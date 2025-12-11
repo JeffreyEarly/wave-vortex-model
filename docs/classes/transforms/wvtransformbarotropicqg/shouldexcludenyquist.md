@@ -1,0 +1,19 @@
+---
+layout: default
+title: shouldExcludeNyquist
+parent: WVTransformBarotropicQG
+grand_parent: Classes
+nav_order: 113
+mathjax: true
+---
+
+#  shouldExcludeNyquist
+
+whether the WV grid includes Nyquist wavenumbers
+
+
+---
+
+## Discussion
+
+  

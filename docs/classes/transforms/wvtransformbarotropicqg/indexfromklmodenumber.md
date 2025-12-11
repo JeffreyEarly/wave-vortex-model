@@ -1,0 +1,35 @@
+---
+layout: default
+title: indexFromKLModeNumber
+parent: WVTransformBarotropicQG
+grand_parent: Classes
+nav_order: 58
+mathjax: true
+---
+
+#  indexFromKLModeNumber
+
+return the linear index into k_wv and l_wv from a mode number
+
+
+---
+
+## Declaration
+```matlab
+ index = indexFromKLModeNumber(kMode,lMode,jMode)
+```
+## Parameters
++ `kMode`  integer
++ `lMode`  integer
+
+## Returns
++ `linearIndex`  a non-negative integer number
+
+## Discussion
+
+  This function will return the linear index into the (k_wv,l_wv) arrays,
+  given the mode numbers (kMode,lMode). Note that this will
+  *not* normalize the mode to the primary mode number, but will
+  throw an error.
+ 
+          

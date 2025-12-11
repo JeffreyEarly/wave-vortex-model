@@ -303,21 +303,6 @@ classdef WVStratification < WVRotatingFPlane
             vars = rmfield(vars,{'Lz'});
             options = namedargs2cell(vars);
         end
-
-        % function methodAnnotations = methodAnnotationsForStratification()
-        %     % return array of WVAnnotations to annotate the methods
-        %     %
-        %     % This function returns annotations for all methods of the
-        %     % WVStratification class.
-        %     %
-        %     % - Topic: Developer
-        %     % - Declaration: methodAnnotations = WVStratification.methodAnnotationsForStratifiedFlow()
-        %     % - Returns methodAnnotations: array of WVAnnotations instances
-        %     methodAnnotations = WVAnnotation.empty(0,0);
-        % 
-        %     methodAnnotations(end+1) = WVAnnotation('diffZF', 'differentiates a variable of (x,y,z) by projecting onto the F-modes, differentiating, and transforming back to (x,y,z)');
-        %     methodAnnotations(end+1) = WVAnnotation('diffZG', 'differentiates a variable of (x,y,z) by projecting onto the G-modes, differentiating, and transforming back to (x,y,z)');
-        % end
     end
 
 end

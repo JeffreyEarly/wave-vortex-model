@@ -22,10 +22,64 @@ if isfile(changelogPath)
     fclose(fid);
 end
 
-websiteRootURL = "wave-vortex-model-diagnostics/";
-
 classFolderName = 'Class documentation';
-websiteFolder = "classes";
-classDoc = ClassDocumentation('WVDiagnostics',websiteRootURL=websiteRootURL,buildFolder=buildFolder,websiteFolder=websiteFolder,parent=classFolderName,nav_order=1);
+websiteFolder = 'classes';
+classDoc = ClassDocumentation('WVTransform',buildFolder=buildFolder,websiteFolder=websiteFolder,parent=classFolderName,nav_order=1);
 classDoc.writeToFile();
+
+classDoc = ClassDocumentation('WVModel',buildFolder=buildFolder,websiteFolder=websiteFolder,parent=classFolderName,nav_order=2);
+classDoc.writeToFile();
+
+parentName = 'Transforms';
+websiteFolder = 'classes/transforms';
+classes = {'WVTransformBoussinesq','WVTransformHydrostatic','WVTransformConstantStratification','WVTransformBarotropicQG','WVTransformStratifiedQG'}; % 'WVTransformSingleMode'
+excludedSuperclasses = {'handle','WVTransform','CAAnnotatedClass'};
+classDocumentation = ClassDocumentation.empty(length(classes),0);
+for iName=1:length(classes)
+    classDocumentation(iName) = ClassDocumentation(classes{iName},nav_order=iName,buildFolder=buildFolder,websiteFolder=websiteFolder,parent=parentName,grandparent=classFolderName,excludedSuperclasses=excludedSuperclasses);
+end
+arrayfun(@(a) a.writeToFile(),classDocumentation)
+
+
+%%
+parentName = 'Forcing';
+websiteFolder = 'classes/forcing';
+
+classDoc = ClassDocumentation('WVForcing',nav_order=1,buildFolder=buildFolder,websiteFolder=websiteFolder,parent=classFolderName);
+classDoc.writeToFile();
+
+excludedSuperclasses = {'handle','WVForcing','CAAnnotatedClass'};
+classes = {'WVAdaptiveDamping','WVAdaptiveDiffusivity','WVAdaptiveViscosity','WVAntialiasing','WVBetaPlanePVAdvection','WVBottomFrictionLinear','WVBottomFrictionQuadratic','WVFixedAmplitudeForcing','WVHorizontalScalarDiffusivity','WVMeanFlowForcing','WVNonlinearAdvection','WVSpectralVanishingViscosity','WVThermalDamping','WVVerticalDiffusivity','WVVerticalScalarDiffusivity'};
+classDocumentation = ClassDocumentation.empty(length(classes),0);
+for iName=1:length(classes)
+    classDocumentation(iName) = ClassDocumentation(classes{iName},nav_order=iName+1,buildFolder=buildFolder,websiteFolder=websiteFolder,parent=parentName,grandparent=classFolderName,excludedSuperclasses=excludedSuperclasses);
+end
+arrayfun(@(a) a.writeToFile(),classDocumentation)
+
+%%
+parentName = 'Operations & annotations';
+websiteFolder = 'classes/operations-and-annotations';
+classes = {'WVOperation','WVVariableAnnotation'};
+
+classDocumentation = ClassDocumentation.empty(length(classes),0);
+for iName=1:length(classes)
+    classDocumentation(iName) = ClassDocumentation(classes{iName},nav_order=iName,buildFolder=buildFolder,websiteFolder=websiteFolder,parent=parentName,grandparent=classFolderName);
+end
+arrayfun(@(a) a.writeToFile(),classDocumentation)
+
+
+parentName = 'Flow components';
+websiteFolder = 'classes/flow-components';
+
+classDoc = ClassDocumentation('WVFlowComponent',nav_order=1,buildFolder=buildFolder,websiteFolder=websiteFolder,parent=classFolderName);
+classDoc.writeToFile();
+
+excludedSuperclasses = {'handle','WVFlowComponent'};
+classes = {'WVPrimaryFlowComponent','WVTotalFlowComponent','WVGeostrophicComponent','WVInternalGravityWaveComponent','WVInertialOscillationComponent','WVMeanDensityAnomalyComponent'};
+classDocumentation = ClassDocumentation.empty(length(classes),0);
+for iName=1:length(classes)
+    classDocumentation(iName) = ClassDocumentation(classes{iName},nav_order=iName+1,buildFolder=buildFolder,websiteFolder=websiteFolder,parent=parentName,grandparent=classFolderName,excludedSuperclasses=excludedSuperclasses);
+end
+arrayfun(@(a) a.writeToFile(),classDocumentation)
+
 end

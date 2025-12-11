@@ -1,0 +1,16 @@
+---
+layout: default
+title: maxFw
+parent: WVTransformStratifiedQG
+grand_parent: Classes
+nav_order: 114
+mathjax: true
+---
+
+#  maxFw
+
+
+
+
+---
+
