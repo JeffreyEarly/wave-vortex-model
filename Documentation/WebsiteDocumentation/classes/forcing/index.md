@@ -1,10 +1,10 @@
 ---
 layout: default
-title: Nonlinear fluxes
+title: Forcing
 parent: Class documentation
 nav_order: 4
 has_children: true
-permalink: /classes/nonlinear-fluxes
+permalink: /classes/forcing
 ---
 
 #  Nonlinear flux operations
