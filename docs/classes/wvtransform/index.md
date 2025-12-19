@@ -63,7 +63,6 @@ Represents the state of the ocean in terms of energetically orthogonal wave and 
   + [`addToVariableCache`](/classes/wvtransform/addtovariablecache.html) add variable to internal cache, in case it is needed again
   + [`clearVariableCacheOfApAmA0DependentVariables`](/classes/wvtransform/clearvariablecacheofapama0dependentvariables.html) clear the internal cache
   + [`clearVariableCacheOfTimeDependentVariables`](/classes/wvtransform/clearvariablecacheoftimedependentvariables.html) clear the internal cache of variables that claim to be time dependent
-  + [`defaultMethodAnnotations`](/classes/wvtransform/defaultmethodannotations.html) return array of WVAnnotations to annotate the methods
   + [`defaultOperations`](/classes/wvtransform/defaultoperations.html) return array of WVOperation instances initialized by default
   + [`fetchFromVariableCache`](/classes/wvtransform/fetchfromvariablecache.html) retrieve a set of variables from the internal cache
   + [`performOperation`](/classes/wvtransform/performoperation.html) computes (runs) the operation

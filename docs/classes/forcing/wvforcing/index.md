@@ -69,8 +69,6 @@ Computes a forcing
   + [`addPotentialVorticitySpectralForcing`](/classes/forcing/wvforcing/addpotentialvorticityspectralforcing.html) 
   + [`addSpectralForcing`](/classes/forcing/wvforcing/addspectralforcing.html) 
   + [`didGetRemovedFromTransform`](/classes/forcing/wvforcing/didgetremovedfromtransform.html) 
-  + [`eq`](/classes/forcing/wvforcing/eq.html) 
-  + [`ne`](/classes/forcing/wvforcing/ne.html) 
   + [`priority`](/classes/forcing/wvforcing/priority.html) determines the order in which the WVForcing will be
   + [`setPotentialVorticitySpectralAmplitude`](/classes/forcing/wvforcing/setpotentialvorticityspectralamplitude.html) 
   + [`setPotentialVorticitySpectralForcing`](/classes/forcing/wvforcing/setpotentialvorticityspectralforcing.html) 
