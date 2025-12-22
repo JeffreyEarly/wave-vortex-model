@@ -9,33 +9,36 @@ has_toc: true
 
 #  Using the WVTransform
 
-At the time of this writing there are three `WVTransform` subclasses with different capabilities,
-- `WVTransformConstantStratification` Non-hydrostatic, constant stratification
+At the time of this writing there are five `WVTransform` subclasses with different capabilities,
+- `WVTransformBoussinesq` Non-hydrostatic, variable stratification
 - `WVTransformHydrostatic` Hydrostatic, variable stratification
-- `WVTransformSingleMode` Single mode, equivalent barotropic
+- `WVTransformConstantStratification` Non-hydrostatic, constant stratification
+- `WVTransformStratifiedQG` Quasigeostrophic dynamics, variable stratification
+- `WVTransformBarotropicQG` Quasigeostrophic dynamics, equivalent barotropic
 
-These three `WVTransform` subclasses are used in the same way, but have three different requirements for initialization.
+These `WVTransform` subclasses are used in the same way, but may have different capabilities and requirements for initialization.
 
 ## Initialization
 
-Constant stratification flows require you specify the domain size, number of grid points, and, optionally, the buoyancy frequency $$N_0$$ and latitude,
-```matlab
-wvt = WVTransformConstantStratification([Lx, Ly, Lz], [Nx, Ny, Nz], N0=N0,latitude=latitude);
-```
+All transforms require you specify the domain size, number of grid points and latitude.
 
-The hydrostatic transformation requires you pass a function handle describing the stratification, e.g.,
+The Boussinesq, hydrostatic and stratified QG transformations require you pass a function handle describing the stratification, e.g.,
 ```matlab
-N2 = @(z) N0*N0*exp(2*z/L_gm);
-wvt = WVTransformHydrostatic([Lx, Ly, Lz], [Nx, Ny, Nz], N2=N2,latitude=latitude);
+wvt = WVTransformHydrostatic([Lx, Ly, Lz], [Nx, Ny, Nz], N2=@(z) N0*N0*exp(2*z/L_gm),latitude=33);
 ```
+whereas constant stratification transform requies the buoyancy frequency $$N_0$$
+```matlab
+wvt = WVTransformConstantStratification([Lx, Ly, Lz], [Nx, Ny, Nz], N0=5.2e-3,latitude=33);
+```
+The equivalent barotropic transform requires that you specify an equivent depth $$h$$,
+```matlab
+wvt = WVTransformBarotropicQG([Lx, Ly], [Nx, Ny], h=0.80,latitude=33);
+```
+where a typical oceanic value for the first barolinic mode would be around 80 cm.
 
 Note that you do not specify the grids, only the dimensions, as the grids are determined by the transforms. The $$x$$ and $$y$$ grids will always be evenly spaced grids appropriate for Fourier transforms, while the $$z$$ grid will be evenly spaced for constant stratification (sine and cosine transforms), but will have variable spacing when using variable stratification.
 
-The equivalent barotropic transform requires that you specify an equivent depth $$h$$,
-```matlab
-wvt = WVTransformSingleMode([Lx, Ly], [Nx, Ny], h=0.80,latitude=latitude);
-```
-where a typical oceanic value for the first barolinic mode would be around 80 cm.
+
 
 ## Initial conditions
 
