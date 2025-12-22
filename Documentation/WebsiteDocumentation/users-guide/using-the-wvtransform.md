@@ -36,20 +36,24 @@ wvt = WVTransformBarotropicQG([Lx, Ly], [Nx, Ny], h=0.80,latitude=33);
 ```
 where a typical oceanic value for the first barolinic mode would be around 80 cm.
 
-Note that you do not specify the grids, only the dimensions, as the grids are determined by the transforms. The $$x$$ and $$y$$ grids will always be evenly spaced grids appropriate for Fourier transforms, while the $$z$$ grid will be evenly spaced for constant stratification (sine and cosine transforms), but will have variable spacing when using variable stratification.
+## Grids
 
+Note that you do not specify the grids, only the domain size---the grids are determined by the transforms.
+
+The dimensions that result can be accessed with, e.g., `wvt.x` or `wvt.z`. This will be array of size `[Nx 1]` and `[Nz 1]`, respectively. More useful perhaps are the grids, e.g., `wvt.X` or `wvt.Z` which are of size `[Nx Ny Nz]`.
+
+For the current set of transforms $$x$$ and $$y$$ grids will always be evenly spaced grids appropriate for Fourier transforms, while the $$z$$ grid will be evenly spaced for constant stratification (sine and cosine transforms), but will have variable spacing when using variable stratification.
 
 
 ## Initial conditions
 
-Once a model is initialized, it is often the case that one would like to add initial conditions. The [WVTransform](/classes/wvtransform.html) class has numerous methods for adding initial conditions---including very generael initialization from any fluid state, as well as initialization specific to waves, inertial oscillations, and geostrophic motions.
+Once a model is instantiated, it is often the case that one would like to add initial conditions. The [WVTransform](/classes/wvtransform.html) class has numerous methods for adding initial conditions---including very general initialization from any fluid state, as well as initialization specific to waves, inertial oscillations, and geostrophic motions.
 
 ### Initializing from $$(u,v,\eta)$$
 
 The most direct methods for initializing the model are [`initWithUVEta`](/classes/wvtransform/initwithuveta.html) and [`initWithUVRho`](/classes/wvtransform/initwithuvrho.html) which take either $$(u,v,\eta)$$ or $$(u,v,\rho)$$. As a simple example, let's intialize with an inertial oscillation initial condition, $$(u_0 \exp(z/100),0,0)$$. In code, this is
 ```matlab
-[X,Y,Z] = wvt.xyzGrid;
-wvt.initWithUVEta( 0.2*exp(Z/100), 0*X, 0*X );
+wvt.initWithUVEta( 0.2*exp(wvt.Z/100), 0*wvt.X, 0*wvt.X );
 ```
 
 The call to `[X,Y,Z] = wvt.xyzGrid` returns three matrices, typically of size `[Nx Ny Nz]`, that contain the grid values. Behind the scenes this is calling the Matlab function `ndgrid`, but please do not create the grids yourself---a `WVTransform` may choose to order the the grid points differently than you expect.
@@ -95,7 +99,11 @@ It can also be useful to [`initWithRandomFlow`](/classes/wvtransform/initwithran
 
 Once you have a `WVTransform` instance, you can now query it to return different state variables. The term "state" is used because these variables tell you something about the state of the fluid at the time in question.
 
-Standard variables that are available are documented with the [WVTransform](/classes/wvtransform.html) and include $$(u,v,w,\rho,p)$$, the sea-surface height and velocities, the quasi-geostrophic potential vorticity (qgpv), the nonlinear fluxes $$(F_p, F_m, F_0)$$ and others. 
+Standard variables that are available are documented with the [WVTransform](/classes/wvtransform.html) and include $$(u,v,w,\rho,p)$$, the sea-surface height and velocities, the quasi-geostrophic potential vorticity (qgpv), the nonlinear fluxes $$(F_p, F_m, F_0)$$ and others. The transform has numerous built-in state variables
+```matlab
+wvt.summarizeVariables
+```
+will enumerate all current variables.
 
 There are two ways to access state variables. In the first way, you can query the transform using Matlab's dot syntax, e.g.,
 ```matlab
@@ -104,7 +112,7 @@ u = wvt.u;
 will return a matrix of the $$u$$ velocity component. This can then be plotted in the usual way, e.g.,
 ```matlab
 figure
-pcolor(wvt.y,wvt.z,squeeze(u(1,:,:)).'), shading interp
+pcolor(wvt.y,wvt.z,squeeze(wvt.u(1,:,:)).'), shading interp
 ```
 where the properties of the WVTransform `wvt.y` and `wvt.z` refer to those dimensions.
 
