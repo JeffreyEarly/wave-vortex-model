@@ -3,7 +3,7 @@ layout: default
 title: Wavenumbers, modes, and indices
 parent: Users guide
 mathjax: true
-nav_order: 6
+nav_order: 16
 ---
 
 #  Wavenumbers, modes, and indices

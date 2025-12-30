@@ -14,7 +14,7 @@ Clone the OceanKit repository
 ```
 git clone https://github.com/JeffreyEarly/OceanKit.git
 ```
-from the command-line (or download [the zip](https://github.com/JeffreyEarly/OceanKit/archive/refs/heads/main.zip). Within Matlab, add this folder as an MPM repository,
+from the command-line (or download [the zip](https://github.com/JeffreyEarly/OceanKit/archive/refs/heads/main.zip)). Within Matlab, add this folder as an MPM repository,
 ```matlab
 mpmAddRepository("OceanKit","path/to/folder/OceanKit")
 ```
@@ -36,6 +36,6 @@ git clone https://github.com/JeffreyEarly/wave-vortex-model.git
 ```
 and install with
 ```matlab
-mpminstall("wave-vortex-model, Authoring=true); 
+mpminstall("wave-vortex-model", Authoring=true); 
 ```
 This will still install the dependencies from the mpm repo (and those will not be editable).

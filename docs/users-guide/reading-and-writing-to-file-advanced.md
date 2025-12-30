@@ -3,7 +3,7 @@ layout: default
 title: Reading and writing to file, advanced topics
 parent: Users guide
 mathjax: true
-nav_order: 3
+nav_order: 12
 has_toc: true
 ---
 

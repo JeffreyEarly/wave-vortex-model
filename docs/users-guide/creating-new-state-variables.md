@@ -3,7 +3,7 @@ layout: default
 title: Creating new state variables
 parent: Users guide
 mathjax: true
-nav_order: 4
+nav_order: 14
 ---
 
 #  Creating new state variables
