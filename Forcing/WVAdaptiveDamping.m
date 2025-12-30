@@ -1,37 +1,99 @@
 classdef WVAdaptiveDamping < WVForcing
     % Adaptive small-scale damping
     %
-    % This damping operator is a linear closure designed not to mix
-    % geostrophic and wavemodes. This requires setting the diffusivity
-    % equal to the viscosity. It also uses the spectral vanishing viscosity
-    % filter to prevent any damping below a particular wavenumber.
+    % This damping operator is a linear closure that dynamically changes
+    % its amplitude to keep the Reynolds number at the grid scale equal to
+    % one. This closure is ideal for a spin-up problem where the amplitude
+    % of the flow is changing.
+    % 
+    % This closure has a number of noteworthy features:
     %
+    % - It does not mix geostrophic and wave modes, which requires setting
+    % the diffusivity equal to the viscosity.
+    % - The properties `k_no_damp` and `j_no_damp` indicate the wavenumber and
+    % mode below which there is zero damping, due to the spectral vanishing
+    % viscosity filter.
+    % - The properties `k_damp` and `j_damp` are *estimates* of the
+    % wavenumber and mode above which significant damping will occur.
+    %
+    % The damping operator acts in the spectral domain, directly damping
+    % the wave-vortex coefficients.
+    %
+    % $$
+    % \begin{align}
+    %     \partial_t A_\pm^{k\ell j} =& - \nu (k^2 + \ell^2 ) A_\pm^{k\ell j} - \nu_z \lambda_j^{-2} A_\pm^{k\ell j} \\
+    %     \partial_t A_0^{k\ell j} =& - \nu (k^2 + \ell^2 ) A_0^{k\ell j} - \nu_z \lambda_j^{-2} A_0^{k\ell j}
+    % \end{align}
+    % $$
+    %
+    % where
+    %
+    % $$
+    % \nu_z = \nu \lambda^2_\textrm{min} k^2_\textrm{max} = \nu \lambda^2_\textrm{min} \left( \frac{\pi}{\Delta} \right)^2
+    % $$
+    %
+    % is chosen to make the damping isotropic. The notation here is that
+    % $$\Delta$$ is the horizontal grid resolution and
+    % $$\lambda^2_\textrm{min}$$ is the smallest resolved radius of
+    % deformation. The value of $$\nu$$ is set as
+    %
+    % $$
+    % \nu = = \frac{U \Delta}{\pi^2}
+    % $$
+    %
+    % where $U$ is the maximum fluid velocity.
     %
     % - Topic: Initializing
     % - Declaration: WVAdaptiveDamping < [WVForcing](/classes/forcing/wvforcing/)
     properties
         damp
-        k_damp % wavenumber at which the significant scale damping starts.
-        k_no_damp % wavenumber below which there is zero damping
-        j_damp % wavenumber at which the significant scale damping starts.
-        j_no_damp % wavenumber below which there is zero damping
 
-        forcingListener
+        % wavenumber at which the significant scale damping starts.
+        %
+        % - Topic: Properties
+        k_damp
+
+        % wavenumber below which there is zero damping
+        %
+        % - Topic: Properties
+        k_no_damp
+        
+        % wavenumber at which the significant scale damping starts.
+        %
+        % - Topic: Properties
+        j_damp
+
+        % wavenumber below which there is zero damping
+        %
+        % - Topic: Properties
+        j_no_damp
+
+        % effective resolution used in the damping calculation
+        %
+        % - Topic: Properties
         assumedEffectiveHorizontalGridResolution = Inf;
+    end
+
+    properties (Access = private, Hidden)
+        forcingListener
+    end
+
+    methods (Access = private, Hidden)
+        function forcingDidChangeNotification(self,~,~)
+            if self.wvt.effectiveHorizontalGridResolution ~= self.assumedEffectiveHorizontalGridResolution
+                self.buildDampingOperator();
+            end
+        end
     end
 
     methods
         function self = WVAdaptiveDamping(wvt)
-            % initialize the WVNonlinearFlux nonlinear flux
+            % initialize the WVAdaptiveDamping
             %
-            % Note that you should never need to set
-            % shouldAssumeAntialiasing to true, because the WVGeometry will
-            % hand back the correct effective grid resolution whether you
-            % enabled it at the transform level, or as a filter.
-            %
-            % - Declaration: nlFlux = WVAdaptiveViscosity(wvt)
+            % - Topic: Initialization
+            % - Declaration: damp = WVAdaptiveDamping(wvt)
             % - Parameter wvt: a WVTransform instance
-            % - Returns self: a WVAdaptiveViscosity instance
+            % - Returns self: a WVAdaptiveDamping instance
             arguments
                 wvt WVTransform {mustBeNonempty}
             end
@@ -47,15 +109,10 @@ classdef WVAdaptiveDamping < WVForcing
             self.forcingListener = [];
         end
 
-        function forcingDidChangeNotification(self,~,~)
-            if self.wvt.effectiveHorizontalGridResolution ~= self.assumedEffectiveHorizontalGridResolution
-                self.buildDampingOperator();
-            end
-        end
-
         function buildDampingOperator(self)
             % Builds the damping operator
             %
+            % - Topic: Initialization
             % - Declaration: buildDampingOperator(self)
             % - Parameter self: an instance of WVAdaptiveViscosity
             % - Returns: None
@@ -167,18 +224,18 @@ classdef WVAdaptiveDamping < WVForcing
         %         Qj = ones(size(J));
         %     end
         % end
-
-        function dampingTimeScale = dampingTimeScale(self)
-            % Computes the damping time scale
-            %
-            % - Declaration: dampingTimeScale(self)
-            % - Parameter self: an instance of WVAdaptiveViscosity
-            % - Returns: dampingTimeScale
-            arguments
-                self WVAdaptiveDamping {mustBeNonempty}
-            end
-            dampingTimeScale = 1/max(abs(self.F0_damp(:)));
-        end
+        % 
+        % function dampingTimeScale = dampingTimeScale(self)
+        %     % Computes the damping time scale
+        %     %
+        %     % - Declaration: dampingTimeScale(self)
+        %     % - Parameter self: an instance of WVAdaptiveViscosity
+        %     % - Returns: dampingTimeScale
+        %     arguments
+        %         self WVAdaptiveDamping {mustBeNonempty}
+        %     end
+        %     dampingTimeScale = 1/max(abs(self.F0_damp(:)));
+        % end
         
         function [Fp, Fm, F0] = addSpectralForcing(self, wvt, Fp, Fm, F0)
             % Adds spectral forcing
@@ -237,6 +294,7 @@ classdef WVAdaptiveDamping < WVForcing
         function vars = classRequiredPropertyNames()
             % Returns the required property names for the class
             %
+            % - Topic: CAAnnotatedClass requirement
             % - Declaration: classRequiredPropertyNames()
             % - Returns: vars
             arguments
@@ -247,6 +305,7 @@ classdef WVAdaptiveDamping < WVForcing
         function propertyAnnotations = classDefinedPropertyAnnotations()
             % Returns the defined property annotations for the class
             %
+            % - Topic: CAAnnotatedClass requirement
             % - Declaration: classDefinedPropertyAnnotations()
             % - Returns: propertyAnnotations
             arguments (Output)

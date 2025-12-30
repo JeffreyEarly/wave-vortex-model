@@ -9,26 +9,21 @@ mathjax: true
 
 #  WVAdaptiveDamping
 
-initialize the WVNonlinearFlux nonlinear flux
+initialize the WVAdaptiveDamping
 
 
 ---
 
 ## Declaration
 ```matlab
- nlFlux = WVAdaptiveViscosity(wvt)
+ damp = WVAdaptiveDamping(wvt)
 ```
 ## Parameters
 + `wvt`  a WVTransform instance
 
 ## Returns
-+ `self`  a WVAdaptiveViscosity instance
++ `self`  a WVAdaptiveDamping instance
 
 ## Discussion
 
-  Note that you should never need to set
-  shouldAssumeAntialiasing to true, because the WVGeometry will
-  hand back the correct effective grid resolution whether you
-  enabled it at the transform level, or as a filter.
- 
-      
+        

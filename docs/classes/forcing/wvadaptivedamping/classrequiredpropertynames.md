@@ -20,4 +20,4 @@ Returns the required property names for the class
 ```
 ## Discussion
 
-    - Returns: vars
+      - Returns: vars

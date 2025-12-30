@@ -9,8 +9,11 @@ mathjax: true
 
 #  assumedEffectiveHorizontalGridResolution
 
-
+effective resolution used in the damping calculation
 
 
 ---
 
+## Discussion
+
+  

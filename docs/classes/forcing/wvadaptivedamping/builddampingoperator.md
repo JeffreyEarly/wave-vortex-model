@@ -23,4 +23,4 @@ Builds the damping operator
 
 ## Discussion
 
-      - Returns: None
+        - Returns: None

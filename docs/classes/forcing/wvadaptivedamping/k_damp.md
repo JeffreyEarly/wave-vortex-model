@@ -3,7 +3,7 @@ layout: default
 title: k_damp
 parent: WVAdaptiveDamping
 grand_parent: Classes
-nav_order: 11
+nav_order: 8
 mathjax: true
 ---
 
@@ -14,3 +14,6 @@ wavenumber at which the significant scale damping starts.
 
 ---
 
+## Discussion
+
+  
