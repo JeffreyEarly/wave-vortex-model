@@ -16,36 +16,30 @@ The WVModel is responsible for time-stepping (integrating) the ocean state forwa
 ---
 
 ## Overview
- 
-  Assuming you have already initialized a WVTransform, e.g.,
+Assuming you have already initialized a WVTransform, e.g.,
   ```matlab
   wvt = WVTransformConstantStratification([Lx, Ly, Lz], [Nx, Ny, Nz], N0,latitude=latitude);
   ```
-  and maybe set some initial conditions, you can then initialize the
-  model,
+and maybe set some initial conditions, you can then initialize the model,
   ```matlab
   model = WVModel(wvt)
   ```
-  
-  By default the model only takes a linear time-step. To specify a
-  nonlinear flux on initialization, for example,
+
+By default the model only takes a linear time-step. To specify a nonlinear flux on initialization, for example,
  ```matlab
   model = WVModel(wvt);
  ```
- 
-  You can also initialize a model from existing output,
+
+You can also initialize a model from existing output,
   ```matlab
   model = WVModel.modelFromFile('SomeFile.nc');
  ```
-  
-  Advanced usage
-  --------------
- 
-  1. Create 1 or more NetCDFFiles
-  2. Add 1 or more WVModelOutputGroups to each file
-  3. Add 1 or more WVObservingSystems to each output group.
- 
-            
+
+Advanced usage --------------
+
+1. Create 1 or more NetCDFFiles
+2. Add 1 or more WVModelOutputGroups to each file
+3. Add 1 or more WVObservingSystems to each output group.
 
 
 ## Topics

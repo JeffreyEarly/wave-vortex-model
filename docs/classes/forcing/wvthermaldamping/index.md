@@ -21,13 +21,9 @@ Thermal damping
 <div class="language-matlab highlighter-rouge"><div class="highlight"><pre class="highlight"><code>WVBottomFriction < <a href="/classes/wvforcing/" title="WVForcing">WVForcing</a></code></pre></div></div>
 
 ## Overview
- 
-  Applies thermal damping to the flow, i.e., $$\frac{dq}{dt} = \alpha \lambda^2 \psi$$.
- 
-  This is as defined in Scott and Dritschel, but it can be shown that
-  it is basically just a vertical diffusivity.
- 
-    
+Applies thermal damping to the flow, i.e., $$\frac{dq}{dt} = \alpha \lambda^2 \psi$$.
+
+This is as defined in Scott and Dritschel, but it can be shown that it is basically just a vertical diffusivity.
 
 
 ## Topics

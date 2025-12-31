@@ -20,10 +20,6 @@ Vertical diffusivty
 
 <div class="language-matlab highlighter-rouge"><div class="highlight"><pre class="highlight"><code>WVVerticalDiffusivity < <a href="/classes/forcing/wvforcing/" title="WVForcing">WVForcing</a></code></pre></div></div>
 
-## Overview
- 
- 
-    
 
 
 ## Topics
