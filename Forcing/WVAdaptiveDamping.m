@@ -43,6 +43,15 @@ classdef WVAdaptiveDamping < WVForcing
     %
     % where $$U$$ is the maximum fluid velocity.
     %
+    % ### Usage
+    %
+    % Assuming there is a WVTransform instance wvt, to add this forcing,
+    %
+    % ```matlab
+    % wvt.addForcing(WVAdaptiveDamping(wvt));
+    % ```
+    %
+    %
     % - Topic: Initialization
     % - Topic: Properties
     % - Topic: Internal

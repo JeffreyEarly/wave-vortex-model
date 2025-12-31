@@ -1,12 +1,61 @@
 classdef WVVerticalScalarDiffusivity < WVForcing
     % Vertical viscosity and diffusivity
     %
+    % The damping is designed to mimic the VerticalScalarDiffusivity in
+    % Oceananigans to allow for direct comparison between the models. This
+    % should probably be used in combination with
+    % `WVHorizontalScalarDiffusivity`. In general, you should be using the
+    % [`WVAdaptiveDamping`](WVAdaptiveDamping).
+    % 
+    % The specific form of the forcing is given by 
     %
-    % - Topic: Initializing
+    % $$
+    % \begin{align}
+    % \mathcal{S}_u &= \nu \frac{\partial^2 u}{\partial z^2} \\
+    % \mathcal{S}_v &= \nu \frac{\partial^2 v }{\partial z^2} \\
+    % \mathcal{S}_w &= \nu \frac{\partial^2 w}{\partial z^2} \\
+    % \mathcal{S}_\eta &= \kappa \frac{\partial^2 \eta}{\partial z^2} - \kappa \frac{\partial}{\partial z} \ln N^2
+    % \end{align}
+    % $$
+    %
+    % with viscosity, $$\nu$$, and diffusivity, $$\kappa$$. This should be combined with
+    % WVHorizontalScalarDiffusivity for a complete closure. For help
+    % choosing appropriate values, see the notes in
+    % [`WVAdaptiveDamping`](WVAdaptiveDamping).
+    %
+    % ### Usage
+    %
+    % Assuming there is a WVTransform instance wvt, to add this forcing,
+    %
+    % ```matlab
+    % wvt.addForcing(WVVerticalScalarDiffusivity(wvt,nu=5e-4, kappa=1e-6));
+    % ```
+    %
+    %
+    % ### Notes
+    %
+    % This is currently implemented in the spatial domain, an is
+    % thus highly un-optimized.
+    %
+    % - Topic: Initialization
+    % - Topic: Properties
+    % - Topic: CAAnnotatedClass requirement
+    %
     % - Declaration: WVVerticalScalarDiffusivity < [WVForcing](/classes/forcing/wvforcing/)
     properties
+        % vertical viscosity
+        %
+        % - Topic: Properties
         nu
+
+        % vertical diffusivity
+        %
+        % - Topic: Properties
         kappa
+
+        % variable stratification factor
+        %
+        % - Topic: Properties
         dLnN2 = 0
     end
 
@@ -14,8 +63,10 @@ classdef WVVerticalScalarDiffusivity < WVForcing
         function self = WVVerticalScalarDiffusivity(wvt,options)
             % initialize the WVVerticalScalarDiffusivity
             %
-            % - Declaration: self = WVVerticalScalarDiffusivity(wvt)
+            % - Declaration: self = WVVerticalScalarDiffusivity(wvt,options)
             % - Parameter wvt: a WVTransform instance
+            % - Parameter nu: vertical viscosity, default $$5 \cdot 10^{-4} \textrm{m}^2/\textrm{s}$$
+            % - Parameter kappa: vertical diffusivity, default $$1 \cdot 10^{-6} \textrm{m}^2/\textrm{s}$$
             % - Returns self: a WVVerticalScalarDiffusivity instance
             arguments
                 wvt WVTransform {mustBeNonempty}
@@ -65,6 +116,7 @@ classdef WVVerticalScalarDiffusivity < WVForcing
         function vars = classRequiredPropertyNames()
             % Returns the required property names for the class
             %
+            % - Topic: CAAnnotatedClass requirement
             % - Declaration: classRequiredPropertyNames()
             % - Returns: vars
             arguments
@@ -75,6 +127,7 @@ classdef WVVerticalScalarDiffusivity < WVForcing
         function propertyAnnotations = classDefinedPropertyAnnotations()
             % Returns the defined property annotations for the class
             %
+            % - Topic: CAAnnotatedClass requirement
             % - Declaration: classDefinedPropertyAnnotations()
             % - Returns: propertyAnnotations
             arguments (Output)

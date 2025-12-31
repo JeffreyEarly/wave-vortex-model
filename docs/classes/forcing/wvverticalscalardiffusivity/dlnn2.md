@@ -9,8 +9,11 @@ mathjax: true
 
 #  dLnN2
 
-
+variable stratification factor
 
 
 ---
 
+## Discussion
+
+  

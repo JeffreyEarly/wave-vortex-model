@@ -25,8 +25,10 @@ Horizontal laplacian damping with viscosity and diffusivity
   The damping is a simple horizontal Laplacian, designed to mimic the
   [HorizontalScalarDiffusivity in
   Oceananigans](https://clima.github.io/OceananigansDocumentation/stable/appendix/library/#Oceananigans.TurbulenceClosures.HorizontalScalarDiffusivity)
-  to allow for direct comparison between the models. In general, you
-  should be using the [`WVAdaptiveDamping`](WVAdaptiveDamping).
+  to allow for direct comparison between the models. This should
+  probably be used in combination with WVVerticalScalarDiffusivity. In
+  general, you should be using the
+  [`WVAdaptiveDamping`](WVAdaptiveDamping).
   
   The specific form of the forcing is given by 
  
@@ -45,10 +47,21 @@ Horizontal laplacian damping with viscosity and diffusivity
   choosing appropriate values, see the notes in
   [`WVAdaptiveDamping`](WVAdaptiveDamping).
  
-  Note that this is currently implemented in the spatial domain, an is
+  ### Usage
+ 
+  Assuming there is a WVTransform instance wvt, to add this forcing,
+ 
+  ```matlab
+  wvt.addForcing(WVHorizontalScalarDiffusivity(wvt,nu=1e-4, kappa=1e-6));
+  ```
+ 
+ 
+  ### Notes
+ 
+  This is currently implemented in the spatial domain, an is
   thus highly un-optimized.
  
-         
+       
   
 
 
