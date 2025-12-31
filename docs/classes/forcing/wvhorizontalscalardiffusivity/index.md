@@ -47,7 +47,7 @@ Horizontal laplacian damping with viscosity and diffusivity
   choosing appropriate values, see the notes in
   [`WVAdaptiveDamping`](WVAdaptiveDamping).
  
-  ### Usage
+### Usage
  
   Assuming there is a WVTransform instance wvt, to add this forcing,
  
@@ -56,7 +56,7 @@ Horizontal laplacian damping with viscosity and diffusivity
   ```
  
  
-  ### Notes
+### Notes
  
   This is currently implemented in the spatial domain, an is
   thus highly un-optimized.
