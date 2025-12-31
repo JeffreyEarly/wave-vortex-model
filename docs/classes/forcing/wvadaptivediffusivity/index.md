@@ -21,7 +21,14 @@ Adaptive small-scale diffusivity
 <div class="language-matlab highlighter-rouge"><div class="highlight"><pre class="highlight"><code>WVAdaptiveViscosity < <a href="/classes/forcing/wvforcing/" title="WVForcing">WVForcing</a></code></pre></div></div>
 
 ## Overview
-The damping is a simple Laplacian, but with a spectral vanishing viscosity (SVV) operator applied that prevents any damping below a cutoff wavenumber, adapted to the current fluid velocity. The SVV operator adjusts the wavenumbers being damped depending on whether anti-aliasing is applied.
+
+The damping is a simple Laplacian, but with a spectral vanishing
+viscosity (SVV) operator applied that prevents any damping below a
+cutoff wavenumber, adapted to the current fluid velocity. The SVV operator adjusts the wavenumbers being
+damped depending on whether anti-aliasing is applied.
+
+
+
 
 
 ## Topics

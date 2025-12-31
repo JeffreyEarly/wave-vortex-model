@@ -21,7 +21,10 @@ The advective flux, $$u\cdot \nabla u$$
 <div class="language-matlab highlighter-rouge"><div class="highlight"><pre class="highlight"><code>WVAdvectiveFlux < <a href="/classes/wvforcing/" title="WVForcing">WVForcing</a></code></pre></div></div>
 
 ## Overview
+
 This computes the nonlinear advection terms.
+
+
 
 
 ## Topics

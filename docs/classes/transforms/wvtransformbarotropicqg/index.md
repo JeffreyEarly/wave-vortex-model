@@ -21,14 +21,20 @@ A transform for modeling single-layer quasigeostrophic flow
 <div class="language-matlab highlighter-rouge"><div class="highlight"><pre class="highlight"><code>classdef WVTransformBarotropicQG < <a href="/classes/wvtransform/" title="WVTransform">WVTransform</a></code></pre></div></div>
 
 ## Overview
-This is a two-dimensional, single-layer which may be interpreted as the sea-surface height. The 'h' parameter is the equivalent depth, and 0.80 m is a typical value for the first baroclinic mode.
 
-  ```matlab
-  Lxy = 50e3;
-  Nxy = 256;
-  latitude = 25;
-  wvt = WVTransformSingleMode([Lxy, Lxy], [Nxy, Nxy], h=0.8, latitude=latitude);
-  ```
+This is a two-dimensional, single-layer which may be interpreted as
+the sea-surface height. The 'h' parameter is the equivalent depth,
+and 0.80 m is a typical value for the first baroclinic mode.
+
+```matlab
+Lxy = 50e3;
+Nxy = 256;
+latitude = 25;
+wvt = WVTransformSingleMode([Lxy, Lxy], [Nxy, Nxy], h=0.8, latitude=latitude);
+```
+
+
+
 
 
 ## Topics

@@ -21,23 +21,35 @@ Resonant forcing at the natural frequency of each mode
 <div class="language-matlab highlighter-rouge"><div class="highlight"><pre class="highlight"><code>WVNonlinearFluxForced < <a href="/classes/wvnonlinearflux/" title="WVNonlinearFlux">WVNonlinearFlux</a></code></pre></div></div>
 
 ## Overview
+
 The unforced model basically looks likes like this,
 
-$$ \frac{\partial}{\partial t} A^{klj} = F_\textrm{inertial}^{klj} + F_\textrm{damp}^{klj} $$
+$$
+\frac{\partial}{\partial t} A^{klj} = F_\textrm{inertial}^{klj} + F_\textrm{damp}^{klj}
+$$
 
 for each of the three components. The forcing adds a new term,
 
-$$ \frac{\partial}{\partial t} A^{klj} = \underbrace{M_{A}^{klj} \left(\bar{A}^{klj} - A^{klj} \night)/ \tau}_{F_\textrm{force}} + F_\textrm{inertial}^{klj} + F_\textrm{damp}^{klj} $$
+$$
+\frac{\partial}{\partial t} A^{klj} = \underbrace{M_{A}^{klj} \left(\bar{A}^{klj}  - A^{klj} \right)/ \tau}_{F_\textrm{force}} + F_\textrm{inertial}^{klj} + F_\textrm{damp}^{klj}
+$$
 
-which forces those select modes to relax to their $$\bar{A}^{klj}$$ state with time scale $$\tau$$. If the time scale is set to 0, then the mean amplitudes remain fixed for all time. In that limit, the equations can be written as,
+which forces those select modes to relax to their $$\bar{A}^{klj}$$
+state with time scale $$\tau$$.  If the time scale is set to 0, then the mean
+amplitudes remain fixed for all time. In that limit, the
+equations can be written as,
 
-$$ \frac{\partial}{\partial t} A^{klj} = \neg M_{A}^{klj} \left( F_\textrm{inertial}^{klj} + F_\textrm{damp}^{klj} \night) $$
+$$
+\frac{\partial}{\partial t} A^{klj} = \neg M_{A}^{klj} \left( F_\textrm{inertial}^{klj} + F_\textrm{damp}^{klj} \right)
+$$
 
 This is most often used when initializing a model, e.g.,
 
-  ```matlab
-  model = WVModel(wvt,nonlinearFlux=WVNonlinearFluxForced(wvt,uv_damp=wvt.uvMax));
-  ```
+```matlab
+model = WVModel(wvt,nonlinearFlux=WVNonlinearFluxForced(wvt,uv_damp=wvt.uvMax));
+```
+
+
 
 
 ## Topics

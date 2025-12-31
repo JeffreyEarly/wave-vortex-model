@@ -20,13 +20,25 @@ Represents the state of the ocean in terms of energetically orthogonal wave and 
 <div class="language-matlab highlighter-rouge"><div class="highlight"><pre class="highlight"><code>classdef WVTransform < handle</code></pre></div></div>
 
 ## Overview
-The WVTransform subclasses encapsulate data representing the state of the ocean at a given instant in time. What makes the WVTransform subclasses special is that the state of the ocean is represented as energetically independent waves and geostrophic motions (vortices). These classes can be queried for any ocean state variable including $$u$$, $$v$$, $$w$$, $$\nho$$, $$p$$, but also Ertel PV, relative vorticity, or custom defined state variables.
 
-The WVTransform is an abstract class and as such you must instatiate one of the concrete subclasses,
+
+The WVTransform subclasses encapsulate data representing the
+state of the ocean at a given instant in time. What makes the
+WVTransform subclasses special is that the state of the ocean
+is represented as energetically independent waves and geostrophic
+motions (vortices). These classes can be queried for any ocean state
+variable including $$u$$, $$v$$, $$w$$, $$\rho$$, $$p$$, but also
+Ertel PV, relative vorticity, or custom defined state variables.
+
+The WVTransform is an abstract class and as such you must
+instatiate one of the concrete subclasses,
 
 + `WVTransformConstantStratification`
 + `WVTransformHydrostatic`
 + `WVTransformSingleMode`
+
+
+
 
 
 ## Topics

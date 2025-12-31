@@ -21,7 +21,12 @@ Advection of QGPV from beta
 <div class="language-matlab highlighter-rouge"><div class="highlight"><pre class="highlight"><code>WVBetaPlanePVAdvection < <a href="/classes/wvforcing/" title="WVForcing">WVForcing</a></code></pre></div></div>
 
 ## Overview
-This applies \beta*v_g to the PV (A0) flux of a simulation. Note that this may not be justified for Boussinesq flow, but it works.
+
+This applies \beta*v_g to the PV (A0) flux of a simulation. Note that
+this may not be justified for Boussinesq flow, but it works.
+
+
+
 
 
 ## Topics
