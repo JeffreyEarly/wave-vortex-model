@@ -38,14 +38,21 @@ classdef WVAdaptiveDamping < WVForcing
     % deformation. The value of $$\nu$$ is set as
     %
     % $$
-    % \nu = = \frac{U \Delta}{\pi^2}
+    % \nu = \frac{U \Delta}{\pi^2}
     % $$
     %
-    % where $U$ is the maximum fluid velocity.
+    % where $$U$$ is the maximum fluid velocity.
     %
-    % - Topic: Initializing
+    % - Topic: Initialization
+    % - Topic: Properties
+    % - Topic: Internal
+    % - Topic: CAAnnotatedClass requirement
+    %
     % - Declaration: WVAdaptiveDamping < [WVForcing](/classes/forcing/wvforcing/)
     properties
+        % spectral matrix that multiplies Ap,Am,A0 to damp
+        %
+        % - Topic: Properties
         damp
 
         % wavenumber at which the significant scale damping starts.
@@ -112,7 +119,7 @@ classdef WVAdaptiveDamping < WVForcing
         function buildDampingOperator(self)
             % Builds the damping operator
             %
-            % - Topic: Initialization
+            % - Topic: Internal
             % - Declaration: buildDampingOperator(self)
             % - Parameter self: an instance of WVAdaptiveViscosity
             % - Returns: None
@@ -139,6 +146,7 @@ classdef WVAdaptiveDamping < WVForcing
         function [Qkl,Qj,kl_cutoff, kl_damp, j_cutoff, j_damp] = spectralVanishingViscosityFilter(self, kl_max, j_max)
             % Builds the spectral vanishing viscosity operator
             %
+            % - Topic: Internal
             % - Declaration: spectralVanishingViscosityFilter(self, options)
             % - Parameter self: an instance of WVAdaptiveViscosity
             % - Parameter options: struct with field shouldAssumeAntialiasing
@@ -225,17 +233,18 @@ classdef WVAdaptiveDamping < WVForcing
         %     end
         % end
         % 
-        % function dampingTimeScale = dampingTimeScale(self)
-        %     % Computes the damping time scale
-        %     %
-        %     % - Declaration: dampingTimeScale(self)
-        %     % - Parameter self: an instance of WVAdaptiveViscosity
-        %     % - Returns: dampingTimeScale
-        %     arguments
-        %         self WVAdaptiveDamping {mustBeNonempty}
-        %     end
-        %     dampingTimeScale = 1/max(abs(self.F0_damp(:)));
-        % end
+        function dampingTimeScale = dampingTimeScale(self)
+            % Computes the minimum damping time scale
+            %
+            % - Topic: Properties
+            % - Declaration: dampingTimeScale(self)
+            % - Parameter self: an instance of WVAdaptiveViscosity
+            % - Returns: dampingTimeScale
+            arguments
+                self WVAdaptiveDamping {mustBeNonempty}
+            end
+            dampingTimeScale = 1/max(abs(self.damp(:)));
+        end
         
         function [Fp, Fm, F0] = addSpectralForcing(self, wvt, Fp, Fm, F0)
             % Adds spectral forcing

@@ -1,5 +1,5 @@
 classdef WVAdaptiveDiffusivity < WVForcing
-    % Adaptive small-scale damping
+    % Adaptive small-scale diffusivity
     %
     % The damping is a simple Laplacian, but with a spectral vanishing
     % viscosity (SVV) operator applied that prevents any damping below a
@@ -99,8 +99,9 @@ classdef WVAdaptiveDiffusivity < WVForcing
         end
 
         function dampingTimeScale = dampingTimeScale(self)
-            % Computes the damping time scale
+            % Computes the minimum damping time scale
             %
+            % - Topic: Properties
             % - Declaration: dampingTimeScale(self)
             % - Parameter self: an instance of WVAdaptiveViscosity
             % - Returns: dampingTimeScale
@@ -167,6 +168,7 @@ classdef WVAdaptiveDiffusivity < WVForcing
         function vars = classRequiredPropertyNames()
             % Returns the required property names for the class
             %
+            % - Topic: CAAnnotatedClass requirement
             % - Declaration: classRequiredPropertyNames()
             % - Returns: vars
             arguments
@@ -177,6 +179,7 @@ classdef WVAdaptiveDiffusivity < WVForcing
         function propertyAnnotations = classDefinedPropertyAnnotations()
             % Returns the defined property annotations for the class
             %
+            % - Topic: CAAnnotatedClass requirement
             % - Declaration: classDefinedPropertyAnnotations()
             % - Returns: propertyAnnotations
             arguments (Output)

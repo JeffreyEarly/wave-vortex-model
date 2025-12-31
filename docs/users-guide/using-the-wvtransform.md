@@ -42,12 +42,12 @@ Note that you do not specify the grids, only the domain size---the grids are det
 
 The dimensions that result can be accessed with, e.g., `wvt.x` or `wvt.z`. This will be array of size `[Nx 1]` and `[Nz 1]`, respectively. More useful perhaps are the grids, e.g., `wvt.X` or `wvt.Z` which are of size `[Nx Ny Nz]`.
 
-For the current set of transforms $$x$$ and $$y$$ grids will always be evenly spaced grids appropriate for Fourier transforms, while the $$z$$ grid will be evenly spaced for constant stratification (sine and cosine transforms), but will have variable spacing when using variable stratification.
+For the current set of transforms $$x$$ and $$y$$ grids will always be evenly spaced grids appropriate for Fourier transforms, while the $$z$$ grid will be evenly spaced for constant stratification (sine and cosine transforms), but will have variable spacing when using variable stratification. **Never create your own grids---always use the built-in functions.**
 
 
 ## Initial conditions
 
-Once a model is instantiated, it is often the case that one would like to add initial conditions. The [WVTransform](/classes/wvtransform.html) class has numerous methods for adding initial conditions---including very general initialization from any fluid state, as well as initialization specific to waves, inertial oscillations, and geostrophic motions.
+Once a tranform is instantiated, it is often the case that one would like to add initial conditions. The [WVTransform](/classes/wvtransform.html) class has numerous methods for adding initial conditions---including very general initialization from any fluid state, as well as initialization specific to waves, inertial oscillations, and geostrophic motions.
 
 ### Initializing from $$(u,v,\eta)$$
 

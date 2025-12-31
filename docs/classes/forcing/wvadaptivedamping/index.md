@@ -59,29 +59,31 @@ Adaptive small-scale damping
   deformation. The value of $$\nu$$ is set as
  
   $$
-  \nu = = \frac{U \Delta}{\pi^2}
+  \nu = \frac{U \Delta}{\pi^2}
   $$
  
-  where $U$ is the maximum fluid velocity.
+  where $$U$$ is the maximum fluid velocity.
  
-    
+         
+  
 
 
 ## Topics
 + Initialization
   + [`WVAdaptiveDamping`](/classes/forcing/wvadaptivedamping/wvadaptivedamping.html) initialize the WVAdaptiveDamping
-  + [`buildDampingOperator`](/classes/forcing/wvadaptivedamping/builddampingoperator.html) Builds the damping operator
 + Properties
   + [`assumedEffectiveHorizontalGridResolution`](/classes/forcing/wvadaptivedamping/assumedeffectivehorizontalgridresolution.html) effective resolution used in the damping calculation
+  + [`damp`](/classes/forcing/wvadaptivedamping/damp.html) spectral matrix that multiplies Ap,Am,A0 to damp
+  + [`dampingTimeScale`](/classes/forcing/wvadaptivedamping/dampingtimescale.html) Computes the minimum damping time scale
   + [`j_damp`](/classes/forcing/wvadaptivedamping/j_damp.html) wavenumber at which the significant scale damping starts.
   + [`j_no_damp`](/classes/forcing/wvadaptivedamping/j_no_damp.html) wavenumber below which there is zero damping
   + [`k_damp`](/classes/forcing/wvadaptivedamping/k_damp.html) wavenumber at which the significant scale damping starts.
   + [`k_no_damp`](/classes/forcing/wvadaptivedamping/k_no_damp.html) wavenumber below which there is zero damping
++ Internal
+  + [`buildDampingOperator`](/classes/forcing/wvadaptivedamping/builddampingoperator.html) Builds the damping operator
+  + [`spectralVanishingViscosityFilter`](/classes/forcing/wvadaptivedamping/spectralvanishingviscosityfilter.html) Builds the spectral vanishing viscosity operator
 + CAAnnotatedClass requirement
   + [`classRequiredPropertyNames`](/classes/forcing/wvadaptivedamping/classrequiredpropertynames.html) Returns the required property names for the class
-+ Other
-  + [`damp`](/classes/forcing/wvadaptivedamping/damp.html) 
-  + [`spectralVanishingViscosityFilter`](/classes/forcing/wvadaptivedamping/spectralvanishingviscosityfilter.html) Builds the spectral vanishing viscosity operator
 
 
 ---

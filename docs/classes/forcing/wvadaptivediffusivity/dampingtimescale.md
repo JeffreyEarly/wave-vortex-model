@@ -9,7 +9,7 @@ mathjax: true
 
 #  dampingTimeScale
 
-Computes the damping time scale
+Computes the minimum damping time scale
 
 
 ---
@@ -23,4 +23,4 @@ Computes the damping time scale
 
 ## Discussion
 
-      - Returns: dampingTimeScale
+        - Returns: dampingTimeScale

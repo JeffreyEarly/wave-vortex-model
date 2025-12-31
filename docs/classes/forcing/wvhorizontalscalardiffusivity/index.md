@@ -22,18 +22,44 @@ Horizontal laplacian damping with viscosity and diffusivity
 
 ## Overview
  
-  The damping is a simple horizontal Laplacian.
+  The damping is a simple horizontal Laplacian, designed to mimic the
+  [HorizontalScalarDiffusivity in
+  Oceananigans](https://clima.github.io/OceananigansDocumentation/stable/appendix/library/#Oceananigans.TurbulenceClosures.HorizontalScalarDiffusivity)
+  to allow for direct comparison between the models. In general, you
+  should be using the [`WVAdaptiveDamping`](WVAdaptiveDamping).
+  
+  The specific form of the forcing is given by 
  
+  $$
+  \begin{align}
+  \mathcal{S}_u &= \nu \left( \frac{\partial^2}{\partial x^2} + \frac{\partial^2}{\partial y^2} \right) u \\
+  \mathcal{S}_v &= \nu \left( \frac{\partial^2}{\partial x^2} + \frac{\partial^2}{\partial y^2} \right)  v \\
+  \mathcal{S}_w &= \nu \left( \frac{\partial^2}{\partial x^2} + \frac{\partial^2}{\partial y^2} \right)  w \\
+  \mathcal{S}_\eta &= \kappa \left( \frac{\partial^2}{\partial x^2} + \frac{\partial^2}{\partial y^2} \right)  \eta
+  \end{align}
+  $$
  
-    
+  which is just your standard Laplacian viscosity, $$\nu$$, and diffusivity, $$\kappa$$, in
+  the horizontal. This should be combined with
+  `WVVerticalScalarDiffusivity` for a complete closure. For help
+  choosing appropriate values, see the notes in
+  [`WVAdaptiveDamping`](WVAdaptiveDamping).
+ 
+  Note that this is currently implemented in the spatial domain, an is
+  thus highly un-optimized.
+ 
+         
+  
 
 
 ## Topics
-+ Other
++ Initialization
   + [`WVHorizontalScalarDiffusivity`](/classes/forcing/wvhorizontalscalardiffusivity/wvhorizontalscalardiffusivity.html) initialize the WVHorizontalScalarDiffusivity
++ Properties
+  + [`kappa`](/classes/forcing/wvhorizontalscalardiffusivity/kappa.html) horizontal diffusivity
+  + [`nu`](/classes/forcing/wvhorizontalscalardiffusivity/nu.html) horizontal viscosity
++ CAAnnotatedClass requirement
   + [`classRequiredPropertyNames`](/classes/forcing/wvhorizontalscalardiffusivity/classrequiredpropertynames.html) Returns the required property names for the class
-  + [`kappa`](/classes/forcing/wvhorizontalscalardiffusivity/kappa.html) 
-  + [`nu`](/classes/forcing/wvhorizontalscalardiffusivity/nu.html) 
 
 
 ---

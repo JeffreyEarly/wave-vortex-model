@@ -11,7 +11,7 @@ nav_order: 3
 
 #  WVAdaptiveDiffusivity
 
-Adaptive small-scale damping
+Adaptive small-scale diffusivity
 
 
 ---
@@ -32,12 +32,14 @@ Adaptive small-scale damping
 
 
 ## Topics
++ CAAnnotatedClass requirement
+  + [`classRequiredPropertyNames`](/classes/forcing/wvadaptivediffusivity/classrequiredpropertynames.html) Returns the required property names for the class
++ Properties
+  + [`dampingTimeScale`](/classes/forcing/wvadaptivediffusivity/dampingtimescale.html) Computes the minimum damping time scale
 + Other
   + [`WVAdaptiveDiffusivity`](/classes/forcing/wvadaptivediffusivity/wvadaptivediffusivity.html) initialize the WVNonlinearFlux nonlinear flux
   + [`buildDampingOperator`](/classes/forcing/wvadaptivediffusivity/builddampingoperator.html) Builds the damping operator
-  + [`classRequiredPropertyNames`](/classes/forcing/wvadaptivediffusivity/classrequiredpropertynames.html) Returns the required property names for the class
   + [`damp`](/classes/forcing/wvadaptivediffusivity/damp.html) 
-  + [`dampingTimeScale`](/classes/forcing/wvadaptivediffusivity/dampingtimescale.html) Computes the damping time scale
   + [`spectralVanishingViscosityFilter`](/classes/forcing/wvadaptivediffusivity/spectralvanishingviscosityfilter.html) Builds the spectral vanishing viscosity operator
 
 

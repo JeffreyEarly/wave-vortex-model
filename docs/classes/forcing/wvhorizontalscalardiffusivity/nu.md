@@ -9,8 +9,11 @@ mathjax: true
 
 #  nu
 
-
+horizontal viscosity
 
 
 ---
 
+## Discussion
+
+  

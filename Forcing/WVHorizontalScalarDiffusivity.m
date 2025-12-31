@@ -1,13 +1,47 @@
 classdef WVHorizontalScalarDiffusivity < WVForcing
     % Horizontal laplacian damping with viscosity and diffusivity
     %
-    % The damping is a simple horizontal Laplacian.
+    % The damping is a simple horizontal Laplacian, designed to mimic the
+    % [HorizontalScalarDiffusivity in
+    % Oceananigans](https://clima.github.io/OceananigansDocumentation/stable/appendix/library/#Oceananigans.TurbulenceClosures.HorizontalScalarDiffusivity)
+    % to allow for direct comparison between the models. In general, you
+    % should be using the [`WVAdaptiveDamping`](WVAdaptiveDamping).
+    % 
+    % The specific form of the forcing is given by 
     %
+    % $$
+    % \begin{align}
+    % \mathcal{S}_u &= \nu \left( \frac{\partial^2}{\partial x^2} + \frac{\partial^2}{\partial y^2} \right) u \\
+    % \mathcal{S}_v &= \nu \left( \frac{\partial^2}{\partial x^2} + \frac{\partial^2}{\partial y^2} \right)  v \\
+    % \mathcal{S}_w &= \nu \left( \frac{\partial^2}{\partial x^2} + \frac{\partial^2}{\partial y^2} \right)  w \\
+    % \mathcal{S}_\eta &= \kappa \left( \frac{\partial^2}{\partial x^2} + \frac{\partial^2}{\partial y^2} \right)  \eta
+    % \end{align}
+    % $$
     %
-    % - Topic: Initializing
+    % which is just your standard Laplacian viscosity, $$\nu$$, and diffusivity, $$\kappa$$, in
+    % the horizontal. This should be combined with
+    % `WVVerticalScalarDiffusivity` for a complete closure. For help
+    % choosing appropriate values, see the notes in
+    % [`WVAdaptiveDamping`](WVAdaptiveDamping).
+    %
+    % Note that this is currently implemented in the spatial domain, an is
+    % thus highly un-optimized.
+    %
+    % - Topic: Initialization
+    % - Topic: Properties
+    % - Topic: Internal
+    % - Topic: CAAnnotatedClass requirement
+    %
     % - Declaration: WVHorizontalScalarDiffusivity < [WVForcing](/classes/forcing/wvforcing/)
     properties
+        % horizontal viscosity
+        %
+        % - Topic: Properties
         nu
+
+        % horizontal diffusivity
+        %
+        % - Topic: Properties
         kappa
     end
 
@@ -15,8 +49,11 @@ classdef WVHorizontalScalarDiffusivity < WVForcing
         function self = WVHorizontalScalarDiffusivity(wvt,options)
             % initialize the WVHorizontalScalarDiffusivity
             %
-            % - Declaration: self = WVHorizontalScalarDiffusivity(wvt)
+            % - Topic: Initialization
+            % - Declaration: self = WVHorizontalScalarDiffusivity(wvt,options)
             % - Parameter wvt: a WVTransform instance
+            % - Parameter nu: horizontal viscosity, default $$1 \cdot 10^{-4} \textrm{m}^2/\textrm{s}$$
+            % - Parameter kappa: horizontal diffusivity, default $$1 \cdot 10^{-6} \textrm{m}^2/\textrm{s}$$
             % - Returns self: a WVHorizontalScalarDiffusivity instance
             arguments
                 wvt WVTransform {mustBeNonempty}
@@ -65,6 +102,7 @@ classdef WVHorizontalScalarDiffusivity < WVForcing
         function vars = classRequiredPropertyNames()
             % Returns the required property names for the class
             %
+            % - Topic: CAAnnotatedClass requirement
             % - Declaration: classRequiredPropertyNames()
             % - Returns: vars
             arguments
@@ -75,6 +113,7 @@ classdef WVHorizontalScalarDiffusivity < WVForcing
         function propertyAnnotations = classDefinedPropertyAnnotations()
             % Returns the defined property annotations for the class
             %
+            % - Topic: CAAnnotatedClass requirement
             % - Declaration: classDefinedPropertyAnnotations()
             % - Returns: propertyAnnotations
             arguments (Output)

@@ -9,8 +9,11 @@ mathjax: true
 
 #  damp
 
-
+spectral matrix that multiplies Ap,Am,A0 to damp
 
 
 ---
 
+## Discussion
+
+  

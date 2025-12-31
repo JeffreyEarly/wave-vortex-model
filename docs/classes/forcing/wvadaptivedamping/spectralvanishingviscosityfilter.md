@@ -3,7 +3,7 @@ layout: default
 title: spectralVanishingViscosityFilter
 parent: WVAdaptiveDamping
 grand_parent: Classes
-nav_order: 10
+nav_order: 11
 mathjax: true
 ---
 
@@ -24,4 +24,4 @@ Builds the spectral vanishing viscosity operator
 
 ## Discussion
 
-        - Returns: Qkl, Qj, kl_cutoff, kl_damp
+          - Returns: Qkl, Qj, kl_cutoff, kl_damp
