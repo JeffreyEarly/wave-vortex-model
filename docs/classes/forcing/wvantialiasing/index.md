@@ -21,14 +21,14 @@ Small-scale damping
 <div class="language-matlab highlighter-rouge"><div class="highlight"><pre class="highlight"><code>WVNonlinearFlux < <a href="/classes/wvnonlinearfluxoperation/" title="WVForcingFluxOperation">WVForcingFluxOperation</a></code></pre></div></div>
 
 ## Overview
-
+ 
 The damping is a simple Laplacian, but with a spectral vanishing
 viscosity (SVV) operator applied that prevents any damping below a
 cutoff wavenumber. The SVV operator adjusts the wavenumbers being
 damped depending on whether anti-aliasing is applied.
-
-
-
+ 
+ 
+  
 
 
 ## Topics

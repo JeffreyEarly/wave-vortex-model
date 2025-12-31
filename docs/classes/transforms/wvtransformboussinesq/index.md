@@ -21,19 +21,19 @@ A class for disentangling hydrostatic waves and vortices in variable stratificat
 <div class="language-matlab highlighter-rouge"><div class="highlight"><pre class="highlight"><code>classdef WVTransformHydrostatic < <a href="/classes/wvtransform/" title="WVTransform">WVTransform</a></code></pre></div></div>
 
 ## Overview
-
+ 
 To initialization an instance of the WVTransformHydrostatic class you
 must specific the domain size, the number of grid points and *either*
 the density profile or the stratification profile.
-
+ 
 ```matlab
 N0 = 3*2*pi/3600;
 L_gm = 1300;
 N2 = @(z) N0*N0*exp(2*z/L_gm);
 wvt = WVTransformHydrostatic([100e3, 100e3, 4000],[64, 64, 65], N2=N2,latitude=30);
 ```
-
-
+ 
+               
 
 
 

@@ -21,7 +21,7 @@ Vertical viscosity and diffusivity
 <div class="language-matlab highlighter-rouge"><div class="highlight"><pre class="highlight"><code>WVVerticalScalarDiffusivity < <a href="/classes/forcing/wvforcing/" title="WVForcing">WVForcing</a></code></pre></div></div>
 
 ## Overview
-
+ 
 The damping is designed to mimic the VerticalScalarDiffusivity in
 Oceananigans to allow for direct comparison between the models. This
 should probably be used in combination with
@@ -29,7 +29,7 @@ should probably be used in combination with
 [`WVAdaptiveDamping`](WVAdaptiveDamping).
 
 The specific form of the forcing is given by 
-
+ 
 $$
 \begin{align}
 \mathcal{S}_u &= \nu \frac{\partial^2 u}{\partial z^2} \\
@@ -38,27 +38,27 @@ $$
 \mathcal{S}_\eta &= \kappa \frac{\partial^2 \eta}{\partial z^2} - \kappa \frac{\partial}{\partial z} \ln N^2
 \end{align}
 $$
-
+ 
 with viscosity, $$\nu$$, and diffusivity, $$\kappa$$. This should be combined with
 WVHorizontalScalarDiffusivity for a complete closure. For help
 choosing appropriate values, see the notes in
 [`WVAdaptiveDamping`](WVAdaptiveDamping).
-
+ 
 ### Usage
-
+ 
 Assuming there is a WVTransform instance wvt, to add this forcing,
-
+ 
 ```matlab
 wvt.addForcing(WVVerticalScalarDiffusivity(wvt,nu=5e-4, kappa=1e-6));
 ```
-
-
+ 
+ 
 ### Notes
-
+ 
 This is currently implemented in the spatial domain, an is
 thus highly un-optimized.
-
-
+ 
+     
 
 
 

@@ -26,16 +26,16 @@ In addition to adding a name, description and detailed description of
 a given variable, you also specify its dimensions, units, and whether
 or note it has an imaginary part. These annotations are used for both
 online documentation and for writing to NetCDF files.
-
+ 
 Setting the two properties `isVariableWithLinearTimeStep` and
 `isVariableWithNonlinearTimeStep` are important for determining
 how the variable is cached, and when it is saved to a NetCDF file.
-
+ 
 Note that as a subclass of WVAnnotation, this class looks for
 a file (name).md in the directory where it is defined another other
 subdirectories. This file is then read-in to the detailed description
 that is used on the website.
-
+ 
 
 
 

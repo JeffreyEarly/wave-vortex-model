@@ -21,8 +21,8 @@ Geostrophic solution group
 <div class="language-matlab highlighter-rouge"><div class="highlight"><pre class="highlight"><code>classdef WVGeostrophicComponent < WVFlowComponent</code></pre></div></div>
 
 ## Overview
-
-
+ 
+  
 
 
 ## Topics
