@@ -27,7 +27,7 @@ state of the ocean at a given instant in time. What makes the
 WVTransform subclasses special is that the state of the ocean
 is represented as energetically independent waves and geostrophic
 motions (vortices). These classes can be queried for any ocean state
-variable including $$u$$, $$v$$, $$w$$, $$\nho$$, $$p$$, but also
+variable including $$u$$, $$v$$, $$w$$, $$\rho$$, $$p$$, but also
 Ertel PV, relative vorticity, or custom defined state variables.
  
 The WVTransform is an abstract class and as such you must

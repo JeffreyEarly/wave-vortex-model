@@ -7,8 +7,8 @@ classdef WVForcing < handle & matlab.mixin.Heterogeneous & CAAnnotatedClass
     %
     % Forcing is applied at two stages:
     % 1. in the spatial domain to
-    %   1a. non-hydrostatic flow d/dt(u,v,w,eta) = (Fu,Fv,Fw,Feta) or
-    %   1b. hydrostatic flow d/dt(u,v,eta) = (Fu,Fv,Feta)  and
+    %    1. non-hydrostatic flow d/dt(u,v,w,eta) = (Fu,Fv,Fw,Feta) or
+    %    1. hydrostatic flow d/dt(u,v,eta) = (Fu,Fv,Feta)  and
     % 2. in the spectral domain to d/dt(Ap,Am,A0) = (Fp,Fm,F0)
     %
     % Each WVForcingFluxOperation must choose one of the two options and

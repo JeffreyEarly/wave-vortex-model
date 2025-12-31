@@ -50,7 +50,7 @@ $$
 where
  
 $$
-\nu_z = \nu \lambda^2_\textrm{min} k^2_\textrm{max} = \nu \lambda^2_\textrm{min} \left( \frac{\pi}{\Delta} \night)^2
+\nu_z = \nu \lambda^2_\textrm{min} k^2_\textrm{max} = \nu \lambda^2_\textrm{min} \left( \frac{\pi}{\Delta} \right)^2
 $$
  
 is chosen to make the damping isotropic. The notation here is that
@@ -63,15 +63,6 @@ $$
 $$
  
 where $$U$$ is the maximum fluid velocity.
- 
-### Usage
- 
-Assuming there is a WVTransform instance wvt, to add this forcing,
- 
-```matlab
-wvt.addForcing(WVAdaptiveDamping(wvt));
-```
- 
  
        
 
