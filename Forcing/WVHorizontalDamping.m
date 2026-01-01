@@ -1,4 +1,4 @@
-classdef WVHorizontalScalarDiffusivity < WVForcing
+classdef WVHorizontalDamping < WVForcing
     % Horizontal laplacian damping with viscosity and diffusivity
     %
     % The damping is a simple horizontal Laplacian, designed to mimic the
@@ -31,7 +31,7 @@ classdef WVHorizontalScalarDiffusivity < WVForcing
     % Assuming there is a WVTransform instance wvt, to add this forcing,
     %
     % ```matlab
-    % wvt.addForcing(WVHorizontalScalarDiffusivity(wvt,nu=1e-4, kappa=1e-6));
+    % wvt.addForcing(WVHorizontalDamping(wvt,nu=1e-4, kappa=1e-6));
     % ```
     %
     %
@@ -44,7 +44,7 @@ classdef WVHorizontalScalarDiffusivity < WVForcing
     % - Topic: Properties
     % - Topic: CAAnnotatedClass requirement
     %
-    % - Declaration: WVHorizontalScalarDiffusivity < [WVForcing](/classes/forcing/wvforcing/)
+    % - Declaration: WVHorizontalDamping < [WVForcing](/classes/forcing/wvforcing/)
     properties
         % horizontal viscosity
         %
@@ -58,15 +58,15 @@ classdef WVHorizontalScalarDiffusivity < WVForcing
     end
 
     methods
-        function self = WVHorizontalScalarDiffusivity(wvt,options)
-            % initialize the WVHorizontalScalarDiffusivity
+        function self = WVHorizontalDamping(wvt,options)
+            % initialize the WVHorizontalDamping
             %
             % - Topic: Initialization
-            % - Declaration: self = WVHorizontalScalarDiffusivity(wvt,options)
+            % - Declaration: self = WVHorizontalDamping(wvt,options)
             % - Parameter wvt: a WVTransform instance
             % - Parameter nu: horizontal viscosity, default $$1 \cdot 10^{-4} \textrm{m}^2/\textrm{s}$$
             % - Parameter kappa: horizontal diffusivity, default $$1 \cdot 10^{-6} \textrm{m}^2/\textrm{s}$$
-            % - Returns self: a WVHorizontalScalarDiffusivity instance
+            % - Returns self: a WVHorizontalDamping instance
             arguments
                 wvt WVTransform {mustBeNonempty}
                 options.nu = 1e-4
@@ -100,14 +100,14 @@ classdef WVHorizontalScalarDiffusivity < WVForcing
             % Creates a forcing with the resolution of the transform
             %
             % - Declaration: forcingWithResolutionOfTransform(self, wvtX2)
-            % - Parameter self: an instance of WVHorizontalScalarDiffusivity
+            % - Parameter self: an instance of WVHorizontalDamping
             % - Parameter wvtX2: a WVTransform instance with doubled resolution
             % - Returns: force
             arguments
-                self WVHorizontalScalarDiffusivity {mustBeNonempty}
+                self WVHorizontalDamping {mustBeNonempty}
                 wvtX2 WVTransform {mustBeNonempty}
             end
-            force = WVHorizontalScalarDiffusivity(wvtX2);
+            force = WVHorizontalDamping(wvtX2);
         end
     end
     methods (Static)

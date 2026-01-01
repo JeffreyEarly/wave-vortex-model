@@ -1,16 +1,19 @@
 ---
 layout: default
-title: dampingTimeScale
-parent: WVSpectralVanishingViscosity
+title: nu
+parent: WVVerticalDamping
 grand_parent: Classes
 nav_order: 5
 mathjax: true
 ---
 
-#  dampingTimeScale
+#  nu
 
-
+vertical viscosity
 
 
 ---
 
+## Discussion
+
+  

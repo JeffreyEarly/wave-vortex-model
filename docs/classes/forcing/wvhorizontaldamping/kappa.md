@@ -1,15 +1,15 @@
 ---
 layout: default
 title: kappa
-parent: WVVerticalScalarDiffusivity
+parent: WVHorizontalDamping
 grand_parent: Classes
-nav_order: 4
+nav_order: 3
 mathjax: true
 ---
 
 #  kappa
 
-vertical diffusivity
+horizontal diffusivity
 
 
 ---

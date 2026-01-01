@@ -1,4 +1,4 @@
-classdef WVVerticalScalarDiffusivity < WVForcing
+classdef WVVerticalDamping < WVForcing
     % Vertical viscosity and diffusivity
     %
     % The damping is designed to mimic the VerticalScalarDiffusivity in
@@ -28,7 +28,7 @@ classdef WVVerticalScalarDiffusivity < WVForcing
     % Assuming there is a WVTransform instance wvt, to add this forcing,
     %
     % ```matlab
-    % wvt.addForcing(WVVerticalScalarDiffusivity(wvt,nu=5e-4, kappa=1e-6));
+    % wvt.addForcing(WVVerticalDamping(wvt,nu=5e-4, kappa=1e-6));
     % ```
     %
     %
@@ -41,7 +41,7 @@ classdef WVVerticalScalarDiffusivity < WVForcing
     % - Topic: Properties
     % - Topic: CAAnnotatedClass requirement
     %
-    % - Declaration: WVVerticalScalarDiffusivity < [WVForcing](/classes/forcing/wvforcing/)
+    % - Declaration: WVVerticalDamping < [WVForcing](/classes/forcing/wvforcing/)
     properties
         % vertical viscosity
         %
@@ -60,14 +60,14 @@ classdef WVVerticalScalarDiffusivity < WVForcing
     end
 
     methods
-        function self = WVVerticalScalarDiffusivity(wvt,options)
-            % initialize the WVVerticalScalarDiffusivity
+        function self = WVVerticalDamping(wvt,options)
+            % initialize the WVVerticalDamping
             %
-            % - Declaration: self = WVVerticalScalarDiffusivity(wvt,options)
+            % - Declaration: self = WVVerticalDamping(wvt,options)
             % - Parameter wvt: a WVTransform instance
             % - Parameter nu: vertical viscosity, default $$5 \cdot 10^{-4} \textrm{m}^2/\textrm{s}$$
             % - Parameter kappa: vertical diffusivity, default $$1 \cdot 10^{-6} \textrm{m}^2/\textrm{s}$$
-            % - Returns self: a WVVerticalScalarDiffusivity instance
+            % - Returns self: a WVVerticalDamping instance
             arguments
                 wvt WVTransform {mustBeNonempty}
                 options.nu = 5e-4
@@ -102,14 +102,14 @@ classdef WVVerticalScalarDiffusivity < WVForcing
             % Creates a forcing with the resolution of the transform
             %
             % - Declaration: forcingWithResolutionOfTransform(self, wvtX2)
-            % - Parameter self: an instance of WVVerticalScalarDiffusivity
+            % - Parameter self: an instance of WVVerticalDamping
             % - Parameter wvtX2: a WVTransform instance with doubled resolution
             % - Returns: force
             arguments
-                self WVVerticalScalarDiffusivity {mustBeNonempty}
+                self WVVerticalDamping {mustBeNonempty}
                 wvtX2 WVTransform {mustBeNonempty}
             end
-            force = WVVerticalScalarDiffusivity(wvtX2);
+            force = WVVerticalDamping(wvtX2);
         end
     end
     methods (Static)

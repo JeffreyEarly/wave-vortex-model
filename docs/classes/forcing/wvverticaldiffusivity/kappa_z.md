@@ -9,8 +9,11 @@ mathjax: true
 
 #  kappa_z
 
-
+vertical diffusivity, $$m^2s^{-1}$$
 
 
 ---
 
+## Discussion
+
+  

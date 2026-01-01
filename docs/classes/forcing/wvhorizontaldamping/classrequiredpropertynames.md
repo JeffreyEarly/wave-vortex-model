@@ -1,9 +1,9 @@
 ---
 layout: default
 title: classRequiredPropertyNames
-parent: WVAdaptiveViscosity
+parent: WVHorizontalDamping
 grand_parent: Classes
-nav_order: 5
+nav_order: 2
 mathjax: true
 ---
 
@@ -20,4 +20,4 @@ Returns the required property names for the class
 ```
 ## Discussion
 
-    - Returns: vars
+      - Returns: vars

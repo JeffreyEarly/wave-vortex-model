@@ -1,15 +1,15 @@
 ---
 layout: default
-title: WVHorizontalScalarDiffusivity
+title: WVHorizontalDamping
 has_children: false
 has_toc: false
 mathjax: true
 parent: Forcing
 grand_parent: Class documentation
-nav_order: 10
+nav_order: 8
 ---
 
-#  WVHorizontalScalarDiffusivity
+#  WVHorizontalDamping
 
 Horizontal laplacian damping with viscosity and diffusivity
 
@@ -18,7 +18,7 @@ Horizontal laplacian damping with viscosity and diffusivity
 
 ## Declaration
 
-<div class="language-matlab highlighter-rouge"><div class="highlight"><pre class="highlight"><code>WVHorizontalScalarDiffusivity < <a href="/classes/forcing/wvforcing/" title="WVForcing">WVForcing</a></code></pre></div></div>
+<div class="language-matlab highlighter-rouge"><div class="highlight"><pre class="highlight"><code>WVHorizontalDamping < <a href="/classes/forcing/wvforcing/" title="WVForcing">WVForcing</a></code></pre></div></div>
 
 ## Overview
  
@@ -52,7 +52,7 @@ choosing appropriate values, see the notes in
 Assuming there is a WVTransform instance wvt, to add this forcing,
  
 ```matlab
-wvt.addForcing(WVHorizontalScalarDiffusivity(wvt,nu=1e-4, kappa=1e-6));
+wvt.addForcing(WVHorizontalDamping(wvt,nu=1e-4, kappa=1e-6));
 ```
  
  
@@ -67,12 +67,12 @@ thus highly un-optimized.
 
 ## Topics
 + Initialization
-  + [`WVHorizontalScalarDiffusivity`](/classes/forcing/wvhorizontalscalardiffusivity/wvhorizontalscalardiffusivity.html) initialize the WVHorizontalScalarDiffusivity
+  + [`WVHorizontalDamping`](/classes/forcing/wvhorizontaldamping/wvhorizontaldamping.html) initialize the WVHorizontalDamping
 + Properties
-  + [`kappa`](/classes/forcing/wvhorizontalscalardiffusivity/kappa.html) horizontal diffusivity
-  + [`nu`](/classes/forcing/wvhorizontalscalardiffusivity/nu.html) horizontal viscosity
+  + [`kappa`](/classes/forcing/wvhorizontaldamping/kappa.html) horizontal diffusivity
+  + [`nu`](/classes/forcing/wvhorizontaldamping/nu.html) horizontal viscosity
 + CAAnnotatedClass requirement
-  + [`classRequiredPropertyNames`](/classes/forcing/wvhorizontalscalardiffusivity/classrequiredpropertynames.html) Returns the required property names for the class
+  + [`classRequiredPropertyNames`](/classes/forcing/wvhorizontaldamping/classrequiredpropertynames.html) Returns the required property names for the class
 
 
 ---

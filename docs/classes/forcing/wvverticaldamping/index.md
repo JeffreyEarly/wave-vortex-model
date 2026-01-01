@@ -1,15 +1,15 @@
 ---
 layout: default
-title: WVVerticalScalarDiffusivity
+title: WVVerticalDamping
 has_children: false
 has_toc: false
 mathjax: true
 parent: Forcing
 grand_parent: Class documentation
-nav_order: 16
+nav_order: 13
 ---
 
-#  WVVerticalScalarDiffusivity
+#  WVVerticalDamping
 
 Vertical viscosity and diffusivity
 
@@ -18,7 +18,7 @@ Vertical viscosity and diffusivity
 
 ## Declaration
 
-<div class="language-matlab highlighter-rouge"><div class="highlight"><pre class="highlight"><code>WVVerticalScalarDiffusivity < <a href="/classes/forcing/wvforcing/" title="WVForcing">WVForcing</a></code></pre></div></div>
+<div class="language-matlab highlighter-rouge"><div class="highlight"><pre class="highlight"><code>WVVerticalDamping < <a href="/classes/forcing/wvforcing/" title="WVForcing">WVForcing</a></code></pre></div></div>
 
 ## Overview
  
@@ -49,7 +49,7 @@ choosing appropriate values, see the notes in
 Assuming there is a WVTransform instance wvt, to add this forcing,
  
 ```matlab
-wvt.addForcing(WVVerticalScalarDiffusivity(wvt,nu=5e-4, kappa=1e-6));
+wvt.addForcing(WVVerticalDamping(wvt,nu=5e-4, kappa=1e-6));
 ```
  
  
@@ -64,13 +64,13 @@ thus highly un-optimized.
 
 ## Topics
 + Properties
-  + [`dLnN2`](/classes/forcing/wvverticalscalardiffusivity/dlnn2.html) variable stratification factor
-  + [`kappa`](/classes/forcing/wvverticalscalardiffusivity/kappa.html) vertical diffusivity
-  + [`nu`](/classes/forcing/wvverticalscalardiffusivity/nu.html) vertical viscosity
+  + [`dLnN2`](/classes/forcing/wvverticaldamping/dlnn2.html) variable stratification factor
+  + [`kappa`](/classes/forcing/wvverticaldamping/kappa.html) vertical diffusivity
+  + [`nu`](/classes/forcing/wvverticaldamping/nu.html) vertical viscosity
 + CAAnnotatedClass requirement
-  + [`classRequiredPropertyNames`](/classes/forcing/wvverticalscalardiffusivity/classrequiredpropertynames.html) Returns the required property names for the class
+  + [`classRequiredPropertyNames`](/classes/forcing/wvverticaldamping/classrequiredpropertynames.html) Returns the required property names for the class
 + Other
-  + [`WVVerticalScalarDiffusivity`](/classes/forcing/wvverticalscalardiffusivity/wvverticalscalardiffusivity.html) initialize the WVVerticalScalarDiffusivity
+  + [`WVVerticalDamping`](/classes/forcing/wvverticaldamping/wvverticaldamping.html) initialize the WVVerticalDamping
 
 
 ---

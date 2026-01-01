@@ -1,7 +1,7 @@
 ---
 layout: default
 title: classRequiredPropertyNames
-parent: WVHorizontalScalarDiffusivity
+parent: WVVerticalDamping
 grand_parent: Classes
 nav_order: 2
 mathjax: true

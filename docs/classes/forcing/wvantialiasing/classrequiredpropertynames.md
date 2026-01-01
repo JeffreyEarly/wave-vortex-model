@@ -9,8 +9,15 @@ mathjax: true
 
 #  classRequiredPropertyNames
 
-
+Returns the required property names for the class
 
 
 ---
 
+## Declaration
+```matlab
+ classRequiredPropertyNames()
+```
+## Discussion
+
+      - Returns: vars

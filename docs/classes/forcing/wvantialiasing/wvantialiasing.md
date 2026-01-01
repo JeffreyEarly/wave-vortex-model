@@ -9,7 +9,7 @@ mathjax: true
 
 #  WVAntialiasing
 
-initialize the WVNonlinearFlux nonlinear flux
+initialize the WVAntialiasing
 
 
 ---
@@ -20,14 +20,11 @@ initialize the WVNonlinearFlux nonlinear flux
 ```
 ## Parameters
 + `wvt`  a WVTransform instance
-+ `uv_damp`  (optional) characteristic speed used to set the damping. Try using wvt.uvMax.
-+ `w_damp`  (optional) characteristic speed used to set the damping. Try using wvt.wMax.
-+ `nu_xy`  (optional) coefficient for damping
-+ `nu_z`  (optional) coefficient for damping
++ `Nj`  (optional) vertical mode above which energy will be set to zero.
 
 ## Returns
-+ `nlFlux`  a WVNonlinearFlux instance
++ `self`  a WVAntialiasing instance
 
 ## Discussion
 
-              
+        

@@ -1,22 +1,22 @@
 ---
 layout: default
-title: WVHorizontalScalarDiffusivity
-parent: WVHorizontalScalarDiffusivity
+title: WVHorizontalDamping
+parent: WVHorizontalDamping
 grand_parent: Classes
 nav_order: 1
 mathjax: true
 ---
 
-#  WVHorizontalScalarDiffusivity
+#  WVHorizontalDamping
 
-initialize the WVHorizontalScalarDiffusivity
+initialize the WVHorizontalDamping
 
 
 ---
 
 ## Declaration
 ```matlab
- self = WVHorizontalScalarDiffusivity(wvt,options)
+ self = WVHorizontalDamping(wvt,options)
 ```
 ## Parameters
 + `wvt`  a WVTransform instance
@@ -24,7 +24,7 @@ initialize the WVHorizontalScalarDiffusivity
 + `kappa`  horizontal diffusivity, default $$1 \cdot 10^{-6} \textrm{m}^2/\textrm{s}$$
 
 ## Returns
-+ `self`  a WVHorizontalScalarDiffusivity instance
++ `self`  a WVHorizontalDamping instance
 
 ## Discussion
 

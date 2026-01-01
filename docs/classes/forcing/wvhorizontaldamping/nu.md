@@ -1,7 +1,7 @@
 ---
 layout: default
 title: nu
-parent: WVHorizontalScalarDiffusivity
+parent: WVHorizontalDamping
 grand_parent: Classes
 nav_order: 4
 mathjax: true

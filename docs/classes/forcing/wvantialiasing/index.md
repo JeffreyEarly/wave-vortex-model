@@ -6,39 +6,59 @@ has_toc: false
 mathjax: true
 parent: Forcing
 grand_parent: Class documentation
-nav_order: 5
+nav_order: 3
 ---
 
 #  WVAntialiasing
 
-Small-scale damping
+Antialiasing filter
 
 
 ---
 
 ## Declaration
 
-<div class="language-matlab highlighter-rouge"><div class="highlight"><pre class="highlight"><code>WVNonlinearFlux < <a href="/classes/wvnonlinearfluxoperation/" title="WVForcingFluxOperation">WVForcingFluxOperation</a></code></pre></div></div>
+<div class="language-matlab highlighter-rouge"><div class="highlight"><pre class="highlight"><code>WVAntialiasing < <a href="/classes/forcing/wvforcing/" title="WVForcing">WVForcing</a></code></pre></div></div>
 
 ## Overview
  
-The damping is a simple Laplacian, but with a spectral vanishing
-viscosity (SVV) operator applied that prevents any damping below a
-cutoff wavenumber. The SVV operator adjusts the wavenumbers being
-damped depending on whether anti-aliasing is applied.
+This forcing removes (sets to zero) energy in the largest 1/3 modes
+to prevent quadratic aliasing. This is the correct de-aliasing for
+the horizontal fourier modes, but is not exactly correct for the
+vertical modes in variable stratification. You can thus manually set
+`Nj`, otherwise it will default to `options.Nj = floor(2*wvt.Nj/3);`.
  
+**Very important** You should almost never use this forcing, as
+de-aliasing is built-in at the transform level and enabled by
+default. For performance reasons is far more optimal to simply never
+compute the de-aliased modes. The purpose of this forcing to allow
+direct measurement of the effect of the de-aliasing on energy and
+potential enstrophy. It is quite slow and thus we recommend it be
+used for diagnostic purposes only.
  
+### Usage
+ 
+This is likely to change in the future, but at the moment several of
+the transforms have a function that will make a new transform in the
+identical state, but with the antialiasing filter explicitly added.
+ 
+```matlab
+wvtAA = wvt.waveVortexTransformWithExplicitAntialiasing();
+```
+ 
+     
   
 
 
 ## Topics
 + Properties
+  + [`M`](/classes/forcing/wvantialiasing/m.html) spectral matrix that multiplies Ap,Am,A0 to zero out the aliased modes
   + [`effectiveHorizontalGridResolution`](/classes/forcing/wvantialiasing/effectivehorizontalgridresolution.html) returns the effective grid resolution in meters
+  + [`effectiveJMax`](/classes/forcing/wvantialiasing/effectivejmax.html) returns the effective highest vertical mode
++ CAAnnotatedClass requirement
+  + [`classRequiredPropertyNames`](/classes/forcing/wvantialiasing/classrequiredpropertynames.html) Returns the required property names for the class
 + Other
-  + [`M`](/classes/forcing/wvantialiasing/m.html) 
-  + [`WVAntialiasing`](/classes/forcing/wvantialiasing/wvantialiasing.html) initialize the WVNonlinearFlux nonlinear flux
-  + [`classRequiredPropertyNames`](/classes/forcing/wvantialiasing/classrequiredpropertynames.html) 
-  + [`effectiveJMax`](/classes/forcing/wvantialiasing/effectivejmax.html) 
+  + [`WVAntialiasing`](/classes/forcing/wvantialiasing/wvantialiasing.html) initialize the WVAntialiasing
 
 
 ---

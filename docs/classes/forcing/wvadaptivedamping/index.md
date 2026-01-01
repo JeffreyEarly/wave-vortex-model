@@ -64,6 +64,21 @@ $$
  
 where $$U$$ is the maximum fluid velocity.
  
+### Usage
+ 
+Assuming there is a WVTransform instance wvt, to add this forcing,
+ 
+```matlab
+wvt.addForcing(WVAdaptiveDamping(wvt));
+```
+ 
+### Notes
+ 
+This currently damps the non-hydrostatic wavemodes the same as the
+hydrostatic geostrophic modes. The non-hydrostatic modes would have a
+smaller deformation radius, and thus would be damped more strongly.
+So arguably they're under-damped in a non-hydrostatic simulation.
+ 
        
 
 

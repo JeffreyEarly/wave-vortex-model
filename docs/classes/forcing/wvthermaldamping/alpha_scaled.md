@@ -9,8 +9,11 @@ mathjax: true
 
 #  alpha_scaled
 
-
+scaled damping parameter, units of $$s^{-1} m^{-2}$$
 
 
 ---
 
+## Discussion
+
+  

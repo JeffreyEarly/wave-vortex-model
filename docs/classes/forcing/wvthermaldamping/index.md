@@ -6,7 +6,7 @@ has_toc: false
 mathjax: true
 parent: Forcing
 grand_parent: Class documentation
-nav_order: 14
+nav_order: 11
 ---
 
 #  WVThermalDamping
@@ -27,15 +27,22 @@ Applies thermal damping to the flow, i.e., $$\frac{dq}{dt} = \alpha \lambda^2 \p
 This is as defined in Scott and Dritschel, but it can be shown that
 it is basically just a vertical diffusivity.
  
+### Notes
+ 
+This is only implemented for quasigeostrophic flows. Specifically, it
+requires `WVForcingType("PVSpatial")`.
+ 
   
 
 
 ## Topics
-+ Other
-  + [`WVThermalDamping`](/classes/forcing/wvthermaldamping/wvthermaldamping.html) initialize the WVNonlinearFlux nonlinear flux
-  + [`alpha`](/classes/forcing/wvthermaldamping/alpha.html) 
-  + [`alpha_scaled`](/classes/forcing/wvthermaldamping/alpha_scaled.html) 
-  + [`classRequiredPropertyNames`](/classes/forcing/wvthermaldamping/classrequiredpropertynames.html) 
++ Initialization
+  + [`WVThermalDamping`](/classes/forcing/wvthermaldamping/wvthermaldamping.html) initialize the WVThermalDamping
++ Properties
+  + [`alpha`](/classes/forcing/wvthermaldamping/alpha.html) damping parameter, units of $$s^{-1}$$
+  + [`alpha_scaled`](/classes/forcing/wvthermaldamping/alpha_scaled.html) scaled damping parameter, units of $$s^{-1} m^{-2}$$
++ CAAnnotatedClass requirement
+  + [`classRequiredPropertyNames`](/classes/forcing/wvthermaldamping/classrequiredpropertynames.html) Returns the required property names for the class
 
 
 ---

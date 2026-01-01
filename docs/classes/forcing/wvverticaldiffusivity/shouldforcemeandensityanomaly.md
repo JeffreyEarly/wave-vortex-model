@@ -9,8 +9,11 @@ mathjax: true
 
 #  shouldForceMeanDensityAnomaly
 
-
+whether to include the $$\frac{\partial}{\partial z} \ln N^2$$ term
 
 
 ---
 
+## Discussion
+
+  

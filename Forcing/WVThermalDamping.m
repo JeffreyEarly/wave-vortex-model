@@ -6,25 +6,37 @@ classdef WVThermalDamping < WVForcing
     % This is as defined in Scott and Dritschel, but it can be shown that
     % it is basically just a vertical diffusivity.
     %
+    % ### Notes
+    %
+    % This is only implemented for quasigeostrophic flows. Specifically, it
+    % requires `WVForcingType("PVSpatial")`.
+    %
     % - Topic: Initializing
     % - Declaration: WVBottomFriction < [WVForcing](/classes/wvforcing/)
     properties
+        % damping parameter, units of $$s^{-1}$$
+        %
+        % - Topic: Properties
         alpha
+
+        % scaled damping parameter, units of $$s^{-1} m^{-2}$$
+        %
+        % - Topic: Properties
         alpha_scaled
-        % RVA0
     end
 
     methods
         function self = WVThermalDamping(wvt,options)
-            % initialize the WVNonlinearFlux nonlinear flux
+            % initialize the WVThermalDamping
             %
-            % - Declaration: self = WVBottomFriction(wvt,options)
+            % - Topic: Initialization
+            % - Declaration: self = WVThermalDamping(wvt,options)
             % - Parameter wvt: a WVTransform instance
-            % - Parameter r: (optional) linear bottom friction, try 1/(200*86400)
-            % - Returns frictionalForce: a WVBottomFriction instance
+            % - Parameter alpha: (optional) damping time scale, default 1/(200*86400)
+            % - Returns self: a WVThermalDamping instance
             arguments
                 wvt WVTransform {mustBeNonempty}
-                options.alpha (1,1) double {mustBeNonnegative} = 1/(200*86400) % linear bottom friction, try 1/(200*86400) https://www.nemo-ocean.eu/doc/node70.html
+                options.alpha (1,1) double {mustBeNonnegative} = 1/(200*86400)
             end
             self@WVForcing(wvt,"thermal damping",WVForcingType("PVSpatial"));
             self.alpha = options.alpha;
@@ -41,10 +53,20 @@ classdef WVThermalDamping < WVForcing
     end
     methods (Static)
         function vars = classRequiredPropertyNames()
+            % Returns the required property names for the class
+            %
+            % - Topic: CAAnnotatedClass requirement
+            % - Declaration: classRequiredPropertyNames()
+            % - Returns: vars
             vars = {'alpha'};
         end
 
         function propertyAnnotations = classDefinedPropertyAnnotations()
+            % Returns the defined property annotations for the class
+            %
+            % - Topic: CAAnnotatedClass requirement
+            % - Declaration: classDefinedPropertyAnnotations()
+            % - Returns: propertyAnnotations
             arguments (Output)
                 propertyAnnotations CAPropertyAnnotation
             end

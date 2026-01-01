@@ -9,8 +9,11 @@ mathjax: true
 
 #  alpha
 
-
+damping parameter, units of $$s^{-1}$$
 
 
 ---
 
+## Discussion
+
+  

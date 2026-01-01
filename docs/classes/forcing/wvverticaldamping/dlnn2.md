@@ -1,7 +1,7 @@
 ---
 layout: default
 title: dLnN2
-parent: WVVerticalScalarDiffusivity
+parent: WVVerticalDamping
 grand_parent: Classes
 nav_order: 3
 mathjax: true

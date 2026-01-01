@@ -1,29 +1,51 @@
 classdef WVAntialiasing < WVForcing
-    % Small-scale damping
+    % Antialiasing filter
     %
-    % The damping is a simple Laplacian, but with a spectral vanishing
-    % viscosity (SVV) operator applied that prevents any damping below a
-    % cutoff wavenumber. The SVV operator adjusts the wavenumbers being
-    % damped depending on whether anti-aliasing is applied.
+    % This forcing removes (sets to zero) energy in the largest 1/3 modes
+    % to prevent quadratic aliasing. This is the correct de-aliasing for
+    % the horizontal fourier modes, but is not exactly correct for the
+    % vertical modes in variable stratification. You can thus manually set
+    % `Nj`, otherwise it will default to `options.Nj = floor(2*wvt.Nj/3);`.
     %
+    % **Very important** You should almost never use this forcing, as
+    % de-aliasing is built-in at the transform level and enabled by
+    % default. For performance reasons is far more optimal to simply never
+    % compute the de-aliased modes. The purpose of this forcing to allow
+    % direct measurement of the effect of the de-aliasing on energy and
+    % potential enstrophy. It is quite slow and thus we recommend it be
+    % used for diagnostic purposes only.
+    %
+    % ### Usage
+    %
+    % This is likely to change in the future, but at the moment several of
+    % the transforms have a function that will make a new transform in the
+    % identical state, but with the antialiasing filter explicitly added.
+    %
+    % ```matlab
+    % wvtAA = wvt.waveVortexTransformWithExplicitAntialiasing();
+    % ```
+    %
+    % - Topic: Initialization
+    % - Topic: Properties
+    % - Topic: CAAnnotatedClass requirement
     %
     % - Topic: Initializing
-    % - Declaration: WVNonlinearFlux < [WVForcingFluxOperation](/classes/wvnonlinearfluxoperation/)
+    % - Declaration: WVAntialiasing < [WVForcing](/classes/forcing/wvforcing/)
     properties
+        % spectral matrix that multiplies Ap,Am,A0 to zero out the aliased modes
+        %
+        % - Topic: Properties
         M
     end
 
     methods
         function self = WVAntialiasing(wvt,options)
-            % initialize the WVNonlinearFlux nonlinear flux
+            % initialize the WVAntialiasing
             %
             % - Declaration: nlFlux = WVNonlinearFlux(wvt,options)
             % - Parameter wvt: a WVTransform instance
-            % - Parameter uv_damp: (optional) characteristic speed used to set the damping. Try using wvt.uvMax.
-            % - Parameter w_damp: (optional) characteristic speed used to set the damping. Try using wvt.wMax.
-            % - Parameter nu_xy: (optional) coefficient for damping
-            % - Parameter nu_z: (optional) coefficient for damping
-            % - Returns nlFlux: a WVNonlinearFlux instance
+            % - Parameter Nj: (optional) vertical mode above which energy will be set to zero.
+            % - Returns self: a WVAntialiasing instance
             arguments
                 wvt WVTransform {mustBeNonempty}
                 options.Nj
@@ -61,6 +83,16 @@ classdef WVAntialiasing < WVForcing
         end
 
         function j_max = effectiveJMax(self)
+            %returns the effective highest vertical mode
+            %
+            % The effective highest vertical modeis the highest fully resolved
+            % mode in the model. This value takes into account
+            % anti-aliasing, and is thus appropriate for setting damping
+            % operators.
+            %
+            % - Topic: Properties
+            % - Declaration: flag = effectiveJMax(other)
+            % - Returns effectiveJMax: double
             arguments
                 self WVAntialiasing
             end
@@ -109,10 +141,20 @@ classdef WVAntialiasing < WVForcing
     end
     methods (Static)
         function vars = classRequiredPropertyNames()
+            % Returns the required property names for the class
+            %
+            % - Topic: CAAnnotatedClass requirement
+            % - Declaration: classRequiredPropertyNames()
+            % - Returns: vars
             vars = {};
         end
 
         function propertyAnnotations = classDefinedPropertyAnnotations()
+            % Returns the defined property annotations for the class
+            %
+            % - Topic: CAAnnotatedClass requirement
+            % - Declaration: classDefinedPropertyAnnotations()
+            % - Returns: propertyAnnotations
             arguments (Output)
                 propertyAnnotations CAPropertyAnnotation
             end

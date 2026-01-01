@@ -1,22 +1,68 @@
 classdef WVVerticalDiffusivity < WVForcing
     % Vertical diffusivty
     %
+    % This forcing applies a vertical diffusivity with fixed $$\kappa_z$$
+    % to the thermodynamic equation.
+    % 
+    % The specific form of the forcing is given by 
     %
-    % - Topic: Initializing
+    % $$
+    % \begin{align}
+    % \mathcal{S}_u &= 0 \\
+    % \mathcal{S}_v &= 0 \\
+    % \mathcal{S}_w &= 0 \\
+    % \mathcal{S}_\eta &= \kappa_z \frac{\partial^2 \eta}{\partial z^2} - \kappa_z \frac{\partial}{\partial z} \ln N^2
+    % \end{align}
+    % $$
+    %
+    % Upon initialization you can set `shouldForceMeanDensityAnomaly` to
+    % `false` and the $$\frac{\partial}{\partial z} \ln N^2$$ term will be
+    % neglected.
+    %
+    % ### Usage
+    %
+    % Assuming there is a WVTransform instance wvt, to add this forcing,
+    %
+    % ```matlab
+    % wvt.addForcing(WVVerticalDiffusivity(wvt, kappa_z=1e-6));
+    % ```
+    %
+    % ### Notes
+    %
+    % This is currently implemented in the spatial domain.
+    %
+    % - Topic: Initialization
+    % - Topic: Properties
+    % - Topic: CAAnnotatedClass requirement
+    %
     % - Declaration: WVVerticalDiffusivity < [WVForcing](/classes/forcing/wvforcing/)
     properties
+        % vertical diffusivity, $$m^2s^{-1}$$
+        %
+        % - Topic: Properties
         kappa_z
+
+        % whether to include the $$\frac{\partial}{\partial z} \ln N^2$$ term
+        %
+        % - Topic: Properties
         shouldForceMeanDensityAnomaly
+
+        % precomputed dLnN2 term
+        %
+        % - Topic: Properties
         dLnN2 = 0
     end
 
     methods
         function self = WVVerticalDiffusivity(wvt,options)
-            % initialize the WVNonlinearFlux nonlinear flux
+            % initialize the WVVerticalDiffusivity
             %
-            % - Declaration: nlFlux = WVAdaptiveViscosity(wvt)
+            % - Topic: Initialization
+            % - Declaration: self = WVVerticalDiffusivity(wvt,options)
             % - Parameter wvt: a WVTransform instance
-            % - Returns self: a WVAdaptiveViscosity instance
+            % - Parameter kappa_z: (optional) vertical diffusivity, $$m^2s^{-1}$$. Default values 1e-5
+            % - Parameter shouldForceMeanDensityAnomaly: (optional) whether to include the $$\frac{\partial}{\partial z} \ln N^2$$ term. Default `true`.
+            % - Returns self: a WVVerticalDiffusivity instance
             arguments
                 wvt WVTransform {mustBeNonempty}
                 options.kappa_z double = 1e-5
@@ -64,6 +110,7 @@ classdef WVVerticalDiffusivity < WVForcing
         function vars = classRequiredPropertyNames()
             % Returns the required property names for the class
             %
+            % - Topic: CAAnnotatedClass requirement
             % - Declaration: classRequiredPropertyNames()
             % - Returns: vars
             arguments
@@ -74,6 +121,7 @@ classdef WVVerticalDiffusivity < WVForcing
         function propertyAnnotations = classDefinedPropertyAnnotations()
             % Returns the defined property annotations for the class
             %
+            % - Topic: CAAnnotatedClass requirement
             % - Declaration: classDefinedPropertyAnnotations()
             % - Returns: propertyAnnotations
             arguments (Output)

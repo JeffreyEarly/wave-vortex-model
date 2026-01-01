@@ -9,22 +9,22 @@ mathjax: true
 
 #  WVThermalDamping
 
-initialize the WVNonlinearFlux nonlinear flux
+initialize the WVThermalDamping
 
 
 ---
 
 ## Declaration
 ```matlab
- self = WVBottomFriction(wvt,options)
+ self = WVThermalDamping(wvt,options)
 ```
 ## Parameters
 + `wvt`  a WVTransform instance
-+ `r`  (optional) linear bottom friction, try 1/(200*86400)
++ `alpha`  (optional) damping time scale, default 1/(200*86400)
 
 ## Returns
-+ `frictionalForce`  a WVBottomFriction instance
++ `self`  a WVThermalDamping instance
 
 ## Discussion
 
-        
+          

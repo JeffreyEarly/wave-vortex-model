@@ -9,21 +9,23 @@ mathjax: true
 
 #  WVVerticalDiffusivity
 
-initialize the WVNonlinearFlux nonlinear flux
+initialize the WVVerticalDiffusivity
 
 
 ---
 
 ## Declaration
 ```matlab
- nlFlux = WVAdaptiveViscosity(wvt)
+ self = WVVerticalDiffusivity(wvt,options)
 ```
 ## Parameters
 + `wvt`  a WVTransform instance
++ `kappa_z`  (optional) vertical diffusivity, $$m^2s^{-1}$$. Default values 1e-5
++ `shouldForceMeanDensityAnomaly`  (optional) whether to include the $$\frac{\partial}{\partial z} \ln N^2$$ term. Default `true`.
 
 ## Returns
-+ `self`  a WVAdaptiveViscosity instance
++ `self`  a WVVerticalDiffusivity instance
 
 ## Discussion
 
-      
+            
