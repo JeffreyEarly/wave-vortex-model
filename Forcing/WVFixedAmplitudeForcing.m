@@ -1,5 +1,5 @@
 classdef WVFixedAmplitudeForcing < WVForcing
-    % Resonant forcing at the natural frequency of each mode
+    % Resonant, fixed amplitude forcing at the natural frequency of each mode
     %
     % The unforced model basically looks likes like this,
     %
@@ -42,15 +42,17 @@ classdef WVFixedAmplitudeForcing < WVForcing
 
     methods
         function self = WVFixedAmplitudeForcing(wvt,options)
-            % initialize the WVNonlinearFlux nonlinear flux
+            % initialize the WVFixedAmplitudeForcing
             %
             % - Declaration: nlFlux = WVNonlinearFlux(wvt,options)
             % - Parameter wvt: a WVTransform instance
-            % - Parameter uv_damp: (optional) characteristic speed used to set the damping. Try using wvt.uvMax.
-            % - Parameter w_damp: (optional) characteristic speed used to set the damping. Try using wvt.wMax.
-            % - Parameter nu_xy: (optional) coefficient for damping
-            % - Parameter nu_z: (optional) coefficient for damping
-            % - Returns nlFlux: a WVNonlinearFlux instance
+            % - Parameter Apbar: (optional) amplitude of Ap matrix to fix
+            % - Parameter Ambar: (optional) amplitude of Am matrix to fix
+            % - Parameter A0bar: (optional) amplitude of A0 matrix to fix
+            % - Parameter Ap_indices: (optional) index of coefficient in Ap matrix to fix
+            % - Parameter Am_indices: (optional) index of coefficient in Am matrix to fix
+            % - Parameter A0_indices: (optional) index of coefficient in A0 matrix to fix
+            % - Returns self: a WVFixedAmplitudeForcing instance
             arguments
                 wvt WVTransform {mustBeNonempty}
                 options.name {mustBeText}
@@ -319,6 +321,13 @@ classdef WVFixedAmplitudeForcing < WVForcing
         end
 
         function writeToGroup(self,group,propertyAnnotations,attributes)
+            % Writes this class to a NetCDF group
+            %
+            % - Topic: CAAnnotatedClass requirement
+            % - Declaration: writeToGroup(group,propertyAnnotations,attributes)
+            % - Parameter group: NetCDFGroup
+            % - Parameter propertyAnnotations: CAPropertyAnnotation
+            % - Parameter attributes: configureDictionary("string","string")
             arguments
                 self CAAnnotatedClass
                 group NetCDFGroup
@@ -343,10 +352,20 @@ classdef WVFixedAmplitudeForcing < WVForcing
 
     methods (Static)
         function vars = classRequiredPropertyNames()
+            % Returns the required property names for the class
+            %
+            % - Topic: CAAnnotatedClass requirement
+            % - Declaration: classRequiredPropertyNames()
+            % - Returns: vars
             vars = {'name','Ap_indices','Apbar','Am_indices','Ambar','A0_indices','A0bar'};
         end
 
         function propertyAnnotations = classDefinedPropertyAnnotations()
+            % Returns the defined property annotations for the class
+            %
+            % - Topic: CAAnnotatedClass requirement
+            % - Declaration: classDefinedPropertyAnnotations()
+            % - Returns: propertyAnnotations
             arguments (Output)
                 propertyAnnotations CAPropertyAnnotation
             end

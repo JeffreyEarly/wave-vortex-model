@@ -9,7 +9,7 @@ $$
 \mathcal{S}_u &= - \left( u \partial_x u + v \partial_y u + w \partial_z u \right) \\
 \mathcal{S}_v &= - \left( u \partial_x v + v \partial_y v + w \partial_z v \right) \\
 \mathcal{S}_w &= - \left(  u \partial_x w + v \partial_y w + w \partial_z w \right) \\
-\mathcal{S}_\eta &= - \left( u \partial_x \eta + v \partial_y \eta  + w \left(\partial_z \eta +\eta \partial_z \ln N^2 \right)
+\mathcal{S}_\eta &= - \left( u \partial_x \eta + v \partial_y \eta  + w \left(\partial_z \eta +\eta \partial_z \ln N^2 \right) \right)
 \end{align}
 $$
 
@@ -19,7 +19,7 @@ $$
 \begin{align}
 \mathcal{S}_u &= - \left( u \partial_x u + v \partial_y u + w \partial_z u \right) \\
 \mathcal{S}_v &= - \left( u \partial_x v + v \partial_y v + w \partial_z v \right) \\
-\mathcal{S}_\eta &= - \left( u \partial_x \eta + v \partial_y \eta  + w \left(\partial_z \eta +\eta \partial_z \ln N^2 \right)
+\mathcal{S}_\eta &= - \left( u \partial_x \eta + v \partial_y \eta  + w \left(\partial_z \eta +\eta \partial_z \ln N^2 \right) \right)
 \end{align}
 $$
 

@@ -11,7 +11,7 @@ nav_order: 5
 
 #  WVFixedAmplitudeForcing
 
-Resonant forcing at the natural frequency of each mode
+Resonant, fixed amplitude forcing at the natural frequency of each mode
 
 
 ---
@@ -53,6 +53,8 @@ model = WVModel(wvt,nonlinearFlux=WVNonlinearFluxForced(wvt,uv_damp=wvt.uvMax));
 
 
 ## Topics
++ CAAnnotatedClass requirement
+  + [`classRequiredPropertyNames`](/classes/forcing/wvfixedamplitudeforcing/classrequiredpropertynames.html) Returns the required property names for the class
 + Set forcing
   + [`setGeostrophicForcingCoefficients`](/classes/forcing/wvfixedamplitudeforcing/setgeostrophicforcingcoefficients.html) set forcing values for the geostrophic part of the flow
   + [`setWaveForcingCoefficients`](/classes/forcing/wvfixedamplitudeforcing/setwaveforcingcoefficients.html) set forcing values for the wave part of the flow
@@ -63,8 +65,7 @@ model = WVModel(wvt,nonlinearFlux=WVNonlinearFluxForced(wvt,uv_damp=wvt.uvMax));
   + [`Ambar`](/classes/forcing/wvfixedamplitudeforcing/ambar.html) Am 'mean' value to relax to
   + [`Ap_indices`](/classes/forcing/wvfixedamplitudeforcing/ap_indices.html) Forcing mask, Ap. 1s at the forced modes, 0s at the unforced modes
   + [`Apbar`](/classes/forcing/wvfixedamplitudeforcing/apbar.html) Ap 'mean' value to relax to
-  + [`WVFixedAmplitudeForcing`](/classes/forcing/wvfixedamplitudeforcing/wvfixedamplitudeforcing.html) initialize the WVNonlinearFlux nonlinear flux
-  + [`classRequiredPropertyNames`](/classes/forcing/wvfixedamplitudeforcing/classrequiredpropertynames.html) 
+  + [`WVFixedAmplitudeForcing`](/classes/forcing/wvfixedamplitudeforcing/wvfixedamplitudeforcing.html) initialize the WVFixedAmplitudeForcing
   + [`setNarrowBandGeostrophicForcing`](/classes/forcing/wvfixedamplitudeforcing/setnarrowbandgeostrophicforcing.html) 
 
 

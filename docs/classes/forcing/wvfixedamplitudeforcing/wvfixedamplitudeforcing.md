@@ -9,7 +9,7 @@ mathjax: true
 
 #  WVFixedAmplitudeForcing
 
-initialize the WVNonlinearFlux nonlinear flux
+initialize the WVFixedAmplitudeForcing
 
 
 ---
@@ -20,14 +20,16 @@ initialize the WVNonlinearFlux nonlinear flux
 ```
 ## Parameters
 + `wvt`  a WVTransform instance
-+ `uv_damp`  (optional) characteristic speed used to set the damping. Try using wvt.uvMax.
-+ `w_damp`  (optional) characteristic speed used to set the damping. Try using wvt.wMax.
-+ `nu_xy`  (optional) coefficient for damping
-+ `nu_z`  (optional) coefficient for damping
++ `Apbar`  (optional) amplitude of Ap matrix to fix
++ `Ambar`  (optional) amplitude of Am matrix to fix
++ `A0bar`  (optional) amplitude of A0 matrix to fix
++ `Ap_indices`  (optional) index of coefficient in Ap matrix to fix
++ `Am_indices`  (optional) index of coefficient in Am matrix to fix
++ `A0_indices`  (optional) index of coefficient in A0 matrix to fix
 
 ## Returns
-+ `nlFlux`  a WVNonlinearFlux instance
++ `self`  a WVFixedAmplitudeForcing instance
 
 ## Discussion
 
-              
+                  
