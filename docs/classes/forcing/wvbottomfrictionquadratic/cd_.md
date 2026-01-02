@@ -9,8 +9,11 @@ mathjax: true
 
 #  cd
 
-units of inverse length
+$$\frac{Cd}{dz}$$ scaled quadratic drag coefficient with units $$m^{-1}$$
 
 
 ---
 
+## Discussion
+
+  

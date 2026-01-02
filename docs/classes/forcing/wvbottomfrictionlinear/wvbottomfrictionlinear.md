@@ -9,22 +9,22 @@ mathjax: true
 
 #  WVBottomFrictionLinear
 
-initialize the WVNonlinearFlux nonlinear flux
+initialize the WVBottomFrictionLinear
 
 
 ---
 
 ## Declaration
 ```matlab
- self = WVBottomFriction(wvt,options)
+ self = WVBottomFrictionLinear(wvt,options)
 ```
 ## Parameters
 + `wvt`  a WVTransform instance
 + `r`  (optional) linear bottom friction, try 1/(200*86400)
 
 ## Returns
-+ `frictionalForce`  a WVBottomFriction instance
++ `frictionalForce`  a WVBottomFrictionLinear instance
 
 ## Discussion
 
-        
+          

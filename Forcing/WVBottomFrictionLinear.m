@@ -1,33 +1,69 @@
 classdef WVBottomFrictionLinear < WVForcing
     % Linear bottom friction
     %
-    % Applies linear bottom friction to the flow, i.e., $$\frac{du}{dt} = -r*u$$.
+    % Applies linear bottom friction to the flow, i.e., $$\frac{du}{dt} =
+    % -r u(x,y,-D)$$. The parameter $$r$$ has units of $$s^{-1}$$ and thus
+    % can be set as an inverse time scale.
     %
     % The linear bottom friction is scaled such that we actually apply,
-    % $$\frac{du}{dt} = -(Lz/dz)*r*u$$ and the volume integrated effect of
-    % friction remains the same regardless of resolution.
+    % $$\frac{du}{dt} = -\frac{Lz}{dz} r u(x,y,-D)$$ and the volume
+    % integrated effect of friction remains the same regardless of
+    % resolution. $$Lz$$ is the total domain depth and $$dz$$ is the
+    % spacing at the bottom grid point.
     %
     % To compare with quadratic bottom friction where $$\frac{du}{dt} =
-    % -(Cd/dz)*|u|*u$$, note that $$-(Lz/dz)*r = -(Cd/dz)*|u|$$ and you
+    % -\frac{Cd}{dz} |u|* $$, note that $$- \frac{Lz}{dz} r = -\frac{Cd}{dz} |u|$$ and you
     % will find a characteristic velocity $$|u|$$ of about 10 cm/s for
     % Cd=0.002.
     %
-    % - Topic: Initializing
-    % - Declaration: WVBottomFriction < [WVForcing](/classes/wvforcing/)
+    % For both nonhydrostatic and hydrostatic transforms linear bottom drag
+    %
+    % $$
+    % \begin{align}
+    % \mathcal{S}_u &= -\frac{Lz}{dz} r u(x,y,-D) \\
+    % \mathcal{S}_v &= -\frac{Lz}{dz} r v(x,y,-D)  \\
+    % \mathcal{S}_w &= 0 \\
+    % \mathcal{S}_\eta &= 0
+    % \end{align}
+    % $$
+    %
+    % and for quasigeostrophic transforms,
+    %
+    % $$
+    % \begin{align}
+    % \mathcal{S}_\textrm{qgpv} &= -\frac{Lz}{dz} r \zeta(x,y,-D)
+    % \end{align}
+    % $$
+    %
+    % where $\zeta = \partial_x v - \partial_y u$.
+    %
+    %
+    % - Topic: Initialization
+    % - Topic: Properties
+    % - Topic: CAAnnotatedClass requirement
+    %
+    % - Declaration: WVBottomFrictionLinear < [WVForcing](/classes/wvforcing/)
     properties
+        % bottom friction, $$s^{-1}$$
+        %
+        % - Topic: Properties
         r
+
+        % scaled bottom friction, $$\frac{Lz}{dz} r$$ with units $$s^{-1}$$
+        %
+        % - Topic: Properties
         r_scaled
-        % RVA0
     end
 
     methods
         function self = WVBottomFrictionLinear(wvt,options)
-            % initialize the WVNonlinearFlux nonlinear flux
+            % initialize the WVBottomFrictionLinear
             %
-            % - Declaration: self = WVBottomFriction(wvt,options)
+            % - Topic: Initialization
+            % - Declaration: self = WVBottomFrictionLinear(wvt,options)
             % - Parameter wvt: a WVTransform instance
             % - Parameter r: (optional) linear bottom friction, try 1/(200*86400)
-            % - Returns frictionalForce: a WVBottomFriction instance
+            % - Returns frictionalForce: a WVBottomFrictionLinear instance
             arguments
                 wvt WVTransform {mustBeNonempty}
                 options.r (1,1) double {mustBeNonnegative} = 1/(200*86400) % linear bottom friction, try 1/(200*86400) https://www.nemo-ocean.eu/doc/node70.html
@@ -61,10 +97,20 @@ classdef WVBottomFrictionLinear < WVForcing
     end
     methods (Static)
         function vars = classRequiredPropertyNames()
+            % Returns the required property names for the class
+            %
+            % - Topic: CAAnnotatedClass requirement
+            % - Declaration: classRequiredPropertyNames()
+            % - Returns: vars
             vars = {'r'};
         end
 
         function propertyAnnotations = classDefinedPropertyAnnotations()
+            % Returns the defined property annotations for the class
+            %
+            % - Topic: CAAnnotatedClass requirement
+            % - Declaration: classDefinedPropertyAnnotations()
+            % - Returns: propertyAnnotations
             arguments (Output)
                 propertyAnnotations CAPropertyAnnotation
             end

@@ -63,14 +63,14 @@ thus highly un-optimized.
 
 
 ## Topics
++ Initialization
+  + [`WVVerticalDamping`](/classes/forcing/closures/wvverticaldamping/wvverticaldamping.html) initialize the WVVerticalDamping
 + Properties
   + [`dLnN2`](/classes/forcing/closures/wvverticaldamping/dlnn2.html) variable stratification factor
   + [`kappa`](/classes/forcing/closures/wvverticaldamping/kappa.html) vertical diffusivity
   + [`nu`](/classes/forcing/closures/wvverticaldamping/nu.html) vertical viscosity
 + CAAnnotatedClass requirement
   + [`classRequiredPropertyNames`](/classes/forcing/closures/wvverticaldamping/classrequiredpropertynames.html) Returns the required property names for the class
-+ Other
-  + [`WVVerticalDamping`](/classes/forcing/closures/wvverticaldamping/wvverticaldamping.html) initialize the WVVerticalDamping
 
 
 ---

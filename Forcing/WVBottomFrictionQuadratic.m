@@ -2,36 +2,72 @@ classdef WVBottomFrictionQuadratic < WVForcing
     % Quadratic bottom friction
     %
     % Applies quadratic bottom friction to the flow, i.e.,
-    % $$\frac{du}{dt} = -(Cd/dz)*|u|*u$$. Cd is unitless, and dz is
+    % $$\frac{du}{dt} = -\frac{Cd}{dz}|\mathbf{u}|\mathbf{u}(x,y,-D)$. Cd is unitless, and dz is
     % (approximately) the size of the grid spacing at the bottom boundary.
     %
     % To compare with linear bottom friction where $$\frac{du}{dt} =
-    % -r*u$$, note that $$-(Lz/dz)*r = -(Cd/dz)*|u|$$ and you will find a
+    % -r u(x,y,-D)$$, note that $$- \frac{Lz}{dz} r = -\frac{Cd}{dz} |u|$$ and you will find a
     % characteristic velocity $$|u|$$ of about 11.5 cm/s for Cd=0.002 and
     % r=1/(200 days). If Cd=0.001, then the damping time scale has to
     % double to 1/(400 days) for and equivalent characteristic velocity.
     %
     % For barotropic QG we want the scaling to work out similarly, but now
-    % have $$-r = -(Cd/D)*|u|$$ where $$D$$ works out to be Lz. Thus, we
+    % have $$-r = -\frac{Cd}{D}|u|$$ where $$D$$ works out to be Lz. Thus, we
     % will scale the barotropic QG quadratic bottom drag by 4000 m, to match
     % typical oceanic scales.
     % 
     %
-    % - Topic: Initializing
+    % For both nonhydrostatic and hydrostatic transforms linear bottom drag
+    %
+    % $$
+    % \begin{align}
+    % \mathcal{S}_u &= -\frac{Cd}{dz} \sqrt{u^2(x,y,-D) + v^2(x,y,-D)} u(x,y,-D) \\
+    % \mathcal{S}_v &= -\frac{Cd}{dz} \sqrt{u^2(x,y,-D) + v^2(x,y,-D)} v(x,y,-D)  \\
+    % \mathcal{S}_w &= 0 \\
+    % \mathcal{S}_\eta &= 0
+    % \end{align}
+    % $$
+    %
+    % and for quasigeostrophic transforms,
+    %
+    % $$
+    % \begin{align}
+    % \mathcal{S}_\textrm{qgpv} &= -\frac{Cd}{dz} \left(
+    % \frac{\partial}{\partial x} \left( \sqrt{u^2(x,y,-D) + v^2(x,y,-D)}
+    % v(x,y,-D) \right) - \frac{\partial}{\partial y} \left(
+    % \sqrt{u^2(x,y,-D) + v^2(x,y,-D)} u(x,y,-D) \right) \right)
+    % \end{align}
+    % $$
+    %
+    % where $\zeta = \partial_x v - \partial_y u$.
+    %
+    %
+    % - Topic: Initialization
+    % - Topic: Properties
+    % - Topic: CAAnnotatedClass requirement
+    %
     % - Declaration: WVBottomFrictionQuadratic < [WVForcing](/classes/wvforcing/)
     properties
-        Cd % non-dimensional
-        cd % units of inverse length
+        % non-dimensional quadratic drag coefficient
+        %
+        % - Topic: Properties
+        Cd
+
+        % $$\frac{Cd}{dz}$$ scaled quadratic drag coefficient with units $$m^{-1}$$
+        %
+        % - Topic: Properties
+        cd
     end
 
     methods
         function self = WVBottomFrictionQuadratic(wvt,options)
-            % initialize the WVNonlinearFlux nonlinear flux
+            % initialize the WVBottomFrictionQuadratic
             %
+            % - Topic: Initialization
             % - Declaration: self = WVBottomFrictionQuadratic(wvt,options)
             % - Parameter wvt: a WVTransform instance
             % - Parameter Cd: (optional) non-dimensional quadratic damping coefficient. Default is 0.001
-            % - Returns frictionalForce: a WVBottomFriction instance
+            % - Returns frictionalForce: a WVBottomFrictionQuadratic instance
             arguments
                 wvt WVTransform {mustBeNonempty}
                 options.Cd (1,1) double {mustBeNonnegative} = 1e-3 % https://www.nemo-ocean.eu/doc/node70.html
@@ -76,10 +112,20 @@ classdef WVBottomFrictionQuadratic < WVForcing
     end
     methods (Static)
         function vars = classRequiredPropertyNames()
+            % Returns the required property names for the class
+            %
+            % - Topic: CAAnnotatedClass requirement
+            % - Declaration: classRequiredPropertyNames()
+            % - Returns: vars
             vars = {'Cd'};
         end
 
         function propertyAnnotations = classDefinedPropertyAnnotations()
+            % Returns the defined property annotations for the class
+            %
+            % - Topic: CAAnnotatedClass requirement
+            % - Declaration: classDefinedPropertyAnnotations()
+            % - Returns: propertyAnnotations
             arguments (Output)
                 propertyAnnotations CAPropertyAnnotation
             end

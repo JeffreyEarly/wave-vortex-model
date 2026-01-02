@@ -63,6 +63,7 @@ classdef WVVerticalDamping < WVForcing
         function self = WVVerticalDamping(wvt,options)
             % initialize the WVVerticalDamping
             %
+            % - Topic: Initialization
             % - Declaration: self = WVVerticalDamping(wvt,options)
             % - Parameter wvt: a WVTransform instance
             % - Parameter nu: vertical viscosity, default $$5 \cdot 10^{-4} \textrm{m}^2/\textrm{s}$$

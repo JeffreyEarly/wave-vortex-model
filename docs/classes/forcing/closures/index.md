@@ -2,6 +2,7 @@
 layout: default
 title: Closures
 parent: Forcing
+mathjax: true
 nav_order: 1
 has_children: true
 permalink: /classes/forcing/closures

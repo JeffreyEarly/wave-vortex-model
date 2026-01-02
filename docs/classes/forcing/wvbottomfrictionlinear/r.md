@@ -9,8 +9,11 @@ mathjax: true
 
 #  r
 
-
+bottom friction, $$s^{-1}$$
 
 
 ---
 
+## Discussion
+
+  

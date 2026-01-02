@@ -9,7 +9,7 @@ mathjax: true
 
 #  WVBottomFrictionQuadratic
 
-initialize the WVNonlinearFlux nonlinear flux
+initialize the WVBottomFrictionQuadratic
 
 
 ---
@@ -23,8 +23,8 @@ initialize the WVNonlinearFlux nonlinear flux
 + `Cd`  (optional) non-dimensional quadratic damping coefficient. Default is 0.001
 
 ## Returns
-+ `frictionalForce`  a WVBottomFriction instance
++ `frictionalForce`  a WVBottomFrictionQuadratic instance
 
 ## Discussion
 
-        
+          

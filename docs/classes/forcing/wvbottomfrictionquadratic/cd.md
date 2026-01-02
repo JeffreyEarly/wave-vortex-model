@@ -9,8 +9,11 @@ mathjax: true
 
 #  Cd
 
-non-dimensional
+non-dimensional quadratic drag coefficient
 
 
 ---
 
+## Discussion
+
+  

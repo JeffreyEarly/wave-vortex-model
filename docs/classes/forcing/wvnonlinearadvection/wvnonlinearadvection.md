@@ -9,18 +9,21 @@ mathjax: true
 
 #  WVNonlinearAdvection
 
-initialize the WVAdvectiveFlux nonlinear flux
+initialize the WVNonlinearAdvection nonlinear flux
 
 
 ---
 
 ## Declaration
 ```matlab
- self = WVAdvectiveFlux(wvt,options)
+ self = WVNonlinearAdvection(wvt,options)
 ```
 ## Parameters
 + `wvt`  a WVTransform instance
 
+## Returns
++ `self`  a WVNonlinearAdvection instance
+
 ## Discussion
 
-    
+        
