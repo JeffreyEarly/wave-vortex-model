@@ -4,9 +4,9 @@ title: WVVerticalDamping
 has_children: false
 has_toc: false
 mathjax: true
-parent: Forcing
-grand_parent: Class documentation
-nav_order: 13
+parent: Closures
+grand_parent: Forcing
+nav_order: 5
 ---
 
 #  WVVerticalDamping
@@ -24,9 +24,9 @@ Vertical viscosity and diffusivity
  
 The damping is designed to mimic the VerticalScalarDiffusivity in
 Oceananigans to allow for direct comparison between the models. This
-should probably be used in combination with
-`WVHorizontalScalarDiffusivity`. In general, you should be using the
-[`WVAdaptiveDamping`](WVAdaptiveDamping).
+is intended be used in combination with
+WVHorizontalDamping. In general, you should be using the
+[`WVAdaptiveDamping`](../WVAdaptiveDamping).
 
 The specific form of the forcing is given by 
  
@@ -40,9 +40,9 @@ $$
 $$
  
 with viscosity, $$\nu$$, and diffusivity, $$\kappa$$. This should be combined with
-WVHorizontalScalarDiffusivity for a complete closure. For help
+[`WVHorizontalDamping`](../`WVHorizontalDamping`) for a complete closure. For help
 choosing appropriate values, see the notes in
-[`WVAdaptiveDamping`](WVAdaptiveDamping).
+[`WVAdaptiveDamping`](../WVAdaptiveDamping).
  
 ### Usage
  
@@ -64,13 +64,13 @@ thus highly un-optimized.
 
 ## Topics
 + Properties
-  + [`dLnN2`](/classes/forcing/wvverticaldamping/dlnn2.html) variable stratification factor
-  + [`kappa`](/classes/forcing/wvverticaldamping/kappa.html) vertical diffusivity
-  + [`nu`](/classes/forcing/wvverticaldamping/nu.html) vertical viscosity
+  + [`dLnN2`](/classes/forcing/closures/wvverticaldamping/dlnn2.html) variable stratification factor
+  + [`kappa`](/classes/forcing/closures/wvverticaldamping/kappa.html) vertical diffusivity
+  + [`nu`](/classes/forcing/closures/wvverticaldamping/nu.html) vertical viscosity
 + CAAnnotatedClass requirement
-  + [`classRequiredPropertyNames`](/classes/forcing/wvverticaldamping/classrequiredpropertynames.html) Returns the required property names for the class
+  + [`classRequiredPropertyNames`](/classes/forcing/closures/wvverticaldamping/classrequiredpropertynames.html) Returns the required property names for the class
 + Other
-  + [`WVVerticalDamping`](/classes/forcing/wvverticaldamping/wvverticaldamping.html) initialize the WVVerticalDamping
+  + [`WVVerticalDamping`](/classes/forcing/closures/wvverticaldamping/wvverticaldamping.html) initialize the WVVerticalDamping
 
 
 ---

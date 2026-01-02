@@ -50,10 +50,21 @@ classDoc = ClassDocumentation('WVForcing',nav_order=1,buildFolder=buildFolder,we
 classDoc.writeToFile();
 
 excludedSuperclasses = {'handle','WVForcing','CAAnnotatedClass','matlab.mixin.Heterogeneous'};
-classes = {'WVAdaptiveDamping','WVAntialiasing','WVBetaPlanePVAdvection','WVBottomFrictionLinear','WVBottomFrictionQuadratic','WVFixedAmplitudeForcing','WVHorizontalDamping','WVMeanFlowForcing','WVNonlinearAdvection','WVThermalDamping','WVVerticalDiffusivity','WVVerticalDamping'};
+classes = {'WVNonlinearAdvection','WVBottomFrictionLinear','WVBottomFrictionQuadratic','WVFixedAmplitudeForcing','WVMeanFlowForcing','WVBetaPlanePVAdvection'};
 classDocumentation = ClassDocumentation.empty(length(classes),0);
 for iName=1:length(classes)
     classDocumentation(iName) = ClassDocumentation(classes{iName},nav_order=iName+1,buildFolder=buildFolder,websiteFolder=websiteFolder,parent=parentName,grandparent=classFolderName,excludedSuperclasses=excludedSuperclasses);
+end
+arrayfun(@(a) a.writeToFile(),classDocumentation)
+
+%%
+websiteFolder = 'classes/forcing/closures';
+
+excludedSuperclasses = {'handle','WVForcing','CAAnnotatedClass','matlab.mixin.Heterogeneous'};
+classes = {'WVAdaptiveDamping','WVVerticalDiffusivity','WVHorizontalDamping','WVVerticalDamping','WVThermalDamping','WVAntialiasing'};
+classDocumentation = ClassDocumentation.empty(length(classes),0);
+for iName=1:length(classes)
+    classDocumentation(iName) = ClassDocumentation(classes{iName},nav_order=iName+1,buildFolder=buildFolder,websiteFolder=websiteFolder,parent='Closures',grandparent='Forcing',excludedSuperclasses=excludedSuperclasses);
 end
 arrayfun(@(a) a.writeToFile(),classDocumentation)
 

@@ -7,11 +7,13 @@ has_children: true
 permalink: /classes/forcing
 ---
 
-#  Nonlinear flux operations
+#  Forcing
 
-Nonlinear flux operations are used for taking a nonlinear time step with the model. See the [users guide](http://wavevortexmodel.org/users-guide/nonlinear-flux-operations.html) for an overview of classes and their usage.
+Forcing operations are used to apply forcing to the model. See the [users guide on adding forcing](/users-guide/adding-forcing.html).
 
-All nonlinear flux operations are a subclass of [WVNonlinearFluxOperation](/classes-nonlinearfluxes/wvnonlinearfluxoperation/).
+### Notes
+ - All forcing operations are a subclass of [WVForcing](/classes/forcing/wvforcing/).
+ - The word *viscosity* is reserved for $$\nu$$ which acts on the momentum equations.
+ - The word *diffusivity* is reserved for $$\kappa$$ which acts on the thermodynamic equation.
+ - The word *damping* is a catchall term that applies to any small scale feature removal.
 
-- [WVNonlinearFlux](/classes-nonlinearfluxes/wvnonlinearflux/)
-- [BoussinesqSpatial](/classes-nonlinearfluxes/boussinesqspatial/)

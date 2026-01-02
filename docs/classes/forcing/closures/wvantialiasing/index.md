@@ -4,9 +4,9 @@ title: WVAntialiasing
 has_children: false
 has_toc: false
 mathjax: true
-parent: Forcing
-grand_parent: Class documentation
-nav_order: 3
+parent: Closures
+grand_parent: Forcing
+nav_order: 7
 ---
 
 #  WVAntialiasing
@@ -52,13 +52,13 @@ wvtAA = wvt.waveVortexTransformWithExplicitAntialiasing();
 
 ## Topics
 + Properties
-  + [`M`](/classes/forcing/wvantialiasing/m.html) spectral matrix that multiplies Ap,Am,A0 to zero out the aliased modes
-  + [`effectiveHorizontalGridResolution`](/classes/forcing/wvantialiasing/effectivehorizontalgridresolution.html) returns the effective grid resolution in meters
-  + [`effectiveJMax`](/classes/forcing/wvantialiasing/effectivejmax.html) returns the effective highest vertical mode
+  + [`M`](/classes/forcing/closures/wvantialiasing/m.html) spectral matrix that multiplies Ap,Am,A0 to zero out the aliased modes
+  + [`effectiveHorizontalGridResolution`](/classes/forcing/closures/wvantialiasing/effectivehorizontalgridresolution.html) returns the effective grid resolution in meters
+  + [`effectiveJMax`](/classes/forcing/closures/wvantialiasing/effectivejmax.html) returns the effective highest vertical mode
 + CAAnnotatedClass requirement
-  + [`classRequiredPropertyNames`](/classes/forcing/wvantialiasing/classrequiredpropertynames.html) Returns the required property names for the class
+  + [`classRequiredPropertyNames`](/classes/forcing/closures/wvantialiasing/classrequiredpropertynames.html) Returns the required property names for the class
 + Other
-  + [`WVAntialiasing`](/classes/forcing/wvantialiasing/wvantialiasing.html) initialize the WVAntialiasing
+  + [`WVAntialiasing`](/classes/forcing/closures/wvantialiasing/wvantialiasing.html) initialize the WVAntialiasing
 
 
 ---

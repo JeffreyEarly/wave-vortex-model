@@ -3,9 +3,9 @@ classdef WVVerticalDamping < WVForcing
     %
     % The damping is designed to mimic the VerticalScalarDiffusivity in
     % Oceananigans to allow for direct comparison between the models. This
-    % should probably be used in combination with
-    % `WVHorizontalScalarDiffusivity`. In general, you should be using the
-    % [`WVAdaptiveDamping`](WVAdaptiveDamping).
+    % is intended be used in combination with
+    % WVHorizontalDamping. In general, you should be using the
+    % [`WVAdaptiveDamping`](../WVAdaptiveDamping).
     % 
     % The specific form of the forcing is given by 
     %
@@ -19,9 +19,9 @@ classdef WVVerticalDamping < WVForcing
     % $$
     %
     % with viscosity, $$\nu$$, and diffusivity, $$\kappa$$. This should be combined with
-    % WVHorizontalScalarDiffusivity for a complete closure. For help
+    % [`WVHorizontalDamping`](../`WVHorizontalDamping`) for a complete closure. For help
     % choosing appropriate values, see the notes in
-    % [`WVAdaptiveDamping`](WVAdaptiveDamping).
+    % [`WVAdaptiveDamping`](../WVAdaptiveDamping).
     %
     % ### Usage
     %

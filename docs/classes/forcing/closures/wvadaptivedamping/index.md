@@ -4,8 +4,8 @@ title: WVAdaptiveDamping
 has_children: false
 has_toc: false
 mathjax: true
-parent: Forcing
-grand_parent: Class documentation
+parent: Closures
+grand_parent: Forcing
 nav_order: 2
 ---
 
@@ -85,20 +85,20 @@ So arguably they're under-damped in a non-hydrostatic simulation.
 
 ## Topics
 + Initialization
-  + [`WVAdaptiveDamping`](/classes/forcing/wvadaptivedamping/wvadaptivedamping.html) initialize the WVAdaptiveDamping
+  + [`WVAdaptiveDamping`](/classes/forcing/closures/wvadaptivedamping/wvadaptivedamping.html) initialize the WVAdaptiveDamping
 + Properties
-  + [`assumedEffectiveHorizontalGridResolution`](/classes/forcing/wvadaptivedamping/assumedeffectivehorizontalgridresolution.html) effective resolution used in the damping calculation
-  + [`damp`](/classes/forcing/wvadaptivedamping/damp.html) spectral matrix that multiplies Ap,Am,A0 to damp
-  + [`dampingTimeScale`](/classes/forcing/wvadaptivedamping/dampingtimescale.html) Computes the minimum damping time scale
-  + [`j_damp`](/classes/forcing/wvadaptivedamping/j_damp.html) wavenumber at which the significant scale damping starts.
-  + [`j_no_damp`](/classes/forcing/wvadaptivedamping/j_no_damp.html) wavenumber below which there is zero damping
-  + [`k_damp`](/classes/forcing/wvadaptivedamping/k_damp.html) wavenumber at which the significant scale damping starts.
-  + [`k_no_damp`](/classes/forcing/wvadaptivedamping/k_no_damp.html) wavenumber below which there is zero damping
+  + [`assumedEffectiveHorizontalGridResolution`](/classes/forcing/closures/wvadaptivedamping/assumedeffectivehorizontalgridresolution.html) effective resolution used in the damping calculation
+  + [`damp`](/classes/forcing/closures/wvadaptivedamping/damp.html) spectral matrix that multiplies Ap,Am,A0 to damp
+  + [`dampingTimeScale`](/classes/forcing/closures/wvadaptivedamping/dampingtimescale.html) Computes the minimum damping time scale
+  + [`j_damp`](/classes/forcing/closures/wvadaptivedamping/j_damp.html) wavenumber at which the significant scale damping starts.
+  + [`j_no_damp`](/classes/forcing/closures/wvadaptivedamping/j_no_damp.html) wavenumber below which there is zero damping
+  + [`k_damp`](/classes/forcing/closures/wvadaptivedamping/k_damp.html) wavenumber at which the significant scale damping starts.
+  + [`k_no_damp`](/classes/forcing/closures/wvadaptivedamping/k_no_damp.html) wavenumber below which there is zero damping
 + Internal
-  + [`buildDampingOperator`](/classes/forcing/wvadaptivedamping/builddampingoperator.html) Builds the damping operator
-  + [`spectralVanishingViscosityFilter`](/classes/forcing/wvadaptivedamping/spectralvanishingviscosityfilter.html) Builds the spectral vanishing viscosity operator
+  + [`buildDampingOperator`](/classes/forcing/closures/wvadaptivedamping/builddampingoperator.html) Builds the damping operator
+  + [`spectralVanishingViscosityFilter`](/classes/forcing/closures/wvadaptivedamping/spectralvanishingviscosityfilter.html) Builds the spectral vanishing viscosity operator
 + CAAnnotatedClass requirement
-  + [`classRequiredPropertyNames`](/classes/forcing/wvadaptivedamping/classrequiredpropertynames.html) Returns the required property names for the class
+  + [`classRequiredPropertyNames`](/classes/forcing/closures/wvadaptivedamping/classrequiredpropertynames.html) Returns the required property names for the class
 
 
 ---

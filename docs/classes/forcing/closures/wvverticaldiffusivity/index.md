@@ -4,9 +4,9 @@ title: WVVerticalDiffusivity
 has_children: false
 has_toc: false
 mathjax: true
-parent: Forcing
-grand_parent: Class documentation
-nav_order: 12
+parent: Closures
+grand_parent: Forcing
+nav_order: 3
 ---
 
 #  WVVerticalDiffusivity
@@ -58,13 +58,13 @@ This is currently implemented in the spatial domain.
 
 ## Topics
 + Initialization
-  + [`WVVerticalDiffusivity`](/classes/forcing/wvverticaldiffusivity/wvverticaldiffusivity.html) initialize the WVVerticalDiffusivity
+  + [`WVVerticalDiffusivity`](/classes/forcing/closures/wvverticaldiffusivity/wvverticaldiffusivity.html) initialize the WVVerticalDiffusivity
 + Properties
-  + [`dLnN2`](/classes/forcing/wvverticaldiffusivity/dlnn2.html) precomputed dLnN2 term
-  + [`kappa_z`](/classes/forcing/wvverticaldiffusivity/kappa_z.html) vertical diffusivity, $$m^2s^{-1}$$
-  + [`shouldForceMeanDensityAnomaly`](/classes/forcing/wvverticaldiffusivity/shouldforcemeandensityanomaly.html) whether to include the $$\frac{\partial}{\partial z} \ln N^2$$ term
+  + [`dLnN2`](/classes/forcing/closures/wvverticaldiffusivity/dlnn2.html) precomputed dLnN2 term
+  + [`kappa_z`](/classes/forcing/closures/wvverticaldiffusivity/kappa_z.html) vertical diffusivity, $$m^2s^{-1}$$
+  + [`shouldForceMeanDensityAnomaly`](/classes/forcing/closures/wvverticaldiffusivity/shouldforcemeandensityanomaly.html) whether to include the $$\frac{\partial}{\partial z} \ln N^2$$ term
 + CAAnnotatedClass requirement
-  + [`classRequiredPropertyNames`](/classes/forcing/wvverticaldiffusivity/classrequiredpropertynames.html) Returns the required property names for the class
+  + [`classRequiredPropertyNames`](/classes/forcing/closures/wvverticaldiffusivity/classrequiredpropertynames.html) Returns the required property names for the class
 
 
 ---

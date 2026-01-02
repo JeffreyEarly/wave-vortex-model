@@ -1,15 +1,15 @@
 ---
 layout: default
-title: Forcing
-parent: Class documentation
-nav_order: 4
+title: Closures
+parent: Forcing
+nav_order: 1
 has_children: true
-permalink: /classes/forcing
+permalink: /classes/forcing/closures
 ---
 
-#  Forcing
+#  Closures
 
-Forcing operations are used to apply forcing to the model. See the [users guide on adding forcing](/users-guide/adding-forcing.html).
+Closures are forcing operations that remove small scale features from the flow. See the [users guide on adding forcing](/users-guide/adding-forcing.html).
 
 ### Notes
  - All forcing operations are a subclass of [WVForcing](/classes/forcing/wvforcing/).

@@ -4,9 +4,9 @@ title: WVThermalDamping
 has_children: false
 has_toc: false
 mathjax: true
-parent: Forcing
-grand_parent: Class documentation
-nav_order: 11
+parent: Closures
+grand_parent: Forcing
+nav_order: 6
 ---
 
 #  WVThermalDamping
@@ -37,12 +37,12 @@ requires `WVForcingType("PVSpatial")`.
 
 ## Topics
 + Initialization
-  + [`WVThermalDamping`](/classes/forcing/wvthermaldamping/wvthermaldamping.html) initialize the WVThermalDamping
+  + [`WVThermalDamping`](/classes/forcing/closures/wvthermaldamping/wvthermaldamping.html) initialize the WVThermalDamping
 + Properties
-  + [`alpha`](/classes/forcing/wvthermaldamping/alpha.html) damping parameter, units of $$s^{-1}$$
-  + [`alpha_scaled`](/classes/forcing/wvthermaldamping/alpha_scaled.html) scaled damping parameter, units of $$s^{-1} m^{-2}$$
+  + [`alpha`](/classes/forcing/closures/wvthermaldamping/alpha.html) damping parameter, units of $$s^{-1}$$
+  + [`alpha_scaled`](/classes/forcing/closures/wvthermaldamping/alpha_scaled.html) scaled damping parameter, units of $$s^{-1} m^{-2}$$
 + CAAnnotatedClass requirement
-  + [`classRequiredPropertyNames`](/classes/forcing/wvthermaldamping/classrequiredpropertynames.html) Returns the required property names for the class
+  + [`classRequiredPropertyNames`](/classes/forcing/closures/wvthermaldamping/classrequiredpropertynames.html) Returns the required property names for the class
 
 
 ---
