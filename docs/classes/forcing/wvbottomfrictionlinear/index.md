@@ -26,7 +26,7 @@ Applies linear bottom friction to the flow, i.e., $$\frac{du}{dt} = -r \cdot u(x
  
 The linear bottom friction is scaled such that we actually apply, $$\frac{du}{dt} = -\frac{L_z}{dz} r \cdot u(x,y,-D)$$ and the volume integrated effect of friction remains the same regardless of resolution. $$L_z$$ is the total domain depth and $$dz$$ is the spacing at the bottom grid point.
  
-To compare with quadratic bottom friction where $$\frac{du}{dt} = -\frac{C_d}{dz} |\mathbf{u}|* $$, note that $$- \frac{L_z}{dz} r = -\frac{C_d}{dz} |\mathbf{u}|$$ and you will find a characteristic velocity $$|\mathbf{u}|$$ of about 10 cm/s for $$C_d=0.002$$.
+To compare with quadratic bottom friction where $$\frac{du}{dt} = -\frac{C_d}{dz} \lvert \mathbf{u} \rvert $$, note that $$- \frac{L_z}{dz} r = -\frac{C_d}{dz} \lvert \mathbf{u} \rvert$$ and you will find a characteristic velocity $$\lvert\mathbf{u}\rvert$$ of about 10 cm/s for $$C_d=0.002$$.
  
 For both nonhydrostatic and hydrostatic transforms linear bottom drag
  
@@ -56,7 +56,6 @@ Assuming there is a WVTransform instance wvt, to add this forcing,
 ```matlab
 wvt.addForcing(WVBottomFrictionLinear(r=1/(200*86400)));
 ```
- 
  
      
 

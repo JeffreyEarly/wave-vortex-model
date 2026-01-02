@@ -1,11 +1,11 @@
 classdef WVBottomFrictionQuadratic < WVForcing
     % Quadratic bottom friction
     %
-    % Applies quadratic bottom friction to the flow, i.e., $$\frac{du}{dt} = -\frac{Cd}{dz}|\mathbf{u}|\mathbf{u}(x,y,-D)$$. Cd is unitless, and dz is (approximately) the size of the grid spacing at the bottom boundary.
+    % Applies quadratic bottom friction to the flow, i.e., $$\frac{du}{dt} = -\frac{Cd}{dz}\lvert \mathbf{u} \rvert\mathbf{u}(x,y,-D)$$. Cd is unitless, and dz is (approximately) the size of the grid spacing at the bottom boundary.
     %
-    % To compare with linear bottom friction where $$\frac{du}{dt} = -r \cdot u(x,y,-D)$$, note that $$- \frac{L_z}{dz} r = -\frac{C_d}{dz} |\mathbf{u}|$$ and you will find a characteristic velocity $$|\mathbf{u}|$$ of about 11.5 cm/s for Cd=0.002 and r=1/(200 days). If $$C_d=0.001$$, then the damping time scale has to double to 1/(400 days) for and equivalent characteristic velocity.
+    % To compare with linear bottom friction where $$\frac{du}{dt} = -r \cdot u(x,y,-D)$$, note that $$- \frac{L_z}{dz} r = -\frac{C_d}{dz} \lvert \mathbf{u} \rvert$$ and you will find a characteristic velocity $$\lvert \mathbf{u} \rvert$$ of about 11.5 cm/s for Cd=0.002 and r=1/(200 days). If $$C_d=0.001$$, then the damping time scale has to double to 1/(400 days) for and equivalent characteristic velocity.
     %
-    % For barotropic QG we want the scaling to work out similarly, but now have $$-r = -\frac{C_d}{D}|u|$$ where $$D$$ works out to be $$L_z$$. Thus, we will scale the barotropic QG quadratic bottom drag by 4000 m, to match typical oceanic scales.
+    % For barotropic QG we want the scaling to work out similarly, but now have $$-r = -\frac{C_d}{D}\lvert \mathbf{u} \rvert$$ where $$D$$ works out to be $$L_z$$. Thus, we will scale the barotropic QG quadratic bottom drag by 4000 m, to match typical oceanic scales.
     %
     % Using the notation that
     %
