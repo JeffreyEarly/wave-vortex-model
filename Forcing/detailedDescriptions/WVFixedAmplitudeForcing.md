@@ -8,10 +8,10 @@ As a simple example, one can set an internal wave mode with amplitude 1 cm/s, an
 There are several different ways to write this style of forcing mathematically. The equations of motion, written in the spectral domain, take the following form
 
 $$
-\frac{\partial}{\partial t} A^{klj} = \Sum_i F_i^{klj}
+\frac{\partial}{\partial t} A^{klj} = \sum_i F_i^{klj}
 $$
 
-where $F_i$ are the different forces applied. The transform computes the spatial forcing (which includes nonlinear advection), the spectral forcing, followed by the spectral amplitude forcing. The `WVFixedAmplitudeForcing` is a spectral amplitude forcing and is thus comptued last. This forcing thus simply adds back the flux the from the spatial and spectral forcing, so that $$\frac{\partial}{\partial t} A^{klj} =0$$ for the modes in question.
+where $$F_i$$ are the different forces applied. The transform computes the spatial forcing (which includes nonlinear advection), the spectral forcing, followed by the spectral amplitude forcing. The `WVFixedAmplitudeForcing` is a spectral amplitude forcing and is thus comptued last. This forcing thus simply adds back the flux the from the spatial and spectral forcing, so that $$\frac{\partial}{\partial t} A^{klj} =0$$ for the modes in question.
 
 In practice, of course, we simply restore the amplitudes to their desired value at the last step, e.g.,
 
@@ -22,7 +22,7 @@ A0(self.A0_indices) = self.A0bar
 ### Notes
 
 - This approach is commonly used in forced-dissipative turbulence to maintain some fixed forcing.
-- Every mode that is used in `WVFixedAmplitudeForcing` essentially removes a degree-of-freedom from the model, as that mode is no longer free to fully evolve. The when you pass the forcing wave-vortex coefficients, e.g. `A0`, it does not fix the amplitude of coefficients that are small to avoid removing degrees-of-freedom.
+- Every mode that is used in `WVFixedAmplitudeForcing` essentially removes a degree-of-freedom from the model, as that mode is no longer free to fully evolve. Thus when you pass the forcing wave-vortex coefficients, e.g. `A0`, it does not fix the amplitude of coefficients that are small to avoid removing degrees-of-freedom.
 - One must also be careful not to forcing in the damping region. If you have some sort of small scale damping enabled, you probably do not want to be forcing at those smallest scales.
 
 ### Usage

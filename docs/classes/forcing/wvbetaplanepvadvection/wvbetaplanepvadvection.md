@@ -20,7 +20,7 @@ Advection of QGPV from beta
 ```
 ## Discussion
 
-  This applies $$\beta*v_g$$ to the PV (A0) flux of a simulation.
+  This applies $$\beta v_g$$ to the PV (A0) flux of a simulation.
   
   
   ### Usage

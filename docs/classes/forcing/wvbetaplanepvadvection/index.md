@@ -6,7 +6,7 @@ has_toc: false
 mathjax: true
 parent: Forcing
 grand_parent: Class documentation
-nav_order: 7
+nav_order: 6
 ---
 
 #  WVBetaPlanePVAdvection
@@ -22,7 +22,7 @@ Advection of QGPV from beta
 
 ## Overview
  
-This applies $$\beta*v_g$$ to the PV (A0) flux of a simulation.
+This applies $$\beta v_g$$ to the PV (A0) flux of a simulation.
 
 
 ### Usage

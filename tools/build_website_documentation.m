@@ -50,7 +50,7 @@ classDoc = ClassDocumentation('WVForcing',nav_order=1,buildFolder=buildFolder,we
 classDoc.writeToFile();
 
 excludedSuperclasses = {'handle','WVForcing','CAAnnotatedClass','matlab.mixin.Heterogeneous'};
-classes = {'WVNonlinearAdvection','WVBottomFrictionLinear','WVBottomFrictionQuadratic','WVFixedAmplitudeForcing','WVMeanFlowForcing','WVBetaPlanePVAdvection'};
+classes = {'WVNonlinearAdvection','WVBottomFrictionLinear','WVBottomFrictionQuadratic','WVFixedAmplitudeForcing','WVBetaPlanePVAdvection'};
 classDocumentation = ClassDocumentation.empty(length(classes),0);
 for iName=1:length(classes)
     classDocumentation(iName) = ClassDocumentation(classes{iName},nav_order=iName+1,buildFolder=buildFolder,websiteFolder=websiteFolder,parent=parentName,grandparent=classFolderName,excludedSuperclasses=excludedSuperclasses);
