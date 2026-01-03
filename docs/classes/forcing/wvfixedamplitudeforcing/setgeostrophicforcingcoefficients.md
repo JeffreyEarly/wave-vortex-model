@@ -9,7 +9,7 @@ mathjax: true
 
 #  setGeostrophicForcingCoefficients
 
-set forcing values for the geostrophic part of the flow
+set amplitude to fix for the geostrophic part of the flow
 
 
 ---
@@ -19,26 +19,12 @@ set forcing values for the geostrophic part of the flow
  setGeostrophicForcingCoefficients(A0bar,options)
 ```
 ## Parameters
-+ `A0bar`  A0 'mean' value to relax to
-+ `MA0`  (optional) forcing mask, A0. 1s at the forced modes, 0s at the unforced modes. If it is left blank, then it will be produced using the nonzero values of A0bar
-+ `tau0`  (optional) relaxation time
++ `A0bar`  A0 fixed amplitude
++ `MA0`  (optional) forcing mask, A0. 1s at the forced modes, 0s at the unforced modes. Default is MA0 = abs(A0bar) > 1e-6*max(abs(A0bar(:)))
 
 ## Discussion
 
-  Forcing takes the following form,
+  This function will automatically remove modes set in the
+  damping region of the WVAdapativeDamping forcing, if present.
  
-  $$
-  \frac{\partial}{\partial t} A_0^{klj} = \underbrace{M_{A_0}^{klj} \left(\bar{A}_0^{klj}  - A_0^{klj} \right)/ \tau_0}_{F_\textrm{force}} + F_\textrm{inertial}^{klj} + F_\textrm{damp}^{klj}
-  $$
- 
-  where $$M_{A_0}^{klj}$$ are masks (1s and 0s),
-  $$\bar{A}_0^{klj}$$ are mean amplitudes, and $$\tau_0$$
-  are time scales. If the time scale is set to 0, then the mean
-  amplitudes remain fixed for all time. In that limit, the
-  equations can be written as,
- 
-  $$
-  \frac{\partial}{\partial t} A_0^{klj} = \neg M_{A_0}^{klj} \left( F_\textrm{inertial}^{klj} + F_\textrm{damp}^{klj} \right)
-  $$
- 
-          
+        

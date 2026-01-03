@@ -9,8 +9,11 @@ mathjax: true
 
 #  A0bar
 
-A0 'mean' value to relax to
+amplitudes of the fixed modes in the `A0` matrix
 
 
 ---
 
+## Discussion
+
+  

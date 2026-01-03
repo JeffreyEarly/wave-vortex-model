@@ -16,10 +16,11 @@ initialize the WVFixedAmplitudeForcing
 
 ## Declaration
 ```matlab
- nlFlux = WVNonlinearFlux(wvt,options)
+ self = WVFixedAmplitudeForcing(wvt,options)
 ```
 ## Parameters
 + `wvt`  a WVTransform instance
++ `name`  (required) name of this forcing
 + `Apbar`  (optional) amplitude of Ap matrix to fix
 + `Ambar`  (optional) amplitude of Am matrix to fix
 + `A0bar`  (optional) amplitude of A0 matrix to fix
@@ -32,4 +33,7 @@ initialize the WVFixedAmplitudeForcing
 
 ## Discussion
 
-                  
+  You must pass the instance of the WVTransform to be used and
+  you must also specify a unique name for the forcing.
+ 
+                    

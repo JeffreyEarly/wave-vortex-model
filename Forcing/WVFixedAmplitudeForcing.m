@@ -1,51 +1,100 @@
 classdef WVFixedAmplitudeForcing < WVForcing
-    % Resonant, fixed amplitude forcing at the natural frequency of each mode
+    % Fixed amplitude forcing at the natural frequency of each mode
     %
-    % The unforced model basically looks likes like this,
+    % The fixed-amplitude forcing maintains the amplitude of the wave or geostrophic features, while allowing energy and enstrophy to flux from the feature.
     %
-    % $$
-    % \frac{\partial}{\partial t} A^{klj} = F_\textrm{inertial}^{klj} + F_\textrm{damp}^{klj}
-    % $$
+    % As a simple example, one can set an internal wave mode with amplitude 1 cm/s, and that mode will continue to oscillate and maintain its amplitude. The wave will participate in all the nonlinear dynamics, but its amplitude will be maintained/restored at each time step.
     %
-    % for each of the three components. The forcing adds a new term,
     %
-    % $$
-    % \frac{\partial}{\partial t} A^{klj} = \underbrace{M_{A}^{klj} \left(\bar{A}^{klj}  - A^{klj} \right)/ \tau}_{F_\textrm{force}} + F_\textrm{inertial}^{klj} + F_\textrm{damp}^{klj}
-    % $$
-    %
-    % which forces those select modes to relax to their $$\bar{A}^{klj}$$
-    % state with time scale $$\tau$$.  If the time scale is set to 0, then the mean
-    % amplitudes remain fixed for all time. In that limit, the
-    % equations can be written as,
+    % There are several different ways to write this style of forcing mathematically. The equations of motion, written in the spectral domain, take the following form
     %
     % $$
-    % \frac{\partial}{\partial t} A^{klj} = \neg M_{A}^{klj} \left( F_\textrm{inertial}^{klj} + F_\textrm{damp}^{klj} \right)
+    % \frac{\partial}{\partial t} A^{klj} = \Sum_i F_i^{klj}
     % $$
     %
-    % This is most often used when initializing a model, e.g.,
+    % where $F_i$ are the different forces applied. The transform computes the spatial forcing (which includes nonlinear advection), the spectral forcing, followed by the spectral amplitude forcing. The `WVFixedAmplitudeForcing` is a spectral amplitude forcing and is thus comptued last. This forcing thus simply adds back the flux the from the spatial and spectral forcing, so that $$\frac{\partial}{\partial t} A^{klj} =0$$ for the modes in question.
+    %
+    % In practice, of course, we simply restore the amplitudes to their desired value at the last step, e.g.,
     %
     % ```matlab
-    % model = WVModel(wvt,nonlinearFlux=WVNonlinearFluxForced(wvt,uv_damp=wvt.uvMax));
+    % A0(self.A0_indices) = self.A0bar
     % ```
     %
-    % - Topic: Initializing
-    % - Declaration: WVNonlinearFluxForced < [WVNonlinearFlux](/classes/wvnonlinearflux/)
+    % ### Notes
+    %
+    % - This approach is commonly used in forced-dissipative turbulence to maintain some fixed forcing.
+    % - Every mode that is used in `WVFixedAmplitudeForcing` essentially removes a degree-of-freedom from the model, as that mode is no longer free to fully evolve. The when you pass the forcing wave-vortex coefficients, e.g. `A0`, it does not fix the amplitude of coefficients that are small to avoid removing degrees-of-freedom.
+    % - One must also be careful not to forcing in the damping region. If you have some sort of small scale damping enabled, you probably do not want to be forcing at those smallest scales.
+    %
+    % ### Usage
+    %
+    % To setup a geostrophic mean flow,
+    %
+    % ```matlab
+    % % initialize a transform
+    % wvt = WVTransformHydrostatic([Lx, Ly, Lz], [Nx, Ny, Nz], N2=@(z) N0*N0*exp(2*z/L_gm),latitude=33);
+    %
+    % % set a geostrophic mode, with no flow at the bottom boundary
+    % wvt.setGeostrophicModes(k=0,l=5,j=1,phi=0,u=u0);
+    % wvt.setGeostrophicModes(k=0,l=5,j=0,phi=0,u=max(max(wvt.u(:,:,1))));
+    %
+    % % pass the vortex coefficients to the forcing
+    % force = WVFixedAmplitudeForcing(wvt,name="geostrophic-mean-flow");
+    % force.setGeostrophicForcingCoefficients(wvt.A0);
+    % wvt.addForcing(force);
+    %
+    % ```
+    %
+    % In practice you can initialize the flow in any way you want with any arbitrary structure, and then pass those coefficients to the forcing. The `WVFixedAmplitudeForcing` looks for coefficients that are small and ignores those.
+    %
+    % - Topic: Initialization
+    % - Topic: Setting the forcing
+    % - Topic: Properties
+    % - Topic: CAAnnotatedClass requirement
+    %
+    % - Declaration: WVFixedAmplitudeForcing < [WVForcing](/classes/forcing/wvforcing/)
     properties
-        A0_indices (:,1) uint64 = []    % Forcing mask, A0. 1s at the forced modes, 0s at the unforced modes
-        Ap_indices (:,1) uint64 = []    % Forcing mask, Ap. 1s at the forced modes, 0s at the unforced modes
-        Am_indices (:,1) uint64 = []    % Forcing mask, Am. 1s at the forced modes, 0s at the unforced modes
+        % indices of modes in the `A0` matrix to fix
+        %
+        % - Topic: Properties
+        A0_indices (:,1) uint64 = []
 
-        A0bar (:,1) double = []  % A0 'mean' value to relax to
-        Apbar (:,1) double = []  % Ap 'mean' value to relax to
-        Ambar (:,1) double = []  % Am 'mean' value to relax to
+        % indices of modes in the `Ap` matrix to fix
+        %
+        % - Topic: Properties
+        Ap_indices (:,1) uint64 = []
+
+        % indices of modes in the `Am` matrix to fix
+        %
+        % - Topic: Properties
+        Am_indices (:,1) uint64 = []
+
+        % amplitudes of the fixed modes in the `A0` matrix
+        %
+        % - Topic: Properties
+        A0bar (:,1) double = []
+
+        % amplitudes of the fixed modes in the `Ap` matrix
+        %
+        % - Topic: Properties
+        Apbar (:,1) double = []
+
+        % amplitudes of the fixed modes in the `Am` matrix
+        %
+        % - Topic: Properties
+        Ambar (:,1) double = []
     end
 
     methods
         function self = WVFixedAmplitudeForcing(wvt,options)
             % initialize the WVFixedAmplitudeForcing
             %
-            % - Declaration: nlFlux = WVNonlinearFlux(wvt,options)
+            % You must pass the instance of the WVTransform to be used and
+            % you must also specify a unique name for the forcing.
+            %
+            % - Declaration: self = WVFixedAmplitudeForcing(wvt,options)
             % - Parameter wvt: a WVTransform instance
+            % - Parameter name: (required) name of this forcing
             % - Parameter Apbar: (optional) amplitude of Ap matrix to fix
             % - Parameter Ambar: (optional) amplitude of Am matrix to fix
             % - Parameter A0bar: (optional) amplitude of A0 matrix to fix
@@ -81,32 +130,17 @@ classdef WVFixedAmplitudeForcing < WVForcing
             end
         end
         function setWaveForcingCoefficients(self,Apbar,Ambar,options)
-            % set forcing values for the wave part of the flow
+            % set the amplitude to fix for the wave part of the flow
             %
-            % Forcing takes the following form,
+            % This function will automatically remove modes set in the
+            % damping region of the WVAdapativeDamping forcing, if present.
             %
-            % $$
-            % \frac{\partial}{\partial t} A_\pm^{klj} = \underbrace{M_{A_\pm}^{klj} \left(\bar{A}_\pm^{klj}  - A_\pm^{klj} \right)/ \tau_\pm}_{F_\textrm{force}} + F_\textrm{inertial}^{klj} + F_\textrm{damp}^{klj}
-            % $$
-            %
-            % where $$M_{A_\pm}^{klj}$$ are masks (1s and 0s),
-            % $$\bar{A}_\pm^{klj}$$ are mean amplitudes, and $$\tau_\pm$$
-            % are time scales. If the time scale is set to 0, then the mean
-            % amplitudes remain fixed for all time. In that limit, the
-            % equations can be written as,
-            %
-            % $$
-            % \frac{\partial}{\partial t} A_\pm^{klj} = \neg M_{A_\pm}^{klj} \left( F_\textrm{inertial}^{klj} + F_\textrm{damp}^{klj} \right)
-            % $$
-            %
-            % - Topic: Set forcing
+            % - Topic: Setting the forcing
             % - Declaration:  setWaveForcingCoefficients(Apbar,Ambar,options)
-            % - Parameter Apbar: Ap 'mean' value to relax to
-            % - Parameter Ambar: Am 'mean' value to relax to
-            % - Parameter MAp: (optional) forcing mask, Ap. 1s at the forced modes, 0s at the unforced modes. Default is MAp = abs(Apbar) > 0
-            % - Parameter MAm: (optional) forcing mask, Am. 1s at the forced modes, 0s at the unforced modes. Default is MAm = abs(Apbar) > 0
-            % - Parameter tauP: (optional) relaxation time (default 0)
-            % - Parameter tauM: (optional) relaxation time (default 0)
+            % - Parameter Apbar: Ap fixed amplitude
+            % - Parameter Ambar: Am fixed amplitude
+            % - Parameter MAp: (optional) forcing mask, Ap. 1s at the forced modes, 0s at the unforced modes. Default is MAp = abs(Apbar) > 1e-6*max(abs(Apbar(:)))
+            % - Parameter MAm: (optional) forcing mask, Am. 1s at the forced modes, 0s at the unforced modes. Default is MAm = abs(Ambar) > 1e-6*max(abs(Ambar(:)))
             arguments
                 self WVFixedAmplitudeForcing {mustBeNonempty}
                 Apbar (:,:) double {mustBeNonempty}
@@ -114,8 +148,8 @@ classdef WVFixedAmplitudeForcing < WVForcing
                 options.MAp (:,:) logical = abs(Apbar) > 1e-6*max(abs(Apbar(:)))
                 options.MAm (:,:) logical = abs(Ambar) > 1e-6*max(abs(Ambar(:)))
             end
-            if self.wvt.hasForcingWithName("spectral vanishing viscosity")
-                svv = self.wvt.forcingWithName("spectral vanishing viscosity");
+            if self.wvt.hasForcingWithName("adaptive damping")
+                svv = self.wvt.forcingWithName("adaptive damping");
                 dampedIndicesAp = options.MAp(self.wvt.Kh > svv.k_damp);
                 dampedIndicesAm = options.MAm(self.wvt.Kh > svv.k_damp);
                 if any(dampedIndicesAp(:) | dampedIndicesAm(:))
@@ -137,37 +171,23 @@ classdef WVFixedAmplitudeForcing < WVForcing
         end
 
         function setGeostrophicForcingCoefficients(self,A0bar,options)
-            % set forcing values for the geostrophic part of the flow
+            % set amplitude to fix for the geostrophic part of the flow
             %
-            % Forcing takes the following form,
+            % This function will automatically remove modes set in the
+            % damping region of the WVAdapativeDamping forcing, if present.
             %
-            % $$
-            % \frac{\partial}{\partial t} A_0^{klj} = \underbrace{M_{A_0}^{klj} \left(\bar{A}_0^{klj}  - A_0^{klj} \right)/ \tau_0}_{F_\textrm{force}} + F_\textrm{inertial}^{klj} + F_\textrm{damp}^{klj}
-            % $$
-            %
-            % where $$M_{A_0}^{klj}$$ are masks (1s and 0s),
-            % $$\bar{A}_0^{klj}$$ are mean amplitudes, and $$\tau_0$$
-            % are time scales. If the time scale is set to 0, then the mean
-            % amplitudes remain fixed for all time. In that limit, the
-            % equations can be written as,
-            %
-            % $$
-            % \frac{\partial}{\partial t} A_0^{klj} = \neg M_{A_0}^{klj} \left( F_\textrm{inertial}^{klj} + F_\textrm{damp}^{klj} \right)
-            % $$
-            %
-            % - Topic: Set forcing
+            % - Topic: Setting the forcing
             % - Declaration: setGeostrophicForcingCoefficients(A0bar,options)
-            % - Parameter A0bar: A0 'mean' value to relax to
-            % - Parameter MA0: (optional) forcing mask, A0. 1s at the forced modes, 0s at the unforced modes. If it is left blank, then it will be produced using the nonzero values of A0bar
-            % - Parameter tau0: (optional) relaxation time
+            % - Parameter A0bar: A0 fixed amplitude
+            % - Parameter MA0: (optional) forcing mask, A0. 1s at the forced modes, 0s at the unforced modes. Default is MA0 = abs(A0bar) > 1e-6*max(abs(A0bar(:)))
             arguments
                 self WVFixedAmplitudeForcing {mustBeNonempty}
                 A0bar (:,:) double {mustBeNonempty}
                 options.MA0 (:,:) logical = abs(A0bar) > 1e-6*max(abs(A0bar(:)))
             end
 
-            if self.wvt.hasForcingWithName("spectral vanishing viscosity")
-                svv = self.wvt.forcingWithName("spectral vanishing viscosity");
+            if self.wvt.hasForcingWithName("adaptive damping")
+                svv = self.wvt.forcingWithName("adaptive damping");
                 dampedIndicesA0 = options.MA0(self.wvt.Kh > svv.k_damp);
 
                 if any(dampedIndicesA0(:))
@@ -184,6 +204,13 @@ classdef WVFixedAmplitudeForcing < WVForcing
         end
 
         function [model_spectrum, r] = setNarrowBandGeostrophicForcing(self, options)
+            % sets a narrow waveband of geostrophic forcing for forced-dissipative modeling
+            %
+            % to be moved to a subclass
+            %
+            % - Topic: Setting the forcing
+            % - Declaration: setNarrowBandGeostrophicForcing(options)
+            % - Parameter r: A0 fixed amplitude
             arguments
                 self WVFixedAmplitudeForcing {mustBeNonempty}
                 options.r (1,1) double

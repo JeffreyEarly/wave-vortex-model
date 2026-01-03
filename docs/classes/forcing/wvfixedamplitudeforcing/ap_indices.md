@@ -9,8 +9,11 @@ mathjax: true
 
 #  Ap_indices
 
-Forcing mask, Ap. 1s at the forced modes, 0s at the unforced modes
+indices of modes in the `Ap` matrix to fix
 
 
 ---
 
+## Discussion
+
+  

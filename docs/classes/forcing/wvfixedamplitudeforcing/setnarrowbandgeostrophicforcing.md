@@ -9,8 +9,20 @@ mathjax: true
 
 #  setNarrowBandGeostrophicForcing
 
-
+sets a narrow waveband of geostrophic forcing for forced-dissipative modeling
 
 
 ---
 
+## Declaration
+```matlab
+ setNarrowBandGeostrophicForcing(options)
+```
+## Parameters
++ `r`  A0 fixed amplitude
+
+## Discussion
+
+  to be moved to a subclass
+ 
+      

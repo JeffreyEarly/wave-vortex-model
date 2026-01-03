@@ -9,8 +9,11 @@ mathjax: true
 
 #  Am_indices
 
-Forcing mask, Am. 1s at the forced modes, 0s at the unforced modes
+indices of modes in the `Am` matrix to fix
 
 
 ---
 
+## Discussion
+
+  

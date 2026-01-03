@@ -9,8 +9,11 @@ mathjax: true
 
 #  Apbar
 
-Ap 'mean' value to relax to
+amplitudes of the fixed modes in the `Ap` matrix
 
 
 ---
 
+## Discussion
+
+  

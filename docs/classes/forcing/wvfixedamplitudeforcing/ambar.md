@@ -9,8 +9,11 @@ mathjax: true
 
 #  Ambar
 
-Am 'mean' value to relax to
+amplitudes of the fixed modes in the `Am` matrix
 
 
 ---
 
+## Discussion
+
+  
