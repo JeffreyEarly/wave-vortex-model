@@ -47,10 +47,15 @@ where `iTime=100` indicates the index along the time dimension.
 
 It is often the case that for analysis of model output, you want to read the model output at multiple time points. You *could* intialize a new `WVTransform` instance at each time index, but this involves unnecessary computation. Instead, you should update the existing `WVTransform` instance `wvt` with the data from that time point.
 
-First load the NetCDF file, then initialize the existing instance from a specific time point in that file with [`initFromNetCDFFile`](/classes/wvtransform/initfromnetcdffile.html). For example,
+First load the NetCDF file, then initialize the existing instance from a specific time point in that file with [`initFromNetCDFFile`](/classes/wvtransform/initfromnetcdffile.html). For example, a for-loop over all time points written to file, would look like
 ```matlab
-ncfile = NetCDFFile('test.nc');
-wvt.initWithFile(ncfile,iTime=100);
+[wvt, ncfile] = WVTransform.waveVortexTransformFromFile('test.nc');
+t = ncfile.readVariables("wave-vortex/t");
+
+for iTime=1:length(t)
+    wvt.initWithFile(ncfile,iTime=iTime);
+    % do some analysis
+end
 ```
 
 ## WVModel
@@ -58,9 +63,8 @@ wvt.initWithFile(ncfile,iTime=100);
 Time series model output is created with
 
 ```matlab
-model = WVModel(wvt,nonlinearFlux=WVNonlinearFlux(wvt,shouldAntialias=1));
-model.setupIntegrator(timeStepConstraint="min",outputInterval=wvt.inertialPeriod/10);
-model.createNetCDFFileForModelOutput("test.nc",shouldOverwriteExisting=0);
+model = WVModel(wvt);
+model.createNetCDFFileForModelOutput('test.nc',outputInterval=wvt.inertialPeriod);
 model.integrateToTime(10*wvt.inertialPeriod);
 ```
 
