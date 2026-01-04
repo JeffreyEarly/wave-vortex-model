@@ -56,8 +56,6 @@ The most direct methods for initializing the model are [`initWithUVEta`](/classe
 wvt.initWithUVEta( 0.2*exp(wvt.Z/100), 0*wvt.X, 0*wvt.X );
 ```
 
-The call to `[X,Y,Z] = wvt.xyzGrid` returns three matrices, typically of size `[Nx Ny Nz]`, that contain the grid values. Behind the scenes this is calling the Matlab function `ndgrid`, but please do not create the grids yourself---a `WVTransform` may choose to order the the grid points differently than you expect.
-
 These methods can be used to initialize from *any* flow fields that use the same stratification and boundary conditions as the `WVTransform` that is being used. For example, you might use output from another model and use [`initWithUVRho`](/classes/wvtransform/initwithuvrho.html) to initialize the WaveVortexMode with that output.
 
 ### Initializing waves, inertial oscillations, and geostrophic motions
@@ -66,11 +64,10 @@ The wave-vortex model provides methods for initializing the fluid with specific 
 
 To initialize individual waves, use  [`initWithWaveModes`](/classes/wvtransform/initwithwavemodes.html) and the related methods, e.g.,
 ```matlab
-U = .2; phi=0;
-omega = wvt.initWithWaveModes(10,0,1,phi,U,1);
+[omega, k, l] = wvt.initWithWaveModes(kMode=10,lMode=0,j=1,phi=0,u=0.2,sign=1);
 period = 2*pi/omega;
 ```
-will initialize a first baroclinic mode wave with a wavenumber of $$k_x = 10(2\pi)/L_x$$.
+will initialize a first baroclinic mode wave with a wavenumber of $$k = 10(2\pi)/L_x$$.
 
 To initialize with a geostrophic stream function, use  [`initWithGeostrophicStreamfunction`](/classes/wvtransform/initwithgeostrophicstreamfunction.html) and the related methods, e.g.,
 ```matlab
@@ -93,7 +90,7 @@ The initialization methods for the [WVTransform](/classes/wvtransform.html) all 
 
 ### Other initialization methods
 
-It can also be useful to [`initWithRandomFlow`](/classes/wvtransform/initwithrandomflow.html) and [`removeEnergyFromAliasedModes`](/classes/wvtransform/removeenergyfromaliasedmodes.html) before doing a model run. Also check out the section on [reading and writing to file](/users-guide/reading-and-writing-to-file.html) for how to use [`initFromNetCDFFile`](/classes/wvtransform/initfromnetcdffile.html) to quickly read in the ocean state from a saved file.
+It can also be useful to [`initWithRandomFlow`](/classes/wvtransform/initwithrandomflow.html). Also check out the section on [reading and writing to file](/users-guide/reading-and-writing-to-file.html) for how to use [`initFromNetCDFFile`](/classes/wvtransform/initfromnetcdffile.html) to quickly read in the ocean state from a saved file.
 
 ## Examining the fluid state
 
