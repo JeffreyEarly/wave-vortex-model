@@ -9,8 +9,11 @@ mathjax: true
 
 #  wvt
 
-this should be weak
+reference to the WVModel being used
 
 
 ---
 
+## Discussion
+
+  

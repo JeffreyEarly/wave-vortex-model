@@ -1,9 +1,20 @@
 classdef WVObservingSystem < handle & matlab.mixin.Heterogeneous & CAAnnotatedClass
-    %UNTITLED2 Summary of this class goes here
-    %   Detailed explanation goes here
-
+    %A WVObservingSystem is an abstract class that defines different ways of observing the model
+    %
+    %
+    %
+    % 
+    % - Topic: Initializing
+    % - Topic: Properties
+    % - Topic: Required subclass overrides
+    % - Topic: Required subclass overrides for integrated (fluxed) components
+    % - Topic: Internal
+    %
+    % - Declaration: WVObservingSystem < handle
     properties (WeakHandle)
-        % Reference to the WVModel being used
+        % reference to the WVModel being used
+        %
+        % - Topic: Properties
         model WVModel
     end
 
@@ -25,6 +36,9 @@ classdef WVObservingSystem < handle & matlab.mixin.Heterogeneous & CAAnnotatedCl
         % - Topic: Properties
         nFluxComponents uint8 = 0
 
+        % reference to the WVModel being used
+        %
+        % - Topic: Properties
         wvt % this should be weak
     end
 
@@ -35,7 +49,7 @@ classdef WVObservingSystem < handle & matlab.mixin.Heterogeneous & CAAnnotatedCl
             % This class is intended to be subclassed, so it generally
             % assumed that this initialization will not be called directly.
             %
-            % - Topic: Initialization
+            % - Topic: Initializing
             % - Declaration: self = WVObservingSystem(wvt,name)
             % - Parameter wvt: the WVTransform instance
             % - Parameter name: name of the observing system

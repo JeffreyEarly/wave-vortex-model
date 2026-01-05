@@ -4,7 +4,7 @@ title: WVForcing
 has_children: false
 has_toc: false
 mathjax: true
-parent: Class documentation
+parent: Forcing
 nav_order: 1
 ---
 

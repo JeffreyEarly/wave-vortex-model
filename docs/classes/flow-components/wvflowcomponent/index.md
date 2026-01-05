@@ -4,7 +4,8 @@ title: WVFlowComponent
 has_children: false
 has_toc: false
 mathjax: true
-parent: Class documentation
+parent: Flow components
+grand_parent: Class documentation
 nav_order: 1
 ---
 
