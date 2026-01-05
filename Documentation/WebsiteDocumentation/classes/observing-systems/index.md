@@ -1,6 +1,6 @@
 ---
 layout: default
-title: Observing system
+title: Observing systems
 parent: Class documentation
 nav_order: 12
 has_children: true
