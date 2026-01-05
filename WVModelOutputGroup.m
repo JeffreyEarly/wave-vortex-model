@@ -4,7 +4,8 @@ classdef WVModelOutputGroup < handle & matlab.mixin.Heterogeneous & CAAnnotatedC
     % A `WVModelOutputGroup` encapsulates a netcdf group with particular
     % output times `t`; it has one or more observing systems that get written to the group at those times.
     %
-    % The simplest output group is the `WVModelOutputGroupEvenlySpaced`
+    % The simplest output group is the
+    % [`WVModelOutputGroupEvenlySpaced`](/classes/model-output/wvmodeloutputgroupevenlyspaced/)
     % which, as the name suggests, writes outputs at an evenly spaced
     % interval.
     %
@@ -15,6 +16,14 @@ classdef WVModelOutputGroup < handle & matlab.mixin.Heterogeneous & CAAnnotatedC
     % a short interval at higher frequency, e.g., sampling a mooring at
     % high frequency to resolve the buoyancy frequency, or running a tracer
     % experiment for 24 hours in the middle of a long model run.
+    %
+    % ### Usage
+    %
+    % ```matlab
+    % outputFile = model.addNewOutputFile("myfile.nc");
+    % outputGroup = WVModelOutputGroupEvenlySpaced(model,name="high-temporal-resolution",initialTime=wvt.t,outputInterval=wvt.inertialPeriod/20);
+    % outputFile.addOutputGroup(outputGroup);
+    % ```
     %
     % 
     % - Topic: Initializing

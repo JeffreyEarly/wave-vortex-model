@@ -73,7 +73,7 @@ parentName = 'Model output';
 websiteFolder = 'classes/model-output';
 classes = {'WVModelOutputFile','WVModelOutputGroup'};
 
-excludedSuperclasses = {'handle','WVForcing','CAAnnotatedClass','matlab.mixin.Heterogeneous'};
+excludedSuperclasses = {'handle','CAAnnotatedClass','matlab.mixin.Heterogeneous'};
 classDocumentation = ClassDocumentation.empty(length(classes),0);
 for iName=1:length(classes)
     classDocumentation(iName) = ClassDocumentation(classes{iName},nav_order=iName,buildFolder=buildFolder,websiteFolder=websiteFolder,parent=parentName,grandparent=classFolderName,excludedSuperclasses=excludedSuperclasses);
@@ -83,6 +83,24 @@ arrayfun(@(a) a.writeToFile(),classDocumentation)
 excludedSuperclasses = {'handle','WVModelOutputGroup','CAAnnotatedClass','matlab.mixin.Heterogeneous'};
 classDoc = ClassDocumentation('WVModelOutputGroupEvenlySpaced',buildFolder=buildFolder,websiteFolder=websiteFolder,parent=parentName,grandparent=classFolderName,nav_order=3,excludedSuperclasses=excludedSuperclasses);
 classDoc.writeToFile();
+
+%%
+parentName = 'Observing systems';
+websiteFolder = 'classes/observing-systems';
+
+excludedSuperclasses = {'handle','CAAnnotatedClass','matlab.mixin.Heterogeneous'};
+classDoc = ClassDocumentation('WVObservingSystem',buildFolder=buildFolder,websiteFolder=websiteFolder,parent=parentName,grandparent=classFolderName,nav_order=1,excludedSuperclasses=excludedSuperclasses);
+classDoc.writeToFile();
+
+excludedSuperclasses = {'handle','WVObservingSystem','CAAnnotatedClass','matlab.mixin.Heterogeneous'};
+classes = {'WVEulerianFields','WVLagrangianParticles','WVTracer','WVMooring','WVCoefficients'};
+classDocumentation = ClassDocumentation.empty(length(classes),0);
+for iName=1:length(classes)
+    classDocumentation(iName) = ClassDocumentation(classes{iName},nav_order=iName+1,buildFolder=buildFolder,websiteFolder=websiteFolder,parent=parentName,grandparent=classFolderName,excludedSuperclasses=excludedSuperclasses);
+end
+arrayfun(@(a) a.writeToFile(),classDocumentation)
+
+
 
 %%
 parentName = 'Operations & annotations';

@@ -31,6 +31,27 @@ A `WVModelOutputFile` holds onto one or more output groups, instances
 of `WVModelOutputGroup`, and internally they orchestrate pausing the
 model and writing to groups
  
+### Usage
+ 
+You probably do not ever need to initialize a WVModelOutputFile
+directly, but instead should use the convenience method defined in
+`WVModel`,
+ 
+```matlab
+outputFile = model.addNewOutputFile("myfile.nc");
+```
+ 
+At this stage the file contains no output groups and will not write
+anything to file. You can now add output groups to the file. Most
+users will want to simply use
+ 
+```matlab
+outputFile = model.createNetCDFFileForModelOutput("myfile.nc",outputInterval=86400);
+```
+ 
+which will additionally add the evenly-spaced output group and record
+the wave-vortex coefficients.
+ 
  
      
 
@@ -40,6 +61,7 @@ model and writing to groups
 + Properties
   + [`didInitializeStorage`](/classes/model-output/wvmodeloutputfile/didinitializestorage.html) boolean indicating whether or not the internal structure of the NetCDF file has been created
   + [`filename`](/classes/model-output/wvmodeloutputfile/filename.html) name of the current (or future) NetCDF file
+  + [`model`](/classes/model-output/wvmodeloutputfile/model.html) reference to the WVModel being used
   + [`ncfile`](/classes/model-output/wvmodeloutputfile/ncfile.html) reference to the NetCDFFile being used for model output
   + [`outputGroups`](/classes/model-output/wvmodeloutputfile/outputgroups.html) array of `WVModelOutputGroup`s that will be written to file
   + [`path`](/classes/model-output/wvmodeloutputfile/path.html) current (or future) path of the NetCDF file
@@ -61,9 +83,6 @@ model and writing to groups
   + [`addOutputGroup`](/classes/model-output/wvmodeloutputfile/addoutputgroup.html) add an output group to this file
   + [`outputGroupNames`](/classes/model-output/wvmodeloutputfile/outputgroupnames.html) retrieve the names of all output group names
   + [`outputGroupWithName`](/classes/model-output/wvmodeloutputfile/outputgroupwithname.html) retrieve a WVModelOutputGroup by name
-+ Other
-  + [`description`](/classes/model-output/wvmodeloutputfile/description.html) 
-  + [`model`](/classes/model-output/wvmodeloutputfile/model.html) Reference to the WVModel being used
 
 
 ---

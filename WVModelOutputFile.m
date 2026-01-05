@@ -10,6 +10,27 @@ classdef WVModelOutputFile < handle & matlab.mixin.Heterogeneous
     % of `WVModelOutputGroup`, and internally they orchestrate pausing the
     % model and writing to groups
     %
+    % ### Usage
+    %
+    % You probably do not ever need to initialize a WVModelOutputFile
+    % directly, but instead should use the convenience method defined in
+    % `WVModel`,
+    %
+    % ```matlab
+    % outputFile = model.addNewOutputFile("myfile.nc");
+    % ```
+    %
+    % At this stage the file contains no output groups and will not write
+    % anything to file. You can now add output groups to the file. Most
+    % users will want to simply use
+        %
+    % ```matlab
+    % outputFile = model.createNetCDFFileForModelOutput("myfile.nc",outputInterval=86400);
+    % ```
+    %
+    % which will additionally add the evenly-spaced output group and record
+    % the wave-vortex coefficients.
+    %
     %
     % - Topic: Initializing
     % - Topic: Properties
@@ -17,7 +38,9 @@ classdef WVModelOutputFile < handle & matlab.mixin.Heterogeneous
     %
     % - Declaration: WVModelOutputFile < handle
     properties (WeakHandle)
-        % Reference to the WVModel being used
+        % reference to the WVModel being used
+        %
+        % - Topic: Properties
         model WVModel
     end
 
@@ -109,10 +132,6 @@ classdef WVModelOutputFile < handle & matlab.mixin.Heterogeneous
 
         function wvt = get.wvt(self)
             wvt = self.model.wvt;
-        end
-
-        function aString = description(self)
-            aString = "evenly spaced output with an interval of start a";
         end
 
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
