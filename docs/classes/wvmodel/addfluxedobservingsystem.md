@@ -9,8 +9,11 @@ mathjax: true
 
 #  addFluxedObservingSystem
 
-
+add a WVObservingSystem to the fluxed observing systems array
 
 
 ---
 
+## Discussion
+
+  

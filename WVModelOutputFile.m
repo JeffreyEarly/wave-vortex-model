@@ -1,25 +1,64 @@
 classdef WVModelOutputFile < handle & matlab.mixin.Heterogeneous
-    %UNTITLED Summary of this class goes here
-    %   Detailed explanation goes here
-
+    %A WVModelOutputFile represents a file to be written to disk and has one or more output groups
+    %
+    % A `WVModelOutputFile` represents a file to be written to disk, that
+    % may or may not have been created yet, depending on the model time.
+    % The `ncfile` property therefore may be empty if a NetCDF file is not
+    % yet created for writing.
+    %
+    % A `WVModelOutputFile` holds onto one or more output groups, instances
+    % of `WVModelOutputGroup`, and internally they orchestrate pausing the
+    % model and writing to groups
+    %
+    %
+    % - Topic: Initializing
+    % - Topic: Properties
+    % - Topic: Internal
+    %
+    % - Declaration: WVModelOutputFile < handle
     properties (WeakHandle)
         % Reference to the WVModel being used
         model WVModel
     end
 
     properties
+        % current (or future) path of the NetCDF file
+        %
+        % - Topic: Properties
         path
 
-        % Reference to the NetCDFFile being used for model output
+        % reference to the NetCDFFile being used for model output
+        %
+        % This property may be empty if the file is not yet created
+        %
+        % - Topic: Properties
         ncfile NetCDFFile
 
+        % boolean indicating whether or not the internal structure of the NetCDF file has been created
+        %
+        % - Topic: Properties
         didInitializeStorage = false
+
+        % time at which the NetCDF file will be created
+        %
+        % - Topic: Properties
         tInitialize = Inf
     end
 
     properties (Dependent)
+        % array of `WVModelOutputGroup`s that will be written to file
+        %
+        % - Topic: Properties
         outputGroups
+
+        % name of the current (or future) NetCDF file
+        %
+        % - Topic: Properties
         filename
+
+        % pass-through of the wvt instance
+        %
+        % - Topic: Properties
         wvt
     end
 
@@ -30,6 +69,15 @@ classdef WVModelOutputFile < handle & matlab.mixin.Heterogeneous
 
     methods
         function self = WVModelOutputFile(model,path,options)
+            % initialize a WVModelOutputFile
+            %
+            % - Topic: Initialization
+            % - Declaration: self = WVModelOutputFile(model,path,options)
+            % - Parameter model: a WVModel instance
+            % - Parameter path: path where the file is to be written
+            % - Parameter ncfile: (optional) handle to existing NetCDFFile 
+            % - Parameter shouldOverwriteExisting: (optional) whether to overwrite an existing file (default: false).
+            % - Returns self: a WVModelOutputFile instance
             arguments
                 model WVModel
                 path {mustBeText}
@@ -74,13 +122,16 @@ classdef WVModelOutputFile < handle & matlab.mixin.Heterogeneous
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
         function outputGroups = get.outputGroups(self)
+            % return array of output groups associated with this file
+            %
+            % - Topic: Output groups
             outputGroups = [self.outputGroupNameMap(self.outputGroupNameMap.keys)];
         end
 
         function names = outputGroupNames(self)
             % retrieve the names of all output group names
             %
-            % - Topic: Utility function — Metadata
+            % - Topic: Output groups
             arguments (Input)
                 self WVModelOutputFile {mustBeNonempty}
             end
@@ -92,6 +143,8 @@ classdef WVModelOutputFile < handle & matlab.mixin.Heterogeneous
 
         function val = outputGroupWithName(self,name)
             % retrieve a WVModelOutputGroup by name
+            %
+            % - Topic: Output groups
             arguments (Input)
                 self WVModelOutputFile {mustBeNonempty}
                 name char {mustBeNonempty}
@@ -103,6 +156,9 @@ classdef WVModelOutputFile < handle & matlab.mixin.Heterogeneous
         end
 
         function addOutputGroup(self,outputGroup)
+            % add an output group to this file
+            %
+            % - Topic: Output groups
             arguments
                 self WVModelOutputFile {mustBeNonempty}
                 outputGroup WVModelOutputGroup
@@ -111,6 +167,9 @@ classdef WVModelOutputFile < handle & matlab.mixin.Heterogeneous
         end
 
         function outputGroup = addNewEvenlySpacedOutputGroup(self,name,options)
+            % add an evenly-spaced output group to this file
+            %
+            % - Topic: Output groups
             arguments (Input)
                 self WVModelOutputFile
                 name {mustBeText}
@@ -128,6 +187,13 @@ classdef WVModelOutputFile < handle & matlab.mixin.Heterogeneous
         end
 
         function addObservingSystem(self,observingSystem)
+            % add an observing system to the ouput group (if there is only one group)
+            %
+            % If there are multiple output groups this will throw an error,
+            % as you must decide which group you want to add the observing
+            % system to.
+            %
+            % - Topic: Output groups
             arguments
                 self WVModelOutputFile {mustBeNonempty}
                 observingSystem WVObservingSystem
@@ -145,8 +211,12 @@ classdef WVModelOutputFile < handle & matlab.mixin.Heterogeneous
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
         function t = outputTimesForIntegrationPeriod(self,initialTime,finalTime)
-            % This will be called exactly once before an integration
-            % begins.
+            % returns a unique, ordered array of the aggregate output times during the requested integration period.
+            %
+            % This will be called exactly once by the model before an
+            % integration begins.
+            %
+            % - Topic: Internal
             arguments (Input)
                 self WVModelOutputFile
                 initialTime (1,1) double
@@ -169,6 +239,20 @@ classdef WVModelOutputFile < handle & matlab.mixin.Heterogeneous
         end
 
         function writeTimeStepToOutputFile(self,t)
+            % tells the output groups to write data at time t
+            %
+            % This will only be called if the
+            % `outputTimesForIntegrationPeriod` previously returned this
+            % time `t`. Thus, the actual NetCDF file will be created if
+            % it does not yet exist, and then the output groups can write
+            % to file.
+            %
+            % - Topic: Internal
+            arguments
+                self WVModelOutputFile
+                t (1,1) double
+            end
+
             % 1) initialize the netcdf file if necessary
             if self.didInitializeStorage == false && abs(t - self.tInitialize) < eps
                 self.initializeOutputFile();
@@ -192,6 +276,17 @@ classdef WVModelOutputFile < handle & matlab.mixin.Heterogeneous
         end
 
         function initializeOutputFile(self)
+            % tells the output groups to initialize themselves in the NetCDF file
+            %
+            % One noteworthy piece of logic handle by this function: we
+            % want all files to able to re-initialize the model, so we make
+            % sure that the NetCDFFile has all the required properties of
+            % the transform. However, we are writing time series data, so
+            % we need to exclude `t`. Additionally, if we happen to also be
+            % writing the wave-vortex coefficients, we can neglect writing
+            % those to file.
+            %
+            % - Topic: Internal
             if self.observingSystemWillWriteWaveVortexCoefficients == true
                 properties = setdiff(self.wvt.requiredProperties,{'Ap','Am','A0','t'});
             else
@@ -208,8 +303,9 @@ classdef WVModelOutputFile < handle & matlab.mixin.Heterogeneous
         end
 
         function bool = observingSystemWillWriteWaveVortexCoefficients(self)
-            % A simple check to see if one of the observing systems will be
-            % writing wave-vortex coefficients
+            % A simple check to see if one of the observing systems will be writing wave-vortex coefficients
+            %
+            % - Topic: Internal
             outputGroups_ = self.outputGroups;
             bool = false;
             for iGroup = 1:length(outputGroups_)
@@ -223,6 +319,9 @@ classdef WVModelOutputFile < handle & matlab.mixin.Heterogeneous
         end
 
         function recordNetCDFFileHistory(self,options)
+            % tells the output groups to log this time step in the NetCDF history
+            %
+            % - Topic: Internal
             arguments
                 self WVModelOutputFile {mustBeNonempty}
                 options.didBlowUp {mustBeNumeric} = 0
@@ -235,6 +334,9 @@ classdef WVModelOutputFile < handle & matlab.mixin.Heterogeneous
 
 
         function closeNetCDFFile(self)
+            % closes the netcdf file after informing the output groups
+            %
+            % - Topic: Internal
             if ~isempty(self.ncfile)
                 arrayfun( @(outputGroup) outputGroup.closeNetCDFFile(), self.outputGroups);
                 self.ncfile = NetCDFFile.empty(0,0);
@@ -245,6 +347,9 @@ classdef WVModelOutputFile < handle & matlab.mixin.Heterogeneous
 
     methods (Static)
         function outputFile = modelOutputFileFromFile(file,model)
+            % create a WVModelOutputFile from an existing NetCDFFile
+            %
+            % - Topic: Initialization
             arguments
                 file NetCDFFile {mustBeNonempty}
                 model WVModel {mustBeNonempty}

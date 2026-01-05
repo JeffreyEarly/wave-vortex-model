@@ -9,7 +9,7 @@ mathjax: true
 
 #  outputFileNames
 
-retrieve the names of all output group names
+retrieve the names of all output files
 
 
 ---

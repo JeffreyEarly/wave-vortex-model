@@ -9,8 +9,11 @@ mathjax: true
 
 #  ncfile
 
-
+returns the first/primary NetCDF file being written to
 
 
 ---
 
+## Discussion
+
+  

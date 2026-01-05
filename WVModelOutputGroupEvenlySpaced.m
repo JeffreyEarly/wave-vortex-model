@@ -1,24 +1,56 @@
 classdef WVModelOutputGroupEvenlySpaced < WVModelOutputGroup
-    %UNTITLED Summary of this class goes here
-    %   Detailed explanation goes here
+    %A WVModelOutputGroupEvenlySpaced is an evenly spaced output group with optional start and end times
+    %
+    % This is the primary `WVModelOutputGroup` subclass which implements
+    % evenly spaced output, standard in numerical modeling. It also
+    % includes optional `initialTime` and `finalTime` properties, which
+    % allow you to customize when this group is active in model time.
+    %
+    % 
+    % - Topic: Initializing
+    % - Topic: Properties
+    %
+    % - Declaration: WVModelOutputGroupEvenlySpaced < [WVModelOutputGroup](/classes/WVModelOutputGroup)
 
     properties
-        % Model output interval (seconds)
-        % - Topic: Integration
-        % This property is optionally set when calling setupIntegrator. If
-        % set, it will allow you to call -integrateToNextOutputTime and, if
-        % a NetCDF file is set for output, it will set the interval at
-        % which time steps are written to file.
+        % model output interval (seconds)
+        %
+        % The model output interval written to the group
+        %
+        % - Topic: Properties
         outputInterval = [] % (1,1) double
 
-        t0 = 0;
-
+        % initial model time that the output group is active (seconds)
+        %
+        % This optional properties determines when the output group will
+        % become active. By default it is set to `-Inf`.
+        %
+        % - Topic: Properties
         initialTime
+
+        % final model time that the output group is active (seconds)
+        %
+        % This optional properties determines when the output group will
+        % de-actives. By default it is set to `Inf`, indicating that it
+        % will always write to file.
+        %
+        % - Topic: Properties
         finalTime
     end
 
     methods
         function self = WVModelOutputGroupEvenlySpaced(model,options)
+            % initialize a WVModelOutputGroupEvenlySpaced
+            %
+            % 
+            % - Topic: Initialization
+            % - Declaration: self = WVModelOutputGroupEvenlySpaced(model,options)
+            % - Parameter model: a WVModel instance
+            % - Parameter name: name of the group
+            % - Parameter outputInterval: model output interval (seconds)
+            % - Parameter initialTime: (optional) initial model time that the output group is active (seconds), default `-Inf`
+            % - Parameter finalTime: (optional) final model time that the output group is active (seconds), default `Inf`
+            % - Returns self: a WVModelOutputGroupEvenlySpaced instance
             arguments
                 model WVModel
                 options.name {mustBeText}

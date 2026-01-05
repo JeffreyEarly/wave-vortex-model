@@ -1,9 +1,33 @@
 classdef WVModelOutputGroup < handle & matlab.mixin.Heterogeneous & CAAnnotatedClass
-    %UNTITLED Summary of this class goes here
-    %   Detailed explanation goes here
-
+    % A WVModelOutputGroup represents a group of observing system to be written to file at particular output times
+    %
+    % A `WVModelOutputGroup` encapsulates a netcdf group with particular
+    % output times `t`; it has one or more observing systems that get written to the group at those times.
+    %
+    % The simplest output group is the `WVModelOutputGroupEvenlySpaced`
+    % which, as the name suggests, writes outputs at an evenly spaced
+    % interval.
+    %
+    % The reason for this abstraction is that some observing systems do not
+    % have evenly spaced output intervals, e.g., the
+    % [AlongTrackSimulator](https://satmapkit.github.io/AlongTrackSimulator/),
+    % and it is often the case that one might want to sample the model for
+    % a short interval at higher frequency, e.g., sampling a mooring at
+    % high frequency to resolve the buoyancy frequency, or running a tracer
+    % experiment for 24 hours in the middle of a long model run.
+    %
+    % 
+    % - Topic: Initializing
+    % - Topic: Properties
+    % - Topic: Observing systems
+    % - Topic: Required subclass overrides
+    % - Topic: Internal
+    %
+    % - Declaration: WVModelOutputFile < handle
     properties (WeakHandle)
         % Reference to the WVModel being used
+        %
+        % - Topic: Properties
         model WVModel
 
         % Reference to the NetCDFGroup being used for model output
@@ -14,6 +38,9 @@ classdef WVModelOutputGroup < handle & matlab.mixin.Heterogeneous & CAAnnotatedC
     end
 
     properties
+        % name of the current (or future) group in the NetCDF file
+        %
+        % - Topic: Properties
         name string
 
         % output index of the current/most recent step.
@@ -26,15 +53,28 @@ classdef WVModelOutputGroup < handle & matlab.mixin.Heterogeneous & CAAnnotatedC
         % If stepsTaken=0, outputIndex=1 means the initial conditions get written at index 1
         timeOfLastIncrementWrittenToGroup (1,1) double = -Inf
 
+        % boolean indicating whether or not the internal structure of the NetCDF file has been created
+        %
+        % - Topic: Properties
         didInitializeStorage = false
     end
 
     properties
+        % array of WVObservingSystem that will be written to the group
+        %
+        % - Topic: Observing systems
         observingSystems
     end
 
     methods
         function self = WVModelOutputGroup(model,options)
+            % initialize a WVModelOutputGroup
+            %
+            % - Topic: Initialization
+            % - Declaration: self = WVModelOutputGroup(model,path,options)
+            % - Parameter model: a WVModel instance
+            % - Parameter name: name of the group
+            % - Returns self: a WVModelOutputFile instance
             arguments
                 model WVModel
                 options.name {mustBeText}
@@ -54,6 +94,9 @@ classdef WVModelOutputGroup < handle & matlab.mixin.Heterogeneous & CAAnnotatedC
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
         function addObservingSystem(self,observingSystem)
+            % add an observing system to this file
+            %
+            % - Topic: Observing systems
             arguments
                 self WVModelOutputGroup {mustBeNonempty}
                 observingSystem WVObservingSystem
@@ -80,6 +123,9 @@ classdef WVModelOutputGroup < handle & matlab.mixin.Heterogeneous & CAAnnotatedC
         end
 
         function removeObservingSystem(self, observingSystem)
+            % remove an observing system to this file
+            %
+            % - Topic: Observing systems
             arguments
                 self WVModelOutputGroup {mustBeNonempty}
                 observingSystem WVObservingSystem
@@ -110,6 +156,9 @@ classdef WVModelOutputGroup < handle & matlab.mixin.Heterogeneous & CAAnnotatedC
         end
 
         function observingSystem = observingSystemWithName(self,name)
+            % retrieve an observing system by name
+            %
+            % - Topic: Observing systems
             idx = find(strcmp({self.observingSystems.name}, name),1);
             if isempty(idx)
                 error('No observing system named %s exists to remove.', anObservingSystem.name);
@@ -125,6 +174,12 @@ classdef WVModelOutputGroup < handle & matlab.mixin.Heterogeneous & CAAnnotatedC
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
         function t = outputTimesForIntegrationPeriod(self,initialTime,finalTime)
+            % returns a unique, ordered array of the aggregate output times during the requested integration period.
+            %
+            % Any new subclass of `WVModelOutputGroup` must override this
+            % methods and return the appropriate output times.
+            %
+            % - Topic: Required subclass overrides
             arguments (Input)
                 self WVModelOutputGroup
                 initialTime (1,1) double
@@ -137,6 +192,13 @@ classdef WVModelOutputGroup < handle & matlab.mixin.Heterogeneous & CAAnnotatedC
         end
 
         function initializeOutputGroup(self,ncfile)
+            % initializes a new output group in the NetCDF file
+            %
+            % This will only be called only once. This creates a new group,
+            % adds the required properties, creates a time dimension, then
+            % tells the observing systems to also initialize their storage.
+            %
+            % - Topic: Internal
             arguments (Input)
                 self WVModelOutputGroup {mustBeNonempty}
                 ncfile NetCDFGroup {mustBeNonempty}
@@ -166,6 +228,13 @@ classdef WVModelOutputGroup < handle & matlab.mixin.Heterogeneous & CAAnnotatedC
         end
 
         function writeTimeStepToNetCDFFile(self,ncfile,t)
+            % writes data at time t
+            %
+            % This is called by the `WVModelOutputFile` when the model
+            % reaches time `t`. The new time is written to file, adn the
+            % observing systems are also told to write to file.
+            %
+            % - Topic: Internal
             arguments
                 self WVModelOutputGroup
                 ncfile NetCDFFile
@@ -189,6 +258,9 @@ classdef WVModelOutputGroup < handle & matlab.mixin.Heterogeneous & CAAnnotatedC
         end
 
         function recordNetCDFFileHistory(self,options)
+            % losg this time step in the NetCDF history
+            %
+            % - Topic: Internal
             arguments
                 self WVModelOutputGroup {mustBeNonempty}
                 options.didBlowUp {mustBeNumeric} = 0
@@ -212,12 +284,23 @@ classdef WVModelOutputGroup < handle & matlab.mixin.Heterogeneous & CAAnnotatedC
         end
 
         function closeNetCDFFile(self)
+            % notification that the NetCDF file will close
+            %
+            % This gives the output group an opportunity to display some
+            % relevant data or do other necessary clean up.
+            %
+            % - Topic: Internal
             if ~isempty(self.group)
                 fprintf('Ending simulation. Wrote %d time points to %s group\n',self.incrementsWrittenToGroup,self.name);
             end
         end
 
         function initObservingSystemsFromGroup(self,outputGroup)
+            % asks the output group to load the observing systems in the NetCDF file
+            %
+            % Called by the static method `modelOutputGroupFromGroup` during the init from file process, this asks the output group to load the observing systems in the NetCDF file 
+            %
+            % - Topic: Internal
             arguments
                 self WVModelOutputGroup {mustBeNonempty}
                 outputGroup NetCDFGroup {mustBeNonempty}
@@ -239,8 +322,9 @@ classdef WVModelOutputGroup < handle & matlab.mixin.Heterogeneous & CAAnnotatedC
             % to provide restart capability.
             %
             % - Topic: Initialization
-            % - Declaration: outputGroup = modelOutputGroupFromGroup(group,wvt)
-            % - Parameter wvt: the WVTransform to be used
+            % - Declaration: outputGroup = modelOutputGroupFromGroup(group,model)
+            % - Parameter group: the NetCDFGroup to be used
+            % - Parameter model: the WVModel to be used
             % - Returns outputGroup: a new instance of WVModelOutputGroup
             arguments
                 group NetCDFGroup {mustBeNonempty}

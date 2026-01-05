@@ -9,8 +9,11 @@ mathjax: true
 
 #  outputFileWithName
 
-retrieve a WVModelOutputGroup by name
+retrieve a WVModelOutputFile by name
 
 
 ---
 
+## Discussion
+
+  

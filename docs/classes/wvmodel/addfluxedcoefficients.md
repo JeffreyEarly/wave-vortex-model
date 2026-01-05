@@ -9,8 +9,11 @@ mathjax: true
 
 #  addFluxedCoefficients
 
-prepend, so that its always first
+add the `WVCoefficients` to the fluxed observing systems array
 
 
 ---
 
+## Discussion
+
+  

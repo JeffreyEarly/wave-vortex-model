@@ -3,7 +3,7 @@ layout: default
 title: Forcing
 parent: Class documentation
 mathjax: true
-nav_order: 4
+nav_order: 10
 has_children: true
 permalink: /classes/forcing
 ---

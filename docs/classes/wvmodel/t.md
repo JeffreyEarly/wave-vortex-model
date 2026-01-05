@@ -16,3 +16,4 @@ Current model time (seconds)
 
 ## Discussion
 Current time of the ocean state, particle positions, and tracer.
+  This is just a pass-through of wvt.t.

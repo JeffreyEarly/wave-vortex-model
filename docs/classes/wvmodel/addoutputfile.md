@@ -9,8 +9,11 @@ mathjax: true
 
 #  addOutputFile
 
-
+add a WVModelOutputFile, by passing a WVModelOutputFile instance
 
 
 ---
 
+## Discussion
+
+  

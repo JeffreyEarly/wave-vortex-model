@@ -64,8 +64,11 @@ classdef WVModel < handle & WVModelAdapativeTimeStepMethods & WVModelFixedTimeSt
         % Current model time (seconds)
         % - Topic: Model Properties
         % Current time of the ocean state, particle positions, and tracer.
+        % This is just a pass-through of wvt.t.
         t % (1,1) double
 
+        % Array of WVModelOutputFile instances
+        % - Topic: Writing to NetCDF files
         outputFiles
     end
 
@@ -118,6 +121,9 @@ classdef WVModel < handle & WVModelAdapativeTimeStepMethods & WVModelFixedTimeSt
         end
         
         function ncfile = ncfile(self)
+            % returns the first/primary NetCDF file being written to
+            %
+            % - Topic: Writing to NetCDF files
             ncfile = NetCDFFile.empty(0,0);
             outputFiles_ = self.outputFiles;
             for iFile = 1:length(outputFiles_)
@@ -137,9 +143,9 @@ classdef WVModel < handle & WVModelAdapativeTimeStepMethods & WVModelFixedTimeSt
             outputFiles = [self.outputFileNameMap(self.outputFileNameMap.keys)];
         end
         function names = outputFileNames(self)
-            % retrieve the names of all output group names
+            % retrieve the names of all output files
             %
-            % - Topic: Utility function — Metadata
+            % - Topic: Writing to NetCDF files
             arguments (Input)
                 self WVModel {mustBeNonempty}
             end
@@ -150,7 +156,9 @@ classdef WVModel < handle & WVModelAdapativeTimeStepMethods & WVModelFixedTimeSt
         end
 
         function val = outputFileWithName(self,name)
-            % retrieve a WVModelOutputGroup by name
+            % retrieve a WVModelOutputFile by name
+            %
+            % - Topic: Writing to NetCDF files
             arguments (Input)
                 self WVModel {mustBeNonempty}
                 name char {mustBeNonempty}
@@ -162,6 +170,9 @@ classdef WVModel < handle & WVModelAdapativeTimeStepMethods & WVModelFixedTimeSt
         end
 
         function addOutputFile(self,outputFile)
+            % add a WVModelOutputFile, by passing a WVModelOutputFile instance
+            %
+            % - Topic: Writing to NetCDF files
             arguments
                 self WVModel {mustBeNonempty}
                 outputFile WVModelOutputFile
@@ -170,6 +181,9 @@ classdef WVModel < handle & WVModelAdapativeTimeStepMethods & WVModelFixedTimeSt
         end
 
         function outputFile = addNewOutputFile(self,path,options)
+            % add a WVModelOutputFile, by passing an output path
+            %
+            % - Topic: Writing to NetCDF files
             arguments (Input)
                 self WVModel {mustBeNonempty}
                 path {mustBeText}
@@ -189,6 +203,9 @@ classdef WVModel < handle & WVModelAdapativeTimeStepMethods & WVModelFixedTimeSt
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
         function wvCoeff = wvCoefficientFluxedObservingSystem(self)
+            % return the `WVCoefficients` fluxed observing system
+            %
+            % - Topic: Integrated (fluxed) observing systems
             wvCoeff = [];
             if ~isempty(self.fluxedObservingSystems) && isa(self.fluxedObservingSystems(1),'WVCoefficients')
                 wvCoeff = self.fluxedObservingSystems(1);
@@ -196,6 +213,9 @@ classdef WVModel < handle & WVModelAdapativeTimeStepMethods & WVModelFixedTimeSt
         end
 
         function addFluxedCoefficients(self,anObservingSystem)
+            % add the `WVCoefficients` to the fluxed observing systems array
+            %
+            % - Topic: Integrated (fluxed) observing systems
             arguments
                 self WVModel {mustBeNonempty}
                 anObservingSystem (1,1) WVCoefficients
@@ -216,6 +236,9 @@ classdef WVModel < handle & WVModelAdapativeTimeStepMethods & WVModelFixedTimeSt
         end 
 
         function addFluxedObservingSystem(self,anObservingSystem)
+            % add a WVObservingSystem to the fluxed observing systems array
+            %
+            % - Topic: Integrated (fluxed) observing systems
             arguments
                 self WVModel {mustBeNonempty}
                 anObservingSystem WVObservingSystem
@@ -230,6 +253,9 @@ classdef WVModel < handle & WVModelAdapativeTimeStepMethods & WVModelFixedTimeSt
         end
 
         function removeFluxedObservingSystem(self,anObservingSystem)
+            % remove a WVObservingSystem to the fluxed observing systems array
+            %
+            % - Topic: Integrated (fluxed) observing systems
             arguments
                 self WVModel {mustBeNonempty}
                 anObservingSystem WVObservingSystem
@@ -241,6 +267,9 @@ classdef WVModel < handle & WVModelAdapativeTimeStepMethods & WVModelFixedTimeSt
         end
 
         function anObservingSystem = fluxedObservingSystemWithName(self,name)
+            % retrieve a WVObservingSystem by name
+            %
+            % - Topic: Integrated (fluxed) observing systems
             arguments (Input)
                 self WVModel {mustBeNonempty}
                 name {mustBeText}

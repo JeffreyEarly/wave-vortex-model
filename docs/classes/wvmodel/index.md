@@ -72,18 +72,23 @@ The WVModel is responsible for time-stepping (integrating) the ocean state forwa
   + [`tracer`](/classes/wvmodel/tracer.html) Scalar field of the requested tracer at the current model time.
 + Writing to NetCDF files
   + [`addNetCDFOutputVariables`](/classes/wvmodel/addnetcdfoutputvariables.html) Add variables to list of variables to be written to the NetCDF variable during the model run.
+  + [`addNewOutputFile`](/classes/wvmodel/addnewoutputfile.html) add a WVModelOutputFile, by passing an output path
+  + [`addOutputFile`](/classes/wvmodel/addoutputfile.html) add a WVModelOutputFile, by passing a WVModelOutputFile instance
   + [`createNetCDFFileForModelOutput`](/classes/wvmodel/createnetcdffileformodeloutput.html) Create a NetCDF file for model output
+  + [`ncfile`](/classes/wvmodel/ncfile.html) returns the first/primary NetCDF file being written to
+  + [`outputFileNames`](/classes/wvmodel/outputfilenames.html) retrieve the names of all output files
+  + [`outputFileWithName`](/classes/wvmodel/outputfilewithname.html) retrieve a WVModelOutputFile by name
+  + [`outputFiles`](/classes/wvmodel/outputfiles.html) Array of WVModelOutputFile instances
   + [`removeNetCDFOutputVariables`](/classes/wvmodel/removenetcdfoutputvariables.html) Remove variables from the list of variables to be written to the NetCDF variable during the model run.
   + [`setNetCDFOutputVariables`](/classes/wvmodel/setnetcdfoutputvariables.html) Set list of variables to be written to the NetCDF variable during the model run.
-+ Utility function
-  + Metadata
-    + [`outputFileNames`](/classes/wvmodel/outputfilenames.html) retrieve the names of all output group names
++ Integrated (fluxed) observing systems
+  + [`addFluxedCoefficients`](/classes/wvmodel/addfluxedcoefficients.html) add the `WVCoefficients` to the fluxed observing systems array
+  + [`addFluxedObservingSystem`](/classes/wvmodel/addfluxedobservingsystem.html) add a WVObservingSystem to the fluxed observing systems array
+  + [`fluxedObservingSystemWithName`](/classes/wvmodel/fluxedobservingsystemwithname.html) retrieve a WVObservingSystem by name
+  + [`removeFluxedObservingSystem`](/classes/wvmodel/removefluxedobservingsystem.html) remove a WVObservingSystem to the fluxed observing systems array
+  + [`wvCoefficientFluxedObservingSystem`](/classes/wvmodel/wvcoefficientfluxedobservingsystem.html) return the `WVCoefficients` fluxed observing system
 + Other
   + [`absErrorToleranceCellArray`](/classes/wvmodel/abserrortolerancecellarray.html) 
-  + [`addFluxedCoefficients`](/classes/wvmodel/addfluxedcoefficients.html) prepend, so that its always first
-  + [`addFluxedObservingSystem`](/classes/wvmodel/addfluxedobservingsystem.html) 
-  + [`addNewOutputFile`](/classes/wvmodel/addnewoutputfile.html) 
-  + [`addOutputFile`](/classes/wvmodel/addoutputfile.html) 
   + [`closeNetCDFFile`](/classes/wvmodel/closenetcdffile.html) 
   + [`defaultOutputGroupName`](/classes/wvmodel/defaultoutputgroupname.html) 
   + [`didBlowUp`](/classes/wvmodel/didblowup.html) 
@@ -91,7 +96,6 @@ The WVModel is responsible for time-stepping (integrating) the ocean state forwa
   + [`eulerianObservingSystem`](/classes/wvmodel/eulerianobservingsystem.html) 
   + [`finalIntegrationTime`](/classes/wvmodel/finalintegrationtime.html) set only during an integration
   + [`fluxAtTimeCellArray`](/classes/wvmodel/fluxattimecellarray.html) 
-  + [`fluxedObservingSystemWithName`](/classes/wvmodel/fluxedobservingsystemwithname.html) 
   + [`fluxedObservingSystems`](/classes/wvmodel/fluxedobservingsystems.html) 
   + [`indicesForFluxedSystem`](/classes/wvmodel/indicesforfluxedsystem.html) 
   + [`initialConditionsCellArray`](/classes/wvmodel/initialconditionscellarray.html) 
@@ -105,14 +109,10 @@ The WVModel is responsible for time-stepping (integrating) the ocean state forwa
   + [`nFluxComponents`](/classes/wvmodel/nfluxcomponents.html) 
   + [`nFluxComputations`](/classes/wvmodel/nfluxcomputations.html) 
   + [`nFluxComputationsAtLastInform`](/classes/wvmodel/nfluxcomputationsatlastinform.html) 
-  + [`ncfile`](/classes/wvmodel/ncfile.html) 
-  + [`outputFileWithName`](/classes/wvmodel/outputfilewithname.html) retrieve a WVModelOutputGroup by name
-  + [`outputFiles`](/classes/wvmodel/outputfiles.html) 
   + [`outputTimesForIntegrationPeriod`](/classes/wvmodel/outputtimesforintegrationperiod.html) This will be called exactly once before an integration
   + [`pseudoIntegrateToTime`](/classes/wvmodel/pseudointegratetotime.html) Time step the model forward linearly
   + [`recomputeIndicesForFluxedSystems`](/classes/wvmodel/recomputeindicesforfluxedsystems.html) 
   + [`recordNetCDFFileHistory`](/classes/wvmodel/recordnetcdffilehistory.html) 
-  + [`removeFluxedObservingSystem`](/classes/wvmodel/removefluxedobservingsystem.html) 
   + [`shouldShowIntegrationDiagnostics`](/classes/wvmodel/shouldshowintegrationdiagnostics.html) 
   + [`showIntegrationFinishDiagnostics`](/classes/wvmodel/showintegrationfinishdiagnostics.html) 
   + [`showIntegrationStartDiagnostics`](/classes/wvmodel/showintegrationstartdiagnostics.html) 
@@ -120,7 +120,6 @@ The WVModel is responsible for time-stepping (integrating) the ocean state forwa
   + [`summarize`](/classes/wvmodel/summarize.html) 
   + [`updateIntegratorValuesFromCellArray`](/classes/wvmodel/updateintegratorvaluesfromcellarray.html) We must set the time here. If we are integrating the
   + [`writeTimeStepToNetCDFFile`](/classes/wvmodel/writetimesteptonetcdffile.html) 
-  + [`wvCoefficientFluxedObservingSystem`](/classes/wvmodel/wvcoefficientfluxedobservingsystem.html) 
 
 
 ---

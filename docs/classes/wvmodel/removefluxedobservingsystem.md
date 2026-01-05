@@ -9,8 +9,11 @@ mathjax: true
 
 #  removeFluxedObservingSystem
 
-
+remove a WVObservingSystem to the fluxed observing systems array
 
 
 ---
 
+## Discussion
+
+  

@@ -39,17 +39,6 @@ override either,
 Regardless of which method is chosen, the energy flux from the forcing
 can always be deduced at each moment in time.
  
-Here's how this fits together:
-There are several WVNonlinearFluxOperations, including
-1. WVHydrostaticFlux
-2. WVNonhydrostaticFlux
-3. WVQuasigeostrophicFlux
- 
-You can add forcing to a WVT, and it will automatically inform the
-flux about it. The flux then cycles through the forcing components
-Note that initialize of the three flux types still will take
-parameters for bottom drag and viscosity, because why not?
- 
 
 
 

@@ -9,7 +9,7 @@ mathjax: true
 
 #  outputFiles
 
-
+Array of WVModelOutputFile instances
 
 
 ---

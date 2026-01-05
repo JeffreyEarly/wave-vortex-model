@@ -8,25 +8,10 @@ classdef WVObservingSystem < handle & matlab.mixin.Heterogeneous & CAAnnotatedCl
     end
 
     properties (GetAccess=public, SetAccess=protected)
-        % boolean indicating this class implements addHydrostaticSpatialForcing
+        % name of the observing system
         %
         % - Topic: Properties
         name
-
-        % boolean indicating whether the observing system requires custom
-        % output logic.
-        %
-        % If this is set to true, the function
-        %   - outputTimesForIntegrationPeriod
-        % will be called.
-        %
-        % Lagrangian particles or a passive tracer field can be sampled at
-        % any output time, and thus would return false. In contrast, a
-        % satellite passover occurs at custom times, determined by the
-        % observing system and would return true.
-        %
-        % - Topic: Properties
-        requiresCustomOutputTimes logical =  false
 
         % number of components that need to be integrated in time.
         %
@@ -81,6 +66,8 @@ classdef WVObservingSystem < handle & matlab.mixin.Heterogeneous & CAAnnotatedCl
 
         function nArray = lengthOfFluxComponents(self)
             % return an array containing the numel of each flux component.
+            %
+            % - Topic: Required subclass overrides for integrated (fluxed) components
             nArray = [];
         end
 
@@ -91,23 +78,31 @@ classdef WVObservingSystem < handle & matlab.mixin.Heterogeneous & CAAnnotatedCl
             %
             % this will only be called when the time-stepping is run with
             % an adaptive integrator.
+            %
+            % - Topic: Required subclass overrides for integrated (fluxed) components
             Y0 = {};
         end
 
         function Y0 = initialConditions(self)
             % return a cell array of variables that need to be integrated
+            %
+            % - Topic: Required subclass overrides for integrated (fluxed) components
             Y0 = {};
         end
 
         function F = fluxAtTime(self,t,y0)
             % return a cell array of the flux of the variables being
             % integrated. You may want to call -updateIntegratorValues.
+            %
+            % - Topic: Required subclass overrides for integrated (fluxed) components
             F = {};
         end
 
         function updateIntegratorValues(self,t,y0)
             % passes updated values of the variables being integrated.
             % Called 1) during fluxAtTime and 2) during interpolation
+            %
+            % - Topic: Required subclass overrides for integrated (fluxed) components
         end
 
 
@@ -118,9 +113,22 @@ classdef WVObservingSystem < handle & matlab.mixin.Heterogeneous & CAAnnotatedCl
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
         function initializeStorage(self,group)
+            % called once to allow the observing system to initialize its storage space in the NetCDFGroup
+            %
+            % Any observing system must implement this method to initialize
+            % the NetCDFGroup with the appropriate attributes, dimensions
+            % and variables.
+            %
+            % - Topic: Required subclass overrides
         end
 
         function writeTimeStepToFile(self,group,outputIndex)
+            % called at each time for the observing system to write to file
+            %
+            % Any observing system must implement this method to initialize
+            % and write to the NetCDFGroup at the particular outputIndex.
+            %
+            % - Topic: Required subclass overrides
         end
     end
 
