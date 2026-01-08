@@ -16,7 +16,7 @@ classdef WVStratification < WVRotatingFPlane
     end
 
     properties (Dependent)
-        Nz, Nj
+        Nz, Nj, rho_nm
     end
 
     methods (Abstract)
@@ -32,6 +32,11 @@ classdef WVStratification < WVRotatingFPlane
         GMatrix
     end
 
+    properties (Access=private)
+        rho_nm_
+        isRhoNMDirty
+    end
+
     methods
         function value = get.Nz(self)
             value=length(self.z);
@@ -39,6 +44,47 @@ classdef WVStratification < WVRotatingFPlane
 
         function value = get.Nj(self)
             value=length(self.j);
+        end
+
+        function spline = get.rho_nm(self)
+            spline = self.rho_nm_;
+            if self.isRhoNMDirty
+                rho = sort(self.rho_total(:),'descend');
+                z_i = self.Z(:);
+
+                rho_bar = (rho - spline.x_mean)/spline.x_std;
+                Z = BSpline.matrix( z_i, spline.tKnot, spline.K );
+                spline.xi = Z\rho_bar;
+
+                DeltaZ_i = (rho - spline(z_i))./spline(z_i,1);
+                disp("rms z deviation " + std(DeltaZ_i) + " m.")
+                disp("rms density deviation " + std(rho - spline(z_i)) + " kg m^{-3}.")
+
+                TolZ = 1e-2; % centimeter accuracy
+                MaxIteration = 10;
+                iteration = 0;
+                while std(DeltaZ_i) > TolZ & iteration < MaxIteration
+                    z_i = z_i + DeltaZ_i;
+                    z_i(z_i<self.z(1)) = self.z(1);
+                    z_i(z_i>self.z(end)) = self.z(end);
+
+                    % the spline regression requires this sort order
+                    [z_i,I] = sort(z_i);
+                    rho = rho(I);
+
+                    rho_bar = (rho - spline.x_mean)/spline.x_std;
+                    Z = BSpline.matrix( z_i, spline.tKnot, spline.K );
+                    spline.xi = Z\rho_bar;
+
+                    DeltaZ_i = (rho - spline(z_i))./spline(z_i,1);
+
+                    disp("rms z deviation " + std(DeltaZ_i) + " m.")
+                    disp("rms density deviation " + std(rho - spline(z_i)) + " kg m^{-3}.")
+                    iteration = iteration + 1;
+                end
+                self.rho_nm_ = spline;
+                self.isRhoNMDirty = false;
+            end
         end
 
         function flag = isDensityInValidRange(self)
@@ -103,6 +149,10 @@ classdef WVStratification < WVRotatingFPlane
 
         function cheb_function = chebfunForZArray(self,my_z_vector)
             cheb_function = chebfun( @(z) interp1(self.z,my_z_vector,z,'spline'),[min(self.z) max(self.z)],'splitting','on');
+        end
+
+        function resetRhoNoMotion(self)
+            self.isRhoNMDirty = true;
         end
     end
 
@@ -173,6 +223,16 @@ classdef WVStratification < WVRotatingFPlane
             self.N2Function = options.N2Function;
             self.rhoFunction = options.rhoFunction;
             self.rho_nm0 = self.rhoFunction(self.z);
+
+            % initially there is no perturbation, so there is no problem
+            % setting this.
+            K = 3;
+            self.rho_nm_ = BSpline(K,BSpline.knotPointsForDataPoints(self.z,K=K));
+            self.rho_nm_.x_mean = mean(self.rho_nm0);
+            self.rho_nm_.x_std = std(self.rho_nm0);
+            Z = BSpline.matrix( self.z, self.rho_nm_.tKnot, self.rho_nm_.K );
+            self.rho_nm_.xi = Z\((self.rho_nm0 - self.rho_nm_.x_mean)/self.rho_nm_.x_std);
+            self.isRhoNMDirty = false;
         end
 
         function [P,Q,PFinv,PF,QGinv,QG,h,w] = verticalProjectionOperatorsForGeostrophicModes(self,Nj)

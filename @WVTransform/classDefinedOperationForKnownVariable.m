@@ -108,10 +108,10 @@ for iOp = 1:length(variableName)
         case 'rho_bar'
             varAnnotation = WVVariableAnnotation('rho_bar',{'z'},'kg m^{-3}', 'mean density');
             f = @(wvt) wvt.rho_nm0 + (wvt.rho0/wvt.g) * wvt.N2 .* wvt.GinvMatrix*(wvt.NA0(:,1).*wvt.A0t(:,1));
-
-        case 'rho_nm'
-            varAnnotation = WVVariableAnnotation('rho_nm',{'z'},'kg m^{-3}', 'no-motion density');
-            f = @(wvt) squeeze(mean(mean(reshape( sort(wvt.rho_total(:),'descend'), size(wvt.rho_total)),1),2));
+        % 
+        % case 'rho_nm'
+        %     varAnnotation = WVVariableAnnotation('rho_nm',{'z'},'kg m^{-3}', 'no-motion density');
+        %     f = @(wvt) squeeze(mean(mean(reshape( sort(wvt.rho_total(:),'descend'), size(wvt.rho_total)),1),2));
 
         case 'rho_e'
             varAnnotation = WVVariableAnnotation('rho_e',options.spatialDimensionNames,'kg/m3', 'excess density');
