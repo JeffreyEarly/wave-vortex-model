@@ -1,4 +1,4 @@
-classdef WVOperation < handle
+classdef WVOperation < handle & matlab.mixin.Heterogeneous
 %Perform an operation and return a variable using a WVTransform
 % 
 % A WVOperation allows you to add new functionality to the WVTransform by

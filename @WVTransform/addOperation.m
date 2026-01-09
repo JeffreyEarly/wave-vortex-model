@@ -66,7 +66,7 @@ for iOp=1:length(operation)
     % Now go ahead and actually add the operation and its variables
     self.addPropertyAnnotation(operation(iOp).outputVariables);
     for iVar=1:length(operation(iOp).outputVariables)
-        self.operationVariableNameMap(operation(iOp).outputVariables(iVar).name) = operation(iOp).outputVariables(iVar);
+        self.operationVariableNameMap{operation(iOp).outputVariables(iVar).name} = operation(iOp).outputVariables(iVar);
     end
     self.operationNameMap{operation(iOp).name} = operation(iOp);
 

@@ -1,6 +1,6 @@
-classdef WVVariableAnnotation < CANumericProperty & WVVariable
-    % Describes a variable computed from the WVTransform
-    % 
+classdef WVObjectVariableAnnotation < CAObjectProperty & WVVariable
+    % Describes an object variable computed from the WVTransform
+    %
     % In addition to adding a name, description and detailed description of
     % a given variable, you also specify its dimensions, units, and whether
     % or note it has an imaginary part. These annotations are used for both
@@ -16,8 +16,30 @@ classdef WVVariableAnnotation < CANumericProperty & WVVariable
     % that is used on the website.
     %
     % - Declaration: classdef WVVariableAnnotation < [WVAnnotation](/classes/wvannotation/)
+    properties (GetAccess=public, SetAccess=public)
+        % ordered cell array with the names of the dimensions
+        %
+        % If the property has no dimensions, and empty cell array should be
+        % passed. The dimension names must correspond to existing
+        % dimensions.
+        % - Topic: Properties
+        dimensions
+
+        % units of the dimension
+        %
+        % All units should be abbreviated SI units, e.g., 'm', or 'rad'.
+        % - Topic: Properties
+        units
+
+        % boolean indicating whether or not the property may have an imaginary part
+        %
+        % This information is used when allocating space in a NetCDF file.
+        % - Topic: Properties
+        isComplex logical = false
+    end
+
     methods
-        function self = WVVariableAnnotation(name,dimensions,units,description,options)
+        function self = WVObjectVariableAnnotation(name,dimensions,units,description,options)
             % create a new instance of WVVariableAnnotation
             %
             % If a markdown file of the same name is in the same directory
@@ -38,10 +60,11 @@ classdef WVVariableAnnotation < CANumericProperty & WVVariable
                 dimensions
                 units char {mustBeNonempty}
                 description char {mustBeNonempty}
-                options.isComplex double {mustBeMember(options.isComplex,[0 1])} = 0
                 options.detailedDescription char = ''
             end
-            self@CANumericProperty(name,dimensions,units,description,isComplex=options.isComplex,detailedDescription=options.detailedDescription);
+            self@CAObjectProperty(name,description,detailedDescription=options.detailedDescription);
+            self.dimensions = dimensions;
+            self.units = units;
         end
 
     end
