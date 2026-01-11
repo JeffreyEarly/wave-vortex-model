@@ -38,8 +38,10 @@ classdef NoMotionProfileOperation < WVOperation
                 self.spline = BSpline(K,BSpline.knotPointsForDataPoints(wvt.z,K=K));
                 self.spline.x_mean = mean(wvt.rho_nm0);
                 self.spline.x_std = std(wvt.rho_nm0);
-                Z = BSpline.matrix( wvt.z, self.spline.tKnot, self.spline.K );
-                self.spline.xi = Z\((wvt.rho_nm0 - self.spline.x_mean)/self.spline.x_std);
+                Z = BSpline.Spline( wvt.z, self.spline.t_knot, self.spline.K );
+                self.spline.m = Z\((wvt.rho_nm0 - self.spline.x_mean)/self.spline.x_std);
+                % Z = BSpline.matrix( wvt.z, self.spline.tKnot, self.spline.K );
+                % self.spline.xi = Z\((wvt.rho_nm0 - self.spline.x_mean)/self.spline.x_std);
             end
 
             rho = sort(wvt.rho_total(:),'descend');
@@ -61,8 +63,10 @@ classdef NoMotionProfileOperation < WVOperation
                 rho = rho(I);
 
                 rho_bar = (rho - self.spline.x_mean)/self.spline.x_std;
-                Z = BSpline.matrix( z_i, self.spline.tKnot, self.spline.K );
-                self.spline.xi = Z\rho_bar;
+                Z = BSpline.Spline( z_i, self.spline.t_knot, self.spline.K );
+                self.spline.m = Z\rho_bar;
+                % Z = BSpline.matrix( z_i, self.spline.tKnot, self.spline.K );
+                % self.spline.xi = Z\rho_bar;
 
                 DeltaZ_i = (rho - self.spline(z_i))./self.spline(z_i,1);
 
