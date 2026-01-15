@@ -1,6 +1,28 @@
 classdef EtaTrueOperation < WVOperation
 % Computes the true vertical displacement, eta.
 %
+% 2026-01-15
+%
+% Using moments to compute rho_nm, and then a high order spline to compute
+% the functional version. The following code gives,
+%
+% int_vol_avg = @(integrand) sum(mean(mean(shiftdim(wvt.z_int,-2).*integrand,1),2),3)/wvt.Lz;
+% 
+% data = wvt.rho_nm;
+% spline_nm = BSpline(K,BSpline.knotPointsForDataPoints(wvt.z,K=K));
+% spline_nm.x_mean = mean(data);
+% spline_nm.x_std = std(data);
+% Z = BSpline.Spline( wvt.z, spline_nm.t_knot, spline_nm.K );
+% spline_nm.m = Z\((data - spline_nm.x_mean)/spline_nm.x_std);
+% 
+% rho_e = wvt.rho_total - shiftdim(wvt.rho_nm,-2);
+% int_vol_avg(rho_e)/max(abs(rho_e(:)))
+% int_vol_avg(wvt.eta_true)/max(abs(wvt.eta_true(:)))
+%
+% which produces relative errors of 3e-6 for rho_e and 1e-3 for eta. This
+% corresponds to a volume average of 13cm for eta, about 10x better than
+% reported in July 2025 below.
+%
 % 2025-07-14
 % Note: this will recover rho_e with
 %   rho_e = wvt.rhoFunction(wvt.Z-wvt.eta_true)-wvt.rhoFunction(wvt.Z);
@@ -23,33 +45,35 @@ classdef EtaTrueOperation < WVOperation
 % of the MDA.
 
     properties (GetAccess=public, SetAccess=protected)
-    
+        spline_nm
+        Z
     end
 
     methods
 
-        function self = EtaTrueOperation()
+        function self = EtaTrueOperation(wvt)
+            arguments
+                wvt 
+            end
             outputVariables(1) = WVVariableAnnotation('eta_true',{'x','y','z'},'m', 'true isopycnal deviation');
             self@WVOperation('eta_true',outputVariables,@disp);
+
+            K=8;
+            data = wvt.rho0 - wvt.rho_nm0;
+            self.spline_nm = BSpline(K,BSpline.knotPointsForDataPoints(wvt.z,K=K));
+            self.spline_nm.x_mean = mean(data);
+            self.spline_nm.x_std = std(data);
+            self.Z = BSpline.Spline( wvt.z, self.spline_nm.t_knot, self.spline_nm.K );
+            self.spline_nm.m = self.Z\((data - self.spline_nm.x_mean)/self.spline_nm.x_std);
         end
 
         function varargout = compute(self,wvt,varargin)
-            
-            % rho_total = -rho_nm(wvt.Z) + wvt.rho_e;
-
-            % Alternative 1: reference to the original no-motion state
-            % rho_nm = @(z) -(wvt.rhoFunction(z) - wvt.rho0);
-
-            % Alternative 2: reference to the current no-motion state
-            % rho_nm_v = wvt.rho_nm - wvt.rho_nm(end);
-            % rho_bar = squeeze(mean(mean(wvt.rho_e,1),2));
-            % rho_nm_t = sort(rho_bar+rho_nm_v,1,"descend") - rho_nm_v;
-            rho_nm_t = wvt.rho_nm - wvt.rho_nm0;
-            rho_nm = @(z) -(wvt.rhoFunction(z) - wvt.rho0) - interp1(wvt.z,rho_nm_t,z,"linear");
+            data = wvt.rho0 - wvt.rho_nm;
+            self.spline_nm.m = self.Z\((data - self.spline_nm.x_mean)/self.spline_nm.x_std);
 
             rho_total = (wvt.rhoFunction(wvt.Z) - wvt.rho0) + wvt.rho_e ;
 
-            zMinusEta = EtaTrueOperation.fInverseBisection(rho_nm,-rho_total(:),-wvt.Lz,0,1e-12);
+            zMinusEta = EtaTrueOperation.fInverseBisection(self.spline_nm,-rho_total(:),-wvt.Lz,0,1e-12);
             zMinusEta = reshape(zMinusEta,size(wvt.X));
             eta_true = wvt.Z - zMinusEta;
             varargout = {eta_true};
