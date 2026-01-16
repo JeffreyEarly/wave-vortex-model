@@ -1,7 +1,9 @@
 # Version History
 
 ## [4.0.2] - 2026-01-16
-- new moment based algorithm for rho_nm
+- new moment based algorithm for computing rho_nm.
+- eta_true now computed from high order spline representation of rho_nm; recores SplineCore package.
+- added placeParticlesOnIsopycnals function to all WVStratification subclasses.
 
 ## [4.0.1] - 2025-12-11
 - initial mpm ci release
