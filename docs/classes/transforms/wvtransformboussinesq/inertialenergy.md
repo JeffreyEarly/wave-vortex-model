@@ -3,7 +3,7 @@ layout: default
 title: inertialEnergy
 parent: WVTransformBoussinesq
 grand_parent: Classes
-nav_order: 124
+nav_order: 125
 mathjax: true
 ---
 

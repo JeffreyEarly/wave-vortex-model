@@ -3,7 +3,7 @@ layout: default
 title: verticalProjectionOperatorsWithRigidLid
 parent: WVTransformConstantStratification
 grand_parent: Classes
-nav_order: 214
+nav_order: 216
 mathjax: true
 ---
 

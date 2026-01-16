@@ -3,7 +3,7 @@ layout: default
 title: maskForNyquistModes
 parent: WVTransformHydrostatic
 grand_parent: Classes
-nav_order: 143
+nav_order: 144
 mathjax: true
 ---
 

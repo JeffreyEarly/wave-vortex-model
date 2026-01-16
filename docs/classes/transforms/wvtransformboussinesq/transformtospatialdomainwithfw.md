@@ -3,7 +3,7 @@ layout: default
 title: transformToSpatialDomainWithFw
 parent: WVTransformBoussinesq
 grand_parent: Classes
-nav_order: 225
+nav_order: 227
 mathjax: true
 ---
 

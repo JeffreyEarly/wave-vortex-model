@@ -3,7 +3,7 @@ layout: default
 title: dftConjugateIndex
 parent: WVTransformConstantStratification
 grand_parent: Classes
-nav_order: 79
+nav_order: 80
 mathjax: true
 ---
 

@@ -3,7 +3,7 @@ layout: default
 title: waveComponent
 parent: WVTransformBoussinesq
 grand_parent: Classes
-nav_order: 235
+nav_order: 237
 mathjax: true
 ---
 

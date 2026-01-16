@@ -3,7 +3,7 @@ layout: default
 title: transformToPseudoRadialWavenumberApm
 parent: WVTransformBoussinesq
 grand_parent: Classes
-nav_order: 218
+nav_order: 220
 mathjax: true
 ---
 

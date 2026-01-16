@@ -3,7 +3,7 @@ layout: default
 title: maskForAliasedModes
 parent: WVTransformBoussinesq
 grand_parent: Classes
-nav_order: 158
+nav_order: 159
 mathjax: true
 ---
 

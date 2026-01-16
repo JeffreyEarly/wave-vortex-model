@@ -161,6 +161,8 @@ wvt = WVTransformHydrostatic([100e3, 100e3, 4000],[64, 64, 65], N2=N2,latitude=3
   + [`maskForAliasedModes`](/classes/transforms/wvtransformhydrostatic/maskforaliasedmodes.html) returns a mask with locations of modes that will alias with a quadratic multiplication.
   + [`maskForConjugateFourierCoefficients`](/classes/transforms/wvtransformhydrostatic/maskforconjugatefouriercoefficients.html) a mask indicate the components that are redundant conjugates
   + [`maskForNyquistModes`](/classes/transforms/wvtransformhydrostatic/maskfornyquistmodes.html) returns a mask with locations of modes that are not fully resolved
++ Utilities
+  + [`placeParticlesOnIsopycnal`](/classes/transforms/wvtransformhydrostatic/placeparticlesonisopycnal.html) places Lagrangian particles along a specified isopycnal
 + Developer
   + [`propertyAnnotationsForGeometry`](/classes/transforms/wvtransformhydrostatic/propertyannotationsforgeometry.html) return array of CAPropertyAnnotations initialized by default
 + Internal
@@ -212,6 +214,7 @@ wvt = WVTransformHydrostatic([100e3, 100e3, 4000],[64, 64, 65], N2=N2,latitude=3
   + [`Z`](/classes/transforms/wvtransformhydrostatic/z_.html) 
   + [`beta`](/classes/transforms/wvtransformhydrostatic/beta.html) 
   + [`boussinesqTransform`](/classes/transforms/wvtransformhydrostatic/boussinesqtransform.html) 
+  + [`buoyancyPeriod`](/classes/transforms/wvtransformhydrostatic/buoyancyperiod.html) 
   + [`chebfunForZArray`](/classes/transforms/wvtransformhydrostatic/chebfunforzarray.html) 
   + [`classRequiredPropertyNames`](/classes/transforms/wvtransformhydrostatic/classrequiredpropertynames.html) 
   + [`crossSpectrumWithFgTransform`](/classes/transforms/wvtransformhydrostatic/crossspectrumwithfgtransform.html) 

@@ -3,7 +3,7 @@ layout: default
 title: transformToOmegaAxis
 parent: WVTransformBoussinesq
 grand_parent: Classes
-nav_order: 215
+nav_order: 217
 mathjax: true
 ---
 

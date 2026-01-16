@@ -163,6 +163,8 @@ wvt = WVTransformHydrostatic([100e3, 100e3, 4000],[64, 64, 65], N2=N2,latitude=3
   + [`maskForAliasedModes`](/classes/transforms/wvtransformconstantstratification/maskforaliasedmodes.html) returns a mask with locations of modes that will alias with a quadratic multiplication.
   + [`maskForConjugateFourierCoefficients`](/classes/transforms/wvtransformconstantstratification/maskforconjugatefouriercoefficients.html) a mask indicate the components that are redundant conjugates
   + [`maskForNyquistModes`](/classes/transforms/wvtransformconstantstratification/maskfornyquistmodes.html) returns a mask with locations of modes that are not fully resolved
++ Utilities
+  + [`placeParticlesOnIsopycnal`](/classes/transforms/wvtransformconstantstratification/placeparticlesonisopycnal.html) places Lagrangian particles along a specified isopycnal
 + Developer
   + [`propertyAnnotationsForGeometry`](/classes/transforms/wvtransformconstantstratification/propertyannotationsforgeometry.html) return array of CAPropertyAnnotations initialized by default
 + Internal
@@ -221,6 +223,7 @@ wvt = WVTransformHydrostatic([100e3, 100e3, 4000],[64, 64, 65], N2=N2,latitude=3
   + [`Z`](/classes/transforms/wvtransformconstantstratification/z_.html) 
   + [`beta`](/classes/transforms/wvtransformconstantstratification/beta.html) 
   + [`buildVerticalModeProjectionOperators`](/classes/transforms/wvtransformconstantstratification/buildverticalmodeprojectionoperators.html) Build the transformation matrices
+  + [`buoyancyPeriod`](/classes/transforms/wvtransformconstantstratification/buoyancyperiod.html) 
   + [`chebfunForZArray`](/classes/transforms/wvtransformconstantstratification/chebfunforzarray.html) 
   + [`classRequiredPropertyNames`](/classes/transforms/wvtransformconstantstratification/classrequiredpropertynames.html) 
   + [`cos_alpha`](/classes/transforms/wvtransformconstantstratification/cos_alpha.html) 

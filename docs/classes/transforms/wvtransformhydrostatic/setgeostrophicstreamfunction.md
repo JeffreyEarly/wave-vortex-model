@@ -3,7 +3,7 @@ layout: default
 title: setGeostrophicStreamfunction
 parent: WVTransformHydrostatic
 grand_parent: Classes
-nav_order: 175
+nav_order: 177
 mathjax: true
 ---
 

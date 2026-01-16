@@ -3,7 +3,7 @@ layout: default
 title: geostrophicEnergy
 parent: WVTransformHydrostatic
 grand_parent: Classes
-nav_order: 94
+nav_order: 95
 mathjax: true
 ---
 

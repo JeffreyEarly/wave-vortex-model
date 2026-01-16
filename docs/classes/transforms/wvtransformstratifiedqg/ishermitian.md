@@ -3,7 +3,7 @@ layout: default
 title: isHermitian
 parent: WVTransformStratifiedQG
 grand_parent: Classes
-nav_order: 86
+nav_order: 87
 mathjax: true
 ---
 

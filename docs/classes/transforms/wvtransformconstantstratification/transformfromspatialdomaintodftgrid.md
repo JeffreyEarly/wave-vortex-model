@@ -3,7 +3,7 @@ layout: default
 title: transformFromSpatialDomainToDFTGrid
 parent: WVTransformConstantStratification
 grand_parent: Classes
-nav_order: 200
+nav_order: 202
 mathjax: true
 ---
 

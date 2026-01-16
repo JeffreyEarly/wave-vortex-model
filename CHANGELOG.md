@@ -1,5 +1,8 @@
 # Version History
 
+## [4.0.2] - 2026-01-16
+- new moment based algorithm for rho_nm
+
 ## [4.0.1] - 2025-12-11
 - initial mpm ci release
 

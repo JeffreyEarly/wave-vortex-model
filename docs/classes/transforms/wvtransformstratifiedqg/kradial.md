@@ -3,7 +3,7 @@ layout: default
 title: kRadial
 parent: WVTransformStratifiedQG
 grand_parent: Classes
-nav_order: 99
+nav_order: 100
 mathjax: true
 ---
 
