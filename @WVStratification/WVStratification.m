@@ -16,7 +16,7 @@ classdef WVStratification < WVRotatingFPlane
     end
 
     properties (Dependent)
-        Nz, Nj
+        Nz, Nj, buoyancyPeriod
     end
 
     methods (Abstract)
@@ -39,6 +39,10 @@ classdef WVStratification < WVRotatingFPlane
 
         function value = get.Nj(self)
             value=length(self.j);
+        end
+
+        function value = get.buoyancyPeriod(self)
+            value=2*pi/sqrt(max(self.N2));
         end
 
         function flag = isDensityInValidRange(self)
@@ -104,6 +108,8 @@ classdef WVStratification < WVRotatingFPlane
         function cheb_function = chebfunForZArray(self,my_z_vector)
             cheb_function = chebfun( @(z) interp1(self.z,my_z_vector,z,'spline'),[min(self.z) max(self.z)],'splitting','on');
         end
+
+        zIsopycnal = placeParticlesOnIsopycnal(wvt,x,y,zNoMotion)
     end
 
     methods (Access=protected)
