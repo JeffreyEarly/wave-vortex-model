@@ -4,7 +4,7 @@ N0 = 3*2*pi/3600; % buoyancy frequency at the surface, radians/seconds
 L_gm = 1300; % thermocline exponential scale, meters
 N2 = @(z) N0*N0*exp(2*z/L_gm);
 % N2 = @(z) N0*N0*ones(size(z));
-Nz = 256;
+Nz = 512;
 latitude = 31;
 g = 9.81;
 
@@ -39,6 +39,16 @@ PFinv = Finv./P;
 QGinv = Ginv./Q;
 PF = inv(PFinv);
 QG = inv(QGinv);
+
+%% This estimates the quadrature weights just using the grid
+z_mid = z(1:end-1) + diff(z)/2;
+z2 = cat(1,z(1),z_mid,z(end));
+dz = diff(z2);
+
+M = (N2(z(2:end-1)) - im.f0*im.f0)/g;
+Icheck = Ginv.' * ( dz(2:end-1) .* M .* Ginv);
+T = eye(Nz-2);
+disp(norm(Icheck - T, 'fro')/norm(T,'fro'))
 
 %% This determines the weights using the relation that \int F dz = 0
 b = zeros(Nz,1);
@@ -85,7 +95,15 @@ w3 = A \ b;                % or lsqminnorm(A,b) if near rank-deficient
 Icheck = G.' * (M.* w3 .* G);
 disp(norm(Icheck - T, 'fro')/norm(T,'fro'))
 
-% CONCLUSION: They all produce the same relative error, but the first
-% method is better because it works for the first and last point of the F
-% modes.
+% CONCLUSION: They all produce the same relative error, but the first and
+% second methods are better because they works for the first and last point
+% of the F modes.
+
+%%
+
+M = (N2(z(2:end-1)) - im.f0*im.f0)/g;
+G = ( w(2:end-1) .* M .* Ginv).';
+I = G*Ginv;
+
+% [cond(PFinv), cond(QGinv), cond(PF), cond(QG)]
 
