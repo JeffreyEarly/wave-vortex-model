@@ -105,5 +105,12 @@ M = (N2(z(2:end-1)) - im.f0*im.f0)/g;
 G = ( w(2:end-1) .* M .* Ginv).';
 I = G*Ginv;
 
+QG2 = ( (w(2:end-1) .* M .* Ginv) .* Q).';
+disp(norm(QG2*QGinv - T, 'fro')/norm(T,'fro'))
+disp(norm(QG*QGinv - T, 'fro')/norm(T,'fro'))
+
+a1 = vecnorm(QG*QGinv-T,Inf,1);
+a2 = vecnorm(QG2*QGinv-T,Inf,1);
+
 % [cond(PFinv), cond(QGinv), cond(PF), cond(QG)]
 
