@@ -257,6 +257,7 @@ classdef WVInternalGravityWaveMethods < handle
                 options.ApmSpectrum = @isempty
                 options.shouldOnlyRandomizeOrientations (1,1) double {mustBeMember(options.shouldOnlyRandomizeOrientations,[0 1])} = 0
                 options.shouldShowDiagnostics (1,1) double {mustBeMember(options.shouldShowDiagnostics,[0 1])} = 0
+                options.shouldThrowErrorIfDensityViolation (1,1) logical = true
             end
             self.removeAllWaves;
             optionsArgs = namedargs2cell(options);
@@ -294,6 +295,7 @@ classdef WVInternalGravityWaveMethods < handle
                 options.ApmSpectrum = @isempty
                 options.shouldOnlyRandomizeOrientations (1,1) double {mustBeMember(options.shouldOnlyRandomizeOrientations,[0 1])} = 0
                 options.shouldShowDiagnostics (1,1) double {mustBeMember(options.shouldShowDiagnostics,[0 1])} = 0
+                options.shouldThrowErrorIfDensityViolation (1,1) logical = true
             end
 
             if isequal(options.ApmSpectrum,@isempty)
@@ -366,7 +368,9 @@ classdef WVInternalGravityWaveMethods < handle
                 end
             end
 
-            self.throwErrorIfDensityViolation(A0=self.A0,Ap=self.Ap+Ap_,Am=self.Am+Am_,additionalErrorInfo=sprintf('The modes you are setting will cause the fluid state to violate this condition.\n'));
+            if options.shouldThrowErrorIfDensityViolation
+                self.throwErrorIfDensityViolation(A0=self.A0,Ap=self.Ap+Ap_,Am=self.Am+Am_,additionalErrorInfo=sprintf('The modes you are setting will cause the fluid state to violate this condition.\n'));
+            end
             self.Ap = self.Ap+Ap_;
             self.Am = self.Am+Am_;
         end

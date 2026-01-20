@@ -45,6 +45,7 @@ z_mid = z(1:end-1) + diff(z)/2;
 z2 = cat(1,z(1),z_mid,z(end));
 dz = diff(z2);
 
+% Now apply the approximated inverse
 M = (N2(z(2:end-1)) - im.f0*im.f0)/g;
 Icheck = Ginv.' * ( dz(2:end-1) .* M .* Ginv);
 T = eye(Nz-2);
@@ -55,6 +56,7 @@ b = zeros(Nz,1);
 b(1) = Lz;
 w = (PFinv.')\b;
 
+% Now apply the approximated inverse
 M = (N2(z(2:end-1)) - im.f0*im.f0)/g;
 Icheck = Ginv.' * ( w(2:end-1) .* M .* Ginv);
 T = eye(Nz-2);
@@ -114,3 +116,16 @@ a2 = vecnorm(QG2*QGinv-T,Inf,1);
 
 % [cond(PFinv), cond(QGinv), cond(PF), cond(QG)]
 
+%%
+
+tic
+WG = w(2:end-1) .* M .* QGinv;
+QG2 = (QGinv.' * WG) \ (WG.');
+toc
+
+tic
+QG = inv(QGinv);
+toc
+
+
+% disp(norm(QG2*QGinv - T, 'fro')/norm(T,'fro'))
