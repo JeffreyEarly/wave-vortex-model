@@ -9,7 +9,7 @@ rotationRate = 7.2921E-5;
 
 
 %%
-dx = 10.^(linspace(log10(150),log10(300e3),60));
+dx = 10.^(linspace(log10(15),log10(300e3),60));
 
 Lr_scale = (1/(2*rotationRate))*integral(@(z) sqrt(N2(z)),-Lz,0);
 Nj_10 = ceil(Lr_scale ./ dx / sind(10));
