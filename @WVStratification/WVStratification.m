@@ -237,17 +237,21 @@ classdef WVStratification < WVRotatingFPlane
                 rotatingOptions.latitude (1,1) double = 33
                 rotatingOptions.g (1,1) double = 9.81
             end
-            z = linspace(-Lz,0,500);
-            nEVP = max(256,Nx);
-            nModes = floor(nEVP/2.1);
-            im = InternalModesWKBSpectral(N2=options.N2Function,zIn=[-Lz 0],zOut=z,latitude=rotatingOptions.latitude,rho0=options.rho0,nModes=nModes,nEVP=nEVP,rotationRate=rotatingOptions.rotationRate,g=rotatingOptions.g);
-            im.normalization = Normalization.geostrophic;
-            im.upperBoundary = UpperBoundary.rigidLid;
-            [~,~,h] = im.ModesAtFrequency(0);
-            Lr = sqrt(rotatingOptions.g*h)/im.f0;
-            kmax = pi*Nx/Lxy;
+            % z = linspace(-Lz,0,500);
+            % nEVP = max(256,floor(3*Nx));
+            % nModes = floor(nEVP/2.1);
+            % im = InternalModesWKBSpectral(N2=options.N2Function,zIn=[-Lz 0],zOut=z,latitude=rotatingOptions.latitude,rho0=options.rho0,nModes=nModes,nEVP=nEVP,rotationRate=rotatingOptions.rotationRate,g=rotatingOptions.g);
+            % im.normalization = Normalization.geostrophic;
+            % im.upperBoundary = UpperBoundary.rigidLid;
+            % [~,~,h] = im.ModesAtFrequency(0);
+            % Lr = sqrt(rotatingOptions.g*h)/im.f0;
+            % kmax = pi*Nx/Lxy;
+            % 
+            % [~,Nz] = min( abs(Lr*kmax-1) );
 
-            [~,Nz] = min( abs(Lr*kmax-1) );
+            f = 2*rotatingOptions.rotationRate*sind(rotatingOptions.latitude);
+            Nz = ceil((Nx/Lxy)*(1/f)*integral(@(z) sqrt(options.N2Function(z)),-Lz,0));
+
         end
 
         function requiredPropertyNames = namesOfRequiredPropertiesForStratification()
