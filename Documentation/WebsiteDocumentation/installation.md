@@ -36,6 +36,6 @@ git clone https://github.com/JeffreyEarly/wave-vortex-model.git
 ```
 and install with
 ```matlab
-mpminstall("wave-vortex-model", Authoring=true); 
+mpminstall("path/to/folder/wave-vortex-model", Authoring=true); 
 ```
 This will still install the dependencies from the mpm repo (and those will not be editable).
