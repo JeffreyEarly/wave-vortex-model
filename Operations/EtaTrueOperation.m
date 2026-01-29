@@ -58,7 +58,7 @@ classdef EtaTrueOperation < WVOperation
             outputVariables(1) = WVVariableAnnotation('eta_true',{'x','y','z'},'m', 'true isopycnal deviation');
             self@WVOperation('eta_true',outputVariables,@disp);
 
-            K=8;
+            K=min(wvt.Nz,8);
             data = wvt.rho0 - wvt.rho_nm0;
             self.spline_nm = BSpline(K,BSpline.knotPointsForDataPoints(wvt.z,K=K));
             self.spline_nm.x_mean = mean(data);
