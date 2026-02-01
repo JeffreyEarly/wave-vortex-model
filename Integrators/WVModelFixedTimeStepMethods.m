@@ -63,6 +63,7 @@ classdef WVModelFixedTimeStepMethods < handle
             period = Inf;
             if self.wvt.hasWaveComponent == true
                 omega = self.wvt.Omega;
+                omega(1,:) = []; % dump the 0 mode
                 period = 2*pi/max(abs(omega(:)));
                 oscillatoryDT = cfl*period;
             end
