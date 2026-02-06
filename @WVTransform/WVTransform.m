@@ -234,6 +234,10 @@ classdef WVTransform < matlab.mixin.indexing.RedefinesDot & CAAnnotatedClass
                 components WVFlowComponent
             end
             customKeys = setdiff(self.flowComponentNameMap.keys,self.primaryFlowComponentNameMap.keys);
+            if isempty(customKeys)
+                components = WVFlowComponent.empty(1,0);
+                return
+            end
             components = [self.flowComponentNameMap{customKeys}];
         end
 

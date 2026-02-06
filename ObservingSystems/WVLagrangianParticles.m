@@ -11,6 +11,8 @@ classdef WVLagrangianParticles < WVObservingSystem
         trackedVarInterpolation
         absToleranceXY
         absToleranceZ
+        flowComponentName
+        uName, vName, wName
     end
 
     properties (Dependent)
@@ -41,7 +43,8 @@ classdef WVLagrangianParticles < WVObservingSystem
                 options.advectionInterpolation char {mustBeMember(options.advectionInterpolation,["linear","spline","exact","finufft"])} = "linear"
                 options.trackedVarInterpolation char {mustBeMember(options.trackedVarInterpolation,["linear","spline","exact","finufft"])} = "linear"
                 options.absToleranceXY = 1e-1; % 100 km * 10^{-6}
-                options.absToleranceZ = 1e-2;  
+                options.absToleranceZ = 1e-2;
+                options.flowComponentName
             end
             % Do we actually want to inherit the properties from the
             % WVTransform? I'm not sure. I think this should be optional.
@@ -74,6 +77,17 @@ classdef WVLagrangianParticles < WVObservingSystem
             self.x = options.x;
             self.y = options.y;
             self.z = options.z;
+            if ~isfield(options,"flowComponentName")
+                self.uName = "u";
+                self.vName = "v";
+                self.wName = "w";
+            else
+                self.flowComponentName = options.flowComponentName;
+                flowComponent = self.wvt.flowComponentWithName(options.flowComponentName);
+                self.uName = "u_" + flowComponent.abbreviatedName;
+                self.vName = "v_" + flowComponent.abbreviatedName;
+                self.wName = "w_" + flowComponent.abbreviatedName;
+            end
             self.isXYOnly = options.isXYOnly;
             self.trackedFieldNamesCell = options.trackedFieldNames;
             self.trackedVarInterpolation = options.trackedVarInterpolation;
@@ -166,9 +180,9 @@ classdef WVLagrangianParticles < WVObservingSystem
             self.updateIntegratorValues(t,y0);
             F = cell(1,self.nFluxComponents);
             if self.isXYOnly
-                [F{:}] = self.wvt.variableAtPositionWithName(self.x,self.y,self.z,'u','v',interpolationMethod=self.advectionInterpolation);
+                [F{:}] = self.wvt.variableAtPositionWithName(self.x,self.y,self.z,self.uName,self.vName,interpolationMethod=self.advectionInterpolation);
             else
-                [F{:}] = self.wvt.variableAtPositionWithName(self.x,self.y,self.z,'u','v','w',interpolationMethod=self.advectionInterpolation);
+                [F{:}] = self.wvt.variableAtPositionWithName(self.x,self.y,self.z,self.uName,self.vName,self.wName,interpolationMethod=self.advectionInterpolation);
             end
         end
 
@@ -273,7 +287,7 @@ classdef WVLagrangianParticles < WVObservingSystem
         end
 
         function vars = classRequiredPropertyNames()
-            vars = {'name','isXYOnly','trackedFieldNames','advectionInterpolation','trackedVarInterpolation','absToleranceXY','absToleranceZ'};
+            vars = {'name','flowComponentName','isXYOnly','trackedFieldNames','advectionInterpolation','trackedVarInterpolation','absToleranceXY','absToleranceZ'};
         end
 
         function propertyAnnotations = classDefinedPropertyAnnotations()
@@ -282,6 +296,7 @@ classdef WVLagrangianParticles < WVObservingSystem
             end
             propertyAnnotations = CAPropertyAnnotation.empty(0,0);
             propertyAnnotations(end+1) = CAPropertyAnnotation('name','name of Lagrangian particles');
+            propertyAnnotations(end+1) = CAPropertyAnnotation('flowComponentName','name of flow component used to advect the particles');
             propertyAnnotations(end+1) = CANumericProperty('isXYOnly',{}, 'bool', 'whether the advection is only applied in x-y');
             propertyAnnotations(end+1) = CAPropertyAnnotation('trackedFieldNames','tracked field names');
             propertyAnnotations(end+1) = CAPropertyAnnotation('advectionInterpolation','interpolation method for the advection scheme');

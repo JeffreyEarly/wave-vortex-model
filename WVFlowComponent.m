@@ -121,6 +121,13 @@ classdef WVFlowComponent < handle & matlab.mixin.Heterogeneous & CAAnnotatedClas
             bool = all( ~otherComponent.maskA0(:) | self.maskA0(:)) & all( ~otherComponent.maskAm(:) | self.maskAm(:)) & all( ~otherComponent.maskAm(:) | self.maskAm(:));
         end
 
+        function h = copy(self)
+            h = WVFlowComponent(self.wvt);
+            h.maskAp = self.maskAp;
+            h.maskAm = self.maskAm;
+            h.maskA0 = self.maskA0;
+        end
+
         function h = plus(f,g)
             h = WVFlowComponent(f.wvt);
             h.name = join(cat(2,string(f.name),string(g.name)),' + ');
