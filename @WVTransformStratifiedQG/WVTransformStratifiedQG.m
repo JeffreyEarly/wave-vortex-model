@@ -258,7 +258,7 @@ classdef WVTransformStratifiedQG < WVGeometryDoublyPeriodicStratified & WVTransf
         end
 
         function newRequiredPropertyNames = newRequiredPropertyNames()
-            newRequiredPropertyNames = {'A0','kl','t0','t','forcing'};
+            newRequiredPropertyNames = {'A0','kl','t0','t','forcing','customFlowComponents'};
         end
 
         function names = namesOfTransformVariables()
@@ -317,6 +317,7 @@ classdef WVTransformStratifiedQG < WVGeometryDoublyPeriodicStratified & WVTransf
             ncfile = NetCDFFile(path,shouldReadOnly=options.shouldReadOnly);
             wvt = WVTransformStratifiedQG.transformFromGroup(ncfile);
             wvt.initFromNetCDFFile(ncfile,iTime=options.iTime,shouldDisplayInit=1);
+            wvt.initCustomFlowComponentsFromNetCDFFile(ncfile);
             wvt.initForcingFromNetCDFFile(ncfile);
         end
 

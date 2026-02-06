@@ -342,7 +342,7 @@ classdef WVTransformConstantStratification < WVGeometryDoublyPeriodicStratifiedC
         end
 
         function newRequiredPropertyNames = newRequiredPropertyNames()
-            newRequiredPropertyNames = {'A0','Ap','Am','kl','t0','t','forcing'};
+            newRequiredPropertyNames = {'A0','Ap','Am','kl','t0','t','forcing','customFlowComponents'};
         end
 
         function names = namesOfTransformVariables()
@@ -401,6 +401,7 @@ classdef WVTransformConstantStratification < WVGeometryDoublyPeriodicStratifiedC
             ncfile = NetCDFFile(path,shouldReadOnly=options.shouldReadOnly);
             wvt = WVTransformConstantStratification.transformFromGroup(ncfile);
             wvt.initFromNetCDFFile(ncfile,iTime=options.iTime,shouldDisplayInit=1);
+            wvt.initCustomFlowComponentsFromNetCDFFile(ncfile);
             wvt.initForcingFromNetCDFFile(ncfile);
         end
 

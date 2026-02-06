@@ -332,6 +332,15 @@ classdef WVGeometryDoublyPeriodicStratified < WVGeometryDoublyPeriodic & WVStrat
             newNonrequiredPropertyNames = {'conjugateDimension','shouldExcludeNyquist','shouldExludeConjugates'};
         end
 
+        % function propertyAnnotations = propertyAnnotationsForSpectralDimensions()
+        %     propertyAnnotations = CAPropertyAnnotation.empty(0,0);
+        % 
+        %     geomPropertyAnnotations = WVGeometryDoublyPeriodic.propertyAnnotationsForGeometry;
+        %     propertyAnnotations(end+1) = geomPropertyAnnotations(strcmp({geomPropertyAnnotations.name}, "kl"));
+        %     stratPropertyAnnotations = WVGeometryDoublyPeriodic.propertyAnnotationsForStratification;
+        %     propertyAnnotations(end+1) = stratPropertyAnnotations(strcmp({stratPropertyAnnotations.name}, "j"));
+        % end
+
         function propertyAnnotations = propertyAnnotationsForGeometry()
             propertyAnnotations = WVGeometryDoublyPeriodic.propertyAnnotationsForGeometry();
             propertyAnnotations = cat(2,propertyAnnotations,WVStratification.propertyAnnotationsForStratification());

@@ -1,4 +1,4 @@
-classdef WVFlowComponent < handle & matlab.mixin.Heterogeneous
+classdef WVFlowComponent < handle & matlab.mixin.Heterogeneous & CAAnnotatedClass
     %Orthogonal solution group
     %
     % Each degree-of-freedom in the model is associated with an analytical
@@ -82,14 +82,39 @@ classdef WVFlowComponent < handle & matlab.mixin.Heterogeneous
             % - Returns solnGroup: a new orthogonal solution group instance
             arguments
                 wvt WVTransform {mustBeNonempty}
+                options.name
+                options.shortName
+                options.abbreviatedName
                 options.maskAp = 0
                 options.maskAm = 0
                 options.maskA0 = 0
             end
             self.wvt = wvt;
-            self.maskAp = options.maskAp;
-            self.maskAm = options.maskAm;
-            self.maskA0 = options.maskA0;
+            if isfield(options,'name')
+                self.name = options.name;
+            end
+            if isfield(options,'shortName')
+                self.shortName = options.shortName;
+            end
+            if isfield(options,'abbreviatedName')
+                self.abbreviatedName = options.abbreviatedName;
+            end
+
+            if any(options.maskAp(:))
+                self.maskAp = options.maskAp;
+            else
+                self.maskAp = 0;
+            end
+            if any(options.maskAm(:))
+                self.maskAm = options.maskAm;
+            else
+                self.maskAm = 0;
+            end
+            if any(options.maskA0(:))
+                self.maskA0 = options.maskA0;
+            else
+                self.maskA0 = 0;
+            end
         end
 
         function bool = contains(self,otherComponent)
@@ -259,6 +284,62 @@ classdef WVFlowComponent < handle & matlab.mixin.Heterogeneous
             A0(isnan(A0)) = 0;
             Ap(isnan(Ap)) = 0;
             Am(isnan(Am)) = 0;
+        end
+    end
+
+    methods (Static)
+        function vars = classRequiredPropertyNames()
+            % Returns the required property names for the class
+            %
+            % - Topic: CAAnnotatedClass requirement
+            % - Declaration: classRequiredPropertyNames()
+            % - Returns: vars
+            vars = {'name','shortName','abbreviatedName','maskAp','maskAm','maskA0'};
+        end
+
+        function propertyAnnotations = classDefinedPropertyAnnotations()
+            % Returns the defined property annotations for the class
+            %
+            % - Topic: CAAnnotatedClass requirement
+            % - Declaration: classDefinedPropertyAnnotations()
+            % - Returns: propertyAnnotations
+            arguments (Output)
+                propertyAnnotations CAPropertyAnnotation
+            end
+            propertyAnnotations = CAPropertyAnnotation.empty(0,0);
+            propertyAnnotations(end+1) = CAPropertyAnnotation('name','long-form version of the feature name');
+            propertyAnnotations(end+1) = CAPropertyAnnotation('shortName','camel-case version of the feature name');
+            propertyAnnotations(end+1) = CAPropertyAnnotation('abbreviatedName','abreviated feature name');
+
+            % This is a bad, bad hack. Somehow these need to be pulled
+            % dynamically, but I might have boxed myself into a corner.
+            propertyAnnotations(end+1) = CADimensionProperty('j', 'mode number', 'vertical mode number');
+            propertyAnnotations(end+1) = CADimensionProperty('kl', 'unitless', 'dimension of the interleaved k-l wavenumber coordinate');
+
+            propertyAnnotations(end+1) = CANumericProperty('maskAp', {'j','kl'}, '','mask of active Ap flow components',isComplex=false);
+            propertyAnnotations(end+1) = CANumericProperty('maskAm', {'j','kl'}, '','mask of active Am flow components',isComplex=false);
+            propertyAnnotations(end+1) = CANumericProperty('maskA0', {'j','kl'}, '','mask of active A0 flow components',isComplex=false);
+        end
+
+        function flowComponent = flowComponentFromGroup(group,wvt)
+            %initialize a WVFlowComponent instance from NetCDF file
+            %
+            % Subclasses to should override this method to enable model
+            % restarts. This method works in conjunction with -writeToFile
+            % to provide restart capability.
+            %
+            % - Topic: Initialization
+            % - Declaration: force = flowComponentFromGroup(group,wvt)
+            % - Parameter wvt: the WVTransform to be used
+            % - Returns force: a new instance of WVForcing
+            arguments
+                group NetCDFGroup {mustBeNonempty}
+                wvt WVTransform {mustBeNonempty}
+            end
+            className = group.attributes('AnnotatedClass');
+            vars = CAAnnotatedClass.requiredPropertiesFromGroup(group);
+            options = namedargs2cell(vars);
+            flowComponent = feval(className,wvt,options{:});
         end
     end
 

@@ -65,6 +65,7 @@ classdef WVTransform < matlab.mixin.indexing.RedefinesDot & CAAnnotatedClass
     properties (Dependent, SetAccess=private)
         hasClosure
         primaryFlowComponents
+        customFlowComponents
         nFluxedComponents
         forcing
     end
@@ -222,6 +223,17 @@ classdef WVTransform < matlab.mixin.indexing.RedefinesDot & CAAnnotatedClass
                 components WVPrimaryFlowComponent
             end
             components = [self.primaryFlowComponentNameMap{self.primaryFlowComponentNameMap.keys}];
+        end
+
+        function components = get.customFlowComponents(self)
+            arguments (Input)
+                self WVTransform
+            end
+            arguments (Output)
+                components WVFlowComponent
+            end
+            customKeys = setdiff(self.flowComponentNameMap.keys,self.primaryFlowComponentNameMap.keys);
+            components = [self.flowComponentNameMap{customKeys}];
         end
 
         addFlowComponent(self,flowComponent)
@@ -728,6 +740,15 @@ classdef WVTransform < matlab.mixin.indexing.RedefinesDot & CAAnnotatedClass
             end
         end
 
+        function initCustomFlowComponentsFromNetCDFFile(self,ncfile)
+            group = ncfile;
+            f = @(className,group) feval(strcat(className,'.flowComponentFromGroup'),group, self);
+            vars = CAAnnotatedClass.propertyValuesFromGroup(group,{"customFlowComponents"},classConstructor=f,shouldIgnoreMissingProperties=true);
+            if isfield(vars,"customFlowComponents")
+                self.addFlowComponent(vars.customFlowComponents);
+            end
+        end
+
         initWithUVRho(self,u,v,rho,t)
         initWithUVEta(self,U,V,N)
         addUVEta(self,U,V,N)
@@ -795,6 +816,8 @@ classdef WVTransform < matlab.mixin.indexing.RedefinesDot & CAAnnotatedClass
             propertyAnnotations = CAPropertyAnnotation.empty(0,0);
 
             propertyAnnotations(end+1) = CAObjectProperty('forcing','array of WVForcing objects');
+
+            propertyAnnotations(end+1) = CAObjectProperty('customFlowComponents','array of custom WVFlowComponent objects');
 
             propertyAnnotations(end+1) = CANumericProperty('t',{}, 's', 'time of observations');
             propertyAnnotations(end).attributes('standard_name') = 'time';
