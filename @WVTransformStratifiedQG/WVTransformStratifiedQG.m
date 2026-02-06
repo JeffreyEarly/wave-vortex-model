@@ -26,6 +26,7 @@ classdef WVTransformStratifiedQG < WVGeometryDoublyPeriodicStratified & WVTransf
         totalEnergySpatiallyIntegrated
         totalEnergy
         isHydrostatic
+        maskableVariables
     end
 
     properties (GetAccess=private,SetAccess=private)
@@ -100,6 +101,10 @@ classdef WVTransformStratifiedQG < WVGeometryDoublyPeriodicStratified & WVTransf
                 error("This transform requires the geostrophic component to be normalized the the qgpv norm.");
                 % self.A0PV = self.geostrophicComponent.multiplierForVariable(WVCoefficientMatrix.A0,"qgpv-inv");
             end
+        end
+
+        function knownMaskableVariables = get.maskableVariables(self)
+            knownMaskableVariables = ["u","v","w","eta", "rho_e","p","psi","qgpv","energy"];
         end
 
         function wvtX2 = waveVortexTransformWithResolution(self,m)

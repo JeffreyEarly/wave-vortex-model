@@ -26,6 +26,7 @@ classdef WVTransformHydrostatic < WVGeometryDoublyPeriodicStratified & WVTransfo
         totalEnergySpatiallyIntegrated
         totalEnergy
         isHydrostatic
+        maskableVariables
         exactTotalEnergy
         exactPotentialEnstrophy
         volumeIntegral
@@ -101,10 +102,11 @@ classdef WVTransformHydrostatic < WVGeometryDoublyPeriodicStratified & WVTransfo
             varNames = self.namesOfTransformVariables();
             self.addOperation(self.operationForKnownVariable(varNames{:}),shouldOverwriteExisting=true,shouldSuppressWarning=true);
 
-            self.addOperation(self.operationForKnownVariable('u','v','w','eta','p',flowComponent=self.geostrophicComponent));
-            self.addOperation(self.operationForKnownVariable('u','v','w','eta','p',flowComponent=self.waveComponent));
-            self.addOperation(self.operationForKnownVariable('u','v','w','eta','p',flowComponent=self.inertialComponent));
-            self.addOperation(self.operationForKnownVariable('u','v','w','eta','p',flowComponent=self.mdaComponent));
+            variables = cellstr(self.maskableVariables);
+            for i=1:length(self.primaryFlowComponents)    
+                self.addOperation(self.operationForKnownVariable(variables{:},flowComponent=self.primaryFlowComponents(i)));
+            end
+
             self.addOperation(EtaTrueOperation(self));
             self.addOperation(APVOperation());
             self.addOperation(APEOperation(self));
@@ -116,6 +118,10 @@ classdef WVTransformHydrostatic < WVGeometryDoublyPeriodicStratified & WVTransfo
             self.Fu=zeros(self.spatialMatrixSize);
             self.Fv=zeros(self.spatialMatrixSize);
             self.Feta=zeros(self.spatialMatrixSize);
+        end
+
+        function knownMaskableVariables = get.maskableVariables(self)
+            knownMaskableVariables = ["u","v","w","eta", "rho_e","p","psi","qgpv","energy"];
         end
 
         function wvtX2 = waveVortexTransformWithResolution(self,m,options)

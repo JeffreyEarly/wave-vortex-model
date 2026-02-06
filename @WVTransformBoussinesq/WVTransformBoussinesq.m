@@ -26,6 +26,7 @@ classdef WVTransformBoussinesq < WVGeometryDoublyPeriodicStratifiedBoussinesq & 
         totalEnergySpatiallyIntegrated
         totalEnergy
         isHydrostatic
+        maskableVariables
         exactTotalEnergy
         exactPotentialEnstrophy
         volumeIntegral
@@ -115,10 +116,10 @@ classdef WVTransformBoussinesq < WVGeometryDoublyPeriodicStratifiedBoussinesq & 
             varNames = self.namesOfTransformVariables();
             self.addOperation(self.operationForKnownVariable(varNames{:}),shouldOverwriteExisting=true,shouldSuppressWarning=true);
 
-            self.addOperation(self.operationForKnownVariable('u','v','w','eta','p',flowComponent=self.geostrophicComponent));
-            self.addOperation(self.operationForKnownVariable('u','v','w','eta','p',flowComponent=self.waveComponent));
-            self.addOperation(self.operationForKnownVariable('u','v','w','eta','p',flowComponent=self.inertialComponent));
-            self.addOperation(self.operationForKnownVariable('u','v','w','eta','p',flowComponent=self.mdaComponent));
+            variables = cellstr(self.maskableVariables);
+            for i=1:length(self.primaryFlowComponents)
+                self.addOperation(self.operationForKnownVariable(variables{:},flowComponent=self.primaryFlowComponents(i)));
+            end
             self.addOperation(EtaTrueOperation(self));
             self.addOperation(APVOperation());
             self.addOperation(APEOperation(self));
@@ -142,6 +143,10 @@ classdef WVTransformBoussinesq < WVGeometryDoublyPeriodicStratifiedBoussinesq & 
             self.ApmW = self.g*kappa./(self.N2 - self.f*self.f)/2;
 
             self.Ddelta = (self.N2./(self.N2 - self.f*self.f)) .* self.QG0inv*(squeeze(self.Q0 ./ self.P0).*self.PF0);  
+        end
+
+        function knownMaskableVariables = get.maskableVariables(self)
+            knownMaskableVariables = ["u","v","w","eta", "rho_e","p","psi","qgpv","energy"];
         end
 
         function wvtX2 = waveVortexTransformWithResolution(self,m)

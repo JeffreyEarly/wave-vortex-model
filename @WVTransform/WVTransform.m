@@ -60,6 +60,7 @@ classdef WVTransform < matlab.mixin.indexing.RedefinesDot & CAAnnotatedClass
         totalEnergySpatiallyIntegrated
         totalEnergy
         isHydrostatic
+        maskableVariables
     end
 
     properties (Dependent, SetAccess=private)

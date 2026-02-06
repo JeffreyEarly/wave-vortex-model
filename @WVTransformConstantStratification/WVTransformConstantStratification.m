@@ -25,6 +25,7 @@ classdef WVTransformConstantStratification < WVGeometryDoublyPeriodicStratifiedC
     properties (Dependent)
         totalEnergySpatiallyIntegrated
         totalEnergy
+        maskableVariables
     end
     properties
         Fu, Fv, Feta
@@ -92,10 +93,10 @@ classdef WVTransformConstantStratification < WVGeometryDoublyPeriodicStratifiedC
             varNames = self.namesOfTransformVariables();
             self.addOperation(self.operationForKnownVariable(varNames{:}),shouldOverwriteExisting=true,shouldSuppressWarning=true);
 
-            self.addOperation(self.operationForKnownVariable('u','v','w','eta','p',flowComponent=self.geostrophicComponent));
-            self.addOperation(self.operationForKnownVariable('u','v','w','eta','p',flowComponent=self.waveComponent));
-            self.addOperation(self.operationForKnownVariable('u','v','w','eta','p',flowComponent=self.inertialComponent));
-            self.addOperation(self.operationForKnownVariable('u','v','w','eta','p',flowComponent=self.mdaComponent));
+            variables = cellstr(self.maskableVariables);
+            for i=1:length(self.primaryFlowComponents)
+                self.addOperation(self.operationForKnownVariable(variables{:},flowComponent=self.primaryFlowComponents(i)));
+            end
             self.addOperation(EtaTrueOperation(self));
             self.addOperation(APVOperation());
             self.addOperation(APEOperation(self));
@@ -127,6 +128,10 @@ classdef WVTransformConstantStratification < WVGeometryDoublyPeriodicStratifiedC
             else
                 self.nonlinearFluxFunction = @() self.nonlinearFluxNonhydrostatic();
             end
+        end
+
+        function knownMaskableVariables = get.maskableVariables(self)
+            knownMaskableVariables = ["u","v","w","eta", "rho_e","p","psi","qgpv","energy"];
         end
 
         function wvtX2 = waveVortexTransformWithResolution(self,m)
