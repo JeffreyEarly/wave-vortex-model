@@ -22,6 +22,8 @@ classdef WVStratification < WVRotatingFPlane
     methods (Abstract)
         u_z = diffZF(self,u,options);
         w_z = diffZG(self,w,options);
+        U = intZF(self,u,options);
+        W = intZG(self,w,options)
     end
 
     properties (Abstract)

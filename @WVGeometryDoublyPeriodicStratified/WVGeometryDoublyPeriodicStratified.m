@@ -120,6 +120,8 @@ classdef WVGeometryDoublyPeriodicStratified < WVGeometryDoublyPeriodic & WVStrat
 
         du = diffZF(self,u,options)
         dw = diffZG(self,w,options)
+        U = intZF(self,u,options)
+        W = intZG(self,w,options)
 
         function Lr2 = get.Lr2(self)
             Lr2 = self.g*self.h_0/(self.f*self.f);
