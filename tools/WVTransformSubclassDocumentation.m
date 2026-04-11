@@ -13,9 +13,14 @@ classdef WVTransformSubclassDocumentation < ClassDocumentation
                 options.grandparent = []
                 options.nav_order = []
                 options.excludedSuperclasses = {'handle'};
+                options.shouldLoadDetailedDescriptionSidecars (1,1) logical = true
             end
             superClassOptions = namedargs2cell(options);
             self@ClassDocumentation(name,superClassOptions{:});
+            cleanup = onCleanup(@() []);
+            if self.shouldLoadDetailedDescriptionSidecars
+                cleanup = CAEnableDetailedDescriptionSidecars(); %#ok<NASGU>
+            end
 
             classMetadata = meta.class.fromName(self.name);
             for iClass=1:length(classMetadata.SuperclassList)
@@ -87,11 +92,20 @@ classdef WVTransformSubclassDocumentation < ClassDocumentation
                 options.parent = []
                 options.grandparent = []
                 options.excludedSuperclasses = {'handle'};
+                options.shouldLoadDetailedDescriptionSidecars (1,1) logical = true
             end
 
             classDocumentation = WVTransformSubclassDocumentation.empty(length(nameArray),0);
             for iName=1:length(nameArray)
-                classDocumentation(iName) = WVTransformSubclassDocumentation(nameArray{iName},buildFolder=options.buildFolder,websiteFolder=options.websiteFolder,parent=options.parent,grandparent=options.grandparent,nav_order=iName,excludedSuperclasses = options.excludedSuperclasses);
+                classDocumentation(iName) = WVTransformSubclassDocumentation( ...
+                    nameArray{iName}, ...
+                    buildFolder=options.buildFolder, ...
+                    websiteFolder=options.websiteFolder, ...
+                    parent=options.parent, ...
+                    grandparent=options.grandparent, ...
+                    nav_order=iName, ...
+                    excludedSuperclasses=options.excludedSuperclasses, ...
+                    shouldLoadDetailedDescriptionSidecars=options.shouldLoadDetailedDescriptionSidecars);
             end
         end
     end
