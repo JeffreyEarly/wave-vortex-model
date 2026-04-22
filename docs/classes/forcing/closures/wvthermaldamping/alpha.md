@@ -14,6 +14,9 @@ damping parameter, units of $$s^{-1}$$
 
 ---
 
+## Description
+Real valued property with no dimensions and units of $$s^{-1}$$.
+
 ## Discussion
 
   

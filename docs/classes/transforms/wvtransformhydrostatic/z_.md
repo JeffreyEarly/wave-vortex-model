@@ -3,14 +3,17 @@ layout: default
 title: Z
 parent: WVTransformHydrostatic
 grand_parent: Classes
-nav_order: 52
+nav_order: 57
 mathjax: true
 ---
 
 #  Z
 
-
+z-coordinate matrix
 
 
 ---
+
+## Description
+Real valued property with dimensions $$(x,y,z)$$ and units of $$m$$.
 

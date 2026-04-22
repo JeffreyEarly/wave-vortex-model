@@ -3,7 +3,7 @@ layout: default
 title: degreesOfFreedomForComplexMatrix
 parent: WVTransformBarotropicQG
 grand_parent: Classes
-nav_order: 33
+nav_order: 37
 mathjax: true
 ---
 

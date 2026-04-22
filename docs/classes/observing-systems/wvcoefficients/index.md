@@ -25,7 +25,7 @@ Detailed explanation goes here
   + [`WVCoefficients`](/classes/observing-systems/wvcoefficients/wvcoefficients.html) create a new observing system
   + [`observingSystemWithResolutionOfTransform`](/classes/observing-systems/wvcoefficients/observingsystemwithresolutionoftransform.html) create a new WVObservingSystem with a new resolution
 + Other
-  + [`absTolerance`](/classes/observing-systems/wvcoefficients/abstolerance.html) 
+  + [`absTolerance`](/classes/observing-systems/wvcoefficients/abstolerance.html) absolute tolerance of the wave-vortex coefficients
   + [`classRequiredPropertyNames`](/classes/observing-systems/wvcoefficients/classrequiredpropertynames.html) 
   + [`errorTolerances`](/classes/observing-systems/wvcoefficients/errortolerances.html) 
 

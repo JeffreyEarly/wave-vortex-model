@@ -3,7 +3,7 @@ layout: default
 title: shouldExludeConjugates
 parent: WVTransformHydrostatic
 grand_parent: Classes
-nav_order: 183
+nav_order: 201
 mathjax: true
 ---
 
@@ -13,6 +13,9 @@ whether the WV grid includes wavenumbers that are Hermitian conjugates
 
 
 ---
+
+## Description
+Real valued property with no dimensions and units of $$bool$$.
 
 ## Discussion
 

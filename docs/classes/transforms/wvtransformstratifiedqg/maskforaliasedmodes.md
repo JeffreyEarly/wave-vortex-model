@@ -3,7 +3,7 @@ layout: default
 title: maskForAliasedModes
 parent: WVTransformStratifiedQG
 grand_parent: Classes
-nav_order: 111
+nav_order: 117
 mathjax: true
 ---
 

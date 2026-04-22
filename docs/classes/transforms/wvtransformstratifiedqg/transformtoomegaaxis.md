@@ -3,7 +3,7 @@ layout: default
 title: transformToOmegaAxis
 parent: WVTransformStratifiedQG
 grand_parent: Classes
-nav_order: 159
+nav_order: 174
 mathjax: true
 ---
 

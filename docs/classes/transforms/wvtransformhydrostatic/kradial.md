@@ -3,7 +3,7 @@ layout: default
 title: kRadial
 parent: WVTransformHydrostatic
 grand_parent: Classes
-nav_order: 131
+nav_order: 140
 mathjax: true
 ---
 
@@ -16,4 +16,11 @@ radial (k,l) wavenumber on the WV grid
 
 ## Discussion
 
-  
+Creates a radial wavenumber axis,
+
+$$
+k_r \equiv \sqrt( k^2 + l^2)
+$$
+
+with spacing set by the largest gap in the gridded radial wavenumber. See `radialWavenumberAxis`.
+

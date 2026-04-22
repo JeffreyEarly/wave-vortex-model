@@ -3,7 +3,7 @@ layout: default
 title: quadraturePointsForStratifiedFlow
 parent: WVTransformBoussinesq
 grand_parent: Classes
-nav_order: 180
+nav_order: 194
 mathjax: true
 ---
 

@@ -14,6 +14,9 @@ final model time that the output group is active (seconds)
 
 ---
 
+## Description
+Real valued property with no dimensions and units of $$s$$.
+
 ## Discussion
 
   This optional properties determines when the output group will

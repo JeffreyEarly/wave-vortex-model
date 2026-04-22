@@ -3,14 +3,21 @@ layout: default
 title: GMatrix
 parent: WVTransformBoussinesq
 grand_parent: Classes
-nav_order: 14
+nav_order: 19
 mathjax: true
 ---
 
 #  GMatrix
 
-
+transformation matrix $$G_g$$
 
 
 ---
+
+## Description
+Real valued property with dimensions $$(j,z)$$ and no units.
+
+## Discussion
+
+This is the geostrophic transformation matrix $$G_g$$ that transforms a vector from physical space to vertical mode space. Typically applied to variables $$\eta$$ and possibly $$w$$.
 

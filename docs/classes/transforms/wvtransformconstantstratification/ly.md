@@ -3,7 +3,7 @@ layout: default
 title: Ly
 parent: WVTransformConstantStratification
 grand_parent: Classes
-nav_order: 33
+nav_order: 38
 mathjax: true
 ---
 
@@ -13,6 +13,9 @@ length of the y-dimension
 
 
 ---
+
+## Description
+Real valued property with no dimensions and units of $$m$$.
 
 ## Discussion
 

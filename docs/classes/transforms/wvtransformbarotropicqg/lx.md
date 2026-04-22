@@ -3,7 +3,7 @@ layout: default
 title: Lx
 parent: WVTransformBarotropicQG
 grand_parent: Classes
-nav_order: 11
+nav_order: 14
 mathjax: true
 ---
 
@@ -13,6 +13,9 @@ length of the x-dimension
 
 
 ---
+
+## Description
+Real valued property with no dimensions and units of $$m$$.
 
 ## Discussion
 

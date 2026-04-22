@@ -14,6 +14,9 @@ boolean indicating whether the variable changes value with a linear time step
 
 ---
 
+## Type
++ Class: `logical`
+
 ## Discussion
 
   This information is used when caching variables and when writing

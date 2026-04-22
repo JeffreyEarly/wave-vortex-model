@@ -3,14 +3,17 @@ layout: default
 title: VA0
 parent: WVTransformHydrostatic
 grand_parent: Classes
-nav_order: 44
+nav_order: 49
 mathjax: true
 ---
 
 #  VA0
 
-
+matrix component that multiplies $$A_0$$ to compute $$\tilde{v}$$.
 
 
 ---
+
+## Description
+Complex valued property with dimensions $$(j,kl)$$ and units of $$s^{-1}$$.
 

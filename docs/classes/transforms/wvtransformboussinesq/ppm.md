@@ -3,7 +3,7 @@ layout: default
 title: Ppm
 parent: WVTransformBoussinesq
 grand_parent: Classes
-nav_order: 48
+nav_order: 53
 mathjax: true
 ---
 
@@ -13,4 +13,7 @@ Preconditioner for F, size(P)=[Nj x Nk]. F*u = uhat, (PF)*u = P*uhat, so ubar==P
 
 
 ---
+
+## Description
+Real valued property with dimensions $$(j,K2unique)$$ and no units.
 

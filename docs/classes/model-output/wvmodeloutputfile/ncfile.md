@@ -14,6 +14,9 @@ reference to the NetCDFFile being used for model output
 
 ---
 
+## Type
++ Class: `NetCDFFile`
+
 ## Discussion
 
   This property may be empty if the file is not yet created

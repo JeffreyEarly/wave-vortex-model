@@ -14,6 +14,9 @@ Array of supported forcing types
 
 ---
 
+## Type
++ Class: `WVForcingType`
+
 ## Discussion
 
   If the class supports a given forcing type, that indicates that

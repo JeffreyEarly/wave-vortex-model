@@ -44,6 +44,7 @@ instatiate one of the concrete subclasses,
 
 ## Topics
 + Initialization
+  + [`version`](/classes/transforms/wvtransform/version.html) WaveVortexModel package version read from `resources/mpackage.json`.
   + [`waveVortexTransformFromFile`](/classes/transforms/wvtransform/wavevortextransformfromfile.html) Initialize a WVTransform instance from an existing file
   + [`waveVortexTransformWithDoubleResolution`](/classes/transforms/wvtransform/wavevortextransformwithdoubleresolution.html) create a new WVTransform with double resolution
 + Domain attributes
@@ -181,7 +182,6 @@ instatiate one of the concrete subclasses,
   + [`updateDependentVariablesNameMap`](/classes/transforms/wvtransform/updatedependentvariablesnamemap.html) 
   + [`variableCache`](/classes/transforms/wvtransform/variablecache.html) 
   + [`variableNames`](/classes/transforms/wvtransform/variablenames.html) 
-  + [`version`](/classes/transforms/wvtransform/version.html) 
   + [`waveVortexTransformWithResolution`](/classes/transforms/wvtransform/wavevortextransformwithresolution.html) 
   + [`wvCoefficientDependentVariablesNameMap`](/classes/transforms/wvtransform/wvcoefficientdependentvariablesnamemap.html) 
 

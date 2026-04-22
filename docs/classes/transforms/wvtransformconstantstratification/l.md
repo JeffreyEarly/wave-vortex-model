@@ -3,7 +3,7 @@ layout: default
 title: l
 parent: WVTransformConstantStratification
 grand_parent: Classes
-nav_order: 142
+nav_order: 152
 mathjax: true
 ---
 
@@ -13,6 +13,9 @@ wavenumber dimension on the WV grid
 
 
 ---
+
+## Description
+Real valued property with dimension $$kl$$ and units of $$rad/m$$.
 
 ## Discussion
 

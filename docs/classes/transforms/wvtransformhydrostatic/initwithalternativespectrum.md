@@ -3,7 +3,7 @@ layout: default
 title: initWithAlternativeSpectrum
 parent: WVTransformHydrostatic
 grand_parent: Classes
-nav_order: 111
+nav_order: 118
 mathjax: true
 ---
 

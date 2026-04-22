@@ -9,8 +9,11 @@ mathjax: true
 
 #  shouldAntialias
 
-
+whether to antialias
 
 
 ---
+
+## Description
+Real valued property with no dimensions and units of $$bool$$.
 

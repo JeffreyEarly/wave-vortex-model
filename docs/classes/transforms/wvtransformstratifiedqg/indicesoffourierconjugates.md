@@ -3,7 +3,7 @@ layout: default
 title: indicesOfFourierConjugates
 parent: WVTransformStratifiedQG
 grand_parent: Classes
-nav_order: 83
+nav_order: 87
 mathjax: true
 ---
 

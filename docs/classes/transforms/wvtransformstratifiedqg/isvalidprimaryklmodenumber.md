@@ -3,7 +3,7 @@ layout: default
 title: isValidPrimaryKLModeNumber
 parent: WVTransformStratifiedQG
 grand_parent: Classes
-nav_order: 92
+nav_order: 98
 mathjax: true
 ---
 

@@ -3,7 +3,7 @@ layout: default
 title: indexFromKLModeNumber
 parent: WVTransformStratifiedQG
 grand_parent: Classes
-nav_order: 78
+nav_order: 82
 mathjax: true
 ---
 

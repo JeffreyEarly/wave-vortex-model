@@ -14,6 +14,9 @@ determines the order in which the WVForcing will be
 
 ---
 
+## Type
++ Class: `uint8`
+
 ## Discussion
 applied. Highest priority (0) will get called first, lowest (255)
   will get called last. The default is 255. The priority level is

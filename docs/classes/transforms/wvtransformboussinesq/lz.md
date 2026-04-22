@@ -3,7 +3,7 @@ layout: default
 title: Lz
 parent: WVTransformBoussinesq
 grand_parent: Classes
-nav_order: 28
+nav_order: 33
 mathjax: true
 ---
 
@@ -13,6 +13,9 @@ length of the z-dimension
 
 
 ---
+
+## Description
+Real valued property with no dimensions and units of $$m$$.
 
 ## Discussion
 

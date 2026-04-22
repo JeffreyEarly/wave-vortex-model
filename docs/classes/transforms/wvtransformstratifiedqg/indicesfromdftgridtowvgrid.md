@@ -3,7 +3,7 @@ layout: default
 title: indicesFromDFTGridToWVGrid
 parent: WVTransformStratifiedQG
 grand_parent: Classes
-nav_order: 80
+nav_order: 84
 mathjax: true
 ---
 

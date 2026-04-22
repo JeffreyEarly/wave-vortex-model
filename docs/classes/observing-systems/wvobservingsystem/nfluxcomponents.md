@@ -14,6 +14,9 @@ number of components that need to be integrated in time.
 
 ---
 
+## Type
++ Class: `uint8`
+
 ## Discussion
 
   Setting a value greater than zero will require that you

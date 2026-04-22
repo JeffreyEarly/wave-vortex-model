@@ -14,6 +14,9 @@ non-dimensional quadratic drag coefficient
 
 ---
 
+## Description
+Real valued property with no dimensions and no units.
+
 ## Discussion
 
   

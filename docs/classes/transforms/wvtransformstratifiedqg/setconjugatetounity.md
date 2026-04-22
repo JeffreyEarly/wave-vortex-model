@@ -3,7 +3,7 @@ layout: default
 title: setConjugateToUnity
 parent: WVTransformStratifiedQG
 grand_parent: Classes
-nav_order: 138
+nav_order: 150
 mathjax: true
 ---
 

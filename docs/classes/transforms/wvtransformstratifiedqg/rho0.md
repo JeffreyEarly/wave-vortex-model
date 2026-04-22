@@ -3,7 +3,7 @@ layout: default
 title: rho0
 parent: WVTransformStratifiedQG
 grand_parent: Classes
-nav_order: 134
+nav_order: 144
 mathjax: true
 ---
 
@@ -13,4 +13,7 @@ mathjax: true
 
 
 ---
+
+## Description
+Real valued property with no dimensions and units of $$kg m^{-3}$$.
 

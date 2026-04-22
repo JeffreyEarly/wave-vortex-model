@@ -9,8 +9,11 @@ mathjax: true
 
 #  A0N
 
-
+matrix component that multiplies $$\tilde{\eta}$$ to compute $$A_0$$.
 
 
 ---
+
+## Description
+Real valued property with dimensions $$(j,kl)$$ and no units.
 

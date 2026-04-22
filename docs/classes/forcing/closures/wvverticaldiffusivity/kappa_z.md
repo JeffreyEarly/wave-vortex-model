@@ -14,6 +14,9 @@ vertical diffusivity, $$m^2s^{-1}$$
 
 ---
 
+## Description
+Real valued property with no dimensions and units of $$m^2 s^{-1}$$.
+
 ## Discussion
 
   

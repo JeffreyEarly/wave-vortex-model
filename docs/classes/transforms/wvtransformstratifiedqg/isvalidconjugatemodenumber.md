@@ -3,7 +3,7 @@ layout: default
 title: isValidConjugateModeNumber
 parent: WVTransformStratifiedQG
 grand_parent: Classes
-nav_order: 89
+nav_order: 95
 mathjax: true
 ---
 

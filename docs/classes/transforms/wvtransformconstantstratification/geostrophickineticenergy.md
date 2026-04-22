@@ -3,7 +3,7 @@ layout: default
 title: geostrophicKineticEnergy
 parent: WVTransformConstantStratification
 grand_parent: Classes
-nav_order: 101
+nav_order: 109
 mathjax: true
 ---
 

@@ -3,7 +3,7 @@ layout: default
 title: initWavesWithFrequencySpectrum
 parent: WVTransformConstantStratification
 grand_parent: Classes
-nav_order: 117
+nav_order: 125
 mathjax: true
 ---
 

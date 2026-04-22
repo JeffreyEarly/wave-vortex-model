@@ -3,7 +3,7 @@ layout: default
 title: isValidConjugateModeNumber
 parent: WVTransformHydrostatic
 grand_parent: Classes
-nav_order: 120
+nav_order: 129
 mathjax: true
 ---
 

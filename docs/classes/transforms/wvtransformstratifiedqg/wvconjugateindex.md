@@ -3,7 +3,7 @@ layout: default
 title: wvConjugateIndex
 parent: WVTransformStratifiedQG
 grand_parent: Classes
-nav_order: 172
+nav_order: 190
 mathjax: true
 ---
 
@@ -13,6 +13,9 @@ index into the WV mode that matches the dftConjugateIndices
 
 
 ---
+
+## Type
++ Class: `uint64`
 
 ## Discussion
 

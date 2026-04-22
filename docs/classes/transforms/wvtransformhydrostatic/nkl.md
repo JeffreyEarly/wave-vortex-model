@@ -3,7 +3,7 @@ layout: default
 title: Nkl
 parent: WVTransformHydrostatic
 grand_parent: Classes
-nav_order: 28
+nav_order: 33
 mathjax: true
 ---
 
@@ -13,6 +13,9 @@ length of the combined kl-wavenumber dimension on the WV grid
 
 
 ---
+
+## Description
+Real valued property with no dimensions and no units.
 
 ## Discussion
 

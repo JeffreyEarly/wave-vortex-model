@@ -9,7 +9,7 @@ mathjax: true
 
 #  advectionInterpolation
 
-
+interpolation method for the advection scheme
 
 
 ---

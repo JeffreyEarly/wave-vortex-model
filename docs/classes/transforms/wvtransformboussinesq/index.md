@@ -46,7 +46,16 @@ wvt = WVTransformHydrostatic([100e3, 100e3, 4000],[64, 64, 65], N2=N2,latitude=3
   + [`inertialComponent`](/classes/transforms/wvtransformboussinesq/inertialcomponent.html) returns the inertial oscillation flow component
   + [`mdaComponent`](/classes/transforms/wvtransformboussinesq/mdacomponent.html) returns the mean density anomaly component
 + Stratification
+  + [`rho_nm`](/classes/transforms/wvtransformboussinesq/rho_nm.html) no-motion density profile
+  + [`N2`](/classes/transforms/wvtransformboussinesq/n2.html) $$N^2(z)$$, squared buoyancy frequency of the no-motion density, $$N^2\equiv - \frac{g}{\rho_0} \frac{\partial \rho_\textrm{nm}}{\partial z}$$
+  + [`dLnN2`](/classes/transforms/wvtransformboussinesq/dlnn2.html) $$\frac{\partial \ln N^2}{\partial z}$$, vertical variation of the log of the squared buoyancy frequency
+  + [`verticalModes`](/classes/transforms/wvtransformboussinesq/verticalmodes.html) instance of the InternalModes class
   + [`effectiveVerticalGridResolution`](/classes/transforms/wvtransformboussinesq/effectiveverticalgridresolution.html) returns the effective vertical grid resolution in meters
+  + Vertical modes
+    + [`FMatrix`](/classes/transforms/wvtransformboussinesq/fmatrix.html) transformation matrix $$F_g$$
+    + [`FinvMatrix`](/classes/transforms/wvtransformboussinesq/finvmatrix.html) transformation matrix $$F_g^{-1}$$
+    + [`GMatrix`](/classes/transforms/wvtransformboussinesq/gmatrix.html) transformation matrix $$G_g$$
+    + [`GinvMatrix`](/classes/transforms/wvtransformboussinesq/ginvmatrix.html) transformation matrix $$G_g^{-1}$$
   + Validation
     + [`isDensityInValidRange`](/classes/transforms/wvtransformboussinesq/isdensityinvalidrange.html) checks if the density field is a valid adiabatic re-arrangement of the base state
 + Initial conditions
@@ -77,6 +86,8 @@ wvt = WVTransformHydrostatic([100e3, 100e3, 4000],[64, 64, 65], N2=N2,latitude=3
     + [`initWithMeanDensityAnomaly`](/classes/transforms/wvtransformboussinesq/initwithmeandensityanomaly.html) initialize with inertial motions
     + [`removeAllMeanDensityAnomaly`](/classes/transforms/wvtransformboussinesq/removeallmeandensityanomaly.html) remove all mean density anomalies
     + [`setMeanDensityAnomaly`](/classes/transforms/wvtransformboussinesq/setmeandensityanomaly.html) set inertial motions
++ Energetics of flow components
+  + [`geostrophicEnergy`](/classes/transforms/wvtransformboussinesq/geostrophicenergy.html) total energy, geostrophic
 + Operations
   + Transformations
     + [`FwInvMatrix`](/classes/transforms/wvtransformboussinesq/fwinvmatrix.html) transformation matrix $$F_w^{-1}$$
@@ -97,16 +108,41 @@ wvt = WVTransformHydrostatic([100e3, 100e3, 4000],[64, 64, 65], N2=N2,latitude=3
     + [`transformFromSpatialDomainToDFTGrid`](/classes/transforms/wvtransformboussinesq/transformfromspatialdomaintodftgrid.html) transform from $$(x,y,z)$$ to $$(k,l,z)$$ on the DFT grid
     + [`transformToSpatialDomainFromDFTGrid`](/classes/transforms/wvtransformboussinesq/transformtospatialdomainfromdftgrid.html) transform from $$(k,l,z)$$ on the DFT grid to $$(x,y,z)$$
     + [`transformToSpatialDomainFromDFTGridAtPosition`](/classes/transforms/wvtransformboussinesq/transformtospatialdomainfromdftgridatposition.html) transform from $$(k,l)$$ on the DFT grid to $$(x,y)$$ at any position
-+ Domain attributes
++ Wave-vortex coefficients
+  + at time $$t$$
+    + [`A0t`](/classes/transforms/wvtransformboussinesq/a0t.html) geostrophic coefficients time t
+    + [`Amt`](/classes/transforms/wvtransformboussinesq/amt.html) negative wave coefficients at reference time t
+    + [`Apt`](/classes/transforms/wvtransformboussinesq/apt.html) positive wave coefficients at reference time t
++ Domain Attributes
+  + [`f`](/classes/transforms/wvtransformboussinesq/f.html) Coriolis parameter
+  + [`g`](/classes/transforms/wvtransformboussinesq/g.html) gravity of Earth
+  + [`inertialPeriod`](/classes/transforms/wvtransformboussinesq/inertialperiod.html) inertial period
+  + [`latitude`](/classes/transforms/wvtransformboussinesq/latitude.html) central latitude of the simulation
+  + [`planetaryRadius`](/classes/transforms/wvtransformboussinesq/planetaryradius.html) radius of the planetary body
+  + [`rho0`](/classes/transforms/wvtransformboussinesq/rho0.html) , dLnN2
+  + [`rotationRate`](/classes/transforms/wvtransformboussinesq/rotationrate.html) rotation rate of the planetary body
+  + Grid
+    + Spectral
+      + [`J`](/classes/transforms/wvtransformboussinesq/j_.html) j-coordinate matrix
+      + [`K`](/classes/transforms/wvtransformboussinesq/k_.html) k-coordinate matrix
+      + [`K2`](/classes/transforms/wvtransformboussinesq/k2.html) squared horizontal wavenumber, $$K2=K^2+L^2$$
+      + [`Kh`](/classes/transforms/wvtransformboussinesq/kh.html) horizontal wavenumber, $$Kh=\sqrt(K^2+L^2)$$
+      + [`L`](/classes/transforms/wvtransformboussinesq/l_.html) l-coordinate matrix
+      + [`Nj`](/classes/transforms/wvtransformboussinesq/nj.html) points in the j-coordinate, `length(z)`
+    + Spatial
+      + [`Nz`](/classes/transforms/wvtransformboussinesq/nz.html) points in the third, untransformed, dimension
+      + [`X`](/classes/transforms/wvtransformboussinesq/x_.html) x-coordinate matrix
+      + [`Y`](/classes/transforms/wvtransformboussinesq/y_.html) y-coordinate matrix
+      + [`Z`](/classes/transforms/wvtransformboussinesq/z_.html) z-coordinate matrix
   + Spatial grid
+    + [`x`](/classes/transforms/wvtransformboussinesq/x.html) dimension
+    + [`y`](/classes/transforms/wvtransformboussinesq/y.html) dimension
     + [`Lx`](/classes/transforms/wvtransformboussinesq/lx.html) length of the x-dimension
     + [`Ly`](/classes/transforms/wvtransformboussinesq/ly.html) length of the y-dimension
     + [`Lz`](/classes/transforms/wvtransformboussinesq/lz.html) length of the z-dimension
     + [`Nx`](/classes/transforms/wvtransformboussinesq/nx.html) number of grid points in the x-dimension
     + [`Ny`](/classes/transforms/wvtransformboussinesq/ny.html) number of grid points in the y-dimension
     + [`fastTransform`](/classes/transforms/wvtransformboussinesq/fasttransform.html) fast transform object
-    + [`x`](/classes/transforms/wvtransformboussinesq/x.html) dimension
-    + [`y`](/classes/transforms/wvtransformboussinesq/y.html) dimension
   + DFT grid
     + [`Nk_dft`](/classes/transforms/wvtransformboussinesq/nk_dft.html) length of the k-wavenumber dimension on the DFT grid
     + [`Nl_dft`](/classes/transforms/wvtransformboussinesq/nl_dft.html) length of the l-wavenumber dimension on the DFT grid
@@ -133,6 +169,9 @@ wvt = WVTransformHydrostatic([100e3, 100e3, 4000],[64, 64, 65], N2=N2,latitude=3
     + [`shouldExcludeNyquist`](/classes/transforms/wvtransformboussinesq/shouldexcludenyquist.html) whether the WV grid includes Nyquist wavenumbers
     + [`shouldExludeConjugates`](/classes/transforms/wvtransformboussinesq/shouldexludeconjugates.html) whether the WV grid includes wavenumbers that are Hermitian conjugates
     + [`wvConjugateIndex`](/classes/transforms/wvtransformboussinesq/wvconjugateindex.html) index into the WV mode that matches the dftConjugateIndices
+  + Stratification
+    + [`h_0`](/classes/transforms/wvtransformboussinesq/h_0.html) [Nj 1]
+    + [`h_pm`](/classes/transforms/wvtransformboussinesq/h_pm.html) equivalent depth of each wave mode
 + Utility function
   + [`degreesOfFreedomForComplexMatrix`](/classes/transforms/wvtransformboussinesq/degreesoffreedomforcomplexmatrix.html) a matrix with the number of degrees-of-freedom at each entry
   + [`degreesOfFreedomForRealMatrix`](/classes/transforms/wvtransformboussinesq/degreesoffreedomforrealmatrix.html) a matrix with the number of degrees-of-freedom at each entry
@@ -142,7 +181,6 @@ wvt = WVTransformHydrostatic([100e3, 100e3, 4000],[64, 64, 65], N2=N2,latitude=3
 + Properties
   + [`effectiveHorizontalGridResolution`](/classes/transforms/wvtransformboussinesq/effectivehorizontalgridresolution.html) returns the effective grid resolution in meters
 + Energetics
-  + [`geostrophicEnergy`](/classes/transforms/wvtransformboussinesq/geostrophicenergy.html) total energy of the geostrophic flow
   + [`inertialEnergy`](/classes/transforms/wvtransformboussinesq/inertialenergy.html) total energy of the inertial flow
   + [`mdaEnergy`](/classes/transforms/wvtransformboussinesq/mdaenergy.html) total energy of the mean density anomaly
   + [`geostrophicKineticEnergy`](/classes/transforms/wvtransformboussinesq/geostrophickineticenergy.html) kinetic energy of the geostrophic flow
@@ -170,38 +208,34 @@ wvt = WVTransformHydrostatic([100e3, 100e3, 4000],[64, 64, 65], N2=N2,latitude=3
   + [`placeParticlesOnIsopycnal`](/classes/transforms/wvtransformboussinesq/placeparticlesonisopycnal.html) places Lagrangian particles along a specified isopycnal
 + Developer
   + [`propertyAnnotationsForGeometry`](/classes/transforms/wvtransformboussinesq/propertyannotationsforgeometry.html) return array of CAPropertyAnnotations initialized by default
++ State Variables
+  + [`psi`](/classes/transforms/wvtransformboussinesq/psi.html) geostrophic streamfunction
+  + [`ssu`](/classes/transforms/wvtransformboussinesq/ssu.html) x-component of the fluid velocity at the surface
+  + [`ssv`](/classes/transforms/wvtransformboussinesq/ssv.html) y-component of the fluid velocity at the surface
++ Potential Vorticity & Enstrophy
+  + [`qgpv`](/classes/transforms/wvtransformboussinesq/qgpv.html) quasigeostrophic potential vorticity
 + Internal
   + [`quadraturePointsForStratifiedFlow`](/classes/transforms/wvtransformboussinesq/quadraturepointsforstratifiedflow.html) return the quadrature points for a given stratification
   + [`verticalProjectionOperatorsWithRigidLid`](/classes/transforms/wvtransformboussinesq/verticalprojectionoperatorswithrigidlid.html) return the normalized projection operators with prefactors
 + Other
-  + [`A0N`](/classes/transforms/wvtransformboussinesq/a0n.html) 
+  + [`A0N`](/classes/transforms/wvtransformboussinesq/a0n.html) matrix component that multiplies $$\tilde{\eta}$$ to compute $$A_0$$.
+  + [`A0U`](/classes/transforms/wvtransformboussinesq/a0u.html) matrix component that multiplies $$\tilde{u}$$ to compute $$A_0$$.
+  + [`A0V`](/classes/transforms/wvtransformboussinesq/a0v.html) matrix component that multiplies $$\tilde{v}$$ to compute $$A_0$$.
   + [`A0Z`](/classes/transforms/wvtransformboussinesq/a0z.html) 
   + [`ApmD`](/classes/transforms/wvtransformboussinesq/apmd.html) 
   + [`ApmN`](/classes/transforms/wvtransformboussinesq/apmn.html) 
   + [`ApmW`](/classes/transforms/wvtransformboussinesq/apmw.html) 
   + [`Ddelta`](/classes/transforms/wvtransformboussinesq/ddelta.html) 
-  + [`FMatrix`](/classes/transforms/wvtransformboussinesq/fmatrix.html) 
   + [`Feta`](/classes/transforms/wvtransformboussinesq/feta.html) 
-  + [`FinvMatrix`](/classes/transforms/wvtransformboussinesq/finvmatrix.html) 
   + [`Fu`](/classes/transforms/wvtransformboussinesq/fu.html) 
   + [`Fv`](/classes/transforms/wvtransformboussinesq/fv.html) 
-  + [`GMatrix`](/classes/transforms/wvtransformboussinesq/gmatrix.html) 
-  + [`GinvMatrix`](/classes/transforms/wvtransformboussinesq/ginvmatrix.html) 
-  + [`J`](/classes/transforms/wvtransformboussinesq/j_.html) 
-  + [`K`](/classes/transforms/wvtransformboussinesq/k_.html) 
-  + [`K2`](/classes/transforms/wvtransformboussinesq/k2.html) 
   + [`K2unique`](/classes/transforms/wvtransformboussinesq/k2unique.html) unique squared-wavenumbers
   + [`K2uniqueK2Map`](/classes/transforms/wvtransformboussinesq/k2uniquek2map.html) cell array Nk in length. Each cell contains indices back to K2
-  + [`Kh`](/classes/transforms/wvtransformboussinesq/kh.html) 
-  + [`L`](/classes/transforms/wvtransformboussinesq/l_.html) 
-  + [`Lr2`](/classes/transforms/wvtransformboussinesq/lr2.html) 
-  + [`N2`](/classes/transforms/wvtransformboussinesq/n2.html) 
-  + [`N2Function`](/classes/transforms/wvtransformboussinesq/n2function.html) 
-  + [`NA0`](/classes/transforms/wvtransformboussinesq/na0.html) 
+  + [`Lr2`](/classes/transforms/wvtransformboussinesq/lr2.html) squared Rossby radius
+  + [`N2Function`](/classes/transforms/wvtransformboussinesq/n2function.html) takes $$z$$ values and returns the squared buoyancy frequency of the no-motion density.
+  + [`NA0`](/classes/transforms/wvtransformboussinesq/na0.html) matrix component that multiplies $$A_0$$ to compute $$\tilde{\eta}$$.
   + [`NAm`](/classes/transforms/wvtransformboussinesq/nam.html) 
   + [`NAp`](/classes/transforms/wvtransformboussinesq/nap.html) 
-  + [`Nj`](/classes/transforms/wvtransformboussinesq/nj.html) 
-  + [`Nz`](/classes/transforms/wvtransformboussinesq/nz.html) 
   + [`Omega`](/classes/transforms/wvtransformboussinesq/omega.html) 
   + [`P0`](/classes/transforms/wvtransformboussinesq/p0.html) Preconditioner for F, size(P)=[Nj 1]. F*u = uhat, (PF)*u = P*uhat, so ubar==P*uhat
   + [`PA0`](/classes/transforms/wvtransformboussinesq/pa0.html) 
@@ -211,31 +245,28 @@ wvt = WVTransformHydrostatic([100e3, 100e3, 4000],[64, 64, 65], N2=N2,latitude=3
   + [`PFpmInv`](/classes/transforms/wvtransformboussinesq/pfpminv.html) IGW transformation matrices
   + [`Ppm`](/classes/transforms/wvtransformboussinesq/ppm.html) Preconditioner for F, size(P)=[Nj x Nk]. F*u = uhat, (PF)*u = P*uhat, so ubar==P*uhat
   + [`Q0`](/classes/transforms/wvtransformboussinesq/q0.html) Preconditioner for G, size(Q)=[Nj 1]. G*eta = etahat, (QG)*eta = Q*etahat, so etabar==Q*etahat.
-  + [`QG0`](/classes/transforms/wvtransformboussinesq/qg0.html) 
-  + [`QG0inv`](/classes/transforms/wvtransformboussinesq/qg0inv.html) 
-  + [`QGpm`](/classes/transforms/wvtransformboussinesq/qgpm.html) 
-  + [`QGpmInv`](/classes/transforms/wvtransformboussinesq/qgpminv.html) 
+  + [`QG0`](/classes/transforms/wvtransformboussinesq/qg0.html) Preconditioned G-mode forward transformation
+  + [`QG0inv`](/classes/transforms/wvtransformboussinesq/qg0inv.html) Preconditioned G-mode inverse transformation
+  + [`QGpm`](/classes/transforms/wvtransformboussinesq/qgpm.html) Preconditioned G-mode forward transformation
+  + [`QGpmInv`](/classes/transforms/wvtransformboussinesq/qgpminv.html) Preconditioned G-mode inverse transformation
   + [`QGwg`](/classes/transforms/wvtransformboussinesq/qgwg.html) size(PF,PG)=[Nj x Nj x Nk]
   + [`Qpm`](/classes/transforms/wvtransformboussinesq/qpm.html) Preconditioner for G, size(Q)=[Nj x Nk]. G*eta = etahat, (QG)*eta = Q*etahat, so etabar==Q*etahat.
-  + [`UA0`](/classes/transforms/wvtransformboussinesq/ua0.html) 
+  + [`UA0`](/classes/transforms/wvtransformboussinesq/ua0.html) matrix component that multiplies $$A_0$$ to compute $$\tilde{u}$$.
   + [`UAm`](/classes/transforms/wvtransformboussinesq/uam.html) 
   + [`UAp`](/classes/transforms/wvtransformboussinesq/uap.html) 
-  + [`VA0`](/classes/transforms/wvtransformboussinesq/va0.html) 
+  + [`VA0`](/classes/transforms/wvtransformboussinesq/va0.html) matrix component that multiplies $$A_0$$ to compute $$\tilde{v}$$.
   + [`VAm`](/classes/transforms/wvtransformboussinesq/vam.html) 
   + [`VAp`](/classes/transforms/wvtransformboussinesq/vap.html) 
   + [`WAm`](/classes/transforms/wvtransformboussinesq/wam.html) 
   + [`WAp`](/classes/transforms/wvtransformboussinesq/wap.html) 
-  + [`X`](/classes/transforms/wvtransformboussinesq/x_.html) 
-  + [`Y`](/classes/transforms/wvtransformboussinesq/y_.html) 
-  + [`Z`](/classes/transforms/wvtransformboussinesq/z_.html) 
   + [`beta`](/classes/transforms/wvtransformboussinesq/beta.html) 
   + [`buildVerticalModeProjectionOperators`](/classes/transforms/wvtransformboussinesq/buildverticalmodeprojectionoperators.html) 
   + [`buoyancyPeriod`](/classes/transforms/wvtransformboussinesq/buoyancyperiod.html) 
   + [`chebfunForZArray`](/classes/transforms/wvtransformboussinesq/chebfunforzarray.html) 
   + [`classRequiredPropertyNames`](/classes/transforms/wvtransformboussinesq/classrequiredpropertynames.html) 
+  + [`conjPhase`](/classes/transforms/wvtransformboussinesq/conjphase.html) phase of the Am wave modes
   + [`crossSpectrumWithFgTransform`](/classes/transforms/wvtransformboussinesq/crossspectrumwithfgtransform.html) 
   + [`crossSpectrumWithGgTransform`](/classes/transforms/wvtransformboussinesq/crossspectrumwithggtransform.html) 
-  + [`dLnN2`](/classes/transforms/wvtransformboussinesq/dlnn2.html) 
   + [`delta_uhat`](/classes/transforms/wvtransformboussinesq/delta_uhat.html) 
   + [`delta_vhat`](/classes/transforms/wvtransformboussinesq/delta_vhat.html) 
   + [`diffX`](/classes/transforms/wvtransformboussinesq/diffx.html) 
@@ -244,24 +275,21 @@ wvt = WVTransformHydrostatic([100e3, 100e3, 4000],[64, 64, 65], N2=N2,latitude=3
   + [`diffZG`](/classes/transforms/wvtransformboussinesq/diffzg.html) 
   + [`effectiveJMax`](/classes/transforms/wvtransformboussinesq/effectivejmax.html) 
   + [`enstrophyFluxFromF0`](/classes/transforms/wvtransformboussinesq/enstrophyfluxfromf0.html) 
+  + [`eta`](/classes/transforms/wvtransformboussinesq/eta.html) approximate isopycnal deviation
   + [`exactPotentialEnstrophy`](/classes/transforms/wvtransformboussinesq/exactpotentialenstrophy.html) 
   + [`exactTotalEnergy`](/classes/transforms/wvtransformboussinesq/exacttotalenergy.html) 
-  + [`f`](/classes/transforms/wvtransformboussinesq/f.html) 
   + [`fluxForForcing`](/classes/transforms/wvtransformboussinesq/fluxforforcing.html) 
-  + [`g`](/classes/transforms/wvtransformboussinesq/g.html) 
   + [`geometryFromFile`](/classes/transforms/wvtransformboussinesq/geometryfromfile.html) 
   + [`geometryFromGroup`](/classes/transforms/wvtransformboussinesq/geometryfromgroup.html) 
-  + [`h_0`](/classes/transforms/wvtransformboussinesq/h_0.html) [Nj 1]
-  + [`h_pm`](/classes/transforms/wvtransformboussinesq/h_pm.html) 
   + [`iK2unique`](/classes/transforms/wvtransformboussinesq/ik2unique.html) map from 2-dim K2, to 1-dim K2unique
   + [`iOmega`](/classes/transforms/wvtransformboussinesq/iomega.html) 
-  + [`inertialPeriod`](/classes/transforms/wvtransformboussinesq/inertialperiod.html) 
-  + [`j`](/classes/transforms/wvtransformboussinesq/j.html) 
-  + [`kAxis`](/classes/transforms/wvtransformboussinesq/kaxis.html) 
+  + [`intZF`](/classes/transforms/wvtransformboussinesq/intzf.html)
+  + [`intZG`](/classes/transforms/wvtransformboussinesq/intzg.html)
+  + [`j`](/classes/transforms/wvtransformboussinesq/j.html) vertical mode number
+  + [`kAxis`](/classes/transforms/wvtransformboussinesq/kaxis.html) k coordinate
   + [`kPseudoRadial`](/classes/transforms/wvtransformboussinesq/kpseudoradial.html) 
   + [`kljGrid`](/classes/transforms/wvtransformboussinesq/kljgrid.html) 
-  + [`lAxis`](/classes/transforms/wvtransformboussinesq/laxis.html) 
-  + [`latitude`](/classes/transforms/wvtransformboussinesq/latitude.html) 
+  + [`lAxis`](/classes/transforms/wvtransformboussinesq/laxis.html) l coordinate
   + [`maxFg`](/classes/transforms/wvtransformboussinesq/maxfg.html) 
   + [`maxFw`](/classes/transforms/wvtransformboussinesq/maxfw.html) 
   + [`modeNumberFromIndex`](/classes/transforms/wvtransformboussinesq/modenumberfromindex.html) 
@@ -272,21 +300,26 @@ wvt = WVTransformHydrostatic([100e3, 100e3, 4000],[64, 64, 65], N2=N2,latitude=3
   + [`namesOfTransformVariables`](/classes/transforms/wvtransformboussinesq/namesoftransformvariables.html) 
   + [`newNonrequiredPropertyNames`](/classes/transforms/wvtransformboussinesq/newnonrequiredpropertynames.html) 
   + [`newRequiredPropertyNames`](/classes/transforms/wvtransformboussinesq/newrequiredpropertynames.html) 
-  + [`planetaryRadius`](/classes/transforms/wvtransformboussinesq/planetaryradius.html) 
+  + [`p`](/classes/transforms/wvtransformboussinesq/p.html) pressure anomaly
+  + [`phase`](/classes/transforms/wvtransformboussinesq/phase.html) phase of the Ap wave modes
+  + [`pi`](/classes/transforms/wvtransformboussinesq/pi.html) height anomaly
   + [`propertyAnnotationsForRotatingFPlane`](/classes/transforms/wvtransformboussinesq/propertyannotationsforrotatingfplane.html) 
   + [`qgpvFluxFromF0`](/classes/transforms/wvtransformboussinesq/qgpvfluxfromf0.html) 
   + [`requiredPropertiesForGeometryFromGroup`](/classes/transforms/wvtransformboussinesq/requiredpropertiesforgeometryfromgroup.html) 
   + [`requiredPropertiesForRotatingFPlaneFromGroup`](/classes/transforms/wvtransformboussinesq/requiredpropertiesforrotatingfplanefromgroup.html) 
   + [`requiredPropertiesForTransformFromGroup`](/classes/transforms/wvtransformboussinesq/requiredpropertiesfortransformfromgroup.html) 
-  + [`rho0`](/classes/transforms/wvtransformboussinesq/rho0.html) , dLnN2
   + [`rhoFunction`](/classes/transforms/wvtransformboussinesq/rhofunction.html) eta_true operation needs rhoFunction
-  + [`rho_nm0`](/classes/transforms/wvtransformboussinesq/rho_nm0.html) 
-  + [`rotationRate`](/classes/transforms/wvtransformboussinesq/rotationrate.html) 
+  + [`rho_bar`](/classes/transforms/wvtransformboussinesq/rho_bar.html) mean density
+  + [`rho_e`](/classes/transforms/wvtransformboussinesq/rho_e.html) excess density
+  + [`rho_nm0`](/classes/transforms/wvtransformboussinesq/rho_nm0.html) $$\rho_\textrm{nm}(z)$$, no-motion density at time `t0`
+  + [`rho_total`](/classes/transforms/wvtransformboussinesq/rho_total.html) total potential density
+  + [`shouldUseTrueNoMotionProfile`](/classes/transforms/wvtransformboussinesq/shouldusetruenomotionprofile.html) whether eta_true uses rho_nm instead of rho_nm0
   + [`spatialFluxForForcingWithName`](/classes/transforms/wvtransformboussinesq/spatialfluxforforcingwithname.html) 
   + [`spatialMatrixSize`](/classes/transforms/wvtransformboussinesq/spatialmatrixsize.html) 
   + [`spectralMatrixSize`](/classes/transforms/wvtransformboussinesq/spectralmatrixsize.html) 
   + [`spectrumWithFgTransform`](/classes/transforms/wvtransformboussinesq/spectrumwithfgtransform.html) 
   + [`spectrumWithGgTransform`](/classes/transforms/wvtransformboussinesq/spectrumwithggtransform.html) 
+  + [`ssh`](/classes/transforms/wvtransformboussinesq/ssh.html) sea-surface height
   + [`throwErrorIfDensityViolation`](/classes/transforms/wvtransformboussinesq/throwerrorifdensityviolation.html) checks if the proposed coefficients are a valid adiabatic re-arrangement of the base state
   + [`totalEnstrophy`](/classes/transforms/wvtransformboussinesq/totalenstrophy.html) 
   + [`totalEnstrophySpatiallyIntegrated`](/classes/transforms/wvtransformboussinesq/totalenstrophyspatiallyintegrated.html) 
@@ -301,15 +334,22 @@ wvt = WVTransformHydrostatic([100e3, 100e3, 4000],[64, 64, 65], N2=N2,latitude=3
   + [`transformToSpatialDomainWithGg`](/classes/transforms/wvtransformboussinesq/transformtospatialdomainwithgg.html) arguments
   + [`transformToSpatialDomainWithGw`](/classes/transforms/wvtransformboussinesq/transformtospatialdomainwithgw.html) 
   + [`transformWithG_wg`](/classes/transforms/wvtransformboussinesq/transformwithg_wg.html) 
-  + [`verticalModes`](/classes/transforms/wvtransformboussinesq/verticalmodes.html) 
+  + [`u`](/classes/transforms/wvtransformboussinesq/u.html) x-component of the fluid velocity
+  + [`uvMax`](/classes/transforms/wvtransformboussinesq/uvmax.html) max horizontal fluid speed
+  + [`v`](/classes/transforms/wvtransformboussinesq/v.html) y-component of the fluid velocity
   + [`verticalProjectionOperatorsWithFreeSurface`](/classes/transforms/wvtransformboussinesq/verticalprojectionoperatorswithfreesurface.html) 
   + [`volumeIntegral`](/classes/transforms/wvtransformboussinesq/volumeintegral.html) 
+  + [`w`](/classes/transforms/wvtransformboussinesq/w.html) z-component of the fluid velocity
+  + [`wMax`](/classes/transforms/wvtransformboussinesq/wmax.html) max vertical fluid speed
   + [`waveCoefficientsAtTimeT`](/classes/transforms/wvtransformboussinesq/wavecoefficientsattimet.html) 
   + [`waveVortexTransformWithExplicitAntialiasing`](/classes/transforms/wvtransformboussinesq/wavevortextransformwithexplicitantialiasing.html) 
   + [`wvBuffer`](/classes/transforms/wvtransformboussinesq/wvbuffer.html) 
   + [`xyzGrid`](/classes/transforms/wvtransformboussinesq/xyzgrid.html) 
-  + [`z`](/classes/transforms/wvtransformboussinesq/z.html) 
-  + [`z_int`](/classes/transforms/wvtransformboussinesq/z_int.html) 
+  + [`z`](/classes/transforms/wvtransformboussinesq/z.html) z coordinate
+  + [`z_int`](/classes/transforms/wvtransformboussinesq/z_int.html) Quadrature weights for the vertical grid
+  + [`zeta_x`](/classes/transforms/wvtransformboussinesq/zeta_x.html) x-component component of relative vorticity
+  + [`zeta_y`](/classes/transforms/wvtransformboussinesq/zeta_y.html) y-component component of relative vorticity
+  + [`zeta_z`](/classes/transforms/wvtransformboussinesq/zeta_z.html) vertical component of relative vorticity
 
 
 ---

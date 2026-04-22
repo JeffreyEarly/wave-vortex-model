@@ -3,13 +3,13 @@ layout: default
 title: z
 parent: WVTransformStratifiedQG
 grand_parent: Classes
-nav_order: 176
+nav_order: 194
 mathjax: true
 ---
 
 #  z
 
-
+z coordinate
 
 
 ---

@@ -9,8 +9,11 @@ mathjax: true
 
 #  absTolerance
 
-
+absolute tolerance of the wave-vortex coefficients
 
 
 ---
+
+## Description
+Real valued property with no dimensions and units of $$m^{3} s^{-2}$$.
 

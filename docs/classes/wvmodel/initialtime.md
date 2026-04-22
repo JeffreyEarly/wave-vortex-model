@@ -14,6 +14,10 @@ Initial model time (seconds)
 
 ---
 
+## Type
++ Class: `double`
++ Size: `(1,1)`
+
 ## Discussion
 The time of the WVTransform when the model was
   initialized. This also corresponds to the first time in the

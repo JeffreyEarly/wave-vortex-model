@@ -9,8 +9,11 @@ mathjax: true
 
 #  absTolerance
 
-
+absolute tolerance of phi for the adaptive integrator
 
 
 ---
+
+## Description
+Real valued property with no dimensions and no units.
 

@@ -14,6 +14,10 @@ indices of modes in the `Am` matrix to fix
 
 ---
 
+## Type
++ Class: `uint64`
++ Size: `(:,1)`
+
 ## Discussion
 
   

@@ -14,6 +14,10 @@ indices of modes in the `A0` matrix to fix
 
 ---
 
+## Type
++ Class: `uint64`
++ Size: `(:,1)`
+
 ## Discussion
 
   

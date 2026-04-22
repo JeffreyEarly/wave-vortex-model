@@ -3,7 +3,7 @@ layout: default
 title: geostrophicComponent
 parent: WVTransformStratifiedQG
 grand_parent: Classes
-nav_order: 71
+nav_order: 75
 mathjax: true
 ---
 

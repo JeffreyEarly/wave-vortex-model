@@ -14,6 +14,9 @@ reference to the WVModel being used
 
 ---
 
+## Type
++ Class: `WVModel`
+
 ## Discussion
 
   

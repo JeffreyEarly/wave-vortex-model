@@ -3,7 +3,7 @@ layout: default
 title: Lz
 parent: WVTransformStratifiedQG
 grand_parent: Classes
-nav_order: 15
+nav_order: 18
 mathjax: true
 ---
 
@@ -13,6 +13,9 @@ length of the z-dimension
 
 
 ---
+
+## Description
+Real valued property with no dimensions and units of $$m$$.
 
 ## Discussion
 

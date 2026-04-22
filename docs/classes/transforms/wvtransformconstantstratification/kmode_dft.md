@@ -3,7 +3,7 @@ layout: default
 title: kMode_dft
 parent: WVTransformConstantStratification
 grand_parent: Classes
-nav_order: 135
+nav_order: 145
 mathjax: true
 ---
 

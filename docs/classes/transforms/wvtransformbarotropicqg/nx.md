@@ -3,7 +3,7 @@ layout: default
 title: Nx
 parent: WVTransformBarotropicQG
 grand_parent: Classes
-nav_order: 19
+nav_order: 22
 mathjax: true
 ---
 
@@ -13,6 +13,9 @@ number of grid points in the x-dimension
 
 
 ---
+
+## Description
+Real valued property with no dimensions and no units.
 
 ## Discussion
 

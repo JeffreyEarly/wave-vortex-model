@@ -3,7 +3,7 @@ layout: default
 title: rho0
 parent: WVTransformBoussinesq
 grand_parent: Classes
-nav_order: 188
+nav_order: 202
 mathjax: true
 ---
 
@@ -13,4 +13,7 @@ mathjax: true
 
 
 ---
+
+## Description
+Real valued property with no dimensions and units of $$kg m^{-3}$$.
 

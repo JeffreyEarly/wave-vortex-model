@@ -3,14 +3,17 @@ layout: default
 title: Kh
 parent: WVTransformStratifiedQG
 grand_parent: Classes
-nav_order: 10
+nav_order: 13
 mathjax: true
 ---
 
 #  Kh
 
-
+horizontal wavenumber, $$Kh=\sqrt(K^2+L^2)$$
 
 
 ---
+
+## Description
+Real valued property with dimensions $$(j,kl)$$ and units of $$rad/m$$.
 

@@ -3,7 +3,7 @@ layout: default
 title: Nkl
 parent: WVTransformBarotropicQG
 grand_parent: Classes
-nav_order: 17
+nav_order: 20
 mathjax: true
 ---
 
@@ -13,6 +13,9 @@ length of the combined kl-wavenumber dimension on the WV grid
 
 
 ---
+
+## Description
+Real valued property with no dimensions and no units.
 
 ## Discussion
 

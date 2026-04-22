@@ -3,7 +3,7 @@ layout: default
 title: primaryKLModeNumberFromKLModeNumber
 parent: WVTransformHydrostatic
 grand_parent: Classes
-nav_order: 158
+nav_order: 170
 mathjax: true
 ---
 

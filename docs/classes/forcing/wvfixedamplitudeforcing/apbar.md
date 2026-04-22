@@ -14,6 +14,13 @@ amplitudes of the fixed modes in the `Ap` matrix
 
 ---
 
+## Type
++ Class: `double`
++ Size: `(:,1)`
+
+## Description
+Complex valued property with dimension $$Ap_indices$$ and no units.
+
 ## Discussion
 
   

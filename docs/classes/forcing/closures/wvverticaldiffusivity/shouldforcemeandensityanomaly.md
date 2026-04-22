@@ -14,6 +14,9 @@ whether to include the $$\frac{\partial}{\partial z} \ln N^2$$ term
 
 ---
 
+## Description
+Real valued property with no dimensions and units of $$bool$$.
+
 ## Discussion
 
   

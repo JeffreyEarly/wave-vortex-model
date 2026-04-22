@@ -9,7 +9,7 @@ mathjax: true
 
 #  trackedVarInterpolation
 
-
+interpolation method for the tracked fields
 
 
 ---

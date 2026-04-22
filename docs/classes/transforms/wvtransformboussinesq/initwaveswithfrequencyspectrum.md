@@ -3,7 +3,7 @@ layout: default
 title: initWavesWithFrequencySpectrum
 parent: WVTransformBoussinesq
 grand_parent: Classes
-nav_order: 127
+nav_order: 134
 mathjax: true
 ---
 

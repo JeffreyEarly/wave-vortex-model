@@ -14,6 +14,9 @@ Reference to the NetCDFGroup being used for model output
 
 ---
 
+## Type
++ Class: `NetCDFGroup`
+
 ## Discussion
 Empty indicates no file output. The output group creates the
   NetCDFGroup, but the NetCDFFile owns it, hence a WeakHandle.

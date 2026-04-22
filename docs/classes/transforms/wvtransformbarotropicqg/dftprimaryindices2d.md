@@ -3,7 +3,7 @@ layout: default
 title: dftPrimaryIndices2D
 parent: WVTransformBarotropicQG
 grand_parent: Classes
-nav_order: 38
+nav_order: 42
 mathjax: true
 ---
 
@@ -13,6 +13,9 @@ index into the DFT grid of each WV mode
 
 
 ---
+
+## Type
++ Class: `uint64`
 
 ## Discussion
 

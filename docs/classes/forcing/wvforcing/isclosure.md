@@ -14,6 +14,9 @@ boolean indicating that this forcing is a turbulence closure
 
 ---
 
+## Type
++ Class: `logical`
+
 ## Discussion
 scheme, capable of removing variance at the small scales.
  

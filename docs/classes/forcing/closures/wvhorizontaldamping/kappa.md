@@ -14,6 +14,9 @@ horizontal diffusivity
 
 ---
 
+## Description
+Real valued property with no dimensions and units of $$m^2 s^{-1}$$.
+
 ## Discussion
 
   

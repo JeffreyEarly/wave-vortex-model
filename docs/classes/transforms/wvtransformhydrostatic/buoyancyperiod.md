@@ -3,7 +3,7 @@ layout: default
 title: buoyancyPeriod
 parent: WVTransformHydrostatic
 grand_parent: Classes
-nav_order: 62
+nav_order: 67
 mathjax: true
 ---
 

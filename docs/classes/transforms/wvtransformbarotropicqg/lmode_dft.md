@@ -3,7 +3,7 @@ layout: default
 title: lMode_dft
 parent: WVTransformBarotropicQG
 grand_parent: Classes
-nav_order: 83
+nav_order: 88
 mathjax: true
 ---
 

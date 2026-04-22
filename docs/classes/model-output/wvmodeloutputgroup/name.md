@@ -14,6 +14,9 @@ of the current (or future) group in the NetCDF file
 
 ---
 
+## Type
++ Class: `string`
+
 ## Discussion
 
   

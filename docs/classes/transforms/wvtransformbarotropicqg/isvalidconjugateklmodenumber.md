@@ -3,7 +3,7 @@ layout: default
 title: isValidConjugateKLModeNumber
 parent: WVTransformBarotropicQG
 grand_parent: Classes
-nav_order: 67
+nav_order: 72
 mathjax: true
 ---
 
