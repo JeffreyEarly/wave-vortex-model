@@ -1,6 +1,6 @@
 {
     "name": "WaveVortexModel",
-    "version": "4.0.2",
+    "version": "4.0.3",
     "id": "5b1d512f-b713-471f-9b51-70befc23ccf2",
     "formerNames": [],
     "displayName": "WaveVortexModel",
@@ -70,7 +70,7 @@
         },
         {
             "name": "InternalModes",
-            "compatibleVersions": "^1.0",
+            "compatibleVersions": "1.0.1",
             "id": "d671f7d7-4215-4319-a7cc-d4c25efc725a"
         },
         {

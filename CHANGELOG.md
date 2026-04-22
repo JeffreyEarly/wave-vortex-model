@@ -1,5 +1,8 @@
 # Version History
 
+## [4.0.3] - 2026-04-22
+- pinned `InternalModes` to `1.0.1` so MPM resolves a `SplineCore`-compatible dependency set for `WaveVortexModel` installs.
+
 ## [4.0.2] - 2026-01-16
 - new moment based algorithm for computing rho_nm.
 - eta_true now computed from high order spline representation of rho_nm; recores SplineCore package.
@@ -27,4 +30,3 @@
 
 ## [0.0.1](https://github.com/Energy-Pathways-Group/GLOceanKit/commits/master/GLOceanKit/GLInternalWaveInitialization.m) - 2014-12-10
 - Initially released as a linear internal wave model that time stepped forward non-hydrostatic internal gravity waves in variable stratification using internal wave modes. The code was written in C and Objective-C.
-
