@@ -52,8 +52,14 @@ classdef WVTransform < matlab.mixin.indexing.RedefinesDot & CAAnnotatedClass
     end
     % Public read-only properties
     properties (GetAccess=public, SetAccess=protected)
-        version = "4.0.4";
         forcingType
+    end
+
+    properties (GetAccess=public, SetAccess=private, Dependent)
+        % WaveVortexModel package version read from `resources/mpackage.json`.
+        %
+        % - Topic: Initialization
+        version
     end
 
     properties (Abstract)
@@ -279,6 +285,13 @@ classdef WVTransform < matlab.mixin.indexing.RedefinesDot & CAAnnotatedClass
             for iForce=1:length(self.forcing)
                 bool = bool | self.forcing(iForce).isClosure;
             end
+        end
+
+        function version = get.version(self)
+            arguments
+                self WVTransform
+            end
+            version = WVTransform.cachedPackageVersion();
         end
 
         function removeAllForcing(self)
@@ -852,6 +865,51 @@ classdef WVTransform < matlab.mixin.indexing.RedefinesDot & CAAnnotatedClass
             end
         end
     end
-end 
 
+    methods (Static, Access=private)
+        function version = cachedPackageVersion()
+            persistent cachedVersion
 
+            if ~isempty(cachedVersion)
+                version = cachedVersion;
+                return
+            end
+
+            classFilePath = which('WVTransform');
+            packageRoot = fileparts(fileparts(classFilePath));
+            manifestPath = fullfile(packageRoot,'resources','mpackage.json');
+
+            if ~isfile(manifestPath)
+                error("WVTransform:MissingPackageManifest", ...
+                    "Could not find the WaveVortexModel package manifest at %s.", manifestPath);
+            end
+
+            try
+                manifest = jsondecode(fileread(manifestPath));
+            catch ME
+                error("WVTransform:InvalidPackageManifest", ...
+                    "Could not parse the WaveVortexModel package manifest at %s: %s", ...
+                    manifestPath, ME.message);
+            end
+
+            if ~isstruct(manifest) || ~isfield(manifest,'version')
+                error("WVTransform:InvalidPackageManifest", ...
+                    "The WaveVortexModel package manifest at %s must define a version field.", manifestPath);
+            end
+
+            manifestVersion = manifest.version;
+            if ~(ischar(manifestVersion) || (isstring(manifestVersion) && isscalar(manifestVersion)))
+                error("WVTransform:InvalidPackageManifest", ...
+                    "The WaveVortexModel package manifest at %s must define version as a text scalar.", manifestPath);
+            end
+
+            version = string(manifestVersion);
+            if strlength(version) == 0
+                error("WVTransform:InvalidPackageManifest", ...
+                    "The WaveVortexModel package manifest at %s must define a nonempty version.", manifestPath);
+            end
+
+            cachedVersion = version;
+        end
+    end
+end
