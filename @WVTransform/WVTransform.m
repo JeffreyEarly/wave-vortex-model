@@ -52,7 +52,7 @@ classdef WVTransform < matlab.mixin.indexing.RedefinesDot & CAAnnotatedClass
     end
     % Public read-only properties
     properties (GetAccess=public, SetAccess=protected)
-        version = "3.1.0";
+        version = "4.0.4";
         forcingType
     end
 
@@ -853,6 +853,5 @@ classdef WVTransform < matlab.mixin.indexing.RedefinesDot & CAAnnotatedClass
         end
     end
 end 
-
 
 

@@ -49,6 +49,10 @@ classdef EtaTrueOperation < WVOperation
         Z
     end
 
+    properties (Access=private)
+        hasWarnedAboutOptimizationToolboxUnavailable (1,1) logical = false
+    end
+
     methods
 
         function self = EtaTrueOperation(wvt)
@@ -58,17 +62,16 @@ classdef EtaTrueOperation < WVOperation
             outputVariables(1) = WVVariableAnnotation('eta_true',{'x','y','z'},'m', 'true isopycnal deviation');
             self@WVOperation('eta_true',outputVariables,@disp);
 
-            K=min(wvt.Nz,8);
-            data = wvt.rho0 - wvt.rho_nm0;
+            K = min(wvt.Nz,8);
             self.spline_nm = BSpline(K,BSpline.knotPointsForDataPoints(wvt.z,K=K));
-            self.spline_nm.x_mean = mean(data);
-            self.spline_nm.x_std = std(data);
             self.Z = BSpline.Spline( wvt.z, self.spline_nm.t_knot, self.spline_nm.K );
-            self.spline_nm.m = self.Z\((data - self.spline_nm.x_mean)/self.spline_nm.x_std);
         end
 
         function varargout = compute(self,wvt,varargin)
-            data = wvt.rho0 - wvt.rho_nm;
+            rho_nm = self.noMotionProfileForEtaTrue(wvt);
+            data = wvt.rho0 - rho_nm;
+            self.spline_nm.x_mean = mean(data);
+            self.spline_nm.x_std = std(data);
             self.spline_nm.m = self.Z\((data - self.spline_nm.x_mean)/self.spline_nm.x_std);
 
             rho_total = (wvt.rhoFunction(wvt.Z) - wvt.rho0) + wvt.rho_e ;
@@ -78,7 +81,33 @@ classdef EtaTrueOperation < WVOperation
             eta_true = wvt.Z - zMinusEta;
             varargout = {eta_true};
         end
-  
+
+    end
+
+    methods (Access=protected, Hidden)
+        function rho_nm = noMotionProfileForEtaTrue(self,wvt)
+            if wvt.shouldUseTrueNoMotionProfile
+                self.warnIfOptimizationToolboxUnavailable();
+                rho_nm = wvt.rho_nm;
+            else
+                rho_nm = wvt.rho_nm0;
+            end
+        end
+
+        function warnIfOptimizationToolboxUnavailable(self)
+            if self.hasWarnedAboutOptimizationToolboxUnavailable || self.hasOptimizationToolboxSupport()
+                return
+            end
+            warning('EtaTrueOperation:OptimizationToolboxUnavailable', ...
+                ['The rho_nm transform variable is being used to compute eta_true, ', ...
+                'but rho_nm is being computed without Optimization Toolbox support. ', ...
+                'The eta_true computation may be less reliable.']);
+            self.hasWarnedAboutOptimizationToolboxUnavailable = true;
+        end
+
+        function tf = hasOptimizationToolboxSupport(self)
+            tf = WVNoMotionProfileOperation.hasOptimizationToolboxSupport();
+        end
     end
 
     methods (Static)

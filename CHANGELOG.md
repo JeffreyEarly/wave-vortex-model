@@ -1,5 +1,10 @@
 # Version History
 
+## [4.0.4] - 2026-04-22
+- added `shouldUseTrueNoMotionProfile` to the constant-stratification, hydrostatic, and Boussinesq transforms so `eta_true` uses `rho_nm0` by default and `rho_nm` when explicitly requested.
+- added an advisory `EtaTrueOperation:OptimizationToolboxUnavailable` warning when `shouldUseTrueNoMotionProfile=true` and `rho_nm` is being computed without Optimization Toolbox support.
+- added focused tests covering `eta_true` profile selection, warning behavior, transform-copy preservation, and NetCDF round-trip persistence of `shouldUseTrueNoMotionProfile`.
+
 ## [4.0.3] - 2026-04-22
 - pinned `InternalModes` to `1.0.1` so MPM resolves a `SplineCore`-compatible dependency set for `WaveVortexModel` installs.
 

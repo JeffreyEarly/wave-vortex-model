@@ -12,8 +12,8 @@ classdef WVNoMotionProfileOperation < WVOperation
             % outputVariables(1).isVariableWithLinearTimeStep = false;
             self@WVOperation('rho_nm',outputVariables,@disp);
 
-            if license("test","Optimization_Toolbox") && exist("fsolve","file")==2
-                self.solver = "fsolve";
+            if WVNoMotionProfileOperation.hasOptimizationToolboxSupport()
+                self.solver = "lsqnonlin";
             else
                 self.solver = "fminsearch";
             end
@@ -27,6 +27,12 @@ classdef WVNoMotionProfileOperation < WVOperation
     end
 
     methods (Static)
+        function tf = hasOptimizationToolboxSupport()
+            tf = license("test","Optimization_Toolbox") ...
+                && exist("lsqnonlin","file")==2 ...
+                && exist("optimoptions","file")==2;
+        end
+
         function [rho,exitflag,output] = find_rho_nm(z_int, Lz, rho_total, rho_nm0,options)
             %SOLVEMOMENTS_M1ZERO_MNFIXED
             % Solve moments:  sum_{j=1}^n z_j m_j^k = c_k,  k=1..n
@@ -61,7 +67,7 @@ classdef WVNoMotionProfileOperation < WVOperation
                 Lz (1,1) double {mustBeFinite, mustBePositive}
                 rho_total (:,:,:) double {mustBeFinite}
                 rho_nm0 (:,1) double {mustBeFinite, mustBeNonnegative}
-                options.solver (1,1) string {mustBeMember(options.solver, ["fsolve","fminsearch"])} = "fminsearch"
+                options.solver (1,1) string {mustBeMember(options.solver, ["lsqnonlin","fminsearch"])} = "fminsearch"
             end
 
             n = numel(z_int);
@@ -78,7 +84,7 @@ classdef WVNoMotionProfileOperation < WVOperation
             u0 = WVNoMotionProfileOperation.rho_to_u(rho_nm0, rho0, rhoD);
 
             switch options.solver
-                case "fsolve"
+                case "lsqnonlin"
                     options = optimoptions("lsqnonlin", ...
                         "Display","none", ...
                         "Algorithm","trust-region-reflective", ...

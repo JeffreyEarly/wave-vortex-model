@@ -30,6 +30,9 @@ classdef WVTransformBoussinesq < WVGeometryDoublyPeriodicStratifiedBoussinesq & 
         exactPotentialEnstrophy
         volumeIntegral
     end
+    properties (GetAccess=public, SetAccess=protected)
+        shouldUseTrueNoMotionProfile (1,1) logical = false
+    end
     properties
         Fu, Fv, Feta
         delta_uhat
@@ -57,11 +60,13 @@ classdef WVTransformBoussinesq < WVGeometryDoublyPeriodicStratifiedBoussinesq & 
             % - Parameter stratification:  (optional) function_handle specifying the stratification as a function of depth on the domain [-Lz 0]
             % - Parameter latitude: (optional) latitude of the domain (default is 33 degrees north)
             % - Parameter rho0: (optional) density at the surface z=0 (default is 1025 kg/m^3)
+            % - Parameter shouldUseTrueNoMotionProfile: (optional) whether eta_true uses rho_nm instead of rho_nm0. Default false.
             % - Returns wvt: a new WVTransformHydrostatic instance
             arguments
                 Lxyz (1,3) double {mustBePositive}
                 Nxyz (1,3) double {mustBePositive}
                 options.shouldAntialias (1,1) logical = true
+                options.shouldUseTrueNoMotionProfile (1,1) logical = false
                 options.z (:,1) double {mustBeNonempty} % quadrature points!
                 options.j (:,1) double {mustBeNonempty}
                 options.Nj (1,1) double {mustBePositive}
@@ -94,13 +99,15 @@ classdef WVTransformBoussinesq < WVGeometryDoublyPeriodicStratifiedBoussinesq & 
                 options.iK2unique
             end
 
-            optionArgs = namedargs2cell(options);
+            geometryOptions = rmfield(options,'shouldUseTrueNoMotionProfile');
+            optionArgs = namedargs2cell(geometryOptions);
             self@WVGeometryDoublyPeriodicStratifiedBoussinesq(Lxyz, Nxyz, optionArgs{:})
             self@WVTransform(WVForcingType(["NonhydrostaticSpatial","Spectral","SpectralAmplitude"]));
             self@WVGeostrophicMethods();
             self@WVMeanDensityAnomalyMethods();
             self@WVInternalGravityWaveMethods();
             self@WVInertialOscillationMethods();
+            self.shouldUseTrueNoMotionProfile = options.shouldUseTrueNoMotionProfile;
 
             self.initializeGeostrophicComponent();
             self.initializeMeanDensityAnomalyComponent();
@@ -145,7 +152,7 @@ classdef WVTransformBoussinesq < WVGeometryDoublyPeriodicStratifiedBoussinesq & 
         end
 
         function wvtX2 = waveVortexTransformWithResolution(self,m)
-            names = {'shouldAntialias','N2Function','rho0','planetaryRadius','rotationRate','latitude','g'};
+            names = {'shouldAntialias','shouldUseTrueNoMotionProfile','N2Function','rho0','planetaryRadius','rotationRate','latitude','g'};
             optionArgs = {};
             for i=1:length(names)
                 optionArgs{2*i-1} = names{i};
@@ -303,7 +310,7 @@ classdef WVTransformBoussinesq < WVGeometryDoublyPeriodicStratifiedBoussinesq & 
             if self.shouldAntialias == false
                 error("This function only applies to transforms that are dealiasing.")
             end
-            names = {'shouldAntialias','N2Function','rho0','planetaryRadius','rotationRate','latitude','g'};
+            names = {'shouldAntialias','shouldUseTrueNoMotionProfile','N2Function','rho0','planetaryRadius','rotationRate','latitude','g'};
             optionArgs = {};
             for i=1:length(names)
                 optionArgs{2*i-1} = names{i};
@@ -357,7 +364,7 @@ classdef WVTransformBoussinesq < WVGeometryDoublyPeriodicStratifiedBoussinesq & 
         end
 
         function newRequiredPropertyNames = newRequiredPropertyNames()
-            newRequiredPropertyNames = {'A0','Ap','Am','kl','t0','t','forcing'};
+            newRequiredPropertyNames = {'A0','Ap','Am','kl','t0','t','forcing','shouldUseTrueNoMotionProfile'};
         end
 
         function names = namesOfTransformVariables()
@@ -371,6 +378,7 @@ classdef WVTransformBoussinesq < WVGeometryDoublyPeriodicStratifiedBoussinesq & 
             propertyAnnotations = WVGeometryDoublyPeriodicStratifiedBoussinesq.propertyAnnotationsForGeometry();
             propertyAnnotations = cat(2,propertyAnnotations,WVGeostrophicMethods.propertyAnnotationsForGeostrophicComponent(spectralDimensionNames = spectralDimensionNames));
             transformProperties = WVTransform.propertyAnnotationsForTransform('A0','Ap','Am','A0_TE_factor','A0_QGPV_factor','A0_TZ_factor','A0_Psi_factor','Apm_TE_factor',spectralDimensionNames = spectralDimensionNames);
+            transformProperties(end+1) = CANumericProperty('shouldUseTrueNoMotionProfile',{},'bool', 'whether eta_true uses rho_nm instead of rho_nm0');
 
             varNames = WVTransformBoussinesq.namesOfTransformVariables();
             varAnnotations = WVTransform.propertyAnnotationForKnownVariable(varNames{:},spectralDimensionNames = spectralDimensionNames,spatialDimensionNames = spatialDimensionNames);
@@ -387,11 +395,14 @@ classdef WVTransformBoussinesq < WVGeometryDoublyPeriodicStratifiedBoussinesq & 
                 options
             end
             [Lxyz, Nxyz, geomOptions] = WVGeometryDoublyPeriodicStratifiedBoussinesq.requiredPropertiesForGeometryFromGroup(group);
-            % CAAnnotatedClass.throwErrorIfMissingProperties(group,WVTransformBarotropicQG.newRequiredPropertyNames);
-            % vars = CAAnnotatedClass.propertyValuesFromGroup(group,WVTransformBarotropicQG.newRequiredPropertyNames);
-            % newOptions = namedargs2cell(vars);
-            % options = cat(2,geomOptions,newOptions);
-            options = geomOptions;
+            vars = CAAnnotatedClass.propertyValuesFromGroup(group,{'shouldUseTrueNoMotionProfile'},shouldIgnoreMissingProperties=true);
+            if isfield(vars,'shouldUseTrueNoMotionProfile')
+                vars.shouldUseTrueNoMotionProfile = logical(vars.shouldUseTrueNoMotionProfile);
+                newOptions = namedargs2cell(vars);
+                options = cat(2,geomOptions,newOptions);
+            else
+                options = geomOptions;
+            end
         end
 
         function [wvt,ncfile] = waveVortexTransformFromFile(path,options)
@@ -434,6 +445,4 @@ classdef WVTransformBoussinesq < WVGeometryDoublyPeriodicStratifiedBoussinesq & 
     end
 
 end
-
-
 
