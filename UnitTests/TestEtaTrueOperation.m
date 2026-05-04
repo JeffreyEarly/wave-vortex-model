@@ -1,20 +1,43 @@
 classdef TestEtaTrueOperation < matlab.unittest.TestCase
 
     methods (Test)
-        function testConstantStratificationRegistersRhoNm(testCase)
-            names = WVTransformConstantStratification.namesOfTransformVariables();
-            requiredPropertyNames = WVTransformConstantStratification.newRequiredPropertyNames();
-            propertyAnnotations = WVTransformConstantStratification.propertyAnnotationsForTransform();
-            propertyNames = string({propertyAnnotations.name});
+        function testTransformsRegisterRhoNmWithoutPersistingFlag(testCase)
+            testCase.verifyTrue(ismember('rho_nm',WVTransformConstantStratification.namesOfTransformVariables()));
+            testCase.verifyTrue(ismember('rho_nm',WVTransformHydrostatic.namesOfTransformVariables()));
+            testCase.verifyTrue(ismember('rho_nm',WVTransformBoussinesq.namesOfTransformVariables()));
 
-            testCase.verifyTrue(ismember('rho_nm',names));
-            testCase.verifyTrue(ismember('shouldUseTrueNoMotionProfile',requiredPropertyNames));
-            testCase.verifyTrue(ismember("shouldUseTrueNoMotionProfile",propertyNames));
+            testCase.verifyFalse(ismember('shouldUseTrueNoMotionProfile', ...
+                WVTransformConstantStratification.newRequiredPropertyNames()));
+            testCase.verifyFalse(ismember('shouldUseTrueNoMotionProfile', ...
+                WVTransformHydrostatic.newRequiredPropertyNames()));
+            testCase.verifyFalse(ismember('shouldUseTrueNoMotionProfile', ...
+                WVTransformBoussinesq.newRequiredPropertyNames()));
+
+            testCase.verifyFalse(TestEtaTrueOperation.hasPropertyAnnotation( ...
+                WVTransformConstantStratification.propertyAnnotationsForTransform(),"shouldUseTrueNoMotionProfile"));
+            testCase.verifyFalse(TestEtaTrueOperation.hasPropertyAnnotation( ...
+                WVTransformHydrostatic.propertyAnnotationsForTransform(),"shouldUseTrueNoMotionProfile"));
+            testCase.verifyFalse(TestEtaTrueOperation.hasPropertyAnnotation( ...
+                WVTransformBoussinesq.propertyAnnotationsForTransform(),"shouldUseTrueNoMotionProfile"));
+        end
+
+        function testShouldUseTrueNoMotionProfileIsPostInitializationOnly(testCase)
+            testCase.verifyFalse(TestEtaTrueOperation.canConstructConstantWithShouldUseTrueNoMotionProfile());
+            testCase.verifyFalse(TestEtaTrueOperation.canConstructHydrostaticWithShouldUseTrueNoMotionProfile());
+            testCase.verifyFalse(TestEtaTrueOperation.canConstructBoussinesqWithShouldUseTrueNoMotionProfile());
+
+            wvt = TestEtaTrueOperation.hydrostaticTransform();
+            testCase.verifyFalse(wvt.shouldUseTrueNoMotionProfile);
+            wvt.shouldUseTrueNoMotionProfile = true;
+            testCase.verifyTrue(wvt.shouldUseTrueNoMotionProfile);
+            wvt.shouldUseTrueNoMotionProfile = false;
+            testCase.verifyFalse(wvt.shouldUseTrueNoMotionProfile);
         end
 
         function testEtaTrueUsesRhoNm0ByDefault(testCase)
             wvt = TestEtaTrueOperation.hydrostaticTransform();
-            wvt.addOperation(TestEtaTrueOperation.failingRhoNmOperation(),shouldOverwriteExisting=true,shouldSuppressWarning=true);
+            wvt.addOperation(TestEtaTrueOperation.failingRhoNmOperation(), ...
+                shouldOverwriteExisting=true,shouldSuppressWarning=true);
 
             testCase.verifyWarningFree(@() wvt.performOperationWithName('eta_true'));
 
@@ -24,9 +47,11 @@ classdef TestEtaTrueOperation < matlab.unittest.TestCase
         end
 
         function testEtaTrueUsesRegisteredRhoNmWhenRequested(testCase)
-            wvt = TestEtaTrueOperation.hydrostaticTransform(shouldUseTrueNoMotionProfile=true);
+            wvt = TestEtaTrueOperation.hydrostaticTransform();
+            wvt.shouldUseTrueNoMotionProfile = true;
             rho_nm = TestEtaTrueOperation.testRhoNmProfile(wvt);
-            wvt.addOperation(TestEtaTrueOperation.fixedRhoNmOperation(rho_nm),shouldOverwriteExisting=true,shouldSuppressWarning=true);
+            wvt.addOperation(TestEtaTrueOperation.fixedRhoNmOperation(rho_nm), ...
+                shouldOverwriteExisting=true,shouldSuppressWarning=true);
 
             testCase.verifyWarningFree(@() wvt.performOperationWithName('eta_true'));
 
@@ -40,50 +65,88 @@ classdef TestEtaTrueOperation < matlab.unittest.TestCase
 
         function testEtaTrueDoesNotWarnWhenUsingRhoNm0(testCase)
             wvt = TestEtaTrueOperation.hydrostaticTransform();
-            wvt.addOperation(EtaTrueOperationToolboxUnavailable(wvt),shouldOverwriteExisting=true,shouldSuppressWarning=true);
+            wvt.addOperation(EtaTrueOperationToolboxUnavailable(wvt), ...
+                shouldOverwriteExisting=true,shouldSuppressWarning=true);
 
             testCase.verifyWarningFree(@() wvt.performOperationWithName('eta_true'));
         end
 
         function testEtaTrueWarnsOnceWhenOptimizationToolboxUnavailable(testCase)
-            wvt = TestEtaTrueOperation.hydrostaticTransform(shouldUseTrueNoMotionProfile=true);
+            wvt = TestEtaTrueOperation.hydrostaticTransform();
+            wvt.shouldUseTrueNoMotionProfile = true;
             rho_nm = TestEtaTrueOperation.testRhoNmProfile(wvt);
-            wvt.addOperation(TestEtaTrueOperation.fixedRhoNmOperation(rho_nm),shouldOverwriteExisting=true,shouldSuppressWarning=true);
-            wvt.addOperation(EtaTrueOperationToolboxUnavailable(wvt),shouldOverwriteExisting=true,shouldSuppressWarning=true);
+            wvt.addOperation(TestEtaTrueOperation.fixedRhoNmOperation(rho_nm), ...
+                shouldOverwriteExisting=true,shouldSuppressWarning=true);
+            wvt.addOperation(EtaTrueOperationToolboxUnavailable(wvt), ...
+                shouldOverwriteExisting=true,shouldSuppressWarning=true);
 
-            testCase.verifyWarning(@() wvt.performOperationWithName('eta_true'),'EtaTrueOperation:OptimizationToolboxUnavailable');
+            testCase.verifyWarning(@() wvt.performOperationWithName('eta_true'), ...
+                'EtaTrueOperation:OptimizationToolboxUnavailable');
             wvt.clearVariableCacheOfApAmA0DependentVariables();
             testCase.verifyWarningFree(@() wvt.performOperationWithName('eta_true'));
         end
 
         function testShouldUseTrueNoMotionProfilePersistsThroughTransformCopies(testCase)
-            wvtHydrostatic = TestEtaTrueOperation.hydrostaticTransform(shouldUseTrueNoMotionProfile=true,shouldAntialias=true);
-            testCase.verifyTrue(wvtHydrostatic.waveVortexTransformWithResolution([12 12 7]).shouldUseTrueNoMotionProfile);
-            testCase.verifyTrue(wvtHydrostatic.waveVortexTransformWithExplicitAntialiasing().shouldUseTrueNoMotionProfile);
+            wvtHydrostatic = TestEtaTrueOperation.hydrostaticTransform(shouldAntialias=true);
+            wvtHydrostatic.shouldUseTrueNoMotionProfile = true;
+            wvtHydrostaticX2 = wvtHydrostatic.waveVortexTransformWithResolution([12 12 7]);
+            wvtHydrostaticAntialias = wvtHydrostatic.waveVortexTransformWithExplicitAntialiasing();
+            testCase.verifyTrue(wvtHydrostaticX2.shouldUseTrueNoMotionProfile);
+            testCase.verifyTrue(wvtHydrostaticAntialias.shouldUseTrueNoMotionProfile);
             testCase.verifyTrue(wvtHydrostatic.boussinesqTransform().shouldUseTrueNoMotionProfile);
 
-            wvtBoussinesq = TestEtaTrueOperation.boussinesqTransform(shouldUseTrueNoMotionProfile=true,shouldAntialias=true);
-            testCase.verifyTrue(wvtBoussinesq.waveVortexTransformWithResolution([12 12 7]).shouldUseTrueNoMotionProfile);
-            testCase.verifyTrue(wvtBoussinesq.waveVortexTransformWithExplicitAntialiasing().shouldUseTrueNoMotionProfile);
+            wvtBoussinesq = TestEtaTrueOperation.boussinesqTransform(shouldAntialias=true);
+            wvtBoussinesq.shouldUseTrueNoMotionProfile = true;
+            wvtBoussinesqX2 = wvtBoussinesq.waveVortexTransformWithResolution([12 12 7]);
+            wvtBoussinesqAntialias = wvtBoussinesq.waveVortexTransformWithExplicitAntialiasing();
+            testCase.verifyTrue(wvtBoussinesqX2.shouldUseTrueNoMotionProfile);
+            testCase.verifyTrue(wvtBoussinesqAntialias.shouldUseTrueNoMotionProfile);
         end
 
-        function testShouldUseTrueNoMotionProfilePersistsThroughRoundTrip(testCase)
+        function testShouldUseTrueNoMotionProfileDoesNotPersistThroughRoundTrip(testCase)
             transforms = {
-                TestEtaTrueOperation.hydrostaticTransform(shouldUseTrueNoMotionProfile=true)
-                TestEtaTrueOperation.boussinesqTransform(shouldUseTrueNoMotionProfile=true)
+                TestEtaTrueOperation.hydrostaticTransform()
+                TestEtaTrueOperation.boussinesqTransform()
                 };
 
             for iTransform = 1:numel(transforms)
+                transforms{iTransform}.shouldUseTrueNoMotionProfile = true;
                 path = [tempname,'.nc'];
                 cleanup = onCleanup(@() TestEtaTrueOperation.deleteIfExists(path));
                 transforms{iTransform}.writeToFile(path,shouldOverwriteExisting=true);
                 [wvt2,ncfile] = WVTransform.waveVortexTransformFromFile(path);
 
-                testCase.verifyTrue(wvt2.shouldUseTrueNoMotionProfile);
+                testCase.verifyFalse(wvt2.shouldUseTrueNoMotionProfile);
 
                 ncfile = [];
                 wvt2 = [];
                 clear cleanup
+            end
+        end
+
+        function testShouldUseTrueNoMotionProfileInvalidatesOnlyRhoNmCache(testCase)
+            transforms = {
+                TestEtaTrueOperation.constantTransform()
+                TestEtaTrueOperation.hydrostaticTransform()
+                TestEtaTrueOperation.boussinesqTransform()
+                };
+
+            for iTransform = 1:numel(transforms)
+                wvt = transforms{iTransform};
+                wvt.addToVariableCache("rho_nm",wvt.rho_nm0);
+                wvt.addToVariableCache("eta",zeros(wvt.spatialMatrixSize));
+
+                wvt.shouldUseTrueNoMotionProfile = false;
+                testCase.verifyTrue(isKey(wvt.variableCache,"rho_nm"));
+                testCase.verifyTrue(isKey(wvt.variableCache,"eta"));
+
+                wvt.shouldUseTrueNoMotionProfile = true;
+                testCase.verifyFalse(isKey(wvt.variableCache,"rho_nm"));
+                testCase.verifyTrue(isKey(wvt.variableCache,"eta"));
+
+                wvt.addToVariableCache("rho_nm",wvt.rho_nm0);
+                wvt.shouldUseTrueNoMotionProfile = true;
+                testCase.verifyTrue(isKey(wvt.variableCache,"rho_nm"));
             end
         end
     end
@@ -91,19 +154,16 @@ classdef TestEtaTrueOperation < matlab.unittest.TestCase
     methods (Static, Access=private)
         function wvt = constantTransform(options)
             arguments
-                options.shouldUseTrueNoMotionProfile (1,1) logical = false
                 options.shouldAntialias (1,1) logical = false
             end
 
             wvt = WVTransformConstantStratification([4e3, 4e3, 2e3], [8 8 5], ...
                 latitude=30, ...
-                shouldAntialias=options.shouldAntialias, ...
-                shouldUseTrueNoMotionProfile=options.shouldUseTrueNoMotionProfile);
+                shouldAntialias=options.shouldAntialias);
         end
 
         function wvt = hydrostaticTransform(options)
             arguments
-                options.shouldUseTrueNoMotionProfile (1,1) logical = false
                 options.shouldAntialias (1,1) logical = false
             end
 
@@ -111,13 +171,11 @@ classdef TestEtaTrueOperation < matlab.unittest.TestCase
             wvt = WVTransformHydrostatic([4e3, 4e3, 2e3], [8 8 5], ...
                 N2Function=N2, ...
                 latitude=30, ...
-                shouldAntialias=options.shouldAntialias, ...
-                shouldUseTrueNoMotionProfile=options.shouldUseTrueNoMotionProfile);
+                shouldAntialias=options.shouldAntialias);
         end
 
         function wvt = boussinesqTransform(options)
             arguments
-                options.shouldUseTrueNoMotionProfile (1,1) logical = false
                 options.shouldAntialias (1,1) logical = false
             end
 
@@ -125,8 +183,44 @@ classdef TestEtaTrueOperation < matlab.unittest.TestCase
             wvt = WVTransformBoussinesq([4e3, 4e3, 2e3], [8 8 5], ...
                 N2Function=N2, ...
                 latitude=30, ...
-                shouldAntialias=options.shouldAntialias, ...
-                shouldUseTrueNoMotionProfile=options.shouldUseTrueNoMotionProfile);
+                shouldAntialias=options.shouldAntialias);
+        end
+
+        function tf = hasPropertyAnnotation(propertyAnnotations,name)
+            propertyNames = string({propertyAnnotations.name});
+            tf = ismember(name,propertyNames);
+        end
+
+        function tf = canConstructConstantWithShouldUseTrueNoMotionProfile()
+            try
+                WVTransformConstantStratification([4e3, 4e3, 2e3], [8 8 5], ...
+                    latitude=30, shouldAntialias=false, shouldUseTrueNoMotionProfile=true);
+                tf = true;
+            catch
+                tf = false;
+            end
+        end
+
+        function tf = canConstructHydrostaticWithShouldUseTrueNoMotionProfile()
+            try
+                N2 = @(z) (5.2e-3)^2 * ones(size(z));
+                WVTransformHydrostatic([4e3, 4e3, 2e3], [8 8 5], ...
+                    N2Function=N2, latitude=30, shouldAntialias=false, shouldUseTrueNoMotionProfile=true);
+                tf = true;
+            catch
+                tf = false;
+            end
+        end
+
+        function tf = canConstructBoussinesqWithShouldUseTrueNoMotionProfile()
+            try
+                N2 = @(z) (5.2e-3)^2 * ones(size(z));
+                WVTransformBoussinesq([4e3, 4e3, 2e3], [8 8 5], ...
+                    N2Function=N2, latitude=30, shouldAntialias=false, shouldUseTrueNoMotionProfile=true);
+                tf = true;
+            catch
+                tf = false;
+            end
         end
 
         function op = fixedRhoNmOperation(rho_nm)

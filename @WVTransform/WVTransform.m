@@ -272,6 +272,7 @@ classdef WVTransform < matlab.mixin.indexing.RedefinesDot & CAAnnotatedClass
         addToVariableCache(self,name,var)
         clearVariableCacheOfApAmA0DependentVariables(self)
         clearVariableCacheOfTimeDependentVariables(self)
+        removeFromVariableCache(self,name)
         varargout = fetchFromVariableCache(self,varargin)
 
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

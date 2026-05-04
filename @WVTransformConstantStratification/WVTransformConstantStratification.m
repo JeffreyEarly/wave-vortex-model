@@ -26,7 +26,7 @@ classdef WVTransformConstantStratification < WVGeometryDoublyPeriodicStratifiedC
         totalEnergySpatiallyIntegrated
         totalEnergy
     end
-    properties (GetAccess=public, SetAccess=protected)
+    properties (GetAccess=public, SetAccess=public)
         shouldUseTrueNoMotionProfile (1,1) logical = false
     end
     properties
@@ -58,13 +58,11 @@ classdef WVTransformConstantStratification < WVGeometryDoublyPeriodicStratifiedC
             % - Parameter stratification:  (optional) function_handle specifying the stratification as a function of depth on the domain [-Lz 0]
             % - Parameter latitude: (optional) latitude of the domain (default is 33 degrees north)
             % - Parameter rho0: (optional) density at the surface z=0 (default is 1025 kg/m^3)
-            % - Parameter shouldUseTrueNoMotionProfile: (optional) whether eta_true uses rho_nm instead of rho_nm0. Default false.
             % - Returns wvt: a new WVTransformHydrostatic instance
             arguments
                 Lxyz (1,3) double {mustBePositive}
                 Nxyz (1,3) double {mustBePositive}
                 options.shouldAntialias (1,1) logical = true
-                options.shouldUseTrueNoMotionProfile (1,1) logical = false
 
                 options.N0 (1,1) double {mustBePositive} = 5.2e-3
                 options.rho0 (1,1) double {mustBePositive} = 1025
@@ -76,15 +74,13 @@ classdef WVTransformConstantStratification < WVGeometryDoublyPeriodicStratifiedC
                 options.isHydrostatic logical = false
             end
 
-            geometryOptions = rmfield(options,'shouldUseTrueNoMotionProfile');
-            optionArgs = namedargs2cell(geometryOptions);
+            optionArgs = namedargs2cell(options);
             self@WVGeometryDoublyPeriodicStratifiedConstant(Lxyz, Nxyz, optionArgs{:})
             self@WVTransform(WVForcingType(["HydrostaticSpatial","Spectral","SpectralAmplitude"]));
             self@WVGeostrophicMethods();
             self@WVMeanDensityAnomalyMethods();
             self@WVInternalGravityWaveMethods();
             self@WVInertialOscillationMethods();
-            self.shouldUseTrueNoMotionProfile = options.shouldUseTrueNoMotionProfile;
 
             self.initializeGeostrophicComponent();
             self.initializeMeanDensityAnomalyComponent();
@@ -136,14 +132,24 @@ classdef WVTransformConstantStratification < WVGeometryDoublyPeriodicStratifiedC
             end
         end
 
+        function set.shouldUseTrueNoMotionProfile(self,value)
+            if self.shouldUseTrueNoMotionProfile == value
+                self.shouldUseTrueNoMotionProfile = value;
+                return
+            end
+            self.shouldUseTrueNoMotionProfile = value;
+            self.removeFromVariableCache("rho_nm");
+        end
+
         function wvtX2 = waveVortexTransformWithResolution(self,m)
-            names = {'shouldAntialias','shouldUseTrueNoMotionProfile','N2Function','rho0','planetaryRadius','rotationRate','latitude','g'};
+            names = {'shouldAntialias','N2Function','rho0','planetaryRadius','rotationRate','latitude','g'};
             optionArgs = {};
             for i=1:length(names)
                 optionArgs{2*i-1} = names{i};
                 optionArgs{2*i} = self.(names{i});
             end
             wvtX2 = WVTransformConstantStratification([self.Lx self.Ly self.Lz],m,optionArgs{:});
+            wvtX2.shouldUseTrueNoMotionProfile = self.shouldUseTrueNoMotionProfile;
             forcing = WVForcing.empty(0,length(self.forcing));
             for iForce=1:length(self.forcing)
                 forcing(iForce) = self.forcing(iForce).forcingWithResolutionOfTransform(wvtX2);
@@ -159,7 +165,7 @@ classdef WVTransformConstantStratification < WVGeometryDoublyPeriodicStratifiedC
             if self.shouldAntialias == false
                 error("This function only applies to transforms that are dealiasing.")
             end
-            names = {'shouldAntialias','shouldUseTrueNoMotionProfile','N2Function','rho0','planetaryRadius','rotationRate','latitude','g'};
+            names = {'shouldAntialias','N2Function','rho0','planetaryRadius','rotationRate','latitude','g'};
             optionArgs = {};
             for i=1:length(names)
                 optionArgs{2*i-1} = names{i};
@@ -169,6 +175,7 @@ classdef WVTransformConstantStratification < WVGeometryDoublyPeriodicStratifiedC
                 end
             end
             wvt2 = WVTransformConstantStratification([self.Lx self.Ly self.Lz],[self.Nx self.Ny self.Nz],optionArgs{:});
+            wvt2.shouldUseTrueNoMotionProfile = self.shouldUseTrueNoMotionProfile;
             wvt2.removeAllForcing();
             wvt2.addForcing(WVAntialiasing(wvt2));
 
@@ -349,7 +356,7 @@ classdef WVTransformConstantStratification < WVGeometryDoublyPeriodicStratifiedC
         end
 
         function newRequiredPropertyNames = newRequiredPropertyNames()
-            newRequiredPropertyNames = {'A0','Ap','Am','kl','t0','t','forcing','shouldUseTrueNoMotionProfile'};
+            newRequiredPropertyNames = {'A0','Ap','Am','kl','t0','t','forcing'};
         end
 
         function names = namesOfTransformVariables()
@@ -363,7 +370,6 @@ classdef WVTransformConstantStratification < WVGeometryDoublyPeriodicStratifiedC
             propertyAnnotations = WVGeometryDoublyPeriodicStratifiedConstant.propertyAnnotationsForGeometry();
             propertyAnnotations = cat(2,propertyAnnotations,WVGeostrophicMethods.propertyAnnotationsForGeostrophicComponent(spectralDimensionNames = spectralDimensionNames));
             transformProperties = WVTransform.propertyAnnotationsForTransform('A0','Ap','Am','A0_TE_factor','A0_QGPV_factor','A0_TZ_factor','A0_Psi_factor','Apm_TE_factor',spectralDimensionNames = spectralDimensionNames);
-            transformProperties(end+1) = CANumericProperty('shouldUseTrueNoMotionProfile',{},'bool', 'whether eta_true uses rho_nm instead of rho_nm0');
 
             varNames = WVTransformConstantStratification.namesOfTransformVariables();
             varAnnotations = WVTransform.propertyAnnotationForKnownVariable(varNames{:},spectralDimensionNames = spectralDimensionNames,spatialDimensionNames = spatialDimensionNames);
@@ -380,14 +386,7 @@ classdef WVTransformConstantStratification < WVGeometryDoublyPeriodicStratifiedC
                 options
             end
             [Lxyz, Nxyz, geomOptions] = WVGeometryDoublyPeriodicStratifiedConstant.requiredPropertiesForGeometryFromGroup(group);
-            vars = CAAnnotatedClass.propertyValuesFromGroup(group,{'shouldUseTrueNoMotionProfile'},shouldIgnoreMissingProperties=true);
-            if isfield(vars,'shouldUseTrueNoMotionProfile')
-                vars.shouldUseTrueNoMotionProfile = logical(vars.shouldUseTrueNoMotionProfile);
-                newOptions = namedargs2cell(vars);
-                options = cat(2,geomOptions,newOptions);
-            else
-                options = geomOptions;
-            end
+            options = geomOptions;
         end
 
         function [wvt,ncfile] = waveVortexTransformFromFile(path,options)
@@ -430,4 +429,3 @@ classdef WVTransformConstantStratification < WVGeometryDoublyPeriodicStratifiedC
     end
 
 end
-
