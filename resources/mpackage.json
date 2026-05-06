@@ -1,6 +1,6 @@
 {
     "name": "WaveVortexModel",
-    "version": "4.0.5",
+    "version": "4.0.6",
     "id": "5b1d512f-b713-471f-9b51-70befc23ccf2",
     "formerNames": [],
     "displayName": "WaveVortexModel",
@@ -65,7 +65,7 @@
     "dependencies": [
         {
             "name": "ClassAnnotations",
-            "compatibleVersions": "^1.0",
+            "compatibleVersions": "^1.2.1",
             "id": "2fadd643-a526-49d9-ac09-2486f9d1d4b9"
         },
         {
@@ -75,7 +75,7 @@
         },
         {
             "name": "NetCDF",
-            "compatibleVersions": "^1.0",
+            "compatibleVersions": "^1.0.2",
             "id": "f71928ab-80de-413b-b8ad-f0b9fc22d537"
         },
         {

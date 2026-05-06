@@ -1,5 +1,8 @@
 # Version History
 
+## [4.0.6] - 2026-05-06
+- raised the `ClassAnnotations` and `NetCDF` dependency floors so OceanKit installs resolve the NetCDF function-handle serialization support required by annotated persistence.
+
 ## [4.0.5] - 2026-05-06
 - changed `shouldUseTrueNoMotionProfile` to be a post-initialization setting that is not accepted by constructors or persisted through NetCDF round trips, while preserving transform-copy behavior and invalidating only the `rho_nm` cache when toggled.
 
