@@ -6,6 +6,9 @@ nav_order: 100
 
 # Version History
 
+## [4.0.5] - 2026-05-06
+- changed `shouldUseTrueNoMotionProfile` to be a post-initialization setting that is not accepted by constructors or persisted through NetCDF round trips, while preserving transform-copy behavior and invalidating only the `rho_nm` cache when toggled.
+
 ## [4.0.4] - 2026-04-22
 - added `shouldUseTrueNoMotionProfile` to the constant-stratification, hydrostatic, and Boussinesq transforms so `eta_true` uses `rho_nm0` by default and `rho_nm` when explicitly requested.
 - added an advisory `EtaTrueOperation:OptimizationToolboxUnavailable` warning when `shouldUseTrueNoMotionProfile=true` and `rho_nm` is being computed without Optimization Toolbox support.

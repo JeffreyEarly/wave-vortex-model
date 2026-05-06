@@ -3,7 +3,7 @@ layout: default
 title: spectralFluxForcing
 parent: WVTransform
 grand_parent: Classes
-nav_order: 93
+nav_order: 94
 mathjax: true
 ---
 
@@ -16,4 +16,3 @@ mathjax: true
 
 ## Type
 + Class: `WVForcing`
-

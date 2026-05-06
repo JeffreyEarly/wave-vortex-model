@@ -3,7 +3,7 @@ layout: default
 title: variableAtPositionWithName
 parent: WVTransform
 grand_parent: Classes
-nav_order: 117
+nav_order: 118
 mathjax: true
 ---
 
@@ -27,12 +27,10 @@ Primary method for accessing the dynamical variables on the at any
 
 ## Discussion
 position in the domain.
- 
+
   Computes (or retrieves from cache) any known state variables and computes
   their values at the requested positions (x,y,z)
- 
+
   The method argument specifies how off-grid values should be interpolated.
   Use 'exact' for the slow, but accurate, spectral interpolation. Otherwise
   use 'spline' or some other method used by Matlab's interp function.
- 
-              

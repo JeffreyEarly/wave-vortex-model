@@ -3,7 +3,7 @@ layout: default
 title: spectralVariableWithResolution
 parent: WVTransform
 grand_parent: Classes
-nav_order: 94
+nav_order: 95
 mathjax: true
 ---
 
@@ -30,5 +30,3 @@ create a new variable with different resolution
   Given a variable with dimensions [Nj Nkl], this returns a new variable
   with dimensions matching wvtX2. This can be either increased or decreased
   resolution.
- 
-          

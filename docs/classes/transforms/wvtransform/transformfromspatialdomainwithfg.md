@@ -3,13 +3,13 @@ layout: default
 title: transformFromSpatialDomainWithFg
 parent: WVTransform
 grand_parent: Classes
-nav_order: 108
+nav_order: 109
 mathjax: true
 ---
 
 #  transformFromSpatialDomainWithFg
 
-Required for transformUVEtaToWaveVortex 
+Required for transformUVEtaToWaveVortex
 
 
 ---
