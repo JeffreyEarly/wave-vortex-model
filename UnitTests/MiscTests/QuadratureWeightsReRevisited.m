@@ -18,7 +18,7 @@ im.upperBoundary = UpperBoundary.rigidLid;
 
 %%
 k = 0;
-[Finv,Ginv,h] = im.ModesAtWavenumber(k);
+[Finv,Ginv,h] = im.modesAtWavenumber(k);
 
 Nz = size(Finv,1);
 nModes = size(Finv,2);

@@ -20,7 +20,7 @@ for iK=1:length(k)
     im.normalization = normalization;
     im.upperBoundary = upperBoundary;
     
-    z_g(:,iK) = im.GaussQuadraturePointsForModesAtWavenumber(nPoints,k(iK));
+    [~,~,~,z_g(:,iK)] = im.modesAtQuadraturePoints(nPoints=nPoints,k=k(iK));
 end
 
 figure
@@ -49,8 +49,8 @@ im_gauss = InternalModesSpectral(rhoFunc,zIn,z_g,33,'nEVP',256,'nModes',nPoints)
 im_gauss.normalization = normalization;
 im_gauss.upperBoundary = upperBoundary;
 
-[F,G,h] = im_gauss.ModesAtWavenumber(k);
-[F_hr,G_hr] = im.ModesAtWavenumber(k);
+[F,G,h] = im_gauss.modesAtWavenumber(k);
+[F_hr,G_hr] = im.modesAtWavenumber(k);
 
 if im_gauss.upperBoundary ==  UpperBoundary.rigidLid
     maxGMode = nPoints-2;
@@ -89,4 +89,3 @@ if im_gauss.upperBoundary == UpperBoundary.freeSurface
 end
 
 fprintf('Note that the barotropic mode destroys the conditioning. If you leave it off, everything does well again\n');
-

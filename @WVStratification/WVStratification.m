@@ -188,7 +188,7 @@ classdef WVStratification < WVRotatingFPlane
             % quadrature points.
             self.verticalModes.normalization = Normalization.geostrophic;
             self.verticalModes.upperBoundary = UpperBoundary.rigidLid;
-            [Finv,Ginv,h] = self.verticalModes.ModesAtFrequency(0);
+            [Finv,Ginv,h] = self.verticalModes.modesAtFrequency(0);
             [P,Q,PFinv,PF,QGinv,QG,h,w] = WVStratification.verticalProjectionOperatorsWithRigidLid(Finv,Ginv,h,Nj,self.verticalModes.Lz);
         end
 
@@ -197,7 +197,7 @@ classdef WVStratification < WVRotatingFPlane
             % quadrature points.
             self.verticalModes.normalization = Normalization.kConstant;
             self.verticalModes.upperBoundary = UpperBoundary.rigidLid;
-            [Finv,Ginv,h] = self.verticalModes.ModesAtWavenumber(k);
+            [Finv,Ginv,h] = self.verticalModes.modesAtWavenumber(k);
             [P,Q,PFinv,PF,QGinv,QG,h] = WVStratification.verticalProjectionOperatorsWithRigidLid(Finv,Ginv,h,Nj,self.verticalModes.Lz);
         end
     end
@@ -245,7 +245,7 @@ classdef WVStratification < WVRotatingFPlane
             % im = InternalModesWKBSpectral(N2=options.N2Function,zIn=[-Lz 0],zOut=z,latitude=rotatingOptions.latitude,rho0=options.rho0,nModes=nModes,nEVP=nEVP,rotationRate=rotatingOptions.rotationRate,g=rotatingOptions.g);
             % im.normalization = Normalization.geostrophic;
             % im.upperBoundary = UpperBoundary.rigidLid;
-            % [~,~,h] = im.ModesAtFrequency(0);
+            % [~,~,h] = im.modesAtFrequency(0);
             % Lr = sqrt(rotatingOptions.g*h)/im.f0;
             % kmax = pi*Nx/Lxy;
             % 

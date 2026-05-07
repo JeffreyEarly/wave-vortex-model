@@ -21,13 +21,13 @@ k = 0;
 im = InternalModesSpectral(rho=rhoFunc,zIn=zIn,zOut=z,latitude=33,nEVP=256);
 im.normalization = normalization;
 im.upperBoundary = upperBoundary;
-z = im.GaussQuadraturePointsForModesAtWavenumber(nPoints,k);
+[~,~,~,z] = im.modesAtQuadraturePoints(nPoints=nPoints,k=k);
 
 % Compute F,G at those points
 im = InternalModesSpectral(rho=rhoFunc,zIn=zIn,zOut=z,latitude=33,nEVP=256);
 im.normalization = normalization;
 im.upperBoundary = upperBoundary;
-[Finv,Ginv,self.h] = im.ModesAtWavenumber(k);
+[Finv,Ginv,self.h] = im.modesAtWavenumber(k);
 
 
 
@@ -42,5 +42,5 @@ for iK=1:length(k)
     im.normalization = normalization;
     im.upperBoundary = upperBoundary;
     
-    z_g(:,iK) = im.GaussQuadraturePointsForModesAtWavenumber(nPoints,k(iK));
+    [~,~,~,z_g(:,iK)] = im.modesAtQuadraturePoints(nPoints=nPoints,k=k(iK));
 end

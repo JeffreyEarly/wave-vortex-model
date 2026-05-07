@@ -23,7 +23,7 @@ intG_const(2:2:end) = 0;
 im = InternalModesSpectral(N2=N2,zIn=[-Lz 0],zOut=z,latitude=latitude,nEVP=max(256,floor(2.1*Nz)));
 im.normalization = Normalization.geostrophic;
 im.upperBoundary = UpperBoundary.rigidLid;
-z = im.GaussQuadraturePointsForModesAtFrequency(Nz,0);
+[~,~,~,z] = im.modesAtQuadraturePoints(nPoints=Nz,omega=0);
 
 %%
 im = InternalModesSpectral(N2=N2,zIn=[-Lz 0],zOut=z,latitude=latitude,nModes=Nz-1,nEVP=max(256,floor(2.1*Nz)));
@@ -31,7 +31,7 @@ im.normalization = Normalization.geostrophic;
 im.upperBoundary = UpperBoundary.rigidLid;
 
 % Weights returns \int (N^2/g) Gj dz;
-[Finv,Ginv,h,k,intG] = im.ModesAtFrequency(0,'weights');
+[Finv,Ginv,h,k,intG] = im.modesAtFrequency(0,'weights');
 intG = reshape(intG(1:end-1),[],1);
 Ginv = Ginv(2:end-1,1:end-1);
 G = inv(Ginv);

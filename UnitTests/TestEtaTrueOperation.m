@@ -250,12 +250,14 @@ classdef TestEtaTrueOperation < matlab.unittest.TestCase
 
         function eta_true = etaTrueForProfile(wvt,rho_nm)
             K = min(wvt.Nz,8);
+            S = K - 1;
             data = wvt.rho0 - rho_nm;
-            spline_nm = BSpline(K,BSpline.knotPointsForDataPoints(wvt.z,K=K));
-            spline_nm.x_mean = mean(data);
-            spline_nm.x_std = std(data);
-            Z = BSpline.Spline(wvt.z, spline_nm.t_knot, spline_nm.K);
-            spline_nm.m = Z\((data - spline_nm.x_mean)/spline_nm.x_std);
+            knotPoints = BSpline.knotPointsForDataPoints(wvt.z,S=S);
+            Z = BSpline.matrixForDataPoints(wvt.z,knotPoints=knotPoints,S=S);
+            xMean = mean(data);
+            xStd = std(data);
+            xi = Z\((data - xMean)/xStd);
+            spline_nm = BSpline(S=S,knotPoints=knotPoints,xi=xi,xMean=xMean,xStd=xStd);
 
             rho_total = (wvt.rhoFunction(wvt.Z) - wvt.rho0) + wvt.rho_e;
             zMinusEta = EtaTrueOperation.fInverseBisection(spline_nm,-rho_total(:),-wvt.Lz,0,1e-12);

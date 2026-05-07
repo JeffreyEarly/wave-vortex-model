@@ -1,6 +1,6 @@
 {
     "name": "WaveVortexModel",
-    "version": "4.0.6",
+    "version": "4.0.7",
     "id": "5b1d512f-b713-471f-9b51-70befc23ccf2",
     "formerNames": [],
     "displayName": "WaveVortexModel",
@@ -70,7 +70,7 @@
         },
         {
             "name": "InternalModes",
-            "compatibleVersions": "1.0.1",
+            "compatibleVersions": "1.3.0",
             "id": "d671f7d7-4215-4319-a7cc-d4c25efc725a"
         },
         {
@@ -80,8 +80,13 @@
         },
         {
             "name": "SplineCore",
-            "compatibleVersions": "^1.0.1",
+            "compatibleVersions": "^2.2.0",
             "id": "f723c088-397a-43e5-a0ad-e19422cc3c2a"
+        },
+        {
+            "name": "chebfun",
+            "compatibleVersions": "",
+            "id": "809af0b0-0175-4c98-97d0-1537925cf2d5"
         }
     ],
     "releaseCompatibility": ">=R2024b",

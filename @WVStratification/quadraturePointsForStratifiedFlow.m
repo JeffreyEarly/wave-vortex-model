@@ -25,5 +25,5 @@ elseif ~isequal(options.rho,@isempty)
 end
 im.normalization = Normalization.geostrophic;
 im.upperBoundary = UpperBoundary.rigidLid;
-z = im.GaussQuadraturePointsForModesAtFrequency(Nz,0);
+[~,~,~,z] = im.modesAtQuadraturePoints(nPoints=Nz,omega=0);
 end

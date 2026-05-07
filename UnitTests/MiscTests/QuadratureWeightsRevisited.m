@@ -43,7 +43,7 @@ z = WVStratifiedFlow.quadraturePointsForStratifiedFlow(Lz,Nz,N2=N2,latitude=33);
 verticalModes = InternalModesSpectral(N2=N2,zIn=[-Lz 0],zOut=z,latitude=33,nModes=Nj,nEVP=max(256,floor(2.1*Nz)));
 verticalModes.normalization = Normalization.geostrophic;
 verticalModes.upperBoundary = UpperBoundary.rigidLid;
-[Finv,Ginv,h,k,int_n2g,int_f,int_g] = verticalModes.ModesAtFrequency(0,'int_N2_G_dz/g','int_F_dz','int_G_dz');
+[Finv,Ginv,h,k,int_n2g,int_f,int_g] = verticalModes.modesAtFrequency(0,'int_N2_G_dz/g','int_F_dz','int_G_dz');
 [P,Q,PFinv,PF,QGinv,QG,h,w] = WVStratifiedFlow.verticalProjectionOperatorsWithRigidLid(Finv,Ginv,h,Nj,Lz);
 int_n2g=int_n2g.'; int_f=int_f.'; int_g=int_g.';
 

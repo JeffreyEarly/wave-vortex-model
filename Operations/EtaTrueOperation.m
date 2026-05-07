@@ -9,11 +9,13 @@ classdef EtaTrueOperation < WVOperation
 % int_vol_avg = @(integrand) sum(mean(mean(shiftdim(wvt.z_int,-2).*integrand,1),2),3)/wvt.Lz;
 % 
 % data = wvt.rho_nm;
-% spline_nm = BSpline(K,BSpline.knotPointsForDataPoints(wvt.z,K=K));
-% spline_nm.x_mean = mean(data);
-% spline_nm.x_std = std(data);
-% Z = BSpline.Spline( wvt.z, spline_nm.t_knot, spline_nm.K );
-% spline_nm.m = Z\((data - spline_nm.x_mean)/spline_nm.x_std);
+% S = K - 1;
+% knotPoints = BSpline.knotPointsForDataPoints(wvt.z,S=S);
+% Z = BSpline.matrixForDataPoints(wvt.z,knotPoints=knotPoints,S=S);
+% xMean = mean(data);
+% xStd = std(data);
+% xi = Z\((data - xMean)/xStd);
+% spline_nm = BSpline(S=S,knotPoints=knotPoints,xi=xi,xMean=xMean,xStd=xStd);
 % 
 % rho_e = wvt.rho_total - shiftdim(wvt.rho_nm,-2);
 % int_vol_avg(rho_e)/max(abs(rho_e(:)))
@@ -63,16 +65,19 @@ classdef EtaTrueOperation < WVOperation
             self@WVOperation('eta_true',outputVariables,@disp);
 
             K = min(wvt.Nz,8);
-            self.spline_nm = BSpline(K,BSpline.knotPointsForDataPoints(wvt.z,K=K));
-            self.Z = BSpline.Spline( wvt.z, self.spline_nm.t_knot, self.spline_nm.K );
+            S = K - 1;
+            knotPoints = BSpline.knotPointsForDataPoints(wvt.z,S=S);
+            self.spline_nm = BSpline(S=S,knotPoints=knotPoints);
+            self.Z = BSpline.matrixForDataPoints(wvt.z,knotPoints=knotPoints,S=S);
         end
 
         function varargout = compute(self,wvt,varargin)
             rho_nm = self.noMotionProfileForEtaTrue(wvt);
             data = wvt.rho0 - rho_nm;
-            self.spline_nm.x_mean = mean(data);
-            self.spline_nm.x_std = std(data);
-            self.spline_nm.m = self.Z\((data - self.spline_nm.x_mean)/self.spline_nm.x_std);
+            xMean = mean(data);
+            xStd = std(data);
+            xi = self.Z\((data - xMean)/xStd);
+            self.spline_nm = BSpline(S=self.spline_nm.S,knotPoints=self.spline_nm.knotPoints,xi=xi,xMean=xMean,xStd=xStd);
 
             rho_total = (wvt.rhoFunction(wvt.Z) - wvt.rho0) + wvt.rho_e ;
 

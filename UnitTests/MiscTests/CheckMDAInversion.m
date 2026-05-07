@@ -14,12 +14,12 @@ im.normalization = Normalization.wMax;
 %% Quadrature grid for geostrophic modes
 im.upperBoundary = UpperBoundary.rigidLid;
 im.lowerBoundary = LowerBoundary.freeSlip;
-z_g = im.GaussQuadraturePointsForModesAtFrequency(nPoints,0);
+[~,~,~,z_g] = im.modesAtQuadraturePoints(nPoints=nPoints,omega=0);
 im_g = InternalModesSpectral(N2=N2,zIn=[-Lz 0],zOut=z_g,latitude=33,nModes=nModes);
 im_g.upperBoundary = UpperBoundary.rigidLid;
 im_g.lowerBoundary = LowerBoundary.freeSlip;
 im_g.normalization = Normalization.kConstant;
-[Fg,Gg,hg] = im_g.ModesAtFrequency(0);
+[Fg,Gg,hg] = im_g.modesAtFrequency(0);
 
 Pg = max(abs(Fg),[],1);
 FgNorm = Fg./Pg;

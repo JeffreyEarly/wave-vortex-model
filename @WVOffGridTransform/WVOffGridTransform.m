@@ -95,7 +95,7 @@ classdef WVOffGridTransform < handle
                 error('All input array must be of equal size');
             end
             K2h = reshape(k.*k + l.*l,1,[]);  
-            [h_, validIndices] = self.AddExternalWavesWithMethod(j,phi,A,norm,sqrt(K2h),'ModesAtWavenumber');
+            [h_, validIndices] = self.AddExternalWavesWithMethod(j,phi,A,norm,sqrt(K2h),'modesAtWavenumber');
             K2h = K2h(validIndices);
             k = k(validIndices);
             l = l(validIndices);
@@ -138,7 +138,7 @@ classdef WVOffGridTransform < handle
                 error('All input array must be of equal size');
             end
             omega = reshape(omega,1,[]);
-            [h_, validIndices] = self.AddExternalWavesWithMethod(j,phi,A,norm,omega,'ModesAtFrequency');
+            [h_, validIndices] = self.AddExternalWavesWithMethod(j,phi,A,norm,omega,'modesAtFrequency');
             
             omega = omega(validIndices);
             alpha = alpha(validIndices);
@@ -200,7 +200,7 @@ classdef WVOffGridTransform < handle
                     self.U_ext = cat(2,self.U_ext,A(iWave));
                 else
                     if self.isHydrostatic == 1
-                        [FExt,GExt,hExt] = self.verticalModes.ModesAtFrequency(0);
+                        [FExt,GExt,hExt] = self.verticalModes.modesAtFrequency(0);
                     else
                         [FExt,GExt,hExt] = self.verticalModes.(methodName)(abs(kOrOmega(iWave)));
                     end
@@ -387,4 +387,3 @@ classdef WVOffGridTransform < handle
         end
     end
 end
-

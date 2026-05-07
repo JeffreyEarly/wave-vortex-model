@@ -1,5 +1,11 @@
 # Version History
 
+## [4.0.7] - 2026-05-06
+- raised the `InternalModes` dependency floor to `1.3.0` and the `SplineCore` dependency floor to `^2.2.0`.
+- added `chebfun` as a direct dependency for the model's direct chebfun helper usage.
+- migrated the `eta_true` spline fit to the `SplineCore` 2.x `BSpline` constructor, knot, and basis-matrix APIs.
+- modernized WaveVortexModel's `InternalModes` call sites to the lowerCamel mode and quadrature APIs, including the new `modesAtQuadraturePoints` helper.
+
 ## [4.0.6] - 2026-05-06
 - raised the `ClassAnnotations` and `NetCDF` dependency floors so OceanKit installs resolve the NetCDF function-handle serialization support required by annotated persistence.
 - fixed `WVAdaptiveDamping` for `WVTransformConstantStratification` by routing `effectiveJMax` through the constant-stratification geometry superclass.

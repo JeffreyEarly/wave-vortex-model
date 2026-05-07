@@ -21,7 +21,7 @@ max(abs(Finv_b(:)-Finv_c(:)))
 verticalModes = InternalModesWKBSpectral(N2=wvt_b.N2Function,zIn=[-wvt_b.Lz 0],zOut=wvt_b.z,latitude=wvt_b.latitude,nModes=wvt_b.Nj-1,nEVP=max(256,floor(2.1*wvt_b.Nz)));
 verticalModes.normalization = Normalization.geostrophic;
 verticalModes.upperBoundary = UpperBoundary.rigidLid;
-[Finv,Ginv,h] = verticalModes.ModesAtFrequency(0);
+[Finv,Ginv,h] = verticalModes.modesAtFrequency(0);
 
 h_a = cat(2,1,h);
 Finv_a = cat(2,ones(wvt_b.Nz,1),Finv);
@@ -40,7 +40,7 @@ k = wvt_c.Kh(1,iK);
 [kMode,lMode,j] = wvt_b.modeNumberFromIndex(iK);
 verticalModes.normalization = Normalization.kConstant;
 verticalModes.upperBoundary = UpperBoundary.rigidLid;
-[Finv,Ginv,h] = verticalModes.ModesAtWavenumber(k);
+[Finv,Ginv,h] = verticalModes.modesAtWavenumber(k);
 
 h_a = cat(2,1,h);
 FwInv_a = cat(2,ones(wvt_b.Nz,1),Finv);
