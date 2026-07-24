@@ -1,5 +1,11 @@
 # Version History
 
+## [4.1.0] - 2026-07-24
+- registered flow components now automatically expose supported standard and sea-surface variables.
+- added flow-component diagnostics for `pi`, `ssh`, `ssu`, and `ssv`, and corrected component pressure to use the selected component rather than total pressure height.
+- added periodic two-dimensional interpolation support for surface fields while preserving three-dimensional interpolation behavior.
+- added focused tests for composed-component closure and linear two- and three-dimensional interpolation across periodic boundaries.
+
 ## [4.0.7] - 2026-05-06
 - raised the `InternalModes` dependency floor to `1.3.0` and the `SplineCore` dependency floor to `^2.2.0`.
 - added `chebfun` as a direct dependency for the model's direct chebfun helper usage.

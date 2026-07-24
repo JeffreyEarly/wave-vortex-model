@@ -18,7 +18,7 @@ end
 
 operations = WVOperation.empty(length(variableName),0);
 
-knownMaskableVariables = ["u","v","w","eta", "rho_e","p","psi","qgpv","energy"];
+knownMaskableVariables = ["u","v","w","eta","rho_e","pi","p","psi","qgpv","energy","ssu","ssv","ssh"];
 d = setdiff(variableName,knownMaskableVariables);
 if isMasked && ~isempty(d)
     error("The variables %s cannot be masked.",strjoin(d,", "));
@@ -82,7 +82,7 @@ for iOp = 1:length(variableName)
 
                 case 'p'
                     varAnnotation =  WVVariableAnnotation(name,options.spatialDimensionNames,'kg/m/s2', 'pressure anomaly');
-                    f = @(wvt) wvt.rho0*wvt.g*wvt.pi;
+                    f = @(wvt) wvt.rho0*wvt.g*transformToSpatialDomainWithF(wvt,@(wvt) wvt.NAp.*wvt.Apt,@(wvt) wvt.NAm.*wvt.Amt,@(wvt) wvt.PA0.*wvt.A0t);
 
                 case 'psi'
                     varAnnotation =  WVVariableAnnotation(name,options.spatialDimensionNames,'m^2/s', 'geostrophic streamfunction');
@@ -138,15 +138,15 @@ for iOp = 1:length(variableName)
 
                 case 'ssu'
                     varAnnotation = WVVariableAnnotation('ssu',{'x','y'},'m/s', 'x-component of the fluid velocity at the surface',detailedDescription='- topic: State Variables');
-                    f = @(wvt) wvt.u(:,:,end);
+                    f = @(wvt) surfaceSlice(transformToSpatialDomainWithF(wvt,@(wvt) wvt.UAp.*wvt.Apt,@(wvt) wvt.UAm.*wvt.Amt,@(wvt) wvt.UA0.*wvt.A0t));
 
                 case 'ssv'
                     varAnnotation = WVVariableAnnotation('ssv',{'x','y'},'m/s', 'y-component of the fluid velocity at the surface',detailedDescription='- topic: State Variables');
-                    f = @(wvt) wvt.v(:,:,end);
+                    f = @(wvt) surfaceSlice(transformToSpatialDomainWithF(wvt,@(wvt) wvt.VAp.*wvt.Apt,@(wvt) wvt.VAm.*wvt.Amt,@(wvt) wvt.VA0.*wvt.A0t));
 
                 case 'ssh'
                     varAnnotation = WVVariableAnnotation('ssh',{'x','y'},'m', 'sea-surface height');
-                    f = @(wvt) wvt.pi(:,:,end);
+                    f = @(wvt) surfaceSlice(transformToSpatialDomainWithF(wvt,@(wvt) wvt.NAp.*wvt.Apt,@(wvt) wvt.NAm.*wvt.Amt,@(wvt) wvt.PA0.*wvt.A0t));
 
                 otherwise
                     error('There is no variable named %s.',name)
@@ -162,4 +162,8 @@ for iOp = 1:length(variableName)
     end
 end
 
+end
+
+function surfaceField = surfaceSlice(field)
+surfaceField = field(:,:,end);
 end

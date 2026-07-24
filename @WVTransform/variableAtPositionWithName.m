@@ -3,7 +3,8 @@ function [varargout] = variableAtPositionWithName(self,x,y,z,variableNames,optio
 % position in the domain.
 %
 % Computes (or retrieves from cache) any known state variables and computes
-% their values at the requested positions (x,y,z)
+% their values at the requested positions (x,y,z). For two-dimensional
+% variables, interpolation uses only (x,y), and z may be empty.
 %
 % The method argument specifies how off-grid values should be interpolated.
 % Use 'exact' for the slow, but accurate, spectral interpolation. Otherwise
@@ -13,7 +14,7 @@ function [varargout] = variableAtPositionWithName(self,x,y,z,variableNames,optio
 % - Declaration: [varargout] = variableAtPositionWithName(self,x,y,z,variableNames,options)
 % - Parameter x: array of x-positions
 % - Parameter y: array of y-positions
-% - Parameter z: array of z-positions
+% - Parameter z: array of z-positions, or empty for two-dimensional variables
 % - Parameter variableNames: strings of variable names.
 % - Parameter interpolationMethod: (optional) `linear`,`spline`,`exact`. Default `linear`.
 arguments

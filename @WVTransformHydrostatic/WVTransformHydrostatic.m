@@ -104,10 +104,7 @@ classdef WVTransformHydrostatic < WVGeometryDoublyPeriodicStratified & WVTransfo
             varNames = self.namesOfTransformVariables();
             self.addOperation(self.operationForKnownVariable(varNames{:}),shouldOverwriteExisting=true,shouldSuppressWarning=true);
 
-            self.addOperation(self.operationForKnownVariable('u','v','w','eta','p',flowComponent=self.geostrophicComponent));
-            self.addOperation(self.operationForKnownVariable('u','v','w','eta','p',flowComponent=self.waveComponent));
-            self.addOperation(self.operationForKnownVariable('u','v','w','eta','p',flowComponent=self.inertialComponent));
-            self.addOperation(self.operationForKnownVariable('u','v','w','eta','p',flowComponent=self.mdaComponent));
+            self.addFlowComponent([self.geostrophicComponent,self.waveComponent,self.inertialComponent,self.mdaComponent]);
             self.addOperation(EtaTrueOperation(self));
             self.addOperation(APVOperation());
             self.addOperation(APEOperation(self));
