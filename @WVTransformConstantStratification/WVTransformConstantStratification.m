@@ -139,7 +139,7 @@ classdef WVTransformConstantStratification < WVGeometryDoublyPeriodicStratifiedC
         end
 
         function wvtX2 = waveVortexTransformWithResolution(self,m)
-            names = {'shouldAntialias','N2Function','rho0','planetaryRadius','rotationRate','latitude','g'};
+            names = {'shouldAntialias','N0','rho0','planetaryRadius','rotationRate','latitude','g','isHydrostatic'};
             optionArgs = {};
             for i=1:length(names)
                 optionArgs{2*i-1} = names{i};
@@ -162,7 +162,7 @@ classdef WVTransformConstantStratification < WVGeometryDoublyPeriodicStratifiedC
             if self.shouldAntialias == false
                 error("This function only applies to transforms that are dealiasing.")
             end
-            names = {'shouldAntialias','N2Function','rho0','planetaryRadius','rotationRate','latitude','g'};
+            names = {'shouldAntialias','N0','rho0','planetaryRadius','rotationRate','latitude','g','isHydrostatic'};
             optionArgs = {};
             for i=1:length(names)
                 optionArgs{2*i-1} = names{i};

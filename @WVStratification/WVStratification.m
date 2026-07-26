@@ -24,6 +24,7 @@ classdef WVStratification < WVRotatingFPlane
         w_z = diffZG(self,w,options);
         U = intZF(self,u,options);
         W = intZG(self,w,options)
+        [F,dGdz] = waveModeVerticalStructureAtIndex(self,iZ);
     end
 
     properties (Abstract)
