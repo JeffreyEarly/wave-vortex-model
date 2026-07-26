@@ -3,7 +3,7 @@ layout: default
 title: degreesOfFreedomForComplexMatrix
 parent: WVTransformConstantStratification
 grand_parent: Classes
-nav_order: 85
+nav_order: 87
 mathjax: true
 ---
 

@@ -9,7 +9,7 @@ mathjax: true
 
 #  transformFromSpatialDomainWithFg
 
-Required for transformUVEtaToWaveVortex
+Required for transformUVEtaToWaveVortex 
 
 
 ---

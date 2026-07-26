@@ -24,3 +24,5 @@ Primary method for accessing the dynamical variables
 ## Discussion
 
   Computes (or retrieves from cache) any known state variables.
+ 
+      

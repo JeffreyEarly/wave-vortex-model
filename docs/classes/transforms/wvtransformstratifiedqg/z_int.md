@@ -3,7 +3,7 @@ layout: default
 title: z_int
 parent: WVTransformStratifiedQG
 grand_parent: Classes
-nav_order: 195
+nav_order: 196
 mathjax: true
 ---
 

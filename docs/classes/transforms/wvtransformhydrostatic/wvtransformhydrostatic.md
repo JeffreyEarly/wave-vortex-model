@@ -34,6 +34,8 @@ create a wave-vortex transform for variable stratification
   Creates a new instance of the WVTransformHydrostatic class
   appropriate for disentangling hydrostatic waves and vortices
   in variable stratification
-
+ 
   You must initialization by passing *either* the density
   profile or the stratification profile.
+ 
+                  

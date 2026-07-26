@@ -3,7 +3,7 @@ layout: default
 title: effectiveVerticalGridResolution
 parent: WVTransformConstantStratification
 grand_parent: Classes
-nav_order: 99
+nav_order: 101
 mathjax: true
 ---
 

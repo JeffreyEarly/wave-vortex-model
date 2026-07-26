@@ -3,7 +3,7 @@ layout: default
 title: shouldUseTrueNoMotionProfile
 parent: WVTransformConstantStratification
 grand_parent: Classes
-nav_order: 210
+nav_order: 213
 mathjax: true
 ---
 
@@ -17,3 +17,4 @@ mathjax: true
 ## Type
 + Class: `logical`
 + Size: `(1,1)`
+

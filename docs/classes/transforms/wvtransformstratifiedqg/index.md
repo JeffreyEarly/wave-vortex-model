@@ -21,19 +21,19 @@ A class for disentangling hydrostatic waves and vortices in variable stratificat
 <div class="language-matlab highlighter-rouge"><div class="highlight"><pre class="highlight"><code>classdef WVTransformHydrostatic < <a href="/classes/wvtransform/" title="WVTransform">WVTransform</a></code></pre></div></div>
 
 ## Overview
-
+ 
 To initialization an instance of the WVTransformHydrostatic class you
 must specific the domain size, the number of grid points and *either*
 the density profile or the stratification profile.
-
+ 
 ```matlab
 N0 = 3*2*pi/3600;
 L_gm = 1300;
 N2 = @(z) N0*N0*exp(2*z/L_gm);
 wvt = WVTransformHydrostatic([100e3, 100e3, 4000],[64, 64, 65], N2=N2,latitude=30);
 ```
-
-
+ 
+               
 
 
 
@@ -79,6 +79,7 @@ wvt = WVTransformHydrostatic([100e3, 100e3, 4000],[64, 64, 65], N2=N2,latitude=3
     + [`transformToPseudoRadialWavenumberA0`](/classes/transforms/wvtransformstratifiedqg/transformtopseudoradialwavenumbera0.html) transforms in the from (j,kRadial) to kPseudoRadial
     + [`transformToPseudoRadialWavenumberApm`](/classes/transforms/wvtransformstratifiedqg/transformtopseudoradialwavenumberapm.html) transforms in the from (j,kRadial) to kPseudoRadial
     + [`transformToRadialWavenumber`](/classes/transforms/wvtransformstratifiedqg/transformtoradialwavenumber.html) transforms in the spectral domain from (j,kl) to (j,kRadial)
+    + [`waveModeVerticalStructureAtIndex`](/classes/transforms/wvtransformstratifiedqg/wavemodeverticalstructureatindex.html) Return wave vertical-structure factors at one vertical grid index.
 + Wave-vortex coefficients
   + at time $$t$$
     + [`A0t`](/classes/transforms/wvtransformstratifiedqg/a0t.html) geostrophic coefficients time t
@@ -186,12 +187,12 @@ wvt = WVTransformHydrostatic([100e3, 100e3, 4000],[64, 64, 65], N2=N2,latitude=3
   + [`A0N`](/classes/transforms/wvtransformstratifiedqg/a0n.html) matrix component that multiplies $$\tilde{\eta}$$ to compute $$A_0$$.
   + [`A0U`](/classes/transforms/wvtransformstratifiedqg/a0u.html) matrix component that multiplies $$\tilde{u}$$ to compute $$A_0$$.
   + [`A0V`](/classes/transforms/wvtransformstratifiedqg/a0v.html) matrix component that multiplies $$\tilde{v}$$ to compute $$A_0$$.
-  + [`A0Z`](/classes/transforms/wvtransformstratifiedqg/a0z.html)
+  + [`A0Z`](/classes/transforms/wvtransformstratifiedqg/a0z.html) 
   + [`Lr2`](/classes/transforms/wvtransformstratifiedqg/lr2.html) squared Rossby radius
   + [`N2Function`](/classes/transforms/wvtransformstratifiedqg/n2function.html) takes $$z$$ values and returns the squared buoyancy frequency of the no-motion density.
   + [`NA0`](/classes/transforms/wvtransformstratifiedqg/na0.html) matrix component that multiplies $$A_0$$ to compute $$\tilde{\eta}$$.
   + [`P0`](/classes/transforms/wvtransformstratifiedqg/p0.html) Preconditioner for F, size(P)=[Nj 1]. F*u = uhat, (PF)*u = P*uhat, so ubar==P*uhat
-  + [`PA0`](/classes/transforms/wvtransformstratifiedqg/pa0.html)
+  + [`PA0`](/classes/transforms/wvtransformstratifiedqg/pa0.html) 
   + [`PF0`](/classes/transforms/wvtransformstratifiedqg/pf0.html) size(PF,PG)=[Nj x Nz]
   + [`PF0inv`](/classes/transforms/wvtransformstratifiedqg/pf0inv.html) Transformation matrices
   + [`Q0`](/classes/transforms/wvtransformstratifiedqg/q0.html) Preconditioner for G, size(Q)=[Nj 1]. G*eta = etahat, (QG)*eta = Q*etahat, so etabar==Q*etahat.
@@ -199,71 +200,71 @@ wvt = WVTransformHydrostatic([100e3, 100e3, 4000],[64, 64, 65], N2=N2,latitude=3
   + [`QG0inv`](/classes/transforms/wvtransformstratifiedqg/qg0inv.html) Preconditioned G-mode inverse transformation
   + [`UA0`](/classes/transforms/wvtransformstratifiedqg/ua0.html) matrix component that multiplies $$A_0$$ to compute $$\tilde{u}$$.
   + [`VA0`](/classes/transforms/wvtransformstratifiedqg/va0.html) matrix component that multiplies $$A_0$$ to compute $$\tilde{v}$$.
-  + [`beta`](/classes/transforms/wvtransformstratifiedqg/beta.html)
-  + [`buoyancyPeriod`](/classes/transforms/wvtransformstratifiedqg/buoyancyperiod.html)
-  + [`chebfunForZArray`](/classes/transforms/wvtransformstratifiedqg/chebfunforzarray.html)
-  + [`classRequiredPropertyNames`](/classes/transforms/wvtransformstratifiedqg/classrequiredpropertynames.html)
-  + [`crossSpectrumWithFgTransform`](/classes/transforms/wvtransformstratifiedqg/crossspectrumwithfgtransform.html)
-  + [`crossSpectrumWithGgTransform`](/classes/transforms/wvtransformstratifiedqg/crossspectrumwithggtransform.html)
-  + [`diffX`](/classes/transforms/wvtransformstratifiedqg/diffx.html)
-  + [`diffY`](/classes/transforms/wvtransformstratifiedqg/diffy.html)
-  + [`diffZF`](/classes/transforms/wvtransformstratifiedqg/diffzf.html)
-  + [`diffZG`](/classes/transforms/wvtransformstratifiedqg/diffzg.html)
-  + [`effectiveJMax`](/classes/transforms/wvtransformstratifiedqg/effectivejmax.html)
-  + [`enstrophyFluxFromF0`](/classes/transforms/wvtransformstratifiedqg/enstrophyfluxfromf0.html)
+  + [`beta`](/classes/transforms/wvtransformstratifiedqg/beta.html) 
+  + [`buoyancyPeriod`](/classes/transforms/wvtransformstratifiedqg/buoyancyperiod.html) 
+  + [`chebfunForZArray`](/classes/transforms/wvtransformstratifiedqg/chebfunforzarray.html) 
+  + [`classRequiredPropertyNames`](/classes/transforms/wvtransformstratifiedqg/classrequiredpropertynames.html) 
+  + [`crossSpectrumWithFgTransform`](/classes/transforms/wvtransformstratifiedqg/crossspectrumwithfgtransform.html) 
+  + [`crossSpectrumWithGgTransform`](/classes/transforms/wvtransformstratifiedqg/crossspectrumwithggtransform.html) 
+  + [`diffX`](/classes/transforms/wvtransformstratifiedqg/diffx.html) 
+  + [`diffY`](/classes/transforms/wvtransformstratifiedqg/diffy.html) 
+  + [`diffZF`](/classes/transforms/wvtransformstratifiedqg/diffzf.html) 
+  + [`diffZG`](/classes/transforms/wvtransformstratifiedqg/diffzg.html) 
+  + [`effectiveJMax`](/classes/transforms/wvtransformstratifiedqg/effectivejmax.html) 
+  + [`enstrophyFluxFromF0`](/classes/transforms/wvtransformstratifiedqg/enstrophyfluxfromf0.html) 
   + [`eta`](/classes/transforms/wvtransformstratifiedqg/eta.html) approximate isopycnal deviation
-  + [`fluxForForcing`](/classes/transforms/wvtransformstratifiedqg/fluxforforcing.html)
-  + [`geometryFromFile`](/classes/transforms/wvtransformstratifiedqg/geometryfromfile.html)
-  + [`geometryFromGroup`](/classes/transforms/wvtransformstratifiedqg/geometryfromgroup.html)
-  + [`h_pm`](/classes/transforms/wvtransformstratifiedqg/h_pm.html)
-  + [`hydrostaticTransform`](/classes/transforms/wvtransformstratifiedqg/hydrostatictransform.html)
-  + [`intZF`](/classes/transforms/wvtransformstratifiedqg/intzf.html)
-  + [`intZG`](/classes/transforms/wvtransformstratifiedqg/intzg.html)
+  + [`fluxForForcing`](/classes/transforms/wvtransformstratifiedqg/fluxforforcing.html) 
+  + [`geometryFromFile`](/classes/transforms/wvtransformstratifiedqg/geometryfromfile.html) 
+  + [`geometryFromGroup`](/classes/transforms/wvtransformstratifiedqg/geometryfromgroup.html) 
+  + [`h_pm`](/classes/transforms/wvtransformstratifiedqg/h_pm.html) 
+  + [`hydrostaticTransform`](/classes/transforms/wvtransformstratifiedqg/hydrostatictransform.html) 
+  + [`intZF`](/classes/transforms/wvtransformstratifiedqg/intzf.html) 
+  + [`intZG`](/classes/transforms/wvtransformstratifiedqg/intzg.html) 
   + [`j`](/classes/transforms/wvtransformstratifiedqg/j.html) vertical mode number
   + [`kAxis`](/classes/transforms/wvtransformstratifiedqg/kaxis.html) k coordinate
-  + [`kPseudoRadial`](/classes/transforms/wvtransformstratifiedqg/kpseudoradial.html)
-  + [`kljGrid`](/classes/transforms/wvtransformstratifiedqg/kljgrid.html)
+  + [`kPseudoRadial`](/classes/transforms/wvtransformstratifiedqg/kpseudoradial.html) 
+  + [`kljGrid`](/classes/transforms/wvtransformstratifiedqg/kljgrid.html) 
   + [`lAxis`](/classes/transforms/wvtransformstratifiedqg/laxis.html) l coordinate
-  + [`maxFg`](/classes/transforms/wvtransformstratifiedqg/maxfg.html)
-  + [`maxFw`](/classes/transforms/wvtransformstratifiedqg/maxfw.html)
-  + [`modeNumberFromIndex`](/classes/transforms/wvtransformstratifiedqg/modenumberfromindex.html)
-  + [`namesOfRequiredPropertiesForGeometry`](/classes/transforms/wvtransformstratifiedqg/namesofrequiredpropertiesforgeometry.html)
-  + [`namesOfRequiredPropertiesForRotatingFPlane`](/classes/transforms/wvtransformstratifiedqg/namesofrequiredpropertiesforrotatingfplane.html)
-  + [`namesOfRequiredPropertiesForTransform`](/classes/transforms/wvtransformstratifiedqg/namesofrequiredpropertiesfortransform.html)
-  + [`namesOfTransformVariables`](/classes/transforms/wvtransformstratifiedqg/namesoftransformvariables.html)
-  + [`newNonrequiredPropertyNames`](/classes/transforms/wvtransformstratifiedqg/newnonrequiredpropertynames.html)
-  + [`newRequiredPropertyNames`](/classes/transforms/wvtransformstratifiedqg/newrequiredpropertynames.html)
+  + [`maxFg`](/classes/transforms/wvtransformstratifiedqg/maxfg.html) 
+  + [`maxFw`](/classes/transforms/wvtransformstratifiedqg/maxfw.html) 
+  + [`modeNumberFromIndex`](/classes/transforms/wvtransformstratifiedqg/modenumberfromindex.html) 
+  + [`namesOfRequiredPropertiesForGeometry`](/classes/transforms/wvtransformstratifiedqg/namesofrequiredpropertiesforgeometry.html) 
+  + [`namesOfRequiredPropertiesForRotatingFPlane`](/classes/transforms/wvtransformstratifiedqg/namesofrequiredpropertiesforrotatingfplane.html) 
+  + [`namesOfRequiredPropertiesForTransform`](/classes/transforms/wvtransformstratifiedqg/namesofrequiredpropertiesfortransform.html) 
+  + [`namesOfTransformVariables`](/classes/transforms/wvtransformstratifiedqg/namesoftransformvariables.html) 
+  + [`newNonrequiredPropertyNames`](/classes/transforms/wvtransformstratifiedqg/newnonrequiredpropertynames.html) 
+  + [`newRequiredPropertyNames`](/classes/transforms/wvtransformstratifiedqg/newrequiredpropertynames.html) 
   + [`p`](/classes/transforms/wvtransformstratifiedqg/p.html) pressure anomaly
   + [`pi`](/classes/transforms/wvtransformstratifiedqg/pi.html) height anomaly
-  + [`propertyAnnotationsForRotatingFPlane`](/classes/transforms/wvtransformstratifiedqg/propertyannotationsforrotatingfplane.html)
-  + [`qgpvFluxFromF0`](/classes/transforms/wvtransformstratifiedqg/qgpvfluxfromf0.html)
-  + [`requiredPropertiesForGeometryFromGroup`](/classes/transforms/wvtransformstratifiedqg/requiredpropertiesforgeometryfromgroup.html)
-  + [`requiredPropertiesForRotatingFPlaneFromGroup`](/classes/transforms/wvtransformstratifiedqg/requiredpropertiesforrotatingfplanefromgroup.html)
-  + [`requiredPropertiesForTransformFromGroup`](/classes/transforms/wvtransformstratifiedqg/requiredpropertiesfortransformfromgroup.html)
+  + [`propertyAnnotationsForRotatingFPlane`](/classes/transforms/wvtransformstratifiedqg/propertyannotationsforrotatingfplane.html) 
+  + [`qgpvFluxFromF0`](/classes/transforms/wvtransformstratifiedqg/qgpvfluxfromf0.html) 
+  + [`requiredPropertiesForGeometryFromGroup`](/classes/transforms/wvtransformstratifiedqg/requiredpropertiesforgeometryfromgroup.html) 
+  + [`requiredPropertiesForRotatingFPlaneFromGroup`](/classes/transforms/wvtransformstratifiedqg/requiredpropertiesforrotatingfplanefromgroup.html) 
+  + [`requiredPropertiesForTransformFromGroup`](/classes/transforms/wvtransformstratifiedqg/requiredpropertiesfortransformfromgroup.html) 
   + [`rhoFunction`](/classes/transforms/wvtransformstratifiedqg/rhofunction.html) eta_true operation needs rhoFunction
   + [`rho_e`](/classes/transforms/wvtransformstratifiedqg/rho_e.html) excess density
   + [`rho_nm0`](/classes/transforms/wvtransformstratifiedqg/rho_nm0.html) $$\rho_\textrm{nm}(z)$$, no-motion density at time `t0`
   + [`rho_total`](/classes/transforms/wvtransformstratifiedqg/rho_total.html) total potential density
-  + [`spatialMatrixSize`](/classes/transforms/wvtransformstratifiedqg/spatialmatrixsize.html)
-  + [`spectralMatrixSize`](/classes/transforms/wvtransformstratifiedqg/spectralmatrixsize.html)
-  + [`spectrumWithFgTransform`](/classes/transforms/wvtransformstratifiedqg/spectrumwithfgtransform.html)
-  + [`spectrumWithGgTransform`](/classes/transforms/wvtransformstratifiedqg/spectrumwithggtransform.html)
+  + [`spatialMatrixSize`](/classes/transforms/wvtransformstratifiedqg/spatialmatrixsize.html) 
+  + [`spectralMatrixSize`](/classes/transforms/wvtransformstratifiedqg/spectralmatrixsize.html) 
+  + [`spectrumWithFgTransform`](/classes/transforms/wvtransformstratifiedqg/spectrumwithfgtransform.html) 
+  + [`spectrumWithGgTransform`](/classes/transforms/wvtransformstratifiedqg/spectrumwithggtransform.html) 
   + [`ssh`](/classes/transforms/wvtransformstratifiedqg/ssh.html) sea-surface height
   + [`throwErrorIfDensityViolation`](/classes/transforms/wvtransformstratifiedqg/throwerrorifdensityviolation.html) checks if the proposed coefficients are a valid adiabatic re-arrangement of the base state
-  + [`totalEnstrophy`](/classes/transforms/wvtransformstratifiedqg/totalenstrophy.html)
-  + [`totalEnstrophySpatiallyIntegrated`](/classes/transforms/wvtransformstratifiedqg/totalenstrophyspatiallyintegrated.html)
-  + [`transformFromGroup`](/classes/transforms/wvtransformstratifiedqg/transformfromgroup.html)
-  + [`transformFromSpatialDomainWithFio`](/classes/transforms/wvtransformstratifiedqg/transformfromspatialdomainwithfio.html)
-  + [`transformFromSpatialDomainWithFourier`](/classes/transforms/wvtransformstratifiedqg/transformfromspatialdomainwithfourier.html)
-  + [`transformQGPVToWaveVortex`](/classes/transforms/wvtransformstratifiedqg/transformqgpvtowavevortex.html)
-  + [`transformToSpatialDomainWithFourier`](/classes/transforms/wvtransformstratifiedqg/transformtospatialdomainwithfourier.html)
-  + [`transformToSpatialDomainWithFourierAtPosition`](/classes/transforms/wvtransformstratifiedqg/transformtospatialdomainwithfourieratposition.html)
-  + [`transformWithG_wg`](/classes/transforms/wvtransformstratifiedqg/transformwithg_wg.html)
+  + [`totalEnstrophy`](/classes/transforms/wvtransformstratifiedqg/totalenstrophy.html) 
+  + [`totalEnstrophySpatiallyIntegrated`](/classes/transforms/wvtransformstratifiedqg/totalenstrophyspatiallyintegrated.html) 
+  + [`transformFromGroup`](/classes/transforms/wvtransformstratifiedqg/transformfromgroup.html) 
+  + [`transformFromSpatialDomainWithFio`](/classes/transforms/wvtransformstratifiedqg/transformfromspatialdomainwithfio.html) 
+  + [`transformFromSpatialDomainWithFourier`](/classes/transforms/wvtransformstratifiedqg/transformfromspatialdomainwithfourier.html) 
+  + [`transformQGPVToWaveVortex`](/classes/transforms/wvtransformstratifiedqg/transformqgpvtowavevortex.html) 
+  + [`transformToSpatialDomainWithFourier`](/classes/transforms/wvtransformstratifiedqg/transformtospatialdomainwithfourier.html) 
+  + [`transformToSpatialDomainWithFourierAtPosition`](/classes/transforms/wvtransformstratifiedqg/transformtospatialdomainwithfourieratposition.html) 
+  + [`transformWithG_wg`](/classes/transforms/wvtransformstratifiedqg/transformwithg_wg.html) 
   + [`u`](/classes/transforms/wvtransformstratifiedqg/u.html) x-component of the fluid velocity
   + [`uvMax`](/classes/transforms/wvtransformstratifiedqg/uvmax.html) max horizontal fluid speed
   + [`v`](/classes/transforms/wvtransformstratifiedqg/v.html) y-component of the fluid velocity
-  + [`verticalProjectionOperatorsWithFreeSurface`](/classes/transforms/wvtransformstratifiedqg/verticalprojectionoperatorswithfreesurface.html)
-  + [`xyzGrid`](/classes/transforms/wvtransformstratifiedqg/xyzgrid.html)
+  + [`verticalProjectionOperatorsWithFreeSurface`](/classes/transforms/wvtransformstratifiedqg/verticalprojectionoperatorswithfreesurface.html) 
+  + [`xyzGrid`](/classes/transforms/wvtransformstratifiedqg/xyzgrid.html) 
   + [`z`](/classes/transforms/wvtransformstratifiedqg/z.html) z coordinate
   + [`z_int`](/classes/transforms/wvtransformstratifiedqg/z_int.html) Quadrature weights for the vertical grid
   + [`zeta_z`](/classes/transforms/wvtransformstratifiedqg/zeta_z.html) vertical component of relative vorticity

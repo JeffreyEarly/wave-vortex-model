@@ -17,3 +17,4 @@ mathjax: true
 ## Type
 + Class: `logical`
 + Size: `(1,1)`
+

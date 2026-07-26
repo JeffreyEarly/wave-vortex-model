@@ -3,7 +3,7 @@ layout: default
 title: wMax
 parent: WVTransformConstantStratification
 grand_parent: Classes
-nav_order: 243
+nav_order: 248
 mathjax: true
 ---
 
@@ -17,62 +17,3 @@ max vertical fluid speed
 ## Description
 Real valued property with no dimensions and units of $$m s^{-1}$$.
 
-## Discussion
----
-layout: default
-title: wMax
-parent: WVTransformBoussinesq
-grand_parent: Classes
-nav_order: 262
-mathjax: true
----
-
-#  wMax
-
-max vertical fluid speed
-
-
----
-
-## Description
-Real valued property with no dimensions and units of $$m s^{-1}$$.
-
-## Discussion
----
-layout: default
-title: wMax
-parent: WVTransformBoussinesq
-grand_parent: Classes
-nav_order: 262
-mathjax: true
----
-
-#  wMax
-
-max vertical fluid speed
-
-
----
-
-## Description
-Real valued property with no dimensions and units of $$m s^{-1}$$.
-
-## Discussion
----
-layout: default
-title: wMax
-parent: WVTransformBoussinesq
-grand_parent: Classes
-nav_order: 262
-mathjax: true
----
-
-#  wMax
-
-max vertical fluid speed
-
-
----
-
-## Description
-Real valued property with no dimensions and units of $$m s^{-1}$$.

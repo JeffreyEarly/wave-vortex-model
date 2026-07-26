@@ -25,3 +25,5 @@ List the most energetic modes
 
   At the moment the +/- waves are simply added together for each mode.
   It would be better if they were separate.
+ 
+      

@@ -3,7 +3,7 @@ layout: default
 title: shouldExcludeNyquist
 parent: WVTransformConstantStratification
 grand_parent: Classes
-nav_order: 208
+nav_order: 211
 mathjax: true
 ---
 

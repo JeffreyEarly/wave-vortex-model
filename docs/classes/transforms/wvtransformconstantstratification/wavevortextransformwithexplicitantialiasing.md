@@ -3,7 +3,7 @@ layout: default
 title: waveVortexTransformWithExplicitAntialiasing
 parent: WVTransformConstantStratification
 grand_parent: Classes
-nav_order: 247
+nav_order: 253
 mathjax: true
 ---
 

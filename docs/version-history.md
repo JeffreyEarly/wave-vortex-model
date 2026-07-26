@@ -6,8 +6,28 @@ nav_order: 100
 
 # Version History
 
+## [4.1.1] - 2026-07-26
+- Added `waveModeVerticalStructureAtIndex` with optimized wave F and vertical-derivative G endpoint factors for constant-stratification, hydrostatic, and Boussinesq geometries; fixed constant-stratification resolution and explicit-antialias conversions to preserve `N0` and `isHydrostatic`.
+
+## [4.1.0] - 2026-07-24
+- registered flow components now automatically expose supported standard and sea-surface variables.
+- added flow-component diagnostics for `pi`, `ssh`, `ssu`, and `ssv`, and corrected component pressure to use the selected component rather than total pressure height.
+- added periodic two-dimensional interpolation support for surface fields while preserving three-dimensional interpolation behavior.
+- added focused tests for composed-component closure and linear two- and three-dimensional interpolation across periodic boundaries.
+
+## [4.0.7] - 2026-05-06
+- raised the `InternalModes` dependency floor to `1.3.0` and the `SplineCore` dependency floor to `^2.2.0`.
+- added `chebfun` as a direct dependency for the model's direct chebfun helper usage.
+- migrated the `eta_true` spline fit to the `SplineCore` 2.x `BSpline` constructor, knot, and basis-matrix APIs.
+- modernized WaveVortexModel's `InternalModes` call sites to the lowerCamel mode and quadrature APIs, including the new `modesAtQuadraturePoints` helper.
+
 ## [4.0.6] - 2026-05-06
 - raised the `ClassAnnotations` and `NetCDF` dependency floors so OceanKit installs resolve the NetCDF function-handle serialization support required by annotated persistence.
+- fixed `WVAdaptiveDamping` for `WVTransformConstantStratification` by routing `effectiveJMax` through the constant-stratification geometry superclass.
+- fixed constant-stratification `rhoFunction` and `N2Function` handles so they preserve the shape of caller-provided `z` arrays.
+- added `zeta_x` and `zeta_y` as known variables for `WVTransformConstantStratification`, matching the hydrostatic and Boussinesq transforms.
+- restored `fluxForForcing` on `WVTransformConstantStratification` so diagnostics can compute forcing flux summaries.
+- added constant-stratification `F_g` and `G_g` spectrum/cross-spectrum helpers needed by diagnostics.
 
 ## [4.0.5] - 2026-05-06
 - changed `shouldUseTrueNoMotionProfile` to be a post-initialization setting that is not accepted by constructors or persisted through NetCDF round trips, while preserving transform-copy behavior and invalidating only the `rho_nm` cache when toggled.

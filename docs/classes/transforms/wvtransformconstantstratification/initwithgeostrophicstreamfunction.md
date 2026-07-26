@@ -3,7 +3,7 @@ layout: default
 title: initWithGeostrophicStreamfunction
 parent: WVTransformConstantStratification
 grand_parent: Classes
-nav_order: 128
+nav_order: 131
 mathjax: true
 ---
 

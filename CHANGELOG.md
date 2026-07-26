@@ -1,5 +1,8 @@
 # Version History
 
+## [4.1.1] - 2026-07-26
+- Added `waveModeVerticalStructureAtIndex` with optimized wave F and vertical-derivative G endpoint factors for constant-stratification, hydrostatic, and Boussinesq geometries; fixed constant-stratification resolution and explicit-antialias conversions to preserve `N0` and `isHydrostatic`.
+
 ## [4.1.0] - 2026-07-24
 - registered flow components now automatically expose supported standard and sea-surface variables.
 - added flow-component diagnostics for `pi`, `ssh`, `ssu`, and `ssv`, and corrected component pressure to use the selected component rather than total pressure height.

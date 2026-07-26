@@ -30,3 +30,5 @@ create a new variable with different resolution
   Given a variable with dimensions [Nj Nkl], this returns a new variable
   with dimensions matching wvtX2. This can be either increased or decreased
   resolution.
+ 
+          

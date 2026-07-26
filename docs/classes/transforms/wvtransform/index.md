@@ -21,8 +21,8 @@ Represents the state of the ocean in terms of energetically orthogonal wave and 
 <div class="language-matlab highlighter-rouge"><div class="highlight"><pre class="highlight"><code>classdef WVTransform < handle</code></pre></div></div>
 
 ## Overview
-
-
+ 
+ 
 The WVTransform subclasses encapsulate data representing the
 state of the ocean at a given instant in time. What makes the
 WVTransform subclasses special is that the state of the ocean
@@ -30,15 +30,15 @@ is represented as energetically independent waves and geostrophic
 motions (vortices). These classes can be queried for any ocean state
 variable including $$u$$, $$v$$, $$w$$, $$\rho$$, $$p$$, but also
 Ertel PV, relative vorticity, or custom defined state variables.
-
+ 
 The WVTransform is an abstract class and as such you must
 instatiate one of the concrete subclasses,
-
+ 
 + `WVTransformConstantStratification`
 + `WVTransformHydrostatic`
 + `WVTransformSingleMode`
-
-
+ 
+                     
 
 
 
@@ -71,7 +71,7 @@ instatiate one of the concrete subclasses,
   + [`performOperationWithName`](/classes/transforms/wvtransform/performoperationwithname.html) computes (runs) the operation
   + [`removeFromVariableCache`](/classes/transforms/wvtransform/removefromvariablecache.html) remove one variable from the internal cache
 + Flow components
-  + [`addFlowComponent`](/classes/transforms/wvtransform/addflowcomponent.html) add a flow component
+  + [`addFlowComponent`](/classes/transforms/wvtransform/addflowcomponent.html) add a flow component and its standard variables
   + [`addPrimaryFlowComponent`](/classes/transforms/wvtransform/addprimaryflowcomponent.html) add a primary flow component, automatically added to the flow
   + [`flowComponentWithName`](/classes/transforms/wvtransform/flowcomponentwithname.html) retrieve a WVFlowComponent by name
   + [`primaryFlowComponentWithName`](/classes/transforms/wvtransform/primaryflowcomponentwithname.html) retrieve a WVPrimaryFlowComponent by name
@@ -105,86 +105,86 @@ instatiate one of the concrete subclasses,
   + [`variableWithName`](/classes/transforms/wvtransform/variablewithname.html) Primary method for accessing the dynamical variables
 + Other
   + [`A0`](/classes/transforms/wvtransform/a0.html) geostrophic coefficients at reference time t0 (m)
-  + [`A0_KE_factor`](/classes/transforms/wvtransform/a0_ke_factor.html)
-  + [`A0_PE_factor`](/classes/transforms/wvtransform/a0_pe_factor.html)
-  + [`A0_Psi_factor`](/classes/transforms/wvtransform/a0_psi_factor.html)
-  + [`A0_QGPV_factor`](/classes/transforms/wvtransform/a0_qgpv_factor.html)
-  + [`A0_TE_factor`](/classes/transforms/wvtransform/a0_te_factor.html)
-  + [`A0_TZ_factor`](/classes/transforms/wvtransform/a0_tz_factor.html)
+  + [`A0_KE_factor`](/classes/transforms/wvtransform/a0_ke_factor.html) 
+  + [`A0_PE_factor`](/classes/transforms/wvtransform/a0_pe_factor.html) 
+  + [`A0_Psi_factor`](/classes/transforms/wvtransform/a0_psi_factor.html) 
+  + [`A0_QGPV_factor`](/classes/transforms/wvtransform/a0_qgpv_factor.html) 
+  + [`A0_TE_factor`](/classes/transforms/wvtransform/a0_te_factor.html) 
+  + [`A0_TZ_factor`](/classes/transforms/wvtransform/a0_tz_factor.html) 
   + [`Am`](/classes/transforms/wvtransform/am.html) negative wave coefficients at reference time t0 (m/s)
   + [`Ap`](/classes/transforms/wvtransform/ap.html) positive wave coefficients at reference time t0 (m/s)
-  + [`Apm_TE_factor`](/classes/transforms/wvtransform/apm_te_factor.html)
-  + [`addForcing`](/classes/transforms/wvtransform/addforcing.html)
-  + [`addlistener`](/classes/transforms/wvtransform/addlistener.html)
+  + [`Apm_TE_factor`](/classes/transforms/wvtransform/apm_te_factor.html) 
+  + [`addForcing`](/classes/transforms/wvtransform/addforcing.html) 
+  + [`addlistener`](/classes/transforms/wvtransform/addlistener.html) 
   + [`classDefinedOperationForKnownVariable`](/classes/transforms/wvtransform/classdefinedoperationforknownvariable.html) This is one of two functions that returns operations for computing
-  + [`delete`](/classes/transforms/wvtransform/delete.html)
-  + [`eq`](/classes/transforms/wvtransform/eq.html)
-  + [`findobj`](/classes/transforms/wvtransform/findobj.html)
-  + [`findprop`](/classes/transforms/wvtransform/findprop.html)
-  + [`flowComponentNameMap`](/classes/transforms/wvtransform/flowcomponentnamemap.html)
-  + [`flowComponents`](/classes/transforms/wvtransform/flowcomponents.html)
-  + [`forcing`](/classes/transforms/wvtransform/forcing.html)
-  + [`forcingNameMap`](/classes/transforms/wvtransform/forcingnamemap.html)
-  + [`forcingType`](/classes/transforms/wvtransform/forcingtype.html)
-  + [`forcingWithName`](/classes/transforms/wvtransform/forcingwithname.html)
-  + [`ge`](/classes/transforms/wvtransform/ge.html)
-  + [`gt`](/classes/transforms/wvtransform/gt.html)
-  + [`hasClosure`](/classes/transforms/wvtransform/hasclosure.html)
-  + [`hasForcingWithName`](/classes/transforms/wvtransform/hasforcingwithname.html)
+  + [`delete`](/classes/transforms/wvtransform/delete.html) 
+  + [`eq`](/classes/transforms/wvtransform/eq.html) 
+  + [`findobj`](/classes/transforms/wvtransform/findobj.html) 
+  + [`findprop`](/classes/transforms/wvtransform/findprop.html) 
+  + [`flowComponentNameMap`](/classes/transforms/wvtransform/flowcomponentnamemap.html) 
+  + [`flowComponents`](/classes/transforms/wvtransform/flowcomponents.html) 
+  + [`forcing`](/classes/transforms/wvtransform/forcing.html) 
+  + [`forcingNameMap`](/classes/transforms/wvtransform/forcingnamemap.html) 
+  + [`forcingType`](/classes/transforms/wvtransform/forcingtype.html) 
+  + [`forcingWithName`](/classes/transforms/wvtransform/forcingwithname.html) 
+  + [`ge`](/classes/transforms/wvtransform/ge.html) 
+  + [`gt`](/classes/transforms/wvtransform/gt.html) 
+  + [`hasClosure`](/classes/transforms/wvtransform/hasclosure.html) 
+  + [`hasForcingWithName`](/classes/transforms/wvtransform/hasforcingwithname.html) 
   + [`hasMeanPressureDifference`](/classes/transforms/wvtransform/hasmeanpressuredifference.html) checks if there is a non-zero mean pressure difference between the top and bottom of the fluid
-  + [`hasPVComponent`](/classes/transforms/wvtransform/haspvcomponent.html)
-  + [`hasVariableWithName`](/classes/transforms/wvtransform/hasvariablewithname.html)
-  + [`hasWaveComponent`](/classes/transforms/wvtransform/haswavecomponent.html)
+  + [`hasPVComponent`](/classes/transforms/wvtransform/haspvcomponent.html) 
+  + [`hasVariableWithName`](/classes/transforms/wvtransform/hasvariablewithname.html) 
+  + [`hasWaveComponent`](/classes/transforms/wvtransform/haswavecomponent.html) 
   + [`initForcingFromNetCDFFile`](/classes/transforms/wvtransform/initforcingfromnetcdffile.html) forcingGroupName = join( [string(class(self)),"forcing"],"-");
-  + [`isHydrostatic`](/classes/transforms/wvtransform/ishydrostatic.html)
-  + [`isvalid`](/classes/transforms/wvtransform/isvalid.html)
-  + [`le`](/classes/transforms/wvtransform/le.html)
-  + [`listener`](/classes/transforms/wvtransform/listener.html)
-  + [`lt`](/classes/transforms/wvtransform/lt.html)
-  + [`nFluxedComponents`](/classes/transforms/wvtransform/nfluxedcomponents.html)
-  + [`ne`](/classes/transforms/wvtransform/ne.html)
-  + [`nonlinearFlux`](/classes/transforms/wvtransform/nonlinearflux.html)
-  + [`notify`](/classes/transforms/wvtransform/notify.html)
+  + [`isHydrostatic`](/classes/transforms/wvtransform/ishydrostatic.html) 
+  + [`isvalid`](/classes/transforms/wvtransform/isvalid.html) 
+  + [`le`](/classes/transforms/wvtransform/le.html) 
+  + [`listener`](/classes/transforms/wvtransform/listener.html) 
+  + [`lt`](/classes/transforms/wvtransform/lt.html) 
+  + [`nFluxedComponents`](/classes/transforms/wvtransform/nfluxedcomponents.html) 
+  + [`ne`](/classes/transforms/wvtransform/ne.html) 
+  + [`nonlinearFlux`](/classes/transforms/wvtransform/nonlinearflux.html) 
+  + [`notify`](/classes/transforms/wvtransform/notify.html) 
   + [`operationForKnownVariable`](/classes/transforms/wvtransform/operationforknownvariable.html) This is one of two functions that returns operations for computing
-  + [`operationNameMap`](/classes/transforms/wvtransform/operationnamemap.html)
-  + [`operationVariableNameMap`](/classes/transforms/wvtransform/operationvariablenamemap.html)
+  + [`operationNameMap`](/classes/transforms/wvtransform/operationnamemap.html) 
+  + [`operationVariableNameMap`](/classes/transforms/wvtransform/operationvariablenamemap.html) 
   + [`optimizedTransformsForFlowComponent`](/classes/transforms/wvtransform/optimizedtransformsforflowcomponent.html) returns optimized transforms that avoid unnecessary computation
-  + [`primaryFlowComponentNameMap`](/classes/transforms/wvtransform/primaryflowcomponentnamemap.html)
-  + [`primaryFlowComponents`](/classes/transforms/wvtransform/primaryflowcomponents.html)
+  + [`primaryFlowComponentNameMap`](/classes/transforms/wvtransform/primaryflowcomponentnamemap.html) 
+  + [`primaryFlowComponents`](/classes/transforms/wvtransform/primaryflowcomponents.html) 
   + [`propertyAnnotationForKnownVariable`](/classes/transforms/wvtransform/propertyannotationforknownvariable.html) This is one of two functions that returns operations for computing
-  + [`removeAllForcing`](/classes/transforms/wvtransform/removeallforcing.html)
-  + [`removeForcing`](/classes/transforms/wvtransform/removeforcing.html)
-  + [`restoreForcingAmplitudes`](/classes/transforms/wvtransform/restoreforcingamplitudes.html)
-  + [`rk4NonlinearFlux`](/classes/transforms/wvtransform/rk4nonlinearflux.html)
-  + [`rk4NonlinearFluxForFlowComponents`](/classes/transforms/wvtransform/rk4nonlinearfluxforflowcomponents.html)
-  + [`setForcing`](/classes/transforms/wvtransform/setforcing.html)
-  + [`spatialDimensionNames`](/classes/transforms/wvtransform/spatialdimensionnames.html)
-  + [`spatialFluxForcing`](/classes/transforms/wvtransform/spatialfluxforcing.html)
-  + [`spectralAmplitudeForcing`](/classes/transforms/wvtransform/spectralamplitudeforcing.html)
-  + [`spectralDimensionNames`](/classes/transforms/wvtransform/spectraldimensionnames.html)
-  + [`spectralFluxForcing`](/classes/transforms/wvtransform/spectralfluxforcing.html)
-  + [`summarizeDegreesOfFreedom`](/classes/transforms/wvtransform/summarizedegreesoffreedom.html)
-  + [`summarizeFlowComponents`](/classes/transforms/wvtransform/summarizeflowcomponents.html)
-  + [`summarizeForcing`](/classes/transforms/wvtransform/summarizeforcing.html)
-  + [`summarizeVariables`](/classes/transforms/wvtransform/summarizevariables.html)
-  + [`t`](/classes/transforms/wvtransform/t.html)
-  + [`t0`](/classes/transforms/wvtransform/t0.html)
-  + [`timeDependentVariablesNameMap`](/classes/transforms/wvtransform/timedependentvariablesnamemap.html)
-  + [`totalEnergy`](/classes/transforms/wvtransform/totalenergy.html)
-  + [`totalEnergyOfFlowComponent`](/classes/transforms/wvtransform/totalenergyofflowcomponent.html)
-  + [`totalEnergySpatiallyIntegrated`](/classes/transforms/wvtransform/totalenergyspatiallyintegrated.html)
-  + [`totalFlowComponent`](/classes/transforms/wvtransform/totalflowcomponent.html)
-  + [`transformFromSpatialDomainWithFg`](/classes/transforms/wvtransform/transformfromspatialdomainwithfg.html) Required for transformUVEtaToWaveVortex
-  + [`transformFromSpatialDomainWithGg`](/classes/transforms/wvtransform/transformfromspatialdomainwithgg.html)
+  + [`removeAllForcing`](/classes/transforms/wvtransform/removeallforcing.html) 
+  + [`removeForcing`](/classes/transforms/wvtransform/removeforcing.html) 
+  + [`restoreForcingAmplitudes`](/classes/transforms/wvtransform/restoreforcingamplitudes.html) 
+  + [`rk4NonlinearFlux`](/classes/transforms/wvtransform/rk4nonlinearflux.html) 
+  + [`rk4NonlinearFluxForFlowComponents`](/classes/transforms/wvtransform/rk4nonlinearfluxforflowcomponents.html) 
+  + [`setForcing`](/classes/transforms/wvtransform/setforcing.html) 
+  + [`spatialDimensionNames`](/classes/transforms/wvtransform/spatialdimensionnames.html) 
+  + [`spatialFluxForcing`](/classes/transforms/wvtransform/spatialfluxforcing.html) 
+  + [`spectralAmplitudeForcing`](/classes/transforms/wvtransform/spectralamplitudeforcing.html) 
+  + [`spectralDimensionNames`](/classes/transforms/wvtransform/spectraldimensionnames.html) 
+  + [`spectralFluxForcing`](/classes/transforms/wvtransform/spectralfluxforcing.html) 
+  + [`summarizeDegreesOfFreedom`](/classes/transforms/wvtransform/summarizedegreesoffreedom.html) 
+  + [`summarizeFlowComponents`](/classes/transforms/wvtransform/summarizeflowcomponents.html) 
+  + [`summarizeForcing`](/classes/transforms/wvtransform/summarizeforcing.html) 
+  + [`summarizeVariables`](/classes/transforms/wvtransform/summarizevariables.html) 
+  + [`t`](/classes/transforms/wvtransform/t.html) 
+  + [`t0`](/classes/transforms/wvtransform/t0.html) 
+  + [`timeDependentVariablesNameMap`](/classes/transforms/wvtransform/timedependentvariablesnamemap.html) 
+  + [`totalEnergy`](/classes/transforms/wvtransform/totalenergy.html) 
+  + [`totalEnergyOfFlowComponent`](/classes/transforms/wvtransform/totalenergyofflowcomponent.html) 
+  + [`totalEnergySpatiallyIntegrated`](/classes/transforms/wvtransform/totalenergyspatiallyintegrated.html) 
+  + [`totalFlowComponent`](/classes/transforms/wvtransform/totalflowcomponent.html) 
+  + [`transformFromSpatialDomainWithFg`](/classes/transforms/wvtransform/transformfromspatialdomainwithfg.html) Required for transformUVEtaToWaveVortex 
+  + [`transformFromSpatialDomainWithGg`](/classes/transforms/wvtransform/transformfromspatialdomainwithgg.html) 
   + [`transformToSpatialDomainWithF`](/classes/transforms/wvtransform/transformtospatialdomainwithf.html) Required for transformWaveVortexToUVEta
-  + [`transformToSpatialDomainWithFAllDerivatives`](/classes/transforms/wvtransform/transformtospatialdomainwithfallderivatives.html)
-  + [`transformToSpatialDomainWithG`](/classes/transforms/wvtransform/transformtospatialdomainwithg.html)
-  + [`transformToSpatialDomainWithGAllDerivatives`](/classes/transforms/wvtransform/transformtospatialdomainwithgallderivatives.html)
-  + [`updateDependentVariablesNameMap`](/classes/transforms/wvtransform/updatedependentvariablesnamemap.html)
-  + [`variableCache`](/classes/transforms/wvtransform/variablecache.html)
-  + [`variableNames`](/classes/transforms/wvtransform/variablenames.html)
-  + [`waveVortexTransformWithResolution`](/classes/transforms/wvtransform/wavevortextransformwithresolution.html)
-  + [`wvCoefficientDependentVariablesNameMap`](/classes/transforms/wvtransform/wvcoefficientdependentvariablesnamemap.html)
+  + [`transformToSpatialDomainWithFAllDerivatives`](/classes/transforms/wvtransform/transformtospatialdomainwithfallderivatives.html) 
+  + [`transformToSpatialDomainWithG`](/classes/transforms/wvtransform/transformtospatialdomainwithg.html) 
+  + [`transformToSpatialDomainWithGAllDerivatives`](/classes/transforms/wvtransform/transformtospatialdomainwithgallderivatives.html) 
+  + [`updateDependentVariablesNameMap`](/classes/transforms/wvtransform/updatedependentvariablesnamemap.html) 
+  + [`variableCache`](/classes/transforms/wvtransform/variablecache.html) 
+  + [`variableNames`](/classes/transforms/wvtransform/variablenames.html) 
+  + [`waveVortexTransformWithResolution`](/classes/transforms/wvtransform/wavevortextransformwithresolution.html) 
+  + [`wvCoefficientDependentVariablesNameMap`](/classes/transforms/wvtransform/wvcoefficientdependentvariablesnamemap.html) 
 
 
 ---
