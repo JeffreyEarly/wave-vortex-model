@@ -5,8 +5,6 @@
 - added flow-component diagnostics for `pi`, `ssh`, `ssu`, and `ssv`, and corrected component pressure to use the selected component rather than total pressure height.
 - added periodic two-dimensional interpolation support for surface fields while preserving three-dimensional interpolation behavior.
 - added focused tests for composed-component closure and linear two- and three-dimensional interpolation across periodic boundaries.
-- added `waveModeVerticalStructureAtIndex` to expose optimized wave $$F$$ and $$\partial_zG$$ factors across constant-stratification, hydrostatic, and Boussinesq geometries.
-- fixed constant-stratification resolution and explicit-antialias conversions to preserve `N0` and `isHydrostatic`.
 
 ## [4.0.7] - 2026-05-06
 - raised the `InternalModes` dependency floor to `1.3.0` and the `SplineCore` dependency floor to `^2.2.0`.
