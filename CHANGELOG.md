@@ -1,5 +1,9 @@
 # Version History
 
+## [Unreleased]
+- Made transform restoration read-only by default, eliminated hidden duplicate NetCDF handles, and made one-output restoration close its file before returning.
+- Changed model restart to complete read-only restoration before acquiring its single writable output handle, and made model output closure explicitly release that handle.
+
 ## [4.1.1] - 2026-07-26
 - Added `waveModeVerticalStructureAtIndex` with optimized wave F and vertical-derivative G endpoint factors for constant-stratification, hydrostatic, and Boussinesq geometries; fixed constant-stratification resolution and explicit-antialias conversions to preserve `N0` and `isHydrostatic`.
 

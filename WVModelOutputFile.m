@@ -358,6 +358,9 @@ classdef WVModelOutputFile < handle & matlab.mixin.Heterogeneous
             % - Topic: Internal
             if ~isempty(self.ncfile)
                 arrayfun( @(outputGroup) outputGroup.closeNetCDFFile(), self.outputGroups);
+                if ~isempty(self.ncfile.id)
+                    self.ncfile.close();
+                end
                 self.ncfile = NetCDFFile.empty(0,0);
             end
         end

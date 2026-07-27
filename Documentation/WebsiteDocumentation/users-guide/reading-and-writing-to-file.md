@@ -27,7 +27,7 @@ To create a new `WVTransform` instance from file, call the static method [`waveV
 ```matlab
 wvt2 = WVTransform.waveVortexTransformFromFile('test.nc');
 ```
-The two instances `wvt` and `wvt2` are now equivalent.
+The two instances `wvt` and `wvt2` are now equivalent. This one-output form closes the NetCDF file before returning.
 
 ### Adding variables
 
@@ -50,13 +50,16 @@ It is often the case that for analysis of model output, you want to read the mod
 First load the NetCDF file, then initialize the existing instance from a specific time point in that file with [`initFromNetCDFFile`](/classes/wvtransform/initfromnetcdffile.html). For example, a for-loop over all time points written to file, would look like
 ```matlab
 [wvt, ncfile] = WVTransform.waveVortexTransformFromFile('test.nc');
+cleanup = onCleanup(@()ncfile.close());
 t = ncfile.readVariables("wave-vortex/t");
 
 for iTime=1:length(t)
-    wvt.initWithFile(ncfile,iTime=iTime);
+    wvt.initFromNetCDFFile(ncfile,iTime=iTime);
     % do some analysis
 end
 ```
+
+The returned `ncfile` is read-only by default and must be closed by the caller. Pass `shouldReadOnly=false` explicitly only when writable access is required.
 
 ## WVModel
 

@@ -403,23 +403,38 @@ classdef WVTransformConstantStratification < WVGeometryDoublyPeriodicStratifiedC
             % This static method is called by WVTransform.waveVortexTransformFromFile
             % and should not need to be called directly.
             %
+            % With one output, the temporary NetCDF file is closed before
+            % returning. With two outputs, the caller owns the returned
+            % NetCDFFile and must close it.
+            %
             % - Topic: Initialization (Static)
             % - Declaration: wvt = waveVortexTransformFromFile(path,options)
             % - Parameter path: path to a NetCDF file
             % - Parameter iTime: (optional) time index to initialize from (default 1)
+            % - Parameter shouldReadOnly: (optional) open the returned NetCDFFile read-only (default true)
             arguments (Input)
                 path char {mustBeFile}
                 options.iTime (1,1) double {mustBePositive} = 1
-                options.shouldReadOnly logical = false
+                options.shouldReadOnly logical = true
             end
             arguments (Output)
                 wvt WVTransform
                 ncfile NetCDFFile
             end
             ncfile = NetCDFFile(path,shouldReadOnly=options.shouldReadOnly);
-            wvt = WVTransformConstantStratification.transformFromGroup(ncfile);
-            wvt.initFromNetCDFFile(ncfile,iTime=options.iTime,shouldDisplayInit=1);
-            wvt.initForcingFromNetCDFFile(ncfile);
+            try
+                wvt = WVTransformConstantStratification.transformFromGroup(ncfile);
+                wvt.initFromNetCDFFile(ncfile,iTime=options.iTime,shouldDisplayInit=1);
+                wvt.initForcingFromNetCDFFile(ncfile);
+            catch exception
+                if ~isempty(ncfile.id)
+                    ncfile.close();
+                end
+                rethrow(exception)
+            end
+            if nargout < 2
+                ncfile.close();
+            end
         end
 
 

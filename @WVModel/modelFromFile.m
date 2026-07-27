@@ -12,8 +12,16 @@ function model = modelFromFile(path)
         path char {mustBeFile}
     end
 
-    wvt = WVTransform.waveVortexTransformFromFile(path,iTime=Inf);
+    wvt = WVTransform.waveVortexTransformFromFile(path,iTime=Inf,shouldReadOnly=true);
     model = WVModel(wvt);
-    outputFile = WVModelOutputFile.modelOutputFileFromFile(NetCDFFile(path),model);
-    model.addOutputFile(outputFile);
+    ncfile = NetCDFFile(path,shouldReadOnly=false);
+    try
+        outputFile = WVModelOutputFile.modelOutputFileFromFile(ncfile,model);
+        model.addOutputFile(outputFile);
+    catch exception
+        if ~isempty(ncfile.id)
+            ncfile.close();
+        end
+        rethrow(exception)
+    end
 end

@@ -21,10 +21,11 @@ Initialize a WVTransform instance from an existing file
 ## Parameters
 + `path`  path to a NetCDF file
 + `iTime`  (optional) time index to initialize from (default 1).
++ `shouldReadOnly`  (optional) open the returned NetCDFFile read-only (default true).
 
 ## Returns
 + `wvt`  an instance of a WVTransform subclass
-+ `ncfile`  a NetCDFFile instance pointing to the file
++ `ncfile`  a caller-owned NetCDFFile instance pointing to the file
 
 ## Discussion
 
@@ -41,11 +42,14 @@ Initialize a WVTransform instance from an existing file
   prepend `WVTransform.` The result of this function call is an instance
   variable.
  
-  If you intend to read more than one time point from the save file, hold
-  onto the NetCDFFile instance that is returned, and then call
+  Restoring only the transform closes the NetCDF file before returning. If
+  you intend to read more than one time point from the save file, request
+  the second output and hold onto that read-only NetCDFFile instance, then call
   [`initFromNetCDFFile`](/classes/wvtransform/initfromnetcdffile.html). This
   avoids the relatively expensive operation recreating the WVTransform, and
-  simply read the appropriate data from file.
+  simply reads the appropriate data from file. The caller owns the returned
+  NetCDFFile and must close it. Set `shouldReadOnly=false` only when writable
+  access is required.
  
   See also the users guide for [reading and writing to
   file](/users-guide/reading-and-writing-to-file.html).
