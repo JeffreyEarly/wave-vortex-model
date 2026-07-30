@@ -36,8 +36,11 @@ classdef WVHorizontalDamping < WVForcing
     %
     % ### Notes
     %
-    % This is currently implemented in the spatial domain, an is
+    % This is currently implemented in the spatial domain and is
     % thus highly un-optimized.
+    %
+    % The configured viscosity and diffusivity are preserved when the
+    % forcing is copied to a transform with a different resolution.
     %
     % - Topic: Initialization
     % - Topic: Properties
@@ -106,7 +109,7 @@ classdef WVHorizontalDamping < WVForcing
                 self WVHorizontalDamping {mustBeNonempty}
                 wvtX2 WVTransform {mustBeNonempty}
             end
-            force = WVHorizontalDamping(wvtX2);
+            force = WVHorizontalDamping(wvtX2,nu=self.nu,kappa=self.kappa);
         end
     end
     methods (Static)

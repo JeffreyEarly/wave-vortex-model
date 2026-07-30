@@ -57,9 +57,12 @@ wvt.addForcing(WVHorizontalDamping(wvt,nu=1e-4, kappa=1e-6));
  
 ### Notes
  
-This is currently implemented in the spatial domain, an is
+This is currently implemented in the spatial domain and is
 thus highly un-optimized.
  
+The configured viscosity and diffusivity are preserved when the
+forcing is copied to a transform with a different resolution.
+
      
 
 

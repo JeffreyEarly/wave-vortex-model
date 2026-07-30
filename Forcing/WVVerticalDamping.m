@@ -34,8 +34,13 @@ classdef WVVerticalDamping < WVForcing
     %
     % ### Notes
     %
-    % This is currently implemented in the spatial domain, an is
+    % This is currently implemented in the spatial domain and is
     % thus highly un-optimized.
+    %
+    % For constant stratification, $$\partial_z \ln N^2=0$$ and the
+    % stratification-gradient correction vanishes. The configured viscosity
+    % and diffusivity are preserved when the forcing is copied to a
+    % transform with a different resolution.
     %
     % - Topic: Initialization
     % - Topic: Properties
@@ -79,7 +84,9 @@ classdef WVVerticalDamping < WVForcing
             self.isClosure = true;
             self.nu = options.nu;
             self.kappa = options.kappa;
-            self.dLnN2 = shiftdim(wvt.dLnN2,-2);
+            if isprop(wvt,"dLnN2")
+                self.dLnN2 = shiftdim(wvt.dLnN2,-2);
+            end
 
             % construct the damping operator
             % [K,L,~] = self.wvt.kljGrid;
@@ -110,7 +117,7 @@ classdef WVVerticalDamping < WVForcing
                 self WVVerticalDamping {mustBeNonempty}
                 wvtX2 WVTransform {mustBeNonempty}
             end
-            force = WVVerticalDamping(wvtX2);
+            force = WVVerticalDamping(wvtX2,nu=self.nu,kappa=self.kappa);
         end
     end
     methods (Static)
