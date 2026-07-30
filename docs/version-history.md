@@ -7,6 +7,9 @@ nav_order: 100
 # Version History
 
 ## [Unreleased]
+
+## [4.2.0] - 2026-07-30
+- Added `WVPseudoTopographicWaveGeneration` with Darwin-symbol or custom-frequency initialization, adaptive-damping-aware spectral masking, resolution conversion, restart persistence, and deterministic Goff abyssal-hill generation.
 - Made transform restoration read-only by default, eliminated hidden duplicate NetCDF handles, and made one-output restoration close its file before returning.
 - Changed model restart to complete read-only restoration before acquiring its single writable output handle, and made model output closure explicitly release that handle.
 - Fixed horizontal and vertical Laplacian damping to preserve configured viscosity and diffusivity across transform resolution changes, and made vertical damping support constant-stratification transforms by using the exact zero stratification-gradient correction.

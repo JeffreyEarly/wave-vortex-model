@@ -109,6 +109,22 @@ which returns the forcing on the wave-vortex coefficients. For the QG transforms
 F0 = wvt.nonlinearFlux();
 ```
 
+## Generating waves from pseudo-topography
+
+`WVPseudoTopographicWaveGeneration` projects the bottom-normal velocity from a prescribed horizontally uniform current over upward-positive pseudo-topography onto the model's wave modes. Select a standard tidal constituent with `darwinSymbol`, or supply a custom angular `frequency`.
+
+```matlab
+forcing = WVPseudoTopographicWaveGeneration(wvt, ...
+    topographicHeight=h, ...
+    barotropicVelocityAmplitude=[0.05; 0], ...
+    darwinSymbol="M2");
+wvt.addForcing(forcing);
+```
+
+The supported Darwin symbols are `M2`, `S2`, `N2`, `K1`, and `O1`. If neither frequency option is supplied, M2 is used. Direct `frequency` and `darwinSymbol` options are mutually exclusive.
+
+By default, the generated tendency is projected outside the exact support of any active `WVAdaptiveDamping`. Use `maximumForcedHorizontalWavenumber` and `maximumForcedVerticalMode` to impose manual spectral limits for other closure choices.
+
 ## Creating your own forcing
 
 The model has a number of very useful forcings already built-in; however, it is also very straightforward to add your own forcing.
