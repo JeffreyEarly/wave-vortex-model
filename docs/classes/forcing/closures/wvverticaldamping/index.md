@@ -62,7 +62,7 @@ For constant stratification, $$\partial_z \ln N^2=0$$ and the
 stratification-gradient correction vanishes. The configured viscosity
 and diffusivity are preserved when the forcing is copied to a
 transform with a different resolution.
-
+ 
      
 
 
