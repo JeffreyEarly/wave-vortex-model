@@ -95,6 +95,8 @@ classdef WVInertialOscillationMethods < handle
             % - Parameter u: function handle that takes a single argument, u(Z)
             % - Parameter v: function handle that takes a single argument, v(Z)
             self.Ap(:,1) = self.Ap(:,1) + self.transformFromSpatialDomainWithFio(u(self.z) - sqrt(-1)*v(self.z))/2;
+            % Am stores the redundant conjugate inertial modes, so rebuild
+            % it from Ap to preserve a real-valued physical state.
             self.Am(:,1) = conj(self.Ap(:,1));
         end
 

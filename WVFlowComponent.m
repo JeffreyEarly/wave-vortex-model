@@ -183,11 +183,11 @@ classdef WVFlowComponent < handle & matlab.mixin.Heterogeneous
                 
                 validModes = self.maskAm & self.wvt.totalFlowComponent.maskOfPrimaryModesForCoefficientMatrix(WVCoefficientMatrix.Am);
                 if any(validModes(:))
-                    Am = ((randn(self.wvt.spectralMatrixSize) + sqrt(-1)*randn(self.wvt.spectralMatrixSize))/sqrt(2));
-                    Am(~validModes) = 0;
+                    primaryAm = ((randn(self.wvt.spectralMatrixSize) + sqrt(-1)*randn(self.wvt.spectralMatrixSize))/sqrt(2));
                     if options.shouldOnlyRandomizeOrientations == 1
-                        Am(logical(validModes)) = Am(logical(validModes)) ./ abs(Am(logical(validModes)));
+                        primaryAm(logical(validModes)) = primaryAm(logical(validModes)) ./ abs(primaryAm(logical(validModes)));
                     end
+                    Am(logical(validModes)) = primaryAm(logical(validModes));
                 end
             else
                 Ap = 0;
@@ -273,4 +273,3 @@ classdef WVFlowComponent < handle & matlab.mixin.Heterogeneous
     % end
     
 end
-
