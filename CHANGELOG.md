@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Documented the v4.2.1 target support contract: the five current transform families, the supported latitude domain of `5 <= abs(latitude) <= 85`, MATLAB builtin FFTs, fixed and adaptive integration, and periodic `linear` and `spline` interpolation are stable; `adaptive-cell` integration is experimental; and FFTW, `exact` and `finufft` interpolation, off-grid behavior, and legacy low-level entry points are internal.
+
 ## [4.2.0] - 2026-07-30
 - Added `WVPseudoTopographicWaveGeneration` with Darwin-symbol or custom-frequency initialization, adaptive-damping-aware spectral masking, resolution conversion, restart persistence, and deterministic Goff abyssal-hill generation.
 - Made transform restoration read-only by default, eliminated hidden duplicate NetCDF handles, and made one-output restoration close its file before returning.
