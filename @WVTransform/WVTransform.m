@@ -254,12 +254,10 @@ classdef WVTransform < matlab.mixin.indexing.RedefinesDot & CAAnnotatedClass
         % Primary method for accessing the dynamical variables
         [varargout] = variableWithName(self, variableNames);
         
-        % Primary method for accessing the dynamical variables on the at
-        % any position or time.
+        % Access dynamical variables at arbitrary positions.
         %
-        % The method argument specifies how off-grid values should be
-        % interpolated: linear, spline or exact. Use 'exact' for the slow,
-        % but accurate, spectral interpolation.
+        % The interpolation method may be `linear` or `spline`. Horizontal
+        % coordinates are wrapped periodically before interpolation.
         % - Topic: Lagrangian
         [varargout] = variableAtPositionWithName(self,x,y,z,variableNames,options)
 

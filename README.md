@@ -13,13 +13,11 @@ If you use these classes, please cite the JFM paper.
 ### Table of contents
 1. [Quick Start](#quick-start)
 2. [Introduction](#introduction)
-4. [Gridded wave modes](#gridded-wave-modes)
-5. [External wave modes](#external-wave-modes)
-6. [Dynamical variables](#dynamical-variables)
+3. [Gridded wave modes](#gridded-wave-modes)
+4. [Dynamical variables](#dynamical-variables)
     1. [Eulerian](#eulerian)
     2. [Lagrangian](#lagrangian)
-    3. [Internal and external variables](#internal-and-external-variables)
-7. [Initialization](#initialization)
+5. [Initialization](#initialization)
 
 ------------------------
 
@@ -77,7 +75,7 @@ rho = wavemodel.DensityFieldAtTime(t);
 zeta = wavemodel.IsopycnalDisplacementFieldAtTime(t);
 ```
 
-The model also supports external/free wave modes that do not fit in the gridded domain, as well as a series of functions for advecting particles.
+The model also includes functions for advecting particles.
 
 Introduction
 ------------
@@ -86,7 +84,7 @@ The linear internal wave model adds together an arbitrary number single-mode pla
 
 The `InternalWaveModel` class is divided into two subclasses, depending on the stratification. The constant stratification model `InternalWaveModelConstantStratification` takes advantage of the fact that the vertical modes in constant stratification are simply sines and cosines, and uses the fast fourier transform to sum the vertical modes. For more general stratification profiles, the class `InternalWaveModelArbitraryStratification` computes the vertical modes using the [`InternalModes` class](../InternalModes/) and then sums them with a (slow) matrix multiplication. This technique will often be *slower* than simplying time-stepping the linearized equations of motion using a Runge-Kutta time stepping routine, but comes with the advantage that the vertical extent of the model can be arbitrarily defined. This allows a model to be constructed with high resolution in regions of interested.
 
-Initializing the model creates a user-specified standard evenly-spaced, periodic grid. This grid useful because it allows wave modes to be computed with the Fast Fourier Transform (FFT) algorithm and both the constant and arbitrary stratification classes use this grid to quickly compute the horizontal component of the solution. However, such a grid limits the wavelengths of each wave to be integer multiples of the grid spacing. To get around this limitation, the linear wave model supports an arbitrary number of [external (or free) wave modes](#external-wave-modes) that are not required to fit in the gridded model. These wave modes are linearly added to the gridded modes, but must be computed using the slower discrete fourier transform.
+Initializing the model creates a user-specified standard evenly-spaced, periodic grid. This grid is useful because it allows wave modes to be computed with the Fast Fourier Transform (FFT) algorithm and both the constant and arbitrary stratification classes use this grid to quickly compute the horizontal component of the solution.
 
 Gridded wave modes
 ------------
@@ -110,34 +108,6 @@ wavemodel.removeAllWaves();
 ```
 and they will be set to 0 amplitude.
 
-
-External wave modes
-------------
-
-The external wave modes can be added or set either by specifying the wavelength of the modes,
-```matlab
-omega = wavemodel.addExternalWavesWithWavenumbers(k,l,j,phi,A,norm);
-omega = wavemodel.setExternalWavesWithWavenumbers(k,l,j,phi,A,norm);
-```
-or by specifying the frequency of the modes,
-```matlab
-k = wavemodel.addExternalWavesWithFrequencies(omega, alpha, j, phi, A, norm);
-k = wavemodel.setExternalWavesWithFrequencies(omega, alpha, j, phi, A, norm);
-```
-The `Set` methods will remove all external modes and then add the list you give it, and the `Add` methods will append these modes to the existing list. You can call,
-```matlab
-wavemodel.removeAllExternalWaves();
-```
-to remove all external modes.
-
-The amplitude of the waves is set with respect to a given norm of the internal mode (see [`InternalModes` class](../InternalModes/) for more details). Typically, one would want to use `Normalization.uMax`  if you are simply setting the maximum wave velocity.
-
-You can extract the nonzero *gridded* wave components, and feed those directly into the external wave modes. The amplitude in this case uses `Normalization.kConstant`. This can be done with two lines of code,
-```matlab
-[omega, alpha, mode, phi, A, norm] = wavemodel.waveModesFromWaveCoefficients();
-wavemodel.setExternalWavesWithFrequencies(omega, alpha, mode, phi, A, norm);
-```
-but of course now have you external waves with the exact same values as the gridded waves, which isn't likely very helpful.
 
 Dynamical variables
 ------------
@@ -173,7 +143,7 @@ Fundamentally these routines are just calling `VariableFieldsAtTime`, which lets
 
 ### Lagrangian
 
-These methods will return values at any point in space and time. The argument `interpolationMethod` specifies how off-grid values should be interpolated. Use `'exact'` for the slow, but accurate, spectral interpolation. Otherwise use `'spline'` or some other method accepted by Matlab's `interp` function.
+These methods will return values at any point in space and time. The argument `interpolationMethod` specifies whether periodic off-grid values use `'linear'` or cubic `'spline'` interpolation.
 
 As an example, lets create some floats at various depths in the water column.
 ```matlab
@@ -185,7 +155,7 @@ x = (0:N-1)*dx;
 y = (0:N-1)*dy;
 z = (0:nLevels-1)*(-wavemodel.Lz/(2*(nLevels-1)));
 ```
-Now we can call the various Lagrangian methods to return the dynamical fields at those positions. First, we need to specify how we want to interpolate the gridded dynamical fields. The two most obvious choices are `'exact'`, if we want to use spectral interpolation, or `'spline'`, if we want a good accuracy speed tradeoff. It may also being worth using `'linear'` interpolation if accuracy is less important. The following code returns the values of the dynamical variables at the positions we requested,
+Now we can call the various Lagrangian methods to return the dynamical fields at those positions. Cubic `'spline'` interpolation offers a good accuracy-speed tradeoff, while `'linear'` interpolation is useful when speed is more important. The following code returns the values of the dynamical variables at the positions we requested,
 
 ```matlab
 interpolationMethod = 'spline';
@@ -199,24 +169,6 @@ As with the Eulerian accessor methods, you can request all the dynamical variabl
 ```
 which provides the optimal speed advantage.
 
-### Internal and external variables
-
-As explained in the introduction, the model is composed of *gridded* or *internal* wave modes and *external* or *free* wave modes.
-
-If you so choose, you can also access the dynamical variables associated with the internal and external wave modes separately (which always sum to the total). The following code accesses the Eulerian and Lagrangian versions of the internal wave modes,
-```matlab
-[u,v,w,rho_prime,zeta] = wavemodel.InternalVariableFieldsAtTime(t,'u','v','w','rho_prime','zeta');
-[u,v,w,rho_prime,zeta] = wavemodel.InternalVariablesAtTimePosition(t,x,y,z,interpolationMethod,'u','v','w','rho_prime','zeta');
-```
-In practice, the Eulerian function `InternalVariableFieldsAtTime` is doing all the heavy lifting by computing the FFTs for the gridded modes. The Lagrangian function `InternalVariablesAtTimePosition` uses the Eulerian solutions and interpolates the position at the user requested point, unless `'exact'` interpolation is requested.
-
-The external dynamical variables can be access with,
-```matlab
-[u,v,w,rho_prime,zeta] = wavemodel.externalVariableFieldsAtTime(t,'u','v','w','rho_prime','zeta');
-[u,v,w,rho_prime,zeta] = wavemodel.externalVariablesAtTimePosition(t,x,y,z,'u','v','w','rho_prime','zeta');
-```
-Notice that interpolation is not an option, because these values are always exact.
-
 Initialization
 ------------
 
@@ -229,7 +181,6 @@ where the only required argument indicates the GM reference level. This function
 - `'j_star'` takes any integer value, default is 3.
 - `'shouldRandomizeAmplitude'` takes a 0 or 1 to indicate whether or not the amplitude should be randomized with a Gaussian random variable with expectation matching the GM value. The default is 0.
 - `'maxDeltaOmega'` is the maximum width in frequency that will be integrated over for assigned energy. By default it is self.Nmax-self.f.
-- `'initializeModes'`  is used to determine which modes get initialized. Possible values are `'all'`, `'internalOnly'`, or `'externalOnly'` . Default is `'all'`
 - `'energyWarningThreshold'` will provide a warning if the energy of a single mode exceeds a certain value of the total energy in that modal band. Values between 0 and 1. Default is 0.5 (e.g., you get a warning if the energy in a single mode exceeds 50% of the total energy).
 - `'excludeNyquist'` takes a 0 or 1 to indicate whether or not to include the Nyquist wavenumbers in initialization. Default 1.
 - `'maxK'` and `'minK'` can be set to limit the wavenumbers that will be initialized. By default all resolved wavenumbers are initialized (other than the Nyquist, as above).

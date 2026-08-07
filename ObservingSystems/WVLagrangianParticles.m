@@ -20,16 +20,18 @@ classdef WVLagrangianParticles < WVObservingSystem
 
     methods
         function self = WVLagrangianParticles(model,options)
-            %create a new observing system
+            % Create a Lagrangian-particle observing system.
             %
-            % This class is intended to be subclassed, so it generally
-            % assumed that this initialization will not be called directly.
+            % This class is intended to be subclassed, so this initializer
+            % is generally called by a model particle facade.
             %
             % - Topic: Initialization
-            % - Declaration: self = WVObservingSystem(model,name)
+            % - Declaration: self = WVLagrangianParticles(model,options)
             % - Parameter model: the WVModel instance
             % - Parameter name: name of the observing system
-            % - Returns self: a new instance of WVObservingSystem
+            % - Parameter advectionInterpolation: (optional) `linear` (default) or `spline` interpolation for particle advection
+            % - Parameter trackedVarInterpolation: (optional) `linear` (default) or `spline` interpolation for tracked fields
+            % - Returns self: a new WVLagrangianParticles instance
             arguments
                 model WVModel
                 options.name {mustBeText}
@@ -38,8 +40,8 @@ classdef WVLagrangianParticles < WVObservingSystem
                 options.z (1,:) double
                 options.isXYOnly (1,1) logical = false
                 options.trackedFieldNames
-                options.advectionInterpolation char {mustBeMember(options.advectionInterpolation,["linear","spline","exact","finufft"])} = "linear"
-                options.trackedVarInterpolation char {mustBeMember(options.trackedVarInterpolation,["linear","spline","exact","finufft"])} = "linear"
+                options.advectionInterpolation char {mustBeMember(options.advectionInterpolation,["linear","spline"])} = "linear"
+                options.trackedVarInterpolation char {mustBeMember(options.trackedVarInterpolation,["linear","spline"])} = "linear"
                 options.absToleranceXY = 1e-1; % 100 km * 10^{-6}
                 options.absToleranceZ = 1e-2;  
             end

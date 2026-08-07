@@ -23,8 +23,8 @@ Set positions of float-like particles to be advected by the model.
 + `y`  y-coordinate location of the particles
 + `z`  z-coordinate location of the particles
 + `trackedFields`  strings of variable names
-+ `advectionInterpolation`  (optional) interpolation method used for particle advection. "linear" (default), "spline", "exact"
-+ `trackedVarInterpolation`  (optional) interpolation method used for tracked field. "linear" (default), "spline", "exact"
++ `advectionInterpolation`  (optional) `linear` (default) or `spline` interpolation for particle advection
++ `trackedVarInterpolation`  (optional) `linear` (default) or `spline` interpolation for tracked fields
 + `absToleranceXY`  (adapative) absolute tolerance in meters for particle advection in (x,y). 1e-1 (default)
 + `absToleranceZ`  (adapative) absolute tolerance  in meters for particle advection in (z). 1e-2 (default)
 
@@ -40,8 +40,8 @@ Set positions of float-like particles to be advected by the model.
   many flows this will have sufficient accuracy and allow you
   to place float at nearly every grid point without slowing
   down the model integration. However, if high accuracy is
-  required, you may want to use cubic "spline" interpolation or
-  even "exact" at the expense of computational speed.
+  required, you may want to use cubic "spline" interpolation at
+  the expense of computational speed.
  
   You can track the value of any known WVVariableAnnotation along the
   particle's flow path, e.g., relative vorticity. These values

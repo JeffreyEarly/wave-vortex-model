@@ -9,25 +9,27 @@ mathjax: true
 
 #  WVLagrangianParticles
 
-create a new observing system
+Create a Lagrangian-particle observing system.
 
 
 ---
 
 ## Declaration
 ```matlab
- self = WVObservingSystem(model,name)
+ self = WVLagrangianParticles(model,options)
 ```
 ## Parameters
 + `model`  the WVModel instance
 + `name`  name of the observing system
++ `advectionInterpolation`  (optional) `linear` (default) or `spline` interpolation for particle advection
++ `trackedVarInterpolation`  (optional) `linear` (default) or `spline` interpolation for tracked fields
 
 ## Returns
-+ `self`  a new instance of WVObservingSystem
++ `self`  a new WVLagrangianParticles instance
 
 ## Discussion
 
-  This class is intended to be subclassed, so it generally
-  assumed that this initialization will not be called directly.
+  This class is intended to be subclassed, so this initializer
+  is generally called by a model particle facade.
  
           

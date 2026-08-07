@@ -9,7 +9,7 @@ mathjax: true
 
 #  variableAtPositionWithName
 
-Primary method for accessing the dynamical variables on the at any
+Access dynamical variables at arbitrary positions in the domain.
 
 
 ---
@@ -23,17 +23,15 @@ Primary method for accessing the dynamical variables on the at any
 + `y`  array of y-positions
 + `z`  array of z-positions, or empty for two-dimensional variables
 + `variableNames`  strings of variable names.
-+ `interpolationMethod`  (optional) `linear`,`spline`,`exact`. Default `linear`.
++ `interpolationMethod`  (optional) `linear` or `spline`. Default `linear`.
 
 ## Discussion
-position in the domain.
- 
+
   Computes (or retrieves from cache) any known state variables and computes
   their values at the requested positions (x,y,z). For two-dimensional
   variables, interpolation uses only (x,y), and z may be empty.
  
-  The method argument specifies how off-grid values should be interpolated.
-  Use 'exact' for the slow, but accurate, spectral interpolation. Otherwise
-  use 'spline' or some other method used by Matlab's interp function.
+  The interpolation method may be `linear` or `spline`. Horizontal
+  coordinates are wrapped periodically before interpolation.
  
               
