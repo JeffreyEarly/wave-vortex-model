@@ -36,6 +36,7 @@ No feature is assigned to Deprecated in the v4.2.1 target contract.
 | MATLAB builtin FFT implementation | Stable | This is the supported Fourier-transform backend. |
 | FFTW and `RealToComplexTransform` integration | Internal | These backend remnants are not selectable through a supported transform contract. |
 | Periodic `linear` and `spline` interpolation | Stable | These are the only interpolation methods exposed by the supported public interpolation contract. |
+| Vertical calculus for stable 3-D transforms | Stable | `diffZF` and `diffZG` support orders 1 through 4 on `[Nx Ny Nz]` grids. `intZF` and `intZG` support first antiderivatives on `[Nx Ny Nz]` grids and `[Nz N]` matrices. Unsupported orders and layouts are rejected through ordinary MATLAB argument validation. |
 | `exact` and `finufft` interpolation | Internal | These implementation paths and option values must not appear in public option lists or user documentation. |
 | `WVOffGridTransform`, external-wave behavior, and off-grid pressure | Internal | These incomplete remnants have no 4.2.x compatibility promise. |
 
@@ -103,8 +104,6 @@ The following contracts are part of the v4.2.1 target even though their 4.2.0 im
 
 | Interface | v4.2.1 target |
 | --- | --- |
-| `diffZF` and `diffZG` | Support derivative orders 1 through 4 and reject other orders with a clear, stable error. |
-| `intZF` and `intZG` | Support first-order integration for every stable three-dimensional transform and reject higher orders with a clear, stable error. |
 | `hasMeanPressureDifference` | Return the documented result instead of a placeholder error. |
 | `WVTotalFlowComponent.solutionForModeAtIndex` | Return the documented total-flow solution instead of a placeholder error. |
 | `summarizeDegreesOfFreedom` | Provide a general implementation for the stable transform surface. |

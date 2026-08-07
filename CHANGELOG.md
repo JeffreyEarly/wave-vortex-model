@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- Completed the supported vertical-calculus contract: first through fourth derivatives now use ordinary MATLAB order and grid-layout validation, and all stable three-dimensional transforms provide first antiderivatives with documented G-space projection and bottom-zero conventions.
 - Restricted public field and particle interpolation to periodic `linear` and `spline` methods and removed the dead `exact` and off-grid dispatch.
 - Documented the v4.2.1 target support contract: the five current transform families, the supported latitude domain of `5 <= abs(latitude) <= 85`, MATLAB builtin FFTs, fixed and adaptive integration, and periodic `linear` and `spline` interpolation are stable; `adaptive-cell` integration is experimental; and FFTW, `exact` and `finufft` interpolation, off-grid behavior, and legacy low-level entry points are internal.
 - Enforced the supported latitude domain and restored a deterministic, order-independent green test baseline with isolated random state and temporary files.
