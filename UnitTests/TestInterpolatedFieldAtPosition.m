@@ -31,7 +31,7 @@ classdef TestInterpolatedFieldAtPosition < matlab.unittest.TestCase
         end
     end
 
-    methods (Test)
+    methods (Test, TestTags = "smoke")
         function testTwoDimensionalLinearInterpolation(testCase)
             [x,y] = testCase.horizontalQueryPoints();
 

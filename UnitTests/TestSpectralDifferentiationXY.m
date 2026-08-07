@@ -4,12 +4,8 @@ classdef TestSpectralDifferentiationXY < matlab.unittest.TestCase
     end
 
     properties (ClassSetupParameter)
-        %transform = {'constant','hydrostatic','boussinesq'};
-        % Lxyz = struct('Lxyz',[1 10 4]);
         Nxyz = struct('Nx16Ny16Nz9',[16 16 9]);
-        % transform = {'hydrostatic'};
         Lxyz = struct('Lxyz',[1000, 500, 500]);
-        % Nxyz = struct('Nx32N16Nz17',[32 16 17]);
         transform = {'hydrostatic'};
     end
 
@@ -41,12 +37,11 @@ classdef TestSpectralDifferentiationXY < matlab.unittest.TestCase
 
     properties (TestParameter)
         derivative = struct('first',1,'second',2,'third',3,'fourth',4);
-        % derivative = struct('second',2,'third',3,'fourth',4);
         k_n
         l_n
     end
 
-    methods (Test)
+    methods (Test, TestTags = "exhaustive")
         function testDiffX(testCase,derivative,k_n,l_n)
             [X,Y,Z] = testCase.wvt.xyzGrid;
             Lx = testCase.wvt.Lx;

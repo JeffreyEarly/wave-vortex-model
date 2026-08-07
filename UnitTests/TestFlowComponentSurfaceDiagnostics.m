@@ -41,7 +41,7 @@ classdef TestFlowComponentSurfaceDiagnostics < matlab.unittest.TestCase
         end
     end
 
-    methods (Test)
+    methods (Test, TestTags = "smoke")
         function testRegistrationAddsStandardVariables(testCase)
             testCase.verifyTrue(ismember("balanced",testCase.wvt.flowComponentNames));
             expectedNames = ["u_balanced","v_balanced","w_balanced","eta_balanced","p_balanced","ssh_balanced","ssu_balanced","ssv_balanced"];

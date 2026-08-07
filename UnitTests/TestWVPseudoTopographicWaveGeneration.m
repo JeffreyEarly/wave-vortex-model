@@ -8,7 +8,7 @@ classdef TestWVPseudoTopographicWaveGeneration < matlab.unittest.TestCase
         end
     end
 
-    methods (Test)
+    methods (Test, TestTags = "full")
         function darwinSymbolsSelectFrequency(testCase)
             wvt = TestWVPseudoTopographicWaveGeneration.createTransform(false);
             terrain = TestWVPseudoTopographicWaveGeneration.sinusoidalTopography(wvt,50);

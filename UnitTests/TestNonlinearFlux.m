@@ -5,13 +5,7 @@ classdef TestNonlinearFlux < matlab.unittest.TestCase
 
     properties (ClassSetupParameter)
         Lxyz = struct('Lxyz',[4e3, 4e3, 2e3]);
-        % Nxyz = struct('Nx8Ny8Nz5',[8 8 5]);
         Nxyz = struct('Nx16Ny16Nz9',[16 16 9]);
-        %transform = {'constant','hydrostatic','boussinesq'};
-        % transform = {'constant-hydrostatic','constant-boussinesq','hydrostatic','boussinesq'};
-        % transform = {'constant-hydrostatic','constant-boussinesq'};
-        % transform = {'boussinesq'};
-        % transform = {'hydrostatic'};
         transform = {'hydrostatic-exp'};
     end
 
@@ -35,7 +29,7 @@ classdef TestNonlinearFlux < matlab.unittest.TestCase
         end
     end
 
-    methods (Test)
+    methods (Test, TestTags = "full")
         % function testNonlinearFlux(self)
         %     wvt = self.wvt_;
         %     wvt.initWithRandomFlow();

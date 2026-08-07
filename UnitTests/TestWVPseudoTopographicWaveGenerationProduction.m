@@ -8,7 +8,7 @@ classdef TestWVPseudoTopographicWaveGenerationProduction < matlab.unittest.TestC
         end
     end
 
-    methods (Test)
+    methods (Test, TestTags = "full")
         function variableStratificationMatchesOracleAndIdentities(testCase)
             previousRandomState = rng;
             randomStateCleanup = onCleanup(@()rng(previousRandomState));

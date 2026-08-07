@@ -22,7 +22,7 @@ classdef TestNetCDF < matlab.unittest.TestCase
         end
     end
 
-    methods (Test)
+    methods (Test, TestTags = "full")
         function testAddDimension(testCase)
             testCase.verifyWarningFree(@() testCase.ncfile.addDimension('x',testCase.x) );
         end

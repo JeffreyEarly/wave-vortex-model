@@ -4,12 +4,8 @@ classdef TestFourierTransformXY < matlab.unittest.TestCase
     end
 
     properties (ClassSetupParameter)
-        %transform = {'constant','hydrostatic','boussinesq'};
-        % Lxyz = struct('Lxyz',[1 10 4]);
         Nxyz = struct('Nx16Ny16Nz9',[16 16 9]);
-        % transform = {'hydrostatic'};
         Lxyz = struct('Lxyz',[1000, 500, 500]);
-        % Nxyz = struct('Nx32N16Nz17',[32 16 17]);
         transform = {'hydrostatic'};
     end
 
@@ -44,7 +40,7 @@ classdef TestFourierTransformXY < matlab.unittest.TestCase
         l_n
     end
 
-    methods (Test)
+    methods (Test, TestTags = "smoke")
         function testForwardBackwardTransform(testCase,k_n,l_n)
             [X,Y,Z] = testCase.wvt.xyzGrid;
             Lx = testCase.wvt.Lx;

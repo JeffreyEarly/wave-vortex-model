@@ -7,8 +7,6 @@ classdef TestInertialOscillationMethods < matlab.unittest.TestCase
     properties (ClassSetupParameter)
         Lxyz = struct('Lxyz',[15e3, 15e3, 1300]);
         Nxyz = struct('Nx8Ny8Nz5',[8 8 30]);
-        % Nxyz = struct('Nx16Ny16Nz5',[16 16 5]);
-        % transform = {'constant','hydrostatic','boussinesq'};
         transform = {'hydrostatic'};
     end
 
@@ -27,7 +25,7 @@ classdef TestInertialOscillationMethods < matlab.unittest.TestCase
         end
     end
 
-    methods (Test)
+    methods (Test, TestTags = "full")
         function testRemoveAllInertialMotions(self)
             % In this test we intialize with a random flow state, confirm
             % that both total energy and inertial energy are present,

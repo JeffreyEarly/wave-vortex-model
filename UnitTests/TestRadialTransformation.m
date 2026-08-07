@@ -29,7 +29,7 @@ classdef TestRadialTransformation < matlab.unittest.TestCase
         flowComponent = {'geostrophic','mda','wave','inertial'}
     end
 
-    methods (Test)
+    methods (Test, TestTags = "full")
         function testRadialWavenumberVariance(self,flowComponent)
             self.wvt.initWithRandomFlow(flowComponent);
             varianceMatrix = abs(self.wvt.Ap).^2 + abs(self.wvt.Am).^2 + abs(self.wvt.A0).^2;
