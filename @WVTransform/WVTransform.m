@@ -756,13 +756,55 @@ classdef WVTransform < matlab.mixin.indexing.RedefinesDot & CAAnnotatedClass
         ncfile = writeToFile(self,path,props,options)
 
         function flag = hasMeanPressureDifference(self)
-            % checks if there is a non-zero mean pressure difference between the top and bottom of the fluid
+            % Diagnose an MDA mean-pressure difference between the boundaries.
             %
-            % This is probably best re-defined as a dynamical variable.
+            % Only the mean-density-anomaly (MDA) component can contribute
+            % to a horizontally averaged pressure difference between the
+            % top and bottom boundaries. The diagnostic evaluates
             %
+            % $$
+            % \Delta \bar p_{\mathrm{mda}} =
+            % \left|\langle p_{\mathrm{mda,top}}\rangle_{xy}
+            % -\langle p_{\mathrm{mda,bottom}}\rangle_{xy}\right|
+            % $$
+            %
+            % relative to the maximum absolute MDA pressure. It returns
+            % `true` when the relative difference is greater than `1e-5`.
+            % Transforms without an MDA component return `false`. Other
+            % flow components and common pressure-gauge offsets do not
+            % enter the calculation.
+            %
+            % - Topic: Initial Conditions
             % - Declaration: flag = hasMeanPressureDifference()
-            % - Returns flag: a boolean
-            error('Not yet implemented');
+            % - Returns flag: scalar logical indicating a resolved MDA boundary-pressure difference
+            arguments (Input)
+                self WVTransform {mustBeNonempty}
+            end
+            arguments (Output)
+                flag (1,1) logical
+            end
+
+            if ~isa(self,"WVMeanDensityAnomalyMethods")
+                flag = false;
+                return
+            end
+
+            mdaCoefficients = self.mdaComponent.maskA0.*self.A0;
+            if ~any(mdaCoefficients ~= 0,"all")
+                flag = false;
+                return
+            end
+
+            pressureOperation = self.operationForKnownVariable('p',flowComponent=self.mdaComponent);
+            pMDA = pressureOperation.compute(self);
+            pressureScale = max(abs(pMDA),[],"all");
+            if pressureScale == 0
+                flag = false;
+                return
+            end
+
+            meanPressureDifference = abs(mean(pMDA(:,:,end),"all") - mean(pMDA(:,:,1),"all"));
+            flag = meanPressureDifference > 1e-5*pressureScale;
         end
 
         [varargout] = spectralVariableWithResolution(self,wvtX2,varargin)

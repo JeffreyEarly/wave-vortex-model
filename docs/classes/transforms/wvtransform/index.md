@@ -131,7 +131,7 @@ instatiate one of the concrete subclasses,
   + [`gt`](/classes/transforms/wvtransform/gt.html) 
   + [`hasClosure`](/classes/transforms/wvtransform/hasclosure.html) 
   + [`hasForcingWithName`](/classes/transforms/wvtransform/hasforcingwithname.html) 
-  + [`hasMeanPressureDifference`](/classes/transforms/wvtransform/hasmeanpressuredifference.html) checks if there is a non-zero mean pressure difference between the top and bottom of the fluid
+  + [`hasMeanPressureDifference`](/classes/transforms/wvtransform/hasmeanpressuredifference.html) diagnoses an MDA mean-pressure difference between the boundaries
   + [`hasPVComponent`](/classes/transforms/wvtransform/haspvcomponent.html) 
   + [`hasVariableWithName`](/classes/transforms/wvtransform/hasvariablewithname.html) 
   + [`hasWaveComponent`](/classes/transforms/wvtransform/haswavecomponent.html) 
