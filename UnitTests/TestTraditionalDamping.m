@@ -18,7 +18,7 @@ classdef TestTraditionalDamping < matlab.unittest.TestCase
         end
     end
 
-    methods (Test)
+    methods (Test, TestTags = "smoke")
         function verticalDampingSupportsConstantStratification(testCase)
             for isHydrostatic = [true false]
                 wvt = TestTraditionalDamping.constantTransform(isHydrostatic=isHydrostatic,shouldAntialias=false);

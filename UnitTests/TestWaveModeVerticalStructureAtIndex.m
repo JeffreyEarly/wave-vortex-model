@@ -31,7 +31,7 @@ classdef TestWaveModeVerticalStructureAtIndex < matlab.unittest.TestCase
         end
     end
 
-    methods (Test)
+    methods (Test, TestTags = "smoke")
         function factorsMatchNativeTransforms(testCase)
             previousRandomState = rng;
             randomStateCleanup = onCleanup(@()rng(previousRandomState));

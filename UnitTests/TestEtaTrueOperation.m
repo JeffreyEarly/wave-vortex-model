@@ -1,6 +1,6 @@
 classdef TestEtaTrueOperation < matlab.unittest.TestCase
 
-    methods (Test)
+    methods (Test, TestTags = "full")
         function testTransformsRegisterRhoNmWithoutPersistingFlag(testCase)
             testCase.verifyTrue(ismember('rho_nm',WVTransformConstantStratification.namesOfTransformVariables()));
             testCase.verifyTrue(ismember('rho_nm',WVTransformHydrostatic.namesOfTransformVariables()));
@@ -45,8 +45,12 @@ classdef TestEtaTrueOperation < matlab.unittest.TestCase
             expectedEtaTrue = TestEtaTrueOperation.etaTrueForProfile(wvt,wvt.rho_nm0);
             testCase.verifyEqual(eta_true,expectedEtaTrue,AbsTol=1e-12);
         end
+    end
 
+    methods (Test, TestTags = ["optional","optimization-toolbox"])
         function testEtaTrueUsesRegisteredRhoNmWhenRequested(testCase)
+            testCase.assumeTrue(WVNoMotionProfileOperation.hasOptimizationToolboxSupport(),"Optimization Toolbox is required for this optional test.");
+
             wvt = TestEtaTrueOperation.hydrostaticTransform();
             wvt.shouldUseTrueNoMotionProfile = true;
             rho_nm = TestEtaTrueOperation.testRhoNmProfile(wvt);
@@ -62,7 +66,9 @@ classdef TestEtaTrueOperation < matlab.unittest.TestCase
             testCase.verifyEqual(eta_true,expectedEtaTrue,AbsTol=1e-12);
             testCase.verifyGreaterThan(max(abs(eta_true(:) - defaultEtaTrue(:))),1e-8);
         end
+    end
 
+    methods (Test, TestTags = "full")
         function testEtaTrueDoesNotWarnWhenUsingRhoNm0(testCase)
             wvt = TestEtaTrueOperation.hydrostaticTransform();
             wvt.addOperation(EtaTrueOperationToolboxUnavailable(wvt), ...

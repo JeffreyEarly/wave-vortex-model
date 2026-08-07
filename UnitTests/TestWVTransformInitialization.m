@@ -4,7 +4,7 @@ classdef TestWVTransformInitialization < matlab.unittest.TestCase
         latitude = {0,5,10,90}
     end
 
-    methods (Test)
+    methods (Test, TestTags = "full")
         function testInitWithLatitude(testCase,latitude)
             if latitude < 5
             testCase.verifyError(@() WVTransformConstantStratification([15e3, 15e3, 5000], [8 8 5],latitude=latitude),'MATLAB:validators:mustBeGreaterThanOrEqual' );

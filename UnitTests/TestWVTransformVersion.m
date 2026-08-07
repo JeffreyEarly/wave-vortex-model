@@ -1,6 +1,6 @@
 classdef TestWVTransformVersion < matlab.unittest.TestCase
 
-    methods (Test)
+    methods (Test, TestTags = "smoke")
         function testVersionMatchesPackageManifest(testCase)
             wvt = TestWVTransformVersion.barotropicTransform();
             expectedVersion = TestWVTransformVersion.packageVersionFromManifest();

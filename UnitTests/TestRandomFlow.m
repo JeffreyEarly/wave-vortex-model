@@ -5,16 +5,9 @@ classdef TestRandomFlow < matlab.unittest.TestCase
     end
 
     properties (ClassSetupParameter)
-        % Lxyz = struct('Lxyz',[15e3, 15e3, 1300]);
-        % Nxyz = struct('Nx8Ny8Nz5',[8 8 5]);
-        % Nxyz = struct('Nx16Ny16Nz5',[16 16 5]);
-        % transform = {'constant','hydrostatic','boussinesq'};
         Lxyz = struct('Lxyz',[1000, 500, 500]);
         Nxyz = struct('Nx16Ny8Nz9',[16 8 9]);
-        % Nxyz = struct('Nx32N16Nz17',[32 16 17]);
         transform = {'constant'};
-        % orthogonalSolutionGroup = {'WVInertialOscillationComponent','WVMeanDensityAnomalyComponent','WVInternalGravityWaveComponent','WVGeostrophicComponent'}
-        % flowComponent = {'WVMeanDensityAnomalyComponent'}
     end
 
     methods (TestClassSetup)
@@ -51,7 +44,7 @@ classdef TestRandomFlow < matlab.unittest.TestCase
         flowComponent
     end
 
-    methods (Test)
+    methods (Test, TestTags = "full")
         function testSolution(self,flowComponent)
             self.wvt.initWithRandomFlow(flowComponent,uvMax=0.1);
             self.verifyEqual(self.wvt.totalEnergy,self.wvt.totalEnergySpatiallyIntegrated, "AbsTol",1e-7,"RelTol",1e-7);

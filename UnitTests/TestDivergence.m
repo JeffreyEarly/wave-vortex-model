@@ -1,6 +1,6 @@
 classdef TestDivergence < matlab.unittest.TestCase
 
-    methods (Test)
+    methods (Test, TestTags = "smoke")
         function testDivergence(self)
             Lxyz = [1000, 500, 500];
             Nxyz = [16 8 9];

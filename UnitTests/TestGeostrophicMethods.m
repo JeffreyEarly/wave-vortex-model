@@ -7,8 +7,6 @@ classdef TestGeostrophicMethods < matlab.unittest.TestCase
     properties (ClassSetupParameter)
         Lxyz = struct('Lxyz',[750e3, 750e3, 1300]);
         Nxyz = struct('Nx64Ny64Nz30',[64 64 40]);
-        % Nxyz = struct('Nx16Ny16Nz5',[16 16 5]);
-        % transform = {'constant','hydrostatic','boussinesq'};
         transform = {'hydrostatic'};
     end
 
@@ -27,7 +25,7 @@ classdef TestGeostrophicMethods < matlab.unittest.TestCase
         end
     end
 
-    methods (Test)
+    methods (Test, TestTags = "full")
         function testRemoveAllGeostrophicMotions(self)
             % In this test we intialize with a random flow state, confirm
             % that both total energy and geostrophic energy are present,

@@ -26,7 +26,7 @@ classdef TestNetCDFHandleOwnership < matlab.unittest.TestCase
         end
     end
 
-    methods (Test)
+    methods (Test, TestTags = "full")
         function oneOutputRestorationClosesFile(testCase)
             wvt = WVTransform.waveVortexTransformFromFile(char(testCase.transformPath));
             testCase.verifyClass(wvt,"WVTransformConstantStratification")
