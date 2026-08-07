@@ -5,21 +5,14 @@ classdef TestTraditionalDamping < matlab.unittest.TestCase
 
     methods (TestMethodSetup)
         function createTemporaryFolder(testCase)
-            testCase.tempFolder = string(tempname);
-            mkdir(testCase.tempFolder);
-        end
-    end
-
-    methods (TestMethodTeardown)
-        function removeTemporaryFolder(testCase)
-            if isfolder(testCase.tempFolder)
-                rmdir(testCase.tempFolder,"s");
-            end
+            fixture = testCase.applyFixture(matlab.unittest.fixtures.TemporaryFolderFixture);
+            testCase.tempFolder = string(fixture.Folder);
         end
     end
 
     methods (Test, TestTags = "smoke")
         function verticalDampingSupportsConstantStratification(testCase)
+            seedRandomNumberGenerator(testCase,93187);
             for isHydrostatic = [true false]
                 wvt = TestTraditionalDamping.constantTransform(isHydrostatic=isHydrostatic,shouldAntialias=false);
                 damping = WVVerticalDamping(wvt,nu=2e-4,kappa=3e-6);

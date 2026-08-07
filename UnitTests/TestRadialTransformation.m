@@ -31,11 +31,13 @@ classdef TestRadialTransformation < matlab.unittest.TestCase
 
     methods (Test, TestTags = "full")
         function testRadialWavenumberVariance(self,flowComponent)
+            seedRandomNumberGenerator(self,41803);
+            self.wvt.removeAll();
             self.wvt.initWithRandomFlow(flowComponent);
             varianceMatrix = abs(self.wvt.Ap).^2 + abs(self.wvt.Am).^2 + abs(self.wvt.A0).^2;
             radialVarianceMatrix = self.wvt.transformToRadialWavenumber(varianceMatrix);
 
-            self.verifyEqual(sum(radialVarianceMatrix(:)),sum(radialVarianceMatrix(:)), "AbsTol",1e-7,"RelTol",1e-7);
+            self.verifyEqual(sum(radialVarianceMatrix(:)),sum(varianceMatrix(:)),"RelTol",100*eps);
         end
 
 

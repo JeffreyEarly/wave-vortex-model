@@ -48,7 +48,7 @@ classdef WVTransformBarotropicQG < WVGeometryDoublyPeriodicBarotropic & WVTransf
                 options.shouldAntialias (1,1) logical = true
                 options.rotationRate (1,1) double = 7.2921E-5
                 options.planetaryRadius (1,1) double = 6.371e6
-                options.latitude (1,1) double = 33
+                options.latitude (1,1) double {mustBeSupportedLatitude} = 33
                 options.g (1,1) double = 9.81
                 options.h (1,1) double = 0.8
                 options.j (1,1) double {mustBeMember(options.j,[0 1])} = 1

@@ -24,8 +24,16 @@ classdef TestInternalGravityWaveMethods < matlab.unittest.TestCase
         end
     end
 
+    methods (TestMethodSetup)
+        function resetTransform(self)
+            self.wvt.removeAll();
+            self.wvt.t = 0;
+        end
+    end
+
     methods (Test, TestTags = "full")
         function testRemoveAllWaves(self)
+            seedRandomNumberGenerator(self,76423);
             % In this test we intialize with a random flow state, confirm
             % that both total energy and geostrophic energy are present,
             % remove all the geostrophic energy, and then confirm that there

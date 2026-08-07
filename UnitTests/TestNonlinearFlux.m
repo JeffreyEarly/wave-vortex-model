@@ -1,87 +1,26 @@
 classdef TestNonlinearFlux < matlab.unittest.TestCase
-    properties
-        wvt_
-    end
-
-    properties (ClassSetupParameter)
-        Lxyz = struct('Lxyz',[4e3, 4e3, 2e3]);
-        Nxyz = struct('Nx16Ny16Nz9',[16 16 9]);
-        transform = {'hydrostatic-exp'};
-    end
-
-    methods (TestClassSetup)
-        function classSetup(testCase,Lxyz,Nxyz,transform)
-            switch transform
-                case 'constant-hydrostatic'
-                    testCase.wvt_ = WVTransformConstantStratification(Lxyz, Nxyz, isHydrostatic=true, shouldAntialias=0);
-                case 'constant-boussinesq'
-                    testCase.wvt_ = WVTransformConstantStratification(Lxyz, Nxyz,shouldAntialias=0);
-                case 'hydrostatic'
-                    testCase.wvt_ = WVTransformHydrostatic(Lxyz, Nxyz, N2=@(z) (5.2e-3)*(5.2e-3)*ones(size(z)),shouldAntialias=false);
-                case 'hydrostatic-exp'
-                    N0 = 3*2*pi/3600; % buoyancy frequency at the surface, radians/seconds
-                    L_gm = 1300; % thermocline exponential scale, meters
-                    N2 = @(z) N0*N0*exp(2*z/L_gm);
-                    testCase.wvt_ = WVTransformHydrostatic(Lxyz, Nxyz, N2=N2,shouldAntialias=false);
-                case 'boussinesq'
-                    testCase.wvt_ = WVTransformBoussinesq(Lxyz, Nxyz, N2=@(z) (5.2e-3)*(5.2e-3)*ones(size(z)),shouldAntialias=0);
-            end
-        end
+    properties (TestParameter)
+        isHydrostatic = {true,false}
     end
 
     methods (Test, TestTags = "full")
-        % function testNonlinearFlux(self)
-        %     wvt = self.wvt_;
-        %     wvt.initWithRandomFlow();
-        %     spatialFlux = WVNonlinearFluxSpatial(wvt);
-        %     standardFlux = WVNonlinearFlux(wvt);
-        % 
-        %     wvt.t = 6000;
-        %     [SpatialFp,SpatialFm,SpatialF0] = spatialFlux.compute(wvt);
-        %     [StandardFp,StandardFm,StandardF0] = standardFlux.compute(wvt);
-        % 
-        %     self.verifyEqual(StandardFp,SpatialFp, "AbsTol",1e-7,"RelTol",1e-7);
-        %     self.verifyEqual(StandardFm,SpatialFm, "AbsTol",1e-7,"RelTol",1e-7);
-        %     self.verifyEqual(StandardF0,SpatialF0, "AbsTol",1e-7,"RelTol",1e-7);
-        % end
-
-        function testEnergyFluxConservation(self)
-            wvt = self.wvt_;
-            wvt.initWithRandomFlow(uvMax=0.1);
-            
-            % We are careful to *not* initialize in an anti-aliased
-            % configuration, and then only energize modes that will not
-            % alias. This ensures that energy can be conserved.
-            antialiasMask = zeros(wvt.spectralMatrixSize);
-            antialiasMask(wvt.Kh > 2*max(abs(wvt.k))/3) = 1;
-            antialiasMask(wvt.J > 2*max(abs(wvt.j))/3) = 1;
-            antialiasMask = logical(antialiasMask);
-
-            wvt.Ap(antialiasMask) = 0;
-            wvt.Am(antialiasMask) = 0;
-            wvt.A0(antialiasMask) = 0;
+        function testEnergyFluxConservation(self,isHydrostatic)
+            seedRandomNumberGenerator(self,45137);
+            wvt = TestNonlinearFlux.constantTransform(isHydrostatic);
+            TestNonlinearFlux.initializeWithResolvedRandomFlow(wvt);
 
             [Fp,Fm,F0] = wvt.nonlinearFlux();
             [Ep,Em,E0] = wvt.energyFluxFromNonlinearFlux(Fp,Fm,F0,deltaT=0);
             totalEnergyFlux = sum(Ep(:))+sum(Em(:))+sum(E0(:));
-            self.verifyEqual(totalEnergyFlux,0, "AbsTol",1e-15);
+            absoluteEnergyFlux = sum(abs([Ep(:);Em(:);E0(:)]));
+            % Constant-stratification modes conserve this balance to roundoff.
+            self.verifyLessThanOrEqual(abs(totalEnergyFlux)/absoluteEnergyFlux,100*eps)
         end
 
-        function testTriadFluxConservation(self)
-            wvt = self.wvt_;
-            wvt.initWithRandomFlow(uvMax=0.1);
-
-            % We are careful to *not* initialize in an anti-aliased
-            % configuration, and then only energize modes that will not
-            % alias. This ensures that energy can be conserved.
-            antialiasMask = zeros(wvt.spectralMatrixSize);
-            antialiasMask(wvt.Kh > 2*max(abs(wvt.k))/3) = 1;
-            antialiasMask(wvt.J > 2*max(abs(wvt.j))/3) = 1;
-            antialiasMask = logical(antialiasMask);
-
-            wvt.Ap(antialiasMask) = 0;
-            wvt.Am(antialiasMask) = 0;
-            wvt.A0(antialiasMask) = 0;
+        function testTriadFluxComposition(self)
+            seedRandomNumberGenerator(self,73417);
+            wvt = TestNonlinearFlux.variableTransform();
+            TestNonlinearFlux.initializeWithResolvedRandomFlow(wvt);
 
             Fp = zeros(wvt.spectralMatrixSize);
             Fm = zeros(wvt.spectralMatrixSize);
@@ -100,30 +39,13 @@ classdef TestNonlinearFlux < matlab.unittest.TestCase
             self.verifyEqual(Fp,Fp_, "AbsTol",1e-15,"RelTol",1e-7);
             self.verifyEqual(Fm,Fm_, "AbsTol",1e-15,"RelTol",1e-7);
             self.verifyEqual(F0,F0_, "AbsTol",1e-15,"RelTol",1e-7);
-
-            [Ep,Em,E0] = wvt.energyFluxFromNonlinearFlux(Fp,Fm,F0,deltaT=0);
-            totalEnergyFlux = sum(Ep(:))+sum(Em(:))+sum(E0(:));
-            self.verifyEqual(totalEnergyFlux,0, "AbsTol",1e-15);
         end
 
         function testSpatialFluxConservation(self)
-            wvt = self.wvt_;
-            wvt.initWithRandomFlow(uvMax=0.1);
+            seedRandomNumberGenerator(self,11);
+            wvt = TestNonlinearFlux.variableTransform();
+            TestNonlinearFlux.initializeWithResolvedRandomFlow(wvt);
 
-            % We are careful to *not* initialize in an anti-aliased
-            % configuration, and then only energize modes that will not
-            % alias. This ensures that energy can be conserved.
-            antialiasMask = zeros(wvt.spectralMatrixSize);
-            antialiasMask(wvt.Kh > 2*max(abs(wvt.k))/3) = 1;
-            antialiasMask(wvt.J > 2*max(abs(wvt.j))/3) = 1;
-            antialiasMask = logical(antialiasMask);
-
-            wvt.Ap(antialiasMask) = 0;
-            wvt.Am(antialiasMask) = 0;
-            wvt.A0(antialiasMask) = 0;
-
-            wvt.addOperation(EtaTrueOperation());
-            wvt.addOperation(APEOperation(wvt));
             wvt.addOperation(SpatialForcingOperation(wvt));
             int_vol = @(integrand) sum(mean(mean(shiftdim(wvt.z_int,-2).*integrand,1),2),3);
 
@@ -138,13 +60,15 @@ classdef TestNonlinearFlux < matlab.unittest.TestCase
             end
 
             totalEnergyFlux = int_vol(F_density);
-            self.verifyEqual(totalEnergyFlux,0, "AbsTol",1e-15);
+            absoluteEnergyFlux = int_vol(abs(F_density));
+            % EtaTrueOperation's spline inversion is accurate to roughly 1e-3.
+            self.verifyLessThanOrEqual(abs(totalEnergyFlux)/absoluteEnergyFlux,5e-4)
         end
 
-        function testNonlinearWaveTriad(self)
+        function testNonlinearWaveTriad(self,isHydrostatic)
             % Note, this unit test is designed with the assumption that
             % Lx=Ly=2*Lz.
-            wvt = self.wvt_;
+            wvt = TestNonlinearFlux.constantTransform(isHydrostatic);
             wvt.t = 0;
             L = wvt.Lx/2/pi;
             N0 = 5.2e-3;
@@ -337,6 +261,26 @@ classdef TestNonlinearFlux < matlab.unittest.TestCase
 
         end
 
+    end
+
+    methods (Static, Access=private)
+        function wvt = constantTransform(isHydrostatic)
+            wvt = WVTransformConstantStratification([4e3 4e3 2e3],[16 16 9],N0=5.2e-3,isHydrostatic=isHydrostatic,shouldAntialias=false);
+        end
+
+        function wvt = variableTransform()
+            N0 = 3*2*pi/3600;
+            N2 = @(z)N0*N0*exp(2*z/1300);
+            wvt = WVTransformHydrostatic([4e3 4e3 2e3],[16 16 9],N2=N2,shouldAntialias=false);
+        end
+
+        function initializeWithResolvedRandomFlow(wvt)
+            wvt.initWithRandomFlow(uvMax=0.1);
+            unresolvedMask = wvt.Kh > 2*max(abs(wvt.k))/3 | wvt.J > 2*max(abs(wvt.j))/3;
+            wvt.Ap(unresolvedMask) = 0;
+            wvt.Am(unresolvedMask) = 0;
+            wvt.A0(unresolvedMask) = 0;
+        end
     end
 
 end

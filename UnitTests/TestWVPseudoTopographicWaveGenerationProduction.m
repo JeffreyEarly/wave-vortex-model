@@ -1,18 +1,20 @@
 classdef TestWVPseudoTopographicWaveGenerationProduction < matlab.unittest.TestCase
     % Verify variable stratification, resolution rebuilding, and restart behavior.
 
-    methods (TestClassSetup)
-        function addRepositoryToPath(~)
-            repositoryRoot = fileparts(fileparts(mfilename("fullpath")));
-            addpath(repositoryRoot)
+    properties
+        tempFolder
+    end
+
+    methods (TestMethodSetup)
+        function createTemporaryFolder(testCase)
+            fixture = testCase.applyFixture(matlab.unittest.fixtures.TemporaryFolderFixture);
+            testCase.tempFolder = string(fixture.Folder);
         end
     end
 
     methods (Test, TestTags = "full")
         function variableStratificationMatchesOracleAndIdentities(testCase)
-            previousRandomState = rng;
-            randomStateCleanup = onCleanup(@()rng(previousRandomState));
-            rng(7142,"twister")
+            seedRandomNumberGenerator(testCase,7142);
             for shouldAntialias = [false true]
                 wvt = TestWVPseudoTopographicWaveGenerationProduction.createTransform([8 6 5],shouldAntialias);
                 terrain = TestWVPseudoTopographicWaveGenerationProduction.topography(wvt);
@@ -36,7 +38,6 @@ classdef TestWVPseudoTopographicWaveGenerationProduction < matlab.unittest.TestC
                 testCase.verifyLessThanOrEqual(diagnostics.qgpvNorm,1e-10)
                 testCase.verifyLessThanOrEqual(diagnostics.powerError,1e-10)
             end
-            clear randomStateCleanup
         end
 
         function resolutionConversionRebuildsEquivalentForcing(testCase)
@@ -130,8 +131,7 @@ classdef TestWVPseudoTopographicWaveGenerationProduction < matlab.unittest.TestC
             wvt.t = 317;
             [originalFp,originalFm,originalF0] = forcing.addSpectralForcing(wvt,zeros(size(wvt.Ap)),zeros(size(wvt.Am)),zeros(size(wvt.A0)));
 
-            path = string(tempname)+".nc";
-            cleanup = onCleanup(@()TestWVPseudoTopographicWaveGenerationProduction.deleteFile(path));
+            path = fullfile(testCase.tempFolder,"forcing-round-trip.nc");
             ncfile = wvt.writeToFile(path,shouldOverwriteExisting=true);
             ncfile.close();
             [restoredTransform,restoredFile] = WVTransform.waveVortexTransformFromFile(path);
@@ -154,7 +154,6 @@ classdef TestWVPseudoTopographicWaveGenerationProduction < matlab.unittest.TestC
             testCase.verifyLessThanOrEqual(TestWVPseudoTopographicWaveGenerationProduction.relativeError(restoredFp,originalFp),1e-12)
             testCase.verifyLessThanOrEqual(TestWVPseudoTopographicWaveGenerationProduction.relativeError(restoredFm,originalFm),1e-12)
             testCase.verifyEqual(restoredF0,originalF0)
-            clear cleanup
         end
 
         function persistedFrequencyIsAuthoritative(testCase)
@@ -163,8 +162,7 @@ classdef TestWVPseudoTopographicWaveGenerationProduction < matlab.unittest.TestC
             wvt.removeAllForcing();
             wvt.addForcing(forcing);
 
-            path = string(tempname)+".nc";
-            cleanup = onCleanup(@()TestWVPseudoTopographicWaveGenerationProduction.deleteFile(path));
+            path = fullfile(testCase.tempFolder,"authoritative-frequency.nc");
             ncfile = wvt.writeToFile(path,shouldOverwriteExisting=true);
             ncfile.close();
             persistedFrequency = forcing.frequency*(1+1e-6);
@@ -179,12 +177,10 @@ classdef TestWVPseudoTopographicWaveGenerationProduction < matlab.unittest.TestC
             convertedForcing = restoredForcing.forcingWithResolutionOfTransform(targetTransform);
             testCase.verifyEqual(convertedForcing.frequency,persistedFrequency)
             testCase.verifyEqual(convertedForcing.darwinSymbol,"N2")
-            clear cleanup
         end
 
         function adaptiveModelRestartMatchesControl(testCase)
-            restartPath = string(tempname)+".nc";
-            cleanup = onCleanup(@()TestWVPseudoTopographicWaveGenerationProduction.deleteFile(restartPath));
+            restartPath = fullfile(testCase.tempFolder,"adaptive-restart.nc");
             [restartModel,checkpointTime,finalTime] = TestWVPseudoTopographicWaveGenerationProduction.modelForRestart();
             [controlModel,~,~] = TestWVPseudoTopographicWaveGenerationProduction.modelForRestart();
             restartModel.createNetCDFFileForModelOutput(restartPath,outputInterval=checkpointTime/2,shouldOverwriteExisting=true);
@@ -192,7 +188,11 @@ classdef TestWVPseudoTopographicWaveGenerationProduction < matlab.unittest.TestC
             restartModel.closeNetCDFFile();
 
             controlModel.integrateToTime(finalTime,shouldShowIntegrationDiagnostics=false,callback=@(~)[]);
+            warningState = warning;
+            warningCleanup = onCleanup(@()warning(warningState));
+            warning("off","all")
             resumedModel = WVModel.modelFromFile(restartPath);
+            clear warningCleanup
             resumedModel.setupIntegrator(integratorType="adaptive",absTolerance=1e-12,relTolerance=1e-10);
             resumedModel.integrateToTime(finalTime,shouldShowIntegrationDiagnostics=false,callback=@(~)[]);
             resumedModel.closeNetCDFFile();
@@ -201,7 +201,6 @@ classdef TestWVPseudoTopographicWaveGenerationProduction < matlab.unittest.TestC
             testCase.verifyLessThanOrEqual(max(abs(resumedModel.wvt.Am-controlModel.wvt.Am),[],"all"),1e-10)
             testCase.verifyEqual(resumedModel.wvt.A0,controlModel.wvt.A0)
             testCase.verifyClass(resumedModel.wvt.forcingWithName("restart model terrain"),"WVPseudoTopographicWaveGeneration")
-            clear cleanup
         end
 
     end
@@ -236,7 +235,11 @@ classdef TestWVPseudoTopographicWaveGenerationProduction < matlab.unittest.TestC
             forcing = WVPseudoTopographicWaveGeneration(wvt,topographicHeight=TestWVPseudoTopographicWaveGenerationProduction.topography(wvt),barotropicVelocityAmplitude=[0.05; -0.01],rampDuration=100,startTime=0,name="restart model terrain");
             wvt.removeAllForcing();
             wvt.addForcing(forcing);
+            warningState = warning;
+            warningCleanup = onCleanup(@()warning(warningState));
+            warning("off","all")
             model = WVModel(wvt);
+            clear warningCleanup
             model.setupIntegrator(integratorType="adaptive",absTolerance=1e-12,relTolerance=1e-10);
             checkpointTime = 300;
             finalTime = 600;
@@ -246,10 +249,5 @@ classdef TestWVPseudoTopographicWaveGenerationProduction < matlab.unittest.TestC
             errorValue = norm(actual(:)-expected(:))/max(norm(expected(:)),eps);
         end
 
-        function deleteFile(path)
-            if isfile(path)
-                delete(path)
-            end
-        end
     end
 end

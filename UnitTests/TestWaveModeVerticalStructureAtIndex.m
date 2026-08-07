@@ -33,9 +33,7 @@ classdef TestWaveModeVerticalStructureAtIndex < matlab.unittest.TestCase
 
     methods (Test, TestTags = "smoke")
         function factorsMatchNativeTransforms(testCase)
-            previousRandomState = rng;
-            randomStateCleanup = onCleanup(@()rng(previousRandomState));
-            rng(19374,"twister")
+            seedRandomNumberGenerator(testCase,19374);
 
             wvt = testCase.wvt;
             waveMask = logical(wvt.waveComponent.maskAp) | logical(wvt.waveComponent.maskAm);
@@ -57,7 +55,6 @@ classdef TestWaveModeVerticalStructureAtIndex < matlab.unittest.TestCase
                 FOnly = wvt.waveModeVerticalStructureAtIndex(iZ);
                 testCase.verifyEqual(FOnly,F)
             end
-            clear randomStateCleanup
         end
 
         function invalidVerticalIndexUsesStableError(testCase)

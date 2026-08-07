@@ -24,7 +24,7 @@ classdef TestFlowComponentSurfaceDiagnostics < matlab.unittest.TestCase
                     testCase.wvt = WVTransformBoussinesq(Lxyz,Nxyz,N2=N2,shouldAntialias=false);
             end
 
-            rng(1);
+            seedRandomNumberGenerator(testCase,1);
             testCase.wvt.initWithRandomFlow(uvMax=0.01);
             testCase.wvt.t = 3600;
 

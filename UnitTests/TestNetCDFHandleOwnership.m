@@ -7,22 +7,14 @@ classdef TestNetCDFHandleOwnership < matlab.unittest.TestCase
 
     methods (TestMethodSetup)
         function createFixtures(testCase)
-            testCase.tempFolder = string(tempname);
-            mkdir(testCase.tempFolder);
+            fixture = testCase.applyFixture(matlab.unittest.fixtures.TemporaryFolderFixture);
+            testCase.tempFolder = string(fixture.Folder);
             testCase.transformPath = fullfile(testCase.tempFolder,"transform.nc");
             testCase.modelPath = fullfile(testCase.tempFolder,"model.nc");
 
             wvt = TestNetCDFHandleOwnership.newTransform();
             ncfile = wvt.writeToFile(testCase.transformPath,shouldOverwriteExisting=true);
             ncfile.close();
-        end
-    end
-
-    methods (TestMethodTeardown)
-        function removeFixtures(testCase)
-            if isfolder(testCase.tempFolder)
-                rmdir(testCase.tempFolder,"s");
-            end
         end
     end
 
@@ -111,7 +103,11 @@ classdef TestNetCDFHandleOwnership < matlab.unittest.TestCase
             model.integrateToTime(2,shouldShowIntegrationDiagnostics=false,callback=@(~)[]);
             model.closeNetCDFFile();
 
+            warningState = warning;
+            warningCleanup = onCleanup(@()warning(warningState));
+            warning("off","all")
             resumedModel = WVModel.modelFromFile(char(testCase.modelPath));
+            clear warningCleanup
             cleanup = onCleanup(@()resumedModel.closeNetCDFFile());
             resumedModel.integrateToTime(3,shouldShowIntegrationDiagnostics=false,callback=@(~)[]);
             resumedModel.closeNetCDFFile();

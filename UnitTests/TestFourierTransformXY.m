@@ -26,6 +26,9 @@ classdef TestFourierTransformXY < matlab.unittest.TestCase
         function [k_n,l_n] = initializeProperty(Lxyz,Nxyz,transform)
             % If you want to dynamically adjust the test parameters, you
             % have to do it here.
+            if numel(Lxyz) ~= numel(Nxyz) || ~ismember(string(transform),["constant" "hydrostatic" "boussinesq"])
+                error("TestFourierTransformXY:InvalidClassSetupParameters","Unsupported class setup parameters.")
+            end
             for i=0:(floor(Nxyz(1)/2)-1) % Note that we are specifically avoiding testing the Nyquist which is not fully resolved.
                 k_n.(sprintf('k_%d',i)) = i;
             end
@@ -42,7 +45,8 @@ classdef TestFourierTransformXY < matlab.unittest.TestCase
 
     methods (Test, TestTags = "smoke")
         function testForwardBackwardTransform(testCase,k_n,l_n)
-            [X,Y,Z] = testCase.wvt.xyzGrid;
+            seedRandomNumberGenerator(testCase,53911);
+            [X,Y,~] = testCase.wvt.xyzGrid;
             Lx = testCase.wvt.Lx;
             Ly = testCase.wvt.Ly;
             phix = 2*pi*rand(1);

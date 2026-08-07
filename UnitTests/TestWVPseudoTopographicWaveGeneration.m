@@ -1,13 +1,6 @@
 classdef TestWVPseudoTopographicWaveGeneration < matlab.unittest.TestCase
     % Verify prescribed bottom wave generation and model integration.
 
-    methods (TestClassSetup)
-        function addRepositoryToPath(~)
-            repositoryRoot = fileparts(fileparts(mfilename("fullpath")));
-            addpath(repositoryRoot);
-        end
-    end
-
     methods (Test, TestTags = "full")
         function darwinSymbolsSelectFrequency(testCase)
             wvt = TestWVPseudoTopographicWaveGeneration.createTransform(false);
@@ -168,9 +161,7 @@ classdef TestWVPseudoTopographicWaveGeneration < matlab.unittest.TestCase
         end
 
         function maskedBottomWorkMatchesModalInjection(testCase)
-            previousRandomState = rng;
-            randomStateCleanup = onCleanup(@()rng(previousRandomState));
-            rng(92841,"twister")
+            seedRandomNumberGenerator(testCase,92841);
             wvt = WVTransformBoussinesq([40e3 30e3 2e3],[8 8 9],N2=@(z)2e-5*exp(z/4000),latitude=45,shouldAntialias=true);
             terrain = TestWVPseudoTopographicWaveGeneration.bandLimitedTopography(wvt);
             forcing = WVPseudoTopographicWaveGeneration(wvt,topographicHeight=terrain,barotropicVelocityAmplitude=[0.05; -0.02],maximumForcedVerticalMode=2);
@@ -183,7 +174,6 @@ classdef TestWVPseudoTopographicWaveGeneration < matlab.unittest.TestCase
 
             diagnostics = TestWVPseudoTopographicWaveGeneration.sourceDiagnostics(wvt,forcing);
             testCase.verifyLessThanOrEqual(diagnostics.powerError,5e-12)
-            clear randomStateCleanup
         end
 
         function prescribedVelocityAndRampAreCorrect(testCase)
@@ -323,9 +313,7 @@ classdef TestWVPseudoTopographicWaveGeneration < matlab.unittest.TestCase
         end
 
         function noPVAndEnergyWorkIdentities(testCase)
-            previousRandomState = rng;
-            randomStateCleanup = onCleanup(@()rng(previousRandomState));
-            rng(67291,"twister")
+            seedRandomNumberGenerator(testCase,67291);
             for shouldAntialias = [false true]
                 wvt = TestWVPseudoTopographicWaveGeneration.createTransform(shouldAntialias);
                 terrain = TestWVPseudoTopographicWaveGeneration.sinusoidalTopography(wvt,50);
@@ -368,7 +356,6 @@ classdef TestWVPseudoTopographicWaveGeneration < matlab.unittest.TestCase
                 TestWVPseudoTopographicWaveGeneration.verifyZeroDiagnostics(testCase,wvt,flat)
                 TestWVPseudoTopographicWaveGeneration.verifyZeroDiagnostics(testCase,wvt,zeroCurrent)
             end
-            clear randomStateCleanup
 
             wvt = TestWVPseudoTopographicWaveGeneration.createTransform(true);
             terrain = TestWVPseudoTopographicWaveGeneration.sinusoidalTopography(wvt,50);
@@ -379,6 +366,7 @@ classdef TestWVPseudoTopographicWaveGeneration < matlab.unittest.TestCase
             warningCleanup = onCleanup(@()warning(warningState));
             warning("off","all")
             model = WVModel(wvt);
+            clear warningCleanup
             model.setupIntegrator(integratorType="adaptive",absTolerance=1e-10,relTolerance=1e-8);
             model.integrateToTime(600,shouldShowIntegrationDiagnostics=false,callback=@(~)[]);
             evolvedDiagnostics = TestWVPseudoTopographicWaveGeneration.sourceDiagnostics(wvt,forcing);
@@ -386,7 +374,6 @@ classdef TestWVPseudoTopographicWaveGeneration < matlab.unittest.TestCase
             testCase.verifyEqual(evolvedDiagnostics.modalQGPVSource,zeros(size(wvt.A0)))
             testCase.verifyLessThanOrEqual(evolvedDiagnostics.normalizedQGPV,1e-10)
             testCase.verifyLessThanOrEqual(evolvedDiagnostics.powerError,5e-12)
-            clear warningCleanup
         end
 
         function adaptiveModelSmoke(testCase)
@@ -403,13 +390,13 @@ classdef TestWVPseudoTopographicWaveGeneration < matlab.unittest.TestCase
             warningCleanup = onCleanup(@()warning(warningState));
             warning("off","all")
             model = WVModel(wvt);
+            clear warningCleanup
             model.setupIntegrator(integratorType="adaptive",absTolerance=1e-10,relTolerance=1e-8);
             model.integrateToTime(300,shouldShowIntegrationDiagnostics=false,callback=@(~)[]);
             testCase.verifyEqual(wvt.t,300,"AbsTol",1e-10)
             testCase.verifyTrue(all(isfinite([wvt.Ap(:); wvt.Am(:); wvt.A0(:)])))
             testCase.verifyGreaterThan(norm([wvt.Ap(:); wvt.Am(:)]),0)
             testCase.verifyEqual(wvt.A0,zeros(size(wvt.A0)))
-            clear warningCleanup
         end
 
         function goffTopographyIsDeterministicAndLocal(testCase)
@@ -455,7 +442,6 @@ classdef TestWVPseudoTopographicWaveGeneration < matlab.unittest.TestCase
             for iMode = 1:size(modes,1)
                 terrain = terrain+amplitudes(iMode)*cos(2*pi*(modes(iMode,1)*x/wvt.Lx+modes(iMode,2)*y/wvt.Ly)+phases(iMode));
             end
-            clear randomStateCleanup
         end
 
         function errorValue = relativeError(actual,expected)
