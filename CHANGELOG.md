@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- Restricted public field and particle interpolation to periodic `linear` and `spline` methods and removed the dead `exact` and off-grid dispatch.
 - Documented the v4.2.1 target support contract: the five current transform families, the supported latitude domain of `5 <= abs(latitude) <= 85`, MATLAB builtin FFTs, fixed and adaptive integration, and periodic `linear` and `spline` interpolation are stable; `adaptive-cell` integration is experimental; and FFTW, `exact` and `finufft` interpolation, off-grid behavior, and legacy low-level entry points are internal.
 - Enforced the supported latitude domain and restored a deterministic, order-independent green test baseline with isolated random state and temporary files.
 - Corrected combined random-flow initialization to preserve conjugate inertial `Ap` and `Am` coefficients.

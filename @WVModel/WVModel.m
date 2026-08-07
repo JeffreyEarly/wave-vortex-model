@@ -371,15 +371,15 @@ classdef WVModel < handle & WVModelAdapativeTimeStepMethods & WVModelFixedTimeSt
             % Add particles to be advected by the flow.
             %
             % - Topic: Particles
-            % - Declaration: addParticles(name,fluxOp,x,y,z,trackedFieldNames,options)
+            % - Declaration: addParticles(name,isXYOnly,x,y,z,trackedFieldNames,options)
             % - Parameter name: a unique name to call the particles
-            % - Parameter fluxOp: a WVParticleFluxOperation, used to determine how the flow advects the particles
+            % - Parameter isXYOnly: whether particles are advected only in the horizontal dimensions
             % - Parameter x: x-coordinate location of the particles
             % - Parameter y: y-coordinate location of the particles
             % - Parameter z: z-coordinate location of the particles
-            % - Parameter trackedFields: strings of variable names
-            % - Parameter advectionInterpolation: (optional) interpolation method used for particle advection. "linear" (default), "spline", "exact"
-            % - Parameter trackedVarInterpolation: (optional) interpolation method used for tracked field. "linear" (default), "spline", "exact"
+            % - Parameter trackedFieldNames: strings of variable names
+            % - Parameter advectionInterpolation: (optional) `linear` (default) or `spline` interpolation for particle advection
+            % - Parameter trackedVarInterpolation: (optional) `linear` or `spline` (default) interpolation for tracked fields
             % - Parameter absToleranceXY: (adapative) absolute tolerance in meters for particle advection in (x,y). 1e-1 (default)
             % - Parameter absToleranceZ: (adapative) absolute tolerance  in meters for particle advection in (z). 1e-2 (default)
             arguments
@@ -394,8 +394,8 @@ classdef WVModel < handle & WVModelAdapativeTimeStepMethods & WVModelFixedTimeSt
                 trackedFieldNames char
             end
             arguments
-                options.advectionInterpolation char {mustBeMember(options.advectionInterpolation,["linear","spline","exact","finufft"])} = "linear"
-                options.trackedVarInterpolation char {mustBeMember(options.trackedVarInterpolation,["linear","spline","exact","finufft"])} = "spline"
+                options.advectionInterpolation char {mustBeMember(options.advectionInterpolation,["linear","spline"])} = "linear"
+                options.trackedVarInterpolation char {mustBeMember(options.trackedVarInterpolation,["linear","spline"])} = "spline"
                 options.outputGroupName = "wave-vortex"
                 options.absToleranceXY = 1e-1; % 100 km * 10^{-6}
                 options.absToleranceZ = 1e-2;
@@ -429,8 +429,8 @@ classdef WVModel < handle & WVModelAdapativeTimeStepMethods & WVModelFixedTimeSt
             % - Parameter y: y-coordinate location of the particles
             % - Parameter z: z-coordinate location of the particles
             % - Parameter trackedFields: strings of variable names
-            % - Parameter advectionInterpolation: (optional) interpolation method used for particle advection. "linear" (default), "spline", "exact"
-            % - Parameter trackedVarInterpolation: (optional) interpolation method used for tracked field. "linear" (default), "spline", "exact"
+            % - Parameter advectionInterpolation: (optional) `linear` (default) or `spline` interpolation for particle advection
+            % - Parameter trackedVarInterpolation: (optional) `linear` (default) or `spline` interpolation for tracked fields
             % - Parameter absToleranceXY: (adapative) absolute tolerance in meters for particle advection in (x,y). 1e-1 (default)
             % - Parameter absToleranceZ: (adapative) absolute tolerance  in meters for particle advection in (z). 1e-2 (default)
             %
@@ -443,8 +443,8 @@ classdef WVModel < handle & WVModelAdapativeTimeStepMethods & WVModelFixedTimeSt
             % many flows this will have sufficient accuracy and allow you
             % to place float at nearly every grid point without slowing
             % down the model integration. However, if high accuracy is
-            % required, you may want to use cubic "spline" interpolation or
-            % even "exact" at the expense of computational speed.
+            % required, you may want to use cubic "spline" interpolation at
+            % the expense of computational speed.
             %
             % You can track the value of any known WVVariableAnnotation along the
             % particle's flow path, e.g., relative vorticity. These values
@@ -475,8 +475,8 @@ classdef WVModel < handle & WVModelAdapativeTimeStepMethods & WVModelFixedTimeSt
                 trackedFields char
             end
             arguments
-                options.advectionInterpolation char {mustBeMember(options.advectionInterpolation,["linear","spline","exact","finufft"])} = "linear"
-                options.trackedVarInterpolation char {mustBeMember(options.trackedVarInterpolation,["linear","spline","exact","finufft"])} = "linear"
+                options.advectionInterpolation char {mustBeMember(options.advectionInterpolation,["linear","spline"])} = "linear"
+                options.trackedVarInterpolation char {mustBeMember(options.trackedVarInterpolation,["linear","spline"])} = "linear"
                 options.absToleranceXY = 1e-1;
                 options.absToleranceZ = 1e-2;
             end
@@ -517,7 +517,15 @@ classdef WVModel < handle & WVModelAdapativeTimeStepMethods & WVModelFixedTimeSt
 
         function setDrifterPositions(self,x,y,z,trackedFields,options)
             % Set positions of drifter-like particles to be advected.
+            %
             % - Topic: Particles
+            % - Declaration: setDrifterPositions(self,x,y,z,trackedFields,options)
+            % - Parameter x: x-coordinate locations of the particles
+            % - Parameter y: y-coordinate locations of the particles
+            % - Parameter z: optional z-coordinate locations of the particles
+            % - Parameter trackedFields: variable names to sample along each trajectory
+            % - Parameter advectionInterpolation: (optional) `linear` (default) or `spline` interpolation for particle advection
+            % - Parameter trackedVarInterpolation: (optional) `linear` (default) or `spline` interpolation for tracked fields
             arguments
                 self WVModel {mustBeNonempty}
                 x (1,:) double
@@ -528,8 +536,8 @@ classdef WVModel < handle & WVModelAdapativeTimeStepMethods & WVModelFixedTimeSt
                 trackedFields char
             end
             arguments
-                options.advectionInterpolation char {mustBeMember(options.advectionInterpolation,["linear","spline","exact","finufft"])} = "linear"
-                options.trackedVarInterpolation char {mustBeMember(options.trackedVarInterpolation,["linear","spline","exact","finufft"])} = "linear"
+                options.advectionInterpolation char {mustBeMember(options.advectionInterpolation,["linear","spline"])} = "linear"
+                options.trackedVarInterpolation char {mustBeMember(options.trackedVarInterpolation,["linear","spline"])} = "linear"
                 options.absToleranceXY = 1e-1;
             end
             optionCell = namedargs2cell(options);
