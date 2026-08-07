@@ -9,30 +9,33 @@ mathjax: true
 
 #  solutionForModeAtIndex
 
-return the analytical solution for the mode at this index
+Return analytical solutions from the complete primary-flow basis.
 
 
 ---
 
 ## Declaration
 ```matlab
- solution = solutionForModeAtIndex(index)
+ solutions = solutionForModeAtIndex(index,options)
 ```
 ## Parameters
-+ `index`  non-negative integer less than nModes
++ `index`  positive integer scalar or column vector with values no greater than nModes
 + `amplitude`  (optional) 'wvt' or 'random' (default)
 
 ## Returns
-+ `solution`  an instance of WVAnalyticalSolution
++ `solutions`  scalar or column vector of WVOrthogonalSolution objects
 
 ## Discussion
 
-  Returns WVAnalyticalSolution object for this index.
-  The solution indices run from 1:nModes.
- 
-  The solution amplitude can be set to either 'wvt' or
-  'random'. Setting the amplitude='wvt' will use the amplitude
-  currently set in the wvt to initialize this solution.
-  Otherwise an appropriate random amplitude will be created.
+Total-flow indices run from 1 through `nModes`. Primary flow
+components are ordered lexically by `shortName`, and each
+component contributes one contiguous range while retaining its
+own local mode ordering. Scalar inputs return a scalar solution;
+column-vector inputs return solutions in the requested order.
+
+Set `amplitude='wvt'` to reconstruct each solution from the
+corresponding coefficient currently stored by the transform.
+Set `amplitude='random'` to generate an appropriate random
+amplitude for each requested solution.
  
           

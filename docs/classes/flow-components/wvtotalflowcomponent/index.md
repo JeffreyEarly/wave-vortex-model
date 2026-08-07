@@ -45,7 +45,7 @@ in two different matrices.
 + Quadratic quantities
   + [`totalEnergyFactorForCoefficientMatrix`](/classes/flow-components/wvtotalflowcomponent/totalenergyfactorforcoefficientmatrix.html) returns the total energy multiplier for the coefficient matrix.
 + Analytical solutions
-  + [`solutionForModeAtIndex`](/classes/flow-components/wvtotalflowcomponent/solutionformodeatindex.html) return the analytical solution for the mode at this index
+  + [`solutionForModeAtIndex`](/classes/flow-components/wvtotalflowcomponent/solutionformodeatindex.html) Return analytical solutions from the complete primary-flow basis.
 + Index Gymnastics
   + [`isValidConjugateModeNumber`](/classes/flow-components/wvtotalflowcomponent/isvalidconjugatemodenumber.html) returns a boolean indicating whether (k,l,j) is a valid mode number
   + [`isValidModeNumber`](/classes/flow-components/wvtotalflowcomponent/isvalidmodenumber.html) returns a boolean indicating whether (k,l,j) is a valid mode number

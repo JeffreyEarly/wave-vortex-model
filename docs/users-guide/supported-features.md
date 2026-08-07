@@ -38,6 +38,7 @@ No feature is assigned to Deprecated in the v4.2.1 target contract.
 | Periodic `linear` and `spline` interpolation | Stable | These are the only interpolation methods exposed by the supported public interpolation contract. |
 | Vertical calculus for stable 3-D transforms | Stable | `diffZF` and `diffZG` support orders 1 through 4 on `[Nx Ny Nz]` grids. `intZF` and `intZG` support first antiderivatives on `[Nx Ny Nz]` grids and `[Nz N]` matrices. Unsupported orders and layouts are rejected through ordinary MATLAB argument validation. |
 | `hasMeanPressureDifference` | Stable | The diagnostic reports whether the mean-density-anomaly component produces a resolved horizontally averaged pressure difference between the top and bottom boundaries. Transforms without an MDA component return `false`. |
+| `WVTotalFlowComponent.solutionForModeAtIndex` | Stable | Total-flow indices select primary-component analytical solutions in lexical `shortName` order while retaining each component's local mode ordering. |
 | `exact` and `finufft` interpolation | Internal | These implementation paths and option values must not appear in public option lists or user documentation. |
 | `WVOffGridTransform`, external-wave behavior, and off-grid pressure | Internal | These incomplete remnants have no 4.2.x compatibility promise. |
 
@@ -105,7 +106,6 @@ The following contracts are part of the v4.2.1 target even though their 4.2.0 im
 
 | Interface | v4.2.1 target |
 | --- | --- |
-| `WVTotalFlowComponent.solutionForModeAtIndex` | Return the documented total-flow solution instead of a placeholder error. |
 | `summarizeDegreesOfFreedom` | Provide a general implementation for the stable transform surface. |
 
 ## Known 4.2.0 gaps and follow-up work
