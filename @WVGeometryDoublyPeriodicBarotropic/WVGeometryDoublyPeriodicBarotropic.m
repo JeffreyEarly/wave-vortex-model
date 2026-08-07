@@ -132,6 +132,45 @@ classdef WVGeometryDoublyPeriodicBarotropic < WVGeometryDoublyPeriodic & WVRotat
             [~,value] = ndgrid(self.x,self.y);
         end
 
+        function bool = isValidPrimaryModeNumber(self,kMode,lMode,jMode)
+            arguments (Input)
+                self WVGeometryDoublyPeriodicBarotropic {mustBeNonempty}
+                kMode (:,1) double {mustBeInteger}
+                lMode (:,1) double {mustBeInteger}
+                jMode (:,1) double {mustBeInteger,mustBeNonnegative}
+            end
+            arguments (Output)
+                bool (:,1) logical {mustBeMember(bool,[0 1])}
+            end
+            bool = (jMode == self.j) & self.isValidPrimaryKLModeNumber(kMode,lMode);
+        end
+
+        function bool = isValidConjugateModeNumber(self,kMode,lMode,jMode)
+            arguments (Input)
+                self WVGeometryDoublyPeriodicBarotropic {mustBeNonempty}
+                kMode (:,1) double {mustBeInteger}
+                lMode (:,1) double {mustBeInteger}
+                jMode (:,1) double {mustBeInteger,mustBeNonnegative}
+            end
+            arguments (Output)
+                bool (:,1) logical {mustBeMember(bool,[0 1])}
+            end
+            bool = (jMode == self.j) & self.isValidConjugateKLModeNumber(kMode,lMode);
+        end
+
+        function bool = isValidModeNumber(self,kMode,lMode,jMode)
+            arguments (Input)
+                self WVGeometryDoublyPeriodicBarotropic {mustBeNonempty}
+                kMode (:,1) double {mustBeInteger}
+                lMode (:,1) double {mustBeInteger}
+                jMode (:,1) double {mustBeInteger,mustBeNonnegative}
+            end
+            arguments (Output)
+                bool (:,1) logical {mustBeMember(bool,[0 1])}
+            end
+            bool = self.isValidPrimaryModeNumber(kMode,lMode,jMode) | self.isValidConjugateModeNumber(kMode,lMode,jMode);
+        end
+
         function index = indexFromModeNumber(self,kMode,lMode,jMode)
             arguments (Input)
                 self WVGeometryDoublyPeriodicBarotropic {mustBeNonempty}
@@ -142,11 +181,12 @@ classdef WVGeometryDoublyPeriodicBarotropic < WVGeometryDoublyPeriodic & WVRotat
             arguments (Output)
                 index (:,1) double {mustBeInteger,mustBePositive}
             end
-            index = self.indexFromModeNumber(kMode,lMode);
+            mustBeMember(jMode,self.j)
+            index = self.indexFromKLModeNumber(kMode,lMode);
         end
         function [kMode,lMode,jMode] = modeNumberFromIndex(self,linearIndex)
             arguments (Input)
-                self WVGeometryDoublyPeriodic {mustBeNonempty}
+                self WVGeometryDoublyPeriodicBarotropic {mustBeNonempty}
                 linearIndex (1,1) double {mustBeInteger,mustBePositive}
             end
             arguments (Output)
@@ -154,7 +194,7 @@ classdef WVGeometryDoublyPeriodicBarotropic < WVGeometryDoublyPeriodic & WVRotat
                 lMode (1,1) double {mustBeInteger}
                 jMode (1,1) double {mustBeInteger}
             end
-            [kMode,lMode] = modeNumberFromIndex@WVGeometryDoublyPeriodic(self,linearIndex);
+            [kMode,lMode] = self.klModeNumberFromIndex(linearIndex);
             jMode = self.j;
         end
     end

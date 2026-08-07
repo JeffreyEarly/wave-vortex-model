@@ -161,36 +161,51 @@ classdef WVTotalFlowComponent < WVPrimaryFlowComponent
             end
         end
 
-        function solution = solutionForModeAtIndex(self,index,options)
-            % return the analytical solution for the mode at this index
+        function solutions = solutionForModeAtIndex(self,index,options)
+            % Return analytical solutions from the complete primary-flow basis.
             %
-            % Returns WVAnalyticalSolution object for this index.
-            % The solution indices run from 1:nModes.
+            % Total-flow indices run from 1 through `nModes`. Primary flow
+            % components are ordered lexically by `shortName`, and each
+            % component contributes one contiguous range while retaining its
+            % own local mode ordering. Scalar inputs return a scalar solution;
+            % column-vector inputs return solutions in the requested order.
             %
-            % The solution amplitude can be set to either 'wvt' or
-            % 'random'. Setting the amplitude='wvt' will use the amplitude
-            % currently set in the wvt to initialize this solution.
-            % Otherwise an appropriate random amplitude will be created.
+            % Set `amplitude='wvt'` to reconstruct each solution from the
+            % corresponding coefficient currently stored by the transform.
+            % Set `amplitude='random'` to generate an appropriate random
+            % amplitude for each requested solution.
             %
             % - Topic: Analytical solutions
-            % - Declaration: solution = solutionForModeAtIndex(index)
-            % - Parameter index: non-negative integer less than nModes
+            % - Declaration: solutions = solutionForModeAtIndex(index,options)
+            % - Parameter index: positive integer scalar or column vector with values no greater than nModes
             % - Parameter amplitude: (optional) 'wvt' or 'random' (default)
-            % - Returns solution: an instance of WVAnalyticalSolution
+            % - Returns solutions: scalar or column vector of WVOrthogonalSolution objects
             arguments (Input)
                 self WVFlowComponent {mustBeNonempty}
-                index (:,1) double {mustBeNonnegative}
+                index (:,1) double {mustBeInteger,mustBePositive}
                 options.amplitude {mustBeMember(options.amplitude,['wvt' 'random'])} = 'random'
             end
             arguments (Output)
-                solution (:,1) WVOrthogonalSolution
+                solutions (:,1) WVOrthogonalSolution
             end
-            solution=0;
-            error('This still needs to be implemented. Need to pull from the primary components and return a solution. Not sure how this would be useful yet.')
+            mustBeLessThanOrEqual(index,self.nModes)
+
+            components = self.wvt.primaryFlowComponents;
+            [~,componentOrder] = sort(string({components.shortName}));
+            components = components(componentOrder);
+            nModesByComponent = arrayfun(@(component) component.nModes,components);
+            lastIndexByComponent = cumsum(nModesByComponent);
+
+            solutions = WVOrthogonalSolution.empty(length(index),0);
+            for iSolution = 1:length(index)
+                iComponent = find(index(iSolution) <= lastIndexByComponent,1);
+                firstIndexForComponent = lastIndexByComponent(iComponent) - nModesByComponent(iComponent) + 1;
+                localIndex = index(iSolution) - firstIndexForComponent + 1;
+                solutions(iSolution) = components(iComponent).solutionForModeAtIndex(localIndex,amplitude=options.amplitude);
+            end
         end
 
 
     end
     
 end
-
