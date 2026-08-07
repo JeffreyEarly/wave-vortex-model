@@ -48,6 +48,8 @@ instatiate one of the concrete subclasses,
   + [`waveVortexTransformFromFile`](/classes/transforms/wvtransform/wavevortextransformfromfile.html) Initialize a WVTransform instance from an existing file
   + [`waveVortexTransformWithDoubleResolution`](/classes/transforms/wvtransform/wavevortextransformwithdoubleresolution.html) create a new WVTransform with double resolution
 + Domain attributes
+  + Grid
+    + [`summarizeDegreesOfFreedom`](/classes/transforms/wvtransform/summarizedegreesoffreedom.html) Summarize the spatial grid and active spectral degrees of freedom.
 + Initial Conditions
   + [`addRandomFlow`](/classes/transforms/wvtransform/addrandomflow.html) add randomized flow to the existing state
   + [`addUVEta`](/classes/transforms/wvtransform/adduveta.html) add $$(u,v,\eta)$$ to the existing values
@@ -163,7 +165,6 @@ instatiate one of the concrete subclasses,
   + [`spectralAmplitudeForcing`](/classes/transforms/wvtransform/spectralamplitudeforcing.html) 
   + [`spectralDimensionNames`](/classes/transforms/wvtransform/spectraldimensionnames.html) 
   + [`spectralFluxForcing`](/classes/transforms/wvtransform/spectralfluxforcing.html) 
-  + [`summarizeDegreesOfFreedom`](/classes/transforms/wvtransform/summarizedegreesoffreedom.html) 
   + [`summarizeFlowComponents`](/classes/transforms/wvtransform/summarizeflowcomponents.html) 
   + [`summarizeForcing`](/classes/transforms/wvtransform/summarizeforcing.html) 
   + [`summarizeVariables`](/classes/transforms/wvtransform/summarizevariables.html) 

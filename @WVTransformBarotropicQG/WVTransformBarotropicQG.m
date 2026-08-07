@@ -216,8 +216,6 @@ classdef WVTransformBarotropicQG < WVGeometryDoublyPeriodicBarotropic & WVTransf
             energy = sum( self.A0_TE_factor(:).*( abs(self.A0(:)).^2) );
         end
 
-        summarizeDegreesOfFreedom(self)
-
         function setSSH(self,ssh,options)
             arguments
                 self WVTransformBarotropicQG

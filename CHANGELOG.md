@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- Generalized `summarizeDegreesOfFreedom` across every stable transform with deterministic grid metadata and primary-component mask counts.
 - Implemented deterministic total-flow analytical-solution lookup across primary components and repaired barotropic mode-index conversion used by that lookup.
 - Implemented `hasMeanPressureDifference` as an MDA-only boundary diagnostic with a `1e-5` relative pressure tolerance; other flow components and transforms without an MDA component return `false`.
 - Completed the supported vertical-calculus contract: first through fourth derivatives now use ordinary MATLAB order and grid-layout validation, and all stable three-dimensional transforms provide first antiderivatives with documented G-space projection and bottom-zero conventions.
