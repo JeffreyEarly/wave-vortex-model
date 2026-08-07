@@ -39,6 +39,7 @@ No feature is assigned to Deprecated in the v4.2.1 target contract.
 | Vertical calculus for stable 3-D transforms | Stable | `diffZF` and `diffZG` support orders 1 through 4 on `[Nx Ny Nz]` grids. `intZF` and `intZG` support first antiderivatives on `[Nx Ny Nz]` grids and `[Nz N]` matrices. Unsupported orders and layouts are rejected through ordinary MATLAB argument validation. |
 | `hasMeanPressureDifference` | Stable | The diagnostic reports whether the mean-density-anomaly component produces a resolved horizontally averaged pressure difference between the top and bottom boundaries. Transforms without an MDA component return `false`. |
 | `WVTotalFlowComponent.solutionForModeAtIndex` | Stable | Total-flow indices select primary-component analytical solutions in lexical `shortName` order while retaining each component's local mode ordering. |
+| `summarizeDegreesOfFreedom` | Stable | The no-output console summary reports the spatial grid and mask-derived active spectral degrees of freedom for every primary component in lexical `shortName` order. |
 | `exact` and `finufft` interpolation | Internal | These implementation paths and option values must not appear in public option lists or user documentation. |
 | `WVOffGridTransform`, external-wave behavior, and off-grid pressure | Internal | These incomplete remnants have no 4.2.x compatibility promise. |
 
@@ -99,14 +100,6 @@ The Internal forcing classes currently reside under `Forcing/Experimental`; thei
 | `WVFlowComponent` extension surface | Stable | Documented custom flow components are supported. |
 | `WVNoMotionProfileOperation` solver selection | Stable | `lsqnonlin` is used when Optimization Toolbox is available; otherwise the warning-producing `fminsearch` fallback is supported. Optimization Toolbox remains optional. |
 | Low-level `Adapative` and `mustBeDoulbyPeriodicFPlane` spellings | Internal | These names may be corrected without compatibility wrappers; the stable `WVModel` facade must remain unchanged. |
-
-## Stable target contracts pending implementation
-
-The following contracts are part of the v4.2.1 target even though their 4.2.0 implementations are incomplete.
-
-| Interface | v4.2.1 target |
-| --- | --- |
-| `summarizeDegreesOfFreedom` | Provide a general implementation for the stable transform surface. |
 
 ## Known 4.2.0 gaps and follow-up work
 
