@@ -10,18 +10,19 @@ classdef TestWVTransformVersion < matlab.unittest.TestCase
 
         function testWriteToFileUsesManifestBackedVersion(testCase)
             expectedVersion = TestWVTransformVersion.packageVersionFromManifest();
-            path = [tempname,'.nc'];
-            cleanup = onCleanup(@() TestWVTransformVersion.deleteIfExists(path));
+            fixture = testCase.applyFixture(matlab.unittest.fixtures.TemporaryFolderFixture);
+            path = fullfile(fixture.Folder,'version.nc');
 
             wvt = TestWVTransformVersion.barotropicTransform();
             ncfile = wvt.writeToFile(path,shouldOverwriteExisting=true);
             ncfile.close();
             ncfile = NetCDFFile(path,shouldReadOnly=true);
+            cleanup = onCleanup(@()TestWVTransformVersion.closeIfOpen(ncfile));
 
             testCase.verifyEqual(string(ncfile.attributes('model_version')),expectedVersion);
             testCase.verifyTrue(contains(string(ncfile.attributes('source')),expectedVersion));
 
-            ncfile = [];
+            ncfile.close();
             clear cleanup
         end
     end
@@ -39,12 +40,9 @@ classdef TestWVTransformVersion < matlab.unittest.TestCase
             version = string(manifest.version);
         end
 
-        function deleteIfExists(path)
-            if isfile(path)
-                try
-                    delete(path);
-                catch
-                end
+        function closeIfOpen(ncfile)
+            if ~isempty(ncfile) && isvalid(ncfile) && ~isempty(ncfile.id)
+                ncfile.close();
             end
         end
     end

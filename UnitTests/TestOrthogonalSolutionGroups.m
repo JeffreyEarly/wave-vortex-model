@@ -68,12 +68,20 @@ classdef TestOrthogonalSolutionGroups < matlab.unittest.TestCase
         end
     end
 
+    methods (TestMethodSetup)
+        function resetTransform(self)
+            self.wvt.removeAll();
+            self.wvt.t = 0;
+        end
+    end
+
     properties (TestParameter)
         solutionIndex
     end
 
     methods (Test, TestTags = "full")
         function testSolution(self,solutionIndex)
+            seedRandomNumberGenerator(self,31183);
             self.wvt.t=0;
             args = {self.wvt.X,self.wvt.Y,self.wvt.Z,self.wvt.t};
             soln = self.solutionGroup.solutionForModeAtIndex(solutionIndex,amplitude='random');
@@ -100,6 +108,7 @@ classdef TestOrthogonalSolutionGroups < matlab.unittest.TestCase
         end
 
         function testFTransformAllDerivatives(self,solutionIndex)
+            seedRandomNumberGenerator(self,49433);
             args = {self.wvt.X,self.wvt.Y,self.wvt.Z,self.wvt.t};
             soln = self.solutionGroup.solutionForModeAtIndex(solutionIndex,amplitude='random');
             self.wvt.initWithUVEta(soln.u(args{:}), soln.v(args{:}),soln.eta(args{:}));
@@ -119,6 +128,7 @@ classdef TestOrthogonalSolutionGroups < matlab.unittest.TestCase
         end
 
         function testGTransformAllDerivatives(self,solutionIndex)
+            seedRandomNumberGenerator(self,66271);
             args = {self.wvt.X,self.wvt.Y,self.wvt.Z,self.wvt.t};
             soln = self.solutionGroup.solutionForModeAtIndex(solutionIndex,amplitude='random');
             self.wvt.initWithUVEta(soln.u(args{:}), soln.v(args{:}),soln.eta(args{:}));

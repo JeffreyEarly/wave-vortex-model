@@ -36,7 +36,7 @@ classdef TestRandomFlow < matlab.unittest.TestCase
                     tmpwvt = WVTransformBoussinesq(Lxyz, Nxyz, N2=@(z) (5.2e-3)*(5.2e-3)*ones(size(z)));
             end
             
-            flowComponent = tmpwvt.flowComponentNames;
+            flowComponent = cellstr(tmpwvt.flowComponentNames);
         end
     end
 
@@ -46,6 +46,8 @@ classdef TestRandomFlow < matlab.unittest.TestCase
 
     methods (Test, TestTags = "full")
         function testSolution(self,flowComponent)
+            seedRandomNumberGenerator(self,17431);
+            self.wvt.removeAll();
             self.wvt.initWithRandomFlow(flowComponent,uvMax=0.1);
             self.verifyEqual(self.wvt.totalEnergy,self.wvt.totalEnergySpatiallyIntegrated, "AbsTol",1e-7,"RelTol",1e-7);
         end

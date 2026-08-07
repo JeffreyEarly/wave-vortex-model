@@ -35,9 +35,14 @@ repositoryRoot = fileparts(mfilename("fullpath"));
 testFolder = fullfile(repositoryRoot,"UnitTests");
 originalPath = path;
 pathCleanup = onCleanup(@()path(originalPath));
-addpath(testFolder);
+pathEntries = string(strsplit(path,pathsep));
+if ~any(pathEntries == string(testFolder))
+    addpath(testFolder);
+end
 
-suite = matlab.unittest.TestSuite.fromFolder(testFolder,IncludingSubfolders=true);
+folderSuite = matlab.unittest.TestSuite.fromFolder(testFolder,IncludingSubfolders=true);
+rejectAccidentalScriptTests(folderSuite);
+suite = formalTestSuite(testFolder);
 [expectedPairs,discoveredPairs,selectedSuite] = validateTestDiscovery(testFolder,suite,selectedTags);
 
 missingPairs = setdiff(expectedPairs,discoveredPairs);
@@ -64,10 +69,32 @@ end
 clear pathCleanup
 end
 
+function suite = formalTestSuite(testFolder)
+testFiles = dir(fullfile(testFolder,"Test*.m"));
+classSuites = cell(numel(testFiles),1);
+for iFile = 1:numel(testFiles)
+    className = erase(string(testFiles(iFile).name),".m");
+    testClass = meta.class.fromName(className);
+    if isempty(testClass) || ~isTestCaseClass(testClass)
+        error("WaveVortexModel:InvalidFormalTest","%s must define a matlab.unittest.TestCase class named %s.",testFiles(iFile).name,className);
+    end
+    classSuites{iFile} = matlab.unittest.TestSuite.fromClass(testClass);
+end
+suite = [classSuites{:}];
+end
+
+function rejectAccidentalScriptTests(suite)
+discoveredClassNames = string({suite.TestClass});
+if any(discoveredClassNames == "")
+    accidentalNames = unique(string({suite(discoveredClassNames == "").Name}));
+    error("WaveVortexModel:AccidentalScriptTests","UnitTests discovery found script-based tests: %s",strjoin(accidentalNames,", "));
+end
+end
+
 function [expectedPairs,discoveredPairs,selectedSuite] = validateTestDiscovery(testFolder,suite,selectedTags)
 primaryTags = ["smoke" "full" "exhaustive" "optional"];
 testFiles = dir(fullfile(testFolder,"Test*.m"));
-expectedPairs = strings(0,1);
+expectedPairsByFile = cell(numel(testFiles),1);
 
 for iFile = 1:numel(testFiles)
     className = erase(string(testFiles(iFile).name),".m");
@@ -80,21 +107,22 @@ for iFile = 1:numel(testFiles)
     if isempty(testMethods)
         error("WaveVortexModel:InvalidFormalTest","%s does not declare any test methods.",className);
     end
+    selectedMethodPairs = strings(numel(testMethods),1);
+    nSelectedMethods = 0;
     for iMethod = 1:numel(testMethods)
         methodTags = string(testMethods(iMethod).TestTags);
         validatePrimaryTags(className,testMethods(iMethod).Name,methodTags,primaryTags);
         if any(ismember(methodTags,selectedTags))
-            expectedPairs(end+1,1) = className + "/" + testMethods(iMethod).Name; %#ok<AGROW>
+            nSelectedMethods = nSelectedMethods + 1;
+            selectedMethodPairs(nSelectedMethods) = className + "/" + testMethods(iMethod).Name;
         end
     end
+    expectedPairsByFile{iFile} = selectedMethodPairs(1:nSelectedMethods);
 end
+expectedPairs = vertcat(expectedPairsByFile{:});
 
 discoveredClassNames = string({suite.TestClass});
 discoveredMethodNames = string({suite.ProcedureName});
-if any(discoveredClassNames == "")
-    accidentalNames = unique(string({suite(discoveredClassNames == "").Name}));
-    error("WaveVortexModel:AccidentalScriptTests","UnitTests discovery found script-based tests: %s",strjoin(accidentalNames,", "));
-end
 
 selectedMask = false(size(suite));
 for iTest = 1:numel(suite)

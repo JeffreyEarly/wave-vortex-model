@@ -110,6 +110,7 @@ classdef TestEtaTrueOperation < matlab.unittest.TestCase
         end
 
         function testShouldUseTrueNoMotionProfileDoesNotPersistThroughRoundTrip(testCase)
+            fixture = testCase.applyFixture(matlab.unittest.fixtures.TemporaryFolderFixture);
             transforms = {
                 TestEtaTrueOperation.hydrostaticTransform()
                 TestEtaTrueOperation.boussinesqTransform()
@@ -117,15 +118,15 @@ classdef TestEtaTrueOperation < matlab.unittest.TestCase
 
             for iTransform = 1:numel(transforms)
                 transforms{iTransform}.shouldUseTrueNoMotionProfile = true;
-                path = [tempname,'.nc'];
-                cleanup = onCleanup(@() TestEtaTrueOperation.deleteIfExists(path));
-                transforms{iTransform}.writeToFile(path,shouldOverwriteExisting=true);
+                path = fullfile(fixture.Folder,sprintf('eta-true-%d.nc',iTransform));
+                writtenFile = transforms{iTransform}.writeToFile(path,shouldOverwriteExisting=true);
+                writtenFile.close();
                 [wvt2,ncfile] = WVTransform.waveVortexTransformFromFile(path);
+                cleanup = onCleanup(@()TestEtaTrueOperation.closeIfOpen(ncfile));
 
                 testCase.verifyFalse(wvt2.shouldUseTrueNoMotionProfile);
 
-                ncfile = [];
-                wvt2 = [];
+                ncfile.close();
                 clear cleanup
             end
         end
@@ -271,12 +272,9 @@ classdef TestEtaTrueOperation < matlab.unittest.TestCase
             eta_true = wvt.Z - zMinusEta;
         end
 
-        function deleteIfExists(path)
-            if isfile(path)
-                try
-                    delete(path);
-                catch
-                end
+        function closeIfOpen(ncfile)
+            if ~isempty(ncfile) && isvalid(ncfile) && ~isempty(ncfile.id)
+                ncfile.close();
             end
         end
     end

@@ -26,6 +26,9 @@ classdef TestSpectralDifferentiationXY < matlab.unittest.TestCase
         function [k_n,l_n] = initializeProperty(Lxyz,Nxyz,transform)
             % If you want to dynamically adjust the test parameters, you
             % have to do it here.
+            if numel(Lxyz) ~= numel(Nxyz) || ~ismember(string(transform),["constant" "hydrostatic" "boussinesq"])
+                error("TestSpectralDifferentiationXY:InvalidClassSetupParameters","Unsupported class setup parameters.")
+            end
             for i=1:(floor(Nxyz(1)/2)-1) % Note that we are specifically avoiding testing the Nyquist which is not fully resolved.
                 k_n.(sprintf('k_%d',i)) = i;
             end
@@ -43,7 +46,8 @@ classdef TestSpectralDifferentiationXY < matlab.unittest.TestCase
 
     methods (Test, TestTags = "exhaustive")
         function testDiffX(testCase,derivative,k_n,l_n)
-            [X,Y,Z] = testCase.wvt.xyzGrid;
+            seedRandomNumberGenerator(testCase,39341);
+            [X,Y,~] = testCase.wvt.xyzGrid;
             Lx = testCase.wvt.Lx;
             Ly = testCase.wvt.Ly;
             phix = 2*pi*rand(1);
@@ -67,7 +71,8 @@ classdef TestSpectralDifferentiationXY < matlab.unittest.TestCase
         end
 
         function testDiffY(testCase,derivative,k_n,l_n)
-            [X,Y,Z] = testCase.wvt.xyzGrid;
+            seedRandomNumberGenerator(testCase,39341);
+            [X,Y,~] = testCase.wvt.xyzGrid;
             Lx = testCase.wvt.Lx;
             Ly = testCase.wvt.Ly;
             phix = 2*pi*rand(1);
@@ -89,7 +94,6 @@ classdef TestSpectralDifferentiationXY < matlab.unittest.TestCase
             end
 
             testCase.verifyEqual(testCase.wvt.diffY(f,n=derivative),Df_analytical, "AbsTol",1e-7,"RelTol",1e-7);
-
         end
     end
 

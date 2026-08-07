@@ -26,13 +26,16 @@ classdef TestSpectralDifferentiationZ < matlab.unittest.TestCase
         function [k_n,l_n,m_n] = initializeProperty(Lxyz,Nxyz,transform)
             % If you want to dynamically adjust the test parameters, you
             % have to do it here.
+            if numel(Lxyz) ~= numel(Nxyz) || ~ismember(string(transform),["constant" "hydrostatic" "boussinesq"])
+                error("TestSpectralDifferentiationZ:InvalidClassSetupParameters","Unsupported class setup parameters.")
+            end
             for i=1:floor(Nxyz(1)/2)
                 k_n.(sprintf('k_%d',i)) = i;
             end
             for i=1:floor(Nxyz(2)/2)
                 l_n.(sprintf('l_%d',i)) = i;
             end
-            for i=0:(Nxyz(3)-1)
+            for i=0:(Nxyz(3)-2) % The transform drops the unrepresentable vertical Nyquist mode.
                 m_n.(sprintf('m_%d',i)) = i;
             end
         end
@@ -47,6 +50,7 @@ classdef TestSpectralDifferentiationZ < matlab.unittest.TestCase
 
     methods (Test, TestTags = "exhaustive")
         function testDiffZF(self,derivative,k_n,m_n)
+            seedRandomNumberGenerator(self,60217);
             [X,Y,Z] = self.wvt.xyzGrid;
 
             Lx = self.wvt.Lx;
@@ -73,10 +77,10 @@ classdef TestSpectralDifferentiationZ < matlab.unittest.TestCase
             end
 
             self.verifyEqual(self.wvt.diffZF(f,n=derivative),Df_analytical, "AbsTol",1e-7,"RelTol",1e-7);
-
         end
 
         function testDiffZG(self,derivative,k_n,m_n)
+            seedRandomNumberGenerator(self,60217);
             [X,Y,Z] = self.wvt.xyzGrid;
 
             Lx = self.wvt.Lx;
@@ -102,13 +106,7 @@ classdef TestSpectralDifferentiationZ < matlab.unittest.TestCase
                     Df_analytical = (kz^4)*sin(kz*Z).*cos(kx*X+phix).*cos(ky*Y+phiy);
             end
 
-            if m_n==16 && (derivative == 1 || derivative == 3)
-                % Nquist, cosine of m=8 is not resolved.
-                self.verifyNotEqual(self.wvt.diffZG(f,n=derivative),Df_analytical);
-            else
-                self.verifyEqual(self.wvt.diffZG(f,n=derivative),Df_analytical, "AbsTol",1e-7,"RelTol",1e-7);
-            end
-
+            self.verifyEqual(self.wvt.diffZG(f,n=derivative),Df_analytical, "AbsTol",1e-7,"RelTol",1e-7);
         end
 
 

@@ -2,6 +2,7 @@ classdef TestDivergence < matlab.unittest.TestCase
 
     methods (Test, TestTags = "smoke")
         function testDivergence(self)
+            seedRandomNumberGenerator(self,27103);
             Lxyz = [1000, 500, 500];
             Nxyz = [16 8 9];
             latitude = 33;
@@ -19,6 +20,7 @@ classdef TestDivergence < matlab.unittest.TestCase
         end
 
         function testForwardAndInverseWVTrasform(self)
+            seedRandomNumberGenerator(self,82763);
             Lxyz = [1000, 500, 500];
             Nxyz = [16 8 9];
             latitude = 33;
