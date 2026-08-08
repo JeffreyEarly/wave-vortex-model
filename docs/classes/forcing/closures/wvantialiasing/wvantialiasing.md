@@ -20,7 +20,7 @@ initialize the WVAntialiasing
 ```
 ## Parameters
 + `wvt`  a WVTransform instance
-+ `Nj`  (optional) vertical mode above which energy will be set to zero.
++ `Nj`  (optional) number of retained vertical modes. Modes with `j >= Nj` are set to zero. Defaults to `floor(2*wvt.Nj/3)`.
 
 ## Returns
 + `self`  a WVAntialiasing instance

@@ -31,7 +31,15 @@ classdef WVAntialiasing < WVForcing
     %
     % - Topic: Initializing
     % - Declaration: WVAntialiasing < [WVForcing](/classes/forcing/wvforcing/)
-    properties
+    properties (GetAccess=public, SetAccess=protected)
+        % number of retained vertical modes used to construct the filter
+        %
+        % This value is preserved when the forcing is converted to another
+        % resolution or restored from an annotated NetCDF file.
+        %
+        % - Topic: Properties
+        Nj
+
         % spectral matrix that multiplies Ap,Am,A0 to zero out the aliased modes
         %
         % - Topic: Properties
@@ -44,7 +52,7 @@ classdef WVAntialiasing < WVForcing
             %
             % - Declaration: nlFlux = WVNonlinearFlux(wvt,options)
             % - Parameter wvt: a WVTransform instance
-            % - Parameter Nj: (optional) vertical mode above which energy will be set to zero.
+            % - Parameter Nj: (optional) number of retained vertical modes. Modes with `j >= Nj` are set to zero. Defaults to `floor(2*wvt.Nj/3)`.
             % - Returns self: a WVAntialiasing instance
             arguments
                 wvt WVTransform {mustBeNonempty}
@@ -62,6 +70,7 @@ classdef WVAntialiasing < WVForcing
             if ~isfield(options,"Nj")
                 options.Nj = floor(2*wvt.Nj/3);
             end
+            self.Nj = options.Nj;
             self.M(wvt.J > (options.Nj-1)) = 1;
         end
 
@@ -136,7 +145,7 @@ classdef WVAntialiasing < WVForcing
         end
 
         function force = forcingWithResolutionOfTransform(self,wvtX2)
-            force = WVAntialiasing(wvtX2);
+            force = WVAntialiasing(wvtX2,Nj=self.Nj);
         end
     end
     methods (Static)
@@ -146,7 +155,7 @@ classdef WVAntialiasing < WVForcing
             % - Topic: CAAnnotatedClass requirement
             % - Declaration: classRequiredPropertyNames()
             % - Returns: vars
-            vars = {};
+            vars = {"Nj"};
         end
 
         function propertyAnnotations = classDefinedPropertyAnnotations()
@@ -159,6 +168,7 @@ classdef WVAntialiasing < WVForcing
                 propertyAnnotations CAPropertyAnnotation
             end
             propertyAnnotations = CAPropertyAnnotation.empty(0,0);
+            propertyAnnotations(end+1) = CANumericProperty('Nj', {}, '1','number of retained vertical modes used to construct the filter');
         end
     end
 end

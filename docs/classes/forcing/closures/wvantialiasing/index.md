@@ -52,6 +52,7 @@ wvtAA = wvt.waveVortexTransformWithExplicitAntialiasing();
 
 ## Topics
 + Properties
+  + [`Nj`](/classes/forcing/closures/wvantialiasing/nj.html) number of retained vertical modes used to construct the filter
   + [`M`](/classes/forcing/closures/wvantialiasing/m.html) spectral matrix that multiplies Ap,Am,A0 to zero out the aliased modes
   + [`effectiveHorizontalGridResolution`](/classes/forcing/closures/wvantialiasing/effectivehorizontalgridresolution.html) returns the effective grid resolution in meters
   + [`effectiveJMax`](/classes/forcing/closures/wvantialiasing/effectivejmax.html) returns the effective highest vertical mode

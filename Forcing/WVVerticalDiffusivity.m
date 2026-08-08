@@ -29,7 +29,9 @@ classdef WVVerticalDiffusivity < WVForcing
     %
     % ### Notes
     %
-    % This is currently implemented in the spatial domain.
+    % This is currently implemented in the spatial domain. It applies to
+    % three-dimensional wave and stratified-QG transforms, but not to a
+    % barotropic transform because that geometry has no vertical structure.
     %
     % - Topic: Initialization
     % - Topic: Properties
@@ -68,7 +70,11 @@ classdef WVVerticalDiffusivity < WVForcing
                 options.kappa_z double = 1e-5
                 options.shouldForceMeanDensityAnomaly = true;
             end
-            self@WVForcing(wvt,"vertical diffusivity",WVForcingType(["HydrostaticSpatial","NonhydrostaticSpatial","PVSpatial"]));
+            supportedTypes = ["HydrostaticSpatial","NonhydrostaticSpatial","PVSpatial"];
+            if isa(wvt,"WVGeometryDoublyPeriodicBarotropic")
+                supportedTypes = ["HydrostaticSpatial","NonhydrostaticSpatial"];
+            end
+            self@WVForcing(wvt,"vertical diffusivity",WVForcingType(supportedTypes));
             self.wvt = wvt;
             self.kappa_z = options.kappa_z;
             self.shouldForceMeanDensityAnomaly = options.shouldForceMeanDensityAnomaly;
@@ -103,7 +109,7 @@ classdef WVVerticalDiffusivity < WVForcing
                 self WVVerticalDiffusivity {mustBeNonempty}
                 wvtX2 WVTransform {mustBeNonempty}
             end
-            force = WVVerticalDiffusivity(wvtX2);
+            force = WVVerticalDiffusivity(wvtX2,kappa_z=self.kappa_z,shouldForceMeanDensityAnomaly=self.shouldForceMeanDensityAnomaly);
         end
     end
     methods (Static)
