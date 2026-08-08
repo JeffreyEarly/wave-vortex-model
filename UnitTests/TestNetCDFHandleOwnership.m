@@ -118,6 +118,67 @@ classdef TestNetCDFHandleOwnership < matlab.unittest.TestCase
             ncfile.close();
             clear fileCleanup cleanup
         end
+
+        function initializationFailureRollsBackAndAllowsRetry(testCase)
+            path = fullfile(testCase.tempFolder,"initialization-failure.nc");
+            model = WVModel(TestNetCDFHandleOwnership.newTransform(),shouldUseLinearDynamics=true);
+            outputFile = model.createNetCDFFileForModelOutput(path,outputInterval=1,shouldOverwriteExisting=true);
+            outputGroup = outputFile.outputGroups(1);
+            failingObserver = WVFailingObservingSystem(model,failurePhase="initialize");
+            outputGroup.addObservingSystem(failingObserver);
+
+            testCase.verifyError(@()model.integrateToTime(1,shouldShowIntegrationDiagnostics=false,callback=@(~)[]),'')
+            testCase.verifyFalse(isfile(path))
+            testCase.verifyFalse(outputFile.didInitializeStorage)
+            testCase.verifyEmpty(outputFile.ncfile)
+            testCase.verifyFalse(outputGroup.didInitializeStorage)
+            testCase.verifyEmpty(outputGroup.group)
+            testCase.verifyEqual(outputGroup.incrementsWrittenToGroup,uint64(0))
+            testCase.verifyEqual(outputGroup.timeOfLastIncrementWrittenToGroup,-Inf)
+
+            outputGroup.removeObservingSystem(failingObserver);
+            model.integrateToTime(1,shouldShowIntegrationDiagnostics=false,callback=@(~)[]);
+            model.closeNetCDFFile();
+            testCase.verifyTrue(isfile(path))
+            TestNetCDFHandleOwnership.verifyWritableOpen(testCase,path);
+        end
+
+        function writeFailureClosesAndPreservesFile(testCase)
+            path = fullfile(testCase.tempFolder,"write-failure.nc");
+            model = WVModel(TestNetCDFHandleOwnership.newTransform(),shouldUseLinearDynamics=true);
+            outputFile = model.createNetCDFFileForModelOutput(path,outputInterval=1,shouldOverwriteExisting=true);
+            outputFile.outputGroups(1).addObservingSystem(WVFailingObservingSystem(model,failurePhase="write"));
+
+            testCase.verifyError(@()model.integrateToTime(1,shouldShowIntegrationDiagnostics=false,callback=@(~)[]),'')
+            testCase.verifyTrue(isfile(path))
+            testCase.verifyEmpty(outputFile.ncfile)
+            TestNetCDFHandleOwnership.verifyWritableOpen(testCase,path);
+        end
+
+        function observerRestorationFailureClosesWriter(testCase)
+            path = fullfile(testCase.tempFolder,"restoration-failure.nc");
+            model = WVModel(TestNetCDFHandleOwnership.newTransform(),shouldUseLinearDynamics=true);
+            model.createNetCDFFileForModelOutput(path,outputInterval=1,shouldOverwriteExisting=true);
+            model.integrateToTime(1,shouldShowIntegrationDiagnostics=false,callback=@(~)[]);
+            model.closeNetCDFFile();
+
+            ncfile = NetCDFFile(path,shouldReadOnly=false);
+            cleanup = onCleanup(@()TestNetCDFHandleOwnership.closeIfOpen(ncfile));
+            observerGroup = TestNetCDFHandleOwnership.groupWithAnnotatedClass(ncfile,'WVEulerianFields');
+            testCase.assertNotEmpty(observerGroup)
+            observerGroup.addAttribute('AnnotatedClass','UnavailableObservingSystem');
+            ncfile.close();
+            clear cleanup
+
+            didThrow = false;
+            try
+                WVModel.modelFromFile(char(path));
+            catch
+                didThrow = true;
+            end
+            testCase.verifyTrue(didThrow)
+            TestNetCDFHandleOwnership.verifyWritableOpen(testCase,path);
+        end
     end
 
     methods (Static, Access=private)
@@ -156,6 +217,21 @@ classdef TestNetCDFHandleOwnership < matlab.unittest.TestCase
         function closeIfOpen(ncfile)
             if ~isempty(ncfile) && isvalid(ncfile) && ~isempty(ncfile.id)
                 ncfile.close();
+            end
+        end
+
+        function matchingGroup = groupWithAnnotatedClass(group,className)
+            matchingGroup = NetCDFGroup.empty(0,0);
+            for iGroup = 1:length(group.groups)
+                candidate = group.groups(iGroup);
+                if isKey(candidate.attributes,'AnnotatedClass') && strcmp(candidate.attributes('AnnotatedClass'),className)
+                    matchingGroup = candidate;
+                    return
+                end
+                matchingGroup = TestNetCDFHandleOwnership.groupWithAnnotatedClass(candidate,className);
+                if ~isempty(matchingGroup)
+                    return
+                end
             end
         end
     end

@@ -52,7 +52,7 @@ classdef WVLagrangianParticles < WVObservingSystem
             self@WVObservingSystem(model,options.name);
             if ~isfield(options,"trackedFieldNames")
                 options.trackedFieldNames = {};
-            elseif isa(options.trackedFieldNames,"string")
+            elseif ischar(options.trackedFieldNames) || isstring(options.trackedFieldNames)
                 options.trackedFieldNames = cellstr(options.trackedFieldNames);
             end
 
@@ -73,9 +73,9 @@ classdef WVLagrangianParticles < WVObservingSystem
                 end
             end
 
-            self.x = options.x;
-            self.y = options.y;
-            self.z = options.z;
+            self.x = reshape(options.x,1,[]);
+            self.y = reshape(options.y,1,[]);
+            self.z = reshape(options.z,1,[]);
             self.isXYOnly = options.isXYOnly;
             self.trackedFieldNamesCell = options.trackedFieldNames;
             self.trackedVarInterpolation = options.trackedVarInterpolation;
@@ -263,6 +263,8 @@ classdef WVLagrangianParticles < WVObservingSystem
             vars.y = parentGroup.readVariablesAtIndexAlongDimension('t',nPoints,vars.name+"_y");
             if ~isequal(model.wvt.spatialDimensionNames,{'x','y'})
                 vars.z = parentGroup.readVariablesAtIndexAlongDimension('t',nPoints,vars.name+"_z");
+            else
+                vars.z = [];
             end
 
             options = namedargs2cell(vars);

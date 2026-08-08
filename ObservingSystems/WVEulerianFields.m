@@ -39,7 +39,7 @@ classdef WVEulerianFields < WVObservingSystem
             % group.
             if ~isfield(options,"fieldNames")
                 options.fieldNames = {};
-            elseif isa(options.fieldNames,"string")
+            elseif ischar(options.fieldNames) || isstring(options.fieldNames)
                 options.fieldNames = cellstr(options.fieldNames);
             end
             self@WVObservingSystem(model,"eulerian fields");

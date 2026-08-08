@@ -166,10 +166,14 @@ classdef WVModelOutputFile < handle & matlab.mixin.Heterogeneous
             % - Topic: Output groups
             arguments (Input)
                 self WVModelOutputFile {mustBeNonempty}
-                name char {mustBeNonempty}
+                name {mustBeText,mustBeNonempty}
             end
             arguments (Output)
                 val WVModelOutputGroup
+            end
+            name = string(name);
+            if ~isKey(self.outputGroupNameMap,name)
+                error('No output group named %s is registered with this file.',name);
             end
             val = self.outputGroupNameMap(name);
         end
@@ -180,7 +184,17 @@ classdef WVModelOutputFile < handle & matlab.mixin.Heterogeneous
             % - Topic: Output groups
             arguments
                 self WVModelOutputFile {mustBeNonempty}
-                outputGroup WVModelOutputGroup
+                outputGroup (1,1) WVModelOutputGroup
+            end
+            if outputGroup.model ~= self.model
+                error('The output group %s was not initialized for this output file''s model.',outputGroup.name);
+            end
+            if isKey(self.outputGroupNameMap,outputGroup.name)
+                registeredGroup = self.outputGroupNameMap(outputGroup.name);
+                if registeredGroup == outputGroup
+                    return
+                end
+                error('A different output group named %s is already registered with this file.',outputGroup.name);
             end
             self.outputGroupNameMap(outputGroup.name) = outputGroup;
         end
@@ -251,7 +265,7 @@ classdef WVModelOutputFile < handle & matlab.mixin.Heterogeneous
                 self.outputGroupNameOutputTimeMap{outputGroups_(iGroup).name} = t_group;
                 t = cat(1,t,t_group);
             end
-            t = sort(uniquetol(t));
+            t = unique(t,"sorted");
             if self.didInitializeStorage == false && ~isempty(t)
                 self.tInitialize = t(1);
             end
@@ -272,25 +286,30 @@ classdef WVModelOutputFile < handle & matlab.mixin.Heterogeneous
                 t (1,1) double
             end
 
-            % 1) initialize the netcdf file if necessary
-            if self.didInitializeStorage == false && abs(t - self.tInitialize) < eps
-                self.initializeOutputFile();
-            end
-
-            % 2) inform the appropriate groups that they need to write a time step.
-            outputGroupNames = self.outputGroupNameOutputTimeMap.keys;
-            didWriteToFile = false;
-            for i = 1:length(outputGroupNames)
-                t_group = self.outputGroupNameOutputTimeMap{outputGroupNames(i)};
-                if ~isempty(t_group) && abs(t - t_group(1)) < eps
-                    self.outputGroupWithName(outputGroupNames(i)).writeTimeStepToNetCDFFile(self.ncfile,t);
-                    t_group(1) = [];
-                    self.outputGroupNameOutputTimeMap{outputGroupNames(i)} = t_group;
-                    didWriteToFile = true;
+            try
+                % 1) initialize the netcdf file if necessary
+                if self.didInitializeStorage == false && t == self.tInitialize
+                    self.initializeOutputFile();
                 end
-            end
-            if didWriteToFile
-                self.ncfile.sync();
+
+                % 2) inform the appropriate groups that they need to write a time step.
+                outputGroupNames = self.outputGroupNameOutputTimeMap.keys;
+                didWriteToFile = false;
+                for i = 1:length(outputGroupNames)
+                    t_group = self.outputGroupNameOutputTimeMap{outputGroupNames(i)};
+                    if ~isempty(t_group) && t == t_group(1)
+                        self.outputGroupWithName(outputGroupNames(i)).writeTimeStepToNetCDFFile(self.ncfile,t);
+                        t_group(1) = [];
+                        self.outputGroupNameOutputTimeMap{outputGroupNames(i)} = t_group;
+                        didWriteToFile = true;
+                    end
+                end
+                if didWriteToFile
+                    self.ncfile.sync();
+                end
+            catch exception
+                self.closeNetCDFFile();
+                rethrow(exception)
             end
         end
 
@@ -305,6 +324,10 @@ classdef WVModelOutputFile < handle & matlab.mixin.Heterogeneous
             % writing the wave-vortex coefficients, we can neglect writing
             % those to file.
             %
+            % Initialization is transactional. If any group or observing
+            % system fails, the new file is closed and deleted and every
+            % storage object returns to its uninitialized state.
+            %
             % - Topic: Internal
             if self.observingSystemWillWriteWaveVortexCoefficients == true
                 properties = setdiff(self.wvt.requiredProperties,{'Ap','Am','A0','t'});
@@ -315,10 +338,34 @@ classdef WVModelOutputFile < handle & matlab.mixin.Heterogeneous
             if isfile(self.path)
                 error('A file already exists at this path.');
             end
-            self.ncfile = self.wvt.writeToFile(self.path,properties{:},shouldOverwriteExisting=false,shouldAddRequiredProperties=false);
+            newFile = NetCDFFile.empty(0,0);
+            try
+                newFile = self.wvt.writeToFile(self.path,properties{:},shouldOverwriteExisting=false,shouldAddRequiredProperties=false);
+                newFile.addAttribute('WVModelIsDynamicsLinear',uint8(self.model.isDynamicsLinear));
+                outputGroups_ = self.outputGroups;
+                for iGroup = 1:length(outputGroups_)
+                    outputGroups_(iGroup).initializeOutputGroup(newFile);
+                end
+            catch exception
+                outputGroups_ = self.outputGroups;
+                for iGroup = 1:length(outputGroups_)
+                    outputGroups_(iGroup).group = NetCDFGroup.empty(0,0);
+                    outputGroups_(iGroup).incrementsWrittenToGroup = 0;
+                    outputGroups_(iGroup).timeOfLastIncrementWrittenToGroup = -Inf;
+                    outputGroups_(iGroup).didInitializeStorage = false;
+                end
+                if ~isempty(newFile) && isvalid(newFile) && ~isempty(newFile.id)
+                    newFile.close();
+                end
+                self.ncfile = NetCDFFile.empty(0,0);
+                self.didInitializeStorage = false;
+                if isfile(self.path)
+                    delete(self.path);
+                end
+                rethrow(exception)
+            end
+            self.ncfile = newFile;
             self.didInitializeStorage = true;
-
-            arrayfun( @(outputGroup) outputGroup.initializeOutputGroup(self.ncfile), self.outputGroups);
         end
 
         function bool = observingSystemWillWriteWaveVortexCoefficients(self)
@@ -355,13 +402,20 @@ classdef WVModelOutputFile < handle & matlab.mixin.Heterogeneous
         function closeNetCDFFile(self)
             % closes the netcdf file after informing the output groups
             %
+            % The file handle is released even if an output-group cleanup
+            % notification fails.
+            %
             % - Topic: Internal
             if ~isempty(self.ncfile)
-                arrayfun( @(outputGroup) outputGroup.closeNetCDFFile(), self.outputGroups);
-                if ~isempty(self.ncfile.id)
-                    self.ncfile.close();
-                end
+                ownedFile = self.ncfile;
                 self.ncfile = NetCDFFile.empty(0,0);
+                cleanup = onCleanup(@()WVModelOutputFile.closeIfOpen(ownedFile));
+                outputGroups_ = self.outputGroups;
+                for iGroup = 1:length(outputGroups_)
+                    outputGroups_(iGroup).closeNetCDFFile();
+                end
+                WVModelOutputFile.closeIfOpen(ownedFile);
+                clear cleanup
             end
         end
 
@@ -384,6 +438,97 @@ classdef WVModelOutputFile < handle & matlab.mixin.Heterogeneous
                     className = group.attributes('AnnotatedClass');
                     if exist(className,'class') && ismember("WVModelOutputGroup",superclasses(className))
                         outputFile.addOutputGroup(WVModelOutputGroup.modelOutputGroupFromGroup(group,model));                        
+                    end
+                end
+            end
+            WVModelOutputFile.canonicalizeIntegratedObservingSystems(outputFile);
+        end
+    end
+
+    methods (Static, Access=private)
+        function closeIfOpen(ncfile)
+            if ~isempty(ncfile) && isvalid(ncfile) && ~isempty(ncfile.id)
+                ncfile.close();
+            end
+        end
+
+        function canonicalizeIntegratedObservingSystems(outputFile)
+            outputGroups_ = outputFile.outputGroups;
+            processedNames = configureDictionary("string","logical");
+            for iGroup = 1:length(outputGroups_)
+                for iObserver = 1:length(outputGroups_(iGroup).observingSystems)
+                    observer = outputGroups_(iGroup).observingSystems(iObserver);
+                    observerName = string(observer.name);
+                    if observer.nFluxComponents == 0 || isKey(processedNames,observerName)
+                        continue
+                    end
+                    processedNames(observerName) = true;
+
+                    [candidates,candidateGroups] = WVModelOutputFile.integratedObserverCandidates(outputGroups_,observerName);
+                    WVModelOutputFile.validateEquivalentObserverConfigurations(candidates);
+                    if isa(observer,'WVCoefficients')
+                        canonicalObserver = outputFile.model.wvCoefficientFluxedObservingSystem();
+                        if isempty(canonicalObserver)
+                            error('The restored output contains coefficients, but the model is configured for linear dynamics.');
+                        end
+                        canonicalObserver.absTolerance = candidates{1}.absTolerance;
+                    else
+                        candidateTimes = cellfun(@(group) group.timeOfLastIncrementWrittenToGroup,candidateGroups);
+                        timeTolerance = 8*eps(max(1,abs(outputFile.model.t)));
+                        currentStateIndices = find(abs(candidateTimes-outputFile.model.t) <= timeTolerance);
+                        if isempty(currentStateIndices)
+                            error('The integrated observing system %s has no saved state at the model restart time t=%g.',observerName,outputFile.model.t);
+                        end
+                        canonicalObserver = candidates{currentStateIndices(1)};
+                        canonicalState = canonicalObserver.initialConditions();
+                        for iCandidate = reshape(currentStateIndices(2:end),1,[])
+                            if ~isequaln(candidates{iCandidate}.initialConditions(),canonicalState)
+                                error('The output groups contain inconsistent saved states for observing system %s at t=%g.',observerName,outputFile.model.t);
+                            end
+                        end
+                        outputFile.model.addFluxedObservingSystem(canonicalObserver);
+                    end
+
+                    for iCandidate = 1:length(candidates)
+                        candidateGroup = candidateGroups{iCandidate};
+                        candidateIndex = find(arrayfun(@(existing) existing == candidates{iCandidate},candidateGroup.observingSystems),1);
+                        candidateGroup.observingSystems(candidateIndex) = canonicalObserver;
+                    end
+                end
+            end
+        end
+
+        function [candidates,candidateGroups] = integratedObserverCandidates(outputGroups,observerName)
+            maximumCandidateCount = sum(arrayfun(@(group)length(group.observingSystems),outputGroups));
+            candidates = cell(1,maximumCandidateCount);
+            candidateGroups = cell(1,maximumCandidateCount);
+            candidateCount = 0;
+            for iGroup = 1:length(outputGroups)
+                for iObserver = 1:length(outputGroups(iGroup).observingSystems)
+                    candidate = outputGroups(iGroup).observingSystems(iObserver);
+                    if candidate.nFluxComponents > 0 && string(candidate.name) == observerName
+                        candidateCount = candidateCount+1;
+                        candidates{candidateCount} = candidate;
+                        candidateGroups{candidateCount} = outputGroups(iGroup);
+                    end
+                end
+            end
+            candidates = candidates(1:candidateCount);
+            candidateGroups = candidateGroups(1:candidateCount);
+        end
+
+        function validateEquivalentObserverConfigurations(candidates)
+            reference = candidates{1};
+            requiredProperties = feval(strcat(class(reference),'.classRequiredPropertyNames'));
+            for iCandidate = 2:length(candidates)
+                candidate = candidates{iCandidate};
+                if ~strcmp(class(candidate),class(reference))
+                    error('Integrated observing systems named %s must have the same class in every output group.',reference.name);
+                end
+                for iProperty = 1:length(requiredProperties)
+                    propertyName = requiredProperties{iProperty};
+                    if ~isequaln(candidate.(propertyName),reference.(propertyName))
+                        error('Integrated observing systems named %s have inconsistent persisted configuration for %s.',reference.name,propertyName);
                     end
                 end
             end

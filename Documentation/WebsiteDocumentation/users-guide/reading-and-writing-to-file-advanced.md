@@ -9,31 +9,37 @@ has_toc: true
 
 #  Reading and writing to file, advanced topics
 
-The `WVModel` supports a number of advanced features for writing to file, including
-- multiple output files
-- groups within files with different output intervals
-- groups that start and stop at different time points
+The `WVModel` supports multiple output files, groups with different output intervals, and groups that start and stop at different model times.
 
 With these features, it is possible to setup up numerical simulations that "observe" the ocean in different ways, at different intervals. For example, you might place moorings in your simulation that sample the velocity field at a high frequency. You might setup a series of drifter experiments, that deploy and retrieve drifters every five days.
 
-There are three classes that work together to write to file,
-- `WVModelObservingSystem` - classes that describe different ways of observing the fluid, may or may not require integration
-- `WVModelOutputFile` - a representation of a file to be written to disk; has one more output groups
-- `WVModelOutputGroup` - a netcdf group that writes to file at certain output times; has one or more observing systems
+There are three classes that work together to write to file:
 
-Any `WVModelObservingSystem` instances that require integration, will also be held onto the model, which will integrate the observign system as necessary.
+- `WVObservingSystem` describes a way of observing the fluid and may or may not require integration.
+- `WVModelOutputFile` represents one file on disk and owns one or more output groups.
+- `WVModelOutputGroup` writes one or more observing systems at its scheduled output times.
+
+Any `WVObservingSystem` that requires integration is also held by the model. The same integrated observer handle may be written by multiple groups, including groups with different sampling intervals.
 
 
-## WVModelObservingSystem
+## WVObservingSystem
 
 Observing systems include, e.g., the wave-vortex coefficients, Eulerian fields, Lagrangian particles, tracers, mooring, and satellite along-track data.
 
-Subclasses of `WVModelObservingSystem` describe whether or not the observing system needs to be integrated (fluxed) in time by the model, and how to write to a group (an instance of `WVModelOutputGroup`) if desired. Some observing seems are only fluxed (e.g., the `WVCoefficients` system is used to integrate the wave-vortex coefficients) and do not write to file, while other observing system are not fluxed (e.g., `WVMooring`) but do write to file. Some of the observing systems require a specific subclasses of `WVModelOutputGroup` in order to write to file and set `requiresCustomOutputTimes` to `true`. For example, the `WVAlongTrackObservingSystem` can only write to the `WVModelOutputGroupAlongTrack` because it requires specific output times that are tied to the details of the satellite oribits.
+Subclasses of `WVObservingSystem` describe whether the observing system needs to be integrated in time and how it writes to a `WVModelOutputGroup`. `WVCoefficients` participates in model integration while coefficient storage is provided by the Eulerian field observer. `WVMooring` writes sampled fields without adding integrated state. `WVLagrangianParticles` and `WVTracer` both add integrated state and write their latest state to output.
 
 ## WVModelOutputFile
 
-After you create a `WVModel` instance, you may add one more `WVModelOutputFile`. Output files are conceptually very simple as they simply represent files on disk. Importantly, they hold onto one or more output groups, instances of `WVModelOutputGroup`, and internally they orchestrate pausing the model and writing to groups.
+After creating a `WVModel`, you may add one or more `WVModelOutputFile` instances. The model combines their requested output times so coincident times are integrated once and delivered to every file and group that requested them.
+
+Each file is an independent restart boundary. `WVModel.modelFromFile(path)` restores the supplied file and all of its groups; it does not reconstruct other files that the original model may also have written. A restart-capable file must contain exactly one group with the complete coefficient stream (`Ap`, `Am`, and `A0` for wave-bearing transforms, or `A0` for QG transforms). Other groups may store fields and observing systems without duplicating that complete coefficient stream.
+
+The file records whether the model used linear or nonlinear dynamics. Files written before that metadata was introduced retain the historical nonlinear restart default. Integrator objects are runtime configuration and must be configured again after restoration.
 
 ## WVModelOutputGroup
 
-The most useful `WVModelOutputGroup` subclass is the `WVModelOutputGroupEvenlySpaced`, which outputs at a fixed interval, but with user specified initial and final times. 
+The most useful `WVModelOutputGroup` subclass is `WVModelOutputGroupEvenlySpaced`, which writes on the lattice `initialTime + k*outputInterval` within the inclusive initial and final bounds. Repeated and segmented integrations remain anchored to that original lattice, and an already written time is not written again.
+
+When an integrated observer is shared by multiple groups, restoration reconnects those groups to one canonical observer handle. At least one of the groups must contain that observer at the coefficient restart time; otherwise the file does not contain a consistent restart state.
+
+Output initialization is transactional. If a group cannot initialize, WaveVortexModel closes and removes the newly created partial file and resets the output objects so the operation can be retried. If a later time-step write fails, all model-owned file handles are closed and the existing file is preserved for inspection. NetCDF does not provide transactional rollback of a partially written time record, so such a file should not be treated as a valid restart until inspected.

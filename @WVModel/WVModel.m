@@ -161,10 +161,14 @@ classdef WVModel < handle & WVModelAdapativeTimeStepMethods & WVModelFixedTimeSt
             % - Topic: Writing to NetCDF files
             arguments (Input)
                 self WVModel {mustBeNonempty}
-                name char {mustBeNonempty}
+                name {mustBeText,mustBeNonempty}
             end
             arguments (Output)
-                val WVModelOutputGroup
+                val WVModelOutputFile
+            end
+            name = string(name);
+            if ~isKey(self.outputFileNameMap,name)
+                error('No output file named %s is registered with this model.',name);
             end
             val = self.outputFileNameMap(name);
         end
@@ -175,7 +179,17 @@ classdef WVModel < handle & WVModelAdapativeTimeStepMethods & WVModelFixedTimeSt
             % - Topic: Writing to NetCDF files
             arguments
                 self WVModel {mustBeNonempty}
-                outputFile WVModelOutputFile
+                outputFile (1,1) WVModelOutputFile
+            end
+            if outputFile.model ~= self
+                error('The output file %s was not initialized for this model.',outputFile.filename);
+            end
+            if isKey(self.outputFileNameMap,outputFile.filename)
+                registeredFile = self.outputFileNameMap(outputFile.filename);
+                if registeredFile == outputFile
+                    return
+                end
+                error('A different output file named %s is already registered with this model.',outputFile.filename);
             end
             self.outputFileNameMap(outputFile.filename) = outputFile;
         end
@@ -714,20 +728,33 @@ classdef WVModel < handle & WVModelAdapativeTimeStepMethods & WVModelFixedTimeSt
             % arrayfun( @(outputFile) outputFile.initializeOutputFile(), self.outputFiles);
             % arrayfun( @(outputFile) outputFile.writeTimeStepToOutputFile(self.t), self.outputFiles);
 
-            self.wvt.restoreForcingAmplitudes();
-            
+            try
+                self.wvt.restoreForcingAmplitudes();
 
-            if self.nFluxComponents == 0
-                self.pseudoIntegrateToTime(finalTime);
-            elseif strcmp(self.integratorType,"adaptive")
-                self.integrateToTimeWithAdaptiveTimeStep(finalTime)
-            elseif strcmp(self.integratorType,"adaptive-cell")
-                self.integrateToTimeWithAdaptiveTimeStepCell(finalTime)
-            else
-                self.integrateToTimeWithFixedTimeStep(finalTime);
+                if self.nFluxComponents == 0
+                    self.pseudoIntegrateToTime(finalTime);
+                elseif strcmp(self.integratorType,"adaptive")
+                    self.integrateToTimeWithAdaptiveTimeStep(finalTime)
+                elseif strcmp(self.integratorType,"adaptive-cell")
+                    self.integrateToTimeWithAdaptiveTimeStepCell(finalTime)
+                else
+                    self.integrateToTimeWithFixedTimeStep(finalTime);
+                end
+
+                self.recordNetCDFFileHistory();
+            catch exception
+                self.finalIntegrationTime = [];
+                self.integrationCallback = [];
+                outputFiles_ = self.outputFiles;
+                for iFile = 1:length(outputFiles_)
+                    try
+                        outputFiles_(iFile).closeNetCDFFile();
+                    catch closeException
+                        exception = addCause(exception,closeException);
+                    end
+                end
+                rethrow(exception)
             end
-
-            self.recordNetCDFFileHistory();            
         end
 
 
@@ -994,7 +1021,7 @@ classdef WVModel < handle & WVModelAdapativeTimeStepMethods & WVModelFixedTimeSt
             for iFile = 1:length(outputFiles_)
                 integratorTimes = cat(1,integratorTimes,outputFiles_(iFile).outputTimesForIntegrationPeriod(initialTime,finalTime));
             end
-            integratorTimes = sort(uniquetol(integratorTimes));
+            integratorTimes = unique(integratorTimes,"sorted");
             if isempty(integratorTimes) || integratorTimes(1) ~= self.t
                 integratorTimes = cat(1,self.t,integratorTimes);
             end
