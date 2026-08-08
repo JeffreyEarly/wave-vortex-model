@@ -589,7 +589,7 @@ classdef WVPseudoTopographicWaveGeneration < WVForcing
                 propertyName = requiredPropertyNames{iProperty};
                 isPresent = group.hasVariableWithName(propertyName) || group.hasGroupWithName(propertyName) || isKey(group.attributes,propertyName);
                 if ~isPresent
-                    missingPropertyNames(end+1) = string(propertyName); %#ok<AGROW>
+                    missingPropertyNames(end+1) = string(propertyName);
                 end
             end
             if ~isempty(missingPropertyNames)

@@ -11,7 +11,18 @@ tasks = [
 
 plan = buildplan;
 plan("test") = TaskGroup(tasks,TaskNames=["smoke"; "full"; "exhaustive"; "optional"],Description="Run WaveVortexModel test categories.");
+plan("analyze") = Task(Actions=@analyzeTask,Description="Analyze production MATLAB source for correctness findings.",DisableIncremental=true);
 plan.DefaultTasks = "test:smoke";
+end
+
+function analyzeTask(~)
+repositoryRoot = fileparts(mfilename("fullpath"));
+toolsFolder = fullfile(repositoryRoot,"tools");
+originalPath = path;
+pathCleanup = onCleanup(@()path(originalPath));
+addpath(toolsFolder);
+analyzeProductionCode(repositoryRoot);
+clear pathCleanup
 end
 
 function testSmokeTask(~)

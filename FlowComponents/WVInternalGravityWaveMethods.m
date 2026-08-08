@@ -630,7 +630,6 @@ classdef WVInternalGravityWaveMethods < handle
                     for i=1:M
                         ii = mod(M-i+1, M) + 1;
                         jj = mod(N-j+1, N) + 1;
-                        waveAmp = 0; wavePhase = 0;
                         if i == ii && j == jj
                             % self-conjugate term
                             if i == 1 && j == 1

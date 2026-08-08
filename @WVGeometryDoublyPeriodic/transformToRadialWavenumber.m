@@ -64,11 +64,7 @@ if nK == 1
     edges  = [k(1)-dk, k(1)+dk];
 else
     mid    = 0.5*(k(1:end-1) + k(2:end));
-    left   = [k(1) - (k(2)-k(1))/2, mid];
-    right  = [mid, k(end) + (k(end)-k(end-1))/2];
-    edges  = [left(1), mid, right(end)];
-    % Compact form:
-    edges  = [-Inf, mid, +Inf];         % If you prefer open-ended ends
+    edges  = [-Inf, mid, +Inf];
 end
 
 % Assign each Kh to a radial bin
