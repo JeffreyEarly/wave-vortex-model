@@ -9,27 +9,11 @@ mathjax: true
 
 #  addOperation
 
-add a WVOperation
+Register one or more operations and their output variables.
 
 
 ---
 
 ## Discussion
 
-  Several things happen when adding an operation.
-  1. We check that dimensions exist for all output variables
-  produced by this operation.
-  2. We see if there are any existing output variables with the
-  same name.
-    2a. We remove the operation that produced the existing
-    variables, if it exists.
-  3. We map each new variable to this operation variableAnnotationNameMap
-  4. Map each operation name to the operation
- 
-  In our revision,
-    - The variableAnnotationNameMap will map the name to the
-    variable annotation
-    - The operationVariableNameMap will map the name to the
-    operation
- 
-  
+The complete request is validated before annotations, lookup maps, or cached values are changed. Existing operations are replaced only when `shouldOverwriteExisting` is true. For an operation array, replacements are evaluated in caller order and the last conflicting operation wins.

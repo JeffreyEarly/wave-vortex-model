@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- Made operation registration, replacement, and removal atomic and identity-based; corrected multiple-output lookup; and made cache invalidation follow each operation's declared time and coefficient dependencies.
 - Made forcing registration identity-based, deterministic, and atomic; preserved vertical-diffusivity, fixed-amplitude, and explicit-antialias configurations through resolution changes and NetCDF restoration; and rejected vertical diffusivity on barotropic transforms.
 - Corrected observing-system ownership and composition, linear-time flux evaluation, particle tolerance and tracked-field propagation, and periodic one-based mooring indexing.
 - Added compact invariant coverage across every stable transform on even and odd grids; corrected parity-aware Nyquist and Hermitian bookkeeping, vector mode/index mappings, coefficient-preserving resolution conversion, and barotropic spatial energy and enstrophy diagnostics.

@@ -9,20 +9,18 @@ mathjax: true
 
 #  variableWithName
 
-Primary method for accessing the dynamical variables
+Compute or retrieve one or more registered transform variables.
 
 
 ---
 
 ## Declaration
 ```matlab
- [varargout] = variables(self, variables)
+ [varargout] = variableWithName(self, variableNames)
 ```
 ## Parameters
-+ `variables`  strings of variable names.
++ `variableNames` registered variable names.
 
 ## Discussion
 
-  Computes (or retrieves from cache) any known state variables.
- 
-      
+Outputs are returned in caller order. Requesting any uncached output evaluates its owning operation, including every output of a multiple-output operation, and stores the results in the transform cache. Unknown names produce a clear lookup error.

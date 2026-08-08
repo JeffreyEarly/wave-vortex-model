@@ -9,5 +9,8 @@ end
 arguments (Output)
     val WVOperation 
 end
+if ~isKey(self.operationNameMap,name)
+    error("No operation named '%s' is registered with this transform.",name)
+end
 val = self.operationNameMap{name};
 end

@@ -132,6 +132,7 @@ classdef WVTransform < matlab.mixin.indexing.RedefinesDot & CAAnnotatedClass
                 end
             elseif isKey(self.operationNameMap,indexOp(1).Name)
                 op = self.operationNameMap{indexOp(1).Name};
+                varargout = cell(1,op.nVarOut);
                 [varargout{:}] = self.performOperation(op);
             else
                 error("WVTransform:UnknownVariable","The variable %s does not exist",indexOp(1).Name);
@@ -191,6 +192,7 @@ classdef WVTransform < matlab.mixin.indexing.RedefinesDot & CAAnnotatedClass
 
         function updateDependentVariablesNameMap(self,~,~)
             self.timeDependentVariablesNameMap = configureDictionary("string","cell");
+            self.wvCoefficientDependentVariablesNameMap = configureDictionary("string","cell");
             annotations = self.propertyAnnotations;
             for i=1:length(annotations)
                 if isa(annotations(i),'WVVariableAnnotation')
