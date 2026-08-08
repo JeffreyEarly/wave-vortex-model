@@ -164,7 +164,6 @@ while true
             break
         end
 
-        prev_t = new_t;
         prev_y = new_y;
 
         % Select correct derivative at the end of the step
