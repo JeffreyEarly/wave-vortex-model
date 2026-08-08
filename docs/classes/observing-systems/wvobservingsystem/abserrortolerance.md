@@ -16,7 +16,7 @@ return a cell array of the absolute tolerances of the
 
 ## Discussion
 variables being integrated. You can pass either scalar
-  values, or an array of the same size as the variable.
+values, or an array of the same size as the variable.
 
-  this will only be called when the time-stepping is run with
-  an adaptive integrator.
+this will only be called when the time-stepping is run with
+an adaptive integrator.

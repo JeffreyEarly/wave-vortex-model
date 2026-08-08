@@ -18,7 +18,7 @@ outputVar(2).isComplex = 1;
 f = @(wvt) wvt.waveCoefficientsAtTimeT();
 operations(end+1) = WVOperation('ApAm',outputVar,f);
 
-outputVar = WVVariableAnnotation('A0t',{'j','kl'},'m', 'geostrophic coefficients at time t');
+outputVar = WVVariableAnnotation('A0t',{'j','kl'},'m^2 s^{-1}', 'zero-frequency coefficients at current time t');
 outputVar.isComplex = 1;
 operations(end+1) = WVOperation('A0t',outputVar,@(wvt) wvt.A0);
 

@@ -31,6 +31,6 @@ create a new instance of WVVariableAnnotation
 
 ## Discussion
 
-  If a markdown file of the same name is in the same directory
-  or child directory, it will be loaded as the detailed
-  description upon initialization.
+If a markdown file of the same name is in the same directory
+or child directory, it will be loaded as the detailed
+description upon initialization.

@@ -25,4 +25,4 @@ create a new WVOperation for computing a new variable
 
 ## Discussion
 
-            - Return operation: a new WV operation instance
+- Return operation: a new WV operation instance

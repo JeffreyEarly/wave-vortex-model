@@ -33,4 +33,4 @@ add amplitudes of the given wave modes
 
 ## Discussion
 
-  Add new amplitudes to any existing amplitudes
+Add new amplitudes to any existing amplitudes

@@ -8,13 +8,14 @@ function [varargout] = variableAtPositionWithName(self,x,y,z,variableNames,optio
 % The interpolation method may be `linear` or `spline`. Horizontal
 % coordinates are wrapped periodically before interpolation.
 %
-% - Topic: State Variables
-% - Declaration: [varargout] = variableAtPositionWithName(self,x,y,z,variableNames,options)
+% - Topic: State variables
+% - Declaration: [varargout] = variableAtPositionWithName(x,y,z,variableNames,options)
 % - Parameter x: array of x-positions
 % - Parameter y: array of y-positions
 % - Parameter z: array of z-positions, or empty for two-dimensional variables
 % - Parameter variableNames: strings of variable names.
-% - Parameter interpolationMethod: (optional) `linear` or `spline`. Default `linear`.
+% - Parameter options.interpolationMethod: periodic `linear` or cubic `spline` interpolation; default `linear`
+% - Returns varargout: interpolated arrays in the requested order and query shape
 arguments
     self WVTransform {mustBeNonempty}
     x (1,:) double

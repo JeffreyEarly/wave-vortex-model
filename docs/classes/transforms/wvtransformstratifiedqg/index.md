@@ -11,7 +11,7 @@ nav_order: 6
 
 #  WVTransformStratifiedQG
 
-A quasigeostrophic transform for variable stratification
+Represent stratified quasigeostrophic flow with variable stratification.
 
 
 ---
@@ -23,15 +23,19 @@ A quasigeostrophic transform for variable stratification
 ## Overview
 
 To initialize an instance of the WVTransformStratifiedQG class you
-must specific the domain size, the number of grid points and *either*
+must specify the domain size, the number of grid points, and either
 the density profile or the stratification profile.
 
 ```matlab
 N0 = 3*2*pi/3600;
 L_gm = 1300;
 N2 = @(z) N0*N0*exp(2*z/L_gm);
-wvt = WVTransformStratifiedQG([100e3, 100e3, 4000],[64, 64, 65], N2=N2,latitude=30);
+wvt = WVTransformStratifiedQG([100e3,100e3,4000],[64,64,65],N2Function=N2,latitude=30);
 ```
+
+The Stable quasigeostrophic state is stored in
+[`A0`](/classes/transforms/wvtransform/a0.html), with current-time view
+`A0t`. This transform has no active `Ap`, `Am`, `Apt`, or `Amt` content.
 
 
 
@@ -39,7 +43,10 @@ wvt = WVTransformStratifiedQG([100e3, 100e3, 4000],[64, 64, 65], N2=N2,latitude=
 
 ## Topics
 + Initialization
-  + [`WVTransformStratifiedQG`](/classes/transforms/wvtransformstratifiedqg/wvtransformstratifiedqg.html) create a wave-vortex transform for variable stratification
+  + [`WVTransformStratifiedQG`](/classes/transforms/wvtransformstratifiedqg/wvtransformstratifiedqg.html) Create a stratified quasigeostrophic transform.
++ Wave-vortex coefficients
+  + At current time
+    + [`A0t`](/classes/transforms/wvtransformstratifiedqg/a0t.html) zero-frequency coefficients at current time t
 + Primary flow components
   + [`geostrophicComponent`](/classes/transforms/wvtransformstratifiedqg/geostrophiccomponent.html) returns the geostrophic flow component
 + Stratification
@@ -76,18 +83,8 @@ wvt = WVTransformStratifiedQG([100e3, 100e3, 4000],[64, 64, 65], N2=N2,latitude=
     + [`transformToPseudoRadialWavenumberApm`](/classes/transforms/wvtransformstratifiedqg/transformtopseudoradialwavenumberapm.html) transforms in the from (j,kRadial) to kPseudoRadial
     + [`transformToRadialWavenumber`](/classes/transforms/wvtransformstratifiedqg/transformtoradialwavenumber.html) transforms in the spectral domain from (j,kl) to (j,kRadial)
     + [`waveModeVerticalStructureAtIndex`](/classes/transforms/wvtransformstratifiedqg/wavemodeverticalstructureatindex.html) Return wave vertical-structure factors at one vertical grid index.
-+ Wave-vortex sorting matrix
-  + inverse components ($$S^{-1}$$)
-    + [`A0N`](/classes/transforms/wvtransformstratifiedqg/a0n.html) matrix component that multiplies $$\tilde{\eta}$$ to compute $$A_0$$.
-    + [`A0U`](/classes/transforms/wvtransformstratifiedqg/a0u.html) matrix component that multiplies $$\tilde{u}$$ to compute $$A_0$$.
-    + [`A0V`](/classes/transforms/wvtransformstratifiedqg/a0v.html) matrix component that multiplies $$\tilde{v}$$ to compute $$A_0$$.
-  + components of $$S$$
-    + [`NA0`](/classes/transforms/wvtransformstratifiedqg/na0.html) matrix component that multiplies $$A_0$$ to compute $$\tilde{\eta}$$.
-    + [`UA0`](/classes/transforms/wvtransformstratifiedqg/ua0.html) matrix component that multiplies $$A_0$$ to compute $$\tilde{u}$$.
-    + [`VA0`](/classes/transforms/wvtransformstratifiedqg/va0.html) matrix component that multiplies $$A_0$$ to compute $$\tilde{v}$$.
-+ Wave-vortex coefficients
-  + at time $$t$$
-    + [`A0t`](/classes/transforms/wvtransformstratifiedqg/a0t.html) geostrophic coefficients time t
++ Developer
+  + [`propertyAnnotationsForGeometry`](/classes/transforms/wvtransformstratifiedqg/propertyannotationsforgeometry.html) return array of CAPropertyAnnotations initialized by default
 + Domain Attributes
   + [`f`](/classes/transforms/wvtransformstratifiedqg/f.html) Coriolis parameter
   + [`g`](/classes/transforms/wvtransformstratifiedqg/g.html) gravity of Earth
@@ -180,8 +177,6 @@ wvt = WVTransformStratifiedQG([100e3, 100e3, 4000],[64, 64, 65], N2=N2,latitude=
   + [`maskForNyquistModes`](/classes/transforms/wvtransformstratifiedqg/maskfornyquistmodes.html) returns a mask with locations of modes that are not fully resolved
 + Utilities
   + [`placeParticlesOnIsopycnal`](/classes/transforms/wvtransformstratifiedqg/placeparticlesonisopycnal.html) places Lagrangian particles along a specified isopycnal
-+ Developer
-  + [`propertyAnnotationsForGeometry`](/classes/transforms/wvtransformstratifiedqg/propertyannotationsforgeometry.html) return array of CAPropertyAnnotations initialized by default
 + State Variables
   + [`psi`](/classes/transforms/wvtransformstratifiedqg/psi.html) geostrophic streamfunction
   + [`ssu`](/classes/transforms/wvtransformstratifiedqg/ssu.html) x-component of the fluid velocity at the surface
@@ -269,6 +264,21 @@ wvt = WVTransformStratifiedQG([100e3, 100e3, 4000],[64, 64, 65], N2=N2,latitude=
   + [`xyzGrid`](/classes/transforms/wvtransformstratifiedqg/xyzgrid.html)
   + [`z_int`](/classes/transforms/wvtransformstratifiedqg/z_int.html) Quadrature weights for the vertical grid
   + [`zeta_z`](/classes/transforms/wvtransformstratifiedqg/zeta_z.html) vertical component of relative vorticity
+
+
+## Developer Topics
+These items document internal implementation details and are not part of the primary public API.
++ Wave-vortex coefficients
++ Stratification
++ Developer
+  + Projection coefficients
+    + [`A0N`](/classes/transforms/wvtransformstratifiedqg/a0n.html) matrix component that multiplies $$\tilde{\eta}$$ to compute $$A_0$$.
+    + [`A0U`](/classes/transforms/wvtransformstratifiedqg/a0u.html) matrix component that multiplies $$\tilde{u}$$ to compute $$A_0$$.
+    + [`A0V`](/classes/transforms/wvtransformstratifiedqg/a0v.html) matrix component that multiplies $$\tilde{v}$$ to compute $$A_0$$.
+  + Reconstruction coefficients
+    + [`NA0`](/classes/transforms/wvtransformstratifiedqg/na0.html) matrix component that multiplies $$A_0$$ to compute $$\tilde{\eta}$$.
+    + [`UA0`](/classes/transforms/wvtransformstratifiedqg/ua0.html) matrix component that multiplies $$A_0$$ to compute $$\tilde{u}$$.
+    + [`VA0`](/classes/transforms/wvtransformstratifiedqg/va0.html) matrix component that multiplies $$A_0$$ to compute $$\tilde{v}$$.
 
 
 ---

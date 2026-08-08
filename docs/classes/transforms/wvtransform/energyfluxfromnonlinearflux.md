@@ -32,11 +32,11 @@ converts nonlinear flux into energy flux
 
 ## Discussion
 
-  Multiplies the nonlinear flux (Fp,Fm,F0) by the appropriate coefficients
-  to convert into an energy flux.
+Multiplies the nonlinear flux (Fp,Fm,F0) by the appropriate coefficients
+to convert into an energy flux.
 
-  Optional parameter deltaT added by Bailey Avila: This equation is C17 in
-  the manuscript, but with addition of 1st term on LHS of C16 converted to
-  energy using Apm_TE_factor or A0_TE_factor This differs from energyFlux
-  due to the importance of the 2*F*F*deltaT in equation C16 at the initial
-  condition.
+Optional parameter deltaT added by Bailey Avila: This equation is C17 in
+the manuscript, but with addition of 1st term on LHS of C16 converted to
+energy using Apm_TE_factor or A0_TE_factor This differs from energyFlux
+due to the importance of the 2*F*F*deltaT in equation C16 at the initial
+condition.

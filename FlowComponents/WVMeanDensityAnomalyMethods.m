@@ -74,18 +74,15 @@ classdef WVMeanDensityAnomalyMethods < handle
         end
 
         function addMeanDensityAnomaly(self,eta)
-            % add inertial motions to existing inertial motions
+            % Add a mean-density anomaly to the existing fluid state.
             %
-            % The amplitudes of the inertial part of the flow will be added
-            % to the existing inertial part of the flow.
+            % The supplied horizontally uniform isopycnal displacement is
+            % projected onto the internal mean-density-anomaly modes and
+            % added to their `A0` coefficients.
             %
             % ```matlab
-            % U_io = 0.2;
-            % Ld = wvt.Lz/5;
-            % u_NIO = @(z) U_io*exp((z/Ld));
-            % v_NIO = @(z) zeros(size(z));
-            %
-            % wvt.addInertialMotions(u_NIO,v_NIO);
+            % eta = @(z) 10*sin(pi*(z+wvt.Lz)/wvt.Lz);
+            % wvt.addMeanDensityAnomaly(eta);
             % ```
             %
             % It is important to note that because the WVTransform
@@ -93,7 +90,6 @@ classdef WVMeanDensityAnomalyMethods < handle
             % same function out that you put in. The high-modes are
             % removed.
             %
-            % The new inertial motions are added to the existing inertial motions
             % - Topic: Initial conditions — Mean density anomaly
             % - Declaration: addMeanDensityAnomaly(eta)
             % - Parameter eta: function handle that takes a single argument, eta(Z)
@@ -101,17 +97,15 @@ classdef WVMeanDensityAnomalyMethods < handle
         end
 
         function initWithMeanDensityAnomaly(self,eta)
-            % initialize with inertial motions
+            % Initialize the fluid state with a mean-density anomaly.
             %
-            % Clears variables Ap,Am,A0 and then sets inertial motions.
+            % Clear `Ap`, `Am`, and `A0`, then project the supplied
+            % horizontally uniform isopycnal displacement onto the internal
+            % mean-density-anomaly modes.
             % 
             % ```matlab
-            % U_io = 0.2;
-            % Ld = wvt.Lz/5;
-            % u_NIO = @(z) U_io*exp((z/Ld));
-            % v_NIO = @(z) zeros(size(z));
-            %
-            % wvt.initWithInertialMotions(u_NIO,v_NIO);
+            % eta = @(z) 10*sin(pi*(z+wvt.Lz)/wvt.Lz);
+            % wvt.initWithMeanDensityAnomaly(eta);
             % ```
             %
             % It is important to note that because the WVTransform
@@ -127,18 +121,15 @@ classdef WVMeanDensityAnomalyMethods < handle
         end
 
         function setMeanDensityAnomaly(self,eta)
-            % set inertial motions
+            % Set the mean-density-anomaly component.
             %
-            % Overwrites existing inertial motions with the new values.
+            % Overwrite existing mean-density-anomaly coefficients with the
+            % projection of `eta` while preserving other flow components.
             % Other components of the flow will remain unaffected.
             %
             % ```matlab
-            % U_io = 0.2;
-            % Ld = wvt.Lz/5;
-            % u_NIO = @(z) U_io*exp((z/Ld));
-            % v_NIO = @(z) zeros(size(z));
-            %
-            % wvt.setInertialMotions(u_NIO,v_NIO);
+            % eta = @(z) 10*sin(pi*(z+wvt.Lz)/wvt.Lz);
+            % wvt.setMeanDensityAnomaly(eta);
             % ```
             %
             % It is important to note that because the WVTransform

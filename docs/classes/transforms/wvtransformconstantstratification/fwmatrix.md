@@ -23,5 +23,5 @@ transformation matrix $$F_w$$
 
 ## Discussion
 
-  A matrix that transforms a vector in physical space to IGW
-  mode space
+A matrix that transforms a vector in physical space to IGW
+mode space

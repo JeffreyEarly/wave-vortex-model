@@ -16,7 +16,7 @@ array of WVVariableAnnotations describing the outputs of the computation
 
 ## Discussion
 
-  This array is set during initialization.
+This array is set during initialization.
 
-  The order of the WVVariableAnnotation must match the order that
-  the variables will be returned with the -compute method.
+The order of the WVVariableAnnotation must match the order that
+the variables will be returned with the -compute method.

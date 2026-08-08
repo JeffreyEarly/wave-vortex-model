@@ -24,5 +24,5 @@ set amplitude to fix for the geostrophic part of the flow
 
 ## Discussion
 
-  This function will automatically remove modes set in the
-  damping region of the WVAdaptiveDamping forcing, if present.
+This function will automatically remove modes set in the
+damping region of the WVAdaptiveDamping forcing, if present.

@@ -9,31 +9,34 @@ mathjax: true
 
 #  WVTransformConstantStratification
 
-create a wave-vortex transform for constant stratification
+Create a wave-vortex transform for constant stratification.
 
 
 ---
 
 ## Declaration
 ```matlab
- wvt = WVTransformHydrostatic(Lxyz, Nxyz, options)
+ wvt = WVTransformConstantStratification(Lxyz,Nxyz,options)
 ```
 ## Parameters
 + `Lxyz`  length of the domain (in meters) in the three coordinate directions, e.g. [Lx Ly Lz]
 + `Nxyz`  number of grid points in the three coordinate directions, e.g. [Nx Ny Nz]
-+ `rho`   (optional) function_handle specifying the density as a function of depth on the domain [-Lz 0]
-+ `stratification`   (optional) function_handle specifying the stratification as a function of depth on the domain [-Lz 0]
-+ `latitude`  (optional) latitude of the domain (default is 33 degrees north)
-+ `rho0`  (optional) density at the surface z=0 (default is 1025 kg/m^3)
++ `options.N0`  constant buoyancy frequency in radians per second; default `5.2e-3`
++ `options.isHydrostatic`  use hydrostatic dynamics; default `false`
++ `options.latitude`  latitude in the supported domain; default `33`
++ `options.shouldAntialias`  exclude quadratically aliased modes; default `true`
++ `options.rho0`  reference density in kilograms per cubic meter; default `1025`
 
 ## Returns
-+ `wvt`  a new WVTransformHydrostatic instance
++ `wvt`  new `WVTransformConstantStratification` instance
 
 ## Discussion
 
-  Creates a new instance of the WVTransformConstantStratification
-  class appropriate for disentangling waves and vortices in
-  constant stratification.
+Creates a new instance of the WVTransformConstantStratification
+class appropriate for disentangling waves and vortices in
+constant stratification.
 
-  You must initialization by passing *either* the density
-  profile or the stratification profile.
+Set `isHydrostatic=true` for hydrostatic dynamics; the default
+is the nonhydrostatic transform. `N0` is the constant buoyancy
+frequency. The remaining geometry options configure the
+rotating, doubly periodic domain.

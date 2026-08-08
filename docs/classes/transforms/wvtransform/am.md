@@ -9,10 +9,14 @@ mathjax: true
 
 #  Am
 
-negative wave coefficients at reference time t0 (m/s)
+Negative-frequency wave and inertial coefficients at reference time `t0`.
 
 
 ---
 
 ## Discussion
-Topic: Wave-vortex coefficients
+
+`Am` is a complex array with the transform's spectral layout. Only
+locations selected by the primary wave and inertial component masks
+are active. Its conjugacy relations with `Ap` enforce a real
+physical state, including `Am = conj(Ap)` on inertial modes.

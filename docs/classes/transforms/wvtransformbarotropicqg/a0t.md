@@ -9,16 +9,19 @@ mathjax: true
 
 #  A0t
 
-geostrophic coefficients time t
+zero-frequency coefficients at current time t
 
 
 ---
 
 ## Description
-Complex valued property with dimension $$kl$$ and units of $$m$$.
+Complex valued property with dimension $$kl$$ and units of $$m^2 s^{-1}$$.
 
 ## Discussion
+`A0t` is the zero-frequency coefficient array evaluated at the current transform time. On the supported $$f$$-plane transforms, `A0` has no linear phase winding and therefore
 
-These are the *time dependent* coefficients of the geostrophic flow, denoted  $$A_0$$ in [Early, et al. (2021)](https://doi.org/10.1017/jfm.2020.995).
+$$
+A_0^{k\ell j}(t) = A_0^{k\ell j}(t_0).
+$$
 
-These geostrophic coefficients do not have any linear time dependence on the $$f$$-plane and thus are identical to `A0`.
+Consequently, `A0t` returns the current stored `A0` coefficients.

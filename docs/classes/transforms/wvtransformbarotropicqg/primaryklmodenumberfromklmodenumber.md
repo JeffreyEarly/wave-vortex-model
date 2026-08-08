@@ -28,8 +28,8 @@ takes any valid WV mode number and returns the primary mode number
 
 ## Discussion
 
-  The function first confirms that the mode numbers are valid,
-  and then converts any conjugate mode numbers to primary mode
-  numbers.
+The function first confirms that the mode numbers are valid,
+and then converts any conjugate mode numbers to primary mode
+numbers.
 
-  The result is affected by the chosen conjugateDimension.
+The result is affected by the chosen conjugateDimension.

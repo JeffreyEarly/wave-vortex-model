@@ -9,13 +9,7 @@ mathjax: true
 
 #  WVInertialOscillationComponent
 
-Inertial oscillation solution group
+
 
 
 ---
-
-## Declaration
-```matlab
- classdef WVInertialOscillationComponent < WVPrimaryFlowComponent
-```
-## Discussion

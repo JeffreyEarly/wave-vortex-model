@@ -26,5 +26,5 @@ returns a mask indicating where the redundant (conjugate )solutions live in the 
 
 ## Discussion
 
-  Returns a 'mask' (matrix with 1s or 0s) indicating where
-  different solution types live in the Ap, Am, A0 matrices.
+Returns a 'mask' (matrix with 1s or 0s) indicating where
+different solution types live in the Ap, Am, A0 matrices.

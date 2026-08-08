@@ -23,5 +23,5 @@ transformation matrix $$F_w^{-1}$$
 
 ## Discussion
 
-  A matrix that transforms a vector of igw amplitudes from
-  vertical mode space to physical space.
+A matrix that transforms a vector of igw amplitudes from
+vertical mode space to physical space.

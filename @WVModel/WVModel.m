@@ -1,33 +1,21 @@
 classdef WVModel < handle & WVModelAdaptiveTimeStepMethods & WVModelFixedTimeStepMethods & WVModelAdaptiveTimeStepCellMethods
-    % The WVModel is responsible for time-stepping (integrating) the ocean state forward in time, as represented by a WVTransform.
+    % Integrate a fluid state represented by a WVTransform.
     %
-    % Assuming you have already initialized a WVTransform, e.g.,
+    % Construct a transform and use it to initialize the model:
     % ```matlab
-    % wvt = WVTransformConstantStratification([Lx, Ly, Lz], [Nx, Ny, Nz], N0,latitude=latitude);
-    % ```
-    % and maybe set some initial conditions, you can then initialize the
-    % model,
-    % ```matlab
-    % model = WVModel(wvt)
-    % ```
-    % 
-    % By default the model only takes a linear time-step. To specify a
-    % nonlinear flux on initialization, for example,
-    %```matlab
+    % wvt = WVTransformConstantStratification([40e3,30e3,2e3],[8,6,9],N0=5.2e-3,latitude=45);
     % model = WVModel(wvt);
-    %```
+    % ```
+    % By default `WVModel` integrates the transform's nonlinear forcing and
+    % registers its coefficient observing system. Pass
+    % `shouldUseLinearDynamics=true` for analytical linear evolution. Use
+    % `setupIntegrator` to select the Stable fixed or adaptive integrator;
+    % `adaptive-cell` remains Experimental.
     %
-    % You can also initialize a model from existing output,
+    % Restore a model and its output graph from one restart-capable file:
     % ```matlab
-    % model = WVModel.modelFromFile('SomeFile.nc');
-    %```
-    % 
-    % Advanced usage
-    % --------------
-    %
-    % 1. Create 1 or more NetCDFFiles
-    % 2. Add 1 or more WVModelOutputGroups to each file
-    % 3. Add 1 or more WVObservingSystems to each output group.
+    % model = WVModel.modelFromFile("SomeFile.nc");
+    % ```
     %
     % - Topic: Initialization
     % - Topic: Model Properties
@@ -35,9 +23,12 @@ classdef WVModel < handle & WVModelAdaptiveTimeStepMethods & WVModelFixedTimeSte
     % - Topic: Particles
     % - Topic: Tracer
     % - Topic: Writing to NetCDF files
+    % - Topic: Integrated observing systems
+    % - Topic: Developer
+    % - Declaration: classdef WVModel < handle
 
     properties (GetAccess=public,SetAccess=protected)
-        % The WVTransform instance the represents the ocean state.
+        % WVTransform instance representing the ocean state.
         % - Topic: Model Properties
         % Set on initialization only, the WVTransform in the model
         % performs all computations necessary to return information about
@@ -49,10 +40,11 @@ classdef WVModel < handle & WVModelAdaptiveTimeStepMethods & WVModelFixedTimeSte
         nFluxComputations uint64 = 0
         indicesForFluxedSystem
 
-        % Indicates whether or not the model is using linear or nonlinear dynamics.
+        % Whether the model uses analytical linear dynamics.
         % - Topic: Model Properties
-        % In practice, this is simply checking whether the nonlinearFlux
-        % property is nil.
+        % When `false`, the model integrates registered coefficient and
+        % observing-system tendencies. When `true`, `integrateToTime`
+        % advances the transform and output schedule analytically.
         isDynamicsLinear
 
         eulerianObservingSystem
@@ -93,11 +85,13 @@ classdef WVModel < handle & WVModelAdaptiveTimeStepMethods & WVModelFixedTimeSte
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
         function self = WVModel(wvt,options)
-            % Initialize a model from a WVTransform instance
+            % Initialize a model from a WVTransform instance.
             %
             % - Topic: Initialization
-            % - Declaration: WVModel(wvt,options)
-            % - Parameter wvt: a WaveVortexTranform instance
+            % - Declaration: model = WVModel(wvt,options)
+            % - Parameter wvt: `WVTransform` instance representing the initial fluid state
+            % - Parameter options.shouldUseLinearDynamics: use analytical linear evolution; default `false`
+            % - Returns model: new `WVModel` instance
             %
             % 
             arguments
@@ -817,6 +811,9 @@ classdef WVModel < handle & WVModelAdaptiveTimeStepMethods & WVModelFixedTimeSte
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
         function summarize(self)
+            % Print a summary of integrated systems and output files.
+            %
+            % - Topic: Model Properties
             if isempty(self.fluxedObservingSystems)
                 fprintf('The model has no systems to integrate.\n');
             else

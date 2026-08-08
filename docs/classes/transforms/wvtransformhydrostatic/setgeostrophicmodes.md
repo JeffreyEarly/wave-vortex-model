@@ -31,16 +31,16 @@ set amplitudes of the given geostrophic modes
 
 ## Discussion
 
-  Set the amplitude of the given geostrophic modes by
-  overwriting any existing amplitudes. The parameters are given
-  as [horizontal and vertical modes](/users-guide/wavenumber-modes-and-indices.html),
-  and the function will return the associated [horizontal wavenumbers](/users-guide/wavenumber-modes-and-indices.html)
-  of those modes.
+Set the amplitude of the given geostrophic modes by
+overwriting any existing amplitudes. The parameters are given
+as [horizontal and vertical modes](/users-guide/wavenumber-modes-and-indices.html),
+and the function will return the associated [horizontal wavenumbers](/users-guide/wavenumber-modes-and-indices.html)
+of those modes.
 
-  For example,
+For example,
 
-  ```matlab
-  wvt.addGeostrophicModes(kMode=0,lMode=1,jMode=1,u=0.5);
-  ```
+```matlab
+wvt.addGeostrophicModes(kMode=0,lMode=1,jMode=1,u=0.5);
+```
 
-  will add a geostrophic mode.
+will add a geostrophic mode.

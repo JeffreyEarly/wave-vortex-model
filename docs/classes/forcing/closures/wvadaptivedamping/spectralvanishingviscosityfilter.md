@@ -24,4 +24,4 @@ Builds the spectral vanishing viscosity operator
 
 ## Discussion
 
-          - Returns: Qkl, Qj, kl_cutoff, kl_damp
+- Returns: Qkl, Qj, kl_cutoff, kl_damp

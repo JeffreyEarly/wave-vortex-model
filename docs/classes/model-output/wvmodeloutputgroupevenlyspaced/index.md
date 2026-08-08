@@ -31,7 +31,6 @@ allow you to customize when this group is active in model time.
 
 
 
-
 ## Topics
 + Properties
   + [`finalTime`](/classes/model-output/wvmodeloutputgroupevenlyspaced/finaltime.html) final model time that the output group is active (seconds)

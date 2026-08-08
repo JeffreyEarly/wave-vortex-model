@@ -27,7 +27,7 @@ create a new variable with different resolution
 
 ## Discussion
 
-  Given a variable with dimensions `[Nj Nkl]`, this returns a new variable
-  with dimensions matching `wvtX2`. Coefficients are matched by their
-  integer `(kMode,lMode,jMode)` identities. Modes absent from the target are
-  discarded and target modes absent from the source are initialized to zero.
+Given a variable with dimensions `[Nj Nkl]`, this returns a new variable
+with dimensions matching `wvtX2`. Coefficients are matched by their
+integer `(kMode,lMode,jMode)` identities. Modes absent from the target are
+discarded and target modes absent from the source are initialized to zero.

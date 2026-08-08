@@ -16,6 +16,6 @@ initializes a new output group in the NetCDF file
 
 ## Discussion
 
-  This will only be called only once. This creates a new group,
-  adds the required properties, creates a time dimension, then
-  tells the observing systems to also initialize their storage.
+This will only be called only once. This creates a new group,
+adds the required properties, creates a time dimension, then
+tells the observing systems to also initialize their storage.

@@ -16,6 +16,6 @@ called once to allow the observing system to initialize its storage space in the
 
 ## Discussion
 
-  Any observing system must implement this method to initialize
-  the NetCDFGroup with the appropriate attributes, dimensions
-  and variables.
+Any observing system must implement this method to initialize
+the NetCDFGroup with the appropriate attributes, dimensions
+and variables.

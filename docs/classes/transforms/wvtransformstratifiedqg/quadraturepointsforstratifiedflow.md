@@ -23,5 +23,5 @@ return the quadrature points for a given stratification
 
 ## Discussion
 
-  This function uses InternalModesWKBSpectral to compute the
-  quadrature points of a given stratification profile.
+This function uses InternalModesWKBSpectral to compute the
+quadrature points of a given stratification profile.

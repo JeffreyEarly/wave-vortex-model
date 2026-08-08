@@ -27,5 +27,5 @@ create a new observing system
 
 ## Discussion
 
-  This class is intended to be subclassed, so it generally
-  assumed that this initialization will not be called directly.
+This class is intended to be subclassed, so it generally
+assumed that this initialization will not be called directly.

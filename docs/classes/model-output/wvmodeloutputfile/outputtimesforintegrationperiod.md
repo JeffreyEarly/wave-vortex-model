@@ -16,5 +16,5 @@ returns a unique, ordered array of the aggregate output times during the request
 
 ## Discussion
 
-  This will be called exactly once by the model before an
-  integration begins.
+This will be called exactly once by the model before an
+integration begins.

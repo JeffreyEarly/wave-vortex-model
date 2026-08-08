@@ -28,13 +28,13 @@ returns a mask with locations of modes that are not fully resolved
 
 ## Discussion
 
-  Returns a 'mask' (matrices with 1s or 0s) indicating where Nyquist
-  modes are located in a standard FFT matrix. A direction has
-  a Nyquist coordinate only when its grid size is even.
+Returns a 'mask' (matrices with 1s or 0s) indicating where Nyquist
+modes are located in a standard FFT matrix. A direction has
+a Nyquist coordinate only when its grid size is even.
 
-  Basic usage,
-  ```matlab
-  NyquistMask = wvm.maskForNyquistModes(8,8);
-  ```
-  will return a mask that contains 1 at the locations of modes that will
-  are at the Nyquist frequency of the Fourier transforms.
+Basic usage,
+```matlab
+NyquistMask = wvm.maskForNyquistModes(8,8);
+```
+will return a mask that contains 1 at the locations of modes that will
+are at the Nyquist frequency of the Fourier transforms.

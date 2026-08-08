@@ -16,5 +16,5 @@ returns a unique, ordered array of the aggregate output times during the request
 
 ## Discussion
 
-  Any new subclass of `WVModelOutputGroup` must override this
-  methods and return the appropriate output times.
+Any new subclass of `WVModelOutputGroup` must override this
+methods and return the appropriate output times.

@@ -9,7 +9,9 @@ mathjax: true
 
 #  addForcing
 
-
+Add forcing or closure objects to this transform.
 
 
 ---
+
+## Discussion

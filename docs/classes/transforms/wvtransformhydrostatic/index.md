@@ -11,7 +11,7 @@ nav_order: 3
 
 #  WVTransformHydrostatic
 
-A class for disentangling hydrostatic waves and vortices in variable stratification
+Decompose hydrostatic variable-stratification flow into wave and geostrophic components.
 
 
 ---
@@ -22,16 +22,21 @@ A class for disentangling hydrostatic waves and vortices in variable stratificat
 
 ## Overview
 
-To initialization an instance of the WVTransformHydrostatic class you
-must specific the domain size, the number of grid points and *either*
+To initialize `WVTransformHydrostatic`, specify the domain size, the
+number of grid points, and either
 the density profile or the stratification profile.
 
 ```matlab
 N0 = 3*2*pi/3600;
 L_gm = 1300;
 N2 = @(z) N0*N0*exp(2*z/L_gm);
-wvt = WVTransformHydrostatic([100e3, 100e3, 4000],[64, 64, 65], N2=N2,latitude=30);
+wvt = WVTransformHydrostatic([100e3,100e3,4000],[64,64,65],N2Function=N2,latitude=30);
 ```
+
+The Stable transform state is stored in [`Ap`](/classes/transforms/wvtransform/ap.html),
+[`Am`](/classes/transforms/wvtransform/am.html), and
+[`A0`](/classes/transforms/wvtransform/a0.html). Their current-time
+views are `Apt`, `Amt`, and `A0t`.
 
 
 
@@ -39,7 +44,12 @@ wvt = WVTransformHydrostatic([100e3, 100e3, 4000],[64, 64, 65], N2=N2,latitude=3
 
 ## Topics
 + Initialization
-  + [`WVTransformHydrostatic`](/classes/transforms/wvtransformhydrostatic/wvtransformhydrostatic.html) create a wave-vortex transform for variable stratification
+  + [`WVTransformHydrostatic`](/classes/transforms/wvtransformhydrostatic/wvtransformhydrostatic.html) Create a hydrostatic wave-vortex transform for variable stratification.
++ Wave-vortex coefficients
+  + At current time
+    + [`A0t`](/classes/transforms/wvtransformhydrostatic/a0t.html) zero-frequency coefficients at current time t
+    + [`Amt`](/classes/transforms/wvtransformhydrostatic/amt.html) negative-frequency coefficients at current time t
+    + [`Apt`](/classes/transforms/wvtransformhydrostatic/apt.html) positive-frequency coefficients at current time t
 + Primary flow components
   + [`geostrophicComponent`](/classes/transforms/wvtransformhydrostatic/geostrophiccomponent.html) returns the geostrophic flow component
   + [`waveComponent`](/classes/transforms/wvtransformhydrostatic/wavecomponent.html) returns the internal gravity wave flow component
@@ -73,10 +83,10 @@ wvt = WVTransformHydrostatic([100e3, 100e3, 4000],[64, 64, 65], N2=N2,latitude=3
     + [`removeAllInertialMotions`](/classes/transforms/wvtransformhydrostatic/removeallinertialmotions.html) remove all inertial motions
     + [`setInertialMotions`](/classes/transforms/wvtransformhydrostatic/setinertialmotions.html) set inertial motions
   + Mean density anomaly
-    + [`addMeanDensityAnomaly`](/classes/transforms/wvtransformhydrostatic/addmeandensityanomaly.html) add inertial motions to existing inertial motions
-    + [`initWithMeanDensityAnomaly`](/classes/transforms/wvtransformhydrostatic/initwithmeandensityanomaly.html) initialize with inertial motions
+    + [`addMeanDensityAnomaly`](/classes/transforms/wvtransformhydrostatic/addmeandensityanomaly.html) Add a mean-density anomaly to the existing fluid state.
+    + [`initWithMeanDensityAnomaly`](/classes/transforms/wvtransformhydrostatic/initwithmeandensityanomaly.html) Initialize the fluid state with a mean-density anomaly.
     + [`removeAllMeanDensityAnomaly`](/classes/transforms/wvtransformhydrostatic/removeallmeandensityanomaly.html) remove all mean density anomalies
-    + [`setMeanDensityAnomaly`](/classes/transforms/wvtransformhydrostatic/setmeandensityanomaly.html) set inertial motions
+    + [`setMeanDensityAnomaly`](/classes/transforms/wvtransformhydrostatic/setmeandensityanomaly.html) Set the mean-density-anomaly component.
 + Operations
   + Calculus
     + [`diffZF`](/classes/transforms/wvtransformhydrostatic/diffzf.html) Differentiate an F-grid field with respect to z.
@@ -99,28 +109,8 @@ wvt = WVTransformHydrostatic([100e3, 100e3, 4000],[64, 64, 65], N2=N2,latitude=3
     + [`transformToPseudoRadialWavenumberApm`](/classes/transforms/wvtransformhydrostatic/transformtopseudoradialwavenumberapm.html) transforms in the from (j,kRadial) to kPseudoRadial
     + [`transformToRadialWavenumber`](/classes/transforms/wvtransformhydrostatic/transformtoradialwavenumber.html) transforms in the spectral domain from (j,kl) to (j,kRadial)
     + [`waveModeVerticalStructureAtIndex`](/classes/transforms/wvtransformhydrostatic/wavemodeverticalstructureatindex.html) Return wave vertical-structure factors at one vertical grid index.
-+ Wave-vortex sorting matrix
-  + inverse components ($$S^{-1}$$)
-    + [`A0N`](/classes/transforms/wvtransformhydrostatic/a0n.html) matrix component that multiplies $$\tilde{\eta}$$ to compute $$A_0$$.
-    + [`A0U`](/classes/transforms/wvtransformhydrostatic/a0u.html) matrix component that multiplies $$\tilde{u}$$ to compute $$A_0$$.
-    + [`A0V`](/classes/transforms/wvtransformhydrostatic/a0v.html) matrix component that multiplies $$\tilde{v}$$ to compute $$A_0$$.
-  + components of $$S$$
-    + [`NA0`](/classes/transforms/wvtransformhydrostatic/na0.html) matrix component that multiplies $$A_0$$ to compute $$\tilde{\eta}$$.
-    + [`NAm`](/classes/transforms/wvtransformhydrostatic/nam.html)
-    + [`NAp`](/classes/transforms/wvtransformhydrostatic/nap.html)
-    + [`UA0`](/classes/transforms/wvtransformhydrostatic/ua0.html) matrix component that multiplies $$A_0$$ to compute $$\tilde{u}$$.
-    + [`UAm`](/classes/transforms/wvtransformhydrostatic/uam.html)
-    + [`UAp`](/classes/transforms/wvtransformhydrostatic/uap.html)
-    + [`VA0`](/classes/transforms/wvtransformhydrostatic/va0.html) matrix component that multiplies $$A_0$$ to compute $$\tilde{v}$$.
-    + [`VAm`](/classes/transforms/wvtransformhydrostatic/vam.html)
-    + [`VAp`](/classes/transforms/wvtransformhydrostatic/vap.html)
-    + [`WAm`](/classes/transforms/wvtransformhydrostatic/wam.html)
-    + [`WAp`](/classes/transforms/wvtransformhydrostatic/wap.html)
-+ Wave-vortex coefficients
-  + at time $$t$$
-    + [`A0t`](/classes/transforms/wvtransformhydrostatic/a0t.html) geostrophic coefficients time t
-    + [`Amt`](/classes/transforms/wvtransformhydrostatic/amt.html) negative wave coefficients at reference time t
-    + [`Apt`](/classes/transforms/wvtransformhydrostatic/apt.html) positive wave coefficients at reference time t
++ Developer
+  + [`propertyAnnotationsForGeometry`](/classes/transforms/wvtransformhydrostatic/propertyannotationsforgeometry.html) return array of CAPropertyAnnotations initialized by default
 + Domain Attributes
   + [`f`](/classes/transforms/wvtransformhydrostatic/f.html) Coriolis parameter
   + [`g`](/classes/transforms/wvtransformhydrostatic/g.html) gravity of Earth
@@ -216,8 +206,6 @@ wvt = WVTransformHydrostatic([100e3, 100e3, 4000],[64, 64, 65], N2=N2,latitude=3
   + [`maskForNyquistModes`](/classes/transforms/wvtransformhydrostatic/maskfornyquistmodes.html) returns a mask with locations of modes that are not fully resolved
 + Utilities
   + [`placeParticlesOnIsopycnal`](/classes/transforms/wvtransformhydrostatic/placeparticlesonisopycnal.html) places Lagrangian particles along a specified isopycnal
-+ Developer
-  + [`propertyAnnotationsForGeometry`](/classes/transforms/wvtransformhydrostatic/propertyannotationsforgeometry.html) return array of CAPropertyAnnotations initialized by default
 + State Variables
   + [`psi`](/classes/transforms/wvtransformhydrostatic/psi.html) geostrophic streamfunction
   + [`ssu`](/classes/transforms/wvtransformhydrostatic/ssu.html) x-component of the fluid velocity at the surface
@@ -329,6 +317,29 @@ wvt = WVTransformHydrostatic([100e3, 100e3, 4000],[64, 64, 65], N2=N2,latitude=3
   + [`zeta_x`](/classes/transforms/wvtransformhydrostatic/zeta_x.html) x-component component of relative vorticity
   + [`zeta_y`](/classes/transforms/wvtransformhydrostatic/zeta_y.html) y-component component of relative vorticity
   + [`zeta_z`](/classes/transforms/wvtransformhydrostatic/zeta_z.html) vertical component of relative vorticity
+
+
+## Developer Topics
+These items document internal implementation details and are not part of the primary public API.
++ Wave-vortex coefficients
++ Stratification
++ Developer
+  + Projection coefficients
+    + [`A0N`](/classes/transforms/wvtransformhydrostatic/a0n.html) matrix component that multiplies $$\tilde{\eta}$$ to compute $$A_0$$.
+    + [`A0U`](/classes/transforms/wvtransformhydrostatic/a0u.html) matrix component that multiplies $$\tilde{u}$$ to compute $$A_0$$.
+    + [`A0V`](/classes/transforms/wvtransformhydrostatic/a0v.html) matrix component that multiplies $$\tilde{v}$$ to compute $$A_0$$.
+  + Reconstruction coefficients
+    + [`NA0`](/classes/transforms/wvtransformhydrostatic/na0.html) matrix component that multiplies $$A_0$$ to compute $$\tilde{\eta}$$.
+    + [`NAm`](/classes/transforms/wvtransformhydrostatic/nam.html)
+    + [`NAp`](/classes/transforms/wvtransformhydrostatic/nap.html)
+    + [`UA0`](/classes/transforms/wvtransformhydrostatic/ua0.html) matrix component that multiplies $$A_0$$ to compute $$\tilde{u}$$.
+    + [`UAm`](/classes/transforms/wvtransformhydrostatic/uam.html)
+    + [`UAp`](/classes/transforms/wvtransformhydrostatic/uap.html)
+    + [`VA0`](/classes/transforms/wvtransformhydrostatic/va0.html) matrix component that multiplies $$A_0$$ to compute $$\tilde{v}$$.
+    + [`VAm`](/classes/transforms/wvtransformhydrostatic/vam.html)
+    + [`VAp`](/classes/transforms/wvtransformhydrostatic/vap.html)
+    + [`WAm`](/classes/transforms/wvtransformhydrostatic/wam.html)
+    + [`WAp`](/classes/transforms/wvtransformhydrostatic/wap.html)
 
 
 ---

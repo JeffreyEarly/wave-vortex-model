@@ -9,7 +9,9 @@ mathjax: true
 
 #  hasForcingWithName
 
-
+Test whether forcing objects are registered by name.
 
 
 ---
+
+## Discussion

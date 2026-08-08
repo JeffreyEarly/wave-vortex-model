@@ -1,9 +1,10 @@
 function varargout = variableWithName(self,variableNames)
 % Compute or retrieve one or more registered transform variables.
 %
-% - Topic: State Variables
+% - Topic: State variables
 % - Declaration: varargout = variableWithName(variableNames)
-% - Parameter variableNames: registered variable names
+% - Parameter variableNames: names of registered state variables
+% - Returns varargout: state-variable arrays in the requested order
 arguments
     self WVTransform {mustBeNonempty}
 end

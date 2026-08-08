@@ -23,5 +23,5 @@ Real valued property with dimensions $$(x,y)$$ and units of $$m$$.
 
 ## Discussion
 
-  The field is stationary and periodic on the transform's
-  horizontal grid.
+The field is stationary and periodic on the transform's
+horizontal grid.

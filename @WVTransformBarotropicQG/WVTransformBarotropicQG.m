@@ -1,18 +1,31 @@
 classdef WVTransformBarotropicQG < WVGeometryDoublyPeriodicBarotropic & WVTransform & WVGeostrophicMethods
-    % A transform for modeling single-layer quasigeostrophic flow
+    % Represent two-dimensional equivalent-barotropic quasigeostrophic flow.
     %
-    % This is a two-dimensional, single-layer which may be interpreted as
-    % the sea-surface height. The 'h' parameter is the equivalent depth,
-    % and 0.80 m is a typical value for the first baroclinic mode.
+    % This is a two-dimensional, single-layer transform. The `h` parameter
+    % is the equivalent depth; `0.80` m is a representative first-baroclinic
+    % value. The transform stores its state in `A0` and has no wave `Ap` or
+    % `Am` content.
     %
     % ```matlab
     % Lxy = 50e3;
     % Nxy = 256;
     % latitude = 25;
-    % wvt = WVTransformSingleMode([Lxy, Lxy], [Nxy, Nxy], h=0.8, latitude=latitude);
+    % wvt = WVTransformBarotropicQG([Lxy,Lxy],[Nxy,Nxy],h=0.8,latitude=latitude);
     % ```
     %
+    % The Stable quasigeostrophic state is stored in
+    % [`A0`](/classes/transforms/wvtransform/a0.html), with current-time view
+    % `A0t`. This transform has no active `Ap`, `Am`, `Apt`, or `Amt` content.
+    %
     % - Topic: Initialization
+    % - Topic: Wave-vortex coefficients
+    % - Topic: Wave-vortex coefficients — At current time
+    % - Topic: Primary flow components
+    % - Topic: Initial conditions
+    % - Topic: Energetics of flow components
+    % - Topic: Operations
+    % - Topic: Developer — Projection coefficients
+    % - Topic: Developer — Reconstruction coefficients
     %
     % - Declaration: classdef WVTransformBarotropicQG < [WVTransform](/classes/transforms/wvtransform/)
     properties (Dependent)
@@ -28,20 +41,22 @@ classdef WVTransformBarotropicQG < WVGeometryDoublyPeriodicBarotropic & WVTransf
 
     methods
         function self = WVTransformBarotropicQG(Lxy, Nxy, options)
-            % create geometry for 2D barotropic flow
+            % Create an equivalent-barotropic quasigeostrophic transform.
             %
             % ```matlab
             % Lxy = 50e3;
             % Nxy = 256;
-            % wvt = Cartesian2DBarotropic([Lxy, Lxy], [Nxy, Nxy]);
+            % wvt = WVTransformBarotropicQG([Lxy,Lxy],[Nxy,Nxy],h=0.8,latitude=30);
             % ```
             %
             % - Topic: Initialization
-            % - Declaration: wvt = Cartesian2DBarotropic(Lxyz, Nxyz, options)
+            % - Declaration: wvt = WVTransformBarotropicQG(Lxy,Nxy,options)
             % - Parameter Lxy: length of the domain (in meters) in the two coordinate directions, e.g. [Lx Ly]
             % - Parameter Nxy: number of grid points in the two coordinate directions, e.g. [Nx Ny]
             % - Parameter shouldAntialias: (optional) whether or not to de-alias for quadratic multiplications
-            % - Returns wvt: a new Cartesian2DBarotropic instance
+            % - Parameter options.h: equivalent depth in meters; default `0.8`
+            % - Parameter options.latitude: latitude in the supported domain; default `33`
+            % - Returns wvt: new `WVTransformBarotropicQG` instance
             arguments
                 Lxy (1,2) double {mustBePositive}
                 Nxy (1,2) double {mustBePositive}

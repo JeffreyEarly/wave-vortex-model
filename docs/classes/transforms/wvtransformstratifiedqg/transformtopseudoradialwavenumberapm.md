@@ -26,4 +26,4 @@ transforms in the from (j,kRadial) to kPseudoRadial
 
 ## Discussion
 
-  Sums all the variance/energy in radial bins `kPseudoRadial`.
+Sums all the variance/energy in radial bins `kPseudoRadial`.

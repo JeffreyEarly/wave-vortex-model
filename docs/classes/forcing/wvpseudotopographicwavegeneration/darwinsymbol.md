@@ -20,6 +20,6 @@ Darwin symbol used to select the tidal frequency.
 
 ## Discussion
 
-  This is empty when `frequency` was supplied directly. On restart,
-  the persisted symbol is descriptive metadata and the persisted
-  frequency remains authoritative.
+This is empty when `frequency` was supplied directly. On restart,
+the persisted symbol is descriptive metadata and the persisted
+frequency remains authoritative.

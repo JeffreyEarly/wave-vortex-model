@@ -9,7 +9,9 @@ mathjax: true
 
 #  variableNames
 
-
+Return the names of all registered state variables.
 
 
 ---
+
+## Discussion

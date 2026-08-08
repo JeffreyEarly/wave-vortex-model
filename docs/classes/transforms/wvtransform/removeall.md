@@ -16,4 +16,4 @@ removes all energy from the model
 
 ## Discussion
 
-  Simply sets Ap, Am, and A0 to zero.
+Simply sets Ap, Am, and A0 to zero.

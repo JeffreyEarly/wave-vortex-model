@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- Corrected the Stable `WVTransform` and `WVModel` API reference, promoted the stored and time-evaluated wave-vortex coefficients, and classified low-level projection and reconstruction arrays as Developer reference.
 - Made documentation generation clean, deterministic, transactional, and reviewable with an exact ClassDocumentation 1.3.0 authoring dependency, canonical build/check tasks, generated hierarchy validation, and case-sensitive internal-route checks.
 - Quarantined disconnected legacy implementations, corrected Internal adaptive-integrator and geometry spelling, retained a narrow 4.x file fallback for `shouldExludeConjugates`, and repaired the retained Internal barotropic FINUFFT path.
 - Stabilized model-output scheduling and NetCDF restart across multiple files and groups; preserved linear dynamics and shared observing systems; and made initialization, writing, restoration, and handle ownership exception-safe.

@@ -9,7 +9,9 @@ mathjax: true
 
 #  waveVortexTransformWithResolution
 
-
+Construct the same transform family at a requested resolution.
 
 
 ---
+
+## Discussion

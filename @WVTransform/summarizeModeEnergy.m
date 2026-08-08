@@ -6,7 +6,7 @@ function summarizeModeEnergy(self,options)
     %
     % - Topic: Energetics
     % - Declaration: summarizeModeEnergy(options)
-    % - Parameter n: (optional) number of modes to list
+    % - Parameter options.n: number of modes to list; default `10`
     arguments
         self WVTransform {mustBeNonempty}
     end

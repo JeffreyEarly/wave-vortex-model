@@ -27,19 +27,19 @@ add randomized flow to the existing state
 
 ## Discussion
 
-  Adds random amplitudes at all available modes. Optionally, you can
-  specify which components of the flow should get initialized. For example,
+Adds random amplitudes at all available modes. Optionally, you can
+specify which components of the flow should get initialized. For example,
 
-  ```matlab
-    wvt.addRandomFlow();
-  ```
+```matlab
+  wvt.addRandomFlow();
+```
 
-  will add noise at all modes, while
+will add noise at all modes, while
 
-  ```matlab
-    wvt.addRandomFlow('geostrophic','mda');
-  ```
+```matlab
+  wvt.addRandomFlow('geostrophic','mda');
+```
 
-  will add random flow at only thegeostrophic and mean density anomaly flow
-  components, while the wave and inertial oscillations components will
-  remain untouched
+will add random flow at only thegeostrophic and mean density anomaly flow
+components, while the wave and inertial oscillations components will
+remain untouched

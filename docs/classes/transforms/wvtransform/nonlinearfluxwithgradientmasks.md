@@ -31,8 +31,8 @@ returns the flux of each coefficient as determined by the nonlinear flux operati
 
 ## Discussion
 
-  The masks are applied to the coefficients Ap,Am,A0 before computing the
-  nonlinear flux, $$\vec{u} \cdot \nabla \vec{u}$$. This function offers
-  more fine-grained control than -nonlinearFluxWithMask.
+The masks are applied to the coefficients Ap,Am,A0 before computing the
+nonlinear flux, $$\vec{u} \cdot \nabla \vec{u}$$. This function offers
+more fine-grained control than -nonlinearFluxWithMask.
 
-  The nonlinear flux used is the unforced, invicid equations.
+The nonlinear flux used is the unforced, invicid equations.

@@ -9,7 +9,9 @@ mathjax: true
 
 #  summarizeFlowComponents
 
-
+Print a table of registered primary and diagnostic components.
 
 
 ---
+
+## Discussion

@@ -27,6 +27,6 @@ initialize a WVModelOutputGroup instance from NetCDF file
 
 ## Discussion
 
-  Subclasses to should override this method to enable model
-  restarts. This method works in conjunction with -writeToFile
-  to provide restart capability.
+Subclasses to should override this method to enable model
+restarts. This method works in conjunction with -writeToFile
+to provide restart capability.

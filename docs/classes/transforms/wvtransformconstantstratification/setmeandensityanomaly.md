@@ -9,7 +9,7 @@ mathjax: true
 
 #  setMeanDensityAnomaly
 
-set inertial motions
+Set the mean-density-anomaly component.
 
 
 ---
@@ -23,19 +23,16 @@ set inertial motions
 
 ## Discussion
 
-  Overwrites existing inertial motions with the new values.
-  Other components of the flow will remain unaffected.
+Overwrite existing mean-density-anomaly coefficients with the
+projection of `eta` while preserving other flow components.
+Other components of the flow will remain unaffected.
 
-  ```matlab
-  U_io = 0.2;
-  Ld = wvt.Lz/5;
-  u_NIO = @(z) U_io*exp((z/Ld));
-  v_NIO = @(z) zeros(size(z));
+```matlab
+eta = @(z) 10*sin(pi*(z+wvt.Lz)/wvt.Lz);
+wvt.setMeanDensityAnomaly(eta);
+```
 
-  wvt.setInertialMotions(u_NIO,v_NIO);
-  ```
-
-  It is important to note that because the WVTransform
-  de-aliases by default, you will not likely get exactly the
-  same function out that you put in. The high-modes are
-  removed.
+It is important to note that because the WVTransform
+de-aliases by default, you will not likely get exactly the
+same function out that you put in. The high-modes are
+removed.

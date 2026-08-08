@@ -19,9 +19,9 @@ List the most energetic modes
  summarizeModeEnergy(options)
 ```
 ## Parameters
-+ `n`  (optional) number of modes to list
++ `options.n`  number of modes to list; default `10`
 
 ## Discussion
 
-  At the moment the +/- waves are simply added together for each mode.
-  It would be better if they were separate.
+At the moment the +/- waves are simply added together for each mode.
+It would be better if they were separate.

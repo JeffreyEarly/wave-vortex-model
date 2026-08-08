@@ -28,13 +28,13 @@ a mask indicate the components that are redundant conjugates
 
 ## Discussion
 
-  Returns a 'mask' (matrices with 1s or 0s) indicating where
-  the non-primary Hermitian conjugates are located in the DFT
-  matrix.
+Returns a 'mask' (matrices with 1s or 0s) indicating where
+the non-primary Hermitian conjugates are located in the DFT
+matrix.
 
-  Basic usage,
-  ```matlab
-  NyquistMask = wvm.maskForConjugateFourierCoefficients(8,8,conjugateDimension=2);
-  ```
-  will return a mask that contains 1 at the locations of the
-  modes assumed conjugate.
+Basic usage,
+```matlab
+NyquistMask = wvm.maskForConjugateFourierCoefficients(8,8,conjugateDimension=2);
+```
+will return a mask that contains 1 at the locations of the
+modes assumed conjugate.

@@ -24,10 +24,10 @@ Add variables to list of variables to be written to the NetCDF variable during t
 ## Discussion
 
 
-  Pass strings of WVTransform state variables of the
-  same name. This must be called before using any of the
-  integrate methods.
+Pass strings of WVTransform state variables of the
+same name. This must be called before using any of the
+integrate methods.
 
-  ```matlab
-  model.addNetCDFOutputVariables('A0','u','v');
-  ```
+```matlab
+model.addNetCDFOutputVariables('A0','u','v');
+```

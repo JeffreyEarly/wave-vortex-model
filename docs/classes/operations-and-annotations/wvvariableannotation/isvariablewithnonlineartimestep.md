@@ -19,5 +19,5 @@ boolean indicating whether the variable changes value with a non-linear time ste
 
 ## Discussion
 
-  This information is used when caching variables and when writing
-  to NetCDF file.
+This information is used when caching variables and when writing
+to NetCDF file.

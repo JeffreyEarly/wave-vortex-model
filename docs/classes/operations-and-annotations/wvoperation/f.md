@@ -16,5 +16,5 @@ function handle to be called when computing the operation
 
 ## Discussion
 
-  If you override the compute method, there no need to set or use
-  this function handle.
+If you override the compute method, there no need to set or use
+this function handle.

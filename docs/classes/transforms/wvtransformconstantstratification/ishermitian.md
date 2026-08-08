@@ -27,12 +27,12 @@ Check if the matrix is Hermitian. Report errors.
 
 ## Discussion
 
-  This algorithm checks whether any 2 or 3 dimensional matrix
-  is Hermitian in the first two dimensions, following the data
-  structure of a 2D DFT algorithm. The third dimension can be
-  any length, including length 1.
+This algorithm checks whether any 2 or 3 dimensional matrix
+is Hermitian in the first two dimensions, following the data
+structure of a 2D DFT algorithm. The third dimension can be
+any length, including length 1.
 
-  Errors can be reported indicating which entries are not
-  conjugate.
+Errors can be reported indicating which entries are not
+conjugate.
 
-  This algorithm is not fast.
+This algorithm is not fast.

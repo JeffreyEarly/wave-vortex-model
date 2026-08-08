@@ -1,7 +1,7 @@
 function [Ap,Am,A0] = transformUVWEtaToWaveVortex(self,U,V,W,N)
 % transform momentum variables $$(u,v,w,\eta)$$ to wave-vortex coefficients $$(A_+,A_-,A_0)$$.
 %
-% This function tuned for constant stratification.
+% This implementation uses the constant-stratification projection operators.
 %
 % - Topic: Operations — Transformations
 % - Declaration: [Ap,Am,A0] = transformUVWEtaToWaveVortex(U,V,N)

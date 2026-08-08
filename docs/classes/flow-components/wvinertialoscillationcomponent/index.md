@@ -42,7 +42,7 @@ Inertial oscillation solution group
 + Quadratic quantities
   + [`totalEnergyFactorForCoefficientMatrix`](/classes/flow-components/wvinertialoscillationcomponent/totalenergyfactorforcoefficientmatrix.html) returns the total energy multiplier for the coefficient matrix.
 + Other
-  + [`WVInertialOscillationComponent`](/classes/flow-components/wvinertialoscillationcomponent/wvinertialoscillationcomponent.html) Inertial oscillation solution group
+  + [`WVInertialOscillationComponent`](/classes/flow-components/wvinertialoscillationcomponent/wvinertialoscillationcomponent.html)
   + [`degreesOfFreedomPerMode`](/classes/flow-components/wvinertialoscillationcomponent/degreesoffreedompermode.html)
   + [`inertialOscillationSpatialTransformCoefficients`](/classes/flow-components/wvinertialoscillationcomponent/inertialoscillationspatialtransformcoefficients.html)
 

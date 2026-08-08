@@ -9,11 +9,14 @@ mathjax: true
 
 #  WVTransform
 
-initialize a WVTransform instance
+Initialize the internal WVTransform state for a concrete subclass.
+
+> Developer documentation: this item describes internal implementation details.
 
 
 ---
 
 ## Discussion
 
-  This must be called from a subclass.
+Concrete transform constructors call this method; users create
+one of the supported subclasses instead.

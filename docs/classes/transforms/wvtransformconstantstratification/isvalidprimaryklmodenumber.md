@@ -27,9 +27,9 @@ return a boolean indicating whether (k,l) is a valid primary (non-conjugate) WV 
 
 ## Discussion
 
-  returns a boolean indicating whether (k,l) is a valid
-  *primary* WV mode number. Even if a mode number is available
-  in the DFT matrix, it does not mean it is a valid WV mode
-  number, e.g., it may be removed due to aliasing.
+returns a boolean indicating whether (k,l) is a valid
+*primary* WV mode number. Even if a mode number is available
+in the DFT matrix, it does not mean it is a valid WV mode
+number, e.g., it may be removed due to aliasing.
 
-  The result is affected by the chosen conjugateDimension.
+The result is affected by the chosen conjugateDimension.

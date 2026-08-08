@@ -9,13 +9,7 @@ mathjax: true
 
 #  WVMeanDensityAnomalyComponent
 
-Inertial oscillation solution group
+
 
 
 ---
-
-## Declaration
-```matlab
- classdef WVMeanDensityAnomalyComponent < WVPrimaryFlowComponent
-```
-## Discussion

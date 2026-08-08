@@ -27,7 +27,7 @@ Return the bottom-zero first antiderivative of a G-representation.
 
 ## Discussion
 
-  A G-to-F antiderivative is defined up to an additive constant. This
-  method selects the representative that vanishes at the bottom boundary.
-  `w` may use the gridded layout `[Nx Ny Nz]` or a vertical-first matrix
-  `[Nz N]`; the returned array preserves that layout.
+A G-to-F antiderivative is defined up to an additive constant. This
+method selects the representative that vanishes at the bottom boundary.
+`w` may use the gridded layout `[Nx Ny Nz]` or a vertical-first matrix
+`[Nz N]`; the returned array preserves that layout.

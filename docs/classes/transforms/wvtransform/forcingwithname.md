@@ -9,7 +9,9 @@ mathjax: true
 
 #  forcingWithName
 
-
+Return registered forcing objects by name.
 
 
 ---
+
+## Discussion

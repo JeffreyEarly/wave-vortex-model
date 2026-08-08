@@ -23,6 +23,6 @@ Return the forcing properties required for restart.
 
 ## Discussion
 
-  Derived gradients and modal responses are intentionally not
-  persisted; construction against the restored transform
-  rebuilds them.
+Derived gradients and modal responses are intentionally not
+persisted; construction against the restored transform
+rebuilds them.

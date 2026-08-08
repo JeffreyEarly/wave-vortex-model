@@ -23,4 +23,4 @@ Computes the minimum damping time scale
 
 ## Discussion
 
-        - Returns: dampingTimeScale
+- Returns: dampingTimeScale

@@ -19,5 +19,5 @@ Real valued property with no dimensions and units of $$s$$.
 
 ## Discussion
 
-  This optional properties determines when the output group will
-  become active. By default it is set to `-Inf`.
+This optional properties determines when the output group will
+become active. By default it is set to `-Inf`.

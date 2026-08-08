@@ -16,5 +16,5 @@ notification that the NetCDF file will close
 
 ## Discussion
 
-  This gives the output group an opportunity to display some
-  relevant data or do other necessary clean up.
+This gives the output group an opportunity to display some
+relevant data or do other necessary clean up.

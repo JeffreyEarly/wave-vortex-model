@@ -11,7 +11,7 @@ nav_order: 2
 
 #  WVTransformBoussinesq
 
-A class for disentangling nonhydrostatic waves and vortices in variable stratification
+Decompose nonhydrostatic variable-stratification flow into wave and geostrophic components.
 
 
 ---
@@ -23,15 +23,20 @@ A class for disentangling nonhydrostatic waves and vortices in variable stratifi
 ## Overview
 
 To initialize an instance of the WVTransformBoussinesq class you
-must specific the domain size, the number of grid points and *either*
+must specify the domain size, the number of grid points, and either
 the density profile or the stratification profile.
 
 ```matlab
 N0 = 3*2*pi/3600;
 L_gm = 1300;
 N2 = @(z) N0*N0*exp(2*z/L_gm);
-wvt = WVTransformBoussinesq([100e3, 100e3, 4000],[64, 64, 65], N2=N2,latitude=30);
+wvt = WVTransformBoussinesq([100e3,100e3,4000],[64,64,65],N2Function=N2,latitude=30);
 ```
+
+The Stable transform state is stored in [`Ap`](/classes/transforms/wvtransform/ap.html),
+[`Am`](/classes/transforms/wvtransform/am.html), and
+[`A0`](/classes/transforms/wvtransform/a0.html). Their current-time
+views are `Apt`, `Amt`, and `A0t`.
 
 
 
@@ -39,7 +44,12 @@ wvt = WVTransformBoussinesq([100e3, 100e3, 4000],[64, 64, 65], N2=N2,latitude=30
 
 ## Topics
 + Initialization
-  + [`WVTransformBoussinesq`](/classes/transforms/wvtransformboussinesq/wvtransformboussinesq.html) create a wave-vortex transform for variable stratification
+  + [`WVTransformBoussinesq`](/classes/transforms/wvtransformboussinesq/wvtransformboussinesq.html) Create a nonhydrostatic wave-vortex transform for variable stratification.
++ Wave-vortex coefficients
+  + At current time
+    + [`A0t`](/classes/transforms/wvtransformboussinesq/a0t.html) zero-frequency coefficients at current time t
+    + [`Amt`](/classes/transforms/wvtransformboussinesq/amt.html) negative-frequency coefficients at current time t
+    + [`Apt`](/classes/transforms/wvtransformboussinesq/apt.html) positive-frequency coefficients at current time t
 + Primary flow components
   + [`geostrophicComponent`](/classes/transforms/wvtransformboussinesq/geostrophiccomponent.html) returns the geostrophic flow component
   + [`waveComponent`](/classes/transforms/wvtransformboussinesq/wavecomponent.html) returns the internal gravity wave flow component
@@ -73,10 +83,10 @@ wvt = WVTransformBoussinesq([100e3, 100e3, 4000],[64, 64, 65], N2=N2,latitude=30
     + [`removeAllInertialMotions`](/classes/transforms/wvtransformboussinesq/removeallinertialmotions.html) remove all inertial motions
     + [`setInertialMotions`](/classes/transforms/wvtransformboussinesq/setinertialmotions.html) set inertial motions
   + Mean density anomaly
-    + [`addMeanDensityAnomaly`](/classes/transforms/wvtransformboussinesq/addmeandensityanomaly.html) add inertial motions to existing inertial motions
-    + [`initWithMeanDensityAnomaly`](/classes/transforms/wvtransformboussinesq/initwithmeandensityanomaly.html) initialize with inertial motions
+    + [`addMeanDensityAnomaly`](/classes/transforms/wvtransformboussinesq/addmeandensityanomaly.html) Add a mean-density anomaly to the existing fluid state.
+    + [`initWithMeanDensityAnomaly`](/classes/transforms/wvtransformboussinesq/initwithmeandensityanomaly.html) Initialize the fluid state with a mean-density anomaly.
     + [`removeAllMeanDensityAnomaly`](/classes/transforms/wvtransformboussinesq/removeallmeandensityanomaly.html) remove all mean density anomalies
-    + [`setMeanDensityAnomaly`](/classes/transforms/wvtransformboussinesq/setmeandensityanomaly.html) set inertial motions
+    + [`setMeanDensityAnomaly`](/classes/transforms/wvtransformboussinesq/setmeandensityanomaly.html) Set the mean-density-anomaly component.
 + Operations
   + Transformations
     + [`FwInvMatrix`](/classes/transforms/wvtransformboussinesq/fwinvmatrix.html) transformation matrix $$F_w^{-1}$$
@@ -104,28 +114,8 @@ wvt = WVTransformBoussinesq([100e3, 100e3, 4000],[64, 64, 65], N2=N2,latitude=30
     + [`transformFromSpatialDomainToDFTGrid`](/classes/transforms/wvtransformboussinesq/transformfromspatialdomaintodftgrid.html) transform from $$(x,y,z)$$ to $$(k,l,z)$$ on the DFT grid
     + [`transformToSpatialDomainFromDFTGrid`](/classes/transforms/wvtransformboussinesq/transformtospatialdomainfromdftgrid.html) transform from $$(k,l,z)$$ on the DFT grid to $$(x,y,z)$$
     + [`transformToSpatialDomainFromDFTGridAtPosition`](/classes/transforms/wvtransformboussinesq/transformtospatialdomainfromdftgridatposition.html) transform from $$(k,l)$$ on the DFT grid to $$(x,y)$$ at any position
-+ Wave-vortex sorting matrix
-  + inverse components ($$S^{-1}$$)
-    + [`A0N`](/classes/transforms/wvtransformboussinesq/a0n.html) matrix component that multiplies $$\tilde{\eta}$$ to compute $$A_0$$.
-    + [`A0U`](/classes/transforms/wvtransformboussinesq/a0u.html) matrix component that multiplies $$\tilde{u}$$ to compute $$A_0$$.
-    + [`A0V`](/classes/transforms/wvtransformboussinesq/a0v.html) matrix component that multiplies $$\tilde{v}$$ to compute $$A_0$$.
-  + components of $$S$$
-    + [`NA0`](/classes/transforms/wvtransformboussinesq/na0.html) matrix component that multiplies $$A_0$$ to compute $$\tilde{\eta}$$.
-    + [`NAm`](/classes/transforms/wvtransformboussinesq/nam.html)
-    + [`NAp`](/classes/transforms/wvtransformboussinesq/nap.html)
-    + [`UA0`](/classes/transforms/wvtransformboussinesq/ua0.html) matrix component that multiplies $$A_0$$ to compute $$\tilde{u}$$.
-    + [`UAm`](/classes/transforms/wvtransformboussinesq/uam.html)
-    + [`UAp`](/classes/transforms/wvtransformboussinesq/uap.html)
-    + [`VA0`](/classes/transforms/wvtransformboussinesq/va0.html) matrix component that multiplies $$A_0$$ to compute $$\tilde{v}$$.
-    + [`VAm`](/classes/transforms/wvtransformboussinesq/vam.html)
-    + [`VAp`](/classes/transforms/wvtransformboussinesq/vap.html)
-    + [`WAm`](/classes/transforms/wvtransformboussinesq/wam.html)
-    + [`WAp`](/classes/transforms/wvtransformboussinesq/wap.html)
-+ Wave-vortex coefficients
-  + at time $$t$$
-    + [`A0t`](/classes/transforms/wvtransformboussinesq/a0t.html) geostrophic coefficients time t
-    + [`Amt`](/classes/transforms/wvtransformboussinesq/amt.html) negative wave coefficients at reference time t
-    + [`Apt`](/classes/transforms/wvtransformboussinesq/apt.html) positive wave coefficients at reference time t
++ Developer
+  + [`propertyAnnotationsForGeometry`](/classes/transforms/wvtransformboussinesq/propertyannotationsforgeometry.html) return array of CAPropertyAnnotations initialized by default
 + Domain Attributes
   + [`f`](/classes/transforms/wvtransformboussinesq/f.html) Coriolis parameter
   + [`g`](/classes/transforms/wvtransformboussinesq/g.html) gravity of Earth
@@ -222,8 +212,6 @@ wvt = WVTransformBoussinesq([100e3, 100e3, 4000],[64, 64, 65], N2=N2,latitude=30
   + [`maskForNyquistModes`](/classes/transforms/wvtransformboussinesq/maskfornyquistmodes.html) returns a mask with locations of modes that are not fully resolved
 + Utilities
   + [`placeParticlesOnIsopycnal`](/classes/transforms/wvtransformboussinesq/placeparticlesonisopycnal.html) places Lagrangian particles along a specified isopycnal
-+ Developer
-  + [`propertyAnnotationsForGeometry`](/classes/transforms/wvtransformboussinesq/propertyannotationsforgeometry.html) return array of CAPropertyAnnotations initialized by default
 + State Variables
   + [`psi`](/classes/transforms/wvtransformboussinesq/psi.html) geostrophic streamfunction
   + [`ssu`](/classes/transforms/wvtransformboussinesq/ssu.html) x-component of the fluid velocity at the surface
@@ -352,6 +340,29 @@ wvt = WVTransformBoussinesq([100e3, 100e3, 4000],[64, 64, 65], N2=N2,latitude=30
   + [`zeta_x`](/classes/transforms/wvtransformboussinesq/zeta_x.html) x-component component of relative vorticity
   + [`zeta_y`](/classes/transforms/wvtransformboussinesq/zeta_y.html) y-component component of relative vorticity
   + [`zeta_z`](/classes/transforms/wvtransformboussinesq/zeta_z.html) vertical component of relative vorticity
+
+
+## Developer Topics
+These items document internal implementation details and are not part of the primary public API.
++ Wave-vortex coefficients
++ Stratification
++ Developer
+  + Projection coefficients
+    + [`A0N`](/classes/transforms/wvtransformboussinesq/a0n.html) matrix component that multiplies $$\tilde{\eta}$$ to compute $$A_0$$.
+    + [`A0U`](/classes/transforms/wvtransformboussinesq/a0u.html) matrix component that multiplies $$\tilde{u}$$ to compute $$A_0$$.
+    + [`A0V`](/classes/transforms/wvtransformboussinesq/a0v.html) matrix component that multiplies $$\tilde{v}$$ to compute $$A_0$$.
+  + Reconstruction coefficients
+    + [`NA0`](/classes/transforms/wvtransformboussinesq/na0.html) matrix component that multiplies $$A_0$$ to compute $$\tilde{\eta}$$.
+    + [`NAm`](/classes/transforms/wvtransformboussinesq/nam.html)
+    + [`NAp`](/classes/transforms/wvtransformboussinesq/nap.html)
+    + [`UA0`](/classes/transforms/wvtransformboussinesq/ua0.html) matrix component that multiplies $$A_0$$ to compute $$\tilde{u}$$.
+    + [`UAm`](/classes/transforms/wvtransformboussinesq/uam.html)
+    + [`UAp`](/classes/transforms/wvtransformboussinesq/uap.html)
+    + [`VA0`](/classes/transforms/wvtransformboussinesq/va0.html) matrix component that multiplies $$A_0$$ to compute $$\tilde{v}$$.
+    + [`VAm`](/classes/transforms/wvtransformboussinesq/vam.html)
+    + [`VAp`](/classes/transforms/wvtransformboussinesq/vap.html)
+    + [`WAm`](/classes/transforms/wvtransformboussinesq/wam.html)
+    + [`WAp`](/classes/transforms/wvtransformboussinesq/wap.html)
 
 
 ---

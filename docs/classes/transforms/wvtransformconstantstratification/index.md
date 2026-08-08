@@ -11,7 +11,7 @@ nav_order: 4
 
 #  WVTransformConstantStratification
 
-A class for disentangling waves and vortices in constant stratification
+Decompose constant-stratification flow into wave and geostrophic components.
 
 
 ---
@@ -28,8 +28,14 @@ and the constant buoyancy frequency.
 
 ```matlab
 N0 = 3*2*pi/3600;
-wvt = WVTransformConstantStratification([100e3, 100e3, 4000],[64, 64, 65],N0=N0,latitude=30);
+wvt = WVTransformConstantStratification([100e3,100e3,4000],[64,64,65],N0=N0,latitude=30);
+wvtHydrostatic = WVTransformConstantStratification([100e3,100e3,4000],[64,64,65],N0=N0,latitude=30,isHydrostatic=true);
 ```
+
+The Stable transform state is stored in [`Ap`](/classes/transforms/wvtransform/ap.html),
+[`Am`](/classes/transforms/wvtransform/am.html), and
+[`A0`](/classes/transforms/wvtransform/a0.html). Their current-time
+views are `Apt`, `Amt`, and `A0t`.
 
 
 
@@ -37,7 +43,12 @@ wvt = WVTransformConstantStratification([100e3, 100e3, 4000],[64, 64, 65],N0=N0,
 
 ## Topics
 + Initialization
-  + [`WVTransformConstantStratification`](/classes/transforms/wvtransformconstantstratification/wvtransformconstantstratification.html) create a wave-vortex transform for constant stratification
+  + [`WVTransformConstantStratification`](/classes/transforms/wvtransformconstantstratification/wvtransformconstantstratification.html) Create a wave-vortex transform for constant stratification.
++ Wave-vortex coefficients
+  + At current time
+    + [`A0t`](/classes/transforms/wvtransformconstantstratification/a0t.html) zero-frequency coefficients at current time t
+    + [`Amt`](/classes/transforms/wvtransformconstantstratification/amt.html) negative-frequency coefficients at current time t
+    + [`Apt`](/classes/transforms/wvtransformconstantstratification/apt.html) positive-frequency coefficients at current time t
 + Primary flow components
   + [`geostrophicComponent`](/classes/transforms/wvtransformconstantstratification/geostrophiccomponent.html) returns the geostrophic flow component
   + [`waveComponent`](/classes/transforms/wvtransformconstantstratification/wavecomponent.html) returns the internal gravity wave flow component
@@ -71,10 +82,10 @@ wvt = WVTransformConstantStratification([100e3, 100e3, 4000],[64, 64, 65],N0=N0,
     + [`removeAllInertialMotions`](/classes/transforms/wvtransformconstantstratification/removeallinertialmotions.html) remove all inertial motions
     + [`setInertialMotions`](/classes/transforms/wvtransformconstantstratification/setinertialmotions.html) set inertial motions
   + Mean density anomaly
-    + [`addMeanDensityAnomaly`](/classes/transforms/wvtransformconstantstratification/addmeandensityanomaly.html) add inertial motions to existing inertial motions
-    + [`initWithMeanDensityAnomaly`](/classes/transforms/wvtransformconstantstratification/initwithmeandensityanomaly.html) initialize with inertial motions
+    + [`addMeanDensityAnomaly`](/classes/transforms/wvtransformconstantstratification/addmeandensityanomaly.html) Add a mean-density anomaly to the existing fluid state.
+    + [`initWithMeanDensityAnomaly`](/classes/transforms/wvtransformconstantstratification/initwithmeandensityanomaly.html) Initialize the fluid state with a mean-density anomaly.
     + [`removeAllMeanDensityAnomaly`](/classes/transforms/wvtransformconstantstratification/removeallmeandensityanomaly.html) remove all mean density anomalies
-    + [`setMeanDensityAnomaly`](/classes/transforms/wvtransformconstantstratification/setmeandensityanomaly.html) set inertial motions
+    + [`setMeanDensityAnomaly`](/classes/transforms/wvtransformconstantstratification/setmeandensityanomaly.html) Set the mean-density-anomaly component.
 + Operations
   + Transformations
     + [`FwInvMatrix`](/classes/transforms/wvtransformconstantstratification/fwinvmatrix.html) transformation matrix $$F_w^{-1}$$
@@ -98,28 +109,8 @@ wvt = WVTransformConstantStratification([100e3, 100e3, 4000],[64, 64, 65],N0=N0,
     + [`transformFromSpatialDomainToDFTGrid`](/classes/transforms/wvtransformconstantstratification/transformfromspatialdomaintodftgrid.html) transform from $$(x,y,z)$$ to $$(k,l,z)$$ on the DFT grid
     + [`transformToSpatialDomainFromDFTGrid`](/classes/transforms/wvtransformconstantstratification/transformtospatialdomainfromdftgrid.html) transform from $$(k,l,z)$$ on the DFT grid to $$(x,y,z)$$
     + [`transformToSpatialDomainFromDFTGridAtPosition`](/classes/transforms/wvtransformconstantstratification/transformtospatialdomainfromdftgridatposition.html) transform from $$(k,l)$$ on the DFT grid to $$(x,y)$$ at any position
-+ Wave-vortex sorting matrix
-  + inverse components ($$S^{-1}$$)
-    + [`A0N`](/classes/transforms/wvtransformconstantstratification/a0n.html) matrix component that multiplies $$\tilde{\eta}$$ to compute $$A_0$$.
-    + [`A0U`](/classes/transforms/wvtransformconstantstratification/a0u.html) matrix component that multiplies $$\tilde{u}$$ to compute $$A_0$$.
-    + [`A0V`](/classes/transforms/wvtransformconstantstratification/a0v.html) matrix component that multiplies $$\tilde{v}$$ to compute $$A_0$$.
-  + components of $$S$$
-    + [`NA0`](/classes/transforms/wvtransformconstantstratification/na0.html) matrix component that multiplies $$A_0$$ to compute $$\tilde{\eta}$$.
-    + [`NAm`](/classes/transforms/wvtransformconstantstratification/nam.html)
-    + [`NAp`](/classes/transforms/wvtransformconstantstratification/nap.html)
-    + [`UA0`](/classes/transforms/wvtransformconstantstratification/ua0.html) matrix component that multiplies $$A_0$$ to compute $$\tilde{u}$$.
-    + [`UAm`](/classes/transforms/wvtransformconstantstratification/uam.html)
-    + [`UAp`](/classes/transforms/wvtransformconstantstratification/uap.html)
-    + [`VA0`](/classes/transforms/wvtransformconstantstratification/va0.html) matrix component that multiplies $$A_0$$ to compute $$\tilde{v}$$.
-    + [`VAm`](/classes/transforms/wvtransformconstantstratification/vam.html)
-    + [`VAp`](/classes/transforms/wvtransformconstantstratification/vap.html)
-    + [`WAm`](/classes/transforms/wvtransformconstantstratification/wam.html)
-    + [`WAp`](/classes/transforms/wvtransformconstantstratification/wap.html)
-+ Wave-vortex coefficients
-  + at time $$t$$
-    + [`A0t`](/classes/transforms/wvtransformconstantstratification/a0t.html) geostrophic coefficients time t
-    + [`Amt`](/classes/transforms/wvtransformconstantstratification/amt.html) negative wave coefficients at reference time t
-    + [`Apt`](/classes/transforms/wvtransformconstantstratification/apt.html) positive wave coefficients at reference time t
++ Developer
+  + [`propertyAnnotationsForGeometry`](/classes/transforms/wvtransformconstantstratification/propertyannotationsforgeometry.html) return array of CAPropertyAnnotations initialized by default
 + Domain Attributes
   + [`f`](/classes/transforms/wvtransformconstantstratification/f.html) Coriolis parameter
   + [`g`](/classes/transforms/wvtransformconstantstratification/g.html) gravity of Earth
@@ -215,8 +206,6 @@ wvt = WVTransformConstantStratification([100e3, 100e3, 4000],[64, 64, 65],N0=N0,
   + [`maskForNyquistModes`](/classes/transforms/wvtransformconstantstratification/maskfornyquistmodes.html) returns a mask with locations of modes that are not fully resolved
 + Utilities
   + [`placeParticlesOnIsopycnal`](/classes/transforms/wvtransformconstantstratification/placeparticlesonisopycnal.html) places Lagrangian particles along a specified isopycnal
-+ Developer
-  + [`propertyAnnotationsForGeometry`](/classes/transforms/wvtransformconstantstratification/propertyannotationsforgeometry.html) return array of CAPropertyAnnotations initialized by default
 + State Variables
   + [`psi`](/classes/transforms/wvtransformconstantstratification/psi.html) geostrophic streamfunction
   + [`ssu`](/classes/transforms/wvtransformconstantstratification/ssu.html) x-component of the fluid velocity at the surface
@@ -334,6 +323,29 @@ wvt = WVTransformConstantStratification([100e3, 100e3, 4000],[64, 64, 65],N0=N0,
   + [`zeta_x`](/classes/transforms/wvtransformconstantstratification/zeta_x.html) x-component component of relative vorticity
   + [`zeta_y`](/classes/transforms/wvtransformconstantstratification/zeta_y.html) y-component component of relative vorticity
   + [`zeta_z`](/classes/transforms/wvtransformconstantstratification/zeta_z.html) vertical component of relative vorticity
+
+
+## Developer Topics
+These items document internal implementation details and are not part of the primary public API.
++ Wave-vortex coefficients
++ Stratification
++ Developer
+  + Projection coefficients
+    + [`A0N`](/classes/transforms/wvtransformconstantstratification/a0n.html) matrix component that multiplies $$\tilde{\eta}$$ to compute $$A_0$$.
+    + [`A0U`](/classes/transforms/wvtransformconstantstratification/a0u.html) matrix component that multiplies $$\tilde{u}$$ to compute $$A_0$$.
+    + [`A0V`](/classes/transforms/wvtransformconstantstratification/a0v.html) matrix component that multiplies $$\tilde{v}$$ to compute $$A_0$$.
+  + Reconstruction coefficients
+    + [`NA0`](/classes/transforms/wvtransformconstantstratification/na0.html) matrix component that multiplies $$A_0$$ to compute $$\tilde{\eta}$$.
+    + [`NAm`](/classes/transforms/wvtransformconstantstratification/nam.html)
+    + [`NAp`](/classes/transforms/wvtransformconstantstratification/nap.html)
+    + [`UA0`](/classes/transforms/wvtransformconstantstratification/ua0.html) matrix component that multiplies $$A_0$$ to compute $$\tilde{u}$$.
+    + [`UAm`](/classes/transforms/wvtransformconstantstratification/uam.html)
+    + [`UAp`](/classes/transforms/wvtransformconstantstratification/uap.html)
+    + [`VA0`](/classes/transforms/wvtransformconstantstratification/va0.html) matrix component that multiplies $$A_0$$ to compute $$\tilde{v}$$.
+    + [`VAm`](/classes/transforms/wvtransformconstantstratification/vam.html)
+    + [`VAp`](/classes/transforms/wvtransformconstantstratification/vap.html)
+    + [`WAm`](/classes/transforms/wvtransformconstantstratification/wam.html)
+    + [`WAp`](/classes/transforms/wvtransformconstantstratification/wap.html)
 
 
 ---

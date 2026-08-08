@@ -27,6 +27,6 @@ return mode number from a linear index into a WV matrix
 
 ## Discussion
 
-  This function will return the mode numbers (kMode,lMode)
-  given some linear index into a WV structured matrix. Scalar
-  and column-vector inputs preserve their shape and ordering.
+This function will return the mode numbers (kMode,lMode)
+given some linear index into a WV structured matrix. Scalar
+and column-vector inputs preserve their shape and ordering.

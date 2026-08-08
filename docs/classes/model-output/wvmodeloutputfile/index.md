@@ -56,7 +56,6 @@ the wave-vortex coefficients.
 
 
 
-
 ## Topics
 + Properties
   + [`didInitializeStorage`](/classes/model-output/wvmodeloutputfile/didinitializestorage.html) boolean indicating whether or not the internal structure of the NetCDF file has been created

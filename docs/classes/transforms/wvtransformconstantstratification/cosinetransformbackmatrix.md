@@ -16,5 +16,5 @@ Discrete Cosine Transform (DCT-I) matrix
 
 ## Discussion
 
-  This matrix exactly matches CosineTransformBack. See its documentation
-  for details.
+This matrix exactly matches CosineTransformBack. See its documentation
+for details.

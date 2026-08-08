@@ -9,16 +9,20 @@ mathjax: true
 
 #  WVModel
 
-Initialize a model from a WVTransform instance
+Initialize a model from a WVTransform instance.
 
 
 ---
 
 ## Declaration
 ```matlab
- WVModel(wvt,options)
+ model = WVModel(wvt,options)
 ```
 ## Parameters
-+ `wvt`  a WaveVortexTranform instance
++ `wvt`  `WVTransform` instance representing the initial fluid state
++ `options.shouldUseLinearDynamics`  use analytical linear evolution; default `false`
+
+## Returns
++ `model`  new `WVModel` instance
 
 ## Discussion

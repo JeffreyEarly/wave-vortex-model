@@ -19,4 +19,4 @@ reference to the NetCDFFile being used for model output
 
 ## Discussion
 
-  This property may be empty if the file is not yet created
+This property may be empty if the file is not yet created

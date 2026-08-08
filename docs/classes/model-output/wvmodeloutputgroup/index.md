@@ -50,7 +50,6 @@ outputFile.addOutputGroup(outputGroup);
 
 
 
-
 ## Topics
 + Properties
   + [`didInitializeStorage`](/classes/model-output/wvmodeloutputgroup/didinitializestorage.html) boolean indicating whether or not the internal structure of the NetCDF file has been created

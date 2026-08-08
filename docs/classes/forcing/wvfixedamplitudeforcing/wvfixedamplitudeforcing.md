@@ -33,5 +33,5 @@ initialize the WVFixedAmplitudeForcing
 
 ## Discussion
 
-  You must pass the instance of the WVTransform to be used and
-  you must also specify a unique name for the forcing.
+You must pass the instance of the WVTransform to be used and
+you must also specify a unique name for the forcing.

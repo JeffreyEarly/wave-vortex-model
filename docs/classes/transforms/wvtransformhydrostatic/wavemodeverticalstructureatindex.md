@@ -27,16 +27,16 @@ Return wave vertical-structure factors at one vertical grid index.
 
 ## Discussion
 
-  For a wave coefficient matrix `Apm`, the horizontal Fourier values of
-  the corresponding $$F$$ field and the vertical derivative of the
-  corresponding $$G$$ field at `z(iZ)` are
+For a wave coefficient matrix `Apm`, the horizontal Fourier values of
+the corresponding $$F$$ field and the vertical derivative of the
+corresponding $$G$$ field at `z(iZ)` are
 
-  $$
-  \widehat F(z_{iZ}) = \sum_j F_j(z_{iZ})A_{j\boldsymbol{k}},
-  \qquad
-  \partial_z\widehat G(z_{iZ}) =
-  \sum_j \partial_zG_j(z_{iZ})A_{j\boldsymbol{k}}.
-  $$
+$$
+\widehat F(z_{iZ}) = \sum_j F_j(z_{iZ})A_{j\boldsymbol{k}},
+\qquad
+\partial_z\widehat G(z_{iZ}) =
+\sum_j \partial_zG_j(z_{iZ})A_{j\boldsymbol{k}}.
+$$
 
-  Both returned arrays have dimensions `[Nj Nkl]`. Request only `F` when
-  the derivative factors are not needed.
+Both returned arrays have dimensions `[Nj Nkl]`. Request only `F` when
+the derivative factors are not needed.

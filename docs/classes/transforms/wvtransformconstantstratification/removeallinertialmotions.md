@@ -20,4 +20,4 @@ remove all inertial motions
 ```
 ## Discussion
 
-  All inertial motions are removed. Other components of the flow will remain unaffected.
+All inertial motions are removed. Other components of the flow will remain unaffected.

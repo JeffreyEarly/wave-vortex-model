@@ -27,5 +27,5 @@ converts nonlinear flux into enstrophy flux
 
 ## Discussion
 
-  Multiplies the nonlinear flux F0 by the appropriate coefficients
-  to convert into an energy flux.
+Multiplies the nonlinear flux F0 by the appropriate coefficients
+to convert into an energy flux.

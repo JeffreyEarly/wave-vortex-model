@@ -16,5 +16,5 @@ arguments
 
 ## Discussion
 self WVTransform {mustBeNonempty}
-      u_bar
-  end
+    u_bar
+end

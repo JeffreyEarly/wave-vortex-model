@@ -23,4 +23,4 @@ Real valued property with no dimensions and units of $$rad m^{-1}$$.
 
 ## Discussion
 
-  The default `Inf` applies no manual horizontal restriction.
+The default `Inf` applies no manual horizontal restriction.

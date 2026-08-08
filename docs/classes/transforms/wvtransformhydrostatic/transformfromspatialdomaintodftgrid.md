@@ -26,5 +26,5 @@ transform from $$(x,y,z)$$ to $$(k,l,z)$$ on the DFT grid
 
 ## Discussion
 
-  Performs a Fourier transform in the x and y direction. The
-  resulting matrix is on the DFT grid.
+Performs a Fourier transform in the x and y direction. The
+resulting matrix is on the DFT grid.

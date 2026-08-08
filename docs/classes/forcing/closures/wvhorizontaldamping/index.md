@@ -54,7 +54,6 @@ Assuming there is a WVTransform instance wvt, to add this forcing,
 wvt.addForcing(WVHorizontalDamping(wvt,nu=1e-4, kappa=1e-6));
 ```
 
-
 ### Notes
 
 This is currently implemented in the spatial domain and is

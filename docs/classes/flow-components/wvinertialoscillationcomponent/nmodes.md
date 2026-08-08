@@ -23,5 +23,5 @@ return the number of unique modes of this type
 
 ## Discussion
 
-  Returns the number of unique modes of this type for the
-  transform in its current configuration.
+Returns the number of unique modes of this type for the
+transform in its current configuration.

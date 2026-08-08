@@ -20,5 +20,5 @@ Coordinate for the barotropic-velocity components.
 
 ## Discussion
 
-  Values 1 and 2 identify the zonal and meridional components,
-  respectively. This coordinate is used for NetCDF persistence.
+Values 1 and 2 identify the zonal and meridional components,
+respectively. This coordinate is used for NetCDF persistence.

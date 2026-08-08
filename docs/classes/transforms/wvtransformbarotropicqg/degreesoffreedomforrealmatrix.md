@@ -28,10 +28,10 @@ a matrix with the number of degrees-of-freedom at each entry
 
 ## Discussion
 
-  A real-valued matrix A defined on a grid of size [Nx Ny] has
-  Nx*Ny degrees of freedom, one at each grid point. In the
-  Fourier domain these degrees-of-freedom are more complicated,
-  because some modes are strictly real-valued (k=l=0 and
-  Nyquist), while others are complex, and there are redundant
-  Hermitian conjugates. Nyquist coordinates contribute
-  self-conjugate modes only in even-sized dimensions.
+A real-valued matrix A defined on a grid of size [Nx Ny] has
+Nx*Ny degrees of freedom, one at each grid point. In the
+Fourier domain these degrees-of-freedom are more complicated,
+because some modes are strictly real-valued (k=l=0 and
+Nyquist), while others are complex, and there are redundant
+Hermitian conjugates. Nyquist coordinates contribute
+self-conjugate modes only in even-sized dimensions.

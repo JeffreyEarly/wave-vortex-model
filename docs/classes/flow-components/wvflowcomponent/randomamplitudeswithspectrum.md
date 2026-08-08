@@ -30,5 +30,5 @@ initialize with coefficients following a specified spectrum
 
 ## Discussion
 
-  This allows you to initialize amplitudes following a spectrum
-  defined in terms of wavenumber and vertical mode.
+This allows you to initialize amplitudes following a spectrum
+defined in terms of wavenumber and vertical mode.

@@ -43,17 +43,17 @@ for iOp = 1:length(variableName)
                     f = @(wvt) conj(wvt.phase);
 
                 case 'A0t'
-                    varAnnotation = WVVariableAnnotation(name,options.spectralDimensionNames,'m', 'geostrophic coefficients time t');
+                    varAnnotation = WVVariableAnnotation(name,options.spectralDimensionNames,'m^2 s^{-1}', 'zero-frequency coefficients at current time t');
                     varAnnotation.isComplex = true;
                     f = @(wvt) wvt.A0;
 
                 case 'Apt'
-                    varAnnotation = WVVariableAnnotation(name,options.spectralDimensionNames,'m/s', 'positive wave coefficients at reference time t');
+                    varAnnotation = WVVariableAnnotation(name,options.spectralDimensionNames,'m/s', 'positive-frequency coefficients at current time t');
                     varAnnotation.isComplex = true;
                     f = @(wvt) wvt.Ap .* wvt.phase;
 
                 case 'Amt'
-                    varAnnotation = WVVariableAnnotation(name,options.spectralDimensionNames,'m/s', 'negative wave coefficients at reference time t');
+                    varAnnotation = WVVariableAnnotation(name,options.spectralDimensionNames,'m/s', 'negative-frequency coefficients at current time t');
                     varAnnotation.isComplex = true;
                     f = @(wvt) wvt.Am .* wvt.conjPhase;
 

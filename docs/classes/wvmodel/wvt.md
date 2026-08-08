@@ -9,12 +9,12 @@ mathjax: true
 
 #  wvt
 
-The WVTransform instance the represents the ocean state.
+WVTransform instance representing the ocean state.
 
 
 ---
 
 ## Discussion
 Set on initialization only, the WVTransform in the model
-  performs all computations necessary to return information about
-  the ocean state at a given time.
+performs all computations necessary to return information about
+the ocean state at a given time.

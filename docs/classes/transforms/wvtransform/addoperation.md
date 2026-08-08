@@ -16,7 +16,7 @@ Register one or more operations and their output variables.
 
 ## Discussion
 
-  The complete request is validated before annotations, lookup maps, or
-  cached values are changed. Existing operations are replaced only when
-  `shouldOverwriteExisting` is true. For an operation array, replacements
-  are evaluated in caller order and the last conflicting operation wins.
+The complete request is validated before annotations, lookup maps, or
+cached values are changed. Existing operations are replaced only when
+`shouldOverwriteExisting` is true. For an operation array, replacements
+are evaluated in caller order and the last conflicting operation wins.
