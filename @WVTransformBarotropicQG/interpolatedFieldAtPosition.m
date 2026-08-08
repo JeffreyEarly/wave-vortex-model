@@ -13,7 +13,7 @@ function varargout = interpolatedFieldAtPosition(self,x,y,z,method,varargin)
             % for now, this is likely unnecessary computation as we should
             % already have computed u_bar.
             u_bar = fft(fft(varargin{i},self.Nx,1),self.Ny,2)/(self.Nx*self.Ny);
-            varargout{i} = self.horizontalModes.transformToSpatialDomainAtPosition(u_bar,x_tilde,y_tilde);
+            varargout{i} = self.transformToSpatialDomainFromDFTGridAtPosition(u_bar,x_tilde,y_tilde);
         end
     else
 

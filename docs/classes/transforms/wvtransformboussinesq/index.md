@@ -168,7 +168,7 @@ wvt = WVTransformHydrostatic([100e3, 100e3, 4000],[64, 64, 65], N2=N2,latitude=3
     + [`lMode_wv`](/classes/transforms/wvtransformboussinesq/lmode_wv.html) l mode number on the WV grid
     + [`shouldAntialias`](/classes/transforms/wvtransformboussinesq/shouldantialias.html) whether the WV grid includes quadratically aliased wavenumbers
     + [`shouldExcludeNyquist`](/classes/transforms/wvtransformboussinesq/shouldexcludenyquist.html) whether the WV grid includes Nyquist wavenumbers
-    + [`shouldExludeConjugates`](/classes/transforms/wvtransformboussinesq/shouldexludeconjugates.html) whether the WV grid includes wavenumbers that are Hermitian conjugates
+    + [`shouldExcludeConjugates`](/classes/transforms/wvtransformboussinesq/shouldexcludeconjugates.html) whether the WV grid excludes redundant Hermitian-conjugate wavenumbers
     + [`wvConjugateIndex`](/classes/transforms/wvtransformboussinesq/wvconjugateindex.html) index into the WV mode that matches the dftConjugateIndices
   + Stratification
     + [`h_0`](/classes/transforms/wvtransformboussinesq/h_0.html) [Nj 1]

@@ -51,7 +51,7 @@ classdef WVGeometryDoublyPeriodicBarotropic < WVGeometryDoublyPeriodic & WVRotat
                 options.j (1,1) double {mustBeMember(options.j,[0 1])} = 1
             end
             optionCell = namedargs2cell(geomOptions);
-            self@WVGeometryDoublyPeriodic(Lxy,Nxy,optionCell{:},Nz=1,shouldExcludeNyquist=true,shouldExludeConjugates=true,conjugateDimension=2);
+            self@WVGeometryDoublyPeriodic(Lxy,Nxy,optionCell{:},Nz=1,shouldExcludeNyquist=true,shouldExcludeConjugates=true,conjugateDimension=2);
 
             optionCell = namedargs2cell(rotatingOptions);
             self@WVRotatingFPlane(optionCell{:});
@@ -236,7 +236,7 @@ classdef WVGeometryDoublyPeriodicBarotropic < WVGeometryDoublyPeriodic & WVRotat
         end
 
         function newNonrequiredPropertyNames = newNonrequiredPropertyNames()
-            newNonrequiredPropertyNames = {'Nz','conjugateDimension','shouldExcludeNyquist','shouldExludeConjugates'};
+            newNonrequiredPropertyNames = {'Nz','conjugateDimension','shouldExcludeNyquist','shouldExcludeConjugates'};
         end
 
         function propertyAnnotations = propertyAnnotationsForGeometry()

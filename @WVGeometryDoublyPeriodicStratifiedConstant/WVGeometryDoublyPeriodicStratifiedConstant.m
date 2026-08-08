@@ -73,7 +73,7 @@ classdef WVGeometryDoublyPeriodicStratifiedConstant < WVGeometryDoublyPeriodic &
             self@WVStratification(Lz,Nz,statOptionCell{:});
 
             optionCell = namedargs2cell(geomOptions);
-            self@WVGeometryDoublyPeriodic(Lxyz(1:2),Nxyz(1:2),optionCell{:},Nz=Nxyz(3),shouldExcludeNyquist=true,shouldExludeConjugates=true,conjugateDimension=2);
+            self@WVGeometryDoublyPeriodic(Lxyz(1:2),Nxyz(1:2),optionCell{:},Nz=Nxyz(3),shouldExcludeNyquist=true,shouldExcludeConjugates=true,conjugateDimension=2);
 
             self.isHydrostatic = options.isHydrostatic;
             self.N0 = options.N0;
@@ -590,7 +590,7 @@ classdef WVGeometryDoublyPeriodicStratifiedConstant < WVGeometryDoublyPeriodic &
         end
 
         function newNonrequiredPropertyNames = newNonrequiredPropertyNames()
-            newNonrequiredPropertyNames = {'N2Function','j','conjugateDimension','shouldExcludeNyquist','shouldExludeConjugates'};
+            newNonrequiredPropertyNames = {'N2Function','j','conjugateDimension','shouldExcludeNyquist','shouldExcludeConjugates'};
         end
 
         function newRequiredPropertyNames = newRequiredPropertyNames()
