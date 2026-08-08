@@ -28,6 +28,6 @@ returns a boolean indicating whether (k,l,j) is a valid primary (non-conjugate) 
 
 ## Discussion
 
-  returns a boolean indicating whether (k,l,j) is a valid
-  non-conjugate mode number according to how the property
-  conjugateDimension is set.
+returns a boolean indicating whether (k,l,j) is a valid
+non-conjugate mode number according to how the property
+conjugateDimension is set.

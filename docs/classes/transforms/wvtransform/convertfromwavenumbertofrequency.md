@@ -26,8 +26,8 @@ Summary
 
 ## Discussion
 This method transforms an instantaneous WVT field that is in the
-   horizontal wave number domain to the frequency domain.
+ horizontal wave number domain to the frequency domain.
 
-   At this point the method is only set to return the total wave energy.
-   In the future I plan to include an option for the user
-   to transform any WVT field (Leticia)
+ At this point the method is only set to return the total wave energy.
+ In the future I plan to include an option for the user
+ to transform any WVT field (Leticia)

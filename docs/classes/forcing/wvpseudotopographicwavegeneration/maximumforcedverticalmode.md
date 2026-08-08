@@ -23,4 +23,4 @@ Real valued property with no dimensions and units of $$1$$.
 
 ## Discussion
 
-  The default `Inf` applies no manual vertical-mode restriction.
+The default `Inf` applies no manual vertical-mode restriction.

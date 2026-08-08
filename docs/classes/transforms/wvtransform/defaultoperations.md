@@ -23,5 +23,5 @@ return array of WVOperation instances initialized by default
 
 ## Discussion
 
-  This function creates a number of standard StateVariables with associated
-  TransformOperations.
+This function creates a number of standard StateVariables with associated
+TransformOperations.

@@ -20,9 +20,9 @@ remove all geostrophic motions
 ```
 ## Discussion
 
-  All geostrophic motions are removed by setting A0 to zero.
+All geostrophic motions are removed by setting A0 to zero.
 
-  **Note** that this does *not* remove the mean density anomaly
-  (mda) part of the solution, just the geostrophic part. Thus,
-  this function will not clear all parts of a geostrophic
-  streamfunction.
+**Note** that this does *not* remove the mean density anomaly
+(mda) part of the solution, just the geostrophic part. Thus,
+this function will not clear all parts of a geostrophic
+streamfunction.

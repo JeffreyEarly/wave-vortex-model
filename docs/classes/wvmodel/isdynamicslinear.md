@@ -9,11 +9,12 @@ mathjax: true
 
 #  isDynamicsLinear
 
-Indicates whether or not the model is using linear or nonlinear dynamics.
+Whether the model uses analytical linear dynamics.
 
 
 ---
 
 ## Discussion
-In practice, this is simply checking whether the nonlinearFlux
-  property is nil.
+When `false`, the model integrates registered coefficient and
+observing-system tendencies. When `true`, `integrateToTime`
+advances the transform and output schedule analytically.

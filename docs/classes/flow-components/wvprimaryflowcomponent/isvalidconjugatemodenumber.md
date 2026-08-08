@@ -28,5 +28,5 @@ returns a boolean indicating whether (k,l,j) is a valid mode number
 
 ## Discussion
 
-  returns a boolean indicating whether (k,l,j) is a valid mode
-  number
+returns a boolean indicating whether (k,l,j) is a valid mode
+number

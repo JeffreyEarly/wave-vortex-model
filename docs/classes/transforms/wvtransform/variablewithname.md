@@ -19,6 +19,9 @@ Compute or retrieve one or more registered transform variables.
  varargout = variableWithName(variableNames)
 ```
 ## Parameters
-+ `variableNames`  registered variable names
++ `variableNames`  names of registered state variables
+
+## Returns
++ `varargout`  state-variable arrays in the requested order
 
 ## Discussion

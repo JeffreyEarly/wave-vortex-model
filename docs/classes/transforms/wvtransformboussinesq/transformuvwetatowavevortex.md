@@ -32,4 +32,5 @@ transform momentum variables $$(u,v,w,\eta)$$ to wave-vortex coefficients $$(A_+
 
 ## Discussion
 
-  This function tuned for constant stratification.
+This implementation uses the nonhydrostatic variable-stratification
+projection operators.

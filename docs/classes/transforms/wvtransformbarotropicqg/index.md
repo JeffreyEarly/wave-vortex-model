@@ -11,7 +11,7 @@ nav_order: 5
 
 #  WVTransformBarotropicQG
 
-A transform for modeling single-layer quasigeostrophic flow
+Represent two-dimensional equivalent-barotropic quasigeostrophic flow.
 
 
 ---
@@ -22,16 +22,21 @@ A transform for modeling single-layer quasigeostrophic flow
 
 ## Overview
 
-This is a two-dimensional, single-layer which may be interpreted as
-the sea-surface height. The 'h' parameter is the equivalent depth,
-and 0.80 m is a typical value for the first baroclinic mode.
+This is a two-dimensional, single-layer transform. The `h` parameter
+is the equivalent depth; `0.80` m is a representative first-baroclinic
+value. The transform stores its state in `A0` and has no wave `Ap` or
+`Am` content.
 
 ```matlab
 Lxy = 50e3;
 Nxy = 256;
 latitude = 25;
-wvt = WVTransformSingleMode([Lxy, Lxy], [Nxy, Nxy], h=0.8, latitude=latitude);
+wvt = WVTransformBarotropicQG([Lxy,Lxy],[Nxy,Nxy],h=0.8,latitude=latitude);
 ```
+
+The Stable quasigeostrophic state is stored in
+[`A0`](/classes/transforms/wvtransform/a0.html), with current-time view
+`A0t`. This transform has no active `Ap`, `Am`, `Apt`, or `Amt` content.
 
 
 
@@ -39,19 +44,33 @@ wvt = WVTransformSingleMode([Lxy, Lxy], [Nxy, Nxy], h=0.8, latitude=latitude);
 
 ## Topics
 + Initialization
-  + [`WVTransformBarotropicQG`](/classes/transforms/wvtransformbarotropicqg/wvtransformbarotropicqg.html) create geometry for 2D barotropic flow
-+ Wave-vortex sorting matrix
-  + inverse components ($$S^{-1}$$)
-    + [`A0N`](/classes/transforms/wvtransformbarotropicqg/a0n.html) matrix component that multiplies $$\tilde{\eta}$$ to compute $$A_0$$.
-    + [`A0U`](/classes/transforms/wvtransformbarotropicqg/a0u.html) matrix component that multiplies $$\tilde{u}$$ to compute $$A_0$$.
-    + [`A0V`](/classes/transforms/wvtransformbarotropicqg/a0v.html) matrix component that multiplies $$\tilde{v}$$ to compute $$A_0$$.
-  + components of $$S$$
-    + [`NA0`](/classes/transforms/wvtransformbarotropicqg/na0.html) matrix component that multiplies $$A_0$$ to compute $$\tilde{\eta}$$.
-    + [`UA0`](/classes/transforms/wvtransformbarotropicqg/ua0.html) matrix component that multiplies $$A_0$$ to compute $$\tilde{u}$$.
-    + [`VA0`](/classes/transforms/wvtransformbarotropicqg/va0.html) matrix component that multiplies $$A_0$$ to compute $$\tilde{v}$$.
+  + [`WVTransformBarotropicQG`](/classes/transforms/wvtransformbarotropicqg/wvtransformbarotropicqg.html) Create an equivalent-barotropic quasigeostrophic transform.
 + Wave-vortex coefficients
-  + at time $$t$$
-    + [`A0t`](/classes/transforms/wvtransformbarotropicqg/a0t.html) geostrophic coefficients time t
+  + At current time
+    + [`A0t`](/classes/transforms/wvtransformbarotropicqg/a0t.html) zero-frequency coefficients at current time t
++ Primary flow components
+  + [`geostrophicComponent`](/classes/transforms/wvtransformbarotropicqg/geostrophiccomponent.html) returns the geostrophic flow component
++ Initial conditions
+  + Geostrophic Motions
+    + [`initWithGeostrophicStreamfunction`](/classes/transforms/wvtransformbarotropicqg/initwithgeostrophicstreamfunction.html) initialize with a geostrophic streamfunction
+    + [`setGeostrophicStreamfunction`](/classes/transforms/wvtransformbarotropicqg/setgeostrophicstreamfunction.html) set a geostrophic streamfunction
+    + [`addGeostrophicStreamfunction`](/classes/transforms/wvtransformbarotropicqg/addgeostrophicstreamfunction.html) add a geostrophic streamfunction to existing geostrophic motions
+    + [`setGeostrophicModes`](/classes/transforms/wvtransformbarotropicqg/setgeostrophicmodes.html) set amplitudes of the given geostrophic modes
+    + [`addGeostrophicModes`](/classes/transforms/wvtransformbarotropicqg/addgeostrophicmodes.html) add amplitudes of the given geostrophic modes
+    + [`removeAllGeostrophicMotions`](/classes/transforms/wvtransformbarotropicqg/removeallgeostrophicmotions.html) remove all geostrophic motions
++ Operations
+  + Grid transformation
+    + [`transformFromDFTGridToWVGrid`](/classes/transforms/wvtransformbarotropicqg/transformfromdftgridtowvgrid.html) convert from DFT to WV grid
+    + [`transformFromWVGridToDFTGrid`](/classes/transforms/wvtransformbarotropicqg/transformfromwvgridtodftgrid.html) convert from a WV to DFT grid
+  + Fourier transformation
+    + [`transformFromSpatialDomainToDFTGrid`](/classes/transforms/wvtransformbarotropicqg/transformfromspatialdomaintodftgrid.html) transform from $$(x,y,z)$$ to $$(k,l,z)$$ on the DFT grid
+    + [`transformToSpatialDomainFromDFTGrid`](/classes/transforms/wvtransformbarotropicqg/transformtospatialdomainfromdftgrid.html) transform from $$(k,l,z)$$ on the DFT grid to $$(x,y,z)$$
+    + [`transformToSpatialDomainFromDFTGridAtPosition`](/classes/transforms/wvtransformbarotropicqg/transformtospatialdomainfromdftgridatposition.html) transform from $$(k,l)$$ on the DFT grid to $$(x,y)$$ at any position
+  + Transformations
+    + [`transformToKLAxes`](/classes/transforms/wvtransformbarotropicqg/transformtoklaxes.html) transforms in the spectral domain from (j,kl) to (kAxis,lAxis,j)
+    + [`transformToRadialWavenumber`](/classes/transforms/wvtransformbarotropicqg/transformtoradialwavenumber.html) transforms in the spectral domain from (j,kl) to (j,kRadial)
++ Developer
+  + [`propertyAnnotationsForGeometry`](/classes/transforms/wvtransformbarotropicqg/propertyannotationsforgeometry.html) return array of CAPropertyAnnotations initialized by default
 + Domain Attributes
   + [`f`](/classes/transforms/wvtransformbarotropicqg/f.html) Coriolis parameter
   + [`g`](/classes/transforms/wvtransformbarotropicqg/g.html) gravity of Earth
@@ -106,14 +125,6 @@ wvt = WVTransformSingleMode([Lxy, Lxy], [Nxy, Nxy], h=0.8, latitude=latitude);
     + [`shouldExcludeConjugates`](/classes/transforms/wvtransformbarotropicqg/shouldexcludeconjugates.html) whether the WV grid excludes redundant Hermitian-conjugate wavenumbers
     + [`shouldExcludeNyquist`](/classes/transforms/wvtransformbarotropicqg/shouldexcludenyquist.html) whether the WV grid includes Nyquist wavenumbers
     + [`wvConjugateIndex`](/classes/transforms/wvtransformbarotropicqg/wvconjugateindex.html) index into the WV mode that matches the dftConjugateIndices
-+ Initial conditions
-  + Geostrophic Motions
-    + [`initWithGeostrophicStreamfunction`](/classes/transforms/wvtransformbarotropicqg/initwithgeostrophicstreamfunction.html) initialize with a geostrophic streamfunction
-    + [`setGeostrophicStreamfunction`](/classes/transforms/wvtransformbarotropicqg/setgeostrophicstreamfunction.html) set a geostrophic streamfunction
-    + [`addGeostrophicStreamfunction`](/classes/transforms/wvtransformbarotropicqg/addgeostrophicstreamfunction.html) add a geostrophic streamfunction to existing geostrophic motions
-    + [`setGeostrophicModes`](/classes/transforms/wvtransformbarotropicqg/setgeostrophicmodes.html) set amplitudes of the given geostrophic modes
-    + [`addGeostrophicModes`](/classes/transforms/wvtransformbarotropicqg/addgeostrophicmodes.html) add amplitudes of the given geostrophic modes
-    + [`removeAllGeostrophicMotions`](/classes/transforms/wvtransformbarotropicqg/removeallgeostrophicmotions.html) remove all geostrophic motions
 + Utility function
   + [`degreesOfFreedomForComplexMatrix`](/classes/transforms/wvtransformbarotropicqg/degreesoffreedomforcomplexmatrix.html) a matrix with the number of degrees-of-freedom at each entry
   + [`degreesOfFreedomForRealMatrix`](/classes/transforms/wvtransformbarotropicqg/degreesoffreedomforrealmatrix.html) a matrix with the number of degrees-of-freedom at each entry
@@ -122,8 +133,6 @@ wvt = WVTransformSingleMode([Lxy, Lxy], [Nxy, Nxy], h=0.8, latitude=latitude);
   + [`setConjugateToUnity`](/classes/transforms/wvtransformbarotropicqg/setconjugatetounity.html) set the conjugate of the wavenumber (iK,iL) to 1
 + Properties
   + [`effectiveHorizontalGridResolution`](/classes/transforms/wvtransformbarotropicqg/effectivehorizontalgridresolution.html) returns the effective grid resolution in meters
-+ Primary flow components
-  + [`geostrophicComponent`](/classes/transforms/wvtransformbarotropicqg/geostrophiccomponent.html) returns the geostrophic flow component
 + Energetics
   + [`geostrophicKineticEnergy`](/classes/transforms/wvtransformbarotropicqg/geostrophickineticenergy.html) kinetic energy of the geostrophic flow
   + [`geostrophicPotentialEnergy`](/classes/transforms/wvtransformbarotropicqg/geostrophicpotentialenergy.html) potential energy of the geostrophic flow
@@ -142,23 +151,10 @@ wvt = WVTransformSingleMode([Lxy, Lxy], [Nxy, Nxy], h=0.8, latitude=latitude);
   + [`maskForAliasedModes`](/classes/transforms/wvtransformbarotropicqg/maskforaliasedmodes.html) returns a mask with locations of modes that will alias with a quadratic multiplication.
   + [`maskForConjugateFourierCoefficients`](/classes/transforms/wvtransformbarotropicqg/maskforconjugatefouriercoefficients.html) a mask indicate the components that are redundant conjugates
   + [`maskForNyquistModes`](/classes/transforms/wvtransformbarotropicqg/maskfornyquistmodes.html) returns a mask with locations of modes that are not fully resolved
-+ Developer
-  + [`propertyAnnotationsForGeometry`](/classes/transforms/wvtransformbarotropicqg/propertyannotationsforgeometry.html) return array of CAPropertyAnnotations initialized by default
 + State Variables
   + [`psi`](/classes/transforms/wvtransformbarotropicqg/psi.html) geostrophic streamfunction
 + Potential Vorticity & Enstrophy
   + [`qgpv`](/classes/transforms/wvtransformbarotropicqg/qgpv.html) quasigeostrophic potential vorticity
-+ Operations
-  + Grid transformation
-    + [`transformFromDFTGridToWVGrid`](/classes/transforms/wvtransformbarotropicqg/transformfromdftgridtowvgrid.html) convert from DFT to WV grid
-    + [`transformFromWVGridToDFTGrid`](/classes/transforms/wvtransformbarotropicqg/transformfromwvgridtodftgrid.html) convert from a WV to DFT grid
-  + Fourier transformation
-    + [`transformFromSpatialDomainToDFTGrid`](/classes/transforms/wvtransformbarotropicqg/transformfromspatialdomaintodftgrid.html) transform from $$(x,y,z)$$ to $$(k,l,z)$$ on the DFT grid
-    + [`transformToSpatialDomainFromDFTGrid`](/classes/transforms/wvtransformbarotropicqg/transformtospatialdomainfromdftgrid.html) transform from $$(k,l,z)$$ on the DFT grid to $$(x,y,z)$$
-    + [`transformToSpatialDomainFromDFTGridAtPosition`](/classes/transforms/wvtransformbarotropicqg/transformtospatialdomainfromdftgridatposition.html) transform from $$(k,l)$$ on the DFT grid to $$(x,y)$$ at any position
-  + Transformations
-    + [`transformToKLAxes`](/classes/transforms/wvtransformbarotropicqg/transformtoklaxes.html) transforms in the spectral domain from (j,kl) to (kAxis,lAxis,j)
-    + [`transformToRadialWavenumber`](/classes/transforms/wvtransformbarotropicqg/transformtoradialwavenumber.html) transforms in the spectral domain from (j,kl) to (j,kRadial)
 + Other
   + [`A0Z`](/classes/transforms/wvtransformbarotropicqg/a0z.html)
   + [`F0`](/classes/transforms/wvtransformbarotropicqg/f0.html)
@@ -217,6 +213,20 @@ wvt = WVTransformSingleMode([Lxy, Lxy], [Nxy, Nxy], h=0.8, latitude=latitude);
   + [`v`](/classes/transforms/wvtransformbarotropicqg/v.html) y-component of the fluid velocity
   + [`xyGrid`](/classes/transforms/wvtransformbarotropicqg/xygrid.html)
   + [`zeta_z`](/classes/transforms/wvtransformbarotropicqg/zeta_z.html) vertical component of relative vorticity
+
+
+## Developer Topics
+These items document internal implementation details and are not part of the primary public API.
++ Wave-vortex coefficients
++ Developer
+  + Projection coefficients
+    + [`A0N`](/classes/transforms/wvtransformbarotropicqg/a0n.html) matrix component that multiplies $$\tilde{\eta}$$ to compute $$A_0$$.
+    + [`A0U`](/classes/transforms/wvtransformbarotropicqg/a0u.html) matrix component that multiplies $$\tilde{u}$$ to compute $$A_0$$.
+    + [`A0V`](/classes/transforms/wvtransformbarotropicqg/a0v.html) matrix component that multiplies $$\tilde{v}$$ to compute $$A_0$$.
+  + Reconstruction coefficients
+    + [`NA0`](/classes/transforms/wvtransformbarotropicqg/na0.html) matrix component that multiplies $$A_0$$ to compute $$\tilde{\eta}$$.
+    + [`UA0`](/classes/transforms/wvtransformbarotropicqg/ua0.html) matrix component that multiplies $$A_0$$ to compute $$\tilde{u}$$.
+    + [`VA0`](/classes/transforms/wvtransformbarotropicqg/va0.html) matrix component that multiplies $$A_0$$ to compute $$\tilde{v}$$.
 
 
 ---

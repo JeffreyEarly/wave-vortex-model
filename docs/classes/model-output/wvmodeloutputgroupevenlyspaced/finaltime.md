@@ -19,6 +19,6 @@ Real valued property with no dimensions and units of $$s$$.
 
 ## Discussion
 
-  This optional properties determines when the output group will
-  de-actives. By default it is set to `Inf`, indicating that it
-  will always write to file.
+This optional properties determines when the output group will
+de-actives. By default it is set to `Inf`, indicating that it
+will always write to file.

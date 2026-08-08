@@ -26,7 +26,6 @@ The fixed-amplitude forcing maintains the amplitude of the wave or geostrophic f
 
 As a simple example, one can set an internal wave mode with amplitude 1 cm/s, and that mode will continue to oscillate and maintain its amplitude. The wave will participate in all the nonlinear dynamics, but its amplitude will be maintained/restored at each time step.
 
-
 There are several different ways to write this style of forcing mathematically. The equations of motion, written in the spectral domain, take the following form
 
 $$

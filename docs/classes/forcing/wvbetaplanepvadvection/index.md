@@ -24,7 +24,6 @@ Advection of QGPV from beta
 
 This applies $$\beta v_g$$ to the PV (A0) flux of a simulation.
 
-
 ### Usage
 
 Assuming there is a WVTransform instance wvt, to add this forcing,
@@ -50,9 +49,8 @@ actually justifiable with the correct asymptotics. -- Jeffrey
 
 
 ## Topics
-+ Initializing
-  + [`WVBetaPlanePVAdvection`](/classes/forcing/wvbetaplanepvadvection/wvbetaplanepvadvection.html) Advection of QGPV from beta
 + Other
+  + [`WVBetaPlanePVAdvection`](/classes/forcing/wvbetaplanepvadvection/wvbetaplanepvadvection.html)
   + [`betaA0`](/classes/forcing/wvbetaplanepvadvection/betaa0.html)
   + [`classRequiredPropertyNames`](/classes/forcing/wvbetaplanepvadvection/classrequiredpropertynames.html)
 

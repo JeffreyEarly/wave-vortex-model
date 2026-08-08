@@ -16,5 +16,5 @@ closes the netcdf file after informing the output groups
 
 ## Discussion
 
-  The file handle is released even if an output-group cleanup
-  notification fails.
+The file handle is released even if an output-group cleanup
+notification fails.

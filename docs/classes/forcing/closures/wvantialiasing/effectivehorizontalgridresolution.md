@@ -23,7 +23,7 @@ returns the effective grid resolution in meters
 
 ## Discussion
 
-  The effective grid resolution is the highest fully resolved
-  wavelength in the model. This value takes into account
-  anti-aliasing, and is thus appropriate for setting damping
-  operators.
+The effective grid resolution is the highest fully resolved
+wavelength in the model. This value takes into account
+anti-aliasing, and is thus appropriate for setting damping
+operators.

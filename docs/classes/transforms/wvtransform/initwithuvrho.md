@@ -25,4 +25,4 @@ initialize with fluid variables $$(u,v,\rho)$$
 
 ## Discussion
 
-  Replaces the variables Ap,Am,A0 with those computed from $$(u,v,\rho_e)$$.
+Replaces the variables Ap,Am,A0 with those computed from $$(u,v,\rho_e)$$.

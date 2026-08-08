@@ -28,20 +28,20 @@ places Lagrangian particles along a specified isopycnal
 
 ## Discussion
 
-  Given particle position (x,y), `zNoMotion` is used to determine the target
-  isopycnal using the no-motion density,
+Given particle position (x,y), `zNoMotion` is used to determine the target
+isopycnal using the no-motion density,
 
-  ```matlab
-  targetRho = wvt.rhoFunction(zNoMotion);
-  ```
+```matlab
+targetRho = wvt.rhoFunction(zNoMotion);
+```
 
-  and a minimization algorithm is used to find zIsopycnal such that
+and a minimization algorithm is used to find zIsopycnal such that
 
-  ```matlab
-  zIsopycnal = rho(targetRho);
-  ```
+```matlab
+zIsopycnal = rho(targetRho);
+```
 
-  where rho is the current total density field of the fluid.
+where rho is the current total density field of the fluid.
 
-  Note that the density is not necessarily monotonic, so the answer is not
-  necessarily unique.
+Note that the density is not necessarily monotonic, so the answer is not
+necessarily unique.

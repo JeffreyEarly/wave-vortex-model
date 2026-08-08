@@ -30,5 +30,5 @@ return the normalized projection operators with prefactors
 
 ## Discussion
 
-  This function uses InternalModesWKBSpectral to compute the
-  quadrature points of a given stratification profile.
+This function uses InternalModesWKBSpectral to compute the
+quadrature points of a given stratification profile.

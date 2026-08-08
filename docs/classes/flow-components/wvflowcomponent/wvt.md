@@ -16,4 +16,4 @@ reference to the wave vortex transform
 
 ## Discussion
 
-  reference to the WVTransform instance
+reference to the WVTransform instance

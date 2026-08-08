@@ -26,7 +26,7 @@ return array of CAPropertyAnnotations for the WVTransform
 
 ## Discussion
 
-  This function returns annotations for all properties defined
-  by the WVTransform. It selectively returns annotations for
-  the wave-vortex coefficients, as not all subclass will handle
-  these coefficients in the same way.
+This function returns annotations for all properties defined
+by the WVTransform. It selectively returns annotations for
+the wave-vortex coefficients, as not all subclass will handle
+these coefficients in the same way.

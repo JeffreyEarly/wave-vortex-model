@@ -1,18 +1,25 @@
 classdef WVTransformHydrostatic < WVGeometryDoublyPeriodicStratified & WVTransform & WVGeostrophicMethods & WVInternalGravityWaveMethods & WVInertialOscillationMethods & WVMeanDensityAnomalyMethods
-    % A class for disentangling hydrostatic waves and vortices in variable stratification
+    % Decompose hydrostatic variable-stratification flow into wave and geostrophic components.
     %
-    % To initialization an instance of the WVTransformHydrostatic class you
-    % must specific the domain size, the number of grid points and *either*
+    % To initialize `WVTransformHydrostatic`, specify the domain size, the
+    % number of grid points, and either
     % the density profile or the stratification profile.
     %
     % ```matlab
     % N0 = 3*2*pi/3600;
     % L_gm = 1300;
     % N2 = @(z) N0*N0*exp(2*z/L_gm);
-    % wvt = WVTransformHydrostatic([100e3, 100e3, 4000],[64, 64, 65], N2=N2,latitude=30);
+    % wvt = WVTransformHydrostatic([100e3,100e3,4000],[64,64,65],N2Function=N2,latitude=30);
     % ```
     %
+    % The Stable transform state is stored in [`Ap`](/classes/transforms/wvtransform/ap.html),
+    % [`Am`](/classes/transforms/wvtransform/am.html), and
+    % [`A0`](/classes/transforms/wvtransform/a0.html). Their current-time
+    % views are `Apt`, `Amt`, and `A0t`.
+    %
     % - Topic: Initialization
+    % - Topic: Wave-vortex coefficients
+    % - Topic: Wave-vortex coefficients — At current time
     % - Topic: Primary flow components
     % - Topic: Stratification
     % - Topic: Stratification — Vertical modes
@@ -20,6 +27,8 @@ classdef WVTransformHydrostatic < WVGeometryDoublyPeriodicStratified & WVTransfo
     % - Topic: Initial conditions
     % - Topic: Energetics of flow components
     % - Topic: Operations
+    % - Topic: Developer — Projection coefficients
+    % - Topic: Developer — Reconstruction coefficients
     %
     % - Declaration: classdef WVTransformHydrostatic < [WVTransform](/classes/transforms/wvtransform/)
     properties (Dependent)
@@ -39,24 +48,27 @@ classdef WVTransformHydrostatic < WVGeometryDoublyPeriodicStratified & WVTransfo
 
     methods
         function self = WVTransformHydrostatic(Lxyz, Nxyz, options)
-            % create a wave-vortex transform for variable stratification
+            % Create a hydrostatic wave-vortex transform for variable stratification.
             %
             % Creates a new instance of the WVTransformHydrostatic class
             % appropriate for disentangling hydrostatic waves and vortices
             % in variable stratification
             %
-            % You must initialization by passing *either* the density
-            % profile or the stratification profile.
+            % Supply either `N2Function` or `rhoFunction`. The additional
+            % modal arrays accepted by the constructor are reconstruction
+            % state used by the persistence factories rather than ordinary
+            % user construction options.
             %
             % - Topic: Initialization
             % - Declaration: wvt = WVTransformHydrostatic(Lxyz, Nxyz, options)
             % - Parameter Lxyz: length of the domain (in meters) in the three coordinate directions, e.g. [Lx Ly Lz]
             % - Parameter Nxyz: number of grid points in the three coordinate directions, e.g. [Nx Ny Nz]
-            % - Parameter rho:  (optional) function_handle specifying the density as a function of depth on the domain [-Lz 0]
-            % - Parameter stratification:  (optional) function_handle specifying the stratification as a function of depth on the domain [-Lz 0]
-            % - Parameter latitude: (optional) latitude of the domain (default is 33 degrees north)
-            % - Parameter rho0: (optional) density at the surface z=0 (default is 1025 kg/m^3)
-            % - Returns wvt: a new WVTransformHydrostatic instance
+            % - Parameter options.N2Function: function returning squared buoyancy frequency on `[-Lz,0]`
+            % - Parameter options.rhoFunction: function returning density on `[-Lz,0]`
+            % - Parameter options.latitude: latitude in the supported domain; default `33`
+            % - Parameter options.shouldAntialias: exclude quadratically aliased modes; default `true`
+            % - Parameter options.rho0: reference density in kilograms per cubic meter; default `1025`
+            % - Returns wvt: new `WVTransformHydrostatic` instance
             arguments
                 Lxyz (1,3) double {mustBePositive}
                 Nxyz (1,3) double {mustBePositive}

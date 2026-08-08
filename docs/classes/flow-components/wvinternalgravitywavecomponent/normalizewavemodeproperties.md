@@ -36,6 +36,6 @@ returns properties of a internal gravity wave solutions relative to the primary 
 
 ## Discussion
 
-  This function will return the primary mode numbers (k,l,j),
-  given the any valid mode numbers (k,l,j) and adjust the
-  amplitude (A) and phase (phi), if necessary.
+This function will return the primary mode numbers (k,l,j),
+given the any valid mode numbers (k,l,j) and adjust the
+amplitude (A) and phase (phi), if necessary.

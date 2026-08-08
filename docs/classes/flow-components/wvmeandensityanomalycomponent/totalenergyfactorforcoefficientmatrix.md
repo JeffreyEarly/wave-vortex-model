@@ -26,6 +26,6 @@ returns the total energy multiplier for the coefficient matrix.
 
 ## Discussion
 
-  Returns a matrix of size wvt.spectralMatrixSize that
-  multiplies the squared absolute value of this matrix to
-  produce the total energy.
+Returns a matrix of size wvt.spectralMatrixSize that
+multiplies the squared absolute value of this matrix to
+produce the total energy.

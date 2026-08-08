@@ -16,5 +16,5 @@ WVOperation responsible for computing this variable
 
 ## Discussion
 
-  This property will be automatically populated when the variable
-  annotation is passed to the WVOperation.
+This property will be automatically populated when the variable
+annotation is passed to the WVOperation.

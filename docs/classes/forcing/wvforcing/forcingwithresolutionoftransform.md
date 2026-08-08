@@ -26,5 +26,5 @@ create a new WVForcing with a new resolution
 
 ## Discussion
 
-  Subclasses to should override this method an implement the
-  correct logic.
+Subclasses to should override this method an implement the
+correct logic.

@@ -14,6 +14,7 @@ function model = modelFromFile(path)
 % - Topic: Initialization
 % - Declaration: model = modelFromFile(path)
 % - Parameter path: path to a NetCDF file
+% - Returns model: restored `WVModel` instance
     arguments
         path char {mustBeFile}
     end

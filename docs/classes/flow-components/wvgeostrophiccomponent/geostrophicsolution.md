@@ -36,4 +36,4 @@ return a real-valued analytical solution of the geostrophic mode
 
 ## Discussion
 
-  Returns function handles of the form u=@(x,y,z,t)
+Returns function handles of the form u=@(x,y,z,t)

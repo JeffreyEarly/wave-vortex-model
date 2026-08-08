@@ -9,7 +9,7 @@ mathjax: true
 
 #  initWithMeanDensityAnomaly
 
-initialize with inertial motions
+Initialize the fluid state with a mean-density anomaly.
 
 
 ---
@@ -23,18 +23,16 @@ initialize with inertial motions
 
 ## Discussion
 
-  Clears variables Ap,Am,A0 and then sets inertial motions.
+Clear `Ap`, `Am`, and `A0`, then project the supplied
+horizontally uniform isopycnal displacement onto the internal
+mean-density-anomaly modes.
 
-  ```matlab
-  U_io = 0.2;
-  Ld = wvt.Lz/5;
-  u_NIO = @(z) U_io*exp((z/Ld));
-  v_NIO = @(z) zeros(size(z));
+```matlab
+eta = @(z) 10*sin(pi*(z+wvt.Lz)/wvt.Lz);
+wvt.initWithMeanDensityAnomaly(eta);
+```
 
-  wvt.initWithInertialMotions(u_NIO,v_NIO);
-  ```
-
-  It is important to note that because the WVTransform
-  de-aliases by default, you will not likely get exactly the
-  same function out that you put in. The high-modes are
-  removed.
+It is important to note that because the WVTransform
+de-aliases by default, you will not likely get exactly the
+same function out that you put in. The high-modes are
+removed.

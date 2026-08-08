@@ -23,5 +23,5 @@ Return horizontally averaged barotropic potential enstrophy.
 
 ## Discussion
 
-  The spatial invariant is
-  $$Z = \frac{h}{2}\langle q_{\mathrm{QG}}^2\rangle.$$
+The spatial invariant is
+$$Z = \frac{h}{2}\langle q_{\mathrm{QG}}^2\rangle.$$

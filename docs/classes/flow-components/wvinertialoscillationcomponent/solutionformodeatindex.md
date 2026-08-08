@@ -26,4 +26,4 @@ return the analytical solution at this index
 
 ## Discussion
 
-  Returns WVOrthogonalSolution object for this index
+Returns WVOrthogonalSolution object for this index

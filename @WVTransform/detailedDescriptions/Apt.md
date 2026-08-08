@@ -1,5 +1,9 @@
-- Topic: Wave-vortex coefficients — at time $$t$$
+`Apt` is the positive-frequency coefficient array evaluated at the current transform time:
 
-These are the *time dependent* coefficients of the internal gravity wave and inertial oscillation portion of the flow, denoted  $$A_+ e^{i \omega t} $$ in [Early, et al. (2021)](https://doi.org/10.1017/jfm.2020.995).
+$$
+A_+^{k\ell j}(t) = A_+^{k\ell j}(t_0) e^{i\omega^{k\ell j}(t-t_0)}.
+$$
 
-Unlike `Ap`, these coefficients do not have their phases wound to time $$t_0$$ (`t0`), and **do** change for linear dynamics.
+It is computed from the stored `Ap`, `t`, `t0`, and modal frequency without changing `Ap`.
+
+- Topic: Wave-vortex coefficients — At current time

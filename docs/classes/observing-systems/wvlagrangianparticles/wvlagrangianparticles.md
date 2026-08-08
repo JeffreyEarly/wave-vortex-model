@@ -29,5 +29,5 @@ Create a Lagrangian-particle observing system.
 
 ## Discussion
 
-  This class is intended to be subclassed, so this initializer
-  is generally called by a model particle facade.
+This class is intended to be subclassed, so this initializer
+is generally called by a model particle facade.

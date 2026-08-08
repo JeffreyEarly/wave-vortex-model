@@ -19,5 +19,5 @@ Real valued property with no dimensions and units of $$1$$.
 
 ## Discussion
 
-  This value is preserved when the forcing is converted to another
-  resolution or restored from an annotated NetCDF file.
+This value is preserved when the forcing is converted to another
+resolution or restored from an annotated NetCDF file.

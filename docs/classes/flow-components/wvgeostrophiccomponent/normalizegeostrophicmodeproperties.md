@@ -34,6 +34,6 @@ returns properties of a geostrophic solution relative to the primary mode number
 
 ## Discussion
 
-  This function will return the primary mode numbers (k,l,j),
-  given the any valid mode numbers (k,l,j) and adjust the
-  amplitude (A) and phase (phi), if necessary.
+This function will return the primary mode numbers (k,l,j),
+given the any valid mode numbers (k,l,j) and adjust the
+amplitude (A) and phase (phi), if necessary.

@@ -43,7 +43,7 @@ Geostrophic solution group
 + Quadratic quantities
   + [`totalEnergyFactorForCoefficientMatrix`](/classes/flow-components/wvinternalgravitywavecomponent/totalenergyfactorforcoefficientmatrix.html) returns the total energy multiplier for the coefficient matrix.
 + Other
-  + [`WVInternalGravityWaveComponent`](/classes/flow-components/wvinternalgravitywavecomponent/wvinternalgravitywavecomponent.html) Geostrophic solution group
+  + [`WVInternalGravityWaveComponent`](/classes/flow-components/wvinternalgravitywavecomponent/wvinternalgravitywavecomponent.html)
   + [`degreesOfFreedomPerMode`](/classes/flow-components/wvinternalgravitywavecomponent/degreesoffreedompermode.html)
   + [`internalGravityWaveSpatialTransformCoefficients`](/classes/flow-components/wvinternalgravitywavecomponent/internalgravitywavespatialtransformcoefficients.html)
   + [`internalGravityWaveSpectralTransformCoefficients`](/classes/flow-components/wvinternalgravitywavecomponent/internalgravitywavespectraltransformcoefficients.html)

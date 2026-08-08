@@ -9,17 +9,7 @@ mathjax: true
 
 #  WVGeostrophicComponent
 
-Geostrophic solution group
+
 
 
 ---
-
-## Declaration
-```matlab
- classdef WVGeostrophicComponent < WVPrimaryFlowComponent
-```
-## Discussion
-FlowConstituentGroup WVGeostrophicFlowGroup
-  WVInternalGravityWaveFlowGroup
-  WVRigidLidFlowGroup
-  OrthogonalSolutionGroup

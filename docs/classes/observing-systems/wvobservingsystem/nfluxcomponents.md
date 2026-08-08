@@ -19,9 +19,9 @@ number of components that need to be integrated in time.
 
 ## Discussion
 
-  Setting a value greater than zero will require that you
-  implement,
-    -absErrorTolerance
-    -initialConditions
-    -fluxAtTime
-    -updateIntegratorValues
+Setting a value greater than zero will require that you
+implement,
+  -absErrorTolerance
+  -initialConditions
+  -fluxAtTime
+  -updateIntegratorValues

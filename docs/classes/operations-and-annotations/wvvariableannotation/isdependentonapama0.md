@@ -19,5 +19,5 @@ boolean indicating whether the variable depends on Ap, Am, or A0
 
 ## Discussion
 
-  This information is used when caching variables and when writing
-  to NetCDF file.
+This information is used when caching variables and when writing
+to NetCDF file.

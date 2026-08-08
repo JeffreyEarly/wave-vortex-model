@@ -26,9 +26,6 @@ A WVObservingSystem is an abstract class that defines different ways of observin
 
 
 
-
-
-
 ## Topics
 + Initializing
   + [`WVObservingSystem`](/classes/observing-systems/wvobservingsystem/wvobservingsystem.html) create a new observing system

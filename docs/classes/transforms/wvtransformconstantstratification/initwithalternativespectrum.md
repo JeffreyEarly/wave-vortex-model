@@ -25,4 +25,4 @@ initialize with an alternative formulation of the GM spectrum in the wavenumber 
 
 ## Discussion
 
-  This only initializes the wave components, A0 is left untouched.
+This only initializes the wave components, A0 is left untouched.

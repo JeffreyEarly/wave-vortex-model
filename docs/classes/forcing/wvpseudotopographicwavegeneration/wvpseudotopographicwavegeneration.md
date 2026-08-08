@@ -36,11 +36,11 @@ Create a prescribed bottom wave-generation forcing.
 
 ## Discussion
 
-  Supply either `frequency` or `darwinSymbol`, but not both.
-  Omitting both selects M2. Supported Darwin symbols are `M2`,
-  `S2`, `N2`, `K1`, and `O1`. A zero ramp duration activates
-  the harmonic current immediately at `startTime`. The
-  transform must contain a wave component and implement
-  `waveModeVerticalStructureAtIndex`. Generation avoids active
-  adaptive damping by default. Manual bounds use radial
-  horizontal wavenumber and vertical wave-mode index.
+Supply either `frequency` or `darwinSymbol`, but not both.
+Omitting both selects M2. Supported Darwin symbols are `M2`,
+`S2`, `N2`, `K1`, and `O1`. A zero ramp duration activates
+the harmonic current immediately at `startTime`. The
+transform must contain a wave component and implement
+`waveModeVerticalStructureAtIndex`. Generation avoids active
+adaptive damping by default. Manual bounds use radial
+horizontal wavenumber and vertical wave-mode index.

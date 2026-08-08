@@ -9,7 +9,9 @@ mathjax: true
 
 #  removeForcing
 
-
+Remove the exact registered forcing objects.
 
 
 ---
+
+## Discussion

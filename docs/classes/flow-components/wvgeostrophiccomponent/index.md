@@ -46,7 +46,7 @@ OrthogonalSolutionGroup
 + Quadratic quantities
   + [`totalEnergyFactorForCoefficientMatrix`](/classes/flow-components/wvgeostrophiccomponent/totalenergyfactorforcoefficientmatrix.html) returns the total energy multiplier for the coefficient matrix.
 + Other
-  + [`WVGeostrophicComponent`](/classes/flow-components/wvgeostrophiccomponent/wvgeostrophiccomponent.html) Geostrophic solution group
+  + [`WVGeostrophicComponent`](/classes/flow-components/wvgeostrophiccomponent/wvgeostrophiccomponent.html)
   + [`degreesOfFreedomPerMode`](/classes/flow-components/wvgeostrophiccomponent/degreesoffreedompermode.html)
   + [`multiplierForVariable`](/classes/flow-components/wvgeostrophiccomponent/multiplierforvariable.html)
   + [`normalization`](/classes/flow-components/wvgeostrophiccomponent/normalization.html)

@@ -30,8 +30,8 @@ indices to convert from WV to DFT grid
 
 ## Discussion
 
-  This function returns indices to quickly reformat the memory
-  layout of a data structure on a WV grid to one on a DFT grid.
+This function returns indices to quickly reformat the memory
+layout of a data structure on a WV grid to one on a DFT grid.
 
-  This function is should generally be faster than the function
-  transformFromWVGridToDFTGrid if you cache these indices.
+This function is should generally be faster than the function
+transformFromWVGridToDFTGrid if you cache these indices.

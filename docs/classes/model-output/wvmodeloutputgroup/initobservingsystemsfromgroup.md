@@ -16,4 +16,4 @@ asks the output group to load the observing systems in the NetCDF file
 
 ## Discussion
 
-  Called by the static method `modelOutputGroupFromGroup` during the init from file process, this asks the output group to load the observing systems in the NetCDF file
+Called by the static method `modelOutputGroupFromGroup` during the init from file process, this asks the output group to load the observing systems in the NetCDF file

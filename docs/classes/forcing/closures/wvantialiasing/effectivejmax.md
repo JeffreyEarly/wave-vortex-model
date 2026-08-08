@@ -23,7 +23,7 @@ returns the effective highest vertical mode
 
 ## Discussion
 
-  The effective highest vertical modeis the highest fully resolved
-  mode in the model. This value takes into account
-  anti-aliasing, and is thus appropriate for setting damping
-  operators.
+The effective highest vertical modeis the highest fully resolved
+mode in the model. This value takes into account
+anti-aliasing, and is thus appropriate for setting damping
+operators.

@@ -1,49 +1,91 @@
 classdef WVTransform < matlab.mixin.indexing.RedefinesDot & CAAnnotatedClass
-    % Represents the state of the ocean in terms of energetically orthogonal wave and geostrophic (vortex) solutions
+    % Represent a fluid state with orthogonal wave and geostrophic solutions.
     %
+    % `WVTransform` is the abstract base class for the supported wave-vortex
+    % transforms. Each concrete transform represents the fluid state at time
+    % `t` with spectral coefficients and exposes physical variables such as
+    % velocity, isopycnal displacement, pressure, and potential vorticity.
+    % Density is denoted by $$\rho$$. Energetic quantities are normalized per
+    % unit reference density $$\rho_0$$ unless a method states otherwise.
     %
-    % The WVTransform subclasses encapsulate data representing the
-    % state of the ocean at a given instant in time. What makes the
-    % WVTransform subclasses special is that the state of the ocean
-    % is represented as energetically independent waves and geostrophic
-    % motions (vortices). These classes can be queried for any ocean state
-    % variable including $$u$$, $$v$$, $$w$$, $$\rho$$, $$p$$, but also
-    % Ertel PV, relative vorticity, or custom defined state variables.
+    % Use one of the five Stable concrete transform families:
     %
-    % The WVTransform is an abstract class and as such you must
-    % instatiate one of the concrete subclasses,
-    %
-    % + `WVTransformConstantStratification`
+    % + `WVTransformConstantStratification`, in hydrostatic or nonhydrostatic mode
     % + `WVTransformHydrostatic`
-    % + `WVTransformSingleMode`
+    % + `WVTransformBoussinesq`
+    % + `WVTransformStratifiedQG`
+    % + `WVTransformBarotropicQG`
+    %
+    % Wave-bearing transforms store positive- and negative-frequency wave and
+    % inertial coefficients in `Ap` and `Am`, and zero-frequency geostrophic
+    % and mean-density-anomaly coefficients in `A0`. Quasigeostrophic
+    % transforms use `A0` only. The `Apt`, `Amt`, and `A0t` variables are the
+    % corresponding coefficients evaluated at the current transform time.
     %
     % - Topic: Initialization
+    % - Topic: Wave-vortex coefficients
+    % - Topic: Wave-vortex coefficients — At current time
+    % - Topic: State variables
+    % - Topic: Flow components
+    % - Topic: Forcing
     % - Topic: Domain attributes
     % - Topic: Domain attributes — Grid
-    % - Topic: Domain attributes — Grid – Spatial
-    % - Topic: Domain attributes — Grid – Spectral
-    % - Topic: Wave-vortex coefficients
-    % - Topic: Initial Conditions
-    % - Topic: Initial Conditions — Waves
-    % - Topic: Initial Conditions — Inertial Oscillations
-    % - Topic: Initial Conditions — Geostrophic Motions
+    % - Topic: Domain attributes — Grid — Spatial
+    % - Topic: Domain attributes — Grid — Spectral
+    % - Topic: Initial conditions
+    % - Topic: Initial conditions — Waves
+    % - Topic: Initial conditions — Inertial oscillations
+    % - Topic: Initial conditions — Geostrophic motions
+    % - Topic: Operations
     % - Topic: Energetics
+    % - Topic: Potential vorticity and enstrophy
+    % - Topic: Persistence
+    % - Topic: Developer — Projection coefficients
+    % - Topic: Developer — Reconstruction coefficients
     %
-    % - Declaration: classdef WVTransform < handle
+    % - Declaration: classdef WVTransform < matlab.mixin.indexing.RedefinesDot & CAAnnotatedClass
     
     % Public read and write properties
     properties (GetAccess=public, SetAccess=public)
+        % Current transform time in seconds.
+        %
+        % - Topic: Domain attributes
         t = 0
+
+        % Reference time for the stored wave phases, in seconds.
+        %
+        % - Topic: Domain attributes
         t0 = 0
-        
-        % positive wave coefficients at reference time t0 (m/s)
-        % Topic: Wave-vortex coefficients
+
+        % Positive-frequency wave and inertial coefficients at reference time `t0`.
+        %
+        % `Ap` is a complex array with the transform's spectral layout. Only
+        % locations selected by the primary wave and inertial component masks
+        % are active. Together with `Am`, it reconstructs a real physical
+        % state and has units of velocity.
+        %
+        % - Topic: Wave-vortex coefficients
         Ap = 0
-        % negative wave coefficients at reference time t0 (m/s)
-        % Topic: Wave-vortex coefficients
+
+        % Negative-frequency wave and inertial coefficients at reference time `t0`.
+        %
+        % `Am` is a complex array with the transform's spectral layout. Only
+        % locations selected by the primary wave and inertial component masks
+        % are active. Its conjugacy relations with `Ap` enforce a real
+        % physical state, including `Am = conj(Ap)` on inertial modes.
+        %
+        % - Topic: Wave-vortex coefficients
         Am = 0
-        % geostrophic coefficients at reference time t0 (m)
-        % Topic: Wave-vortex coefficients
+
+        % Zero-frequency geostrophic and mean-density-anomaly coefficients.
+        %
+        % `A0` is a complex spectral array with units of streamfunction,
+        % $$\mathrm{m^2\,s^{-1}}$$. Geostrophic modes occupy nonzero
+        % horizontal wavenumbers; mean-density-anomaly modes occupy the
+        % horizontally averaged internal-mode locations. Quasigeostrophic
+        % transforms use `A0` without `Ap` or `Am` wave content.
+        %
+        % - Topic: Wave-vortex coefficients
         A0 = 0
     end
 
@@ -100,6 +142,9 @@ classdef WVTransform < matlab.mixin.indexing.RedefinesDot & CAAnnotatedClass
     end
     
     methods (Abstract)
+        % Construct the same transform family at a requested resolution.
+        %
+        % - Topic: Initialization
         wvtX2 = waveVortexTransformWithResolution(self,m)
         
         % Required for transformUVEtaToWaveVortex 
@@ -156,10 +201,13 @@ classdef WVTransform < matlab.mixin.indexing.RedefinesDot & CAAnnotatedClass
 
     methods
         function self = WVTransform(forcingType)
-            % initialize a WVTransform instance
+            % Initialize the internal WVTransform state for a concrete subclass.
             %
-            % This must be called from a subclass.
-            % - Topic: Internal
+            % Concrete transform constructors call this method; users create
+            % one of the supported subclasses instead.
+            %
+            % - Topic: Developer
+            % - Developer: true
             arguments
                 forcingType WVForcingType {mustBeNonempty}
             end
@@ -219,9 +267,21 @@ classdef WVTransform < matlab.mixin.indexing.RedefinesDot & CAAnnotatedClass
         %
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+        % Register a primary flow-component extension.
+        %
+        % - Topic: Flow components
         addPrimaryFlowComponent(self,primaryFlowComponent)
+        % Return the registered primary flow-component names.
+        %
+        % - Topic: Flow components
         names = primaryFlowComponentNames(self)
+        % Return a primary flow component by its Stable short name.
+        %
+        % - Topic: Flow components
         val = primaryFlowComponentWithName(self,name)
+        % Registered primary flow components.
+        %
+        % - Topic: Flow components
         function components = get.primaryFlowComponents(self)
             arguments (Input)
                 self WVTransform
@@ -232,8 +292,17 @@ classdef WVTransform < matlab.mixin.indexing.RedefinesDot & CAAnnotatedClass
             components = [self.primaryFlowComponentNameMap{self.primaryFlowComponentNameMap.keys}];
         end
 
+        % Register a diagnostic flow-component extension.
+        %
+        % - Topic: Flow components
         addFlowComponent(self,flowComponent)
+        % Return all registered flow-component names.
+        %
+        % - Topic: Flow components
         names = flowComponentNames(self)
+        % Return a registered flow component by short name.
+        %
+        % - Topic: Flow components
         val = flowComponentWithName(self,name)
 
         function n = get.nFluxedComponents(self)
@@ -246,21 +315,32 @@ classdef WVTransform < matlab.mixin.indexing.RedefinesDot & CAAnnotatedClass
         %
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+        % Register an operation and its annotated output variables.
+        %
+        % - Topic: Operations
         addOperation(self,operation,options)
+        % Remove a registered operation.
+        %
+        % - Topic: Operations
         removeOperation(self,transformOperation)
+        % Return a registered operation by name.
+        %
+        % - Topic: Operations
         val = operationWithName(self,name)
 
         varargout = performOperation(self,modelOp)
         varargout = performOperationWithName(self,opName)
 
-        % Primary method for accessing the dynamical variables
+        % Evaluate one or more registered state variables.
+        %
+        % - Topic: State variables
         [varargout] = variableWithName(self, variableNames);
         
         % Access dynamical variables at arbitrary positions.
         %
         % The interpolation method may be `linear` or `spline`. Horizontal
         % coordinates are wrapped periodically before interpolation.
-        % - Topic: Lagrangian
+        % - Topic: State variables
         [varargout] = variableAtPositionWithName(self,x,y,z,variableNames,options)
 
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -296,6 +376,9 @@ classdef WVTransform < matlab.mixin.indexing.RedefinesDot & CAAnnotatedClass
         end
 
         function removeAllForcing(self)
+            % Remove every forcing and closure from this transform.
+            %
+            % - Topic: Forcing
             arguments
                 self WVTransform {mustBeNonempty}
             end
@@ -308,6 +391,9 @@ classdef WVTransform < matlab.mixin.indexing.RedefinesDot & CAAnnotatedClass
         end
 
         function setForcing(self,force)
+            % Replace the complete forcing registry.
+            %
+            % - Topic: Forcing
             arguments
                 self WVTransform {mustBeNonempty}
                 force WVForcing
@@ -317,6 +403,9 @@ classdef WVTransform < matlab.mixin.indexing.RedefinesDot & CAAnnotatedClass
         end
 
         function addForcing(self,force)
+            % Add forcing or closure objects to this transform.
+            %
+            % - Topic: Forcing
             arguments
                 self WVTransform {mustBeNonempty}
                 force WVForcing
@@ -328,6 +417,9 @@ classdef WVTransform < matlab.mixin.indexing.RedefinesDot & CAAnnotatedClass
         end
 
         function removeForcing(self,force)
+            % Remove the exact registered forcing objects.
+            %
+            % - Topic: Forcing
             arguments
                 self WVTransform {mustBeNonempty}
                 force WVForcing
@@ -348,10 +440,16 @@ classdef WVTransform < matlab.mixin.indexing.RedefinesDot & CAAnnotatedClass
         end
 
         function forcing = get.forcing(self)
+            % Registered forcing and closure objects in execution order.
+            %
+            % - Topic: Forcing
             forcing = cat(2,self.spatialFluxForcing,self.spectralFluxForcing,self.spectralAmplitudeForcing);
         end
 
         function bool = hasForcingWithName(self,name)
+            % Test whether forcing objects are registered by name.
+            %
+            % - Topic: Forcing
             arguments (Input)
                 self WVTransform
             end
@@ -368,7 +466,7 @@ classdef WVTransform < matlab.mixin.indexing.RedefinesDot & CAAnnotatedClass
             % retrieve the names of all available variables. This preserves
             % the order in which the forcing is applied.
             %
-            % - Topic: Utility function — Metadata
+            % - Topic: Forcing
             arguments (Input)
                 self WVTransform {mustBeNonempty}
             end
@@ -379,6 +477,9 @@ classdef WVTransform < matlab.mixin.indexing.RedefinesDot & CAAnnotatedClass
         end
 
         function forcing = forcingWithName(self,name)
+            % Return registered forcing objects by name.
+            %
+            % - Topic: Forcing
             arguments (Input)
                 self WVTransform
             end
@@ -592,6 +693,9 @@ classdef WVTransform < matlab.mixin.indexing.RedefinesDot & CAAnnotatedClass
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
         function names = variableNames(self)
+            % Return the names of all registered state variables.
+            %
+            % - Topic: State variables
             annotations = self.propertyAnnotations;
             names = {};
             for i=1:length(annotations)
@@ -602,6 +706,9 @@ classdef WVTransform < matlab.mixin.indexing.RedefinesDot & CAAnnotatedClass
         end
 
         function bool = hasVariableWithName(self,name)
+            % Test whether state variables are registered by name.
+            %
+            % - Topic: State variables
             arguments (Input)
                 self WVTransform
             end
@@ -619,6 +726,9 @@ classdef WVTransform < matlab.mixin.indexing.RedefinesDot & CAAnnotatedClass
         summarizeModeEnergy(self,options)
 
         function summarizeVariables(self)
+            % Print a table of registered state variables and cache status.
+            %
+            % - Topic: State variables
             annotations = self.propertyAnnotations;
             variableAnnotationNameMap = configureDictionary("string","cell");
             for i=1:length(annotations)
@@ -651,6 +761,9 @@ classdef WVTransform < matlab.mixin.indexing.RedefinesDot & CAAnnotatedClass
         end
 
         function summarizeFlowComponents(self)
+            % Print a table of registered primary and diagnostic components.
+            %
+            % - Topic: Flow components
             Name = cell(self.flowComponentNameMap.numEntries,1);
             isPrimary = cell(self.flowComponentNameMap.numEntries,1);
             FullName = cell(self.flowComponentNameMap.numEntries,1);
@@ -672,6 +785,9 @@ classdef WVTransform < matlab.mixin.indexing.RedefinesDot & CAAnnotatedClass
         end
 
         function summarizeForcing(self)
+            % Print a table of registered forcing and closure objects.
+            %
+            % - Topic: Forcing
             Name = cell(length(self.forcing),1);
             IsClosure = cell(length(self.forcing),1);
             for iForce=1:length(self.forcing)

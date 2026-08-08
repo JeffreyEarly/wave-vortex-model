@@ -16,5 +16,5 @@ of the operation
 
 ## Discussion
 
-  If the operation only returns a single variable, it **must** be
-  given the same name as that variable.
+If the operation only returns a single variable, it **must** be
+given the same name as that variable.

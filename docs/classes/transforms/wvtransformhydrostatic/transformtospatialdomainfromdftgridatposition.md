@@ -26,6 +26,6 @@ transform from $$(k,l)$$ on the DFT grid to $$(x,y)$$ at any position
 
 ## Discussion
 
-  Performs an inverse non-uniform Fourier transform to take a
-  matrix from the DFT grid back to the spatial domain at any
-  set of points (x,y).
+Performs an inverse non-uniform Fourier transform to take a
+matrix from the DFT grid back to the spatial domain at any
+set of points (x,y).

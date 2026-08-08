@@ -19,4 +19,4 @@ Real valued property with no dimensions and units of $$s$$.
 
 ## Discussion
 
-  The model output interval written to the group
+The model output interval written to the group

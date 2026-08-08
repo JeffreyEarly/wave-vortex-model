@@ -9,7 +9,7 @@ mathjax: true
 
 #  addMeanDensityAnomaly
 
-add inertial motions to existing inertial motions
+Add a mean-density anomaly to the existing fluid state.
 
 
 ---
@@ -23,21 +23,16 @@ add inertial motions to existing inertial motions
 
 ## Discussion
 
-  The amplitudes of the inertial part of the flow will be added
-  to the existing inertial part of the flow.
+The supplied horizontally uniform isopycnal displacement is
+projected onto the internal mean-density-anomaly modes and
+added to their `A0` coefficients.
 
-  ```matlab
-  U_io = 0.2;
-  Ld = wvt.Lz/5;
-  u_NIO = @(z) U_io*exp((z/Ld));
-  v_NIO = @(z) zeros(size(z));
+```matlab
+eta = @(z) 10*sin(pi*(z+wvt.Lz)/wvt.Lz);
+wvt.addMeanDensityAnomaly(eta);
+```
 
-  wvt.addInertialMotions(u_NIO,v_NIO);
-  ```
-
-  It is important to note that because the WVTransform
-  de-aliases by default, you will not likely get exactly the
-  same function out that you put in. The high-modes are
-  removed.
-
-  The new inertial motions are added to the existing inertial motions
+It is important to note that because the WVTransform
+de-aliases by default, you will not likely get exactly the
+same function out that you put in. The high-modes are
+removed.

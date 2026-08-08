@@ -9,13 +9,7 @@ mathjax: true
 
 #  WVInternalGravityWaveComponent
 
-Geostrophic solution group
+
 
 
 ---
-
-## Declaration
-```matlab
- classdef WVInternalGravityWaveComponent < WVPrimaryFlowComponent
-```
-## Discussion

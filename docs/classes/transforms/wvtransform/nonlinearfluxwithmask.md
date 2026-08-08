@@ -29,8 +29,8 @@ returns the flux of each coefficient as determined by the nonlinear flux
 ## Discussion
 operation and the given mask.
 
-  The mask is applied to the coefficients Ap,Am,A0 before computing the
-  nonlinear flux. This is useful for zeroing wavenumbers at given total
-  wavenumber or frequency, for example.
+The mask is applied to the coefficients Ap,Am,A0 before computing the
+nonlinear flux. This is useful for zeroing wavenumbers at given total
+wavenumber or frequency, for example.
 
-  The nonlinear flux used is the unforced, invicid equations.
+The nonlinear flux used is the unforced, invicid equations.

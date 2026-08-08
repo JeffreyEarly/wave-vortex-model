@@ -33,4 +33,4 @@ set amplitudes of the given wave modes
 
 ## Discussion
 
-  Overwrite any existing wave modes with the given new values
+Overwrite any existing wave modes with the given new values

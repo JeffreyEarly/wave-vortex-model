@@ -31,4 +31,4 @@ add amplitudes of the given geostrophic modes
 
 ## Discussion
 
-  Add new amplitudes to any existing amplitudes
+Add new amplitudes to any existing amplitudes

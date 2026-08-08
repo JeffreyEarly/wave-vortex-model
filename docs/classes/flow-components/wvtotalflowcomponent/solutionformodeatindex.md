@@ -27,13 +27,13 @@ Return analytical solutions from the complete primary-flow basis.
 
 ## Discussion
 
-  Total-flow indices run from 1 through `nModes`. Primary flow
-  components are ordered lexically by `shortName`, and each
-  component contributes one contiguous range while retaining its
-  own local mode ordering. Scalar inputs return a scalar solution;
-  column-vector inputs return solutions in the requested order.
+Total-flow indices run from 1 through `nModes`. Primary flow
+components are ordered lexically by `shortName`, and each
+component contributes one contiguous range while retaining its
+own local mode ordering. Scalar inputs return a scalar solution;
+column-vector inputs return solutions in the requested order.
 
-  Set `amplitude='wvt'` to reconstruct each solution from the
-  corresponding coefficient currently stored by the transform.
-  Set `amplitude='random'` to generate an appropriate random
-  amplitude for each requested solution.
+Set `amplitude='wvt'` to reconstruct each solution from the
+corresponding coefficient currently stored by the transform.
+Set `amplitude='random'` to generate an appropriate random
+amplitude for each requested solution.

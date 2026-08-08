@@ -10,53 +10,46 @@ nav_order: 2
 
 #  WVModel
 
-The WVModel is responsible for time-stepping (integrating) the ocean state forward in time, as represented by a WVTransform.
+Integrate a fluid state represented by a WVTransform.
 
 
 ---
 
+## Declaration
+
+<div class="language-matlab highlighter-rouge"><div class="highlight"><pre class="highlight"><code>classdef WVModel < handle</code></pre></div></div>
+
 ## Overview
 
- Assuming you have already initialized a WVTransform, e.g.,
- ```matlab
- wvt = WVTransformConstantStratification([Lx, Ly, Lz], [Nx, Ny, Nz], N0,latitude=latitude);
- ```
- and maybe set some initial conditions, you can then initialize the
- model,
- ```matlab
- model = WVModel(wvt)
- ```
-
- By default the model only takes a linear time-step. To specify a
- nonlinear flux on initialization, for example,
+Construct a transform and use it to initialize the model:
 ```matlab
- model = WVModel(wvt);
+wvt = WVTransformConstantStratification([40e3,30e3,2e3],[8,6,9],N0=5.2e-3,latitude=45);
+model = WVModel(wvt);
 ```
+By default `WVModel` integrates the transform's nonlinear forcing and
+registers its coefficient observing system. Pass
+`shouldUseLinearDynamics=true` for analytical linear evolution. Use
+`setupIntegrator` to select the Stable fixed or adaptive integrator;
+`adaptive-cell` remains Experimental.
 
- You can also initialize a model from existing output,
- ```matlab
- model = WVModel.modelFromFile('SomeFile.nc');
+Restore a model and its output graph from one restart-capable file:
+```matlab
+model = WVModel.modelFromFile("SomeFile.nc");
 ```
-
- Advanced usage
- --------------
-
- 1. Create 1 or more NetCDFFiles
- 2. Add 1 or more WVModelOutputGroups to each file
- 3. Add 1 or more WVObservingSystems to each output group.
 
 
 
 
 ## Topics
 + Initialization
-  + [`WVModel`](/classes/wvmodel/wvmodel.html) Initialize a model from a WVTransform instance
+  + [`WVModel`](/classes/wvmodel/wvmodel.html) Initialize a model from a WVTransform instance.
   + [`modelFromFile`](/classes/wvmodel/modelfromfile.html) Initialize a model from an existing file
 + Model Properties
   + [`initialTime`](/classes/wvmodel/initialtime.html) Initial model time (seconds)
-  + [`isDynamicsLinear`](/classes/wvmodel/isdynamicslinear.html) Indicates whether or not the model is using linear or nonlinear dynamics.
+  + [`isDynamicsLinear`](/classes/wvmodel/isdynamicslinear.html) Whether the model uses analytical linear dynamics.
+  + [`summarize`](/classes/wvmodel/summarize.html) Print a summary of integrated systems and output files.
   + [`t`](/classes/wvmodel/t.html) Current model time (seconds)
-  + [`wvt`](/classes/wvmodel/wvt.html) The WVTransform instance the represents the ocean state.
+  + [`wvt`](/classes/wvmodel/wvt.html) WVTransform instance representing the ocean state.
 + Integration
   + [`integrateToTime`](/classes/wvmodel/integratetotime.html) Time step the model forward to the requested time.
   + [`setupIntegrator`](/classes/wvmodel/setupintegrator.html) Customize the time-stepping
@@ -117,7 +110,6 @@ The WVModel is responsible for time-stepping (integrating) the ocean state forwa
   + [`showIntegrationFinishDiagnostics`](/classes/wvmodel/showintegrationfinishdiagnostics.html)
   + [`showIntegrationStartDiagnostics`](/classes/wvmodel/showintegrationstartdiagnostics.html)
   + [`showIntegrationTimeDiagnostics`](/classes/wvmodel/showintegrationtimediagnostics.html)
-  + [`summarize`](/classes/wvmodel/summarize.html)
   + [`updateIntegratorValuesFromCellArray`](/classes/wvmodel/updateintegratorvaluesfromcellarray.html) We must set the time here. If we are integrating the
   + [`writeTimeStepToNetCDFFile`](/classes/wvmodel/writetimesteptonetcdffile.html)
 

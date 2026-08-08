@@ -27,6 +27,6 @@ Differentiate a G-grid field with respect to z.
 
 ## Discussion
 
-  `u` must use the gridded layout `[Nx Ny Nz]`. Orders 1 through 4 are
-  supported. Odd orders return an F-representation and even orders return
-  a G-representation.
+`u` must use the gridded layout `[Nx Ny Nz]`. Orders 1 through 4 are
+supported. Odd orders return an F-representation and even orders return
+a G-representation.

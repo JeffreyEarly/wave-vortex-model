@@ -1,14 +1,7 @@
+`Ap` stores the positive-frequency coefficients $$A_+^{k\ell j}$$ for internal gravity waves and the positive-frequency member of the paired inertial representation. The coefficients have units of velocity and use the transform's spectral layout.
+
+The stored phase is referenced to `t0`. Linear evolution does not overwrite `Ap`; use `Apt` for the coefficients evaluated at the current `t`. The wave and inertial primary-flow-component masks identify the active locations. Coefficients outside those masks must remain zero.
+
+Together `Ap` and `Am` obey the transform's Hermitian and inertial conjugacy relationships so the reconstructed physical fields are real. Quasigeostrophic transforms have no active `Ap` content.
+
 - Topic: Wave-vortex coefficients
-
-These are the coefficients of the internal gravity wave and inertial oscillation portion of the flow, denoted  $$A_+$$ in [Early, et al. (2021)](https://doi.org/10.1017/jfm.2020.995). The internal gravity solutions are showin in equation (3.18) and the inertial oscillations solutions are equation (3.15).
-
-These solutions have their phases wound to time $$t_0$$ (`t0`), and thus do not change for linear dynamics. The two different solutions are internal gravity waves (IGW) and inertial oscillations (IO). They exist in the $$A_+$$ array as follows (where k and l are considered equivalent),
-
-|  j\k  | **0** | **1** | **2** | **3** |
-|:-----:|:-----:|:-----:|:-----:|:-----:|
-| **0** |IO|     |     |     |
-| **1** |IO| IGW | IGW | IGW |
-| **2** |IO| IGW | IGW | IGW |
-| **3** |IO| IGW | IGW | IGW |
-
-These are the positive ($$+$$) frequency solutions of equation (3.18), the negative solutions are in the `Am` matrix.

@@ -65,7 +65,6 @@ wvt.addForcing(WVBottomFrictionQuadratic(Cd=0.001));
 
 
 
-
 ## Topics
 + Initialization
   + [`WVBottomFrictionQuadratic`](/classes/forcing/wvbottomfrictionquadratic/wvbottomfrictionquadratic.html) initialize the WVBottomFrictionQuadratic

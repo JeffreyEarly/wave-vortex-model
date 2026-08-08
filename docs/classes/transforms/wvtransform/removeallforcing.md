@@ -9,7 +9,9 @@ mathjax: true
 
 #  removeAllForcing
 
-
+Remove every forcing and closure from this transform.
 
 
 ---
+
+## Discussion

@@ -25,4 +25,4 @@ add $$(u,v,\eta)$$ to the existing values
 
 ## Discussion
 
-  Add $$(u,v,\eta)$$ to the existing Ap,Am,A0
+Add $$(u,v,\eta)$$ to the existing Ap,Am,A0

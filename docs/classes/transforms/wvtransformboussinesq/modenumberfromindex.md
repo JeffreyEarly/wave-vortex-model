@@ -28,5 +28,5 @@ Return mode numbers for spectral linear indices.
 
 ## Discussion
 
-  Scalar and column-vector inputs preserve their shape and ordering. Each
-  index must lie within the current spectral matrix.
+Scalar and column-vector inputs preserve their shape and ordering. Each
+index must lie within the current spectral matrix.

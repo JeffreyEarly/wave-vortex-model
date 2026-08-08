@@ -23,4 +23,4 @@ sets a narrow waveband of geostrophic forcing for forced-dissipative modeling
 
 ## Discussion
 
-  to be moved to a subclass
+to be moved to a subclass

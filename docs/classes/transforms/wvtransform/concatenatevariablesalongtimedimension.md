@@ -23,5 +23,5 @@ Concatenate variables along the time dimension
 
 ## Discussion
 
-  Writes to an existing file initialized with
-  createNetCDFFileForTimeStepOutput.
+Writes to an existing file initialized with
+createNetCDFFileForTimeStepOutput.

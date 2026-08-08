@@ -28,18 +28,18 @@ returns a mask with locations of modes that will alias with a quadratic multipli
 
 ## Discussion
 
-  Returns a 'mask' (matrices with 1s or 0s) indicating where aliased wave
-  modes are, assuming the 2/3 anti-aliasing rule for quadratic
-  interactions.
+Returns a 'mask' (matrices with 1s or 0s) indicating where aliased wave
+modes are, assuming the 2/3 anti-aliasing rule for quadratic
+interactions.
 
-  Technically one needs only restrict to 2/3s in each
-  wavenumber direction. However, we prefer to maintain an
-  isotropic effective grid size and instead restrict to a
-  circle.
+Technically one needs only restrict to 2/3s in each
+wavenumber direction. However, we prefer to maintain an
+isotropic effective grid size and instead restrict to a
+circle.
 
-  Basic usage,
-  ```matlab
-  antialiasMask = WVGeometryDoublyPeriodic.maskForAliasedModes(8,8);
-  ```
-  will return a mask that contains 1 at the locations of modes that will
-  alias with a quadratic multiplication.
+Basic usage,
+```matlab
+antialiasMask = WVGeometryDoublyPeriodic.maskForAliasedModes(8,8);
+```
+will return a mask that contains 1 at the locations of modes that will
+alias with a quadratic multiplication.

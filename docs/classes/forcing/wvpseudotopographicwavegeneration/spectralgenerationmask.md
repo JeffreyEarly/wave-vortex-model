@@ -24,8 +24,8 @@ Return the spectral region eligible for bottom-wave generation.
 
 ## Discussion
 
-  The common `mask` combines wave validity, the manual radial
-  horizontal-wavenumber and vertical-mode bounds, and the exact
-  zero-damping support of active `WVAdaptiveDamping` objects.
-  `components` reports those masks separately, including the
-  distinct positive- and negative-wave validity masks.
+The common `mask` combines wave validity, the manual radial
+horizontal-wavenumber and vertical-mode bounds, and the exact
+zero-damping support of active `WVAdaptiveDamping` objects.
+`components` reports those masks separately, including the
+distinct positive- and negative-wave validity masks.

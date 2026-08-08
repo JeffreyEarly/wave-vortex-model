@@ -26,11 +26,11 @@ convert from DFT to WV grid
 
 ## Discussion
 
-  This function will reformat the memory layout of a data
-  structure on a DFT grid to one on a WV grid. The WV grid will
-  respect the conditions set when this class was initialized
-  (shouldAntialias, shouldExcludeNyquist,
-  shouldExcludeConjugates).
+This function will reformat the memory layout of a data
+structure on a DFT grid to one on a WV grid. The WV grid will
+respect the conditions set when this class was initialized
+(shouldAntialias, shouldExcludeNyquist,
+shouldExcludeConjugates).
 
-  This function is not the fastest way to reformat your data.
-  If high performance is required, you should
+This function is not the fastest way to reformat your data.
+If high performance is required, you should

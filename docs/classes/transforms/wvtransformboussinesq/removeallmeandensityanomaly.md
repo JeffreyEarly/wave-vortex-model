@@ -20,4 +20,4 @@ remove all mean density anomalies
 ```
 ## Discussion
 
-  All mean density anomalies are removed. Other components of the flow will remain unaffected.
+All mean density anomalies are removed. Other components of the flow will remain unaffected.

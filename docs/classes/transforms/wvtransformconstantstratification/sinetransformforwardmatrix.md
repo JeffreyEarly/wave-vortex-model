@@ -16,5 +16,5 @@ CosineTransformForwardMatrix  Discrete Cosine Transform (DCT-I) matrix
 
 ## Discussion
 
-  This matrix exactly matches CosineTransformForward. See its documentation
-  for details.
+This matrix exactly matches CosineTransformForward. See its documentation
+for details.

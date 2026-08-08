@@ -23,6 +23,6 @@ Real valued property with no dimensions and units of $$bool$$.
 
 ## Discussion
 
-  When true, modes for which an active `WVAdaptiveDamping` has a
-  nonzero spectral operator are excluded from the generated wave
-  tendency.
+When true, modes for which an active `WVAdaptiveDamping` has a
+nonzero spectral operator are excluded from the generated wave
+tendency.

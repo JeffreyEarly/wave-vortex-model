@@ -27,7 +27,7 @@ a matrix with the number of degrees-of-freedom at each entry
 
 ## Discussion
 
-  A complex valued matrix A defined on a grid of size [Nx Ny]
-  would has 2*Nx*Ny degrees-of-freedom at each grid point. In
-  the Fourier domain, it also has 2*Nx*Ny degrees-of-freedom at
-  each grid point.
+A complex valued matrix A defined on a grid of size [Nx Ny]
+would has 2*Nx*Ny degrees-of-freedom at each grid point. In
+the Fourier domain, it also has 2*Nx*Ny degrees-of-freedom at
+each grid point.

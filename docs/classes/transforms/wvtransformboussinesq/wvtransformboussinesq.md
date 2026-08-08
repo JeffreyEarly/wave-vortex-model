@@ -9,31 +9,34 @@ mathjax: true
 
 #  WVTransformBoussinesq
 
-create a wave-vortex transform for variable stratification
+Create a nonhydrostatic wave-vortex transform for variable stratification.
 
 
 ---
 
 ## Declaration
 ```matlab
- wvt = WVTransformHydrostatic(Lxyz, Nxyz, options)
+ wvt = WVTransformBoussinesq(Lxyz,Nxyz,options)
 ```
 ## Parameters
 + `Lxyz`  length of the domain (in meters) in the three coordinate directions, e.g. [Lx Ly Lz]
 + `Nxyz`  number of grid points in the three coordinate directions, e.g. [Nx Ny Nz]
-+ `rho`   (optional) function_handle specifying the density as a function of depth on the domain [-Lz 0]
-+ `stratification`   (optional) function_handle specifying the stratification as a function of depth on the domain [-Lz 0]
-+ `latitude`  (optional) latitude of the domain (default is 33 degrees north)
-+ `rho0`  (optional) density at the surface z=0 (default is 1025 kg/m^3)
++ `options.N2Function`  function returning squared buoyancy frequency on `[-Lz,0]`
++ `options.rhoFunction`  function returning density on `[-Lz,0]`
++ `options.latitude`  latitude in the supported domain; default `33`
++ `options.shouldAntialias`  exclude quadratically aliased modes; default `true`
++ `options.rho0`  reference density in kilograms per cubic meter; default `1025`
 
 ## Returns
-+ `wvt`  a new WVTransformHydrostatic instance
++ `wvt`  new `WVTransformBoussinesq` instance
 
 ## Discussion
 
-  Creates a new instance of the WVTransformBoussinesq class
-  appropriate for disentangling nonhydrostatic waves and vortices
-  in variable stratification
+Creates a new instance of the WVTransformBoussinesq class
+appropriate for disentangling nonhydrostatic waves and vortices
+in variable stratification
 
-  You must initialization by passing *either* the density
-  profile or the stratification profile.
+Supply either `N2Function` or `rhoFunction`. The additional
+modal arrays accepted by the constructor are reconstruction
+state used by the persistence factories rather than ordinary
+user construction options.

@@ -9,7 +9,7 @@ mathjax: true
 
 #  t
 
-
+Current transform time in seconds.
 
 
 ---

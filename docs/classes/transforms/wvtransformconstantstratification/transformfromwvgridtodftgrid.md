@@ -27,7 +27,7 @@ convert from a WV to DFT grid
 
 ## Discussion
 
-  This function will reformat the memory layout of a data
-  structure on a WV grid to one on a DFT grid. If the option
-  isHalfComplex is selected, then it will not set values for
-  iL>Ny/2, which are ignored by a 'symmetric' fft.
+This function will reformat the memory layout of a data
+structure on a WV grid to one on a DFT grid. If the option
+isHalfComplex is selected, then it will not set values for
+iL>Ny/2, which are ignored by a 'symmetric' fft.

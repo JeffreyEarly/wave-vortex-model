@@ -42,7 +42,7 @@ Inertial oscillation solution group
 + Quadratic quantities
   + [`totalEnergyFactorForCoefficientMatrix`](/classes/flow-components/wvmeandensityanomalycomponent/totalenergyfactorforcoefficientmatrix.html) returns the total energy multiplier for the coefficient matrix.
 + Other
-  + [`WVMeanDensityAnomalyComponent`](/classes/flow-components/wvmeandensityanomalycomponent/wvmeandensityanomalycomponent.html) Inertial oscillation solution group
+  + [`WVMeanDensityAnomalyComponent`](/classes/flow-components/wvmeandensityanomalycomponent/wvmeandensityanomalycomponent.html)
   + [`degreesOfFreedomPerMode`](/classes/flow-components/wvmeandensityanomalycomponent/degreesoffreedompermode.html)
   + [`meanDensityAnomalySpatialTransformCoefficients`](/classes/flow-components/wvmeandensityanomalycomponent/meandensityanomalyspatialtransformcoefficients.html)
   + [`meanDensityAnomalySpectralTransformCoefficients`](/classes/flow-components/wvmeandensityanomalycomponent/meandensityanomalyspectraltransformcoefficients.html)

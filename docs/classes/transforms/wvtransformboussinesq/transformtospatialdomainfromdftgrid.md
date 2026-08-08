@@ -26,5 +26,5 @@ transform from $$(k,l,z)$$ on the DFT grid to $$(x,y,z)$$
 
 ## Discussion
 
-  Performs an inverse Fourier transform to take a matrix from
-  the DFT grid back to the spatial domain.
+Performs an inverse Fourier transform to take a matrix from
+the DFT grid back to the spatial domain.
