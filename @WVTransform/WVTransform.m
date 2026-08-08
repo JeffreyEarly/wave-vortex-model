@@ -310,8 +310,8 @@ classdef WVTransform < matlab.mixin.indexing.RedefinesDot & CAAnnotatedClass
                 self WVTransform {mustBeNonempty}
                 force WVForcing
             end
-            self.removeAllForcing();
-            self.addForcing(force);
+            [spatialForcing,spectralForcing,amplitudeForcing,nameMap] = self.stagedForcingRegistry(force);
+            self.commitForcingRegistry(spatialForcing,spectralForcing,amplitudeForcing,nameMap);
         end
 
         function addForcing(self,force)
@@ -320,48 +320,9 @@ classdef WVTransform < matlab.mixin.indexing.RedefinesDot & CAAnnotatedClass
                 force WVForcing
             end
 
-            didAddForcing = false;
-            for iForce = 1:length(force)
-                aForce = force(iForce);
-                if aForce.wvt ~= self
-                    error('This force was not initialized with the same wvt that it is being added to!')
-                end
-                if isKey(self.forcingNameMap,aForce.name)
-                    otherForce = self.forcingNameMap{aForce.name};
-                    if ~aForce.isequal(otherForce)
-                        sprintf('A forcing named %s already exists. It will be removed and replaced.\n',aForce.name)
-                        self.removeForcing(otherForce);
-                    else
-                        warning("You have attempted to add the forcing named '%s', but this forcing is already added to the WVTransform. This will be ignored.",aForce.name);
-                        return
-                    end
-                end
-                if ismember(intersect(aForce.forcingType,self.forcingType),WVForcing.spatialFluxTypes())
-                    self.spatialFluxForcing(end+1) = aForce;
-                    [~, idx] = sort([self.spatialFluxForcing.priority]);
-                    self.spatialFluxForcing = self.spatialFluxForcing(idx);
-                    self.forcingNameMap{aForce.name} = aForce;
-                    didAddForcing = true;
-                end
-                if ismember(intersect(aForce.forcingType,self.forcingType),WVForcing.spectralFluxTypes)
-                    self.spectralFluxForcing(end+1) = aForce;
-                    [~, idx] = sort([self.spectralFluxForcing.priority]);
-                    self.spectralFluxForcing = self.spectralFluxForcing(idx);
-                    self.forcingNameMap{aForce.name} = aForce;
-                    didAddForcing = true;
-                end
-                if ismember(intersect(aForce.forcingType,self.forcingType),WVForcing.spectralAmplitudeTypes)
-                    self.spectralAmplitudeForcing(end+1) = aForce;
-                    [~, idx] = sort([self.spectralAmplitudeForcing.priority]);
-                    self.spectralAmplitudeForcing = self.spectralAmplitudeForcing(idx);
-                    self.forcingNameMap{aForce.name} = aForce;
-                    didAddForcing = true;
-                end
-            end
-            if didAddForcing == false
-                error("This WVTransform does not support this type of forcing!!!");
-            end
-            notify(self,'forcingDidChange');
+            requestedForcing = [self.forcing reshape(force,1,[])];
+            [spatialForcing,spectralForcing,amplitudeForcing,nameMap] = self.stagedForcingRegistry(requestedForcing);
+            self.commitForcingRegistry(spatialForcing,spectralForcing,amplitudeForcing,nameMap);
         end
 
         function removeForcing(self,force)
@@ -371,13 +332,17 @@ classdef WVTransform < matlab.mixin.indexing.RedefinesDot & CAAnnotatedClass
             end
             for iForce = 1:length(force)
                 aForce = force(iForce);
-                self.spatialFluxForcing = setdiff(self.spatialFluxForcing,aForce,'stable');
-                self.spectralFluxForcing = setdiff(self.spectralFluxForcing,aForce,'stable');
-                self.spectralAmplitudeForcing = setdiff(self.spectralAmplitudeForcing,aForce,'stable');
-                self.forcingNameMap = self.forcingNameMap.remove(aForce.name);
-                aForce.didGetRemovedFromTransform(self);
+                if ~isKey(self.forcingNameMap,aForce.name) || self.forcingNameMap{aForce.name} ~= aForce
+                    error("The requested forcing is not registered with this transform.")
+                end
             end
-            notify(self,'forcingDidChange');
+
+            retainedForcing = self.forcing;
+            for iForce = 1:length(force)
+                retainedForcing(retainedForcing == force(iForce)) = [];
+            end
+            [spatialForcing,spectralForcing,amplitudeForcing,nameMap] = self.stagedForcingRegistry(retainedForcing);
+            self.commitForcingRegistry(spatialForcing,spectralForcing,amplitudeForcing,nameMap);
         end
 
         function forcing = get.forcing(self)
@@ -421,7 +386,14 @@ classdef WVTransform < matlab.mixin.indexing.RedefinesDot & CAAnnotatedClass
             arguments (Output)
                 forcing WVForcing
             end
-            forcing = [self.forcingNameMap{name}];
+            forcing = WVForcing.empty(1,0);
+            for iName = 1:length(name)
+                requestedName = name{iName};
+                if ~isKey(self.forcingNameMap,requestedName)
+                    error("No forcing named '%s' is registered with this transform.",requestedName)
+                end
+                forcing(end+1) = self.forcingNameMap{requestedName};
+            end
         end
 
         function restoreForcingAmplitudes(self)
@@ -810,6 +782,73 @@ classdef WVTransform < matlab.mixin.indexing.RedefinesDot & CAAnnotatedClass
         [varargout] = spectralVariableWithResolution(self,wvtX2,varargin)
     end
 
+    methods (Access=private)
+        function [spatialForcing,spectralForcing,amplitudeForcing,nameMap] = stagedForcingRegistry(self,forcing)
+            spatialForcing = WVForcing.empty(1,0);
+            spectralForcing = WVForcing.empty(1,0);
+            amplitudeForcing = WVForcing.empty(1,0);
+            nameMap = configureDictionary("string","cell");
+
+            for iForce = 1:length(forcing)
+                aForce = forcing(iForce);
+                if aForce.wvt ~= self
+                    error("Every forcing must be initialized with the transform receiving it.")
+                end
+
+                compatibleTypes = intersect(aForce.forcingType,self.forcingType);
+                isSpatial = any(ismember(compatibleTypes,WVForcing.spatialFluxTypes()));
+                isSpectral = any(ismember(compatibleTypes,WVForcing.spectralFluxTypes()));
+                isAmplitude = any(ismember(compatibleTypes,WVForcing.spectralAmplitudeTypes()));
+                if sum([isSpatial isSpectral isAmplitude]) ~= 1
+                    error("The transform does not support exactly one forcing category for '%s'.",aForce.name)
+                end
+
+                if isKey(nameMap,aForce.name)
+                    existingForce = nameMap{aForce.name};
+                    if existingForce == aForce
+                        continue
+                    end
+                    spatialForcing(spatialForcing == existingForce) = [];
+                    spectralForcing(spectralForcing == existingForce) = [];
+                    amplitudeForcing(amplitudeForcing == existingForce) = [];
+                end
+
+                if isSpatial
+                    spatialForcing(end+1) = aForce;
+                elseif isSpectral
+                    spectralForcing(end+1) = aForce;
+                else
+                    amplitudeForcing(end+1) = aForce;
+                end
+                nameMap{aForce.name} = aForce;
+            end
+
+            spatialForcing = WVTransform.sortForcingByPriority(spatialForcing);
+            spectralForcing = WVTransform.sortForcingByPriority(spectralForcing);
+            amplitudeForcing = WVTransform.sortForcingByPriority(amplitudeForcing);
+        end
+
+        function commitForcingRegistry(self,spatialForcing,spectralForcing,amplitudeForcing,nameMap)
+            oldForcing = self.forcing;
+            newForcing = [spatialForcing spectralForcing amplitudeForcing];
+            if WVTransform.areIdenticalForcingArrays(oldForcing,newForcing)
+                return
+            end
+
+            self.spatialFluxForcing = spatialForcing;
+            self.spectralFluxForcing = spectralForcing;
+            self.spectralAmplitudeForcing = amplitudeForcing;
+            self.forcingNameMap = nameMap;
+
+            for iForce = 1:length(oldForcing)
+                if isempty(newForcing) || ~any(newForcing == oldForcing(iForce))
+                    oldForcing(iForce).didGetRemovedFromTransform(self);
+                end
+            end
+            notify(self,'forcingDidChange');
+        end
+    end
+
     methods (Access=protected)
         % protected — Access from methods in class or subclasses
         varargout = interpolatedFieldAtPosition(self,x,y,z,method,varargin);
@@ -908,6 +947,20 @@ classdef WVTransform < matlab.mixin.indexing.RedefinesDot & CAAnnotatedClass
     end
 
     methods (Static, Access=private)
+        function forcing = sortForcingByPriority(forcing)
+            if length(forcing) > 1
+                [~,indices] = sort([forcing.priority],"ascend");
+                forcing = forcing(indices);
+            end
+        end
+
+        function tf = areIdenticalForcingArrays(first,second)
+            tf = length(first) == length(second);
+            if tf && ~isempty(first)
+                tf = all(first == second);
+            end
+        end
+
         function version = cachedPackageVersion()
             persistent cachedVersion
 

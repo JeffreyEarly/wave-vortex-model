@@ -326,23 +326,9 @@ classdef WVFixedAmplitudeForcing < WVForcing
 
         function force = forcingWithResolutionOfTransform(self,wvtX2)
             options.name = self.name;
-            Abar = zeros(self.wvt.spectralMatrixSize);
-            Abar(self.Ap_indices) = self.Apbar;
-            [AbarX2] = self.wvt.spectralVariableWithResolution(wvtX2,Abar);
-            options.Apbar = self.Apbar;
-            options.Ap_indices = find(AbarX2);
-
-            Abar = zeros(self.wvt.spectralMatrixSize);
-            Abar(self.Am_indices) = self.Ambar;
-            [AbarX2] = self.wvt.spectralVariableWithResolution(wvtX2,Abar);
-            options.Ambar = self.Ambar;
-            options.Am_indices = find(AbarX2);
-
-            Abar = zeros(self.wvt.spectralMatrixSize);
-            Abar(self.A0_indices) = self.A0bar;
-            [AbarX2] = self.wvt.spectralVariableWithResolution(wvtX2,Abar);
-            options.A0bar = self.A0bar;
-            options.A0_indices = find(AbarX2);
+            [options.Ap_indices,options.Apbar] = self.convertSelectedCoefficients(wvtX2,self.Ap_indices,self.Apbar);
+            [options.Am_indices,options.Ambar] = self.convertSelectedCoefficients(wvtX2,self.Am_indices,self.Ambar);
+            [options.A0_indices,options.A0bar] = self.convertSelectedCoefficients(wvtX2,self.A0_indices,self.A0bar);
 
             optionArgs = namedargs2cell(options);
             force = WVFixedAmplitudeForcing(wvtX2,optionArgs{:});
@@ -375,6 +361,20 @@ classdef WVFixedAmplitudeForcing < WVForcing
             end
             propertyAnnotations = self.propertyAnnotationWithName(properties);      
             writeToGroup@CAAnnotatedClass(self,group,propertyAnnotations,attributes);
+        end
+    end
+
+    methods (Access=private)
+        function [targetIndices,targetValues] = convertSelectedCoefficients(self,wvtX2,sourceIndices,sourceValues)
+            selection = zeros(self.wvt.spectralMatrixSize);
+            selection(sourceIndices) = 1;
+            targetSelection = self.wvt.spectralVariableWithResolution(wvtX2,selection);
+            targetIndices = find(targetSelection);
+
+            coefficientValues = complex(zeros(self.wvt.spectralMatrixSize));
+            coefficientValues(sourceIndices) = sourceValues;
+            targetCoefficientValues = self.wvt.spectralVariableWithResolution(wvtX2,coefficientValues);
+            targetValues = targetCoefficientValues(targetIndices);
         end
     end
 
