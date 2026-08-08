@@ -28,6 +28,7 @@ return the linear index into a spectral matrix given (k,l,j)
 ## Discussion
 
   This function will return the linear index in a spectral
-  matrix given a mode number.
+  matrix given a mode number. Scalar and column-vector inputs preserve their
+  shape and ordering; conjugate mode numbers map to their primary coefficient.
  
           

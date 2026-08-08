@@ -34,6 +34,9 @@ No feature is assigned to Deprecated in the v4.2.1 target contract.
 | `WVTransformBarotropicQG` | Stable | The equivalent-barotropic quasigeostrophic transform is supported. |
 | Latitude | Stable | Supported transforms accept both hemispheres for `5 <= abs(latitude) <= 85`, including the endpoints. |
 | MATLAB builtin FFT implementation | Stable | This is the supported Fourier-transform backend. |
+| Even and odd builtin horizontal grids | Stable | Positive integer grid counts are supported independently in each periodic direction. Nyquist modes exist and are excluded only along even-sized directions. |
+| Transform indexing and resolution conversion | Stable | Scalar and column-vector mode/index mappings are bijective on supported modes. Resolution and explicit-antialias conversions preserve coefficients identified by common integer mode numbers and initialize new modes to zero. |
+| Spectral and spatial quadratic invariants | Stable | Energy and, where defined, enstrophy agree within the documented transform discretization tolerance. |
 | FFTW and `RealToComplexTransform` integration | Internal | These backend remnants are not selectable through a supported transform contract. |
 | Periodic `linear` and `spline` interpolation | Stable | These are the only interpolation methods exposed by the supported public interpolation contract. |
 | Vertical calculus for stable 3-D transforms | Stable | `diffZF` and `diffZG` support orders 1 through 4 on `[Nx Ny Nz]` grids. `intZF` and `intZG` support first antiderivatives on `[Nx Ny Nz]` grids and `[Nz N]` matrices. Unsupported orders and layouts are rejected through ordinary MATLAB argument validation. |
@@ -105,7 +108,6 @@ The Internal forcing classes currently reside under `Forcing/Experimental`; thei
 
 - [WVM-421-04: Restore a deterministic green test baseline](https://github.com/JeffreyEarly/wave-vortex-model/issues/11) will enforce the supported latitude range and reconcile the existing latitude tests.
 - [WVM-421-06: Resolve exact interpolation and placeholder public-method contracts](https://github.com/JeffreyEarly/wave-vortex-model/issues/13) will implement the stable derivative, integral, pressure, modal-solution, and summary contracts and remove internal interpolation choices from public-facing option lists.
-- [WVM-421-07: Add core transform invariant coverage](https://github.com/JeffreyEarly/wave-vortex-model/issues/14) will add representative and exhaustive coverage for every stable transform.
 - [WVM-421-08: Add model, forcing, observing, output, and persistence coverage](https://github.com/JeffreyEarly/wave-vortex-model/issues/15) will cover the stable subsystem contracts and evaluate the experimental integration path separately.
 - [WVM-421-09: Resolve correctness-related analyzer findings and legacy package artifacts](https://github.com/JeffreyEarly/wave-vortex-model/issues/16) will quarantine or remove internal remnants and correct internal misspellings without changing the stable model facade.
 

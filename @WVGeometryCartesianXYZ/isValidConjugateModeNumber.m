@@ -23,6 +23,6 @@ arguments (Output)
     bool (:,1) logical {mustBeMember(bool,[0 1])}
 end
 klCheck = self.isValidConjugateKLModeNumber(kMode,lMode);
-jCheck = jMode >= 0 & jMode <= self.Nj;
+jCheck = ismember(jMode,self.j);
 bool = klCheck & jCheck;
 end

@@ -100,7 +100,7 @@ classdef WVGeostrophicComponent < WVPrimaryFlowComponent
                             variableFactor = (f/g)*mask;
                         case "eta"
                             variableFactor = (f/g)*mask;
-                            variableFactor(1,:) = 0;
+                            variableFactor(self.wvt.J == 0) = 0;
                         case "A0N"
                             variableFactor = (f./(self.wvt.h_0.*(K2 + Lr2inv)));
                             variableFactor(self.wvt.J==0) = 0;
@@ -148,7 +148,7 @@ classdef WVGeostrophicComponent < WVPrimaryFlowComponent
                             variableFactor = -(f/g)./(K2 + Lr2inv);
                         case "eta"
                             variableFactor = -(f/g)./(K2 + Lr2inv);
-                            variableFactor(1,:) = 0;
+                            variableFactor(self.wvt.J == 0) = 0;
                         case "A0N"
                             variableFactor = -(f./self.wvt.h_0).*mask;
                             variableFactor(self.wvt.J==0) = 0;
@@ -393,4 +393,3 @@ classdef WVGeostrophicComponent < WVPrimaryFlowComponent
 
     end 
 end
-

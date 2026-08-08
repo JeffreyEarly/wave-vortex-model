@@ -35,3 +35,9 @@ Every formal test method declares exactly one primary tag:
 - `optional` requires a declared optional dependency. The current optional category exercises the supported Optimization Toolbox path; unavailable dependencies produce an incomplete, unsuccessful run.
 
 Any failed or incomplete test makes its build task unsuccessful. Full and exhaustive discovery also check declared test metadata so a class or method cannot be silently omitted.
+
+## Core transform invariant matrix
+
+`TestCoreTransformInvariants` applies the compact full-category invariant matrix to constant-stratification hydrostatic and nonhydrostatic transforms, variable-stratification hydrostatic and Boussinesq transforms, stratified QG, and barotropic QG. The matrix uses both `[8 6 9]` and `[9 7 8]` grids; focused horizontal checks also cover mixed even/odd dimensions. `TestCoreTransformInvariantSmoke` provides one fast representative path, while the existing spectral-differentiation classes retain the large exhaustive parameter sweeps.
+
+Fourier round trips, Hermitian conjugacy, indexing, and constant-stratification derivatives use scale-aware machine-precision tolerances. Variable-stratification projections and spatial-versus-spectral quadratic invariants use relative tolerances up to `1e-3` on these deliberately small grids because their vertical discretization error is larger than floating-point roundoff. Test diagnostics identify the transform, grid parity, and invariant.

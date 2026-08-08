@@ -171,7 +171,7 @@ classdef WVTransformBarotropicQG < WVGeometryDoublyPeriodicBarotropic & WVTransf
         end
 
         function wvtX2 = waveVortexTransformWithResolution(self,m)
-            names = {'shouldAntialias','h','planetaryRadius','rotationRate','latitude','g'};
+            names = {'shouldAntialias','h','j','planetaryRadius','rotationRate','latitude','g'};
             optionArgs = {};
             for i=1:length(names)
                 optionArgs{2*i-1} = names{i};
@@ -208,8 +208,27 @@ classdef WVTransformBarotropicQG < WVGeometryDoublyPeriodicBarotropic & WVTransf
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
         function energy = get.totalEnergySpatiallyIntegrated(self)
+            % Return horizontally averaged barotropic energy.
+            %
+            % The spatial invariant is
+            % $$E = \frac{h}{2}\langle u^2+v^2\rangle + \frac{g}{2}\langle\eta^2\rangle.$$
+            %
+            % - Topic: Energetics
+            % - Returns energy: horizontally averaged energy per unit density
             [u,v,eta] = self.variableWithName('u','v','eta');
-            energy = sum(shiftdim(self.z_int,-2).*mean(mean( u.^2 + v.^2 + shiftdim(self.N2,-2).*eta.*eta, 1 ),2 ) )/2;
+            energy = self.h*mean(u.^2+v.^2,'all')/2 + self.g*mean(eta.^2,'all')/2;
+        end
+
+        function enstrophy = totalEnstrophySpatiallyIntegrated(self)
+            % Return horizontally averaged barotropic potential enstrophy.
+            %
+            % The spatial invariant is
+            % $$Z = \frac{h}{2}\langle q_{\mathrm{QG}}^2\rangle.$$
+            %
+            % - Topic: Energetics
+            % - Declaration: enstrophy = totalEnstrophySpatiallyIntegrated()
+            % - Returns enstrophy: horizontally averaged potential enstrophy
+            enstrophy = self.h*mean(self.qgpv.^2,'all')/2;
         end
 
         function energy = get.totalEnergy(self)

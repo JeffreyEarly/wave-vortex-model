@@ -29,7 +29,8 @@ returns a mask with locations of modes that are not fully resolved
 ## Discussion
 
   Returns a 'mask' (matrices with 1s or 0s) indicating where Nyquist
-  modes are located a standard FFT matrix.
+  modes are located in a standard FFT matrix. A direction has a Nyquist
+  coordinate only when its grid size is even.
  
   Basic usage,
   ```matlab

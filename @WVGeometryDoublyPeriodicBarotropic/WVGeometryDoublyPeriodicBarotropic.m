@@ -41,7 +41,7 @@ classdef WVGeometryDoublyPeriodicBarotropic < WVGeometryDoublyPeriodic & WVRotat
             % - Returns wvt: a new Cartesian2DBarotropic instance
             arguments
                 Lxy (1,2) double {mustBePositive}
-                Nxy (1,2) double {mustBePositive}
+                Nxy (1,2) double {mustBeInteger,mustBePositive}
                 geomOptions.shouldAntialias (1,1) logical = true
                 rotatingOptions.rotationRate (1,1) double = 7.2921E-5
                 rotatingOptions.planetaryRadius (1,1) double = 6.371e6
@@ -182,20 +182,25 @@ classdef WVGeometryDoublyPeriodicBarotropic < WVGeometryDoublyPeriodic & WVRotat
                 index (:,1) double {mustBeInteger,mustBePositive}
             end
             mustBeMember(jMode,self.j)
+            if ~all(self.isValidModeNumber(kMode,lMode,jMode))
+                error('Invalid WV mode number!');
+            end
+            [kMode,lMode] = self.primaryKLModeNumberFromKLModeNumber(kMode,lMode);
             index = self.indexFromKLModeNumber(kMode,lMode);
         end
         function [kMode,lMode,jMode] = modeNumberFromIndex(self,linearIndex)
             arguments (Input)
                 self WVGeometryDoublyPeriodicBarotropic {mustBeNonempty}
-                linearIndex (1,1) double {mustBeInteger,mustBePositive}
+                linearIndex (:,1) double {mustBeInteger,mustBePositive}
             end
             arguments (Output)
-                kMode (1,1) double {mustBeInteger}
-                lMode (1,1) double {mustBeInteger}
-                jMode (1,1) double {mustBeInteger}
+                kMode (:,1) double {mustBeInteger}
+                lMode (:,1) double {mustBeInteger}
+                jMode (:,1) double {mustBeInteger}
             end
+            mustBeLessThanOrEqual(linearIndex,self.Nkl)
             [kMode,lMode] = self.klModeNumberFromIndex(linearIndex);
-            jMode = self.j;
+            jMode = repmat(self.j,size(linearIndex));
         end
     end
 

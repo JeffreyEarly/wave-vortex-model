@@ -348,8 +348,10 @@ classdef WVPseudoTopographicWaveGeneration < WVForcing
             end
 
             terrainFourier = self.wvt.transformFromSpatialDomainWithFourier(repmat(self.topographicHeight,1,1,self.wvt.Nz));
-            terrainFourierX2 = self.wvt.spectralVariableWithResolution(wvtX2,terrainFourier);
-            terrainX2 = wvtX2.transformToSpatialDomainWithFourier(repmat(terrainFourierX2(1,:),wvtX2.Nz,1));
+            [isCommon,sourceIndex] = ismember([wvtX2.kMode_wv,wvtX2.lMode_wv],[self.wvt.kMode_wv,self.wvt.lMode_wv],"rows");
+            terrainFourierX2 = zeros(1,wvtX2.Nkl);
+            terrainFourierX2(isCommon) = terrainFourier(1,sourceIndex(isCommon));
+            terrainX2 = wvtX2.transformToSpatialDomainWithFourier(repmat(terrainFourierX2,wvtX2.Nz,1));
             forcing = WVPseudoTopographicWaveGeneration(wvtX2,topographicHeight=real(terrainX2(:,:,1)),barotropicVelocityAmplitude=self.barotropicVelocityAmplitude,frequency=self.frequency,rampDuration=self.rampDuration,startTime=self.startTime,shouldAvoidAdaptiveDamping=self.shouldAvoidAdaptiveDamping,maximumForcedHorizontalWavenumber=self.maximumForcedHorizontalWavenumber,maximumForcedVerticalMode=self.maximumForcedVerticalMode,name=string(self.name));
             forcing.darwinSymbol = self.darwinSymbol;
         end
