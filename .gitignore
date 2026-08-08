@@ -2,4 +2,5 @@
 *.asv
 *.mat
 *.nc
+Benchmarks/results/runs/
 *.nc
