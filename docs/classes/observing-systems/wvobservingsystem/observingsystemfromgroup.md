@@ -11,6 +11,8 @@ mathjax: true
 
 initialize a WVObservingSystem instance from NetCDF file
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

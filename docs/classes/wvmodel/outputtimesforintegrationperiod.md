@@ -11,6 +11,8 @@ mathjax: true
 
 This will be called exactly once before an integration
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

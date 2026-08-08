@@ -11,6 +11,8 @@ mathjax: true
 
 precomputed dLnN2 term
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

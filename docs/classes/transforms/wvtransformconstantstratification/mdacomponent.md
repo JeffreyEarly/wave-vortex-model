@@ -11,6 +11,8 @@ mathjax: true
 
 returns the mean density anomaly component
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

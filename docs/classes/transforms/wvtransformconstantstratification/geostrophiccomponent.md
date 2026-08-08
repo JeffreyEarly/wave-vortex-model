@@ -11,6 +11,8 @@ mathjax: true
 
 returns the geostrophic flow component
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

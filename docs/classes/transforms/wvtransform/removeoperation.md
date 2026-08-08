@@ -3,7 +3,7 @@ layout: default
 title: removeOperation
 parent: WVTransform
 grand_parent: Transforms
-nav_order: 85
+nav_order: 72
 mathjax: true
 ---
 

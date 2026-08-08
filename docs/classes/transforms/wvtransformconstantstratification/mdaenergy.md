@@ -11,6 +11,8 @@ mathjax: true
 
 total energy of the mean density anomaly
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

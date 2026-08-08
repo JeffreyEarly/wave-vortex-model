@@ -11,5 +11,7 @@ mathjax: true
 
 interpolation method for the tracked fields
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---

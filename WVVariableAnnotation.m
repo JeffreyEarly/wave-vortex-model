@@ -1,19 +1,21 @@
 classdef WVVariableAnnotation < CANumericProperty
-    % Describes a variable computed from the WVTransform
+    % Describe a variable computed from a WVTransform.
     % 
     % In addition to adding a name, description and detailed description of
     % a given variable, you also specify its dimensions, units, and whether
-    % or note it has an imaginary part. These annotations are used for both
+    % or whether it has an imaginary part. These annotations are used for
     % online documentation and for writing to NetCDF files.
     %
     % Setting the two properties `isVariableWithLinearTimeStep` and
     % `isVariableWithNonlinearTimeStep` are important for determining
     % how the variable is cached, and when it is saved to a NetCDF file.
     %
-    % Note that as a subclass of WVAnnotation, this class looks for
-    % a file (name).md in the directory where it is defined another other
-    % subdirectories. This file is then read-in to the detailed description
-    % that is used on the website.
+    % A matching Markdown sidecar named for the variable may provide the
+    % longer mathematical or scientific description. `CAPropertyAnnotation`
+    % locates that sidecar when detailed documentation is requested, and the
+    % website builder merges the canonical sidecar into each generated class
+    % reference that exposes the variable. This keeps equations and tables out
+    % of constructor calls without disconnecting them from the annotation.
     %
     % - Declaration: classdef WVVariableAnnotation < WVAnnotation
     properties

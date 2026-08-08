@@ -3,13 +3,13 @@ layout: default
 title: version
 parent: WVTransform
 grand_parent: Transforms
-nav_order: 122
+nav_order: 109
 mathjax: true
 ---
 
 #  version
 
-WaveVortexModel package version read from `resources/mpackage.json`.
+Installed WaveVortexModel version.
 
 
 ---

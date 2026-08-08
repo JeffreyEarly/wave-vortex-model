@@ -11,6 +11,8 @@ mathjax: true
 
 Whether generation avoids active adaptive damping.
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

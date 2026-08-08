@@ -11,6 +11,8 @@ mathjax: true
 
 radial (k,l) wavenumber on the WV grid
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

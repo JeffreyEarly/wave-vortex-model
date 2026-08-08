@@ -11,7 +11,7 @@ nav_order: 1
 
 #  WVOperation
 
-Perform an operation and return a variable using a WVTransform
+Compute one or more registered WVTransform variables.
 
 
 ---
@@ -22,7 +22,7 @@ Perform an operation and return a variable using a WVTransform
 
 ## Overview
 
-A WVOperation allows you to add new functionality to the WVTransform by
+A `WVOperation` adds computed variables to a `WVTransform` by
 defining one or more variables and creating an operation for computing
 those variables.
 
@@ -39,7 +39,7 @@ wvt.addOperation(WVOperation('zeta_z',outputVar,f));
 will enable direct calls to `wvt.zeta_z` to compute the vertical
 vorticity.
 
-Note that a `WVOperation` that computes a single variable, must have the
+A `WVOperation` that computes a single variable must have the
 same name as the variable, as specified in `WVVariableAnnotation`.
 
 More involved calculations may require subclassing WVOperation and
@@ -50,17 +50,21 @@ compute operation must be described with a `WVVariableAnnotation`.
 
 
 ## Topics
-+ Initialization
++ Create operations and annotations
   + [`WVOperation`](/classes/operations-and-annotations/wvoperation/wvoperation.html) create a new WVOperation for computing a new variable
-+ Computation
++ Evaluate an operation
   + [`compute`](/classes/operations-and-annotations/wvoperation/compute.html) the promised variable
-+ Properties
-  + [`f`](/classes/operations-and-annotations/wvoperation/f.html) function handle to be called when computing the operation
-  + [`nVarOut`](/classes/operations-and-annotations/wvoperation/nvarout.html) number of variables returned by the computation
++ Inspect dependencies and outputs
+  + [`detailedDescription`](/classes/operations-and-annotations/wvoperation/detaileddescription.html)
   + [`name`](/classes/operations-and-annotations/wvoperation/name.html) of the operation
   + [`outputVariables`](/classes/operations-and-annotations/wvoperation/outputvariables.html) array of WVVariableAnnotations describing the outputs of the computation
-+ Other
-  + [`detailedDescription`](/classes/operations-and-annotations/wvoperation/detaileddescription.html)
+
+
+## Developer Topics
+These items document internal implementation details and are not part of the primary public API.
++ Operation internals
+  + [`f`](/classes/operations-and-annotations/wvoperation/f.html) function handle to be called when computing the operation
+  + [`nVarOut`](/classes/operations-and-annotations/wvoperation/nvarout.html) number of variables returned by the computation
 
 
 ---

@@ -11,6 +11,8 @@ mathjax: true
 
 return a boolean indicating whether (k,l) is a valid conjugate WV mode number
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

@@ -3,13 +3,15 @@ layout: default
 title: optimizedTransformsForFlowComponent
 parent: WVTransform
 grand_parent: Transforms
-nav_order: 72
+nav_order: 59
 mathjax: true
 ---
 
 #  optimizedTransformsForFlowComponent
 
 returns optimized transforms that avoid unnecessary computation
+
+> Developer documentation: this item describes internal implementation details.
 
 
 ---

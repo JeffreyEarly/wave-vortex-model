@@ -11,6 +11,8 @@ mathjax: true
 
 returns a mask with locations of modes that are not fully resolved
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

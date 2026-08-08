@@ -11,6 +11,8 @@ mathjax: true
 
 create a new WVObservingSystem with a new resolution
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

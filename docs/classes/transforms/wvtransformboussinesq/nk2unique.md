@@ -11,5 +11,7 @@ mathjax: true
 
 number of unique squared-wavenumbers
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---

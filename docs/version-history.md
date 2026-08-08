@@ -8,20 +8,21 @@ nav_order: 100
 
 ## [Unreleased]
 
-- Corrected the Stable `WVTransform` and `WVModel` API reference, promoted the stored and time-evaluated wave-vortex coefficients, and classified low-level projection and reconstruction arrays as Developer reference.
+- Reorganized the generated API reference around user tasks, moved implementation machinery into Developer Topics, replaced release-status jargon with direct descriptions of capabilities and limitations, and restored authored scientific context, coefficient-occupancy tables, and design rationale.
+- Corrected the `WVTransform` and `WVModel` API reference, promoted the stored and time-evaluated wave-vortex coefficients, and classified low-level projection and reconstruction arrays as Developer reference.
 - Made documentation generation clean, deterministic, transactional, and reviewable with an exact ClassDocumentation 1.3.0 authoring dependency, canonical build/check tasks, generated hierarchy validation, and case-sensitive internal-route checks.
-- Quarantined disconnected legacy implementations, corrected Internal adaptive-integrator and geometry spelling, retained a narrow 4.x file fallback for `shouldExludeConjugates`, and repaired the retained Internal barotropic FINUFFT path.
+- Quarantined disconnected legacy implementations, corrected low-level adaptive-integrator and geometry spelling, retained a narrow 4.x file fallback for `shouldExludeConjugates`, and repaired the retained barotropic FINUFFT development path.
 - Stabilized model-output scheduling and NetCDF restart across multiple files and groups; preserved linear dynamics and shared observing systems; and made initialization, writing, restoration, and handle ownership exception-safe.
 - Made operation registration, replacement, and removal atomic and identity-based; corrected multiple-output lookup; and made cache invalidation follow each operation's declared time and coefficient dependencies.
 - Made forcing registration identity-based, deterministic, and atomic; preserved vertical-diffusivity, fixed-amplitude, and explicit-antialias configurations through resolution changes and NetCDF restoration; and rejected vertical diffusivity on barotropic transforms.
 - Corrected observing-system ownership and composition, linear-time flux evaluation, particle tolerance and tracked-field propagation, and periodic one-based mooring indexing.
-- Added compact invariant coverage across every stable transform on even and odd grids; corrected parity-aware Nyquist and Hermitian bookkeeping, vector mode/index mappings, coefficient-preserving resolution conversion, and barotropic spatial energy and enstrophy diagnostics.
-- Generalized `summarizeDegreesOfFreedom` across every stable transform with deterministic grid metadata and primary-component mask counts.
+- Added compact invariant coverage across every transform family on even and odd grids; corrected parity-aware Nyquist and Hermitian bookkeeping, vector mode/index mappings, coefficient-preserving resolution conversion, and barotropic spatial energy and enstrophy diagnostics.
+- Generalized `summarizeDegreesOfFreedom` across every transform family with deterministic grid metadata and primary-component mask counts.
 - Implemented deterministic total-flow analytical-solution lookup across primary components and repaired barotropic mode-index conversion used by that lookup.
 - Implemented `hasMeanPressureDifference` as an MDA-only boundary diagnostic with a `1e-5` relative pressure tolerance; other flow components and transforms without an MDA component return `false`.
-- Completed the supported vertical-calculus contract: first through fourth derivatives now use ordinary MATLAB order and grid-layout validation, and all stable three-dimensional transforms provide first antiderivatives with documented G-space projection and bottom-zero conventions.
+- Completed the vertical-calculus contract: first through fourth derivatives now use ordinary MATLAB order and grid-layout validation, and all three-dimensional transforms provide first antiderivatives with documented G-space projection and bottom-zero conventions.
 - Restricted public field and particle interpolation to periodic `linear` and `spline` methods and removed the dead `exact` and off-grid dispatch.
-- Documented the v4.2.1 target support contract: the five current transform families, the supported latitude domain of `5 <= abs(latitude) <= 85`, MATLAB builtin FFTs, fixed and adaptive integration, and periodic `linear` and `spline` interpolation are stable; `adaptive-cell` integration is experimental; and FFTW, `exact` and `finufft` interpolation, off-grid behavior, and legacy low-level entry points are internal.
+- Documented the v4.2.1 capabilities and limitations, including the five transform families, latitude domain of `5 <= abs(latitude) <= 85`, MATLAB builtin FFTs, fixed and adaptive integration, and periodic `linear` and `spline` interpolation.
 - Enforced the supported latitude domain and restored a deterministic, order-independent green test baseline with isolated random state and temporary files.
 - Corrected combined random-flow initialization to preserve conjugate inertial `Ap` and `Am` coefficients.
 

@@ -11,6 +11,8 @@ mathjax: true
 
 whether the WV grid includes Nyquist wavenumbers
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

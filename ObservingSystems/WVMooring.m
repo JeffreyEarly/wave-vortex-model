@@ -1,6 +1,8 @@
 classdef WVMooring < WVObservingSystem
-    %UNTITLED2 Summary of this class goes here
-    %   Detailed explanation goes here
+    % Sample transform fields at fixed horizontal locations
+    %
+    % WVMooring records vertical profiles of selected fields at stationary
+    % points in a three-dimensional periodic domain.
 
     properties (GetAccess=public, SetAccess=protected)
         x, y

@@ -11,6 +11,8 @@ mathjax: true
 
 scaled damping parameter, units of $$s^{-1} m^{-2}$$
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

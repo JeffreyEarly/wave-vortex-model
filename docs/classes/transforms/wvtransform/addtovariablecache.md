@@ -11,6 +11,8 @@ mathjax: true
 
 add variable to internal cache, in case it is needed again
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

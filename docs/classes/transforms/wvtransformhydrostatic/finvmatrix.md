@@ -11,6 +11,8 @@ mathjax: true
 
 transformation matrix $$F_g^{-1}$$
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

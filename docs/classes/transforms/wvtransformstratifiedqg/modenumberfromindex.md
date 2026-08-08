@@ -11,6 +11,8 @@ mathjax: true
 
 Return mode numbers for spectral linear indices.
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

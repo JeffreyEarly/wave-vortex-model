@@ -13,19 +13,34 @@ classdef WVTransformBarotropicQG < WVGeometryDoublyPeriodicBarotropic & WVTransf
     % wvt = WVTransformBarotropicQG([Lxy,Lxy],[Nxy,Nxy],h=0.8,latitude=latitude);
     % ```
     %
-    % The Stable quasigeostrophic state is stored in
+    % The quasigeostrophic state is stored in
     % [`A0`](/classes/transforms/wvtransform/a0.html), with current-time view
     % `A0t`. This transform has no active `Ap`, `Am`, `Apt`, or `Amt` content.
     %
-    % - Topic: Initialization
-    % - Topic: Wave-vortex coefficients
-    % - Topic: Wave-vortex coefficients — At current time
-    % - Topic: Primary flow components
-    % - Topic: Initial conditions
-    % - Topic: Energetics of flow components
-    % - Topic: Operations
-    % - Topic: Developer — Projection coefficients
-    % - Topic: Developer — Reconstruction coefficients
+    % - Topic: Create and restore a transform
+    % - Topic: Inspect wave-vortex coefficients
+    % - Topic: Inspect wave-vortex coefficients — Coefficients at the current time
+    % - Topic: Inspect the domain
+    % - Topic: Inspect the domain — Spatial grid
+    % - Topic: Inspect the domain — Spectral grid
+    % - Topic: Inspect the domain — Rotation and stratification
+    % - Topic: Initialize the flow
+    % - Topic: Initialize the flow — Geostrophic motions
+    % - Topic: Evaluate physical fields
+    % - Topic: Evaluate physical fields — On the model grid
+    % - Topic: Convert representations
+    % - Topic: Convert representations — Physical fields and coefficients
+    % - Topic: Analyze the flow
+    % - Topic: Analyze the flow — Energy and summaries
+    % - Topic: Analyze the flow — Potential vorticity and enstrophy
+    % - Topic: Analyze the flow — Spectra
+    % - Topic: Projection and reconstruction coefficients
+    % - Topic: Geometry and mode indexing
+    % - Topic: Spectral transforms and operators
+    % - Topic: Nonlinear flux and forcing internals
+    % - Topic: Persistence internals
+    % - Topic: Caches and registries
+    % - Topic: Class internals
     %
     % - Declaration: classdef WVTransformBarotropicQG < [WVTransform](/classes/transforms/wvtransform/)
     properties (Dependent)

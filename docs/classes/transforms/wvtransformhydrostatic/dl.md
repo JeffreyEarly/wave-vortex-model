@@ -11,6 +11,8 @@ mathjax: true
 
 wavenumber spacing of the $$l$$ axis
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

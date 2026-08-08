@@ -11,6 +11,8 @@ mathjax: true
 
 index into the DFT grid of the conjugate of each WV mode
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

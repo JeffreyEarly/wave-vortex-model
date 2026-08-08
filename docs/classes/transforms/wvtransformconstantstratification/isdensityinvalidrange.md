@@ -11,6 +11,8 @@ mathjax: true
 
 checks if the density field is a valid adiabatic re-arrangement of the base state
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

@@ -11,6 +11,8 @@ mathjax: true
 
 whether the advection is only applied in x-y
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

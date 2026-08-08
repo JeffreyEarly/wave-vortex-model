@@ -11,6 +11,8 @@ mathjax: true
 
 retrieve an observing system by name
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

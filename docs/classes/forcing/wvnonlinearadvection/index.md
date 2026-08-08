@@ -66,12 +66,16 @@ This is the only forcing added to the transforms by default. You must explicitly
 
 
 ## Topics
-+ Initialization
++ Create forcing and closures
   + [`WVNonlinearAdvection`](/classes/forcing/wvnonlinearadvection/wvnonlinearadvection.html) initialize the WVNonlinearAdvection nonlinear flux
-+ Properties
-  + [`dLnN2`](/classes/forcing/wvnonlinearadvection/dlnn2.html) variable stratification factor
-+ CAAnnotatedClass requirement
+
+
+## Developer Topics
+These items document internal implementation details and are not part of the primary public API.
++ Forcing persistence
   + [`classRequiredPropertyNames`](/classes/forcing/wvnonlinearadvection/classrequiredpropertynames.html) Returns the required property names for the class
++ Forcing internals
+  + [`dLnN2`](/classes/forcing/wvnonlinearadvection/dlnn2.html) variable stratification factor
 
 
 ---

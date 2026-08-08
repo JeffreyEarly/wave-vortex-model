@@ -11,6 +11,8 @@ mathjax: true
 
 passes updated values of the variables being integrated.
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

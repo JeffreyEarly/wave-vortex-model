@@ -11,6 +11,8 @@ mathjax: true
 
 whether to antialias
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

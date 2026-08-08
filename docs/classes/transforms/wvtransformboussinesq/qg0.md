@@ -11,6 +11,8 @@ mathjax: true
 
 Preconditioned G-mode forward transformation
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

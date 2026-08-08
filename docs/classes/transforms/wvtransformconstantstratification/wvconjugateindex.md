@@ -11,6 +11,8 @@ mathjax: true
 
 index into the WV mode that matches the dftConjugateIndices
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

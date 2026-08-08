@@ -11,6 +11,8 @@ mathjax: true
 
 Return wave vertical-structure factors at one vertical grid index.
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

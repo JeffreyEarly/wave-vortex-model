@@ -11,6 +11,8 @@ mathjax: true
 
 Preconditioner for F, size(P)=[Nj x Nk]. F*u = uhat, (PF)*u = P*uhat, so ubar==P*uhat
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

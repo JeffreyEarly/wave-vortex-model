@@ -11,6 +11,8 @@ mathjax: true
 
 takes any valid WV mode number and returns the primary mode number
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

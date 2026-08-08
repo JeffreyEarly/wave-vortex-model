@@ -11,6 +11,8 @@ mathjax: true
 
 wavenumber spacing of the $$k$$ axis
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

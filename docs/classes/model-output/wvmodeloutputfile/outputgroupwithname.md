@@ -11,6 +11,8 @@ mathjax: true
 
 retrieve a WVModelOutputGroup by name
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

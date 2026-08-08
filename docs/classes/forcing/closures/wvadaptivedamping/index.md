@@ -84,20 +84,23 @@ rguably they're under-damped in a non-hydrostatic simulation.
 
 
 ## Topics
-+ Initialization
++ Create forcing and closures
   + [`WVAdaptiveDamping`](/classes/forcing/closures/wvadaptivedamping/wvadaptivedamping.html) initialize the WVAdaptiveDamping
-+ Properties
+
+
+## Developer Topics
+These items document internal implementation details and are not part of the primary public API.
++ Forcing internals
   + [`assumedEffectiveHorizontalGridResolution`](/classes/forcing/closures/wvadaptivedamping/assumedeffectivehorizontalgridresolution.html) effective resolution used in the damping calculation
+  + [`buildDampingOperator`](/classes/forcing/closures/wvadaptivedamping/builddampingoperator.html) Builds the damping operator
   + [`damp`](/classes/forcing/closures/wvadaptivedamping/damp.html) spectral matrix that multiplies Ap,Am,A0 to damp
   + [`dampingTimeScale`](/classes/forcing/closures/wvadaptivedamping/dampingtimescale.html) Computes the minimum damping time scale
   + [`j_damp`](/classes/forcing/closures/wvadaptivedamping/j_damp.html) wavenumber at which the significant scale damping starts.
   + [`j_no_damp`](/classes/forcing/closures/wvadaptivedamping/j_no_damp.html) wavenumber below which there is zero damping
   + [`k_damp`](/classes/forcing/closures/wvadaptivedamping/k_damp.html) wavenumber at which the significant scale damping starts.
   + [`k_no_damp`](/classes/forcing/closures/wvadaptivedamping/k_no_damp.html) wavenumber below which there is zero damping
-+ Internal
-  + [`buildDampingOperator`](/classes/forcing/closures/wvadaptivedamping/builddampingoperator.html) Builds the damping operator
   + [`spectralVanishingViscosityFilter`](/classes/forcing/closures/wvadaptivedamping/spectralvanishingviscosityfilter.html) Builds the spectral vanishing viscosity operator
-+ CAAnnotatedClass requirement
++ Forcing persistence
   + [`classRequiredPropertyNames`](/classes/forcing/closures/wvadaptivedamping/classrequiredpropertynames.html) Returns the required property names for the class
 
 

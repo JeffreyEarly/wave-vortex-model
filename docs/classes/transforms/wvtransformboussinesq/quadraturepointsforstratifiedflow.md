@@ -11,6 +11,8 @@ mathjax: true
 
 return the quadrature points for a given stratification
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

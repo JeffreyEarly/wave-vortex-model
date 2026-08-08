@@ -11,6 +11,8 @@ mathjax: true
 
 a matrix of linear indices of the conjugate
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

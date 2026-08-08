@@ -11,6 +11,8 @@ mathjax: true
 
 add an output group to this file
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

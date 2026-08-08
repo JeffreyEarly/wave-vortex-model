@@ -11,6 +11,8 @@ mathjax: true
 
 Shortest distance on a 2D torus
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

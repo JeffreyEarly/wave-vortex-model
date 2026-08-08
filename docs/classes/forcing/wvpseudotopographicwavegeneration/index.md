@@ -48,14 +48,21 @@ wvt.addForcing(forcing);
 
 
 ## Topics
-+ Create the forcing
++ Create forcing and closures
   + [`WVPseudoTopographicWaveGeneration`](/classes/forcing/wvpseudotopographicwavegeneration/wvpseudotopographicwavegeneration.html) Create a prescribed bottom wave-generation forcing.
-+ Generate topography
-  + [`goffAbyssalHillTopography`](/classes/forcing/wvpseudotopographicwavegeneration/goffabyssalhilltopography.html) Generate periodic Goff abyssal-hill topography.
-+ Inspect the forcing
+
+
+## Developer Topics
+These items document internal implementation details and are not part of the primary public API.
++ Forcing evaluation
   + [`barotropicVelocityAmplitude`](/classes/forcing/wvpseudotopographicwavegeneration/barotropicvelocityamplitude.html) Complex barotropic velocity amplitude in meters per second.
++ Forcing internals
+  + [`barotropicVelocityAtTime`](/classes/forcing/wvpseudotopographicwavegeneration/barotropicvelocityattime.html) Evaluate the prescribed horizontally uniform current.
+  + [`barotropicVelocityComponent`](/classes/forcing/wvpseudotopographicwavegeneration/barotropicvelocitycomponent.html) Coordinate for the barotropic-velocity components.
+  + [`bottomVelocityAtTime`](/classes/forcing/wvpseudotopographicwavegeneration/bottomvelocityattime.html) Evaluate $$g_b=\boldsymbol U_{\mathrm{bt}}\boldsymbol{\cdot}\nabla_Hh$$.
   + [`darwinSymbol`](/classes/forcing/wvpseudotopographicwavegeneration/darwinsymbol.html) Darwin symbol used to select the tidal frequency.
   + [`frequency`](/classes/forcing/wvpseudotopographicwavegeneration/frequency.html) Barotropic angular frequency $$\omega$$ in radians per second.
+  + [`goffAbyssalHillTopography`](/classes/forcing/wvpseudotopographicwavegeneration/goffabyssalhilltopography.html) Generate periodic Goff abyssal-hill topography.
   + [`maximumForcedHorizontalWavenumber`](/classes/forcing/wvpseudotopographicwavegeneration/maximumforcedhorizontalwavenumber.html) Largest radial horizontal wavenumber forced, in radians per meter.
   + [`maximumForcedVerticalMode`](/classes/forcing/wvpseudotopographicwavegeneration/maximumforcedverticalmode.html) Largest vertical wave-mode index forced.
   + [`rampDuration`](/classes/forcing/wvpseudotopographicwavegeneration/rampduration.html) Duration of the half-cosine startup ramp in seconds.
@@ -63,11 +70,7 @@ wvt.addForcing(forcing);
   + [`spectralGenerationMask`](/classes/forcing/wvpseudotopographicwavegeneration/spectralgenerationmask.html) Return the spectral region eligible for bottom-wave generation.
   + [`startTime`](/classes/forcing/wvpseudotopographicwavegeneration/starttime.html) Time at which the prescribed barotropic forcing begins, in seconds.
   + [`topographicHeight`](/classes/forcing/wvpseudotopographicwavegeneration/topographicheight.html) Upward-positive topographic height $$h(x,y)$$ in meters.
-+ Evaluate the forcing
-  + [`barotropicVelocityAtTime`](/classes/forcing/wvpseudotopographicwavegeneration/barotropicvelocityattime.html) Evaluate the prescribed horizontally uniform current.
-  + [`bottomVelocityAtTime`](/classes/forcing/wvpseudotopographicwavegeneration/bottomvelocityattime.html) Evaluate $$g_b=\boldsymbol U_{\mathrm{bt}}\boldsymbol{\cdot}\nabla_Hh$$.
-+ Restart persistence
-  + [`barotropicVelocityComponent`](/classes/forcing/wvpseudotopographicwavegeneration/barotropicvelocitycomponent.html) Coordinate for the barotropic-velocity components.
++ Forcing persistence
   + [`classRequiredPropertyNames`](/classes/forcing/wvpseudotopographicwavegeneration/classrequiredpropertynames.html) Return the forcing properties required for restart.
 
 

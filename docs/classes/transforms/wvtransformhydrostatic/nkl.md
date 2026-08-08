@@ -11,6 +11,8 @@ mathjax: true
 
 length of the combined kl-wavenumber dimension on the WV grid
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

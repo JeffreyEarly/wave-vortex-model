@@ -34,24 +34,23 @@ ich will have a primary and conjugate part, each of which might be
 
 
 ## Topics
-+ Initialization
++ Create a flow component
   + [`WVTotalFlowComponent`](/classes/flow-components/wvtotalflowcomponent/wvtotalflowcomponent.html) create a new orthogonal solution group
-+ Properties
-  + [`nModes`](/classes/flow-components/wvtotalflowcomponent/nmodes.html) return the number of unique modes of this type
-+ Masks
-  + [`maskOfConjugateModesForCoefficientMatrix`](/classes/flow-components/wvtotalflowcomponent/maskofconjugatemodesforcoefficientmatrix.html) returns a mask indicating where the redundant (conjugate )solutions live in the requested coefficient matrix.
-  + [`maskOfModesForCoefficientMatrix`](/classes/flow-components/wvtotalflowcomponent/maskofmodesforcoefficientmatrix.html) returns a mask indicating where solutions live in the requested coefficient matrix.
-  + [`maskOfPrimaryModesForCoefficientMatrix`](/classes/flow-components/wvtotalflowcomponent/maskofprimarymodesforcoefficientmatrix.html) returns a mask indicating where the primary (non-conjugate) solutions live in the requested coefficient matrix.
-+ Quadratic quantities
-  + [`totalEnergyFactorForCoefficientMatrix`](/classes/flow-components/wvtotalflowcomponent/totalenergyfactorforcoefficientmatrix.html) returns the total energy multiplier for the coefficient matrix.
-+ Analytical solutions
-  + [`solutionForModeAtIndex`](/classes/flow-components/wvtotalflowcomponent/solutionformodeatindex.html) Return analytical solutions from the complete primary-flow basis.
-+ Index Gymnastics
-  + [`isValidConjugateModeNumber`](/classes/flow-components/wvtotalflowcomponent/isvalidconjugatemodenumber.html) returns a boolean indicating whether (k,l,j) is a valid mode number
-  + [`isValidModeNumber`](/classes/flow-components/wvtotalflowcomponent/isvalidmodenumber.html) returns a boolean indicating whether (k,l,j) is a valid mode number
-  + [`isValidPrimaryModeNumber`](/classes/flow-components/wvtotalflowcomponent/isvalidprimarymodenumber.html) returns a boolean indicating whether (k,l,j) is a valid mode number
-+ Other
++ Inspect a flow component
   + [`degreesOfFreedomPerMode`](/classes/flow-components/wvtotalflowcomponent/degreesoffreedompermode.html)
+  + [`nModes`](/classes/flow-components/wvtotalflowcomponent/nmodes.html) return the number of unique modes of this type
++ Inspect component modes
+  + Masks and validity
+    + [`isValidConjugateModeNumber`](/classes/flow-components/wvtotalflowcomponent/isvalidconjugatemodenumber.html) returns a boolean indicating whether (k,l,j) is a valid mode number
+    + [`isValidModeNumber`](/classes/flow-components/wvtotalflowcomponent/isvalidmodenumber.html) returns a boolean indicating whether (k,l,j) is a valid mode number
+    + [`isValidPrimaryModeNumber`](/classes/flow-components/wvtotalflowcomponent/isvalidprimarymodenumber.html) returns a boolean indicating whether (k,l,j) is a valid mode number
+    + [`maskOfConjugateModesForCoefficientMatrix`](/classes/flow-components/wvtotalflowcomponent/maskofconjugatemodesforcoefficientmatrix.html) returns a mask indicating where the redundant (conjugate )solutions live in the requested coefficient matrix.
+    + [`maskOfModesForCoefficientMatrix`](/classes/flow-components/wvtotalflowcomponent/maskofmodesforcoefficientmatrix.html) returns a mask indicating where solutions live in the requested coefficient matrix.
+    + [`maskOfPrimaryModesForCoefficientMatrix`](/classes/flow-components/wvtotalflowcomponent/maskofprimarymodesforcoefficientmatrix.html) returns a mask indicating where the primary (non-conjugate) solutions live in the requested coefficient matrix.
++ Work with component modes
+  + [`solutionForModeAtIndex`](/classes/flow-components/wvtotalflowcomponent/solutionformodeatindex.html) Return analytical solutions from the complete primary-flow basis.
++ Compute component energy
+  + [`totalEnergyFactorForCoefficientMatrix`](/classes/flow-components/wvtotalflowcomponent/totalenergyfactorforcoefficientmatrix.html) returns the total energy multiplier for the coefficient matrix.
 
 
 ---

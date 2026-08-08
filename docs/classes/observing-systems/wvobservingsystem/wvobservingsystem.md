@@ -9,17 +9,17 @@ mathjax: true
 
 #  WVObservingSystem
 
-create a new observing system
+Initialize an observing system for a model.
 
 
 ---
 
 ## Declaration
 ```matlab
- self = WVObservingSystem(wvt,name)
+ self = WVObservingSystem(model,name)
 ```
 ## Parameters
-+ `wvt`  the WVTransform instance
++ `model`  the WVModel instance
 + `name`  name of the observing system
 
 ## Returns

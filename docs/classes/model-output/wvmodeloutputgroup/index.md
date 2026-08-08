@@ -11,7 +11,7 @@ nav_order: 2
 
 #  WVModelOutputGroup
 
-A WVModelOutputGroup represents a group of observing system to be written to file at particular output times
+Schedule observing systems into one NetCDF output group.
 
 
 ---
@@ -22,21 +22,21 @@ A WVModelOutputGroup represents a group of observing system to be written to fil
 
 ## Overview
 
-A `WVModelOutputGroup` encapsulates a netcdf group with particular
-output times `t`; it has one or more observing systems that get written to the group at those times.
+A `WVModelOutputGroup` contains one or more observing systems and
+defines the model times at which their state is written.
 
 The simplest output group is the
 [`WVModelOutputGroupEvenlySpaced`](/classes/model-output/wvmodeloutputgroupevenlyspaced/)
 which, as the name suggests, writes outputs at an evenly spaced
 interval.
 
-The reason for this abstraction is that some observing systems do not
-have evenly spaced output intervals, e.g., the
-[AlongTrackSimulator](https://satmapkit.github.io/AlongTrackSimulator/),
-and it is often the case that one might want to sample the model for
-a short interval at higher frequency, e.g., sampling a mooring at
-high frequency to resolve the buoyancy frequency, or running a tracer
-experiment for 24 hours in the middle of a long model run.
+Separate groups allow different observing systems to use different
+schedules or bounded output windows within the same file. This matters
+when an observing system does not sample evenly, such as a satellite
+along-track simulator, or when one diagnostic needs a shorter,
+higher-frequency window than the rest of a long model run. For example,
+a mooring may need to resolve the buoyancy frequency, while a tracer
+experiment may run for only 24 hours in the middle of the simulation.
 
 ### Usage
 
@@ -51,31 +51,33 @@ outputFile.addOutputGroup(outputGroup);
 
 
 ## Topics
-+ Properties
++ Create model output
+  + [`WVModelOutputGroup`](/classes/model-output/wvmodeloutputgroup/wvmodeloutputgroup.html) initialize a WVModelOutputGroup
++ Manage output observers
+  + [`addObservingSystem`](/classes/model-output/wvmodeloutputgroup/addobservingsystem.html) add an observing system to this file
+  + [`initObservingSystemsFromGroup`](/classes/model-output/wvmodeloutputgroup/initobservingsystemsfromgroup.html) asks the output group to load the observing systems in the NetCDF file
+  + [`removeObservingSystem`](/classes/model-output/wvmodeloutputgroup/removeobservingsystem.html) remove an observing system to this file
++ Write and close output
+  + [`closeNetCDFFile`](/classes/model-output/wvmodeloutputgroup/closenetcdffile.html) notification that the NetCDF file will close
+  + [`initializeOutputGroup`](/classes/model-output/wvmodeloutputgroup/initializeoutputgroup.html) initializes a new output group in the NetCDF file
+  + [`writeTimeStepToNetCDFFile`](/classes/model-output/wvmodeloutputgroup/writetimesteptonetcdffile.html) writes data at time t
+
+
+## Developer Topics
+These items document internal implementation details and are not part of the primary public API.
++ Output persistence and scheduling
   + [`didInitializeStorage`](/classes/model-output/wvmodeloutputgroup/didinitializestorage.html) boolean indicating whether or not the internal structure of the NetCDF file has been created
+  + [`group`](/classes/model-output/wvmodeloutputgroup/group.html) Reference to the NetCDFGroup being used for model output
+  + [`incrementsWrittenToGroup`](/classes/model-output/wvmodeloutputgroup/incrementswrittentogroup.html) output index of the current/most recent step.
+  + [`modelOutputGroupFromGroup`](/classes/model-output/wvmodeloutputgroup/modeloutputgroupfromgroup.html) initialize a WVModelOutputGroup instance from NetCDF file
+  + [`outputTimesForIntegrationPeriod`](/classes/model-output/wvmodeloutputgroup/outputtimesforintegrationperiod.html) returns a unique, ordered array of the aggregate output times during the requested integration period.
+  + [`recordNetCDFFileHistory`](/classes/model-output/wvmodeloutputgroup/recordnetcdffilehistory.html) losg this time step in the NetCDF history
+  + [`timeOfLastIncrementWrittenToGroup`](/classes/model-output/wvmodeloutputgroup/timeoflastincrementwrittentogroup.html) output index of the current/most recent step.
++ Output internals
   + [`model`](/classes/model-output/wvmodeloutputgroup/model.html) Reference to the WVModel being used
   + [`name`](/classes/model-output/wvmodeloutputgroup/name.html) of the current (or future) group in the NetCDF file
-+ Observing systems
-  + [`addObservingSystem`](/classes/model-output/wvmodeloutputgroup/addobservingsystem.html) add an observing system to this file
   + [`observingSystemWithName`](/classes/model-output/wvmodeloutputgroup/observingsystemwithname.html) retrieve an observing system by name
   + [`observingSystems`](/classes/model-output/wvmodeloutputgroup/observingsystems.html) array of WVObservingSystem that will be written to the group
-  + [`removeObservingSystem`](/classes/model-output/wvmodeloutputgroup/removeobservingsystem.html) remove an observing system to this file
-+ Required subclass overrides
-  + [`outputTimesForIntegrationPeriod`](/classes/model-output/wvmodeloutputgroup/outputtimesforintegrationperiod.html) returns a unique, ordered array of the aggregate output times during the requested integration period.
-+ Internal
-  + [`closeNetCDFFile`](/classes/model-output/wvmodeloutputgroup/closenetcdffile.html) notification that the NetCDF file will close
-  + [`initObservingSystemsFromGroup`](/classes/model-output/wvmodeloutputgroup/initobservingsystemsfromgroup.html) asks the output group to load the observing systems in the NetCDF file
-  + [`initializeOutputGroup`](/classes/model-output/wvmodeloutputgroup/initializeoutputgroup.html) initializes a new output group in the NetCDF file
-  + [`recordNetCDFFileHistory`](/classes/model-output/wvmodeloutputgroup/recordnetcdffilehistory.html) losg this time step in the NetCDF history
-  + [`writeTimeStepToNetCDFFile`](/classes/model-output/wvmodeloutputgroup/writetimesteptonetcdffile.html) writes data at time t
-+ Initialization
-  + [`WVModelOutputGroup`](/classes/model-output/wvmodeloutputgroup/wvmodeloutputgroup.html) initialize a WVModelOutputGroup
-  + [`modelOutputGroupFromGroup`](/classes/model-output/wvmodeloutputgroup/modeloutputgroupfromgroup.html) initialize a WVModelOutputGroup instance from NetCDF file
-+ Writing to NetCDF files
-  + [`group`](/classes/model-output/wvmodeloutputgroup/group.html) Reference to the NetCDFGroup being used for model output
-+ Integration
-  + [`incrementsWrittenToGroup`](/classes/model-output/wvmodeloutputgroup/incrementswrittentogroup.html) output index of the current/most recent step.
-  + [`timeOfLastIncrementWrittenToGroup`](/classes/model-output/wvmodeloutputgroup/timeoflastincrementwrittentogroup.html) output index of the current/most recent step.
 
 
 ---

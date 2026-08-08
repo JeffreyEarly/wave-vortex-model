@@ -11,6 +11,8 @@ mathjax: true
 
 radius of the planetary body
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

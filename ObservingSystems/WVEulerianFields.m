@@ -1,6 +1,8 @@
 classdef WVEulerianFields < WVObservingSystem
-    %UNTITLED2 Summary of this class goes here
-    %   Detailed explanation goes here
+    % Select transform fields for model output
+    %
+    % WVEulerianFields records named WVTransform fields, separating values
+    % written once at initialization from fields written at every output time.
 
     properties (GetAccess=public, SetAccess=protected)
         initialConditionOnlyVariables = {};

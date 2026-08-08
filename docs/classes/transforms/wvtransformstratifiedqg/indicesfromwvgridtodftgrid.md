@@ -11,6 +11,8 @@ mathjax: true
 
 indices to convert from WV to DFT grid
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

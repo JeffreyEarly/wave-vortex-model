@@ -11,6 +11,8 @@ mathjax: true
 
 returns random amplitude for a valid flow state
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

@@ -11,6 +11,8 @@ mathjax: true
 
 k wavenumber dimension on the DFT grid
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

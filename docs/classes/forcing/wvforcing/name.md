@@ -9,7 +9,7 @@ mathjax: true
 
 #  name
 
-boolean indicating this class implements addHydrostaticSpatialForcing
+used to register this forcing with its transform.
 
 
 ---

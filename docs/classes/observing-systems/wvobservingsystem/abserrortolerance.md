@@ -11,6 +11,8 @@ mathjax: true
 
 return a cell array of the absolute tolerances of the
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

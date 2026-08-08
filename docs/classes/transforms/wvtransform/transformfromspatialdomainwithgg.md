@@ -3,13 +3,15 @@ layout: default
 title: transformFromSpatialDomainWithGg
 parent: WVTransform
 grand_parent: Transforms
-nav_order: 110
+nav_order: 97
 mathjax: true
 ---
 
 #  transformFromSpatialDomainWithGg
 
 
+
+> Developer documentation: this item describes internal implementation details.
 
 
 ---

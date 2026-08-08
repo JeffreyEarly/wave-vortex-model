@@ -11,6 +11,8 @@ mathjax: true
 
 function handle to be called when computing the operation
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

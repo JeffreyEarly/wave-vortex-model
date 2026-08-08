@@ -11,6 +11,8 @@ mathjax: true
 
 A simple check to see if one of the observing systems will be writing wave-vortex coefficients
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

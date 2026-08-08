@@ -3,13 +3,15 @@ layout: default
 title: energyFluxFromNonlinearFlux
 parent: WVTransform
 grand_parent: Transforms
-nav_order: 28
+nav_order: 26
 mathjax: true
 ---
 
 #  energyFluxFromNonlinearFlux
 
 converts nonlinear flux into energy flux
+
+> Developer documentation: this item describes internal implementation details.
 
 
 ---

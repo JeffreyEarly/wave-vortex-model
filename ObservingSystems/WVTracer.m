@@ -1,6 +1,8 @@
 classdef WVTracer < WVObservingSystem
-    %UNTITLED2 Summary of this class goes here
-    %   Detailed explanation goes here
+    % Advect a scalar tracer with a WVModel velocity field
+    %
+    % WVTracer evolves a two- or three-dimensional scalar field alongside
+    % the model. The tracer may be antialiased after each flux evaluation.
 
     properties (GetAccess=public, SetAccess=protected)
         isXYOnly

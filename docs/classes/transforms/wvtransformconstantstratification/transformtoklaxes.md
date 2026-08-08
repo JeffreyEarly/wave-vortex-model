@@ -11,6 +11,8 @@ mathjax: true
 
 transforms in the spectral domain from (j,kl) to (kAxis,lAxis,j)
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

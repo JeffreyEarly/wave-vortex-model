@@ -11,6 +11,8 @@ mathjax: true
 
 geostrophic streamfunction
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

@@ -11,6 +11,8 @@ mathjax: true
 
 return the linear index into k_wv and l_wv from a mode number
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

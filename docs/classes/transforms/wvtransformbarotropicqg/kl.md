@@ -11,6 +11,8 @@ mathjax: true
 
 wavenumber dimension
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

@@ -11,6 +11,8 @@ mathjax: true
 
 Coriolis parameter
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

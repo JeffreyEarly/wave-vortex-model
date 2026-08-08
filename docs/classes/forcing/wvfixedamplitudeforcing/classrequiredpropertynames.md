@@ -11,6 +11,8 @@ mathjax: true
 
 Returns the required property names for the class
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

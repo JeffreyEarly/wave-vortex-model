@@ -9,22 +9,31 @@ classdef WVModel < handle & WVModelAdaptiveTimeStepMethods & WVModelFixedTimeSte
     % By default `WVModel` integrates the transform's nonlinear forcing and
     % registers its coefficient observing system. Pass
     % `shouldUseLinearDynamics=true` for analytical linear evolution. Use
-    % `setupIntegrator` to select the Stable fixed or adaptive integrator;
-    % `adaptive-cell` remains Experimental.
+    % `setupIntegrator` to change time-stepping settings.
+    %
+    % Model output is assembled in three layers: a model owns one or more
+    % `WVModelOutputFile` objects, each file contains one or more
+    % `WVModelOutputGroup` schedules, and each group writes one or more
+    % `WVObservingSystem` objects. Observing systems with flux components,
+    % including coefficients, particles, and tracers, are integrated alongside
+    % the transform state; other observing systems sample it at output times.
     %
     % Restore a model and its output graph from one restart-capable file:
     % ```matlab
     % model = WVModel.modelFromFile("SomeFile.nc");
     % ```
     %
-    % - Topic: Initialization
-    % - Topic: Model Properties
-    % - Topic: Integration
-    % - Topic: Particles
-    % - Topic: Tracer
-    % - Topic: Writing to NetCDF files
-    % - Topic: Integrated observing systems
-    % - Topic: Developer
+    % - Topic: Create and restore a model
+    % - Topic: Inspect model state
+    % - Topic: Configure and run integration
+    % - Topic: Track particles
+    % - Topic: Advect tracers
+    % - Topic: Manage observing systems
+    % - Topic: Write model output
+    % - Topic: Integrator state
+    % - Topic: Flux assembly
+    % - Topic: Output scheduling and persistence
+    % - Topic: Model internals
     % - Declaration: classdef WVModel < handle
 
     properties (GetAccess=public,SetAccess=protected)

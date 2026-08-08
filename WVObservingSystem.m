@@ -1,9 +1,12 @@
 classdef WVObservingSystem < handle & matlab.mixin.Heterogeneous & CAAnnotatedClass
-    %A WVObservingSystem is an abstract class that defines different ways of observing the model
+    % Observe or integrate additional state alongside a WVModel.
     %
+    % `WVObservingSystem` is the base class for Eulerian fields,
+    % wave-vortex coefficients, particles, moorings, and tracers. An
+    % observing system belongs to one model. Systems with flux components
+    % participate in numerical integration; other systems sample model
+    % state when requested or written to output.
     %
-    %
-    % 
     % - Topic: Initializing
     % - Topic: Properties
     % - Topic: Required subclass overrides
@@ -44,14 +47,14 @@ classdef WVObservingSystem < handle & matlab.mixin.Heterogeneous & CAAnnotatedCl
 
     methods
         function self = WVObservingSystem(model,name)
-            %create a new observing system
+            % Initialize an observing system for a model.
             %
             % This class is intended to be subclassed, so it generally
             % assumed that this initialization will not be called directly.
             %
             % - Topic: Initializing
-            % - Declaration: self = WVObservingSystem(wvt,name)
-            % - Parameter wvt: the WVTransform instance
+            % - Declaration: self = WVObservingSystem(model,name)
+            % - Parameter model: the WVModel instance
             % - Parameter name: name of the observing system
             % - Returns self: a new instance of WVObservingSystem
             arguments

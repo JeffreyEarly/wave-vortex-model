@@ -11,23 +11,39 @@ classdef WVTransformConstantStratification < WVGeometryDoublyPeriodicStratifiedC
     % wvtHydrostatic = WVTransformConstantStratification([100e3,100e3,4000],[64,64,65],N0=N0,latitude=30,isHydrostatic=true);
     % ```
     %
-    % The Stable transform state is stored in [`Ap`](/classes/transforms/wvtransform/ap.html),
+    % The transform state is stored in [`Ap`](/classes/transforms/wvtransform/ap.html),
     % [`Am`](/classes/transforms/wvtransform/am.html), and
     % [`A0`](/classes/transforms/wvtransform/a0.html). Their current-time
     % views are `Apt`, `Amt`, and `A0t`.
     %
-    % - Topic: Initialization
-    % - Topic: Wave-vortex coefficients
-    % - Topic: Wave-vortex coefficients — At current time
-    % - Topic: Primary flow components
-    % - Topic: Stratification
-    % - Topic: Stratification — Vertical modes
-    % - Topic: Stratification — Validation
-    % - Topic: Initial conditions
-    % - Topic: Energetics of flow components
-    % - Topic: Operations
-    % - Topic: Developer — Projection coefficients
-    % - Topic: Developer — Reconstruction coefficients
+    % - Topic: Create and restore a transform
+    % - Topic: Inspect wave-vortex coefficients
+    % - Topic: Inspect wave-vortex coefficients — Coefficients at the current time
+    % - Topic: Inspect the domain
+    % - Topic: Inspect the domain — Spatial grid
+    % - Topic: Inspect the domain — Spectral grid
+    % - Topic: Inspect the domain — Rotation and stratification
+    % - Topic: Initialize the flow
+    % - Topic: Initialize the flow — Waves
+    % - Topic: Initialize the flow — Inertial oscillations
+    % - Topic: Initialize the flow — Geostrophic motions
+    % - Topic: Initialize the flow — Mean density anomalies
+    % - Topic: Evaluate physical fields
+    % - Topic: Evaluate physical fields — On the model grid
+    % - Topic: Convert representations
+    % - Topic: Convert representations — Physical fields and coefficients
+    % - Topic: Differentiate and integrate fields
+    % - Topic: Analyze the flow
+    % - Topic: Analyze the flow — Energy and summaries
+    % - Topic: Analyze the flow — Potential vorticity and enstrophy
+    % - Topic: Analyze the flow — Spectra
+    % - Topic: Projection and reconstruction coefficients
+    % - Topic: Geometry and mode indexing
+    % - Topic: Spectral transforms and operators
+    % - Topic: Nonlinear flux and forcing internals
+    % - Topic: Persistence internals
+    % - Topic: Caches and registries
+    % - Topic: Class internals
     %
     % - Declaration: classdef WVTransformConstantStratification < [WVTransform](/classes/transforms/wvtransform/)
     properties (Dependent)

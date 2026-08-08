@@ -3,7 +3,7 @@ layout: default
 title: summarizeFlowComponents
 parent: WVTransform
 grand_parent: Transforms
-nav_order: 98
+nav_order: 85
 mathjax: true
 ---
 

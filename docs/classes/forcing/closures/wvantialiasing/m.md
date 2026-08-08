@@ -11,6 +11,8 @@ mathjax: true
 
 spectral matrix that multiplies Ap,Am,A0 to zero out the aliased modes
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 
