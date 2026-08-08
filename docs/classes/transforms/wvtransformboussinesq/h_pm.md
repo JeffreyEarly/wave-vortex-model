@@ -11,6 +11,8 @@ mathjax: true
 
 equivalent depth of each wave mode
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

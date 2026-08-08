@@ -3,13 +3,15 @@ layout: default
 title: nonlinearFluxWithGradientMasks
 parent: WVTransform
 grand_parent: Transforms
-nav_order: 65
+nav_order: 53
 mathjax: true
 ---
 
 #  nonlinearFluxWithGradientMasks
 
 returns the flux of each coefficient as determined by the nonlinear flux operation
+
+> Developer documentation: this item describes internal implementation details.
 
 
 ---

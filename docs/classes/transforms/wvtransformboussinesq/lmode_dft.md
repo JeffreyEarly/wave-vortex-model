@@ -11,6 +11,8 @@ mathjax: true
 
 l mode-number on the DFT grid
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

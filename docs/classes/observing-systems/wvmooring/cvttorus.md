@@ -11,6 +11,8 @@ mathjax: true
 
 Centroidal Voronoi tessellation on a 2D torus
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

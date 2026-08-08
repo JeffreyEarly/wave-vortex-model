@@ -11,6 +11,8 @@ mathjax: true
 
 Return the spectral region eligible for bottom-wave generation.
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

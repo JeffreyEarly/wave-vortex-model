@@ -11,6 +11,8 @@ mathjax: true
 
 potential energy of the geostrophic flow
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

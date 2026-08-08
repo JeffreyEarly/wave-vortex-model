@@ -1,17 +1,23 @@
 classdef WVFlowComponent < handle & matlab.mixin.Heterogeneous
-    %Orthogonal solution group
+    % Describe one family of orthogonal wave-vortex solutions.
     %
     % Each degree-of-freedom in the model is associated with an analytical
     % solution to the equations of motion. This class groups together
     % solutions of a particular type and provides a mapping between their
     % analytical solutions and their numerical representation.
     %
-    % Perhaps the most complicate part of the numerical implementation is
-    % the indexing---finding where each solution is represented
-    % numerically. In general, a solution will have some properties, e.g.,
-    %   (kMode,lMode,jMode,phi,A,omegasign) 
-    % which will have a primary and conjugate part, each of which might be
-    % in two different matrices.
+    % Component masks identify the coefficient locations occupied by the
+    % family. This indexing is an important part of the abstraction: one
+    % analytical mode, identified by horizontal mode numbers, vertical mode,
+    % amplitude, and phase, may require a primary coefficient and a Hermitian
+    % conjugate stored at different locations or even in different members of
+    % `Ap`, `Am`, and `A0`.
+    %
+    % Primary components provide that mapping between mode numbers,
+    % `WVOrthogonalSolution` objects, and coefficient locations. They also
+    % define the degrees of freedom carried by each mode. Diagnostic or total
+    % components may combine those masks without introducing a new independent
+    % solution family.
     %
     % - Topic: Initialization
     properties (Access=private)

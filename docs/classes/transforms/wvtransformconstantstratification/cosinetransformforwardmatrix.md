@@ -11,6 +11,8 @@ mathjax: true
 
 Discrete Cosine Transform (DCT-I) matrix
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

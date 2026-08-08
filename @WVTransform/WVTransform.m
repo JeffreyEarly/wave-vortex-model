@@ -1,14 +1,21 @@
 classdef WVTransform < matlab.mixin.indexing.RedefinesDot & CAAnnotatedClass
     % Represent a fluid state with orthogonal wave and geostrophic solutions.
     %
-    % `WVTransform` is the abstract base class for the supported wave-vortex
-    % transforms. Each concrete transform represents the fluid state at time
+    % `WVTransform` is the abstract base class for wave-vortex transforms.
+    % Each concrete transform represents the fluid state at time
     % `t` with spectral coefficients and exposes physical variables such as
     % velocity, isopycnal displacement, pressure, and potential vorticity.
     % Density is denoted by $$\rho$$. Energetic quantities are normalized per
     % unit reference density $$\rho_0$$ unless a method states otherwise.
     %
-    % Use one of the five Stable concrete transform families:
+    % The distinguishing feature of a `WVTransform` is that an instantaneous
+    % fluid state is represented as energetically orthogonal wave, inertial,
+    % geostrophic, and mean-density-anomaly constituents. No temporal filter is
+    % required to perform the decomposition. The same object can reconstruct
+    % $$(u,v,w,\rho,p)$$, relative vorticity, potential vorticity, energetic
+    % diagnostics, and custom registered variables from those coefficients.
+    %
+    % Choose one of five concrete transform classes:
     %
     % + `WVTransformConstantStratification`, in hydrostatic or nonhydrostatic mode
     % + `WVTransformHydrostatic`
@@ -22,26 +29,45 @@ classdef WVTransform < matlab.mixin.indexing.RedefinesDot & CAAnnotatedClass
     % transforms use `A0` only. The `Apt`, `Amt`, and `A0t` variables are the
     % corresponding coefficients evaluated at the current transform time.
     %
-    % - Topic: Initialization
-    % - Topic: Wave-vortex coefficients
-    % - Topic: Wave-vortex coefficients — At current time
-    % - Topic: State variables
-    % - Topic: Flow components
-    % - Topic: Forcing
-    % - Topic: Domain attributes
-    % - Topic: Domain attributes — Grid
-    % - Topic: Domain attributes — Grid — Spatial
-    % - Topic: Domain attributes — Grid — Spectral
-    % - Topic: Initial conditions
-    % - Topic: Initial conditions — Waves
-    % - Topic: Initial conditions — Inertial oscillations
-    % - Topic: Initial conditions — Geostrophic motions
-    % - Topic: Operations
-    % - Topic: Energetics
-    % - Topic: Potential vorticity and enstrophy
-    % - Topic: Persistence
-    % - Topic: Developer — Projection coefficients
-    % - Topic: Developer — Reconstruction coefficients
+    % - Topic: Create and restore a transform
+    % - Topic: Inspect wave-vortex coefficients
+    % - Topic: Inspect wave-vortex coefficients — Stored coefficients
+    % - Topic: Inspect wave-vortex coefficients — Coefficients at the current time
+    % - Topic: Set and inspect time
+    % - Topic: Initialize the flow
+    % - Topic: Initialize the flow — Waves
+    % - Topic: Initialize the flow — Inertial oscillations
+    % - Topic: Initialize the flow — Geostrophic motions
+    % - Topic: Initialize the flow — Mean density anomalies
+    % - Topic: Evaluate physical fields
+    % - Topic: Evaluate physical fields — On the model grid
+    % - Topic: Evaluate physical fields — Registered variables
+    % - Topic: Evaluate physical fields — At arbitrary positions
+    % - Topic: Inspect the domain
+    % - Topic: Inspect the domain — Spatial grid
+    % - Topic: Inspect the domain — Spectral grid
+    % - Topic: Inspect the domain — Rotation and stratification
+    % - Topic: Convert representations
+    % - Topic: Convert representations — Physical fields and coefficients
+    % - Topic: Differentiate and integrate fields
+    % - Topic: Analyze the flow
+    % - Topic: Analyze the flow — Energy and summaries
+    % - Topic: Analyze the flow — Potential vorticity and enstrophy
+    % - Topic: Analyze the flow — Spectra
+    % - Topic: Manage forcing and closures
+    % - Topic: Extend a transform
+    % - Topic: Extend a transform — Flow components
+    % - Topic: Extend a transform — Operations and variables
+    % - Topic: Save transform state
+    % - Topic: Get package information
+    % - Topic: Projection and reconstruction coefficients
+    % - Topic: Geometry and mode indexing
+    % - Topic: Spectral transforms and operators
+    % - Topic: Nonlinear flux and forcing internals
+    % - Topic: Persistence internals
+    % - Topic: Caches and registries
+    % - Topic: Class internals
+    % - Topic: Construction internals
     %
     % - Declaration: classdef WVTransform < matlab.mixin.indexing.RedefinesDot & CAAnnotatedClass
     
@@ -98,9 +124,9 @@ classdef WVTransform < matlab.mixin.indexing.RedefinesDot & CAAnnotatedClass
     end
 
     properties (GetAccess=public, SetAccess=private, Dependent)
-        % WaveVortexModel package version read from `resources/mpackage.json`.
+        % Installed WaveVortexModel version.
         %
-        % - Topic: Initialization
+        % - Topic: Get package information
         version
     end
 
@@ -275,7 +301,7 @@ classdef WVTransform < matlab.mixin.indexing.RedefinesDot & CAAnnotatedClass
         %
         % - Topic: Flow components
         names = primaryFlowComponentNames(self)
-        % Return a primary flow component by its Stable short name.
+        % Return a primary flow component by its short name.
         %
         % - Topic: Flow components
         val = primaryFlowComponentWithName(self,name)

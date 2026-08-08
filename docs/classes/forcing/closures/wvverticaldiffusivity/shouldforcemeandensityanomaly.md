@@ -11,6 +11,8 @@ mathjax: true
 
 whether to include the $$\frac{\partial}{\partial z} \ln N^2$$ term
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

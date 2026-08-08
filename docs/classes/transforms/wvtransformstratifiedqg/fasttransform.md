@@ -11,6 +11,8 @@ mathjax: true
 
 fast transform object
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

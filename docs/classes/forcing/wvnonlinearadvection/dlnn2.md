@@ -11,6 +11,8 @@ mathjax: true
 
 variable stratification factor
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

@@ -11,6 +11,8 @@ mathjax: true
 
 Builds the spectral vanishing viscosity operator
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

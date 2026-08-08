@@ -11,6 +11,8 @@ mathjax: true
 
 map from 2-dim K2, to 1-dim K2unique
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

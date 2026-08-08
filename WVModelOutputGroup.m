@@ -1,21 +1,21 @@
 classdef WVModelOutputGroup < handle & matlab.mixin.Heterogeneous & CAAnnotatedClass
-    % A WVModelOutputGroup represents a group of observing system to be written to file at particular output times
+    % Schedule observing systems into one NetCDF output group.
     %
-    % A `WVModelOutputGroup` encapsulates a netcdf group with particular
-    % output times `t`; it has one or more observing systems that get written to the group at those times.
+    % A `WVModelOutputGroup` contains one or more observing systems and
+    % defines the model times at which their state is written.
     %
     % The simplest output group is the
     % [`WVModelOutputGroupEvenlySpaced`](/classes/model-output/wvmodeloutputgroupevenlyspaced/)
     % which, as the name suggests, writes outputs at an evenly spaced
     % interval.
     %
-    % The reason for this abstraction is that some observing systems do not
-    % have evenly spaced output intervals, e.g., the
-    % [AlongTrackSimulator](https://satmapkit.github.io/AlongTrackSimulator/),
-    % and it is often the case that one might want to sample the model for
-    % a short interval at higher frequency, e.g., sampling a mooring at
-    % high frequency to resolve the buoyancy frequency, or running a tracer
-    % experiment for 24 hours in the middle of a long model run.
+    % Separate groups allow different observing systems to use different
+    % schedules or bounded output windows within the same file. This matters
+    % when an observing system does not sample evenly, such as a satellite
+    % along-track simulator, or when one diagnostic needs a shorter,
+    % higher-frequency window than the rest of a long model run. For example,
+    % a mooring may need to resolve the buoyancy frequency, while a tracer
+    % experiment may run for only 24 hours in the middle of the simulation.
     %
     % ### Usage
     %

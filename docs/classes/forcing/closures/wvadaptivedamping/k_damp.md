@@ -11,6 +11,8 @@ mathjax: true
 
 wavenumber at which the significant scale damping starts.
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

@@ -3,13 +3,15 @@ layout: default
 title: transformToSpatialDomainWithF
 parent: WVTransform
 grand_parent: Transforms
-nav_order: 111
+nav_order: 98
 mathjax: true
 ---
 
 #  transformToSpatialDomainWithF
 
 Required for transformWaveVortexToUVEta
+
+> Developer documentation: this item describes internal implementation details.
 
 
 ---

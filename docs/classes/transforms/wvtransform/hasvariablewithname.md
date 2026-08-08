@@ -3,7 +3,7 @@ layout: default
 title: hasVariableWithName
 parent: WVTransform
 grand_parent: Transforms
-nav_order: 49
+nav_order: 42
 mathjax: true
 ---
 

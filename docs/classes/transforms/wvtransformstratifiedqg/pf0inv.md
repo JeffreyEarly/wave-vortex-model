@@ -11,6 +11,8 @@ mathjax: true
 
 Transformation matrices
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

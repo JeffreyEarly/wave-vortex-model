@@ -11,6 +11,8 @@ mathjax: true
 
 retrieve the names of all output group names
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

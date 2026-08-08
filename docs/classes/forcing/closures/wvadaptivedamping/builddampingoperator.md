@@ -11,6 +11,8 @@ mathjax: true
 
 Builds the damping operator
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

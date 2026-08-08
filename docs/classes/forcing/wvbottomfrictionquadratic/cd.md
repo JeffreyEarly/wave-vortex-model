@@ -11,6 +11,8 @@ mathjax: true
 
 non-dimensional quadratic drag coefficient
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

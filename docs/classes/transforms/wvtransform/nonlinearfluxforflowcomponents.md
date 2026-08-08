@@ -3,13 +3,15 @@ layout: default
 title: nonlinearFluxForFlowComponents
 parent: WVTransform
 grand_parent: Transforms
-nav_order: 64
+nav_order: 52
 mathjax: true
 ---
 
 #  nonlinearFluxForFlowComponents
 
 returns the flux of each coefficient as determined by the nonlinear flux operation
+
+> Developer documentation: this item describes internal implementation details.
 
 
 ---

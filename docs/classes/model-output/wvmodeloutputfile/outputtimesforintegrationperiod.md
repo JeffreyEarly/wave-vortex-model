@@ -11,6 +11,8 @@ mathjax: true
 
 returns a unique, ordered array of the aggregate output times during the requested integration period.
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

@@ -11,6 +11,8 @@ mathjax: true
 
 a matrix with the number of degrees-of-freedom at each entry
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

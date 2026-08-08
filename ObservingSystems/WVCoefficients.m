@@ -1,6 +1,8 @@
 classdef WVCoefficients < WVObservingSystem
-    %UNTITLED2 Summary of this class goes here
-    %   Detailed explanation goes here
+    % Integrate and record the wave-vortex coefficients
+    %
+    % WVCoefficients supplies the Ap, Am, and A0 state variables used by a
+    % WVModel integrator and writes their current values to model output.
 
     properties (GetAccess=public, SetAccess=public)
         absTolerance

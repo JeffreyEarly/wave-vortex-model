@@ -11,5 +11,7 @@ mathjax: true
 
 cell array Nk in length. Each cell contains indices back to K2
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---

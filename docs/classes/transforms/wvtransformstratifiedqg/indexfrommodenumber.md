@@ -11,6 +11,8 @@ mathjax: true
 
 return the linear index into a spectral matrix given (k,l,j)
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

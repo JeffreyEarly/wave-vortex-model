@@ -11,6 +11,8 @@ mathjax: true
 
 transforms in the from (j,kRadial) to omegaAxis
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

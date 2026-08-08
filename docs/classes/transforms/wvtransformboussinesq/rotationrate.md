@@ -11,6 +11,8 @@ mathjax: true
 
 rotation rate of the planetary body
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

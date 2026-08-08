@@ -11,6 +11,8 @@ mathjax: true
 
 transform from $$(k,l)$$ on the DFT grid to $$(x,y)$$ at any position
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

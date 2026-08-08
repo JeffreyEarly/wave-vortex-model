@@ -14,7 +14,7 @@ forcingSidecars = fullfile(repositoryRoot,"Forcing","detailedDescriptions");
 
 parentName = "Transforms";
 websiteFolder = "classes/transforms";
-writeClassDocumentation("WVTransform",buildFolder,websiteFolder,parentName,classFolderName,parentName,1,{'CAAnnotatedClass'},transformSidecars);
+writeClassDocumentation("WVTransform",buildFolder,websiteFolder,parentName,classFolderName,parentName,1,{'handle','CAAnnotatedClass'},transformSidecars);
 classes = ["WVTransformBoussinesq" "WVTransformHydrostatic" "WVTransformConstantStratification" "WVTransformBarotropicQG" "WVTransformStratifiedQG"];
 writeClassGroup(classes,buildFolder,websiteFolder,parentName,classFolderName,parentName,2,{'handle','WVTransform','CAAnnotatedClass'},transformSidecars);
 
@@ -97,6 +97,7 @@ if grandparent ~= ""
 end
 documentation = ClassDocumentation(className,options{:});
 mergeCanonicalSidecars(documentation,sidecarFolders);
+applyDocumentationTaxonomy(documentation);
 documentation.writeToFile();
 normalizeGeneratedMarkdown(documentation.pathOfClassFolderOnHardDrive);
 end
@@ -117,7 +118,11 @@ for sidecarFolder = sidecarFolders'
         sidecarMetadata = MethodDocumentation(sidecarName);
         sidecarMetadata.addMetadataFromDetailedDescription(fileread(fullfile(sidecars(iSidecar).folder,sidecars(iSidecar).name)));
         for iMethod = matchingIndices
-            documentation.allMethodDocumentation(iMethod).mergeAnnotatedPropertyDocumentation(sidecarMetadata);
+            methodDocumentation = documentation.allMethodDocumentation(iMethod);
+            methodDocumentation.mergeAnnotatedPropertyDocumentation(sidecarMetadata);
+            if strlength(strtrim(string(sidecarMetadata.detailedDescription))) > 0
+                methodDocumentation.detailedDescription = sidecarMetadata.detailedDescription;
+            end
         end
     end
 end

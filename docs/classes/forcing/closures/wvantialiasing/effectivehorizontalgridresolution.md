@@ -11,6 +11,8 @@ mathjax: true
 
 returns the effective grid resolution in meters
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

@@ -62,13 +62,17 @@ wvt.addForcing(WVBottomFrictionLinear(r=1/(200*86400)));
 
 
 ## Topics
-+ Initialization
++ Create forcing and closures
   + [`WVBottomFrictionLinear`](/classes/forcing/wvbottomfrictionlinear/wvbottomfrictionlinear.html) initialize the WVBottomFrictionLinear
-+ Properties
+
+
+## Developer Topics
+These items document internal implementation details and are not part of the primary public API.
++ Forcing persistence
+  + [`classRequiredPropertyNames`](/classes/forcing/wvbottomfrictionlinear/classrequiredpropertynames.html) Returns the required property names for the class
++ Forcing internals
   + [`r`](/classes/forcing/wvbottomfrictionlinear/r.html) bottom friction, $$s^{-1}$$
   + [`r_scaled`](/classes/forcing/wvbottomfrictionlinear/r_scaled.html) scaled bottom friction, $$\frac{Lz}{dz} r$$ with units $$s^{-1}$$
-+ CAAnnotatedClass requirement
-  + [`classRequiredPropertyNames`](/classes/forcing/wvbottomfrictionlinear/classrequiredpropertynames.html) Returns the required property names for the class
 
 
 ---

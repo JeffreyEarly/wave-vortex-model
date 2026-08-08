@@ -1,6 +1,10 @@
 classdef WVLagrangianParticles < WVObservingSystem
-    %UNTITLED2 Summary of this class goes here
-    %   Detailed explanation goes here
+    % Track particles and sampled fields through a WVModel velocity field.
+    %
+    % `WVLagrangianParticles` stores periodic horizontal positions, optional
+    % vertical positions, interpolation choices, and fields sampled at each
+    % particle. Model particle facades construct the usual float and drifter
+    % configurations.
 
     properties (GetAccess=public, SetAccess=protected)
         x, y, z

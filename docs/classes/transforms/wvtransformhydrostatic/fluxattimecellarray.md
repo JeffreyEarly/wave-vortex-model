@@ -11,6 +11,8 @@ mathjax: true
 
 y0 is a 3x1 cell array
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

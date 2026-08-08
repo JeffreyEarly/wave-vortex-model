@@ -11,20 +11,27 @@ nav_order: 4
 
 #  WVTracer
 
-UNTITLED2 Summary of this class goes here
+Advect a scalar tracer with a WVModel velocity field
 
 
 ---
 
 ## Overview
-Detailed explanation goes here
+
+WVTracer evolves a two- or three-dimensional scalar field alongside
+the model. The tracer may be antialiased after each flux evaluation.
 
 
 ## Topics
-+ Initialization
++ Create an observing system
   + [`WVTracer`](/classes/observing-systems/wvtracer/wvtracer.html) create a new observing system
-+ Other
++ Inspect observed state
   + [`absTolerance`](/classes/observing-systems/wvtracer/abstolerance.html) absolute tolerance of phi for the adaptive integrator
+
+
+## Developer Topics
+These items document internal implementation details and are not part of the primary public API.
++ Observing-system internals
   + [`classRequiredPropertyNames`](/classes/observing-systems/wvtracer/classrequiredpropertynames.html)
   + [`isXYOnly`](/classes/observing-systems/wvtracer/isxyonly.html) whether the advection is only applied in x-y
   + [`phi`](/classes/observing-systems/wvtracer/phi.html)

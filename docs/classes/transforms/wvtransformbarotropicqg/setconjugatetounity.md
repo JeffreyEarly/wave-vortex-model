@@ -11,6 +11,8 @@ mathjax: true
 
 set the conjugate of the wavenumber (iK,iL) to 1
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

@@ -11,6 +11,8 @@ mathjax: true
 
 returns a mask with locations of modes that will alias with a quadratic multiplication.
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

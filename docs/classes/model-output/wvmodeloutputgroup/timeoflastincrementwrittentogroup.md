@@ -11,6 +11,8 @@ mathjax: true
 
 output index of the current/most recent step.
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

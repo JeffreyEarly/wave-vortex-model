@@ -11,6 +11,8 @@ mathjax: true
 
 called once to allow the observing system to initialize its storage space in the NetCDFGroup
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

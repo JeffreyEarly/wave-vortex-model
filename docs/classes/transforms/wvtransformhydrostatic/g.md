@@ -11,6 +11,8 @@ mathjax: true
 
 gravity of Earth
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

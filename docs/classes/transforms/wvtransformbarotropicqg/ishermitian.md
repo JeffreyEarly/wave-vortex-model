@@ -11,6 +11,8 @@ mathjax: true
 
 Check if the matrix is Hermitian. Report errors.
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

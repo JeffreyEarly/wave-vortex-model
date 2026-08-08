@@ -11,6 +11,8 @@ mathjax: true
 
 return an array containing the numel of each flux component.
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

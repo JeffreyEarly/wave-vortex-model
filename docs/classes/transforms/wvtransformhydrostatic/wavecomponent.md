@@ -11,6 +11,8 @@ mathjax: true
 
 returns the internal gravity wave flow component
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

@@ -11,6 +11,8 @@ mathjax: true
 
 return array of CAPropertyAnnotations initialized by default
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

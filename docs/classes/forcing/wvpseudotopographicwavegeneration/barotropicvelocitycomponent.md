@@ -11,6 +11,8 @@ mathjax: true
 
 Coordinate for the barotropic-velocity components.
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

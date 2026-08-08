@@ -32,13 +32,17 @@ allow you to customize when this group is active in model time.
 
 
 ## Topics
-+ Properties
++ Create model output
+  + [`WVModelOutputGroupEvenlySpaced`](/classes/model-output/wvmodeloutputgroupevenlyspaced/wvmodeloutputgroupevenlyspaced.html) initialize a WVModelOutputGroupEvenlySpaced
++ Configure output schedules
   + [`finalTime`](/classes/model-output/wvmodeloutputgroupevenlyspaced/finaltime.html) final model time that the output group is active (seconds)
   + [`initialTime`](/classes/model-output/wvmodeloutputgroupevenlyspaced/initialtime.html) initial model time that the output group is active (seconds)
   + [`outputInterval`](/classes/model-output/wvmodeloutputgroupevenlyspaced/outputinterval.html) model output interval (seconds)
-+ Initialization
-  + [`WVModelOutputGroupEvenlySpaced`](/classes/model-output/wvmodeloutputgroupevenlyspaced/wvmodeloutputgroupevenlyspaced.html) initialize a WVModelOutputGroupEvenlySpaced
-+ Other
+
+
+## Developer Topics
+These items document internal implementation details and are not part of the primary public API.
++ Output internals
   + [`classRequiredPropertyNames`](/classes/model-output/wvmodeloutputgroupevenlyspaced/classrequiredpropertynames.html)
   + [`description`](/classes/model-output/wvmodeloutputgroupevenlyspaced/description.html)
 

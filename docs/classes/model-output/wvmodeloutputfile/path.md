@@ -11,6 +11,8 @@ mathjax: true
 
 current (or future) path of the NetCDF file
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

@@ -11,6 +11,8 @@ mathjax: true
 
 Upward-positive topographic height $$h(x,y)$$ in meters.
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

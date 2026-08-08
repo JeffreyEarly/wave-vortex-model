@@ -11,6 +11,8 @@ mathjax: true
 
 return mode number from a linear index into a WV matrix
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

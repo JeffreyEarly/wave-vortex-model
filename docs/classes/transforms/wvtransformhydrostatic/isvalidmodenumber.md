@@ -11,6 +11,8 @@ mathjax: true
 
 returns a boolean indicating whether (k,l,j) is a valid mode number
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

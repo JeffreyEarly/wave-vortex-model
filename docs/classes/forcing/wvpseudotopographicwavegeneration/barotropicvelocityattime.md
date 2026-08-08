@@ -11,6 +11,8 @@ mathjax: true
 
 Evaluate the prescribed horizontally uniform current.
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

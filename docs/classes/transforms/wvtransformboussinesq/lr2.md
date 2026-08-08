@@ -11,6 +11,8 @@ mathjax: true
 
 squared Rossby radius
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

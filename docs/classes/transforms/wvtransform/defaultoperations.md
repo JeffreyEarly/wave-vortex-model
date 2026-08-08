@@ -3,13 +3,15 @@ layout: default
 title: defaultOperations
 parent: WVTransform
 grand_parent: Transforms
-nav_order: 26
+nav_order: 25
 mathjax: true
 ---
 
 #  defaultOperations
 
 return array of WVOperation instances initialized by default
+
+> Developer documentation: this item describes internal implementation details.
 
 
 ---

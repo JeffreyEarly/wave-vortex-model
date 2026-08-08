@@ -11,31 +11,40 @@ nav_order: 2
 
 #  WVEulerianFields
 
-UNTITLED2 Summary of this class goes here
+Select transform fields for model output
 
 
 ---
 
 ## Overview
-Detailed explanation goes here
+
+WVEulerianFields records named WVTransform fields, separating values
+written once at initialization from fields written at every output time.
 
 
 ## Topics
-+ Initialization
++ Create an observing system
   + [`WVEulerianFields`](/classes/observing-systems/wveulerianfields/wveulerianfields.html) create a new observing system
-  + [`observingSystemWithResolutionOfTransform`](/classes/observing-systems/wveulerianfields/observingsystemwithresolutionoftransform.html) create a new WVObservingSystem with a new resolution
-+ Writing to NetCDF files
++ Configure sampled variables
   + [`addNetCDFOutputVariables`](/classes/observing-systems/wveulerianfields/addnetcdfoutputvariables.html) Add variables to list of variables to be written to the NetCDF variable during the model run.
   + [`removeNetCDFOutputVariables`](/classes/observing-systems/wveulerianfields/removenetcdfoutputvariables.html) Remove variables from the list of variables to be written to the NetCDF variable during the model run.
   + [`setNetCDFOutputVariables`](/classes/observing-systems/wveulerianfields/setnetcdfoutputvariables.html) Set list of variables to be written to the NetCDF variable during the model run.
-+ Other
-  + [`classRequiredPropertyNames`](/classes/observing-systems/wveulerianfields/classrequiredpropertynames.html)
++ Inspect observed state
   + [`fieldNames`](/classes/observing-systems/wveulerianfields/fieldnames.html) eulerian field names
-  + [`initialConditionOnlyVariables`](/classes/observing-systems/wveulerianfields/initialconditiononlyvariables.html)
+
+
+## Developer Topics
+These items document internal implementation details and are not part of the primary public API.
++ Observing-system internals
+  + [`classRequiredPropertyNames`](/classes/observing-systems/wveulerianfields/classrequiredpropertynames.html)
   + [`nOutputVariables`](/classes/observing-systems/wveulerianfields/noutputvariables.html)
   + [`nTimeSeriesVariables`](/classes/observing-systems/wveulerianfields/ntimeseriesvariables.html)
-  + [`netCDFOutputVariables`](/classes/observing-systems/wveulerianfields/netcdfoutputvariables.html)
+  + [`observingSystemWithResolutionOfTransform`](/classes/observing-systems/wveulerianfields/observingsystemwithresolutionoftransform.html) create a new WVObservingSystem with a new resolution
   + [`timeSeriesVariables`](/classes/observing-systems/wveulerianfields/timeseriesvariables.html)
++ Observer integration
+  + [`initialConditionOnlyVariables`](/classes/observing-systems/wveulerianfields/initialconditiononlyvariables.html)
++ Observing-system persistence
+  + [`netCDFOutputVariables`](/classes/observing-systems/wveulerianfields/netcdfoutputvariables.html)
   + [`updateNetCDFVariableCategorization`](/classes/observing-systems/wveulerianfields/updatenetcdfvariablecategorization.html)
 
 

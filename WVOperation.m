@@ -1,7 +1,7 @@
 classdef WVOperation < handle & matlab.mixin.Heterogeneous
-%Perform an operation and return a variable using a WVTransform
+% Compute one or more registered WVTransform variables.
 % 
-% A WVOperation allows you to add new functionality to the WVTransform by
+% A `WVOperation` adds computed variables to a `WVTransform` by
 % defining one or more variables and creating an operation for computing
 % those variables.
 % 
@@ -18,7 +18,7 @@ classdef WVOperation < handle & matlab.mixin.Heterogeneous
 % will enable direct calls to `wvt.zeta_z` to compute the vertical
 % vorticity.
 % 
-% Note that a `WVOperation` that computes a single variable, must have the
+% A `WVOperation` that computes a single variable must have the
 % same name as the variable, as specified in `WVVariableAnnotation`.
 %
 % More involved calculations may require subclassing WVOperation and

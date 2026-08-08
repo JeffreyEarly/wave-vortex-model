@@ -11,6 +11,8 @@ mathjax: true
 
 spectral matrix that multiplies Ap,Am,A0 to damp
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

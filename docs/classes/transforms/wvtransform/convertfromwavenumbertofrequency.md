@@ -3,31 +3,26 @@ layout: default
 title: convertFromWavenumberToFrequency
 parent: WVTransform
 grand_parent: Transforms
-nav_order: 24
+nav_order: 23
 mathjax: true
 ---
 
 #  convertFromWavenumberToFrequency
 
-Summary
+Bin wave energy by vertical mode and intrinsic frequency
 
 
 ---
 
 ## Declaration
 ```matlab
- [varargout] = wvt.convertFromWavenumberToFrequency
+ [energyFrequency,omegaVector] = wvt.convertFromWavenumberToFrequency()
 ```
-## Parameters
-+ `varargin`  WVT
-
 ## Returns
-+ `varargout`  energyFrequency has dimensions $$(j,omegaVector)$$
++ `energyFrequency`  wave energy for each vertical mode and frequency bin, with dimensions `Nj`-by-`numel(omegaVector)`
++ `omegaVector`  intrinsic-frequency bin coordinates
 
 ## Discussion
-This method transforms an instantaneous WVT field that is in the
- horizontal wave number domain to the frequency domain.
 
- At this point the method is only set to return the total wave energy.
- In the future I plan to include an option for the user
- to transform any WVT field (Leticia)
+Redistributes the energy in the stored Ap and Am coefficients from the
+horizontal-wavenumber grid onto uniformly spaced intrinsic-frequency bins.

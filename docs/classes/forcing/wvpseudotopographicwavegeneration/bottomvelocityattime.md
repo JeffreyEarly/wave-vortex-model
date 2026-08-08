@@ -11,6 +11,8 @@ mathjax: true
 
 Evaluate $$g_b=\boldsymbol U_{\mathrm{bt}}\boldsymbol{\cdot}\nabla_Hh$$.
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

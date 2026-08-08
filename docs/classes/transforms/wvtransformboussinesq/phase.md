@@ -11,6 +11,8 @@ mathjax: true
 
 phase of the Ap wave modes
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

@@ -11,6 +11,8 @@ mathjax: true
 
 of the current (or future) group in the NetCDF file
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

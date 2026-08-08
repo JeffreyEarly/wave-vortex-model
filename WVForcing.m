@@ -1,23 +1,27 @@
 classdef WVForcing < handle & matlab.mixin.Heterogeneous & CAAnnotatedClass
-    % Computes a forcing
+    % Add forcing or dissipation to a wave-vortex transform.
     %
-    % WVForcing is an abstract class that defines how forcing gets added to
-    % a WVTransform. You can use one the built-in forcing operations, or
-    % make your own.
+    % `WVForcing` is the abstract base class for forcing and closure objects
+    % attached to a `WVTransform`. Use one of the supplied subclasses or
+    % implement this interface for a custom forcing.
     %
-    % Forcing is applied at two stages:
-    % 1. in the spatial domain to
-    %    1. non-hydrostatic flow d/dt(u,v,w,eta) = (Fu,Fv,Fw,Feta) or
-    %    1. hydrostatic flow d/dt(u,v,eta) = (Fu,Fv,Feta)  and
-    % 2. in the spectral domain to d/dt(Ap,Am,A0) = (Fp,Fm,F0)
+    % Forcing is applied in three stages. Physical-space forcing contributes
+    % tendencies to $$(u,v,\eta)$$ for hydrostatic flow or
+    % $$(u,v,w,\eta)$$ for nonhydrostatic flow. Those tendencies are projected
+    % into wave-vortex space before spectral forcing contributes directly to
+    % $$(F_+,F_-,F_0)$$. Spectral-amplitude forcing may then update `Ap`, `Am`,
+    % and `A0` directly. Potential-vorticity variants contribute only to the
+    % zero-frequency tendency or amplitude.
     %
-    % Each WVForcingFluxOperation must choose one of the two options and
-    % override either,
-    % 1. [Fu, Fv, Fw, Feta] = addSpatialForcing(wvt, Fu, Fv, Fw, Feta) or,
-    % 2. [Fp, Fm, F0] = addSpectralForcing( wvt, Fp, Fm, F0)
+    % A custom subclass declares its stages with `forcingType` and overrides
+    % the corresponding method, such as `addHydrostaticSpatialForcing`,
+    % `addNonhydrostaticSpatialForcing`, `addSpectralForcing`, or
+    % `setSpectralAmplitude`. The `forcingType` property documents the complete
+    % mapping, including the potential-vorticity variants.
     %
-    % Regardless of which method is chosen, the energy flux from the forcing
-    % can always be deduced at each moment in time.
+    % `WVTransform.addForcing` registers forcing objects, orders compatible
+    % contributions by priority, and exposes their energy transfers through
+    % the transform diagnostics.
     %
     % - Declaration: classdef WVForcing < handle
 
@@ -29,7 +33,7 @@ classdef WVForcing < handle & matlab.mixin.Heterogeneous & CAAnnotatedClass
     properties (GetAccess=public, SetAccess=protected)
         wvt
 
-        % boolean indicating this class implements addHydrostaticSpatialForcing
+        % Name used to register this forcing with its transform.
         %
         % - Topic: Properties
         name

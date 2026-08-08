@@ -11,6 +11,8 @@ mathjax: true
 
 assumed conjugate dimension
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

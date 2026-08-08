@@ -11,6 +11,8 @@ mathjax: true
 
 initialize with coefficients following a specified spectrum
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

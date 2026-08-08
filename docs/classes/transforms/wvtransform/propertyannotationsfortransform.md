@@ -3,13 +3,15 @@ layout: default
 title: propertyAnnotationsForTransform
 parent: WVTransform
 grand_parent: Transforms
-nav_order: 80
+nav_order: 67
 mathjax: true
 ---
 
 #  propertyAnnotationsForTransform
 
 return array of CAPropertyAnnotations for the WVTransform
+
+> Developer documentation: this item describes internal implementation details.
 
 
 ---

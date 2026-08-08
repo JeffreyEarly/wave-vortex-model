@@ -11,23 +11,30 @@ nav_order: 6
 
 #  WVCoefficients
 
-UNTITLED2 Summary of this class goes here
+Integrate and record the wave-vortex coefficients
 
 
 ---
 
 ## Overview
-Detailed explanation goes here
+
+WVCoefficients supplies the Ap, Am, and A0 state variables used by a
+WVModel integrator and writes their current values to model output.
 
 
 ## Topics
-+ Initialization
++ Create an observing system
   + [`WVCoefficients`](/classes/observing-systems/wvcoefficients/wvcoefficients.html) create a new observing system
-  + [`observingSystemWithResolutionOfTransform`](/classes/observing-systems/wvcoefficients/observingsystemwithresolutionoftransform.html) create a new WVObservingSystem with a new resolution
-+ Other
++ Inspect observed state
   + [`absTolerance`](/classes/observing-systems/wvcoefficients/abstolerance.html) absolute tolerance of the wave-vortex coefficients
+
+
+## Developer Topics
+These items document internal implementation details and are not part of the primary public API.
++ Observing-system internals
   + [`classRequiredPropertyNames`](/classes/observing-systems/wvcoefficients/classrequiredpropertynames.html)
   + [`errorTolerances`](/classes/observing-systems/wvcoefficients/errortolerances.html)
+  + [`observingSystemWithResolutionOfTransform`](/classes/observing-systems/wvcoefficients/observingsystemwithresolutionoftransform.html) create a new WVObservingSystem with a new resolution
 
 
 ---

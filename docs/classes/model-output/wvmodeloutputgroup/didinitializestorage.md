@@ -11,6 +11,8 @@ mathjax: true
 
 boolean indicating whether or not the internal structure of the NetCDF file has been created
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

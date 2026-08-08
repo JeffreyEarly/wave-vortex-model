@@ -11,6 +11,8 @@ mathjax: true
 
 amplitudes of the fixed modes in the `Ap` matrix
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

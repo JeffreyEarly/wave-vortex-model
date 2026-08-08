@@ -11,6 +11,8 @@ mathjax: true
 
 a mask indicate the components that are redundant conjugates
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

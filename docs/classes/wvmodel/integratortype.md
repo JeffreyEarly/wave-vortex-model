@@ -11,5 +11,7 @@ mathjax: true
 
 Array integrator
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---

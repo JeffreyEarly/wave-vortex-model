@@ -11,6 +11,8 @@ mathjax: true
 
 checks if the proposed coefficients are a valid adiabatic re-arrangement of the base state
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

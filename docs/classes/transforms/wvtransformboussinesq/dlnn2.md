@@ -11,6 +11,8 @@ mathjax: true
 
 $$\frac{\partial \ln N^2}{\partial z}$$, vertical variation of the log of the squared buoyancy frequency
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

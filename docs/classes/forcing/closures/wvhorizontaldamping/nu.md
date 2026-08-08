@@ -11,6 +11,8 @@ mathjax: true
 
 horizontal viscosity
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

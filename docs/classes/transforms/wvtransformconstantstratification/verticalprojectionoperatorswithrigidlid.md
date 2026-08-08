@@ -11,6 +11,8 @@ mathjax: true
 
 return the normalized projection operators with prefactors
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

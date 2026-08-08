@@ -11,6 +11,8 @@ mathjax: true
 
 phase of the Am wave modes
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

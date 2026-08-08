@@ -11,6 +11,8 @@ mathjax: true
 
 initialize a WVModelOutputGroup instance from NetCDF file
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

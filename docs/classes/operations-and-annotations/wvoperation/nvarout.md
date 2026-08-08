@@ -11,6 +11,8 @@ mathjax: true
 
 number of variables returned by the computation
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

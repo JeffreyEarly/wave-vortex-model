@@ -11,6 +11,8 @@ mathjax: true
 
 size(PF,PG)=[Nj x Nz]
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

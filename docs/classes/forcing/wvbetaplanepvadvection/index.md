@@ -49,9 +49,15 @@ actually justifiable with the correct asymptotics. -- Jeffrey
 
 
 ## Topics
-+ Other
++ Create forcing and closures
   + [`WVBetaPlanePVAdvection`](/classes/forcing/wvbetaplanepvadvection/wvbetaplanepvadvection.html)
+
+
+## Developer Topics
+These items document internal implementation details and are not part of the primary public API.
++ Forcing internals
   + [`betaA0`](/classes/forcing/wvbetaplanepvadvection/betaa0.html)
++ Forcing persistence
   + [`classRequiredPropertyNames`](/classes/forcing/wvbetaplanepvadvection/classrequiredpropertynames.html)
 
 

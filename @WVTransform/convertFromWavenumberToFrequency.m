@@ -1,16 +1,13 @@
 function [energyFrequency,omegaVector] = convertFromWavenumberToFrequency(self)
-%  Summary
-%  This method transforms an instantaneous WVT field that is in the 
-%  horizontal wave number domain to the frequency domain.
+% Bin wave energy by vertical mode and intrinsic frequency
 %
-%  At this point the method is only set to return the total wave energy.
-%  In the future I plan to include an option for the user
-%  to transform any WVT field (Leticia)
+% Redistributes the energy in the stored Ap and Am coefficients from the
+% horizontal-wavenumber grid onto uniformly spaced intrinsic-frequency bins.
 %
-% - Topic: Operations — Transformations
-% - Declaration: [varargout] = wvt.convertFromWavenumberToFrequency
-% - Parameter varargin: WVT
-% - Returns varargout: energyFrequency has dimensions $$(j,omegaVector)$$ 
+% - Topic: Analyze flow
+% - Declaration: [energyFrequency,omegaVector] = wvt.convertFromWavenumberToFrequency()
+% - Returns energyFrequency: wave energy for each vertical mode and frequency bin, with dimensions `Nj`-by-`numel(omegaVector)`
+% - Returns omegaVector: intrinsic-frequency bin coordinates
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%​
   % Defining omega vector based on biggest dOmega %​

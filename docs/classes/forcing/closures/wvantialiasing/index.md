@@ -51,15 +51,19 @@ wvtAA = wvt.waveVortexTransformWithExplicitAntialiasing();
 
 
 ## Topics
-+ Properties
++ Create forcing and closures
+  + [`WVAntialiasing`](/classes/forcing/closures/wvantialiasing/wvantialiasing.html) initialize the WVAntialiasing
+
+
+## Developer Topics
+These items document internal implementation details and are not part of the primary public API.
++ Forcing internals
   + [`M`](/classes/forcing/closures/wvantialiasing/m.html) spectral matrix that multiplies Ap,Am,A0 to zero out the aliased modes
   + [`Nj`](/classes/forcing/closures/wvantialiasing/nj.html) number of retained vertical modes used to construct the filter
   + [`effectiveHorizontalGridResolution`](/classes/forcing/closures/wvantialiasing/effectivehorizontalgridresolution.html) returns the effective grid resolution in meters
   + [`effectiveJMax`](/classes/forcing/closures/wvantialiasing/effectivejmax.html) returns the effective highest vertical mode
-+ CAAnnotatedClass requirement
++ Forcing persistence
   + [`classRequiredPropertyNames`](/classes/forcing/closures/wvantialiasing/classrequiredpropertynames.html) Returns the required property names for the class
-+ Other
-  + [`WVAntialiasing`](/classes/forcing/closures/wvantialiasing/wvantialiasing.html) initialize the WVAntialiasing
 
 
 ---
