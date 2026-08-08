@@ -9,8 +9,15 @@ mathjax: true
 
 #  totalEnstrophySpatiallyIntegrated
 
+Return horizontally averaged barotropic potential enstrophy.
 
+The spatial invariant is
 
+$$Z = \frac{h}{2}\langle q_{\mathrm{QG}}^2\rangle.$$
 
 ---
 
+## Declaration
+```matlab
+enstrophy = totalEnstrophySpatiallyIntegrated()
+```

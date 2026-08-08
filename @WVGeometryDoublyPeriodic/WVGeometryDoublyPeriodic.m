@@ -225,7 +225,10 @@ classdef WVGeometryDoublyPeriodic < CAAnnotatedClass
             % - Topic: Initialization
             % - Declaration:  self = WVGeometryDoublyPeriodic(Lxy, Nxy, options)
             % - Parameter Lxy: length of the domain (in meters) in the two periodic coordinate directions, e.g. [Lx Ly]
-            % - Parameter Nxy: number of grid points in the two coordinate directions, e.g. [Nx Ny]
+            % Both even and odd positive integer grid sizes are supported. A
+            % Nyquist mode exists only in an even-sized direction.
+            %
+            % - Parameter Nxy: positive integer grid counts in the two coordinate directions, e.g. [Nx Ny]
             % - Parameter conjugateDimension: (optional) set which dimension in the DFT grid is assumed to have the redundant conjugates (1 or 2), default is 2
             % - Parameter shouldAntialias: (optional) set whether the WV grid excludes the quadratically aliased modes [0 1] (default 1)
             % - Parameter shouldExcludeNyquist: (optional) set whether the WV grid excludes Nyquist modes[0 1] (default 1)
@@ -234,8 +237,8 @@ classdef WVGeometryDoublyPeriodic < CAAnnotatedClass
             % - Returns geom: a new WVGeometryDoublyPeriodic instance
             arguments
                 Lxy (1,2) double {mustBePositive}
-                Nxy (1,2) double {mustBePositive}
-                options.Nz (1,1) double {mustBePositive} = 1
+                Nxy (1,2) double {mustBeInteger,mustBePositive}
+                options.Nz (1,1) double {mustBeInteger,mustBePositive} = 1
                 options.conjugateDimension (1,1) double {mustBeMember(options.conjugateDimension,[1 2])} = 2
                 options.shouldAntialias (1,1) logical = true
                 options.shouldExcludeNyquist (1,1) logical = true
@@ -631,7 +634,8 @@ classdef WVGeometryDoublyPeriodic < CAAnnotatedClass
             % This function will return the linear index into the (k_wv,l_wv) arrays,
             % given the mode numbers (kMode,lMode). Note that this will
             % *not* normalize the mode to the primary mode number, but will
-            % throw an error.
+            % throw an error. Scalar and column-vector inputs preserve their
+            % shape and ordering.
             %
             % - Topic: Index gymnastics
             % - Declaration: index = indexFromKLModeNumber(kMode,lMode,jMode)
@@ -646,18 +650,21 @@ classdef WVGeometryDoublyPeriodic < CAAnnotatedClass
             arguments (Output)
                 index (:,1) double {mustBeInteger,mustBePositive}
             end
-            if ~self.isValidKLModeNumber(kMode,lMode)
-                error('Invalid WV mode number!');
+            if ~all(self.isValidPrimaryKLModeNumber(kMode,lMode))
+                error('Invalid WV primary mode number!');
             end
-            indices = 1:self.Nkl;
-            index = indices(self.kMode_wv == kMode & self.lMode_wv == lMode);
+            [isPresent,index] = ismember([kMode,lMode],[self.kMode_wv,self.lMode_wv],'rows');
+            if ~all(isPresent)
+                error('Invalid WV primary mode number!');
+            end
         end
 
         function [kMode,lMode] = klModeNumberFromIndex(self,linearIndex)
             % return mode number from a linear index into a WV matrix
             %
             % This function will return the mode numbers (kMode,lMode)
-            % given some linear index into a WV structured matrix.
+            % given some linear index into a WV structured matrix. Scalar
+            % and column-vector inputs preserve their shape and ordering.
             %
             % - Topic: Index gymnastics
             % - Declaration: [kMode,lMode] = klModeNumberFromIndex(self,linearIndex)
@@ -666,12 +673,13 @@ classdef WVGeometryDoublyPeriodic < CAAnnotatedClass
             % - Returns lMode: integer
             arguments (Input)
                 self WVGeometryDoublyPeriodic {mustBeNonempty}
-                linearIndex (1,1) double {mustBeInteger,mustBePositive}
+                linearIndex (:,1) double {mustBeInteger,mustBePositive}
             end
             arguments (Output)
-                kMode (1,1) double {mustBeInteger}
-                lMode (1,1) double {mustBeInteger}
+                kMode (:,1) double {mustBeInteger}
+                lMode (:,1) double {mustBeInteger}
             end
+            mustBeLessThanOrEqual(linearIndex,self.Nkl)
             kMode = self.kMode_wv(linearIndex);
             lMode = self.lMode_wv(linearIndex);
         end
@@ -1164,7 +1172,8 @@ classdef WVGeometryDoublyPeriodic < CAAnnotatedClass
             % Fourier domain these degrees-of-freedom are more complicated,
             % because some modes are strictly real-valued (k=l=0 and
             % Nyquist), while others are complex, and there are redundant
-            % Hermitian conjugates.
+            % Hermitian conjugates. Nyquist coordinates contribute
+            % self-conjugate modes only in even-sized dimensions.
             %
             % - Topic: Utility function
             % - Declaration: matrix = WVGeometryDoublyPeriodic.degreesOfFreedomForFourierCoefficients(Nx,Ny,conjugateDimension);
@@ -1180,11 +1189,18 @@ classdef WVGeometryDoublyPeriodic < CAAnnotatedClass
 
             dof = WVGeometryDoublyPeriodic.degreesOfFreedomForComplexMatrix(Nx,Ny);
 
-            % self-conjugate modes only have one degree-of-freedom
-            dof(1,1) = 1;
-            dof(Nx/2+1,1) = 1;
-            dof(Nx/2+1,Ny/2+1) = 1;
-            dof(1,Ny/2+1) = 1;
+            % Self-conjugate modes only have one degree of freedom. Each
+            % even-sized dimension contributes a Nyquist coordinate; odd
+            % dimensions have no Nyquist mode.
+            selfConjugateK = 1;
+            selfConjugateL = 1;
+            if mod(Nx,2) == 0
+                selfConjugateK(end+1) = Nx/2+1;
+            end
+            if mod(Ny,2) == 0
+                selfConjugateL(end+1) = Ny/2+1;
+            end
+            dof(selfConjugateK,selfConjugateL) = 1;
 
             % and remove the conjugates.
             mask = WVGeometryDoublyPeriodic.maskForConjugateFourierCoefficients(Nx,Ny,conjugateDimension=options.conjugateDimension);
@@ -1239,7 +1255,8 @@ classdef WVGeometryDoublyPeriodic < CAAnnotatedClass
             % returns a mask with locations of modes that are not fully resolved
             %
             % Returns a 'mask' (matrices with 1s or 0s) indicating where Nyquist
-            % modes are located a standard FFT matrix.
+            % modes are located in a standard FFT matrix. A direction has
+            % a Nyquist coordinate only when its grid size is even.
             %
             % Basic usage,
             % ```matlab
@@ -1263,8 +1280,12 @@ classdef WVGeometryDoublyPeriodic < CAAnnotatedClass
                 nyquistMask double {mustBeNonnegative}
             end
             nyquistMask = zeros(Nx,Ny,Nz);
-            nyquistMask(Nx/2+1,:,:) = 1;
-            nyquistMask(:,Ny/2+1,:) = 1;
+            if mod(Nx,2) == 0
+                nyquistMask(Nx/2+1,:,:) = 1;
+            end
+            if mod(Ny,2) == 0
+                nyquistMask(:,Ny/2+1,:) = 1;
+            end
         end
 
         function mask = maskForConjugateFourierCoefficients(Nx,Ny,options)
@@ -1296,36 +1317,18 @@ classdef WVGeometryDoublyPeriodic < CAAnnotatedClass
                 mask double {mustBeNonnegative}
             end
 
-            mask = zeros([Nx Ny]);
+            kMode = [0:ceil(Nx/2)-1 -floor(Nx/2):-1]';
+            lMode = [0:ceil(Ny/2)-1 -floor(Ny/2):-1]';
+            [K,L] = ndgrid(kMode,lMode);
+            kIsSelfConjugate = K == 0 | (mod(Nx,2) == 0 & K == -Nx/2);
+            lIsSelfConjugate = L == 0 | (mod(Ny,2) == 0 & L == -Ny/2);
+
             if options.conjugateDimension == 1
-                % The order of the for-loop is chosen carefully here.
-                for iK=1:(Nx/2+1)
-                    for iL=1:Ny
-                        if iK == 1 && iL > Ny/2 % avoid letting k=0, l=Ny/2+1 terms set themselves again
-                            continue;
-                        elseif iK == Nx/2+1 && iL > Ny/2 % avoid letting k=0, l=Ny/2+1 terms set themselves again
-                            continue;
-                        else
-                            mask = WVGeometryDoublyPeriodic.setConjugateToUnity(mask,iK,iL,Nx,Ny);
-                        end
-                    end
-                end
-            elseif options.conjugateDimension == 2
-                % The order of the for-loop is chosen carefully here.
-                for iL=1:(Ny/2+1)
-                    for iK=1:Nx
-                        if iL == 1 && iK > Nx/2 % avoid letting l=0, k=Nx/2+1 terms set themselves again
-                            continue;
-                        elseif iL == Ny/2+1 && iK > Nx/2 % avoid letting l=0, k=Nx/2+1 terms set themselves again
-                            continue;
-                        else
-                            mask = WVGeometryDoublyPeriodic.setConjugateToUnity(mask,iK,iL,Nx,Ny);
-                        end
-                    end
-                end
+                isPrimary = K > 0 | (kIsSelfConjugate & (L > 0 | lIsSelfConjugate));
             else
-                error('invalid conjugate dimension')
+                isPrimary = L > 0 | (lIsSelfConjugate & (K > 0 | kIsSelfConjugate));
             end
+            mask = double(~isPrimary);
         end
 
         function flag = isHermitian(A,options)
@@ -1357,14 +1360,14 @@ classdef WVGeometryDoublyPeriodic < CAAnnotatedClass
             N = size(A,2);
             K = size(A,3);
 
-            flag = 0;
+            flag = true;
             for k=1:K
                 for i=M:-1:1
                     for j=N:-1:1
                         ii = mod(M-i+1, M) + 1;
                         jj = mod(N-j+1, N) + 1;
                         if A(i,j,k) ~= conj(A(ii,jj,k))
-                            flag = 1;
+                            flag = false;
                             if options.shouldReportErrors == 1
                                 fprintf('(i,j,k)=(%d,%d,%d) is not conjugate with (%d,%d,%d)\n',i,j,k,ii,jj,k)
                             else

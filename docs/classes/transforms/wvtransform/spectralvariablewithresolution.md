@@ -9,14 +9,14 @@ mathjax: true
 
 #  spectralVariableWithResolution
 
-create a new variable with different resolution
+Create a spectral variable at a different resolution
 
 
 ---
 
 ## Declaration
 ```matlab
- varX2 = spectralVariableWithResolution(var,Nklj)
+ varX2 = spectralVariableWithResolution(wvtX2,var)
 ```
 ## Parameters
 + `var`  a variable with dimensions [Nj Nkl]
@@ -27,8 +27,9 @@ create a new variable with different resolution
 
 ## Discussion
 
-  Given a variable with dimensions [Nj Nkl], this returns a new variable
-  with dimensions matching wvtX2. This can be either increased or decreased
-  resolution.
+  Given a variable with dimensions `[Nj Nkl]`, this returns a new variable
+  with dimensions matching `wvtX2`. Coefficients are matched by integer
+  `(kMode,lMode,jMode)` identity. Modes absent from the target are discarded,
+  and target modes absent from the source are initialized to zero.
  
           

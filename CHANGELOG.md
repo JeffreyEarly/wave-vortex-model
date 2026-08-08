@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- Added compact invariant coverage across every stable transform on even and odd grids; corrected parity-aware Nyquist and Hermitian bookkeeping, vector mode/index mappings, coefficient-preserving resolution conversion, and barotropic spatial energy and enstrophy diagnostics.
 - Generalized `summarizeDegreesOfFreedom` across every stable transform with deterministic grid metadata and primary-component mask counts.
 - Implemented deterministic total-flow analytical-solution lookup across primary components and repaired barotropic mode-index conversion used by that lookup.
 - Implemented `hasMeanPressureDifference` as an MDA-only boundary diagnostic with a `1e-5` relative pressure tolerance; other flow components and transforms without an MDA component return `false`.
