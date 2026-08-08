@@ -2,7 +2,7 @@
 layout: default
 title: FwInvMatrix
 parent: WVTransformBoussinesq
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 17
 mathjax: true
 ---
@@ -25,5 +25,3 @@ transformation matrix $$F_w^{-1}$$
 
   A matrix that transforms a vector of igw amplitudes from
   vertical mode space to physical space.
- 
-      

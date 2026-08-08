@@ -2,8 +2,8 @@
 layout: default
 title: w
 parent: WVTransformConstantStratification
-grand_parent: Classes
-nav_order: 247
+grand_parent: Transforms
+nav_order: 245
 mathjax: true
 ---
 
@@ -16,105 +16,3 @@ z-component of the fluid velocity
 
 ## Description
 Real valued property with dimensions $$(x,y,z)$$ and units of $$m/s$$.
-
-## Discussion
----
-layout: default
-title: w
-parent: WVTransformBoussinesq
-grand_parent: Classes
-nav_order: 261
-mathjax: true
----
-
-#  w
-
-z-component of the fluid velocity
-
-
----
-
-## Description
-Real valued property with dimensions $$(x,y,z)$$ and units of $$m/s$$.
-
-## Discussion
----
-layout: default
-title: w
-parent: WVTransformBoussinesq
-grand_parent: Classes
-nav_order: 261
-mathjax: true
----
-
-#  w
-
-z-component of the fluid velocity
-
-
----
-
-## Description
-Real valued property with dimensions $$(x,y,z)$$ and units of $$m/s$$.
-
-## Discussion
----
-layout: default
-title: w
-parent: WVTransformBoussinesq
-grand_parent: Classes
-nav_order: 261
-mathjax: true
----
-
-#  w
-
-z-component of the fluid velocity
-
-
----
-
-## Description
-Real valued property with dimensions $$(x,y,z)$$ and units of $$m/s$$.
-
-## Discussion
----
-layout: default
-title: w
-parent: WVTransformBoussinesq
-grand_parent: Classes
-nav_order: 261
-mathjax: true
----
-
-#  w
-
-z-component of the fluid velocity
-
-
----
-
-## Description
-Real valued property with dimensions $$(x,y,z)$$ and units of $$m/s$$.
-
-## Discussion
----
-layout: default
-title: w
-parent: WVTransformBoussinesq
-grand_parent: Classes
-nav_order: 261
-mathjax: true
----
-
-#  w
-
-z-component of the fluid velocity
-
-
----
-
-## Description
-Real valued property with dimensions $$(x,y,z)$$ and units of $$m/s$$.
-
-

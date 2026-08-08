@@ -2,7 +2,7 @@
 layout: default
 title: classRequiredPropertyNames
 parent: WVBottomFrictionQuadratic
-grand_parent: Classes
+grand_parent: Forcing
 nav_order: 4
 mathjax: true
 ---

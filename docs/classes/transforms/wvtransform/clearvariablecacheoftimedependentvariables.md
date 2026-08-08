@@ -2,7 +2,7 @@
 layout: default
 title: clearVariableCacheOfTimeDependentVariables
 parent: WVTransform
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 22
 mathjax: true
 ---
@@ -15,5 +15,3 @@ clear the internal cache of variables that claim to be time dependent
 ---
 
 ## Discussion
-
-  

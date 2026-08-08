@@ -2,7 +2,7 @@
 layout: default
 title: nFluxComponents
 parent: WVObservingSystem
-grand_parent: Classes
+grand_parent: Observing systems
 nav_order: 9
 mathjax: true
 ---
@@ -25,5 +25,3 @@ number of components that need to be integrated in time.
     -initialConditions
     -fluxAtTime
     -updateIntegratorValues
- 
-  

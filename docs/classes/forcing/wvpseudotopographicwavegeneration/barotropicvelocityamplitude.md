@@ -2,7 +2,7 @@
 layout: default
 title: barotropicVelocityAmplitude
 parent: WVPseudoTopographicWaveGeneration
-grand_parent: Classes
+grand_parent: Forcing
 nav_order: 2
 mathjax: true
 ---
@@ -26,5 +26,3 @@ Complex valued property with dimension $$barotropicVelocityComponent$$ and units
   The two entries are the zonal and meridional amplitudes in
   $$\boldsymbol U_{\mathrm{bt}}=R(t)\operatorname{Re}
   \{\widehat{\boldsymbol U}_{\mathrm{bt}}e^{-i\omega(t-t_0)}\}$$.
- 
-  

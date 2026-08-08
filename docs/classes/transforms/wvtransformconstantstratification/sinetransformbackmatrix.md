@@ -2,7 +2,7 @@
 layout: default
 title: SineTransformBackMatrix
 parent: WVTransformConstantStratification
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 55
 mathjax: true
 ---

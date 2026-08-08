@@ -2,18 +2,16 @@
 layout: default
 title: operationWithName
 parent: WVTransform
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 71
 mathjax: true
 ---
 
 #  operationWithName
 
-Retrieve a registered `WVOperation` by name.
+retrieve a WVOperation by name
 
 
 ---
 
 ## Discussion
-
-An unknown name produces a clear lookup error.

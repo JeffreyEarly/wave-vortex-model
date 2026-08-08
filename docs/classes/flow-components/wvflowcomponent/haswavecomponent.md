@@ -2,7 +2,7 @@
 layout: default
 title: hasWaveComponent
 parent: WVFlowComponent
-grand_parent: Classes
+grand_parent: Flow components
 nav_order: 5
 mathjax: true
 ---
@@ -16,4 +16,3 @@ mathjax: true
 
 ## Type
 + Class: `logical`
-

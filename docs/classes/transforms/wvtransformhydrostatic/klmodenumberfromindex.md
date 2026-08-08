@@ -2,7 +2,7 @@
 layout: default
 title: klModeNumberFromIndex
 parent: WVTransformHydrostatic
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 143
 mathjax: true
 ---
@@ -28,6 +28,5 @@ return mode number from a linear index into a WV matrix
 ## Discussion
 
   This function will return the mode numbers (kMode,lMode)
-  given some linear index into a WV structured matrix.
- 
-          
+  given some linear index into a WV structured matrix. Scalar
+  and column-vector inputs preserve their shape and ordering.

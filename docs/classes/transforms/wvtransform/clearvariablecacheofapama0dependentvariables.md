@@ -2,7 +2,7 @@
 layout: default
 title: clearVariableCacheOfApAmA0DependentVariables
 parent: WVTransform
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 21
 mathjax: true
 ---
@@ -15,5 +15,3 @@ clear the internal cache
 ---
 
 ## Discussion
-
-  

@@ -2,7 +2,7 @@
 layout: default
 title: description
 parent: WVModelOutputGroupEvenlySpaced
-grand_parent: Classes
+grand_parent: Model output
 nav_order: 3
 mathjax: true
 ---
@@ -13,4 +13,3 @@ mathjax: true
 
 
 ---
-

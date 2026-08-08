@@ -26,7 +26,7 @@ The WVModel is responsible for time-stepping (integrating) the ocean state forwa
  ```matlab
  model = WVModel(wvt)
  ```
- 
+
  By default the model only takes a linear time-step. To specify a
  nonlinear flux on initialization, for example,
 ```matlab
@@ -37,7 +37,7 @@ The WVModel is responsible for time-stepping (integrating) the ocean state forwa
  ```matlab
  model = WVModel.modelFromFile('SomeFile.nc');
 ```
- 
+
  Advanced usage
  --------------
 
@@ -45,7 +45,7 @@ The WVModel is responsible for time-stepping (integrating) the ocean state forwa
  2. Add 1 or more WVModelOutputGroups to each file
  3. Add 1 or more WVObservingSystems to each output group.
 
-           
+
 
 
 ## Topics
@@ -88,38 +88,38 @@ The WVModel is responsible for time-stepping (integrating) the ocean state forwa
   + [`removeFluxedObservingSystem`](/classes/wvmodel/removefluxedobservingsystem.html) remove a WVObservingSystem to the fluxed observing systems array
   + [`wvCoefficientFluxedObservingSystem`](/classes/wvmodel/wvcoefficientfluxedobservingsystem.html) return the `WVCoefficients` fluxed observing system
 + Other
-  + [`absErrorToleranceCellArray`](/classes/wvmodel/abserrortolerancecellarray.html) 
-  + [`closeNetCDFFile`](/classes/wvmodel/closenetcdffile.html) 
-  + [`defaultOutputGroupName`](/classes/wvmodel/defaultoutputgroupname.html) 
-  + [`didBlowUp`](/classes/wvmodel/didblowup.html) 
-  + [`didSetupIntegrator`](/classes/wvmodel/didsetupintegrator.html) 
-  + [`eulerianObservingSystem`](/classes/wvmodel/eulerianobservingsystem.html) 
+  + [`absErrorToleranceCellArray`](/classes/wvmodel/abserrortolerancecellarray.html)
+  + [`closeNetCDFFile`](/classes/wvmodel/closenetcdffile.html)
+  + [`defaultOutputGroupName`](/classes/wvmodel/defaultoutputgroupname.html)
+  + [`didBlowUp`](/classes/wvmodel/didblowup.html)
+  + [`didSetupIntegrator`](/classes/wvmodel/didsetupintegrator.html)
+  + [`eulerianObservingSystem`](/classes/wvmodel/eulerianobservingsystem.html)
   + [`finalIntegrationTime`](/classes/wvmodel/finalintegrationtime.html) set only during an integration
-  + [`fluxAtTimeCellArray`](/classes/wvmodel/fluxattimecellarray.html) 
-  + [`fluxedObservingSystems`](/classes/wvmodel/fluxedobservingsystems.html) 
-  + [`indicesForFluxedSystem`](/classes/wvmodel/indicesforfluxedsystem.html) 
-  + [`initialConditionsCellArray`](/classes/wvmodel/initialconditionscellarray.html) 
-  + [`integrationCallback`](/classes/wvmodel/integrationcallback.html) 
-  + [`integrationInformTime`](/classes/wvmodel/integrationinformtime.html) 
-  + [`integrationLastInformModelTime`](/classes/wvmodel/integrationlastinformmodeltime.html) 
+  + [`fluxAtTimeCellArray`](/classes/wvmodel/fluxattimecellarray.html)
+  + [`fluxedObservingSystems`](/classes/wvmodel/fluxedobservingsystems.html)
+  + [`indicesForFluxedSystem`](/classes/wvmodel/indicesforfluxedsystem.html)
+  + [`initialConditionsCellArray`](/classes/wvmodel/initialconditionscellarray.html)
+  + [`integrationCallback`](/classes/wvmodel/integrationcallback.html)
+  + [`integrationInformTime`](/classes/wvmodel/integrationinformtime.html)
+  + [`integrationLastInformModelTime`](/classes/wvmodel/integrationlastinformmodeltime.html)
   + [`integrationLastInformWallTime`](/classes/wvmodel/integrationlastinformwalltime.html) wall clock, to keep track of the expected integration time
-  + [`integrationStartModelTime`](/classes/wvmodel/integrationstartmodeltime.html) 
-  + [`integrationStartWallTime`](/classes/wvmodel/integrationstartwalltime.html) 
+  + [`integrationStartModelTime`](/classes/wvmodel/integrationstartmodeltime.html)
+  + [`integrationStartWallTime`](/classes/wvmodel/integrationstartwalltime.html)
   + [`integratorType`](/classes/wvmodel/integratortype.html) Array integrator
-  + [`nFluxComponents`](/classes/wvmodel/nfluxcomponents.html) 
-  + [`nFluxComputations`](/classes/wvmodel/nfluxcomputations.html) 
-  + [`nFluxComputationsAtLastInform`](/classes/wvmodel/nfluxcomputationsatlastinform.html) 
+  + [`nFluxComponents`](/classes/wvmodel/nfluxcomponents.html)
+  + [`nFluxComputations`](/classes/wvmodel/nfluxcomputations.html)
+  + [`nFluxComputationsAtLastInform`](/classes/wvmodel/nfluxcomputationsatlastinform.html)
   + [`outputTimesForIntegrationPeriod`](/classes/wvmodel/outputtimesforintegrationperiod.html) This will be called exactly once before an integration
   + [`pseudoIntegrateToTime`](/classes/wvmodel/pseudointegratetotime.html) Time step the model forward linearly
-  + [`recomputeIndicesForFluxedSystems`](/classes/wvmodel/recomputeindicesforfluxedsystems.html) 
-  + [`recordNetCDFFileHistory`](/classes/wvmodel/recordnetcdffilehistory.html) 
-  + [`shouldShowIntegrationDiagnostics`](/classes/wvmodel/shouldshowintegrationdiagnostics.html) 
-  + [`showIntegrationFinishDiagnostics`](/classes/wvmodel/showintegrationfinishdiagnostics.html) 
-  + [`showIntegrationStartDiagnostics`](/classes/wvmodel/showintegrationstartdiagnostics.html) 
-  + [`showIntegrationTimeDiagnostics`](/classes/wvmodel/showintegrationtimediagnostics.html) 
-  + [`summarize`](/classes/wvmodel/summarize.html) 
+  + [`recomputeIndicesForFluxedSystems`](/classes/wvmodel/recomputeindicesforfluxedsystems.html)
+  + [`recordNetCDFFileHistory`](/classes/wvmodel/recordnetcdffilehistory.html)
+  + [`shouldShowIntegrationDiagnostics`](/classes/wvmodel/shouldshowintegrationdiagnostics.html)
+  + [`showIntegrationFinishDiagnostics`](/classes/wvmodel/showintegrationfinishdiagnostics.html)
+  + [`showIntegrationStartDiagnostics`](/classes/wvmodel/showintegrationstartdiagnostics.html)
+  + [`showIntegrationTimeDiagnostics`](/classes/wvmodel/showintegrationtimediagnostics.html)
+  + [`summarize`](/classes/wvmodel/summarize.html)
   + [`updateIntegratorValuesFromCellArray`](/classes/wvmodel/updateintegratorvaluesfromcellarray.html) We must set the time here. If we are integrating the
-  + [`writeTimeStepToNetCDFFile`](/classes/wvmodel/writetimesteptonetcdffile.html) 
+  + [`writeTimeStepToNetCDFFile`](/classes/wvmodel/writetimesteptonetcdffile.html)
 
 
 ---

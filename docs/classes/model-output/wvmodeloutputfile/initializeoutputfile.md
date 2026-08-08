@@ -2,7 +2,7 @@
 layout: default
 title: initializeOutputFile
 parent: WVModelOutputFile
-grand_parent: Classes
+grand_parent: Model output
 nav_order: 8
 mathjax: true
 ---
@@ -24,8 +24,6 @@ tells the output groups to initialize themselves in the NetCDF file
   writing the wave-vortex coefficients, we can neglect writing
   those to file.
 
-  Initialization is transactional. If any group or observing system
-  fails, the new file is closed and deleted and every storage object
-  returns to its uninitialized state.
- 
-  
+  Initialization is transactional. If any group or observing
+  system fails, the new file is closed and deleted and every
+  storage object returns to its uninitialized state.

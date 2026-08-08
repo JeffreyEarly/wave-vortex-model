@@ -2,7 +2,7 @@
 layout: default
 title: forcingType
 parent: WVForcing
-grand_parent: Classes
+grand_parent: Forcing
 nav_order: 9
 mathjax: true
 ---
@@ -31,5 +31,3 @@ Array of supported forcing types
   PVSpectral                    addPotentialVorticitySpectralForcing
   SpectralAmplitude             setSpectralForcing / setSpectralAmplitude
   PVSpectralAmplitude           setPotentialVorticitySpectralForcing / setPotentialVorticitySpectralAmplitude
- 
-  

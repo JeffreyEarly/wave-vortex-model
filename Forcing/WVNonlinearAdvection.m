@@ -44,7 +44,7 @@ classdef WVNonlinearAdvection < WVForcing
     % - Topic: Properties
     % - Topic: CAAnnotatedClass requirement
     %
-    % - Declaration: WVNonlinearAdvection < [WVForcing](/classes/wvforcing/)
+    % - Declaration: WVNonlinearAdvection < [WVForcing](/classes/forcing/wvforcing/)
     properties
         % variable stratification factor
         %

@@ -2,7 +2,7 @@
 layout: default
 title: name
 parent: WVModelOutputGroup
-grand_parent: Classes
+grand_parent: Model output
 nav_order: 11
 mathjax: true
 ---
@@ -18,5 +18,3 @@ of the current (or future) group in the NetCDF file
 + Class: `string`
 
 ## Discussion
-
-  

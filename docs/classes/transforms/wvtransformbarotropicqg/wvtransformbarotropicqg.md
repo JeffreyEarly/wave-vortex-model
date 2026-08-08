@@ -2,7 +2,7 @@
 layout: default
 title: WVTransformBarotropicQG
 parent: WVTransformBarotropicQG
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 28
 mathjax: true
 ---
@@ -33,5 +33,3 @@ create geometry for 2D barotropic flow
   Nxy = 256;
   wvt = Cartesian2DBarotropic([Lxy, Lxy], [Nxy, Nxy]);
   ```
- 
-            

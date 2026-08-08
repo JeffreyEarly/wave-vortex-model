@@ -2,7 +2,7 @@
 layout: default
 title: transformFromSpatialDomainToDFTGrid
 parent: WVTransformStratifiedQG
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 168
 mathjax: true
 ---
@@ -28,5 +28,3 @@ transform from $$(x,y,z)$$ to $$(k,l,z)$$ on the DFT grid
 
   Performs a Fourier transform in the x and y direction. The
   resulting matrix is on the DFT grid.
- 
-        

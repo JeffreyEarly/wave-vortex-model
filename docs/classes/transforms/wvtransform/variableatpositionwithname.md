@@ -2,7 +2,7 @@
 layout: default
 title: variableAtPositionWithName
 parent: WVTransform
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 118
 mathjax: true
 ---
@@ -30,8 +30,6 @@ Access dynamical variables at arbitrary positions in the domain.
   Computes (or retrieves from cache) any known state variables and computes
   their values at the requested positions (x,y,z). For two-dimensional
   variables, interpolation uses only (x,y), and z may be empty.
- 
+
   The interpolation method may be `linear` or `spline`. Horizontal
   coordinates are wrapped periodically before interpolation.
- 
-              

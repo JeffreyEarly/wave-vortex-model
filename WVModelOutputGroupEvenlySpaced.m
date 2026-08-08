@@ -10,7 +10,7 @@ classdef WVModelOutputGroupEvenlySpaced < WVModelOutputGroup
     % - Topic: Initializing
     % - Topic: Properties
     %
-    % - Declaration: WVModelOutputGroupEvenlySpaced < [WVModelOutputGroup](/classes/WVModelOutputGroup)
+    % - Declaration: WVModelOutputGroupEvenlySpaced < [WVModelOutputGroup](/classes/model-output/wvmodeloutputgroup/)
 
     properties
         % model output interval (seconds)

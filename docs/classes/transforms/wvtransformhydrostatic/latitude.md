@@ -2,7 +2,7 @@
 layout: default
 title: latitude
 parent: WVTransformHydrostatic
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 150
 mathjax: true
 ---
@@ -16,4 +16,3 @@ central latitude of the simulation
 
 ## Description
 Real valued property with no dimensions and units of $$degrees_north$$.
-

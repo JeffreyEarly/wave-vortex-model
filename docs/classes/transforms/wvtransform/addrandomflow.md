@@ -2,7 +2,7 @@
 layout: default
 title: addRandomFlow
 parent: WVTransform
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 16
 mathjax: true
 ---
@@ -29,19 +29,17 @@ add randomized flow to the existing state
 
   Adds random amplitudes at all available modes. Optionally, you can
   specify which components of the flow should get initialized. For example,
- 
+
   ```matlab
     wvt.addRandomFlow();
   ```
- 
+
   will add noise at all modes, while
- 
+
   ```matlab
     wvt.addRandomFlow('geostrophic','mda');
   ```
- 
+
   will add random flow at only thegeostrophic and mean density anomaly flow
   components, while the wave and inertial oscillations components will
   remain untouched
- 
-              

@@ -2,7 +2,7 @@
 layout: default
 title: setupIntegrator
 parent: WVModel
-grand_parent: Classes
+grand_parent: Class documentation
 nav_order: 52
 mathjax: true
 ---
@@ -33,25 +33,23 @@ Customize the time-stepping
   By default the model will use adaptive time stepping with a
   reasonable choice of values. However, you may find it
   necessary to customize the time stepping behavior.
- 
+
   When setting up the integrator you must choice between
   "adaptive" and "fixed" integrator types. Depending on which
   type you choose, you will have different options available.
- 
+
   The "fixed" time-step integrator used a cfl condition based
   on the advective velocity, but you can change this to use the
   highest oscillatory frequency. Alternatively, you can simply
   set deltaT yourself.
- 
+
   The "adaptive" time-step integator uses absolute and relative
   error tolerances. It is worth reading Matlab's documentation
   on RelTol and AbsTol as part of odeset to understand what
   these mean. By default, the adaptive time stepping uses a
   a relative error tolerance of 1e-3 for everything. However,
   the absolute error tolerance is less straightforward.
- 
+
   The absolute tolerance has a meaningful scale with units, and
   thus must be chosen differently for particle positions (x,y)
-  than for geostrophic coefficients (A0). 
- 
-                    
+  than for geostrophic coefficients (A0).

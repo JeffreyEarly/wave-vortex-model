@@ -2,7 +2,7 @@
 layout: default
 title: WVFixedAmplitudeForcing
 parent: WVFixedAmplitudeForcing
-grand_parent: Classes
+grand_parent: Forcing
 nav_order: 7
 mathjax: true
 ---
@@ -35,5 +35,3 @@ initialize the WVFixedAmplitudeForcing
 
   You must pass the instance of the WVTransform to be used and
   you must also specify a unique name for the forcing.
- 
-                      

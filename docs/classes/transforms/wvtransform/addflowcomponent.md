@@ -2,7 +2,7 @@
 layout: default
 title: addFlowComponent
 parent: WVTransform
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 12
 mathjax: true
 ---
@@ -23,7 +23,7 @@ add a flow component and its standard variables
 
 ## Discussion
 
-       
+
   The standard variables supported by the concrete transform are
   registered for each component. These include the three-dimensional state
   variables and the sea-surface variables.

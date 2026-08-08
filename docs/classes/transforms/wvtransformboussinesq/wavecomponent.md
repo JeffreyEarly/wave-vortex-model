@@ -2,8 +2,8 @@
 layout: default
 title: waveComponent
 parent: WVTransformBoussinesq
-grand_parent: Classes
-nav_order: 264
+grand_parent: Transforms
+nav_order: 263
 mathjax: true
 ---
 
@@ -22,5 +22,3 @@ returns the internal gravity wave flow component
 + `flowComponent`  subclass of WVPrimaryFlowComponent
 
 ## Discussion
-
-        

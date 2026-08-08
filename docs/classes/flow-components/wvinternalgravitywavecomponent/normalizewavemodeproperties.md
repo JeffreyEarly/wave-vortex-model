@@ -2,7 +2,7 @@
 layout: default
 title: normalizeWaveModeProperties
 parent: WVInternalGravityWaveComponent
-grand_parent: Classes
+grand_parent: Flow components
 nav_order: 13
 mathjax: true
 ---
@@ -39,5 +39,3 @@ returns properties of a internal gravity wave solutions relative to the primary 
   This function will return the primary mode numbers (k,l,j),
   given the any valid mode numbers (k,l,j) and adjust the
   amplitude (A) and phase (phi), if necessary.
- 
-                            

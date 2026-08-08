@@ -235,7 +235,7 @@ classdef WVPrimaryFlowComponent < WVFlowComponent
         function solution = solutionForModeAtIndex(self,index,options)
             % return the analytical solution for the mode at this index
             %
-            % Returns WVAnalyticalSolution object for this index.
+            % Returns WVOrthogonalSolution object for this index.
             % The solution indices run from 1:nModes.
             %
             % The solution amplitude can be set to either 'wvt' or
@@ -247,7 +247,7 @@ classdef WVPrimaryFlowComponent < WVFlowComponent
             % - Declaration: solution = solutionForModeAtIndex(index)
             % - Parameter index: non-negative integer less than nModes
             % - Parameter amplitude: (optional) 'wvt' or 'random' (default)
-            % - Returns solution: an instance of WVAnalyticalSolution
+            % - Returns solution: an instance of WVOrthogonalSolution
             arguments (Input)
                 self WVFlowComponent {mustBeNonempty}
                 index (:,1) double {mustBeNonnegative}
@@ -263,4 +263,3 @@ classdef WVPrimaryFlowComponent < WVFlowComponent
     end
     
 end
-

@@ -2,7 +2,7 @@
 layout: default
 title: Nx
 parent: WVTransformConstantStratification
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 50
 mathjax: true
 ---
@@ -18,5 +18,3 @@ number of grid points in the x-dimension
 Real valued property with no dimensions and no units.
 
 ## Discussion
-
-  

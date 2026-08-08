@@ -18,11 +18,11 @@ Inertial oscillation solution group
 
 ## Declaration
 
-<div class="language-matlab highlighter-rouge"><div class="highlight"><pre class="highlight"><code>classdef WVInertialOscillationComponent < WVFlowComponent</code></pre></div></div>
+<div class="language-matlab highlighter-rouge"><div class="highlight"><pre class="highlight"><code>classdef WVMeanDensityAnomalyComponent < WVPrimaryFlowComponent</code></pre></div></div>
 
 ## Overview
- 
-  
+
+
 
 
 ## Topics
@@ -43,11 +43,11 @@ Inertial oscillation solution group
   + [`totalEnergyFactorForCoefficientMatrix`](/classes/flow-components/wvmeandensityanomalycomponent/totalenergyfactorforcoefficientmatrix.html) returns the total energy multiplier for the coefficient matrix.
 + Other
   + [`WVMeanDensityAnomalyComponent`](/classes/flow-components/wvmeandensityanomalycomponent/wvmeandensityanomalycomponent.html) Inertial oscillation solution group
-  + [`degreesOfFreedomPerMode`](/classes/flow-components/wvmeandensityanomalycomponent/degreesoffreedompermode.html) 
-  + [`meanDensityAnomalySpatialTransformCoefficients`](/classes/flow-components/wvmeandensityanomalycomponent/meandensityanomalyspatialtransformcoefficients.html) 
-  + [`meanDensityAnomalySpectralTransformCoefficients`](/classes/flow-components/wvmeandensityanomalycomponent/meandensityanomalyspectraltransformcoefficients.html) 
-  + [`multiplierForVariable`](/classes/flow-components/wvmeandensityanomalycomponent/multiplierforvariable.html) 
-  + [`normalization`](/classes/flow-components/wvmeandensityanomalycomponent/normalization.html) 
+  + [`degreesOfFreedomPerMode`](/classes/flow-components/wvmeandensityanomalycomponent/degreesoffreedompermode.html)
+  + [`meanDensityAnomalySpatialTransformCoefficients`](/classes/flow-components/wvmeandensityanomalycomponent/meandensityanomalyspatialtransformcoefficients.html)
+  + [`meanDensityAnomalySpectralTransformCoefficients`](/classes/flow-components/wvmeandensityanomalycomponent/meandensityanomalyspectraltransformcoefficients.html)
+  + [`multiplierForVariable`](/classes/flow-components/wvmeandensityanomalycomponent/multiplierforvariable.html)
+  + [`normalization`](/classes/flow-components/wvmeandensityanomalycomponent/normalization.html)
 
 
 ---

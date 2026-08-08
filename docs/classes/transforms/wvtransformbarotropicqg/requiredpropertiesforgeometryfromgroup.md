@@ -2,8 +2,8 @@
 layout: default
 title: requiredPropertiesForGeometryFromGroup
 parent: WVTransformBarotropicQG
-grand_parent: Classes
-nav_order: 112
+grand_parent: Transforms
+nav_order: 115
 mathjax: true
 ---
 

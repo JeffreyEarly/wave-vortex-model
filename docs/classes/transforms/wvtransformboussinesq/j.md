@@ -2,7 +2,7 @@
 layout: default
 title: j
 parent: WVTransformBoussinesq
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 151
 mathjax: true
 ---
@@ -14,3 +14,9 @@ vertical mode number
 
 ---
 
+## Discussion
+
+This is simply an ordered enumeration of modes, starting with the zero-th (barotropic) mode.
+```matlab
+j = (0:(self.Nj-1))';
+```

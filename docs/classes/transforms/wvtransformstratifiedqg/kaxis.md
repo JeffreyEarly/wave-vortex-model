@@ -2,7 +2,7 @@
 layout: default
 title: kAxis
 parent: WVTransformStratifiedQG
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 102
 mathjax: true
 ---
@@ -13,4 +13,3 @@ k coordinate
 
 
 ---
-

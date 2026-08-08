@@ -2,7 +2,7 @@
 layout: default
 title: nonlinearFluxForFlowComponents
 parent: WVTransform
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 64
 mathjax: true
 ---
@@ -33,5 +33,3 @@ returns the flux of each coefficient as determined by the nonlinear flux operati
   constituents. The masks are applied to the coefficients Ap,Am,A0 before
   computing the nonlinear flux, $$\vec{u} \cdot \nabla \vec{u}$$. This
   function calls -nonlinearFluxWithGradientMasks.
- 
-              

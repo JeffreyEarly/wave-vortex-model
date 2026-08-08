@@ -2,7 +2,7 @@
 layout: default
 title: addWavesWithFrequencySpectrum
 parent: WVTransformHydrostatic
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 64
 mathjax: true
 ---
@@ -29,11 +29,11 @@ add waves with a specified frequency spectrum
   with a spectrum specified in terms of vertical mode j and
   frequency $\omega$. This allows us to initialize with a
   Garrett-Munk spectrum, for example, using code like,
- 
+
   ```matlab
   GM = @(omega,j) E*H(j) .* B(omega);
   ```
-  
+
   Because the model has limited resolution, there will not
   necessarily be many modes in a given frequency band. This
   means that the ensemble may be over a very low number of
@@ -42,5 +42,3 @@ add waves with a specified frequency spectrum
   shouldOnlyRandomizeOrientations may be useful. This will only
   randomize the phases of the waves, while fixing the
   amplitudes so that the desired spectrum will be achieved.
- 
-          

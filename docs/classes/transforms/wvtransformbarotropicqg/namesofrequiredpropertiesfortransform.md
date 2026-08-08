@@ -2,8 +2,8 @@
 layout: default
 title: namesOfRequiredPropertiesForTransform
 parent: WVTransformBarotropicQG
-grand_parent: Classes
-nav_order: 99
+grand_parent: Transforms
+nav_order: 102
 mathjax: true
 ---
 
@@ -13,4 +13,3 @@ mathjax: true
 
 
 ---
-

@@ -2,7 +2,7 @@
 layout: default
 title: absTolerance
 parent: WVTracer
-grand_parent: Classes
+grand_parent: Observing systems
 nav_order: 2
 mathjax: true
 ---
@@ -16,4 +16,3 @@ absolute tolerance of phi for the adaptive integrator
 
 ## Description
 Real valued property with no dimensions and no units.
-

@@ -2,7 +2,7 @@
 layout: default
 title: advectionInterpolation
 parent: WVLagrangianParticles
-grand_parent: Classes
+grand_parent: Observing systems
 nav_order: 4
 mathjax: true
 ---
@@ -13,4 +13,3 @@ interpolation method for the advection scheme
 
 
 ---
-

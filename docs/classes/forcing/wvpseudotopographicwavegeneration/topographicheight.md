@@ -2,7 +2,7 @@
 layout: default
 title: topographicHeight
 parent: WVPseudoTopographicWaveGeneration
-grand_parent: Classes
+grand_parent: Forcing
 nav_order: 16
 mathjax: true
 ---
@@ -25,5 +25,3 @@ Real valued property with dimensions $$(x,y)$$ and units of $$m$$.
 
   The field is stationary and periodic on the transform's
   horizontal grid.
- 
-  

@@ -2,7 +2,7 @@
 layout: default
 title: l
 parent: WVTransformHydrostatic
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 145
 mathjax: true
 ---
@@ -18,5 +18,3 @@ wavenumber dimension on the WV grid
 Real valued property with dimension $$kl$$ and units of $$rad/m$$.
 
 ## Discussion
-
-  

@@ -2,7 +2,7 @@
 layout: default
 title: optimizedTransformsForFlowComponent
 parent: WVTransform
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 72
 mathjax: true
 ---
@@ -22,6 +22,6 @@ returns optimized transforms that avoid unnecessary computation
   components. The value will be set to 1 if the primary component is
   nonzero, and this component has the same values. Otherwise, an array will
   be returned.
- 
+
   The isMasked boolean is true if this flow component deviates from the
   total primary flow components in some fashion.

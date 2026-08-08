@@ -2,7 +2,7 @@
 layout: default
 title: DCT
 parent: WVTransformConstantStratification
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 14
 mathjax: true
 ---
@@ -13,4 +13,3 @@ mathjax: true
 
 
 ---
-

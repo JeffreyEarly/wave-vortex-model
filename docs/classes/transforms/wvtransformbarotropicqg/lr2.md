@@ -2,7 +2,7 @@
 layout: default
 title: Lr2
 parent: WVTransformBarotropicQG
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 13
 mathjax: true
 ---
@@ -16,4 +16,3 @@ squared Rossby radius
 
 ## Description
 Real valued property with no dimensions and units of $$m^2$$.
-

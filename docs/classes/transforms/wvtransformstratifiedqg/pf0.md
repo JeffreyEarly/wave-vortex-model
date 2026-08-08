@@ -2,7 +2,7 @@
 layout: default
 title: PF0
 parent: WVTransformStratifiedQG
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 31
 mathjax: true
 ---
@@ -16,4 +16,3 @@ size(PF,PG)=[Nj x Nz]
 
 ## Description
 Real valued property with dimensions $$(j,z)$$ and no units.
-

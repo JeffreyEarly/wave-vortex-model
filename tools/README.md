@@ -11,3 +11,16 @@ The task analyzes root runtime files, root class folders, and runtime folders de
 The analyzer uses MATLAB's factory configuration and reports active and suppressed findings. Preallocation and established interface-style advice are visible but nonblocking. The centralized policy in `analyzeProductionCode.m` also records the narrowly accepted multiple-inheritance false positives. Analyzer errors, correctness findings, and unfamiliar identifiers block until reviewed and classified.
 
 Do not add `%#ok` annotations merely to make this report empty. Suppressed correctness findings remain blocking.
+
+## Documentation
+
+Documentation generation requires the authoring-only package `ClassDocumentation@1.3.0`. Install that exact package and its dependencies before running either task; it is intentionally absent from `resources/mpackage.json` because it is not a runtime dependency.
+
+```matlab
+buildtool docs:build
+buildtool docs:check
+```
+
+`docs:build` generates into clean staging storage, validates internal routes and generated navigation, and transactionally replaces `docs`. `docs:check` performs the same build in temporary storage and fails on any difference from the committed tree without changing the checkout. Both tasks print the resolved ClassDocumentation version and path before generation.
+
+The OceanKit release workflow continues to call `build_website_documentation(rootDir=...)`. That entry point uses the same exact dependency check, clean generator, validation, and transactional replacement as `docs:build`.

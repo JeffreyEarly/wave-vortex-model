@@ -2,8 +2,8 @@
 layout: default
 title: setGeostrophicModes
 parent: WVTransformBarotropicQG
-grand_parent: Classes
-nav_order: 117
+grand_parent: Transforms
+nav_order: 120
 mathjax: true
 ---
 
@@ -36,13 +36,11 @@ set amplitudes of the given geostrophic modes
   as [horizontal and vertical modes](/users-guide/wavenumber-modes-and-indices.html),
   and the function will return the associated [horizontal wavenumbers](/users-guide/wavenumber-modes-and-indices.html)
   of those modes.
- 
+
   For example,
- 
+
   ```matlab
   wvt.addGeostrophicModes(kMode=0,lMode=1,jMode=1,u=0.5);
   ```
- 
+
   will add a geostrophic mode.
- 
-                    

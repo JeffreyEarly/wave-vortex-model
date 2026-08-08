@@ -2,7 +2,7 @@
 layout: default
 title: transformFromDFTGridToWVGrid
 parent: WVTransformBoussinesq
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 231
 mathjax: true
 ---
@@ -31,8 +31,6 @@ convert from DFT to WV grid
   respect the conditions set when this class was initialized
   (shouldAntialias, shouldExcludeNyquist,
   shouldExcludeConjugates).
- 
+
   This function is not the fastest way to reformat your data.
-  If high performance is required, you should 
- 
-        
+  If high performance is required, you should

@@ -2,7 +2,7 @@
 layout: default
 title: namesOfRequiredPropertiesForGeometry
 parent: WVTransformConstantStratification
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 169
 mathjax: true
 ---
@@ -13,4 +13,3 @@ mathjax: true
 
 
 ---
-

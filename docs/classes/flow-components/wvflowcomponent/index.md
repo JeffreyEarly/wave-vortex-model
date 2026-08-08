@@ -17,19 +17,19 @@ Orthogonal solution group
 ---
 
 ## Overview
- 
+
 Each degree-of-freedom in the model is associated with an analytical
 solution to the equations of motion. This class groups together
 solutions of a particular type and provides a mapping between their
 analytical solutions and their numerical representation.
- 
+
 Perhaps the most complicate part of the numerical implementation is
 the indexing---finding where each solution is represented
 numerically. In general, a solution will have some properties, e.g.,
-  (kMode,lMode,jMode,phi,A,omegasign) 
+  (kMode,lMode,jMode,phi,A,omegasign)
 which will have a primary and conjugate part, each of which might be
 in two different matrices.
- 
+
 
 
 
@@ -48,10 +48,10 @@ in two different matrices.
   + [`maskAm`](/classes/flow-components/wvflowcomponent/maskam.html) returns a mask indicating where solutions live in the Am matrix.
   + [`maskAp`](/classes/flow-components/wvflowcomponent/maskap.html) returns a mask indicating where solutions live in the Ap matrix.
 + Other
-  + [`contains`](/classes/flow-components/wvflowcomponent/contains.html) 
-  + [`hasPVComponent`](/classes/flow-components/wvflowcomponent/haspvcomponent.html) 
-  + [`hasWaveComponent`](/classes/flow-components/wvflowcomponent/haswavecomponent.html) 
-  + [`plus`](/classes/flow-components/wvflowcomponent/plus.html) 
+  + [`contains`](/classes/flow-components/wvflowcomponent/contains.html)
+  + [`hasPVComponent`](/classes/flow-components/wvflowcomponent/haspvcomponent.html)
+  + [`hasWaveComponent`](/classes/flow-components/wvflowcomponent/haswavecomponent.html)
+  + [`plus`](/classes/flow-components/wvflowcomponent/plus.html)
 
 
 ---

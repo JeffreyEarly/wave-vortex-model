@@ -2,7 +2,7 @@
 layout: default
 title: inertialComponent
 parent: WVTransformHydrostatic
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 114
 mathjax: true
 ---
@@ -22,5 +22,3 @@ returns the inertial oscillation flow component
 + `flowComponent`  subclass of WVPrimaryFlowComponent
 
 ## Discussion
-
-        

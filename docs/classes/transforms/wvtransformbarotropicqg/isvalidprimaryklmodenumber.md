@@ -2,8 +2,8 @@
 layout: default
 title: isValidPrimaryKLModeNumber
 parent: WVTransformBarotropicQG
-grand_parent: Classes
-nav_order: 74
+grand_parent: Transforms
+nav_order: 76
 mathjax: true
 ---
 
@@ -31,7 +31,5 @@ return a boolean indicating whether (k,l) is a valid primary (non-conjugate) WV 
   *primary* WV mode number. Even if a mode number is available
   in the DFT matrix, it does not mean it is a valid WV mode
   number, e.g., it may be removed due to aliasing.
- 
+
   The result is affected by the chosen conjugateDimension.
- 
-          

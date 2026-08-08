@@ -2,7 +2,7 @@
 layout: default
 title: kl
 parent: WVTransformStratifiedQG
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 108
 mathjax: true
 ---
@@ -15,5 +15,3 @@ wavenumber dimension
 ---
 
 ## Discussion
-
-  

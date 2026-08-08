@@ -2,7 +2,7 @@
 layout: default
 title: showIntegrationStartDiagnostics
 parent: WVModel
-grand_parent: Classes
+grand_parent: Class documentation
 nav_order: 55
 mathjax: true
 ---
@@ -13,4 +13,3 @@ mathjax: true
 
 
 ---
-

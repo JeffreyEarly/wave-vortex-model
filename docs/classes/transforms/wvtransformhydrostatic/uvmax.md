@@ -2,7 +2,7 @@
 layout: default
 title: uvMax
 parent: WVTransformHydrostatic
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 233
 mathjax: true
 ---
@@ -16,4 +16,3 @@ max horizontal fluid speed
 
 ## Description
 Real valued property with no dimensions and units of $$m s^{-1}$$.
-

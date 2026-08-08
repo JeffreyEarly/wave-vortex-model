@@ -2,7 +2,7 @@
 layout: default
 title: didGetRemovedFromTransform
 parent: WVForcing
-grand_parent: Classes
+grand_parent: Forcing
 nav_order: 7
 mathjax: true
 ---
@@ -13,4 +13,3 @@ mathjax: true
 
 
 ---
-

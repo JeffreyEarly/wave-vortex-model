@@ -2,7 +2,7 @@
 layout: default
 title: K2uniqueK2Map
 parent: WVTransformBoussinesq
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 27
 mathjax: true
 ---
@@ -13,4 +13,3 @@ cell array Nk in length. Each cell contains indices back to K2
 
 
 ---
-

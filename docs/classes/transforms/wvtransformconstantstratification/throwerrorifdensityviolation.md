@@ -2,8 +2,8 @@
 layout: default
 title: throwErrorIfDensityViolation
 parent: WVTransformConstantStratification
-grand_parent: Classes
-nav_order: 224
+grand_parent: Transforms
+nav_order: 223
 mathjax: true
 ---
 

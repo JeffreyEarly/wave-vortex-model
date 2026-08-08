@@ -2,7 +2,7 @@
 layout: default
 title: ncfile
 parent: WVModelOutputFile
-grand_parent: Classes
+grand_parent: Model output
 nav_order: 11
 mathjax: true
 ---
@@ -20,5 +20,3 @@ reference to the NetCDFFile being used for model output
 ## Discussion
 
   This property may be empty if the file is not yet created
- 
-  

@@ -2,7 +2,7 @@
 layout: default
 title: Lz
 parent: WVTransformBoussinesq
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 33
 mathjax: true
 ---
@@ -19,4 +19,4 @@ Real valued property with no dimensions and units of $$m$$.
 
 ## Discussion
 
-  
+The `z` coordinate and `Lz` are both set during initialization. `Lz` is the full domain depth.

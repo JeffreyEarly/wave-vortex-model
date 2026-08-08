@@ -2,7 +2,7 @@
 layout: default
 title: setDrifterPositions
 parent: WVModel
-grand_parent: Classes
+grand_parent: Class documentation
 nav_order: 49
 mathjax: true
 ---
@@ -25,3 +25,5 @@ Set positions of drifter-like particles to be advected.
 + `trackedFields`  variable names to sample along each trajectory
 + `advectionInterpolation`  (optional) `linear` (default) or `spline` interpolation for particle advection
 + `trackedVarInterpolation`  (optional) `linear` (default) or `spline` interpolation for tracked fields
+
+## Discussion

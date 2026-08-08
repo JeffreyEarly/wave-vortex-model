@@ -2,7 +2,7 @@
 layout: default
 title: addParticles
 parent: WVModel
-grand_parent: Classes
+grand_parent: Class documentation
 nav_order: 8
 mathjax: true
 ---
@@ -31,5 +31,3 @@ Add particles to be advected by the flow.
 + `absToleranceZ`  (adapative) absolute tolerance  in meters for particle advection in (z). 1e-2 (default)
 
 ## Discussion
-
-                        

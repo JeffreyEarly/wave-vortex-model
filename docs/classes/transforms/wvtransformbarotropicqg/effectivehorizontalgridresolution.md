@@ -2,7 +2,7 @@
 layout: default
 title: effectiveHorizontalGridResolution
 parent: WVTransformBarotropicQG
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 47
 mathjax: true
 ---
@@ -27,5 +27,3 @@ returns the effective grid resolution in meters
   wavelength in the model. This value takes into account
   anti-aliasing, and is thus appropriate for setting damping
   operators.
- 
-      

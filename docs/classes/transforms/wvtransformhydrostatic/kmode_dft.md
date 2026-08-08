@@ -2,7 +2,7 @@
 layout: default
 title: kMode_dft
 parent: WVTransformHydrostatic
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 137
 mathjax: true
 ---
@@ -15,5 +15,3 @@ k mode-number on the DFT grid
 ---
 
 ## Discussion
-
-  

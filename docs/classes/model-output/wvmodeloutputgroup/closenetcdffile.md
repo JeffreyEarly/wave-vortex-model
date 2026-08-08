@@ -2,7 +2,7 @@
 layout: default
 title: closeNetCDFFile
 parent: WVModelOutputGroup
-grand_parent: Classes
+grand_parent: Model output
 nav_order: 3
 mathjax: true
 ---
@@ -18,5 +18,3 @@ notification that the NetCDF file will close
 
   This gives the output group an opportunity to display some
   relevant data or do other necessary clean up.
- 
-  

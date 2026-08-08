@@ -2,7 +2,7 @@
 layout: default
 title: dampingTimeScale
 parent: WVAdaptiveDamping
-grand_parent: Classes
+grand_parent: Closures
 nav_order: 6
 mathjax: true
 ---

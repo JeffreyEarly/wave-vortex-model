@@ -2,7 +2,7 @@
 layout: default
 title: psi
 parent: WVTransformStratifiedQG
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 136
 mathjax: true
 ---
@@ -25,11 +25,10 @@ $$
 \hat{\psi} = \frac{g}{f_0} A_0
 $$
 
-and then transformed back to the spatial domain with the $$F$$ modes using [transformToSpatialDomainWithF](classes/wvtransform/transformtospatialdomainwithf.html).
+and then transformed back to the spatial domain with the $$F$$ modes using [transformToSpatialDomainWithF](/classes/transforms/wvtransform/transformtospatialdomainwithf.html).
 
 In code,
 
 ```matlab
 f = @(wvt) wvt.transformToSpatialDomainWithF(A0=(wvt.g/wvt.f) * wvt.A0t);
 ```
-

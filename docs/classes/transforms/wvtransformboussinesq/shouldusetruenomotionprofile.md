@@ -2,7 +2,7 @@
 layout: default
 title: shouldUseTrueNoMotionProfile
 parent: WVTransformBoussinesq
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 219
 mathjax: true
 ---
@@ -17,4 +17,3 @@ mathjax: true
 ## Type
 + Class: `logical`
 + Size: `(1,1)`
-

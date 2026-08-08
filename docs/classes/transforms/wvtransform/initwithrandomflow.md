@@ -2,7 +2,7 @@
 layout: default
 title: initWithRandomFlow
 parent: WVTransform
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 53
 mathjax: true
 ---
@@ -30,19 +30,17 @@ initialize with a random flow state
   Clears variables Ap,Am,A0 and then randomizes the flow by adding random
   amplitudes at all available modes. Optionally, you can specify which
   components of the flow should get initialized. For example,
- 
+
   ```matlab
     wvt.initWithRandomFlow();
   ```
- 
+
   will initialize all modes, while
- 
+
   ```matlab
     wvt.initWithRandomFlow('geostrophic','mda');
   ```
- 
+
   will initialize the flow with geostrophic and mean density anomaly flow
   components, while the wave and inertial oscillations components will be
   zero.
- 
-              

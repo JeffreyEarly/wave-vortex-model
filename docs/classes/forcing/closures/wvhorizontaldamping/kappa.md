@@ -2,7 +2,7 @@
 layout: default
 title: kappa
 parent: WVHorizontalDamping
-grand_parent: Classes
+grand_parent: Closures
 nav_order: 3
 mathjax: true
 ---
@@ -18,5 +18,3 @@ horizontal diffusivity
 Real valued property with no dimensions and units of $$m^2 s^{-1}$$.
 
 ## Discussion
-
-  

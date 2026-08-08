@@ -2,7 +2,7 @@
 layout: default
 title: propertyAnnotationsForTransform
 parent: WVTransform
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 80
 mathjax: true
 ---
@@ -30,5 +30,3 @@ return array of CAPropertyAnnotations for the WVTransform
   by the WVTransform. It selectively returns annotations for
   the wave-vortex coefficients, as not all subclass will handle
   these coefficients in the same way.
- 
-            

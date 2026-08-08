@@ -2,7 +2,7 @@
 layout: default
 title: particlePositions
 parent: WVModel
-grand_parent: Classes
+grand_parent: Class documentation
 nav_order: 43
 mathjax: true
 ---
@@ -22,5 +22,3 @@ Positions and values of tracked fields of particles at the current model time.
 + `name`  name of the particles
 
 ## Discussion
-
-      

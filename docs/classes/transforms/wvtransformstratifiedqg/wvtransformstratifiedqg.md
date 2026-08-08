@@ -2,7 +2,7 @@
 layout: default
 title: WVTransformStratifiedQG
 parent: WVTransformStratifiedQG
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 38
 mathjax: true
 ---
@@ -31,11 +31,8 @@ create a wave-vortex transform for variable stratification
 
 ## Discussion
 
-  Creates a new instance of the WVTransformHydrostatic class
-  appropriate for disentangling hydrostatic waves and vortices
-  in variable stratification
- 
+  Creates a new instance of the WVTransformStratifiedQG class
+  for quasigeostrophic flow in variable stratification.
+
   You must initialization by passing *either* the density
   profile or the stratification profile.
- 
-                  

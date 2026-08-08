@@ -2,7 +2,7 @@
 layout: default
 title: l_dft
 parent: WVTransformConstantStratification
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 159
 mathjax: true
 ---
@@ -15,5 +15,3 @@ l wavenumber dimension on the DFT grid
 ---
 
 ## Discussion
-
-  

@@ -2,7 +2,7 @@
 layout: default
 title: indicesFromDFTGridToWVGrid
 parent: WVTransformBoussinesq
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 127
 mathjax: true
 ---
@@ -31,8 +31,6 @@ indices to convert from DFT to WV grid
   The resulting WV grid will respect the conditions set when
   this class was initialized (shouldAntialias,
   shouldExcludeNyquist, shouldExcludeConjugates).
- 
+
   This function is should generally be faster than the function
   transformFromDFTGridToWVGrid if you cache these indices.
- 
-        

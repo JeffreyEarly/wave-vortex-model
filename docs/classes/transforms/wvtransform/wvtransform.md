@@ -2,7 +2,7 @@
 layout: default
 title: WVTransform
 parent: WVTransform
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 11
 mathjax: true
 ---
@@ -17,4 +17,3 @@ initialize a WVTransform instance
 ## Discussion
 
   This must be called from a subclass.
-  

@@ -2,8 +2,8 @@
 layout: default
 title: shouldExcludeConjugates
 parent: WVTransformHydrostatic
-grand_parent: Classes
-nav_order: 201
+grand_parent: Transforms
+nav_order: 200
 mathjax: true
 ---
 
@@ -18,5 +18,3 @@ whether the WV grid excludes redundant Hermitian-conjugate wavenumbers
 Real valued property with no dimensions and units of $$bool$$.
 
 ## Discussion
-
-  

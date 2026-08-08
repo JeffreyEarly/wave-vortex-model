@@ -2,14 +2,14 @@
 layout: default
 title: spectralVariableWithResolution
 parent: WVTransform
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 95
 mathjax: true
 ---
 
 #  spectralVariableWithResolution
 
-Create a spectral variable at a different resolution
+create a new variable with different resolution
 
 
 ---
@@ -28,8 +28,6 @@ Create a spectral variable at a different resolution
 ## Discussion
 
   Given a variable with dimensions `[Nj Nkl]`, this returns a new variable
-  with dimensions matching `wvtX2`. Coefficients are matched by integer
-  `(kMode,lMode,jMode)` identity. Modes absent from the target are discarded,
-  and target modes absent from the source are initialized to zero.
- 
-          
+  with dimensions matching `wvtX2`. Coefficients are matched by their
+  integer `(kMode,lMode,jMode)` identities. Modes absent from the target are
+  discarded and target modes absent from the source are initialized to zero.

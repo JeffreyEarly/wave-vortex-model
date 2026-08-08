@@ -2,7 +2,7 @@
 layout: default
 title: WVThermalDamping
 parent: WVThermalDamping
-grand_parent: Classes
+grand_parent: Closures
 nav_order: 1
 mathjax: true
 ---
@@ -26,5 +26,3 @@ initialize the WVThermalDamping
 + `self`  a WVThermalDamping instance
 
 ## Discussion
-
-          

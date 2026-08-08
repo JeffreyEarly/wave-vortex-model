@@ -2,7 +2,7 @@
 layout: default
 title: integrateToTime
 parent: WVModel
-grand_parent: Classes
+grand_parent: Class documentation
 nav_order: 25
 mathjax: true
 ---
@@ -13,4 +13,3 @@ Time step the model forward to the requested time.
 
 
 ---
-

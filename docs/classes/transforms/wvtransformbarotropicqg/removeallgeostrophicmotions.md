@@ -2,8 +2,8 @@
 layout: default
 title: removeAllGeostrophicMotions
 parent: WVTransformBarotropicQG
-grand_parent: Classes
-nav_order: 111
+grand_parent: Transforms
+nav_order: 114
 mathjax: true
 ---
 
@@ -16,15 +16,13 @@ remove all geostrophic motions
 
 ## Declaration
 ```matlab
- removeAllGeostrophicMotions()     
+ removeAllGeostrophicMotions()
 ```
 ## Discussion
 
   All geostrophic motions are removed by setting A0 to zero.
- 
+
   **Note** that this does *not* remove the mean density anomaly
   (mda) part of the solution, just the geostrophic part. Thus,
   this function will not clear all parts of a geostrophic
   streamfunction.
- 
-      

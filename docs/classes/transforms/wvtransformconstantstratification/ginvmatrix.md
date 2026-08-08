@@ -2,7 +2,7 @@
 layout: default
 title: GinvMatrix
 parent: WVTransformConstantStratification
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 28
 mathjax: true
 ---
@@ -16,8 +16,3 @@ transformation matrix $$G_g^{-1}$$
 
 ## Description
 Real valued property with dimensions $$(z,j)$$ and no units.
-
-## Discussion
-
-This is the geostrophic transformation matrix $$G_g^{-1}$$ that transforms a vector from vertical mode space to physical space. Thus the columns are the vertical modes. Typically applied to variables $$\eta$$ and possibly $$w$$.
-

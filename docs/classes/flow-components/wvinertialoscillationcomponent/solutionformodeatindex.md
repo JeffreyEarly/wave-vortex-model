@@ -2,7 +2,7 @@
 layout: default
 title: solutionForModeAtIndex
 parent: WVInertialOscillationComponent
-grand_parent: Classes
+grand_parent: Flow components
 nav_order: 12
 mathjax: true
 ---
@@ -22,10 +22,8 @@ return the analytical solution at this index
 + `solutionIndex`  non-negative integer
 
 ## Returns
-+ `solution`  an instance of WVAnalyticalSolution
++ `solution`  an instance of WVOrthogonalSolution
 
 ## Discussion
 
-  Returns WVAnalyticalSolution object for this index
- 
-        
+  Returns WVOrthogonalSolution object for this index

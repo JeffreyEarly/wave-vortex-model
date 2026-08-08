@@ -2,8 +2,8 @@
 layout: default
 title: effectiveHorizontalGridResolution
 parent: WVAntialiasing
-grand_parent: Classes
-nav_order: 4
+grand_parent: Closures
+nav_order: 5
 mathjax: true
 ---
 
@@ -27,5 +27,3 @@ returns the effective grid resolution in meters
   wavelength in the model. This value takes into account
   anti-aliasing, and is thus appropriate for setting damping
   operators.
- 
-      

@@ -2,7 +2,7 @@
 layout: default
 title: removeAllWaves
 parent: WVTransformBoussinesq
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 198
 mathjax: true
 ---
@@ -17,4 +17,3 @@ removes all wave from the model, including inertial oscillations
 ## Discussion
 
   Simply sets Ap and Am to zero.
-  

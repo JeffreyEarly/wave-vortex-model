@@ -2,7 +2,7 @@
 layout: default
 title: k_dft
 parent: WVTransformConstantStratification
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 151
 mathjax: true
 ---
@@ -15,5 +15,3 @@ k wavenumber dimension on the DFT grid
 ---
 
 ## Discussion
-
-  

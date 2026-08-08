@@ -2,8 +2,8 @@
 layout: default
 title: propertyAnnotationsForRotatingFPlane
 parent: WVTransformBarotropicQG
-grand_parent: Classes
-nav_order: 107
+grand_parent: Transforms
+nav_order: 110
 mathjax: true
 ---
 
@@ -13,4 +13,3 @@ mathjax: true
 
 
 ---
-

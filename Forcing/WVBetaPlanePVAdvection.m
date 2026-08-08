@@ -26,7 +26,7 @@ classdef WVBetaPlanePVAdvection < WVForcing
     % actually justifiable with the correct asymptotics. -- Jeffrey
     %
     % - Topic: Initializing
-    % - Declaration: WVBetaPlanePVAdvection < [WVForcing](/classes/wvforcing/)
+    % - Declaration: WVBetaPlanePVAdvection < [WVForcing](/classes/forcing/wvforcing/)
     properties
         betaA0
     end

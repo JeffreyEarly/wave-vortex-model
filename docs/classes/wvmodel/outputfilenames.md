@@ -2,7 +2,7 @@
 layout: default
 title: outputFileNames
 parent: WVModel
-grand_parent: Classes
+grand_parent: Class documentation
 nav_order: 39
 mathjax: true
 ---
@@ -15,5 +15,3 @@ retrieve the names of all output files
 ---
 
 ## Discussion
-
-  

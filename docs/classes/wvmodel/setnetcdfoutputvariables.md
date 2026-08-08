@@ -2,7 +2,7 @@
 layout: default
 title: setNetCDFOutputVariables
 parent: WVModel
-grand_parent: Classes
+grand_parent: Class documentation
 nav_order: 51
 mathjax: true
 ---
@@ -23,11 +23,11 @@ Set list of variables to be written to the NetCDF variable during the model run.
 
 ## Discussion
 
-       
+
   Pass strings of WVTransform state variables of the
   same name. This must be called before using any of the
   integrate methods.
- 
+
   ```matlab
   model.setNetCDFOutputVariables('A0','u','v');
   ```

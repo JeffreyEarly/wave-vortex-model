@@ -2,8 +2,8 @@
 layout: default
 title: totalEnstrophy
 parent: WVTransformConstantStratification
-grand_parent: Classes
-nav_order: 225
+grand_parent: Transforms
+nav_order: 224
 mathjax: true
 ---
 
@@ -13,4 +13,3 @@ mathjax: true
 
 
 ---
-

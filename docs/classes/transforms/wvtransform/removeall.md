@@ -2,7 +2,7 @@
 layout: default
 title: removeAll
 parent: WVTransform
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 81
 mathjax: true
 ---
@@ -17,4 +17,3 @@ removes all energy from the model
 ## Discussion
 
   Simply sets Ap, Am, and A0 to zero.
-  

@@ -2,7 +2,7 @@
 layout: default
 title: contains
 parent: WVFlowComponent
-grand_parent: Classes
+grand_parent: Flow components
 nav_order: 3
 mathjax: true
 ---
@@ -13,4 +13,3 @@ mathjax: true
 
 
 ---
-

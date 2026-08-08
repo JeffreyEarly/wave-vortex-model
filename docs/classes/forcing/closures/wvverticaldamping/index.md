@@ -6,7 +6,7 @@ has_toc: false
 mathjax: true
 parent: Closures
 grand_parent: Forcing
-nav_order: 5
+nav_order: 4
 ---
 
 #  WVVerticalDamping
@@ -21,15 +21,15 @@ Vertical viscosity and diffusivity
 <div class="language-matlab highlighter-rouge"><div class="highlight"><pre class="highlight"><code>WVVerticalDamping < <a href="/classes/forcing/wvforcing/" title="WVForcing">WVForcing</a></code></pre></div></div>
 
 ## Overview
- 
+
 The damping is designed to mimic the VerticalScalarDiffusivity in
 Oceananigans to allow for direct comparison between the models. This
 is intended be used in combination with
 WVHorizontalDamping. In general, you should be using the
-[`WVAdaptiveDamping`](../WVAdaptiveDamping).
+[`WVAdaptiveDamping`](/classes/forcing/closures/wvadaptivedamping/).
 
-The specific form of the forcing is given by 
- 
+The specific form of the forcing is given by
+
 $$
 \begin{align}
 \mathcal{S}_u &= \nu \frac{\partial^2 u}{\partial z^2} \\
@@ -38,32 +38,32 @@ $$
 \mathcal{S}_\eta &= \kappa \frac{\partial^2 \eta}{\partial z^2} - \kappa \frac{\partial}{\partial z} \ln N^2
 \end{align}
 $$
- 
+
 with viscosity, $$\nu$$, and diffusivity, $$\kappa$$. This should be combined with
-[`WVHorizontalDamping`](../`WVHorizontalDamping`) for a complete closure. For help
+[`WVHorizontalDamping`](/classes/forcing/closures/wvhorizontaldamping/) for a complete closure. For help
 choosing appropriate values, see the notes in
-[`WVAdaptiveDamping`](../WVAdaptiveDamping).
- 
+[`WVAdaptiveDamping`](/classes/forcing/closures/wvadaptivedamping/).
+
 ### Usage
- 
+
 Assuming there is a WVTransform instance wvt, to add this forcing,
- 
+
 ```matlab
 wvt.addForcing(WVVerticalDamping(wvt,nu=5e-4, kappa=1e-6));
 ```
- 
- 
+
+
 ### Notes
- 
+
 This is currently implemented in the spatial domain and is
 thus highly un-optimized.
- 
+
 For constant stratification, $$\partial_z \ln N^2=0$$ and the
 stratification-gradient correction vanishes. The configured viscosity
 and diffusivity are preserved when the forcing is copied to a
 transform with a different resolution.
- 
-     
+
+
 
 
 

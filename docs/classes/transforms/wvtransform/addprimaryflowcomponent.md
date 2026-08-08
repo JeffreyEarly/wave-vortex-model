@@ -2,7 +2,7 @@
 layout: default
 title: addPrimaryFlowComponent
 parent: WVTransform
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 15
 mathjax: true
 ---
@@ -23,5 +23,3 @@ add a primary flow component, automatically added to the flow
 
 ## Discussion
 components
- 
-      

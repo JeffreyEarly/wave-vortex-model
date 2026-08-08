@@ -2,7 +2,7 @@
 layout: default
 title: integrationCallback
 parent: WVModel
-grand_parent: Classes
+grand_parent: Class documentation
 nav_order: 26
 mathjax: true
 ---
@@ -13,4 +13,3 @@ mathjax: true
 
 
 ---
-

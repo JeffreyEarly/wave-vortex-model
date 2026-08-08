@@ -2,8 +2,8 @@
 layout: default
 title: effectiveJMax
 parent: WVAntialiasing
-grand_parent: Classes
-nav_order: 5
+grand_parent: Closures
+nav_order: 6
 mathjax: true
 ---
 
@@ -27,5 +27,3 @@ returns the effective highest vertical mode
   mode in the model. This value takes into account
   anti-aliasing, and is thus appropriate for setting damping
   operators.
- 
-      

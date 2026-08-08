@@ -2,7 +2,7 @@
 layout: default
 title: kl
 parent: WVTransformHydrostatic
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 142
 mathjax: true
 ---
@@ -15,5 +15,3 @@ wavenumber dimension
 ---
 
 ## Discussion
-
-  

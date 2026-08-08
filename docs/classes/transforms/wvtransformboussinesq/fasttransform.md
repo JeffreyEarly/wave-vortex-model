@@ -2,7 +2,7 @@
 layout: default
 title: fastTransform
 parent: WVTransformBoussinesq
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 112
 mathjax: true
 ---
@@ -15,5 +15,3 @@ fast transform object
 ---
 
 ## Discussion
-
-  

@@ -2,7 +2,7 @@
 layout: default
 title: addFluxedObservingSystem
 parent: WVModel
-grand_parent: Classes
+grand_parent: Class documentation
 nav_order: 4
 mathjax: true
 ---
@@ -15,5 +15,3 @@ add a WVObservingSystem to the fluxed observing systems array
 ---
 
 ## Discussion
-
-  

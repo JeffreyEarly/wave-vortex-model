@@ -2,7 +2,7 @@
 layout: default
 title: WVEulerianFields
 parent: WVEulerianFields
-grand_parent: Classes
+grand_parent: Observing systems
 nav_order: 1
 mathjax: true
 ---
@@ -29,5 +29,3 @@ create a new observing system
 
   This class is intended to be subclassed, so it generally
   assumed that this initialization will not be called directly.
- 
-          

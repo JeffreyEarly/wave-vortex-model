@@ -2,7 +2,7 @@
 layout: default
 title: QG0
 parent: WVTransformBoussinesq
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 55
 mathjax: true
 ---
@@ -16,4 +16,3 @@ Preconditioned G-mode forward transformation
 
 ## Description
 Real valued property with dimensions $$(j,z)$$ and no units.
-

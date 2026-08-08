@@ -2,7 +2,7 @@
 layout: default
 title: rampDuration
 parent: WVPseudoTopographicWaveGeneration
-grand_parent: Classes
+grand_parent: Forcing
 nav_order: 12
 mathjax: true
 ---
@@ -22,5 +22,3 @@ Duration of the half-cosine startup ramp in seconds.
 Real valued property with no dimensions and units of $$s$$.
 
 ## Discussion
-
-  

@@ -2,7 +2,7 @@
 layout: default
 title: enstrophyFluxFromNonlinearFlux
 parent: WVTransform
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 29
 mathjax: true
 ---
@@ -29,5 +29,3 @@ converts nonlinear flux into enstrophy flux
 
   Multiplies the nonlinear flux F0 by the appropriate coefficients
   to convert into an energy flux.
- 
-          

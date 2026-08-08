@@ -2,8 +2,8 @@
 layout: default
 title: primaryKLModeNumberFromKLModeNumber
 parent: WVTransformBarotropicQG
-grand_parent: Classes
-nav_order: 105
+grand_parent: Transforms
+nav_order: 108
 mathjax: true
 ---
 
@@ -31,7 +31,5 @@ takes any valid WV mode number and returns the primary mode number
   The function first confirms that the mode numbers are valid,
   and then converts any conjugate mode numbers to primary mode
   numbers.
- 
+
   The result is affected by the chosen conjugateDimension.
- 
-            

@@ -2,8 +2,8 @@
 layout: default
 title: shouldAntialias
 parent: WVTransformBarotropicQG
-grand_parent: Classes
-nav_order: 120
+grand_parent: Transforms
+nav_order: 123
 mathjax: true
 ---
 
@@ -18,5 +18,3 @@ whether the WV grid includes quadratically aliased wavenumbers
 Real valued property with no dimensions and units of $$bool$$.
 
 ## Discussion
-
-  

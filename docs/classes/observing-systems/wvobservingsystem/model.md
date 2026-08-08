@@ -2,7 +2,7 @@
 layout: default
 title: model
 parent: WVObservingSystem
-grand_parent: Classes
+grand_parent: Observing systems
 nav_order: 8
 mathjax: true
 ---
@@ -18,5 +18,3 @@ reference to the WVModel being used
 + Class: `WVModel`
 
 ## Discussion
-
-  

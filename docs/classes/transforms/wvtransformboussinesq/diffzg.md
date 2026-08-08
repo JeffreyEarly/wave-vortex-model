@@ -2,7 +2,7 @@
 layout: default
 title: diffZG
 parent: WVTransformBoussinesq
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 101
 mathjax: true
 ---
@@ -11,11 +11,12 @@ mathjax: true
 
 Differentiate a G-grid field with respect to z.
 
+
 ---
 
 ## Declaration
 ```matlab
-du = diffZG(u,n=n)
+ du = diffZG(u,n=n)
 ```
 ## Parameters
 + `u`  G-grid field with dimensions `[Nx Ny Nz]`
@@ -26,4 +27,6 @@ du = diffZG(u,n=n)
 
 ## Discussion
 
-`u` must use the gridded layout `[Nx Ny Nz]`. Orders 1 through 4 are supported. Odd orders return an F-representation and even orders return a G-representation.
+  `u` must use the gridded layout `[Nx Ny Nz]`. Orders 1 through 4 are
+  supported. Odd orders return an F-representation and even orders return
+  a G-representation.

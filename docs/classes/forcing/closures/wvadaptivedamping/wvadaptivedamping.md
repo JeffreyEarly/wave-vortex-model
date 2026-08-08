@@ -2,7 +2,7 @@
 layout: default
 title: WVAdaptiveDamping
 parent: WVAdaptiveDamping
-grand_parent: Classes
+grand_parent: Closures
 nav_order: 1
 mathjax: true
 ---
@@ -25,5 +25,3 @@ initialize the WVAdaptiveDamping
 + `self`  a WVAdaptiveDamping instance
 
 ## Discussion
-
-        

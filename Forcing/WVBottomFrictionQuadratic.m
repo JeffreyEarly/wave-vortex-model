@@ -45,7 +45,7 @@ classdef WVBottomFrictionQuadratic < WVForcing
     % - Topic: Properties
     % - Topic: CAAnnotatedClass requirement
     %
-    % - Declaration: WVBottomFrictionQuadratic < [WVForcing](/classes/wvforcing/)
+    % - Declaration: WVBottomFrictionQuadratic < [WVForcing](/classes/forcing/wvforcing/)
     properties
         % non-dimensional quadratic drag coefficient
         %

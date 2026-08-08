@@ -21,14 +21,14 @@ Generate internal waves from prescribed barotropic flow over topography.
 <div class="language-matlab highlighter-rouge"><div class="highlight"><pre class="highlight"><code>classdef WVPseudoTopographicWaveGeneration < WVForcing</code></pre></div></div>
 
 ## Overview
- 
+
 `WVPseudoTopographicWaveGeneration` projects the first-order bottom
 velocity
- 
+
 $$
 g_b=\boldsymbol U_{\mathrm{bt}}(t)\boldsymbol{\cdot}\nabla_Hh
 $$
- 
+
 onto the rigid-lid wave modes using their bottom pressure. The
 projection is precomputed, so ordinary forcing calls add spectral
 wave tendencies without a pressure solve or spatial transform. By
@@ -37,14 +37,14 @@ active `WVAdaptiveDamping`. Optional horizontal-wavenumber and
 vertical-mode bounds support other closures. The incoming balanced
 tendency is left unchanged. Select a standard constituent with
 `darwinSymbol`, or supply a custom angular `frequency`.
- 
+
 ```matlab
 forcing = WVPseudoTopographicWaveGeneration(wvt,topographicHeight=h,barotropicVelocityAmplitude=[0.05; 0],darwinSymbol="M2");
 wvt.removeAllForcing();
 wvt.addForcing(forcing);
 ```
- 
-            
+
+
 
 
 ## Topics

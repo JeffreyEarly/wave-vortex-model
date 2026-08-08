@@ -2,7 +2,7 @@
 layout: default
 title: convertFromWavenumberToFrequency
 parent: WVTransform
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 24
 mathjax: true
 ---
@@ -25,11 +25,9 @@ Summary
 + `varargout`  energyFrequency has dimensions $$(j,omegaVector)$$
 
 ## Discussion
-This method transforms an instantaneous WVT field that is in the 
+This method transforms an instantaneous WVT field that is in the
    horizontal wave number domain to the frequency domain.
- 
+
    At this point the method is only set to return the total wave energy.
    In the future I plan to include an option for the user
    to transform any WVT field (Leticia)
- 
-        

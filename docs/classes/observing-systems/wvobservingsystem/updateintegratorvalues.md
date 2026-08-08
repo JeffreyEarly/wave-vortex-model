@@ -2,7 +2,7 @@
 layout: default
 title: updateIntegratorValues
 parent: WVObservingSystem
-grand_parent: Classes
+grand_parent: Observing systems
 nav_order: 12
 mathjax: true
 ---
@@ -16,5 +16,3 @@ passes updated values of the variables being integrated.
 
 ## Discussion
 Called 1) during fluxAtTime and 2) during interpolation
- 
-  

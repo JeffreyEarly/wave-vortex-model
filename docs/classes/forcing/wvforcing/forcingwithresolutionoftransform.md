@@ -2,7 +2,7 @@
 layout: default
 title: forcingWithResolutionOfTransform
 parent: WVForcing
-grand_parent: Classes
+grand_parent: Forcing
 nav_order: 10
 mathjax: true
 ---
@@ -28,5 +28,3 @@ create a new WVForcing with a new resolution
 
   Subclasses to should override this method an implement the
   correct logic.
- 
-        

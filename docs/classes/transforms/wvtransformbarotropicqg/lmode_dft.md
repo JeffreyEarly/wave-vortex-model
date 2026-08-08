@@ -2,8 +2,8 @@
 layout: default
 title: lMode_dft
 parent: WVTransformBarotropicQG
-grand_parent: Classes
-nav_order: 88
+grand_parent: Transforms
+nav_order: 91
 mathjax: true
 ---
 
@@ -15,5 +15,3 @@ l mode-number on the DFT grid
 ---
 
 ## Discussion
-
-  

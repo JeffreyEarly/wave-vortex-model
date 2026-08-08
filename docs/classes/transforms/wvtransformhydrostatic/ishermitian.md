@@ -2,7 +2,7 @@
 layout: default
 title: isHermitian
 parent: WVTransformHydrostatic
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 127
 mathjax: true
 ---
@@ -31,10 +31,8 @@ Check if the matrix is Hermitian. Report errors.
   is Hermitian in the first two dimensions, following the data
   structure of a 2D DFT algorithm. The third dimension can be
   any length, including length 1.
- 
+
   Errors can be reported indicating which entries are not
   conjugate.
- 
+
   This algorithm is not fast.
- 
-          

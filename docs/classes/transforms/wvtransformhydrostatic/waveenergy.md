@@ -2,8 +2,8 @@
 layout: default
 title: waveEnergy
 parent: WVTransformHydrostatic
-grand_parent: Classes
-nav_order: 243
+grand_parent: Transforms
+nav_order: 242
 mathjax: true
 ---
 
@@ -19,5 +19,3 @@ total energy of the geostrophic flow
  geostrophicEnergy
 ```
 ## Discussion
-
-      

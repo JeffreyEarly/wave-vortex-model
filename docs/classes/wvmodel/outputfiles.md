@@ -2,7 +2,7 @@
 layout: default
 title: outputFiles
 parent: WVModel
-grand_parent: Classes
+grand_parent: Class documentation
 nav_order: 41
 mathjax: true
 ---
@@ -13,4 +13,3 @@ Array of WVModelOutputFile instances
 
 
 ---
-

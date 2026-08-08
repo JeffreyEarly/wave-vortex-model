@@ -1,7 +1,7 @@
 classdef WVTransformBoussinesq < WVGeometryDoublyPeriodicStratifiedBoussinesq & WVTransform & WVGeostrophicMethods & WVInternalGravityWaveMethods & WVInertialOscillationMethods & WVMeanDensityAnomalyMethods
-    % A class for disentangling hydrostatic waves and vortices in variable stratification
+    % A class for disentangling nonhydrostatic waves and vortices in variable stratification
     %
-    % To initialization an instance of the WVTransformHydrostatic class you
+    % To initialize an instance of the WVTransformBoussinesq class you
     % must specific the domain size, the number of grid points and *either*
     % the density profile or the stratification profile.
     %
@@ -9,7 +9,7 @@ classdef WVTransformBoussinesq < WVGeometryDoublyPeriodicStratifiedBoussinesq & 
     % N0 = 3*2*pi/3600;
     % L_gm = 1300;
     % N2 = @(z) N0*N0*exp(2*z/L_gm);
-    % wvt = WVTransformHydrostatic([100e3, 100e3, 4000],[64, 64, 65], N2=N2,latitude=30);
+    % wvt = WVTransformBoussinesq([100e3, 100e3, 4000],[64, 64, 65], N2=N2,latitude=30);
     % ```
     %
     % - Topic: Initialization
@@ -21,7 +21,7 @@ classdef WVTransformBoussinesq < WVGeometryDoublyPeriodicStratifiedBoussinesq & 
     % - Topic: Energetics of flow components
     % - Topic: Operations
     %
-    % - Declaration: classdef WVTransformHydrostatic < [WVTransform](/classes/wvtransform/)
+    % - Declaration: classdef WVTransformBoussinesq < [WVTransform](/classes/transforms/wvtransform/)
     properties (Dependent)
         totalEnergySpatiallyIntegrated
         totalEnergy
@@ -45,8 +45,8 @@ classdef WVTransformBoussinesq < WVGeometryDoublyPeriodicStratifiedBoussinesq & 
         function self = WVTransformBoussinesq(Lxyz, Nxyz, options)
             % create a wave-vortex transform for variable stratification
             %
-            % Creates a new instance of the WVTransformHydrostatic class
-            % appropriate for disentangling hydrostatic waves and vortices
+            % Creates a new instance of the WVTransformBoussinesq class
+            % appropriate for disentangling nonhydrostatic waves and vortices
             % in variable stratification
             %
             % You must initialization by passing *either* the density

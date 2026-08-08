@@ -2,7 +2,7 @@
 layout: default
 title: nVarOut
 parent: WVOperation
-grand_parent: Classes
+grand_parent: Operations & annotations
 nav_order: 5
 mathjax: true
 ---
@@ -15,5 +15,3 @@ number of variables returned by the computation
 ---
 
 ## Discussion
-
-  

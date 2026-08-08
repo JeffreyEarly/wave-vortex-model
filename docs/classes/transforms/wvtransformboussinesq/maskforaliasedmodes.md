@@ -2,7 +2,7 @@
 layout: default
 title: maskForAliasedModes
 parent: WVTransformBoussinesq
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 168
 mathjax: true
 ---
@@ -31,17 +31,15 @@ returns a mask with locations of modes that will alias with a quadratic multipli
   Returns a 'mask' (matrices with 1s or 0s) indicating where aliased wave
   modes are, assuming the 2/3 anti-aliasing rule for quadratic
   interactions.
- 
+
   Technically one needs only restrict to 2/3s in each
   wavenumber direction. However, we prefer to maintain an
   isotropic effective grid size and instead restrict to a
   circle.
- 
+
   Basic usage,
   ```matlab
   antialiasMask = WVGeometryDoublyPeriodic.maskForAliasedModes(8,8);
   ```
   will return a mask that contains 1 at the locations of modes that will
   alias with a quadratic multiplication.
- 
-            

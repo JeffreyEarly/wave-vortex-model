@@ -2,7 +2,7 @@
 layout: default
 title: WVModelOutputFile
 parent: WVModelOutputFile
-grand_parent: Classes
+grand_parent: Model output
 nav_order: 1
 mathjax: true
 ---
@@ -21,12 +21,10 @@ initialize a WVModelOutputFile
 ## Parameters
 + `model`  a WVModel instance
 + `path`  path where the file is to be written
-+ `ncfile`  (optional) handle to existing NetCDFFile 
++ `ncfile`  (optional) handle to existing NetCDFFile
 + `shouldOverwriteExisting`  (optional) whether to overwrite an existing file (default: false).
 
 ## Returns
 + `self`  a WVModelOutputFile instance
 
 ## Discussion
-
-              

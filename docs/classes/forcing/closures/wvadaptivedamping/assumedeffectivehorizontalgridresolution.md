@@ -2,7 +2,7 @@
 layout: default
 title: assumedEffectiveHorizontalGridResolution
 parent: WVAdaptiveDamping
-grand_parent: Classes
+grand_parent: Closures
 nav_order: 2
 mathjax: true
 ---
@@ -15,5 +15,3 @@ effective resolution used in the damping calculation
 ---
 
 ## Discussion
-
-  

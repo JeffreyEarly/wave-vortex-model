@@ -2,7 +2,7 @@
 layout: default
 title: setWaveModes
 parent: WVTransformBoussinesq
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 215
 mathjax: true
 ---
@@ -34,4 +34,3 @@ set amplitudes of the given wave modes
 ## Discussion
 
   Overwrite any existing wave modes with the given new values
-                      

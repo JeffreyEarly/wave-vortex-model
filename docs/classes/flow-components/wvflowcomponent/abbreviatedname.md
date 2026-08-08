@@ -2,7 +2,7 @@
 layout: default
 title: abbreviatedName
 parent: WVFlowComponent
-grand_parent: Classes
+grand_parent: Flow components
 nav_order: 2
 mathjax: true
 ---
@@ -17,4 +17,3 @@ abbreviated name
 ## Discussion
 
   abreviated feature name, e.g., "igw" for internal gravity waves.
-  

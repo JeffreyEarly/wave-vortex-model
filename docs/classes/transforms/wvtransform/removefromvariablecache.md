@@ -2,7 +2,7 @@
 layout: default
 title: removeFromVariableCache
 parent: WVTransform
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 84
 mathjax: true
 ---
@@ -15,5 +15,3 @@ remove one variable from the internal cache
 ---
 
 ## Discussion
-
-  

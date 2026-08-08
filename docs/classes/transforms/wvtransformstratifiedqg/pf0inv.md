@@ -2,7 +2,7 @@
 layout: default
 title: PF0inv
 parent: WVTransformStratifiedQG
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 32
 mathjax: true
 ---
@@ -16,4 +16,3 @@ Transformation matrices
 
 ## Description
 Real valued property with dimensions $$(z,j)$$ and no units.
-

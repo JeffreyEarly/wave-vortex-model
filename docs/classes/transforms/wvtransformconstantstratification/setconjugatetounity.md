@@ -2,7 +2,7 @@
 layout: default
 title: setConjugateToUnity
 parent: WVTransformConstantStratification
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 204
 mathjax: true
 ---
@@ -27,5 +27,3 @@ set the conjugate of the wavenumber (iK,iL) to 1
 + `matrix`  matrix containing linear indices
 
 ## Discussion
-
-            

@@ -2,7 +2,7 @@
 layout: default
 title: particlePositions
 parent: WVLagrangianParticles
-grand_parent: Classes
+grand_parent: Observing systems
 nav_order: 8
 mathjax: true
 ---
@@ -22,5 +22,3 @@ Positions and values of tracked fields of particles at the current model time.
 + `name`  name of the particles
 
 ## Discussion
-
-      

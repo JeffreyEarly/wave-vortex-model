@@ -2,8 +2,8 @@
 layout: default
 title: waveVortexTransformWithExplicitAntialiasing
 parent: WVTransformBoussinesq
-grand_parent: Classes
-nav_order: 267
+grand_parent: Transforms
+nav_order: 266
 mathjax: true
 ---
 
@@ -13,4 +13,3 @@ mathjax: true
 
 
 ---
-

@@ -2,7 +2,7 @@
 layout: default
 title: ssu
 parent: WVTransformBoussinesq
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 226
 mathjax: true
 ---
@@ -16,4 +16,3 @@ x-component of the fluid velocity at the surface
 
 ## Description
 Real valued property with dimensions $$(x,y)$$ and units of $$m/s$$.
-

@@ -2,7 +2,7 @@
 layout: default
 title: rhoFunction
 parent: WVTransformConstantStratification
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 198
 mathjax: true
 ---
@@ -13,4 +13,3 @@ eta_true operation needs rhoFunction
 
 
 ---
-

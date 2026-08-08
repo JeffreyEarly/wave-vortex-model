@@ -2,7 +2,7 @@
 layout: default
 title: updateIntegratorValuesFromCellArray
 parent: WVModel
-grand_parent: Classes
+grand_parent: Class documentation
 nav_order: 60
 mathjax: true
 ---

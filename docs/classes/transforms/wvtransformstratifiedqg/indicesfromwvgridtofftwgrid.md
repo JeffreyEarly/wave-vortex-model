@@ -2,7 +2,7 @@
 layout: default
 title: indicesFromWVGridToFFTWGrid
 parent: WVTransformStratifiedQG
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 86
 mathjax: true
 ---
@@ -32,8 +32,6 @@ indices to convert from WV to DFT grid
 
   This function returns indices to quickly reformat the memory
   layout of a data structure on a WV grid to one on a DFT grid.
- 
+
   This function is should generally be faster than the function
   transformFromWVGridToDFTGrid if you cache these indices.
- 
-                

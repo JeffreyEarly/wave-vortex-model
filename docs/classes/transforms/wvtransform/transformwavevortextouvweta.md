@@ -2,7 +2,7 @@
 layout: default
 title: transformWaveVortexToUVWEta
 parent: WVTransform
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 116
 mathjax: true
 ---
@@ -36,11 +36,9 @@ transform wave-vortex coefficients $$(A_+,A_-,A_0)$$ to fluid variables $$(u,v,\
   [linear
   transformation](/mathematical-introduction/transformations.html)
   denoted $$\mathcal{L}$$.
- 
+
   This function is not intended to be used directly (although
   you can), and is kept here to demonstrate a simple
   implementation of the transformation. Instead, you should
   initialize the WVTransform using one of the
   initialization functions.
- 
-                    

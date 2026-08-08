@@ -2,7 +2,7 @@
 layout: default
 title: initWithGMSpectrum
 parent: WVTransformBoussinesq
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 136
 mathjax: true
 ---
@@ -25,5 +25,3 @@ initialize the wave field following a Garrett-Munk spectrum
 + `shouldShowDiagnostics`  (optional) whether to summarize what just happened (default 0)
 
 ## Discussion
-
-            

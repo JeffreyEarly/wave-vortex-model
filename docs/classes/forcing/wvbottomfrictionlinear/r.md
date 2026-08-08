@@ -2,7 +2,7 @@
 layout: default
 title: r
 parent: WVBottomFrictionLinear
-grand_parent: Classes
+grand_parent: Forcing
 nav_order: 3
 mathjax: true
 ---
@@ -18,5 +18,3 @@ bottom friction, $$s^{-1}$$
 Real valued property with no dimensions and units of $$s^{-1}$$.
 
 ## Discussion
-
-  

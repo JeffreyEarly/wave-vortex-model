@@ -2,7 +2,7 @@
 layout: default
 title: name
 parent: WVFlowComponent
-grand_parent: Classes
+grand_parent: Flow components
 nav_order: 9
 mathjax: true
 ---
@@ -17,4 +17,3 @@ of the flow feature
 ## Discussion
 
   long-form version of the feature name, e.g., "internal gravity wave"
-  

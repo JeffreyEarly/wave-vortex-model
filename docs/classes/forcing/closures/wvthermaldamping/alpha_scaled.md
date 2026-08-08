@@ -2,7 +2,7 @@
 layout: default
 title: alpha_scaled
 parent: WVThermalDamping
-grand_parent: Classes
+grand_parent: Closures
 nav_order: 3
 mathjax: true
 ---
@@ -15,5 +15,3 @@ scaled damping parameter, units of $$s^{-1} m^{-2}$$
 ---
 
 ## Discussion
-
-  

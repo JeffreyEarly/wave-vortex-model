@@ -2,7 +2,7 @@
 layout: default
 title: dftPrimaryIndices2D
 parent: WVTransformConstantStratification
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 92
 mathjax: true
 ---
@@ -18,5 +18,3 @@ index into the DFT grid of each WV mode
 + Class: `uint64`
 
 ## Discussion
-
-  

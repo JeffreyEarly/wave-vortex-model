@@ -2,7 +2,7 @@
 layout: default
 title: Cd
 parent: WVBottomFrictionQuadratic
-grand_parent: Classes
+grand_parent: Forcing
 nav_order: 1
 mathjax: true
 ---
@@ -18,5 +18,3 @@ non-dimensional quadratic drag coefficient
 Real valued property with no dimensions and no units.
 
 ## Discussion
-
-  

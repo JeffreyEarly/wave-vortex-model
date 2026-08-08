@@ -2,7 +2,7 @@
 layout: default
 title: Ambar
 parent: WVFixedAmplitudeForcing
-grand_parent: Classes
+grand_parent: Forcing
 nav_order: 4
 mathjax: true
 ---
@@ -22,5 +22,3 @@ amplitudes of the fixed modes in the `Am` matrix
 Complex valued property with dimension $$Am_indices$$ and no units.
 
 ## Discussion
-
-  

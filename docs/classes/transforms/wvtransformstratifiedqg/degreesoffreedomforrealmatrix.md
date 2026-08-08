@@ -2,7 +2,7 @@
 layout: default
 title: degreesOfFreedomForRealMatrix
 parent: WVTransformStratifiedQG
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 53
 mathjax: true
 ---
@@ -33,6 +33,5 @@ a matrix with the number of degrees-of-freedom at each entry
   Fourier domain these degrees-of-freedom are more complicated,
   because some modes are strictly real-valued (k=l=0 and
   Nyquist), while others are complex, and there are redundant
-  Hermitian conjugates.
- 
-            
+  Hermitian conjugates. Nyquist coordinates contribute
+  self-conjugate modes only in even-sized dimensions.

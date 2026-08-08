@@ -2,7 +2,7 @@
 layout: default
 title: L
 parent: WVTransformHydrostatic
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 21
 mathjax: true
 ---
@@ -16,4 +16,3 @@ l-coordinate matrix
 
 ## Description
 Real valued property with dimensions $$(j,kl)$$ and units of $$rad/m$$.
-

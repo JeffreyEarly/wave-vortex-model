@@ -2,7 +2,7 @@
 layout: default
 title: setNarrowBandGeostrophicForcing
 parent: WVFixedAmplitudeForcing
-grand_parent: Classes
+grand_parent: Forcing
 nav_order: 10
 mathjax: true
 ---
@@ -24,5 +24,3 @@ sets a narrow waveband of geostrophic forcing for forced-dissipative modeling
 ## Discussion
 
   to be moved to a subclass
- 
-      

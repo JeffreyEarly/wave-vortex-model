@@ -2,7 +2,7 @@
 layout: default
 title: wvt
 parent: WVFlowComponent
-grand_parent: Classes
+grand_parent: Flow components
 nav_order: 14
 mathjax: true
 ---
@@ -17,4 +17,3 @@ reference to the wave vortex transform
 ## Discussion
 
   reference to the WVTransform instance
-  

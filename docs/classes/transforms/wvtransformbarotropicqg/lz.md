@@ -2,7 +2,7 @@
 layout: default
 title: Lz
 parent: WVTransformBarotropicQG
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 16
 mathjax: true
 ---
@@ -14,3 +14,6 @@ mathjax: true
 
 ---
 
+## Discussion
+
+The `z` coordinate and `Lz` are both set during initialization. `Lz` is the full domain depth.

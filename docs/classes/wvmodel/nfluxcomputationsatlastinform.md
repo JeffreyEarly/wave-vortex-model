@@ -2,7 +2,7 @@
 layout: default
 title: nFluxComputationsAtLastInform
 parent: WVModel
-grand_parent: Classes
+grand_parent: Class documentation
 nav_order: 37
 mathjax: true
 ---
@@ -16,4 +16,3 @@ mathjax: true
 
 ## Type
 + Class: `uint64`
-

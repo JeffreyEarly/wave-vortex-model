@@ -2,7 +2,7 @@
 layout: default
 title: fastTransform
 parent: WVTransformStratifiedQG
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 70
 mathjax: true
 ---
@@ -15,5 +15,3 @@ fast transform object
 ---
 
 ## Discussion
-
-  

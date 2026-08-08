@@ -40,7 +40,7 @@ classdef WVBottomFrictionLinear < WVForcing
     % - Topic: Properties
     % - Topic: CAAnnotatedClass requirement
     %
-    % - Declaration: WVBottomFrictionLinear < [WVForcing](/classes/wvforcing/)
+    % - Declaration: WVBottomFrictionLinear < [WVForcing](/classes/forcing/wvforcing/)
     properties
         % bottom friction, $$s^{-1}$$
         %

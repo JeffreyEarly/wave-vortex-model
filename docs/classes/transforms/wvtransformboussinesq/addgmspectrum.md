@@ -2,7 +2,7 @@
 layout: default
 title: addGMSpectrum
 parent: WVTransformBoussinesq
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 73
 mathjax: true
 ---
@@ -25,5 +25,3 @@ add waves following a Garrett-Munk spectrum
 + `shouldShowDiagnostics`  (optional) whether to summarize what just happened (default 0)
 
 ## Discussion
-
-            

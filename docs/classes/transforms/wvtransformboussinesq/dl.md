@@ -2,7 +2,7 @@
 layout: default
 title: dl
 parent: WVTransformBoussinesq
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 103
 mathjax: true
 ---
@@ -15,5 +15,3 @@ wavenumber spacing of the $$l$$ axis
 ---
 
 ## Discussion
-
-  

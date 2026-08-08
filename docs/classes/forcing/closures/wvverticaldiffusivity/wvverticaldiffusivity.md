@@ -2,7 +2,7 @@
 layout: default
 title: WVVerticalDiffusivity
 parent: WVVerticalDiffusivity
-grand_parent: Classes
+grand_parent: Closures
 nav_order: 1
 mathjax: true
 ---
@@ -27,5 +27,3 @@ initialize the WVVerticalDiffusivity
 + `self`  a WVVerticalDiffusivity instance
 
 ## Discussion
-
-            

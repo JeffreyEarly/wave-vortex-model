@@ -2,7 +2,7 @@
 layout: default
 title: indexFromKLModeNumber
 parent: WVTransformConstantStratification
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 119
 mathjax: true
 ---
@@ -30,6 +30,5 @@ return the linear index into k_wv and l_wv from a mode number
   This function will return the linear index into the (k_wv,l_wv) arrays,
   given the mode numbers (kMode,lMode). Note that this will
   *not* normalize the mode to the primary mode number, but will
-  throw an error.
- 
-          
+  throw an error. Scalar and column-vector inputs preserve their
+  shape and ordering.

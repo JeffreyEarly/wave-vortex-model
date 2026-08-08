@@ -2,8 +2,8 @@
 layout: default
 title: transformFromDFTGridToWVGrid
 parent: WVTransformConstantStratification
-grand_parent: Classes
-nav_order: 227
+grand_parent: Transforms
+nav_order: 226
 mathjax: true
 ---
 
@@ -31,8 +31,6 @@ convert from DFT to WV grid
   respect the conditions set when this class was initialized
   (shouldAntialias, shouldExcludeNyquist,
   shouldExcludeConjugates).
- 
+
   This function is not the fastest way to reformat your data.
-  If high performance is required, you should 
- 
-        
+  If high performance is required, you should

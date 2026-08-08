@@ -2,7 +2,7 @@
 layout: default
 title: hasWaveComponent
 parent: WVTransform
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 50
 mathjax: true
 ---
@@ -16,4 +16,3 @@ mathjax: true
 
 ## Type
 + Class: `logical`
-

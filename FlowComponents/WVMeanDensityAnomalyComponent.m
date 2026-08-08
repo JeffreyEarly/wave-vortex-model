@@ -1,7 +1,7 @@
 classdef WVMeanDensityAnomalyComponent < WVPrimaryFlowComponent
     %Inertial oscillation solution group
     %
-    % - Declaration: classdef WVInertialOscillationComponent < WVFlowComponent
+    % - Declaration: classdef WVMeanDensityAnomalyComponent < WVPrimaryFlowComponent
     properties
         normalization
     end
@@ -118,12 +118,12 @@ classdef WVMeanDensityAnomalyComponent < WVPrimaryFlowComponent
         function solutions = solutionForModeAtIndex(self,solutionIndex,options)
             % return the analytical solution at this index
             %
-            % Returns WVAnalyticalSolution object for this index
+            % Returns WVOrthogonalSolution object for this index
             %
             % - Topic: Analytical solutions
             % - Declaration: solution = solutionForModeAtIndex(index)
             % - Parameter solutionIndex: non-negative integer
-            % - Returns solution: an instance of WVAnalyticalSolution
+            % - Returns solution: an instance of WVOrthogonalSolution
             arguments (Input)
                 self WVMeanDensityAnomalyComponent {mustBeNonempty}
                 solutionIndex (:,1) double {mustBeNonnegative}
@@ -217,4 +217,3 @@ classdef WVMeanDensityAnomalyComponent < WVPrimaryFlowComponent
 
     end 
 end
-

@@ -2,13 +2,22 @@
 layout: default
 title: Nj
 parent: WVAntialiasing
-grand_parent: Classes
-nav_order: 1
+grand_parent: Closures
+nav_order: 2
 mathjax: true
 ---
 
-# Nj
+#  Nj
 
-Number of retained vertical modes used to construct the filter.
+number of retained vertical modes used to construct the filter
 
-This value is preserved when the forcing is converted to another resolution or restored from an annotated NetCDF file. Modes with `j >= Nj` are filtered.
+
+---
+
+## Description
+Real valued property with no dimensions and units of $$1$$.
+
+## Discussion
+
+  This value is preserved when the forcing is converted to another
+  resolution or restored from an annotated NetCDF file.

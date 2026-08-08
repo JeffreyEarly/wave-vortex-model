@@ -2,7 +2,7 @@
 layout: default
 title: performOperationWithName
 parent: WVTransform
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 74
 mathjax: true
 ---
@@ -15,5 +15,3 @@ computes (runs) the operation
 ---
 
 ## Discussion
-
-  

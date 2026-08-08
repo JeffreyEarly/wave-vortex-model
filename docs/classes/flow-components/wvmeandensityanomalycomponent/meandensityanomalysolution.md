@@ -2,7 +2,7 @@
 layout: default
 title: meanDensityAnomalySolution
 parent: WVMeanDensityAnomalyComponent
-grand_parent: Classes
+grand_parent: Flow components
 nav_order: 9
 mathjax: true
 ---
@@ -33,5 +33,3 @@ return a real-valued analytical solution of the mean density anomaly mode
 ## Discussion
 
   Returns function handles of the form u=@(x,y,z,t)
- 
-                    

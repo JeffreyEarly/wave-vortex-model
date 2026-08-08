@@ -2,8 +2,8 @@
 layout: default
 title: wMax
 parent: WVTransformConstantStratification
-grand_parent: Classes
-nav_order: 248
+grand_parent: Transforms
+nav_order: 246
 mathjax: true
 ---
 
@@ -16,4 +16,3 @@ max vertical fluid speed
 
 ## Description
 Real valued property with no dimensions and units of $$m s^{-1}$$.
-

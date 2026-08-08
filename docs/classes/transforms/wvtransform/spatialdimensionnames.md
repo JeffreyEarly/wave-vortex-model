@@ -2,7 +2,7 @@
 layout: default
 title: spatialDimensionNames
 parent: WVTransform
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 90
 mathjax: true
 ---
@@ -13,4 +13,3 @@ mathjax: true
 
 
 ---
-

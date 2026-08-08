@@ -2,8 +2,8 @@
 layout: default
 title: waveCoefficientsAtTimeT
 parent: WVTransformHydrostatic
-grand_parent: Classes
-nav_order: 241
+grand_parent: Transforms
+nav_order: 240
 mathjax: true
 ---
 
@@ -13,4 +13,3 @@ mathjax: true
 
 
 ---
-

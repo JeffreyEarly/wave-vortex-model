@@ -2,7 +2,7 @@
 layout: default
 title: maskOfPrimaryModesForCoefficientMatrix
 parent: WVMeanDensityAnomalyComponent
-grand_parent: Classes
+grand_parent: Flow components
 nav_order: 8
 mathjax: true
 ---
@@ -28,6 +28,6 @@ returns a mask indicating where the primary (non-conjugate) solutions live in th
 
   Returns a 'mask' (matrix with 1s or 0s) indicating where
   different solution types live in the Ap, Am, A0 matrices.
- 
-        
+
+
 Help for WVMeanDensityAnomalyComponent/maskOfPrimaryModesForCoefficientMatrix is inherited from superclass WVPrimaryFlowComponent

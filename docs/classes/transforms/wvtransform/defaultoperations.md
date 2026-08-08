@@ -2,7 +2,7 @@
 layout: default
 title: defaultOperations
 parent: WVTransform
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 26
 mathjax: true
 ---
@@ -25,5 +25,3 @@ return array of WVOperation instances initialized by default
 
   This function creates a number of standard StateVariables with associated
   TransformOperations.
- 
-      

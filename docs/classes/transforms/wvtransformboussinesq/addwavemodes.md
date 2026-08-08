@@ -2,7 +2,7 @@
 layout: default
 title: addWaveModes
 parent: WVTransformBoussinesq
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 78
 mathjax: true
 ---
@@ -34,4 +34,3 @@ add amplitudes of the given wave modes
 ## Discussion
 
   Add new amplitudes to any existing amplitudes
-                      

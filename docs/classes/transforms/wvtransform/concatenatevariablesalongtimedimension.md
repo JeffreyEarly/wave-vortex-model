@@ -2,7 +2,7 @@
 layout: default
 title: concatenateVariablesAlongTimeDimension
 parent: WVTransform
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 23
 mathjax: true
 ---
@@ -25,5 +25,3 @@ Concatenate variables along the time dimension
 
   Writes to an existing file initialized with
   createNetCDFFileForTimeStepOutput.
- 
-      

@@ -2,7 +2,7 @@
 layout: default
 title: dLnN2
 parent: WVVerticalDiffusivity
-grand_parent: Classes
+grand_parent: Closures
 nav_order: 3
 mathjax: true
 ---
@@ -15,5 +15,3 @@ precomputed dLnN2 term
 ---
 
 ## Discussion
-
-  

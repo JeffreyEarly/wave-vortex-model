@@ -2,7 +2,7 @@
 layout: default
 title: goffAbyssalHillTopography
 parent: WVPseudoTopographicWaveGeneration
-grand_parent: Classes
+grand_parent: Forcing
 nav_order: 9
 mathjax: true
 ---
@@ -33,17 +33,15 @@ Generate periodic Goff abyssal-hill topography.
 ## Discussion
 
   The isotropic two-dimensional power spectrum is
- 
+
   $$P_h(K)=\frac{4\pi h_{\mathrm{rms}}^2}{K_c^2}
   \left(1+\frac{K^2}{K_c^2}\right)^{-2}.$$
- 
+
   The returned height is positive upward, zero mean, and
   normalized to the requested post-filter RMS. Random phases
   use a local stream and do not alter MATLAB's global random
   state.
- 
+
   ```matlab
   [H,h,diagnostics] = WVPseudoTopographicWaveGeneration.goffAbyssalHillTopography(wvt,minimumWavelength=30e3);
   ```
- 
-                    

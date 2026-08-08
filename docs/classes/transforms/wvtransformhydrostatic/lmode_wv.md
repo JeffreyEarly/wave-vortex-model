@@ -2,7 +2,7 @@
 layout: default
 title: lMode_wv
 parent: WVTransformHydrostatic
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 148
 mathjax: true
 ---
@@ -15,5 +15,3 @@ l mode number on the WV grid
 ---
 
 ## Discussion
-
-  

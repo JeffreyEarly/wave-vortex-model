@@ -2,7 +2,7 @@
 layout: default
 title: A0_indices
 parent: WVFixedAmplitudeForcing
-grand_parent: Classes
+grand_parent: Forcing
 nav_order: 1
 mathjax: true
 ---
@@ -19,5 +19,3 @@ indices of modes in the `A0` matrix to fix
 + Size: `(:,1)`
 
 ## Discussion
-
-  

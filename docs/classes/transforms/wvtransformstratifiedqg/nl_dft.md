@@ -2,7 +2,7 @@
 layout: default
 title: Nl_dft
 parent: WVTransformStratifiedQG
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 25
 mathjax: true
 ---
@@ -15,5 +15,3 @@ length of the l-wavenumber dimension on the DFT grid
 ---
 
 ## Discussion
-
-  

@@ -2,8 +2,8 @@
 layout: default
 title: l_dft
 parent: WVTransformBarotropicQG
-grand_parent: Classes
-nav_order: 90
+grand_parent: Transforms
+nav_order: 93
 mathjax: true
 ---
 
@@ -15,5 +15,3 @@ l wavenumber dimension on the DFT grid
 ---
 
 ## Discussion
-
-  

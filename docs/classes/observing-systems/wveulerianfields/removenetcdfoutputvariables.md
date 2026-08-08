@@ -2,7 +2,7 @@
 layout: default
 title: removeNetCDFOutputVariables
 parent: WVEulerianFields
-grand_parent: Classes
+grand_parent: Observing systems
 nav_order: 10
 mathjax: true
 ---
@@ -23,11 +23,11 @@ Remove variables from the list of variables to be written to the NetCDF variable
 
 ## Discussion
 
-       
+
   Pass strings of WVTransform state variables of the
   same name. This must be called before using any of the
   integrate methods.
- 
+
   ```matlab
   model.removeNetCDFOutputVariables('A0','u','v');
   ```

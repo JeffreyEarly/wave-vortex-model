@@ -2,7 +2,7 @@
 layout: default
 title: geostrophicKineticEnergy
 parent: WVTransformBarotropicQG
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 59
 mathjax: true
 ---
@@ -19,5 +19,3 @@ kinetic energy of the geostrophic flow
  geostrophicKineticEnergy
 ```
 ## Discussion
-
-      

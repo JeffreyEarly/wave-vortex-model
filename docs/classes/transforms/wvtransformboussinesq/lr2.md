@@ -2,7 +2,7 @@
 layout: default
 title: Lr2
 parent: WVTransformBoussinesq
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 30
 mathjax: true
 ---
@@ -16,4 +16,3 @@ squared Rossby radius
 
 ## Description
 Real valued property with dimension $$j$$ and units of $$m^2$$.
-

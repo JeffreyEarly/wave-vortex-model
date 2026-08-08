@@ -2,7 +2,7 @@
 layout: default
 title: modelFromFile
 parent: WVModel
-grand_parent: Classes
+grand_parent: Class documentation
 nav_order: 34
 mathjax: true
 ---
@@ -32,5 +32,3 @@ Initialize a model from an existing file
 
   Runtime integrator objects are not persisted. Configure the desired
   fixed or adaptive integrator before continuing the restored model.
- 
-      

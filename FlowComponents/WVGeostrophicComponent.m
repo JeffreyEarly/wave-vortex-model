@@ -4,7 +4,7 @@ classdef WVGeostrophicComponent < WVPrimaryFlowComponent
     % WVInternalGravityWaveFlowGroup
     % WVRigidLidFlowGroup
     % OrthogonalSolutionGroup
-    % - Declaration: classdef WVGeostrophicComponent < WVFlowComponent
+    % - Declaration: classdef WVGeostrophicComponent < WVPrimaryFlowComponent
     properties
         normalization
     end
@@ -195,12 +195,12 @@ classdef WVGeostrophicComponent < WVPrimaryFlowComponent
         function solutions = solutionForModeAtIndex(self,index,options)
             % return the analytical solution at this index
             %
-            % Returns WVAnalyticalSolution object for this index
+            % Returns WVOrthogonalSolution object for this index
             %
             % - Topic: Analytical solutions
             % - Declaration: solution = solutionForModeAtIndex(index)
             % - Parameter index: non-negative integer
-            % - Returns solution: an instance of WVAnalyticalSolution
+            % - Returns solution: an instance of WVOrthogonalSolution
             arguments (Input)
                 self WVGeostrophicComponent {mustBeNonempty}
                 index (:,1) double {mustBeNonnegative}

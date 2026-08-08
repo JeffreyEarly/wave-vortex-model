@@ -2,7 +2,7 @@
 layout: default
 title: primaryKLModeNumberFromKLModeNumber
 parent: WVTransformBoussinesq
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 188
 mathjax: true
 ---
@@ -31,7 +31,5 @@ takes any valid WV mode number and returns the primary mode number
   The function first confirms that the mode numbers are valid,
   and then converts any conjugate mode numbers to primary mode
   numbers.
- 
+
   The result is affected by the chosen conjugateDimension.
- 
-            

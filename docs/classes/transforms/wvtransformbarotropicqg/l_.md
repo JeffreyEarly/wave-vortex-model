@@ -2,8 +2,8 @@
 layout: default
 title: l
 parent: WVTransformBarotropicQG
-grand_parent: Classes
-nav_order: 86
+grand_parent: Transforms
+nav_order: 89
 mathjax: true
 ---
 
@@ -18,5 +18,3 @@ wavenumber dimension on the WV grid
 Real valued property with dimension $$kl$$ and units of $$rad/m$$.
 
 ## Discussion
-
-  

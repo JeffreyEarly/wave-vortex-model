@@ -2,7 +2,7 @@
 layout: default
 title: drifterPositions
 parent: WVModel
-grand_parent: Classes
+grand_parent: Class documentation
 nav_order: 15
 mathjax: true
 ---
@@ -13,4 +13,3 @@ Current positions of the drifter particles
 
 
 ---
-

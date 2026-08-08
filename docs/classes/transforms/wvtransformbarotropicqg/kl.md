@@ -2,8 +2,8 @@
 layout: default
 title: kl
 parent: WVTransformBarotropicQG
-grand_parent: Classes
-nav_order: 82
+grand_parent: Transforms
+nav_order: 85
 mathjax: true
 ---
 
@@ -15,5 +15,3 @@ wavenumber dimension
 ---
 
 ## Discussion
-
-  

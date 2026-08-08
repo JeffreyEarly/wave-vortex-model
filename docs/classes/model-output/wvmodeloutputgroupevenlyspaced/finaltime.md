@@ -2,7 +2,7 @@
 layout: default
 title: finalTime
 parent: WVModelOutputGroupEvenlySpaced
-grand_parent: Classes
+grand_parent: Model output
 nav_order: 4
 mathjax: true
 ---
@@ -22,5 +22,3 @@ Real valued property with no dimensions and units of $$s$$.
   This optional properties determines when the output group will
   de-actives. By default it is set to `Inf`, indicating that it
   will always write to file.
- 
-  

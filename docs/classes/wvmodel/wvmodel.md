@@ -2,7 +2,7 @@
 layout: default
 title: WVModel
 parent: WVModel
-grand_parent: Classes
+grand_parent: Class documentation
 nav_order: 1
 mathjax: true
 ---
@@ -22,5 +22,3 @@ Initialize a model from a WVTransform instance
 + `wvt`  a WaveVortexTranform instance
 
 ## Discussion
-
-      

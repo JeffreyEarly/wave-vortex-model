@@ -2,7 +2,7 @@
 layout: default
 title: kl
 parent: WVTransformBoussinesq
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 159
 mathjax: true
 ---
@@ -15,5 +15,3 @@ wavenumber dimension
 ---
 
 ## Discussion
-
-  

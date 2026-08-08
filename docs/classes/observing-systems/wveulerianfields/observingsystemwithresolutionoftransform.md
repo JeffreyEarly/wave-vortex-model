@@ -2,7 +2,7 @@
 layout: default
 title: observingSystemWithResolutionOfTransform
 parent: WVEulerianFields
-grand_parent: Classes
+grand_parent: Observing systems
 nav_order: 9
 mathjax: true
 ---
@@ -28,5 +28,3 @@ create a new WVObservingSystem with a new resolution
 
   Subclasses to should override this method an implement the
   correct logic.
- 
-        

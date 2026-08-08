@@ -2,7 +2,7 @@
 layout: default
 title: waveVortexTransformWithDoubleResolution
 parent: WVTransform
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 124
 mathjax: true
 ---
@@ -15,5 +15,3 @@ create a new WVTransform with double resolution
 ---
 
 ## Discussion
-
-  

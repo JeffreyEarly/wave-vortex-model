@@ -2,7 +2,7 @@
 layout: default
 title: randomAmplitudesWithSpectrum
 parent: WVFlowComponent
-grand_parent: Classes
+grand_parent: Flow components
 nav_order: 12
 mathjax: true
 ---
@@ -32,5 +32,3 @@ initialize with coefficients following a specified spectrum
 
   This allows you to initialize amplitudes following a spectrum
   defined in terms of wavenumber and vertical mode.
- 
-                

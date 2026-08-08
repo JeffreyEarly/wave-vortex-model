@@ -2,7 +2,7 @@
 layout: default
 title: propertyAnnotationsForGeometry
 parent: WVTransformBoussinesq
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 189
 mathjax: true
 ---
@@ -25,6 +25,6 @@ return array of CAPropertyAnnotations initialized by default
 
   This function returns annotations for all properties of the
   WVStratification class.
- 
-      
+
+
 Help for WVGeometryDoublyPeriodicStratifiedBoussinesq.propertyAnnotationsForGeometry is inherited from superclass WVGeometryDoublyPeriodic

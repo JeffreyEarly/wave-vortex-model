@@ -2,7 +2,7 @@
 layout: default
 title: removeFluxedObservingSystem
 parent: WVModel
-grand_parent: Classes
+grand_parent: Class documentation
 nav_order: 47
 mathjax: true
 ---
@@ -15,5 +15,3 @@ remove a WVObservingSystem to the fluxed observing systems array
 ---
 
 ## Discussion
-
-  

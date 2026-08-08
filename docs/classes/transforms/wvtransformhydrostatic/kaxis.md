@@ -2,7 +2,7 @@
 layout: default
 title: kAxis
 parent: WVTransformHydrostatic
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 136
 mathjax: true
 ---
@@ -13,4 +13,3 @@ k coordinate
 
 
 ---
-
