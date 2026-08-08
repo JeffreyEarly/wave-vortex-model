@@ -114,21 +114,44 @@ classdef WVModelOutputGroup < handle & matlab.mixin.Heterogeneous & CAAnnotatedC
                 error('Storage already initialized! You cannot add a new observing system after the storage has been initialized.');
             end
 
+            registeredSystems = self.observingSystems;
+            fluxedSystems = WVObservingSystem.empty(1,0);
+            coefficientSystems = {};
+            coefficientTolerances = {};
             for iObs = 1:length(observingSystem)
-                anObservingSystem = observingSystem(iObs);
-                if anObservingSystem.wvt ~= self.model.wvt
-                    error('This observing system was not initialized with the same wvt that it is being added to!')
+                observer = observingSystem(iObs);
+                if observer.model ~= self.model
+                    error('The observing system %s was not initialized for this output group''s model.',observer.name);
                 end
-
-                if ~isempty(find(strcmp({self.observingSystems.name}, anObservingSystem.name), 1))
-                    error('An observing system named %s already exists.\n',anObservingSystem.name)
+                if isa(observer,'WVCoefficients')
+                    % Model construction creates the canonical coefficient observer
+                    % before persisted output groups are restored.
+                    canonicalCoefficients = self.model.wvCoefficientFluxedObservingSystem();
+                    if ~isempty(canonicalCoefficients) && canonicalCoefficients ~= observer
+                        coefficientSystems{end+1} = canonicalCoefficients;
+                        coefficientTolerances{end+1} = observer.absTolerance;
+                        observer = canonicalCoefficients;
+                    end
                 end
-
-                self.observingSystems(end+1) = anObservingSystem;
-                if anObservingSystem.nFluxComponents > 0
-                    self.model.addFluxedObservingSystem(anObservingSystem);
+                if any(strcmp(string({registeredSystems.name}),string(observer.name)))
+                    error('An observing system named %s already exists in this output group.',observer.name);
+                end
+                if isempty(registeredSystems)
+                    registeredSystems = observer;
+                else
+                    registeredSystems(end+1) = observer;
+                end
+                if observer.nFluxComponents > 0
+                    fluxedSystems(end+1) = observer;
                 end
             end
+            if ~isempty(fluxedSystems)
+                self.model.addFluxedObservingSystem(fluxedSystems);
+            end
+            for iCoefficient = 1:length(coefficientSystems)
+                coefficientSystems{iCoefficient}.absTolerance = coefficientTolerances{iCoefficient};
+            end
+            self.observingSystems = registeredSystems;
         end
 
         function removeObservingSystem(self, observingSystem)
@@ -140,40 +163,43 @@ classdef WVModelOutputGroup < handle & matlab.mixin.Heterogeneous & CAAnnotatedC
                 observingSystem WVObservingSystem
             end
 
+            registeredSystems = self.observingSystems;
+            removeMask = false(size(registeredSystems));
+            fluxedSystems = WVObservingSystem.empty(1,0);
             for iObs = 1:length(observingSystem)
-                anObservingSystem = observingSystem(iObs);
-
-                % Verify that the observing system belongs to the same wvt
-                if anObservingSystem.wvt ~= self
-                    error('This observing system does not belong to the same wvt!');
+                observer = observingSystem(iObs);
+                if observer.model ~= self.model
+                    error('The observing system %s was not initialized for this output group''s model.',observer.name);
                 end
-
-                % Find index of the observing system with the matching name
-                idx = find(strcmp({self.observingSystems.name}, anObservingSystem.name));
-                if isempty(idx)
-                    error('No observing system named %s exists to remove.', anObservingSystem.name);
+                sameHandle = cellfun(@(existing) existing == observer,num2cell(registeredSystems));
+                if ~any(sameHandle)
+                    error('The observing system %s is not registered with this output group.',observer.name);
                 end
-
-                % Remove the observing system from the collection
-                self.observingSystems(idx) = [];
-
-                % If the system includes flux components, remove it from the fluxed systems in the model
-                if anObservingSystem.nFluxComponents > 0
-                    self.model.removeFluxedObservingSystem(anObservingSystem);
+                removeMask = removeMask | sameHandle;
+                if observer.nFluxComponents > 0
+                    fluxedSystems(end+1) = observer;
                 end
             end
+            if ~isempty(fluxedSystems)
+                self.model.removeFluxedObservingSystem(fluxedSystems);
+            end
+            registeredSystems(removeMask) = [];
+            self.observingSystems = registeredSystems;
         end
 
         function observingSystem = observingSystemWithName(self,name)
             % retrieve an observing system by name
             %
             % - Topic: Observing systems
-            idx = find(strcmp({self.observingSystems.name}, name),1);
-            if isempty(idx)
-                error('No observing system named %s exists to remove.', anObservingSystem.name);
-            else
-                observingSystem = self.observingSystems(idx);
+            arguments
+                self WVModelOutputGroup {mustBeNonempty}
+                name {mustBeText}
             end
+            idx = find(strcmp(string({self.observingSystems.name}),string(name)),1);
+            if isempty(idx)
+                error('No observing system named %s is registered with this output group.',name);
+            end
+            observingSystem = self.observingSystems(idx);
         end
 
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

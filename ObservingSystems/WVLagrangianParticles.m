@@ -106,6 +106,7 @@ classdef WVLagrangianParticles < WVObservingSystem
             % - Topic: Particles
             % - Declaration: [x,y,z,trackedFields] = particlePositions(name)
             % - Parameter name: name of the particles
+            self.updateParticleTrackedFields();
             x = self.x;
             y = self.y;
             z = self.z;
@@ -176,10 +177,10 @@ classdef WVLagrangianParticles < WVObservingSystem
 
         function updateIntegratorValues(self,t,y0)
             % passes updated values of the variables being integrated.
-            self.x = y0{1};
-            self.y = y0{2};
+            self.x(:) = y0{1};
+            self.y(:) = y0{2};
             if ~self.isXYOnly
-                self.z = y0{3};
+                self.z(:) = y0{3};
             end
         end
 
