@@ -11,7 +11,7 @@ classdef WVGeostrophicComponent < WVPrimaryFlowComponent
     methods
         function self = WVGeostrophicComponent(wvt,options)
             arguments
-                wvt {mustBeDoulbyPeriodicFPlane}
+                wvt {mustBeDoublyPeriodicFPlane}
                 options.normalization = "qgpv" % "qgpv" %"streamfunction" %mustBeMember
             end
             self@WVPrimaryFlowComponent(wvt);

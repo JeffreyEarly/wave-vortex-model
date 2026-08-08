@@ -94,7 +94,7 @@ wvt = WVTransformSingleMode([Lxy, Lxy], [Nxy, Nxy], h=0.8, latitude=latitude);
     + [`lMode_wv`](/classes/transforms/wvtransformbarotropicqg/lmode_wv.html) l mode number on the WV grid
     + [`shouldAntialias`](/classes/transforms/wvtransformbarotropicqg/shouldantialias.html) whether the WV grid includes quadratically aliased wavenumbers
     + [`shouldExcludeNyquist`](/classes/transforms/wvtransformbarotropicqg/shouldexcludenyquist.html) whether the WV grid includes Nyquist wavenumbers
-    + [`shouldExludeConjugates`](/classes/transforms/wvtransformbarotropicqg/shouldexludeconjugates.html) whether the WV grid includes wavenumbers that are Hermitian conjugates
+    + [`shouldExcludeConjugates`](/classes/transforms/wvtransformbarotropicqg/shouldexcludeconjugates.html) whether the WV grid excludes redundant Hermitian-conjugate wavenumbers
     + [`wvConjugateIndex`](/classes/transforms/wvtransformbarotropicqg/wvconjugateindex.html) index into the WV mode that matches the dftConjugateIndices
 + Initial conditions
   + Geostrophic Motions

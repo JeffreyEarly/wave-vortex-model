@@ -1,10 +1,8 @@
-function resultsTable = speedTest
-% Initialize a WVTransformConstantStratification instance from an existing file
+function resultsTable = WVTransformConstantStratificationSpeedTest
+% Benchmark nonlinear-flux evaluation for constant-stratification transforms.
 %
-% - Topic: Initialization
-% - Declaration: wvt = waveVortexTransformFromFile(path,options)
-% - Parameter path: path to a NetCDF file
-% - Parameter iTime: (optional) time index to initialize from (default 1)
+% This machine-dependent authoring benchmark is not a correctness or
+% release gate. Inspect the configured resolutions before running it.
 
 Nxy = [32 64 64 128 128 128 256 256 256].';
 Nz =  [32 32 64 32 64 128 32 64 128].'+1;

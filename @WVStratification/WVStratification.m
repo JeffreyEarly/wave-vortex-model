@@ -206,7 +206,6 @@ classdef WVStratification < WVRotatingFPlane
     methods (Static)
         z = quadraturePointsForStratifiedFlow(Lz,Nz,options);
         [P,Q,PFinv,PF,QGinv,QG,h,w] = verticalProjectionOperatorsWithRigidLid(Finv,Ginv,h,Nj,Lz);
-        [P,Q,PFinv,PF,QGinv,QG,h] = verticalProjectionOperatorsWithFreeSurface(Finv,Ginv,h,Nj,Lz);
     end
     methods (Static, Hidden=true)
         % All the metadata has to be defined at the class level---so static

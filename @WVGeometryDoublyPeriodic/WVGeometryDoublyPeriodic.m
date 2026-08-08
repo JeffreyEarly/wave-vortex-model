@@ -85,10 +85,10 @@ classdef WVGeometryDoublyPeriodic < CAAnnotatedClass
         % - Topic: Domain attributes — WV grid
         shouldExcludeNyquist
 
-        % whether the WV grid includes wavenumbers that are Hermitian conjugates
+        % whether the WV grid excludes redundant Hermitian-conjugate wavenumbers
         %
         % - Topic: Domain attributes — WV grid  
-        shouldExludeConjugates
+        shouldExcludeConjugates
 
         % index into the DFT grid of each WV mode
         %
@@ -232,7 +232,7 @@ classdef WVGeometryDoublyPeriodic < CAAnnotatedClass
             % - Parameter conjugateDimension: (optional) set which dimension in the DFT grid is assumed to have the redundant conjugates (1 or 2), default is 2
             % - Parameter shouldAntialias: (optional) set whether the WV grid excludes the quadratically aliased modes [0 1] (default 1)
             % - Parameter shouldExcludeNyquist: (optional) set whether the WV grid excludes Nyquist modes[0 1] (default 1)
-            % - Parameter shouldExludeConjugates: (optional) set whether the WV grid excludes conjugate modes [0 1] (default 1)
+            % - Parameter shouldExcludeConjugates: (optional) set whether the WV grid excludes conjugate modes [0 1] (default 1)
             % - Parameter isHalfComplex: (optional) set whether the DFT grid excludes modes iL>Ny/2 [0 1] (default 1)
             % - Returns geom: a new WVGeometryDoublyPeriodic instance
             arguments
@@ -242,7 +242,7 @@ classdef WVGeometryDoublyPeriodic < CAAnnotatedClass
                 options.conjugateDimension (1,1) double {mustBeMember(options.conjugateDimension,[1 2])} = 2
                 options.shouldAntialias (1,1) logical = true
                 options.shouldExcludeNyquist (1,1) logical = true
-                options.shouldExludeConjugates (1,1) logical = true
+                options.shouldExcludeConjugates (1,1) logical = true
                 options.isHalfComplex (1,1) logical = true
                 options.fastTransform string {mustBeMember(options.fastTransform,["builtin","fftw"])} = "builtin"
             end
@@ -255,7 +255,7 @@ classdef WVGeometryDoublyPeriodic < CAAnnotatedClass
             self.conjugateDimension = options.conjugateDimension;
             self.shouldAntialias = options.shouldAntialias;
             self.shouldExcludeNyquist = options.shouldExcludeNyquist;
-            self.shouldExludeConjugates = options.shouldExludeConjugates;
+            self.shouldExcludeConjugates = options.shouldExcludeConjugates;
 
             % indices to convert between DFT to WV grid (2D only)
             %
@@ -279,7 +279,7 @@ classdef WVGeometryDoublyPeriodic < CAAnnotatedClass
             if self.shouldExcludeNyquist == 1
                 notPrimaryCoeffs = notPrimaryCoeffs | WVGeometryDoublyPeriodic.maskForNyquistModes(self.Nk_dft,self.Nl_dft);
             end
-            if self.shouldExludeConjugates == 1
+            if self.shouldExcludeConjugates == 1
                 notPrimaryCoeffs = notPrimaryCoeffs | WVGeometryDoublyPeriodic.maskForConjugateFourierCoefficients(self.Nk_dft,self.Nl_dft,conjugateDimension=self.conjugateDimension);
             end
             
@@ -497,9 +497,10 @@ classdef WVGeometryDoublyPeriodic < CAAnnotatedClass
         end
 
         function u = transformToSpatialDomainWithFourierAtPosition(self,u_bar,x,y)
-            self.dftBuffer(self.dftPrimaryIndex) = u_bar;
-            self.dftBuffer(self.dftConjugateIndex) = conj(u_bar(self.wvConjugateIndex));
-            u = self.transformToSpatialDomainAtPosition(self.dftBuffer,x,y);
+            dftBuffer = complex(zeros(self.Nx,self.Ny));
+            dftBuffer(self.dftPrimaryIndex) = u_bar;
+            dftBuffer(self.dftConjugateIndex) = conj(u_bar(self.wvConjugateIndex));
+            u = self.transformToSpatialDomainFromDFTGridAtPosition(dftBuffer,x,y);
         end
 
         function bool = isValidPrimaryKLModeNumber(self,kMode,lMode)
@@ -1019,13 +1020,12 @@ classdef WVGeometryDoublyPeriodic < CAAnnotatedClass
             arguments (Output)
                 geometry WVGeometryDoublyPeriodic {mustBeNonempty}
             end
-            CAAnnotatedClass.throwErrorIfMissingProperties(group,WVGeometryDoublyPeriodic.namesOfRequiredPropertiesForGeometry);
             [Lxy, Nxy, options] = WVGeometryDoublyPeriodic.requiredPropertiesForGeometryFromGroup(group);
             geometry = WVGeometryDoublyPeriodic(Lxy,Nxy,options{:});
         end
 
         function vars = namesOfRequiredPropertiesForGeometry()
-            vars = {'x','y','Lx','Ly','shouldAntialias','conjugateDimension','shouldExcludeNyquist','shouldExludeConjugates'};
+            vars = {'x','y','Lx','Ly','shouldAntialias','conjugateDimension','shouldExcludeNyquist','shouldExcludeConjugates'};
         end
 
         function [Lxy, Nxy, options] = requiredPropertiesForGeometryFromGroup(group,options)
@@ -1039,8 +1039,19 @@ classdef WVGeometryDoublyPeriodic < CAAnnotatedClass
                 options
             end
 
-            requiredProperties = WVGeometryDoublyPeriodic.namesOfRequiredPropertiesForGeometry;
+            requiredProperties = setdiff(WVGeometryDoublyPeriodic.namesOfRequiredPropertiesForGeometry,{'shouldExcludeConjugates'},'stable');
             vars = CAAnnotatedClass.propertyValuesFromGroup(group,requiredProperties,shouldIgnoreMissingProperties=options.shouldIgnoreMissingProperties);
+
+            if options.shouldIgnoreMissingProperties == false
+                excludeConjugates = CAAnnotatedClass.propertyValuesFromGroup(group,{'shouldExcludeConjugates'},shouldIgnoreMissingProperties=true);
+                if isempty(excludeConjugates)
+                    % TODO(v5): Remove the shouldExludeConjugates read fallback; WaveVortexModel 5 accepts only shouldExcludeConjugates. See #54.
+                    excludeConjugates = CAAnnotatedClass.propertyValuesFromGroup(group,{'shouldExludeConjugates'});
+                    excludeConjugates.shouldExcludeConjugates = excludeConjugates.shouldExludeConjugates;
+                    excludeConjugates = rmfield(excludeConjugates,'shouldExludeConjugates');
+                end
+                vars.shouldExcludeConjugates = excludeConjugates.shouldExcludeConjugates;
+            end
 
             Nxy(1) = length(vars.x);
             Nxy(2) = length(vars.y);
@@ -1078,7 +1089,7 @@ classdef WVGeometryDoublyPeriodic < CAAnnotatedClass
             propertyAnnotations(end+1) = CANumericProperty('conjugateDimension',{},'', 'assumed conjugate dimension in the horizontal geometry', detailedDescription='- topic: Domain Attributes — Grid');
             propertyAnnotations(end+1) = CANumericProperty('shouldAntialias',{},'bool', 'whether the horizontal grid includes quadratically aliased wavenumbers', detailedDescription='- topic: Domain Attributes — Grid');
             propertyAnnotations(end+1) = CANumericProperty('shouldExcludeNyquist',{},'bool', 'whether the horizontal grid includes Nyquist wavenumbers', detailedDescription='- topic: Domain Attributes — Grid');
-            propertyAnnotations(end+1) = CANumericProperty('shouldExludeConjugates',{},'bool', 'whether the horizontal grid includes wavenumbers that are Hermitian conjugates', detailedDescription='- topic: Domain Attributes — Grid');
+            propertyAnnotations(end+1) = CANumericProperty('shouldExcludeConjugates',{},'bool', 'whether the horizontal grid excludes redundant Hermitian-conjugate wavenumbers', detailedDescription='- topic: Domain Attributes — Grid');
             propertyAnnotations(end+1) = CANumericProperty('Nkl',{},'', 'points in the kl-coordinate, `length(k)`', detailedDescription='- topic: Domain Attributes — Grid — Spectral');
             propertyAnnotations(end+1) = CANumericProperty('k', {'kl'}, 'rad/m', 'wavenumber coordinate in the x-direction', detailedDescription='- topic: Domain Attributes — Grid — Spectral');
             propertyAnnotations(end+1) = CANumericProperty('l', {'kl'}, 'rad/m', 'wavenumber coordinate in the y-direction', detailedDescription='- topic: Domain Attributes — Grid — Spectral');

@@ -94,7 +94,7 @@ classdef WVGeometryDoublyPeriodicStratified < WVGeometryDoublyPeriodic & WVStrat
             self@WVStratification(Lxyz(3),Nxyz(3),statOptionCell{:});
 
             optionCell = namedargs2cell(geomOptions);
-            self@WVGeometryDoublyPeriodic(Lxyz(1:2),Nxyz(1:2),optionCell{:},Nz=Nxyz(3),shouldExcludeNyquist=true,shouldExludeConjugates=true,conjugateDimension=2);
+            self@WVGeometryDoublyPeriodic(Lxyz(1:2),Nxyz(1:2),optionCell{:},Nz=Nxyz(3),shouldExcludeNyquist=true,shouldExcludeConjugates=true,conjugateDimension=2);
 
             self.verticalModes = verticalModes;
 
@@ -331,7 +331,7 @@ classdef WVGeometryDoublyPeriodicStratified < WVGeometryDoublyPeriodic & WVStrat
         end
 
         function newNonrequiredPropertyNames = newNonrequiredPropertyNames()
-            newNonrequiredPropertyNames = {'conjugateDimension','shouldExcludeNyquist','shouldExludeConjugates'};
+            newNonrequiredPropertyNames = {'conjugateDimension','shouldExcludeNyquist','shouldExcludeConjugates'};
         end
 
         function propertyAnnotations = propertyAnnotationsForGeometry()

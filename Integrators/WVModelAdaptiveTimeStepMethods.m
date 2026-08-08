@@ -1,4 +1,4 @@
-classdef WVModelAdapativeTimeStepMethods < handle
+classdef WVModelAdaptiveTimeStepMethods < handle
     %UNTITLED3 Summary of this class goes here
     %   Detailed explanation goes here
 
@@ -58,7 +58,7 @@ classdef WVModelAdapativeTimeStepMethods < handle
             self.odeIntegrator = options.integrator;
         end
 
-        function resetAdapativeTimeStepIntegrator(self)
+        function resetAdaptiveTimeStepIntegrator(self)
             self.arrayLength = [];
             self.arrayStartIndex = [];
             self.arrayEndIndex = [];

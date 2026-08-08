@@ -1,15 +1,15 @@
 ---
 layout: default
-title: shouldExludeConjugates
+title: shouldExcludeConjugates
 parent: WVTransformHydrostatic
 grand_parent: Classes
 nav_order: 201
 mathjax: true
 ---
 
-#  shouldExludeConjugates
+#  shouldExcludeConjugates
 
-whether the WV grid includes wavenumbers that are Hermitian conjugates
+whether the WV grid excludes redundant Hermitian-conjugate wavenumbers
 
 
 ---

@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- Quarantined disconnected legacy implementations, corrected Internal adaptive-integrator and geometry spelling, retained a narrow 4.x file fallback for `shouldExludeConjugates`, and repaired the retained Internal barotropic FINUFFT path.
 - Stabilized model-output scheduling and NetCDF restart across multiple files and groups; preserved linear dynamics and shared observing systems; and made initialization, writing, restoration, and handle ownership exception-safe.
 - Made operation registration, replacement, and removal atomic and identity-based; corrected multiple-output lookup; and made cache invalidation follow each operation's declared time and coefficient dependencies.
 - Made forcing registration identity-based, deterministic, and atomic; preserved vertical-diffusivity, fixed-amplitude, and explicit-antialias configurations through resolution changes and NetCDF restoration; and rejected vertical diffusivity on barotropic transforms.
