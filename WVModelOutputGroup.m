@@ -241,21 +241,29 @@ classdef WVModelOutputGroup < handle & matlab.mixin.Heterogeneous & CAAnnotatedC
             if self.didInitializeStorage
                 error('Storage already initialized!');
             end
-            self.group = ncfile.addGroup(self.name);
-            self.writeToGroup(self.group,self.propertyAnnotationWithName(self.requiredProperties));
+            try
+                self.group = ncfile.addGroup(self.name);
+                self.writeToGroup(self.group,self.propertyAnnotationWithName(self.requiredProperties));
 
-            varAnnotation = self.model.wvt.propertyAnnotationWithName('t');
-            varAnnotation.attributes('units') = varAnnotation.units;
-            varAnnotation.attributes('long_name') = varAnnotation.description;
-            varAnnotation.attributes('standard_name') = 'time';
-            varAnnotation.attributes('long_name') = 'time';
-            varAnnotation.attributes('units') = 'seconds since 1970-01-01 00:00:00';
-            varAnnotation.attributes('axis') = 'T';
-            varAnnotation.attributes('calendar') = 'standard';
-            self.group.addDimension(varAnnotation.name,length=Inf,type="double",attributes=varAnnotation.attributes);
+                varAnnotation = self.model.wvt.propertyAnnotationWithName('t');
+                varAnnotation.attributes('units') = varAnnotation.units;
+                varAnnotation.attributes('long_name') = varAnnotation.description;
+                varAnnotation.attributes('standard_name') = 'time';
+                varAnnotation.attributes('long_name') = 'time';
+                varAnnotation.attributes('units') = 'seconds since 1970-01-01 00:00:00';
+                varAnnotation.attributes('axis') = 'T';
+                varAnnotation.attributes('calendar') = 'standard';
+                self.group.addDimension(varAnnotation.name,length=Inf,type="double",attributes=varAnnotation.attributes);
 
-            for iObs = 1:length(self.observingSystems)
-                self.observingSystems(iObs).initializeStorage(self.group);
+                for iObs = 1:length(self.observingSystems)
+                    self.observingSystems(iObs).initializeStorage(self.group);
+                end
+            catch exception
+                self.group = NetCDFGroup.empty(0,0);
+                self.incrementsWrittenToGroup = 0;
+                self.timeOfLastIncrementWrittenToGroup = -Inf;
+                self.didInitializeStorage = false;
+                rethrow(exception)
             end
 
             self.incrementsWrittenToGroup = 0;
@@ -343,7 +351,7 @@ classdef WVModelOutputGroup < handle & matlab.mixin.Heterogeneous & CAAnnotatedC
 
             f = @(className,group) feval(strcat(className,'.observingSystemFromGroup'),group, self.model, self);
             vars = CAAnnotatedClass.propertyValuesFromGroup(outputGroup,{"observingSystems"},classConstructor=f);
-            self.addObservingSystem(vars.observingSystems);
+            self.observingSystems = vars.observingSystems;
         end
 
     end

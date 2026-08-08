@@ -23,5 +23,9 @@ tells the output groups to initialize themselves in the NetCDF file
   we need to exclude `t`. Additionally, if we happen to also be
   writing the wave-vortex coefficients, we can neglect writing
   those to file.
+
+  Initialization is transactional. If any group or observing system
+  fails, the new file is closed and deleted and every storage object
+  returns to its uninitialized state.
  
   

@@ -41,7 +41,7 @@ classdef WVMooring < WVObservingSystem
 
             if ~isfield(options,"trackedFieldNames")
                 options.trackedFieldNames = {"u","v","w","eta","rho_e"};
-            elseif isa(options.trackedFieldNames,"string")
+            elseif ischar(options.trackedFieldNames) || isstring(options.trackedFieldNames)
                 options.trackedFieldNames = cellstr(options.trackedFieldNames);
             end
             % Confirm that we really can track these variables.

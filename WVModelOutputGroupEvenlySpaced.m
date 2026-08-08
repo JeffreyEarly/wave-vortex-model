@@ -82,6 +82,14 @@ classdef WVModelOutputGroupEvenlySpaced < WVModelOutputGroup
         end
 
         function t = outputTimesForIntegrationPeriod(self,initialTime,finalTime)
+            % Return unwritten output times on the group's fixed time lattice.
+            %
+            % Times are generated from `initialTime + k*outputInterval`,
+            % bounded by the group and integration windows, and strictly
+            % later than the last written increment. Anchoring every call
+            % to the original lattice prevents segmented-run timing drift.
+            %
+            % - Topic: Integration
             arguments (Input)
                 self WVModelOutputGroup
                 initialTime (1,1) double
@@ -90,16 +98,40 @@ classdef WVModelOutputGroupEvenlySpaced < WVModelOutputGroup
             arguments (Output)
                 t (:,1) double
             end
-            % Two possibilities here either:
-            % 1) nothing is initialize, or 2) we already wrote to file
-            if self.timeOfLastIncrementWrittenToGroup == -Inf
-                t = (self.initialTime:self.outputInterval:finalTime).';
-            else
-                t = ((self.timeOfLastIncrementWrittenToGroup+self.outputInterval):self.outputInterval:finalTime).';
+            lowerTime = max(initialTime,self.initialTime);
+            upperTime = min(finalTime,self.finalTime);
+            if upperTime < lowerTime
+                t = zeros(0,1);
+                return
             end
-            t(t<initialTime) = [];
-            t(t<self.initialTime) = [];
-            t(t>self.finalTime) = [];
+
+            lowerIndex = (lowerTime-self.initialTime)/self.outputInterval;
+            lowerIndexTolerance = 8*eps(max(1,abs(lowerIndex)));
+            if abs(lowerIndex-round(lowerIndex)) <= lowerIndexTolerance
+                lowerIndex = round(lowerIndex);
+            end
+            firstIndex = max(0,ceil(lowerIndex));
+
+            if self.timeOfLastIncrementWrittenToGroup ~= -Inf
+                lastWrittenIndex = (self.timeOfLastIncrementWrittenToGroup-self.initialTime)/self.outputInterval;
+                lastWrittenIndexTolerance = 8*eps(max(1,abs(lastWrittenIndex)));
+                if abs(lastWrittenIndex-round(lastWrittenIndex)) <= lastWrittenIndexTolerance
+                    lastWrittenIndex = round(lastWrittenIndex);
+                end
+                firstIndex = max(firstIndex,floor(lastWrittenIndex)+1);
+            end
+
+            lastIndex = (upperTime-self.initialTime)/self.outputInterval;
+            lastIndexTolerance = 8*eps(max(1,abs(lastIndex)));
+            if abs(lastIndex-round(lastIndex)) <= lastIndexTolerance
+                lastIndex = round(lastIndex);
+            end
+            lastIndex = floor(lastIndex);
+            if lastIndex < firstIndex
+                t = zeros(0,1);
+            else
+                t = self.initialTime+(firstIndex:lastIndex).'*self.outputInterval;
+            end
         end
 
     end
