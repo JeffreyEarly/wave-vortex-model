@@ -9,7 +9,7 @@ end
 arguments (Output,Repeating)
     varargout
 end
-modelOp = self.operationNameMap{opName};
+modelOp = self.operationWithName(opName);
 varargout = cell(1,modelOp.nVarOut);
 [varargout{:}] = self.performOperation(modelOp);
 end

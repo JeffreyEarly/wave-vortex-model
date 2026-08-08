@@ -9,11 +9,11 @@ mathjax: true
 
 #  operationWithName
 
-retrieve a WVOperation by name
+Retrieve a registered `WVOperation` by name.
 
 
 ---
 
 ## Discussion
 
-  
+An unknown name produces a clear lookup error.

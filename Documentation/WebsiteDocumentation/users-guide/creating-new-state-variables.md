@@ -48,8 +48,14 @@ If the output variable has spatial dimension $$(x,y)$$ or $$(x,y,z)$$, then the 
 
 In the example above a function handle was used to compute the relative vorticity because it only required a single line of code. However, it is often the case that computations will be more involved. In that case, you should subclass the `WVOperation`.
 
-If a `WVOperation` produces a variable with the same name as one that already exists, it will *replace* the existing `WVOperation`. This is both useful and dangerous.
+Operation names and output-variable names must be unique. By default, `addOperation` rejects a new operation that conflicts with an existing operation and leaves the registry unchanged. To intentionally replace an operation, opt in explicitly:
 
-A `WVOperation` can return multiple variables.
+```matlab
+wvt.addOperation(replacementOperation,shouldOverwriteExisting=true);
+```
 
-All computed variables are cached, so as not to repeat unnecessary calculations.
+An operation is registered and removed as a unit. If the replacement conflicts with one output from a multiple-output operation, every output from the displaced operation is removed. When registering an array of operations with replacement enabled, conflicts are resolved in caller order and the last conflicting operation wins.
+
+A `WVOperation` can return multiple variables. Its outputs are returned in annotation order and computed together when any uncached output is requested.
+
+All computed variables are cached to avoid unnecessary calculations. Set an operation's dependency metadata before registration: `isVariableWithLinearTimeStep=true` invalidates its outputs when transform time changes, while `isDependentOnApAmA0=true` invalidates them when `Ap`, `Am`, or `A0` changes. Outputs without the relevant dependency remain cached.
