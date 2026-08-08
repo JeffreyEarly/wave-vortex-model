@@ -77,12 +77,14 @@ classdef WVMooring < WVObservingSystem
                 y = options.y;
             end
 
+            x = mod(x,model.wvt.Lx);
+            y = mod(y,model.wvt.Ly);
             self.x = x;
             self.y = y;
             dx = model.wvt.x(2)-model.wvt.x(1);
-            self.x_index = floor(x/dx);
+            self.x_index = floor(x/dx) + 1;
             dy = model.wvt.y(2)-model.wvt.y(1);
-            self.y_index = floor(y/dy);
+            self.y_index = floor(y/dy) + 1;
         end
 
         function names = get.trackedFieldNames(self)

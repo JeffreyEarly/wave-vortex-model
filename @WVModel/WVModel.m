@@ -220,19 +220,7 @@ classdef WVModel < handle & WVModelAdapativeTimeStepMethods & WVModelFixedTimeSt
                 self WVModel {mustBeNonempty}
                 anObservingSystem (1,1) WVCoefficients
             end
-            % prepend, so that its always first
-            if isempty(self.fluxedObservingSystems)
-                self.fluxedObservingSystems = anObservingSystem;
-            else
-                if ~isa(self.fluxedObservingSystems(1),'WVCoefficients')
-                    idx = find(size(self.fluxedObservingSystems) > 1, 1);
-                    if isempty(idx)
-                        idx = 1;
-                    end
-                    self.fluxedObservingSystems = cat(idx, anObservingSystem, self.fluxedObservingSystems);
-                end
-            end
-            self.recomputeIndicesForFluxedSystems();
+            self.addFluxedObservingSystem(anObservingSystem);
         end 
 
         function addFluxedObservingSystem(self,anObservingSystem)
@@ -243,12 +231,34 @@ classdef WVModel < handle & WVModelAdapativeTimeStepMethods & WVModelFixedTimeSt
                 self WVModel {mustBeNonempty}
                 anObservingSystem WVObservingSystem
             end
-            for iObs=1:length(anObservingSystem)
-                alreadyInArray = any(cellfun(@(x) isequal(x, anObservingSystem(iObs)), num2cell(self.fluxedObservingSystems)));
-                if ~alreadyInArray
-                    self.fluxedObservingSystems(end+1) = anObservingSystem(iObs);
+            registeredSystems = self.fluxedObservingSystems;
+            for iObs = 1:length(anObservingSystem)
+                observer = anObservingSystem(iObs);
+                if observer.model ~= self
+                    error('The observing system %s was not initialized for this model.',observer.name);
+                end
+
+                sameHandle = cellfun(@(existing) existing == observer,num2cell(registeredSystems));
+                if any(sameHandle)
+                    continue;
+                end
+
+                if any(strcmp(string({registeredSystems.name}),string(observer.name)))
+                    error('An observing system named %s is already registered with this model.',observer.name);
+                end
+
+                if isempty(registeredSystems)
+                    registeredSystems = observer;
+                elseif isa(observer,'WVCoefficients')
+                    if any(arrayfun(@(existing) isa(existing,'WVCoefficients'),registeredSystems))
+                        error('A WVCoefficients observing system is already registered with this model.');
+                    end
+                    registeredSystems = [observer registeredSystems];
+                else
+                    registeredSystems(end+1) = observer;
                 end
             end
+            self.fluxedObservingSystems = registeredSystems;
             self.recomputeIndicesForFluxedSystems();
         end
 
@@ -260,9 +270,21 @@ classdef WVModel < handle & WVModelAdapativeTimeStepMethods & WVModelFixedTimeSt
                 self WVModel {mustBeNonempty}
                 anObservingSystem WVObservingSystem
             end
-            for iObs=1:length(anObservingSystem)
-                self.fluxedObservingSystems = setdiff(self.fluxedObservingSystems,anObservingSystem(iObs),'stable');
+            registeredSystems = self.fluxedObservingSystems;
+            removeMask = false(size(registeredSystems));
+            for iObs = 1:length(anObservingSystem)
+                observer = anObservingSystem(iObs);
+                if observer.model ~= self
+                    error('The observing system %s was not initialized for this model.',observer.name);
+                end
+                sameHandle = cellfun(@(existing) existing == observer,num2cell(registeredSystems));
+                if ~any(sameHandle)
+                    error('The observing system %s is not registered with this model.',observer.name);
+                end
+                removeMask = removeMask | sameHandle;
             end
+            registeredSystems(removeMask) = [];
+            self.fluxedObservingSystems = registeredSystems;
             self.recomputeIndicesForFluxedSystems();
         end
 
@@ -277,12 +299,11 @@ classdef WVModel < handle & WVModelAdapativeTimeStepMethods & WVModelFixedTimeSt
             arguments (Output)
                 anObservingSystem WVObservingSystem
             end
-            anObservingSystem = [];
-            for i = 1:length(self.fluxedObservingSystems)
-                if strcmp(self.fluxedObservingSystems(i).name,name)
-                    anObservingSystem = self.fluxedObservingSystems(i);
-                end
+            idx = find(strcmp(string({self.fluxedObservingSystems.name}),string(name)),1);
+            if isempty(idx)
+                error('No fluxed observing system named %s is registered with this model.',name);
             end
+            anObservingSystem = self.fluxedObservingSystems(idx);
         end
 
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -401,7 +422,7 @@ classdef WVModel < handle & WVModelAdapativeTimeStepMethods & WVModelFixedTimeSt
                 options.absToleranceZ = 1e-2;
             end
 
-            observingSystem = WVLagrangianParticles(self,name=name,isXYOnly=isXYOnly,x=x,y=y,z=z,trackedFieldNames=trackedFieldNames,advectionInterpolation=options.advectionInterpolation,trackedVarInterpolation=options.trackedVarInterpolation);
+            observingSystem = WVLagrangianParticles(self,name=name,isXYOnly=isXYOnly,x=x,y=y,z=z,trackedFieldNames=trackedFieldNames,advectionInterpolation=options.advectionInterpolation,trackedVarInterpolation=options.trackedVarInterpolation,absToleranceXY=options.absToleranceXY,absToleranceZ=options.absToleranceZ);
             if isscalar(self.outputFiles) && isscalar(self.outputFiles(1).outputGroups)
                 self.outputFiles(1).outputGroups(1).addObservingSystem(observingSystem);
             elseif isempty(self.outputFiles)
@@ -742,6 +763,8 @@ classdef WVModel < handle & WVModelAdapativeTimeStepMethods & WVModelFixedTimeSt
 
         function F = fluxAtTimeCellArray(self,t,y0)
             self.nFluxComputations = self.nFluxComputations + 1;
+            % Linear models have no coefficient observer to advance the transform time.
+            self.wvt.t = t;
             F = cell(self.nFluxComponents,1);
             for i = 1:length(self.fluxedObservingSystems)
                 F(self.indicesForFluxedSystem{i}) = self.fluxedObservingSystems(i).fluxAtTime(t,y0(self.indicesForFluxedSystem{i}));
