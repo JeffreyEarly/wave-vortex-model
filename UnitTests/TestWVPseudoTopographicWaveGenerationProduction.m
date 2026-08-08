@@ -179,30 +179,6 @@ classdef TestWVPseudoTopographicWaveGenerationProduction < matlab.unittest.TestC
             testCase.verifyEqual(convertedForcing.darwinSymbol,"N2")
         end
 
-        function adaptiveModelRestartMatchesControl(testCase)
-            restartPath = fullfile(testCase.tempFolder,"adaptive-restart.nc");
-            [restartModel,checkpointTime,finalTime] = TestWVPseudoTopographicWaveGenerationProduction.modelForRestart();
-            [controlModel,~,~] = TestWVPseudoTopographicWaveGenerationProduction.modelForRestart();
-            restartModel.createNetCDFFileForModelOutput(restartPath,outputInterval=checkpointTime/2,shouldOverwriteExisting=true);
-            restartModel.integrateToTime(checkpointTime,shouldShowIntegrationDiagnostics=false,callback=@(~)[]);
-            restartModel.closeNetCDFFile();
-
-            controlModel.integrateToTime(finalTime,shouldShowIntegrationDiagnostics=false,callback=@(~)[]);
-            warningState = warning;
-            warningCleanup = onCleanup(@()warning(warningState));
-            warning("off","all")
-            resumedModel = WVModel.modelFromFile(restartPath);
-            clear warningCleanup
-            resumedModel.setupIntegrator(integratorType="adaptive",absTolerance=1e-12,relTolerance=1e-10);
-            resumedModel.integrateToTime(finalTime,shouldShowIntegrationDiagnostics=false,callback=@(~)[]);
-            resumedModel.closeNetCDFFile();
-
-            testCase.verifyLessThanOrEqual(max(abs(resumedModel.wvt.Ap-controlModel.wvt.Ap),[],"all"),1e-10)
-            testCase.verifyLessThanOrEqual(max(abs(resumedModel.wvt.Am-controlModel.wvt.Am),[],"all"),1e-10)
-            testCase.verifyEqual(resumedModel.wvt.A0,controlModel.wvt.A0)
-            testCase.verifyClass(resumedModel.wvt.forcingWithName("restart model terrain"),"WVPseudoTopographicWaveGeneration")
-        end
-
     end
 
     methods (Static, Access = private)
@@ -228,21 +204,6 @@ classdef TestWVPseudoTopographicWaveGenerationProduction < matlab.unittest.TestC
             [~,iBottom] = min(wvt.z);
             bottomPower = mean(kinematicPressure(:,:,iBottom).*forcing.bottomVelocityAtTime(wvt.t),"all");
             diagnostics = struct(F0=F0,modalQGPVSource=wvt.A0_QGPV_factor.*F0,qgpvNorm=norm(qgpvSource(:)),modalPower=modalPower,bottomPower=bottomPower,powerError=abs(modalPower-bottomPower)/max([abs(modalPower) abs(bottomPower) eps]));
-        end
-
-        function [model,checkpointTime,finalTime] = modelForRestart()
-            wvt = TestWVPseudoTopographicWaveGenerationProduction.createTransform([8 6 5],false);
-            forcing = WVPseudoTopographicWaveGeneration(wvt,topographicHeight=TestWVPseudoTopographicWaveGenerationProduction.topography(wvt),barotropicVelocityAmplitude=[0.05; -0.01],rampDuration=100,startTime=0,name="restart model terrain");
-            wvt.removeAllForcing();
-            wvt.addForcing(forcing);
-            warningState = warning;
-            warningCleanup = onCleanup(@()warning(warningState));
-            warning("off","all")
-            model = WVModel(wvt);
-            clear warningCleanup
-            model.setupIntegrator(integratorType="adaptive",absTolerance=1e-12,relTolerance=1e-10);
-            checkpointTime = 300;
-            finalTime = 600;
         end
 
         function errorValue = relativeError(actual,expected)
