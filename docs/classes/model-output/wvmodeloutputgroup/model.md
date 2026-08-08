@@ -2,7 +2,7 @@
 layout: default
 title: model
 parent: WVModelOutputGroup
-grand_parent: Classes
+grand_parent: Model output
 nav_order: 9
 mathjax: true
 ---
@@ -18,5 +18,3 @@ Reference to the WVModel being used
 + Class: `WVModel`
 
 ## Discussion
-
-  

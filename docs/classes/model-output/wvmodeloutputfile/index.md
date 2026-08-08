@@ -21,39 +21,39 @@ A WVModelOutputFile represents a file to be written to disk and has one or more 
 <div class="language-matlab highlighter-rouge"><div class="highlight"><pre class="highlight"><code>WVModelOutputFile < handle</code></pre></div></div>
 
 ## Overview
- 
+
 A `WVModelOutputFile` represents a file to be written to disk, that
 may or may not have been created yet, depending on the model time.
 The `ncfile` property therefore may be empty if a NetCDF file is not
 yet created for writing.
- 
+
 A `WVModelOutputFile` holds onto one or more output groups, instances
 of `WVModelOutputGroup`, and internally they orchestrate pausing the
 model and writing to groups
- 
+
 ### Usage
- 
+
 You probably do not ever need to initialize a WVModelOutputFile
 directly, but instead should use the convenience method defined in
 `WVModel`,
- 
+
 ```matlab
 outputFile = model.addNewOutputFile("myfile.nc");
 ```
- 
+
 At this stage the file contains no output groups and will not write
 anything to file. You can now add output groups to the file. Most
 users will want to simply use
- 
+
 ```matlab
 outputFile = model.createNetCDFFileForModelOutput("myfile.nc",outputInterval=86400);
 ```
- 
+
 which will additionally add the evenly-spaced output group and record
 the wave-vortex coefficients.
- 
- 
-     
+
+
+
 
 
 

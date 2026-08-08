@@ -2,7 +2,7 @@
 layout: default
 title: classRequiredPropertyNames
 parent: WVFixedAmplitudeForcing
-grand_parent: Classes
+grand_parent: Forcing
 nav_order: 8
 mathjax: true
 ---

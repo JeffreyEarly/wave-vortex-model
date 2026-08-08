@@ -2,7 +2,7 @@
 layout: default
 title: classRequiredPropertyNames
 parent: WVThermalDamping
-grand_parent: Classes
+grand_parent: Closures
 nav_order: 4
 mathjax: true
 ---

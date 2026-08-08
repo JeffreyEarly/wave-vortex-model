@@ -2,7 +2,7 @@
 layout: default
 title: geostrophicComponent
 parent: WVTransformHydrostatic
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 101
 mathjax: true
 ---
@@ -22,5 +22,3 @@ returns the geostrophic flow component
 + `flowComponent`  subclass of WVPrimaryFlowComponent
 
 ## Discussion
-
-        

@@ -2,7 +2,7 @@
 layout: default
 title: frequency
 parent: WVPseudoTopographicWaveGeneration
-grand_parent: Classes
+grand_parent: Forcing
 nav_order: 8
 mathjax: true
 ---
@@ -22,5 +22,3 @@ Barotropic angular frequency $$\omega$$ in radians per second.
 Real valued property with no dimensions and units of $$rad s^{-1}$$.
 
 ## Discussion
-
-  

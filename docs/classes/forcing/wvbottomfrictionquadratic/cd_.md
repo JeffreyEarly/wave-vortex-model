@@ -2,7 +2,7 @@
 layout: default
 title: cd
 parent: WVBottomFrictionQuadratic
-grand_parent: Classes
+grand_parent: Forcing
 nav_order: 3
 mathjax: true
 ---
@@ -15,5 +15,3 @@ $$\frac{Cd}{dz}$$ scaled quadratic drag coefficient with units $$m^{-1}$$
 ---
 
 ## Discussion
-
-  

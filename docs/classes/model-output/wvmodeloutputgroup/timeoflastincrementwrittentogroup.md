@@ -2,7 +2,7 @@
 layout: default
 title: timeOfLastIncrementWrittenToGroup
 parent: WVModelOutputGroup
-grand_parent: Classes
+grand_parent: Model output
 nav_order: 17
 mathjax: true
 ---

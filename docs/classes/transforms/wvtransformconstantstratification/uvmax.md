@@ -2,8 +2,8 @@
 layout: default
 title: uvMax
 parent: WVTransformConstantStratification
-grand_parent: Classes
-nav_order: 242
+grand_parent: Transforms
+nav_order: 241
 mathjax: true
 ---
 
@@ -16,4 +16,3 @@ max horizontal fluid speed
 
 ## Description
 Real valued property with no dimensions and units of $$m s^{-1}$$.
-

@@ -18,7 +18,7 @@ Geostrophic solution group
 
 ## Declaration
 
-<div class="language-matlab highlighter-rouge"><div class="highlight"><pre class="highlight"><code>classdef WVGeostrophicComponent < WVFlowComponent</code></pre></div></div>
+<div class="language-matlab highlighter-rouge"><div class="highlight"><pre class="highlight"><code>classdef WVGeostrophicComponent < WVPrimaryFlowComponent</code></pre></div></div>
 
 ## Overview
 FlowConstituentGroup WVGeostrophicFlowGroup
@@ -47,9 +47,9 @@ OrthogonalSolutionGroup
   + [`totalEnergyFactorForCoefficientMatrix`](/classes/flow-components/wvgeostrophiccomponent/totalenergyfactorforcoefficientmatrix.html) returns the total energy multiplier for the coefficient matrix.
 + Other
   + [`WVGeostrophicComponent`](/classes/flow-components/wvgeostrophiccomponent/wvgeostrophiccomponent.html) Geostrophic solution group
-  + [`degreesOfFreedomPerMode`](/classes/flow-components/wvgeostrophiccomponent/degreesoffreedompermode.html) 
-  + [`multiplierForVariable`](/classes/flow-components/wvgeostrophiccomponent/multiplierforvariable.html) 
-  + [`normalization`](/classes/flow-components/wvgeostrophiccomponent/normalization.html) 
+  + [`degreesOfFreedomPerMode`](/classes/flow-components/wvgeostrophiccomponent/degreesoffreedompermode.html)
+  + [`multiplierForVariable`](/classes/flow-components/wvgeostrophiccomponent/multiplierforvariable.html)
+  + [`normalization`](/classes/flow-components/wvgeostrophiccomponent/normalization.html)
 
 
 ---

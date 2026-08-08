@@ -2,7 +2,7 @@
 layout: default
 title: lMode_dft
 parent: WVTransformBoussinesq
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 164
 mathjax: true
 ---
@@ -15,5 +15,3 @@ l mode-number on the DFT grid
 ---
 
 ## Discussion
-
-  

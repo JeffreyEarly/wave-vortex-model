@@ -2,7 +2,7 @@
 layout: default
 title: flowComponentWithName
 parent: WVTransform
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 36
 mathjax: true
 ---
@@ -15,5 +15,3 @@ retrieve a WVFlowComponent by name
 ---
 
 ## Discussion
-
-  

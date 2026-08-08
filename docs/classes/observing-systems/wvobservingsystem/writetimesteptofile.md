@@ -2,7 +2,7 @@
 layout: default
 title: writeTimeStepToFile
 parent: WVObservingSystem
-grand_parent: Classes
+grand_parent: Observing systems
 nav_order: 13
 mathjax: true
 ---
@@ -18,5 +18,3 @@ called at each time for the observing system to write to file
 
   Any observing system must implement this method to initialize
   and write to the NetCDFGroup at the particular outputIndex.
- 
-  

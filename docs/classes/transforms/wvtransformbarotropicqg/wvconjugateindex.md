@@ -2,8 +2,8 @@
 layout: default
 title: wvConjugateIndex
 parent: WVTransformBarotropicQG
-grand_parent: Classes
-nav_order: 143
+grand_parent: Transforms
+nav_order: 146
 mathjax: true
 ---
 
@@ -18,5 +18,3 @@ index into the WV mode that matches the dftConjugateIndices
 + Class: `uint64`
 
 ## Discussion
-
-  

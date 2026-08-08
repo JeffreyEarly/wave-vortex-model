@@ -2,7 +2,7 @@
 layout: default
 title: f
 parent: WVTransformHydrostatic
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 94
 mathjax: true
 ---
@@ -16,4 +16,3 @@ Coriolis parameter
 
 ## Description
 Real valued property with no dimensions and units of $$rad/s$$.
-

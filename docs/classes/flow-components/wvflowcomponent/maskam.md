@@ -2,7 +2,7 @@
 layout: default
 title: maskAm
 parent: WVFlowComponent
-grand_parent: Classes
+grand_parent: Flow components
 nav_order: 7
 mathjax: true
 ---
@@ -18,5 +18,3 @@ returns a mask indicating where solutions live in the Am matrix.
 
   Returns a 'mask' (matrix with 1s or 0s) indicating where
   different solution types live in the Am matrix.
- 
-  

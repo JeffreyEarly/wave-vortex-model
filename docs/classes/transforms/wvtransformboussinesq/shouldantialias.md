@@ -2,7 +2,7 @@
 layout: default
 title: shouldAntialias
 parent: WVTransformBoussinesq
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 216
 mathjax: true
 ---
@@ -18,5 +18,3 @@ whether the WV grid includes quadratically aliased wavenumbers
 Real valued property with no dimensions and units of $$bool$$.
 
 ## Discussion
-
-  

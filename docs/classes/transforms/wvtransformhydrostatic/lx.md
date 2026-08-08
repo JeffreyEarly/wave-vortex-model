@@ -2,7 +2,7 @@
 layout: default
 title: Lx
 parent: WVTransformHydrostatic
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 23
 mathjax: true
 ---
@@ -18,5 +18,3 @@ length of the x-dimension
 Real valued property with no dimensions and units of $$m$$.
 
 ## Discussion
-
-  

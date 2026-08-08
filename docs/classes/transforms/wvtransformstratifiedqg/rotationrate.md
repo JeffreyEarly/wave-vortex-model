@@ -2,7 +2,7 @@
 layout: default
 title: rotationRate
 parent: WVTransformStratifiedQG
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 149
 mathjax: true
 ---
@@ -16,4 +16,3 @@ rotation rate of the planetary body
 
 ## Description
 Real valued property with no dimensions and units of $$rad/s$$.
-

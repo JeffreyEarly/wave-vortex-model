@@ -17,7 +17,7 @@ function [wvt,ncfile] = waveVortexTransformFromFile(path,options)
 % Restoring only the transform closes the NetCDF file before returning. If
 % you intend to read more than one time point from the save file, request
 % the second output and hold onto that read-only NetCDFFile instance, then call
-% [`initFromNetCDFFile`](/classes/wvtransform/initfromnetcdffile.html). This
+% [`initFromNetCDFFile`](/classes/transforms/wvtransform/initfromnetcdffile.html). This
 % avoids the relatively expensive operation recreating the WVTransform, and
 % simply reads the appropriate data from file. The caller owns the returned
 % NetCDFFile and must close it. Set `shouldReadOnly=false` only when writable

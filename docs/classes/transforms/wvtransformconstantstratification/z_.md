@@ -2,7 +2,7 @@
 layout: default
 title: Z
 parent: WVTransformConstantStratification
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 68
 mathjax: true
 ---
@@ -16,4 +16,3 @@ z-coordinate matrix
 
 ## Description
 Real valued property with dimensions $$(x,y,z)$$ and units of $$m$$.
-

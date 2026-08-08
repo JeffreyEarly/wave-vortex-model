@@ -2,7 +2,7 @@
 layout: default
 title: forcingType
 parent: WVTransform
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 41
 mathjax: true
 ---
@@ -13,4 +13,3 @@ mathjax: true
 
 
 ---
-

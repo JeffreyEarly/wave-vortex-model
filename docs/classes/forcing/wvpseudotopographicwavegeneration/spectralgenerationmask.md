@@ -2,7 +2,7 @@
 layout: default
 title: spectralGenerationMask
 parent: WVPseudoTopographicWaveGeneration
-grand_parent: Classes
+grand_parent: Forcing
 nav_order: 14
 mathjax: true
 ---
@@ -29,5 +29,3 @@ Return the spectral region eligible for bottom-wave generation.
   zero-damping support of active `WVAdaptiveDamping` objects.
   `components` reports those masks separately, including the
   distinct positive- and negative-wave validity masks.
- 
-        

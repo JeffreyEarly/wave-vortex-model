@@ -2,7 +2,7 @@
 layout: default
 title: N2Function
 parent: WVTransformHydrostatic
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 27
 mathjax: true
 ---
@@ -13,4 +13,3 @@ takes $$z$$ values and returns the squared buoyancy frequency of the no-motion d
 
 
 ---
-

@@ -2,8 +2,8 @@
 layout: default
 title: volumeIntegral
 parent: WVTransformBoussinesq
-grand_parent: Classes
-nav_order: 260
+grand_parent: Transforms
+nav_order: 259
 mathjax: true
 ---
 
@@ -13,4 +13,3 @@ mathjax: true
 
 
 ---
-

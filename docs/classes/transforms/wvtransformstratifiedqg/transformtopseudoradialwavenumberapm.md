@@ -2,7 +2,7 @@
 layout: default
 title: transformToPseudoRadialWavenumberApm
 parent: WVTransformStratifiedQG
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 177
 mathjax: true
 ---
@@ -16,7 +16,7 @@ transforms in the from (j,kRadial) to kPseudoRadial
 
 ## Declaration
 ```matlab
- [varargout] = transformToRadialWavenumber(varargin) 
+ [varargout] = transformToRadialWavenumber(varargin)
 ```
 ## Parameters
 + `varargin`  variables with dimensions $$(j,kl)$$
@@ -27,5 +27,3 @@ transforms in the from (j,kRadial) to kPseudoRadial
 ## Discussion
 
   Sums all the variance/energy in radial bins `kPseudoRadial`.
- 
-        

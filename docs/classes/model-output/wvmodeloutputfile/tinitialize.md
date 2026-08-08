@@ -2,7 +2,7 @@
 layout: default
 title: tInitialize
 parent: WVModelOutputFile
-grand_parent: Classes
+grand_parent: Model output
 nav_order: 19
 mathjax: true
 ---
@@ -15,5 +15,3 @@ time at which the NetCDF file will be created
 ---
 
 ## Discussion
-
-  

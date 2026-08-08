@@ -2,7 +2,7 @@
 layout: default
 title: addToVariableCache
 parent: WVTransform
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 17
 mathjax: true
 ---
@@ -15,5 +15,3 @@ add variable to internal cache, in case it is needed again
 ---
 
 ## Discussion
-
-  

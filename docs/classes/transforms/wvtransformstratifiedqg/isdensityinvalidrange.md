@@ -2,7 +2,7 @@
 layout: default
 title: isDensityInValidRange
 parent: WVTransformStratifiedQG
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 92
 mathjax: true
 ---
@@ -24,5 +24,3 @@ checks if the density field is a valid adiabatic re-arrangement of the base stat
 ## Discussion
 
   This is probably best re-defined as a dynamical variable.
- 
-      

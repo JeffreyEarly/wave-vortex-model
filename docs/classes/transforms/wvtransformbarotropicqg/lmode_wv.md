@@ -2,8 +2,8 @@
 layout: default
 title: lMode_wv
 parent: WVTransformBarotropicQG
-grand_parent: Classes
-nav_order: 89
+grand_parent: Transforms
+nav_order: 92
 mathjax: true
 ---
 
@@ -15,5 +15,3 @@ l mode number on the WV grid
 ---
 
 ## Discussion
-
-  

@@ -2,7 +2,7 @@
 layout: default
 title: wvt
 parent: WVModelOutputFile
-grand_parent: Classes
+grand_parent: Model output
 nav_order: 21
 mathjax: true
 ---
@@ -15,5 +15,3 @@ pass-through of the wvt instance
 ---
 
 ## Discussion
-
-  

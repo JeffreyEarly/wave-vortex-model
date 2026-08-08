@@ -2,7 +2,7 @@
 layout: default
 title: GwInvMatrix
 parent: WVTransformConstantStratification
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 29
 mathjax: true
 ---
@@ -25,5 +25,3 @@ transformation matrix $$G_w^{-1}$$
 
   A matrix that transforms a vector of igw amplitudes from
   vertical mode space to physical space.
- 
-      

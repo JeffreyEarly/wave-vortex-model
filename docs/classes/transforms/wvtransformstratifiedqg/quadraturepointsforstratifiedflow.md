@@ -2,7 +2,7 @@
 layout: default
 title: quadraturePointsForStratifiedFlow
 parent: WVTransformStratifiedQG
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 139
 mathjax: true
 ---
@@ -25,5 +25,3 @@ return the quadrature points for a given stratification
 
   This function uses InternalModesWKBSpectral to compute the
   quadrature points of a given stratification profile.
- 
-      

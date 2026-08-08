@@ -2,7 +2,7 @@
 layout: default
 title: spatialFluxForcing
 parent: WVTransform
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 91
 mathjax: true
 ---
@@ -16,4 +16,3 @@ mathjax: true
 
 ## Type
 + Class: `WVForcing`
-

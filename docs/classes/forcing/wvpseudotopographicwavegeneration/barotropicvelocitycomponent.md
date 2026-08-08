@@ -2,7 +2,7 @@
 layout: default
 title: barotropicVelocityComponent
 parent: WVPseudoTopographicWaveGeneration
-grand_parent: Classes
+grand_parent: Forcing
 nav_order: 4
 mathjax: true
 ---
@@ -22,5 +22,3 @@ Coordinate for the barotropic-velocity components.
 
   Values 1 and 2 identify the zonal and meridional components,
   respectively. This coordinate is used for NetCDF persistence.
- 
-  

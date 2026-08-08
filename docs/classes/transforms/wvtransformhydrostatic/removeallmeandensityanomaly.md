@@ -2,7 +2,7 @@
 layout: default
 title: removeAllMeanDensityAnomaly
 parent: WVTransformHydrostatic
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 179
 mathjax: true
 ---
@@ -21,5 +21,3 @@ remove all mean density anomalies
 ## Discussion
 
   All mean density anomalies are removed. Other components of the flow will remain unaffected.
- 
-    

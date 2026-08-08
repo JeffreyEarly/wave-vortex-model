@@ -2,7 +2,7 @@
 layout: default
 title: dLnN2
 parent: WVTransformStratifiedQG
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 51
 mathjax: true
 ---
@@ -16,8 +16,3 @@ $$\frac{\partial \ln N^2}{\partial z}$$, vertical variation of the log of the sq
 
 ## Description
 Real valued property with dimension $$z$$ and no units.
-
-## Discussion
-
-The quantity $$\frac{\partial \ln N^2}{\partial z}$$ is an inertial term in the nonlinear flux.
-

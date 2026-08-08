@@ -2,7 +2,7 @@
 layout: default
 title: hasPVComponent
 parent: WVFlowComponent
-grand_parent: Classes
+grand_parent: Flow components
 nav_order: 4
 mathjax: true
 ---
@@ -16,4 +16,3 @@ mathjax: true
 
 ## Type
 + Class: `logical`
-

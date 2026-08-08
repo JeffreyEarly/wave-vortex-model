@@ -2,7 +2,7 @@
 layout: default
 title: wvCoefficientFluxedObservingSystem
 parent: WVModel
-grand_parent: Classes
+grand_parent: Class documentation
 nav_order: 62
 mathjax: true
 ---
@@ -15,5 +15,3 @@ return the `WVCoefficients` fluxed observing system
 ---
 
 ## Discussion
-
-  

@@ -2,7 +2,7 @@
 layout: default
 title: barotropicVelocityAtTime
 parent: WVPseudoTopographicWaveGeneration
-grand_parent: Classes
+grand_parent: Forcing
 nav_order: 3
 mathjax: true
 ---
@@ -25,5 +25,3 @@ Evaluate the prescribed horizontally uniform current.
 + `velocity`  real two-component velocity in meters per second
 
 ## Discussion
-
-        

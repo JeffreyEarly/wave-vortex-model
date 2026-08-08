@@ -2,7 +2,7 @@
 layout: default
 title: inertialComponent
 parent: WVTransformConstantStratification
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 125
 mathjax: true
 ---
@@ -22,5 +22,3 @@ returns the inertial oscillation flow component
 + `flowComponent`  subclass of WVPrimaryFlowComponent
 
 ## Discussion
-
-        

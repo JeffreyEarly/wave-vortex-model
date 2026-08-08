@@ -21,12 +21,12 @@ A WVObservingSystem is an abstract class that defines different ways of observin
 <div class="language-matlab highlighter-rouge"><div class="highlight"><pre class="highlight"><code>WVObservingSystem < handle</code></pre></div></div>
 
 ## Overview
- 
- 
- 
-  
-           
-  
+
+
+
+
+
+
 
 
 ## Topics
@@ -49,7 +49,7 @@ A WVObservingSystem is an abstract class that defines different ways of observin
 + Initialization
   + [`observingSystemFromGroup`](/classes/observing-systems/wvobservingsystem/observingsystemfromgroup.html) initialize a WVObservingSystem instance from NetCDF file
 + Other
-  + [`description`](/classes/observing-systems/wvobservingsystem/description.html) 
+  + [`description`](/classes/observing-systems/wvobservingsystem/description.html)
 
 
 ---

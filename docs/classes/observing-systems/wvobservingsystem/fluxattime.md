@@ -2,7 +2,7 @@
 layout: default
 title: fluxAtTime
 parent: WVObservingSystem
-grand_parent: Classes
+grand_parent: Observing systems
 nav_order: 4
 mathjax: true
 ---
@@ -16,5 +16,3 @@ return a cell array of the flux of the variables being
 
 ## Discussion
 integrated. You may want to call -updateIntegratorValues.
- 
-  

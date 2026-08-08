@@ -18,11 +18,11 @@ Inertial oscillation solution group
 
 ## Declaration
 
-<div class="language-matlab highlighter-rouge"><div class="highlight"><pre class="highlight"><code>classdef WVInertialOscillationComponent < WVFlowComponent</code></pre></div></div>
+<div class="language-matlab highlighter-rouge"><div class="highlight"><pre class="highlight"><code>classdef WVInertialOscillationComponent < WVPrimaryFlowComponent</code></pre></div></div>
 
 ## Overview
- 
-  
+
+
 
 
 ## Topics
@@ -43,8 +43,8 @@ Inertial oscillation solution group
   + [`totalEnergyFactorForCoefficientMatrix`](/classes/flow-components/wvinertialoscillationcomponent/totalenergyfactorforcoefficientmatrix.html) returns the total energy multiplier for the coefficient matrix.
 + Other
   + [`WVInertialOscillationComponent`](/classes/flow-components/wvinertialoscillationcomponent/wvinertialoscillationcomponent.html) Inertial oscillation solution group
-  + [`degreesOfFreedomPerMode`](/classes/flow-components/wvinertialoscillationcomponent/degreesoffreedompermode.html) 
-  + [`inertialOscillationSpatialTransformCoefficients`](/classes/flow-components/wvinertialoscillationcomponent/inertialoscillationspatialtransformcoefficients.html) 
+  + [`degreesOfFreedomPerMode`](/classes/flow-components/wvinertialoscillationcomponent/degreesoffreedompermode.html)
+  + [`inertialOscillationSpatialTransformCoefficients`](/classes/flow-components/wvinertialoscillationcomponent/inertialoscillationspatialtransformcoefficients.html)
 
 
 ---

@@ -2,7 +2,7 @@
 layout: default
 title: WVTransformBoussinesq
 parent: WVTransformBoussinesq
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 69
 mathjax: true
 ---
@@ -31,11 +31,9 @@ create a wave-vortex transform for variable stratification
 
 ## Discussion
 
-  Creates a new instance of the WVTransformHydrostatic class
-  appropriate for disentangling hydrostatic waves and vortices
+  Creates a new instance of the WVTransformBoussinesq class
+  appropriate for disentangling nonhydrostatic waves and vortices
   in variable stratification
- 
+
   You must initialization by passing *either* the density
   profile or the stratification profile.
- 
-                  

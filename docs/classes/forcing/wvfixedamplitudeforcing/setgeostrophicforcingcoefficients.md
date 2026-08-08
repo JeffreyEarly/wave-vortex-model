@@ -2,7 +2,7 @@
 layout: default
 title: setGeostrophicForcingCoefficients
 parent: WVFixedAmplitudeForcing
-grand_parent: Classes
+grand_parent: Forcing
 nav_order: 9
 mathjax: true
 ---
@@ -26,5 +26,3 @@ set amplitude to fix for the geostrophic part of the flow
 
   This function will automatically remove modes set in the
   damping region of the WVAdaptiveDamping forcing, if present.
- 
-        

@@ -2,7 +2,7 @@
 layout: default
 title: mdaComponent
 parent: WVTransformBoussinesq
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 173
 mathjax: true
 ---
@@ -22,5 +22,3 @@ returns the mean density anomaly component
 + `flowComponent`  subclass of WVPrimaryFlowComponent
 
 ## Discussion
-
-        

@@ -5,7 +5,7 @@ classdef WVVerticalDamping < WVForcing
     % Oceananigans to allow for direct comparison between the models. This
     % is intended be used in combination with
     % WVHorizontalDamping. In general, you should be using the
-    % [`WVAdaptiveDamping`](../WVAdaptiveDamping).
+    % [`WVAdaptiveDamping`](/classes/forcing/closures/wvadaptivedamping/).
     % 
     % The specific form of the forcing is given by 
     %
@@ -19,9 +19,9 @@ classdef WVVerticalDamping < WVForcing
     % $$
     %
     % with viscosity, $$\nu$$, and diffusivity, $$\kappa$$. This should be combined with
-    % [`WVHorizontalDamping`](../`WVHorizontalDamping`) for a complete closure. For help
+    % [`WVHorizontalDamping`](/classes/forcing/closures/wvhorizontaldamping/) for a complete closure. For help
     % choosing appropriate values, see the notes in
-    % [`WVAdaptiveDamping`](../WVAdaptiveDamping).
+    % [`WVAdaptiveDamping`](/classes/forcing/closures/wvadaptivedamping/).
     %
     % ### Usage
     %

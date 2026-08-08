@@ -2,7 +2,7 @@
 layout: default
 title: addGeostrophicModes
 parent: WVTransformBarotropicQG
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 32
 mathjax: true
 ---
@@ -32,5 +32,3 @@ add amplitudes of the given geostrophic modes
 ## Discussion
 
   Add new amplitudes to any existing amplitudes
- 
-                    

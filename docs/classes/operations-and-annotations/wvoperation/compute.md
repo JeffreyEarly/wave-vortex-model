@@ -2,7 +2,7 @@
 layout: default
 title: compute
 parent: WVOperation
-grand_parent: Classes
+grand_parent: Operations & annotations
 nav_order: 2
 mathjax: true
 ---
@@ -28,8 +28,6 @@ the promised variable
 
   The compute operation is given the current state of the ocean
   (wvt) during each call, and it is expected to compute the
-  variables from that state. You can, of course, use other 
+  variables from that state. You can, of course, use other
   instance variables from your own custom subclass to
   implement computations with other dependencies.
-  
-        

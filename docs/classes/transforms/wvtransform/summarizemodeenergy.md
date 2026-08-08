@@ -2,7 +2,7 @@
 layout: default
 title: summarizeModeEnergy
 parent: WVTransform
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 100
 mathjax: true
 ---
@@ -25,5 +25,3 @@ List the most energetic modes
 
   At the moment the +/- waves are simply added together for each mode.
   It would be better if they were separate.
- 
-      

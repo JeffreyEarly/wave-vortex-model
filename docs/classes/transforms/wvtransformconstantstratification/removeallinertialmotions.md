@@ -2,7 +2,7 @@
 layout: default
 title: removeAllInertialMotions
 parent: WVTransformConstantStratification
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 191
 mathjax: true
 ---
@@ -21,5 +21,3 @@ remove all inertial motions
 ## Discussion
 
   All inertial motions are removed. Other components of the flow will remain unaffected.
- 
-    

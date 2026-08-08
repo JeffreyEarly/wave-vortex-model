@@ -2,7 +2,7 @@
 layout: default
 title: x_index
 parent: WVMooring
-grand_parent: Classes
+grand_parent: Observing systems
 nav_order: 8
 mathjax: true
 ---
@@ -13,4 +13,3 @@ mathjax: true
 
 
 ---
-

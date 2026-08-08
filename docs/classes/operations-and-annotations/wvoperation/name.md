@@ -2,7 +2,7 @@
 layout: default
 title: name
 parent: WVOperation
-grand_parent: Classes
+grand_parent: Operations & annotations
 nav_order: 6
 mathjax: true
 ---
@@ -18,4 +18,3 @@ of the operation
 
   If the operation only returns a single variable, it **must** be
   given the same name as that variable.
-  

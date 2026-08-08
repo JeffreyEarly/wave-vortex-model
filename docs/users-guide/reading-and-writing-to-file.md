@@ -17,13 +17,13 @@ After you create a `WVTransform` instance
 ```matlab
 wvt = WVTransformConstantStratification([50e3 50e3 1300], [64 64 32]);
 ```
-you call [`writeToFile`](/classes/wvtransform/writetofile.html)
+you call `writeToFile`
 ```matlab
 wvt.writeToFile('test.nc');
 ```
 and all the information needed to exactly re-create the `wvt` instance will be written to file.
 
-To create a new `WVTransform` instance from file, call the static method [`waveVortexTransformFromFile`](/classes/wvtransform/wavevortextransformfromfile.html)
+To create a new `WVTransform` instance from file, call the static method [`waveVortexTransformFromFile`](/classes/transforms/wvtransform/wavevortextransformfromfile.html)
 ```matlab
 wvt2 = WVTransform.waveVortexTransformFromFile('test.nc');
 ```
@@ -31,7 +31,7 @@ The two instances `wvt` and `wvt2` are now equivalent. This one-output form clos
 
 ### Adding variables
 
-Any variable that the `WVTransform` instance knows about (including [custom variables](/users-guide/operations.html)) can also be written to file, but including its name in the variable argument list. For example, if you want to add the variables $$u$$, $$v$$, and $$\zeta_z$$ then call,
+Any variable that the `WVTransform` instance knows about (including [custom variables](/developers-guide/operations-and-variables.html)) can also be written to file, but including its name in the variable argument list. For example, if you want to add the variables $$u$$, $$v$$, and $$\zeta_z$$ then call,
 ```matlab
 wvt.writeToFile('test.nc','u','v','zeta_z');
 ```
@@ -47,7 +47,7 @@ where `iTime=100` indicates the index along the time dimension.
 
 It is often the case that for analysis of model output, you want to read the model output at multiple time points. You *could* intialize a new `WVTransform` instance at each time index, but this involves unnecessary computation. Instead, you should update the existing `WVTransform` instance `wvt` with the data from that time point.
 
-First load the NetCDF file, then initialize the existing instance from a specific time point in that file with [`initFromNetCDFFile`](/classes/wvtransform/initfromnetcdffile.html). For example, a for-loop over all time points written to file, would look like
+First load the NetCDF file, then initialize the existing instance from a specific time point in that file with [`initFromNetCDFFile`](/classes/transforms/wvtransform/initfromnetcdffile.html). For example, a for-loop over all time points written to file, would look like
 ```matlab
 [wvt, ncfile] = WVTransform.waveVortexTransformFromFile('test.nc');
 cleanup = onCleanup(@()ncfile.close());

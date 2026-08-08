@@ -2,7 +2,7 @@
 layout: default
 title: modelOp
 parent: WVVariableAnnotation
-grand_parent: Classes
+grand_parent: Operations & annotations
 nav_order: 5
 mathjax: true
 ---
@@ -18,4 +18,3 @@ WVOperation responsible for computing this variable
 
   This property will be automatically populated when the variable
   annotation is passed to the WVOperation.
-  

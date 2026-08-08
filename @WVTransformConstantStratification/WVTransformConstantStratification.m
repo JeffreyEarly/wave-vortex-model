@@ -1,15 +1,13 @@
 classdef WVTransformConstantStratification < WVGeometryDoublyPeriodicStratifiedConstant & WVTransform & WVGeostrophicMethods & WVInternalGravityWaveMethods & WVInertialOscillationMethods & WVMeanDensityAnomalyMethods
-    % A class for disentangling hydrostatic waves and vortices in variable stratification
+    % A class for disentangling waves and vortices in constant stratification
     %
-    % To initialization an instance of the WVTransformHydrostatic class you
-    % must specific the domain size, the number of grid points and *either*
-    % the density profile or the stratification profile.
+    % To initialize an instance of the WVTransformConstantStratification
+    % class you must specify the domain size, the number of grid points,
+    % and the constant buoyancy frequency.
     %
     % ```matlab
     % N0 = 3*2*pi/3600;
-    % L_gm = 1300;
-    % N2 = @(z) N0*N0*exp(2*z/L_gm);
-    % wvt = WVTransformHydrostatic([100e3, 100e3, 4000],[64, 64, 65], N2=N2,latitude=30);
+    % wvt = WVTransformConstantStratification([100e3, 100e3, 4000],[64, 64, 65],N0=N0,latitude=30);
     % ```
     %
     % - Topic: Initialization
@@ -21,7 +19,7 @@ classdef WVTransformConstantStratification < WVGeometryDoublyPeriodicStratifiedC
     % - Topic: Energetics of flow components
     % - Topic: Operations
     %
-    % - Declaration: classdef WVTransformHydrostatic < [WVTransform](/classes/wvtransform/)
+    % - Declaration: classdef WVTransformConstantStratification < [WVTransform](/classes/transforms/wvtransform/)
     properties (Dependent)
         totalEnergySpatiallyIntegrated
         totalEnergy
@@ -41,11 +39,11 @@ classdef WVTransformConstantStratification < WVGeometryDoublyPeriodicStratifiedC
 
     methods
         function self = WVTransformConstantStratification(Lxyz, Nxyz, options)
-            % create a wave-vortex transform for variable stratification
+            % create a wave-vortex transform for constant stratification
             %
-            % Creates a new instance of the WVTransformHydrostatic class
-            % appropriate for disentangling hydrostatic waves and vortices
-            % in variable stratification
+            % Creates a new instance of the WVTransformConstantStratification
+            % class appropriate for disentangling waves and vortices in
+            % constant stratification.
             %
             % You must initialization by passing *either* the density
             % profile or the stratification profile.

@@ -2,7 +2,7 @@
 layout: default
 title: N2Function
 parent: WVTransformBoussinesq
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 35
 mathjax: true
 ---
@@ -13,4 +13,3 @@ takes $$z$$ values and returns the squared buoyancy frequency of the no-motion d
 
 
 ---
-

@@ -2,7 +2,7 @@
 layout: default
 title: fetchFromVariableCache
 parent: WVTransform
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 31
 mathjax: true
 ---
@@ -15,5 +15,3 @@ retrieve a set of variables from the internal cache
 ---
 
 ## Discussion
-
-  

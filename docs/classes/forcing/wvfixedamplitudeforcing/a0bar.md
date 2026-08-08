@@ -2,7 +2,7 @@
 layout: default
 title: A0bar
 parent: WVFixedAmplitudeForcing
-grand_parent: Classes
+grand_parent: Forcing
 nav_order: 2
 mathjax: true
 ---
@@ -22,5 +22,3 @@ amplitudes of the fixed modes in the `A0` matrix
 Complex valued property with dimension $$A0_indices$$ and no units.
 
 ## Discussion
-
-  

@@ -2,7 +2,7 @@
 layout: default
 title: requiredPropertiesForGeometryFromGroup
 parent: WVTransformHydrostatic
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 181
 mathjax: true
 ---
@@ -13,4 +13,3 @@ mathjax: true
 
 
 ---
-

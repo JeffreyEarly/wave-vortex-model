@@ -2,7 +2,7 @@
 layout: default
 title: geostrophicPotentialEnergy
 parent: WVTransformHydrostatic
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 104
 mathjax: true
 ---
@@ -19,5 +19,3 @@ potential energy of the geostrophic flow
  geostrophicPotentialEnergy
 ```
 ## Discussion
-
-      

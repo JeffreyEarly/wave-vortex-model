@@ -15,7 +15,7 @@ classdef WVVariableAnnotation < CANumericProperty
     % subdirectories. This file is then read-in to the detailed description
     % that is used on the website.
     %
-    % - Declaration: classdef WVVariableAnnotation < [WVAnnotation](/classes/wvannotation/)
+    % - Declaration: classdef WVVariableAnnotation < WVAnnotation
     properties
         % WVOperation responsible for computing this variable
         %

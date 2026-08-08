@@ -5,7 +5,7 @@ function initFromNetCDFFile(wvt,ncfile,options)
 % at the requested time.
 % 
 % This is intended to be used in conjunction with
-% [`waveVortexTransformFromFile`](/classes/wvtransform/wavevortextransformfromfile.html)
+% [`waveVortexTransformFromFile`](/classes/transforms/wvtransform/wavevortextransformfromfile.html)
 % e.g.,
 %
 % ```matlab

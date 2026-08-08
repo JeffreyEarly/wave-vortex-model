@@ -2,7 +2,7 @@
 layout: default
 title: kMode_wv
 parent: WVTransformStratifiedQG
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 104
 mathjax: true
 ---
@@ -15,5 +15,3 @@ k mode number on the WV grid
 ---
 
 ## Discussion
-
-  

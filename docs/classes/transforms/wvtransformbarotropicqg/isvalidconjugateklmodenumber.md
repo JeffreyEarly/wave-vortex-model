@@ -2,7 +2,7 @@
 layout: default
 title: isValidConjugateKLModeNumber
 parent: WVTransformBarotropicQG
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 72
 mathjax: true
 ---
@@ -31,9 +31,7 @@ return a boolean indicating whether (k,l) is a valid conjugate WV mode number
   *conjugate* WV mode number. Even if a mode number is
   available in the DFT matrix, it does not mean it is a valid
   WV mode number, e.g., it may be removed due to aliasing.
- 
+
   The result is affected by the chosen conjugateDimension.
- 
+
   Any valid self-conjugate modes (i.e., k=l=0) will return 1.
- 
-          

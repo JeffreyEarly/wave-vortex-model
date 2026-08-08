@@ -2,7 +2,7 @@
 layout: default
 title: isValidConjugateModeNumber
 parent: WVPrimaryFlowComponent
-grand_parent: Classes
+grand_parent: Flow components
 nav_order: 3
 mathjax: true
 ---
@@ -30,5 +30,3 @@ returns a boolean indicating whether (k,l,j) is a valid mode number
 
   returns a boolean indicating whether (k,l,j) is a valid mode
   number
- 
-            

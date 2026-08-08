@@ -2,8 +2,8 @@
 layout: default
 title: kljGrid
 parent: WVTransformBarotropicQG
-grand_parent: Classes
-nav_order: 85
+grand_parent: Transforms
+nav_order: 88
 mathjax: true
 ---
 
@@ -13,4 +13,3 @@ mathjax: true
 
 
 ---
-

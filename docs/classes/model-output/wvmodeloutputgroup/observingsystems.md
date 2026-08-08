@@ -2,7 +2,7 @@
 layout: default
 title: observingSystems
 parent: WVModelOutputGroup
-grand_parent: Classes
+grand_parent: Model output
 nav_order: 13
 mathjax: true
 ---
@@ -15,5 +15,3 @@ array of WVObservingSystem that will be written to the group
 ---
 
 ## Discussion
-
-  

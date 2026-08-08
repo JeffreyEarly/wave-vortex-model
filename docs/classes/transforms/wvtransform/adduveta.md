@@ -2,7 +2,7 @@
 layout: default
 title: addUVEta
 parent: WVTransform
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 18
 mathjax: true
 ---
@@ -26,4 +26,3 @@ add $$(u,v,\eta)$$ to the existing values
 ## Discussion
 
   Add $$(u,v,\eta)$$ to the existing Ap,Am,A0
-          

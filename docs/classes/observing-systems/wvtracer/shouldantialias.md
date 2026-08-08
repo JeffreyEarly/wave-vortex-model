@@ -2,7 +2,7 @@
 layout: default
 title: shouldAntialias
 parent: WVTracer
-grand_parent: Classes
+grand_parent: Observing systems
 nav_order: 6
 mathjax: true
 ---
@@ -16,4 +16,3 @@ whether to antialias
 
 ## Description
 Real valued property with no dimensions and units of $$bool$$.
-

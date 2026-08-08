@@ -2,7 +2,7 @@
 layout: default
 title: throwErrorIfDensityViolation
 parent: WVTransformStratifiedQG
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 163
 mathjax: true
 ---

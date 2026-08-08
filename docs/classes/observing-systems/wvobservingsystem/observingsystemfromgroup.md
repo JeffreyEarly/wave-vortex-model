@@ -2,7 +2,7 @@
 layout: default
 title: observingSystemFromGroup
 parent: WVObservingSystem
-grand_parent: Classes
+grand_parent: Observing systems
 nav_order: 11
 mathjax: true
 ---
@@ -29,5 +29,3 @@ initialize a WVObservingSystem instance from NetCDF file
   Subclasses to should override this method to enable model
   restarts. This method works in conjunction with -writeToFile
   to provide restart capability.
- 
-        

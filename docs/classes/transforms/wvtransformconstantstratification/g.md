@@ -2,7 +2,7 @@
 layout: default
 title: g
 parent: WVTransformConstantStratification
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 107
 mathjax: true
 ---
@@ -16,4 +16,3 @@ gravity of Earth
 
 ## Description
 Real valued property with no dimensions and units of $$m s^{-2}$$.
-

@@ -2,7 +2,7 @@
 layout: default
 title: initialConditions
 parent: WVObservingSystem
-grand_parent: Classes
+grand_parent: Observing systems
 nav_order: 5
 mathjax: true
 ---
@@ -15,5 +15,3 @@ return a cell array of variables that need to be integrated
 ---
 
 ## Discussion
-
-  

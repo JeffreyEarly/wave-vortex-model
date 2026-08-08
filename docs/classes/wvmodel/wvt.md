@@ -2,7 +2,7 @@
 layout: default
 title: wvt
 parent: WVModel
-grand_parent: Classes
+grand_parent: Class documentation
 nav_order: 63
 mathjax: true
 ---

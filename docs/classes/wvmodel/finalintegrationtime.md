@@ -2,7 +2,7 @@
 layout: default
 title: finalIntegrationTime
 parent: WVModel
-grand_parent: Classes
+grand_parent: Class documentation
 nav_order: 17
 mathjax: true
 ---
@@ -13,4 +13,3 @@ set only during an integration
 
 
 ---
-

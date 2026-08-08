@@ -1,7 +1,7 @@
 classdef WVTransformStratifiedQG < WVGeometryDoublyPeriodicStratified & WVTransform & WVGeostrophicMethods
-    % A class for disentangling hydrostatic waves and vortices in variable stratification
+    % A quasigeostrophic transform for variable stratification
     %
-    % To initialization an instance of the WVTransformHydrostatic class you
+    % To initialize an instance of the WVTransformStratifiedQG class you
     % must specific the domain size, the number of grid points and *either*
     % the density profile or the stratification profile.
     %
@@ -9,7 +9,7 @@ classdef WVTransformStratifiedQG < WVGeometryDoublyPeriodicStratified & WVTransf
     % N0 = 3*2*pi/3600;
     % L_gm = 1300;
     % N2 = @(z) N0*N0*exp(2*z/L_gm);
-    % wvt = WVTransformHydrostatic([100e3, 100e3, 4000],[64, 64, 65], N2=N2,latitude=30);
+    % wvt = WVTransformStratifiedQG([100e3, 100e3, 4000],[64, 64, 65], N2=N2,latitude=30);
     % ```
     %
     % - Topic: Initialization
@@ -21,7 +21,7 @@ classdef WVTransformStratifiedQG < WVGeometryDoublyPeriodicStratified & WVTransf
     % - Topic: Energetics of flow components
     % - Topic: Operations
     %
-    % - Declaration: classdef WVTransformHydrostatic < [WVTransform](/classes/wvtransform/)
+    % - Declaration: classdef WVTransformStratifiedQG < [WVTransform](/classes/transforms/wvtransform/)
     properties (Dependent)
         totalEnergySpatiallyIntegrated
         totalEnergy
@@ -36,9 +36,8 @@ classdef WVTransformStratifiedQG < WVGeometryDoublyPeriodicStratified & WVTransf
         function self = WVTransformStratifiedQG(Lxyz, Nxyz, options)
             % create a wave-vortex transform for variable stratification
             %
-            % Creates a new instance of the WVTransformHydrostatic class
-            % appropriate for disentangling hydrostatic waves and vortices
-            % in variable stratification
+            % Creates a new instance of the WVTransformStratifiedQG class
+            % for quasigeostrophic flow in variable stratification.
             %
             % You must initialization by passing *either* the density
             % profile or the stratification profile.

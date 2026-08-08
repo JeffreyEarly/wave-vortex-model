@@ -2,8 +2,8 @@
 layout: default
 title: kMode_dft
 parent: WVTransformBarotropicQG
-grand_parent: Classes
-nav_order: 78
+grand_parent: Transforms
+nav_order: 81
 mathjax: true
 ---
 
@@ -15,5 +15,3 @@ k mode-number on the DFT grid
 ---
 
 ## Discussion
-
-  

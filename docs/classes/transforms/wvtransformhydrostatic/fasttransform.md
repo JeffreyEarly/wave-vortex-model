@@ -2,7 +2,7 @@
 layout: default
 title: fastTransform
 parent: WVTransformHydrostatic
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 95
 mathjax: true
 ---
@@ -15,5 +15,3 @@ fast transform object
 ---
 
 ## Discussion
-
-  

@@ -2,7 +2,7 @@
 layout: default
 title: alpha
 parent: WVThermalDamping
-grand_parent: Classes
+grand_parent: Closures
 nav_order: 2
 mathjax: true
 ---
@@ -18,5 +18,3 @@ damping parameter, units of $$s^{-1}$$
 Real valued property with no dimensions and units of $$s^{-1}$$.
 
 ## Discussion
-
-  

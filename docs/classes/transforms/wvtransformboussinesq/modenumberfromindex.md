@@ -2,17 +2,31 @@
 layout: default
 title: modeNumberFromIndex
 parent: WVTransformBoussinesq
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 175
 mathjax: true
 ---
 
 #  modeNumberFromIndex
 
-Return `(kMode,lMode,jMode)` for spectral linear indices. Scalar and
-column-vector inputs preserve their shape and ordering, and each index must
-lie within the current spectral matrix.
-
+Return mode numbers for spectral linear indices.
 
 
 ---
+
+## Declaration
+```matlab
+ [kMode,lMode,jMode] = modeNumberFromIndex(linearIndex)
+```
+## Parameters
++ `linearIndex`  positive integer scalar or column vector
+
+## Returns
++ `kMode`  integer scalar or column vector
++ `lMode`  integer scalar or column vector
++ `jMode`  integer scalar or column vector
+
+## Discussion
+
+  Scalar and column-vector inputs preserve their shape and ordering. Each
+  index must lie within the current spectral matrix.

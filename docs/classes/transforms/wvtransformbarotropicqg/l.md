@@ -2,7 +2,7 @@
 layout: default
 title: L
 parent: WVTransformBarotropicQG
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 12
 mathjax: true
 ---
@@ -16,4 +16,3 @@ l-coordinate matrix
 
 ## Description
 Real valued property with dimension $$kl$$ and units of $$rad/m$$.
-

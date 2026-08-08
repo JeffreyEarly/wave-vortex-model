@@ -2,7 +2,7 @@
 layout: default
 title: QGwg
 parent: WVTransformBoussinesq
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 59
 mathjax: true
 ---
@@ -16,4 +16,3 @@ size(PF,PG)=[Nj x Nj x Nk]
 
 ## Description
 Real valued property with dimensions $$(j,j,K2unique)$$ and no units.
-

@@ -2,7 +2,7 @@
 layout: default
 title: internalGravityWaveSolution
 parent: WVInternalGravityWaveComponent
-grand_parent: Classes
+grand_parent: Flow components
 nav_order: 3
 mathjax: true
 ---
@@ -39,5 +39,3 @@ return a real-valued analytical solution of the internal gravity wave mode
 ## Discussion
 
   Returns function handles of the form u=@(x,y,z,t)
- 
-                                

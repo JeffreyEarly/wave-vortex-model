@@ -2,7 +2,7 @@
 layout: default
 title: Nz
 parent: WVTransformHydrostatic
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 37
 mathjax: true
 ---
@@ -16,4 +16,3 @@ points in the third, untransformed, dimension
 
 ## Description
 Real valued property with no dimensions and no units.
-

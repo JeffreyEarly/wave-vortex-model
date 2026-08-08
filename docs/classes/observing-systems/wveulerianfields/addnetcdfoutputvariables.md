@@ -2,7 +2,7 @@
 layout: default
 title: addNetCDFOutputVariables
 parent: WVEulerianFields
-grand_parent: Classes
+grand_parent: Observing systems
 nav_order: 2
 mathjax: true
 ---
@@ -23,11 +23,11 @@ Add variables to list of variables to be written to the NetCDF variable during t
 
 ## Discussion
 
-       
+
   Pass strings of WVTransform state variables of the
   same name. This must be called before using any of the
   integrate methods.
- 
+
   ```matlab
   model.addNetCDFOutputVariables('A0','u','v');
   ```

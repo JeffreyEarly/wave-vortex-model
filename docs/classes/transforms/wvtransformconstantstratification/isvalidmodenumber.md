@@ -2,7 +2,7 @@
 layout: default
 title: isValidModeNumber
 parent: WVTransformConstantStratification
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 142
 mathjax: true
 ---
@@ -30,5 +30,3 @@ returns a boolean indicating whether (k,l,j) is a valid mode number
 
   returns a boolean indicating whether (k,l,j) is a valid mode
   number
- 
-            

@@ -2,7 +2,7 @@
 layout: default
 title: WVModelOutputGroup
 parent: WVModelOutputGroup
-grand_parent: Classes
+grand_parent: Model output
 nav_order: 1
 mathjax: true
 ---
@@ -26,5 +26,3 @@ initialize a WVModelOutputGroup
 + `self`  a WVModelOutputFile instance
 
 ## Discussion
-
-          

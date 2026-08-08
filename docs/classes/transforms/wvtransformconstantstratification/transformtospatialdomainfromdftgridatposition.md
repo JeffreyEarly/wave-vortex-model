@@ -2,8 +2,8 @@
 layout: default
 title: transformToSpatialDomainFromDFTGridAtPosition
 parent: WVTransformConstantStratification
-grand_parent: Classes
-nav_order: 236
+grand_parent: Transforms
+nav_order: 235
 mathjax: true
 ---
 
@@ -29,5 +29,3 @@ transform from $$(k,l)$$ on the DFT grid to $$(x,y)$$ at any position
   Performs an inverse non-uniform Fourier transform to take a
   matrix from the DFT grid back to the spatial domain at any
   set of points (x,y).
- 
-        

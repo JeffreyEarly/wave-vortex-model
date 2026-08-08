@@ -2,7 +2,7 @@
 layout: default
 title: f
 parent: WVOperation
-grand_parent: Classes
+grand_parent: Operations & annotations
 nav_order: 4
 mathjax: true
 ---
@@ -18,4 +18,3 @@ function handle to be called when computing the operation
 
   If you override the compute method, there no need to set or use
   this function handle.
-  

@@ -6,7 +6,7 @@ classdef WVHorizontalDamping < WVForcing
     % Oceananigans](https://clima.github.io/OceananigansDocumentation/stable/appendix/library/#Oceananigans.TurbulenceClosures.HorizontalScalarDiffusivity)
     % to allow for direct comparison between the models. This is intended to be used in combination with WVVerticalScalarDiffusivity. In
     % general, you should be using the
-    % [`WVAdaptiveDamping`](../WVAdaptiveDamping).
+    % [`WVAdaptiveDamping`](/classes/forcing/closures/wvadaptivedamping/).
     % 
     % The specific form of the forcing is given by 
     %
@@ -21,9 +21,9 @@ classdef WVHorizontalDamping < WVForcing
     %
     % which is just your standard Laplacian viscosity, $$\nu$$, and diffusivity, $$\kappa$$, in
     % the horizontal. This should be combined with
-    % [`WVVerticalDamping`](../WVVerticalDamping) for a complete closure. For help
+    % [`WVVerticalDamping`](/classes/forcing/closures/wvverticaldamping/) for a complete closure. For help
     % choosing appropriate values, see the notes in
-    % [`WVAdaptiveDamping`](../WVAdaptiveDamping).
+    % [`WVAdaptiveDamping`](/classes/forcing/closures/wvadaptivedamping/).
     %
     % ### Usage
     %

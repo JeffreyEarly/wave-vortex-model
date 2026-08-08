@@ -2,7 +2,7 @@
 layout: default
 title: geostrophicEnergy
 parent: WVTransformBoussinesq
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 118
 mathjax: true
 ---
@@ -16,8 +16,3 @@ total energy, geostrophic
 
 ## Description
 Real valued property with no dimensions and units of $$m^3 s^{-2}$$.
-
-## Discussion
-
-Total energy of the geostrophic portion of the flow.
-

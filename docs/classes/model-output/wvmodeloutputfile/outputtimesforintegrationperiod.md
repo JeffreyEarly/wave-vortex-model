@@ -2,7 +2,7 @@
 layout: default
 title: outputTimesForIntegrationPeriod
 parent: WVModelOutputFile
-grand_parent: Classes
+grand_parent: Model output
 nav_order: 16
 mathjax: true
 ---
@@ -18,5 +18,3 @@ returns a unique, ordered array of the aggregate output times during the request
 
   This will be called exactly once by the model before an
   integration begins.
- 
-  

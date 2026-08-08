@@ -2,7 +2,7 @@
 layout: default
 title: isClosure
 parent: WVForcing
-grand_parent: Classes
+grand_parent: Forcing
 nav_order: 11
 mathjax: true
 ---
@@ -19,5 +19,3 @@ boolean indicating that this forcing is a turbulence closure
 
 ## Discussion
 scheme, capable of removing variance at the small scales.
- 
-  

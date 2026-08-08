@@ -2,7 +2,7 @@
 layout: default
 title: initWithWaveModes
 parent: WVTransformConstantStratification
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 134
 mathjax: true
 ---
@@ -36,6 +36,5 @@ initialize with the given wave modes
   $$
   sin(k*x+l*y)*F_j*sin(omega*t + phi)
   $$
- 
+
   Clears variables Ap,Am,A0 and then sets the given wave modes.
-                      

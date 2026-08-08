@@ -2,7 +2,7 @@
 layout: default
 title: WVInternalGravityWaveComponent
 parent: WVInternalGravityWaveComponent
-grand_parent: Classes
+grand_parent: Flow components
 nav_order: 1
 mathjax: true
 ---
@@ -16,8 +16,6 @@ Geostrophic solution group
 
 ## Declaration
 ```matlab
- classdef WVGeostrophicComponent < WVFlowComponent
+ classdef WVInternalGravityWaveComponent < WVPrimaryFlowComponent
 ```
 ## Discussion
-
-  

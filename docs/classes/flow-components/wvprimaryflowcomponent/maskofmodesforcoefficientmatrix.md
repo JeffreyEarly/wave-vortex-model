@@ -2,7 +2,7 @@
 layout: default
 title: maskOfModesForCoefficientMatrix
 parent: WVPrimaryFlowComponent
-grand_parent: Classes
+grand_parent: Flow components
 nav_order: 7
 mathjax: true
 ---
@@ -28,5 +28,3 @@ returns a mask indicating where solutions live in the requested coefficient matr
 
   Returns a 'mask' (matrix with 1s or 0s) indicating where
   different solution types live in the Ap, Am, A0 matrices.
- 
-        

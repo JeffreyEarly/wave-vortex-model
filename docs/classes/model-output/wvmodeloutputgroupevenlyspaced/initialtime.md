@@ -2,7 +2,7 @@
 layout: default
 title: initialTime
 parent: WVModelOutputGroupEvenlySpaced
-grand_parent: Classes
+grand_parent: Model output
 nav_order: 5
 mathjax: true
 ---
@@ -21,5 +21,3 @@ Real valued property with no dimensions and units of $$s$$.
 
   This optional properties determines when the output group will
   become active. By default it is set to `-Inf`.
- 
-  

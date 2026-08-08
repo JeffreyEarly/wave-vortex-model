@@ -2,7 +2,7 @@
 layout: default
 title: WVTotalFlowComponent
 parent: WVTotalFlowComponent
-grand_parent: Classes
+grand_parent: Flow components
 nav_order: 1
 mathjax: true
 ---
@@ -25,5 +25,3 @@ create a new orthogonal solution group
 + `solnGroup`  a new orthogonal solution group instance
 
 ## Discussion
-
-        

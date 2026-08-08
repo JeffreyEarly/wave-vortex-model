@@ -2,7 +2,7 @@
 layout: default
 title: tracer
 parent: WVModel
-grand_parent: Classes
+grand_parent: Class documentation
 nav_order: 59
 mathjax: true
 ---
@@ -13,4 +13,3 @@ Scalar field of the requested tracer at the current model time.
 
 
 ---
-

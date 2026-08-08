@@ -2,7 +2,7 @@
 layout: default
 title: outputGroups
 parent: WVModelOutputFile
-grand_parent: Classes
+grand_parent: Model output
 nav_order: 15
 mathjax: true
 ---
@@ -15,5 +15,3 @@ array of `WVModelOutputGroup`s that will be written to file
 ---
 
 ## Discussion
-
-  

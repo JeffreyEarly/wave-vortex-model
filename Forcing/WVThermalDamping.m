@@ -12,7 +12,7 @@ classdef WVThermalDamping < WVForcing
     % requires `WVForcingType("PVSpatial")`.
     %
     % - Topic: Initializing
-    % - Declaration: WVBottomFriction < [WVForcing](/classes/wvforcing/)
+    % - Declaration: WVThermalDamping < [WVForcing](/classes/forcing/wvforcing/)
     properties
         % damping parameter, units of $$s^{-1}$$
         %

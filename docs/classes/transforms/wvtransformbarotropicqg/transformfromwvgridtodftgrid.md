@@ -2,8 +2,8 @@
 layout: default
 title: transformFromWVGridToDFTGrid
 parent: WVTransformBarotropicQG
-grand_parent: Classes
-nav_order: 132
+grand_parent: Transforms
+nav_order: 135
 mathjax: true
 ---
 
@@ -31,5 +31,3 @@ convert from a WV to DFT grid
   structure on a WV grid to one on a DFT grid. If the option
   isHalfComplex is selected, then it will not set values for
   iL>Ny/2, which are ignored by a 'symmetric' fft.
- 
-          

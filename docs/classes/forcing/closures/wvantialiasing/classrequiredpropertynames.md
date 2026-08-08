@@ -2,8 +2,8 @@
 layout: default
 title: classRequiredPropertyNames
 parent: WVAntialiasing
-grand_parent: Classes
-nav_order: 3
+grand_parent: Closures
+nav_order: 4
 mathjax: true
 ---
 

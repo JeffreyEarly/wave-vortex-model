@@ -20,4 +20,4 @@ $$
 \textrm{QGPV} = \mathcal{DFT}_x^{-1} \left[\mathcal{DFT}_y^{-1} \left[ \mathcal{F}^{-1} \left[ \textrm{QGPV}^{klj} A_0^{klj} \right] \right] \right].
 $$
 
-where [$$\textrm{QGPV}^{klj}$$ are linear coefficients](./a0_qgpv_factor.html).
+where $$\textrm{QGPV}^{klj}$$ are linear coefficients.

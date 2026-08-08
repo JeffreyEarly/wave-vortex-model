@@ -2,8 +2,8 @@
 layout: default
 title: WVAntialiasing
 parent: WVAntialiasing
-grand_parent: Classes
-nav_order: 2
+grand_parent: Closures
+nav_order: 3
 mathjax: true
 ---
 
@@ -26,5 +26,3 @@ initialize the WVAntialiasing
 + `self`  a WVAntialiasing instance
 
 ## Discussion
-
-        

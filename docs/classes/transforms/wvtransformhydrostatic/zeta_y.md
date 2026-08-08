@@ -2,8 +2,8 @@
 layout: default
 title: zeta_y
 parent: WVTransformHydrostatic
-grand_parent: Classes
-nav_order: 253
+grand_parent: Transforms
+nav_order: 252
 mathjax: true
 ---
 
@@ -16,105 +16,3 @@ y-component component of relative vorticity
 
 ## Description
 Real valued property with dimensions $$(x,y,z)$$ and units of $$1/s$$.
-
-## Discussion
----
-layout: default
-title: zeta_y
-parent: WVTransformBoussinesq
-grand_parent: Classes
-nav_order: 276
-mathjax: true
----
-
-#  zeta_y
-
-y-component component of relative vorticity
-
-
----
-
-## Description
-Real valued property with dimensions $$(x,y,z)$$ and units of $$1/s$$.
-
-## Discussion
----
-layout: default
-title: zeta_y
-parent: WVTransformBoussinesq
-grand_parent: Classes
-nav_order: 275
-mathjax: true
----
-
-#  zeta_y
-
-y-component component of relative vorticity
-
-
----
-
-## Description
-Real valued property with dimensions $$(x,y,z)$$ and units of $$1/s$$.
-
-## Discussion
----
-layout: default
-title: zeta_y
-parent: WVTransformBoussinesq
-grand_parent: Classes
-nav_order: 275
-mathjax: true
----
-
-#  zeta_y
-
-y-component component of relative vorticity
-
-
----
-
-## Description
-Real valued property with dimensions $$(x,y,z)$$ and units of $$1/s$$.
-
-## Discussion
----
-layout: default
-title: zeta_y
-parent: WVTransformBoussinesq
-grand_parent: Classes
-nav_order: 275
-mathjax: true
----
-
-#  zeta_y
-
-y-component component of relative vorticity
-
-
----
-
-## Description
-Real valued property with dimensions $$(x,y,z)$$ and units of $$1/s$$.
-
-## Discussion
----
-layout: default
-title: zeta_y
-parent: WVTransformBoussinesq
-grand_parent: Classes
-nav_order: 275
-mathjax: true
----
-
-#  zeta_y
-
-y-component component of relative vorticity
-
-
----
-
-## Description
-Real valued property with dimensions $$(x,y,z)$$ and units of $$1/s$$.
-
-

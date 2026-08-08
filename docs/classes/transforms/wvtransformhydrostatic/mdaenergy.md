@@ -2,7 +2,7 @@
 layout: default
 title: mdaEnergy
 parent: WVTransformHydrostatic
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 157
 mathjax: true
 ---
@@ -19,5 +19,3 @@ total energy of the mean density anomaly
  mdaEnergy
 ```
 ## Discussion
-
-      

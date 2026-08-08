@@ -2,7 +2,7 @@
 layout: default
 title: indicesOfFourierConjugates
 parent: WVTransformHydrostatic
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 113
 mathjax: true
 ---
@@ -27,5 +27,3 @@ a matrix of linear indices of the conjugate
 + `matrix`  matrix containing linear indices
 
 ## Discussion
-
-            

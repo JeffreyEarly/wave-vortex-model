@@ -11,8 +11,30 @@ tasks = [
 
 plan = buildplan;
 plan("test") = TaskGroup(tasks,TaskNames=["smoke"; "full"; "exhaustive"; "optional"],Description="Run WaveVortexModel test categories.");
+documentationTasks = [
+    Task(Actions=@documentationBuildTask,Description="Build and transactionally replace committed documentation.",DisableIncremental=true)
+    Task(Actions=@documentationCheckTask,Description="Verify committed documentation against a clean generated site.",DisableIncremental=true)
+    ];
+plan("docs") = TaskGroup(documentationTasks,TaskNames=["build"; "check"],Description="Build or verify website documentation.");
 plan("analyze") = Task(Actions=@analyzeTask,Description="Analyze production MATLAB source for correctness findings.",DisableIncremental=true);
 plan.DefaultTasks = "test:smoke";
+end
+
+function documentationBuildTask(~)
+withToolsPath(@()build_website_documentation(rootDir=fileparts(mfilename("fullpath"))));
+end
+
+function documentationCheckTask(~)
+withToolsPath(@()check_website_documentation(rootDir=fileparts(mfilename("fullpath"))));
+end
+
+function withToolsPath(action)
+repositoryRoot = fileparts(mfilename("fullpath"));
+originalPath = path;
+pathCleanup = onCleanup(@()path(originalPath));
+addpath(fullfile(repositoryRoot,"tools"));
+action();
+clear pathCleanup
 end
 
 function analyzeTask(~)

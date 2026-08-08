@@ -2,7 +2,7 @@
 layout: default
 title: observingSystemWillWriteWaveVortexCoefficients
 parent: WVModelOutputFile
-grand_parent: Classes
+grand_parent: Model output
 nav_order: 12
 mathjax: true
 ---
@@ -15,5 +15,3 @@ A simple check to see if one of the observing systems will be writing wave-vorte
 ---
 
 ## Discussion
-
-  

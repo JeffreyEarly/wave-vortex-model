@@ -2,7 +2,7 @@
 layout: default
 title: mdaComponent
 parent: WVTransformHydrostatic
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 156
 mathjax: true
 ---
@@ -22,5 +22,3 @@ returns the mean density anomaly component
 + `flowComponent`  subclass of WVPrimaryFlowComponent
 
 ## Discussion
-
-        

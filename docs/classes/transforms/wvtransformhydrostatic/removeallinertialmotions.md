@@ -2,7 +2,7 @@
 layout: default
 title: removeAllInertialMotions
 parent: WVTransformHydrostatic
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 178
 mathjax: true
 ---
@@ -21,5 +21,3 @@ remove all inertial motions
 ## Discussion
 
   All inertial motions are removed. Other components of the flow will remain unaffected.
- 
-    

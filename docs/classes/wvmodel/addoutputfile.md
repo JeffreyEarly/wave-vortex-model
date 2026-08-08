@@ -2,7 +2,7 @@
 layout: default
 title: addOutputFile
 parent: WVModel
-grand_parent: Classes
+grand_parent: Class documentation
 nav_order: 7
 mathjax: true
 ---
@@ -15,5 +15,3 @@ add a WVModelOutputFile, by passing a WVModelOutputFile instance
 ---
 
 ## Discussion
-
-  

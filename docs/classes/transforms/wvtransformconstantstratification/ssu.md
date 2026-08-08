@@ -2,8 +2,8 @@
 layout: default
 title: ssu
 parent: WVTransformConstantStratification
-grand_parent: Classes
-nav_order: 222
+grand_parent: Transforms
+nav_order: 221
 mathjax: true
 ---
 
@@ -16,4 +16,3 @@ x-component of the fluid velocity at the surface
 
 ## Description
 Real valued property with dimensions $$(x,y)$$ and units of $$m/s$$.
-

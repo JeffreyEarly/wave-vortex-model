@@ -2,7 +2,7 @@
 layout: default
 title: didInitializeStorage
 parent: WVModelOutputFile
-grand_parent: Classes
+grand_parent: Model output
 nav_order: 6
 mathjax: true
 ---
@@ -15,5 +15,3 @@ boolean indicating whether or not the internal structure of the NetCDF file has 
 ---
 
 ## Discussion
-
-  

@@ -2,7 +2,7 @@
 layout: default
 title: Nj
 parent: WVTransformConstantStratification
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 46
 mathjax: true
 ---
@@ -16,4 +16,3 @@ points in the j-coordinate, `length(z)`
 
 ## Description
 Real valued property with no dimensions and no units.
-

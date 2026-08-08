@@ -2,7 +2,7 @@
 layout: default
 title: updateParticleTrackedFields
 parent: WVLagrangianParticles
-grand_parent: Classes
+grand_parent: Observing systems
 nav_order: 13
 mathjax: true
 ---

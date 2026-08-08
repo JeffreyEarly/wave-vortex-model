@@ -2,7 +2,7 @@
 layout: default
 title: WVVariableAnnotation
 parent: WVVariableAnnotation
-grand_parent: Classes
+grand_parent: Operations & annotations
 nav_order: 1
 mathjax: true
 ---
@@ -34,5 +34,3 @@ create a new instance of WVVariableAnnotation
   If a markdown file of the same name is in the same directory
   or child directory, it will be loaded as the detailed
   description upon initialization.
- 
-                  

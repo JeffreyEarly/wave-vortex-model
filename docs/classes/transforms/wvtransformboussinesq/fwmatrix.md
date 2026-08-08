@@ -2,7 +2,7 @@
 layout: default
 title: FwMatrix
 parent: WVTransformBoussinesq
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 18
 mathjax: true
 ---
@@ -25,5 +25,3 @@ transformation matrix $$F_w$$
 
   A matrix that transforms a vector in physical space to IGW
   mode space
- 
-      

@@ -2,7 +2,7 @@
 layout: default
 title: addFluxedCoefficients
 parent: WVModel
-grand_parent: Classes
+grand_parent: Class documentation
 nav_order: 3
 mathjax: true
 ---
@@ -15,5 +15,3 @@ add the `WVCoefficients` to the fluxed observing systems array
 ---
 
 ## Discussion
-
-  

@@ -41,7 +41,7 @@ vorticity.
 
 Note that a `WVOperation` that computes a single variable, must have the
 same name as the variable, as specified in `WVVariableAnnotation`.
- 
+
 More involved calculations may require subclassing WVOperation and
 overriding the `compute` method. Note that every variable returned by the
 compute operation must be described with a `WVVariableAnnotation`.
@@ -60,7 +60,7 @@ compute operation must be described with a `WVVariableAnnotation`.
   + [`name`](/classes/operations-and-annotations/wvoperation/name.html) of the operation
   + [`outputVariables`](/classes/operations-and-annotations/wvoperation/outputvariables.html) array of WVVariableAnnotations describing the outputs of the computation
 + Other
-  + [`detailedDescription`](/classes/operations-and-annotations/wvoperation/detaileddescription.html) 
+  + [`detailedDescription`](/classes/operations-and-annotations/wvoperation/detaileddescription.html)
 
 
 ---

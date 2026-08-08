@@ -2,7 +2,7 @@
 layout: default
 title: forcingFromGroup
 parent: WVForcing
-grand_parent: Classes
+grand_parent: Forcing
 nav_order: 8
 mathjax: true
 ---
@@ -29,5 +29,3 @@ initialize a WVForcing instance from NetCDF file
   Subclasses to should override this method to enable model
   restarts. This method works in conjunction with -writeToFile
   to provide restart capability.
- 
-        

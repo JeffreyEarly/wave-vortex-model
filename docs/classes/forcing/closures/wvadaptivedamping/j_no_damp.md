@@ -2,7 +2,7 @@
 layout: default
 title: j_no_damp
 parent: WVAdaptiveDamping
-grand_parent: Classes
+grand_parent: Closures
 nav_order: 8
 mathjax: true
 ---
@@ -15,5 +15,3 @@ wavenumber below which there is zero damping
 ---
 
 ## Discussion
-
-  

@@ -2,7 +2,7 @@
 layout: default
 title: darwinSymbol
 parent: WVPseudoTopographicWaveGeneration
-grand_parent: Classes
+grand_parent: Forcing
 nav_order: 7
 mathjax: true
 ---
@@ -23,5 +23,3 @@ Darwin symbol used to select the tidal frequency.
   This is empty when `frequency` was supplied directly. On restart,
   the persisted symbol is descriptive metadata and the persisted
   frequency remains authoritative.
- 
-  

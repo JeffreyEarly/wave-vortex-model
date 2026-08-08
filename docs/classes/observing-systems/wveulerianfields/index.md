@@ -29,14 +29,14 @@ Detailed explanation goes here
   + [`removeNetCDFOutputVariables`](/classes/observing-systems/wveulerianfields/removenetcdfoutputvariables.html) Remove variables from the list of variables to be written to the NetCDF variable during the model run.
   + [`setNetCDFOutputVariables`](/classes/observing-systems/wveulerianfields/setnetcdfoutputvariables.html) Set list of variables to be written to the NetCDF variable during the model run.
 + Other
-  + [`classRequiredPropertyNames`](/classes/observing-systems/wveulerianfields/classrequiredpropertynames.html) 
+  + [`classRequiredPropertyNames`](/classes/observing-systems/wveulerianfields/classrequiredpropertynames.html)
   + [`fieldNames`](/classes/observing-systems/wveulerianfields/fieldnames.html) eulerian field names
-  + [`initialConditionOnlyVariables`](/classes/observing-systems/wveulerianfields/initialconditiononlyvariables.html) 
-  + [`nOutputVariables`](/classes/observing-systems/wveulerianfields/noutputvariables.html) 
-  + [`nTimeSeriesVariables`](/classes/observing-systems/wveulerianfields/ntimeseriesvariables.html) 
-  + [`netCDFOutputVariables`](/classes/observing-systems/wveulerianfields/netcdfoutputvariables.html) 
-  + [`timeSeriesVariables`](/classes/observing-systems/wveulerianfields/timeseriesvariables.html) 
-  + [`updateNetCDFVariableCategorization`](/classes/observing-systems/wveulerianfields/updatenetcdfvariablecategorization.html) 
+  + [`initialConditionOnlyVariables`](/classes/observing-systems/wveulerianfields/initialconditiononlyvariables.html)
+  + [`nOutputVariables`](/classes/observing-systems/wveulerianfields/noutputvariables.html)
+  + [`nTimeSeriesVariables`](/classes/observing-systems/wveulerianfields/ntimeseriesvariables.html)
+  + [`netCDFOutputVariables`](/classes/observing-systems/wveulerianfields/netcdfoutputvariables.html)
+  + [`timeSeriesVariables`](/classes/observing-systems/wveulerianfields/timeseriesvariables.html)
+  + [`updateNetCDFVariableCategorization`](/classes/observing-systems/wveulerianfields/updatenetcdfvariablecategorization.html)
 
 
 ---

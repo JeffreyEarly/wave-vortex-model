@@ -1,7 +1,7 @@
 classdef WVInertialOscillationComponent < WVPrimaryFlowComponent
     %Inertial oscillation solution group
     %
-    % - Declaration: classdef WVInertialOscillationComponent < WVFlowComponent
+    % - Declaration: classdef WVInertialOscillationComponent < WVPrimaryFlowComponent
     methods
         function self = WVInertialOscillationComponent(wvt)
             arguments
@@ -95,12 +95,12 @@ classdef WVInertialOscillationComponent < WVPrimaryFlowComponent
         function solutions = solutionForModeAtIndex(self,solutionIndex,options)
             % return the analytical solution at this index
             %
-            % Returns WVAnalyticalSolution object for this index
+            % Returns WVOrthogonalSolution object for this index
             %
             % - Topic: Analytical solutions
             % - Declaration: solution = solutionForModeAtIndex(index)
             % - Parameter solutionIndex: non-negative integer
-            % - Returns solution: an instance of WVAnalyticalSolution
+            % - Returns solution: an instance of WVOrthogonalSolution
             arguments (Input)
                 self WVInertialOscillationComponent {mustBeNonempty}
                 solutionIndex (:,1) double {mustBeNonnegative}
@@ -221,4 +221,3 @@ classdef WVInertialOscillationComponent < WVPrimaryFlowComponent
 
     end 
 end
-

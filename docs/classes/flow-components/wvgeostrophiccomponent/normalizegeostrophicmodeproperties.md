@@ -2,7 +2,7 @@
 layout: default
 title: normalizeGeostrophicModeProperties
 parent: WVGeostrophicComponent
-grand_parent: Classes
+grand_parent: Flow components
 nav_order: 13
 mathjax: true
 ---
@@ -37,5 +37,3 @@ returns properties of a geostrophic solution relative to the primary mode number
   This function will return the primary mode numbers (k,l,j),
   given the any valid mode numbers (k,l,j) and adjust the
   amplitude (A) and phase (phi), if necessary.
- 
-                        

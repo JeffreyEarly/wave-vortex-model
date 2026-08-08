@@ -2,7 +2,7 @@
 layout: default
 title: j_damp
 parent: WVAdaptiveDamping
-grand_parent: Classes
+grand_parent: Closures
 nav_order: 7
 mathjax: true
 ---
@@ -15,5 +15,3 @@ wavenumber at which the significant scale damping starts.
 ---
 
 ## Discussion
-
-  

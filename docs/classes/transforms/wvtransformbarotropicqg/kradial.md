@@ -2,8 +2,8 @@
 layout: default
 title: kRadial
 parent: WVTransformBarotropicQG
-grand_parent: Classes
-nav_order: 80
+grand_parent: Transforms
+nav_order: 83
 mathjax: true
 ---
 
@@ -15,12 +15,3 @@ radial (k,l) wavenumber on the WV grid
 ---
 
 ## Discussion
-
-Creates a radial wavenumber axis,
-
-$$
-k_r \equiv \sqrt( k^2 + l^2)
-$$
-
-with spacing set by the largest gap in the gridded radial wavenumber. See `radialWavenumberAxis`.
-

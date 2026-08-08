@@ -2,7 +2,7 @@
 layout: default
 title: setWaveForcingCoefficients
 parent: WVFixedAmplitudeForcing
-grand_parent: Classes
+grand_parent: Forcing
 nav_order: 11
 mathjax: true
 ---
@@ -28,5 +28,3 @@ set the amplitude to fix for the wave part of the flow
 
   This function will automatically remove modes set in the
   damping region of the WVAdaptiveDamping forcing, if present.
- 
-            

@@ -2,8 +2,8 @@
 layout: default
 title: waveCoefficientsAtTimeT
 parent: WVTransformBoussinesq
-grand_parent: Classes
-nav_order: 263
+grand_parent: Transforms
+nav_order: 262
 mathjax: true
 ---
 
@@ -13,4 +13,3 @@ mathjax: true
 
 
 ---
-

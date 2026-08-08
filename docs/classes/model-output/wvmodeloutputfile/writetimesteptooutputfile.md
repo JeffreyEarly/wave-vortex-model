@@ -2,7 +2,7 @@
 layout: default
 title: writeTimeStepToOutputFile
 parent: WVModelOutputFile
-grand_parent: Classes
+grand_parent: Model output
 nav_order: 20
 mathjax: true
 ---
@@ -21,5 +21,3 @@ tells the output groups to write data at time t
   time `t`. Thus, the actual NetCDF file will be created if
   it does not yet exist, and then the output groups can write
   to file.
- 
-  

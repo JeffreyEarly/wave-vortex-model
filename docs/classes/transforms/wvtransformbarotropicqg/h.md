@@ -2,7 +2,7 @@
 layout: default
 title: h
 parent: WVTransformBarotropicQG
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 61
 mathjax: true
 ---
@@ -16,4 +16,3 @@ equivalent depth
 
 ## Description
 Real valued property with no dimensions and units of $$m$$.
-

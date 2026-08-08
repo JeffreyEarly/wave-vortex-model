@@ -2,8 +2,8 @@
 layout: default
 title: waveVortexTransformWithExplicitAntialiasing
 parent: WVTransformConstantStratification
-grand_parent: Classes
-nav_order: 253
+grand_parent: Transforms
+nav_order: 251
 mathjax: true
 ---
 
@@ -13,4 +13,3 @@ mathjax: true
 
 
 ---
-

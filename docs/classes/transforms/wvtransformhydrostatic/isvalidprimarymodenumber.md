@@ -2,7 +2,7 @@
 layout: default
 title: isValidPrimaryModeNumber
 parent: WVTransformHydrostatic
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 133
 mathjax: true
 ---
@@ -31,5 +31,3 @@ returns a boolean indicating whether (k,l,j) is a valid primary (non-conjugate) 
   returns a boolean indicating whether (k,l,j) is a valid
   non-conjugate mode number according to how the property
   conjugateDimension is set.
- 
-            

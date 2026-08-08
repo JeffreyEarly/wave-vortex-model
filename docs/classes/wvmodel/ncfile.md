@@ -2,7 +2,7 @@
 layout: default
 title: ncfile
 parent: WVModel
-grand_parent: Classes
+grand_parent: Class documentation
 nav_order: 38
 mathjax: true
 ---
@@ -15,5 +15,3 @@ returns the first/primary NetCDF file being written to
 ---
 
 ## Discussion
-
-  

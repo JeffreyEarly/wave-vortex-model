@@ -2,7 +2,7 @@
 layout: default
 title: Nk_dft
 parent: WVTransformBoussinesq
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 40
 mathjax: true
 ---
@@ -15,5 +15,3 @@ length of the k-wavenumber dimension on the DFT grid
 ---
 
 ## Discussion
-
-  

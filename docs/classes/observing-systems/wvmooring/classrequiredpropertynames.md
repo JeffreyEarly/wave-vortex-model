@@ -2,7 +2,7 @@
 layout: default
 title: classRequiredPropertyNames
 parent: WVMooring
-grand_parent: Classes
+grand_parent: Observing systems
 nav_order: 2
 mathjax: true
 ---
@@ -13,4 +13,3 @@ mathjax: true
 
 
 ---
-

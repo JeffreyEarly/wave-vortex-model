@@ -2,7 +2,7 @@
 layout: default
 title: shouldAvoidAdaptiveDamping
 parent: WVPseudoTopographicWaveGeneration
-grand_parent: Classes
+grand_parent: Forcing
 nav_order: 13
 mathjax: true
 ---
@@ -26,5 +26,3 @@ Real valued property with no dimensions and units of $$bool$$.
   When true, modes for which an active `WVAdaptiveDamping` has a
   nonzero spectral operator are excluded from the generated wave
   tendency.
- 
-  

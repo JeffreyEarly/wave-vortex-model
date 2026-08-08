@@ -2,7 +2,7 @@
 layout: default
 title: incrementsWrittenToGroup
 parent: WVModelOutputGroup
-grand_parent: Classes
+grand_parent: Model output
 nav_order: 6
 mathjax: true
 ---

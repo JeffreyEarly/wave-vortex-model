@@ -2,7 +2,7 @@
 layout: default
 title: dftConjugateIndex
 parent: WVTransformHydrostatic
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 77
 mathjax: true
 ---
@@ -18,5 +18,3 @@ index into the DFT grid of the conjugate of each WV mode
 + Class: `uint64`
 
 ## Discussion
-
-  

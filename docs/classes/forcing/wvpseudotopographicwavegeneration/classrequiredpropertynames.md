@@ -2,7 +2,7 @@
 layout: default
 title: classRequiredPropertyNames
 parent: WVPseudoTopographicWaveGeneration
-grand_parent: Classes
+grand_parent: Forcing
 nav_order: 6
 mathjax: true
 ---
@@ -26,5 +26,3 @@ Return the forcing properties required for restart.
   Derived gradients and modal responses are intentionally not
   persisted; construction against the restored transform
   rebuilds them.
- 
-      

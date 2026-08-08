@@ -2,8 +2,8 @@
 layout: default
 title: z_int
 parent: WVTransformHydrostatic
-grand_parent: Classes
-nav_order: 251
+grand_parent: Transforms
+nav_order: 250
 mathjax: true
 ---
 
@@ -16,4 +16,3 @@ Quadrature weights for the vertical grid
 
 ## Description
 Real valued property with dimension $$z$$ and no units.
-

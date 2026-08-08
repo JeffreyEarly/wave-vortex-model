@@ -2,7 +2,7 @@
 layout: default
 title: isVariableWithNonlinearTimeStep
 parent: WVVariableAnnotation
-grand_parent: Classes
+grand_parent: Operations & annotations
 nav_order: 4
 mathjax: true
 ---
@@ -21,4 +21,3 @@ boolean indicating whether the variable changes value with a non-linear time ste
 
   This information is used when caching variables and when writing
   to NetCDF file.
-  

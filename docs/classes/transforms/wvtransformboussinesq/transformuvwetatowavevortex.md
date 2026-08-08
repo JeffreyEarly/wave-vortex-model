@@ -2,7 +2,7 @@
 layout: default
 title: transformUVWEtaToWaveVortex
 parent: WVTransformBoussinesq
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 252
 mathjax: true
 ---
@@ -33,5 +33,3 @@ transform momentum variables $$(u,v,w,\eta)$$ to wave-vortex coefficients $$(A_+
 ## Discussion
 
   This function tuned for constant stratification.
- 
-                    

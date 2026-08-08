@@ -2,7 +2,7 @@
 layout: default
 title: initWithAlternativeSpectrum
 parent: WVTransformConstantStratification
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 129
 mathjax: true
 ---
@@ -26,5 +26,3 @@ initialize with an alternative formulation of the GM spectrum in the wavenumber 
 ## Discussion
 
   This only initializes the wave components, A0 is left untouched.
- 
-          

@@ -2,7 +2,7 @@
 layout: default
 title: dftConjugateIndex
 parent: WVTransformBarotropicQG
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 39
 mathjax: true
 ---
@@ -18,5 +18,3 @@ index into the DFT grid of the conjugate of each WV mode
 + Class: `uint64`
 
 ## Discussion
-
-  

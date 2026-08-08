@@ -1,7 +1,7 @@
 classdef WVInternalGravityWaveComponent < WVPrimaryFlowComponent
     %Geostrophic solution group
     %
-    % - Declaration: classdef WVGeostrophicComponent < WVFlowComponent
+    % - Declaration: classdef WVInternalGravityWaveComponent < WVPrimaryFlowComponent
     methods
         function self = WVInternalGravityWaveComponent(wvt)
             arguments
@@ -74,12 +74,12 @@ classdef WVInternalGravityWaveComponent < WVPrimaryFlowComponent
         function solutions = solutionForModeAtIndex(self,solutionIndex,options)
             % return the analytical solution at this index
             %
-            % Returns WVAnalyticalSolution object for this index
+            % Returns WVOrthogonalSolution object for this index
             %
             % - Topic: Analytical solutions
             % - Declaration: solution = solutionForModeAtIndex(index)
             % - Parameter solutionIndex: non-negative integer
-            % - Returns solution: an instance of WVAnalyticalSolution
+            % - Returns solution: an instance of WVOrthogonalSolution
             arguments (Input)
                 self WVInternalGravityWaveComponent {mustBeNonempty}
                 solutionIndex (:,1) double {mustBeNonnegative}
@@ -303,4 +303,3 @@ classdef WVInternalGravityWaveComponent < WVPrimaryFlowComponent
     end 
 
 end
-

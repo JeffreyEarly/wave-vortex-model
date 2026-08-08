@@ -2,7 +2,7 @@
 layout: default
 title: l_dft
 parent: WVTransformBoussinesq
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 166
 mathjax: true
 ---
@@ -15,5 +15,3 @@ l wavenumber dimension on the DFT grid
 ---
 
 ## Discussion
-
-  

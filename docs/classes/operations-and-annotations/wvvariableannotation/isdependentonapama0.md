@@ -2,7 +2,7 @@
 layout: default
 title: isDependentOnApAmA0
 parent: WVVariableAnnotation
-grand_parent: Classes
+grand_parent: Operations & annotations
 nav_order: 2
 mathjax: true
 ---
@@ -21,4 +21,3 @@ boolean indicating whether the variable depends on Ap, Am, or A0
 
   This information is used when caching variables and when writing
   to NetCDF file.
-  

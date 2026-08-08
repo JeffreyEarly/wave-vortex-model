@@ -2,7 +2,7 @@
 layout: default
 title: WVModelOutputGroupEvenlySpaced
 parent: WVModelOutputGroupEvenlySpaced
-grand_parent: Classes
+grand_parent: Model output
 nav_order: 1
 mathjax: true
 ---
@@ -29,6 +29,3 @@ initialize a WVModelOutputGroupEvenlySpaced
 + `self`  a WVModelOutputGroupEvenlySpaced instance
 
 ## Discussion
-
-  
-                

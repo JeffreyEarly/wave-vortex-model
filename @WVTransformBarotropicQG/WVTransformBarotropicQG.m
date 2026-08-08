@@ -14,7 +14,7 @@ classdef WVTransformBarotropicQG < WVGeometryDoublyPeriodicBarotropic & WVTransf
     %
     % - Topic: Initialization
     %
-    % - Declaration: classdef WVTransformBarotropicQG < [WVTransform](/classes/wvtransform/)
+    % - Declaration: classdef WVTransformBarotropicQG < [WVTransform](/classes/transforms/wvtransform/)
     properties (Dependent)
         h_0
         totalEnergySpatiallyIntegrated

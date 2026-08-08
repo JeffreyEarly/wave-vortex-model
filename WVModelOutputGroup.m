@@ -32,7 +32,7 @@ classdef WVModelOutputGroup < handle & matlab.mixin.Heterogeneous & CAAnnotatedC
     % - Topic: Required subclass overrides
     % - Topic: Internal
     %
-    % - Declaration: WVModelOutputFile < handle
+    % - Declaration: WVModelOutputGroup < handle
     properties (WeakHandle)
         % Reference to the WVModel being used
         %

@@ -2,7 +2,7 @@
 layout: default
 title: nModes
 parent: WVMeanDensityAnomalyComponent
-grand_parent: Classes
+grand_parent: Flow components
 nav_order: 13
 mathjax: true
 ---
@@ -25,5 +25,3 @@ return the number of unique modes of this type
 
   Returns the number of unique modes of this type for the
   transform in its current configuration.
- 
-      

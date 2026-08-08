@@ -22,7 +22,7 @@ classdef WVOrthogonalSolution < handle
     % required to multiply the sum of the squared amplitudes by to get energy
     % and enstrophy.
     %
-    % - Declaration: classdef WVAnalyticalSolution < handle
+    % - Declaration: classdef WVOrthogonalSolution < handle
     properties
         kMode, lMode, jMode
         amplitude

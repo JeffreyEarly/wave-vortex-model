@@ -2,7 +2,7 @@
 layout: default
 title: conjPhase
 parent: WVTransformBoussinesq
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 85
 mathjax: true
 ---
@@ -16,4 +16,3 @@ phase of the Am wave modes
 
 ## Description
 Real valued property with dimensions $$(j,kl)$$ and units of $$radians$$.
-

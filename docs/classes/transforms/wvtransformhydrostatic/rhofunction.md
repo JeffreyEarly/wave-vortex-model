@@ -2,7 +2,7 @@
 layout: default
 title: rhoFunction
 parent: WVTransformHydrostatic
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 185
 mathjax: true
 ---
@@ -13,4 +13,3 @@ eta_true operation needs rhoFunction
 
 
 ---
-

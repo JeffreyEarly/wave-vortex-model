@@ -2,7 +2,7 @@
 layout: default
 title: Nkl
 parent: WVTransformStratifiedQG
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 24
 mathjax: true
 ---
@@ -18,5 +18,3 @@ length of the combined kl-wavenumber dimension on the WV grid
 Real valued property with no dimensions and no units.
 
 ## Discussion
-
-  

@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- Made documentation generation clean, deterministic, transactional, and reviewable with an exact ClassDocumentation 1.3.0 authoring dependency, canonical build/check tasks, generated hierarchy validation, and case-sensitive internal-route checks.
 - Quarantined disconnected legacy implementations, corrected Internal adaptive-integrator and geometry spelling, retained a narrow 4.x file fallback for `shouldExludeConjugates`, and repaired the retained Internal barotropic FINUFFT path.
 - Stabilized model-output scheduling and NetCDF restart across multiple files and groups; preserved linear dynamics and shared observing systems; and made initialization, writing, restoration, and handle ownership exception-safe.
 - Made operation registration, replacement, and removal atomic and identity-based; corrected multiple-output lookup; and made cache invalidation follow each operation's declared time and coefficient dependencies.

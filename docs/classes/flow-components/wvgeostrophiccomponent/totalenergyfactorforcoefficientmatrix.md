@@ -2,7 +2,7 @@
 layout: default
 title: totalEnergyFactorForCoefficientMatrix
 parent: WVGeostrophicComponent
-grand_parent: Classes
+grand_parent: Flow components
 nav_order: 15
 mathjax: true
 ---
@@ -29,5 +29,3 @@ returns the total energy multiplier for the coefficient matrix.
   Returns a matrix of size wvt.spectralMatrixSize that
   multiplies the squared absolute value of this matrix to
   produce the total energy.
- 
-        

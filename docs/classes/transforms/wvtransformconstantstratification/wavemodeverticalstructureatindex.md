@@ -2,8 +2,8 @@
 layout: default
 title: waveModeVerticalStructureAtIndex
 parent: WVTransformConstantStratification
-grand_parent: Classes
-nav_order: 252
+grand_parent: Transforms
+nav_order: 250
 mathjax: true
 ---
 
@@ -30,15 +30,13 @@ Return wave vertical-structure factors at one vertical grid index.
   For a wave coefficient matrix `Apm`, the horizontal Fourier values of
   the corresponding $$F$$ field and the vertical derivative of the
   corresponding $$G$$ field at `z(iZ)` are
- 
+
   $$
   \widehat F(z_{iZ}) = \sum_j F_{j\boldsymbol{k}}(z_{iZ})A_{j\boldsymbol{k}},
   \qquad
   \partial_z\widehat G(z_{iZ}) =
   \sum_j \partial_zG_{j\boldsymbol{k}}(z_{iZ})A_{j\boldsymbol{k}}.
   $$
- 
+
   Both returned arrays have dimensions `[Nj Nkl]`. Request only `F` when
   the derivative factors are not needed.
- 
-          

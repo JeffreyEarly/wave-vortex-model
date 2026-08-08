@@ -2,7 +2,7 @@
 layout: default
 title: planetaryRadius
 parent: WVTransformConstantStratification
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 182
 mathjax: true
 ---
@@ -16,4 +16,3 @@ radius of the planetary body
 
 ## Description
 Real valued property with no dimensions and units of $$m$$.
-

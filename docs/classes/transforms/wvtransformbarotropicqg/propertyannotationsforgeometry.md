@@ -2,8 +2,8 @@
 layout: default
 title: propertyAnnotationsForGeometry
 parent: WVTransformBarotropicQG
-grand_parent: Classes
-nav_order: 106
+grand_parent: Transforms
+nav_order: 109
 mathjax: true
 ---
 
@@ -25,6 +25,6 @@ return array of CAPropertyAnnotations initialized by default
 
   This function returns annotations for all properties of the
   WVStratification class.
- 
-      
+
+
 Help for WVGeometryDoublyPeriodicBarotropic.propertyAnnotationsForGeometry is inherited from superclass WVGeometryDoublyPeriodic

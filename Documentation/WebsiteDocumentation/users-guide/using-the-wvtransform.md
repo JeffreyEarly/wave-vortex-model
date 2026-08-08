@@ -47,29 +47,29 @@ For the current set of transforms $$x$$ and $$y$$ grids will always be evenly sp
 
 ## Initial conditions
 
-Once a tranform is instantiated, it is often the case that one would like to add initial conditions. The [WVTransform](/classes/wvtransform.html) class has numerous methods for adding initial conditions---including very general initialization from any fluid state, as well as initialization specific to waves, inertial oscillations, and geostrophic motions.
+Once a tranform is instantiated, it is often the case that one would like to add initial conditions. The [WVTransform](/classes/transforms/wvtransform/) class has numerous methods for adding initial conditions---including very general initialization from any fluid state, as well as initialization specific to waves, inertial oscillations, and geostrophic motions.
 
 ### Initializing from $$(u,v,\eta)$$
 
-The most direct methods for initializing the model are [`initWithUVEta`](/classes/wvtransform/initwithuveta.html) and [`initWithUVRho`](/classes/wvtransform/initwithuvrho.html) which take either $$(u,v,\eta)$$ or $$(u,v,\rho)$$. As a simple example, let's intialize with an inertial oscillation initial condition, $$(u_0 \exp(z/100),0,0)$$. In code, this is
+The most direct methods for initializing the model are [`initWithUVEta`](/classes/transforms/wvtransform/initwithuveta.html) and [`initWithUVRho`](/classes/transforms/wvtransform/initwithuvrho.html) which take either $$(u,v,\eta)$$ or $$(u,v,\rho)$$. As a simple example, let's intialize with an inertial oscillation initial condition, $$(u_0 \exp(z/100),0,0)$$. In code, this is
 ```matlab
 wvt.initWithUVEta( 0.2*exp(wvt.Z/100), 0*wvt.X, 0*wvt.X );
 ```
 
-These methods can be used to initialize from *any* flow fields that use the same stratification and boundary conditions as the `WVTransform` that is being used. For example, you might use output from another model and use [`initWithUVRho`](/classes/wvtransform/initwithuvrho.html) to initialize the WaveVortexMode with that output.
+These methods can be used to initialize from *any* flow fields that use the same stratification and boundary conditions as the `WVTransform` that is being used. For example, you might use output from another model and use [`initWithUVRho`](/classes/transforms/wvtransform/initwithuvrho.html) to initialize the WaveVortexMode with that output.
 
 ### Initializing waves, inertial oscillations, and geostrophic motions
 
 The wave-vortex model provides methods for initializing the fluid with specific dynamical solutions, including inertial oscillations, internal gravity waves, and geostrophic (vortex) flows. 
 
-To initialize individual waves, use  [`initWithWaveModes`](/classes/wvtransform/initwithwavemodes.html) and the related methods, e.g.,
+To initialize individual waves, use `initWithWaveModes` and the related methods, e.g.,
 ```matlab
 [omega, k, l] = wvt.initWithWaveModes(kMode=10,lMode=0,j=1,phi=0,u=0.2,sign=1);
 period = 2*pi/omega;
 ```
 will initialize a first baroclinic mode wave with a wavenumber of $$k = 10(2\pi)/L_x$$.
 
-To initialize with a geostrophic stream function, use  [`initWithGeostrophicStreamfunction`](/classes/wvtransform/initwithgeostrophicstreamfunction.html) and the related methods, e.g.,
+To initialize with a geostrophic stream function, use `initWithGeostrophicStreamfunction` and the related methods, e.g.,
 ```matlab
 Le = 35e3;
 z0 = -wvt.Lz/4;
@@ -81,7 +81,7 @@ wvt.setGeostrophicStreamfunction(psi);
 ```
 creates a deep eddy.
 
-The initialization methods for the [WVTransform](/classes/wvtransform.html) all use the same nomenclature,
+The initialization methods for the [WVTransform](/classes/transforms/wvtransform/) all use the same nomenclature,
 
 - `init`---clears ALL variables `Ap`, `Am`, `A0`, then sets/adds
 - `set`---clears only the component requested, and sets with new value.
@@ -90,13 +90,13 @@ The initialization methods for the [WVTransform](/classes/wvtransform.html) all 
 
 ### Other initialization methods
 
-It can also be useful to [`initWithRandomFlow`](/classes/wvtransform/initwithrandomflow.html). Also check out the section on [reading and writing to file](/users-guide/reading-and-writing-to-file.html) for how to use [`initFromNetCDFFile`](/classes/wvtransform/initfromnetcdffile.html) to quickly read in the ocean state from a saved file.
+It can also be useful to [`initWithRandomFlow`](/classes/transforms/wvtransform/initwithrandomflow.html). Also check out the section on [reading and writing to file](/users-guide/reading-and-writing-to-file.html) for how to use [`initFromNetCDFFile`](/classes/transforms/wvtransform/initfromnetcdffile.html) to quickly read in the ocean state from a saved file.
 
 ## Examining the fluid state
 
 Once you have a `WVTransform` instance, you can now query it to return different state variables. The term "state" is used because these variables tell you something about the state of the fluid at the time in question.
 
-Standard variables that are available are documented with the [WVTransform](/classes/wvtransform.html) and include $$(u,v,w,\rho,p)$$, the sea-surface height and velocities, the quasi-geostrophic potential vorticity (qgpv), the nonlinear fluxes $$(F_p, F_m, F_0)$$ and others. The transform has numerous built-in state variables
+Standard variables that are available are documented with the [WVTransform](/classes/transforms/wvtransform/) and include $$(u,v,w,\rho,p)$$, the sea-surface height and velocities, the quasi-geostrophic potential vorticity (qgpv), the nonlinear fluxes $$(F_p, F_m, F_0)$$ and others. The transform has numerous built-in state variables
 ```matlab
 wvt.summarizeVariables
 ```
@@ -113,10 +113,9 @@ pcolor(wvt.y,wvt.z,squeeze(wvt.u(1,:,:)).'), shading interp
 ```
 where the properties of the WVTransform `wvt.y` and `wvt.z` refer to those dimensions.
 
-The other way to access variables is to query them in a list using the [`variables`](/classes/wvtransform/variables.html) method,
+The other way to access variables is to query them in a list using the [`variableWithName`](/classes/transforms/wvtransform/variablewithname.html) method,
  ```matlab
 [u,v,w] = wvt.variableWithName('u','v','w');
 ```
-this returns all the variables requested at the grid points. However, you can also the [`variableAtPositionWithName`](/classes/wvtransform/variablesatposition.html) method to return the value of any variable at *any* set of points in the domain. This method is used to do particle advection by the `WVModel`.
-
+this returns all the variables requested at the grid points. However, you can also use the [`variableAtPositionWithName`](/classes/transforms/wvtransform/variableatpositionwithname.html) method to return the value of any variable at *any* set of points in the domain. This method is used to do particle advection by the `WVModel`.
 

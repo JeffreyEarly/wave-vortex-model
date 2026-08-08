@@ -2,7 +2,7 @@
 layout: default
 title: degreesOfFreedomForComplexMatrix
 parent: WVTransformStratifiedQG
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 52
 mathjax: true
 ---
@@ -31,5 +31,3 @@ a matrix with the number of degrees-of-freedom at each entry
   would has 2*Nx*Ny degrees-of-freedom at each grid point. In
   the Fourier domain, it also has 2*Nx*Ny degrees-of-freedom at
   each grid point.
- 
-          

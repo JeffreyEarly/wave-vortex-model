@@ -2,7 +2,7 @@
 layout: default
 title: modelOutputGroupFromGroup
 parent: WVModelOutputGroup
-grand_parent: Classes
+grand_parent: Model output
 nav_order: 10
 mathjax: true
 ---
@@ -30,5 +30,3 @@ initialize a WVModelOutputGroup instance from NetCDF file
   Subclasses to should override this method to enable model
   restarts. This method works in conjunction with -writeToFile
   to provide restart capability.
- 
-          

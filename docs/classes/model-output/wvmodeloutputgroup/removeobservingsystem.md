@@ -2,7 +2,7 @@
 layout: default
 title: removeObservingSystem
 parent: WVModelOutputGroup
-grand_parent: Classes
+grand_parent: Model output
 nav_order: 16
 mathjax: true
 ---
@@ -15,5 +15,3 @@ remove an observing system to this file
 ---
 
 ## Discussion
-
-  

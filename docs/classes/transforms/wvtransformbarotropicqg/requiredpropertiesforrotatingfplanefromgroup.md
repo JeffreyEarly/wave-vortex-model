@@ -2,8 +2,8 @@
 layout: default
 title: requiredPropertiesForRotatingFPlaneFromGroup
 parent: WVTransformBarotropicQG
-grand_parent: Classes
-nav_order: 113
+grand_parent: Transforms
+nav_order: 116
 mathjax: true
 ---
 
@@ -13,4 +13,3 @@ mathjax: true
 
 
 ---
-

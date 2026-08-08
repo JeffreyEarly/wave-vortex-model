@@ -21,7 +21,7 @@ classdef WVTransformHydrostatic < WVGeometryDoublyPeriodicStratified & WVTransfo
     % - Topic: Energetics of flow components
     % - Topic: Operations
     %
-    % - Declaration: classdef WVTransformHydrostatic < [WVTransform](/classes/wvtransform/)
+    % - Declaration: classdef WVTransformHydrostatic < [WVTransform](/classes/transforms/wvtransform/)
     properties (Dependent)
         totalEnergySpatiallyIntegrated
         totalEnergy

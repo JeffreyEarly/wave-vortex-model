@@ -2,7 +2,7 @@
 layout: default
 title: initWithUVEta
 parent: WVTransform
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 54
 mathjax: true
 ---
@@ -26,4 +26,3 @@ initialize with fluid variables $$(u,v,\eta)$$
 ## Discussion
 
   Replaces the variables Ap,Am,A0 with those computed from $$(u,v,\eta)$$.
-          

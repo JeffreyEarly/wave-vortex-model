@@ -2,7 +2,7 @@
 layout: default
 title: A0_TE_factor
 parent: WVTransform
-grand_parent: Classes
+grand_parent: Transforms
 nav_order: 6
 mathjax: true
 ---
@@ -14,3 +14,20 @@ mathjax: true
 
 ---
 
+## Discussion
+
+These coefficients multiply $$A_0^2$$ to give a horizontally-averaged depth-integrated total energy for the geostrophic solutions.
+
+Assuming hydrostatic modes, this is
+
+$$
+E = \frac{g}{2} \left( \frac{gh}{f_0^2} K^2 + 1 \right)
+$$
+
+for the $$j>0$$ modes and
+
+$$
+E = \frac{g^2 L_z}{2f_0^2} K^2
+$$
+
+for the $$j=0$$ barotropic mode.

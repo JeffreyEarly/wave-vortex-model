@@ -2,7 +2,7 @@
 layout: default
 title: absTolerance
 parent: WVCoefficients
-grand_parent: Classes
+grand_parent: Observing systems
 nav_order: 2
 mathjax: true
 ---
@@ -16,4 +16,3 @@ absolute tolerance of the wave-vortex coefficients
 
 ## Description
 Real valued property with no dimensions and units of $$m^{3} s^{-2}$$.
-

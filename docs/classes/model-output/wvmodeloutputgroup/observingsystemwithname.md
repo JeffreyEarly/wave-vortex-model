@@ -2,7 +2,7 @@
 layout: default
 title: observingSystemWithName
 parent: WVModelOutputGroup
-grand_parent: Classes
+grand_parent: Model output
 nav_order: 12
 mathjax: true
 ---
@@ -15,5 +15,3 @@ retrieve an observing system by name
 ---
 
 ## Discussion
-
-  

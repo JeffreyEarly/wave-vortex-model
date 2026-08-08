@@ -2,7 +2,7 @@
 layout: default
 title: spectralVanishingViscosityFilter
 parent: WVAdaptiveDamping
-grand_parent: Classes
+grand_parent: Closures
 nav_order: 11
 mathjax: true
 ---

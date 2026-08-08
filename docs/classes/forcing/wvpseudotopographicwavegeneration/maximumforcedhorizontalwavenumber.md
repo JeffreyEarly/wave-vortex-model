@@ -2,7 +2,7 @@
 layout: default
 title: maximumForcedHorizontalWavenumber
 parent: WVPseudoTopographicWaveGeneration
-grand_parent: Classes
+grand_parent: Forcing
 nav_order: 10
 mathjax: true
 ---
@@ -24,5 +24,3 @@ Real valued property with no dimensions and units of $$rad m^{-1}$$.
 ## Discussion
 
   The default `Inf` applies no manual horizontal restriction.
- 
-  

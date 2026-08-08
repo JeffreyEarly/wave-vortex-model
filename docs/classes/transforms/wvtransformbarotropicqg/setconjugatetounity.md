@@ -2,8 +2,8 @@
 layout: default
 title: setConjugateToUnity
 parent: WVTransformBarotropicQG
-grand_parent: Classes
-nav_order: 116
+grand_parent: Transforms
+nav_order: 119
 mathjax: true
 ---
 
@@ -27,5 +27,3 @@ set the conjugate of the wavenumber (iK,iL) to 1
 + `matrix`  matrix containing linear indices
 
 ## Discussion
-
-            

@@ -2,8 +2,8 @@
 layout: default
 title: waveCoefficientsAtTimeT
 parent: WVTransformConstantStratification
-grand_parent: Classes
-nav_order: 249
+grand_parent: Transforms
+nav_order: 247
 mathjax: true
 ---
 
@@ -13,4 +13,3 @@ mathjax: true
 
 
 ---
-

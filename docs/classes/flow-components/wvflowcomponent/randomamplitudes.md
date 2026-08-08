@@ -2,7 +2,7 @@
 layout: default
 title: randomAmplitudes
 parent: WVFlowComponent
-grand_parent: Classes
+grand_parent: Flow components
 nav_order: 11
 mathjax: true
 ---
@@ -27,6 +27,4 @@ returns random amplitude for a valid flow state
 
   Returns Ap, Am, A0 matrices initialized with random amplitude
   for this flow component. These resulting matrices will have
-  the correct symmetries for a valid flow state. 
- 
-          
+  the correct symmetries for a valid flow state.

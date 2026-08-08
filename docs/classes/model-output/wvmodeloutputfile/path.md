@@ -2,7 +2,7 @@
 layout: default
 title: path
 parent: WVModelOutputFile
-grand_parent: Classes
+grand_parent: Model output
 nav_order: 17
 mathjax: true
 ---
@@ -15,5 +15,3 @@ current (or future) path of the NetCDF file
 ---
 
 ## Discussion
-
-  

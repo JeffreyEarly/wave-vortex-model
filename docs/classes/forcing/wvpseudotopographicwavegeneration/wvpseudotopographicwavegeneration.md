@@ -2,7 +2,7 @@
 layout: default
 title: WVPseudoTopographicWaveGeneration
 parent: WVPseudoTopographicWaveGeneration
-grand_parent: Classes
+grand_parent: Forcing
 nav_order: 1
 mathjax: true
 ---
@@ -44,5 +44,3 @@ Create a prescribed bottom wave-generation forcing.
   `waveModeVerticalStructureAtIndex`. Generation avoids active
   adaptive damping by default. Manual bounds use radial
   horizontal wavenumber and vertical wave-mode index.
- 
-                            

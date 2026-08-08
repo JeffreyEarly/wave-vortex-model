@@ -9,7 +9,7 @@ mathjax: true
 
 WaveVortexModel uses the shared OceanKit annotated persistence convention described in the OceanKit developers guide:
 
-- [`Annotated persistence`](/developers-guide/annotated-persistence-style-guide)
+- [`Annotated persistence`](https://jeffreyearly.github.io/OceanKit/developers-guide/annotated-persistence-style-guide/)
 
 That shared guide defines the generic contract for `CAAnnotatedClass`, `writeToFile(...)`, source-specific `roleFromFile(...)` factories, `roleFromGroup(...)`, and the helper structure used to adapt persisted NetCDF state back into constructor arguments.
 

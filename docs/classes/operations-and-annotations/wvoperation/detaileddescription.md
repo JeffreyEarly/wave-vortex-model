@@ -2,7 +2,7 @@
 layout: default
 title: detailedDescription
 parent: WVOperation
-grand_parent: Classes
+grand_parent: Operations & annotations
 nav_order: 3
 mathjax: true
 ---
@@ -13,4 +13,3 @@ mathjax: true
 
 
 ---
-

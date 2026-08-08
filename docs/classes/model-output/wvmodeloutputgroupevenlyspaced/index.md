@@ -18,17 +18,17 @@ A WVModelOutputGroupEvenlySpaced is an evenly spaced output group with optional 
 
 ## Declaration
 
-<div class="language-matlab highlighter-rouge"><div class="highlight"><pre class="highlight"><code>WVModelOutputGroupEvenlySpaced < <a href="/classes/WVModelOutputGroup" title="WVModelOutputGroup">WVModelOutputGroup</a></code></pre></div></div>
+<div class="language-matlab highlighter-rouge"><div class="highlight"><pre class="highlight"><code>WVModelOutputGroupEvenlySpaced < <a href="/classes/model-output/wvmodeloutputgroup/" title="WVModelOutputGroup">WVModelOutputGroup</a></code></pre></div></div>
 
 ## Overview
- 
+
 This is the primary `WVModelOutputGroup` subclass which implements
 evenly spaced output, standard in numerical modeling. It also
 includes optional `initialTime` and `finalTime` properties, which
 allow you to customize when this group is active in model time.
- 
 
-   
+
+
 
 
 
@@ -40,8 +40,8 @@ allow you to customize when this group is active in model time.
 + Initialization
   + [`WVModelOutputGroupEvenlySpaced`](/classes/model-output/wvmodeloutputgroupevenlyspaced/wvmodeloutputgroupevenlyspaced.html) initialize a WVModelOutputGroupEvenlySpaced
 + Other
-  + [`classRequiredPropertyNames`](/classes/model-output/wvmodeloutputgroupevenlyspaced/classrequiredpropertynames.html) 
-  + [`description`](/classes/model-output/wvmodeloutputgroupevenlyspaced/description.html) 
+  + [`classRequiredPropertyNames`](/classes/model-output/wvmodeloutputgroupevenlyspaced/classrequiredpropertynames.html)
+  + [`description`](/classes/model-output/wvmodeloutputgroupevenlyspaced/description.html)
 
 
 ---

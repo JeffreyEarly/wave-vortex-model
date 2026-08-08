@@ -2,7 +2,7 @@
 layout: default
 title: WVLagrangianParticles
 parent: WVLagrangianParticles
-grand_parent: Classes
+grand_parent: Observing systems
 nav_order: 1
 mathjax: true
 ---
@@ -31,5 +31,3 @@ Create a Lagrangian-particle observing system.
 
   This class is intended to be subclassed, so this initializer
   is generally called by a model particle facade.
- 
-          

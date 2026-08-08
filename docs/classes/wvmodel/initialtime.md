@@ -2,7 +2,7 @@
 layout: default
 title: initialTime
 parent: WVModel
-grand_parent: Classes
+grand_parent: Class documentation
 nav_order: 24
 mathjax: true
 ---

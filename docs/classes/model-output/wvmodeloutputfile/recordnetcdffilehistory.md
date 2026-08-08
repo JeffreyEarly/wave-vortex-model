@@ -2,7 +2,7 @@
 layout: default
 title: recordNetCDFFileHistory
 parent: WVModelOutputFile
-grand_parent: Classes
+grand_parent: Model output
 nav_order: 18
 mathjax: true
 ---
@@ -15,5 +15,3 @@ tells the output groups to log this time step in the NetCDF history
 ---
 
 ## Discussion
-
-  

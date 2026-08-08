@@ -2,8 +2,8 @@
 layout: default
 title: verticalProjectionOperatorsWithRigidLid
 parent: WVTransformStratifiedQG
-grand_parent: Classes
-nav_order: 189
+grand_parent: Transforms
+nav_order: 188
 mathjax: true
 ---
 
@@ -32,5 +32,3 @@ return the normalized projection operators with prefactors
 
   This function uses InternalModesWKBSpectral to compute the
   quadrature points of a given stratification profile.
- 
-                    

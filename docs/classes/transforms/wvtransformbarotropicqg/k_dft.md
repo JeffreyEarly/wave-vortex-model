@@ -2,8 +2,8 @@
 layout: default
 title: k_dft
 parent: WVTransformBarotropicQG
-grand_parent: Classes
-nav_order: 81
+grand_parent: Transforms
+nav_order: 84
 mathjax: true
 ---
 
@@ -15,5 +15,3 @@ k wavenumber dimension on the DFT grid
 ---
 
 ## Discussion
-
-  

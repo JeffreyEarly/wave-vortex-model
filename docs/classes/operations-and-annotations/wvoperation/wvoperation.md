@@ -2,7 +2,7 @@
 layout: default
 title: WVOperation
 parent: WVOperation
-grand_parent: Classes
+grand_parent: Operations & annotations
 nav_order: 1
 mathjax: true
 ---
