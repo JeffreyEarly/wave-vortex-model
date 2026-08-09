@@ -83,6 +83,6 @@
             "id": "809af0b0-0175-4c98-97d0-1537925cf2d5"
         }
     ],
-    "releaseCompatibility": ">=R2025a",
+    "releaseCompatibility": ">=R2025b",
     "schemaVersion": "1.1.0"
 }

@@ -17,8 +17,8 @@ require(string(sourceManifest.version) == options.expectedVersion, ...
 
 configureIsolatedMPMRepository(oceanKitRoot);
 packageUnderTest = matlab.mpm.Package(packageRoot);
-require(string(packageUnderTest.ReleaseCompatibility) == ">=R2025a", ...
-    "The package under test does not declare MATLAB R2025a as its compatibility floor.");
+require(string(packageUnderTest.ReleaseCompatibility) == ">=R2025b", ...
+    "The package under test does not declare MATLAB R2025b as its compatibility floor.");
 mpminstall(packageRoot,Prompt=false,Temporary=true,Verbosity="detailed");
 packages = mpmlist;
 

@@ -39,19 +39,19 @@ classdef TestReleaseVerification < matlab.unittest.TestCase
             for iDependency = 1:numel(dependencies)
                 testCase.verifyEqual(compatibleVersions(iDependency),expected(dependencies(iDependency)));
             end
-            testCase.verifyEqual(string(manifest.releaseCompatibility),">=R2025a");
+            testCase.verifyEqual(string(manifest.releaseCompatibility),">=R2025b");
             testCase.verifyEqual(string(manifest.version),"4.2.0");
         end
 
-        function packageWorkflowHasIsolatedR2025aGates(testCase)
+        function packageWorkflowHasIsolatedR2025bGates(testCase)
             workflow = testCase.readFile(fullfile(".github","workflows","release-verification.yml"));
             tools = testCase.readFile(fullfile("tools","verifyWaveVortexModelPackage.m")) + ...
                 testCase.readFile(fullfile("tools","prepareWaveVortexModelReleaseCandidate.m"));
             contract = workflow + tools;
             for required = [
-                    "Clean install / MATLAB R2025a"
-                    "Exported package / MATLAB R2025a"
-                    "release: R2025a"
+                    "Clean install / MATLAB R2025b"
+                    "Exported package / MATLAB R2025b"
+                    "release: R2025b"
                     "contents: read"
                     "eb6141e837b2a2d52db675d449ed0ac4c9a64bb5"
                     "MATLAB_PREFDIR"
@@ -60,7 +60,7 @@ classdef TestReleaseVerification < matlab.unittest.TestCase
                     "prepareWaveVortexModelReleaseCandidate"
                     "verifyWaveVortexModelPackage"
                     "ReleaseCompatibility"
-                    ">=R2025a"
+                    ">=R2025b"
                     "checkCIWorkspaceCleanliness.sh"
                     ]'
                 testCase.verifySubstring(contract,required);
@@ -79,21 +79,21 @@ classdef TestReleaseVerification < matlab.unittest.TestCase
             extendedWorkflow = testCase.readFile(fullfile(".github","workflows","extended-ci.yml"));
             for workflow = [requiredWorkflow extendedWorkflow]
                 testCase.verifySubstring(workflow,"eb6141e837b2a2d52db675d449ed0ac4c9a64bb5");
-                testCase.verifySubstring(workflow,"release: R2025a");
+                testCase.verifySubstring(workflow,"release: R2025b");
                 testCase.verifyFalse(contains(workflow,"eb71bc7b05e74776afd678b27c964cf53cd9d547"));
                 testCase.verifyFalse(contains(workflow,"R2024b"));
             end
             for context = [
-                    "Smoke / MATLAB R2025a"
-                    "Documentation / MATLAB R2025a"
-                    "Code Analyzer / MATLAB R2025a"
+                    "Smoke / MATLAB R2025b"
+                    "Documentation / MATLAB R2025b"
+                    "Code Analyzer / MATLAB R2025b"
                     ]'
                 testCase.verifySubstring(requiredWorkflow,context);
             end
             for context = [
-                    "Full / MATLAB R2025a"
-                    "Exhaustive / MATLAB R2025a"
-                    "Optional / MATLAB R2025a"
+                    "Full / MATLAB R2025b"
+                    "Exhaustive / MATLAB R2025b"
+                    "Optional / MATLAB R2025b"
                     ]'
                 testCase.verifySubstring(extendedWorkflow,context);
             end
@@ -111,7 +111,7 @@ classdef TestReleaseVerification < matlab.unittest.TestCase
             testCase.verifyEqual(generatedCI,canonicalCI);
             testCase.verifyEqual(generatedChecklist,canonicalChecklist);
             for phrase = [
-                    "Native-package CI: Clean install and Exported package on MATLAB R2025a"
+                    "Native-package CI: Clean install and Exported package on MATLAB R2025b"
                     "promote the complete `Unreleased` body"
                     "authoring commit first"
                     "OceanKit package snapshot second"
@@ -120,20 +120,19 @@ classdef TestReleaseVerification < matlab.unittest.TestCase
                     ]'
                 testCase.verifySubstring(generatedChecklist,phrase);
             end
-            testCase.verifySubstring(canonicalCI,"schema 1.1, which is native to R2025a");
-            testCase.verifySubstring(canonicalCI,"hosted R2024b native-MPM discovery did not reliably load");
-            testCase.verifyFalse(contains(canonicalCI," / MATLAB R2024b"));
-            testCase.verifySubstring(readme,"requires MATLAB R2025a or newer");
-            testCase.verifySubstring(installation,"requires MATLAB R2025a or newer");
-            testCase.verifyFalse(contains(readme,"requires MATLAB R2024b"));
-            testCase.verifyFalse(contains(installation,"requires MATLAB R2024b"));
+            testCase.verifySubstring(canonicalCI,"supported runtime and native-package verification use MATLAB R2025b");
+            testCase.verifyFalse(contains(canonicalCI," / MATLAB R2025a"));
+            testCase.verifySubstring(readme,"requires MATLAB R2025b or newer");
+            testCase.verifySubstring(installation,"requires MATLAB R2025b or newer");
+            testCase.verifyFalse(contains(readme,"requires MATLAB R2025a"));
+            testCase.verifyFalse(contains(installation,"requires MATLAB R2025a"));
         end
 
         function generatedVersionHistoryIncludesCurrentReleaseRecords(testCase)
             changelog = testCase.readFile("CHANGELOG.md");
             versionHistory = testCase.readFile(fullfile("docs","version-history.md"));
             releaseGateRecord = "Pinned releases to the immutable OceanKit release pilot";
-            releaseFloorRecord = "Raised the minimum MATLAB release to R2025a";
+            releaseFloorRecord = "Raised the minimum MATLAB release to R2025b";
             compactMappingRecord = "Replaced vertically replicated horizontal Fourier mappings";
             for record = [releaseGateRecord releaseFloorRecord compactMappingRecord]
                 testCase.verifySubstring(changelog,record);

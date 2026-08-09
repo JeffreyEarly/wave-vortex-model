@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- Raised the minimum MATLAB release to R2025a so native MPM installation uses the schema 1.1 package manifests declared by WaveVortexModel and its dependencies.
+- Raised the minimum MATLAB release to R2025b, aligning the supported runtime, native MPM verification, and release engine.
 - Pinned releases to the immutable OceanKit release pilot, added native-MPM clean-install and exported-package gates, and removed authoring tests from the installed runtime path.
 - Replaced vertically replicated horizontal Fourier mappings with compact two-dimensional row mappings while preserving the canonical WaveVortex coefficients. On the Apple M5 Max/R2026a reference run, complete builtin forward transforms were 1.06x–2.00x faster and inverse transforms were 1.81x–3.58x faster across the `[256 256 65]` and `[512 512 129]` gate cases with antialiasing on and off; numerical results remained equivalent within the benchmark tolerance. See the issue #70 `transform-layout-integration-v1` artifact for the machine-specific measurements.
 - Rewrote the README, homepage, installation instructions, and user guidance around the current `WVTransform` and `WVModel` workflows; completed the NetCDF conventions guide; linked the canonical wavevortexmodel.org site prominently; and adopted the Avenir-first website typography while retaining search.

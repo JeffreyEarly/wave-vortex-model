@@ -19,7 +19,7 @@ env:
 
 jobs:
   smoke:
-    name: Smoke / MATLAB R2025a
+    name: Smoke / MATLAB R2025b
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
@@ -37,10 +37,10 @@ jobs:
           path: OceanKit
           persist-credentials: false
 
-      - name: Set up MATLAB R2025a
+      - name: Set up MATLAB R2025b
         uses: matlab-actions/setup-matlab@v3
         with:
-          release: R2025a
+          release: R2025b
           cache: true
 
       - name: Run smoke tests
@@ -61,7 +61,7 @@ jobs:
         run: bash tools/checkCIWorkspaceCleanliness.sh
 
   documentation:
-    name: Documentation / MATLAB R2025a
+    name: Documentation / MATLAB R2025b
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
@@ -79,10 +79,10 @@ jobs:
           path: OceanKit
           persist-credentials: false
 
-      - name: Set up MATLAB R2025a
+      - name: Set up MATLAB R2025b
         uses: matlab-actions/setup-matlab@v3
         with:
-          release: R2025a
+          release: R2025b
           cache: true
 
       - name: Verify committed documentation
@@ -116,7 +116,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: r2025a-generated-documentation
+          name: r2025b-generated-documentation
           path: ${{ runner.temp }}/wave-vortex-model-generated-docs
           if-no-files-found: ignore
 
@@ -124,7 +124,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: r2025a-rendered-website
+          name: r2025b-rendered-website
           path: rendered-site
           if-no-files-found: ignore
 
@@ -134,7 +134,7 @@ jobs:
         run: bash tools/checkCIWorkspaceCleanliness.sh
 
   analyzer:
-    name: Code Analyzer / MATLAB R2025a
+    name: Code Analyzer / MATLAB R2025b
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
@@ -152,10 +152,10 @@ jobs:
           path: OceanKit
           persist-credentials: false
 
-      - name: Set up MATLAB R2025a
+      - name: Set up MATLAB R2025b
         uses: matlab-actions/setup-matlab@v3
         with:
-          release: R2025a
+          release: R2025b
           cache: true
 
       - name: Run Code Analyzer
