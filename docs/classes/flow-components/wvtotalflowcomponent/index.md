@@ -18,17 +18,17 @@ Orthogonal solution group
 
 ## Overview
 
-ch degree-of-freedom in the model is associated with an analytical
-lution to the equations of motion. This class groups together
-lutions of a particular type and provides a mapping between their
-alytical solutions and their numerical representation.
+Each degree-of-freedom in the model is associated with an analytical
+solution to the equations of motion. This class groups together
+solutions of a particular type and provides a mapping between their
+analytical solutions and their numerical representation.
 
-rhaps the most complicate part of the numerical implementation is
-e indexing---finding where each solution is represented
-merically. In general, a solution will have some properties, e.g.,
-(kMode,lMode,jMode,phi,A,omegasign)
-ich will have a primary and conjugate part, each of which might be
- two different matrices.
+Perhaps the most complicate part of the numerical implementation is
+the indexing---finding where each solution is represented
+numerically. In general, a solution will have some properties, e.g.,
+  (kMode,lMode,jMode,phi,A,omegasign)
+which will have a primary and conjugate part, each of which might be
+in two different matrices.
 
 
 

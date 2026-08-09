@@ -96,10 +96,64 @@ if grandparent ~= ""
     options = [options {"grandparent",grandparent}];
 end
 documentation = ClassDocumentation(className,options{:});
+normalizeReflectedDocumentation(documentation);
 mergeCanonicalSidecars(documentation,sidecarFolders);
 applyDocumentationTaxonomy(documentation);
 documentation.writeToFile();
 normalizeGeneratedMarkdown(documentation.pathOfClassFolderOnHardDrive);
+end
+
+function normalizeReflectedDocumentation(documentation)
+% MATLAB releases expose help-text indentation differently through the
+% metaclass API. Normalize it before ClassDocumentation writes Markdown so
+% one source tree produces the same documentation on every supported release.
+classMetadata = meta.class.fromName(documentation.name);
+classDescription = ClassDocumentation.trimDeclarationFromString(classMetadata.DetailedDescription);
+classDescription = Topic.trimTopicsFromString(classDescription);
+documentation.detailedDescription = removeCommonIndent(classDescription);
+
+for iMethod = 1:numel(documentation.allMethodDocumentation)
+    methodDocumentation = documentation.allMethodDocumentation(iMethod);
+    if ~isempty(methodDocumentation.detailedDescription)
+        methodDocumentation.detailedDescription = removeCommonIndent(methodDocumentation.detailedDescription);
+    end
+    if string(methodDocumentation.name) == documentation.name && ...
+            ~isempty(methodDocumentation.detailedDescription) && ...
+            isequal(strtrim(string(methodDocumentation.detailedDescription)),strtrim(string(documentation.detailedDescription)))
+        % R2024b exposes the class help as constructor help when the
+        % constructor has no help block. Newer releases leave it empty.
+        methodDocumentation.shortDescription = [];
+        methodDocumentation.detailedDescription = [];
+        methodDocumentation.declaration = [];
+    end
+end
+end
+
+function text = removeCommonIndent(text)
+lines = splitlines(string(text));
+nonblankLines = strlength(strtrim(lines)) > 0;
+if ~any(nonblankLines)
+    text = join(lines,newline);
+    return
+end
+
+leadingWhitespace = zeros(sum(nonblankLines),1);
+nonblankIndices = find(nonblankLines);
+for iLine = 1:numel(nonblankIndices)
+    line = char(lines(nonblankIndices(iLine)));
+    match = regexp(line,'^[ \t]*','match','once');
+    leadingWhitespace(iLine) = strlength(string(match));
+end
+commonIndent = min(leadingWhitespace);
+if commonIndent > 0
+    for iLine = 1:numel(lines)
+        line = char(lines(iLine));
+        if length(line) >= commonIndent
+            lines(iLine) = string(line(commonIndent+1:end));
+        end
+    end
+end
+text = join(lines,newline);
 end
 
 function mergeCanonicalSidecars(documentation,sidecarFolders)
