@@ -16,7 +16,14 @@ end
 end
 
 function suites = suiteRegistry()
-suites = [smokeSuite(),coreSuite(),standardScalingSuite(),largeScalingSuite(),transformLayoutSuite(),derivativeDispatchSuite()];
+suites = [smokeSuite(),coreSuite(),standardScalingSuite(),largeScalingSuite(),transformLayoutSuite(),derivativeDispatchSuite(),transformStorageSuite()];
+end
+
+function suite = transformStorageSuite()
+suite = baseSuite("transform-storage-v1","Exact transform storage and repeated whole-process RSS diagnostics",false);
+suite.kind = "transform-storage";
+suite.operation = "nonlinearAdvection";
+suite.cases = coreSuite().cases;
 end
 
 function suite = derivativeDispatchSuite()

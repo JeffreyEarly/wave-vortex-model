@@ -136,6 +136,30 @@ classdef WVFastTransformDoublyPeriodicFFTW < WVFastTransformDoublyPeriodic
                 "persistentArrayBytes",0);
         end
 
+        function entries = storageLedger(self)
+            % Return exact arrays and opaque FFTW plans for memory benchmarks.
+            entries = emptyLedger();
+            mappings = self.fourierStorageLayout.mappingMemoryUsage();
+            for iMapping = 1:numel(mappings)
+                mapping = mappings(iMapping);
+                entries(end+1,1) = ledgerEntry("horizontal.layout." + mapping.name,"WVFourierStorageLayout","mapping","Fourier/WV index mapping",mapping.class,mapping.shape,mapping.bytes,"persistent","allocated","exact","mapping",mapping.bytes); %#ok<AGROW>
+            end
+            halfBytes = 16*prod(self.horizontalTransform.complexSize);
+            entries(end+1,1) = ledgerEntry("horizontal.persistentSpectrumBuffer","WVFastTransformDoublyPeriodicFFTW","spectrum-buffer","No persistent Fourier buffer is retained","double",self.horizontalTransform.complexSize,0,"persistent","unallocated","exact","hermitian-half",halfBytes);
+            entries(end+1,1) = ledgerEntry("horizontal.preservingInverseScratch","RealToComplexTransform","preserving-scratch","Lazy preserving-c2r scratch; production uses destructive c2r","double",self.horizontalTransform.complexSize,0,"persistent","unallocated","exact","hermitian-half",halfBytes);
+            entries(end+1,1) = planEntry("horizontal.plan","Horizontal half-x r2c/c2r plan",self.horizontalTransform);
+            if ~isempty(self.xDerivativeTransform) && isvalid(self.xDerivativeTransform)
+                entries(end+1,1) = planEntry("horizontal.derivativePlanX","One-dimensional x-derivative r2c/c2r plan",self.xDerivativeTransform);
+            end
+            if ~isempty(self.yDerivativeTransform) && isvalid(self.yDerivativeTransform)
+                entries(end+1,1) = planEntry("horizontal.derivativePlanY","One-dimensional y-derivative r2c/c2r plan",self.yDerivativeTransform);
+            end
+            realBytes = 8*prod(self.horizontalTransform.realSize);
+            entries(end+1,1) = ledgerEntry("horizontal.forwardHalfSpectrum","WVFastTransformDoublyPeriodicFFTW","temporary","Zero-copy allocating forward result","double",self.horizontalTransform.complexSize,halfBytes,"transient","allocated","exact","hermitian-half",halfBytes);
+            entries(end+1,1) = ledgerEntry("horizontal.inverseHalfSpectrum","WVFastTransformDoublyPeriodicFFTW","temporary","Uniquely owned destructive inverse input","double",self.horizontalTransform.complexSize,halfBytes,"transient","allocated","exact","hermitian-half",halfBytes);
+            entries(end+1,1) = ledgerEntry("horizontal.inverseSpatialResult","WVFastTransformDoublyPeriodicFFTW","temporary","Caller-owned destructive inverse output","double",self.horizontalTransform.realSize,realBytes,"transient","allocated","exact","real",realBytes);
+        end
+
         function [u,diagnostics] = destructiveInverseDiagnostics(self,uBar)
             % Exercise the production destructive inverse with pointer evidence.
             %
@@ -182,4 +206,16 @@ classdef WVFastTransformDoublyPeriodicFFTW < WVFastTransformDoublyPeriodic
             end
         end
     end
+end
+
+function value = planEntry(identifier,purpose,plan)
+value = ledgerEntry(identifier,"RealToComplexTransform","fftw-plan",purpose,string(class(plan)),plan.realSize,NaN,"persistent","allocated","opaque","plan",NaN);
+end
+
+function value = ledgerEntry(identifier,owner,category,purpose,className,shape,bytes,persistence,allocationState,byteStatus,storageType,potentialBytes)
+value = struct("identifier",identifier,"owner",owner,"category",category,"purpose",purpose,"className",className,"shape",double(shape),"bytes",double(bytes),"persistence",persistence,"allocationState",allocationState,"byteStatus",byteStatus,"storageType",storageType,"potentialBytes",double(potentialBytes));
+end
+
+function value = emptyLedger()
+value = repmat(ledgerEntry("","","","","",[],0,"","","","",0),0,1);
 end

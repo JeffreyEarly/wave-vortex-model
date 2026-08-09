@@ -25,6 +25,7 @@ packages = mpmlist;
 expectedNames = [
     "ClassAnnotations"
     "Distributions"
+    "FFTWTransforms"
     "InternalModes"
     "NetCDF"
     "SplineCore"
@@ -34,6 +35,7 @@ expectedNames = [
 expectedVersions = [
     "1.2.1"
     "2.0.0"
+    "1.0.2"
     "1.3.0"
     "1.0.2"
     "2.2.0"
@@ -43,6 +45,7 @@ expectedVersions = [
 expectedSnapshotFolders = [
     "ClassAnnotations-1.2.1"
     "Distributions-2.0.0"
+    "FFTWTransforms-1.0.2"
     "InternalModes-1.3.0"
     "NetCDF-1.0.2"
     "SplineCore-2.2.0"
@@ -97,6 +100,7 @@ end
 representativeSymbols = [
     "CAAnnotatedClass"
     "NormalDistribution"
+    "FFTWBackend"
     "InternalModesWKBSpectral"
     "NetCDFFile"
     "BSpline"
@@ -106,6 +110,7 @@ representativeSymbols = [
 representativePackages = [
     "ClassAnnotations"
     "Distributions"
+    "FFTWTransforms"
     "InternalModes"
     "NetCDF"
     "SplineCore"

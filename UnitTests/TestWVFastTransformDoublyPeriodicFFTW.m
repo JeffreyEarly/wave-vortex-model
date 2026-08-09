@@ -262,8 +262,9 @@ classdef TestWVFastTransformDoublyPeriodicFFTW < matlab.unittest.TestCase
                 testCase.verifyLessThanOrEqual(relativeError(adapter.diffX(spatial,n=order),geometry.fastTransform.diffX(spatial,n=order)),1e-12);
             end
             testCase.verifyLessThanOrEqual(relativeError(adapter.diffY(spatial,n=2),geometry.fastTransform.diffY(spatial,n=2)),1e-12);
+            testCase.verifyEqual(WVSpatialDerivativeDispatch.implementation("fftw","diffY",[128 128 129],2,false),"matlab-1d");
             after = adapter.storageDiagnostics();
-            testCase.verifyEqual(after.horizontalPlanCount,3);
+            testCase.verifyEqual(after.horizontalPlanCount,2);
             testCase.verifyEqual(after.persistentArrayBytes,0);
             clear cleanup
         end

@@ -33,8 +33,8 @@ classdef TestReleaseVerification < matlab.unittest.TestCase
             dependencies = string({manifest.dependencies.name});
             compatibleVersions = string({manifest.dependencies.compatibleVersions});
             expected = dictionary( ...
-                ["ClassAnnotations" "InternalModes" "NetCDF" "SplineCore" "chebfun"], ...
-                ["^1.2.1" "1.3.0" "^1.0.2" "^2.2.0" ""]);
+                ["ClassAnnotations" "FFTWTransforms" "InternalModes" "NetCDF" "SplineCore" "chebfun"], ...
+                ["^1.2.1" "^1.0.2" "1.3.0" "^1.0.2" "^2.2.0" ""]);
             testCase.verifyEqual(sort(reshape(dependencies,[],1)),sort(reshape(keys(expected),[],1)));
             for iDependency = 1:numel(dependencies)
                 testCase.verifyEqual(compatibleVersions(iDependency),expected(dependencies(iDependency)));

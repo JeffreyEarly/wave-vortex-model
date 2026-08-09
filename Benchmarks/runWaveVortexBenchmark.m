@@ -15,6 +15,9 @@ arguments
     options.shouldCreateReference (1,1) logical = false
     options.correctnessTolerance (1,1) double {mustBePositive} = 1e-12
     options.runId (1,1) string = ""
+    options.memoryRunCount (1,1) double {mustBeInteger,mustBePositive} = 3
+    options.memorySamplingIntervalSeconds (1,1) double {mustBePositive} = 0.01
+    options.memoryPlateauSeconds (1,1) double {mustBePositive} = 0.25
 end
 
 benchmarkFolder = fileparts(mfilename("fullpath"));
@@ -40,7 +43,7 @@ if options.outputDirectory == ""
     options.outputDirectory = fullfile(benchmarkFolder,"results","runs",options.runId + "-" + computer("arch") + "-" + version("-release"));
 end
 
-results = struct("schemaVersion","1.0.0","status","complete","runId",options.runId,"environment",benchmarkEnvironment(repositoryRoot),"configuration",struct("suiteIds",options.suites,"backendIds",options.backends,"caseIds",options.caseIds,"correctnessTolerance",options.correctnessTolerance,"shouldMeasureMemory",options.shouldMeasureMemory),"suites",emptySuiteResults());
+results = struct("schemaVersion","1.0.0","status","complete","runId",options.runId,"environment",benchmarkEnvironment(repositoryRoot),"configuration",struct("suiteIds",options.suites,"backendIds",options.backends,"caseIds",options.caseIds,"correctnessTolerance",options.correctnessTolerance,"shouldMeasureMemory",options.shouldMeasureMemory,"memoryRunCount",options.memoryRunCount,"memorySamplingIntervalSeconds",options.memorySamplingIntervalSeconds,"memoryPlateauSeconds",options.memoryPlateauSeconds),"suites",emptySuiteResults());
 for iSuite = 1:numel(suites)
     suiteResult = runSuite(suites(iSuite),backends,options,benchmarkFolder,repositoryRoot);
     results.suites(end+1) = suiteResult;
@@ -68,6 +71,12 @@ if suite.kind == "transform-layout"
 end
 if suite.kind == "derivative-dispatch"
     suiteResult = runWaveVortexDerivativeDispatchSuite(suite,backends,options.correctnessTolerance,repositoryRoot);
+    suiteResult.referenceArtifact = referencePath;
+    return
+end
+if suite.kind == "transform-storage"
+    memoryBackends = waveVortexBenchmarkBackends(["builtin" "fftw"]);
+    suiteResult = runWaveVortexTransformStorageSuite(suite,memoryBackends,options,benchmarkFolder,repositoryRoot);
     suiteResult.referenceArtifact = referencePath;
     return
 end
