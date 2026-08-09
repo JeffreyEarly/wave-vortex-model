@@ -22,6 +22,7 @@ Initialize a WVTransform instance from an existing file
 + `path`  path to a NetCDF file
 + `iTime`  (optional) time index to initialize from (default 1).
 + `shouldReadOnly`  (optional) open the returned NetCDFFile read-only (default true).
++ `fastTransform`  (optional) runtime backend for constant-stratification files, `"builtin"` (default) or `"fftw"`.
 
 ## Returns
 + `wvt`  an instance of a WVTransform subclass

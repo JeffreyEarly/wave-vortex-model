@@ -25,6 +25,7 @@ Create a wave-vortex transform for constant stratification.
 + `options.isHydrostatic`  use hydrostatic dynamics; default `false`
 + `options.latitude`  latitude in the supported domain; default `33`
 + `options.shouldAntialias`  exclude quadratically aliased modes; default `true`
++ `options.fastTransform`  horizontal transform backend, `"builtin"` (default) or explicitly requested `"fftw"`
 + `options.rho0`  reference density in kilograms per cubic meter; default `1025`
 
 ## Returns
