@@ -16,7 +16,6 @@ concurrency:
 
 env:
   OCEANKIT_COMMIT: eb71bc7b05e74776afd678b27c964cf53cd9d547
-  WVM_DOCUMENTATION_DIAGNOSTIC_FOLDER: ${{ runner.temp }}/wave-vortex-model-generated-docs
 
 jobs:
   smoke:
@@ -88,6 +87,8 @@ jobs:
 
       - name: Verify committed documentation
         uses: matlab-actions/run-command@v3
+        env:
+          WVM_DOCUMENTATION_DIAGNOSTIC_FOLDER: ${{ runner.temp }}/wave-vortex-model-generated-docs
         with:
           command: >-
             sourceRoot = fullfile(pwd,"source");
