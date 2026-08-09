@@ -50,8 +50,8 @@ if ispc
     provider = "matlab-memory";
     return
 end
-pid = java.lang.ProcessHandle.current().pid();
-[status,output] = system("ps -o rss= -p " + pid);
+pid = feature("getpid");
+[status,output] = system(sprintf("ps -o rss= -p %d",pid));
 if status ~= 0
     error("WaveVortexBenchmark:RSSUnavailable","Unable to query resident memory: %s",output);
 end
