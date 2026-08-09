@@ -1,4 +1,8 @@
 classdef WVFastTransformDoublyPeriodic < handle
+    properties (SetAccess=protected)
+        fourierSpectrumLayout
+    end
+
     methods (Abstract)
         u_bar = transformFromSpatialDomainWithFourier(self,u)
         u = transformToSpatialDomainWithFourier(self,u_bar)
