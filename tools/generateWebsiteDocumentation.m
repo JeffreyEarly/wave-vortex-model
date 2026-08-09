@@ -110,7 +110,7 @@ function normalizeReflectedDocumentation(documentation)
 classMetadata = meta.class.fromName(documentation.name);
 classDescription = ClassDocumentation.trimDeclarationFromString(classMetadata.DetailedDescription);
 classDescription = Topic.trimTopicsFromString(classDescription);
-documentation.detailedDescription = removeCommonIndent(classDescription);
+documentation.detailedDescription = regexprep(removeCommonIndent(classDescription),'(?:\r?\n){3,}','\n\n');
 
 for iMethod = 1:numel(documentation.allMethodDocumentation)
     methodDocumentation = documentation.allMethodDocumentation(iMethod);
