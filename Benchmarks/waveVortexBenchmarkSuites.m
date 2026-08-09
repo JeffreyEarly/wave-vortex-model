@@ -16,7 +16,7 @@ end
 end
 
 function suites = suiteRegistry()
-suites = [smokeSuite(),coreSuite(),standardScalingSuite(),largeScalingSuite()];
+suites = [smokeSuite(),coreSuite(),standardScalingSuite(),largeScalingSuite(),transformLayoutSuite()];
 end
 
 function suite = smokeSuite()
@@ -87,8 +87,34 @@ end
 suite.cases = cases;
 end
 
+function suite = transformLayoutSuite()
+suite = baseSuite("transform-layout-v1","Full-complex horizontal mapping and Fourier diagnostics",false);
+suite.kind = "transform-layout";
+suite.operation = "transform-layout";
+sizes = [64 48 17;65 63 17;256 256 65;512 512 129];
+cases = emptyCases();
+seed = 6900;
+for iSize = 1:size(sizes,1)
+    for shouldAntialias = [false true]
+        seed = seed+1;
+        antialiasId = "antialias-" + string(double(shouldAntialias));
+        caseId = "full-layout-" + join(string(sizes(iSize,:)),"x") + "-" + antialiasId;
+        sampleCount = 7;
+        if sizes(iSize,1) == 512
+            sampleCount = 3;
+        end
+        benchmarkCase = baseCase(caseId,"layout-only",sizes(iSize,:),false,sampleCount,2,seed);
+        benchmarkCase.Lxyz = [15e3 15e3];
+        benchmarkCase.operation = "transform-layout";
+        benchmarkCase.shouldAntialias = shouldAntialias;
+        cases(end+1) = benchmarkCase; %#ok<AGROW>
+    end
+end
+suite.cases = cases;
+end
+
 function suite = baseSuite(id,description,isScored)
-suite = struct("id",id,"version",1,"description",description,"operation","nonlinearAdvection","isScored",isScored,"selectionIsComplete",true,"cases",emptyCases());
+suite = struct("id",id,"version",1,"kind","model-operation","description",description,"operation","nonlinearAdvection","isScored",isScored,"selectionIsComplete",true,"cases",emptyCases());
 end
 
 function benchmarkCase = make3DCase(id,transformId,Nxyz,isHydrostatic,sampleCount,warmupCount,seed)
@@ -117,7 +143,7 @@ caseIds = string({suite.cases.id});
 if numel(unique(caseIds)) ~= numel(caseIds)
     error("WaveVortexBenchmark:DuplicateCase","Suite %s contains duplicate case IDs.",suite.id);
 end
-knownTransforms = ["constant-nonhydrostatic" "constant-hydrostatic" "hydrostatic" "boussinesq" "stratified-qg" "barotropic-qg"];
+knownTransforms = ["constant-nonhydrostatic" "constant-hydrostatic" "hydrostatic" "boussinesq" "stratified-qg" "barotropic-qg" "layout-only"];
 if ~all(ismember(string({suite.cases.transformId}),knownTransforms))
     error("WaveVortexBenchmark:InvalidTransform","Suite %s contains an unknown transform ID.",suite.id);
 end
