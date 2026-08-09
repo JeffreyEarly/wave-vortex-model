@@ -35,7 +35,7 @@ env:
 
 jobs:
   clean-install:
-    name: Clean install / MATLAB R2024b
+    name: Clean install / MATLAB R2025a
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
@@ -53,10 +53,10 @@ jobs:
           path: OceanKit
           persist-credentials: false
 
-      - name: Set up MATLAB R2024b
+      - name: Set up MATLAB R2025a
         uses: matlab-actions/setup-matlab@v3
         with:
-          release: R2024b
+          release: R2025a
           cache: true
 
       - name: Create isolated MATLAB preferences
@@ -79,7 +79,7 @@ jobs:
         run: bash tools/checkCIWorkspaceCleanliness.sh
 
   exported-package:
-    name: Exported package / MATLAB R2024b
+    name: Exported package / MATLAB R2025a
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
@@ -97,10 +97,10 @@ jobs:
           path: OceanKit
           persist-credentials: false
 
-      - name: Set up MATLAB R2024b
+      - name: Set up MATLAB R2025a
         uses: matlab-actions/setup-matlab@v3
         with:
-          release: R2024b
+          release: R2025a
           cache: true
 
       - name: Create isolated release workspace

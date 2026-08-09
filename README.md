@@ -6,7 +6,7 @@ WaveVortexModel represents rotating, stratified Boussinesq flow on an energetica
 
 ## Installation
 
-WaveVortexModel requires MATLAB R2024b or newer. The recommended installation uses [OceanKit](https://github.com/JeffreyEarly/OceanKit) as an MPM repository:
+WaveVortexModel requires MATLAB R2025a or newer. The recommended installation uses [OceanKit](https://github.com/JeffreyEarly/OceanKit) as an MPM repository:
 
 ```matlab
 mpmAddRepository("OceanKit","local/path/to/OceanKit")

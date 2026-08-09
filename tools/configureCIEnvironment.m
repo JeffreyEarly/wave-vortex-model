@@ -7,7 +7,7 @@ end
 
 % Routine CI loads the pinned package snapshots directly to minimize setup
 % time. The release-verification workflow separately exercises native MPM
-% installation from a clean MATLAB path on the R2024b compatibility floor.
+% installation from a clean MATLAB path on the R2025a compatibility floor.
 snapshotNames = [
     "Distributions-2.0.0"
     "SplineCore-2.2.0"

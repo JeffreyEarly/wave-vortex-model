@@ -21,7 +21,7 @@ Use this checklist for a maintenance release after every issue assigned to the r
 
 - Required CI: Smoke, Documentation, and Code Analyzer on the final commit.
 - Extended CI: Full, Exhaustive, and Optional, with any unavailable optional dependency reported explicitly.
-- Native-package CI: Clean install and Exported package on MATLAB R2024b.
+- Native-package CI: Clean install and Exported package on MATLAB R2025a.
 - Local or CI reruns leave no NetCDF files, MAT-files, generated documentation, open handles, or other repository artifacts.
 
 The native-package checks must resolve dependencies from the immutable OceanKit snapshot rather than sibling authoring repositories. The exported-package check must install the unpublished export in a fresh MATLAB process and exercise transform construction, model evolution, variable stratification, and NetCDF restoration.

@@ -7,7 +7,7 @@ nav_order: 3
 
 # Continuous integration
 
-WaveVortexModel uses non-mutating continuous integration to check changes without modifying the package, publishing a release, or exporting an OceanKit snapshot. The workflows run on Ubuntu with MATLAB R2024b and resolve runtime dependencies from OceanKit commit `eb6141e837b2a2d52db675d449ed0ac4c9a64bb5`. This fixed dependency snapshot makes a workflow rerun use the same OceanKit packages as the original run.
+WaveVortexModel uses non-mutating continuous integration to check changes without modifying the package, publishing a release, or exporting an OceanKit snapshot. The workflows run on Ubuntu with MATLAB R2025a and resolve runtime dependencies from OceanKit commit `eb6141e837b2a2d52db675d449ed0ac4c9a64bb5`. This fixed dependency snapshot makes a workflow rerun use the same OceanKit packages as the original run.
 
 ## Required checks
 
@@ -15,9 +15,9 @@ The required workflow runs for every pull request, every update to `main`, and m
 
 | GitHub check | Local equivalent |
 | --- | --- |
-| Smoke / MATLAB R2024b | `buildtool test:smoke` |
-| Documentation / MATLAB R2024b | `buildtool docs:check` |
-| Code Analyzer / MATLAB R2024b | `buildtool analyze` |
+| Smoke / MATLAB R2025a | `buildtool test:smoke` |
+| Documentation / MATLAB R2025a | `buildtool docs:check` |
+| Code Analyzer / MATLAB R2025a | `buildtool analyze` |
 
 The documentation job installs the authoring-only package `ClassDocumentation@1.3.0` explicitly before checking the committed Markdown. It then builds that exact tree with GitHub Pages' Jekyll action and validates the rendered HTML. This second stage catches malformed front matter, mathematical Markdown, expressions split across rendered table cells, or other source syntax that can pass a link check but disappear or remain raw in the deployed site. Valid math delimiters remain in the Jekyll output for browser-side MathJax. Failed rendered output is uploaded as a temporary diagnostic artifact and is never committed.
 
@@ -41,18 +41,18 @@ The public GitHub MATLAB license permits one MATLAB process at a time. The full 
 
 Each job checks out WaveVortexModel in an isolated `source` directory and the pinned OceanKit repository in a sibling `OceanKit` directory. MATLAB registers that local checkout as the MPM repository and loads the exact dependency snapshots declared by the CI setup. The workflows do not modify the OceanKit checkout.
 
-These routine jobs configure the pinned dependency paths directly because that is faster than creating a fresh native MPM installation for every pull-request check. MATLAB package schemas are forward compatible, so this optimization is not a manifest-format workaround. It is complemented by the native-package gates below.
+These routine jobs configure the pinned dependency paths directly because that is faster than creating a fresh native MPM installation for every pull-request check. The native-package gates below remain authoritative for the installed package boundary. WaveVortexModel and its pinned dependencies use package-manifest schema 1.1, which is native to R2025a; hosted R2024b native-MPM discovery did not reliably load that package graph.
 
 The OceanKit commit is deliberately recorded in both routine workflow files, the package-verification workflow, and this page. Update all four locations together after compatibility with a newer dependency snapshot has been reviewed.
 
 ## Native-package release gates
 
-The package-verification workflow may be started manually and runs on pull requests that change production source, package metadata, documentation, release workflows, or verification tools. Test-only, benchmark-only, and developer-experiment changes do not start it automatically. It reports two independent MATLAB R2024b jobs:
+The package-verification workflow may be started manually and runs on pull requests that change production source, package metadata, documentation, release workflows, or verification tools. Test-only, benchmark-only, and developer-experiment changes do not start it automatically. It reports two independent MATLAB R2025a jobs:
 
 | GitHub check | Purpose |
 | --- | --- |
-| Clean install / MATLAB R2024b | Installs the authoring checkout non-editably through MPM using only the pinned OceanKit repository. |
-| Exported package / MATLAB R2024b | Builds an unpublished release candidate, installs the exported folder in a fresh MATLAB process, and exercises it as a consumer. |
+| Clean install / MATLAB R2025a | Installs the authoring checkout non-editably through MPM using only the pinned OceanKit repository. |
+| Exported package / MATLAB R2025a | Builds an unpublished release candidate, installs the exported folder in a fresh MATLAB process, and exercises it as a consumer. |
 
 Both jobs use isolated MATLAB preferences and temporary MPM installations. They require the exact declared dependency graph and reject dependencies that resolve from sibling authoring repositories. The installed package path must omit `UnitTests`, test doubles, and `RunAllUnitTests`.
 
