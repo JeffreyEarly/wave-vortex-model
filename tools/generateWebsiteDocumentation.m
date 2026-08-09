@@ -14,7 +14,7 @@ for iFolder = 1:numel(metadata.folders)
         addpath(folder,"-begin");
     end
 end
-clear WVFourierStorageLayout WVFastTransformDoublyPeriodic WVFastTransformDoublyPeriodicFFTW WVVerticalTransformConstantStratification
+clear WVFourierStorageLayout WVFastTransformDoublyPeriodic WVFastTransformDoublyPeriodicFFTW WVVerticalTransformConstantStratification WVSpatialDerivativeDispatch
 
 sourceFolder = fullfile(repositoryRoot,"Documentation","WebsiteDocumentation");
 rebuildWebsiteDocumentationFromSource(sourceFolder,buildFolder);
@@ -72,6 +72,7 @@ writeClassDocumentation("WVFourierStorageLayout",buildFolder,websiteFolder,paren
 writeClassDocumentation("WVFastTransformDoublyPeriodic",buildFolder,websiteFolder,parentName,classFolderName,parentName,2,{'handle'},string.empty(0,1));
 writeClassDocumentation("WVFastTransformDoublyPeriodicFFTW",buildFolder,websiteFolder,parentName,classFolderName,parentName,3,{'handle','WVFastTransformDoublyPeriodic'},string.empty(0,1));
 writeClassDocumentation("WVVerticalTransformConstantStratification",buildFolder,websiteFolder,parentName,classFolderName,parentName,4,{'handle'},string.empty(0,1));
+writeClassDocumentation("WVSpatialDerivativeDispatch",buildFolder,websiteFolder,parentName,classFolderName,parentName,5,{},string.empty(0,1));
 clear pathCleanup
 end
 

@@ -143,6 +143,25 @@ classdef WVFastTransformDoublyPeriodic < handle
         du = diffY(wvg,u,options)
     end
 
+    methods
+        function [u,u_x,u_y] = transformToSpatialDomainWithFourierAndDerivatives(self,uBar)
+            % Reconstruct a field and its first horizontal derivatives.
+            %
+            % Concrete adapters may override this layout-neutral composition
+            % to reuse storage or transform work.
+            %
+            % - Topic: Developer internals
+            % - Parameter uBar: normalized canonical WV-grid coefficients
+            % - Returns u: reconstructed spatial field
+            % - Returns u_x: first derivative with respect to x
+            % - Returns u_y: first derivative with respect to y
+            % - Developer: true
+            u = self.transformToSpatialDomainWithFourier(uBar);
+            u_x = self.diffX(u);
+            u_y = self.diffY(u);
+        end
+    end
+
     methods (Static, Access=private)
         function services = defaultServices()
             services = struct( ...

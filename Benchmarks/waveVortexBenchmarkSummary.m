@@ -69,9 +69,47 @@ for iSuite = 1:numel(results.suites)
     suite = results.suites(iSuite);
     if isfield(suite,"kind") && string(suite.kind) == "transform-layout"
         lines = [lines;transformLayoutLines(suite)]; %#ok<AGROW>
+    elseif isfield(suite,"kind") && string(suite.kind) == "derivative-dispatch"
+        lines = [lines;derivativeDispatchLines(suite)]; %#ok<AGROW>
     end
 end
 summary = strjoin(lines,newline) + newline;
+end
+
+function lines = derivativeDispatchLines(suite)
+lines = ["";"## Spatial-derivative dispatch diagnostic";"";"A candidate is adopted only when it is at least 1.10× faster than the current complete call, remains within relative error 1e-12, and passes the structural memory checks.";"";"| Case | Backend | Operation | Baseline (ms) | Fastest | Fastest (ms) | Speedup | Selected |";"|---|---|---|---:|---|---:|---:|---|"];
+for iCase = 1:numel(suite.cases)
+    benchmarkCase = suite.cases(iCase);
+    if benchmarkCase.status ~= "complete"
+        lines(end+1) = "| " + benchmarkCase.id + " | failed | — | NaN | — | NaN | NaN | — |"; %#ok<AGROW>
+        continue
+    end
+    for iBackend = 1:numel(benchmarkCase.backends)
+        backend = benchmarkCase.backends(iBackend);
+        for iOperation = 1:numel(backend.operations)
+            operation = backend.operations(iOperation);
+            selection = operation.selection;
+            lines(end+1) = sprintf("| %s | %s | %s | %.3f | %s | %.3f | %.3f | %s |",benchmarkCase.id,backend.id,operation.id,1e3*selection.baselineSeconds,selection.strictFastest,1e3*selection.strictFastestSeconds,selection.speedup,selection.selected); %#ok<AGROW>
+        end
+    end
+end
+lines = [lines;"";"### Correctness and storage";"";"| Case | Backend | Operation | Candidate | Error | Known temporary (MiB) | Persistent arrays (MiB) | Preserving c2r |";"|---|---|---|---|---:|---:|---:|---|"];
+for iCase = 1:numel(suite.cases)
+    benchmarkCase = suite.cases(iCase);
+    if benchmarkCase.status ~= "complete"
+        continue
+    end
+    for iBackend = 1:numel(benchmarkCase.backends)
+        backend = benchmarkCase.backends(iBackend);
+        for iOperation = 1:numel(backend.operations)
+            operation = backend.operations(iOperation);
+            for iCandidate = 1:numel(operation.candidates)
+                candidate = operation.candidates(iCandidate);
+                lines(end+1) = sprintf("| %s | %s | %s | %s | %.3g | %.3f | %.3f | %s |",benchmarkCase.id,backend.id,operation.id,candidate.id,candidate.relativeError,candidate.memory.knownTemporaryBytes/2^20,candidate.memory.persistentArrayBytes/2^20,yesNo(candidate.memory.usesPreservingInverse)); %#ok<AGROW>
+            end
+        end
+    end
+end
 end
 
 function tf = isModelOperationSuite(suite)

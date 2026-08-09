@@ -250,6 +250,40 @@ classdef TestWVFastTransformDoublyPeriodicFFTW < matlab.unittest.TestCase
             clear cleanup
         end
 
+        function selectedOneDimensionalDerivativesAreCorrectAndLazy(testCase)
+            geometry = WVGeometryDoublyPeriodic([4000 3000],[128 128],Nz=129,shouldAntialias=false);
+            adapter = WVFastTransformDoublyPeriodicFFTW(geometry,129,planner="estimate",nCores=1);
+            cleanup = onCleanup(@()delete(adapter));
+            rng(7475,"twister");
+            spatial = randn(128,128,129);
+            before = adapter.storageDiagnostics();
+            testCase.verifyEqual(before.horizontalPlanCount,1);
+            for order = [2 3]
+                testCase.verifyLessThanOrEqual(relativeError(adapter.diffX(spatial,n=order),geometry.fastTransform.diffX(spatial,n=order)),1e-12);
+            end
+            testCase.verifyLessThanOrEqual(relativeError(adapter.diffY(spatial,n=2),geometry.fastTransform.diffY(spatial,n=2)),1e-12);
+            after = adapter.storageDiagnostics();
+            testCase.verifyEqual(after.horizontalPlanCount,3);
+            testCase.verifyEqual(after.persistentArrayBytes,0);
+            clear cleanup
+        end
+
+        function selectedModalAllDerivativePathMatchesBuiltin(testCase)
+            builtin = WVTransformConstantStratification([4000 3000 1000],[64 64 65],shouldAntialias=false,fastTransform="builtin");
+            fftw = WVTransformConstantStratification([4000 3000 1000],[64 64 65],shouldAntialias=false,fastTransform="fftw");
+            cleanup = onCleanup(@()deleteTransforms(builtin,fftw));
+            rng(7476,"twister");
+            Apm = randn(builtin.spectralMatrixSize) + 1i*randn(builtin.spectralMatrixSize);
+            A0 = randn(builtin.spectralMatrixSize) + 1i*randn(builtin.spectralMatrixSize);
+            [a,b,c,d] = builtin.transformToSpatialDomainWithGAllDerivatives(Apm=Apm,A0=A0);
+            [w,x,y,z] = fftw.transformToSpatialDomainWithGAllDerivatives(Apm=Apm,A0=A0);
+            verifyArrays(testCase,{w,x,y,z},{a,b,c,d});
+            diagnostics = fftw.fastTransform.storageDiagnostics();
+            testCase.verifyEqual(diagnostics.horizontalPlanCount,1);
+            testCase.verifyEqual(diagnostics.persistentArrayBytes,0);
+            clear cleanup
+        end
+
         function repeatedConstructionAndFailureCleanupAreBalanced(testCase)
             before = fftw_r2c('lifetime');
             geometry = WVGeometryDoublyPeriodic([4000 3000],[8 6],Nz=3,shouldAntialias=false);

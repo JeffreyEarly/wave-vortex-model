@@ -16,7 +16,31 @@ end
 end
 
 function suites = suiteRegistry()
-suites = [smokeSuite(),coreSuite(),standardScalingSuite(),largeScalingSuite(),transformLayoutSuite()];
+suites = [smokeSuite(),coreSuite(),standardScalingSuite(),largeScalingSuite(),transformLayoutSuite(),derivativeDispatchSuite()];
+end
+
+function suite = derivativeDispatchSuite()
+suite = baseSuite("derivative-dispatch-v1","Spatial derivative implementation and dispatch diagnostics",false);
+suite.kind = "derivative-dispatch";
+suite.operation = "spatial-derivatives";
+definitions = [ ...
+    struct("id","derivatives-64x64x65","transformId","constant-nonhydrostatic","Nxyz",[64 64 65],"isHydrostatic",false,"sampleCount",7,"seed",7401), ...
+    struct("id","derivatives-128x128x33","transformId","constant-nonhydrostatic","Nxyz",[128 128 33],"isHydrostatic",false,"sampleCount",7,"seed",7402), ...
+    struct("id","derivatives-128x128x65","transformId","constant-nonhydrostatic","Nxyz",[128 128 65],"isHydrostatic",false,"sampleCount",7,"seed",7403), ...
+    struct("id","derivatives-128x128x129","transformId","constant-nonhydrostatic","Nxyz",[128 128 129],"isHydrostatic",false,"sampleCount",7,"seed",7404), ...
+    struct("id","derivatives-128x128x257","transformId","constant-nonhydrostatic","Nxyz",[128 128 257],"isHydrostatic",false,"sampleCount",7,"seed",7405), ...
+    struct("id","derivatives-nonhydrostatic-256x256x65","transformId","constant-nonhydrostatic","Nxyz",[256 256 65],"isHydrostatic",false,"sampleCount",7,"seed",7411), ...
+    struct("id","derivatives-hydrostatic-256x256x65","transformId","constant-hydrostatic","Nxyz",[256 256 65],"isHydrostatic",true,"sampleCount",7,"seed",7412), ...
+    struct("id","derivatives-nonhydrostatic-512x512x129","transformId","constant-nonhydrostatic","Nxyz",[512 512 129],"isHydrostatic",false,"sampleCount",3,"seed",7413), ...
+    struct("id","derivatives-hydrostatic-512x512x129","transformId","constant-hydrostatic","Nxyz",[512 512 129],"isHydrostatic",true,"sampleCount",3,"seed",7414)];
+cases = emptyCases();
+for definition = definitions
+    benchmarkCase = baseCase(definition.id,definition.transformId,definition.Nxyz,definition.isHydrostatic,definition.sampleCount,2,definition.seed);
+    benchmarkCase.Lxyz = [15e3 15e3 1300];
+    benchmarkCase.operation = "spatial-derivatives";
+    cases(end+1) = benchmarkCase; %#ok<AGROW>
+end
+suite.cases = cases;
 end
 
 function suite = smokeSuite()

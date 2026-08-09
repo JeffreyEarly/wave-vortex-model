@@ -30,8 +30,10 @@ real- or spectrum-sized persistent MATLAB array.
 Forward transforms return normalized WaveVortex coefficients. Inverse
 transforms assemble a uniquely owned transient half spectrum and use
 FFTW's destructive c2r operation without additional normalization.
-Spatial derivatives deliberately retain MATLAB's one-dimensional FFT
-implementation until issue #74 evaluates derivative dispatch.
+Spatial derivatives retain MATLAB by default and lazily create
+one-dimensional FFTW plans only for exact issue #74 dispatch records.
+Per-field reconstruction can apply horizontal multipliers directly on
+the canonical WV grid without retaining additional Fourier storage.
 
 ```matlab
 adapter = WVFastTransformDoublyPeriodicFFTW(geometry,Nz);

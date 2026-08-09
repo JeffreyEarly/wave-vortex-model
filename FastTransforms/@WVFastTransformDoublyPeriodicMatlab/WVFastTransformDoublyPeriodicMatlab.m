@@ -33,6 +33,7 @@ classdef WVFastTransformDoublyPeriodicMatlab < WVFastTransformDoublyPeriodic
     methods
         u_bar = transformFromSpatialDomainWithFourier(self,u)
         u = transformToSpatialDomainWithFourier(self,u_bar)
+        [u,u_x,u_y] = transformToSpatialDomainWithFourierAndDerivatives(self,u_bar)
         du = diffX(wvg,u,options)
         du = diffY(wvg,u,options)
     end
