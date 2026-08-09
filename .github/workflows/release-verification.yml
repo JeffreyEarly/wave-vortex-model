@@ -71,7 +71,7 @@ jobs:
             sourceRoot = fullfile(pwd,"source");
             oceanKitRoot = fullfile(pwd,"OceanKit");
             addpath(fullfile(sourceRoot,"tools"));
-            verifyWaveVortexModelPackage(sourceRoot,oceanKitRoot,expectedVersion="4.2.0")
+            verifyWaveVortexModelPackage(sourceRoot,oceanKitRoot)
 
       - name: Verify clean source checkout
         if: always()
@@ -111,7 +111,7 @@ jobs:
           mkdir -p "${{ runner.temp }}/matlab-preferences-release"
           mkdir -p "${{ runner.temp }}/matlab-preferences-export"
 
-      - name: Prepare unpublished 4.2.1 export
+      - name: Prepare unpublished patch export
         uses: matlab-actions/run-command@v3
         env:
           MATLAB_PREFDIR: ${{ runner.temp }}/matlab-preferences-release
@@ -133,9 +133,10 @@ jobs:
           command: >-
             sourceRoot = fullfile(pwd,"source");
             oceanKitRoot = fullfile(pwd,"OceanKit");
-            exportRoot = "${{ runner.temp }}/wave-vortex-model-release-output/WaveVortexModel-4.2.1";
+            outputRoot = "${{ runner.temp }}/wave-vortex-model-release-output";
+            candidate = load(fullfile(outputRoot,"candidate-report.mat"),"report");
             addpath(fullfile(sourceRoot,"tools"));
-            verifyWaveVortexModelPackage(exportRoot,oceanKitRoot,expectedVersion="4.2.1")
+            verifyWaveVortexModelPackage(candidate.report.exportPath,oceanKitRoot,expectedVersion=candidate.report.version)
 
       - name: Upload release-candidate diagnostics
         if: failure()
