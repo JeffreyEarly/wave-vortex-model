@@ -2,40 +2,48 @@
 layout: default
 title: Installation
 nav_order: 2
-description: Installation instructions"
+description: Install WaveVortexModel and its dependencies
 permalink: /installation
 ---
 
-## Installation
+# Installation
 
-The recommended way to install the model is with [OceanKit](https://github.com/JeffreyEarly/OceanKit).
+WaveVortexModel requires MATLAB R2024b or newer. The package depends on other OceanKit packages and on Chebfun; MPM installs the declared dependencies automatically.
 
-Clone the OceanKit repository
-```
-git clone https://github.com/JeffreyEarly/OceanKit.git
-```
-from the command-line (or download [the zip](https://github.com/JeffreyEarly/OceanKit/archive/refs/heads/main.zip)). Within Matlab, add this folder as an MPM repository,
+## Install from OceanKit
+
+Clone or download the [OceanKit repository](https://github.com/JeffreyEarly/OceanKit), then register its local folder with MPM:
+
 ```matlab
-mpmAddRepository("OceanKit","path/to/folder/OceanKit")
+mpmAddRepository("OceanKit","local/path/to/OceanKit")
 ```
-and then
+
+Install WaveVortexModel and its dependencies:
+
 ```matlab
 mpminstall("WaveVortexModel")
 ```
-will install the [WaveVortexModel](https://wavevortexmodel.org) and its dependencies.
 
-## Advanced
+The installed package can be inspected with:
 
-The WaveVortexModel is highly extensible and rarely needs to be modified directly. However, if you do need to make change to the code you will need to install the model with *Authoring* enabled.
-
-You should still download OceanKit and add the mpm repo as above. However, instead of installing model from the OceanKit, you will install it directly from its github repo.
-
-Clone the WaveVortexModel repository
+```matlab
+mpmlist("WaveVortexModel")
 ```
+
+See [OceanKit installation](https://jeffreyearly.github.io/OceanKit/installation/) for repository management, updates, and removal.
+
+## Install an authoring checkout
+
+Ordinary users should install the released OceanKit package. Clone the authoring repository only when developing WaveVortexModel or rebuilding its documentation:
+
+```text
 git clone https://github.com/JeffreyEarly/wave-vortex-model.git
 ```
-and install with
+
+Install that checkout with authoring files enabled:
+
 ```matlab
-mpminstall("path/to/folder/wave-vortex-model", Authoring=true); 
+mpminstall("local/path/to/wave-vortex-model",Authoring=true)
 ```
-This will still install the dependencies from the mpm repo (and those will not be editable).
+
+Runtime dependencies still come from the registered OceanKit repository. Documentation generation additionally requires the authoring-only package `ClassDocumentation@1.3.0`; it is not a WaveVortexModel runtime dependency.

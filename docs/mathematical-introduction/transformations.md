@@ -161,7 +161,7 @@ $$
 
 ## Phase winding
 
-The final step of the transformation is to wind the phases to reference time $$t_0$$. This is done using the the phase winding operator $$T_\omega$$
+The final step of the transformation is to wind the phases to reference time $$t_0$$. This is done using the phase winding operator $$T_\omega$$
 
 $$
     T_\omega = 

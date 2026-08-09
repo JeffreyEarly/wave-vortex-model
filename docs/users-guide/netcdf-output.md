@@ -1,25 +1,35 @@
 ---
 layout: default
-title: WaveVortexModel NetCDF output
-parent: Users guide
+title: NetCDF conventions
+parent: User guide
 nav_order: 18
 mathjax: true
 ---
 
-#  WaveVortexModel NetCDF output
+# NetCDF conventions
 
-WaveVortexModel NetCDF output follows the [CF metadata conventions](https://cfconventions.org) to "promote the processing and sharing of files created with the NetCDF API". These conventions are (mostly) automatically followed by the code.
+WaveVortexModel writes named dimensions, variables, units, descriptive attributes, transform metadata, and history information through its annotated persistence system. This metadata makes model files self-describing and provides the information required to reconstruct supported transforms, forcing, observing systems, and restart state.
 
-For data that is intended to be distributed, it is also useful to follow the [attribute convention for data discovery](https://wiki.esipfed.org/Attribute_Convention_for_Data_Discovery_1-3). These additional attributes are not added automatically by the WaveVortexModel, but a tool is provided for making this easy.
+## Scientific variables
 
-## Global attributes
+Each registered variable has a `WVVariableAnnotation` that defines its name, dimensions, units, and description. The output system uses those annotations when creating NetCDF dimensions and variables. Eulerian fields, coefficients, particles, tracers, and moorings add the dimensions and metadata needed for their own stored state.
 
-## Dimensions
+The package uses established names and units where they are defined, but the metadata should still be reviewed before a file is distributed or deposited in an archive.
 
-## Variables
+## CF conventions
 
-- `name' name of the variable used by the WVOperation
-- `standard_name' the standard name must come
-- `long_name'
+The [Climate and Forecast metadata conventions](https://cfconventions.org) provide standard names, coordinate rules, and structural guidance for interoperable geoscience data. WaveVortexModel supplies useful CF-oriented metadata, but it does not claim that every possible output configuration is automatically a complete CF-compliant data product.
 
+Users preparing a distributed dataset should verify coordinate attributes, standard names, units, missing-value treatment, and any project-specific requirements with an appropriate CF checker.
 
+## Discovery metadata
+
+The [Attribute Convention for Data Discovery](https://wiki.esipfed.org/Attribute_Convention_for_Data_Discovery_1-3) describes global attributes used by repositories and search systems. Dataset title, summary, creator, institution, spatial and temporal coverage, license, and persistent identifiers depend on the scientific project and are therefore the responsibility of the file producer.
+
+Add project-specific global attributes as part of the output workflow and validate the finished file before publication. WaveVortexModel's automatically recorded class, package version, creation date, references, and history complement this dataset-level metadata but do not replace it.
+
+## Related guidance
+
+- [Reading and writing files](/users-guide/reading-and-writing-to-file.html) covers transform persistence, ordinary model output, and restart.
+- [Reading and writing files: advanced topics](/users-guide/reading-and-writing-to-file-advanced.html) covers multiple files, schedules, observing systems, restoration, and failure behavior.
+- [Creating new state variables](/users-guide/creating-new-state-variables.html) explains how annotations supply names, dimensions, units, and descriptions for custom output variables.

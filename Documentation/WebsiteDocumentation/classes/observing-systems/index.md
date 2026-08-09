@@ -9,5 +9,4 @@ permalink: /classes/observing-systems
 
 #  Observing systems
 
-These classes allows you to *observe* during integration. Specific subclasses include systems for Eulerian fields, Lagrangian particles, tracers, moorings, and even [along-track satellite observations](https://satmapkit.github.io/AlongTrackSimulator/)
-
+These classes let you observe a state during integration. Specific subclasses provide Eulerian fields, Lagrangian particles, tracers, moorings, and [along-track satellite observations](https://satmapkit.github.io/AlongTrackSimulator/).

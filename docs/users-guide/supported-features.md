@@ -1,14 +1,14 @@
 ---
 layout: default
 title: Capabilities and limitations
-parent: Users guide
+parent: User guide
 nav_order: 3
 has_toc: true
 ---
 
 # Capabilities and limitations
 
-WaveVortexModel provides five transform families together with model integration, forcing, observing systems, and NetCDF output. This page summarizes the public behavior covered by the package documentation and release tests. Public MATLAB visibility alone does not make an implementation helper a recommended entry point.
+WaveVortexModel provides five transform families together with model integration, forcing, observing systems, and NetCDF output. This page summarizes the documented public behavior and important limitations. Public MATLAB visibility alone does not make an implementation helper a recommended entry point.
 
 ## Transforms
 
@@ -38,7 +38,7 @@ For three-dimensional transforms, `diffZF` and `diffZG` accept derivative orders
 
 `WVModel` provides adaptive and fixed-step integration, tolerance and time-step configuration, segmented integration, model output, and restart. Call `setupIntegrator` to change time-stepping settings.
 
-The `adaptive-cell` option remains available for development but is not exercised by the v4.2.1 release tests. Low-level integrator mixins and `ode45_cell` are implementation machinery rather than model entry points.
+The `adaptive-cell` option is under development and does not have the validation coverage of fixed-step and adaptive integration. Low-level integrator mixins and `ode45_cell` are implementation machinery rather than model entry points.
 
 ## Forcing and closures
 
@@ -56,7 +56,7 @@ The supplied forcing and closure classes are:
 - `WVBetaPlanePVAdvection`
 - `WVPseudoTopographicWaveGeneration`
 
-`WVThermalDamping` remains available for development but does not yet have the same release-test coverage as the classes above. Custom forcing may be implemented through the documented `WVForcing` extension interface.
+`WVThermalDamping` is under development and has more limited validation than the classes above. Custom forcing may be implemented through the documented `WVForcing` extension interface.
 
 ## Observing systems, output, and restart
 
@@ -70,6 +70,4 @@ Custom operations and annotated variables use `WVOperation` and `WVVariableAnnot
 
 Optimization Toolbox is optional. `WVNoMotionProfileOperation` uses `lsqnonlin` when it is available and otherwise uses `fminsearch` with an advisory warning.
 
-FFTW selection and the low-level barotropic FINUFFT path remain active development machinery. They are not selected through the documented transform constructors or public interpolation options, and FINUFFT is not a required package dependency.
-
-New scientific capabilities, new transform families, and broad numerical redesign are outside the v4.2.1 maintenance release.
+FFTW selection and the low-level barotropic FINUFFT path remain development machinery. They are not selected through the documented transform constructors or public interpolation options, and FINUFFT is not a required package dependency.

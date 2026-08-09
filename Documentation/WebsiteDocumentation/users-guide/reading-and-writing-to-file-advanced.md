@@ -1,17 +1,17 @@
 ---
 layout: default
-title: Reading and writing to file, advanced topics
-parent: Users guide
+title: Reading and writing files: advanced topics
+parent: User guide
 mathjax: true
 nav_order: 12
 has_toc: true
 ---
 
-#  Reading and writing to file, advanced topics
+# Reading and writing files: advanced topics
 
 The `WVModel` supports multiple output files, groups with different output intervals, and groups that start and stop at different model times.
 
-With these features, it is possible to setup up numerical simulations that "observe" the ocean in different ways, at different intervals. For example, you might place moorings in your simulation that sample the velocity field at a high frequency. You might setup a series of drifter experiments, that deploy and retrieve drifters every five days.
+These features let one simulation observe the fluid in several ways and at several intervals. For example, moorings may sample velocity frequently while a sequence of drifter experiments deploys and retrieves particles in bounded five-day windows.
 
 There are three classes that work together to write to file:
 
@@ -24,13 +24,24 @@ Any `WVObservingSystem` that requires integration is also held by the model. The
 
 ## WVObservingSystem
 
-Observing systems include, e.g., the wave-vortex coefficients, Eulerian fields, Lagrangian particles, tracers, mooring, and satellite along-track data.
+Observing systems include wave–vortex coefficients, Eulerian fields, Lagrangian particles, tracers, moorings, and satellite along-track data.
 
 Subclasses of `WVObservingSystem` describe whether the observing system needs to be integrated in time and how it writes to a `WVModelOutputGroup`. `WVCoefficients` participates in model integration while coefficient storage is provided by the Eulerian field observer. `WVMooring` writes sampled fields without adding integrated state. `WVLagrangianParticles` and `WVTracer` both add integrated state and write their latest state to output.
 
 ## WVModelOutputFile
 
 After creating a `WVModel`, you may add one or more `WVModelOutputFile` instances. The model combines their requested output times so coincident times are integrated once and delivered to every file and group that requested them.
+
+The convenience method `createNetCDFFileForModelOutput` creates one file and one evenly spaced group containing the model's ordinary observing systems. For explicit control, construct the layers separately:
+
+```matlab
+outputFile = model.addNewOutputFile('experiment.nc');
+hourly = outputFile.addNewEvenlySpacedOutputGroup( ...
+    'hourly',initialTime=model.t,finalTime=model.t+86400,outputInterval=3600);
+hourly.addObservingSystem(model.eulerianObservingSystem);
+```
+
+The file remains an in-memory configuration until its first output initialization. This makes it possible to assemble groups and observing systems before any partial file exists on disk.
 
 Each file is an independent restart boundary. `WVModel.modelFromFile(path)` restores the supplied file and all of its groups; it does not reconstruct other files that the original model may also have written. A restart-capable file must contain exactly one group with the complete coefficient stream (`Ap`, `Am`, and `A0` for wave-bearing transforms, or `A0` for QG transforms). Other groups may store fields and observing systems without duplicating that complete coefficient stream.
 

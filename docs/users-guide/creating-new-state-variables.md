@@ -1,61 +1,62 @@
 ---
 layout: default
 title: Creating new state variables
-parent: Users guide
+parent: User guide
 mathjax: true
 nav_order: 14
 ---
 
-#  Creating new state variables
+# Creating new state variables
 
-The WaveVortexModel allows you to quickly and easily create custom operations to define new variables describing the state of the ocean. These new variables can saved to file and their values can be tracked along particle trajectories using the model.
+Custom `WVOperation` objects add derived variables to a transform. Once registered, those variables participate in ordinary field access, caching, NetCDF output, and particle tracking.
 
-## WVOperation
+## Define and register an operation
 
-The simplest way to add new functionality to the WaveVortexModel is to create a new `WVOperation`. A `WVOperation` instance has two jobs: 1) describe the variable (or variables) that it is capable of producing and 2) implement an operation for computing those variables.
+A `WVVariableAnnotation` describes the output's name, dimensions, units, and meaning. A `WVOperation` associates one or more annotations with the calculation that produces them.
 
-### Creating a new operation
-
-As an example, lets add a new operation to compute relative vorticity. Assuming that `wvt` is a WVTransform instance,
+For example, register the vertical component of relative vorticity:
 
 ```matlab
-outputVar = WVVariableAnnotation('zeta_z',{'x','y','z'},'1/s^2', 'vertical component of relative vorticity');
-f = @(wvt) wvt.diffX(wvt.v) - wvt.diffY(wvt.u);
-wvt.addOperation(WVOperation('zeta_z',outputVar,f));
+annotation = WVVariableAnnotation( ...
+    'zeta_z',{'x','y','z'},'1/s','vertical component of relative vorticity');
+computeVorticity = @(wvt) wvt.diffX(wvt.v) - wvt.diffY(wvt.u);
+wvt.addOperation(WVOperation('zeta_z',annotation,computeVorticity));
 ```
 
-That's it! The `WVVariableAnnotation` class is used to describe the structure of the the output variable, and the function handle `f` performs the actual computation. The computation is not actually performed until it is needed.
-
-Now that the WVTransform has a recipe for computing `zeta_z`, you can simply call `wvt.zeta_z` at any time. In fact, these operations compose---so you can create a new operation itself calls `wvt.zeta_z` as part of its computation.
-
-### Saving to file
-
-The new variable can be immediately saved to file because it already has a name, dimensions, and units.
-
-Using the variable `zeta_z` from the example above, the transform can be written to file
+The calculation is lazy: registration records how to compute `zeta_z`, but the operation does not run until the value is requested.
 
 ```matlab
-wvt.writeToFile('path/to/file.nc','zeta_z');
+zeta_z = wvt.zeta_z;
 ```
 
-When doing a model simulation, this variable is also available to write to file as part of the time series see, e.g., `setNetCDFOutputVariables`.
+Operations compose, so another operation may use `wvt.zeta_z` as an input. More involved calculations can subclass `WVOperation` and override `compute`.
 
-### Tracking along particle trajectories
+## Control caching
 
-If the output variable has spatial dimension $$(x,y)$$ or $$(x,y,z)$$, then the WVModel can track its value along advected particle trajectories. See the documentation for `addParticles`, `setFloatPositions`, or `setDrifterPositions`. 
+Computed variables are cached. Set the operation's dependency metadata before registration so the transform knows when to invalidate its outputs:
 
-## Notes
+- `isVariableWithLinearTimeStep=true` invalidates the output when transform time changes.
+- `isDependentOnApAmA0=true` invalidates the output when `Ap`, `Am`, or `A0` changes.
 
-In the example above a function handle was used to compute the relative vorticity because it only required a single line of code. However, it is often the case that computations will be more involved. In that case, you should subclass the `WVOperation`.
+Outputs without the relevant dependency remain cached. A multiple-output operation computes and caches its annotations together in annotation order.
 
-Operation names and output-variable names must be unique. By default, `addOperation` rejects a new operation that conflicts with an existing operation and leaves the registry unchanged. To intentionally replace an operation, opt in explicitly:
+Operation names and output-variable names must be unique. Registration rejects conflicts by default. Pass `shouldOverwriteExisting=true` to replace the complete conflicting operation intentionally.
+
+## Write and track the variable
+
+The annotation supplies the metadata needed to write the variable with a transform:
 
 ```matlab
-wvt.addOperation(replacementOperation,shouldOverwriteExisting=true);
+ncfile = wvt.writeToFile('state.nc','zeta_z');
+ncfile.close();
 ```
 
-An operation is registered and removed as a unit. If the replacement conflicts with one output from a multiple-output operation, every output from the displaced operation is removed. When registering an array of operations with replacement enabled, conflicts are resolved in caller order and the last conflicting operation wins.
+For model output, add the variable to the Eulerian field selection:
 
-A `WVOperation` can return multiple variables. Its outputs are returned in annotation order and computed together when any uncached output is requested.
+```matlab
+model.addNetCDFOutputVariables('zeta_z');
+```
 
-All computed variables are cached to avoid unnecessary calculations. Set an operation's dependency metadata before registration: `isVariableWithLinearTimeStep=true` invalidates its outputs when transform time changes, while `isDependentOnApAmA0=true` invalidates them when `Ap`, `Am`, or `A0` changes. Outputs without the relevant dependency remain cached.
+Variables with spatial dimensions $$(x,y)$$ or $$(x,y,z)$$ can also be sampled along particle trajectories. Pass their names to `addParticles`, `setFloatPositions`, or `setDrifterPositions`.
+
+For details about annotations, multiple outputs, replacement, and cache invalidation, see [`WVOperation`](/classes/operations-and-annotations/wvoperation/) and [`WVVariableAnnotation`](/classes/operations-and-annotations/wvvariableannotation/).

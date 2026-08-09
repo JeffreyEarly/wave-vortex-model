@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- Rewrote the README, homepage, installation instructions, and user guidance around the current `WVTransform` and `WVModel` workflows; completed the NetCDF conventions guide; linked the canonical wavevortexmodel.org site prominently; and adopted the Avenir-first website typography while retaining search.
 - Reorganized the generated API reference around user tasks, moved implementation machinery into Developer Topics, replaced release-status jargon with direct descriptions of capabilities and limitations, and restored authored scientific context, coefficient-occupancy tables, and design rationale.
 - Corrected the `WVTransform` and `WVModel` API reference, promoted the stored and time-evaluated wave-vortex coefficients, and classified low-level projection and reconstruction arrays as Developer reference.
 - Made documentation generation clean, deterministic, transactional, and reviewable with an exact ClassDocumentation 1.3.0 authoring dependency, canonical build/check tasks, generated hierarchy validation, and case-sensitive internal-route checks.
