@@ -26,8 +26,8 @@ zeta_bar = self.transformFromSpatialDomainWithFg(iK .* v_hat - iL .* u_hat);
 A0 = self.A0Z.*zeta_bar + self.A0N.*n_bar;
 nw_bar = self.transformWithG_wg(n_bar - self.NA0.*A0);
 
-delta_bar = self.ApmD_scaled .* (self.DCT * (self.cos_alpha .* u_hat + self.sin_alpha .* v_hat));
-w_bar = self.ApmW_scaled .* (self.DST * w_hat);
+delta_bar = self.ApmD_scaled .* self.verticalTransform.transformForward(self.cos_alpha .* u_hat + self.sin_alpha .* v_hat,"cosine",self.DCT);
+w_bar = self.ApmW_scaled .* self.verticalTransform.transformForward(w_hat,"sine",self.DST);
 Ap = delta_bar + w_bar + self.ApmN .* nw_bar;
 Am = delta_bar + w_bar - self.ApmN .* nw_bar;
 

@@ -141,6 +141,7 @@ for iBackend = 1:numel(backends)
     executeWaveVortexBenchmarkOperation(models{iBackend},benchmarkCase.operation);
     backendResults(iBackend).sameStateCacheHitSeconds = toc(cacheTimer);
     backendResults(iBackend).correctnessPassed = backendResults(iBackend).relativeError <= options.correctnessTolerance;
+    backendResults(iBackend).metadata = backendMetadata(models{iBackend});
     if options.shouldMeasureMemory
         backendResults(iBackend).memory = measureCaseMemory(benchmarkCase,backends(iBackend).id,benchmarkFolder,repositoryRoot);
     end
@@ -150,7 +151,14 @@ clear models
 end
 
 function result = baseBackendResult(backendId,constructionSeconds,firstCallSeconds,sampleCount)
-result = struct("id",backendId,"status","complete","constructionSeconds",constructionSeconds,"firstCallSeconds",firstCallSeconds,"sameStateCacheHitSeconds",NaN,"rawSeconds",NaN(1,sampleCount),"medianSeconds",NaN,"relativeError",0,"correctnessPassed",false,"referenceMedianSeconds",NaN,"caseScore",NaN,"sameHostSpeedup",NaN,"memory",emptyMemory(),"failure",emptyFailure());
+result = struct("id",backendId,"status","complete","constructionSeconds",constructionSeconds,"firstCallSeconds",firstCallSeconds,"sameStateCacheHitSeconds",NaN,"rawSeconds",NaN(1,sampleCount),"medianSeconds",NaN,"relativeError",0,"correctnessPassed",false,"referenceMedianSeconds",NaN,"caseScore",NaN,"sameHostSpeedup",NaN,"memory",emptyMemory(),"metadata",struct(),"failure",emptyFailure());
+end
+
+function metadata = backendMetadata(model)
+metadata = struct();
+if isprop(model,"verticalTransform") && isa(model.verticalTransform,"WVVerticalTransformConstantStratification")
+    metadata.verticalTransformDispatch = model.verticalTransform.dispatchRecords();
+end
 end
 
 function caseResult = failedCaseResult(benchmarkCase,exception)
@@ -368,7 +376,7 @@ results = struct("id",{},"transformId",{},"scoreFamily",{},"operation",{},"Lxyz"
 end
 
 function results = emptyBackendResults()
-results = struct("id",{},"status",{},"constructionSeconds",{},"firstCallSeconds",{},"sameStateCacheHitSeconds",{},"rawSeconds",{},"medianSeconds",{},"relativeError",{},"correctnessPassed",{},"referenceMedianSeconds",{},"caseScore",{},"sameHostSpeedup",{},"memory",{},"failure",{});
+results = struct("id",{},"status",{},"constructionSeconds",{},"firstCallSeconds",{},"sameStateCacheHitSeconds",{},"rawSeconds",{},"medianSeconds",{},"relativeError",{},"correctnessPassed",{},"referenceMedianSeconds",{},"caseScore",{},"sameHostSpeedup",{},"memory",{},"metadata",{},"failure",{});
 end
 
 function results = emptyScores()
