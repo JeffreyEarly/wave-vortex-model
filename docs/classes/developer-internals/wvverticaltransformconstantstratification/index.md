@@ -55,8 +55,8 @@ These items document internal implementation details and are not part of the pri
   + [`Nz`](/classes/developer-internals/wvverticaltransformconstantstratification/nz.html) Number of physical vertical grid points.
   + [`backendIdentifier`](/classes/developer-internals/wvverticaltransformconstantstratification/backendidentifier.html) Active model-wide transform backend, `"builtin"` or `"fftw"`.
   + [`create`](/classes/developer-internals/wvverticaltransformconstantstratification/create.html) a vertical strategy for the active model backend.
-+ Class internals
-  + [`delete`](/classes/developer-internals/wvverticaltransformconstantstratification/delete.html)
++ Manage vertical-transform lifecycle
+  + [`delete`](/classes/developer-internals/wvverticaltransformconstantstratification/delete.html) every cached FFTW plan idempotently.
 + Inspect vertical dispatch
   + [`dispatchRecords`](/classes/developer-internals/wvverticaltransformconstantstratification/dispatchrecords.html) Return stable, JSON-safe records for encountered operations.
 + Apply vertical transforms

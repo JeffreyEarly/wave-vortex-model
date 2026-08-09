@@ -62,6 +62,8 @@ elseif ismember(name,["transformForward","transformBack"])
     topicPath = "Apply vertical transforms";
 elseif name == "dispatchRecords"
     topicPath = "Inspect vertical dispatch";
+elseif name == "delete"
+    topicPath = "Manage vertical-transform lifecycle";
 else
     topicPath = "Class internals";
 end

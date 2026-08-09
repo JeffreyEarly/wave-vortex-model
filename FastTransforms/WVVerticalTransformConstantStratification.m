@@ -229,6 +229,14 @@ classdef (Sealed) WVVerticalTransformConstantStratification < handle
         end
 
         function delete(self)
+            % Delete every cached FFTW plan idempotently.
+            %
+            % The strategy retains no array-sized MATLAB work buffers. Plan
+            % deletion releases the native FFTW plans owned by the cached
+            % `RealToRealTransform` objects.
+            %
+            % - Topic: Developer internals
+            % - Developer: true
             if isempty(self.planCache) || self.planCache.Count == 0
                 return
             end
@@ -326,12 +334,12 @@ classdef (Sealed) WVVerticalTransformConstantStratification < handle
             end
 
             try
-                capabilities = self.capabilities;
-                if string(capabilities.provider.id) ~= "matlab-bundled"
+                capabilityRecord = self.capabilities;
+                if string(capabilityRecord.provider.id) ~= "matlab-bundled"
                     record.reason = self.reason("provider-mismatch","The active FFTW provider is not matlab-bundled.");
                     return
                 end
-                if ~capabilities.modules.r2r.identityValidated
+                if ~capabilityRecord.modules.r2r.identityValidated
                     record.reason = self.reason("r2r-library-identity-failed","The r2r module did not validate its loaded FFTW library.");
                     return
                 end
@@ -339,7 +347,7 @@ classdef (Sealed) WVVerticalTransformConstantStratification < handle
                 if transformType == "sine"
                     featureName = "dst1";
                 end
-                feature = capabilities.features.(featureName);
+                feature = capabilityRecord.features.(featureName);
                 if ~feature.isAvailable
                     record.reason = self.reason("vertical-feature-unavailable","The requested FFTW real-to-real feature is unavailable.");
                     return
@@ -348,7 +356,7 @@ classdef (Sealed) WVVerticalTransformConstantStratification < handle
                     record.reason = self.reason("vertical-self-test-failed","The FFTW real-to-real self-test exceeded relative error 1e-12.");
                     return
                 end
-                eligibility = capabilities.eligibility.realToReal;
+                eligibility = capabilityRecord.eligibility.realToReal;
                 if string(eligibility.schemaVersion) ~= self.eligibilitySchema
                     error("WaveVortexModel:IncompatibleR2REligibility","Expected issue43-v1 real-to-real eligibility records.");
                 end
