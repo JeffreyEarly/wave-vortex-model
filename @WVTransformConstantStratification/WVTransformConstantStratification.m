@@ -367,6 +367,10 @@ classdef WVTransformConstantStratification < WVGeometryDoublyPeriodicStratifiedC
 
     end
 
+    methods (Hidden)
+        ledger = transformStorageLedger(self)
+    end
+
     methods (Static)
 
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

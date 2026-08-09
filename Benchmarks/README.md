@@ -18,6 +18,7 @@ The registered suites are:
 - `scaling-standard-v1`: standard horizontal and vertical scaling across transform families.
 - `scaling-large-v1`: fixed large-memory scaling cases.
 - `transform-layout-v1`: an unscored diagnostic of full-complex WV/DFT mapping expressions. It compares the current WV-sorted linear mapping with DFT-sorted, two-dimensional-row, and per-plane alternatives while preserving production behavior.
+- `transform-storage-v1`: an unscored comparison of exact transform-owned storage and repeated externally sampled process RSS for the builtin and FFTW constant-stratification backends.
 
 The runner accepts more than one suite and a subset of case IDs. Suite definitions are versioned in `waveVortexBenchmarkSuites`; changing a case matrix or score definition requires a new suite version. Backends are selected independently from transform families through `waveVortexBenchmarkBackends`.
 
@@ -34,6 +35,14 @@ results = runWaveVortexBenchmark(suites="transform-layout-v1")
 ```
 
 It measures extraction, primary insertion, conjugate insertion, combined insertion, and complete horizontal forward/inverse calls. Each strategy owns and reuses a persistent full-complex buffer. Array setup and mapping construction are excluded, while indexing, allocation, conjugation, reshape, transpose, and MATLAB copy-on-write behavior inherent to each expression remain timed. The strict winner has the smallest median; the production `wv-sorted-linear` strategy remains preferred when it is within 3% of that median. MATLAB pointer and copy state is reported as unavailable because no supported API exposes it for these expressions. Whole-process memory comparisons remain separate from this suite.
+
+The transform-storage suite runs every `core-v1` case three times per backend in fresh MATLAB processes:
+
+```matlab
+results = runWaveVortexBenchmark(suites="transform-storage-v1")
+```
+
+Each worker retains normal production caches, records an exact ledger of application-owned transform arrays, and labels FFTW plan memory and MATLAB-internal work buffers as unresolved. An external `ps` sampler records raw resident-memory samples during construction, warmup, a persistent plateau, and one state-advanced `nonlinearFlux` call. The report keeps every raw run and compares medians; pointer or source-level copy guesses do not substitute for the process measurement. The FFTW structural gates require no persistent full Hermitian spectrum and no allocated preserving-c2r scratch. The repeated-process improvement thresholds are 16.125 MiB at `[256 256 65]` and 128.496 MiB at `[512 512 129]`. This diagnostic records evidence only; issue #47 owns the backend readiness decision.
 
 Issue #70 moved the builtin adapter to a row-oriented Fourier-storage layout. Its integration gate compares the production adapter—not a stand-alone approximation—with the immutable issue #69 medians:
 

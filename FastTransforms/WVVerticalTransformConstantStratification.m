@@ -259,6 +259,20 @@ classdef (Sealed) WVVerticalTransformConstantStratification < handle
                 "hasWarnedOfFailure",self.hasWarnedOfFailure);
         end
 
+        function entries = storageLedger(self)
+            % Return cached vertical FFTW plans for memory benchmarks.
+            entries = emptyLedger();
+            keys = sort(string(self.planCache.keys));
+            for iKey = 1:numel(keys)
+                plan = self.planCache(char(keys(iKey)));
+                if isempty(plan) || ~isvalid(plan)
+                    continue
+                end
+                purpose = "Cached " + plan.transformType + " " + plan.dataType + " vertical transform plan";
+                entries(end+1,1) = ledgerEntry("vertical.plan." + iKey,"RealToRealTransform","fftw-plan",purpose,string(class(plan)),plan.realSize,NaN,"persistent","allocated","opaque","plan",NaN); %#ok<AGROW>
+            end
+        end
+
         function record = dispatchForConfiguration(self,Nbatch,dataType,transformType,direction)
             % Return eligibility without allocating an input or creating a plan.
             arguments
@@ -530,4 +544,12 @@ classdef (Sealed) WVVerticalTransformConstantStratification < handle
                 "callCount",0,"planCreationCount",0,"planReuseCount",0),0,1);
         end
     end
+end
+
+function value = ledgerEntry(identifier,owner,category,purpose,className,shape,bytes,persistence,allocationState,byteStatus,storageType,potentialBytes)
+value = struct("identifier",identifier,"owner",owner,"category",category,"purpose",purpose,"className",className,"shape",double(shape),"bytes",double(bytes),"persistence",persistence,"allocationState",allocationState,"byteStatus",byteStatus,"storageType",storageType,"potentialBytes",double(potentialBytes));
+end
+
+function value = emptyLedger()
+value = repmat(ledgerEntry("","","","","",[],0,"","","","",0),0,1);
 end

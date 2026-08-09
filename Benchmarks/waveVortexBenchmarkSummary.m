@@ -71,9 +71,65 @@ for iSuite = 1:numel(results.suites)
         lines = [lines;transformLayoutLines(suite)]; %#ok<AGROW>
     elseif isfield(suite,"kind") && string(suite.kind) == "derivative-dispatch"
         lines = [lines;derivativeDispatchLines(suite)]; %#ok<AGROW>
+    elseif isfield(suite,"kind") && string(suite.kind) == "transform-storage"
+        lines = [lines;transformStorageLines(suite)]; %#ok<AGROW>
     end
 end
 summary = strjoin(lines,newline) + newline;
+end
+
+function lines = transformStorageLines(suite)
+lines = ["";"## Transform-storage diagnostic";"";"Exact totals include only explicitly owned arrays with known byte counts. FFTW plan memory and MATLAB-internal buffers remain opaque and participate only in repeated RSS measurements.";"";"### Exact persistent storage";"";"| Case | Backend | Known persistent (MiB) | Known transient (MiB) | Opaque plans | Full persistent spectrum | Preserving scratch (MiB) |";"|---|---|---:|---:|---:|---|---:|"];
+for benchmarkCase = suite.cases
+    if benchmarkCase.status == "failed"
+        continue
+    end
+    for backend = benchmarkCase.backends
+        ledger = backend.ledger;
+        if ~isfield(ledger,"knownPersistentBytes")
+            lines(end+1) = sprintf("| %s | %s | NaN | NaN | 0 | unavailable | NaN |",benchmarkCase.id,backend.id); %#ok<AGROW>
+            continue
+        end
+        lines(end+1) = sprintf("| %s | %s | %.3f | %.3f | %d | %s | %.3f |",benchmarkCase.id,backend.id,ledger.knownPersistentBytes/2^20,ledger.knownTransientBytes/2^20,ledger.opaquePlanCount,yesNo(ledger.hasPersistentFullSpectrum),ledger.preservingScratchAllocatedBytes/2^20); %#ok<AGROW>
+    end
+end
+lines = [lines;"";"### Repeated process RSS";"";"| Case | Backend | Persistent runs (MiB) | Persistent median (MiB) | Peak runs (MiB) | Peak median (MiB) | Status |";"|---|---|---|---:|---|---:|---|"];
+for benchmarkCase = suite.cases
+    if benchmarkCase.status == "failed"
+        continue
+    end
+    for backend = benchmarkCase.backends
+        persistentValues = join(compose("%.3f",backend.rss.persistentIncrementBytes/2^20),", ");
+        peak = join(compose("%.3f",backend.rss.peakIncrementBytes/2^20),", ");
+        lines(end+1) = sprintf("| %s | %s | %s | %.3f | %s | %.3f | %s |",benchmarkCase.id,backend.id,persistentValues,backend.rss.medianPersistentIncrementBytes/2^20,peak,backend.rss.medianPeakIncrementBytes/2^20,backend.rss.status); %#ok<AGROW>
+    end
+end
+lines = [lines;"";"### Memory gates";"";"| Case | Exact savings (MiB) | Persistent RSS improvement (MiB) | Peak RSS improvement (MiB) | Threshold (MiB) | Exact | No full spectrum | No scratch | Persistent RSS | Peak RSS |";"|---|---:|---:|---:|---:|---|---|---|---|---|"];
+for benchmarkCase = suite.cases
+    if benchmarkCase.status == "failed"
+        lines(end+1) = "| " + benchmarkCase.id + " | NaN | NaN | NaN | NaN | failed | failed | failed | failed | failed |"; %#ok<AGROW>
+        continue
+    end
+    comparison = benchmarkCase.comparison;
+    gates = comparison.gates;
+    lines(end+1) = sprintf("| %s | %.3f | %.3f | %.3f | %.3f | %s | %s | %s | %s | %s |",benchmarkCase.id,comparison.exactKnownPersistentSavingsMiB,comparison.medianPersistentRSSImprovementMiB,comparison.medianPeakRSSImprovementMiB,comparison.thresholdMiB,passFail(gates.exactStorageSavingsPassed),passFail(gates.noPersistentFullSpectrumPassed),passFail(gates.noPreservingScratchPassed),supportedPassFail(gates.rssSupported,gates.persistentRSSPassed),supportedPassFail(gates.rssSupported,gates.peakRSSPassed)); %#ok<AGROW>
+end
+end
+
+function value = passFail(flag)
+if flag
+    value = "pass";
+else
+    value = "fail";
+end
+end
+
+function value = supportedPassFail(isSupported,flag)
+if ~isSupported
+    value = "unsupported";
+else
+    value = passFail(flag);
+end
 end
 
 function lines = derivativeDispatchLines(suite)
