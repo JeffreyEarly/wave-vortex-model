@@ -1,0 +1,1660 @@
+{
+  "schemaVersion": "1.0.0",
+  "status": "complete",
+  "runId": "fftw-horizontal-v1-m5-max-r2026a-bundled",
+  "environment": {
+    "matlabVersion": "26.1.0.3312084 (R2026a) Update 4",
+    "matlabRelease": "2026a",
+    "architecture": "maca64",
+    "sourceCommit": "927c602c92b675414017970bee240e457a9518b0",
+    "sourceTree": "18b1e5c6f98ee6a3ea8f0d8c124432f1a9ddcd7f",
+    "fftwTransformsCommit": "10f0c8a102212d0bd4be0d093eeab72b851841ee",
+    "fftwModule": "/Users/jearly/Documents/OceanKitRepositories/fftw-transforms/fftw_r2c.mexmaca64"
+  },
+  "configuration": {
+    "sizes": [
+      [
+        64,
+        48,
+        17
+      ],
+      [
+        65,
+        63,
+        17
+      ],
+      [
+        256,
+        256,
+        65
+      ],
+      [
+        512,
+        512,
+        129
+      ]
+    ],
+    "antialiasValues": [
+      false,
+      true
+    ],
+    "warmupCount": 2,
+    "sampleCount": 7,
+    "largeSampleCount": 3,
+    "planner": "measure",
+    "nCores": 18,
+    "correctnessTolerance": 1E-12,
+    "selectionTolerance": 0.03
+  },
+  "candidateIds": [
+    "builtin",
+    "layout-methods",
+    "specialized-rows"
+  ],
+  "operationIds": [
+    "forward",
+    "inverse"
+  ],
+  "cases": [
+    {
+      "id": "fftw-half-x-64x48x17-antialias-0",
+      "size": [
+        64,
+        48,
+        17
+      ],
+      "shouldAntialias": false,
+      "seed": 711000,
+      "sampleCount": 7,
+      "isGate": false,
+      "status": "complete",
+      "failure": {
+        "identifier": "",
+        "message": "",
+        "stack": []
+      },
+      "warmupSchedules": [
+        [
+          "builtin/forward",
+          "layout-methods/forward",
+          "specialized-rows/forward",
+          "builtin/inverse",
+          "layout-methods/inverse",
+          "specialized-rows/inverse"
+        ],
+        [
+          "layout-methods/forward",
+          "specialized-rows/forward",
+          "builtin/inverse",
+          "layout-methods/inverse",
+          "specialized-rows/inverse",
+          "builtin/forward"
+        ]
+      ],
+      "sampleSchedules": [
+        [
+          "builtin/forward",
+          "layout-methods/forward",
+          "specialized-rows/forward",
+          "builtin/inverse",
+          "layout-methods/inverse",
+          "specialized-rows/inverse"
+        ],
+        [
+          "layout-methods/forward",
+          "specialized-rows/forward",
+          "builtin/inverse",
+          "layout-methods/inverse",
+          "specialized-rows/inverse",
+          "builtin/forward"
+        ],
+        [
+          "specialized-rows/forward",
+          "builtin/inverse",
+          "layout-methods/inverse",
+          "specialized-rows/inverse",
+          "builtin/forward",
+          "layout-methods/forward"
+        ],
+        [
+          "builtin/inverse",
+          "layout-methods/inverse",
+          "specialized-rows/inverse",
+          "builtin/forward",
+          "layout-methods/forward",
+          "specialized-rows/forward"
+        ],
+        [
+          "layout-methods/inverse",
+          "specialized-rows/inverse",
+          "builtin/forward",
+          "layout-methods/forward",
+          "specialized-rows/forward",
+          "builtin/inverse"
+        ],
+        [
+          "specialized-rows/inverse",
+          "builtin/forward",
+          "layout-methods/forward",
+          "specialized-rows/forward",
+          "builtin/inverse",
+          "layout-methods/inverse"
+        ],
+        [
+          "builtin/forward",
+          "layout-methods/forward",
+          "specialized-rows/forward",
+          "builtin/inverse",
+          "layout-methods/inverse",
+          "specialized-rows/inverse"
+        ]
+      ],
+      "storage": {
+        "fourierStorageSize": [
+          33,
+          48
+        ],
+        "mappingMemoryBytes": 24256,
+        "adapterPersistentArrayBytes": 0,
+        "horizontalPlanCount": 1
+      },
+      "candidates": [
+        {
+          "id": "builtin",
+          "operations": [
+            {
+              "id": "forward",
+              "rawSeconds": [
+                0.000485875,
+                0.00034904166666666666,
+                0.00038520833333333332,
+                0.00035970833333333335,
+                0.00034116666666666665,
+                0.00035420833333333333,
+                0.00033533333333333332
+              ],
+              "medianSeconds": 0.00035420833333333333,
+              "relativeError": 0,
+              "correctnessPassed": true
+            },
+            {
+              "id": "inverse",
+              "rawSeconds": [
+                0.00052091666666666671,
+                0.00044179166666666667,
+                0.00045370833333333331,
+                0.0005405,
+                0.00075329166666666665,
+                0.00048429166666666667,
+                0.00053295833333333331
+              ],
+              "medianSeconds": 0.00052091666666666671,
+              "relativeError": 0,
+              "correctnessPassed": true
+            }
+          ]
+        },
+        {
+          "id": "layout-methods",
+          "operations": [
+            {
+              "id": "forward",
+              "rawSeconds": [
+                0.00063825,
+                0.0005151666666666667,
+                0.000561,
+                0.000599625,
+                0.000538625,
+                0.00070083333333333336,
+                0.00059475
+              ],
+              "medianSeconds": 0.00059475,
+              "relativeError": 3.1609407808525884E-16,
+              "correctnessPassed": true
+            },
+            {
+              "id": "inverse",
+              "rawSeconds": [
+                0.000836625,
+                0.00068358333333333335,
+                0.00081508333333333335,
+                0.000848,
+                0.00074954166666666669,
+                0.00082266666666666664,
+                0.00099779166666666658
+              ],
+              "medianSeconds": 0.00082266666666666664,
+              "relativeError": 3.2847851827388742E-16,
+              "correctnessPassed": true
+            }
+          ]
+        },
+        {
+          "id": "specialized-rows",
+          "operations": [
+            {
+              "id": "forward",
+              "rawSeconds": [
+                0.00056329166666666669,
+                0.00051316666666666665,
+                0.00053704166666666668,
+                0.00054875,
+                0.0005,
+                0.000548375,
+                0.00056695833333333338
+              ],
+              "medianSeconds": 0.000548375,
+              "relativeError": 3.1609407808525884E-16,
+              "correctnessPassed": true
+            },
+            {
+              "id": "inverse",
+              "rawSeconds": [
+                0.000685125,
+                0.00067579166666666666,
+                0.0007645,
+                0.00070808333333333335,
+                0.000673875,
+                0.0007575,
+                0.0010619583333333334
+              ],
+              "medianSeconds": 0.00070808333333333335,
+              "relativeError": 3.2847851827388742E-16,
+              "correctnessPassed": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "fftw-half-x-64x48x17-antialias-1",
+      "size": [
+        64,
+        48,
+        17
+      ],
+      "shouldAntialias": true,
+      "seed": 711001,
+      "sampleCount": 7,
+      "isGate": false,
+      "status": "complete",
+      "failure": {
+        "identifier": "",
+        "message": "",
+        "stack": []
+      },
+      "warmupSchedules": [
+        [
+          "builtin/forward",
+          "layout-methods/forward",
+          "specialized-rows/forward",
+          "builtin/inverse",
+          "layout-methods/inverse",
+          "specialized-rows/inverse"
+        ],
+        [
+          "layout-methods/forward",
+          "specialized-rows/forward",
+          "builtin/inverse",
+          "layout-methods/inverse",
+          "specialized-rows/inverse",
+          "builtin/forward"
+        ]
+      ],
+      "sampleSchedules": [
+        [
+          "builtin/forward",
+          "layout-methods/forward",
+          "specialized-rows/forward",
+          "builtin/inverse",
+          "layout-methods/inverse",
+          "specialized-rows/inverse"
+        ],
+        [
+          "layout-methods/forward",
+          "specialized-rows/forward",
+          "builtin/inverse",
+          "layout-methods/inverse",
+          "specialized-rows/inverse",
+          "builtin/forward"
+        ],
+        [
+          "specialized-rows/forward",
+          "builtin/inverse",
+          "layout-methods/inverse",
+          "specialized-rows/inverse",
+          "builtin/forward",
+          "layout-methods/forward"
+        ],
+        [
+          "builtin/inverse",
+          "layout-methods/inverse",
+          "specialized-rows/inverse",
+          "builtin/forward",
+          "layout-methods/forward",
+          "specialized-rows/forward"
+        ],
+        [
+          "layout-methods/inverse",
+          "specialized-rows/inverse",
+          "builtin/forward",
+          "layout-methods/forward",
+          "specialized-rows/forward",
+          "builtin/inverse"
+        ],
+        [
+          "specialized-rows/inverse",
+          "builtin/forward",
+          "layout-methods/forward",
+          "specialized-rows/forward",
+          "builtin/inverse",
+          "layout-methods/inverse"
+        ],
+        [
+          "builtin/forward",
+          "layout-methods/forward",
+          "specialized-rows/forward",
+          "builtin/inverse",
+          "layout-methods/inverse",
+          "specialized-rows/inverse"
+        ]
+      ],
+      "storage": {
+        "fourierStorageSize": [
+          33,
+          48
+        ],
+        "mappingMemoryBytes": 9616,
+        "adapterPersistentArrayBytes": 0,
+        "horizontalPlanCount": 1
+      },
+      "candidates": [
+        {
+          "id": "builtin",
+          "operations": [
+            {
+              "id": "forward",
+              "rawSeconds": [
+                0.00030904166666666667,
+                0.00031066666666666666,
+                0.00035629166666666665,
+                0.000335125,
+                0.0003795,
+                0.00039229166666666666,
+                0.00046220833333333335
+              ],
+              "medianSeconds": 0.00035629166666666665,
+              "relativeError": 0,
+              "correctnessPassed": true
+            },
+            {
+              "id": "inverse",
+              "rawSeconds": [
+                0.00038745833333333335,
+                0.00035354166666666666,
+                0.00039258333333333333,
+                0.000476,
+                0.00041841666666666665,
+                0.0003165,
+                0.00041066666666666666
+              ],
+              "medianSeconds": 0.00039258333333333333,
+              "relativeError": 0,
+              "correctnessPassed": true
+            }
+          ]
+        },
+        {
+          "id": "layout-methods",
+          "operations": [
+            {
+              "id": "forward",
+              "rawSeconds": [
+                0.00051683333333333334,
+                0.00047075,
+                0.00057008333333333336,
+                0.000531625,
+                0.00054929166666666668,
+                0.00055708333333333337,
+                0.00051329166666666667
+              ],
+              "medianSeconds": 0.000531625,
+              "relativeError": 3.0426382256106483E-16,
+              "correctnessPassed": true
+            },
+            {
+              "id": "inverse",
+              "rawSeconds": [
+                0.00073091666666666672,
+                0.000636125,
+                0.00069841666666666663,
+                0.00070758333333333328,
+                0.00072004166666666668,
+                0.00068325,
+                0.00066041666666666668
+              ],
+              "medianSeconds": 0.00069841666666666663,
+              "relativeError": 3.1521893119033181E-16,
+              "correctnessPassed": true
+            }
+          ]
+        },
+        {
+          "id": "specialized-rows",
+          "operations": [
+            {
+              "id": "forward",
+              "rawSeconds": [
+                0.000495625,
+                0.00045129166666666668,
+                0.00048558333333333331,
+                0.00050425,
+                0.00051566666666666666,
+                0.00047204166666666667,
+                0.00044566666666666669
+              ],
+              "medianSeconds": 0.00048558333333333331,
+              "relativeError": 3.0426382256106483E-16,
+              "correctnessPassed": true
+            },
+            {
+              "id": "inverse",
+              "rawSeconds": [
+                0.0006055,
+                0.00060983333333333332,
+                0.00082358333333333329,
+                0.00070979166666666662,
+                0.00063041666666666671,
+                0.00067379166666666661,
+                0.00056966666666666667
+              ],
+              "medianSeconds": 0.00063041666666666671,
+              "relativeError": 3.1521893119033181E-16,
+              "correctnessPassed": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "fftw-half-x-65x63x17-antialias-0",
+      "size": [
+        65,
+        63,
+        17
+      ],
+      "shouldAntialias": false,
+      "seed": 712000,
+      "sampleCount": 7,
+      "isGate": false,
+      "status": "complete",
+      "failure": {
+        "identifier": "",
+        "message": "",
+        "stack": []
+      },
+      "warmupSchedules": [
+        [
+          "builtin/forward",
+          "layout-methods/forward",
+          "specialized-rows/forward",
+          "builtin/inverse",
+          "layout-methods/inverse",
+          "specialized-rows/inverse"
+        ],
+        [
+          "layout-methods/forward",
+          "specialized-rows/forward",
+          "builtin/inverse",
+          "layout-methods/inverse",
+          "specialized-rows/inverse",
+          "builtin/forward"
+        ]
+      ],
+      "sampleSchedules": [
+        [
+          "builtin/forward",
+          "layout-methods/forward",
+          "specialized-rows/forward",
+          "builtin/inverse",
+          "layout-methods/inverse",
+          "specialized-rows/inverse"
+        ],
+        [
+          "layout-methods/forward",
+          "specialized-rows/forward",
+          "builtin/inverse",
+          "layout-methods/inverse",
+          "specialized-rows/inverse",
+          "builtin/forward"
+        ],
+        [
+          "specialized-rows/forward",
+          "builtin/inverse",
+          "layout-methods/inverse",
+          "specialized-rows/inverse",
+          "builtin/forward",
+          "layout-methods/forward"
+        ],
+        [
+          "builtin/inverse",
+          "layout-methods/inverse",
+          "specialized-rows/inverse",
+          "builtin/forward",
+          "layout-methods/forward",
+          "specialized-rows/forward"
+        ],
+        [
+          "layout-methods/inverse",
+          "specialized-rows/inverse",
+          "builtin/forward",
+          "layout-methods/forward",
+          "specialized-rows/forward",
+          "builtin/inverse"
+        ],
+        [
+          "specialized-rows/inverse",
+          "builtin/forward",
+          "layout-methods/forward",
+          "specialized-rows/forward",
+          "builtin/inverse",
+          "layout-methods/inverse"
+        ],
+        [
+          "builtin/forward",
+          "layout-methods/forward",
+          "specialized-rows/forward",
+          "builtin/inverse",
+          "layout-methods/inverse",
+          "specialized-rows/inverse"
+        ]
+      ],
+      "storage": {
+        "fourierStorageSize": [
+          33,
+          63
+        ],
+        "mappingMemoryBytes": 33520,
+        "adapterPersistentArrayBytes": 0,
+        "horizontalPlanCount": 1
+      },
+      "candidates": [
+        {
+          "id": "builtin",
+          "operations": [
+            {
+              "id": "forward",
+              "rawSeconds": [
+                0.00054829166666666665,
+                0.00073020833333333336,
+                0.00062754166666666666,
+                0.00052595833333333336,
+                0.000395125,
+                0.00047495833333333331,
+                0.00043008333333333332
+              ],
+              "medianSeconds": 0.00052595833333333336,
+              "relativeError": 0,
+              "correctnessPassed": true
+            },
+            {
+              "id": "inverse",
+              "rawSeconds": [
+                0.00047920833333333333,
+                0.0005902916666666667,
+                0.00063425,
+                0.000748125,
+                0.00058225,
+                0.000569875,
+                0.00062920833333333329
+              ],
+              "medianSeconds": 0.0005902916666666667,
+              "relativeError": 0,
+              "correctnessPassed": true
+            }
+          ]
+        },
+        {
+          "id": "layout-methods",
+          "operations": [
+            {
+              "id": "forward",
+              "rawSeconds": [
+                0.011626916666666667,
+                0.011254083333333333,
+                0.01150025,
+                0.01118275,
+                0.0112165,
+                0.011486333333333333,
+                0.0113735
+              ],
+              "medianSeconds": 0.0113735,
+              "relativeError": 3.0017949809108571E-16,
+              "correctnessPassed": true
+            },
+            {
+              "id": "inverse",
+              "rawSeconds": [
+                0.012188,
+                0.011566041666666667,
+                0.011821541666666666,
+                0.011198125,
+                0.010996583333333334,
+                0.011496041666666667,
+                0.011288958333333333
+              ],
+              "medianSeconds": 0.011496041666666667,
+              "relativeError": 3.6413993213798083E-16,
+              "correctnessPassed": true
+            }
+          ]
+        },
+        {
+          "id": "specialized-rows",
+          "operations": [
+            {
+              "id": "forward",
+              "rawSeconds": [
+                0.010959833333333334,
+                0.012079083333333334,
+                0.011678125,
+                0.010911541666666667,
+                0.011267791666666667,
+                0.011194375,
+                0.011191458333333333
+              ],
+              "medianSeconds": 0.011194375,
+              "relativeError": 3.0017949809108571E-16,
+              "correctnessPassed": true
+            },
+            {
+              "id": "inverse",
+              "rawSeconds": [
+                0.011617541666666667,
+                0.012333541666666666,
+                0.011262375,
+                0.010975,
+                0.011187083333333334,
+                0.011036333333333334,
+                0.011367666666666667
+              ],
+              "medianSeconds": 0.011262375,
+              "relativeError": 3.6413993213798083E-16,
+              "correctnessPassed": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "fftw-half-x-65x63x17-antialias-1",
+      "size": [
+        65,
+        63,
+        17
+      ],
+      "shouldAntialias": true,
+      "seed": 712001,
+      "sampleCount": 7,
+      "isGate": false,
+      "status": "complete",
+      "failure": {
+        "identifier": "",
+        "message": "",
+        "stack": []
+      },
+      "warmupSchedules": [
+        [
+          "builtin/forward",
+          "layout-methods/forward",
+          "specialized-rows/forward",
+          "builtin/inverse",
+          "layout-methods/inverse",
+          "specialized-rows/inverse"
+        ],
+        [
+          "layout-methods/forward",
+          "specialized-rows/forward",
+          "builtin/inverse",
+          "layout-methods/inverse",
+          "specialized-rows/inverse",
+          "builtin/forward"
+        ]
+      ],
+      "sampleSchedules": [
+        [
+          "builtin/forward",
+          "layout-methods/forward",
+          "specialized-rows/forward",
+          "builtin/inverse",
+          "layout-methods/inverse",
+          "specialized-rows/inverse"
+        ],
+        [
+          "layout-methods/forward",
+          "specialized-rows/forward",
+          "builtin/inverse",
+          "layout-methods/inverse",
+          "specialized-rows/inverse",
+          "builtin/forward"
+        ],
+        [
+          "specialized-rows/forward",
+          "builtin/inverse",
+          "layout-methods/inverse",
+          "specialized-rows/inverse",
+          "builtin/forward",
+          "layout-methods/forward"
+        ],
+        [
+          "builtin/inverse",
+          "layout-methods/inverse",
+          "specialized-rows/inverse",
+          "builtin/forward",
+          "layout-methods/forward",
+          "specialized-rows/forward"
+        ],
+        [
+          "layout-methods/inverse",
+          "specialized-rows/inverse",
+          "builtin/forward",
+          "layout-methods/forward",
+          "specialized-rows/forward",
+          "builtin/inverse"
+        ],
+        [
+          "specialized-rows/inverse",
+          "builtin/forward",
+          "layout-methods/forward",
+          "specialized-rows/forward",
+          "builtin/inverse",
+          "layout-methods/inverse"
+        ],
+        [
+          "builtin/forward",
+          "layout-methods/forward",
+          "specialized-rows/forward",
+          "builtin/inverse",
+          "layout-methods/inverse",
+          "specialized-rows/inverse"
+        ]
+      ],
+      "storage": {
+        "fourierStorageSize": [
+          33,
+          63
+        ],
+        "mappingMemoryBytes": 9616,
+        "adapterPersistentArrayBytes": 0,
+        "horizontalPlanCount": 1
+      },
+      "candidates": [
+        {
+          "id": "builtin",
+          "operations": [
+            {
+              "id": "forward",
+              "rawSeconds": [
+                0.000514,
+                0.000584375,
+                0.00050379166666666671,
+                0.00040366666666666665,
+                0.00038266666666666668,
+                0.00031454166666666669,
+                0.00029816666666666669
+              ],
+              "medianSeconds": 0.00040366666666666665,
+              "relativeError": 0,
+              "correctnessPassed": true
+            },
+            {
+              "id": "inverse",
+              "rawSeconds": [
+                0.00046008333333333334,
+                0.00050141666666666672,
+                0.00049504166666666663,
+                0.00052820833333333333,
+                0.000590875,
+                0.00040225,
+                0.00053395833333333333
+              ],
+              "medianSeconds": 0.00050141666666666672,
+              "relativeError": 0,
+              "correctnessPassed": true
+            }
+          ]
+        },
+        {
+          "id": "layout-methods",
+          "operations": [
+            {
+              "id": "forward",
+              "rawSeconds": [
+                0.010962208333333332,
+                0.011111041666666667,
+                0.010586125,
+                0.010508083333333333,
+                0.010703458333333334,
+                0.010683541666666666,
+                0.010557958333333334
+              ],
+              "medianSeconds": 0.010683541666666666,
+              "relativeError": 3.1999480797980618E-16,
+              "correctnessPassed": true
+            },
+            {
+              "id": "inverse",
+              "rawSeconds": [
+                0.010976208333333333,
+                0.011336416666666667,
+                0.011263125,
+                0.010685208333333333,
+                0.010679833333333333,
+                0.010550208333333333,
+                0.010547833333333333
+              ],
+              "medianSeconds": 0.010685208333333333,
+              "relativeError": 4.8809840081401E-16,
+              "correctnessPassed": true
+            }
+          ]
+        },
+        {
+          "id": "specialized-rows",
+          "operations": [
+            {
+              "id": "forward",
+              "rawSeconds": [
+                0.010931041666666667,
+                0.011467958333333333,
+                0.01105625,
+                0.010928083333333333,
+                0.010721166666666667,
+                0.010700166666666667,
+                0.010726458333333333
+              ],
+              "medianSeconds": 0.010928083333333333,
+              "relativeError": 3.1999480797980618E-16,
+              "correctnessPassed": true
+            },
+            {
+              "id": "inverse",
+              "rawSeconds": [
+                0.010862666666666666,
+                0.011046833333333334,
+                0.011341083333333333,
+                0.01073425,
+                0.010725625,
+                0.010605416666666668,
+                0.01088575
+              ],
+              "medianSeconds": 0.010862666666666666,
+              "relativeError": 4.8809840081401E-16,
+              "correctnessPassed": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "fftw-half-x-256x256x65-antialias-0",
+      "size": [
+        256,
+        256,
+        65
+      ],
+      "shouldAntialias": false,
+      "seed": 713000,
+      "sampleCount": 7,
+      "isGate": true,
+      "status": "complete",
+      "failure": {
+        "identifier": "",
+        "message": "",
+        "stack": []
+      },
+      "warmupSchedules": [
+        [
+          "builtin/forward",
+          "layout-methods/forward",
+          "specialized-rows/forward",
+          "builtin/inverse",
+          "layout-methods/inverse",
+          "specialized-rows/inverse"
+        ],
+        [
+          "layout-methods/forward",
+          "specialized-rows/forward",
+          "builtin/inverse",
+          "layout-methods/inverse",
+          "specialized-rows/inverse",
+          "builtin/forward"
+        ]
+      ],
+      "sampleSchedules": [
+        [
+          "builtin/forward",
+          "layout-methods/forward",
+          "specialized-rows/forward",
+          "builtin/inverse",
+          "layout-methods/inverse",
+          "specialized-rows/inverse"
+        ],
+        [
+          "layout-methods/forward",
+          "specialized-rows/forward",
+          "builtin/inverse",
+          "layout-methods/inverse",
+          "specialized-rows/inverse",
+          "builtin/forward"
+        ],
+        [
+          "specialized-rows/forward",
+          "builtin/inverse",
+          "layout-methods/inverse",
+          "specialized-rows/inverse",
+          "builtin/forward",
+          "layout-methods/forward"
+        ],
+        [
+          "builtin/inverse",
+          "layout-methods/inverse",
+          "specialized-rows/inverse",
+          "builtin/forward",
+          "layout-methods/forward",
+          "specialized-rows/forward"
+        ],
+        [
+          "layout-methods/inverse",
+          "specialized-rows/inverse",
+          "builtin/forward",
+          "layout-methods/forward",
+          "specialized-rows/forward",
+          "builtin/inverse"
+        ],
+        [
+          "specialized-rows/inverse",
+          "builtin/forward",
+          "layout-methods/forward",
+          "specialized-rows/forward",
+          "builtin/inverse",
+          "layout-methods/inverse"
+        ],
+        [
+          "builtin/forward",
+          "layout-methods/forward",
+          "specialized-rows/forward",
+          "builtin/inverse",
+          "layout-methods/inverse",
+          "specialized-rows/inverse"
+        ]
+      ],
+      "storage": {
+        "fourierStorageSize": [
+          129,
+          256
+        ],
+        "mappingMemoryBytes": 523264,
+        "adapterPersistentArrayBytes": 0,
+        "horizontalPlanCount": 1
+      },
+      "candidates": [
+        {
+          "id": "builtin",
+          "operations": [
+            {
+              "id": "forward",
+              "rawSeconds": [
+                0.0045405833333333331,
+                0.0059829583333333332,
+                0.0056376666666666667,
+                0.00608775,
+                0.0063879166666666667,
+                0.0054113333333333331,
+                0.004847
+              ],
+              "medianSeconds": 0.0056376666666666667,
+              "relativeError": 0,
+              "correctnessPassed": true
+            },
+            {
+              "id": "inverse",
+              "rawSeconds": [
+                0.0047292083333333335,
+                0.0063457916666666662,
+                0.0064599166666666668,
+                0.0060465,
+                0.0061665,
+                0.0055033333333333332,
+                0.00497225
+              ],
+              "medianSeconds": 0.0060465,
+              "relativeError": 0,
+              "correctnessPassed": true
+            }
+          ]
+        },
+        {
+          "id": "layout-methods",
+          "operations": [
+            {
+              "id": "forward",
+              "rawSeconds": [
+                0.005530416666666667,
+                0.005158,
+                0.0059060833333333335,
+                0.005642291666666667,
+                0.0057120833333333329,
+                0.0055778333333333331,
+                0.006238375
+              ],
+              "medianSeconds": 0.005642291666666667,
+              "relativeError": 3.5378662621550222E-16,
+              "correctnessPassed": true
+            },
+            {
+              "id": "inverse",
+              "rawSeconds": [
+                0.0054345,
+                0.005242875,
+                0.0056860416666666665,
+                0.00558575,
+                0.0051309583333333337,
+                0.0053340416666666666,
+                0.006702
+              ],
+              "medianSeconds": 0.0054345,
+              "relativeError": 4.2827302377771929E-16,
+              "correctnessPassed": true
+            }
+          ]
+        },
+        {
+          "id": "specialized-rows",
+          "operations": [
+            {
+              "id": "forward",
+              "rawSeconds": [
+                0.0053242083333333336,
+                0.005380833333333333,
+                0.0056825833333333338,
+                0.0055325416666666665,
+                0.00621025,
+                0.005612375,
+                0.0058299583333333337
+              ],
+              "medianSeconds": 0.005612375,
+              "relativeError": 3.5378662621550222E-16,
+              "correctnessPassed": true
+            },
+            {
+              "id": "inverse",
+              "rawSeconds": [
+                0.0052840416666666669,
+                0.0050983333333333332,
+                0.00546525,
+                0.005497625,
+                0.0052734166666666667,
+                0.005481,
+                0.006057
+              ],
+              "medianSeconds": 0.00546525,
+              "relativeError": 4.2827302377771929E-16,
+              "correctnessPassed": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "fftw-half-x-256x256x65-antialias-1",
+      "size": [
+        256,
+        256,
+        65
+      ],
+      "shouldAntialias": true,
+      "seed": 713001,
+      "sampleCount": 7,
+      "isGate": true,
+      "status": "complete",
+      "failure": {
+        "identifier": "",
+        "message": "",
+        "stack": []
+      },
+      "warmupSchedules": [
+        [
+          "builtin/forward",
+          "layout-methods/forward",
+          "specialized-rows/forward",
+          "builtin/inverse",
+          "layout-methods/inverse",
+          "specialized-rows/inverse"
+        ],
+        [
+          "layout-methods/forward",
+          "specialized-rows/forward",
+          "builtin/inverse",
+          "layout-methods/inverse",
+          "specialized-rows/inverse",
+          "builtin/forward"
+        ]
+      ],
+      "sampleSchedules": [
+        [
+          "builtin/forward",
+          "layout-methods/forward",
+          "specialized-rows/forward",
+          "builtin/inverse",
+          "layout-methods/inverse",
+          "specialized-rows/inverse"
+        ],
+        [
+          "layout-methods/forward",
+          "specialized-rows/forward",
+          "builtin/inverse",
+          "layout-methods/inverse",
+          "specialized-rows/inverse",
+          "builtin/forward"
+        ],
+        [
+          "specialized-rows/forward",
+          "builtin/inverse",
+          "layout-methods/inverse",
+          "specialized-rows/inverse",
+          "builtin/forward",
+          "layout-methods/forward"
+        ],
+        [
+          "builtin/inverse",
+          "layout-methods/inverse",
+          "specialized-rows/inverse",
+          "builtin/forward",
+          "layout-methods/forward",
+          "specialized-rows/forward"
+        ],
+        [
+          "layout-methods/inverse",
+          "specialized-rows/inverse",
+          "builtin/forward",
+          "layout-methods/forward",
+          "specialized-rows/forward",
+          "builtin/inverse"
+        ],
+        [
+          "specialized-rows/inverse",
+          "builtin/forward",
+          "layout-methods/forward",
+          "specialized-rows/forward",
+          "builtin/inverse",
+          "layout-methods/inverse"
+        ],
+        [
+          "builtin/forward",
+          "layout-methods/forward",
+          "specialized-rows/forward",
+          "builtin/inverse",
+          "layout-methods/inverse",
+          "specialized-rows/inverse"
+        ]
+      ],
+      "storage": {
+        "fourierStorageSize": [
+          129,
+          256
+        ],
+        "mappingMemoryBytes": 148136,
+        "adapterPersistentArrayBytes": 0,
+        "horizontalPlanCount": 1
+      },
+      "candidates": [
+        {
+          "id": "builtin",
+          "operations": [
+            {
+              "id": "forward",
+              "rawSeconds": [
+                0.004004916666666667,
+                0.00398025,
+                0.0039855833333333332,
+                0.0037645416666666665,
+                0.00344,
+                0.00386025,
+                0.0035788333333333332
+              ],
+              "medianSeconds": 0.00386025,
+              "relativeError": 0,
+              "correctnessPassed": true
+            },
+            {
+              "id": "inverse",
+              "rawSeconds": [
+                0.0045524166666666664,
+                0.0031202916666666666,
+                0.0031539166666666668,
+                0.0029884583333333334,
+                0.00308525,
+                0.0030474166666666666,
+                0.0031272083333333334
+              ],
+              "medianSeconds": 0.0031202916666666666,
+              "relativeError": 0,
+              "correctnessPassed": true
+            }
+          ]
+        },
+        {
+          "id": "layout-methods",
+          "operations": [
+            {
+              "id": "forward",
+              "rawSeconds": [
+                0.0026158333333333333,
+                0.0025504166666666665,
+                0.0022623333333333332,
+                0.0022802083333333333,
+                0.0022855,
+                0.0022354583333333332,
+                0.0021428333333333334
+              ],
+              "medianSeconds": 0.0022802083333333333,
+              "relativeError": 3.9211050647753059E-16,
+              "correctnessPassed": true
+            },
+            {
+              "id": "inverse",
+              "rawSeconds": [
+                0.003533375,
+                0.0030234583333333333,
+                0.002949125,
+                0.002768,
+                0.0026645416666666666,
+                0.002710625,
+                0.0029085833333333333
+              ],
+              "medianSeconds": 0.0029085833333333333,
+              "relativeError": 4.0942446138828252E-16,
+              "correctnessPassed": true
+            }
+          ]
+        },
+        {
+          "id": "specialized-rows",
+          "operations": [
+            {
+              "id": "forward",
+              "rawSeconds": [
+                0.00293475,
+                0.0026279166666666669,
+                0.0025915833333333333,
+                0.0024366666666666668,
+                0.002470125,
+                0.0023144583333333333,
+                0.002192
+              ],
+              "medianSeconds": 0.002470125,
+              "relativeError": 3.9211050647753059E-16,
+              "correctnessPassed": true
+            },
+            {
+              "id": "inverse",
+              "rawSeconds": [
+                0.0035651666666666666,
+                0.0031722083333333333,
+                0.0027990416666666667,
+                0.0026348333333333332,
+                0.0025804583333333335,
+                0.00277875,
+                0.0027080833333333332
+              ],
+              "medianSeconds": 0.00277875,
+              "relativeError": 4.0942446138828252E-16,
+              "correctnessPassed": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "fftw-half-x-512x512x129-antialias-0",
+      "size": [
+        512,
+        512,
+        129
+      ],
+      "shouldAntialias": false,
+      "seed": 714000,
+      "sampleCount": 3,
+      "isGate": true,
+      "status": "complete",
+      "failure": {
+        "identifier": "",
+        "message": "",
+        "stack": []
+      },
+      "warmupSchedules": [
+        [
+          "builtin/forward",
+          "layout-methods/forward",
+          "specialized-rows/forward",
+          "builtin/inverse",
+          "layout-methods/inverse",
+          "specialized-rows/inverse"
+        ],
+        [
+          "layout-methods/forward",
+          "specialized-rows/forward",
+          "builtin/inverse",
+          "layout-methods/inverse",
+          "specialized-rows/inverse",
+          "builtin/forward"
+        ]
+      ],
+      "sampleSchedules": [
+        [
+          "builtin/forward",
+          "layout-methods/forward",
+          "specialized-rows/forward",
+          "builtin/inverse",
+          "layout-methods/inverse",
+          "specialized-rows/inverse"
+        ],
+        [
+          "layout-methods/forward",
+          "specialized-rows/forward",
+          "builtin/inverse",
+          "layout-methods/inverse",
+          "specialized-rows/inverse",
+          "builtin/forward"
+        ],
+        [
+          "specialized-rows/forward",
+          "builtin/inverse",
+          "layout-methods/inverse",
+          "specialized-rows/inverse",
+          "builtin/forward",
+          "layout-methods/forward"
+        ]
+      ],
+      "storage": {
+        "fourierStorageSize": [
+          257,
+          512
+        ],
+        "mappingMemoryBytes": 2.095104E+6,
+        "adapterPersistentArrayBytes": 0,
+        "horizontalPlanCount": 1
+      },
+      "candidates": [
+        {
+          "id": "builtin",
+          "operations": [
+            {
+              "id": "forward",
+              "rawSeconds": [
+                0.04653954166666667,
+                0.046839708333333334,
+                0.047491625
+              ],
+              "medianSeconds": 0.046839708333333334,
+              "relativeError": 0,
+              "correctnessPassed": true
+            },
+            {
+              "id": "inverse",
+              "rawSeconds": [
+                0.038925333333333333,
+                0.0389455,
+                0.03927320833333333
+              ],
+              "medianSeconds": 0.0389455,
+              "relativeError": 0,
+              "correctnessPassed": true
+            }
+          ]
+        },
+        {
+          "id": "layout-methods",
+          "operations": [
+            {
+              "id": "forward",
+              "rawSeconds": [
+                0.044841208333333334,
+                0.044911875,
+                0.044586125
+              ],
+              "medianSeconds": 0.044841208333333334,
+              "relativeError": 3.3676180444703074E-16,
+              "correctnessPassed": true
+            },
+            {
+              "id": "inverse",
+              "rawSeconds": [
+                0.041402,
+                0.041743125,
+                0.041425666666666666
+              ],
+              "medianSeconds": 0.041425666666666666,
+              "relativeError": 4.4351617764665467E-16,
+              "correctnessPassed": true
+            }
+          ]
+        },
+        {
+          "id": "specialized-rows",
+          "operations": [
+            {
+              "id": "forward",
+              "rawSeconds": [
+                0.043825166666666665,
+                0.04368620833333333,
+                0.043224708333333334
+              ],
+              "medianSeconds": 0.04368620833333333,
+              "relativeError": 3.3676180444703074E-16,
+              "correctnessPassed": true
+            },
+            {
+              "id": "inverse",
+              "rawSeconds": [
+                0.0415245,
+                0.042014,
+                0.042038958333333334
+              ],
+              "medianSeconds": 0.042014,
+              "relativeError": 4.4351617764665467E-16,
+              "correctnessPassed": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "fftw-half-x-512x512x129-antialias-1",
+      "size": [
+        512,
+        512,
+        129
+      ],
+      "shouldAntialias": true,
+      "seed": 714001,
+      "sampleCount": 3,
+      "isGate": true,
+      "status": "complete",
+      "failure": {
+        "identifier": "",
+        "message": "",
+        "stack": []
+      },
+      "warmupSchedules": [
+        [
+          "builtin/forward",
+          "layout-methods/forward",
+          "specialized-rows/forward",
+          "builtin/inverse",
+          "layout-methods/inverse",
+          "specialized-rows/inverse"
+        ],
+        [
+          "layout-methods/forward",
+          "specialized-rows/forward",
+          "builtin/inverse",
+          "layout-methods/inverse",
+          "specialized-rows/inverse",
+          "builtin/forward"
+        ]
+      ],
+      "sampleSchedules": [
+        [
+          "builtin/forward",
+          "layout-methods/forward",
+          "specialized-rows/forward",
+          "builtin/inverse",
+          "layout-methods/inverse",
+          "specialized-rows/inverse"
+        ],
+        [
+          "layout-methods/forward",
+          "specialized-rows/forward",
+          "builtin/inverse",
+          "layout-methods/inverse",
+          "specialized-rows/inverse",
+          "builtin/forward"
+        ],
+        [
+          "specialized-rows/forward",
+          "builtin/inverse",
+          "layout-methods/inverse",
+          "specialized-rows/inverse",
+          "builtin/forward",
+          "layout-methods/forward"
+        ]
+      ],
+      "storage": {
+        "fourierStorageSize": [
+          257,
+          512
+        ],
+        "mappingMemoryBytes": 589016,
+        "adapterPersistentArrayBytes": 0,
+        "horizontalPlanCount": 1
+      },
+      "candidates": [
+        {
+          "id": "builtin",
+          "operations": [
+            {
+              "id": "forward",
+              "rawSeconds": [
+                0.0302505,
+                0.030215041666666668,
+                0.03032625
+              ],
+              "medianSeconds": 0.0302505,
+              "relativeError": 0,
+              "correctnessPassed": true
+            },
+            {
+              "id": "inverse",
+              "rawSeconds": [
+                0.032045083333333335,
+                0.02435475,
+                0.024706333333333334
+              ],
+              "medianSeconds": 0.024706333333333334,
+              "relativeError": 0,
+              "correctnessPassed": true
+            }
+          ]
+        },
+        {
+          "id": "layout-methods",
+          "operations": [
+            {
+              "id": "forward",
+              "rawSeconds": [
+                0.019739541666666666,
+                0.019761,
+                0.019809833333333332
+              ],
+              "medianSeconds": 0.019761,
+              "relativeError": 3.271679080034376E-16,
+              "correctnessPassed": true
+            },
+            {
+              "id": "inverse",
+              "rawSeconds": [
+                0.02325,
+                0.023019166666666667,
+                0.022638125
+              ],
+              "medianSeconds": 0.023019166666666667,
+              "relativeError": 4.3412542360811163E-16,
+              "correctnessPassed": true
+            }
+          ]
+        },
+        {
+          "id": "specialized-rows",
+          "operations": [
+            {
+              "id": "forward",
+              "rawSeconds": [
+                0.019270375,
+                0.019629916666666667,
+                0.019281208333333334
+              ],
+              "medianSeconds": 0.019281208333333334,
+              "relativeError": 3.271679080034376E-16,
+              "correctnessPassed": true
+            },
+            {
+              "id": "inverse",
+              "rawSeconds": [
+                0.022731083333333332,
+                0.02257925,
+                0.022701833333333334
+              ],
+              "medianSeconds": 0.022701833333333334,
+              "relativeError": 4.3412542360811163E-16,
+              "correctnessPassed": true
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "selection": {
+    "rule": "Select specialized rows when they are over 3% faster on at least one gate case and no more than 3% slower on every gate case.",
+    "tolerance": 0.03,
+    "forward": "layout-methods",
+    "inverse": "specialized-rows",
+    "details": [
+      {
+        "operationId": "forward",
+        "gateRatios": [
+          0.99469778089576488,
+          1.0832891731384193,
+          0.97424244254494319,
+          0.97572027394025274
+        ],
+        "specializedMateriallyFaster": false,
+        "specializedNeverMateriallySlower": false,
+        "selected": "layout-methods"
+      },
+      {
+        "operationId": "inverse",
+        "gateRatios": [
+          1.0056582942313,
+          0.95536200326619491,
+          1.0142021452078824,
+          0.98621438656192306
+        ],
+        "specializedMateriallyFaster": true,
+        "specializedNeverMateriallySlower": true,
+        "selected": "specialized-rows"
+      }
+    ]
+  }
+}
