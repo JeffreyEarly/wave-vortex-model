@@ -1,13 +1,13 @@
 ---
 layout: default
-title: WVFastTransformDoublyPeriodicFactory
-parent: WVFastTransformDoublyPeriodicFactory
+title: transformFromSpatialDomainWithFourier
+parent: WVFastTransformDoublyPeriodic
 grand_parent: Developer internals
-nav_order: 1
+nav_order: 7
 mathjax: true
 ---
 
-#  WVFastTransformDoublyPeriodicFactory
+#  transformFromSpatialDomainWithFourier
 
 
 
