@@ -41,6 +41,7 @@ jobs:
         uses: matlab-actions/setup-matlab@v3
         with:
           release: R2025a
+          products: Parallel_Computing_Toolbox
           cache: true
 
       - name: Run smoke tests
