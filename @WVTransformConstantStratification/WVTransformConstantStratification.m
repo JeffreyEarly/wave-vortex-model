@@ -84,12 +84,14 @@ classdef WVTransformConstantStratification < WVGeometryDoublyPeriodicStratifiedC
             % - Parameter options.isHydrostatic: use hydrostatic dynamics; default `false`
             % - Parameter options.latitude: latitude in the supported domain; default `33`
             % - Parameter options.shouldAntialias: exclude quadratically aliased modes; default `true`
+            % - Parameter options.fastTransform: horizontal transform backend, `"builtin"` (default) or explicitly requested `"fftw"`
             % - Parameter options.rho0: reference density in kilograms per cubic meter; default `1025`
             % - Returns wvt: new `WVTransformConstantStratification` instance
             arguments
                 Lxyz (1,3) double {mustBePositive}
                 Nxyz (1,3) double {mustBePositive}
                 options.shouldAntialias (1,1) logical = true
+                options.fastTransform (1,1) string {mustBeMember(options.fastTransform,["builtin","fftw"])} = "builtin"
 
                 options.N0 (1,1) double {mustBePositive} = 5.2e-3
                 options.rho0 (1,1) double {mustBePositive} = 1025
@@ -172,6 +174,7 @@ classdef WVTransformConstantStratification < WVGeometryDoublyPeriodicStratifiedC
                 optionArgs{2*i-1} = names{i};
                 optionArgs{2*i} = self.(names{i});
             end
+            optionArgs(end+1:end+2) = {'fastTransform',self.fastTransform.backendIdentifier};
             wvtX2 = WVTransformConstantStratification([self.Lx self.Ly self.Lz],m,optionArgs{:});
             wvtX2.shouldUseTrueNoMotionProfile = self.shouldUseTrueNoMotionProfile;
             forcing = WVForcing.empty(0,length(self.forcing));
@@ -198,6 +201,7 @@ classdef WVTransformConstantStratification < WVGeometryDoublyPeriodicStratifiedC
                     optionArgs{2*i} = false;
                 end
             end
+            optionArgs(end+1:end+2) = {'fastTransform',self.fastTransform.backendIdentifier};
             wvt2 = WVTransformConstantStratification([self.Lx self.Ly self.Lz],[self.Nx self.Ny self.Nz],optionArgs{:});
             wvt2.shouldUseTrueNoMotionProfile = self.shouldUseTrueNoMotionProfile;
             wvt2.removeAllForcing();
@@ -439,10 +443,12 @@ classdef WVTransformConstantStratification < WVGeometryDoublyPeriodicStratifiedC
             % - Parameter path: path to a NetCDF file
             % - Parameter iTime: (optional) time index to initialize from (default 1)
             % - Parameter shouldReadOnly: (optional) open the returned NetCDFFile read-only (default true)
+            % - Parameter fastTransform: (optional) runtime horizontal backend selection; default `"builtin"`
             arguments (Input)
                 path char {mustBeFile}
                 options.iTime (1,1) double {mustBePositive} = 1
                 options.shouldReadOnly logical = true
+                options.fastTransform (1,1) string {mustBeMember(options.fastTransform,["builtin","fftw"])} = "builtin"
             end
             arguments (Output)
                 wvt WVTransform
@@ -450,7 +456,7 @@ classdef WVTransformConstantStratification < WVGeometryDoublyPeriodicStratifiedC
             end
             ncfile = NetCDFFile(path,shouldReadOnly=options.shouldReadOnly);
             try
-                wvt = WVTransformConstantStratification.transformFromGroup(ncfile);
+                wvt = WVTransformConstantStratification.transformFromGroup(ncfile,fastTransform=options.fastTransform);
                 wvt.initFromNetCDFFile(ncfile,iTime=options.iTime,shouldDisplayInit=1);
                 wvt.initForcingFromNetCDFFile(ncfile);
             catch exception
@@ -465,15 +471,18 @@ classdef WVTransformConstantStratification < WVGeometryDoublyPeriodicStratifiedC
         end
 
 
-        function wvt = transformFromGroup(group)
+        function wvt = transformFromGroup(group,options)
             arguments (Input)
                 group NetCDFGroup {mustBeNonempty}
+                options.fastTransform (1,1) string {mustBeMember(options.fastTransform,["builtin","fftw"])} = "builtin"
             end
             arguments (Output)
                 wvt WVTransform {mustBeNonempty}
             end  
-            [Lxy, Nxy, options] = WVTransformConstantStratification.requiredPropertiesForTransformFromGroup(group);
-            wvt = WVTransformConstantStratification(Lxy,Nxy,options{:});
+            requestedBackend = options.fastTransform;
+            [Lxyz, Nxyz, constructorOptions] = WVTransformConstantStratification.requiredPropertiesForTransformFromGroup(group);
+            constructorOptions(end+1:end+2) = {'fastTransform',requestedBackend};
+            wvt = WVTransformConstantStratification(Lxyz,Nxyz,constructorOptions{:});
         end
 
     end

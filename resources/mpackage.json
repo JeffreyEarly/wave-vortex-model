@@ -87,6 +87,11 @@
             "name": "chebfun",
             "compatibleVersions": "",
             "id": "809af0b0-0175-4c98-97d0-1537925cf2d5"
+        },
+        {
+            "name": "FFTWTransforms",
+            "compatibleVersions": "^1.0.2",
+            "id": "c9f6616c-d26a-4fdc-8426-91ca8ffd751b"
         }
     ],
     "releaseCompatibility": ">=R2024b",

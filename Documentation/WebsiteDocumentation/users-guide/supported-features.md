@@ -20,7 +20,9 @@ WaveVortexModel provides five transform families together with model integration
 | `WVTransformStratifiedQG` | Stratified quasigeostrophic flow. |
 | `WVTransformBarotropicQG` | Equivalent-barotropic quasigeostrophic flow. |
 
-The rotating transforms accept either hemisphere for `5 <= abs(latitude) <= 85`, including the endpoints. Horizontal grids may contain independently chosen positive even or odd grid counts. The built-in MATLAB FFT implementation is used by the documented transform constructors.
+The rotating transforms accept either hemisphere for `5 <= abs(latitude) <= 85`, including the endpoints. Horizontal grids may contain independently chosen positive even or odd grid counts. The built-in MATLAB FFT implementation remains the default.
+
+Constant-stratification transforms also accept the experimental opt-in `fastTransform="fftw"`. This uses the source-only `FFTWTransforms ^1.0.2` package and locally built MEX modules only when its MATLAB-bundled r2c/c2r capability, ownership, and numerical checks pass. An unavailable explicit request emits one warning and continues with builtin transforms. The active implementation is available to developers as `wvt.fastTransform.backendIdentifier`. Variable-stratification and quasigeostrophic transforms remain builtin-only.
 
 Mode/index mappings accept scalars and column vectors. Resolution conversion and explicit antialiasing preserve coefficients identified by common integer mode numbers and initialize newly introduced modes to zero. Energy and, where defined, enstrophy agree between spectral and spatial representations within the transform discretization tolerance.
 
@@ -70,4 +72,4 @@ Custom operations and annotated variables use `WVOperation` and `WVVariableAnnot
 
 Optimization Toolbox is optional. `WVNoMotionProfileOperation` uses `lsqnonlin` when it is available and otherwise uses `fminsearch` with an advisory warning.
 
-FFTW selection and the low-level barotropic FINUFFT path remain development machinery. They are not selected through the documented transform constructors or public interpolation options, and FINUFFT is not a required package dependency.
+FFTWTransforms is a direct source dependency, but its compiled backend is optional and currently validated only for MATLAB R2026a on `maca64`. DCT-I/DST-I and derivative dispatch remain future milestone work. The low-level barotropic FINUFFT path remains development machinery and FINUFFT is not a required package dependency.

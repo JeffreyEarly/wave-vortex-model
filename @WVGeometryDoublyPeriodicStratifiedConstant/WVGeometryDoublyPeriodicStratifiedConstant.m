@@ -41,6 +41,7 @@ classdef WVGeometryDoublyPeriodicStratifiedConstant < WVGeometryDoublyPeriodic &
                 Lxyz (1,3) double {mustBePositive}
                 Nxyz (1,3) double {mustBePositive}
                 geomOptions.shouldAntialias (1,1) logical = true
+                geomOptions.fastTransform (1,1) string {mustBeMember(geomOptions.fastTransform,["builtin","fftw"])} = "builtin"
                 stratOptions.Nj (1,1) double {mustBePositive}
                 stratOptions.rho0 (1,1) double {mustBePositive} = 1025
                 stratOptions.planetaryRadius (1,1) double = 6.371e6

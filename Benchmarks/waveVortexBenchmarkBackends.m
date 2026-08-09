@@ -3,7 +3,9 @@ function backends = waveVortexBenchmarkBackends(backendIds)
 arguments
     backendIds (1,:) string = "builtin"
 end
-registry = struct("id","builtin","description","MATLAB builtin WaveVortex transform implementation");
+registry = [ ...
+    struct("id","builtin","description","MATLAB builtin WaveVortex transform implementation") ...
+    struct("id","fftw","description","Optional FFTWTransforms half-x horizontal implementation")];
 unknownIds = setdiff(backendIds,string({registry.id}));
 if ~isempty(unknownIds)
     error("WaveVortexBenchmark:UnknownBackend","Unknown benchmark backend: %s.",strjoin(unknownIds,", "));

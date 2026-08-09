@@ -32,6 +32,7 @@ classdef TestWaveVortexBenchmark < matlab.unittest.TestCase
             testCase.verifyTrue(all(ismember(["constant-nonhydrostatic" "constant-hydrostatic" "hydrostatic" "boussinesq" "stratified-qg" "barotropic-qg"],unique(string({suites(3).cases.transformId})))));
             testCase.verifyError(@()waveVortexBenchmarkSuites("missing-v1"),"WaveVortexBenchmark:UnknownSuite");
             testCase.verifyError(@()waveVortexBenchmarkBackends("missing"),"WaveVortexBenchmark:UnknownBackend");
+            testCase.verifyEqual(string({waveVortexBenchmarkBackends(["builtin" "fftw"]).id}),["builtin" "fftw"]);
         end
 
         function scoringUsesEqualFamilyWeights(testCase)
