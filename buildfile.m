@@ -152,7 +152,12 @@ for iFile = 1:numel(testFiles)
     end
     expectedPairsByFile{iFile} = selectedMethodPairs(1:nSelectedMethods);
 end
-expectedPairs = vertcat(expectedPairsByFile{:});
+nonemptyExpectedPairs = expectedPairsByFile(~cellfun(@isempty,expectedPairsByFile));
+if isempty(nonemptyExpectedPairs)
+    expectedPairs = strings(0,1);
+else
+    expectedPairs = vertcat(nonemptyExpectedPairs{:});
+end
 
 discoveredClassNames = string({suite.TestClass});
 discoveredMethodNames = string({suite.ProcedureName});

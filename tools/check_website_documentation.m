@@ -16,9 +16,22 @@ validateWebsiteDocumentation(stagingFolder);
 comparison = compareDocumentationTrees(fullfile(repositoryRoot,"docs"),stagingFolder);
 printComparison(comparison);
 if ~comparison.IsEqual
+    preserveDiagnostics(stagingFolder);
     error("WaveVortexModel:DocumentationOutOfDate","Committed documentation does not match a clean ClassDocumentation 1.3.0 build.");
 end
 clear stagingCleanup
+end
+
+function preserveDiagnostics(stagingFolder)
+diagnosticFolder = string(getenv("WVM_DOCUMENTATION_DIAGNOSTIC_FOLDER"));
+if diagnosticFolder == ""
+    return
+end
+if isfolder(diagnosticFolder)
+    error("WaveVortexModel:DocumentationDiagnosticExists","The documentation diagnostic folder already exists: %s",diagnosticFolder);
+end
+copyfile(stagingFolder,diagnosticFolder);
+fprintf("Generated documentation diagnostics preserved at %s\n",diagnosticFolder);
 end
 
 function printComparison(comparison)
