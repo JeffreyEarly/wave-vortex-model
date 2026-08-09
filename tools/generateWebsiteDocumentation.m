@@ -110,20 +110,36 @@ function normalizeReflectedDocumentation(documentation)
 classMetadata = meta.class.fromName(documentation.name);
 classDescription = ClassDocumentation.trimDeclarationFromString(classMetadata.DetailedDescription);
 classDescription = Topic.trimTopicsFromString(classDescription);
-documentation.detailedDescription = regexprep(removeCommonIndent(classDescription),'(?:\r?\n){3,}','\n\n');
+documentation.detailedDescription = removeCommonIndent(classDescription);
 
 for iMethod = 1:numel(documentation.allMethodDocumentation)
     methodDocumentation = documentation.allMethodDocumentation(iMethod);
     methodDocumentation.detailedDescription = normalizedReflectedDescription(classMetadata,methodDocumentation);
     if string(methodDocumentation.name) == documentation.name && ...
             ~isempty(methodDocumentation.detailedDescription) && ...
-            isequal(strtrim(string(methodDocumentation.detailedDescription)),strtrim(string(documentation.detailedDescription)))
+            (constructorUsesClassHelp(classMetadata) || ...
+            isequal(strtrim(string(methodDocumentation.detailedDescription)),strtrim(string(documentation.detailedDescription))))
         % R2024b exposes the class help as constructor help when the
         % constructor has no help block. Newer releases leave it empty.
         methodDocumentation.shortDescription = [];
         methodDocumentation.detailedDescription = [];
         methodDocumentation.declaration = [];
     end
+end
+end
+
+function tf = constructorUsesClassHelp(classMetadata)
+tf = false;
+methodMetadata = classMetadata.MethodList;
+for iMetadata = 1:numel(methodMetadata)
+    item = methodMetadata(iMetadata);
+    if string(item.Name) ~= string(classMetadata.Name) || isempty(item.DetailedDescription)
+        continue
+    end
+    constructorHelp = regexprep(strtrim(char(item.DetailedDescription)),'\s+',' ');
+    classHelp = regexprep(strtrim(char(classMetadata.DetailedDescription)),'\s+',' ');
+    tf = strcmp(constructorHelp,classHelp);
+    return
 end
 end
 
@@ -236,6 +252,8 @@ for iPage = 1:numel(pages)
     pagePath = fullfile(pages(iPage).folder,pages(iPage).name);
     pageText = fileread(pagePath);
     pageText = regexprep(pageText,'[ \t]+(?=\r?\n|$)','');
+    pageText = regexprep(pageText,'(## Discussion)(?:\r?\n){3,}','$1\n\n');
+    pageText = regexprep(pageText,'(?:\r?\n){5,}(?=## Topics)','\n\n\n\n\n');
     pageText = regexprep(pageText,'(?:\r?\n)*$','\n');
     writeTextFile(pagePath,pageText);
 end

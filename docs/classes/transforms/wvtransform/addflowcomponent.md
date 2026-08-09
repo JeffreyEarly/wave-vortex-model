@@ -23,7 +23,6 @@ add a flow component and its standard variables
 
 ## Discussion
 
-
 The standard variables supported by the concrete transform are
 registered for each component. These include the three-dimensional state
 variables and the sea-surface variables.

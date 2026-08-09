@@ -30,7 +30,6 @@ Set positions of float-like particles to be advected by the model.
 
 ## Discussion
 
-
 Pass the initial positions of particles to be advected by all
 three components of the velocity field, (u,v,w).
 

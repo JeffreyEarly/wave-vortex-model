@@ -23,7 +23,6 @@ Remove variables from the list of variables to be written to the NetCDF variable
 
 ## Discussion
 
-
 Pass strings of WVTransform state variables of the
 same name. This must be called before using any of the
 integrate methods.
