@@ -29,6 +29,9 @@ elseif className == "WVFastTransformDoublyPeriodicFFTW"
     [topicPath,isDeveloper] = fftwAdapterTopic(name);
 elseif className == "WVVerticalTransformConstantStratification"
     [topicPath,isDeveloper] = verticalTransformTopic(name);
+elseif className == "WVSpatialDerivativeDispatch"
+    topicPath = "Inspect spatial-derivative dispatch";
+    isDeveloper = true;
 elseif startsWith(className,"WVTransform")
     [topicPath,isDeveloper] = transformTopic(name);
 elseif className == "WVModel"
@@ -75,7 +78,7 @@ if ismember(name,["WVFastTransformDoublyPeriodicFFTW","wvg","Nz","backendIdentif
     topicPath = "Create an FFTW adapter";
 elseif ismember(name,["transformFromSpatialDomainWithFourier","transformToSpatialDomainWithFourier"])
     topicPath = "Apply horizontal transforms";
-elseif ismember(name,["diffX","diffY"])
+elseif ismember(name,["diffX","diffY","transformToSpatialDomainWithFourierAndDerivatives"])
     topicPath = "Apply spatial derivatives";
 else
     topicPath = "Class internals";

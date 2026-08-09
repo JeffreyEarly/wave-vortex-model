@@ -9,8 +9,10 @@ classdef WVFastTransformDoublyPeriodicFFTW < WVFastTransformDoublyPeriodic
     % Forward transforms return normalized WaveVortex coefficients. Inverse
     % transforms assemble a uniquely owned transient half spectrum and use
     % FFTW's destructive c2r operation without additional normalization.
-    % Spatial derivatives deliberately retain MATLAB's one-dimensional FFT
-    % implementation until issue #74 evaluates derivative dispatch.
+    % Spatial derivatives retain MATLAB by default and lazily create
+    % one-dimensional FFTW plans only for exact issue #74 dispatch records.
+    % Per-field reconstruction can apply horizontal multipliers directly on
+    % the canonical WV grid without retaining additional Fourier storage.
     %
     % ```matlab
     % adapter = WVFastTransformDoublyPeriodicFFTW(geometry,Nz);
@@ -39,6 +41,11 @@ classdef WVFastTransformDoublyPeriodicFFTW < WVFastTransformDoublyPeriodic
 
     properties (Access=private)
         horizontalTransform
+        xDerivativeTransform
+        yDerivativeTransform
+        xDerivativeUnavailable (1,1) logical = false
+        yDerivativeUnavailable (1,1) logical = false
+        hasWarnedOfDerivativeFailure (1,1) logical = false
         forwardMappingMethod (1,1) string
         inverseMappingMethod (1,1) string
     end
@@ -85,6 +92,14 @@ classdef WVFastTransformDoublyPeriodicFFTW < WVFastTransformDoublyPeriodic
         end
 
         function delete(self)
+            if ~isempty(self.xDerivativeTransform) && isvalid(self.xDerivativeTransform)
+                delete(self.xDerivativeTransform);
+            end
+            self.xDerivativeTransform = [];
+            if ~isempty(self.yDerivativeTransform) && isvalid(self.yDerivativeTransform)
+                delete(self.yDerivativeTransform);
+            end
+            self.yDerivativeTransform = [];
             if ~isempty(self.horizontalTransform) && isvalid(self.horizontalTransform)
                 delete(self.horizontalTransform);
             end
@@ -95,6 +110,7 @@ classdef WVFastTransformDoublyPeriodicFFTW < WVFastTransformDoublyPeriodic
     methods
         uBar = transformFromSpatialDomainWithFourier(self,u)
         u = transformToSpatialDomainWithFourier(self,uBar)
+        [u,u_x,u_y] = transformToSpatialDomainWithFourierAndDerivatives(self,uBar)
         du = diffX(self,u,options)
         du = diffY(self,u,options)
     end
@@ -116,7 +132,7 @@ classdef WVFastTransformDoublyPeriodicFFTW < WVFastTransformDoublyPeriodic
                 "forwardMappingMethod",self.forwardMappingMethod, ...
                 "inverseMappingMethod",self.inverseMappingMethod, ...
                 "mappingMemoryBytes",self.fourierStorageLayout.mappingMemoryBytes, ...
-                "horizontalPlanCount",1, ...
+                "horizontalPlanCount",1 + double(~isempty(self.xDerivativeTransform) && isvalid(self.xDerivativeTransform)) + double(~isempty(self.yDerivativeTransform) && isvalid(self.yDerivativeTransform)), ...
                 "persistentArrayBytes",0);
         end
 

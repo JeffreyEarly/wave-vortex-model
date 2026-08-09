@@ -60,6 +60,7 @@ These items document internal implementation details and are not part of the pri
   + [`fourierStorageLayout`](/classes/developer-internals/wvfasttransformdoublyperiodic/fourierstoragelayout.html)
   + [`transformFromSpatialDomainWithFourier`](/classes/developer-internals/wvfasttransformdoublyperiodic/transformfromspatialdomainwithfourier.html)
   + [`transformToSpatialDomainWithFourier`](/classes/developer-internals/wvfasttransformdoublyperiodic/transformtospatialdomainwithfourier.html)
+  + [`transformToSpatialDomainWithFourierAndDerivatives`](/classes/developer-internals/wvfasttransformdoublyperiodic/transformtospatialdomainwithfourierandderivatives.html) Reconstruct a field and its first horizontal derivatives.
 
 
 ---

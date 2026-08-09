@@ -66,6 +66,11 @@ if suite.kind == "transform-layout"
     end
     return
 end
+if suite.kind == "derivative-dispatch"
+    suiteResult = runWaveVortexDerivativeDispatchSuite(suite,backends,options.correctnessTolerance,repositoryRoot);
+    suiteResult.referenceArtifact = referencePath;
+    return
+end
 suiteResult = struct("id",suite.id,"version",suite.version,"kind",suite.kind,"description",suite.description,"operation",suite.operation,"isScored",suite.isScored,"selectionIsComplete",suite.selectionIsComplete,"status","complete","cases",emptyCaseResults(),"familyScores",emptyScores(),"suiteScores",emptyScores(),"referenceArtifact","","metadata",struct);
 for iCase = 1:numel(suite.cases)
     try
