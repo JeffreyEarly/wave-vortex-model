@@ -3,7 +3,7 @@ layout: default
 title: initWithAlternativeSpectrum
 parent: WVTransformBoussinesq
 grand_parent: Transforms
-nav_order: 135
+nav_order: 133
 mathjax: true
 ---
 

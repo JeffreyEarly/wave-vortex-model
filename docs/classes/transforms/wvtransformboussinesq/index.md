@@ -204,8 +204,6 @@ These items document internal implementation details and are not part of the pri
 + Geometry and mode indexing
   + [`buildVerticalModeProjectionOperators`](/classes/transforms/wvtransformboussinesq/buildverticalmodeprojectionoperators.html)
   + [`conjugateDimension`](/classes/transforms/wvtransformboussinesq/conjugatedimension.html) assumed conjugate dimension
-  + [`dftConjugateIndex`](/classes/transforms/wvtransformboussinesq/dftconjugateindex.html) legacy vertically replicated conjugate index
-  + [`dftPrimaryIndex`](/classes/transforms/wvtransformboussinesq/dftprimaryindex.html) legacy vertically replicated index into the active Fourier storage
   + [`indexFromKLModeNumber`](/classes/transforms/wvtransformboussinesq/indexfromklmodenumber.html) return the linear index into k_wv and l_wv from a mode number
   + [`indexFromModeNumber`](/classes/transforms/wvtransformboussinesq/indexfrommodenumber.html) return the linear index into a spectral matrix given (k,l,j)
   + [`indicesFromDFTGridToWVGrid`](/classes/transforms/wvtransformboussinesq/indicesfromdftgridtowvgrid.html) indices to convert from DFT to WV grid
@@ -234,7 +232,6 @@ These items document internal implementation details and are not part of the pri
   + [`transformToSpatialDomainFromDFTGrid`](/classes/transforms/wvtransformboussinesq/transformtospatialdomainfromdftgrid.html) transform from $$(k,l,z)$$ on the DFT grid to $$(x,y,z)$$
   + [`transformToSpatialDomainFromDFTGridAtPosition`](/classes/transforms/wvtransformboussinesq/transformtospatialdomainfromdftgridatposition.html) transform from $$(k,l)$$ on the DFT grid to $$(x,y)$$ at any position
   + [`waveModeVerticalStructureAtIndex`](/classes/transforms/wvtransformboussinesq/wavemodeverticalstructureatindex.html) Return wave vertical-structure factors at one vertical grid index.
-  + [`wvConjugateIndex`](/classes/transforms/wvtransformboussinesq/wvconjugateindex.html) legacy vertically replicated WV conjugate index
 + Spectral transforms and operators
   + [`FMatrix`](/classes/transforms/wvtransformboussinesq/fmatrix.html) transformation matrix $$F_g$$
   + [`FinvMatrix`](/classes/transforms/wvtransformboussinesq/finvmatrix.html) transformation matrix $$F_g^{-1}$$

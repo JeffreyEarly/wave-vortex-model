@@ -130,7 +130,6 @@ for iOperation = 1:numel(operationIds)
         "performancePassed",~isGate || ratio <= 1+gateTolerance);
 end
 
-diagnostics = geometry.fourierStorageLayoutDiagnostics();
 caseResult = struct( ...
     "id",benchmarkCase.id, ...
     "Nxyz",benchmarkCase.Nxyz, ...
@@ -144,8 +143,6 @@ caseResult = struct( ...
     "mappingMethod",layout.mappingMethod, ...
     "fourierStorageSize",layout.fourierStorageSize, ...
     "mappingMemoryBytes",layout.mappingMemoryBytes, ...
-    "legacyMappingsAreMaterialized",diagnostics.legacyMappingsAreMaterialized, ...
-    "legacyMappingBytes",diagnostics.legacyMappingBytes, ...
     "persistentBufferBytes",complexArrayBytes(transform.complexBuffer), ...
     "warmupSchedules",warmupSchedules, ...
     "sampleSchedules",sampleSchedules, ...
@@ -308,10 +305,10 @@ for benchmarkCase = results.cases
         lines(end+1) = sprintf("| %s | %d | %s | %s | %.3f | %.3f | %.3f | %.3g | %s |",benchmarkCase.id,benchmarkCase.shouldAntialias,yesNo(benchmarkCase.isGate),operation.id,1e3*operation.medianSeconds,1e3*operation.referenceMedianSeconds,operation.relativeToReference,operation.relativeError,yesNo(operation.correctnessPassed && operation.performancePassed)); %#ok<AGROW>
     end
 end
-lines = [lines;"";"## Storage contract";"";"| Case | Strategy | Mapping (MiB) | Persistent full buffer (MiB) | Legacy maps materialized | Legacy map bytes |";"|---|---|---:|---:|---|---:|"];
+lines = [lines;"";"## Storage contract";"";"| Case | Strategy | Mapping (MiB) | Persistent full buffer (MiB) |";"|---|---|---:|---:|"];
 for benchmarkCase = results.cases
     if benchmarkCase.status == "complete"
-        lines(end+1) = sprintf("| %s | %s | %.3f | %.3f | %s | %d |",benchmarkCase.id,benchmarkCase.mappingMethod,benchmarkCase.mappingMemoryBytes/2^20,benchmarkCase.persistentBufferBytes/2^20,yesNo(benchmarkCase.legacyMappingsAreMaterialized),benchmarkCase.legacyMappingBytes); %#ok<AGROW>
+        lines(end+1) = sprintf("| %s | %s | %.3f | %.3f |",benchmarkCase.id,benchmarkCase.mappingMethod,benchmarkCase.mappingMemoryBytes/2^20,benchmarkCase.persistentBufferBytes/2^20); %#ok<AGROW>
     end
 end
 if ~isempty(results.readiness.failedCriteria)
@@ -376,11 +373,11 @@ rng(originalRng);
 end
 
 function result = failedCase(benchmarkCase,exception)
-result = struct("id",benchmarkCase.id,"Nxyz",benchmarkCase.Nxyz,"shouldAntialias",benchmarkCase.shouldAntialias,"seed",benchmarkCase.seed,"warmupCount",benchmarkCase.warmupCount,"sampleCount",benchmarkCase.sampleCount,"isGate",isGateSize(benchmarkCase.Nxyz),"status","failed","failure",struct("identifier",string(exception.identifier),"message",string(exception.message),"stack",string({exception.stack.name})),"mappingMethod","","fourierStorageSize",[],"mappingMemoryBytes",NaN,"legacyMappingsAreMaterialized",false,"legacyMappingBytes",NaN,"persistentBufferBytes",NaN,"warmupSchedules",strings(0,0),"sampleSchedules",strings(0,0),"operations",emptyOperationResults());
+result = struct("id",benchmarkCase.id,"Nxyz",benchmarkCase.Nxyz,"shouldAntialias",benchmarkCase.shouldAntialias,"seed",benchmarkCase.seed,"warmupCount",benchmarkCase.warmupCount,"sampleCount",benchmarkCase.sampleCount,"isGate",isGateSize(benchmarkCase.Nxyz),"status","failed","failure",struct("identifier",string(exception.identifier),"message",string(exception.message),"stack",string({exception.stack.name})),"mappingMethod","","fourierStorageSize",[],"mappingMemoryBytes",NaN,"persistentBufferBytes",NaN,"warmupSchedules",strings(0,0),"sampleSchedules",strings(0,0),"operations",emptyOperationResults());
 end
 
 function results = emptyCaseResults()
-results = struct("id",{},"Nxyz",{},"shouldAntialias",{},"seed",{},"warmupCount",{},"sampleCount",{},"isGate",{},"status",{},"failure",{},"mappingMethod",{},"fourierStorageSize",{},"mappingMemoryBytes",{},"legacyMappingsAreMaterialized",{},"legacyMappingBytes",{},"persistentBufferBytes",{},"warmupSchedules",{},"sampleSchedules",{},"operations",{});
+results = struct("id",{},"Nxyz",{},"shouldAntialias",{},"seed",{},"warmupCount",{},"sampleCount",{},"isGate",{},"status",{},"failure",{},"mappingMethod",{},"fourierStorageSize",{},"mappingMemoryBytes",{},"persistentBufferBytes",{},"warmupSchedules",{},"sampleSchedules",{},"operations",{});
 end
 
 function results = emptyOperationResults()

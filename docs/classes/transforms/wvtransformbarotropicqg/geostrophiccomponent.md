@@ -3,7 +3,7 @@ layout: default
 title: geostrophicComponent
 parent: WVTransformBarotropicQG
 grand_parent: Transforms
-nav_order: 57
+nav_order: 55
 mathjax: true
 ---
 

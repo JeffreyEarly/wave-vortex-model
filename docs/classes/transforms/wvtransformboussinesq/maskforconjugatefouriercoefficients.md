@@ -3,7 +3,7 @@ layout: default
 title: maskForConjugateFourierCoefficients
 parent: WVTransformBoussinesq
 grand_parent: Transforms
-nav_order: 169
+nav_order: 167
 mathjax: true
 ---
 

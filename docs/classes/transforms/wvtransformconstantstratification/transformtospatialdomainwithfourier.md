@@ -3,7 +3,7 @@ layout: default
 title: transformToSpatialDomainWithFourier
 parent: WVTransformConstantStratification
 grand_parent: Transforms
-nav_order: 236
+nav_order: 234
 mathjax: true
 ---
 

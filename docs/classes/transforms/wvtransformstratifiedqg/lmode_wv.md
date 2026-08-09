@@ -3,7 +3,7 @@ layout: default
 title: lMode_wv
 parent: WVTransformStratifiedQG
 grand_parent: Transforms
-nav_order: 114
+nav_order: 112
 mathjax: true
 ---
 

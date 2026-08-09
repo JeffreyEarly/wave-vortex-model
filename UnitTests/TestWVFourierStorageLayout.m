@@ -110,7 +110,7 @@ classdef TestWVFourierStorageLayout < matlab.unittest.TestCase
             testCase.verifyTrue(all(strcmp({publicProperties.SetAccess},"private")));
 
             expectedMethods = ["WVFourierStorageLayout" "allocateFourierStorage" ...
-                "expandedLegacyMappings" "mappingMemoryUsage" ...
+                "mappingMemoryUsage" ...
                 "reshapeFourierRowsToStorage" "reshapeFourierStorageToRows" ...
                 "transformFromFourierStorageToWVGrid" ...
                 "transformFromWVGridToFourierStorage"];
@@ -136,13 +136,11 @@ classdef TestWVFourierStorageLayout < matlab.unittest.TestCase
             testCase.verifyEqual(layout.transformFromFourierStorageToWVGrid(rows),wvArray,AbsTol=1e-12);
         end
 
-        function builtinUsesRowsAndPreservesLegacyMappings(testCase)
+        function builtinUsesRowsWithoutExpandedMappings(testCase)
             geometry = WVGeometryDoublyPeriodic([4000 3000],[16 12],Nz=5,shouldAntialias=false);
             diagnostics = geometry.fourierStorageLayoutDiagnostics();
             testCase.verifyEqual(diagnostics.fourierStorageType,"full-complex");
             testCase.verifyEqual(diagnostics.mappingMethod,"two-dimensional-rows");
-            testCase.verifyFalse(diagnostics.legacyMappingsAreMaterialized);
-            testCase.verifyEqual(diagnostics.legacyMappingBytes,0);
 
             rng(7100,"twister");
             realInput = randn(16,12,5);
@@ -151,17 +149,16 @@ classdef TestWVFourierStorageLayout < matlab.unittest.TestCase
             testCase.verifySize(canonical,[5 geometry.Nkl]);
             testCase.verifySize(realOutput,[16 12 5]);
             testCase.verifySize(geometry.fastTransform.complexBuffer,[16 12 5]);
-            diagnostics = geometry.fourierStorageLayoutDiagnostics();
-            testCase.verifyFalse(diagnostics.legacyMappingsAreMaterialized);
-
             [expectedPrimary,expectedConjugate,expectedWVConjugate] = geometry.indicesFromWVGridToDFTGrid(5,isHalfComplex=true);
-            testCase.verifyEqual(geometry.dftPrimaryIndex,uint64(expectedPrimary));
-            testCase.verifyEqual(geometry.dftConjugateIndex,uint64(expectedConjugate));
-            testCase.verifyEqual(geometry.wvConjugateIndex,uint64(expectedWVConjugate));
-            diagnostics = geometry.fourierStorageLayoutDiagnostics();
-            testCase.verifyTrue(diagnostics.legacyMappingsAreMaterialized);
-            testCase.verifyEqual(diagnostics.legacyMappingBytes,8*(numel(expectedPrimary)+numel(expectedConjugate)+numel(expectedWVConjugate)));
-            testCase.verifyEqual(geometry.dftPrimaryIndex,uint64(expectedPrimary));
+            testCase.verifyEqual(numel(expectedPrimary),5*geometry.Nkl);
+            testCase.verifyEqual(numel(expectedConjugate),numel(expectedWVConjugate));
+            geometryMetadata = metaclass(geometry);
+            properties = geometryMetadata.PropertyList;
+            if iscell(properties)
+                properties = [properties{:}];
+            end
+            propertyNames = string({properties.Name});
+            testCase.verifyFalse(any(ismember(propertyNames,["dftPrimaryIndex" "dftConjugateIndex" "wvConjugateIndex"])));
         end
 
         function builtinDefaultPathMatchesFrozenExpressions(testCase)

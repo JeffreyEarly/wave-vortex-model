@@ -3,7 +3,7 @@ layout: default
 title: transformToSpatialDomainWithGg
 parent: WVTransformBoussinesq
 grand_parent: Transforms
-nav_order: 250
+nav_order: 248
 mathjax: true
 ---
 

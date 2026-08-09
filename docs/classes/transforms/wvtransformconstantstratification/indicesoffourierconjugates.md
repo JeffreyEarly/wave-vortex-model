@@ -3,7 +3,7 @@ layout: default
 title: indicesOfFourierConjugates
 parent: WVTransformConstantStratification
 grand_parent: Transforms
-nav_order: 124
+nav_order: 122
 mathjax: true
 ---
 

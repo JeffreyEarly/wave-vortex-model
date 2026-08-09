@@ -3,7 +3,7 @@ layout: default
 title: isHermitian
 parent: WVTransformBarotropicQG
 grand_parent: Transforms
-nav_order: 71
+nav_order: 69
 mathjax: true
 ---
 

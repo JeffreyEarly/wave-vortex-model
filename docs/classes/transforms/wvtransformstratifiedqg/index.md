@@ -152,8 +152,6 @@ These items document internal implementation details and are not part of the pri
   + [`VA0`](/classes/transforms/wvtransformstratifiedqg/va0.html) matrix component that multiplies $$A_0$$ to compute $$\tilde{v}$$.
 + Geometry and mode indexing
   + [`conjugateDimension`](/classes/transforms/wvtransformstratifiedqg/conjugatedimension.html) assumed conjugate dimension
-  + [`dftConjugateIndex`](/classes/transforms/wvtransformstratifiedqg/dftconjugateindex.html) legacy vertically replicated conjugate index
-  + [`dftPrimaryIndex`](/classes/transforms/wvtransformstratifiedqg/dftprimaryindex.html) legacy vertically replicated index into the active Fourier storage
   + [`indexFromKLModeNumber`](/classes/transforms/wvtransformstratifiedqg/indexfromklmodenumber.html) return the linear index into k_wv and l_wv from a mode number
   + [`indexFromModeNumber`](/classes/transforms/wvtransformstratifiedqg/indexfrommodenumber.html) return the linear index into a spectral matrix given (k,l,j)
   + [`indicesFromDFTGridToWVGrid`](/classes/transforms/wvtransformstratifiedqg/indicesfromdftgridtowvgrid.html) indices to convert from DFT to WV grid
@@ -182,7 +180,6 @@ These items document internal implementation details and are not part of the pri
   + [`transformToSpatialDomainFromDFTGrid`](/classes/transforms/wvtransformstratifiedqg/transformtospatialdomainfromdftgrid.html) transform from $$(k,l,z)$$ on the DFT grid to $$(x,y,z)$$
   + [`transformToSpatialDomainFromDFTGridAtPosition`](/classes/transforms/wvtransformstratifiedqg/transformtospatialdomainfromdftgridatposition.html) transform from $$(k,l)$$ on the DFT grid to $$(x,y)$$ at any position
   + [`waveModeVerticalStructureAtIndex`](/classes/transforms/wvtransformstratifiedqg/wavemodeverticalstructureatindex.html) Return wave vertical-structure factors at one vertical grid index.
-  + [`wvConjugateIndex`](/classes/transforms/wvtransformstratifiedqg/wvconjugateindex.html) legacy vertically replicated WV conjugate index
 + Spectral transforms and operators
   + [`FMatrix`](/classes/transforms/wvtransformstratifiedqg/fmatrix.html) transformation matrix $$F_g$$
   + [`FinvMatrix`](/classes/transforms/wvtransformstratifiedqg/finvmatrix.html) transformation matrix $$F_g^{-1}$$

@@ -3,7 +3,7 @@ layout: default
 title: geostrophicEnergy
 parent: WVTransformStratifiedQG
 grand_parent: Transforms
-nav_order: 76
+nav_order: 74
 mathjax: true
 ---
 

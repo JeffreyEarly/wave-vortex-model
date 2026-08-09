@@ -3,7 +3,7 @@ layout: default
 title: g
 parent: WVTransformBarotropicQG
 grand_parent: Transforms
-nav_order: 54
+nav_order: 52
 mathjax: true
 ---
 

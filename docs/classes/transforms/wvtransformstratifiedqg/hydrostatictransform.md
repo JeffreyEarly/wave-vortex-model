@@ -3,7 +3,7 @@ layout: default
 title: hydrostaticTransform
 parent: WVTransformStratifiedQG
 grand_parent: Transforms
-nav_order: 81
+nav_order: 79
 mathjax: true
 ---
 

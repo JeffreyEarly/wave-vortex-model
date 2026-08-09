@@ -3,7 +3,7 @@ layout: default
 title: kRadial
 parent: WVTransformHydrostatic
 grand_parent: Transforms
-nav_order: 140
+nav_order: 138
 mathjax: true
 ---
 

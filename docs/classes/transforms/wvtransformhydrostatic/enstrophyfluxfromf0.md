@@ -3,7 +3,7 @@ layout: default
 title: enstrophyFluxFromF0
 parent: WVTransformHydrostatic
 grand_parent: Transforms
-nav_order: 90
+nav_order: 88
 mathjax: true
 ---
 

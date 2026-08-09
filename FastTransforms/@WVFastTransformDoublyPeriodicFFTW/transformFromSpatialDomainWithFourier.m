@@ -1,29 +1,21 @@
-function u_bar = transformFromSpatialDomainWithFourier(self,u)
-% transform from $$(x,y,z)$$ to $$(z,kl)$$ on the WV grid
+function uBar = transformFromSpatialDomainWithFourier(self,u)
+% Transform a real spatial array to normalized canonical WV coefficients.
 %
-% Performs a Fourier transform in the x and y direction. The
-% resulting matrix is on the WV gride
-%
-% - Topic: Operations — Fourier transformation
-% - Declaration: u_bar = transformFromSpatialDomainWithFourier(u)
-% - Parameter u: a real-valued matrix of size [Nx Ny Nz]
-% - Returns u_bar: a complex-valued matrix of size [Nz Nkl]
-
-% self.dftXYComplexBuffer = self.dftXY.scaleFactor*self.dftXY.transformForwardIntoArray(u,self.dftXYComplexBuffer);
-
-% Matlab builtin gets to 2.23s-2.25s
-
-% Method 1: (2.7s)
-% from performance testing it is clear that the multiplication step is
-% causing a memory copy.
-u_bar = self.dftXY.transformForward(u);
-u_bar = u_bar*self.dftXY.scaleFactor;
-
-% Method 2: (3.23s-3.30s)
-% u_bar = complex(double(zeros(self.dftXY.complexSize)));
-% u_bar = self.dftXY.scaleFactor*self.dftXY.transformForwardIntoArray(u,u_bar);
-
-
-u_bar = reshape(u_bar(self.wvg.dftPrimaryIndex),[self.Nz self.wvg.Nkl]);
-
+% - Topic: Apply horizontal transforms
+% - Declaration: uBar = transformFromSpatialDomainWithFourier(u)
+% - Parameter u: real spatial array `[Nx,Ny,Nz]`
+% - Returns uBar: normalized canonical WV-grid coefficients `[Nz,Nkl]`
+% - Developer: true
+halfSpectrum = self.horizontalTransform.transformForward(u);
+rows = self.fourierStorageLayout.reshapeFourierStorageToRows(halfSpectrum);
+if self.forwardMappingMethod == "specialized-rows"
+    layout = self.fourierStorageLayout;
+    uBar = complex(zeros(self.Nz,layout.Nkl));
+    uBar(:,layout.directWVIndices) = self.horizontalTransform.scaleFactor*rows(layout.fourierRowsForDirectWVIndices,:).';
+    if ~isempty(layout.conjugatedWVIndices)
+        uBar(:,layout.conjugatedWVIndices) = self.horizontalTransform.scaleFactor*conj(rows(layout.fourierRowsForConjugatedWVIndices,:).');
+    end
+else
+    uBar = self.horizontalTransform.scaleFactor*self.fourierStorageLayout.transformFromFourierStorageToWVGrid(rows);
+end
 end

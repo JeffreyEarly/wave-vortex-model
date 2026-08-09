@@ -313,41 +313,6 @@ classdef (Sealed) WVFourierStorageLayout
             end
         end
 
-        function [dftPrimaryIndex,dftConjugateIndex,wvConjugateIndex] = expandedLegacyMappings(self,nBatch)
-            % Materialize the vertically expanded legacy full-storage mappings.
-            %
-            % This temporary compatibility method exists only until issue #71
-            % removes consumers of the old Nz-replicated geometry properties.
-            % It is unavailable when conjugated extraction is needed.
-            %
-            % - Topic: Legacy compatibility
-            % - Declaration: [dftPrimaryIndex,dftConjugateIndex,wvConjugateIndex] = expandedLegacyMappings(nBatch)
-            % - Parameter nBatch: positive batch count used to expand row indices
-            % - Returns dftPrimaryIndex: vertically expanded direct Fourier indices
-            % - Returns dftConjugateIndex: vertically expanded Hermitian destination indices
-            % - Returns wvConjugateIndex: vertically expanded WV source indices
-            % - Developer: true
-            arguments
-                self (1,1) WVFourierStorageLayout
-                nBatch (1,1) double {mustBeInteger,mustBePositive}
-            end
-            if ~isempty(self.conjugatedWVIndices)
-                error("WaveVortexModel:LegacyMappingUnavailable","Legacy linear mappings cannot represent storage whose WV modes require conjugated extraction.");
-            end
-            offsets = uint64((0:nBatch-1)*self.nFourierStorageRows);
-            primary = self.fourierRowsForDirectWVIndices(:)+offsets;
-            dftPrimaryIndex = reshape(primary.',[],1);
-            completion = self.hermitianCompletionRows(:)+offsets;
-            dftConjugateIndex = reshape(completion.',[],1);
-
-            sourceWVIndices = zeros(numel(self.hermitianSourceRows),1,"uint64");
-            for iSource = 1:numel(self.hermitianSourceRows)
-                iDirect = find(self.fourierRowsForDirectWVIndices == self.hermitianSourceRows(iSource),1);
-                sourceWVIndices(iSource) = self.directWVIndices(iDirect);
-            end
-            wvIndices = uint64((0:nBatch-1)')+1+nBatch*(sourceWVIndices(:)'-1);
-            wvConjugateIndex = reshape(wvIndices,[],1);
-        end
     end
 
     methods (Access=private)

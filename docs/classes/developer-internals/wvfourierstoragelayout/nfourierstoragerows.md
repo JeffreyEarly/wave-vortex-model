@@ -3,7 +3,7 @@ layout: default
 title: nFourierStorageRows
 parent: WVFourierStorageLayout
 grand_parent: Developer internals
-nav_order: 19
+nav_order: 18
 mathjax: true
 ---
 
