@@ -135,6 +135,47 @@ classdef TestUserDocumentation < matlab.unittest.TestCase
             testCase.verifyEqual(canonicalCNAME,"wavevortexmodel.org");
             testCase.verifyEqual(generatedCNAME,canonicalCNAME);
         end
+
+        function renderingSensitiveMarkupIsWellFormed(testCase)
+            transformGuide = testCase.readCanonical(fullfile("users-guide","using-the-wvtransform.md"));
+            testCase.verifySubstring(transformGuide,'$$5 \leq \lvert\mathrm{latitude}\rvert \leq 85$$');
+            testCase.verifyFalse(contains(transformGuide,'|\mathrm{latitude}|'));
+
+            forcingGuide = testCase.readCanonical(fullfile("users-guide","adding-forcing.md"));
+            equationStart = strfind(forcingGuide,"$$" + newline + "    \begin{align}");
+            equationEnd = strfind(forcingGuide,"    \end{align}" + newline + "$$");
+            explanatoryText = strfind(forcingGuide,"and implemented by overriding `addSpectralForcing`");
+            testCase.verifyNumElements(equationStart,1);
+            testCase.verifyNumElements(equationEnd,1);
+            testCase.verifyNumElements(explanatoryText,1);
+            testCase.verifyLessThan(equationStart,equationEnd);
+            testCase.verifyLessThan(equationEnd,explanatoryText);
+
+            advancedGuide = testCase.readCanonical(fullfile("users-guide","reading-and-writing-to-file-advanced.md"));
+            testCase.verifyMatches(advancedGuide,'(?m)^title: "Reading and writing files: advanced topics"$');
+            testCase.verifyMatches(advancedGuide,'(?m)^parent: User guide$');
+
+            landingPages = [
+                "acknowledgements.md"
+                "addons.md"
+                fullfile("classes","index.md")
+                fullfile("developers-guide","index.md")
+                fullfile("mathematical-introduction","index.md")
+                ];
+            for landingPage = landingPages'
+                testCase.verifyMatches(testCase.readCanonical(landingPage),'(?m)^# \S');
+            end
+
+            operationsGuide = testCase.readCanonical(fullfile("developers-guide","operations-and-variables.md"));
+            propertyGuide = testCase.readCanonical(fullfile("developers-guide","property-and-method-types.md"));
+            styleGuide = testCase.readCanonical(fullfile("developers-guide","style-guide.md"));
+            changelog = testCase.readFile(fullfile(testCase.repositoryRoot,"CHANGELOG.md"));
+            testCase.verifySubstring(operationsGuide,"`operationVariableNameMap`");
+            testCase.verifySubstring(propertyGuide,"`WVTransform`");
+            testCase.verifySubstring(styleGuide,"`WaveVortexTransformConstantStratification(Lxyz, Nxyz, N0, options)`");
+            testCase.verifySubstring(changelog,"`WVForcing`");
+            testCase.verifySubstring(changelog,"`WVObservingSystems`");
+        end
     end
 
     methods (Access=private)

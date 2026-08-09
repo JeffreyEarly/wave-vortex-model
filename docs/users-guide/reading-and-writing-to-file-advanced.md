@@ -1,6 +1,6 @@
 ---
 layout: default
-title: Reading and writing files: advanced topics
+title: "Reading and writing files: advanced topics"
 parent: User guide
 mathjax: true
 nav_order: 12

@@ -21,7 +21,7 @@ A `WVTransform` represents a fluid state in physical and wave–vortex coordinat
 | [`WVTransformStratifiedQG`](/classes/transforms/wvtransformstratifiedqg/) | Three-dimensional stratified quasigeostrophic flow. |
 | [`WVTransformBarotropicQG`](/classes/transforms/wvtransformbarotropicqg/) | Two-dimensional equivalent-barotropic quasigeostrophic flow. |
 
-All rotating transforms accept latitude in either hemisphere for $$5 \leq |\mathrm{latitude}| \leq 85$$ degrees.
+All rotating transforms accept latitude in either hemisphere for $$5 \leq \lvert\mathrm{latitude}\rvert \leq 85$$ degrees.
 
 ## Construct a transform
 

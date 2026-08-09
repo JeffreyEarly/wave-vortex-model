@@ -12,7 +12,7 @@ This document is meant to articulate the internal logic used for operations and 
 
 First note that `variableAnnotationNameMap` contains *all* variables, even those which are properties on the class. The `operationVariableNameMap` contains the subset of those that needs to be computed with an operation.
 
-Second note that `operationVariableNameMap
+Second note that `operationVariableNameMap`
 
 There are a couple of important points,
 1. One operation can produce many variables.

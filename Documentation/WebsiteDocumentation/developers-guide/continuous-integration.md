@@ -19,7 +19,9 @@ The required workflow runs for every pull request, every update to `main`, and m
 | Documentation / MATLAB R2024b | `buildtool docs:check` |
 | Code Analyzer / MATLAB R2024b | `buildtool analyze` |
 
-The documentation job installs the authoring-only package `ClassDocumentation@1.3.0` explicitly before checking the committed site. Smoke tests, documentation verification, and Code Analyzer are required to merge into `main`. Branch protection requires the pull request branch to be current with `main` before those checks can satisfy the merge gate.
+The documentation job installs the authoring-only package `ClassDocumentation@1.3.0` explicitly before checking the committed Markdown. It then builds that exact tree with GitHub Pages' Jekyll action and validates the rendered HTML. This second stage catches malformed front matter, mathematical Markdown, expressions split across rendered table cells, or other source syntax that can pass a link check but disappear or remain raw in the deployed site. Valid math delimiters remain in the Jekyll output for browser-side MathJax. Failed rendered output is uploaded as a temporary diagnostic artifact and is never committed.
+
+Smoke tests, source-and-rendered documentation verification, and Code Analyzer are required to merge into `main`. Branch protection requires the pull request branch to be current with `main` before those checks can satisfy the merge gate.
 
 ## Extended checks
 
