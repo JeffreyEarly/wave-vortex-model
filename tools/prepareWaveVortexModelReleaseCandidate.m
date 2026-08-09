@@ -30,6 +30,7 @@ dependency = oceankitrelease.installDocumentationPackage("ClassDocumentation@1.3
 require(dependency.Version == "1.3.0", ...
     "ClassDocumentation 1.3.0 was not installed for the export dry run.");
 addpath(sourceTools,"-begin");
+configureCIEnvironment(repositoryRoot,oceanKitRoot);
 
 oceankitrelease.runDocumentationCheck(repositoryRoot,"docs:check");
 expectedBody = oceankitrelease.unreleasedBody(fullfile(repositoryRoot,"CHANGELOG.md"));

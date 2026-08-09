@@ -59,6 +59,7 @@ classdef TestReleaseVerification < matlab.unittest.TestCase
                     "ClassDocumentation@1.3.0"
                     "prepareWaveVortexModelReleaseCandidate"
                     "verifyWaveVortexModelPackage"
+                    "configureCIEnvironment(repositoryRoot,oceanKitRoot)"
                     "ReleaseCompatibility"
                     ">=R2025b"
                     "checkCIWorkspaceCleanliness.sh"
