@@ -1,21 +1,33 @@
 ---
 layout: default
 title: Introduction
-parent: Users guide
+parent: User guide
 mathjax: true
 nav_order: 1
 ---
 
-#  Introduction
+# Introduction
 
-There are two high-level components to the wave-vortex model, the `WVTransform` and the `WVModel`. The `WV` prefix is short for wave-vortex and establishes a namespace for all classes in the model.
+WaveVortexModel separates the representation of a fluid state from its time evolution. The `WV` prefix means wave–vortex and provides a common namespace for the package's classes.
 
-## WVTransform
+## `WVTransform`: represent and diagnose a state
 
-The `WVTransform` subclasses encapsulate data representing the *state* of the ocean at a given instant in time (e.g., $$u$$, $$v$$, $$w$$, and $$\rho$$). The `WVTransform` can be customized to tell you anything you want about the state of the ocean at a point in time.
+A [`WVTransform`](/classes/transforms/wvtransform/) represents the state of a rotating fluid at a reference time. Wave-bearing transforms store that state in the wave–vortex coefficients `Ap`, `Am`, and `A0`; quasigeostrophic transforms use `A0`. The transform reconstructs physical variables such as velocity, density, pressure, and potential vorticity when they are requested.
 
-## WVModel
+Transforms also provide the forward projection from physical fields to coefficients, spectral differentiation and integration, interpolation at periodic off-grid positions, energetics, spectra, and flow-component diagnostics. Choose the transform family to match the desired stratification and dynamical approximation.
 
-A `WVModel` instance uses a `WVTransform` instance to integrate (time-step) the non-linear equations of motion forwad in time. The `WVModel` class adds support for features like particle advection and tracer advection.
+## `WVModel`: evolve and observe a state
 
+A [`WVModel`](/classes/wvmodel/) advances a `WVTransform` in time. Analytical linear evolution is useful for evaluating a prescribed superposition of modes. Fixed-step and adaptive integration evolve active coefficient and observing-system dynamics.
 
+The model coordinates forcing and closures, Lagrangian particles, tracers, moorings, Eulerian fields, and wave–vortex coefficients. Output files and output groups allow these observing systems to be sampled on different schedules and restored for a later restart.
+
+## A typical workflow
+
+1. Construct the appropriate `WVTransform`.
+2. Initialize it from physical fields, individual modes, a spectrum, or a saved file.
+3. Inspect reconstructed fields and diagnostics.
+4. If integrating nonlinear dynamics, configure forcing and a closure.
+5. Construct a `WVModel`, add observing systems or output, and integrate.
+
+Continue with [Using `WVTransform`](/users-guide/using-the-wvtransform.html) for concrete construction and initialization examples.

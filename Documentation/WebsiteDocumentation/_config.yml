@@ -1,5 +1,6 @@
 remote_theme: just-the-docs/just-the-docs
 title: WaveVortexModel
-description: Solve the stratified nonhydrostatic equations of motion and decompose into wave-vortex components
+description: Decompose and model rotating stratified flow with wave-vortex modes
+search_enabled: true
 compress_html:
   blanklines: true

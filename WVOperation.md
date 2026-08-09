@@ -5,7 +5,7 @@ A WVOperation allows you to add new functionality to the WVTransform by defining
 If the operation is simple and can be computed in one line, you can directly instantiate the WVOperation class and pass a function handle. For example,
 
 ```matlab
-outputVar = WVVariableAnnotation('zeta_z',{'x','y','z'},'1/s^2', 'vertical component of relative vorticity');
+outputVar = WVVariableAnnotation('zeta_z',{'x','y','z'},'1/s', 'vertical component of relative vorticity');
 f = @(wvt) wvt.diffX(wvt.v) - wvt.diffY(wvt.u);
 wvt.addOperation(WVOperation('zeta_z',outputVar,f));
 ```

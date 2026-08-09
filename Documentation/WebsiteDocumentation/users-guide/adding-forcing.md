@@ -1,18 +1,18 @@
 ---
 layout: default
 title: Adding forcing
-parent: Users guide
+parent: User guide
 nav_order: 4
 mathjax: true
 ---
 
-#  Adding forcing
+# Adding forcing
 
-The `WVTransform` is the linear part of the equations of motion and thus forcing is required for more interesting dynamics.
+A `WVTransform` provides analytical linear evolution of its modes. Nonlinear advection, external tendencies, and closures enter through `WVForcing` objects.
 
 ## Quick start
 
-By default, a `WVTransform` is initialized with exactly one forcing term: nonlinear advection. To see this, initialize a new transform, then `summarizeForcing` to list all right-hand-side terms,
+By default, a `WVTransform` is initialized with exactly one forcing term: nonlinear advection. Initialize a transform, then call `summarizeForcing` to list its right-hand-side terms:
 ```matlab
 wvt = WVTransformHydrostatic([800e3, 800e3, 4000],[64, 64, 65], N2=@(z) (3*2*pi/3600)^2*exp(2*z/1300),latitude=30);
 wvt.summarizeForcing
@@ -25,7 +25,7 @@ wvt.summarizeForcing
     "nonlinear advection"     "false"
  ```
 
-This indicates that the only forcing term is the nonlinear advection. If the goal is to time-step a model, we also require a closure scheme to remove small scale features. For a first pass, we recommend using the `WVAdaptiveDamping`. You add a right-hand-side forcing term with `addForcing`,
+Nonlinear integration also needs a closure to control unresolved small scales. `WVAdaptiveDamping` is a useful first choice. Register it with `addForcing`:
 
 ```matlab
 wvt.addForcing(WVAdaptiveDamping(wvt));
@@ -40,7 +40,7 @@ wvt.summarizeForcing
     "adaptive damping"        "true"
  ```
 
-With this, you could now time-step the `WVTransform` forwards in time with the model,
+The model now includes nonlinear advection and adaptive damping when it advances the transform:
 ```matlab
 model = WVModel(wvt);
 model.integrateToTime(wvt.inertialPeriod);
@@ -82,7 +82,7 @@ $$
 \end{bmatrix}
 $$
 
-is the nonlinear advection. For the hydrostatic model, `WVTransformHydrostatic`, the the vertical momentum equation effectively vanishes, as $$w$$ is determined diagnostically.
+is the nonlinear advection. For hydrostatic dynamics, the vertical momentum equation effectively vanishes because $$w$$ is determined diagnostically.
 
 For the quasigeostrophic transforms, `WVTransformStratifiedQG` and `WVTransformBarotropicQG`, the equation of motion is the evolution of quasigeostrophic potential vorticity (QGPV),
 
@@ -100,7 +100,7 @@ This is also commonly written as a streamfunction, using $\psi = \frac{1}{\rho_0
 
 Adding forcing to a transform with `wvt.addForcing()` adds an additional right-hand-side term, $$\mathcal{S}$$.
 
-The total forcing (at the current time) in the spectral is found by calling `wvt.nonlinearFlux`,
+The total coefficient tendency at the current time is returned by `wvt.nonlinearFlux`:
 ```matlab
 [Fp,Fm,F0] = wvt.nonlinearFlux();
 ```
@@ -127,9 +127,15 @@ By default, the generated tendency is projected outside the exact support of any
 
 ## Creating your own forcing
 
-The model has a number of very useful forcings already built-in; however, it is also very straightforward to add your own forcing.
+Custom forcing subclasses derive from `WVForcing`, declare one or more `WVForcingType` stages, and override the method corresponding to each declared stage. Physical-space forcing modifies velocity and displacement tendencies before projection. Spectral forcing modifies $$(F_+,F_-,F_0)$$ after projection. Spectral-amplitude forcing updates `Ap`, `Am`, and `A0` directly.
+
+For example, horizontal and vertical spectral damping can be expressed as
 
 $$
+
+and implemented by overriding `addSpectralForcing`. Hydrostatic and nonhydrostatic physical forcing instead override `addHydrostaticSpatialForcing` or `addNonhydrostaticSpatialForcing`. QG forcing uses the potential-vorticity variants of the spatial, spectral, or amplitude interfaces.
+
+The transform validates that a forcing stage is compatible with its dynamics, applies stages in physical–spectral–amplitude order, and uses `priority` to order forcing objects within one stage. See [`WVForcing`](/classes/forcing/wvforcing/) and [`WVForcingType`](/classes/forcing/wvforcing/) before implementing a subclass.
     \begin{align}
         \partial_t A_\pm^{k\ell j} =& - \nu (k^2 + \ell^2 ) A_\pm^{k\ell j} - \nu_z \lambda_j^{-2} A_\pm^{k\ell j} \\
         \partial_t A_0^{k\ell j} =& - \nu (k^2 + \ell^2 ) A_0^{k\ell j} - \nu_z \lambda_j^{-2} A_0^{k\ell j}

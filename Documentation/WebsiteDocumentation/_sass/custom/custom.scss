@@ -1,4 +1,36 @@
 
 @import "./sidebar-upgrades";
 
+body,
+.site-title,
+.site-button,
+.nav-list .nav-list-link,
+.nav-list .nav-list-expander,
+.main-content,
+.search-input,
+.search-result-title,
+.search-result-rel-url,
+.label,
+button,
+input,
+select,
+textarea {
+  font-family: "Avenir Next", Avenir, "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+.main-content {
+  line-height: 1.65;
+}
+
+.main-content h1,
+.main-content h2,
+.main-content h3,
+.main-content h4,
+.main-content h5,
+.main-content h6,
+.site-title {
+  font-family: "Avenir Next", Avenir, "Helvetica Neue", Helvetica, Arial, sans-serif;
+  letter-spacing: -0.015em;
+}
+
 @import "./matlab-live-script";

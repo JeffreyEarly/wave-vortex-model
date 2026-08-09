@@ -1,74 +1,86 @@
 ---
 layout: default
-title: Reading and writing to file
-parent: Users guide
+title: Reading and writing files
+parent: User guide
 mathjax: true
 nav_order: 10
 has_toc: true
 ---
 
-#  Reading and writing to file
+# Reading and writing files
 
-The `WVTransform` and the `WVModel` both read and write to NetCDF files.
+WaveVortexModel uses NetCDF files for transform persistence, model output, and restart. A transform file stores the geometry and wave–vortex state needed to reconstruct a `WVTransform`. A restart-capable model file additionally stores forcing, observing systems, output groups, and the latest integrated state.
 
-## WVTransform
+## Save and restore a transform
 
-After you create a `WVTransform` instance
+Write a transform and close the returned file handle:
+
 ```matlab
-wvt = WVTransformConstantStratification([50e3 50e3 1300], [64 64 32]);
+wvt = WVTransformConstantStratification( ...
+    [50e3 50e3 1300],[32 32 17],N0=5.2e-3,latitude=45);
+wvt.initWithRandomFlow();
+
+ncfile = wvt.writeToFile('transform.nc');
+ncfile.close();
 ```
-you call `writeToFile`
+
+Restore the transform through the static factory. The one-output form closes its read handle before returning:
+
 ```matlab
-wvt.writeToFile('test.nc');
+wvtRestored = WVTransform.waveVortexTransformFromFile('transform.nc');
 ```
-and all the information needed to exactly re-create the `wvt` instance will be written to file.
 
-To create a new `WVTransform` instance from file, call the static method [`waveVortexTransformFromFile`](/classes/transforms/wvtransform/wavevortextransformfromfile.html)
+Pass additional registered variable names to `writeToFile` when physical fields or diagnostics should be stored alongside the reconstructable state:
+
 ```matlab
-wvt2 = WVTransform.waveVortexTransformFromFile('test.nc');
+ncfile = wvt.writeToFile('transform-with-fields.nc','u','v','rho');
+ncfile.close();
 ```
-The two instances `wvt` and `wvt2` are now equivalent. This one-output form closes the NetCDF file before returning.
 
-### Adding variables
+## Read a transform time series
 
-Any variable that the `WVTransform` instance knows about (including [custom variables](/developers-guide/operations-and-variables.html)) can also be written to file, but including its name in the variable argument list. For example, if you want to add the variables $$u$$, $$v$$, and $$\zeta_z$$ then call,
+Model output may contain many time records. Creating the transform once and updating its coefficients is less expensive than reconstructing its geometry for every record.
+
+Request the second output to retain a caller-owned, read-only `NetCDFFile`, and close it explicitly:
+
 ```matlab
-wvt.writeToFile('test.nc','u','v','zeta_z');
-```
-and the data will be written, accessible from anything that reads NetCDF files.
-
-### Reading model output
-
-Model output contains multiple time points from which the a `WVTransform` instance can be initialized. To initialize a `WVTransform` instance from a specific point in the model output, call
-```matlab
-wvt = WVTransform.waveVortexTransformFromFile('test.nc',iTime=100);
-``` 
-where `iTime=100` indicates the index along the time dimension.
-
-It is often the case that for analysis of model output, you want to read the model output at multiple time points. You *could* intialize a new `WVTransform` instance at each time index, but this involves unnecessary computation. Instead, you should update the existing `WVTransform` instance `wvt` with the data from that time point.
-
-First load the NetCDF file, then initialize the existing instance from a specific time point in that file with [`initFromNetCDFFile`](/classes/transforms/wvtransform/initfromnetcdffile.html). For example, a for-loop over all time points written to file, would look like
-```matlab
-[wvt, ncfile] = WVTransform.waveVortexTransformFromFile('test.nc');
+[wvt,ncfile] = WVTransform.waveVortexTransformFromFile('model-output.nc');
 cleanup = onCleanup(@()ncfile.close());
 t = ncfile.readVariables("wave-vortex/t");
 
-for iTime=1:length(t)
+for iTime = 1:numel(t)
     wvt.initFromNetCDFFile(ncfile,iTime=iTime);
-    % do some analysis
+    energy(iTime) = wvt.totalEnergy;
 end
 ```
 
-The returned `ncfile` is read-only by default and must be closed by the caller. Pass `shouldReadOnly=false` explicitly only when writable access is required.
+Use `shouldReadOnly=false` only when the returned file genuinely needs writable access.
 
-## WVModel
+## Write model output
 
-Time series model output is created with
+For a model with one ordinary output schedule, create the file through the convenience method and integrate:
 
 ```matlab
-model = WVModel(wvt);
-model.createNetCDFFileForModelOutput('test.nc',outputInterval=wvt.inertialPeriod);
-model.integrateToTime(10*wvt.inertialPeriod);
+model = WVModel(wvt,shouldUseLinearDynamics=true);
+outputFile = model.createNetCDFFileForModelOutput( ...
+    'model-output.nc',outputInterval=600);
+model.integrateToTime(3600);
+outputFile.closeNetCDFFile();
 ```
 
-which can then be read in using the above commands.
+The physical file is created lazily when output is first initialized. Before integration you may add Eulerian variables, particles, tracers, or other observing systems to the model's output configuration.
+
+## Restore and continue a model
+
+Restore a model from one restart-capable file:
+
+```matlab
+model = WVModel.modelFromFile('model-output.nc');
+model.setupIntegrator();
+model.integrateToTime(model.t + 3600);
+model.outputFiles(1).closeNetCDFFile();
+```
+
+Runtime integrator objects are not persisted, so configure the desired fixed or adaptive settings after restoration. `modelFromFile` restores only the supplied file's output graph; other files written by the original run are independent restart boundaries.
+
+For multiple schedules, bounded output windows, shared observing systems, and handle ownership, continue with [Reading and writing files: advanced topics](/users-guide/reading-and-writing-to-file-advanced.html). For metadata conventions, see [NetCDF conventions](/users-guide/netcdf-output.html).
