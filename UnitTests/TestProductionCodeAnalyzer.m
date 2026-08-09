@@ -23,13 +23,14 @@ classdef TestProductionCodeAnalyzer < matlab.unittest.TestCase
     methods (Test,TestTags="full")
         function productionInventoryIsDeterministic(testCase)
             files = testCase.productionReport.Files;
-            testCase.verifyNumElements(files,171);
+            testCase.verifyNumElements(files,172);
             testCase.verifyEqual(files,sort(unique(files)));
             testCase.verifyTrue(all(isfile(fullfile(testCase.repositoryRoot,files))));
 
             expectedFiles = [
                 "WVOperation.m"
                 "@WVTransform/WVTransform.m"
+                "FastTransforms/WVFourierSpectrumLayout.m"
                 "FastTransforms/@WVFastTransformDoublyPeriodicFFTW/WVFastTransformDoublyPeriodicFFTW.m"
                 "Forcing/WVNonlinearAdvection.m"
                 "ObservingSystems/WVLagrangianParticles.m"
@@ -70,7 +71,7 @@ classdef TestProductionCodeAnalyzer < matlab.unittest.TestCase
         function reportContainsReleaseLocationsAndDiagnostics(testCase)
             output = evalc("analyzeProductionCode(testCase.repositoryRoot,ShouldFail=false);");
             testCase.verifySubstring(output,"MATLAB Code Analyzer: release=R");
-            testCase.verifySubstring(output,"files=171");
+            testCase.verifySubstring(output,"files=172");
             testCase.verifySubstring(output,"[AGROW, performance]");
             testCase.verifySubstring(output,"Variable appears to change size");
             testCase.verifyFalse(contains(output,testCase.repositoryRoot));

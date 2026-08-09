@@ -39,6 +39,9 @@ classdef WVFastTransformDoublyPeriodicFFTW < WVFastTransformDoublyPeriodic
             end
             self.wvg = wvg;
             self.Nz = Nz;
+            % This legacy adapter still owns full-complex buffers. Issue #71
+            % replaces its internals with the half-x production engine.
+            self.fourierSpectrumLayout = WVFourierSpectrumLayout(wvg,"full");
             self.complexBuffer = complex(zeros([wvg.Nx wvg.Ny Nz]));
 
             self.dftXY = RealToComplexTransform([wvg.Nx wvg.Ny Nz],dims=[1 2],nCores=options.nCores,planner="measure");

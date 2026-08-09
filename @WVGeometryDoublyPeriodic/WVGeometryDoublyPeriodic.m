@@ -100,21 +100,6 @@ classdef WVGeometryDoublyPeriodic < CAAnnotatedClass
         % - Topic: Domain attributes — WV grid
         dftConjugateIndices2D uint64
 
-        % index into the DFT grid of each WV mode
-        %
-        % - Topic: Domain attributes — WV grid      
-        dftPrimaryIndex uint64
-    
-        % index into the DFT grid of the conjugate of each WV mode
-        %
-        % - Topic: Domain attributes — WV grid
-        dftConjugateIndex uint64
-
-        % index into the WV mode that matches the dftConjugateIndices
-        %
-        % - Topic: Domain attributes — WV grid
-        wvConjugateIndex uint64
-
         % k-wavenumber dimension on the WV grid
         %
         % - Topic: Domain attributes — WV grid
@@ -136,9 +121,30 @@ classdef WVGeometryDoublyPeriodic < CAAnnotatedClass
         %
         % - Topic: Domain attributes — Spatial grid
         Nz
+        legacyDftPrimaryIndex uint64 = uint64.empty(0,1)
+        legacyDftConjugateIndex uint64 = uint64.empty(0,1)
+        legacyWvConjugateIndex uint64 = uint64.empty(0,1)
+        legacyMappingsAreMaterialized (1,1) logical = false
     end
 
     properties (Dependent, SetAccess=private)
+        % legacy vertically replicated index into the active Fourier storage
+        %
+        % Materialized lazily for compatibility. Production transforms use
+        % WVFourierSpectrumLayout two-dimensional mappings instead.
+        %
+        % - Topic: Domain attributes — WV grid
+        dftPrimaryIndex uint64
+
+        % legacy vertically replicated conjugate index
+        %
+        % - Topic: Domain attributes — WV grid
+        dftConjugateIndex uint64
+
+        % legacy vertically replicated WV conjugate index
+        %
+        % - Topic: Domain attributes — WV grid
+        wvConjugateIndex uint64
         
         % x-dimension
         %
@@ -322,7 +328,6 @@ classdef WVGeometryDoublyPeriodic < CAAnnotatedClass
                 self.k = K(self.dftPrimaryIndices2D);
                 self.l = L(self.dftPrimaryIndices2D);
 
-                [self.dftPrimaryIndex, self.dftConjugateIndex, self.wvConjugateIndex] = self.indicesFromWVGridToFFTWGrid(self.Nz,isHalfComplex=1);
                 self.fastTransform = WVFastTransformDoublyPeriodicFFTW(self,self.Nz);
             else
                 self.dftConjugateIndices2D = WVGeometryDoublyPeriodic.indicesOfFourierConjugates(self.Nx,self.Ny);
@@ -330,7 +335,6 @@ classdef WVGeometryDoublyPeriodic < CAAnnotatedClass
                 self.k = K(self.dftPrimaryIndices2D);
                 self.l = L(self.dftPrimaryIndices2D);
 
-                [self.dftPrimaryIndex, self.dftConjugateIndex, self.wvConjugateIndex] = self.indicesFromWVGridToDFTGrid(self.Nz,isHalfComplex=1);
                 self.fastTransform = WVFastTransformDoublyPeriodicMatlab(self,self.Nz);
             end
 
@@ -347,6 +351,21 @@ classdef WVGeometryDoublyPeriodic < CAAnnotatedClass
             % 
             dx = self.Lx/self.Nx;
             x = dx*(0:self.Nx-1)';
+        end
+
+        function value = get.dftPrimaryIndex(self)
+            self.materializeLegacyMappings();
+            value = self.legacyDftPrimaryIndex;
+        end
+
+        function value = get.dftConjugateIndex(self)
+            self.materializeLegacyMappings();
+            value = self.legacyDftConjugateIndex;
+        end
+
+        function value = get.wvConjugateIndex(self)
+            self.materializeLegacyMappings();
+            value = self.legacyWvConjugateIndex;
         end
 
         function y = get.y(self)
@@ -992,6 +1011,24 @@ classdef WVGeometryDoublyPeriodic < CAAnnotatedClass
 
         [varargout] = transformToKLAxes(self,varargin);
         [varargout] = transformToRadialWavenumber(self,varargin);
+    end
+
+    methods (Access=private)
+        function materializeLegacyMappings(self)
+            if self.legacyMappingsAreMaterialized
+                return
+            end
+            [self.legacyDftPrimaryIndex,self.legacyDftConjugateIndex,self.legacyWvConjugateIndex] = self.fastTransform.fourierSpectrumLayout.expandedLegacyMappings(self.Nz);
+            self.legacyMappingsAreMaterialized = true;
+        end
+    end
+
+    methods (Hidden)
+        function diagnostics = fourierSpectrumLayoutDiagnostics(self)
+            layout = self.fastTransform.fourierSpectrumLayout;
+            legacyMappingBytes = 8*(numel(self.legacyDftPrimaryIndex)+numel(self.legacyDftConjugateIndex)+numel(self.legacyWvConjugateIndex));
+            diagnostics = struct("storageType",layout.storageType,"compressedDimension",layout.compressedDimension,"storageShape",layout.storageShape,"mappingStrategy",layout.mappingStrategy,"mappingBytes",layout.mappingBytes,"mappingLedger",layout.mappingLedger(),"legacyMappingsAreMaterialized",self.legacyMappingsAreMaterialized,"legacyMappingBytes",legacyMappingBytes);
+        end
     end
 
     methods (Static)

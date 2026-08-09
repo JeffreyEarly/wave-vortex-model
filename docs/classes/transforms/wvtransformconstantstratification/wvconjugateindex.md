@@ -9,7 +9,7 @@ mathjax: true
 
 #  wvConjugateIndex
 
-index into the WV mode that matches the dftConjugateIndices
+legacy vertically replicated WV conjugate index
 
 > Developer documentation: this item describes internal implementation details.
 

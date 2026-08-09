@@ -9,7 +9,7 @@ mathjax: true
 
 #  dftPrimaryIndex
 
-index into the DFT grid of each WV mode
+legacy vertically replicated index into the active Fourier storage
 
 > Developer documentation: this item describes internal implementation details.
 
@@ -20,3 +20,6 @@ index into the DFT grid of each WV mode
 + Class: `uint64`
 
 ## Discussion
+
+Materialized lazily for compatibility. Production transforms use
+WVFourierSpectrumLayout two-dimensional mappings instead.

@@ -35,4 +35,12 @@ results = runWaveVortexBenchmark(suites="transform-layout-v1")
 
 It measures extraction, primary insertion, conjugate insertion, combined insertion, and complete horizontal forward/inverse calls. Each strategy owns and reuses a persistent full-complex buffer. Array setup and mapping construction are excluded, while indexing, allocation, conjugation, reshape, transpose, and MATLAB copy-on-write behavior inherent to each expression remain timed. The strict winner has the smallest median; the production `wv-sorted-linear` strategy remains preferred when it is within 3% of that median. MATLAB pointer and copy state is reported as unavailable because no supported API exposes it for these expressions. Whole-process memory comparisons remain separate from this suite.
 
+Issue #70 moved the builtin adapter to an internal row-oriented spectrum layout. Its integration gate compares the production adapter—not a stand-alone approximation—with the immutable issue #69 medians:
+
+```matlab
+results = runWVFourierSpectrumLayoutIntegrationBenchmark
+```
+
+The 3% regression threshold applies only to `[256 256 65]` and `[512 512 129]`, with antialiasing both disabled and enabled. Smaller cases remain descriptive because the row layout was selected as the single production representation even where MATLAB timing noise or fixed overhead can make a legacy expression faster. The integration artifact also confirms that the vertically replicated compatibility indices remain unallocated until a caller explicitly requests them.
+
 `WVTransformConstantStratificationSpeedTest`, `ProfileableSpeedTest`, and `ForcingSpectralMaskPerformanceTest` remain historical investigation scripts. Deterministic correctness checks belong in `UnitTests`; mixed scientific investigations belong in `DeveloperExperiments`.

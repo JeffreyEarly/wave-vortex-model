@@ -1,19 +1,31 @@
 classdef WVFastTransformDoublyPeriodicMatlab < WVFastTransformDoublyPeriodic
+    properties (Dependent)
+        complexBuffer
+    end
+
     properties
         wvg
-
-        % memory buffer to hold the dft matrices
-        %
-        % - Topic: Domain attributes — WV grid
-        complexBuffer
         Nz
+    end
+
+    properties (Access=private)
+        complexBufferRows
     end
 
     methods
         function self = WVFastTransformDoublyPeriodicMatlab(wvg,Nz)
             self.wvg = wvg;
-            self.complexBuffer = complex(zeros([wvg.Nx wvg.Ny Nz]));
             self.Nz=Nz;
+            self.fourierSpectrumLayout = WVFourierSpectrumLayout(wvg,"full");
+            self.complexBufferRows = self.fourierSpectrumLayout.allocateStorage(Nz);
+        end
+
+        function value = get.complexBuffer(self)
+            value = self.fourierSpectrumLayout.spectrumFromRows(self.complexBufferRows);
+        end
+
+        function set.complexBuffer(self,value)
+            self.complexBufferRows = self.fourierSpectrumLayout.rowsFromSpectrum(value);
         end
     end
 
