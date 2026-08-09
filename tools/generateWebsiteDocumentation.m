@@ -14,7 +14,7 @@ for iFolder = 1:numel(metadata.folders)
         addpath(folder,"-begin");
     end
 end
-clear WVFourierStorageLayout WVFastTransformDoublyPeriodic WVFastTransformDoublyPeriodicFFTW WVFastTransformDoublyPeriodicFactory
+clear WVFourierStorageLayout WVFastTransformDoublyPeriodic WVFastTransformDoublyPeriodicFFTW
 
 sourceFolder = fullfile(repositoryRoot,"Documentation","WebsiteDocumentation");
 rebuildWebsiteDocumentationFromSource(sourceFolder,buildFolder);
@@ -69,8 +69,8 @@ writeClassGroup(classes,buildFolder,websiteFolder,parentName,classFolderName,par
 parentName = "Developer internals";
 websiteFolder = "classes/developer-internals";
 writeClassDocumentation("WVFourierStorageLayout",buildFolder,websiteFolder,parentName,classFolderName,parentName,1,{'handle'},string.empty(0,1));
-writeClassDocumentation("WVFastTransformDoublyPeriodicFFTW",buildFolder,websiteFolder,parentName,classFolderName,parentName,2,{'handle','WVFastTransformDoublyPeriodic'},string.empty(0,1));
-writeClassDocumentation("WVFastTransformDoublyPeriodicFactory",buildFolder,websiteFolder,parentName,classFolderName,parentName,3,{'handle'},string.empty(0,1));
+writeClassDocumentation("WVFastTransformDoublyPeriodic",buildFolder,websiteFolder,parentName,classFolderName,parentName,2,{'handle'},string.empty(0,1));
+writeClassDocumentation("WVFastTransformDoublyPeriodicFFTW",buildFolder,websiteFolder,parentName,classFolderName,parentName,3,{'handle','WVFastTransformDoublyPeriodic'},string.empty(0,1));
 clear pathCleanup
 end
 

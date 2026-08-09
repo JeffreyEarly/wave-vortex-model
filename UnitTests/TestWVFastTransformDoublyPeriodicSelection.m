@@ -1,4 +1,4 @@
-classdef TestWVFastTransformDoublyPeriodicFactory < matlab.unittest.TestCase
+classdef TestWVFastTransformDoublyPeriodicSelection < matlab.unittest.TestCase
     methods (TestClassSetup)
         function addSupportPath(testCase)
             supportFolder = fullfile(fileparts(mfilename("fullpath")),"Support");
@@ -9,16 +9,16 @@ classdef TestWVFastTransformDoublyPeriodicFactory < matlab.unittest.TestCase
     methods (Test,TestTags="full")
         function builtinBypassesFFTWServices(testCase)
             geometry = testGeometry();
-            factory = MockWVBackendFactory();
-            factory.installed = false;
-            [adapter,selection] = factory.create(geometry,3,"builtin");
+            mock = MockWVBackendServices();
+            mock.installed = false;
+            [adapter,selection] = createWithMock(geometry,3,"builtin",mock);
             cleanup = onCleanup(@()delete(adapter));
             testCase.verifyEqual(adapter.backendIdentifier,"builtin");
             testCase.verifyEqual(selection.requestedBackend,"builtin");
             testCase.verifyEqual(selection.activeBackend,"builtin");
             testCase.verifyFalse(selection.didFallback);
-            testCase.verifyEqual(factory.queryCount,0);
-            testCase.verifyEqual(factory.buildCount,0);
+            testCase.verifyEqual(mock.queryCount,0);
+            testCase.verifyEqual(mock.buildCount,0);
             clear cleanup
         end
 
@@ -27,8 +27,8 @@ classdef TestWVFastTransformDoublyPeriodicFactory < matlab.unittest.TestCase
             capabilities = validCapabilities();
             capabilities.features.dct1.isAvailable = false;
             capabilities.features.dst1.isAvailable = false;
-            factory = MockWVBackendFactory(capabilities);
-            [adapter,selection] = factory.create(geometry,3,"fftw");
+            mock = MockWVBackendServices(capabilities);
+            [adapter,selection] = createWithMock(geometry,3,"fftw",mock);
             cleanup = onCleanup(@()delete(adapter));
             testCase.verifyEqual(adapter.backendIdentifier,"fftw");
             testCase.verifyEqual(selection.activeBackend,"fftw");
@@ -36,8 +36,8 @@ classdef TestWVFastTransformDoublyPeriodicFactory < matlab.unittest.TestCase
             testCase.verifyTrue(selection.capabilityQueried);
             testCase.verifyEqual(selection.providerId,"matlab-bundled");
             testCase.verifyEqual(selection.libraryPath,"/validated/libmwfftw3.3.dylib");
-            testCase.verifyEqual(factory.queryCount,1);
-            testCase.verifyEqual(factory.buildCount,0);
+            testCase.verifyEqual(mock.queryCount,1);
+            testCase.verifyEqual(mock.buildCount,0);
             clear cleanup
         end
 
@@ -47,31 +47,31 @@ classdef TestWVFastTransformDoublyPeriodicFactory < matlab.unittest.TestCase
             unavailable.features.r2c.isAvailable = false;
             unavailable.build.isPossible = true;
             available = validCapabilities();
-            factory = MockWVBackendFactory({unavailable,available});
-            factory.buildResult = struct("build",struct("succeeded",true));
-            [adapter,selection] = factory.create(geometry,3,"fftw");
+            mock = MockWVBackendServices({unavailable,available});
+            mock.buildResult = struct("build",struct("succeeded",true));
+            [adapter,selection] = createWithMock(geometry,3,"fftw",mock);
             cleanup = onCleanup(@()delete(adapter));
             testCase.verifyEqual(adapter.backendIdentifier,"fftw");
             testCase.verifyTrue(selection.buildAttempted);
             testCase.verifyTrue(selection.buildSucceeded);
-            testCase.verifyEqual(factory.queryCount,2);
-            testCase.verifyEqual(factory.buildCount,1);
+            testCase.verifyEqual(mock.queryCount,2);
+            testCase.verifyEqual(mock.buildCount,1);
             clear cleanup
         end
 
         function missingPackageWarnsOnceAndFallsBack(testCase)
             geometry = testGeometry();
-            factory = MockWVBackendFactory();
-            factory.installed = false;
-            testCase.verifyWarning(@()factory.create(geometry,3,"fftw"),"WaveVortexModel:FFTWBackendUnavailable");
+            mock = MockWVBackendServices();
+            mock.installed = false;
+            testCase.verifyWarning(@()createWithMock(geometry,3,"fftw",mock),"WaveVortexModel:FFTWBackendUnavailable");
             warningState = warning("off","WaveVortexModel:FFTWBackendUnavailable");
             cleanup = onCleanup(@()warning(warningState));
-            [adapter,selection] = factory.create(geometry,3,"fftw");
+            [adapter,selection] = createWithMock(geometry,3,"fftw",mock);
             adapterCleanup = onCleanup(@()delete(adapter));
             testCase.verifyEqual(adapter.backendIdentifier,"builtin");
             testCase.verifyTrue(selection.didFallback);
             testCase.verifyEqual(selection.reason.code,"package-missing");
-            testCase.verifyEqual(factory.queryCount,0);
+            testCase.verifyEqual(mock.queryCount,0);
             clear adapterCleanup cleanup
         end
 
@@ -81,12 +81,12 @@ classdef TestWVFastTransformDoublyPeriodicFactory < matlab.unittest.TestCase
             warningState = warning("off","WaveVortexModel:FFTWBackendUnavailable");
             cleanup = onCleanup(@()warning(warningState));
             for iCase = 1:numel(cases)
-                factory = MockWVBackendFactory(cases(iCase).capabilities);
-                [adapter,selection] = factory.create(geometry,3,"fftw");
+                mock = MockWVBackendServices(cases(iCase).capabilities);
+                [adapter,selection] = createWithMock(geometry,3,"fftw",mock);
                 testCase.verifyEqual(adapter.backendIdentifier,"builtin",cases(iCase).id);
                 testCase.verifyTrue(selection.didFallback,cases(iCase).id);
                 testCase.verifyEqual(selection.reason.code,cases(iCase).reasonCode,cases(iCase).id);
-                testCase.verifyEqual(factory.buildCount,0,cases(iCase).id);
+                testCase.verifyEqual(mock.buildCount,0,cases(iCase).id);
                 delete(adapter);
             end
             clear cleanup
@@ -97,15 +97,15 @@ classdef TestWVFastTransformDoublyPeriodicFactory < matlab.unittest.TestCase
             warningState = warning("off","WaveVortexModel:FFTWBackendUnavailable");
             cleanup = onCleanup(@()warning(warningState));
 
-            queryFactory = MockWVBackendFactory();
-            queryFactory.queryException = MException("TestFactory:QueryFailed","injected query failure");
-            [queryAdapter,querySelection] = queryFactory.create(geometry,3,"fftw");
+            queryMock = MockWVBackendServices();
+            queryMock.queryException = MException("TestSelection:QueryFailed","injected query failure");
+            [queryAdapter,querySelection] = createWithMock(geometry,3,"fftw",queryMock);
             testCase.verifyEqual(querySelection.reason.code,"capability-query-failed");
             delete(queryAdapter);
 
-            constructorFactory = MockWVBackendFactory(validCapabilities());
-            constructorFactory.shouldFailFFTWConstruction = true;
-            [constructorAdapter,constructorSelection] = constructorFactory.create(geometry,3,"fftw");
+            constructorMock = MockWVBackendServices(validCapabilities());
+            constructorMock.shouldFailFFTWConstruction = true;
+            [constructorAdapter,constructorSelection] = createWithMock(geometry,3,"fftw",constructorMock);
             testCase.verifyEqual(constructorSelection.reason.code,"adapter-construction-failed");
             testCase.verifyEqual(constructorAdapter.backendIdentifier,"builtin");
             delete(constructorAdapter);
@@ -113,14 +113,14 @@ classdef TestWVFastTransformDoublyPeriodicFactory < matlab.unittest.TestCase
             unavailable = validCapabilities();
             unavailable.features.r2c.isAvailable = false;
             unavailable.build.isPossible = true;
-            buildFactory = MockWVBackendFactory(unavailable);
-            buildFactory.buildException = MException("MockWVBackendFactory:CompileFailed","injected compilation failure");
-            [buildAdapter,buildSelection] = buildFactory.create(geometry,3,"fftw");
+            buildMock = MockWVBackendServices(unavailable);
+            buildMock.buildException = MException("MockWVBackendServices:CompileFailed","injected compilation failure");
+            [buildAdapter,buildSelection] = createWithMock(geometry,3,"fftw",buildMock);
             testCase.verifyTrue(buildSelection.buildAttempted);
             testCase.verifyFalse(buildSelection.buildSucceeded);
             testCase.verifyEqual(buildSelection.buildReason.code,"build-failed");
-            testCase.verifyEqual(buildFactory.buildCount,1);
-            testCase.verifyEqual(buildFactory.queryCount,2);
+            testCase.verifyEqual(buildMock.buildCount,1);
+            testCase.verifyEqual(buildMock.queryCount,2);
             delete(buildAdapter);
             clear cleanup
         end
@@ -132,6 +132,12 @@ classdef TestWVFastTransformDoublyPeriodicFactory < matlab.unittest.TestCase
             for token = forbidden
                 testCase.verifyFalse(contains(source,token),token);
             end
+            testCase.verifySubstring(source,"WVFastTransformDoublyPeriodic.create(self,self.Nz,options.fastTransform)");
+        end
+
+        function invalidInjectedServicesAreRejected(testCase)
+            geometry = testGeometry();
+            testCase.verifyError(@()WVFastTransformDoublyPeriodic.createWithServices(geometry,3,"builtin",struct()),"WaveVortexModel:InvalidBackendServices");
         end
 
         function packageDeclaresFFTWTransformsDependency(testCase)
@@ -153,6 +159,10 @@ classdef TestWVFastTransformDoublyPeriodicFactory < matlab.unittest.TestCase
             testCase.verifyError(@()WVTransform.waveVortexTransformFromFile(pathname,fastTransform="fftw"),"WVTransform:UnsupportedFastTransform");
         end
     end
+end
+
+function [adapter,selection] = createWithMock(geometry,Nz,requestedBackend,mock)
+[adapter,selection] = WVFastTransformDoublyPeriodic.createWithServices(geometry,Nz,requestedBackend,mock.functionHandles());
 end
 
 function geometry = testGeometry()

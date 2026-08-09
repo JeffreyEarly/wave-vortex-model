@@ -22,7 +22,7 @@ end
 function [topicPath,isDeveloper] = topicForMember(className,name)
 if className == "WVFourierStorageLayout"
     [topicPath,isDeveloper] = fourierStorageLayoutTopic(name);
-elseif className == "WVFastTransformDoublyPeriodicFactory"
+elseif className == "WVFastTransformDoublyPeriodic"
     topicPath = "Select a horizontal-transform backend";
     isDeveloper = true;
 elseif className == "WVFastTransformDoublyPeriodicFFTW"

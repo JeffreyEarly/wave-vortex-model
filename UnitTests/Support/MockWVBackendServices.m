@@ -1,4 +1,4 @@
-classdef MockWVBackendFactory < WVFastTransformDoublyPeriodicFactory
+classdef MockWVBackendServices < handle
     properties
         installed (1,1) logical = true
         capabilityResults cell = {struct()}
@@ -11,7 +11,7 @@ classdef MockWVBackendFactory < WVFastTransformDoublyPeriodicFactory
     end
 
     methods
-        function self = MockWVBackendFactory(results)
+        function self = MockWVBackendServices(results)
             if nargin == 0
                 return
             end
@@ -21,13 +21,18 @@ classdef MockWVBackendFactory < WVFastTransformDoublyPeriodicFactory
                 self.capabilityResults = {results};
             end
         end
+
+        function services = functionHandles(self)
+            services = struct( ...
+                "isFFTWTransformsInstalled",@()self.installed, ...
+                "queryCapabilities",@()self.queryCapabilities(), ...
+                "buildBackend",@()self.buildBackend(), ...
+                "constructBuiltin",@(geometry,Nz)WVFastTransformDoublyPeriodicMatlab(geometry,Nz), ...
+                "constructFFTW",@(geometry,Nz)self.constructFFTW(geometry,Nz));
+        end
     end
 
-    methods (Access=protected)
-        function tf = isFFTWTransformsInstalled(self)
-            tf = self.installed;
-        end
-
+    methods (Access=private)
         function capabilities = queryCapabilities(self)
             self.queryCount = self.queryCount + 1;
             if ~isempty(self.queryException)
@@ -47,7 +52,7 @@ classdef MockWVBackendFactory < WVFastTransformDoublyPeriodicFactory
 
         function adapter = constructFFTW(self,geometry,Nz)
             if self.shouldFailFFTWConstruction
-                error("MockWVBackendFactory:ConstructionFailed","injected adapter construction failure");
+                error("MockWVBackendServices:ConstructionFailed","injected adapter construction failure");
             end
             adapter = MockFastTransformAdapter(geometry,Nz,"fftw");
         end

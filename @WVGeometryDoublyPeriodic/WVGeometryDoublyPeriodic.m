@@ -280,8 +280,7 @@ classdef WVGeometryDoublyPeriodic < CAAnnotatedClass
             self.k = K(self.dftPrimaryIndices2D);
             self.l = L(self.dftPrimaryIndices2D);
 
-            factory = WVFastTransformDoublyPeriodicFactory();
-            self.fastTransform = factory.create(self,self.Nz,options.fastTransform);
+            self.fastTransform = WVFastTransformDoublyPeriodic.create(self,self.Nz,options.fastTransform);
         end
 
         function x = get.x(self)
