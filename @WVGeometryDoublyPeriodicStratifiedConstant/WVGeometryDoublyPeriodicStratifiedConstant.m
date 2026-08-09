@@ -7,6 +7,19 @@ classdef WVGeometryDoublyPeriodicStratifiedConstant < WVGeometryDoublyPeriodic &
         F_g,G_g
         F_wg, G_wg
         DCT, iDCT, DST, iDST
+
+    end
+
+    properties (SetAccess=private)
+        % Layout-neutral vertical DCT-I/DST-I dispatch and plan cache.
+        %
+        % The strategy operates on canonical `[Nz,Nbatch]` arrays and is
+        % independent of horizontal Fourier storage. Call `dispatchRecords`
+        % on this object to inspect which operations used FFTW.
+        %
+        % - Topic: Developer internals
+        % - Developer: true
+        verticalTransform
     end
 
     properties
@@ -81,6 +94,7 @@ classdef WVGeometryDoublyPeriodicStratifiedConstant < WVGeometryDoublyPeriodic &
             self.z_int = dz*ones(Nz,1);
             self.z_int(1) = dz/2; self.z_int(end) = dz/2; 
             self.buildVerticalModeProjectionOperators();
+            self.verticalTransform = WVVerticalTransformConstantStratification.create(self.Nz,self.Nj,self.fastTransform.backendIdentifier);
         end
         
         du = diffZF(self,u,options)
@@ -363,7 +377,8 @@ classdef WVGeometryDoublyPeriodicStratifiedConstant < WVGeometryDoublyPeriodic &
             if isscalar(options.Apm) && isscalar(options.A0)
                 u = zeros(self.spatialMatrixSize);
             else
-                u_bar = self.transformToSpatialDomainWithF_MM(options.Apm./self.F_wg + options.A0);
+                coefficients = self.F_g .* (options.Apm./self.F_wg + options.A0);
+                u_bar = self.verticalTransform.transformBack(coefficients,"cosine",self.iDCT);
                 u = self.transformToSpatialDomainWithFourier(u_bar);
             end
         end
@@ -377,7 +392,8 @@ classdef WVGeometryDoublyPeriodicStratifiedConstant < WVGeometryDoublyPeriodic &
             if isscalar(options.Apm) && isscalar(options.A0)
                 w = zeros(self.spatialMatrixSize);
             else
-                w_bar = self.transformToSpatialDomainWithG_MM(options.Apm./self.G_wg + options.A0 );
+                coefficients = self.G_g .* (options.Apm./self.G_wg + options.A0);
+                w_bar = self.verticalTransform.transformBack(coefficients,"sine",self.iDST);
                 w = self.transformToSpatialDomainWithFourier(w_bar);
             end
         end
@@ -387,16 +403,16 @@ classdef WVGeometryDoublyPeriodicStratifiedConstant < WVGeometryDoublyPeriodic &
         end
 
         function u_bar = transformFromSpatialDomainWithFio(self,u)
-            u_bar = self.DCT*u;
+            u_bar = self.verticalTransform.transformForward(u,"cosine",self.DCT);
             u_bar = self.F_wg(:,1).*(u_bar./self.F_g(:,1));
         end
 
         function u_bar = transformFromSpatialDomainWithFg(self,u)
-            u_bar = (self.DCT*u)./self.F_g;
+            u_bar = self.verticalTransform.transformForward(u,"cosine",self.DCT)./self.F_g;
         end
 
         function w_bar = transformFromSpatialDomainWithGg(self,w)
-            w_bar = (self.DST*w)./self.G_g;
+            w_bar = self.verticalTransform.transformForward(w,"sine",self.DST)./self.G_g;
         end
     end
 

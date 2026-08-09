@@ -251,6 +251,7 @@ These items document internal implementation details and are not part of the pri
   + [`transformToSpatialDomainWithFourier`](/classes/transforms/wvtransformconstantstratification/transformtospatialdomainwithfourier.html)
   + [`transformToSpatialDomainWithFourierAtPosition`](/classes/transforms/wvtransformconstantstratification/transformtospatialdomainwithfourieratposition.html)
   + [`transformWithG_wg`](/classes/transforms/wvtransformconstantstratification/transformwithg_wg.html)
+  + [`verticalTransform`](/classes/transforms/wvtransformconstantstratification/verticaltransform.html) Layout-neutral vertical DCT-I/DST-I dispatch and plan cache.
 + Nonlinear flux and forcing internals
   + [`fluxForForcing`](/classes/transforms/wvtransformconstantstratification/fluxforforcing.html)
   + [`nonlinearFluxFunction`](/classes/transforms/wvtransformconstantstratification/nonlinearfluxfunction.html)

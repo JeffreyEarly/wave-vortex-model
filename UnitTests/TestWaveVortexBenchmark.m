@@ -77,6 +77,10 @@ classdef TestWaveVortexBenchmark < matlab.unittest.TestCase
             decoded = jsondecode(fileread(fullfile(runFolder,"benchmark.json")));
             testCase.verifyEqual(string(decoded.schemaVersion),"1.0.0");
             testCase.verifyEqual(decoded.suites.cases.backends.caseScore,100);
+            testCase.verifyTrue(isfield(decoded.suites.cases.backends,"metadata"));
+            testCase.verifyTrue(isfield(decoded.suites.cases.backends.metadata,"verticalTransformDispatch"));
+            testCase.verifyNotEmpty(decoded.suites.cases.backends.metadata.verticalTransformDispatch);
+            testCase.verifyTrue(all(string({decoded.suites.cases.backends.metadata.verticalTransformDispatch.implementation}) == "matrix"));
             summary = fileread(fullfile(runFolder,"summary.md"));
             testCase.verifySubstring(summary,"## Suite scores");
             testCase.verifySubstring(summary,"## Family scores");

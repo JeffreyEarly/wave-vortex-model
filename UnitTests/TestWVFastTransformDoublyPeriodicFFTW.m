@@ -19,6 +19,61 @@ classdef TestWVFastTransformDoublyPeriodicFFTW < matlab.unittest.TestCase
     end
 
     methods (Test,TestTags="optional")
+        function allVerticalOperationsRespectIssue43Dispatch(testCase)
+            Nz = 129;
+            Nj = 128;
+            Nbatch = 8320;
+            strategy = WVVerticalTransformConstantStratification.create(Nz,Nj,"fftw");
+            cleanup = onCleanup(@()delete(strategy));
+            DCT = WVGeometryDoublyPeriodicStratifiedConstant.CosineTransformForwardMatrix(Nz);
+            DCT = DCT(1:Nj,:);
+            iDCT = WVGeometryDoublyPeriodicStratifiedConstant.CosineTransformBackMatrix(Nz);
+            iDCT = iDCT(:,1:Nj);
+            DST = WVGeometryDoublyPeriodicStratifiedConstant.SineTransformForwardMatrix(Nz);
+            DST = [zeros(1,Nz); DST];
+            DST = DST(1:Nj,:);
+            iDST = WVGeometryDoublyPeriodicStratifiedConstant.SineTransformBackMatrix(Nz);
+            iDST = [zeros(Nz,1) iDST];
+            iDST = iDST(:,1:Nj);
+            rng(7330,"twister");
+
+            maximumError = 0;
+            for isComplex = [false true]
+                values = randn(Nz,Nbatch);
+                coefficients = randn(Nj,Nbatch);
+                if isComplex
+                    values = complex(values,randn(Nz,Nbatch));
+                    coefficients = complex(coefficients,randn(Nj,Nbatch));
+                end
+                operations = { ...
+                    strategy.transformForward(values,"cosine",DCT), DCT*values; ...
+                    strategy.transformBack(coefficients,"cosine",iDCT), iDCT*coefficients; ...
+                    strategy.transformForward(values,"sine",DST), DST*values; ...
+                    strategy.transformBack(coefficients,"sine",iDST), iDST*coefficients};
+                for iOperation = 1:size(operations,1)
+                    operationError = relativeError(operations{iOperation,1},operations{iOperation,2});
+                    maximumError = max(maximumError,operationError);
+                    testCase.verifyLessThanOrEqual(operationError,1e-12);
+                end
+                if isComplex
+                    testCase.verifyEqual(operations{4,1}([1 end],:),zeros(2,Nbatch,"like",operations{4,1}),AbsTol=0);
+                end
+            end
+            records = strategy.dispatchRecords();
+            testCase.verifyNumElements(records,8);
+            testCase.verifyEqual(nnz([records.isEligible]),5);
+            testCase.verifyEqual(nnz([records.implementation] == "fftw"),5);
+            testCase.verifyEqual(unique([records([records.isEligible]).minimumBatchCount]),8320);
+            matrixRecords = records(~[records.isEligible]);
+            testCase.verifyEqual(string({matrixRecords.key}),[ ...
+                "cosine|forward|real|8320" ...
+                "cosine|inverse|real|8320" ...
+                "sine|inverse|real|8320"]);
+            testCase.verifyLessThanOrEqual(maximumError,1e-12);
+            testCase.verifyEqual(strategy.cacheDiagnostics().planCount,uint64(3));
+            clear cleanup
+        end
+
         function completeConstantTransformsSelectEquivalentBackends(testCase)
             for isHydrostatic = [false true]
                 arguments = {'N0',sqrt(2e-5),'latitude',45,'isHydrostatic',isHydrostatic,'shouldAntialias',true};
@@ -27,6 +82,8 @@ classdef TestWVFastTransformDoublyPeriodicFFTW < matlab.unittest.TestCase
                 cleanup = onCleanup(@()deleteTransforms(builtin,fftw));
                 testCase.verifyEqual(builtin.fastTransform.backendIdentifier,"builtin");
                 testCase.verifyEqual(fftw.fastTransform.backendIdentifier,"fftw");
+                testCase.verifyEqual(builtin.verticalTransform.backendIdentifier,"builtin");
+                testCase.verifyEqual(fftw.verticalTransform.backendIdentifier,"fftw");
                 testCase.verifyEqual(fftw.k,builtin.k);
                 testCase.verifyEqual(fftw.l,builtin.l);
                 testCase.verifyEqual(fftw.Nkl,builtin.Nkl);

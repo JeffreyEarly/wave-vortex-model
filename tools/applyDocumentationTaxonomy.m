@@ -27,6 +27,8 @@ elseif className == "WVFastTransformDoublyPeriodic"
     isDeveloper = true;
 elseif className == "WVFastTransformDoublyPeriodicFFTW"
     [topicPath,isDeveloper] = fftwAdapterTopic(name);
+elseif className == "WVVerticalTransformConstantStratification"
+    [topicPath,isDeveloper] = verticalTransformTopic(name);
 elseif startsWith(className,"WVTransform")
     [topicPath,isDeveloper] = transformTopic(name);
 elseif className == "WVModel"
@@ -49,6 +51,21 @@ elseif contains(className,"FlowComponent") || endsWith(className,"Component")
 else
     topicPath = "Class internals";
     isDeveloper = true;
+end
+end
+
+function [topicPath,isDeveloper] = verticalTransformTopic(name)
+isDeveloper = true;
+if ismember(name,["WVVerticalTransformConstantStratification","create","Nz","Nj","backendIdentifier"])
+    topicPath = "Create a vertical-transform strategy";
+elseif ismember(name,["transformForward","transformBack"])
+    topicPath = "Apply vertical transforms";
+elseif name == "dispatchRecords"
+    topicPath = "Inspect vertical dispatch";
+elseif name == "delete"
+    topicPath = "Manage vertical-transform lifecycle";
+else
+    topicPath = "Class internals";
 end
 end
 
