@@ -50,7 +50,9 @@ jobs:
           command: >-
             sourceRoot = fullfile(pwd,"source");
             oceanKitRoot = fullfile(pwd,"OceanKit");
-            mpmAddRepository("OceanKit",oceanKitRoot);
+            package = matlab.mpm.Package(sourceRoot);
+            disp(package.ReleaseCompatibility);
+            mpminstall(fullfile(oceanKitRoot,"ClassAnnotations-1.2.1"),Temporary=true);
             addpath(fullfile(sourceRoot,"tools"));
             configureCIEnvironment(sourceRoot,oceanKitRoot);
             cd(sourceRoot);
