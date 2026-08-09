@@ -44,6 +44,17 @@ results = runWaveVortexBenchmark(suites="transform-storage-v1")
 
 Each worker retains normal production caches, records an exact ledger of application-owned transform arrays, and labels FFTW plan memory and MATLAB-internal work buffers as unresolved. An external `ps` sampler records raw resident-memory samples during construction, warmup, a persistent plateau, and one state-advanced `nonlinearFlux` call. The report keeps every raw run and compares medians; pointer or source-level copy guesses do not substitute for the process measurement. The FFTW structural gates require no persistent full Hermitian spectrum and no allocated preserving-c2r scratch. The repeated-process improvement thresholds are 16.125 MiB at `[256 256 65]` and 128.496 MiB at `[512 512 129]`. This diagnostic records evidence only; issue #47 owns the backend readiness decision.
 
+## FFTW readiness
+
+`runWaveVortexFFTWReadinessBenchmark` is the final issue #47 decision entry point. It runs `core-v1` with builtin and FFTW backends on identical state-advanced inputs, verifies that FFTW actually executed, and combines the timing and correctness results with the fixed issue #75 storage artifact. Reference generation requires `v4.2.1` in the source ancestry and a clean tracked tree.
+
+```matlab
+results = runWaveVortexFFTWReadinessBenchmark( ...
+    outputDirectory="Benchmarks/results/reference/fftw-readiness-v1-m5-max-r2026a-bundled");
+```
+
+The outcome is `READY` only if all four core cases pass every fixed performance, correctness, identity, structural-storage, lifecycle, and repeated-RSS gate. Complete evidence with any failed gate is `NOT READY`; missing or failed evidence is `INCOMPLETE`. Thresholds are never averaged across cases or changed after observing results.
+
 Issue #70 moved the builtin adapter to a row-oriented Fourier-storage layout. Its integration gate compares the production adapter—not a stand-alone approximation—with the immutable issue #69 medians:
 
 ```matlab

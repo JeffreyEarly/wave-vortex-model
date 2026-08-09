@@ -169,9 +169,24 @@ result = struct("id",backendId,"status","complete","constructionSeconds",constru
 end
 
 function metadata = backendMetadata(model)
-metadata = struct();
+layout = model.fastTransform.fourierStorageLayout;
+metadata = struct( ...
+    "activeBackend",model.fastTransform.backendIdentifier, ...
+    "fourierStorageType",layout.fourierStorageType, ...
+    "compressedDimension",layout.compressedDimension, ...
+    "mappingMethod",layout.mappingMethod, ...
+    "mappingMemoryBytes",layout.mappingMemoryBytes);
 if isprop(model,"verticalTransform") && isa(model.verticalTransform,"WVVerticalTransformConstantStratification")
     metadata.verticalTransformDispatch = model.verticalTransform.dispatchRecords();
+end
+if isa(model,"WVTransformConstantStratification")
+    Nxyz = [model.Nx model.Ny model.Nz];
+    operations = ["diffX" "diffY" "diffZF" "diffZG" "F-all" "G-all"];
+    records = repmat(struct("operation","","derivativeOrder",1,"implementation",""),1,numel(operations));
+    for iOperation = 1:numel(operations)
+        records(iOperation) = struct("operation",operations(iOperation),"derivativeOrder",1,"implementation",WVSpatialDerivativeDispatch.implementation(model.fastTransform.backendIdentifier,operations(iOperation),Nxyz,1,model.isHydrostatic));
+    end
+    metadata.spatialDerivativeDispatch = records;
 end
 end
 

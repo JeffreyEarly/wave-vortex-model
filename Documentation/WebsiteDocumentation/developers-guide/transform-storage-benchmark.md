@@ -21,6 +21,8 @@ The ledger intentionally excludes canonical model coefficients, forcing state, M
 
 Each backend/case pair runs three times in a fresh MATLAB process. Normal production caches remain enabled. An external sampler records the worker's RSS during baseline, construction, warmup, a persistent plateau, and a state-advanced `nonlinearFlux` call. Holding the returned flux briefly allows the sampler to observe its resident-memory peak without changing the computation being measured.
 
+The final issue #47 readiness benchmark consumes this artifact by fixed SHA-256 rather than repeating or reinterpreting the measurement. It verifies that the measured transform implementation has not changed, then combines the storage gates with same-host `core-v1` timing and correctness. Both exact structural savings and repeated process-RSS improvements are required; one does not substitute for the other.
+
 The artifact preserves every raw RSS sample, sampler identity and interval, per-run increments, medians, minima, and maxima. Unsupported sampling remains a structured result rather than being replaced with an allocation estimate. The benchmark rotates builtin and FFTW process order to reduce systematic ordering bias.
 
 ## Gates

@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- Added the final authoring-only readiness gate for the optional FFTW WaveVortex adapter. It combines same-host `core-v1` timing and correctness with the immutable issue #75 exact-storage and repeated-process RSS evidence without changing thresholds after measurement.
 - Added benchmark-selected spatial derivative dispatch. Complete-call measurements retain dense vertical differentiation and MATLAB horizontal derivatives except at exact validated FFTW size/order records, while selected constant-stratification G-family reconstructions apply horizontal and vertical modal multipliers before inverse transforms without persistent spectrum buffers.
 - Added exact transform-storage ledgers and a repeated fresh-process RSS benchmark for comparing the builtin full-complex and optional FFTW half-complex constant-stratification backends without inferring MATLAB copy behavior.
 - Added eligibility-aware DCT-I/DST-I dispatch for constant-stratification transforms. The optional FFTW backend now reuses validated real-to-real plans only inside the exact FFTWTransforms issue #43 size and batch intervals, while every other vertical operation retains the existing dense matrix result.
