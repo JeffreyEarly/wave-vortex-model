@@ -1,0 +1,152 @@
+name: WaveVortexModel Extended CI
+
+on:
+  schedule:
+    - cron: "0 9 * * 1"
+  pull_request:
+    paths:
+      - .github/workflows/extended-ci.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  OCEANKIT_COMMIT: eb71bc7b05e74776afd678b27c964cf53cd9d547
+
+jobs:
+  full:
+    name: Full / MATLAB R2024b
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check out WaveVortexModel
+        uses: actions/checkout@v6
+        with:
+          path: source
+          persist-credentials: false
+
+      - name: Check out pinned OceanKit packages
+        uses: actions/checkout@v6
+        with:
+          repository: JeffreyEarly/OceanKit
+          ref: ${{ env.OCEANKIT_COMMIT }}
+          path: OceanKit
+          persist-credentials: false
+
+      - name: Set up MATLAB R2024b
+        uses: matlab-actions/setup-matlab@v3
+        with:
+          release: R2024b
+          cache: true
+
+      - name: Run full tests
+        uses: matlab-actions/run-command@v3
+        with:
+          command: >-
+            mpmAddRepository("OceanKit",fullfile(pwd,"OceanKit"));
+            sourcePackage = matlab.mpm.Package("source");
+            mpminstall(sourcePackage,Prompt=false,Authoring=true);
+            cd("source");
+            buildtool test:full
+
+      - name: Verify clean source checkout
+        if: always()
+        working-directory: source
+        run: bash tools/checkCIWorkspaceCleanliness.sh
+
+  exhaustive:
+    name: Exhaustive / MATLAB R2024b
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check out WaveVortexModel
+        uses: actions/checkout@v6
+        with:
+          path: source
+          persist-credentials: false
+
+      - name: Check out pinned OceanKit packages
+        uses: actions/checkout@v6
+        with:
+          repository: JeffreyEarly/OceanKit
+          ref: ${{ env.OCEANKIT_COMMIT }}
+          path: OceanKit
+          persist-credentials: false
+
+      - name: Set up MATLAB R2024b
+        uses: matlab-actions/setup-matlab@v3
+        with:
+          release: R2024b
+          cache: true
+
+      - name: Run exhaustive tests
+        uses: matlab-actions/run-command@v3
+        with:
+          command: >-
+            mpmAddRepository("OceanKit",fullfile(pwd,"OceanKit"));
+            sourcePackage = matlab.mpm.Package("source");
+            mpminstall(sourcePackage,Prompt=false,Authoring=true);
+            cd("source");
+            buildtool test:exhaustive
+
+      - name: Verify clean source checkout
+        if: always()
+        working-directory: source
+        run: bash tools/checkCIWorkspaceCleanliness.sh
+
+  optional:
+    name: Optional / MATLAB R2024b
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check out WaveVortexModel
+        uses: actions/checkout@v6
+        with:
+          path: source
+          persist-credentials: false
+
+      - name: Check out pinned OceanKit packages
+        uses: actions/checkout@v6
+        with:
+          repository: JeffreyEarly/OceanKit
+          ref: ${{ env.OCEANKIT_COMMIT }}
+          path: OceanKit
+          persist-credentials: false
+
+      - name: Set up MATLAB R2024b with Optimization Toolbox
+        uses: matlab-actions/setup-matlab@v3
+        with:
+          release: R2024b
+          products: Optimization_Toolbox
+          cache: true
+
+      - name: Run optional tests when Optimization Toolbox is available
+        uses: matlab-actions/run-command@v3
+        with:
+          command: >-
+            mpmAddRepository("OceanKit",fullfile(pwd,"OceanKit"));
+            sourcePackage = matlab.mpm.Package("source");
+            mpminstall(sourcePackage,Prompt=false,Authoring=true);
+            cd("source");
+            if WVNoMotionProfileOperation.hasOptimizationToolboxSupport()
+                buildtool test:optional;
+            else
+                message = "Optimization Toolbox is unavailable; optional tests were skipped intentionally.";
+                fprintf("::notice title=Optional tests skipped::%s\n",message);
+                summaryPath = getenv("GITHUB_STEP_SUMMARY");
+                summaryFile = fopen(summaryPath,"a");
+                assert(summaryFile >= 0,"Unable to open the GitHub step summary.");
+                summaryCleanup = onCleanup(@()fclose(summaryFile));
+                fprintf(summaryFile,"### Optional tests\n\n%s\n",message);
+                clear summaryCleanup
+            end
+
+      - name: Verify clean source checkout
+        if: always()
+        working-directory: source
+        run: bash tools/checkCIWorkspaceCleanliness.sh
