@@ -56,7 +56,17 @@ clear stateCleanup
 end
 
 function suiteResult = runSuite(suite,backends,options,benchmarkFolder,repositoryRoot)
-suiteResult = struct("id",suite.id,"version",suite.version,"description",suite.description,"operation",suite.operation,"isScored",suite.isScored,"selectionIsComplete",suite.selectionIsComplete,"status","complete","cases",emptyCaseResults(),"familyScores",emptyScores(),"suiteScores",emptyScores(),"referenceArtifact","");
+referencePath = referenceArtifactPath(options.referenceDirectory,suite.id);
+if suite.kind == "transform-layout"
+    suiteResult = runWaveVortexTransformLayoutSuite(suite,options.correctnessTolerance,repositoryRoot);
+    suiteResult.referenceArtifact = referencePath;
+    if options.shouldCreateReference
+        referenceResults = struct("schemaVersion","1.0.0","status",suiteResult.status,"runId",options.runId,"environment",benchmarkEnvironment(repositoryRoot),"configuration",struct("suiteIds",suite.id,"backendIds","builtin","correctnessTolerance",options.correctnessTolerance,"shouldMeasureMemory",false),"suites",suiteResult);
+        writeRunArtifacts(referenceResults,referencePath);
+    end
+    return
+end
+suiteResult = struct("id",suite.id,"version",suite.version,"kind",suite.kind,"description",suite.description,"operation",suite.operation,"isScored",suite.isScored,"selectionIsComplete",suite.selectionIsComplete,"status","complete","cases",emptyCaseResults(),"familyScores",emptyScores(),"suiteScores",emptyScores(),"referenceArtifact","","metadata",struct);
 for iCase = 1:numel(suite.cases)
     try
         caseResult = runCase(suite.cases(iCase),backends,options,benchmarkFolder,repositoryRoot);
@@ -70,7 +80,6 @@ if ~suite.selectionIsComplete
     suiteResult.status = "partial";
 end
 
-referencePath = referenceArtifactPath(options.referenceDirectory,suite.id);
 suiteResult.referenceArtifact = referencePath;
 if options.shouldCreateReference
     suiteResult = applySelfReferenceScores(suiteResult);
@@ -351,7 +360,7 @@ memory = struct("status","not-requested","provider","","baselineBytes",NaN,"pers
 end
 
 function results = emptySuiteResults()
-results = struct("id",{},"version",{},"description",{},"operation",{},"isScored",{},"selectionIsComplete",{},"status",{},"cases",{},"familyScores",{},"suiteScores",{},"referenceArtifact",{});
+results = struct("id",{},"version",{},"kind",{},"description",{},"operation",{},"isScored",{},"selectionIsComplete",{},"status",{},"cases",{},"familyScores",{},"suiteScores",{},"referenceArtifact",{},"metadata",{});
 end
 
 function results = emptyCaseResults()

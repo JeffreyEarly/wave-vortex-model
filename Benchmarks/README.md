@@ -17,6 +17,7 @@ The registered suites are:
 - `core-v1`: the canonical constant-stratification nonlinear-advection score.
 - `scaling-standard-v1`: standard horizontal and vertical scaling across transform families.
 - `scaling-large-v1`: fixed large-memory scaling cases.
+- `transform-layout-v1`: an unscored diagnostic of full-complex WV/DFT mapping expressions. It compares the current WV-sorted linear mapping with DFT-sorted, two-dimensional-row, and per-plane alternatives while preserving production behavior.
 
 The runner accepts more than one suite and a subset of case IDs. Suite definitions are versioned in `waveVortexBenchmarkSuites`; changing a case matrix or score definition requires a new suite version. Backends are selected independently from transform families through `waveVortexBenchmarkBackends`.
 
@@ -25,5 +26,13 @@ Every scored case is normalized against its matching committed builtin reference
 Ordinary artifacts are written beneath the ignored `results/runs` directory. Immutable reference artifacts live beneath `results/reference`. Memory measurements use a fresh MATLAB process and report baseline, persistent, and peak-observed resident memory; these process measurements include MATLAB runtime and allocator behavior.
 
 The large suites can require substantial time and memory. A partial result is valid, but a family or suite receives no aggregate score unless every required case completes.
+
+The transform-layout suite uses the same artifact entry point but does not participate in benchmark scores or fresh-process memory measurement:
+
+```matlab
+results = runWaveVortexBenchmark(suites="transform-layout-v1")
+```
+
+It measures extraction, primary insertion, conjugate insertion, combined insertion, and complete horizontal forward/inverse calls. Each strategy owns and reuses a persistent full-complex buffer. Array setup and mapping construction are excluded, while indexing, allocation, conjugation, reshape, transpose, and MATLAB copy-on-write behavior inherent to each expression remain timed. The strict winner has the smallest median; the production `wv-sorted-linear` strategy remains preferred when it is within 3% of that median. MATLAB pointer and copy state is reported as unavailable because no supported API exposes it for these expressions. Whole-process memory comparisons remain separate from this suite.
 
 `WVTransformConstantStratificationSpeedTest`, `ProfileableSpeedTest`, and `ForcingSpectralMaskPerformanceTest` remain historical investigation scripts. Deterministic correctness checks belong in `UnitTests`; mixed scientific investigations belong in `DeveloperExperiments`.
