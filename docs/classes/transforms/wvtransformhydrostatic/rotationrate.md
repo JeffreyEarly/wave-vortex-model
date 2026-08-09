@@ -3,7 +3,7 @@ layout: default
 title: rotationRate
 parent: WVTransformHydrostatic
 grand_parent: Transforms
-nav_order: 192
+nav_order: 190
 mathjax: true
 ---
 

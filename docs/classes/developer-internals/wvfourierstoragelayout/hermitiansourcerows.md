@@ -3,7 +3,7 @@ layout: default
 title: hermitianSourceRows
 parent: WVFourierStorageLayout
 grand_parent: Developer internals
-nav_order: 13
+nav_order: 12
 mathjax: true
 ---
 

@@ -41,6 +41,14 @@ Issue #70 moved the builtin adapter to a row-oriented Fourier-storage layout. It
 results = runWVFourierStorageLayoutIntegrationBenchmark
 ```
 
-The 3% regression threshold applies only to `[256 256 65]` and `[512 512 129]`, with antialiasing both disabled and enabled. Smaller cases remain descriptive because the row layout was selected as the single production representation even where MATLAB timing noise or fixed overhead can make a legacy expression faster. The integration artifact also confirms that the vertically replicated compatibility indices remain unallocated until a caller explicitly requests them.
+The 3% regression threshold applies only to `[256 256 65]` and `[512 512 129]`, with antialiasing both disabled and enabled. Smaller cases remain descriptive because the row layout was selected as the single production representation even where MATLAB timing noise or fixed overhead can make a historical expression faster. The integration artifact also confirms the compact mapping storage used by the production builtin adapter. Vertically replicated mapping properties were removed in issue #71; `indicesFromWVGridToDFTGrid(...)` remains the explicit authoring API for deliberately constructing expanded indices.
+
+Issue #71 adds a focused complete-call comparison for the half-x FFTW adapter:
+
+```matlab
+results = runWVFFTWAdapterBenchmark
+```
+
+The benchmark compares the general `WVFourierStorageLayout` mapping methods with specialized compact row assignments and includes builtin timings as descriptive context. It uses deterministic inputs, rotated forward/inverse schedules, two warmups, seven samples, and three samples for the `[512 512 129]` cases. The general method remains preferred unless specialized rows are over 3% faster on at least one gate case and no more than 3% slower on every gate case. This diagnostic selects mapping expressions only; issue #47 owns end-to-end backend readiness.
 
 `WVTransformConstantStratificationSpeedTest`, `ProfileableSpeedTest`, and `ForcingSpectralMaskPerformanceTest` remain historical investigation scripts. Deterministic correctness checks belong in `UnitTests`; mixed scientific investigations belong in `DeveloperExperiments`.

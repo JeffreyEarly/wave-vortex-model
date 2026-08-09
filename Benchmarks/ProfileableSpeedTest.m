@@ -53,8 +53,8 @@ profile viewer
 % unsorted is fastest!!! DFT sorted is 2x slower, WV sorted is 10% slower
 % tic
 % for i=1:500
-%     wvt.dftBuffer(wvt.dftPrimaryIndex) = wvt.wvBuffer(wvt.wvPrimaryIndex);
-%     wvt.dftBuffer(wvt.dftConjugateIndex) = conj(wvt.wvBuffer(wvt.wvConjugateIndex));
+%     dftBuffer(dftPrimaryIndices) = wvBuffer(wvPrimaryIndices);
+%     dftBuffer(dftConjugateIndices) = conj(wvBuffer(wvConjugateIndices));
 % end
 % toc
 % 
@@ -62,7 +62,7 @@ profile viewer
 % % unsorted is 10% slower than sorting either dimension
 % tic
 % for i=1:500
-%     wvt.wvBuffer = wvt.dftBuffer(wvt.dftPrimaryIndex);
+%     wvBuffer = dftBuffer(dftPrimaryIndices);
 % end
 % toc
 

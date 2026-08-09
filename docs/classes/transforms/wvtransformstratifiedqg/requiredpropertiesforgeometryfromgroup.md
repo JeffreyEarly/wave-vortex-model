@@ -3,7 +3,7 @@ layout: default
 title: requiredPropertiesForGeometryFromGroup
 parent: WVTransformStratifiedQG
 grand_parent: Transforms
-nav_order: 141
+nav_order: 139
 mathjax: true
 ---
 

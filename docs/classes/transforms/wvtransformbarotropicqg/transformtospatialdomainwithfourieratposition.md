@@ -3,7 +3,7 @@ layout: default
 title: transformToSpatialDomainWithFourierAtPosition
 parent: WVTransformBarotropicQG
 grand_parent: Transforms
-nav_order: 142
+nav_order: 140
 mathjax: true
 ---
 

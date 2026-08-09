@@ -3,7 +3,7 @@ layout: default
 title: dftPrimaryIndices2D
 parent: WVTransformBarotropicQG
 grand_parent: Transforms
-nav_order: 42
+nav_order: 40
 mathjax: true
 ---
 

@@ -3,7 +3,7 @@ layout: default
 title: hermitianCompletionRows
 parent: WVFourierStorageLayout
 grand_parent: Developer internals
-nav_order: 12
+nav_order: 11
 mathjax: true
 ---
 

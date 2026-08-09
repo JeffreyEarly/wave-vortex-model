@@ -3,7 +3,7 @@ layout: default
 title: kMode_wv
 parent: WVTransformBoussinesq
 grand_parent: Transforms
-nav_order: 155
+nav_order: 153
 mathjax: true
 ---
 

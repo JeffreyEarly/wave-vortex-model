@@ -3,7 +3,7 @@ layout: default
 title: diffY
 parent: WVTransformStratifiedQG
 grand_parent: Transforms
-nav_order: 59
+nav_order: 57
 mathjax: true
 ---
 

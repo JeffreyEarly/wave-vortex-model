@@ -37,8 +37,6 @@ classdef TestWVFourierStorageLayoutIntegrationBenchmark < matlab.unittest.TestCa
             testCase.verifyFalse(benchmarkCase.isGate);
             testCase.verifyEqual(benchmarkCase.mappingMethod,"two-dimensional-rows");
             testCase.verifyEqual(benchmarkCase.fourierStorageSize,[64 48]);
-            testCase.verifyFalse(benchmarkCase.legacyMappingsAreMaterialized);
-            testCase.verifyEqual(benchmarkCase.legacyMappingBytes,0);
             testCase.verifySize(benchmarkCase.warmupSchedules,[2 6]);
             testCase.verifySize(benchmarkCase.sampleSchedules,[7 6]);
             testCase.verifyEqual(numel(unique(benchmarkCase.sampleSchedules(1,:))),6);

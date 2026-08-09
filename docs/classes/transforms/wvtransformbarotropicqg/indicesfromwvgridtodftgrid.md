@@ -3,7 +3,7 @@ layout: default
 title: indicesFromWVGridToDFTGrid
 parent: WVTransformBarotropicQG
 grand_parent: Transforms
-nav_order: 66
+nav_order: 64
 mathjax: true
 ---
 

@@ -3,7 +3,7 @@ layout: default
 title: isValidPrimaryModeNumber
 parent: WVTransformConstantStratification
 grand_parent: Transforms
-nav_order: 144
+nav_order: 142
 mathjax: true
 ---
 

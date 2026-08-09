@@ -3,7 +3,7 @@ layout: default
 title: transformToSpatialDomainFromDFTGrid
 parent: WVTransformBoussinesq
 grand_parent: Transforms
-nav_order: 244
+nav_order: 242
 mathjax: true
 ---
 

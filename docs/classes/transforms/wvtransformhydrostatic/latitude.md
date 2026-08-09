@@ -3,7 +3,7 @@ layout: default
 title: latitude
 parent: WVTransformHydrostatic
 grand_parent: Transforms
-nav_order: 150
+nav_order: 148
 mathjax: true
 ---
 

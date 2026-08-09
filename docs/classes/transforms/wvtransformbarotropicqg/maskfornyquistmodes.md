@@ -3,7 +3,7 @@ layout: default
 title: maskForNyquistModes
 parent: WVTransformBarotropicQG
 grand_parent: Transforms
-nav_order: 97
+nav_order: 95
 mathjax: true
 ---
 

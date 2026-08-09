@@ -3,7 +3,7 @@ layout: default
 title: mappingMethod
 parent: WVFourierStorageLayout
 grand_parent: Developer internals
-nav_order: 18
+nav_order: 17
 mathjax: true
 ---
 

@@ -22,6 +22,8 @@ end
 function [topicPath,isDeveloper] = topicForMember(className,name)
 if className == "WVFourierStorageLayout"
     [topicPath,isDeveloper] = fourierStorageLayoutTopic(name);
+elseif className == "WVFastTransformDoublyPeriodicFFTW"
+    [topicPath,isDeveloper] = fftwAdapterTopic(name);
 elseif startsWith(className,"WVTransform")
     [topicPath,isDeveloper] = transformTopic(name);
 elseif className == "WVModel"
@@ -47,6 +49,19 @@ else
 end
 end
 
+function [topicPath,isDeveloper] = fftwAdapterTopic(name)
+isDeveloper = true;
+if ismember(name,["WVFastTransformDoublyPeriodicFFTW","wvg","Nz","fourierStorageLayout"])
+    topicPath = "Create an FFTW adapter";
+elseif ismember(name,["transformFromSpatialDomainWithFourier","transformToSpatialDomainWithFourier"])
+    topicPath = "Apply horizontal transforms";
+elseif ismember(name,["diffX","diffY"])
+    topicPath = "Apply spatial derivatives";
+else
+    topicPath = "Class internals";
+end
+end
+
 function [topicPath,isDeveloper] = fourierStorageLayoutTopic(name)
 isDeveloper = true;
 if ismember(name,["WVFourierStorageLayout","horizontalGridSize", ...
@@ -66,7 +81,7 @@ elseif ismember(name,["allocateFourierStorage", ...
 elseif ismember(name,["mappingMemoryBytes","mappingMemoryUsage"])
     topicPath = "Inspect Fourier storage";
 else
-    topicPath = "Legacy compatibility";
+    topicPath = "Class internals";
 end
 end
 

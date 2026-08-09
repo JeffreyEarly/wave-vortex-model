@@ -3,7 +3,7 @@ layout: default
 title: rotationRate
 parent: WVTransformStratifiedQG
 grand_parent: Transforms
-nav_order: 149
+nav_order: 147
 mathjax: true
 ---
 

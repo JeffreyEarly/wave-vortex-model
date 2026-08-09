@@ -3,7 +3,7 @@ layout: default
 title: planetaryRadius
 parent: WVTransformConstantStratification
 grand_parent: Transforms
-nav_order: 182
+nav_order: 180
 mathjax: true
 ---
 

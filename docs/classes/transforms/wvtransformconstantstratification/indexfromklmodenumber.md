@@ -3,7 +3,7 @@ layout: default
 title: indexFromKLModeNumber
 parent: WVTransformConstantStratification
 grand_parent: Transforms
-nav_order: 119
+nav_order: 117
 mathjax: true
 ---
 

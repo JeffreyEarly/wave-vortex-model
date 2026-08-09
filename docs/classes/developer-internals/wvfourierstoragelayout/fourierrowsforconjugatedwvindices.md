@@ -3,7 +3,7 @@ layout: default
 title: fourierRowsForConjugatedWVIndices
 parent: WVFourierStorageLayout
 grand_parent: Developer internals
-nav_order: 8
+nav_order: 7
 mathjax: true
 ---
 

@@ -3,7 +3,7 @@ layout: default
 title: placeParticlesOnIsopycnal
 parent: WVTransformBoussinesq
 grand_parent: Transforms
-nav_order: 186
+nav_order: 184
 mathjax: true
 ---
 

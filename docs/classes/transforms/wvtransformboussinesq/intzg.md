@@ -3,7 +3,7 @@ layout: default
 title: intZG
 parent: WVTransformBoussinesq
 grand_parent: Transforms
-nav_order: 142
+nav_order: 140
 mathjax: true
 ---
 

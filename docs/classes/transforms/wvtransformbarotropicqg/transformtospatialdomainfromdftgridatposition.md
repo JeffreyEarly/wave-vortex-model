@@ -3,7 +3,7 @@ layout: default
 title: transformToSpatialDomainFromDFTGridAtPosition
 parent: WVTransformBarotropicQG
 grand_parent: Transforms
-nav_order: 140
+nav_order: 138
 mathjax: true
 ---
 

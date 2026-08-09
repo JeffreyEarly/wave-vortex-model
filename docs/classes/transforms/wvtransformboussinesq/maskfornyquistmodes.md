@@ -3,7 +3,7 @@ layout: default
 title: maskForNyquistModes
 parent: WVTransformBoussinesq
 grand_parent: Transforms
-nav_order: 170
+nav_order: 168
 mathjax: true
 ---
 

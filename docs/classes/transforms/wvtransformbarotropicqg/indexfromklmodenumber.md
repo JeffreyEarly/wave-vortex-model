@@ -3,7 +3,7 @@ layout: default
 title: indexFromKLModeNumber
 parent: WVTransformBarotropicQG
 grand_parent: Transforms
-nav_order: 63
+nav_order: 61
 mathjax: true
 ---
 

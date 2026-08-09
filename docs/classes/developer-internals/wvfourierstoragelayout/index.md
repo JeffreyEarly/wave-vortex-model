@@ -86,8 +86,6 @@ These items document internal implementation details and are not part of the pri
   + [`selfConjugateFourierRows`](/classes/developer-internals/wvfourierstoragelayout/selfconjugatefourierrows.html) Fourier rows representing modes equal to their own Hermitian partner.
   + [`transformFromFourierStorageToWVGrid`](/classes/developer-internals/wvfourierstoragelayout/transformfromfourierstoragetowvgrid.html) Map a Fourier row view to canonical WV-grid ordering.
   + [`transformFromWVGridToFourierStorage`](/classes/developer-internals/wvfourierstoragelayout/transformfromwvgridtofourierstorage.html) Insert WV-grid coefficients into caller-owned Fourier storage.
-+ Legacy compatibility
-  + [`expandedLegacyMappings`](/classes/developer-internals/wvfourierstoragelayout/expandedlegacymappings.html) Materialize the vertically expanded legacy full-storage mappings.
 + Inspect Fourier storage
   + [`mappingMemoryBytes`](/classes/developer-internals/wvfourierstoragelayout/mappingmemorybytes.html) Exact bytes occupied by all one-based uint64 mapping arrays.
   + [`mappingMemoryUsage`](/classes/developer-internals/wvfourierstoragelayout/mappingmemoryusage.html) Return exact memory usage for each mapping array.

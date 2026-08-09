@@ -27,14 +27,13 @@ classdef WVGeometryDoublyPeriodic < CAAnnotatedClass
     %   size(wvMatrix) == [Nkl_wv 1];
     %   size(dftMatrix) == [Nk_dft Nl_dft]; % (equivalently [Nx Ny]
     % ```
-    % then to transform data from the DFT matrix to the WV matrix,
+    % then to transform data from Fourier storage to the WV grid,
     % ```matlab
-    %   wvMatrix = dftMatrix(dftPrimaryIndices);
+    %   wvMatrix = layout.transformFromFourierStorageToWVGrid(rows);
     % ```
     % and the reverse is
     % ```matlab
-    %   dftMatrix(dftPrimaryIndices) = wvMatrix;
-    %   dftMatrix(dftConjugateIndices) = conj(wvMatrix(wvConjugateIndex));
+    %   rows = layout.transformFromWVGridToFourierStorage(rows,wvMatrix);
     % ```
     %
     % - Topic: Initialization
@@ -121,31 +120,9 @@ classdef WVGeometryDoublyPeriodic < CAAnnotatedClass
         %
         % - Topic: Domain attributes — Spatial grid
         Nz
-        legacyDftPrimaryIndex uint64 = uint64.empty(0,1)
-        legacyDftConjugateIndex uint64 = uint64.empty(0,1)
-        legacyWvConjugateIndex uint64 = uint64.empty(0,1)
-        legacyMappingsAreMaterialized (1,1) logical = false
     end
 
     properties (Dependent, SetAccess=private)
-        % legacy vertically replicated index into the active Fourier storage
-        %
-        % Materialized lazily for compatibility. Production transforms use
-        % WVFourierStorageLayout two-dimensional mappings instead.
-        %
-        % - Topic: Domain attributes — WV grid
-        dftPrimaryIndex uint64
-
-        % legacy vertically replicated conjugate index
-        %
-        % - Topic: Domain attributes — WV grid
-        dftConjugateIndex uint64
-
-        % legacy vertically replicated WV conjugate index
-        %
-        % - Topic: Domain attributes — WV grid
-        wvConjugateIndex uint64
-        
         % x-dimension
         %
         % - Topic: Domain attributes — Spatial grid
@@ -353,21 +330,6 @@ classdef WVGeometryDoublyPeriodic < CAAnnotatedClass
             x = dx*(0:self.Nx-1)';
         end
 
-        function value = get.dftPrimaryIndex(self)
-            self.materializeLegacyMappings();
-            value = self.legacyDftPrimaryIndex;
-        end
-
-        function value = get.dftConjugateIndex(self)
-            self.materializeLegacyMappings();
-            value = self.legacyDftConjugateIndex;
-        end
-
-        function value = get.wvConjugateIndex(self)
-            self.materializeLegacyMappings();
-            value = self.legacyWvConjugateIndex;
-        end
-
         function y = get.y(self)
             dy = self.Ly/self.Ny;
             y = dy*(0:self.Ny-1)';
@@ -516,9 +478,10 @@ classdef WVGeometryDoublyPeriodic < CAAnnotatedClass
         end
 
         function u = transformToSpatialDomainWithFourierAtPosition(self,u_bar,x,y)
-            dftBuffer = complex(zeros(self.Nx,self.Ny));
-            dftBuffer(self.dftPrimaryIndex) = u_bar;
-            dftBuffer(self.dftConjugateIndex) = conj(u_bar(self.wvConjugateIndex));
+            layout = WVFourierStorageLayout(self,"full-complex");
+            rows = layout.allocateFourierStorage(1);
+            rows = layout.transformFromWVGridToFourierStorage(rows,reshape(u_bar,1,[]));
+            dftBuffer = reshape(layout.reshapeFourierRowsToStorage(rows),self.Nx,self.Ny);
             u = self.transformToSpatialDomainFromDFTGridAtPosition(dftBuffer,x,y);
         end
 
@@ -853,18 +816,18 @@ classdef WVGeometryDoublyPeriodic < CAAnnotatedClass
 
             % Considered unsorted, dft-sorted, and wv-sorted indices.
             % The code:
-            %   wvt.dftBuffer(wvt.dftPrimaryIndex) = wvt.wvBuffer(wvt.wvPrimaryIndex);
-            %   wvt.dftBuffer(wvt.dftConjugateIndex) = conj(wvt.wvBuffer(wvt.wvConjugateIndex));
+            %   dftBuffer(dftPrimaryIndices) = wvBuffer(wvPrimaryIndices);
+            %   dftBuffer(dftConjugateIndices) = conj(wvBuffer(wvConjugateIndices));
             % runs about 10% faster when dft-sorted, than the other two
             % options.
             % The code:
-            %   wvt.wvBuffer(wvt.wvPrimaryIndex) = wvt.dftBuffer(wvt.dftPrimaryIndex);
+            %   wvBuffer(wvPrimaryIndices) = dftBuffer(dftPrimaryIndices);
             % runs about the same when wv or dft-sorted. But importantly
-            %   wvt.wvBuffer = wvt.dftBuffer(wvt.dftPrimaryIndex);
+            %   wvBuffer = dftBuffer(dftPrimaryIndices);
             % is almost twice as fast and can be used when wv-sorted.
             % Ha ha, but even better is that when wv-sorted,
-            %   wvt.dftBuffer(wvt.dftPrimaryIndex) = wvt.wvBuffer;
-            %   wvt.dftBuffer(wvt.dftConjugateIndex) = conj(wvt.wvBuffer(wvt.wvConjugateIndex));
+            %   dftBuffer(dftPrimaryIndices) = wvBuffer;
+            %   dftBuffer(dftConjugateIndices) = conj(wvBuffer(wvConjugateIndices));
             % runs the absolute fastest. So, that's a no-brainer!
 
             [~,indices] = sort(wvPrimaryIndices_);
@@ -943,18 +906,18 @@ classdef WVGeometryDoublyPeriodic < CAAnnotatedClass
 
             % Considered unsorted, dft-sorted, and wv-sorted indices.
             % The code:
-            %   wvt.dftBuffer(wvt.dftPrimaryIndex) = wvt.wvBuffer(wvt.wvPrimaryIndex);
-            %   wvt.dftBuffer(wvt.dftConjugateIndex) = conj(wvt.wvBuffer(wvt.wvConjugateIndex));
+            %   dftBuffer(dftPrimaryIndices) = wvBuffer(wvPrimaryIndices);
+            %   dftBuffer(dftConjugateIndices) = conj(wvBuffer(wvConjugateIndices));
             % runs about 10% faster when dft-sorted, than the other two
             % options.
             % The code:
-            %   wvt.wvBuffer(wvt.wvPrimaryIndex) = wvt.dftBuffer(wvt.dftPrimaryIndex);
+            %   wvBuffer(wvPrimaryIndices) = dftBuffer(dftPrimaryIndices);
             % runs about the same when wv or dft-sorted. But importantly
-            %   wvt.wvBuffer = wvt.dftBuffer(wvt.dftPrimaryIndex);
+            %   wvBuffer = dftBuffer(dftPrimaryIndices);
             % is almost twice as fast and can be used when wv-sorted.
             % Ha ha, but even better is that when wv-sorted,
-            %   wvt.dftBuffer(wvt.dftPrimaryIndex) = wvt.wvBuffer;
-            %   wvt.dftBuffer(wvt.dftConjugateIndex) = conj(wvt.wvBuffer(wvt.wvConjugateIndex));
+            %   dftBuffer(dftPrimaryIndices) = wvBuffer;
+            %   dftBuffer(dftConjugateIndices) = conj(wvBuffer(wvConjugateIndices));
             % runs the absolute fastest. So, that's a no-brainer!
 
             [~,indices] = sort(wvPrimaryIndices_);
@@ -1013,21 +976,10 @@ classdef WVGeometryDoublyPeriodic < CAAnnotatedClass
         [varargout] = transformToRadialWavenumber(self,varargin);
     end
 
-    methods (Access=private)
-        function materializeLegacyMappings(self)
-            if self.legacyMappingsAreMaterialized
-                return
-            end
-            [self.legacyDftPrimaryIndex,self.legacyDftConjugateIndex,self.legacyWvConjugateIndex] = self.fastTransform.fourierStorageLayout.expandedLegacyMappings(self.Nz);
-            self.legacyMappingsAreMaterialized = true;
-        end
-    end
-
     methods (Hidden)
         function diagnostics = fourierStorageLayoutDiagnostics(self)
             layout = self.fastTransform.fourierStorageLayout;
-            legacyMappingBytes = 8*(numel(self.legacyDftPrimaryIndex)+numel(self.legacyDftConjugateIndex)+numel(self.legacyWvConjugateIndex));
-            diagnostics = struct("fourierStorageType",layout.fourierStorageType,"compressedDimension",layout.compressedDimension,"fourierStorageSize",layout.fourierStorageSize,"mappingMethod",layout.mappingMethod,"mappingMemoryBytes",layout.mappingMemoryBytes,"mappingMemoryUsage",layout.mappingMemoryUsage(),"legacyMappingsAreMaterialized",self.legacyMappingsAreMaterialized,"legacyMappingBytes",legacyMappingBytes);
+            diagnostics = struct("fourierStorageType",layout.fourierStorageType,"compressedDimension",layout.compressedDimension,"fourierStorageSize",layout.fourierStorageSize,"mappingMethod",layout.mappingMethod,"mappingMemoryBytes",layout.mappingMemoryBytes,"mappingMemoryUsage",layout.mappingMemoryUsage());
         end
     end
 
