@@ -75,6 +75,7 @@ classdef WVFastTransformDoublyPeriodicFFTW < WVFastTransformDoublyPeriodic
                 options.forwardMappingMethod (1,1) string {mustBeMember(options.forwardMappingMethod,["layout-methods","specialized-rows"])} = "layout-methods"
                 options.inverseMappingMethod (1,1) string {mustBeMember(options.inverseMappingMethod,["layout-methods","specialized-rows"])} = "specialized-rows"
             end
+            self.backendIdentifier = "fftw";
             self.wvg = wvg;
             self.Nz = Nz;
             self.forwardMappingMethod = options.forwardMappingMethod;

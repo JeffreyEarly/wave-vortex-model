@@ -30,6 +30,15 @@ Restore the transform through the static factory. The one-output form closes its
 wvtRestored = WVTransform.waveVortexTransformFromFile('transform.nc');
 ```
 
+Horizontal backend selection is runtime-only and is not written into the NetCDF file. Restoring a constant-stratification transform therefore uses builtin transforms by default, regardless of the backend used when the file was written. Request the optional backend again when appropriate for the current machine:
+
+```matlab
+wvtRestored = WVTransform.waveVortexTransformFromFile( ...
+    'transform.nc',fastTransform="fftw");
+```
+
+If FFTWTransforms is unavailable or fails validation, restoration continues with builtin transforms after one warning. Other transform families reject an FFTW restoration request.
+
 Pass additional registered variable names to `writeToFile` when physical fields or diagnostics should be stored alongside the reconstructable state:
 
 ```matlab

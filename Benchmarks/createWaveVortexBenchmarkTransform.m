@@ -4,25 +4,34 @@ arguments
     benchmarkCase (1,1) struct
     backendId (1,1) string = "builtin"
 end
-if backendId ~= "builtin"
-    error("WaveVortexBenchmark:UnsupportedBackend","Backend %s is not registered for transform construction.",backendId);
-end
-
 switch benchmarkCase.transformId
     case "constant-nonhydrostatic"
-        wvt = WVTransformConstantStratification(benchmarkCase.Lxyz,benchmarkCase.Nxyz,isHydrostatic=false,shouldAntialias=benchmarkCase.shouldAntialias);
+        wvt = WVTransformConstantStratification(benchmarkCase.Lxyz,benchmarkCase.Nxyz,isHydrostatic=false,shouldAntialias=benchmarkCase.shouldAntialias,fastTransform=backendId);
     case "constant-hydrostatic"
-        wvt = WVTransformConstantStratification(benchmarkCase.Lxyz,benchmarkCase.Nxyz,isHydrostatic=true,shouldAntialias=benchmarkCase.shouldAntialias);
+        wvt = WVTransformConstantStratification(benchmarkCase.Lxyz,benchmarkCase.Nxyz,isHydrostatic=true,shouldAntialias=benchmarkCase.shouldAntialias,fastTransform=backendId);
     case "hydrostatic"
+        requireBuiltinBackend(backendId,benchmarkCase.transformId);
         wvt = WVTransformHydrostatic(benchmarkCase.Lxyz,benchmarkCase.Nxyz,N2=@benchmarkN2,shouldAntialias=benchmarkCase.shouldAntialias);
     case "boussinesq"
+        requireBuiltinBackend(backendId,benchmarkCase.transformId);
         wvt = WVTransformBoussinesq(benchmarkCase.Lxyz,benchmarkCase.Nxyz,N2=@benchmarkN2,shouldAntialias=benchmarkCase.shouldAntialias);
     case "stratified-qg"
+        requireBuiltinBackend(backendId,benchmarkCase.transformId);
         wvt = WVTransformStratifiedQG(benchmarkCase.Lxyz,benchmarkCase.Nxyz,N2=@benchmarkN2,shouldAntialias=benchmarkCase.shouldAntialias);
     case "barotropic-qg"
+        requireBuiltinBackend(backendId,benchmarkCase.transformId);
         wvt = WVTransformBarotropicQG(benchmarkCase.Lxyz,benchmarkCase.Nxyz,shouldAntialias=benchmarkCase.shouldAntialias);
     otherwise
         error("WaveVortexBenchmark:UnknownTransform","Unknown transform ID %s.",benchmarkCase.transformId);
+end
+if wvt.fastTransform.backendIdentifier ~= backendId
+    error("WaveVortexBenchmark:RequestedBackendUnavailable","Requested benchmark backend %s, but the constructed transform is using %s.",backendId,wvt.fastTransform.backendIdentifier);
+end
+end
+
+function requireBuiltinBackend(backendId,transformId)
+if backendId ~= "builtin"
+    error("WaveVortexBenchmark:UnsupportedBackend","Backend %s is not supported for transform family %s.",backendId,transformId);
 end
 end
 

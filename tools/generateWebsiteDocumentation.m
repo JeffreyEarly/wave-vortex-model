@@ -1,8 +1,20 @@
 function generateWebsiteDocumentation(repositoryRoot,buildFolder)
 arguments
-    repositoryRoot (1,1) string
+repositoryRoot (1,1) string
     buildFolder (1,1) string
 end
+
+originalPath = path;
+pathCleanup = onCleanup(@()path(originalPath));
+addpath(repositoryRoot,"-begin");
+metadata = jsondecode(fileread(fullfile(repositoryRoot,"resources","mpackage.json")));
+for iFolder = 1:numel(metadata.folders)
+    folder = fullfile(repositoryRoot,metadata.folders(iFolder).path);
+    if isfolder(folder) && metadata.folders(iFolder).path ~= "UnitTests"
+        addpath(folder,"-begin");
+    end
+end
+clear WVFourierStorageLayout WVFastTransformDoublyPeriodic WVFastTransformDoublyPeriodicFFTW WVFastTransformDoublyPeriodicFactory
 
 sourceFolder = fullfile(repositoryRoot,"Documentation","WebsiteDocumentation");
 rebuildWebsiteDocumentationFromSource(sourceFolder,buildFolder);
@@ -58,6 +70,8 @@ parentName = "Developer internals";
 websiteFolder = "classes/developer-internals";
 writeClassDocumentation("WVFourierStorageLayout",buildFolder,websiteFolder,parentName,classFolderName,parentName,1,{'handle'},string.empty(0,1));
 writeClassDocumentation("WVFastTransformDoublyPeriodicFFTW",buildFolder,websiteFolder,parentName,classFolderName,parentName,2,{'handle','WVFastTransformDoublyPeriodic'},string.empty(0,1));
+writeClassDocumentation("WVFastTransformDoublyPeriodicFactory",buildFolder,websiteFolder,parentName,classFolderName,parentName,3,{'handle'},string.empty(0,1));
+clear pathCleanup
 end
 
 function writeVersionHistory(repositoryRoot,buildFolder)

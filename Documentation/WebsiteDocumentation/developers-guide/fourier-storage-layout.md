@@ -75,6 +75,14 @@ This contract makes mutation explicit without claiming that MATLAB will always u
 
 The adapter intentionally continues to use MATLAB's one-dimensional FFT implementation for `diffX` and `diffY`. Issue #74 owns the separate complete-call derivative comparison.
 
+## Backend selection
+
+`WVFastTransformDoublyPeriodicFactory` is the boundary between canonical geometry construction and backend-specific storage. `WVGeometryDoublyPeriodic` first completes the WV mode ordering, wavenumbers, and conjugate relationships. It then asks the factory for either the builtin full-complex adapter or the FFTW half-x adapter. Geometry construction never probes a MEX gateway and never changes coefficient ordering for a backend.
+
+The builtin path performs no FFTW discovery. For an explicit FFTW request, the factory queries `FFTWBackend.capabilities()`, validates the MATLAB-bundled r2c/c2r library identity, numerical self-tests, half-x ownership record, and lazy preserving-inverse scratch contract. If the modules are not ready but can be built, it makes one local build attempt and queries capabilities again. An unsuccessful request produces one actionable warning and a working builtin adapter.
+
+Each adapter exposes `backendIdentifier` so developer tools and benchmarks can verify which implementation actually executed. Benchmark code treats fallback as an unavailable FFTW candidate rather than labeling builtin measurements as FFTW.
+
 ## Developer contract
 
 The class is visible so backend developers can inspect its API and generated documentation. It is sealed and read-only because storage layouts are value-like descriptions, not extension points. A new backend should normally use the reshape and mapping methods. It may use the mapping properties directly when complete-expression benchmarks show that a specialized gather or assignment is materially better.

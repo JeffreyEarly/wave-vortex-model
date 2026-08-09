@@ -68,6 +68,18 @@ repositoryRoot = fileparts(mfilename("fullpath"));
 testFolder = fullfile(repositoryRoot,"UnitTests");
 originalPath = path;
 pathCleanup = onCleanup(@()path(originalPath));
+addpath(repositoryRoot);
+metadata = jsondecode(fileread(fullfile(repositoryRoot,"resources","mpackage.json")));
+for iFolder = 1:numel(metadata.folders)
+    runtimeFolder = fullfile(repositoryRoot,metadata.folders(iFolder).path);
+    if isfolder(runtimeFolder)
+        addpath(runtimeFolder);
+    end
+end
+supportFolder = fullfile(testFolder,"Support");
+if isfolder(supportFolder)
+    addpath(supportFolder);
+end
 pathEntries = string(strsplit(path,pathsep));
 if ~any(pathEntries == string(testFolder))
     addpath(testFolder);

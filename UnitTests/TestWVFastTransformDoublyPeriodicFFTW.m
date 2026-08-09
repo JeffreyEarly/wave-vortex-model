@@ -19,6 +19,81 @@ classdef TestWVFastTransformDoublyPeriodicFFTW < matlab.unittest.TestCase
     end
 
     methods (Test,TestTags="optional")
+        function completeConstantTransformsSelectEquivalentBackends(testCase)
+            for isHydrostatic = [false true]
+                arguments = {'N0',sqrt(2e-5),'latitude',45,'isHydrostatic',isHydrostatic,'shouldAntialias',true};
+                builtin = WVTransformConstantStratification([4000 3000 1000],[8 6 5],arguments{:},fastTransform="builtin");
+                fftw = WVTransformConstantStratification([4000 3000 1000],[8 6 5],arguments{:},fastTransform="fftw");
+                cleanup = onCleanup(@()deleteTransforms(builtin,fftw));
+                testCase.verifyEqual(builtin.fastTransform.backendIdentifier,"builtin");
+                testCase.verifyEqual(fftw.fastTransform.backendIdentifier,"fftw");
+                testCase.verifyEqual(fftw.k,builtin.k);
+                testCase.verifyEqual(fftw.l,builtin.l);
+                testCase.verifyEqual(fftw.Nkl,builtin.Nkl);
+                testCase.verifyEqual(fftw.dftPrimaryIndices2D,builtin.dftPrimaryIndices2D);
+                testCase.verifyEqual(fftw.dftConjugateIndices2D,builtin.dftConjugateIndices2D);
+                testCase.verifyEqual(fftw.spatialMatrixSize,builtin.spatialMatrixSize);
+                testCase.verifyEqual(fftw.spectralMatrixSize,builtin.spectralMatrixSize);
+
+                rng(7200+isHydrostatic,"twister");
+                builtin.initWithRandomFlow(uvMax=0.01);
+                fftw.Ap = builtin.Ap;
+                fftw.Am = builtin.Am;
+                fftw.A0 = builtin.A0;
+                [builtinU,builtinV,builtinW,builtinEta] = builtin.variableWithName("u","v","w","eta");
+                [fftwU,fftwV,fftwW,fftwEta] = fftw.variableWithName("u","v","w","eta");
+                verifyArrays(testCase,{fftwU,fftwV,fftwW,fftwEta},{builtinU,builtinV,builtinW,builtinEta});
+                [builtinFp,builtinFm,builtinF0] = builtin.nonlinearFlux();
+                [fftwFp,fftwFm,fftwF0] = fftw.nonlinearFlux();
+                verifyArrays(testCase,{fftwFp,fftwFm,fftwF0},{builtinFp,builtinFm,builtinF0});
+                clear cleanup
+            end
+        end
+
+        function resolutionAndAntialiasingPreserveActiveBackend(testCase)
+            wvt = WVTransformConstantStratification([4000 3000 1000],[8 6 5],N0=sqrt(2e-5),latitude=45,shouldAntialias=true,fastTransform="fftw");
+            cleanup = onCleanup(@()delete(wvt));
+            resized = wvt.waveVortexTransformWithResolution([10 8 7]);
+            resizedCleanup = onCleanup(@()delete(resized));
+            explicit = wvt.waveVortexTransformWithExplicitAntialiasing();
+            explicitCleanup = onCleanup(@()delete(explicit));
+            testCase.verifyEqual(resized.fastTransform.backendIdentifier,"fftw");
+            testCase.verifyEqual(explicit.fastTransform.backendIdentifier,"fftw");
+            testCase.verifyFalse(explicit.shouldAntialias);
+            clear explicitCleanup resizedCleanup cleanup
+        end
+
+        function persistenceUsesRuntimeBackendOverride(testCase)
+            fixture = testCase.applyFixture(matlab.unittest.fixtures.TemporaryFolderFixture);
+            pathname = fullfile(fixture.Folder,"fftw-runtime-selection.nc");
+            original = WVTransformConstantStratification([4000 3000 1000],[8 6 5],N0=sqrt(2e-5),latitude=45,shouldAntialias=false,fastTransform="fftw");
+            originalCleanup = onCleanup(@()delete(original));
+            file = original.writeToFile(pathname,shouldOverwriteExisting=true);
+            testCase.verifyFalse(file.hasVariableWithName("fastTransform"));
+            file.close();
+
+            restoredBuiltin = WVTransform.waveVortexTransformFromFile(pathname);
+            builtinCleanup = onCleanup(@()delete(restoredBuiltin));
+            restoredFFTW = WVTransform.waveVortexTransformFromFile(pathname,fastTransform="fftw");
+            fftwCleanup = onCleanup(@()delete(restoredFFTW));
+            testCase.verifyEqual(restoredBuiltin.fastTransform.backendIdentifier,"builtin");
+            testCase.verifyEqual(restoredFFTW.fastTransform.backendIdentifier,"fftw");
+            testCase.verifyEqual(restoredFFTW.k,restoredBuiltin.k);
+            testCase.verifyEqual(restoredFFTW.l,restoredBuiltin.l);
+            testCase.verifyEqual(restoredFFTW.Ap,restoredBuiltin.Ap);
+            testCase.verifyEqual(restoredFFTW.Am,restoredBuiltin.Am);
+            testCase.verifyEqual(restoredFFTW.A0,restoredBuiltin.A0);
+            clear fftwCleanup builtinCleanup originalCleanup
+        end
+
+        function benchmarkConstructionRejectsFallback(testCase)
+            benchmarkCase = struct("transformId","constant-nonhydrostatic","Lxyz",[4000 3000 1000],"Nxyz",[8 6 5],"shouldAntialias",false);
+            wvt = createWaveVortexBenchmarkTransform(benchmarkCase,"fftw");
+            cleanup = onCleanup(@()delete(wvt));
+            testCase.verifyEqual(wvt.fastTransform.backendIdentifier,"fftw");
+            clear cleanup
+        end
+
         function forwardInverseAndMappingImplementationsAgree(testCase)
             cases = struct( ...
                 "size",{[16 12 5],[15 11 4],[16 11 3]}, ...
@@ -166,6 +241,21 @@ for iAdapter = 1:numel(varargin)
     if ~isempty(adapter) && isvalid(adapter)
         delete(adapter);
     end
+end
+end
+
+function deleteTransforms(varargin)
+for iTransform = 1:numel(varargin)
+    transform = varargin{iTransform};
+    if ~isempty(transform) && isvalid(transform)
+        delete(transform);
+    end
+end
+end
+
+function verifyArrays(testCase,actual,expected)
+for iArray = 1:numel(actual)
+    testCase.verifyLessThanOrEqual(relativeError(actual{iArray},expected{iArray}),1e-12);
 end
 end
 

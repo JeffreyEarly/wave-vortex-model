@@ -14,6 +14,7 @@ classdef WVFastTransformDoublyPeriodicMatlab < WVFastTransformDoublyPeriodic
 
     methods
         function self = WVFastTransformDoublyPeriodicMatlab(wvg,Nz)
+            self.backendIdentifier = "builtin";
             self.wvg = wvg;
             self.Nz=Nz;
             self.fourierStorageLayout = WVFourierStorageLayout(wvg,"full-complex");

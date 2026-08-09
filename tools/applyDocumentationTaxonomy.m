@@ -22,6 +22,9 @@ end
 function [topicPath,isDeveloper] = topicForMember(className,name)
 if className == "WVFourierStorageLayout"
     [topicPath,isDeveloper] = fourierStorageLayoutTopic(name);
+elseif className == "WVFastTransformDoublyPeriodicFactory"
+    topicPath = "Select a horizontal-transform backend";
+    isDeveloper = true;
 elseif className == "WVFastTransformDoublyPeriodicFFTW"
     [topicPath,isDeveloper] = fftwAdapterTopic(name);
 elseif startsWith(className,"WVTransform")
@@ -51,7 +54,7 @@ end
 
 function [topicPath,isDeveloper] = fftwAdapterTopic(name)
 isDeveloper = true;
-if ismember(name,["WVFastTransformDoublyPeriodicFFTW","wvg","Nz","fourierStorageLayout"])
+if ismember(name,["WVFastTransformDoublyPeriodicFFTW","wvg","Nz","backendIdentifier","fourierStorageLayout"])
     topicPath = "Create an FFTW adapter";
 elseif ismember(name,["transformFromSpatialDomainWithFourier","transformToSpatialDomainWithFourier"])
     topicPath = "Apply horizontal transforms";

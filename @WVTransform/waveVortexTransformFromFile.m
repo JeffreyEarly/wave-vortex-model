@@ -31,19 +31,28 @@ function [wvt,ncfile] = waveVortexTransformFromFile(path,options)
 % - Parameter path: path to a NetCDF file
 % - Parameter iTime: (optional) time index to initialize from (default 1).
 % - Parameter shouldReadOnly: (optional) open the returned NetCDFFile read-only (default true).
+% - Parameter fastTransform: (optional) runtime backend for constant-stratification files, `"builtin"` (default) or `"fftw"`.
 % - Returns wvt: an instance of a WVTransform subclass
 % - Returns ncfile: a caller-owned NetCDFFile instance pointing to the file
 arguments (Input)
     path char {mustBeFile}
     options.iTime (1,1) double {mustBePositive} = 1
     options.shouldReadOnly logical = true
+    options.fastTransform (1,1) string {mustBeMember(options.fastTransform,["builtin","fftw"])} = "builtin"
 end
 arguments (Output)
     wvt WVTransform
     ncfile NetCDFFile
 end
 wvtClassName = transformClassNameFromFile(path);
-[wvt,ncfile] = feval(strcat(wvtClassName,'.waveVortexTransformFromFile'),path,'iTime',options.iTime,'shouldReadOnly',options.shouldReadOnly);
+if options.fastTransform == "fftw" && wvtClassName ~= "WVTransformConstantStratification"
+    error("WVTransform:UnsupportedFastTransform","fastTransform=""fftw"" is supported only for WVTransformConstantStratification files.");
+end
+if wvtClassName == "WVTransformConstantStratification"
+    [wvt,ncfile] = feval(strcat(wvtClassName,'.waveVortexTransformFromFile'),path,'iTime',options.iTime,'shouldReadOnly',options.shouldReadOnly,'fastTransform',options.fastTransform);
+else
+    [wvt,ncfile] = feval(strcat(wvtClassName,'.waveVortexTransformFromFile'),path,'iTime',options.iTime,'shouldReadOnly',options.shouldReadOnly);
+end
 
 if nargout < 2
     ncfile.close();

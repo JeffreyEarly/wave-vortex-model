@@ -266,11 +266,6 @@ classdef WVGeometryDoublyPeriodic < CAAnnotatedClass
                 notPrimaryCoeffs = notPrimaryCoeffs | WVGeometryDoublyPeriodic.maskForConjugateFourierCoefficients(self.Nk_dft,self.Nl_dft,conjugateDimension=self.conjugateDimension);
             end
             
-            % In theory we might have to re-do this for the FFTW grid, but
-            % because of Matlabs index ordering, it's the same.
-            % e.g., we do not need
-            %   notPrimaryCoeffs = notPrimaryCoeffs(:,1:(self.Ny/2 + 1));
-            %   [K,L] = ndgrid(self.k_dft,self.l_dft(1:(self.Ny/2 + 1)));
             [K,L] = ndgrid(self.k_dft,self.l_dft);
             Kh = sqrt(K.*K + L.*L);
 
@@ -280,48 +275,13 @@ classdef WVGeometryDoublyPeriodic < CAAnnotatedClass
             % Now remove all the coefficients that we didn't want
             self.dftPrimaryIndices2D = self.dftPrimaryIndices2D(sortedMultiIndex(:,1) == 0);
 
-            canUseFFTW = false;
-            if options.fastTransform == "fftw"
-                if ~exist('RealToComplexTransform','class')
-                    warning("Unable to find the class RealToComplexTransform. Reverting to built-in transforms.");
-                else
-                    if exist('fftw_dft2','file') == 3
-                        fprintf('fftw_dft2 found. Will use fftw.\n')
-                        canUseFFTW = true;
-                    else
-                        try
-                            RealToComplexTransform.makeMexFiles();
-                            canUseFFTW = true;
-                        catch
-                            warning('Unable to compile fftw_dft2. Will use builtins.\n')
-                        end
-                    end
-                end
-            end
+            self.dftConjugateIndices2D = WVGeometryDoublyPeriodic.indicesOfFourierConjugates(self.Nx,self.Ny);
+            self.dftConjugateIndices2D = self.dftConjugateIndices2D(self.dftPrimaryIndices2D);
+            self.k = K(self.dftPrimaryIndices2D);
+            self.l = L(self.dftPrimaryIndices2D);
 
-            if canUseFFTW == true
-                self.dftConjugateIndices2D = WVGeometryDoublyPeriodic.indicesOfFourierConjugates(self.Nx,self.Ny);
-                self.dftConjugateIndices2D = self.dftConjugateIndices2D(self.dftPrimaryIndices2D);
-                self.k = K(self.dftPrimaryIndices2D);
-                self.l = L(self.dftPrimaryIndices2D);
-
-                self.fastTransform = WVFastTransformDoublyPeriodicFFTW(self,self.Nz);
-            else
-                self.dftConjugateIndices2D = WVGeometryDoublyPeriodic.indicesOfFourierConjugates(self.Nx,self.Ny);
-                self.dftConjugateIndices2D = self.dftConjugateIndices2D(self.dftPrimaryIndices2D);
-                self.k = K(self.dftPrimaryIndices2D);
-                self.l = L(self.dftPrimaryIndices2D);
-
-                self.fastTransform = WVFastTransformDoublyPeriodicMatlab(self,self.Nz);
-            end
-
-
-            % self.fastTransform = WVFastTransformDoublyPeriodicMatlab(self,self.Nz);
-
-            % if exist('RealToComplexTransform', 'class')
-            % 
-            %     fprintf("successfully loaded fftw.\n");
-            % end
+            factory = WVFastTransformDoublyPeriodicFactory();
+            self.fastTransform = factory.create(self,self.Nz,options.fastTransform);
         end
 
         function x = get.x(self)
