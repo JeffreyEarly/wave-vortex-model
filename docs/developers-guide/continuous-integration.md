@@ -35,7 +35,9 @@ The Optional job requests Optimization Toolbox. When MATLAB is available but the
 
 ## Package installation
 
-Each job checks out WaveVortexModel in an isolated `source` directory and the pinned OceanKit repository in a sibling `OceanKit` directory. MATLAB registers that local OceanKit checkout as the MPM repository and installs WaveVortexModel in authoring mode. The workflows do not inspect or modify the OceanKit checkout beyond using it as the package source.
+Each job checks out WaveVortexModel in an isolated `source` directory and the pinned OceanKit repository in a sibling `OceanKit` directory. MATLAB registers that local checkout as the MPM repository and loads the exact dependency snapshots declared by the CI setup. The workflows do not modify the OceanKit checkout.
+
+MATLAB R2024b cannot construct a package from the schema 1.1 manifest currently written by newer MATLAB releases. The non-mutating CI therefore configures the source and pinned dependency paths directly, preserving the same package boundaries without rewriting the manifest. The separate clean-install work tracked by Issue #77 owns the permanent MPM schema and installation gate.
 
 The OceanKit commit is deliberately recorded in both workflow files and this page. Update all three locations together after compatibility with a newer dependency snapshot has been reviewed. Clean-install and exported-package testing are separate release gates and do not replace these authoring checks.
 

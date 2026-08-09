@@ -48,10 +48,12 @@ jobs:
         uses: matlab-actions/run-command@v3
         with:
           command: >-
-            mpmAddRepository("OceanKit",fullfile(pwd,"OceanKit"));
-            sourcePackage = matlab.mpm.Package("source");
-            mpminstall(sourcePackage,Prompt=false,Authoring=true);
-            cd("source");
+            sourceRoot = fullfile(pwd,"source");
+            oceanKitRoot = fullfile(pwd,"OceanKit");
+            mpmAddRepository("OceanKit",oceanKitRoot);
+            addpath(fullfile(sourceRoot,"tools"));
+            configureCIEnvironment(sourceRoot,oceanKitRoot);
+            cd(sourceRoot);
             buildtool test:full
 
       - name: Verify clean source checkout
@@ -88,10 +90,12 @@ jobs:
         uses: matlab-actions/run-command@v3
         with:
           command: >-
-            mpmAddRepository("OceanKit",fullfile(pwd,"OceanKit"));
-            sourcePackage = matlab.mpm.Package("source");
-            mpminstall(sourcePackage,Prompt=false,Authoring=true);
-            cd("source");
+            sourceRoot = fullfile(pwd,"source");
+            oceanKitRoot = fullfile(pwd,"OceanKit");
+            mpmAddRepository("OceanKit",oceanKitRoot);
+            addpath(fullfile(sourceRoot,"tools"));
+            configureCIEnvironment(sourceRoot,oceanKitRoot);
+            cd(sourceRoot);
             buildtool test:exhaustive
 
       - name: Verify clean source checkout
@@ -129,10 +133,12 @@ jobs:
         uses: matlab-actions/run-command@v3
         with:
           command: >-
-            mpmAddRepository("OceanKit",fullfile(pwd,"OceanKit"));
-            sourcePackage = matlab.mpm.Package("source");
-            mpminstall(sourcePackage,Prompt=false,Authoring=true);
-            cd("source");
+            sourceRoot = fullfile(pwd,"source");
+            oceanKitRoot = fullfile(pwd,"OceanKit");
+            mpmAddRepository("OceanKit",oceanKitRoot);
+            addpath(fullfile(sourceRoot,"tools"));
+            configureCIEnvironment(sourceRoot,oceanKitRoot);
+            cd(sourceRoot);
             if WVNoMotionProfileOperation.hasOptimizationToolboxSupport()
                 buildtool test:optional;
             else

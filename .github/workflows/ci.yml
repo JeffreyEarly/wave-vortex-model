@@ -47,10 +47,12 @@ jobs:
         uses: matlab-actions/run-command@v3
         with:
           command: >-
-            mpmAddRepository("OceanKit",fullfile(pwd,"OceanKit"));
-            sourcePackage = matlab.mpm.Package("source");
-            mpminstall(sourcePackage,Prompt=false,Authoring=true);
-            cd("source");
+            sourceRoot = fullfile(pwd,"source");
+            oceanKitRoot = fullfile(pwd,"OceanKit");
+            mpmAddRepository("OceanKit",oceanKitRoot);
+            addpath(fullfile(sourceRoot,"tools"));
+            configureCIEnvironment(sourceRoot,oceanKitRoot);
+            cd(sourceRoot);
             buildtool test:smoke
 
       - name: Verify clean source checkout
@@ -87,11 +89,12 @@ jobs:
         uses: matlab-actions/run-command@v3
         with:
           command: >-
-            mpmAddRepository("OceanKit",fullfile(pwd,"OceanKit"));
-            sourcePackage = matlab.mpm.Package("source");
-            mpminstall(sourcePackage,Prompt=false,Authoring=true);
-            mpminstall("ClassDocumentation@1.3.0",Prompt=false);
-            cd("source");
+            sourceRoot = fullfile(pwd,"source");
+            oceanKitRoot = fullfile(pwd,"OceanKit");
+            mpmAddRepository("OceanKit",oceanKitRoot);
+            addpath(fullfile(sourceRoot,"tools"));
+            configureCIEnvironment(sourceRoot,oceanKitRoot,documentationPackageSpecifier="ClassDocumentation@1.3.0");
+            cd(sourceRoot);
             buildtool docs:check
 
       - name: Verify clean source checkout
@@ -128,10 +131,12 @@ jobs:
         uses: matlab-actions/run-command@v3
         with:
           command: >-
-            mpmAddRepository("OceanKit",fullfile(pwd,"OceanKit"));
-            sourcePackage = matlab.mpm.Package("source");
-            mpminstall(sourcePackage,Prompt=false,Authoring=true);
-            cd("source");
+            sourceRoot = fullfile(pwd,"source");
+            oceanKitRoot = fullfile(pwd,"OceanKit");
+            mpmAddRepository("OceanKit",oceanKitRoot);
+            addpath(fullfile(sourceRoot,"tools"));
+            configureCIEnvironment(sourceRoot,oceanKitRoot);
+            cd(sourceRoot);
             buildtool analyze
 
       - name: Verify clean source checkout
