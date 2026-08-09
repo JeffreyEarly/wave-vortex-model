@@ -8,7 +8,7 @@ permalink: /installation
 
 # Installation
 
-WaveVortexModel requires MATLAB R2024b or newer. The package depends on other OceanKit packages and on Chebfun; MPM installs the declared dependencies automatically.
+WaveVortexModel requires MATLAB R2025b or newer. MPM installs the declared OceanKit dependencies automatically.
 
 ## Install from OceanKit
 

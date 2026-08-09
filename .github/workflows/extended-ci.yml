@@ -16,11 +16,11 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  OCEANKIT_COMMIT: eb71bc7b05e74776afd678b27c964cf53cd9d547
+  OCEANKIT_COMMIT: eb6141e837b2a2d52db675d449ed0ac4c9a64bb5
 
 jobs:
   full:
-    name: Full / MATLAB R2024b
+    name: Full / MATLAB R2025b
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
@@ -38,10 +38,10 @@ jobs:
           path: OceanKit
           persist-credentials: false
 
-      - name: Set up MATLAB R2024b
+      - name: Set up MATLAB R2025b
         uses: matlab-actions/setup-matlab@v3
         with:
-          release: R2024b
+          release: R2025b
           cache: true
 
       - name: Run full tests
@@ -62,7 +62,7 @@ jobs:
         run: bash tools/checkCIWorkspaceCleanliness.sh
 
   exhaustive:
-    name: Exhaustive / MATLAB R2024b
+    name: Exhaustive / MATLAB R2025b
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
@@ -80,10 +80,10 @@ jobs:
           path: OceanKit
           persist-credentials: false
 
-      - name: Set up MATLAB R2024b
+      - name: Set up MATLAB R2025b
         uses: matlab-actions/setup-matlab@v3
         with:
-          release: R2024b
+          release: R2025b
           cache: true
 
       - name: Run exhaustive tests
@@ -104,7 +104,7 @@ jobs:
         run: bash tools/checkCIWorkspaceCleanliness.sh
 
   optional:
-    name: Optional / MATLAB R2024b
+    name: Optional / MATLAB R2025b
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
@@ -122,10 +122,10 @@ jobs:
           path: OceanKit
           persist-credentials: false
 
-      - name: Set up MATLAB R2024b with Optimization Toolbox
+      - name: Set up MATLAB R2025b with Optimization Toolbox
         uses: matlab-actions/setup-matlab@v3
         with:
-          release: R2024b
+          release: R2025b
           products: Optimization_Toolbox
           cache: true
 

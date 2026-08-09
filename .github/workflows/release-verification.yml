@@ -1,0 +1,151 @@
+name: WaveVortexModel Package Verification
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "*.m"
+      - "@*/**"
+      - "FlowComponents/**"
+      - "Forcing/**"
+      - "ArgumentValidationFunctions/**"
+      - "FastTransforms/**"
+      - "Integrators/**"
+      - "ObservingSystems/**"
+      - "Operations/**"
+      - "Documentation/**"
+      - "docs/**"
+      - "tools/**"
+      - "resources/mpackage.json"
+      - "CHANGELOG.md"
+      - ".github/workflows/ci.yml"
+      - ".github/workflows/extended-ci.yml"
+      - ".github/workflows/release-mpm.yml"
+      - ".github/workflows/release-verification.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  OCEANKIT_COMMIT: eb6141e837b2a2d52db675d449ed0ac4c9a64bb5
+
+jobs:
+  clean-install:
+    name: Clean install / MATLAB R2025b
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check out WaveVortexModel
+        uses: actions/checkout@v6
+        with:
+          path: source
+          persist-credentials: false
+
+      - name: Check out immutable OceanKit packages
+        uses: actions/checkout@v6
+        with:
+          repository: JeffreyEarly/OceanKit
+          ref: ${{ env.OCEANKIT_COMMIT }}
+          path: OceanKit
+          persist-credentials: false
+
+      - name: Set up MATLAB R2025b
+        uses: matlab-actions/setup-matlab@v3
+        with:
+          release: R2025b
+          cache: true
+
+      - name: Create isolated MATLAB preferences
+        run: mkdir -p "${{ runner.temp }}/matlab-preferences-clean-install"
+
+      - name: Install and verify the authoring package
+        uses: matlab-actions/run-command@v3
+        env:
+          MATLAB_PREFDIR: ${{ runner.temp }}/matlab-preferences-clean-install
+        with:
+          command: >-
+            sourceRoot = fullfile(pwd,"source");
+            oceanKitRoot = fullfile(pwd,"OceanKit");
+            addpath(fullfile(sourceRoot,"tools"));
+            verifyWaveVortexModelPackage(sourceRoot,oceanKitRoot,expectedVersion="4.2.0")
+
+      - name: Verify clean source checkout
+        if: always()
+        working-directory: source
+        run: bash tools/checkCIWorkspaceCleanliness.sh
+
+  exported-package:
+    name: Exported package / MATLAB R2025b
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check out WaveVortexModel
+        uses: actions/checkout@v6
+        with:
+          path: source
+          persist-credentials: false
+
+      - name: Check out immutable OceanKit release tools and packages
+        uses: actions/checkout@v6
+        with:
+          repository: JeffreyEarly/OceanKit
+          ref: ${{ env.OCEANKIT_COMMIT }}
+          path: OceanKit
+          persist-credentials: false
+
+      - name: Set up MATLAB R2025b
+        uses: matlab-actions/setup-matlab@v3
+        with:
+          release: R2025b
+          cache: true
+
+      - name: Create isolated release workspace
+        run: |
+          git clone --no-hardlinks source "${{ runner.temp }}/wave-vortex-model-release-candidate"
+          git -C "${{ runner.temp }}/wave-vortex-model-release-candidate" checkout --detach "$(git -C source rev-parse HEAD)"
+          mkdir -p "${{ runner.temp }}/wave-vortex-model-release-output"
+          mkdir -p "${{ runner.temp }}/matlab-preferences-release"
+          mkdir -p "${{ runner.temp }}/matlab-preferences-export"
+
+      - name: Prepare unpublished 4.2.1 export
+        uses: matlab-actions/run-command@v3
+        env:
+          MATLAB_PREFDIR: ${{ runner.temp }}/matlab-preferences-release
+        with:
+          command: >-
+            sourceRoot = fullfile(pwd,"source");
+            candidateRoot = "${{ runner.temp }}/wave-vortex-model-release-candidate";
+            oceanKitRoot = fullfile(pwd,"OceanKit");
+            outputRoot = "${{ runner.temp }}/wave-vortex-model-release-output";
+            addpath(fullfile(sourceRoot,"tools"));
+            report = prepareWaveVortexModelReleaseCandidate(candidateRoot,oceanKitRoot,outputRoot);
+            save(fullfile(outputRoot,"candidate-report.mat"),"report")
+
+      - name: Install and verify the exported package
+        uses: matlab-actions/run-command@v3
+        env:
+          MATLAB_PREFDIR: ${{ runner.temp }}/matlab-preferences-export
+        with:
+          command: >-
+            sourceRoot = fullfile(pwd,"source");
+            oceanKitRoot = fullfile(pwd,"OceanKit");
+            exportRoot = "${{ runner.temp }}/wave-vortex-model-release-output/WaveVortexModel-4.2.1";
+            addpath(fullfile(sourceRoot,"tools"));
+            verifyWaveVortexModelPackage(exportRoot,oceanKitRoot,expectedVersion="4.2.1")
+
+      - name: Upload release-candidate diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: wave-vortex-model-release-candidate
+          path: ${{ runner.temp }}/wave-vortex-model-release-output
+          if-no-files-found: ignore
+
+      - name: Verify clean source checkout
+        if: always()
+        working-directory: source
+        run: bash tools/checkCIWorkspaceCleanliness.sh

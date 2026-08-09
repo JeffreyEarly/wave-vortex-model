@@ -5,10 +5,9 @@ arguments
     options.documentationPackageSpecifier (1,1) string {mustBeMember(options.documentationPackageSpecifier,["","ClassDocumentation@1.3.0"])} = ""
 end
 
-% MATLAB R2024b cannot read the schema 1.1 MPM manifests currently committed
-% by newer MATLAB releases. Issue #77 owns the clean MPM-install gate. Until
-% then, CI loads the exact package snapshots from the pinned OceanKit checkout
-% without modifying either repository.
+% Routine CI loads the pinned package snapshots directly to minimize setup
+% time. The release-verification workflow separately exercises native MPM
+% installation from a clean MATLAB path on the R2025b compatibility floor.
 snapshotNames = [
     "Distributions-2.0.0"
     "SplineCore-2.2.0"
