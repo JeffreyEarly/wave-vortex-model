@@ -53,6 +53,10 @@ websiteFolder = "classes/flow-components";
 writeClassDocumentation("WVFlowComponent",buildFolder,websiteFolder,parentName,classFolderName,parentName,1,{'handle'},string.empty(0,1));
 classes = ["WVPrimaryFlowComponent" "WVTotalFlowComponent" "WVGeostrophicComponent" "WVInternalGravityWaveComponent" "WVInertialOscillationComponent" "WVMeanDensityAnomalyComponent"];
 writeClassGroup(classes,buildFolder,websiteFolder,parentName,classFolderName,parentName,2,{'handle','WVFlowComponent'},string.empty(0,1));
+
+parentName = "Developer internals";
+websiteFolder = "classes/developer-internals";
+writeClassDocumentation("WVFourierStorageLayout",buildFolder,websiteFolder,parentName,classFolderName,parentName,1,{'handle'},string.empty(0,1));
 end
 
 function writeVersionHistory(repositoryRoot,buildFolder)

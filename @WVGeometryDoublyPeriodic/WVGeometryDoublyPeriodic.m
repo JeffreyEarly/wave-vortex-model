@@ -131,7 +131,7 @@ classdef WVGeometryDoublyPeriodic < CAAnnotatedClass
         % legacy vertically replicated index into the active Fourier storage
         %
         % Materialized lazily for compatibility. Production transforms use
-        % WVFourierSpectrumLayout two-dimensional mappings instead.
+        % WVFourierStorageLayout two-dimensional mappings instead.
         %
         % - Topic: Domain attributes — WV grid
         dftPrimaryIndex uint64
@@ -1018,16 +1018,16 @@ classdef WVGeometryDoublyPeriodic < CAAnnotatedClass
             if self.legacyMappingsAreMaterialized
                 return
             end
-            [self.legacyDftPrimaryIndex,self.legacyDftConjugateIndex,self.legacyWvConjugateIndex] = self.fastTransform.fourierSpectrumLayout.expandedLegacyMappings(self.Nz);
+            [self.legacyDftPrimaryIndex,self.legacyDftConjugateIndex,self.legacyWvConjugateIndex] = self.fastTransform.fourierStorageLayout.expandedLegacyMappings(self.Nz);
             self.legacyMappingsAreMaterialized = true;
         end
     end
 
     methods (Hidden)
-        function diagnostics = fourierSpectrumLayoutDiagnostics(self)
-            layout = self.fastTransform.fourierSpectrumLayout;
+        function diagnostics = fourierStorageLayoutDiagnostics(self)
+            layout = self.fastTransform.fourierStorageLayout;
             legacyMappingBytes = 8*(numel(self.legacyDftPrimaryIndex)+numel(self.legacyDftConjugateIndex)+numel(self.legacyWvConjugateIndex));
-            diagnostics = struct("storageType",layout.storageType,"compressedDimension",layout.compressedDimension,"storageShape",layout.storageShape,"mappingStrategy",layout.mappingStrategy,"mappingBytes",layout.mappingBytes,"mappingLedger",layout.mappingLedger(),"legacyMappingsAreMaterialized",self.legacyMappingsAreMaterialized,"legacyMappingBytes",legacyMappingBytes);
+            diagnostics = struct("fourierStorageType",layout.fourierStorageType,"compressedDimension",layout.compressedDimension,"fourierStorageSize",layout.fourierStorageSize,"mappingMethod",layout.mappingMethod,"mappingMemoryBytes",layout.mappingMemoryBytes,"mappingMemoryUsage",layout.mappingMemoryUsage(),"legacyMappingsAreMaterialized",self.legacyMappingsAreMaterialized,"legacyMappingBytes",legacyMappingBytes);
         end
     end
 

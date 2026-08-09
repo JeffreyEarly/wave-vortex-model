@@ -20,7 +20,9 @@ end
 end
 
 function [topicPath,isDeveloper] = topicForMember(className,name)
-if startsWith(className,"WVTransform")
+if className == "WVFourierStorageLayout"
+    [topicPath,isDeveloper] = fourierStorageLayoutTopic(name);
+elseif startsWith(className,"WVTransform")
     [topicPath,isDeveloper] = transformTopic(name);
 elseif className == "WVModel"
     [topicPath,isDeveloper] = modelTopic(name);
@@ -42,6 +44,29 @@ elseif contains(className,"FlowComponent") || endsWith(className,"Component")
 else
     topicPath = "Class internals";
     isDeveloper = true;
+end
+end
+
+function [topicPath,isDeveloper] = fourierStorageLayoutTopic(name)
+isDeveloper = true;
+if ismember(name,["WVFourierStorageLayout","horizontalGridSize", ...
+        "fourierStorageSize","nFourierStorageRows","Nkl", ...
+        "fourierStorageType","compressedDimension","mappingMethod"])
+    topicPath = "Describe Fourier storage";
+elseif ismember(name,["fourierRowsForDirectWVIndices","directWVIndices", ...
+        "fourierRowsForConjugatedWVIndices","conjugatedWVIndices", ...
+        "hermitianCompletionRows","hermitianSourceRows", ...
+        "hermitianSourceWVIndices","selfConjugateFourierRows", ...
+        "transformFromFourierStorageToWVGrid", ...
+        "transformFromWVGridToFourierStorage"])
+    topicPath = "Map Fourier storage and WV grid";
+elseif ismember(name,["allocateFourierStorage", ...
+        "reshapeFourierStorageToRows","reshapeFourierRowsToStorage"])
+    topicPath = "Manage Fourier storage";
+elseif ismember(name,["mappingMemoryBytes","mappingMemoryUsage"])
+    topicPath = "Inspect Fourier storage";
+else
+    topicPath = "Legacy compatibility";
 end
 end
 

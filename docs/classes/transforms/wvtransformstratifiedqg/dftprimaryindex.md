@@ -22,4 +22,4 @@ legacy vertically replicated index into the active Fourier storage
 ## Discussion
 
 Materialized lazily for compatibility. Production transforms use
-WVFourierSpectrumLayout two-dimensional mappings instead.
+WVFourierStorageLayout two-dimensional mappings instead.

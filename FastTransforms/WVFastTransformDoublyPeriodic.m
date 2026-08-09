@@ -1,6 +1,6 @@
 classdef WVFastTransformDoublyPeriodic < handle
     properties (SetAccess=protected)
-        fourierSpectrumLayout
+        fourierStorageLayout
     end
 
     methods (Abstract)
