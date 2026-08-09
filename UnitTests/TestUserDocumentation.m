@@ -135,6 +135,26 @@ classdef TestUserDocumentation < matlab.unittest.TestCase
             testCase.verifyEqual(canonicalCNAME,"wavevortexmodel.org");
             testCase.verifyEqual(generatedCNAME,canonicalCNAME);
         end
+
+        function renderingSensitiveMarkupIsWellFormed(testCase)
+            transformGuide = testCase.readCanonical(fullfile("users-guide","using-the-wvtransform.md"));
+            testCase.verifySubstring(transformGuide,'$$5 \leq \lvert\mathrm{latitude}\rvert \leq 85$$');
+            testCase.verifyFalse(contains(transformGuide,'|\mathrm{latitude}|'));
+
+            forcingGuide = testCase.readCanonical(fullfile("users-guide","adding-forcing.md"));
+            equationStart = strfind(forcingGuide,"$$" + newline + "    \begin{align}");
+            equationEnd = strfind(forcingGuide,"    \end{align}" + newline + "$$");
+            explanatoryText = strfind(forcingGuide,"and implemented by overriding `addSpectralForcing`");
+            testCase.verifyNumElements(equationStart,1);
+            testCase.verifyNumElements(equationEnd,1);
+            testCase.verifyNumElements(explanatoryText,1);
+            testCase.verifyLessThan(equationStart,equationEnd);
+            testCase.verifyLessThan(equationEnd,explanatoryText);
+
+            advancedGuide = testCase.readCanonical(fullfile("users-guide","reading-and-writing-to-file-advanced.md"));
+            testCase.verifyMatches(advancedGuide,'(?m)^title: "Reading and writing files: advanced topics"$');
+            testCase.verifyMatches(advancedGuide,'(?m)^parent: User guide$');
+        end
     end
 
     methods (Access=private)

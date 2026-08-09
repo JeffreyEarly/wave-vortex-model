@@ -14,6 +14,10 @@ markdownFiles = files(endsWith(files,".md"));
 for relativePath = markdownFiles'
     pagePath = fullfile(documentationRoot,relativePath);
     pageText = string(fileread(pagePath));
+    sourceDiagnostics = documentationSourceDiagnostics(pageText);
+    for diagnostic = sourceDiagnostics'
+        diagnostics(end+1,1) = relativePath + ": " + diagnostic;
+    end
     malformedDiagnostics = malformedLinkDiagnostics(pageText);
     for diagnostic = malformedDiagnostics'
         diagnostics(end+1,1) = relativePath + ": " + diagnostic;
@@ -26,21 +30,6 @@ for relativePath = markdownFiles'
         end
     end
 end
-
-function diagnostics = malformedLinkDiagnostics(pageText)
-diagnostics = strings(0,1);
-markdownStarts = regexp(pageText,'!?\[[^\]]*\]\(','start');
-markdownLinks = regexp(pageText,'!?\[[^\]]*\]\([^)]*\)','start');
-if numel(markdownStarts) ~= numel(markdownLinks)
-    diagnostics(end+1,1) = "malformed Markdown link or image";
-end
-htmlStarts = regexp(pageText,'(?i:href|src)\s*=\s*["'']','start');
-htmlLinks = regexp(pageText,'(?i:href|src)\s*=\s*(?:"[^"]*"|''[^'']*'')','start');
-if numel(htmlStarts) ~= numel(htmlLinks)
-    diagnostics(end+1,1) = "malformed HTML href or src attribute";
-end
-end
-
 if options.ShouldCheckHierarchy
     diagnostics = [diagnostics; hierarchyDiagnostics(documentationRoot,markdownFiles)];
 end
@@ -246,11 +235,141 @@ end
 end
 
 function value = frontMatterValue(pageText,name)
+[frontMatter,didFindFrontMatter] = frontMatterBlock(pageText);
+if ~didFindFrontMatter
+    value = "";
+    return
+end
 expression = '(?m)^' + regexptranslate("escape",name) + ':\s*(?<value>[^\r\n]+)\s*$';
-match = regexp(pageText,expression,'names','once');
+match = regexp(frontMatter,expression,'names','once');
 if isempty(match)
     value = "";
 else
     value = strtrim(string(match.value));
+    if strlength(value) >= 2 && ((startsWith(value,'"') && endsWith(value,'"')) || (startsWith(value,"'") && endsWith(value,"'")))
+        quotedValue = char(value);
+        value = string(quotedValue(2:end-1));
+    end
+end
+end
+
+function [frontMatter,didFindFrontMatter] = frontMatterBlock(pageText)
+normalizedText = replace(pageText,sprintf("\r\n"),newline);
+lines = split(normalizedText,newline);
+if isempty(lines) || strip(lines(1)) ~= "---"
+    didFindFrontMatter = false;
+    frontMatter = "";
+    return
+end
+closingDelimiter = find(strip(lines(2:end)) == "---",1,"first") + 1;
+didFindFrontMatter = ~isempty(closingDelimiter);
+if didFindFrontMatter
+    frontMatter = strjoin(lines(2:closingDelimiter-1),newline);
+else
+    frontMatter = "";
+end
+end
+
+function diagnostics = documentationSourceDiagnostics(pageText)
+diagnostics = [frontMatterDiagnostics(pageText); mathMarkupDiagnostics(pageText)];
+end
+
+function diagnostics = frontMatterDiagnostics(pageText)
+diagnostics = strings(0,1);
+if ~startsWith(pageText,"---" + newline) && ~startsWith(pageText,"---" + sprintf("\r\n"))
+    return
+end
+
+[frontMatter,didFindFrontMatter] = frontMatterBlock(pageText);
+if ~didFindFrontMatter
+    diagnostics(end+1,1) = "unterminated front matter";
+    return
+end
+
+lines = splitlines(frontMatter);
+frontMatterKeys = strings(0,1);
+for line = lines'
+    frontMatterLine = strip(line);
+    if frontMatterLine == "" || startsWith(frontMatterLine,"#")
+        continue
+    end
+    match = regexp(frontMatterLine,'^(?<key>[A-Za-z_][A-Za-z0-9_-]*):(?<value>.*)$','names','once');
+    if isempty(match)
+        diagnostics(end+1,1) = "malformed front matter line: " + frontMatterLine;
+        continue
+    end
+    key = string(match.key);
+    value = strtrim(string(match.value));
+    if any(frontMatterKeys == key)
+        diagnostics(end+1,1) = "duplicate front matter key " + key;
+    end
+    frontMatterKeys(end+1,1) = key;
+
+    isDoubleQuoted = startsWith(value,'"') && endsWith(value,'"');
+    isSingleQuoted = startsWith(value,"'") && endsWith(value,"'");
+    if xor(startsWith(value,'"'),endsWith(value,'"')) || xor(startsWith(value,"'"),endsWith(value,"'"))
+        diagnostics(end+1,1) = "malformed quoted front matter value for key " + key;
+    end
+    if contains(value,": ") && ~isDoubleQuoted && ~isSingleQuoted
+        diagnostics(end+1,1) = "front matter value containing ': ' must be quoted for key " + key;
+    end
+end
+end
+
+function diagnostics = mathMarkupDiagnostics(pageText)
+diagnostics = strings(0,1);
+mathScanText = maskMathDelimitersInCode(pageText);
+delimiterLocations = strfind(mathScanText,"$$");
+if mod(numel(delimiterLocations),2) ~= 0
+    diagnostics(end+1,1) = "unbalanced display-math delimiters";
+else
+    for iDelimiter = 1:2:numel(delimiterLocations)
+        openingLocation = delimiterLocations(iDelimiter);
+        closingLocation = delimiterLocations(iDelimiter+1);
+        mathContent = extractBetween(pageText,openingLocation+2,closingLocation-1);
+        isInline = ~contains(extractBetween(mathScanText,openingLocation,closingLocation+1),newline);
+        if isInline
+            if ~isempty(regexp(mathContent,'(?<!\\)\|','once'))
+                diagnostics(end+1,1) = "inline math contains an unescaped vertical bar; use \\lvert and \\rvert";
+            end
+            continue
+        end
+        if contains(mathContent,"```")
+            diagnostics(end+1,1) = "fenced code appears inside a display-math block";
+        elseif contains(mathContent,"`")
+            diagnostics(end+1,1) = "Markdown backticks appear inside a display-math block";
+        end
+        if ~isempty(regexp(mathContent,'!?\[[^\]]*\]\([^)]*\)','once'))
+            diagnostics(end+1,1) = "Markdown link or image appears inside a display-math block";
+        end
+        if ~isempty(regexp(mathContent,'(?m)^\s*#{1,6}\s+\S','once'))
+            diagnostics(end+1,1) = "Markdown heading appears inside a display-math block";
+        end
+    end
+end
+diagnostics = unique(diagnostics,'stable');
+end
+
+function maskedText = maskMathDelimitersInCode(pageText)
+maskedText = char(pageText);
+[codeStarts,codeEnds] = regexp(maskedText,'(?s)```.*?```|(?m)(?<!`)`[^`\r\n]*`(?!`)','start','end');
+for iCode = 1:numel(codeStarts)
+    codeText = maskedText(codeStarts(iCode):codeEnds(iCode));
+    maskedText(codeStarts(iCode):codeEnds(iCode)) = strrep(codeText,'$$','  ');
+end
+maskedText = string(maskedText);
+end
+
+function diagnostics = malformedLinkDiagnostics(pageText)
+diagnostics = strings(0,1);
+markdownStarts = regexp(pageText,'!?\[[^\]]*\]\(','start');
+markdownLinks = regexp(pageText,'!?\[[^\]]*\]\([^)]*\)','start');
+if numel(markdownStarts) ~= numel(markdownLinks)
+    diagnostics(end+1,1) = "malformed Markdown link or image";
+end
+htmlStarts = regexp(pageText,'(?i:href|src)\s*=\s*["'']','start');
+htmlLinks = regexp(pageText,'(?i:href|src)\s*=\s*(?:"[^"]*"|''[^'']*'')','start');
+if numel(htmlStarts) ~= numel(htmlLinks)
+    diagnostics(end+1,1) = "malformed HTML href or src attribute";
 end
 end

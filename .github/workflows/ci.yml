@@ -99,12 +99,33 @@ jobs:
             cd(sourceRoot);
             buildtool docs:check
 
+      - name: Build rendered website
+        uses: actions/jekyll-build-pages@v1
+        with:
+          source: ./source/docs
+          destination: ./rendered-site
+
+      - name: Verify rendered website
+        uses: matlab-actions/run-command@v3
+        with:
+          command: >-
+            addpath(fullfile(pwd,"source","tools"));
+            validateRenderedWebsite(fullfile(pwd,"rendered-site"))
+
       - name: Upload generated documentation diagnostics
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: r2024b-generated-documentation
           path: ${{ runner.temp }}/wave-vortex-model-generated-docs
+          if-no-files-found: ignore
+
+      - name: Upload rendered website diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: r2024b-rendered-website
+          path: rendered-site
           if-no-files-found: ignore
 
       - name: Verify clean source checkout
