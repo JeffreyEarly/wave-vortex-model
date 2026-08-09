@@ -60,7 +60,6 @@ wvt.addForcing(WVBottomFrictionLinear(r=1/(200*86400)));
 
 
 
-
 ## Topics
 + Create forcing and closures
   + [`WVBottomFrictionLinear`](/classes/forcing/wvbottomfrictionlinear/wvbottomfrictionlinear.html) initialize the WVBottomFrictionLinear

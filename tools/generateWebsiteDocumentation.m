@@ -110,13 +110,11 @@ function normalizeReflectedDocumentation(documentation)
 classMetadata = meta.class.fromName(documentation.name);
 classDescription = ClassDocumentation.trimDeclarationFromString(classMetadata.DetailedDescription);
 classDescription = Topic.trimTopicsFromString(classDescription);
-documentation.detailedDescription = removeCommonIndent(classDescription);
+documentation.detailedDescription = regexprep(removeCommonIndent(classDescription),'(?:\r?\n){3,}','\n\n');
 
 for iMethod = 1:numel(documentation.allMethodDocumentation)
     methodDocumentation = documentation.allMethodDocumentation(iMethod);
-    if ~isempty(methodDocumentation.detailedDescription)
-        methodDocumentation.detailedDescription = removeCommonIndent(methodDocumentation.detailedDescription);
-    end
+    methodDocumentation.detailedDescription = normalizedReflectedDescription(classMetadata,methodDocumentation);
     if string(methodDocumentation.name) == documentation.name && ...
             ~isempty(methodDocumentation.detailedDescription) && ...
             isequal(strtrim(string(methodDocumentation.detailedDescription)),strtrim(string(documentation.detailedDescription)))
@@ -127,6 +125,56 @@ for iMethod = 1:numel(documentation.allMethodDocumentation)
         methodDocumentation.declaration = [];
     end
 end
+end
+
+function description = normalizedReflectedDescription(classMetadata,methodDocumentation)
+description = methodDocumentation.detailedDescription;
+if isempty(description)
+    return
+end
+methodMetadata = classMetadata.MethodList;
+for iMetadata = 1:numel(methodMetadata)
+    item = methodMetadata(iMetadata);
+    if string(item.Name) == string(methodDocumentation.name) && ...
+            string(item.DefiningClass.Name) == string(methodDocumentation.definingClassName)
+        normalizedMetadata = MethodDocumentation(methodDocumentation.name);
+        normalizedMetadata.addMetadataFromDetailedDescription(char(removeCommonIndent(item.DetailedDescription)));
+        if descriptionsDifferOnlyByIndent(description,normalizedMetadata.detailedDescription)
+            description = normalizedMetadata.detailedDescription;
+        else
+            description = removeCommonIndent(description);
+        end
+        return
+    end
+end
+propertyMetadata = classMetadata.PropertyList;
+for iMetadata = 1:numel(propertyMetadata)
+    item = propertyMetadata(iMetadata);
+    if string(item.Name) == string(methodDocumentation.name) && ...
+            string(item.DefiningClass.Name) == string(methodDocumentation.definingClassName)
+        normalizedMetadata = MethodDocumentation(methodDocumentation.name);
+        normalizedMetadata.addMetadataFromDetailedDescription(char(removeCommonIndent(item.DetailedDescription)));
+        if descriptionsDifferOnlyByIndent(description,normalizedMetadata.detailedDescription)
+            description = normalizedMetadata.detailedDescription;
+        else
+            description = removeCommonIndent(description);
+        end
+        return
+    end
+end
+description = removeCommonIndent(methodDocumentation.detailedDescription);
+end
+
+function tf = descriptionsDifferOnlyByIndent(first,second)
+if isempty(first) || isempty(second)
+    tf = false;
+    return
+end
+first = regexprep(char(first),'\r\n?','\n');
+second = regexprep(char(second),'\r\n?','\n');
+first = regexprep(first,'^[ \t]+','','lineanchors');
+second = regexprep(second,'^[ \t]+','','lineanchors');
+tf = strcmp(strtrim(first),strtrim(second));
 end
 
 function text = removeCommonIndent(text)

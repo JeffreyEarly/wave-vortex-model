@@ -40,7 +40,6 @@ views are `Apt`, `Amt`, and `A0t`.
 
 
 
-
 ## Topics
 + Create and restore a transform
   + [`WVTransformConstantStratification`](/classes/transforms/wvtransformconstantstratification/wvtransformconstantstratification.html) Create a wave-vortex transform for constant stratification.

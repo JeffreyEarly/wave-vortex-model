@@ -41,7 +41,6 @@ The quasigeostrophic state is stored in
 
 
 
-
 ## Topics
 + Create and restore a transform
   + [`WVTransformBarotropicQG`](/classes/transforms/wvtransformbarotropicqg/wvtransformbarotropicqg.html) Create an equivalent-barotropic quasigeostrophic transform.

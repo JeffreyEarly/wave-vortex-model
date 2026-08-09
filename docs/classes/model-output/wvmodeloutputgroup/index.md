@@ -49,7 +49,6 @@ outputFile.addOutputGroup(outputGroup);
 
 
 
-
 ## Topics
 + Create model output
   + [`WVModelOutputGroup`](/classes/model-output/wvmodeloutputgroup/wvmodeloutputgroup.html) initialize a WVModelOutputGroup

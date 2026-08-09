@@ -82,7 +82,6 @@ So arguably they're under-damped in a non-hydrostatic simulation.
 
 
 
-
 ## Topics
 + Create forcing and closures
   + [`WVAdaptiveDamping`](/classes/forcing/closures/wvadaptivedamping/wvadaptivedamping.html) initialize the WVAdaptiveDamping
