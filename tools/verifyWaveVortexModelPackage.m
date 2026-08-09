@@ -149,8 +149,11 @@ require(model.t == 60,"The installed linear model did not advance to the request
 
 N2 = @(z) 2e-5*exp(z/4000);
 variableWvt = WVTransformHydrostatic(Lxyz,Nxyz,N2Function=N2,latitude=45,shouldAntialias=false);
-require(all(isfinite(variableWvt.F),"all") && all(isfinite(variableWvt.G),"all"), ...
-    "The installed variable-stratification transform did not construct finite modes.");
+variableWvt.initWithWaveModes(kMode=1,lMode=1,j=1,phi=0,u=0.01,sign=1);
+[variableU,variableEta] = variableWvt.variableWithName("u","eta");
+require(all(isfinite(variableWvt.N2),"all") && any(abs(variableU)>0,"all") && ...
+    all(isfinite(variableU),"all") && all(isfinite(variableEta),"all"), ...
+    "The installed variable-stratification transform did not evaluate finite wave fields.");
 
 statePath = string(tempname) + ".nc";
 fileCleanup = onCleanup(@()deleteIfPresent(statePath));
@@ -171,7 +174,7 @@ delete(statePath);
 clear fileCleanup
 
 report = struct("finalTime",model.t,"maximumU",max(abs(u),[],"all"), ...
-    "variableModeCount",size(variableWvt.F,2));
+    "variableModeCount",nnz(variableWvt.Ap) + nnz(variableWvt.Am));
 end
 
 function paths = canonicalExistingPaths(paths)
