@@ -30,7 +30,7 @@ classdef TestProductionCodeAnalyzer < matlab.unittest.TestCase
             expectedFiles = [
                 "WVOperation.m"
                 "@WVTransform/WVTransform.m"
-                "FastTransforms/WVFourierSpectrumLayout.m"
+                "FastTransforms/WVFourierStorageLayout.m"
                 "FastTransforms/@WVFastTransformDoublyPeriodicFFTW/WVFastTransformDoublyPeriodicFFTW.m"
                 "Forcing/WVNonlinearAdvection.m"
                 "ObservingSystems/WVLagrangianParticles.m"

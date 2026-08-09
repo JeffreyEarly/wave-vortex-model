@@ -1,5 +1,5 @@
-function results = runWVFourierSpectrumLayoutIntegrationBenchmark(options)
-% Compare the production row layout with the frozen issue-69 baseline.
+function results = runWVFourierStorageLayoutIntegrationBenchmark(options)
+% Compare the production Fourier-storage layout with issue #69.
 arguments
     options.caseIds (1,:) string = strings(1,0)
     options.outputDirectory (1,1) string = ""
@@ -32,7 +32,7 @@ if options.runId == ""
     options.runId = string(datetime("now","TimeZone","UTC","Format","yyyyMMdd'T'HHmmss'Z'"));
 end
 if options.outputDirectory == ""
-    options.outputDirectory = fullfile(benchmarkFolder,"results","runs",options.runId + "-layout-integration-" + computer("arch") + "-" + version("-release"));
+    options.outputDirectory = fullfile(benchmarkFolder,"results","runs",options.runId + "-storage-layout-integration-" + computer("arch") + "-" + version("-release"));
 end
 
 operationIds = ["extract" "insert-primary" "insert-conjugate" "insert-complete" "forward-complete" "inverse-complete"];
@@ -73,14 +73,14 @@ Nz = benchmarkCase.Nxyz(3);
 rng(benchmarkCase.seed,"twister");
 geometry = WVGeometryDoublyPeriodic(benchmarkCase.Lxyz(1:2),[Nx Ny],Nz=Nz,shouldAntialias=benchmarkCase.shouldAntialias,shouldExcludeNyquist=true,shouldExcludeConjugates=true,conjugateDimension=2,fastTransform="builtin");
 transform = geometry.fastTransform;
-layout = transform.fourierSpectrumLayout;
+layout = transform.fourierStorageLayout;
 realInput = randn(Nx,Ny,Nz);
 fullSpectrum = fft(fft(realInput,Nx,1),Ny,2)/(Nx*Ny);
-fullSpectrumRows = reshape(fullSpectrum,layout.storageRowCount,[]);
-referenceWV = fullSpectrumRows(layout.directStorageRows,:).';
-referenceRows = layout.allocateStorage(Nz);
-referenceRows = layout.insertCanonical(referenceRows,referenceWV);
-referenceInverse = ifft(ifft(layout.spectrumFromRows(referenceRows),Nx,1),Ny,2,"symmetric")*(Nx*Ny);
+fullSpectrumRows = reshape(fullSpectrum,layout.nFourierStorageRows,[]);
+referenceWV = fullSpectrumRows(layout.fourierRowsForDirectWVIndices,:).';
+referenceRows = layout.allocateFourierStorage(Nz);
+referenceRows = layout.transformFromWVGridToFourierStorage(referenceRows,referenceWV);
+referenceInverse = ifft(ifft(layout.reshapeFourierRowsToStorage(referenceRows),Nx,1),Ny,2,"symmetric")*(Nx*Ny);
 buffer = WVTransformLayoutBenchmarkBuffer([Nx Ny Nz],"rows-2d");
 
 errors = validateProduction(transform,layout,buffer,fullSpectrum,realInput,referenceWV,referenceRows,referenceInverse);
@@ -130,7 +130,7 @@ for iOperation = 1:numel(operationIds)
         "performancePassed",~isGate || ratio <= 1+gateTolerance);
 end
 
-diagnostics = geometry.fourierSpectrumLayoutDiagnostics();
+diagnostics = geometry.fourierStorageLayoutDiagnostics();
 caseResult = struct( ...
     "id",benchmarkCase.id, ...
     "Nxyz",benchmarkCase.Nxyz, ...
@@ -141,9 +141,9 @@ caseResult = struct( ...
     "isGate",isGate, ...
     "status","complete", ...
     "failure",emptyFailure(), ...
-    "mappingStrategy",layout.mappingStrategy, ...
-    "storageShape",layout.storageShape, ...
-    "mappingBytes",layout.mappingBytes, ...
+    "mappingMethod",layout.mappingMethod, ...
+    "fourierStorageSize",layout.fourierStorageSize, ...
+    "mappingMemoryBytes",layout.mappingMemoryBytes, ...
     "legacyMappingsAreMaterialized",diagnostics.legacyMappingsAreMaterialized, ...
     "legacyMappingBytes",diagnostics.legacyMappingBytes, ...
     "persistentBufferBytes",complexArrayBytes(transform.complexBuffer), ...
@@ -156,11 +156,11 @@ function errors = validateProduction(transform,layout,buffer,fullSpectrum,realIn
 extracted = executeOperation("extract",transform,layout,buffer,fullSpectrum,referenceWV,realInput);
 buffer.reset();
 executeOperation("insert-primary",transform,layout,buffer,fullSpectrum,referenceWV,realInput);
-primaryError = relativeError(buffer.value(layout.directStorageRows,:),referenceRows(layout.directStorageRows,:));
+primaryError = relativeError(buffer.value(layout.fourierRowsForDirectWVIndices,:),referenceRows(layout.fourierRowsForDirectWVIndices,:));
 buffer.reset();
-buffer.value(layout.directStorageRows,:) = referenceRows(layout.directStorageRows,:);
+buffer.value(layout.fourierRowsForDirectWVIndices,:) = referenceRows(layout.fourierRowsForDirectWVIndices,:);
 executeOperation("insert-conjugate",transform,layout,buffer,fullSpectrum,referenceWV,realInput);
-completionRows = [layout.completionStorageRows;layout.selfConjugateStorageRows];
+completionRows = [layout.hermitianCompletionRows;layout.selfConjugateFourierRows];
 conjugateError = relativeError(buffer.value(completionRows,:),referenceRows(completionRows,:));
 buffer.reset();
 executeOperation("insert-complete",transform,layout,buffer,fullSpectrum,referenceWV,realInput);
@@ -178,25 +178,25 @@ end
 function output = executeOperation(operationId,transform,layout,buffer,fullSpectrum,wvInput,realInput)
 switch operationId
     case "extract"
-        output = layout.extractCanonical(reshape(fullSpectrum,layout.storageRowCount,[]));
+        output = layout.transformFromFourierStorageToWVGrid(reshape(fullSpectrum,layout.nFourierStorageRows,[]));
     case "insert-primary"
-        buffer.value(layout.directStorageRows,:) = wvInput(:,layout.directWVColumns).';
+        buffer.value(layout.fourierRowsForDirectWVIndices,:) = wvInput(:,layout.directWVIndices).';
         output = [];
     case "insert-conjugate"
-        if ~isempty(layout.completionStorageRows)
-            buffer.value(layout.completionStorageRows,:) = conj(wvInput(:,layout.completionWVColumns).');
+        if ~isempty(layout.hermitianCompletionRows)
+            buffer.value(layout.hermitianCompletionRows,:) = conj(wvInput(:,layout.hermitianSourceWVIndices).');
         end
-        if ~isempty(layout.selfConjugateStorageRows)
-            buffer.value(layout.selfConjugateStorageRows,:) = real(buffer.value(layout.selfConjugateStorageRows,:));
+        if ~isempty(layout.selfConjugateFourierRows)
+            buffer.value(layout.selfConjugateFourierRows,:) = real(buffer.value(layout.selfConjugateFourierRows,:));
         end
         output = [];
     case "insert-complete"
-        buffer.value(layout.directStorageRows,:) = wvInput(:,layout.directWVColumns).';
-        if ~isempty(layout.completionStorageRows)
-            buffer.value(layout.completionStorageRows,:) = conj(wvInput(:,layout.completionWVColumns).');
+        buffer.value(layout.fourierRowsForDirectWVIndices,:) = wvInput(:,layout.directWVIndices).';
+        if ~isempty(layout.hermitianCompletionRows)
+            buffer.value(layout.hermitianCompletionRows,:) = conj(wvInput(:,layout.hermitianSourceWVIndices).');
         end
-        if ~isempty(layout.selfConjugateStorageRows)
-            buffer.value(layout.selfConjugateStorageRows,:) = real(buffer.value(layout.selfConjugateStorageRows,:));
+        if ~isempty(layout.selfConjugateFourierRows)
+            buffer.value(layout.selfConjugateFourierRows,:) = real(buffer.value(layout.selfConjugateFourierRows,:));
         end
         output = [];
     case "forward-complete"
@@ -298,7 +298,7 @@ writeText(fullfile(outputDirectory,"summary.md"),summaryText(results));
 end
 
 function summary = summaryText(results)
-lines = ["# Fourier spectrum layout integration";"";"- Status: `" + results.status + "`";"- Gate passed: `" + string(results.readiness.passed) + "`";"- Reference: WaveVortex issue #69 (`wv-sorted-linear`)";"- Gate: no operation above `1.03x` the frozen median on the 256 and 512 workloads";"";"## Timing and frozen-baseline comparison";"";"| Case | Antialias | Gate | Operation | Production (ms) | Issue #69 (ms) | Relative | Error | Pass |";"|---|---:|---|---|---:|---:|---:|---:|---|"];
+lines = ["# Fourier storage layout integration";"";"- Status: `" + results.status + "`";"- Gate passed: `" + string(results.readiness.passed) + "`";"- Reference: WaveVortex issue #69 (`wv-sorted-linear`)";"- Gate: no operation above `1.03x` the frozen median on the 256 and 512 workloads";"";"## Timing and frozen-baseline comparison";"";"| Case | Antialias | Gate | Operation | Production (ms) | Issue #69 (ms) | Relative | Error | Pass |";"|---|---:|---|---|---:|---:|---:|---:|---|"];
 for benchmarkCase = results.cases
     if benchmarkCase.status ~= "complete"
         lines(end+1) = "| " + benchmarkCase.id + " | " + string(benchmarkCase.shouldAntialias) + " | " + yesNo(benchmarkCase.isGate) + " | failed | NaN | NaN | NaN | NaN | no |"; %#ok<AGROW>
@@ -311,7 +311,7 @@ end
 lines = [lines;"";"## Storage contract";"";"| Case | Strategy | Mapping (MiB) | Persistent full buffer (MiB) | Legacy maps materialized | Legacy map bytes |";"|---|---|---:|---:|---|---:|"];
 for benchmarkCase = results.cases
     if benchmarkCase.status == "complete"
-        lines(end+1) = sprintf("| %s | %s | %.3f | %.3f | %s | %d |",benchmarkCase.id,benchmarkCase.mappingStrategy,benchmarkCase.mappingBytes/2^20,benchmarkCase.persistentBufferBytes/2^20,yesNo(benchmarkCase.legacyMappingsAreMaterialized),benchmarkCase.legacyMappingBytes); %#ok<AGROW>
+        lines(end+1) = sprintf("| %s | %s | %.3f | %.3f | %s | %d |",benchmarkCase.id,benchmarkCase.mappingMethod,benchmarkCase.mappingMemoryBytes/2^20,benchmarkCase.persistentBufferBytes/2^20,yesNo(benchmarkCase.legacyMappingsAreMaterialized),benchmarkCase.legacyMappingBytes); %#ok<AGROW>
     end
 end
 if ~isempty(results.readiness.failedCriteria)
@@ -376,11 +376,11 @@ rng(originalRng);
 end
 
 function result = failedCase(benchmarkCase,exception)
-result = struct("id",benchmarkCase.id,"Nxyz",benchmarkCase.Nxyz,"shouldAntialias",benchmarkCase.shouldAntialias,"seed",benchmarkCase.seed,"warmupCount",benchmarkCase.warmupCount,"sampleCount",benchmarkCase.sampleCount,"isGate",isGateSize(benchmarkCase.Nxyz),"status","failed","failure",struct("identifier",string(exception.identifier),"message",string(exception.message),"stack",string({exception.stack.name})),"mappingStrategy","","storageShape",[],"mappingBytes",NaN,"legacyMappingsAreMaterialized",false,"legacyMappingBytes",NaN,"persistentBufferBytes",NaN,"warmupSchedules",strings(0,0),"sampleSchedules",strings(0,0),"operations",emptyOperationResults());
+result = struct("id",benchmarkCase.id,"Nxyz",benchmarkCase.Nxyz,"shouldAntialias",benchmarkCase.shouldAntialias,"seed",benchmarkCase.seed,"warmupCount",benchmarkCase.warmupCount,"sampleCount",benchmarkCase.sampleCount,"isGate",isGateSize(benchmarkCase.Nxyz),"status","failed","failure",struct("identifier",string(exception.identifier),"message",string(exception.message),"stack",string({exception.stack.name})),"mappingMethod","","fourierStorageSize",[],"mappingMemoryBytes",NaN,"legacyMappingsAreMaterialized",false,"legacyMappingBytes",NaN,"persistentBufferBytes",NaN,"warmupSchedules",strings(0,0),"sampleSchedules",strings(0,0),"operations",emptyOperationResults());
 end
 
 function results = emptyCaseResults()
-results = struct("id",{},"Nxyz",{},"shouldAntialias",{},"seed",{},"warmupCount",{},"sampleCount",{},"isGate",{},"status",{},"failure",{},"mappingStrategy",{},"storageShape",{},"mappingBytes",{},"legacyMappingsAreMaterialized",{},"legacyMappingBytes",{},"persistentBufferBytes",{},"warmupSchedules",{},"sampleSchedules",{},"operations",{});
+results = struct("id",{},"Nxyz",{},"shouldAntialias",{},"seed",{},"warmupCount",{},"sampleCount",{},"isGate",{},"status",{},"failure",{},"mappingMethod",{},"fourierStorageSize",{},"mappingMemoryBytes",{},"legacyMappingsAreMaterialized",{},"legacyMappingBytes",{},"persistentBufferBytes",{},"warmupSchedules",{},"sampleSchedules",{},"operations",{});
 end
 
 function results = emptyOperationResults()

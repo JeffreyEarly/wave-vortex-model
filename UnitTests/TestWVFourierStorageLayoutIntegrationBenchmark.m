@@ -1,4 +1,4 @@
-classdef TestWVFourierSpectrumLayoutIntegrationBenchmark < matlab.unittest.TestCase
+classdef TestWVFourierStorageLayoutIntegrationBenchmark < matlab.unittest.TestCase
     properties
         benchmarkFolder
         temporaryFolder
@@ -22,7 +22,7 @@ classdef TestWVFourierSpectrumLayoutIntegrationBenchmark < matlab.unittest.TestC
     methods (Test,TestTags="full")
         function reducedRunComparesProductionWithFrozenReference(testCase)
             caseId = "full-layout-64x48x17-antialias-0";
-            result = runWVFourierSpectrumLayoutIntegrationBenchmark(caseIds=caseId,shouldWriteArtifacts=false,runId="layout-integration-test");
+            result = runWVFourierStorageLayoutIntegrationBenchmark(caseIds=caseId,shouldWriteArtifacts=false,runId="storage-layout-integration-test");
 
             testCase.verifyEqual(result.status,"complete");
             testCase.verifyEqual(result.reference.issue,69);
@@ -35,8 +35,8 @@ classdef TestWVFourierSpectrumLayoutIntegrationBenchmark < matlab.unittest.TestC
             benchmarkCase = result.cases;
             testCase.verifyEqual(benchmarkCase.status,"complete");
             testCase.verifyFalse(benchmarkCase.isGate);
-            testCase.verifyEqual(benchmarkCase.mappingStrategy,"two-dimensional-rows");
-            testCase.verifyEqual(benchmarkCase.storageShape,[64 48]);
+            testCase.verifyEqual(benchmarkCase.mappingMethod,"two-dimensional-rows");
+            testCase.verifyEqual(benchmarkCase.fourierStorageSize,[64 48]);
             testCase.verifyFalse(benchmarkCase.legacyMappingsAreMaterialized);
             testCase.verifyEqual(benchmarkCase.legacyMappingBytes,0);
             testCase.verifySize(benchmarkCase.warmupSchedules,[2 6]);
@@ -61,13 +61,13 @@ classdef TestWVFourierSpectrumLayoutIntegrationBenchmark < matlab.unittest.TestC
             originalPath = path;
             originalRng = rng;
             outputDirectory = fullfile(testCase.temporaryFolder,"artifacts");
-            result = runWVFourierSpectrumLayoutIntegrationBenchmark(caseIds="full-layout-64x48x17-antialias-1",outputDirectory=outputDirectory,runId="layout-integration-artifact");
+            result = runWVFourierStorageLayoutIntegrationBenchmark(caseIds="full-layout-64x48x17-antialias-1",outputDirectory=outputDirectory,runId="storage-layout-integration-artifact");
 
             testCase.verifyTrue(isfile(fullfile(outputDirectory,"benchmark.json")));
             testCase.verifyTrue(isfile(fullfile(outputDirectory,"summary.md")));
             decoded = jsondecode(fileread(fullfile(outputDirectory,"benchmark.json")));
             testCase.verifyEqual(string(decoded.runId),result.runId);
-            testCase.verifyEqual(string(decoded.cases.mappingStrategy),"two-dimensional-rows");
+            testCase.verifyEqual(string(decoded.cases.mappingMethod),"two-dimensional-rows");
             summary = string(fileread(fullfile(outputDirectory,"summary.md")));
             testCase.verifySubstring(summary,"## Timing and frozen-baseline comparison");
             testCase.verifySubstring(summary,"## Storage contract");
@@ -80,7 +80,7 @@ classdef TestWVFourierSpectrumLayoutIntegrationBenchmark < matlab.unittest.TestC
             originalDirectory = pwd;
             originalPath = path;
             originalRng = rng;
-            testCase.verifyError(@()runWVFourierSpectrumLayoutIntegrationBenchmark(caseIds="missing-layout-case",shouldWriteArtifacts=false),"WaveVortexBenchmark:UnknownCase");
+            testCase.verifyError(@()runWVFourierStorageLayoutIntegrationBenchmark(caseIds="missing-layout-case",shouldWriteArtifacts=false),"WaveVortexBenchmark:UnknownCase");
             testCase.verifyEqual(pwd,originalDirectory);
             testCase.verifyEqual(path,originalPath);
             testCase.verifyEqual(rng,originalRng);

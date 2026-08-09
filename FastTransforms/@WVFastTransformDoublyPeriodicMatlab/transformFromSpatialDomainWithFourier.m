@@ -9,5 +9,5 @@ function u_bar = transformFromSpatialDomainWithFourier(self,u)
 % - Parameter u: a real-valued matrix of size [Nx Ny Nz]
 % - Returns u_bar: a complex-valued matrix of size [Nz Nkl]
 u_bar = fft(fft(u,self.wvg.Nx,1),self.wvg.Ny,2)/(self.wvg.Nx*self.wvg.Ny);
-u_bar = self.fourierSpectrumLayout.extractCanonical(reshape(u_bar,[],self.Nz));
+u_bar = self.fourierStorageLayout.transformFromFourierStorageToWVGrid(reshape(u_bar,[],self.Nz));
 end

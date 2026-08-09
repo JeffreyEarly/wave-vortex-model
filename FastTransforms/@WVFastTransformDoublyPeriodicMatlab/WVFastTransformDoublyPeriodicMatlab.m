@@ -16,16 +16,16 @@ classdef WVFastTransformDoublyPeriodicMatlab < WVFastTransformDoublyPeriodic
         function self = WVFastTransformDoublyPeriodicMatlab(wvg,Nz)
             self.wvg = wvg;
             self.Nz=Nz;
-            self.fourierSpectrumLayout = WVFourierSpectrumLayout(wvg,"full");
-            self.complexBufferRows = self.fourierSpectrumLayout.allocateStorage(Nz);
+            self.fourierStorageLayout = WVFourierStorageLayout(wvg,"full-complex");
+            self.complexBufferRows = self.fourierStorageLayout.allocateFourierStorage(Nz);
         end
 
         function value = get.complexBuffer(self)
-            value = self.fourierSpectrumLayout.spectrumFromRows(self.complexBufferRows);
+            value = self.fourierStorageLayout.reshapeFourierRowsToStorage(self.complexBufferRows);
         end
 
         function set.complexBuffer(self,value)
-            self.complexBufferRows = self.fourierSpectrumLayout.rowsFromSpectrum(value);
+            self.complexBufferRows = self.fourierStorageLayout.reshapeFourierStorageToRows(value);
         end
     end
 
