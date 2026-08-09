@@ -54,12 +54,6 @@
             "languages": [
                 "matlab"
             ]
-        },
-        {
-            "path": "UnitTests",
-            "languages": [
-                "matlab"
-            ]
         }
     ],
     "dependencies": [
@@ -94,6 +88,6 @@
             "id": "c9f6616c-d26a-4fdc-8426-91ca8ffd751b"
         }
     ],
-    "releaseCompatibility": ">=R2024b",
+    "releaseCompatibility": ">=R2025b",
     "schemaVersion": "1.1.0"
 }

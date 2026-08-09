@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Raised the minimum MATLAB release to R2025b, aligning the supported runtime, native MPM verification, and release engine.
+- Pinned releases to the immutable OceanKit release pilot, added native-MPM clean-install and exported-package gates, and removed authoring tests from the installed runtime path.
 - Added benchmark-selected spatial derivative dispatch. Complete-call measurements retain dense vertical differentiation and MATLAB horizontal derivatives except at exact validated FFTW size/order records, while selected constant-stratification G-family reconstructions apply horizontal and vertical modal multipliers before inverse transforms without persistent spectrum buffers.
 - Added eligibility-aware DCT-I/DST-I dispatch for constant-stratification transforms. The optional FFTW backend now reuses validated real-to-real plans only inside the exact FFTWTransforms issue #43 size and batch intervals, while every other vertical operation retains the existing dense matrix result.
 - Added `FFTWTransforms ^1.0.2` and an explicitly opt-in `fastTransform="fftw"` path for constant-stratification transforms. Backend discovery, validated local building, and safe fallback now pass through the static layout-neutral constructor on `WVFastTransformDoublyPeriodic`; builtin remains the default and persisted files do not encode machine capability.
