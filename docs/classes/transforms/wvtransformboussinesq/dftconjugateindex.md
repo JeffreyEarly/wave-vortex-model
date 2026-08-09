@@ -9,7 +9,7 @@ mathjax: true
 
 #  dftConjugateIndex
 
-index into the DFT grid of the conjugate of each WV mode
+legacy vertically replicated conjugate index
 
 > Developer documentation: this item describes internal implementation details.
 
