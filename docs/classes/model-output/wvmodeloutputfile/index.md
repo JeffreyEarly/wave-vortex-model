@@ -50,7 +50,6 @@ the model or output-file facade when writing is complete.
 
 
 
-
 ## Topics
 + Create model output
   + [`WVModelOutputFile`](/classes/model-output/wvmodeloutputfile/wvmodeloutputfile.html) initialize a WVModelOutputFile

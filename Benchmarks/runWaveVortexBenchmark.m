@@ -237,7 +237,7 @@ function memory = measureCaseMemory(benchmarkCase,backendId,benchmarkFolder,repo
 memory = emptyMemory();
 configPath = string(tempname) + ".json";
 outputPath = string(tempname) + ".json";
-config = struct("benchmarkCase",benchmarkCase,"backendId",backendId,"repositoryRoot",repositoryRoot,"benchmarkFolder",benchmarkFolder);
+config = struct("benchmarkCase",benchmarkCase,"backendId",backendId,"repositoryRoot",repositoryRoot,"benchmarkFolder",benchmarkFolder,"matlabPath",path);
 writeText(configPath,jsonencode(config));
 cleanup = onCleanup(@()deleteTemporaryFiles(configPath,outputPath));
 matlabExecutable = fullfile(matlabroot,"bin","matlab");

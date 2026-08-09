@@ -41,7 +41,6 @@ views are `Apt`, `Amt`, and `A0t`.
 
 
 
-
 ## Topics
 + Create and restore a transform
   + [`WVTransformHydrostatic`](/classes/transforms/wvtransformhydrostatic/wvtransformhydrostatic.html) Create a hydrostatic wave-vortex transform for variable stratification.

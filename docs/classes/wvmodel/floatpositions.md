@@ -20,7 +20,6 @@ Returns the positions of the floats at the current time as well as the value of 
 ```
 ## Discussion
 
-
 The tracked variable is a structure, with fields named for
 each of the requested fields being tracked.
 

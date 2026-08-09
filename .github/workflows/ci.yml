@@ -1,0 +1,155 @@
+name: WaveVortexModel CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  OCEANKIT_COMMIT: eb71bc7b05e74776afd678b27c964cf53cd9d547
+
+jobs:
+  smoke:
+    name: Smoke / MATLAB R2024b
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check out WaveVortexModel
+        uses: actions/checkout@v6
+        with:
+          path: source
+          persist-credentials: false
+
+      - name: Check out pinned OceanKit packages
+        uses: actions/checkout@v6
+        with:
+          repository: JeffreyEarly/OceanKit
+          ref: ${{ env.OCEANKIT_COMMIT }}
+          path: OceanKit
+          persist-credentials: false
+
+      - name: Set up MATLAB R2024b
+        uses: matlab-actions/setup-matlab@v3
+        with:
+          release: R2024b
+          cache: true
+
+      - name: Run smoke tests
+        uses: matlab-actions/run-command@v3
+        with:
+          command: >-
+            sourceRoot = fullfile(pwd,"source");
+            oceanKitRoot = fullfile(pwd,"OceanKit");
+            mpmAddRepository("OceanKit",oceanKitRoot);
+            addpath(fullfile(sourceRoot,"tools"));
+            configureCIEnvironment(sourceRoot,oceanKitRoot);
+            cd(sourceRoot);
+            buildtool test:smoke
+
+      - name: Verify clean source checkout
+        if: always()
+        working-directory: source
+        run: bash tools/checkCIWorkspaceCleanliness.sh
+
+  documentation:
+    name: Documentation / MATLAB R2024b
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check out WaveVortexModel
+        uses: actions/checkout@v6
+        with:
+          path: source
+          persist-credentials: false
+
+      - name: Check out pinned OceanKit packages
+        uses: actions/checkout@v6
+        with:
+          repository: JeffreyEarly/OceanKit
+          ref: ${{ env.OCEANKIT_COMMIT }}
+          path: OceanKit
+          persist-credentials: false
+
+      - name: Set up MATLAB R2024b
+        uses: matlab-actions/setup-matlab@v3
+        with:
+          release: R2024b
+          cache: true
+
+      - name: Verify committed documentation
+        uses: matlab-actions/run-command@v3
+        env:
+          WVM_DOCUMENTATION_DIAGNOSTIC_FOLDER: ${{ runner.temp }}/wave-vortex-model-generated-docs
+        with:
+          command: >-
+            sourceRoot = fullfile(pwd,"source");
+            oceanKitRoot = fullfile(pwd,"OceanKit");
+            mpmAddRepository("OceanKit",oceanKitRoot);
+            addpath(fullfile(sourceRoot,"tools"));
+            configureCIEnvironment(sourceRoot,oceanKitRoot,documentationPackageSpecifier="ClassDocumentation@1.3.0");
+            cd(sourceRoot);
+            buildtool docs:check
+
+      - name: Upload generated documentation diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: r2024b-generated-documentation
+          path: ${{ runner.temp }}/wave-vortex-model-generated-docs
+          if-no-files-found: ignore
+
+      - name: Verify clean source checkout
+        if: always()
+        working-directory: source
+        run: bash tools/checkCIWorkspaceCleanliness.sh
+
+  analyzer:
+    name: Code Analyzer / MATLAB R2024b
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check out WaveVortexModel
+        uses: actions/checkout@v6
+        with:
+          path: source
+          persist-credentials: false
+
+      - name: Check out pinned OceanKit packages
+        uses: actions/checkout@v6
+        with:
+          repository: JeffreyEarly/OceanKit
+          ref: ${{ env.OCEANKIT_COMMIT }}
+          path: OceanKit
+          persist-credentials: false
+
+      - name: Set up MATLAB R2024b
+        uses: matlab-actions/setup-matlab@v3
+        with:
+          release: R2024b
+          cache: true
+
+      - name: Run Code Analyzer
+        uses: matlab-actions/run-command@v3
+        with:
+          command: >-
+            sourceRoot = fullfile(pwd,"source");
+            oceanKitRoot = fullfile(pwd,"OceanKit");
+            mpmAddRepository("OceanKit",oceanKitRoot);
+            addpath(fullfile(sourceRoot,"tools"));
+            configureCIEnvironment(sourceRoot,oceanKitRoot);
+            cd(sourceRoot);
+            buildtool analyze
+
+      - name: Verify clean source checkout
+        if: always()
+        working-directory: source
+        run: bash tools/checkCIWorkspaceCleanliness.sh

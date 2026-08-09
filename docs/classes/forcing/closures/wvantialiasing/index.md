@@ -49,7 +49,6 @@ wvtAA = wvt.waveVortexTransformWithExplicitAntialiasing();
 
 
 
-
 ## Topics
 + Create forcing and closures
   + [`WVAntialiasing`](/classes/forcing/closures/wvantialiasing/wvantialiasing.html) initialize the WVAntialiasing

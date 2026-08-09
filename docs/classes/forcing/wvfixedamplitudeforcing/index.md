@@ -70,7 +70,6 @@ In practice you can initialize the flow in any way you want with any arbitrary s
 
 
 
-
 ## Topics
 + Create forcing and closures
   + [`WVFixedAmplitudeForcing`](/classes/forcing/wvfixedamplitudeforcing/wvfixedamplitudeforcing.html) initialize the WVFixedAmplitudeForcing

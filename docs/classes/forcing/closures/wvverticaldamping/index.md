@@ -65,7 +65,6 @@ transform with a different resolution.
 
 
 
-
 ## Topics
 + Create forcing and closures
   + [`WVVerticalDamping`](/classes/forcing/closures/wvverticaldamping/wvverticaldamping.html) initialize the WVVerticalDamping

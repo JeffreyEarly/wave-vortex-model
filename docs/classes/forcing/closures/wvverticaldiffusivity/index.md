@@ -57,7 +57,6 @@ barotropic transform because that geometry has no vertical structure.
 
 
 
-
 ## Topics
 + Create forcing and closures
   + [`WVVerticalDiffusivity`](/classes/forcing/closures/wvverticaldiffusivity/wvverticaldiffusivity.html) initialize the WVVerticalDiffusivity

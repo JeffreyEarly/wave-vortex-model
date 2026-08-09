@@ -41,7 +41,6 @@ views are `Apt`, `Amt`, and `A0t`.
 
 
 
-
 ## Topics
 + Create and restore a transform
   + [`WVTransformBoussinesq`](/classes/transforms/wvtransformboussinesq/wvtransformboussinesq.html) Create a nonhydrostatic wave-vortex transform for variable stratification.

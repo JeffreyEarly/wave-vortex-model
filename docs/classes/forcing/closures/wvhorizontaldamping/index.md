@@ -65,7 +65,6 @@ forcing is copied to a transform with a different resolution.
 
 
 
-
 ## Topics
 + Create forcing and closures
   + [`WVHorizontalDamping`](/classes/forcing/closures/wvhorizontaldamping/wvhorizontaldamping.html) initialize the WVHorizontalDamping

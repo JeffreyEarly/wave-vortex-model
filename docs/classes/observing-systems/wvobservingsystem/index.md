@@ -31,7 +31,6 @@ state when requested or written to output.
 
 
 
-
 ## Topics
 + Create an observing system
   + [`WVObservingSystem`](/classes/observing-systems/wvobservingsystem/wvobservingsystem.html) Initialize an observing system for a model.

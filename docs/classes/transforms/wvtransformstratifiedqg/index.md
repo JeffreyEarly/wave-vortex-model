@@ -40,7 +40,6 @@ The quasigeostrophic state is stored in
 
 
 
-
 ## Topics
 + Create and restore a transform
   + [`WVTransformStratifiedQG`](/classes/transforms/wvtransformstratifiedqg/wvtransformstratifiedqg.html) Create a stratified quasigeostrophic transform.

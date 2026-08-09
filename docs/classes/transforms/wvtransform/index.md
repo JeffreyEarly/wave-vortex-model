@@ -53,7 +53,6 @@ corresponding coefficients evaluated at the current transform time.
 
 
 
-
 ## Topics
 + Create and restore a transform
   + [`spectralVariableWithResolution`](/classes/transforms/wvtransform/spectralvariablewithresolution.html) create a new variable with different resolution

@@ -96,10 +96,128 @@ if grandparent ~= ""
     options = [options {"grandparent",grandparent}];
 end
 documentation = ClassDocumentation(className,options{:});
+normalizeReflectedDocumentation(documentation);
 mergeCanonicalSidecars(documentation,sidecarFolders);
 applyDocumentationTaxonomy(documentation);
 documentation.writeToFile();
 normalizeGeneratedMarkdown(documentation.pathOfClassFolderOnHardDrive);
+end
+
+function normalizeReflectedDocumentation(documentation)
+% MATLAB releases expose help-text indentation differently through the
+% metaclass API. Normalize it before ClassDocumentation writes Markdown so
+% one source tree produces the same documentation on every supported release.
+classMetadata = meta.class.fromName(documentation.name);
+classDescription = ClassDocumentation.trimDeclarationFromString(classMetadata.DetailedDescription);
+classDescription = Topic.trimTopicsFromString(classDescription);
+documentation.detailedDescription = regexprep(removeCommonIndent(classDescription),'(?:\r?\n[ \t]*){3,}','\n\n');
+
+for iMethod = 1:numel(documentation.allMethodDocumentation)
+    methodDocumentation = documentation.allMethodDocumentation(iMethod);
+    methodDocumentation.detailedDescription = normalizedReflectedDescription(classMetadata,methodDocumentation);
+    if string(methodDocumentation.name) == documentation.name && ...
+            ~isempty(methodDocumentation.detailedDescription) && ...
+            (constructorUsesClassHelp(classMetadata) || ...
+            isequal(strtrim(string(methodDocumentation.detailedDescription)),strtrim(string(documentation.detailedDescription))))
+        % R2024b exposes the class help as constructor help when the
+        % constructor has no help block. Newer releases leave it empty.
+        methodDocumentation.shortDescription = [];
+        methodDocumentation.detailedDescription = [];
+        methodDocumentation.declaration = [];
+    end
+end
+end
+
+function tf = constructorUsesClassHelp(classMetadata)
+tf = false;
+methodMetadata = classMetadata.MethodList;
+for iMetadata = 1:numel(methodMetadata)
+    item = methodMetadata(iMetadata);
+    if string(item.Name) ~= string(classMetadata.Name) || isempty(item.DetailedDescription)
+        continue
+    end
+    constructorHelp = regexprep(strtrim(char(item.DetailedDescription)),'\s+',' ');
+    classHelp = regexprep(strtrim(char(classMetadata.DetailedDescription)),'\s+',' ');
+    tf = strcmp(constructorHelp,classHelp);
+    return
+end
+end
+
+function description = normalizedReflectedDescription(classMetadata,methodDocumentation)
+description = methodDocumentation.detailedDescription;
+if isempty(description)
+    return
+end
+methodMetadata = classMetadata.MethodList;
+for iMetadata = 1:numel(methodMetadata)
+    item = methodMetadata(iMetadata);
+    if string(item.Name) == string(methodDocumentation.name) && ...
+            string(item.DefiningClass.Name) == string(methodDocumentation.definingClassName)
+        normalizedMetadata = MethodDocumentation(methodDocumentation.name);
+        normalizedMetadata.addMetadataFromDetailedDescription(char(removeCommonIndent(item.DetailedDescription)));
+        if descriptionsDifferOnlyByIndent(description,normalizedMetadata.detailedDescription)
+            description = normalizedMetadata.detailedDescription;
+        else
+            description = removeCommonIndent(description);
+        end
+        return
+    end
+end
+propertyMetadata = classMetadata.PropertyList;
+for iMetadata = 1:numel(propertyMetadata)
+    item = propertyMetadata(iMetadata);
+    if string(item.Name) == string(methodDocumentation.name) && ...
+            string(item.DefiningClass.Name) == string(methodDocumentation.definingClassName)
+        normalizedMetadata = MethodDocumentation(methodDocumentation.name);
+        normalizedMetadata.addMetadataFromDetailedDescription(char(removeCommonIndent(item.DetailedDescription)));
+        if descriptionsDifferOnlyByIndent(description,normalizedMetadata.detailedDescription)
+            description = normalizedMetadata.detailedDescription;
+        else
+            description = removeCommonIndent(description);
+        end
+        return
+    end
+end
+description = removeCommonIndent(methodDocumentation.detailedDescription);
+end
+
+function tf = descriptionsDifferOnlyByIndent(first,second)
+if isempty(first) || isempty(second)
+    tf = false;
+    return
+end
+first = regexprep(char(first),'\r\n?','\n');
+second = regexprep(char(second),'\r\n?','\n');
+first = regexprep(first,'^[ \t]+','','lineanchors');
+second = regexprep(second,'^[ \t]+','','lineanchors');
+tf = strcmp(strtrim(first),strtrim(second));
+end
+
+function text = removeCommonIndent(text)
+lines = splitlines(string(text));
+nonblankLines = strlength(strtrim(lines)) > 0;
+if ~any(nonblankLines)
+    text = join(lines,newline);
+    return
+end
+
+leadingWhitespace = zeros(sum(nonblankLines),1);
+nonblankIndices = find(nonblankLines);
+for iLine = 1:numel(nonblankIndices)
+    line = char(lines(nonblankIndices(iLine)));
+    match = regexp(line,'^[ \t]*','match','once');
+    leadingWhitespace(iLine) = strlength(string(match));
+end
+commonIndent = min(leadingWhitespace);
+if commonIndent > 0
+    for iLine = 1:numel(lines)
+        line = char(lines(iLine));
+        if length(line) >= commonIndent
+            lines(iLine) = string(line(commonIndent+1:end));
+        end
+    end
+end
+text = join(lines,newline);
 end
 
 function mergeCanonicalSidecars(documentation,sidecarFolders)
@@ -134,6 +252,8 @@ for iPage = 1:numel(pages)
     pagePath = fullfile(pages(iPage).folder,pages(iPage).name);
     pageText = fileread(pagePath);
     pageText = regexprep(pageText,'[ \t]+(?=\r?\n|$)','');
+    pageText = regexprep(pageText,'(## Discussion)(?:\r?\n){3,}','$1\n\n');
+    pageText = regexprep(pageText,'(?:\r?\n){5,}(?=## Topics)','\n\n\n\n\n');
     pageText = regexprep(pageText,'(?:\r?\n)*$','\n');
     writeTextFile(pagePath,pageText);
 end

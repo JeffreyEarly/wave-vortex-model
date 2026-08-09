@@ -30,7 +30,6 @@ allow you to customize when this group is active in model time.
 
 
 
-
 ## Topics
 + Create model output
   + [`WVModelOutputGroupEvenlySpaced`](/classes/model-output/wvmodeloutputgroupevenlyspaced/wvmodeloutputgroupevenlyspaced.html) initialize a WVModelOutputGroupEvenlySpaced
