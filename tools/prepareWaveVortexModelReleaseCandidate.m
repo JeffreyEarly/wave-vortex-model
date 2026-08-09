@@ -1,5 +1,5 @@
 function report = prepareWaveVortexModelReleaseCandidate(repositoryRoot,oceanKitRoot,outputRoot,options)
-%PREPAREWAVEVORTEXMODELRELEASECANDIDATE Build an unpublished 4.2.1 export.
+%PREPAREWAVEVORTEXMODELRELEASECANDIDATE Build an unpublished patch export.
 arguments
     repositoryRoot (1,1) string {mustBeFolder}
     oceanKitRoot (1,1) string {mustBeFolder}
@@ -12,8 +12,10 @@ if ~isfolder(outputRoot)
 end
 manifestPath = fullfile(repositoryRoot,"resources","mpackage.json");
 manifestBefore = jsondecode(fileread(manifestPath));
-require(string(manifestBefore.name) == "WaveVortexModel" && string(manifestBefore.version) == "4.2.0", ...
-    "The export dry run requires the WaveVortexModel 4.2.0 authoring manifest.");
+require(string(manifestBefore.name) == "WaveVortexModel", ...
+    "The export dry run requires a WaveVortexModel authoring manifest.");
+currentVersion = string(manifestBefore.version);
+candidateVersion = nextPatchVersion(currentVersion);
 configureIsolatedMPMRepository(oceanKitRoot);
 packageBefore = matlab.mpm.Package(repositoryRoot);
 require(string(packageBefore.ReleaseCompatibility) == ">=R2025b", ...
@@ -51,44 +53,52 @@ expectedPaths = ["CHANGELOG.md";"docs/version-history.md";"resources/mpackage.js
 require(isequal(changedPaths,expectedPaths), ...
     "The export dry run changed files outside the permitted release-owned set.");
 manifestAfter = jsondecode(fileread(manifestPath));
-require(string(manifestAfter.version) == "4.2.1", ...
-    "The export dry run did not create the expected 4.2.1 candidate.");
+require(string(manifestAfter.version) == candidateVersion, ...
+    "The export dry run did not create the expected " + candidateVersion + " candidate.");
 actualBody = string(fileread(releaseBodyPath));
 require(strtrim(actualBody) == strtrim(expectedBody), ...
     "The release-body file does not match the promoted Unreleased body.");
 
 changelog = string(fileread(fullfile(repositoryRoot,"CHANGELOG.md")));
-unreleasedMatch = regexp(changelog,'(?s)^.*?## \[Unreleased\]\s*## \[4\.2\.1\] - [^\r\n]+','once','match');
+escapedVersion = regexptranslate("escape",candidateVersion);
+unreleasedMatch = regexp(changelog,'(?s)^.*?## \[Unreleased\]\s*## \[' + escapedVersion + '\] - [^\r\n]+','once','match');
 require(~isempty(unreleasedMatch), ...
     "The promoted changelog does not begin with a fresh empty Unreleased section.");
-changelogBody = versionBody(fullfile(repositoryRoot,"CHANGELOG.md"),"4.2.1");
-require(contains(changelog,"## [4.2.1] - " + options.releaseDate) && changelogBody == expectedBody, ...
+changelogBody = versionBody(fullfile(repositoryRoot,"CHANGELOG.md"),candidateVersion);
+require(contains(changelog,"## [" + candidateVersion + "] - " + options.releaseDate) && changelogBody == expectedBody, ...
     "The promoted changelog does not contain the expected dated release body.");
 versionHistory = string(fileread(fullfile(repositoryRoot,"docs","version-history.md")));
-versionHistoryBody = versionBody(fullfile(repositoryRoot,"docs","version-history.md"),"4.2.1");
-require(contains(versionHistory,"## [4.2.1] - " + options.releaseDate) && versionHistoryBody == expectedBody, ...
+versionHistoryBody = versionBody(fullfile(repositoryRoot,"docs","version-history.md"),candidateVersion);
+require(contains(versionHistory,"## [" + candidateVersion + "] - " + options.releaseDate) && versionHistoryBody == expectedBody, ...
     "The generated version history does not agree with the promoted changelog.");
 
-exportPath = fullfile(outputRoot,"WaveVortexModel-4.2.1");
-require(isfolder(exportPath),"The expected WaveVortexModel-4.2.1 export was not created.");
+exportPath = fullfile(outputRoot,"WaveVortexModel-" + candidateVersion);
+require(isfolder(exportPath),"The expected WaveVortexModel-" + candidateVersion + " export was not created.");
 exportManifest = jsondecode(fileread(fullfile(exportPath,"resources","mpackage.json")));
 exportFolders = string({exportManifest.folders.path});
-require(string(exportManifest.version) == "4.2.1" && ~any(exportFolders == "UnitTests"), ...
+require(string(exportManifest.version) == candidateVersion && ~any(exportFolders == "UnitTests"), ...
     "The exported manifest does not describe the expected runtime package.");
 exportPackage = matlab.mpm.Package(exportPath);
 require(string(exportPackage.ReleaseCompatibility) == ">=R2025b", ...
     "The exported package does not retain the MATLAB R2025b compatibility floor.");
 
 report = struct( ...
-    "version","4.2.1", ...
+    "sourceVersion",currentVersion, ...
+    "version",candidateVersion, ...
     "releaseCompatibility",string(exportPackage.ReleaseCompatibility), ...
     "exportPath",exportPath, ...
     "releaseBodyPath",releaseBodyPath, ...
     "releaseBody",expectedBody, ...
     "authoringPaths",changedPaths, ...
     "documentationPackageRoot",dependency.Root);
-fprintf("Prepared unpublished WaveVortexModel 4.2.1 candidate at %s.\n",exportPath);
+fprintf("Prepared unpublished WaveVortexModel %s candidate at %s.\n",candidateVersion,exportPath);
 clear pathCleanup
+end
+
+function version = nextPatchVersion(currentVersion)
+tokens = regexp(currentVersion,'^(\d+)\.(\d+)\.(\d+)$','tokens','once');
+require(~isempty(tokens),"The WaveVortexModel version must use major.minor.patch format.");
+version = string(sprintf("%d.%d.%d",str2double(tokens{1}),str2double(tokens{2}),str2double(tokens{3})+1));
 end
 
 function body = versionBody(path,version)

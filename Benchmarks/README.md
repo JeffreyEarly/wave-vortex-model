@@ -60,4 +60,6 @@ results = runWVFFTWAdapterBenchmark
 
 The benchmark compares the general `WVFourierStorageLayout` mapping methods with specialized compact row assignments and includes builtin timings as descriptive context. It uses deterministic inputs, rotated forward/inverse schedules, two warmups, seven samples, and three samples for the `[512 512 129]` cases. The general method remains preferred unless specialized rows are over 3% faster on at least one gate case and no more than 3% slower on every gate case. This diagnostic selects mapping expressions only; issue #47 owns end-to-end backend readiness.
 
+The v4.2.1 release audit repeated this gate against the final production source. Its immutable M5 Max/R2026a builtin result is stored under `results/reference/transform-layout-v4.2.1-release-m5-max-r2026a-builtin`.
+
 `WVTransformConstantStratificationSpeedTest`, `ProfileableSpeedTest`, and `ForcingSpectralMaskPerformanceTest` remain historical investigation scripts. Deterministic correctness checks belong in `UnitTests`; mixed scientific investigations belong in `DeveloperExperiments`.

@@ -40,7 +40,7 @@ classdef TestReleaseVerification < matlab.unittest.TestCase
                 testCase.verifyEqual(compatibleVersions(iDependency),expected(dependencies(iDependency)));
             end
             testCase.verifyEqual(string(manifest.releaseCompatibility),">=R2025b");
-            testCase.verifyEqual(string(manifest.version),"4.2.0");
+            testCase.verifyMatches(string(manifest.version),"^\d+\.\d+\.\d+$");
         end
 
         function packageWorkflowHasIsolatedR2025bGates(testCase)
@@ -73,6 +73,11 @@ classdef TestReleaseVerification < matlab.unittest.TestCase
             testCase.verifyFalse(contains(workflow,'- "Benchmarks/**"'));
             testCase.verifyFalse(contains(workflow,'- "DeveloperExperiments/**"'));
             testCase.verifyFalse(contains(workflow,"contents: write"));
+            testCase.verifySubstring(workflow,"verifyWaveVortexModelPackage(sourceRoot,oceanKitRoot)");
+            testCase.verifySubstring(workflow,"candidate.report.exportPath");
+            testCase.verifySubstring(workflow,"candidate.report.version");
+            testCase.verifyFalse(contains(contract,'expectedVersion="4.2.0"'));
+            testCase.verifyFalse(contains(contract,'WaveVortexModel-4.2.1'));
         end
 
         function routineWorkflowsUsePilotDependencySnapshot(testCase)

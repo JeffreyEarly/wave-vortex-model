@@ -2,13 +2,16 @@
 
 ## [Unreleased]
 
-- Raised the minimum MATLAB release to R2025b, aligning the supported runtime, native MPM verification, and release engine.
-- Pinned releases to the immutable OceanKit release pilot, added native-MPM clean-install and exported-package gates, and removed authoring tests from the installed runtime path.
 - Added benchmark-selected spatial derivative dispatch. Complete-call measurements retain dense vertical differentiation and MATLAB horizontal derivatives except at exact validated FFTW size/order records, while selected constant-stratification G-family reconstructions apply horizontal and vertical modal multipliers before inverse transforms without persistent spectrum buffers.
 - Added exact transform-storage ledgers and a repeated fresh-process RSS benchmark for comparing the builtin full-complex and optional FFTW half-complex constant-stratification backends without inferring MATLAB copy behavior.
 - Added eligibility-aware DCT-I/DST-I dispatch for constant-stratification transforms. The optional FFTW backend now reuses validated real-to-real plans only inside the exact FFTWTransforms issue #43 size and batch intervals, while every other vertical operation retains the existing dense matrix result.
 - Added `FFTWTransforms ^1.0.2` and an explicitly opt-in `fastTransform="fftw"` path for constant-stratification transforms. Backend discovery, validated local building, and safe fallback now pass through the static layout-neutral constructor on `WVFastTransformDoublyPeriodic`; builtin remains the default and persisted files do not encode machine capability.
-- Replaced vertically replicated horizontal Fourier mappings with compact two-dimensional row mappings while preserving the canonical WaveVortex coefficients. On the Apple M5 Max/R2026a reference run, complete builtin forward transforms were 1.06x–2.00x faster and inverse transforms were 1.81x–3.58x faster across the `[256 256 65]` and `[512 512 129]` gate cases with antialiasing on and off; numerical results remained equivalent within the benchmark tolerance. See the issue #70 `transform-layout-integration-v1` artifact for the machine-specific measurements.
+
+## [4.2.1] - 2026-08-09
+
+- Raised the minimum MATLAB release to R2025b, aligning the supported runtime, native MPM verification, and release engine.
+- Pinned releases to the immutable OceanKit release pilot, added native-MPM clean-install and exported-package gates, and removed authoring tests from the installed runtime path.
+- Replaced vertically replicated horizontal Fourier mappings with compact two-dimensional row mappings while preserving the canonical WaveVortex coefficients. On the Apple M5 Max/R2026a release-candidate run, complete builtin forward transforms were 1.05x–2.00x faster and inverse transforms were 1.81x–3.52x faster across the `[256 256 65]` and `[512 512 129]` gate cases with antialiasing on and off; numerical results remained equivalent within the benchmark tolerance. See the `transform-layout-v4.2.1-release-m5-max-r2026a-builtin` artifact for the machine-specific measurements.
 - Rewrote the README, homepage, installation instructions, and user guidance around the current `WVTransform` and `WVModel` workflows; completed the NetCDF conventions guide; linked the canonical wavevortexmodel.org site prominently; and adopted the Avenir-first website typography while retaining search.
 - Reorganized the generated API reference around user tasks, moved implementation machinery into Developer Topics, replaced release-status jargon with direct descriptions of capabilities and limitations, and restored authored scientific context, coefficient-occupancy tables, and design rationale.
 - Corrected the `WVTransform` and `WVModel` API reference, promoted the stored and time-evaluated wave-vortex coefficients, and classified low-level projection and reconstruction arrays as Developer reference.

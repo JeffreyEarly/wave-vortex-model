@@ -74,6 +74,24 @@ classdef TestWVFourierStorageLayoutIntegrationBenchmark < matlab.unittest.TestCa
             testCase.verifyEqual(rng,originalRng);
         end
 
+        function releaseCandidateArtifactPassed(testCase)
+            artifactPath = fullfile(testCase.benchmarkFolder,"results","reference", ...
+                "transform-layout-v4.2.1-release-m5-max-r2026a-builtin","benchmark.json");
+            artifact = jsondecode(fileread(artifactPath));
+
+            testCase.verifyEqual(string(artifact.status),"complete");
+            testCase.verifyEqual(string(artifact.runId),"transform-layout-v4.2.1-release-m5-max-r2026a-builtin");
+            testCase.verifyEqual(strlength(string(artifact.environment.sourceCommit)),40);
+            testCase.verifyEqual(strlength(string(artifact.environment.sourceTree)),40);
+            testCase.verifyTrue(artifact.readiness.passed);
+            testCase.verifyTrue(artifact.readiness.completeGateSet);
+            testCase.verifyEqual(artifact.readiness.gateCaseCount,4);
+            gateCases = artifact.cases([artifact.cases.isGate]);
+            operations = [gateCases.operations];
+            testCase.verifyTrue(all([operations.correctnessPassed]));
+            testCase.verifyTrue(all([operations.performancePassed]));
+        end
+
         function invalidCaseRestoresState(testCase)
             originalDirectory = pwd;
             originalPath = path;
