@@ -11,6 +11,7 @@ originalRng = rng;
 cleanup = onCleanup(@()restoreState(originalDirectory,originalPath,originalRng));
 result = emptyResult();
 try
+    path(config.matlabPath);
     addpath(config.repositoryRoot,config.benchmarkFolder);
     metadata = jsondecode(fileread(fullfile(config.repositoryRoot,"resources","mpackage.json")));
     for iFolder = 1:numel(metadata.folders)
@@ -50,8 +51,8 @@ if ispc
     provider = "matlab-memory";
     return
 end
-pid = feature("getpid");
-[status,output] = system(sprintf("ps -o rss= -p %d",pid));
+pid = feature('getpid');
+[status,output] = system(sprintf('ps -o rss= -p %d',pid));
 if status ~= 0
     error("WaveVortexBenchmark:RSSUnavailable","Unable to query resident memory: %s",output);
 end

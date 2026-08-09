@@ -90,7 +90,8 @@ classdef TestWaveVortexBenchmark < matlab.unittest.TestCase
         function freshProcessMemoryIsRecorded(testCase)
             results = runWaveVortexBenchmark(suites="smoke-v1",caseIds="smoke-barotropic-qg",shouldMeasureMemory=true,shouldWriteArtifacts=false);
             memory = results.suites.cases.backends.memory;
-            testCase.verifyEqual(string(memory.status),"complete");
+            diagnostic = "Memory worker failed: " + string(memory.failure.identifier) + ": " + string(memory.failure.message);
+            testCase.verifyEqual(string(memory.status),"complete",diagnostic);
             testCase.verifyGreaterThan(memory.baselineBytes,0);
             testCase.verifyGreaterThanOrEqual(memory.persistentIncrementBytes,0);
             testCase.verifyGreaterThanOrEqual(memory.peakIncrementBytes,memory.persistentIncrementBytes);
