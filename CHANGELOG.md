@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [4.2.1] - 2026-08-09
+
 - Raised the minimum MATLAB release to R2025b, aligning the supported runtime, native MPM verification, and release engine.
 - Pinned releases to the immutable OceanKit release pilot, added native-MPM clean-install and exported-package gates, and removed authoring tests from the installed runtime path.
 - Replaced vertically replicated horizontal Fourier mappings with compact two-dimensional row mappings while preserving the canonical WaveVortex coefficients. On the Apple M5 Max/R2026a release-candidate run, complete builtin forward transforms were 1.05x–2.00x faster and inverse transforms were 1.81x–3.52x faster across the `[256 256 65]` and `[512 512 129]` gate cases with antialiasing on and off; numerical results remained equivalent within the benchmark tolerance. See the `transform-layout-v4.2.1-release-m5-max-r2026a-builtin` artifact for the machine-specific measurements.
