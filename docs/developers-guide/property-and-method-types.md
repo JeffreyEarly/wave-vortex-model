@@ -7,7 +7,7 @@ mathjax: true
 
 #  Annotations
 
-The methods and properties of the `WVTransform' are divided into 5 categories, depending on their functionality. These properties or methods are then annotated appropriately.
+The methods and properties of the `WVTransform` are divided into 5 categories, depending on their functionality. These properties or methods are then annotated appropriately.
 
 - *Dimension* are independent coordinate axes, such as $$x$$, $$t$$, or $$k$$ and are annotated with `WVDimensionAnnotation`.
 - *Properties* are fixed attributes of the `WVTransform` that are never time-dependent. The `WVPropertyAnnotation` class is used to annotate properties.
@@ -20,4 +20,3 @@ We need to distinguish between variables that have direct method (or even proper
 - *Methods* are everything else, and use `WVAnnotation` to annotate their functionality.
 
 If you are building a subclass the `WVTransform`, it is important to know that there are two types of variables: those that are directly computed by the class, and those that result from a `WVOperation`.
-

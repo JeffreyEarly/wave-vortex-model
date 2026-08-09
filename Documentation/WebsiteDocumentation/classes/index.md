@@ -6,5 +6,4 @@ has_children: true
 permalink: /classes
 ---
 
-
-
+# Class documentation

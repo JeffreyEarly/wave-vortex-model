@@ -71,8 +71,8 @@
 - initial mpm ci release
 
 ## [4.0.0](https://github.com/Energy-Pathways-Group/GLOceanKit/releases/tag/v4.0) - 2025-08-05
-- Added support for `WVForcing', a mechanism for adding arbitrary forcing to the model which also also the nonlinear fluxes to be automatically diagnosed.
-- Added `WVObservingSystems', a mechanism for adding user defined observing systems to the model, such as drifters, mooring, along-track altimetry.
+- Added support for `WVForcing`, a mechanism for adding arbitrary forcing to the model which also also the nonlinear fluxes to be automatically diagnosed.
+- Added `WVObservingSystems`, a mechanism for adding user defined observing systems to the model, such as drifters, mooring, along-track altimetry.
 
 ## [3.0.0](https://github.com/Energy-Pathways-Group/GLOceanKit/releases/tag/v3.0.0) - 2024-07-25
 - Full implemented non-hydrostatic forwards model, passing all unit tests.

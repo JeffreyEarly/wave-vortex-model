@@ -6,6 +6,8 @@ description: "Acknowledgements"
 permalink: /acknowledgements
 ---
 
+# Acknowledgements
+
 ## Developers & Contributors
 
 This project was primarily developed and is maintained by:

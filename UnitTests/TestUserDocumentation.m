@@ -154,6 +154,27 @@ classdef TestUserDocumentation < matlab.unittest.TestCase
             advancedGuide = testCase.readCanonical(fullfile("users-guide","reading-and-writing-to-file-advanced.md"));
             testCase.verifyMatches(advancedGuide,'(?m)^title: "Reading and writing files: advanced topics"$');
             testCase.verifyMatches(advancedGuide,'(?m)^parent: User guide$');
+
+            landingPages = [
+                "acknowledgements.md"
+                "addons.md"
+                fullfile("classes","index.md")
+                fullfile("developers-guide","index.md")
+                fullfile("mathematical-introduction","index.md")
+                ];
+            for landingPage = landingPages'
+                testCase.verifyMatches(testCase.readCanonical(landingPage),'(?m)^# \S');
+            end
+
+            operationsGuide = testCase.readCanonical(fullfile("developers-guide","operations-and-variables.md"));
+            propertyGuide = testCase.readCanonical(fullfile("developers-guide","property-and-method-types.md"));
+            styleGuide = testCase.readCanonical(fullfile("developers-guide","style-guide.md"));
+            changelog = testCase.readFile(fullfile(testCase.repositoryRoot,"CHANGELOG.md"));
+            testCase.verifySubstring(operationsGuide,"`operationVariableNameMap`");
+            testCase.verifySubstring(propertyGuide,"`WVTransform`");
+            testCase.verifySubstring(styleGuide,"`WaveVortexTransformConstantStratification(Lxyz, Nxyz, N0, options)`");
+            testCase.verifySubstring(changelog,"`WVForcing`");
+            testCase.verifySubstring(changelog,"`WVObservingSystems`");
         end
     end
 

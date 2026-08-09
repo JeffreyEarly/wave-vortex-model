@@ -20,8 +20,6 @@ mathjax: true
 
 All classes can be initialized directly, or from NetCDF file and thus also written to file. 
 
-- A class has a single initialization method (constructor), such as ` WaveVortexTransformConstantStratification(Lxyz, Nxyz, N0, options)`
+- A class has a single initialization method (constructor), such as `WaveVortexTransformConstantStratification(Lxyz, Nxyz, N0, options)`
 - Each class has an instance method `-writeToFilePath` and `-writeToNetCDFFile`.
-- Each class has a class method (or static method) to re-initialize from file, e.g., `-transformFromFilePath' and `transformFromNetCDFFile'.
-
-
+- Each class has a class method (or static method) to re-initialize from file, e.g., `-transformFromFilePath` and `transformFromNetCDFFile`.
