@@ -79,7 +79,7 @@ classdef TestDocumentationTools < matlab.unittest.TestCase
             mkdir(classFolder);
             testCase.writeText(fullfile(classFolder,"index.md"),[
                 "---"
-                "title: ExampleClass"
+                "title: ""ExampleClass"""
                 "parent: Transforms"
                 "---"
                 "## Declaration"
@@ -121,6 +121,86 @@ classdef TestDocumentationTools < matlab.unittest.TestCase
             report = validateWebsiteDocumentation(root,ShouldFail=false,ShouldCheckHierarchy=false);
             testCase.verifyFalse(report.IsValid);
             testCase.verifyTrue(any(contains(report.Diagnostics,"historical truncated")));
+        end
+
+        function validFrontMatterAndMathMarkupPass(testCase)
+            root = fullfile(testCase.temporaryFolder,"valid-source");
+            mkdir(root);
+            testCase.writeText(fullfile(root,"index.md"),[
+                "---"
+                "layout: default"
+                "title: ""Guide: details"""
+                "---"
+                "# Guide"
+                "The literal delimiter `$$` may be discussed in code."
+                "Inline $$5 \\leq \\lvert x\\rvert \\leq 85$$ math."
+                "$$"
+                "\\begin{align}"
+                "x &= y"
+                "\\end{align}"
+                "$$"
+                ]);
+
+            report = validateWebsiteDocumentation(root,ShouldFail=false,ShouldCheckHierarchy=false,ShouldCheckGeneratedContent=false);
+            testCase.verifyTrue(report.IsValid,strjoin(report.Diagnostics,newline));
+        end
+
+        function malformedFrontMatterAndMathAreReported(testCase)
+            root = fullfile(testCase.temporaryFolder,"invalid-source");
+            mkdir(root);
+            testCase.writeText(fullfile(root,"unterminated.md"),["---"; "title: Missing end"]);
+            testCase.writeText(fullfile(root,"unquoted.md"),["---"; "title: Guide: details"; "---"]);
+            testCase.writeText(fullfile(root,"malformed-quote.md"),["---"; "title: ""Missing end"; "---"]);
+            testCase.writeText(fullfile(root,"duplicate.md"),["---"; "title: First"; "title: Second"; "---"]);
+            testCase.writeText(fullfile(root,"unbalanced-display.md"),["# Display"; "$$"; "x=y"]);
+            testCase.writeText(fullfile(root,"display-markdown.md"),["# Display"; "$$"; "[link](target.md) and `code`"; "## Heading"; "$$"]);
+            testCase.writeText(fullfile(root,"inline-bar.md"),"Inline $$|x|$$ math.");
+
+            report = validateWebsiteDocumentation(root,ShouldFail=false,ShouldCheckHierarchy=false,ShouldCheckGeneratedContent=false);
+            expected = [
+                "unterminated front matter"
+                "must be quoted"
+                "malformed quoted front matter value"
+                "duplicate front matter key"
+                "unbalanced display-math"
+                "Markdown link or image appears inside"
+                "Markdown backticks appear inside"
+                "Markdown heading appears inside"
+                "unescaped vertical bar"
+                ];
+            for diagnostic = expected'
+                testCase.verifyTrue(any(contains(report.Diagnostics,diagnostic)),"Missing diagnostic: " + diagnostic);
+            end
+        end
+
+        function renderedWebsiteRejectsRawMarkup(testCase)
+            root = fullfile(testCase.temporaryFolder,"rendered-site");
+            mkdir(root);
+            testCase.writeText(fullfile(root,"index.html"),'<main><h1>Home</h1><p>Rendered $$x$$ content.</p><code>`[example](target)`</code></main>');
+            cleanReport = validateRenderedWebsite(root,ShouldFail=false);
+            testCase.verifyTrue(cleanReport.IsValid,strjoin(cleanReport.Diagnostics,newline));
+
+            testCase.writeText(fullfile(root,"missing-main.html"),'<h1>Missing main</h1>');
+            testCase.writeText(fullfile(root,"missing-heading.html"),'<main><p>Missing heading</p></main>');
+            testCase.writeText(fullfile(root,"raw-math.html"),'<main><h1>Math</h1><p>Unbalanced $$x</p></main>');
+            testCase.writeText(fullfile(root,"table-math.html"),'<main><h1>Table</h1><table><tr><td>$$|x</td><td>|$$</td></tr></table></main>');
+            testCase.writeText(fullfile(root,"raw-link.html"),'<main><h1>Link</h1><p>[link](target.html)</p></main>');
+            testCase.writeText(fullfile(root,"raw-fence.html"),'<main><h1>Fence</h1><p>```matlab</p></main>');
+            testCase.writeText(fullfile(root,"raw-backtick.html"),'<main><h1>Code</h1><p>`code`</p></main>');
+
+            report = validateRenderedWebsite(root,ShouldFail=false);
+            expected = [
+                "missing main content element"
+                "missing level-one heading"
+                "unbalanced MathJax delimiters"
+                "MathJax expression is split across rendered table cells"
+                "raw Markdown link or image"
+                "raw fenced-code marker"
+                "raw Markdown backtick"
+                ];
+            for diagnostic = expected'
+                testCase.verifyTrue(any(contains(report.Diagnostics,diagnostic)),"Missing diagnostic: " + diagnostic);
+            end
         end
 
         function treeComparisonClassifiesDifferences(testCase)

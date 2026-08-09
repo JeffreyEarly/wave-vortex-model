@@ -132,12 +132,12 @@ Custom forcing subclasses derive from `WVForcing`, declare one or more `WVForcin
 For example, horizontal and vertical spectral damping can be expressed as
 
 $$
-
-and implemented by overriding `addSpectralForcing`. Hydrostatic and nonhydrostatic physical forcing instead override `addHydrostaticSpatialForcing` or `addNonhydrostaticSpatialForcing`. QG forcing uses the potential-vorticity variants of the spatial, spectral, or amplitude interfaces.
-
-The transform validates that a forcing stage is compatible with its dynamics, applies stages in physical–spectral–amplitude order, and uses `priority` to order forcing objects within one stage. See [`WVForcing`](/classes/forcing/wvforcing/) and [`WVForcingType`](/classes/forcing/wvforcing/) before implementing a subclass.
     \begin{align}
         \partial_t A_\pm^{k\ell j} =& - \nu (k^2 + \ell^2 ) A_\pm^{k\ell j} - \nu_z \lambda_j^{-2} A_\pm^{k\ell j} \\
         \partial_t A_0^{k\ell j} =& - \nu (k^2 + \ell^2 ) A_0^{k\ell j} - \nu_z \lambda_j^{-2} A_0^{k\ell j}
     \end{align}
 $$
+
+and implemented by overriding `addSpectralForcing`. Hydrostatic and nonhydrostatic physical forcing instead override `addHydrostaticSpatialForcing` or `addNonhydrostaticSpatialForcing`. QG forcing uses the potential-vorticity variants of the spatial, spectral, or amplitude interfaces.
+
+The transform validates that a forcing stage is compatible with its dynamics, applies stages in physical–spectral–amplitude order, and uses `priority` to order forcing objects within one stage. See [`WVForcing`](/classes/forcing/wvforcing/) and [`WVForcingType`](/classes/forcing/wvforcing/) before implementing a subclass.
