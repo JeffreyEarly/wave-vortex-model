@@ -3,7 +3,7 @@ layout: default
 title: inertialPeriod
 parent: WVTransformBarotropicQG
 grand_parent: Transforms
-nav_order: 69
+nav_order: 78
 mathjax: true
 ---
 

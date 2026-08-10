@@ -3,15 +3,13 @@ layout: default
 title: geostrophicComponent
 parent: WVTransformHydrostatic
 grand_parent: Transforms
-nav_order: 101
+nav_order: 116
 mathjax: true
 ---
 
 #  geostrophicComponent
 
 returns the geostrophic flow component
-
-> Developer documentation: this item describes internal implementation details.
 
 
 ---

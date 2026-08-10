@@ -8,6 +8,10 @@ classdef WVInternalGravityWaveMethods < handle
         ApmD,ApmN
         % Omega, iOmega
 
+        % Imaginary angular frequency, $$i\Omega$$, used for linear phase evolution.
+        %
+        % `iOmega` has the transform's spectral shape, units of radians per
+        % second, and equals `1i*Omega`.
         iOmega
     end
 
@@ -20,6 +24,10 @@ classdef WVInternalGravityWaveMethods < handle
         % - nav_order: 2
         waveComponent
 
+        % Intrinsic angular frequency of each wave and inertial mode.
+        %
+        % `Omega` has the transform's spectral shape and units of radians
+        % per second.
         Omega
     end
     properties (Abstract)
@@ -90,10 +98,10 @@ classdef WVInternalGravityWaveMethods < handle
         end
 
         function energy = waveEnergy(self)
-            % total energy of the geostrophic flow
+            % Total energy of the internal-gravity-wave flow.
             %
             % - Topic: Energetics
-            % - Declaration: geostrophicEnergy
+            % - Declaration: energy = waveEnergy()
             % - nav_order: 2
             energy = self.totalEnergyOfFlowComponent(self.flowComponentWithName('wave'));
         end
@@ -231,7 +239,7 @@ classdef WVInternalGravityWaveMethods < handle
             %
             % This allows you to initialize the wave field (Ap,Am matrices)
             % with a spectrum specified in terms of vertical mode j and
-            % frequency $\omega$. This allows us to initialize with a
+            % frequency $$\omega$$. This allows us to initialize with a
             % Garrett-Munk spectrum, for example, using code like,
             %
             % ```matlab
@@ -269,7 +277,7 @@ classdef WVInternalGravityWaveMethods < handle
             %
             % This allows you to initialize the wave field (Ap,Am matrices)
             % with a spectrum specified in terms of vertical mode j and
-            % frequency $\omega$. This allows us to initialize with a
+            % frequency $$\omega$$. This allows us to initialize with a
             % Garrett-Munk spectrum, for example, using code like,
             %
             % ```matlab
@@ -584,7 +592,8 @@ classdef WVInternalGravityWaveMethods < handle
             annotation.isVariableWithNonlinearTimeStep = 1;
             propertyAnnotations(end+1) = annotation;
 
-            propertyAnnotations(end+1) = WVPropertyAnnotation('Omega',{'k','l','j'},'rad s^{-1}', 'frequency of oscillation of the linear waves', detailedDescription='- topic: Domain Attributes');
+            propertyAnnotations(end+1) = WVPropertyAnnotation('Omega',options.spectralDimensionNames,'rad s^{-1}', 'intrinsic angular frequency of each wave and inertial mode');
+            propertyAnnotations(end+1) = WVPropertyAnnotation('iOmega',options.spectralDimensionNames,'rad s^{-1}', 'imaginary angular frequency, $$i\Omega$$, used for linear phase evolution',isComplex=1);
 
 
             propertyAnnotations(end+1) = CANumericProperty('ApU',options.spectralDimensionNames,'', 'matrix component that multiplies $$\tilde{u}$$ to compute $$A_p$$.',isComplex=1);

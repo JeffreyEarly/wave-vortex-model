@@ -3,7 +3,7 @@ layout: default
 title: FMatrix
 parent: WVTransformStratifiedQG
 grand_parent: Transforms
-nav_order: 6
+nav_order: 7
 mathjax: true
 ---
 

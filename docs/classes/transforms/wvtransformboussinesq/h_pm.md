@@ -3,7 +3,7 @@ layout: default
 title: h_pm
 parent: WVTransformBoussinesq
 grand_parent: Transforms
-nav_order: 122
+nav_order: 137
 mathjax: true
 ---
 
@@ -11,10 +11,8 @@ mathjax: true
 
 equivalent depth of each wave mode
 
-> Developer documentation: this item describes internal implementation details.
-
 
 ---
 
 ## Description
-Real valued property with dimensions $$(j,kl)$$ and units of $$m$$.
+Real valued property with dimension $$j$$ and units of $$m$$.

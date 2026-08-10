@@ -3,13 +3,13 @@ layout: default
 title: rhoFunction
 parent: WVTransformConstantStratification
 grand_parent: Transforms
-nav_order: 198
+nav_order: 230
 mathjax: true
 ---
 
 #  rhoFunction
 
-eta_true operation needs rhoFunction
+Function returning the no-motion density profile at requested depths.
 
 
 ---

@@ -3,15 +3,13 @@ layout: default
 title: Z
 parent: WVTransformBoussinesq
 grand_parent: Transforms
-nav_order: 72
+nav_order: 75
 mathjax: true
 ---
 
 #  Z
 
 z-coordinate matrix
-
-> Developer documentation: this item describes internal implementation details.
 
 
 ---

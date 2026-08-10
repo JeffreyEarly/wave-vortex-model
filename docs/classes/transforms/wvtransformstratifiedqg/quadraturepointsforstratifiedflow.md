@@ -3,7 +3,7 @@ layout: default
 title: quadraturePointsForStratifiedFlow
 parent: WVTransformStratifiedQG
 grand_parent: Transforms
-nav_order: 139
+nav_order: 164
 mathjax: true
 ---
 

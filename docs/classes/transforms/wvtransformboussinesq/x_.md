@@ -3,15 +3,13 @@ layout: default
 title: X
 parent: WVTransformBoussinesq
 grand_parent: Transforms
-nav_order: 70
+nav_order: 73
 mathjax: true
 ---
 
 #  X
 
 x-coordinate matrix
-
-> Developer documentation: this item describes internal implementation details.
 
 
 ---

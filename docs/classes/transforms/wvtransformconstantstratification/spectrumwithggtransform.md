@@ -3,15 +3,13 @@ layout: default
 title: spectrumWithGgTransform
 parent: WVTransformConstantStratification
 grand_parent: Transforms
-nav_order: 219
+nav_order: 253
 mathjax: true
 ---
 
 #  spectrumWithGgTransform
 
 
-
-> Developer documentation: this item describes internal implementation details.
 
 
 ---

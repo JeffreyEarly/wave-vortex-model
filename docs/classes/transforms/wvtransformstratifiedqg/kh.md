@@ -3,15 +3,13 @@ layout: default
 title: Kh
 parent: WVTransformStratifiedQG
 grand_parent: Transforms
-nav_order: 13
+nav_order: 14
 mathjax: true
 ---
 
 #  Kh
 
 horizontal wavenumber, $$Kh=\sqrt(K^2+L^2)$$
-
-> Developer documentation: this item describes internal implementation details.
 
 
 ---

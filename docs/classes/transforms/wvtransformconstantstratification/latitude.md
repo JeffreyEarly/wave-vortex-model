@@ -3,7 +3,7 @@ layout: default
 title: latitude
 parent: WVTransformConstantStratification
 grand_parent: Transforms
-nav_order: 160
+nav_order: 184
 mathjax: true
 ---
 

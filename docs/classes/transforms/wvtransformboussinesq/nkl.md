@@ -3,15 +3,13 @@ layout: default
 title: Nkl
 parent: WVTransformBoussinesq
 grand_parent: Transforms
-nav_order: 41
+nav_order: 44
 mathjax: true
 ---
 
 #  Nkl
 
 length of the combined kl-wavenumber dimension on the WV grid
-
-> Developer documentation: this item describes internal implementation details.
 
 
 ---

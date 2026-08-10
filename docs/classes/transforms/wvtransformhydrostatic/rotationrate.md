@@ -3,15 +3,13 @@ layout: default
 title: rotationRate
 parent: WVTransformHydrostatic
 grand_parent: Transforms
-nav_order: 192
+nav_order: 224
 mathjax: true
 ---
 
 #  rotationRate
 
 rotation rate of the planetary body
-
-> Developer documentation: this item describes internal implementation details.
 
 
 ---

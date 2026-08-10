@@ -3,18 +3,16 @@ layout: default
 title: dLnN2
 parent: WVTransformConstantStratification
 grand_parent: Transforms
-nav_order: 86
+nav_order: 96
 mathjax: true
 ---
 
 #  dLnN2
 
-$$\frac{\partial \ln N^2}{\partial z}$$, vertical variation of the log of the squared buoyancy frequency
-
-> Developer documentation: this item describes internal implementation details.
+$$\partial_z \ln N^2$$, vertical derivative of the logarithm of squared buoyancy frequency
 
 
 ---
 
 ## Description
-Real valued property with dimension $$z$$ and no units.
+Real valued property with dimension $$z$$ and units of $$m^{-1}$$.

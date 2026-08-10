@@ -3,7 +3,7 @@ layout: default
 title: GwMatrix
 parent: WVTransformBoussinesq
 grand_parent: Transforms
-nav_order: 22
+nav_order: 25
 mathjax: true
 ---
 

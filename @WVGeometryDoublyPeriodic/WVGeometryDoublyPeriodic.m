@@ -75,7 +75,7 @@ classdef WVGeometryDoublyPeriodic < CAAnnotatedClass
         % - Topic: Domain attributes — DFT grid
         conjugateDimension
 
-        % whether the WV grid includes quadratically aliased wavenumbers
+        % whether quadratic antialiasing is enabled
         %
         % - Topic: Domain attributes — WV grid
         shouldAntialias 
@@ -1124,8 +1124,8 @@ classdef WVGeometryDoublyPeriodic < CAAnnotatedClass
             propertyAnnotations(end+1) = CADimensionProperty('kRadial', 'rad/m', 'isotropic wavenumber dimension');
 
             propertyAnnotations(end+1) = CANumericProperty('conjugateDimension',{},'', 'assumed conjugate dimension in the horizontal geometry', detailedDescription='- topic: Domain Attributes — Grid');
-            propertyAnnotations(end+1) = CANumericProperty('shouldAntialias',{},'bool', 'whether the horizontal grid includes quadratically aliased wavenumbers', detailedDescription='- topic: Domain Attributes — Grid');
-            propertyAnnotations(end+1) = CANumericProperty('shouldExcludeNyquist',{},'bool', 'whether the horizontal grid includes Nyquist wavenumbers', detailedDescription='- topic: Domain Attributes — Grid');
+            propertyAnnotations(end+1) = CANumericProperty('shouldAntialias',{},'bool', 'whether quadratic antialiasing is enabled', detailedDescription='- topic: Domain Attributes — Grid');
+            propertyAnnotations(end+1) = CANumericProperty('shouldExcludeNyquist',{},'bool', 'whether the horizontal grid excludes Nyquist wavenumbers', detailedDescription='- topic: Domain Attributes — Grid');
             propertyAnnotations(end+1) = CANumericProperty('shouldExcludeConjugates',{},'bool', 'whether the horizontal grid excludes redundant Hermitian-conjugate wavenumbers', detailedDescription='- topic: Domain Attributes — Grid');
             propertyAnnotations(end+1) = CANumericProperty('Nkl',{},'', 'points in the kl-coordinate, `length(k)`', detailedDescription='- topic: Domain Attributes — Grid — Spectral');
             propertyAnnotations(end+1) = CANumericProperty('k', {'kl'}, 'rad/m', 'wavenumber coordinate in the x-direction', detailedDescription='- topic: Domain Attributes — Grid — Spectral');

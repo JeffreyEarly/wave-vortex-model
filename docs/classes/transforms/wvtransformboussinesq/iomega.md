@@ -3,15 +3,18 @@ layout: default
 title: iOmega
 parent: WVTransformBoussinesq
 grand_parent: Transforms
-nav_order: 124
+nav_order: 143
 mathjax: true
 ---
 
 #  iOmega
 
-
-
-> Developer documentation: this item describes internal implementation details.
+Imaginary angular frequency, $$i\Omega$$, used for linear phase evolution.
 
 
 ---
+
+## Discussion
+
+`iOmega` has the transform's spectral shape, units of radians per
+second, and equals `1i*Omega`.

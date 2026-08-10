@@ -20,12 +20,16 @@ classdef TestUserDocumentation < matlab.unittest.TestCase
             eval(char(readmeBlock));
             testCase.verifyClass(wvt,"WVTransformConstantStratification");
             testCase.verifyClass(model,"WVModel");
-            testCase.verifyTrue(model.isDynamicsLinear);
+            testCase.verifyFalse(model.isDynamicsLinear);
+            testCase.verifyClass(wvt.forcingWithName("adaptive damping"),"WVAdaptiveDamping");
             testCase.verifyEqual(model.t,600);
             testCase.verifyTrue(any(abs(u)>0,"all"));
             testCase.verifySize(v,wvt.spatialMatrixSize);
             testCase.verifySize(w,wvt.spatialMatrixSize);
             testCase.verifyTrue(all(isfinite([omega k l])));
+            testCase.verifyFalse(contains(readmeBlock,"shouldUseLinearDynamics"));
+            testCase.verifyFalse(contains(readmeBlock,"shouldShowIntegrationDiagnostics"));
+            testCase.verifyFalse(contains(readmeBlock,"..."));
         end
 
         function readmePointsToHostedDocumentation(testCase)
@@ -78,6 +82,28 @@ classdef TestUserDocumentation < matlab.unittest.TestCase
             end
             testCase.verifySubstring(transformGuide,"`linear` or `spline`");
             testCase.verifySubstring(transformGuide,"isHydrostatic=true");
+
+            nonlinearStatement = "By default, it integrates nonlinear interactions among the resolved flow components.";
+            linearStatement = "Analytical linear evolution is also available when those nonlinear interactions should be omitted.";
+            nonlinearLocation = strfind(introduction,nonlinearStatement);
+            linearLocation = strfind(introduction,linearStatement);
+            testCase.verifyNumElements(nonlinearLocation,1);
+            testCase.verifyNumElements(linearLocation,1);
+            testCase.verifyLessThan(nonlinearLocation,linearLocation);
+            testCase.verifyFalse(contains(persistenceGuide,"shouldUseLinearDynamics"));
+        end
+
+        function handAuthoredExamplesAvoidUnnecessaryContinuations(testCase)
+            markdownFiles = dir(fullfile(testCase.canonicalRoot,"**","*.md"));
+            paths = [fullfile(testCase.repositoryRoot,"README.md"); string(fullfile({markdownFiles.folder},{markdownFiles.name})).'];
+            for path = paths'
+                page = testCase.readFile(path);
+                blocks = regexp(page,'(?s)```matlab\r?\n(?<code>.*?)```','names');
+                for iBlock = 1:numel(blocks)
+                    testCase.verifyEmpty(regexp(string(blocks(iBlock).code),'(?m)\.\.\.\s*$','once'), ...
+                        "Unnecessary MATLAB continuation remains in " + path);
+                end
+            end
         end
 
         function canonicalGuidanceAvoidsObsoleteProse(testCase)
@@ -150,6 +176,9 @@ classdef TestUserDocumentation < matlab.unittest.TestCase
             testCase.verifyNumElements(explanatoryText,1);
             testCase.verifyLessThan(equationStart,equationEnd);
             testCase.verifyLessThan(equationEnd,explanatoryText);
+            testCase.verifySubstring(forcingGuide,'$$\psi = p/(\rho_0 f)$$');
+            testCase.verifySubstring(forcingGuide,'$$\rho=- (\rho_0 f/g) \partial_z \psi$$');
+            testCase.verifyEmpty(regexp(forcingGuide,'(?<![\\$])\$(?!\$)','once'));
 
             advancedGuide = testCase.readCanonical(fullfile("users-guide","reading-and-writing-to-file-advanced.md"));
             testCase.verifyMatches(advancedGuide,'(?m)^title: "Reading and writing files: advanced topics"$');

@@ -3,15 +3,13 @@ layout: default
 title: Lr2
 parent: WVTransformHydrostatic
 grand_parent: Transforms
-nav_order: 22
+nav_order: 25
 mathjax: true
 ---
 
 #  Lr2
 
-squared Rossby radius
-
-> Developer documentation: this item describes internal implementation details.
+squared Rossby deformation radius of each geostrophic mode
 
 
 ---

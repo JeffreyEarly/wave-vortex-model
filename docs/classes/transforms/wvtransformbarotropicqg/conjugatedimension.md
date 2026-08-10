@@ -3,7 +3,7 @@ layout: default
 title: conjugateDimension
 parent: WVTransformBarotropicQG
 grand_parent: Transforms
-nav_order: 36
+nav_order: 37
 mathjax: true
 ---
 

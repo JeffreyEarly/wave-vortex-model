@@ -10,22 +10,20 @@ permalink: /
 
 WaveVortexModel represents rotating, stratified Boussinesq flow on an energetically orthogonal basis of internal waves, inertial oscillations, geostrophic motions, and mean-density anomalies.
 
-Use a [`WVTransform`](/classes/transforms/wvtransform/) to decompose a fluid state, reconstruct physical fields, and calculate diagnostics. Use [`WVModel`](/classes/wvmodel/) to integrate the state while advecting particles and tracers, sampling observing systems, and writing restartable NetCDF output.
+Use a [`WVTransform`](/classes/transforms/wvtransform/) to decompose a fluid state, reconstruct physical fields, and calculate diagnostics. Use [`WVModel`](/classes/wvmodel/) to integrate the nonlinear state while advecting particles and tracers, sampling observing systems, and writing restartable NetCDF output.
 
 ## Quick start
 
-Create a small constant-stratification transform, initialize one internal wave, inspect its velocity field, and advance the state with analytical linear dynamics:
+Create a small constant-stratification transform, initialize one internal wave, inspect its velocity field, and advance the state with nonlinear model integration:
 
 ```matlab
-wvt = WVTransformConstantStratification( ...
-    [40e3 40e3 1000], [16 16 9], N0=5.2e-3, latitude=45);
-
-[omega,k,l] = wvt.initWithWaveModes( ...
-    kMode=1, lMode=0, j=1, phi=0, u=0.05, sign=1);
+wvt = WVTransformConstantStratification([40e3 40e3 1000],[16 16 9],N0=5.2e-3,latitude=45);
+[omega,k,l] = wvt.initWithWaveModes(kMode=1,lMode=0,j=1,phi=0,u=0.05,sign=1);
 [u,v,w] = wvt.variableWithName('u','v','w');
 
-model = WVModel(wvt,shouldUseLinearDynamics=true);
-model.integrateToTime(600,shouldShowIntegrationDiagnostics=false);
+wvt.addForcing(WVAdaptiveDamping(wvt));
+model = WVModel(wvt);
+model.integrateToTime(600);
 ```
 
 The transform stores the decomposed state in `Ap`, `Am`, and `A0`. Variables such as velocity, density, pressure, energy, and potential vorticity are reconstructed from those coefficients when requested.

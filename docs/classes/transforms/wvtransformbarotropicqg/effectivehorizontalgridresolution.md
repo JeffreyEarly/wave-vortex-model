@@ -3,7 +3,7 @@ layout: default
 title: effectiveHorizontalGridResolution
 parent: WVTransformBarotropicQG
 grand_parent: Transforms
-nav_order: 47
+nav_order: 48
 mathjax: true
 ---
 

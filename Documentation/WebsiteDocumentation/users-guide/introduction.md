@@ -18,7 +18,7 @@ Transforms also provide the forward projection from physical fields to coefficie
 
 ## `WVModel`: evolve and observe a state
 
-A [`WVModel`](/classes/wvmodel/) advances a `WVTransform` in time. Analytical linear evolution is useful for evaluating a prescribed superposition of modes. Fixed-step and adaptive integration evolve active coefficient and observing-system dynamics.
+A [`WVModel`](/classes/wvmodel/) advances a `WVTransform` in time. By default, it integrates nonlinear interactions among the resolved flow components. Analytical linear evolution is also available when those nonlinear interactions should be omitted. Fixed-step and adaptive integration evolve active coefficient and observing-system dynamics.
 
 The model coordinates forcing and closures, Lagrangian particles, tracers, moorings, Eulerian fields, and wave–vortex coefficients. Output files and output groups allow these observing systems to be sampled on different schedules and restored for a later restart.
 
@@ -27,7 +27,7 @@ The model coordinates forcing and closures, Lagrangian particles, tracers, moori
 1. Construct the appropriate `WVTransform`.
 2. Initialize it from physical fields, individual modes, a spectrum, or a saved file.
 3. Inspect reconstructed fields and diagnostics.
-4. If integrating nonlinear dynamics, configure forcing and a closure.
+4. Configure forcing and a closure for nonlinear integration.
 5. Construct a `WVModel`, add observing systems or output, and integrate.
 
 Continue with [Using `WVTransform`](/users-guide/using-the-wvtransform.html) for concrete construction and initialization examples.

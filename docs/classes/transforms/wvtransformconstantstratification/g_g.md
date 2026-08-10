@@ -3,7 +3,7 @@ layout: default
 title: G_g
 parent: WVTransformConstantStratification
 grand_parent: Transforms
-nav_order: 26
+nav_order: 29
 mathjax: true
 ---
 

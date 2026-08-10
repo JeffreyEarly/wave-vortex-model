@@ -3,15 +3,13 @@ layout: default
 title: shouldAntialias
 parent: WVTransformBoussinesq
 grand_parent: Transforms
-nav_order: 216
+nav_order: 249
 mathjax: true
 ---
 
 #  shouldAntialias
 
-whether the WV grid includes quadratically aliased wavenumbers
-
-> Developer documentation: this item describes internal implementation details.
+whether quadratic antialiasing is enabled
 
 
 ---

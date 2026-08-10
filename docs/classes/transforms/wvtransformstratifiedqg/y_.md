@@ -3,15 +3,13 @@ layout: default
 title: Y
 parent: WVTransformStratifiedQG
 grand_parent: Transforms
-nav_order: 40
+nav_order: 41
 mathjax: true
 ---
 
 #  Y
 
 y-coordinate matrix
-
-> Developer documentation: this item describes internal implementation details.
 
 
 ---

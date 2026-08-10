@@ -18,22 +18,54 @@ classdef WVTransformBarotropicQG < WVGeometryDoublyPeriodicBarotropic & WVTransf
     % `A0t`. This transform has no active `Ap`, `Am`, `Apt`, or `Amt` content.
     %
     % - Topic: Create and restore a transform
-    % - Topic: Inspect wave-vortex coefficients
-    % - Topic: Inspect wave-vortex coefficients — Coefficients at the current time
     % - Topic: Inspect the domain
+    % - Topic: Inspect the domain — Physical environment
+    % - Topic: Inspect the domain — Physical environment — Planetary rotation
+    % - Topic: Inspect the domain — Physical environment — Gravity
     % - Topic: Inspect the domain — Spatial grid
+    % - Topic: Inspect the domain — Spatial grid — Coordinate axes
+    % - Topic: Inspect the domain — Spatial grid — Coordinate arrays
+    % - Topic: Inspect the domain — Spatial grid — Domain dimensions
+    % - Topic: Inspect the domain — Spatial grid — Resolution and shape
     % - Topic: Inspect the domain — Spectral grid
-    % - Topic: Inspect the domain — Rotation and stratification
+    % - Topic: Inspect the domain — Spectral grid — Axes and spacing
+    % - Topic: Inspect the domain — Spectral grid — Coordinate arrays
+    % - Topic: Inspect the domain — Spectral grid — Horizontal wavenumber geometry
+    % - Topic: Inspect the domain — Spectral grid — Resolution and shape
+    % - Topic: Inspect the domain — Spectral grid — Equivalent depth and deformation scale
+    % - Topic: Inspect the domain — Transform configuration
     % - Topic: Initialize the flow
+    % - Topic: Initialize the flow — General initialization
     % - Topic: Initialize the flow — Geostrophic motions
     % - Topic: Evaluate physical fields
+    % - Topic: Evaluate physical fields — Registered variables
     % - Topic: Evaluate physical fields — On the model grid
-    % - Topic: Convert representations
-    % - Topic: Convert representations — Physical fields and coefficients
+    % - Topic: Evaluate physical fields — On the model grid — Velocity
+    % - Topic: Evaluate physical fields — On the model grid — Pressure and surface fields
+    % - Topic: Evaluate physical fields — On the model grid — Vorticity and geostrophic fields
+    % - Topic: Evaluate physical fields — At arbitrary positions
+    % - Topic: Manage forcing and closures
     % - Topic: Analyze the flow
     % - Topic: Analyze the flow — Energy and summaries
+    % - Topic: Analyze the flow — Flow diagnostics
     % - Topic: Analyze the flow — Potential vorticity and enstrophy
     % - Topic: Analyze the flow — Spectra
+    % - Topic: Analyze the flow — Spectra — Spectral fields
+    % - Topic: Analyze the flow — Spectra — Radial wavenumber
+    % - Topic: Save transform state
+    % - Topic: Convert representations
+    % - Topic: Convert representations — Physical fields and coefficients
+    % - Topic: Differentiate and integrate fields
+    % - Topic: Inspect flow components
+    % - Topic: Inspect wave-vortex coefficients
+    % - Topic: Inspect wave-vortex coefficients — Stored coefficients
+    % - Topic: Inspect wave-vortex coefficients — Coefficients at the current time
+    % - Topic: Inspect wave-vortex coefficients — Coefficient evolution
+    % - Topic: Create a related transform
+    % - Topic: Extend a transform
+    % - Topic: Extend a transform — Flow components
+    % - Topic: Extend a transform — Operations and variables
+    % - Topic: Get package information
     % - Topic: Projection and reconstruction coefficients
     % - Topic: Geometry and mode indexing
     % - Topic: Spectral transforms and operators
@@ -382,7 +414,7 @@ classdef WVTransformBarotropicQG < WVGeometryDoublyPeriodicBarotropic & WVTransf
         end
 
         function [wvt,ncfile] = waveVortexTransformFromFile(path,options)
-            % Initialize a WVTransformHydrostatic instance from an existing file
+            % Restore a WVTransformBarotropicQG instance from an existing file
             %
             % This static method is called by WVTransform.waveVortexTransformFromFile
             % and should not need to be called directly.

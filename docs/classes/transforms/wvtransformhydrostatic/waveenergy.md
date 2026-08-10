@@ -3,19 +3,19 @@ layout: default
 title: waveEnergy
 parent: WVTransformHydrostatic
 grand_parent: Transforms
-nav_order: 242
+nav_order: 294
 mathjax: true
 ---
 
 #  waveEnergy
 
-total energy of the geostrophic flow
+Total energy of the internal-gravity-wave flow.
 
 
 ---
 
 ## Declaration
 ```matlab
- geostrophicEnergy
+ energy = waveEnergy()
 ```
 ## Discussion

@@ -3,15 +3,13 @@ layout: default
 title: geostrophicPotentialEnergy
 parent: WVTransformHydrostatic
 grand_parent: Transforms
-nav_order: 104
+nav_order: 119
 mathjax: true
 ---
 
 #  geostrophicPotentialEnergy
 
 potential energy of the geostrophic flow
-
-> Developer documentation: this item describes internal implementation details.
 
 
 ---

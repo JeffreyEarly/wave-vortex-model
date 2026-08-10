@@ -3,7 +3,7 @@ layout: default
 title: dftConjugateIndices2D
 parent: WVTransformBoussinesq
 grand_parent: Transforms
-nav_order: 95
+nav_order: 105
 mathjax: true
 ---
 

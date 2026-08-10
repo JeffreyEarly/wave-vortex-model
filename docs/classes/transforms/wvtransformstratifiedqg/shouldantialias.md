@@ -3,15 +3,13 @@ layout: default
 title: shouldAntialias
 parent: WVTransformStratifiedQG
 grand_parent: Transforms
-nav_order: 153
+nav_order: 183
 mathjax: true
 ---
 
 #  shouldAntialias
 
-whether the WV grid includes quadratically aliased wavenumbers
-
-> Developer documentation: this item describes internal implementation details.
+whether quadratic antialiasing is enabled
 
 
 ---

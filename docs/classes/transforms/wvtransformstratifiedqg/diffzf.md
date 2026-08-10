@@ -3,7 +3,7 @@ layout: default
 title: diffZF
 parent: WVTransformStratifiedQG
 grand_parent: Transforms
-nav_order: 60
+nav_order: 67
 mathjax: true
 ---
 

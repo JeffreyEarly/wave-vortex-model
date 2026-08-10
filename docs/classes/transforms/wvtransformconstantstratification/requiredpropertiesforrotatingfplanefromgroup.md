@@ -3,7 +3,7 @@ layout: default
 title: requiredPropertiesForRotatingFPlaneFromGroup
 parent: WVTransformConstantStratification
 grand_parent: Transforms
-nav_order: 195
+nav_order: 227
 mathjax: true
 ---
 

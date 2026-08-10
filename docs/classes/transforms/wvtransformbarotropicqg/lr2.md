@@ -9,9 +9,7 @@ mathjax: true
 
 #  Lr2
 
-squared Rossby radius
-
-> Developer documentation: this item describes internal implementation details.
+squared barotropic Rossby deformation radius
 
 
 ---

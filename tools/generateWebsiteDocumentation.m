@@ -103,8 +103,50 @@ documentation = ClassDocumentation(className,options{:});
 normalizeReflectedDocumentation(documentation);
 mergeCanonicalSidecars(documentation,sidecarFolders);
 applyDocumentationTaxonomy(documentation);
+configureTransformInheritance(documentation,className);
 documentation.writeToFile();
 normalizeGeneratedMarkdown(documentation.pathOfClassFolderOnHardDrive);
+end
+
+function configureTransformInheritance(documentation,className)
+if ~startsWith(className,"WVTransform")
+    return
+end
+
+% Concrete transform pages should describe the inherited interface that
+% users can call without repeating inherited implementation machinery.
+% Reassigning this observable property selects individual superclasses
+% rather than ClassDocumentation's special "all superclasses" shorthand.
+documentation.excludedSuperclasses = {'handle'};
+inheritedDeveloperClasses = ["CAAnnotatedClass","matlab.mixin.indexing.RedefinesDot"];
+if className ~= "WVTransform"
+    inheritedDeveloperClasses(end+1) = "WVTransform";
+end
+
+excludedNames = "geometryFromFile";
+for metadata = documentation.allMethodDocumentation
+    isInheritedDeveloper = metadata.isDeveloper && any(arrayfun( ...
+        @(name) metadata.isDeclaredInClass(name), inheritedDeveloperClasses));
+    if isInheritedDeveloper
+        excludedNames(end+1) = string(metadata.name);
+    end
+end
+
+if ismember(className,["WVTransformStratifiedQG","WVTransformBarotropicQG"])
+    excludedNames = [excludedNames "Ap" "Am" "convertFromWavenumberToFrequency"];
+    a0Index = find(string({documentation.allMethodDocumentation.name}) == "A0",1);
+    if ~isempty(a0Index)
+        documentation.allMethodDocumentation(a0Index).shortDescription = ...
+            "Zero-frequency geostrophic coefficients.";
+    end
+end
+if className == "WVTransformBarotropicQG"
+    excludedNames = [excludedNames ...
+        "z" "Z" "Lz" "Nz" "j" "J" "Nj" "kljGrid" "effectiveJMax" ...
+        "initWithUVEta" "initWithUVRho" "addUVEta" ...
+        "transformUVEtaToWaveVortex" "transformWaveVortexToUVWEta"];
+end
+documentation.excludedMethodNames = unique(excludedNames,'stable');
 end
 
 function normalizeReflectedDocumentation(documentation)
@@ -258,9 +300,48 @@ for iPage = 1:numel(pages)
     pageText = regexprep(pageText,'[ \t]+(?=\r?\n|$)','');
     pageText = regexprep(pageText,'(## Discussion)(?:\r?\n){3,}','$1\n\n');
     pageText = regexprep(pageText,'(?:\r?\n){5,}(?=## Topics)','\n\n\n\n\n');
+    if pages(iPage).name == "index.md"
+        pageText = pruneEmptyTopicBranches(pageText);
+    end
     pageText = regexprep(pageText,'(?:\r?\n)*$','\n');
     writeTextFile(pagePath,pageText);
 end
+end
+
+function pageText = pruneEmptyTopicBranches(pageText)
+lines = splitlines(string(pageText));
+topicsStart = find(lines == "## Topics",1);
+if isempty(topicsStart)
+    return
+end
+
+removeLine = false(size(lines));
+for iLine = topicsStart+1:numel(lines)
+    match = regexp(lines(iLine),'^(?<indent> *)\+ (?<text>.*)$','names','once');
+    if isempty(match) || contains(match.text,"](")
+        continue
+    end
+    indent = strlength(string(match.indent));
+    hasLinkedDescendant = false;
+    for iNext = iLine+1:numel(lines)
+        nextMatch = regexp(lines(iNext),'^(?<indent> *)\+ (?<text>.*)$','names','once');
+        if startsWith(lines(iNext),"## ") || lines(iNext) == "---"
+            break
+        elseif isempty(nextMatch)
+            continue
+        end
+        nextIndent = strlength(string(nextMatch.indent));
+        if nextIndent <= indent
+            break
+        elseif contains(nextMatch.text,"](")
+            hasLinkedDescendant = true;
+            break
+        end
+    end
+    removeLine(iLine) = ~hasLinkedDescendant;
+end
+lines(removeLine) = [];
+pageText = join(lines,newline);
 end
 
 function writeTextFile(path,text)

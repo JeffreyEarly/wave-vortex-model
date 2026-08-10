@@ -3,15 +3,13 @@ layout: default
 title: rho0
 parent: WVTransformHydrostatic
 grand_parent: Transforms
-nav_order: 184
+nav_order: 216
 mathjax: true
 ---
 
 #  rho0
 
-, dLnN2
-
-> Developer documentation: this item describes internal implementation details.
+Boussinesq reference density.
 
 
 ---

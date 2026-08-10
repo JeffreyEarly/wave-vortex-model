@@ -11,8 +11,6 @@ mathjax: true
 
 horizontal wavenumber, $$Kh=\sqrt(K^2+L^2)$$
 
-> Developer documentation: this item describes internal implementation details.
-
 
 ---
 

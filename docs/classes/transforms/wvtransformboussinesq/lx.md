@@ -3,7 +3,7 @@ layout: default
 title: Lx
 parent: WVTransformBoussinesq
 grand_parent: Transforms
-nav_order: 31
+nav_order: 34
 mathjax: true
 ---
 

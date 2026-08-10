@@ -3,13 +3,13 @@ layout: default
 title: z
 parent: WVTransformConstantStratification
 grand_parent: Transforms
-nav_order: 256
+nav_order: 312
 mathjax: true
 ---
 
 #  z
 
-z coordinate
+Vertical coordinate axis.
 
 
 ---

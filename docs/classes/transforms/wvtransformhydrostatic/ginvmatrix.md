@@ -3,7 +3,7 @@ layout: default
 title: GinvMatrix
 parent: WVTransformHydrostatic
 grand_parent: Transforms
-nav_order: 16
+nav_order: 19
 mathjax: true
 ---
 

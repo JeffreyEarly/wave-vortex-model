@@ -3,18 +3,16 @@ layout: default
 title: J
 parent: WVTransformHydrostatic
 grand_parent: Transforms
-nav_order: 17
+nav_order: 20
 mathjax: true
 ---
 
 #  J
 
-j-coordinate matrix
-
-> Developer documentation: this item describes internal implementation details.
+vertical mode-number matrix
 
 
 ---
 
 ## Description
-Real valued property with dimensions $$(j,kl)$$ and units of $$rad/m$$.
+Real valued property with dimensions $$(j,kl)$$ and units of $$mode number$$.

@@ -451,7 +451,7 @@ classdef WVGeometryDoublyPeriodicStratifiedBoussinesq < WVGeometryDoublyPeriodic
             propertyAnnotations(end+1) = CANumericProperty('Ppm',{'j','K2unique'},'','Preconditioner for F, size(P)=[1 Nj]. F*u = uhat, (PF)*u = P*uhat, so ubar==P*uhat');
             propertyAnnotations(end+1) = CANumericProperty('Qpm',{'j','K2unique'},'','Preconditioner for G, size(Q)=[1 Nj]. G*eta = etahat, (QG)*eta = Q*etahat, so etabar==Q*etahat. ');
             propertyAnnotations(end+1) = CANumericProperty('QGwg',{'j','j','K2unique'},'','Transformation from geostrophic to wave-modes');
-            propertyAnnotations(end+1) = CANumericProperty('h_pm',{'j','kl'},'m', 'equivalent depth of each wave mode', detailedDescription='- topic: Domain Attributes — Stratification');
+            propertyAnnotations(end+1) = CANumericProperty('h_pm',{'j','kl'},'m', 'equivalent depth of each wave mode and horizontal wavenumber', detailedDescription='- topic: Domain Attributes — Stratification');
         end
 
         function [Lxyz, Nxyz, options] = requiredPropertiesForGeometryFromGroup(group)

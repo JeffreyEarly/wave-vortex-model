@@ -55,26 +55,19 @@ corresponding coefficients evaluated at the current transform time.
 
 ## Topics
 + Create and restore a transform
-  + [`spectralVariableWithResolution`](/classes/transforms/wvtransform/spectralvariablewithresolution.html) create a new variable with different resolution
   + [`waveVortexTransformFromFile`](/classes/transforms/wvtransform/wavevortextransformfromfile.html) Initialize a WVTransform instance from an existing file
-  + [`waveVortexTransformWithDoubleResolution`](/classes/transforms/wvtransform/wavevortextransformwithdoubleresolution.html) create a new WVTransform with double resolution
-  + [`waveVortexTransformWithResolution`](/classes/transforms/wvtransform/wavevortextransformwithresolution.html) Construct the same transform family at a requested resolution.
-+ Inspect wave-vortex coefficients
-  + Stored coefficients
-    + [`A0`](/classes/transforms/wvtransform/a0.html) Zero-frequency geostrophic and mean-density-anomaly coefficients.
-    + [`Am`](/classes/transforms/wvtransform/am.html) Negative-frequency wave and inertial coefficients at reference time `t0`.
-    + [`Ap`](/classes/transforms/wvtransform/ap.html) Positive-frequency wave and inertial coefficients at reference time `t0`.
-+ Set and inspect time
-  + [`t`](/classes/transforms/wvtransform/t.html) Current transform time in seconds.
-  + [`t0`](/classes/transforms/wvtransform/t0.html) Reference time for the stored wave phases, in seconds.
++ Inspect the domain
+  + Transform configuration
+    + [`isHydrostatic`](/classes/transforms/wvtransform/ishydrostatic.html)
 + Initialize the flow
-  + [`addRandomFlow`](/classes/transforms/wvtransform/addrandomflow.html) add randomized flow to the existing state
-  + [`addUVEta`](/classes/transforms/wvtransform/adduveta.html) add $$(u,v,\eta)$$ to the existing values
-  + [`initFromNetCDFFile`](/classes/transforms/wvtransform/initfromnetcdffile.html) initialize the flow from a NetCDF file
-  + [`initWithRandomFlow`](/classes/transforms/wvtransform/initwithrandomflow.html) initialize with a random flow state
-  + [`initWithUVEta`](/classes/transforms/wvtransform/initwithuveta.html) initialize with fluid variables $$(u,v,\eta)$$
-  + [`initWithUVRho`](/classes/transforms/wvtransform/initwithuvrho.html) initialize with fluid variables $$(u,v,\rho)$$
-  + [`removeAll`](/classes/transforms/wvtransform/removeall.html) removes all energy from the model
+  + General initialization
+    + [`addRandomFlow`](/classes/transforms/wvtransform/addrandomflow.html) add randomized flow to the existing state
+    + [`addUVEta`](/classes/transforms/wvtransform/adduveta.html) add $$(u,v,\eta)$$ to the existing values
+    + [`initFromNetCDFFile`](/classes/transforms/wvtransform/initfromnetcdffile.html) initialize the flow from a NetCDF file
+    + [`initWithRandomFlow`](/classes/transforms/wvtransform/initwithrandomflow.html) initialize with a random flow state
+    + [`initWithUVEta`](/classes/transforms/wvtransform/initwithuveta.html) initialize with fluid variables $$(u,v,\eta)$$
+    + [`initWithUVRho`](/classes/transforms/wvtransform/initwithuvrho.html) initialize with fluid variables $$(u,v,\rho)$$
+    + [`removeAll`](/classes/transforms/wvtransform/removeall.html) removes all energy from the model
 + Evaluate physical fields
   + Registered variables
     + [`hasVariableWithName`](/classes/transforms/wvtransform/hasvariablewithname.html) Test whether state variables are registered by name.
@@ -83,26 +76,6 @@ corresponding coefficients evaluated at the current transform time.
     + [`variableWithName`](/classes/transforms/wvtransform/variablewithname.html) Compute or retrieve one or more registered transform variables.
   + At arbitrary positions
     + [`variableAtPositionWithName`](/classes/transforms/wvtransform/variableatpositionwithname.html) Access dynamical variables at arbitrary positions in the domain.
-+ Inspect the domain
-  + Rotation and stratification
-    + [`isHydrostatic`](/classes/transforms/wvtransform/ishydrostatic.html)
-+ Convert representations
-  + Physical fields and coefficients
-    + [`transformUVEtaToWaveVortex`](/classes/transforms/wvtransform/transformuvetatowavevortex.html) transform fluid variables $$(u,v,\eta)$$ to wave-vortex coefficients $$(A_+,A_-,A_0)$$.
-    + [`transformWaveVortexToUVWEta`](/classes/transforms/wvtransform/transformwavevortextouvweta.html) transform wave-vortex coefficients $$(A_+,A_-,A_0)$$ to fluid variables $$(u,v,\eta)$$.
-+ Analyze the flow
-  + Energy and summaries
-    + [`hasMeanPressureDifference`](/classes/transforms/wvtransform/hasmeanpressuredifference.html) Diagnose an MDA mean-pressure difference between the boundaries.
-    + [`summarizeDegreesOfFreedom`](/classes/transforms/wvtransform/summarizedegreesoffreedom.html) Summarize the spatial grid and active spectral degrees of freedom.
-    + [`summarizeEnergyContent`](/classes/transforms/wvtransform/summarizeenergycontent.html) displays a summary of the energy content of the fluid
-    + [`summarizeModeEnergy`](/classes/transforms/wvtransform/summarizemodeenergy.html) List the most energetic modes
-    + [`totalEnergy`](/classes/transforms/wvtransform/totalenergy.html)
-    + [`totalEnergyOfFlowComponent`](/classes/transforms/wvtransform/totalenergyofflowcomponent.html)
-    + [`totalEnergySpatiallyIntegrated`](/classes/transforms/wvtransform/totalenergyspatiallyintegrated.html)
-  + Potential vorticity and enstrophy
-    + [`enstrophyFluxFromNonlinearFlux`](/classes/transforms/wvtransform/enstrophyfluxfromnonlinearflux.html) converts nonlinear flux into enstrophy flux
-  + Spectra
-    + [`convertFromWavenumberToFrequency`](/classes/transforms/wvtransform/convertfromwavenumbertofrequency.html) Bin wave energy by vertical mode and intrinsic frequency
 + Manage forcing and closures
   + [`addForcing`](/classes/transforms/wvtransform/addforcing.html) Add forcing or closure objects to this transform.
   + [`forcing`](/classes/transforms/wvtransform/forcing.html)
@@ -114,18 +87,49 @@ corresponding coefficients evaluated at the current transform time.
   + [`removeForcing`](/classes/transforms/wvtransform/removeforcing.html) Remove the exact registered forcing objects.
   + [`setForcing`](/classes/transforms/wvtransform/setforcing.html) Replace the complete forcing registry.
   + [`summarizeForcing`](/classes/transforms/wvtransform/summarizeforcing.html) Print a table of registered forcing and closure objects.
++ Analyze the flow
+  + Energy and summaries
+    + [`hasMeanPressureDifference`](/classes/transforms/wvtransform/hasmeanpressuredifference.html) Diagnose an MDA mean-pressure difference between the boundaries.
+    + [`summarizeDegreesOfFreedom`](/classes/transforms/wvtransform/summarizedegreesoffreedom.html) Summarize the spatial grid and active spectral degrees of freedom.
+    + [`summarizeEnergyContent`](/classes/transforms/wvtransform/summarizeenergycontent.html) displays a summary of the energy content of the fluid
+    + [`summarizeModeEnergy`](/classes/transforms/wvtransform/summarizemodeenergy.html) List the most energetic modes
+    + [`totalEnergy`](/classes/transforms/wvtransform/totalenergy.html)
+    + [`totalEnergyOfFlowComponent`](/classes/transforms/wvtransform/totalenergyofflowcomponent.html)
+    + [`totalEnergySpatiallyIntegrated`](/classes/transforms/wvtransform/totalenergyspatiallyintegrated.html)
+  + Spectra
+    + Frequency
+      + [`convertFromWavenumberToFrequency`](/classes/transforms/wvtransform/convertfromwavenumbertofrequency.html) Bin wave energy by vertical mode and intrinsic frequency
++ Save transform state
+  + [`writeToFile`](/classes/transforms/wvtransform/writetofile.html) Write this instance to NetCDF file.
++ Convert representations
+  + Physical fields and coefficients
+    + [`transformUVEtaToWaveVortex`](/classes/transforms/wvtransform/transformuvetatowavevortex.html) transform fluid variables $$(u,v,\eta)$$ to wave-vortex coefficients $$(A_+,A_-,A_0)$$.
+    + [`transformWaveVortexToUVWEta`](/classes/transforms/wvtransform/transformwavevortextouvweta.html) transform wave-vortex coefficients $$(A_+,A_-,A_0)$$ to fluid variables $$(u,v,\eta)$$.
++ Inspect flow components
+  + [`flowComponentNames`](/classes/transforms/wvtransform/flowcomponentnames.html) retrieve the names of all available variables
+  + [`flowComponentWithName`](/classes/transforms/wvtransform/flowcomponentwithname.html) retrieve a WVFlowComponent by name
+  + [`flowComponents`](/classes/transforms/wvtransform/flowcomponents.html)
+  + [`primaryFlowComponentNames`](/classes/transforms/wvtransform/primaryflowcomponentnames.html) retrieve the names of all available variables
+  + [`primaryFlowComponentWithName`](/classes/transforms/wvtransform/primaryflowcomponentwithname.html) retrieve a WVPrimaryFlowComponent by name
+  + [`primaryFlowComponents`](/classes/transforms/wvtransform/primaryflowcomponents.html)
+  + [`summarizeFlowComponents`](/classes/transforms/wvtransform/summarizeflowcomponents.html) Print a table of registered primary and diagnostic components.
+  + [`totalFlowComponent`](/classes/transforms/wvtransform/totalflowcomponent.html)
++ Inspect wave-vortex coefficients
+  + Stored coefficients
+    + [`Ap`](/classes/transforms/wvtransform/ap.html) Positive-frequency wave and inertial coefficients at reference time `t0`.
+    + [`Am`](/classes/transforms/wvtransform/am.html) Negative-frequency wave and inertial coefficients at reference time `t0`.
+    + [`A0`](/classes/transforms/wvtransform/a0.html) Zero-frequency geostrophic and mean-density-anomaly coefficients.
+  + Coefficient evolution
+    + [`t0`](/classes/transforms/wvtransform/t0.html) Reference time for the stored wave phases, in seconds.
+    + [`t`](/classes/transforms/wvtransform/t.html) Current transform time in seconds.
++ Create a related transform
+  + [`spectralVariableWithResolution`](/classes/transforms/wvtransform/spectralvariablewithresolution.html) create a new variable with different resolution
+  + [`waveVortexTransformWithDoubleResolution`](/classes/transforms/wvtransform/wavevortextransformwithdoubleresolution.html) create a new WVTransform with double resolution
+  + [`waveVortexTransformWithResolution`](/classes/transforms/wvtransform/wavevortextransformwithresolution.html) Construct the same transform family at a requested resolution.
 + Extend a transform
   + Flow components
     + [`addFlowComponent`](/classes/transforms/wvtransform/addflowcomponent.html) add a flow component and its standard variables
     + [`addPrimaryFlowComponent`](/classes/transforms/wvtransform/addprimaryflowcomponent.html) add a primary flow component, automatically added to the flow
-    + [`flowComponentNames`](/classes/transforms/wvtransform/flowcomponentnames.html) retrieve the names of all available variables
-    + [`flowComponentWithName`](/classes/transforms/wvtransform/flowcomponentwithname.html) retrieve a WVFlowComponent by name
-    + [`flowComponents`](/classes/transforms/wvtransform/flowcomponents.html)
-    + [`primaryFlowComponentNames`](/classes/transforms/wvtransform/primaryflowcomponentnames.html) retrieve the names of all available variables
-    + [`primaryFlowComponentWithName`](/classes/transforms/wvtransform/primaryflowcomponentwithname.html) retrieve a WVPrimaryFlowComponent by name
-    + [`primaryFlowComponents`](/classes/transforms/wvtransform/primaryflowcomponents.html)
-    + [`summarizeFlowComponents`](/classes/transforms/wvtransform/summarizeflowcomponents.html) Print a table of registered primary and diagnostic components.
-    + [`totalFlowComponent`](/classes/transforms/wvtransform/totalflowcomponent.html)
   + Operations and variables
     + [`addOperation`](/classes/transforms/wvtransform/addoperation.html) Register one or more operations and their output variables.
     + [`operationWithName`](/classes/transforms/wvtransform/operationwithname.html) retrieve a WVOperation by name
@@ -136,13 +140,6 @@ corresponding coefficients evaluated at the current transform time.
 
 ## Developer Topics
 These items document internal implementation details and are not part of the primary public API.
-+ Inspect wave-vortex coefficients
-+ Initialize the flow
-+ Evaluate physical fields
-+ Inspect the domain
-+ Convert representations
-+ Analyze the flow
-+ Extend a transform
 + Projection and reconstruction coefficients
   + [`A0_KE_factor`](/classes/transforms/wvtransform/a0_ke_factor.html)
   + [`A0_PE_factor`](/classes/transforms/wvtransform/a0_pe_factor.html)
@@ -165,6 +162,7 @@ These items document internal implementation details and are not part of the pri
   + [`transformToSpatialDomainWithGAllDerivatives`](/classes/transforms/wvtransform/transformtospatialdomainwithgallderivatives.html)
 + Nonlinear flux and forcing internals
   + [`energyFluxFromNonlinearFlux`](/classes/transforms/wvtransform/energyfluxfromnonlinearflux.html) converts nonlinear flux into energy flux
+  + [`enstrophyFluxFromNonlinearFlux`](/classes/transforms/wvtransform/enstrophyfluxfromnonlinearflux.html) converts nonlinear flux into enstrophy flux
   + [`forcingType`](/classes/transforms/wvtransform/forcingtype.html)
   + [`nFluxedComponents`](/classes/transforms/wvtransform/nfluxedcomponents.html)
   + [`nonlinearFlux`](/classes/transforms/wvtransform/nonlinearflux.html)

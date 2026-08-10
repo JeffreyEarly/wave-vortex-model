@@ -3,15 +3,13 @@ layout: default
 title: Kh
 parent: WVTransformHydrostatic
 grand_parent: Transforms
-nav_order: 20
+nav_order: 23
 mathjax: true
 ---
 
 #  Kh
 
 horizontal wavenumber, $$Kh=\sqrt(K^2+L^2)$$
-
-> Developer documentation: this item describes internal implementation details.
 
 
 ---

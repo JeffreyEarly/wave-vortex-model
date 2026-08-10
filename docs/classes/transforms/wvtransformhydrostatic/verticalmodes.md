@@ -3,13 +3,13 @@ layout: default
 title: verticalModes
 parent: WVTransformHydrostatic
 grand_parent: Transforms
-nav_order: 235
+nav_order: 287
 mathjax: true
 ---
 
 #  verticalModes
 
-instance of the InternalModes class
+Vertical eigenmodes used by the transform.
 
 
 ---

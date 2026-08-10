@@ -3,13 +3,13 @@ layout: default
 title: j
 parent: WVTransformHydrostatic
 grand_parent: Transforms
-nav_order: 134
+nav_order: 158
 mathjax: true
 ---
 
 #  j
 
-vertical mode number
+Vertical-mode index axis.
 
 
 ---

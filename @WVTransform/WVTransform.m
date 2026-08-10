@@ -30,35 +30,65 @@ classdef WVTransform < matlab.mixin.indexing.RedefinesDot & CAAnnotatedClass
     % corresponding coefficients evaluated at the current transform time.
     %
     % - Topic: Create and restore a transform
-    % - Topic: Inspect wave-vortex coefficients
-    % - Topic: Inspect wave-vortex coefficients — Stored coefficients
-    % - Topic: Inspect wave-vortex coefficients — Coefficients at the current time
-    % - Topic: Set and inspect time
+    % - Topic: Inspect the domain
+    % - Topic: Inspect the domain — Physical environment
+    % - Topic: Inspect the domain — Physical environment — Planetary rotation
+    % - Topic: Inspect the domain — Physical environment — Stratification and reference density
+    % - Topic: Inspect the domain — Physical environment — Gravity
+    % - Topic: Inspect the domain — Spatial grid
+    % - Topic: Inspect the domain — Spatial grid — Coordinate axes
+    % - Topic: Inspect the domain — Spatial grid — Coordinate arrays
+    % - Topic: Inspect the domain — Spatial grid — Domain dimensions
+    % - Topic: Inspect the domain — Spatial grid — Resolution and shape
+    % - Topic: Inspect the domain — Spatial grid — Quadrature and integration
+    % - Topic: Inspect the domain — Spectral grid
+    % - Topic: Inspect the domain — Spectral grid — Axes and spacing
+    % - Topic: Inspect the domain — Spectral grid — Coordinate arrays
+    % - Topic: Inspect the domain — Spectral grid — Horizontal wavenumber geometry
+    % - Topic: Inspect the domain — Spectral grid — Resolution and shape
+    % - Topic: Inspect the domain — Spectral grid — Vertical modes and scaling
+    % - Topic: Inspect the domain — Transform configuration
     % - Topic: Initialize the flow
+    % - Topic: Initialize the flow — General initialization
     % - Topic: Initialize the flow — Waves
+    % - Topic: Initialize the flow — Waves — Individual modes
+    % - Topic: Initialize the flow — Waves — Wave spectra
     % - Topic: Initialize the flow — Inertial oscillations
     % - Topic: Initialize the flow — Geostrophic motions
     % - Topic: Initialize the flow — Mean density anomalies
     % - Topic: Evaluate physical fields
-    % - Topic: Evaluate physical fields — On the model grid
     % - Topic: Evaluate physical fields — Registered variables
+    % - Topic: Evaluate physical fields — On the model grid
+    % - Topic: Evaluate physical fields — On the model grid — Velocity
+    % - Topic: Evaluate physical fields — On the model grid — Density and displacement
+    % - Topic: Evaluate physical fields — On the model grid — Pressure and surface fields
+    % - Topic: Evaluate physical fields — On the model grid — Vorticity and geostrophic fields
     % - Topic: Evaluate physical fields — At arbitrary positions
-    % - Topic: Inspect the domain
-    % - Topic: Inspect the domain — Spatial grid
-    % - Topic: Inspect the domain — Spectral grid
-    % - Topic: Inspect the domain — Rotation and stratification
+    % - Topic: Evaluate physical fields — Isopycnal utilities
+    % - Topic: Manage forcing and closures
+    % - Topic: Analyze the flow
+    % - Topic: Analyze the flow — Energy and summaries
+    % - Topic: Analyze the flow — Flow diagnostics
+    % - Topic: Analyze the flow — Density validity
+    % - Topic: Analyze the flow — Potential vorticity and enstrophy
+    % - Topic: Analyze the flow — Spectra
+    % - Topic: Analyze the flow — Spectra — Spectral fields
+    % - Topic: Analyze the flow — Spectra — Radial wavenumber
+    % - Topic: Analyze the flow — Spectra — Pseudo-radial wavenumber
+    % - Topic: Analyze the flow — Spectra — Frequency
+    % - Topic: Save transform state
     % - Topic: Convert representations
     % - Topic: Convert representations — Physical fields and coefficients
     % - Topic: Differentiate and integrate fields
-    % - Topic: Analyze the flow
-    % - Topic: Analyze the flow — Energy and summaries
-    % - Topic: Analyze the flow — Potential vorticity and enstrophy
-    % - Topic: Analyze the flow — Spectra
-    % - Topic: Manage forcing and closures
+    % - Topic: Inspect flow components
+    % - Topic: Inspect wave-vortex coefficients
+    % - Topic: Inspect wave-vortex coefficients — Stored coefficients
+    % - Topic: Inspect wave-vortex coefficients — Coefficients at the current time
+    % - Topic: Inspect wave-vortex coefficients — Coefficient evolution
+    % - Topic: Create a related transform
     % - Topic: Extend a transform
     % - Topic: Extend a transform — Flow components
     % - Topic: Extend a transform — Operations and variables
-    % - Topic: Save transform state
     % - Topic: Get package information
     % - Topic: Projection and reconstruction coefficients
     % - Topic: Geometry and mode indexing

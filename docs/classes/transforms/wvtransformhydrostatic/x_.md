@@ -3,15 +3,13 @@ layout: default
 title: X
 parent: WVTransformHydrostatic
 grand_parent: Transforms
-nav_order: 55
+nav_order: 58
 mathjax: true
 ---
 
 #  X
 
 x-coordinate matrix
-
-> Developer documentation: this item describes internal implementation details.
 
 
 ---

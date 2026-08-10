@@ -3,16 +3,16 @@ layout: default
 title: z_int
 parent: WVTransformHydrostatic
 grand_parent: Transforms
-nav_order: 250
+nav_order: 306
 mathjax: true
 ---
 
 #  z_int
 
-Quadrature weights for the vertical grid
+Vertical quadrature weights.
 
 
 ---
 
 ## Description
-Real valued property with dimension $$z$$ and no units.
+Real valued property with dimension $$z$$ and units of $$m$$.

@@ -347,6 +347,9 @@ else
         end
     end
 end
+if ~isempty(regexp(mathScanText,'(?<![\\$])\$(?!\$)','once'))
+    diagnostics(end+1,1) = "unsupported single-dollar math delimiter; use $$...$$";
+end
 diagnostics = unique(diagnostics,'stable');
 end
 
@@ -355,7 +358,7 @@ maskedText = char(pageText);
 [codeStarts,codeEnds] = regexp(maskedText,'(?s)```.*?```|(?m)(?<!`)`[^`\r\n]*`(?!`)','start','end');
 for iCode = 1:numel(codeStarts)
     codeText = maskedText(codeStarts(iCode):codeEnds(iCode));
-    maskedText(codeStarts(iCode):codeEnds(iCode)) = strrep(codeText,'$$','  ');
+    maskedText(codeStarts(iCode):codeEnds(iCode)) = strrep(codeText,'$',' ');
 end
 maskedText = string(maskedText);
 end

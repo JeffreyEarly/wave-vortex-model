@@ -28,6 +28,9 @@ for relativePath = htmlFiles'
     if mod(numel(strfind(visibleText,"$$")),2) ~= 0
         diagnostics(end+1,1) = relativePath + ": unbalanced MathJax delimiters remain in rendered content";
     end
+    if ~isempty(regexp(visibleText,'(?<![\\$])\$(?!\$)[^$\r\n]+(?<!\\)\$(?!\$)','once'))
+        diagnostics(end+1,1) = relativePath + ": unsupported single-dollar MathJax delimiter remains in rendered content";
+    end
     tableMatches = regexp(visibleHTML,'(?is)<table(?:\s[^>]*)?>.*?</table>','match');
     for iTable = 1:numel(tableMatches)
         cells = regexp(tableMatches{iTable},'(?is)<t[dh](?:\s[^>]*)?>(?<content>.*?)</t[dh]>','names');

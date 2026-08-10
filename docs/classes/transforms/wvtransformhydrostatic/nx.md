@@ -3,7 +3,7 @@ layout: default
 title: Nx
 parent: WVTransformHydrostatic
 grand_parent: Transforms
-nav_order: 35
+nav_order: 38
 mathjax: true
 ---
 

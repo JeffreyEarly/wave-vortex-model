@@ -3,15 +3,13 @@ layout: default
 title: L
 parent: WVTransformStratifiedQG
 grand_parent: Transforms
-nav_order: 14
+nav_order: 15
 mathjax: true
 ---
 
 #  L
 
 l-coordinate matrix
-
-> Developer documentation: this item describes internal implementation details.
 
 
 ---

@@ -3,18 +3,16 @@ layout: default
 title: J
 parent: WVTransformConstantStratification
 grand_parent: Transforms
-nav_order: 31
+nav_order: 34
 mathjax: true
 ---
 
 #  J
 
-j-coordinate matrix
-
-> Developer documentation: this item describes internal implementation details.
+vertical mode-number matrix
 
 
 ---
 
 ## Description
-Real valued property with dimensions $$(j,kl)$$ and units of $$rad/m$$.
+Real valued property with dimensions $$(j,kl)$$ and units of $$mode number$$.

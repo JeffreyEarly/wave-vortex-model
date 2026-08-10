@@ -3,7 +3,7 @@ layout: default
 title: GinvMatrix
 parent: WVTransformBoussinesq
 grand_parent: Transforms
-nav_order: 20
+nav_order: 23
 mathjax: true
 ---
 

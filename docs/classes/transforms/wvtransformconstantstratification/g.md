@@ -3,15 +3,13 @@ layout: default
 title: g
 parent: WVTransformConstantStratification
 grand_parent: Transforms
-nav_order: 107
+nav_order: 123
 mathjax: true
 ---
 
 #  g
 
-gravity of Earth
-
-> Developer documentation: this item describes internal implementation details.
+gravitational acceleration
 
 
 ---

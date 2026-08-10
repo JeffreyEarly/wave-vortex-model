@@ -13,9 +13,11 @@ end
 className = string(documentation.name);
 for iMetadata = 1:numel(documentation.allMethodDocumentation)
     metadata = documentation.allMethodDocumentation(iMetadata);
-    [topicPath,isDeveloper] = topicForMember(className,string(metadata.name));
+    name = string(metadata.name);
+    [topicPath,isDeveloper] = topicForMember(className,name);
     setTopicPath(metadata,topicPath);
     metadata.isDeveloper = isDeveloper;
+    metadata.nav_order = transformMemberOrder(className,name,metadata.nav_order);
 end
 end
 
@@ -23,7 +25,7 @@ function [topicPath,isDeveloper] = topicForMember(className,name)
 if className == "WVFourierStorageLayout"
     [topicPath,isDeveloper] = fourierStorageLayoutTopic(name);
 elseif startsWith(className,"WVTransform")
-    [topicPath,isDeveloper] = transformTopic(name);
+    [topicPath,isDeveloper] = transformTopic(className,name);
 elseif className == "WVModel"
     [topicPath,isDeveloper] = modelTopic(name);
 elseif className == "WVForcing" || startsWith(className,"WVBottomFriction") || ...
@@ -70,25 +72,33 @@ else
 end
 end
 
-function [topicPath,isDeveloper] = transformTopic(name)
+function [topicPath,isDeveloper] = transformTopic(className,name)
 isDeveloper = false;
 
 if ismember(name,["WVTransformConstantStratification", ...
         "WVTransformHydrostatic","WVTransformBoussinesq", ...
         "WVTransformStratifiedQG","WVTransformBarotropicQG", ...
-        "waveVortexTransformFromFile","waveVortexTransformWithResolution", ...
-        "waveVortexTransformWithDoubleResolution", ...
-        "waveVortexTransformWithExplicitAntialiasing"])
+        "waveVortexTransformFromFile"])
     topicPath = "Create and restore a transform";
+elseif ismember(name,["waveVortexTransformWithResolution", ...
+        "waveVortexTransformWithDoubleResolution", ...
+        "waveVortexTransformWithExplicitAntialiasing", ...
+        "boussinesqTransform","hydrostaticTransform", ...
+        "spectralVariableWithResolution"])
+    topicPath = "Create a related transform";
 elseif ismember(name,["Ap","Am","A0"])
     topicPath = "Inspect wave-vortex coefficients — Stored coefficients";
 elseif ismember(name,["Apt","Amt","A0t","waveCoefficientsAtTimeT"])
     topicPath = "Inspect wave-vortex coefficients — Coefficients at the current time";
-elseif ismember(name,["t","t0"])
-    topicPath = "Set and inspect time";
+elseif ismember(name,["Omega","iOmega","phase","conjPhase","t","t0"])
+    topicPath = "Inspect wave-vortex coefficients — Coefficient evolution";
+elseif ismember(name,["addGMSpectrum","initWithAlternativeSpectrum", ...
+        "initWavesWithFrequencySpectrum","initWithGMSpectrum", ...
+        "addWavesWithFrequencySpectrum"])
+    topicPath = "Initialize the flow — Waves — Wave spectra";
 elseif startsWith(name,"initWithWave") || startsWith(name,"addWave") || ...
         startsWith(name,"setWave") || startsWith(name,"removeAllWave")
-    topicPath = "Initialize the flow — Waves";
+    topicPath = "Initialize the flow — Waves — Individual modes";
 elseif contains(name,"InertialMotion")
     topicPath = "Initialize the flow — Inertial oscillations";
 elseif contains(name,"Geostrophic") || ismember(name,["setSSH","removeAllGeostrophicMotions"])
@@ -97,20 +107,60 @@ elseif contains(name,"MeanDensityAnomaly")
     topicPath = "Initialize the flow — Mean density anomalies";
 elseif ismember(name,["initWithUVEta","initWithUVRho","addUVEta", ...
         "initFromNetCDFFile","initWithRandomFlow","addRandomFlow","removeAll"])
-    topicPath = "Initialize the flow";
-elseif ismember(name,physicalFieldNames())
-    topicPath = "Evaluate physical fields — On the model grid";
+    topicPath = "Initialize the flow — General initialization";
+elseif ismember(name,["u","v","w"])
+    topicPath = "Evaluate physical fields — On the model grid — Velocity";
+elseif name == "eta" && className == "WVTransformBarotropicQG"
+    topicPath = "Evaluate physical fields — On the model grid — Pressure and surface fields";
+elseif ismember(name,["eta","eta_true","rho","rho_bar","rho_e", ...
+        "rho_nm","rho_nm0","rho_total"])
+    topicPath = "Evaluate physical fields — On the model grid — Density and displacement";
+elseif ismember(name,["p","pi","ssh","ssu","ssv"])
+    topicPath = "Evaluate physical fields — On the model grid — Pressure and surface fields";
+elseif ismember(name,["qgpv","psi","zeta_x","zeta_y","zeta_z"])
+    topicPath = "Evaluate physical fields — On the model grid — Vorticity and geostrophic fields";
+elseif name == "placeParticlesOnIsopycnal"
+    topicPath = "Evaluate physical fields — Isopycnal utilities";
 elseif ismember(name,["variableWithName","variableNames","hasVariableWithName", ...
         "summarizeVariables"])
     topicPath = "Evaluate physical fields — Registered variables";
 elseif ismember(name,["variableAtPositionWithName","interpolatedFieldAtPosition"])
     topicPath = "Evaluate physical fields — At arbitrary positions";
-elseif ismember(name,spatialDomainNames())
-    topicPath = "Inspect the domain — Spatial grid";
-elseif ismember(name,spectralDomainNames())
-    topicPath = "Inspect the domain — Spectral grid";
-elseif ismember(name,stratificationNames())
-    topicPath = "Inspect the domain — Rotation and stratification";
+elseif ismember(name,["latitude","f","f0","beta","rotationRate", ...
+        "planetaryRadius","inertialPeriod"])
+    topicPath = "Inspect the domain — Physical environment — Planetary rotation";
+elseif ismember(name,["N0","N2","dLnN2","N2Function","rho0", ...
+        "rhoFunction","shouldUseTrueNoMotionProfile","buoyancyPeriod"])
+    topicPath = "Inspect the domain — Physical environment — Stratification and reference density";
+elseif name == "g"
+    topicPath = "Inspect the domain — Physical environment — Gravity";
+elseif ismember(name,["x","y","z"])
+    topicPath = "Inspect the domain — Spatial grid — Coordinate axes";
+elseif ismember(name,["X","Y","Z","xyGrid","xyzGrid"])
+    topicPath = "Inspect the domain — Spatial grid — Coordinate arrays";
+elseif ismember(name,["Lx","Ly","Lz"])
+    topicPath = "Inspect the domain — Spatial grid — Domain dimensions";
+elseif ismember(name,["Nx","Ny","Nz","spatialMatrixSize"])
+    topicPath = "Inspect the domain — Spatial grid — Resolution and shape";
+elseif ismember(name,["z_int","volumeIntegral"])
+    topicPath = "Inspect the domain — Spatial grid — Quadrature and integration";
+elseif ismember(name,["kAxis","lAxis","j","dk","dl"])
+    topicPath = "Inspect the domain — Spectral grid — Axes and spacing";
+elseif ismember(name,["k","l","K","L","J","klGrid","kljGrid"])
+    topicPath = "Inspect the domain — Spectral grid — Coordinate arrays";
+elseif ismember(name,["Kh","K2"])
+    topicPath = "Inspect the domain — Spectral grid — Horizontal wavenumber geometry";
+elseif ismember(name,["Nj","Nkl","spectralMatrixSize", ...
+        "effectiveHorizontalGridResolution", ...
+        "effectiveVerticalGridResolution","effectiveJMax"])
+    topicPath = "Inspect the domain — Spectral grid — Resolution and shape";
+elseif className == "WVTransformBarotropicQG" && ismember(name,["h","h_0","Lr2"])
+    topicPath = "Inspect the domain — Spectral grid — Equivalent depth and deformation scale";
+elseif ismember(name,["verticalModes","h","h_0","h_pm","Lr2", ...
+        "waveModeVerticalStructureAtIndex"])
+    topicPath = "Inspect the domain — Spectral grid — Vertical modes and scaling";
+elseif ismember(name,["isHydrostatic","shouldAntialias"])
+    topicPath = "Inspect the domain — Transform configuration";
 elseif ismember(name,["diffX","diffY","diffZF","diffZG","intZF","intZG"])
     topicPath = "Differentiate and integrate fields";
 elseif ismember(name,["transformUVEtaToWaveVortex","transformUVWEtaToWaveVortex", ...
@@ -120,19 +170,33 @@ elseif name == "hasMeanPressureDifference" || startsWith(name,"summarizeEnergy")
         name == "summarizeModeEnergy" || name == "summarizeDegreesOfFreedom" || ...
         ismember(name,energyNames())
     topicPath = "Analyze the flow — Energy and summaries";
-elseif contains(lower(name),"enstrophy") || name == "qgpv"
+elseif ismember(name,["uvMax","wMax"])
+    topicPath = "Analyze the flow — Flow diagnostics";
+elseif name == "isDensityInValidRange"
+    topicPath = "Analyze the flow — Density validity";
+elseif contains(lower(name),"enstrophy") && ~contains(lower(name),"flux")
     topicPath = "Analyze the flow — Potential vorticity and enstrophy";
-elseif contains(name,"Spectrum") || startsWith(name,"transformToRadial") || ...
-        startsWith(name,"transformToPseudoRadial") || name == "convertFromWavenumberToFrequency"
-    topicPath = "Analyze the flow — Spectra";
+elseif ismember(name,["spectrumWithFgTransform","spectrumWithGgTransform", ...
+        "crossSpectrumWithFgTransform","crossSpectrumWithGgTransform", ...
+        "transformToKLAxes"])
+    topicPath = "Analyze the flow — Spectra — Spectral fields";
+elseif name == "kRadial" || name == "transformToRadialWavenumber"
+    topicPath = "Analyze the flow — Spectra — Radial wavenumber";
+elseif name == "kPseudoRadial" || startsWith(name,"transformToPseudoRadial")
+    topicPath = "Analyze the flow — Spectra — Pseudo-radial wavenumber";
+elseif name == "convertFromWavenumberToFrequency"
+    topicPath = "Analyze the flow — Spectra — Frequency";
 elseif ismember(name,["addForcing","setForcing","removeForcing", ...
         "removeAllForcing","forcingNames","forcingWithName", ...
         "hasForcingWithName","summarizeForcing","forcing","hasClosure"])
     topicPath = "Manage forcing and closures";
-elseif ismember(name,["addFlowComponent","addPrimaryFlowComponent", ...
-        "flowComponentNames","flowComponentWithName","flowComponents", ...
+elseif ismember(name,["waveComponent","inertialComponent", ...
+        "geostrophicComponent","mdaComponent","flowComponentNames", ...
+        "flowComponentWithName","flowComponents", ...
         "primaryFlowComponentNames","primaryFlowComponentWithName", ...
         "primaryFlowComponents","totalFlowComponent","summarizeFlowComponents"])
+    topicPath = "Inspect flow components";
+elseif ismember(name,["addFlowComponent","addPrimaryFlowComponent"])
     topicPath = "Extend a transform — Flow components";
 elseif ismember(name,["addOperation","removeOperation","operationWithName", ...
         "variableWithName","variableNames","hasVariableWithName"])
@@ -141,12 +205,46 @@ elseif name == "writeToFile"
     topicPath = "Save transform state";
 elseif name == "version"
     topicPath = "Get package information";
-elseif name == "spectralVariableWithResolution"
-    topicPath = "Create and restore a transform";
 else
     topicPath = transformDeveloperTopic(name);
     isDeveloper = true;
 end
+end
+
+function navOrder = transformMemberOrder(className,name,currentOrder)
+if ~startsWith(className,"WVTransform")
+    navOrder = currentOrder;
+    return
+end
+
+orderedGroups = {
+    ["x","y","z"]
+    ["X","Y","Z","xyGrid","xyzGrid"]
+    ["Lx","Ly","Lz"]
+    ["Nx","Ny","Nz","spatialMatrixSize"]
+    ["z_int","volumeIntegral"]
+    ["kAxis","lAxis","j","dk","dl"]
+    ["k","l","K","L","J","klGrid","kljGrid"]
+    ["Kh","K2"]
+    ["Nj","Nkl","spectralMatrixSize","effectiveHorizontalGridResolution", ...
+        "effectiveVerticalGridResolution","effectiveJMax"]
+    ["verticalModes","h","h_0","h_pm","Lr2","waveModeVerticalStructureAtIndex"]
+    ["Ap","Am","A0"]
+    ["Apt","Amt","A0t","waveCoefficientsAtTimeT"]
+    ["t0","t","Omega","iOmega","phase","conjPhase"]
+    ["kRadial","transformToRadialWavenumber"]
+    ["kPseudoRadial","transformToPseudoRadialWavenumber", ...
+        "transformToPseudoRadialWavenumberWithWavenumbers"]
+    };
+
+for group = orderedGroups'
+    index = find(group{1} == name,1);
+    if ~isempty(index)
+        navOrder = index;
+        return
+    end
+end
+navOrder = currentOrder;
 end
 
 function topicPath = transformDeveloperTopic(name)
@@ -334,31 +432,10 @@ if numel(parts) >= 3
 end
 end
 
-function names = physicalFieldNames()
-names = ["u","v","w","eta","eta_true","p","pi","ssh","ssu","ssv", ...
-    "rho","rho_bar","rho_e","rho_nm","rho_nm0","rho_total", ...
-    "qgpv","zeta_x","zeta_y","zeta_z","uvMax","wMax"];
-end
-
-function names = spatialDomainNames()
-names = ["Lx","Ly","Lz","Nx","Ny","Nz","x","y","z","z_int", ...
-    "xyGrid","xyzGrid","spatialMatrixSize","volumeIntegral"];
-end
-
-function names = spectralDomainNames()
-names = ["k","l","j","kAxis","lAxis","klGrid","kljGrid","Nj", ...
-    "spectralMatrixSize","effectiveHorizontalGridResolution", ...
-    "effectiveVerticalGridResolution","effectiveJMax"];
-end
-
-function names = stratificationNames()
-names = ["latitude","f0","beta","N0","N2","N2Function","rhoFunction", ...
-    "buoyancyPeriod","inertialPeriod","isHydrostatic", ...
-    "shouldUseTrueNoMotionProfile","verticalModes"];
-end
-
 function names = energyNames()
 names = ["totalEnergy","totalEnergySpatiallyIntegrated","exactTotalEnergy", ...
     "geostrophicEnergy","waveEnergy","inertialEnergy", ...
-    "meanDensityAnomalyEnergy","totalEnergyOfFlowComponent"];
+    "mdaEnergy","meanDensityAnomalyEnergy", ...
+    "geostrophicKineticEnergy","geostrophicPotentialEnergy", ...
+    "totalEnergyOfFlowComponent"];
 end

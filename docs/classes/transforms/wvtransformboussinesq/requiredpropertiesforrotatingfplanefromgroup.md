@@ -3,7 +3,7 @@ layout: default
 title: requiredPropertiesForRotatingFPlaneFromGroup
 parent: WVTransformBoussinesq
 grand_parent: Transforms
-nav_order: 200
+nav_order: 232
 mathjax: true
 ---
 

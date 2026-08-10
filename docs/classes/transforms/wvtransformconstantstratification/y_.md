@@ -3,15 +3,13 @@ layout: default
 title: Y
 parent: WVTransformConstantStratification
 grand_parent: Transforms
-nav_order: 67
+nav_order: 70
 mathjax: true
 ---
 
 #  Y
 
 y-coordinate matrix
-
-> Developer documentation: this item describes internal implementation details.
 
 
 ---

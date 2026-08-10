@@ -36,8 +36,7 @@ The convenience method `createNetCDFFileForModelOutput` creates one file and one
 
 ```matlab
 outputFile = model.addNewOutputFile('experiment.nc');
-hourly = outputFile.addNewEvenlySpacedOutputGroup( ...
-    'hourly',initialTime=model.t,finalTime=model.t+86400,outputInterval=3600);
+hourly = outputFile.addNewEvenlySpacedOutputGroup('hourly',initialTime=model.t,finalTime=model.t+86400,outputInterval=3600);
 hourly.addObservingSystem(model.eulerianObservingSystem);
 ```
 

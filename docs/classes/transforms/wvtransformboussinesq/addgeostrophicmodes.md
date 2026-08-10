@@ -3,7 +3,7 @@ layout: default
 title: addGeostrophicModes
 parent: WVTransformBoussinesq
 grand_parent: Transforms
-nav_order: 74
+nav_order: 79
 mathjax: true
 ---
 

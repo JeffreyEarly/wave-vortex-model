@@ -8,6 +8,9 @@ nav_order: 100
 
 ## [Unreleased]
 
+- Reorganized each transform reference around common user tasks, grouped physical and spectral coordinates coherently, promoted flow-component diagnostics, and kept inherited implementation machinery out of concrete transform pages.
+- Updated onboarding examples to demonstrate warning-free nonlinear integration by default, simplified hand-authored MATLAB examples, and corrected unsupported single-dollar mathematical markup throughout the generated website.
+
 ## [4.2.1] - 2026-08-09
 
 - Raised the minimum MATLAB release to R2025b, aligning the supported runtime, native MPM verification, and release engine.

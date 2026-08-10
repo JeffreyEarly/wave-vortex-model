@@ -3,16 +3,16 @@ layout: default
 title: z_int
 parent: WVTransformBoussinesq
 grand_parent: Transforms
-nav_order: 273
+nav_order: 329
 mathjax: true
 ---
 
 #  z_int
 
-Quadrature weights for the vertical grid
+Vertical quadrature weights.
 
 
 ---
 
 ## Description
-Real valued property with dimension $$z$$ and no units.
+Real valued property with dimension $$z$$ and units of $$m$$.

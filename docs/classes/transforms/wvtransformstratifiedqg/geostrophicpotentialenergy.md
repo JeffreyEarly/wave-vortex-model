@@ -3,15 +3,13 @@ layout: default
 title: geostrophicPotentialEnergy
 parent: WVTransformStratifiedQG
 grand_parent: Transforms
-nav_order: 78
+nav_order: 90
 mathjax: true
 ---
 
 #  geostrophicPotentialEnergy
 
 potential energy of the geostrophic flow
-
-> Developer documentation: this item describes internal implementation details.
 
 
 ---

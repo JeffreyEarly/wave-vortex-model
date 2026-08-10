@@ -3,15 +3,13 @@ layout: default
 title: mdaComponent
 parent: WVTransformHydrostatic
 grand_parent: Transforms
-nav_order: 156
+nav_order: 180
 mathjax: true
 ---
 
 #  mdaComponent
 
 returns the mean density anomaly component
-
-> Developer documentation: this item describes internal implementation details.
 
 
 ---

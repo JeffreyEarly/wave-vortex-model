@@ -3,13 +3,13 @@ layout: default
 title: j
 parent: WVTransformConstantStratification
 grand_parent: Transforms
-nav_order: 145
+nav_order: 169
 mathjax: true
 ---
 
 #  j
 
-vertical mode number
+Vertical-mode index axis.
 
 
 ---

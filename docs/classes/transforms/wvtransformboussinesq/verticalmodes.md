@@ -3,13 +3,13 @@ layout: default
 title: verticalModes
 parent: WVTransformBoussinesq
 grand_parent: Transforms
-nav_order: 257
+nav_order: 309
 mathjax: true
 ---
 
 #  verticalModes
 
-instance of the InternalModes class
+Vertical eigenmodes used by the transform.
 
 
 ---

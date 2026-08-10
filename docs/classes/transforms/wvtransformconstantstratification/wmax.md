@@ -3,7 +3,7 @@ layout: default
 title: wMax
 parent: WVTransformConstantStratification
 grand_parent: Transforms
-nav_order: 246
+nav_order: 298
 mathjax: true
 ---
 

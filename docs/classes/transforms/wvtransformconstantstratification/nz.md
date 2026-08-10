@@ -3,7 +3,7 @@ layout: default
 title: Nz
 parent: WVTransformConstantStratification
 grand_parent: Transforms
-nav_order: 52
+nav_order: 55
 mathjax: true
 ---
 

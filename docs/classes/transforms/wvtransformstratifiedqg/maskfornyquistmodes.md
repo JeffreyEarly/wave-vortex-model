@@ -3,7 +3,7 @@ layout: default
 title: maskForNyquistModes
 parent: WVTransformStratifiedQG
 grand_parent: Transforms
-nav_order: 119
+nav_order: 140
 mathjax: true
 ---
 

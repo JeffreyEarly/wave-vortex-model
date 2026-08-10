@@ -3,15 +3,13 @@ layout: default
 title: planetaryRadius
 parent: WVTransformConstantStratification
 grand_parent: Transforms
-nav_order: 182
+nav_order: 207
 mathjax: true
 ---
 
 #  planetaryRadius
 
 radius of the planetary body
-
-> Developer documentation: this item describes internal implementation details.
 
 
 ---

@@ -3,7 +3,7 @@ layout: default
 title: removeAllGeostrophicMotions
 parent: WVTransformStratifiedQG
 grand_parent: Transforms
-nav_order: 140
+nav_order: 167
 mathjax: true
 ---
 

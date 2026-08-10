@@ -3,15 +3,13 @@ layout: default
 title: boussinesqTransform
 parent: WVTransformHydrostatic
 grand_parent: Transforms
-nav_order: 66
+nav_order: 75
 mathjax: true
 ---
 
 #  boussinesqTransform
 
 
-
-> Developer documentation: this item describes internal implementation details.
 
 
 ---

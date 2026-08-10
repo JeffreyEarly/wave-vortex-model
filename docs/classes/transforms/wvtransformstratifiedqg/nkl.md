@@ -3,15 +3,13 @@ layout: default
 title: Nkl
 parent: WVTransformStratifiedQG
 grand_parent: Transforms
-nav_order: 24
+nav_order: 25
 mathjax: true
 ---
 
 #  Nkl
 
 length of the combined kl-wavenumber dimension on the WV grid
-
-> Developer documentation: this item describes internal implementation details.
 
 
 ---

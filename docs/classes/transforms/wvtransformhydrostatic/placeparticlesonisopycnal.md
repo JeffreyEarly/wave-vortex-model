@@ -3,15 +3,13 @@ layout: default
 title: placeParticlesOnIsopycnal
 parent: WVTransformHydrostatic
 grand_parent: Transforms
-nav_order: 168
+nav_order: 193
 mathjax: true
 ---
 
 #  placeParticlesOnIsopycnal
 
-places Lagrangian particles along a specified isopycnal
-
-> Developer documentation: this item describes internal implementation details.
+Return particle depths on the isopycnal identified by a no-motion depth.
 
 
 ---
@@ -43,7 +41,7 @@ and a minimization algorithm is used to find zIsopycnal such that
 zIsopycnal = rho(targetRho);
 ```
 
-where rho is the current total density field of the fluid.
+where `rho` is the current total density field of the fluid.
 
 Note that the density is not necessarily monotonic, so the answer is not
 necessarily unique.

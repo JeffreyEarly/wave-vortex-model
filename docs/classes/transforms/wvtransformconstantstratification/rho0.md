@@ -3,15 +3,13 @@ layout: default
 title: rho0
 parent: WVTransformConstantStratification
 grand_parent: Transforms
-nav_order: 197
+nav_order: 229
 mathjax: true
 ---
 
 #  rho0
 
-, dLnN2
-
-> Developer documentation: this item describes internal implementation details.
+Boussinesq reference density.
 
 
 ---

@@ -3,7 +3,7 @@ layout: default
 title: removeAllGeostrophicMotions
 parent: WVTransformBoussinesq
 grand_parent: Transforms
-nav_order: 195
+nav_order: 225
 mathjax: true
 ---
 

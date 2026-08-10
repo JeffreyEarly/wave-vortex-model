@@ -3,15 +3,13 @@ layout: default
 title: f
 parent: WVTransformStratifiedQG
 grand_parent: Transforms
-nav_order: 69
+nav_order: 76
 mathjax: true
 ---
 
 #  f
 
 Coriolis parameter
-
-> Developer documentation: this item describes internal implementation details.
 
 
 ---

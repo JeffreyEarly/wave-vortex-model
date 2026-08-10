@@ -44,38 +44,65 @@ The quasigeostrophic state is stored in
 ## Topics
 + Create and restore a transform
   + [`WVTransformBarotropicQG`](/classes/transforms/wvtransformbarotropicqg/wvtransformbarotropicqg.html) Create an equivalent-barotropic quasigeostrophic transform.
-+ Inspect wave-vortex coefficients
-  + Coefficients at the current time
-    + [`A0t`](/classes/transforms/wvtransformbarotropicqg/a0t.html) zero-frequency coefficients at current time t
+  + [`waveVortexTransformFromFile`](/classes/transforms/wvtransformbarotropicqg/wavevortextransformfromfile.html) Restore a WVTransformBarotropicQG instance from an existing file
 + Inspect the domain
+  + Physical environment
+    + Planetary rotation
+      + [`beta`](/classes/transforms/wvtransformbarotropicqg/beta.html) meridional gradient of the Coriolis parameter
+      + [`f`](/classes/transforms/wvtransformbarotropicqg/f.html) Coriolis parameter
+      + [`inertialPeriod`](/classes/transforms/wvtransformbarotropicqg/inertialperiod.html) inertial period
+      + [`latitude`](/classes/transforms/wvtransformbarotropicqg/latitude.html) central latitude of the simulation
+      + [`planetaryRadius`](/classes/transforms/wvtransformbarotropicqg/planetaryradius.html) radius of the planetary body
+      + [`rotationRate`](/classes/transforms/wvtransformbarotropicqg/rotationrate.html) rotation rate of the planetary body
+    + Gravity
+      + [`g`](/classes/transforms/wvtransformbarotropicqg/g.html) gravitational acceleration
   + Spatial grid
-    + [`Lx`](/classes/transforms/wvtransformbarotropicqg/lx.html) length of the x-dimension
-    + [`Ly`](/classes/transforms/wvtransformbarotropicqg/ly.html) length of the y-dimension
-    + [`Lz`](/classes/transforms/wvtransformbarotropicqg/lz.html)
-    + [`Nx`](/classes/transforms/wvtransformbarotropicqg/nx.html) number of grid points in the x-dimension
-    + [`Ny`](/classes/transforms/wvtransformbarotropicqg/ny.html) number of grid points in the y-dimension
-    + [`Nz`](/classes/transforms/wvtransformbarotropicqg/nz.html) points in the third, untransformed, dimension
-    + [`spatialMatrixSize`](/classes/transforms/wvtransformbarotropicqg/spatialmatrixsize.html)
-    + [`x`](/classes/transforms/wvtransformbarotropicqg/x_.html) dimension
-    + [`xyGrid`](/classes/transforms/wvtransformbarotropicqg/xygrid.html)
-    + [`y`](/classes/transforms/wvtransformbarotropicqg/y_.html) dimension
+    + Coordinate axes
+      + [`x`](/classes/transforms/wvtransformbarotropicqg/x_.html) dimension
+      + [`y`](/classes/transforms/wvtransformbarotropicqg/y_.html) dimension
+    + Coordinate arrays
+      + [`X`](/classes/transforms/wvtransformbarotropicqg/x.html) x-coordinate matrix
+      + [`Y`](/classes/transforms/wvtransformbarotropicqg/y.html) y-coordinate matrix
+      + [`xyGrid`](/classes/transforms/wvtransformbarotropicqg/xygrid.html)
+    + Domain dimensions
+      + [`Lx`](/classes/transforms/wvtransformbarotropicqg/lx.html) length of the x-dimension
+      + [`Ly`](/classes/transforms/wvtransformbarotropicqg/ly.html) length of the y-dimension
+    + Resolution and shape
+      + [`Nx`](/classes/transforms/wvtransformbarotropicqg/nx.html) number of grid points in the x-dimension
+      + [`Ny`](/classes/transforms/wvtransformbarotropicqg/ny.html) number of grid points in the y-dimension
+      + [`spatialMatrixSize`](/classes/transforms/wvtransformbarotropicqg/spatialmatrixsize.html)
   + Spectral grid
-    + [`Nj`](/classes/transforms/wvtransformbarotropicqg/nj.html)
-    + [`effectiveHorizontalGridResolution`](/classes/transforms/wvtransformbarotropicqg/effectivehorizontalgridresolution.html) returns the effective grid resolution in meters
-    + [`effectiveJMax`](/classes/transforms/wvtransformbarotropicqg/effectivejmax.html)
-    + [`j`](/classes/transforms/wvtransformbarotropicqg/j.html) mode number
-    + [`k`](/classes/transforms/wvtransformbarotropicqg/k_.html) wavenumber dimension on the WV grid
-    + [`kAxis`](/classes/transforms/wvtransformbarotropicqg/kaxis.html) k coordinate
-    + [`klGrid`](/classes/transforms/wvtransformbarotropicqg/klgrid.html)
-    + [`kljGrid`](/classes/transforms/wvtransformbarotropicqg/kljgrid.html)
-    + [`l`](/classes/transforms/wvtransformbarotropicqg/l_.html) wavenumber dimension on the WV grid
-    + [`lAxis`](/classes/transforms/wvtransformbarotropicqg/laxis.html) l coordinate
-    + [`spectralMatrixSize`](/classes/transforms/wvtransformbarotropicqg/spectralmatrixsize.html)
-  + Rotation and stratification
-    + [`beta`](/classes/transforms/wvtransformbarotropicqg/beta.html)
-    + [`inertialPeriod`](/classes/transforms/wvtransformbarotropicqg/inertialperiod.html) inertial period
-    + [`latitude`](/classes/transforms/wvtransformbarotropicqg/latitude.html) central latitude of the simulation
+    + Axes and spacing
+      + [`kAxis`](/classes/transforms/wvtransformbarotropicqg/kaxis.html) k coordinate
+      + [`lAxis`](/classes/transforms/wvtransformbarotropicqg/laxis.html) l coordinate
+      + [`dk`](/classes/transforms/wvtransformbarotropicqg/dk.html) wavenumber spacing of the $$k$$ axis
+      + [`dl`](/classes/transforms/wvtransformbarotropicqg/dl.html) wavenumber spacing of the $$l$$ axis
+    + Coordinate arrays
+      + [`k`](/classes/transforms/wvtransformbarotropicqg/k_.html) wavenumber dimension on the WV grid
+      + [`l`](/classes/transforms/wvtransformbarotropicqg/l_.html) wavenumber dimension on the WV grid
+      + [`K`](/classes/transforms/wvtransformbarotropicqg/k.html) k-coordinate matrix
+      + [`L`](/classes/transforms/wvtransformbarotropicqg/l.html) l-coordinate matrix
+      + [`klGrid`](/classes/transforms/wvtransformbarotropicqg/klgrid.html)
+    + Horizontal wavenumber geometry
+      + [`Kh`](/classes/transforms/wvtransformbarotropicqg/kh.html) horizontal wavenumber, $$Kh=\sqrt(K^2+L^2)$$
+      + [`K2`](/classes/transforms/wvtransformbarotropicqg/k2.html) squared horizontal wavenumber, $$K2=K^2+L^2$$
+    + Resolution and shape
+      + [`Nkl`](/classes/transforms/wvtransformbarotropicqg/nkl.html) length of the combined kl-wavenumber dimension on the WV grid
+      + [`spectralMatrixSize`](/classes/transforms/wvtransformbarotropicqg/spectralmatrixsize.html)
+      + [`effectiveHorizontalGridResolution`](/classes/transforms/wvtransformbarotropicqg/effectivehorizontalgridresolution.html) returns the effective grid resolution in meters
+    + Equivalent depth and deformation scale
+      + [`h`](/classes/transforms/wvtransformbarotropicqg/h.html) equivalent depth
+      + [`h_0`](/classes/transforms/wvtransformbarotropicqg/h_0.html) [Nj 1]
+      + [`Lr2`](/classes/transforms/wvtransformbarotropicqg/lr2.html) squared barotropic Rossby deformation radius
+  + Transform configuration
+    + [`isHydrostatic`](/classes/transforms/wvtransformbarotropicqg/ishydrostatic.html)
+    + [`shouldAntialias`](/classes/transforms/wvtransformbarotropicqg/shouldantialias.html) whether quadratic antialiasing is enabled
 + Initialize the flow
+  + General initialization
+    + [`addRandomFlow`](/classes/transforms/wvtransformbarotropicqg/addrandomflow.html) add randomized flow to the existing state
+    + [`initFromNetCDFFile`](/classes/transforms/wvtransformbarotropicqg/initfromnetcdffile.html) initialize the flow from a NetCDF file
+    + [`initWithRandomFlow`](/classes/transforms/wvtransformbarotropicqg/initwithrandomflow.html) initialize with a random flow state
+    + [`removeAll`](/classes/transforms/wvtransformbarotropicqg/removeall.html) removes all energy from the model
   + Geostrophic motions
     + [`initWithGeostrophicStreamfunction`](/classes/transforms/wvtransformbarotropicqg/initwithgeostrophicstreamfunction.html) initialize with a geostrophic streamfunction
     + [`setGeostrophicStreamfunction`](/classes/transforms/wvtransformbarotropicqg/setgeostrophicstreamfunction.html) set a geostrophic streamfunction
@@ -85,40 +112,103 @@ The quasigeostrophic state is stored in
     + [`removeAllGeostrophicMotions`](/classes/transforms/wvtransformbarotropicqg/removeallgeostrophicmotions.html) remove all geostrophic motions
     + [`setSSH`](/classes/transforms/wvtransformbarotropicqg/setssh.html)
 + Evaluate physical fields
+  + Registered variables
+    + [`hasVariableWithName`](/classes/transforms/wvtransformbarotropicqg/hasvariablewithname.html) Test whether state variables are registered by name.
+    + [`summarizeVariables`](/classes/transforms/wvtransformbarotropicqg/summarizevariables.html) Print a table of registered state variables and cache status.
+    + [`variableNames`](/classes/transforms/wvtransformbarotropicqg/variablenames.html) Return the names of all registered state variables.
+    + [`variableWithName`](/classes/transforms/wvtransformbarotropicqg/variablewithname.html) Compute or retrieve one or more registered transform variables.
   + On the model grid
-    + [`eta`](/classes/transforms/wvtransformbarotropicqg/eta.html) approximate isopycnal deviation
-    + [`pi`](/classes/transforms/wvtransformbarotropicqg/pi.html) height anomaly
-    + [`qgpv`](/classes/transforms/wvtransformbarotropicqg/qgpv.html) quasigeostrophic potential vorticity
-    + [`ssh`](/classes/transforms/wvtransformbarotropicqg/ssh.html) sea-surface height
-    + [`u`](/classes/transforms/wvtransformbarotropicqg/u.html) x-component of the fluid velocity
-    + [`uvMax`](/classes/transforms/wvtransformbarotropicqg/uvmax.html) max horizontal fluid speed
-    + [`v`](/classes/transforms/wvtransformbarotropicqg/v.html) y-component of the fluid velocity
-    + [`zeta_z`](/classes/transforms/wvtransformbarotropicqg/zeta_z.html) vertical component of relative vorticity
-+ Convert representations
-  + Physical fields and coefficients
-    + [`transformQGPVToWaveVortex`](/classes/transforms/wvtransformbarotropicqg/transformqgpvtowavevortex.html)
+    + Velocity
+      + [`u`](/classes/transforms/wvtransformbarotropicqg/u.html) x-component of the fluid velocity
+      + [`v`](/classes/transforms/wvtransformbarotropicqg/v.html) y-component of the fluid velocity
+    + Pressure and surface fields
+      + [`eta`](/classes/transforms/wvtransformbarotropicqg/eta.html) approximate isopycnal deviation
+      + [`pi`](/classes/transforms/wvtransformbarotropicqg/pi.html) height anomaly
+      + [`ssh`](/classes/transforms/wvtransformbarotropicqg/ssh.html) sea-surface height
+    + Vorticity and geostrophic fields
+      + [`psi`](/classes/transforms/wvtransformbarotropicqg/psi.html) geostrophic streamfunction
+      + [`qgpv`](/classes/transforms/wvtransformbarotropicqg/qgpv.html) quasigeostrophic potential vorticity
+      + [`zeta_z`](/classes/transforms/wvtransformbarotropicqg/zeta_z.html) vertical component of relative vorticity
+  + At arbitrary positions
+    + [`variableAtPositionWithName`](/classes/transforms/wvtransformbarotropicqg/variableatpositionwithname.html) Access dynamical variables at arbitrary positions in the domain.
++ Manage forcing and closures
+  + [`addForcing`](/classes/transforms/wvtransformbarotropicqg/addforcing.html) Add forcing or closure objects to this transform.
+  + [`forcing`](/classes/transforms/wvtransformbarotropicqg/forcing.html) array of WVForcing objects
+  + [`forcingNames`](/classes/transforms/wvtransformbarotropicqg/forcingnames.html) retrieve the names of all available variables. This preserves
+  + [`forcingWithName`](/classes/transforms/wvtransformbarotropicqg/forcingwithname.html) Return registered forcing objects by name.
+  + [`hasClosure`](/classes/transforms/wvtransformbarotropicqg/hasclosure.html)
+  + [`hasForcingWithName`](/classes/transforms/wvtransformbarotropicqg/hasforcingwithname.html) Test whether forcing objects are registered by name.
+  + [`removeAllForcing`](/classes/transforms/wvtransformbarotropicqg/removeallforcing.html) Remove every forcing and closure from this transform.
+  + [`removeForcing`](/classes/transforms/wvtransformbarotropicqg/removeforcing.html) Remove the exact registered forcing objects.
+  + [`setForcing`](/classes/transforms/wvtransformbarotropicqg/setforcing.html) Replace the complete forcing registry.
+  + [`summarizeForcing`](/classes/transforms/wvtransformbarotropicqg/summarizeforcing.html) Print a table of registered forcing and closure objects.
 + Analyze the flow
   + Energy and summaries
+    + [`geostrophicKineticEnergy`](/classes/transforms/wvtransformbarotropicqg/geostrophickineticenergy.html) kinetic energy of the geostrophic flow
+    + [`geostrophicPotentialEnergy`](/classes/transforms/wvtransformbarotropicqg/geostrophicpotentialenergy.html) potential energy of the geostrophic flow
     + [`geostrophicEnergy`](/classes/transforms/wvtransformbarotropicqg/geostrophicenergy.html) total energy, geostrophic
+    + [`hasMeanPressureDifference`](/classes/transforms/wvtransformbarotropicqg/hasmeanpressuredifference.html) Diagnose an MDA mean-pressure difference between the boundaries.
+    + [`summarizeDegreesOfFreedom`](/classes/transforms/wvtransformbarotropicqg/summarizedegreesoffreedom.html) Summarize the spatial grid and active spectral degrees of freedom.
+    + [`summarizeEnergyContent`](/classes/transforms/wvtransformbarotropicqg/summarizeenergycontent.html) displays a summary of the energy content of the fluid
+    + [`summarizeModeEnergy`](/classes/transforms/wvtransformbarotropicqg/summarizemodeenergy.html) List the most energetic modes
+    + [`totalEnergy`](/classes/transforms/wvtransformbarotropicqg/totalenergy.html) horizontally-averaged depth-integrated energy computed spectrally from wave-vortex coefficients
+    + [`totalEnergyOfFlowComponent`](/classes/transforms/wvtransformbarotropicqg/totalenergyofflowcomponent.html)
+    + [`totalEnergySpatiallyIntegrated`](/classes/transforms/wvtransformbarotropicqg/totalenergyspatiallyintegrated.html) horizontally-averaged depth-integrated energy computed in the spatial domain
+  + Flow diagnostics
+    + [`uvMax`](/classes/transforms/wvtransformbarotropicqg/uvmax.html) max horizontal fluid speed
   + Potential vorticity and enstrophy
-    + [`enstrophyFluxFromF0`](/classes/transforms/wvtransformbarotropicqg/enstrophyfluxfromf0.html)
     + [`totalEnstrophy`](/classes/transforms/wvtransformbarotropicqg/totalenstrophy.html)
     + [`totalEnstrophySpatiallyIntegrated`](/classes/transforms/wvtransformbarotropicqg/totalenstrophyspatiallyintegrated.html) Return horizontally averaged barotropic potential enstrophy.
   + Spectra
-    + [`transformToRadialWavenumber`](/classes/transforms/wvtransformbarotropicqg/transformtoradialwavenumber.html) transforms in the spectral domain from (j,kl) to (j,kRadial)
+    + Spectral fields
+      + [`transformToKLAxes`](/classes/transforms/wvtransformbarotropicqg/transformtoklaxes.html) transforms in the spectral domain from (j,kl) to (kAxis,lAxis,j)
+    + Radial wavenumber
+      + [`kRadial`](/classes/transforms/wvtransformbarotropicqg/kradial.html) radial (k,l) wavenumber on the WV grid
+      + [`transformToRadialWavenumber`](/classes/transforms/wvtransformbarotropicqg/transformtoradialwavenumber.html) transforms in the spectral domain from (j,kl) to (j,kRadial)
++ Save transform state
+  + [`writeToFile`](/classes/transforms/wvtransformbarotropicqg/writetofile.html) Write this instance to NetCDF file.
++ Convert representations
+  + Physical fields and coefficients
+    + [`transformQGPVToWaveVortex`](/classes/transforms/wvtransformbarotropicqg/transformqgpvtowavevortex.html)
 + Differentiate and integrate fields
   + [`diffX`](/classes/transforms/wvtransformbarotropicqg/diffx.html)
   + [`diffY`](/classes/transforms/wvtransformbarotropicqg/diffy.html)
++ Inspect flow components
+  + [`geostrophicComponent`](/classes/transforms/wvtransformbarotropicqg/geostrophiccomponent.html) returns the geostrophic flow component
+  + [`flowComponentNames`](/classes/transforms/wvtransformbarotropicqg/flowcomponentnames.html) retrieve the names of all available variables
+  + [`flowComponentWithName`](/classes/transforms/wvtransformbarotropicqg/flowcomponentwithname.html) retrieve a WVFlowComponent by name
+  + [`flowComponents`](/classes/transforms/wvtransformbarotropicqg/flowcomponents.html)
+  + [`primaryFlowComponentNames`](/classes/transforms/wvtransformbarotropicqg/primaryflowcomponentnames.html) retrieve the names of all available variables
+  + [`primaryFlowComponentWithName`](/classes/transforms/wvtransformbarotropicqg/primaryflowcomponentwithname.html) retrieve a WVPrimaryFlowComponent by name
+  + [`primaryFlowComponents`](/classes/transforms/wvtransformbarotropicqg/primaryflowcomponents.html)
+  + [`summarizeFlowComponents`](/classes/transforms/wvtransformbarotropicqg/summarizeflowcomponents.html) Print a table of registered primary and diagnostic components.
+  + [`totalFlowComponent`](/classes/transforms/wvtransformbarotropicqg/totalflowcomponent.html)
++ Inspect wave-vortex coefficients
+  + Stored coefficients
+    + [`A0`](/classes/transforms/wvtransformbarotropicqg/a0.html) Zero-frequency geostrophic coefficients.
+  + Coefficients at the current time
+    + [`A0t`](/classes/transforms/wvtransformbarotropicqg/a0t.html) zero-frequency coefficients at current time t
+  + Coefficient evolution
+    + [`t0`](/classes/transforms/wvtransformbarotropicqg/t0.html) Reference time for the stored wave phases, in seconds.
+    + [`t`](/classes/transforms/wvtransformbarotropicqg/t.html) Current transform time in seconds.
++ Create a related transform
+  + [`spectralVariableWithResolution`](/classes/transforms/wvtransformbarotropicqg/spectralvariablewithresolution.html) create a new variable with different resolution
+  + [`waveVortexTransformWithDoubleResolution`](/classes/transforms/wvtransformbarotropicqg/wavevortextransformwithdoubleresolution.html) create a new WVTransform with double resolution
+  + [`waveVortexTransformWithResolution`](/classes/transforms/wvtransformbarotropicqg/wavevortextransformwithresolution.html) Construct the same transform family at a requested resolution.
++ Extend a transform
+  + Flow components
+    + [`addFlowComponent`](/classes/transforms/wvtransformbarotropicqg/addflowcomponent.html) add a flow component and its standard variables
+    + [`addPrimaryFlowComponent`](/classes/transforms/wvtransformbarotropicqg/addprimaryflowcomponent.html) add a primary flow component, automatically added to the flow
+  + Operations and variables
+    + [`addOperation`](/classes/transforms/wvtransformbarotropicqg/addoperation.html) Register one or more operations and their output variables.
+    + [`operationWithName`](/classes/transforms/wvtransformbarotropicqg/operationwithname.html) retrieve a WVOperation by name
+    + [`removeOperation`](/classes/transforms/wvtransformbarotropicqg/removeoperation.html) Remove the exact registered operation and its cached outputs.
++ Get package information
+  + [`version`](/classes/transforms/wvtransformbarotropicqg/version.html) Installed WaveVortexModel version.
 
 
 ## Developer Topics
 These items document internal implementation details and are not part of the primary public API.
-+ Inspect wave-vortex coefficients
-+ Inspect the domain
-+ Initialize the flow
-+ Evaluate physical fields
-+ Convert representations
-+ Analyze the flow
 + Projection and reconstruction coefficients
   + [`A0N`](/classes/transforms/wvtransformbarotropicqg/a0n.html) matrix component that multiplies $$\tilde{\eta}$$ to compute $$A_0$$.
   + [`A0U`](/classes/transforms/wvtransformbarotropicqg/a0u.html) matrix component that multiplies $$\tilde{u}$$ to compute $$A_0$$.
@@ -166,10 +256,10 @@ These items document internal implementation details and are not part of the pri
   + [`degreesOfFreedomForRealMatrix`](/classes/transforms/wvtransformbarotropicqg/degreesoffreedomforrealmatrix.html) a matrix with the number of degrees-of-freedom at each entry
   + [`fastTransform`](/classes/transforms/wvtransformbarotropicqg/fasttransform.html) fast transform object
   + [`transformFromSpatialDomainWithFourier`](/classes/transforms/wvtransformbarotropicqg/transformfromspatialdomainwithfourier.html)
-  + [`transformToKLAxes`](/classes/transforms/wvtransformbarotropicqg/transformtoklaxes.html) transforms in the spectral domain from (j,kl) to (kAxis,lAxis,j)
   + [`transformToSpatialDomainWithFourier`](/classes/transforms/wvtransformbarotropicqg/transformtospatialdomainwithfourier.html)
   + [`transformToSpatialDomainWithFourierAtPosition`](/classes/transforms/wvtransformbarotropicqg/transformtospatialdomainwithfourieratposition.html)
 + Nonlinear flux and forcing internals
+  + [`enstrophyFluxFromF0`](/classes/transforms/wvtransformbarotropicqg/enstrophyfluxfromf0.html)
   + [`fluxForForcing`](/classes/transforms/wvtransformbarotropicqg/fluxforforcing.html)
   + [`qgpvFluxFromF0`](/classes/transforms/wvtransformbarotropicqg/qgpvfluxfromf0.html)
 + Persistence internals
@@ -189,42 +279,17 @@ These items document internal implementation details and are not part of the pri
   + [`propertyAnnotationsForGeometry`](/classes/transforms/wvtransformbarotropicqg/propertyannotationsforgeometry.html) return array of CAPropertyAnnotations initialized by default
   + [`propertyAnnotationsForRotatingFPlane`](/classes/transforms/wvtransformbarotropicqg/propertyannotationsforrotatingfplane.html)
 + Class internals
-  + [`geostrophicComponent`](/classes/transforms/wvtransformbarotropicqg/geostrophiccomponent.html) returns the geostrophic flow component
-  + [`geostrophicKineticEnergy`](/classes/transforms/wvtransformbarotropicqg/geostrophickineticenergy.html) kinetic energy of the geostrophic flow
-  + [`geostrophicPotentialEnergy`](/classes/transforms/wvtransformbarotropicqg/geostrophicpotentialenergy.html) potential energy of the geostrophic flow
-  + [`J`](/classes/transforms/wvtransformbarotropicqg/j_.html)
-  + [`K`](/classes/transforms/wvtransformbarotropicqg/k.html) k-coordinate matrix
-  + [`K2`](/classes/transforms/wvtransformbarotropicqg/k2.html) squared horizontal wavenumber, $$K2=K^2+L^2$$
-  + [`Kh`](/classes/transforms/wvtransformbarotropicqg/kh.html) horizontal wavenumber, $$Kh=\sqrt(K^2+L^2)$$
-  + [`L`](/classes/transforms/wvtransformbarotropicqg/l.html) l-coordinate matrix
-  + [`Lr2`](/classes/transforms/wvtransformbarotropicqg/lr2.html) squared Rossby radius
   + [`Nk_dft`](/classes/transforms/wvtransformbarotropicqg/nk_dft.html) length of the k-wavenumber dimension on the DFT grid
-  + [`Nkl`](/classes/transforms/wvtransformbarotropicqg/nkl.html) length of the combined kl-wavenumber dimension on the WV grid
   + [`Nl_dft`](/classes/transforms/wvtransformbarotropicqg/nl_dft.html) length of the l-wavenumber dimension on the DFT grid
-  + [`X`](/classes/transforms/wvtransformbarotropicqg/x.html) x-coordinate matrix
-  + [`Y`](/classes/transforms/wvtransformbarotropicqg/y.html) y-coordinate matrix
-  + [`Z`](/classes/transforms/wvtransformbarotropicqg/z.html)
   + [`dftConjugateIndices2D`](/classes/transforms/wvtransformbarotropicqg/dftconjugateindices2d.html) index into the DFT grid of the conjugate of each WV mode
   + [`dftPrimaryIndices2D`](/classes/transforms/wvtransformbarotropicqg/dftprimaryindices2d.html) index into the DFT grid of each WV mode
-  + [`dk`](/classes/transforms/wvtransformbarotropicqg/dk.html) wavenumber spacing of the $$k$$ axis
-  + [`dl`](/classes/transforms/wvtransformbarotropicqg/dl.html) wavenumber spacing of the $$l$$ axis
-  + [`f`](/classes/transforms/wvtransformbarotropicqg/f.html) Coriolis parameter
-  + [`g`](/classes/transforms/wvtransformbarotropicqg/g.html) gravity of Earth
-  + [`geometryFromFile`](/classes/transforms/wvtransformbarotropicqg/geometryfromfile.html)
-  + [`h`](/classes/transforms/wvtransformbarotropicqg/h.html) equivalent depth
-  + [`h_0`](/classes/transforms/wvtransformbarotropicqg/h_0.html) [Nj 1]
   + [`indicesOfFourierConjugates`](/classes/transforms/wvtransformbarotropicqg/indicesoffourierconjugates.html) a matrix of linear indices of the conjugate
   + [`isHermitian`](/classes/transforms/wvtransformbarotropicqg/ishermitian.html) Check if the matrix is Hermitian. Report errors.
-  + [`kRadial`](/classes/transforms/wvtransformbarotropicqg/kradial.html) radial (k,l) wavenumber on the WV grid
   + [`k_dft`](/classes/transforms/wvtransformbarotropicqg/k_dft.html) k wavenumber dimension on the DFT grid
   + [`kl`](/classes/transforms/wvtransformbarotropicqg/kl.html) wavenumber dimension
   + [`l_dft`](/classes/transforms/wvtransformbarotropicqg/l_dft.html) l wavenumber dimension on the DFT grid
   + [`maxFg`](/classes/transforms/wvtransformbarotropicqg/maxfg.html)
-  + [`planetaryRadius`](/classes/transforms/wvtransformbarotropicqg/planetaryradius.html) radius of the planetary body
-  + [`psi`](/classes/transforms/wvtransformbarotropicqg/psi.html) geostrophic streamfunction
-  + [`rotationRate`](/classes/transforms/wvtransformbarotropicqg/rotationrate.html) rotation rate of the planetary body
   + [`setConjugateToUnity`](/classes/transforms/wvtransformbarotropicqg/setconjugatetounity.html) set the conjugate of the wavenumber (iK,iL) to 1
-  + [`shouldAntialias`](/classes/transforms/wvtransformbarotropicqg/shouldantialias.html) whether the WV grid includes quadratically aliased wavenumbers
   + [`shouldExcludeConjugates`](/classes/transforms/wvtransformbarotropicqg/shouldexcludeconjugates.html) whether the WV grid excludes redundant Hermitian-conjugate wavenumbers
   + [`shouldExcludeNyquist`](/classes/transforms/wvtransformbarotropicqg/shouldexcludenyquist.html) whether the WV grid includes Nyquist wavenumbers
 

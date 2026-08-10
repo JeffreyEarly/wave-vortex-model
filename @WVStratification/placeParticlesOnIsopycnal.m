@@ -1,5 +1,5 @@
 function zIsopycnal = placeParticlesOnIsopycnal(wvt,x,y,zNoMotion)
-% places Lagrangian particles along a specified isopycnal
+% Return particle depths on the isopycnal identified by a no-motion depth.
 %
 % Given particle position (x,y), `zNoMotion` is used to determine the target
 % isopycnal using the no-motion density,
@@ -14,7 +14,7 @@ function zIsopycnal = placeParticlesOnIsopycnal(wvt,x,y,zNoMotion)
 % zIsopycnal = rho(targetRho);
 % ```
 %
-% where rho is the current total density field of the fluid.
+% where `rho` is the current total density field of the fluid.
 %
 % Note that the density is not necessarily monotonic, so the answer is not
 % necessarily unique.

@@ -3,7 +3,7 @@ layout: default
 title: conjugateDimension
 parent: WVTransformBoussinesq
 grand_parent: Transforms
-nav_order: 86
+nav_order: 95
 mathjax: true
 ---
 

@@ -3,7 +3,7 @@ layout: default
 title: initWithGMSpectrum
 parent: WVTransformBoussinesq
 grand_parent: Transforms
-nav_order: 136
+nav_order: 156
 mathjax: true
 ---
 

@@ -3,15 +3,13 @@ layout: default
 title: psi
 parent: WVTransformStratifiedQG
 grand_parent: Transforms
-nav_order: 136
+nav_order: 161
 mathjax: true
 ---
 
 #  psi
 
 geostrophic streamfunction
-
-> Developer documentation: this item describes internal implementation details.
 
 
 ---

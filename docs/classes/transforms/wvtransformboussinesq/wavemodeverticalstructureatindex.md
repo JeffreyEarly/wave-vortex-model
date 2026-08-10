@@ -3,15 +3,13 @@ layout: default
 title: waveModeVerticalStructureAtIndex
 parent: WVTransformBoussinesq
 grand_parent: Transforms
-nav_order: 265
+nav_order: 317
 mathjax: true
 ---
 
 #  waveModeVerticalStructureAtIndex
 
 Return wave vertical-structure factors at one vertical grid index.
-
-> Developer documentation: this item describes internal implementation details.
 
 
 ---

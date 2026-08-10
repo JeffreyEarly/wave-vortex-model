@@ -3,7 +3,7 @@ layout: default
 title: isHermitian
 parent: WVTransformConstantStratification
 grand_parent: Transforms
-nav_order: 138
+nav_order: 161
 mathjax: true
 ---
 

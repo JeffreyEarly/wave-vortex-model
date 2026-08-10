@@ -3,13 +3,13 @@ layout: default
 title: rho_nm0
 parent: WVTransformStratifiedQG
 grand_parent: Transforms
-nav_order: 147
+nav_order: 176
 mathjax: true
 ---
 
 #  rho_nm0
 
-$$\rho_\textrm{nm}(z)$$, no-motion density at time `t0`
+No-motion density profile sampled on the vertical grid.
 
 
 ---

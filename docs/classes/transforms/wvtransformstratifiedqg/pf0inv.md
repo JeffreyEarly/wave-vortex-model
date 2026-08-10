@@ -3,7 +3,7 @@ layout: default
 title: PF0inv
 parent: WVTransformStratifiedQG
 grand_parent: Transforms
-nav_order: 32
+nav_order: 33
 mathjax: true
 ---
 

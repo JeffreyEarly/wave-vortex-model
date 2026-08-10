@@ -3,15 +3,13 @@ layout: default
 title: dk
 parent: WVTransformStratifiedQG
 grand_parent: Transforms
-nav_order: 62
+nav_order: 69
 mathjax: true
 ---
 
 #  dk
 
 wavenumber spacing of the $$k$$ axis
-
-> Developer documentation: this item describes internal implementation details.
 
 
 ---

@@ -3,13 +3,13 @@ layout: default
 title: j
 parent: WVTransformStratifiedQG
 grand_parent: Transforms
-nav_order: 100
+nav_order: 121
 mathjax: true
 ---
 
 #  j
 
-vertical mode number
+Vertical-mode index axis.
 
 
 ---

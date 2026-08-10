@@ -3,7 +3,7 @@ layout: default
 title: Lz
 parent: WVTransformHydrostatic
 grand_parent: Transforms
-nav_order: 25
+nav_order: 28
 mathjax: true
 ---
 

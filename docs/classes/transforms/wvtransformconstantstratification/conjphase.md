@@ -3,18 +3,16 @@ layout: default
 title: conjPhase
 parent: WVTransformConstantStratification
 grand_parent: Transforms
-nav_order: 81
+nav_order: 90
 mathjax: true
 ---
 
 #  conjPhase
 
-phase of the Am wave modes
-
-> Developer documentation: this item describes internal implementation details.
+conjugate phase factor that advances `Am` from `t0` to `t`
 
 
 ---
 
 ## Description
-Real valued property with dimensions $$(j,kl)$$ and units of $$radians$$.
+Real valued property with dimensions $$(j,kl)$$ and units of $$1$$.

@@ -3,15 +3,13 @@ layout: default
 title: Lr2
 parent: WVTransformBoussinesq
 grand_parent: Transforms
-nav_order: 30
+nav_order: 33
 mathjax: true
 ---
 
 #  Lr2
 
-squared Rossby radius
-
-> Developer documentation: this item describes internal implementation details.
+squared Rossby deformation radius of each geostrophic mode
 
 
 ---

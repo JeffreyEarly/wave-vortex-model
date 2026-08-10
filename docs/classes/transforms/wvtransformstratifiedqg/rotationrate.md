@@ -3,15 +3,13 @@ layout: default
 title: rotationRate
 parent: WVTransformStratifiedQG
 grand_parent: Transforms
-nav_order: 149
+nav_order: 178
 mathjax: true
 ---
 
 #  rotationRate
 
 rotation rate of the planetary body
-
-> Developer documentation: this item describes internal implementation details.
 
 
 ---

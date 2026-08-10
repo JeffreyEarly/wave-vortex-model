@@ -53,7 +53,7 @@ classdef TestCoreAPIDocumentation < matlab.unittest.TestCase
 
         function waveVortexCoefficientsAreProminent(testCase)
             abstractPage = testCase.generatedTransformPage("wvtransform","index.md");
-            coefficientSection = extractBetween(abstractPage,"+ Inspect wave-vortex coefficients","+ Set and inspect time");
+            coefficientSection = extractBetween(abstractPage,"+ Inspect wave-vortex coefficients","+ Create a related transform");
             for name = ["Ap" "Am" "A0"]
                 testCase.verifySubstring(coefficientSection,"[`" + name + "`]");
             end
@@ -156,6 +156,84 @@ classdef TestCoreAPIDocumentation < matlab.unittest.TestCase
             testCase.verifyFalse(contains(versionPage,"mpackage.json"));
             packageSection = extractAfter(transformPage,"+ Get package information");
             testCase.verifySubstring(packageSection,"[`version`]");
+        end
+
+        function concreteTransformsUseTaskOrientedTopics(testCase)
+            expected = [
+                "Create and restore a transform"
+                "Inspect the domain"
+                "Initialize the flow"
+                "Evaluate physical fields"
+                "Manage forcing and closures"
+                "Analyze the flow"
+                "Save transform state"
+                "Convert representations"
+                "Differentiate and integrate fields"
+                "Inspect flow components"
+                "Inspect wave-vortex coefficients"
+                "Create a related transform"
+                "Extend a transform"
+                "Get package information"
+                ];
+            folders = [
+                "wvtransformconstantstratification"
+                "wvtransformhydrostatic"
+                "wvtransformboussinesq"
+                "wvtransformstratifiedqg"
+                "wvtransformbarotropicqg"
+                ];
+            for folder = folders'
+                page = testCase.generatedTransformPage(folder,"index.md");
+                testCase.verifyEqual(testCase.topLevelTopics(page),expected,folder);
+                testCase.verifyLessThan(strfind(page,"+ Initialize the flow"), ...
+                    strfind(page,"+ Inspect wave-vortex coefficients"),folder);
+                testCase.verifyNoEmptyTopicBranches(page,folder);
+            end
+        end
+
+        function transformDomainTopicsHaveScientificOrder(testCase)
+            page = testCase.generatedTransformPage("wvtransformhydrostatic","index.md");
+            domain = extractBetween(page,"+ Inspect the domain","+ Initialize the flow");
+            testCase.verifyTextOrder(domain,["[`x`]" "[`y`]" "[`z`]"]);
+            testCase.verifyTextOrder(domain,["[`X`]" "[`Y`]" "[`Z`]" "[`xyzGrid`]"]);
+            testCase.verifyTextOrder(domain,["[`z_int`]" "[`volumeIntegral`]"]);
+            testCase.verifyTextOrder(domain,["[`kAxis`]" "[`lAxis`]" "[`j`]" "[`dk`]" "[`dl`]"]);
+            testCase.verifyTextOrder(domain,["[`k`]" "[`l`]" "[`K`]" "[`L`]" "[`J`]" "[`kljGrid`]"]);
+            testCase.verifyTextOrder(domain,["[`Kh`]" "[`K2`]"]);
+            for name = ["f" "g" "dLnN2" "rho0" "planetaryRadius" "rotationRate"]
+                testCase.verifySubstring(domain,"[`" + name + "`]");
+            end
+
+            analysis = extractBetween(page,"+ Analyze the flow","+ Save transform state");
+            testCase.verifyTextOrder(analysis,["[`kRadial`]" "[`transformToRadialWavenumber`]"]);
+            testCase.verifyTextOrder(analysis,["[`kPseudoRadial`]" "[`transformToPseudoRadialWavenumber`]"]);
+        end
+
+        function concreteTransformsShowUsefulInheritedSurface(testCase)
+            hydrostatic = testCase.generatedTransformPage("wvtransformhydrostatic","index.md");
+            for name = ["variableWithName" "addForcing" "writeToFile" "Ap" "flowComponents"]
+                testCase.verifySubstring(hydrostatic, ...
+                    "/classes/transforms/wvtransformhydrostatic/" + lower(name) + ".html");
+            end
+            testCase.verifyFalse(contains(hydrostatic,"geometryfromfile.html"));
+            testCase.verifySubstring(extractAfter(hydrostatic,"## Developer Topics"),"shouldExcludeConjugates");
+            testCase.verifySubstring(extractAfter(hydrostatic,"## Developer Topics"),"enstrophyFluxFromF0");
+
+            for folder = ["wvtransformstratifiedqg" "wvtransformbarotropicqg"]
+                page = testCase.generatedTransformPage(folder,"index.md");
+                testCase.verifyFalse(contains(page,"/" + folder + "/ap.html"));
+                testCase.verifyFalse(contains(page,"/" + folder + "/am.html"));
+                testCase.verifySubstring(page,"/" + folder + "/a0.html) Zero-frequency geostrophic coefficients.");
+            end
+
+            barotropic = testCase.generatedTransformPage("wvtransformbarotropicqg","index.md");
+            for name = ["z" "z_" "lz" "nz" "j" "j_" "nj" "kljgrid" "effectivejmax" ...
+                    "initwithuveta" "transformuvetatowavevortex"]
+                testCase.verifyFalse(contains(barotropic, ...
+                    "/classes/transforms/wvtransformbarotropicqg/" + name + ".html"));
+            end
+            testCase.verifySubstring(barotropic,"Equivalent depth and deformation scale");
+            testCase.verifySubstring(barotropic,"[`psi`]");
         end
 
         function capabilityPageAvoidsReleaseStatusJargon(testCase)
@@ -324,6 +402,47 @@ classdef TestCoreAPIDocumentation < matlab.unittest.TestCase
 
         function source = coefficientSidecar(testCase,filename)
             source = string(fileread(fullfile(testCase.repositoryRoot,"@WVTransform","detailedDescriptions",filename)));
+        end
+
+        function topics = topLevelTopics(~,page)
+            topicBlock = extractBetween(page,"## Topics","## Developer Topics");
+            tokens = regexp(topicBlock,'(?m)^\+ (?<name>[^\r\n]+)$','names');
+            topics = string({tokens.name})';
+        end
+
+        function verifyTextOrder(testCase,text,tokens)
+            positions = zeros(size(tokens));
+            for iToken = 1:numel(tokens)
+                location = strfind(text,tokens(iToken));
+                testCase.assertNotEmpty(location,"Missing " + tokens(iToken));
+                positions(iToken) = location(1);
+            end
+            testCase.verifyGreaterThan(diff(positions),zeros(1,numel(tokens)-1), ...
+                "Items are not in the requested order: " + strjoin(tokens," → "));
+        end
+
+        function verifyNoEmptyTopicBranches(testCase,page,label)
+            lines = splitlines(extractBetween(page,"## Topics","## Developer Topics"));
+            for iLine = 1:numel(lines)
+                topic = regexp(lines(iLine),'^(?<indent> *)\+ (?<body>.+)$','names','once');
+                if isempty(topic) || contains(string(topic.body),"[`")
+                    continue
+                end
+                depth = strlength(string(topic.indent));
+                hasLinkedMember = false;
+                for iChild = (iLine+1):numel(lines)
+                    child = regexp(lines(iChild),'^(?<indent> *)\+ (?<body>.+)$','names','once');
+                    if isempty(child)
+                        continue
+                    end
+                    if strlength(string(child.indent)) <= depth
+                        break
+                    end
+                    hasLinkedMember = hasLinkedMember || contains(string(child.body),"[`");
+                end
+                testCase.verifyTrue(hasLinkedMember, ...
+                    label + " has an empty topic branch: " + string(topic.body));
+            end
         end
 
         function transforms = supportedTransformFixtures(~)

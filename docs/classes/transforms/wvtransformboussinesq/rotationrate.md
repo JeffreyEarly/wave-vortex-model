@@ -3,15 +3,13 @@ layout: default
 title: rotationRate
 parent: WVTransformBoussinesq
 grand_parent: Transforms
-nav_order: 209
+nav_order: 241
 mathjax: true
 ---
 
 #  rotationRate
 
 rotation rate of the planetary body
-
-> Developer documentation: this item describes internal implementation details.
 
 
 ---

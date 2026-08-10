@@ -3,15 +3,13 @@ layout: default
 title: g
 parent: WVTransformBoussinesq
 grand_parent: Transforms
-nav_order: 114
+nav_order: 130
 mathjax: true
 ---
 
 #  g
 
-gravity of Earth
-
-> Developer documentation: this item describes internal implementation details.
+gravitational acceleration
 
 
 ---

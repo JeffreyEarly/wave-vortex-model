@@ -3,15 +3,13 @@ layout: default
 title: geostrophicComponent
 parent: WVTransformStratifiedQG
 grand_parent: Transforms
-nav_order: 75
+nav_order: 87
 mathjax: true
 ---
 
 #  geostrophicComponent
 
 returns the geostrophic flow component
-
-> Developer documentation: this item describes internal implementation details.
 
 
 ---

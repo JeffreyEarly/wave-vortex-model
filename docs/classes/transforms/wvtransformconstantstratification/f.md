@@ -3,15 +3,13 @@ layout: default
 title: f
 parent: WVTransformConstantStratification
 grand_parent: Transforms
-nav_order: 104
+nav_order: 114
 mathjax: true
 ---
 
 #  f
 
 Coriolis parameter
-
-> Developer documentation: this item describes internal implementation details.
 
 
 ---

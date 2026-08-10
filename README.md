@@ -1,6 +1,6 @@
 # WaveVortexModel
 
-WaveVortexModel represents rotating, stratified Boussinesq flow on an energetically orthogonal basis of internal waves, inertial oscillations, geostrophic motions, and mean-density anomalies. It can decompose a fluid state into wave–vortex coefficients, reconstruct physical fields, diagnose the resulting flow, and integrate linear or nonlinear dynamics.
+WaveVortexModel represents rotating, stratified Boussinesq flow on an energetically orthogonal basis of internal waves, inertial oscillations, geostrophic motions, and mean-density anomalies. It can decompose a fluid state into wave–vortex coefficients, reconstruct physical fields, diagnose the resulting flow, and integrate nonlinear dynamics, with analytical linear evolution available when needed.
 
 **Complete documentation:** [wavevortexmodel.org](https://wavevortexmodel.org)
 
@@ -17,18 +17,16 @@ See the [installation guide](https://wavevortexmodel.org/installation) for compl
 
 ## Quick start
 
-Create a small constant-stratification transform, initialize one internal wave, inspect its velocity field, and advance the state with analytical linear dynamics:
+Create a small constant-stratification transform, initialize one internal wave, inspect its velocity field, and advance the state with nonlinear model integration:
 
 ```matlab
-wvt = WVTransformConstantStratification( ...
-    [40e3 40e3 1000], [16 16 9], N0=5.2e-3, latitude=45);
-
-[omega,k,l] = wvt.initWithWaveModes( ...
-    kMode=1, lMode=0, j=1, phi=0, u=0.05, sign=1);
+wvt = WVTransformConstantStratification([40e3 40e3 1000],[16 16 9],N0=5.2e-3,latitude=45);
+[omega,k,l] = wvt.initWithWaveModes(kMode=1,lMode=0,j=1,phi=0,u=0.05,sign=1);
 [u,v,w] = wvt.variableWithName('u','v','w');
 
-model = WVModel(wvt,shouldUseLinearDynamics=true);
-model.integrateToTime(600,shouldShowIntegrationDiagnostics=false);
+wvt.addForcing(WVAdaptiveDamping(wvt));
+model = WVModel(wvt);
+model.integrateToTime(600);
 ```
 
 The transform stores the decomposed state in the wave–vortex coefficients `Ap`, `Am`, and `A0`. Physical variables such as `u`, `v`, `w`, density, pressure, energy, and potential vorticity are reconstructed from those coefficients when requested.

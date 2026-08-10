@@ -3,7 +3,7 @@ layout: default
 title: addMeanDensityAnomaly
 parent: WVTransformBoussinesq
 grand_parent: Transforms
-nav_order: 77
+nav_order: 82
 mathjax: true
 ---
 

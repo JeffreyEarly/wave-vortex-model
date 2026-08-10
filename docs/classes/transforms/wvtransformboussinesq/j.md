@@ -3,13 +3,13 @@ layout: default
 title: j
 parent: WVTransformBoussinesq
 grand_parent: Transforms
-nav_order: 151
+nav_order: 175
 mathjax: true
 ---
 
 #  j
 
-vertical mode number
+Vertical-mode index axis.
 
 
 ---

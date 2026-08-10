@@ -3,15 +3,13 @@ layout: default
 title: planetaryRadius
 parent: WVTransformStratifiedQG
 grand_parent: Transforms
-nav_order: 132
+nav_order: 154
 mathjax: true
 ---
 
 #  planetaryRadius
 
 radius of the planetary body
-
-> Developer documentation: this item describes internal implementation details.
 
 
 ---

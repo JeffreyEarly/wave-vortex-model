@@ -3,15 +3,13 @@ layout: default
 title: transformToKLAxes
 parent: WVTransformConstantStratification
 grand_parent: Transforms
-nav_order: 232
+nav_order: 278
 mathjax: true
 ---
 
 #  transformToKLAxes
 
 transforms in the spectral domain from (j,kl) to (kAxis,lAxis,j)
-
-> Developer documentation: this item describes internal implementation details.
 
 
 ---
