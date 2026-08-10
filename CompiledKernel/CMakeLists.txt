@@ -3,6 +3,7 @@ project(WaveVortexKernel VERSION 0.1.0 LANGUAGES CXX)
 
 add_library(WaveVortexKernel STATIC
     src/WVKernelTypes.cpp
+    src/WVTransformConstantStratificationKernel.cpp
 )
 add_library(WaveVortex::Kernel ALIAS WaveVortexKernel)
 
@@ -19,4 +20,3 @@ set_target_properties(WaveVortexKernel PROPERTIES
 if(CMAKE_CXX_COMPILER_ID MATCHES "AppleClang|Clang|GNU")
     target_compile_options(WaveVortexKernel PRIVATE -Wall -Wextra -Wpedantic -Werror)
 endif()
-

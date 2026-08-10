@@ -6,5 +6,6 @@ CompiledKernel/build/
 tools/compiled-kernel/build/
 *.a
 *.o
+*.mex*
 Benchmarks/results/runs/
 *.nc

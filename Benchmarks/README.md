@@ -59,3 +59,7 @@ results = runWaveVortexBuiltinStorageBenchmark
 The ledger covers compact Fourier mappings, the reused builtin inverse buffer, dense vertical transform matrices, and known forward/inverse result arrays. MATLAB-internal FFT work storage remains explicitly opaque. Each case runs in three fresh MATLAB processes by default while ordinary production caches stay warm.
 
 `WVTransformConstantStratificationSpeedTest`, `ProfileableSpeedTest`, and `ForcingSpectralMaskPerformanceTest` remain historical investigation scripts. Deterministic correctness checks belong in `UnitTests`; mixed scientific investigations belong in `DeveloperExperiments`.
+
+## Compiled transform components
+
+`runCompiledKernelTransformBenchmark` measures the issue #49/#50 portable C++ transform core through an authoring-only MEX gateway. It compares complete forward projection, inverse reconstruction, and fused F/G value-plus-derivative calls with MATLAB. The gateway links locally to the active MATLAB installation's FFTW library; no MEX product or FFTW library is tracked. Component speedups are descriptive and do not decide whether the later nonlinear kernel is ready.

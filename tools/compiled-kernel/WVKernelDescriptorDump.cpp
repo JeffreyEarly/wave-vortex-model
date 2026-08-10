@@ -19,6 +19,15 @@ void numericArray(const std::vector<T>& values) {
     std::cout << ']';
 }
 
+void complexComponent(const std::vector<WVComplex64>& values, bool imaginary) {
+    std::cout << '[';
+    for (std::size_t i = 0; i < values.size(); ++i) {
+        if (i != 0) std::cout << ',';
+        std::cout << (imaginary ? values[i].imag : values[i].real);
+    }
+    std::cout << ']';
+}
+
 double argument(char** values, int index) {
     return std::stod(values[index]);
 }
@@ -79,6 +88,13 @@ int main(int argc, char** argv) {
     std::cout << ",\"l\":"; numericArray(l);
     std::cout << ",\"dftPrimaryIndices2D\":"; numericArray(primary);
     std::cout << ",\"dftConjugateIndices2D\":"; numericArray(conjugate);
+    std::cout << ",\"halfDirectRows\":"; numericArray(descriptor.halfSpectrumMappings().directRows);
+    std::cout << ",\"halfDirectWVIndices\":"; numericArray(descriptor.halfSpectrumMappings().directWVIndices);
+    std::cout << ",\"halfConjugatedRows\":"; numericArray(descriptor.halfSpectrumMappings().conjugatedRows);
+    std::cout << ",\"halfConjugatedWVIndices\":"; numericArray(descriptor.halfSpectrumMappings().conjugatedWVIndices);
+    std::cout << ",\"halfCompletionRows\":"; numericArray(descriptor.halfSpectrumMappings().hermitianCompletionRows);
+    std::cout << ",\"halfCompletionSourceRows\":"; numericArray(descriptor.halfSpectrumMappings().hermitianSourceRows);
+    std::cout << ",\"halfSelfConjugateRows\":"; numericArray(descriptor.halfSpectrumMappings().selfConjugateRows);
     std::cout << ",\"z\":"; numericArray(descriptor.verticalModes().z);
     std::cout << ",\"j\":"; numericArray(descriptor.verticalModes().j);
     std::cout << ",\"h0\":"; numericArray(descriptor.verticalModes().h0);
@@ -88,6 +104,33 @@ int main(int argc, char** argv) {
     std::cout << ",\"Gg\":"; numericArray(descriptor.verticalModes().Gg);
     std::cout << ",\"Fwg\":"; numericArray(descriptor.verticalModes().Fwg);
     std::cout << ",\"Gwg\":"; numericArray(descriptor.verticalModes().Gwg);
+    std::cout << ",\"UApReal\":"; complexComponent(descriptor.verticalModes().UAp,false);
+    std::cout << ",\"UApImag\":"; complexComponent(descriptor.verticalModes().UAp,true);
+    std::cout << ",\"UAmReal\":"; complexComponent(descriptor.verticalModes().UAm,false);
+    std::cout << ",\"UAmImag\":"; complexComponent(descriptor.verticalModes().UAm,true);
+    std::cout << ",\"VApReal\":"; complexComponent(descriptor.verticalModes().VAp,false);
+    std::cout << ",\"VApImag\":"; complexComponent(descriptor.verticalModes().VAp,true);
+    std::cout << ",\"VAmReal\":"; complexComponent(descriptor.verticalModes().VAm,false);
+    std::cout << ",\"VAmImag\":"; complexComponent(descriptor.verticalModes().VAm,true);
+    std::cout << ",\"WApReal\":"; complexComponent(descriptor.verticalModes().WAp,false);
+    std::cout << ",\"WApImag\":"; complexComponent(descriptor.verticalModes().WAp,true);
+    std::cout << ",\"WAmReal\":"; complexComponent(descriptor.verticalModes().WAm,false);
+    std::cout << ",\"WAmImag\":"; complexComponent(descriptor.verticalModes().WAm,true);
+    std::cout << ",\"NAp\":"; numericArray(descriptor.verticalModes().NAp);
+    std::cout << ",\"NAm\":"; numericArray(descriptor.verticalModes().NAm);
+    std::cout << ",\"UA0Real\":"; complexComponent(descriptor.verticalModes().UA0,false);
+    std::cout << ",\"UA0Imag\":"; complexComponent(descriptor.verticalModes().UA0,true);
+    std::cout << ",\"VA0Real\":"; complexComponent(descriptor.verticalModes().VA0,false);
+    std::cout << ",\"VA0Imag\":"; complexComponent(descriptor.verticalModes().VA0,true);
+    std::cout << ",\"NA0\":"; numericArray(descriptor.verticalModes().NA0);
+    std::cout << ",\"A0Z\":"; numericArray(descriptor.verticalModes().A0Z);
+    std::cout << ",\"A0N\":"; numericArray(descriptor.verticalModes().A0N);
+    std::cout << ",\"ApmDReal\":"; complexComponent(descriptor.verticalModes().ApmD,false);
+    std::cout << ",\"ApmDImag\":"; complexComponent(descriptor.verticalModes().ApmD,true);
+    std::cout << ",\"ApmN\":"; numericArray(descriptor.verticalModes().ApmN);
+    std::cout << ",\"ApmDScaled\":"; numericArray(descriptor.verticalModes().ApmDScaled);
+    std::cout << ",\"ApmWScaledReal\":"; complexComponent(descriptor.verticalModes().ApmWScaled,false);
+    std::cout << ",\"ApmWScaledImag\":"; complexComponent(descriptor.verticalModes().ApmWScaled,true);
     std::cout << "}\n";
     return 0;
 }
