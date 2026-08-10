@@ -3,7 +3,7 @@ layout: default
 title: hasClosure
 parent: WVTransformHydrostatic
 grand_parent: Transforms
-nav_order: 122
+nav_order: 120
 mathjax: true
 ---
 

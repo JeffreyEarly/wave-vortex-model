@@ -3,7 +3,7 @@ layout: default
 title: reshapeFourierStorageToRows
 parent: WVFourierStorageLayout
 grand_parent: Developer internals
-nav_order: 21
+nav_order: 20
 mathjax: true
 ---
 

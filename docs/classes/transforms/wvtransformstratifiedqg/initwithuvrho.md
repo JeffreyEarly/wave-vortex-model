@@ -3,7 +3,7 @@ layout: default
 title: initWithUVRho
 parent: WVTransformStratifiedQG
 grand_parent: Transforms
-nav_order: 109
+nav_order: 106
 mathjax: true
 ---
 

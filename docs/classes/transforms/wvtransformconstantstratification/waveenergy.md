@@ -3,7 +3,7 @@ layout: default
 title: waveEnergy
 parent: WVTransformConstantStratification
 grand_parent: Transforms
-nav_order: 301
+nav_order: 299
 mathjax: true
 ---
 

@@ -3,7 +3,7 @@ layout: default
 title: hasMeanPressureDifference
 parent: WVTransformBarotropicQG
 grand_parent: Transforms
-nav_order: 70
+nav_order: 68
 mathjax: true
 ---
 

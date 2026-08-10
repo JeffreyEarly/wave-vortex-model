@@ -28,8 +28,10 @@ classdef TestInternalRuntimeArtifacts < matlab.unittest.TestCase
             testCase.verifyFalse(any(transformMethods == "speedTest"))
         end
 
-        function retainedInternalBackendsRemainAvailable(testCase)
-            testCase.verifyNotEmpty(meta.class.fromName('WVFastTransformDoublyPeriodicFFTW'))
+        function retainedInternalTransformsRemainAvailable(testCase)
+            repositoryRoot = fileparts(fileparts(mfilename("fullpath")));
+            testCase.verifyFalse(isfile(fullfile(repositoryRoot,"FastTransforms","@WVFastTransformDoublyPeriodicFFTW","WVFastTransformDoublyPeriodicFFTW.m")))
+            testCase.verifyFalse(isfile(fullfile(repositoryRoot,"FastTransforms","fftw_dft2.m")))
             wvt = WVTransformBarotropicQG([4000 3000],[8 6],latitude=45,shouldAntialias=false);
             testCase.verifyTrue(ismethod(wvt,'transformToSpatialDomainFromDFTGridAtPosition'))
             testCase.verifyTrue(ismethod(wvt,'transformToSpatialDomainWithFourierAtPosition'))

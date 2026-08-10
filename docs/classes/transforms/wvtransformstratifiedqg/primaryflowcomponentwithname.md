@@ -3,7 +3,7 @@ layout: default
 title: primaryFlowComponentWithName
 parent: WVTransformStratifiedQG
 grand_parent: Transforms
-nav_order: 155
+nav_order: 152
 mathjax: true
 ---
 

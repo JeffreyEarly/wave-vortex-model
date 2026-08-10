@@ -3,7 +3,7 @@ layout: default
 title: kljGrid
 parent: WVTransformStratifiedQG
 grand_parent: Transforms
-nav_order: 130
+nav_order: 127
 mathjax: true
 ---
 

@@ -3,7 +3,7 @@ layout: default
 title: hasVariableWithName
 parent: WVTransformStratifiedQG
 grand_parent: Transforms
-nav_order: 96
+nav_order: 94
 mathjax: true
 ---
 

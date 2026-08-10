@@ -3,7 +3,7 @@ layout: default
 title: waveModeVerticalStructureAtIndex
 parent: WVTransformStratifiedQG
 grand_parent: Transforms
-nav_order: 233
+nav_order: 230
 mathjax: true
 ---
 

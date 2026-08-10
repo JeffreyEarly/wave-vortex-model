@@ -3,7 +3,7 @@ layout: default
 title: initWithInertialMotions
 parent: WVTransformHydrostatic
 grand_parent: Transforms
-nav_order: 141
+nav_order: 138
 mathjax: true
 ---
 

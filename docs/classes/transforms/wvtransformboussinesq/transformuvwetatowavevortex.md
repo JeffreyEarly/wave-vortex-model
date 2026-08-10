@@ -3,7 +3,7 @@ layout: default
 title: transformUVWEtaToWaveVortex
 parent: WVTransformBoussinesq
 grand_parent: Transforms
-nav_order: 294
+nav_order: 291
 mathjax: true
 ---
 

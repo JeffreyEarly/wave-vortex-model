@@ -3,7 +3,7 @@ layout: default
 title: setInertialMotions
 parent: WVTransformBoussinesq
 grand_parent: Transforms
-nav_order: 245
+nav_order: 242
 mathjax: true
 ---
 

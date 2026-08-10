@@ -41,8 +41,21 @@ Issue #70 moved the builtin adapter to a row-oriented Fourier-storage layout. It
 results = runWVFourierStorageLayoutIntegrationBenchmark
 ```
 
-The 3% regression threshold applies only to `[256 256 65]` and `[512 512 129]`, with antialiasing both disabled and enabled. Smaller cases remain descriptive because the row layout was selected as the single production representation even where MATLAB timing noise or fixed overhead can make a legacy expression faster. The integration artifact also confirms that the vertically replicated compatibility indices remain unallocated until a caller explicitly requests them.
+The 3% regression threshold applies only to `[256 256 65]` and `[512 512 129]`, with antialiasing both disabled and enabled. Smaller cases remain descriptive because the row layout was selected as the single production representation even where MATLAB timing noise or fixed overhead can make a legacy expression faster. The integration artifact predates removal of the vertically replicated compatibility properties; the historical suite now constructs equivalent expanded indices during untimed setup through `indicesFromWVGridToDFTGrid`, while its immutable canonical artifact remains unchanged.
 
 The v4.2.1 release audit repeated this gate against the final production source. Its immutable M5 Max/R2026a builtin result is stored under `results/reference/transform-layout-v4.2.1-release-m5-max-r2026a-builtin`.
+
+## Builtin transform storage
+
+`runWaveVortexBuiltinStorageBenchmark` reports exact application-owned transform arrays and repeated externally sampled process RSS without assuming that MATLAB allocation behavior can be inferred from source code:
+
+```matlab
+addpath("Benchmarks")
+results = runWaveVortexBuiltinStorageBenchmark
+```
+
+`runWaveVortexRetirementBenchmark` compares archived `v4.2.1` and candidate source snapshots in three fresh processes per `core-v1` case. Each worker rotates implementation order, records the required 7/3 within-process samples, compares the final numerical outputs, and proves that the builtin adapter executed. The same command includes the generic storage/RSS benchmark in its retirement artifact.
+
+The ledger covers compact Fourier mappings, the reused builtin inverse buffer, dense vertical transform matrices, and known forward/inverse result arrays. MATLAB-internal FFT work storage remains explicitly opaque. Each case runs in three fresh MATLAB processes by default while ordinary production caches stay warm.
 
 `WVTransformConstantStratificationSpeedTest`, `ProfileableSpeedTest`, and `ForcingSpectralMaskPerformanceTest` remain historical investigation scripts. Deterministic correctness checks belong in `UnitTests`; mixed scientific investigations belong in `DeveloperExperiments`.

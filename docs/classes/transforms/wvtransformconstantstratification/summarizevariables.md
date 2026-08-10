@@ -3,7 +3,7 @@ layout: default
 title: summarizeVariables
 parent: WVTransformConstantStratification
 grand_parent: Transforms
-nav_order: 262
+nav_order: 259
 mathjax: true
 ---
 

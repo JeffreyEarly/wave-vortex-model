@@ -3,7 +3,7 @@ layout: default
 title: verticalModes
 parent: WVTransformBoussinesq
 grand_parent: Transforms
-nav_order: 304
+nav_order: 301
 mathjax: true
 ---
 

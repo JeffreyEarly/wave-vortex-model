@@ -3,7 +3,7 @@ layout: default
 title: rho_bar
 parent: WVTransformBoussinesq
 grand_parent: Transforms
-nav_order: 235
+nav_order: 232
 mathjax: true
 ---
 

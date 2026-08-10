@@ -325,13 +325,10 @@ These items document internal implementation details and are not part of the pri
 + Geometry and mode indexing
   + [`buildVerticalModeProjectionOperators`](/classes/transforms/wvtransformconstantstratification/buildverticalmodeprojectionoperators.html) Build the transformation matrices
   + [`conjugateDimension`](/classes/transforms/wvtransformconstantstratification/conjugatedimension.html) assumed conjugate dimension
-  + [`dftConjugateIndex`](/classes/transforms/wvtransformconstantstratification/dftconjugateindex.html) legacy vertically replicated conjugate index
-  + [`dftPrimaryIndex`](/classes/transforms/wvtransformconstantstratification/dftprimaryindex.html) legacy vertically replicated index into the active Fourier storage
   + [`indexFromKLModeNumber`](/classes/transforms/wvtransformconstantstratification/indexfromklmodenumber.html) return the linear index into k_wv and l_wv from a mode number
   + [`indexFromModeNumber`](/classes/transforms/wvtransformconstantstratification/indexfrommodenumber.html) return the linear index into a spectral matrix given (k,l,j)
   + [`indicesFromDFTGridToWVGrid`](/classes/transforms/wvtransformconstantstratification/indicesfromdftgridtowvgrid.html) indices to convert from DFT to WV grid
   + [`indicesFromWVGridToDFTGrid`](/classes/transforms/wvtransformconstantstratification/indicesfromwvgridtodftgrid.html) indices to convert from WV to DFT grid
-  + [`indicesFromWVGridToFFTWGrid`](/classes/transforms/wvtransformconstantstratification/indicesfromwvgridtofftwgrid.html) indices to convert from WV to DFT grid
   + [`isValidConjugateKLModeNumber`](/classes/transforms/wvtransformconstantstratification/isvalidconjugateklmodenumber.html) return a boolean indicating whether (k,l) is a valid conjugate WV mode number
   + [`isValidConjugateModeNumber`](/classes/transforms/wvtransformconstantstratification/isvalidconjugatemodenumber.html) returns a boolean indicating whether (k,l,j) is a valid conjugate mode number
   + [`isValidKLModeNumber`](/classes/transforms/wvtransformconstantstratification/isvalidklmodenumber.html) return a boolean indicating whether (k,l) is a valid WV mode number
@@ -353,7 +350,6 @@ These items document internal implementation details and are not part of the pri
   + [`transformFromWVGridToDFTGrid`](/classes/transforms/wvtransformconstantstratification/transformfromwvgridtodftgrid.html) convert from a WV to DFT grid
   + [`transformToSpatialDomainFromDFTGrid`](/classes/transforms/wvtransformconstantstratification/transformtospatialdomainfromdftgrid.html) transform from $$(k,l,z)$$ on the DFT grid to $$(x,y,z)$$
   + [`transformToSpatialDomainFromDFTGridAtPosition`](/classes/transforms/wvtransformconstantstratification/transformtospatialdomainfromdftgridatposition.html) transform from $$(k,l)$$ on the DFT grid to $$(x,y)$$ at any position
-  + [`wvConjugateIndex`](/classes/transforms/wvtransformconstantstratification/wvconjugateindex.html) legacy vertically replicated WV conjugate index
 + Spectral transforms and operators
   + [`CosineTransformBackMatrix`](/classes/transforms/wvtransformconstantstratification/cosinetransformbackmatrix.html) Discrete Cosine Transform (DCT-I) matrix
   + [`CosineTransformForwardMatrix`](/classes/transforms/wvtransformconstantstratification/cosinetransformforwardmatrix.html) Discrete Cosine Transform (DCT-I) matrix
@@ -376,6 +372,7 @@ These items document internal implementation details and are not part of the pri
   + [`iDST`](/classes/transforms/wvtransformconstantstratification/idst.html)
   + [`transformFromSpatialDomainWithFio`](/classes/transforms/wvtransformconstantstratification/transformfromspatialdomainwithfio.html)
   + [`transformFromSpatialDomainWithFourier`](/classes/transforms/wvtransformconstantstratification/transformfromspatialdomainwithfourier.html)
+  + [`transformStorageLedger`](/classes/transforms/wvtransformconstantstratification/transformstorageledger.html) Return known transform storage and explicitly opaque internal storage.
   + [`transformToSpatialDomainWithFourier`](/classes/transforms/wvtransformconstantstratification/transformtospatialdomainwithfourier.html)
   + [`transformToSpatialDomainWithFourierAtPosition`](/classes/transforms/wvtransformconstantstratification/transformtospatialdomainwithfourieratposition.html)
   + [`transformWithG_wg`](/classes/transforms/wvtransformconstantstratification/transformwithg_wg.html)

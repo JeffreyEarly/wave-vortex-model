@@ -3,7 +3,7 @@ layout: default
 title: kMode_wv
 parent: WVTransformBarotropicQG
 grand_parent: Transforms
-nav_order: 93
+nav_order: 90
 mathjax: true
 ---
 

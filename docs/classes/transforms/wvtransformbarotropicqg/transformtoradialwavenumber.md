@@ -3,7 +3,7 @@ layout: default
 title: transformToRadialWavenumber
 parent: WVTransformBarotropicQG
 grand_parent: Transforms
-nav_order: 170
+nav_order: 167
 mathjax: true
 ---
 

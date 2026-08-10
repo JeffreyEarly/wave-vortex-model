@@ -3,7 +3,7 @@ layout: default
 title: initWithGeostrophicStreamfunction
 parent: WVTransformBarotropicQG
 grand_parent: Transforms
-nav_order: 80
+nav_order: 77
 mathjax: true
 ---
 

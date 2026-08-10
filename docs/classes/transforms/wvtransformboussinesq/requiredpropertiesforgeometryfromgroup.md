@@ -3,7 +3,7 @@ layout: default
 title: requiredPropertiesForGeometryFromGroup
 parent: WVTransformBoussinesq
 grand_parent: Transforms
-nav_order: 230
+nav_order: 227
 mathjax: true
 ---
 

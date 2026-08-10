@@ -3,7 +3,7 @@ layout: default
 title: waveEnergy
 parent: WVTransformHydrostatic
 grand_parent: Transforms
-nav_order: 289
+nav_order: 286
 mathjax: true
 ---
 

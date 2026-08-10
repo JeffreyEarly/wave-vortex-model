@@ -3,7 +3,7 @@ layout: default
 title: effectiveVerticalGridResolution
 parent: WVTransformBoussinesq
 grand_parent: Transforms
-nav_order: 116
+nav_order: 114
 mathjax: true
 ---
 

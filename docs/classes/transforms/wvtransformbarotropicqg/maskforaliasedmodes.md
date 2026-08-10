@@ -3,7 +3,7 @@ layout: default
 title: maskForAliasedModes
 parent: WVTransformBarotropicQG
 grand_parent: Transforms
-nav_order: 105
+nav_order: 102
 mathjax: true
 ---
 

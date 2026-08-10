@@ -41,30 +41,11 @@ profile on
 tic
 for i=1:50
     % du = wvt.diffX(u);
-    % du = wvt.fastTransform.diffXIntoArray(u,du);
     u_bar = wvt.transformFromSpatialDomainWithFourier(u);
-    % u_bar = u_bar*wvt.fastTransform.dftXY.scaleFactor;
     % u = wvt.transformToSpatialDomainWithFourier(u_bar);
 end
 toc
 profile viewer
-
-%%
-% unsorted is fastest!!! DFT sorted is 2x slower, WV sorted is 10% slower
-% tic
-% for i=1:500
-%     wvt.dftBuffer(wvt.dftPrimaryIndex) = wvt.wvBuffer(wvt.wvPrimaryIndex);
-%     wvt.dftBuffer(wvt.dftConjugateIndex) = conj(wvt.wvBuffer(wvt.wvConjugateIndex));
-% end
-% toc
-% 
-% %%
-% % unsorted is 10% slower than sorting either dimension
-% tic
-% for i=1:500
-%     wvt.wvBuffer = wvt.dftBuffer(wvt.dftPrimaryIndex);
-% end
-% toc
 
 %%
 [Fp,Fm,F0] = wvt.nonlinearFlux();

@@ -3,7 +3,7 @@ layout: default
 title: propertyAnnotationsForGeometry
 parent: WVTransformBarotropicQG
 grand_parent: Transforms
-nav_order: 123
+nav_order: 120
 mathjax: true
 ---
 

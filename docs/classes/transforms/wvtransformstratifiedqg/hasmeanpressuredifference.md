@@ -3,7 +3,7 @@ layout: default
 title: hasMeanPressureDifference
 parent: WVTransformStratifiedQG
 grand_parent: Transforms
-nav_order: 95
+nav_order: 93
 mathjax: true
 ---
 

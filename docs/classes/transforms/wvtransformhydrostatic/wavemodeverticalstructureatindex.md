@@ -3,7 +3,7 @@ layout: default
 title: waveModeVerticalStructureAtIndex
 parent: WVTransformHydrostatic
 grand_parent: Transforms
-nav_order: 290
+nav_order: 287
 mathjax: true
 ---
 

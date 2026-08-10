@@ -3,7 +3,7 @@ layout: default
 title: totalEnergySpatiallyIntegrated
 parent: WVTransformBoussinesq
 grand_parent: Transforms
-nav_order: 272
+nav_order: 269
 mathjax: true
 ---
 

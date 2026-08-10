@@ -3,7 +3,7 @@ layout: default
 title: primaryFlowComponents
 parent: WVTransformBarotropicQG
 grand_parent: Transforms
-nav_order: 121
+nav_order: 118
 mathjax: true
 ---
 

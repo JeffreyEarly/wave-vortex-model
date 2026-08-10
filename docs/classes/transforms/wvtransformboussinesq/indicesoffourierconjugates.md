@@ -3,7 +3,7 @@ layout: default
 title: indicesOfFourierConjugates
 parent: WVTransformBoussinesq
 grand_parent: Transforms
-nav_order: 149
+nav_order: 146
 mathjax: true
 ---
 

@@ -3,7 +3,7 @@ layout: default
 title: setMeanDensityAnomaly
 parent: WVTransformConstantStratification
 grand_parent: Transforms
-nav_order: 241
+nav_order: 238
 mathjax: true
 ---
 

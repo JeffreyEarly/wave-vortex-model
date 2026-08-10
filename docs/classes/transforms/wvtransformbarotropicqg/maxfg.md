@@ -3,7 +3,7 @@ layout: default
 title: maxFg
 parent: WVTransformBarotropicQG
 grand_parent: Transforms
-nav_order: 108
+nav_order: 105
 mathjax: true
 ---
 

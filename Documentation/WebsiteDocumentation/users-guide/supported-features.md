@@ -70,4 +70,4 @@ Custom operations and annotated variables use `WVOperation` and `WVVariableAnnot
 
 Optimization Toolbox is optional. `WVNoMotionProfileOperation` uses `lsqnonlin` when it is available and otherwise uses `fminsearch` with an advisory warning.
 
-FFTW selection and the low-level barotropic FINUFFT path remain development machinery. They are not selected through the documented transform constructors or public interpolation options, and FINUFFT is not a required package dependency.
+WaveVortexModel uses MATLAB's builtin Fourier transforms. The experimental WaveVortex FFTW selector was retired after complete nonlinear-advection benchmarks did not justify its additional integration complexity. The reusable FFTWTransforms package remains independent of WaveVortexModel. The low-level barotropic FINUFFT path remains development machinery and is not selected through the documented interpolation options; FINUFFT is not a required package dependency.

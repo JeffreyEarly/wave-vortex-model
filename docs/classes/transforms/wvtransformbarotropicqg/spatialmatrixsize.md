@@ -3,7 +3,7 @@ layout: default
 title: spatialMatrixSize
 parent: WVTransformBarotropicQG
 grand_parent: Transforms
-nav_order: 145
+nav_order: 142
 mathjax: true
 ---
 

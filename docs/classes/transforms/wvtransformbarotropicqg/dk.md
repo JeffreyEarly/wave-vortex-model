@@ -3,7 +3,7 @@ layout: default
 title: dk
 parent: WVTransformBarotropicQG
 grand_parent: Transforms
-nav_order: 46
+nav_order: 44
 mathjax: true
 ---
 

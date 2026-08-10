@@ -222,13 +222,10 @@ These items document internal implementation details and are not part of the pri
   + [`VA0`](/classes/transforms/wvtransformbarotropicqg/va0.html) These reconstruction coefficients map $$A_0$$ onto the $$v$$ state variable. In the historical notation of [Early et al. (2021)](https://doi.org/10.1017/jfm.2020.995), they are the row 2, column 3 entries of $$S$$ for the primary internal-gravity-wave and geostrophic solutions in equation C4.
 + Geometry and mode indexing
   + [`conjugateDimension`](/classes/transforms/wvtransformbarotropicqg/conjugatedimension.html) assumed conjugate dimension
-  + [`dftConjugateIndex`](/classes/transforms/wvtransformbarotropicqg/dftconjugateindex.html) legacy vertically replicated conjugate index
-  + [`dftPrimaryIndex`](/classes/transforms/wvtransformbarotropicqg/dftprimaryindex.html) legacy vertically replicated index into the active Fourier storage
   + [`indexFromKLModeNumber`](/classes/transforms/wvtransformbarotropicqg/indexfromklmodenumber.html) return the linear index into k_wv and l_wv from a mode number
   + [`indexFromModeNumber`](/classes/transforms/wvtransformbarotropicqg/indexfrommodenumber.html)
   + [`indicesFromDFTGridToWVGrid`](/classes/transforms/wvtransformbarotropicqg/indicesfromdftgridtowvgrid.html) indices to convert from DFT to WV grid
   + [`indicesFromWVGridToDFTGrid`](/classes/transforms/wvtransformbarotropicqg/indicesfromwvgridtodftgrid.html) indices to convert from WV to DFT grid
-  + [`indicesFromWVGridToFFTWGrid`](/classes/transforms/wvtransformbarotropicqg/indicesfromwvgridtofftwgrid.html) indices to convert from WV to DFT grid
   + [`isValidConjugateKLModeNumber`](/classes/transforms/wvtransformbarotropicqg/isvalidconjugateklmodenumber.html) return a boolean indicating whether (k,l) is a valid conjugate WV mode number
   + [`isValidConjugateModeNumber`](/classes/transforms/wvtransformbarotropicqg/isvalidconjugatemodenumber.html)
   + [`isValidKLModeNumber`](/classes/transforms/wvtransformbarotropicqg/isvalidklmodenumber.html) return a boolean indicating whether (k,l) is a valid WV mode number
@@ -250,7 +247,6 @@ These items document internal implementation details and are not part of the pri
   + [`transformFromWVGridToDFTGrid`](/classes/transforms/wvtransformbarotropicqg/transformfromwvgridtodftgrid.html) convert from a WV to DFT grid
   + [`transformToSpatialDomainFromDFTGrid`](/classes/transforms/wvtransformbarotropicqg/transformtospatialdomainfromdftgrid.html) transform from $$(k,l,z)$$ on the DFT grid to $$(x,y,z)$$
   + [`transformToSpatialDomainFromDFTGridAtPosition`](/classes/transforms/wvtransformbarotropicqg/transformtospatialdomainfromdftgridatposition.html) transform from $$(k,l)$$ on the DFT grid to $$(x,y)$$ at any position
-  + [`wvConjugateIndex`](/classes/transforms/wvtransformbarotropicqg/wvconjugateindex.html) legacy vertically replicated WV conjugate index
 + Spectral transforms and operators
   + [`degreesOfFreedomForComplexMatrix`](/classes/transforms/wvtransformbarotropicqg/degreesoffreedomforcomplexmatrix.html) a matrix with the number of degrees-of-freedom at each entry
   + [`degreesOfFreedomForRealMatrix`](/classes/transforms/wvtransformbarotropicqg/degreesoffreedomforrealmatrix.html) a matrix with the number of degrees-of-freedom at each entry
