@@ -3,7 +3,7 @@ layout: default
 title: variableAtPositionWithName
 parent: WVTransformHydrostatic
 grand_parent: Transforms
-nav_order: 283
+nav_order: 278
 mathjax: true
 ---
 
@@ -36,3 +36,7 @@ variables, interpolation uses only (x,y), and z may be empty.
 
 The interpolation method may be `linear` or `spline`. Horizontal
 coordinates are wrapped periodically before interpolation.
+
+```matlab
+[u,v] = wvt.variableAtPositionWithName(xParticle,yParticle,zParticle,'u','v',interpolationMethod='spline');
+```

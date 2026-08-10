@@ -9,7 +9,7 @@ mathjax: true
 
 #  Apt
 
-positive-frequency coefficients at current time t
+`Apt` is the positive-frequency coefficient array evaluated at the current transform time:
 
 
 ---

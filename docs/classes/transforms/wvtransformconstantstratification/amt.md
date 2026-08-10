@@ -9,7 +9,7 @@ mathjax: true
 
 #  Amt
 
-negative-frequency coefficients at current time t
+`Amt` is the negative-frequency coefficient array evaluated at the current transform time:
 
 
 ---

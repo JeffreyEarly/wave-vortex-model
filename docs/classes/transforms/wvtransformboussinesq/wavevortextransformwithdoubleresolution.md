@@ -3,7 +3,7 @@ layout: default
 title: waveVortexTransformWithDoubleResolution
 parent: WVTransformBoussinesq
 grand_parent: Transforms
-nav_order: 319
+nav_order: 314
 mathjax: true
 ---
 

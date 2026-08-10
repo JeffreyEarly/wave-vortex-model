@@ -8,6 +8,10 @@ function [varargout] = variableAtPositionWithName(self,x,y,z,variableNames,optio
 % The interpolation method may be `linear` or `spline`. Horizontal
 % coordinates are wrapped periodically before interpolation.
 %
+% ```matlab
+% [u,v] = wvt.variableAtPositionWithName(xParticle,yParticle,zParticle,'u','v',interpolationMethod='spline');
+% ```
+%
 % - Topic: State variables
 % - Declaration: [varargout] = variableAtPositionWithName(x,y,z,variableNames,options)
 % - Parameter x: array of x-positions

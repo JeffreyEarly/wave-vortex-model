@@ -3,7 +3,7 @@ layout: default
 title: modeNumberFromIndex
 parent: WVTransformBoussinesq
 grand_parent: Transforms
-nav_order: 199
+nav_order: 198
 mathjax: true
 ---
 

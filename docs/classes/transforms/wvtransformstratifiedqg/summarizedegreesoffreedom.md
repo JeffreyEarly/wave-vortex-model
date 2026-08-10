@@ -3,7 +3,7 @@ layout: default
 title: summarizeDegreesOfFreedom
 parent: WVTransformStratifiedQG
 grand_parent: Transforms
-nav_order: 194
+nav_order: 193
 mathjax: true
 ---
 

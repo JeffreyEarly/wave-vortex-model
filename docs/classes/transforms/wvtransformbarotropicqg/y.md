@@ -9,7 +9,7 @@ mathjax: true
 
 #  Y
 
-y-coordinate matrix
+Gridded y-coordinate array in meters with shape `[Nx Ny]`.
 
 
 ---

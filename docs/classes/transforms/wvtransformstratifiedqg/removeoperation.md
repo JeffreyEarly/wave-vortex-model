@@ -3,7 +3,7 @@ layout: default
 title: removeOperation
 parent: WVTransformStratifiedQG
 grand_parent: Transforms
-nav_order: 169
+nav_order: 168
 mathjax: true
 ---
 

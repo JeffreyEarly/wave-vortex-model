@@ -3,7 +3,7 @@ layout: default
 title: wvConjugateIndex
 parent: WVTransformBoussinesq
 grand_parent: Transforms
-nav_order: 324
+nav_order: 319
 mathjax: true
 ---
 

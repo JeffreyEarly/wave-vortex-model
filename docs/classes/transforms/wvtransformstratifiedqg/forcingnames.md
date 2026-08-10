@@ -9,10 +9,19 @@ mathjax: true
 
 #  forcingNames
 
-retrieve the names of all available variables. This preserves
+Return forcing and closure names in application order.
 
 
 ---
 
+## Declaration
+```matlab
+ names = forcingNames()
+```
+## Returns
++ `names`  column string array of registered forcing and closure names
+
 ## Discussion
-the order in which the forcing is applied.
+Return forcing and closure names in application order.
+
+Names are ordered by the three forcing stages: physical-space flux, spectral flux, and spectral-amplitude modification.

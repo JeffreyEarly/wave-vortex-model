@@ -20,11 +20,11 @@ function zIsopycnal = placeParticlesOnIsopycnal(wvt,x,y,zNoMotion)
 % necessarily unique.
 %
 % - Topic: Utilities
-% - Declaration: zIsopycnal = placeParticlesOnIsopycnal(x,y,z)
+% - Declaration: zIsopycnal = placeParticlesOnIsopycnal(x,y,zNoMotion)
 % - Parameter x: array of particle x positions
 % - Parameter y: array of particle y positions
-% - Parameter z: array of z location of target isopycnal in the no-motion profile
-% - Returns zIsopycnal: particle depth 
+% - Parameter zNoMotion: depths identifying target densities in the no-motion profile
+% - Returns zIsopycnal: particle depths in meters
 arguments
     wvt 
     x 

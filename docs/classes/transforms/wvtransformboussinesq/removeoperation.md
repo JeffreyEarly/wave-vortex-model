@@ -3,7 +3,7 @@ layout: default
 title: removeOperation
 parent: WVTransformBoussinesq
 grand_parent: Transforms
-nav_order: 230
+nav_order: 229
 mathjax: true
 ---
 

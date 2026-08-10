@@ -74,7 +74,6 @@ classdef WVTransform < matlab.mixin.indexing.RedefinesDot & CAAnnotatedClass
     % - Topic: Analyze the flow — Spectra
     % - Topic: Analyze the flow — Spectra — Spectral fields
     % - Topic: Analyze the flow — Spectra — Radial wavenumber
-    % - Topic: Analyze the flow — Spectra — Pseudo-radial wavenumber
     % - Topic: Analyze the flow — Spectra — Frequency
     % - Topic: Save transform state
     % - Topic: Convert representations
@@ -519,8 +518,10 @@ classdef WVTransform < matlab.mixin.indexing.RedefinesDot & CAAnnotatedClass
         end
 
         function names = forcingNames(self)
-            % retrieve the names of all available variables. This preserves
-            % the order in which the forcing is applied.
+            % Return forcing and closure names in application order.
+            %
+            % Names follow the physical-space flux, spectral-flux, and
+            % spectral-amplitude stages used by the nonlinear tendency.
             %
             % - Topic: Forcing
             arguments (Input)
@@ -682,6 +683,19 @@ classdef WVTransform < matlab.mixin.indexing.RedefinesDot & CAAnnotatedClass
         % end
 
         function energy = totalEnergyOfFlowComponent(self,flowComponent)
+            % Compute the energy carried by one flow component.
+            %
+            % The component masks select its active `Ap`, `Am`, and `A0`
+            % coefficients before the transform's energy factors are summed.
+            %
+            % ```matlab
+            % waveEnergy = wvt.totalEnergyOfFlowComponent(wvt.waveComponent);
+            % ```
+            %
+            % - Topic: Energetics
+            % - Declaration: energy = totalEnergyOfFlowComponent(flowComponent)
+            % - Parameter flowComponent: component whose coefficient masks select the energy
+            % - Returns energy: horizontally averaged, depth-integrated energy per unit reference density
             arguments (Input)
                 self WVTransform
                 flowComponent WVFlowComponent

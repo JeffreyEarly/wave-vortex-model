@@ -3,7 +3,7 @@ layout: default
 title: variableWithName
 parent: WVTransformHydrostatic
 grand_parent: Transforms
-nav_order: 285
+nav_order: 280
 mathjax: true
 ---
 
@@ -25,3 +25,9 @@ Compute or retrieve one or more registered transform variables.
 + `varargout`  state-variable arrays in the requested order
 
 ## Discussion
+
+Request several variables in one call to preserve their requested order:
+
+```matlab
+[u,v,eta] = wvt.variableWithName('u','v','eta');
+```

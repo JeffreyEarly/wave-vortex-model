@@ -9,7 +9,7 @@ mathjax: true
 
 #  Am
 
-Negative-frequency wave and inertial coefficients at reference time `t0`.
+`Am` stores the negative-frequency coefficients $$A_-^{k\ell j}$$ for internal gravity waves and inertial oscillations. The coefficients have units of velocity and use the transform's spectral layout.
 
 
 ---

@@ -9,7 +9,7 @@ mathjax: true
 
 #  Ap
 
-Positive-frequency wave and inertial coefficients at reference time `t0`.
+`Ap` stores the positive-frequency coefficients $$A_+^{k\ell j}$$ for internal gravity waves and the positive-frequency member of the paired inertial representation. The coefficients have units of velocity and use the transform's spectral layout.
 
 
 ---

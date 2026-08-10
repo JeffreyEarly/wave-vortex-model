@@ -1,6 +1,9 @@
 classdef WVGeometryDoublyPeriodicStratifiedConstant < WVGeometryDoublyPeriodic & WVStratification & WVGeometryCartesianXYZ
     properties (Access=public) %(GetAccess=public, SetAccess=protected)
         N0
+        % Geostrophic equivalent-depth scale for each vertical mode.
+        %
+        % `h_0` is an `Nj`-by-1 vector in meters.
         h_0
         h_pm
 

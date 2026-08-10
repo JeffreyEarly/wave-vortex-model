@@ -5,6 +5,10 @@ function du = diffZF(self,u,options)
 % supported. Odd orders return a G-representation and even orders return
 % an F-representation.
 %
+% ```matlab
+% dudz = wvt.diffZF(u);
+% ```
+%
 % - Topic: Operations — Calculus
 % - Declaration: du = diffZF(u,n=n)
 % - Parameter u: F-grid field with dimensions `[Nx Ny Nz]`

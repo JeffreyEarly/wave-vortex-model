@@ -3,16 +3,21 @@ layout: default
 title: rotationRate
 parent: WVTransformHydrostatic
 grand_parent: Transforms
-nav_order: 224
+nav_order: 223
 mathjax: true
 ---
 
 #  rotationRate
 
-rotation rate of the planetary body
+Planetary rotation rate in radians per second.
 
 
 ---
 
 ## Description
 Real valued property with no dimensions and units of $$rad/s$$.
+
+## Discussion
+Planetary rotation rate in radians per second.
+
+The constructor default is `7.2921e-5` rad/s. Together with `latitude`, it determines `f`, `beta`, and `inertialPeriod`.

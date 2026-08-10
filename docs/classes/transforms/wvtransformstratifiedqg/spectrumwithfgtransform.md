@@ -3,13 +3,32 @@ layout: default
 title: spectrumWithFgTransform
 parent: WVTransformStratifiedQG
 grand_parent: Transforms
-nav_order: 189
+nav_order: 188
 mathjax: true
 ---
 
 #  spectrumWithFgTransform
 
-
+Compute a modal autospectrum using the F-basis transform.
 
 
 ---
+
+## Declaration
+```matlab
+ spectrum = spectrumWithFgTransform(field)
+```
+## Parameters
++ `field`  F-space field with shape `[Nx Ny Nz]`
+
+## Returns
++ `spectrum`  nonnegative autospectrum with shape `[Nj Nkl]`
+
+## Discussion
+Compute a modal autospectrum using the F-basis transform.
+
+The method transforms a gridded F-space field and applies the horizontal Hermitian and vertical normalization factors so summing the result recovers the corresponding quadratic integral.
+
+```matlab
+spectrum = wvt.spectrumWithFgTransform(u);
+```

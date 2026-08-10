@@ -16,11 +16,12 @@ initialize the flow from a NetCDF file
 
 ## Declaration
 ```matlab
- initWithFile(self,path,options)
+ initFromNetCDFFile(ncfile,options)
 ```
 ## Parameters
 + `ncfile`  a NetCDF file object
-+ `iTime`  (optional) time index to initialize from (default 1)
++ `options.iTime`  time index to initialize from; default `1`
++ `options.shouldDisplayInit`  display the restored representation; default `false`
 
 ## Discussion
 

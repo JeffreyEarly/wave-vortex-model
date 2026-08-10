@@ -1,14 +1,35 @@
 classdef WVGeometryDoublyPeriodicBarotropic < WVGeometryDoublyPeriodic & WVRotatingFPlane
 
     properties
+        % Equivalent depth in meters; constructor default `0.8` m.
         h
     end
     properties (Dependent, SetAccess=private)
+        % Shape `[Nx Ny]` of a gridded physical-space field.
         spatialMatrixSize
+
+        % Shape `[1 Nkl]` of a barotropic coefficient array.
         spectralMatrixSize
-        K2, Kh
-        X, Y
-        K, L
+
+        % Squared horizontal angular wavenumber, `K.^2 + L.^2`, in rad²/m².
+        K2
+
+        % Horizontal angular-wavenumber magnitude, `sqrt(K2)`, in rad/m.
+        Kh
+
+        % Gridded x-coordinate array in meters with shape `[Nx Ny]`.
+        X
+
+        % Gridded y-coordinate array in meters with shape `[Nx Ny]`.
+        Y
+
+        % X-direction angular-wavenumber array in rad/m with shape `[1 Nkl]`.
+        K
+
+        % Y-direction angular-wavenumber array in rad/m with shape `[1 Nkl]`.
+        L
+
+        % Squared barotropic Rossby deformation radius, `g*h/f^2`, in m².
         Lr2
         
     end
@@ -17,6 +38,7 @@ classdef WVGeometryDoublyPeriodicBarotropic < WVGeometryDoublyPeriodic & WVRotat
     end
 
     properties (GetAccess=public,SetAccess=protected)
+        % Fixed dimensionless barotropic mode index; default `1`.
         j=1
     end
     properties (Dependent,GetAccess=public)
@@ -81,6 +103,15 @@ classdef WVGeometryDoublyPeriodicBarotropic < WVGeometryDoublyPeriodic & WVRotat
         end
 
         function [K,L,J] = kljGrid(self)
+            % Return barotropic spectral-coordinate arrays.
+            %
+            % `[K,L,J]` each have shape `[1 Nkl]`; `K` and `L` are in
+            % radians per meter and `J` contains the fixed barotropic index.
+            %
+            % - Declaration: [K,L,J] = kljGrid()
+            % - Returns K: x-direction angular wavenumbers
+            % - Returns L: y-direction angular wavenumbers
+            % - Returns J: fixed barotropic mode-index array
             [K,L] = self.klGrid;
             J = self.J;
         end
@@ -100,10 +131,28 @@ classdef WVGeometryDoublyPeriodicBarotropic < WVGeometryDoublyPeriodic & WVRotat
         end
 
         function [X,Y] = xyGrid(self)
+            % Return the two-dimensional spatial coordinate arrays.
+            %
+            % ```matlab
+            % [X,Y] = wvt.xyGrid;
+            % ```
+            %
+            % - Declaration: [X,Y] = xyGrid()
+            % - Returns X: x-coordinate array in meters with shape `[Nx Ny]`
+            % - Returns Y: y-coordinate array in meters with shape `[Nx Ny]`
             X = self.X; Y = self.Y;
         end
 
         function [K,L] = klGrid(self)
+            % Return the two-dimensional spectral-coordinate arrays.
+            %
+            % ```matlab
+            % [K,L] = wvt.klGrid;
+            % ```
+            %
+            % - Declaration: [K,L] = klGrid()
+            % - Returns K: x-direction angular wavenumbers in radians per meter
+            % - Returns L: y-direction angular wavenumbers in radians per meter
             K = shiftdim(self.k,-1);
             L = shiftdim(self.l,-1);
         end

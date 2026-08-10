@@ -3,13 +3,13 @@ layout: default
 title: totalEnergySpatiallyIntegrated
 parent: WVTransformBoussinesq
 grand_parent: Transforms
-nav_order: 273
+nav_order: 272
 mathjax: true
 ---
 
 #  totalEnergySpatiallyIntegrated
 
-horizontally-averaged depth-integrated energy computed in the spatial domain
+% - Topic: Energetics
 
 
 ---

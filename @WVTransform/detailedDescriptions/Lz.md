@@ -1,3 +1,5 @@
-- Topic: Domain attributes — Grid — Spatial
+Vertical domain depth in meters.
 
-The `z` coordinate and `Lz` are both set during initialization. `Lz` is the full domain depth.
+`Lz` is the third element of a three-dimensional transform's domain-size vector. The vertical coordinate extends from `-Lz` at the bottom to zero at the surface.
+
+- Topic: Domain attributes — Grid — Spatial

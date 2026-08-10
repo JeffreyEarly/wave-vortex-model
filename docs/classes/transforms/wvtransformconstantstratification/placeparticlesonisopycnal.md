@@ -16,15 +16,15 @@ Return particle depths on the isopycnal identified by a no-motion depth.
 
 ## Declaration
 ```matlab
- zIsopycnal = placeParticlesOnIsopycnal(x,y,z)
+ zIsopycnal = placeParticlesOnIsopycnal(x,y,zNoMotion)
 ```
 ## Parameters
 + `x`  array of particle x positions
 + `y`  array of particle y positions
-+ `z`  array of z location of target isopycnal in the no-motion profile
++ `zNoMotion`  depths identifying target densities in the no-motion profile
 
 ## Returns
-+ `zIsopycnal`  particle depth
++ `zIsopycnal`  particle depths in meters
 
 ## Discussion
 

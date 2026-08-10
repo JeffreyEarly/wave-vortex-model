@@ -9,10 +9,15 @@ mathjax: true
 
 #  Lr2
 
-squared Rossby deformation radius of each geostrophic mode
+Squared Rossby deformation radius in square meters.
 
 
 ---
 
 ## Description
 Real valued property with dimension $$j$$ and units of $$m^2$$.
+
+## Discussion
+Squared Rossby deformation radius in square meters.
+
+The transform computes $$L_r^2=g h_0/f^2$$ for geostrophic modes. The barotropic transform uses its scalar equivalent depth `h` in the same relation.

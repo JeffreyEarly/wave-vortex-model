@@ -3,13 +3,13 @@ layout: default
 title: totalEnergy
 parent: WVTransformStratifiedQG
 grand_parent: Transforms
-nav_order: 203
+nav_order: 202
 mathjax: true
 ---
 
 #  totalEnergy
 
-horizontally-averaged depth-integrated energy computed spectrally from wave-vortex coefficients
+% - Topic: Energetics
 
 
 ---

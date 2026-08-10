@@ -3,13 +3,13 @@ layout: default
 title: shouldAntialias
 parent: WVTransformHydrostatic
 grand_parent: Transforms
-nav_order: 232
+nav_order: 231
 mathjax: true
 ---
 
 #  shouldAntialias
 
-whether quadratic antialiasing is enabled
+Whether the spectral grid excludes modes that alias quadratic products.
 
 
 ---
@@ -18,3 +18,6 @@ whether quadratic antialiasing is enabled
 Real valued property with no dimensions and units of $$bool$$.
 
 ## Discussion
+Whether the spectral grid excludes modes that alias quadratic products.
+
+The constructor default is `true`. When enabled, the wave-vortex grid follows the two-thirds antialiasing rule in each periodic direction.

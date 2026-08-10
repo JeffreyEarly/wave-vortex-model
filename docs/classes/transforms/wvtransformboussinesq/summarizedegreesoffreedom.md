@@ -3,7 +3,7 @@ layout: default
 title: summarizeDegreesOfFreedom
 parent: WVTransformBoussinesq
 grand_parent: Transforms
-nav_order: 262
+nav_order: 261
 mathjax: true
 ---
 

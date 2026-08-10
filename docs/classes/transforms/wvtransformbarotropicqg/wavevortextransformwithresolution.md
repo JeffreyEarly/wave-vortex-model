@@ -9,11 +9,26 @@ mathjax: true
 
 #  waveVortexTransformWithResolution
 
-Construct the same transform family at a requested resolution.
+Create the same transform family at a new resolution.
 
 
 ---
 
-## Discussion
+## Declaration
+```matlab
+ wvtNew = waveVortexTransformWithResolution(resolution)
+```
+## Parameters
++ `resolution`  positive integer spatial grid counts for the target transform
 
-Help for WVTransformBarotropicQG/waveVortexTransformWithResolution is inherited from superclass WVTransform
+## Returns
++ `wvtNew`  transform of the same family at `resolution`
+
+## Discussion
+Create the same transform family at a new resolution.
+
+The returned transform preserves the physical domain, configuration, time, compatible forcing, and resolved state while converting coefficients to the requested grid size.
+
+```matlab
+wvtFine = wvt.waveVortexTransformWithResolution([16 12 9]);
+```

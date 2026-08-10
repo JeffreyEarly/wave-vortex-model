@@ -182,8 +182,6 @@ elseif ismember(name,["spectrumWithFgTransform","spectrumWithGgTransform", ...
     topicPath = "Analyze the flow — Spectra — Spectral fields";
 elseif name == "kRadial" || name == "transformToRadialWavenumber"
     topicPath = "Analyze the flow — Spectra — Radial wavenumber";
-elseif name == "kPseudoRadial" || startsWith(name,"transformToPseudoRadial")
-    topicPath = "Analyze the flow — Spectra — Pseudo-radial wavenumber";
 elseif name == "convertFromWavenumberToFrequency"
     topicPath = "Analyze the flow — Spectra — Frequency";
 elseif ismember(name,["addForcing","setForcing","removeForcing", ...
@@ -233,8 +231,6 @@ orderedGroups = {
     ["Apt","Amt","A0t","waveCoefficientsAtTimeT"]
     ["t0","t","Omega","iOmega","phase","conjPhase"]
     ["kRadial","transformToRadialWavenumber"]
-    ["kPseudoRadial","transformToPseudoRadialWavenumber", ...
-        "transformToPseudoRadialWavenumberWithWavenumbers"]
     };
 
 for group = orderedGroups'

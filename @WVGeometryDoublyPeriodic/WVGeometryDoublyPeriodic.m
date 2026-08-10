@@ -50,22 +50,22 @@ classdef WVGeometryDoublyPeriodic < CAAnnotatedClass
     % - Topic: Masks
     % - Topic: Utility function
     properties (GetAccess=public, SetAccess=protected)
-        % length of the x-dimension
+        % Periodic domain length in the x direction, in meters.
         %
         % - Topic: Domain attributes — Spatial grid
         Lx
 
-        % length of the y-dimension
+        % Periodic domain length in the y direction, in meters.
         %
         % - Topic: Domain attributes — Spatial grid
         Ly
 
-        % number of grid points in the x-dimension
+        % Number of spatial grid points in the x direction.
         %
         % - Topic: Domain attributes — Spatial grid
         Nx
         
-        % number of grid points in the y-dimension
+        % Number of spatial grid points in the y direction.
         %
         % - Topic: Domain attributes — Spatial grid
         Ny
@@ -100,12 +100,16 @@ classdef WVGeometryDoublyPeriodic < CAAnnotatedClass
         % - Topic: Domain attributes — WV grid
         dftConjugateIndices2D uint64
 
-        % k-wavenumber dimension on the WV grid
+        % Stored x-direction angular wavenumbers on the compact WV grid.
+        %
+        % `k` is an `Nkl`-by-1 column vector in radians per meter.
         %
         % - Topic: Domain attributes — WV grid
         k
         
-        % l-wavenumber dimension on the WV grid
+        % Stored y-direction angular wavenumbers on the compact WV grid.
+        %
+        % `l` is an `Nkl`-by-1 column vector in radians per meter.
         %
         % - Topic: Domain attributes — WV grid
         l
@@ -146,12 +150,18 @@ classdef WVGeometryDoublyPeriodic < CAAnnotatedClass
         % - Topic: Domain attributes — WV grid
         wvConjugateIndex uint64
         
-        % x-dimension
+        % Periodic x-coordinate axis in meters.
+        %
+        % `x` is an `Nx`-by-1 column vector spanning $$0 \le x < L_x$$
+        % with spacing `Lx/Nx`; the endpoint at `Lx` is omitted.
         %
         % - Topic: Domain attributes — Spatial grid
         x
 
-        % y-dimension
+        % Periodic y-coordinate axis in meters.
+        %
+        % `y` is an `Ny`-by-1 column vector spanning $$0 \le y < L_y$$
+        % with spacing `Ly/Ny`; the endpoint at `Ly` is omitted.
         %
         % - Topic: Domain attributes — Spatial grid
         y
@@ -221,7 +231,11 @@ classdef WVGeometryDoublyPeriodic < CAAnnotatedClass
         % - Topic: Domain attributes — WV grid
         dl
 
-        kAxis, lAxis
+        % Centered x-direction angular-wavenumber axis in radians per meter.
+        kAxis
+
+        % Centered y-direction angular-wavenumber axis in radians per meter.
+        lAxis
     end
 
     methods
@@ -498,6 +512,19 @@ classdef WVGeometryDoublyPeriodic < CAAnnotatedClass
         end
 
         function u_x = diffX(self,u,options)
+            % Differentiate a gridded field in the periodic x direction.
+            %
+            % The derivative is evaluated spectrally and retains the input
+            % shape. Derivative order `n` defaults to `1`.
+            %
+            % ```matlab
+            % dudx = wvt.diffX(u);
+            % ```
+            %
+            % - Declaration: derivative = diffX(field,options)
+            % - Parameter field: gridded field with the transform's spatial shape
+            % - Parameter options.n: derivative order; default `1`
+            % - Returns derivative: x derivative with the same shape as `field`
             arguments
                 self
                 u 
@@ -507,6 +534,19 @@ classdef WVGeometryDoublyPeriodic < CAAnnotatedClass
         end
 
         function u_y = diffY(self,u,options)
+            % Differentiate a gridded field in the periodic y direction.
+            %
+            % The derivative is evaluated spectrally and retains the input
+            % shape. Derivative order `n` defaults to `1`.
+            %
+            % ```matlab
+            % dudy = wvt.diffY(u);
+            % ```
+            %
+            % - Declaration: derivative = diffY(field,options)
+            % - Parameter field: gridded field with the transform's spatial shape
+            % - Parameter options.n: derivative order; default `1`
+            % - Returns derivative: y derivative with the same shape as `field`
             arguments
                 self
                 u 

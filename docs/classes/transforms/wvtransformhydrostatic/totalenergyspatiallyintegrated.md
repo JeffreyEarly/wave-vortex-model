@@ -3,13 +3,13 @@ layout: default
 title: totalEnergySpatiallyIntegrated
 parent: WVTransformHydrostatic
 grand_parent: Transforms
-nav_order: 257
+nav_order: 256
 mathjax: true
 ---
 
 #  totalEnergySpatiallyIntegrated
 
-horizontally-averaged depth-integrated energy computed in the spatial domain
+% - Topic: Energetics
 
 
 ---

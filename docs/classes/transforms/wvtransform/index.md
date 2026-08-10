@@ -58,7 +58,7 @@ corresponding coefficients evaluated at the current transform time.
   + [`waveVortexTransformFromFile`](/classes/transforms/wvtransform/wavevortextransformfromfile.html) Initialize a WVTransform instance from an existing file
 + Inspect the domain
   + Transform configuration
-    + [`isHydrostatic`](/classes/transforms/wvtransform/ishydrostatic.html)
+    + [`isHydrostatic`](/classes/transforms/wvtransform/ishydrostatic.html) Whether the transform uses the hydrostatic approximation.
 + Initialize the flow
   + General initialization
     + [`addRandomFlow`](/classes/transforms/wvtransform/addrandomflow.html) add randomized flow to the existing state
@@ -79,9 +79,9 @@ corresponding coefficients evaluated at the current transform time.
 + Manage forcing and closures
   + [`addForcing`](/classes/transforms/wvtransform/addforcing.html) Add forcing or closure objects to this transform.
   + [`forcing`](/classes/transforms/wvtransform/forcing.html)
-  + [`forcingNames`](/classes/transforms/wvtransform/forcingnames.html) retrieve the names of all available variables. This preserves
+  + [`forcingNames`](/classes/transforms/wvtransform/forcingnames.html) Return forcing and closure names in application order.
   + [`forcingWithName`](/classes/transforms/wvtransform/forcingwithname.html) Return registered forcing objects by name.
-  + [`hasClosure`](/classes/transforms/wvtransform/hasclosure.html)
+  + [`hasClosure`](/classes/transforms/wvtransform/hasclosure.html) Whether a closure is currently attached to the transform.
   + [`hasForcingWithName`](/classes/transforms/wvtransform/hasforcingwithname.html) Test whether forcing objects are registered by name.
   + [`removeAllForcing`](/classes/transforms/wvtransform/removeallforcing.html) Remove every forcing and closure from this transform.
   + [`removeForcing`](/classes/transforms/wvtransform/removeforcing.html) Remove the exact registered forcing objects.
@@ -93,9 +93,9 @@ corresponding coefficients evaluated at the current transform time.
     + [`summarizeDegreesOfFreedom`](/classes/transforms/wvtransform/summarizedegreesoffreedom.html) Summarize the spatial grid and active spectral degrees of freedom.
     + [`summarizeEnergyContent`](/classes/transforms/wvtransform/summarizeenergycontent.html) displays a summary of the energy content of the fluid
     + [`summarizeModeEnergy`](/classes/transforms/wvtransform/summarizemodeenergy.html) List the most energetic modes
-    + [`totalEnergy`](/classes/transforms/wvtransform/totalenergy.html)
-    + [`totalEnergyOfFlowComponent`](/classes/transforms/wvtransform/totalenergyofflowcomponent.html)
-    + [`totalEnergySpatiallyIntegrated`](/classes/transforms/wvtransform/totalenergyspatiallyintegrated.html)
+    + [`totalEnergy`](/classes/transforms/wvtransform/totalenergy.html) % - Topic: Energetics
+    + [`totalEnergyOfFlowComponent`](/classes/transforms/wvtransform/totalenergyofflowcomponent.html) Compute the energy carried by one flow component.
+    + [`totalEnergySpatiallyIntegrated`](/classes/transforms/wvtransform/totalenergyspatiallyintegrated.html) % - Topic: Energetics
   + Spectra
     + Frequency
       + [`convertFromWavenumberToFrequency`](/classes/transforms/wvtransform/convertfromwavenumbertofrequency.html) Bin wave energy by vertical mode and intrinsic frequency
@@ -108,24 +108,24 @@ corresponding coefficients evaluated at the current transform time.
 + Inspect flow components
   + [`flowComponentNames`](/classes/transforms/wvtransform/flowcomponentnames.html) retrieve the names of all available variables
   + [`flowComponentWithName`](/classes/transforms/wvtransform/flowcomponentwithname.html) retrieve a WVFlowComponent by name
-  + [`flowComponents`](/classes/transforms/wvtransform/flowcomponents.html)
+  + [`flowComponents`](/classes/transforms/wvtransform/flowcomponents.html) All registered physical and diagnostic flow components.
   + [`primaryFlowComponentNames`](/classes/transforms/wvtransform/primaryflowcomponentnames.html) retrieve the names of all available variables
   + [`primaryFlowComponentWithName`](/classes/transforms/wvtransform/primaryflowcomponentwithname.html) retrieve a WVPrimaryFlowComponent by name
-  + [`primaryFlowComponents`](/classes/transforms/wvtransform/primaryflowcomponents.html)
+  + [`primaryFlowComponents`](/classes/transforms/wvtransform/primaryflowcomponents.html) Primary flow components that partition the active coefficient state.
   + [`summarizeFlowComponents`](/classes/transforms/wvtransform/summarizeflowcomponents.html) Print a table of registered primary and diagnostic components.
-  + [`totalFlowComponent`](/classes/transforms/wvtransform/totalflowcomponent.html)
+  + [`totalFlowComponent`](/classes/transforms/wvtransform/totalflowcomponent.html) Combined view of all primary flow components.
 + Inspect wave-vortex coefficients
   + Stored coefficients
-    + [`Ap`](/classes/transforms/wvtransform/ap.html) Positive-frequency wave and inertial coefficients at reference time `t0`.
-    + [`Am`](/classes/transforms/wvtransform/am.html) Negative-frequency wave and inertial coefficients at reference time `t0`.
-    + [`A0`](/classes/transforms/wvtransform/a0.html) Zero-frequency geostrophic and mean-density-anomaly coefficients.
+    + [`Ap`](/classes/transforms/wvtransform/ap.html) `Ap` stores the positive-frequency coefficients $$A_+^{k\ell j}$$ for internal gravity waves and the positive-frequency member of the paired inertial representation. The coefficients have units of velocity and use the transform's spectral layout.
+    + [`Am`](/classes/transforms/wvtransform/am.html) `Am` stores the negative-frequency coefficients $$A_-^{k\ell j}$$ for internal gravity waves and inertial oscillations. The coefficients have units of velocity and use the transform's spectral layout.
+    + [`A0`](/classes/transforms/wvtransform/a0.html) `A0` stores the zero-frequency coefficients $$A_0^{k\ell j}$$ with units of streamfunction, $$\mathrm{m^2\,s^{-1}}$$. It is the active coefficient family for geostrophic and quasigeostrophic flow and, on transforms that include it, the mean-density anomaly.
   + Coefficient evolution
     + [`t0`](/classes/transforms/wvtransform/t0.html) Reference time for the stored wave phases, in seconds.
     + [`t`](/classes/transforms/wvtransform/t.html) Current transform time in seconds.
 + Create a related transform
   + [`spectralVariableWithResolution`](/classes/transforms/wvtransform/spectralvariablewithresolution.html) create a new variable with different resolution
   + [`waveVortexTransformWithDoubleResolution`](/classes/transforms/wvtransform/wavevortextransformwithdoubleresolution.html) create a new WVTransform with double resolution
-  + [`waveVortexTransformWithResolution`](/classes/transforms/wvtransform/wavevortextransformwithresolution.html) Construct the same transform family at a requested resolution.
+  + [`waveVortexTransformWithResolution`](/classes/transforms/wvtransform/wavevortextransformwithresolution.html) Create the same transform family at a new resolution.
 + Extend a transform
   + Flow components
     + [`addFlowComponent`](/classes/transforms/wvtransform/addflowcomponent.html) add a flow component and its standard variables

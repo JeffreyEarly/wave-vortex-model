@@ -3,7 +3,7 @@ layout: default
 title: setWaveModes
 parent: WVTransformBoussinesq
 grand_parent: Transforms
-nav_order: 248
+nav_order: 247
 mathjax: true
 ---
 

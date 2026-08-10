@@ -56,7 +56,6 @@ classdef WVTransformStratifiedQG < WVGeometryDoublyPeriodicStratified & WVTransf
     % - Topic: Analyze the flow — Spectra
     % - Topic: Analyze the flow — Spectra — Spectral fields
     % - Topic: Analyze the flow — Spectra — Radial wavenumber
-    % - Topic: Analyze the flow — Spectra — Pseudo-radial wavenumber
     % - Topic: Analyze the flow — Spectra — Frequency
     % - Topic: Save transform state
     % - Topic: Convert representations

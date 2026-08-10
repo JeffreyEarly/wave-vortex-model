@@ -3,7 +3,7 @@ layout: default
 title: transformUVEtaToWaveVortex
 parent: WVTransformStratifiedQG
 grand_parent: Transforms
-nav_order: 226
+nav_order: 221
 mathjax: true
 ---
 

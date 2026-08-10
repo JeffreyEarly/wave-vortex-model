@@ -9,7 +9,7 @@ mathjax: true
 
 #  J
 
-vertical mode-number matrix
+Dimensionless vertical-mode index array with shape `[Nj Nkl]`.
 
 
 ---

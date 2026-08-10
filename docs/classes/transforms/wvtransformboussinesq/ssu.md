@@ -3,7 +3,7 @@ layout: default
 title: ssu
 parent: WVTransformBoussinesq
 grand_parent: Transforms
-nav_order: 260
+nav_order: 259
 mathjax: true
 ---
 

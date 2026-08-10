@@ -3,17 +3,32 @@ layout: default
 title: waveVortexTransformWithResolution
 parent: WVTransformHydrostatic
 grand_parent: Transforms
-nav_order: 299
+nav_order: 294
 mathjax: true
 ---
 
 #  waveVortexTransformWithResolution
 
-If you set shouldAntialias == false, when the transform
+Create the same transform family at a new resolution.
 
 
 ---
 
+## Declaration
+```matlab
+ wvtNew = waveVortexTransformWithResolution(resolution)
+```
+## Parameters
++ `resolution`  positive integer spatial grid counts for the target transform
+
+## Returns
++ `wvtNew`  transform of the same family at `resolution`
+
 ## Discussion
-you're copying had shouldAntialias == true, then we will
-override the adaptive damping with this flag as well.
+Create the same transform family at a new resolution.
+
+The returned transform preserves the physical domain, configuration, time, compatible forcing, and resolved state while converting coefficients to the requested grid size.
+
+```matlab
+wvtFine = wvt.waveVortexTransformWithResolution([16 12 9]);
+```

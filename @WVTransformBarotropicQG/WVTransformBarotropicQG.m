@@ -76,6 +76,7 @@ classdef WVTransformBarotropicQG < WVGeometryDoublyPeriodicBarotropic & WVTransf
     %
     % - Declaration: classdef WVTransformBarotropicQG < [WVTransform](/classes/transforms/wvtransform/)
     properties (Dependent)
+        % Scalar barotropic equivalent depth in meters.
         h_0
         totalEnergySpatiallyIntegrated
         totalEnergy

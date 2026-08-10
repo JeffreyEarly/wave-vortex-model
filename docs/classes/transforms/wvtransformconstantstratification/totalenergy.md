@@ -9,7 +9,7 @@ mathjax: true
 
 #  totalEnergy
 
-horizontally-averaged depth-integrated energy computed spectrally from wave-vortex coefficients
+% - Topic: Energetics
 
 
 ---

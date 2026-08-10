@@ -1,11 +1,35 @@
 classdef WVGeometryCartesianXYZ < handle
 
     properties (Dependent, SetAccess=private)
+        % Shape `[Nx Ny Nz]` of a gridded physical-space field.
         spatialMatrixSize
+
+        % Shape `[Nj Nkl]` of a wave-vortex coefficient array.
         spectralMatrixSize
-        K2, Kh
-        X, Y, Z
-        K, L, J
+
+        % Squared horizontal angular wavenumber, `K.^2 + L.^2`, in rad²/m².
+        K2
+
+        % Horizontal angular-wavenumber magnitude, `sqrt(K2)`, in rad/m.
+        Kh
+
+        % Gridded x-coordinate array in meters with shape `[Nx Ny Nz]`.
+        X
+
+        % Gridded y-coordinate array in meters with shape `[Nx Ny Nz]`.
+        Y
+
+        % Gridded vertical-coordinate array in meters with shape `[Nx Ny Nz]`.
+        Z
+
+        % X-direction angular-wavenumber array in rad/m with shape `[Nj Nkl]`.
+        K
+
+        % Y-direction angular-wavenumber array in rad/m with shape `[Nj Nkl]`.
+        L
+
+        % Dimensionless vertical-mode index array with shape `[Nj Nkl]`.
+        J
     end
 
     % properties (Abstract)
@@ -30,10 +54,30 @@ classdef WVGeometryCartesianXYZ < handle
         end
 
         function [X,Y,Z] = xyzGrid(self)
+            % Return the three-dimensional spatial coordinate arrays.
+            %
+            % ```matlab
+            % [X,Y,Z] = wvt.xyzGrid;
+            % ```
+            %
+            % - Declaration: [X,Y,Z] = xyzGrid()
+            % - Returns X: x-coordinate array in meters with shape `[Nx Ny Nz]`
+            % - Returns Y: y-coordinate array in meters with shape `[Nx Ny Nz]`
+            % - Returns Z: vertical-coordinate array in meters with shape `[Nx Ny Nz]`
             X = self.X; Y = self.Y; Z = self.Z;
         end
 
         function [K,L,J] = kljGrid(self)
+            % Return spectral-coordinate arrays in wave-vortex layout.
+            %
+            % ```matlab
+            % [K,L,J] = wvt.kljGrid;
+            % ```
+            %
+            % - Declaration: [K,L,J] = kljGrid()
+            % - Returns K: x-direction angular wavenumbers in radians per meter
+            % - Returns L: y-direction angular wavenumbers in radians per meter
+            % - Returns J: dimensionless vertical-mode indices
             K = repmat(shiftdim(self.k,-1),self.Nj,1);
             L = repmat(shiftdim(self.l,-1),self.Nj,1);
             J = repmat(self.j,1,self.Nkl);

@@ -48,77 +48,77 @@ views are `Apt`, `Amt`, and `A0t`.
 + Inspect the domain
   + Physical environment
     + Planetary rotation
-      + [`beta`](/classes/transforms/wvtransformhydrostatic/beta.html) meridional gradient of the Coriolis parameter
-      + [`f`](/classes/transforms/wvtransformhydrostatic/f.html) Coriolis parameter
-      + [`inertialPeriod`](/classes/transforms/wvtransformhydrostatic/inertialperiod.html) inertial period
-      + [`latitude`](/classes/transforms/wvtransformhydrostatic/latitude.html) central latitude of the simulation
-      + [`planetaryRadius`](/classes/transforms/wvtransformhydrostatic/planetaryradius.html) radius of the planetary body
-      + [`rotationRate`](/classes/transforms/wvtransformhydrostatic/rotationrate.html) rotation rate of the planetary body
+      + [`beta`](/classes/transforms/wvtransformhydrostatic/beta.html) Meridional gradient of the Coriolis parameter.
+      + [`f`](/classes/transforms/wvtransformhydrostatic/f.html) Coriolis parameter in radians per second.
+      + [`inertialPeriod`](/classes/transforms/wvtransformhydrostatic/inertialperiod.html) Inertial period in seconds.
+      + [`latitude`](/classes/transforms/wvtransformhydrostatic/latitude.html) Central latitude of the rotating domain in degrees north.
+      + [`planetaryRadius`](/classes/transforms/wvtransformhydrostatic/planetaryradius.html) Radius of the rotating planetary body in meters.
+      + [`rotationRate`](/classes/transforms/wvtransformhydrostatic/rotationrate.html) Planetary rotation rate in radians per second.
     + Stratification and reference density
       + [`N2`](/classes/transforms/wvtransformhydrostatic/n2.html) Buoyancy frequency squared sampled on the vertical grid.
       + [`N2Function`](/classes/transforms/wvtransformhydrostatic/n2function.html) Function returning buoyancy frequency squared at requested depths.
-      + [`buoyancyPeriod`](/classes/transforms/wvtransformhydrostatic/buoyancyperiod.html)
+      + [`buoyancyPeriod`](/classes/transforms/wvtransformhydrostatic/buoyancyperiod.html) Shortest buoyancy period in seconds.
       + [`dLnN2`](/classes/transforms/wvtransformhydrostatic/dlnn2.html) $$\partial_z \ln N^2$$, vertical derivative of the logarithm of squared buoyancy frequency
-      + [`rho0`](/classes/transforms/wvtransformhydrostatic/rho0.html) Boussinesq reference density.
+      + [`rho0`](/classes/transforms/wvtransformhydrostatic/rho0.html) Boussinesq reference density in kilograms per cubic meter.
       + [`rhoFunction`](/classes/transforms/wvtransformhydrostatic/rhofunction.html) Function returning the no-motion density profile at requested depths.
-      + [`shouldUseTrueNoMotionProfile`](/classes/transforms/wvtransformhydrostatic/shouldusetruenomotionprofile.html)
+      + [`shouldUseTrueNoMotionProfile`](/classes/transforms/wvtransformhydrostatic/shouldusetruenomotionprofile.html) Whether density diagnostics use the supplied no-motion profile directly.
     + Gravity
-      + [`g`](/classes/transforms/wvtransformhydrostatic/g.html) gravitational acceleration
+      + [`g`](/classes/transforms/wvtransformhydrostatic/g.html) Gravitational acceleration in meters per second squared.
   + Spatial grid
     + Coordinate axes
-      + [`x`](/classes/transforms/wvtransformhydrostatic/x.html) dimension
-      + [`y`](/classes/transforms/wvtransformhydrostatic/y.html) dimension
-      + [`z`](/classes/transforms/wvtransformhydrostatic/z.html) Vertical coordinate axis.
+      + [`x`](/classes/transforms/wvtransformhydrostatic/x.html) Periodic x-coordinate axis in meters.
+      + [`y`](/classes/transforms/wvtransformhydrostatic/y.html) Periodic y-coordinate axis in meters.
+      + [`z`](/classes/transforms/wvtransformhydrostatic/z.html) Three-dimensional vertical-coordinate array in meters.
     + Coordinate arrays
-      + [`X`](/classes/transforms/wvtransformhydrostatic/x_.html) x-coordinate matrix
-      + [`Y`](/classes/transforms/wvtransformhydrostatic/y_.html) y-coordinate matrix
-      + [`Z`](/classes/transforms/wvtransformhydrostatic/z_.html) z-coordinate matrix
-      + [`xyzGrid`](/classes/transforms/wvtransformhydrostatic/xyzgrid.html)
+      + [`X`](/classes/transforms/wvtransformhydrostatic/x_.html) Gridded x-coordinate array in meters with shape `[Nx Ny Nz]`.
+      + [`Y`](/classes/transforms/wvtransformhydrostatic/y_.html) Gridded y-coordinate array in meters with shape `[Nx Ny Nz]`.
+      + [`Z`](/classes/transforms/wvtransformhydrostatic/z_.html) Gridded vertical-coordinate array in meters with shape `[Nx Ny Nz]`.
+      + [`xyzGrid`](/classes/transforms/wvtransformhydrostatic/xyzgrid.html) Return the three-dimensional spatial coordinate arrays.
     + Domain dimensions
-      + [`Lx`](/classes/transforms/wvtransformhydrostatic/lx.html) length of the x-dimension
-      + [`Ly`](/classes/transforms/wvtransformhydrostatic/ly.html) length of the y-dimension
-      + [`Lz`](/classes/transforms/wvtransformhydrostatic/lz.html) length of the z-dimension
+      + [`Lx`](/classes/transforms/wvtransformhydrostatic/lx.html) Periodic domain length in the x direction.
+      + [`Ly`](/classes/transforms/wvtransformhydrostatic/ly.html) Periodic domain length in the y direction.
+      + [`Lz`](/classes/transforms/wvtransformhydrostatic/lz.html) Vertical domain depth in meters.
     + Resolution and shape
-      + [`Nx`](/classes/transforms/wvtransformhydrostatic/nx.html) number of grid points in the x-dimension
-      + [`Ny`](/classes/transforms/wvtransformhydrostatic/ny.html) number of grid points in the y-dimension
-      + [`Nz`](/classes/transforms/wvtransformhydrostatic/nz.html) points in the third, untransformed, dimension
-      + [`spatialMatrixSize`](/classes/transforms/wvtransformhydrostatic/spatialmatrixsize.html)
+      + [`Nx`](/classes/transforms/wvtransformhydrostatic/nx.html) Number of spatial grid points in the x direction.
+      + [`Ny`](/classes/transforms/wvtransformhydrostatic/ny.html) Number of spatial grid points in the y direction.
+      + [`Nz`](/classes/transforms/wvtransformhydrostatic/nz.html) Number of vertical spatial grid points.
+      + [`spatialMatrixSize`](/classes/transforms/wvtransformhydrostatic/spatialmatrixsize.html) Shape of a gridded physical-space field.
     + Quadrature and integration
-      + [`z_int`](/classes/transforms/wvtransformhydrostatic/z_int.html) Vertical quadrature weights.
-      + [`volumeIntegral`](/classes/transforms/wvtransformhydrostatic/volumeintegral.html)
+      + [`z_int`](/classes/transforms/wvtransformhydrostatic/z_int.html) Vertical quadrature weights in meters.
+      + [`volumeIntegral`](/classes/transforms/wvtransformhydrostatic/volumeintegral.html) Compute the horizontally averaged depth integral of a scalar field.
   + Spectral grid
     + Axes and spacing
-      + [`kAxis`](/classes/transforms/wvtransformhydrostatic/kaxis.html) k coordinate
-      + [`lAxis`](/classes/transforms/wvtransformhydrostatic/laxis.html) l coordinate
+      + [`kAxis`](/classes/transforms/wvtransformhydrostatic/kaxis.html) Centered x-direction angular-wavenumber axis.
+      + [`lAxis`](/classes/transforms/wvtransformhydrostatic/laxis.html) Centered y-direction angular-wavenumber axis.
       + [`j`](/classes/transforms/wvtransformhydrostatic/j.html) Vertical-mode index axis.
-      + [`dk`](/classes/transforms/wvtransformhydrostatic/dk.html) wavenumber spacing of the $$k$$ axis
-      + [`dl`](/classes/transforms/wvtransformhydrostatic/dl.html) wavenumber spacing of the $$l$$ axis
+      + [`dk`](/classes/transforms/wvtransformhydrostatic/dk.html) Spacing of the x-direction angular-wavenumber axis.
+      + [`dl`](/classes/transforms/wvtransformhydrostatic/dl.html) Spacing of the y-direction angular-wavenumber axis.
     + Coordinate arrays
-      + [`k`](/classes/transforms/wvtransformhydrostatic/k.html) wavenumber dimension on the WV grid
-      + [`l`](/classes/transforms/wvtransformhydrostatic/l.html) wavenumber dimension on the WV grid
-      + [`K`](/classes/transforms/wvtransformhydrostatic/k_.html) k-coordinate matrix
-      + [`L`](/classes/transforms/wvtransformhydrostatic/l_.html) l-coordinate matrix
-      + [`J`](/classes/transforms/wvtransformhydrostatic/j_.html) vertical mode-number matrix
-      + [`kljGrid`](/classes/transforms/wvtransformhydrostatic/kljgrid.html)
+      + [`k`](/classes/transforms/wvtransformhydrostatic/k.html) Stored x-direction angular wavenumbers on the compact WV grid.
+      + [`l`](/classes/transforms/wvtransformhydrostatic/l.html) Stored y-direction angular wavenumbers on the compact WV grid.
+      + [`K`](/classes/transforms/wvtransformhydrostatic/k_.html) X-direction angular-wavenumber array in rad/m with shape `[Nj Nkl]`.
+      + [`L`](/classes/transforms/wvtransformhydrostatic/l_.html) Y-direction angular-wavenumber array in rad/m with shape `[Nj Nkl]`.
+      + [`J`](/classes/transforms/wvtransformhydrostatic/j_.html) Dimensionless vertical-mode index array with shape `[Nj Nkl]`.
+      + [`kljGrid`](/classes/transforms/wvtransformhydrostatic/kljgrid.html) Return spectral-coordinate arrays in wave-vortex layout.
     + Horizontal wavenumber geometry
-      + [`Kh`](/classes/transforms/wvtransformhydrostatic/kh.html) horizontal wavenumber, $$Kh=\sqrt(K^2+L^2)$$
-      + [`K2`](/classes/transforms/wvtransformhydrostatic/k2.html) squared horizontal wavenumber, $$K2=K^2+L^2$$
+      + [`Kh`](/classes/transforms/wvtransformhydrostatic/kh.html) Horizontal angular-wavenumber magnitude on the coefficient grid.
+      + [`K2`](/classes/transforms/wvtransformhydrostatic/k2.html) Squared horizontal angular wavenumber on the coefficient grid.
     + Resolution and shape
-      + [`Nj`](/classes/transforms/wvtransformhydrostatic/nj.html) points in the j-coordinate, `length(z)`
-      + [`Nkl`](/classes/transforms/wvtransformhydrostatic/nkl.html) length of the combined kl-wavenumber dimension on the WV grid
-      + [`spectralMatrixSize`](/classes/transforms/wvtransformhydrostatic/spectralmatrixsize.html)
+      + [`Nj`](/classes/transforms/wvtransformhydrostatic/nj.html) Number of retained vertical modes.
+      + [`Nkl`](/classes/transforms/wvtransformhydrostatic/nkl.html) Number of retained compact horizontal-wavenumber columns.
+      + [`spectralMatrixSize`](/classes/transforms/wvtransformhydrostatic/spectralmatrixsize.html) Shape of a wave-vortex coefficient array.
       + [`effectiveHorizontalGridResolution`](/classes/transforms/wvtransformhydrostatic/effectivehorizontalgridresolution.html) returns the effective grid resolution in meters
       + [`effectiveVerticalGridResolution`](/classes/transforms/wvtransformhydrostatic/effectiveverticalgridresolution.html) returns the effective vertical grid resolution in meters
-      + [`effectiveJMax`](/classes/transforms/wvtransformhydrostatic/effectivejmax.html)
+      + [`effectiveJMax`](/classes/transforms/wvtransformhydrostatic/effectivejmax.html) Largest active vertical-mode index.
     + Vertical modes and scaling
-      + [`verticalModes`](/classes/transforms/wvtransformhydrostatic/verticalmodes.html) Vertical eigenmodes used by the transform.
-      + [`h_0`](/classes/transforms/wvtransformhydrostatic/h_0.html) [Nj 1]
-      + [`h_pm`](/classes/transforms/wvtransformhydrostatic/h_pm.html) equivalent depth of each wave mode
-      + [`Lr2`](/classes/transforms/wvtransformhydrostatic/lr2.html) squared Rossby deformation radius of each geostrophic mode
+      + [`verticalModes`](/classes/transforms/wvtransformhydrostatic/verticalmodes.html) Vertical-mode solution used to construct the transform basis.
+      + [`h_0`](/classes/transforms/wvtransformhydrostatic/h_0.html) Geostrophic equivalent-depth scale for each vertical mode.
+      + [`h_pm`](/classes/transforms/wvtransformhydrostatic/h_pm.html) Wave equivalent depth on the spectral grid.
+      + [`Lr2`](/classes/transforms/wvtransformhydrostatic/lr2.html) Squared Rossby deformation radius in square meters.
       + [`waveModeVerticalStructureAtIndex`](/classes/transforms/wvtransformhydrostatic/wavemodeverticalstructureatindex.html) Return wave vertical-structure factors at one vertical grid index.
   + Transform configuration
-    + [`isHydrostatic`](/classes/transforms/wvtransformhydrostatic/ishydrostatic.html)
-    + [`shouldAntialias`](/classes/transforms/wvtransformhydrostatic/shouldantialias.html) whether quadratic antialiasing is enabled
+    + [`isHydrostatic`](/classes/transforms/wvtransformhydrostatic/ishydrostatic.html) Whether the transform uses the hydrostatic approximation.
+    + [`shouldAntialias`](/classes/transforms/wvtransformhydrostatic/shouldantialias.html) Whether the spectral grid excludes modes that alias quadratic products.
 + Initialize the flow
   + General initialization
     + [`addRandomFlow`](/classes/transforms/wvtransformhydrostatic/addrandomflow.html) add randomized flow to the existing state
@@ -194,9 +194,9 @@ views are `Apt`, `Amt`, and `A0t`.
 + Manage forcing and closures
   + [`addForcing`](/classes/transforms/wvtransformhydrostatic/addforcing.html) Add forcing or closure objects to this transform.
   + [`forcing`](/classes/transforms/wvtransformhydrostatic/forcing.html) array of WVForcing objects
-  + [`forcingNames`](/classes/transforms/wvtransformhydrostatic/forcingnames.html) retrieve the names of all available variables. This preserves
+  + [`forcingNames`](/classes/transforms/wvtransformhydrostatic/forcingnames.html) Return forcing and closure names in application order.
   + [`forcingWithName`](/classes/transforms/wvtransformhydrostatic/forcingwithname.html) Return registered forcing objects by name.
-  + [`hasClosure`](/classes/transforms/wvtransformhydrostatic/hasclosure.html)
+  + [`hasClosure`](/classes/transforms/wvtransformhydrostatic/hasclosure.html) Whether a closure is currently attached to the transform.
   + [`hasForcingWithName`](/classes/transforms/wvtransformhydrostatic/hasforcingwithname.html) Test whether forcing objects are registered by name.
   + [`removeAllForcing`](/classes/transforms/wvtransformhydrostatic/removeallforcing.html) Remove every forcing and closure from this transform.
   + [`removeForcing`](/classes/transforms/wvtransformhydrostatic/removeforcing.html) Remove the exact registered forcing objects.
@@ -209,39 +209,34 @@ views are `Apt`, `Amt`, and `A0t`.
     + [`geostrophicKineticEnergy`](/classes/transforms/wvtransformhydrostatic/geostrophickineticenergy.html) kinetic energy of the geostrophic flow
     + [`waveEnergy`](/classes/transforms/wvtransformhydrostatic/waveenergy.html) Total energy of the internal-gravity-wave flow.
     + [`geostrophicPotentialEnergy`](/classes/transforms/wvtransformhydrostatic/geostrophicpotentialenergy.html) potential energy of the geostrophic flow
-    + [`exactTotalEnergy`](/classes/transforms/wvtransformhydrostatic/exacttotalenergy.html)
+    + [`exactTotalEnergy`](/classes/transforms/wvtransformhydrostatic/exacttotalenergy.html) Nonlinear total energy evaluated from physical-space fields.
     + [`geostrophicEnergy`](/classes/transforms/wvtransformhydrostatic/geostrophicenergy.html) total energy, geostrophic
     + [`hasMeanPressureDifference`](/classes/transforms/wvtransformhydrostatic/hasmeanpressuredifference.html) Diagnose an MDA mean-pressure difference between the boundaries.
     + [`summarizeDegreesOfFreedom`](/classes/transforms/wvtransformhydrostatic/summarizedegreesoffreedom.html) Summarize the spatial grid and active spectral degrees of freedom.
     + [`summarizeEnergyContent`](/classes/transforms/wvtransformhydrostatic/summarizeenergycontent.html) displays a summary of the energy content of the fluid
     + [`summarizeModeEnergy`](/classes/transforms/wvtransformhydrostatic/summarizemodeenergy.html) List the most energetic modes
-    + [`totalEnergy`](/classes/transforms/wvtransformhydrostatic/totalenergy.html) horizontally-averaged depth-integrated energy computed spectrally from wave-vortex coefficients
-    + [`totalEnergyOfFlowComponent`](/classes/transforms/wvtransformhydrostatic/totalenergyofflowcomponent.html)
-    + [`totalEnergySpatiallyIntegrated`](/classes/transforms/wvtransformhydrostatic/totalenergyspatiallyintegrated.html) horizontally-averaged depth-integrated energy computed in the spatial domain
+    + [`totalEnergy`](/classes/transforms/wvtransformhydrostatic/totalenergy.html) % - Topic: Energetics
+    + [`totalEnergyOfFlowComponent`](/classes/transforms/wvtransformhydrostatic/totalenergyofflowcomponent.html) Compute the energy carried by one flow component.
+    + [`totalEnergySpatiallyIntegrated`](/classes/transforms/wvtransformhydrostatic/totalenergyspatiallyintegrated.html) % - Topic: Energetics
   + Flow diagnostics
     + [`uvMax`](/classes/transforms/wvtransformhydrostatic/uvmax.html) max horizontal fluid speed
     + [`wMax`](/classes/transforms/wvtransformhydrostatic/wmax.html) max vertical fluid speed
   + Density validity
     + [`isDensityInValidRange`](/classes/transforms/wvtransformhydrostatic/isdensityinvalidrange.html) Test whether total density remains within the no-motion density range.
   + Potential vorticity and enstrophy
-    + [`exactPotentialEnstrophy`](/classes/transforms/wvtransformhydrostatic/exactpotentialenstrophy.html)
-    + [`totalEnstrophy`](/classes/transforms/wvtransformhydrostatic/totalenstrophy.html)
-    + [`totalEnstrophySpatiallyIntegrated`](/classes/transforms/wvtransformhydrostatic/totalenstrophyspatiallyintegrated.html)
+    + [`exactPotentialEnstrophy`](/classes/transforms/wvtransformhydrostatic/exactpotentialenstrophy.html) Exact potential enstrophy evaluated from available potential vorticity.
+    + [`totalEnstrophy`](/classes/transforms/wvtransformhydrostatic/totalenstrophy.html) Potential enstrophy computed from geostrophic coefficients.
+    + [`totalEnstrophySpatiallyIntegrated`](/classes/transforms/wvtransformhydrostatic/totalenstrophyspatiallyintegrated.html) Potential enstrophy evaluated from the gridded QGPV field.
   + Spectra
     + Spectral fields
-      + [`crossSpectrumWithFgTransform`](/classes/transforms/wvtransformhydrostatic/crossspectrumwithfgtransform.html)
-      + [`crossSpectrumWithGgTransform`](/classes/transforms/wvtransformhydrostatic/crossspectrumwithggtransform.html)
-      + [`spectrumWithFgTransform`](/classes/transforms/wvtransformhydrostatic/spectrumwithfgtransform.html)
-      + [`spectrumWithGgTransform`](/classes/transforms/wvtransformhydrostatic/spectrumwithggtransform.html)
+      + [`crossSpectrumWithFgTransform`](/classes/transforms/wvtransformhydrostatic/crossspectrumwithfgtransform.html) Compute a real modal cross-spectrum using the F-basis transform.
+      + [`crossSpectrumWithGgTransform`](/classes/transforms/wvtransformhydrostatic/crossspectrumwithggtransform.html) Compute a real modal cross-spectrum using the G-basis transform.
+      + [`spectrumWithFgTransform`](/classes/transforms/wvtransformhydrostatic/spectrumwithfgtransform.html) Compute a modal autospectrum using the F-basis transform.
+      + [`spectrumWithGgTransform`](/classes/transforms/wvtransformhydrostatic/spectrumwithggtransform.html) Compute a modal autospectrum using the G-basis transform.
       + [`transformToKLAxes`](/classes/transforms/wvtransformhydrostatic/transformtoklaxes.html) transforms in the spectral domain from (j,kl) to (kAxis,lAxis,j)
     + Radial wavenumber
       + [`kRadial`](/classes/transforms/wvtransformhydrostatic/kradial.html) radial (k,l) wavenumber on the WV grid
       + [`transformToRadialWavenumber`](/classes/transforms/wvtransformhydrostatic/transformtoradialwavenumber.html) transforms in the spectral domain from (j,kl) to (j,kRadial)
-    + Pseudo-radial wavenumber
-      + [`kPseudoRadial`](/classes/transforms/wvtransformhydrostatic/kpseudoradial.html)
-      + [`transformToPseudoRadialWavenumber`](/classes/transforms/wvtransformhydrostatic/transformtopseudoradialwavenumber.html) transforms in the from (j,kRadial) to kPseudoRadial
-      + [`transformToPseudoRadialWavenumberA0`](/classes/transforms/wvtransformhydrostatic/transformtopseudoradialwavenumbera0.html) transforms in the from (j,kRadial) to kPseudoRadial
-      + [`transformToPseudoRadialWavenumberApm`](/classes/transforms/wvtransformhydrostatic/transformtopseudoradialwavenumberapm.html) transforms in the from (j,kRadial) to kPseudoRadial
     + Frequency
       + [`convertFromWavenumberToFrequency`](/classes/transforms/wvtransformhydrostatic/convertfromwavenumbertofrequency.html) Bin wave energy by vertical mode and intrinsic frequency
 + Save transform state
@@ -251,8 +246,8 @@ views are `Apt`, `Amt`, and `A0t`.
     + [`transformUVEtaToWaveVortex`](/classes/transforms/wvtransformhydrostatic/transformuvetatowavevortex.html) transform fluid variables $$(u,v,\eta)$$ to wave-vortex coefficients $$(A_+,A_-,A_0)$$.
     + [`transformWaveVortexToUVWEta`](/classes/transforms/wvtransformhydrostatic/transformwavevortextouvweta.html) transform wave-vortex coefficients $$(A_+,A_-,A_0)$$ to fluid variables $$(u,v,\eta)$$.
 + Differentiate and integrate fields
-  + [`diffX`](/classes/transforms/wvtransformhydrostatic/diffx.html)
-  + [`diffY`](/classes/transforms/wvtransformhydrostatic/diffy.html)
+  + [`diffX`](/classes/transforms/wvtransformhydrostatic/diffx.html) Differentiate a gridded field in the periodic x direction.
+  + [`diffY`](/classes/transforms/wvtransformhydrostatic/diffy.html) Differentiate a gridded field in the periodic y direction.
   + [`diffZF`](/classes/transforms/wvtransformhydrostatic/diffzf.html) Differentiate an F-grid field with respect to z.
   + [`diffZG`](/classes/transforms/wvtransformhydrostatic/diffzg.html) Differentiate a G-grid field with respect to z.
   + [`intZF`](/classes/transforms/wvtransformhydrostatic/intzf.html) Return the first antiderivative of an F-representation.
@@ -264,22 +259,22 @@ views are `Apt`, `Amt`, and `A0t`.
   + [`mdaComponent`](/classes/transforms/wvtransformhydrostatic/mdacomponent.html) returns the mean density anomaly component
   + [`flowComponentNames`](/classes/transforms/wvtransformhydrostatic/flowcomponentnames.html) retrieve the names of all available variables
   + [`flowComponentWithName`](/classes/transforms/wvtransformhydrostatic/flowcomponentwithname.html) retrieve a WVFlowComponent by name
-  + [`flowComponents`](/classes/transforms/wvtransformhydrostatic/flowcomponents.html)
+  + [`flowComponents`](/classes/transforms/wvtransformhydrostatic/flowcomponents.html) All registered physical and diagnostic flow components.
   + [`primaryFlowComponentNames`](/classes/transforms/wvtransformhydrostatic/primaryflowcomponentnames.html) retrieve the names of all available variables
   + [`primaryFlowComponentWithName`](/classes/transforms/wvtransformhydrostatic/primaryflowcomponentwithname.html) retrieve a WVPrimaryFlowComponent by name
-  + [`primaryFlowComponents`](/classes/transforms/wvtransformhydrostatic/primaryflowcomponents.html)
+  + [`primaryFlowComponents`](/classes/transforms/wvtransformhydrostatic/primaryflowcomponents.html) Primary flow components that partition the active coefficient state.
   + [`summarizeFlowComponents`](/classes/transforms/wvtransformhydrostatic/summarizeflowcomponents.html) Print a table of registered primary and diagnostic components.
-  + [`totalFlowComponent`](/classes/transforms/wvtransformhydrostatic/totalflowcomponent.html)
+  + [`totalFlowComponent`](/classes/transforms/wvtransformhydrostatic/totalflowcomponent.html) Combined view of all primary flow components.
 + Inspect wave-vortex coefficients
   + Stored coefficients
-    + [`Ap`](/classes/transforms/wvtransformhydrostatic/ap.html) Positive-frequency wave and inertial coefficients at reference time `t0`.
-    + [`Am`](/classes/transforms/wvtransformhydrostatic/am.html) Negative-frequency wave and inertial coefficients at reference time `t0`.
-    + [`A0`](/classes/transforms/wvtransformhydrostatic/a0.html) Zero-frequency geostrophic and mean-density-anomaly coefficients.
+    + [`Ap`](/classes/transforms/wvtransformhydrostatic/ap.html) `Ap` stores the positive-frequency coefficients $$A_+^{k\ell j}$$ for internal gravity waves and the positive-frequency member of the paired inertial representation. The coefficients have units of velocity and use the transform's spectral layout.
+    + [`Am`](/classes/transforms/wvtransformhydrostatic/am.html) `Am` stores the negative-frequency coefficients $$A_-^{k\ell j}$$ for internal gravity waves and inertial oscillations. The coefficients have units of velocity and use the transform's spectral layout.
+    + [`A0`](/classes/transforms/wvtransformhydrostatic/a0.html) `A0` stores the zero-frequency coefficients $$A_0^{k\ell j}$$ with units of streamfunction, $$\mathrm{m^2\,s^{-1}}$$. It is the active coefficient family for geostrophic and quasigeostrophic flow and, on transforms that include it, the mean-density anomaly.
   + Coefficients at the current time
-    + [`Apt`](/classes/transforms/wvtransformhydrostatic/apt.html) positive-frequency coefficients at current time t
-    + [`Amt`](/classes/transforms/wvtransformhydrostatic/amt.html) negative-frequency coefficients at current time t
-    + [`A0t`](/classes/transforms/wvtransformhydrostatic/a0t.html) zero-frequency coefficients at current time t
-    + [`waveCoefficientsAtTimeT`](/classes/transforms/wvtransformhydrostatic/wavecoefficientsattimet.html)
+    + [`Apt`](/classes/transforms/wvtransformhydrostatic/apt.html) `Apt` is the positive-frequency coefficient array evaluated at the current transform time:
+    + [`Amt`](/classes/transforms/wvtransformhydrostatic/amt.html) `Amt` is the negative-frequency coefficient array evaluated at the current transform time:
+    + [`A0t`](/classes/transforms/wvtransformhydrostatic/a0t.html) `A0t` is the zero-frequency coefficient array evaluated at the current transform time. On the supported $$f$$-plane transforms, `A0` has no linear phase winding and therefore
+    + [`waveCoefficientsAtTimeT`](/classes/transforms/wvtransformhydrostatic/wavecoefficientsattimet.html) Return positive- and negative-frequency coefficients at the current time.
   + Coefficient evolution
     + [`t0`](/classes/transforms/wvtransformhydrostatic/t0.html) Reference time for the stored wave phases, in seconds.
     + [`t`](/classes/transforms/wvtransformhydrostatic/t.html) Current transform time in seconds.
@@ -288,11 +283,11 @@ views are `Apt`, `Amt`, and `A0t`.
     + [`phase`](/classes/transforms/wvtransformhydrostatic/phase.html) unit-magnitude phase factor that advances `Ap` from `t0` to `t`
     + [`conjPhase`](/classes/transforms/wvtransformhydrostatic/conjphase.html) conjugate phase factor that advances `Am` from `t0` to `t`
 + Create a related transform
-  + [`boussinesqTransform`](/classes/transforms/wvtransformhydrostatic/boussinesqtransform.html)
+  + [`boussinesqTransform`](/classes/transforms/wvtransformhydrostatic/boussinesqtransform.html) Create the corresponding nonhydrostatic Boussinesq transform.
   + [`spectralVariableWithResolution`](/classes/transforms/wvtransformhydrostatic/spectralvariablewithresolution.html) create a new variable with different resolution
   + [`waveVortexTransformWithDoubleResolution`](/classes/transforms/wvtransformhydrostatic/wavevortextransformwithdoubleresolution.html) create a new WVTransform with double resolution
-  + [`waveVortexTransformWithExplicitAntialiasing`](/classes/transforms/wvtransformhydrostatic/wavevortextransformwithexplicitantialiasing.html)
-  + [`waveVortexTransformWithResolution`](/classes/transforms/wvtransformhydrostatic/wavevortextransformwithresolution.html) If you set shouldAntialias == false, when the transform
+  + [`waveVortexTransformWithExplicitAntialiasing`](/classes/transforms/wvtransformhydrostatic/wavevortextransformwithexplicitantialiasing.html) Create an explicit-antialiasing transform with the same grid.
+  + [`waveVortexTransformWithResolution`](/classes/transforms/wvtransformhydrostatic/wavevortextransformwithresolution.html) Create the same transform family at a new resolution.
 + Extend a transform
   + Flow components
     + [`addFlowComponent`](/classes/transforms/wvtransformhydrostatic/addflowcomponent.html) add a flow component and its standard variables
@@ -308,29 +303,29 @@ views are `Apt`, `Amt`, and `A0t`.
 ## Developer Topics
 These items document internal implementation details and are not part of the primary public API.
 + Projection and reconstruction coefficients
-  + [`A0N`](/classes/transforms/wvtransformhydrostatic/a0n.html) matrix component that multiplies $$\tilde{\eta}$$ to compute $$A_0$$.
-  + [`A0U`](/classes/transforms/wvtransformhydrostatic/a0u.html) matrix component that multiplies $$\tilde{u}$$ to compute $$A_0$$.
-  + [`A0V`](/classes/transforms/wvtransformhydrostatic/a0v.html) matrix component that multiplies $$\tilde{v}$$ to compute $$A_0$$.
+  + [`A0N`](/classes/transforms/wvtransformhydrostatic/a0n.html) These projection coefficients map the density-displacement state variable onto $$A_0$$. In the historical notation of [Early et al. (2021)](https://doi.org/10.1017/jfm.2020.995), they are the row 3, column 3 entries of $$S^{-1}$$ for the primary internal-gravity-wave and geostrophic solutions in equation C5.
+  + [`A0U`](/classes/transforms/wvtransformhydrostatic/a0u.html) These projection coefficients map the $$u$$ state variable onto $$A_0$$. In the historical notation of [Early et al. (2021)](https://doi.org/10.1017/jfm.2020.995), they are the row 3, column 1 entries of $$S^{-1}$$ for the primary internal-gravity-wave and geostrophic solutions in equation C5.
+  + [`A0V`](/classes/transforms/wvtransformhydrostatic/a0v.html) These projection coefficients map the $$v$$ state variable onto $$A_0$$. In the historical notation of [Early et al. (2021)](https://doi.org/10.1017/jfm.2020.995), they are the row 3, column 2 entries of $$S^{-1}$$ for the primary internal-gravity-wave and geostrophic solutions in equation C5.
   + [`A0Z`](/classes/transforms/wvtransformhydrostatic/a0z.html)
   + [`ApmD`](/classes/transforms/wvtransformhydrostatic/apmd.html)
   + [`ApmN`](/classes/transforms/wvtransformhydrostatic/apmn.html)
   + [`Feta`](/classes/transforms/wvtransformhydrostatic/feta.html)
   + [`Fu`](/classes/transforms/wvtransformhydrostatic/fu.html)
   + [`Fv`](/classes/transforms/wvtransformhydrostatic/fv.html)
-  + [`NA0`](/classes/transforms/wvtransformhydrostatic/na0.html) matrix component that multiplies $$A_0$$ to compute $$\tilde{\eta}$$.
-  + [`NAm`](/classes/transforms/wvtransformhydrostatic/nam.html)
-  + [`NAp`](/classes/transforms/wvtransformhydrostatic/nap.html)
+  + [`NA0`](/classes/transforms/wvtransformhydrostatic/na0.html) These reconstruction coefficients map $$A_0$$ onto the density-displacement state variable. In the historical notation of [Early et al. (2021)](https://doi.org/10.1017/jfm.2020.995), they are the row 3, column 3 entries of $$S$$ for the primary internal-gravity-wave and geostrophic solutions in equation C4.
+  + [`NAm`](/classes/transforms/wvtransformhydrostatic/nam.html) These reconstruction coefficients map $$A_-$$ onto the density-displacement state variable. In the historical notation of [Early et al. (2021)](https://doi.org/10.1017/jfm.2020.995), they are the row 3, column 2 entries of $$S$$ for the primary internal-gravity-wave and geostrophic solutions in equation C4.
+  + [`NAp`](/classes/transforms/wvtransformhydrostatic/nap.html) These reconstruction coefficients map $$A_+$$ onto the density-displacement state variable. In the historical notation of [Early et al. (2021)](https://doi.org/10.1017/jfm.2020.995), they are the row 3, column 1 entries of $$S$$ for the primary internal-gravity-wave and geostrophic solutions in equation C4.
   + [`P0`](/classes/transforms/wvtransformhydrostatic/p0.html) Preconditioner for F, size(P)=[Nj 1]. F*u = uhat, (PF)*u = P*uhat, so ubar==P*uhat
   + [`PA0`](/classes/transforms/wvtransformhydrostatic/pa0.html)
   + [`Q0`](/classes/transforms/wvtransformhydrostatic/q0.html) Preconditioner for G, size(Q)=[Nj 1]. G*eta = etahat, (QG)*eta = Q*etahat, so etabar==Q*etahat.
-  + [`UA0`](/classes/transforms/wvtransformhydrostatic/ua0.html) matrix component that multiplies $$A_0$$ to compute $$\tilde{u}$$.
-  + [`UAm`](/classes/transforms/wvtransformhydrostatic/uam.html)
-  + [`UAp`](/classes/transforms/wvtransformhydrostatic/uap.html)
-  + [`VA0`](/classes/transforms/wvtransformhydrostatic/va0.html) matrix component that multiplies $$A_0$$ to compute $$\tilde{v}$$.
-  + [`VAm`](/classes/transforms/wvtransformhydrostatic/vam.html)
-  + [`VAp`](/classes/transforms/wvtransformhydrostatic/vap.html)
-  + [`WAm`](/classes/transforms/wvtransformhydrostatic/wam.html)
-  + [`WAp`](/classes/transforms/wvtransformhydrostatic/wap.html)
+  + [`UA0`](/classes/transforms/wvtransformhydrostatic/ua0.html) These reconstruction coefficients map $$A_0$$ onto the $$u$$ state variable. In the historical notation of [Early et al. (2021)](https://doi.org/10.1017/jfm.2020.995), they are the row 1, column 3 entries of $$S$$ for the primary internal-gravity-wave and geostrophic solutions in equation C4.
+  + [`UAm`](/classes/transforms/wvtransformhydrostatic/uam.html) These reconstruction coefficients map $$A_-$$ onto the $$u$$ state variable. In the historical notation of [Early et al. (2021)](https://doi.org/10.1017/jfm.2020.995), they are the row 1, column 2 entries of $$S$$ for the primary internal-gravity-wave and geostrophic solutions in equation C4.
+  + [`UAp`](/classes/transforms/wvtransformhydrostatic/uap.html) These reconstruction coefficients map $$A_+$$ onto the $$u$$ state variable. In the historical notation of [Early et al. (2021)](https://doi.org/10.1017/jfm.2020.995), they are the row 1, column 1 entries of $$S$$ for the primary internal-gravity-wave and geostrophic solutions in equation C4.
+  + [`VA0`](/classes/transforms/wvtransformhydrostatic/va0.html) These reconstruction coefficients map $$A_0$$ onto the $$v$$ state variable. In the historical notation of [Early et al. (2021)](https://doi.org/10.1017/jfm.2020.995), they are the row 2, column 3 entries of $$S$$ for the primary internal-gravity-wave and geostrophic solutions in equation C4.
+  + [`VAm`](/classes/transforms/wvtransformhydrostatic/vam.html) These reconstruction coefficients map $$A_-$$ onto the $$v$$ state variable. In the historical notation of [Early et al. (2021)](https://doi.org/10.1017/jfm.2020.995), they are the row 2, column 2 entries of $$S$$ for the primary internal-gravity-wave and geostrophic solutions in equation C4.
+  + [`VAp`](/classes/transforms/wvtransformhydrostatic/vap.html) These reconstruction coefficients map $$A_+$$ onto the $$v$$ state variable. In the historical notation of [Early et al. (2021)](https://doi.org/10.1017/jfm.2020.995), they are the row 2, column 1 entries of $$S$$ for the primary internal-gravity-wave and geostrophic solutions in equation C4.
+  + [`WAm`](/classes/transforms/wvtransformhydrostatic/wam.html) These reconstruction coefficients map $$A_-$$ onto the $$w$$ state variable. In the historical notation of [Early et al. (2021)](https://doi.org/10.1017/jfm.2020.995), they are the row 4, column 2 entries of $$S$$ for the primary internal-gravity-wave and geostrophic solutions in equation C4.
+  + [`WAp`](/classes/transforms/wvtransformhydrostatic/wap.html) These reconstruction coefficients map $$A_+$$ onto the $$w$$ state variable. In the historical notation of [Early et al. (2021)](https://doi.org/10.1017/jfm.2020.995), they are the row 4, column 1 entries of $$S$$ for the primary internal-gravity-wave and geostrophic solutions in equation C4.
 + Geometry and mode indexing
   + [`conjugateDimension`](/classes/transforms/wvtransformhydrostatic/conjugatedimension.html) assumed conjugate dimension
   + [`dftConjugateIndex`](/classes/transforms/wvtransformhydrostatic/dftconjugateindex.html) legacy vertically replicated conjugate index
@@ -359,7 +354,6 @@ These items document internal implementation details and are not part of the pri
   + [`transformFromDFTGridToWVGrid`](/classes/transforms/wvtransformhydrostatic/transformfromdftgridtowvgrid.html) convert from DFT to WV grid
   + [`transformFromSpatialDomainToDFTGrid`](/classes/transforms/wvtransformhydrostatic/transformfromspatialdomaintodftgrid.html) transform from $$(x,y,z)$$ to $$(k,l,z)$$ on the DFT grid
   + [`transformFromWVGridToDFTGrid`](/classes/transforms/wvtransformhydrostatic/transformfromwvgridtodftgrid.html) convert from a WV to DFT grid
-  + [`transformToOmegaAxis`](/classes/transforms/wvtransformhydrostatic/transformtoomegaaxis.html) transforms in the from (j,kRadial) to omegaAxis
   + [`transformToSpatialDomainFromDFTGrid`](/classes/transforms/wvtransformhydrostatic/transformtospatialdomainfromdftgrid.html) transform from $$(k,l,z)$$ on the DFT grid to $$(x,y,z)$$
   + [`transformToSpatialDomainFromDFTGridAtPosition`](/classes/transforms/wvtransformhydrostatic/transformtospatialdomainfromdftgridatposition.html) transform from $$(k,l)$$ on the DFT grid to $$(x,y)$$ at any position
   + [`wvConjugateIndex`](/classes/transforms/wvtransformhydrostatic/wvconjugateindex.html) legacy vertically replicated WV conjugate index

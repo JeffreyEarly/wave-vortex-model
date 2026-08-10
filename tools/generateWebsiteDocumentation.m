@@ -269,6 +269,7 @@ end
 function mergeCanonicalSidecars(documentation,sidecarFolders)
 methodNames = string({documentation.allMethodDocumentation.name});
 for sidecarFolder = sidecarFolders'
+    shouldOverrideSummary = endsWith(string(sidecarFolder),fullfile("@WVTransform","detailedDescriptions"));
     sidecars = dir(fullfile(sidecarFolder,"*.md"));
     for iSidecar = 1:numel(sidecars)
         sidecarName = erase(string(sidecars(iSidecar).name),".md");
@@ -279,11 +280,21 @@ for sidecarFolder = sidecarFolders'
         if isempty(matchingIndices)
             continue
         end
+        sidecarText = string(fileread(fullfile(sidecars(iSidecar).folder,sidecars(iSidecar).name)));
         sidecarMetadata = MethodDocumentation(sidecarName);
-        sidecarMetadata.addMetadataFromDetailedDescription(fileread(fullfile(sidecars(iSidecar).folder,sidecars(iSidecar).name)));
+        sidecarMetadata.addMetadataFromDetailedDescription(sidecarText);
+        sidecarLines = splitlines(sidecarText);
+        firstContentLine = find(strlength(strtrim(sidecarLines)) > 0,1);
+        sidecarSummary = "";
+        if ~isempty(firstContentLine) && ~startsWith(strtrim(sidecarLines(firstContentLine)),"-")
+            sidecarSummary = strtrim(sidecarLines(firstContentLine));
+        end
         for iMethod = matchingIndices
             methodDocumentation = documentation.allMethodDocumentation(iMethod);
             methodDocumentation.mergeAnnotatedPropertyDocumentation(sidecarMetadata);
+            if shouldOverrideSummary && sidecarSummary ~= ""
+                methodDocumentation.shortDescription = sidecarSummary;
+            end
             if strlength(strtrim(string(sidecarMetadata.detailedDescription))) > 0
                 methodDocumentation.detailedDescription = sidecarMetadata.detailedDescription;
             end

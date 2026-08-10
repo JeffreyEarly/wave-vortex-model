@@ -3,7 +3,7 @@ layout: default
 title: shouldExcludeNyquist
 parent: WVTransformStratifiedQG
 grand_parent: Transforms
-nav_order: 185
+nav_order: 184
 mathjax: true
 ---
 

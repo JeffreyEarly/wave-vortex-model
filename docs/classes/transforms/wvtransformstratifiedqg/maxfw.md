@@ -3,7 +3,7 @@ layout: default
 title: maxFw
 parent: WVTransformStratifiedQG
 grand_parent: Transforms
-nav_order: 142
+nav_order: 141
 mathjax: true
 ---
 

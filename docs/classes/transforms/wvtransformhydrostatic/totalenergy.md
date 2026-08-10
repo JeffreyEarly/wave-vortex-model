@@ -3,13 +3,13 @@ layout: default
 title: totalEnergy
 parent: WVTransformHydrostatic
 grand_parent: Transforms
-nav_order: 255
+nav_order: 254
 mathjax: true
 ---
 
 #  totalEnergy
 
-horizontally-averaged depth-integrated energy computed spectrally from wave-vortex coefficients
+% - Topic: Energetics
 
 
 ---

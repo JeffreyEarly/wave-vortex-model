@@ -9,7 +9,7 @@ mathjax: true
 
 #  totalEnergySpatiallyIntegrated
 
-horizontally-averaged depth-integrated energy computed in the spatial domain
+% - Topic: Energetics
 
 
 ---
