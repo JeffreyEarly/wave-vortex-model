@@ -9,7 +9,7 @@ mathjax: true
 
 #  setGeostrophicForcingCoefficients
 
-set amplitude to fix for the geostrophic part of the flow
+Select zero-frequency coefficients to fix.
 
 
 ---
@@ -19,10 +19,12 @@ set amplitude to fix for the geostrophic part of the flow
  setGeostrophicForcingCoefficients(A0bar,options)
 ```
 ## Parameters
-+ `A0bar`  A0 fixed amplitude
-+ `MA0`  (optional) forcing mask, A0. 1s at the forced modes, 0s at the unforced modes. Default is MA0 = abs(A0bar) > 1e-6*max(abs(A0bar(:)))
++ `A0bar`  `A0` values on the transform spectral grid
++ `MA0`  optional logical `A0` selection mask; default `abs(A0bar) > 1e-6*max(abs(A0bar(:)))`
 
 ## Discussion
 
-This function will automatically remove modes set in the
-damping region of the WVAdaptiveDamping forcing, if present.
+Without an explicit mask, coefficients whose magnitude is at
+least $$10^{-6}$$ times the largest supplied magnitude are
+selected. If adaptive damping is registered, selected modes
+above its horizontal `k_damp` threshold are removed.

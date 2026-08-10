@@ -9,21 +9,19 @@ mathjax: true
 
 #  effectiveJMax
 
-returns the effective highest vertical mode
+Return the highest retained vertical-mode number.
 
 
 ---
 
 ## Declaration
 ```matlab
- flag = effectiveJMax(other)
+ j_max = effectiveJMax()
 ```
 ## Returns
-+ `effectiveJMax`  double
++ `j_max`  highest retained vertical-mode number
 
 ## Discussion
 
-The effective highest vertical modeis the highest fully resolved
-mode in the model. This value takes into account
-anti-aliasing, and is thus appropriate for setting damping
-operators.
+This dimensionless value accounts for the explicit vertical
+mask and is appropriate when constructing damping operators.

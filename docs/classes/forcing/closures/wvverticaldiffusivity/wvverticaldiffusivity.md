@@ -9,7 +9,7 @@ mathjax: true
 
 #  WVVerticalDiffusivity
 
-initialize the WVVerticalDiffusivity
+Create vertical diffusivity for a three-dimensional transform.
 
 
 ---
@@ -19,11 +19,11 @@ initialize the WVVerticalDiffusivity
  self = WVVerticalDiffusivity(wvt,options)
 ```
 ## Parameters
-+ `wvt`  a WVTransform instance
-+ `kappa_z`  (optional) vertical diffusivity, $$m^2s^{-1}$$. Default values 1e-5
-+ `shouldForceMeanDensityAnomaly`  (optional) whether to include the $$\frac{\partial}{\partial z} \ln N^2$$ term. Default `true`.
++ `wvt`  wave-bearing or stratified-QG transform that owns the forcing
++ `kappa_z`  optional vertical diffusivity in square meters per second; default `1e-5`
++ `shouldForceMeanDensityAnomaly`  optional variable-stratification correction flag; default `true`
 
 ## Returns
-+ `self`  a WVVerticalDiffusivity instance
++ `self`  vertical-diffusivity forcing owned by `wvt`
 
 ## Discussion

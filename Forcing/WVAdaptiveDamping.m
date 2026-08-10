@@ -1,10 +1,10 @@
 classdef WVAdaptiveDamping < WVForcing
-    % Adaptive small-scale damping
+    % Adapt small-scale spectral damping to the current flow speed.
     %
-    % This damping operator is a linear closure that dynamically changes
-    % its amplitude to keep the Reynolds number at the grid scale equal to
-    % one. This closure is ideal for a spin-up problem where the amplitude
-    % of the flow is changing.
+    % This closure rebuilds its spectral shape when the transform's effective
+    % resolution changes and scales its coefficient tendency by the current
+    % maximum horizontal speed. It is useful when the flow amplitude evolves
+    % substantially, such as during spin-up.
     % 
     % This closure has a number of noteworthy features:
     %
@@ -43,11 +43,10 @@ classdef WVAdaptiveDamping < WVForcing
     %
     % where $$U$$ is the maximum fluid velocity.
     %
-    % ### Usage
-    %
-    % Assuming there is a WVTransform instance wvt, to add this forcing,
+    % ### Example
     %
     % ```matlab
+    % wvt = WVTransformConstantStratification([40e3,30e3,2e3],[8,6,5],N0=5.2e-3,latitude=45,isHydrostatic=true);
     % wvt.addForcing(WVAdaptiveDamping(wvt));
     % ```
     %
@@ -68,32 +67,45 @@ classdef WVAdaptiveDamping < WVForcing
     %
     % - Declaration: WVAdaptiveDamping < [WVForcing](/classes/forcing/wvforcing/)
     properties
-        % spectral matrix that multiplies Ap,Am,A0 to damp
+        % Unit-speed spectral damping operator in inverse meters.
+        %
+        % This array has `wvt.spectralMatrixSize`. The actual coefficient
+        % damping rate is `wvt.uvMax*damp` in inverse seconds.
         %
         % - Topic: Properties
         damp
 
-        % wavenumber at which the significant scale damping starts.
+        % Estimated horizontal wavenumber for significant damping.
+        %
+        % Units are radians per meter. The filter is already nonzero below
+        % this estimate; use `k_no_damp` for the exact zero-damping cutoff.
         %
         % - Topic: Properties
         k_damp
 
-        % wavenumber below which there is zero damping
+        % Horizontal wavenumber below which damping is exactly zero.
+        %
+        % Units are radians per meter.
         %
         % - Topic: Properties
         k_no_damp
         
-        % wavenumber at which the significant scale damping starts.
+        % Estimated vertical mode number for significant damping.
+        %
+        % This value is dimensionless. The filter is already nonzero below
+        % this estimate; use `j_no_damp` for the exact zero-damping cutoff.
         %
         % - Topic: Properties
         j_damp
 
-        % wavenumber below which there is zero damping
+        % Vertical mode number below which damping is exactly zero.
+        %
+        % This value is dimensionless.
         %
         % - Topic: Properties
         j_no_damp
 
-        % effective resolution used in the damping calculation
+        % Effective horizontal resolution used to construct `damp`, in meters.
         %
         % - Topic: Properties
         assumedEffectiveHorizontalGridResolution = Inf;
@@ -113,12 +125,12 @@ classdef WVAdaptiveDamping < WVForcing
 
     methods
         function self = WVAdaptiveDamping(wvt)
-            % initialize the WVAdaptiveDamping
+            % Create adaptive spectral damping for a transform.
             %
             % - Topic: Initialization
-            % - Declaration: damp = WVAdaptiveDamping(wvt)
-            % - Parameter wvt: a WVTransform instance
-            % - Returns self: a WVAdaptiveDamping instance
+            % - Declaration: self = WVAdaptiveDamping(wvt)
+            % - Parameter wvt: transform that owns and evaluates the closure
+            % - Returns self: adaptive-damping closure owned by `wvt`
             arguments
                 wvt WVTransform {mustBeNonempty}
             end
@@ -135,12 +147,11 @@ classdef WVAdaptiveDamping < WVForcing
         end
 
         function buildDampingOperator(self)
-            % Builds the damping operator
+            % Build the unit-speed spectral damping operator.
             %
             % - Topic: Internal
             % - Declaration: buildDampingOperator(self)
-            % - Parameter self: an instance of WVAdaptiveViscosity
-            % - Returns: None
+            % - Parameter self: adaptive-damping instance to update
             arguments
                 self WVAdaptiveDamping {mustBeNonempty}
             end
@@ -162,13 +173,18 @@ classdef WVAdaptiveDamping < WVForcing
         end
 
         function [Qkl,Qj,kl_cutoff, kl_damp, j_cutoff, j_damp] = spectralVanishingViscosityFilter(self, kl_max, j_max)
-            % Builds the spectral vanishing viscosity operator
+            % Build horizontal and vertical spectral-vanishing filters.
             %
             % - Topic: Internal
-            % - Declaration: spectralVanishingViscosityFilter(self, options)
-            % - Parameter self: an instance of WVAdaptiveViscosity
-            % - Parameter options: struct with field shouldAssumeAntialiasing
-            % - Returns: Qkl, Qj, kl_cutoff, kl_damp
+            % - Declaration: [Qkl,Qj,kl_cutoff,kl_damp,j_cutoff,j_damp] = spectralVanishingViscosityFilter(kl_max,j_max)
+            % - Parameter kl_max: maximum resolved horizontal wavenumber in radians per meter
+            % - Parameter j_max: maximum resolved vertical-mode number
+            % - Returns Qkl: horizontal filter on the spectral grid
+            % - Returns Qj: vertical filter on the spectral grid
+            % - Returns kl_cutoff: exact horizontal zero-damping cutoff in radians per meter
+            % - Returns kl_damp: estimated horizontal significant-damping wavenumber in radians per meter
+            % - Returns j_cutoff: exact vertical zero-damping cutoff
+            % - Returns j_damp: estimated vertical significant-damping mode
             arguments
                 self WVAdaptiveDamping {mustBeNonempty}
                 kl_max
@@ -206,7 +222,7 @@ classdef WVAdaptiveDamping < WVForcing
         %     % Builds the spectral vanishing viscosity operator
         %     %
         %     % - Declaration: spectralVanishingViscosityFilter(self, options)
-        %     % - Parameter self: an instance of WVAdaptiveViscosity
+        %     % - Parameter self: an instance of WVAdaptiveDamping
         %     % - Parameter options: struct with field shouldAssumeAntialiasing
         %     % - Returns: Qkl, Qj, kl_cutoff, kl_damp
         %     arguments
@@ -252,12 +268,16 @@ classdef WVAdaptiveDamping < WVForcing
         % end
         % 
         function dampingTimeScale = dampingTimeScale(self)
-            % Computes the minimum damping time scale
+            % Return the inverse maximum unit-speed damping coefficient.
+            %
+            % Despite the historical method name, this value has units of
+            % meters because `damp` has units of inverse meters. For a
+            % nonzero flow, divide this value by `wvt.uvMax` to obtain the
+            % shortest instantaneous e-folding time in seconds.
             %
             % - Topic: Properties
-            % - Declaration: dampingTimeScale(self)
-            % - Parameter self: an instance of WVAdaptiveViscosity
-            % - Returns: dampingTimeScale
+            % - Declaration: dampingTimeScale = dampingTimeScale()
+            % - Returns dampingTimeScale: inverse maximum absolute entry of `damp`, in meters
             arguments
                 self WVAdaptiveDamping {mustBeNonempty}
             end
@@ -265,15 +285,16 @@ classdef WVAdaptiveDamping < WVForcing
         end
         
         function [Fp, Fm, F0] = addSpectralForcing(self, wvt, Fp, Fm, F0)
-            % Adds spectral forcing
+            % Add adaptive damping to wave-vortex coefficient tendencies.
             %
             % - Declaration: addSpectralForcing(self, wvt, Fp, Fm, F0)
-            % - Parameter self: an instance of WVAdaptiveViscosity
-            % - Parameter wvt: a WVTransform instance
-            % - Parameter Fp: positive frequency forcing
-            % - Parameter Fm: negative frequency forcing
-            % - Parameter F0: zero frequency forcing
-            % - Returns: Fp, Fm, F0
+            % - Parameter wvt: transform evaluating the forcing
+            % - Parameter Fp: accumulated `Ap` tendency
+            % - Parameter Fm: accumulated `Am` tendency
+            % - Parameter F0: accumulated `A0` tendency
+            % - Returns Fp: damped `Ap` tendency
+            % - Returns Fm: damped `Am` tendency
+            % - Returns F0: damped `A0` tendency
             arguments
                 self WVAdaptiveDamping {mustBeNonempty}
                 wvt WVTransform {mustBeNonempty}
@@ -288,13 +309,12 @@ classdef WVAdaptiveDamping < WVForcing
         end
 
         function F0 = addPotentialVorticitySpectralForcing(self, wvt, F0)
-            % Adds potential vorticity spectral forcing
+            % Add adaptive damping to the QGPV coefficient tendency.
             %
             % - Declaration: addPotentialVorticitySpectralForcing(self, wvt, F0)
-            % - Parameter self: an instance of WVAdaptiveViscosity
-            % - Parameter wvt: a WVTransform instance
-            % - Parameter F0: zero frequency forcing
-            % - Returns: F0
+            % - Parameter wvt: QG transform evaluating the forcing
+            % - Parameter F0: accumulated `A0` tendency
+            % - Returns F0: damped `A0` tendency
             arguments
                 self WVAdaptiveDamping {mustBeNonempty}
                 wvt WVTransform {mustBeNonempty}
@@ -304,12 +324,11 @@ classdef WVAdaptiveDamping < WVForcing
         end
 
         function force = forcingWithResolutionOfTransform(self, wvtX2)
-            % Creates a forcing with the resolution of the transform
+            % Create equivalent adaptive damping for another resolution.
             %
             % - Declaration: forcingWithResolutionOfTransform(self, wvtX2)
-            % - Parameter self: an instance of WVAdaptiveViscosity
-            % - Parameter wvtX2: a WVTransform instance with doubled resolution
-            % - Returns: force
+            % - Parameter wvtX2: compatible transform at the target resolution
+            % - Returns force: adaptive damping owned by `wvtX2`
             arguments
                 self WVAdaptiveDamping {mustBeNonempty}
                 wvtX2 WVTransform {mustBeNonempty}

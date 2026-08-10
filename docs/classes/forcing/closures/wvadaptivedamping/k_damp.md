@@ -9,9 +9,12 @@ mathjax: true
 
 #  k_damp
 
-wavenumber at which the significant scale damping starts.
+Estimated horizontal wavenumber for significant damping.
 
 
 ---
 
 ## Discussion
+
+Units are radians per meter. The filter is already nonzero below
+this estimate; use `k_no_damp` for the exact zero-damping cutoff.

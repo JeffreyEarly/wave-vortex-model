@@ -10,11 +10,13 @@ mathjax: true
 
 `WVModel` advances a transform with nonlinear advection by default. External tendencies and closures enter through `WVForcing` objects, while analytical linear evolution is available when nonlinear interactions should be omitted.
 
+The [Forcing reference](/classes/forcing/) summarizes the supplied physical and spectral tendencies. The [Closures reference](/classes/forcing/closures/) compares the available small-scale closures and their principal controls.
+
 ## Quick start
 
 By default, a `WVTransform` is initialized with exactly one forcing term: nonlinear advection. Initialize a transform, then call `summarizeForcing` to list its right-hand-side terms:
 ```matlab
-wvt = WVTransformHydrostatic([800e3, 800e3, 4000],[64, 64, 65], N2=@(z) (3*2*pi/3600)^2*exp(2*z/1300),latitude=30);
+wvt = WVTransformHydrostatic([800e3,800e3,4000],[64,64,65],N2Function=@(z)(3*2*pi/3600)^2*exp(2*z/1300),latitude=30);
 wvt.summarizeForcing
 ```
 
@@ -45,7 +47,10 @@ The model now includes nonlinear advection and adaptive damping when it advances
 model = WVModel(wvt);
 model.integrateToTime(wvt.inertialPeriod);
 ```
-and it would include both nonlinear advection and small scale adaptive damping.
+
+`WVModel` now advances the transform with both nonlinear advection and small-scale adaptive damping.
+
+Prescribed forcings and closures use the same registration mechanism. For example, `WVFixedAmplitudeForcing` can hold selected wave-vortex coefficients at specified values, while traditional horizontal and vertical damping apply fixed viscosity or diffusivity. The class reference documents each forcing's supported geometry, configuration, and diagnostic scales.
 
 
 ## The equations of motion

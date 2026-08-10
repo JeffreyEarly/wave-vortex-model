@@ -9,7 +9,7 @@ mathjax: true
 
 #  Nj
 
-number of retained vertical modes used to construct the filter
+Number of retained vertical modes.
 
 
 ---

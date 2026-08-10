@@ -9,7 +9,7 @@ mathjax: true
 
 #  alpha
 
-damping parameter, units of $$s^{-1}$$
+Configured thermal-damping rate in $$\mathrm{s^{-1}}$$.
 
 
 ---
@@ -18,3 +18,5 @@ damping parameter, units of $$s^{-1}$$
 Real valued property with no dimensions and units of $$s^{-1}$$.
 
 ## Discussion
+
+The constructor default is `1/(200*86400)`.

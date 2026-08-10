@@ -1,10 +1,12 @@
 classdef WVVerticalDamping < WVForcing
-    % Vertical viscosity and diffusivity
+    % Apply vertical Laplacian viscosity and diffusivity.
     %
     % The damping is designed to mimic the VerticalScalarDiffusivity in
     % Oceananigans to allow for direct comparison between the models. This
-    % is intended be used in combination with
-    % WVHorizontalDamping. In general, you should be using the
+    % applies to wave-bearing three-dimensional transforms and is intended
+    % for use with
+    % [`WVHorizontalDamping`](/classes/forcing/closures/wvhorizontaldamping/).
+    % For an automatically scaled closure, use
     % [`WVAdaptiveDamping`](/classes/forcing/closures/wvadaptivedamping/).
     % 
     % The specific form of the forcing is given by 
@@ -18,24 +20,24 @@ classdef WVVerticalDamping < WVForcing
     % \end{align}
     % $$
     %
-    % with viscosity, $$\nu$$, and diffusivity, $$\kappa$$. This should be combined with
-    % [`WVHorizontalDamping`](/classes/forcing/closures/wvhorizontaldamping/) for a complete closure. For help
-    % choosing appropriate values, see the notes in
+    % Here $$\nu$$ is the vertical viscosity and $$\kappa$$ is the vertical
+    % diffusivity. Combine this closure with
+    % [`WVHorizontalDamping`](/classes/forcing/closures/wvhorizontaldamping/)
+    % to damp horizontal gradients as well. For guidance on automatically
+    % scaled coefficients, see
     % [`WVAdaptiveDamping`](/classes/forcing/closures/wvadaptivedamping/).
     %
-    % ### Usage
-    %
-    % Assuming there is a WVTransform instance wvt, to add this forcing,
+    % ### Example
     %
     % ```matlab
-    % wvt.addForcing(WVVerticalDamping(wvt,nu=5e-4, kappa=1e-6));
+    % wvt = WVTransformConstantStratification([40e3,30e3,2e3],[8,6,5],N0=5.2e-3,latitude=45,isHydrostatic=true);
+    % wvt.addForcing(WVVerticalDamping(wvt,nu=5e-4,kappa=1e-6));
     % ```
     %
     %
     % ### Notes
     %
-    % This is currently implemented in the spatial domain and is
-    % thus highly un-optimized.
+    % This closure is evaluated in the spatial domain.
     %
     % For constant stratification, $$\partial_z \ln N^2=0$$ and the
     % stratification-gradient correction vanishes. The configured viscosity
@@ -51,17 +53,24 @@ classdef WVVerticalDamping < WVForcing
     %
     % - Declaration: WVVerticalDamping < [WVForcing](/classes/forcing/wvforcing/)
     properties
-        % vertical viscosity
+        % Vertical momentum viscosity in $$\mathrm{m^2\,s^{-1}}$$.
+        %
+        % The constructor default is `5e-4`.
         %
         % - Topic: Properties
         nu
 
-        % vertical diffusivity
+        % Vertical displacement diffusivity in $$\mathrm{m^2\,s^{-1}}$$.
+        %
+        % The constructor default is `1e-6`.
         %
         % - Topic: Properties
         kappa
 
-        % variable stratification factor
+        % Precomputed vertical logarithmic stratification gradient.
+        %
+        % This Internal array is zero for constant stratification and has
+        % units of inverse meters for variable stratification.
         %
         % - Topic: Properties
         dLnN2 = 0
@@ -69,14 +78,14 @@ classdef WVVerticalDamping < WVForcing
 
     methods
         function self = WVVerticalDamping(wvt,options)
-            % initialize the WVVerticalDamping
+            % Create vertical Laplacian damping for a transform.
             %
             % - Topic: Initialization
             % - Declaration: self = WVVerticalDamping(wvt,options)
-            % - Parameter wvt: a WVTransform instance
-            % - Parameter nu: vertical viscosity, default $$5 \cdot 10^{-4} \textrm{m}^2/\textrm{s}$$
-            % - Parameter kappa: vertical diffusivity, default $$1 \cdot 10^{-6} \textrm{m}^2/\textrm{s}$$
-            % - Returns self: a WVVerticalDamping instance
+            % - Parameter wvt: wave-bearing three-dimensional transform that owns the closure
+            % - Parameter nu: optional vertical viscosity in square meters per second; default `5e-4`
+            % - Parameter kappa: optional vertical diffusivity in square meters per second; default `1e-6`
+            % - Returns self: vertical-damping closure owned by `wvt`
             arguments
                 wvt WVTransform {mustBeNonempty}
                 options.nu = 5e-4
@@ -110,12 +119,11 @@ classdef WVVerticalDamping < WVForcing
         end
 
         function force = forcingWithResolutionOfTransform(self, wvtX2)
-            % Creates a forcing with the resolution of the transform
+            % Create equivalent vertical damping for another resolution.
             %
             % - Declaration: forcingWithResolutionOfTransform(self, wvtX2)
-            % - Parameter self: an instance of WVVerticalDamping
-            % - Parameter wvtX2: a WVTransform instance with doubled resolution
-            % - Returns: force
+            % - Parameter wvtX2: compatible transform at the target resolution
+            % - Returns force: vertical damping owned by `wvtX2`
             arguments
                 self WVVerticalDamping {mustBeNonempty}
                 wvtX2 WVTransform {mustBeNonempty}

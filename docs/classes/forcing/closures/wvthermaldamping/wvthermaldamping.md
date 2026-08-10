@@ -9,7 +9,7 @@ mathjax: true
 
 #  WVThermalDamping
 
-initialize the WVThermalDamping
+Create thermal damping for a QG transform.
 
 
 ---
@@ -19,10 +19,10 @@ initialize the WVThermalDamping
  self = WVThermalDamping(wvt,options)
 ```
 ## Parameters
-+ `wvt`  a WVTransform instance
-+ `alpha`  (optional) damping time scale, default 1/(200*86400)
++ `wvt`  stratified or barotropic QG transform that owns the forcing
++ `alpha`  optional damping rate in inverse seconds; default `1/(200*86400)`
 
 ## Returns
-+ `self`  a WVThermalDamping instance
++ `self`  thermal-damping forcing owned by `wvt`
 
 ## Discussion

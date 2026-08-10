@@ -9,7 +9,7 @@ mathjax: true
 
 #  dLnN2
 
-precomputed dLnN2 term
+Precomputed vertical logarithmic stratification gradient.
 
 > Developer documentation: this item describes internal implementation details.
 
@@ -17,3 +17,7 @@ precomputed dLnN2 term
 ---
 
 ## Discussion
+
+This Internal value is zero when the correction is disabled or
+stratification is constant, and otherwise has units of inverse
+meters.

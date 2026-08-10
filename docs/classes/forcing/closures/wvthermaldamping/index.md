@@ -11,7 +11,7 @@ nav_order: 5
 
 #  WVThermalDamping
 
-Thermal damping
+Apply large-scale thermal damping to QGPV.
 
 
 ---
@@ -22,26 +22,37 @@ Thermal damping
 
 ## Overview
 
-Applies thermal damping to the flow, i.e., $$\frac{dq}{dt} = \alpha \lambda^2 \psi$$.
+For each deformation scale $$L_r$$, the implementation adds
 
-This is as defined in Scott and Dritschel, but it can be shown that
-it is basically just a vertical diffusivity.
+$$
+\mathcal{S}_q=\frac{\alpha}{L_r^2}\psi.
+$$
+
+This follows the large-scale thermal-damping formulation considered
+by [Scott and Dritschel](https://www.cambridge.org/core/journals/journal-of-fluid-mechanics/article/halting-scale-and-energy-equilibration-in-twodimensional-quasigeostrophic-turbulence/BD0CAFC9019691ADC9B18A95D15445F9).
 
 ### Notes
 
-This is only implemented for quasigeostrophic flows. Specifically, it
-requires `WVForcingType("PVSpatial")`.
+This forcing is compatible only with stratified and barotropic QG
+transforms through their physical-space QGPV forcing stage.
+
+### Example
+
+```matlab
+wvt = WVTransformBarotropicQG([40e3,30e3],[8,6],h=0.8,latitude=45);
+wvt.addForcing(WVThermalDamping(wvt,alpha=1/(200*86400)));
+```
 
 
 
 
 ## Topics
 + Create the forcing
-  + [`WVThermalDamping`](/classes/forcing/closures/wvthermaldamping/wvthermaldamping.html) initialize the WVThermalDamping
+  + [`WVThermalDamping`](/classes/forcing/closures/wvthermaldamping/wvthermaldamping.html) Create thermal damping for a QG transform.
 + Inspect forcing configuration
-  + [`alpha`](/classes/forcing/closures/wvthermaldamping/alpha.html) damping parameter, units of $$s^{-1}$$
+  + [`alpha`](/classes/forcing/closures/wvthermaldamping/alpha.html) Configured thermal-damping rate in $$\mathrm{s^{-1}}$$.
 + Inspect forcing or damping scales
-  + [`alpha_scaled`](/classes/forcing/closures/wvthermaldamping/alpha_scaled.html) scaled damping parameter, units of $$s^{-1} m^{-2}$$
+  + [`alpha_scaled`](/classes/forcing/closures/wvthermaldamping/alpha_scaled.html) Deformation-scaled damping coefficient in $$\mathrm{s^{-1}\,m^{-2}}$$.
 
 
 ## Developer Topics

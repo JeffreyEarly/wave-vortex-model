@@ -1,28 +1,24 @@
 classdef WVAntialiasing < WVForcing
-    % Antialiasing filter
+    % Apply explicit spectral antialias filtering for diagnostics.
     %
-    % This forcing removes (sets to zero) energy in the largest 1/3 modes
-    % to prevent quadratic aliasing. This is the correct de-aliasing for
-    % the horizontal fourier modes, but is not exactly correct for the
-    % vertical modes in variable stratification. You can thus manually set
-    % `Nj`, otherwise it will default to `options.Nj = floor(2*wvt.Nj/3);`.
+    % This closure removes coefficient tendencies in aliased modes and sets
+    % those coefficients to zero after every integration step. The
+    % horizontal mask uses the transform's quadratic-aliasing rule. Vertical
+    % modes with `j >= Nj` are discarded; `Nj` defaults to
+    % `floor(2*wvt.Nj/3)`.
     %
-    % **Very important** You should almost never use this forcing, as
-    % de-aliasing is built-in at the transform level and enabled by
-    % default. For performance reasons is far more optimal to simply never
-    % compute the de-aliased modes. The purpose of this forcing to allow
-    % direct measurement of the effect of the de-aliasing on energy and
-    % potential enstrophy. It is quite slow and thus we recommend it be
-    % used for diagnostic purposes only.
+    % Transform-level antialiasing is enabled by default and is more
+    % efficient because discarded modes are never computed. Explicit
+    % antialiasing is intended for measuring the filter's effect on energy
+    % and potential enstrophy. Construct the transform with
+    % `shouldAntialias=false` before adding this closure. It is compatible
+    % with wave-bearing and QG transforms.
     %
-    % ### Usage
-    %
-    % This is likely to change in the future, but at the moment several of
-    % the transforms have a function that will make a new transform in the
-    % identical state, but with the antialiasing filter explicitly added.
+    % ### Example
     %
     % ```matlab
-    % wvtAA = wvt.waveVortexTransformWithExplicitAntialiasing();
+    % wvt = WVTransformConstantStratification([40e3,30e3,2e3],[8,6,5],N0=5.2e-3,latitude=45,isHydrostatic=true,shouldAntialias=false);
+    % wvt.addForcing(WVAntialiasing(wvt));
     % ```
     %
     % - Topic: Create the forcing
@@ -34,7 +30,7 @@ classdef WVAntialiasing < WVForcing
     % - Topic: Forcing internals
     % - Declaration: WVAntialiasing < [WVForcing](/classes/forcing/wvforcing/)
     properties (GetAccess=public, SetAccess=protected)
-        % number of retained vertical modes used to construct the filter
+        % Number of retained vertical modes.
         %
         % This value is preserved when the forcing is converted to another
         % resolution or restored from an annotated NetCDF file.
@@ -42,7 +38,10 @@ classdef WVAntialiasing < WVForcing
         % - Topic: Properties
         Nj
 
-        % spectral matrix that multiplies Ap,Am,A0 to zero out the aliased modes
+        % Logical-shape spectral mask of discarded coefficients.
+        %
+        % This array has `wvt.spectralMatrixSize`; nonzero entries are
+        % removed from coefficient tendencies and amplitudes.
         %
         % - Topic: Properties
         M
@@ -50,12 +49,15 @@ classdef WVAntialiasing < WVForcing
 
     methods
         function self = WVAntialiasing(wvt,options)
-            % initialize the WVAntialiasing
+            % Create explicit antialias filtering for a transform.
             %
-            % - Declaration: nlFlux = WVNonlinearFlux(wvt,options)
-            % - Parameter wvt: a WVTransform instance
-            % - Parameter Nj: (optional) number of retained vertical modes. Modes with `j >= Nj` are set to zero. Defaults to `floor(2*wvt.Nj/3)`.
-            % - Returns self: a WVAntialiasing instance
+            % The transform must have been constructed with
+            % `shouldAntialias=false`.
+            %
+            % - Declaration: self = WVAntialiasing(wvt,options)
+            % - Parameter wvt: transform that owns and evaluates the closure
+            % - Parameter Nj: optional number of retained vertical modes; modes with `j >= Nj` are discarded; default `floor(2*wvt.Nj/3)`
+            % - Returns self: explicit-antialiasing closure owned by `wvt`
             arguments
                 wvt WVTransform {mustBeNonempty}
                 options.Nj
@@ -77,7 +79,7 @@ classdef WVAntialiasing < WVForcing
         end
 
         function effectiveHorizontalGridResolution = effectiveHorizontalGridResolution(self)
-            %returns the effective grid resolution in meters
+            % Return the shortest fully retained horizontal wavelength.
             %
             % The effective grid resolution is the highest fully resolved
             % wavelength in the model. This value takes into account
@@ -85,8 +87,8 @@ classdef WVAntialiasing < WVForcing
             % operators.
             %
             % - Topic: Properties
-            % - Declaration: flag = effectiveHorizontalGridResolution(other)
-            % - Returns effectiveHorizontalGridResolution: double
+            % - Declaration: effectiveHorizontalGridResolution = effectiveHorizontalGridResolution()
+            % - Returns effectiveHorizontalGridResolution: effective horizontal resolution in meters
             arguments
                 self WVAntialiasing
             end
@@ -94,16 +96,14 @@ classdef WVAntialiasing < WVForcing
         end
 
         function j_max = effectiveJMax(self)
-            %returns the effective highest vertical mode
+            % Return the highest retained vertical-mode number.
             %
-            % The effective highest vertical modeis the highest fully resolved
-            % mode in the model. This value takes into account
-            % anti-aliasing, and is thus appropriate for setting damping
-            % operators.
+            % This dimensionless value accounts for the explicit vertical
+            % mask and is appropriate when constructing damping operators.
             %
             % - Topic: Properties
-            % - Declaration: flag = effectiveJMax(other)
-            % - Returns effectiveJMax: double
+            % - Declaration: j_max = effectiveJMax()
+            % - Returns j_max: highest retained vertical-mode number
             arguments
                 self WVAntialiasing
             end

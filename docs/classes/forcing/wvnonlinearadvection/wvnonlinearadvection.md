@@ -9,23 +9,23 @@ mathjax: true
 
 #  WVNonlinearAdvection
 
-initialize the WVNonlinearAdvection nonlinear flux
+Create nonlinear advection for a transform.
 
 
 ---
 
 ## Declaration
 ```matlab
- self = WVNonlinearAdvection(wvt,options)
+ self = WVNonlinearAdvection(wvt)
 ```
 ## Parameters
-+ `wvt`  a WVTransform instance
++ `wvt`  transform that owns and evaluates the forcing
 
 ## Returns
-+ `self`  a WVNonlinearAdvection instance
++ `self`  nonlinear-advection forcing owned by `wvt`
 
 ## Discussion
 
 See the [WVNonlinearAdvection overview](/classes/forcing/wvnonlinearadvection/)
-for the hydrostatic, nonhydrostatic, and quasigeostrophic
-equations and its role as the default forcing.
+for the hydrostatic, nonhydrostatic, and QGPV equations and
+its role as the default forcing.

@@ -1,5 +1,5 @@
 classdef WVVerticalDiffusivity < WVForcing
-    % Vertical diffusivty
+    % Apply vertical diffusivity to the thermodynamic field.
     %
     % This forcing applies a vertical diffusivity with fixed $$\kappa_z$$
     % to the thermodynamic equation.
@@ -15,23 +15,24 @@ classdef WVVerticalDiffusivity < WVForcing
     % \end{align}
     % $$
     %
-    % Upon initialization you can set `shouldForceMeanDensityAnomaly` to
-    % `false` and the $$\frac{\partial}{\partial z} \ln N^2$$ term will be
-    % neglected.
+    % Set `shouldForceMeanDensityAnomaly=false` to omit the
+    % $$\partial_z\ln N^2$$ correction for variable stratification. This
+    % option has no effect for constant stratification because the gradient
+    % is zero.
     %
-    % ### Usage
-    %
-    % Assuming there is a WVTransform instance wvt, to add this forcing,
+    % ### Example
     %
     % ```matlab
-    % wvt.addForcing(WVVerticalDiffusivity(wvt, kappa_z=1e-6));
+    % wvt = WVTransformConstantStratification([40e3,30e3,2e3],[8,6,5],N0=5.2e-3,latitude=45,isHydrostatic=true);
+    % wvt.addForcing(WVVerticalDiffusivity(wvt,kappa_z=1e-6));
     % ```
     %
     % ### Notes
     %
     % This is currently implemented in the spatial domain. It applies to
-    % three-dimensional wave and stratified-QG transforms, but not to a
-    % barotropic transform because that geometry has no vertical structure.
+    % wave-bearing three-dimensional transforms and has a separate QGPV
+    % pathway for stratified QG. It is not compatible with barotropic QG,
+    % which has no vertical structure.
     %
     % - Topic: Create the forcing
     % - Topic: Inspect forcing configuration
@@ -42,17 +43,26 @@ classdef WVVerticalDiffusivity < WVForcing
     %
     % - Declaration: WVVerticalDiffusivity < [WVForcing](/classes/forcing/wvforcing/)
     properties
-        % vertical diffusivity, $$m^2s^{-1}$$
+        % Configured vertical diffusivity in $$\mathrm{m^2\,s^{-1}}$$.
+        %
+        % The constructor default is `1e-5`.
         %
         % - Topic: Properties
         kappa_z
 
-        % whether to include the $$\frac{\partial}{\partial z} \ln N^2$$ term
+        % Whether to include the variable-stratification correction.
+        %
+        % The default is `true`. This controls the precomputed
+        % $$\partial_z\ln N^2$$ term used by the wave-bearing pathway.
         %
         % - Topic: Properties
         shouldForceMeanDensityAnomaly
 
-        % precomputed dLnN2 term
+        % Precomputed vertical logarithmic stratification gradient.
+        %
+        % This Internal value is zero when the correction is disabled or
+        % stratification is constant, and otherwise has units of inverse
+        % meters.
         %
         % - Topic: Properties
         dLnN2 = 0
@@ -60,14 +70,14 @@ classdef WVVerticalDiffusivity < WVForcing
 
     methods
         function self = WVVerticalDiffusivity(wvt,options)
-            % initialize the WVVerticalDiffusivity
+            % Create vertical diffusivity for a three-dimensional transform.
             %
             % - Topic: Initialization
             % - Declaration: self = WVVerticalDiffusivity(wvt,options)
-            % - Parameter wvt: a WVTransform instance
-            % - Parameter kappa_z: (optional) vertical diffusivity, $$m^2s^{-1}$$. Default values 1e-5
-            % - Parameter shouldForceMeanDensityAnomaly: (optional) whether to include the $$\frac{\partial}{\partial z} \ln N^2$$ term. Default `true`.
-            % - Returns self: a WVVerticalDiffusivity instance
+            % - Parameter wvt: wave-bearing or stratified-QG transform that owns the forcing
+            % - Parameter kappa_z: optional vertical diffusivity in square meters per second; default `1e-5`
+            % - Parameter shouldForceMeanDensityAnomaly: optional variable-stratification correction flag; default `true`
+            % - Returns self: vertical-diffusivity forcing owned by `wvt`
             arguments
                 wvt WVTransform {mustBeNonempty}
                 options.kappa_z double = 1e-5
@@ -102,12 +112,11 @@ classdef WVVerticalDiffusivity < WVForcing
         end
 
         function force = forcingWithResolutionOfTransform(self, wvtX2)
-            % Creates a forcing with the resolution of the transform
+            % Create equivalent vertical diffusivity for another resolution.
             %
             % - Declaration: forcingWithResolutionOfTransform(self, wvtX2)
-            % - Parameter self: an instance of WVAdaptiveViscosity
-            % - Parameter wvtX2: a WVTransform instance with doubled resolution
-            % - Returns: force
+            % - Parameter wvtX2: compatible transform at the target resolution
+            % - Returns force: vertical diffusivity owned by `wvtX2`
             arguments
                 self WVVerticalDiffusivity {mustBeNonempty}
                 wvtX2 WVTransform {mustBeNonempty}

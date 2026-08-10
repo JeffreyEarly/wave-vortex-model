@@ -9,7 +9,7 @@ mathjax: true
 
 #  A0bar
 
-amplitudes of the fixed modes in the `A0` matrix
+Prescribed `A0` values in $$\mathrm{m^2\,s^{-1}}$$.
 
 
 ---
@@ -22,3 +22,5 @@ amplitudes of the fixed modes in the `A0` matrix
 Complex valued property with dimension $$A0_indices$$ and no units.
 
 ## Discussion
+
+Values correspond element-by-element to `A0_indices`.

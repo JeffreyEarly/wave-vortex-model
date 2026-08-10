@@ -9,7 +9,7 @@ mathjax: true
 
 #  assumedEffectiveHorizontalGridResolution
 
-effective resolution used in the damping calculation
+Effective horizontal resolution used to construct `damp`, in meters.
 
 
 ---

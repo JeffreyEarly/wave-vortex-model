@@ -9,9 +9,11 @@ mathjax: true
 
 #  k_no_damp
 
-wavenumber below which there is zero damping
+Horizontal wavenumber below which damping is exactly zero.
 
 
 ---
 
 ## Discussion
+
+Units are radians per meter.

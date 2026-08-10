@@ -9,9 +9,12 @@ mathjax: true
 
 #  r_scaled
 
-scaled bottom friction, $$\frac{Lz}{dz} r$$ with units $$s^{-1}$$
+Drag rate applied at the bottom grid point in $$\mathrm{s^{-1}}$$.
 
 
 ---
 
 ## Discussion
+
+This is `r*Lz/z_int(1)` for a three-dimensional transform and
+`r` for a barotropic transform.
