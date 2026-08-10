@@ -11,8 +11,6 @@ mathjax: true
 
 Barotropic angular frequency $$\omega$$ in radians per second.
 
-> Developer documentation: this item describes internal implementation details.
-
 
 ---
 

@@ -71,23 +71,23 @@ In practice you can initialize the flow in any way you want with any arbitrary s
 
 
 ## Topics
-+ Create forcing and closures
++ Create the forcing
   + [`WVFixedAmplitudeForcing`](/classes/forcing/wvfixedamplitudeforcing/wvfixedamplitudeforcing.html) initialize the WVFixedAmplitudeForcing
++ Inspect forcing configuration
+  + [`A0_indices`](/classes/forcing/wvfixedamplitudeforcing/a0_indices.html) indices of modes in the `A0` matrix to fix
+  + [`A0bar`](/classes/forcing/wvfixedamplitudeforcing/a0bar.html) amplitudes of the fixed modes in the `A0` matrix
+  + [`Ap_indices`](/classes/forcing/wvfixedamplitudeforcing/ap_indices.html) indices of modes in the `Ap` matrix to fix
+  + [`Apbar`](/classes/forcing/wvfixedamplitudeforcing/apbar.html) amplitudes of the fixed modes in the `Ap` matrix
+  + [`Am_indices`](/classes/forcing/wvfixedamplitudeforcing/am_indices.html) indices of modes in the `Am` matrix to fix
+  + [`Ambar`](/classes/forcing/wvfixedamplitudeforcing/ambar.html) amplitudes of the fixed modes in the `Am` matrix
 + Configure forcing
+  + [`setWaveForcingCoefficients`](/classes/forcing/wvfixedamplitudeforcing/setwaveforcingcoefficients.html) set the amplitude to fix for the wave part of the flow
   + [`setGeostrophicForcingCoefficients`](/classes/forcing/wvfixedamplitudeforcing/setgeostrophicforcingcoefficients.html) set amplitude to fix for the geostrophic part of the flow
   + [`setNarrowBandGeostrophicForcing`](/classes/forcing/wvfixedamplitudeforcing/setnarrowbandgeostrophicforcing.html) sets a narrow waveband of geostrophic forcing for forced-dissipative modeling
-  + [`setWaveForcingCoefficients`](/classes/forcing/wvfixedamplitudeforcing/setwaveforcingcoefficients.html) set the amplitude to fix for the wave part of the flow
 
 
 ## Developer Topics
 These items document internal implementation details and are not part of the primary public API.
-+ Forcing internals
-  + [`A0_indices`](/classes/forcing/wvfixedamplitudeforcing/a0_indices.html) indices of modes in the `A0` matrix to fix
-  + [`A0bar`](/classes/forcing/wvfixedamplitudeforcing/a0bar.html) amplitudes of the fixed modes in the `A0` matrix
-  + [`Am_indices`](/classes/forcing/wvfixedamplitudeforcing/am_indices.html) indices of modes in the `Am` matrix to fix
-  + [`Ambar`](/classes/forcing/wvfixedamplitudeforcing/ambar.html) amplitudes of the fixed modes in the `Am` matrix
-  + [`Ap_indices`](/classes/forcing/wvfixedamplitudeforcing/ap_indices.html) indices of modes in the `Ap` matrix to fix
-  + [`Apbar`](/classes/forcing/wvfixedamplitudeforcing/apbar.html) amplitudes of the fixed modes in the `Ap` matrix
 + Forcing persistence
   + [`classRequiredPropertyNames`](/classes/forcing/wvfixedamplitudeforcing/classrequiredpropertynames.html) Returns the required property names for the class
 

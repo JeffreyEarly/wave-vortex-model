@@ -11,8 +11,6 @@ mathjax: true
 
 amplitudes of the fixed modes in the `A0` matrix
 
-> Developer documentation: this item describes internal implementation details.
-
 
 ---
 

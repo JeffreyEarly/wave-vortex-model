@@ -66,8 +66,11 @@ transform with a different resolution.
 
 
 ## Topics
-+ Create forcing and closures
++ Create the forcing
   + [`WVVerticalDamping`](/classes/forcing/closures/wvverticaldamping/wvverticaldamping.html) initialize the WVVerticalDamping
++ Inspect forcing configuration
+  + [`nu`](/classes/forcing/closures/wvverticaldamping/nu.html) vertical viscosity
+  + [`kappa`](/classes/forcing/closures/wvverticaldamping/kappa.html) vertical diffusivity
 
 
 ## Developer Topics
@@ -76,8 +79,6 @@ These items document internal implementation details and are not part of the pri
   + [`classRequiredPropertyNames`](/classes/forcing/closures/wvverticaldamping/classrequiredpropertynames.html) Returns the required property names for the class
 + Forcing internals
   + [`dLnN2`](/classes/forcing/closures/wvverticaldamping/dlnn2.html) variable stratification factor
-  + [`kappa`](/classes/forcing/closures/wvverticaldamping/kappa.html) vertical diffusivity
-  + [`nu`](/classes/forcing/closures/wvverticaldamping/nu.html) vertical viscosity
 
 
 ---

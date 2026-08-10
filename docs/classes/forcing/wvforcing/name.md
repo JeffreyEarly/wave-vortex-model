@@ -15,3 +15,6 @@ used to register this forcing with its transform.
 ---
 
 ## Discussion
+
+Names identify forcing objects in transform lookup, replacement,
+removal, diagnostics, and persistence operations.

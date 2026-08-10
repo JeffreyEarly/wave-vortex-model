@@ -8,13 +8,17 @@ has_children: true
 permalink: /classes/forcing
 ---
 
-#  Forcing
+# Forcing
 
-Forcing operations are used to apply forcing to the model. See the [users guide on adding forcing](/users-guide/adding-forcing.html).
+Forcing objects add physical-space tendencies, spectral tendencies, or direct coefficient constraints to a `WVTransform`. Register them with `wvt.addForcing(...)`; see [Adding forcing](/users-guide/adding-forcing.html) for the model equations and extension interface.
 
-### Notes
- - All forcing operations are a subclass of [WVForcing](/classes/forcing/wvforcing/).
- - The [`WVNonlinearAdvection`](/classes/forcing/wvnonlinearadvection/) is the only forcing that is added by default when you initialize a new transform.
- - The [*closure*](/classes/forcing/closures) schemes are grouped separately from other forcing mechanisms below for convenience.
- - All transforms have anti-aliasing enabled by default at the transform level (which can act as a partial closure scheme for some dynamics), but you can also explicitly add [antialiasing as a forcing](/classes/forcing/closures/wvantialiasing/)
+All forcing classes derive from [`WVForcing`](/classes/forcing/wvforcing/). New transforms contain nonlinear advection by default; other forcing and [closure](/classes/forcing/closures/) objects are added explicitly.
 
+| Class | Purpose | Supported transforms | Principal controls |
+| --- | --- | --- | --- |
+| [`WVNonlinearAdvection`](/classes/forcing/wvnonlinearadvection/) | Nonlinear momentum, displacement, and QGPV advection | All transform families | None; added by default |
+| [`WVBottomFrictionLinear`](/classes/forcing/wvbottomfrictionlinear/) | Linear drag at the bottom boundary | All transform families | Drag rate `r` |
+| [`WVBottomFrictionQuadratic`](/classes/forcing/wvbottomfrictionquadratic/) | Quadratic drag at the bottom boundary | All transform families | Drag coefficient `Cd` |
+| [`WVFixedAmplitudeForcing`](/classes/forcing/wvfixedamplitudeforcing/) | Hold selected `Ap`, `Am`, or `A0` coefficients fixed | All transform families | Registry `name`, selected indices, and target coefficients |
+| [`WVBetaPlanePVAdvection`](/classes/forcing/wvbetaplanepvadvection/) | Add beta-plane QGPV advection | All transform families through their compatible PV or spectral stage | No user parameter |
+| [`WVPseudoTopographicWaveGeneration`](/classes/forcing/wvpseudotopographicwavegeneration/) | Generate internal waves from prescribed barotropic flow over topography | Wave-bearing three-dimensional transforms | Topography, velocity amplitude, tidal frequency, ramp, and spectral bounds |

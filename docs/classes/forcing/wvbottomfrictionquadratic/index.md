@@ -65,15 +65,16 @@ wvt.addForcing(WVBottomFrictionQuadratic(Cd=0.001));
 
 
 ## Topics
-+ Create forcing and closures
++ Create the forcing
   + [`WVBottomFrictionQuadratic`](/classes/forcing/wvbottomfrictionquadratic/wvbottomfrictionquadratic.html) initialize the WVBottomFrictionQuadratic
++ Inspect forcing configuration
+  + [`Cd`](/classes/forcing/wvbottomfrictionquadratic/cd.html) non-dimensional quadratic drag coefficient
++ Inspect forcing or damping scales
+  + [`cd`](/classes/forcing/wvbottomfrictionquadratic/cd_.html) $$\frac{Cd}{dz}$$ scaled quadratic drag coefficient with units $$m^{-1}$$
 
 
 ## Developer Topics
 These items document internal implementation details and are not part of the primary public API.
-+ Forcing internals
-  + [`Cd`](/classes/forcing/wvbottomfrictionquadratic/cd.html) non-dimensional quadratic drag coefficient
-  + [`cd`](/classes/forcing/wvbottomfrictionquadratic/cd_.html) $$\frac{Cd}{dz}$$ scaled quadratic drag coefficient with units $$m^{-1}$$
 + Forcing persistence
   + [`classRequiredPropertyNames`](/classes/forcing/wvbottomfrictionquadratic/classrequiredpropertynames.html) Returns the required property names for the class
 

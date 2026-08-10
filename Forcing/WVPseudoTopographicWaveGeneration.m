@@ -24,11 +24,13 @@ classdef WVPseudoTopographicWaveGeneration < WVForcing
     % ```
     %
     % - Topic: Create the forcing
-    % - Topic: Generate topography
-    % - Topic: Inspect the forcing
-    % - Topic: Evaluate the forcing
-    % - Topic: Restart persistence
-    % - Topic: CAAnnotatedClass requirement
+    % - Topic: Inspect forcing configuration
+    % - Topic: Evaluate prescribed forcing
+    % - Topic: Generate forcing inputs
+    % - Topic: Implement forcing evaluation
+    % - Topic: Convert forcing resolution
+    % - Topic: Forcing persistence
+    % - Topic: Forcing internals
     % - Declaration: classdef WVPseudoTopographicWaveGeneration < WVForcing
 
     properties (SetAccess = private)

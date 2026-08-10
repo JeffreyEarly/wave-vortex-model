@@ -33,9 +33,12 @@ classdef WVVerticalDiffusivity < WVForcing
     % three-dimensional wave and stratified-QG transforms, but not to a
     % barotropic transform because that geometry has no vertical structure.
     %
-    % - Topic: Initialization
-    % - Topic: Properties
-    % - Topic: CAAnnotatedClass requirement
+    % - Topic: Create the forcing
+    % - Topic: Inspect forcing configuration
+    % - Topic: Implement forcing evaluation
+    % - Topic: Convert forcing resolution
+    % - Topic: Forcing persistence
+    % - Topic: Forcing internals
     %
     % - Declaration: WVVerticalDiffusivity < [WVForcing](/classes/forcing/wvforcing/)
     properties

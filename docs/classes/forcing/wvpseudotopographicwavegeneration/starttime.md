@@ -11,8 +11,6 @@ mathjax: true
 
 Time at which the prescribed barotropic forcing begins, in seconds.
 
-> Developer documentation: this item describes internal implementation details.
-
 
 ---
 

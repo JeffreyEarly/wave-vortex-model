@@ -50,19 +50,21 @@ wvtAA = wvt.waveVortexTransformWithExplicitAntialiasing();
 
 
 ## Topics
-+ Create forcing and closures
++ Create the forcing
   + [`WVAntialiasing`](/classes/forcing/closures/wvantialiasing/wvantialiasing.html) initialize the WVAntialiasing
++ Inspect forcing configuration
+  + [`Nj`](/classes/forcing/closures/wvantialiasing/nj.html) number of retained vertical modes used to construct the filter
++ Inspect forcing or damping scales
+  + [`effectiveHorizontalGridResolution`](/classes/forcing/closures/wvantialiasing/effectivehorizontalgridresolution.html) returns the effective grid resolution in meters
+  + [`effectiveJMax`](/classes/forcing/closures/wvantialiasing/effectivejmax.html) returns the effective highest vertical mode
 
 
 ## Developer Topics
 These items document internal implementation details and are not part of the primary public API.
-+ Forcing internals
-  + [`M`](/classes/forcing/closures/wvantialiasing/m.html) spectral matrix that multiplies Ap,Am,A0 to zero out the aliased modes
-  + [`Nj`](/classes/forcing/closures/wvantialiasing/nj.html) number of retained vertical modes used to construct the filter
-  + [`effectiveHorizontalGridResolution`](/classes/forcing/closures/wvantialiasing/effectivehorizontalgridresolution.html) returns the effective grid resolution in meters
-  + [`effectiveJMax`](/classes/forcing/closures/wvantialiasing/effectivejmax.html) returns the effective highest vertical mode
 + Forcing persistence
   + [`classRequiredPropertyNames`](/classes/forcing/closures/wvantialiasing/classrequiredpropertynames.html) Returns the required property names for the class
++ Forcing internals
+  + [`M`](/classes/forcing/closures/wvantialiasing/m.html) spectral matrix that multiplies Ap,Am,A0 to zero out the aliased modes
 
 
 ---

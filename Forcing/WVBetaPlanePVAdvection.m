@@ -25,7 +25,11 @@ classdef WVBetaPlanePVAdvection < WVForcing
     % this effect to only the PV part of the flow. I suspect this is
     % actually justifiable with the correct asymptotics. -- Jeffrey
     %
-    % - Topic: Initializing
+    % - Topic: Create the forcing
+    % - Topic: Implement forcing evaluation
+    % - Topic: Convert forcing resolution
+    % - Topic: Forcing persistence
+    % - Topic: Forcing internals
     % - Declaration: WVBetaPlanePVAdvection < [WVForcing](/classes/forcing/wvforcing/)
     properties
         betaA0

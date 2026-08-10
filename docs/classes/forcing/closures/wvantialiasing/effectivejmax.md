@@ -11,8 +11,6 @@ mathjax: true
 
 returns the effective highest vertical mode
 
-> Developer documentation: this item describes internal implementation details.
-
 
 ---
 

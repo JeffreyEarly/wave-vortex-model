@@ -9,7 +9,7 @@ mathjax: true
 
 #  forcingFromGroup
 
-initialize a WVForcing instance from NetCDF file
+Restore a concrete forcing from a NetCDF group.
 
 > Developer documentation: this item describes internal implementation details.
 
@@ -18,16 +18,16 @@ initialize a WVForcing instance from NetCDF file
 
 ## Declaration
 ```matlab
- force = forcingFromFile(group,wvt)
+ force = forcingFromGroup(group,wvt)
 ```
 ## Parameters
-+ `wvt`  the WVTransform to be used
++ `group`  NetCDF group containing annotated forcing state
++ `wvt`  transform that will own the restored forcing
 
 ## Returns
-+ `force`  a new instance of WVForcing
++ `force`  restored concrete `WVForcing` instance
 
 ## Discussion
 
-Subclasses to should override this method to enable model
-restarts. This method works in conjunction with -writeToFile
-to provide restart capability.
+The annotated class name and required properties select and
+reconstruct the concrete forcing subclass.

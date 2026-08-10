@@ -9,24 +9,25 @@ mathjax: true
 
 #  WVForcing
 
-create a new nonlinear flux operation
+Initialize the base state for a forcing subclass.
 
 
 ---
 
 ## Declaration
 ```matlab
- nlFluxOp = WVNonlinearFluxOperation(name,outputVariables,options)
+ self = WVForcing(wvt,name,forcingType)
 ```
 ## Parameters
-+ `name`  name of the nonlinear flux operation
-+ `outputVariables`  ordered list WVVariableAnnotation instances describing each variable returned by the compute method
-+ `f`  (optional) directly pass a function handle, rather than override the compute method
++ `wvt`  transform that owns and evaluates the forcing
++ `name`  unique forcing registry name
++ `forcingType`  one or more `WVForcingType` evaluation stages implemented by the subclass
 
 ## Returns
-+ `nlFluxOp`  a new instance of WVNonlinearFluxOperation
++ `self`  initialized `WVForcing` base instance
 
 ## Discussion
 
-This class is intended to be subclassed, so it generally
-assumed that this initialization will not be called directly.
+Subclass constructors call this constructor with their owning
+transform, unique registry name, and implemented evaluation
+stages. Users normally construct a concrete supplied subclass.

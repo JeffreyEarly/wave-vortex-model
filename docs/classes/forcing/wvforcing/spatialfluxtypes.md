@@ -9,9 +9,18 @@ mathjax: true
 
 #  spatialFluxTypes
 
-
+Return the physical-space forcing types.
 
 > Developer documentation: this item describes internal implementation details.
 
 
 ---
+
+## Declaration
+```matlab
+ forceTypes = spatialFluxTypes()
+```
+## Returns
++ `forceTypes`  `HydrostaticSpatial`, `NonhydrostaticSpatial`, and `PVSpatial`
+
+## Discussion

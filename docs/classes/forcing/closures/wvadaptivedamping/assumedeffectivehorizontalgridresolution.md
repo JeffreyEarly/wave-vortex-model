@@ -11,8 +11,6 @@ mathjax: true
 
 effective resolution used in the damping calculation
 
-> Developer documentation: this item describes internal implementation details.
-
 
 ---
 

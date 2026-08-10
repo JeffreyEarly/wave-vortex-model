@@ -25,11 +25,13 @@ classdef WVAntialiasing < WVForcing
     % wvtAA = wvt.waveVortexTransformWithExplicitAntialiasing();
     % ```
     %
-    % - Topic: Initialization
-    % - Topic: Properties
-    % - Topic: CAAnnotatedClass requirement
-    %
-    % - Topic: Initializing
+    % - Topic: Create the forcing
+    % - Topic: Inspect forcing configuration
+    % - Topic: Inspect forcing or damping scales
+    % - Topic: Implement forcing evaluation
+    % - Topic: Convert forcing resolution
+    % - Topic: Forcing persistence
+    % - Topic: Forcing internals
     % - Declaration: WVAntialiasing < [WVForcing](/classes/forcing/wvforcing/)
     properties (GetAccess=public, SetAccess=protected)
         % number of retained vertical modes used to construct the filter

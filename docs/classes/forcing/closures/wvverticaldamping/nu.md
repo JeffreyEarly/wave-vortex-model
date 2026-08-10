@@ -11,8 +11,6 @@ mathjax: true
 
 vertical viscosity
 
-> Developer documentation: this item describes internal implementation details.
-
 
 ---
 

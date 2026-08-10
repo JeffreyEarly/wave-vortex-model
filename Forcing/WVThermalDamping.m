@@ -11,7 +11,12 @@ classdef WVThermalDamping < WVForcing
     % This is only implemented for quasigeostrophic flows. Specifically, it
     % requires `WVForcingType("PVSpatial")`.
     %
-    % - Topic: Initializing
+    % - Topic: Create the forcing
+    % - Topic: Inspect forcing configuration
+    % - Topic: Inspect forcing or damping scales
+    % - Topic: Implement forcing evaluation
+    % - Topic: Convert forcing resolution
+    % - Topic: Forcing persistence
     % - Declaration: WVThermalDamping < [WVForcing](/classes/forcing/wvforcing/)
     properties
         % damping parameter, units of $$s^{-1}$$

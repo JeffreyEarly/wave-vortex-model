@@ -11,8 +11,6 @@ mathjax: true
 
 Largest radial horizontal wavenumber forced, in radians per meter.
 
-> Developer documentation: this item describes internal implementation details.
-
 
 ---
 

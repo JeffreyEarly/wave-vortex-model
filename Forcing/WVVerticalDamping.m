@@ -42,9 +42,12 @@ classdef WVVerticalDamping < WVForcing
     % and diffusivity are preserved when the forcing is copied to a
     % transform with a different resolution.
     %
-    % - Topic: Initialization
-    % - Topic: Properties
-    % - Topic: CAAnnotatedClass requirement
+    % - Topic: Create the forcing
+    % - Topic: Inspect forcing configuration
+    % - Topic: Implement forcing evaluation
+    % - Topic: Convert forcing resolution
+    % - Topic: Forcing persistence
+    % - Topic: Forcing internals
     %
     % - Declaration: WVVerticalDamping < [WVForcing](/classes/forcing/wvforcing/)
     properties
