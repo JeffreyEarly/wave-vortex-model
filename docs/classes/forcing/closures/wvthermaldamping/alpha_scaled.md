@@ -9,9 +9,12 @@ mathjax: true
 
 #  alpha_scaled
 
-scaled damping parameter, units of $$s^{-1} m^{-2}$$
+Deformation-scaled damping coefficient in $$\mathrm{s^{-1}\,m^{-2}}$$.
 
 
 ---
 
 ## Discussion
+
+This is `alpha/wvt.Lr2` and has the shape required by the QG
+streamfunction field.

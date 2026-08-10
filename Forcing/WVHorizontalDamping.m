@@ -1,11 +1,13 @@
 classdef WVHorizontalDamping < WVForcing
-    % Horizontal laplacian damping with viscosity and diffusivity
+    % Apply horizontal Laplacian viscosity and diffusivity.
     %
     % The damping is a simple horizontal Laplacian, designed to mimic the
     % [HorizontalScalarDiffusivity in
     % Oceananigans](https://clima.github.io/OceananigansDocumentation/stable/appendix/library/#Oceananigans.TurbulenceClosures.HorizontalScalarDiffusivity)
-    % to allow for direct comparison between the models. This is intended to be used in combination with WVVerticalScalarDiffusivity. In
-    % general, you should be using the
+    % to allow direct comparison between the models. It applies to
+    % wave-bearing three-dimensional transforms and is intended for use with
+    % [`WVVerticalDamping`](/classes/forcing/closures/wvverticaldamping/).
+    % For an automatically scaled closure, use
     % [`WVAdaptiveDamping`](/classes/forcing/closures/wvadaptivedamping/).
     % 
     % The specific form of the forcing is given by 
@@ -19,25 +21,24 @@ classdef WVHorizontalDamping < WVForcing
     % \end{align}
     % $$
     %
-    % which is just your standard Laplacian viscosity, $$\nu$$, and diffusivity, $$\kappa$$, in
-    % the horizontal. This should be combined with
-    % [`WVVerticalDamping`](/classes/forcing/closures/wvverticaldamping/) for a complete closure. For help
-    % choosing appropriate values, see the notes in
+    % These are horizontal Laplacian viscosity, $$\nu$$, and diffusivity,
+    % $$\kappa$$. Combine this closure with
+    % [`WVVerticalDamping`](/classes/forcing/closures/wvverticaldamping/) to
+    % damp vertical gradients as well. For guidance on automatically scaled
+    % coefficients, see
     % [`WVAdaptiveDamping`](/classes/forcing/closures/wvadaptivedamping/).
     %
-    % ### Usage
-    %
-    % Assuming there is a WVTransform instance wvt, to add this forcing,
+    % ### Example
     %
     % ```matlab
-    % wvt.addForcing(WVHorizontalDamping(wvt,nu=1e-4, kappa=1e-6));
+    % wvt = WVTransformConstantStratification([40e3,30e3,2e3],[8,6,5],N0=5.2e-3,latitude=45,isHydrostatic=true);
+    % wvt.addForcing(WVHorizontalDamping(wvt,nu=1e-4,kappa=1e-6));
     % ```
     %
     %
     % ### Notes
     %
-    % This is currently implemented in the spatial domain and is
-    % thus highly un-optimized.
+    % This closure is evaluated in the spatial domain.
     %
     % The configured viscosity and diffusivity are preserved when the
     % forcing is copied to a transform with a different resolution.
@@ -50,12 +51,16 @@ classdef WVHorizontalDamping < WVForcing
     %
     % - Declaration: WVHorizontalDamping < [WVForcing](/classes/forcing/wvforcing/)
     properties
-        % horizontal viscosity
+        % Horizontal momentum viscosity in $$\mathrm{m^2\,s^{-1}}$$.
+        %
+        % The constructor default is `1e-4`.
         %
         % - Topic: Properties
         nu
 
-        % horizontal diffusivity
+        % Horizontal displacement diffusivity in $$\mathrm{m^2\,s^{-1}}$$.
+        %
+        % The constructor default is `1e-6`.
         %
         % - Topic: Properties
         kappa
@@ -63,14 +68,14 @@ classdef WVHorizontalDamping < WVForcing
 
     methods
         function self = WVHorizontalDamping(wvt,options)
-            % initialize the WVHorizontalDamping
+            % Create horizontal Laplacian damping for a transform.
             %
             % - Topic: Initialization
             % - Declaration: self = WVHorizontalDamping(wvt,options)
-            % - Parameter wvt: a WVTransform instance
-            % - Parameter nu: horizontal viscosity, default $$1 \cdot 10^{-4} \textrm{m}^2/\textrm{s}$$
-            % - Parameter kappa: horizontal diffusivity, default $$1 \cdot 10^{-6} \textrm{m}^2/\textrm{s}$$
-            % - Returns self: a WVHorizontalDamping instance
+            % - Parameter wvt: wave-bearing three-dimensional transform that owns the closure
+            % - Parameter nu: optional horizontal viscosity in square meters per second; default `1e-4`
+            % - Parameter kappa: optional horizontal diffusivity in square meters per second; default `1e-6`
+            % - Returns self: horizontal-damping closure owned by `wvt`
             arguments
                 wvt WVTransform {mustBeNonempty}
                 options.nu = 1e-4
@@ -101,12 +106,11 @@ classdef WVHorizontalDamping < WVForcing
         end
 
         function force = forcingWithResolutionOfTransform(self, wvtX2)
-            % Creates a forcing with the resolution of the transform
+            % Create equivalent horizontal damping for another resolution.
             %
             % - Declaration: forcingWithResolutionOfTransform(self, wvtX2)
-            % - Parameter self: an instance of WVHorizontalDamping
-            % - Parameter wvtX2: a WVTransform instance with doubled resolution
-            % - Returns: force
+            % - Parameter wvtX2: compatible transform at the target resolution
+            % - Returns force: horizontal damping owned by `wvtX2`
             arguments
                 self WVHorizontalDamping {mustBeNonempty}
                 wvtX2 WVTransform {mustBeNonempty}

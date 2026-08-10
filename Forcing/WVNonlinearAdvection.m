@@ -1,9 +1,9 @@
 classdef WVNonlinearAdvection < WVForcing
-    % The advective flux, $$\mathbf{u}\cdot \nabla \mathbf{u}$$ and $$\mathbf{u}\cdot \nabla \eta$$
+    % Add nonlinear advection to the model equations.
     %
-    % The nonlinear advection forcing adds the nonlinear terms to the momentum and thermodynamic equation.
-    %
-    % The nonlinear terms are all computed in the spatial domain.
+    % The nonlinear terms are evaluated in physical space and added to the
+    % momentum, thermodynamic, or quasigeostrophic potential-vorticity
+    % (QGPV) equation appropriate to the transform.
     %
     % For nonhydrostatic transforms,
     %
@@ -30,15 +30,25 @@ classdef WVNonlinearAdvection < WVForcing
     %
     % $$
     % \begin{align}
-    % \mathcal{S}_\textrm{qgpv} &= - \left( u \partial_x q + v \partial_y q \right)
+    % \mathcal{S}_\mathrm{qgpv} &= - \left( u \partial_x q + v \partial_y q \right)
     % \end{align}
     % $$
     %
-    % where $$q$$ is the qgpv.
+    % where $$q$$ is QGPV.
     %
     % ### Notes
     %
-    % This is the only forcing added to the transforms by default. You must explicitly remove it if you want to consider linear flows.
+    % Every supported transform installs this forcing by default. A
+    % nonlinear `WVModel` evaluates it automatically. Analytical linear
+    % evolution does not evaluate nonlinear forcing, so the object does not
+    % need to be removed when using linear evolution.
+    %
+    % ### Example
+    %
+    % ```matlab
+    % wvt = WVTransformConstantStratification([40e3,30e3,2e3],[8,6,5],N0=5.2e-3,latitude=45,isHydrostatic=true);
+    % nonlinearAdvection = wvt.forcingWithName("nonlinear advection");
+    % ```
     %
     % - Topic: Create the forcing
     % - Topic: Implement forcing evaluation
@@ -48,7 +58,10 @@ classdef WVNonlinearAdvection < WVForcing
     %
     % - Declaration: WVNonlinearAdvection < [WVForcing](/classes/forcing/wvforcing/)
     properties
-        % variable stratification factor
+        % Precomputed vertical logarithmic stratification gradient.
+        %
+        % This Internal array is zero for constant stratification and has
+        % units of inverse meters for variable stratification.
         %
         % - Topic: Properties
         dLnN2 = 0
@@ -56,16 +69,16 @@ classdef WVNonlinearAdvection < WVForcing
 
     methods
         function self = WVNonlinearAdvection(wvt)
-            % initialize the WVNonlinearAdvection nonlinear flux
+            % Create nonlinear advection for a transform.
             %
             % See the [WVNonlinearAdvection overview](/classes/forcing/wvnonlinearadvection/)
-            % for the hydrostatic, nonhydrostatic, and quasigeostrophic
-            % equations and its role as the default forcing.
+            % for the hydrostatic, nonhydrostatic, and QGPV equations and
+            % its role as the default forcing.
             %
             % - Topic: Initialization
-            % - Declaration: self = WVNonlinearAdvection(wvt,options)
-            % - Parameter wvt: a WVTransform instance
-            % - Returns self: a WVNonlinearAdvection instance
+            % - Declaration: self = WVNonlinearAdvection(wvt)
+            % - Parameter wvt: transform that owns and evaluates the forcing
+            % - Returns self: nonlinear-advection forcing owned by `wvt`
             arguments
                 wvt WVTransform {mustBeNonempty}
             end

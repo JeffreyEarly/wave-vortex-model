@@ -1,15 +1,26 @@
 classdef WVThermalDamping < WVForcing
-    % Thermal damping
+    % Apply large-scale thermal damping to QGPV.
     %
-    % Applies thermal damping to the flow, i.e., $$\frac{dq}{dt} = \alpha \lambda^2 \psi$$.
+    % For each deformation scale $$L_r$$, the implementation adds
     %
-    % This is as defined in Scott and Dritschel, but it can be shown that
-    % it is basically just a vertical diffusivity.
+    % $$
+    % \mathcal{S}_q=\frac{\alpha}{L_r^2}\psi.
+    % $$
+    %
+    % This follows the large-scale thermal-damping formulation considered
+    % by [Scott and Dritschel](https://www.cambridge.org/core/journals/journal-of-fluid-mechanics/article/halting-scale-and-energy-equilibration-in-twodimensional-quasigeostrophic-turbulence/BD0CAFC9019691ADC9B18A95D15445F9).
     %
     % ### Notes
     %
-    % This is only implemented for quasigeostrophic flows. Specifically, it
-    % requires `WVForcingType("PVSpatial")`.
+    % This forcing is compatible only with stratified and barotropic QG
+    % transforms through their physical-space QGPV forcing stage.
+    %
+    % ### Example
+    %
+    % ```matlab
+    % wvt = WVTransformBarotropicQG([40e3,30e3],[8,6],h=0.8,latitude=45);
+    % wvt.addForcing(WVThermalDamping(wvt,alpha=1/(200*86400)));
+    % ```
     %
     % - Topic: Create the forcing
     % - Topic: Inspect forcing configuration
@@ -19,12 +30,17 @@ classdef WVThermalDamping < WVForcing
     % - Topic: Forcing persistence
     % - Declaration: WVThermalDamping < [WVForcing](/classes/forcing/wvforcing/)
     properties
-        % damping parameter, units of $$s^{-1}$$
+        % Configured thermal-damping rate in $$\mathrm{s^{-1}}$$.
+        %
+        % The constructor default is `1/(200*86400)`.
         %
         % - Topic: Properties
         alpha
 
-        % scaled damping parameter, units of $$s^{-1} m^{-2}$$
+        % Deformation-scaled damping coefficient in $$\mathrm{s^{-1}\,m^{-2}}$$.
+        %
+        % This is `alpha/wvt.Lr2` and has the shape required by the QG
+        % streamfunction field.
         %
         % - Topic: Properties
         alpha_scaled
@@ -32,13 +48,13 @@ classdef WVThermalDamping < WVForcing
 
     methods
         function self = WVThermalDamping(wvt,options)
-            % initialize the WVThermalDamping
+            % Create thermal damping for a QG transform.
             %
             % - Topic: Initialization
             % - Declaration: self = WVThermalDamping(wvt,options)
-            % - Parameter wvt: a WVTransform instance
-            % - Parameter alpha: (optional) damping time scale, default 1/(200*86400)
-            % - Returns self: a WVThermalDamping instance
+            % - Parameter wvt: stratified or barotropic QG transform that owns the forcing
+            % - Parameter alpha: optional damping rate in inverse seconds; default `1/(200*86400)`
+            % - Returns self: thermal-damping forcing owned by `wvt`
             arguments
                 wvt WVTransform {mustBeNonempty}
                 options.alpha (1,1) double {mustBeNonnegative} = 1/(200*86400)

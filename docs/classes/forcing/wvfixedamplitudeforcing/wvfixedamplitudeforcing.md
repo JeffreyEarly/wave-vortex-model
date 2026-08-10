@@ -9,7 +9,7 @@ mathjax: true
 
 #  WVFixedAmplitudeForcing
 
-initialize the WVFixedAmplitudeForcing
+Create fixed-amplitude forcing for selected coefficients.
 
 
 ---
@@ -19,22 +19,24 @@ initialize the WVFixedAmplitudeForcing
  self = WVFixedAmplitudeForcing(wvt,options)
 ```
 ## Parameters
-+ `wvt`  a WVTransform instance
-+ `name`  (required) name of this forcing
-+ `Apbar`  (optional) amplitude of Ap matrix to fix
-+ `Ambar`  (optional) amplitude of Am matrix to fix
-+ `A0bar`  (optional) amplitude of A0 matrix to fix
-+ `Ap_indices`  (optional) index of coefficient in Ap matrix to fix
-+ `Am_indices`  (optional) index of coefficient in Am matrix to fix
-+ `A0_indices`  (optional) index of coefficient in A0 matrix to fix
++ `wvt`  transform that owns and evaluates the forcing
++ `name`  required unique forcing-registry name
++ `Apbar`  optional column of prescribed `Ap` values; default empty
++ `Ambar`  optional column of prescribed `Am` values; default empty
++ `A0bar`  optional column of prescribed `A0` values; default empty
++ `Ap_indices`  optional column of corresponding `Ap` linear indices; default empty
++ `Am_indices`  optional column of corresponding `Am` linear indices; default empty
++ `A0_indices`  optional column of corresponding `A0` linear indices; default empty
 
 ## Returns
-+ `self`  a WVFixedAmplitudeForcing instance
++ `self`  fixed-amplitude forcing owned by `wvt`
 
 ## Discussion
 
-You must pass the instance of the WVTransform to be used and
-you must also specify a unique name for the forcing.
+Supply a unique registry name. Coefficients may be selected
+directly with paired value/index column vectors, or later with
+`setWaveForcingCoefficients` and
+`setGeostrophicForcingCoefficients`.
 
 See the [WVFixedAmplitudeForcing overview](/classes/forcing/wvfixedamplitudeforcing/)
 for the tendency and restoration behavior, modeling cautions,

@@ -9,7 +9,7 @@ mathjax: true
 
 #  Apbar
 
-amplitudes of the fixed modes in the `Ap` matrix
+Prescribed `Ap` values in $$\mathrm{m\,s^{-1}}$$.
 
 
 ---
@@ -22,3 +22,5 @@ amplitudes of the fixed modes in the `Ap` matrix
 Complex valued property with dimension $$Ap_indices$$ and no units.
 
 ## Discussion
+
+Values correspond element-by-element to `Ap_indices`.

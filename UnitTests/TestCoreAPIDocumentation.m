@@ -584,37 +584,39 @@ classdef TestCoreAPIDocumentation < matlab.unittest.TestCase
         function forcingDetailedDescriptionsRemainOnClassPages(testCase)
             expectations = {
                 "wvbottomfrictionlinear", [
-                    "volume integrated effect of friction remains the same regardless of resolution"
-                    "To compare with quadratic bottom friction"
+                    "bottom quadrature weight"
+                    "r_\mathrm{scaled}"
+                    "Comparing this with quadratic drag"
                     "For both nonhydrostatic and hydrostatic transforms"
                     "and for quasigeostrophic transforms"
-                    "### Usage"
-                    "wvt.addForcing(WVBottomFrictionLinear(r=1/(200*86400)))"
+                    "### Example"
+                    "wvt.addForcing(WVBottomFrictionLinear(wvt,r=1/(200*86400)))"
                     ]
                 "wvbottomfrictionquadratic", [
-                    "To compare with linear bottom friction"
-                    "For barotropic QG"
-                    "both nonhydrostatic and hydrostatic transforms"
+                    "quadrature weight"
+                    "4000 m reference depth"
+                    "Comparing quadratic and linear drag"
+                    "hydrostatic and nonhydrostatic transforms"
                     "and for quasigeostrophic transforms"
-                    "### Usage"
-                    "wvt.addForcing(WVBottomFrictionQuadratic(Cd=0.001))"
+                    "### Example"
+                    "wvt.addForcing(WVBottomFrictionQuadratic(wvt,Cd=0.001))"
                     ]
                 "wvfixedamplitudeforcing", [
                     "participate in all the nonlinear dynamics"
-                    "spectral amplitude forcing"
-                    "restore the amplitudes to their desired value"
-                    "removes a degree-of-freedom from the model"
-                    "small scale damping enabled"
-                    "### Usage"
+                    "spectral-amplitude forcing"
+                    "prescribed coefficient values"
+                    "removes a degree of freedom"
+                    "closure's damping range"
+                    "### Example"
                     ]
                 "wvnonlinearadvection", [
-                    "For nonhydrostatic transforms"
-                    "for hydrostatic transforms"
-                    "and for quasigeostrophic transforms"
+                    "nonhydrostatic transforms"
+                    "hydrostatic transforms"
+                    "quasigeostrophic transforms"
                     "\mathcal{S}_w"
                     "\mathcal{S}_\eta"
-                    "\mathcal{S}_\textrm{qgpv}"
-                    "only forcing added to the transforms by default"
+                    "\mathcal{S}_\mathrm{qgpv}"
+                    "installs this forcing by default"
                     ]
                 };
             for iExpectation = 1:size(expectations,1)

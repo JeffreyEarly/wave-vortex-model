@@ -9,7 +9,7 @@ mathjax: true
 
 #  A0_indices
 
-indices of modes in the `A0` matrix to fix
+Linear indices of the selected `A0` coefficients.
 
 
 ---
@@ -19,3 +19,6 @@ indices of modes in the `A0` matrix to fix
 + Size: `(:,1)`
 
 ## Discussion
+
+This column vector is empty by default and has one entry for each
+value in `A0bar`.

@@ -9,7 +9,7 @@ mathjax: true
 
 #  nu
 
-vertical viscosity
+Vertical momentum viscosity in $$\mathrm{m^2\,s^{-1}}$$.
 
 
 ---
@@ -18,3 +18,5 @@ vertical viscosity
 Real valued property with no dimensions and units of $$m^2 s^{-1}$$.
 
 ## Discussion
+
+The constructor default is `5e-4`.

@@ -1,18 +1,27 @@
 classdef WVBottomFrictionLinear < WVForcing
-    % Linear bottom friction
+    % Apply linear drag at the bottom boundary.
     %
-    % Applies linear bottom friction to the flow, i.e., $$\frac{du}{dt} = -r \cdot u(x,y,-D)$$. The parameter $$r$$ has units of $$s^{-1}$$ and thus can be set as an inverse time scale.
+    % The parameter $$r$$ is an inverse time scale in $$\mathrm{s^{-1}}$$.
+    % For a three-dimensional transform, the bottom tendency is scaled by
+    % the bottom quadrature weight `z_int(1)` so its vertically integrated
+    % effect does not change with vertical resolution:
     %
-    % The linear bottom friction is scaled such that we actually apply, $$\frac{du}{dt} = -\frac{L_z}{dz} r \cdot u(x,y,-D)$$ and the volume integrated effect of friction remains the same regardless of resolution. $$L_z$$ is the total domain depth and $$dz$$ is the spacing at the bottom grid point.
+    % $$
+    % r_\mathrm{scaled}=\frac{L_z}{z_\mathrm{int}(1)}r.
+    % $$
     %
-    % To compare with quadratic bottom friction where $$\frac{du}{dt} = -\frac{C_d}{dz} \lvert \mathbf{u} \rvert $$, note that $$- \frac{L_z}{dz} r = -\frac{C_d}{dz} \lvert \mathbf{u} \rvert$$ and you will find a characteristic velocity $$\lvert\mathbf{u}\rvert$$ of about 10 cm/s for $$C_d=0.002$$.
+    % A barotropic transform has no vertical quadrature and uses
+    % $$r_\mathrm{scaled}=r$$.
+    %
+    % Comparing this with quadratic drag gives the characteristic relation
+    % $$L_z r=C_d\lvert\mathbf{u}\rvert$$.
     %
     % For both nonhydrostatic and hydrostatic transforms linear bottom drag
     %
     % $$
     % \begin{align}
-    % \mathcal{S}_u &= -\frac{L_z}{dz} r \cdot u(x,y,-D) \\
-    % \mathcal{S}_v &= -\frac{L_z}{dz} r \cdot v(x,y,-D)  \\
+    % \mathcal{S}_u &= -r_\mathrm{scaled} u(x,y,-D) \\
+    % \mathcal{S}_v &= -r_\mathrm{scaled} v(x,y,-D)  \\
     % \mathcal{S}_w &= 0 \\
     % \mathcal{S}_\eta &= 0
     % \end{align}
@@ -22,18 +31,17 @@ classdef WVBottomFrictionLinear < WVForcing
     %
     % $$
     % \begin{align}
-    % \mathcal{S}_\textrm{qgpv} &= -\frac{L_z}{dz} r \cdot \zeta(x,y,-D)
+    % \mathcal{S}_\mathrm{qgpv} &= -r_\mathrm{scaled}\zeta(x,y,-D)
     % \end{align}
     % $$
     %
     % where $$\zeta = \partial_x v - \partial_y u$$.
     %
-    % ### Usage
-    %
-    % Assuming there is a WVTransform instance wvt, to add this forcing,
+    % ### Example
     %
     % ```matlab
-    % wvt.addForcing(WVBottomFrictionLinear(r=1/(200*86400)));
+    % wvt = WVTransformConstantStratification([40e3,30e3,2e3],[8,6,5],N0=5.2e-3,latitude=45,isHydrostatic=true);
+    % wvt.addForcing(WVBottomFrictionLinear(wvt,r=1/(200*86400)));
     % ```
     %
     % - Topic: Create the forcing
@@ -45,12 +53,18 @@ classdef WVBottomFrictionLinear < WVForcing
     %
     % - Declaration: WVBottomFrictionLinear < [WVForcing](/classes/forcing/wvforcing/)
     properties
-        % bottom friction, $$s^{-1}$$
+        % Configured linear drag rate in $$\mathrm{s^{-1}}$$.
+        %
+        % The constructor default is `1/(200*86400)`, corresponding to a
+        % 200-day time scale.
         %
         % - Topic: Properties
         r
 
-        % scaled bottom friction, $$\frac{Lz}{dz} r$$ with units $$s^{-1}$$
+        % Drag rate applied at the bottom grid point in $$\mathrm{s^{-1}}$$.
+        %
+        % This is `r*Lz/z_int(1)` for a three-dimensional transform and
+        % `r` for a barotropic transform.
         %
         % - Topic: Properties
         r_scaled
@@ -58,7 +72,7 @@ classdef WVBottomFrictionLinear < WVForcing
 
     methods
         function self = WVBottomFrictionLinear(wvt,options)
-            % initialize the WVBottomFrictionLinear
+            % Create linear bottom friction for a transform.
             %
             % See the [WVBottomFrictionLinear overview](/classes/forcing/wvbottomfrictionlinear/)
             % for the governing equations, resolution scaling, comparison
@@ -66,9 +80,9 @@ classdef WVBottomFrictionLinear < WVForcing
             %
             % - Topic: Initialization
             % - Declaration: self = WVBottomFrictionLinear(wvt,options)
-            % - Parameter wvt: a WVTransform instance
-            % - Parameter r: (optional) linear bottom friction, try 1/(200*86400)
-            % - Returns frictionalForce: a WVBottomFrictionLinear instance
+            % - Parameter wvt: transform that owns and evaluates the forcing
+            % - Parameter r: optional drag rate in inverse seconds; default `1/(200*86400)`
+            % - Returns self: linear bottom-friction forcing owned by `wvt`
             arguments
                 wvt WVTransform {mustBeNonempty}
                 options.r (1,1) double {mustBeNonnegative} = 1/(200*86400) % linear bottom friction, try 1/(200*86400) https://www.nemo-ocean.eu/doc/node70.html

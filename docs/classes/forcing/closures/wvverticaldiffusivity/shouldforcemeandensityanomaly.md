@@ -9,7 +9,7 @@ mathjax: true
 
 #  shouldForceMeanDensityAnomaly
 
-whether to include the $$\frac{\partial}{\partial z} \ln N^2$$ term
+Whether to include the variable-stratification correction.
 
 
 ---
@@ -18,3 +18,6 @@ whether to include the $$\frac{\partial}{\partial z} \ln N^2$$ term
 Real valued property with no dimensions and units of $$bool$$.
 
 ## Discussion
+
+The default is `true`. This controls the precomputed
+$$\partial_z\ln N^2$$ term used by the wave-bearing pathway.

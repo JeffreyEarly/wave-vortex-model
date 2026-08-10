@@ -11,7 +11,7 @@ nav_order: 1
 
 #  WVAdaptiveDamping
 
-Adaptive small-scale damping
+Adapt small-scale spectral damping to the current flow speed.
 
 
 ---
@@ -22,10 +22,10 @@ Adaptive small-scale damping
 
 ## Overview
 
-This damping operator is a linear closure that dynamically changes
-its amplitude to keep the Reynolds number at the grid scale equal to
-one. This closure is ideal for a spin-up problem where the amplitude
-of the flow is changing.
+This closure rebuilds its spectral shape when the transform's effective
+resolution changes and scales its coefficient tendency by the current
+maximum horizontal speed. It is useful when the flow amplitude evolves
+substantially, such as during spin-up.
 
 This closure has a number of noteworthy features:
 
@@ -64,11 +64,10 @@ $$
 
 where $$U$$ is the maximum fluid velocity.
 
-### Usage
-
-Assuming there is a WVTransform instance wvt, to add this forcing,
+### Example
 
 ```matlab
+wvt = WVTransformConstantStratification([40e3,30e3,2e3],[8,6,5],N0=5.2e-3,latitude=45,isHydrostatic=true);
 wvt.addForcing(WVAdaptiveDamping(wvt));
 ```
 
@@ -84,15 +83,15 @@ So arguably they're under-damped in a non-hydrostatic simulation.
 
 ## Topics
 + Create the forcing
-  + [`WVAdaptiveDamping`](/classes/forcing/closures/wvadaptivedamping/wvadaptivedamping.html) initialize the WVAdaptiveDamping
+  + [`WVAdaptiveDamping`](/classes/forcing/closures/wvadaptivedamping/wvadaptivedamping.html) Create adaptive spectral damping for a transform.
 + Inspect forcing or damping scales
-  + [`k_no_damp`](/classes/forcing/closures/wvadaptivedamping/k_no_damp.html) wavenumber below which there is zero damping
-  + [`k_damp`](/classes/forcing/closures/wvadaptivedamping/k_damp.html) wavenumber at which the significant scale damping starts.
-  + [`j_no_damp`](/classes/forcing/closures/wvadaptivedamping/j_no_damp.html) wavenumber below which there is zero damping
-  + [`j_damp`](/classes/forcing/closures/wvadaptivedamping/j_damp.html) wavenumber at which the significant scale damping starts.
-  + [`assumedEffectiveHorizontalGridResolution`](/classes/forcing/closures/wvadaptivedamping/assumedeffectivehorizontalgridresolution.html) effective resolution used in the damping calculation
-  + [`dampingTimeScale`](/classes/forcing/closures/wvadaptivedamping/dampingtimescale.html) Computes the minimum damping time scale
-  + [`damp`](/classes/forcing/closures/wvadaptivedamping/damp.html) spectral matrix that multiplies Ap,Am,A0 to damp
+  + [`k_no_damp`](/classes/forcing/closures/wvadaptivedamping/k_no_damp.html) Horizontal wavenumber below which damping is exactly zero.
+  + [`k_damp`](/classes/forcing/closures/wvadaptivedamping/k_damp.html) Estimated horizontal wavenumber for significant damping.
+  + [`j_no_damp`](/classes/forcing/closures/wvadaptivedamping/j_no_damp.html) Vertical mode number below which damping is exactly zero.
+  + [`j_damp`](/classes/forcing/closures/wvadaptivedamping/j_damp.html) Estimated vertical mode number for significant damping.
+  + [`assumedEffectiveHorizontalGridResolution`](/classes/forcing/closures/wvadaptivedamping/assumedeffectivehorizontalgridresolution.html) Effective horizontal resolution used to construct `damp`, in meters.
+  + [`dampingTimeScale`](/classes/forcing/closures/wvadaptivedamping/dampingtimescale.html) Return the inverse maximum unit-speed damping coefficient.
+  + [`damp`](/classes/forcing/closures/wvadaptivedamping/damp.html) Unit-speed spectral damping operator in inverse meters.
 
 
 ## Developer Topics
@@ -100,8 +99,8 @@ These items document internal implementation details and are not part of the pri
 + Forcing persistence
   + [`classRequiredPropertyNames`](/classes/forcing/closures/wvadaptivedamping/classrequiredpropertynames.html) Returns the required property names for the class
 + Forcing internals
-  + [`buildDampingOperator`](/classes/forcing/closures/wvadaptivedamping/builddampingoperator.html) Builds the damping operator
-  + [`spectralVanishingViscosityFilter`](/classes/forcing/closures/wvadaptivedamping/spectralvanishingviscosityfilter.html) Builds the spectral vanishing viscosity operator
+  + [`buildDampingOperator`](/classes/forcing/closures/wvadaptivedamping/builddampingoperator.html) Build the unit-speed spectral damping operator.
+  + [`spectralVanishingViscosityFilter`](/classes/forcing/closures/wvadaptivedamping/spectralvanishingviscosityfilter.html) Build horizontal and vertical spectral-vanishing filters.
 
 
 ---

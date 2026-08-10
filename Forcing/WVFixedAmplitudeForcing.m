@@ -1,7 +1,8 @@
 classdef WVFixedAmplitudeForcing < WVForcing
-    % Fixed amplitude forcing at the natural frequency of each mode
+    % Hold selected wave-vortex coefficients at prescribed amplitudes.
     %
-    % The fixed-amplitude forcing maintains the amplitude of the wave or geostrophic features, while allowing energy and enstrophy to flux from the feature.
+    % The forcing maintains selected wave or geostrophic coefficients while
+    % recording the tendency that must be cancelled to maintain them.
     %
     % As a simple example, one can set an internal wave mode with amplitude 1 cm/s, and that mode will continue to oscillate and maintain its amplitude. The wave will participate in all the nonlinear dynamics, but its amplitude will be maintained/restored at each time step.
     %
@@ -12,7 +13,12 @@ classdef WVFixedAmplitudeForcing < WVForcing
     % \frac{\partial}{\partial t} A^{klj} = \sum_i F_i^{klj}
     % $$
     %
-    % where $$F_i$$ are the different forces applied. The transform computes the spatial forcing (which includes nonlinear advection), the spectral forcing, followed by the spectral amplitude forcing. The `WVFixedAmplitudeForcing` is a spectral amplitude forcing and is thus comptued last. This forcing thus simply adds back the flux the from the spatial and spectral forcing, so that $$\frac{\partial}{\partial t} A^{klj} =0$$ for the modes in question.
+    % where $$F_i$$ are the contributions from the registered forcing
+    % objects. The transform evaluates physical-space forcing, spectral
+    % forcing, and then spectral-amplitude forcing. This forcing is evaluated
+    % last: it zeros the tendency at selected indices and restores the
+    % prescribed coefficient values after the integration step, giving
+    % $$\partial_t A^{k\ell j}=0$$ for those modes.
     %
     % In practice, of course, we simply restore the amplitudes to their desired value at the last step, e.g.,
     %
@@ -23,26 +29,22 @@ classdef WVFixedAmplitudeForcing < WVForcing
     % ### Notes
     %
     % - This approach is commonly used in forced-dissipative turbulence to maintain some fixed forcing.
-    % - Every mode that is used in `WVFixedAmplitudeForcing` essentially removes a degree-of-freedom from the model, as that mode is no longer free to fully evolve. Thus when you pass the forcing wave-vortex coefficients, e.g. `A0`, it does not fix the amplitude of coefficients that are small to avoid removing degrees-of-freedom.
-    % - One must also be careful not to forcing in the damping region. If you have some sort of small scale damping enabled, you probably do not want to be forcing at those smallest scales.
+    % - Every fixed mode removes a degree of freedom because it no longer
+    % evolves freely. The setter methods therefore ignore coefficients below
+    % $$10^{-6}$$ times the largest supplied magnitude unless an explicit
+    % mask is provided.
+    % - Avoid selecting modes in a closure's damping range. When
+    % `WVAdaptiveDamping` is registered, the setter methods automatically
+    % remove requested modes with $$K_h>k_\mathrm{damp}$$.
     %
-    % ### Usage
-    %
-    % To setup a geostrophic mean flow,
+    % ### Example
     %
     % ```matlab
-    % % initialize a transform
-    % wvt = WVTransformHydrostatic([Lx, Ly, Lz], [Nx, Ny, Nz], N2=@(z) N0*N0*exp(2*z/L_gm),latitude=33);
-    %
-    % % set a geostrophic mode, with no flow at the bottom boundary
-    % wvt.setGeostrophicModes(k=0,l=5,j=1,phi=0,u=u0);
-    % wvt.setGeostrophicModes(k=0,l=5,j=0,phi=0,u=max(max(wvt.u(:,:,1))));
-    %
-    % % pass the vortex coefficients to the forcing
+    % wvt = WVTransformConstantStratification([40e3,30e3,2e3],[8,6,5],N0=5.2e-3,latitude=45,isHydrostatic=true);
+    % wvt.setGeostrophicModes(kMode=1,lMode=0,j=1,u=0.01);
     % force = WVFixedAmplitudeForcing(wvt,name="geostrophic-mean-flow");
     % force.setGeostrophicForcingCoefficients(wvt.A0);
     % wvt.addForcing(force);
-    %
     % ```
     %
     % In practice you can initialize the flow in any way you want with any arbitrary structure, and then pass those coefficients to the forcing. The `WVFixedAmplitudeForcing` looks for coefficients that are small and ignores those.
@@ -57,32 +59,47 @@ classdef WVFixedAmplitudeForcing < WVForcing
     %
     % - Declaration: WVFixedAmplitudeForcing < [WVForcing](/classes/forcing/wvforcing/)
     properties
-        % indices of modes in the `A0` matrix to fix
+        % Linear indices of the selected `A0` coefficients.
+        %
+        % This column vector is empty by default and has one entry for each
+        % value in `A0bar`.
         %
         % - Topic: Properties
         A0_indices (:,1) uint64 = []
 
-        % indices of modes in the `Ap` matrix to fix
+        % Linear indices of the selected `Ap` coefficients.
+        %
+        % This column vector is empty by default and has one entry for each
+        % value in `Apbar`.
         %
         % - Topic: Properties
         Ap_indices (:,1) uint64 = []
 
-        % indices of modes in the `Am` matrix to fix
+        % Linear indices of the selected `Am` coefficients.
+        %
+        % This column vector is empty by default and has one entry for each
+        % value in `Ambar`.
         %
         % - Topic: Properties
         Am_indices (:,1) uint64 = []
 
-        % amplitudes of the fixed modes in the `A0` matrix
+        % Prescribed `A0` values in $$\mathrm{m^2\,s^{-1}}$$.
+        %
+        % Values correspond element-by-element to `A0_indices`.
         %
         % - Topic: Properties
         A0bar (:,1) double = []
 
-        % amplitudes of the fixed modes in the `Ap` matrix
+        % Prescribed `Ap` values in $$\mathrm{m\,s^{-1}}$$.
+        %
+        % Values correspond element-by-element to `Ap_indices`.
         %
         % - Topic: Properties
         Apbar (:,1) double = []
 
-        % amplitudes of the fixed modes in the `Am` matrix
+        % Prescribed `Am` values in $$\mathrm{m\,s^{-1}}$$.
+        %
+        % Values correspond element-by-element to `Am_indices`.
         %
         % - Topic: Properties
         Ambar (:,1) double = []
@@ -90,10 +107,12 @@ classdef WVFixedAmplitudeForcing < WVForcing
 
     methods
         function self = WVFixedAmplitudeForcing(wvt,options)
-            % initialize the WVFixedAmplitudeForcing
+            % Create fixed-amplitude forcing for selected coefficients.
             %
-            % You must pass the instance of the WVTransform to be used and
-            % you must also specify a unique name for the forcing.
+            % Supply a unique registry name. Coefficients may be selected
+            % directly with paired value/index column vectors, or later with
+            % `setWaveForcingCoefficients` and
+            % `setGeostrophicForcingCoefficients`.
             %
             % See the [WVFixedAmplitudeForcing overview](/classes/forcing/wvfixedamplitudeforcing/)
             % for the tendency and restoration behavior, modeling cautions,
@@ -101,15 +120,15 @@ classdef WVFixedAmplitudeForcing < WVForcing
             %
             % - Topic: Initialization
             % - Declaration: self = WVFixedAmplitudeForcing(wvt,options)
-            % - Parameter wvt: a WVTransform instance
-            % - Parameter name: (required) name of this forcing
-            % - Parameter Apbar: (optional) amplitude of Ap matrix to fix
-            % - Parameter Ambar: (optional) amplitude of Am matrix to fix
-            % - Parameter A0bar: (optional) amplitude of A0 matrix to fix
-            % - Parameter Ap_indices: (optional) index of coefficient in Ap matrix to fix
-            % - Parameter Am_indices: (optional) index of coefficient in Am matrix to fix
-            % - Parameter A0_indices: (optional) index of coefficient in A0 matrix to fix
-            % - Returns self: a WVFixedAmplitudeForcing instance
+            % - Parameter wvt: transform that owns and evaluates the forcing
+            % - Parameter name: required unique forcing-registry name
+            % - Parameter Apbar: optional column of prescribed `Ap` values; default empty
+            % - Parameter Ambar: optional column of prescribed `Am` values; default empty
+            % - Parameter A0bar: optional column of prescribed `A0` values; default empty
+            % - Parameter Ap_indices: optional column of corresponding `Ap` linear indices; default empty
+            % - Parameter Am_indices: optional column of corresponding `Am` linear indices; default empty
+            % - Parameter A0_indices: optional column of corresponding `A0` linear indices; default empty
+            % - Returns self: fixed-amplitude forcing owned by `wvt`
             arguments
                 wvt WVTransform {mustBeNonempty}
                 options.name {mustBeText}
@@ -138,17 +157,19 @@ classdef WVFixedAmplitudeForcing < WVForcing
             end
         end
         function setWaveForcingCoefficients(self,Apbar,Ambar,options)
-            % set the amplitude to fix for the wave part of the flow
+            % Select positive- and negative-frequency coefficients to fix.
             %
-            % This function will automatically remove modes set in the
-            % damping region of the WVAdaptiveDamping forcing, if present.
+            % Without explicit masks, coefficients whose magnitude is at
+            % least $$10^{-6}$$ times the largest supplied magnitude are
+            % selected. If adaptive damping is registered, selected modes
+            % above its horizontal `k_damp` threshold are removed.
             %
             % - Topic: Setting the forcing
-            % - Declaration:  setWaveForcingCoefficients(Apbar,Ambar,options)
-            % - Parameter Apbar: Ap fixed amplitude
-            % - Parameter Ambar: Am fixed amplitude
-            % - Parameter MAp: (optional) forcing mask, Ap. 1s at the forced modes, 0s at the unforced modes. Default is MAp = abs(Apbar) > 1e-6*max(abs(Apbar(:)))
-            % - Parameter MAm: (optional) forcing mask, Am. 1s at the forced modes, 0s at the unforced modes. Default is MAm = abs(Ambar) > 1e-6*max(abs(Ambar(:)))
+            % - Declaration: setWaveForcingCoefficients(Apbar,Ambar,options)
+            % - Parameter Apbar: `Ap` values on the transform spectral grid
+            % - Parameter Ambar: `Am` values on the transform spectral grid
+            % - Parameter MAp: optional logical `Ap` selection mask; default `abs(Apbar) > 1e-6*max(abs(Apbar(:)))`
+            % - Parameter MAm: optional logical `Am` selection mask; default `abs(Ambar) > 1e-6*max(abs(Ambar(:)))`
             arguments
                 self WVFixedAmplitudeForcing {mustBeNonempty}
                 Apbar (:,:) double {mustBeNonempty}
@@ -179,15 +200,17 @@ classdef WVFixedAmplitudeForcing < WVForcing
         end
 
         function setGeostrophicForcingCoefficients(self,A0bar,options)
-            % set amplitude to fix for the geostrophic part of the flow
+            % Select zero-frequency coefficients to fix.
             %
-            % This function will automatically remove modes set in the
-            % damping region of the WVAdaptiveDamping forcing, if present.
+            % Without an explicit mask, coefficients whose magnitude is at
+            % least $$10^{-6}$$ times the largest supplied magnitude are
+            % selected. If adaptive damping is registered, selected modes
+            % above its horizontal `k_damp` threshold are removed.
             %
             % - Topic: Setting the forcing
             % - Declaration: setGeostrophicForcingCoefficients(A0bar,options)
-            % - Parameter A0bar: A0 fixed amplitude
-            % - Parameter MA0: (optional) forcing mask, A0. 1s at the forced modes, 0s at the unforced modes. Default is MA0 = abs(A0bar) > 1e-6*max(abs(A0bar(:)))
+            % - Parameter A0bar: `A0` values on the transform spectral grid
+            % - Parameter MA0: optional logical `A0` selection mask; default `abs(A0bar) > 1e-6*max(abs(A0bar(:)))`
             arguments
                 self WVFixedAmplitudeForcing {mustBeNonempty}
                 A0bar (:,:) double {mustBeNonempty}
@@ -212,13 +235,31 @@ classdef WVFixedAmplitudeForcing < WVForcing
         end
 
         function [model_spectrum, r] = setNarrowBandGeostrophicForcing(self, options)
-            % sets a narrow waveband of geostrophic forcing for forced-dissipative modeling
+            % Initialize and fix a narrow band of geostrophic coefficients.
             %
-            % to be moved to a subclass
+            % This legacy helper optionally initializes `wvt.A0`, constructs
+            % a radial geostrophic spectrum, selects the band centered on
+            % `k_f` at vertical mode `j_f`, and passes that selection to
+            % `setGeostrophicForcingCoefficients`. It mutates both the
+            % transform and this forcing. Its eventual replacement is
+            % tracked by [Issue #2](https://github.com/JeffreyEarly/wave-vortex-model/issues/2).
+            %
+            % `model_spectrum` is assigned only when `initialPV` is
+            % `"narrow-band"` or `"full-spectrum"`. The returned `r` is
+            % assigned only when `r` is omitted and computed from `k_r`.
+            % Callers should therefore treat both outputs as conditional
+            % legacy diagnostics.
             %
             % - Topic: Setting the forcing
-            % - Declaration: setNarrowBandGeostrophicForcing(options)
-            % - Parameter r: A0 fixed amplitude
+            % - Declaration: [model_spectrum,r] = setNarrowBandGeostrophicForcing(options)
+            % - Parameter r: optional large-scale damping rate in inverse seconds; when supplied, determines `k_r`
+            % - Parameter k_r: optional arrest wavenumber in radians per meter; default `2*dk`
+            % - Parameter k_f: optional forcing-band center in radians per meter; default `20*dk`
+            % - Parameter j_f: optional forced vertical-mode number; default `1`
+            % - Parameter u_rms: optional target surface root-mean-square speed in meters per second; default `0.2`
+            % - Parameter initialPV: optional initialization choice `"none"`, `"narrow-band"`, or `"full-spectrum"`; default `"narrow-band"`
+            % - Returns model_spectrum: conditional radial spectrum function used for initialization
+            % - Returns r: conditional damping-rate estimate computed when `r` is omitted
             arguments
                 self WVFixedAmplitudeForcing {mustBeNonempty}
                 options.r (1,1) double

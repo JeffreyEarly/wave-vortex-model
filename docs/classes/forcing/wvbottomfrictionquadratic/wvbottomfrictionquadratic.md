@@ -9,7 +9,7 @@ mathjax: true
 
 #  WVBottomFrictionQuadratic
 
-initialize the WVBottomFrictionQuadratic
+Create quadratic bottom friction for a transform.
 
 
 ---
@@ -19,11 +19,11 @@ initialize the WVBottomFrictionQuadratic
  self = WVBottomFrictionQuadratic(wvt,options)
 ```
 ## Parameters
-+ `wvt`  a WVTransform instance
-+ `Cd`  (optional) non-dimensional quadratic damping coefficient. Default is 0.001
++ `wvt`  transform that owns and evaluates the forcing
++ `Cd`  optional dimensionless drag coefficient; default `1e-3`
 
 ## Returns
-+ `frictionalForce`  a WVBottomFrictionQuadratic instance
++ `self`  quadratic bottom-friction forcing owned by `wvt`
 
 ## Discussion
 

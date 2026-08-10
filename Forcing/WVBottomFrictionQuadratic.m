@@ -1,11 +1,16 @@
 classdef WVBottomFrictionQuadratic < WVForcing
-    % Quadratic bottom friction
+    % Apply quadratic drag at the bottom boundary.
     %
-    % Applies quadratic bottom friction to the flow, i.e., $$\frac{du}{dt} = -\frac{Cd}{dz}\lvert \mathbf{u} \rvert\mathbf{u}(x,y,-D)$$. Cd is unitless, and dz is (approximately) the size of the grid spacing at the bottom boundary.
+    % The dimensionless drag coefficient $$C_d$$ is divided by the bottom
+    % quadrature weight for a three-dimensional transform:
     %
-    % To compare with linear bottom friction where $$\frac{du}{dt} = -r \cdot u(x,y,-D)$$, note that $$- \frac{L_z}{dz} r = -\frac{C_d}{dz} \lvert \mathbf{u} \rvert$$ and you will find a characteristic velocity $$\lvert \mathbf{u} \rvert$$ of about 11.5 cm/s for Cd=0.002 and r=1/(200 days). If $$C_d=0.001$$, then the damping time scale has to double to 1/(400 days) for and equivalent characteristic velocity.
+    % $$
+    % c_d=\frac{C_d}{z_\mathrm{int}(1)}.
+    % $$
     %
-    % For barotropic QG we want the scaling to work out similarly, but now have $$-r = -\frac{C_d}{D}\lvert \mathbf{u} \rvert$$ where $$D$$ works out to be $$L_z$$. Thus, we will scale the barotropic QG quadratic bottom drag by 4000 m, to match typical oceanic scales.
+    % Barotropic QG uses a fixed 4000 m reference depth,
+    % $$c_d=C_d/(4000\,\mathrm{m})$$. Comparing quadratic and linear drag
+    % gives the characteristic relation $$L_z r=C_d\lvert\mathbf{u}\rvert$$.
     %
     % Using the notation that
     %
@@ -13,12 +18,13 @@ classdef WVBottomFrictionQuadratic < WVForcing
     % |\mathbf{u}(x,y,-D)| = \sqrt{u^2(x,y,-D) + v^2(x,y,-D)}
     % $$
     %
-    % is the magnitude of the total velocity at the bottom boundary, both nonhydrostatic and hydrostatic transforms linear bottom drag have the form
+    % is the magnitude of the total velocity at the bottom boundary. For
+    % hydrostatic and nonhydrostatic transforms,
     %
     % $$
     % \begin{align}
-    % \mathcal{S}_u &= -\frac{C_d}{dz} |\mathbf{u}(x,y,-D)| u(x,y,-D) \\
-    % \mathcal{S}_v &= -\frac{C_d}{dz} |\mathbf{u}(x,y,-D)| v(x,y,-D)  \\
+    % \mathcal{S}_u &= -c_d |\mathbf{u}(x,y,-D)| u(x,y,-D) \\
+    % \mathcal{S}_v &= -c_d |\mathbf{u}(x,y,-D)| v(x,y,-D)  \\
     % \mathcal{S}_w &= 0 \\
     % \mathcal{S}_\eta &= 0
     % \end{align}
@@ -28,16 +34,15 @@ classdef WVBottomFrictionQuadratic < WVForcing
     %
     % $$
     % \begin{align}
-    % \mathcal{S}_\textrm{qgpv} &= -\frac{C_dd}{dz} \left( \frac{\partial}{\partial x} \left( |\mathbf{u}(x,y,-D)| v(x,y,-D) \right) - \frac{\partial}{\partial y} \left( |\mathbf{u}(x,y,-D)| u(x,y,-D) \right) \right)
+    % \mathcal{S}_\mathrm{qgpv} &= -c_d \left[ \partial_x \left( |\mathbf{u}|v \right) - \partial_y \left( |\mathbf{u}|u \right) \right]_{z=-D}
     % \end{align}
     % $$
     %
-    % ### Usage
-    %
-    % Assuming there is a WVTransform instance wvt, to add this forcing,
+    % ### Example
     %
     % ```matlab
-    % wvt.addForcing(WVBottomFrictionQuadratic(Cd=0.001));
+    % wvt = WVTransformConstantStratification([40e3,30e3,2e3],[8,6,5],N0=5.2e-3,latitude=45,isHydrostatic=true);
+    % wvt.addForcing(WVBottomFrictionQuadratic(wvt,Cd=0.001));
     % ```
     %
     %
@@ -50,12 +55,17 @@ classdef WVBottomFrictionQuadratic < WVForcing
     %
     % - Declaration: WVBottomFrictionQuadratic < [WVForcing](/classes/forcing/wvforcing/)
     properties
-        % non-dimensional quadratic drag coefficient
+        % Configured dimensionless quadratic drag coefficient.
+        %
+        % The constructor default is `1e-3`.
         %
         % - Topic: Properties
         Cd
 
-        % $$\frac{Cd}{dz}$$ scaled quadratic drag coefficient with units $$m^{-1}$$
+        % Drag coefficient applied at the bottom in $$\mathrm{m^{-1}}$$.
+        %
+        % This is `Cd/z_int(1)` for a three-dimensional transform and
+        % `Cd/4000` for a barotropic transform.
         %
         % - Topic: Properties
         cd
@@ -63,7 +73,7 @@ classdef WVBottomFrictionQuadratic < WVForcing
 
     methods
         function self = WVBottomFrictionQuadratic(wvt,options)
-            % initialize the WVBottomFrictionQuadratic
+            % Create quadratic bottom friction for a transform.
             %
             % See the [WVBottomFrictionQuadratic overview](/classes/forcing/wvbottomfrictionquadratic/)
             % for the governing equations, geometry-dependent scaling,
@@ -71,9 +81,9 @@ classdef WVBottomFrictionQuadratic < WVForcing
             %
             % - Topic: Initialization
             % - Declaration: self = WVBottomFrictionQuadratic(wvt,options)
-            % - Parameter wvt: a WVTransform instance
-            % - Parameter Cd: (optional) non-dimensional quadratic damping coefficient. Default is 0.001
-            % - Returns frictionalForce: a WVBottomFrictionQuadratic instance
+            % - Parameter wvt: transform that owns and evaluates the forcing
+            % - Parameter Cd: optional dimensionless drag coefficient; default `1e-3`
+            % - Returns self: quadratic bottom-friction forcing owned by `wvt`
             arguments
                 wvt WVTransform {mustBeNonempty}
                 options.Cd (1,1) double {mustBeNonnegative} = 1e-3 % https://www.nemo-ocean.eu/doc/node70.html
