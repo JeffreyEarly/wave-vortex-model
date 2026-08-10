@@ -2,5 +2,9 @@
 *.asv
 *.mat
 *.nc
+CompiledKernel/build/
+tools/compiled-kernel/build/
+*.a
+*.o
 Benchmarks/results/runs/
 *.nc
