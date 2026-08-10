@@ -9,7 +9,7 @@ mathjax: true
 
 #  WVBottomFrictionLinear
 
-initialize the WVBottomFrictionLinear
+Create linear bottom friction for a transform.
 
 
 ---
@@ -19,11 +19,11 @@ initialize the WVBottomFrictionLinear
  self = WVBottomFrictionLinear(wvt,options)
 ```
 ## Parameters
-+ `wvt`  a WVTransform instance
-+ `r`  (optional) linear bottom friction, try 1/(200*86400)
++ `wvt`  transform that owns and evaluates the forcing
++ `r`  optional drag rate in inverse seconds; default `1/(200*86400)`
 
 ## Returns
-+ `frictionalForce`  a WVBottomFrictionLinear instance
++ `self`  linear bottom-friction forcing owned by `wvt`
 
 ## Discussion
 

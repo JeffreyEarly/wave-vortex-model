@@ -9,7 +9,7 @@ mathjax: true
 
 #  M
 
-spectral matrix that multiplies Ap,Am,A0 to zero out the aliased modes
+Logical-shape spectral mask of discarded coefficients.
 
 > Developer documentation: this item describes internal implementation details.
 
@@ -17,3 +17,6 @@ spectral matrix that multiplies Ap,Am,A0 to zero out the aliased modes
 ---
 
 ## Discussion
+
+This array has `wvt.spectralMatrixSize`; nonzero entries are
+removed from coefficient tendencies and amplitudes.

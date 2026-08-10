@@ -9,9 +9,12 @@ mathjax: true
 
 #  damp
 
-spectral matrix that multiplies Ap,Am,A0 to damp
+Unit-speed spectral damping operator in inverse meters.
 
 
 ---
 
 ## Discussion
+
+This array has `wvt.spectralMatrixSize`. The actual coefficient
+damping rate is `wvt.uvMax*damp` in inverse seconds.

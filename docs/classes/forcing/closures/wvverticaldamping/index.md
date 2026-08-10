@@ -11,7 +11,7 @@ nav_order: 4
 
 #  WVVerticalDamping
 
-Vertical viscosity and diffusivity
+Apply vertical Laplacian viscosity and diffusivity.
 
 
 ---
@@ -24,8 +24,10 @@ Vertical viscosity and diffusivity
 
 The damping is designed to mimic the VerticalScalarDiffusivity in
 Oceananigans to allow for direct comparison between the models. This
-is intended be used in combination with
-WVHorizontalDamping. In general, you should be using the
+applies to wave-bearing three-dimensional transforms and is intended
+for use with
+[`WVHorizontalDamping`](/classes/forcing/closures/wvhorizontaldamping/).
+For an automatically scaled closure, use
 [`WVAdaptiveDamping`](/classes/forcing/closures/wvadaptivedamping/).
 
 The specific form of the forcing is given by
@@ -39,23 +41,23 @@ $$
 \end{align}
 $$
 
-with viscosity, $$\nu$$, and diffusivity, $$\kappa$$. This should be combined with
-[`WVHorizontalDamping`](/classes/forcing/closures/wvhorizontaldamping/) for a complete closure. For help
-choosing appropriate values, see the notes in
+Here $$\nu$$ is the vertical viscosity and $$\kappa$$ is the vertical
+diffusivity. Combine this closure with
+[`WVHorizontalDamping`](/classes/forcing/closures/wvhorizontaldamping/)
+to damp horizontal gradients as well. For guidance on automatically
+scaled coefficients, see
 [`WVAdaptiveDamping`](/classes/forcing/closures/wvadaptivedamping/).
 
-### Usage
-
-Assuming there is a WVTransform instance wvt, to add this forcing,
+### Example
 
 ```matlab
-wvt.addForcing(WVVerticalDamping(wvt,nu=5e-4, kappa=1e-6));
+wvt = WVTransformConstantStratification([40e3,30e3,2e3],[8,6,5],N0=5.2e-3,latitude=45,isHydrostatic=true);
+wvt.addForcing(WVVerticalDamping(wvt,nu=5e-4,kappa=1e-6));
 ```
 
 ### Notes
 
-This is currently implemented in the spatial domain and is
-thus highly un-optimized.
+This closure is evaluated in the spatial domain.
 
 For constant stratification, $$\partial_z \ln N^2=0$$ and the
 stratification-gradient correction vanishes. The configured viscosity
@@ -67,10 +69,10 @@ transform with a different resolution.
 
 ## Topics
 + Create the forcing
-  + [`WVVerticalDamping`](/classes/forcing/closures/wvverticaldamping/wvverticaldamping.html) initialize the WVVerticalDamping
+  + [`WVVerticalDamping`](/classes/forcing/closures/wvverticaldamping/wvverticaldamping.html) Create vertical Laplacian damping for a transform.
 + Inspect forcing configuration
-  + [`nu`](/classes/forcing/closures/wvverticaldamping/nu.html) vertical viscosity
-  + [`kappa`](/classes/forcing/closures/wvverticaldamping/kappa.html) vertical diffusivity
+  + [`nu`](/classes/forcing/closures/wvverticaldamping/nu.html) Vertical momentum viscosity in $$\mathrm{m^2\,s^{-1}}$$.
+  + [`kappa`](/classes/forcing/closures/wvverticaldamping/kappa.html) Vertical displacement diffusivity in $$\mathrm{m^2\,s^{-1}}$$.
 
 
 ## Developer Topics
@@ -78,7 +80,7 @@ These items document internal implementation details and are not part of the pri
 + Forcing persistence
   + [`classRequiredPropertyNames`](/classes/forcing/closures/wvverticaldamping/classrequiredpropertynames.html) Returns the required property names for the class
 + Forcing internals
-  + [`dLnN2`](/classes/forcing/closures/wvverticaldamping/dlnn2.html) variable stratification factor
+  + [`dLnN2`](/classes/forcing/closures/wvverticaldamping/dlnn2.html) Precomputed vertical logarithmic stratification gradient.
 
 
 ---

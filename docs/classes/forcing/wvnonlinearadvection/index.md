@@ -11,7 +11,7 @@ nav_order: 2
 
 #  WVNonlinearAdvection
 
-The advective flux, $$\mathbf{u}\cdot \nabla \mathbf{u}$$ and $$\mathbf{u}\cdot \nabla \eta$$
+Add nonlinear advection to the model equations.
 
 
 ---
@@ -22,9 +22,9 @@ The advective flux, $$\mathbf{u}\cdot \nabla \mathbf{u}$$ and $$\mathbf{u}\cdot 
 
 ## Overview
 
-The nonlinear advection forcing adds the nonlinear terms to the momentum and thermodynamic equation.
-
-The nonlinear terms are all computed in the spatial domain.
+The nonlinear terms are evaluated in physical space and added to the
+momentum, thermodynamic, or quasigeostrophic potential-vorticity
+(QGPV) equation appropriate to the transform.
 
 For nonhydrostatic transforms,
 
@@ -51,22 +51,32 @@ and for quasigeostrophic transforms,
 
 $$
 \begin{align}
-\mathcal{S}_\textrm{qgpv} &= - \left( u \partial_x q + v \partial_y q \right)
+\mathcal{S}_\mathrm{qgpv} &= - \left( u \partial_x q + v \partial_y q \right)
 \end{align}
 $$
 
-where $$q$$ is the qgpv.
+where $$q$$ is QGPV.
 
 ### Notes
 
-This is the only forcing added to the transforms by default. You must explicitly remove it if you want to consider linear flows.
+Every supported transform installs this forcing by default. A
+nonlinear `WVModel` evaluates it automatically. Analytical linear
+evolution does not evaluate nonlinear forcing, so the object does not
+need to be removed when using linear evolution.
+
+### Example
+
+```matlab
+wvt = WVTransformConstantStratification([40e3,30e3,2e3],[8,6,5],N0=5.2e-3,latitude=45,isHydrostatic=true);
+nonlinearAdvection = wvt.forcingWithName("nonlinear advection");
+```
 
 
 
 
 ## Topics
 + Create the forcing
-  + [`WVNonlinearAdvection`](/classes/forcing/wvnonlinearadvection/wvnonlinearadvection.html) initialize the WVNonlinearAdvection nonlinear flux
+  + [`WVNonlinearAdvection`](/classes/forcing/wvnonlinearadvection/wvnonlinearadvection.html) Create nonlinear advection for a transform.
 
 
 ## Developer Topics
@@ -74,7 +84,7 @@ These items document internal implementation details and are not part of the pri
 + Forcing persistence
   + [`classRequiredPropertyNames`](/classes/forcing/wvnonlinearadvection/classrequiredpropertynames.html) Returns the required property names for the class
 + Forcing internals
-  + [`dLnN2`](/classes/forcing/wvnonlinearadvection/dlnn2.html) variable stratification factor
+  + [`dLnN2`](/classes/forcing/wvnonlinearadvection/dlnn2.html) Precomputed vertical logarithmic stratification gradient.
 
 
 ---

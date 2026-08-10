@@ -9,7 +9,7 @@ mathjax: true
 
 #  WVHorizontalDamping
 
-initialize the WVHorizontalDamping
+Create horizontal Laplacian damping for a transform.
 
 
 ---
@@ -19,11 +19,11 @@ initialize the WVHorizontalDamping
  self = WVHorizontalDamping(wvt,options)
 ```
 ## Parameters
-+ `wvt`  a WVTransform instance
-+ `nu`  horizontal viscosity, default $$1 \cdot 10^{-4} \textrm{m}^2/\textrm{s}$$
-+ `kappa`  horizontal diffusivity, default $$1 \cdot 10^{-6} \textrm{m}^2/\textrm{s}$$
++ `wvt`  wave-bearing three-dimensional transform that owns the closure
++ `nu`  optional horizontal viscosity in square meters per second; default `1e-4`
++ `kappa`  optional horizontal diffusivity in square meters per second; default `1e-6`
 
 ## Returns
-+ `self`  a WVHorizontalDamping instance
++ `self`  horizontal-damping closure owned by `wvt`
 
 ## Discussion

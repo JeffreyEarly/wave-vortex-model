@@ -9,9 +9,12 @@ mathjax: true
 
 #  j_damp
 
-wavenumber at which the significant scale damping starts.
+Estimated vertical mode number for significant damping.
 
 
 ---
 
 ## Discussion
+
+This value is dimensionless. The filter is already nonzero below
+this estimate; use `j_no_damp` for the exact zero-damping cutoff.

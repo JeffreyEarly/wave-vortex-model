@@ -9,7 +9,7 @@ mathjax: true
 
 #  Cd
 
-non-dimensional quadratic drag coefficient
+Configured dimensionless quadratic drag coefficient.
 
 
 ---
@@ -18,3 +18,5 @@ non-dimensional quadratic drag coefficient
 Real valued property with no dimensions and no units.
 
 ## Discussion
+
+The constructor default is `1e-3`.

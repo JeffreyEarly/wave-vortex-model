@@ -9,17 +9,17 @@ mathjax: true
 
 #  effectiveHorizontalGridResolution
 
-returns the effective grid resolution in meters
+Return the shortest fully retained horizontal wavelength.
 
 
 ---
 
 ## Declaration
 ```matlab
- flag = effectiveHorizontalGridResolution(other)
+ effectiveHorizontalGridResolution = effectiveHorizontalGridResolution()
 ```
 ## Returns
-+ `effectiveHorizontalGridResolution`  double
++ `effectiveHorizontalGridResolution`  effective horizontal resolution in meters
 
 ## Discussion
 

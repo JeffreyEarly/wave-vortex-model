@@ -9,9 +9,12 @@ mathjax: true
 
 #  cd
 
-$$\frac{Cd}{dz}$$ scaled quadratic drag coefficient with units $$m^{-1}$$
+Drag coefficient applied at the bottom in $$\mathrm{m^{-1}}$$.
 
 
 ---
 
 ## Discussion
+
+This is `Cd/z_int(1)` for a three-dimensional transform and
+`Cd/4000` for a barotropic transform.

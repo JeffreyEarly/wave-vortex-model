@@ -9,7 +9,7 @@ mathjax: true
 
 #  dLnN2
 
-variable stratification factor
+Precomputed vertical logarithmic stratification gradient.
 
 > Developer documentation: this item describes internal implementation details.
 
@@ -17,3 +17,6 @@ variable stratification factor
 ---
 
 ## Discussion
+
+This Internal array is zero for constant stratification and has
+units of inverse meters for variable stratification.

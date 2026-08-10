@@ -9,19 +9,19 @@ mathjax: true
 
 #  WVAdaptiveDamping
 
-initialize the WVAdaptiveDamping
+Create adaptive spectral damping for a transform.
 
 
 ---
 
 ## Declaration
 ```matlab
- damp = WVAdaptiveDamping(wvt)
+ self = WVAdaptiveDamping(wvt)
 ```
 ## Parameters
-+ `wvt`  a WVTransform instance
++ `wvt`  transform that owns and evaluates the closure
 
 ## Returns
-+ `self`  a WVAdaptiveDamping instance
++ `self`  adaptive-damping closure owned by `wvt`
 
 ## Discussion

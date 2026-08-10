@@ -9,7 +9,7 @@ mathjax: true
 
 #  Ap_indices
 
-indices of modes in the `Ap` matrix to fix
+Linear indices of the selected `Ap` coefficients.
 
 
 ---
@@ -19,3 +19,6 @@ indices of modes in the `Ap` matrix to fix
 + Size: `(:,1)`
 
 ## Discussion
+
+This column vector is empty by default and has one entry for each
+value in `Apbar`.

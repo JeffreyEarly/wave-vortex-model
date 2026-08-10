@@ -9,22 +9,24 @@ mathjax: true
 
 #  setWaveForcingCoefficients
 
-set the amplitude to fix for the wave part of the flow
+Select positive- and negative-frequency coefficients to fix.
 
 
 ---
 
 ## Declaration
 ```matlab
-  setWaveForcingCoefficients(Apbar,Ambar,options)
+ setWaveForcingCoefficients(Apbar,Ambar,options)
 ```
 ## Parameters
-+ `Apbar`  Ap fixed amplitude
-+ `Ambar`  Am fixed amplitude
-+ `MAp`  (optional) forcing mask, Ap. 1s at the forced modes, 0s at the unforced modes. Default is MAp = abs(Apbar) > 1e-6*max(abs(Apbar(:)))
-+ `MAm`  (optional) forcing mask, Am. 1s at the forced modes, 0s at the unforced modes. Default is MAm = abs(Ambar) > 1e-6*max(abs(Ambar(:)))
++ `Apbar`  `Ap` values on the transform spectral grid
++ `Ambar`  `Am` values on the transform spectral grid
++ `MAp`  optional logical `Ap` selection mask; default `abs(Apbar) > 1e-6*max(abs(Apbar(:)))`
++ `MAm`  optional logical `Am` selection mask; default `abs(Ambar) > 1e-6*max(abs(Ambar(:)))`
 
 ## Discussion
 
-This function will automatically remove modes set in the
-damping region of the WVAdaptiveDamping forcing, if present.
+Without explicit masks, coefficients whose magnitude is at
+least $$10^{-6}$$ times the largest supplied magnitude are
+selected. If adaptive damping is registered, selected modes
+above its horizontal `k_damp` threshold are removed.

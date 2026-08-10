@@ -11,7 +11,7 @@ nav_order: 2
 
 #  WVVerticalDiffusivity
 
-Vertical diffusivty
+Apply vertical diffusivity to the thermodynamic field.
 
 
 ---
@@ -36,33 +36,34 @@ $$
 \end{align}
 $$
 
-Upon initialization you can set `shouldForceMeanDensityAnomaly` to
-`false` and the $$\frac{\partial}{\partial z} \ln N^2$$ term will be
-neglected.
+Set `shouldForceMeanDensityAnomaly=false` to omit the
+$$\partial_z\ln N^2$$ correction for variable stratification. This
+option has no effect for constant stratification because the gradient
+is zero.
 
-### Usage
-
-Assuming there is a WVTransform instance wvt, to add this forcing,
+### Example
 
 ```matlab
-wvt.addForcing(WVVerticalDiffusivity(wvt, kappa_z=1e-6));
+wvt = WVTransformConstantStratification([40e3,30e3,2e3],[8,6,5],N0=5.2e-3,latitude=45,isHydrostatic=true);
+wvt.addForcing(WVVerticalDiffusivity(wvt,kappa_z=1e-6));
 ```
 
 ### Notes
 
 This is currently implemented in the spatial domain. It applies to
-three-dimensional wave and stratified-QG transforms, but not to a
-barotropic transform because that geometry has no vertical structure.
+wave-bearing three-dimensional transforms and has a separate QGPV
+pathway for stratified QG. It is not compatible with barotropic QG,
+which has no vertical structure.
 
 
 
 
 ## Topics
 + Create the forcing
-  + [`WVVerticalDiffusivity`](/classes/forcing/closures/wvverticaldiffusivity/wvverticaldiffusivity.html) initialize the WVVerticalDiffusivity
+  + [`WVVerticalDiffusivity`](/classes/forcing/closures/wvverticaldiffusivity/wvverticaldiffusivity.html) Create vertical diffusivity for a three-dimensional transform.
 + Inspect forcing configuration
-  + [`kappa_z`](/classes/forcing/closures/wvverticaldiffusivity/kappa_z.html) vertical diffusivity, $$m^2s^{-1}$$
-  + [`shouldForceMeanDensityAnomaly`](/classes/forcing/closures/wvverticaldiffusivity/shouldforcemeandensityanomaly.html) whether to include the $$\frac{\partial}{\partial z} \ln N^2$$ term
+  + [`kappa_z`](/classes/forcing/closures/wvverticaldiffusivity/kappa_z.html) Configured vertical diffusivity in $$\mathrm{m^2\,s^{-1}}$$.
+  + [`shouldForceMeanDensityAnomaly`](/classes/forcing/closures/wvverticaldiffusivity/shouldforcemeandensityanomaly.html) Whether to include the variable-stratification correction.
 
 
 ## Developer Topics
@@ -70,7 +71,7 @@ These items document internal implementation details and are not part of the pri
 + Forcing persistence
   + [`classRequiredPropertyNames`](/classes/forcing/closures/wvverticaldiffusivity/classrequiredpropertynames.html) Returns the required property names for the class
 + Forcing internals
-  + [`dLnN2`](/classes/forcing/closures/wvverticaldiffusivity/dlnn2.html) precomputed dLnN2 term
+  + [`dLnN2`](/classes/forcing/closures/wvverticaldiffusivity/dlnn2.html) Precomputed vertical logarithmic stratification gradient.
 
 
 ---

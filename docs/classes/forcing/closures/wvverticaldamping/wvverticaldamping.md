@@ -9,7 +9,7 @@ mathjax: true
 
 #  WVVerticalDamping
 
-initialize the WVVerticalDamping
+Create vertical Laplacian damping for a transform.
 
 
 ---
@@ -19,11 +19,11 @@ initialize the WVVerticalDamping
  self = WVVerticalDamping(wvt,options)
 ```
 ## Parameters
-+ `wvt`  a WVTransform instance
-+ `nu`  vertical viscosity, default $$5 \cdot 10^{-4} \textrm{m}^2/\textrm{s}$$
-+ `kappa`  vertical diffusivity, default $$1 \cdot 10^{-6} \textrm{m}^2/\textrm{s}$$
++ `wvt`  wave-bearing three-dimensional transform that owns the closure
++ `nu`  optional vertical viscosity in square meters per second; default `5e-4`
++ `kappa`  optional vertical diffusivity in square meters per second; default `1e-6`
 
 ## Returns
-+ `self`  a WVVerticalDamping instance
++ `self`  vertical-damping closure owned by `wvt`
 
 ## Discussion

@@ -11,7 +11,7 @@ nav_order: 6
 
 #  WVAntialiasing
 
-Antialiasing filter
+Apply explicit spectral antialias filtering for diagnostics.
 
 
 ---
@@ -22,28 +22,24 @@ Antialiasing filter
 
 ## Overview
 
-This forcing removes (sets to zero) energy in the largest 1/3 modes
-to prevent quadratic aliasing. This is the correct de-aliasing for
-the horizontal fourier modes, but is not exactly correct for the
-vertical modes in variable stratification. You can thus manually set
-`Nj`, otherwise it will default to `options.Nj = floor(2*wvt.Nj/3);`.
+This closure removes coefficient tendencies in aliased modes and sets
+those coefficients to zero after every integration step. The
+horizontal mask uses the transform's quadratic-aliasing rule. Vertical
+modes with `j >= Nj` are discarded; `Nj` defaults to
+`floor(2*wvt.Nj/3)`.
 
-**Very important** You should almost never use this forcing, as
-de-aliasing is built-in at the transform level and enabled by
-default. For performance reasons is far more optimal to simply never
-compute the de-aliased modes. The purpose of this forcing to allow
-direct measurement of the effect of the de-aliasing on energy and
-potential enstrophy. It is quite slow and thus we recommend it be
-used for diagnostic purposes only.
+Transform-level antialiasing is enabled by default and is more
+efficient because discarded modes are never computed. Explicit
+antialiasing is intended for measuring the filter's effect on energy
+and potential enstrophy. Construct the transform with
+`shouldAntialias=false` before adding this closure. It is compatible
+with wave-bearing and QG transforms.
 
-### Usage
-
-This is likely to change in the future, but at the moment several of
-the transforms have a function that will make a new transform in the
-identical state, but with the antialiasing filter explicitly added.
+### Example
 
 ```matlab
-wvtAA = wvt.waveVortexTransformWithExplicitAntialiasing();
+wvt = WVTransformConstantStratification([40e3,30e3,2e3],[8,6,5],N0=5.2e-3,latitude=45,isHydrostatic=true,shouldAntialias=false);
+wvt.addForcing(WVAntialiasing(wvt));
 ```
 
 
@@ -51,12 +47,12 @@ wvtAA = wvt.waveVortexTransformWithExplicitAntialiasing();
 
 ## Topics
 + Create the forcing
-  + [`WVAntialiasing`](/classes/forcing/closures/wvantialiasing/wvantialiasing.html) initialize the WVAntialiasing
+  + [`WVAntialiasing`](/classes/forcing/closures/wvantialiasing/wvantialiasing.html) Create explicit antialias filtering for a transform.
 + Inspect forcing configuration
-  + [`Nj`](/classes/forcing/closures/wvantialiasing/nj.html) number of retained vertical modes used to construct the filter
+  + [`Nj`](/classes/forcing/closures/wvantialiasing/nj.html) Number of retained vertical modes.
 + Inspect forcing or damping scales
-  + [`effectiveHorizontalGridResolution`](/classes/forcing/closures/wvantialiasing/effectivehorizontalgridresolution.html) returns the effective grid resolution in meters
-  + [`effectiveJMax`](/classes/forcing/closures/wvantialiasing/effectivejmax.html) returns the effective highest vertical mode
+  + [`effectiveHorizontalGridResolution`](/classes/forcing/closures/wvantialiasing/effectivehorizontalgridresolution.html) Return the shortest fully retained horizontal wavelength.
+  + [`effectiveJMax`](/classes/forcing/closures/wvantialiasing/effectivejmax.html) Return the highest retained vertical-mode number.
 
 
 ## Developer Topics
@@ -64,7 +60,7 @@ These items document internal implementation details and are not part of the pri
 + Forcing persistence
   + [`classRequiredPropertyNames`](/classes/forcing/closures/wvantialiasing/classrequiredpropertynames.html) Returns the required property names for the class
 + Forcing internals
-  + [`M`](/classes/forcing/closures/wvantialiasing/m.html) spectral matrix that multiplies Ap,Am,A0 to zero out the aliased modes
+  + [`M`](/classes/forcing/closures/wvantialiasing/m.html) Logical-shape spectral mask of discarded coefficients.
 
 
 ---

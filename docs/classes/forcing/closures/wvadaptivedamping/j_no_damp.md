@@ -9,9 +9,11 @@ mathjax: true
 
 #  j_no_damp
 
-wavenumber below which there is zero damping
+Vertical mode number below which damping is exactly zero.
 
 
 ---
 
 ## Discussion
+
+This value is dimensionless.

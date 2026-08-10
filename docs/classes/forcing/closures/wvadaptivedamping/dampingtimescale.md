@@ -9,18 +9,21 @@ mathjax: true
 
 #  dampingTimeScale
 
-Computes the minimum damping time scale
+Return the inverse maximum unit-speed damping coefficient.
 
 
 ---
 
 ## Declaration
 ```matlab
- dampingTimeScale(self)
+ dampingTimeScale = dampingTimeScale()
 ```
-## Parameters
-+ `self`  an instance of WVAdaptiveViscosity
+## Returns
++ `dampingTimeScale`  inverse maximum absolute entry of `damp`, in meters
 
 ## Discussion
 
-- Returns: dampingTimeScale
+Despite the historical method name, this value has units of
+meters because `damp` has units of inverse meters. For a
+nonzero flow, divide this value by `wvt.uvMax` to obtain the
+shortest instantaneous e-folding time in seconds.

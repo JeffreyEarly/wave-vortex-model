@@ -9,7 +9,7 @@ mathjax: true
 
 #  kappa_z
 
-vertical diffusivity, $$m^2s^{-1}$$
+Configured vertical diffusivity in $$\mathrm{m^2\,s^{-1}}$$.
 
 
 ---
@@ -18,3 +18,5 @@ vertical diffusivity, $$m^2s^{-1}$$
 Real valued property with no dimensions and units of $$m^2 s^{-1}$$.
 
 ## Discussion
+
+The constructor default is `1e-5`.

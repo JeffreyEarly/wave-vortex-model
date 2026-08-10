@@ -9,7 +9,7 @@ mathjax: true
 
 #  Ambar
 
-amplitudes of the fixed modes in the `Am` matrix
+Prescribed `Am` values in $$\mathrm{m\,s^{-1}}$$.
 
 
 ---
@@ -22,3 +22,5 @@ amplitudes of the fixed modes in the `Am` matrix
 Complex valued property with dimension $$Am_indices$$ and no units.
 
 ## Discussion
+
+Values correspond element-by-element to `Am_indices`.

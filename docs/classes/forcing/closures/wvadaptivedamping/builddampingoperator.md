@@ -9,7 +9,7 @@ mathjax: true
 
 #  buildDampingOperator
 
-Builds the damping operator
+Build the unit-speed spectral damping operator.
 
 > Developer documentation: this item describes internal implementation details.
 
@@ -21,8 +21,6 @@ Builds the damping operator
  buildDampingOperator(self)
 ```
 ## Parameters
-+ `self`  an instance of WVAdaptiveViscosity
++ `self`  adaptive-damping instance to update
 
 ## Discussion
-
-- Returns: None
