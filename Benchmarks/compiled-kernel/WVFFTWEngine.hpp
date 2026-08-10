@@ -1,6 +1,6 @@
 #pragma once
 
-#include "WVFFTEngine.hpp"
+#include "WaveVortexKernel/WVFFTEngine.hpp"
 
 #include <cstddef>
 #include <memory>
@@ -8,8 +8,8 @@
 
 namespace wavevortex {
 
-// Portable FFTW implementation of the engine-neutral transform contract.
-// FFTW is supplied by the embedding application and is never bundled here.
+// Authoring-only FFTW implementation of the portable engine contract.
+// FFTW is supplied by MATLAB and is never bundled here.
 class WVFFTWEngine final : public WVFFTEngine {
 public:
     static WVKernelStatus create(std::size_t threadCount, std::unique_ptr<WVFFTEngine>& engine);

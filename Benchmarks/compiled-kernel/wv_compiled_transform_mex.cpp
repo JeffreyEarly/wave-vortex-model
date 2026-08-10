@@ -1,6 +1,6 @@
 #include "mex.h"
 
-#include "WaveVortexKernel/WVFFTWEngine.hpp"
+#include "WVFFTWEngine.hpp"
 #include "WaveVortexKernel/WVTransformConstantStratificationKernel.hpp"
 
 #include <cstdint>

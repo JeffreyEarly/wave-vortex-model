@@ -1,4 +1,4 @@
-#include "WaveVortexKernel/WVFFTWEngine.hpp"
+#include "WVFFTWEngine.hpp"
 
 #include <fftw3.h>
 
