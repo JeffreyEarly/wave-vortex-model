@@ -1,0 +1,456 @@
+{
+  "schemaVersion": "1.0.0",
+  "repository": "JeffreyEarly/wave-vortex-model",
+  "issue": 95,
+  "recordedAt": "2026-08-10",
+  "authoritativeBaseline": "v4.2.1",
+  "branchPolicy": {
+    "finalWorkStartsFrom": "main",
+    "mergeIntegrationBranchWholesale": false,
+    "mergeInvestigationBranchWholesale": false,
+    "deleteExperimentalBranchesAfterTransfer": true
+  },
+  "refs": {
+    "baseline": {
+      "name": "v4.2.1",
+      "commit": "9652b116b3ffd4ee3372cc5cdeea9700cd6cbc32",
+      "tree": "a74e72a9b2c1886468edf877c133fa6edc9cf416",
+      "remoteMainCommit": "9652b116b3ffd4ee3372cc5cdeea9700cd6cbc32",
+      "clean": true
+    },
+    "integration": {
+      "name": "feature/layout-neutral-fftw-backend",
+      "commit": "453e79c9190623c2cee8308e9bb9fe92c0647c63",
+      "tree": "90a7d4b831af5313ec70831243724f3517991a50",
+      "remoteCommit": "453e79c9190623c2cee8308e9bb9fe92c0647c63",
+      "mergeBaseWithBaseline": "9652b116b3ffd4ee3372cc5cdeea9700cd6cbc32",
+      "clean": true
+    },
+    "investigation": {
+      "name": "experiment/fftw-adapter-overhead",
+      "commit": "18a4de1c11250b2f2a9ce3e7530ff76a6827c23e",
+      "tree": "f84cbccc2688e236786d2d3bbfcf9b32f81f9938",
+      "remoteCommit": "18a4de1c11250b2f2a9ce3e7530ff76a6827c23e",
+      "mergeBaseWithIntegration": "453e79c9190623c2cee8308e9bb9fe92c0647c63",
+      "clean": true
+    }
+  },
+  "commitGroups": [
+    {
+      "id": "issue-71",
+      "issue": 71,
+      "commits": [
+        "927c602c92b675414017970bee240e457a9518b0",
+        "cc172eedc07004a0afccb06a2ddfd26c6dfabe89",
+        "39b63e7612ba766ee067bd7263989c70cd8b798c"
+      ]
+    },
+    {
+      "id": "issue-72",
+      "issue": 72,
+      "commits": [
+        "c2fcd0d9a00457daaea01bf6d3b8dfccf72360ce",
+        "d78acbe060a6229abca1661821d7fe0d4c640ae3",
+        "b64faf93d417c2b10328b6e1bcc8fe2f6a588bcc",
+        "2f62acce8e3bf62004381a15709838d90c238ed5",
+        "d550898b1dd3ddd1d0c9ae91ac87abba95f8e54d",
+        "b51bcbd7f32f30b1d556a5a6c08fab252e6bd277"
+      ]
+    },
+    {
+      "id": "issue-73",
+      "issue": 73,
+      "commits": [
+        "ba94e2e3d57bb94d0412550e50b9d24c67421911",
+        "77f08b1dfafa20edd57e91795c979f672391ebfc",
+        "0829c315a07c9d9d796b711910a483c0631ad2cd",
+        "ab012b51bd90154be2f9f225549ea4cd3c33d78a"
+      ]
+    },
+    {
+      "id": "issue-74",
+      "issue": 74,
+      "commits": [
+        "7781c86f7cd1e54c211384cb123496b9ea59cc50",
+        "37cdb91cb5a4cfeb533f4ed68d5faf9145c32f13",
+        "3c7f71d1a776201c9762ae737b273ea63d886ec9"
+      ]
+    },
+    {
+      "id": "main-synchronization",
+      "issue": null,
+      "commits": [
+        "be2bd4d4006ac6cac500860a3bbfdb90f44099db",
+        "ff281b33b1b2f9a25563636db93b4bdca3cdf38a"
+      ]
+    },
+    {
+      "id": "issue-75",
+      "issue": 75,
+      "commits": [
+        "c9b3be4b6c1f40d9fe815b2a27439d95565f9c7f",
+        "adc690eaf92e40de689c2df2df3b9cca8a73b3ae",
+        "40cbf3d0c791cf5cf77378f22c64a108ffd53327",
+        "54bf58d5fa9a69fe5ab482a8131555ae6c4fec2e"
+      ]
+    },
+    {
+      "id": "issue-47",
+      "issue": 47,
+      "commits": [
+        "f07e0c065314dea4430925b45c2ca1fe6715f6bc",
+        "918f180654368f510f6917a053891e1e5a362434",
+        "453e79c9190623c2cee8308e9bb9fe92c0647c63"
+      ]
+    },
+    {
+      "id": "issue-92",
+      "issue": 92,
+      "commits": [
+        "0383c86e735521316ea1d725247c80c2abde368f",
+        "40776432f6bcab60b2c1e85901a9794e547e819c",
+        "23d3423ec80edb02447e82f68280c0425d17d244",
+        "6e3ff3679e45ef39bb4e08864efdece1ab667841",
+        "7e576f8fa3952681b598667769ad648882e841ea",
+        "18a4de1c11250b2f2a9ce3e7530ff76a6827c23e"
+      ]
+    }
+  ],
+  "frozenSources": [
+    {
+      "id": "builtin-buffer-owner",
+      "path": "FastTransforms/@WVFastTransformDoublyPeriodicMatlab/WVFastTransformDoublyPeriodicMatlab.m",
+      "blob": "52f332efaba2040f3d9398ec8bd8c62bb0e3f980",
+      "sha256": "bd2cd68f6c4584a90a7f23e9a86ef294521d2258ba8946b7c3815e5665fcf3e7"
+    },
+    {
+      "id": "builtin-forward",
+      "path": "FastTransforms/@WVFastTransformDoublyPeriodicMatlab/transformFromSpatialDomainWithFourier.m",
+      "blob": "de8cd4079cf9e526fab96cdad6013b260e624693",
+      "sha256": "805be10e7c1ed6e4d03cc651db9d2255947cdf0b41fd327a85e452522530c3e2"
+    },
+    {
+      "id": "builtin-inverse",
+      "path": "FastTransforms/@WVFastTransformDoublyPeriodicMatlab/transformToSpatialDomainWithFourier.m",
+      "blob": "6b889d9aea52c0c2c4faa21858ded8a1d58dbc93",
+      "sha256": "a98f17b3be2d733dfecc26047e21b45c12f8bf6b2ae51057da6e8f7f1983bea2"
+    },
+    {
+      "id": "geometry-ordering",
+      "path": "@WVGeometryDoublyPeriodic/WVGeometryDoublyPeriodic.m",
+      "blob": "185b7c7ef0e4fc6a7c591543fb2191c326d072e0",
+      "sha256": "909b31c829be2262d5f7ead065db1429c8d8d32cc3be7c4f7a0dbe7afae96432"
+    },
+    {
+      "id": "fourier-storage-layout",
+      "path": "FastTransforms/WVFourierStorageLayout.m",
+      "blob": "91dff2a18b515c0bf0c4de1f5ac004fbc135f79e",
+      "sha256": "a2e50ccc5330381383c7325ea6af6ae36899613c3098a7943562e2e3c72be53a"
+    }
+  ],
+  "artifacts": [
+    {"id":"core-v1-json","ref":"v4.2.1","path":"Benchmarks/results/reference/core-v1-m5-max-r2026a-builtin/benchmark.json","blob":"6cd911923d6604f5240be3cb25d40ea3847e19d0","sha256":"f4c32afdff95e75941e35a3033daa85dcbaac157644c72f4141170501e9c5bfc","bytes":9335},
+    {"id":"core-v1-summary","ref":"v4.2.1","path":"Benchmarks/results/reference/core-v1-m5-max-r2026a-builtin/summary.md","blob":"f5e8d406ca81e8de88e732c97f0a60c8d4bc2c20","sha256":"13942d7941dd41375903d2c08a77771b14e4c706fb50f3ff71374ab4373e83fb","bytes":2029},
+    {"id":"layout-v1-json","ref":"v4.2.1","path":"Benchmarks/results/reference/transform-layout-v1-m5-max-r2026a-builtin/benchmark.json","blob":"2e8cd848d21b864d8ea9e74322383df938719c2c","sha256":"d07b40c6209e8b557b7f7cea63f9f5cdbd893a028888cc7e7e1b3f2cbeeaa7ec","bytes":329327},
+    {"id":"layout-v1-summary","ref":"v4.2.1","path":"Benchmarks/results/reference/transform-layout-v1-m5-max-r2026a-builtin/summary.md","blob":"c9818c918341eca8724ea5a9b78981a67ca974ec","sha256":"795f4ddcde716e910c193f0af10755d6baaed28a855a5043aa371276b0b8f964","bytes":14649},
+    {"id":"layout-integration-json","ref":"v4.2.1","path":"Benchmarks/results/reference/transform-layout-integration-v1-m5-max-r2026a-builtin/benchmark.json","blob":"44004e121fe20af4a5cedab4df775ee549e7def3","sha256":"293ad7ae4ed3204d54be310dcfe39ed67379ab4931e862a8f7e1c6760f8c35af","bytes":47155},
+    {"id":"layout-integration-summary","ref":"v4.2.1","path":"Benchmarks/results/reference/transform-layout-integration-v1-m5-max-r2026a-builtin/summary.md","blob":"9ee182a218e6ca7f38c405fc9ae9405f634d8ca9","sha256":"72bab6165bf41edbd18b91b33c3071632cd1c7b8554dba2e49f4505d4c4c605e","bytes":6026},
+    {"id":"layout-release-json","ref":"v4.2.1","path":"Benchmarks/results/reference/transform-layout-v4.2.1-release-m5-max-r2026a-builtin/benchmark.json","blob":"193152d118cf0525300dc6a5d66e04c6f0d42e1d","sha256":"f5b6115bfeb67b1c43d9ffcbbb4a9be489cb64e12935990b0421cc74a640432d","bytes":47071},
+    {"id":"layout-release-summary","ref":"v4.2.1","path":"Benchmarks/results/reference/transform-layout-v4.2.1-release-m5-max-r2026a-builtin/summary.md","blob":"2f87c524a3416f01718e559b910162f86944bfb7","sha256":"6a391ed16090e462fad0f8696e4f58de45b84b3a5389f3484a01d2aa30e41f27","bytes":6025},
+    {"id":"issue71-horizontal-json","ref":"feature/layout-neutral-fftw-backend","path":"Benchmarks/results/reference/fftw-horizontal-v1-m5-max-r2026a-bundled/benchmark.json","blob":"10086eb5197b271c00a4d0660d7b2c9f42f6ed2f","sha256":"4ea114ba7a650652ae45f0fca0f725ffbda708d0f47975920e55ce5c1afffc38","bytes":45907},
+    {"id":"issue71-horizontal-summary","ref":"feature/layout-neutral-fftw-backend","path":"Benchmarks/results/reference/fftw-horizontal-v1-m5-max-r2026a-bundled/summary.md","blob":"ca6d382b8a86a91c768cd4ee30c0e7a048d32417","sha256":"312ccd97e5f3204c4172626f83dc75fc46915a9c19487271f99f082c035a2cf3","bytes":3128},
+    {"id":"issue74-derivative-json","ref":"feature/layout-neutral-fftw-backend","path":"Benchmarks/results/reference/derivative-dispatch-v1-m5-max-r2026a-fftw/benchmark.json","blob":"ebd6d51f7319297f0bfd6b1b06324ea42d8bf85d","sha256":"b8caea2beef155477376515cc356cfa416aaff538b27bacf68280855248da5f0","bytes":919327},
+    {"id":"issue74-derivative-summary","ref":"feature/layout-neutral-fftw-backend","path":"Benchmarks/results/reference/derivative-dispatch-v1-m5-max-r2026a-fftw/summary.md","blob":"92e44030c95fe2b7314b00397aff621ae45f5dd9","sha256":"022858746654087d4607434cedfc5f22c8d21d90b8461b11051bf849139d0cfd","bytes":71524},
+    {"id":"issue75-storage-json","ref":"feature/layout-neutral-fftw-backend","path":"Benchmarks/results/reference/transform-storage-v1-m5-max-r2026a-fftw/benchmark.json","blob":"ed9a33a35b71566ac540355ca197a0d8b7b16ea4","sha256":"0210a3c0a8e54c891c0cd2935a812c3e2d598f35162e3f73d7aab979c4e76690","bytes":4116546},
+    {"id":"issue75-storage-summary","ref":"feature/layout-neutral-fftw-backend","path":"Benchmarks/results/reference/transform-storage-v1-m5-max-r2026a-fftw/summary.md","blob":"ffeaab72d64b287552b0fbbd018be67d0528e039","sha256":"f61efd9cdd5c75d6ae666743e24dbbffc78e059bf089e70662ff440bf544f18c","bytes":3811},
+    {"id":"issue47-readiness-json","ref":"feature/layout-neutral-fftw-backend","path":"Benchmarks/results/reference/fftw-readiness-v1-m5-max-r2026a-bundled/benchmark.json","blob":"9d1b8ac2eb19162f1a2715e37b952d35e73ae318","sha256":"b84bd793329902d65cf6556ba28d880b487c3411720dcbc27324768b135e2caa","bytes":4187417},
+    {"id":"issue47-readiness-summary","ref":"feature/layout-neutral-fftw-backend","path":"Benchmarks/results/reference/fftw-readiness-v1-m5-max-r2026a-bundled/summary.md","blob":"39ffdcf4801e7040dc6025b81e527f067613b42e","sha256":"2143f3fa652d41742f27b6154a7a1094eb11d905a720339d6ad1014be617eb2e","bytes":3968},
+    {"id":"issue92-investigation-json","ref":"experiment/fftw-adapter-overhead","path":"Benchmarks/results/experiments/issue92/20260809-m5-max-r2026a/investigation.json","blob":"c62be94bb124499dc86fcbd39b5831ab9a85e882","sha256":"2582b0d58c42e160c08a96ae51bc33a7659b8e7d16669f44b50156a82d41bcf5","bytes":351870},
+    {"id":"issue92-investigation-summary","ref":"experiment/fftw-adapter-overhead","path":"Benchmarks/results/experiments/issue92/20260809-m5-max-r2026a/summary.md","blob":"c2a6feef4db6041b3e9b10ae804cf9ea4010460e","sha256":"2ded308d83585b3b7916297960856b9aaaeb8631685aa91c8960aeee6ee65bba","bytes":5969}
+  ],
+  "components": [
+    {
+      "id": "benchmark-framework",
+      "issues": [59],
+      "currentLocation": "main",
+      "disposition": "retain-independent",
+      "reconstructionRequired": false,
+      "productionPaths": [],
+      "testPaths": ["UnitTests/TestWaveVortexBenchmark.m"],
+      "documentationPaths": ["Benchmarks/README.md"],
+      "benchmarkPaths": ["Benchmarks/runWaveVortexBenchmark.m", "Benchmarks/waveVortexBenchmarkSuites.m"],
+      "artifactIds": ["core-v1-json", "core-v1-summary"],
+      "packageMetadataPaths": [],
+      "rationale": "General benchmark infrastructure is already released and is required by future transform and kernel comparisons.",
+      "downstreamIssue": 96
+    },
+    {
+      "id": "full-mapping-baseline",
+      "issues": [69],
+      "currentLocation": "main",
+      "disposition": "retain-independent",
+      "reconstructionRequired": false,
+      "productionPaths": [],
+      "testPaths": ["UnitTests/TestWaveVortexTransformLayoutBenchmark.m"],
+      "documentationPaths": ["Benchmarks/README.md"],
+      "benchmarkPaths": ["Benchmarks/runWaveVortexTransformLayoutSuite.m"],
+      "artifactIds": ["layout-v1-json", "layout-v1-summary"],
+      "packageMetadataPaths": [],
+      "rationale": "Frozen evidence for the optimized full-complex MATLAB mapping.",
+      "downstreamIssue": 96
+    },
+    {
+      "id": "compact-layout-abstraction",
+      "issues": [70],
+      "currentLocation": "main",
+      "disposition": "retain-independent",
+      "reconstructionRequired": false,
+      "productionPaths": ["FastTransforms/WVFourierStorageLayout.m", "FastTransforms/@WVFastTransformDoublyPeriodicMatlab/WVFastTransformDoublyPeriodicMatlab.m", "FastTransforms/@WVFastTransformDoublyPeriodicMatlab/transformFromSpatialDomainWithFourier.m", "FastTransforms/@WVFastTransformDoublyPeriodicMatlab/transformToSpatialDomainWithFourier.m"],
+      "testPaths": ["UnitTests/TestWVFourierStorageLayout.m", "UnitTests/TestWVFourierStorageLayoutIntegrationBenchmark.m"],
+      "documentationPaths": ["Documentation/WebsiteDocumentation/developers-guide/fourier-storage-layout.md"],
+      "benchmarkPaths": ["Benchmarks/runWVFourierStorageLayoutIntegrationBenchmark.m"],
+      "artifactIds": ["layout-integration-json", "layout-integration-summary", "layout-release-json", "layout-release-summary"],
+      "packageMetadataPaths": [],
+      "rationale": "Released in v4.2.1, numerically equivalent, faster, and shared by builtin and future compiled backends.",
+      "downstreamIssue": 97
+    },
+    {
+      "id": "legacy-expanded-mapping-removal",
+      "issues": [71],
+      "currentLocation": "integration",
+      "disposition": "retain-independent",
+      "reconstructionRequired": true,
+      "productionPaths": ["@WVGeometryDoublyPeriodic/WVGeometryDoublyPeriodic.m", "FastTransforms/WVFourierStorageLayout.m"],
+      "testPaths": ["UnitTests/TestWVFourierStorageLayout.m"],
+      "documentationPaths": ["Documentation/WebsiteDocumentation/developers-guide/fourier-storage-layout.md"],
+      "benchmarkPaths": [],
+      "artifactIds": [],
+      "packageMetadataPaths": [],
+      "rationale": "Removes vertically replicated compatibility state while preserving indicesFromWVGridToDFTGrid; commit 927c602 also contains conditional FFTW work and cannot be cherry-picked.",
+      "downstreamIssue": 97
+    },
+    {
+      "id": "fourier-position-compact-reconstruction",
+      "issues": [71],
+      "currentLocation": "integration",
+      "disposition": "retain-independent",
+      "reconstructionRequired": true,
+      "productionPaths": ["@WVGeometryDoublyPeriodic/WVGeometryDoublyPeriodic.m"],
+      "testPaths": ["UnitTests/TestWVFourierStorageLayout.m"],
+      "documentationPaths": [],
+      "benchmarkPaths": [],
+      "artifactIds": [],
+      "packageMetadataPaths": [],
+      "rationale": "Uses the compact full layout for Fourier-at-position evaluation without depending on FFTW.",
+      "downstreamIssue": 97
+    },
+    {
+      "id": "obsolete-main-fftw-route",
+      "issues": [],
+      "currentLocation": "main",
+      "disposition": "remove-from-main",
+      "reconstructionRequired": true,
+      "productionPaths": ["FastTransforms/@WVFastTransformDoublyPeriodicFFTW", "@WVGeometryDoublyPeriodic/WVGeometryDoublyPeriodic.m"],
+      "testPaths": ["UnitTests/TestInternalRuntimeArtifacts.m", "UnitTests/TestProductionCodeAnalyzer.m"],
+      "documentationPaths": [],
+      "benchmarkPaths": [],
+      "artifactIds": [],
+      "packageMetadataPaths": [],
+      "rationale": "The unsupported three-plan/full-buffer adapter and fftw_dft2 probe are obsolete in both PROMOTE and RETIRE outcomes.",
+      "downstreamIssue": 97
+    },
+    {
+      "id": "half-x-adapter",
+      "issues": [71],
+      "currentLocation": "integration",
+      "disposition": "conditional-qualified-winner",
+      "reconstructionRequired": true,
+      "productionPaths": ["FastTransforms/@WVFastTransformDoublyPeriodicFFTW"],
+      "testPaths": ["UnitTests/TestWVFastTransformDoublyPeriodicFFTW.m"],
+      "documentationPaths": ["Documentation/WebsiteDocumentation/developers-guide/fourier-storage-layout.md"],
+      "benchmarkPaths": ["Benchmarks/runWVFFTWAdapterBenchmark.m"],
+      "artifactIds": ["issue71-horizontal-json", "issue71-horizontal-summary"],
+      "packageMetadataPaths": [],
+      "rationale": "Reference implementation only; replace or simplify around a candidate that clears #94's architectural gate.",
+      "downstreamIssue": 94
+    },
+    {
+      "id": "backend-selection-and-package-contract",
+      "issues": [72],
+      "currentLocation": "integration",
+      "disposition": "conditional-qualified-winner",
+      "reconstructionRequired": true,
+      "productionPaths": ["FastTransforms/WVFastTransformDoublyPeriodic.m", "@WVGeometryDoublyPeriodic/WVGeometryDoublyPeriodic.m", "@WVTransformConstantStratification/WVTransformConstantStratification.m", "@WVTransform/waveVortexTransformFromFile.m"],
+      "testPaths": ["UnitTests/TestWVFastTransformDoublyPeriodicSelection.m", "UnitTests/Support/MockWVBackendServices.m"],
+      "documentationPaths": ["Documentation/WebsiteDocumentation/developers-guide/fourier-storage-layout.md", "Documentation/WebsiteDocumentation/users-guide/reading-and-writing-to-file.md", "Documentation/WebsiteDocumentation/users-guide/supported-features.md"],
+      "benchmarkPaths": ["Benchmarks/createWaveVortexBenchmarkTransform.m", "Benchmarks/waveVortexBenchmarkBackends.m"],
+      "artifactIds": [],
+      "packageMetadataPaths": ["resources/mpackage.json"],
+      "rationale": "Public selection, fallback, persistence, and the FFTWTransforms dependency are justified only by a qualified production backend.",
+      "downstreamIssue": 97
+    },
+    {
+      "id": "vertical-r2r-dispatch",
+      "issues": [73],
+      "currentLocation": "integration",
+      "disposition": "conditional-qualified-winner",
+      "reconstructionRequired": true,
+      "productionPaths": ["FastTransforms/WVVerticalTransformConstantStratification.m", "@WVGeometryDoublyPeriodicStratifiedConstant/WVGeometryDoublyPeriodicStratifiedConstant.m", "@WVTransformConstantStratification/transformUVWEtaToWaveVortex.m"],
+      "testPaths": ["UnitTests/TestWVVerticalTransformConstantStratification.m", "UnitTests/Support/MockWVVerticalTransformServices.m", "UnitTests/Support/MockWVVerticalR2RPlan.m"],
+      "documentationPaths": ["Documentation/WebsiteDocumentation/developers-guide/constant-stratification-vertical-transforms.md"],
+      "benchmarkPaths": ["Benchmarks/runWaveVortexBenchmark.m"],
+      "artifactIds": [],
+      "packageMetadataPaths": [],
+      "rationale": "Eligibility-aware vertical FFTW adds substantial strategy state and remains only when its complete model contribution qualifies.",
+      "downstreamIssue": 97
+    },
+    {
+      "id": "fftw-derivative-dispatch",
+      "issues": [74],
+      "currentLocation": "integration",
+      "disposition": "conditional-qualified-winner",
+      "reconstructionRequired": true,
+      "productionPaths": ["FastTransforms/WVSpatialDerivativeDispatch.m", "FastTransforms/@WVFastTransformDoublyPeriodicFFTW/diffX.m", "FastTransforms/@WVFastTransformDoublyPeriodicFFTW/diffY.m"],
+      "testPaths": ["UnitTests/TestWVSpatialDerivativeDispatch.m"],
+      "documentationPaths": ["Documentation/WebsiteDocumentation/developers-guide/spatial-derivative-dispatch.md"],
+      "benchmarkPaths": ["Benchmarks/runWaveVortexDerivativeDispatchSuite.m", "Benchmarks/waveVortexDerivativeDispatchCaseWorker.m"],
+      "artifactIds": ["issue74-derivative-json", "issue74-derivative-summary"],
+      "packageMetadataPaths": [],
+      "rationale": "Exact FFTW derivative regions remain conditional on the selected backend and complete nonlinearFlux qualification.",
+      "downstreamIssue": 97
+    },
+    {
+      "id": "modal-direct-derivative-formulas",
+      "issues": [74],
+      "currentLocation": "integration",
+      "disposition": "conditional-qualified-winner",
+      "reconstructionRequired": true,
+      "productionPaths": ["@WVTransformConstantStratification/transformToSpatialDomainWithFAllDerivatives.m", "@WVTransformConstantStratification/transformToSpatialDomainWithGAllDerivatives.m", "FastTransforms/@WVFastTransformDoublyPeriodicMatlab/transformToSpatialDomainWithFourierAndDerivatives.m"],
+      "testPaths": ["UnitTests/TestWVSpatialDerivativeDispatch.m"],
+      "documentationPaths": ["Documentation/WebsiteDocumentation/developers-guide/spatial-derivative-dispatch.md"],
+      "benchmarkPaths": ["Benchmarks/runWaveVortexDerivativeDispatchSuite.m"],
+      "artifactIds": ["issue74-derivative-json", "issue74-derivative-summary"],
+      "packageMetadataPaths": [],
+      "rationale": "Backend-neutral formulas are retained only if they independently clear the contained-change gate against complete nonlinearFlux.",
+      "downstreamIssue": 97
+    },
+    {
+      "id": "generic-storage-and-rss-tools",
+      "issues": [75],
+      "currentLocation": "integration",
+      "disposition": "retain-independent",
+      "reconstructionRequired": true,
+      "productionPaths": ["@WVTransformConstantStratification/transformStorageLedger.m"],
+      "testPaths": ["UnitTests/TestWaveVortexTransformStorageBenchmark.m"],
+      "documentationPaths": ["Documentation/WebsiteDocumentation/developers-guide/transform-storage-benchmark.md"],
+      "benchmarkPaths": ["Benchmarks/runWaveVortexTransformStorageSuite.m", "Benchmarks/sampleProcessRSS.sh", "Benchmarks/waveVortexTransformStorageComparison.m", "Benchmarks/waveVortexTransformStorageWorker.m"],
+      "artifactIds": ["issue75-storage-json", "issue75-storage-summary"],
+      "packageMetadataPaths": [],
+      "rationale": "Exact storage ledgers and external repeated-process RSS sampling are backend-neutral requirements for later optimization and kernel decisions.",
+      "downstreamIssue": 97
+    },
+    {
+      "id": "fftw-storage-readiness-machinery",
+      "issues": [75, 47],
+      "currentLocation": "integration",
+      "disposition": "conditional-qualified-winner",
+      "reconstructionRequired": true,
+      "productionPaths": [],
+      "testPaths": ["UnitTests/TestWaveVortexFFTWReadinessBenchmark.m"],
+      "documentationPaths": ["Documentation/WebsiteDocumentation/users-guide/supported-features.md"],
+      "benchmarkPaths": ["Benchmarks/runWaveVortexFFTWReadinessBenchmark.m", "Benchmarks/waveVortexFFTWReadinessDecision.m", "Benchmarks/waveVortexFFTWReadinessSummary.m"],
+      "artifactIds": ["issue47-readiness-json", "issue47-readiness-summary"],
+      "packageMetadataPaths": [],
+      "rationale": "Rebuild only the instrumentation required by the clean final candidate; do not merge the existing readiness harness wholesale.",
+      "downstreamIssue": 97
+    },
+    {
+      "id": "fine-grained-not-ready-record",
+      "issues": [47],
+      "currentLocation": "integration-and-github",
+      "disposition": "historical-only",
+      "reconstructionRequired": false,
+      "productionPaths": [],
+      "testPaths": [],
+      "documentationPaths": [],
+      "benchmarkPaths": [],
+      "artifactIds": ["issue47-readiness-json", "issue47-readiness-summary"],
+      "packageMetadataPaths": [],
+      "rationale": "Canonical NOT READY evidence for the fine-grained adapter remains valid and is not reopened.",
+      "downstreamIssue": 97
+    },
+    {
+      "id": "adapter-overhead-prototype-code",
+      "issues": [92],
+      "currentLocation": "investigation",
+      "disposition": "discard",
+      "reconstructionRequired": false,
+      "productionPaths": ["FastTransforms/@WVFastTransformDoublyPeriodicFFTW", "FastTransforms/WVSpatialDerivativeDispatch.m", "FastTransforms/WVVerticalTransformConstantStratification.m"],
+      "testPaths": ["UnitTests/TestFFTWAdapterOverheadInvestigation.m"],
+      "documentationPaths": [],
+      "benchmarkPaths": ["Benchmarks/runWaveVortexFFTWOverheadInvestigation.m", "Benchmarks/runWaveVortexFFTWAdapterStageBenchmark.m", "Benchmarks/waveVortexFFTWOverheadCandidateWorker.m", "Benchmarks/runFFTWAdapterPerformanceInvestigation.sh"],
+      "artifactIds": [],
+      "packageMetadataPaths": [],
+      "rationale": "Disposable workspace, mapping, pointer, allocation, dispatch, and instrumentation prototypes; selected algorithms must be reimplemented cleanly.",
+      "downstreamIssue": 94
+    },
+    {
+      "id": "adapter-overhead-evidence",
+      "issues": [92],
+      "currentLocation": "investigation-and-github",
+      "disposition": "historical-only",
+      "reconstructionRequired": false,
+      "productionPaths": [],
+      "testPaths": [],
+      "documentationPaths": [],
+      "benchmarkPaths": [],
+      "artifactIds": ["issue92-investigation-json", "issue92-investigation-summary"],
+      "packageMetadataPaths": [],
+      "rationale": "Preserve stage budgets, rejected variants, ownership evidence, batching ceiling, and RSS attribution as inputs to #93, #94, and FFTWTransforms #9.",
+      "downstreamIssue": 94
+    },
+    {
+      "id": "fftw-transforms-package",
+      "issues": [],
+      "currentLocation": "JeffreyEarly/fftw-transforms",
+      "disposition": "retain-independent",
+      "reconstructionRequired": false,
+      "productionPaths": [],
+      "testPaths": [],
+      "documentationPaths": [],
+      "benchmarkPaths": [],
+      "artifactIds": [],
+      "packageMetadataPaths": [],
+      "rationale": "Released reusable transform package remains useful independently of WaveVortex integration; package issues #8 and #9 are tracked separately.",
+      "downstreamIssue": 97
+    },
+    {
+      "id": "integration-main-sync-merges",
+      "issues": [],
+      "currentLocation": "integration",
+      "disposition": "historical-only",
+      "reconstructionRequired": false,
+      "productionPaths": [],
+      "testPaths": [],
+      "documentationPaths": [],
+      "benchmarkPaths": [],
+      "artifactIds": [],
+      "packageMetadataPaths": [],
+      "rationale": "Merge-only synchronization commits are recorded for complete commit coverage and are never transferred independently.",
+      "downstreamIssue": 97
+    }
+  ],
+  "mixedCommits": [
+    {"commit":"927c602c92b675414017970bee240e457a9518b0","issues":[71],"retainedComponents":["legacy-expanded-mapping-removal","fourier-position-compact-reconstruction"],"conditionalComponents":["half-x-adapter"]},
+    {"commit":"c2fcd0d9a00457daaea01bf6d3b8dfccf72360ce","issues":[72],"retainedComponents":[],"conditionalComponents":["backend-selection-and-package-contract"],"removeComponents":["obsolete-main-fftw-route"]},
+    {"commit":"7781c86f7cd1e54c211384cb123496b9ea59cc50","issues":[74],"retainedComponents":[],"conditionalComponents":["fftw-derivative-dispatch","modal-direct-derivative-formulas"]},
+    {"commit":"c9b3be4b6c1f40d9fe815b2a27439d95565f9c7f","issues":[75],"retainedComponents":["generic-storage-and-rss-tools"],"conditionalComponents":["fftw-storage-readiness-machinery"]}
+  ],
+  "staticBaselineChecks": {
+    "canonicalWVShape": "[Nz,Nkl]",
+    "mappingMethod": "two-dimensional-rows",
+    "builtinStorage": "full-complex",
+    "builtinInverseBufferPolicy": "one persistent reused full-complex row buffer",
+    "verticallyReplicatedProductionMappings": false
+  }
+}
