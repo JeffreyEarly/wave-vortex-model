@@ -4,6 +4,7 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
 namespace wavevortex {
 
@@ -14,13 +15,20 @@ enum class WVFFTPlanKind : std::uint32_t {
     verticalDSTI
 };
 
+struct WVFFTDimension {
+    std::size_t count = 0;
+    std::ptrdiff_t inputStride = 0;
+    std::ptrdiff_t outputStride = 0;
+};
+
 struct WVFFTPlanSpecification {
     WVFFTPlanKind kind = WVFFTPlanKind::horizontalRealToComplex2D;
-    std::vector<std::size_t> dimensions;
-    std::size_t batchCount = 0;
-    std::vector<std::ptrdiff_t> inputStrides;
-    std::vector<std::ptrdiff_t> outputStrides;
+    std::vector<WVFFTDimension> transformDimensions;
+    std::vector<WVFFTDimension> batchDimensions;
+    std::size_t inputBytes = 0;
+    std::size_t outputBytes = 0;
     bool destroysInput = false;
+    bool inPlace = false;
 };
 
 class WVFFTPlan {
@@ -34,8 +42,8 @@ class WVFFTEngine {
 public:
     virtual ~WVFFTEngine() = default;
     virtual std::string identifier() const = 0;
+    virtual std::string libraryIdentity() const { return {}; }
     virtual WVKernelStatus createPlan(const WVFFTPlanSpecification& specification, std::unique_ptr<WVFFTPlan>& plan) = 0;
 };
 
 } // namespace wavevortex
-

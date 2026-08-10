@@ -4,7 +4,7 @@ project(WaveVortexKernelContractTests LANGUAGES CXX)
 include(CTest)
 add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/../../CompiledKernel ${CMAKE_CURRENT_BINARY_DIR}/kernel)
 
-add_executable(TestWVKernelContract tests/TestWVKernelContract.cpp)
+add_executable(TestWVKernelContract tests/TestWVKernelContract.cpp tests/WVReferenceFFTEngine.cpp)
 target_link_libraries(TestWVKernelContract PRIVATE WaveVortex::Kernel)
 target_compile_features(TestWVKernelContract PRIVATE cxx_std_17)
 set_target_properties(TestWVKernelContract PROPERTIES CXX_EXTENSIONS OFF)
@@ -20,4 +20,3 @@ set_target_properties(WVKernelDescriptorDump PROPERTIES CXX_EXTENSIONS OFF)
 if(CMAKE_CXX_COMPILER_ID MATCHES "AppleClang|Clang|GNU")
     target_compile_options(WVKernelDescriptorDump PRIVATE -Wall -Wextra -Wpedantic -Werror)
 endif()
-

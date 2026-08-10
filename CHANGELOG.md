@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 - Defined the portable C++17 contract, ownership rules, and optimized-builtin benchmark baseline for the future constant-stratification nonlinear kernel; no compiled backend is exposed yet.
+- Implemented engine-neutral fused constant-stratification projection, reconstruction, and field/derivative transforms in the portable C++ core, with a source-only optional FFTW engine for authoring validation; nonlinear products and public backend selection remain future work.
 - Retired the experimental FFTW backend; WaveVortexModel now uses MATLAB's builtin transforms and has no FFTWTransforms dependency.
 - Removed the obsolete expanded mappings `dftPrimaryIndex`, `dftConjugateIndex`, `wvConjugateIndex`, `indicesFromWVGridToFFTWGrid`, and `expandedLegacyMappings`; `indicesFromWVGridToDFTGrid` remains available explicitly.
 - Updated Fourier-at-position reconstruction to use compact `WVFourierStorageLayout` mappings.

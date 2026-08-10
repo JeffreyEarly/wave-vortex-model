@@ -1,5 +1,6 @@
 #include "WaveVortexKernel/WVFFTEngine.hpp"
 #include "WaveVortexKernel/WVTransformConstantStratificationKernel.hpp"
+#include "WVReferenceFFTEngine.hpp"
 
 #include <cmath>
 #include <iostream>
@@ -59,7 +60,7 @@ void testDescriptor() {
     WVTransformConstantStratificationDescriptor even;
     auto status = WVTransformConstantStratificationDescriptor::create(configuration(16, 12, false), even);
     require(static_cast<bool>(status), "even descriptor construction failed");
-    require(even.spectralShape().rows == 9, "unexpected spectral rows");
+    require(even.spectralShape().rows == 5, "unexpected spectral rows");
     require(even.Nkl() > 0, "empty Fourier modes");
     require(even.fourierModes().front().kMode == 0 && even.fourierModes().front().lMode == 0, "zero mode must be first");
     require(even.verticalModes().z.front() == -1300.0, "unexpected bottom coordinate");
@@ -103,16 +104,78 @@ void testEngineContract() {
     FakeEngine engine;
     WVFFTPlanSpecification specification;
     specification.kind = WVFFTPlanKind::horizontalRealToComplex2D;
-    specification.dimensions = {16, 12};
-    specification.batchCount = 9;
-    specification.inputStrides = {1, 16, 16 * 12};
-    specification.outputStrides = {1, 9, 9 * 9};
+    specification.transformDimensions = {{12,16,9*9},{16,1,9}};
+    specification.batchDimensions = {{9,16*12,1}};
     std::unique_ptr<WVFFTPlan> plan;
     const auto status = engine.createPlan(specification, plan);
-    require(static_cast<bool>(status) && plan && engine.last.batchCount == 9, "fake plan contract failed");
+    require(static_cast<bool>(status) && plan && engine.last.batchDimensions.front().count == 9, "fake plan contract failed");
     double input = 0.0;
     double output = 0.0;
     require(static_cast<bool>(plan->execute(&input, &output)), "fake plan execution failed");
+}
+
+void testReferenceHorizontalRoundTrip() {
+    constexpr std::size_t Nx = 6, Ny = 5, Nz = 3, fields = 4, NxHalf = Nx / 2 + 1;
+    WVFFTPlanSpecification forward;
+    forward.kind = WVFFTPlanKind::horizontalRealToComplex2D;
+    forward.transformDimensions = {{Ny,static_cast<std::ptrdiff_t>(Nx),static_cast<std::ptrdiff_t>(Nz*fields*NxHalf)},{Nx,1,static_cast<std::ptrdiff_t>(Nz*fields)}};
+    forward.batchDimensions = {{Nz,static_cast<std::ptrdiff_t>(Nx*Ny),1},{fields,static_cast<std::ptrdiff_t>(Nx*Ny*Nz),static_cast<std::ptrdiff_t>(Nz)}};
+    auto inverse = forward;
+    inverse.kind = WVFFTPlanKind::horizontalComplexToReal2D;
+    for (auto& dimension : inverse.transformDimensions) std::swap(dimension.inputStride,dimension.outputStride);
+    for (auto& dimension : inverse.batchDimensions) std::swap(dimension.inputStride,dimension.outputStride);
+    wavevortex::test::WVReferenceFFTEngine engine;
+    std::unique_ptr<WVFFTPlan> forwardPlan, inversePlan;
+    require(static_cast<bool>(engine.createPlan(forward,forwardPlan)),"reference forward plan failed");
+    require(static_cast<bool>(engine.createPlan(inverse,inversePlan)),"reference inverse plan failed");
+    std::vector<double> source(Nx*Ny*Nz*fields), output(source.size());
+    std::vector<WVComplex64> half(NxHalf*Ny*Nz*fields);
+    for (std::size_t i = 0; i < source.size(); ++i) source[i] = std::sin(0.1*static_cast<double>(i+1));
+    require(static_cast<bool>(forwardPlan->execute(source.data(),half.data())),"reference forward failed");
+    require(static_cast<bool>(inversePlan->execute(half.data(),output.data())),"reference inverse failed");
+    double error = 0.0;
+    for (std::size_t i = 0; i < source.size(); ++i) error = std::max(error,std::abs(output[i]/static_cast<double>(Nx*Ny)-source[i]));
+    require(error < 1e-12,"reference horizontal round trip failed");
+}
+
+[[maybe_unused]] void testFusedTransformRoundTrip(bool hydrostatic) {
+    auto config = configuration(6, 5, hydrostatic);
+    config.Nz = 7;
+    config.Nj = 4;
+    config.shouldAntialias = false;
+    std::unique_ptr<WVTransformConstantStratificationKernel> kernel;
+    auto status = WVTransformConstantStratificationKernel::create(config, std::make_unique<wavevortex::test::WVReferenceFFTEngine>(), kernel);
+    require(static_cast<bool>(status) && kernel, "kernel construction failed");
+
+    const auto spatial = kernel->descriptor().spatialShape();
+    const auto spectral = kernel->descriptor().spectralShape();
+    const std::size_t inputChannels = hydrostatic ? 3 : 4;
+    std::vector<double> source(spatial.elementCount() * inputChannels);
+    for (std::size_t i = 0; i < source.size(); ++i) source[i] = std::sin(0.173 * static_cast<double>(i + 1)) + 0.2 * std::cos(0.071 * static_cast<double>(i + 3));
+    const auto count = spectral.elementCount();
+    std::vector<WVComplex64> Ap(count), Am(count), A0(count), Ap2(count), Am2(count), A02(count);
+    WVMutableCoefficients coefficients{{Ap.data(),spectral},{Am.data(),spectral},{A0.data(),spectral}};
+    const WVRealFieldBundleConstView input{source.data(),{spatial.first,spatial.second,spatial.third,inputChannels}};
+    status = hydrostatic ? kernel->transformUVEtaToWaveVortex(input,0.25,0.0,coefficients) : kernel->transformUVWEtaToWaveVortex(input,0.25,0.0,coefficients);
+    require(static_cast<bool>(status), "fused forward transform failed");
+
+    std::vector<double> reconstructed(spatial.elementCount() * 4);
+    WVState state{0.25,0.0,{{Ap.data(),spectral},{Am.data(),spectral},{A0.data(),spectral}}};
+    WVRealFieldBundleView output{reconstructed.data(),{spatial.first,spatial.second,spatial.third,4}};
+    status = kernel->transformWaveVortexToUVWEta(state,output);
+    require(static_cast<bool>(status), "fused inverse transform failed");
+
+    WVMutableCoefficients repeated{{Ap2.data(),spectral},{Am2.data(),spectral},{A02.data(),spectral}};
+    const WVRealFieldBundleConstView repeatedInput{reconstructed.data(),{spatial.first,spatial.second,spatial.third,inputChannels}};
+    status = hydrostatic ? kernel->transformUVEtaToWaveVortex(repeatedInput,0.25,0.0,repeated) : kernel->transformUVWEtaToWaveVortex(repeatedInput,0.25,0.0,repeated);
+    require(static_cast<bool>(status), "repeated fused forward transform failed");
+    for (const auto* array : {&Ap2,&Am2,&A02}) for (const auto& coefficient : *array) require(std::isfinite(coefficient.real) && std::isfinite(coefficient.imag),"fused transform produced a non-finite coefficient");
+    require(kernel->metrics().horizontalExecutionCount == 3, "unexpected horizontal execution count");
+    require(kernel->metrics().verticalExecutionCount == 6, "unexpected vertical execution count");
+    require(kernel->persistentBytes() >= kernel->scratchBytes(), "persistent byte accounting is incomplete");
+    WVMutableCoefficients overlapping{{Ap2.data(),spectral},{Ap2.data(),spectral},{A02.data(),spectral}};
+    status = hydrostatic ? kernel->transformUVEtaToWaveVortex(input,0.25,0.0,overlapping) : kernel->transformUVWEtaToWaveVortex(input,0.25,0.0,overlapping);
+    require(status.code == WVKernelStatusCode::overlappingArrays,"overlapping transform outputs were accepted");
 }
 
 } // namespace
@@ -121,6 +184,9 @@ int main() {
     testDescriptor();
     testViewsAndAliasing();
     testEngineContract();
+    testReferenceHorizontalRoundTrip();
+    testFusedTransformRoundTrip(true);
+    testFusedTransformRoundTrip(false);
     std::cout << "WaveVortex kernel contract tests passed\n";
     return 0;
 }

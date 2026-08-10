@@ -17,6 +17,8 @@ compiler=${CXX:-c++}
 "$compiler" -std=c++17 -Wall -Wextra -Wpedantic -Werror \
     -I "$repository_root/CompiledKernel/include" \
     "$repository_root/CompiledKernel/src/WVKernelTypes.cpp" \
+    "$repository_root/CompiledKernel/src/WVTransformConstantStratificationKernel.cpp" \
+    "$script_directory/tests/WVReferenceFFTEngine.cpp" \
     "$script_directory/tests/TestWVKernelContract.cpp" \
     -o "$build_directory/TestWVKernelContract"
 "$build_directory/TestWVKernelContract"
@@ -24,6 +26,6 @@ compiler=${CXX:-c++}
 "$compiler" -std=c++17 -Wall -Wextra -Wpedantic -Werror \
     -I "$repository_root/CompiledKernel/include" \
     "$repository_root/CompiledKernel/src/WVKernelTypes.cpp" \
+    "$repository_root/CompiledKernel/src/WVTransformConstantStratificationKernel.cpp" \
     "$script_directory/WVKernelDescriptorDump.cpp" \
     -o "$build_directory/WVKernelDescriptorDump"
-

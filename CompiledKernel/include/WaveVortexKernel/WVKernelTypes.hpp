@@ -8,7 +8,7 @@
 
 namespace wavevortex {
 
-inline constexpr std::uint32_t WVKernelContractVersion = 1;
+inline constexpr std::uint32_t WVKernelContractVersion = 2;
 
 struct WVComplex64 {
     double real = 0.0;
@@ -30,7 +30,8 @@ enum class WVKernelStatusCode : std::uint32_t {
     fftPlanFailure,
     fftExecutionFailure,
     numericalFailure,
-    unsupportedOperation
+    unsupportedOperation,
+    reentrantExecution
 };
 
 struct WVKernelStatus {
@@ -44,7 +45,21 @@ struct WVKernelStatus {
 struct WVShape2D {
     std::size_t rows = 0;
     std::size_t columns = 0;
+    std::size_t elementCount() const;
+};
 
+struct WVShape3D {
+    std::size_t first = 0;
+    std::size_t second = 0;
+    std::size_t third = 0;
+    std::size_t elementCount() const;
+};
+
+struct WVShape4D {
+    std::size_t first = 0;
+    std::size_t second = 0;
+    std::size_t third = 0;
+    std::size_t fourth = 0;
     std::size_t elementCount() const;
 };
 
@@ -52,18 +67,32 @@ template <typename T>
 struct WVMatrixView {
     T* data = nullptr;
     WVShape2D shape;
-
     bool empty() const noexcept { return shape.rows == 0 || shape.columns == 0; }
+};
+
+template <typename T>
+struct WVFieldBundleView {
+    T* data = nullptr;
+    WVShape4D shape;
+    bool empty() const noexcept { return shape.first == 0 || shape.second == 0 || shape.third == 0 || shape.fourth == 0; }
 };
 
 using WVRealConstView = WVMatrixView<const double>;
 using WVComplexConstView = WVMatrixView<const WVComplex64>;
 using WVComplexView = WVMatrixView<WVComplex64>;
+using WVRealFieldBundleConstView = WVFieldBundleView<const double>;
+using WVRealFieldBundleView = WVFieldBundleView<double>;
 
 struct WVCoefficients {
     WVComplexConstView Ap;
     WVComplexConstView Am;
     WVComplexConstView A0;
+};
+
+struct WVMutableCoefficients {
+    WVComplexView Ap;
+    WVComplexView Am;
+    WVComplexView A0;
 };
 
 struct WVState {
@@ -115,43 +144,71 @@ struct WVFourierMode {
     std::size_t dftConjugateIndex = 0;
 };
 
+struct WVHalfSpectrumMappings {
+    std::size_t NxHalf = 0;
+    std::vector<std::size_t> directRows;
+    std::vector<std::size_t> directWVIndices;
+    std::vector<std::size_t> conjugatedRows;
+    std::vector<std::size_t> conjugatedWVIndices;
+    std::vector<std::size_t> storageRowsByWVIndex;
+    std::vector<std::uint8_t> conjugatesStoredValueByWVIndex;
+    std::vector<std::size_t> hermitianCompletionRows;
+    std::vector<std::size_t> hermitianSourceRows;
+    std::vector<std::size_t> selfConjugateRows;
+    std::size_t persistentBytes() const noexcept;
+};
+
 struct WVConstantStratificationModes {
     double coriolisFrequency = 0.0;
     std::vector<double> z;
     std::vector<double> j;
     std::vector<double> h0;
-    // The following arrays use column-major [Nj,Nkl] ordering.
+    // Modal arrays use column-major [Nj,Nkl] ordering.
     std::vector<double> hpm;
     std::vector<double> omega;
     std::vector<double> Fg;
     std::vector<double> Gg;
     std::vector<double> Fwg;
     std::vector<double> Gwg;
+    std::vector<WVComplex64> UAp;
+    std::vector<WVComplex64> UAm;
+    std::vector<WVComplex64> VAp;
+    std::vector<WVComplex64> VAm;
+    std::vector<WVComplex64> WAp;
+    std::vector<WVComplex64> WAm;
+    std::vector<double> NAp;
+    std::vector<double> NAm;
+    std::vector<WVComplex64> UA0;
+    std::vector<WVComplex64> VA0;
+    std::vector<double> NA0;
+    std::vector<double> A0Z;
+    std::vector<double> A0N;
+    std::vector<WVComplex64> ApmD;
+    std::vector<double> ApmN;
+    std::vector<double> ApmDScaled;
+    std::vector<WVComplex64> ApmWScaled;
 };
 
 class WVTransformConstantStratificationDescriptor {
 public:
-    static WVKernelStatus create(
-        const WVTransformConstantStratificationConfiguration& configuration,
-        WVTransformConstantStratificationDescriptor& descriptor);
+    static WVKernelStatus create(const WVTransformConstantStratificationConfiguration& configuration, WVTransformConstantStratificationDescriptor& descriptor);
 
     const WVTransformConstantStratificationConfiguration& configuration() const noexcept { return configuration_; }
     const std::vector<WVFourierMode>& fourierModes() const noexcept { return fourierModes_; }
+    const WVHalfSpectrumMappings& halfSpectrumMappings() const noexcept { return halfSpectrumMappings_; }
     const WVConstantStratificationModes& verticalModes() const noexcept { return verticalModes_; }
     std::size_t Nkl() const noexcept { return fourierModes_.size(); }
-    WVShape2D spectralShape() const noexcept { return {configuration_.Nz, Nkl()}; }
-    WVShape2D spatialPlaneShape() const noexcept { return {configuration_.Nx, configuration_.Ny}; }
+    WVShape2D spectralShape() const noexcept { return {configuration_.Nj, Nkl()}; }
+    WVShape3D spatialShape() const noexcept { return {configuration_.Nx, configuration_.Ny, configuration_.Nz}; }
+    std::size_t persistentBytes() const noexcept;
 
 private:
     WVTransformConstantStratificationConfiguration configuration_;
     std::vector<WVFourierMode> fourierModes_;
+    WVHalfSpectrumMappings halfSpectrumMappings_;
     WVConstantStratificationModes verticalModes_;
 };
 
-WVKernelStatus validateStateAndFlux(
-    const WVTransformConstantStratificationDescriptor& descriptor,
-    const WVState& state,
-    const WVGradientMasks& masks,
-    const WVFlux& flux);
+WVKernelStatus validateStateAndFlux(const WVTransformConstantStratificationDescriptor& descriptor, const WVState& state, const WVGradientMasks& masks, const WVFlux& flux);
 
 } // namespace wavevortex
