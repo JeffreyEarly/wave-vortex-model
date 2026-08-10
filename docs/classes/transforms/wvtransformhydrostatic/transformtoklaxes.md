@@ -3,15 +3,13 @@ layout: default
 title: transformToKLAxes
 parent: WVTransformHydrostatic
 grand_parent: Transforms
-nav_order: 221
+nav_order: 266
 mathjax: true
 ---
 
 #  transformToKLAxes
 
 transforms in the spectral domain from (j,kl) to (kAxis,lAxis,j)
-
-> Developer documentation: this item describes internal implementation details.
 
 
 ---

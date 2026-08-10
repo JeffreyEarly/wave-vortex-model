@@ -3,13 +3,13 @@ layout: default
 title: VA0
 parent: WVTransformHydrostatic
 grand_parent: Transforms
-nav_order: 49
+nav_order: 52
 mathjax: true
 ---
 
 #  VA0
 
-matrix component that multiplies $$A_0$$ to compute $$\tilde{v}$$.
+These reconstruction coefficients map $$A_0$$ onto the $$v$$ state variable. In the historical notation of [Early et al. (2021)](https://doi.org/10.1017/jfm.2020.995), they are the row 2, column 3 entries of $$S$$ for the primary internal-gravity-wave and geostrophic solutions in equation C4.
 
 > Developer documentation: this item describes internal implementation details.
 

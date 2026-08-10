@@ -3,7 +3,7 @@ layout: default
 title: GinvMatrix
 parent: WVTransformConstantStratification
 grand_parent: Transforms
-nav_order: 28
+nav_order: 31
 mathjax: true
 ---
 

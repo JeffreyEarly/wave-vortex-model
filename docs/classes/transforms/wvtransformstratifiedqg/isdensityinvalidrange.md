@@ -3,15 +3,13 @@ layout: default
 title: isDensityInValidRange
 parent: WVTransformStratifiedQG
 grand_parent: Transforms
-nav_order: 92
+nav_order: 112
 mathjax: true
 ---
 
 #  isDensityInValidRange
 
-checks if the density field is a valid adiabatic re-arrangement of the base state
-
-> Developer documentation: this item describes internal implementation details.
+Test whether total density remains within the no-motion density range.
 
 
 ---
@@ -21,8 +19,9 @@ checks if the density field is a valid adiabatic re-arrangement of the base stat
  flag = isDensityInValidRange()
 ```
 ## Returns
-+ `flag`  a boolean
++ `flag`  `true` when every total-density value lies within the no-motion range
 
 ## Discussion
 
-This is probably best re-defined as a dynamical variable.
+A valid adiabatic rearrangement cannot contain density values
+outside the range spanned by the no-motion profile.

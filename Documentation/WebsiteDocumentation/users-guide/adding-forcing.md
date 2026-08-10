@@ -8,7 +8,7 @@ mathjax: true
 
 # Adding forcing
 
-A `WVTransform` provides analytical linear evolution of its modes. Nonlinear advection, external tendencies, and closures enter through `WVForcing` objects.
+`WVModel` advances a transform with nonlinear advection by default. External tendencies and closures enter through `WVForcing` objects, while analytical linear evolution is available when nonlinear interactions should be omitted.
 
 ## Quick start
 
@@ -96,7 +96,7 @@ $$
 q = \frac{\partial v}{\partial x} - \frac{\partial u}{\partial y} - f  \frac{\partial \eta}{\partial z}.
 $$
 
-This is also commonly written as a streamfunction, using $\psi = \frac{1}{\rho_0 f} p$, $u=-\frac{\partial \psi}{\partial y}$, $v=\frac{\partial \psi}{\partial x}$, $N^2 \eta =-f\frac{\partial \psi}{\partial z}$ or, equivalently, $\rho=- \frac{\rho_0 f}{g} \frac{\partial \psi}{\partial z}$.
+This is also commonly written using the streamfunction $$\psi = p/(\rho_0 f)$$, for which $$u=-\partial_y \psi$$, $$v=\partial_x \psi$$, and $$N^2 \eta =-f\partial_z \psi$$ or, equivalently, $$\rho=- (\rho_0 f/g) \partial_z \psi$$.
 
 Adding forcing to a transform with `wvt.addForcing()` adds an additional right-hand-side term, $$\mathcal{S}$$.
 
@@ -114,10 +114,7 @@ F0 = wvt.nonlinearFlux();
 `WVPseudoTopographicWaveGeneration` projects the bottom-normal velocity from a prescribed horizontally uniform current over upward-positive pseudo-topography onto the model's wave modes. Select a standard tidal constituent with `darwinSymbol`, or supply a custom angular `frequency`.
 
 ```matlab
-forcing = WVPseudoTopographicWaveGeneration(wvt, ...
-    topographicHeight=h, ...
-    barotropicVelocityAmplitude=[0.05; 0], ...
-    darwinSymbol="M2");
+forcing = WVPseudoTopographicWaveGeneration(wvt,topographicHeight=h,barotropicVelocityAmplitude=[0.05; 0],darwinSymbol="M2");
 wvt.addForcing(forcing);
 ```
 

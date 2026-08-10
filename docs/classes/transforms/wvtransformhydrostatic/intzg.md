@@ -3,7 +3,7 @@ layout: default
 title: intZG
 parent: WVTransformHydrostatic
 grand_parent: Transforms
-nav_order: 125
+nav_order: 148
 mathjax: true
 ---
 
@@ -31,3 +31,7 @@ A G-to-F antiderivative is defined up to an additive constant. This
 method selects the representative that vanishes at the bottom boundary.
 `w` may use the gridded layout `[Nx Ny Nz]` or a vertical-first matrix
 `[Nz N]`; the returned array preserves that layout.
+
+```matlab
+antiderivative = wvt.intZG(gField);
+```

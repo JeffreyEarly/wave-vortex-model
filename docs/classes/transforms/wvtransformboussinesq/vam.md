@@ -3,13 +3,13 @@ layout: default
 title: VAm
 parent: WVTransformBoussinesq
 grand_parent: Transforms
-nav_order: 65
+nav_order: 68
 mathjax: true
 ---
 
 #  VAm
 
-
+These reconstruction coefficients map $$A_-$$ onto the $$v$$ state variable. In the historical notation of [Early et al. (2021)](https://doi.org/10.1017/jfm.2020.995), they are the row 2, column 2 entries of $$S$$ for the primary internal-gravity-wave and geostrophic solutions in equation C4.
 
 > Developer documentation: this item describes internal implementation details.
 

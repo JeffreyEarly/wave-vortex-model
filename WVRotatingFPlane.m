@@ -47,8 +47,9 @@ classdef WVRotatingFPlane < handle
             propertyAnnotations(end+1) = CANumericProperty('rotationRate',{},'rad/s', 'rotation rate of the planetary body', detailedDescription='- topic: Domain Attributes');
             propertyAnnotations(end+1) = CANumericProperty('planetaryRadius',{},'m', 'radius of the planetary body', detailedDescription='- topic: Domain Attributes');
             propertyAnnotations(end+1) = CANumericProperty('f',{},'rad/s', 'Coriolis parameter', detailedDescription='- topic: Domain Attributes');
+            propertyAnnotations(end+1) = CANumericProperty('beta',{},'rad m^{-1} s^{-1}', 'meridional gradient of the Coriolis parameter', detailedDescription='- topic: Domain Attributes');
             propertyAnnotations(end+1) = CANumericProperty('inertialPeriod',{},'s', 'inertial period');
-            propertyAnnotations(end+1) = CANumericProperty('g',{},'m s^{-2}', 'gravity of Earth', detailedDescription='- topic: Domain Attributes');
+            propertyAnnotations(end+1) = CANumericProperty('g',{},'m s^{-2}', 'gravitational acceleration', detailedDescription='- topic: Domain Attributes');
         end
 
         function rotatingOptions = requiredPropertiesForRotatingFPlaneFromGroup(group)

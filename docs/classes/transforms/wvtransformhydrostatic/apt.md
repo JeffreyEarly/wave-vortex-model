@@ -3,13 +3,13 @@ layout: default
 title: Apt
 parent: WVTransformHydrostatic
 grand_parent: Transforms
-nav_order: 9
+nav_order: 12
 mathjax: true
 ---
 
 #  Apt
 
-positive-frequency coefficients at current time t
+`Apt` is the positive-frequency coefficient array evaluated at the current transform time:
 
 
 ---

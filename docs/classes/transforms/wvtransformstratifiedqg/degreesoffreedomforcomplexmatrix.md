@@ -3,7 +3,7 @@ layout: default
 title: degreesOfFreedomForComplexMatrix
 parent: WVTransformStratifiedQG
 grand_parent: Transforms
-nav_order: 52
+nav_order: 59
 mathjax: true
 ---
 

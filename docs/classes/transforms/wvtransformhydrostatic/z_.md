@@ -3,15 +3,13 @@ layout: default
 title: Z
 parent: WVTransformHydrostatic
 grand_parent: Transforms
-nav_order: 57
+nav_order: 60
 mathjax: true
 ---
 
 #  Z
 
-z-coordinate matrix
-
-> Developer documentation: this item describes internal implementation details.
+Gridded vertical-coordinate array in meters with shape `[Nx Ny Nz]`.
 
 
 ---

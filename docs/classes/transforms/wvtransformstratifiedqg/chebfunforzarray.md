@@ -3,7 +3,7 @@ layout: default
 title: chebfunForZArray
 parent: WVTransformStratifiedQG
 grand_parent: Transforms
-nav_order: 46
+nav_order: 53
 mathjax: true
 ---
 

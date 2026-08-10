@@ -3,15 +3,13 @@ layout: default
 title: kRadial
 parent: WVTransformBarotropicQG
 grand_parent: Transforms
-nav_order: 83
+nav_order: 94
 mathjax: true
 ---
 
 #  kRadial
 
 radial (k,l) wavenumber on the WV grid
-
-> Developer documentation: this item describes internal implementation details.
 
 
 ---

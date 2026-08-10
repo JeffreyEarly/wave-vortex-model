@@ -11,6 +11,8 @@ mathjax: true
 
 converts nonlinear flux into enstrophy flux
 
+> Developer documentation: this item describes internal implementation details.
+
 
 ---
 

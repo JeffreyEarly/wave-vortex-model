@@ -3,13 +3,18 @@ layout: default
 title: spatialMatrixSize
 parent: WVTransformBoussinesq
 grand_parent: Transforms
-nav_order: 221
+nav_order: 253
 mathjax: true
 ---
 
 #  spatialMatrixSize
 
-
+Shape of a gridded physical-space field.
 
 
 ---
+
+## Discussion
+Shape of a gridded physical-space field.
+
+The value is `[Nx Ny Nz]` for three-dimensional transforms and `[Nx Ny]` for the barotropic transform.

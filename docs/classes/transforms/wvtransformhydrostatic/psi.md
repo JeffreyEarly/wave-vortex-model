@@ -3,15 +3,13 @@ layout: default
 title: psi
 parent: WVTransformHydrostatic
 grand_parent: Transforms
-nav_order: 173
+nav_order: 200
 mathjax: true
 ---
 
 #  psi
 
 geostrophic streamfunction
-
-> Developer documentation: this item describes internal implementation details.
 
 
 ---

@@ -3,15 +3,13 @@ layout: default
 title: inertialComponent
 parent: WVTransformConstantStratification
 grand_parent: Transforms
-nav_order: 125
+nav_order: 144
 mathjax: true
 ---
 
 #  inertialComponent
 
 returns the inertial oscillation flow component
-
-> Developer documentation: this item describes internal implementation details.
 
 
 ---

@@ -3,13 +3,13 @@ layout: default
 title: l
 parent: WVTransformHydrostatic
 grand_parent: Transforms
-nav_order: 145
+nav_order: 168
 mathjax: true
 ---
 
 #  l
 
-wavenumber dimension on the WV grid
+Stored y-direction angular wavenumbers on the compact WV grid.
 
 
 ---
@@ -18,3 +18,5 @@ wavenumber dimension on the WV grid
 Real valued property with dimension $$kl$$ and units of $$rad/m$$.
 
 ## Discussion
+
+`l` is an `Nkl`-by-1 column vector in radians per meter.

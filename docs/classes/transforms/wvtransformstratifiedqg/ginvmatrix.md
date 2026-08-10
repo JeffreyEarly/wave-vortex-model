@@ -3,7 +3,7 @@ layout: default
 title: GinvMatrix
 parent: WVTransformStratifiedQG
 grand_parent: Transforms
-nav_order: 9
+nav_order: 10
 mathjax: true
 ---
 

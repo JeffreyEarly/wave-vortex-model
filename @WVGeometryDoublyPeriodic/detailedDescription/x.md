@@ -1,7 +1,6 @@
-- Topic: Domain attributes — Grid — Spatial
-- nav_order: 1
+Periodic x-coordinate axis in meters.
 
-The values `Lx` and `Nx` are set during initialization from which the `x` coordinate is derived.
+`x` is an `Nx`-by-1 column vector spanning $$0 \le x < L_x$$. The values `Lx` and `Nx` are set during initialization, and
 
 The x coordinate is periodic, which means that
 ```matlab
@@ -9,4 +8,7 @@ dx = Lx/Nx;
 x = dx*(0:Nx-1)';
 ```
 
-Note that this means that it is NOT true that Lx=x(end)-x(1), but in fact you need an extra grid point, i.e., it IS true that Lx = dx + x(end)-x(1). This is the usual grid for Fourier Transforms.
+Because the endpoint is omitted, `Lx` equals `x(end)-x(1)+dx`, not `x(end)-x(1)`. This is the standard grid for a periodic Fourier transform.
+
+- Topic: Domain attributes — Grid — Spatial
+- nav_order: 1

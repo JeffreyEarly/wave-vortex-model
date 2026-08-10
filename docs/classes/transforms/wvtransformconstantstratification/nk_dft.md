@@ -3,7 +3,7 @@ layout: default
 title: Nk_dft
 parent: WVTransformConstantStratification
 grand_parent: Transforms
-nav_order: 47
+nav_order: 50
 mathjax: true
 ---
 

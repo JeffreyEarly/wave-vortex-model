@@ -3,7 +3,7 @@ layout: default
 title: wvConjugateIndex
 parent: WVTransformStratifiedQG
 grand_parent: Transforms
-nav_order: 190
+nav_order: 238
 mathjax: true
 ---
 

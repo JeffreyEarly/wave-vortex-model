@@ -3,15 +3,18 @@ layout: default
 title: x
 parent: WVTransformStratifiedQG
 grand_parent: Transforms
-nav_order: 191
+nav_order: 239
 mathjax: true
 ---
 
 #  x
 
-dimension
+Periodic x-coordinate axis in meters.
 
 
 ---
 
 ## Discussion
+
+`x` is an `Nx`-by-1 column vector spanning $$0 \le x < L_x$$
+with spacing `Lx/Nx`; the endpoint at `Lx` is omitted.

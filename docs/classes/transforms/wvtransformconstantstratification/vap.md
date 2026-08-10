@@ -3,13 +3,13 @@ layout: default
 title: VAp
 parent: WVTransformConstantStratification
 grand_parent: Transforms
-nav_order: 62
+nav_order: 65
 mathjax: true
 ---
 
 #  VAp
 
-
+These reconstruction coefficients map $$A_+$$ onto the $$v$$ state variable. In the historical notation of [Early et al. (2021)](https://doi.org/10.1017/jfm.2020.995), they are the row 2, column 1 entries of $$S$$ for the primary internal-gravity-wave and geostrophic solutions in equation C4.
 
 > Developer documentation: this item describes internal implementation details.
 

@@ -6,6 +6,10 @@ function W = intZG(self,w,options)
 % `w` may use the gridded layout `[Nx Ny Nz]` or a vertical-first matrix
 % `[Nz N]`; the returned array preserves that layout.
 %
+% ```matlab
+% antiderivative = wvt.intZG(gField);
+% ```
+%
 % - Topic: Operations — Calculus
 % - Declaration: W = intZG(w,n=1)
 % - Parameter w: G-representation in `[Nx Ny Nz]` or `[Nz N]` layout

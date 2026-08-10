@@ -3,13 +3,13 @@ layout: default
 title: Lx
 parent: WVTransformBoussinesq
 grand_parent: Transforms
-nav_order: 31
+nav_order: 34
 mathjax: true
 ---
 
 #  Lx
 
-length of the x-dimension
+Periodic domain length in the x direction.
 
 
 ---
@@ -18,3 +18,6 @@ length of the x-dimension
 Real valued property with no dimensions and units of $$m$$.
 
 ## Discussion
+Periodic domain length in the x direction.
+
+`Lx` is the first element of the constructor's domain-size vector and has units of meters.

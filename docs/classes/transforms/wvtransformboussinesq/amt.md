@@ -3,13 +3,13 @@ layout: default
 title: Amt
 parent: WVTransformBoussinesq
 grand_parent: Transforms
-nav_order: 6
+nav_order: 8
 mathjax: true
 ---
 
 #  Amt
 
-negative-frequency coefficients at current time t
+`Amt` is the negative-frequency coefficient array evaluated at the current transform time:
 
 
 ---

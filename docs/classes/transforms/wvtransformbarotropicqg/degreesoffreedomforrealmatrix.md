@@ -3,7 +3,7 @@ layout: default
 title: degreesOfFreedomForRealMatrix
 parent: WVTransformBarotropicQG
 grand_parent: Transforms
-nav_order: 38
+nav_order: 39
 mathjax: true
 ---
 

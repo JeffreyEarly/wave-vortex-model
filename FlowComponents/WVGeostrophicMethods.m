@@ -17,7 +17,8 @@ classdef WVGeostrophicMethods < handle
     end
     properties (Abstract)
         A0
-        h_0  % [Nj 1]
+        % Geostrophic equivalent-depth scale for each vertical mode.
+        h_0
     end
     methods (Abstract)
 

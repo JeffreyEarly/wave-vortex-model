@@ -3,30 +3,28 @@ layout: default
 title: placeParticlesOnIsopycnal
 parent: WVTransformStratifiedQG
 grand_parent: Transforms
-nav_order: 131
+nav_order: 152
 mathjax: true
 ---
 
 #  placeParticlesOnIsopycnal
 
-places Lagrangian particles along a specified isopycnal
-
-> Developer documentation: this item describes internal implementation details.
+Return particle depths on the isopycnal identified by a no-motion depth.
 
 
 ---
 
 ## Declaration
 ```matlab
- zIsopycnal = placeParticlesOnIsopycnal(x,y,z)
+ zIsopycnal = placeParticlesOnIsopycnal(x,y,zNoMotion)
 ```
 ## Parameters
 + `x`  array of particle x positions
 + `y`  array of particle y positions
-+ `z`  array of z location of target isopycnal in the no-motion profile
++ `zNoMotion`  depths identifying target densities in the no-motion profile
 
 ## Returns
-+ `zIsopycnal`  particle depth
++ `zIsopycnal`  particle depths in meters
 
 ## Discussion
 
@@ -43,7 +41,7 @@ and a minimization algorithm is used to find zIsopycnal such that
 zIsopycnal = rho(targetRho);
 ```
 
-where rho is the current total density field of the fluid.
+where `rho` is the current total density field of the fluid.
 
 Note that the density is not necessarily monotonic, so the answer is not
 necessarily unique.

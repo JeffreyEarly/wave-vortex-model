@@ -3,15 +3,13 @@ layout: default
 title: mdaComponent
 parent: WVTransformBoussinesq
 grand_parent: Transforms
-nav_order: 173
+nav_order: 196
 mathjax: true
 ---
 
 #  mdaComponent
 
 returns the mean density anomaly component
-
-> Developer documentation: this item describes internal implementation details.
 
 
 ---

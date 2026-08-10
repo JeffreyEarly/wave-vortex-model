@@ -3,13 +3,13 @@ layout: default
 title: NA0
 parent: WVTransformHydrostatic
 grand_parent: Transforms
-nav_order: 28
+nav_order: 31
 mathjax: true
 ---
 
 #  NA0
 
-matrix component that multiplies $$A_0$$ to compute $$\tilde{\eta}$$.
+These reconstruction coefficients map $$A_0$$ onto the density-displacement state variable. In the historical notation of [Early et al. (2021)](https://doi.org/10.1017/jfm.2020.995), they are the row 3, column 3 entries of $$S$$ for the primary internal-gravity-wave and geostrophic solutions in equation C4.
 
 > Developer documentation: this item describes internal implementation details.
 

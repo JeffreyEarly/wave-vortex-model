@@ -3,18 +3,21 @@ layout: default
 title: rho0
 parent: WVTransformHydrostatic
 grand_parent: Transforms
-nav_order: 184
+nav_order: 215
 mathjax: true
 ---
 
 #  rho0
 
-, dLnN2
-
-> Developer documentation: this item describes internal implementation details.
+Boussinesq reference density in kilograms per cubic meter.
 
 
 ---
 
 ## Description
 Real valued property with no dimensions and units of $$kg m^{-3}$$.
+
+## Discussion
+Boussinesq reference density in kilograms per cubic meter.
+
+The constructor default is `1025` kg/m³. Density anomalies and pressure conversions use this constant reference value.

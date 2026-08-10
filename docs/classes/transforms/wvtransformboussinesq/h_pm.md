@@ -3,18 +3,21 @@ layout: default
 title: h_pm
 parent: WVTransformBoussinesq
 grand_parent: Transforms
-nav_order: 122
+nav_order: 137
 mathjax: true
 ---
 
 #  h_pm
 
-equivalent depth of each wave mode
-
-> Developer documentation: this item describes internal implementation details.
+Wave equivalent depth on the spectral grid.
 
 
 ---
 
 ## Description
-Real valued property with dimensions $$(j,kl)$$ and units of $$m$$.
+Real valued property with dimension $$j$$ and units of $$m$$.
+
+## Discussion
+Wave equivalent depth on the spectral grid.
+
+`h_pm` has shape `[Nj Nkl]` and units of meters. It supplies the gravity-wave phase-speed factor in $$\Omega^2=f^2+g h_{\pm}K_h^2$$.

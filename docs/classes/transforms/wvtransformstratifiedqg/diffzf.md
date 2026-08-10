@@ -3,7 +3,7 @@ layout: default
 title: diffZF
 parent: WVTransformStratifiedQG
 grand_parent: Transforms
-nav_order: 60
+nav_order: 67
 mathjax: true
 ---
 
@@ -30,3 +30,7 @@ Differentiate an F-grid field with respect to z.
 `u` must use the gridded layout `[Nx Ny Nz]`. Orders 1 through 4 are
 supported. Odd orders return a G-representation and even orders return
 an F-representation.
+
+```matlab
+dudz = wvt.diffZF(u);
+```

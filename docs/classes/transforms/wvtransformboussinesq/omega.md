@@ -3,15 +3,18 @@ layout: default
 title: Omega
 parent: WVTransformBoussinesq
 grand_parent: Transforms
-nav_order: 46
+nav_order: 49
 mathjax: true
 ---
 
 #  Omega
 
-
-
-> Developer documentation: this item describes internal implementation details.
+Intrinsic angular frequency of each wave and inertial mode.
 
 
 ---
+
+## Discussion
+
+`Omega` has the transform's spectral shape and units of radians
+per second.

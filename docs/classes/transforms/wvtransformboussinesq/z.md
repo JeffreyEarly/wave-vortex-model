@@ -3,17 +3,22 @@ layout: default
 title: z
 parent: WVTransformBoussinesq
 grand_parent: Transforms
-nav_order: 272
+nav_order: 323
 mathjax: true
 ---
 
 #  z
 
-z coordinate
+Three-dimensional vertical-coordinate array in meters.
 
 
 ---
 
 ## Discussion
+Three-dimensional vertical-coordinate array in meters.
 
-The `z` coordinate is set during initialization. The spacing in the z-coordinate should be the quadrature points of the vertical modes being used. The details of how this is implemented is particular to each subclass of `WVTransform`.
+`Z` has spatial shape `[Nx Ny Nz]` and is formed with `ndgrid(x,y,z)`. It varies along the third dimension.
+
+```matlab
+[X,Y,Z] = wvt.xyzGrid;
+```

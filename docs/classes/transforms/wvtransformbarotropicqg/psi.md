@@ -3,15 +3,13 @@ layout: default
 title: psi
 parent: WVTransformBarotropicQG
 grand_parent: Transforms
-nav_order: 111
+nav_order: 125
 mathjax: true
 ---
 
 #  psi
 
 geostrophic streamfunction
-
-> Developer documentation: this item describes internal implementation details.
 
 
 ---

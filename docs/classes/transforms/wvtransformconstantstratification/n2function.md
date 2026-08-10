@@ -3,13 +3,13 @@ layout: default
 title: N2Function
 parent: WVTransformConstantStratification
 grand_parent: Transforms
-nav_order: 42
+nav_order: 45
 mathjax: true
 ---
 
 #  N2Function
 
-takes $$z$$ values and returns the squared buoyancy frequency of the no-motion density.
+Function returning buoyancy frequency squared at requested depths.
 
 
 ---

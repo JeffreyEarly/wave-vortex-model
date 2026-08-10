@@ -3,7 +3,7 @@ layout: default
 title: initWithAlternativeSpectrum
 parent: WVTransformConstantStratification
 grand_parent: Transforms
-nav_order: 129
+nav_order: 149
 mathjax: true
 ---
 

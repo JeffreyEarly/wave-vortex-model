@@ -3,7 +3,7 @@ layout: default
 title: eta
 parent: WVTransformStratifiedQG
 grand_parent: Transforms
-nav_order: 68
+nav_order: 75
 mathjax: true
 ---
 

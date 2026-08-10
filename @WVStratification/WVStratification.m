@@ -2,11 +2,23 @@ classdef WVStratification < WVRotatingFPlane
     %UNTITLED2 Summary of this class goes here
     %   Detailed explanation goes here
     properties (GetAccess=public, SetAccess=protected)
-        % eta_true operation needs rhoFunction
-        rhoFunction, N2Function%, dLnN2Function = []
-        rho0, rho_nm0, N2%, dLnN2
-        z, j
+        % Function returning the no-motion density profile at requested depths.
+        rhoFunction
+        % Function returning buoyancy frequency squared at requested depths.
+        N2Function
+        % Boussinesq reference density.
+        rho0
+        % No-motion density profile sampled on the vertical grid.
+        rho_nm0
+        % Buoyancy frequency squared sampled on the vertical grid.
+        N2
+        % Vertical coordinate axis.
+        z
+        % Vertical-mode index axis.
+        j
+        % Vertical quadrature weights.
         z_int
+        % Vertical eigenmodes used by the transform.
         verticalModes
 
         % length of the z-dimension
@@ -49,13 +61,14 @@ classdef WVStratification < WVRotatingFPlane
         end
 
         function flag = isDensityInValidRange(self)
-            % checks if the density field is a valid adiabatic re-arrangement of the base state
+            % Test whether total density remains within the no-motion density range.
             %
-            % This is probably best re-defined as a dynamical variable.
+            % A valid adiabatic rearrangement cannot contain density values
+            % outside the range spanned by the no-motion profile.
             %
             % - Topic: Stratification — Validation
             % - Declaration: flag = isDensityInValidRange()
-            % - Returns flag: a boolean
+            % - Returns flag: `true` when every total-density value lies within the no-motion range
             flag = ~(any(self.rho_total(:) < min(self.rho_nm0)) | any(self.rho_total(:) > max(self.rho_nm0)));
         end
 
@@ -280,18 +293,18 @@ classdef WVStratification < WVRotatingFPlane
             propertyAnnotations(end+1) = CADimensionProperty('j', 'mode number', 'vertical mode number');
             propertyAnnotations(end+1) = CANumericProperty('Nj',{},'', 'points in the j-coordinate, `length(z)`', detailedDescription='- topic: Domain Attributes — Grid — Spectral');
 
-            propertyAnnotations(end+1) = CAFunctionProperty('rhoFunction', 'takes $$z$$ values and returns the no-motion density.');
+            propertyAnnotations(end+1) = CAFunctionProperty('rhoFunction', 'takes $$z$$ values and returns the no-motion density profile $$\rho_\mathrm{nm}(z)$$.');
             propertyAnnotations(end+1) = CAFunctionProperty('N2Function', 'takes $$z$$ values and returns the squared buoyancy frequency of the no-motion density.');
-            propertyAnnotations(end+1) = CAPropertyAnnotation('verticalModes', 'instance of the InternalModes class');
+            propertyAnnotations(end+1) = CAPropertyAnnotation('verticalModes', 'vertical-mode solution used by the transform');
             propertyAnnotations(end+1) = CANumericProperty('rho_nm0',{'z'},'kg m^{-3}', '$$\rho_\textrm{nm}(z)$$, no-motion density at time `t0`');
             propertyAnnotations(end+1) = CANumericProperty('N2',{'z'},'rad^2 s^{-2}', '$$N^2(z)$$, squared buoyancy frequency of the no-motion density, $$N^2\equiv - \frac{g}{\rho_0} \frac{\partial \rho_\textrm{nm}}{\partial z}$$');
-            propertyAnnotations(end+1) = CANumericProperty('dLnN2',{'z'},'', '$$\frac{\partial \ln N^2}{\partial z}$$, vertical variation of the log of the squared buoyancy frequency');
+            propertyAnnotations(end+1) = CANumericProperty('dLnN2',{'z'},'m^{-1}', '$$\partial_z \ln N^2$$, vertical derivative of the logarithm of squared buoyancy frequency');
             propertyAnnotations(end+1) = CANumericProperty('FinvMatrix',{'z','j'},'', 'transformation matrix $$F_g^{-1}$$');
             propertyAnnotations(end+1) = CANumericProperty('FMatrix',{'j','z'},'', 'transformation matrix $$F_g$$');
             propertyAnnotations(end+1) = CANumericProperty('GinvMatrix',{'z','j'},'', 'transformation matrix $$G_g^{-1}$$');
             propertyAnnotations(end+1) = CANumericProperty('GMatrix',{'j','z'},'', 'transformation matrix $$G_g$$');
-            propertyAnnotations(end+1) = CANumericProperty('z_int',{'z'},'', 'Quadrature weights for the vertical grid');
-            propertyAnnotations(end+1) = CANumericProperty('rho0',{},'kg m^{-3}', 'density of $$\rho_\textrm{nm}$$ at the surface (z=0)', detailedDescription='- topic: Domain Attributes');
+            propertyAnnotations(end+1) = CANumericProperty('z_int',{'z'},'m', 'quadrature weights for vertical integration');
+            propertyAnnotations(end+1) = CANumericProperty('rho0',{},'kg m^{-3}', 'Boussinesq reference density', detailedDescription='- topic: Domain Attributes');
             propertyAnnotations(end).attributes('standard_name') = 'sea_surface_density';
 
             propertyAnnotations(end+1) = CANumericProperty('Lz',{},'m', 'domain size in the z-direction', detailedDescription='- topic: Domain Attributes — Grid — Spatial');

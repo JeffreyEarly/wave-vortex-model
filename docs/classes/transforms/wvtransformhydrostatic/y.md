@@ -3,15 +3,18 @@ layout: default
 title: y
 parent: WVTransformHydrostatic
 grand_parent: Transforms
-nav_order: 248
+nav_order: 299
 mathjax: true
 ---
 
 #  y
 
-dimension
+Periodic y-coordinate axis in meters.
 
 
 ---
 
 ## Discussion
+
+`y` is an `Ny`-by-1 column vector spanning $$0 \le y < L_y$$
+with spacing `Ly/Ny`; the endpoint at `Ly` is omitted.

@@ -133,6 +133,11 @@ classdef TestDocumentationTools < matlab.unittest.TestCase
                 "---"
                 "# Guide"
                 "The literal delimiter `$$` may be discussed in code."
+                "The inline-code expression `$x$` remains literal."
+                "An escaped dollar costs \$5."
+                "```matlab"
+                "pattern = '$x$';"
+                "```"
                 "Inline $$5 \\leq \\lvert x\\rvert \\leq 85$$ math."
                 "$$"
                 "\\begin{align}"
@@ -155,6 +160,7 @@ classdef TestDocumentationTools < matlab.unittest.TestCase
             testCase.writeText(fullfile(root,"unbalanced-display.md"),["# Display"; "$$"; "x=y"]);
             testCase.writeText(fullfile(root,"display-markdown.md"),["# Display"; "$$"; "[link](target.md) and `code`"; "## Heading"; "$$"]);
             testCase.writeText(fullfile(root,"inline-bar.md"),"Inline $$|x|$$ math.");
+            testCase.writeText(fullfile(root,"single-dollar.md"),"Unsupported $x$ math.");
 
             report = validateWebsiteDocumentation(root,ShouldFail=false,ShouldCheckHierarchy=false,ShouldCheckGeneratedContent=false);
             expected = [
@@ -167,6 +173,7 @@ classdef TestDocumentationTools < matlab.unittest.TestCase
                 "Markdown backticks appear inside"
                 "Markdown heading appears inside"
                 "unescaped vertical bar"
+                "unsupported single-dollar math delimiter"
                 ];
             for diagnostic = expected'
                 testCase.verifyTrue(any(contains(report.Diagnostics,diagnostic)),"Missing diagnostic: " + diagnostic);
@@ -176,7 +183,7 @@ classdef TestDocumentationTools < matlab.unittest.TestCase
         function renderedWebsiteRejectsRawMarkup(testCase)
             root = fullfile(testCase.temporaryFolder,"rendered-site");
             mkdir(root);
-            testCase.writeText(fullfile(root,"index.html"),'<main><h1>Home</h1><p>Rendered $$x$$ content.</p><code>`[example](target)`</code></main>');
+            testCase.writeText(fullfile(root,"index.html"),'<main><h1>Home</h1><p>Rendered $$x$$ content costs $5.</p><code>`[example](target)` and `$x$`</code></main>');
             cleanReport = validateRenderedWebsite(root,ShouldFail=false);
             testCase.verifyTrue(cleanReport.IsValid,strjoin(cleanReport.Diagnostics,newline));
 
@@ -187,6 +194,7 @@ classdef TestDocumentationTools < matlab.unittest.TestCase
             testCase.writeText(fullfile(root,"raw-link.html"),'<main><h1>Link</h1><p>[link](target.html)</p></main>');
             testCase.writeText(fullfile(root,"raw-fence.html"),'<main><h1>Fence</h1><p>```matlab</p></main>');
             testCase.writeText(fullfile(root,"raw-backtick.html"),'<main><h1>Code</h1><p>`code`</p></main>');
+            testCase.writeText(fullfile(root,"raw-single-dollar.html"),'<main><h1>Math</h1><p>Raw $x$ math.</p></main>');
 
             report = validateRenderedWebsite(root,ShouldFail=false);
             expected = [
@@ -197,6 +205,7 @@ classdef TestDocumentationTools < matlab.unittest.TestCase
                 "raw Markdown link or image"
                 "raw fenced-code marker"
                 "raw Markdown backtick"
+                "unsupported single-dollar MathJax delimiter"
                 ];
             for diagnostic = expected'
                 testCase.verifyTrue(any(contains(report.Diagnostics,diagnostic)),"Missing diagnostic: " + diagnostic);

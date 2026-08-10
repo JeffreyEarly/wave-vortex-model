@@ -36,7 +36,7 @@ $$
 
 The $$G$$ mode projection is applicable to dynamical variables $$\eta$$, $$w$$.
 
-As noted in [Early, et al. (2021)](https://doi.org/10.1017/jfm.2020.995), the vertical transforms $\mathcal{F}$ and $\mathcal{G}$ require a matrix multiplication and thus have a computational cost of,
+As noted in [Early, et al. (2021)](https://doi.org/10.1017/jfm.2020.995), the vertical transforms $$\mathcal{F}$$ and $$\mathcal{G}$$ require a matrix multiplication and thus have a computational cost of,
 
 $$
 N_z^2 N_x N_y

@@ -5,7 +5,10 @@ classdef WVGeometryDoublyPeriodicStratified < WVGeometryDoublyPeriodic & WVStrat
         % Transformation matrices
         PF0inv, QG0inv % size(PFinv,PGinv)=[Nz x Nj]
         PF0, QG0 % size(PF,PG)=[Nj x Nz]
-        h_0 % [Nj 1]
+        % Geostrophic equivalent-depth scale for each vertical mode.
+        %
+        % `h_0` is an `Nj`-by-1 vector in meters.
+        h_0
         h_pm
 
         P0 % Preconditioner for F, size(P)=[Nj 1]. F*u = uhat, (PF)*u = P*uhat, so ubar==P*uhat
@@ -18,8 +21,6 @@ classdef WVGeometryDoublyPeriodicStratified < WVGeometryDoublyPeriodic & WVStrat
         FMatrix
         GMatrix
         Lr2
-        kPseudoRadial
-          % [Nj 1]
     end
 
     methods
@@ -131,19 +132,6 @@ classdef WVGeometryDoublyPeriodicStratified < WVGeometryDoublyPeriodic & WVStrat
             j_max = max(self.j);
         end
 
-        function kPseudoRadial = get.kPseudoRadial(self)
-            jWavenumber = 1./sqrt(self.Lr2);
-            jWavenumber(1) = 0; % barotropic mode is a mean?
-            [kj,kr] = ndgrid(jWavenumber,self.kRadial);
-            Kh = sqrt(kj.^2 + kr.^2);
-            allKs = unique(reshape(abs(Kh),[],1),'sorted');
-            deltaK = max(diff(allKs));
-            kAxis_ = 0:deltaK:(max(allKs)+deltaK/2);
-            % This choices of axis spacing ensures that there will be no
-            % gaps in the resulting spectrum.
-            kPseudoRadial = reshape(kAxis_,[],1);
-        end
-
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         %
         % Transformation matrices
@@ -245,11 +233,6 @@ classdef WVGeometryDoublyPeriodicStratified < WVGeometryDoublyPeriodic & WVStrat
         S_f = crossSpectrumWithFgTransform(self,phi,gamma)
         S_f = crossSpectrumWithGgTransform(self,phi,gamma)
 
-        [varargout] = transformToPseudoRadialWavenumber(self,energyReservoir,varargin);
-        [varargout] = transformToPseudoRadialWavenumberA0(self,varargin);
-        [varargout] = transformToPseudoRadialWavenumberApm(self,varargin)  
-        [varargout] = transformToOmegaAxis(self,varargin)   
-
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         %
         % Transformations TO the spatial domain
@@ -347,7 +330,8 @@ classdef WVGeometryDoublyPeriodicStratified < WVGeometryDoublyPeriodic & WVStrat
             propertyAnnotations(end+1) = CANumericProperty('Q0',{'j'},'','Preconditioner for G, size(Q)=[1 Nj]. G*eta = etahat, (QG)*eta = Q*etahat, so etabar==Q*etahat. ');
 
             propertyAnnotations(end+1) = CANumericProperty('h_0',{'j'},'m', 'equivalent depth of each geostrophic mode', detailedDescription='- topic: Domain Attributes — Stratification');
-            propertyAnnotations(end+1) = CANumericProperty('Lr2',{'j'},'m^2', 'squared Rossby radius');
+            propertyAnnotations(end+1) = CANumericProperty('h_pm',{'j'},'m', 'equivalent depth of each wave mode', detailedDescription='- topic: Domain Attributes — Stratification');
+            propertyAnnotations(end+1) = CANumericProperty('Lr2',{'j'},'m^2', 'squared Rossby deformation radius of each geostrophic mode');
         end
 
         function [Lxyz, Nxyz, options] = requiredPropertiesForGeometryFromGroup(group)

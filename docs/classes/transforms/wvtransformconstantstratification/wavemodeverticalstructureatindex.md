@@ -3,15 +3,13 @@ layout: default
 title: waveModeVerticalStructureAtIndex
 parent: WVTransformConstantStratification
 grand_parent: Transforms
-nav_order: 250
+nav_order: 302
 mathjax: true
 ---
 
 #  waveModeVerticalStructureAtIndex
 
 Return wave vertical-structure factors at one vertical grid index.
-
-> Developer documentation: this item describes internal implementation details.
 
 
 ---

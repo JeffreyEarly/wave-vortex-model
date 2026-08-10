@@ -3,7 +3,7 @@ layout: default
 title: addGeostrophicModes
 parent: WVTransformStratifiedQG
 grand_parent: Transforms
-nav_order: 42
+nav_order: 45
 mathjax: true
 ---
 

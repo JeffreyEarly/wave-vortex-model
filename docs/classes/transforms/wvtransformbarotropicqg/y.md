@@ -3,15 +3,13 @@ layout: default
 title: Y
 parent: WVTransformBarotropicQG
 grand_parent: Transforms
-nav_order: 30
+nav_order: 27
 mathjax: true
 ---
 
 #  Y
 
-y-coordinate matrix
-
-> Developer documentation: this item describes internal implementation details.
+Gridded y-coordinate array in meters with shape `[Nx Ny]`.
 
 
 ---

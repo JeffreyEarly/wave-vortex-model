@@ -3,13 +3,13 @@ layout: default
 title: Lz
 parent: WVTransformBoussinesq
 grand_parent: Transforms
-nav_order: 33
+nav_order: 36
 mathjax: true
 ---
 
 #  Lz
 
-length of the z-dimension
+Vertical domain depth in meters.
 
 
 ---
@@ -18,5 +18,6 @@ length of the z-dimension
 Real valued property with no dimensions and units of $$m$$.
 
 ## Discussion
+Vertical domain depth in meters.
 
-The `z` coordinate and `Lz` are both set during initialization. `Lz` is the full domain depth.
+`Lz` is the third element of a three-dimensional transform's domain-size vector. The vertical coordinate extends from `-Lz` at the bottom to zero at the surface.

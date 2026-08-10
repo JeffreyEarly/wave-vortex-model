@@ -3,13 +3,13 @@ layout: default
 title: k
 parent: WVTransformBarotropicQG
 grand_parent: Transforms
-nav_order: 79
+nav_order: 90
 mathjax: true
 ---
 
 #  k
 
-wavenumber dimension on the WV grid
+Stored x-direction angular wavenumbers on the compact WV grid.
 
 
 ---
@@ -18,3 +18,5 @@ wavenumber dimension on the WV grid
 Real valued property with dimension $$kl$$ and units of $$rad/m$$.
 
 ## Discussion
+
+`k` is an `Nkl`-by-1 column vector in radians per meter.

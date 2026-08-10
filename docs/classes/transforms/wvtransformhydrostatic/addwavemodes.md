@@ -3,7 +3,7 @@ layout: default
 title: addWaveModes
 parent: WVTransformHydrostatic
 grand_parent: Transforms
-nav_order: 63
+nav_order: 72
 mathjax: true
 ---
 

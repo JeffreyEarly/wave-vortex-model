@@ -3,15 +3,13 @@ layout: default
 title: Nkl
 parent: WVTransformStratifiedQG
 grand_parent: Transforms
-nav_order: 24
+nav_order: 25
 mathjax: true
 ---
 
 #  Nkl
 
-length of the combined kl-wavenumber dimension on the WV grid
-
-> Developer documentation: this item describes internal implementation details.
+Number of retained compact horizontal-wavenumber columns.
 
 
 ---
@@ -20,3 +18,6 @@ length of the combined kl-wavenumber dimension on the WV grid
 Real valued property with no dimensions and no units.
 
 ## Discussion
+Number of retained compact horizontal-wavenumber columns.
+
+`Nkl` equals `length(k)` and `length(l)`. Its value reflects the Hermitian-conjugacy and antialiasing choices used to construct the spectral grid.

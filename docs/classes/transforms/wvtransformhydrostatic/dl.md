@@ -3,17 +3,18 @@ layout: default
 title: dl
 parent: WVTransformHydrostatic
 grand_parent: Transforms
-nav_order: 86
+nav_order: 96
 mathjax: true
 ---
 
 #  dl
 
-wavenumber spacing of the $$l$$ axis
-
-> Developer documentation: this item describes internal implementation details.
+Spacing of the y-direction angular-wavenumber axis.
 
 
 ---
 
 ## Discussion
+Spacing of the y-direction angular-wavenumber axis.
+
+The transform computes $$\Delta l=2\pi/L_y$$ in radians per meter.

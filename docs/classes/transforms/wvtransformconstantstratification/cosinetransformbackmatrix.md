@@ -3,7 +3,7 @@ layout: default
 title: CosineTransformBackMatrix
 parent: WVTransformConstantStratification
 grand_parent: Transforms
-nav_order: 12
+nav_order: 15
 mathjax: true
 ---
 

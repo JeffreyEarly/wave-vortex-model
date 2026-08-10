@@ -3,15 +3,13 @@ layout: default
 title: X
 parent: WVTransformConstantStratification
 grand_parent: Transforms
-nav_order: 66
+nav_order: 69
 mathjax: true
 ---
 
 #  X
 
-x-coordinate matrix
-
-> Developer documentation: this item describes internal implementation details.
+Gridded x-coordinate array in meters with shape `[Nx Ny Nz]`.
 
 
 ---

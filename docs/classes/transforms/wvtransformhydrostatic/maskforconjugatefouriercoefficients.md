@@ -3,7 +3,7 @@ layout: default
 title: maskForConjugateFourierCoefficients
 parent: WVTransformHydrostatic
 grand_parent: Transforms
-nav_order: 152
+nav_order: 175
 mathjax: true
 ---
 

@@ -3,13 +3,13 @@ layout: default
 title: UA0
 parent: WVTransformStratifiedQG
 grand_parent: Transforms
-nav_order: 36
+nav_order: 37
 mathjax: true
 ---
 
 #  UA0
 
-matrix component that multiplies $$A_0$$ to compute $$\tilde{u}$$.
+These reconstruction coefficients map $$A_0$$ onto the $$u$$ state variable. In the historical notation of [Early et al. (2021)](https://doi.org/10.1017/jfm.2020.995), they are the row 1, column 3 entries of $$S$$ for the primary internal-gravity-wave and geostrophic solutions in equation C4.
 
 > Developer documentation: this item describes internal implementation details.
 

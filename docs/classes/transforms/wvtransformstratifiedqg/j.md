@@ -3,20 +3,22 @@ layout: default
 title: j
 parent: WVTransformStratifiedQG
 grand_parent: Transforms
-nav_order: 100
+nav_order: 121
 mathjax: true
 ---
 
 #  j
 
-vertical mode number
+Vertical-mode index axis.
 
 
 ---
 
 ## Discussion
+Vertical-mode index axis.
 
-This is simply an ordered enumeration of modes, starting with the zero-th (barotropic) mode.
+`j` is an `Nj`-by-1 column vector of dimensionless nonnegative mode numbers. Three-dimensional rigid-lid transforms include the barotropic index `j=0`; wave motions occupy internal modes with `j>0`.
+
 ```matlab
-j = (0:(self.Nj-1))';
+j = (0:(wvt.Nj-1))';
 ```

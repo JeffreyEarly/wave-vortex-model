@@ -3,7 +3,7 @@ layout: default
 title: addGeostrophicModes
 parent: WVTransformHydrostatic
 grand_parent: Transforms
-nav_order: 59
+nav_order: 64
 mathjax: true
 ---
 

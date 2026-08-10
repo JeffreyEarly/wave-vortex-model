@@ -3,15 +3,13 @@ layout: default
 title: Z
 parent: WVTransformStratifiedQG
 grand_parent: Transforms
-nav_order: 41
+nav_order: 42
 mathjax: true
 ---
 
 #  Z
 
-z-coordinate matrix
-
-> Developer documentation: this item describes internal implementation details.
+Gridded vertical-coordinate array in meters with shape `[Nx Ny Nz]`.
 
 
 ---

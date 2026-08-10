@@ -3,13 +3,18 @@ layout: default
 title: verticalModes
 parent: WVTransformBoussinesq
 grand_parent: Transforms
-nav_order: 257
+nav_order: 304
 mathjax: true
 ---
 
 #  verticalModes
 
-instance of the InternalModes class
+Vertical-mode solution used to construct the transform basis.
 
 
 ---
+
+## Discussion
+Vertical-mode solution used to construct the transform basis.
+
+The object contains the eigenfunctions, equivalent depths, and quadrature information from which the transform's vertical projection and reconstruction operators are built.

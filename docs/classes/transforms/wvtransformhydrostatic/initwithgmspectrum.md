@@ -3,7 +3,7 @@ layout: default
 title: initWithGMSpectrum
 parent: WVTransformHydrostatic
 grand_parent: Transforms
-nav_order: 119
+nav_order: 139
 mathjax: true
 ---
 

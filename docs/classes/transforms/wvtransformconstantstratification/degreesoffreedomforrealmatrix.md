@@ -3,7 +3,7 @@ layout: default
 title: degreesOfFreedomForRealMatrix
 parent: WVTransformConstantStratification
 grand_parent: Transforms
-nav_order: 88
+nav_order: 98
 mathjax: true
 ---
 

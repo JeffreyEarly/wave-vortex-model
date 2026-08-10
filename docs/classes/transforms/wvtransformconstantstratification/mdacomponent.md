@@ -3,15 +3,13 @@ layout: default
 title: mdaComponent
 parent: WVTransformConstantStratification
 grand_parent: Transforms
-nav_order: 166
+nav_order: 190
 mathjax: true
 ---
 
 #  mdaComponent
 
 returns the mean density anomaly component
-
-> Developer documentation: this item describes internal implementation details.
 
 
 ---

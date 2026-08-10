@@ -3,13 +3,13 @@ layout: default
 title: A0N
 parent: WVTransformHydrostatic
 grand_parent: Transforms
-nav_order: 1
+nav_order: 2
 mathjax: true
 ---
 
 #  A0N
 
-matrix component that multiplies $$\tilde{\eta}$$ to compute $$A_0$$.
+These projection coefficients map the density-displacement state variable onto $$A_0$$. In the historical notation of [Early et al. (2021)](https://doi.org/10.1017/jfm.2020.995), they are the row 3, column 3 entries of $$S^{-1}$$ for the primary internal-gravity-wave and geostrophic solutions in equation C5.
 
 > Developer documentation: this item describes internal implementation details.
 

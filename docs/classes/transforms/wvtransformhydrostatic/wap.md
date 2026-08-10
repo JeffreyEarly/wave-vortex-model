@@ -3,13 +3,13 @@ layout: default
 title: WAp
 parent: WVTransformHydrostatic
 grand_parent: Transforms
-nav_order: 53
+nav_order: 56
 mathjax: true
 ---
 
 #  WAp
 
-
+These reconstruction coefficients map $$A_+$$ onto the $$w$$ state variable. In the historical notation of [Early et al. (2021)](https://doi.org/10.1017/jfm.2020.995), they are the row 4, column 1 entries of $$S$$ for the primary internal-gravity-wave and geostrophic solutions in equation C4.
 
 > Developer documentation: this item describes internal implementation details.
 

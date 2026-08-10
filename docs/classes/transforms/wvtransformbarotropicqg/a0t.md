@@ -3,13 +3,13 @@ layout: default
 title: A0t
 parent: WVTransformBarotropicQG
 grand_parent: Transforms
-nav_order: 5
+nav_order: 6
 mathjax: true
 ---
 
 #  A0t
 
-zero-frequency coefficients at current time t
+`A0t` is the zero-frequency coefficient array evaluated at the current transform time. On the supported $$f$$-plane transforms, `A0` has no linear phase winding and therefore
 
 
 ---

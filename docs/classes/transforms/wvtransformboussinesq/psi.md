@@ -3,15 +3,13 @@ layout: default
 title: psi
 parent: WVTransformBoussinesq
 grand_parent: Transforms
-nav_order: 191
+nav_order: 218
 mathjax: true
 ---
 
 #  psi
 
 geostrophic streamfunction
-
-> Developer documentation: this item describes internal implementation details.
 
 
 ---

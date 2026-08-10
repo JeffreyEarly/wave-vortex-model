@@ -3,16 +3,21 @@ layout: default
 title: Nz
 parent: WVTransformStratifiedQG
 grand_parent: Transforms
-nav_order: 28
+nav_order: 29
 mathjax: true
 ---
 
 #  Nz
 
-points in the third, untransformed, dimension
+Number of vertical spatial grid points.
 
 
 ---
 
 ## Description
 Real valued property with no dimensions and no units.
+
+## Discussion
+Number of vertical spatial grid points.
+
+`Nz` is the third element of a three-dimensional transform's resolution vector and equals `length(z)`.

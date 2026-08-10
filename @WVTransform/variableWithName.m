@@ -1,6 +1,12 @@
 function varargout = variableWithName(self,variableNames)
 % Compute or retrieve one or more registered transform variables.
 %
+% Request several variables in one call to preserve their requested order:
+%
+% ```matlab
+% [u,v,eta] = wvt.variableWithName('u','v','eta');
+% ```
+%
 % - Topic: State variables
 % - Declaration: varargout = variableWithName(variableNames)
 % - Parameter variableNames: names of registered state variables

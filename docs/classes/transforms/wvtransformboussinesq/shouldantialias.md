@@ -3,15 +3,13 @@ layout: default
 title: shouldAntialias
 parent: WVTransformBoussinesq
 grand_parent: Transforms
-nav_order: 216
+nav_order: 248
 mathjax: true
 ---
 
 #  shouldAntialias
 
-whether the WV grid includes quadratically aliased wavenumbers
-
-> Developer documentation: this item describes internal implementation details.
+Whether the spectral grid excludes modes that alias quadratic products.
 
 
 ---
@@ -20,3 +18,6 @@ whether the WV grid includes quadratically aliased wavenumbers
 Real valued property with no dimensions and units of $$bool$$.
 
 ## Discussion
+Whether the spectral grid excludes modes that alias quadratic products.
+
+The constructor default is `true`. When enabled, the wave-vortex grid follows the two-thirds antialiasing rule in each periodic direction.

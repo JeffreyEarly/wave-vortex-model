@@ -16,8 +16,7 @@ WaveVortexModel uses NetCDF files for transform persistence, model output, and r
 Write a transform and close the returned file handle:
 
 ```matlab
-wvt = WVTransformConstantStratification( ...
-    [50e3 50e3 1300],[32 32 17],N0=5.2e-3,latitude=45);
+wvt = WVTransformConstantStratification([50e3 50e3 1300],[32 32 17],N0=5.2e-3,latitude=45);
 wvt.initWithRandomFlow();
 
 ncfile = wvt.writeToFile('transform.nc');
@@ -61,9 +60,9 @@ Use `shouldReadOnly=false` only when the returned file genuinely needs writable 
 For a model with one ordinary output schedule, create the file through the convenience method and integrate:
 
 ```matlab
-model = WVModel(wvt,shouldUseLinearDynamics=true);
-outputFile = model.createNetCDFFileForModelOutput( ...
-    'model-output.nc',outputInterval=600);
+wvt.addForcing(WVAdaptiveDamping(wvt));
+model = WVModel(wvt);
+outputFile = model.createNetCDFFileForModelOutput('model-output.nc',outputInterval=600);
 model.integrateToTime(3600);
 outputFile.closeNetCDFFile();
 ```

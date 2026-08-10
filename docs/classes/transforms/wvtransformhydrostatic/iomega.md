@@ -3,15 +3,18 @@ layout: default
 title: iOmega
 parent: WVTransformHydrostatic
 grand_parent: Transforms
-nav_order: 107
+nav_order: 126
 mathjax: true
 ---
 
 #  iOmega
 
-
-
-> Developer documentation: this item describes internal implementation details.
+Imaginary angular frequency, $$i\Omega$$, used for linear phase evolution.
 
 
 ---
+
+## Discussion
+
+`iOmega` has the transform's spectral shape, units of radians per
+second, and equals `1i*Omega`.

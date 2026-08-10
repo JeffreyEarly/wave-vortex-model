@@ -3,7 +3,7 @@ layout: default
 title: initWithGeostrophicStreamfunction
 parent: WVTransformBoussinesq
 grand_parent: Transforms
-nav_order: 137
+nav_order: 157
 mathjax: true
 ---
 

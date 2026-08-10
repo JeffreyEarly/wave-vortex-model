@@ -3,7 +3,7 @@ layout: default
 title: FinvMatrix
 parent: WVTransformBoussinesq
 grand_parent: Transforms
-nav_order: 14
+nav_order: 17
 mathjax: true
 ---
 

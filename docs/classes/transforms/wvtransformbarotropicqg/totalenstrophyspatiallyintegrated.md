@@ -3,13 +3,13 @@ layout: default
 title: totalEnstrophySpatiallyIntegrated
 parent: WVTransformBarotropicQG
 grand_parent: Transforms
-nav_order: 130
+nav_order: 161
 mathjax: true
 ---
 
 #  totalEnstrophySpatiallyIntegrated
 
-Return horizontally averaged barotropic potential enstrophy.
+Potential enstrophy evaluated from the gridded QGPV field.
 
 
 ---
@@ -22,6 +22,6 @@ Return horizontally averaged barotropic potential enstrophy.
 + `enstrophy`  horizontally averaged potential enstrophy
 
 ## Discussion
+Potential enstrophy evaluated from the gridded QGPV field.
 
-The spatial invariant is
-$$Z = \frac{h}{2}\langle q_{\mathrm{QG}}^2\rangle.$$
+This scalar diagnostic evaluates one half of the QGPV variance integrated over depth, or multiplied by equivalent depth for the barotropic transform.

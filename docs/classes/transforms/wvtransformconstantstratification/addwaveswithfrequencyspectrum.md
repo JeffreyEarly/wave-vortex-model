@@ -3,7 +3,7 @@ layout: default
 title: addWavesWithFrequencySpectrum
 parent: WVTransformConstantStratification
 grand_parent: Transforms
-nav_order: 75
+nav_order: 84
 mathjax: true
 ---
 
@@ -27,7 +27,7 @@ add waves with a specified frequency spectrum
 
 This allows you to initialize the wave field (Ap,Am matrices)
 with a spectrum specified in terms of vertical mode j and
-frequency $\omega$. This allows us to initialize with a
+frequency $$\omega$$. This allows us to initialize with a
 Garrett-Munk spectrum, for example, using code like,
 
 ```matlab

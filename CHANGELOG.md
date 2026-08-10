@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+- Reorganized each transform reference around common user tasks, grouped physical and spectral coordinates coherently, promoted flow-component diagnostics, documented the complete user-facing transform surface with units, defaults, shapes, formulas, and focused examples, kept inherited implementation machinery out of concrete transform pages, and removed obsolete transform-level pseudo-radial and frequency-axis binning remnants whose maintained implementations live in `WVDiagnostics`.
+- Updated onboarding examples to demonstrate warning-free nonlinear integration by default, simplified hand-authored MATLAB examples, and corrected unsupported single-dollar mathematical markup throughout the generated website.
+
 ## [4.2.1] - 2026-08-09
 
 - Raised the minimum MATLAB release to R2025b, aligning the supported runtime, native MPM verification, and release engine.

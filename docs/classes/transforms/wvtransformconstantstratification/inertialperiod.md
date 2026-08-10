@@ -3,13 +3,13 @@ layout: default
 title: inertialPeriod
 parent: WVTransformConstantStratification
 grand_parent: Transforms
-nav_order: 127
+nav_order: 146
 mathjax: true
 ---
 
 #  inertialPeriod
 
-inertial period
+Inertial period in seconds.
 
 
 ---
@@ -18,5 +18,6 @@ inertial period
 Real valued property with no dimensions and units of $$s$$.
 
 ## Discussion
+Inertial period in seconds.
 
-The inertial period is determined from latitude, which can only be set during initialization.
+The inertial period is computed from the Coriolis parameter as $$T_f=2\pi/f$$. It is determined by `rotationRate` and `latitude`, which are set during construction.

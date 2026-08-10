@@ -3,18 +3,16 @@ layout: default
 title: J
 parent: WVTransformBoussinesq
 grand_parent: Transforms
-nav_order: 23
+nav_order: 26
 mathjax: true
 ---
 
 #  J
 
-j-coordinate matrix
-
-> Developer documentation: this item describes internal implementation details.
+Dimensionless vertical-mode index array with shape `[Nj Nkl]`.
 
 
 ---
 
 ## Description
-Real valued property with dimensions $$(j,kl)$$ and units of $$rad/m$$.
+Real valued property with dimensions $$(j,kl)$$ and units of $$mode number$$.

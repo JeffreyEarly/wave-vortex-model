@@ -3,7 +3,7 @@ layout: default
 title: indicesOfFourierConjugates
 parent: WVTransformHydrostatic
 grand_parent: Transforms
-nav_order: 113
+nav_order: 132
 mathjax: true
 ---
 

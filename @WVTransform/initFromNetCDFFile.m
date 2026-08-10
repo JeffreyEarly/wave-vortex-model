@@ -24,9 +24,10 @@ function initFromNetCDFFile(wvt,ncfile,options)
 % file](/users-guide/reading-and-writing-to-file.html).
 % 
 % - Topic: Initial conditions
-% - Declaration: initWithFile(self,path,options)
+% - Declaration: initFromNetCDFFile(ncfile,options)
 % - Parameter ncfile: a NetCDF file object
-% - Parameter iTime: (optional) time index to initialize from (default 1)
+% - Parameter options.iTime: time index to initialize from; default `1`
+% - Parameter options.shouldDisplayInit: display the restored representation; default `false`
 arguments
     wvt WVTransform {mustBeNonempty}
     ncfile NetCDFFile {mustBeNonempty}

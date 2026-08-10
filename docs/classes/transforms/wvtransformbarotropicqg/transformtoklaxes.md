@@ -3,15 +3,13 @@ layout: default
 title: transformToKLAxes
 parent: WVTransformBarotropicQG
 grand_parent: Transforms
-nav_order: 137
+nav_order: 169
 mathjax: true
 ---
 
 #  transformToKLAxes
 
 transforms in the spectral domain from (j,kl) to (kAxis,lAxis,j)
-
-> Developer documentation: this item describes internal implementation details.
 
 
 ---

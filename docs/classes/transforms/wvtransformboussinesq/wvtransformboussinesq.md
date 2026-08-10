@@ -3,7 +3,7 @@ layout: default
 title: WVTransformBoussinesq
 parent: WVTransformBoussinesq
 grand_parent: Transforms
-nav_order: 69
+nav_order: 72
 mathjax: true
 ---
 

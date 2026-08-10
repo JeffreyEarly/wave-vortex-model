@@ -3,13 +3,13 @@ layout: default
 title: A0U
 parent: WVTransformConstantStratification
 grand_parent: Transforms
-nav_order: 2
+nav_order: 3
 mathjax: true
 ---
 
 #  A0U
 
-matrix component that multiplies $$\tilde{u}$$ to compute $$A_0$$.
+These projection coefficients map the $$u$$ state variable onto $$A_0$$. In the historical notation of [Early et al. (2021)](https://doi.org/10.1017/jfm.2020.995), they are the row 3, column 1 entries of $$S^{-1}$$ for the primary internal-gravity-wave and geostrophic solutions in equation C5.
 
 > Developer documentation: this item describes internal implementation details.
 

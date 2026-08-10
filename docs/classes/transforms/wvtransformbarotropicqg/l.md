@@ -9,9 +9,7 @@ mathjax: true
 
 #  L
 
-l-coordinate matrix
-
-> Developer documentation: this item describes internal implementation details.
+Y-direction angular-wavenumber array in rad/m with shape `[1 Nkl]`.
 
 
 ---

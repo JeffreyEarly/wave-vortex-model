@@ -3,13 +3,13 @@ layout: default
 title: Ly
 parent: WVTransformStratifiedQG
 grand_parent: Transforms
-nav_order: 17
+nav_order: 18
 mathjax: true
 ---
 
 #  Ly
 
-length of the y-dimension
+Periodic domain length in the y direction.
 
 
 ---
@@ -18,3 +18,6 @@ length of the y-dimension
 Real valued property with no dimensions and units of $$m$$.
 
 ## Discussion
+Periodic domain length in the y direction.
+
+`Ly` is the second element of the constructor's domain-size vector and has units of meters.

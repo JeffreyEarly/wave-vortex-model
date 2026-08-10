@@ -3,13 +3,13 @@ layout: default
 title: rhoFunction
 parent: WVTransformHydrostatic
 grand_parent: Transforms
-nav_order: 185
+nav_order: 216
 mathjax: true
 ---
 
 #  rhoFunction
 
-eta_true operation needs rhoFunction
+Function returning the no-motion density profile at requested depths.
 
 
 ---

@@ -3,13 +3,13 @@ layout: default
 title: Apt
 parent: WVTransformBoussinesq
 grand_parent: Transforms
-nav_order: 10
+nav_order: 13
 mathjax: true
 ---
 
 #  Apt
 
-positive-frequency coefficients at current time t
+`Apt` is the positive-frequency coefficient array evaluated at the current transform time:
 
 
 ---

@@ -9,12 +9,15 @@ mathjax: true
 
 #  Kh
 
-horizontal wavenumber, $$Kh=\sqrt(K^2+L^2)$$
-
-> Developer documentation: this item describes internal implementation details.
+Horizontal angular-wavenumber magnitude on the coefficient grid.
 
 
 ---
 
 ## Description
 Real valued property with dimension $$kl$$ and units of $$rad/m$$.
+
+## Discussion
+Horizontal angular-wavenumber magnitude on the coefficient grid.
+
+`Kh` has `spectralMatrixSize`, units of radians per meter, and is defined by $$K_h=\sqrt{K^2+L^2}$$.

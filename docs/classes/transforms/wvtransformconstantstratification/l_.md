@@ -3,15 +3,13 @@ layout: default
 title: L
 parent: WVTransformConstantStratification
 grand_parent: Transforms
-nav_order: 35
+nav_order: 38
 mathjax: true
 ---
 
 #  L
 
-l-coordinate matrix
-
-> Developer documentation: this item describes internal implementation details.
+Y-direction angular-wavenumber array in rad/m with shape `[Nj Nkl]`.
 
 
 ---

@@ -3,7 +3,7 @@ layout: default
 title: shouldExcludeConjugates
 parent: WVTransformConstantStratification
 grand_parent: Transforms
-nav_order: 211
+nav_order: 244
 mathjax: true
 ---
 

@@ -36,10 +36,8 @@ Lxyz = [100e3 100e3 4000];
 Nxyz = [64 64 65];
 N0 = 3*2*pi/3600;
 
-wvt = WVTransformConstantStratification( ...
-    Lxyz,Nxyz,N0=N0,latitude=30);
-wvtHydrostatic = WVTransformConstantStratification( ...
-    Lxyz,Nxyz,N0=N0,latitude=30,isHydrostatic=true);
+wvt = WVTransformConstantStratification(Lxyz,Nxyz,N0=N0,latitude=30);
+wvtHydrostatic = WVTransformConstantStratification(Lxyz,Nxyz,N0=N0,latitude=30,isHydrostatic=true);
 ```
 
 ### Variable stratification
@@ -51,12 +49,9 @@ N0 = 3*2*pi/3600;
 Lgm = 1300;
 N2 = @(z) N0*N0*exp(2*z/Lgm);
 
-wvtHydrostatic = WVTransformHydrostatic( ...
-    Lxyz,Nxyz,N2Function=N2,latitude=30);
-wvtBoussinesq = WVTransformBoussinesq( ...
-    Lxyz,Nxyz,N2Function=N2,latitude=30);
-wvtQG = WVTransformStratifiedQG( ...
-    Lxyz,Nxyz,N2Function=N2,latitude=30);
+wvtHydrostatic = WVTransformHydrostatic(Lxyz,Nxyz,N2Function=N2,latitude=30);
+wvtBoussinesq = WVTransformBoussinesq(Lxyz,Nxyz,N2Function=N2,latitude=30);
+wvtQG = WVTransformStratifiedQG(Lxyz,Nxyz,N2Function=N2,latitude=30);
 ```
 
 ### Equivalent-barotropic QG
@@ -64,8 +59,7 @@ wvtQG = WVTransformStratifiedQG( ...
 The two-dimensional transform takes horizontal dimensions and an equivalent depth `h`:
 
 ```matlab
-wvtBarotropic = WVTransformBarotropicQG( ...
-    [100e3 100e3],[64 64],h=0.8,latitude=30);
+wvtBarotropic = WVTransformBarotropicQG([100e3 100e3],[64 64],h=0.8,latitude=30);
 ```
 
 ## Use the transform grids
@@ -101,8 +95,7 @@ This projection can also decompose output from another numerical model when its 
 The component-specific methods initialize internal waves, inertial oscillations, geostrophic motions, and mean-density anomalies. For example, initialize one internal wave by integer horizontal and vertical mode numbers:
 
 ```matlab
-[omega,k,l] = wvt.initWithWaveModes( ...
-    kMode=10,lMode=0,j=1,phi=0,u=0.2,sign=1);
+[omega,k,l] = wvt.initWithWaveModes(kMode=10,lMode=0,j=1,phi=0,u=0.2,sign=1);
 period = 2*pi/omega;
 ```
 
@@ -131,8 +124,7 @@ For periodic off-grid queries, use `variableAtPositionWithName` with `linear` or
 xq = [0 10e3 20e3];
 yq = [0 15e3 30e3];
 zq = [-100 -300 -500];
-[uq,vq] = wvt.variableAtPositionWithName( ...
-    xq,yq,zq,'u','v',interpolationMethod='spline');
+[uq,vq] = wvt.variableAtPositionWithName(xq,yq,zq,'u','v',interpolationMethod='spline');
 ```
 
 Horizontal query coordinates wrap periodically. The returned arrays retain the query shape.
