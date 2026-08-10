@@ -22,21 +22,52 @@ Generate internal waves from prescribed barotropic flow over topography.
 
 ## Overview
 
-`WVPseudoTopographicWaveGeneration` projects the first-order bottom
-velocity
+`WVPseudoTopographicWaveGeneration` prescribes a horizontally uniform
+barotropic velocity
 
 $$
-g_b=\boldsymbol U_{\mathrm{bt}}(t)\boldsymbol{\cdot}\nabla_Hh
+\mathbf{U}_{\mathrm{bt}}(t)
+=R(\tau)\operatorname{Re}\left\{
+\widehat{\mathbf{U}}_{\mathrm{bt}}e^{-i\omega\tau}\right\},
+\qquad \tau=t-t_s,
 $$
 
-onto the rigid-lid wave modes using their bottom pressure. The
-projection is precomputed, so ordinary forcing calls add spectral
-wave tendencies without a pressure solve or spatial transform. By
-default, generation is projected outside the exact support of an
-active `WVAdaptiveDamping`. Optional horizontal-wavenumber and
-vertical-mode bounds support other closures. The incoming balanced
-tendency is left unchanged. Select a standard constituent with
-`darwinSymbol`, or supply a custom angular `frequency`.
+where $$t_s$$ is `startTime`, $$\omega$$ is `frequency`, and $$R$$ is
+either unity or a half-cosine startup ramp. For upward-positive
+topographic height $$h(x,y)$$, the linearized bottom kinematic
+boundary condition is
+
+$$
+g_b(x,y,t)=w(z_b)=\mathbf{U}_{\mathrm{bt}}(t)\cdot\nabla_H h,
+$$
+
+with Fourier representation
+
+$$
+\widehat{g}_b=U_{\mathrm{bt},x}(ik\widehat h)
++U_{\mathrm{bt},y}(i\ell\widehat h).
+$$
+
+Let $$\pi_\pm(z_b)$$ denote the kinematic bottom pressure of a unit
+current-time wave coefficient and let $$E_\pm$$ denote its
+`Apm_TE_factor`. The projected current-time tendencies are
+
+$$
+\dot A_{\pm,t}
+=\frac{\pi_\pm^*(z_b)\widehat g_b}{E_\pm}.
+$$
+
+The implementation precomputes the pressure-gradient response and
+converts these tendencies to the stored reference-time coefficients
+with `conjPhase` for `Ap` and `phase` for `Am`. This normalization
+makes modal energy input equal the bottom pressure work.
+
+Generation is limited to the valid `Ap` and `Am` wave masks, the
+requested horizontal-wavenumber and vertical-mode bounds, and, by
+default, the exact zero-damping support of active
+`WVAdaptiveDamping` objects. The incoming `A0` tendency is unchanged.
+Select a standard constituent with `darwinSymbol`, or supply a custom
+angular `frequency`.
 
 ```matlab
 forcing = WVPseudoTopographicWaveGeneration(wvt,topographicHeight=h,barotropicVelocityAmplitude=[0.05; 0],darwinSymbol="M2");
@@ -62,7 +93,7 @@ wvt.addForcing(forcing);
   + [`maximumForcedVerticalMode`](/classes/forcing/wvpseudotopographicwavegeneration/maximumforcedverticalmode.html) Largest vertical wave-mode index forced.
 + Evaluate prescribed forcing
   + [`barotropicVelocityAtTime`](/classes/forcing/wvpseudotopographicwavegeneration/barotropicvelocityattime.html) Evaluate the prescribed horizontally uniform current.
-  + [`bottomVelocityAtTime`](/classes/forcing/wvpseudotopographicwavegeneration/bottomvelocityattime.html) Evaluate $$g_b=\boldsymbol U_{\mathrm{bt}}\boldsymbol{\cdot}\nabla_Hh$$.
+  + [`bottomVelocityAtTime`](/classes/forcing/wvpseudotopographicwavegeneration/bottomvelocityattime.html) Evaluate the bottom kinematic velocity.
   + [`spectralGenerationMask`](/classes/forcing/wvpseudotopographicwavegeneration/spectralgenerationmask.html) Return the spectral region eligible for bottom-wave generation.
 + Generate forcing inputs
   + [`goffAbyssalHillTopography`](/classes/forcing/wvpseudotopographicwavegeneration/goffabyssalhilltopography.html) Generate periodic Goff abyssal-hill topography.

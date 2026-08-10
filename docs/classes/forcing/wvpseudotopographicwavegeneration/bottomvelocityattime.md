@@ -9,7 +9,7 @@ mathjax: true
 
 #  bottomVelocityAtTime
 
-Evaluate $$g_b=\boldsymbol U_{\mathrm{bt}}\boldsymbol{\cdot}\nabla_Hh$$.
+Evaluate the bottom kinematic velocity.
 
 
 ---
@@ -25,3 +25,6 @@ Evaluate $$g_b=\boldsymbol U_{\mathrm{bt}}\boldsymbol{\cdot}\nabla_Hh$$.
 + `gBottom`  real bottom-normal velocity on the horizontal grid
 
 ## Discussion
+
+For upward-positive topography, this returns
+$$g_b=\mathbf{U}_{\mathrm{bt}}\cdot\nabla_H h$$.

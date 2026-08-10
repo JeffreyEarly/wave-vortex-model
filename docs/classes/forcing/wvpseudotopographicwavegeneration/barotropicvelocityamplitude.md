@@ -24,5 +24,6 @@ Complex valued property with dimension $$barotropicVelocityComponent$$ and units
 ## Discussion
 
 The two entries are the zonal and meridional amplitudes in
-$$\boldsymbol U_{\mathrm{bt}}=R(t)\operatorname{Re}
-\{\widehat{\boldsymbol U}_{\mathrm{bt}}e^{-i\omega(t-t_0)}\}$$.
+$$\mathbf{U}_{\mathrm{bt}}=R(\tau)\operatorname{Re}
+\{\widehat{\mathbf{U}}_{\mathrm{bt}}e^{-i\omega\tau}\}$$, where
+$$\tau=t-\mathtt{startTime}$$.
