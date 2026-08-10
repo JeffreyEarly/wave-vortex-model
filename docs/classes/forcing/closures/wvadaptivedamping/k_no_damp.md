@@ -11,8 +11,6 @@ mathjax: true
 
 wavenumber below which there is zero damping
 
-> Developer documentation: this item describes internal implementation details.
-
 
 ---
 

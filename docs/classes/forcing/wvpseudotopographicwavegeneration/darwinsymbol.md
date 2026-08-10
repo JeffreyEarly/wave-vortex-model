@@ -11,8 +11,6 @@ mathjax: true
 
 Darwin symbol used to select the tidal frequency.
 
-> Developer documentation: this item describes internal implementation details.
-
 
 ---
 

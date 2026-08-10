@@ -9,7 +9,7 @@ mathjax: true
 
 #  isClosure
 
-boolean indicating that this forcing is a turbulence closure
+Whether this forcing is a small-scale closure.
 
 
 ---
@@ -18,4 +18,6 @@ boolean indicating that this forcing is a turbulence closure
 + Class: `logical`
 
 ## Discussion
-scheme, capable of removing variance at the small scales.
+
+Closure objects remove variance at unresolved scales and cause
+`WVTransform.hasClosure` to return `true`.

@@ -65,7 +65,7 @@ This is the only forcing added to the transforms by default. You must explicitly
 
 
 ## Topics
-+ Create forcing and closures
++ Create the forcing
   + [`WVNonlinearAdvection`](/classes/forcing/wvnonlinearadvection/wvnonlinearadvection.html) initialize the WVNonlinearAdvection nonlinear flux
 
 

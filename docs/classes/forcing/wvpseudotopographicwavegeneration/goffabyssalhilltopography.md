@@ -11,8 +11,6 @@ mathjax: true
 
 Generate periodic Goff abyssal-hill topography.
 
-> Developer documentation: this item describes internal implementation details.
-
 
 ---
 

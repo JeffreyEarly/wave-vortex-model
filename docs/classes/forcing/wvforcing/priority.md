@@ -9,7 +9,7 @@ mathjax: true
 
 #  priority
 
-determines the order in which the WVForcing will be
+Order within a forcing stage, from 0 first to 255 last.
 
 
 ---
@@ -18,10 +18,9 @@ determines the order in which the WVForcing will be
 + Class: `uint8`
 
 ## Discussion
-applied. Highest priority (0) will get called first, lowest (255)
-will get called last. The default is 255. The priority level is
-relativity to the ForcingType: i.e., spatial forcing is always
-called before spectral forcing, regardless of priority. Nonlinear
-advection and Antialiasing have priorities set to 127, and thus
-by default they will be called before other forcings in their
-type.
+
+The default is 255. Priority is compared only among forcing objects
+in the same evaluation stage: all spatial forcing is evaluated
+before spectral forcing, regardless of priority. Nonlinear advection
+and explicit antialiasing use priority 127 so they precede ordinary
+default-priority forcing in their respective stages.

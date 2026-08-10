@@ -36,15 +36,16 @@ requires `WVForcingType("PVSpatial")`.
 
 
 ## Topics
-+ Create forcing and closures
++ Create the forcing
   + [`WVThermalDamping`](/classes/forcing/closures/wvthermaldamping/wvthermaldamping.html) initialize the WVThermalDamping
++ Inspect forcing configuration
+  + [`alpha`](/classes/forcing/closures/wvthermaldamping/alpha.html) damping parameter, units of $$s^{-1}$$
++ Inspect forcing or damping scales
+  + [`alpha_scaled`](/classes/forcing/closures/wvthermaldamping/alpha_scaled.html) scaled damping parameter, units of $$s^{-1} m^{-2}$$
 
 
 ## Developer Topics
 These items document internal implementation details and are not part of the primary public API.
-+ Forcing internals
-  + [`alpha`](/classes/forcing/closures/wvthermaldamping/alpha.html) damping parameter, units of $$s^{-1}$$
-  + [`alpha_scaled`](/classes/forcing/closures/wvthermaldamping/alpha_scaled.html) scaled damping parameter, units of $$s^{-1} m^{-2}$$
 + Forcing persistence
   + [`classRequiredPropertyNames`](/classes/forcing/closures/wvthermaldamping/classrequiredpropertynames.html) Returns the required property names for the class
 

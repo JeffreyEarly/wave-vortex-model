@@ -40,9 +40,11 @@ classdef WVNonlinearAdvection < WVForcing
     %
     % This is the only forcing added to the transforms by default. You must explicitly remove it if you want to consider linear flows.
     %
-    % - Topic: Initialization
-    % - Topic: Properties
-    % - Topic: CAAnnotatedClass requirement
+    % - Topic: Create the forcing
+    % - Topic: Implement forcing evaluation
+    % - Topic: Convert forcing resolution
+    % - Topic: Forcing persistence
+    % - Topic: Forcing internals
     %
     % - Declaration: WVNonlinearAdvection < [WVForcing](/classes/forcing/wvforcing/)
     properties
@@ -55,6 +57,10 @@ classdef WVNonlinearAdvection < WVForcing
     methods
         function self = WVNonlinearAdvection(wvt)
             % initialize the WVNonlinearAdvection nonlinear flux
+            %
+            % See the [WVNonlinearAdvection overview](/classes/forcing/wvnonlinearadvection/)
+            % for the hydrostatic, nonhydrostatic, and quasigeostrophic
+            % equations and its role as the default forcing.
             %
             % - Topic: Initialization
             % - Declaration: self = WVNonlinearAdvection(wvt,options)

@@ -9,7 +9,7 @@ mathjax: true
 
 #  forcingType
 
-Array of supported forcing types
+Evaluation stages implemented by this forcing.
 
 
 ---
@@ -19,15 +19,20 @@ Array of supported forcing types
 
 ## Discussion
 
-If the class supports a given forcing type, that indicates that
-the class implements a particular methods. The correspondence is
-as follows:
-WVForcingType                 Method
--------------                 ------
-HydrostaticSpatial            addHydrostaticSpatialForcing
-NonhydrostaticSpatial         addNonhydrostaticSpatialForcing
-PVSpatial                     addPotentialVorticitySpatialForcing
-Spectral                      addSpectralForcing
-PVSpectral                    addPotentialVorticitySpectralForcing
-SpectralAmplitude             setSpectralForcing / setSpectralAmplitude
-PVSpectralAmplitude           setPotentialVorticitySpectralForcing / setPotentialVorticitySpectralAmplitude
+Each `WVForcingType` value declares the method or methods that a
+subclass implements:
+
+| Type | Evaluation method |
+| --- | --- |
+| `HydrostaticSpatial` | `addHydrostaticSpatialForcing` |
+| `NonhydrostaticSpatial` | `addNonhydrostaticSpatialForcing` |
+| `PVSpatial` | `addPotentialVorticitySpatialForcing` |
+| `Spectral` | `addSpectralForcing` |
+| `PVSpectral` | `addPotentialVorticitySpectralForcing` |
+| `SpectralAmplitude` | `setSpectralForcing` and `setSpectralAmplitude` |
+| `PVSpectralAmplitude` | `setPotentialVorticitySpectralForcing` and `setPotentialVorticitySpectralAmplitude` |
+
+Spectral-amplitude forcing first modifies the coefficient tendency
+with the corresponding `*SpectralForcing` method. After an
+integration step, the corresponding `*SpectralAmplitude` method
+restores the constrained coefficient values exactly.

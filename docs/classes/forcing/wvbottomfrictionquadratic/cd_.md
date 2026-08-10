@@ -11,8 +11,6 @@ mathjax: true
 
 $$\frac{Cd}{dz}$$ scaled quadratic drag coefficient with units $$m^{-1}$$
 
-> Developer documentation: this item describes internal implementation details.
-
 
 ---
 

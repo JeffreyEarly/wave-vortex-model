@@ -9,9 +9,12 @@ mathjax: true
 
 #  wvt
 
-
-
-> Developer documentation: this item describes internal implementation details.
+Transform to which this forcing belongs.
 
 
 ---
+
+## Discussion
+
+A forcing can be registered only with the same transform instance
+supplied to its constructor.

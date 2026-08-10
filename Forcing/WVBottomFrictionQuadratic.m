@@ -41,9 +41,12 @@ classdef WVBottomFrictionQuadratic < WVForcing
     % ```
     %
     %
-    % - Topic: Initialization
-    % - Topic: Properties
-    % - Topic: CAAnnotatedClass requirement
+    % - Topic: Create the forcing
+    % - Topic: Inspect forcing configuration
+    % - Topic: Inspect forcing or damping scales
+    % - Topic: Implement forcing evaluation
+    % - Topic: Convert forcing resolution
+    % - Topic: Forcing persistence
     %
     % - Declaration: WVBottomFrictionQuadratic < [WVForcing](/classes/forcing/wvforcing/)
     properties
@@ -61,6 +64,10 @@ classdef WVBottomFrictionQuadratic < WVForcing
     methods
         function self = WVBottomFrictionQuadratic(wvt,options)
             % initialize the WVBottomFrictionQuadratic
+            %
+            % See the [WVBottomFrictionQuadratic overview](/classes/forcing/wvbottomfrictionquadratic/)
+            % for the governing equations, geometry-dependent scaling,
+            % comparison with linear drag, and a usage example.
             %
             % - Topic: Initialization
             % - Declaration: self = WVBottomFrictionQuadratic(wvt,options)

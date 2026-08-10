@@ -66,17 +66,17 @@ forcing is copied to a transform with a different resolution.
 
 
 ## Topics
-+ Create forcing and closures
++ Create the forcing
   + [`WVHorizontalDamping`](/classes/forcing/closures/wvhorizontaldamping/wvhorizontaldamping.html) initialize the WVHorizontalDamping
++ Inspect forcing configuration
+  + [`nu`](/classes/forcing/closures/wvhorizontaldamping/nu.html) horizontal viscosity
+  + [`kappa`](/classes/forcing/closures/wvhorizontaldamping/kappa.html) horizontal diffusivity
 
 
 ## Developer Topics
 These items document internal implementation details and are not part of the primary public API.
 + Forcing persistence
   + [`classRequiredPropertyNames`](/classes/forcing/closures/wvhorizontaldamping/classrequiredpropertynames.html) Returns the required property names for the class
-+ Forcing internals
-  + [`kappa`](/classes/forcing/closures/wvhorizontaldamping/kappa.html) horizontal diffusivity
-  + [`nu`](/classes/forcing/closures/wvhorizontaldamping/nu.html) horizontal viscosity
 
 
 ---

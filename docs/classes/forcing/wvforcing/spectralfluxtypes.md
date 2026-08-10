@@ -9,9 +9,18 @@ mathjax: true
 
 #  spectralFluxTypes
 
-
+Return the spectral-tendency forcing types.
 
 > Developer documentation: this item describes internal implementation details.
 
 
 ---
+
+## Declaration
+```matlab
+ forceTypes = spectralFluxTypes()
+```
+## Returns
++ `forceTypes`  `Spectral` and `PVSpectral`
+
+## Discussion

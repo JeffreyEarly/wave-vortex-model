@@ -11,8 +11,6 @@ mathjax: true
 
 number of retained vertical modes used to construct the filter
 
-> Developer documentation: this item describes internal implementation details.
-
 
 ---
 
