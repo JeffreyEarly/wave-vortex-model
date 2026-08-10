@@ -58,10 +58,13 @@ classdef WVAdaptiveDamping < WVForcing
     % smaller deformation radius, and thus would be damped more strongly.
     % So arguably they're under-damped in a non-hydrostatic simulation.
     %
-    % - Topic: Initialization
-    % - Topic: Properties
-    % - Topic: Internal
-    % - Topic: CAAnnotatedClass requirement
+    % - Topic: Create the forcing
+    % - Topic: Inspect forcing configuration
+    % - Topic: Inspect forcing or damping scales
+    % - Topic: Implement forcing evaluation
+    % - Topic: Convert forcing resolution
+    % - Topic: Forcing persistence
+    % - Topic: Forcing internals
     %
     % - Declaration: WVAdaptiveDamping < [WVForcing](/classes/forcing/wvforcing/)
     properties

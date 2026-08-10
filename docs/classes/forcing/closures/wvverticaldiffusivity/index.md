@@ -58,8 +58,11 @@ barotropic transform because that geometry has no vertical structure.
 
 
 ## Topics
-+ Create forcing and closures
++ Create the forcing
   + [`WVVerticalDiffusivity`](/classes/forcing/closures/wvverticaldiffusivity/wvverticaldiffusivity.html) initialize the WVVerticalDiffusivity
++ Inspect forcing configuration
+  + [`kappa_z`](/classes/forcing/closures/wvverticaldiffusivity/kappa_z.html) vertical diffusivity, $$m^2s^{-1}$$
+  + [`shouldForceMeanDensityAnomaly`](/classes/forcing/closures/wvverticaldiffusivity/shouldforcemeandensityanomaly.html) whether to include the $$\frac{\partial}{\partial z} \ln N^2$$ term
 
 
 ## Developer Topics
@@ -68,8 +71,6 @@ These items document internal implementation details and are not part of the pri
   + [`classRequiredPropertyNames`](/classes/forcing/closures/wvverticaldiffusivity/classrequiredpropertynames.html) Returns the required property names for the class
 + Forcing internals
   + [`dLnN2`](/classes/forcing/closures/wvverticaldiffusivity/dlnn2.html) precomputed dLnN2 term
-  + [`kappa_z`](/classes/forcing/closures/wvverticaldiffusivity/kappa_z.html) vertical diffusivity, $$m^2s^{-1}$$
-  + [`shouldForceMeanDensityAnomaly`](/classes/forcing/closures/wvverticaldiffusivity/shouldforcemeandensityanomaly.html) whether to include the $$\frac{\partial}{\partial z} \ln N^2$$ term
 
 
 ---

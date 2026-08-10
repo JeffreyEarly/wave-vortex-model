@@ -124,7 +124,7 @@ By default, the generated tendency is projected outside the exact support of any
 
 ## Creating your own forcing
 
-Custom forcing subclasses derive from `WVForcing`, declare one or more `WVForcingType` stages, and override the method corresponding to each declared stage. Physical-space forcing modifies velocity and displacement tendencies before projection. Spectral forcing modifies $$(F_+,F_-,F_0)$$ after projection. Spectral-amplitude forcing updates `Ap`, `Am`, and `A0` directly.
+Custom forcing subclasses derive from `WVForcing`, declare one or more `WVForcingType` stages, and override the method corresponding to each declared stage. Physical-space forcing modifies velocity and displacement tendencies before projection. Spectral forcing modifies $$(F_+,F_-,F_0)$$ after projection. Spectral-amplitude forcing modifies the tendency of constrained coefficients and restores their exact `Ap`, `Am`, or `A0` values after an integration step.
 
 For example, horizontal and vertical spectral damping can be expressed as
 
@@ -137,4 +137,4 @@ $$
 
 and implemented by overriding `addSpectralForcing`. Hydrostatic and nonhydrostatic physical forcing instead override `addHydrostaticSpatialForcing` or `addNonhydrostaticSpatialForcing`. QG forcing uses the potential-vorticity variants of the spatial, spectral, or amplitude interfaces.
 
-The transform validates that a forcing stage is compatible with its dynamics, applies stages in physical–spectral–amplitude order, and uses `priority` to order forcing objects within one stage. See [`WVForcing`](/classes/forcing/wvforcing/) and [`WVForcingType`](/classes/forcing/wvforcing/) before implementing a subclass.
+The transform validates that a forcing stage is compatible with its dynamics, applies stages in physical–spectral–amplitude order, and uses `priority` to order forcing objects within one stage. See [`WVForcing`](/classes/forcing/wvforcing/) and the [`forcingType` stage table](/classes/forcing/wvforcing/forcingtype.html) before implementing a subclass.

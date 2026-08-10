@@ -11,8 +11,6 @@ mathjax: true
 
 Duration of the half-cosine startup ramp in seconds.
 
-> Developer documentation: this item describes internal implementation details.
-
 
 ---
 

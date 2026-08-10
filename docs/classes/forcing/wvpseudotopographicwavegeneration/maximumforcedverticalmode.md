@@ -11,8 +11,6 @@ mathjax: true
 
 Largest vertical wave-mode index forced.
 
-> Developer documentation: this item describes internal implementation details.
-
 
 ---
 

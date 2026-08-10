@@ -9,7 +9,9 @@ mathjax: true
 
 #  forcingWithResolutionOfTransform
 
-create a new WVForcing with a new resolution
+Rebuild a forcing for a compatible transform resolution.
+
+> Developer documentation: this item describes internal implementation details.
 
 
 ---
@@ -19,12 +21,12 @@ create a new WVForcing with a new resolution
  force = forcingWithResolutionOfTransform(wvtX2)
 ```
 ## Parameters
-+ `wvtX2`  the WVTransform with increased resolution
++ `wvtX2`  compatible transform at the target resolution
 
 ## Returns
-+ `force`  a new instance of WVForcing
++ `force`  equivalent forcing owned by `wvtX2`
 
 ## Discussion
 
-Subclasses to should override this method an implement the
-correct logic.
+Subclasses that support transform resolution conversion override
+this method and preserve their user configuration.

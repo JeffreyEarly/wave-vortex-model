@@ -36,9 +36,12 @@ classdef WVBottomFrictionLinear < WVForcing
     % wvt.addForcing(WVBottomFrictionLinear(r=1/(200*86400)));
     % ```
     %
-    % - Topic: Initialization
-    % - Topic: Properties
-    % - Topic: CAAnnotatedClass requirement
+    % - Topic: Create the forcing
+    % - Topic: Inspect forcing configuration
+    % - Topic: Inspect forcing or damping scales
+    % - Topic: Implement forcing evaluation
+    % - Topic: Convert forcing resolution
+    % - Topic: Forcing persistence
     %
     % - Declaration: WVBottomFrictionLinear < [WVForcing](/classes/forcing/wvforcing/)
     properties
@@ -56,6 +59,10 @@ classdef WVBottomFrictionLinear < WVForcing
     methods
         function self = WVBottomFrictionLinear(wvt,options)
             % initialize the WVBottomFrictionLinear
+            %
+            % See the [WVBottomFrictionLinear overview](/classes/forcing/wvbottomfrictionlinear/)
+            % for the governing equations, resolution scaling, comparison
+            % with quadratic drag, and a usage example.
             %
             % - Topic: Initialization
             % - Declaration: self = WVBottomFrictionLinear(wvt,options)

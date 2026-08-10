@@ -456,6 +456,180 @@ classdef TestCoreAPIDocumentation < matlab.unittest.TestCase
             testCase.verifyFalse(nonlinearModel.isDynamicsLinear);
         end
 
+        function forcingReferenceUsesReviewedTopics(testCase)
+            expectedOrder = [
+                "Create the forcing"
+                "Inspect forcing configuration"
+                "Configure forcing"
+                "Inspect forcing or damping scales"
+                "Evaluate prescribed forcing"
+                "Generate forcing inputs"
+                ];
+            indexes = [
+                fullfile("wvforcing","index.md")
+                fullfile("wvnonlinearadvection","index.md")
+                fullfile("wvbottomfrictionlinear","index.md")
+                fullfile("wvbottomfrictionquadratic","index.md")
+                fullfile("wvfixedamplitudeforcing","index.md")
+                fullfile("wvbetaplanepvadvection","index.md")
+                fullfile("wvpseudotopographicwavegeneration","index.md")
+                fullfile("closures","wvadaptivedamping","index.md")
+                fullfile("closures","wvverticaldiffusivity","index.md")
+                fullfile("closures","wvhorizontaldamping","index.md")
+                fullfile("closures","wvverticaldamping","index.md")
+                fullfile("closures","wvthermaldamping","index.md")
+                fullfile("closures","wvantialiasing","index.md")
+                ];
+            for relativePath = indexes'
+                page = testCase.generatedForcingPage(relativePath);
+                topics = testCase.topLevelTopics(page);
+                testCase.verifyEqual(topics,expectedOrder(ismember(expectedOrder,topics)),relativePath);
+                testCase.verifyFalse(contains(page,newline + "+ Other" + newline),relativePath);
+                testCase.verifyNoEmptyTopicBranches(page,relativePath);
+            end
+
+            expectedUserMembers = {
+                fullfile("wvforcing","index.md"), ["wvt" "name" "forcingType" "isClosure" "priority"]
+                fullfile("wvbottomfrictionlinear","index.md"), ["r" "r_scaled"]
+                fullfile("wvbottomfrictionquadratic","index.md"), ["Cd" "cd"]
+                fullfile("wvfixedamplitudeforcing","index.md"), ["A0_indices" "A0bar" "Ap_indices" "Apbar" "Am_indices" "Ambar" "setWaveForcingCoefficients" "setGeostrophicForcingCoefficients" "setNarrowBandGeostrophicForcing"]
+                fullfile("closures","wvadaptivedamping","index.md"), ["damp" "k_no_damp" "k_damp" "j_no_damp" "j_damp" "dampingTimeScale"]
+                fullfile("closures","wvverticaldiffusivity","index.md"), ["kappa_z" "shouldForceMeanDensityAnomaly"]
+                fullfile("closures","wvhorizontaldamping","index.md"), ["nu" "kappa"]
+                fullfile("closures","wvverticaldamping","index.md"), ["nu" "kappa"]
+                fullfile("closures","wvthermaldamping","index.md"), ["alpha" "alpha_scaled"]
+                fullfile("closures","wvantialiasing","index.md"), ["Nj" "effectiveHorizontalGridResolution" "effectiveJMax"]
+                fullfile("wvpseudotopographicwavegeneration","index.md"), ["topographicHeight" "barotropicVelocityAmplitude" "frequency" "darwinSymbol" "rampDuration" "startTime" "shouldAvoidAdaptiveDamping" "maximumForcedHorizontalWavenumber" "maximumForcedVerticalMode" "barotropicVelocityAtTime" "bottomVelocityAtTime" "spectralGenerationMask" "goffAbyssalHillTopography"]
+                };
+            for iExpectation = 1:size(expectedUserMembers,1)
+                relativePath = expectedUserMembers{iExpectation,1};
+                page = testCase.generatedForcingPage(relativePath);
+                userTopics = extractBetween(page,"## Topics","## Developer Topics");
+                for member = expectedUserMembers{iExpectation,2}
+                    testCase.verifySubstring(userTopics,"[`" + member + "`]",relativePath + " hides " + member + ".");
+                end
+            end
+
+            base = testCase.generatedForcingPage(fullfile("wvforcing","index.md"));
+            baseUserTopics = extractBetween(base,"## Topics","## Developer Topics");
+            baseDeveloperTopics = extractAfter(base,"## Developer Topics");
+            evaluationHooks = [
+                "addHydrostaticSpatialForcing"
+                "addNonhydrostaticSpatialForcing"
+                "addPotentialVorticitySpatialForcing"
+                "addSpectralForcing"
+                "setSpectralForcing"
+                "setSpectralAmplitude"
+                ];
+            for hook = evaluationHooks'
+                testCase.verifyFalse(contains(baseUserTopics,"[`" + hook + "`]"));
+                testCase.verifySubstring(baseDeveloperTopics,"[`" + hook + "`]");
+            end
+            antialiasing = testCase.generatedForcingPage(fullfile("closures","wvantialiasing","index.md"));
+            testCase.verifySubstring(extractAfter(antialiasing,"## Developer Topics"),"[`M`]");
+        end
+
+        function forcingBaseDocumentsStagesAndConstructor(testCase)
+            constructor = testCase.generatedForcingPage(fullfile("wvforcing","wvforcing.md"));
+            testCase.verifySubstring(constructor,"self = WVForcing(wvt,name,forcingType)");
+            for parameter = ["wvt" "name" "forcingType"]
+                testCase.verifySubstring(constructor,"`" + parameter + "`");
+            end
+            testCase.verifySubstring(constructor,"`self`");
+            testCase.verifyFalse(contains(constructor,"WVNonlinearFluxOperation"));
+
+            forcingType = testCase.generatedForcingPage(fullfile("wvforcing","forcingtype.md"));
+            stageMappings = {
+                "HydrostaticSpatial", "addHydrostaticSpatialForcing"
+                "NonhydrostaticSpatial", "addNonhydrostaticSpatialForcing"
+                "PVSpatial", "addPotentialVorticitySpatialForcing"
+                "Spectral", "addSpectralForcing"
+                "PVSpectral", "addPotentialVorticitySpectralForcing"
+                "SpectralAmplitude", "setSpectralForcing"
+                "PVSpectralAmplitude", "setPotentialVorticitySpectralForcing"
+                };
+            for iMapping = 1:size(stageMappings,1)
+                testCase.verifySubstring(forcingType,"`" + stageMappings{iMapping,1} + "`");
+                testCase.verifySubstring(forcingType,"`" + stageMappings{iMapping,2} + "`");
+            end
+            testCase.verifySubstring(forcingType,"restores the constrained coefficient values exactly");
+            priority = testCase.generatedForcingPage(fullfile("wvforcing","priority.md"));
+            testCase.verifySubstring(priority,"from 0 first to 255 last");
+            testCase.verifySubstring(priority,"same evaluation stage");
+        end
+
+        function forcingLandingPagesCoverGeneratedClasses(testCase)
+            forcingLanding = string(fileread(fullfile(testCase.repositoryRoot,"Documentation", ...
+                "WebsiteDocumentation","classes","forcing","index.md")));
+            closureLanding = string(fileread(fullfile(testCase.repositoryRoot,"Documentation", ...
+                "WebsiteDocumentation","classes","forcing","closures","index.md")));
+            forcingClasses = ["WVNonlinearAdvection" "WVBottomFrictionLinear" ...
+                "WVBottomFrictionQuadratic" "WVFixedAmplitudeForcing" ...
+                "WVBetaPlanePVAdvection" "WVPseudoTopographicWaveGeneration"];
+            closureClasses = ["WVAdaptiveDamping" "WVHorizontalDamping" ...
+                "WVVerticalDamping" "WVVerticalDiffusivity" ...
+                "WVThermalDamping" "WVAntialiasing"];
+            for className = forcingClasses
+                testCase.verifyEqual(count(forcingLanding,"[`" + className + "`]"),1,className);
+            end
+            for className = closureClasses
+                testCase.verifyEqual(count(closureLanding,"[`" + className + "`]"),1,className);
+            end
+            testCase.verifySubstring(closureLanding,"Transform-level antialiasing remains the efficient default");
+            sidecarFolder = fullfile(testCase.repositoryRoot,"Forcing","detailedDescriptions");
+            remainingSidecars = dir(fullfile(sidecarFolder,"*.md"));
+            testCase.verifyEmpty(remainingSidecars);
+        end
+
+        function forcingDetailedDescriptionsRemainOnClassPages(testCase)
+            expectations = {
+                "wvbottomfrictionlinear", [
+                    "volume integrated effect of friction remains the same regardless of resolution"
+                    "To compare with quadratic bottom friction"
+                    "For both nonhydrostatic and hydrostatic transforms"
+                    "and for quasigeostrophic transforms"
+                    "### Usage"
+                    "wvt.addForcing(WVBottomFrictionLinear(r=1/(200*86400)))"
+                    ]
+                "wvbottomfrictionquadratic", [
+                    "To compare with linear bottom friction"
+                    "For barotropic QG"
+                    "both nonhydrostatic and hydrostatic transforms"
+                    "and for quasigeostrophic transforms"
+                    "### Usage"
+                    "wvt.addForcing(WVBottomFrictionQuadratic(Cd=0.001))"
+                    ]
+                "wvfixedamplitudeforcing", [
+                    "participate in all the nonlinear dynamics"
+                    "spectral amplitude forcing"
+                    "restore the amplitudes to their desired value"
+                    "removes a degree-of-freedom from the model"
+                    "small scale damping enabled"
+                    "### Usage"
+                    ]
+                "wvnonlinearadvection", [
+                    "For nonhydrostatic transforms"
+                    "for hydrostatic transforms"
+                    "and for quasigeostrophic transforms"
+                    "\mathcal{S}_w"
+                    "\mathcal{S}_\eta"
+                    "\mathcal{S}_\textrm{qgpv}"
+                    "only forcing added to the transforms by default"
+                    ]
+                };
+            for iExpectation = 1:size(expectations,1)
+                classFolder = expectations{iExpectation,1};
+                overview = testCase.generatedForcingPage(fullfile(classFolder,"index.md"));
+                for expectedText = expectations{iExpectation,2}'
+                    testCase.verifySubstring(overview,expectedText,classFolder + " lost authored detail.");
+                end
+
+                constructor = testCase.generatedForcingPage(fullfile(classFolder,classFolder + ".md"));
+                expectedLink = "](/classes/forcing/" + classFolder + "/)";
+                testCase.verifySubstring(constructor,expectedLink,classFolder + " constructor does not link to its overview.");
+            end
+        end
+
         function coefficientClaimsMatchTransformState(testCase)
             wvt = WVTransformConstantStratification([40e3 30e3 2e3],[8 6 5],N0=5.2e-3,latitude=45);
             testCase.verifyEqual(size(wvt.Ap),size(wvt.Am));
@@ -582,6 +756,10 @@ classdef TestCoreAPIDocumentation < matlab.unittest.TestCase
 
         function source = coefficientSidecar(testCase,filename)
             source = string(fileread(fullfile(testCase.repositoryRoot,"@WVTransform","detailedDescriptions",filename)));
+        end
+
+        function page = generatedForcingPage(testCase,relativePath)
+            page = string(fileread(fullfile(testCase.repositoryRoot,"docs","classes","forcing",relativePath)));
         end
 
         function topics = topLevelTopics(~,page)

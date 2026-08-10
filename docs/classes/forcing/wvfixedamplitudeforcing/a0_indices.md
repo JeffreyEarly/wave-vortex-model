@@ -11,8 +11,6 @@ mathjax: true
 
 indices of modes in the `A0` matrix to fix
 
-> Developer documentation: this item describes internal implementation details.
-
 
 ---
 

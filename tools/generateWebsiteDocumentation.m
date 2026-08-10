@@ -10,7 +10,6 @@ writeVersionHistory(repositoryRoot,buildFolder);
 
 classFolderName = "Class documentation";
 transformSidecars = fullfile(repositoryRoot,"@WVTransform","detailedDescriptions");
-forcingSidecars = fullfile(repositoryRoot,"Forcing","detailedDescriptions");
 
 parentName = "Transforms";
 websiteFolder = "classes/transforms";
@@ -22,14 +21,14 @@ writeClassDocumentation("WVModel",buildFolder,"classes",classFolderName,"",class
 
 parentName = "Forcing";
 websiteFolder = "classes/forcing";
-writeClassDocumentation("WVForcing",buildFolder,websiteFolder,parentName,"",parentName,1,{'handle','CAAnnotatedClass','matlab.mixin.Heterogeneous'},forcingSidecars);
+writeClassDocumentation("WVForcing",buildFolder,websiteFolder,parentName,"",parentName,1,{'handle','CAAnnotatedClass','matlab.mixin.Heterogeneous'},string.empty(0,1));
 classes = ["WVNonlinearAdvection" "WVBottomFrictionLinear" "WVBottomFrictionQuadratic" "WVFixedAmplitudeForcing" "WVBetaPlanePVAdvection" "WVPseudoTopographicWaveGeneration"];
-writeClassGroup(classes,buildFolder,websiteFolder,parentName,classFolderName,parentName,2,{'handle','WVForcing','CAAnnotatedClass','matlab.mixin.Heterogeneous'},forcingSidecars);
+writeClassGroup(classes,buildFolder,websiteFolder,parentName,classFolderName,parentName,2,{'handle','WVForcing','CAAnnotatedClass','matlab.mixin.Heterogeneous'},string.empty(0,1));
 
 parentName = "Closures";
 websiteFolder = "classes/forcing/closures";
 classes = ["WVAdaptiveDamping" "WVVerticalDiffusivity" "WVHorizontalDamping" "WVVerticalDamping" "WVThermalDamping" "WVAntialiasing"];
-writeClassGroup(classes,buildFolder,websiteFolder,parentName,"Forcing",parentName,1,{'handle','WVForcing','CAAnnotatedClass','matlab.mixin.Heterogeneous'},forcingSidecars);
+writeClassGroup(classes,buildFolder,websiteFolder,parentName,"Forcing",parentName,1,{'handle','WVForcing','CAAnnotatedClass','matlab.mixin.Heterogeneous'},string.empty(0,1));
 
 parentName = "Model output";
 websiteFolder = "classes/model-output";

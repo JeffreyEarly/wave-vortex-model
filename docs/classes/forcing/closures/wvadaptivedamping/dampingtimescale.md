@@ -11,8 +11,6 @@ mathjax: true
 
 Computes the minimum damping time scale
 
-> Developer documentation: this item describes internal implementation details.
-
 
 ---
 

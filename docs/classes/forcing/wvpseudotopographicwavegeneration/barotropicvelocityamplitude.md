@@ -11,8 +11,6 @@ mathjax: true
 
 Complex barotropic velocity amplitude in meters per second.
 
-> Developer documentation: this item describes internal implementation details.
-
 
 ---
 
