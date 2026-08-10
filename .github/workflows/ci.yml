@@ -18,6 +18,33 @@ env:
   OCEANKIT_COMMIT: eb6141e837b2a2d52db675d449ed0ac4c9a64bb5
 
 jobs:
+  kernel-contract:
+    name: Portable C++ kernel contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out WaveVortexModel
+        uses: actions/checkout@v6
+        with:
+          path: source
+          persist-credentials: false
+
+      - name: Build and test without MATLAB headers
+        working-directory: source
+        run: tools/compiled-kernel/run_contract_tests.sh
+
+      - name: Reject forbidden core dependencies and build products
+        working-directory: source
+        run: |
+          if grep -R -nE '#include[[:space:]]*[<"](mex|matrix|matlab|fftw|netcdf)' CompiledKernel; then
+            echo "Portable kernel source contains a forbidden dependency."
+            exit 1
+          fi
+          if git ls-files | grep -E '(\.mex[a-z0-9]*$|\.a$|\.o$|CMakeCache\.txt$)'; then
+            echo "A generated native build product is tracked."
+            exit 1
+          fi
+
   smoke:
     name: Smoke / MATLAB R2025b
     runs-on: ubuntu-latest

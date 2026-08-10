@@ -17,7 +17,18 @@ documentationTasks = [
     ];
 plan("docs") = TaskGroup(documentationTasks,TaskNames=["build"; "check"],Description="Build or verify website documentation.");
 plan("analyze") = Task(Actions=@analyzeTask,Description="Analyze production MATLAB source for correctness findings.",DisableIncremental=true);
+plan("kernel:contract") = Task(Actions=@kernelContractTask,Description="Build and run the portable C++ kernel contract tests.",DisableIncremental=true);
 plan.DefaultTasks = "test:smoke";
+end
+
+function kernelContractTask(~)
+repositoryRoot = fileparts(mfilename("fullpath"));
+scriptPath = fullfile(repositoryRoot,"tools","compiled-kernel","run_contract_tests.sh");
+[status,output] = system(sprintf('"%s"',scriptPath));
+fprintf("%s",output);
+if status ~= 0
+    error("WaveVortexModel:KernelContractTestsFailed","Portable C++ kernel contract tests failed.");
+end
 end
 
 function documentationBuildTask(~)

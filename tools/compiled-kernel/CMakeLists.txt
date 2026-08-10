@@ -1,0 +1,23 @@
+cmake_minimum_required(VERSION 3.20)
+project(WaveVortexKernelContractTests LANGUAGES CXX)
+
+include(CTest)
+add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/../../CompiledKernel ${CMAKE_CURRENT_BINARY_DIR}/kernel)
+
+add_executable(TestWVKernelContract tests/TestWVKernelContract.cpp)
+target_link_libraries(TestWVKernelContract PRIVATE WaveVortex::Kernel)
+target_compile_features(TestWVKernelContract PRIVATE cxx_std_17)
+set_target_properties(TestWVKernelContract PROPERTIES CXX_EXTENSIONS OFF)
+if(CMAKE_CXX_COMPILER_ID MATCHES "AppleClang|Clang|GNU")
+    target_compile_options(TestWVKernelContract PRIVATE -Wall -Wextra -Wpedantic -Werror)
+endif()
+add_test(NAME WVKernelContract COMMAND TestWVKernelContract)
+
+add_executable(WVKernelDescriptorDump WVKernelDescriptorDump.cpp)
+target_link_libraries(WVKernelDescriptorDump PRIVATE WaveVortex::Kernel)
+target_compile_features(WVKernelDescriptorDump PRIVATE cxx_std_17)
+set_target_properties(WVKernelDescriptorDump PROPERTIES CXX_EXTENSIONS OFF)
+if(CMAKE_CXX_COMPILER_ID MATCHES "AppleClang|Clang|GNU")
+    target_compile_options(WVKernelDescriptorDump PRIVATE -Wall -Wextra -Wpedantic -Werror)
+endif()
+

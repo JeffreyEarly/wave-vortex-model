@@ -1,0 +1,93 @@
+#include "WaveVortexKernel/WVKernelTypes.hpp"
+
+#include <cstdlib>
+#include <iomanip>
+#include <iostream>
+#include <stdexcept>
+
+using namespace wavevortex;
+
+namespace {
+
+template <typename T>
+void numericArray(const std::vector<T>& values) {
+    std::cout << '[';
+    for (std::size_t i = 0; i < values.size(); ++i) {
+        if (i != 0) std::cout << ',';
+        std::cout << values[i];
+    }
+    std::cout << ']';
+}
+
+double argument(char** values, int index) {
+    return std::stod(values[index]);
+}
+
+} // namespace
+
+int main(int argc, char** argv) {
+    if (argc != 15) {
+        std::cerr << "usage: descriptor Nx Ny Nz Nj Lx Ly Lz N0 rho0 g rotationRate latitude isHydrostatic shouldAntialias\n";
+        return 2;
+    }
+    WVTransformConstantStratificationConfiguration configuration;
+    configuration.Nx = static_cast<std::size_t>(argument(argv, 1));
+    configuration.Ny = static_cast<std::size_t>(argument(argv, 2));
+    configuration.Nz = static_cast<std::size_t>(argument(argv, 3));
+    configuration.Nj = static_cast<std::size_t>(argument(argv, 4));
+    configuration.Lx = argument(argv, 5);
+    configuration.Ly = argument(argv, 6);
+    configuration.Lz = argument(argv, 7);
+    configuration.N0 = argument(argv, 8);
+    configuration.rho0 = argument(argv, 9);
+    configuration.g = argument(argv, 10);
+    configuration.planetaryRadius = 6.371e6;
+    configuration.rotationRate = argument(argv, 11);
+    configuration.latitude = argument(argv, 12);
+    configuration.isHydrostatic = argument(argv, 13) != 0.0;
+    configuration.shouldAntialias = argument(argv, 14) != 0.0;
+
+    WVTransformConstantStratificationDescriptor descriptor;
+    const auto status = WVTransformConstantStratificationDescriptor::create(configuration, descriptor);
+    if (!status) {
+        std::cerr << status.message << '\n';
+        return 3;
+    }
+
+    std::vector<std::int64_t> kMode;
+    std::vector<std::int64_t> lMode;
+    std::vector<double> k;
+    std::vector<double> l;
+    std::vector<std::size_t> primary;
+    std::vector<std::size_t> conjugate;
+    for (const auto& mode : descriptor.fourierModes()) {
+        kMode.push_back(mode.kMode);
+        lMode.push_back(mode.lMode);
+        k.push_back(mode.k);
+        l.push_back(mode.l);
+        primary.push_back(mode.dftPrimaryIndex + 1);
+        conjugate.push_back(mode.dftConjugateIndex + 1);
+    }
+
+    std::cout << std::setprecision(17);
+    std::cout << "{\"contractVersion\":" << WVKernelContractVersion << ",\"Nkl\":" << descriptor.Nkl();
+    std::cout << ",\"spectralShape\":[" << descriptor.spectralShape().rows << ',' << descriptor.spectralShape().columns << ']';
+    std::cout << ",\"coriolisFrequency\":" << descriptor.verticalModes().coriolisFrequency;
+    std::cout << ",\"kMode\":"; numericArray(kMode);
+    std::cout << ",\"lMode\":"; numericArray(lMode);
+    std::cout << ",\"k\":"; numericArray(k);
+    std::cout << ",\"l\":"; numericArray(l);
+    std::cout << ",\"dftPrimaryIndices2D\":"; numericArray(primary);
+    std::cout << ",\"dftConjugateIndices2D\":"; numericArray(conjugate);
+    std::cout << ",\"z\":"; numericArray(descriptor.verticalModes().z);
+    std::cout << ",\"j\":"; numericArray(descriptor.verticalModes().j);
+    std::cout << ",\"h0\":"; numericArray(descriptor.verticalModes().h0);
+    std::cout << ",\"hpm\":"; numericArray(descriptor.verticalModes().hpm);
+    std::cout << ",\"omega\":"; numericArray(descriptor.verticalModes().omega);
+    std::cout << ",\"Fg\":"; numericArray(descriptor.verticalModes().Fg);
+    std::cout << ",\"Gg\":"; numericArray(descriptor.verticalModes().Gg);
+    std::cout << ",\"Fwg\":"; numericArray(descriptor.verticalModes().Fwg);
+    std::cout << ",\"Gwg\":"; numericArray(descriptor.verticalModes().Gwg);
+    std::cout << "}\n";
+    return 0;
+}
