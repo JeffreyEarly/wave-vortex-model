@@ -3,7 +3,7 @@ layout: default
 title: fourierStorageType
 parent: WVFourierStorageLayout
 grand_parent: Developer internals
-nav_order: 11
+nav_order: 10
 mathjax: true
 ---
 

@@ -3,7 +3,7 @@ layout: default
 title: dftPrimaryIndices2D
 parent: WVTransformConstantStratification
 grand_parent: Transforms
-nav_order: 102
+nav_order: 100
 mathjax: true
 ---
 

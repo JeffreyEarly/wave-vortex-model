@@ -3,7 +3,7 @@ layout: default
 title: horizontalGridSize
 parent: WVFourierStorageLayout
 grand_parent: Developer internals
-nav_order: 15
+nav_order: 14
 mathjax: true
 ---
 

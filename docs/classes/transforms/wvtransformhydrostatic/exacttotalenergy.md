@@ -3,7 +3,7 @@ layout: default
 title: exactTotalEnergy
 parent: WVTransformHydrostatic
 grand_parent: Transforms
-nav_order: 103
+nav_order: 101
 mathjax: true
 ---
 

@@ -3,7 +3,7 @@ layout: default
 title: summarizeFlowComponents
 parent: WVTransformConstantStratification
 grand_parent: Transforms
-nav_order: 259
+nav_order: 256
 mathjax: true
 ---
 

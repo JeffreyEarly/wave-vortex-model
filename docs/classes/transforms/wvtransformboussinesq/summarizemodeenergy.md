@@ -3,7 +3,7 @@ layout: default
 title: summarizeModeEnergy
 parent: WVTransformBoussinesq
 grand_parent: Transforms
-nav_order: 265
+nav_order: 262
 mathjax: true
 ---
 

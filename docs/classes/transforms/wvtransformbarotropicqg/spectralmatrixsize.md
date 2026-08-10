@@ -3,7 +3,7 @@ layout: default
 title: spectralMatrixSize
 parent: WVTransformBarotropicQG
 grand_parent: Transforms
-nav_order: 146
+nav_order: 143
 mathjax: true
 ---
 

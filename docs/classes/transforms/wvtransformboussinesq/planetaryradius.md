@@ -3,7 +3,7 @@ layout: default
 title: planetaryRadius
 parent: WVTransformBoussinesq
 grand_parent: Transforms
-nav_order: 211
+nav_order: 208
 mathjax: true
 ---
 

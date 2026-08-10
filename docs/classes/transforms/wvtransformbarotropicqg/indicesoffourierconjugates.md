@@ -3,7 +3,7 @@ layout: default
 title: indicesOfFourierConjugates
 parent: WVTransformBarotropicQG
 grand_parent: Transforms
-nav_order: 77
+nav_order: 74
 mathjax: true
 ---
 

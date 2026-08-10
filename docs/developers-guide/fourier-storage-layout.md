@@ -12,6 +12,8 @@ mathjax: true
 
 The class describes mappings; it does not execute FFTs, normalize coefficients, own backend storage, or choose a backend. Those responsibilities remain with the fast-transform implementation.
 
+WaveVortexModel currently uses only the full-complex MATLAB builtin implementation. The half-x and half-y contracts remain documented because they are useful boundaries for future coarse compiled kernels; they do not imply that a lightweight FFTW backend is available.
+
 ## Representations
 
 For a spatial array `[Nx,Ny,Nbatch]`, the supported natural Fourier-storage shapes are:
@@ -72,3 +74,5 @@ This contract makes mutation explicit without claiming that MATLAB will always u
 ## Developer contract
 
 The class is visible so backend developers can inspect its API and generated documentation. It is sealed and read-only because storage layouts are value-like descriptions, not extension points. A new backend should normally use the reshape and mapping methods. It may use the mapping properties directly when complete-expression benchmarks show that a specialized gather or assignment is materially better.
+
+Production transforms never materialize mappings replicated over `Nz`. Developers who deliberately need expanded full-grid indices can call `WVGeometryDoublyPeriodic.indicesFromWVGridToDFTGrid`; the returned arrays are caller-owned and should not be cached as transform state.

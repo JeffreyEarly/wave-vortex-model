@@ -3,7 +3,7 @@ layout: default
 title: maskForConjugateFourierCoefficients
 parent: WVTransformConstantStratification
 grand_parent: Transforms
-nav_order: 186
+nav_order: 183
 mathjax: true
 ---
 

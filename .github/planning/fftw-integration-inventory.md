@@ -6,15 +6,15 @@ Authoritative data: [`fftw-integration-inventory.json`](fftw-integration-invento
 
 Baseline: WaveVortexModel v4.2.1 at `9652b116b3ffd4ee3372cc5cdeea9700cd6cbc32`
 
-This inventory separates released infrastructure, unreleased integration work, and disposable experiments before any further FFTW implementation. Final production or cleanup work starts from `main`; neither `feature/layout-neutral-fftw-backend` nor `experiment/fftw-adapter-overhead` is a merge candidate.
+This inventory separates released infrastructure, unreleased integration work, and disposable experiments. Issue #97 recorded `RETIRE`: no WaveVortex FFTW candidate cleared its complexity-adjusted model-level gate. The final cleanup was reconstructed from `main`; neither the integration branch nor an experimental branch was merged.
 
 ## Branch record
 
 | Ref | Commit | Tree | Merge base | Unique commits | Disposition |
 |---|---|---|---|---:|---|
 | `v4.2.1` / `main` | `9652b116b3ffd4ee3372cc5cdeea9700cd6cbc32` | `a74e72a9b2c1886468edf877c133fa6edc9cf416` | — | — | Immutable builtin baseline |
-| `feature/layout-neutral-fftw-backend` | `453e79c9190623c2cee8308e9bb9fe92c0647c63` | `90a7d4b831af5313ec70831243724f3517991a50` | v4.2.1 | 25 | Reconstruct selected components only |
-| `experiment/fftw-adapter-overhead` | `18a4de1c11250b2f2a9ce3e7530ff76a6827c23e` | `f84cbccc2688e236786d2d3bbfcf9b32f81f9938` | Integration head | 6 | Never merge; preserve conclusions only |
+| `feature/layout-neutral-fftw-backend` | `453e79c9190623c2cee8308e9bb9fe92c0647c63` | `90a7d4b831af5313ec70831243724f3517991a50` | v4.2.1 | 25 | Historical; selected cleanup reconstructed manually |
+| `experiment/fftw-adapter-overhead` | `18a4de1c11250b2f2a9ce3e7530ff76a6827c23e` | `f84cbccc2688e236786d2d3bbfcf9b32f81f9938` | Integration head | 6 | Historical evidence only |
 
 All three heads matched their corresponding remote refs and their worktrees were clean when this inventory was recorded.
 
@@ -25,19 +25,22 @@ All three heads matched their corresponding remote refs and their worktrees were
 | `benchmark-framework` | #59 | `main` | Retain independently | no | Shared performance and memory benchmark contract |
 | `full-mapping-baseline` | #69 | `main` | Retain independently | no | Frozen evidence for the optimized builtin mapping |
 | `compact-layout-abstraction` | #70 | `main` | Retain independently | no | Released, faster, and shared by future backends |
-| `legacy-expanded-mapping-removal` | #71 | integration | Retain independently | yes | Compact cleanup is mixed with the half-x adapter |
-| `fourier-position-compact-reconstruction` | #71 | integration | Retain independently | yes | Backend-neutral use of the full layout contract |
-| `obsolete-main-fftw-route` | legacy/main | `main` | Remove from main | yes | Unsupported and obsolete in either final outcome |
-| `half-x-adapter` | #71 | integration | Conditional | yes | Reference only until a candidate clears #94 |
-| `backend-selection-and-package-contract` | #72 | integration | Conditional | yes | Public/dependency complexity requires a qualified backend |
-| `vertical-r2r-dispatch` | #73 | integration | Conditional | yes | Retain only with model-level qualification |
-| `fftw-derivative-dispatch` | #74 | integration | Conditional | yes | Exact regions depend on the selected backend |
-| `modal-direct-derivative-formulas` | #74 | integration | Conditional | yes | Must independently clear the contained-change gate |
-| `generic-storage-and-rss-tools` | #75 | integration | Retain independently | yes | Needed by later transform and kernel decisions |
-| `fftw-storage-readiness-machinery` | #75/#47 | integration | Conditional | yes | Rebuild only what the final clean gate needs |
+| `legacy-expanded-mapping-removal` | #71 | `main` | Retained | no | Compact mappings replace vertically replicated compatibility state |
+| `fourier-position-compact-reconstruction` | #71 | `main` | Retained | no | Backend-neutral use of the full layout contract |
+| `obsolete-main-fftw-route` | legacy/main | removed | Removed | no | Unsupported three-plan adapter and probe retired |
+| `half-x-adapter` | #71 | integration | Discarded | no | No production candidate qualified |
+| `backend-selection-and-package-contract` | #72 | integration | Discarded | no | No public backend remains to justify the dependency or factory |
+| `vertical-r2r-dispatch` | #73 | integration | Discarded | no | Did not qualify as a complete model-level contribution |
+| `fftw-derivative-dispatch` | #74 | integration | Discarded | no | Conditional on the retired backend |
+| `modal-direct-derivative-formulas` | #74 | integration | Discarded | no | Did not clear the contained complete-`nonlinearFlux` gate |
+| `generic-storage-and-rss-tools` | #75 | `main` | Retained | no | Builtin-neutral storage and process-memory diagnostics support future kernels |
+| `fftw-storage-readiness-machinery` | #75/#47 | integration | Discarded | no | Historical results remain in issues; unused harness code is not retained |
 | `fine-grained-not-ready-record` | #47 | GitHub/integration | Historical only | no | Valid canonical decision, not reopened |
 | `adapter-overhead-prototype-code` | #92 | investigation | Discard | no | Disposable experimental implementations |
 | `adapter-overhead-evidence` | #92 | GitHub/investigation | Historical only | no | Stage, batching, ownership, and RSS evidence |
+| `dispatch-cache-experiment` | #93 | GitHub/experiment | Discarded | no | Missed the contained-change gate and did not improve RSS |
+| `matlab-half-mapping-experiment` | #96 | GitHub/experiment | Discarded | no | No new MATLAB mapping cleared the local-change gate |
+| `coarse-gateway-experiment` | #94 | GitHub/experiment | Discarded | no | Missed the 20% architectural gate and increased RSS |
 | `fftw-transforms-package` | external repository | released | Retain independently | no | Reusable outside WaveVortexModel |
 | `integration-main-sync-merges` | branch history | integration | Historical only | no | Coverage records, not transferable changes |
 
@@ -64,9 +67,9 @@ The v4.2.1 builtin path:
 
 The JSON inventory records Git blob and SHA-256 hashes for the builtin buffer owner, forward transform, inverse transform, geometry ordering, and layout class. It also records fixed hashes for the existing `core-v1`, layout-v1, layout-integration, and v4.2.1 release artifacts. No benchmark was rerun for this inventory.
 
-## Downstream contract
+## Final contract
 
-- #96 may test only the remaining bounded MATLAB half-spectrum mappings.
-- #93 may retain cached dispatch only under its contained-change gate or as part of a qualified cumulative candidate.
-- #94 may use the integration and investigation branches as references but must prototype on a nonmergeable branch.
-- #97 must create its final PROMOTE or RETIRE branch from `main`, reconstruct retained pieces, and remove the obsolete main-branch FFTW route in either outcome.
+- The supported lightweight implementation is the optimized MATLAB builtin path.
+- WaveVortexModel has no FFTWTransforms dependency or public FFTW selector.
+- `WVFourierStorageLayout` retains full and half-storage contracts for future compiled backends.
+- Further FFTW work belongs to the compiled constant-stratification kernel milestone and compares against the optimized builtin baseline.

@@ -3,7 +3,7 @@ layout: default
 title: setGeostrophicStreamfunction
 parent: WVTransformStratifiedQG
 grand_parent: Transforms
-nav_order: 181
+nav_order: 178
 mathjax: true
 ---
 

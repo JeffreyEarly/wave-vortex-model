@@ -3,7 +3,7 @@ layout: default
 title: inertialPeriod
 parent: WVTransformHydrostatic
 grand_parent: Transforms
-nav_order: 135
+nav_order: 132
 mathjax: true
 ---
 

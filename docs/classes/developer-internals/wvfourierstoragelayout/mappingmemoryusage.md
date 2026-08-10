@@ -3,7 +3,7 @@ layout: default
 title: mappingMemoryUsage
 parent: WVFourierStorageLayout
 grand_parent: Developer internals
-nav_order: 17
+nav_order: 16
 mathjax: true
 ---
 

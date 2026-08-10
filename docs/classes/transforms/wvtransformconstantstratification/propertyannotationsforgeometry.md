@@ -3,7 +3,7 @@ layout: default
 title: propertyAnnotationsForGeometry
 parent: WVTransformConstantStratification
 grand_parent: Transforms
-nav_order: 212
+nav_order: 209
 mathjax: true
 ---
 

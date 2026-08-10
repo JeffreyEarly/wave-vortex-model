@@ -3,7 +3,7 @@ layout: default
 title: transformUVWEtaToWaveVortex
 parent: WVTransformConstantStratification
 grand_parent: Transforms
-nav_order: 285
+nav_order: 283
 mathjax: true
 ---
 

@@ -42,7 +42,7 @@ Nx = benchmarkCase.Nxyz(1);
 Ny = benchmarkCase.Nxyz(2);
 Nz = benchmarkCase.Nxyz(3);
 rng(benchmarkCase.seed,"twister");
-geometry = WVGeometryDoublyPeriodic(benchmarkCase.Lxyz(1:2),[Nx Ny],Nz=Nz,shouldAntialias=benchmarkCase.shouldAntialias,shouldExcludeNyquist=true,shouldExcludeConjugates=true,conjugateDimension=2,fastTransform="builtin");
+geometry = WVGeometryDoublyPeriodic(benchmarkCase.Lxyz(1:2),[Nx Ny],Nz=Nz,shouldAntialias=benchmarkCase.shouldAntialias,shouldExcludeNyquist=true,shouldExcludeConjugates=true,conjugateDimension=2);
 productionTransform = geometry.fastTransform;
 realInput = randn(Nx,Ny,Nz);
 realInputReference = realInput;
@@ -50,9 +50,13 @@ wvReference = productionTransform.transformFromSpatialDomainWithFourier(realInpu
 wvInputReference = wvReference;
 productionInverse = productionTransform.transformToSpatialDomainWithFourier(wvReference);
 fullSpectrum = fft(fft(realInput,Nx,1),Ny,2)/(Nx*Ny);
+[currentPrimary,currentConjugate,currentWvConjugate] = geometry.indicesFromWVGridToDFTGrid(Nz,isHalfComplex=true);
+currentPrimary = uint64(currentPrimary);
+currentConjugate = uint64(currentConjugate);
+currentWvConjugate = uint64(currentWvConjugate);
 fullBufferReference = complex(zeros(Nx,Ny,Nz));
-fullBufferReference(geometry.dftPrimaryIndex) = wvReference;
-fullBufferReference(geometry.dftConjugateIndex) = conj(wvReference(geometry.wvConjugateIndex));
+fullBufferReference(currentPrimary) = wvReference;
+fullBufferReference(currentConjugate) = conj(wvReference(currentWvConjugate));
 runtimes = createStrategyRuntimes(geometry,Nz,strategyIds);
 validations = repmat(emptyValidation(),1,numel(strategyIds));
 for iStrategy = 1:numel(runtimes)
@@ -135,7 +139,7 @@ caseResult = struct( ...
     "sampleCount",benchmarkCase.sampleCount, ...
     "status","complete", ...
     "failure",emptyFailure(), ...
-    "reference",struct("strategyId","wv-sorted-linear","forwardRelativeError",relativeInfinityError(wvReference,reshape(fullSpectrum(geometry.dftPrimaryIndex),Nz,geometry.Nkl)),"inputProjectionRelativeError",relativeInfinityError(productionInverse,realInput),"fullBufferRelativeError",relativeInfinityError(productionTransform.complexBuffer,fullBufferReference)), ...
+    "reference",struct("strategyId","wv-sorted-linear","forwardRelativeError",relativeInfinityError(wvReference,reshape(fullSpectrum(currentPrimary),Nz,geometry.Nkl)),"inputProjectionRelativeError",relativeInfinityError(productionInverse,realInput),"fullBufferRelativeError",relativeInfinityError(productionTransform.complexBuffer,fullBufferReference)), ...
     "storage",commonStorageLedger(realInput,fullSpectrum,wvReference,productionInverse), ...
     "warmupSchedules",warmupSchedules, ...
     "sampleSchedules",sampleSchedules, ...
@@ -146,9 +150,10 @@ end
 function runtimes = createStrategyRuntimes(geometry,Nz,strategyIds)
 Nx = geometry.Nx;
 Ny = geometry.Ny;
-currentPrimary = uint64(geometry.dftPrimaryIndex);
-currentConjugate = uint64(geometry.dftConjugateIndex);
-currentWvConjugate = uint64(geometry.wvConjugateIndex);
+[currentPrimary,currentConjugate,currentWvConjugate] = geometry.indicesFromWVGridToDFTGrid(Nz,isHalfComplex=true);
+currentPrimary = uint64(currentPrimary);
+currentConjugate = uint64(currentConjugate);
+currentWvConjugate = uint64(currentWvConjugate);
 [dftPrimary,primaryOrder] = sort(currentPrimary);
 [dftConjugate,conjugateOrder] = sort(currentConjugate);
 wvPrimary = uint64(primaryOrder);

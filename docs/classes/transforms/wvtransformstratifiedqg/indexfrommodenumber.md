@@ -3,7 +3,7 @@ layout: default
 title: indexFromModeNumber
 parent: WVTransformStratifiedQG
 grand_parent: Transforms
-nav_order: 99
+nav_order: 97
 mathjax: true
 ---
 

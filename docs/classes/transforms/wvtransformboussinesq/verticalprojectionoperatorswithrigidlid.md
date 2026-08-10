@@ -3,7 +3,7 @@ layout: default
 title: verticalProjectionOperatorsWithRigidLid
 parent: WVTransformBoussinesq
 grand_parent: Transforms
-nav_order: 305
+nav_order: 302
 mathjax: true
 ---
 

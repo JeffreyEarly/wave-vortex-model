@@ -3,7 +3,7 @@ layout: default
 title: zeta_x
 parent: WVTransformBoussinesq
 grand_parent: Transforms
-nav_order: 325
+nav_order: 321
 mathjax: true
 ---
 

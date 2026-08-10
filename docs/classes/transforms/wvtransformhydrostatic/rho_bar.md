@@ -3,7 +3,7 @@ layout: default
 title: rho_bar
 parent: WVTransformHydrostatic
 grand_parent: Transforms
-nav_order: 217
+nav_order: 214
 mathjax: true
 ---
 

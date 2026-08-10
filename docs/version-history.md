@@ -8,6 +8,7 @@ nav_order: 100
 
 ## [Unreleased]
 
+- Retired the unsupported experimental WaveVortex FFTW backend after the fine-grained and coarse-gateway implementations missed their model-level adoption gates; removed its probe, plans, buffers, and expanded compatibility indices while retaining compact Fourier layouts, builtin performance, and backend-neutral storage/RSS diagnostics.
 - Reorganized the transform and forcing references around common user tasks, grouped physical and spectral coordinates coherently, promoted flow-component diagnostics and forcing configuration, documented the user-facing transform surface and forcing-stage contract, corrected the supplied forcing and closure declarations, units, defaults, examples, and geometry-specific behavior, kept evaluation and inherited implementation machinery in Developer Topics, and removed obsolete transform-level pseudo-radial and frequency-axis binning remnants whose maintained implementations live in `WVDiagnostics`.
 - Updated onboarding examples to demonstrate warning-free nonlinear integration by default, simplified hand-authored MATLAB examples, and corrected unsupported single-dollar mathematical markup throughout the generated website.
 

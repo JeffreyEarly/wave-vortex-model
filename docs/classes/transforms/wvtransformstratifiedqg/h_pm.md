@@ -3,7 +3,7 @@ layout: default
 title: h_pm
 parent: WVTransformStratifiedQG
 grand_parent: Transforms
-nav_order: 92
+nav_order: 90
 mathjax: true
 ---
 

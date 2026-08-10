@@ -3,7 +3,7 @@ layout: default
 title: totalEnstrophy
 parent: WVTransformConstantStratification
 grand_parent: Transforms
-nav_order: 269
+nav_order: 266
 mathjax: true
 ---
 

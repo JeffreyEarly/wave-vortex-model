@@ -3,7 +3,7 @@ layout: default
 title: summarizeDegreesOfFreedom
 parent: WVTransformConstantStratification
 grand_parent: Transforms
-nav_order: 257
+nav_order: 254
 mathjax: true
 ---
 

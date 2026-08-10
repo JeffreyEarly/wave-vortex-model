@@ -3,7 +3,7 @@ layout: default
 title: waveEnergy
 parent: WVTransformBoussinesq
 grand_parent: Transforms
-nav_order: 311
+nav_order: 308
 mathjax: true
 ---
 

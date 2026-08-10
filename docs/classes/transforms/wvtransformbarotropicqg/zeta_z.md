@@ -3,7 +3,7 @@ layout: default
 title: zeta_z
 parent: WVTransformBarotropicQG
 grand_parent: Transforms
-nav_order: 190
+nav_order: 186
 mathjax: true
 ---
 

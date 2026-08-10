@@ -110,8 +110,8 @@ classdef TestWVFourierStorageLayout < matlab.unittest.TestCase
             testCase.verifyTrue(all(strcmp({publicProperties.SetAccess},"private")));
 
             expectedMethods = ["WVFourierStorageLayout" "allocateFourierStorage" ...
-                "expandedLegacyMappings" "mappingMemoryUsage" ...
-                "reshapeFourierRowsToStorage" "reshapeFourierStorageToRows" ...
+                "mappingMemoryUsage" "reshapeFourierRowsToStorage" ...
+                "reshapeFourierStorageToRows" ...
                 "transformFromFourierStorageToWVGrid" ...
                 "transformFromWVGridToFourierStorage"];
             methods = classMetadata.MethodList;
@@ -136,13 +136,15 @@ classdef TestWVFourierStorageLayout < matlab.unittest.TestCase
             testCase.verifyEqual(layout.transformFromFourierStorageToWVGrid(rows),wvArray,AbsTol=1e-12);
         end
 
-        function builtinUsesRowsAndPreservesLegacyMappings(testCase)
+        function builtinUsesRowsWithoutExpandedMappings(testCase)
             geometry = WVGeometryDoublyPeriodic([4000 3000],[16 12],Nz=5,shouldAntialias=false);
             diagnostics = geometry.fourierStorageLayoutDiagnostics();
             testCase.verifyEqual(diagnostics.fourierStorageType,"full-complex");
             testCase.verifyEqual(diagnostics.mappingMethod,"two-dimensional-rows");
-            testCase.verifyFalse(diagnostics.legacyMappingsAreMaterialized);
-            testCase.verifyEqual(diagnostics.legacyMappingBytes,0);
+            testCase.verifyFalse(isprop(geometry,"dftPrimaryIndex"));
+            testCase.verifyFalse(isprop(geometry,"dftConjugateIndex"));
+            testCase.verifyFalse(isprop(geometry,"wvConjugateIndex"));
+            testCase.verifyFalse(ismethod(geometry.fastTransform.fourierStorageLayout,"expandedLegacyMappings"));
 
             rng(7100,"twister");
             realInput = randn(16,12,5);
@@ -151,17 +153,33 @@ classdef TestWVFourierStorageLayout < matlab.unittest.TestCase
             testCase.verifySize(canonical,[5 geometry.Nkl]);
             testCase.verifySize(realOutput,[16 12 5]);
             testCase.verifySize(geometry.fastTransform.complexBuffer,[16 12 5]);
-            diagnostics = geometry.fourierStorageLayoutDiagnostics();
-            testCase.verifyFalse(diagnostics.legacyMappingsAreMaterialized);
 
             [expectedPrimary,expectedConjugate,expectedWVConjugate] = geometry.indicesFromWVGridToDFTGrid(5,isHalfComplex=true);
-            testCase.verifyEqual(geometry.dftPrimaryIndex,uint64(expectedPrimary));
-            testCase.verifyEqual(geometry.dftConjugateIndex,uint64(expectedConjugate));
-            testCase.verifyEqual(geometry.wvConjugateIndex,uint64(expectedWVConjugate));
-            diagnostics = geometry.fourierStorageLayoutDiagnostics();
-            testCase.verifyTrue(diagnostics.legacyMappingsAreMaterialized);
-            testCase.verifyEqual(diagnostics.legacyMappingBytes,8*(numel(expectedPrimary)+numel(expectedConjugate)+numel(expectedWVConjugate)));
-            testCase.verifyEqual(geometry.dftPrimaryIndex,uint64(expectedPrimary));
+            fullSpectrum = fft(fft(realInput,16,1),12,2)/(16*12);
+            expectedCanonical = reshape(fullSpectrum(expectedPrimary),[5 geometry.Nkl]);
+            expectedBuffer = complex(zeros(16,12,5));
+            expectedBuffer(expectedPrimary) = expectedCanonical;
+            expectedBuffer(expectedConjugate) = conj(expectedCanonical(expectedWVConjugate));
+            testCase.verifyEqual(canonical,expectedCanonical,AbsTol=1e-12);
+            testCase.verifyEqual(geometry.fastTransform.complexBuffer,expectedBuffer,AbsTol=1e-12);
+        end
+
+        function fourierAtPositionUsesCompactLayout(testCase)
+            if exist("finufft_plan","class") ~= 8
+                return
+            end
+            for conjugateDimension = [1 2]
+                geometry = WVGeometryDoublyPeriodic([4000 3000],[16 12],Nz=1,shouldAntialias=false,conjugateDimension=conjugateDimension);
+                rng(7150+conjugateDimension,"twister");
+                field = randn(16,12);
+                coefficients = geometry.transformFromSpatialDomainWithFourier(field);
+                x = [0 137 3999 4123];
+                y = [0 211 2999 -77];
+                actual = geometry.transformToSpatialDomainWithFourierAtPosition(coefficients,x,y);
+                dftField = geometry.transformFromSpatialDomainToDFTGrid(field);
+                expected = geometry.transformToSpatialDomainFromDFTGridAtPosition(dftField,x,y);
+                testCase.verifyEqual(actual,expected,AbsTol=1e-12);
+            end
         end
 
         function builtinDefaultPathMatchesFrozenExpressions(testCase)

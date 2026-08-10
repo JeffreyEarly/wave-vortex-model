@@ -3,7 +3,7 @@ layout: default
 title: spectrumWithGgTransform
 parent: WVTransformHydrostatic
 grand_parent: Transforms
-nav_order: 240
+nav_order: 237
 mathjax: true
 ---
 

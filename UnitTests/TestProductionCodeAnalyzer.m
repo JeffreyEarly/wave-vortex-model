@@ -23,7 +23,7 @@ classdef TestProductionCodeAnalyzer < matlab.unittest.TestCase
     methods (Test,TestTags="full")
         function productionInventoryIsDeterministic(testCase)
             files = testCase.productionReport.Files;
-            testCase.verifyNumElements(files,172);
+            testCase.verifyNumElements(files,163);
             testCase.verifyEqual(files,sort(unique(files)));
             testCase.verifyTrue(all(isfile(fullfile(testCase.repositoryRoot,files))));
 
@@ -31,7 +31,7 @@ classdef TestProductionCodeAnalyzer < matlab.unittest.TestCase
                 "WVOperation.m"
                 "@WVTransform/WVTransform.m"
                 "FastTransforms/WVFourierStorageLayout.m"
-                "FastTransforms/@WVFastTransformDoublyPeriodicFFTW/WVFastTransformDoublyPeriodicFFTW.m"
+                "FastTransforms/@WVFastTransformDoublyPeriodicMatlab/WVFastTransformDoublyPeriodicMatlab.m"
                 "Forcing/WVNonlinearAdvection.m"
                 "ObservingSystems/WVLagrangianParticles.m"
                 "Integrators/WVModelAdaptiveTimeStepMethods.m"
@@ -57,6 +57,16 @@ classdef TestProductionCodeAnalyzer < matlab.unittest.TestCase
             testCase.verifyFalse(any(files == "buildfile.m"));
         end
 
+        function retiredFFTWRouteIsAbsentFromProduction(testCase)
+            forbiddenTokens = ["FFTWTransforms" "RealToComplexTransform" "fftw_dft2" "WVFastTransformDoublyPeriodicFFTW"];
+            for file = testCase.productionReport.Files'
+                source = string(fileread(fullfile(testCase.repositoryRoot,file)));
+                for token = forbiddenTokens
+                    testCase.verifyFalse(contains(source,token),"Retired token " + token + " remains in " + file);
+                end
+            end
+        end
+
         function productionFindingsAreClassifiedAndNonblocking(testCase)
             findings = testCase.productionReport.Findings;
             testCase.verifyEmpty(testCase.productionReport.BlockingFindings);
@@ -71,7 +81,7 @@ classdef TestProductionCodeAnalyzer < matlab.unittest.TestCase
         function reportContainsReleaseLocationsAndDiagnostics(testCase)
             output = evalc("analyzeProductionCode(testCase.repositoryRoot,ShouldFail=false);");
             testCase.verifySubstring(output,"MATLAB Code Analyzer: release=R");
-            testCase.verifySubstring(output,"files=172");
+            testCase.verifySubstring(output,"files=163");
             testCase.verifySubstring(output,"[AGROW, performance]");
             testCase.verifySubstring(output,"Variable appears to change size");
             testCase.verifyFalse(contains(output,testCase.repositoryRoot));

@@ -3,7 +3,7 @@ layout: default
 title: transformQGPVToWaveVortex
 parent: WVTransformBarotropicQG
 grand_parent: Transforms
-nav_order: 168
+nav_order: 165
 mathjax: true
 ---
 

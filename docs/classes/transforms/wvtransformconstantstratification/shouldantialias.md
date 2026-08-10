@@ -3,7 +3,7 @@ layout: default
 title: shouldAntialias
 parent: WVTransformConstantStratification
 grand_parent: Transforms
-nav_order: 243
+nav_order: 240
 mathjax: true
 ---
 
