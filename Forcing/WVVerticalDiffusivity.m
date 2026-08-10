@@ -15,10 +15,30 @@ classdef WVVerticalDiffusivity < WVForcing
     % \end{align}
     % $$
     %
-    % Set `shouldForceMeanDensityAnomaly=false` to omit the
-    % $$\partial_z\ln N^2$$ correction for variable stratification. This
-    % option has no effect for constant stratification because the gradient
-    % is zero.
+    % The horizontally uniform
+    % $$-\kappa_z\partial_z\ln N^2$$ source projects onto the
+    % mean-density-anomaly component. Set
+    % `shouldForceMeanDensityAnomaly=false` to omit this source. The option
+    % has no effect for constant stratification because the gradient is
+    % zero, and it does not modify the wave modes.
+    %
+    % For `WVTransformStratifiedQG`, the QGPV definition
+    %
+    % $$
+    % q=\partial_xv-\partial_yu-f\partial_z\eta
+    % $$
+    %
+    % maps the displacement source
+    % $$\mathcal{S}_\eta=\kappa_z\partial_{zz}\eta$$ to
+    %
+    % $$
+    % \mathcal{S}_q=-f\partial_z\mathcal{S}_\eta
+    % =-f\kappa_z\partial_{zzz}\eta.
+    % $$
+    %
+    % Stratified QG contains only nonzero-horizontal-wavenumber geostrophic
+    % modes, not a mean-density-anomaly component. Consequently,
+    % `shouldForceMeanDensityAnomaly` does not alter its QGPV pathway.
     %
     % ### Example
     %
@@ -50,10 +70,12 @@ classdef WVVerticalDiffusivity < WVForcing
         % - Topic: Properties
         kappa_z
 
-        % Whether to include the variable-stratification correction.
+        % Whether to include the mean-density-anomaly source.
         %
-        % The default is `true`. This controls the precomputed
-        % $$\partial_z\ln N^2$$ term used by the wave-bearing pathway.
+        % The default is `true`. This controls the horizontally uniform
+        % $$-\kappa_z\partial_z\ln N^2$$ source, which projects onto the
+        % mean-density-anomaly component. It has no effect on wave modes,
+        % for constant stratification, or for stratified QG.
         %
         % - Topic: Properties
         shouldForceMeanDensityAnomaly
@@ -76,7 +98,7 @@ classdef WVVerticalDiffusivity < WVForcing
             % - Declaration: self = WVVerticalDiffusivity(wvt,options)
             % - Parameter wvt: wave-bearing or stratified-QG transform that owns the forcing
             % - Parameter kappa_z: optional vertical diffusivity in square meters per second; default `1e-5`
-            % - Parameter shouldForceMeanDensityAnomaly: optional variable-stratification correction flag; default `true`
+            % - Parameter shouldForceMeanDensityAnomaly: optional flag controlling the horizontally uniform mean-density-anomaly source; default `true`
             % - Returns self: vertical-diffusivity forcing owned by `wvt`
             arguments
                 wvt WVTransform {mustBeNonempty}
@@ -91,7 +113,7 @@ classdef WVVerticalDiffusivity < WVForcing
             self.wvt = wvt;
             self.kappa_z = options.kappa_z;
             self.shouldForceMeanDensityAnomaly = options.shouldForceMeanDensityAnomaly;
-            if isa(wvt,'WVStratificationVariable') && self.shouldForceMeanDensityAnomaly
+            if self.shouldForceMeanDensityAnomaly && isprop(wvt,"dLnN2")
                 self.dLnN2 = shiftdim(wvt.dLnN2,-2);
             end
         end
@@ -105,10 +127,18 @@ classdef WVVerticalDiffusivity < WVForcing
         end
 
         function Fpv = addPotentialVorticitySpatialForcing(self, wvt, Fpv)
-            % Fpv = Fpv - wvt.f * self.kappa_z * (wvt.diffZG(wvt.eta,3) - wvt.diffZG(self.dLnN2));
+            % Add the QGPV tendency induced by vertical displacement diffusion.
+            %
+            % This evaluates
+            % $$-f\partial_z(\kappa_z\partial_{zz}\eta)$$.
+            %
+            % - Topic: Implement forcing evaluation
+            % - Declaration: Fpv = addPotentialVorticitySpatialForcing(wvt,Fpv)
+            % - Parameter wvt: stratified-QG transform evaluating the forcing
+            % - Parameter Fpv: accumulated physical-space QGPV tendency
+            % - Returns Fpv: QGPV tendency including vertical diffusivity
+            % - Developer: true
             Fpv = Fpv - wvt.f * self.kappa_z * (wvt.diffZG(wvt.eta,n=3));
-            % I believe this is incorrect because it excludes
-            % the MDA
         end
 
         function force = forcingWithResolutionOfTransform(self, wvtX2)
@@ -147,7 +177,7 @@ classdef WVVerticalDiffusivity < WVForcing
             end
             propertyAnnotations = CAPropertyAnnotation.empty(0,0);
             propertyAnnotations(end+1) = CANumericProperty('kappa_z', {}, 'm^2 s^{-1}','vertical diffusivity');
-            propertyAnnotations(end+1) = CANumericProperty('shouldForceMeanDensityAnomaly',{},'bool', 'whether the vertical diffusivity is applied to the mean density anomaly');
+            propertyAnnotations(end+1) = CANumericProperty('shouldForceMeanDensityAnomaly',{},'bool', 'whether to include the horizontally uniform mean-density-anomaly source');
         end
     end
 end

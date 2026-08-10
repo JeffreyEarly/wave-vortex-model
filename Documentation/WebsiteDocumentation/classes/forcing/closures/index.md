@@ -17,7 +17,7 @@ Closures are `WVForcing` objects that remove variance near unresolved scales. No
 | [`WVAdaptiveDamping`](/classes/forcing/closures/wvadaptivedamping/) | Adapt spectral damping to the instantaneous flow and effective resolution | All transform families | Computed automatically from the flow |
 | [`WVHorizontalDamping`](/classes/forcing/closures/wvhorizontaldamping/) | Apply horizontal Laplacian viscosity and diffusivity | Wave-bearing three-dimensional transforms | Viscosity `nu` and diffusivity `kappa` |
 | [`WVVerticalDamping`](/classes/forcing/closures/wvverticaldamping/) | Apply vertical Laplacian viscosity and diffusivity | Wave-bearing three-dimensional transforms | Viscosity `nu` and diffusivity `kappa` |
-| [`WVVerticalDiffusivity`](/classes/forcing/closures/wvverticaldiffusivity/) | Diffuse the thermodynamic field vertically | Three-dimensional wave and stratified-QG transforms | `kappa_z` and `shouldForceMeanDensityAnomaly` |
+| [`WVVerticalDiffusivity`](/classes/forcing/closures/wvverticaldiffusivity/) | Diffuse displacement vertically and apply its induced QGPV tendency | Three-dimensional wave and stratified-QG transforms | `kappa_z`; optional mean-density-anomaly source |
 | [`WVThermalDamping`](/classes/forcing/closures/wvthermaldamping/) | Apply the current QG thermal-damping formulation | Stratified and barotropic QG transforms | Rate `alpha` |
 | [`WVAntialiasing`](/classes/forcing/closures/wvantialiasing/) | Apply antialias filtering explicitly for diagnostics | All transform families constructed without transform-level antialiasing | Retained vertical-mode count `Nj` |
 

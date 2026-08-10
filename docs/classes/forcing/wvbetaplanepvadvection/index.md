@@ -11,7 +11,7 @@ nav_order: 6
 
 #  WVBetaPlanePVAdvection
 
-Advection of QGPV from beta
+Add beta-plane advection to the balanced QGPV tendency.
 
 
 ---
@@ -22,35 +22,38 @@ Advection of QGPV from beta
 
 ## Overview
 
-This applies $$\beta v_g$$ to the PV (A0) flux of a simulation.
+On a beta plane, material conservation of total quasigeostrophic
+potential vorticity gives
 
-### Usage
+$$
+\frac{D}{Dt}(q+\beta y)=0,
+$$
 
-Assuming there is a WVTransform instance wvt, to add this forcing,
+so the right-hand-side tendency contributed by this forcing is
+
+$$
+\left.\frac{\partial q}{\partial t}\right|_\beta=-\beta v_g.
+$$
+
+QG transforms evaluate this expression directly in physical QGPV
+space. Wave-bearing transforms apply the equivalent spectral tendency
+only to the geostrophic `A0` coefficients; `Ap`, `Am`, inertial modes,
+and mean-density-anomaly modes receive no direct beta tendency. This
+retains beta advection for the balanced flow but is not a full
+beta-plane treatment of internal-wave dynamics: wave frequencies and
+structures continue to use the transform's constant Coriolis
+parameter.
 
 ```matlab
 wvt.addForcing(WVBetaPlanePVAdvection(wvt));
 ```
-
-### Notes
-
-This may not be justified for a hydrostatic or Boussinesq flow, but
-it works.
-
-A doubly-periodic domain with $$\beta$$ has a different $$f$$ at the
-northern and southern boundary. This is fine for quasigeostrophic
-dynamics, which only cares about the gradient of $$f$$, but is not
-okay for internal waves. However, because the wave-vortex model
-evolves coupled QG-wave equations in the spectral domain, we can add
-this effect to only the PV part of the flow. I suspect this is
-actually justifiable with the correct asymptotics. -- Jeffrey
 
 
 
 
 ## Topics
 + Create the forcing
-  + [`WVBetaPlanePVAdvection`](/classes/forcing/wvbetaplanepvadvection/wvbetaplanepvadvection.html)
+  + [`WVBetaPlanePVAdvection`](/classes/forcing/wvbetaplanepvadvection/wvbetaplanepvadvection.html) Create beta-plane QGPV advection for a transform.
 
 
 ## Developer Topics
@@ -58,7 +61,7 @@ These items document internal implementation details and are not part of the pri
 + Forcing persistence
   + [`classRequiredPropertyNames`](/classes/forcing/wvbetaplanepvadvection/classrequiredpropertynames.html)
 + Forcing internals
-  + [`betaA0`](/classes/forcing/wvbetaplanepvadvection/betaa0.html)
+  + [`betaA0`](/classes/forcing/wvbetaplanepvadvection/betaa0.html) Spectral multiplier mapping `A0` to its beta-plane tendency.
 
 
 ---

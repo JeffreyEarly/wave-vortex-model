@@ -116,7 +116,13 @@ F0 = wvt.nonlinearFlux();
 
 ## Generating waves from pseudo-topography
 
-`WVPseudoTopographicWaveGeneration` projects the bottom-normal velocity from a prescribed horizontally uniform current over upward-positive pseudo-topography onto the model's wave modes. Select a standard tidal constituent with `darwinSymbol`, or supply a custom angular `frequency`.
+`WVPseudoTopographicWaveGeneration` projects the bottom-normal velocity from a prescribed horizontally uniform current over upward-positive pseudo-topography onto the model's wave modes. The linearized bottom condition is
+
+$$
+g_b=\mathbf{U}_{\mathrm{bt}}\cdot\nabla_H h.
+$$
+
+The forcing projects this velocity onto each wave mode with its bottom-pressure structure and modal-energy normalization, converts the result to the stored `Ap` and `Am` representation, and leaves `A0` unchanged. Select a standard tidal constituent with `darwinSymbol`, or supply a custom angular `frequency`.
 
 ```matlab
 forcing = WVPseudoTopographicWaveGeneration(wvt,topographicHeight=h,barotropicVelocityAmplitude=[0.05; 0],darwinSymbol="M2");
@@ -126,6 +132,26 @@ wvt.addForcing(forcing);
 The supported Darwin symbols are `M2`, `S2`, `N2`, `K1`, and `O1`. If neither frequency option is supplied, M2 is used. Direct `frequency` and `darwinSymbol` options are mutually exclusive.
 
 By default, the generated tendency is projected outside the exact support of any active `WVAdaptiveDamping`. Use `maximumForcedHorizontalWavenumber` and `maximumForcedVerticalMode` to impose manual spectral limits for other closure choices.
+
+See [`WVPseudoTopographicWaveGeneration`](/classes/forcing/wvpseudotopographicwavegeneration/) for the ramp, Fourier projection, phase conversion, and energy-work relation.
+
+## Adding beta-plane PV advection
+
+`WVBetaPlanePVAdvection` adds the right-hand-side QGPV tendency
+
+$$
+\left.\frac{\partial q}{\partial t}\right|_\beta=-\beta v_g,
+$$
+
+which follows from material conservation of $$q+\beta y$$. QG transforms apply this term directly in physical QGPV space. Wave-bearing transforms apply it only to the balanced `A0` coefficients; their internal-wave frequencies and structures continue to use a constant Coriolis parameter.
+
+```matlab
+wvt.addForcing(WVBetaPlanePVAdvection(wvt));
+```
+
+## Diffusing displacement vertically
+
+`WVVerticalDiffusivity` applies $$\mathcal{S}_\eta=\kappa_z\partial_{zz}\eta$$ to the represented displacement field. For variable stratification, `shouldForceMeanDensityAnomaly=true` also includes the horizontally uniform source $$-\kappa_z\partial_z\ln N^2$$, which projects onto the mean-density-anomaly component rather than the wave modes. For stratified QG, which has no mean-density-anomaly component, the corresponding QGPV tendency is $$\mathcal{S}_q=-f\partial_z\mathcal{S}_\eta$$ and the option has no effect.
 
 ## Creating your own forcing
 

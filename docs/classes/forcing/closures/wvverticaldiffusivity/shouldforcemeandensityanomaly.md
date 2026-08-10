@@ -9,7 +9,7 @@ mathjax: true
 
 #  shouldForceMeanDensityAnomaly
 
-Whether to include the variable-stratification correction.
+Whether to include the mean-density-anomaly source.
 
 
 ---
@@ -19,5 +19,7 @@ Real valued property with no dimensions and units of $$bool$$.
 
 ## Discussion
 
-The default is `true`. This controls the precomputed
-$$\partial_z\ln N^2$$ term used by the wave-bearing pathway.
+The default is `true`. This controls the horizontally uniform
+$$-\kappa_z\partial_z\ln N^2$$ source, which projects onto the
+mean-density-anomaly component. It has no effect on wave modes,
+for constant stratification, or for stratified QG.

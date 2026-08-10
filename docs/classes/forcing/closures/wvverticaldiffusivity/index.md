@@ -36,10 +36,30 @@ $$
 \end{align}
 $$
 
-Set `shouldForceMeanDensityAnomaly=false` to omit the
-$$\partial_z\ln N^2$$ correction for variable stratification. This
-option has no effect for constant stratification because the gradient
-is zero.
+The horizontally uniform
+$$-\kappa_z\partial_z\ln N^2$$ source projects onto the
+mean-density-anomaly component. Set
+`shouldForceMeanDensityAnomaly=false` to omit this source. The option
+has no effect for constant stratification because the gradient is
+zero, and it does not modify the wave modes.
+
+For `WVTransformStratifiedQG`, the QGPV definition
+
+$$
+q=\partial_xv-\partial_yu-f\partial_z\eta
+$$
+
+maps the displacement source
+$$\mathcal{S}_\eta=\kappa_z\partial_{zz}\eta$$ to
+
+$$
+\mathcal{S}_q=-f\partial_z\mathcal{S}_\eta
+=-f\kappa_z\partial_{zzz}\eta.
+$$
+
+Stratified QG contains only nonzero-horizontal-wavenumber geostrophic
+modes, not a mean-density-anomaly component. Consequently,
+`shouldForceMeanDensityAnomaly` does not alter its QGPV pathway.
 
 ### Example
 
@@ -63,7 +83,7 @@ which has no vertical structure.
   + [`WVVerticalDiffusivity`](/classes/forcing/closures/wvverticaldiffusivity/wvverticaldiffusivity.html) Create vertical diffusivity for a three-dimensional transform.
 + Inspect forcing configuration
   + [`kappa_z`](/classes/forcing/closures/wvverticaldiffusivity/kappa_z.html) Configured vertical diffusivity in $$\mathrm{m^2\,s^{-1}}$$.
-  + [`shouldForceMeanDensityAnomaly`](/classes/forcing/closures/wvverticaldiffusivity/shouldforcemeandensityanomaly.html) Whether to include the variable-stratification correction.
+  + [`shouldForceMeanDensityAnomaly`](/classes/forcing/closures/wvverticaldiffusivity/shouldforcemeandensityanomaly.html) Whether to include the mean-density-anomaly source.
 
 
 ## Developer Topics
