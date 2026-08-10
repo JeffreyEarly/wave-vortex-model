@@ -4,6 +4,7 @@
 #include <cmath>
 #include <limits>
 #include <new>
+#include <stdexcept>
 
 namespace wavevortex {
 namespace {
