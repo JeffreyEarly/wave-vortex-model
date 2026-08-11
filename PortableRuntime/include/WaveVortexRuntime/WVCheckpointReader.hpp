@@ -1,5 +1,6 @@
 #pragma once
 
+#include "WaveVortexKernel/WVForcingSchedule.hpp"
 #include "WaveVortexKernel/WVKernelTypes.hpp"
 
 #include <cstddef>
@@ -28,7 +29,11 @@ enum class WVCheckpointStatusCode : std::uint32_t {
     invalidValue,
     ambiguousState,
     stateIndexOutOfRange,
-    descriptorFailure
+    descriptorFailure,
+    unsupportedForcing,
+    malformedForcing,
+    duplicateForcing,
+    incompatibleForcing
 };
 
 struct WVCheckpointStatus {
@@ -98,6 +103,7 @@ struct WVCheckpoint {
     WVTransformConstantStratificationConfiguration configuration;
     WVCheckpointState state;
     WVCheckpointMetadata metadata;
+    WVFrozenForcingSchedule forcingSchedule;
 };
 
 // Read and structurally validate existing WaveVortexModel 4.x NetCDF checkpoints.

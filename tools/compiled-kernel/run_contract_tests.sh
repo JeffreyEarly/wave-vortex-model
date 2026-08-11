@@ -53,6 +53,7 @@ fi
     $netcdf_cflags \
     "$repository_root/CompiledKernel/src/WVKernelTypes.cpp" \
     "$repository_root/PortableRuntime/src/WVNetCDF.cpp" \
+    "$repository_root/PortableRuntime/src/WVForcingScheduleDecoder.cpp" \
     "$repository_root/PortableRuntime/src/WVCheckpointReader.cpp" \
     "$repository_root/tools/portable-runtime/tests/TestWVCheckpointReader.cpp" \
     $netcdf_libs \
@@ -66,6 +67,7 @@ fi
     $netcdf_cflags \
     "$repository_root/CompiledKernel/src/WVKernelTypes.cpp" \
     "$repository_root/PortableRuntime/src/WVNetCDF.cpp" \
+    "$repository_root/PortableRuntime/src/WVForcingScheduleDecoder.cpp" \
     "$repository_root/PortableRuntime/src/WVCheckpointReader.cpp" \
     "$repository_root/tools/portable-runtime/WVCheckpointInspect.cpp" \
     $netcdf_libs \

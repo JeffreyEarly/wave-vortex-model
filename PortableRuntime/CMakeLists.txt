@@ -16,6 +16,7 @@ endif()
 
 add_library(WaveVortexCheckpoint STATIC
     src/WVNetCDF.cpp
+    src/WVForcingScheduleDecoder.cpp
     src/WVCheckpointReader.cpp
 )
 add_library(WaveVortex::Checkpoint ALIAS WaveVortexCheckpoint)

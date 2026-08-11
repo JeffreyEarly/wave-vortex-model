@@ -8,8 +8,10 @@
 #include <filesystem>
 #include <iostream>
 #include <limits>
+#include <set>
 #include <stdexcept>
 #include <string>
+#include <type_traits>
 #include <utility>
 
 #ifndef WV_CHECKPOINT_FIXTURE_DIR
@@ -91,6 +93,9 @@ void verifyCheckpoint(const WVCheckpoint& checkpoint, bool hydrostatic, const st
     verifyCoefficient(checkpoint.state.coefficients.A0.back(), "A0", offset, 36.0);
     require(checkpoint.metadata.forcingHeaders.size() == 1, "default forcing metadata was not recovered");
     require(checkpoint.metadata.forcingHeaders.front().ordinal == 1 && checkpoint.metadata.forcingHeaders.front().groupPath == "/forcing" && checkpoint.metadata.forcingHeaders.front().annotatedClass == "WVNonlinearAdvection", "forcing header mismatch");
+    require(checkpoint.forcingSchedule.profileIdentifier == "wave-vortex-forcing-v1" && checkpoint.forcingSchedule.entries.size() == 1, "forcing schedule was not decoded");
+    const auto& forcing = checkpoint.forcingSchedule.entries.front();
+    require(forcing.kind == WVForcingKind::nonlinearAdvection && forcing.name == "nonlinear advection" && forcing.stage == WVForcingStage::spatial && forcing.priority == 127, "nonlinear forcing contract mismatch");
 
     WVTransformConstantStratificationDescriptor descriptor;
     const auto descriptorStatus = WVTransformConstantStratificationDescriptor::create(configuration, descriptor);
@@ -106,6 +111,69 @@ void testPositiveFixtures() {
     verifyCheckpoint(read("time-series-nonhydrostatic.nc"), false, "/wave-vortex", 3, 2, 3.25, 300.0);
     verifyCheckpoint(read("time-series-hydrostatic.nc", WVCheckpointStateSelection::atIndex(0)), true, "/wave-vortex", 3, 0, 0.5, 120.0);
     verifyCheckpoint(read("time-series-hydrostatic.nc", WVCheckpointStateSelection::atIndex(1)), true, "/wave-vortex", 3, 1, 1.75, 220.0);
+}
+
+void testForcingCapabilities() {
+    const auto& capabilities = forcingCapabilities();
+    require(capabilities.size() == 12, "forcing capability matrix does not cover all supplied classes");
+    std::size_t supported = 0;
+    std::set<std::string> identifiers;
+    for (const auto& capability : capabilities) {
+        require(identifiers.insert(capability.typeIdentifier).second, "forcing capability identifier repeated");
+        require(!capability.forcingTypes.empty(), "forcing capability omitted WVForcingType names");
+        if (capability.isSupported) {
+            ++supported;
+            require(std::string(capability.unavailabilityReason).empty(), "supported forcing has an unavailability reason");
+        } else {
+            require(!std::string(capability.unavailabilityReason).empty(), "unsupported forcing omitted its reason");
+        }
+    }
+    require(supported == 6, "forcing capability matrix must expose six runtime-v1 classes");
+}
+
+void testSupportedForcingFixtures() {
+    const std::array<std::pair<const char*, WVForcingKind>, 6> cases = {{
+        {"forcing-nonlinear.nc", WVForcingKind::nonlinearAdvection},
+        {"forcing-adaptive-damping.nc", WVForcingKind::adaptiveDamping},
+        {"forcing-fixed-amplitude.nc", WVForcingKind::fixedAmplitude},
+        {"forcing-quadratic-bottom-friction.nc", WVForcingKind::bottomFrictionQuadratic},
+        {"forcing-pseudo-topographic.nc", WVForcingKind::pseudoTopographicWaveGeneration},
+        {"forcing-beta-plane.nc", WVForcingKind::betaPlanePVAdvection}
+    }};
+    for (const auto& testCase : cases) {
+        const auto checkpoint = read(testCase.first);
+        require(checkpoint.forcingSchedule.entries.size() == 1, std::string(testCase.first) + " did not decode one forcing");
+        require(checkpoint.forcingSchedule.entries.front().kind == testCase.second, std::string(testCase.first) + " decoded the wrong forcing kind");
+    }
+
+    const auto fixed = read("forcing-fixed-amplitude.nc").forcingSchedule.entries.front();
+    const auto& fixedRecord = std::get<WVFixedAmplitudeForcingRecord>(fixed.payload);
+    require(fixed.name == "fixed-amplitude fixture" && fixed.stage == WVForcingStage::spectralAmplitude && fixed.priority == 255, "fixed-amplitude header mismatch");
+    require(fixedRecord.ApIndices == std::vector<std::size_t>({0, 5}) && fixedRecord.AmIndices == std::vector<std::size_t>({1, 8}) && fixedRecord.A0Indices == std::vector<std::size_t>({2, 11}), "fixed-amplitude indices were not converted to zero-based offsets");
+    require(fixedRecord.ApValues.size() == 2 && fixedRecord.ApValues[0].real == 1.25 && fixedRecord.ApValues[1].imag == 0.75, "fixed-amplitude values changed during decoding");
+
+    const auto quadratic = read("forcing-quadratic-bottom-friction.nc").forcingSchedule.entries.front();
+    require(std::get<WVBottomFrictionQuadraticRecord>(quadratic.payload).Cd == 1.7e-3, "quadratic drag coefficient mismatch");
+
+    const auto pseudo = read("forcing-pseudo-topographic.nc").forcingSchedule.entries.front();
+    const auto& pseudoRecord = std::get<WVPseudoTopographicWaveGenerationRecord>(pseudo.payload);
+    require(pseudo.name == "pseudo-topographic fixture" && pseudoRecord.topographicShape.rows == 8 && pseudoRecord.topographicShape.columns == 6 && pseudoRecord.topographicHeight.size() == 48, "pseudo-topographic shape mismatch");
+    require(pseudoRecord.barotropicVelocityAmplitude[0].real == 0.12 && pseudoRecord.barotropicVelocityAmplitude[1].imag == 0.02, "barotropic velocity amplitude mismatch");
+    require(pseudoRecord.darwinSymbol == "M2" && pseudoRecord.rampDuration == 900.0 && pseudoRecord.startTime == -50.0 && pseudoRecord.shouldAvoidAdaptiveDamping, "pseudo-topographic scalar mismatch");
+    require(pseudoRecord.maximumForcedVerticalMode == 2.0, "pseudo-topographic vertical bound mismatch");
+}
+
+void testMixedForcingSchedules() {
+    for (const std::string file : {"forcing-mixed-hydrostatic.nc", "forcing-mixed-nonhydrostatic.nc"}) {
+        const auto checkpoint = read(file);
+        const auto& entries = checkpoint.forcingSchedule.entries;
+        require(entries.size() == 6, "mixed schedule did not recover all forcing records");
+        const std::array<WVForcingKind, 6> expected = {WVForcingKind::nonlinearAdvection, WVForcingKind::bottomFrictionQuadratic, WVForcingKind::pseudoTopographicWaveGeneration, WVForcingKind::adaptiveDamping, WVForcingKind::betaPlanePVAdvection, WVForcingKind::fixedAmplitude};
+        for (std::size_t index = 0; index < expected.size(); ++index) {
+            require(entries[index].kind == expected[index] && entries[index].ordinal == index + 1, "mixed schedule stage/priority/stable ordering mismatch");
+        }
+        require(entries[2].stage == WVForcingStage::spectral && entries[3].stage == WVForcingStage::spectral && entries[4].stage == WVForcingStage::spectral, "mixed spectral stage mismatch");
+    }
 }
 
 void overwriteTextAttribute(int groupId, const char* name, const std::string& value) {
@@ -283,7 +351,7 @@ void testOrderedForcingHeaders() {
     requireNetCDF(nc_inq_ncid(id, "forcing", &forcingId), "find forcing group");
     requireNetCDF(nc_del_att(forcingId, NC_GLOBAL, "AnnotatedClass"), "remove singleton forcing tag");
     for (const auto& record : std::array<std::pair<const char*, const char*>, 2>{
-            std::pair<const char*, const char*>{"forcing-2", "WVHorizontalDamping"},
+            std::pair<const char*, const char*>{"forcing-2", "WVAdaptiveDamping"},
             {"forcing-1", "WVNonlinearAdvection"}}) {
         int childId = -1;
         requireNetCDF(nc_def_grp(forcingId, record.first, &childId), "define forcing record");
@@ -297,7 +365,91 @@ void testOrderedForcingHeaders() {
     require(static_cast<bool>(result), result.message);
     require(checkpoint.metadata.forcingHeaders.size() == 2, "forcing array was not recovered");
     require(checkpoint.metadata.forcingHeaders[0].ordinal == 1 && checkpoint.metadata.forcingHeaders[0].groupPath == "/forcing/forcing-1" && checkpoint.metadata.forcingHeaders[0].annotatedClass == "WVNonlinearAdvection", "first forcing record was not ordered");
-    require(checkpoint.metadata.forcingHeaders[1].ordinal == 2 && checkpoint.metadata.forcingHeaders[1].groupPath == "/forcing/forcing-2" && checkpoint.metadata.forcingHeaders[1].annotatedClass == "WVHorizontalDamping", "second forcing record was not ordered");
+    require(checkpoint.metadata.forcingHeaders[1].ordinal == 2 && checkpoint.metadata.forcingHeaders[1].groupPath == "/forcing/forcing-2" && checkpoint.metadata.forcingHeaders[1].annotatedClass == "WVAdaptiveDamping", "second forcing record was not ordered");
+    require(checkpoint.forcingSchedule.entries.size() == 2 && checkpoint.forcingSchedule.entries[0].kind == WVForcingKind::nonlinearAdvection && checkpoint.forcingSchedule.entries[1].kind == WVForcingKind::adaptiveDamping, "forcing schedule was not ordered by stage and priority");
+}
+
+void testUnsupportedForcingClasses() {
+    const std::array<const char*, 7> unsupported = {"WVAntialiasing", "WVHorizontalDamping", "WVVerticalDamping", "WVThermalDamping", "WVBottomFrictionLinear", "WVVerticalDiffusivity", "WVUserForcing"};
+    for (const char* typeIdentifier : unsupported) {
+        TemporaryFile file(temporaryCopy("forcing-nonlinear.nc"));
+        int id = -1;
+        requireNetCDF(nc_open(file.path.string().c_str(), NC_WRITE, &id), "open unsupported forcing fixture");
+        int forcingId = -1;
+        requireNetCDF(nc_inq_ncid(id, "forcing", &forcingId), "find singleton forcing group");
+        overwriteTextAttribute(forcingId, "AnnotatedClass", typeIdentifier);
+        requireNetCDF(nc_close(id), "close unsupported forcing fixture");
+        WVCheckpoint checkpoint;
+        const auto result = WVCheckpointReader::read(file.path.string(), checkpoint);
+        require(result.code == WVCheckpointStatusCode::unsupportedForcing, std::string(typeIdentifier) + " did not report unsupportedForcing");
+        verifyWritableAfterFailure(file.path);
+    }
+}
+
+void testMalformedForcingRecords() {
+    {
+        TemporaryFile file(temporaryCopy("forcing-quadratic-bottom-friction.nc"));
+        int id = -1;
+        requireNetCDF(nc_open(file.path.string().c_str(), NC_WRITE, &id), "open invalid Cd fixture");
+        int forcingId = -1;
+        requireNetCDF(nc_inq_ncid(id, "forcing", &forcingId), "find quadratic forcing group");
+        int variableId = -1;
+        requireNetCDF(nc_inq_varid(forcingId, "Cd", &variableId), "find Cd");
+        const double invalid = -1.0;
+        requireNetCDF(nc_put_var_double(forcingId, variableId, &invalid), "write invalid Cd");
+        requireNetCDF(nc_close(id), "close invalid Cd fixture");
+        WVCheckpoint checkpoint;
+        const auto result = WVCheckpointReader::read(file.path.string(), checkpoint);
+        require(result.code == WVCheckpointStatusCode::malformedForcing, "negative Cd was accepted");
+        verifyWritableAfterFailure(file.path);
+    }
+    {
+        TemporaryFile file(temporaryCopy("forcing-fixed-amplitude.nc"));
+        int id = -1;
+        requireNetCDF(nc_open(file.path.string().c_str(), NC_WRITE, &id), "open invalid fixed-index fixture");
+        int forcingId = -1;
+        requireNetCDF(nc_inq_ncid(id, "forcing", &forcingId), "find fixed forcing group");
+        int variableId = -1;
+        requireNetCDF(nc_inq_varid(forcingId, "Ap_indices", &variableId), "find fixed indices");
+        const unsigned long long invalid[] = {0, 6};
+        requireNetCDF(nc_put_var_ulonglong(forcingId, variableId, invalid), "write invalid fixed indices");
+        requireNetCDF(nc_close(id), "close invalid fixed-index fixture");
+        WVCheckpoint checkpoint;
+        const auto result = WVCheckpointReader::read(file.path.string(), checkpoint);
+        require(result.code == WVCheckpointStatusCode::incompatibleForcing, "zero fixed-amplitude index was accepted");
+        verifyWritableAfterFailure(file.path);
+    }
+    {
+        TemporaryFile file(temporaryCopy("forcing-fixed-amplitude.nc"));
+        int id = -1;
+        requireNetCDF(nc_open(file.path.string().c_str(), NC_WRITE, &id), "open duplicate fixed-index fixture");
+        int forcingId = -1;
+        requireNetCDF(nc_inq_ncid(id, "forcing", &forcingId), "find fixed forcing group");
+        int variableId = -1;
+        requireNetCDF(nc_inq_varid(forcingId, "Ap_indices", &variableId), "find fixed indices");
+        const unsigned long long duplicate[] = {1, 1};
+        requireNetCDF(nc_put_var_ulonglong(forcingId, variableId, duplicate), "write duplicate fixed indices");
+        requireNetCDF(nc_close(id), "close duplicate fixed-index fixture");
+        WVCheckpoint checkpoint;
+        const auto result = WVCheckpointReader::read(file.path.string(), checkpoint);
+        require(result.code == WVCheckpointStatusCode::duplicateForcing, "duplicate fixed-amplitude index was accepted");
+        verifyWritableAfterFailure(file.path);
+    }
+    {
+        TemporaryFile file(temporaryCopy("forcing-mixed-nonhydrostatic.nc"));
+        int id = -1;
+        requireNetCDF(nc_open(file.path.string().c_str(), NC_WRITE, &id), "open duplicate-name fixture");
+        int forcingId = -1;
+        int pseudoId = -1;
+        requireNetCDF(nc_inq_ncid(id, "forcing", &forcingId), "find forcing container");
+        requireNetCDF(nc_inq_ncid(forcingId, "forcing-3", &pseudoId), "find pseudo forcing");
+        overwriteTextAttribute(pseudoId, "name", "fixed-amplitude fixture");
+        requireNetCDF(nc_close(id), "close duplicate-name fixture");
+        WVCheckpoint checkpoint;
+        const auto result = WVCheckpointReader::read(file.path.string(), checkpoint);
+        require(result.code == WVCheckpointStatusCode::duplicateForcing, "duplicate forcing name was accepted");
+        verifyWritableAfterFailure(file.path);
+    }
 }
 
 } // namespace
@@ -305,11 +457,16 @@ void testOrderedForcingHeaders() {
 int main() {
     try {
         testPositiveFixtures();
+        testForcingCapabilities();
+        testSupportedForcingFixtures();
+        testMixedForcingSchedules();
         testUnsupportedVersionAndTransform();
         testMissingPartnerAndWrongType();
         testAmbiguousStateAndIndex();
         testInvalidConfiguration();
         testOrderedForcingHeaders();
+        testUnsupportedForcingClasses();
+        testMalformedForcingRecords();
         std::cout << "WaveVortex checkpoint reader tests passed.\n";
         return 0;
     } catch (const std::exception& exception) {
