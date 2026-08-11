@@ -87,19 +87,18 @@ views are `Apt`, `Amt`, and `A0t`.
       + [`z_int`](/classes/transforms/wvtransformboussinesq/z_int.html) Vertical quadrature weights in meters.
       + [`volumeIntegral`](/classes/transforms/wvtransformboussinesq/volumeintegral.html) Compute the horizontally averaged depth integral of a scalar field.
   + Spectral grid
-    + Axes and spacing
-      + [`kAxis`](/classes/transforms/wvtransformboussinesq/kaxis.html) Centered x-direction angular-wavenumber axis.
-      + [`lAxis`](/classes/transforms/wvtransformboussinesq/laxis.html) Centered y-direction angular-wavenumber axis.
-      + [`j`](/classes/transforms/wvtransformboussinesq/j.html) Vertical-mode index axis.
-      + [`dk`](/classes/transforms/wvtransformboussinesq/dk.html) Spacing of the x-direction angular-wavenumber axis.
-      + [`dl`](/classes/transforms/wvtransformboussinesq/dl.html) Spacing of the y-direction angular-wavenumber axis.
-    + Coordinate arrays
-      + [`k`](/classes/transforms/wvtransformboussinesq/k.html) Stored x-direction angular wavenumbers on the compact WV grid.
-      + [`l`](/classes/transforms/wvtransformboussinesq/l.html) Stored y-direction angular wavenumbers on the compact WV grid.
+    + Compact grid vectors
+      + [`k`](/classes/transforms/wvtransformboussinesq/k.html) Compact `Nkl`-by-1 x-wavenumber vector in rad/m.
+      + [`l`](/classes/transforms/wvtransformboussinesq/l.html) Compact `Nkl`-by-1 y-wavenumber vector in rad/m.
+      + [`j`](/classes/transforms/wvtransformboussinesq/j.html) Dimensionless `Nj`-by-1 vertical-mode index vector.
+    + Compact grid arrays
       + [`K`](/classes/transforms/wvtransformboussinesq/k_.html) X-direction angular-wavenumber array in rad/m with shape `[Nj Nkl]`.
       + [`L`](/classes/transforms/wvtransformboussinesq/l_.html) Y-direction angular-wavenumber array in rad/m with shape `[Nj Nkl]`.
       + [`J`](/classes/transforms/wvtransformboussinesq/j_.html) Dimensionless vertical-mode index array with shape `[Nj Nkl]`.
       + [`kljGrid`](/classes/transforms/wvtransformboussinesq/kljgrid.html) Return spectral-coordinate arrays in wave-vortex layout.
+    + Wavenumber spacing
+      + [`dk`](/classes/transforms/wvtransformboussinesq/dk.html) Spacing of the x-direction angular-wavenumber axis.
+      + [`dl`](/classes/transforms/wvtransformboussinesq/dl.html) Spacing of the y-direction angular-wavenumber axis.
     + Horizontal wavenumber geometry
       + [`Kh`](/classes/transforms/wvtransformboussinesq/kh.html) Horizontal angular-wavenumber magnitude on the coefficient grid.
       + [`K2`](/classes/transforms/wvtransformboussinesq/k2.html) Squared horizontal angular wavenumber on the coefficient grid.
@@ -110,12 +109,18 @@ views are `Apt`, `Amt`, and `A0t`.
       + [`effectiveHorizontalGridResolution`](/classes/transforms/wvtransformboussinesq/effectivehorizontalgridresolution.html) returns the effective grid resolution in meters
       + [`effectiveVerticalGridResolution`](/classes/transforms/wvtransformboussinesq/effectiveverticalgridresolution.html) returns the effective vertical grid resolution in meters
       + [`effectiveJMax`](/classes/transforms/wvtransformboussinesq/effectivejmax.html) Largest active vertical-mode index.
+      + [`summarizeDegreesOfFreedom`](/classes/transforms/wvtransformboussinesq/summarizedegreesoffreedom.html) Summarize the spatial grid and active spectral degrees of freedom.
     + Vertical modes and scaling
       + [`verticalModes`](/classes/transforms/wvtransformboussinesq/verticalmodes.html) Vertical-mode solution used to construct the transform basis.
       + [`h_0`](/classes/transforms/wvtransformboussinesq/h_0.html) Geostrophic equivalent-depth scale for each vertical mode.
       + [`h_pm`](/classes/transforms/wvtransformboussinesq/h_pm.html) Wave equivalent depth on the spectral grid.
       + [`Lr2`](/classes/transforms/wvtransformboussinesq/lr2.html) Squared Rossby deformation radius in square meters.
       + [`waveModeVerticalStructureAtIndex`](/classes/transforms/wvtransformboussinesq/wavemodeverticalstructureatindex.html) Return wave vertical-structure factors at one vertical grid index.
+    + Vertical-mode transformation matrices
+      + [`FMatrix`](/classes/transforms/wvtransformboussinesq/fmatrix.html) Transformation matrix $$F$$ projecting F-grid values onto vertical modes; shape `[Nj Nz]`.
+      + [`FinvMatrix`](/classes/transforms/wvtransformboussinesq/finvmatrix.html) Transformation matrix $$F^{-1}$$ reconstructing F-grid values from vertical modes; shape `[Nz Nj]`.
+      + [`GMatrix`](/classes/transforms/wvtransformboussinesq/gmatrix.html) Transformation matrix $$G$$ projecting G-grid values onto vertical modes; shape `[Nj Nz]`.
+      + [`GinvMatrix`](/classes/transforms/wvtransformboussinesq/ginvmatrix.html) Transformation matrix $$G^{-1}$$ reconstructing G-grid values from vertical modes; shape `[Nz Nj]`.
   + Transform configuration
     + [`isHydrostatic`](/classes/transforms/wvtransformboussinesq/ishydrostatic.html) Whether the transform uses the hydrostatic approximation.
     + [`shouldAntialias`](/classes/transforms/wvtransformboussinesq/shouldantialias.html) Whether the spectral grid excludes modes that alias quadratic products.
@@ -170,10 +175,10 @@ views are `Apt`, `Amt`, and `A0t`.
       + [`w`](/classes/transforms/wvtransformboussinesq/w.html) z-component of the fluid velocity
     + Density and displacement
       + [`eta`](/classes/transforms/wvtransformboussinesq/eta.html) approximate isopycnal deviation
-      + [`rho_bar`](/classes/transforms/wvtransformboussinesq/rho_bar.html) mean density
+      + [`rho_bar`](/classes/transforms/wvtransformboussinesq/rho_bar.html) Current horizontally averaged density, `[Nz 1]`, in kg/m³.
       + [`rho_e`](/classes/transforms/wvtransformboussinesq/rho_e.html) excess density
-      + [`rho_nm`](/classes/transforms/wvtransformboussinesq/rho_nm.html) no-motion density profile
-      + [`rho_nm0`](/classes/transforms/wvtransformboussinesq/rho_nm0.html) No-motion density profile sampled on the vertical grid.
+      + [`rho_nm`](/classes/transforms/wvtransformboussinesq/rho_nm.html) Diagnosed no-motion density profile, `[Nz 1]`, in kg/m³.
+      + [`rho_nm0`](/classes/transforms/wvtransformboussinesq/rho_nm0.html) Reference no-motion density profile, `[Nz 1]`, in kg/m³.
       + [`rho_total`](/classes/transforms/wvtransformboussinesq/rho_total.html) total potential density
     + Pressure and surface fields
       + [`p`](/classes/transforms/wvtransformboussinesq/p.html) pressure anomaly
@@ -192,33 +197,22 @@ views are `Apt`, `Amt`, and `A0t`.
   + Isopycnal utilities
     + [`placeParticlesOnIsopycnal`](/classes/transforms/wvtransformboussinesq/placeparticlesonisopycnal.html) Return particle depths on the isopycnal identified by a no-motion depth.
 + Manage forcing and closures
-  + [`addForcing`](/classes/transforms/wvtransformboussinesq/addforcing.html) Add forcing or closure objects to this transform.
-  + [`forcing`](/classes/transforms/wvtransformboussinesq/forcing.html) array of WVForcing objects
-  + [`forcingNames`](/classes/transforms/wvtransformboussinesq/forcingnames.html) Return forcing and closure names in application order.
-  + [`forcingWithName`](/classes/transforms/wvtransformboussinesq/forcingwithname.html) Return registered forcing objects by name.
-  + [`hasClosure`](/classes/transforms/wvtransformboussinesq/hasclosure.html) Whether a closure is currently attached to the transform.
-  + [`hasForcingWithName`](/classes/transforms/wvtransformboussinesq/hasforcingwithname.html) Test whether forcing objects are registered by name.
-  + [`removeAllForcing`](/classes/transforms/wvtransformboussinesq/removeallforcing.html) Remove every forcing and closure from this transform.
-  + [`removeForcing`](/classes/transforms/wvtransformboussinesq/removeforcing.html) Remove the exact registered forcing objects.
-  + [`setForcing`](/classes/transforms/wvtransformboussinesq/setforcing.html) Replace the complete forcing registry.
-  + [`summarizeForcing`](/classes/transforms/wvtransformboussinesq/summarizeforcing.html) Print a table of registered forcing and closure objects.
+  + Configure forcing
+    + [`addForcing`](/classes/transforms/wvtransformboussinesq/addforcing.html) Add forcing or closure objects to this transform.
+    + [`setForcing`](/classes/transforms/wvtransformboussinesq/setforcing.html) Replace the complete forcing registry.
+    + [`removeForcing`](/classes/transforms/wvtransformboussinesq/removeforcing.html) Remove the exact registered forcing objects.
+    + [`removeAllForcing`](/classes/transforms/wvtransformboussinesq/removeallforcing.html) Remove every forcing and closure from this transform.
+  + Inspect forcing and closures
+    + [`forcing`](/classes/transforms/wvtransformboussinesq/forcing.html) array of WVForcing objects
+    + [`forcingNames`](/classes/transforms/wvtransformboussinesq/forcingnames.html) Return forcing and closure names in application order.
+    + [`forcingWithName`](/classes/transforms/wvtransformboussinesq/forcingwithname.html) Return registered forcing objects by name.
+    + [`hasForcingWithName`](/classes/transforms/wvtransformboussinesq/hasforcingwithname.html) Test whether forcing objects are registered by name.
+    + [`hasClosure`](/classes/transforms/wvtransformboussinesq/hasclosure.html) Whether a closure is currently attached to the transform.
+  + Summarize forcing
+    + [`summarizeForcing`](/classes/transforms/wvtransformboussinesq/summarizeforcing.html) Print a table of registered forcing and closure objects.
 + Analyze the flow
-  + Energy and summaries
-    + [`inertialEnergy`](/classes/transforms/wvtransformboussinesq/inertialenergy.html) total energy of the inertial flow
-    + [`mdaEnergy`](/classes/transforms/wvtransformboussinesq/mdaenergy.html) total energy of the mean density anomaly
-    + [`geostrophicKineticEnergy`](/classes/transforms/wvtransformboussinesq/geostrophickineticenergy.html) kinetic energy of the geostrophic flow
-    + [`waveEnergy`](/classes/transforms/wvtransformboussinesq/waveenergy.html) Total energy of the internal-gravity-wave flow.
-    + [`geostrophicPotentialEnergy`](/classes/transforms/wvtransformboussinesq/geostrophicpotentialenergy.html) potential energy of the geostrophic flow
-    + [`exactTotalEnergy`](/classes/transforms/wvtransformboussinesq/exacttotalenergy.html) Nonlinear total energy evaluated from physical-space fields.
-    + [`geostrophicEnergy`](/classes/transforms/wvtransformboussinesq/geostrophicenergy.html) total energy, geostrophic
-    + [`hasMeanPressureDifference`](/classes/transforms/wvtransformboussinesq/hasmeanpressuredifference.html) Diagnose an MDA mean-pressure difference between the boundaries.
-    + [`summarizeDegreesOfFreedom`](/classes/transforms/wvtransformboussinesq/summarizedegreesoffreedom.html) Summarize the spatial grid and active spectral degrees of freedom.
-    + [`summarizeEnergyContent`](/classes/transforms/wvtransformboussinesq/summarizeenergycontent.html) displays a summary of the energy content of the fluid
-    + [`summarizeModeEnergy`](/classes/transforms/wvtransformboussinesq/summarizemodeenergy.html) List the most energetic modes
-    + [`totalEnergy`](/classes/transforms/wvtransformboussinesq/totalenergy.html) % - Topic: Energetics
-    + [`totalEnergyOfFlowComponent`](/classes/transforms/wvtransformboussinesq/totalenergyofflowcomponent.html) Compute the energy carried by one flow component.
-    + [`totalEnergySpatiallyIntegrated`](/classes/transforms/wvtransformboussinesq/totalenergyspatiallyintegrated.html) % - Topic: Energetics
   + Flow diagnostics
+    + [`hasMeanPressureDifference`](/classes/transforms/wvtransformboussinesq/hasmeanpressuredifference.html) Diagnose an MDA mean-pressure difference between the boundaries.
     + [`uvMax`](/classes/transforms/wvtransformboussinesq/uvmax.html) max horizontal fluid speed
     + [`wMax`](/classes/transforms/wvtransformboussinesq/wmax.html) max vertical fluid speed
   + Density validity
@@ -229,16 +223,34 @@ views are `Apt`, `Amt`, and `A0t`.
     + [`totalEnstrophySpatiallyIntegrated`](/classes/transforms/wvtransformboussinesq/totalenstrophyspatiallyintegrated.html) Potential enstrophy evaluated from the gridded QGPV field.
   + Spectra
     + Spectral fields
+      + [`kAxis`](/classes/transforms/wvtransformboussinesq/kaxis.html) Centered `Nx`-by-1 x-wavenumber axis in rad/m.
+      + [`lAxis`](/classes/transforms/wvtransformboussinesq/laxis.html) Centered `Ny`-by-1 y-wavenumber axis in rad/m.
+      + [`transformToKLAxes`](/classes/transforms/wvtransformboussinesq/transformtoklaxes.html) transforms in the spectral domain from (j,kl) to (kAxis,lAxis,j)
       + [`crossSpectrumWithFgTransform`](/classes/transforms/wvtransformboussinesq/crossspectrumwithfgtransform.html) Compute a real modal cross-spectrum using the F-basis transform.
       + [`crossSpectrumWithGgTransform`](/classes/transforms/wvtransformboussinesq/crossspectrumwithggtransform.html) Compute a real modal cross-spectrum using the G-basis transform.
       + [`spectrumWithFgTransform`](/classes/transforms/wvtransformboussinesq/spectrumwithfgtransform.html) Compute a modal autospectrum using the F-basis transform.
       + [`spectrumWithGgTransform`](/classes/transforms/wvtransformboussinesq/spectrumwithggtransform.html) Compute a modal autospectrum using the G-basis transform.
-      + [`transformToKLAxes`](/classes/transforms/wvtransformboussinesq/transformtoklaxes.html) transforms in the spectral domain from (j,kl) to (kAxis,lAxis,j)
     + Radial wavenumber
       + [`kRadial`](/classes/transforms/wvtransformboussinesq/kradial.html) radial (k,l) wavenumber on the WV grid
       + [`transformToRadialWavenumber`](/classes/transforms/wvtransformboussinesq/transformtoradialwavenumber.html) transforms in the spectral domain from (j,kl) to (j,kRadial)
     + Frequency
       + [`convertFromWavenumberToFrequency`](/classes/transforms/wvtransformboussinesq/convertfromwavenumbertofrequency.html) Bin wave energy by vertical mode and intrinsic frequency
++ Analyze energy
+  + Component energy
+    + [`inertialEnergy`](/classes/transforms/wvtransformboussinesq/inertialenergy.html) total energy of the inertial flow
+    + [`mdaEnergy`](/classes/transforms/wvtransformboussinesq/mdaenergy.html) total energy of the mean density anomaly
+    + [`geostrophicKineticEnergy`](/classes/transforms/wvtransformboussinesq/geostrophickineticenergy.html) kinetic energy of the geostrophic flow
+    + [`waveEnergy`](/classes/transforms/wvtransformboussinesq/waveenergy.html) Total energy of the internal-gravity-wave flow.
+    + [`geostrophicPotentialEnergy`](/classes/transforms/wvtransformboussinesq/geostrophicpotentialenergy.html) potential energy of the geostrophic flow
+    + [`geostrophicEnergy`](/classes/transforms/wvtransformboussinesq/geostrophicenergy.html) total energy, geostrophic
+    + [`totalEnergyOfFlowComponent`](/classes/transforms/wvtransformboussinesq/totalenergyofflowcomponent.html) Compute the energy carried by one flow component.
+  + Total energy
+    + [`exactTotalEnergy`](/classes/transforms/wvtransformboussinesq/exacttotalenergy.html) Nonlinear total energy evaluated from physical-space fields.
+    + [`totalEnergy`](/classes/transforms/wvtransformboussinesq/totalenergy.html) Total energy computed from wave-vortex coefficients.
+    + [`totalEnergySpatiallyIntegrated`](/classes/transforms/wvtransformboussinesq/totalenergyspatiallyintegrated.html) Total energy computed from physical-space fields.
+  + Energy summaries
+    + [`summarizeEnergyContent`](/classes/transforms/wvtransformboussinesq/summarizeenergycontent.html) displays a summary of the energy content of the fluid
+    + [`summarizeModeEnergy`](/classes/transforms/wvtransformboussinesq/summarizemodeenergy.html) List the most energetic modes
 + Save transform state
   + [`writeToFile`](/classes/transforms/wvtransformboussinesq/writetofile.html) Write this instance to NetCDF file.
 + Convert representations
@@ -254,23 +266,26 @@ views are `Apt`, `Amt`, and `A0t`.
   + [`intZF`](/classes/transforms/wvtransformboussinesq/intzf.html) Return the first antiderivative of an F-representation.
   + [`intZG`](/classes/transforms/wvtransformboussinesq/intzg.html) Return the bottom-zero first antiderivative of a G-representation.
 + Inspect flow components
-  + [`geostrophicComponent`](/classes/transforms/wvtransformboussinesq/geostrophiccomponent.html) returns the geostrophic flow component
-  + [`waveComponent`](/classes/transforms/wvtransformboussinesq/wavecomponent.html) returns the internal gravity wave flow component
-  + [`inertialComponent`](/classes/transforms/wvtransformboussinesq/inertialcomponent.html) returns the inertial oscillation flow component
-  + [`mdaComponent`](/classes/transforms/wvtransformboussinesq/mdacomponent.html) returns the mean density anomaly component
-  + [`flowComponentNames`](/classes/transforms/wvtransformboussinesq/flowcomponentnames.html) retrieve the names of all available variables
-  + [`flowComponentWithName`](/classes/transforms/wvtransformboussinesq/flowcomponentwithname.html) retrieve a WVFlowComponent by name
-  + [`flowComponents`](/classes/transforms/wvtransformboussinesq/flowcomponents.html) All registered physical and diagnostic flow components.
-  + [`primaryFlowComponentNames`](/classes/transforms/wvtransformboussinesq/primaryflowcomponentnames.html) retrieve the names of all available variables
-  + [`primaryFlowComponentWithName`](/classes/transforms/wvtransformboussinesq/primaryflowcomponentwithname.html) retrieve a WVPrimaryFlowComponent by name
-  + [`primaryFlowComponents`](/classes/transforms/wvtransformboussinesq/primaryflowcomponents.html) Primary flow components that partition the active coefficient state.
-  + [`summarizeFlowComponents`](/classes/transforms/wvtransformboussinesq/summarizeflowcomponents.html) Print a table of registered primary and diagnostic components.
-  + [`totalFlowComponent`](/classes/transforms/wvtransformboussinesq/totalflowcomponent.html) Combined view of all primary flow components.
+  + Primary flow components
+    + [`waveComponent`](/classes/transforms/wvtransformboussinesq/wavecomponent.html) returns the internal gravity wave flow component
+    + [`inertialComponent`](/classes/transforms/wvtransformboussinesq/inertialcomponent.html) returns the inertial oscillation flow component
+    + [`geostrophicComponent`](/classes/transforms/wvtransformboussinesq/geostrophiccomponent.html) returns the geostrophic flow component
+    + [`mdaComponent`](/classes/transforms/wvtransformboussinesq/mdacomponent.html) returns the mean density anomaly component
+    + [`primaryFlowComponents`](/classes/transforms/wvtransformboussinesq/primaryflowcomponents.html) Primary flow components that partition the active coefficient state.
+    + [`primaryFlowComponentNames`](/classes/transforms/wvtransformboussinesq/primaryflowcomponentnames.html) retrieve the names of all available variables
+    + [`primaryFlowComponentWithName`](/classes/transforms/wvtransformboussinesq/primaryflowcomponentwithname.html) retrieve a WVPrimaryFlowComponent by name
+  + Registered and combined components
+    + [`flowComponents`](/classes/transforms/wvtransformboussinesq/flowcomponents.html) All registered physical and diagnostic flow components.
+    + [`flowComponentNames`](/classes/transforms/wvtransformboussinesq/flowcomponentnames.html) retrieve the names of all available variables
+    + [`flowComponentWithName`](/classes/transforms/wvtransformboussinesq/flowcomponentwithname.html) retrieve a WVFlowComponent by name
+    + [`totalFlowComponent`](/classes/transforms/wvtransformboussinesq/totalflowcomponent.html) Combined view of all primary flow components.
+  + Summarize flow components
+    + [`summarizeFlowComponents`](/classes/transforms/wvtransformboussinesq/summarizeflowcomponents.html) Print a table of registered primary and diagnostic components.
 + Inspect wave-vortex coefficients
   + Stored coefficients
-    + [`Ap`](/classes/transforms/wvtransformboussinesq/ap.html) `Ap` stores the positive-frequency coefficients $$A_+^{k\ell j}$$ for internal gravity waves and the positive-frequency member of the paired inertial representation. The coefficients have units of velocity and use the transform's spectral layout.
-    + [`Am`](/classes/transforms/wvtransformboussinesq/am.html) `Am` stores the negative-frequency coefficients $$A_-^{k\ell j}$$ for internal gravity waves and inertial oscillations. The coefficients have units of velocity and use the transform's spectral layout.
-    + [`A0`](/classes/transforms/wvtransformboussinesq/a0.html) `A0` stores the zero-frequency coefficients $$A_0^{k\ell j}$$ with units of streamfunction, $$\mathrm{m^2\,s^{-1}}$$. It is the active coefficient family for geostrophic and quasigeostrophic flow and, on transforms that include it, the mean-density anomaly.
+    + [`Ap`](/classes/transforms/wvtransformboussinesq/ap.html) Positive-frequency wave–vortex coefficient array.
+    + [`Am`](/classes/transforms/wvtransformboussinesq/am.html) Negative-frequency wave–vortex coefficient array.
+    + [`A0`](/classes/transforms/wvtransformboussinesq/a0.html) Zero-frequency wave–vortex coefficient array.
   + Coefficients at the current time
     + [`Apt`](/classes/transforms/wvtransformboussinesq/apt.html) `Apt` is the positive-frequency coefficient array evaluated at the current transform time:
     + [`Amt`](/classes/transforms/wvtransformboussinesq/amt.html) `Amt` is the negative-frequency coefficient array evaluated at the current transform time:
@@ -303,71 +318,82 @@ views are `Apt`, `Amt`, and `A0t`.
 ## Developer Topics
 These items document internal implementation details and are not part of the primary public API.
 + Projection and reconstruction coefficients
-  + [`A0N`](/classes/transforms/wvtransformboussinesq/a0n.html) These projection coefficients map the density-displacement state variable onto $$A_0$$. In the historical notation of [Early et al. (2021)](https://doi.org/10.1017/jfm.2020.995), they are the row 3, column 3 entries of $$S^{-1}$$ for the primary internal-gravity-wave and geostrophic solutions in equation C5.
-  + [`A0U`](/classes/transforms/wvtransformboussinesq/a0u.html) These projection coefficients map the $$u$$ state variable onto $$A_0$$. In the historical notation of [Early et al. (2021)](https://doi.org/10.1017/jfm.2020.995), they are the row 3, column 1 entries of $$S^{-1}$$ for the primary internal-gravity-wave and geostrophic solutions in equation C5.
-  + [`A0V`](/classes/transforms/wvtransformboussinesq/a0v.html) These projection coefficients map the $$v$$ state variable onto $$A_0$$. In the historical notation of [Early et al. (2021)](https://doi.org/10.1017/jfm.2020.995), they are the row 3, column 2 entries of $$S^{-1}$$ for the primary internal-gravity-wave and geostrophic solutions in equation C5.
-  + [`A0Z`](/classes/transforms/wvtransformboussinesq/a0z.html)
-  + [`ApmD`](/classes/transforms/wvtransformboussinesq/apmd.html)
-  + [`ApmN`](/classes/transforms/wvtransformboussinesq/apmn.html)
+  + [`A0N`](/classes/transforms/wvtransformboussinesq/a0n.html) Projects density displacement onto $$A_0$$.
+  + [`A0U`](/classes/transforms/wvtransformboussinesq/a0u.html) Projects $$u$$ onto $$A_0$$.
+  + [`A0V`](/classes/transforms/wvtransformboussinesq/a0v.html) Projects $$v$$ onto $$A_0$$.
+  + [`A0Z`](/classes/transforms/wvtransformboussinesq/a0z.html) Projects vertical vorticity onto $$A_0$$.
+  + [`ApmD`](/classes/transforms/wvtransformboussinesq/apmd.html) Projects horizontal divergence onto $$A_+$$ and $$A_-$$.
+  + [`ApmN`](/classes/transforms/wvtransformboussinesq/apmn.html) Projects density displacement onto $$A_+$$ and $$A_-$$.
   + [`ApmW`](/classes/transforms/wvtransformboussinesq/apmw.html)
-  + [`Feta`](/classes/transforms/wvtransformboussinesq/feta.html)
-  + [`Fu`](/classes/transforms/wvtransformboussinesq/fu.html)
-  + [`Fv`](/classes/transforms/wvtransformboussinesq/fv.html)
-  + [`NA0`](/classes/transforms/wvtransformboussinesq/na0.html) These reconstruction coefficients map $$A_0$$ onto the density-displacement state variable. In the historical notation of [Early et al. (2021)](https://doi.org/10.1017/jfm.2020.995), they are the row 3, column 3 entries of $$S$$ for the primary internal-gravity-wave and geostrophic solutions in equation C4.
-  + [`NAm`](/classes/transforms/wvtransformboussinesq/nam.html) These reconstruction coefficients map $$A_-$$ onto the density-displacement state variable. In the historical notation of [Early et al. (2021)](https://doi.org/10.1017/jfm.2020.995), they are the row 3, column 2 entries of $$S$$ for the primary internal-gravity-wave and geostrophic solutions in equation C4.
-  + [`NAp`](/classes/transforms/wvtransformboussinesq/nap.html) These reconstruction coefficients map $$A_+$$ onto the density-displacement state variable. In the historical notation of [Early et al. (2021)](https://doi.org/10.1017/jfm.2020.995), they are the row 3, column 1 entries of $$S$$ for the primary internal-gravity-wave and geostrophic solutions in equation C4.
-  + [`P0`](/classes/transforms/wvtransformboussinesq/p0.html) Preconditioner for F, size(P)=[Nj 1]. F*u = uhat, (PF)*u = P*uhat, so ubar==P*uhat
-  + [`PA0`](/classes/transforms/wvtransformboussinesq/pa0.html)
-  + [`Q0`](/classes/transforms/wvtransformboussinesq/q0.html) Preconditioner for G, size(Q)=[Nj 1]. G*eta = etahat, (QG)*eta = Q*etahat, so etabar==Q*etahat.
-  + [`UA0`](/classes/transforms/wvtransformboussinesq/ua0.html) These reconstruction coefficients map $$A_0$$ onto the $$u$$ state variable. In the historical notation of [Early et al. (2021)](https://doi.org/10.1017/jfm.2020.995), they are the row 1, column 3 entries of $$S$$ for the primary internal-gravity-wave and geostrophic solutions in equation C4.
-  + [`UAm`](/classes/transforms/wvtransformboussinesq/uam.html) These reconstruction coefficients map $$A_-$$ onto the $$u$$ state variable. In the historical notation of [Early et al. (2021)](https://doi.org/10.1017/jfm.2020.995), they are the row 1, column 2 entries of $$S$$ for the primary internal-gravity-wave and geostrophic solutions in equation C4.
-  + [`UAp`](/classes/transforms/wvtransformboussinesq/uap.html) These reconstruction coefficients map $$A_+$$ onto the $$u$$ state variable. In the historical notation of [Early et al. (2021)](https://doi.org/10.1017/jfm.2020.995), they are the row 1, column 1 entries of $$S$$ for the primary internal-gravity-wave and geostrophic solutions in equation C4.
-  + [`VA0`](/classes/transforms/wvtransformboussinesq/va0.html) These reconstruction coefficients map $$A_0$$ onto the $$v$$ state variable. In the historical notation of [Early et al. (2021)](https://doi.org/10.1017/jfm.2020.995), they are the row 2, column 3 entries of $$S$$ for the primary internal-gravity-wave and geostrophic solutions in equation C4.
-  + [`VAm`](/classes/transforms/wvtransformboussinesq/vam.html) These reconstruction coefficients map $$A_-$$ onto the $$v$$ state variable. In the historical notation of [Early et al. (2021)](https://doi.org/10.1017/jfm.2020.995), they are the row 2, column 2 entries of $$S$$ for the primary internal-gravity-wave and geostrophic solutions in equation C4.
-  + [`VAp`](/classes/transforms/wvtransformboussinesq/vap.html) These reconstruction coefficients map $$A_+$$ onto the $$v$$ state variable. In the historical notation of [Early et al. (2021)](https://doi.org/10.1017/jfm.2020.995), they are the row 2, column 1 entries of $$S$$ for the primary internal-gravity-wave and geostrophic solutions in equation C4.
-  + [`WAm`](/classes/transforms/wvtransformboussinesq/wam.html) These reconstruction coefficients map $$A_-$$ onto the $$w$$ state variable. In the historical notation of [Early et al. (2021)](https://doi.org/10.1017/jfm.2020.995), they are the row 4, column 2 entries of $$S$$ for the primary internal-gravity-wave and geostrophic solutions in equation C4.
-  + [`WAp`](/classes/transforms/wvtransformboussinesq/wap.html) These reconstruction coefficients map $$A_+$$ onto the $$w$$ state variable. In the historical notation of [Early et al. (2021)](https://doi.org/10.1017/jfm.2020.995), they are the row 4, column 1 entries of $$S$$ for the primary internal-gravity-wave and geostrophic solutions in equation C4.
+  + [`NA0`](/classes/transforms/wvtransformboussinesq/na0.html) Reconstructs density displacement from $$A_0$$.
+  + [`NAm`](/classes/transforms/wvtransformboussinesq/nam.html) Reconstructs density displacement from $$A_-$$.
+  + [`NAp`](/classes/transforms/wvtransformboussinesq/nap.html) Reconstructs density displacement from $$A_+$$.
+  + [`PA0`](/classes/transforms/wvtransformboussinesq/pa0.html) Reconstructs pressure height from $$A_0$$.
+  + [`UA0`](/classes/transforms/wvtransformboussinesq/ua0.html) Reconstructs $$u$$ from $$A_0$$.
+  + [`UAm`](/classes/transforms/wvtransformboussinesq/uam.html) Reconstructs $$u$$ from $$A_-$$.
+  + [`UAp`](/classes/transforms/wvtransformboussinesq/uap.html) Reconstructs $$u$$ from $$A_+$$.
+  + [`VA0`](/classes/transforms/wvtransformboussinesq/va0.html) Reconstructs $$v$$ from $$A_0$$.
+  + [`VAm`](/classes/transforms/wvtransformboussinesq/vam.html) Reconstructs $$v$$ from $$A_-$$.
+  + [`VAp`](/classes/transforms/wvtransformboussinesq/vap.html) Reconstructs $$v$$ from $$A_+$$.
+  + [`WAm`](/classes/transforms/wvtransformboussinesq/wam.html) Reconstructs $$w$$ from $$A_-$$.
+  + [`WAp`](/classes/transforms/wvtransformboussinesq/wap.html) Reconstructs $$w$$ from $$A_+$$.
 + Geometry and mode indexing
-  + [`buildVerticalModeProjectionOperators`](/classes/transforms/wvtransformboussinesq/buildverticalmodeprojectionoperators.html)
-  + [`conjugateDimension`](/classes/transforms/wvtransformboussinesq/conjugatedimension.html) assumed conjugate dimension
-  + [`indexFromKLModeNumber`](/classes/transforms/wvtransformboussinesq/indexfromklmodenumber.html) return the linear index into k_wv and l_wv from a mode number
-  + [`indexFromModeNumber`](/classes/transforms/wvtransformboussinesq/indexfrommodenumber.html) return the linear index into a spectral matrix given (k,l,j)
-  + [`indicesFromDFTGridToWVGrid`](/classes/transforms/wvtransformboussinesq/indicesfromdftgridtowvgrid.html) indices to convert from DFT to WV grid
-  + [`indicesFromWVGridToDFTGrid`](/classes/transforms/wvtransformboussinesq/indicesfromwvgridtodftgrid.html) indices to convert from WV to DFT grid
-  + [`isValidConjugateKLModeNumber`](/classes/transforms/wvtransformboussinesq/isvalidconjugateklmodenumber.html) return a boolean indicating whether (k,l) is a valid conjugate WV mode number
-  + [`isValidConjugateModeNumber`](/classes/transforms/wvtransformboussinesq/isvalidconjugatemodenumber.html) returns a boolean indicating whether (k,l,j) is a valid conjugate mode number
-  + [`isValidKLModeNumber`](/classes/transforms/wvtransformboussinesq/isvalidklmodenumber.html) return a boolean indicating whether (k,l) is a valid WV mode number
-  + [`isValidModeNumber`](/classes/transforms/wvtransformboussinesq/isvalidmodenumber.html) returns a boolean indicating whether (k,l,j) is a valid mode number
-  + [`isValidPrimaryKLModeNumber`](/classes/transforms/wvtransformboussinesq/isvalidprimaryklmodenumber.html) return a boolean indicating whether (k,l) is a valid primary (non-conjugate) WV mode number
-  + [`isValidPrimaryModeNumber`](/classes/transforms/wvtransformboussinesq/isvalidprimarymodenumber.html) returns a boolean indicating whether (k,l,j) is a valid primary (non-conjugate) mode number
-  + [`kMode_dft`](/classes/transforms/wvtransformboussinesq/kmode_dft.html) k mode-number on the DFT grid
-  + [`kMode_wv`](/classes/transforms/wvtransformboussinesq/kmode_wv.html) k mode number on the WV grid
-  + [`klModeNumberFromIndex`](/classes/transforms/wvtransformboussinesq/klmodenumberfromindex.html) return mode number from a linear index into a WV matrix
-  + [`lMode_dft`](/classes/transforms/wvtransformboussinesq/lmode_dft.html) l mode-number on the DFT grid
-  + [`lMode_wv`](/classes/transforms/wvtransformboussinesq/lmode_wv.html) l mode number on the WV grid
-  + [`maskForAliasedModes`](/classes/transforms/wvtransformboussinesq/maskforaliasedmodes.html) returns a mask with locations of modes that will alias with a quadratic multiplication.
-  + [`maskForConjugateFourierCoefficients`](/classes/transforms/wvtransformboussinesq/maskforconjugatefouriercoefficients.html) a mask indicate the components that are redundant conjugates
-  + [`maskForNyquistModes`](/classes/transforms/wvtransformboussinesq/maskfornyquistmodes.html) returns a mask with locations of modes that are not fully resolved
-  + [`modeNumberFromIndex`](/classes/transforms/wvtransformboussinesq/modenumberfromindex.html) Return mode numbers for spectral linear indices.
-  + [`primaryKLModeNumberFromKLModeNumber`](/classes/transforms/wvtransformboussinesq/primaryklmodenumberfromklmodenumber.html) takes any valid WV mode number and returns the primary mode number
-  + [`transformFromDFTGridToWVGrid`](/classes/transforms/wvtransformboussinesq/transformfromdftgridtowvgrid.html) convert from DFT to WV grid
-  + [`transformFromSpatialDomainToDFTGrid`](/classes/transforms/wvtransformboussinesq/transformfromspatialdomaintodftgrid.html) transform from $$(x,y,z)$$ to $$(k,l,z)$$ on the DFT grid
-  + [`transformFromWVGridToDFTGrid`](/classes/transforms/wvtransformboussinesq/transformfromwvgridtodftgrid.html) convert from a WV to DFT grid
-  + [`transformToSpatialDomainFromDFTGrid`](/classes/transforms/wvtransformboussinesq/transformtospatialdomainfromdftgrid.html) transform from $$(k,l,z)$$ on the DFT grid to $$(x,y,z)$$
-  + [`transformToSpatialDomainFromDFTGridAtPosition`](/classes/transforms/wvtransformboussinesq/transformtospatialdomainfromdftgridatposition.html) transform from $$(k,l)$$ on the DFT grid to $$(x,y)$$ at any position
+  + Mode numbers and validity
+    + [`isValidConjugateKLModeNumber`](/classes/transforms/wvtransformboussinesq/isvalidconjugateklmodenumber.html) return a boolean indicating whether (k,l) is a valid conjugate WV mode number
+    + [`isValidConjugateModeNumber`](/classes/transforms/wvtransformboussinesq/isvalidconjugatemodenumber.html) returns a boolean indicating whether (k,l,j) is a valid conjugate mode number
+    + [`isValidKLModeNumber`](/classes/transforms/wvtransformboussinesq/isvalidklmodenumber.html) return a boolean indicating whether (k,l) is a valid WV mode number
+    + [`isValidModeNumber`](/classes/transforms/wvtransformboussinesq/isvalidmodenumber.html) returns a boolean indicating whether (k,l,j) is a valid mode number
+    + [`isValidPrimaryKLModeNumber`](/classes/transforms/wvtransformboussinesq/isvalidprimaryklmodenumber.html) return a boolean indicating whether (k,l) is a valid primary (non-conjugate) WV mode number
+    + [`isValidPrimaryModeNumber`](/classes/transforms/wvtransformboussinesq/isvalidprimarymodenumber.html) returns a boolean indicating whether (k,l,j) is a valid primary (non-conjugate) mode number
+    + [`kMode_dft`](/classes/transforms/wvtransformboussinesq/kmode_dft.html) k mode-number on the DFT grid
+    + [`kMode_wv`](/classes/transforms/wvtransformboussinesq/kmode_wv.html) k mode number on the WV grid
+    + [`lMode_dft`](/classes/transforms/wvtransformboussinesq/lmode_dft.html) l mode-number on the DFT grid
+    + [`lMode_wv`](/classes/transforms/wvtransformboussinesq/lmode_wv.html) l mode number on the WV grid
+    + [`primaryKLModeNumberFromKLModeNumber`](/classes/transforms/wvtransformboussinesq/primaryklmodenumberfromklmodenumber.html) takes any valid WV mode number and returns the primary mode number
+  + Linear-index conversion
+    + [`indexFromKLModeNumber`](/classes/transforms/wvtransformboussinesq/indexfromklmodenumber.html) return the linear index into k_wv and l_wv from a mode number
+    + [`indexFromModeNumber`](/classes/transforms/wvtransformboussinesq/indexfrommodenumber.html) return the linear index into a spectral matrix given (k,l,j)
+    + [`klModeNumberFromIndex`](/classes/transforms/wvtransformboussinesq/klmodenumberfromindex.html) return mode number from a linear index into a WV matrix
+    + [`modeNumberFromIndex`](/classes/transforms/wvtransformboussinesq/modenumberfromindex.html) Return mode numbers for spectral linear indices.
+  + DFT and WV layout metadata
+    + [`Nk_dft`](/classes/transforms/wvtransformboussinesq/nk_dft.html) length of the k-wavenumber dimension on the DFT grid
+    + [`Nl_dft`](/classes/transforms/wvtransformboussinesq/nl_dft.html) length of the l-wavenumber dimension on the DFT grid
+    + [`conjugateDimension`](/classes/transforms/wvtransformboussinesq/conjugatedimension.html) assumed conjugate dimension
+    + [`dftConjugateIndices2D`](/classes/transforms/wvtransformboussinesq/dftconjugateindices2d.html) index into the DFT grid of the conjugate of each WV mode
+    + [`dftPrimaryIndices2D`](/classes/transforms/wvtransformboussinesq/dftprimaryindices2d.html) index into the DFT grid of each WV mode
+    + [`indicesOfFourierConjugates`](/classes/transforms/wvtransformboussinesq/indicesoffourierconjugates.html) a matrix of linear indices of the conjugate
+    + [`k_dft`](/classes/transforms/wvtransformboussinesq/k_dft.html) k wavenumber dimension on the DFT grid
+    + [`kl`](/classes/transforms/wvtransformboussinesq/kl.html) wavenumber dimension
+    + [`l_dft`](/classes/transforms/wvtransformboussinesq/l_dft.html) l wavenumber dimension on the DFT grid
+    + [`shouldExcludeConjugates`](/classes/transforms/wvtransformboussinesq/shouldexcludeconjugates.html) whether the WV grid excludes redundant Hermitian-conjugate wavenumbers
+    + [`shouldExcludeNyquist`](/classes/transforms/wvtransformboussinesq/shouldexcludenyquist.html) whether the WV grid includes Nyquist wavenumbers
+  + Layout conversion
+    + [`indicesFromDFTGridToWVGrid`](/classes/transforms/wvtransformboussinesq/indicesfromdftgridtowvgrid.html) indices to convert from DFT to WV grid
+    + [`indicesFromWVGridToDFTGrid`](/classes/transforms/wvtransformboussinesq/indicesfromwvgridtodftgrid.html) indices to convert from WV to DFT grid
+    + [`transformFromDFTGridToWVGrid`](/classes/transforms/wvtransformboussinesq/transformfromdftgridtowvgrid.html) convert from DFT to WV grid
+    + [`transformFromSpatialDomainToDFTGrid`](/classes/transforms/wvtransformboussinesq/transformfromspatialdomaintodftgrid.html) transform from $$(x,y,z)$$ to $$(k,l,z)$$ on the DFT grid
+    + [`transformFromWVGridToDFTGrid`](/classes/transforms/wvtransformboussinesq/transformfromwvgridtodftgrid.html) convert from a WV to DFT grid
+    + [`transformToSpatialDomainFromDFTGrid`](/classes/transforms/wvtransformboussinesq/transformtospatialdomainfromdftgrid.html) transform from $$(k,l,z)$$ on the DFT grid to $$(x,y,z)$$
+    + [`transformToSpatialDomainFromDFTGridAtPosition`](/classes/transforms/wvtransformboussinesq/transformtospatialdomainfromdftgridatposition.html) transform from $$(k,l)$$ on the DFT grid to $$(x,y)$$ at any position
+  + Masks and Hermitian bookkeeping
+    + [`isHermitian`](/classes/transforms/wvtransformboussinesq/ishermitian.html) Check if the matrix is Hermitian. Report errors.
+    + [`maskForAliasedModes`](/classes/transforms/wvtransformboussinesq/maskforaliasedmodes.html) returns a mask with locations of modes that will alias with a quadratic multiplication.
+    + [`maskForConjugateFourierCoefficients`](/classes/transforms/wvtransformboussinesq/maskforconjugatefouriercoefficients.html) a mask indicate the components that are redundant conjugates
+    + [`maskForNyquistModes`](/classes/transforms/wvtransformboussinesq/maskfornyquistmodes.html) returns a mask with locations of modes that are not fully resolved
+    + [`setConjugateToUnity`](/classes/transforms/wvtransformboussinesq/setconjugatetounity.html) set the conjugate of the wavenumber (iK,iL) to 1
+  + Additional geometry utilities
+    + [`buildVerticalModeProjectionOperators`](/classes/transforms/wvtransformboussinesq/buildverticalmodeprojectionoperators.html)
 + Spectral transforms and operators
-  + [`FMatrix`](/classes/transforms/wvtransformboussinesq/fmatrix.html) transformation matrix $$F_g$$
-  + [`FinvMatrix`](/classes/transforms/wvtransformboussinesq/finvmatrix.html) transformation matrix $$F_g^{-1}$$
   + [`FwInvMatrix`](/classes/transforms/wvtransformboussinesq/fwinvmatrix.html) transformation matrix $$F_w^{-1}$$
   + [`FwMatrix`](/classes/transforms/wvtransformboussinesq/fwmatrix.html) transformation matrix $$F_w$$
-  + [`GMatrix`](/classes/transforms/wvtransformboussinesq/gmatrix.html) transformation matrix $$G_g$$
-  + [`GinvMatrix`](/classes/transforms/wvtransformboussinesq/ginvmatrix.html) transformation matrix $$G_g^{-1}$$
   + [`GwInvMatrix`](/classes/transforms/wvtransformboussinesq/gwinvmatrix.html) transformation matrix $$G_w^{-1}$$
   + [`GwMatrix`](/classes/transforms/wvtransformboussinesq/gwmatrix.html) transformation matrix $$G_w$$
+  + [`P0`](/classes/transforms/wvtransformboussinesq/p0.html) Preconditioner for F, size(P)=[Nj 1]. F*u = uhat, (PF)*u = P*uhat, so ubar==P*uhat
   + [`PF0`](/classes/transforms/wvtransformboussinesq/pf0.html) size(PF,PG)=[Nj x Nz]
   + [`PF0inv`](/classes/transforms/wvtransformboussinesq/pf0inv.html) Transformation matrices
   + [`PFpm`](/classes/transforms/wvtransformboussinesq/pfpm.html) size(PF,PG)=[Nj x Nz x Nk]
   + [`PFpmInv`](/classes/transforms/wvtransformboussinesq/pfpminv.html) IGW transformation matrices
+  + [`Q0`](/classes/transforms/wvtransformboussinesq/q0.html) Preconditioner for G, size(Q)=[Nj 1]. G*eta = etahat, (QG)*eta = Q*etahat, so etabar==Q*etahat.
   + [`QG0`](/classes/transforms/wvtransformboussinesq/qg0.html) Preconditioned G-mode forward transformation
   + [`QG0inv`](/classes/transforms/wvtransformboussinesq/qg0inv.html) Preconditioned G-mode inverse transformation
   + [`QGpm`](/classes/transforms/wvtransformboussinesq/qgpm.html) Preconditioned G-mode forward transformation
@@ -387,6 +413,9 @@ These items document internal implementation details and are not part of the pri
   + [`transformToSpatialDomainWithGw`](/classes/transforms/wvtransformboussinesq/transformtospatialdomainwithgw.html)
   + [`transformWithG_wg`](/classes/transforms/wvtransformboussinesq/transformwithg_wg.html)
 + Nonlinear flux and forcing internals
+  + [`Feta`](/classes/transforms/wvtransformboussinesq/feta.html)
+  + [`Fu`](/classes/transforms/wvtransformboussinesq/fu.html)
+  + [`Fv`](/classes/transforms/wvtransformboussinesq/fv.html)
   + [`enstrophyFluxFromF0`](/classes/transforms/wvtransformboussinesq/enstrophyfluxfromf0.html)
   + [`fluxForForcing`](/classes/transforms/wvtransformboussinesq/fluxforforcing.html)
   + [`qgpvFluxFromF0`](/classes/transforms/wvtransformboussinesq/qgpvfluxfromf0.html)
@@ -411,28 +440,16 @@ These items document internal implementation details and are not part of the pri
   + [`Ddelta`](/classes/transforms/wvtransformboussinesq/ddelta.html)
   + [`K2unique`](/classes/transforms/wvtransformboussinesq/k2unique.html) unique squared-wavenumbers
   + [`K2uniqueK2Map`](/classes/transforms/wvtransformboussinesq/k2uniquek2map.html) cell array Nk in length. Each cell contains indices back to K2
-  + [`Nk_dft`](/classes/transforms/wvtransformboussinesq/nk_dft.html) length of the k-wavenumber dimension on the DFT grid
-  + [`Nl_dft`](/classes/transforms/wvtransformboussinesq/nl_dft.html) length of the l-wavenumber dimension on the DFT grid
   + [`Ppm`](/classes/transforms/wvtransformboussinesq/ppm.html) Preconditioner for F, size(P)=[Nj x Nk]. F*u = uhat, (PF)*u = P*uhat, so ubar==P*uhat
   + [`Qpm`](/classes/transforms/wvtransformboussinesq/qpm.html) Preconditioner for G, size(Q)=[Nj x Nk]. G*eta = etahat, (QG)*eta = Q*etahat, so etabar==Q*etahat.
   + [`chebfunForZArray`](/classes/transforms/wvtransformboussinesq/chebfunforzarray.html)
   + [`delta_uhat`](/classes/transforms/wvtransformboussinesq/delta_uhat.html)
   + [`delta_vhat`](/classes/transforms/wvtransformboussinesq/delta_vhat.html)
-  + [`dftConjugateIndices2D`](/classes/transforms/wvtransformboussinesq/dftconjugateindices2d.html) index into the DFT grid of the conjugate of each WV mode
-  + [`dftPrimaryIndices2D`](/classes/transforms/wvtransformboussinesq/dftprimaryindices2d.html) index into the DFT grid of each WV mode
   + [`iK2unique`](/classes/transforms/wvtransformboussinesq/ik2unique.html) map from 2-dim K2, to 1-dim K2unique
-  + [`indicesOfFourierConjugates`](/classes/transforms/wvtransformboussinesq/indicesoffourierconjugates.html) a matrix of linear indices of the conjugate
-  + [`isHermitian`](/classes/transforms/wvtransformboussinesq/ishermitian.html) Check if the matrix is Hermitian. Report errors.
-  + [`k_dft`](/classes/transforms/wvtransformboussinesq/k_dft.html) k wavenumber dimension on the DFT grid
-  + [`kl`](/classes/transforms/wvtransformboussinesq/kl.html) wavenumber dimension
-  + [`l_dft`](/classes/transforms/wvtransformboussinesq/l_dft.html) l wavenumber dimension on the DFT grid
   + [`maxFg`](/classes/transforms/wvtransformboussinesq/maxfg.html)
   + [`maxFw`](/classes/transforms/wvtransformboussinesq/maxfw.html)
   + [`nK2unique`](/classes/transforms/wvtransformboussinesq/nk2unique.html) number of unique squared-wavenumbers
   + [`quadraturePointsForStratifiedFlow`](/classes/transforms/wvtransformboussinesq/quadraturepointsforstratifiedflow.html) return the quadrature points for a given stratification
-  + [`setConjugateToUnity`](/classes/transforms/wvtransformboussinesq/setconjugatetounity.html) set the conjugate of the wavenumber (iK,iL) to 1
-  + [`shouldExcludeConjugates`](/classes/transforms/wvtransformboussinesq/shouldexcludeconjugates.html) whether the WV grid excludes redundant Hermitian-conjugate wavenumbers
-  + [`shouldExcludeNyquist`](/classes/transforms/wvtransformboussinesq/shouldexcludenyquist.html) whether the WV grid includes Nyquist wavenumbers
   + [`throwErrorIfDensityViolation`](/classes/transforms/wvtransformboussinesq/throwerrorifdensityviolation.html) checks if the proposed coefficients are a valid adiabatic re-arrangement of the base state
   + [`verticalProjectionOperatorsWithRigidLid`](/classes/transforms/wvtransformboussinesq/verticalprojectionoperatorswithrigidlid.html) return the normalized projection operators with prefactors
   + [`wvBuffer`](/classes/transforms/wvtransformboussinesq/wvbuffer.html)

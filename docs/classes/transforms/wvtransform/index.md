@@ -57,6 +57,9 @@ corresponding coefficients evaluated at the current transform time.
 + Create and restore a transform
   + [`waveVortexTransformFromFile`](/classes/transforms/wvtransform/wavevortextransformfromfile.html) Initialize a WVTransform instance from an existing file
 + Inspect the domain
+  + Spectral grid
+    + Resolution and shape
+      + [`summarizeDegreesOfFreedom`](/classes/transforms/wvtransform/summarizedegreesoffreedom.html) Summarize the spatial grid and active spectral degrees of freedom.
   + Transform configuration
     + [`isHydrostatic`](/classes/transforms/wvtransform/ishydrostatic.html) Whether the transform uses the hydrostatic approximation.
 + Initialize the flow
@@ -77,28 +80,34 @@ corresponding coefficients evaluated at the current transform time.
   + At arbitrary positions
     + [`variableAtPositionWithName`](/classes/transforms/wvtransform/variableatpositionwithname.html) Access dynamical variables at arbitrary positions in the domain.
 + Manage forcing and closures
-  + [`addForcing`](/classes/transforms/wvtransform/addforcing.html) Add forcing or closure objects to this transform.
-  + [`forcing`](/classes/transforms/wvtransform/forcing.html)
-  + [`forcingNames`](/classes/transforms/wvtransform/forcingnames.html) Return forcing and closure names in application order.
-  + [`forcingWithName`](/classes/transforms/wvtransform/forcingwithname.html) Return registered forcing objects by name.
-  + [`hasClosure`](/classes/transforms/wvtransform/hasclosure.html) Whether a closure is currently attached to the transform.
-  + [`hasForcingWithName`](/classes/transforms/wvtransform/hasforcingwithname.html) Test whether forcing objects are registered by name.
-  + [`removeAllForcing`](/classes/transforms/wvtransform/removeallforcing.html) Remove every forcing and closure from this transform.
-  + [`removeForcing`](/classes/transforms/wvtransform/removeforcing.html) Remove the exact registered forcing objects.
-  + [`setForcing`](/classes/transforms/wvtransform/setforcing.html) Replace the complete forcing registry.
-  + [`summarizeForcing`](/classes/transforms/wvtransform/summarizeforcing.html) Print a table of registered forcing and closure objects.
+  + Configure forcing
+    + [`addForcing`](/classes/transforms/wvtransform/addforcing.html) Add forcing or closure objects to this transform.
+    + [`setForcing`](/classes/transforms/wvtransform/setforcing.html) Replace the complete forcing registry.
+    + [`removeForcing`](/classes/transforms/wvtransform/removeforcing.html) Remove the exact registered forcing objects.
+    + [`removeAllForcing`](/classes/transforms/wvtransform/removeallforcing.html) Remove every forcing and closure from this transform.
+  + Inspect forcing and closures
+    + [`forcing`](/classes/transforms/wvtransform/forcing.html)
+    + [`forcingNames`](/classes/transforms/wvtransform/forcingnames.html) Return forcing and closure names in application order.
+    + [`forcingWithName`](/classes/transforms/wvtransform/forcingwithname.html) Return registered forcing objects by name.
+    + [`hasForcingWithName`](/classes/transforms/wvtransform/hasforcingwithname.html) Test whether forcing objects are registered by name.
+    + [`hasClosure`](/classes/transforms/wvtransform/hasclosure.html) Whether a closure is currently attached to the transform.
+  + Summarize forcing
+    + [`summarizeForcing`](/classes/transforms/wvtransform/summarizeforcing.html) Print a table of registered forcing and closure objects.
 + Analyze the flow
-  + Energy and summaries
+  + Flow diagnostics
     + [`hasMeanPressureDifference`](/classes/transforms/wvtransform/hasmeanpressuredifference.html) Diagnose an MDA mean-pressure difference between the boundaries.
-    + [`summarizeDegreesOfFreedom`](/classes/transforms/wvtransform/summarizedegreesoffreedom.html) Summarize the spatial grid and active spectral degrees of freedom.
-    + [`summarizeEnergyContent`](/classes/transforms/wvtransform/summarizeenergycontent.html) displays a summary of the energy content of the fluid
-    + [`summarizeModeEnergy`](/classes/transforms/wvtransform/summarizemodeenergy.html) List the most energetic modes
-    + [`totalEnergy`](/classes/transforms/wvtransform/totalenergy.html) % - Topic: Energetics
-    + [`totalEnergyOfFlowComponent`](/classes/transforms/wvtransform/totalenergyofflowcomponent.html) Compute the energy carried by one flow component.
-    + [`totalEnergySpatiallyIntegrated`](/classes/transforms/wvtransform/totalenergyspatiallyintegrated.html) % - Topic: Energetics
   + Spectra
     + Frequency
       + [`convertFromWavenumberToFrequency`](/classes/transforms/wvtransform/convertfromwavenumbertofrequency.html) Bin wave energy by vertical mode and intrinsic frequency
++ Analyze energy
+  + Component energy
+    + [`totalEnergyOfFlowComponent`](/classes/transforms/wvtransform/totalenergyofflowcomponent.html) Compute the energy carried by one flow component.
+  + Total energy
+    + [`totalEnergy`](/classes/transforms/wvtransform/totalenergy.html) Total energy computed from wave-vortex coefficients.
+    + [`totalEnergySpatiallyIntegrated`](/classes/transforms/wvtransform/totalenergyspatiallyintegrated.html) Total energy computed from physical-space fields.
+  + Energy summaries
+    + [`summarizeEnergyContent`](/classes/transforms/wvtransform/summarizeenergycontent.html) displays a summary of the energy content of the fluid
+    + [`summarizeModeEnergy`](/classes/transforms/wvtransform/summarizemodeenergy.html) List the most energetic modes
 + Save transform state
   + [`writeToFile`](/classes/transforms/wvtransform/writetofile.html) Write this instance to NetCDF file.
 + Convert representations
@@ -106,19 +115,22 @@ corresponding coefficients evaluated at the current transform time.
     + [`transformUVEtaToWaveVortex`](/classes/transforms/wvtransform/transformuvetatowavevortex.html) transform fluid variables $$(u,v,\eta)$$ to wave-vortex coefficients $$(A_+,A_-,A_0)$$.
     + [`transformWaveVortexToUVWEta`](/classes/transforms/wvtransform/transformwavevortextouvweta.html) transform wave-vortex coefficients $$(A_+,A_-,A_0)$$ to fluid variables $$(u,v,\eta)$$.
 + Inspect flow components
-  + [`flowComponentNames`](/classes/transforms/wvtransform/flowcomponentnames.html) retrieve the names of all available variables
-  + [`flowComponentWithName`](/classes/transforms/wvtransform/flowcomponentwithname.html) retrieve a WVFlowComponent by name
-  + [`flowComponents`](/classes/transforms/wvtransform/flowcomponents.html) All registered physical and diagnostic flow components.
-  + [`primaryFlowComponentNames`](/classes/transforms/wvtransform/primaryflowcomponentnames.html) retrieve the names of all available variables
-  + [`primaryFlowComponentWithName`](/classes/transforms/wvtransform/primaryflowcomponentwithname.html) retrieve a WVPrimaryFlowComponent by name
-  + [`primaryFlowComponents`](/classes/transforms/wvtransform/primaryflowcomponents.html) Primary flow components that partition the active coefficient state.
-  + [`summarizeFlowComponents`](/classes/transforms/wvtransform/summarizeflowcomponents.html) Print a table of registered primary and diagnostic components.
-  + [`totalFlowComponent`](/classes/transforms/wvtransform/totalflowcomponent.html) Combined view of all primary flow components.
+  + Primary flow components
+    + [`primaryFlowComponents`](/classes/transforms/wvtransform/primaryflowcomponents.html) Primary flow components that partition the active coefficient state.
+    + [`primaryFlowComponentNames`](/classes/transforms/wvtransform/primaryflowcomponentnames.html) retrieve the names of all available variables
+    + [`primaryFlowComponentWithName`](/classes/transforms/wvtransform/primaryflowcomponentwithname.html) retrieve a WVPrimaryFlowComponent by name
+  + Registered and combined components
+    + [`flowComponents`](/classes/transforms/wvtransform/flowcomponents.html) All registered physical and diagnostic flow components.
+    + [`flowComponentNames`](/classes/transforms/wvtransform/flowcomponentnames.html) retrieve the names of all available variables
+    + [`flowComponentWithName`](/classes/transforms/wvtransform/flowcomponentwithname.html) retrieve a WVFlowComponent by name
+    + [`totalFlowComponent`](/classes/transforms/wvtransform/totalflowcomponent.html) Combined view of all primary flow components.
+  + Summarize flow components
+    + [`summarizeFlowComponents`](/classes/transforms/wvtransform/summarizeflowcomponents.html) Print a table of registered primary and diagnostic components.
 + Inspect wave-vortex coefficients
   + Stored coefficients
-    + [`Ap`](/classes/transforms/wvtransform/ap.html) `Ap` stores the positive-frequency coefficients $$A_+^{k\ell j}$$ for internal gravity waves and the positive-frequency member of the paired inertial representation. The coefficients have units of velocity and use the transform's spectral layout.
-    + [`Am`](/classes/transforms/wvtransform/am.html) `Am` stores the negative-frequency coefficients $$A_-^{k\ell j}$$ for internal gravity waves and inertial oscillations. The coefficients have units of velocity and use the transform's spectral layout.
-    + [`A0`](/classes/transforms/wvtransform/a0.html) `A0` stores the zero-frequency coefficients $$A_0^{k\ell j}$$ with units of streamfunction, $$\mathrm{m^2\,s^{-1}}$$. It is the active coefficient family for geostrophic and quasigeostrophic flow and, on transforms that include it, the mean-density anomaly.
+    + [`Ap`](/classes/transforms/wvtransform/ap.html) Positive-frequency wave–vortex coefficient array.
+    + [`Am`](/classes/transforms/wvtransform/am.html) Negative-frequency wave–vortex coefficient array.
+    + [`A0`](/classes/transforms/wvtransform/a0.html) Zero-frequency wave–vortex coefficient array.
   + Coefficient evolution
     + [`t0`](/classes/transforms/wvtransform/t0.html) Reference time for the stored wave phases, in seconds.
     + [`t`](/classes/transforms/wvtransform/t.html) Current transform time in seconds.
@@ -149,9 +161,10 @@ These items document internal implementation details and are not part of the pri
   + [`A0_TZ_factor`](/classes/transforms/wvtransform/a0_tz_factor.html)
   + [`Apm_TE_factor`](/classes/transforms/wvtransform/apm_te_factor.html)
 + Geometry and mode indexing
-  + [`concatenateVariablesAlongTimeDimension`](/classes/transforms/wvtransform/concatenatevariablesalongtimedimension.html) Concatenate variables along the time dimension
-  + [`spatialDimensionNames`](/classes/transforms/wvtransform/spatialdimensionnames.html)
-  + [`spectralDimensionNames`](/classes/transforms/wvtransform/spectraldimensionnames.html)
+  + Additional geometry utilities
+    + [`concatenateVariablesAlongTimeDimension`](/classes/transforms/wvtransform/concatenatevariablesalongtimedimension.html) Concatenate variables along the time dimension
+    + [`spatialDimensionNames`](/classes/transforms/wvtransform/spatialdimensionnames.html)
+    + [`spectralDimensionNames`](/classes/transforms/wvtransform/spectraldimensionnames.html)
 + Spectral transforms and operators
   + [`optimizedTransformsForFlowComponent`](/classes/transforms/wvtransform/optimizedtransformsforflowcomponent.html) returns optimized transforms that avoid unnecessary computation
   + [`transformFromSpatialDomainWithFg`](/classes/transforms/wvtransform/transformfromspatialdomainwithfg.html) Required for transformUVEtaToWaveVortex

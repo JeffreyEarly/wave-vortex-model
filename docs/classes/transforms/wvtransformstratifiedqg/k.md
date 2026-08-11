@@ -9,7 +9,7 @@ mathjax: true
 
 #  k
 
-Stored x-direction angular wavenumbers on the compact WV grid.
+Compact `Nkl`-by-1 x-wavenumber vector in rad/m.
 
 
 ---

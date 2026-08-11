@@ -9,7 +9,7 @@ mathjax: true
 
 #  totalEnergy
 
-% - Topic: Energetics
+Total energy computed from wave-vortex coefficients.
 
 
 ---
@@ -18,7 +18,8 @@ mathjax: true
 Real valued property with no dimensions and units of $$m3/s2$$.
 
 ## Discussion
-%
+Total energy computed from wave-vortex coefficients.
+
 The horizontally-averaged depth-integrated energy computed from the wave-vortex coefficients
 
 $$

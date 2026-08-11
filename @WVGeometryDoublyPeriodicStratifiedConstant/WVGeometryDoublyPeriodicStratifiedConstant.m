@@ -161,14 +161,14 @@ classdef WVGeometryDoublyPeriodicStratifiedConstant < WVGeometryDoublyPeriodic &
         end
 
         function Finv = get.FinvMatrix(wvt)
-            % transformation matrix $$F^{-1}$$
+            % Transformation matrix $$F^{-1}$$ reconstructing F-grid values from vertical modes; shape `[Nz Nj]`.
             %
             % A matrix that transforms a vector from vertical mode space to physical
             % space.
             %
             % - Topic: Operations — Transformations
             % - Declaration: Finv = FinvMatrix(wvt)
-            % - Returns Finv: A matrix with dimensions [Nz Nj]
+            % - Returns Finv: vertical-mode reconstruction matrix with dimensions `[Nz Nj]`
             arguments
                 wvt         WVTransform
             end
@@ -177,14 +177,14 @@ classdef WVGeometryDoublyPeriodicStratifiedConstant < WVGeometryDoublyPeriodic &
         end
 
         function F = get.FMatrix(wvt)
-            % transformation matrix $$F$$
+            % Transformation matrix $$F$$ projecting F-grid values onto vertical modes; shape `[Nj Nz]`.
             %
             % A matrix that transforms a vector from physical
             % space to vertical mode space.
             %
             % - Topic: Operations — Transformations
             % - Declaration: F = FMatrix(wvt)
-            % - Returns Finv: A matrix with dimensions [Nz Nj]
+            % - Returns F: vertical-mode projection matrix with dimensions `[Nj Nz]`
             arguments
                 wvt         WVTransform
             end
@@ -192,14 +192,14 @@ classdef WVGeometryDoublyPeriodicStratifiedConstant < WVGeometryDoublyPeriodic &
             F = wvt.DCT ./ wvt.F_g(:,1);
         end
         function Ginv = get.GinvMatrix(wvt)
-            % transformation matrix $$G^{-1}$$
+            % Transformation matrix $$G^{-1}$$ reconstructing G-grid values from vertical modes; shape `[Nz Nj]`.
             %
             % A matrix that transforms a vector from vertical mode space to physical
             % space.
             %
             % - Topic: Operations — Transformations
             % - Declaration: Ginv = GinvMatrix(wvt)
-            % - Returns Finv: A matrix with dimensions [Nz Nj]
+            % - Returns Ginv: vertical-mode reconstruction matrix with dimensions `[Nz Nj]`
             arguments
                 wvt         WVTransform
             end
@@ -207,14 +207,14 @@ classdef WVGeometryDoublyPeriodicStratifiedConstant < WVGeometryDoublyPeriodic &
             Ginv = shiftdim(wvt.G_g(:,1),1) .* wvt.iDST;
         end
         function G = get.GMatrix(wvt)
-            % transformation matrix $$G$$
+            % Transformation matrix $$G$$ projecting G-grid values onto vertical modes; shape `[Nj Nz]`.
             %
             % A matrix that transforms a vector from physical
             % space to vertical mode space.
             %
             % - Topic: Operations — Transformations
             % - Declaration: G = GMatrix(wvt)
-            % - Returns Ginv: A matrix with dimensions [Nz Nj]
+            % - Returns G: vertical-mode projection matrix with dimensions `[Nj Nz]`
             arguments
                 wvt         WVTransform
             end

@@ -9,7 +9,7 @@ mathjax: true
 
 #  Am
 
-`Am` stores the negative-frequency coefficients $$A_-^{k\ell j}$$ for internal gravity waves and inertial oscillations. The coefficients have units of velocity and use the transform's spectral layout.
+Negative-frequency wave–vortex coefficient array.
 
 
 ---
@@ -18,6 +18,8 @@ mathjax: true
 Complex valued property with dimensions $$(j,kl)$$ and units of $$m/s$$.
 
 ## Discussion
+Negative-frequency wave–vortex coefficient array.
+
 `Am` stores the negative-frequency coefficients $$A_-^{k\ell j}$$ for internal gravity waves and inertial oscillations. The coefficients have units of velocity and use the transform's spectral layout.
 
 These coefficients multiply the negative-frequency wave solutions described by [Early, Lelong, and Sundermeyer (2021)](https://doi.org/10.1017/jfm.2020.995) and the current [available-potential-vorticity formulation](https://doi.org/10.48550/arXiv.2403.20269). The internal-gravity-wave and inertial-oscillation solutions appear as equations (3.18) and (3.15), respectively, in the 2021 paper.

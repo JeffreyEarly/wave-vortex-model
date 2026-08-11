@@ -28,8 +28,9 @@ classdef WVTransformBarotropicQG < WVGeometryDoublyPeriodicBarotropic & WVTransf
     % - Topic: Inspect the domain — Spatial grid — Domain dimensions
     % - Topic: Inspect the domain — Spatial grid — Resolution and shape
     % - Topic: Inspect the domain — Spectral grid
-    % - Topic: Inspect the domain — Spectral grid — Axes and spacing
-    % - Topic: Inspect the domain — Spectral grid — Coordinate arrays
+    % - Topic: Inspect the domain — Spectral grid — Compact grid vectors
+    % - Topic: Inspect the domain — Spectral grid — Compact grid arrays
+    % - Topic: Inspect the domain — Spectral grid — Wavenumber spacing
     % - Topic: Inspect the domain — Spectral grid — Horizontal wavenumber geometry
     % - Topic: Inspect the domain — Spectral grid — Resolution and shape
     % - Topic: Inspect the domain — Spectral grid — Equivalent depth and deformation scale
@@ -45,18 +46,27 @@ classdef WVTransformBarotropicQG < WVGeometryDoublyPeriodicBarotropic & WVTransf
     % - Topic: Evaluate physical fields — On the model grid — Vorticity and geostrophic fields
     % - Topic: Evaluate physical fields — At arbitrary positions
     % - Topic: Manage forcing and closures
+    % - Topic: Manage forcing and closures — Configure forcing
+    % - Topic: Manage forcing and closures — Inspect forcing and closures
+    % - Topic: Manage forcing and closures — Summarize forcing
     % - Topic: Analyze the flow
-    % - Topic: Analyze the flow — Energy and summaries
     % - Topic: Analyze the flow — Flow diagnostics
     % - Topic: Analyze the flow — Potential vorticity and enstrophy
     % - Topic: Analyze the flow — Spectra
     % - Topic: Analyze the flow — Spectra — Spectral fields
     % - Topic: Analyze the flow — Spectra — Radial wavenumber
+    % - Topic: Analyze energy
+    % - Topic: Analyze energy — Component energy
+    % - Topic: Analyze energy — Total energy
+    % - Topic: Analyze energy — Energy summaries
     % - Topic: Save transform state
     % - Topic: Convert representations
     % - Topic: Convert representations — Physical fields and coefficients
     % - Topic: Differentiate and integrate fields
     % - Topic: Inspect flow components
+    % - Topic: Inspect flow components — Primary flow components
+    % - Topic: Inspect flow components — Registered and combined components
+    % - Topic: Inspect flow components — Summarize flow components
     % - Topic: Inspect wave-vortex coefficients
     % - Topic: Inspect wave-vortex coefficients — Stored coefficients
     % - Topic: Inspect wave-vortex coefficients — Coefficients at the current time
@@ -68,6 +78,12 @@ classdef WVTransformBarotropicQG < WVGeometryDoublyPeriodicBarotropic & WVTransf
     % - Topic: Get package information
     % - Topic: Projection and reconstruction coefficients
     % - Topic: Geometry and mode indexing
+    % - Topic: Geometry and mode indexing — Mode numbers and validity
+    % - Topic: Geometry and mode indexing — Linear-index conversion
+    % - Topic: Geometry and mode indexing — DFT and WV layout metadata
+    % - Topic: Geometry and mode indexing — Layout conversion
+    % - Topic: Geometry and mode indexing — Masks and Hermitian bookkeeping
+    % - Topic: Geometry and mode indexing — Additional geometry utilities
     % - Topic: Spectral transforms and operators
     % - Topic: Nonlinear flux and forcing internals
     % - Topic: Persistence internals

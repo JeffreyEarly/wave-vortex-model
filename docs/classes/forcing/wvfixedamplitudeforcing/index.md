@@ -22,8 +22,7 @@ Hold selected wave-vortex coefficients at prescribed amplitudes.
 
 ## Overview
 
-The forcing maintains selected wave or geostrophic coefficients while
-recording the tendency that must be cancelled to maintain them.
+This forcing keeps selected wave-vortex coefficients at prescribed amplitudes while those modes continue to participate in nonlinear interactions.
 
 As a simple example, one can set an internal wave mode with amplitude 1 cm/s, and that mode will continue to oscillate and maintain its amplitude. The wave will participate in all the nonlinear dynamics, but its amplitude will be maintained/restored at each time step.
 
