@@ -9,4 +9,7 @@ tools/compiled-kernel/build/
 *.mex*
 Benchmarks/results/runs/
 *.nc
-!tools/portable-runtime/fixtures/*.nc
+!tools/portable-runtime/fixtures/root-hydrostatic.nc
+!tools/portable-runtime/fixtures/root-nonhydrostatic.nc
+!tools/portable-runtime/fixtures/time-series-hydrostatic.nc
+!tools/portable-runtime/fixtures/time-series-nonhydrostatic.nc

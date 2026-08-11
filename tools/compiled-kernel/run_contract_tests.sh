@@ -1,6 +1,15 @@
 #!/bin/sh
 set -eu
 
+if [ "${WV_NATIVE_ENVIRONMENT_CLEAN:-0}" != "1" ]; then
+    exec env \
+        -u LD_LIBRARY_PATH \
+        -u DYLD_LIBRARY_PATH \
+        -u DYLD_FALLBACK_LIBRARY_PATH \
+        WV_NATIVE_ENVIRONMENT_CLEAN=1 \
+        "$0" "$@"
+fi
+
 script_directory=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 repository_root=$(CDPATH= cd -- "$script_directory/../.." && pwd)
 build_directory=${1:-"$script_directory/build"}

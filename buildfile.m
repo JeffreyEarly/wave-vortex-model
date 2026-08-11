@@ -4,13 +4,14 @@ import matlab.buildtool.TaskGroup
 
 tasks = [
     Task(Actions=@testSmokeTask,Description="Run the fast smoke test category.",DisableIncremental=true)
-    Task(Actions=@testFullTask,Description="Run all non-optional, non-exhaustive tests.",DisableIncremental=true)
+    Task(Actions=@testFullTask,Description="Run smoke and full deterministic tests.",DisableIncremental=true)
     Task(Actions=@testExhaustiveTask,Description="Run exhaustive numerical test matrices.",DisableIncremental=true)
     Task(Actions=@testOptionalTask,Description="Run tests that require optional dependencies.",DisableIncremental=true)
+    Task(Actions=@testLocalTask,Description="Run tests that launch fresh local MATLAB processes.",DisableIncremental=true)
     ];
 
 plan = buildplan;
-plan("test") = TaskGroup(tasks,TaskNames=["smoke"; "full"; "exhaustive"; "optional"],Description="Run WaveVortexModel test categories.");
+plan("test") = TaskGroup(tasks,TaskNames=["smoke"; "full"; "exhaustive"; "optional"; "local"],Description="Run WaveVortexModel test categories.");
 documentationTasks = [
     Task(Actions=@documentationBuildTask,Description="Build and transactionally replace committed documentation.",DisableIncremental=true)
     Task(Actions=@documentationCheckTask,Description="Verify committed documentation against a clean generated site.",DisableIncremental=true)
@@ -72,6 +73,10 @@ end
 
 function testOptionalTask(~)
 runTestCategory("optional","optional");
+end
+
+function testLocalTask(~)
+runTestCategory("local","local");
 end
 
 function runTestCategory(categoryName,selectedTags)
@@ -136,7 +141,7 @@ end
 end
 
 function [expectedPairs,discoveredPairs,selectedSuite] = validateTestDiscovery(testFolder,suite,selectedTags)
-primaryTags = ["smoke" "full" "exhaustive" "optional"];
+primaryTags = ["smoke" "full" "exhaustive" "optional" "local"];
 testFiles = dir(fullfile(testFolder,"Test*.m"));
 expectedPairsByFile = cell(numel(testFiles),1);
 

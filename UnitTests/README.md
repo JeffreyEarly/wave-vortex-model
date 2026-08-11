@@ -23,6 +23,7 @@ buildtool test:smoke
 buildtool test:full
 buildtool test:exhaustive
 buildtool test:optional
+buildtool test:local
 ```
 
 Running `buildtool` without a task runs the smoke category. `RunAllUnitTests` delegates to `buildtool test:full` and may be invoked from any working directory.
@@ -33,6 +34,7 @@ Every formal test method declares exactly one primary tag:
 - `full` contains the remaining deterministic tests that do not require optional dependencies or exhaustive parameter sweeps.
 - `exhaustive` contains large numerical parameter matrices, including spectral differentiation combinations.
 - `optional` requires a declared optional dependency. The current optional category exercises the supported Optimization Toolbox path; unavailable dependencies produce an incomplete, unsuccessful run.
+- `local` launches fresh MATLAB processes for process-memory and isolated-runtime measurements. It is required for local release gates but is not run in hosted CI, where a second licensed MATLAB process is unavailable.
 
 Any failed or incomplete test makes its build task unsuccessful. Full and exhaustive discovery also check declared test metadata so a class or method cannot be silently omitted.
 
