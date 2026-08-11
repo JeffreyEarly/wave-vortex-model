@@ -160,6 +160,33 @@ classdef TestCompiledKernelTransforms < matlab.unittest.TestCase
             clear cleanup
         end
 
+        function readinessHarnessUsesCoreSchemaAndExecutedMetadata(testCase)
+            repositoryRoot = fileparts(fileparts(mfilename("fullpath")));
+            addpath(fullfile(repositoryRoot,"Benchmarks"));
+            outputDirectory = string(tempname);
+            cleanup = onCleanup(@()removeDirectory(outputDirectory));
+            result = runCompiledKernelReadinessBenchmark( ...
+                caseIds="constant-hydrostatic-256x256x65",processRunCount=1, ...
+                samplingIntervalSeconds=0.01,plateauSeconds=0.08,threadCount=1, ...
+                outputDirectory=outputDirectory,runId="smoke");
+            testCase.verifyEqual(result.status,"complete");
+            testCase.verifyEqual(result.configuration.suiteId,"core-v1");
+            testCase.verifyEqual(result.configuration.operation,"ordinary nonlinearFlux");
+            testCase.verifyEqual(numel(result.suite.cases),1);
+            backends = result.suite.cases.backends;
+            testCase.verifyEqual(string({backends.id}),["builtin" "compiled"]);
+            testCase.verifyEqual(numel(backends(1).runs.rawSeconds),7);
+            testCase.verifyEqual(numel(backends(2).runs.rawSeconds),7);
+            testCase.verifyEqual(string(backends(1).metadata.activeImplementation),"builtin");
+            testCase.verifyEqual(string(backends(2).metadata.activeImplementation),"compiled");
+            testCase.verifyFalse(backends(2).metadata.fallback);
+            testCase.verifyLessThanOrEqual(backends(2).maximumRelativeError,1e-12);
+            testCase.verifyTrue(backends(2).lifecyclePassed);
+            testCase.verifyTrue(isfile(fullfile(outputDirectory,"compiled-kernel-readiness.json")));
+            testCase.verifyTrue(isfile(fullfile(outputDirectory,"summary.md")));
+            clear cleanup
+        end
+
     end
 end
 
