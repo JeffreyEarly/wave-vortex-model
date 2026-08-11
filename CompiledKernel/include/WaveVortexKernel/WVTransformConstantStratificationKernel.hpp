@@ -48,6 +48,7 @@ public:
     const char* nonlinearFluxScheduleIdentifier() const noexcept;
     const char* phaseImplementationIdentifier() const noexcept;
     const char* coefficientArithmeticModeIdentifier() const noexcept;
+    const char* inverseNormalizationPlacementIdentifier() const noexcept;
     const char* optimizationImplementationIdentifier() const noexcept;
     std::size_t coefficientWorkerCount() const noexcept;
     void setStageInstrumentation(bool enabled) noexcept;
