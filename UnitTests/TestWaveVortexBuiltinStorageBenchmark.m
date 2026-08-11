@@ -46,7 +46,12 @@ classdef TestWaveVortexBuiltinStorageBenchmark < matlab.unittest.TestCase
         function oneCommandBenchmarkWritesJSONAndMarkdown(testCase)
             outputDirectory = fullfile(testCase.temporaryFolder,"storage-result");
             results = runWaveVortexBuiltinStorageBenchmark(suiteId="smoke-v1",caseIds="smoke-constant-nonhydrostatic",processRunCount=1,samplingIntervalSeconds=0.01,plateauSeconds=0.08,outputDirectory=outputDirectory);
-            testCase.verifyEqual(results.status,"complete");
+            diagnostic = "Storage worker failed: " + string(results.cases.runs.failure.identifier) + ": " + string(results.cases.runs.failure.message);
+            if results.status == "partial" && results.cases.runs.status == "failed" && strcmp(getenv("GITHUB_ACTIONS"),"true")
+                verifyNestedMatlabLicenseFailure(testCase,results.cases.runs.failure,"WaveVortexBenchmark:BuiltinStorageWorkerFailed");
+                return
+            end
+            testCase.verifyEqual(results.status,"complete",diagnostic);
             testCase.verifyEqual(results.cases.implementation,"builtin");
             testCase.verifyEqual(string(results.cases.runs.metadata.fourierStorageType),"full-complex");
             testCase.verifyEqual(results.cases.rss.status,"complete");
@@ -74,7 +79,12 @@ classdef TestWaveVortexBuiltinStorageBenchmark < matlab.unittest.TestCase
                 shouldWriteArtifacts=true, ...
                 outputDirectory=outputDirectory, ...
                 runId="retirement-smoke");
-            testCase.verifyEqual(result.status,"complete");
+            diagnostic = "Retirement worker failed: " + string(result.cases.runs.failure.identifier) + ": " + string(result.cases.runs.failure.message);
+            if result.status == "failed" && result.cases.runs.status == "failed" && strcmp(getenv("GITHUB_ACTIONS"),"true")
+                verifyNestedMatlabLicenseFailure(testCase,result.cases.runs.failure,"WaveVortexBenchmark:RetirementWorkerFailed");
+                return
+            end
+            testCase.verifyEqual(result.status,"complete",diagnostic);
             testCase.verifyEqual(result.decision,"RETIRE");
             testCase.verifyEqual(result.cases.maximumRelativeError,0);
             testCase.verifyTrue(result.cases.builtinExecutionPassed);
