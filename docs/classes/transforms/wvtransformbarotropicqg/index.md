@@ -72,17 +72,16 @@ The quasigeostrophic state is stored in
       + [`Ny`](/classes/transforms/wvtransformbarotropicqg/ny.html) Number of spatial grid points in the y direction.
       + [`spatialMatrixSize`](/classes/transforms/wvtransformbarotropicqg/spatialmatrixsize.html) Shape of a gridded physical-space field.
   + Spectral grid
-    + Axes and spacing
-      + [`kAxis`](/classes/transforms/wvtransformbarotropicqg/kaxis.html) Centered x-direction angular-wavenumber axis.
-      + [`lAxis`](/classes/transforms/wvtransformbarotropicqg/laxis.html) Centered y-direction angular-wavenumber axis.
-      + [`dk`](/classes/transforms/wvtransformbarotropicqg/dk.html) Spacing of the x-direction angular-wavenumber axis.
-      + [`dl`](/classes/transforms/wvtransformbarotropicqg/dl.html) Spacing of the y-direction angular-wavenumber axis.
-    + Coordinate arrays
-      + [`k`](/classes/transforms/wvtransformbarotropicqg/k_.html) Stored x-direction angular wavenumbers on the compact WV grid.
-      + [`l`](/classes/transforms/wvtransformbarotropicqg/l_.html) Stored y-direction angular wavenumbers on the compact WV grid.
+    + Compact grid vectors
+      + [`k`](/classes/transforms/wvtransformbarotropicqg/k_.html) Compact `Nkl`-by-1 x-wavenumber vector in rad/m.
+      + [`l`](/classes/transforms/wvtransformbarotropicqg/l_.html) Compact `Nkl`-by-1 y-wavenumber vector in rad/m.
+    + Compact grid arrays
       + [`K`](/classes/transforms/wvtransformbarotropicqg/k.html) X-direction angular-wavenumber array in rad/m with shape `[1 Nkl]`.
       + [`L`](/classes/transforms/wvtransformbarotropicqg/l.html) Y-direction angular-wavenumber array in rad/m with shape `[1 Nkl]`.
       + [`klGrid`](/classes/transforms/wvtransformbarotropicqg/klgrid.html) Return the barotropic spectral-coordinate arrays.
+    + Wavenumber spacing
+      + [`dk`](/classes/transforms/wvtransformbarotropicqg/dk.html) Spacing of the x-direction angular-wavenumber axis.
+      + [`dl`](/classes/transforms/wvtransformbarotropicqg/dl.html) Spacing of the y-direction angular-wavenumber axis.
     + Horizontal wavenumber geometry
       + [`Kh`](/classes/transforms/wvtransformbarotropicqg/kh.html) Horizontal angular-wavenumber magnitude on the coefficient grid.
       + [`K2`](/classes/transforms/wvtransformbarotropicqg/k2.html) Squared horizontal angular wavenumber on the coefficient grid.
@@ -90,6 +89,7 @@ The quasigeostrophic state is stored in
       + [`Nkl`](/classes/transforms/wvtransformbarotropicqg/nkl.html) Number of retained compact horizontal-wavenumber columns.
       + [`spectralMatrixSize`](/classes/transforms/wvtransformbarotropicqg/spectralmatrixsize.html) Shape of a wave-vortex coefficient array.
       + [`effectiveHorizontalGridResolution`](/classes/transforms/wvtransformbarotropicqg/effectivehorizontalgridresolution.html) returns the effective grid resolution in meters
+      + [`summarizeDegreesOfFreedom`](/classes/transforms/wvtransformbarotropicqg/summarizedegreesoffreedom.html) Summarize the spatial grid and active spectral degrees of freedom.
     + Equivalent depth and deformation scale
       + [`h`](/classes/transforms/wvtransformbarotropicqg/h.html) Equivalent depth associated with a vertical mode.
       + [`h_0`](/classes/transforms/wvtransformbarotropicqg/h_0.html) Geostrophic equivalent-depth scale for each vertical mode.
@@ -132,39 +132,46 @@ The quasigeostrophic state is stored in
   + At arbitrary positions
     + [`variableAtPositionWithName`](/classes/transforms/wvtransformbarotropicqg/variableatpositionwithname.html) Access dynamical variables at arbitrary positions in the domain.
 + Manage forcing and closures
-  + [`addForcing`](/classes/transforms/wvtransformbarotropicqg/addforcing.html) Add forcing or closure objects to this transform.
-  + [`forcing`](/classes/transforms/wvtransformbarotropicqg/forcing.html) array of WVForcing objects
-  + [`forcingNames`](/classes/transforms/wvtransformbarotropicqg/forcingnames.html) Return forcing and closure names in application order.
-  + [`forcingWithName`](/classes/transforms/wvtransformbarotropicqg/forcingwithname.html) Return registered forcing objects by name.
-  + [`hasClosure`](/classes/transforms/wvtransformbarotropicqg/hasclosure.html) Whether a closure is currently attached to the transform.
-  + [`hasForcingWithName`](/classes/transforms/wvtransformbarotropicqg/hasforcingwithname.html) Test whether forcing objects are registered by name.
-  + [`removeAllForcing`](/classes/transforms/wvtransformbarotropicqg/removeallforcing.html) Remove every forcing and closure from this transform.
-  + [`removeForcing`](/classes/transforms/wvtransformbarotropicqg/removeforcing.html) Remove the exact registered forcing objects.
-  + [`setForcing`](/classes/transforms/wvtransformbarotropicqg/setforcing.html) Replace the complete forcing registry.
-  + [`summarizeForcing`](/classes/transforms/wvtransformbarotropicqg/summarizeforcing.html) Print a table of registered forcing and closure objects.
+  + Configure forcing
+    + [`addForcing`](/classes/transforms/wvtransformbarotropicqg/addforcing.html) Add forcing or closure objects to this transform.
+    + [`setForcing`](/classes/transforms/wvtransformbarotropicqg/setforcing.html) Replace the complete forcing registry.
+    + [`removeForcing`](/classes/transforms/wvtransformbarotropicqg/removeforcing.html) Remove the exact registered forcing objects.
+    + [`removeAllForcing`](/classes/transforms/wvtransformbarotropicqg/removeallforcing.html) Remove every forcing and closure from this transform.
+  + Inspect forcing and closures
+    + [`forcing`](/classes/transforms/wvtransformbarotropicqg/forcing.html) array of WVForcing objects
+    + [`forcingNames`](/classes/transforms/wvtransformbarotropicqg/forcingnames.html) Return forcing and closure names in application order.
+    + [`forcingWithName`](/classes/transforms/wvtransformbarotropicqg/forcingwithname.html) Return registered forcing objects by name.
+    + [`hasForcingWithName`](/classes/transforms/wvtransformbarotropicqg/hasforcingwithname.html) Test whether forcing objects are registered by name.
+    + [`hasClosure`](/classes/transforms/wvtransformbarotropicqg/hasclosure.html) Whether a closure is currently attached to the transform.
+  + Summarize forcing
+    + [`summarizeForcing`](/classes/transforms/wvtransformbarotropicqg/summarizeforcing.html) Print a table of registered forcing and closure objects.
 + Analyze the flow
-  + Energy and summaries
-    + [`geostrophicKineticEnergy`](/classes/transforms/wvtransformbarotropicqg/geostrophickineticenergy.html) kinetic energy of the geostrophic flow
-    + [`geostrophicPotentialEnergy`](/classes/transforms/wvtransformbarotropicqg/geostrophicpotentialenergy.html) potential energy of the geostrophic flow
-    + [`geostrophicEnergy`](/classes/transforms/wvtransformbarotropicqg/geostrophicenergy.html) total energy, geostrophic
-    + [`hasMeanPressureDifference`](/classes/transforms/wvtransformbarotropicqg/hasmeanpressuredifference.html) Diagnose an MDA mean-pressure difference between the boundaries.
-    + [`summarizeDegreesOfFreedom`](/classes/transforms/wvtransformbarotropicqg/summarizedegreesoffreedom.html) Summarize the spatial grid and active spectral degrees of freedom.
-    + [`summarizeEnergyContent`](/classes/transforms/wvtransformbarotropicqg/summarizeenergycontent.html) displays a summary of the energy content of the fluid
-    + [`summarizeModeEnergy`](/classes/transforms/wvtransformbarotropicqg/summarizemodeenergy.html) List the most energetic modes
-    + [`totalEnergy`](/classes/transforms/wvtransformbarotropicqg/totalenergy.html) % - Topic: Energetics
-    + [`totalEnergyOfFlowComponent`](/classes/transforms/wvtransformbarotropicqg/totalenergyofflowcomponent.html) Compute the energy carried by one flow component.
-    + [`totalEnergySpatiallyIntegrated`](/classes/transforms/wvtransformbarotropicqg/totalenergyspatiallyintegrated.html) % - Topic: Energetics
   + Flow diagnostics
+    + [`hasMeanPressureDifference`](/classes/transforms/wvtransformbarotropicqg/hasmeanpressuredifference.html) Diagnose an MDA mean-pressure difference between the boundaries.
     + [`uvMax`](/classes/transforms/wvtransformbarotropicqg/uvmax.html) max horizontal fluid speed
   + Potential vorticity and enstrophy
     + [`totalEnstrophy`](/classes/transforms/wvtransformbarotropicqg/totalenstrophy.html) Potential enstrophy computed from geostrophic coefficients.
     + [`totalEnstrophySpatiallyIntegrated`](/classes/transforms/wvtransformbarotropicqg/totalenstrophyspatiallyintegrated.html) Potential enstrophy evaluated from the gridded QGPV field.
   + Spectra
     + Spectral fields
+      + [`kAxis`](/classes/transforms/wvtransformbarotropicqg/kaxis.html) Centered `Nx`-by-1 x-wavenumber axis in rad/m.
+      + [`lAxis`](/classes/transforms/wvtransformbarotropicqg/laxis.html) Centered `Ny`-by-1 y-wavenumber axis in rad/m.
       + [`transformToKLAxes`](/classes/transforms/wvtransformbarotropicqg/transformtoklaxes.html) transforms in the spectral domain from (j,kl) to (kAxis,lAxis,j)
     + Radial wavenumber
       + [`kRadial`](/classes/transforms/wvtransformbarotropicqg/kradial.html) radial (k,l) wavenumber on the WV grid
       + [`transformToRadialWavenumber`](/classes/transforms/wvtransformbarotropicqg/transformtoradialwavenumber.html) transforms in the spectral domain from (j,kl) to (j,kRadial)
++ Analyze energy
+  + Component energy
+    + [`geostrophicKineticEnergy`](/classes/transforms/wvtransformbarotropicqg/geostrophickineticenergy.html) kinetic energy of the geostrophic flow
+    + [`geostrophicPotentialEnergy`](/classes/transforms/wvtransformbarotropicqg/geostrophicpotentialenergy.html) potential energy of the geostrophic flow
+    + [`geostrophicEnergy`](/classes/transforms/wvtransformbarotropicqg/geostrophicenergy.html) total energy, geostrophic
+    + [`totalEnergyOfFlowComponent`](/classes/transforms/wvtransformbarotropicqg/totalenergyofflowcomponent.html) Compute the energy carried by one flow component.
+  + Total energy
+    + [`totalEnergy`](/classes/transforms/wvtransformbarotropicqg/totalenergy.html) Total energy computed from wave-vortex coefficients.
+    + [`totalEnergySpatiallyIntegrated`](/classes/transforms/wvtransformbarotropicqg/totalenergyspatiallyintegrated.html) Total energy computed from physical-space fields.
+  + Energy summaries
+    + [`summarizeEnergyContent`](/classes/transforms/wvtransformbarotropicqg/summarizeenergycontent.html) displays a summary of the energy content of the fluid
+    + [`summarizeModeEnergy`](/classes/transforms/wvtransformbarotropicqg/summarizemodeenergy.html) List the most energetic modes
 + Save transform state
   + [`writeToFile`](/classes/transforms/wvtransformbarotropicqg/writetofile.html) Write this instance to NetCDF file.
 + Convert representations
@@ -174,15 +181,18 @@ The quasigeostrophic state is stored in
   + [`diffX`](/classes/transforms/wvtransformbarotropicqg/diffx.html) Differentiate a gridded field in the periodic x direction.
   + [`diffY`](/classes/transforms/wvtransformbarotropicqg/diffy.html) Differentiate a gridded field in the periodic y direction.
 + Inspect flow components
-  + [`geostrophicComponent`](/classes/transforms/wvtransformbarotropicqg/geostrophiccomponent.html) returns the geostrophic flow component
-  + [`flowComponentNames`](/classes/transforms/wvtransformbarotropicqg/flowcomponentnames.html) retrieve the names of all available variables
-  + [`flowComponentWithName`](/classes/transforms/wvtransformbarotropicqg/flowcomponentwithname.html) retrieve a WVFlowComponent by name
-  + [`flowComponents`](/classes/transforms/wvtransformbarotropicqg/flowcomponents.html) All registered physical and diagnostic flow components.
-  + [`primaryFlowComponentNames`](/classes/transforms/wvtransformbarotropicqg/primaryflowcomponentnames.html) retrieve the names of all available variables
-  + [`primaryFlowComponentWithName`](/classes/transforms/wvtransformbarotropicqg/primaryflowcomponentwithname.html) retrieve a WVPrimaryFlowComponent by name
-  + [`primaryFlowComponents`](/classes/transforms/wvtransformbarotropicqg/primaryflowcomponents.html) Primary flow components that partition the active coefficient state.
-  + [`summarizeFlowComponents`](/classes/transforms/wvtransformbarotropicqg/summarizeflowcomponents.html) Print a table of registered primary and diagnostic components.
-  + [`totalFlowComponent`](/classes/transforms/wvtransformbarotropicqg/totalflowcomponent.html) Combined view of all primary flow components.
+  + Primary flow components
+    + [`geostrophicComponent`](/classes/transforms/wvtransformbarotropicqg/geostrophiccomponent.html) returns the geostrophic flow component
+    + [`primaryFlowComponents`](/classes/transforms/wvtransformbarotropicqg/primaryflowcomponents.html) Primary flow components that partition the active coefficient state.
+    + [`primaryFlowComponentNames`](/classes/transforms/wvtransformbarotropicqg/primaryflowcomponentnames.html) retrieve the names of all available variables
+    + [`primaryFlowComponentWithName`](/classes/transforms/wvtransformbarotropicqg/primaryflowcomponentwithname.html) retrieve a WVPrimaryFlowComponent by name
+  + Registered and combined components
+    + [`flowComponents`](/classes/transforms/wvtransformbarotropicqg/flowcomponents.html) All registered physical and diagnostic flow components.
+    + [`flowComponentNames`](/classes/transforms/wvtransformbarotropicqg/flowcomponentnames.html) retrieve the names of all available variables
+    + [`flowComponentWithName`](/classes/transforms/wvtransformbarotropicqg/flowcomponentwithname.html) retrieve a WVFlowComponent by name
+    + [`totalFlowComponent`](/classes/transforms/wvtransformbarotropicqg/totalflowcomponent.html) Combined view of all primary flow components.
+  + Summarize flow components
+    + [`summarizeFlowComponents`](/classes/transforms/wvtransformbarotropicqg/summarizeflowcomponents.html) Print a table of registered primary and diagnostic components.
 + Inspect wave-vortex coefficients
   + Stored coefficients
     + [`A0`](/classes/transforms/wvtransformbarotropicqg/a0.html) Zero-frequency geostrophic coefficients.
@@ -210,43 +220,58 @@ The quasigeostrophic state is stored in
 ## Developer Topics
 These items document internal implementation details and are not part of the primary public API.
 + Projection and reconstruction coefficients
-  + [`A0N`](/classes/transforms/wvtransformbarotropicqg/a0n.html) These projection coefficients map the density-displacement state variable onto $$A_0$$. In the historical notation of [Early et al. (2021)](https://doi.org/10.1017/jfm.2020.995), they are the row 3, column 3 entries of $$S^{-1}$$ for the primary internal-gravity-wave and geostrophic solutions in equation C5.
-  + [`A0U`](/classes/transforms/wvtransformbarotropicqg/a0u.html) These projection coefficients map the $$u$$ state variable onto $$A_0$$. In the historical notation of [Early et al. (2021)](https://doi.org/10.1017/jfm.2020.995), they are the row 3, column 1 entries of $$S^{-1}$$ for the primary internal-gravity-wave and geostrophic solutions in equation C5.
-  + [`A0V`](/classes/transforms/wvtransformbarotropicqg/a0v.html) These projection coefficients map the $$v$$ state variable onto $$A_0$$. In the historical notation of [Early et al. (2021)](https://doi.org/10.1017/jfm.2020.995), they are the row 3, column 2 entries of $$S^{-1}$$ for the primary internal-gravity-wave and geostrophic solutions in equation C5.
-  + [`A0Z`](/classes/transforms/wvtransformbarotropicqg/a0z.html)
-  + [`F0`](/classes/transforms/wvtransformbarotropicqg/f0.html)
-  + [`Fpv`](/classes/transforms/wvtransformbarotropicqg/fpv.html)
-  + [`NA0`](/classes/transforms/wvtransformbarotropicqg/na0.html) These reconstruction coefficients map $$A_0$$ onto the density-displacement state variable. In the historical notation of [Early et al. (2021)](https://doi.org/10.1017/jfm.2020.995), they are the row 3, column 3 entries of $$S$$ for the primary internal-gravity-wave and geostrophic solutions in equation C4.
-  + [`PA0`](/classes/transforms/wvtransformbarotropicqg/pa0.html)
-  + [`UA0`](/classes/transforms/wvtransformbarotropicqg/ua0.html) These reconstruction coefficients map $$A_0$$ onto the $$u$$ state variable. In the historical notation of [Early et al. (2021)](https://doi.org/10.1017/jfm.2020.995), they are the row 1, column 3 entries of $$S$$ for the primary internal-gravity-wave and geostrophic solutions in equation C4.
-  + [`VA0`](/classes/transforms/wvtransformbarotropicqg/va0.html) These reconstruction coefficients map $$A_0$$ onto the $$v$$ state variable. In the historical notation of [Early et al. (2021)](https://doi.org/10.1017/jfm.2020.995), they are the row 2, column 3 entries of $$S$$ for the primary internal-gravity-wave and geostrophic solutions in equation C4.
+  + [`A0N`](/classes/transforms/wvtransformbarotropicqg/a0n.html) Projects density displacement onto $$A_0$$.
+  + [`A0U`](/classes/transforms/wvtransformbarotropicqg/a0u.html) Projects $$u$$ onto $$A_0$$.
+  + [`A0V`](/classes/transforms/wvtransformbarotropicqg/a0v.html) Projects $$v$$ onto $$A_0$$.
+  + [`A0Z`](/classes/transforms/wvtransformbarotropicqg/a0z.html) Projects vertical vorticity onto $$A_0$$.
+  + [`NA0`](/classes/transforms/wvtransformbarotropicqg/na0.html) Reconstructs density displacement from $$A_0$$.
+  + [`PA0`](/classes/transforms/wvtransformbarotropicqg/pa0.html) Reconstructs pressure height from $$A_0$$.
+  + [`UA0`](/classes/transforms/wvtransformbarotropicqg/ua0.html) Reconstructs $$u$$ from $$A_0$$.
+  + [`VA0`](/classes/transforms/wvtransformbarotropicqg/va0.html) Reconstructs $$v$$ from $$A_0$$.
 + Geometry and mode indexing
-  + [`conjugateDimension`](/classes/transforms/wvtransformbarotropicqg/conjugatedimension.html) assumed conjugate dimension
-  + [`indexFromKLModeNumber`](/classes/transforms/wvtransformbarotropicqg/indexfromklmodenumber.html) return the linear index into k_wv and l_wv from a mode number
-  + [`indexFromModeNumber`](/classes/transforms/wvtransformbarotropicqg/indexfrommodenumber.html)
-  + [`indicesFromDFTGridToWVGrid`](/classes/transforms/wvtransformbarotropicqg/indicesfromdftgridtowvgrid.html) indices to convert from DFT to WV grid
-  + [`indicesFromWVGridToDFTGrid`](/classes/transforms/wvtransformbarotropicqg/indicesfromwvgridtodftgrid.html) indices to convert from WV to DFT grid
-  + [`isValidConjugateKLModeNumber`](/classes/transforms/wvtransformbarotropicqg/isvalidconjugateklmodenumber.html) return a boolean indicating whether (k,l) is a valid conjugate WV mode number
-  + [`isValidConjugateModeNumber`](/classes/transforms/wvtransformbarotropicqg/isvalidconjugatemodenumber.html)
-  + [`isValidKLModeNumber`](/classes/transforms/wvtransformbarotropicqg/isvalidklmodenumber.html) return a boolean indicating whether (k,l) is a valid WV mode number
-  + [`isValidModeNumber`](/classes/transforms/wvtransformbarotropicqg/isvalidmodenumber.html)
-  + [`isValidPrimaryKLModeNumber`](/classes/transforms/wvtransformbarotropicqg/isvalidprimaryklmodenumber.html) return a boolean indicating whether (k,l) is a valid primary (non-conjugate) WV mode number
-  + [`isValidPrimaryModeNumber`](/classes/transforms/wvtransformbarotropicqg/isvalidprimarymodenumber.html)
-  + [`kMode_dft`](/classes/transforms/wvtransformbarotropicqg/kmode_dft.html) k mode-number on the DFT grid
-  + [`kMode_wv`](/classes/transforms/wvtransformbarotropicqg/kmode_wv.html) k mode number on the WV grid
-  + [`klModeNumberFromIndex`](/classes/transforms/wvtransformbarotropicqg/klmodenumberfromindex.html) return mode number from a linear index into a WV matrix
-  + [`lMode_dft`](/classes/transforms/wvtransformbarotropicqg/lmode_dft.html) l mode-number on the DFT grid
-  + [`lMode_wv`](/classes/transforms/wvtransformbarotropicqg/lmode_wv.html) l mode number on the WV grid
-  + [`maskForAliasedModes`](/classes/transforms/wvtransformbarotropicqg/maskforaliasedmodes.html) returns a mask with locations of modes that will alias with a quadratic multiplication.
-  + [`maskForConjugateFourierCoefficients`](/classes/transforms/wvtransformbarotropicqg/maskforconjugatefouriercoefficients.html) a mask indicate the components that are redundant conjugates
-  + [`maskForNyquistModes`](/classes/transforms/wvtransformbarotropicqg/maskfornyquistmodes.html) returns a mask with locations of modes that are not fully resolved
-  + [`modeNumberFromIndex`](/classes/transforms/wvtransformbarotropicqg/modenumberfromindex.html)
-  + [`primaryKLModeNumberFromKLModeNumber`](/classes/transforms/wvtransformbarotropicqg/primaryklmodenumberfromklmodenumber.html) takes any valid WV mode number and returns the primary mode number
-  + [`transformFromDFTGridToWVGrid`](/classes/transforms/wvtransformbarotropicqg/transformfromdftgridtowvgrid.html) convert from DFT to WV grid
-  + [`transformFromSpatialDomainToDFTGrid`](/classes/transforms/wvtransformbarotropicqg/transformfromspatialdomaintodftgrid.html) transform from $$(x,y,z)$$ to $$(k,l,z)$$ on the DFT grid
-  + [`transformFromWVGridToDFTGrid`](/classes/transforms/wvtransformbarotropicqg/transformfromwvgridtodftgrid.html) convert from a WV to DFT grid
-  + [`transformToSpatialDomainFromDFTGrid`](/classes/transforms/wvtransformbarotropicqg/transformtospatialdomainfromdftgrid.html) transform from $$(k,l,z)$$ on the DFT grid to $$(x,y,z)$$
-  + [`transformToSpatialDomainFromDFTGridAtPosition`](/classes/transforms/wvtransformbarotropicqg/transformtospatialdomainfromdftgridatposition.html) transform from $$(k,l)$$ on the DFT grid to $$(x,y)$$ at any position
+  + Mode numbers and validity
+    + [`isValidConjugateKLModeNumber`](/classes/transforms/wvtransformbarotropicqg/isvalidconjugateklmodenumber.html) return a boolean indicating whether (k,l) is a valid conjugate WV mode number
+    + [`isValidConjugateModeNumber`](/classes/transforms/wvtransformbarotropicqg/isvalidconjugatemodenumber.html)
+    + [`isValidKLModeNumber`](/classes/transforms/wvtransformbarotropicqg/isvalidklmodenumber.html) return a boolean indicating whether (k,l) is a valid WV mode number
+    + [`isValidModeNumber`](/classes/transforms/wvtransformbarotropicqg/isvalidmodenumber.html)
+    + [`isValidPrimaryKLModeNumber`](/classes/transforms/wvtransformbarotropicqg/isvalidprimaryklmodenumber.html) return a boolean indicating whether (k,l) is a valid primary (non-conjugate) WV mode number
+    + [`isValidPrimaryModeNumber`](/classes/transforms/wvtransformbarotropicqg/isvalidprimarymodenumber.html)
+    + [`kMode_dft`](/classes/transforms/wvtransformbarotropicqg/kmode_dft.html) k mode-number on the DFT grid
+    + [`kMode_wv`](/classes/transforms/wvtransformbarotropicqg/kmode_wv.html) k mode number on the WV grid
+    + [`lMode_dft`](/classes/transforms/wvtransformbarotropicqg/lmode_dft.html) l mode-number on the DFT grid
+    + [`lMode_wv`](/classes/transforms/wvtransformbarotropicqg/lmode_wv.html) l mode number on the WV grid
+    + [`primaryKLModeNumberFromKLModeNumber`](/classes/transforms/wvtransformbarotropicqg/primaryklmodenumberfromklmodenumber.html) takes any valid WV mode number and returns the primary mode number
+  + Linear-index conversion
+    + [`indexFromKLModeNumber`](/classes/transforms/wvtransformbarotropicqg/indexfromklmodenumber.html) return the linear index into k_wv and l_wv from a mode number
+    + [`indexFromModeNumber`](/classes/transforms/wvtransformbarotropicqg/indexfrommodenumber.html)
+    + [`klModeNumberFromIndex`](/classes/transforms/wvtransformbarotropicqg/klmodenumberfromindex.html) return mode number from a linear index into a WV matrix
+    + [`modeNumberFromIndex`](/classes/transforms/wvtransformbarotropicqg/modenumberfromindex.html)
+  + DFT and WV layout metadata
+    + [`Nk_dft`](/classes/transforms/wvtransformbarotropicqg/nk_dft.html) length of the k-wavenumber dimension on the DFT grid
+    + [`Nl_dft`](/classes/transforms/wvtransformbarotropicqg/nl_dft.html) length of the l-wavenumber dimension on the DFT grid
+    + [`conjugateDimension`](/classes/transforms/wvtransformbarotropicqg/conjugatedimension.html) assumed conjugate dimension
+    + [`dftConjugateIndices2D`](/classes/transforms/wvtransformbarotropicqg/dftconjugateindices2d.html) index into the DFT grid of the conjugate of each WV mode
+    + [`dftPrimaryIndices2D`](/classes/transforms/wvtransformbarotropicqg/dftprimaryindices2d.html) index into the DFT grid of each WV mode
+    + [`indicesOfFourierConjugates`](/classes/transforms/wvtransformbarotropicqg/indicesoffourierconjugates.html) a matrix of linear indices of the conjugate
+    + [`k_dft`](/classes/transforms/wvtransformbarotropicqg/k_dft.html) k wavenumber dimension on the DFT grid
+    + [`kl`](/classes/transforms/wvtransformbarotropicqg/kl.html) wavenumber dimension
+    + [`l_dft`](/classes/transforms/wvtransformbarotropicqg/l_dft.html) l wavenumber dimension on the DFT grid
+    + [`shouldExcludeConjugates`](/classes/transforms/wvtransformbarotropicqg/shouldexcludeconjugates.html) whether the WV grid excludes redundant Hermitian-conjugate wavenumbers
+    + [`shouldExcludeNyquist`](/classes/transforms/wvtransformbarotropicqg/shouldexcludenyquist.html) whether the WV grid includes Nyquist wavenumbers
+  + Layout conversion
+    + [`indicesFromDFTGridToWVGrid`](/classes/transforms/wvtransformbarotropicqg/indicesfromdftgridtowvgrid.html) indices to convert from DFT to WV grid
+    + [`indicesFromWVGridToDFTGrid`](/classes/transforms/wvtransformbarotropicqg/indicesfromwvgridtodftgrid.html) indices to convert from WV to DFT grid
+    + [`transformFromDFTGridToWVGrid`](/classes/transforms/wvtransformbarotropicqg/transformfromdftgridtowvgrid.html) convert from DFT to WV grid
+    + [`transformFromSpatialDomainToDFTGrid`](/classes/transforms/wvtransformbarotropicqg/transformfromspatialdomaintodftgrid.html) transform from $$(x,y,z)$$ to $$(k,l,z)$$ on the DFT grid
+    + [`transformFromWVGridToDFTGrid`](/classes/transforms/wvtransformbarotropicqg/transformfromwvgridtodftgrid.html) convert from a WV to DFT grid
+    + [`transformToSpatialDomainFromDFTGrid`](/classes/transforms/wvtransformbarotropicqg/transformtospatialdomainfromdftgrid.html) transform from $$(k,l,z)$$ on the DFT grid to $$(x,y,z)$$
+    + [`transformToSpatialDomainFromDFTGridAtPosition`](/classes/transforms/wvtransformbarotropicqg/transformtospatialdomainfromdftgridatposition.html) transform from $$(k,l)$$ on the DFT grid to $$(x,y)$$ at any position
+  + Masks and Hermitian bookkeeping
+    + [`isHermitian`](/classes/transforms/wvtransformbarotropicqg/ishermitian.html) Check if the matrix is Hermitian. Report errors.
+    + [`maskForAliasedModes`](/classes/transforms/wvtransformbarotropicqg/maskforaliasedmodes.html) returns a mask with locations of modes that will alias with a quadratic multiplication.
+    + [`maskForConjugateFourierCoefficients`](/classes/transforms/wvtransformbarotropicqg/maskforconjugatefouriercoefficients.html) a mask indicate the components that are redundant conjugates
+    + [`maskForNyquistModes`](/classes/transforms/wvtransformbarotropicqg/maskfornyquistmodes.html) returns a mask with locations of modes that are not fully resolved
+    + [`setConjugateToUnity`](/classes/transforms/wvtransformbarotropicqg/setconjugatetounity.html) set the conjugate of the wavenumber (iK,iL) to 1
 + Spectral transforms and operators
   + [`degreesOfFreedomForComplexMatrix`](/classes/transforms/wvtransformbarotropicqg/degreesoffreedomforcomplexmatrix.html) a matrix with the number of degrees-of-freedom at each entry
   + [`degreesOfFreedomForRealMatrix`](/classes/transforms/wvtransformbarotropicqg/degreesoffreedomforrealmatrix.html) a matrix with the number of degrees-of-freedom at each entry
@@ -255,6 +280,8 @@ These items document internal implementation details and are not part of the pri
   + [`transformToSpatialDomainWithFourier`](/classes/transforms/wvtransformbarotropicqg/transformtospatialdomainwithfourier.html)
   + [`transformToSpatialDomainWithFourierAtPosition`](/classes/transforms/wvtransformbarotropicqg/transformtospatialdomainwithfourieratposition.html)
 + Nonlinear flux and forcing internals
+  + [`F0`](/classes/transforms/wvtransformbarotropicqg/f0.html)
+  + [`Fpv`](/classes/transforms/wvtransformbarotropicqg/fpv.html)
   + [`enstrophyFluxFromF0`](/classes/transforms/wvtransformbarotropicqg/enstrophyfluxfromf0.html)
   + [`fluxForForcing`](/classes/transforms/wvtransformbarotropicqg/fluxforforcing.html)
   + [`qgpvFluxFromF0`](/classes/transforms/wvtransformbarotropicqg/qgpvfluxfromf0.html)
@@ -275,19 +302,7 @@ These items document internal implementation details and are not part of the pri
   + [`propertyAnnotationsForGeometry`](/classes/transforms/wvtransformbarotropicqg/propertyannotationsforgeometry.html) return array of CAPropertyAnnotations initialized by default
   + [`propertyAnnotationsForRotatingFPlane`](/classes/transforms/wvtransformbarotropicqg/propertyannotationsforrotatingfplane.html)
 + Class internals
-  + [`Nk_dft`](/classes/transforms/wvtransformbarotropicqg/nk_dft.html) length of the k-wavenumber dimension on the DFT grid
-  + [`Nl_dft`](/classes/transforms/wvtransformbarotropicqg/nl_dft.html) length of the l-wavenumber dimension on the DFT grid
-  + [`dftConjugateIndices2D`](/classes/transforms/wvtransformbarotropicqg/dftconjugateindices2d.html) index into the DFT grid of the conjugate of each WV mode
-  + [`dftPrimaryIndices2D`](/classes/transforms/wvtransformbarotropicqg/dftprimaryindices2d.html) index into the DFT grid of each WV mode
-  + [`indicesOfFourierConjugates`](/classes/transforms/wvtransformbarotropicqg/indicesoffourierconjugates.html) a matrix of linear indices of the conjugate
-  + [`isHermitian`](/classes/transforms/wvtransformbarotropicqg/ishermitian.html) Check if the matrix is Hermitian. Report errors.
-  + [`k_dft`](/classes/transforms/wvtransformbarotropicqg/k_dft.html) k wavenumber dimension on the DFT grid
-  + [`kl`](/classes/transforms/wvtransformbarotropicqg/kl.html) wavenumber dimension
-  + [`l_dft`](/classes/transforms/wvtransformbarotropicqg/l_dft.html) l wavenumber dimension on the DFT grid
   + [`maxFg`](/classes/transforms/wvtransformbarotropicqg/maxfg.html)
-  + [`setConjugateToUnity`](/classes/transforms/wvtransformbarotropicqg/setconjugatetounity.html) set the conjugate of the wavenumber (iK,iL) to 1
-  + [`shouldExcludeConjugates`](/classes/transforms/wvtransformbarotropicqg/shouldexcludeconjugates.html) whether the WV grid excludes redundant Hermitian-conjugate wavenumbers
-  + [`shouldExcludeNyquist`](/classes/transforms/wvtransformbarotropicqg/shouldexcludenyquist.html) whether the WV grid includes Nyquist wavenumbers
 
 
 ---

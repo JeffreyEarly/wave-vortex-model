@@ -1,4 +1,4 @@
- % - Topic: Energetics
+Total energy computed from physical-space fields.
 
 The horizontally-averaged depth-integrated energy computed in the spatial domain is defined as,
 

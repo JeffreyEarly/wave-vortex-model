@@ -84,19 +84,18 @@ The quasigeostrophic state is stored in
     + Quadrature and integration
       + [`z_int`](/classes/transforms/wvtransformstratifiedqg/z_int.html) Vertical quadrature weights in meters.
   + Spectral grid
-    + Axes and spacing
-      + [`kAxis`](/classes/transforms/wvtransformstratifiedqg/kaxis.html) Centered x-direction angular-wavenumber axis.
-      + [`lAxis`](/classes/transforms/wvtransformstratifiedqg/laxis.html) Centered y-direction angular-wavenumber axis.
-      + [`j`](/classes/transforms/wvtransformstratifiedqg/j.html) Vertical-mode index axis.
-      + [`dk`](/classes/transforms/wvtransformstratifiedqg/dk.html) Spacing of the x-direction angular-wavenumber axis.
-      + [`dl`](/classes/transforms/wvtransformstratifiedqg/dl.html) Spacing of the y-direction angular-wavenumber axis.
-    + Coordinate arrays
-      + [`k`](/classes/transforms/wvtransformstratifiedqg/k.html) Stored x-direction angular wavenumbers on the compact WV grid.
-      + [`l`](/classes/transforms/wvtransformstratifiedqg/l.html) Stored y-direction angular wavenumbers on the compact WV grid.
+    + Compact grid vectors
+      + [`k`](/classes/transforms/wvtransformstratifiedqg/k.html) Compact `Nkl`-by-1 x-wavenumber vector in rad/m.
+      + [`l`](/classes/transforms/wvtransformstratifiedqg/l.html) Compact `Nkl`-by-1 y-wavenumber vector in rad/m.
+      + [`j`](/classes/transforms/wvtransformstratifiedqg/j.html) Dimensionless `Nj`-by-1 vertical-mode index vector.
+    + Compact grid arrays
       + [`K`](/classes/transforms/wvtransformstratifiedqg/k_.html) X-direction angular-wavenumber array in rad/m with shape `[Nj Nkl]`.
       + [`L`](/classes/transforms/wvtransformstratifiedqg/l_.html) Y-direction angular-wavenumber array in rad/m with shape `[Nj Nkl]`.
       + [`J`](/classes/transforms/wvtransformstratifiedqg/j_.html) Dimensionless vertical-mode index array with shape `[Nj Nkl]`.
       + [`kljGrid`](/classes/transforms/wvtransformstratifiedqg/kljgrid.html) Return spectral-coordinate arrays in wave-vortex layout.
+    + Wavenumber spacing
+      + [`dk`](/classes/transforms/wvtransformstratifiedqg/dk.html) Spacing of the x-direction angular-wavenumber axis.
+      + [`dl`](/classes/transforms/wvtransformstratifiedqg/dl.html) Spacing of the y-direction angular-wavenumber axis.
     + Horizontal wavenumber geometry
       + [`Kh`](/classes/transforms/wvtransformstratifiedqg/kh.html) Horizontal angular-wavenumber magnitude on the coefficient grid.
       + [`K2`](/classes/transforms/wvtransformstratifiedqg/k2.html) Squared horizontal angular wavenumber on the coefficient grid.
@@ -107,12 +106,18 @@ The quasigeostrophic state is stored in
       + [`effectiveHorizontalGridResolution`](/classes/transforms/wvtransformstratifiedqg/effectivehorizontalgridresolution.html) returns the effective grid resolution in meters
       + [`effectiveVerticalGridResolution`](/classes/transforms/wvtransformstratifiedqg/effectiveverticalgridresolution.html) returns the effective vertical grid resolution in meters
       + [`effectiveJMax`](/classes/transforms/wvtransformstratifiedqg/effectivejmax.html) Largest active vertical-mode index.
+      + [`summarizeDegreesOfFreedom`](/classes/transforms/wvtransformstratifiedqg/summarizedegreesoffreedom.html) Summarize the spatial grid and active spectral degrees of freedom.
     + Vertical modes and scaling
       + [`verticalModes`](/classes/transforms/wvtransformstratifiedqg/verticalmodes.html) Vertical-mode solution used to construct the transform basis.
       + [`h_0`](/classes/transforms/wvtransformstratifiedqg/h_0.html) Geostrophic equivalent-depth scale for each vertical mode.
       + [`h_pm`](/classes/transforms/wvtransformstratifiedqg/h_pm.html) Wave equivalent depth on the spectral grid.
       + [`Lr2`](/classes/transforms/wvtransformstratifiedqg/lr2.html) Squared Rossby deformation radius in square meters.
       + [`waveModeVerticalStructureAtIndex`](/classes/transforms/wvtransformstratifiedqg/wavemodeverticalstructureatindex.html) Return wave vertical-structure factors at one vertical grid index.
+    + Vertical-mode transformation matrices
+      + [`FMatrix`](/classes/transforms/wvtransformstratifiedqg/fmatrix.html) Projects F-grid values onto vertical modes with shape `[Nj Nz]`.
+      + [`FinvMatrix`](/classes/transforms/wvtransformstratifiedqg/finvmatrix.html) Reconstructs F-grid values from vertical modes with shape `[Nz Nj]`.
+      + [`GMatrix`](/classes/transforms/wvtransformstratifiedqg/gmatrix.html) Projects G-grid values onto vertical modes with shape `[Nj Nz]`.
+      + [`GinvMatrix`](/classes/transforms/wvtransformstratifiedqg/ginvmatrix.html) Reconstructs G-grid values from vertical modes with shape `[Nz Nj]`.
   + Transform configuration
     + [`isHydrostatic`](/classes/transforms/wvtransformstratifiedqg/ishydrostatic.html) Whether the transform uses the hydrostatic approximation.
     + [`shouldAntialias`](/classes/transforms/wvtransformstratifiedqg/shouldantialias.html) Whether the spectral grid excludes modes that alias quadratic products.
@@ -145,7 +150,7 @@ The quasigeostrophic state is stored in
     + Density and displacement
       + [`eta`](/classes/transforms/wvtransformstratifiedqg/eta.html) approximate isopycnal deviation
       + [`rho_e`](/classes/transforms/wvtransformstratifiedqg/rho_e.html) excess density
-      + [`rho_nm0`](/classes/transforms/wvtransformstratifiedqg/rho_nm0.html) No-motion density profile sampled on the vertical grid.
+      + [`rho_nm0`](/classes/transforms/wvtransformstratifiedqg/rho_nm0.html) Reference no-motion density profile, `[Nz 1]`, in kg/m³.
       + [`rho_total`](/classes/transforms/wvtransformstratifiedqg/rho_total.html) total potential density
     + Pressure and surface fields
       + [`p`](/classes/transforms/wvtransformstratifiedqg/p.html) pressure anomaly
@@ -162,29 +167,22 @@ The quasigeostrophic state is stored in
   + Isopycnal utilities
     + [`placeParticlesOnIsopycnal`](/classes/transforms/wvtransformstratifiedqg/placeparticlesonisopycnal.html) Return particle depths on the isopycnal identified by a no-motion depth.
 + Manage forcing and closures
-  + [`addForcing`](/classes/transforms/wvtransformstratifiedqg/addforcing.html) Add forcing or closure objects to this transform.
-  + [`forcing`](/classes/transforms/wvtransformstratifiedqg/forcing.html) array of WVForcing objects
-  + [`forcingNames`](/classes/transforms/wvtransformstratifiedqg/forcingnames.html) Return forcing and closure names in application order.
-  + [`forcingWithName`](/classes/transforms/wvtransformstratifiedqg/forcingwithname.html) Return registered forcing objects by name.
-  + [`hasClosure`](/classes/transforms/wvtransformstratifiedqg/hasclosure.html) Whether a closure is currently attached to the transform.
-  + [`hasForcingWithName`](/classes/transforms/wvtransformstratifiedqg/hasforcingwithname.html) Test whether forcing objects are registered by name.
-  + [`removeAllForcing`](/classes/transforms/wvtransformstratifiedqg/removeallforcing.html) Remove every forcing and closure from this transform.
-  + [`removeForcing`](/classes/transforms/wvtransformstratifiedqg/removeforcing.html) Remove the exact registered forcing objects.
-  + [`setForcing`](/classes/transforms/wvtransformstratifiedqg/setforcing.html) Replace the complete forcing registry.
-  + [`summarizeForcing`](/classes/transforms/wvtransformstratifiedqg/summarizeforcing.html) Print a table of registered forcing and closure objects.
+  + Configure forcing
+    + [`addForcing`](/classes/transforms/wvtransformstratifiedqg/addforcing.html) Add forcing or closure objects to this transform.
+    + [`setForcing`](/classes/transforms/wvtransformstratifiedqg/setforcing.html) Replace the complete forcing registry.
+    + [`removeForcing`](/classes/transforms/wvtransformstratifiedqg/removeforcing.html) Remove the exact registered forcing objects.
+    + [`removeAllForcing`](/classes/transforms/wvtransformstratifiedqg/removeallforcing.html) Remove every forcing and closure from this transform.
+  + Inspect forcing and closures
+    + [`forcing`](/classes/transforms/wvtransformstratifiedqg/forcing.html) array of WVForcing objects
+    + [`forcingNames`](/classes/transforms/wvtransformstratifiedqg/forcingnames.html) Return forcing and closure names in application order.
+    + [`forcingWithName`](/classes/transforms/wvtransformstratifiedqg/forcingwithname.html) Return registered forcing objects by name.
+    + [`hasForcingWithName`](/classes/transforms/wvtransformstratifiedqg/hasforcingwithname.html) Test whether forcing objects are registered by name.
+    + [`hasClosure`](/classes/transforms/wvtransformstratifiedqg/hasclosure.html) Whether a closure is currently attached to the transform.
+  + Summarize forcing
+    + [`summarizeForcing`](/classes/transforms/wvtransformstratifiedqg/summarizeforcing.html) Print a table of registered forcing and closure objects.
 + Analyze the flow
-  + Energy and summaries
-    + [`geostrophicKineticEnergy`](/classes/transforms/wvtransformstratifiedqg/geostrophickineticenergy.html) kinetic energy of the geostrophic flow
-    + [`geostrophicPotentialEnergy`](/classes/transforms/wvtransformstratifiedqg/geostrophicpotentialenergy.html) potential energy of the geostrophic flow
-    + [`geostrophicEnergy`](/classes/transforms/wvtransformstratifiedqg/geostrophicenergy.html) total energy, geostrophic
-    + [`hasMeanPressureDifference`](/classes/transforms/wvtransformstratifiedqg/hasmeanpressuredifference.html) Diagnose an MDA mean-pressure difference between the boundaries.
-    + [`summarizeDegreesOfFreedom`](/classes/transforms/wvtransformstratifiedqg/summarizedegreesoffreedom.html) Summarize the spatial grid and active spectral degrees of freedom.
-    + [`summarizeEnergyContent`](/classes/transforms/wvtransformstratifiedqg/summarizeenergycontent.html) displays a summary of the energy content of the fluid
-    + [`summarizeModeEnergy`](/classes/transforms/wvtransformstratifiedqg/summarizemodeenergy.html) List the most energetic modes
-    + [`totalEnergy`](/classes/transforms/wvtransformstratifiedqg/totalenergy.html) % - Topic: Energetics
-    + [`totalEnergyOfFlowComponent`](/classes/transforms/wvtransformstratifiedqg/totalenergyofflowcomponent.html) Compute the energy carried by one flow component.
-    + [`totalEnergySpatiallyIntegrated`](/classes/transforms/wvtransformstratifiedqg/totalenergyspatiallyintegrated.html) % - Topic: Energetics
   + Flow diagnostics
+    + [`hasMeanPressureDifference`](/classes/transforms/wvtransformstratifiedqg/hasmeanpressuredifference.html) Diagnose an MDA mean-pressure difference between the boundaries.
     + [`uvMax`](/classes/transforms/wvtransformstratifiedqg/uvmax.html) max horizontal fluid speed
   + Density validity
     + [`isDensityInValidRange`](/classes/transforms/wvtransformstratifiedqg/isdensityinvalidrange.html) Test whether total density remains within the no-motion density range.
@@ -193,14 +191,28 @@ The quasigeostrophic state is stored in
     + [`totalEnstrophySpatiallyIntegrated`](/classes/transforms/wvtransformstratifiedqg/totalenstrophyspatiallyintegrated.html) Potential enstrophy evaluated from the gridded QGPV field.
   + Spectra
     + Spectral fields
+      + [`kAxis`](/classes/transforms/wvtransformstratifiedqg/kaxis.html) Centered `Nx`-by-1 x-wavenumber axis in rad/m.
+      + [`lAxis`](/classes/transforms/wvtransformstratifiedqg/laxis.html) Centered `Ny`-by-1 y-wavenumber axis in rad/m.
+      + [`transformToKLAxes`](/classes/transforms/wvtransformstratifiedqg/transformtoklaxes.html) transforms in the spectral domain from (j,kl) to (kAxis,lAxis,j)
       + [`crossSpectrumWithFgTransform`](/classes/transforms/wvtransformstratifiedqg/crossspectrumwithfgtransform.html) Compute a real modal cross-spectrum using the F-basis transform.
       + [`crossSpectrumWithGgTransform`](/classes/transforms/wvtransformstratifiedqg/crossspectrumwithggtransform.html) Compute a real modal cross-spectrum using the G-basis transform.
       + [`spectrumWithFgTransform`](/classes/transforms/wvtransformstratifiedqg/spectrumwithfgtransform.html) Compute a modal autospectrum using the F-basis transform.
       + [`spectrumWithGgTransform`](/classes/transforms/wvtransformstratifiedqg/spectrumwithggtransform.html) Compute a modal autospectrum using the G-basis transform.
-      + [`transformToKLAxes`](/classes/transforms/wvtransformstratifiedqg/transformtoklaxes.html) transforms in the spectral domain from (j,kl) to (kAxis,lAxis,j)
     + Radial wavenumber
       + [`kRadial`](/classes/transforms/wvtransformstratifiedqg/kradial.html) radial (k,l) wavenumber on the WV grid
       + [`transformToRadialWavenumber`](/classes/transforms/wvtransformstratifiedqg/transformtoradialwavenumber.html) transforms in the spectral domain from (j,kl) to (j,kRadial)
++ Analyze energy
+  + Component energy
+    + [`geostrophicKineticEnergy`](/classes/transforms/wvtransformstratifiedqg/geostrophickineticenergy.html) kinetic energy of the geostrophic flow
+    + [`geostrophicPotentialEnergy`](/classes/transforms/wvtransformstratifiedqg/geostrophicpotentialenergy.html) potential energy of the geostrophic flow
+    + [`geostrophicEnergy`](/classes/transforms/wvtransformstratifiedqg/geostrophicenergy.html) total energy, geostrophic
+    + [`totalEnergyOfFlowComponent`](/classes/transforms/wvtransformstratifiedqg/totalenergyofflowcomponent.html) Compute the energy carried by one flow component.
+  + Total energy
+    + [`totalEnergy`](/classes/transforms/wvtransformstratifiedqg/totalenergy.html) Total energy computed from wave-vortex coefficients.
+    + [`totalEnergySpatiallyIntegrated`](/classes/transforms/wvtransformstratifiedqg/totalenergyspatiallyintegrated.html) Total energy computed from physical-space fields.
+  + Energy summaries
+    + [`summarizeEnergyContent`](/classes/transforms/wvtransformstratifiedqg/summarizeenergycontent.html) displays a summary of the energy content of the fluid
+    + [`summarizeModeEnergy`](/classes/transforms/wvtransformstratifiedqg/summarizemodeenergy.html) List the most energetic modes
 + Save transform state
   + [`writeToFile`](/classes/transforms/wvtransformstratifiedqg/writetofile.html) Write this instance to NetCDF file.
 + Convert representations
@@ -216,15 +228,18 @@ The quasigeostrophic state is stored in
   + [`intZF`](/classes/transforms/wvtransformstratifiedqg/intzf.html) Return the first antiderivative of an F-representation.
   + [`intZG`](/classes/transforms/wvtransformstratifiedqg/intzg.html) Return the bottom-zero first antiderivative of a G-representation.
 + Inspect flow components
-  + [`geostrophicComponent`](/classes/transforms/wvtransformstratifiedqg/geostrophiccomponent.html) returns the geostrophic flow component
-  + [`flowComponentNames`](/classes/transforms/wvtransformstratifiedqg/flowcomponentnames.html) retrieve the names of all available variables
-  + [`flowComponentWithName`](/classes/transforms/wvtransformstratifiedqg/flowcomponentwithname.html) retrieve a WVFlowComponent by name
-  + [`flowComponents`](/classes/transforms/wvtransformstratifiedqg/flowcomponents.html) All registered physical and diagnostic flow components.
-  + [`primaryFlowComponentNames`](/classes/transforms/wvtransformstratifiedqg/primaryflowcomponentnames.html) retrieve the names of all available variables
-  + [`primaryFlowComponentWithName`](/classes/transforms/wvtransformstratifiedqg/primaryflowcomponentwithname.html) retrieve a WVPrimaryFlowComponent by name
-  + [`primaryFlowComponents`](/classes/transforms/wvtransformstratifiedqg/primaryflowcomponents.html) Primary flow components that partition the active coefficient state.
-  + [`summarizeFlowComponents`](/classes/transforms/wvtransformstratifiedqg/summarizeflowcomponents.html) Print a table of registered primary and diagnostic components.
-  + [`totalFlowComponent`](/classes/transforms/wvtransformstratifiedqg/totalflowcomponent.html) Combined view of all primary flow components.
+  + Primary flow components
+    + [`geostrophicComponent`](/classes/transforms/wvtransformstratifiedqg/geostrophiccomponent.html) returns the geostrophic flow component
+    + [`primaryFlowComponents`](/classes/transforms/wvtransformstratifiedqg/primaryflowcomponents.html) Primary flow components that partition the active coefficient state.
+    + [`primaryFlowComponentNames`](/classes/transforms/wvtransformstratifiedqg/primaryflowcomponentnames.html) retrieve the names of all available variables
+    + [`primaryFlowComponentWithName`](/classes/transforms/wvtransformstratifiedqg/primaryflowcomponentwithname.html) retrieve a WVPrimaryFlowComponent by name
+  + Registered and combined components
+    + [`flowComponents`](/classes/transforms/wvtransformstratifiedqg/flowcomponents.html) All registered physical and diagnostic flow components.
+    + [`flowComponentNames`](/classes/transforms/wvtransformstratifiedqg/flowcomponentnames.html) retrieve the names of all available variables
+    + [`flowComponentWithName`](/classes/transforms/wvtransformstratifiedqg/flowcomponentwithname.html) retrieve a WVFlowComponent by name
+    + [`totalFlowComponent`](/classes/transforms/wvtransformstratifiedqg/totalflowcomponent.html) Combined view of all primary flow components.
+  + Summarize flow components
+    + [`summarizeFlowComponents`](/classes/transforms/wvtransformstratifiedqg/summarizeflowcomponents.html) Print a table of registered primary and diagnostic components.
 + Inspect wave-vortex coefficients
   + Stored coefficients
     + [`A0`](/classes/transforms/wvtransformstratifiedqg/a0.html) Zero-frequency geostrophic coefficients.
@@ -253,50 +268,63 @@ The quasigeostrophic state is stored in
 ## Developer Topics
 These items document internal implementation details and are not part of the primary public API.
 + Projection and reconstruction coefficients
-  + [`A0N`](/classes/transforms/wvtransformstratifiedqg/a0n.html) These projection coefficients map the density-displacement state variable onto $$A_0$$. In the historical notation of [Early et al. (2021)](https://doi.org/10.1017/jfm.2020.995), they are the row 3, column 3 entries of $$S^{-1}$$ for the primary internal-gravity-wave and geostrophic solutions in equation C5.
-  + [`A0U`](/classes/transforms/wvtransformstratifiedqg/a0u.html) These projection coefficients map the $$u$$ state variable onto $$A_0$$. In the historical notation of [Early et al. (2021)](https://doi.org/10.1017/jfm.2020.995), they are the row 3, column 1 entries of $$S^{-1}$$ for the primary internal-gravity-wave and geostrophic solutions in equation C5.
-  + [`A0V`](/classes/transforms/wvtransformstratifiedqg/a0v.html) These projection coefficients map the $$v$$ state variable onto $$A_0$$. In the historical notation of [Early et al. (2021)](https://doi.org/10.1017/jfm.2020.995), they are the row 3, column 2 entries of $$S^{-1}$$ for the primary internal-gravity-wave and geostrophic solutions in equation C5.
-  + [`A0Z`](/classes/transforms/wvtransformstratifiedqg/a0z.html)
-  + [`NA0`](/classes/transforms/wvtransformstratifiedqg/na0.html) These reconstruction coefficients map $$A_0$$ onto the density-displacement state variable. In the historical notation of [Early et al. (2021)](https://doi.org/10.1017/jfm.2020.995), they are the row 3, column 3 entries of $$S$$ for the primary internal-gravity-wave and geostrophic solutions in equation C4.
-  + [`P0`](/classes/transforms/wvtransformstratifiedqg/p0.html) Preconditioner for F, size(P)=[Nj 1]. F*u = uhat, (PF)*u = P*uhat, so ubar==P*uhat
-  + [`PA0`](/classes/transforms/wvtransformstratifiedqg/pa0.html)
-  + [`Q0`](/classes/transforms/wvtransformstratifiedqg/q0.html) Preconditioner for G, size(Q)=[Nj 1]. G*eta = etahat, (QG)*eta = Q*etahat, so etabar==Q*etahat.
-  + [`UA0`](/classes/transforms/wvtransformstratifiedqg/ua0.html) These reconstruction coefficients map $$A_0$$ onto the $$u$$ state variable. In the historical notation of [Early et al. (2021)](https://doi.org/10.1017/jfm.2020.995), they are the row 1, column 3 entries of $$S$$ for the primary internal-gravity-wave and geostrophic solutions in equation C4.
-  + [`VA0`](/classes/transforms/wvtransformstratifiedqg/va0.html) These reconstruction coefficients map $$A_0$$ onto the $$v$$ state variable. In the historical notation of [Early et al. (2021)](https://doi.org/10.1017/jfm.2020.995), they are the row 2, column 3 entries of $$S$$ for the primary internal-gravity-wave and geostrophic solutions in equation C4.
+  + [`A0N`](/classes/transforms/wvtransformstratifiedqg/a0n.html) Projects density displacement onto $$A_0$$.
+  + [`A0U`](/classes/transforms/wvtransformstratifiedqg/a0u.html) Projects $$u$$ onto $$A_0$$.
+  + [`A0V`](/classes/transforms/wvtransformstratifiedqg/a0v.html) Projects $$v$$ onto $$A_0$$.
+  + [`A0Z`](/classes/transforms/wvtransformstratifiedqg/a0z.html) Projects vertical vorticity onto $$A_0$$.
+  + [`NA0`](/classes/transforms/wvtransformstratifiedqg/na0.html) Reconstructs density displacement from $$A_0$$.
+  + [`PA0`](/classes/transforms/wvtransformstratifiedqg/pa0.html) Reconstructs pressure height from $$A_0$$.
+  + [`UA0`](/classes/transforms/wvtransformstratifiedqg/ua0.html) Reconstructs $$u$$ from $$A_0$$.
+  + [`VA0`](/classes/transforms/wvtransformstratifiedqg/va0.html) Reconstructs $$v$$ from $$A_0$$.
 + Geometry and mode indexing
-  + [`conjugateDimension`](/classes/transforms/wvtransformstratifiedqg/conjugatedimension.html) assumed conjugate dimension
-  + [`indexFromKLModeNumber`](/classes/transforms/wvtransformstratifiedqg/indexfromklmodenumber.html) return the linear index into k_wv and l_wv from a mode number
-  + [`indexFromModeNumber`](/classes/transforms/wvtransformstratifiedqg/indexfrommodenumber.html) return the linear index into a spectral matrix given (k,l,j)
-  + [`indicesFromDFTGridToWVGrid`](/classes/transforms/wvtransformstratifiedqg/indicesfromdftgridtowvgrid.html) indices to convert from DFT to WV grid
-  + [`indicesFromWVGridToDFTGrid`](/classes/transforms/wvtransformstratifiedqg/indicesfromwvgridtodftgrid.html) indices to convert from WV to DFT grid
-  + [`isValidConjugateKLModeNumber`](/classes/transforms/wvtransformstratifiedqg/isvalidconjugateklmodenumber.html) return a boolean indicating whether (k,l) is a valid conjugate WV mode number
-  + [`isValidConjugateModeNumber`](/classes/transforms/wvtransformstratifiedqg/isvalidconjugatemodenumber.html) returns a boolean indicating whether (k,l,j) is a valid conjugate mode number
-  + [`isValidKLModeNumber`](/classes/transforms/wvtransformstratifiedqg/isvalidklmodenumber.html) return a boolean indicating whether (k,l) is a valid WV mode number
-  + [`isValidModeNumber`](/classes/transforms/wvtransformstratifiedqg/isvalidmodenumber.html) returns a boolean indicating whether (k,l,j) is a valid mode number
-  + [`isValidPrimaryKLModeNumber`](/classes/transforms/wvtransformstratifiedqg/isvalidprimaryklmodenumber.html) return a boolean indicating whether (k,l) is a valid primary (non-conjugate) WV mode number
-  + [`isValidPrimaryModeNumber`](/classes/transforms/wvtransformstratifiedqg/isvalidprimarymodenumber.html) returns a boolean indicating whether (k,l,j) is a valid primary (non-conjugate) mode number
-  + [`kMode_dft`](/classes/transforms/wvtransformstratifiedqg/kmode_dft.html) k mode-number on the DFT grid
-  + [`kMode_wv`](/classes/transforms/wvtransformstratifiedqg/kmode_wv.html) k mode number on the WV grid
-  + [`klModeNumberFromIndex`](/classes/transforms/wvtransformstratifiedqg/klmodenumberfromindex.html) return mode number from a linear index into a WV matrix
-  + [`lMode_dft`](/classes/transforms/wvtransformstratifiedqg/lmode_dft.html) l mode-number on the DFT grid
-  + [`lMode_wv`](/classes/transforms/wvtransformstratifiedqg/lmode_wv.html) l mode number on the WV grid
-  + [`maskForAliasedModes`](/classes/transforms/wvtransformstratifiedqg/maskforaliasedmodes.html) returns a mask with locations of modes that will alias with a quadratic multiplication.
-  + [`maskForConjugateFourierCoefficients`](/classes/transforms/wvtransformstratifiedqg/maskforconjugatefouriercoefficients.html) a mask indicate the components that are redundant conjugates
-  + [`maskForNyquistModes`](/classes/transforms/wvtransformstratifiedqg/maskfornyquistmodes.html) returns a mask with locations of modes that are not fully resolved
-  + [`modeNumberFromIndex`](/classes/transforms/wvtransformstratifiedqg/modenumberfromindex.html) Return mode numbers for spectral linear indices.
-  + [`primaryKLModeNumberFromKLModeNumber`](/classes/transforms/wvtransformstratifiedqg/primaryklmodenumberfromklmodenumber.html) takes any valid WV mode number and returns the primary mode number
-  + [`transformFromDFTGridToWVGrid`](/classes/transforms/wvtransformstratifiedqg/transformfromdftgridtowvgrid.html) convert from DFT to WV grid
-  + [`transformFromSpatialDomainToDFTGrid`](/classes/transforms/wvtransformstratifiedqg/transformfromspatialdomaintodftgrid.html) transform from $$(x,y,z)$$ to $$(k,l,z)$$ on the DFT grid
-  + [`transformFromWVGridToDFTGrid`](/classes/transforms/wvtransformstratifiedqg/transformfromwvgridtodftgrid.html) convert from a WV to DFT grid
-  + [`transformToSpatialDomainFromDFTGrid`](/classes/transforms/wvtransformstratifiedqg/transformtospatialdomainfromdftgrid.html) transform from $$(k,l,z)$$ on the DFT grid to $$(x,y,z)$$
-  + [`transformToSpatialDomainFromDFTGridAtPosition`](/classes/transforms/wvtransformstratifiedqg/transformtospatialdomainfromdftgridatposition.html) transform from $$(k,l)$$ on the DFT grid to $$(x,y)$$ at any position
+  + Mode numbers and validity
+    + [`isValidConjugateKLModeNumber`](/classes/transforms/wvtransformstratifiedqg/isvalidconjugateklmodenumber.html) return a boolean indicating whether (k,l) is a valid conjugate WV mode number
+    + [`isValidConjugateModeNumber`](/classes/transforms/wvtransformstratifiedqg/isvalidconjugatemodenumber.html) returns a boolean indicating whether (k,l,j) is a valid conjugate mode number
+    + [`isValidKLModeNumber`](/classes/transforms/wvtransformstratifiedqg/isvalidklmodenumber.html) return a boolean indicating whether (k,l) is a valid WV mode number
+    + [`isValidModeNumber`](/classes/transforms/wvtransformstratifiedqg/isvalidmodenumber.html) returns a boolean indicating whether (k,l,j) is a valid mode number
+    + [`isValidPrimaryKLModeNumber`](/classes/transforms/wvtransformstratifiedqg/isvalidprimaryklmodenumber.html) return a boolean indicating whether (k,l) is a valid primary (non-conjugate) WV mode number
+    + [`isValidPrimaryModeNumber`](/classes/transforms/wvtransformstratifiedqg/isvalidprimarymodenumber.html) returns a boolean indicating whether (k,l,j) is a valid primary (non-conjugate) mode number
+    + [`kMode_dft`](/classes/transforms/wvtransformstratifiedqg/kmode_dft.html) k mode-number on the DFT grid
+    + [`kMode_wv`](/classes/transforms/wvtransformstratifiedqg/kmode_wv.html) k mode number on the WV grid
+    + [`lMode_dft`](/classes/transforms/wvtransformstratifiedqg/lmode_dft.html) l mode-number on the DFT grid
+    + [`lMode_wv`](/classes/transforms/wvtransformstratifiedqg/lmode_wv.html) l mode number on the WV grid
+    + [`primaryKLModeNumberFromKLModeNumber`](/classes/transforms/wvtransformstratifiedqg/primaryklmodenumberfromklmodenumber.html) takes any valid WV mode number and returns the primary mode number
+  + Linear-index conversion
+    + [`indexFromKLModeNumber`](/classes/transforms/wvtransformstratifiedqg/indexfromklmodenumber.html) return the linear index into k_wv and l_wv from a mode number
+    + [`indexFromModeNumber`](/classes/transforms/wvtransformstratifiedqg/indexfrommodenumber.html) return the linear index into a spectral matrix given (k,l,j)
+    + [`klModeNumberFromIndex`](/classes/transforms/wvtransformstratifiedqg/klmodenumberfromindex.html) return mode number from a linear index into a WV matrix
+    + [`modeNumberFromIndex`](/classes/transforms/wvtransformstratifiedqg/modenumberfromindex.html) Return mode numbers for spectral linear indices.
+  + DFT and WV layout metadata
+    + [`Nk_dft`](/classes/transforms/wvtransformstratifiedqg/nk_dft.html) length of the k-wavenumber dimension on the DFT grid
+    + [`Nl_dft`](/classes/transforms/wvtransformstratifiedqg/nl_dft.html) length of the l-wavenumber dimension on the DFT grid
+    + [`conjugateDimension`](/classes/transforms/wvtransformstratifiedqg/conjugatedimension.html) assumed conjugate dimension
+    + [`dftConjugateIndices2D`](/classes/transforms/wvtransformstratifiedqg/dftconjugateindices2d.html) index into the DFT grid of the conjugate of each WV mode
+    + [`dftPrimaryIndices2D`](/classes/transforms/wvtransformstratifiedqg/dftprimaryindices2d.html) index into the DFT grid of each WV mode
+    + [`indicesOfFourierConjugates`](/classes/transforms/wvtransformstratifiedqg/indicesoffourierconjugates.html) a matrix of linear indices of the conjugate
+    + [`k_dft`](/classes/transforms/wvtransformstratifiedqg/k_dft.html) k wavenumber dimension on the DFT grid
+    + [`kl`](/classes/transforms/wvtransformstratifiedqg/kl.html) wavenumber dimension
+    + [`l_dft`](/classes/transforms/wvtransformstratifiedqg/l_dft.html) l wavenumber dimension on the DFT grid
+    + [`shouldExcludeConjugates`](/classes/transforms/wvtransformstratifiedqg/shouldexcludeconjugates.html) whether the WV grid excludes redundant Hermitian-conjugate wavenumbers
+    + [`shouldExcludeNyquist`](/classes/transforms/wvtransformstratifiedqg/shouldexcludenyquist.html) whether the WV grid includes Nyquist wavenumbers
+  + Layout conversion
+    + [`indicesFromDFTGridToWVGrid`](/classes/transforms/wvtransformstratifiedqg/indicesfromdftgridtowvgrid.html) indices to convert from DFT to WV grid
+    + [`indicesFromWVGridToDFTGrid`](/classes/transforms/wvtransformstratifiedqg/indicesfromwvgridtodftgrid.html) indices to convert from WV to DFT grid
+    + [`transformFromDFTGridToWVGrid`](/classes/transforms/wvtransformstratifiedqg/transformfromdftgridtowvgrid.html) convert from DFT to WV grid
+    + [`transformFromSpatialDomainToDFTGrid`](/classes/transforms/wvtransformstratifiedqg/transformfromspatialdomaintodftgrid.html) transform from $$(x,y,z)$$ to $$(k,l,z)$$ on the DFT grid
+    + [`transformFromWVGridToDFTGrid`](/classes/transforms/wvtransformstratifiedqg/transformfromwvgridtodftgrid.html) convert from a WV to DFT grid
+    + [`transformToSpatialDomainFromDFTGrid`](/classes/transforms/wvtransformstratifiedqg/transformtospatialdomainfromdftgrid.html) transform from $$(k,l,z)$$ on the DFT grid to $$(x,y,z)$$
+    + [`transformToSpatialDomainFromDFTGridAtPosition`](/classes/transforms/wvtransformstratifiedqg/transformtospatialdomainfromdftgridatposition.html) transform from $$(k,l)$$ on the DFT grid to $$(x,y)$$ at any position
+  + Masks and Hermitian bookkeeping
+    + [`isHermitian`](/classes/transforms/wvtransformstratifiedqg/ishermitian.html) Check if the matrix is Hermitian. Report errors.
+    + [`maskForAliasedModes`](/classes/transforms/wvtransformstratifiedqg/maskforaliasedmodes.html) returns a mask with locations of modes that will alias with a quadratic multiplication.
+    + [`maskForConjugateFourierCoefficients`](/classes/transforms/wvtransformstratifiedqg/maskforconjugatefouriercoefficients.html) a mask indicate the components that are redundant conjugates
+    + [`maskForNyquistModes`](/classes/transforms/wvtransformstratifiedqg/maskfornyquistmodes.html) returns a mask with locations of modes that are not fully resolved
+    + [`setConjugateToUnity`](/classes/transforms/wvtransformstratifiedqg/setconjugatetounity.html) set the conjugate of the wavenumber (iK,iL) to 1
 + Spectral transforms and operators
-  + [`FMatrix`](/classes/transforms/wvtransformstratifiedqg/fmatrix.html) transformation matrix $$F_g$$
-  + [`FinvMatrix`](/classes/transforms/wvtransformstratifiedqg/finvmatrix.html) transformation matrix $$F_g^{-1}$$
-  + [`GMatrix`](/classes/transforms/wvtransformstratifiedqg/gmatrix.html) transformation matrix $$G_g$$
-  + [`GinvMatrix`](/classes/transforms/wvtransformstratifiedqg/ginvmatrix.html) transformation matrix $$G_g^{-1}$$
+  + [`P0`](/classes/transforms/wvtransformstratifiedqg/p0.html) Preconditioner for F, size(P)=[Nj 1]. F*u = uhat, (PF)*u = P*uhat, so ubar==P*uhat
   + [`PF0`](/classes/transforms/wvtransformstratifiedqg/pf0.html) size(PF,PG)=[Nj x Nz]
   + [`PF0inv`](/classes/transforms/wvtransformstratifiedqg/pf0inv.html) Transformation matrices
+  + [`Q0`](/classes/transforms/wvtransformstratifiedqg/q0.html) Preconditioner for G, size(Q)=[Nj 1]. G*eta = etahat, (QG)*eta = Q*etahat, so etabar==Q*etahat.
   + [`QG0`](/classes/transforms/wvtransformstratifiedqg/qg0.html) Preconditioned G-mode forward transformation
   + [`QG0inv`](/classes/transforms/wvtransformstratifiedqg/qg0inv.html) Preconditioned G-mode inverse transformation
   + [`degreesOfFreedomForComplexMatrix`](/classes/transforms/wvtransformstratifiedqg/degreesoffreedomforcomplexmatrix.html) a matrix with the number of degrees-of-freedom at each entry
@@ -328,22 +356,10 @@ These items document internal implementation details and are not part of the pri
   + [`propertyAnnotationsForGeometry`](/classes/transforms/wvtransformstratifiedqg/propertyannotationsforgeometry.html) return array of CAPropertyAnnotations initialized by default
   + [`propertyAnnotationsForRotatingFPlane`](/classes/transforms/wvtransformstratifiedqg/propertyannotationsforrotatingfplane.html)
 + Class internals
-  + [`Nk_dft`](/classes/transforms/wvtransformstratifiedqg/nk_dft.html) length of the k-wavenumber dimension on the DFT grid
-  + [`Nl_dft`](/classes/transforms/wvtransformstratifiedqg/nl_dft.html) length of the l-wavenumber dimension on the DFT grid
   + [`chebfunForZArray`](/classes/transforms/wvtransformstratifiedqg/chebfunforzarray.html)
-  + [`dftConjugateIndices2D`](/classes/transforms/wvtransformstratifiedqg/dftconjugateindices2d.html) index into the DFT grid of the conjugate of each WV mode
-  + [`dftPrimaryIndices2D`](/classes/transforms/wvtransformstratifiedqg/dftprimaryindices2d.html) index into the DFT grid of each WV mode
-  + [`indicesOfFourierConjugates`](/classes/transforms/wvtransformstratifiedqg/indicesoffourierconjugates.html) a matrix of linear indices of the conjugate
-  + [`isHermitian`](/classes/transforms/wvtransformstratifiedqg/ishermitian.html) Check if the matrix is Hermitian. Report errors.
-  + [`k_dft`](/classes/transforms/wvtransformstratifiedqg/k_dft.html) k wavenumber dimension on the DFT grid
-  + [`kl`](/classes/transforms/wvtransformstratifiedqg/kl.html) wavenumber dimension
-  + [`l_dft`](/classes/transforms/wvtransformstratifiedqg/l_dft.html) l wavenumber dimension on the DFT grid
   + [`maxFg`](/classes/transforms/wvtransformstratifiedqg/maxfg.html)
   + [`maxFw`](/classes/transforms/wvtransformstratifiedqg/maxfw.html)
   + [`quadraturePointsForStratifiedFlow`](/classes/transforms/wvtransformstratifiedqg/quadraturepointsforstratifiedflow.html) return the quadrature points for a given stratification
-  + [`setConjugateToUnity`](/classes/transforms/wvtransformstratifiedqg/setconjugatetounity.html) set the conjugate of the wavenumber (iK,iL) to 1
-  + [`shouldExcludeConjugates`](/classes/transforms/wvtransformstratifiedqg/shouldexcludeconjugates.html) whether the WV grid excludes redundant Hermitian-conjugate wavenumbers
-  + [`shouldExcludeNyquist`](/classes/transforms/wvtransformstratifiedqg/shouldexcludenyquist.html) whether the WV grid includes Nyquist wavenumbers
   + [`throwErrorIfDensityViolation`](/classes/transforms/wvtransformstratifiedqg/throwerrorifdensityviolation.html) checks if the proposed coefficients are a valid adiabatic re-arrangement of the base state
   + [`verticalProjectionOperatorsWithRigidLid`](/classes/transforms/wvtransformstratifiedqg/verticalprojectionoperatorswithrigidlid.html) return the normalized projection operators with prefactors
 

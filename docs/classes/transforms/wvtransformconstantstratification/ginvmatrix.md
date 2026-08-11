@@ -9,12 +9,15 @@ mathjax: true
 
 #  GinvMatrix
 
-transformation matrix $$G_g^{-1}$$
-
-> Developer documentation: this item describes internal implementation details.
+Reconstructs G-grid values from vertical modes with shape `[Nz Nj]`.
 
 
 ---
 
 ## Description
 Real valued property with dimensions $$(z,j)$$ and no units.
+
+## Discussion
+Reconstructs G-grid values from vertical modes with shape `[Nz Nj]`.
+
+`GinvMatrix` maps G-basis modal coefficients back to values on the physical vertical grid.

@@ -9,12 +9,14 @@ mathjax: true
 
 #  Ap
 
-`Ap` stores the positive-frequency coefficients $$A_+^{k\ell j}$$ for internal gravity waves and the positive-frequency member of the paired inertial representation. The coefficients have units of velocity and use the transform's spectral layout.
+Positive-frequency wave–vortex coefficient array.
 
 
 ---
 
 ## Discussion
+Positive-frequency wave–vortex coefficient array.
+
 `Ap` stores the positive-frequency coefficients $$A_+^{k\ell j}$$ for internal gravity waves and the positive-frequency member of the paired inertial representation. The coefficients have units of velocity and use the transform's spectral layout.
 
 These coefficients multiply the positive-frequency wave solutions described by [Early, Lelong, and Sundermeyer (2021)](https://doi.org/10.1017/jfm.2020.995) and the current [available-potential-vorticity formulation](https://doi.org/10.48550/arXiv.2403.20269). The internal-gravity-wave and inertial-oscillation solutions appear as equations (3.18) and (3.15), respectively, in the 2021 paper.

@@ -86,19 +86,18 @@ views are `Apt`, `Amt`, and `A0t`.
     + Quadrature and integration
       + [`z_int`](/classes/transforms/wvtransformconstantstratification/z_int.html) Vertical quadrature weights in meters.
   + Spectral grid
-    + Axes and spacing
-      + [`kAxis`](/classes/transforms/wvtransformconstantstratification/kaxis.html) Centered x-direction angular-wavenumber axis.
-      + [`lAxis`](/classes/transforms/wvtransformconstantstratification/laxis.html) Centered y-direction angular-wavenumber axis.
-      + [`j`](/classes/transforms/wvtransformconstantstratification/j.html) Vertical-mode index axis.
-      + [`dk`](/classes/transforms/wvtransformconstantstratification/dk.html) Spacing of the x-direction angular-wavenumber axis.
-      + [`dl`](/classes/transforms/wvtransformconstantstratification/dl.html) Spacing of the y-direction angular-wavenumber axis.
-    + Coordinate arrays
-      + [`k`](/classes/transforms/wvtransformconstantstratification/k.html) Stored x-direction angular wavenumbers on the compact WV grid.
-      + [`l`](/classes/transforms/wvtransformconstantstratification/l.html) Stored y-direction angular wavenumbers on the compact WV grid.
+    + Compact grid vectors
+      + [`k`](/classes/transforms/wvtransformconstantstratification/k.html) Compact `Nkl`-by-1 x-wavenumber vector in rad/m.
+      + [`l`](/classes/transforms/wvtransformconstantstratification/l.html) Compact `Nkl`-by-1 y-wavenumber vector in rad/m.
+      + [`j`](/classes/transforms/wvtransformconstantstratification/j.html) Dimensionless `Nj`-by-1 vertical-mode index vector.
+    + Compact grid arrays
       + [`K`](/classes/transforms/wvtransformconstantstratification/k_.html) X-direction angular-wavenumber array in rad/m with shape `[Nj Nkl]`.
       + [`L`](/classes/transforms/wvtransformconstantstratification/l_.html) Y-direction angular-wavenumber array in rad/m with shape `[Nj Nkl]`.
       + [`J`](/classes/transforms/wvtransformconstantstratification/j_.html) Dimensionless vertical-mode index array with shape `[Nj Nkl]`.
       + [`kljGrid`](/classes/transforms/wvtransformconstantstratification/kljgrid.html) Return spectral-coordinate arrays in wave-vortex layout.
+    + Wavenumber spacing
+      + [`dk`](/classes/transforms/wvtransformconstantstratification/dk.html) Spacing of the x-direction angular-wavenumber axis.
+      + [`dl`](/classes/transforms/wvtransformconstantstratification/dl.html) Spacing of the y-direction angular-wavenumber axis.
     + Horizontal wavenumber geometry
       + [`Kh`](/classes/transforms/wvtransformconstantstratification/kh.html) Horizontal angular-wavenumber magnitude on the coefficient grid.
       + [`K2`](/classes/transforms/wvtransformconstantstratification/k2.html) Squared horizontal angular wavenumber on the coefficient grid.
@@ -109,12 +108,18 @@ views are `Apt`, `Amt`, and `A0t`.
       + [`effectiveHorizontalGridResolution`](/classes/transforms/wvtransformconstantstratification/effectivehorizontalgridresolution.html) returns the effective grid resolution in meters
       + [`effectiveVerticalGridResolution`](/classes/transforms/wvtransformconstantstratification/effectiveverticalgridresolution.html) returns the effective vertical grid resolution in meters
       + [`effectiveJMax`](/classes/transforms/wvtransformconstantstratification/effectivejmax.html) Largest active vertical-mode index.
+      + [`summarizeDegreesOfFreedom`](/classes/transforms/wvtransformconstantstratification/summarizedegreesoffreedom.html) Summarize the spatial grid and active spectral degrees of freedom.
     + Vertical modes and scaling
       + [`verticalModes`](/classes/transforms/wvtransformconstantstratification/verticalmodes.html) Vertical-mode solution used to construct the transform basis.
       + [`h_0`](/classes/transforms/wvtransformconstantstratification/h_0.html) Geostrophic equivalent-depth scale for each vertical mode.
       + [`h_pm`](/classes/transforms/wvtransformconstantstratification/h_pm.html) Wave equivalent depth on the spectral grid.
       + [`Lr2`](/classes/transforms/wvtransformconstantstratification/lr2.html) Squared Rossby deformation radius in square meters.
       + [`waveModeVerticalStructureAtIndex`](/classes/transforms/wvtransformconstantstratification/wavemodeverticalstructureatindex.html) Return wave vertical-structure factors at one vertical grid index.
+    + Vertical-mode transformation matrices
+      + [`FMatrix`](/classes/transforms/wvtransformconstantstratification/fmatrix.html) Projects F-grid values onto vertical modes with shape `[Nj Nz]`.
+      + [`FinvMatrix`](/classes/transforms/wvtransformconstantstratification/finvmatrix.html) Reconstructs F-grid values from vertical modes with shape `[Nz Nj]`.
+      + [`GMatrix`](/classes/transforms/wvtransformconstantstratification/gmatrix.html) Projects G-grid values onto vertical modes with shape `[Nj Nz]`.
+      + [`GinvMatrix`](/classes/transforms/wvtransformconstantstratification/ginvmatrix.html) Reconstructs G-grid values from vertical modes with shape `[Nz Nj]`.
   + Transform configuration
     + [`isHydrostatic`](/classes/transforms/wvtransformconstantstratification/ishydrostatic.html) Whether the transform uses the hydrostatic approximation.
     + [`shouldAntialias`](/classes/transforms/wvtransformconstantstratification/shouldantialias.html) Whether the spectral grid excludes modes that alias quadratic products.
@@ -170,8 +175,8 @@ views are `Apt`, `Amt`, and `A0t`.
     + Density and displacement
       + [`eta`](/classes/transforms/wvtransformconstantstratification/eta.html) approximate isopycnal deviation
       + [`rho_e`](/classes/transforms/wvtransformconstantstratification/rho_e.html) excess density
-      + [`rho_nm`](/classes/transforms/wvtransformconstantstratification/rho_nm.html) no-motion density profile
-      + [`rho_nm0`](/classes/transforms/wvtransformconstantstratification/rho_nm0.html) No-motion density profile sampled on the vertical grid.
+      + [`rho_nm`](/classes/transforms/wvtransformconstantstratification/rho_nm.html) Diagnosed no-motion density profile, `[Nz 1]`, in kg/m³.
+      + [`rho_nm0`](/classes/transforms/wvtransformconstantstratification/rho_nm0.html) Reference no-motion density profile, `[Nz 1]`, in kg/m³.
       + [`rho_total`](/classes/transforms/wvtransformconstantstratification/rho_total.html) total potential density
     + Pressure and surface fields
       + [`p`](/classes/transforms/wvtransformconstantstratification/p.html) pressure anomaly
@@ -190,32 +195,22 @@ views are `Apt`, `Amt`, and `A0t`.
   + Isopycnal utilities
     + [`placeParticlesOnIsopycnal`](/classes/transforms/wvtransformconstantstratification/placeparticlesonisopycnal.html) Return particle depths on the isopycnal identified by a no-motion depth.
 + Manage forcing and closures
-  + [`addForcing`](/classes/transforms/wvtransformconstantstratification/addforcing.html) Add forcing or closure objects to this transform.
-  + [`forcing`](/classes/transforms/wvtransformconstantstratification/forcing.html) array of WVForcing objects
-  + [`forcingNames`](/classes/transforms/wvtransformconstantstratification/forcingnames.html) Return forcing and closure names in application order.
-  + [`forcingWithName`](/classes/transforms/wvtransformconstantstratification/forcingwithname.html) Return registered forcing objects by name.
-  + [`hasClosure`](/classes/transforms/wvtransformconstantstratification/hasclosure.html) Whether a closure is currently attached to the transform.
-  + [`hasForcingWithName`](/classes/transforms/wvtransformconstantstratification/hasforcingwithname.html) Test whether forcing objects are registered by name.
-  + [`removeAllForcing`](/classes/transforms/wvtransformconstantstratification/removeallforcing.html) Remove every forcing and closure from this transform.
-  + [`removeForcing`](/classes/transforms/wvtransformconstantstratification/removeforcing.html) Remove the exact registered forcing objects.
-  + [`setForcing`](/classes/transforms/wvtransformconstantstratification/setforcing.html) Replace the complete forcing registry.
-  + [`summarizeForcing`](/classes/transforms/wvtransformconstantstratification/summarizeforcing.html) Print a table of registered forcing and closure objects.
+  + Configure forcing
+    + [`addForcing`](/classes/transforms/wvtransformconstantstratification/addforcing.html) Add forcing or closure objects to this transform.
+    + [`setForcing`](/classes/transforms/wvtransformconstantstratification/setforcing.html) Replace the complete forcing registry.
+    + [`removeForcing`](/classes/transforms/wvtransformconstantstratification/removeforcing.html) Remove the exact registered forcing objects.
+    + [`removeAllForcing`](/classes/transforms/wvtransformconstantstratification/removeallforcing.html) Remove every forcing and closure from this transform.
+  + Inspect forcing and closures
+    + [`forcing`](/classes/transforms/wvtransformconstantstratification/forcing.html) array of WVForcing objects
+    + [`forcingNames`](/classes/transforms/wvtransformconstantstratification/forcingnames.html) Return forcing and closure names in application order.
+    + [`forcingWithName`](/classes/transforms/wvtransformconstantstratification/forcingwithname.html) Return registered forcing objects by name.
+    + [`hasForcingWithName`](/classes/transforms/wvtransformconstantstratification/hasforcingwithname.html) Test whether forcing objects are registered by name.
+    + [`hasClosure`](/classes/transforms/wvtransformconstantstratification/hasclosure.html) Whether a closure is currently attached to the transform.
+  + Summarize forcing
+    + [`summarizeForcing`](/classes/transforms/wvtransformconstantstratification/summarizeforcing.html) Print a table of registered forcing and closure objects.
 + Analyze the flow
-  + Energy and summaries
-    + [`inertialEnergy`](/classes/transforms/wvtransformconstantstratification/inertialenergy.html) total energy of the inertial flow
-    + [`mdaEnergy`](/classes/transforms/wvtransformconstantstratification/mdaenergy.html) total energy of the mean density anomaly
-    + [`geostrophicKineticEnergy`](/classes/transforms/wvtransformconstantstratification/geostrophickineticenergy.html) kinetic energy of the geostrophic flow
-    + [`waveEnergy`](/classes/transforms/wvtransformconstantstratification/waveenergy.html) Total energy of the internal-gravity-wave flow.
-    + [`geostrophicPotentialEnergy`](/classes/transforms/wvtransformconstantstratification/geostrophicpotentialenergy.html) potential energy of the geostrophic flow
-    + [`geostrophicEnergy`](/classes/transforms/wvtransformconstantstratification/geostrophicenergy.html) total energy, geostrophic
-    + [`hasMeanPressureDifference`](/classes/transforms/wvtransformconstantstratification/hasmeanpressuredifference.html) Diagnose an MDA mean-pressure difference between the boundaries.
-    + [`summarizeDegreesOfFreedom`](/classes/transforms/wvtransformconstantstratification/summarizedegreesoffreedom.html) Summarize the spatial grid and active spectral degrees of freedom.
-    + [`summarizeEnergyContent`](/classes/transforms/wvtransformconstantstratification/summarizeenergycontent.html) displays a summary of the energy content of the fluid
-    + [`summarizeModeEnergy`](/classes/transforms/wvtransformconstantstratification/summarizemodeenergy.html) List the most energetic modes
-    + [`totalEnergy`](/classes/transforms/wvtransformconstantstratification/totalenergy.html) % - Topic: Energetics
-    + [`totalEnergyOfFlowComponent`](/classes/transforms/wvtransformconstantstratification/totalenergyofflowcomponent.html) Compute the energy carried by one flow component.
-    + [`totalEnergySpatiallyIntegrated`](/classes/transforms/wvtransformconstantstratification/totalenergyspatiallyintegrated.html) % - Topic: Energetics
   + Flow diagnostics
+    + [`hasMeanPressureDifference`](/classes/transforms/wvtransformconstantstratification/hasmeanpressuredifference.html) Diagnose an MDA mean-pressure difference between the boundaries.
     + [`uvMax`](/classes/transforms/wvtransformconstantstratification/uvmax.html) max horizontal fluid speed
     + [`wMax`](/classes/transforms/wvtransformconstantstratification/wmax.html) max vertical fluid speed
   + Density validity
@@ -225,16 +220,33 @@ views are `Apt`, `Amt`, and `A0t`.
     + [`totalEnstrophySpatiallyIntegrated`](/classes/transforms/wvtransformconstantstratification/totalenstrophyspatiallyintegrated.html) Potential enstrophy evaluated from the gridded QGPV field.
   + Spectra
     + Spectral fields
+      + [`kAxis`](/classes/transforms/wvtransformconstantstratification/kaxis.html) Centered `Nx`-by-1 x-wavenumber axis in rad/m.
+      + [`lAxis`](/classes/transforms/wvtransformconstantstratification/laxis.html) Centered `Ny`-by-1 y-wavenumber axis in rad/m.
+      + [`transformToKLAxes`](/classes/transforms/wvtransformconstantstratification/transformtoklaxes.html) transforms in the spectral domain from (j,kl) to (kAxis,lAxis,j)
       + [`crossSpectrumWithFgTransform`](/classes/transforms/wvtransformconstantstratification/crossspectrumwithfgtransform.html) Compute a real modal cross-spectrum using the F-basis transform.
       + [`crossSpectrumWithGgTransform`](/classes/transforms/wvtransformconstantstratification/crossspectrumwithggtransform.html) Compute a real modal cross-spectrum using the G-basis transform.
       + [`spectrumWithFgTransform`](/classes/transforms/wvtransformconstantstratification/spectrumwithfgtransform.html) Compute a modal autospectrum using the F-basis transform.
       + [`spectrumWithGgTransform`](/classes/transforms/wvtransformconstantstratification/spectrumwithggtransform.html) Compute a modal autospectrum using the G-basis transform.
-      + [`transformToKLAxes`](/classes/transforms/wvtransformconstantstratification/transformtoklaxes.html) transforms in the spectral domain from (j,kl) to (kAxis,lAxis,j)
     + Radial wavenumber
       + [`kRadial`](/classes/transforms/wvtransformconstantstratification/kradial.html) radial (k,l) wavenumber on the WV grid
       + [`transformToRadialWavenumber`](/classes/transforms/wvtransformconstantstratification/transformtoradialwavenumber.html) transforms in the spectral domain from (j,kl) to (j,kRadial)
     + Frequency
       + [`convertFromWavenumberToFrequency`](/classes/transforms/wvtransformconstantstratification/convertfromwavenumbertofrequency.html) Bin wave energy by vertical mode and intrinsic frequency
++ Analyze energy
+  + Component energy
+    + [`inertialEnergy`](/classes/transforms/wvtransformconstantstratification/inertialenergy.html) total energy of the inertial flow
+    + [`mdaEnergy`](/classes/transforms/wvtransformconstantstratification/mdaenergy.html) total energy of the mean density anomaly
+    + [`geostrophicKineticEnergy`](/classes/transforms/wvtransformconstantstratification/geostrophickineticenergy.html) kinetic energy of the geostrophic flow
+    + [`waveEnergy`](/classes/transforms/wvtransformconstantstratification/waveenergy.html) Total energy of the internal-gravity-wave flow.
+    + [`geostrophicPotentialEnergy`](/classes/transforms/wvtransformconstantstratification/geostrophicpotentialenergy.html) potential energy of the geostrophic flow
+    + [`geostrophicEnergy`](/classes/transforms/wvtransformconstantstratification/geostrophicenergy.html) total energy, geostrophic
+    + [`totalEnergyOfFlowComponent`](/classes/transforms/wvtransformconstantstratification/totalenergyofflowcomponent.html) Compute the energy carried by one flow component.
+  + Total energy
+    + [`totalEnergy`](/classes/transforms/wvtransformconstantstratification/totalenergy.html) Total energy computed from wave-vortex coefficients.
+    + [`totalEnergySpatiallyIntegrated`](/classes/transforms/wvtransformconstantstratification/totalenergyspatiallyintegrated.html) Total energy computed from physical-space fields.
+  + Energy summaries
+    + [`summarizeEnergyContent`](/classes/transforms/wvtransformconstantstratification/summarizeenergycontent.html) displays a summary of the energy content of the fluid
+    + [`summarizeModeEnergy`](/classes/transforms/wvtransformconstantstratification/summarizemodeenergy.html) List the most energetic modes
 + Save transform state
   + [`writeToFile`](/classes/transforms/wvtransformconstantstratification/writetofile.html) Write this instance to NetCDF file.
 + Convert representations
@@ -250,23 +262,26 @@ views are `Apt`, `Amt`, and `A0t`.
   + [`intZF`](/classes/transforms/wvtransformconstantstratification/intzf.html) Return the first antiderivative of an F-representation.
   + [`intZG`](/classes/transforms/wvtransformconstantstratification/intzg.html) Return the bottom-zero first antiderivative of a G-representation.
 + Inspect flow components
-  + [`geostrophicComponent`](/classes/transforms/wvtransformconstantstratification/geostrophiccomponent.html) returns the geostrophic flow component
-  + [`waveComponent`](/classes/transforms/wvtransformconstantstratification/wavecomponent.html) returns the internal gravity wave flow component
-  + [`inertialComponent`](/classes/transforms/wvtransformconstantstratification/inertialcomponent.html) returns the inertial oscillation flow component
-  + [`mdaComponent`](/classes/transforms/wvtransformconstantstratification/mdacomponent.html) returns the mean density anomaly component
-  + [`flowComponentNames`](/classes/transforms/wvtransformconstantstratification/flowcomponentnames.html) retrieve the names of all available variables
-  + [`flowComponentWithName`](/classes/transforms/wvtransformconstantstratification/flowcomponentwithname.html) retrieve a WVFlowComponent by name
-  + [`flowComponents`](/classes/transforms/wvtransformconstantstratification/flowcomponents.html) All registered physical and diagnostic flow components.
-  + [`primaryFlowComponentNames`](/classes/transforms/wvtransformconstantstratification/primaryflowcomponentnames.html) retrieve the names of all available variables
-  + [`primaryFlowComponentWithName`](/classes/transforms/wvtransformconstantstratification/primaryflowcomponentwithname.html) retrieve a WVPrimaryFlowComponent by name
-  + [`primaryFlowComponents`](/classes/transforms/wvtransformconstantstratification/primaryflowcomponents.html) Primary flow components that partition the active coefficient state.
-  + [`summarizeFlowComponents`](/classes/transforms/wvtransformconstantstratification/summarizeflowcomponents.html) Print a table of registered primary and diagnostic components.
-  + [`totalFlowComponent`](/classes/transforms/wvtransformconstantstratification/totalflowcomponent.html) Combined view of all primary flow components.
+  + Primary flow components
+    + [`waveComponent`](/classes/transforms/wvtransformconstantstratification/wavecomponent.html) returns the internal gravity wave flow component
+    + [`inertialComponent`](/classes/transforms/wvtransformconstantstratification/inertialcomponent.html) returns the inertial oscillation flow component
+    + [`geostrophicComponent`](/classes/transforms/wvtransformconstantstratification/geostrophiccomponent.html) returns the geostrophic flow component
+    + [`mdaComponent`](/classes/transforms/wvtransformconstantstratification/mdacomponent.html) returns the mean density anomaly component
+    + [`primaryFlowComponents`](/classes/transforms/wvtransformconstantstratification/primaryflowcomponents.html) Primary flow components that partition the active coefficient state.
+    + [`primaryFlowComponentNames`](/classes/transforms/wvtransformconstantstratification/primaryflowcomponentnames.html) retrieve the names of all available variables
+    + [`primaryFlowComponentWithName`](/classes/transforms/wvtransformconstantstratification/primaryflowcomponentwithname.html) retrieve a WVPrimaryFlowComponent by name
+  + Registered and combined components
+    + [`flowComponents`](/classes/transforms/wvtransformconstantstratification/flowcomponents.html) All registered physical and diagnostic flow components.
+    + [`flowComponentNames`](/classes/transforms/wvtransformconstantstratification/flowcomponentnames.html) retrieve the names of all available variables
+    + [`flowComponentWithName`](/classes/transforms/wvtransformconstantstratification/flowcomponentwithname.html) retrieve a WVFlowComponent by name
+    + [`totalFlowComponent`](/classes/transforms/wvtransformconstantstratification/totalflowcomponent.html) Combined view of all primary flow components.
+  + Summarize flow components
+    + [`summarizeFlowComponents`](/classes/transforms/wvtransformconstantstratification/summarizeflowcomponents.html) Print a table of registered primary and diagnostic components.
 + Inspect wave-vortex coefficients
   + Stored coefficients
-    + [`Ap`](/classes/transforms/wvtransformconstantstratification/ap.html) `Ap` stores the positive-frequency coefficients $$A_+^{k\ell j}$$ for internal gravity waves and the positive-frequency member of the paired inertial representation. The coefficients have units of velocity and use the transform's spectral layout.
-    + [`Am`](/classes/transforms/wvtransformconstantstratification/am.html) `Am` stores the negative-frequency coefficients $$A_-^{k\ell j}$$ for internal gravity waves and inertial oscillations. The coefficients have units of velocity and use the transform's spectral layout.
-    + [`A0`](/classes/transforms/wvtransformconstantstratification/a0.html) `A0` stores the zero-frequency coefficients $$A_0^{k\ell j}$$ with units of streamfunction, $$\mathrm{m^2\,s^{-1}}$$. It is the active coefficient family for geostrophic and quasigeostrophic flow and, on transforms that include it, the mean-density anomaly.
+    + [`Ap`](/classes/transforms/wvtransformconstantstratification/ap.html) Positive-frequency wave–vortex coefficient array.
+    + [`Am`](/classes/transforms/wvtransformconstantstratification/am.html) Negative-frequency wave–vortex coefficient array.
+    + [`A0`](/classes/transforms/wvtransformconstantstratification/a0.html) Zero-frequency wave–vortex coefficient array.
   + Coefficients at the current time
     + [`Apt`](/classes/transforms/wvtransformconstantstratification/apt.html) `Apt` is the positive-frequency coefficient array evaluated at the current transform time:
     + [`Amt`](/classes/transforms/wvtransformconstantstratification/amt.html) `Amt` is the negative-frequency coefficient array evaluated at the current transform time:
@@ -299,68 +314,79 @@ views are `Apt`, `Amt`, and `A0t`.
 ## Developer Topics
 These items document internal implementation details and are not part of the primary public API.
 + Projection and reconstruction coefficients
-  + [`A0N`](/classes/transforms/wvtransformconstantstratification/a0n.html) These projection coefficients map the density-displacement state variable onto $$A_0$$. In the historical notation of [Early et al. (2021)](https://doi.org/10.1017/jfm.2020.995), they are the row 3, column 3 entries of $$S^{-1}$$ for the primary internal-gravity-wave and geostrophic solutions in equation C5.
-  + [`A0U`](/classes/transforms/wvtransformconstantstratification/a0u.html) These projection coefficients map the $$u$$ state variable onto $$A_0$$. In the historical notation of [Early et al. (2021)](https://doi.org/10.1017/jfm.2020.995), they are the row 3, column 1 entries of $$S^{-1}$$ for the primary internal-gravity-wave and geostrophic solutions in equation C5.
-  + [`A0V`](/classes/transforms/wvtransformconstantstratification/a0v.html) These projection coefficients map the $$v$$ state variable onto $$A_0$$. In the historical notation of [Early et al. (2021)](https://doi.org/10.1017/jfm.2020.995), they are the row 3, column 2 entries of $$S^{-1}$$ for the primary internal-gravity-wave and geostrophic solutions in equation C5.
-  + [`A0Z`](/classes/transforms/wvtransformconstantstratification/a0z.html)
-  + [`ApmD`](/classes/transforms/wvtransformconstantstratification/apmd.html)
+  + [`A0N`](/classes/transforms/wvtransformconstantstratification/a0n.html) Projects density displacement onto $$A_0$$.
+  + [`A0U`](/classes/transforms/wvtransformconstantstratification/a0u.html) Projects $$u$$ onto $$A_0$$.
+  + [`A0V`](/classes/transforms/wvtransformconstantstratification/a0v.html) Projects $$v$$ onto $$A_0$$.
+  + [`A0Z`](/classes/transforms/wvtransformconstantstratification/a0z.html) Projects vertical vorticity onto $$A_0$$.
+  + [`ApmD`](/classes/transforms/wvtransformconstantstratification/apmd.html) Projects horizontal divergence onto $$A_+$$ and $$A_-$$.
   + [`ApmD_scaled`](/classes/transforms/wvtransformconstantstratification/apmd_scaled.html)
-  + [`ApmN`](/classes/transforms/wvtransformconstantstratification/apmn.html)
+  + [`ApmN`](/classes/transforms/wvtransformconstantstratification/apmn.html) Projects density displacement onto $$A_+$$ and $$A_-$$.
   + [`ApmW_scaled`](/classes/transforms/wvtransformconstantstratification/apmw_scaled.html)
-  + [`Feta`](/classes/transforms/wvtransformconstantstratification/feta.html)
-  + [`Fu`](/classes/transforms/wvtransformconstantstratification/fu.html)
-  + [`Fv`](/classes/transforms/wvtransformconstantstratification/fv.html)
-  + [`NA0`](/classes/transforms/wvtransformconstantstratification/na0.html) These reconstruction coefficients map $$A_0$$ onto the density-displacement state variable. In the historical notation of [Early et al. (2021)](https://doi.org/10.1017/jfm.2020.995), they are the row 3, column 3 entries of $$S$$ for the primary internal-gravity-wave and geostrophic solutions in equation C4.
-  + [`NAm`](/classes/transforms/wvtransformconstantstratification/nam.html) These reconstruction coefficients map $$A_-$$ onto the density-displacement state variable. In the historical notation of [Early et al. (2021)](https://doi.org/10.1017/jfm.2020.995), they are the row 3, column 2 entries of $$S$$ for the primary internal-gravity-wave and geostrophic solutions in equation C4.
-  + [`NAp`](/classes/transforms/wvtransformconstantstratification/nap.html) These reconstruction coefficients map $$A_+$$ onto the density-displacement state variable. In the historical notation of [Early et al. (2021)](https://doi.org/10.1017/jfm.2020.995), they are the row 3, column 1 entries of $$S$$ for the primary internal-gravity-wave and geostrophic solutions in equation C4.
-  + [`PA0`](/classes/transforms/wvtransformconstantstratification/pa0.html)
-  + [`UA0`](/classes/transforms/wvtransformconstantstratification/ua0.html) These reconstruction coefficients map $$A_0$$ onto the $$u$$ state variable. In the historical notation of [Early et al. (2021)](https://doi.org/10.1017/jfm.2020.995), they are the row 1, column 3 entries of $$S$$ for the primary internal-gravity-wave and geostrophic solutions in equation C4.
-  + [`UAm`](/classes/transforms/wvtransformconstantstratification/uam.html) These reconstruction coefficients map $$A_-$$ onto the $$u$$ state variable. In the historical notation of [Early et al. (2021)](https://doi.org/10.1017/jfm.2020.995), they are the row 1, column 2 entries of $$S$$ for the primary internal-gravity-wave and geostrophic solutions in equation C4.
-  + [`UAp`](/classes/transforms/wvtransformconstantstratification/uap.html) These reconstruction coefficients map $$A_+$$ onto the $$u$$ state variable. In the historical notation of [Early et al. (2021)](https://doi.org/10.1017/jfm.2020.995), they are the row 1, column 1 entries of $$S$$ for the primary internal-gravity-wave and geostrophic solutions in equation C4.
-  + [`VA0`](/classes/transforms/wvtransformconstantstratification/va0.html) These reconstruction coefficients map $$A_0$$ onto the $$v$$ state variable. In the historical notation of [Early et al. (2021)](https://doi.org/10.1017/jfm.2020.995), they are the row 2, column 3 entries of $$S$$ for the primary internal-gravity-wave and geostrophic solutions in equation C4.
-  + [`VAm`](/classes/transforms/wvtransformconstantstratification/vam.html) These reconstruction coefficients map $$A_-$$ onto the $$v$$ state variable. In the historical notation of [Early et al. (2021)](https://doi.org/10.1017/jfm.2020.995), they are the row 2, column 2 entries of $$S$$ for the primary internal-gravity-wave and geostrophic solutions in equation C4.
-  + [`VAp`](/classes/transforms/wvtransformconstantstratification/vap.html) These reconstruction coefficients map $$A_+$$ onto the $$v$$ state variable. In the historical notation of [Early et al. (2021)](https://doi.org/10.1017/jfm.2020.995), they are the row 2, column 1 entries of $$S$$ for the primary internal-gravity-wave and geostrophic solutions in equation C4.
-  + [`WAm`](/classes/transforms/wvtransformconstantstratification/wam.html) These reconstruction coefficients map $$A_-$$ onto the $$w$$ state variable. In the historical notation of [Early et al. (2021)](https://doi.org/10.1017/jfm.2020.995), they are the row 4, column 2 entries of $$S$$ for the primary internal-gravity-wave and geostrophic solutions in equation C4.
-  + [`WAp`](/classes/transforms/wvtransformconstantstratification/wap.html) These reconstruction coefficients map $$A_+$$ onto the $$w$$ state variable. In the historical notation of [Early et al. (2021)](https://doi.org/10.1017/jfm.2020.995), they are the row 4, column 1 entries of $$S$$ for the primary internal-gravity-wave and geostrophic solutions in equation C4.
+  + [`NA0`](/classes/transforms/wvtransformconstantstratification/na0.html) Reconstructs density displacement from $$A_0$$.
+  + [`NAm`](/classes/transforms/wvtransformconstantstratification/nam.html) Reconstructs density displacement from $$A_-$$.
+  + [`NAp`](/classes/transforms/wvtransformconstantstratification/nap.html) Reconstructs density displacement from $$A_+$$.
+  + [`PA0`](/classes/transforms/wvtransformconstantstratification/pa0.html) Reconstructs pressure height from $$A_0$$.
+  + [`UA0`](/classes/transforms/wvtransformconstantstratification/ua0.html) Reconstructs $$u$$ from $$A_0$$.
+  + [`UAm`](/classes/transforms/wvtransformconstantstratification/uam.html) Reconstructs $$u$$ from $$A_-$$.
+  + [`UAp`](/classes/transforms/wvtransformconstantstratification/uap.html) Reconstructs $$u$$ from $$A_+$$.
+  + [`VA0`](/classes/transforms/wvtransformconstantstratification/va0.html) Reconstructs $$v$$ from $$A_0$$.
+  + [`VAm`](/classes/transforms/wvtransformconstantstratification/vam.html) Reconstructs $$v$$ from $$A_-$$.
+  + [`VAp`](/classes/transforms/wvtransformconstantstratification/vap.html) Reconstructs $$v$$ from $$A_+$$.
+  + [`WAm`](/classes/transforms/wvtransformconstantstratification/wam.html) Reconstructs $$w$$ from $$A_-$$.
+  + [`WAp`](/classes/transforms/wvtransformconstantstratification/wap.html) Reconstructs $$w$$ from $$A_+$$.
 + Geometry and mode indexing
-  + [`buildVerticalModeProjectionOperators`](/classes/transforms/wvtransformconstantstratification/buildverticalmodeprojectionoperators.html) Build the transformation matrices
-  + [`conjugateDimension`](/classes/transforms/wvtransformconstantstratification/conjugatedimension.html) assumed conjugate dimension
-  + [`indexFromKLModeNumber`](/classes/transforms/wvtransformconstantstratification/indexfromklmodenumber.html) return the linear index into k_wv and l_wv from a mode number
-  + [`indexFromModeNumber`](/classes/transforms/wvtransformconstantstratification/indexfrommodenumber.html) return the linear index into a spectral matrix given (k,l,j)
-  + [`indicesFromDFTGridToWVGrid`](/classes/transforms/wvtransformconstantstratification/indicesfromdftgridtowvgrid.html) indices to convert from DFT to WV grid
-  + [`indicesFromWVGridToDFTGrid`](/classes/transforms/wvtransformconstantstratification/indicesfromwvgridtodftgrid.html) indices to convert from WV to DFT grid
-  + [`isValidConjugateKLModeNumber`](/classes/transforms/wvtransformconstantstratification/isvalidconjugateklmodenumber.html) return a boolean indicating whether (k,l) is a valid conjugate WV mode number
-  + [`isValidConjugateModeNumber`](/classes/transforms/wvtransformconstantstratification/isvalidconjugatemodenumber.html) returns a boolean indicating whether (k,l,j) is a valid conjugate mode number
-  + [`isValidKLModeNumber`](/classes/transforms/wvtransformconstantstratification/isvalidklmodenumber.html) return a boolean indicating whether (k,l) is a valid WV mode number
-  + [`isValidModeNumber`](/classes/transforms/wvtransformconstantstratification/isvalidmodenumber.html) returns a boolean indicating whether (k,l,j) is a valid mode number
-  + [`isValidPrimaryKLModeNumber`](/classes/transforms/wvtransformconstantstratification/isvalidprimaryklmodenumber.html) return a boolean indicating whether (k,l) is a valid primary (non-conjugate) WV mode number
-  + [`isValidPrimaryModeNumber`](/classes/transforms/wvtransformconstantstratification/isvalidprimarymodenumber.html) returns a boolean indicating whether (k,l,j) is a valid primary (non-conjugate) mode number
-  + [`kMode_dft`](/classes/transforms/wvtransformconstantstratification/kmode_dft.html) k mode-number on the DFT grid
-  + [`kMode_wv`](/classes/transforms/wvtransformconstantstratification/kmode_wv.html) k mode number on the WV grid
-  + [`klModeNumberFromIndex`](/classes/transforms/wvtransformconstantstratification/klmodenumberfromindex.html) return mode number from a linear index into a WV matrix
-  + [`lMode_dft`](/classes/transforms/wvtransformconstantstratification/lmode_dft.html) l mode-number on the DFT grid
-  + [`lMode_wv`](/classes/transforms/wvtransformconstantstratification/lmode_wv.html) l mode number on the WV grid
-  + [`maskForAliasedModes`](/classes/transforms/wvtransformconstantstratification/maskforaliasedmodes.html) returns a mask with locations of modes that will alias with a quadratic multiplication.
-  + [`maskForConjugateFourierCoefficients`](/classes/transforms/wvtransformconstantstratification/maskforconjugatefouriercoefficients.html) a mask indicate the components that are redundant conjugates
-  + [`maskForNyquistModes`](/classes/transforms/wvtransformconstantstratification/maskfornyquistmodes.html) returns a mask with locations of modes that are not fully resolved
-  + [`modeNumberFromIndex`](/classes/transforms/wvtransformconstantstratification/modenumberfromindex.html) Return mode numbers for spectral linear indices.
-  + [`primaryKLModeNumberFromKLModeNumber`](/classes/transforms/wvtransformconstantstratification/primaryklmodenumberfromklmodenumber.html) takes any valid WV mode number and returns the primary mode number
-  + [`transformFromDFTGridToWVGrid`](/classes/transforms/wvtransformconstantstratification/transformfromdftgridtowvgrid.html) convert from DFT to WV grid
-  + [`transformFromSpatialDomainToDFTGrid`](/classes/transforms/wvtransformconstantstratification/transformfromspatialdomaintodftgrid.html) transform from $$(x,y,z)$$ to $$(k,l,z)$$ on the DFT grid
-  + [`transformFromWVGridToDFTGrid`](/classes/transforms/wvtransformconstantstratification/transformfromwvgridtodftgrid.html) convert from a WV to DFT grid
-  + [`transformToSpatialDomainFromDFTGrid`](/classes/transforms/wvtransformconstantstratification/transformtospatialdomainfromdftgrid.html) transform from $$(k,l,z)$$ on the DFT grid to $$(x,y,z)$$
-  + [`transformToSpatialDomainFromDFTGridAtPosition`](/classes/transforms/wvtransformconstantstratification/transformtospatialdomainfromdftgridatposition.html) transform from $$(k,l)$$ on the DFT grid to $$(x,y)$$ at any position
+  + Mode numbers and validity
+    + [`isValidConjugateKLModeNumber`](/classes/transforms/wvtransformconstantstratification/isvalidconjugateklmodenumber.html) return a boolean indicating whether (k,l) is a valid conjugate WV mode number
+    + [`isValidConjugateModeNumber`](/classes/transforms/wvtransformconstantstratification/isvalidconjugatemodenumber.html) returns a boolean indicating whether (k,l,j) is a valid conjugate mode number
+    + [`isValidKLModeNumber`](/classes/transforms/wvtransformconstantstratification/isvalidklmodenumber.html) return a boolean indicating whether (k,l) is a valid WV mode number
+    + [`isValidModeNumber`](/classes/transforms/wvtransformconstantstratification/isvalidmodenumber.html) returns a boolean indicating whether (k,l,j) is a valid mode number
+    + [`isValidPrimaryKLModeNumber`](/classes/transforms/wvtransformconstantstratification/isvalidprimaryklmodenumber.html) return a boolean indicating whether (k,l) is a valid primary (non-conjugate) WV mode number
+    + [`isValidPrimaryModeNumber`](/classes/transforms/wvtransformconstantstratification/isvalidprimarymodenumber.html) returns a boolean indicating whether (k,l,j) is a valid primary (non-conjugate) mode number
+    + [`kMode_dft`](/classes/transforms/wvtransformconstantstratification/kmode_dft.html) k mode-number on the DFT grid
+    + [`kMode_wv`](/classes/transforms/wvtransformconstantstratification/kmode_wv.html) k mode number on the WV grid
+    + [`lMode_dft`](/classes/transforms/wvtransformconstantstratification/lmode_dft.html) l mode-number on the DFT grid
+    + [`lMode_wv`](/classes/transforms/wvtransformconstantstratification/lmode_wv.html) l mode number on the WV grid
+    + [`primaryKLModeNumberFromKLModeNumber`](/classes/transforms/wvtransformconstantstratification/primaryklmodenumberfromklmodenumber.html) takes any valid WV mode number and returns the primary mode number
+  + Linear-index conversion
+    + [`indexFromKLModeNumber`](/classes/transforms/wvtransformconstantstratification/indexfromklmodenumber.html) return the linear index into k_wv and l_wv from a mode number
+    + [`indexFromModeNumber`](/classes/transforms/wvtransformconstantstratification/indexfrommodenumber.html) return the linear index into a spectral matrix given (k,l,j)
+    + [`klModeNumberFromIndex`](/classes/transforms/wvtransformconstantstratification/klmodenumberfromindex.html) return mode number from a linear index into a WV matrix
+    + [`modeNumberFromIndex`](/classes/transforms/wvtransformconstantstratification/modenumberfromindex.html) Return mode numbers for spectral linear indices.
+  + DFT and WV layout metadata
+    + [`Nk_dft`](/classes/transforms/wvtransformconstantstratification/nk_dft.html) length of the k-wavenumber dimension on the DFT grid
+    + [`Nl_dft`](/classes/transforms/wvtransformconstantstratification/nl_dft.html) length of the l-wavenumber dimension on the DFT grid
+    + [`conjugateDimension`](/classes/transforms/wvtransformconstantstratification/conjugatedimension.html) assumed conjugate dimension
+    + [`dftConjugateIndices2D`](/classes/transforms/wvtransformconstantstratification/dftconjugateindices2d.html) index into the DFT grid of the conjugate of each WV mode
+    + [`dftPrimaryIndices2D`](/classes/transforms/wvtransformconstantstratification/dftprimaryindices2d.html) index into the DFT grid of each WV mode
+    + [`indicesOfFourierConjugates`](/classes/transforms/wvtransformconstantstratification/indicesoffourierconjugates.html) a matrix of linear indices of the conjugate
+    + [`k_dft`](/classes/transforms/wvtransformconstantstratification/k_dft.html) k wavenumber dimension on the DFT grid
+    + [`kl`](/classes/transforms/wvtransformconstantstratification/kl.html) wavenumber dimension
+    + [`l_dft`](/classes/transforms/wvtransformconstantstratification/l_dft.html) l wavenumber dimension on the DFT grid
+    + [`shouldExcludeConjugates`](/classes/transforms/wvtransformconstantstratification/shouldexcludeconjugates.html) whether the WV grid excludes redundant Hermitian-conjugate wavenumbers
+    + [`shouldExcludeNyquist`](/classes/transforms/wvtransformconstantstratification/shouldexcludenyquist.html) whether the WV grid includes Nyquist wavenumbers
+  + Layout conversion
+    + [`indicesFromDFTGridToWVGrid`](/classes/transforms/wvtransformconstantstratification/indicesfromdftgridtowvgrid.html) indices to convert from DFT to WV grid
+    + [`indicesFromWVGridToDFTGrid`](/classes/transforms/wvtransformconstantstratification/indicesfromwvgridtodftgrid.html) indices to convert from WV to DFT grid
+    + [`transformFromDFTGridToWVGrid`](/classes/transforms/wvtransformconstantstratification/transformfromdftgridtowvgrid.html) convert from DFT to WV grid
+    + [`transformFromSpatialDomainToDFTGrid`](/classes/transforms/wvtransformconstantstratification/transformfromspatialdomaintodftgrid.html) transform from $$(x,y,z)$$ to $$(k,l,z)$$ on the DFT grid
+    + [`transformFromWVGridToDFTGrid`](/classes/transforms/wvtransformconstantstratification/transformfromwvgridtodftgrid.html) convert from a WV to DFT grid
+    + [`transformToSpatialDomainFromDFTGrid`](/classes/transforms/wvtransformconstantstratification/transformtospatialdomainfromdftgrid.html) transform from $$(k,l,z)$$ on the DFT grid to $$(x,y,z)$$
+    + [`transformToSpatialDomainFromDFTGridAtPosition`](/classes/transforms/wvtransformconstantstratification/transformtospatialdomainfromdftgridatposition.html) transform from $$(k,l)$$ on the DFT grid to $$(x,y)$$ at any position
+  + Masks and Hermitian bookkeeping
+    + [`isHermitian`](/classes/transforms/wvtransformconstantstratification/ishermitian.html) Check if the matrix is Hermitian. Report errors.
+    + [`maskForAliasedModes`](/classes/transforms/wvtransformconstantstratification/maskforaliasedmodes.html) returns a mask with locations of modes that will alias with a quadratic multiplication.
+    + [`maskForConjugateFourierCoefficients`](/classes/transforms/wvtransformconstantstratification/maskforconjugatefouriercoefficients.html) a mask indicate the components that are redundant conjugates
+    + [`maskForNyquistModes`](/classes/transforms/wvtransformconstantstratification/maskfornyquistmodes.html) returns a mask with locations of modes that are not fully resolved
+    + [`setConjugateToUnity`](/classes/transforms/wvtransformconstantstratification/setconjugatetounity.html) set the conjugate of the wavenumber (iK,iL) to 1
+  + Additional geometry utilities
+    + [`buildVerticalModeProjectionOperators`](/classes/transforms/wvtransformconstantstratification/buildverticalmodeprojectionoperators.html) Build the transformation matrices
 + Spectral transforms and operators
   + [`CosineTransformBackMatrix`](/classes/transforms/wvtransformconstantstratification/cosinetransformbackmatrix.html) Discrete Cosine Transform (DCT-I) matrix
   + [`CosineTransformForwardMatrix`](/classes/transforms/wvtransformconstantstratification/cosinetransformforwardmatrix.html) Discrete Cosine Transform (DCT-I) matrix
   + [`DCT`](/classes/transforms/wvtransformconstantstratification/dct.html)
   + [`DST`](/classes/transforms/wvtransformconstantstratification/dst.html)
-  + [`FMatrix`](/classes/transforms/wvtransformconstantstratification/fmatrix.html) transformation matrix $$F_g$$
-  + [`FinvMatrix`](/classes/transforms/wvtransformconstantstratification/finvmatrix.html) transformation matrix $$F_g^{-1}$$
   + [`FwInvMatrix`](/classes/transforms/wvtransformconstantstratification/fwinvmatrix.html) transformation matrix $$F_w^{-1}$$
   + [`FwMatrix`](/classes/transforms/wvtransformconstantstratification/fwmatrix.html) transformation matrix $$F_w$$
-  + [`GMatrix`](/classes/transforms/wvtransformconstantstratification/gmatrix.html) transformation matrix $$G_g$$
-  + [`GinvMatrix`](/classes/transforms/wvtransformconstantstratification/ginvmatrix.html) transformation matrix $$G_g^{-1}$$
   + [`GwInvMatrix`](/classes/transforms/wvtransformconstantstratification/gwinvmatrix.html) transformation matrix $$G_w^{-1}$$
   + [`GwMatrix`](/classes/transforms/wvtransformconstantstratification/gwmatrix.html) transformation matrix $$G_w$$
   + [`SineTransformBackMatrix`](/classes/transforms/wvtransformconstantstratification/sinetransformbackmatrix.html) CosineTransformBackMatrix  Discrete Cosine Transform (DCT-I) matrix
@@ -377,6 +403,9 @@ These items document internal implementation details and are not part of the pri
   + [`transformToSpatialDomainWithFourierAtPosition`](/classes/transforms/wvtransformconstantstratification/transformtospatialdomainwithfourieratposition.html)
   + [`transformWithG_wg`](/classes/transforms/wvtransformconstantstratification/transformwithg_wg.html)
 + Nonlinear flux and forcing internals
+  + [`Feta`](/classes/transforms/wvtransformconstantstratification/feta.html)
+  + [`Fu`](/classes/transforms/wvtransformconstantstratification/fu.html)
+  + [`Fv`](/classes/transforms/wvtransformconstantstratification/fv.html)
   + [`enstrophyFluxFromF0`](/classes/transforms/wvtransformconstantstratification/enstrophyfluxfromf0.html)
   + [`fluxForForcing`](/classes/transforms/wvtransformconstantstratification/fluxforforcing.html)
   + [`nonlinearFluxFunction`](/classes/transforms/wvtransformconstantstratification/nonlinearfluxfunction.html)
@@ -405,23 +434,11 @@ These items document internal implementation details and are not part of the pri
   + [`F_wg`](/classes/transforms/wvtransformconstantstratification/f_wg.html)
   + [`G_g`](/classes/transforms/wvtransformconstantstratification/g_g.html)
   + [`G_wg`](/classes/transforms/wvtransformconstantstratification/g_wg.html)
-  + [`Nk_dft`](/classes/transforms/wvtransformconstantstratification/nk_dft.html) length of the k-wavenumber dimension on the DFT grid
-  + [`Nl_dft`](/classes/transforms/wvtransformconstantstratification/nl_dft.html) length of the l-wavenumber dimension on the DFT grid
   + [`chebfunForZArray`](/classes/transforms/wvtransformconstantstratification/chebfunforzarray.html)
   + [`cos_alpha`](/classes/transforms/wvtransformconstantstratification/cos_alpha.html)
-  + [`dftConjugateIndices2D`](/classes/transforms/wvtransformconstantstratification/dftconjugateindices2d.html) index into the DFT grid of the conjugate of each WV mode
-  + [`dftPrimaryIndices2D`](/classes/transforms/wvtransformconstantstratification/dftprimaryindices2d.html) index into the DFT grid of each WV mode
-  + [`indicesOfFourierConjugates`](/classes/transforms/wvtransformconstantstratification/indicesoffourierconjugates.html) a matrix of linear indices of the conjugate
-  + [`isHermitian`](/classes/transforms/wvtransformconstantstratification/ishermitian.html) Check if the matrix is Hermitian. Report errors.
-  + [`k_dft`](/classes/transforms/wvtransformconstantstratification/k_dft.html) k wavenumber dimension on the DFT grid
-  + [`kl`](/classes/transforms/wvtransformconstantstratification/kl.html) wavenumber dimension
-  + [`l_dft`](/classes/transforms/wvtransformconstantstratification/l_dft.html) l wavenumber dimension on the DFT grid
   + [`maxFg`](/classes/transforms/wvtransformconstantstratification/maxfg.html)
   + [`maxFw`](/classes/transforms/wvtransformconstantstratification/maxfw.html)
   + [`quadraturePointsForStratifiedFlow`](/classes/transforms/wvtransformconstantstratification/quadraturepointsforstratifiedflow.html) return the quadrature points for a given stratification
-  + [`setConjugateToUnity`](/classes/transforms/wvtransformconstantstratification/setconjugatetounity.html) set the conjugate of the wavenumber (iK,iL) to 1
-  + [`shouldExcludeConjugates`](/classes/transforms/wvtransformconstantstratification/shouldexcludeconjugates.html) whether the WV grid excludes redundant Hermitian-conjugate wavenumbers
-  + [`shouldExcludeNyquist`](/classes/transforms/wvtransformconstantstratification/shouldexcludenyquist.html) whether the WV grid includes Nyquist wavenumbers
   + [`sin_alpha`](/classes/transforms/wvtransformconstantstratification/sin_alpha.html)
   + [`throwErrorIfDensityViolation`](/classes/transforms/wvtransformconstantstratification/throwerrorifdensityviolation.html) checks if the proposed coefficients are a valid adiabatic re-arrangement of the base state
   + [`verticalProjectionOperatorsWithRigidLid`](/classes/transforms/wvtransformconstantstratification/verticalprojectionoperatorswithrigidlid.html) return the normalized projection operators with prefactors

@@ -7,7 +7,7 @@
 - Updated Fourier-at-position reconstruction to use compact `WVFourierStorageLayout` mappings.
 - Removed obsolete pseudo-radial and frequency-binning APIs whose maintained equivalents live in `WVDiagnostics`.
 - Added backend-neutral transform-storage accounting and fresh-process RSS benchmarks.
-- Completed and reorganized transform and forcing documentation, corrected API metadata, and improved nonlinear-integration examples.
+- Completed and reorganized transform and forcing documentation, clarified spectral grids, energy, forcing, flow components, geometry indexing, density profiles, and projection/reconstruction summaries, corrected API metadata, and improved nonlinear-integration examples.
 - Verified and documented the mathematical contracts for pseudo-topographic wave generation, beta-plane QGPV advection, and vertical diffusivity, and restored the variable-stratification mean-density-anomaly source disabled by an obsolete class-name check.
 
 ## [4.2.1] - 2026-08-09

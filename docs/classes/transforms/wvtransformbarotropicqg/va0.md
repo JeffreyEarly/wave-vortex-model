@@ -9,7 +9,7 @@ mathjax: true
 
 #  VA0
 
-These reconstruction coefficients map $$A_0$$ onto the $$v$$ state variable. In the historical notation of [Early et al. (2021)](https://doi.org/10.1017/jfm.2020.995), they are the row 2, column 3 entries of $$S$$ for the primary internal-gravity-wave and geostrophic solutions in equation C4.
+Reconstructs $$v$$ from $$A_0$$.
 
 > Developer documentation: this item describes internal implementation details.
 
@@ -20,6 +20,8 @@ These reconstruction coefficients map $$A_0$$ onto the $$v$$ state variable. In 
 Complex valued property with dimension $$kl$$ and units of $$s^{-1}$$.
 
 ## Discussion
+Reconstructs $$v$$ from $$A_0$$.
+
 These reconstruction coefficients map $$A_0$$ onto the $$v$$ state variable. In the historical notation of [Early et al. (2021)](https://doi.org/10.1017/jfm.2020.995), they are the row 2, column 3 entries of $$S$$ for the primary internal-gravity-wave and geostrophic solutions in equation C4.
 
 For $$k^2+l^2>0, j>0$$ this is written as,

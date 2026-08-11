@@ -29,11 +29,13 @@ classdef WVTransformStratifiedQG < WVGeometryDoublyPeriodicStratified & WVTransf
     % - Topic: Inspect the domain — Spatial grid — Resolution and shape
     % - Topic: Inspect the domain — Spatial grid — Quadrature and integration
     % - Topic: Inspect the domain — Spectral grid
-    % - Topic: Inspect the domain — Spectral grid — Axes and spacing
-    % - Topic: Inspect the domain — Spectral grid — Coordinate arrays
+    % - Topic: Inspect the domain — Spectral grid — Compact grid vectors
+    % - Topic: Inspect the domain — Spectral grid — Compact grid arrays
+    % - Topic: Inspect the domain — Spectral grid — Wavenumber spacing
     % - Topic: Inspect the domain — Spectral grid — Horizontal wavenumber geometry
     % - Topic: Inspect the domain — Spectral grid — Resolution and shape
     % - Topic: Inspect the domain — Spectral grid — Vertical modes and scaling
+    % - Topic: Inspect the domain — Spectral grid — Vertical-mode transformation matrices
     % - Topic: Inspect the domain — Transform configuration
     % - Topic: Initialize the flow
     % - Topic: Initialize the flow — General initialization
@@ -48,8 +50,10 @@ classdef WVTransformStratifiedQG < WVGeometryDoublyPeriodicStratified & WVTransf
     % - Topic: Evaluate physical fields — At arbitrary positions
     % - Topic: Evaluate physical fields — Isopycnal utilities
     % - Topic: Manage forcing and closures
+    % - Topic: Manage forcing and closures — Configure forcing
+    % - Topic: Manage forcing and closures — Inspect forcing and closures
+    % - Topic: Manage forcing and closures — Summarize forcing
     % - Topic: Analyze the flow
-    % - Topic: Analyze the flow — Energy and summaries
     % - Topic: Analyze the flow — Flow diagnostics
     % - Topic: Analyze the flow — Density validity
     % - Topic: Analyze the flow — Potential vorticity and enstrophy
@@ -57,11 +61,18 @@ classdef WVTransformStratifiedQG < WVGeometryDoublyPeriodicStratified & WVTransf
     % - Topic: Analyze the flow — Spectra — Spectral fields
     % - Topic: Analyze the flow — Spectra — Radial wavenumber
     % - Topic: Analyze the flow — Spectra — Frequency
+    % - Topic: Analyze energy
+    % - Topic: Analyze energy — Component energy
+    % - Topic: Analyze energy — Total energy
+    % - Topic: Analyze energy — Energy summaries
     % - Topic: Save transform state
     % - Topic: Convert representations
     % - Topic: Convert representations — Physical fields and coefficients
     % - Topic: Differentiate and integrate fields
     % - Topic: Inspect flow components
+    % - Topic: Inspect flow components — Primary flow components
+    % - Topic: Inspect flow components — Registered and combined components
+    % - Topic: Inspect flow components — Summarize flow components
     % - Topic: Inspect wave-vortex coefficients
     % - Topic: Inspect wave-vortex coefficients — Stored coefficients
     % - Topic: Inspect wave-vortex coefficients — Coefficients at the current time
@@ -73,6 +84,12 @@ classdef WVTransformStratifiedQG < WVGeometryDoublyPeriodicStratified & WVTransf
     % - Topic: Get package information
     % - Topic: Projection and reconstruction coefficients
     % - Topic: Geometry and mode indexing
+    % - Topic: Geometry and mode indexing — Mode numbers and validity
+    % - Topic: Geometry and mode indexing — Linear-index conversion
+    % - Topic: Geometry and mode indexing — DFT and WV layout metadata
+    % - Topic: Geometry and mode indexing — Layout conversion
+    % - Topic: Geometry and mode indexing — Masks and Hermitian bookkeeping
+    % - Topic: Geometry and mode indexing — Additional geometry utilities
     % - Topic: Spectral transforms and operators
     % - Topic: Nonlinear flux and forcing internals
     % - Topic: Persistence internals

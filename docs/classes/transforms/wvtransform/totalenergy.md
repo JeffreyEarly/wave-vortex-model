@@ -9,13 +9,14 @@ mathjax: true
 
 #  totalEnergy
 
-% - Topic: Energetics
+Total energy computed from wave-vortex coefficients.
 
 
 ---
 
 ## Discussion
-%
+Total energy computed from wave-vortex coefficients.
+
 The horizontally-averaged depth-integrated energy computed from the wave-vortex coefficients
 
 $$

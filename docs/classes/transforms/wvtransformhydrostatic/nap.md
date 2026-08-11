@@ -9,7 +9,7 @@ mathjax: true
 
 #  NAp
 
-These reconstruction coefficients map $$A_+$$ onto the density-displacement state variable. In the historical notation of [Early et al. (2021)](https://doi.org/10.1017/jfm.2020.995), they are the row 3, column 1 entries of $$S$$ for the primary internal-gravity-wave and geostrophic solutions in equation C4.
+Reconstructs density displacement from $$A_+$$.
 
 > Developer documentation: this item describes internal implementation details.
 
@@ -17,6 +17,8 @@ These reconstruction coefficients map $$A_+$$ onto the density-displacement stat
 ---
 
 ## Discussion
+Reconstructs density displacement from $$A_+$$.
+
 These reconstruction coefficients map $$A_+$$ onto the density-displacement state variable. In the historical notation of [Early et al. (2021)](https://doi.org/10.1017/jfm.2020.995), they are the row 3, column 1 entries of $$S$$ for the primary internal-gravity-wave and geostrophic solutions in equation C4.
 
 For $$k^2+l^2>0, j>0$$ this is written as,

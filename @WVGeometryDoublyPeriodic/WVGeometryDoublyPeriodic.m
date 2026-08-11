@@ -99,14 +99,14 @@ classdef WVGeometryDoublyPeriodic < CAAnnotatedClass
         % - Topic: Domain attributes — WV grid
         dftConjugateIndices2D uint64
 
-        % Stored x-direction angular wavenumbers on the compact WV grid.
+        % Compact `Nkl`-by-1 x-wavenumber vector in rad/m.
         %
         % `k` is an `Nkl`-by-1 column vector in radians per meter.
         %
         % - Topic: Domain attributes — WV grid
         k
         
-        % Stored y-direction angular wavenumbers on the compact WV grid.
+        % Compact `Nkl`-by-1 y-wavenumber vector in rad/m.
         %
         % `l` is an `Nkl`-by-1 column vector in radians per meter.
         %

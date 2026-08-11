@@ -144,21 +144,26 @@ elseif ismember(name,["Nx","Ny","Nz","spatialMatrixSize"])
     topicPath = "Inspect the domain — Spatial grid — Resolution and shape";
 elseif ismember(name,["z_int","volumeIntegral"])
     topicPath = "Inspect the domain — Spatial grid — Quadrature and integration";
-elseif ismember(name,["kAxis","lAxis","j","dk","dl"])
-    topicPath = "Inspect the domain — Spectral grid — Axes and spacing";
-elseif ismember(name,["k","l","K","L","J","klGrid","kljGrid"])
-    topicPath = "Inspect the domain — Spectral grid — Coordinate arrays";
+elseif ismember(name,["k","l","j"])
+    topicPath = "Inspect the domain — Spectral grid — Compact grid vectors";
+elseif ismember(name,["K","L","J","klGrid","kljGrid"])
+    topicPath = "Inspect the domain — Spectral grid — Compact grid arrays";
+elseif ismember(name,["dk","dl"])
+    topicPath = "Inspect the domain — Spectral grid — Wavenumber spacing";
 elseif ismember(name,["Kh","K2"])
     topicPath = "Inspect the domain — Spectral grid — Horizontal wavenumber geometry";
 elseif ismember(name,["Nj","Nkl","spectralMatrixSize", ...
         "effectiveHorizontalGridResolution", ...
-        "effectiveVerticalGridResolution","effectiveJMax"])
+        "effectiveVerticalGridResolution","effectiveJMax", ...
+        "summarizeDegreesOfFreedom"])
     topicPath = "Inspect the domain — Spectral grid — Resolution and shape";
 elseif className == "WVTransformBarotropicQG" && ismember(name,["h","h_0","Lr2"])
     topicPath = "Inspect the domain — Spectral grid — Equivalent depth and deformation scale";
 elseif ismember(name,["verticalModes","h","h_0","h_pm","Lr2", ...
         "waveModeVerticalStructureAtIndex"])
     topicPath = "Inspect the domain — Spectral grid — Vertical modes and scaling";
+elseif ismember(name,["FMatrix","FinvMatrix","GMatrix","GinvMatrix"])
+    topicPath = "Inspect the domain — Spectral grid — Vertical-mode transformation matrices";
 elseif ismember(name,["isHydrostatic","shouldAntialias"])
     topicPath = "Inspect the domain — Transform configuration";
 elseif ismember(name,["diffX","diffY","diffZF","diffZG","intZF","intZG"])
@@ -166,11 +171,17 @@ elseif ismember(name,["diffX","diffY","diffZF","diffZG","intZF","intZG"])
 elseif ismember(name,["transformUVEtaToWaveVortex","transformUVWEtaToWaveVortex", ...
         "transformWaveVortexToUVWEta","transformQGPVToWaveVortex"])
     topicPath = "Convert representations — Physical fields and coefficients";
-elseif name == "hasMeanPressureDifference" || startsWith(name,"summarizeEnergy") || ...
-        name == "summarizeModeEnergy" || name == "summarizeDegreesOfFreedom" || ...
-        ismember(name,energyNames())
-    topicPath = "Analyze the flow — Energy and summaries";
-elseif ismember(name,["uvMax","wMax"])
+elseif ismember(name,["geostrophicEnergy","waveEnergy","inertialEnergy", ...
+        "mdaEnergy","meanDensityAnomalyEnergy", ...
+        "geostrophicKineticEnergy","geostrophicPotentialEnergy", ...
+        "totalEnergyOfFlowComponent"])
+    topicPath = "Analyze energy — Component energy";
+elseif ismember(name,["totalEnergy","totalEnergySpatiallyIntegrated", ...
+        "exactTotalEnergy"])
+    topicPath = "Analyze energy — Total energy";
+elseif startsWith(name,"summarizeEnergy") || name == "summarizeModeEnergy"
+    topicPath = "Analyze energy — Energy summaries";
+elseif ismember(name,["uvMax","wMax","hasMeanPressureDifference"])
     topicPath = "Analyze the flow — Flow diagnostics";
 elseif name == "isDensityInValidRange"
     topicPath = "Analyze the flow — Density validity";
@@ -178,22 +189,29 @@ elseif contains(lower(name),"enstrophy") && ~contains(lower(name),"flux")
     topicPath = "Analyze the flow — Potential vorticity and enstrophy";
 elseif ismember(name,["spectrumWithFgTransform","spectrumWithGgTransform", ...
         "crossSpectrumWithFgTransform","crossSpectrumWithGgTransform", ...
-        "transformToKLAxes"])
+        "transformToKLAxes","kAxis","lAxis"])
     topicPath = "Analyze the flow — Spectra — Spectral fields";
 elseif name == "kRadial" || name == "transformToRadialWavenumber"
     topicPath = "Analyze the flow — Spectra — Radial wavenumber";
 elseif name == "convertFromWavenumberToFrequency"
     topicPath = "Analyze the flow — Spectra — Frequency";
-elseif ismember(name,["addForcing","setForcing","removeForcing", ...
-        "removeAllForcing","forcingNames","forcingWithName", ...
-        "hasForcingWithName","summarizeForcing","forcing","hasClosure"])
-    topicPath = "Manage forcing and closures";
+elseif ismember(name,["addForcing","setForcing","removeForcing","removeAllForcing"])
+    topicPath = "Manage forcing and closures — Configure forcing";
+elseif ismember(name,["forcingNames","forcingWithName", ...
+        "hasForcingWithName","forcing","hasClosure"])
+    topicPath = "Manage forcing and closures — Inspect forcing and closures";
+elseif name == "summarizeForcing"
+    topicPath = "Manage forcing and closures — Summarize forcing";
 elseif ismember(name,["waveComponent","inertialComponent", ...
-        "geostrophicComponent","mdaComponent","flowComponentNames", ...
-        "flowComponentWithName","flowComponents", ...
+        "geostrophicComponent","mdaComponent", ...
         "primaryFlowComponentNames","primaryFlowComponentWithName", ...
-        "primaryFlowComponents","totalFlowComponent","summarizeFlowComponents"])
-    topicPath = "Inspect flow components";
+        "primaryFlowComponents"])
+    topicPath = "Inspect flow components — Primary flow components";
+elseif ismember(name,["flowComponentNames","flowComponentWithName", ...
+        "flowComponents","totalFlowComponent"])
+    topicPath = "Inspect flow components — Registered and combined components";
+elseif name == "summarizeFlowComponents"
+    topicPath = "Inspect flow components — Summarize flow components";
 elseif ismember(name,["addFlowComponent","addPrimaryFlowComponent"])
     topicPath = "Extend a transform — Flow components";
 elseif ismember(name,["addOperation","removeOperation","operationWithName", ...
@@ -221,15 +239,23 @@ orderedGroups = {
     ["Lx","Ly","Lz"]
     ["Nx","Ny","Nz","spatialMatrixSize"]
     ["z_int","volumeIntegral"]
-    ["kAxis","lAxis","j","dk","dl"]
-    ["k","l","K","L","J","klGrid","kljGrid"]
+    ["k","l","j"]
+    ["K","L","J","klGrid","kljGrid"]
+    ["dk","dl"]
     ["Kh","K2"]
     ["Nj","Nkl","spectralMatrixSize","effectiveHorizontalGridResolution", ...
-        "effectiveVerticalGridResolution","effectiveJMax"]
+        "effectiveVerticalGridResolution","effectiveJMax","summarizeDegreesOfFreedom"]
     ["verticalModes","h","h_0","h_pm","Lr2","waveModeVerticalStructureAtIndex"]
+    ["FMatrix","FinvMatrix","GMatrix","GinvMatrix"]
+    ["addForcing","setForcing","removeForcing","removeAllForcing"]
+    ["forcing","forcingNames","forcingWithName","hasForcingWithName","hasClosure"]
+    ["waveComponent","inertialComponent","geostrophicComponent","mdaComponent", ...
+        "primaryFlowComponents","primaryFlowComponentNames","primaryFlowComponentWithName"]
+    ["flowComponents","flowComponentNames","flowComponentWithName","totalFlowComponent"]
     ["Ap","Am","A0"]
     ["Apt","Amt","A0t","waveCoefficientsAtTimeT"]
     ["t0","t","Omega","iOmega","phase","conjPhase"]
+    ["kAxis","lAxis","transformToKLAxes"]
     ["kRadial","transformToRadialWavenumber"]
     };
 
@@ -247,25 +273,51 @@ function topicPath = transformDeveloperTopic(name)
 lowerName = lower(name);
 if name == "WVTransform"
     topicPath = "Construction internals";
+elseif ismember(name,["kMode_dft","lMode_dft","kMode_wv","lMode_wv", ...
+        "isValidConjugateKLModeNumber","isValidConjugateModeNumber", ...
+        "isValidKLModeNumber","isValidModeNumber", ...
+        "isValidPrimaryKLModeNumber","isValidPrimaryModeNumber", ...
+        "primaryKLModeNumberFromKLModeNumber"])
+    topicPath = "Geometry and mode indexing — Mode numbers and validity";
+elseif ismember(name,["indexFromKLModeNumber","indexFromModeNumber", ...
+        "klModeNumberFromIndex","modeNumberFromIndex"])
+    topicPath = "Geometry and mode indexing — Linear-index conversion";
+elseif ismember(name,["conjugateDimension","Nk_dft","Nl_dft", ...
+        "k_dft","l_dft","kl","dftConjugateIndices2D", ...
+        "dftPrimaryIndices2D","indicesOfFourierConjugates", ...
+        "shouldExcludeConjugates","shouldExcludeNyquist"])
+    topicPath = "Geometry and mode indexing — DFT and WV layout metadata";
+elseif ismember(name,["indicesFromDFTGridToWVGrid", ...
+        "indicesFromWVGridToDFTGrid","transformFromDFTGridToWVGrid", ...
+        "transformFromWVGridToDFTGrid", ...
+        "transformFromSpatialDomainToDFTGrid", ...
+        "transformToSpatialDomainFromDFTGrid", ...
+        "transformToSpatialDomainFromDFTGridAtPosition"])
+    topicPath = "Geometry and mode indexing — Layout conversion";
+elseif ismember(name,["maskForAliasedModes", ...
+        "maskForConjugateFourierCoefficients","maskForNyquistModes", ...
+        "isHermitian","setConjugateToUnity"])
+    topicPath = "Geometry and mode indexing — Masks and Hermitian bookkeeping";
 elseif contains(lowerName,"cache") || contains(lowerName,"namemap") || ...
         contains(lowerName,"annotation") || contains(lowerName,"operation")
     topicPath = "Caches and registries";
 elseif contains(lowerName,"group") || contains(lowerName,"requiredpropert") || ...
         contains(lowerName,"netcdf") || startsWith(name,"restore") || startsWith(name,"namesOf")
     topicPath = "Persistence internals";
-elseif contains(lowerName,"flux") || contains(lowerName,"forcing") || startsWith(name,"rk4")
+elseif contains(lowerName,"flux") || contains(lowerName,"forcing") || ...
+        startsWith(name,"rk4") || ismember(name,["Fu","Fv","Feta","F0","Fpv"])
     topicPath = "Nonlinear flux and forcing internals";
 elseif contains(lowerName,"index") || contains(lowerName,"mode") || ...
         contains(lowerName,"grid") || contains(lowerName,"mask") || ...
         contains(lowerName,"axis") || contains(lowerName,"dimension") || ...
         contains(lowerName,"matrixsize") || startsWith(name,"isValid")
-    topicPath = "Geometry and mode indexing";
+    topicPath = "Geometry and mode indexing — Additional geometry utilities";
 elseif contains(lowerName,"transform") || contains(lowerName,"matrix") || ...
         contains(lowerName,"dct") || contains(lowerName,"dst") || ...
-        startsWith(name,"PF") || startsWith(name,"QG")
+        startsWith(name,"PF") || startsWith(name,"QG") || ismember(name,["P0","Q0"])
     topicPath = "Spectral transforms and operators";
 elseif contains(name,"Ap") || contains(name,"Am") || contains(name,"A0") || ...
-        ismember(name,["Fu","Fv","Feta","F0","Fpv","PA0","P0","Q0"])
+        name == "PA0"
     topicPath = "Projection and reconstruction coefficients";
 else
     topicPath = "Class internals";
@@ -485,12 +537,4 @@ end
 if numel(parts) >= 3
     metadata.subsubtopic = parts(3);
 end
-end
-
-function names = energyNames()
-names = ["totalEnergy","totalEnergySpatiallyIntegrated","exactTotalEnergy", ...
-    "geostrophicEnergy","waveEnergy","inertialEnergy", ...
-    "mdaEnergy","meanDensityAnomalyEnergy", ...
-    "geostrophicKineticEnergy","geostrophicPotentialEnergy", ...
-    "totalEnergyOfFlowComponent"];
 end

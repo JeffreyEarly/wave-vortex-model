@@ -166,6 +166,7 @@ classdef TestCoreAPIDocumentation < matlab.unittest.TestCase
                 "Evaluate physical fields"
                 "Manage forcing and closures"
                 "Analyze the flow"
+                "Analyze energy"
                 "Save transform state"
                 "Convert representations"
                 "Differentiate and integrate fields"
@@ -197,17 +198,112 @@ classdef TestCoreAPIDocumentation < matlab.unittest.TestCase
             testCase.verifyTextOrder(domain,["[`x`]" "[`y`]" "[`z`]"]);
             testCase.verifyTextOrder(domain,["[`X`]" "[`Y`]" "[`Z`]" "[`xyzGrid`]"]);
             testCase.verifyTextOrder(domain,["[`z_int`]" "[`volumeIntegral`]"]);
-            testCase.verifyTextOrder(domain,["[`kAxis`]" "[`lAxis`]" "[`j`]" "[`dk`]" "[`dl`]"]);
-            testCase.verifyTextOrder(domain,["[`k`]" "[`l`]" "[`K`]" "[`L`]" "[`J`]" "[`kljGrid`]"]);
+            testCase.verifyTextOrder(domain,["[`k`]" "[`l`]" "[`j`]"]);
+            testCase.verifyTextOrder(domain,["[`K`]" "[`L`]" "[`J`]" "[`kljGrid`]"]);
+            testCase.verifyTextOrder(domain,["[`dk`]" "[`dl`]"]);
             testCase.verifyTextOrder(domain,["[`Kh`]" "[`K2`]"]);
+            testCase.verifyTextOrder(domain,["[`FMatrix`]" "[`FinvMatrix`]" "[`GMatrix`]" "[`GinvMatrix`]"]);
+            testCase.verifyFalse(any(contains(domain,["[`kAxis`]" "[`lAxis`]" "[`transformToKLAxes`]" ])));
             for name = ["f" "g" "dLnN2" "rho0" "planetaryRadius" "rotationRate"]
                 testCase.verifySubstring(domain,"[`" + name + "`]");
             end
 
-            analysis = extractBetween(page,"+ Analyze the flow","+ Save transform state");
+            barotropic = testCase.generatedTransformPage("wvtransformbarotropicqg","index.md");
+            barotropicDomain = extractBetween(barotropic,"+ Inspect the domain","+ Initialize the flow");
+            testCase.verifyTextOrder(barotropicDomain,["[`k`]" "[`l`]"]);
+            testCase.verifyTextOrder(barotropicDomain,["[`K`]" "[`L`]" "[`klGrid`]"]);
+
+            analysis = extractBetween(page,"+ Analyze the flow","+ Analyze energy");
+            testCase.verifyTextOrder(analysis,["[`kAxis`]" "[`lAxis`]" "[`transformToKLAxes`]"]);
             testCase.verifyTextOrder(analysis,["[`kRadial`]" "[`transformToRadialWavenumber`]"]);
             testCase.verifyFalse(contains(analysis,"Pseudo-radial wavenumber"));
             testCase.verifyFalse(contains(analysis,"transformToOmegaAxis"));
+        end
+
+        function transformTopicsGroupForcingEnergyAndComponents(testCase)
+            page = testCase.generatedTransformPage("wvtransformhydrostatic","index.md");
+            forcing = extractBetween(page,"+ Manage forcing and closures","+ Analyze the flow");
+            testCase.verifyTextOrder(forcing,["Configure forcing" "Inspect forcing and closures" "Summarize forcing"]);
+            testCase.verifySubstring(forcing,"[`addForcing`]");
+            testCase.verifySubstring(forcing,"[`forcingNames`]");
+            testCase.verifySubstring(forcing,"[`summarizeForcing`]");
+
+            energy = extractBetween(page,"+ Analyze energy","+ Save transform state");
+            testCase.verifyTextOrder(energy,["Component energy" "Total energy" "Energy summaries"]);
+            testCase.verifySubstring(energy,"[`totalEnergyOfFlowComponent`]");
+            testCase.verifySubstring(energy,"[`totalEnergy`]");
+            testCase.verifySubstring(energy,"[`summarizeEnergyContent`]");
+
+            components = extractBetween(page,"+ Inspect flow components","+ Inspect wave-vortex coefficients");
+            testCase.verifyTextOrder(components,["Primary flow components" "Registered and combined components" "Summarize flow components"]);
+            testCase.verifyTextOrder(components,["[`waveComponent`]" "[`inertialComponent`]" "[`geostrophicComponent`]" "[`mdaComponent`]"]);
+
+            for folder = ["wvtransformstratifiedqg" "wvtransformbarotropicqg"]
+                qgPage = testCase.generatedTransformPage(folder,"index.md");
+                qgComponents = extractBetween(qgPage,"+ Inspect flow components","+ Inspect wave-vortex coefficients");
+                testCase.verifySubstring(qgComponents,"[`geostrophicComponent`]");
+                testCase.verifyFalse(any(contains(qgComponents,["[`waveComponent`]" "[`inertialComponent`]" "[`mdaComponent`]" ])));
+            end
+        end
+
+        function transformDeveloperGeometryHasIntentionalSubtopics(testCase)
+            page = testCase.generatedTransformPage("wvtransformhydrostatic","index.md");
+            developer = extractAfter(page,"## Developer Topics");
+            geometry = extractBetween(developer,"+ Geometry and mode indexing","+ Spectral transforms and operators");
+            expectedSubtopics = [
+                "Mode numbers and validity"
+                "Linear-index conversion"
+                "DFT and WV layout metadata"
+                "Layout conversion"
+                "Masks and Hermitian bookkeeping"
+                ];
+            testCase.verifyTextOrder(geometry,expectedSubtopics);
+
+            movedMembers = ["Nk_dft" "Nl_dft" "k_dft" "l_dft" "kl" ...
+                "dftConjugateIndices2D" "dftPrimaryIndices2D" ...
+                "indicesOfFourierConjugates" "shouldExcludeConjugates" ...
+                "shouldExcludeNyquist" "isHermitian" "setConjugateToUnity"];
+            for name = movedMembers
+                testCase.verifySubstring(geometry,"[`" + name + "`]");
+            end
+
+            classInternals = extractAfter(developer,"+ Class internals");
+            for name = movedMembers
+                testCase.verifyFalse(contains(classInternals,"[`" + name + "`]"));
+            end
+        end
+
+        function transformSummariesAreConciseAndSpecific(testCase)
+            page = testCase.generatedTransformPage("wvtransformhydrostatic","index.md");
+            expectedSummaries = {
+                "Ap", "Positive-frequency wave–vortex coefficient array."
+                "Am", "Negative-frequency wave–vortex coefficient array."
+                "A0", "Zero-frequency wave–vortex coefficient array."
+                "k", "Compact `Nkl`-by-1 x-wavenumber vector in rad/m."
+                "l", "Compact `Nkl`-by-1 y-wavenumber vector in rad/m."
+                "j", "Dimensionless `Nj`-by-1 vertical-mode index vector."
+                "kAxis", "Centered `Nx`-by-1 x-wavenumber axis in rad/m."
+                "lAxis", "Centered `Ny`-by-1 y-wavenumber axis in rad/m."
+                "rho_bar", "Current horizontally averaged density, `[Nz 1]`, in kg/m³."
+                "rho_nm", "Diagnosed no-motion density profile, `[Nz 1]`, in kg/m³."
+                "rho_nm0", "Reference no-motion density profile, `[Nz 1]`, in kg/m³."
+                "FMatrix", "Projects F-grid values onto vertical modes with shape `[Nj Nz]`."
+                "FinvMatrix", "Reconstructs F-grid values from vertical modes with shape `[Nz Nj]`."
+                "GMatrix", "Projects G-grid values onto vertical modes with shape `[Nj Nz]`."
+                "GinvMatrix", "Reconstructs G-grid values from vertical modes with shape `[Nz Nj]`."
+                };
+            for iExpectation = 1:size(expectedSummaries,1)
+                testCase.verifyEqual(testCase.memberSummary(page,expectedSummaries{iExpectation,1}),expectedSummaries{iExpectation,2});
+            end
+
+            coefficientNames = ["A0N" "A0U" "A0V" "A0Z" "ApmD" "ApmN" ...
+                "NA0" "NAm" "NAp" "PA0" "UA0" "UAm" "UAp" ...
+                "VA0" "VAm" "VAp" "WAm" "WAp"];
+            for name = coefficientNames
+                summary = testCase.memberSummary(page,name);
+                testCase.verifyTrue(startsWith(summary,["Projects" "Reconstructs"]),name + " has an inconsistent summary: " + summary);
+                testCase.verifyLessThanOrEqual(strlength(summary),80,name + " has an overly long topic summary.");
+            end
         end
 
         function staleTransformLevelSpectralBinningIsAbsent(testCase)
@@ -768,6 +864,13 @@ classdef TestCoreAPIDocumentation < matlab.unittest.TestCase
             topicBlock = extractBetween(page,"## Topics","## Developer Topics");
             tokens = regexp(topicBlock,'(?m)^\+ (?<name>[^\r\n]+)$','names');
             topics = string({tokens.name})';
+        end
+
+        function summary = memberSummary(testCase,page,name)
+            lines = splitlines(page);
+            candidate = lines(startsWith(strtrim(lines),"+ [`" + name + "`]"));
+            testCase.assertNumElements(candidate,1,"Expected exactly one topic-list entry for " + name + ".");
+            summary = strtrim(regexprep(candidate,'^.*\)\s*',''));
         end
 
         function verifyTextOrder(testCase,text,tokens)
