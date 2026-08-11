@@ -9,6 +9,11 @@ arguments
     options.outputDirectory (1,1) string = ""
     options.runId (1,1) string = string(datetime("now","TimeZone","UTC","Format","yyyyMMdd'T'HHmmss'Z'"))
     options.shouldWriteArtifacts (1,1) logical = true
+    options.phaseImplementation (1,1) string {mustBeMember(options.phaseImplementation,["scalar" "accelerate"])} = defaultPhaseImplementation
+    options.optimizationLevel (1,1) string {mustBeMember(options.optimizationLevel,["default" "native"])} = "default"
+    options.modalWorkerCount (1,1) double {mustBeMember(options.modalWorkerCount,[1 2 4 8])} = 1
+    options.modalCoefficientMode (1,1) string {mustBeMember(options.modalCoefficientMode,["compact" "prescaled"])} = "prescaled"
+    options.variantIdentifier (1,1) string = "compiled"
 end
 
 benchmarkFolder=string(fileparts(mfilename("fullpath"))); repositoryRoot=string(fileparts(benchmarkFolder));
@@ -18,7 +23,7 @@ addRepositoryPaths(repositoryRoot,benchmarkFolder);
 suite=waveVortexBenchmarkSuites("core-v1"); cases=suite.cases;
 if ~isempty(options.caseIds), cases=cases(ismember(string({cases.id}),options.caseIds)); end
 if isempty(cases), error("WaveVortexBenchmark:NoCompiledKernelCases","No core-v1 cases matched the selection."); end
-buildDirectory=fullfile(benchmarkFolder,"build"); buildCompiledKernelTransformMex(outputDirectory=buildDirectory);
+buildDirectory=fullfile(benchmarkFolder,"build"); buildCompiledKernelTransformMex(outputDirectory=buildDirectory,phaseImplementation=options.phaseImplementation,optimizationLevel=options.optimizationLevel,modalWorkerCount=options.modalWorkerCount,modalCoefficientMode=options.modalCoefficientMode);
 if options.outputDirectory=="", options.outputDirectory=fullfile(benchmarkFolder,"results","experiments","issue53",options.runId+"-"+computer("arch")+"-"+version("-release")); end
 
 caseResults=repmat(emptyCase(),0,1);
@@ -37,7 +42,7 @@ decision=readinessDecision(caseResults);
 [commit,tree,isDirty]=gitIdentity(repositoryRoot);
 results=struct("schemaVersion","1.0.0","status",conditional(all(string({caseResults.status})=="complete"),"complete","partial"),"runId",options.runId, ...
     "environment",environmentRecord(options.threadCount),"source",struct("repository","JeffreyEarly/wave-vortex-model","commit",commit,"tree",tree,"isDirty",isDirty), ...
-    "configuration",struct("suiteId","core-v1","operation","ordinary nonlinearFlux","processRunCount",options.processRunCount,"warmupPolicy","core-v1","samplePolicy","7 medium / 3 large","speedThreshold",1.25,"correctnessTolerance",1e-12,"baseline","optimized-builtin"), ...
+    "configuration",struct("suiteId","core-v1","operation","ordinary nonlinearFlux","processRunCount",options.processRunCount,"warmupPolicy","core-v1","samplePolicy","7 medium / 3 large","speedThreshold",1.25,"correctnessTolerance",1e-12,"baseline","optimized-builtin","variantIdentifier",options.variantIdentifier,"phaseImplementation",options.phaseImplementation,"modalCoefficientMode",options.modalCoefficientMode,"optimizationLevel",options.optimizationLevel,"modalWorkerCount",options.modalWorkerCount), ...
     "suite",struct("id","core-v1","version",1,"kind","compiled-kernel-readiness","operation","nonlinearAdvection","cases",caseResults),"decision",decision);
 if options.shouldWriteArtifacts
     if ~isfolder(options.outputDirectory), mkdir(options.outputDirectory); end
@@ -49,7 +54,7 @@ end
 
 function run=runWorker(benchmarkCase,implementation,repeatIndex,options,benchmarkFolder,repositoryRoot,buildDirectory)
 configPath=string(tempname)+".json"; outputPath=string(tempname)+".json"; cleanup=onCleanup(@()deleteTemporaryFiles(configPath,outputPath));
-config=struct("benchmarkCase",benchmarkCase,"implementation",implementation,"repeatIndex",repeatIndex,"repositoryRoot",repositoryRoot,"benchmarkFolder",benchmarkFolder,"buildDirectory",buildDirectory,"matlabPath",path,"samplerPath",fullfile(benchmarkFolder,"sampleProcessRSS.sh"),"samplingIntervalSeconds",options.samplingIntervalSeconds,"plateauSeconds",options.plateauSeconds,"threadCount",options.threadCount);
+config=struct("benchmarkCase",benchmarkCase,"implementation",implementation,"repeatIndex",repeatIndex,"repositoryRoot",repositoryRoot,"benchmarkFolder",benchmarkFolder,"buildDirectory",buildDirectory,"matlabPath",path,"samplerPath",fullfile(benchmarkFolder,"sampleProcessRSS.sh"),"samplingIntervalSeconds",options.samplingIntervalSeconds,"plateauSeconds",options.plateauSeconds,"threadCount",options.threadCount,"variantIdentifier",options.variantIdentifier,"phaseImplementation",options.phaseImplementation,"modalCoefficientMode",options.modalCoefficientMode,"optimizationLevel",options.optimizationLevel,"modalWorkerCount",options.modalWorkerCount);
 writeText(configPath,jsonencode(config));
 statement="addpath('"+replace(benchmarkFolder,"'","''")+"'); compiledKernelReadinessWorker('"+replace(configPath,"'","''")+"','"+replace(outputPath,"'","''")+"')";
 command=sprintf('"%s" -batch "%s"',fullfile(matlabroot,"bin","matlab"),replace(statement,'"','\"'));
@@ -128,6 +133,10 @@ end
 
 function value=emptyCase()
 value=struct("id","","transformId","","Nxyz",[],"isHydrostatic",false,"shouldAntialias",true,"seed",0,"warmupCount",0,"sampleCount",0,"status","failed","backends",repmat(emptyBackend(),0,1),"speedup",NaN,"implementationExecuted",false,"storagePassed",false,"thresholdPassed",false);
+end
+
+function value=defaultPhaseImplementation
+if ismac, value="accelerate"; else, value="scalar"; end
 end
 
 function markdown=summaryMarkdown(results)

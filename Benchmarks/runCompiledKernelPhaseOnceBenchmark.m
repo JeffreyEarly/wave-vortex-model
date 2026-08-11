@@ -11,6 +11,9 @@ arguments
     options.runId (1,1) string = string(datetime("now","TimeZone","UTC","Format","yyyyMMdd'T'HHmmss'Z'"))
     options.shouldWriteArtifacts (1,1) logical = true
     options.requireCleanCandidate (1,1) logical = false
+    options.phaseImplementation (1,1) string {mustBeMember(options.phaseImplementation,["scalar" "accelerate"])} = defaultPhaseImplementation
+    options.optimizationLevel (1,1) string {mustBeMember(options.optimizationLevel,["default" "native"])} = "default"
+    options.modalWorkerCount (1,1) double {mustBeMember(options.modalWorkerCount,[1 2 4 8])} = 1
 end
 
 benchmarkFolder=string(fileparts(mfilename("fullpath"))); repositoryRoot=string(fileparts(benchmarkFolder));
@@ -22,8 +25,8 @@ if status~=0, rmdir(temporaryRoot,"s"); error("WaveVortexBenchmark:PhaseOnceBase
 cleanup=onCleanup(@()removeTemporaryWorktree(repositoryRoot,baselineRoot,temporaryRoot));
 
 cleanMatlabPath=benchmarkMatlabPath(repositoryRoot,baselineRoot);
-baseline=runReadinessSnapshot(baselineRoot,"baseline",options,temporaryRoot,cleanMatlabPath);
-candidate=runReadinessSnapshot(repositoryRoot,"phase-once",options,temporaryRoot,cleanMatlabPath);
+baseline=runReadinessSnapshot(baselineRoot,"baseline",options,temporaryRoot,cleanMatlabPath,false);
+candidate=runReadinessSnapshot(repositoryRoot,"phase-once",options,temporaryRoot,cleanMatlabPath,true);
 cases=compareCases(baseline,candidate);
 decision=compiledKernelPhaseOnceDecision(cases);
 results=struct("schemaVersion","1.0.0","status",conditional(all(string({cases.status})=="complete"),"complete","partial"),"runId",options.runId, ...
@@ -39,10 +42,12 @@ end
 clear cleanup
 end
 
-function result=runReadinessSnapshot(sourceRoot,identifier,options,temporaryRoot,cleanMatlabPath)
+function result=runReadinessSnapshot(sourceRoot,identifier,options,temporaryRoot,cleanMatlabPath,isCandidate)
 outputDirectory=fullfile(temporaryRoot,identifier); if ~isfolder(outputDirectory), mkdir(outputDirectory); end
 caseExpression="strings(1,0)"; if ~isempty(options.caseIds), caseExpression="["+strjoin(string(compose('"%s"',options.caseIds))," ")+"]"; end
-statement="path('"+replace(cleanMatlabPath,"'","''")+"'); addpath('"+replace(fullfile(sourceRoot,"Benchmarks"),"'","''")+"'); runCompiledKernelReadinessBenchmark(caseIds="+caseExpression+",processRunCount="+options.processRunCount+",samplingIntervalSeconds="+options.samplingIntervalSeconds+",plateauSeconds="+options.plateauSeconds+",threadCount="+options.threadCount+",outputDirectory='"+replace(outputDirectory,"'","''")+"',runId='"+identifier+"');";
+variantArguments="";
+if isCandidate, variantArguments=",phaseImplementation='"+options.phaseImplementation+"',optimizationLevel='"+options.optimizationLevel+"',modalWorkerCount="+options.modalWorkerCount+",variantIdentifier='"+identifier+"'"; end
+statement="path('"+replace(cleanMatlabPath,"'","''")+"'); addpath('"+replace(fullfile(sourceRoot,"Benchmarks"),"'","''")+"'); runCompiledKernelReadinessBenchmark(caseIds="+caseExpression+",processRunCount="+options.processRunCount+",samplingIntervalSeconds="+options.samplingIntervalSeconds+",plateauSeconds="+options.plateauSeconds+",threadCount="+options.threadCount+",outputDirectory='"+replace(outputDirectory,"'","''")+"',runId='"+identifier+"'"+variantArguments+");";
 command=sprintf('"%s" -batch "%s"',fullfile(matlabroot,"bin","matlab"),replace(statement,'"','\"'));
 [status,output]=system(command);
 artifact=fullfile(outputDirectory,"compiled-kernel-readiness.json");
@@ -106,4 +111,8 @@ end
 
 function value=emptyCase()
 value=struct("id","","Nxyz",[],"isHydrostatic",false,"status","failed","builtin",struct(),"baseline",struct(),"candidate",struct(),"speedup",NaN,"exactStorageRatio",NaN,"peakRSSRatio",NaN,"phaseCountPassed",false,"correctnessPassed",false,"noSpeedRegression",false,"noMemoryRegression",false,"fivePercentSpeedPassed",false);
+end
+
+function value=defaultPhaseImplementation
+if ismac, value="accelerate"; else, value="scalar"; end
 end

@@ -236,19 +236,30 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
         requireStatus(value.nonlinearFlux(state,flux));
         return;
     }
+    if (command == "setStageInstrumentation") {
+        if (nrhs != 3 || nlhs != 0 || !mxIsLogicalScalar(prhs[2])) fail("WaveVortexModel:CompiledKernelCommand","setStageInstrumentation requires handle and a logical scalar.");
+        value.setStageInstrumentation(mxIsLogicalScalarTrue(prhs[2]));
+        return;
+    }
     if (command == "metrics") {
         if (nrhs != 2 || nlhs != 1) fail("WaveVortexModel:CompiledKernelCommand","metrics requires one handle.");
-        const char* names[] = {"engine","loadedLibrary","nonlinearFluxSchedule","planMemoryAccounting","contractVersion","planCount","planBytes","descriptorBytes","scratchCapacityBytes","scratchHighWaterBytes","halfSpectrumScratchCapacityBytes","realScratchCapacityBytes","executionCount","horizontalExecutionCount","verticalExecutionCount","nonlinearFluxCallCount","nonlinearFluxPhaseEvaluationCount","phaseWorkspaceBytes","persistentBytes","stateInputBytes","fluxOutputBytes","knownMaximumLiveOwnedBytes","persistentFullHermitianBytes","gradientMaskBytes","Nx","Ny","Nz","Nj","Nkl"};
-        plhs[0] = mxCreateStructMatrix(1,1,29,names);
+        const char* names[] = {"engine","loadedLibrary","nonlinearFluxSchedule","phaseImplementation","modalCoefficientMode","optimizationImplementation","modalWorkerCount","planMemoryAccounting","contractVersion","planCount","planBytes","descriptorBytes","scratchCapacityBytes","scratchHighWaterBytes","halfSpectrumScratchCapacityBytes","realScratchCapacityBytes","executionCount","horizontalExecutionCount","verticalExecutionCount","nonlinearFluxCallCount","nonlinearFluxPhaseEvaluationCount","phaseWorkspaceBytes","persistentBytes","stateInputBytes","fluxOutputBytes","knownMaximumLiveOwnedBytes","persistentFullHermitianBytes","gradientMaskBytes","Nx","Ny","Nz","Nj","Nkl","phaseSeconds","reconstructionSeconds","derivativeReconstructionSeconds","productSeconds","projectionSeconds","modalReconstructionSeconds","modalDerivativeSeconds","modalProjectionSeconds"};
+        plhs[0] = mxCreateStructMatrix(1,1,41,names);
         const auto& metrics = value.metrics();
         const auto& configuration = value.descriptor().configuration();
         const auto spectralBytes = value.descriptor().spectralShape().elementCount() * sizeof(WVComplex64);
         mxSetField(plhs[0],0,"engine",mxCreateString(value.engineIdentifier().c_str()));
         mxSetField(plhs[0],0,"loadedLibrary",mxCreateString(value.engineLibraryIdentity().c_str()));
         mxSetField(plhs[0],0,"nonlinearFluxSchedule",mxCreateString(value.nonlinearFluxScheduleIdentifier()));
+        mxSetField(plhs[0],0,"phaseImplementation",mxCreateString(value.phaseImplementationIdentifier()));
+        mxSetField(plhs[0],0,"modalCoefficientMode",mxCreateString(value.modalCoefficientModeIdentifier()));
+        mxSetField(plhs[0],0,"optimizationImplementation",mxCreateString(value.optimizationImplementationIdentifier()));
+        mxSetField(plhs[0],0,"modalWorkerCount",mxCreateDoubleScalar(static_cast<double>(value.modalWorkerCount())));
         mxSetField(plhs[0],0,"planMemoryAccounting",mxCreateString("wrapper-lower-bound; FFTW-owned plan memory is opaque"));
         const double numbers[] = {static_cast<double>(WVKernelContractVersion),static_cast<double>(metrics.planCount),static_cast<double>(metrics.planBytes),static_cast<double>(metrics.descriptorBytes),static_cast<double>(metrics.scratchCapacityBytes),static_cast<double>(metrics.scratchHighWaterBytes),static_cast<double>(metrics.halfSpectrumScratchCapacityBytes),static_cast<double>(metrics.realScratchCapacityBytes),static_cast<double>(metrics.executionCount),static_cast<double>(metrics.horizontalExecutionCount),static_cast<double>(metrics.verticalExecutionCount),static_cast<double>(metrics.nonlinearFluxCallCount),static_cast<double>(metrics.nonlinearFluxPhaseEvaluationCount),0.0,static_cast<double>(value.persistentBytes()),static_cast<double>(3*spectralBytes),static_cast<double>(3*spectralBytes),static_cast<double>(value.persistentBytes()+3*spectralBytes),0.0,0.0,static_cast<double>(configuration.Nx),static_cast<double>(configuration.Ny),static_cast<double>(configuration.Nz),static_cast<double>(configuration.Nj),static_cast<double>(value.descriptor().Nkl())};
-        for (std::size_t i = 0; i < 25; ++i) mxSetField(plhs[0],0,names[i+4],mxCreateDoubleScalar(numbers[i]));
+        for (std::size_t i = 0; i < 25; ++i) mxSetField(plhs[0],0,names[i+8],mxCreateDoubleScalar(numbers[i]));
+        const double stageSeconds[] = {metrics.phaseSeconds,metrics.reconstructionSeconds,metrics.derivativeReconstructionSeconds,metrics.productSeconds,metrics.projectionSeconds,metrics.modalReconstructionSeconds,metrics.modalDerivativeSeconds,metrics.modalProjectionSeconds};
+        for (std::size_t i = 0; i < 8; ++i) mxSetField(plhs[0],0,names[i+33],mxCreateDoubleScalar(stageSeconds[i]));
         return;
     }
     fail("WaveVortexModel:CompiledKernelCommand","Unknown compiled-kernel command.");

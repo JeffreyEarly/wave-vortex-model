@@ -17,7 +17,14 @@ try
         advanceWaveVortexBenchmarkState(wvt,state,iWarmup); outputs=executeOperation(config.implementation,wvt,handle); %#ok<NASGU>
         clear outputs
     end
+    if string(config.implementation)=="compiled"
+        wv_compiled_transform_mex('setStageInstrumentation',handle,true);
+        diagnosticOutputs=executeOperation(config.implementation,wvt,handle); %#ok<NASGU>
+        clear diagnosticOutputs
+        wv_compiled_transform_mex('setStageInstrumentation',handle,false);
+    end
     writePhase(phasePath,"persistent"); [ledger,metrics,metadata]=implementationMetadata(config.implementation,wvt,handle); drawnow; pause(config.plateauSeconds);
+    metadata.variantIdentifier=string(config.variantIdentifier); metadata.requestedPhaseImplementation=string(config.phaseImplementation); metadata.requestedModalCoefficientMode=string(config.modalCoefficientMode); metadata.requestedOptimizationLevel=string(config.optimizationLevel); metadata.requestedModalWorkerCount=config.modalWorkerCount;
     rawSeconds=NaN(1,config.benchmarkCase.sampleCount); finalOutputs=[];
     for iSample=1:config.benchmarkCase.sampleCount
         advanceWaveVortexBenchmarkState(wvt,state,config.benchmarkCase.warmupCount+iSample); writePhase(phasePath,"nonlinearFlux"); timer=tic; finalOutputs=executeOperation(config.implementation,wvt,handle); rawSeconds(iSample)=toc(timer);
@@ -49,7 +56,7 @@ end
 
 function [ledger,metrics,metadata]=implementationMetadata(implementation,wvt,handle)
 if string(implementation)=="compiled"
-    metrics=wv_compiled_transform_mex('metrics',handle); ledger=struct("knownPersistentBytes",metrics.persistentBytes,"knownMaximumLiveBytes",metrics.knownMaximumLiveOwnedBytes,"descriptorBytes",metrics.descriptorBytes,"halfSpectrumScratchBytes",metrics.halfSpectrumScratchCapacityBytes,"realScratchBytes",metrics.realScratchCapacityBytes,"planWrapperLowerBoundBytes",metrics.planBytes,"opaquePlanMemory","reported through RSS","persistentFullHermitianBytes",metrics.persistentFullHermitianBytes,"gradientMaskBytes",metrics.gradientMaskBytes); metadata=struct("activeImplementation","compiled","engine",string(metrics.engine),"loadedLibrary",string(metrics.loadedLibrary),"schedule",string(metrics.nonlinearFluxSchedule),"contractVersion",metrics.contractVersion,"fallback",false);
+    metrics=wv_compiled_transform_mex('metrics',handle); ledger=struct("knownPersistentBytes",metrics.persistentBytes,"knownMaximumLiveBytes",metrics.knownMaximumLiveOwnedBytes,"descriptorBytes",metrics.descriptorBytes,"halfSpectrumScratchBytes",metrics.halfSpectrumScratchCapacityBytes,"realScratchBytes",metrics.realScratchCapacityBytes,"planWrapperLowerBoundBytes",metrics.planBytes,"opaquePlanMemory","reported through RSS","persistentFullHermitianBytes",metrics.persistentFullHermitianBytes,"gradientMaskBytes",metrics.gradientMaskBytes); metadata=struct("activeImplementation","compiled","engine",string(metrics.engine),"loadedLibrary",string(metrics.loadedLibrary),"schedule",string(metrics.nonlinearFluxSchedule),"phaseImplementation",string(metrics.phaseImplementation),"modalCoefficientMode",string(metrics.modalCoefficientMode),"optimizationImplementation",string(metrics.optimizationImplementation),"modalWorkerCount",metrics.modalWorkerCount,"contractVersion",metrics.contractVersion,"fallback",false);
 else
     ledger=wvt.transformStorageLedger(); metrics=struct(); metadata=struct("activeImplementation","builtin","engine","matlab-builtin","loadedLibrary","MATLAB managed","schedule","MATLAB ordinary nonlinearFlux","contractVersion",NaN,"fallback",false);
 end

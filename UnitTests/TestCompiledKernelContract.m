@@ -18,13 +18,20 @@ classdef TestCompiledKernelContract < matlab.unittest.TestCase
             for testDefinition = cases
                 wvt = WVTransformConstantStratification(testDefinition.Lxyz,testDefinition.Nxyz,isHydrostatic=testDefinition.isHydrostatic,shouldAntialias=testDefinition.shouldAntialias);
                 actual = descriptorDump(testDefinition,wvt.Nj);
-                testCase.verifyEqual(actual.contractVersion,3);
+                testCase.verifyEqual(actual.contractVersion,4);
                 testCase.verifyEqual(actual.Nkl,wvt.Nkl);
                 testCase.verifyEqual(actual.spectralShape(:)',[wvt.Nj wvt.Nkl]);
                 testCase.verifyEqual(actual.kMode(:),wvt.kMode_wv(:));
                 testCase.verifyEqual(actual.lMode(:),wvt.lMode_wv(:));
                 testCase.verifyEqual(actual.k(:),wvt.k(:),AbsTol=1e-15);
                 testCase.verifyEqual(actual.l(:),wvt.l(:),AbsTol=1e-15);
+                horizontalKh=wvt.Kh(1,:);
+                testCase.verifyEqual(actual.Kh(:),horizontalKh(:),AbsTol=1e-15);
+                expectedCosAlpha=zeros(size(horizontalKh)); expectedSinAlpha=zeros(size(horizontalKh)); nonzero=horizontalKh~=0;
+                horizontalK=reshape(wvt.k,1,[]); horizontalL=reshape(wvt.l,1,[]);
+                expectedCosAlpha(nonzero)=horizontalK(nonzero)./horizontalKh(nonzero); expectedSinAlpha(nonzero)=horizontalL(nonzero)./horizontalKh(nonzero);
+                testCase.verifyEqual(actual.cosAlpha(:),expectedCosAlpha(:),AbsTol=1e-15);
+                testCase.verifyEqual(actual.sinAlpha(:),expectedSinAlpha(:),AbsTol=1e-15);
                 testCase.verifyEqual(uint64(actual.dftPrimaryIndices2D(:)),wvt.dftPrimaryIndices2D(:));
                 testCase.verifyEqual(uint64(actual.dftConjugateIndices2D(:)),wvt.dftConjugateIndices2D(:));
                 layout = WVFourierStorageLayout(wvt,"hermitian-half",compressedDimension=1);
@@ -39,23 +46,29 @@ classdef TestCompiledKernelContract < matlab.unittest.TestCase
                 testCase.verifyEqual(actual.j(:),wvt.j(:));
                 testCase.verifyEqual(actual.h0(:),wvt.h_0(:),RelTol=1e-14);
                 testCase.verifyEqual(actual.coriolisFrequency,wvt.f,RelTol=1e-14);
-                testCase.verifyEqual(reshape(actual.hpm,wvt.spectralMatrixSize),wvt.h_pm,RelTol=1e-13);
                 testCase.verifyEqual(reshape(actual.omega,wvt.spectralMatrixSize),wvt.Omega,RelTol=1e-13);
-                testCase.verifyEqual(reshape(actual.Fg,wvt.spectralMatrixSize),wvt.F_g,RelTol=1e-13);
-                testCase.verifyEqual(reshape(actual.Gg,wvt.spectralMatrixSize),wvt.G_g,RelTol=1e-13);
-                testCase.verifyEqual(reshape(actual.Fwg,wvt.spectralMatrixSize),wvt.F_wg,RelTol=1e-13);
-                testCase.verifyEqual(reshape(actual.Gwg,wvt.spectralMatrixSize),wvt.G_wg,RelTol=1e-13);
-                complexFields = ["UAp" "UAm" "VAp" "VAm" "WAp" "WAm" "UA0" "VA0" "ApmD" "ApmWScaled"];
-                matlabFields = ["UAp" "UAm" "VAp" "VAm" "WAp" "WAm" "UA0" "VA0" "ApmD" "ApmW_scaled"];
+                testCase.verifyEqual(actual.verticalWavenumber(:),wvt.j(:)*pi/wvt.Lz,RelTol=1e-13);
+                testCase.verifyEqual(actual.Fg(:),wvt.F_g(:,1),RelTol=1e-13);
+                testCase.verifyEqual(actual.Gg(:),wvt.G_g(:,1),RelTol=1e-13);
+                testCase.verifyEqual(actual.Gwg(:),wvt.G_wg(:,1),RelTol=1e-13);
+                testCase.verifyEqual(actual.inverseFg(:),1./wvt.F_g(:,1),RelTol=1e-13);
+                testCase.verifyEqual(actual.inverseGg(:),1./wvt.G_g(:,1),RelTol=1e-13);
+                testCase.verifyEqual(actual.inverseGwg(:),1./wvt.G_wg(:,1),RelTol=1e-13);
+                testCase.verifyEqual(actual.deltaScale(:),wvt.h_0(:).*wvt.G_wg(:,1)./wvt.F_g(:,1),RelTol=1e-13);
+                testCase.verifyEqual(reshape(actual.fWaveScale,wvt.spectralMatrixSize),wvt.F_g./wvt.F_wg,RelTol=1e-13);
+                testCase.verifyEqual(actual.gWaveScale(:),wvt.G_g(:,1)./wvt.G_wg(:,1),RelTol=1e-13);
+                fieldFScale=wvt.F_g./wvt.F_wg; fieldGScale=wvt.G_g./wvt.G_wg;
+                complexFields = ["UApField" "UAmField" "VApField" "VAmField" "WApField" "WAmField" "UA0Field" "VA0Field" "ApmDProjection" "ApmWScaled"];
+                expectedComplex = {wvt.UAp.*fieldFScale,wvt.UAm.*fieldFScale,wvt.VAp.*fieldFScale,wvt.VAm.*fieldFScale,wvt.WAp.*fieldGScale,wvt.WAm.*fieldGScale,wvt.UA0.*wvt.F_g,wvt.VA0.*wvt.F_g,wvt.ApmD.*(wvt.h_0.*wvt.G_wg./wvt.F_g),wvt.ApmW_scaled};
                 for iField = 1:numel(complexFields)
                     value = actual.(complexFields(iField) + "Real") + 1i*actual.(complexFields(iField) + "Imag");
-                    expected = expandToSpectralSize(wvt.(matlabFields(iField)),wvt.spectralMatrixSize);
+                    expected = expandToSpectralSize(expectedComplex{iField},wvt.spectralMatrixSize);
                     testCase.verifyEqual(reshape(value,wvt.spectralMatrixSize),expected,RelTol=1e-13,AbsTol=1e-14);
                 end
-                realFields = ["NAp" "NAm" "NA0" "A0Z" "A0N" "ApmN" "ApmDScaled"];
-                matlabFields = ["NAp" "NAm" "NA0" "A0Z" "A0N" "ApmN" "ApmD_scaled"];
+                realFields = ["NApField" "NAmField" "NA0Field" "A0FromVorticity" "A0FromBuoyancy" "ApmNProjection" "ApmDScaled"];
+                expectedReal = {wvt.NAp.*fieldGScale,wvt.NAm.*fieldGScale,wvt.NA0.*wvt.G_g,wvt.A0Z./wvt.F_g,wvt.A0N./wvt.G_g,wvt.ApmN.*wvt.G_wg./wvt.G_g,wvt.ApmD_scaled};
                 for iField = 1:numel(realFields)
-                    expected = expandToSpectralSize(wvt.(matlabFields(iField)),wvt.spectralMatrixSize);
+                    expected = expandToSpectralSize(expectedReal{iField},wvt.spectralMatrixSize);
                     testCase.verifyEqual(reshape(actual.(realFields(iField)),wvt.spectralMatrixSize),expected,RelTol=1e-13,AbsTol=1e-14);
                 end
             end

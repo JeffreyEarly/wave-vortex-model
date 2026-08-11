@@ -80,7 +80,8 @@ classdef TestCompiledKernelTransforms < matlab.unittest.TestCase
                 testCase.verifyEqual(string(metrics.engine),"fftw");
                 expectedLibrary = string(fullfile(matlabroot,"bin",computer("arch"),"libmwfftw3.3.dylib"));
                 testCase.verifyEqual(string(metrics.loadedLibrary),expectedLibrary);
-                testCase.verifyEqual(metrics.contractVersion,3);
+                testCase.verifyEqual(metrics.contractVersion,4);
+                testCase.verifyEqual(string(metrics.phaseImplementation),"accelerate-vvsincos-output-workspace");
                 testCase.verifyEqual(metrics.planCount,14);
                 testCase.verifyGreaterThan(metrics.scratchCapacityBytes,0);
                 clear cleanup
@@ -119,6 +120,29 @@ classdef TestCompiledKernelTransforms < matlab.unittest.TestCase
                 testCase.verifyEqual(wvt.A0,A0);
                 clear cleanup
             end
+        end
+
+        function experimentalModalAndPhaseVariantsAgree(testCase)
+            repositoryRoot=fileparts(fileparts(mfilename("fullpath"))); addpath(fullfile(repositoryRoot,"Benchmarks"));
+            outputDirectory=string(tempname); mkdir(outputDirectory); cleanup=onCleanup(@()cleanupVariantModules(outputDirectory));
+            variants=struct( ...
+                "name",{"wv_compiled_compact_scalar","wv_compiled_prescaled_scalar","wv_compiled_prescaled_accelerate"}, ...
+                "phase",{"scalar","scalar","accelerate"}, ...
+                "coefficients",{"compact","prescaled","prescaled"});
+            for iVariant=1:numel(variants)
+                buildCompiledKernelTransformMex(outputDirectory=outputDirectory,outputName=variants(iVariant).name,phaseImplementation=variants(iVariant).phase,modalCoefficientMode=variants(iVariant).coefficients,modalWorkerCount=1);
+            end
+            addpath(outputDirectory);
+            wvt=WVTransformConstantStratification([15000 12000 1300],[8 6 7],isHydrostatic=false,shouldAntialias=true); wvt.initWithRandomFlow(uvMax=0.01); wvt.t=73;
+            [expectedFp,expectedFm,expectedF0]=wvt.nonlinearFlux();
+            for iVariant=1:numel(variants)
+                module=variants(iVariant).name; handle=feval(module,'create',kernelConfiguration(wvt),1);
+                [actualFp,actualFm,actualF0]=feval(module,'nonlinearFlux',handle,wvt.Ap,wvt.Am,wvt.A0,wvt.t,wvt.t0);
+                verifyRelative(testCase,actualFp,expectedFp,string(module)+" Fp"); verifyRelative(testCase,actualFm,expectedFm,string(module)+" Fm"); verifyRelative(testCase,actualF0,expectedF0,string(module)+" F0");
+                metrics=feval(module,'metrics',handle); testCase.verifyEqual(string(metrics.modalCoefficientMode),string(variants(iVariant).coefficients));
+                feval(module,'delete',handle); clear(module);
+            end
+            delete(wvt); clear cleanup
         end
 
         function transformBenchmarkProducesArtifacts(testCase)
@@ -232,7 +256,7 @@ classdef TestCompiledKernelTransforms < matlab.unittest.TestCase
             testCase.verifyEqual(result.source.baselineCommit,"199c9b8240a46fae8babbce413ee948ac4f89d38");
             testCase.verifyTrue(result.cases.phaseCountPassed);
             testCase.verifyTrue(result.cases.correctnessPassed);
-            testCase.verifyEqual(result.cases.exactStorageRatio,1);
+            testCase.verifyLessThan(result.cases.exactStorageRatio,1);
             testCase.verifyEqual(string(result.cases.candidate.metrics.nonlinearFluxSchedule),"sequential-phase-once");
             testCase.verifyTrue(isfile(fullfile(outputDirectory,"phase-once-benchmark.json")));
             testCase.verifyTrue(isfile(fullfile(outputDirectory,"summary.md")));
@@ -252,6 +276,30 @@ classdef TestCompiledKernelTransforms < matlab.unittest.TestCase
             testCase.verifyFalse(decision.qualified);
         end
 
+        function modalVectorizationBenchmarkProducesArtifacts(testCase)
+            repositoryRoot=fileparts(fileparts(mfilename("fullpath"))); addpath(fullfile(repositoryRoot,"Benchmarks"));
+            outputDirectory=string(tempname); cleanup=onCleanup(@()removeDirectory(outputDirectory));
+            result=runCompiledKernelModalVectorizationBenchmark(screenCaseIds="constant-hydrostatic-256x256x65",gateCaseIds="constant-hydrostatic-256x256x65",screenVariantIds="prescaled-modal",screenProcessRunCount=1,gateProcessRunCount=1,samplingIntervalSeconds=0.01,plateauSeconds=0.08,threadCount=1,outputDirectory=outputDirectory,runId="smoke");
+            testCase.verifyEqual(result.status,"complete");
+            testCase.verifyEqual(result.selectedCumulative.variantId,"prescaled-modal");
+            testCase.verifyEqual(string(result.gateCases.candidate.metadata.variantIdentifier),"prescaled-modal");
+            testCase.verifyEqual(string(result.gateCases.candidate.metadata.modalCoefficientMode),"prescaled");
+            testCase.verifyLessThanOrEqual(result.gateCases.candidate.maximumRelativeError,1e-12);
+            testCase.verifyTrue(isfile(fullfile(outputDirectory,"modal-vectorization-benchmark.json")));
+            testCase.verifyTrue(isfile(fullfile(outputDirectory,"summary.md")));
+            decoded=jsondecode(fileread(fullfile(outputDirectory,"modal-vectorization-benchmark.json")));
+            testCase.verifyEqual(string(decoded.schemaVersion),"1.0.0");
+            clear cleanup
+        end
+
+        function modalVectorizationDecisionHandlesSpeedAndMemory(testCase)
+            mediumHydro=modalDecisionCase([256 256 65],true,1.11,1.0,1.0); mediumNonhydro=modalDecisionCase([256 256 65],false,1.10,1.0,1.0);
+            largeHydro=modalDecisionCase([512 512 129],true,1.0,0.89,0.89); largeNonhydro=modalDecisionCase([512 512 129],false,1.0,0.88,0.90);
+            decision=compiledKernelModalVectorizationDecision([mediumHydro;mediumNonhydro;largeHydro;largeNonhydro]);
+            testCase.verifyTrue(decision.qualified); testCase.verifyEqual(decision.qualifyingSizes,["256x256x65" "512x512x129"]); testCase.verifyEqual(decision.qualifyingMechanisms,["speed" "memory"]);
+            largeNonhydro.noMemoryRegression=false; decision=compiledKernelModalVectorizationDecision([mediumHydro;mediumNonhydro;largeHydro;largeNonhydro]); testCase.verifyFalse(decision.qualified);
+        end
+
     end
 end
 
@@ -259,8 +307,17 @@ function value = decisionCase(Nxyz,isHydrostatic,fivePercentSpeedPassed)
 value=struct("Nxyz",Nxyz,"isHydrostatic",isHydrostatic,"fivePercentSpeedPassed",fivePercentSpeedPassed,"correctnessPassed",true,"phaseCountPassed",true,"noSpeedRegression",true,"noMemoryRegression",true,"status","complete");
 end
 
+function value=modalDecisionCase(Nxyz,isHydrostatic,speedup,exactStorageRatio,peakRSSRatio)
+value=struct("Nxyz",Nxyz,"isHydrostatic",isHydrostatic,"speedup",speedup,"exactStorageRatio",exactStorageRatio,"peakRSSRatio",peakRSSRatio,"correctnessPassed",true,"implementationExecuted",true,"noSpeedRegression",true,"noMemoryRegression",true,"status","complete");
+end
+
 function removeDirectory(pathname)
 if isfolder(pathname), rmdir(pathname,"s"); end
+end
+
+function cleanupVariantModules(outputDirectory)
+rmpath(outputDirectory); clear("wv_compiled_compact_scalar","wv_compiled_prescaled_scalar","wv_compiled_prescaled_accelerate");
+if isfolder(outputDirectory), rmdir(outputDirectory,"s"); end
 end
 
 function configuration = kernelConfiguration(wvt)

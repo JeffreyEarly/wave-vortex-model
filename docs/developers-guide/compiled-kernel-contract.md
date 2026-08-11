@@ -21,9 +21,8 @@ Names are retained where the mathematical object is the same in both languages.
 | `WVTransformConstantStratification` construction parameters | `WVTransformConstantStratificationConfiguration` | Copied into the kernel descriptor |
 | `Ap`, `Am`, `A0` at `t0` | `WVCoefficients` inside `WVState` | Read-only caller views |
 | `t`, `t0` | `WVState.t`, `WVState.t0` | Values supplied for each call |
-| Six arguments to `nonlinearFluxWithGradientMasks` | `WVGradientMasks` | Read-only caller views |
 | `Fp`, `Fm`, `F0` | `WVFlux` | Preallocated caller views |
-| `nonlinearFluxWithGradientMasks` | `WVTransformConstantStratificationKernel::nonlinearFluxWithGradientMasks` | Kernel operation |
+| `nonlinearFlux` | `WVTransformConstantStratificationKernel::nonlinearFlux` | Kernel operation |
 | `transformUVEtaToWaveVortex` | `WVTransformConstantStratificationKernel::transformUVEtaToWaveVortex` | Caller-owned real input and coefficient outputs |
 | `transformUVWEtaToWaveVortex` | `WVTransformConstantStratificationKernel::transformUVWEtaToWaveVortex` | Caller-owned real input and coefficient outputs |
 | `transformWaveVortexToUVWEta` | `WVTransformConstantStratificationKernel::transformWaveVortexToUVWEta` | Caller-owned coefficients and real output |
@@ -40,7 +39,7 @@ $$operatorname{offset}(j,i_{kl})=j+N_j i_{kl}.$$
 
 This keeps the vertical dimension adjacent, matching the MATLAB representation and its efficient vertical matrix products. The compiled implementation may use other transient layouts internally, including Hermitian half spectra, but they never alter the public coefficient ordering.
 
-Inputs are immutable. The caller allocates `Fp`, `Fm`, and `F0`, and these outputs may not overlap each other, the state, or any mask. A steady-state kernel call will allocate no heap storage after the context has been prepared.
+Inputs are immutable. The caller allocates `Fp`, `Fm`, and `F0`, and these outputs may not overlap each other or the state. A steady-state kernel call will allocate no heap storage after the context has been prepared.
 
 `WVComplex64` is a standard-layout pair of doubles. A future MEX adapter must verify that MATLAB's interleaved complex representation has the same size and alignment before creating zero-copy views.
 
@@ -54,6 +53,8 @@ Inputs are immutable. The caller allocates `Fp`, `Fm`, and `F0`, and these outpu
 - all projection, reconstruction, phase, and normalization coefficients used by the fused transforms.
 
 Dense MATLAB DCT/DST or projection matrices are not imported. Constant-stratification modes are analytic and will be built inside C++. A future variable-stratification extension may accept eigenvalues and vertical structures from an external mode solver, but that is not part of this contract.
+
+Contract version 4 normalizes immutable tables by their natural dimensions. Vertical-only factors such as `Fg`, `Gg`, their reciprocals, and vertical wavenumbers have shape `[Nj]`; horizontal magnitude and direction factors have shape `[Nkl]`; only coefficients that genuinely couple a vertical and horizontal mode retain `[Nj,Nkl]`. The pre-scaled experimental form also folds reconstruction and projection normalization into those coupled coefficients. This changes descriptor-table semantics without changing the canonical state, flux, or transform results.
 
 ## FFT-engine boundary
 
@@ -73,7 +74,7 @@ Inverse reconstruction performs modal algebra while scattering directly from `[N
 
 The F- and G-grid derivative calls likewise produce value, x derivative, y derivative, and z derivative together. Horizontal wavenumber multipliers and the DCT/DST derivative-family change are applied before one batched inverse transform. The returned array has shape `[Nx,Ny,Nz,4]` in the order value, x, y, z.
 
-The context owns eleven immutable plans plus the bounded half-spectrum arena. Plan creation may allocate engine-owned memory, but repeated calls make no C++ heap allocation. The authoring FFTW implementation uses unaligned guru plans and reports the dynamically loaded library identity. FFTW is supplied by the embedding application and is not a dependency of the portable core.
+The context owns fourteen immutable plans plus the bounded half-spectrum arena. Plan creation may allocate engine-owned memory, but repeated calls make no C++ heap allocation. The authoring FFTW implementation uses unaligned guru plans and reports the dynamically loaded library identity. FFTW is supplied by the embedding application and is not a dependency of the portable core.
 
 ## Thin MEX boundary
 

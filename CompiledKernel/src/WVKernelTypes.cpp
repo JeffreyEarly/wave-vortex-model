@@ -12,7 +12,9 @@ namespace {
 constexpr double pi = 3.141592653589793238462643383279502884;
 
 WVComplex64 complexValue(double real, double imag = 0.0) { return {real, imag}; }
+#if !WV_KERNEL_USE_PRESCALED_MODAL_COEFFICIENTS
 WVComplex64 conjugate(WVComplex64 value) { return {value.real, -value.imag}; }
+#endif
 
 bool finitePositive(double value) { return std::isfinite(value) && value > 0.0; }
 
@@ -131,16 +133,17 @@ WVKernelStatus WVTransformConstantStratificationDescriptor::create(
                 const auto iL = dftIndexForMode(lMode, configuration.Ny);
                 const auto conjugateK = dftIndexForMode(-kMode, configuration.Nx);
                 const auto conjugateL = dftIndexForMode(-lMode, configuration.Ny);
-                candidate.fourierModes_.push_back({kMode, lMode, k, l, iK + configuration.Nx * iL, conjugateK + configuration.Nx * conjugateL});
+                const double Kh = radialMagnitude(k,l);
+                const double cosAlpha = Kh == 0.0 ? 0.0 : k / Kh;
+                const double sinAlpha = Kh == 0.0 ? 0.0 : l / Kh;
+                candidate.fourierModes_.push_back({kMode, lMode, k, l, Kh, cosAlpha, sinAlpha, iK + configuration.Nx * iL, conjugateK + configuration.Nx * conjugateL});
             }
         }
         std::stable_sort(candidate.fourierModes_.begin(), candidate.fourierModes_.end(), [](const WVFourierMode& a, const WVFourierMode& b) {
             // Match sortrows([Kh,K,L]) in WVGeometryDoublyPeriodic. In
             // particular, use sqrt rather than hypot because tied shells
             // can differ by one ulp in MATLAB's elementwise expression.
-            const double aKh = radialMagnitude(a.k,a.l);
-            const double bKh = radialMagnitude(b.k,b.l);
-            if (aKh != bKh) return aKh < bKh;
+            if (a.Kh != b.Kh) return a.Kh < b.Kh;
             if (a.kMode != b.kMode) return a.kMode < b.kMode;
             return a.lMode < b.lMode;
         });
@@ -150,21 +153,36 @@ WVKernelStatus WVTransformConstantStratificationDescriptor::create(
         modes.z.resize(configuration.Nz);
         modes.j.resize(configuration.Nj);
         modes.h0.resize(configuration.Nj);
+        modes.verticalWavenumber.resize(configuration.Nj);
+        modes.Fg.resize(configuration.Nj); modes.Gg.resize(configuration.Nj);
+        modes.inverseFg.resize(configuration.Nj); modes.inverseGg.resize(configuration.Nj);
+        modes.Gwg.resize(configuration.Nj); modes.inverseGwg.resize(configuration.Nj); modes.GgOverGwg.resize(configuration.Nj);
+        modes.deltaScale.resize(configuration.Nj); modes.inertialScale.resize(configuration.Nj); modes.gWaveScale.resize(configuration.Nj);
         const double dz = configuration.Lz / static_cast<double>(configuration.Nz - 1);
         for (std::size_t i = 0; i < configuration.Nz; ++i) modes.z[i] = dz * static_cast<double>(i) - configuration.Lz;
         for (std::size_t i = 0; i < configuration.Nj; ++i) {
             modes.j[i] = static_cast<double>(i);
             const double m = static_cast<double>(i) * pi / configuration.Lz;
+            modes.verticalWavenumber[i] = m;
             modes.h0[i] = i == 0 ? configuration.Lz : configuration.N0 * configuration.N0 / (configuration.g * m * m);
         }
 
         const auto modalCount = checkedProduct(configuration.Nj, candidate.fourierModes_.size());
-        modes.hpm.resize(modalCount); modes.omega.resize(modalCount); modes.Fg.resize(modalCount); modes.Gg.resize(modalCount);
-        modes.Fwg.resize(modalCount); modes.Gwg.resize(modalCount);
+        modes.omega.resize(modalCount);
+#if WV_KERNEL_USE_PRESCALED_MODAL_COEFFICIENTS
+        modes.fWaveScale.resize(modalCount);
+        modes.UApField.resize(modalCount); modes.UAmField.resize(modalCount); modes.VApField.resize(modalCount); modes.VAmField.resize(modalCount);
+        modes.WApField.resize(modalCount); modes.WAmField.resize(modalCount); modes.NApField.resize(modalCount); modes.NAmField.resize(modalCount);
+        modes.UA0Field.resize(modalCount); modes.VA0Field.resize(modalCount); modes.NA0Field.resize(modalCount);
+        modes.A0FromVorticity.resize(modalCount); modes.A0FromBuoyancy.resize(modalCount);
+        modes.ApmDProjection.resize(modalCount); modes.ApmNProjection.resize(modalCount);
+#else
+        modes.Fwg.resize(modalCount);
         modes.UAp.resize(modalCount); modes.UAm.resize(modalCount); modes.VAp.resize(modalCount); modes.VAm.resize(modalCount);
         modes.WAp.resize(modalCount); modes.WAm.resize(modalCount); modes.NAp.resize(modalCount); modes.NAm.resize(modalCount);
         modes.UA0.resize(modalCount); modes.VA0.resize(modalCount); modes.NA0.resize(modalCount);
         modes.A0Z.resize(modalCount); modes.A0N.resize(modalCount); modes.ApmD.resize(modalCount); modes.ApmN.resize(modalCount);
+#endif
         modes.ApmDScaled.resize(modalCount); modes.ApmWScaled.resize(modalCount);
 
         const double N02 = configuration.N0 * configuration.N0;
@@ -174,15 +192,28 @@ WVKernelStatus WVTransformConstantStratificationDescriptor::create(
             return {WVKernelStatusCode::invalidConfiguration, "Nonhydrostatic constant stratification requires N0 squared greater than f squared."};
         }
 
+        for (std::size_t iJ = 0; iJ < configuration.Nj; ++iJ) {
+            const double M = modes.verticalWavenumber[iJ];
+            const double signNorm = iJ % 2 == 0 ? 1.0 : -1.0;
+            const double Fg = iJ == 0 ? 2.0 : signNorm * modes.h0[iJ] * M * std::sqrt(2.0 * configuration.g / (configuration.Lz * N02));
+            const double Gg = iJ == 0 ? 1.0 : signNorm * std::sqrt(2.0 * configuration.g / (configuration.Lz * N02));
+            const double Gw = configuration.isHydrostatic || iJ == 0 ? Gg : signNorm * std::sqrt(2.0 * configuration.g / (configuration.Lz * (N02 - f2)));
+            const double Gwg = Gg / Gw;
+            modes.Fg[iJ] = Fg; modes.Gg[iJ] = Gg; modes.inverseFg[iJ] = 1.0 / Fg; modes.inverseGg[iJ] = 1.0 / Gg;
+            modes.Gwg[iJ] = Gwg; modes.inverseGwg[iJ] = 1.0 / Gwg; modes.GgOverGwg[iJ] = Gg / Gwg;
+            modes.deltaScale[iJ] = modes.h0[iJ] * Gwg / Fg;
+            modes.gWaveScale[iJ] = Gg / Gwg;
+        }
+
         for (std::size_t iMode = 0; iMode < candidate.fourierModes_.size(); ++iMode) {
             const auto& horizontal = candidate.fourierModes_[iMode];
-            const double Kh = radialMagnitude(horizontal.k,horizontal.l);
+            const double Kh = horizontal.Kh;
             const double Kh2 = Kh * Kh;
-            const double cosAlpha = Kh == 0.0 ? 0.0 : horizontal.k / Kh;
-            const double sinAlpha = Kh == 0.0 ? 0.0 : horizontal.l / Kh;
+            const double cosAlpha = horizontal.cosAlpha;
+            const double sinAlpha = horizontal.sinAlpha;
             for (std::size_t iJ = 0; iJ < configuration.Nj; ++iJ) {
                 const auto index = iJ + configuration.Nj * iMode;
-                const double M = static_cast<double>(iJ) * pi / configuration.Lz;
+                const double M = modes.verticalWavenumber[iJ];
                 const double signNorm = iJ % 2 == 0 ? 1.0 : -1.0;
                 const bool isWave = Kh > 0.0 && iJ > 0;
                 const bool isInertial = Kh == 0.0;
@@ -190,50 +221,95 @@ WVKernelStatus WVTransformConstantStratificationDescriptor::create(
                 const bool isMDA = Kh == 0.0 && iJ > 0;
                 double hpm = 1.0;
                 if (iJ > 0) hpm = configuration.isHydrostatic ? N02 / (configuration.g * M * M) : (N02 - f2) / (configuration.g * (M * M + Kh2));
-                const double Fg = iJ == 0 ? 2.0 : signNorm * modes.h0[iJ] * M * std::sqrt(2.0 * configuration.g / (configuration.Lz * N02));
-                const double Gg = iJ == 0 ? 1.0 : signNorm * std::sqrt(2.0 * configuration.g / (configuration.Lz * N02));
+                const double Fg = modes.Fg[iJ];
+#if WV_KERNEL_USE_PRESCALED_MODAL_COEFFICIENTS
+                const double Gg = modes.Gg[iJ];
+#endif
                 double Fw = Fg;
+#if WV_KERNEL_USE_PRESCALED_MODAL_COEFFICIENTS
                 double Gw = Gg;
+#endif
                 if (!configuration.isHydrostatic) {
                     Fw = iJ == 0 ? 2.0 : signNorm * hpm * M * std::sqrt(2.0 * configuration.g / (configuration.Lz * (N02 - f2)));
+#if WV_KERNEL_USE_PRESCALED_MODAL_COEFFICIENTS
                     Gw = iJ == 0 ? 1.0 : signNorm * std::sqrt(2.0 * configuration.g / (configuration.Lz * (N02 - f2)));
+#endif
                 }
                 const double omega = std::sqrt(configuration.g * hpm * Kh2 + f2);
-                modes.hpm[index] = hpm; modes.omega[index] = omega; modes.Fg[index] = Fg; modes.Gg[index] = Gg;
-                modes.Fwg[index] = Fg / Fw; modes.Gwg[index] = Gg / Gw;
+                const double Fwg = Fg / Fw;
+#if WV_KERNEL_USE_PRESCALED_MODAL_COEFFICIENTS
+                const double Gwg = Gg / Gw;
+#endif
+                modes.omega[index] = omega;
+#if WV_KERNEL_USE_PRESCALED_MODAL_COEFFICIENTS
+                modes.fWaveScale[index] = Fg / Fwg;
+                if (iMode == 0) modes.inertialScale[iJ] = 0.5 * Fwg / Fg;
+#else
+                modes.Fwg[index] = Fwg;
+#endif
 
                 const double prefactor = signNorm * std::sqrt(configuration.g * configuration.Lz / (2.0 * (N02 - f2)));
                 modes.ApmDScaled[index] = (M / 2.0) * prefactor;
                 modes.ApmWScaled[index] = complexValue(0.0, (Kh / 2.0) * prefactor);
 
                 if (isWave) {
-                    modes.UAp[index] = complexValue(cosAlpha, -(f / omega) * sinAlpha);
-                    modes.VAp[index] = complexValue(sinAlpha, (f / omega) * cosAlpha);
-                    modes.WAp[index] = complexValue(0.0, -Kh * hpm);
-                    modes.NAp[index] = -Kh * hpm / omega;
-                    modes.UAm[index] = conjugate(modes.UAp[index]);
-                    modes.VAm[index] = conjugate(modes.VAp[index]);
-                    modes.WAm[index] = modes.WAp[index];
-                    modes.NAm[index] = -modes.NAp[index];
-                    modes.ApmD[index] = complexValue(0.0, -1.0 / (2.0 * Kh * hpm));
-                    modes.ApmN[index] = -omega / (2.0 * Kh * hpm);
+                    const auto UAp = complexValue(cosAlpha, -(f / omega) * sinAlpha);
+                    const auto VAp = complexValue(sinAlpha, (f / omega) * cosAlpha);
+                    const auto WAp = complexValue(0.0, -Kh * hpm);
+                    const double NAp = -Kh * hpm / omega;
+                    const auto ApmD = complexValue(0.0, -1.0 / (2.0 * Kh * hpm));
+                    const double ApmN = -omega / (2.0 * Kh * hpm);
+#if WV_KERNEL_USE_PRESCALED_MODAL_COEFFICIENTS
+                    modes.UApField[index] = complexValue(UAp.real * modes.fWaveScale[index],UAp.imag * modes.fWaveScale[index]);
+                    modes.UAmField[index] = complexValue(UAp.real * modes.fWaveScale[index],-UAp.imag * modes.fWaveScale[index]);
+                    modes.VApField[index] = complexValue(VAp.real * modes.fWaveScale[index],VAp.imag * modes.fWaveScale[index]);
+                    modes.VAmField[index] = complexValue(VAp.real * modes.fWaveScale[index],-VAp.imag * modes.fWaveScale[index]);
+                    modes.WApField[index] = complexValue(WAp.real * modes.gWaveScale[iJ],WAp.imag * modes.gWaveScale[iJ]);
+                    modes.WAmField[index] = modes.WApField[index];
+                    modes.NApField[index] = NAp * modes.gWaveScale[iJ]; modes.NAmField[index] = -modes.NApField[index];
+                    modes.ApmDProjection[index] = complexValue(ApmD.real * modes.deltaScale[iJ],ApmD.imag * modes.deltaScale[iJ]);
+                    modes.ApmNProjection[index] = ApmN * Gwg / Gg;
+#else
+                    modes.UAp[index] = UAp; modes.UAm[index] = conjugate(UAp);
+                    modes.VAp[index] = VAp; modes.VAm[index] = conjugate(VAp);
+                    modes.WAp[index] = WAp; modes.WAm[index] = WAp;
+                    modes.NAp[index] = NAp; modes.NAm[index] = -NAp;
+                    modes.ApmD[index] = ApmD; modes.ApmN[index] = ApmN;
+#endif
                 } else if (isInertial) {
-                    modes.UAp[index] = complexValue(1.0); modes.VAp[index] = complexValue(0.0, 1.0);
-                    modes.UAm[index] = complexValue(1.0); modes.VAm[index] = complexValue(0.0, -1.0);
+#if WV_KERNEL_USE_PRESCALED_MODAL_COEFFICIENTS
+                    modes.UApField[index] = complexValue(modes.fWaveScale[index]); modes.VApField[index] = complexValue(0.0, modes.fWaveScale[index]);
+                    modes.UAmField[index] = complexValue(modes.fWaveScale[index]); modes.VAmField[index] = complexValue(0.0, -modes.fWaveScale[index]);
+#else
+                    modes.UAp[index] = complexValue(1.0); modes.VAp[index] = complexValue(0.0,1.0);
+                    modes.UAm[index] = complexValue(1.0); modes.VAm[index] = complexValue(0.0,-1.0);
+#endif
                 }
 
                 if (isGeostrophic) {
                     double Lr2Inverse = iJ == 0 ? 0.0 : f2 / (configuration.g * modes.h0[iJ]);
                     const double denominator = Kh2 + Lr2Inverse;
-                    modes.UA0[index] = complexValue(0.0, horizontal.l / denominator);
-                    modes.VA0[index] = complexValue(0.0, -horizontal.k / denominator);
-                    modes.NA0[index] = iJ == 0 ? 0.0 : -(f / configuration.g) / denominator;
-                    modes.A0Z[index] = 1.0;
-                    modes.A0N[index] = iJ == 0 ? 0.0 : -f / modes.h0[iJ];
+                    const auto UA0 = complexValue(0.0, horizontal.l / denominator);
+                    const auto VA0 = complexValue(0.0, -horizontal.k / denominator);
+                    const double NA0 = iJ == 0 ? 0.0 : -(f / configuration.g) / denominator;
+#if WV_KERNEL_USE_PRESCALED_MODAL_COEFFICIENTS
+                    modes.UA0Field[index] = complexValue(UA0.real * Fg,UA0.imag * Fg);
+                    modes.VA0Field[index] = complexValue(VA0.real * Fg,VA0.imag * Fg);
+                    modes.NA0Field[index] = NA0 * Gg;
+                    modes.A0FromVorticity[index] = modes.inverseFg[iJ];
+                    modes.A0FromBuoyancy[index] = iJ == 0 ? 0.0 : (-f / modes.h0[iJ]) * modes.inverseGg[iJ];
+#else
+                    modes.UA0[index] = UA0; modes.VA0[index] = VA0; modes.NA0[index] = NA0;
+                    modes.A0Z[index] = 1.0; modes.A0N[index] = iJ == 0 ? 0.0 : -f / modes.h0[iJ];
+#endif
                 } else if (isMDA) {
-                    modes.NA0[index] = 1.0;
-                    modes.A0N[index] = 1.0;
-                    modes.A0Z[index] = f2 / (2.0 * modes.h0[iJ]);
+#if WV_KERNEL_USE_PRESCALED_MODAL_COEFFICIENTS
+                    modes.NA0Field[index] = Gg;
+                    modes.A0FromBuoyancy[index] = modes.inverseGg[iJ];
+                    modes.A0FromVorticity[index] = (f2 / (2.0 * modes.h0[iJ])) * modes.inverseFg[iJ];
+#else
+                    modes.NA0[index] = 1.0; modes.A0N[index] = 1.0; modes.A0Z[index] = f2 / (2.0 * modes.h0[iJ]);
+#endif
                 }
             }
         }
@@ -287,10 +363,19 @@ WVKernelStatus WVTransformConstantStratificationDescriptor::create(
 std::size_t WVTransformConstantStratificationDescriptor::persistentBytes() const noexcept {
     const auto& m = verticalModes_;
     return sizeof(*this) + bytes(fourierModes_) + halfSpectrumMappings_.persistentBytes() + bytes(m.z) + bytes(m.j) + bytes(m.h0) +
-           bytes(m.hpm) + bytes(m.omega) + bytes(m.Fg) + bytes(m.Gg) + bytes(m.Fwg) + bytes(m.Gwg) +
-           bytes(m.UAp) + bytes(m.UAm) + bytes(m.VAp) + bytes(m.VAm) + bytes(m.WAp) + bytes(m.WAm) +
+           bytes(m.verticalWavenumber) + bytes(m.Fg) + bytes(m.Gg) + bytes(m.inverseFg) + bytes(m.inverseGg) + bytes(m.Gwg) +
+           bytes(m.inverseGwg) + bytes(m.GgOverGwg) + bytes(m.deltaScale) + bytes(m.inertialScale) + bytes(m.gWaveScale) +
+           bytes(m.omega) +
+#if WV_KERNEL_USE_PRESCALED_MODAL_COEFFICIENTS
+           bytes(m.fWaveScale) + bytes(m.UApField) + bytes(m.UAmField) + bytes(m.VApField) + bytes(m.VAmField) +
+           bytes(m.WApField) + bytes(m.WAmField) + bytes(m.NApField) + bytes(m.NAmField) + bytes(m.UA0Field) + bytes(m.VA0Field) +
+           bytes(m.NA0Field) + bytes(m.A0FromVorticity) + bytes(m.A0FromBuoyancy) + bytes(m.ApmDProjection) + bytes(m.ApmNProjection) +
+#else
+           bytes(m.Fwg) + bytes(m.UAp) + bytes(m.UAm) + bytes(m.VAp) + bytes(m.VAm) + bytes(m.WAp) + bytes(m.WAm) +
            bytes(m.NAp) + bytes(m.NAm) + bytes(m.UA0) + bytes(m.VA0) + bytes(m.NA0) + bytes(m.A0Z) + bytes(m.A0N) +
-           bytes(m.ApmD) + bytes(m.ApmN) + bytes(m.ApmDScaled) + bytes(m.ApmWScaled);
+           bytes(m.ApmD) + bytes(m.ApmN) +
+#endif
+           bytes(m.ApmDScaled) + bytes(m.ApmWScaled);
 }
 
 WVKernelStatus validateStateAndFlux(
