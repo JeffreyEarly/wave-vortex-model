@@ -10,8 +10,8 @@ namespace wavevortex {
 namespace {
 
 enum PlanIndex : std::size_t {
-    horizontalForward3, horizontalForward4, horizontalInverse4,
-    verticalDCT2Storage3, verticalDST1Storage3,
+    horizontalForward3, horizontalForward4, horizontalInverse3, horizontalInverse4,
+    verticalDCT2Storage3, verticalDST1Storage3, verticalDST2Storage3, verticalDCT1Storage3,
     verticalDCT2Storage4, verticalDST2Storage4,
     verticalDCT3Storage4, verticalDST3Storage4,
     verticalDCT1Storage4, verticalDST1Storage4,
@@ -24,6 +24,13 @@ WVComplex64 multiply(WVComplex64 a, WVComplex64 b) { return {a.real * b.real - a
 WVComplex64 multiply(WVComplex64 a, double b) { return {a.real * b, a.imag * b}; }
 WVComplex64 conjugate(WVComplex64 a) { return {a.real, -a.imag}; }
 WVComplex64 phase(double angle) { return {std::cos(angle), std::sin(angle)}; }
+
+WVComplex64 modalValueForTarget(const WVConstantStratificationModes& modes, std::size_t index, std::size_t target, WVComplex64 Ap, WVComplex64 Am, WVComplex64 A0) {
+    if (target == 0) return add(multiply(add(multiply(modes.UAp[index],Ap),multiply(modes.UAm[index],Am)),1.0 / modes.Fwg[index]),multiply(modes.UA0[index],A0));
+    if (target == 1) return add(multiply(add(multiply(modes.VAp[index],Ap),multiply(modes.VAm[index],Am)),1.0 / modes.Fwg[index]),multiply(modes.VA0[index],A0));
+    if (target == 2) return multiply(add(multiply(modes.WAp[index],Ap),multiply(modes.WAm[index],Am)),1.0 / modes.Gwg[index]);
+    return add(multiply(add(multiply(Ap,modes.NAp[index]),multiply(Am,modes.NAm[index])),1.0 / modes.Gwg[index]),multiply(A0,modes.NA0[index]));
+}
 
 std::size_t checkedProduct(std::size_t first, std::size_t second) {
     if (first != 0 && second > std::numeric_limits<std::size_t>::max() / first) throw std::overflow_error("kernel scratch size overflow");
@@ -195,9 +202,14 @@ WVKernelStatus WVTransformConstantStratificationKernel::create(
         candidate->engineIdentifier_ = engine->identifier();
         candidate->engineLibraryIdentity_ = engine->libraryIdentity();
         candidate->engine_ = std::move(engine);
-        const auto halfElements = checkedProduct(checkedProduct(candidate->descriptor_.halfSpectrumMappings().NxHalf, configuration.Ny), checkedProduct(configuration.Nz, 4));
-        candidate->scratch_.resize(2 * halfElements);
+        constexpr std::size_t halfChannels = 4;
+        const auto halfElements = checkedProduct(checkedProduct(candidate->descriptor_.halfSpectrumMappings().NxHalf, configuration.Ny), checkedProduct(configuration.Nz, halfChannels));
+        const auto realElements = checkedProduct(candidate->descriptor_.spatialShape().elementCount(),configuration.isHydrostatic ? 8 : 9);
+        candidate->halfSpectrumScratch_.resize(2 * halfElements);
+        candidate->realScratch_.resize(realElements);
         candidate->metrics_.descriptorBytes = candidate->descriptor_.persistentBytes();
+        candidate->metrics_.halfSpectrumScratchCapacityBytes = candidate->halfSpectrumScratch_.size() * sizeof(double);
+        candidate->metrics_.realScratchCapacityBytes = candidate->realScratch_.size() * sizeof(double);
         candidate->metrics_.scratchCapacityBytes = candidate->scratchBytes();
         candidate->metrics_.scratchHighWaterBytes = candidate->scratchBytes();
         status = candidate->preparePlans();
@@ -216,8 +228,8 @@ WVKernelStatus WVTransformConstantStratificationKernel::preparePlans() {
     const auto& c = descriptor_.configuration();
     const auto halfRows = (c.Nx / 2 + 1) * c.Ny;
     const WVFFTPlanSpecification specifications[] = {
-        horizontalSpecification(c, 3, true), horizontalSpecification(c, 4, true), horizontalSpecification(c, 4, false),
-        verticalSpecification(c,halfRows,3,2,false), verticalSpecification(c,halfRows,3,1,true),
+        horizontalSpecification(c, 3, true), horizontalSpecification(c, 4, true), horizontalSpecification(c, 3, false), horizontalSpecification(c, 4, false),
+        verticalSpecification(c,halfRows,3,2,false), verticalSpecification(c,halfRows,3,1,true), verticalSpecification(c,halfRows,3,2,true), verticalSpecification(c,halfRows,3,1,false),
         verticalSpecification(c,halfRows,4,2,false), verticalSpecification(c,halfRows,4,2,true),
         verticalSpecification(c,halfRows,4,3,false), verticalSpecification(c,halfRows,4,3,true),
         verticalSpecification(c,halfRows,4,1,false), verticalSpecification(c,halfRows,4,1,true)};
@@ -234,25 +246,31 @@ std::size_t WVTransformConstantStratificationKernel::persistentBytes() const noe
     return descriptor_.persistentBytes() + metrics_.planBytes + scratchBytes();
 }
 
+const char* WVTransformConstantStratificationKernel::nonlinearFluxScheduleIdentifier() const noexcept {
+    return "sequential";
+}
+
 WVKernelStatus WVTransformConstantStratificationKernel::transformUVEtaToWaveVortex(
     const WVRealFieldBundleConstView& fields, double t, double t0, WVMutableCoefficients& coefficients) {
     if (!descriptor_.configuration().isHydrostatic) return {WVKernelStatusCode::invalidConfiguration, "transformUVEtaToWaveVortex requires a hydrostatic kernel."};
-    // The shared implementation distinguishes the three-field layout through the descriptor.
     const auto status = validateBundle(fields, descriptor_.spatialShape(), 3, "Hydrostatic fields");
     if (!status) return status;
-    // Forward implementation is shared below by temporarily dispatching through the four-field method's internal body.
-    ExecutionGuard guard(executing_);
-    if (!guard.entered()) return {WVKernelStatusCode::reentrantExecution, "Kernel operations are not reentrant."};
-
     const auto spectral = descriptor_.spectralShape();
     const WVKernelStatus outputStatuses[] = {validateSpectral(coefficients.Ap, spectral, "Ap"), validateSpectral(coefficients.Am, spectral, "Am"), validateSpectral(coefficients.A0, spectral, "A0")};
     for (const auto& value : outputStatuses) if (!value) return value;
     if (const auto ownership = validateForwardOwnership(fields,coefficients,spectral); !ownership) return ownership;
+    ExecutionGuard guard(executing_);
+    if (!guard.entered()) return {WVKernelStatusCode::reentrantExecution, "Kernel operations are not reentrant."};
+    return transformUVEtaToWaveVortexImpl(fields,t,t0,coefficients);
+}
+
+WVKernelStatus WVTransformConstantStratificationKernel::transformUVEtaToWaveVortexImpl(
+    const WVRealFieldBundleConstView& fields, double t, double t0, WVMutableCoefficients& coefficients) {
     const auto& c = descriptor_.configuration();
     const auto& mapping = descriptor_.halfSpectrumMappings();
     const auto& modes = descriptor_.verticalModes();
     const std::size_t halfRows = mapping.NxHalf * c.Ny;
-    auto* half = reinterpret_cast<WVComplex64*>(scratch_.data());
+    auto* half = reinterpret_cast<WVComplex64*>(halfSpectrumScratch_.data());
     auto execute = plans_[horizontalForward3]->execute(fields.data, half);
     if (!execute) return execute;
     ++metrics_.executionCount; ++metrics_.horizontalExecutionCount;
@@ -296,15 +314,20 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformUVWEtaToWaveVor
     if (descriptor_.configuration().isHydrostatic) return {WVKernelStatusCode::invalidConfiguration, "transformUVWEtaToWaveVortex requires a nonhydrostatic kernel."};
     auto status = validateBundle(fields, descriptor_.spatialShape(), 4, "Nonhydrostatic fields");
     if (!status) return status;
-    ExecutionGuard guard(executing_);
-    if (!guard.entered()) return {WVKernelStatusCode::reentrantExecution, "Kernel operations are not reentrant."};
     const auto spectral = descriptor_.spectralShape();
     const WVKernelStatus outputStatuses[] = {validateSpectral(coefficients.Ap, spectral, "Ap"), validateSpectral(coefficients.Am, spectral, "Am"), validateSpectral(coefficients.A0, spectral, "A0")};
     for (const auto& value : outputStatuses) if (!value) return value;
     if (const auto ownership = validateForwardOwnership(fields,coefficients,spectral); !ownership) return ownership;
+    ExecutionGuard guard(executing_);
+    if (!guard.entered()) return {WVKernelStatusCode::reentrantExecution, "Kernel operations are not reentrant."};
+    return transformUVWEtaToWaveVortexImpl(fields,t,t0,coefficients);
+}
+
+WVKernelStatus WVTransformConstantStratificationKernel::transformUVWEtaToWaveVortexImpl(
+    const WVRealFieldBundleConstView& fields, double t, double t0, WVMutableCoefficients& coefficients) {
     const auto& c = descriptor_.configuration(); const auto& mapping = descriptor_.halfSpectrumMappings(); const auto& modes = descriptor_.verticalModes();
     const std::size_t halfRows = mapping.NxHalf * c.Ny;
-    auto* half = reinterpret_cast<WVComplex64*>(scratch_.data());
+    auto* half = reinterpret_cast<WVComplex64*>(halfSpectrumScratch_.data());
     auto execute = plans_[horizontalForward4]->execute(fields.data, half); if (!execute) return execute;
     ++metrics_.executionCount; ++metrics_.horizontalExecutionCount;
     execute = plans_[verticalDCT2Storage4]->execute(half,half); if (!execute) return execute;
@@ -341,8 +364,12 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformWaveVortexToUVW
     for (const auto& value : inputStatuses) if (!value) return value;
     if (const auto ownership = validateInverseOwnership(state,fields,spectral); !ownership) return ownership;
     ExecutionGuard guard(executing_); if (!guard.entered()) return {WVKernelStatusCode::reentrantExecution, "Kernel operations are not reentrant."};
+    return transformWaveVortexToUVWEtaImpl(state,fields);
+}
+
+WVKernelStatus WVTransformConstantStratificationKernel::transformWaveVortexToUVWEtaImpl(const WVState& state, WVRealFieldBundleView& fields) {
     const auto& c = descriptor_.configuration(); const auto& mapping = descriptor_.halfSpectrumMappings(); const auto& modes = descriptor_.verticalModes();
-    const std::size_t halfRows = mapping.NxHalf * c.Ny; auto* half = reinterpret_cast<WVComplex64*>(scratch_.data());
+    const std::size_t halfRows = mapping.NxHalf * c.Ny; auto* half = reinterpret_cast<WVComplex64*>(halfSpectrumScratch_.data());
     std::fill(half,half + c.Nz * 4 * halfRows,WVComplex64{});
     for (std::size_t iMode = 0; iMode < descriptor_.Nkl(); ++iMode) for (std::size_t j = 0; j < c.Nj; ++j) {
         const auto index = j + c.Nj * iMode; const auto p = phase(modes.omega[index] * (state.t - state.t0));
@@ -382,7 +409,7 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformToSpatialDomain
     auto initial = transformAllDerivatives(*this, true, Apm, A0, fields); if (initial.code != WVKernelStatusCode::unsupportedOperation) return initial;
     ExecutionGuard guard(executing_); if (!guard.entered()) return {WVKernelStatusCode::reentrantExecution, "Kernel operations are not reentrant."};
     const auto& c = descriptor_.configuration(); const auto& mapping = descriptor_.halfSpectrumMappings(); const auto& modes = descriptor_.verticalModes();
-    const std::size_t halfRows = mapping.NxHalf * c.Ny; auto* half = reinterpret_cast<WVComplex64*>(scratch_.data());
+    const std::size_t halfRows = mapping.NxHalf * c.Ny; auto* half = reinterpret_cast<WVComplex64*>(halfSpectrumScratch_.data());
     std::fill(half,half + c.Nz * 4 * halfRows,WVComplex64{});
     for (std::size_t mode = 0; mode < descriptor_.Nkl(); ++mode) for (std::size_t j = 0; j < c.Nj; ++j) {
         const auto index = j + c.Nj * mode; const auto modal = add(multiply(Apm.data[index], 1.0 / modes.Fwg[index]), A0.data[index]);
@@ -404,7 +431,7 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformToSpatialDomain
     auto initial = transformAllDerivatives(*this, false, Apm, A0, fields); if (initial.code != WVKernelStatusCode::unsupportedOperation) return initial;
     ExecutionGuard guard(executing_); if (!guard.entered()) return {WVKernelStatusCode::reentrantExecution, "Kernel operations are not reentrant."};
     const auto& c = descriptor_.configuration(); const auto& mapping = descriptor_.halfSpectrumMappings(); const auto& modes = descriptor_.verticalModes();
-    const std::size_t halfRows = mapping.NxHalf * c.Ny; auto* half = reinterpret_cast<WVComplex64*>(scratch_.data());
+    const std::size_t halfRows = mapping.NxHalf * c.Ny; auto* half = reinterpret_cast<WVComplex64*>(halfSpectrumScratch_.data());
     std::fill(half,half + c.Nz * 4 * halfRows,WVComplex64{});
     for (std::size_t mode = 0; mode < descriptor_.Nkl(); ++mode) for (std::size_t j = 0; j < c.Nj; ++j) {
         const auto index = j + c.Nj * mode; const auto modal = add(multiply(Apm.data[index],1.0 / modes.Gwg[index]),A0.data[index]);
@@ -420,6 +447,85 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformToSpatialDomain
     metrics_.executionCount += 2; metrics_.verticalExecutionCount += 2;
     normalizeInverseDST(half,c.Nz,halfRows,4,0,3); normalizeInverseDCT(half,c.Nz,halfRows,4,3,1);
     execute = plans_[horizontalInverse4]->execute(half, fields.data); if (!execute) return execute; ++metrics_.executionCount; ++metrics_.horizontalExecutionCount; return WVKernelStatus::ok();
+}
+
+WVKernelStatus WVTransformConstantStratificationKernel::transformToSpatialDomainWithDerivativesImpl(
+    const WVState& state, std::size_t target, WVRealFieldBundleView& derivatives) {
+    const auto& c = descriptor_.configuration();
+    const auto& mapping = descriptor_.halfSpectrumMappings();
+    const auto& modes = descriptor_.verticalModes();
+    const std::size_t halfRows = mapping.NxHalf * c.Ny;
+    auto* half = reinterpret_cast<WVComplex64*>(halfSpectrumScratch_.data());
+    std::fill(half,half + c.Nz * 3 * halfRows,WVComplex64{});
+    const bool cosine = target < 2;
+    for (std::size_t mode = 0; mode < descriptor_.Nkl(); ++mode) for (std::size_t j = 0; j < c.Nj; ++j) {
+        const auto index = j + c.Nj * mode;
+        const auto p = phase(modes.omega[index] * (state.t - state.t0));
+        const auto Ap = multiply(state.coefficients.Ap.data[index],p);
+        const auto Am = multiply(state.coefficients.Am.data[index],conjugate(p));
+        const auto A0 = state.coefficients.A0.data[index];
+        const auto modal = modalValueForTarget(modes,index,target,Ap,Am,A0);
+        const auto value = multiply(modal,cosine ? modes.Fg[index] : modes.Gg[index]);
+        const auto& horizontal = descriptor_.fourierModes()[mode];
+        storeWVValue(half,mapping,c.Nz,3,0,mode,j,multiply(value,WVComplex64{0.0,horizontal.k}));
+        storeWVValue(half,mapping,c.Nz,3,1,mode,j,multiply(value,WVComplex64{0.0,horizontal.l}));
+        const double verticalWavenumber = modes.j[j] * 3.14159265358979323846 / c.Lz;
+        storeWVValue(half,mapping,c.Nz,3,2,mode,j,multiply(value,cosine ? -verticalWavenumber : verticalWavenumber));
+    }
+    completeHermitianBoundaries(half,mapping,c.Nz,3);
+    WVKernelStatus execute;
+    if (cosine) {
+        execute = plans_[verticalDCT2Storage3]->execute(half,half); if (!execute) return execute;
+        execute = plans_[verticalDST1Storage3]->execute(half + 2 * c.Nz + 1,half + 2 * c.Nz + 1); if (!execute) return execute;
+        normalizeInverseDCT(half,c.Nz,halfRows,3,0,2);
+        normalizeInverseDST(half,c.Nz,halfRows,3,2,1);
+    } else {
+        execute = plans_[verticalDST2Storage3]->execute(half + 1,half + 1); if (!execute) return execute;
+        execute = plans_[verticalDCT1Storage3]->execute(half + 2 * c.Nz,half + 2 * c.Nz); if (!execute) return execute;
+        normalizeInverseDST(half,c.Nz,halfRows,3,0,2);
+        normalizeInverseDCT(half,c.Nz,halfRows,3,2,1);
+    }
+    metrics_.executionCount += 2;
+    metrics_.verticalExecutionCount += 2;
+    execute = plans_[horizontalInverse3]->execute(half,derivatives.data); if (!execute) return execute;
+    ++metrics_.executionCount;
+    ++metrics_.horizontalExecutionCount;
+    return WVKernelStatus::ok();
+}
+
+WVKernelStatus WVTransformConstantStratificationKernel::nonlinearFlux(const WVState& state, WVFlux& flux) {
+    auto status = validateStateAndFlux(descriptor_,state,flux);
+    if (!status) return status;
+    ExecutionGuard guard(executing_);
+    if (!guard.entered()) return {WVKernelStatusCode::reentrantExecution,"Kernel operations are not reentrant."};
+
+    const auto spatial = descriptor_.spatialShape();
+    const auto fieldElements = spatial.elementCount();
+    WVRealFieldBundleView advectingFields{realScratch_.data(),{spatial.first,spatial.second,spatial.third,4}};
+    status = transformWaveVortexToUVWEtaImpl(state,advectingFields);
+    if (!status) return status;
+
+    const std::size_t targetCount = descriptor_.configuration().isHydrostatic ? 3 : 4;
+    const std::size_t hydrostaticTargets[] = {0,1,3};
+    const std::size_t nonhydrostaticTargets[] = {0,1,2,3};
+    const auto* targets = descriptor_.configuration().isHydrostatic ? hydrostaticTargets : nonhydrostaticTargets;
+    for (std::size_t iTarget = 0; iTarget < targetCount; ++iTarget) {
+        double* derivativeData = realScratch_.data() + (3 + iTarget) * fieldElements;
+        WVRealFieldBundleView derivatives{derivativeData,{spatial.first,spatial.second,spatial.third,3}};
+        status = transformToSpatialDomainWithDerivativesImpl(state,targets[iTarget],derivatives);
+        if (!status) return status;
+        const double* U = realScratch_.data();
+        const double* V = U + fieldElements;
+        const double* W = V + fieldElements;
+        const double* dx = derivativeData;
+        const double* dy = dx + fieldElements;
+        const double* dz = dy + fieldElements;
+        for (std::size_t i = 0; i < fieldElements; ++i) derivativeData[i] = -(U[i] * dx[i] + V[i] * dy[i] + W[i] * dz[i]);
+    }
+    const double* fluxFields = realScratch_.data() + 3 * fieldElements;
+    const WVRealFieldBundleConstView fields{fluxFields,{spatial.first,spatial.second,spatial.third,targetCount}};
+    WVMutableCoefficients coefficients{flux.Fp,flux.Fm,flux.F0};
+    return descriptor_.configuration().isHydrostatic ? transformUVEtaToWaveVortexImpl(fields,state.t,state.t0,coefficients) : transformUVWEtaToWaveVortexImpl(fields,state.t,state.t0,coefficients);
 }
 
 } // namespace wavevortex

@@ -68,11 +68,20 @@ classdef TestCompiledKernelTransforms < matlab.unittest.TestCase
                 [value,x,y,z] = wvt.transformToSpatialDomainWithGAllDerivatives(Apm=Apm,A0=A0);
                 actual = wv_compiled_transform_mex('gAll',handle,Apm,A0);
                 verifyRelative(testCase,actual,cat(4,value,x,y,z),"G derivatives");
+
+                wvt.initWithRandomFlow(uvMax=0.01);
+                wvt.t = 90;
+                [expectedFp,expectedFm,expectedF0] = wvt.nonlinearFlux();
+                [actualFp,actualFm,actualF0] = wv_compiled_transform_mex('nonlinearFlux',handle,wvt.Ap,wvt.Am,wvt.A0,wvt.t,wvt.t0);
+                verifyRelative(testCase,actualFp,expectedFp,"Fp nonlinear flux");
+                verifyRelative(testCase,actualFm,expectedFm,"Fm nonlinear flux");
+                verifyRelative(testCase,actualF0,expectedF0,"F0 nonlinear flux");
                 metrics = wv_compiled_transform_mex('metrics',handle);
                 testCase.verifyEqual(string(metrics.engine),"fftw");
                 expectedLibrary = string(fullfile(matlabroot,"bin",computer("arch"),"libmwfftw3.3.dylib"));
                 testCase.verifyEqual(string(metrics.loadedLibrary),expectedLibrary);
-                testCase.verifyEqual(metrics.planCount,11);
+                testCase.verifyEqual(metrics.contractVersion,3);
+                testCase.verifyEqual(metrics.planCount,14);
                 testCase.verifyGreaterThan(metrics.scratchCapacityBytes,0);
                 clear cleanup
             end
@@ -97,6 +106,7 @@ classdef TestCompiledKernelTransforms < matlab.unittest.TestCase
             testCase.verifyEqual(string(decoded.schemaVersion),"1.0.0");
             clear cleanup
         end
+
     end
 end
 

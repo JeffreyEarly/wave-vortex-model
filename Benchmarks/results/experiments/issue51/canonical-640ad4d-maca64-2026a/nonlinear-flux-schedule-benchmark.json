@@ -1,0 +1,526 @@
+{
+  "schemaVersion": "1.0.0",
+  "status": "complete",
+  "runId": "canonical-640ad4d",
+  "environment": {
+    "os": "Darwin 25.5.0 Darwin Kernel Version 25.5.0: Tue Jun  9 22:28:34 PDT 2026; root:xnu-12377.121.10~1/RELEASE_ARM64_T6050 arm64",
+    "processor": "ABI64 ARM ARM64E",
+    "matlabVersion": "26.1.0.3312084 (R2026a) Update 4",
+    "matlabRelease": "2026a",
+    "architecture": "maca64",
+    "threads": 18,
+    "fftwLibrary": "/Applications/MATLAB_R2026a.app/bin/maca64/libmwfftw3.3.dylib"
+  },
+  "source": {
+    "repository": "JeffreyEarly/wave-vortex-model",
+    "commit": "640ad4da8e0381dfe0991e8e7bbd3f66d5639cf4",
+    "tree": "5d3e91670fc8e768edcb0b5048eed085228f06bc",
+    "isDirty": false,
+    "coreSha256": "d8ab4c1248a94843a7ed34bae342266a9bc6fbfb864a948593872fdf77ce2e32"
+  },
+  "configuration": {
+    "sizes": [
+      [
+        256,
+        256,
+        65
+      ],
+      [
+        512,
+        512,
+        129
+      ]
+    ],
+    "hydrostatic": [
+      true,
+      false
+    ],
+    "warmupCount": 2,
+    "mediumSampleCount": 7,
+    "largeSampleCount": 3,
+    "speedThreshold": 1.1,
+    "memoryIncreaseLimit": 0.15,
+    "regressionLimit": 0.03,
+    "correctnessTolerance": 1E-12
+  },
+  "cases": [
+    {
+      "id": "256x256x65-hydrostatic",
+      "Nxyz": [
+        256,
+        256,
+        65
+      ],
+      "isHydrostatic": true,
+      "Nj": 42,
+      "Nkl": 11439,
+      "warmupCount": 2,
+      "sampleCount": 7,
+      "executionOrders": [
+        [
+          1,
+          2,
+          3
+        ],
+        [
+          2,
+          3,
+          1
+        ],
+        [
+          3,
+          1,
+          2
+        ],
+        [
+          1,
+          2,
+          3
+        ],
+        [
+          2,
+          3,
+          1
+        ],
+        [
+          3,
+          1,
+          2
+        ],
+        [
+          1,
+          2,
+          3
+        ]
+      ],
+      "timings": [
+        {
+          "operation": "matlab",
+          "samplesSeconds": [
+            0.07145325,
+            0.0648165,
+            0.069814666666666664,
+            0.064241458333333334,
+            0.065250833333333327,
+            0.06312541666666667,
+            0.063313208333333329
+          ],
+          "medianSeconds": 0.0648165
+        },
+        {
+          "operation": "sequential",
+          "samplesSeconds": [
+            0.097757625,
+            0.097122541666666673,
+            0.099061166666666672,
+            0.096129916666666662,
+            0.096931416666666673,
+            0.094837041666666663,
+            0.095105666666666672
+          ],
+          "medianSeconds": 0.096931416666666673
+        },
+        {
+          "operation": "paired",
+          "samplesSeconds": [
+            0.093737791666666667,
+            0.091988,
+            0.091698,
+            0.092359208333333331,
+            0.092850583333333334,
+            0.094086166666666665,
+            0.09289429166666667
+          ],
+          "medianSeconds": 0.092850583333333334
+        }
+      ],
+      "pairedSpeedup": 1.043950540608702,
+      "pairedScratchIncreaseFraction": 0.25064935064935057,
+      "errors": {
+        "sequential": 8.6901226745317349E-15,
+        "paired": 8.6901226745317349E-15
+      },
+      "metrics": {
+        "sequential": {
+          "engine": "fftw",
+          "loadedLibrary": "/Applications/MATLAB_R2026a.app/bin/maca64/libmwfftw3.3.dylib",
+          "nonlinearFluxSchedule": "sequential",
+          "contractVersion": 3,
+          "planCount": 14,
+          "planBytes": 336,
+          "descriptorBytes": 1.27991407E+8,
+          "scratchCapacityBytes": 4.100096E+8,
+          "scratchHighWaterBytes": 4.100096E+8,
+          "halfSpectrumScratchCapacityBytes": 1.3737984E+8,
+          "realScratchCapacityBytes": 2.7262976E+8,
+          "executionCount": 150,
+          "horizontalExecutionCount": 50,
+          "verticalExecutionCount": 100,
+          "persistentBytes": 5.38001343E+8
+        },
+        "paired": {
+          "engine": "fftw",
+          "loadedLibrary": "/Applications/MATLAB_R2026a.app/bin/maca64/libmwfftw3.3.dylib",
+          "nonlinearFluxSchedule": "paired",
+          "contractVersion": 3,
+          "planCount": 19,
+          "planBytes": 456,
+          "descriptorBytes": 1.27991407E+8,
+          "scratchCapacityBytes": 5.1277824E+8,
+          "scratchHighWaterBytes": 5.1277824E+8,
+          "halfSpectrumScratchCapacityBytes": 2.0606976E+8,
+          "realScratchCapacityBytes": 3.0670848E+8,
+          "executionCount": 120,
+          "horizontalExecutionCount": 40,
+          "verticalExecutionCount": 80,
+          "persistentBytes": 6.40770103E+8
+        }
+      },
+      "correctnessPassed": true
+    },
+    {
+      "id": "256x256x65-nonhydrostatic",
+      "Nxyz": [
+        256,
+        256,
+        65
+      ],
+      "isHydrostatic": false,
+      "Nj": 42,
+      "Nkl": 11439,
+      "warmupCount": 2,
+      "sampleCount": 7,
+      "executionOrders": [
+        [
+          1,
+          2,
+          3
+        ],
+        [
+          2,
+          3,
+          1
+        ],
+        [
+          3,
+          1,
+          2
+        ],
+        [
+          1,
+          2,
+          3
+        ],
+        [
+          2,
+          3,
+          1
+        ],
+        [
+          3,
+          1,
+          2
+        ],
+        [
+          1,
+          2,
+          3
+        ]
+      ],
+      "timings": [
+        {
+          "operation": "matlab",
+          "samplesSeconds": [
+            0.086729083333333332,
+            0.08411,
+            0.092217541666666666,
+            0.099884041666666673,
+            0.0935885,
+            0.091481125,
+            0.093283125
+          ],
+          "medianSeconds": 0.092217541666666666
+        },
+        {
+          "operation": "sequential",
+          "samplesSeconds": [
+            0.11618783333333334,
+            0.11598554166666666,
+            0.11735854166666666,
+            0.116158125,
+            0.11848866666666667,
+            0.12076183333333333,
+            0.11508945833333334
+          ],
+          "medianSeconds": 0.11618783333333334
+        },
+        {
+          "operation": "paired",
+          "samplesSeconds": [
+            0.10786208333333333,
+            0.111612,
+            0.110157375,
+            0.11081529166666666,
+            0.11260254166666667,
+            0.111383,
+            0.11026866666666667
+          ],
+          "medianSeconds": 0.11081529166666666
+        }
+      ],
+      "pairedSpeedup": 1.0484819521373216,
+      "pairedScratchIncreaseFraction": 0.3081534772182255,
+      "errors": {
+        "sequential": 8.3491897513395548E-15,
+        "paired": 8.3491897513395548E-15
+      },
+      "metrics": {
+        "sequential": {
+          "engine": "fftw",
+          "loadedLibrary": "/Applications/MATLAB_R2026a.app/bin/maca64/libmwfftw3.3.dylib",
+          "nonlinearFluxSchedule": "sequential",
+          "contractVersion": 3,
+          "planCount": 14,
+          "planBytes": 336,
+          "descriptorBytes": 1.27991407E+8,
+          "scratchCapacityBytes": 4.4408832E+8,
+          "scratchHighWaterBytes": 4.4408832E+8,
+          "halfSpectrumScratchCapacityBytes": 1.3737984E+8,
+          "realScratchCapacityBytes": 3.0670848E+8,
+          "executionCount": 180,
+          "horizontalExecutionCount": 60,
+          "verticalExecutionCount": 120,
+          "persistentBytes": 5.72080063E+8
+        },
+        "paired": {
+          "engine": "fftw",
+          "loadedLibrary": "/Applications/MATLAB_R2026a.app/bin/maca64/libmwfftw3.3.dylib",
+          "nonlinearFluxSchedule": "paired",
+          "contractVersion": 3,
+          "planCount": 19,
+          "planBytes": 456,
+          "descriptorBytes": 1.27991407E+8,
+          "scratchCapacityBytes": 5.8093568E+8,
+          "scratchHighWaterBytes": 5.8093568E+8,
+          "halfSpectrumScratchCapacityBytes": 2.0606976E+8,
+          "realScratchCapacityBytes": 3.7486592E+8,
+          "executionCount": 120,
+          "horizontalExecutionCount": 40,
+          "verticalExecutionCount": 80,
+          "persistentBytes": 7.08927543E+8
+        }
+      },
+      "correctnessPassed": true
+    },
+    {
+      "id": "512x512x129-hydrostatic",
+      "Nxyz": [
+        512,
+        512,
+        129
+      ],
+      "isHydrostatic": true,
+      "Nj": 85,
+      "Nkl": 45765,
+      "warmupCount": 2,
+      "sampleCount": 3,
+      "executionOrders": [
+        [
+          1,
+          2,
+          3
+        ],
+        [
+          2,
+          3,
+          1
+        ],
+        [
+          3,
+          1,
+          2
+        ]
+      ],
+      "timings": [
+        {
+          "operation": "matlab",
+          "samplesSeconds": [
+            0.54376304166666667,
+            0.55589804166666668,
+            0.5538535
+          ],
+          "medianSeconds": 0.5538535
+        },
+        {
+          "operation": "sequential",
+          "samplesSeconds": [
+            0.73408608333333336,
+            0.72683633333333331,
+            0.738635375
+          ],
+          "medianSeconds": 0.73408608333333336
+        },
+        {
+          "operation": "paired",
+          "samplesSeconds": [
+            0.70072458333333332,
+            0.7096825,
+            0.70932391666666672
+          ],
+          "medianSeconds": 0.70932391666666672
+        }
+      ],
+      "pairedSpeedup": 1.0349095329860465,
+      "pairedScratchIncreaseFraction": 0.2503250975292588,
+      "errors": {
+        "sequential": 2.2981155688856229E-14,
+        "paired": 2.2981155688856229E-14
+      },
+      "metrics": {
+        "sequential": {
+          "engine": "fftw",
+          "loadedLibrary": "/Applications/MATLAB_R2026a.app/bin/maca64/libmwfftw3.3.dylib",
+          "nonlinearFluxSchedule": "sequential",
+          "contractVersion": 3,
+          "planCount": 14,
+          "planBytes": 336,
+          "descriptorBytes": 1.031580285E+9,
+          "scratchCapacityBytes": 3.250618368E+9,
+          "scratchHighWaterBytes": 3.250618368E+9,
+          "halfSpectrumScratchCapacityBytes": 1.086357504E+9,
+          "realScratchCapacityBytes": 2.164260864E+9,
+          "executionCount": 90,
+          "horizontalExecutionCount": 30,
+          "verticalExecutionCount": 60,
+          "persistentBytes": 4.282198989E+9
+        },
+        "paired": {
+          "engine": "fftw",
+          "loadedLibrary": "/Applications/MATLAB_R2026a.app/bin/maca64/libmwfftw3.3.dylib",
+          "nonlinearFluxSchedule": "paired",
+          "contractVersion": 3,
+          "planCount": 19,
+          "planBytes": 456,
+          "descriptorBytes": 1.031580285E+9,
+          "scratchCapacityBytes": 4.064329728E+9,
+          "scratchHighWaterBytes": 4.064329728E+9,
+          "halfSpectrumScratchCapacityBytes": 1.629536256E+9,
+          "realScratchCapacityBytes": 2.434793472E+9,
+          "executionCount": 72,
+          "horizontalExecutionCount": 24,
+          "verticalExecutionCount": 48,
+          "persistentBytes": 5.095910469E+9
+        }
+      },
+      "correctnessPassed": true
+    },
+    {
+      "id": "512x512x129-nonhydrostatic",
+      "Nxyz": [
+        512,
+        512,
+        129
+      ],
+      "isHydrostatic": false,
+      "Nj": 85,
+      "Nkl": 45765,
+      "warmupCount": 2,
+      "sampleCount": 3,
+      "executionOrders": [
+        [
+          1,
+          2,
+          3
+        ],
+        [
+          2,
+          3,
+          1
+        ],
+        [
+          3,
+          1,
+          2
+        ]
+      ],
+      "timings": [
+        {
+          "operation": "matlab",
+          "samplesSeconds": [
+            0.787162625,
+            0.736872875,
+            0.73006845833333334
+          ],
+          "medianSeconds": 0.736872875
+        },
+        {
+          "operation": "sequential",
+          "samplesSeconds": [
+            0.93272320833333333,
+            0.980494875,
+            0.924082875
+          ],
+          "medianSeconds": 0.93272320833333333
+        },
+        {
+          "operation": "paired",
+          "samplesSeconds": [
+            0.88077383333333337,
+            0.873155875,
+            0.83957608333333333
+          ],
+          "medianSeconds": 0.873155875
+        }
+      ],
+      "pairedSpeedup": 1.0682207324474948,
+      "pairedScratchIncreaseFraction": 0.30792316926770713,
+      "errors": {
+        "sequential": 1.6433880258856121E-14,
+        "paired": 1.6433880258856121E-14
+      },
+      "metrics": {
+        "sequential": {
+          "engine": "fftw",
+          "loadedLibrary": "/Applications/MATLAB_R2026a.app/bin/maca64/libmwfftw3.3.dylib",
+          "nonlinearFluxSchedule": "sequential",
+          "contractVersion": 3,
+          "planCount": 14,
+          "planBytes": 336,
+          "descriptorBytes": 1.031580285E+9,
+          "scratchCapacityBytes": 3.521150976E+9,
+          "scratchHighWaterBytes": 3.521150976E+9,
+          "halfSpectrumScratchCapacityBytes": 1.086357504E+9,
+          "realScratchCapacityBytes": 2.434793472E+9,
+          "executionCount": 108,
+          "horizontalExecutionCount": 36,
+          "verticalExecutionCount": 72,
+          "persistentBytes": 4.552731597E+9
+        },
+        "paired": {
+          "engine": "fftw",
+          "loadedLibrary": "/Applications/MATLAB_R2026a.app/bin/maca64/libmwfftw3.3.dylib",
+          "nonlinearFluxSchedule": "paired",
+          "contractVersion": 3,
+          "planCount": 19,
+          "planBytes": 456,
+          "descriptorBytes": 1.031580285E+9,
+          "scratchCapacityBytes": 4.605394944E+9,
+          "scratchHighWaterBytes": 4.605394944E+9,
+          "halfSpectrumScratchCapacityBytes": 1.629536256E+9,
+          "realScratchCapacityBytes": 2.975858688E+9,
+          "executionCount": 72,
+          "horizontalExecutionCount": 24,
+          "verticalExecutionCount": 48,
+          "persistentBytes": 5.636975685E+9
+        }
+      },
+      "correctnessPassed": true
+    }
+  ],
+  "selection": {
+    "selectedSchedule": "sequential",
+    "pairedQualified": false,
+    "qualifyingSize": "",
+    "reason": "Paired batching did not satisfy the fixed speed, memory, correctness, and regression rule."
+  }
+}

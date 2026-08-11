@@ -90,13 +90,11 @@ void testViewsAndAliasing() {
     const auto shape = descriptor.spectralShape();
     const auto count = shape.elementCount();
     std::vector<WVComplex64> Ap(count), Am(count), A0(count), Fp(count), Fm(count), F0(count);
-    std::vector<double> mask(count, 1.0);
     WVState state{0.5, 0.0, {{Ap.data(), shape}, {Am.data(), shape}, {A0.data(), shape}}};
-    WVGradientMasks masks{{mask.data(), shape}, {mask.data(), shape}, {mask.data(), shape}, {mask.data(), shape}, {mask.data(), shape}, {mask.data(), shape}};
     WVFlux flux{{Fp.data(), shape}, {Fm.data(), shape}, {F0.data(), shape}};
-    require(static_cast<bool>(validateStateAndFlux(descriptor, state, masks, flux)), "valid views were rejected");
+    require(static_cast<bool>(validateStateAndFlux(descriptor, state, flux)), "valid views were rejected");
     flux.Fp.data = Ap.data();
-    status = validateStateAndFlux(descriptor, state, masks, flux);
+    status = validateStateAndFlux(descriptor, state, flux);
     require(status.code == WVKernelStatusCode::overlappingArrays, "overlapping state and flux were accepted");
 }
 
@@ -136,6 +134,44 @@ void testReferenceHorizontalRoundTrip() {
     double error = 0.0;
     for (std::size_t i = 0; i < source.size(); ++i) error = std::max(error,std::abs(output[i]/static_cast<double>(Nx*Ny)-source[i]));
     require(error < 1e-12,"reference horizontal round trip failed");
+}
+
+void testNonlinearFlux(bool hydrostatic) {
+    auto config = configuration(6, 5, hydrostatic);
+    config.Nz = 7;
+    config.Nj = 4;
+    config.shouldAntialias = true;
+    std::unique_ptr<WVTransformConstantStratificationKernel> kernel;
+    auto status = WVTransformConstantStratificationKernel::create(config, std::make_unique<wavevortex::test::WVReferenceFFTEngine>(), kernel);
+    require(static_cast<bool>(status) && kernel, "kernel construction failed");
+
+    const auto shape = kernel->descriptor().spectralShape();
+    const auto count = shape.elementCount();
+    std::vector<WVComplex64> Ap(count), Am(count), A0(count), Fp(count), Fm(count), F0(count);
+    WVState state{0.5, 0.0, {{Ap.data(),shape},{Am.data(),shape},{A0.data(),shape}}};
+    WVFlux flux{{Fp.data(),shape},{Fm.data(),shape},{F0.data(),shape}};
+    status = kernel->nonlinearFlux(state,flux);
+    require(static_cast<bool>(status), "zero-state nonlinear flux failed");
+    for (const auto* array : {&Fp,&Fm,&F0}) {
+        for (const auto& value : *array) require(value.real == 0.0 && value.imag == 0.0,"zero state produced nonzero nonlinear flux");
+    }
+
+    for (std::size_t i = 0; i < count; ++i) {
+        Ap[i] = {1e-4*std::sin(0.17*static_cast<double>(i+1)),1e-4*std::cos(0.11*static_cast<double>(i+2))};
+        Am[i] = {1e-4*std::cos(0.13*static_cast<double>(i+3)),1e-4*std::sin(0.07*static_cast<double>(i+4))};
+        A0[i] = {1e-4*std::sin(0.19*static_cast<double>(i+5)),1e-4*std::cos(0.05*static_cast<double>(i+6))};
+    }
+    status = kernel->nonlinearFlux(state,flux);
+    require(static_cast<bool>(status), "nonlinear flux failed");
+    for (const auto* array : {&Fp,&Fm,&F0}) {
+        for (const auto& value : *array) require(std::isfinite(value.real) && std::isfinite(value.imag),"nonlinear flux produced a non-finite coefficient");
+    }
+    const std::size_t executionsPerCall = hydrostatic ? 15 : 18;
+    require(kernel->metrics().executionCount == 2*executionsPerCall,"unexpected nonlinear-flux plan execution count");
+
+    WVFlux overlapping{{Ap.data(),shape},{Fm.data(),shape},{F0.data(),shape}};
+    status = kernel->nonlinearFlux(state,overlapping);
+    require(status.code == WVKernelStatusCode::overlappingArrays,"overlapping nonlinear-flux arrays were accepted");
 }
 
 [[maybe_unused]] void testFusedTransformRoundTrip(bool hydrostatic) {
@@ -187,6 +223,8 @@ int main() {
     testReferenceHorizontalRoundTrip();
     testFusedTransformRoundTrip(true);
     testFusedTransformRoundTrip(false);
+    testNonlinearFlux(true);
+    testNonlinearFlux(false);
     std::cout << "WaveVortex kernel contract tests passed\n";
     return 0;
 }
