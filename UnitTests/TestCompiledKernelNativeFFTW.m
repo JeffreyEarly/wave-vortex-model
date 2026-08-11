@@ -47,6 +47,17 @@ classdef TestCompiledKernelNativeFFTW < matlab.unittest.TestCase
             testCase.verifyError(@()buildCompiledKernelNativeFFTWProviders(providerIds="native-plain-pthreads",cacheRoot=cacheRoot,shouldBuildMex=false),"WaveVortexModel:NativeFFTWArchiveMissing");
             clear cleanup
         end
+
+        function coefficientAssemblyConfirmationRequiresCommonPhysicalCases(testCase)
+            cases = [confirmationCase([256 256 65],true,1.08,0.12); confirmationCase([256 256 65],false,1.06,0.11); confirmationCase([512 512 129],true,1.02,0.12); confirmationCase([512 512 129],false,1.01,0.11)];
+            decision = compiledKernelCoefficientAssemblyConfirmationDecision(cases);
+            testCase.verifyTrue(decision.confirmed);
+            testCase.verifyEqual(decision.qualifyingSizes,"256x256x65");
+            cases(2).descriptorReduction = 0.09;
+            decision = compiledKernelCoefficientAssemblyConfirmationDecision(cases);
+            testCase.verifyFalse(decision.confirmed);
+            testCase.verifyEqual(decision.status,"CORE-ADOPT-NOT-CONFIRMED");
+        end
     end
 
     methods (Test,TestTags="optional")
@@ -94,6 +105,10 @@ timings = repmat(struct("operation","","internalMedianSeconds",score),numel(oper
 for iOperation = 1:numel(operations), timings(iOperation).operation = operations(iOperation); end
 caseResult = struct("status","complete","maximumRelativeError",0,"lifecyclePassed",true,"timings",timings);
 result = struct("status","complete","providerId",string(providerId),"threadCount",threadCount,"cases",repmat(caseResult,4,1));
+end
+
+function value = confirmationCase(Nxyz,isHydrostatic,speedup,descriptorReduction)
+value = struct("Nxyz",Nxyz,"isHydrostatic",isHydrostatic,"completeCallSpeedup",speedup,"descriptorReduction",descriptorReduction,"maximumRelativeError",1e-14,"lifecyclePassed",true);
 end
 
 function removeDirectory(pathname)

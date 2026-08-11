@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 project(WaveVortexKernel VERSION 0.1.0 LANGUAGES CXX)
+find_package(Threads REQUIRED)
 
 add_library(WaveVortexKernel STATIC
     src/WVKernelTypes.cpp
@@ -12,6 +13,7 @@ target_include_directories(WaveVortexKernel PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
 )
+target_link_libraries(WaveVortexKernel PUBLIC Threads::Threads)
 set_target_properties(WaveVortexKernel PROPERTIES
     CXX_EXTENSIONS OFF
     POSITION_INDEPENDENT_CODE ON

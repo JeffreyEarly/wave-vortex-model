@@ -8,7 +8,7 @@
 
 namespace wavevortex {
 
-inline constexpr std::uint32_t WVKernelContractVersion = 3;
+inline constexpr std::uint32_t WVKernelContractVersion = 4;
 
 struct WVComplex64 {
     double real = 0.0;
@@ -131,6 +131,9 @@ struct WVFourierMode {
     std::int64_t lMode = 0;
     double k = 0.0;
     double l = 0.0;
+    double Kh = 0.0;
+    double cosAlpha = 0.0;
+    double sinAlpha = 0.0;
     std::size_t dftPrimaryIndex = 0;
     std::size_t dftConjugateIndex = 0;
 };
@@ -154,28 +157,31 @@ struct WVConstantStratificationModes {
     std::vector<double> z;
     std::vector<double> j;
     std::vector<double> h0;
-    // Modal arrays use column-major [Nj,Nkl] ordering.
-    std::vector<double> hpm;
-    std::vector<double> omega;
+    // Vertical-only arrays use [Nj] ordering.
+    std::vector<double> verticalWavenumber;
     std::vector<double> Fg;
     std::vector<double> Gg;
-    std::vector<double> Fwg;
-    std::vector<double> Gwg;
-    std::vector<WVComplex64> UAp;
-    std::vector<WVComplex64> UAm;
-    std::vector<WVComplex64> VAp;
-    std::vector<WVComplex64> VAm;
-    std::vector<WVComplex64> WAp;
-    std::vector<WVComplex64> WAm;
-    std::vector<double> NAp;
-    std::vector<double> NAm;
-    std::vector<WVComplex64> UA0;
-    std::vector<WVComplex64> VA0;
-    std::vector<double> NA0;
-    std::vector<double> A0Z;
-    std::vector<double> A0N;
-    std::vector<WVComplex64> ApmD;
-    std::vector<double> ApmN;
+    std::vector<double> inertialScale;
+    // G-family wave scaling is vertical-only for constant stratification.
+    std::vector<double> gWaveScale;
+    // Coefficient arrays use column-major [Nj,Nkl] ordering.
+    std::vector<double> omega;
+    std::vector<double> fWaveScale;
+    std::vector<WVComplex64> UApField;
+    std::vector<WVComplex64> UAmField;
+    std::vector<WVComplex64> VApField;
+    std::vector<WVComplex64> VAmField;
+    std::vector<WVComplex64> WApField;
+    std::vector<WVComplex64> WAmField;
+    std::vector<double> NApField;
+    std::vector<double> NAmField;
+    std::vector<WVComplex64> UA0Field;
+    std::vector<WVComplex64> VA0Field;
+    std::vector<double> NA0Field;
+    std::vector<double> A0FromVorticity;
+    std::vector<double> A0FromBuoyancy;
+    std::vector<WVComplex64> ApmDProjection;
+    std::vector<double> ApmNProjection;
     std::vector<double> ApmDScaled;
     std::vector<WVComplex64> ApmWScaled;
 };

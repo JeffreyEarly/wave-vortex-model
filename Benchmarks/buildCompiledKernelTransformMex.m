@@ -15,14 +15,18 @@ if ~isfolder(options.outputDirectory), mkdir(options.outputDirectory); end
 if options.outputName == ""
     options.outputName = "wv_compiled_transform_mex";
 end
-compilerFlags = "CXXFLAGS=$CXXFLAGS -std=c++17";
+compilerFlags = "CXXFLAGS=$CXXFLAGS -std=c++17 -pthread -O3 -mcpu=native" + ...
+    " -DWV_KERNEL_NATIVE_OPTIMIZATION=1" + ...
+    " -DWV_KERNEL_COEFFICIENT_WORKERS=2";
 mexArguments = {"-R2018a",compilerFlags,gateway, ...
     fullfile(sourceDirectory,"WVKernelTypes.cpp"), ...
     fullfile(sourceDirectory,"WVTransformConstantStratificationKernel.cpp"), ...
     fullfile(gatewayDirectory,"WVFFTWEngine.cpp"), ...
     "-I"+includeDirectory,"-I"+gatewayDirectory,"-I"+provider.includeDirectory};
 if ~isempty(provider.rpathDirectories)
-    mexArguments{end+1} = "LDFLAGS=$LDFLAGS " + join("-Wl,-rpath,"+provider.rpathDirectories," ");
+    mexArguments{end+1} = "LDFLAGS=$LDFLAGS -pthread " + join("-Wl,-rpath,"+provider.rpathDirectories," ");
+else
+    mexArguments{end+1} = "LDFLAGS=$LDFLAGS -pthread";
 end
 mexArguments = [mexArguments reshape(cellstr(provider.linkLibraries),1,[])];
 mexArguments = [mexArguments {"-outdir",options.outputDirectory,"-output",options.outputName}];
