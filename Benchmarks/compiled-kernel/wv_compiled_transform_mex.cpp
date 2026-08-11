@@ -4,6 +4,7 @@
 #include "WaveVortexKernel/WVTransformConstantStratificationKernel.hpp"
 
 #include <cstdint>
+#include <chrono>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -72,6 +73,15 @@ std::string stringInput(const mxArray* value, const char* name) {
     char buffer[64];
     if (mxGetString(value,buffer,sizeof(buffer)) != 0) fail("WaveVortexModel:CompiledKernelCommand",std::string(name) + " is too long.");
     return buffer;
+}
+
+std::string arbitraryLengthStringInput(const mxArray* value, const char* name) {
+    if (!mxIsChar(value)) fail("WaveVortexModel:CompiledKernelCommand",std::string(name) + " must be a character vector.");
+    char* buffer = mxArrayToString(value);
+    if (buffer == nullptr) fail("WaveVortexModel:CompiledKernelCommand",std::string("Unable to read ") + name + '.');
+    std::string result(buffer);
+    mxFree(buffer);
+    return result;
 }
 
 class InjectedFailureEngine final : public WVFFTEngine {
@@ -155,6 +165,20 @@ mxArray* realBundleOutput(WVShape3D spatial, std::size_t channels, WVRealFieldBu
 
 void cleanup() { kernels.clear(); }
 
+mxArray* scalarString(const std::string& value) { return mxCreateString(value.c_str()); }
+
+mxArray* moduleInfo(const std::string& expectedOpenMPRuntime) {
+    const char* names[] = {"engine","version","baseLibrary","threadLibrary","openMPRuntimeLibrary"};
+    mxArray* result = mxCreateStructMatrix(1,1,5,names);
+    const auto identity = WVFFTWEngine::linkedLibraries(expectedOpenMPRuntime);
+    mxSetField(result,0,"engine",mxCreateString("fftw"));
+    mxSetField(result,0,"version",scalarString(identity.version));
+    mxSetField(result,0,"baseLibrary",scalarString(identity.baseLibrary));
+    mxSetField(result,0,"threadLibrary",scalarString(identity.threadLibrary));
+    mxSetField(result,0,"openMPRuntimeLibrary",scalarString(identity.openMPRuntimeLibrary));
+    return result;
+}
+
 } // namespace
 
 void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
@@ -162,13 +186,19 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
     char commandBuffer[64];
     if (mxGetString(prhs[0],commandBuffer,sizeof(commandBuffer)) != 0) fail("WaveVortexModel:CompiledKernelCommand","Command is too long.");
     const std::string command(commandBuffer);
+    if (command == "moduleInfo") {
+        if ((nrhs != 1 && nrhs != 2) || nlhs != 1) fail("WaveVortexModel:CompiledKernelCommand","moduleInfo accepts an optional expected OpenMP runtime path.");
+        const auto expectedRuntime = nrhs == 2 ? arbitraryLengthStringInput(prhs[1],"Expected OpenMP runtime") : std::string{};
+        plhs[0] = moduleInfo(expectedRuntime);
+        return;
+    }
     if (command == "moduleMetrics") {
         if (nrhs != 1 || nlhs != 1) fail("WaveVortexModel:CompiledKernelCommand","moduleMetrics takes no additional inputs.");
-        const char* names[] = {"kernelCount","moduleLocked","activePlans","totalPlansCreated","totalPlansDestroyed","outstandingPlanningBytes"};
-        plhs[0] = mxCreateStructMatrix(1,1,6,names);
+        const char* names[] = {"kernelCount","moduleLocked","activePlans","totalPlansCreated","totalPlansDestroyed","outstandingPlanningBytes","totalPlanningSeconds"};
+        plhs[0] = mxCreateStructMatrix(1,1,7,names);
         const auto lifetime = WVFFTWEngine::lifetimeMetrics();
-        const double values[] = {static_cast<double>(kernels.size()),kernels.empty() ? 0.0 : 1.0,static_cast<double>(lifetime.activePlans),static_cast<double>(lifetime.totalPlansCreated),static_cast<double>(lifetime.totalPlansDestroyed),static_cast<double>(lifetime.outstandingPlanningBytes)};
-        for (std::size_t i = 0; i < 6; ++i) mxSetField(plhs[0],0,names[i],mxCreateDoubleScalar(values[i]));
+        const double values[] = {static_cast<double>(kernels.size()),kernels.empty() ? 0.0 : 1.0,static_cast<double>(lifetime.activePlans),static_cast<double>(lifetime.totalPlansCreated),static_cast<double>(lifetime.totalPlansDestroyed),static_cast<double>(lifetime.outstandingPlanningBytes),lifetime.totalPlanningSeconds};
+        for (std::size_t i = 0; i < 7; ++i) mxSetField(plhs[0],0,names[i],mxCreateDoubleScalar(values[i]));
         return;
     }
     if (command == "create") {
@@ -205,35 +235,48 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
     auto& value = kernel(nrhs > 1 ? prhs[1] : nullptr);
     const auto spectral = value.descriptor().spectralShape();
     const auto spatial = value.descriptor().spatialShape();
-    if (command == "forward") {
-        if (nrhs != 5 || nlhs != 3) fail("WaveVortexModel:CompiledKernelCommand","forward requires handle, fields, t, and t0 and returns Ap, Am, A0.");
+    if (command == "forward" || command == "forwardTimed") {
+        const bool timed = command == "forwardTimed";
+        if (nrhs != 5 || nlhs != (timed ? 4 : 3)) fail("WaveVortexModel:CompiledKernelCommand","forward requires handle, fields, t, and t0 and returns Ap, Am, A0.");
         const auto channels = value.descriptor().configuration().isHydrostatic ? 3U : 4U;
         const auto fields = realBundleInput(prhs[2],spatial,channels);
         WVMutableCoefficients coefficients;
         plhs[0] = complexOutput(spectral,coefficients.Ap); plhs[1] = complexOutput(spectral,coefficients.Am); plhs[2] = complexOutput(spectral,coefficients.A0);
+        const auto start = std::chrono::steady_clock::now();
         requireStatus(value.descriptor().configuration().isHydrostatic ? value.transformUVEtaToWaveVortex(fields,mxGetScalar(prhs[3]),mxGetScalar(prhs[4]),coefficients) : value.transformUVWEtaToWaveVortex(fields,mxGetScalar(prhs[3]),mxGetScalar(prhs[4]),coefficients));
+        if (timed) plhs[3] = mxCreateDoubleScalar(std::chrono::duration<double>(std::chrono::steady_clock::now()-start).count());
         return;
     }
-    if (command == "inverse") {
-        if (nrhs != 7 || nlhs != 1) fail("WaveVortexModel:CompiledKernelCommand","inverse requires handle, Ap, Am, A0, t, and t0.");
+    if (command == "inverse" || command == "inverseTimed") {
+        const bool timed = command == "inverseTimed";
+        if (nrhs != 7 || nlhs != (timed ? 2 : 1)) fail("WaveVortexModel:CompiledKernelCommand","inverse requires handle, Ap, Am, A0, t, and t0.");
         WVState state{mxGetScalar(prhs[5]),mxGetScalar(prhs[6]),{complexInput(prhs[2],spectral,"Ap"),complexInput(prhs[3],spectral,"Am"),complexInput(prhs[4],spectral,"A0")}};
         WVRealFieldBundleView fields; plhs[0] = realBundleOutput(spatial,4,fields);
+        const auto start = std::chrono::steady_clock::now();
         requireStatus(value.transformWaveVortexToUVWEta(state,fields));
+        if (timed) plhs[1] = mxCreateDoubleScalar(std::chrono::duration<double>(std::chrono::steady_clock::now()-start).count());
         return;
     }
-    if (command == "fAll" || command == "gAll") {
-        if (nrhs != 4 || nlhs != 1) fail("WaveVortexModel:CompiledKernelCommand","fAll/gAll require handle, Apm, and A0.");
+    if (command == "fAll" || command == "gAll" || command == "fAllTimed" || command == "gAllTimed") {
+        const bool timed = command == "fAllTimed" || command == "gAllTimed";
+        const bool isF = command == "fAll" || command == "fAllTimed";
+        if (nrhs != 4 || nlhs != (timed ? 2 : 1)) fail("WaveVortexModel:CompiledKernelCommand","fAll/gAll require handle, Apm, and A0.");
         WVRealFieldBundleView fields; plhs[0] = realBundleOutput(spatial,4,fields);
         const auto Apm = complexInput(prhs[2],spectral,"Apm"); const auto A0 = complexInput(prhs[3],spectral,"A0");
-        requireStatus(command == "fAll" ? value.transformToSpatialDomainWithFAllDerivatives(Apm,A0,fields) : value.transformToSpatialDomainWithGAllDerivatives(Apm,A0,fields));
+        const auto start = std::chrono::steady_clock::now();
+        requireStatus(isF ? value.transformToSpatialDomainWithFAllDerivatives(Apm,A0,fields) : value.transformToSpatialDomainWithGAllDerivatives(Apm,A0,fields));
+        if (timed) plhs[1] = mxCreateDoubleScalar(std::chrono::duration<double>(std::chrono::steady_clock::now()-start).count());
         return;
     }
-    if (command == "nonlinearFlux") {
-        if (nrhs != 7 || nlhs != 3) fail("WaveVortexModel:CompiledKernelCommand","nonlinearFlux requires handle, Ap, Am, A0, t, and t0 and returns Fp, Fm, F0.");
+    if (command == "nonlinearFlux" || command == "nonlinearFluxTimed") {
+        const bool timed = command == "nonlinearFluxTimed";
+        if (nrhs != 7 || nlhs != (timed ? 4 : 3)) fail("WaveVortexModel:CompiledKernelCommand","nonlinearFlux requires handle, Ap, Am, A0, t, and t0 and returns Fp, Fm, F0.");
         WVState state{mxGetScalar(prhs[5]),mxGetScalar(prhs[6]),{complexInput(prhs[2],spectral,"Ap"),complexInput(prhs[3],spectral,"Am"),complexInput(prhs[4],spectral,"A0")}};
         WVFlux flux;
         plhs[0] = complexOutput(spectral,flux.Fp); plhs[1] = complexOutput(spectral,flux.Fm); plhs[2] = complexOutput(spectral,flux.F0);
+        const auto start = std::chrono::steady_clock::now();
         requireStatus(value.nonlinearFlux(state,flux));
+        if (timed) plhs[3] = mxCreateDoubleScalar(std::chrono::duration<double>(std::chrono::steady_clock::now()-start).count());
         return;
     }
     if (command == "metrics") {

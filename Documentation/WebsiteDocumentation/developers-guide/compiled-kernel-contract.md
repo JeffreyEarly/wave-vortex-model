@@ -105,3 +105,16 @@ results = runCompiledKernelTransformBenchmark
 ```
 
 It compares complete MATLAB and diagnostic-MEX calls for forward projection, inverse reconstruction, and the fused F/G derivative collections. It records raw samples, medians, exact errors, plan/scratch storage, source identities, and the loaded FFTW library. These component results are descriptive; issue #53 retains the complete `nonlinearFlux` readiness gate.
+
+## Apple-silicon FFT engine baseline
+
+The portable `WVFFTEngine` interface does not select or build a vendor library. Authoring benchmark code supplies the first optimized engine provider on Apple silicon. Run the complete provider and thread comparison with:
+
+```matlab
+addpath("Benchmarks")
+results = runCompiledKernelNativeFFTWBenchmark
+```
+
+The benchmark compares pinned FFTW 3.3.11 builds using plain compiler selection, explicit NEON, generic 128-bit compiler vectors, POSIX threads, and a locally built LLVM OpenMP runtime. It also measures MATLAB's bundled FFTW as a historical control. Every native module must report the expected base and thread libraries through `dladdr`; the OpenMP candidate must additionally report its uniquely identified local runtime.
+
+The selected baseline is one build and one thread count for every qualified constant-stratification workload. Per-workload winners are reported only as performance ceilings. The benchmark does not add runtime dispatch or change the numerical core, coefficient layout, scratch schedule, planner (`FFTW_MEASURE | FFTW_UNALIGNED`), or single-worker coefficient arithmetic.
