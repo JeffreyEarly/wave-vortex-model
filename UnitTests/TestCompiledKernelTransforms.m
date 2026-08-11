@@ -80,9 +80,13 @@ classdef TestCompiledKernelTransforms < matlab.unittest.TestCase
                 testCase.verifyEqual(string(metrics.engine),"fftw");
                 expectedLibrary = string(fullfile(matlabroot,"bin",computer("arch"),"libmwfftw3.3.dylib"));
                 testCase.verifyEqual(string(metrics.loadedLibrary),expectedLibrary);
-                testCase.verifyEqual(metrics.contractVersion,3);
+                testCase.verifyEqual(metrics.contractVersion,4);
                 testCase.verifyEqual(metrics.planCount,14);
                 testCase.verifyGreaterThan(metrics.scratchCapacityBytes,0);
+                testCase.verifyEqual(string(metrics.coefficientStorageMode),"natural-dimensional");
+                testCase.verifyEqual(string(metrics.coefficientArithmeticMode),"natural-dimensional-prescaled");
+                testCase.verifyEqual(string(metrics.optimizationImplementation),"O3-native");
+                testCase.verifyEqual(metrics.coefficientWorkerCount,2);
                 clear cleanup
             end
         end
@@ -232,7 +236,7 @@ classdef TestCompiledKernelTransforms < matlab.unittest.TestCase
             testCase.verifyEqual(result.source.baselineCommit,"199c9b8240a46fae8babbce413ee948ac4f89d38");
             testCase.verifyTrue(result.cases.phaseCountPassed);
             testCase.verifyTrue(result.cases.correctnessPassed);
-            testCase.verifyEqual(result.cases.exactStorageRatio,1);
+            testCase.verifyLessThan(result.cases.exactStorageRatio,1);
             testCase.verifyEqual(string(result.cases.candidate.metrics.nonlinearFluxSchedule),"sequential-phase-once");
             testCase.verifyTrue(isfile(fullfile(outputDirectory,"phase-once-benchmark.json")));
             testCase.verifyTrue(isfile(fullfile(outputDirectory,"summary.md")));

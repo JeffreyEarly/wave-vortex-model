@@ -17,6 +17,7 @@ if numel(selected) ~= numel(options.providerIds)
     error("WaveVortexModel:NativeFFTWUnknownProvider","Unknown issue #137 provider: %s",strjoin(unknown,", "));
 end
 if ~isfolder(options.cacheRoot), mkdir(options.cacheRoot); end
+options.cacheRoot = canonicalPath(options.cacheRoot);
 compiler = compilerRecord;
 archives = sourceArchives(options.cacheRoot);
 verifyArchive(archives.fftw);
@@ -99,11 +100,13 @@ if provider.requiresOpenMP
     end
     if ~contains(dependencies,"@loader_path/libwvissue137omp.dylib"), error("WaveVortexModel:NativeFFTWOpenMPIdentity","%s does not depend on the pinned OpenMP runtime.",provider.id); end
 end
+baseLibrary = canonicalPath(baseLibrary);
+threadLibrary = canonicalPath(threadLibrary);
 linkLibraries = [string(threadLibrary) string(baseLibrary)];
 rpathDirectories = string(fullfile(installDirectory,"lib"));
 runtimeLibrary = "";
 if provider.requiresOpenMP
-    runtimeLibrary = string(providerRuntimeLibrary);
+    runtimeLibrary = canonicalPath(providerRuntimeLibrary);
     rpathDirectories(end+1) = string(fileparts(runtimeLibrary));
 end
 module = "wv_compiled_transform_mex_"+replace(provider.id,"-","_");
@@ -248,4 +251,12 @@ end
 
 function value = emptyBuild
 value = struct("id","","description","","version","","threadBackend","","simplicityRank",NaN,"buildKey","","buildRoot","","installDirectory","","includeDirectory","","baseLibrary","","threadLibrary","","runtimeLibrary","","configureFlags","","compilerFlags","","cycleCounterPassed",false,"checkPassed",false,"module","","mexPath","","mexSha256","","baseLibrarySha256","","threadLibrarySha256","","logs",struct());
+end
+
+function pathname = canonicalPath(pathname)
+[status,output] = system("/bin/realpath "+shellQuote(pathname));
+if status ~= 0
+    error("WaveVortexModel:NativeFFTWCachePath","Unable to resolve native FFTW cache path %s: %s",pathname,output);
+end
+pathname = string(strtrim(output));
 end
