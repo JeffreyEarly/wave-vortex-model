@@ -14,4 +14,10 @@ if ~isfile(libraryPath)
     error("WaveVortexModel:MissingBundledFFTW", ...
         "MATLAB's bundled FFTW library was not found at %s.",libraryPath);
 end
+[status,resolvedPath] = system(sprintf('/bin/realpath "%s"',libraryPath));
+if status ~= 0
+    error("WaveVortexModel:BundledFFTWPathResolutionFailed", ...
+        "MATLAB's bundled FFTW library path could not be resolved: %s",libraryPath);
+end
+libraryPath = string(strtrim(resolvedPath));
 end
