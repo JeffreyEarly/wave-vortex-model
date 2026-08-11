@@ -134,6 +134,13 @@ classdef TestReleaseVerification < matlab.unittest.TestCase
             testCase.verifyFalse(contains(installation,"requires MATLAB R2025a"));
         end
 
+        function exportHelperRequiresPinnedDocumentationVersion(testCase)
+            helper = testCase.readFile("tools/prepareWaveVortexModelReleaseCandidate.m");
+            testCase.verifySubstring(helper,'installDocumentationPackage("ClassDocumentation@1.3.2"');
+            testCase.verifySubstring(helper,'dependency.Version == "1.3.2"');
+            testCase.verifyFalse(contains(helper,'dependency.Version == "1.3.0"'));
+        end
+
         function generatedVersionHistoryIncludesCurrentReleaseRecords(testCase)
             changelog = testCase.readFile("CHANGELOG.md");
             versionHistory = testCase.readFile(fullfile("docs","version-history.md"));
