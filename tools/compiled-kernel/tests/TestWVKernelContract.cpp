@@ -56,6 +56,29 @@ public:
     WVFFTPlanSpecification last;
 };
 
+class FailingPlan final : public WVFFTPlan {
+public:
+    explicit FailingPlan(std::shared_ptr<std::size_t> activePlans) : activePlans_(std::move(activePlans)) { ++*activePlans_; }
+    ~FailingPlan() override { --*activePlans_; }
+    WVKernelStatus execute(const void*, void*) override { return {WVKernelStatusCode::fftExecutionFailure,"injected execution failure"}; }
+    std::size_t persistentBytes() const noexcept override { return sizeof(*this); }
+private:
+    std::shared_ptr<std::size_t> activePlans_;
+};
+
+class FailingEngine final : public WVFFTEngine {
+public:
+    explicit FailingEngine(WVKernelStatusCode code) : code_(code), activePlans(std::make_shared<std::size_t>(0)) {}
+    std::string identifier() const override { return "failing"; }
+    WVKernelStatus createPlan(const WVFFTPlanSpecification&, std::unique_ptr<WVFFTPlan>& plan) override {
+        if (code_ == WVKernelStatusCode::fftPlanFailure || code_ == WVKernelStatusCode::allocationFailure) return {code_,"injected planning failure"};
+        plan = std::make_unique<FailingPlan>(activePlans);
+        return WVKernelStatus::ok();
+    }
+    WVKernelStatusCode code_;
+    std::shared_ptr<std::size_t> activePlans;
+};
+
 void testDescriptor() {
     WVTransformConstantStratificationDescriptor even;
     auto status = WVTransformConstantStratificationDescriptor::create(configuration(16, 12, false), even);
@@ -67,10 +90,13 @@ void testDescriptor() {
     require(even.verticalModes().z.back() == 0.0, "unexpected surface coordinate");
     require(even.verticalModes().h0.front() == 1300.0, "unexpected barotropic equivalent depth");
     require(std::isfinite(even.verticalModes().coriolisFrequency), "non-finite Coriolis frequency");
+    require(!even.halfSpectrumMappings().selfConjugateRows.empty(),"even-grid zero/Nyquist boundary mappings are missing");
+    require(even.halfSpectrumMappings().hermitianCompletionRows.size() == even.halfSpectrumMappings().hermitianSourceRows.size(),"Hermitian boundary mappings are inconsistent");
 
     WVTransformConstantStratificationDescriptor odd;
     status = WVTransformConstantStratificationDescriptor::create(configuration(15, 13, true), odd);
     require(static_cast<bool>(status) && odd.Nkl() > 0, "odd descriptor construction failed");
+    require(!odd.halfSpectrumMappings().selfConjugateRows.empty(),"odd-grid zero-mode boundary mapping is missing");
 
     auto invalid = configuration(16, 12, false);
     invalid.Nj = invalid.Nz;
@@ -110,6 +136,32 @@ void testEngineContract() {
     double input = 0.0;
     double output = 0.0;
     require(static_cast<bool>(plan->execute(&input, &output)), "fake plan execution failed");
+}
+
+void testFailureCleanup() {
+    for (const auto failure : {WVKernelStatusCode::fftPlanFailure,WVKernelStatusCode::allocationFailure}) {
+        auto engine = std::make_unique<FailingEngine>(failure);
+        const auto activePlans = engine->activePlans;
+        std::unique_ptr<WVTransformConstantStratificationKernel> kernel;
+        const auto status = WVTransformConstantStratificationKernel::create(configuration(8,8,false),std::move(engine),kernel);
+        require(status.code == failure,"kernel did not preserve the injected plan-creation failure");
+        require(!kernel,"failed kernel construction returned an object");
+        require(*activePlans == 0,"failed construction leaked plans");
+    }
+
+    auto engine = std::make_unique<FailingEngine>(WVKernelStatusCode::fftExecutionFailure);
+    const auto activePlans = engine->activePlans;
+    std::unique_ptr<WVTransformConstantStratificationKernel> kernel;
+    auto status = WVTransformConstantStratificationKernel::create(configuration(8,8,false),std::move(engine),kernel);
+    require(static_cast<bool>(status) && kernel,"execution-failure kernel construction failed");
+    const auto shape = kernel->descriptor().spectralShape();
+    std::vector<WVComplex64> Ap(shape.elementCount()),Am(shape.elementCount()),A0(shape.elementCount()),Fp(shape.elementCount()),Fm(shape.elementCount()),F0(shape.elementCount());
+    WVState state{0.0,0.0,{{Ap.data(),shape},{Am.data(),shape},{A0.data(),shape}}};
+    WVFlux flux{{Fp.data(),shape},{Fm.data(),shape},{F0.data(),shape}};
+    status = kernel->nonlinearFlux(state,flux);
+    require(status.code == WVKernelStatusCode::fftExecutionFailure,"kernel did not preserve the injected execution failure");
+    kernel.reset();
+    require(*activePlans == 0,"kernel destruction leaked plans after execution failure");
 }
 
 void testReferenceHorizontalRoundTrip() {
@@ -220,6 +272,7 @@ int main() {
     testDescriptor();
     testViewsAndAliasing();
     testEngineContract();
+    testFailureCleanup();
     testReferenceHorizontalRoundTrip();
     testFusedTransformRoundTrip(true);
     testFusedTransformRoundTrip(false);

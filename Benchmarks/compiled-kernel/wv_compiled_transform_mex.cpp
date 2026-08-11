@@ -47,7 +47,86 @@ WVTransformConstantStratificationKernel& kernel(const mxArray* value) {
     return *iterator->second;
 }
 
-void requireStatus(const WVKernelStatus& status) { if (!status) fail("WaveVortexModel:CompiledKernelFailure",status.message); }
+const char* statusIdentifier(WVKernelStatusCode code) {
+    switch (code) {
+        case WVKernelStatusCode::invalidConfiguration: return "WaveVortexModel:CompiledKernelInvalidConfiguration";
+        case WVKernelStatusCode::invalidShape: return "WaveVortexModel:CompiledKernelShape";
+        case WVKernelStatusCode::invalidPointer:
+        case WVKernelStatusCode::overlappingArrays: return "WaveVortexModel:CompiledKernelOwnership";
+        case WVKernelStatusCode::allocationFailure: return "WaveVortexModel:CompiledKernelAllocation";
+        case WVKernelStatusCode::fftPlanFailure: return "WaveVortexModel:CompiledKernelPlan";
+        case WVKernelStatusCode::fftExecutionFailure: return "WaveVortexModel:CompiledKernelExecution";
+        case WVKernelStatusCode::numericalFailure: return "WaveVortexModel:CompiledKernelNumericalFailure";
+        case WVKernelStatusCode::unsupportedOperation: return "WaveVortexModel:CompiledKernelUnsupportedOperation";
+        case WVKernelStatusCode::reentrantExecution: return "WaveVortexModel:CompiledKernelReentrantExecution";
+        case WVKernelStatusCode::sizeOverflow: return "WaveVortexModel:CompiledKernelSizeOverflow";
+        case WVKernelStatusCode::success: break;
+    }
+    return "WaveVortexModel:CompiledKernelFailure";
+}
+
+void requireStatus(const WVKernelStatus& status) { if (!status) fail(statusIdentifier(status.code),status.message); }
+
+std::string stringInput(const mxArray* value, const char* name) {
+    if (!mxIsChar(value)) fail("WaveVortexModel:CompiledKernelCommand",std::string(name) + " must be a character vector.");
+    char buffer[64];
+    if (mxGetString(value,buffer,sizeof(buffer)) != 0) fail("WaveVortexModel:CompiledKernelCommand",std::string(name) + " is too long.");
+    return buffer;
+}
+
+class InjectedFailureEngine final : public WVFFTEngine {
+public:
+    explicit InjectedFailureEngine(WVKernelStatusCode code) : code_(code) {}
+    std::string identifier() const override { return "injected-failure"; }
+    WVKernelStatus createPlan(const WVFFTPlanSpecification&, std::unique_ptr<WVFFTPlan>&) override {
+        return {code_,code_ == WVKernelStatusCode::allocationFailure ? "Injected allocation failure." : "Injected plan-creation failure."};
+    }
+private:
+    WVKernelStatusCode code_;
+};
+
+class InjectedExecutionPlan final : public WVFFTPlan {
+public:
+    InjectedExecutionPlan(std::unique_ptr<WVFFTPlan> plan, std::shared_ptr<bool> shouldFail) : plan_(std::move(plan)), shouldFail_(std::move(shouldFail)) {}
+    WVKernelStatus execute(const void* input, void* output) override {
+        if (*shouldFail_) { *shouldFail_ = false; return {WVKernelStatusCode::fftExecutionFailure,"Injected FFT execution failure."}; }
+        return plan_->execute(input,output);
+    }
+    std::size_t persistentBytes() const noexcept override { return sizeof(*this) + plan_->persistentBytes(); }
+private:
+    std::unique_ptr<WVFFTPlan> plan_;
+    std::shared_ptr<bool> shouldFail_;
+};
+
+class InjectedExecutionEngine final : public WVFFTEngine {
+public:
+    explicit InjectedExecutionEngine(std::unique_ptr<WVFFTEngine> engine) : engine_(std::move(engine)), shouldFail_(std::make_shared<bool>(true)) {}
+    std::string identifier() const override { return "fftw-injected-execution"; }
+    std::string libraryIdentity() const override { return engine_->libraryIdentity(); }
+    WVKernelStatus createPlan(const WVFFTPlanSpecification& specification, std::unique_ptr<WVFFTPlan>& plan) override {
+        std::unique_ptr<WVFFTPlan> inner;
+        auto status = engine_->createPlan(specification,inner);
+        if (!status) return status;
+        try { plan = std::make_unique<InjectedExecutionPlan>(std::move(inner),shouldFail_); }
+        catch (const std::bad_alloc&) { return {WVKernelStatusCode::allocationFailure,"Unable to allocate injected execution plan."}; }
+        return WVKernelStatus::ok();
+    }
+private:
+    std::unique_ptr<WVFFTEngine> engine_;
+    std::shared_ptr<bool> shouldFail_;
+};
+
+std::unique_ptr<WVFFTEngine> injectedEngine(const std::string& mode, std::size_t threads) {
+    if (mode == "plan") return std::make_unique<InjectedFailureEngine>(WVKernelStatusCode::fftPlanFailure);
+    if (mode == "allocation") return std::make_unique<InjectedFailureEngine>(WVKernelStatusCode::allocationFailure);
+    if (mode == "execution") {
+        std::unique_ptr<WVFFTEngine> engine;
+        requireStatus(WVFFTWEngine::create(threads,engine));
+        return std::make_unique<InjectedExecutionEngine>(std::move(engine));
+    }
+    fail("WaveVortexModel:CompiledKernelCommand","Unknown injected failure mode.");
+    return {};
+}
 
 WVComplexConstView complexInput(const mxArray* value, WVShape2D shape, const char* name) {
     if (!mxIsDouble(value) || !mxIsComplex(value) || mxGetM(value) != shape.rows || mxGetN(value) != shape.columns) fail("WaveVortexModel:CompiledKernelShape",std::string(name) + " must be a complex [Nj,Nkl] array.");
@@ -83,10 +162,32 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
     char commandBuffer[64];
     if (mxGetString(prhs[0],commandBuffer,sizeof(commandBuffer)) != 0) fail("WaveVortexModel:CompiledKernelCommand","Command is too long.");
     const std::string command(commandBuffer);
+    if (command == "moduleMetrics") {
+        if (nrhs != 1 || nlhs != 1) fail("WaveVortexModel:CompiledKernelCommand","moduleMetrics takes no additional inputs.");
+        const char* names[] = {"kernelCount","moduleLocked","activePlans","totalPlansCreated","totalPlansDestroyed","outstandingPlanningBytes"};
+        plhs[0] = mxCreateStructMatrix(1,1,6,names);
+        const auto lifetime = WVFFTWEngine::lifetimeMetrics();
+        const double values[] = {static_cast<double>(kernels.size()),kernels.empty() ? 0.0 : 1.0,static_cast<double>(lifetime.activePlans),static_cast<double>(lifetime.totalPlansCreated),static_cast<double>(lifetime.totalPlansDestroyed),static_cast<double>(lifetime.outstandingPlanningBytes)};
+        for (std::size_t i = 0; i < 6; ++i) mxSetField(plhs[0],0,names[i],mxCreateDoubleScalar(values[i]));
+        return;
+    }
     if (command == "create") {
         if (nrhs != 3 || nlhs != 1) fail("WaveVortexModel:CompiledKernelCommand","create requires configuration and thread count.");
         std::unique_ptr<WVFFTEngine> engine;
         requireStatus(WVFFTWEngine::create(static_cast<std::size_t>(mxGetScalar(prhs[2])),engine));
+        std::unique_ptr<WVTransformConstantStratificationKernel> value;
+        requireStatus(WVTransformConstantStratificationKernel::create(configuration(prhs[1]),std::move(engine),value));
+        const auto handle = nextHandle++;
+        kernels.emplace(handle,std::move(value));
+        if (kernels.size() == 1) { mexLock(); mexAtExit(cleanup); }
+        plhs[0] = mxCreateNumericMatrix(1,1,mxUINT64_CLASS,mxREAL); *mxGetUint64s(plhs[0]) = handle;
+        return;
+    }
+    if (command == "createInjectedFailure") {
+        if (nrhs != 4 || nlhs > 1) fail("WaveVortexModel:CompiledKernelCommand","createInjectedFailure requires configuration, thread count, and failure mode.");
+        const auto mode = stringInput(prhs[3],"Failure mode");
+        if (mode == "execution" && nlhs != 1) fail("WaveVortexModel:CompiledKernelCommand","The execution failure mode returns a handle.");
+        auto engine = injectedEngine(mode,static_cast<std::size_t>(mxGetScalar(prhs[2])));
         std::unique_ptr<WVTransformConstantStratificationKernel> value;
         requireStatus(WVTransformConstantStratificationKernel::create(configuration(prhs[1]),std::move(engine),value));
         const auto handle = nextHandle++;
@@ -137,14 +238,17 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
     }
     if (command == "metrics") {
         if (nrhs != 2 || nlhs != 1) fail("WaveVortexModel:CompiledKernelCommand","metrics requires one handle.");
-        const char* names[] = {"engine","loadedLibrary","nonlinearFluxSchedule","contractVersion","planCount","planBytes","descriptorBytes","scratchCapacityBytes","scratchHighWaterBytes","halfSpectrumScratchCapacityBytes","realScratchCapacityBytes","executionCount","horizontalExecutionCount","verticalExecutionCount","persistentBytes"};
-        plhs[0] = mxCreateStructMatrix(1,1,15,names);
+        const char* names[] = {"engine","loadedLibrary","nonlinearFluxSchedule","planMemoryAccounting","contractVersion","planCount","planBytes","descriptorBytes","scratchCapacityBytes","scratchHighWaterBytes","halfSpectrumScratchCapacityBytes","realScratchCapacityBytes","executionCount","horizontalExecutionCount","verticalExecutionCount","persistentBytes","stateInputBytes","fluxOutputBytes","knownMaximumLiveOwnedBytes","persistentFullHermitianBytes","gradientMaskBytes","Nx","Ny","Nz","Nj","Nkl"};
+        plhs[0] = mxCreateStructMatrix(1,1,26,names);
         const auto& metrics = value.metrics();
+        const auto& configuration = value.descriptor().configuration();
+        const auto spectralBytes = value.descriptor().spectralShape().elementCount() * sizeof(WVComplex64);
         mxSetField(plhs[0],0,"engine",mxCreateString(value.engineIdentifier().c_str()));
         mxSetField(plhs[0],0,"loadedLibrary",mxCreateString(value.engineLibraryIdentity().c_str()));
         mxSetField(plhs[0],0,"nonlinearFluxSchedule",mxCreateString(value.nonlinearFluxScheduleIdentifier()));
-        const double numbers[] = {static_cast<double>(WVKernelContractVersion),static_cast<double>(metrics.planCount),static_cast<double>(metrics.planBytes),static_cast<double>(metrics.descriptorBytes),static_cast<double>(metrics.scratchCapacityBytes),static_cast<double>(metrics.scratchHighWaterBytes),static_cast<double>(metrics.halfSpectrumScratchCapacityBytes),static_cast<double>(metrics.realScratchCapacityBytes),static_cast<double>(metrics.executionCount),static_cast<double>(metrics.horizontalExecutionCount),static_cast<double>(metrics.verticalExecutionCount),static_cast<double>(value.persistentBytes())};
-        for (std::size_t i = 0; i < 12; ++i) mxSetField(plhs[0],0,names[i+3],mxCreateDoubleScalar(numbers[i]));
+        mxSetField(plhs[0],0,"planMemoryAccounting",mxCreateString("wrapper-lower-bound; FFTW-owned plan memory is opaque"));
+        const double numbers[] = {static_cast<double>(WVKernelContractVersion),static_cast<double>(metrics.planCount),static_cast<double>(metrics.planBytes),static_cast<double>(metrics.descriptorBytes),static_cast<double>(metrics.scratchCapacityBytes),static_cast<double>(metrics.scratchHighWaterBytes),static_cast<double>(metrics.halfSpectrumScratchCapacityBytes),static_cast<double>(metrics.realScratchCapacityBytes),static_cast<double>(metrics.executionCount),static_cast<double>(metrics.horizontalExecutionCount),static_cast<double>(metrics.verticalExecutionCount),static_cast<double>(value.persistentBytes()),static_cast<double>(3*spectralBytes),static_cast<double>(3*spectralBytes),static_cast<double>(value.persistentBytes()+3*spectralBytes),0.0,0.0,static_cast<double>(configuration.Nx),static_cast<double>(configuration.Ny),static_cast<double>(configuration.Nz),static_cast<double>(configuration.Nj),static_cast<double>(value.descriptor().Nkl())};
+        for (std::size_t i = 0; i < 22; ++i) mxSetField(plhs[0],0,names[i+4],mxCreateDoubleScalar(numbers[i]));
         return;
     }
     fail("WaveVortexModel:CompiledKernelCommand","Unknown compiled-kernel command.");
