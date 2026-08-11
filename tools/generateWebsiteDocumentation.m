@@ -6,6 +6,7 @@ end
 
 sourceFolder = fullfile(repositoryRoot,"Documentation","WebsiteDocumentation");
 rebuildWebsiteDocumentationFromSource(sourceFolder,buildFolder);
+generateBenchmarkWebsiteDocumentation(repositoryRoot,buildFolder);
 writeVersionHistory(repositoryRoot,buildFolder);
 
 classFolderName = "Class documentation";
