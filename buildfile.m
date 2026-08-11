@@ -7,7 +7,7 @@ tasks = [
     Task(Actions=@testFullTask,Description="Run smoke and full deterministic tests.",DisableIncremental=true)
     Task(Actions=@testExhaustiveTask,Description="Run exhaustive numerical test matrices.",DisableIncremental=true)
     Task(Actions=@testOptionalTask,Description="Run tests that require optional dependencies.",DisableIncremental=true)
-    Task(Actions=@testLocalTask,Description="Run tests that launch fresh local MATLAB processes.",DisableIncremental=true)
+    Task(Actions=@testLocalTask,Description="Run platform-specific and fresh-process local tests.",DisableIncremental=true)
     ];
 
 plan = buildplan;

@@ -20,7 +20,11 @@ classdef TestPortableCheckpointReader < matlab.unittest.TestCase
                 if ~isempty(cases{iCase,3})
                     inspectorArguments = " "+string(cases{iCase,3})+inspectorArguments;
                 end
-                [inspectStatus,inspectOutput] = system(sprintf('"%s" "%s"%s',inspector,fixturePath,inspectorArguments));
+                inspectCommand = sprintf('"%s" "%s"%s',inspector,fixturePath,inspectorArguments);
+                if isunix
+                    inspectCommand = "/usr/bin/env -u LD_LIBRARY_PATH -u DYLD_LIBRARY_PATH -u DYLD_FALLBACK_LIBRARY_PATH "+inspectCommand;
+                end
+                [inspectStatus,inspectOutput] = system(inspectCommand);
                 testCase.assertEqual(inspectStatus,0,inspectOutput)
                 record = jsondecode(inspectOutput);
 

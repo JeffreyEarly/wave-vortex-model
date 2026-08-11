@@ -164,7 +164,7 @@ commit=string(strtrim(commit)); tree=string(strtrim(tree)); isDirty=strlength(st
 end
 
 function record = environmentRecord(threads)
-record=struct("os",string(system_dependent("getos")),"processor",string(system_dependent("getcpu")),"matlabVersion",string(version),"matlabRelease",string(version("-release")),"architecture",string(computer("arch")),"threads",threads,"fftwLibrary",fullfile(matlabroot,"bin",computer("arch"),"libmwfftw3.3.dylib"));
+record=struct("os",string(system_dependent("getos")),"processor",string(system_dependent("getcpu")),"matlabVersion",string(version),"matlabRelease",string(version("-release")),"architecture",string(computer("arch")),"threads",threads,"fftwLibrary",matlabBundledFFTWLibrary);
 end
 
 function addRepositoryPaths(repositoryRoot,benchmarkFolder)
