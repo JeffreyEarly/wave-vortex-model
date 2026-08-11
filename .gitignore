@@ -9,3 +9,4 @@ tools/compiled-kernel/build/
 *.mex*
 Benchmarks/results/runs/
 *.nc
+!tools/portable-runtime/fixtures/*.nc

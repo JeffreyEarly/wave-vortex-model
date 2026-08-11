@@ -29,6 +29,9 @@ jobs:
           path: source
           persist-credentials: false
 
+      - name: Install NetCDF C development library
+        run: sudo apt-get update && sudo apt-get install --yes libnetcdf-dev pkg-config
+
       - name: Build and test without MATLAB headers
         working-directory: source
         run: tools/compiled-kernel/run_contract_tests.sh

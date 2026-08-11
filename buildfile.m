@@ -17,7 +17,7 @@ documentationTasks = [
     ];
 plan("docs") = TaskGroup(documentationTasks,TaskNames=["build"; "check"],Description="Build or verify website documentation.");
 plan("analyze") = Task(Actions=@analyzeTask,Description="Analyze production MATLAB source for correctness findings.",DisableIncremental=true);
-plan("kernel:contract") = Task(Actions=@kernelContractTask,Description="Build and run the portable C++ kernel contract tests.",DisableIncremental=true);
+plan("kernel:contract") = Task(Actions=@kernelContractTask,Description="Build and run the portable C++ kernel and checkpoint contract tests.",DisableIncremental=true);
 plan.DefaultTasks = "test:smoke";
 end
 
