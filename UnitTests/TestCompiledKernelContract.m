@@ -18,7 +18,7 @@ classdef TestCompiledKernelContract < matlab.unittest.TestCase
             for testDefinition = cases
                 wvt = WVTransformConstantStratification(testDefinition.Lxyz,testDefinition.Nxyz,isHydrostatic=testDefinition.isHydrostatic,shouldAntialias=testDefinition.shouldAntialias);
                 actual = descriptorDump(testDefinition,wvt.Nj);
-                testCase.verifyEqual(actual.contractVersion,2);
+                testCase.verifyEqual(actual.contractVersion,3);
                 testCase.verifyEqual(actual.Nkl,wvt.Nkl);
                 testCase.verifyEqual(actual.spectralShape(:)',[wvt.Nj wvt.Nkl]);
                 testCase.verifyEqual(actual.kMode(:),wvt.kMode_wv(:));
