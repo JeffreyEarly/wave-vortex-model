@@ -23,6 +23,8 @@ buildtool docs:check
 
 `docs:build` generates into clean staging storage, validates front matter, mathematical Markdown, internal routes, and generated navigation, and transactionally replaces `docs`. `docs:check` performs the same build in temporary storage and fails on any difference from the committed tree without changing the checkout. Both tasks print the resolved ClassDocumentation version and path before generation.
 
+The same build generates the data sections of the top-level Benchmarks page from approved `published-benchmark-v1` entries in `Benchmarks/results/catalog.json`. It never runs a benchmark. Hand-authored explanation remains in the canonical page, while staged tables, static SVG charts, and hosted JSON copies are replaced deterministically from catalog data.
+
 The required documentation CI job also builds the committed tree with GitHub Pages' Jekyll action and runs `validateRenderedWebsite` on the resulting HTML. The rendered-site validator requires ordinary content pages to contain their main content and heading, rejects source Markdown that survived rendering outside code elements, and detects malformed MathJax delimiters or expressions split across table cells. Valid delimiters remain in Jekyll output for browser-side MathJax. Rendered output is temporary diagnostic data and is never committed.
 
 The OceanKit release workflow continues to call `build_website_documentation(rootDir=...)`. That entry point uses the same exact dependency check, clean generator, validation, and transactional replacement as `docs:build`.
