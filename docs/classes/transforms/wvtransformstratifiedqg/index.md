@@ -114,10 +114,10 @@ The quasigeostrophic state is stored in
       + [`Lr2`](/classes/transforms/wvtransformstratifiedqg/lr2.html) Squared Rossby deformation radius in square meters.
       + [`waveModeVerticalStructureAtIndex`](/classes/transforms/wvtransformstratifiedqg/wavemodeverticalstructureatindex.html) Return wave vertical-structure factors at one vertical grid index.
     + Vertical-mode transformation matrices
-      + [`FMatrix`](/classes/transforms/wvtransformstratifiedqg/fmatrix.html) Projects F-grid values onto vertical modes with shape `[Nj Nz]`.
-      + [`FinvMatrix`](/classes/transforms/wvtransformstratifiedqg/finvmatrix.html) Reconstructs F-grid values from vertical modes with shape `[Nz Nj]`.
-      + [`GMatrix`](/classes/transforms/wvtransformstratifiedqg/gmatrix.html) Projects G-grid values onto vertical modes with shape `[Nj Nz]`.
-      + [`GinvMatrix`](/classes/transforms/wvtransformstratifiedqg/ginvmatrix.html) Reconstructs G-grid values from vertical modes with shape `[Nz Nj]`.
+      + [`FMatrix`](/classes/transforms/wvtransformstratifiedqg/fmatrix.html) Transformation matrix $$F$$ projecting F-grid values onto vertical modes; shape `[Nj Nz]`.
+      + [`FinvMatrix`](/classes/transforms/wvtransformstratifiedqg/finvmatrix.html) Transformation matrix $$F^{-1}$$ reconstructing F-grid values from vertical modes; shape `[Nz Nj]`.
+      + [`GMatrix`](/classes/transforms/wvtransformstratifiedqg/gmatrix.html) Transformation matrix $$G$$ projecting G-grid values onto vertical modes; shape `[Nj Nz]`.
+      + [`GinvMatrix`](/classes/transforms/wvtransformstratifiedqg/ginvmatrix.html) Transformation matrix $$G^{-1}$$ reconstructing G-grid values from vertical modes; shape `[Nz Nj]`.
   + Transform configuration
     + [`isHydrostatic`](/classes/transforms/wvtransformstratifiedqg/ishydrostatic.html) Whether the transform uses the hydrostatic approximation.
     + [`shouldAntialias`](/classes/transforms/wvtransformstratifiedqg/shouldantialias.html) Whether the spectral grid excludes modes that alias quadratic products.

@@ -287,10 +287,10 @@ classdef TestCoreAPIDocumentation < matlab.unittest.TestCase
                 "rho_bar", "Current horizontally averaged density, `[Nz 1]`, in kg/m³."
                 "rho_nm", "Diagnosed no-motion density profile, `[Nz 1]`, in kg/m³."
                 "rho_nm0", "Reference no-motion density profile, `[Nz 1]`, in kg/m³."
-                "FMatrix", "Projects F-grid values onto vertical modes with shape `[Nj Nz]`."
-                "FinvMatrix", "Reconstructs F-grid values from vertical modes with shape `[Nz Nj]`."
-                "GMatrix", "Projects G-grid values onto vertical modes with shape `[Nj Nz]`."
-                "GinvMatrix", "Reconstructs G-grid values from vertical modes with shape `[Nz Nj]`."
+                "FMatrix", "Transformation matrix $$F$$ projecting F-grid values onto vertical modes; shape `[Nj Nz]`."
+                "FinvMatrix", "Transformation matrix $$F^{-1}$$ reconstructing F-grid values from vertical modes; shape `[Nz Nj]`."
+                "GMatrix", "Transformation matrix $$G$$ projecting G-grid values onto vertical modes; shape `[Nj Nz]`."
+                "GinvMatrix", "Transformation matrix $$G^{-1}$$ reconstructing G-grid values from vertical modes; shape `[Nz Nj]`."
                 };
             for iExpectation = 1:size(expectedSummaries,1)
                 testCase.verifyEqual(testCase.memberSummary(page,expectedSummaries{iExpectation,1}),expectedSummaries{iExpectation,2});
@@ -671,6 +671,12 @@ classdef TestCoreAPIDocumentation < matlab.unittest.TestCase
             for className = closureClasses
                 testCase.verifyEqual(count(closureLanding,"[`" + className + "`]"),1,className);
             end
+            testCase.verifySubstring(forcingLanding,"| Class | Purpose |");
+            testCase.verifySubstring(closureLanding,"| Class | Purpose |");
+            testCase.verifyFalse(contains(forcingLanding,"Supported transforms"));
+            testCase.verifyFalse(contains(forcingLanding,"Principal controls"));
+            testCase.verifyFalse(contains(closureLanding,"Supported transforms"));
+            testCase.verifyFalse(contains(closureLanding,"Principal controls"));
             testCase.verifySubstring(closureLanding,"Transform-level antialiasing remains the efficient default");
             sidecarFolder = fullfile(testCase.repositoryRoot,"Forcing","detailedDescriptions");
             remainingSidecars = dir(fullfile(sidecarFolder,"*.md"));
@@ -698,6 +704,8 @@ classdef TestCoreAPIDocumentation < matlab.unittest.TestCase
                     "wvt.addForcing(WVBottomFrictionQuadratic(wvt,Cd=0.001))"
                     ]
                 "wvfixedamplitudeforcing", [
+                    "keeps selected wave-vortex coefficients at prescribed amplitudes"
+                    "participate in nonlinear interactions"
                     "participate in all the nonlinear dynamics"
                     "spectral-amplitude forcing"
                     "prescribed coefficient values"
@@ -726,6 +734,8 @@ classdef TestCoreAPIDocumentation < matlab.unittest.TestCase
                 expectedLink = "](/classes/forcing/" + classFolder + "/)";
                 testCase.verifySubstring(constructor,expectedLink,classFolder + " constructor does not link to its overview.");
             end
+            fixedAmplitude = testCase.generatedForcingPage(fullfile("wvfixedamplitudeforcing","index.md"));
+            testCase.verifyFalse(contains(fixedAmplitude,"recording the tendency that must be cancelled"));
         end
 
         function coefficientClaimsMatchTransformState(testCase)

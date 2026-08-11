@@ -9,7 +9,7 @@ mathjax: true
 
 #  FMatrix
 
-Projects F-grid values onto vertical modes with shape `[Nj Nz]`.
+Transformation matrix $$F$$ projecting F-grid values onto vertical modes; shape `[Nj Nz]`.
 
 
 ---
@@ -18,6 +18,6 @@ Projects F-grid values onto vertical modes with shape `[Nj Nz]`.
 Real valued property with dimensions $$(j,z)$$ and no units.
 
 ## Discussion
-Projects F-grid values onto vertical modes with shape `[Nj Nz]`.
+Transformation matrix $$F$$ projecting F-grid values onto vertical modes; shape `[Nj Nz]`.
 
 `FMatrix` maps a column sampled on the physical vertical grid into coefficients of the F vertical-mode basis.

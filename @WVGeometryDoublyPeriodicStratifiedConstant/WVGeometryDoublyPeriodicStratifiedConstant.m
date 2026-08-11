@@ -161,7 +161,7 @@ classdef WVGeometryDoublyPeriodicStratifiedConstant < WVGeometryDoublyPeriodic &
         end
 
         function Finv = get.FinvMatrix(wvt)
-            % Reconstructs F-grid values from vertical modes with shape `[Nz Nj]`.
+            % Transformation matrix $$F^{-1}$$ reconstructing F-grid values from vertical modes; shape `[Nz Nj]`.
             %
             % A matrix that transforms a vector from vertical mode space to physical
             % space.
@@ -177,7 +177,7 @@ classdef WVGeometryDoublyPeriodicStratifiedConstant < WVGeometryDoublyPeriodic &
         end
 
         function F = get.FMatrix(wvt)
-            % Projects F-grid values onto vertical modes with shape `[Nj Nz]`.
+            % Transformation matrix $$F$$ projecting F-grid values onto vertical modes; shape `[Nj Nz]`.
             %
             % A matrix that transforms a vector from physical
             % space to vertical mode space.
@@ -192,7 +192,7 @@ classdef WVGeometryDoublyPeriodicStratifiedConstant < WVGeometryDoublyPeriodic &
             F = wvt.DCT ./ wvt.F_g(:,1);
         end
         function Ginv = get.GinvMatrix(wvt)
-            % Reconstructs G-grid values from vertical modes with shape `[Nz Nj]`.
+            % Transformation matrix $$G^{-1}$$ reconstructing G-grid values from vertical modes; shape `[Nz Nj]`.
             %
             % A matrix that transforms a vector from vertical mode space to physical
             % space.
@@ -207,7 +207,7 @@ classdef WVGeometryDoublyPeriodicStratifiedConstant < WVGeometryDoublyPeriodic &
             Ginv = shiftdim(wvt.G_g(:,1),1) .* wvt.iDST;
         end
         function G = get.GMatrix(wvt)
-            % Projects G-grid values onto vertical modes with shape `[Nj Nz]`.
+            % Transformation matrix $$G$$ projecting G-grid values onto vertical modes; shape `[Nj Nz]`.
             %
             % A matrix that transforms a vector from physical
             % space to vertical mode space.

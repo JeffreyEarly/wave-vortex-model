@@ -117,10 +117,10 @@ views are `Apt`, `Amt`, and `A0t`.
       + [`Lr2`](/classes/transforms/wvtransformhydrostatic/lr2.html) Squared Rossby deformation radius in square meters.
       + [`waveModeVerticalStructureAtIndex`](/classes/transforms/wvtransformhydrostatic/wavemodeverticalstructureatindex.html) Return wave vertical-structure factors at one vertical grid index.
     + Vertical-mode transformation matrices
-      + [`FMatrix`](/classes/transforms/wvtransformhydrostatic/fmatrix.html) Projects F-grid values onto vertical modes with shape `[Nj Nz]`.
-      + [`FinvMatrix`](/classes/transforms/wvtransformhydrostatic/finvmatrix.html) Reconstructs F-grid values from vertical modes with shape `[Nz Nj]`.
-      + [`GMatrix`](/classes/transforms/wvtransformhydrostatic/gmatrix.html) Projects G-grid values onto vertical modes with shape `[Nj Nz]`.
-      + [`GinvMatrix`](/classes/transforms/wvtransformhydrostatic/ginvmatrix.html) Reconstructs G-grid values from vertical modes with shape `[Nz Nj]`.
+      + [`FMatrix`](/classes/transforms/wvtransformhydrostatic/fmatrix.html) Transformation matrix $$F$$ projecting F-grid values onto vertical modes; shape `[Nj Nz]`.
+      + [`FinvMatrix`](/classes/transforms/wvtransformhydrostatic/finvmatrix.html) Transformation matrix $$F^{-1}$$ reconstructing F-grid values from vertical modes; shape `[Nz Nj]`.
+      + [`GMatrix`](/classes/transforms/wvtransformhydrostatic/gmatrix.html) Transformation matrix $$G$$ projecting G-grid values onto vertical modes; shape `[Nj Nz]`.
+      + [`GinvMatrix`](/classes/transforms/wvtransformhydrostatic/ginvmatrix.html) Transformation matrix $$G^{-1}$$ reconstructing G-grid values from vertical modes; shape `[Nz Nj]`.
   + Transform configuration
     + [`isHydrostatic`](/classes/transforms/wvtransformhydrostatic/ishydrostatic.html) Whether the transform uses the hydrostatic approximation.
     + [`shouldAntialias`](/classes/transforms/wvtransformhydrostatic/shouldantialias.html) Whether the spectral grid excludes modes that alias quadratic products.
