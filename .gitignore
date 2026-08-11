@@ -13,3 +13,11 @@ Benchmarks/results/runs/
 !tools/portable-runtime/fixtures/root-nonhydrostatic.nc
 !tools/portable-runtime/fixtures/time-series-hydrostatic.nc
 !tools/portable-runtime/fixtures/time-series-nonhydrostatic.nc
+!tools/portable-runtime/fixtures/forcing-adaptive-damping.nc
+!tools/portable-runtime/fixtures/forcing-beta-plane.nc
+!tools/portable-runtime/fixtures/forcing-fixed-amplitude.nc
+!tools/portable-runtime/fixtures/forcing-mixed-hydrostatic.nc
+!tools/portable-runtime/fixtures/forcing-mixed-nonhydrostatic.nc
+!tools/portable-runtime/fixtures/forcing-nonlinear.nc
+!tools/portable-runtime/fixtures/forcing-pseudo-topographic.nc
+!tools/portable-runtime/fixtures/forcing-quadratic-bottom-friction.nc

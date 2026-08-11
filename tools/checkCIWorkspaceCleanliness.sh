@@ -31,7 +31,15 @@ artifact_paths="$(find . -path './.git' -prune -o -type f \( \
     -e './tools/portable-runtime/fixtures/root-hydrostatic.nc' \
     -e './tools/portable-runtime/fixtures/root-nonhydrostatic.nc' \
     -e './tools/portable-runtime/fixtures/time-series-hydrostatic.nc' \
-    -e './tools/portable-runtime/fixtures/time-series-nonhydrostatic.nc' || true)"
+    -e './tools/portable-runtime/fixtures/time-series-nonhydrostatic.nc' \
+    -e './tools/portable-runtime/fixtures/forcing-adaptive-damping.nc' \
+    -e './tools/portable-runtime/fixtures/forcing-beta-plane.nc' \
+    -e './tools/portable-runtime/fixtures/forcing-fixed-amplitude.nc' \
+    -e './tools/portable-runtime/fixtures/forcing-mixed-hydrostatic.nc' \
+    -e './tools/portable-runtime/fixtures/forcing-mixed-nonhydrostatic.nc' \
+    -e './tools/portable-runtime/fixtures/forcing-nonlinear.nc' \
+    -e './tools/portable-runtime/fixtures/forcing-pseudo-topographic.nc' \
+    -e './tools/portable-runtime/fixtures/forcing-quadratic-bottom-friction.nc' || true)"
 
 if [[ -n "${artifact_paths}" ]]; then
     printf 'Unexpected generated artifacts:\n%s\n' "${artifact_paths}"

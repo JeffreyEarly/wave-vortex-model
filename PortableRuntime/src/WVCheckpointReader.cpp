@@ -1,5 +1,6 @@
 #include "WaveVortexRuntime/WVCheckpointReader.hpp"
 
+#include "WVForcingScheduleDecoder.hpp"
 #include "WVNetCDF.hpp"
 
 #include <netcdf.h>
@@ -309,7 +310,10 @@ bool forcingOrdinal(const std::string& name, std::size_t& ordinal) {
     return conversion.ec == std::errc{} && conversion.ptr == digits.data() + digits.size() && ordinal > 0;
 }
 
-WVCheckpointStatus readForcingHeaders(const std::vector<GroupRecord>& groups, std::vector<WVCheckpointForcingHeader>& headers) {
+WVCheckpointStatus readForcingHeaders(
+    const std::vector<GroupRecord>& groups,
+    std::vector<WVCheckpointForcingHeader>& headers,
+    std::vector<detail::WVForcingGroupSource>& sources) {
     const auto forcing = std::find_if(groups.begin(), groups.end(), [](const GroupRecord& group) { return group.path == "/forcing"; });
     if (forcing == groups.end()) return WVCheckpointStatus::ok();
     std::string singletonClass;
@@ -322,6 +326,7 @@ WVCheckpointStatus readForcingHeaders(const std::vector<GroupRecord>& groups, st
     if (hasSingletonClass) {
         if (!children.empty()) return status(WVCheckpointStatusCode::invalidValue, "A singleton forcing group cannot also contain forcing-N records.", forcing->path);
         headers.push_back({1, forcing->path, singletonClass});
+        sources.push_back({forcing->id, 1, forcing->path, singletonClass});
         return WVCheckpointStatus::ok();
     }
     for (const int child : children) {
@@ -334,8 +339,10 @@ WVCheckpointStatus readForcingHeaders(const std::vector<GroupRecord>& groups, st
         result = detail::readTextAttribute(child, "AnnotatedClass", annotatedClass, forcing->path + "/" + name);
         if (!result) return result;
         headers.push_back({ordinal, forcing->path + "/" + name, annotatedClass});
+        sources.push_back({child, ordinal, forcing->path + "/" + name, annotatedClass});
     }
     std::sort(headers.begin(), headers.end(), [](const auto& left, const auto& right) { return left.ordinal < right.ordinal; });
+    std::sort(sources.begin(), sources.end(), [](const auto& left, const auto& right) { return left.ordinal < right.ordinal; });
     for (std::size_t index = 0; index < headers.size(); ++index) {
         if (headers[index].ordinal != index + 1) return status(WVCheckpointStatusCode::invalidValue, "Forcing group ordinals must be contiguous and one-based.", "/forcing");
     }
@@ -418,7 +425,10 @@ WVCheckpointStatus WVCheckpointReader::read(const std::string& path, WVCheckpoin
         return status(WVCheckpointStatusCode::shapeMismatch, "Stored coefficient shape does not match the descriptor rebuilt from checkpoint configuration.", stateGroup.path);
     }
 
-    result = readForcingHeaders(groups, candidate.metadata.forcingHeaders);
+    std::vector<detail::WVForcingGroupSource> forcingSources;
+    result = readForcingHeaders(groups, candidate.metadata.forcingHeaders, forcingSources);
+    if (!result) return result;
+    result = detail::decodeForcingSchedule(forcingSources, candidate.configuration, Nj * Nkl, candidate.forcingSchedule);
     if (!result) return result;
     checkpoint = std::move(candidate);
     return WVCheckpointStatus::ok();
