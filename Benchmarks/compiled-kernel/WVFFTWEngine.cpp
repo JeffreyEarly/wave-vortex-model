@@ -38,7 +38,13 @@ WVKernelStatus dimensions(const std::vector<WVFFTDimension>& source, std::vector
 std::string loadedLibrary() {
 #if defined(__APPLE__) || defined(__linux__)
     Dl_info information{};
-    if (dladdr(reinterpret_cast<const void*>(&fftw_execute),&information) != 0 && information.dli_fname != nullptr) return information.dli_fname;
+    if (dladdr(reinterpret_cast<const void*>(&fftw_execute),&information) != 0 && information.dli_fname != nullptr) {
+        char* canonicalPath = realpath(information.dli_fname,nullptr);
+        if (canonicalPath == nullptr) return information.dli_fname;
+        std::string result(canonicalPath);
+        std::free(canonicalPath);
+        return result;
+    }
 #endif
     return {};
 }
