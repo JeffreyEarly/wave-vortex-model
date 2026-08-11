@@ -87,6 +87,40 @@ classdef TestCompiledKernelTransforms < matlab.unittest.TestCase
             end
         end
 
+        function nonlinearFluxEvaluatesPhaseOnce(testCase)
+            definitions = struct("hydrostatic",{true,false},"size",{[8 6 7],[8 6 7]});
+            for definition = definitions
+                rng(4127,"twister");
+                wvt = WVTransformConstantStratification([15000 12000 1300],definition.size,isHydrostatic=definition.hydrostatic,shouldAntialias=true);
+                wvt.initWithRandomFlow(uvMax=0.01);
+                Ap = wvt.Ap; Am = wvt.Am; A0 = wvt.A0;
+                handle = wv_compiled_transform_mex('create',kernelConfiguration(wvt),1);
+                cleanup = onCleanup(@()deleteKernel(handle));
+                before = wv_compiled_transform_mex('metrics',handle);
+                timeOffsets = [0 90 -45];
+                for timeOffset = timeOffsets
+                    wvt.t = wvt.t0 + timeOffset;
+                    [expectedFp,expectedFm,expectedF0] = wvt.nonlinearFlux();
+                    [actualFp,actualFm,actualF0] = wv_compiled_transform_mex('nonlinearFlux',handle,wvt.Ap,wvt.Am,wvt.A0,wvt.t,wvt.t0);
+                    verifyRelative(testCase,actualFp,expectedFp,"Fp nonlinear flux at time offset "+timeOffset);
+                    verifyRelative(testCase,actualFm,expectedFm,"Fm nonlinear flux at time offset "+timeOffset);
+                    verifyRelative(testCase,actualF0,expectedF0,"F0 nonlinear flux at time offset "+timeOffset);
+                end
+                after = wv_compiled_transform_mex('metrics',handle);
+                expectedCalls = numel(timeOffsets);
+                expectedPhaseEvaluations = expectedCalls*prod(wvt.spectralMatrixSize);
+                testCase.verifyEqual(after.nonlinearFluxCallCount-before.nonlinearFluxCallCount,expectedCalls);
+                testCase.verifyEqual(after.nonlinearFluxPhaseEvaluationCount-before.nonlinearFluxPhaseEvaluationCount,expectedPhaseEvaluations);
+                testCase.verifyEqual(after.phaseWorkspaceBytes,0);
+                testCase.verifyEqual(after.scratchCapacityBytes,before.scratchCapacityBytes);
+                testCase.verifyEqual(string(after.nonlinearFluxSchedule),"sequential-phase-once");
+                testCase.verifyEqual(wvt.Ap,Ap);
+                testCase.verifyEqual(wvt.Am,Am);
+                testCase.verifyEqual(wvt.A0,A0);
+                clear cleanup
+            end
+        end
+
         function transformBenchmarkProducesArtifacts(testCase)
             repositoryRoot = fileparts(fileparts(mfilename("fullpath")));
             addpath(fullfile(repositoryRoot,"Benchmarks"));
@@ -187,7 +221,42 @@ classdef TestCompiledKernelTransforms < matlab.unittest.TestCase
             clear cleanup
         end
 
+        function phaseOnceBenchmarkComparesParentAndCandidate(testCase)
+            repositoryRoot = fileparts(fileparts(mfilename("fullpath")));
+            addpath(fullfile(repositoryRoot,"Benchmarks"));
+            outputDirectory = string(tempname);
+            cleanup = onCleanup(@()removeDirectory(outputDirectory));
+            result = runCompiledKernelPhaseOnceBenchmark(caseIds="constant-hydrostatic-256x256x65",processRunCount=1,samplingIntervalSeconds=0.01,plateauSeconds=0.08,threadCount=1,outputDirectory=outputDirectory,runId="smoke");
+            testCase.verifyEqual(result.status,"complete");
+            testCase.verifyEqual(numel(result.cases),1);
+            testCase.verifyEqual(result.source.baselineCommit,"199c9b8240a46fae8babbce413ee948ac4f89d38");
+            testCase.verifyTrue(result.cases.phaseCountPassed);
+            testCase.verifyTrue(result.cases.correctnessPassed);
+            testCase.verifyEqual(result.cases.exactStorageRatio,1);
+            testCase.verifyEqual(string(result.cases.candidate.metrics.nonlinearFluxSchedule),"sequential-phase-once");
+            testCase.verifyTrue(isfile(fullfile(outputDirectory,"phase-once-benchmark.json")));
+            testCase.verifyTrue(isfile(fullfile(outputDirectory,"summary.md")));
+            decoded = jsondecode(fileread(fullfile(outputDirectory,"phase-once-benchmark.json")));
+            testCase.verifyEqual(string(decoded.schemaVersion),"1.0.0");
+            clear cleanup
+        end
+
+        function phaseOnceDecisionHandlesMultipleGateSizes(testCase)
+            mediumHydro=decisionCase([256 256 65],true,true); mediumNonhydro=decisionCase([256 256 65],false,true);
+            largeHydro=decisionCase([512 512 129],true,false); largeNonhydro=decisionCase([512 512 129],false,false);
+            decision=compiledKernelPhaseOnceDecision([mediumHydro;mediumNonhydro;largeHydro;largeNonhydro]);
+            testCase.verifyTrue(decision.qualified);
+            testCase.verifyEqual(decision.qualifyingSizes,"256x256x65");
+            largeNonhydro.noMemoryRegression=false;
+            decision=compiledKernelPhaseOnceDecision([mediumHydro;mediumNonhydro;largeHydro;largeNonhydro]);
+            testCase.verifyFalse(decision.qualified);
+        end
+
     end
+end
+
+function value = decisionCase(Nxyz,isHydrostatic,fivePercentSpeedPassed)
+value=struct("Nxyz",Nxyz,"isHydrostatic",isHydrostatic,"fivePercentSpeedPassed",fivePercentSpeedPassed,"correctnessPassed",true,"phaseCountPassed",true,"noSpeedRegression",true,"noMemoryRegression",true,"status","complete");
 end
 
 function removeDirectory(pathname)

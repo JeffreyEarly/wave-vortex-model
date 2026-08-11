@@ -220,6 +220,9 @@ void testNonlinearFlux(bool hydrostatic) {
     }
     const std::size_t executionsPerCall = hydrostatic ? 15 : 18;
     require(kernel->metrics().executionCount == 2*executionsPerCall,"unexpected nonlinear-flux plan execution count");
+    require(kernel->metrics().nonlinearFluxCallCount == 2,"unexpected nonlinear-flux call count");
+    require(kernel->metrics().nonlinearFluxPhaseEvaluationCount == 2*count,"nonlinear flux did not evaluate phase exactly once per coefficient");
+    require(std::string(kernel->nonlinearFluxScheduleIdentifier()) == "sequential-phase-once","unexpected nonlinear-flux schedule identifier");
 
     WVFlux overlapping{{Ap.data(),shape},{Fm.data(),shape},{F0.data(),shape}};
     status = kernel->nonlinearFlux(state,overlapping);
