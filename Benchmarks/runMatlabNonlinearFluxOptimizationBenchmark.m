@@ -50,6 +50,10 @@ end
 if options.outputDirectory == ""
     options.outputDirectory = fullfile(benchmarkFolder,"results","experiments","issue125",options.runId + "-" + computer("arch") + "-" + version("-release"));
 end
+checkpointDirectory = fullfile(options.outputDirectory,"worker-checkpoints");
+if options.shouldWriteArtifacts && ~isfolder(checkpointDirectory)
+    mkdir(checkpointDirectory);
+end
 
 correctness = measureCorrectness(cases,options.variants,options.correctnessTolerance);
 caseResults = emptyCases();
@@ -62,7 +66,15 @@ for iCase = 1:numel(cases)
         executionSchedule(end+1,1) = cases(iCase).id + ":repeat-" + iRepeat + ":" + strjoin(order,","); %#ok<AGROW>
         for variant = order
             iVariant = find(options.variants == variant,1);
-            run = runWorker(cases(iCase),variant,iRepeat,options,benchmarkFolder,repositoryRoot);
+            checkpointPath = fullfile(checkpointDirectory,cases(iCase).id + "__" + variant + "__repeat-" + iRepeat + ".json");
+            if options.shouldWriteArtifacts && isfile(checkpointPath)
+                run = normalizeRun(jsondecode(fileread(checkpointPath)));
+            else
+                run = runWorker(cases(iCase),variant,iRepeat,options,benchmarkFolder,repositoryRoot);
+                if options.shouldWriteArtifacts
+                    writeText(checkpointPath,jsonencode(run,PrettyPrint=true));
+                end
+            end
             variantRuns(iVariant).runs(end+1,1) = run;
         end
     end
@@ -89,6 +101,9 @@ results = struct( ...
 
 if options.shouldWriteArtifacts
     writeArtifacts(results,options.outputDirectory);
+    if isfolder(checkpointDirectory)
+        rmdir(checkpointDirectory,"s");
+    end
 end
 clear stateCleanup
 end
@@ -244,7 +259,7 @@ for variant = variants(variants ~= "current")
     memoryQualified = false;
     reason = "No common hydrostatic/nonhydrostatic size passed the issue #125 5% gate.";
     sizes = unique(arrayfun(@(item)item.Nxyz(1),cases));
-    for horizontalSize = sizes
+    for horizontalSize = sizes(:).'
         selectedCases = cases(arrayfun(@(item)item.Nxyz(1) == horizontalSize,cases));
         if numel(selectedCases) ~= 2 || numel(unique([selectedCases.isHydrostatic])) ~= 2
             continue

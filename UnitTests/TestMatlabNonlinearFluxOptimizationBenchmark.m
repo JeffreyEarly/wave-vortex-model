@@ -89,6 +89,7 @@ classdef TestMatlabNonlinearFluxOptimizationBenchmark < matlab.unittest.TestCase
             testCase.verifyTrue(all(isfinite(results.cases.allocationControls.allocationSeconds)));
             testCase.verifyTrue(isfile(fullfile(outputDirectory,"matlab-optimization-benchmark.json")));
             testCase.verifyTrue(isfile(fullfile(outputDirectory,"summary.md")));
+            testCase.verifyFalse(isfolder(fullfile(outputDirectory,"worker-checkpoints")));
             decoded = jsondecode(fileread(fullfile(outputDirectory,"matlab-optimization-benchmark.json")));
             testCase.verifyEqual(string(decoded.schemaVersion),"issue125-v1");
             summary = string(fileread(fullfile(outputDirectory,"summary.md")));
