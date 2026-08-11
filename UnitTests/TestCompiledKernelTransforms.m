@@ -10,6 +10,37 @@ classdef TestCompiledKernelTransforms < matlab.unittest.TestCase
     end
 
     methods (Test,TestTags="optional")
+        function pairedScheduleMatchesSequential(testCase)
+            repositoryRoot = fileparts(fileparts(mfilename("fullpath")));
+            buildDirectory = fullfile(repositoryRoot,"Benchmarks","build");
+            buildCompiledKernelTransformMex(outputDirectory=buildDirectory,schedule="paired",outputName="wv_compiled_transform_paired_mex");
+            definitions = struct("size",{[8 6 7],[7 5 7]},"hydrostatic",{true,false});
+            for definition = definitions
+                rng(3151,"twister");
+                wvt = WVTransformConstantStratification([15000 12000 1300],definition.size,isHydrostatic=definition.hydrostatic,shouldAntialias=true);
+                wvt.initWithRandomFlow(uvMax=0.01);
+                wvt.t = 75;
+                sequentialHandle = wv_compiled_transform_mex('create',kernelConfiguration(wvt),1);
+                pairedHandle = wv_compiled_transform_paired_mex('create',kernelConfiguration(wvt),1);
+                sequentialCleanup = onCleanup(@()deleteKernel(sequentialHandle));
+                pairedCleanup = onCleanup(@()deleteKernelNamed("wv_compiled_transform_paired_mex",pairedHandle));
+                [expectedFp,expectedFm,expectedF0] = wvt.nonlinearFlux();
+                [sequentialFp,sequentialFm,sequentialF0] = wv_compiled_transform_mex('nonlinearFlux',sequentialHandle,wvt.Ap,wvt.Am,wvt.A0,wvt.t,wvt.t0);
+                [pairedFp,pairedFm,pairedF0] = wv_compiled_transform_paired_mex('nonlinearFlux',pairedHandle,wvt.Ap,wvt.Am,wvt.A0,wvt.t,wvt.t0);
+                verifyRelative(testCase,sequentialFp,expectedFp,"sequential Fp");
+                verifyRelative(testCase,sequentialFm,expectedFm,"sequential Fm");
+                verifyRelative(testCase,sequentialF0,expectedF0,"sequential F0");
+                verifyRelative(testCase,pairedFp,expectedFp,"paired Fp");
+                verifyRelative(testCase,pairedFm,expectedFm,"paired Fm");
+                verifyRelative(testCase,pairedF0,expectedF0,"paired F0");
+                pairedMetrics = wv_compiled_transform_paired_mex('metrics',pairedHandle);
+                sequentialMetrics = wv_compiled_transform_mex('metrics',sequentialHandle);
+                testCase.verifyEqual(string(pairedMetrics.nonlinearFluxSchedule),"paired");
+                testCase.verifyGreaterThan(pairedMetrics.scratchCapacityBytes,sequentialMetrics.scratchCapacityBytes);
+                clear pairedCleanup sequentialCleanup
+            end
+        end
+
         function fusedTransformsMatchMatlab(testCase)
             definitions = struct( ...
                 "domain",{[15000 12000 1300],[15000 12000 1300],[15000 15000 1300]}, ...
@@ -68,11 +99,20 @@ classdef TestCompiledKernelTransforms < matlab.unittest.TestCase
                 [value,x,y,z] = wvt.transformToSpatialDomainWithGAllDerivatives(Apm=Apm,A0=A0);
                 actual = wv_compiled_transform_mex('gAll',handle,Apm,A0);
                 verifyRelative(testCase,actual,cat(4,value,x,y,z),"G derivatives");
+
+                wvt.initWithRandomFlow(uvMax=0.01);
+                wvt.t = 90;
+                [expectedFp,expectedFm,expectedF0] = wvt.nonlinearFlux();
+                [actualFp,actualFm,actualF0] = wv_compiled_transform_mex('nonlinearFlux',handle,wvt.Ap,wvt.Am,wvt.A0,wvt.t,wvt.t0);
+                verifyRelative(testCase,actualFp,expectedFp,"Fp nonlinear flux");
+                verifyRelative(testCase,actualFm,expectedFm,"Fm nonlinear flux");
+                verifyRelative(testCase,actualF0,expectedF0,"F0 nonlinear flux");
                 metrics = wv_compiled_transform_mex('metrics',handle);
                 testCase.verifyEqual(string(metrics.engine),"fftw");
                 expectedLibrary = string(fullfile(matlabroot,"bin",computer("arch"),"libmwfftw3.3.dylib"));
                 testCase.verifyEqual(string(metrics.loadedLibrary),expectedLibrary);
-                testCase.verifyEqual(metrics.planCount,11);
+                testCase.verifyEqual(metrics.contractVersion,3);
+                testCase.verifyEqual(metrics.planCount,14);
                 testCase.verifyGreaterThan(metrics.scratchCapacityBytes,0);
                 clear cleanup
             end
@@ -94,6 +134,27 @@ classdef TestCompiledKernelTransforms < matlab.unittest.TestCase
             testCase.verifyTrue(isfile(fullfile(outputDirectory,"compiled-transform-benchmark.json")));
             testCase.verifyTrue(isfile(fullfile(outputDirectory,"summary.md")));
             decoded = jsondecode(fileread(fullfile(outputDirectory,"compiled-transform-benchmark.json")));
+            testCase.verifyEqual(string(decoded.schemaVersion),"1.0.0");
+            clear cleanup
+        end
+
+        function nonlinearFluxScheduleBenchmarkProducesArtifacts(testCase)
+            repositoryRoot = fileparts(fileparts(mfilename("fullpath")));
+            addpath(fullfile(repositoryRoot,"Benchmarks"));
+            outputDirectory = string(tempname);
+            cleanup = onCleanup(@()removeDirectory(outputDirectory));
+            result = runCompiledKernelNonlinearFluxScheduleBenchmark( ...
+                sizes=[8 6 7;10 8 9],warmupCount=1,mediumSampleCount=2,largeSampleCount=2, ...
+                threadCount=1,outputDirectory=outputDirectory,runId="smoke");
+            testCase.verifyEqual(result.status,"complete");
+            testCase.verifyEqual(numel(result.cases),4);
+            testCase.verifyEqual([result.cases.sampleCount],[2 2 2 2]);
+            testCase.verifyTrue(all([result.cases.correctnessPassed]));
+            testCase.verifyTrue(all(isfinite([result.cases.pairedSpeedup])));
+            testCase.verifyEqual(string(result.selection.selectedSchedule),"sequential");
+            testCase.verifyTrue(isfile(fullfile(outputDirectory,"nonlinear-flux-schedule-benchmark.json")));
+            testCase.verifyTrue(isfile(fullfile(outputDirectory,"summary.md")));
+            decoded = jsondecode(fileread(fullfile(outputDirectory,"nonlinear-flux-schedule-benchmark.json")));
             testCase.verifyEqual(string(decoded.schemaVersion),"1.0.0");
             clear cleanup
         end
@@ -122,6 +183,13 @@ end
 function deleteKernel(handle)
 try
     wv_compiled_transform_mex('delete',handle);
+catch
+end
+end
+
+function deleteKernelNamed(gateway,handle)
+try
+    feval(gateway,'delete',handle);
 catch
 end
 end

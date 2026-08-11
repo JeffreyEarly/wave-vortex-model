@@ -296,26 +296,20 @@ std::size_t WVTransformConstantStratificationDescriptor::persistentBytes() const
 WVKernelStatus validateStateAndFlux(
     const WVTransformConstantStratificationDescriptor& descriptor,
     const WVState& state,
-    const WVGradientMasks& masks,
     const WVFlux& flux) {
     if (!std::isfinite(state.t) || !std::isfinite(state.t0)) return {WVKernelStatusCode::invalidConfiguration, "State times must be finite."};
     const auto expected = descriptor.spectralShape();
     const WVKernelStatus statuses[] = {
         validateView(state.coefficients.Ap, expected, "Ap"), validateView(state.coefficients.Am, expected, "Am"), validateView(state.coefficients.A0, expected, "A0"),
-        validateView(masks.ApUMask, expected, "ApUMask"), validateView(masks.AmUMask, expected, "AmUMask"), validateView(masks.A0UMask, expected, "A0UMask"),
-        validateView(masks.ApUxMask, expected, "ApUxMask"), validateView(masks.AmUxMask, expected, "AmUxMask"), validateView(masks.A0UxMask, expected, "A0UxMask"),
         validateView(flux.Fp, expected, "Fp"), validateView(flux.Fm, expected, "Fm"), validateView(flux.F0, expected, "F0")};
     for (const auto& status : statuses) if (!status) return status;
 
     const auto complexBytes = expected.elementCount() * sizeof(WVComplex64);
-    const auto realBytes = expected.elementCount() * sizeof(double);
-    const void* inputs[] = {state.coefficients.Ap.data, state.coefficients.Am.data, state.coefficients.A0.data,
-        masks.ApUMask.data, masks.AmUMask.data, masks.A0UMask.data, masks.ApUxMask.data, masks.AmUxMask.data, masks.A0UxMask.data};
-    const std::size_t inputBytes[] = {complexBytes, complexBytes, complexBytes, realBytes, realBytes, realBytes, realBytes, realBytes, realBytes};
+    const void* inputs[] = {state.coefficients.Ap.data, state.coefficients.Am.data, state.coefficients.A0.data};
     const void* outputs[] = {flux.Fp.data, flux.Fm.data, flux.F0.data};
     for (std::size_t i = 0; i < 3; ++i) {
         for (std::size_t j = i + 1; j < 3; ++j) if (overlaps(outputs[i], complexBytes, outputs[j], complexBytes)) return {WVKernelStatusCode::overlappingArrays, "Flux outputs must not overlap."};
-        for (std::size_t j = 0; j < 9; ++j) if (overlaps(outputs[i], complexBytes, inputs[j], inputBytes[j])) return {WVKernelStatusCode::overlappingArrays, "Flux outputs must not overlap state or mask inputs."};
+        for (const auto* input : inputs) if (overlaps(outputs[i], complexBytes, input, complexBytes)) return {WVKernelStatusCode::overlappingArrays, "Flux outputs must not overlap state inputs."};
     }
     return WVKernelStatus::ok();
 }

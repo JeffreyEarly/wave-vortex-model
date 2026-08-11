@@ -8,7 +8,7 @@
 
 namespace wavevortex {
 
-inline constexpr std::uint32_t WVKernelContractVersion = 2;
+inline constexpr std::uint32_t WVKernelContractVersion = 3;
 
 struct WVComplex64 {
     double real = 0.0;
@@ -99,15 +99,6 @@ struct WVState {
     double t = 0.0;
     double t0 = 0.0;
     WVCoefficients coefficients;
-};
-
-struct WVGradientMasks {
-    WVRealConstView ApUMask;
-    WVRealConstView AmUMask;
-    WVRealConstView A0UMask;
-    WVRealConstView ApUxMask;
-    WVRealConstView AmUxMask;
-    WVRealConstView A0UxMask;
 };
 
 struct WVFlux {
@@ -209,6 +200,6 @@ private:
     WVConstantStratificationModes verticalModes_;
 };
 
-WVKernelStatus validateStateAndFlux(const WVTransformConstantStratificationDescriptor& descriptor, const WVState& state, const WVGradientMasks& masks, const WVFlux& flux);
+WVKernelStatus validateStateAndFlux(const WVTransformConstantStratificationDescriptor& descriptor, const WVState& state, const WVFlux& flux);
 
 } // namespace wavevortex

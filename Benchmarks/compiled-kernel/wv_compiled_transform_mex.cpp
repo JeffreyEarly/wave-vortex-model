@@ -127,15 +127,24 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
         requireStatus(command == "fAll" ? value.transformToSpatialDomainWithFAllDerivatives(Apm,A0,fields) : value.transformToSpatialDomainWithGAllDerivatives(Apm,A0,fields));
         return;
     }
+    if (command == "nonlinearFlux") {
+        if (nrhs != 7 || nlhs != 3) fail("WaveVortexModel:CompiledKernelCommand","nonlinearFlux requires handle, Ap, Am, A0, t, and t0 and returns Fp, Fm, F0.");
+        WVState state{mxGetScalar(prhs[5]),mxGetScalar(prhs[6]),{complexInput(prhs[2],spectral,"Ap"),complexInput(prhs[3],spectral,"Am"),complexInput(prhs[4],spectral,"A0")}};
+        WVFlux flux;
+        plhs[0] = complexOutput(spectral,flux.Fp); plhs[1] = complexOutput(spectral,flux.Fm); plhs[2] = complexOutput(spectral,flux.F0);
+        requireStatus(value.nonlinearFlux(state,flux));
+        return;
+    }
     if (command == "metrics") {
         if (nrhs != 2 || nlhs != 1) fail("WaveVortexModel:CompiledKernelCommand","metrics requires one handle.");
-        const char* names[] = {"engine","loadedLibrary","planCount","planBytes","descriptorBytes","scratchCapacityBytes","scratchHighWaterBytes","executionCount","horizontalExecutionCount","verticalExecutionCount","persistentBytes"};
-        plhs[0] = mxCreateStructMatrix(1,1,11,names);
+        const char* names[] = {"engine","loadedLibrary","nonlinearFluxSchedule","contractVersion","planCount","planBytes","descriptorBytes","scratchCapacityBytes","scratchHighWaterBytes","halfSpectrumScratchCapacityBytes","realScratchCapacityBytes","executionCount","horizontalExecutionCount","verticalExecutionCount","persistentBytes"};
+        plhs[0] = mxCreateStructMatrix(1,1,15,names);
         const auto& metrics = value.metrics();
         mxSetField(plhs[0],0,"engine",mxCreateString(value.engineIdentifier().c_str()));
         mxSetField(plhs[0],0,"loadedLibrary",mxCreateString(value.engineLibraryIdentity().c_str()));
-        const double numbers[] = {static_cast<double>(metrics.planCount),static_cast<double>(metrics.planBytes),static_cast<double>(metrics.descriptorBytes),static_cast<double>(metrics.scratchCapacityBytes),static_cast<double>(metrics.scratchHighWaterBytes),static_cast<double>(metrics.executionCount),static_cast<double>(metrics.horizontalExecutionCount),static_cast<double>(metrics.verticalExecutionCount),static_cast<double>(value.persistentBytes())};
-        for (std::size_t i = 0; i < 9; ++i) mxSetField(plhs[0],0,names[i+2],mxCreateDoubleScalar(numbers[i]));
+        mxSetField(plhs[0],0,"nonlinearFluxSchedule",mxCreateString(value.nonlinearFluxScheduleIdentifier()));
+        const double numbers[] = {static_cast<double>(WVKernelContractVersion),static_cast<double>(metrics.planCount),static_cast<double>(metrics.planBytes),static_cast<double>(metrics.descriptorBytes),static_cast<double>(metrics.scratchCapacityBytes),static_cast<double>(metrics.scratchHighWaterBytes),static_cast<double>(metrics.halfSpectrumScratchCapacityBytes),static_cast<double>(metrics.realScratchCapacityBytes),static_cast<double>(metrics.executionCount),static_cast<double>(metrics.horizontalExecutionCount),static_cast<double>(metrics.verticalExecutionCount),static_cast<double>(value.persistentBytes())};
+        for (std::size_t i = 0; i < 12; ++i) mxSetField(plhs[0],0,names[i+3],mxCreateDoubleScalar(numbers[i]));
         return;
     }
     fail("WaveVortexModel:CompiledKernelCommand","Unknown compiled-kernel command.");
