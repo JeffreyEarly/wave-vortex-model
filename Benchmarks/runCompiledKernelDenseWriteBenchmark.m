@@ -21,6 +21,7 @@ benchmarkFolder = string(fileparts(mfilename("fullpath")));
 repositoryRoot = string(fileparts(benchmarkFolder));
 [commit,tree,isDirty] = gitIdentity(repositoryRoot);
 if options.shouldRunFinal && options.requireCleanSource && isDirty, error("WaveVortexBenchmark:DirtyDenseWriteCandidate","The canonical issue #127 run requires a clean implementation commit."); end
+if options.outputDirectory == "", options.outputDirectory = fullfile(benchmarkFolder,"results","experiments","issue127",options.runId+"-"+computer("arch")+"-"+lower(version("-release"))); end
 originalDirectory = pwd; originalPath = path; originalRng = rng;
 stateCleanup = onCleanup(@()restoreState(originalDirectory,originalPath,originalRng));
 addRepositoryPaths(repositoryRoot,benchmarkFolder);
@@ -58,6 +59,7 @@ if options.shouldRunFinal && selection.advanced
     for iRun = 1:options.finalProcessCount
         fprintf("Issue #127 final paired process %d/%d: baseline vs %s.\n",iRun,options.finalProcessCount,selection.variantId);
         finalRuns(iRun) = runWorker(selectedBuilds,finalCases,iRun,"final",options,repositoryRoot,benchmarkFolder,provider);
+        writeCheckpoint(options,commit,screenRun,screen,selection,finalRuns(1:iRun));
     end
     finalComparisons = aggregateFinal(finalRuns,selection.variantId);
     decision = compiledKernelDenseWriteDecision(finalComparisons);
@@ -66,7 +68,6 @@ elseif ~selection.advanced
 end
 
 results = struct("schemaVersion","1.0.0","status",conditional(options.shouldRunFinal,conditional(selection.advanced && all(string({finalRuns.status})=="complete"),"complete","screened"),"screened"),"runId",options.runId,"source",struct("repository","JeffreyEarly/wave-vortex-model","commit",commit,"tree",tree,"isDirty",isDirty,"kernelSha256",sha256File(fullfile(repositoryRoot,"CompiledKernel","src","WVTransformConstantStratificationKernel.cpp")),"gatewaySha256",sha256File(fullfile(repositoryRoot,"Benchmarks","compiled-kernel","wv_compiled_transform_mex.cpp")),"issue126",issue126),"environment",environmentRecord,"provider",struct("id",provider.id,"version",provider.version,"threadBackend",provider.threadBackend,"threadCount",options.threadCount,"baseLibrary",provider.baseLibrary,"threadLibrary",provider.threadLibrary,"baseLibrarySha256",provider.baseLibrarySha256),"configuration",struct("screen","one process; one warmup; three medium samples","final","three paired fresh processes; two warmups; 7 medium / 3 large samples","correctnessTolerance",1e-12,"screenThreshold",0.03,"adoptionThreshold",0.05,"maximumRegression",0.03),"builds",builds,"screenRun",screenRun,"screenComparisons",screen,"selection",selection,"finalRuns",finalRuns,"finalComparisons",finalComparisons,"decision",decision);
-if options.outputDirectory == "", options.outputDirectory = fullfile(benchmarkFolder,"results","experiments","issue127",options.runId+"-"+computer("arch")+"-"+lower(version("-release"))); end
 if ~isfolder(options.outputDirectory), mkdir(options.outputDirectory); end
 writeText(fullfile(options.outputDirectory,"dense-half-spectrum-writes.json"),jsonencode(results,PrettyPrint=true));
 writeText(fullfile(options.outputDirectory,"summary.md"),summaryMarkdown(results));
@@ -208,6 +209,13 @@ end
 
 function value = emptyDecision
 value = struct("status","NOT-RUN","adopted",false,"qualifyingSize","","regressionPassed",false,"correctnessPassed",false,"reason","Final confirmation was not run.");
+end
+
+function writeCheckpoint(options,commit,screenRun,screen,selection,finalRuns)
+if options.outputDirectory == "", return, end
+if ~isfolder(options.outputDirectory), mkdir(options.outputDirectory); end
+checkpoint = struct("schemaVersion","1.0.0","status","running","sourceCommit",commit,"screenRun",screenRun,"screenComparisons",screen,"selection",selection,"finalRuns",finalRuns);
+writeText(fullfile(options.outputDirectory,"checkpoint.json"),jsonencode(checkpoint));
 end
 
 function root = defaultNativeCacheRoot

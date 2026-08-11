@@ -6,7 +6,7 @@ regressionPassed = all([comparisons.completeCallSpeedup] >= 1/1.03) && all([comp
 correctnessPassed = all([comparisons.maximumRelativeError] <= 1e-12) && all([comparisons.selectedScheduleExecuted]);
 qualifiedSize = "";
 keys = string(arrayfun(@(item)sprintf('%dx%dx%d',item.Nxyz),comparisons,UniformOutput=false));
-for key = unique(keys)
+for key = unique(keys(:))'
     selected = comparisons(keys==key);
     if numel(selected) ~= 2 || ~all(ismember([true false],[selected.isHydrostatic])), continue, end
     speedPassed = all([selected.completeCallSpeedup] >= 1.05);
