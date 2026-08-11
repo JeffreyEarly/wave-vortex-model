@@ -53,10 +53,6 @@ private:
     WVKernelStatus transformUVWEtaToWaveVortexImpl(const WVRealFieldBundleConstView& fields, double t, double t0, WVMutableCoefficients& coefficients);
     WVKernelStatus transformWaveVortexToUVWEtaImpl(const WVState& state, WVRealFieldBundleView& fields);
     WVKernelStatus transformToSpatialDomainWithDerivativesImpl(const WVState& state, std::size_t target, WVRealFieldBundleView& derivatives);
-#if defined(WV_KERNEL_PAIRED_SCHEDULE)
-    WVKernelStatus transformToSpatialDomainWithPairedDerivativesImpl(const WVState& state, std::size_t firstTarget, std::size_t secondTarget, WVRealFieldBundleView& derivatives);
-#endif
-
     WVTransformConstantStratificationDescriptor descriptor_;
     std::unique_ptr<WVFFTEngine> engine_;
     std::string engineIdentifier_;

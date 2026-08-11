@@ -2,7 +2,6 @@ function mexPath = buildCompiledKernelTransformMex(options)
 % Build the authoring-only compiled transform diagnostic gateway.
 arguments
     options.outputDirectory (1,1) string = fullfile(fileparts(mfilename("fullpath")),"build")
-    options.schedule (1,1) string {mustBeMember(options.schedule,["sequential" "paired"])} = "sequential"
     options.outputName (1,1) string = ""
 end
 repositoryRoot = fileparts(fileparts(mfilename("fullpath")));
@@ -17,9 +16,6 @@ if options.outputName == ""
     options.outputName = "wv_compiled_transform_mex";
 end
 compilerFlags = "CXXFLAGS=$CXXFLAGS -std=c++17";
-if options.schedule == "paired"
-    compilerFlags = compilerFlags + " -DWV_KERNEL_PAIRED_SCHEDULE=1";
-end
 mex("-R2018a",compilerFlags,gateway, ...
     fullfile(sourceDirectory,"WVKernelTypes.cpp"), ...
     fullfile(sourceDirectory,"WVTransformConstantStratificationKernel.cpp"), ...
