@@ -4,6 +4,9 @@ arguments
     options.outputDirectory (1,1) string = fullfile(fileparts(mfilename("fullpath")),"build")
     options.outputName (1,1) string = ""
     options.provider (1,1) struct = struct()
+    options.denseWriteStrategy (1,1) string {mustBeMember(options.denseWriteStrategy,["baseline","row-classified","segmented"])} = "baseline"
+    options.fuseInverseNormalization (1,1) logical = false
+    options.validateDenseWrites (1,1) logical = false
 end
 repositoryRoot = fileparts(fileparts(mfilename("fullpath")));
 sourceDirectory = fullfile(repositoryRoot,"CompiledKernel","src");
@@ -17,7 +20,10 @@ if options.outputName == ""
 end
 compilerFlags = "CXXFLAGS=$CXXFLAGS -std=c++17 -pthread -O3 -mcpu=native" + ...
     " -DWV_KERNEL_NATIVE_OPTIMIZATION=1" + ...
-    " -DWV_KERNEL_COEFFICIENT_WORKERS=2";
+    " -DWV_KERNEL_COEFFICIENT_WORKERS=2" + ...
+    " -DWV_KERNEL_DENSE_WRITE_MODE="+denseWriteMode(options.denseWriteStrategy) + ...
+    " -DWV_KERNEL_FUSE_INVERSE_NORMALIZATION="+double(options.fuseInverseNormalization) + ...
+    " -DWV_KERNEL_VALIDATE_DENSE_WRITES="+double(options.validateDenseWrites);
 mexArguments = {"-R2018a",compilerFlags,gateway, ...
     fullfile(sourceDirectory,"WVKernelTypes.cpp"), ...
     fullfile(sourceDirectory,"WVTransformConstantStratificationKernel.cpp"), ...
@@ -36,6 +42,16 @@ build = provider;
 build.module = options.outputName;
 build.mexPath = string(mexPath);
 build.mexSha256 = sha256File(mexPath);
+build.denseWriteStrategy = options.denseWriteStrategy;
+build.fuseInverseNormalization = options.fuseInverseNormalization;
+build.validateDenseWrites = options.validateDenseWrites;
+end
+
+function mode = denseWriteMode(strategy)
+if strategy == "baseline", mode = 0;
+elseif strategy == "row-classified", mode = 1;
+else, mode = 2;
+end
 end
 
 function provider = normalizedProvider(provider)

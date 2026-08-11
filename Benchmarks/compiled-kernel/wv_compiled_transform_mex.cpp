@@ -286,8 +286,8 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
     }
     if (command == "metrics") {
         if (nrhs != 2 || nlhs != 1) fail("WaveVortexModel:CompiledKernelCommand","metrics requires one handle.");
-        const char* names[] = {"engine","loadedLibrary","nonlinearFluxSchedule","phaseImplementation","coefficientStorageMode","coefficientArithmeticMode","optimizationImplementation","coefficientWorkerCount","planMemoryAccounting","contractVersion","planCount","planBytes","descriptorBytes","scratchCapacityBytes","scratchHighWaterBytes","halfSpectrumScratchCapacityBytes","realScratchCapacityBytes","executionCount","horizontalExecutionCount","verticalExecutionCount","nonlinearFluxCallCount","nonlinearFluxPhaseEvaluationCount","phaseWorkspaceBytes","persistentBytes","stateInputBytes","fluxOutputBytes","knownMaximumLiveOwnedBytes","persistentFullHermitianBytes","gradientMaskBytes","Nx","Ny","Nz","Nj","Nkl","phaseSeconds","reconstructionSeconds","derivativeReconstructionSeconds","productSeconds","projectionSeconds","coefficientAssemblySeconds","derivativeCoefficientAssemblySeconds","coefficientProjectionSeconds"};
-        plhs[0] = mxCreateStructMatrix(1,1,42,names);
+        const char* names[] = {"engine","loadedLibrary","nonlinearFluxSchedule","phaseImplementation","coefficientStorageMode","coefficientArithmeticMode","optimizationImplementation","denseWriteStrategy","inverseNormalizationPlacement","coefficientWorkerCount","planMemoryAccounting","contractVersion","planCount","planBytes","descriptorBytes","scratchCapacityBytes","scratchHighWaterBytes","halfSpectrumScratchCapacityBytes","realScratchCapacityBytes","executionCount","horizontalExecutionCount","verticalExecutionCount","nonlinearFluxCallCount","nonlinearFluxPhaseEvaluationCount","phaseWorkspaceBytes","persistentBytes","stateInputBytes","fluxOutputBytes","knownMaximumLiveOwnedBytes","persistentFullHermitianBytes","gradientMaskBytes","Nx","Ny","Nz","Nj","Nkl","phaseSeconds","reconstructionSeconds","derivativeReconstructionSeconds","productSeconds","projectionSeconds","coefficientAssemblySeconds","derivativeCoefficientAssemblySeconds","coefficientProjectionSeconds","denseComplexCellsZeroed","denseComplexCellsAssembled","hermitianCompletionCellsWritten","selfConjugateImaginaryValuesWritten","inverseNormalizationCellsWritten","denseBytesWritten","densePassCount","denseInputValidationCount","denseInputValidationPassed","denseZeroSeconds","hermitianCompletionSeconds","inverseNormalizationSeconds"};
+        plhs[0] = mxCreateStructMatrix(1,1,56,names);
         const auto& metrics = value.metrics();
         const auto& configuration = value.descriptor().configuration();
         const auto spectralBytes = value.descriptor().spectralShape().elementCount() * sizeof(WVComplex64);
@@ -298,12 +298,20 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
         mxSetField(plhs[0],0,"coefficientStorageMode",mxCreateString("natural-dimensional"));
         mxSetField(plhs[0],0,"coefficientArithmeticMode",mxCreateString(value.coefficientArithmeticModeIdentifier()));
         mxSetField(plhs[0],0,"optimizationImplementation",mxCreateString(value.optimizationImplementationIdentifier()));
+        mxSetField(plhs[0],0,"denseWriteStrategy",mxCreateString(value.denseWriteStrategyIdentifier()));
+        mxSetField(plhs[0],0,"inverseNormalizationPlacement",mxCreateString(value.inverseNormalizationPlacementIdentifier()));
         mxSetField(plhs[0],0,"coefficientWorkerCount",mxCreateDoubleScalar(static_cast<double>(value.coefficientWorkerCount())));
         mxSetField(plhs[0],0,"planMemoryAccounting",mxCreateString("wrapper-lower-bound; FFTW-owned plan memory is opaque"));
         const double numbers[] = {static_cast<double>(WVKernelContractVersion),static_cast<double>(metrics.planCount),static_cast<double>(metrics.planBytes),static_cast<double>(metrics.descriptorBytes),static_cast<double>(metrics.scratchCapacityBytes),static_cast<double>(metrics.scratchHighWaterBytes),static_cast<double>(metrics.halfSpectrumScratchCapacityBytes),static_cast<double>(metrics.realScratchCapacityBytes),static_cast<double>(metrics.executionCount),static_cast<double>(metrics.horizontalExecutionCount),static_cast<double>(metrics.verticalExecutionCount),static_cast<double>(metrics.nonlinearFluxCallCount),static_cast<double>(metrics.nonlinearFluxPhaseEvaluationCount),0.0,static_cast<double>(value.persistentBytes()),static_cast<double>(3*spectralBytes),static_cast<double>(3*spectralBytes),static_cast<double>(value.persistentBytes()+3*spectralBytes),0.0,0.0,static_cast<double>(configuration.Nx),static_cast<double>(configuration.Ny),static_cast<double>(configuration.Nz),static_cast<double>(configuration.Nj),static_cast<double>(value.descriptor().Nkl())};
-        for (std::size_t i = 0; i < 25; ++i) mxSetField(plhs[0],0,names[i+9],mxCreateDoubleScalar(numbers[i]));
+        for (std::size_t i = 0; i < 25; ++i) mxSetField(plhs[0],0,names[i+11],mxCreateDoubleScalar(numbers[i]));
         const double stageSeconds[] = {metrics.phaseSeconds,metrics.reconstructionSeconds,metrics.derivativeReconstructionSeconds,metrics.productSeconds,metrics.projectionSeconds,metrics.coefficientAssemblySeconds,metrics.derivativeCoefficientAssemblySeconds,metrics.coefficientProjectionSeconds};
-        for (std::size_t i = 0; i < 8; ++i) mxSetField(plhs[0],0,names[i+34],mxCreateDoubleScalar(stageSeconds[i]));
+        for (std::size_t i = 0; i < 8; ++i) mxSetField(plhs[0],0,names[i+36],mxCreateDoubleScalar(stageSeconds[i]));
+        const double denseNumbers[] = {static_cast<double>(metrics.denseComplexCellsZeroed),static_cast<double>(metrics.denseComplexCellsAssembled),static_cast<double>(metrics.hermitianCompletionCellsWritten),static_cast<double>(metrics.selfConjugateImaginaryValuesWritten),static_cast<double>(metrics.inverseNormalizationCellsWritten),static_cast<double>(metrics.denseBytesWritten),static_cast<double>(metrics.densePassCount),static_cast<double>(metrics.denseInputValidationCount)};
+        for (std::size_t i = 0; i < 8; ++i) mxSetField(plhs[0],0,names[i+44],mxCreateDoubleScalar(denseNumbers[i]));
+        mxSetField(plhs[0],0,"denseInputValidationPassed",mxCreateLogicalScalar(metrics.denseInputValidationPassed));
+        mxSetField(plhs[0],0,"denseZeroSeconds",mxCreateDoubleScalar(metrics.denseZeroSeconds));
+        mxSetField(plhs[0],0,"hermitianCompletionSeconds",mxCreateDoubleScalar(metrics.hermitianCompletionSeconds));
+        mxSetField(plhs[0],0,"inverseNormalizationSeconds",mxCreateDoubleScalar(metrics.inverseNormalizationSeconds));
         return;
     }
     fail("WaveVortexModel:CompiledKernelCommand","Unknown compiled-kernel command.");

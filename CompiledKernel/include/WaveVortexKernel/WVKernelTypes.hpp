@@ -1,5 +1,9 @@
 #pragma once
 
+#ifndef WV_KERNEL_DENSE_WRITE_MODE
+#define WV_KERNEL_DENSE_WRITE_MODE 0
+#endif
+
 #include <cstddef>
 #include <cstdint>
 #include <string>
@@ -149,6 +153,15 @@ struct WVHalfSpectrumMappings {
     std::vector<std::size_t> hermitianCompletionRows;
     std::vector<std::size_t> hermitianSourceRows;
     std::vector<std::size_t> selfConjugateRows;
+#if WV_KERNEL_DENSE_WRITE_MODE > 0
+    // Authoring-only issue #127 metadata. 0=zero-only, 1=represented,
+    // 2=Hermitian-completion destination.
+    std::vector<std::uint8_t> denseRowClass;
+#endif
+#if WV_KERNEL_DENSE_WRITE_MODE > 1
+    // Consecutive zero-only row ranges stored as [first,count] pairs.
+    std::vector<std::size_t> zeroOnlyRowRanges;
+#endif
     std::size_t persistentBytes() const noexcept;
 };
 

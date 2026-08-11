@@ -21,6 +21,18 @@ struct WVKernelMetrics {
     std::size_t nonlinearFluxCallCount = 0;
     std::size_t nonlinearFluxPhaseEvaluationCount = 0;
     std::size_t bytesCopied = 0;
+    std::size_t denseComplexCellsZeroed = 0;
+    std::size_t denseComplexCellsAssembled = 0;
+    std::size_t hermitianCompletionCellsWritten = 0;
+    std::size_t selfConjugateImaginaryValuesWritten = 0;
+    std::size_t inverseNormalizationCellsWritten = 0;
+    std::size_t denseBytesWritten = 0;
+    std::size_t densePassCount = 0;
+    std::size_t denseInputValidationCount = 0;
+    bool denseInputValidationPassed = true;
+    double denseZeroSeconds = 0.0;
+    double hermitianCompletionSeconds = 0.0;
+    double inverseNormalizationSeconds = 0.0;
     double phaseSeconds = 0.0;
     double reconstructionSeconds = 0.0;
     double derivativeReconstructionSeconds = 0.0;
@@ -49,6 +61,8 @@ public:
     const char* phaseImplementationIdentifier() const noexcept;
     const char* coefficientArithmeticModeIdentifier() const noexcept;
     const char* optimizationImplementationIdentifier() const noexcept;
+    const char* denseWriteStrategyIdentifier() const noexcept;
+    const char* inverseNormalizationPlacementIdentifier() const noexcept;
     std::size_t coefficientWorkerCount() const noexcept;
     void setStageInstrumentation(bool enabled) noexcept;
     std::size_t persistentBytes() const noexcept;

@@ -15,6 +15,14 @@ namespace {
 #define WV_KERNEL_COEFFICIENT_WORKERS 2
 #endif
 
+#ifndef WV_KERNEL_FUSE_INVERSE_NORMALIZATION
+#define WV_KERNEL_FUSE_INVERSE_NORMALIZATION 0
+#endif
+
+#ifndef WV_KERNEL_VALIDATE_DENSE_WRITES
+#define WV_KERNEL_VALIDATE_DENSE_WRITES 0
+#endif
+
 #if defined(WV_KERNEL_NATIVE_OPTIMIZATION) && WV_KERNEL_NATIVE_OPTIMIZATION && (defined(__clang__) || defined(__GNUC__))
 #define WV_KERNEL_RESTRICT __restrict__
 #else
@@ -205,6 +213,71 @@ void normalizeInverseDST(WVComplex64* data, std::size_t Nz, std::size_t rows, st
     }
 }
 
+struct DensePreparation {
+    std::size_t zeroedCells = 0;
+};
+
+DensePreparation prepareDenseInverseInput(WVComplex64* half, const WVHalfSpectrumMappings& mapping, std::size_t halfRows, std::size_t Nz, std::size_t Nj, std::size_t channels) {
+    (void)mapping;
+    (void)Nj;
+#if WV_KERNEL_VALIDATE_DENSE_WRITES
+    const auto poison = std::numeric_limits<double>::quiet_NaN();
+    std::fill(half,half + Nz * channels * halfRows,WVComplex64{poison,poison});
+#endif
+#if WV_KERNEL_DENSE_WRITE_MODE == 0
+    const auto cells = Nz * channels * halfRows;
+    std::fill(half,half + cells,WVComplex64{});
+    return {cells};
+#elif WV_KERNEL_DENSE_WRITE_MODE == 1
+    std::size_t zeroedCells = 0;
+    for (std::size_t row = 0; row < mapping.denseRowClass.size(); ++row) {
+        if (mapping.denseRowClass[row] == 0) {
+            const auto cells = Nz * channels;
+            std::fill(half + row * cells,half + (row + 1) * cells,WVComplex64{});
+            zeroedCells += cells;
+        } else if (mapping.denseRowClass[row] == 1) {
+            for (std::size_t channel = 0; channel < channels; ++channel) {
+                const auto first = row * Nz * channels + channel * Nz + Nj;
+                std::fill(half + first,half + first + (Nz - Nj),WVComplex64{});
+                zeroedCells += Nz - Nj;
+            }
+        }
+    }
+    return {zeroedCells};
+#else
+    std::size_t zeroedCells = 0;
+    const auto rowCells = Nz * channels;
+    for (std::size_t index = 0; index < mapping.zeroOnlyRowRanges.size(); index += 2) {
+        const auto first = mapping.zeroOnlyRowRanges[index];
+        const auto count = mapping.zeroOnlyRowRanges[index + 1];
+        std::fill(half + first * rowCells,half + (first + count) * rowCells,WVComplex64{});
+        zeroedCells += count * rowCells;
+    }
+    auto zeroVerticalTails = [&](const std::vector<std::size_t>& rows) {
+        for (const auto row : rows) for (std::size_t channel = 0; channel < channels; ++channel) {
+            const auto first = row * rowCells + channel * Nz + Nj;
+            std::fill(half + first,half + first + (Nz - Nj),WVComplex64{});
+            zeroedCells += Nz - Nj;
+        }
+    };
+    zeroVerticalTails(mapping.directRows);
+    zeroVerticalTails(mapping.conjugatedRows);
+    return {zeroedCells};
+#endif
+}
+
+#if WV_KERNEL_VALIDATE_DENSE_WRITES
+bool denseInverseInputIsFinite(const WVComplex64* half, std::size_t cells) {
+    for (std::size_t index = 0; index < cells; ++index) if (!std::isfinite(half[index].real) || !std::isfinite(half[index].imag)) return false;
+    return true;
+}
+#endif
+
+void updateDenseBytesWritten(WVKernelMetrics& metrics) {
+    const auto complexWrites = metrics.denseComplexCellsZeroed + metrics.denseComplexCellsAssembled + metrics.hermitianCompletionCellsWritten + metrics.inverseNormalizationCellsWritten;
+    metrics.denseBytesWritten = complexWrites * sizeof(WVComplex64) + metrics.selfConjugateImaginaryValuesWritten * sizeof(double);
+}
+
 WVComplex64 storedValue(const WVComplex64* half, const WVHalfSpectrumMappings& mapping, std::size_t Nz, std::size_t channels, std::size_t field, std::size_t mode, std::size_t z) {
     auto value = half[z + Nz * field + Nz * channels * mapping.storageRowsByWVIndex[mode]];
     return mapping.conjugatesStoredValueByWVIndex[mode] ? conjugate(value) : value;
@@ -233,12 +306,15 @@ void assembleFieldSpectraForMode(
     for (std::size_t j = 0; j < Nj; ++j) {
         const auto index = j + Nj * mode;
         const auto coefficients = source(index);
-        const WVComplex64 values[] = {
+        WVComplex64 values[] = {
             coefficientValueForField<0>(modes,index,coefficients.Ap,coefficients.Am,coefficients.A0),
             coefficientValueForField<1>(modes,index,coefficients.Ap,coefficients.Am,coefficients.A0),
             coefficientValueForField<2>(modes,index,coefficients.Ap,coefficients.Am,coefficients.A0),
             coefficientValueForField<3>(modes,index,coefficients.Ap,coefficients.Am,coefficients.A0)};
         for (std::size_t target = 0; target < 4; ++target) {
+#if WV_KERNEL_FUSE_INVERSE_NORMALIZATION
+            values[target] = target >= 2 && (j == 0 || j + 1 == Nz) ? WVComplex64{} : multiply(values[target],0.5);
+#endif
             half[j + Nz * target + Nz * 4 * storageRow] = Conjugated ? conjugate(values[target]) : values[target];
         }
     }
@@ -261,9 +337,19 @@ void assembleDerivativeSpectraForMode(
         const auto index = j + Nj * mode;
         auto value = coefficientValueForField<Target>(modes,index,coefficients.Ap.data[index],coefficients.Am.data[index],coefficients.A0.data[index]);
         if constexpr (Conjugated) value = conjugate(value);
-        const auto x = multiply(value,WVComplex64{0.0,Conjugated ? -horizontal.k : horizontal.k});
-        const auto y = multiply(value,WVComplex64{0.0,Conjugated ? -horizontal.l : horizontal.l});
-        const auto z = multiply(value,cosine ? -modes.verticalWavenumber[j] : modes.verticalWavenumber[j]);
+        auto x = multiply(value,WVComplex64{0.0,Conjugated ? -horizontal.k : horizontal.k});
+        auto y = multiply(value,WVComplex64{0.0,Conjugated ? -horizontal.l : horizontal.l});
+        auto z = multiply(value,cosine ? -modes.verticalWavenumber[j] : modes.verticalWavenumber[j]);
+#if WV_KERNEL_FUSE_INVERSE_NORMALIZATION
+        if constexpr (cosine) {
+            x = multiply(x,0.5); y = multiply(y,0.5);
+            z = j == 0 || j + 1 == Nz ? WVComplex64{} : multiply(z,0.5);
+        } else {
+            x = j == 0 || j + 1 == Nz ? WVComplex64{} : multiply(x,0.5);
+            y = j == 0 || j + 1 == Nz ? WVComplex64{} : multiply(y,0.5);
+            z = multiply(z,0.5);
+        }
+#endif
         half[j + Nz * 0 + Nz * 3 * storageRow] = x;
         half[j + Nz * 1 + Nz * 3 * storageRow] = y;
         half[j + Nz * 2 + Nz * 3 * storageRow] = z;
@@ -355,6 +441,24 @@ const char* WVTransformConstantStratificationKernel::optimizationImplementationI
 #endif
 }
 
+const char* WVTransformConstantStratificationKernel::denseWriteStrategyIdentifier() const noexcept {
+#if WV_KERNEL_DENSE_WRITE_MODE == 0
+    return "zero-then-sparse-scatter";
+#elif WV_KERNEL_DENSE_WRITE_MODE == 1
+    return "row-classified-producer";
+#else
+    return "segmented-zero-ranges";
+#endif
+}
+
+const char* WVTransformConstantStratificationKernel::inverseNormalizationPlacementIdentifier() const noexcept {
+#if WV_KERNEL_FUSE_INVERSE_NORMALIZATION
+    return "coefficient-production";
+#else
+    return "post-vertical-transform";
+#endif
+}
+
 std::size_t WVTransformConstantStratificationKernel::coefficientWorkerCount() const noexcept { return WV_KERNEL_COEFFICIENT_WORKERS; }
 
 void WVTransformConstantStratificationKernel::setStageInstrumentation(bool enabled) noexcept {
@@ -368,6 +472,18 @@ void WVTransformConstantStratificationKernel::setStageInstrumentation(bool enabl
     metrics_.coefficientAssemblySeconds = 0.0;
     metrics_.derivativeCoefficientAssemblySeconds = 0.0;
     metrics_.coefficientProjectionSeconds = 0.0;
+    metrics_.denseComplexCellsZeroed = 0;
+    metrics_.denseComplexCellsAssembled = 0;
+    metrics_.hermitianCompletionCellsWritten = 0;
+    metrics_.selfConjugateImaginaryValuesWritten = 0;
+    metrics_.inverseNormalizationCellsWritten = 0;
+    metrics_.denseBytesWritten = 0;
+    metrics_.densePassCount = 0;
+    metrics_.denseInputValidationCount = 0;
+    metrics_.denseInputValidationPassed = true;
+    metrics_.denseZeroSeconds = 0.0;
+    metrics_.hermitianCompletionSeconds = 0.0;
+    metrics_.inverseNormalizationSeconds = 0.0;
 }
 
 WVKernelStatus WVTransformConstantStratificationKernel::transformUVEtaToWaveVortex(
@@ -496,7 +612,13 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformWaveVortexToUVW
 WVKernelStatus WVTransformConstantStratificationKernel::transformWaveVortexToUVWEtaImpl(const WVState& state, WVRealFieldBundleView& fields, const WVCoefficients* evolvedCoefficients) {
     const auto& c = descriptor_.configuration(); const auto& mapping = descriptor_.halfSpectrumMappings(); const auto& modes = descriptor_.verticalModes();
     const std::size_t halfRows = mapping.NxHalf * c.Ny; auto* half = reinterpret_cast<WVComplex64*>(halfSpectrumScratch_.data());
-    std::fill(half,half + c.Nz * 4 * halfRows,WVComplex64{});
+    auto denseStageStart = std::chrono::steady_clock::now();
+    const auto preparation = prepareDenseInverseInput(half,mapping,halfRows,c.Nz,c.Nj,4);
+    if (stageInstrumentationEnabled_) {
+        metrics_.denseZeroSeconds += std::chrono::duration<double>(std::chrono::steady_clock::now() - denseStageStart).count();
+        metrics_.denseComplexCellsZeroed += preparation.zeroedCells;
+        ++metrics_.densePassCount;
+    }
     const auto coefficientAssemblyStart = std::chrono::steady_clock::now();
     forEachModeBlock(descriptor_.Nkl(),[&](std::size_t begin, std::size_t end) {
         for (std::size_t iMode = begin; iMode < end; ++iMode) {
@@ -522,12 +644,39 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformWaveVortexToUVW
         }
         }
     });
-    if (stageInstrumentationEnabled_) metrics_.coefficientAssemblySeconds = std::chrono::duration<double>(std::chrono::steady_clock::now() - coefficientAssemblyStart).count();
+    if (stageInstrumentationEnabled_) {
+        metrics_.coefficientAssemblySeconds = std::chrono::duration<double>(std::chrono::steady_clock::now() - coefficientAssemblyStart).count();
+        metrics_.denseComplexCellsAssembled += 4 * c.Nj * descriptor_.Nkl();
+        ++metrics_.densePassCount;
+    }
+    denseStageStart = std::chrono::steady_clock::now();
     completeHermitianBoundaries(half,mapping,c.Nz,4);
+    if (stageInstrumentationEnabled_) {
+        metrics_.hermitianCompletionSeconds += std::chrono::duration<double>(std::chrono::steady_clock::now() - denseStageStart).count();
+        metrics_.hermitianCompletionCellsWritten += 4 * c.Nz * mapping.hermitianCompletionRows.size();
+        metrics_.selfConjugateImaginaryValuesWritten += 4 * c.Nz * mapping.selfConjugateRows.size();
+        ++metrics_.densePassCount;
+    }
+#if WV_KERNEL_VALIDATE_DENSE_WRITES
+    ++metrics_.denseInputValidationCount;
+    metrics_.denseInputValidationPassed = denseInverseInputIsFinite(half,c.Nz * 4 * halfRows);
+    if (!metrics_.denseInputValidationPassed) return {WVKernelStatusCode::numericalFailure,"Dense field spectrum contains an unwritten or nonfinite cell."};
+#endif
     auto execute = plans_[verticalDCT2Storage4]->execute(half,half); if (!execute) return execute;
     execute = plans_[verticalDST2Storage4]->execute(half + 2 * c.Nz + 1,half + 2 * c.Nz + 1); if (!execute) return execute;
     metrics_.executionCount += 2; metrics_.verticalExecutionCount += 2;
+    denseStageStart = std::chrono::steady_clock::now();
+#if !WV_KERNEL_FUSE_INVERSE_NORMALIZATION
     normalizeInverseDCT(half,c.Nz,halfRows,4,0,2); normalizeInverseDST(half,c.Nz,halfRows,4,2,2);
+#endif
+    if (stageInstrumentationEnabled_) {
+        metrics_.inverseNormalizationSeconds += std::chrono::duration<double>(std::chrono::steady_clock::now() - denseStageStart).count();
+#if !WV_KERNEL_FUSE_INVERSE_NORMALIZATION
+        metrics_.inverseNormalizationCellsWritten += 4 * c.Nz * halfRows;
+        ++metrics_.densePassCount;
+#endif
+        updateDenseBytesWritten(metrics_);
+    }
     execute = plans_[horizontalInverse4]->execute(half, fields.data); if (!execute) return execute;
     ++metrics_.executionCount; ++metrics_.horizontalExecutionCount;
     return WVKernelStatus::ok();
@@ -602,7 +751,13 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformToSpatialDomain
     const auto& modes = descriptor_.verticalModes();
     const std::size_t halfRows = mapping.NxHalf * c.Ny;
     auto* half = reinterpret_cast<WVComplex64*>(halfSpectrumScratch_.data());
-    std::fill(half,half + c.Nz * 3 * halfRows,WVComplex64{});
+    auto denseStageStart = std::chrono::steady_clock::now();
+    const auto preparation = prepareDenseInverseInput(half,mapping,halfRows,c.Nz,c.Nj,3);
+    if (stageInstrumentationEnabled_) {
+        metrics_.denseZeroSeconds += std::chrono::duration<double>(std::chrono::steady_clock::now() - denseStageStart).count();
+        metrics_.denseComplexCellsZeroed += preparation.zeroedCells;
+        ++metrics_.densePassCount;
+    }
     const bool cosine = target < 2;
     const auto coefficientAssemblyStart = std::chrono::steady_clock::now();
     auto assembleTarget = [&](auto targetConstant) {
@@ -618,19 +773,49 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformToSpatialDomain
     else if (target == 1) assembleTarget(std::integral_constant<std::size_t,1>{});
     else if (target == 2) assembleTarget(std::integral_constant<std::size_t,2>{});
     else assembleTarget(std::integral_constant<std::size_t,3>{});
-    if (stageInstrumentationEnabled_) metrics_.derivativeCoefficientAssemblySeconds += std::chrono::duration<double>(std::chrono::steady_clock::now() - coefficientAssemblyStart).count();
+    if (stageInstrumentationEnabled_) {
+        metrics_.derivativeCoefficientAssemblySeconds += std::chrono::duration<double>(std::chrono::steady_clock::now() - coefficientAssemblyStart).count();
+        metrics_.denseComplexCellsAssembled += 3 * c.Nj * descriptor_.Nkl();
+        ++metrics_.densePassCount;
+    }
+    denseStageStart = std::chrono::steady_clock::now();
     completeHermitianBoundaries(half,mapping,c.Nz,3);
+    if (stageInstrumentationEnabled_) {
+        metrics_.hermitianCompletionSeconds += std::chrono::duration<double>(std::chrono::steady_clock::now() - denseStageStart).count();
+        metrics_.hermitianCompletionCellsWritten += 3 * c.Nz * mapping.hermitianCompletionRows.size();
+        metrics_.selfConjugateImaginaryValuesWritten += 3 * c.Nz * mapping.selfConjugateRows.size();
+        ++metrics_.densePassCount;
+    }
+#if WV_KERNEL_VALIDATE_DENSE_WRITES
+    ++metrics_.denseInputValidationCount;
+    metrics_.denseInputValidationPassed = denseInverseInputIsFinite(half,c.Nz * 3 * halfRows);
+    if (!metrics_.denseInputValidationPassed) return {WVKernelStatusCode::numericalFailure,"Dense derivative spectrum contains an unwritten or nonfinite cell."};
+#endif
     WVKernelStatus execute;
     if (cosine) {
         execute = plans_[verticalDCT2Storage3]->execute(half,half); if (!execute) return execute;
         execute = plans_[verticalDST1Storage3]->execute(half + 2 * c.Nz + 1,half + 2 * c.Nz + 1); if (!execute) return execute;
-        normalizeInverseDCT(half,c.Nz,halfRows,3,0,2);
-        normalizeInverseDST(half,c.Nz,halfRows,3,2,1);
     } else {
         execute = plans_[verticalDST2Storage3]->execute(half + 1,half + 1); if (!execute) return execute;
         execute = plans_[verticalDCT1Storage3]->execute(half + 2 * c.Nz,half + 2 * c.Nz); if (!execute) return execute;
+    }
+    denseStageStart = std::chrono::steady_clock::now();
+#if !WV_KERNEL_FUSE_INVERSE_NORMALIZATION
+    if (cosine) {
+        normalizeInverseDCT(half,c.Nz,halfRows,3,0,2);
+        normalizeInverseDST(half,c.Nz,halfRows,3,2,1);
+    } else {
         normalizeInverseDST(half,c.Nz,halfRows,3,0,2);
         normalizeInverseDCT(half,c.Nz,halfRows,3,2,1);
+    }
+#endif
+    if (stageInstrumentationEnabled_) {
+        metrics_.inverseNormalizationSeconds += std::chrono::duration<double>(std::chrono::steady_clock::now() - denseStageStart).count();
+#if !WV_KERNEL_FUSE_INVERSE_NORMALIZATION
+        metrics_.inverseNormalizationCellsWritten += 3 * c.Nz * halfRows;
+        ++metrics_.densePassCount;
+#endif
+        updateDenseBytesWritten(metrics_);
     }
     metrics_.executionCount += 2;
     metrics_.verticalExecutionCount += 2;

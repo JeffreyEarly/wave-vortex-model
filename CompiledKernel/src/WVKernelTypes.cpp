@@ -92,8 +92,15 @@ std::size_t WVShape3D::elementCount() const { return checkedProduct(checkedProdu
 std::size_t WVShape4D::elementCount() const { return checkedProduct(checkedProduct(checkedProduct(first, second), third), fourth); }
 
 std::size_t WVHalfSpectrumMappings::persistentBytes() const noexcept {
-    return bytes(directRows) + bytes(directWVIndices) + bytes(conjugatedRows) + bytes(conjugatedWVIndices) +
-           bytes(storageRowsByWVIndex) + bytes(conjugatesStoredValueByWVIndex) + bytes(hermitianCompletionRows) + bytes(hermitianSourceRows) + bytes(selfConjugateRows);
+    std::size_t result = bytes(directRows) + bytes(directWVIndices) + bytes(conjugatedRows) + bytes(conjugatedWVIndices) +
+                         bytes(storageRowsByWVIndex) + bytes(conjugatesStoredValueByWVIndex) + bytes(hermitianCompletionRows) + bytes(hermitianSourceRows) + bytes(selfConjugateRows);
+#if WV_KERNEL_DENSE_WRITE_MODE > 0
+    result += bytes(denseRowClass);
+#endif
+#if WV_KERNEL_DENSE_WRITE_MODE > 1
+    result += bytes(zeroOnlyRowRanges);
+#endif
+    return result;
 }
 
 WVKernelStatus WVTransformConstantStratificationDescriptor::create(
@@ -302,6 +309,24 @@ WVKernelStatus WVTransformConstantStratificationDescriptor::create(
         }
         std::reverse(candidate.halfSpectrumMappings_.hermitianCompletionRows.begin(),candidate.halfSpectrumMappings_.hermitianCompletionRows.end());
         std::reverse(candidate.halfSpectrumMappings_.hermitianSourceRows.begin(),candidate.halfSpectrumMappings_.hermitianSourceRows.end());
+#if WV_KERNEL_DENSE_WRITE_MODE > 0
+        candidate.halfSpectrumMappings_.denseRowClass.resize(halfRows,0);
+        for (const auto row : candidate.halfSpectrumMappings_.directRows) candidate.halfSpectrumMappings_.denseRowClass[row] = 1;
+        for (const auto row : candidate.halfSpectrumMappings_.conjugatedRows) candidate.halfSpectrumMappings_.denseRowClass[row] = 1;
+        for (const auto row : candidate.halfSpectrumMappings_.hermitianCompletionRows) candidate.halfSpectrumMappings_.denseRowClass[row] = 2;
+#endif
+#if WV_KERNEL_DENSE_WRITE_MODE > 1
+        std::size_t row = 0;
+        while (row < halfRows) {
+            while (row < halfRows && candidate.halfSpectrumMappings_.denseRowClass[row] != 0) ++row;
+            const auto first = row;
+            while (row < halfRows && candidate.halfSpectrumMappings_.denseRowClass[row] == 0) ++row;
+            if (row > first) {
+                candidate.halfSpectrumMappings_.zeroOnlyRowRanges.push_back(first);
+                candidate.halfSpectrumMappings_.zeroOnlyRowRanges.push_back(row-first);
+            }
+        }
+#endif
 
         descriptor = std::move(candidate);
         return WVKernelStatus::ok();
