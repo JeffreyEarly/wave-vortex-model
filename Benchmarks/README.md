@@ -58,4 +58,15 @@ results = runWaveVortexBuiltinStorageBenchmark
 
 The ledger covers compact Fourier mappings, the reused builtin inverse buffer, dense vertical transform matrices, and known forward/inverse result arrays. MATLAB-internal FFT work storage remains explicitly opaque. Each case runs in three fresh MATLAB processes by default while ordinary production caches stay warm.
 
+## MATLAB nonlinear-flux scheduling experiment
+
+`runMatlabNonlinearFluxOptimizationBenchmark` is the author-only issue #125 experiment. It compares the production call with scalar accumulation, reusable flux buffers, batched forward horizontal transforms, and complete batched reconstruction/projection schedules:
+
+```matlab
+addpath("Benchmarks")
+results = runMatlabNonlinearFluxOptimizationBenchmark
+```
+
+Every variant runs in a separate fresh MATLAB process. Launch order rotates between repeats, while the suite retains the standard two warmups and 7/3 samples. The artifact reports complete state-advanced `nonlinearFlux`, diagnostic component timing, exact experiment-owned storage, external RSS, and numerical error. Only the `scalar-zero` variant is classified as a few-line local production candidate; larger batching or persistent-workspace variants must clear their higher complexity threshold and proceed through a separate implementation issue.
+
 `WVTransformConstantStratificationSpeedTest`, `ProfileableSpeedTest`, and `ForcingSpectralMaskPerformanceTest` remain historical investigation scripts. Deterministic correctness checks belong in `UnitTests`; mixed scientific investigations belong in `DeveloperExperiments`.
