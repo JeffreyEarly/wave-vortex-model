@@ -85,6 +85,35 @@ classdef TestCompiledKernelNativeFFTW < matlab.unittest.TestCase
             testCase.verifyEqual(string(decoded.schemaVersion),"1.0.0");
             clear cleanup
         end
+
+        function coefficientAssemblyBenchmarkExercisesAllAblations(testCase)
+            outputDirectory = string(tempname);
+            cleanup = onCleanup(@()removeDirectory(outputDirectory));
+            suite = waveVortexBenchmarkSuites("smoke-v1");
+            cases = suite.cases(contains(string({suite.cases.id}),"constant-"));
+            result = runCompiledKernelCoefficientAssemblyBenchmark( ...
+                caseDefinitions=cases, ...
+                processRunCount=1, ...
+                threadCount=1, ...
+                samplingIntervalSeconds=0.01, ...
+                plateauSeconds=0.02, ...
+                outputDirectory=outputDirectory, ...
+                runId="smoke");
+            testCase.verifyEqual(result.status,"complete");
+            testCase.verifyEqual(result.provider.id,"native-neon-pthreads");
+            testCase.verifyEqual(numel(result.componentScreens),7);
+            testCase.verifyEqual(string({result.componentScreens.id}), ...
+                ["compact-storage" "prescaled-arithmetic" "specialized-straight-line" "compiler-vectorized" "bounded-workers-2" "bounded-workers-4" "bounded-workers-8"]);
+            testCase.verifyTrue(all(arrayfun(@(item)all([item.cases.maximumRelativeError]<=1e-12),result.componentScreens)));
+            testCase.verifyTrue(all(arrayfun(@(item)all([item.cases.lifecyclePassed]),result.componentScreens)));
+            testCase.verifyEqual(result.acceleratePointwise.status,"CORE-REJECT");
+            testCase.verifyFalse(result.acceleratePointwise.packingAllowed);
+            testCase.verifyTrue(isfile(fullfile(outputDirectory,"coefficient-assembly-benchmark.json")));
+            testCase.verifyTrue(isfile(fullfile(outputDirectory,"summary.md")));
+            decoded = jsondecode(fileread(fullfile(outputDirectory,"coefficient-assembly-benchmark.json")));
+            testCase.verifyEqual(string(decoded.schemaVersion),"2.0.0");
+            clear cleanup
+        end
     end
 end
 

@@ -21,6 +21,14 @@ struct WVKernelMetrics {
     std::size_t nonlinearFluxCallCount = 0;
     std::size_t nonlinearFluxPhaseEvaluationCount = 0;
     std::size_t bytesCopied = 0;
+    double phaseSeconds = 0.0;
+    double reconstructionSeconds = 0.0;
+    double derivativeReconstructionSeconds = 0.0;
+    double productSeconds = 0.0;
+    double projectionSeconds = 0.0;
+    double coefficientAssemblySeconds = 0.0;
+    double derivativeCoefficientAssemblySeconds = 0.0;
+    double coefficientProjectionSeconds = 0.0;
 };
 
 class WVTransformConstantStratificationKernel {
@@ -38,6 +46,11 @@ public:
     const std::string& engineIdentifier() const noexcept { return engineIdentifier_; }
     const std::string& engineLibraryIdentity() const noexcept { return engineLibraryIdentity_; }
     const char* nonlinearFluxScheduleIdentifier() const noexcept;
+    const char* phaseImplementationIdentifier() const noexcept;
+    const char* coefficientArithmeticModeIdentifier() const noexcept;
+    const char* optimizationImplementationIdentifier() const noexcept;
+    std::size_t coefficientWorkerCount() const noexcept;
+    void setStageInstrumentation(bool enabled) noexcept;
     std::size_t persistentBytes() const noexcept;
     std::size_t scratchBytes() const noexcept { return (halfSpectrumScratch_.size() + realScratch_.size()) * sizeof(double); }
 
@@ -64,6 +77,7 @@ private:
     std::vector<double> realScratch_;
     WVKernelMetrics metrics_;
     bool executing_ = false;
+    bool stageInstrumentationEnabled_ = false;
 };
 
 } // namespace wavevortex

@@ -5,8 +5,10 @@
 
 #include <cstdint>
 #include <chrono>
+#include <atomic>
 #include <memory>
 #include <string>
+#include <thread>
 #include <unordered_map>
 
 using namespace wavevortex;
@@ -279,19 +281,70 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
         if (timed) plhs[3] = mxCreateDoubleScalar(std::chrono::duration<double>(std::chrono::steady_clock::now()-start).count());
         return;
     }
+    if (command == "setStageInstrumentation") {
+        if (nrhs != 3 || nlhs != 0 || !mxIsLogicalScalar(prhs[2])) fail("WaveVortexModel:CompiledKernelCommand","setStageInstrumentation requires handle and a logical scalar.");
+        value.setStageInstrumentation(mxIsLogicalScalarTrue(prhs[2]));
+        return;
+    }
+    if (command == "workerLifecycle") {
+        if (nrhs != 3 || nlhs != 1 || !mxIsDouble(prhs[2]) || mxGetNumberOfElements(prhs[2]) != 1) fail("WaveVortexModel:CompiledKernelCommand","workerLifecycle requires a handle and repetition count.");
+        const auto repetitions = static_cast<std::size_t>(mxGetScalar(prhs[2]));
+        const auto workerCount = value.coefficientWorkerCount();
+        double creationSeconds = 0.0;
+        double synchronizationSeconds = 0.0;
+        double joinSeconds = 0.0;
+        for (std::size_t repetition = 0; repetition < repetitions && workerCount > 1; ++repetition) {
+            std::atomic<std::size_t> ready{0};
+            std::atomic<bool> release{false};
+            std::vector<std::thread> workers;
+            workers.reserve(workerCount - 1);
+            const auto creationStart = std::chrono::steady_clock::now();
+            for (std::size_t worker = 1; worker < workerCount; ++worker) {
+                workers.emplace_back([&ready,&release]() {
+                    ready.fetch_add(1,std::memory_order_release);
+                    while (!release.load(std::memory_order_acquire)) std::this_thread::yield();
+                });
+            }
+            while (ready.load(std::memory_order_acquire) != workerCount - 1) std::this_thread::yield();
+            const auto creationEnd = std::chrono::steady_clock::now();
+            const auto synchronizationStart = std::chrono::steady_clock::now();
+            release.store(true,std::memory_order_release);
+            const auto joinStart = std::chrono::steady_clock::now();
+            for (auto& worker : workers) worker.join();
+            const auto joinEnd = std::chrono::steady_clock::now();
+            creationSeconds += std::chrono::duration<double>(creationEnd-creationStart).count();
+            synchronizationSeconds += std::chrono::duration<double>(joinStart-synchronizationStart).count();
+            joinSeconds += std::chrono::duration<double>(joinEnd-joinStart).count();
+        }
+        const char* names[] = {"workerCount","repetitions","creationSeconds","synchronizationSeconds","joinSeconds"};
+        plhs[0] = mxCreateStructMatrix(1,1,5,names);
+        mxSetField(plhs[0],0,"workerCount",mxCreateDoubleScalar(static_cast<double>(workerCount)));
+        mxSetField(plhs[0],0,"repetitions",mxCreateDoubleScalar(static_cast<double>(repetitions)));
+        mxSetField(plhs[0],0,"creationSeconds",mxCreateDoubleScalar(creationSeconds));
+        mxSetField(plhs[0],0,"synchronizationSeconds",mxCreateDoubleScalar(synchronizationSeconds));
+        mxSetField(plhs[0],0,"joinSeconds",mxCreateDoubleScalar(joinSeconds));
+        return;
+    }
     if (command == "metrics") {
         if (nrhs != 2 || nlhs != 1) fail("WaveVortexModel:CompiledKernelCommand","metrics requires one handle.");
-        const char* names[] = {"engine","loadedLibrary","nonlinearFluxSchedule","planMemoryAccounting","contractVersion","planCount","planBytes","descriptorBytes","scratchCapacityBytes","scratchHighWaterBytes","halfSpectrumScratchCapacityBytes","realScratchCapacityBytes","executionCount","horizontalExecutionCount","verticalExecutionCount","nonlinearFluxCallCount","nonlinearFluxPhaseEvaluationCount","phaseWorkspaceBytes","persistentBytes","stateInputBytes","fluxOutputBytes","knownMaximumLiveOwnedBytes","persistentFullHermitianBytes","gradientMaskBytes","Nx","Ny","Nz","Nj","Nkl"};
-        plhs[0] = mxCreateStructMatrix(1,1,29,names);
+        const char* names[] = {"engine","loadedLibrary","nonlinearFluxSchedule","phaseImplementation","coefficientStorageMode","coefficientArithmeticMode","optimizationImplementation","coefficientWorkerCount","planMemoryAccounting","contractVersion","planCount","planBytes","descriptorBytes","scratchCapacityBytes","scratchHighWaterBytes","halfSpectrumScratchCapacityBytes","realScratchCapacityBytes","executionCount","horizontalExecutionCount","verticalExecutionCount","nonlinearFluxCallCount","nonlinearFluxPhaseEvaluationCount","phaseWorkspaceBytes","persistentBytes","stateInputBytes","fluxOutputBytes","knownMaximumLiveOwnedBytes","persistentFullHermitianBytes","gradientMaskBytes","Nx","Ny","Nz","Nj","Nkl","phaseSeconds","reconstructionSeconds","derivativeReconstructionSeconds","productSeconds","projectionSeconds","coefficientAssemblySeconds","derivativeCoefficientAssemblySeconds","coefficientProjectionSeconds"};
+        plhs[0] = mxCreateStructMatrix(1,1,42,names);
         const auto& metrics = value.metrics();
         const auto& configuration = value.descriptor().configuration();
         const auto spectralBytes = value.descriptor().spectralShape().elementCount() * sizeof(WVComplex64);
         mxSetField(plhs[0],0,"engine",mxCreateString(value.engineIdentifier().c_str()));
         mxSetField(plhs[0],0,"loadedLibrary",mxCreateString(value.engineLibraryIdentity().c_str()));
         mxSetField(plhs[0],0,"nonlinearFluxSchedule",mxCreateString(value.nonlinearFluxScheduleIdentifier()));
+        mxSetField(plhs[0],0,"phaseImplementation",mxCreateString(value.phaseImplementationIdentifier()));
+        mxSetField(plhs[0],0,"coefficientStorageMode",mxCreateString("natural-dimensional"));
+        mxSetField(plhs[0],0,"coefficientArithmeticMode",mxCreateString(value.coefficientArithmeticModeIdentifier()));
+        mxSetField(plhs[0],0,"optimizationImplementation",mxCreateString(value.optimizationImplementationIdentifier()));
+        mxSetField(plhs[0],0,"coefficientWorkerCount",mxCreateDoubleScalar(static_cast<double>(value.coefficientWorkerCount())));
         mxSetField(plhs[0],0,"planMemoryAccounting",mxCreateString("wrapper-lower-bound; FFTW-owned plan memory is opaque"));
         const double numbers[] = {static_cast<double>(WVKernelContractVersion),static_cast<double>(metrics.planCount),static_cast<double>(metrics.planBytes),static_cast<double>(metrics.descriptorBytes),static_cast<double>(metrics.scratchCapacityBytes),static_cast<double>(metrics.scratchHighWaterBytes),static_cast<double>(metrics.halfSpectrumScratchCapacityBytes),static_cast<double>(metrics.realScratchCapacityBytes),static_cast<double>(metrics.executionCount),static_cast<double>(metrics.horizontalExecutionCount),static_cast<double>(metrics.verticalExecutionCount),static_cast<double>(metrics.nonlinearFluxCallCount),static_cast<double>(metrics.nonlinearFluxPhaseEvaluationCount),0.0,static_cast<double>(value.persistentBytes()),static_cast<double>(3*spectralBytes),static_cast<double>(3*spectralBytes),static_cast<double>(value.persistentBytes()+3*spectralBytes),0.0,0.0,static_cast<double>(configuration.Nx),static_cast<double>(configuration.Ny),static_cast<double>(configuration.Nz),static_cast<double>(configuration.Nj),static_cast<double>(value.descriptor().Nkl())};
-        for (std::size_t i = 0; i < 25; ++i) mxSetField(plhs[0],0,names[i+4],mxCreateDoubleScalar(numbers[i]));
+        for (std::size_t i = 0; i < 25; ++i) mxSetField(plhs[0],0,names[i+9],mxCreateDoubleScalar(numbers[i]));
+        const double stageSeconds[] = {metrics.phaseSeconds,metrics.reconstructionSeconds,metrics.derivativeReconstructionSeconds,metrics.productSeconds,metrics.projectionSeconds,metrics.coefficientAssemblySeconds,metrics.derivativeCoefficientAssemblySeconds,metrics.coefficientProjectionSeconds};
+        for (std::size_t i = 0; i < 8; ++i) mxSetField(plhs[0],0,names[i+34],mxCreateDoubleScalar(stageSeconds[i]));
         return;
     }
     fail("WaveVortexModel:CompiledKernelCommand","Unknown compiled-kernel command.");

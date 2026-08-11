@@ -4,6 +4,11 @@ arguments
     options.outputDirectory (1,1) string = fullfile(fileparts(mfilename("fullpath")),"build")
     options.outputName (1,1) string = ""
     options.provider (1,1) struct = struct()
+    options.coefficientArithmeticMode (1,1) string {mustBeMember(options.coefficientArithmeticMode,["compact" "prescaled"])} = "compact"
+    options.controlFlowMode (1,1) string {mustBeMember(options.controlFlowMode,["generic" "specialized"])} = "generic"
+    options.optimizationLevel (1,1) string {mustBeMember(options.optimizationLevel,["default" "native"])} = "default"
+    options.coefficientWorkerCount (1,1) double {mustBeMember(options.coefficientWorkerCount,[1 2 4 8])} = 1
+    options.shouldReportVectorization (1,1) logical = false
 end
 repositoryRoot = fileparts(fileparts(mfilename("fullpath")));
 sourceDirectory = fullfile(repositoryRoot,"CompiledKernel","src");
@@ -15,23 +20,41 @@ if ~isfolder(options.outputDirectory), mkdir(options.outputDirectory); end
 if options.outputName == ""
     options.outputName = "wv_compiled_transform_mex";
 end
-compilerFlags = "CXXFLAGS=$CXXFLAGS -std=c++17";
+compilerFlags = "CXXFLAGS=$CXXFLAGS -std=c++17 -pthread" + ...
+    " -DWV_KERNEL_USE_PRESCALED_MODAL_COEFFICIENTS="+string(options.coefficientArithmeticMode=="prescaled") + ...
+    " -DWV_KERNEL_SPECIALIZED_CONTROL_FLOW="+string(options.controlFlowMode=="specialized") + ...
+    " -DWV_KERNEL_NATIVE_OPTIMIZATION="+string(options.optimizationLevel=="native") + ...
+    " -DWV_KERNEL_MODAL_WORKERS="+options.coefficientWorkerCount;
+if options.optimizationLevel == "native"
+    compilerFlags = compilerFlags+" -O3 -mcpu=native";
+end
+if options.shouldReportVectorization
+    compilerFlags = compilerFlags+" -Rpass=loop-vectorize -Rpass-missed=loop-vectorize -Rpass-analysis=loop-vectorize";
+end
 mexArguments = {"-R2018a",compilerFlags,gateway, ...
     fullfile(sourceDirectory,"WVKernelTypes.cpp"), ...
     fullfile(sourceDirectory,"WVTransformConstantStratificationKernel.cpp"), ...
     fullfile(gatewayDirectory,"WVFFTWEngine.cpp"), ...
     "-I"+includeDirectory,"-I"+gatewayDirectory,"-I"+provider.includeDirectory};
 if ~isempty(provider.rpathDirectories)
-    mexArguments{end+1} = "LDFLAGS=$LDFLAGS " + join("-Wl,-rpath,"+provider.rpathDirectories," ");
+    mexArguments{end+1} = "LDFLAGS=$LDFLAGS -pthread " + join("-Wl,-rpath,"+provider.rpathDirectories," ");
+else
+    mexArguments{end+1} = "LDFLAGS=$LDFLAGS -pthread";
 end
 mexArguments = [mexArguments reshape(cellstr(provider.linkLibraries),1,[])];
 mexArguments = [mexArguments {"-outdir",options.outputDirectory,"-output",options.outputName}];
-mex(mexArguments{:});
+compilerOutput = evalc("mex(mexArguments{:})");
 mexPath = fullfile(options.outputDirectory,options.outputName+"."+mexext);
 build = provider;
 build.module = options.outputName;
 build.mexPath = string(mexPath);
 build.mexSha256 = sha256File(mexPath);
+build.coefficientStorageMode = "natural-dimensional";
+build.coefficientArithmeticMode = options.coefficientArithmeticMode;
+build.controlFlowMode = options.controlFlowMode;
+build.optimizationLevel = options.optimizationLevel;
+build.coefficientWorkerCount = options.coefficientWorkerCount;
+build.vectorizationReport = string(compilerOutput);
 end
 
 function provider = normalizedProvider(provider)
