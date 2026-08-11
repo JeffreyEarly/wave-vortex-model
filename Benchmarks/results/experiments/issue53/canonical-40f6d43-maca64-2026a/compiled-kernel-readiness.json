@@ -13,7 +13,8 @@
   },
   "source": {
     "repository": "JeffreyEarly/wave-vortex-model",
-    "commit": "40f6d430490686b3d0718c81e53087b79445293f",
+    "commit": "690111e317b853cf4a358a3a6d6371ff1b943b0d",
+    "benchmarkExecutionCommit": "40f6d430490686b3d0718c81e53087b79445293f",
     "tree": "91f473ca3b224d235eab3dc10e55cdc5eb6e2238",
     "isDirty": false
   },
