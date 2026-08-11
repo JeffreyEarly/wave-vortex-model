@@ -8,4 +8,5 @@ tools/compiled-kernel/build/
 *.o
 *.mex*
 Benchmarks/results/runs/
+.fftw-cache/
 *.nc

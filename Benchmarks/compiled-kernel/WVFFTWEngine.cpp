@@ -4,6 +4,8 @@
 
 #include <climits>
 #include <atomic>
+#include <chrono>
+#include <cstdint>
 #include <cstdlib>
 #include <mutex>
 #include <new>
@@ -22,6 +24,7 @@ std::atomic<std::size_t> activePlans{0};
 std::atomic<std::size_t> totalPlansCreated{0};
 std::atomic<std::size_t> totalPlansDestroyed{0};
 std::atomic<std::size_t> outstandingPlanningBytes{0};
+std::atomic<std::uint64_t> totalPlanningNanoseconds{0};
 
 WVKernelStatus dimensions(const std::vector<WVFFTDimension>& source, std::vector<fftw_iodim64>& destination) {
     destination.clear();
@@ -35,13 +38,15 @@ WVKernelStatus dimensions(const std::vector<WVFFTDimension>& source, std::vector
     return WVKernelStatus::ok();
 }
 
-std::string loadedLibrary() {
+std::string libraryContaining(const void* symbol) {
 #if defined(__APPLE__) || defined(__linux__)
     Dl_info information{};
-    if (dladdr(reinterpret_cast<const void*>(&fftw_execute),&information) != 0 && information.dli_fname != nullptr) return information.dli_fname;
+    if (symbol != nullptr && dladdr(symbol,&information) != 0 && information.dli_fname != nullptr) return information.dli_fname;
 #endif
     return {};
 }
+
+std::string loadedLibrary() { return libraryContaining(reinterpret_cast<const void*>(&fftw_execute)); }
 
 class FFTWPlan final : public WVFFTPlan {
 public:
@@ -91,7 +96,26 @@ WVKernelStatus WVFFTWEngine::create(std::size_t threadCount, std::unique_ptr<WVF
 }
 
 WVFFTWLifetimeMetrics WVFFTWEngine::lifetimeMetrics() noexcept {
-    return {activePlans.load(),totalPlansCreated.load(),totalPlansDestroyed.load(),outstandingPlanningBytes.load()};
+    return {activePlans.load(),totalPlansCreated.load(),totalPlansDestroyed.load(),outstandingPlanningBytes.load(),1e-9*static_cast<double>(totalPlanningNanoseconds.load())};
+}
+
+WVFFTWLibraryIdentity WVFFTWEngine::linkedLibraries(const std::string& expectedOpenMPRuntime) {
+    WVFFTWLibraryIdentity identity;
+    identity.version = fftw_version;
+    identity.baseLibrary = loadedLibrary();
+    identity.threadLibrary = libraryContaining(reinterpret_cast<const void*>(&fftw_init_threads));
+#if defined(__APPLE__) || defined(__linux__)
+    if (expectedOpenMPRuntime.empty()) {
+        identity.openMPRuntimeLibrary = libraryContaining(dlsym(RTLD_DEFAULT,"omp_get_max_threads"));
+    } else {
+        void* handle = dlopen(expectedOpenMPRuntime.c_str(),RTLD_LAZY | RTLD_NOLOAD);
+        if (handle != nullptr) {
+            identity.openMPRuntimeLibrary = libraryContaining(dlsym(handle,"omp_get_max_threads"));
+            dlclose(handle);
+        }
+    }
+#endif
+    return identity;
 }
 
 std::string WVFFTWEngine::identifier() const { return "fftw"; }
@@ -113,6 +137,7 @@ WVKernelStatus WVFFTWEngine::createPlan(const WVFFTPlanSpecification& specificat
     const auto planningBytes = specification.inputBytes + (specification.inPlace ? 0 : specification.outputBytes);
     outstandingPlanningBytes += planningBytes;
     fftw_plan rawPlan = nullptr;
+    const auto planningStart = std::chrono::steady_clock::now();
     {
         std::lock_guard<std::mutex> lock(planningMutex);
         fftw_plan_with_nthreads(static_cast<int>(threadCount_));
@@ -134,6 +159,7 @@ WVKernelStatus WVFFTWEngine::createPlan(const WVFFTPlanSpecification& specificat
             }
         }
     }
+    totalPlanningNanoseconds.fetch_add(static_cast<std::uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now()-planningStart).count()));
     fftw_free(input);
     if (!specification.inPlace) fftw_free(output);
     outstandingPlanningBytes -= planningBytes;
