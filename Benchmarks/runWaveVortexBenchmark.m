@@ -10,6 +10,7 @@ arguments
     options.caseIds (1,:) string = strings(1,0)
     options.outputDirectory (1,1) string = ""
     options.referenceDirectory (1,1) string = ""
+    options.catalogPath (1,1) string = ""
     options.shouldMeasureMemory (1,1) logical = true
     options.shouldWriteArtifacts (1,1) logical = true
     options.shouldCreateReference (1,1) logical = false
@@ -33,14 +34,19 @@ backends = waveVortexBenchmarkBackends(options.backends);
 if options.runId == ""
     options.runId = string(datetime("now","TimeZone","UTC","Format","yyyyMMdd'T'HHmmss'Z'"));
 end
-if options.referenceDirectory == ""
-    options.referenceDirectory = fullfile(benchmarkFolder,"results","reference");
+if options.catalogPath == ""
+    options.catalogPath = fullfile(benchmarkFolder,"results","catalog.json");
+end
+if options.shouldCreateReference && options.referenceDirectory == ""
+    error("WaveVortexBenchmark:ReferenceDirectoryRequired","referenceDirectory is required when shouldCreateReference is true.");
+elseif ~options.shouldCreateReference && options.referenceDirectory ~= ""
+    error("WaveVortexBenchmark:ReferenceDirectoryNotApplicable","referenceDirectory is used only when shouldCreateReference is true.");
 end
 if options.outputDirectory == ""
     options.outputDirectory = fullfile(benchmarkFolder,"results","runs",options.runId + "-" + computer("arch") + "-" + version("-release"));
 end
 
-results = struct("schemaVersion","1.0.0","status","complete","runId",options.runId,"environment",benchmarkEnvironment(repositoryRoot),"configuration",struct("suiteIds",options.suites,"backendIds",options.backends,"caseIds",options.caseIds,"correctnessTolerance",options.correctnessTolerance,"shouldMeasureMemory",options.shouldMeasureMemory),"suites",emptySuiteResults());
+results = struct("schemaVersion","1.1.0","status","complete","runId",options.runId,"environment",benchmarkEnvironment(repositoryRoot),"configuration",struct("suiteIds",options.suites,"backendIds",options.backends,"caseIds",options.caseIds,"correctnessTolerance",options.correctnessTolerance,"shouldMeasureMemory",options.shouldMeasureMemory),"suites",emptySuiteResults());
 for iSuite = 1:numel(suites)
     suiteResult = runSuite(suites(iSuite),backends,options,benchmarkFolder,repositoryRoot);
     results.suites(end+1) = suiteResult;
@@ -56,13 +62,13 @@ clear stateCleanup
 end
 
 function suiteResult = runSuite(suite,backends,options,benchmarkFolder,repositoryRoot)
-referencePath = referenceArtifactPath(options.referenceDirectory,suite.id);
+[referenceFile,referenceArtifact,referenceOutputDirectory] = referenceLocations(suite,options,repositoryRoot);
 if suite.kind == "transform-layout"
     suiteResult = runWaveVortexTransformLayoutSuite(suite,options.correctnessTolerance,repositoryRoot);
-    suiteResult.referenceArtifact = referencePath;
+    suiteResult.referenceArtifact = referenceArtifact;
     if options.shouldCreateReference
-        referenceResults = struct("schemaVersion","1.0.0","status",suiteResult.status,"runId",options.runId,"environment",benchmarkEnvironment(repositoryRoot),"configuration",struct("suiteIds",suite.id,"backendIds","builtin","correctnessTolerance",options.correctnessTolerance,"shouldMeasureMemory",false),"suites",suiteResult);
-        writeRunArtifacts(referenceResults,referencePath);
+        referenceResults = struct("schemaVersion","1.1.0","status",suiteResult.status,"runId",options.runId,"environment",benchmarkEnvironment(repositoryRoot),"configuration",struct("suiteIds",suite.id,"backendIds","builtin","correctnessTolerance",options.correctnessTolerance,"shouldMeasureMemory",false),"suites",suiteResult);
+        writeRunArtifacts(referenceResults,referenceOutputDirectory);
     end
     return
 end
@@ -80,17 +86,58 @@ if ~suite.selectionIsComplete
     suiteResult.status = "partial";
 end
 
-suiteResult.referenceArtifact = referencePath;
+suiteResult.referenceArtifact = referenceArtifact;
 if options.shouldCreateReference
     suiteResult = applySelfReferenceScores(suiteResult);
 else
-    suiteResult = applyReferenceScores(suiteResult,referencePath);
+    suiteResult = applyReferenceScores(suiteResult,referenceFile);
 end
 suiteResult = calculateAggregateScores(suiteResult);
 
 if options.shouldCreateReference
-    referenceResults = struct("schemaVersion","1.0.0","status",suiteResult.status,"runId",options.runId,"environment",benchmarkEnvironment(repositoryRoot),"configuration",struct("suiteIds",suite.id,"backendIds","builtin","correctnessTolerance",options.correctnessTolerance,"shouldMeasureMemory",options.shouldMeasureMemory),"suites",suiteResult);
-    writeRunArtifacts(referenceResults,referencePath);
+    referenceResults = struct("schemaVersion","1.1.0","status",suiteResult.status,"runId",options.runId,"environment",benchmarkEnvironment(repositoryRoot),"configuration",struct("suiteIds",suite.id,"backendIds","builtin","correctnessTolerance",options.correctnessTolerance,"shouldMeasureMemory",options.shouldMeasureMemory),"suites",suiteResult);
+    writeRunArtifacts(referenceResults,referenceOutputDirectory);
+end
+end
+
+function [referenceFile,referenceArtifact,referenceOutputDirectory] = referenceLocations(suite,options,repositoryRoot)
+referenceFile = "";
+referenceArtifact = "";
+referenceOutputDirectory = "";
+if options.shouldCreateReference
+    referenceOutputDirectory = fullfile(options.referenceDirectory,suite.id);
+    referenceFile = fullfile(referenceOutputDirectory,"benchmark.json");
+    referenceArtifact = referenceOutputDirectory;
+elseif suite.isScored
+    [referenceFile,referenceArtifact] = scoringReferenceFromCatalog(options.catalogPath,suite.id,repositoryRoot);
+end
+end
+
+function [absolutePath,relativePath] = scoringReferenceFromCatalog(catalogPath,suiteId,repositoryRoot)
+if ~isfile(catalogPath)
+    error("WaveVortexBenchmark:MissingCatalog","Benchmark catalog does not exist: %s.",catalogPath);
+end
+catalog = jsondecode(fileread(catalogPath));
+if ~isfield(catalog,"schemaVersion") || string(catalog.schemaVersion) ~= "benchmark-catalog-v1" || ~isfield(catalog,"scoringReferences")
+    error("WaveVortexBenchmark:InvalidCatalog","Benchmark catalog must use schema benchmark-catalog-v1 and contain scoringReferences.");
+end
+references = catalog.scoringReferences;
+matches = string({references.suiteId}) == suiteId;
+if nnz(matches) ~= 1
+    error("WaveVortexBenchmark:MissingScoringReference","Benchmark catalog must contain exactly one scoring reference for suite %s.",suiteId);
+end
+reference = references(matches);
+if string(reference.backendId) ~= "builtin"
+    error("WaveVortexBenchmark:InvalidCatalog","Scoring reference for suite %s must use the builtin backend.",suiteId);
+end
+relativePath = string(reference.rawArtifact);
+parts = split(relativePath,"/");
+if startsWith(relativePath,["/" "\\"]) || ~isempty(regexp(relativePath,"^[A-Za-z]:","once")) || contains(relativePath,"\\") || any(parts == "..") || any(parts == "")
+    error("WaveVortexBenchmark:InvalidCatalog","Scoring reference paths must be repository-relative and cannot contain traversal.");
+end
+absolutePath = fullfile(repositoryRoot,relativePath);
+if ~isfile(absolutePath)
+    error("WaveVortexBenchmark:MissingScoringReference","Scoring reference does not exist: %s.",relativePath);
 end
 end
 
@@ -170,9 +217,8 @@ for iCase = 1:numel(suiteResult.cases)
 end
 end
 
-function suiteResult = applyReferenceScores(suiteResult,referencePath)
-referenceFile = fullfile(referencePath,"benchmark.json");
-if ~isfile(referenceFile)
+function suiteResult = applyReferenceScores(suiteResult,referenceFile)
+if referenceFile == "" || ~isfile(referenceFile)
     return
 end
 reference = jsondecode(fileread(referenceFile));
@@ -268,7 +314,29 @@ end
 function environment = benchmarkEnvironment(repositoryRoot)
 [~,commit] = system(sprintf('git -C "%s" rev-parse HEAD',repositoryRoot));
 [~,dirty] = system(sprintf('git -C "%s" status --porcelain',repositoryRoot));
-environment = struct("os",string(system_dependent("getos")),"processor",string(system_dependent("getcpu")),"physicalMemoryBytes",physicalMemoryBytes(),"matlabVersion",string(version),"matlabRelease",string(version("-release")),"architecture",string(computer("arch")),"requestedThreads",maxNumCompThreads,"sourceCommit",strtrim(string(commit)),"sourceDirty",strlength(strtrim(string(dirty))) > 0);
+metadata = jsondecode(fileread(fullfile(repositoryRoot,"resources","mpackage.json")));
+environment = struct("os",string(system_dependent("getos")),"processor",string(system_dependent("getcpu")),"processorName",processorName(),"physicalMemoryBytes",physicalMemoryBytes(),"matlabVersion",string(version),"matlabRelease",string(version("-release")),"architecture",string(computer("arch")),"requestedThreads",maxNumCompThreads,"sourceCommit",strtrim(string(commit)),"sourceDirty",strlength(strtrim(string(dirty))) > 0,"packageName",string(metadata.name),"packageVersion",string(metadata.version));
+end
+
+function name = processorName()
+name = "";
+if ismac
+    [status,output] = system("sysctl -n machdep.cpu.brand_string");
+    if status == 0
+        name = strtrim(string(output));
+    end
+elseif isunix && isfile("/proc/cpuinfo")
+    text = fileread("/proc/cpuinfo");
+    token = regexp(text,"(?:model name|Hardware)\s*:\s*([^\r\n]+)","tokens","once");
+    if ~isempty(token)
+        name = strtrim(string(token{1}));
+    end
+elseif ispc
+    name = strtrim(string(getenv("PROCESSOR_IDENTIFIER")));
+end
+if name == ""
+    name = string(system_dependent("getcpu"));
+end
 end
 
 function bytes = physicalMemoryBytes()
@@ -288,10 +356,6 @@ elseif isunix && isfile("/proc/meminfo")
         bytes = 1024*str2double(token{1});
     end
 end
-end
-
-function path = referenceArtifactPath(referenceDirectory,suiteId)
-path = fullfile(referenceDirectory,suiteId + "-m5-max-r2026a-builtin");
 end
 
 function addRepositoryPaths(repositoryRoot,benchmarkFolder)
