@@ -107,6 +107,59 @@ classdef TestCompiledKernelTransforms < matlab.unittest.TestCase
             clear cleanup
         end
 
+        function mexFailuresAndLifetimeRemainBalanced(testCase)
+            wvt = WVTransformConstantStratification([15000 12000 1300],[8 6 7],isHydrostatic=false,shouldAntialias=true);
+            wvt.initWithRandomFlow(uvMax=0.01);
+            configuration = kernelConfiguration(wvt);
+            baseline = wv_compiled_transform_mex('moduleMetrics');
+            testCase.verifyError(@()wv_compiled_transform_mex('createInjectedFailure',configuration,1,'plan'), ...
+                'WaveVortexModel:CompiledKernelPlan');
+            testCase.verifyError(@()wv_compiled_transform_mex('createInjectedFailure',configuration,1,'allocation'), ...
+                'WaveVortexModel:CompiledKernelAllocation');
+            afterCreationFailures = wv_compiled_transform_mex('moduleMetrics');
+            testCase.verifyEqual(afterCreationFailures.kernelCount,baseline.kernelCount);
+            testCase.verifyEqual(afterCreationFailures.activePlans,baseline.activePlans);
+            testCase.verifyEqual(afterCreationFailures.outstandingPlanningBytes,0);
+
+            handle = wv_compiled_transform_mex('createInjectedFailure',configuration,1,'execution');
+            cleanup = onCleanup(@()deleteKernel(handle));
+            testCase.verifyError(@()executeNonlinearFlux(handle,wvt),'WaveVortexModel:CompiledKernelExecution');
+            [Fp,Fm,F0] = executeNonlinearFlux(handle,wvt);
+            testCase.verifySize(Fp,wvt.spectralMatrixSize);
+            testCase.verifySize(Fm,wvt.spectralMatrixSize);
+            testCase.verifySize(F0,wvt.spectralMatrixSize);
+            clear cleanup
+            final = wv_compiled_transform_mex('moduleMetrics');
+            testCase.verifyEqual(final.kernelCount,baseline.kernelCount);
+            testCase.verifyEqual(final.activePlans,baseline.activePlans);
+            testCase.verifyEqual(final.outstandingPlanningBytes,0);
+            testCase.verifyEqual(final.totalPlansCreated-final.totalPlansDestroyed,final.activePlans);
+        end
+
+        function validationHarnessProducesFreshProcessEvidence(testCase)
+            repositoryRoot = fileparts(fileparts(mfilename("fullpath")));
+            addpath(fullfile(repositoryRoot,"Benchmarks"));
+            outputDirectory = string(tempname);
+            cleanup = onCleanup(@()removeDirectory(outputDirectory));
+            result = runCompiledKernelValidation(sizes=[8 6 7],hydrostatic=false,antialias=[true false], ...
+                processRunCount=1,warmupCount=1,samplingIntervalSeconds=0.01,plateauSeconds=0.08, ...
+                threadCount=1,outputDirectory=outputDirectory,runId="smoke");
+            testCase.verifyEqual(result.status,"complete");
+            testCase.verifyEqual(numel(result.cases),2);
+            numerical = [result.cases.numerical];
+            ledgers = [result.cases.ledger];
+            testCase.verifyLessThanOrEqual(max([numerical.maximumRelativeError]),1e-12);
+            testCase.verifyTrue(all([result.cases.lifecyclePassed]));
+            testCase.verifyTrue(result.staticChecks.passed);
+            testCase.verifyTrue(all([ledgers.persistentFullHermitianBytes]==0));
+            testCase.verifyTrue(all([ledgers.gradientMaskBytes]==0));
+            testCase.verifyTrue(isfile(fullfile(outputDirectory,"compiled-kernel-validation.json")));
+            testCase.verifyTrue(isfile(fullfile(outputDirectory,"summary.md")));
+            decoded = jsondecode(fileread(fullfile(outputDirectory,"compiled-kernel-validation.json")));
+            testCase.verifyEqual(string(decoded.schemaVersion),"1.0.0");
+            clear cleanup
+        end
+
     end
 end
 
@@ -127,6 +180,10 @@ function verifyRelative(testCase,actual,expected,label)
 expectedMaximum = max(max(abs(expected(:)),[],"omitmissing"),realmin);
 error = max(abs(actual(:)-expected(:)),[],"omitmissing")/expectedMaximum;
 testCase.verifyLessThanOrEqual(error,1e-12,label+" relative error was "+error+", maximum ratio "+max(abs(actual(:)))/expectedMaximum);
+end
+
+function [Fp,Fm,F0] = executeNonlinearFlux(handle,wvt)
+[Fp,Fm,F0] = wv_compiled_transform_mex('nonlinearFlux',handle,wvt.Ap,wvt.Am,wvt.A0,wvt.t,wvt.t0);
 end
 
 function deleteKernel(handle)

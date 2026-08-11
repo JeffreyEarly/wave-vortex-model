@@ -3,6 +3,7 @@
 #include <fftw3.h>
 
 #include <climits>
+#include <atomic>
 #include <cstdlib>
 #include <mutex>
 #include <new>
@@ -17,6 +18,10 @@ namespace wavevortex {
 namespace {
 
 std::mutex planningMutex;
+std::atomic<std::size_t> activePlans{0};
+std::atomic<std::size_t> totalPlansCreated{0};
+std::atomic<std::size_t> totalPlansDestroyed{0};
+std::atomic<std::size_t> outstandingPlanningBytes{0};
 
 WVKernelStatus dimensions(const std::vector<WVFFTDimension>& source, std::vector<fftw_iodim64>& destination) {
     destination.clear();
@@ -40,10 +45,12 @@ std::string loadedLibrary() {
 
 class FFTWPlan final : public WVFFTPlan {
 public:
-    FFTWPlan(fftw_plan plan, WVFFTPlanKind kind) : plan_(plan), kind_(kind) {}
+    FFTWPlan(fftw_plan plan, WVFFTPlanKind kind) : plan_(plan), kind_(kind) { ++activePlans; ++totalPlansCreated; }
     ~FFTWPlan() override {
         std::lock_guard<std::mutex> lock(planningMutex);
         if (plan_ != nullptr) fftw_destroy_plan(plan_);
+        --activePlans;
+        ++totalPlansDestroyed;
     }
     WVKernelStatus execute(const void* input, void* output) override {
         if (input == nullptr || output == nullptr) return {WVKernelStatusCode::invalidPointer,"FFTW received a null execution pointer."};
@@ -83,6 +90,10 @@ WVKernelStatus WVFFTWEngine::create(std::size_t threadCount, std::unique_ptr<WVF
     }
 }
 
+WVFFTWLifetimeMetrics WVFFTWEngine::lifetimeMetrics() noexcept {
+    return {activePlans.load(),totalPlansCreated.load(),totalPlansDestroyed.load(),outstandingPlanningBytes.load()};
+}
+
 std::string WVFFTWEngine::identifier() const { return "fftw"; }
 
 WVKernelStatus WVFFTWEngine::createPlan(const WVFFTPlanSpecification& specification, std::unique_ptr<WVFFTPlan>& plan) {
@@ -99,6 +110,8 @@ WVKernelStatus WVFFTWEngine::createPlan(const WVFFTPlanSpecification& specificat
         if (!specification.inPlace && output != nullptr) fftw_free(output);
         return {WVKernelStatusCode::allocationFailure,"Unable to allocate FFTW planning surrogates."};
     }
+    const auto planningBytes = specification.inputBytes + (specification.inPlace ? 0 : specification.outputBytes);
+    outstandingPlanningBytes += planningBytes;
     fftw_plan rawPlan = nullptr;
     {
         std::lock_guard<std::mutex> lock(planningMutex);
@@ -123,6 +136,7 @@ WVKernelStatus WVFFTWEngine::createPlan(const WVFFTPlanSpecification& specificat
     }
     fftw_free(input);
     if (!specification.inPlace) fftw_free(output);
+    outstandingPlanningBytes -= planningBytes;
     if (rawPlan == nullptr) return {WVKernelStatusCode::fftPlanFailure,"FFTW was unable to create the requested guru plan."};
     try {
         plan = std::make_unique<FFTWPlan>(rawPlan,specification.kind);
