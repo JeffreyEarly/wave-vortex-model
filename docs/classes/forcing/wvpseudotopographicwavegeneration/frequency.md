@@ -19,6 +19,6 @@ Barotropic angular frequency $$\omega$$ in radians per second.
 + Size: `(1,1)`
 
 ## Description
-Real valued property with no dimensions and units of $$rad s^{-1}$$.
+Real valued property with no dimensions and units of $$\mathrm{rad\,s^{-1}}$$.
 
 ## Discussion

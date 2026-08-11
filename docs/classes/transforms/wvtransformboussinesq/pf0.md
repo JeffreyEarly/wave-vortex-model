@@ -17,4 +17,4 @@ size(PF,PG)=[Nj x Nz]
 ---
 
 ## Description
-Real valued property with dimensions $$(j,z)$$ and no units.
+Real valued property with dimensions $$(j,z)$$ and is dimensionless.

@@ -146,7 +146,7 @@ classdef WVBottomFrictionQuadratic < WVForcing
                 propertyAnnotations CAPropertyAnnotation
             end
             propertyAnnotations = CAPropertyAnnotation.empty(0,0);
-            propertyAnnotations(end+1) = CANumericProperty('Cd', {}, '','non-dimensional quadratic drag coefficient');
+            propertyAnnotations(end+1) = CANumericProperty('Cd', {}, '1','dimensionless quadratic drag coefficient');
         end
     end
 

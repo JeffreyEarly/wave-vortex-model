@@ -15,7 +15,7 @@ Total energy computed from wave-vortex coefficients.
 ---
 
 ## Description
-Real valued property with no dimensions and units of $$m3/s2$$.
+Real valued property with no dimensions and units of $$\mathrm{m^{3}\,s^{-2}}$$.
 
 ## Discussion
 Total energy computed from wave-vortex coefficients.

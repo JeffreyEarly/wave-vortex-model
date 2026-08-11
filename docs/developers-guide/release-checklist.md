@@ -15,7 +15,7 @@ Use this checklist for a maintenance release after every issue assigned to the r
 - Confirm `UnitTests` and other authoring-only folders are not on the installed package path.
 - Review the complete `Unreleased` changelog section. It must be nonempty, describe the shipped changes, and contain no issue-planning language.
 - Verify that benchmark claims cite the reviewed source results and remain explicitly machine dependent.
-- Run `buildtool docs:check` with exactly `ClassDocumentation@1.3.0`, inspect the rendered website, and confirm the generated version history agrees with the changelog.
+- Run `buildtool docs:check` with exactly `ClassDocumentation@1.3.2`, inspect the rendered website, and confirm the generated version history agrees with the changelog.
 
 ## Require green verification
 

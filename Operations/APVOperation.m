@@ -8,7 +8,7 @@ classdef APVOperation < WVOperation
     methods
 
         function self = APVOperation()
-            outputVariables(1) = WVVariableAnnotation('apv',{'x','y','z'},'1/s', 'available potential vorticity');
+            outputVariables(1) = WVVariableAnnotation('apv',{'x','y','z'},'s-1', 'available potential vorticity');
             self@WVOperation('apv',outputVariables,@disp);
         end
 

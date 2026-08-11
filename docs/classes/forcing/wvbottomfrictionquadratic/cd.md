@@ -15,7 +15,7 @@ Configured dimensionless quadratic drag coefficient.
 ---
 
 ## Description
-Real valued property with no dimensions and no units.
+Real valued property with no dimensions and is dimensionless.
 
 ## Discussion
 

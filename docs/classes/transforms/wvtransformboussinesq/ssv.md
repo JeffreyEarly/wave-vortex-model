@@ -15,4 +15,4 @@ y-component of the fluid velocity at the surface
 ---
 
 ## Description
-Real valued property with dimensions $$(x,y)$$ and units of $$m/s$$.
+Real valued property with dimensions $$(x,y)$$ and units of $$\mathrm{m\,s^{-1}}$$.

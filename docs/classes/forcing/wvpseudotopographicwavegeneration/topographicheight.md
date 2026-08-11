@@ -19,7 +19,7 @@ Upward-positive topographic height $$h(x,y)$$ in meters.
 + Size: `(:,:)`
 
 ## Description
-Real valued property with dimensions $$(x,y)$$ and units of $$m$$.
+Real valued property with dimensions $$(x,y)$$ and units of $$\mathrm{m}$$.
 
 ## Discussion
 

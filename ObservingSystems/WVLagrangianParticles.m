@@ -291,7 +291,7 @@ classdef WVLagrangianParticles < WVObservingSystem
             end
             propertyAnnotations = CAPropertyAnnotation.empty(0,0);
             propertyAnnotations(end+1) = CAPropertyAnnotation('name','name of Lagrangian particles');
-            propertyAnnotations(end+1) = CANumericProperty('isXYOnly',{}, 'bool', 'whether the advection is only applied in x-y');
+            propertyAnnotations(end+1) = CANumericProperty('isXYOnly',{}, '1', 'logical flag indicating whether advection is restricted to x-y');
             propertyAnnotations(end+1) = CAPropertyAnnotation('trackedFieldNames','tracked field names');
             propertyAnnotations(end+1) = CAPropertyAnnotation('advectionInterpolation','interpolation method for the advection scheme');
             propertyAnnotations(end+1) = CAPropertyAnnotation('trackedVarInterpolation','interpolation method for the tracked fields');

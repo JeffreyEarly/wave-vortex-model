@@ -15,4 +15,4 @@ Dimensionless vertical-mode index array with shape `[Nj Nkl]`.
 ---
 
 ## Description
-Real valued property with dimensions $$(j,kl)$$ and units of $$mode number$$.
+Real valued property with dimensions $$(j,kl)$$ and is dimensionless.

@@ -182,7 +182,7 @@ classdef WVInertialOscillationMethods < handle
             
             variableAnnotations = WVVariableAnnotation.empty(0,0);
 
-            annotation = WVVariableAnnotation('inertialEnergy',{},'m^3 s^{-2}', 'total energy, inertial oscillations');
+            annotation = WVVariableAnnotation('inertialEnergy',{},'m3 s-2', 'total energy, inertial oscillations');
             annotation.isVariableWithLinearTimeStep = 0;
             annotation.isVariableWithNonlinearTimeStep = 1;
             variableAnnotations(end+1) = annotation;

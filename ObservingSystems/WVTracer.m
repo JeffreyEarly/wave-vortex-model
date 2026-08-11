@@ -135,9 +135,9 @@ classdef WVTracer < WVObservingSystem
             end
             propertyAnnotations = CAPropertyAnnotation.empty(0,0);
             propertyAnnotations(end+1) = CAPropertyAnnotation('name','name of Lagrangian particles');
-            propertyAnnotations(end+1) = CANumericProperty('isXYOnly',{}, 'bool', 'whether the advection is only applied in x-y');
-            propertyAnnotations(end+1) = CANumericProperty('absTolerance', {}, '','absolute tolerance of phi for the adaptive integrator');
-            propertyAnnotations(end+1) = CANumericProperty('shouldAntialias',{}, 'bool', 'whether to antialias');
+            propertyAnnotations(end+1) = CANumericProperty('isXYOnly',{}, '1', 'logical flag indicating whether advection is restricted to x-y');
+            propertyAnnotations(end+1) = CANumericProperty('absTolerance', {}, '','adaptive-integrator absolute tolerance, expressed in the same units as the tracer field');
+            propertyAnnotations(end+1) = CANumericProperty('shouldAntialias',{}, '1', 'logical flag indicating whether to antialias the tracer');
         end
     end
 end

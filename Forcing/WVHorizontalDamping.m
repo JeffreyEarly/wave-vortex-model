@@ -51,14 +51,14 @@ classdef WVHorizontalDamping < WVForcing
     %
     % - Declaration: WVHorizontalDamping < [WVForcing](/classes/forcing/wvforcing/)
     properties
-        % Horizontal momentum viscosity in $$\mathrm{m^2\,s^{-1}}$$.
+        % Horizontal momentum viscosity in $$\mathrm{m^{2}\,s^{-1}}$$.
         %
         % The constructor default is `1e-4`.
         %
         % - Topic: Properties
         nu
 
-        % Horizontal displacement diffusivity in $$\mathrm{m^2\,s^{-1}}$$.
+        % Horizontal displacement diffusivity in $$\mathrm{m^{2}\,s^{-1}}$$.
         %
         % The constructor default is `1e-6`.
         %
@@ -140,8 +140,8 @@ classdef WVHorizontalDamping < WVForcing
                 propertyAnnotations CAPropertyAnnotation
             end
             propertyAnnotations = CAPropertyAnnotation.empty(0,0);
-            propertyAnnotations(end+1) = CANumericProperty('nu', {}, 'm^2 s^{-1}','viscosity');
-            propertyAnnotations(end+1) = CANumericProperty('kappa', {}, 'm^2 s^{-1}','diffusivity');
+            propertyAnnotations(end+1) = CANumericProperty('nu', {}, 'm2 s-1','viscosity');
+            propertyAnnotations(end+1) = CANumericProperty('kappa', {}, 'm2 s-1','diffusivity');
         end
     end
 end

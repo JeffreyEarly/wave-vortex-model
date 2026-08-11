@@ -15,7 +15,7 @@ Radius of the rotating planetary body in meters.
 ---
 
 ## Description
-Real valued property with no dimensions and units of $$m$$.
+Real valued property with no dimensions and units of $$\mathrm{m}$$.
 
 ## Discussion
 Radius of the rotating planetary body in meters.

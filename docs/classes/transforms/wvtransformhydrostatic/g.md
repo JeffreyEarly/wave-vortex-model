@@ -15,9 +15,9 @@ Gravitational acceleration in meters per second squared.
 ---
 
 ## Description
-Real valued property with no dimensions and units of $$m s^{-2}$$.
+Real valued property with no dimensions and units of $$\mathrm{m\,s^{-2}}$$.
 
 ## Discussion
 Gravitational acceleration in meters per second squared.
 
-The constructor default is `9.81` m/s².
+The constructor default is $$9.81\ \mathrm{m\,s^{-2}}$$.

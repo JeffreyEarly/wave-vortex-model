@@ -15,4 +15,4 @@ unit-magnitude phase factor that advances `Ap` from `t0` to `t`
 ---
 
 ## Description
-Real valued property with dimensions $$(j,kl)$$ and units of $$1$$.
+Real valued property with dimensions $$(j,kl)$$ and is dimensionless.

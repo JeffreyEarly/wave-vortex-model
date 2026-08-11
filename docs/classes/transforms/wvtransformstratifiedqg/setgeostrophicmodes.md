@@ -23,7 +23,7 @@ set amplitudes of the given geostrophic modes
 + `lMode`  integer index, (lMode > -Ny/2 && lMode < Ny/2)
 + `j`  integer index, (j >= 1 && j <= nModes), unless k=l=j=0
 + `phi`  (optional) phase in radians, (0 <= phi <= 2*pi), default 0
-+ `u`  fluid velocity u (m/s)
++ `u`  fluid velocity in $$\mathrm{m\,s^{-1}}$$
 
 ## Returns
 + `k`  wavenumber k of the kModes (radians/m)

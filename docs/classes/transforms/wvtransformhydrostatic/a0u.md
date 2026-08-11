@@ -17,7 +17,7 @@ Projects $$u$$ onto $$A_0$$.
 ---
 
 ## Description
-Complex valued property with dimensions $$(j,kl)$$ and units of $$s$$.
+Complex valued property with dimensions $$(j,kl)$$ and units of $$\mathrm{s}$$.
 
 ## Discussion
 Projects $$u$$ onto $$A_0$$.

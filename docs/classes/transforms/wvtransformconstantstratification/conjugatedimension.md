@@ -17,6 +17,6 @@ assumed conjugate dimension
 ---
 
 ## Description
-Real valued property with no dimensions and no units.
+Real valued property with no dimensions and is dimensionless.
 
 ## Discussion

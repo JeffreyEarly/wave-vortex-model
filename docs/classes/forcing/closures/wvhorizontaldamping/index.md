@@ -70,8 +70,8 @@ forcing is copied to a transform with a different resolution.
 + Create the forcing
   + [`WVHorizontalDamping`](/classes/forcing/closures/wvhorizontaldamping/wvhorizontaldamping.html) Create horizontal Laplacian damping for a transform.
 + Inspect forcing configuration
-  + [`nu`](/classes/forcing/closures/wvhorizontaldamping/nu.html) Horizontal momentum viscosity in $$\mathrm{m^2\,s^{-1}}$$.
-  + [`kappa`](/classes/forcing/closures/wvhorizontaldamping/kappa.html) Horizontal displacement diffusivity in $$\mathrm{m^2\,s^{-1}}$$.
+  + [`nu`](/classes/forcing/closures/wvhorizontaldamping/nu.html) Horizontal momentum viscosity in $$\mathrm{m^{2}\,s^{-1}}$$.
+  + [`kappa`](/classes/forcing/closures/wvhorizontaldamping/kappa.html) Horizontal displacement diffusivity in $$\mathrm{m^{2}\,s^{-1}}$$.
 
 
 ## Developer Topics

@@ -1,5 +1,5 @@
 function dependency = validateClassDocumentationDependency()
-requiredVersion = "1.3.0";
+requiredVersion = "1.3.2";
 classPath = string(which("ClassDocumentation"));
 if classPath == ""
     error("WaveVortexModel:MissingClassDocumentation","Documentation generation requires ClassDocumentation %s. Install it with mpminstall('ClassDocumentation@%s').",requiredVersion,requiredVersion);

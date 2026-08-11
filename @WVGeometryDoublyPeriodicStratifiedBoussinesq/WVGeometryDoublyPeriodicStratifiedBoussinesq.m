@@ -441,16 +441,16 @@ classdef WVGeometryDoublyPeriodicStratifiedBoussinesq < WVGeometryDoublyPeriodic
         function propertyAnnotations = propertyAnnotationsForGeometry()
             propertyAnnotations = WVGeometryDoublyPeriodicStratified.propertyAnnotationsForGeometry();
 
-            propertyAnnotations(end+1) = CADimensionProperty('K2unique', 'rad/m', 'unique horizontal wavenumbers (sorted)');
-            propertyAnnotations(end+1) = CANumericProperty('iK2unique',{'kl'},'index', 'index for the K2 unique matrix');
+            propertyAnnotations(end+1) = CADimensionProperty('K2unique', 'rad2 m-2', 'unique squared horizontal wavenumbers (sorted)');
+            propertyAnnotations(end+1) = CANumericProperty('iK2unique',{'kl'},'1', 'index into the K2unique dimension');
 
-            propertyAnnotations(end+1) = CANumericProperty('PFpmInv',{'z','j','K2unique'},'','Preconditioned F-mode inverse transformation');
-            propertyAnnotations(end+1) = CANumericProperty('QGpmInv',{'z','j','K2unique'},'','Preconditioned G-mode inverse transformation');
-            propertyAnnotations(end+1) = CANumericProperty('PFpm',{'j','z','K2unique'},'','Preconditioned F-mode forward transformation');
-            propertyAnnotations(end+1) = CANumericProperty('QGpm',{'j','z','K2unique'},'','Preconditioned G-mode forward transformation');
-            propertyAnnotations(end+1) = CANumericProperty('Ppm',{'j','K2unique'},'','Preconditioner for F, size(P)=[1 Nj]. F*u = uhat, (PF)*u = P*uhat, so ubar==P*uhat');
-            propertyAnnotations(end+1) = CANumericProperty('Qpm',{'j','K2unique'},'','Preconditioner for G, size(Q)=[1 Nj]. G*eta = etahat, (QG)*eta = Q*etahat, so etabar==Q*etahat. ');
-            propertyAnnotations(end+1) = CANumericProperty('QGwg',{'j','j','K2unique'},'','Transformation from geostrophic to wave-modes');
+            propertyAnnotations(end+1) = CANumericProperty('PFpmInv',{'z','j','K2unique'},'1','dimensionless preconditioned F-mode inverse transformation');
+            propertyAnnotations(end+1) = CANumericProperty('QGpmInv',{'z','j','K2unique'},'1','dimensionless preconditioned G-mode inverse transformation');
+            propertyAnnotations(end+1) = CANumericProperty('PFpm',{'j','z','K2unique'},'1','dimensionless preconditioned F-mode forward transformation');
+            propertyAnnotations(end+1) = CANumericProperty('QGpm',{'j','z','K2unique'},'1','dimensionless preconditioned G-mode forward transformation');
+            propertyAnnotations(end+1) = CANumericProperty('Ppm',{'j','K2unique'},'1','dimensionless preconditioner for F');
+            propertyAnnotations(end+1) = CANumericProperty('Qpm',{'j','K2unique'},'1','dimensionless preconditioner for G');
+            propertyAnnotations(end+1) = CANumericProperty('QGwg',{'j','j','K2unique'},'1','dimensionless transformation from geostrophic to wave modes');
             propertyAnnotations(end+1) = CANumericProperty('h_pm',{'j','kl'},'m', 'equivalent depth of each wave mode and horizontal wavenumber', detailedDescription='- topic: Domain Attributes — Stratification');
         end
 

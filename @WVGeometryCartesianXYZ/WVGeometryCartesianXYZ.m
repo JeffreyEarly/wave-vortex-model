@@ -7,10 +7,10 @@ classdef WVGeometryCartesianXYZ < handle
         % Shape `[Nj Nkl]` of a wave-vortex coefficient array.
         spectralMatrixSize
 
-        % Squared horizontal angular wavenumber, `K.^2 + L.^2`, in rad²/m².
+        % Squared horizontal angular wavenumber, `K.^2 + L.^2`, in $$\mathrm{rad^{2}\,m^{-2}}$$.
         K2
 
-        % Horizontal angular-wavenumber magnitude, `sqrt(K2)`, in rad/m.
+        % Horizontal angular-wavenumber magnitude, `sqrt(K2)`, in $$\mathrm{rad\,m^{-1}}$$.
         Kh
 
         % Gridded x-coordinate array in meters with shape `[Nx Ny Nz]`.
@@ -22,10 +22,10 @@ classdef WVGeometryCartesianXYZ < handle
         % Gridded vertical-coordinate array in meters with shape `[Nx Ny Nz]`.
         Z
 
-        % X-direction angular-wavenumber array in rad/m with shape `[Nj Nkl]`.
+        % X-direction angular-wavenumber array in $$\mathrm{rad\,m^{-1}}$$ with shape `[Nj Nkl]`.
         K
 
-        % Y-direction angular-wavenumber array in rad/m with shape `[Nj Nkl]`.
+        % Y-direction angular-wavenumber array in $$\mathrm{rad\,m^{-1}}$$ with shape `[Nj Nkl]`.
         L
 
         % Dimensionless vertical-mode index array with shape `[Nj Nkl]`.
@@ -172,11 +172,11 @@ classdef WVGeometryCartesianXYZ < handle
         function propertyAnnotations = propertyAnnotationsForGeometry()
             propertyAnnotations = CAPropertyAnnotation.empty(0,0);
 
-            propertyAnnotations(end+1) = CANumericProperty('K',{'j','kl'},'rad/m', 'k-coordinate matrix', detailedDescription='- topic: Domain Attributes — Grid — Spectral');
-            propertyAnnotations(end+1) = CANumericProperty('L',{'j','kl'},'rad/m', 'l-coordinate matrix', detailedDescription='- topic: Domain Attributes — Grid — Spectral');
-            propertyAnnotations(end+1) = CANumericProperty('J',{'j','kl'},'mode number', 'vertical mode-number matrix', detailedDescription='- topic: Domain Attributes — Grid — Spectral');
-            propertyAnnotations(end+1) = CANumericProperty('Kh',{'j','kl'},'rad/m', 'horizontal wavenumber, $$Kh=\sqrt(K^2+L^2)$$', detailedDescription='- topic: Domain Attributes — Grid — Spectral');
-            propertyAnnotations(end+1) = CANumericProperty('K2',{'j','kl'},'rad^2 m^{-2}', 'squared horizontal wavenumber, $$K2=K^2+L^2$$', detailedDescription='- topic: Domain Attributes — Grid — Spectral');
+            propertyAnnotations(end+1) = CANumericProperty('K',{'j','kl'},'rad m-1', 'k-coordinate matrix', detailedDescription='- topic: Domain Attributes — Grid — Spectral');
+            propertyAnnotations(end+1) = CANumericProperty('L',{'j','kl'},'rad m-1', 'l-coordinate matrix', detailedDescription='- topic: Domain Attributes — Grid — Spectral');
+            propertyAnnotations(end+1) = CANumericProperty('J',{'j','kl'},'1', 'vertical mode-number matrix', detailedDescription='- topic: Domain Attributes — Grid — Spectral');
+            propertyAnnotations(end+1) = CANumericProperty('Kh',{'j','kl'},'rad m-1', 'horizontal wavenumber, $$Kh=\sqrt(K^2+L^2)$$', detailedDescription='- topic: Domain Attributes — Grid — Spectral');
+            propertyAnnotations(end+1) = CANumericProperty('K2',{'j','kl'},'rad2 m-2', 'squared horizontal wavenumber, $$K2=K^2+L^2$$', detailedDescription='- topic: Domain Attributes — Grid — Spectral');
             propertyAnnotations(end+1) = CANumericProperty('X',{'x','y','z'},'m', 'x-coordinate matrix', detailedDescription='- topic: Domain Attributes — Grid — Spatial');
             propertyAnnotations(end+1) = CANumericProperty('Y',{'x','y','z'},'m', 'y-coordinate matrix', detailedDescription='- topic: Domain Attributes — Grid — Spatial');
             propertyAnnotations(end+1) = CANumericProperty('Z',{'x','y','z'},'m', 'z-coordinate matrix', detailedDescription='- topic: Domain Attributes — Grid — Spatial');

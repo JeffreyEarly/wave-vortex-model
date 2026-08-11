@@ -15,7 +15,7 @@ Whether the spectral grid excludes modes that alias quadratic products.
 ---
 
 ## Description
-Real valued property with no dimensions and units of $$bool$$.
+Real valued property with no dimensions and is dimensionless.
 
 ## Discussion
 Whether the spectral grid excludes modes that alias quadratic products.

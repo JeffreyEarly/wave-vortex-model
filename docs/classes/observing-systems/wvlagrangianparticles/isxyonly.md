@@ -9,7 +9,7 @@ mathjax: true
 
 #  isXYOnly
 
-whether the advection is only applied in x-y
+logical flag indicating whether advection is restricted to x-y
 
 > Developer documentation: this item describes internal implementation details.
 
@@ -17,4 +17,4 @@ whether the advection is only applied in x-y
 ---
 
 ## Description
-Real valued property with no dimensions and units of $$bool$$.
+Real valued property with no dimensions and is dimensionless.

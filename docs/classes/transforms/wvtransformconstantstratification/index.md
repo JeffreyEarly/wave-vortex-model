@@ -87,12 +87,12 @@ views are `Apt`, `Amt`, and `A0t`.
       + [`z_int`](/classes/transforms/wvtransformconstantstratification/z_int.html) Vertical quadrature weights in meters.
   + Spectral grid
     + Compact grid vectors
-      + [`k`](/classes/transforms/wvtransformconstantstratification/k.html) Compact `Nkl`-by-1 x-wavenumber vector in rad/m.
-      + [`l`](/classes/transforms/wvtransformconstantstratification/l.html) Compact `Nkl`-by-1 y-wavenumber vector in rad/m.
+      + [`k`](/classes/transforms/wvtransformconstantstratification/k.html) Compact `Nkl`-by-1 x-wavenumber vector in $$\mathrm{rad\,m^{-1}}$$.
+      + [`l`](/classes/transforms/wvtransformconstantstratification/l.html) Compact `Nkl`-by-1 y-wavenumber vector in $$\mathrm{rad\,m^{-1}}$$.
       + [`j`](/classes/transforms/wvtransformconstantstratification/j.html) Dimensionless `Nj`-by-1 vertical-mode index vector.
     + Compact grid arrays
-      + [`K`](/classes/transforms/wvtransformconstantstratification/k_.html) X-direction angular-wavenumber array in rad/m with shape `[Nj Nkl]`.
-      + [`L`](/classes/transforms/wvtransformconstantstratification/l_.html) Y-direction angular-wavenumber array in rad/m with shape `[Nj Nkl]`.
+      + [`K`](/classes/transforms/wvtransformconstantstratification/k_.html) X-direction angular-wavenumber array in $$\mathrm{rad\,m^{-1}}$$ with shape `[Nj Nkl]`.
+      + [`L`](/classes/transforms/wvtransformconstantstratification/l_.html) Y-direction angular-wavenumber array in $$\mathrm{rad\,m^{-1}}$$ with shape `[Nj Nkl]`.
       + [`J`](/classes/transforms/wvtransformconstantstratification/j_.html) Dimensionless vertical-mode index array with shape `[Nj Nkl]`.
       + [`kljGrid`](/classes/transforms/wvtransformconstantstratification/kljgrid.html) Return spectral-coordinate arrays in wave-vortex layout.
     + Wavenumber spacing
@@ -175,8 +175,8 @@ views are `Apt`, `Amt`, and `A0t`.
     + Density and displacement
       + [`eta`](/classes/transforms/wvtransformconstantstratification/eta.html) approximate isopycnal deviation
       + [`rho_e`](/classes/transforms/wvtransformconstantstratification/rho_e.html) excess density
-      + [`rho_nm`](/classes/transforms/wvtransformconstantstratification/rho_nm.html) Diagnosed no-motion density profile, `[Nz 1]`, in kg/m³.
-      + [`rho_nm0`](/classes/transforms/wvtransformconstantstratification/rho_nm0.html) Reference no-motion density profile, `[Nz 1]`, in kg/m³.
+      + [`rho_nm`](/classes/transforms/wvtransformconstantstratification/rho_nm.html) Diagnosed no-motion density profile, `[Nz 1]`, in $$\mathrm{kg\,m^{-3}}$$.
+      + [`rho_nm0`](/classes/transforms/wvtransformconstantstratification/rho_nm0.html) Reference no-motion density profile, `[Nz 1]`, in $$\mathrm{kg\,m^{-3}}$$.
       + [`rho_total`](/classes/transforms/wvtransformconstantstratification/rho_total.html) total potential density
     + Pressure and surface fields
       + [`p`](/classes/transforms/wvtransformconstantstratification/p.html) pressure anomaly
@@ -220,8 +220,8 @@ views are `Apt`, `Amt`, and `A0t`.
     + [`totalEnstrophySpatiallyIntegrated`](/classes/transforms/wvtransformconstantstratification/totalenstrophyspatiallyintegrated.html) Potential enstrophy evaluated from the gridded QGPV field.
   + Spectra
     + Spectral fields
-      + [`kAxis`](/classes/transforms/wvtransformconstantstratification/kaxis.html) Centered `Nx`-by-1 x-wavenumber axis in rad/m.
-      + [`lAxis`](/classes/transforms/wvtransformconstantstratification/laxis.html) Centered `Ny`-by-1 y-wavenumber axis in rad/m.
+      + [`kAxis`](/classes/transforms/wvtransformconstantstratification/kaxis.html) Centered `Nx`-by-1 x-wavenumber axis in $$\mathrm{rad\,m^{-1}}$$.
+      + [`lAxis`](/classes/transforms/wvtransformconstantstratification/laxis.html) Centered `Ny`-by-1 y-wavenumber axis in $$\mathrm{rad\,m^{-1}}$$.
       + [`transformToKLAxes`](/classes/transforms/wvtransformconstantstratification/transformtoklaxes.html) transforms in the spectral domain from (j,kl) to (kAxis,lAxis,j)
       + [`crossSpectrumWithFgTransform`](/classes/transforms/wvtransformconstantstratification/crossspectrumwithfgtransform.html) Compute a real modal cross-spectrum using the F-basis transform.
       + [`crossSpectrumWithGgTransform`](/classes/transforms/wvtransformconstantstratification/crossspectrumwithggtransform.html) Compute a real modal cross-spectrum using the G-basis transform.

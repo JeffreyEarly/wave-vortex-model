@@ -46,4 +46,4 @@ Install that checkout with authoring files enabled:
 mpminstall("local/path/to/wave-vortex-model",Authoring=true)
 ```
 
-Runtime dependencies still come from the registered OceanKit repository. Documentation generation additionally requires the authoring-only package `ClassDocumentation@1.3.0`; it is not a WaveVortexModel runtime dependency.
+Runtime dependencies still come from the registered OceanKit repository. Documentation generation additionally requires the authoring-only package `ClassDocumentation@1.3.2`; it is not a WaveVortexModel runtime dependency.

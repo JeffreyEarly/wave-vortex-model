@@ -2,7 +2,7 @@
 
 `WebsiteDocumentation` contains the canonical hand-authored Markdown sources. The committed `docs` tree combines those sources with generated API pages and version history for GitHub Pages.
 
-Documentation generation is an authoring workflow and requires exactly `ClassDocumentation@1.3.0`. Install that package and its dependencies without adding it to the WaveVortexModel runtime manifest.
+Documentation generation is an authoring workflow and requires exactly `ClassDocumentation@1.3.2`. Install that package and its dependencies without adding it to the WaveVortexModel runtime manifest.
 
 From the repository root, rebuild the committed site with:
 

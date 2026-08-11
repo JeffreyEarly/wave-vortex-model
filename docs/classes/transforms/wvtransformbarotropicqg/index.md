@@ -73,11 +73,11 @@ The quasigeostrophic state is stored in
       + [`spatialMatrixSize`](/classes/transforms/wvtransformbarotropicqg/spatialmatrixsize.html) Shape of a gridded physical-space field.
   + Spectral grid
     + Compact grid vectors
-      + [`k`](/classes/transforms/wvtransformbarotropicqg/k_.html) Compact `Nkl`-by-1 x-wavenumber vector in rad/m.
-      + [`l`](/classes/transforms/wvtransformbarotropicqg/l_.html) Compact `Nkl`-by-1 y-wavenumber vector in rad/m.
+      + [`k`](/classes/transforms/wvtransformbarotropicqg/k_.html) Compact `Nkl`-by-1 x-wavenumber vector in $$\mathrm{rad\,m^{-1}}$$.
+      + [`l`](/classes/transforms/wvtransformbarotropicqg/l_.html) Compact `Nkl`-by-1 y-wavenumber vector in $$\mathrm{rad\,m^{-1}}$$.
     + Compact grid arrays
-      + [`K`](/classes/transforms/wvtransformbarotropicqg/k.html) X-direction angular-wavenumber array in rad/m with shape `[1 Nkl]`.
-      + [`L`](/classes/transforms/wvtransformbarotropicqg/l.html) Y-direction angular-wavenumber array in rad/m with shape `[1 Nkl]`.
+      + [`K`](/classes/transforms/wvtransformbarotropicqg/k.html) X-direction angular-wavenumber array in $$\mathrm{rad\,m^{-1}}$$ with shape `[1 Nkl]`.
+      + [`L`](/classes/transforms/wvtransformbarotropicqg/l.html) Y-direction angular-wavenumber array in $$\mathrm{rad\,m^{-1}}$$ with shape `[1 Nkl]`.
       + [`klGrid`](/classes/transforms/wvtransformbarotropicqg/klgrid.html) Return the barotropic spectral-coordinate arrays.
     + Wavenumber spacing
       + [`dk`](/classes/transforms/wvtransformbarotropicqg/dk.html) Spacing of the x-direction angular-wavenumber axis.
@@ -154,8 +154,8 @@ The quasigeostrophic state is stored in
     + [`totalEnstrophySpatiallyIntegrated`](/classes/transforms/wvtransformbarotropicqg/totalenstrophyspatiallyintegrated.html) Potential enstrophy evaluated from the gridded QGPV field.
   + Spectra
     + Spectral fields
-      + [`kAxis`](/classes/transforms/wvtransformbarotropicqg/kaxis.html) Centered `Nx`-by-1 x-wavenumber axis in rad/m.
-      + [`lAxis`](/classes/transforms/wvtransformbarotropicqg/laxis.html) Centered `Ny`-by-1 y-wavenumber axis in rad/m.
+      + [`kAxis`](/classes/transforms/wvtransformbarotropicqg/kaxis.html) Centered `Nx`-by-1 x-wavenumber axis in $$\mathrm{rad\,m^{-1}}$$.
+      + [`lAxis`](/classes/transforms/wvtransformbarotropicqg/laxis.html) Centered `Ny`-by-1 y-wavenumber axis in $$\mathrm{rad\,m^{-1}}$$.
       + [`transformToKLAxes`](/classes/transforms/wvtransformbarotropicqg/transformtoklaxes.html) transforms in the spectral domain from (j,kl) to (kAxis,lAxis,j)
     + Radial wavenumber
       + [`kRadial`](/classes/transforms/wvtransformbarotropicqg/kradial.html) radial (k,l) wavenumber on the WV grid

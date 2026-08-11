@@ -279,14 +279,14 @@ classdef TestCoreAPIDocumentation < matlab.unittest.TestCase
                 "Ap", "Positive-frequency wave–vortex coefficient array."
                 "Am", "Negative-frequency wave–vortex coefficient array."
                 "A0", "Zero-frequency wave–vortex coefficient array."
-                "k", "Compact `Nkl`-by-1 x-wavenumber vector in rad/m."
-                "l", "Compact `Nkl`-by-1 y-wavenumber vector in rad/m."
+                "k", "Compact `Nkl`-by-1 x-wavenumber vector in $$\mathrm{rad\,m^{-1}}$$."
+                "l", "Compact `Nkl`-by-1 y-wavenumber vector in $$\mathrm{rad\,m^{-1}}$$."
                 "j", "Dimensionless `Nj`-by-1 vertical-mode index vector."
-                "kAxis", "Centered `Nx`-by-1 x-wavenumber axis in rad/m."
-                "lAxis", "Centered `Ny`-by-1 y-wavenumber axis in rad/m."
-                "rho_bar", "Current horizontally averaged density, `[Nz 1]`, in kg/m³."
-                "rho_nm", "Diagnosed no-motion density profile, `[Nz 1]`, in kg/m³."
-                "rho_nm0", "Reference no-motion density profile, `[Nz 1]`, in kg/m³."
+                "kAxis", "Centered `Nx`-by-1 x-wavenumber axis in $$\mathrm{rad\,m^{-1}}$$."
+                "lAxis", "Centered `Ny`-by-1 y-wavenumber axis in $$\mathrm{rad\,m^{-1}}$$."
+                "rho_bar", "Current horizontally averaged density, `[Nz 1]`, in $$\mathrm{kg\,m^{-3}}$$."
+                "rho_nm", "Diagnosed no-motion density profile, `[Nz 1]`, in $$\mathrm{kg\,m^{-3}}$$."
+                "rho_nm0", "Reference no-motion density profile, `[Nz 1]`, in $$\mathrm{kg\,m^{-3}}$$."
                 "FMatrix", "Transformation matrix $$F$$ projecting F-grid values onto vertical modes; shape `[Nj Nz]`."
                 "FinvMatrix", "Transformation matrix $$F^{-1}$$ reconstructing F-grid values from vertical modes; shape `[Nz Nj]`."
                 "GMatrix", "Transformation matrix $$G$$ projecting G-grid values onto vertical modes; shape `[Nj Nz]`."
@@ -436,9 +436,9 @@ classdef TestCoreAPIDocumentation < matlab.unittest.TestCase
                 "spectralmatrixsize.md", ["[Nj Nkl]","[1 Nkl]"]
                 "latitude.md", ["default is `33`","degrees north"]
                 "planetaryradius.md", ["`6.371e6` m","beta"]
-                "rotationrate.md", ["`7.2921e-5` rad/s","inertialPeriod"]
-                "g.md", ["`9.81`","m/s²"]
-                "rho0.md", ["`1025`","kg/m³"]
+                "rotationrate.md", ["7.2921\times10^{-5}","\mathrm{rad\,s^{-1}}","inertialPeriod"]
+                "g.md", ["9.81","\mathrm{m\,s^{-2}}"]
+                "rho0.md", ["1025","\mathrm{kg\,m^{-3}}"]
                 "shouldantialias.md", ["default is `true`","two-thirds"]
                 "shouldusetruenomotionprofile.md", ["default is `false`","rhoFunction"]
                 "h_0.md", ["Nj`-by-1","meters"]
@@ -454,7 +454,8 @@ classdef TestCoreAPIDocumentation < matlab.unittest.TestCase
             testCase.verifySubstring(hydrostatic,"[`xyzGrid`]");
             testCase.verifySubstring(barotropic,"[`xyGrid`]");
             testCase.verifySubstring(testCase.generatedTransformPage("wvtransformbarotropicqg","h.md"),"default is `0.8` m");
-            testCase.verifySubstring(testCase.generatedTransformPage("wvtransformconstantstratification","n0.md"),"default is `5.2e-3` rad/s");
+            testCase.verifySubstring(testCase.generatedTransformPage("wvtransformconstantstratification","n0.md"),"5.2\times10^{-3}");
+            testCase.verifySubstring(testCase.generatedTransformPage("wvtransformconstantstratification","n0.md"),"\mathrm{rad\,s^{-1}}");
         end
 
         function transformDocumentationExamplesExecute(testCase)
@@ -742,10 +743,10 @@ classdef TestCoreAPIDocumentation < matlab.unittest.TestCase
             wvt = WVTransformConstantStratification([40e3 30e3 2e3],[8 6 5],N0=5.2e-3,latitude=45);
             testCase.verifyEqual(size(wvt.Ap),size(wvt.Am));
             testCase.verifyEqual(size(wvt.Ap),size(wvt.A0));
-            testCase.verifyEqual(string(wvt.propertyAnnotationWithName("Ap").units),"m/s");
-            testCase.verifyEqual(string(wvt.propertyAnnotationWithName("Am").units),"m/s");
-            testCase.verifyEqual(string(wvt.propertyAnnotationWithName("A0").units),"m^2 s^{-1}");
-            testCase.verifyEqual(string(wvt.propertyAnnotationWithName("A0t").units),"m^2 s^{-1}");
+            testCase.verifyEqual(string(wvt.propertyAnnotationWithName("Ap").units),"m s-1");
+            testCase.verifyEqual(string(wvt.propertyAnnotationWithName("Am").units),"m s-1");
+            testCase.verifyEqual(string(wvt.propertyAnnotationWithName("A0").units),"m2 s-1");
+            testCase.verifyEqual(string(wvt.propertyAnnotationWithName("A0t").units),"m2 s-1");
 
             waveIndex = find(wvt.waveComponent.maskAp,1);
             wvt.Ap(waveIndex) = 1.25 - 0.5i;

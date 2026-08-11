@@ -15,7 +15,7 @@ Inertial period in seconds.
 ---
 
 ## Description
-Real valued property with no dimensions and units of $$s$$.
+Real valued property with no dimensions and units of $$\mathrm{s}$$.
 
 ## Discussion
 Inertial period in seconds.

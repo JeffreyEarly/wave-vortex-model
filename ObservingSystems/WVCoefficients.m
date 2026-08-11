@@ -188,7 +188,7 @@ classdef WVCoefficients < WVObservingSystem
                 propertyAnnotations CAPropertyAnnotation
             end
             propertyAnnotations = CAPropertyAnnotation.empty(0,0);
-            propertyAnnotations(end+1) = CANumericProperty('absTolerance', {}, 'm^{3} s^{-2}','absolute tolerance of the wave-vortex coefficients');
+            propertyAnnotations(end+1) = CANumericProperty('absTolerance', {}, 'm2 s-1','coefficient-error scale used to construct mode-dependent adaptive tolerances');
         end
     end
 end

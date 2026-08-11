@@ -154,7 +154,7 @@ classdef WVGeostrophicMethods < handle
             %
             % Le = 80e3;
             % He = 300;
-            % U = 0.20; % m/s
+            % U = 0.20; % m s-1
             %
             % H = @(z) exp(-(z/He/sqrt(2)).^2 );
             % F = @(x,y) exp(-((x-x0)/Le).^2 -((y-y0)/Le).^2);
@@ -204,7 +204,7 @@ classdef WVGeostrophicMethods < handle
             %
             % Le = 80e3;
             % He = 300;
-            % U = 0.20; % m/s
+            % U = 0.20; % m s-1
             %
             % H = @(z) exp(-(z/He/sqrt(2)).^2 );
             % F = @(x,y) exp(-((x-x0)/Le).^2 -((y-y0)/Le).^2);
@@ -261,7 +261,7 @@ classdef WVGeostrophicMethods < handle
             %
             % Le = 80e3;
             % He = 300;
-            % U = 0.20; % m/s
+            % U = 0.20; % m s-1
             %
             % H = @(z) exp(-(z/He/sqrt(2)).^2 );
             % F = @(x,y) exp(-((x-x0)/Le).^2 -((y-y0)/Le).^2);
@@ -311,7 +311,7 @@ classdef WVGeostrophicMethods < handle
             % - Parameter lMode: integer index, (lMode > -Ny/2 && lMode < Ny/2)
             % - Parameter j: integer index, (j >= 1 && j <= nModes), unless k=l=j=0
             % - Parameter phi: (optional) phase in radians, (0 <= phi <= 2*pi), default 0
-            % - Parameter u: fluid velocity u (m/s)
+            % - Parameter u: fluid velocity in $$\mathrm{m\,s^{-1}}$$
             % - Returns k: wavenumber k of the kModes (radians/m)
             % - Returns l: wavenumber l of the lModes (radians/m)
             % - nav_order: 4
@@ -358,7 +358,7 @@ classdef WVGeostrophicMethods < handle
             % - Parameter lMode: (optional) integer index, (l0 > -Ny/2 && l0 < Ny/2)
             % - Parameter jMode: (optional) integer index, (j0 >= 1 && j0 <= nModes), unless k=l=j=0
             % - Parameter phi: (optional) phase in radians, (0 <= phi <= 2*pi)
-            % - Parameter u: (optional) fluid velocity u (m/s)
+            % - Parameter u: (optional) fluid velocity in $$\mathrm{m\,s^{-1}}$$
             % - Returns k: wavenumber k of the waves (radians/m)
             % - Returns l: wavenumber l of the waves (radians/m)
             % - nav_order: 5
@@ -444,17 +444,17 @@ classdef WVGeostrophicMethods < handle
             end
             propertyAnnotations = CAPropertyAnnotation.empty(0,0);
 
-            annotation = WVVariableAnnotation('geostrophicEnergy',{},'m^3 s^{-2}', 'total energy, geostrophic');
+            annotation = WVVariableAnnotation('geostrophicEnergy',{},'m3 s-2', 'total energy, geostrophic');
             annotation.isVariableWithLinearTimeStep = 0;
             annotation.isVariableWithNonlinearTimeStep = 1;
             propertyAnnotations(end+1) = annotation;
 
             propertyAnnotations(end+1) = CANumericProperty('A0U',options.spectralDimensionNames,'s', 'matrix component that multiplies $$\tilde{u}$$ to compute $$A_0$$.',isComplex=1);
             propertyAnnotations(end+1) = CANumericProperty('A0V',options.spectralDimensionNames,'s', 'matrix component that multiplies $$\tilde{v}$$ to compute $$A_0$$.',isComplex=1);
-            propertyAnnotations(end+1) = CANumericProperty('A0N',options.spectralDimensionNames,'', 'matrix component that multiplies $$\tilde{\eta}$$ to compute $$A_0$$.',isComplex=0);
-            propertyAnnotations(end+1) = CANumericProperty('UA0',options.spectralDimensionNames,'s^{-1}', 'matrix component that multiplies $$A_0$$ to compute $$\tilde{u}$$.',isComplex=1);
-            propertyAnnotations(end+1) = CANumericProperty('VA0',options.spectralDimensionNames,'s^{-1}', 'matrix component that multiplies $$A_0$$ to compute $$\tilde{v}$$.',isComplex=1);
-            propertyAnnotations(end+1) = CANumericProperty('NA0',options.spectralDimensionNames,'', 'matrix component that multiplies $$A_0$$ to compute $$\tilde{\eta}$$.',isComplex=0);
+            propertyAnnotations(end+1) = CANumericProperty('A0N',options.spectralDimensionNames,'m s-1', 'matrix component that multiplies $$\tilde{\eta}$$ to compute $$A_0$$.',isComplex=0);
+            propertyAnnotations(end+1) = CANumericProperty('UA0',options.spectralDimensionNames,'s-1', 'matrix component that multiplies $$A_0$$ to compute $$\tilde{u}$$.',isComplex=1);
+            propertyAnnotations(end+1) = CANumericProperty('VA0',options.spectralDimensionNames,'s-1', 'matrix component that multiplies $$A_0$$ to compute $$\tilde{v}$$.',isComplex=1);
+            propertyAnnotations(end+1) = CANumericProperty('NA0',options.spectralDimensionNames,'s m-1', 'matrix component that multiplies $$A_0$$ to compute $$\tilde{\eta}$$.',isComplex=0);
             
         end
     end

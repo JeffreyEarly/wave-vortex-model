@@ -15,7 +15,7 @@ Equivalent depth associated with a vertical mode.
 ---
 
 ## Description
-Real valued property with no dimensions and units of $$m$$.
+Real valued property with no dimensions and units of $$\mathrm{m}$$.
 
 ## Discussion
 Equivalent depth associated with a vertical mode.

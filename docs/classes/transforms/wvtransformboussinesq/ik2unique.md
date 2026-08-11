@@ -17,4 +17,4 @@ map from 2-dim K2, to 1-dim K2unique
 ---
 
 ## Description
-Real valued property with dimension $$kl$$ and units of $$index$$.
+Real valued property with dimension $$kl$$ and is dimensionless.

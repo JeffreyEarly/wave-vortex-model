@@ -169,7 +169,7 @@ classdef WVMeanDensityAnomalyMethods < handle
             end
             variableAnnotations = WVVariableAnnotation.empty(0,0);
 
-            annotation = WVVariableAnnotation('mdaEnergy',{},'m^3 s^{-2}', 'total energy, mean density anomaly');
+            annotation = WVVariableAnnotation('mdaEnergy',{},'m3 s-2', 'total energy, mean density anomaly');
             annotation.isVariableWithLinearTimeStep = 0;
             annotation.isVariableWithNonlinearTimeStep = 1;
             variableAnnotations(end+1) = annotation;

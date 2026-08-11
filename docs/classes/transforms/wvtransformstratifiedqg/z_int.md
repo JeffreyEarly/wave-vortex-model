@@ -15,7 +15,7 @@ Vertical quadrature weights in meters.
 ---
 
 ## Description
-Real valued property with dimension $$z$$ and units of $$m$$.
+Real valued property with dimension $$z$$ and units of $$\mathrm{m}$$.
 
 ## Discussion
 Vertical quadrature weights in meters.

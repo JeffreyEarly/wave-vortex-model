@@ -17,4 +17,4 @@ Preconditioner for F, size(P)=[Nj x Nk]. F*u = uhat, (PF)*u = P*uhat, so ubar==P
 ---
 
 ## Description
-Real valued property with dimensions $$(j,K2unique)$$ and no units.
+Real valued property with dimensions $$(j,K2unique)$$ and is dimensionless.

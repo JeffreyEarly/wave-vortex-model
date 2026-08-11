@@ -13,8 +13,8 @@ classdef TestReleaseVerification < matlab.unittest.TestCase
         function releaseCallerUsesImmutablePilot(testCase)
             workflow = testCase.readFile(fullfile(".github","workflows","release-mpm.yml"));
             testCase.verifySubstring(workflow, ...
-                "JeffreyEarly/OceanKit/.github/workflows/reusable-mpm-release.yml@mpm-release-v0.1.0");
-            testCase.verifySubstring(workflow,"documentationPackageSpecifier: ClassDocumentation@1.3.0");
+                "JeffreyEarly/OceanKit/.github/workflows/reusable-mpm-release.yml@mpm-release-v0.1.2");
+            testCase.verifySubstring(workflow,"documentationPackageSpecifier: ClassDocumentation@1.3.2");
             testCase.verifySubstring(workflow,"shouldCheckWebsiteDocumentation: true");
             testCase.verifySubstring(workflow,"documentationCheckTask: docs:check");
             testCase.verifySubstring(workflow, ...
@@ -53,10 +53,10 @@ classdef TestReleaseVerification < matlab.unittest.TestCase
                     "Exported package / MATLAB R2025b"
                     "release: R2025b"
                     "contents: read"
-                    "eb6141e837b2a2d52db675d449ed0ac4c9a64bb5"
+                    "96f0b801c565406dd5a4ba2480334a3a481c3e2c"
                     "MATLAB_PREFDIR"
                     "Temporary=true"
-                    "ClassDocumentation@1.3.0"
+                    "ClassDocumentation@1.3.2"
                     "prepareWaveVortexModelReleaseCandidate"
                     "verifyWaveVortexModelPackage"
                     "configureCIEnvironment(repositoryRoot,oceanKitRoot)"
@@ -84,7 +84,7 @@ classdef TestReleaseVerification < matlab.unittest.TestCase
             requiredWorkflow = testCase.readFile(fullfile(".github","workflows","ci.yml"));
             extendedWorkflow = testCase.readFile(fullfile(".github","workflows","extended-ci.yml"));
             for workflow = [requiredWorkflow extendedWorkflow]
-                testCase.verifySubstring(workflow,"eb6141e837b2a2d52db675d449ed0ac4c9a64bb5");
+                testCase.verifySubstring(workflow,"96f0b801c565406dd5a4ba2480334a3a481c3e2c");
                 testCase.verifySubstring(workflow,"release: R2025b");
                 testCase.verifyFalse(contains(workflow,"eb71bc7b05e74776afd678b27c964cf53cd9d547"));
                 testCase.verifyFalse(contains(workflow,"R2024b"));

@@ -15,7 +15,7 @@ Horizontal angular-wavenumber magnitude on the coefficient grid.
 ---
 
 ## Description
-Real valued property with dimension $$kl$$ and units of $$rad/m$$.
+Real valued property with dimension $$kl$$ and units of $$\mathrm{rad\,m^{-1}}$$.
 
 ## Discussion
 Horizontal angular-wavenumber magnitude on the coefficient grid.

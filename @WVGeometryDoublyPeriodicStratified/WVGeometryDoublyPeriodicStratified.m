@@ -322,16 +322,16 @@ classdef WVGeometryDoublyPeriodicStratified < WVGeometryDoublyPeriodic & WVStrat
             propertyAnnotations = cat(2,propertyAnnotations,WVStratification.propertyAnnotationsForStratification());
             propertyAnnotations = cat(2,propertyAnnotations,WVGeometryCartesianXYZ.propertyAnnotationsForGeometry());
 
-            propertyAnnotations(end+1) = CANumericProperty('PF0inv',{'z','j'},'','Preconditioned F-mode inverse transformation');
-            propertyAnnotations(end+1) = CANumericProperty('QG0inv',{'z','j'},'','Preconditioned G-mode inverse transformation');
-            propertyAnnotations(end+1) = CANumericProperty('PF0',{'j','z'},'','Preconditioned F-mode forward transformation');
-            propertyAnnotations(end+1) = CANumericProperty('QG0',{'j','z'},'','Preconditioned G-mode forward transformation');
-            propertyAnnotations(end+1) = CANumericProperty('P0',{'j'},'','Preconditioner for F, size(P)=[1 Nj]. F*u = uhat, (PF)*u = P*uhat, so ubar==P*uhat');
-            propertyAnnotations(end+1) = CANumericProperty('Q0',{'j'},'','Preconditioner for G, size(Q)=[1 Nj]. G*eta = etahat, (QG)*eta = Q*etahat, so etabar==Q*etahat. ');
+            propertyAnnotations(end+1) = CANumericProperty('PF0inv',{'z','j'},'1','dimensionless preconditioned F-mode inverse transformation');
+            propertyAnnotations(end+1) = CANumericProperty('QG0inv',{'z','j'},'1','dimensionless preconditioned G-mode inverse transformation');
+            propertyAnnotations(end+1) = CANumericProperty('PF0',{'j','z'},'1','dimensionless preconditioned F-mode forward transformation');
+            propertyAnnotations(end+1) = CANumericProperty('QG0',{'j','z'},'1','dimensionless preconditioned G-mode forward transformation');
+            propertyAnnotations(end+1) = CANumericProperty('P0',{'j'},'1','dimensionless preconditioner for F');
+            propertyAnnotations(end+1) = CANumericProperty('Q0',{'j'},'1','dimensionless preconditioner for G');
 
             propertyAnnotations(end+1) = CANumericProperty('h_0',{'j'},'m', 'equivalent depth of each geostrophic mode', detailedDescription='- topic: Domain Attributes — Stratification');
             propertyAnnotations(end+1) = CANumericProperty('h_pm',{'j'},'m', 'equivalent depth of each wave mode', detailedDescription='- topic: Domain Attributes — Stratification');
-            propertyAnnotations(end+1) = CANumericProperty('Lr2',{'j'},'m^2', 'squared Rossby deformation radius of each geostrophic mode');
+            propertyAnnotations(end+1) = CANumericProperty('Lr2',{'j'},'m2', 'squared Rossby deformation radius of each geostrophic mode');
         end
 
         function [Lxyz, Nxyz, options] = requiredPropertiesForGeometryFromGroup(group)

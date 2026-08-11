@@ -15,7 +15,7 @@ Periodic domain length in the y direction.
 ---
 
 ## Description
-Real valued property with no dimensions and units of $$m$$.
+Real valued property with no dimensions and units of $$\mathrm{m}$$.
 
 ## Discussion
 Periodic domain length in the y direction.

@@ -26,7 +26,7 @@ WVModel integrator and writes their current values to model output.
 + Create an observing system
   + [`WVCoefficients`](/classes/observing-systems/wvcoefficients/wvcoefficients.html) create a new observing system
 + Inspect observed state
-  + [`absTolerance`](/classes/observing-systems/wvcoefficients/abstolerance.html) absolute tolerance of the wave-vortex coefficients
+  + [`absTolerance`](/classes/observing-systems/wvcoefficients/abstolerance.html) coefficient-error scale used to construct mode-dependent adaptive tolerances
 
 
 ## Developer Topics

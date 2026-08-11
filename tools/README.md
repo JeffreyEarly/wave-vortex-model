@@ -14,7 +14,7 @@ Do not add `%#ok` annotations merely to make this report empty. Suppressed corre
 
 ## Documentation
 
-Documentation generation requires the authoring-only package `ClassDocumentation@1.3.0`. Install that exact package and its dependencies before running either task; it is intentionally absent from `resources/mpackage.json` because it is not a runtime dependency.
+Documentation generation requires the authoring-only package `ClassDocumentation@1.3.2`. Install that exact package and its dependencies before running either task; it is intentionally absent from `resources/mpackage.json` because it is not a runtime dependency.
 
 ```matlab
 buildtool docs:build

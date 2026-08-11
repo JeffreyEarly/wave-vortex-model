@@ -15,4 +15,4 @@ total potential density
 ---
 
 ## Description
-Real valued property with dimensions $$(x,y,z)$$ and units of $$kg/m3$$.
+Real valued property with dimensions $$(x,y,z)$$ and units of $$\mathrm{kg\,m^{-3}}$$.

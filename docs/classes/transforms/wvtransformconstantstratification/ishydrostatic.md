@@ -15,7 +15,7 @@ Whether the transform uses the hydrostatic approximation.
 ---
 
 ## Description
-Real valued property with no dimensions and units of $$bool$$.
+Real valued property with no dimensions and is dimensionless.
 
 ## Discussion
 Whether the transform uses the hydrostatic approximation.

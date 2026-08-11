@@ -9,7 +9,7 @@ mathjax: true
 
 #  QGpm
 
-Preconditioned G-mode forward transformation
+dimensionless preconditioned G-mode forward transformation
 
 > Developer documentation: this item describes internal implementation details.
 
@@ -17,4 +17,4 @@ Preconditioned G-mode forward transformation
 ---
 
 ## Description
-Real valued property with dimensions $$(j,z,K2unique)$$ and no units.
+Real valued property with dimensions $$(j,z,K2unique)$$ and is dimensionless.

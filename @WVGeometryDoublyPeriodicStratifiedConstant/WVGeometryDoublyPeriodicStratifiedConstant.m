@@ -604,11 +604,11 @@ classdef WVGeometryDoublyPeriodicStratifiedConstant < WVGeometryDoublyPeriodic &
             propertyAnnotations = WVGeometryDoublyPeriodic.propertyAnnotationsForGeometry();
             propertyAnnotations = cat(2,propertyAnnotations,WVStratification.propertyAnnotationsForStratification());
             propertyAnnotations = cat(2,propertyAnnotations,WVGeometryCartesianXYZ.propertyAnnotationsForGeometry());
-            propertyAnnotations(end+1) = CANumericProperty('isHydrostatic',{},'bool', 'whether the transforms are hydrostatic or non-hydrostatic', detailedDescription='- topic: Domain Attributes — Grid');
-            propertyAnnotations(end+1) = CANumericProperty('N0',{},'rad s^{-1}', 'buoyancy frequency of the no-motion density', detailedDescription="The buoyancy frequency $$N_0$$ is defined as $$N_0\equiv sqrt{ - \frac{g}{\rho_0} \frac{\partial \rho_\textrm{nm}}{\partial z} }$$.");
+            propertyAnnotations(end+1) = CANumericProperty('isHydrostatic',{},'1', 'logical flag indicating whether the transforms are hydrostatic or non-hydrostatic', detailedDescription='- topic: Domain Attributes — Grid');
+            propertyAnnotations(end+1) = CANumericProperty('N0',{},'rad s-1', 'buoyancy frequency of the no-motion density', detailedDescription="The buoyancy frequency $$N_0$$ is defined as $$N_0\equiv sqrt{ - \frac{g}{\rho_0} \frac{\partial \rho_\textrm{nm}}{\partial z} }$$.");
             propertyAnnotations(end+1) = CANumericProperty('h_0',{'j'},'m', 'equivalent depth of each geostrophic mode', detailedDescription='- topic: Domain Attributes — Stratification');
             propertyAnnotations(end+1) = CANumericProperty('h_pm',{'j'},'m', 'equivalent depth of each wave mode', detailedDescription='- topic: Domain Attributes — Stratification');
-            propertyAnnotations(end+1) = CANumericProperty('Lr2',{'j'},'m^2', 'squared Rossby deformation radius of each geostrophic mode');
+            propertyAnnotations(end+1) = CANumericProperty('Lr2',{'j'},'m2', 'squared Rossby deformation radius of each geostrophic mode');
         end
 
         function [Lxyz, Nxyz, options] = requiredPropertiesForGeometryFromGroup(group)

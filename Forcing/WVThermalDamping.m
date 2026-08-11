@@ -92,7 +92,7 @@ classdef WVThermalDamping < WVForcing
                 propertyAnnotations CAPropertyAnnotation
             end
             propertyAnnotations = CAPropertyAnnotation.empty(0,0);
-            propertyAnnotations(end+1) = CANumericProperty('alpha', {}, 's^{-1}','thermal damping coefficient');
+            propertyAnnotations(end+1) = CANumericProperty('alpha', {}, 's-1','thermal damping coefficient');
         end
     end
 

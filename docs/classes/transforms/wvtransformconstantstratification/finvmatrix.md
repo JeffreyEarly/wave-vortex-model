@@ -15,7 +15,7 @@ Transformation matrix $$F^{-1}$$ reconstructing F-grid values from vertical mode
 ---
 
 ## Description
-Real valued property with dimensions $$(z,j)$$ and no units.
+Real valued property with dimensions $$(z,j)$$ and is dimensionless.
 
 ## Discussion
 Transformation matrix $$F^{-1}$$ reconstructing F-grid values from vertical modes; shape `[Nz Nj]`.

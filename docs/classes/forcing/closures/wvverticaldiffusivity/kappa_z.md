@@ -9,13 +9,13 @@ mathjax: true
 
 #  kappa_z
 
-Configured vertical diffusivity in $$\mathrm{m^2\,s^{-1}}$$.
+Configured vertical diffusivity in $$\mathrm{m^{2}\,s^{-1}}$$.
 
 
 ---
 
 ## Description
-Real valued property with no dimensions and units of $$m^2 s^{-1}$$.
+Real valued property with no dimensions and units of $$\mathrm{m^{2}\,s^{-1}}$$.
 
 ## Discussion
 

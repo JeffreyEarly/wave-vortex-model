@@ -9,7 +9,7 @@ mathjax: true
 
 #  absTolerance
 
-absolute tolerance of phi for the adaptive integrator
+adaptive-integrator absolute tolerance, expressed in the same units as the tracer field
 
 
 ---

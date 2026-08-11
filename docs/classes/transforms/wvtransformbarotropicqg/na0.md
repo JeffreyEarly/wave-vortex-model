@@ -17,7 +17,7 @@ Reconstructs density displacement from $$A_0$$.
 ---
 
 ## Description
-Real valued property with dimension $$kl$$ and no units.
+Real valued property with dimension $$kl$$ and units of $$\mathrm{s\,m^{-1}}$$.
 
 ## Discussion
 Reconstructs density displacement from $$A_0$$.

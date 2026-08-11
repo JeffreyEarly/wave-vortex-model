@@ -15,4 +15,4 @@ pressure anomaly
 ---
 
 ## Description
-Real valued property with dimensions $$(x,y,z)$$ and units of $$kg/m/s2$$.
+Real valued property with dimensions $$(x,y,z)$$ and units of $$\mathrm{kg\,m^{-1}\,s^{-2}}$$.

@@ -17,4 +17,4 @@ Preconditioner for G, size(Q)=[Nj x Nk]. G*eta = etahat, (QG)*eta = Q*etahat, so
 ---
 
 ## Description
-Real valued property with dimensions $$(j,K2unique)$$ and no units.
+Real valued property with dimensions $$(j,K2unique)$$ and is dimensionless.

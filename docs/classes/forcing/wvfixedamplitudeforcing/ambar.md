@@ -19,7 +19,7 @@ Prescribed `Am` values in $$\mathrm{m\,s^{-1}}$$.
 + Size: `(:,1)`
 
 ## Description
-Complex valued property with dimension $$Am_indices$$ and no units.
+Complex valued property with dimension $$Am_indices$$ and units of $$\mathrm{m\,s^{-1}}$$.
 
 ## Discussion
 

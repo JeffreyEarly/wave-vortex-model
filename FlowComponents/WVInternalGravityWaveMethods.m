@@ -120,11 +120,11 @@ classdef WVInternalGravityWaveMethods < handle
             % - Parameter lMode: integer index, (l0 > -Ny/2 && l0 < Ny/2)
             % - Parameter j: integer index, (j0 >= 1 && j0 <= nModes), unless k=l=0 in which case j=0 is okay (inertial oscillations)
             % - Parameter phi: phase in radians, (0 <= phi <= 2*pi)
-            % - Parameter u: fluid velocity (m/s)
+            % - Parameter u: fluid velocity in $$\mathrm{m\,s^{-1}}$$
             % - Parameter sign: sign of the frequency, +1 or -1
-            % - Returns omega: frequencies of the waves (radians/s)
-            % - Returns k: wavenumber k of the waves (radians/m)
-            % - Returns l: wavenumber l of the waves (radians/m)
+            % - Returns omega: wave frequencies in $$\mathrm{rad\,s^{-1}}$$
+            % - Returns k: x-direction wavenumbers in $$\mathrm{rad\,m^{-1}}$$
+            % - Returns l: y-direction wavenumbers in $$\mathrm{rad\,m^{-1}}$$
             arguments
                 self WVTransform {mustBeNonempty}
                 options.kMode (:,1) double
@@ -149,11 +149,11 @@ classdef WVInternalGravityWaveMethods < handle
             % - Parameter lMode: integer index, (l0 > -Ny/2 && l0 < Ny/2)
             % - Parameter j: integer index, (j0 >= 1 && j0 <= nModes), unless k=l=0 in which case j=0 is okay (inertial oscillations)
             % - Parameter phi: phase in radians, (0 <= phi <= 2*pi)
-            % - Parameter u: fluid velocity (m/s)
+            % - Parameter u: fluid velocity in $$\mathrm{m\,s^{-1}}$$
             % - Parameter sign: sign of the frequency, +1 or -1
-            % - Returns omega: frequencies of the waves (radians/s)
-            % - Returns k: wavenumber k of the waves (radians/m)
-            % - Returns l: wavenumber l of the waves (radians/m)
+            % - Returns omega: wave frequencies in $$\mathrm{rad\,s^{-1}}$$
+            % - Returns k: x-direction wavenumbers in $$\mathrm{rad\,m^{-1}}$$
+            % - Returns l: y-direction wavenumbers in $$\mathrm{rad\,m^{-1}}$$
             arguments
                 self WVTransform {mustBeNonempty}
                 options.kMode (:,1) double
@@ -192,11 +192,11 @@ classdef WVInternalGravityWaveMethods < handle
             % - Parameter lMode: integer index, (l0 > -Ny/2 && l0 < Ny/2)
             % - Parameter j: integer index, (j0 >= 1 && j0 <= nModes), unless k=l=0 in which case j=0 is okay (inertial oscillations)
             % - Parameter phi: phase in radians, (0 <= phi <= 2*pi)
-            % - Parameter u: fluid velocity (m/s)
+            % - Parameter u: fluid velocity in $$\mathrm{m\,s^{-1}}$$
             % - Parameter sign: sign of the frequency, +1 or -1
-            % - Returns omega: frequencies of the waves (radians/s)
-            % - Returns k: wavenumber k of the waves (radians/m)
-            % - Returns l: wavenumber l of the waves (radians/m)
+            % - Returns omega: wave frequencies in $$\mathrm{rad\,s^{-1}}$$
+            % - Returns k: x-direction wavenumbers in $$\mathrm{rad\,m^{-1}}$$
+            % - Returns l: y-direction wavenumbers in $$\mathrm{rad\,m^{-1}}$$
             arguments
                 self WVTransform {mustBeNonempty}
                 options.kMode (:,1) double
@@ -587,29 +587,29 @@ classdef WVInternalGravityWaveMethods < handle
             end
             propertyAnnotations = CAPropertyAnnotation.empty(0,0);
 
-            annotation = WVVariableAnnotation('waveEnergy',{},'m^3 s^{-2}', 'total energy, waves');
+            annotation = WVVariableAnnotation('waveEnergy',{},'m3 s-2', 'total energy, waves');
             annotation.isVariableWithLinearTimeStep = 0;
             annotation.isVariableWithNonlinearTimeStep = 1;
             propertyAnnotations(end+1) = annotation;
 
-            propertyAnnotations(end+1) = WVPropertyAnnotation('Omega',options.spectralDimensionNames,'rad s^{-1}', 'intrinsic angular frequency of each wave and inertial mode');
-            propertyAnnotations(end+1) = WVPropertyAnnotation('iOmega',options.spectralDimensionNames,'rad s^{-1}', 'imaginary angular frequency, $$i\Omega$$, used for linear phase evolution',isComplex=1);
+            propertyAnnotations(end+1) = WVPropertyAnnotation('Omega',options.spectralDimensionNames,'rad s-1', 'intrinsic angular frequency of each wave and inertial mode');
+            propertyAnnotations(end+1) = WVPropertyAnnotation('iOmega',options.spectralDimensionNames,'rad s-1', 'imaginary angular frequency, $$i\Omega$$, used for linear phase evolution',isComplex=1);
 
 
-            propertyAnnotations(end+1) = CANumericProperty('ApU',options.spectralDimensionNames,'', 'matrix component that multiplies $$\tilde{u}$$ to compute $$A_p$$.',isComplex=1);
-            propertyAnnotations(end+1) = CANumericProperty('ApV',options.spectralDimensionNames,'', 'matrix component that multiplies $$\tilde{v}$$ to compute $$A_p$$.',isComplex=1);
-            propertyAnnotations(end+1) = CANumericProperty('ApN',options.spectralDimensionNames,'s^{-1}', 'matrix component that multiplies $$\tilde{\eta}$$ to compute $$A_p$$.',isComplex=0);
-            propertyAnnotations(end+1) = CANumericProperty('AmU',options.spectralDimensionNames,'', 'matrix component that multiplies $$\tilde{u}$$ to compute $$A_m$$.',isComplex=1);
-            propertyAnnotations(end+1) = CANumericProperty('AmV',options.spectralDimensionNames,'', 'matrix component that multiplies $$\tilde{v}$$ to compute $$A_m$$.',isComplex=1);
-            propertyAnnotations(end+1) = CANumericProperty('AmN',options.spectralDimensionNames,'s^{-1}', 'matrix component that multiplies $$\tilde{\eta}$$ to compute $$A_m$$.',isComplex=0);
+            propertyAnnotations(end+1) = CANumericProperty('ApU',options.spectralDimensionNames,'1', 'matrix component that multiplies $$\tilde{u}$$ to compute $$A_p$$.',isComplex=1);
+            propertyAnnotations(end+1) = CANumericProperty('ApV',options.spectralDimensionNames,'1', 'matrix component that multiplies $$\tilde{v}$$ to compute $$A_p$$.',isComplex=1);
+            propertyAnnotations(end+1) = CANumericProperty('ApN',options.spectralDimensionNames,'s-1', 'matrix component that multiplies $$\tilde{\eta}$$ to compute $$A_p$$.',isComplex=0);
+            propertyAnnotations(end+1) = CANumericProperty('AmU',options.spectralDimensionNames,'1', 'matrix component that multiplies $$\tilde{u}$$ to compute $$A_m$$.',isComplex=1);
+            propertyAnnotations(end+1) = CANumericProperty('AmV',options.spectralDimensionNames,'1', 'matrix component that multiplies $$\tilde{v}$$ to compute $$A_m$$.',isComplex=1);
+            propertyAnnotations(end+1) = CANumericProperty('AmN',options.spectralDimensionNames,'s-1', 'matrix component that multiplies $$\tilde{\eta}$$ to compute $$A_m$$.',isComplex=0);
 
 
-            propertyAnnotations(end+1) = CANumericProperty('UAp',options.spectralDimensionNames,'', 'matrix component that multiplies $$A_p$$ to compute $$\tilde{u}$$.',isComplex=1);
-            propertyAnnotations(end+1) = CANumericProperty('UAm',options.spectralDimensionNames,'', 'matrix component that multiplies $$A_m$$ to compute $$\tilde{u}$$.',isComplex=1);
-            propertyAnnotations(end+1) = CANumericProperty('VAp',options.spectralDimensionNames,'', 'matrix component that multiplies $$A_p$$ to compute $$\tilde{v}$$.',isComplex=1);
-            propertyAnnotations(end+1) = CANumericProperty('VAm',options.spectralDimensionNames,'', 'matrix component that multiplies $$A_m$$ to compute $$\tilde{v}$$.',isComplex=1);
-            propertyAnnotations(end+1) = CANumericProperty('WAp',options.spectralDimensionNames,'', 'matrix component that multiplies $$A_p$$ to compute $$\tilde{w}$$.',isComplex=1);
-            propertyAnnotations(end+1) = CANumericProperty('WAm',options.spectralDimensionNames,'', 'matrix component that multiplies $$A_m$$ to compute $$\tilde{w}$$.',isComplex=1);
+            propertyAnnotations(end+1) = CANumericProperty('UAp',options.spectralDimensionNames,'1', 'matrix component that multiplies $$A_p$$ to compute $$\tilde{u}$$.',isComplex=1);
+            propertyAnnotations(end+1) = CANumericProperty('UAm',options.spectralDimensionNames,'1', 'matrix component that multiplies $$A_m$$ to compute $$\tilde{u}$$.',isComplex=1);
+            propertyAnnotations(end+1) = CANumericProperty('VAp',options.spectralDimensionNames,'1', 'matrix component that multiplies $$A_p$$ to compute $$\tilde{v}$$.',isComplex=1);
+            propertyAnnotations(end+1) = CANumericProperty('VAm',options.spectralDimensionNames,'1', 'matrix component that multiplies $$A_m$$ to compute $$\tilde{v}$$.',isComplex=1);
+            propertyAnnotations(end+1) = CANumericProperty('WAp',options.spectralDimensionNames,'1', 'matrix component that multiplies $$A_p$$ to compute $$\tilde{w}$$.',isComplex=1);
+            propertyAnnotations(end+1) = CANumericProperty('WAm',options.spectralDimensionNames,'1', 'matrix component that multiplies $$A_m$$ to compute $$\tilde{w}$$.',isComplex=1);
             propertyAnnotations(end+1) = CANumericProperty('NAp',options.spectralDimensionNames,'s', 'matrix component that multiplies $$A_p$$ to compute $$\tilde{\eta}$$.',isComplex=0);
             propertyAnnotations(end+1) = CANumericProperty('NAm',options.spectralDimensionNames,'s', 'matrix component that multiplies $$A_m$$ to compute $$\tilde{\eta}$$.',isComplex=0);
 

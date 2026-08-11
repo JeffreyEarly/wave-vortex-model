@@ -40,13 +40,13 @@ permissions:
 
 jobs:
   call-reusable-release:
-    uses: JeffreyEarly/OceanKit/.github/workflows/reusable-mpm-release.yml@mpm-release-v0.1.0
+    uses: JeffreyEarly/OceanKit/.github/workflows/reusable-mpm-release.yml@mpm-release-v0.1.2
     with:
       bump: ${{ github.event.inputs.bump }}
       notes: ${{ github.event.inputs.notes }}
       shouldBuildWebsiteDocumentation: ${{ github.event.inputs.shouldBuildWebsiteDocumentation }}
       shouldPackageForDistribution: ${{ github.event.inputs.shouldPackageForDistribution }}
-      documentationPackageSpecifier: ClassDocumentation@1.3.0
+      documentationPackageSpecifier: ClassDocumentation@1.3.2
       shouldCheckWebsiteDocumentation: true
       documentationCheckTask: docs:check
       shouldPromoteUnreleased: ${{ github.event.inputs.bump != 'none' }}

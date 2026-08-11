@@ -19,7 +19,7 @@ Largest radial horizontal wavenumber forced, in radians per meter.
 + Size: `(1,1)`
 
 ## Description
-Real valued property with no dimensions and units of $$rad m^{-1}$$.
+Real valued property with no dimensions and units of $$\mathrm{rad\,m^{-1}}$$.
 
 ## Discussion
 

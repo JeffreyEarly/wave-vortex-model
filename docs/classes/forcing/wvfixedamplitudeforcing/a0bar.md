@@ -9,7 +9,7 @@ mathjax: true
 
 #  A0bar
 
-Prescribed `A0` values in $$\mathrm{m^2\,s^{-1}}$$.
+Prescribed `A0` values in $$\mathrm{m^{2}\,s^{-1}}$$.
 
 
 ---
@@ -19,7 +19,7 @@ Prescribed `A0` values in $$\mathrm{m^2\,s^{-1}}$$.
 + Size: `(:,1)`
 
 ## Description
-Complex valued property with dimension $$A0_indices$$ and no units.
+Complex valued property with dimension $$A0_indices$$ and units of $$\mathrm{m^{2}\,s^{-1}}$$.
 
 ## Discussion
 

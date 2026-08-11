@@ -15,4 +15,4 @@ Gridded x-coordinate array in meters with shape `[Nx Ny]`.
 ---
 
 ## Description
-Real valued property with dimensions $$(x,y)$$ and units of $$m$$.
+Real valued property with dimensions $$(x,y)$$ and units of $$\mathrm{m}$$.

@@ -15,4 +15,4 @@ total energy, geostrophic
 ---
 
 ## Description
-Real valued property with no dimensions and units of $$m^3 s^{-2}$$.
+Real valued property with no dimensions and units of $$\mathrm{m^{3}\,s^{-2}}$$.

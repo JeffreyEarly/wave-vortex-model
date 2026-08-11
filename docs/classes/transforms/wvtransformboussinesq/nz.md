@@ -15,7 +15,7 @@ Number of vertical spatial grid points.
 ---
 
 ## Description
-Real valued property with no dimensions and no units.
+Real valued property with no dimensions and is dimensionless.
 
 ## Discussion
 Number of vertical spatial grid points.

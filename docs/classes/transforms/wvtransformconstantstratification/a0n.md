@@ -17,7 +17,7 @@ Projects density displacement onto $$A_0$$.
 ---
 
 ## Description
-Real valued property with dimensions $$(j,kl)$$ and no units.
+Real valued property with dimensions $$(j,kl)$$ and units of $$\mathrm{m\,s^{-1}}$$.
 
 ## Discussion
 Projects density displacement onto $$A_0$$.

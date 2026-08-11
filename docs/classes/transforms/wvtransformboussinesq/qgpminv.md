@@ -9,7 +9,7 @@ mathjax: true
 
 #  QGpmInv
 
-Preconditioned G-mode inverse transformation
+dimensionless preconditioned G-mode inverse transformation
 
 > Developer documentation: this item describes internal implementation details.
 
@@ -17,4 +17,4 @@ Preconditioned G-mode inverse transformation
 ---
 
 ## Description
-Real valued property with dimensions $$(z,j,K2unique)$$ and no units.
+Real valued property with dimensions $$(z,j,K2unique)$$ and is dimensionless.
