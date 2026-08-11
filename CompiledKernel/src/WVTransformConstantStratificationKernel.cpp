@@ -247,7 +247,7 @@ std::size_t WVTransformConstantStratificationKernel::persistentBytes() const noe
 }
 
 const char* WVTransformConstantStratificationKernel::nonlinearFluxScheduleIdentifier() const noexcept {
-    return "sequential";
+    return "sequential-phase-once";
 }
 
 WVKernelStatus WVTransformConstantStratificationKernel::transformUVEtaToWaveVortex(
@@ -265,7 +265,7 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformUVEtaToWaveVort
 }
 
 WVKernelStatus WVTransformConstantStratificationKernel::transformUVEtaToWaveVortexImpl(
-    const WVRealFieldBundleConstView& fields, double t, double t0, WVMutableCoefficients& coefficients) {
+    const WVRealFieldBundleConstView& fields, double t, double t0, WVMutableCoefficients& coefficients, WVComplexConstView phaseValues) {
     const auto& c = descriptor_.configuration();
     const auto& mapping = descriptor_.halfSpectrumMappings();
     const auto& modes = descriptor_.verticalModes();
@@ -301,7 +301,7 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformUVEtaToWaveVort
             Ap = multiply(inertial, 0.5 * modes.Fwg[index] / modes.Fg[index]);
             Am = conjugate(Ap);
         }
-        const auto p = phase(modes.omega[index] * (t - t0));
+        const auto p = phaseValues.data == nullptr ? phase(modes.omega[index] * (t - t0)) : phaseValues.data[index];
         coefficients.Ap.data[index] = multiply(Ap, conjugate(p));
         coefficients.Am.data[index] = multiply(Am, p);
         coefficients.A0.data[index] = A0;
@@ -324,7 +324,7 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformUVWEtaToWaveVor
 }
 
 WVKernelStatus WVTransformConstantStratificationKernel::transformUVWEtaToWaveVortexImpl(
-    const WVRealFieldBundleConstView& fields, double t, double t0, WVMutableCoefficients& coefficients) {
+    const WVRealFieldBundleConstView& fields, double t, double t0, WVMutableCoefficients& coefficients, WVComplexConstView phaseValues) {
     const auto& c = descriptor_.configuration(); const auto& mapping = descriptor_.halfSpectrumMappings(); const auto& modes = descriptor_.verticalModes();
     const std::size_t halfRows = mapping.NxHalf * c.Ny;
     auto* half = reinterpret_cast<WVComplex64*>(halfSpectrumScratch_.data());
@@ -352,7 +352,7 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformUVWEtaToWaveVor
         auto Ap = add(add(delta, wBar), multiply(nwBar, modes.ApmN[index]));
         auto Am = subtract(add(delta, wBar), multiply(nwBar, modes.ApmN[index]));
         if (iMode == 0) { const auto inertial = subtract(U, multiply(V, WVComplex64{0.0, 1.0})); Ap = multiply(inertial, 0.5 * modes.Fwg[index] / modes.Fg[index]); Am = conjugate(Ap); }
-        const auto p = phase(modes.omega[index] * (t - t0)); coefficients.Ap.data[index] = multiply(Ap, conjugate(p)); coefficients.Am.data[index] = multiply(Am, p); coefficients.A0.data[index] = A0;
+        const auto p = phaseValues.data == nullptr ? phase(modes.omega[index] * (t - t0)) : phaseValues.data[index]; coefficients.Ap.data[index] = multiply(Ap, conjugate(p)); coefficients.Am.data[index] = multiply(Am, p); coefficients.A0.data[index] = A0;
     }
     return WVKernelStatus::ok();
 }
@@ -367,13 +367,21 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformWaveVortexToUVW
     return transformWaveVortexToUVWEtaImpl(state,fields);
 }
 
-WVKernelStatus WVTransformConstantStratificationKernel::transformWaveVortexToUVWEtaImpl(const WVState& state, WVRealFieldBundleView& fields) {
+WVKernelStatus WVTransformConstantStratificationKernel::transformWaveVortexToUVWEtaImpl(const WVState& state, WVRealFieldBundleView& fields, const WVCoefficients* evolvedCoefficients) {
     const auto& c = descriptor_.configuration(); const auto& mapping = descriptor_.halfSpectrumMappings(); const auto& modes = descriptor_.verticalModes();
     const std::size_t halfRows = mapping.NxHalf * c.Ny; auto* half = reinterpret_cast<WVComplex64*>(halfSpectrumScratch_.data());
     std::fill(half,half + c.Nz * 4 * halfRows,WVComplex64{});
     for (std::size_t iMode = 0; iMode < descriptor_.Nkl(); ++iMode) for (std::size_t j = 0; j < c.Nj; ++j) {
-        const auto index = j + c.Nj * iMode; const auto p = phase(modes.omega[index] * (state.t - state.t0));
-        const auto Ap = multiply(state.coefficients.Ap.data[index], p); const auto Am = multiply(state.coefficients.Am.data[index], conjugate(p)); const auto A0 = state.coefficients.A0.data[index];
+        const auto index = j + c.Nj * iMode;
+        WVComplex64 Ap;
+        WVComplex64 Am;
+        WVComplex64 A0;
+        if (evolvedCoefficients == nullptr) {
+            const auto p = phase(modes.omega[index] * (state.t - state.t0));
+            Ap = multiply(state.coefficients.Ap.data[index], p); Am = multiply(state.coefficients.Am.data[index], conjugate(p)); A0 = state.coefficients.A0.data[index];
+        } else {
+            Ap = evolvedCoefficients->Ap.data[index]; Am = evolvedCoefficients->Am.data[index]; A0 = evolvedCoefficients->A0.data[index];
+        }
         const auto UWave = add(multiply(modes.UAp[index],Ap),multiply(modes.UAm[index],Am));
         const auto VWave = add(multiply(modes.VAp[index],Ap),multiply(modes.VAm[index],Am));
         const auto WWave = add(multiply(modes.WAp[index],Ap),multiply(modes.WAm[index],Am));
@@ -450,7 +458,7 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformToSpatialDomain
 }
 
 WVKernelStatus WVTransformConstantStratificationKernel::transformToSpatialDomainWithDerivativesImpl(
-    const WVState& state, std::size_t target, WVRealFieldBundleView& derivatives) {
+    const WVCoefficients& evolvedCoefficients, std::size_t target, WVRealFieldBundleView& derivatives) {
     const auto& c = descriptor_.configuration();
     const auto& mapping = descriptor_.halfSpectrumMappings();
     const auto& modes = descriptor_.verticalModes();
@@ -460,10 +468,9 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformToSpatialDomain
     const bool cosine = target < 2;
     for (std::size_t mode = 0; mode < descriptor_.Nkl(); ++mode) for (std::size_t j = 0; j < c.Nj; ++j) {
         const auto index = j + c.Nj * mode;
-        const auto p = phase(modes.omega[index] * (state.t - state.t0));
-        const auto Ap = multiply(state.coefficients.Ap.data[index],p);
-        const auto Am = multiply(state.coefficients.Am.data[index],conjugate(p));
-        const auto A0 = state.coefficients.A0.data[index];
+        const auto Ap = evolvedCoefficients.Ap.data[index];
+        const auto Am = evolvedCoefficients.Am.data[index];
+        const auto A0 = evolvedCoefficients.A0.data[index];
         const auto modal = modalValueForTarget(modes,index,target,Ap,Am,A0);
         const auto value = multiply(modal,cosine ? modes.Fg[index] : modes.Gg[index]);
         const auto& horizontal = descriptor_.fourierModes()[mode];
@@ -499,10 +506,26 @@ WVKernelStatus WVTransformConstantStratificationKernel::nonlinearFlux(const WVSt
     ExecutionGuard guard(executing_);
     if (!guard.entered()) return {WVKernelStatusCode::reentrantExecution,"Kernel operations are not reentrant."};
 
+    const auto spectral = descriptor_.spectralShape();
+    const auto phaseEvaluationCount = spectral.elementCount();
+    const auto& modes = descriptor_.verticalModes();
+    // The validated flux arrays are disjoint from the state and from each other. Until final projection,
+    // reuse them for A+(t), A-(t), and P=exp(i*omega*(t-t0)) instead of adding an array-sized workspace.
+    for (std::size_t index = 0; index < phaseEvaluationCount; ++index) {
+        const auto p = phase(modes.omega[index] * (state.t - state.t0));
+        flux.Fp.data[index] = multiply(state.coefficients.Ap.data[index],p);
+        flux.Fm.data[index] = multiply(state.coefficients.Am.data[index],conjugate(p));
+        flux.F0.data[index] = p;
+    }
+    ++metrics_.nonlinearFluxCallCount;
+    metrics_.nonlinearFluxPhaseEvaluationCount += phaseEvaluationCount;
+    const WVCoefficients evolvedCoefficients{{flux.Fp.data,spectral},{flux.Fm.data,spectral},state.coefficients.A0};
+    const WVComplexConstView phaseValues{flux.F0.data,spectral};
+
     const auto spatial = descriptor_.spatialShape();
     const auto fieldElements = spatial.elementCount();
     WVRealFieldBundleView advectingFields{realScratch_.data(),{spatial.first,spatial.second,spatial.third,4}};
-    status = transformWaveVortexToUVWEtaImpl(state,advectingFields);
+    status = transformWaveVortexToUVWEtaImpl(state,advectingFields,&evolvedCoefficients);
     if (!status) return status;
 
     const std::size_t targetCount = descriptor_.configuration().isHydrostatic ? 3 : 4;
@@ -512,7 +535,7 @@ WVKernelStatus WVTransformConstantStratificationKernel::nonlinearFlux(const WVSt
     for (std::size_t iTarget = 0; iTarget < targetCount; ++iTarget) {
         double* derivativeData = realScratch_.data() + (3 + iTarget) * fieldElements;
         WVRealFieldBundleView derivatives{derivativeData,{spatial.first,spatial.second,spatial.third,3}};
-        status = transformToSpatialDomainWithDerivativesImpl(state,targets[iTarget],derivatives);
+        status = transformToSpatialDomainWithDerivativesImpl(evolvedCoefficients,targets[iTarget],derivatives);
         if (!status) return status;
         const double* U = realScratch_.data();
         const double* V = U + fieldElements;
@@ -525,7 +548,8 @@ WVKernelStatus WVTransformConstantStratificationKernel::nonlinearFlux(const WVSt
     const double* fluxFields = realScratch_.data() + 3 * fieldElements;
     const WVRealFieldBundleConstView fields{fluxFields,{spatial.first,spatial.second,spatial.third,targetCount}};
     WVMutableCoefficients coefficients{flux.Fp,flux.Fm,flux.F0};
-    return descriptor_.configuration().isHydrostatic ? transformUVEtaToWaveVortexImpl(fields,state.t,state.t0,coefficients) : transformUVWEtaToWaveVortexImpl(fields,state.t,state.t0,coefficients);
+    // Each projection iteration reads its saved phase before replacing the corresponding F0 element.
+    return descriptor_.configuration().isHydrostatic ? transformUVEtaToWaveVortexImpl(fields,state.t,state.t0,coefficients,phaseValues) : transformUVWEtaToWaveVortexImpl(fields,state.t,state.t0,coefficients,phaseValues);
 }
 
 } // namespace wavevortex

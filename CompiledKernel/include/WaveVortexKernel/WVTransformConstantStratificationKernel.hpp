@@ -18,6 +18,8 @@ struct WVKernelMetrics {
     std::size_t executionCount = 0;
     std::size_t horizontalExecutionCount = 0;
     std::size_t verticalExecutionCount = 0;
+    std::size_t nonlinearFluxCallCount = 0;
+    std::size_t nonlinearFluxPhaseEvaluationCount = 0;
     std::size_t bytesCopied = 0;
 };
 
@@ -49,10 +51,10 @@ public:
 private:
     WVTransformConstantStratificationKernel() = default;
     WVKernelStatus preparePlans();
-    WVKernelStatus transformUVEtaToWaveVortexImpl(const WVRealFieldBundleConstView& fields, double t, double t0, WVMutableCoefficients& coefficients);
-    WVKernelStatus transformUVWEtaToWaveVortexImpl(const WVRealFieldBundleConstView& fields, double t, double t0, WVMutableCoefficients& coefficients);
-    WVKernelStatus transformWaveVortexToUVWEtaImpl(const WVState& state, WVRealFieldBundleView& fields);
-    WVKernelStatus transformToSpatialDomainWithDerivativesImpl(const WVState& state, std::size_t target, WVRealFieldBundleView& derivatives);
+    WVKernelStatus transformUVEtaToWaveVortexImpl(const WVRealFieldBundleConstView& fields, double t, double t0, WVMutableCoefficients& coefficients, WVComplexConstView phaseValues = {});
+    WVKernelStatus transformUVWEtaToWaveVortexImpl(const WVRealFieldBundleConstView& fields, double t, double t0, WVMutableCoefficients& coefficients, WVComplexConstView phaseValues = {});
+    WVKernelStatus transformWaveVortexToUVWEtaImpl(const WVState& state, WVRealFieldBundleView& fields, const WVCoefficients* evolvedCoefficients = nullptr);
+    WVKernelStatus transformToSpatialDomainWithDerivativesImpl(const WVCoefficients& evolvedCoefficients, std::size_t target, WVRealFieldBundleView& derivatives);
     WVTransformConstantStratificationDescriptor descriptor_;
     std::unique_ptr<WVFFTEngine> engine_;
     std::string engineIdentifier_;

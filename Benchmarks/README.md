@@ -63,3 +63,5 @@ The ledger covers compact Fourier mappings, the reused builtin inverse buffer, d
 ## Compiled transform components
 
 `runCompiledKernelTransformBenchmark` measures the issue #49/#50 portable C++ transform core through an authoring-only MEX gateway. It compares complete forward projection, inverse reconstruction, and fused F/G value-plus-derivative calls with MATLAB. The gateway links locally to the active MATLAB installation's FFTW library; no MEX product or FFTW library is tracked. Component speedups are descriptive and do not decide whether the later nonlinear kernel is ready.
+
+`runCompiledKernelPhaseOnceBenchmark` compares the isolated kernel baseline at commit `199c9b8` with the current candidate in fresh processes. It verifies that ordinary `nonlinearFlux` evaluates its time-dependent phase exactly once per `[Nj,Nkl]` coefficient while reporting complete timing, exact live storage, and peak RSS. The benchmark creates and removes a temporary detached worktree for the baseline; it never modifies `main`.
