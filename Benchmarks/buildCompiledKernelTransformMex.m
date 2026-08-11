@@ -10,7 +10,7 @@ includeDirectory = fullfile(repositoryRoot,"CompiledKernel","include");
 gatewayDirectory = fullfile(repositoryRoot,"Benchmarks","compiled-kernel");
 gateway = fullfile(gatewayDirectory,"wv_compiled_transform_mex.cpp");
 fftwInclude = fullfile(matlabroot,"extern","include");
-fftwLibrary = fullfile(matlabroot,"bin",computer("arch"),"libmwfftw3.3.dylib");
+fftwLibrary = matlabBundledFFTWLibrary;
 if ~isfolder(options.outputDirectory), mkdir(options.outputDirectory); end
 if options.outputName == ""
     options.outputName = "wv_compiled_transform_mex";

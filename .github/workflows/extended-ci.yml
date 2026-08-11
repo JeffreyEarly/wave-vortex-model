@@ -38,6 +38,9 @@ jobs:
           path: OceanKit
           persist-credentials: false
 
+      - name: Install NetCDF C development library
+        run: sudo apt-get update && sudo apt-get install --yes libnetcdf-dev pkg-config
+
       - name: Set up MATLAB R2025b
         uses: matlab-actions/setup-matlab@v3
         with:
@@ -121,6 +124,9 @@ jobs:
           ref: ${{ env.OCEANKIT_COMMIT }}
           path: OceanKit
           persist-credentials: false
+
+      - name: Install NetCDF C development library
+        run: sudo apt-get update && sudo apt-get install --yes libnetcdf-dev pkg-config
 
       - name: Set up MATLAB R2025b with Optimization Toolbox
         uses: matlab-actions/setup-matlab@v3

@@ -42,7 +42,9 @@ classdef TestWaveVortexBuiltinStorageBenchmark < matlab.unittest.TestCase
             testCase.verifyEqual(fullBuffer.bytes,16*prod([16 16 9]));
             testCase.verifyEqual(nnz(startsWith(string({entries.identifier}),"vertical.matrix.")),4);
         end
+    end
 
+    methods (Test,TestTags="local")
         function oneCommandBenchmarkWritesJSONAndMarkdown(testCase)
             outputDirectory = fullfile(testCase.temporaryFolder,"storage-result");
             results = runWaveVortexBuiltinStorageBenchmark(suiteId="smoke-v1",caseIds="smoke-constant-nonhydrostatic",processRunCount=1,samplingIntervalSeconds=0.01,plateauSeconds=0.08,outputDirectory=outputDirectory);

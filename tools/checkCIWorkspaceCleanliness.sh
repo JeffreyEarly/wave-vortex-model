@@ -27,7 +27,11 @@ artifact_paths="$(find . -path './.git' -prune -o -type f \( \
     -path '*/profiling-output/*' -o \
     -path '*/test-results/*' -o \
     -path '*/TestResults/*' \
-\) -print | sort)"
+\) -print | sort | grep -Fvx \
+    -e './tools/portable-runtime/fixtures/root-hydrostatic.nc' \
+    -e './tools/portable-runtime/fixtures/root-nonhydrostatic.nc' \
+    -e './tools/portable-runtime/fixtures/time-series-hydrostatic.nc' \
+    -e './tools/portable-runtime/fixtures/time-series-nonhydrostatic.nc' || true)"
 
 if [[ -n "${artifact_paths}" ]]; then
     printf 'Unexpected generated artifacts:\n%s\n' "${artifact_paths}"

@@ -61,6 +61,9 @@ classdef TestCompiledKernelContract < matlab.unittest.TestCase
             end
         end
 
+    end
+
+    methods (Test,TestTags="local")
         function baselineWrapperProducesCompleteArtifacts(testCase)
             repositoryRoot = fileparts(fileparts(mfilename("fullpath")));
             addpath(fullfile(repositoryRoot,"Benchmarks"));
@@ -95,6 +98,9 @@ repositoryRoot = fileparts(fileparts(mfilename("fullpath")));
 executable = fullfile(repositoryRoot,"tools","compiled-kernel","build","WVKernelDescriptorDump");
 arguments = [definition.Nxyz(1:3) Nj definition.Lxyz 5.2e-3 1025 9.81 7.2921e-5 33 definition.isHydrostatic definition.shouldAntialias];
 command = sprintf('"%s" %s',executable,strjoin(compose("%.17g",arguments)," "));
+if isunix
+    command = "/usr/bin/env -u LD_LIBRARY_PATH -u DYLD_LIBRARY_PATH -u DYLD_FALLBACK_LIBRARY_PATH "+command;
+end
 [status,output] = system(command);
 if status ~= 0
     error("WaveVortexModel:KernelDescriptorDumpFailed","%s",output);

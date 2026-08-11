@@ -78,7 +78,7 @@ classdef TestCompiledKernelTransforms < matlab.unittest.TestCase
                 verifyRelative(testCase,actualF0,expectedF0,"F0 nonlinear flux");
                 metrics = wv_compiled_transform_mex('metrics',handle);
                 testCase.verifyEqual(string(metrics.engine),"fftw");
-                expectedLibrary = string(fullfile(matlabroot,"bin",computer("arch"),"libmwfftw3.3.dylib"));
+                expectedLibrary = matlabBundledFFTWLibrary;
                 testCase.verifyEqual(string(metrics.loadedLibrary),expectedLibrary);
                 testCase.verifyEqual(metrics.contractVersion,3);
                 testCase.verifyEqual(metrics.planCount,14);
@@ -169,7 +169,9 @@ classdef TestCompiledKernelTransforms < matlab.unittest.TestCase
             testCase.verifyEqual(final.outstandingPlanningBytes,0);
             testCase.verifyEqual(final.totalPlansCreated-final.totalPlansDestroyed,final.activePlans);
         end
+    end
 
+    methods (Test,TestTags="local")
         function validationHarnessProducesFreshProcessEvidence(testCase)
             repositoryRoot = fileparts(fileparts(mfilename("fullpath")));
             addpath(fullfile(repositoryRoot,"Benchmarks"));
@@ -240,7 +242,9 @@ classdef TestCompiledKernelTransforms < matlab.unittest.TestCase
             testCase.verifyEqual(string(decoded.schemaVersion),"1.0.0");
             clear cleanup
         end
+    end
 
+    methods (Test,TestTags="optional")
         function phaseOnceDecisionHandlesMultipleGateSizes(testCase)
             mediumHydro=decisionCase([256 256 65],true,true); mediumNonhydro=decisionCase([256 256 65],false,true);
             largeHydro=decisionCase([512 512 129],true,false); largeNonhydro=decisionCase([512 512 129],false,false);
