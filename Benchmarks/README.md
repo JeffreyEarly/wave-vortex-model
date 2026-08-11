@@ -21,9 +21,31 @@ The registered suites are:
 
 The runner accepts more than one suite and a subset of case IDs. Suite definitions are versioned in `waveVortexBenchmarkSuites`; changing a case matrix or score definition requires a new suite version. Backends are selected independently from transform families through `waveVortexBenchmarkBackends`.
 
-Every scored case is normalized against its matching committed builtin reference. Case score 100 matches the reference. Family and suite scores use geometric means, with transform families weighted equally. Same-host builtin-to-candidate speedups are reported separately.
+Every scored case is normalized against the builtin reference registered for its suite in `results/catalog.json`. The runner reads the catalog entry directly; it does not infer a reference from a machine model, MATLAB release, or backend name. Case score 100 matches the reference. Family and suite scores use geometric means, with transform families weighted equally. Same-host builtin-to-candidate speedups are reported separately.
 
 Ordinary artifacts are written beneath the ignored `results/runs` directory. Immutable reference artifacts live beneath `results/reference`. Memory measurements use a fresh MATLAB process and report baseline, persistent, and peak-observed resident memory; these process measurements include MATLAB runtime and allocator behavior.
+
+Reference generation is an explicit authoring operation. Supply `shouldCreateReference=true` together with a temporary or candidate `referenceDirectory`; the runner writes `<referenceDirectory>/<suiteId>` and never edits the catalog automatically. Review and catalog approval are separate steps.
+
+## Raw and published benchmark data
+
+The detailed MATLAB runner artifact is implementation-specific. It retains construction time, cache diagnostics, scoring fields, failures, and other information useful to benchmark authors. Future raw artifacts use schema `1.1.0`, which adds the WaveVortexModel package version and a human-readable processor name without changing the measured operation.
+
+Public results use the language-neutral schema in `schemas/published-benchmark-v1.schema.json`. One published dataset represents one suite, implementation, backend, platform, and run. It contains the timing samples, median runtime, correctness result, and process-memory measurements needed by the benchmark website without requiring consumers to understand MATLAB runner internals. Missing implementation coverage is recorded as `unavailable`; it is never treated as failed or zero performance.
+
+Normalize a MATLAB artifact with explicit platform identity and repository-relative provenance:
+
+```matlab
+dataset = publishedWaveVortexBenchmarkFromMatlabArtifact(rawPath,suiteId="scaling-standard-v1",platformId="m5-max",platformName="Apple M5 Max",provenancePath="Benchmarks/results/reference/example/benchmark.json");
+```
+
+Legacy `1.0.0` artifacts do not contain a package version or useful processor name, so normalization also requires `implementationVersion` and `processorName`. The original raw artifact is read-only and is never rewritten.
+
+The normalizer returns an ordinary MATLAB structure in canonical field order. Authors can inspect it or encode it with `jsonencode`; Issue #140 owns the reviewed process for writing and registering public datasets.
+
+Published dataset IDs use `<suite>--<implementation>-<backend>--<platform>--<UTC timestamp>`. Approved datasets are listed in `results/catalog.json`; the catalog entry points to the dataset instead of duplicating its machine or implementation metadata. The benchmark website work in Issue #139 owns the comparison rules needed for its plots and tables.
+
+The catalog intentionally excludes transform-layout, storage, retirement, and other engineering gates. Those artifacts continue to support implementation decisions but are not public performance datasets.
 
 The large suites can require substantial time and memory. A partial result is valid, but a family or suite receives no aggregate score unless every required case completes.
 

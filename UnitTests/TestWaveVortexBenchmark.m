@@ -71,10 +71,13 @@ classdef TestWaveVortexBenchmark < matlab.unittest.TestCase
             results = runWaveVortexBenchmark(suites="smoke-v1",caseIds="smoke-constant-hydrostatic",outputDirectory=runFolder,referenceDirectory=referenceFolder,shouldMeasureMemory=false,shouldCreateReference=true,runId="test-run");
             testCase.verifyTrue(isfile(fullfile(runFolder,"benchmark.json")));
             testCase.verifyTrue(isfile(fullfile(runFolder,"summary.md")));
-            referencePath = fullfile(referenceFolder,"smoke-v1-m5-max-r2026a-builtin");
+            referencePath = fullfile(referenceFolder,"smoke-v1");
             testCase.verifyTrue(isfile(fullfile(referencePath,"benchmark.json")));
             decoded = jsondecode(fileread(fullfile(runFolder,"benchmark.json")));
-            testCase.verifyEqual(string(decoded.schemaVersion),"1.0.0");
+            testCase.verifyEqual(string(decoded.schemaVersion),"1.1.0");
+            testCase.verifyEqual(string(decoded.environment.packageName),"WaveVortexModel");
+            testCase.verifyEqual(string(decoded.environment.packageVersion),"4.2.1");
+            testCase.verifyNotEmpty(string(decoded.environment.processorName));
             testCase.verifyEqual(decoded.suites.cases.backends.caseScore,100);
             summary = fileread(fullfile(runFolder,"summary.md"));
             testCase.verifySubstring(summary,"## Suite scores");
@@ -85,6 +88,29 @@ classdef TestWaveVortexBenchmark < matlab.unittest.TestCase
             testCase.verifyEqual(results.runId,"test-run");
             testCase.verifyEqual(results.status,"partial");
             testCase.verifyFalse(results.suites.selectionIsComplete);
+        end
+
+        function referenceCreationRequiresExplicitGenericDirectory(testCase)
+            testCase.verifyError(@()runWaveVortexBenchmark(suites="smoke-v1",shouldMeasureMemory=false,shouldWriteArtifacts=false,shouldCreateReference=true),"WaveVortexBenchmark:ReferenceDirectoryRequired");
+            testCase.verifyError(@()runWaveVortexBenchmark(suites="smoke-v1",referenceDirectory=testCase.temporaryFolder,shouldMeasureMemory=false,shouldWriteArtifacts=false),"WaveVortexBenchmark:ReferenceDirectoryNotApplicable");
+        end
+
+        function catalogScoringPreservesReferenceCalculation(testCase)
+            caseId = "barotropic-qg-128x128";
+            results = runWaveVortexBenchmark(suites="scaling-standard-v1",caseIds=caseId,shouldMeasureMemory=false,shouldWriteArtifacts=false);
+            backend = results.suites.cases.backends;
+            catalog = jsondecode(fileread(fullfile(testCase.benchmarkFolder,"results","catalog.json")));
+            reference = catalog.scoringReferences(string({catalog.scoringReferences.suiteId}) == "scaling-standard-v1");
+            relativePath = string(reference.rawArtifact);
+            referencePath = fullfile(testCase.repositoryRoot,relativePath);
+            reference = jsondecode(fileread(referencePath));
+            referenceIndex = find(string({reference.suites.cases.id}) == caseId,1);
+            referenceMedian = reference.suites.cases(referenceIndex).backends.medianSeconds;
+
+            testCase.verifyEqual(results.suites.referenceArtifact,relativePath);
+            testCase.verifyEqual(backend.referenceMedianSeconds,referenceMedian);
+            testCase.verifyEqual(backend.caseScore,100*referenceMedian/backend.medianSeconds,RelTol=1e-14);
+            testCase.verifyTrue(isfinite(backend.caseScore));
         end
 
         function freshProcessMemoryIsRecorded(testCase)
