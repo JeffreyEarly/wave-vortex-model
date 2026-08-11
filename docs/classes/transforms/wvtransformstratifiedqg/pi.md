@@ -15,4 +15,4 @@ height anomaly
 ---
 
 ## Description
-Real valued property with dimensions $$(x,y,z)$$ and units of $$m$$.
+Real valued property with dimensions $$(x,y,z)$$ and units of $$\mathrm{m}$$.

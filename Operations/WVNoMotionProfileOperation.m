@@ -8,7 +8,7 @@ classdef WVNoMotionProfileOperation < WVOperation
         function self = WVNoMotionProfileOperation()
             arguments
             end
-            outputVariables(1) = WVVariableAnnotation('rho_nm',{'z'},'kg m^{-3}', 'no-motion density profile');
+            outputVariables(1) = WVVariableAnnotation('rho_nm',{'z'},'kg m-3', 'no-motion density profile');
             % outputVariables(1).isVariableWithLinearTimeStep = false;
             self@WVOperation('rho_nm',outputVariables,@disp);
 

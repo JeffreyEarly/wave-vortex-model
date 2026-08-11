@@ -15,4 +15,4 @@ $$\partial_z \ln N^2$$, vertical derivative of the logarithm of squared buoyancy
 ---
 
 ## Description
-Real valued property with dimension $$z$$ and units of $$m^{-1}$$.
+Real valued property with dimension $$z$$ and units of $$\mathrm{m^{-1}}$$.

@@ -9,7 +9,7 @@ mathjax: true
 
 #  shouldAntialias
 
-whether to antialias
+logical flag indicating whether to antialias the tracer
 
 > Developer documentation: this item describes internal implementation details.
 
@@ -17,4 +17,4 @@ whether to antialias
 ---
 
 ## Description
-Real valued property with no dimensions and units of $$bool$$.
+Real valued property with no dimensions and is dimensionless.

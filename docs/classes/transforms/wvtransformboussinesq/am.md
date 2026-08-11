@@ -15,7 +15,7 @@ Negative-frequency wave–vortex coefficient array.
 ---
 
 ## Description
-Complex valued property with dimensions $$(j,kl)$$ and units of $$m/s$$.
+Complex valued property with dimensions $$(j,kl)$$ and units of $$\mathrm{m\,s^{-1}}$$.
 
 ## Discussion
 Negative-frequency wave–vortex coefficient array.

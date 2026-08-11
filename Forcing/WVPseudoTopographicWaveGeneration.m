@@ -594,13 +594,13 @@ classdef WVPseudoTopographicWaveGeneration < WVForcing
             propertyAnnotations = CAPropertyAnnotation.empty(0,0);
             propertyAnnotations(end+1) = CADimensionProperty('barotropicVelocityComponent','1','barotropic-velocity component; 1 is zonal and 2 is meridional');
             propertyAnnotations(end+1) = CANumericProperty('topographicHeight',{'x','y'},'m','upward-positive topographic height');
-            propertyAnnotations(end+1) = CANumericProperty('barotropicVelocityAmplitude',{'barotropicVelocityComponent'},'m s^{-1}','complex barotropic-velocity amplitude',isComplex=true);
-            propertyAnnotations(end+1) = CANumericProperty('frequency',{},'rad s^{-1}','barotropic angular frequency');
+            propertyAnnotations(end+1) = CANumericProperty('barotropicVelocityAmplitude',{'barotropicVelocityComponent'},'m s-1','complex barotropic-velocity amplitude',isComplex=true);
+            propertyAnnotations(end+1) = CANumericProperty('frequency',{},'rad s-1','barotropic angular frequency');
             propertyAnnotations(end+1) = CAPropertyAnnotation('darwinSymbol','Darwin symbol used to select the frequency, or empty for a custom frequency');
             propertyAnnotations(end+1) = CANumericProperty('rampDuration',{},'s','half-cosine startup-ramp duration');
             propertyAnnotations(end+1) = CANumericProperty('startTime',{},'s','model time at which the forcing begins');
-            propertyAnnotations(end+1) = CANumericProperty('shouldAvoidAdaptiveDamping',{},'bool','whether generation avoids active adaptive damping');
-            propertyAnnotations(end+1) = CANumericProperty('maximumForcedHorizontalWavenumber',{},'rad m^{-1}','largest radial horizontal wavenumber receiving generation');
+            propertyAnnotations(end+1) = CANumericProperty('shouldAvoidAdaptiveDamping',{},'1','logical flag indicating whether generation avoids active adaptive damping');
+            propertyAnnotations(end+1) = CANumericProperty('maximumForcedHorizontalWavenumber',{},'rad m-1','largest radial horizontal wavenumber receiving generation');
             propertyAnnotations(end+1) = CANumericProperty('maximumForcedVerticalMode',{},'1','largest vertical wave-mode index receiving generation');
             propertyAnnotations(end+1) = CAPropertyAnnotation('name','name of the forcing');
         end

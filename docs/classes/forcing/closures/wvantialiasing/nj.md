@@ -15,7 +15,7 @@ Number of retained vertical modes.
 ---
 
 ## Description
-Real valued property with no dimensions and units of $$1$$.
+Real valued property with no dimensions and is dimensionless.
 
 ## Discussion
 

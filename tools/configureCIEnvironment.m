@@ -2,7 +2,7 @@ function configureCIEnvironment(sourceRoot,oceanKitRoot,options)
 arguments
     sourceRoot (1,1) string {mustBeFolder}
     oceanKitRoot (1,1) string {mustBeFolder}
-    options.documentationPackageSpecifier (1,1) string {mustBeMember(options.documentationPackageSpecifier,["","ClassDocumentation@1.3.0"])} = ""
+    options.documentationPackageSpecifier (1,1) string {mustBeMember(options.documentationPackageSpecifier,["","ClassDocumentation@1.3.2"])} = ""
 end
 
 % Routine CI loads the pinned package snapshots directly to minimize setup

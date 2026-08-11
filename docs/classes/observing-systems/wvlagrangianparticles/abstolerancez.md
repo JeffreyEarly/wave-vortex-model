@@ -15,4 +15,4 @@ absolute tolerance for the adaptive integrator in z direction
 ---
 
 ## Description
-Real valued property with no dimensions and units of $$m$$.
+Real valued property with no dimensions and units of $$\mathrm{m}$$.

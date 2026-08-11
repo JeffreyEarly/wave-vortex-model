@@ -63,7 +63,7 @@ classdef WVVerticalDiffusivity < WVForcing
     %
     % - Declaration: WVVerticalDiffusivity < [WVForcing](/classes/forcing/wvforcing/)
     properties
-        % Configured vertical diffusivity in $$\mathrm{m^2\,s^{-1}}$$.
+        % Configured vertical diffusivity in $$\mathrm{m^{2}\,s^{-1}}$$.
         %
         % The constructor default is `1e-5`.
         %
@@ -176,8 +176,8 @@ classdef WVVerticalDiffusivity < WVForcing
                 propertyAnnotations CAPropertyAnnotation
             end
             propertyAnnotations = CAPropertyAnnotation.empty(0,0);
-            propertyAnnotations(end+1) = CANumericProperty('kappa_z', {}, 'm^2 s^{-1}','vertical diffusivity');
-            propertyAnnotations(end+1) = CANumericProperty('shouldForceMeanDensityAnomaly',{},'bool', 'whether to include the horizontally uniform mean-density-anomaly source');
+            propertyAnnotations(end+1) = CANumericProperty('kappa_z', {}, 'm2 s-1','vertical diffusivity');
+            propertyAnnotations(end+1) = CANumericProperty('shouldForceMeanDensityAnomaly',{},'1', 'logical flag indicating whether to include the horizontally uniform mean-density-anomaly source');
         end
     end
 end

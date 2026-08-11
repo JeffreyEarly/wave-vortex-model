@@ -15,7 +15,7 @@ Vertical domain depth in meters.
 ---
 
 ## Description
-Real valued property with no dimensions and units of $$m$$.
+Real valued property with no dimensions and units of $$\mathrm{m}$$.
 
 ## Discussion
 Vertical domain depth in meters.

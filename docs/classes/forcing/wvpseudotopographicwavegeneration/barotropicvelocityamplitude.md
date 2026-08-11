@@ -19,7 +19,7 @@ Complex barotropic velocity amplitude in meters per second.
 + Size: `(2,1)`
 
 ## Description
-Complex valued property with dimension $$barotropicVelocityComponent$$ and units of $$m s^{-1}$$.
+Complex valued property with dimension $$barotropicVelocityComponent$$ and units of $$\mathrm{m\,s^{-1}}$$.
 
 ## Discussion
 

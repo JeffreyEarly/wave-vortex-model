@@ -24,7 +24,7 @@ Hold selected wave-vortex coefficients at prescribed amplitudes.
 
 This forcing keeps selected wave-vortex coefficients at prescribed amplitudes while those modes continue to participate in nonlinear interactions.
 
-As a simple example, one can set an internal wave mode with amplitude 1 cm/s, and that mode will continue to oscillate and maintain its amplitude. The wave will participate in all the nonlinear dynamics, but its amplitude will be maintained/restored at each time step.
+As a simple example, one can set an internal wave mode with amplitude $$1\ \mathrm{cm\,s^{-1}}$$, and that mode will continue to oscillate and maintain its amplitude. The wave will participate in all the nonlinear dynamics, but its amplitude will be maintained/restored at each time step.
 
 There are several different ways to write this style of forcing mathematically. The equations of motion, written in the spectral domain, take the following form
 
@@ -76,7 +76,7 @@ In practice you can initialize the flow in any way you want with any arbitrary s
   + [`WVFixedAmplitudeForcing`](/classes/forcing/wvfixedamplitudeforcing/wvfixedamplitudeforcing.html) Create fixed-amplitude forcing for selected coefficients.
 + Inspect forcing configuration
   + [`A0_indices`](/classes/forcing/wvfixedamplitudeforcing/a0_indices.html) Linear indices of the selected `A0` coefficients.
-  + [`A0bar`](/classes/forcing/wvfixedamplitudeforcing/a0bar.html) Prescribed `A0` values in $$\mathrm{m^2\,s^{-1}}$$.
+  + [`A0bar`](/classes/forcing/wvfixedamplitudeforcing/a0bar.html) Prescribed `A0` values in $$\mathrm{m^{2}\,s^{-1}}$$.
   + [`Ap_indices`](/classes/forcing/wvfixedamplitudeforcing/ap_indices.html) Linear indices of the selected `Ap` coefficients.
   + [`Apbar`](/classes/forcing/wvfixedamplitudeforcing/apbar.html) Prescribed `Ap` values in $$\mathrm{m\,s^{-1}}$$.
   + [`Am_indices`](/classes/forcing/wvfixedamplitudeforcing/am_indices.html) Linear indices of the selected `Am` coefficients.

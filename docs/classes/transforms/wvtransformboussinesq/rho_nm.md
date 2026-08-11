@@ -9,15 +9,15 @@ mathjax: true
 
 #  rho_nm
 
-Diagnosed no-motion density profile, `[Nz 1]`, in kg/m³.
+Diagnosed no-motion density profile, `[Nz 1]`, in $$\mathrm{kg\,m^{-3}}$$.
 
 
 ---
 
 ## Description
-Real valued property with dimension $$z$$ and units of $$kg m^{-3}$$.
+Real valued property with dimension $$z$$ and units of $$\mathrm{kg\,m^{-3}}$$.
 
 ## Discussion
-Diagnosed no-motion density profile, `[Nz 1]`, in kg/m³.
+Diagnosed no-motion density profile, `[Nz 1]`, in $$\mathrm{kg\,m^{-3}}$$.
 
 `rho_nm` is the statically rearranged no-motion profile diagnosed from the current density field while preserving its density moments.

@@ -17,4 +17,4 @@ Transformation matrices
 ---
 
 ## Description
-Real valued property with dimensions $$(z,j)$$ and no units.
+Real valued property with dimensions $$(z,j)$$ and is dimensionless.

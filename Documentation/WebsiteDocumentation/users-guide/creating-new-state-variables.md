@@ -17,7 +17,7 @@ A `WVVariableAnnotation` describes the output's name, dimensions, units, and mea
 For example, register the vertical component of relative vorticity:
 
 ```matlab
-annotation = WVVariableAnnotation('zeta_z',{'x','y','z'},'1/s','vertical component of relative vorticity');
+annotation = WVVariableAnnotation('zeta_z',{'x','y','z'},'s-1','vertical component of relative vorticity');
 computeVorticity = @(wvt) wvt.diffX(wvt.v) - wvt.diffY(wvt.u);
 wvt.addOperation(WVOperation('zeta_z',annotation,computeVorticity));
 ```

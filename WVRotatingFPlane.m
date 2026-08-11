@@ -44,12 +44,12 @@ classdef WVRotatingFPlane < handle
             propertyAnnotations = CAPropertyAnnotation.empty(0,0);
             propertyAnnotations(end+1) = CANumericProperty('latitude',{},'degrees_north', 'central latitude of the simulation', detailedDescription='- topic: Domain Attributes');
             propertyAnnotations(end).attributes('standard_name') = 'latitude';
-            propertyAnnotations(end+1) = CANumericProperty('rotationRate',{},'rad/s', 'rotation rate of the planetary body', detailedDescription='- topic: Domain Attributes');
+            propertyAnnotations(end+1) = CANumericProperty('rotationRate',{},'rad s-1', 'rotation rate of the planetary body', detailedDescription='- topic: Domain Attributes');
             propertyAnnotations(end+1) = CANumericProperty('planetaryRadius',{},'m', 'radius of the planetary body', detailedDescription='- topic: Domain Attributes');
-            propertyAnnotations(end+1) = CANumericProperty('f',{},'rad/s', 'Coriolis parameter', detailedDescription='- topic: Domain Attributes');
-            propertyAnnotations(end+1) = CANumericProperty('beta',{},'rad m^{-1} s^{-1}', 'meridional gradient of the Coriolis parameter', detailedDescription='- topic: Domain Attributes');
+            propertyAnnotations(end+1) = CANumericProperty('f',{},'rad s-1', 'Coriolis parameter', detailedDescription='- topic: Domain Attributes');
+            propertyAnnotations(end+1) = CANumericProperty('beta',{},'rad m-1 s-1', 'meridional gradient of the Coriolis parameter', detailedDescription='- topic: Domain Attributes');
             propertyAnnotations(end+1) = CANumericProperty('inertialPeriod',{},'s', 'inertial period');
-            propertyAnnotations(end+1) = CANumericProperty('g',{},'m s^{-2}', 'gravitational acceleration', detailedDescription='- topic: Domain Attributes');
+            propertyAnnotations(end+1) = CANumericProperty('g',{},'m s-2', 'gravitational acceleration', detailedDescription='- topic: Domain Attributes');
         end
 
         function rotatingOptions = requiredPropertiesForRotatingFPlaneFromGroup(group)

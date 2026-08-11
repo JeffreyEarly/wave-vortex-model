@@ -15,7 +15,7 @@ Number of spatial grid points in the x direction.
 ---
 
 ## Description
-Real valued property with no dimensions and no units.
+Real valued property with no dimensions and is dimensionless.
 
 ## Discussion
 Number of spatial grid points in the x direction.

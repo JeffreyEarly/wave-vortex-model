@@ -15,4 +15,4 @@ max vertical fluid speed
 ---
 
 ## Description
-Real valued property with no dimensions and units of $$m s^{-1}$$.
+Real valued property with no dimensions and units of $$\mathrm{m\,s^{-1}}$$.

@@ -82,7 +82,7 @@ which has no vertical structure.
 + Create the forcing
   + [`WVVerticalDiffusivity`](/classes/forcing/closures/wvverticaldiffusivity/wvverticaldiffusivity.html) Create vertical diffusivity for a three-dimensional transform.
 + Inspect forcing configuration
-  + [`kappa_z`](/classes/forcing/closures/wvverticaldiffusivity/kappa_z.html) Configured vertical diffusivity in $$\mathrm{m^2\,s^{-1}}$$.
+  + [`kappa_z`](/classes/forcing/closures/wvverticaldiffusivity/kappa_z.html) Configured vertical diffusivity in $$\mathrm{m^{2}\,s^{-1}}$$.
   + [`shouldForceMeanDensityAnomaly`](/classes/forcing/closures/wvverticaldiffusivity/shouldforcemeandensityanomaly.html) Whether to include the mean-density-anomaly source.
 
 

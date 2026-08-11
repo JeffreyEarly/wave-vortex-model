@@ -17,4 +17,4 @@ IGW transformation matrices
 ---
 
 ## Description
-Real valued property with dimensions $$(z,j,K2unique)$$ and no units.
+Real valued property with dimensions $$(z,j,K2unique)$$ and is dimensionless.

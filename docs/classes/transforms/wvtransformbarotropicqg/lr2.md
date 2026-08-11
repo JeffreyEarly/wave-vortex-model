@@ -15,7 +15,7 @@ Squared Rossby deformation radius in square meters.
 ---
 
 ## Description
-Real valued property with no dimensions and units of $$m^2$$.
+Real valued property with no dimensions and units of $$\mathrm{m^{2}}$$.
 
 ## Discussion
 Squared Rossby deformation radius in square meters.

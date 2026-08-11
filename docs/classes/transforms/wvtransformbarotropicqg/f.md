@@ -15,7 +15,7 @@ Coriolis parameter in radians per second.
 ---
 
 ## Description
-Real valued property with no dimensions and units of $$rad/s$$.
+Real valued property with no dimensions and units of $$\mathrm{rad\,s^{-1}}$$.
 
 ## Discussion
 Coriolis parameter in radians per second.

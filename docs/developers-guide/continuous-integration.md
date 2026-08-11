@@ -7,7 +7,7 @@ nav_order: 3
 
 # Continuous integration
 
-WaveVortexModel uses non-mutating continuous integration to check changes without modifying the package, publishing a release, or exporting an OceanKit snapshot. The workflows run on Ubuntu with MATLAB R2025b and resolve runtime dependencies from OceanKit commit `eb6141e837b2a2d52db675d449ed0ac4c9a64bb5`. This fixed dependency snapshot makes a workflow rerun use the same OceanKit packages as the original run.
+WaveVortexModel uses non-mutating continuous integration to check changes without modifying the package, publishing a release, or exporting an OceanKit snapshot. The workflows run on Ubuntu with MATLAB R2025b and resolve runtime dependencies from OceanKit commit `96f0b801c565406dd5a4ba2480334a3a481c3e2c`. This fixed dependency snapshot makes a workflow rerun use the same OceanKit packages as the original run.
 
 ## Required checks
 
@@ -19,7 +19,7 @@ The required workflow runs for every pull request, every update to `main`, and m
 | Documentation / MATLAB R2025b | `buildtool docs:check` |
 | Code Analyzer / MATLAB R2025b | `buildtool analyze` |
 
-The documentation job installs the authoring-only package `ClassDocumentation@1.3.0` explicitly before checking the committed Markdown. It then builds that exact tree with GitHub Pages' Jekyll action and validates the rendered HTML. This second stage catches malformed front matter, mathematical Markdown, expressions split across rendered table cells, or other source syntax that can pass a link check but disappear or remain raw in the deployed site. Valid math delimiters remain in the Jekyll output for browser-side MathJax. Failed rendered output is uploaded as a temporary diagnostic artifact and is never committed.
+The documentation job installs the authoring-only package `ClassDocumentation@1.3.2` explicitly before checking the committed Markdown. It then builds that exact tree with GitHub Pages' Jekyll action and validates the rendered HTML. This second stage catches malformed front matter, mathematical Markdown, expressions split across rendered table cells, or other source syntax that can pass a link check but disappear or remain raw in the deployed site. Valid math delimiters remain in the Jekyll output for browser-side MathJax. Failed rendered output is uploaded as a temporary diagnostic artifact and is never committed.
 
 Smoke tests, source-and-rendered documentation verification, and Code Analyzer are required to merge into `main`. Branch protection requires the pull request branch to be current with `main` before those checks can satisfy the merge gate.
 
@@ -56,7 +56,7 @@ The package-verification workflow may be started manually and runs on pull reque
 
 Both jobs use isolated MATLAB preferences and temporary MPM installations. They require the exact declared dependency graph and reject dependencies that resolve from sibling authoring repositories. The installed package path must omit `UnitTests`, test doubles, and `RunAllUnitTests`.
 
-The exported-package job first verifies committed documentation with `ClassDocumentation@1.3.0`. In a temporary clone it promotes the complete `Unreleased` changelog body, regenerates documentation, and exports the next patch candidate outside the source checkout. The source and candidate versions are derived from the manifest so the gate remains valid after a release. Only the manifest, changelog, and generated version history may change during that preparation. A second fresh MATLAB process installs the export and exercises constant- and variable-stratification transforms, linear evolution, and NetCDF state restoration. This dry run creates no tag, GitHub release, or OceanKit snapshot.
+The exported-package job first verifies committed documentation with `ClassDocumentation@1.3.2`. In a temporary clone it promotes the complete `Unreleased` changelog body, regenerates documentation, and exports the next patch candidate outside the source checkout. The source and candidate versions are derived from the manifest so the gate remains valid after a release. Only the manifest, changelog, and generated version history may change during that preparation. A second fresh MATLAB process installs the export and exercises constant- and variable-stratification transforms, linear evolution, and NetCDF state restoration. This dry run creates no tag, GitHub release, or OceanKit snapshot.
 
 Routine authoring checks and native-package gates serve different purposes. The former provide fast feedback on every change; the latter prove that the package manager and exported consumer boundary work on the supported MATLAB floor.
 

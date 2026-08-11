@@ -15,7 +15,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  OCEANKIT_COMMIT: eb6141e837b2a2d52db675d449ed0ac4c9a64bb5
+  OCEANKIT_COMMIT: 96f0b801c565406dd5a4ba2480334a3a481c3e2c
 
 jobs:
   smoke:
@@ -95,7 +95,7 @@ jobs:
             oceanKitRoot = fullfile(pwd,"OceanKit");
             mpmAddRepository("OceanKit",oceanKitRoot);
             addpath(fullfile(sourceRoot,"tools"));
-            configureCIEnvironment(sourceRoot,oceanKitRoot,documentationPackageSpecifier="ClassDocumentation@1.3.0");
+            configureCIEnvironment(sourceRoot,oceanKitRoot,documentationPackageSpecifier="ClassDocumentation@1.3.2");
             cd(sourceRoot);
             buildtool docs:check
 

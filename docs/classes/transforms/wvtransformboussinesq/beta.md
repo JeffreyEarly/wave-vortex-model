@@ -15,7 +15,7 @@ Meridional gradient of the Coriolis parameter.
 ---
 
 ## Description
-Real valued property with no dimensions and units of $$rad m^{-1} s^{-1}$$.
+Real valued property with no dimensions and units of $$\mathrm{rad\,m^{-1}\,s^{-1}}$$.
 
 ## Discussion
 Meridional gradient of the Coriolis parameter.

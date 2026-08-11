@@ -15,7 +15,7 @@ Transformation matrix $$G$$ projecting G-grid values onto vertical modes; shape 
 ---
 
 ## Description
-Real valued property with dimensions $$(j,z)$$ and no units.
+Real valued property with dimensions $$(j,z)$$ and is dimensionless.
 
 ## Discussion
 Transformation matrix $$G$$ projecting G-grid values onto vertical modes; shape `[Nj Nz]`.

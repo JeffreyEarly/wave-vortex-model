@@ -99,14 +99,14 @@ classdef WVGeometryDoublyPeriodic < CAAnnotatedClass
         % - Topic: Domain attributes — WV grid
         dftConjugateIndices2D uint64
 
-        % Compact `Nkl`-by-1 x-wavenumber vector in rad/m.
+        % Compact `Nkl`-by-1 x-wavenumber vector in $$\mathrm{rad\,m^{-1}}$$.
         %
         % `k` is an `Nkl`-by-1 column vector in radians per meter.
         %
         % - Topic: Domain attributes — WV grid
         k
         
-        % Compact `Nkl`-by-1 y-wavenumber vector in rad/m.
+        % Compact `Nkl`-by-1 y-wavenumber vector in $$\mathrm{rad\,m^{-1}}$$.
         %
         % `l` is an `Nkl`-by-1 column vector in radians per meter.
         %
@@ -976,25 +976,25 @@ classdef WVGeometryDoublyPeriodic < CAAnnotatedClass
             propertyAnnotations(end).attributes('standard_name') = 'projection_y_coordinate';
             propertyAnnotations(end).attributes('axis') = 'Y';
 
-            propertyAnnotations(end+1) = CADimensionProperty('kAxis', 'rad m^{-1}', 'k coordinate');
-            propertyAnnotations(end+1) = CADimensionProperty('lAxis', 'rad m^{-1}', 'l coordinate');
+            propertyAnnotations(end+1) = CADimensionProperty('kAxis', 'rad m-1', 'k coordinate');
+            propertyAnnotations(end+1) = CADimensionProperty('lAxis', 'rad m-1', 'l coordinate');
 
-            propertyAnnotations(end+1) = CADimensionProperty('kl', 'unitless', 'dimension of the interleaved k-l wavenumber coordinate');
-            propertyAnnotations(end+1) = CADimensionProperty('kRadial', 'rad/m', 'isotropic wavenumber dimension');
+            propertyAnnotations(end+1) = CADimensionProperty('kl', '1', 'dimension of the interleaved k-l wavenumber coordinate');
+            propertyAnnotations(end+1) = CADimensionProperty('kRadial', 'rad m-1', 'isotropic wavenumber dimension');
 
-            propertyAnnotations(end+1) = CANumericProperty('conjugateDimension',{},'', 'assumed conjugate dimension in the horizontal geometry', detailedDescription='- topic: Domain Attributes — Grid');
-            propertyAnnotations(end+1) = CANumericProperty('shouldAntialias',{},'bool', 'whether quadratic antialiasing is enabled', detailedDescription='- topic: Domain Attributes — Grid');
-            propertyAnnotations(end+1) = CANumericProperty('shouldExcludeNyquist',{},'bool', 'whether the horizontal grid excludes Nyquist wavenumbers', detailedDescription='- topic: Domain Attributes — Grid');
-            propertyAnnotations(end+1) = CANumericProperty('shouldExcludeConjugates',{},'bool', 'whether the horizontal grid excludes redundant Hermitian-conjugate wavenumbers', detailedDescription='- topic: Domain Attributes — Grid');
-            propertyAnnotations(end+1) = CANumericProperty('Nkl',{},'', 'points in the kl-coordinate, `length(k)`', detailedDescription='- topic: Domain Attributes — Grid — Spectral');
-            propertyAnnotations(end+1) = CANumericProperty('k', {'kl'}, 'rad/m', 'wavenumber coordinate in the x-direction', detailedDescription='- topic: Domain Attributes — Grid — Spectral');
-            propertyAnnotations(end+1) = CANumericProperty('l', {'kl'}, 'rad/m', 'wavenumber coordinate in the y-direction', detailedDescription='- topic: Domain Attributes — Grid — Spectral');
+            propertyAnnotations(end+1) = CANumericProperty('conjugateDimension',{},'1', 'assumed conjugate dimension in the horizontal geometry', detailedDescription='- topic: Domain Attributes — Grid');
+            propertyAnnotations(end+1) = CANumericProperty('shouldAntialias',{},'1', 'logical flag indicating whether quadratic antialiasing is enabled', detailedDescription='- topic: Domain Attributes — Grid');
+            propertyAnnotations(end+1) = CANumericProperty('shouldExcludeNyquist',{},'1', 'logical flag indicating whether the horizontal grid excludes Nyquist wavenumbers', detailedDescription='- topic: Domain Attributes — Grid');
+            propertyAnnotations(end+1) = CANumericProperty('shouldExcludeConjugates',{},'1', 'logical flag indicating whether the horizontal grid excludes redundant Hermitian-conjugate wavenumbers', detailedDescription='- topic: Domain Attributes — Grid');
+            propertyAnnotations(end+1) = CANumericProperty('Nkl',{},'1', 'number of points in the kl-coordinate, `length(k)`', detailedDescription='- topic: Domain Attributes — Grid — Spectral');
+            propertyAnnotations(end+1) = CANumericProperty('k', {'kl'}, 'rad m-1', 'wavenumber coordinate in the x-direction', detailedDescription='- topic: Domain Attributes — Grid — Spectral');
+            propertyAnnotations(end+1) = CANumericProperty('l', {'kl'}, 'rad m-1', 'wavenumber coordinate in the y-direction', detailedDescription='- topic: Domain Attributes — Grid — Spectral');
 
             propertyAnnotations(end+1) = CANumericProperty('Lx',{},'m', 'domain size in the x-direction', detailedDescription='- topic: Domain Attributes — Grid — Spatial');
             propertyAnnotations(end+1) = CANumericProperty('Ly',{},'m', 'domain size in the y-direction', detailedDescription='- topic: Domain Attributes — Grid — Spatial');
-            propertyAnnotations(end+1) = CANumericProperty('Nx',{},'', 'points in the x-coordinate, `length(x)`', detailedDescription='- topic: Domain Attributes — Grid — Spatial');
-            propertyAnnotations(end+1) = CANumericProperty('Ny',{},'', 'points in the y-coordinate, `length(y)`', detailedDescription='- topic: Domain Attributes — Grid — Spatial');
-            propertyAnnotations(end+1) = CANumericProperty('Nz',{},'', 'points in the third, untransformed, dimension', detailedDescription='- topic: Domain Attributes — Grid — Spatial');
+            propertyAnnotations(end+1) = CANumericProperty('Nx',{},'1', 'number of points in the x-coordinate, `length(x)`', detailedDescription='- topic: Domain Attributes — Grid — Spatial');
+            propertyAnnotations(end+1) = CANumericProperty('Ny',{},'1', 'number of points in the y-coordinate, `length(y)`', detailedDescription='- topic: Domain Attributes — Grid — Spatial');
+            propertyAnnotations(end+1) = CANumericProperty('Nz',{},'1', 'number of points in the third, untransformed, dimension', detailedDescription='- topic: Domain Attributes — Grid — Spatial');
         end
 
         function matrix = indicesOfFourierConjugates(Nx,Ny,Nz)

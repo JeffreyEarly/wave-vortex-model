@@ -22,7 +22,7 @@ return a real-valued analytical solution of the internal gravity wave mode
 + `kMode`  integer index, (k0 > -Nx/2 && k0 < Nx/2)
 + `lMode`  integer index, (l0 > -Ny/2 && l0 < Ny/2)
 + `jMode`  integer index, (j0 >= 1 && j0 <= nModes), unless k=l=j=0
-+ `A`  amplitude in m/s.
++ `A`  amplitude in $$\mathrm{m\,s^{-1}}$$.
 + `phi`  phase in radians, (0 <= phi <= 2*pi)
 + `omegasign`  sign of omega, [-1 1]
 + `shouldAssumeConstantN`  (optional) default 1

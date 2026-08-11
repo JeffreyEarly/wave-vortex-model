@@ -15,7 +15,7 @@ initial model time that the output group is active (seconds)
 ---
 
 ## Description
-Real valued property with no dimensions and units of $$s$$.
+Real valued property with no dimensions and units of $$\mathrm{s}$$.
 
 ## Discussion
 

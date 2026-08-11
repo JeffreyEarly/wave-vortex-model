@@ -15,7 +15,7 @@ Central latitude of the rotating domain in degrees north.
 ---
 
 ## Description
-Real valued property with no dimensions and units of $$degrees_north$$.
+Real valued property with no dimensions and units of degrees north ($$^\circ\mathrm{N}$$).
 
 ## Discussion
 Central latitude of the rotating domain in degrees north.

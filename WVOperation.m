@@ -10,7 +10,7 @@ classdef WVOperation < handle & matlab.mixin.Heterogeneous
 % For example,
 % 
 % ```matlab
-% outputVar = WVVariableAnnotation('zeta_z',{'x','y','z'},'1/s', 'vertical component of relative vorticity');
+% outputVar = WVVariableAnnotation('zeta_z',{'x','y','z'},'s-1', 'vertical component of relative vorticity');
 % f = @(wvt) wvt.diffX(wvt.v) - wvt.diffY(wvt.u);
 % wvt.addOperation(WVOperation('zeta_z',outputVar,f));
 % ```

@@ -15,7 +15,7 @@ Wave equivalent depth on the spectral grid.
 ---
 
 ## Description
-Real valued property with dimension $$j$$ and units of $$m$$.
+Real valued property with dimension $$j$$ and units of $$\mathrm{m}$$.
 
 ## Discussion
 Wave equivalent depth on the spectral grid.

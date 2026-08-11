@@ -9,10 +9,10 @@ mathjax: true
 
 #  absTolerance
 
-absolute tolerance of the wave-vortex coefficients
+coefficient-error scale used to construct mode-dependent adaptive tolerances
 
 
 ---
 
 ## Description
-Real valued property with no dimensions and units of $$m^{3} s^{-2}$$.
+Real valued property with no dimensions and units of $$\mathrm{m^{2}\,s^{-1}}$$.

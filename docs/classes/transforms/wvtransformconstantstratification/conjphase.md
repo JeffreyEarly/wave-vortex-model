@@ -15,4 +15,4 @@ conjugate phase factor that advances `Am` from `t0` to `t`
 ---
 
 ## Description
-Real valued property with dimensions $$(j,kl)$$ and units of $$1$$.
+Real valued property with dimensions $$(j,kl)$$ and is dimensionless.

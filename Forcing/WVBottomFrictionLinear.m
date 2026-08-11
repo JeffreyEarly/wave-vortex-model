@@ -134,7 +134,7 @@ classdef WVBottomFrictionLinear < WVForcing
                 propertyAnnotations CAPropertyAnnotation
             end
             propertyAnnotations = CAPropertyAnnotation.empty(0,0);
-            propertyAnnotations(end+1) = CANumericProperty('r', {}, 's^{-1}','bottom friction');
+            propertyAnnotations(end+1) = CANumericProperty('r', {}, 's-1','bottom friction');
         end
     end
 

@@ -9,6 +9,7 @@
 - Added backend-neutral transform-storage accounting and fresh-process RSS benchmarks.
 - Completed and reorganized transform and forcing documentation, clarified spectral grids, energy, forcing, flow components, geometry indexing, density profiles, and projection/reconstruction summaries, corrected API metadata, and improved nonlinear-integration examples.
 - Verified and documented the mathematical contracts for pseudo-topographic wave generation, beta-plane QGPV advection, and vertical diffusivity, and restored the variable-stratification mean-density-anomaly source disabled by an obsolete class-name check.
+- Normalized physical-unit annotations and newly written NetCDF metadata, corrected squared-wavenumber and coefficient-tendency dimensions, and adopted ClassDocumentation 1.3.2 through the immutable OceanKit release workflow v0.1.2.
 
 ## [4.2.1] - 2026-08-09
 

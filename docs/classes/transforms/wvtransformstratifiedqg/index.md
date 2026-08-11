@@ -85,12 +85,12 @@ The quasigeostrophic state is stored in
       + [`z_int`](/classes/transforms/wvtransformstratifiedqg/z_int.html) Vertical quadrature weights in meters.
   + Spectral grid
     + Compact grid vectors
-      + [`k`](/classes/transforms/wvtransformstratifiedqg/k.html) Compact `Nkl`-by-1 x-wavenumber vector in rad/m.
-      + [`l`](/classes/transforms/wvtransformstratifiedqg/l.html) Compact `Nkl`-by-1 y-wavenumber vector in rad/m.
+      + [`k`](/classes/transforms/wvtransformstratifiedqg/k.html) Compact `Nkl`-by-1 x-wavenumber vector in $$\mathrm{rad\,m^{-1}}$$.
+      + [`l`](/classes/transforms/wvtransformstratifiedqg/l.html) Compact `Nkl`-by-1 y-wavenumber vector in $$\mathrm{rad\,m^{-1}}$$.
       + [`j`](/classes/transforms/wvtransformstratifiedqg/j.html) Dimensionless `Nj`-by-1 vertical-mode index vector.
     + Compact grid arrays
-      + [`K`](/classes/transforms/wvtransformstratifiedqg/k_.html) X-direction angular-wavenumber array in rad/m with shape `[Nj Nkl]`.
-      + [`L`](/classes/transforms/wvtransformstratifiedqg/l_.html) Y-direction angular-wavenumber array in rad/m with shape `[Nj Nkl]`.
+      + [`K`](/classes/transforms/wvtransformstratifiedqg/k_.html) X-direction angular-wavenumber array in $$\mathrm{rad\,m^{-1}}$$ with shape `[Nj Nkl]`.
+      + [`L`](/classes/transforms/wvtransformstratifiedqg/l_.html) Y-direction angular-wavenumber array in $$\mathrm{rad\,m^{-1}}$$ with shape `[Nj Nkl]`.
       + [`J`](/classes/transforms/wvtransformstratifiedqg/j_.html) Dimensionless vertical-mode index array with shape `[Nj Nkl]`.
       + [`kljGrid`](/classes/transforms/wvtransformstratifiedqg/kljgrid.html) Return spectral-coordinate arrays in wave-vortex layout.
     + Wavenumber spacing
@@ -150,7 +150,7 @@ The quasigeostrophic state is stored in
     + Density and displacement
       + [`eta`](/classes/transforms/wvtransformstratifiedqg/eta.html) approximate isopycnal deviation
       + [`rho_e`](/classes/transforms/wvtransformstratifiedqg/rho_e.html) excess density
-      + [`rho_nm0`](/classes/transforms/wvtransformstratifiedqg/rho_nm0.html) Reference no-motion density profile, `[Nz 1]`, in kg/m³.
+      + [`rho_nm0`](/classes/transforms/wvtransformstratifiedqg/rho_nm0.html) Reference no-motion density profile, `[Nz 1]`, in $$\mathrm{kg\,m^{-3}}$$.
       + [`rho_total`](/classes/transforms/wvtransformstratifiedqg/rho_total.html) total potential density
     + Pressure and surface fields
       + [`p`](/classes/transforms/wvtransformstratifiedqg/p.html) pressure anomaly
@@ -191,8 +191,8 @@ The quasigeostrophic state is stored in
     + [`totalEnstrophySpatiallyIntegrated`](/classes/transforms/wvtransformstratifiedqg/totalenstrophyspatiallyintegrated.html) Potential enstrophy evaluated from the gridded QGPV field.
   + Spectra
     + Spectral fields
-      + [`kAxis`](/classes/transforms/wvtransformstratifiedqg/kaxis.html) Centered `Nx`-by-1 x-wavenumber axis in rad/m.
-      + [`lAxis`](/classes/transforms/wvtransformstratifiedqg/laxis.html) Centered `Ny`-by-1 y-wavenumber axis in rad/m.
+      + [`kAxis`](/classes/transforms/wvtransformstratifiedqg/kaxis.html) Centered `Nx`-by-1 x-wavenumber axis in $$\mathrm{rad\,m^{-1}}$$.
+      + [`lAxis`](/classes/transforms/wvtransformstratifiedqg/laxis.html) Centered `Ny`-by-1 y-wavenumber axis in $$\mathrm{rad\,m^{-1}}$$.
       + [`transformToKLAxes`](/classes/transforms/wvtransformstratifiedqg/transformtoklaxes.html) transforms in the spectral domain from (j,kl) to (kAxis,lAxis,j)
       + [`crossSpectrumWithFgTransform`](/classes/transforms/wvtransformstratifiedqg/crossspectrumwithfgtransform.html) Compute a real modal cross-spectrum using the F-basis transform.
       + [`crossSpectrumWithGgTransform`](/classes/transforms/wvtransformstratifiedqg/crossspectrumwithggtransform.html) Compute a real modal cross-spectrum using the G-basis transform.
@@ -325,8 +325,8 @@ These items document internal implementation details and are not part of the pri
   + [`PF0`](/classes/transforms/wvtransformstratifiedqg/pf0.html) size(PF,PG)=[Nj x Nz]
   + [`PF0inv`](/classes/transforms/wvtransformstratifiedqg/pf0inv.html) Transformation matrices
   + [`Q0`](/classes/transforms/wvtransformstratifiedqg/q0.html) Preconditioner for G, size(Q)=[Nj 1]. G*eta = etahat, (QG)*eta = Q*etahat, so etabar==Q*etahat.
-  + [`QG0`](/classes/transforms/wvtransformstratifiedqg/qg0.html) Preconditioned G-mode forward transformation
-  + [`QG0inv`](/classes/transforms/wvtransformstratifiedqg/qg0inv.html) Preconditioned G-mode inverse transformation
+  + [`QG0`](/classes/transforms/wvtransformstratifiedqg/qg0.html) dimensionless preconditioned G-mode forward transformation
+  + [`QG0inv`](/classes/transforms/wvtransformstratifiedqg/qg0inv.html) dimensionless preconditioned G-mode inverse transformation
   + [`degreesOfFreedomForComplexMatrix`](/classes/transforms/wvtransformstratifiedqg/degreesoffreedomforcomplexmatrix.html) a matrix with the number of degrees-of-freedom at each entry
   + [`degreesOfFreedomForRealMatrix`](/classes/transforms/wvtransformstratifiedqg/degreesoffreedomforrealmatrix.html) a matrix with the number of degrees-of-freedom at each entry
   + [`fastTransform`](/classes/transforms/wvtransformstratifiedqg/fasttransform.html) fast transform object

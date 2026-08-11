@@ -9,10 +9,10 @@ mathjax: true
 
 #  L
 
-Y-direction angular-wavenumber array in rad/m with shape `[Nj Nkl]`.
+Y-direction angular-wavenumber array in $$\mathrm{rad\,m^{-1}}$$ with shape `[Nj Nkl]`.
 
 
 ---
 
 ## Description
-Real valued property with dimensions $$(j,kl)$$ and units of $$rad/m$$.
+Real valued property with dimensions $$(j,kl)$$ and units of $$\mathrm{rad\,m^{-1}}$$.

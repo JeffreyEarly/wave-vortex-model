@@ -53,14 +53,14 @@ classdef WVVerticalDamping < WVForcing
     %
     % - Declaration: WVVerticalDamping < [WVForcing](/classes/forcing/wvforcing/)
     properties
-        % Vertical momentum viscosity in $$\mathrm{m^2\,s^{-1}}$$.
+        % Vertical momentum viscosity in $$\mathrm{m^{2}\,s^{-1}}$$.
         %
         % The constructor default is `5e-4`.
         %
         % - Topic: Properties
         nu
 
-        % Vertical displacement diffusivity in $$\mathrm{m^2\,s^{-1}}$$.
+        % Vertical displacement diffusivity in $$\mathrm{m^{2}\,s^{-1}}$$.
         %
         % The constructor default is `1e-6`.
         %
@@ -153,8 +153,8 @@ classdef WVVerticalDamping < WVForcing
                 propertyAnnotations CAPropertyAnnotation
             end
             propertyAnnotations = CAPropertyAnnotation.empty(0,0);
-            propertyAnnotations(end+1) = CANumericProperty('nu', {}, 'm^2 s^{-1}','viscosity');
-            propertyAnnotations(end+1) = CANumericProperty('kappa', {}, 'm^2 s^{-1}','diffusivity');
+            propertyAnnotations(end+1) = CANumericProperty('nu', {}, 'm2 s-1','viscosity');
+            propertyAnnotations(end+1) = CANumericProperty('kappa', {}, 'm2 s-1','diffusivity');
         end
     end
 end

@@ -3,7 +3,7 @@ classdef WVFixedAmplitudeForcing < WVForcing
     %
     % This forcing keeps selected wave-vortex coefficients at prescribed amplitudes while those modes continue to participate in nonlinear interactions.
     %
-    % As a simple example, one can set an internal wave mode with amplitude 1 cm/s, and that mode will continue to oscillate and maintain its amplitude. The wave will participate in all the nonlinear dynamics, but its amplitude will be maintained/restored at each time step.
+    % As a simple example, one can set an internal wave mode with amplitude $$1\ \mathrm{cm\,s^{-1}}$$, and that mode will continue to oscillate and maintain its amplitude. The wave will participate in all the nonlinear dynamics, but its amplitude will be maintained/restored at each time step.
     %
     %
     % There are several different ways to write this style of forcing mathematically. The equations of motion, written in the spectral domain, take the following form
@@ -82,7 +82,7 @@ classdef WVFixedAmplitudeForcing < WVForcing
         % - Topic: Properties
         Am_indices (:,1) uint64 = []
 
-        % Prescribed `A0` values in $$\mathrm{m^2\,s^{-1}}$$.
+        % Prescribed `A0` values in $$\mathrm{m^{2}\,s^{-1}}$$.
         %
         % Values correspond element-by-element to `A0_indices`.
         %
@@ -290,7 +290,7 @@ classdef WVFixedAmplitudeForcing < WVForcing
             if isfield(options,"r")
                 k_r = options.r/(magicNumber*options.u_rms);
             else
-                r = magicNumber*sbRatio*options.u_rms*options.k_r; % 1/s bracket [0.02 0.025]
+                r = magicNumber*sbRatio*options.u_rms*options.k_r; % s-1 bracket [0.02 0.025]
                 % fprintf('1/r is %.1f days, switching to %.1f days\n',1/(self.r*86400),1/(r*86400));
                 k_r = options.k_r;
             end
@@ -333,7 +333,7 @@ classdef WVFixedAmplitudeForcing < WVForcing
                     KE = mean(mean(0.5*(u.^2+v.^2)));
                     PE = mean(mean(0.5*(9.81*zeta.^2)/h));
                     u_rms_surface = mean(mean(sqrt(u.^2+v.^2)));
-                    fprintf("surface u_rms: %.2g cm/s\n",100*u_rms_surface);
+                    fprintf("surface u_rms: %.2g cm s-1\n",100*u_rms_surface);
                     fprintf("surface energy, %g.\n",KE+PE);
                     fprintf('desired energy: %g, actual energy %g\n',0.5 * u_rms^2,wvt.geostrophicEnergy/h);
                 end
@@ -446,12 +446,12 @@ classdef WVFixedAmplitudeForcing < WVForcing
             end
             propertyAnnotations = CAPropertyAnnotation.empty(0,0);
             propertyAnnotations(end+1) = CAPropertyAnnotation('name','name of the forcing');
-            propertyAnnotations(end+1) = CADimensionProperty('Ap_indices', '','indices into the Ap matrix');
-            propertyAnnotations(end+1) = CANumericProperty('Apbar', {'Ap_indices'}, '','Ap mean value',isComplex=true);
-            propertyAnnotations(end+1) = CADimensionProperty('Am_indices', '','indices into the Am matrix');
-            propertyAnnotations(end+1) = CANumericProperty('Ambar', {'Am_indices'}, '','Am mean value',isComplex=true);
-            propertyAnnotations(end+1) = CADimensionProperty('A0_indices', '','indices into the A0 matrix');
-            propertyAnnotations(end+1) = CANumericProperty('A0bar', {'A0_indices'}, '','A0 mean value',isComplex=true);
+            propertyAnnotations(end+1) = CADimensionProperty('Ap_indices', '1','indices into the Ap matrix');
+            propertyAnnotations(end+1) = CANumericProperty('Apbar', {'Ap_indices'}, 'm s-1','prescribed Ap coefficient values',isComplex=true);
+            propertyAnnotations(end+1) = CADimensionProperty('Am_indices', '1','indices into the Am matrix');
+            propertyAnnotations(end+1) = CANumericProperty('Ambar', {'Am_indices'}, 'm s-1','prescribed Am coefficient values',isComplex=true);
+            propertyAnnotations(end+1) = CADimensionProperty('A0_indices', '1','indices into the A0 matrix');
+            propertyAnnotations(end+1) = CANumericProperty('A0bar', {'A0_indices'}, 'm2 s-1','prescribed A0 coefficient values',isComplex=true);
         end
     end
 

@@ -16,28 +16,28 @@ classdef SpatialForcingOperation < WVOperation
 
                 if isa(wvt,"WVTransformBarotropicQG") || isa(wvt,"WVTransformStratifiedQG")
                     name = replace(replace(join( ["Fqgpv_", string(wvt.forcing(i).name)],"")," ","_"),"-","_");
-                    outputVariables(i) = WVVariableAnnotation(name,wvt.spatialDimensionNames(),'s^{-2}', join(['spatial representation of qgpv forcing',string(wvt.forcing(i).name)]));
+                    outputVariables(i) = WVVariableAnnotation(name,wvt.spatialDimensionNames(),'s-2', join(['spatial representation of qgpv forcing',string(wvt.forcing(i).name)]));
                 elseif isa(wvt,"WVTransformHydrostatic") || (isa(wvt,"WVTransformConstantStratification") && wvt.isHydrostatic == true)
                     name = replace(replace(join( ["Fu_", string(wvt.forcing(i).name)],"")," ","_"),"-","_");
-                    outputVariables((i-1)*3+1) = WVVariableAnnotation(name,wvt.spatialDimensionNames(),'m s^{-2}', join(['spatial representation of hydrostatic forcing on the x-momentum equation',string(wvt.forcing(i).name)]));
+                    outputVariables((i-1)*3+1) = WVVariableAnnotation(name,wvt.spatialDimensionNames(),'m s-2', join(['spatial representation of hydrostatic forcing on the x-momentum equation',string(wvt.forcing(i).name)]));
 
                     name = replace(replace(join( ["Fv_", string(wvt.forcing(i).name)],"")," ","_"),"-","_");
-                    outputVariables((i-1)*3+2) = WVVariableAnnotation(name,wvt.spatialDimensionNames(),'m s^{-2}', join(['spatial representation of hydrostatic forcing on the y-momentum equation',string(wvt.forcing(i).name)]));
+                    outputVariables((i-1)*3+2) = WVVariableAnnotation(name,wvt.spatialDimensionNames(),'m s-2', join(['spatial representation of hydrostatic forcing on the y-momentum equation',string(wvt.forcing(i).name)]));
 
                     name = replace(replace(join( ["Feta_", string(wvt.forcing(i).name)],"")," ","_"),"-","_");
-                    outputVariables((i-1)*3+3) = WVVariableAnnotation(name,wvt.spatialDimensionNames(),'m s^{-1}', join(['spatial representation of hydrostatic forcing on the scaled density perturbation equation',string(wvt.forcing(i).name)]));
+                    outputVariables((i-1)*3+3) = WVVariableAnnotation(name,wvt.spatialDimensionNames(),'m s-1', join(['spatial representation of hydrostatic forcing on the scaled density perturbation equation',string(wvt.forcing(i).name)]));
                 elseif isa(wvt,"WVTransformBoussinesq") || (isa(wvt,"WVTransformConstantStratification") && wvt.isHydrostatic == false)
                     name = replace(replace(join( ["Fu_", string(wvt.forcing(i).name)],"")," ","_"),"-","_");
-                    outputVariables((i-1)*4+1) = WVVariableAnnotation(name,wvt.spatialDimensionNames(),'m s^{-2}', join(['spatial representation of non-hydrostatic forcing on the x-momentum equation',string(wvt.forcing(i).name)]));
+                    outputVariables((i-1)*4+1) = WVVariableAnnotation(name,wvt.spatialDimensionNames(),'m s-2', join(['spatial representation of non-hydrostatic forcing on the x-momentum equation',string(wvt.forcing(i).name)]));
 
                     name = replace(replace(join( ["Fv_", string(wvt.forcing(i).name)],"")," ","_"),"-","_");
-                    outputVariables((i-1)*4+2) = WVVariableAnnotation(name,wvt.spatialDimensionNames(),'m s^{-2}', join(['spatial representation of non-hydrostatic forcing on the y-momentum equation',string(wvt.forcing(i).name)]));
+                    outputVariables((i-1)*4+2) = WVVariableAnnotation(name,wvt.spatialDimensionNames(),'m s-2', join(['spatial representation of non-hydrostatic forcing on the y-momentum equation',string(wvt.forcing(i).name)]));
 
                     name = replace(replace(join( ["Fw_", string(wvt.forcing(i).name)],"")," ","_"),"-","_");
-                    outputVariables((i-1)*4+3) = WVVariableAnnotation(name,wvt.spatialDimensionNames(),'m s^{-2}', join(['spatial representation of non-hydrostatic forcing on the z-momentum equation',string(wvt.forcing(i).name)]));
+                    outputVariables((i-1)*4+3) = WVVariableAnnotation(name,wvt.spatialDimensionNames(),'m s-2', join(['spatial representation of non-hydrostatic forcing on the z-momentum equation',string(wvt.forcing(i).name)]));
 
                     name = replace(replace(join( ["Feta_", string(wvt.forcing(i).name)],"")," ","_"),"-","_");
-                    outputVariables((i-1)*4+4) = WVVariableAnnotation(name,wvt.spatialDimensionNames(),'m s^{-1}', join(['spatial representation of non-hydrostatic forcing on the scaled density perturbation equation',string(wvt.forcing(i).name)]));
+                    outputVariables((i-1)*4+4) = WVVariableAnnotation(name,wvt.spatialDimensionNames(),'m s-1', join(['spatial representation of non-hydrostatic forcing on the scaled density perturbation equation',string(wvt.forcing(i).name)]));
                 end
             end
             self@WVOperation('spatial forcing',outputVariables,@disp);

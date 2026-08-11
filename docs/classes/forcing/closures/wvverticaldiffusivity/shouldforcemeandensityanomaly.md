@@ -15,7 +15,7 @@ Whether to include the mean-density-anomaly source.
 ---
 
 ## Description
-Real valued property with no dimensions and units of $$bool$$.
+Real valued property with no dimensions and is dimensionless.
 
 ## Discussion
 

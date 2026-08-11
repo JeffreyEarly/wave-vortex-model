@@ -71,8 +71,8 @@ transform with a different resolution.
 + Create the forcing
   + [`WVVerticalDamping`](/classes/forcing/closures/wvverticaldamping/wvverticaldamping.html) Create vertical Laplacian damping for a transform.
 + Inspect forcing configuration
-  + [`nu`](/classes/forcing/closures/wvverticaldamping/nu.html) Vertical momentum viscosity in $$\mathrm{m^2\,s^{-1}}$$.
-  + [`kappa`](/classes/forcing/closures/wvverticaldamping/kappa.html) Vertical displacement diffusivity in $$\mathrm{m^2\,s^{-1}}$$.
+  + [`nu`](/classes/forcing/closures/wvverticaldamping/nu.html) Vertical momentum viscosity in $$\mathrm{m^{2}\,s^{-1}}$$.
+  + [`kappa`](/classes/forcing/closures/wvverticaldamping/kappa.html) Vertical displacement diffusivity in $$\mathrm{m^{2}\,s^{-1}}$$.
 
 
 ## Developer Topics

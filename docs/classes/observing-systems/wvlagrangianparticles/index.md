@@ -46,7 +46,7 @@ These items document internal implementation details and are not part of the pri
 + Observing-system internals
   + [`advectionInterpolation`](/classes/observing-systems/wvlagrangianparticles/advectioninterpolation.html) interpolation method for the advection scheme
   + [`classRequiredPropertyNames`](/classes/observing-systems/wvlagrangianparticles/classrequiredpropertynames.html)
-  + [`isXYOnly`](/classes/observing-systems/wvlagrangianparticles/isxyonly.html) whether the advection is only applied in x-y
+  + [`isXYOnly`](/classes/observing-systems/wvlagrangianparticles/isxyonly.html) logical flag indicating whether advection is restricted to x-y
   + [`trackedFieldNamesCell`](/classes/observing-systems/wvlagrangianparticles/trackedfieldnamescell.html)
   + [`trackedVarInterpolation`](/classes/observing-systems/wvlagrangianparticles/trackedvarinterpolation.html) interpolation method for the tracked fields
 

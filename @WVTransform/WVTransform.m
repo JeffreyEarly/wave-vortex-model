@@ -152,7 +152,7 @@ classdef WVTransform < matlab.mixin.indexing.RedefinesDot & CAAnnotatedClass
         % Zero-frequency geostrophic and mean-density-anomaly coefficients.
         %
         % `A0` is a complex spectral array with units of streamfunction,
-        % $$\mathrm{m^2\,s^{-1}}$$. Geostrophic modes occupy nonzero
+        % $$\mathrm{m^{2}\,s^{-1}}$$. Geostrophic modes occupy nonzero
         % horizontal wavenumbers; mean-density-anomaly modes occupy the
         % horizontally averaged internal-mode locations. Quasigeostrophic
         % transforms use `A0` without `Ap` or `Am` wave content.
@@ -1100,12 +1100,12 @@ classdef WVTransform < matlab.mixin.indexing.RedefinesDot & CAAnnotatedClass
 
             propertyAnnotations(end+1) = CANumericProperty('t0',{},'s', 'reference time of Ap, Am, A0');
 
-            annotation = WVVariableAnnotation('totalEnergy',{},'m3/s2', 'horizontally-averaged depth-integrated energy computed spectrally from wave-vortex coefficients');
+            annotation = WVVariableAnnotation('totalEnergy',{},'m3 s-2', 'horizontally-averaged depth-integrated energy computed spectrally from wave-vortex coefficients');
             annotation.isVariableWithLinearTimeStep = 0;
             annotation.isVariableWithNonlinearTimeStep = 1;
             propertyAnnotations(end+1) = annotation;
 
-            annotation = WVVariableAnnotation('totalEnergySpatiallyIntegrated',{},'m3/s2', 'horizontally-averaged depth-integrated energy computed in the spatial domain');
+            annotation = WVVariableAnnotation('totalEnergySpatiallyIntegrated',{},'m3 s-2', 'horizontally-averaged depth-integrated energy computed in the spatial domain');
             annotation.isVariableWithLinearTimeStep = 0;
             annotation.isVariableWithNonlinearTimeStep = 1;
             propertyAnnotations(end+1) = annotation;
@@ -1114,32 +1114,32 @@ classdef WVTransform < matlab.mixin.indexing.RedefinesDot & CAAnnotatedClass
                 name = variableName{iVar};
                 switch name
                     case 'A0'
-                        prop = WVVariableAnnotation('A0',options.spectralDimensionNames,'m^2 s^{-1}', 'geostrophic coefficients at reference time t0');
+                        prop = WVVariableAnnotation('A0',options.spectralDimensionNames,'m2 s-1', 'geostrophic coefficients at reference time t0');
                         prop.isComplex = 1;
                         prop.isVariableWithLinearTimeStep = 0;
                         prop.isVariableWithNonlinearTimeStep = 1;
                     case 'Ap'
-                        prop = WVVariableAnnotation('Ap',options.spectralDimensionNames,'m/s', 'positive wave coefficients at reference time t0');
+                        prop = WVVariableAnnotation('Ap',options.spectralDimensionNames,'m s-1', 'positive wave coefficients at reference time t0');
                         prop.isComplex = 1;
                         prop.isVariableWithLinearTimeStep = 0;
                         prop.isVariableWithNonlinearTimeStep = 1;
                     case 'Am'
-                        prop = WVVariableAnnotation('Am',options.spectralDimensionNames,'m/s', 'negative wave coefficients at reference time t0');
+                        prop = WVVariableAnnotation('Am',options.spectralDimensionNames,'m s-1', 'negative wave coefficients at reference time t0');
                         prop.isComplex = 1;
                         prop.isVariableWithLinearTimeStep = 0;
                         prop.isVariableWithNonlinearTimeStep = 1;
                     case 'A0_TE_factor'
-                        prop = CANumericProperty('A0_TE_factor',options.spectralDimensionNames,'m^{-1}', 'multiplicative factor that multiplies $$A_0^2$$ to compute total energy.',isComplex=0);
+                        prop = CANumericProperty('A0_TE_factor',options.spectralDimensionNames,'m-1', 'multiplicative factor that multiplies $$A_0^2$$ to compute total energy.',isComplex=0);
                     case 'A0_KE_factor'
-                        prop = CANumericProperty('A0_KE_factor',options.spectralDimensionNames,'m^{-1}', 'multiplicative factor that multiplies $$A_0^2$$ to compute kinetic energy.',isComplex=0);
+                        prop = CANumericProperty('A0_KE_factor',options.spectralDimensionNames,'m-1', 'multiplicative factor that multiplies $$A_0^2$$ to compute kinetic energy.',isComplex=0);
                     case 'A0_PE_factor'
-                        prop = CANumericProperty('A0_PE_factor',options.spectralDimensionNames,'m^{-1}', 'multiplicative factor that multiplies $$A_0^2$$ to compute potential energy.',isComplex=0);
+                        prop = CANumericProperty('A0_PE_factor',options.spectralDimensionNames,'m-1', 'multiplicative factor that multiplies $$A_0^2$$ to compute potential energy.',isComplex=0);
                     case 'A0_QGPV_factor'
-                        prop = CANumericProperty('A0_QGPV_factor',options.spectralDimensionNames,'m^{-2}', 'multiplicative factor that multiplies $$A_0$$ to compute quasigeostrophic potential vorticity (QGPV).',isComplex=0);
+                        prop = CANumericProperty('A0_QGPV_factor',options.spectralDimensionNames,'m-2', 'multiplicative factor that multiplies $$A_0$$ to compute quasigeostrophic potential vorticity (QGPV).',isComplex=0);
                     case 'A0_Psi_factor'
-                        prop = CANumericProperty('A0_Psi_factor',options.spectralDimensionNames,'', 'multiplicative factor that multiplies $$A_0$$ to compute the geostrophic streamfunction (psi). The units are mixed: unitless for the geostrophic part, $$s m^{-1}$$ for the MDA part.',isComplex=0);
+                        prop = CANumericProperty('A0_Psi_factor',options.spectralDimensionNames,'', 'multiplicative factor that maps $$A_0$$ to geostrophic streamfunction. It has no single unit: geostrophic locations are dimensionless and MDA locations have units of $$\mathrm{s\,m^{-1}}$$.',isComplex=0);
                     case 'A0_TZ_factor'
-                        prop = CANumericProperty('A0_TZ_factor',options.spectralDimensionNames,'m^{-3}', 'multiplicative factor that multiplies $$A_0^2$$ to compute quasigeostrophic enstrophy.',isComplex=0);
+                        prop = CANumericProperty('A0_TZ_factor',options.spectralDimensionNames,'m-3', 'multiplicative factor that multiplies $$A_0^2$$ to compute quasigeostrophic enstrophy.',isComplex=0);
                     case 'Apm_TE_factor'
                         prop = CANumericProperty('Apm_TE_factor',options.spectralDimensionNames,'m', 'multiplicative factor that multiplies $$A_\pm^2$$ to compute total energy.',isComplex=0);
 

@@ -17,7 +17,7 @@ Reconstructs $$u$$ from $$A_0$$.
 ---
 
 ## Description
-Complex valued property with dimension $$kl$$ and units of $$s^{-1}$$.
+Complex valued property with dimension $$kl$$ and units of $$\mathrm{s^{-1}}$$.
 
 ## Discussion
 Reconstructs $$u$$ from $$A_0$$.

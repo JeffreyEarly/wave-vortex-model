@@ -92,9 +92,7 @@ classdef TestWaveVortexBenchmark < matlab.unittest.TestCase
             memory = results.suites.cases.backends.memory;
             diagnostic = "Memory worker failed: " + string(memory.failure.identifier) + ": " + string(memory.failure.message);
             if string(memory.status) == "failed" && strcmp(getenv("GITHUB_ACTIONS"),"true")
-                testCase.verifyEqual(string(memory.failure.identifier),"WaveVortexBenchmark:MemoryWorkerFailed",diagnostic);
-                licenseMessages = ["License checkout failed" "Unable to find a license for MATLAB"];
-                testCase.verifyTrue(any(contains(string(memory.failure.message),licenseMessages)),diagnostic);
+                verifyNestedMatlabLicenseFailure(testCase,memory.failure,"WaveVortexBenchmark:MemoryWorkerFailed");
                 return
             end
             testCase.verifyEqual(string(memory.status),"complete",diagnostic);

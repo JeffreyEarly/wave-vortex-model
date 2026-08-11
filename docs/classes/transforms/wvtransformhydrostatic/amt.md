@@ -15,7 +15,7 @@ mathjax: true
 ---
 
 ## Description
-Complex valued property with dimensions $$(j,kl)$$ and units of $$m/s$$.
+Complex valued property with dimensions $$(j,kl)$$ and units of $$\mathrm{m\,s^{-1}}$$.
 
 ## Discussion
 `Amt` is the negative-frequency coefficient array evaluated at the current transform time:

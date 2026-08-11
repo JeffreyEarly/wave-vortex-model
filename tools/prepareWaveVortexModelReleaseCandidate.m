@@ -27,10 +27,10 @@ originalPath = path;
 pathCleanup = onCleanup(@()path(originalPath));
 addpath(oceanKitTools,"-begin");
 releaseFunction = @ci_release;
-dependency = oceankitrelease.installDocumentationPackage("ClassDocumentation@1.3.0", ...
+dependency = oceankitrelease.installDocumentationPackage("ClassDocumentation@1.3.2", ...
     repositoryRoot=oceanKitRoot);
-require(dependency.Version == "1.3.0", ...
-    "ClassDocumentation 1.3.0 was not installed for the export dry run.");
+require(dependency.Version == "1.3.2", ...
+    "ClassDocumentation 1.3.2 was not installed for the export dry run.");
 addpath(sourceTools,"-begin");
 configureCIEnvironment(repositoryRoot,oceanKitRoot);
 

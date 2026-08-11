@@ -15,7 +15,7 @@ geostrophic streamfunction
 ---
 
 ## Description
-Real valued property with dimensions $$(x,y,z)$$ and units of $$m^2/s$$.
+Real valued property with dimensions $$(x,y,z)$$ and units of $$\mathrm{m^{2}\,s^{-1}}$$.
 
 ## Discussion
 

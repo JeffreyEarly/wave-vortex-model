@@ -12,7 +12,7 @@ classdef APEOperation < WVOperation
             arguments
                 wvt WVTransform
             end
-            outputVariables(1) = WVVariableAnnotation('ape',{'x','y','z'},'m^2 s^{-2}', 'available potential energy density');
+            outputVariables(1) = WVVariableAnnotation('ape',{'x','y','z'},'m2 s-2', 'available potential energy density');
             self@WVOperation('ape',outputVariables,@disp);
 
             % % In the definitions of rho_nm and p_nm we do not include the

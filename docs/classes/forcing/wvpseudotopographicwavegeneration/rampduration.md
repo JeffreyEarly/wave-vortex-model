@@ -19,6 +19,6 @@ Duration of the half-cosine startup ramp in seconds.
 + Size: `(1,1)`
 
 ## Description
-Real valued property with no dimensions and units of $$s$$.
+Real valued property with no dimensions and units of $$\mathrm{s}$$.
 
 ## Discussion

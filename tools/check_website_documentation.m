@@ -17,7 +17,7 @@ comparison = compareDocumentationTrees(fullfile(repositoryRoot,"docs"),stagingFo
 printComparison(comparison);
 if ~comparison.IsEqual
     preserveDiagnostics(stagingFolder);
-    error("WaveVortexModel:DocumentationOutOfDate","Committed documentation does not match a clean ClassDocumentation 1.3.0 build.");
+    error("WaveVortexModel:DocumentationOutOfDate","Committed documentation does not match a clean ClassDocumentation 1.3.2 build.");
 end
 clear stagingCleanup
 end

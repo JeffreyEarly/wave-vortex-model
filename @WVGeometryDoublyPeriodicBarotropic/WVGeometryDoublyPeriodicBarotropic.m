@@ -11,10 +11,10 @@ classdef WVGeometryDoublyPeriodicBarotropic < WVGeometryDoublyPeriodic & WVRotat
         % Shape `[1 Nkl]` of a barotropic coefficient array.
         spectralMatrixSize
 
-        % Squared horizontal angular wavenumber, `K.^2 + L.^2`, in rad²/m².
+        % Squared horizontal angular wavenumber, `K.^2 + L.^2`, in $$\mathrm{rad^{2}\,m^{-2}}$$.
         K2
 
-        % Horizontal angular-wavenumber magnitude, `sqrt(K2)`, in rad/m.
+        % Horizontal angular-wavenumber magnitude, `sqrt(K2)`, in $$\mathrm{rad\,m^{-1}}$$.
         Kh
 
         % Gridded x-coordinate array in meters with shape `[Nx Ny]`.
@@ -23,13 +23,13 @@ classdef WVGeometryDoublyPeriodicBarotropic < WVGeometryDoublyPeriodic & WVRotat
         % Gridded y-coordinate array in meters with shape `[Nx Ny]`.
         Y
 
-        % X-direction angular-wavenumber array in rad/m with shape `[1 Nkl]`.
+        % X-direction angular-wavenumber array in $$\mathrm{rad\,m^{-1}}$$ with shape `[1 Nkl]`.
         K
 
-        % Y-direction angular-wavenumber array in rad/m with shape `[1 Nkl]`.
+        % Y-direction angular-wavenumber array in $$\mathrm{rad\,m^{-1}}$$ with shape `[1 Nkl]`.
         L
 
-        % Squared barotropic Rossby deformation radius, `g*h/f^2`, in m².
+        % Squared barotropic Rossby deformation radius, `g*h/f^2`, in $$\mathrm{m^{2}}$$.
         Lr2
         
     end
@@ -292,17 +292,17 @@ classdef WVGeometryDoublyPeriodicBarotropic < WVGeometryDoublyPeriodic & WVRotat
             propertyAnnotations = WVGeometryDoublyPeriodic.propertyAnnotationsForGeometry();
             propertyAnnotations = cat(2,propertyAnnotations,WVRotatingFPlane.propertyAnnotationsForRotatingFPlane());
 
-            propertyAnnotations(end+1) = CANumericProperty('K',{'kl'},'rad/m', 'k-coordinate matrix', detailedDescription='- topic: Domain Attributes — Grid — Spectral');
-            propertyAnnotations(end+1) = CANumericProperty('L',{'kl'},'rad/m', 'l-coordinate matrix', detailedDescription='- topic: Domain Attributes — Grid — Spectral');
-            propertyAnnotations(end+1) = CANumericProperty('Kh',{'kl'},'rad/m', 'horizontal wavenumber, $$Kh=\sqrt(K^2+L^2)$$', detailedDescription='- topic: Domain Attributes — Grid — Spectral');
-            propertyAnnotations(end+1) = CANumericProperty('K2',{'kl'},'rad^2 m^{-2}', 'squared horizontal wavenumber, $$K2=K^2+L^2$$', detailedDescription='- topic: Domain Attributes — Grid — Spectral');
+            propertyAnnotations(end+1) = CANumericProperty('K',{'kl'},'rad m-1', 'k-coordinate matrix', detailedDescription='- topic: Domain Attributes — Grid — Spectral');
+            propertyAnnotations(end+1) = CANumericProperty('L',{'kl'},'rad m-1', 'l-coordinate matrix', detailedDescription='- topic: Domain Attributes — Grid — Spectral');
+            propertyAnnotations(end+1) = CANumericProperty('Kh',{'kl'},'rad m-1', 'horizontal wavenumber, $$Kh=\sqrt(K^2+L^2)$$', detailedDescription='- topic: Domain Attributes — Grid — Spectral');
+            propertyAnnotations(end+1) = CANumericProperty('K2',{'kl'},'rad2 m-2', 'squared horizontal wavenumber, $$K2=K^2+L^2$$', detailedDescription='- topic: Domain Attributes — Grid — Spectral');
             propertyAnnotations(end+1) = CANumericProperty('X',{'x','y'},'m', 'x-coordinate matrix', detailedDescription='- topic: Domain Attributes — Grid — Spatial');
             propertyAnnotations(end+1) = CANumericProperty('Y',{'x','y'},'m', 'y-coordinate matrix', detailedDescription='- topic: Domain Attributes — Grid — Spatial');
 
             propertyAnnotations(end+1) = CANumericProperty('h',{},'m', 'equivalent depth', detailedDescription='- topic: Domain Attributes');
-            propertyAnnotations(end+1) = CANumericProperty('j',{},'', 'mode number', detailedDescription='- topic: Domain Attributes');
+            propertyAnnotations(end+1) = CANumericProperty('j',{},'1', 'vertical mode number', detailedDescription='- topic: Domain Attributes');
 
-            propertyAnnotations(end+1) = CANumericProperty('Lr2',{},'m^2', 'squared barotropic Rossby deformation radius');
+            propertyAnnotations(end+1) = CANumericProperty('Lr2',{},'m2', 'squared barotropic Rossby deformation radius');
         end
 
         function [Lxy, Nxy, options] = requiredPropertiesForGeometryFromGroup(group)

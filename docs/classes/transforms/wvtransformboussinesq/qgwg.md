@@ -17,4 +17,4 @@ size(PF,PG)=[Nj x Nj x Nk]
 ---
 
 ## Description
-Real valued property with dimensions $$(j,j,K2unique)$$ and no units.
+Real valued property with dimensions $$(j,j,K2unique)$$ and is dimensionless.

@@ -9,13 +9,13 @@ mathjax: true
 
 #  l
 
-Compact `Nkl`-by-1 y-wavenumber vector in rad/m.
+Compact `Nkl`-by-1 y-wavenumber vector in $$\mathrm{rad\,m^{-1}}$$.
 
 
 ---
 
 ## Description
-Real valued property with dimension $$kl$$ and units of $$rad/m$$.
+Real valued property with dimension $$kl$$ and units of $$\mathrm{rad\,m^{-1}}$$.
 
 ## Discussion
 

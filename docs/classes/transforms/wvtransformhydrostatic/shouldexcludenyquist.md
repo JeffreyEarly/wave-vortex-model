@@ -17,6 +17,6 @@ whether the WV grid includes Nyquist wavenumbers
 ---
 
 ## Description
-Real valued property with no dimensions and units of $$bool$$.
+Real valued property with no dimensions and is dimensionless.
 
 ## Discussion
