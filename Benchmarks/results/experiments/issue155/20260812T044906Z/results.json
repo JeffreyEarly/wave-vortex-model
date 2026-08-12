@@ -1,0 +1,71 @@
+{
+  "schemaVersion": 1,
+  "issue": 155,
+  "runId": "20260812T044906Z",
+  "status": "FEASIBILITY-REJECT",
+  "host": "Lyra",
+  "baselineCommit": "be0f78995c49a2bfe4c43d75827856e3812ac278",
+  "scaffoldCommit": "782e9b41b76628eb0f61b1bd87339dd69b884314",
+  "implementationCommit": "071b8a66519854f5f0d886a33f73042428caf832",
+  "branch": "experiment/issue-155-pruned-generated-fft",
+  "radialRetention": [
+    {
+      "shape": "128x128x33",
+      "Nj": 21,
+      "denseHalfRows": 8320,
+      "retainedRows": 2861,
+      "knownZeroOrDiscardedRows": 5459,
+      "knownZeroFraction": 0.65613,
+      "liveNonnegativeKColumns": 43,
+      "totalNonnegativeKColumns": 65,
+      "boundedTransformOnlyCeiling": 0.17054
+    },
+    {
+      "shape": "256x256x65",
+      "Nj": 42,
+      "denseHalfRows": 33024,
+      "retainedRows": 11439,
+      "knownZeroOrDiscardedRows": 21585,
+      "knownZeroFraction": 0.65362,
+      "liveNonnegativeKColumns": 86,
+      "totalNonnegativeKColumns": 129,
+      "boundedTransformOnlyCeiling": 0.16732
+    }
+  ],
+  "generousCompleteCallCeilings": {
+    "mediumHydrostatic": 0.1453,
+    "mediumNonhydrostatic": 0.1471,
+    "largeHydrostatic": 0.1456,
+    "largeNonhydrostatic": 0.1475,
+    "requiredHorizontalBlockGate": 0.15
+  },
+  "candidateAssessment": {
+    "spiralFftx": "No qualified masked batched 2-D real/Hermitian primitive, generated arm64 NEON artifact, or verified standalone OpenMP path; 1-D real batching is documented as in development.",
+    "partialFft": "Cited formulation is one-dimensional with a space-varying cutoff; no source identity, license, or arm64 real/Hermitian 2-D implementation is available.",
+    "boundedHandPruning": "Can omit only all-zero k columns; dense real pass, dense products, packing, mapping, normalization, and memory traffic remain. Complete-call ceiling is below 15%."
+  },
+  "correctness": {
+    "result": "pass",
+    "records": 64,
+    "description": "16 repeated descriptor constructions for every production shape and physical configuration; every retained mode mapped to a unique Hermitian half-spectrum row"
+  },
+  "lifecycle": {
+    "result": "pass",
+    "descriptorCycles": 64,
+    "fftProvidersCreated": 0,
+    "matlabProcessesCreated": 0,
+    "generatedCodeCreated": 0,
+    "persistentPlansCreated": 0
+  },
+  "licensing": {
+    "fftwpp": "LGPL-3.0-or-later obligations retained from pinned issue #128 source identity",
+    "fftx": "BSD-style according to SPIRAL/FFTX project materials; generated-code provenance and dependencies would still require reproducible capture"
+  },
+  "skipped": {
+    "horizontalPrototype": "modeled complete-call ceiling did not reach the 15% feasibility gate",
+    "mediumAndLargeTiming": "early feasibility gate failed",
+    "rss": "no qualified prototype",
+    "donutConfirmation": "no candidate"
+  },
+  "reproductionCommand": "/private/tmp/issue155-overnight-cache/bin/issue155-radial-retention > /private/tmp/issue155-overnight-cache/results/radial-retention.jsonl"
+}
