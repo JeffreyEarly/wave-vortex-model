@@ -1,0 +1,62 @@
+{
+  "schemaVersion": "1.0.0",
+  "issue": 152,
+  "runId": "20260812T162936Z",
+  "disposition": "CORE-REJECT — OPTIMIZER AUDITED",
+  "host": {
+    "hostname": "lyra.ad.nwra.com",
+    "model": "Mac16,9",
+    "architecture": "arm64",
+    "os": "macOS 26.5.2 (25F84)",
+    "memoryBytes": 137438953472,
+    "hardwareThreads": 16,
+    "configuredThreads": 4
+  },
+  "baseline": {
+    "issue152ArtifactCommit": "6993dbe92bc7996ced2b727ad7952dd9b81fcad0",
+    "nativeExplicitControlCommit": "be0f78995c49a2bfe4c43d75827856e3812ac278",
+    "geometry": {"Nx": 128, "Ny": 128, "Nz": 33, "Nj": 21},
+    "warmups": 2,
+    "samples": 3,
+    "executionTimingExcludesOptimizerAndPlanConstruction": true
+  },
+  "dependencies": {
+    "fftwpp": {
+      "repository": "https://github.com/dealias/fftwpp",
+      "commit": "e685733aba768d77e9234ca02092632f7ccb4c86",
+      "tree": "03660c0e78cc469c84bc35ce9088fd3f04869341",
+      "convolveCcSha256": "df17f432a694abecd5cdd0fe9ec606c44fccc193ed8870003619eaccbd60a22b",
+      "license": "LGPL-3.0-or-later",
+      "obligations": "No FFTW++ source or binary is tracked. Redistribution of a binary linked with FFTW++ must preserve LGPL notices and permit relinking with a modified library."
+    },
+    "fftw": {
+      "version": "3.3.11",
+      "pthreadsBaseSha256": "a1bad79db042a9bd442ce10caa1a392e261376af5f32868f52331178329b19a8",
+      "pthreadsThreadSha256": "67c27cd07a519498d645bc7b9aef88447ebebae62b2c749a61c1fad5688c1c01",
+      "openMPBaseSha256": "a562dbe9ce7f899facd0b4b68a035eff8210abbda6c5f58d41ffdb8211e9162f",
+      "openMPThreadSha256": "edcfcfe65d3d2a2f334e06eedf1c8bfa011cae3113e90c27a070e759a098381f"
+    },
+    "llvmLibomp": {"version": "22.1.8", "sha256": "da9fbe007e88d9d4e265ba479f592c5e940e1d617f63e5a257cda77024fa4d52"},
+    "auditSources": {
+      "adapterSha256": "d569df72d248eac7951231361f95ea91da8cf74ca6334e14abf0ac691fb6ffef",
+      "benchmarkSha256": "7e461f1ddb3c731b4872b4e7c701d66788389d39529daa73568e21891bb0f896"
+    }
+  },
+  "correctness": {
+    "directAsymmetricReproducer": {"cases": 10, "maximumRelativeInfinityError": 9.995248e-16, "status": "pass"},
+    "coreRequirement": "relative infinity error <= 1e-12",
+    "optimizerSelection": {"hydrostaticError": 0.50100797687193543, "nonhydrostaticError": 0.50102466007990687, "status": "fail"}
+  },
+  "cases": [
+    {"configuration":"hydrostatic", "variant":"native-pthreads-explicit", "medianSeconds":0.016225, "samplesSeconds":[0.015886625,0.016225,0.016655083], "relativeInfinityError":0, "knownMaximumLiveOwnedBytes":69387557, "maximumRSSBytes":138133504},
+    {"configuration":"hydrostatic", "variant":"native-openmp-explicit", "medianSeconds":0.016961209, "samplesSeconds":[0.016821166,0.017009833,0.016961209], "relativeInfinityError":1.3830322602222294e-14, "knownMaximumLiveOwnedBytes":69387557, "maximumRSSBytes":139886592},
+    {"configuration":"hydrostatic", "variant":"fftwpp-forced-hybrid", "medianSeconds":0.02736425, "samplesSeconds":[0.02736425,0.027354625,0.027424833], "relativeInfinityError":2.4421887372895922e-14, "schedule":{"centered":{"m":44,"D":1,"I":0,"p":2,"q":3},"hermitian":{"m":44,"D":2,"I":0,"p":2,"q":3}}, "knownMaximumLiveOwnedBytes":64781573, "maximumRSSBytes":146997248},
+    {"configuration":"hydrostatic", "variant":"fftwpp-auto-reconstructed", "medianSeconds":0.023566, "samplesSeconds":[0.023607584,0.023566,0.023447208], "relativeInfinityError":0.50100797687193543, "optimizerDiscoverySeconds":0.108788542, "fixedPlanConstructionSeconds":1.275283584, "schedule":{"centered":{"m":64,"D":1,"I":1,"p":2,"q":2,"logicalPadding":42},"hermitian":{"m":128,"D":1,"I":1,"p":1,"q":1,"logicalPadding":42}}, "transforms":{"physical":12,"sacrificial":3,"outputs":3,"total":18}, "knownMaximumLiveOwnedBytes":64797285, "maximumRSSBytes":147554304},
+    {"configuration":"nonhydrostatic", "variant":"native-pthreads-explicit", "medianSeconds":0.021155375, "samplesSeconds":[0.021363625,0.021017583,0.021155375], "relativeInfinityError":0, "knownMaximumLiveOwnedBytes":73712933, "maximumRSSBytes":143114240},
+    {"configuration":"nonhydrostatic", "variant":"native-openmp-explicit", "medianSeconds":0.021293291, "samplesSeconds":[0.021293291,0.021306,0.021258417], "relativeInfinityError":1.7344309783303963e-14, "knownMaximumLiveOwnedBytes":73712933, "maximumRSSBytes":144211968},
+    {"configuration":"nonhydrostatic", "variant":"fftwpp-forced-hybrid", "medianSeconds":0.033898458, "samplesSeconds":[0.033898458,0.033781625,0.034023667], "relativeInfinityError":2.514035835639123e-14, "schedule":{"centered":{"m":44,"D":1,"I":0,"p":2,"q":3},"hermitian":{"m":44,"D":2,"I":0,"p":2,"q":3}}, "knownMaximumLiveOwnedBytes":72783269, "maximumRSSBytes":155762688},
+    {"configuration":"nonhydrostatic", "variant":"fftwpp-auto-reconstructed", "medianSeconds":0.0216745, "samplesSeconds":[0.021564042,0.0216745,0.021751791], "relativeInfinityError":0.50102466007990687, "optimizerDiscoverySeconds":0.018813042, "fixedPlanConstructionSeconds":1.189936125, "schedule":{"centered":{"m":64,"D":1,"I":1,"p":2,"q":2,"logicalPadding":42},"hermitian":{"m":64,"D":2,"I":0,"p":2,"q":2,"logicalPadding":42}}, "transforms":{"physical":15,"sacrificial":4,"outputs":4,"total":23}, "knownMaximumLiveOwnedBytes":72803365, "maximumRSSBytes":155385856}
+  ],
+  "threadAndLifecycle": {"allWorkerRegionsDisjoint":true, "maximumOpenMPActiveLevel":1, "maximumObservedWorkers":4, "allPlansDestroyed":true, "opaquePlanBytes":"0 is a provider lower bound, not a proof of no opaque allocation"},
+  "skipped": {"largeScreening": "optimizer-selected schedule failed correctness at medium", "finalistProtocol": "no valid advancing candidate", "matlab": "outside this standalone-only narrow audit", "DonutConfirmation": "no passing candidate"}
+}
