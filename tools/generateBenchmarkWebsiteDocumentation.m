@@ -167,7 +167,7 @@ for iRecord = 1:numel(records)
     rows(end+1,:) = [datasetLabel(dataset),runtime,memory,increment,string(dataset.platform.threadCount)];
 end
 if isempty(rows)
-    markdown = "No approved benchmark datasets have been published yet. Issue #140 will add the first two-machine MATLAB results.";
+    markdown = "No approved benchmark datasets have been published yet. Approved results will appear here when they are added to the benchmark catalog.";
     return
 end
 rows = sortrows(rows,1);
@@ -235,24 +235,34 @@ for iTemplate = 1:numel(templates)
     eligible(iTemplate) = isScalingTemplate(templates,iTemplate,axisName);
 end
 templates = templates(eligible);
+environments = latestEnvironmentRecords(records);
 rows = struct("datasetId",{},"datasetLabel",{},"suiteId",{},"transformId",{},"caseId",{},"resolution",{},"status",{},"reason",{},"value",{});
-for iRecord = 1:numel(records)
-    dataset = records(iRecord).dataset;
+for iEnvironment = 1:numel(environments)
+    environmentDataset = environments(iEnvironment).dataset;
+    environment = environmentKey(environmentDataset);
     for iTemplate = 1:numel(templates)
         template = templates(iTemplate);
-        if template.suiteId ~= string(dataset.benchmark.suiteId) || template.suiteVersion ~= double(dataset.benchmark.suiteVersion)
-            continue
+        recordIndex = find(arrayfun(@(record)environmentKey(record.dataset) == environment && ...
+            string(record.dataset.benchmark.suiteId) == template.suiteId && ...
+            double(record.dataset.benchmark.suiteVersion) == template.suiteVersion,records),1);
+        if isempty(recordIndex)
+            dataset = environmentDataset;
+            status = "unavailable";
+            reason = "No " + template.suiteId + " dataset was collected for this environment.";
+            value = NaN;
+        else
+            dataset = records(recordIndex).dataset;
+            benchmarkCase = caseWithId(dataset,template.caseId);
+            [status,reason,value] = scalingValue(benchmarkCase,metricName);
         end
-        benchmarkCase = caseWithId(dataset,template.caseId);
-        [status,reason,value] = scalingValue(benchmarkCase,metricName);
         resolution = template.Nxyz(1);
         if axisName == "vertical"
             resolution = template.Nxyz(3);
         end
         rows(end+1) = struct( ...
             "datasetId",string(dataset.datasetId), ...
-            "datasetLabel",datasetLabel(dataset) + " — " + string(dataset.benchmark.suiteId), ...
-            "suiteId",string(dataset.benchmark.suiteId), ...
+            "datasetLabel",datasetLabel(dataset) + " — " + template.suiteId, ...
+            "suiteId",template.suiteId, ...
             "transformId",template.transformId, ...
             "caseId",template.caseId, ...
             "resolution",resolution, ...
@@ -585,7 +595,7 @@ value = datetime(string(dataset.collectedAt),"InputFormat","yyyy-MM-dd'T'HH:mm:s
 end
 
 function label = datasetLabel(dataset)
-label = string(dataset.platform.displayName) + " — " + string(dataset.implementation.displayName) + " " + string(dataset.implementation.version) + " (" + string(dataset.implementation.backend) + ")";
+label = string(dataset.platform.displayName) + " — " + string(dataset.implementation.displayName) + " " + string(dataset.implementation.version) + " (" + string(dataset.implementation.backend) + "; " + string(dataset.toolchain.name) + " " + string(dataset.toolchain.version) + ")";
 end
 
 function displayName = displayTransform(transformId)

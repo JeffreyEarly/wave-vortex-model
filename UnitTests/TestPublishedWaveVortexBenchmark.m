@@ -31,7 +31,7 @@ classdef TestPublishedWaveVortexBenchmark < matlab.unittest.TestCase
             testCase.verifyEqual(string(catalog.schemaVersion),"benchmark-catalog-v1");
             testCase.verifyEqual(string({catalog.scoringReferences.suiteId}),["core-v1" "scaling-standard-v1" "scaling-large-v1"]);
             testCase.verifyEqual(string({catalog.scoringReferences.backendId}),repmat("builtin",1,3));
-            testCase.verifyEmpty(catalog.publishedDatasets);
+            testCase.verifyNumElements(catalog.publishedDatasets,5);
             for iReference = 1:numel(catalog.scoringReferences)
                 reference = catalog.scoringReferences(iReference);
                 relativePath = string(reference.rawArtifact);
@@ -41,6 +41,66 @@ classdef TestPublishedWaveVortexBenchmark < matlab.unittest.TestCase
                 testCase.verifyFalse(startsWith(relativePath,["/" "\\"]));
                 testCase.verifyFalse(contains(relativePath,[".." "\\"]));
             end
+            for iDataset = 1:numel(catalog.publishedDatasets)
+                entry = catalog.publishedDatasets(iDataset);
+                relativePath = string(entry.artifact);
+                testCase.verifyTrue(isfile(fullfile(testCase.repositoryRoot,relativePath)));
+                testCase.verifyTrue(startsWith(relativePath,"Benchmarks/results/published/"));
+                testCase.verifyFalse(startsWith(relativePath,["/" "\\"]));
+                testCase.verifyFalse(contains(relativePath,[".." "\\"]));
+            end
+        end
+
+        function initialPlatformDatasetsMeetPublicationContract(testCase)
+            catalog = jsondecode(fileread(fullfile(testCase.benchmarkFolder,"results","catalog.json")));
+            standardPlatforms = strings(0,1);
+            toolchainVersions = strings(0,1);
+            for iDataset = 1:numel(catalog.publishedDatasets)
+                entry = catalog.publishedDatasets(iDataset);
+                dataset = jsondecode(fileread(fullfile(testCase.repositoryRoot,string(entry.artifact))));
+                testCase.verifyEqual(string(dataset.schemaVersion),"published-benchmark-v1");
+                testCase.verifyEqual(string(dataset.datasetId),string(entry.datasetId));
+                testCase.verifyEqual(string(dataset.implementation.version),"4.2.1");
+                testCase.verifyEqual(string(dataset.implementation.commit),"9652b116b3ffd4ee3372cc5cdeea9700cd6cbc32");
+                testCase.verifyFalse(logical(dataset.implementation.sourceDirty));
+                testCase.verifySubstring(string(dataset.platform.processor),"Apple M");
+                testCase.verifyGreaterThan(double(dataset.platform.physicalMemoryBytes),0);
+                testCase.verifyGreaterThan(double(dataset.platform.threadCount),0);
+                testCase.verifyTrue(isfile(fullfile(testCase.repositoryRoot,string(dataset.provenance.rawArtifact))));
+
+                cases = dataset.cases;
+                if ~iscell(cases)
+                    cases = num2cell(cases);
+                end
+                statuses = string(cellfun(@(benchmarkCase)benchmarkCase.status,cases,"UniformOutput",false));
+                if string(dataset.benchmark.suiteId) == "scaling-standard-v1"
+                    testCase.verifyNumElements(cases,34);
+                    testCase.verifyEqual(statuses,repmat("complete",size(statuses)));
+                    standardPlatforms(end+1,1) = string(dataset.platform.id);
+                else
+                    testCase.verifyEqual(string(dataset.benchmark.suiteId),"scaling-large-v1");
+                    testCase.verifyNumElements(cases,19);
+                    if string(dataset.platform.id) == "m5-max"
+                        testCase.verifyEqual(nnz(statuses == "complete"),16);
+                        testCase.verifyEqual(nnz(statuses == "unavailable"),3);
+                        reasons = string(cellfun(@(benchmarkCase)unavailableReason(benchmarkCase),cases(statuses == "unavailable"),"UniformOutput",false));
+                        testCase.verifyTrue(all(contains(reasons,"48 GiB")));
+                    else
+                        testCase.verifyEqual(statuses,repmat("complete",size(statuses)));
+                    end
+                end
+                for iCase = find(statuses == "complete")
+                    benchmarkCase = cases{iCase};
+                    testCase.verifyTrue(logical(benchmarkCase.correctness.passed));
+                    testCase.verifyTrue(all(isfinite(benchmarkCase.timing.samplesSeconds)));
+                    testCase.verifyGreaterThan(double(benchmarkCase.timing.medianSeconds),0);
+                    testCase.verifyEqual(string(benchmarkCase.memory.status),"complete");
+                end
+                toolchainVersions(end+1,1) = string(dataset.toolchain.version);
+            end
+            testCase.verifyEqual(sort(standardPlatforms),sort(["lyra"; "m5-max"; "matilda"]));
+            testCase.verifyTrue(any(contains(toolchainVersions,"R2025b") & contains(toolchainVersions,"Update 4")));
+            testCase.verifyTrue(any(contains(toolchainVersions,"R2026a") & contains(toolchainVersions,"Update 4")));
         end
 
         function legacyArtifactNormalizesWithoutMutation(testCase)
@@ -125,4 +185,11 @@ fileId = fopen(pathname,"w");
 cleanup = onCleanup(@()fclose(fileId));
 fprintf(fileId,"%s\n",jsonencode(value,PrettyPrint=true));
 clear cleanup
+end
+
+function reason = unavailableReason(benchmarkCase)
+reason = "";
+if isfield(benchmarkCase,"unavailableReason")
+    reason = string(benchmarkCase.unavailableReason);
+end
 end
