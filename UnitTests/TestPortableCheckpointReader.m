@@ -5,7 +5,7 @@ classdef TestPortableCheckpointReader < matlab.unittest.TestCase
             buildScript = fullfile(repositoryRoot,"tools","compiled-kernel","run_contract_tests.sh");
             [buildStatus,buildOutput] = system(sprintf('"%s"',buildScript));
             testCase.assertEqual(buildStatus,0,buildOutput)
-            inspector = fullfile(repositoryRoot,"tools","compiled-kernel","build","wv_checkpoint_inspect");
+            inspector = fullfile(repositoryRoot,"tools","compiled-kernel","build-portable","wv_checkpoint_inspect");
             fixtureDirectory = fullfile(repositoryRoot,"tools","portable-runtime","fixtures");
             cases = {
                 "root-nonhydrostatic.nc", Inf, []
@@ -50,7 +50,7 @@ classdef TestPortableCheckpointReader < matlab.unittest.TestCase
             buildScript = fullfile(repositoryRoot,"tools","compiled-kernel","run_contract_tests.sh");
             [buildStatus,buildOutput] = system(sprintf('"%s"',buildScript));
             testCase.assertEqual(buildStatus,0,buildOutput)
-            inspector = fullfile(repositoryRoot,"tools","compiled-kernel","build","wv_checkpoint_inspect");
+            inspector = fullfile(repositoryRoot,"tools","compiled-kernel","build-portable","wv_checkpoint_inspect");
             fixtureDirectory = fullfile(repositoryRoot,"tools","portable-runtime","fixtures");
 
             capabilityCommand = TestPortableCheckpointReader.sanitizedCommand(sprintf('"%s" --forcing-capabilities',inspector));
@@ -119,9 +119,139 @@ classdef TestPortableCheckpointReader < matlab.unittest.TestCase
                 clear cleanup
             end
         end
+
+        function portableForcingEngineMatchesMatlab(testCase)
+            repositoryRoot = fileparts(fileparts(mfilename("fullpath")));
+            fixtureToolDirectory = fullfile(repositoryRoot,"tools","portable-runtime");
+            addpath(fixtureToolDirectory)
+            fixtureToolCleanup = onCleanup(@()rmpath(fixtureToolDirectory));
+            buildScript = fullfile(repositoryRoot,"tools","compiled-kernel","run_contract_tests.sh");
+            [buildStatus,buildOutput] = system(sprintf('"%s"',buildScript));
+            testCase.assertEqual(buildStatus,0,buildOutput)
+            inspector = fullfile(repositoryRoot,"tools","compiled-kernel","build-portable","wv_portable_forcing_inspect");
+            fixtureDirectory = string(tempname);
+            mkdir(fixtureDirectory)
+            fixtureCleanup = onCleanup(@()rmdir(fixtureDirectory,"s"));
+            generateForcingScheduleFixtures(outputDirectory=fixtureDirectory,coefficientMode="physical-small");
+            fixtureNames = ["forcing-nonlinear.nc" "forcing-adaptive-damping.nc" "forcing-fixed-amplitude.nc" "forcing-quadratic-bottom-friction.nc" "forcing-pseudo-topographic.nc" "forcing-beta-plane.nc" "forcing-mixed-hydrostatic.nc" "forcing-mixed-nonhydrostatic.nc"];
+
+            for fixtureName = fixtureNames
+                fixturePath = fullfile(fixtureDirectory,fixtureName);
+                command = TestPortableCheckpointReader.sanitizedCommand(sprintf('"%s" "%s"',inspector,fixturePath));
+                [status,output] = system(command);
+                testCase.assertEqual(status,0,output)
+                record = jsondecode(output);
+                shape = [record.shape(1) record.shape(2)];
+                actual = {
+                    complex(reshape(record.FpReal,shape),reshape(record.FpImag,shape))
+                    complex(reshape(record.FmReal,shape),reshape(record.FmImag,shape))
+                    complex(reshape(record.F0Real,shape),reshape(record.F0Imag,shape))
+                    };
+
+                [wvt,ncfile] = WVTransform.waveVortexTransformFromFile(fixturePath,shouldReadOnly=true);
+                cleanup = onCleanup(@()TestPortableCheckpointReader.closeIfOpen(ncfile));
+                horizontalMean = wvt.Kh == 0;
+                waveOrInertial = horizontalMean | wvt.J > 0;
+                geostrophicOrMDA = ~horizontalMean | wvt.J > 0;
+                wvt.Ap(~waveOrInertial) = 0;
+                wvt.Am(~waveOrInertial) = 0;
+                wvt.A0(~geostrophicOrMDA) = 0;
+                [expected{1:3}] = wvt.nonlinearFlux(); %#ok<AGROW>
+                for iCoefficient = 1:3
+                    scale = max(max(abs(expected{iCoefficient}),[],"all"),realmin);
+                    relativeError = max(abs(actual{iCoefficient}-expected{iCoefficient}),[],"all")/scale;
+                    testCase.verifyLessThanOrEqual(relativeError,1e-12,sprintf("%s coefficient %d",fixtureName,iCoefficient))
+                end
+                ncfile.close();
+                clear cleanup
+            end
+            clear fixtureCleanup
+            clear fixtureToolCleanup
+        end
+
+        function portableRK4MatchesMatlab(testCase)
+            repositoryRoot = fileparts(fileparts(mfilename("fullpath")));
+            fixtureToolDirectory = fullfile(repositoryRoot,"tools","portable-runtime");
+            addpath(fixtureToolDirectory)
+            fixtureToolCleanup = onCleanup(@()rmpath(fixtureToolDirectory));
+            buildScript = fullfile(repositoryRoot,"tools","compiled-kernel","run_contract_tests.sh");
+            [buildStatus,buildOutput] = system(sprintf('"%s"',buildScript));
+            testCase.assertEqual(buildStatus,0,buildOutput)
+            inspector = fullfile(repositoryRoot,"tools","compiled-kernel","build-portable","wv_portable_rk4_inspect");
+            fixtureDirectory = string(tempname);
+            mkdir(fixtureDirectory)
+            fixtureCleanup = onCleanup(@()rmdir(fixtureDirectory,"s"));
+            generateForcingScheduleFixtures(outputDirectory=fixtureDirectory,coefficientMode="physical-small");
+
+            fixtureNames = ["forcing-mixed-hydrostatic.nc" "forcing-mixed-nonhydrostatic.nc"];
+            for fixtureName = fixtureNames
+                fixturePath = fullfile(fixtureDirectory,fixtureName);
+                [wvt,ncfile] = WVTransform.waveVortexTransformFromFile(fixturePath,shouldReadOnly=true);
+                transformCleanup = onCleanup(@()TestPortableCheckpointReader.closeIfOpen(ncfile));
+                deltaT = 0.037;
+                finalTime = wvt.t+2.5*deltaT;
+                [Ap,Am,A0,t,stepCount] = TestPortableCheckpointReader.advanceRK4(wvt,finalTime,deltaT);
+
+                command = TestPortableCheckpointReader.sanitizedCommand(sprintf('"%s" "%s" %.17g %.17g',inspector,fixturePath,finalTime,deltaT));
+                [status,output] = system(command);
+                testCase.assertEqual(status,0,output)
+                record = jsondecode(output);
+                shape = [record.shape(1) record.shape(2)];
+                actual = {
+                    complex(reshape(record.ApReal,shape),reshape(record.ApImag,shape))
+                    complex(reshape(record.AmReal,shape),reshape(record.AmImag,shape))
+                    complex(reshape(record.A0Real,shape),reshape(record.A0Imag,shape))
+                    };
+                expected = {Ap;Am;A0};
+                for iCoefficient = 1:3
+                    scale = max(max(abs(expected{iCoefficient}),[],"all"),realmin);
+                    testCase.verifyLessThanOrEqual(max(abs(actual{iCoefficient}-expected{iCoefficient}),[],"all")/scale,1e-12)
+                end
+                testCase.verifyEqual(record.t,t,AbsTol=4*eps(t))
+                testCase.verifyEqual(record.stepCount,stepCount)
+                testCase.verifyEqual(record.rhsEvaluationCount,4*stepCount)
+                testCase.verifyEqual(record.workspaceBytes,9*numel(Ap)*16)
+                ncfile.close();
+                clear transformCleanup
+            end
+            clear fixtureCleanup fixtureToolCleanup
+        end
     end
 
     methods (Static, Access=private)
+        function [Ap,Am,A0,t,stepCount] = advanceRK4(wvt,finalTime,deltaT)
+            TestPortableCheckpointReader.restoreFixedAmplitudes(wvt)
+            stepCount = 0;
+            while wvt.t < finalTime
+                h = min(deltaT,finalTime-wvt.t);
+                Ap0 = wvt.Ap; Am0 = wvt.Am; A00 = wvt.A0; t0 = wvt.t;
+                [k1p,k1m,k10] = wvt.nonlinearFlux();
+                wvt.Ap = Ap0+0.5*h*k1p; wvt.Am = Am0+0.5*h*k1m; wvt.A0 = A00+0.5*h*k10; wvt.t = t0+0.5*h; TestPortableCheckpointReader.restoreFixedAmplitudes(wvt)
+                [k2p,k2m,k20] = wvt.nonlinearFlux();
+                wvt.Ap = Ap0+0.5*h*k2p; wvt.Am = Am0+0.5*h*k2m; wvt.A0 = A00+0.5*h*k20; TestPortableCheckpointReader.restoreFixedAmplitudes(wvt)
+                [k3p,k3m,k30] = wvt.nonlinearFlux();
+                wvt.Ap = Ap0+h*k3p; wvt.Am = Am0+h*k3m; wvt.A0 = A00+h*k30; wvt.t = t0+h; TestPortableCheckpointReader.restoreFixedAmplitudes(wvt)
+                [k4p,k4m,k40] = wvt.nonlinearFlux();
+                wvt.Ap = Ap0+(h/6)*(k1p+2*k2p+2*k3p+k4p);
+                wvt.Am = Am0+(h/6)*(k1m+2*k2m+2*k3m+k4m);
+                wvt.A0 = A00+(h/6)*(k10+2*k20+2*k30+k40);
+                wvt.t = t0+h;
+                TestPortableCheckpointReader.restoreFixedAmplitudes(wvt)
+                stepCount = stepCount+1;
+            end
+            Ap = wvt.Ap; Am = wvt.Am; A0 = wvt.A0; t = wvt.t;
+        end
+
+        function restoreFixedAmplitudes(wvt)
+            forcing = wvt.forcing;
+            fixed = forcing(arrayfun(@(force)isa(force,"WVFixedAmplitudeForcing"),forcing));
+            for force = fixed
+                wvt.Ap(force.Ap_indices) = force.Apbar;
+                wvt.Am(force.Am_indices) = force.Ambar;
+                wvt.A0(force.A0_indices) = force.A0bar;
+            end
+        end
+
         function command = sanitizedCommand(command)
             if isunix
                 command = "/usr/bin/env -u LD_LIBRARY_PATH -u DYLD_LIBRARY_PATH -u DYLD_FALLBACK_LIBRARY_PATH "+command;

@@ -10,6 +10,10 @@ namespace wavevortex {
 namespace {
 
 constexpr double pi = 3.141592653589793238462643383279502884;
+// Match WVGeometryDoublyPeriodicStratifiedConstant's established analytic
+// F/G normalization. That MATLAB implementation uses 9.81 independently of
+// the configurable gravity used by h_0 and the physical model.
+constexpr double matlabModalNormalizationGravity = 9.81;
 
 WVComplex64 complexValue(double real, double imag = 0.0) { return {real, imag}; }
 
@@ -182,9 +186,9 @@ WVKernelStatus WVTransformConstantStratificationDescriptor::create(
         for (std::size_t iJ = 0; iJ < configuration.Nj; ++iJ) {
             const double M = modes.verticalWavenumber[iJ];
             const double signNorm = iJ % 2 == 0 ? 1.0 : -1.0;
-            const double Fg = iJ == 0 ? 2.0 : signNorm * modes.h0[iJ] * M * std::sqrt(2.0 * configuration.g / (configuration.Lz * N02));
-            const double Gg = iJ == 0 ? 1.0 : signNorm * std::sqrt(2.0 * configuration.g / (configuration.Lz * N02));
-            const double Gw = configuration.isHydrostatic || iJ == 0 ? Gg : signNorm * std::sqrt(2.0 * configuration.g / (configuration.Lz * (N02 - f2)));
+            const double Fg = iJ == 0 ? 2.0 : signNorm * modes.h0[iJ] * M * std::sqrt(2.0 * matlabModalNormalizationGravity / (configuration.Lz * N02));
+            const double Gg = iJ == 0 ? 1.0 : signNorm * std::sqrt(2.0 * matlabModalNormalizationGravity / (configuration.Lz * N02));
+            const double Gw = configuration.isHydrostatic || iJ == 0 ? Gg : signNorm * std::sqrt(2.0 * matlabModalNormalizationGravity / (configuration.Lz * (N02 - f2)));
             const double Gwg = Gg / Gw;
             modes.Fg[iJ] = Fg; modes.Gg[iJ] = Gg;
             modes.gWaveScale[iJ] = Gg / Gwg;
@@ -211,8 +215,8 @@ WVKernelStatus WVTransformConstantStratificationDescriptor::create(
                 double Fw = Fg;
                 double Gw = Gg;
                 if (!configuration.isHydrostatic) {
-                    Fw = iJ == 0 ? 2.0 : signNorm * hpm * M * std::sqrt(2.0 * configuration.g / (configuration.Lz * (N02 - f2)));
-                    Gw = iJ == 0 ? 1.0 : signNorm * std::sqrt(2.0 * configuration.g / (configuration.Lz * (N02 - f2)));
+                    Fw = iJ == 0 ? 2.0 : signNorm * hpm * M * std::sqrt(2.0 * matlabModalNormalizationGravity / (configuration.Lz * (N02 - f2)));
+                    Gw = iJ == 0 ? 1.0 : signNorm * std::sqrt(2.0 * matlabModalNormalizationGravity / (configuration.Lz * (N02 - f2)));
                 }
                 const double omega = std::sqrt(configuration.g * hpm * Kh2 + f2);
                 const double Fwg = Fg / Fw;

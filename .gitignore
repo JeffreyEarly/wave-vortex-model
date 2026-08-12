@@ -4,6 +4,7 @@
 *.nc
 CompiledKernel/build/
 tools/compiled-kernel/build/
+tools/compiled-kernel/build-*/
 *.a
 *.o
 *.mex*

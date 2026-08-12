@@ -2,6 +2,7 @@ function manifest = generateForcingScheduleFixtures(options)
 % Generate deterministic WaveVortexModel 4.x forcing-schedule fixtures.
 arguments (Input)
     options.outputDirectory (1,1) string = fullfile(fileparts(mfilename("fullpath")),"fixtures")
+    options.coefficientMode (1,1) string {mustBeMember(options.coefficientMode,["contract-pattern" "physical-small"])} = "contract-pattern"
 end
 arguments (Output)
     manifest (1,1) struct
@@ -29,7 +30,7 @@ for iCase = 1:size(cases,1)
     isHydrostatic = cases{iCase,2};
     kind = cases{iCase,3};
     wvt = newFixtureTransform(isHydrostatic);
-    [Ap,Am,A0] = deterministicCoefficients(wvt,700+iCase);
+    [Ap,Am,A0] = deterministicCoefficients(wvt,700+iCase,options.coefficientMode);
     wvt.Ap = Ap;
     wvt.Am = Am;
     wvt.A0 = A0;
@@ -110,11 +111,24 @@ function wvt = newFixtureTransform(isHydrostatic)
 wvt = WVTransformConstantStratification([15000 12000 1300],[8 6 7],N0=5.2e-3,rho0=1027,planetaryRadius=6.3712e6,rotationRate=7.292115e-5,latitude=33,g=9.80665,isHydrostatic=isHydrostatic,shouldAntialias=true);
 end
 
-function [Ap,Am,A0] = deterministicCoefficients(wvt,offset)
+function [Ap,Am,A0] = deterministicCoefficients(wvt,offset,coefficientMode)
 indices = reshape(1:prod(wvt.spectralMatrixSize),wvt.spectralMatrixSize);
-Ap = complex(offset+indices/1000,-offset-indices/2000);
-Am = complex(-2*offset+indices/1500,3*offset-indices/2500);
-A0 = complex(4*offset-indices/3000,-5*offset+indices/3500);
+if coefficientMode == "contract-pattern"
+    Ap = complex(offset+indices/1000,-offset-indices/2000);
+    Am = complex(-2*offset+indices/1500,3*offset-indices/2500);
+    A0 = complex(4*offset-indices/3000,-5*offset+indices/3500);
+    return
+end
+scale = 1e-4;
+Ap = scale*complex(sin(0.17*indices),cos(0.13*(indices+1)));
+Am = scale*complex(cos(0.11*(indices+2)),sin(0.07*(indices+3)));
+A0 = scale*complex(sin(0.19*(indices+4)),cos(0.05*(indices+5)));
+horizontalMean = wvt.Kh == 0;
+waveOrInertial = horizontalMean | wvt.J > 0;
+geostrophicOrMDA = ~horizontalMean | wvt.J > 0;
+Ap(~waveOrInertial) = 0;
+Am(~waveOrInertial) = 0;
+A0(~geostrophicOrMDA) = 0;
 end
 
 function closeAndDeleteIfPresent(path)

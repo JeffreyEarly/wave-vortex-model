@@ -9,6 +9,10 @@ if command -v cmake >/dev/null 2>&1; then
     cmake -S "$script_directory" -B "$build_directory" -DCMAKE_BUILD_TYPE=Release
     cmake --build "$build_directory" --parallel
     ctest --test-dir "$build_directory" --output-on-failure
+    portable_build_directory="${build_directory}-portable"
+    cmake -S "$repository_root/PortableRuntime" -B "$portable_build_directory" -DCMAKE_BUILD_TYPE=Release
+    cmake --build "$portable_build_directory" --parallel
+    ctest --test-dir "$portable_build_directory" --output-on-failure
     exit 0
 fi
 

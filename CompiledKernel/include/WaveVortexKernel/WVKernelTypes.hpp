@@ -101,6 +101,16 @@ struct WVState {
     WVCoefficients coefficients;
 };
 
+struct WVMutableState {
+    double t = 0.0;
+    double t0 = 0.0;
+    WVMutableCoefficients coefficients;
+
+    WVState view() const noexcept {
+        return {t,t0,{{coefficients.Ap.data,coefficients.Ap.shape},{coefficients.Am.data,coefficients.Am.shape},{coefficients.A0.data,coefficients.A0.shape}}};
+    }
+};
+
 struct WVFlux {
     WVComplexView Fp;
     WVComplexView Fm;
