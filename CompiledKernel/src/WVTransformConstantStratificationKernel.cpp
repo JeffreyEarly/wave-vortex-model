@@ -59,10 +59,10 @@ WVComplex64 phase(double angle) { return {std::cos(angle), std::sin(angle)}; }
 
 template <std::size_t Target>
 WVComplex64 coefficientValueForField(const WVConstantStratificationModes& modes, std::size_t index, WVComplex64 Ap, WVComplex64 Am, WVComplex64 A0) {
-    if constexpr (Target == 0) return add(add(multiply(modes.UApField[index],Ap),multiply(modes.UAmField[index],Am)),multiply(modes.UA0Field[index],A0));
-    if constexpr (Target == 1) return add(add(multiply(modes.VApField[index],Ap),multiply(modes.VAmField[index],Am)),multiply(modes.VA0Field[index],A0));
-    if constexpr (Target == 2) return add(multiply(modes.WApField[index],Ap),multiply(modes.WAmField[index],Am));
-    return add(add(multiply(Ap,modes.NApField[index]),multiply(Am,modes.NAmField[index])),multiply(A0,modes.NA0Field[index]));
+    if constexpr (Target == 0) return add(add(multiply(modes.UApField[index],Ap),multiply(conjugate(modes.UApField[index]),Am)),multiply(modes.UA0Field[index],A0));
+    if constexpr (Target == 1) return add(add(multiply(modes.VApField[index],Ap),multiply(conjugate(modes.VApField[index]),Am)),multiply(modes.VA0Field[index],A0));
+    if constexpr (Target == 2) return add(multiply(modes.WApField[index],Ap),multiply(modes.WApField[index],Am));
+    return add(add(multiply(Ap,modes.NApField[index]),multiply(Am,-modes.NApField[index])),multiply(A0,modes.NA0Field[index]));
 }
 
 std::size_t checkedProduct(std::size_t first, std::size_t second) {
@@ -484,7 +484,7 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformUVWEtaToWaveVor
         const auto vorticity = subtract(multiply(V, WVComplex64{0.0, horizontal.k}), multiply(U, WVComplex64{0.0, horizontal.l}));
         const auto A0 = add(multiply(vorticity,modes.A0FromVorticity[index]),multiply(N,modes.A0FromBuoyancy[index]));
         const auto delta = multiply(add(multiply(U,horizontal.cosAlpha),multiply(V,horizontal.sinAlpha)),modes.ApmDScaled[index]);
-        const auto wBar = multiply(modes.ApmWScaled[index], W);
+        const auto wBar = multiply(WVComplex64{0.0, (horizontal.Kh / 2.0) * modes.apmWProjectionPrefactor[j]}, W);
         const auto buoyancyContribution = multiply(subtract(N,multiply(A0,modes.NA0Field[index])),modes.ApmNProjection[index]);
         auto Ap = add(add(delta,wBar),buoyancyContribution);
         auto Am = subtract(add(delta,wBar),buoyancyContribution);

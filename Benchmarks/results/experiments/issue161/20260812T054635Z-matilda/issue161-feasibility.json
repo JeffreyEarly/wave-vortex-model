@@ -1,0 +1,104 @@
+{
+  "schemaVersion": "1.0.0",
+  "issue": 161,
+  "runId": "20260812T054635Z-matilda",
+  "status": "CORE_REJECT",
+  "source": {
+    "experimentBaseCommit": "be0f78995c49a2bfe4c43d75827856e3812ac278",
+    "auditCommit": "7fd33f74aaccfa6e2ac80ad2ede12f19e8740d05"
+  },
+  "model": {
+    "coefficientBytesPerJkl": 232,
+    "eliminatedBytesPerJkl": 72,
+    "retainedJOnlyBytes": 8,
+    "reductionFormula": "72 * (Nj * Nkl) - 8 * Nj + 96",
+    "completeMaximumLiveDefinition": "Exact application-owned descriptor, bounded scratch arena, and three flux outputs; FFTW-owned plan memory remains explicitly opaque.",
+    "forms": {
+      "stored": "232 bytes per [j,kl] coefficient; 56 bytes are exact conjugate/sign duplicates and 16 bytes are the direct ApmW scale.",
+      "generatedAtConstruction": "Store U+, V+, W+, N+, and the remaining direct pre-scaled arrays; regenerate U-, V-, W-, N- and replace ApmW[j,kl] with a pre-scaled j-only factor.",
+      "runtimeReconstructed": "Could remove all [j,kl] descriptor fields, but would add divisions, square roots, and branch-sensitive mode reconstruction to every assembly/projection pass; rejected as more complex and likely slower."
+    }
+  },
+  "cases": [
+    {
+      "Nxyz": [256, 256, 65],
+      "isHydrostatic": true,
+      "Nj": 42,
+      "Nkl": 11439,
+      "coefficientCount": 480438,
+      "directRows": 5805,
+      "conjugatedRows": 5634,
+      "hermitianCompletionRows": 85,
+      "selfConjugateRows": 1,
+      "baselineDescriptorBytes": 113012311,
+      "candidateDescriptorBytes": 78421015,
+      "descriptorReductionBytes": 34591296,
+      "descriptorReduction": 0.306084,
+      "baselineKnownMaximumLiveBytes": 546082935,
+      "candidateKnownMaximumLiveBytes": 511491639,
+      "knownMaximumLiveReduction": 0.0633444
+    },
+    {
+      "Nxyz": [256, 256, 65],
+      "isHydrostatic": false,
+      "Nj": 42,
+      "Nkl": 11439,
+      "coefficientCount": 480438,
+      "directRows": 5805,
+      "conjugatedRows": 5634,
+      "hermitianCompletionRows": 85,
+      "selfConjugateRows": 1,
+      "baselineDescriptorBytes": 113012311,
+      "candidateDescriptorBytes": 78421015,
+      "descriptorReductionBytes": 34591296,
+      "descriptorReduction": 0.306084,
+      "baselineKnownMaximumLiveBytes": 580161655,
+      "candidateKnownMaximumLiveBytes": 545570359,
+      "knownMaximumLiveReduction": 0.0596235
+    },
+    {
+      "Nxyz": [512, 512, 129],
+      "isHydrostatic": true,
+      "Nj": 85,
+      "Nkl": 45765,
+      "coefficientCount": 3890025,
+      "directRows": 23053,
+      "conjugatedRows": 22712,
+      "hermitianCompletionRows": 170,
+      "selfConjugateRows": 1,
+      "baselineDescriptorBytes": 908675773,
+      "candidateDescriptorBytes": 628594557,
+      "descriptorReductionBytes": 280081216,
+      "descriptorReduction": 0.30823,
+      "baselineKnownMaximumLiveBytes": 4346015341,
+      "candidateKnownMaximumLiveBytes": 4065934125,
+      "knownMaximumLiveReduction": 0.0644455
+    },
+    {
+      "Nxyz": [512, 512, 129],
+      "isHydrostatic": false,
+      "Nj": 85,
+      "Nkl": 45765,
+      "coefficientCount": 3890025,
+      "directRows": 23053,
+      "conjugatedRows": 22712,
+      "hermitianCompletionRows": 170,
+      "selfConjugateRows": 1,
+      "baselineDescriptorBytes": 908675773,
+      "candidateDescriptorBytes": 628594557,
+      "descriptorReductionBytes": 280081216,
+      "descriptorReduction": 0.30823,
+      "baselineKnownMaximumLiveBytes": 4616547949,
+      "candidateKnownMaximumLiveBytes": 4336466733,
+      "knownMaximumLiveReduction": 0.060669
+    }
+  ],
+  "verification": {
+    "candidateCppContract": "passed",
+    "auditCppContract": "passed",
+    "matlabMexCorrectness": "blocked",
+    "matlabLifecycle": "blocked",
+    "nativeDirectionalTiming": "blocked",
+    "blocker": "Both MATLAB batch and MATLAB -nojvm -nodisplay abort before project code executes: Incompatible processor; this Qt build requires neon."
+  }
+}
