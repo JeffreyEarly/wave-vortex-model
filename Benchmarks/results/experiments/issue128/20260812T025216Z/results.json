@@ -1,0 +1,126 @@
+{
+  "schemaVersion": "1.0.0",
+  "issue": 128,
+  "phase": "Lyra FFTW++ implicit/hybrid prototype",
+  "runId": "20260812T025216Z",
+  "status": "complete",
+  "recommendation": "CORE-REJECT",
+  "productionIntegrationRequested": false,
+  "issueClosed": false,
+  "canonicalConfirmationHost": "Donut",
+  "canonicalConfirmationRequired": false,
+  "reason": "No FFTW++ candidate passed either decision-gate improvement. Hybrid, the fastest candidate, was 1.80x to 3.23x slower than the pthread explicit control and reduced exact maximum-live bytes by only 0.10% to 6.66%. The pinned LLVM OpenMP runtime also crashed MATLAB R2025b when a 16-thread worker region was attempted.",
+  "source": {
+    "repository": "JeffreyEarly/wave-vortex-model",
+    "baselineCommit": "be0f78995c49a2bfe4c43d75827856e3812ac278",
+    "implementationCommit": "1197f471280f63f312db4d490597f9f6cd865e73",
+    "implementationTree": "ddb1368342d1d87e6d8eaca3427c547a5cf44f40",
+    "branch": "experiment/issue-128-fftwpp-implicit-dealiasing",
+    "files": {
+      "Benchmarks/buildCompiledKernelFFTWPlusPlusPrototype.m": "0b69ff88a0ba2d31f878fec24f3d9f7a1154781a4f0f8020d0166c69d6384ee0",
+      "Benchmarks/compiled-kernel/WVFFTWPlusPlusConvolution.cpp": "729b414456282e435e21b6aa84e38652088a33ad8fb446bd0cac1331d41c5e76",
+      "Benchmarks/compiled-kernel/WVFFTWPlusPlusConvolution.hpp": "cc4f40dd8399ca4a8b7ef8c7b16085c409fdadbf1345279cbb97c239139df931",
+      "Benchmarks/compiled-kernel/wv_compiled_transform_mex.cpp": "862cd160da759c232fc5a77e44d5515e2b423d1bbda688a4bd342b96500f5b79",
+      "Benchmarks/compiledKernelIssue128Worker.m": "76b5e40e5e26ebee258127e689631defea2d653a54cea33cf9c0dd60a72683e5",
+      "Benchmarks/runCompiledKernelFFTWPlusPlusSmoke.m": "a5208a922b4420d57ed93f4270dfafeb5713dbc5e1ffd47d0597d0eaa732ae71",
+      "Benchmarks/runCompiledKernelIssue128Screening.m": "29ed5d13e7b18027412567ccede4269f21bb8d5f9ff0fd3abff73b55005893ea",
+      "CompiledKernel/include/WaveVortexKernel/WVHorizontalConvolutionEngine.hpp": "ec3ae52545a8e274e41e6b800417143645f1338da4d59d3e27032e23f7387ad1",
+      "CompiledKernel/include/WaveVortexKernel/WVTransformConstantStratificationKernel.hpp": "50b1349a8b4b353d469ea85e6b1f5405eac3be3a14f57066db45e49a51d9404b",
+      "CompiledKernel/src/WVTransformConstantStratificationKernel.cpp": "fa391163fd407b90eb7c38720958565e7d32608280d0d9b4791027f89a11e8c2"
+    }
+  },
+  "environment": {
+    "host": "lyra.ad.nwra.com",
+    "hardware": "Mac Studio Mac16,9; Apple M4 Max; 16 cores (12 performance, 4 efficiency); 128 GB memory",
+    "os": "macOS 26.5.2 (25F84)",
+    "architecture": "arm64 / MATLAB maca64",
+    "matlab": "25.2.0.3150157 (R2025b) Update 4",
+    "matlabRelease": "R2025b",
+    "defaultThreadCount": 16,
+    "acceptedBenchmarkThreadCount": 1,
+    "threadCap": 16,
+    "loadGuard": "passed before fetch, build, and accepted timing; no Issue #140 benchmark, MATLAB benchmark, RSS sampler, screen session, or substantial competing workload",
+    "compiler": "Apple clang 21.0.0.21000101"
+  },
+  "dependencies": {
+    "fftwpp": {
+      "url": "https://github.com/dealias/fftwpp",
+      "commit": "1a185f41800cd0e9d4df4ddf93e16e362d4e2c45",
+      "tree": "77be88f8f58cd4a7d0b91f5323dcebd667e5b840",
+      "sourceHashes": {
+        "LICENSE": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903",
+        "LICENSE.LESSER": "a853c2ffec17057872340eee242ae4d96cbf2b520ae27d903e1b2fef1a5f9d1c",
+        "convolve.cc": "2285163a9921eee5417f1fd819035527fd27b0699a70a71472e88dd3be297b31",
+        "convolve.h": "1c44b84820337628c496b4156189cc2606b3507eb0f5d4ad6908224fa40f6eab",
+        "fftw++.cc": "bf4180866430393bea2e55076dfcf7afb703395664056f6c440019d71308d59e",
+        "fftw++.h": "06d93ad0c51ba54eb0a0fc6897036f155c5115059dde1d8e63933525145132dc",
+        "parallel.cc": "ddcca19f4ee9939398c32501d01944e1d53cd961a11580552eda89ec3d509809",
+        "parallel.h": "48d7e636b2fe7157b91fdfbdfade6f9514197eec7f8834453b793b1c885c0173"
+      },
+      "license": "LGPL-3.0-or-later",
+      "obligations": "For conveyed combined/object work: provide prominent notices and GPL/LGPL copies, permit replacement/relinking with a modified LGPL library, and provide corresponding application code or minimal corresponding source as required by LGPLv3 section 4. No FFTW++ source, archive, library, MEX binary, or build cache is tracked on this branch."
+    },
+    "fftw": {"version": "3.3.11", "archiveSha256": "5630c24cdeb33b131612f7eb4b1a9934234754f9f388ff8617458d0be6f239a1", "upstreamMakeCheck": "passed", "cycleCounterCheck": "passed"},
+    "llvmOpenMP": {"version": "22.1.8", "archiveSha256": "922f1817a0df7b1489272d18134ee0087a8b068828f87ac63b9861b1a9965888", "installedVersionedLibrarySha256": "2b6f91dbeab4760651ad5bdddbdbcb7c52cd472b503d87e8dc76e88848546f86", "isolatedProviderRuntimeSha256": "da9fbe007e88d9d4e265ba479f592c5e940e1d617f63e5a257cda77024fa4d52"},
+    "cmake": {"version": "4.1.0", "archiveSha256": "08cbe0b807799a90216923acf457481538c8d0608a19ba9203219387427a4055"}
+  },
+  "binaries": {
+    "nativePthreadsMexSha256": "b6beadf8e43b1e9c661fc5b18af40f0199346cfa3296f41b5ea14199cf2d8e7f",
+    "nativeOpenMPMexSha256": "16e204792e8fc96c0e4f7bb1cc49a7ca939cd9f1cb027095ad3c5aea0a8c588a",
+    "fftwppPrototypeMexSha256": "7117f325f98de00581adc2d8ea46a95a27f63bc5e6bedbf867ff3719ea9f1cb6",
+    "nativePthreadsBaseSha256": "8314e2296212c771a81ad52f3f7ac97fb8df700be45070c583f689725cb179d5",
+    "nativePthreadsThreadSha256": "b5f847b65919a3e2c1ec6aaa4fe127cd129f6400f20d244dd0fca0c1e3e11199",
+    "nativeOpenMPBaseSha256": "9f10c7ac057bca85fcdf6d8e79c50e8886026eee467cbd500bb6e35cb430e82c",
+    "nativeOpenMPThreadSha256": "ccae17e4c58081dcee63d01c612e61e8b786916019c955d96461e5906cdab3aa"
+  },
+  "loadedLibraryIdentitiesFromDladdr": {
+    "nativePthreadsExplicit": {"base": "/private/tmp/issue128-native-cache/providers/native-neon-pthreads-d2b85f7a608fbedd/install/lib/libfftw3.3.dylib", "thread": "/private/tmp/issue128-native-cache/providers/native-neon-pthreads-d2b85f7a608fbedd/install/lib/libfftw3_threads.3.dylib", "openmp": "/Applications/MATLAB_R2025b.app/bin/maca64/libomp.dylib"},
+    "nativeOpenMPExplicit": {"base": "/private/tmp/issue128-native-cache/providers/native-neon-openmp-872739bfc5992370/install/lib/libfftw3.3.dylib", "thread": "/private/tmp/issue128-native-cache/providers/native-neon-openmp-872739bfc5992370/install/lib/libfftw3_omp.3.dylib", "openmp": "/private/tmp/issue128-native-cache/providers/native-neon-openmp-872739bfc5992370/install/lib/libwvissue137omp.dylib"},
+    "fftwppCandidates": {"base": "/private/tmp/issue128-native-cache/providers/native-neon-openmp-872739bfc5992370/install/lib/libfftw3.3.dylib", "thread": "/private/tmp/issue128-native-cache/providers/native-neon-openmp-872739bfc5992370/install/lib/libfftw3_omp.3.dylib", "openmp": "/private/tmp/issue128-native-cache/providers/native-neon-openmp-872739bfc5992370/install/lib/libwvissue137omp.dylib"}
+  },
+  "correctness": {
+    "toleranceRelativeInfinity": 1e-12,
+    "smallSmokeMaximumRelativeInfinity": 1.4408912326264852e-15,
+    "smallSmokeZeroStateMaximum": 0,
+    "smallSmokeLifecycle": "passed",
+    "upstreamPinnedDirectErrors": {"implicit16": 1.31597e-16, "hybrid16": 1.00882e-16, "implicit12": 1.5014e-16, "hybrid12": 1.25782e-16},
+    "contractCTest": "passed 1/1",
+    "matlabCheckcodeIssues": 0
+  },
+  "threadBehavior": {
+    "acceptedOneThreadRuns": {"outerOpenMPThreads": 1, "maximumFFTWThreads": 1, "maximumMultiplierThreads": 1, "maximumOpenMPActiveLevel": 0, "workerRegionsDisjoint": true, "oversubscribed": false},
+    "sixteenThreadProbe": {"status": "crashed-before-timing", "accepted": false, "error": "OMP error 179: pthread_mutex_init invalid argument, followed by segmentation violation in mixed MATLAB libomp and isolated LLVM 22.1.8 worker barriers", "requestedThreads": 16, "reason": "MATLAB R2025b already loaded its bundled libomp while the pinned provider loaded a distinct isolated libomp. No timings from this process were accepted."}
+  },
+  "configuration": {
+    "sizes": [[128,128,33],[256,256,65]],
+    "hydrostatic": [true,false],
+    "warmups": 2,
+    "mediumSamples": 3,
+    "largeSamples": 1,
+    "freshProcessesPerScreenedConfiguration": 1,
+    "order": ["native-pthreads-explicit","native-openmp-explicit","fftwpp-implicit","fftwpp-hybrid"],
+    "deterministicStateAdvancement": true,
+    "rssSamplingIntervalSeconds": 0.01,
+    "persistentFullHermitianBytes": 0,
+    "opaquePlanMemory": "not exposed by FFTW/FFTW++; wrapper lower bound and repeated-process RSS are reported instead",
+    "funnelOutcome": "No finalist. The required two-warmup, seven-medium, three-large, three-process finalist protocol was not run because neither candidate was plausibly within the decision gate after screening."
+  },
+  "measurements": [
+    {"case":"hydrostatic-128x128x33","nativePthreads":{"samples":[0.031973375,0.028990875,0.029893333],"median":0.029893333,"maxLiveBytes":69387557,"peakIncrementRssBytes":393216000,"error":3.6151945893714296e-15},"nativeOpenMP":{"samples":[0.030277625,0.030335666,0.029135417],"median":0.030277625,"maxLiveBytes":69387557,"peakIncrementRssBytes":392019968,"error":3.7189508643713742e-15},"implicit":{"samples":[0.140537959,0.138450792,0.138155166],"median":0.138450792,"maxLiveBytes":65456789,"peakIncrementRssBytes":385318912,"error":3.6998922274835344e-15,"mappingSecondsLastCall":0.017830334,"convolutionSecondsLastCall":0.115903667,"retainedSpectrumBytes":29288160,"exactWorkBytes":1382448},"hybrid":{"samples":[0.059075708,0.05511625,0.057946375],"median":0.057946375,"maxLiveBytes":65467861,"peakIncrementRssBytes":351469568,"error":3.7087984458690006e-15,"mappingSecondsLastCall":0.018367167,"convolutionSecondsLastCall":0.032331917,"retainedSpectrumBytes":29288160,"exactWorkBytes":1393520}},
+    {"case":"nonhydrostatic-128x128x33","nativePthreads":{"samples":[0.038817041,0.038203292,0.037806667],"median":0.038203292,"maxLiveBytes":73712933,"peakIncrementRssBytes":82526208,"error":4.3251616214627627e-15},"nativeOpenMP":{"samples":[0.040084209,0.038038375,0.037371],"median":0.038038375,"maxLiveBytes":73712933,"peakIncrementRssBytes":128155648,"error":4.2095897131508634e-15},"implicit":{"samples":[0.1744585,0.172265792,0.170347166],"median":0.172265792,"maxLiveBytes":73627541,"peakIncrementRssBytes":140607488,"error":4.25800674822634e-15,"mappingSecondsLastCall":0.022562916,"convolutionSecondsLastCall":0.145093333,"retainedSpectrumBytes":37098336,"exactWorkBytes":1743024},"hybrid":{"samples":[0.071984917,0.067467917,0.068911541],"median":0.068911541,"maxLiveBytes":73641365,"peakIncrementRssBytes":93880320,"error":4.2934568801856307e-15,"mappingSecondsLastCall":0.022570417,"convolutionSecondsLastCall":0.041356666,"retainedSpectrumBytes":37098336,"exactWorkBytes":1756848}},
+    {"case":"hydrostatic-256x256x65","nativePthreads":{"samples":[0.284451375],"median":0.284451375,"maxLiveBytes":546083271,"peakIncrementRssBytes":1629274112,"error":9.628590871190325e-15},"nativeOpenMP":{"samples":[0.288885959],"median":0.288885959,"maxLiveBytes":546083271,"peakIncrementRssBytes":1661452288,"error":9.747179747535475e-15},"implicit":{"samples":[0.805848166],"median":0.805848166,"maxLiveBytes":509696967,"peakIncrementRssBytes":1572536320,"error":9.915717638444559e-15,"mappingSecondsLastCall":0.163039334,"convolutionSecondsLastCall":0.614813083,"retainedSpectrumBytes":230755200,"exactWorkBytes":5486624},"hybrid":{"samples":[0.917846708],"median":0.917846708,"maxLiveBytes":509718983,"peakIncrementRssBytes":1583382528,"error":9.812218343334735e-15,"mappingSecondsLastCall":0.163611459,"convolutionSecondsLastCall":0.712088541,"retainedSpectrumBytes":230755200,"exactWorkBytes":5508640}},
+    {"case":"nonhydrostatic-256x256x65","nativePthreads":{"samples":[0.367693125],"median":0.367693125,"maxLiveBytes":580161991,"peakIncrementRssBytes":1064501248,"error":9.329500173060532e-15},"nativeOpenMP":{"samples":[0.359336917],"median":0.359336917,"maxLiveBytes":580161991,"peakIncrementRssBytes":1044201472,"error":9.33913047320939e-15},"implicit":{"samples":[1.029314583],"median":1.029314583,"maxLiveBytes":572662855,"peakIncrementRssBytes":1068613632,"error":9.267226176654356e-15,"mappingSecondsLastCall":0.198223584,"convolutionSecondsLastCall":0.775283,"retainedSpectrumBytes":292289920,"exactWorkBytes":6917792},"hybrid":{"samples":[1.161215417],"median":1.161215417,"maxLiveBytes":572690375,"peakIncrementRssBytes":1068646400,"error":9.409809931420995e-15,"mappingSecondsLastCall":0.208094833,"convolutionSecondsLastCall":0.935252,"retainedSpectrumBytes":292289920,"exactWorkBytes":6945312}}
+  ],
+  "decisionGate": {
+    "required": "At one common size, both hydrostatic and nonhydrostatic must be at least 10% faster complete nonlinearFlux or at least 10% lower exact maximum-live bytes and repeated-process peak RSS, with no persistent full Hermitian spectrum and no more than 3% regression in the other metric.",
+    "bestCandidate": "fftwpp-hybrid",
+    "hybridVsPthreads": [
+      {"case":"hydrostatic-128x128x33","speedup":0.5158792591,"maxLiveChangePercent":-5.648989775},
+      {"case":"nonhydrostatic-128x128x33","speedup":0.5543816238,"maxLiveChangePercent":-0.097090154},
+      {"case":"hydrostatic-256x256x65","speedup":0.3099116361,"maxLiveChangePercent":-6.65911042},
+      {"case":"nonhydrostatic-256x256x65","speedup":0.3166450597,"maxLiveChangePercent":-1.287849965}
+    ],
+    "passed": false,
+    "finalists": []
+  }
+}
