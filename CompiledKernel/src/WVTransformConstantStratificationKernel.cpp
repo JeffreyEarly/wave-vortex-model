@@ -415,6 +415,10 @@ WVKernelStatus WVTransformConstantStratificationKernel::create(
         constexpr std::size_t halfChannels = 4;
 #endif
         const auto halfElements = checkedProduct(checkedProduct(candidate->descriptor_.halfSpectrumMappings().NxHalf, configuration.Ny), checkedProduct(configuration.Nz, halfChannels));
+#if WV_KERNEL_ISSUE130_VARIANT >= 3
+        const auto halfFieldElements = checkedProduct(checkedProduct(candidate->descriptor_.halfSpectrumMappings().NxHalf,configuration.Ny),configuration.Nz);
+        if (candidate->descriptor_.spectralShape().elementCount() > halfFieldElements) return {WVKernelStatusCode::invalidShape,"The streamed phase reservation requires M <= H."};
+#endif
         const auto realChannels = WV_KERNEL_ISSUE130_VARIANT >= 4 ? 5 : (WV_KERNEL_ISSUE130_VARIANT >= 3 ? 6 : (configuration.isHydrostatic ? 8 : 9));
         const auto realElements = checkedProduct(candidate->descriptor_.spatialShape().elementCount(),realChannels);
         candidate->halfSpectrumScratch_.resize(2 * halfElements);

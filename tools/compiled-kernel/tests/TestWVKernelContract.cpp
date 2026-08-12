@@ -247,10 +247,12 @@ void testNonlinearFlux(bool hydrostatic) {
 #if WV_KERNEL_ISSUE130_VARIANT == 4
     require(kernel->metrics().realScratchCapacityBytes == 5 * realFieldBytes,"single-output scratch is not 4H+5R");
     require(kernel->phaseReservationBytes() == halfFieldBytes,"single-output phase reservation is not one H region");
+    require(kernel->descriptor().spectralShape().elementCount() * sizeof(WVComplex64) <= kernel->phaseReservationBytes(),"streamed phase values do not fit inside their H-sized reservation");
     require(kernel->metrics().planCount == 18,"unexpected single-output plan count");
 #elif WV_KERNEL_ISSUE130_VARIANT == 3
     require(kernel->metrics().realScratchCapacityBytes == 6 * realFieldBytes,"streamed target scratch is not 4H+6R");
     require(kernel->phaseReservationBytes() == halfFieldBytes,"streamed target phase reservation is not one H region");
+    require(kernel->descriptor().spectralShape().elementCount() * sizeof(WVComplex64) <= kernel->phaseReservationBytes(),"streamed phase values do not fit inside their H-sized reservation");
     require(kernel->metrics().planCount == 17,"unexpected streamed target plan count");
 #else
     require(kernel->metrics().realScratchCapacityBytes == (hydrostatic ? 8 : 9) * realFieldBytes,"unexpected control/velocity-only real scratch capacity");
