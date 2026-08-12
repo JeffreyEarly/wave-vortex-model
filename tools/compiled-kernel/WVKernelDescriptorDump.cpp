@@ -28,6 +28,36 @@ void complexComponent(const std::vector<WVComplex64>& values, bool imaginary) {
     std::cout << ']';
 }
 
+void conjugatedComplexComponent(const std::vector<WVComplex64>& values, bool imaginary) {
+    std::cout << '[';
+    for (std::size_t i = 0; i < values.size(); ++i) {
+        if (i != 0) std::cout << ',';
+        std::cout << (imaginary ? -values[i].imag : values[i].real);
+    }
+    std::cout << ']';
+}
+
+void negatedNumericArray(const std::vector<double>& values) {
+    std::cout << '[';
+    for (std::size_t i = 0; i < values.size(); ++i) {
+        if (i != 0) std::cout << ',';
+        std::cout << -values[i];
+    }
+    std::cout << ']';
+}
+
+void apmWScaledComponent(const WVTransformConstantStratificationDescriptor& descriptor, bool imaginary) {
+    std::cout << '[';
+    const auto& prefactor = descriptor.verticalModes().apmWProjectionPrefactor;
+    for (std::size_t iMode = 0; iMode < descriptor.Nkl(); ++iMode) {
+        for (std::size_t j = 0; j < prefactor.size(); ++j) {
+            if (iMode != 0 || j != 0) std::cout << ',';
+            std::cout << (imaginary ? (descriptor.fourierModes()[iMode].Kh / 2.0) * prefactor[j] : 0.0);
+        }
+    }
+    std::cout << ']';
+}
+
 double argument(char** values, int index) {
     return std::stod(values[index]);
 }
@@ -116,18 +146,18 @@ int main(int argc, char** argv) {
     std::cout << ",\"gWaveScale\":"; numericArray(descriptor.verticalModes().gWaveScale);
     std::cout << ",\"UApFieldReal\":"; complexComponent(descriptor.verticalModes().UApField,false);
     std::cout << ",\"UApFieldImag\":"; complexComponent(descriptor.verticalModes().UApField,true);
-    std::cout << ",\"UAmFieldReal\":"; complexComponent(descriptor.verticalModes().UAmField,false);
-    std::cout << ",\"UAmFieldImag\":"; complexComponent(descriptor.verticalModes().UAmField,true);
+    std::cout << ",\"UAmFieldReal\":"; conjugatedComplexComponent(descriptor.verticalModes().UApField,false);
+    std::cout << ",\"UAmFieldImag\":"; conjugatedComplexComponent(descriptor.verticalModes().UApField,true);
     std::cout << ",\"VApFieldReal\":"; complexComponent(descriptor.verticalModes().VApField,false);
     std::cout << ",\"VApFieldImag\":"; complexComponent(descriptor.verticalModes().VApField,true);
-    std::cout << ",\"VAmFieldReal\":"; complexComponent(descriptor.verticalModes().VAmField,false);
-    std::cout << ",\"VAmFieldImag\":"; complexComponent(descriptor.verticalModes().VAmField,true);
+    std::cout << ",\"VAmFieldReal\":"; conjugatedComplexComponent(descriptor.verticalModes().VApField,false);
+    std::cout << ",\"VAmFieldImag\":"; conjugatedComplexComponent(descriptor.verticalModes().VApField,true);
     std::cout << ",\"WApFieldReal\":"; complexComponent(descriptor.verticalModes().WApField,false);
     std::cout << ",\"WApFieldImag\":"; complexComponent(descriptor.verticalModes().WApField,true);
-    std::cout << ",\"WAmFieldReal\":"; complexComponent(descriptor.verticalModes().WAmField,false);
-    std::cout << ",\"WAmFieldImag\":"; complexComponent(descriptor.verticalModes().WAmField,true);
+    std::cout << ",\"WAmFieldReal\":"; complexComponent(descriptor.verticalModes().WApField,false);
+    std::cout << ",\"WAmFieldImag\":"; complexComponent(descriptor.verticalModes().WApField,true);
     std::cout << ",\"NApField\":"; numericArray(descriptor.verticalModes().NApField);
-    std::cout << ",\"NAmField\":"; numericArray(descriptor.verticalModes().NAmField);
+    std::cout << ",\"NAmField\":"; negatedNumericArray(descriptor.verticalModes().NApField);
     std::cout << ",\"UA0FieldReal\":"; complexComponent(descriptor.verticalModes().UA0Field,false);
     std::cout << ",\"UA0FieldImag\":"; complexComponent(descriptor.verticalModes().UA0Field,true);
     std::cout << ",\"VA0FieldReal\":"; complexComponent(descriptor.verticalModes().VA0Field,false);
@@ -139,8 +169,8 @@ int main(int argc, char** argv) {
     std::cout << ",\"ApmDProjectionImag\":"; complexComponent(descriptor.verticalModes().ApmDProjection,true);
     std::cout << ",\"ApmNProjection\":"; numericArray(descriptor.verticalModes().ApmNProjection);
     std::cout << ",\"ApmDScaled\":"; numericArray(descriptor.verticalModes().ApmDScaled);
-    std::cout << ",\"ApmWScaledReal\":"; complexComponent(descriptor.verticalModes().ApmWScaled,false);
-    std::cout << ",\"ApmWScaledImag\":"; complexComponent(descriptor.verticalModes().ApmWScaled,true);
+    std::cout << ",\"ApmWScaledReal\":"; apmWScaledComponent(descriptor,false);
+    std::cout << ",\"ApmWScaledImag\":"; apmWScaledComponent(descriptor,true);
     std::cout << "}\n";
     return 0;
 }
