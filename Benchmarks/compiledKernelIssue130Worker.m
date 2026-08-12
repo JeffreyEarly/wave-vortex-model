@@ -47,6 +47,7 @@ try
         advanceWaveVortexBenchmarkState(wvt,state,definition.warmupCount+iSample);
         [~,~,~,internalSamples(iSample),totalSamples(iSample)] = execute(module,handle,wvt);
     end
+    writePhase(phasePath,"correctness");
     [expectedFp,expectedFm,expectedF0] = wvt.nonlinearFlux();
     [actualFp,actualFm,actualF0] = feval(module,'nonlinearFlux',handle,wvt.Ap,wvt.Am,wvt.A0,wvt.t,wvt.t0);
     errors = struct("Fp",relativeError(actualFp,expectedFp),"Fm",relativeError(actualFm,expectedFm),"F0",relativeError(actualF0,expectedF0));
