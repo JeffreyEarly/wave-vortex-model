@@ -218,11 +218,18 @@ void testNonlinearFlux(bool hydrostatic) {
     for (const auto* array : {&Fp,&Fm,&F0}) {
         for (const auto& value : *array) require(std::isfinite(value.real) && std::isfinite(value.imag),"nonlinear flux produced a non-finite coefficient");
     }
-    const std::size_t executionsPerCall = hydrostatic ? 15 : 18;
+    const std::size_t executionsPerCall = hydrostatic ? 18 : 23;
     require(kernel->metrics().executionCount == 2*executionsPerCall,"unexpected nonlinear-flux plan execution count");
     require(kernel->metrics().nonlinearFluxCallCount == 2,"unexpected nonlinear-flux call count");
     require(kernel->metrics().nonlinearFluxPhaseEvaluationCount == 2*count,"nonlinear flux did not evaluate phase exactly once per coefficient");
-    require(std::string(kernel->nonlinearFluxScheduleIdentifier()) == "sequential-phase-once","unexpected nonlinear-flux schedule identifier");
+    require(std::string(kernel->nonlinearFluxScheduleIdentifier()) == "streamed-target-three-channel","unexpected nonlinear-flux schedule identifier");
+    const auto halfFieldBytes = (config.Nx / 2 + 1) * config.Ny * config.Nz * sizeof(WVComplex64);
+    const auto realFieldBytes = config.Nx * config.Ny * config.Nz * sizeof(double);
+    require(kernel->metrics().halfSpectrumScratchCapacityBytes == 4 * halfFieldBytes,"streamed target half-spectrum scratch is not 4H");
+    require(kernel->metrics().realScratchCapacityBytes == 6 * realFieldBytes,"streamed target real scratch is not 6R");
+    require(kernel->phaseReservationBytes() == halfFieldBytes,"streamed target phase reservation is not one H region");
+    require(kernel->descriptor().spectralShape().elementCount() * sizeof(WVComplex64) <= kernel->phaseReservationBytes(),"streamed phase values do not fit inside their H-sized reservation");
+    require(kernel->metrics().planCount == 17,"unexpected streamed target plan count");
 
     WVFlux overlapping{{Ap.data(),shape},{Fm.data(),shape},{F0.data(),shape}};
     status = kernel->nonlinearFlux(state,overlapping);
