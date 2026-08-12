@@ -40,41 +40,19 @@ try
     baseline = jsondecode(fileread(options.baselineArtifactPath));
     validateBaseline(baseline,size(options.sizes,1)*numel(options.hydrostatic));
     results.historicalBaseline = struct("artifactPath",repositoryRelativePath(options.baselineArtifactPath,repositoryRoot),"sha256",sha256File(options.baselineArtifactPath),"source",baseline.source,"comparison",baseline.comparison);
-    activeStage = "paired-control";
+    activeStage = "paired-execution";
     pairedControl = options.pairedControlResult;
-    if isempty(fieldnames(pairedControl))
-        pairedControl = runCompiledPreviewBenchmark( ...
-            sizes=options.sizes, ...
-            hydrostatic=options.hydrostatic, ...
-            processRunCount=options.processRunCount, ...
-            warmupCount=options.warmupCount, ...
-            mediumSampleCount=options.mediumSampleCount, ...
-            largeSampleCount=options.largeSampleCount, ...
-            samplingIntervalSeconds=options.samplingIntervalSeconds, ...
-            plateauSeconds=options.plateauSeconds, ...
-            outputHoldSeconds=options.outputHoldSeconds, ...
-            shouldWriteArtifacts=false, ...
-            materializeBuiltinBufferForCompiled=true);
+    candidate = options.candidateResult;
+    if isempty(fieldnames(pairedControl)) && isempty(fieldnames(candidate))
+        [pairedControl,candidate] = runInterleavedPair(options);
+    elseif isempty(fieldnames(pairedControl)) || isempty(fieldnames(candidate))
+        error("WaveVortexBenchmark:MemoryRefinementInjectionMismatch","Injected paired-control and candidate results must be supplied together.");
     end
     if pairedControl.status ~= "complete"
         error("WaveVortexBenchmark:MemoryRefinementControlFailed","The paired eager-buffer control did not complete.");
     end
     results.pairedControl = pairedControl;
     activeStage = "candidate";
-    candidate = options.candidateResult;
-    if isempty(fieldnames(candidate))
-        candidate = runCompiledPreviewBenchmark( ...
-            sizes=options.sizes, ...
-            hydrostatic=options.hydrostatic, ...
-            processRunCount=options.processRunCount, ...
-            warmupCount=options.warmupCount, ...
-            mediumSampleCount=options.mediumSampleCount, ...
-            largeSampleCount=options.largeSampleCount, ...
-            samplingIntervalSeconds=options.samplingIntervalSeconds, ...
-            plateauSeconds=options.plateauSeconds, ...
-            outputHoldSeconds=options.outputHoldSeconds, ...
-            shouldWriteArtifacts=false);
-    end
     if candidate.status ~= "complete"
         error("WaveVortexBenchmark:MemoryRefinementCandidateFailed","The candidate compiled-preview benchmark did not complete.");
     end
@@ -96,6 +74,60 @@ catch exception
     writeArtifacts(results,options);
     rethrow(exception)
 end
+end
+
+function [control,candidate] = runInterleavedPair(options)
+controlParts = cell(options.processRunCount,1);
+candidateParts = cell(options.processRunCount,1);
+for iRun = 1:options.processRunCount
+    policies = [true false];
+    if mod(iRun,2) == 0
+        policies = fliplr(policies);
+    end
+    for materialize = policies
+        label = conditional(materialize,"eager-control","lazy-candidate");
+        fprintf("Memory refinement: %s, paired repetition %d/%d.\n",label,iRun,options.processRunCount);
+        part = runCompiledPreviewBenchmark( ...
+            sizes=options.sizes, ...
+            hydrostatic=options.hydrostatic, ...
+            processRunCount=1, ...
+            warmupCount=options.warmupCount, ...
+            mediumSampleCount=options.mediumSampleCount, ...
+            largeSampleCount=options.largeSampleCount, ...
+            samplingIntervalSeconds=options.samplingIntervalSeconds, ...
+            plateauSeconds=options.plateauSeconds, ...
+            outputHoldSeconds=options.outputHoldSeconds, ...
+            shouldWriteArtifacts=false, ...
+            materializeBuiltinBufferForCompiled=materialize);
+        part = relabelRepeat(part,iRun);
+        if materialize
+            controlParts{iRun} = part;
+        else
+            candidateParts{iRun} = part;
+        end
+    end
+end
+control = combineParts(controlParts,options.processRunCount,"eager-control");
+candidate = combineParts(candidateParts,options.processRunCount,"lazy-candidate");
+end
+
+function part = relabelRepeat(part,repeatIndex)
+for iRun = 1:numel(part.runs)
+    part.runs(iRun).repeatIndex = repeatIndex;
+end
+end
+
+function combined = combineParts(parts,processRunCount,label)
+combined = parts{1};
+combined.runId = combined.runId+"-"+label;
+combined.configuration.processRunCount = processRunCount;
+combined.runs = parts{1}.runs([]);
+for iPart = 1:numel(parts)
+    combined.runs = [combined.runs; parts{iPart}.runs]; %#ok<AGROW>
+end
+combined.comparison = compiledPreviewBenchmarkComparison(combined.runs,combined.cases,combined.correctness,combined.provider);
+combined.decision = compiledPreviewBenchmarkDecision(combined.comparison);
+combined.completedAtUTC = utcTimestamp();
 end
 
 function results = initializeResult(options,repositoryRoot) %#ok<INUSD>
@@ -232,4 +264,12 @@ end
 
 function value = emptyFailure()
 value = struct("stage","","identifier","","message","","report","");
+end
+
+function value = conditional(condition,whenTrue,whenFalse)
+if condition
+    value = whenTrue;
+else
+    value = whenFalse;
+end
 end
