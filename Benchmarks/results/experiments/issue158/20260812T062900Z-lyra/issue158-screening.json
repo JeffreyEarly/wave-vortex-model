@@ -1,0 +1,793 @@
+{
+  "schemaVersion": "1.0.0",
+  "status": "CORE_REJECT",
+  "runId": "20260812T062900Z",
+  "generatedAtUTC": "2026-08-12T06:28:49.415Z",
+  "completedAtUTC": "2026-08-12T06:29:41.094Z",
+  "source": {
+    "repository": "JeffreyEarly/wave-vortex-model",
+    "commit": "1f3b6de907d8d6fe6e56ba25ece1518d86133170",
+    "tree": "7f4cfd89b701de63e2d733bc7a80ebb34fb4289a",
+    "isDirty": false,
+    "validatedScheduleCommit": "7fd33f74aaccfa6e2ac80ad2ede12f19e8740d05",
+    "selectionEvidenceCommit": "90d8ef1befa2f074474e787ef756f77918621e12",
+    "selectionEvidenceMerged": false
+  },
+  "environment": {
+    "host": "Lyra",
+    "matlabRelease": "2025b",
+    "architecture": "maca64",
+    "provider": "native-neon-pthreads",
+    "fftwVersion": "3.3.11",
+    "threadBackend": "pthreads",
+    "threadCount": 16,
+    "baseLibrary": "/private/tmp/issue128-native-cache/providers/native-neon-pthreads-d2b85f7a608fbedd/install/lib/libfftw3.3.dylib",
+    "threadLibrary": "/private/tmp/issue128-native-cache/providers/native-neon-pthreads-d2b85f7a608fbedd/install/lib/libfftw3_threads.3.dylib",
+    "baseLibrarySha256": "8314e2296212c771a81ad52f3f7ac97fb8df700be45070c583f689725cb179d5",
+    "threadLibrarySha256": "b5f847b65919a3e2c1ec6aaa4fe127cd129f6400f20d244dd0fca0c1e3e11199"
+  },
+  "configuration": {
+    "processCount": 1,
+    "warmupCount": 1,
+    "sampleCount": 3,
+    "rotatedOrder": true,
+    "deterministicAdvancement": true,
+    "largeCasesRun": false,
+    "finalistProtocolRun": false,
+    "rssProtocolRun": false,
+    "correctnessTolerance": 1E-12,
+    "maximumTimeRegression": 0.03,
+    "ordinaryStorageReduction": 0.05,
+    "lowComplexityStorageBand": [
+      0.03,
+      0.05
+    ]
+  },
+  "variants": [
+    {
+      "id": "streamed-three-channel-control",
+      "module": "wv_issue158_streamed_control",
+      "isArena": false,
+      "mexPath": "/private/tmp/issue158-final-mex/wv_issue158_streamed_control.mexmaca64",
+      "mexSha256": "e48ca21b1c2ba85b65bd6520b9726d9741ec7346e9cd67436e2b34989987315b"
+    },
+    {
+      "id": "inplace-six-field-arena",
+      "module": "wv_issue158_inplace_arena",
+      "isArena": true,
+      "mexPath": "/private/tmp/issue158-final-mex/wv_issue158_inplace_arena.mexmaca64",
+      "mexSha256": "b49669cd788b62dda9937685101a974b6fb216d622f7e024421096a4f52e199c"
+    }
+  ],
+  "focusedTests": {
+    "sizes": [
+      [
+        6,
+        5,
+        7
+      ],
+      [
+        7,
+        6,
+        8
+      ],
+      [
+        8,
+        7,
+        9
+      ]
+    ],
+    "hydrostatic": [
+      true,
+      false
+    ],
+    "maximumRelativeError": 8.4926819883859038E-16,
+    "planFailurePassed": true,
+    "allocationFailurePassed": true,
+    "executionFailurePassed": true,
+    "injectedFailuresPassed": true,
+    "lifecyclePassed": true
+  },
+  "liveness": {
+    "hydrostaticTargets": [
+      "U",
+      "V",
+      "N"
+    ],
+    "nonhydrostaticTargets": [
+      "U",
+      "V",
+      "W",
+      "N"
+    ],
+    "symbols": {
+      "R": "Nx*Ny*Nz*8 physical bytes",
+      "P": "2*(floor(Nx/2)+1)*Ny*Nz*8 FFTW-padded physical bytes",
+      "H": "(floor(Nx/2)+1)*Ny*Nz*16 Hermitian-half bytes; H=P",
+      "S": "Nj*Nkl*16 compact coefficient/phase bytes"
+    },
+    "stages": [
+      {
+        "stage": "phase",
+        "live": "canonical state 3S; output flux 3S; compact phase spill S",
+        "alias": "none"
+      },
+      {
+        "stage": "velocity spectrum",
+        "live": "three velocity spectra 3H; compact phase spill S",
+        "alias": "velocity spectra occupy arenas 1-3"
+      },
+      {
+        "stage": "velocity physical",
+        "live": "U,V,W in three padded arenas; compact phase spill S",
+        "alias": "spectral values are dead and overwritten in place"
+      },
+      {
+        "stage": "target derivative spectrum",
+        "live": "U,V,W in arenas 1-3; dx,dy,dz spectra 3H in arenas 4-6; phase S",
+        "alias": "derivative spectra occupy their future physical arenas"
+      },
+      {
+        "stage": "target derivative physical/product",
+        "live": "U,V,W,dx,dy,dz in six padded arenas; phase S",
+        "alias": "dx is overwritten by the physical flux product"
+      },
+      {
+        "stage": "target projection",
+        "live": "U,V,W; one flux spectrum H; phase S; accumulated Fp,Fm,F0",
+        "alias": "the target's dx arena is transformed destructively in place; other derivative arenas are dead"
+      }
+    ],
+    "minimumArenaCount": 6,
+    "unavoidableSpills": "one compact S phase array; caller-owned canonical state and flux boundary arrays",
+    "completeLowerBound": "descriptor + plan wrappers + 6P + S scratch + 6S caller state/flux; FFTW-owned plan allocations are opaque",
+    "alignment": "one stable 64-byte-aligned arena base; no interior alignment gaps; allocator metadata is opaque",
+    "padding": "6*(P-R)",
+    "proof": "No spectral value is consumed after its inverse transform. No derivative physical value is consumed after product formation, and only the product field is consumed by forward projection. Therefore each spectrum may alias its future physical field without overlapping meaningful lifetimes."
+  },
+  "cases": [
+    {
+      "id": "constant-hydrostatic-256x256x65",
+      "Nxyz": [
+        256,
+        256,
+        65
+      ],
+      "isHydrostatic": true,
+      "seed": 1.582561E+6,
+      "executionOrder": [
+        "streamed-three-channel-control",
+        "inplace-six-field-arena"
+      ],
+      "variants": [
+        {
+          "id": "streamed-three-channel-control",
+          "module": "wv_issue158_streamed_control",
+          "mexSha256": "e48ca21b1c2ba85b65bd6520b9726d9741ec7346e9cd67436e2b34989987315b",
+          "executionOrdinal": 1,
+          "maximumRelativeError": 9.4702539674179743E-15,
+          "errors": {
+            "Fp": 8.69272268023638E-15,
+            "Fm": 9.4702539674179743E-15,
+            "F0": 7.8606300167718921E-15
+          },
+          "warmupCount": 1,
+          "sampleCount": 3,
+          "totalSamplesSeconds": [
+            0.057900416666666669,
+            0.053617666666666668,
+            0.0568625
+          ],
+          "totalMedianSeconds": 0.0568625,
+          "internalSamplesSeconds": [
+            0.057705375,
+            0.053441084,
+            0.056670833
+          ],
+          "internalMedianSeconds": 0.056670833,
+          "metrics": {
+            "engine": "fftw",
+            "loadedLibrary": "/private/tmp/issue128-native-cache/providers/native-neon-pthreads-d2b85f7a608fbedd/install/lib/libfftw3.3.dylib",
+            "nonlinearFluxSchedule": "issue130-streamed-target-three-channel",
+            "screeningVariant": "streamed-target-three-channel",
+            "phaseImplementation": "scalar-sincos",
+            "coefficientStorageMode": "natural-dimensional",
+            "coefficientArithmeticMode": "natural-dimensional-prescaled",
+            "inverseNormalizationPlacement": "coefficient-production",
+            "optimizationImplementation": "O3-native",
+            "coefficientWorkerCount": 2,
+            "planMemoryAccounting": "wrapper-lower-bound; FFTW-owned plan memory is opaque",
+            "contractVersion": 4,
+            "planCount": 17,
+            "planBytes": 408,
+            "descriptorBytes": 1.13012311E+8,
+            "scratchCapacityBytes": 3.4185216E+8,
+            "scratchHighWaterBytes": 3.4185216E+8,
+            "halfSpectrumScratchCapacityBytes": 1.3737984E+8,
+            "realScratchCapacityBytes": 2.0447232E+8,
+            "executionCount": 108,
+            "horizontalExecutionCount": 42,
+            "verticalExecutionCount": 66,
+            "nonlinearFluxCallCount": 6,
+            "nonlinearFluxPhaseEvaluationCount": 2.882628E+6,
+            "phaseWorkspaceBytes": 3.434496E+7,
+            "phaseReservationBytes": 3.434496E+7,
+            "persistentBytes": 4.54864879E+8,
+            "stateInputBytes": 2.3061024E+7,
+            "fluxOutputBytes": 2.3061024E+7,
+            "knownMaximumLiveOwnedBytes": 4.77925903E+8,
+            "persistentFullHermitianBytes": 0,
+            "gradientMaskBytes": 0,
+            "Nx": 256,
+            "Ny": 256,
+            "Nz": 65,
+            "Nj": 42,
+            "Nkl": 11439,
+            "phaseSeconds": 0.00159675,
+            "reconstructionSeconds": 0.010392958,
+            "derivativeReconstructionSeconds": 0.028911333,
+            "productSeconds": 0.0070711249999999993,
+            "projectionSeconds": 0.01169675,
+            "coefficientAssemblySeconds": 0.001308709,
+            "derivativeCoefficientAssemblySeconds": 0.002315042,
+            "coefficientProjectionSeconds": 0,
+            "inPlaceArenaCapacityBytes": 0,
+            "inPlaceArenaPaddingBytes": 0,
+            "compactPhaseSpillBytes": 0,
+            "scratchAllocationCount": 0,
+            "scratchBaseAlignmentBytes": 0,
+            "scratchBasePointer": 0,
+            "completeExactMaximumLiveBytes": 5.00986927E+8
+          },
+          "diagnosticDelta": {
+            "executionCount": 18,
+            "horizontalExecutionCount": 7,
+            "verticalExecutionCount": 11,
+            "nonlinearFluxCallCount": 1,
+            "phaseEvaluationCount": 480438,
+            "stages": {
+              "phaseSeconds": 0.00159675,
+              "reconstructionSeconds": 0.010392958,
+              "derivativeReconstructionSeconds": 0.028911333,
+              "productSeconds": 0.0070711249999999993,
+              "projectionSeconds": 0.01169675,
+              "coefficientAssemblySeconds": 0.001308709,
+              "derivativeCoefficientAssemblySeconds": 0.002315042,
+              "coefficientProjectionSeconds": 0
+            }
+          },
+          "memory": {
+            "descriptorBytes": 1.13012311E+8,
+            "planWrapperBytesLowerBound": 408,
+            "opaquePlanMemory": "FFTW-owned plan memory is opaque",
+            "scratchBytes": 3.4185216E+8,
+            "persistentOwnedBytesLowerBound": 4.54864879E+8,
+            "stateInputBytes": 2.3061024E+7,
+            "fluxOutputBytes": 2.3061024E+7,
+            "completeExactMaximumLiveBytesExcludingOpaquePlans": 5.00986927E+8,
+            "halfSpectrumScratchBytes": 1.3737984E+8,
+            "realScratchBytes": 2.0447232E+8,
+            "inPlaceArenaBytes": 0,
+            "paddingBytes": 0,
+            "compactPhaseSpillBytes": 0,
+            "scratchAllocationCount": 0,
+            "alignmentBytes": 0,
+            "persistentFullHermitianBytes": 0
+          },
+          "rss": {
+            "provider": "macos-ps-rss-diagnostic",
+            "beforeCreateBytes": 1.869283328E+9,
+            "afterCreateBytes": 2.699640832E+9,
+            "afterRepeatedBytes": 2.75562496E+9,
+            "afterDiagnosticBytes": 2.755641344E+9,
+            "createIncrementBytes": 8.30357504E+8,
+            "repeatedIncrementBytes": 8.86341632E+8,
+            "diagnosticIncrementBytes": 8.86358016E+8
+          },
+          "pointerStable": true,
+          "lifecyclePassed": true,
+          "libraryIdentityPassed": true,
+          "status": "complete"
+        },
+        {
+          "id": "inplace-six-field-arena",
+          "module": "wv_issue158_inplace_arena",
+          "mexSha256": "b49669cd788b62dda9937685101a974b6fb216d622f7e024421096a4f52e199c",
+          "executionOrdinal": 2,
+          "maximumRelativeError": 9.5861738774089116E-15,
+          "errors": {
+            "Fp": 8.748685879385156E-15,
+            "Fm": 9.5861738774089116E-15,
+            "F0": 7.7542843054466068E-15
+          },
+          "warmupCount": 1,
+          "sampleCount": 3,
+          "totalSamplesSeconds": [
+            0.07623504166666667,
+            0.075297875,
+            0.077191083333333327
+          ],
+          "totalMedianSeconds": 0.07623504166666667,
+          "internalSamplesSeconds": [
+            0.076016875,
+            0.075086584,
+            0.076985875
+          ],
+          "internalMedianSeconds": 0.076016875,
+          "metrics": {
+            "engine": "fftw",
+            "loadedLibrary": "/private/tmp/issue128-native-cache/providers/native-neon-pthreads-d2b85f7a608fbedd/install/lib/libfftw3.3.dylib",
+            "nonlinearFluxSchedule": "issue130-streamed-target-three-channel",
+            "screeningVariant": "issue158-inplace-six-field-arena",
+            "phaseImplementation": "scalar-sincos",
+            "coefficientStorageMode": "natural-dimensional",
+            "coefficientArithmeticMode": "natural-dimensional-prescaled",
+            "inverseNormalizationPlacement": "coefficient-production",
+            "optimizationImplementation": "O3-native",
+            "coefficientWorkerCount": 2,
+            "planMemoryAccounting": "wrapper-lower-bound; FFTW-owned plan memory is opaque",
+            "contractVersion": 4,
+            "planCount": 17,
+            "planBytes": 408,
+            "descriptorBytes": 1.13012311E+8,
+            "scratchCapacityBytes": 2.13756768E+8,
+            "scratchHighWaterBytes": 2.13756768E+8,
+            "halfSpectrumScratchCapacityBytes": 0,
+            "realScratchCapacityBytes": 0,
+            "executionCount": 108,
+            "horizontalExecutionCount": 42,
+            "verticalExecutionCount": 66,
+            "nonlinearFluxCallCount": 6,
+            "nonlinearFluxPhaseEvaluationCount": 2.882628E+6,
+            "phaseWorkspaceBytes": 7.687008E+6,
+            "phaseReservationBytes": 7.687008E+6,
+            "persistentBytes": 3.26769487E+8,
+            "stateInputBytes": 2.3061024E+7,
+            "fluxOutputBytes": 2.3061024E+7,
+            "knownMaximumLiveOwnedBytes": 3.49830511E+8,
+            "persistentFullHermitianBytes": 0,
+            "gradientMaskBytes": 0,
+            "Nx": 256,
+            "Ny": 256,
+            "Nz": 65,
+            "Nj": 42,
+            "Nkl": 11439,
+            "phaseSeconds": 0.00151625,
+            "reconstructionSeconds": 0.010030333,
+            "derivativeReconstructionSeconds": 0.029103208000000002,
+            "productSeconds": 0.005679792999999999,
+            "projectionSeconds": 0.030599125,
+            "coefficientAssemblySeconds": 0.002553791,
+            "derivativeCoefficientAssemblySeconds": 0.0071889169999999995,
+            "coefficientProjectionSeconds": 0,
+            "inPlaceArenaCapacityBytes": 2.0606976E+8,
+            "inPlaceArenaPaddingBytes": 1.59744E+6,
+            "compactPhaseSpillBytes": 7.687008E+6,
+            "scratchAllocationCount": 2,
+            "scratchBaseAlignmentBytes": 64,
+            "scratchBasePointer": 2.3840423936E+10,
+            "completeExactMaximumLiveBytes": 3.72891535E+8
+          },
+          "diagnosticDelta": {
+            "executionCount": 18,
+            "horizontalExecutionCount": 7,
+            "verticalExecutionCount": 11,
+            "nonlinearFluxCallCount": 1,
+            "phaseEvaluationCount": 480438,
+            "stages": {
+              "phaseSeconds": 0.00151625,
+              "reconstructionSeconds": 0.010030333,
+              "derivativeReconstructionSeconds": 0.029103208000000002,
+              "productSeconds": 0.005679792999999999,
+              "projectionSeconds": 0.030599125,
+              "coefficientAssemblySeconds": 0.002553791,
+              "derivativeCoefficientAssemblySeconds": 0.0071889169999999995,
+              "coefficientProjectionSeconds": 0
+            }
+          },
+          "memory": {
+            "descriptorBytes": 1.13012311E+8,
+            "planWrapperBytesLowerBound": 408,
+            "opaquePlanMemory": "FFTW-owned plan memory is opaque",
+            "scratchBytes": 2.13756768E+8,
+            "persistentOwnedBytesLowerBound": 3.26769487E+8,
+            "stateInputBytes": 2.3061024E+7,
+            "fluxOutputBytes": 2.3061024E+7,
+            "completeExactMaximumLiveBytesExcludingOpaquePlans": 3.72891535E+8,
+            "halfSpectrumScratchBytes": 0,
+            "realScratchBytes": 0,
+            "inPlaceArenaBytes": 2.0606976E+8,
+            "paddingBytes": 1.59744E+6,
+            "compactPhaseSpillBytes": 7.687008E+6,
+            "scratchAllocationCount": 2,
+            "alignmentBytes": 64,
+            "persistentFullHermitianBytes": 0
+          },
+          "rss": {
+            "provider": "macos-ps-rss-diagnostic",
+            "beforeCreateBytes": 2.001928192E+9,
+            "afterCreateBytes": 2.242510848E+9,
+            "afterRepeatedBytes": 2.460205056E+9,
+            "afterDiagnosticBytes": 2.460205056E+9,
+            "createIncrementBytes": 2.40582656E+8,
+            "repeatedIncrementBytes": 4.58276864E+8,
+            "diagnosticIncrementBytes": 4.58276864E+8
+          },
+          "pointerStable": true,
+          "lifecyclePassed": true,
+          "libraryIdentityPassed": true,
+          "status": "complete"
+        }
+      ],
+      "comparison": {
+        "completeExactMaximumLiveReduction": 0.255686096974742,
+        "completeTimeRegression": 0.34069099435773431,
+        "diagnosticRSSRegression": -0.48296641342723523,
+        "storageGatePassed": true,
+        "relaxedLowComplexityBand": false,
+        "timeGatePassed": false,
+        "diagnosticRSSGatePassed": true,
+        "correctnessPassed": true,
+        "lifecyclePassed": true,
+        "executionCountsPreserved": true
+      }
+    },
+    {
+      "id": "constant-nonhydrostatic-256x256x65",
+      "Nxyz": [
+        256,
+        256,
+        65
+      ],
+      "isHydrostatic": false,
+      "seed": 1.582562E+6,
+      "executionOrder": [
+        "inplace-six-field-arena",
+        "streamed-three-channel-control"
+      ],
+      "variants": [
+        {
+          "id": "inplace-six-field-arena",
+          "module": "wv_issue158_inplace_arena",
+          "mexSha256": "b49669cd788b62dda9937685101a974b6fb216d622f7e024421096a4f52e199c",
+          "executionOrdinal": 1,
+          "maximumRelativeError": 7.7272562051028169E-15,
+          "errors": {
+            "Fp": 7.7272562051028169E-15,
+            "Fm": 7.6177672752182041E-15,
+            "F0": 7.3256765954126754E-15
+          },
+          "warmupCount": 1,
+          "sampleCount": 3,
+          "totalSamplesSeconds": [
+            0.087646875,
+            0.086300125,
+            0.08706925
+          ],
+          "totalMedianSeconds": 0.08706925,
+          "internalSamplesSeconds": [
+            0.087432333,
+            0.086073208,
+            0.086841416
+          ],
+          "internalMedianSeconds": 0.086841416,
+          "metrics": {
+            "engine": "fftw",
+            "loadedLibrary": "/private/tmp/issue128-native-cache/providers/native-neon-pthreads-d2b85f7a608fbedd/install/lib/libfftw3.3.dylib",
+            "nonlinearFluxSchedule": "issue130-streamed-target-three-channel",
+            "screeningVariant": "issue158-inplace-six-field-arena",
+            "phaseImplementation": "scalar-sincos",
+            "coefficientStorageMode": "natural-dimensional",
+            "coefficientArithmeticMode": "natural-dimensional-prescaled",
+            "inverseNormalizationPlacement": "coefficient-production",
+            "optimizationImplementation": "O3-native",
+            "coefficientWorkerCount": 2,
+            "planMemoryAccounting": "wrapper-lower-bound; FFTW-owned plan memory is opaque",
+            "contractVersion": 4,
+            "planCount": 17,
+            "planBytes": 408,
+            "descriptorBytes": 1.13012311E+8,
+            "scratchCapacityBytes": 2.13756768E+8,
+            "scratchHighWaterBytes": 2.13756768E+8,
+            "halfSpectrumScratchCapacityBytes": 0,
+            "realScratchCapacityBytes": 0,
+            "executionCount": 138,
+            "horizontalExecutionCount": 54,
+            "verticalExecutionCount": 84,
+            "nonlinearFluxCallCount": 6,
+            "nonlinearFluxPhaseEvaluationCount": 2.882628E+6,
+            "phaseWorkspaceBytes": 7.687008E+6,
+            "phaseReservationBytes": 7.687008E+6,
+            "persistentBytes": 3.26769487E+8,
+            "stateInputBytes": 2.3061024E+7,
+            "fluxOutputBytes": 2.3061024E+7,
+            "knownMaximumLiveOwnedBytes": 3.49830511E+8,
+            "persistentFullHermitianBytes": 0,
+            "gradientMaskBytes": 0,
+            "Nx": 256,
+            "Ny": 256,
+            "Nz": 65,
+            "Nj": 42,
+            "Nkl": 11439,
+            "phaseSeconds": 0.001418375,
+            "reconstructionSeconds": 0.008237167,
+            "derivativeReconstructionSeconds": 0.032391375,
+            "productSeconds": 0.007927166,
+            "projectionSeconds": 0.037073877,
+            "coefficientAssemblySeconds": 0.002381417,
+            "derivativeCoefficientAssemblySeconds": 0.0087835,
+            "coefficientProjectionSeconds": 0,
+            "inPlaceArenaCapacityBytes": 2.0606976E+8,
+            "inPlaceArenaPaddingBytes": 1.59744E+6,
+            "compactPhaseSpillBytes": 7.687008E+6,
+            "scratchAllocationCount": 2,
+            "scratchBaseAlignmentBytes": 64,
+            "scratchBasePointer": 2.3899144192E+10,
+            "completeExactMaximumLiveBytes": 3.72891535E+8
+          },
+          "diagnosticDelta": {
+            "executionCount": 23,
+            "horizontalExecutionCount": 9,
+            "verticalExecutionCount": 14,
+            "nonlinearFluxCallCount": 1,
+            "phaseEvaluationCount": 480438,
+            "stages": {
+              "phaseSeconds": 0.001418375,
+              "reconstructionSeconds": 0.008237167,
+              "derivativeReconstructionSeconds": 0.032391375,
+              "productSeconds": 0.007927166,
+              "projectionSeconds": 0.037073877,
+              "coefficientAssemblySeconds": 0.002381417,
+              "derivativeCoefficientAssemblySeconds": 0.0087835,
+              "coefficientProjectionSeconds": 0
+            }
+          },
+          "memory": {
+            "descriptorBytes": 1.13012311E+8,
+            "planWrapperBytesLowerBound": 408,
+            "opaquePlanMemory": "FFTW-owned plan memory is opaque",
+            "scratchBytes": 2.13756768E+8,
+            "persistentOwnedBytesLowerBound": 3.26769487E+8,
+            "stateInputBytes": 2.3061024E+7,
+            "fluxOutputBytes": 2.3061024E+7,
+            "completeExactMaximumLiveBytesExcludingOpaquePlans": 3.72891535E+8,
+            "halfSpectrumScratchBytes": 0,
+            "realScratchBytes": 0,
+            "inPlaceArenaBytes": 2.0606976E+8,
+            "paddingBytes": 1.59744E+6,
+            "compactPhaseSpillBytes": 7.687008E+6,
+            "scratchAllocationCount": 2,
+            "alignmentBytes": 64,
+            "persistentFullHermitianBytes": 0
+          },
+          "rss": {
+            "provider": "macos-ps-rss-diagnostic",
+            "beforeCreateBytes": 2.050310144E+9,
+            "afterCreateBytes": 2.050310144E+9,
+            "afterRepeatedBytes": 2.260271104E+9,
+            "afterDiagnosticBytes": 2.260271104E+9,
+            "createIncrementBytes": 0,
+            "repeatedIncrementBytes": 2.0996096E+8,
+            "diagnosticIncrementBytes": 2.0996096E+8
+          },
+          "pointerStable": true,
+          "lifecyclePassed": true,
+          "libraryIdentityPassed": true,
+          "status": "complete"
+        },
+        {
+          "id": "streamed-three-channel-control",
+          "module": "wv_issue158_streamed_control",
+          "mexSha256": "e48ca21b1c2ba85b65bd6520b9726d9741ec7346e9cd67436e2b34989987315b",
+          "executionOrdinal": 2,
+          "maximumRelativeError": 7.7139135747320958E-15,
+          "errors": {
+            "Fp": 7.7139135747320958E-15,
+            "Fm": 7.6214052798551377E-15,
+            "F0": 7.2105744467875871E-15
+          },
+          "warmupCount": 1,
+          "sampleCount": 3,
+          "totalSamplesSeconds": [
+            0.075892625,
+            0.08322675,
+            0.075080083333333339
+          ],
+          "totalMedianSeconds": 0.075892625,
+          "internalSamplesSeconds": [
+            0.075649666,
+            0.082985041,
+            0.074828083
+          ],
+          "internalMedianSeconds": 0.075649666,
+          "metrics": {
+            "engine": "fftw",
+            "loadedLibrary": "/private/tmp/issue128-native-cache/providers/native-neon-pthreads-d2b85f7a608fbedd/install/lib/libfftw3.3.dylib",
+            "nonlinearFluxSchedule": "issue130-streamed-target-three-channel",
+            "screeningVariant": "streamed-target-three-channel",
+            "phaseImplementation": "scalar-sincos",
+            "coefficientStorageMode": "natural-dimensional",
+            "coefficientArithmeticMode": "natural-dimensional-prescaled",
+            "inverseNormalizationPlacement": "coefficient-production",
+            "optimizationImplementation": "O3-native",
+            "coefficientWorkerCount": 2,
+            "planMemoryAccounting": "wrapper-lower-bound; FFTW-owned plan memory is opaque",
+            "contractVersion": 4,
+            "planCount": 17,
+            "planBytes": 408,
+            "descriptorBytes": 1.13012311E+8,
+            "scratchCapacityBytes": 3.4185216E+8,
+            "scratchHighWaterBytes": 3.4185216E+8,
+            "halfSpectrumScratchCapacityBytes": 1.3737984E+8,
+            "realScratchCapacityBytes": 2.0447232E+8,
+            "executionCount": 138,
+            "horizontalExecutionCount": 54,
+            "verticalExecutionCount": 84,
+            "nonlinearFluxCallCount": 6,
+            "nonlinearFluxPhaseEvaluationCount": 2.882628E+6,
+            "phaseWorkspaceBytes": 3.434496E+7,
+            "phaseReservationBytes": 3.434496E+7,
+            "persistentBytes": 4.54864879E+8,
+            "stateInputBytes": 2.3061024E+7,
+            "fluxOutputBytes": 2.3061024E+7,
+            "knownMaximumLiveOwnedBytes": 4.77925903E+8,
+            "persistentFullHermitianBytes": 0,
+            "gradientMaskBytes": 0,
+            "Nx": 256,
+            "Ny": 256,
+            "Nz": 65,
+            "Nj": 42,
+            "Nkl": 11439,
+            "phaseSeconds": 0.00143025,
+            "reconstructionSeconds": 0.009973917,
+            "derivativeReconstructionSeconds": 0.037166041,
+            "productSeconds": 0.009152709,
+            "projectionSeconds": 0.014719542,
+            "coefficientAssemblySeconds": 0.001304875,
+            "derivativeCoefficientAssemblySeconds": 0.002938833,
+            "coefficientProjectionSeconds": 0,
+            "inPlaceArenaCapacityBytes": 0,
+            "inPlaceArenaPaddingBytes": 0,
+            "compactPhaseSpillBytes": 0,
+            "scratchAllocationCount": 0,
+            "scratchBaseAlignmentBytes": 0,
+            "scratchBasePointer": 0,
+            "completeExactMaximumLiveBytes": 5.00986927E+8
+          },
+          "diagnosticDelta": {
+            "executionCount": 23,
+            "horizontalExecutionCount": 9,
+            "verticalExecutionCount": 14,
+            "nonlinearFluxCallCount": 1,
+            "phaseEvaluationCount": 480438,
+            "stages": {
+              "phaseSeconds": 0.00143025,
+              "reconstructionSeconds": 0.009973917,
+              "derivativeReconstructionSeconds": 0.037166041,
+              "productSeconds": 0.009152709,
+              "projectionSeconds": 0.014719542,
+              "coefficientAssemblySeconds": 0.001304875,
+              "derivativeCoefficientAssemblySeconds": 0.002938833,
+              "coefficientProjectionSeconds": 0
+            }
+          },
+          "memory": {
+            "descriptorBytes": 1.13012311E+8,
+            "planWrapperBytesLowerBound": 408,
+            "opaquePlanMemory": "FFTW-owned plan memory is opaque",
+            "scratchBytes": 3.4185216E+8,
+            "persistentOwnedBytesLowerBound": 4.54864879E+8,
+            "stateInputBytes": 2.3061024E+7,
+            "fluxOutputBytes": 2.3061024E+7,
+            "completeExactMaximumLiveBytesExcludingOpaquePlans": 5.00986927E+8,
+            "halfSpectrumScratchBytes": 1.3737984E+8,
+            "realScratchBytes": 2.0447232E+8,
+            "inPlaceArenaBytes": 0,
+            "paddingBytes": 0,
+            "compactPhaseSpillBytes": 0,
+            "scratchAllocationCount": 0,
+            "alignmentBytes": 0,
+            "persistentFullHermitianBytes": 0
+          },
+          "rss": {
+            "provider": "macos-ps-rss-diagnostic",
+            "beforeCreateBytes": 2.067873792E+9,
+            "afterCreateBytes": 2.409873408E+9,
+            "afterRepeatedBytes": 2.4137728E+9,
+            "afterDiagnosticBytes": 2.413838336E+9,
+            "createIncrementBytes": 3.41999616E+8,
+            "repeatedIncrementBytes": 3.45899008E+8,
+            "diagnosticIncrementBytes": 3.45964544E+8
+          },
+          "pointerStable": true,
+          "lifecyclePassed": true,
+          "libraryIdentityPassed": true,
+          "status": "complete"
+        }
+      ],
+      "comparison": {
+        "completeExactMaximumLiveReduction": 0.255686096974742,
+        "completeTimeRegression": 0.14726892105787615,
+        "diagnosticRSSRegression": -0.39311422617920055,
+        "storageGatePassed": true,
+        "relaxedLowComplexityBand": false,
+        "timeGatePassed": false,
+        "diagnosticRSSGatePassed": true,
+        "correctnessPassed": true,
+        "lifecyclePassed": true,
+        "executionCountsPreserved": true
+      }
+    }
+  ],
+  "decision": {
+    "status": "CORE_REJECT",
+    "advance": false,
+    "gate": "complexity-adjusted issue #158 gate: >=5% ordinarily; 3-5% only for demonstrably localized zero-complexity execution changes; <3% reject",
+    "testsPassed": true,
+    "ordinaryGatePassed": false,
+    "lowComplexityGatePassed": false,
+    "complexityLedger": {
+      "addedExecutionPaths": 0,
+      "addedFFTPlans": 0,
+      "addedTransforms": 0,
+      "addedExecutions": 0,
+      "addedPersistentScientificObjects": 0,
+      "addedFallbacks": 0,
+      "addedRecomputation": 0,
+      "publicScientificInterfaceChanges": 0,
+      "diagnosticMetricFieldsAdded": 7,
+      "persistentDenseHermitianSpectra": 0,
+      "sourceFootprint": {
+        "fileCount": 8,
+        "addedLines": 734,
+        "deletedLines": 112,
+        "files": [
+          {
+            "path": "Benchmarks/buildCompiledKernelTransformMex.m",
+            "addedLines": 4,
+            "deletedLines": 1
+          },
+          {
+            "path": "Benchmarks/compiled-kernel/wv_compiled_transform_mex.cpp",
+            "addedLines": 9,
+            "deletedLines": 2
+          },
+          {
+            "path": "Benchmarks/runCompiledKernelIssue158Screening.m",
+            "addedLines": 322,
+            "deletedLines": 0
+          },
+          {
+            "path": "CompiledKernel/CMakeLists.txt",
+            "addedLines": 7,
+            "deletedLines": 0
+          },
+          {
+            "path": "CompiledKernel/include/WaveVortexKernel/WVTransformConstantStratificationKernel.hpp",
+            "addedLines": 21,
+            "deletedLines": 1
+          },
+          {
+            "path": "CompiledKernel/src/WVTransformConstantStratificationKernel.cpp",
+            "addedLines": 336,
+            "deletedLines": 105
+          },
+          {
+            "path": "tools/compiled-kernel/tests/TestWVKernelContract.cpp",
+            "addedLines": 25,
+            "deletedLines": 3
+          },
+          {
+            "path": "tools/compiled-kernel/tests/WVReferenceFFTEngine.cpp",
+            "addedLines": 10,
+            "deletedLines": 0
+          }
+        ]
+      }
+    },
+    "rejectedControls": [
+      "streamed-target-single-output",
+      "bounded-FFT schedules"
+    ]
+  }
+}
