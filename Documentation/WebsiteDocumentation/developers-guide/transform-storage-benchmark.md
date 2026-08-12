@@ -11,7 +11,7 @@ The builtin storage diagnostic separates exact application-owned arrays from who
 
 ## Exact storage ledger
 
-`WVTransformConstantStratification.transformStorageLedger()` is a hidden developer contract used by the benchmark. It records compact Fourier/WV mappings, the builtin full-complex inverse buffer, dense DCT/DST matrices, and known transient transform results. Each record includes its owner, purpose, shape, MATLAB class, allocation state, persistence, and byte status. The aggregate distinguishes the sum of all recorded transient arrays from maximum known live storage, which combines persistent arrays with the larger mutually exclusive forward or inverse result.
+`WVTransformConstantStratification.transformStorageLedger()` is a hidden developer contract used by the benchmark. It records compact Fourier/WV mappings, the builtin full-complex inverse buffer, dense DCT/DST matrices, and known transient transform results. The builtin inverse buffer is allocated on first builtin inverse use; before allocation its ledger entry reports zero exact retained bytes and its potential size separately. Each record includes its owner, purpose, shape, MATLAB class, allocation state, persistence, and byte status. The aggregate distinguishes the sum of all recorded transient arrays from maximum known live storage, which combines persistent arrays with the larger mutually exclusive forward or inverse result.
 
 MATLAB's FFT workspace is recorded as opaque. Canonical wave-vortex coefficients, forcing state, and unrelated model caches are outside the ledger, so `knownPersistentBytes` must not be interpreted as total model memory.
 

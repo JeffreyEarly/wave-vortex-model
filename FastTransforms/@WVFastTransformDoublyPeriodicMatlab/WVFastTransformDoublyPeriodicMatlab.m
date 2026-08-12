@@ -9,7 +9,7 @@ classdef WVFastTransformDoublyPeriodicMatlab < WVFastTransformDoublyPeriodic
     end
 
     properties (Access=private)
-        complexBufferRows
+        complexBufferRows = []
     end
 
     methods
@@ -17,15 +17,23 @@ classdef WVFastTransformDoublyPeriodicMatlab < WVFastTransformDoublyPeriodic
             self.wvg = wvg;
             self.Nz=Nz;
             self.fourierStorageLayout = WVFourierStorageLayout(wvg,"full-complex");
-            self.complexBufferRows = self.fourierStorageLayout.allocateFourierStorage(Nz);
         end
 
         function value = get.complexBuffer(self)
+            self.allocateComplexBufferRowsIfNeeded();
             value = self.fourierStorageLayout.reshapeFourierRowsToStorage(self.complexBufferRows);
         end
 
         function set.complexBuffer(self,value)
             self.complexBufferRows = self.fourierStorageLayout.reshapeFourierStorageToRows(value);
+        end
+    end
+
+    methods (Access=private)
+        function allocateComplexBufferRowsIfNeeded(self)
+            if isempty(self.complexBufferRows)
+                self.complexBufferRows = self.fourierStorageLayout.allocateFourierStorage(self.Nz);
+            end
         end
     end
 
@@ -45,9 +53,16 @@ classdef WVFastTransformDoublyPeriodicMatlab < WVFastTransformDoublyPeriodic
                 mapping = mappings(iMapping);
                 entries(end+1,1) = ledgerEntry("horizontal.layout." + mapping.name,"WVFourierStorageLayout","mapping","Fourier/WV index mapping",mapping.class,mapping.shape,mapping.bytes,"persistent","allocated","exact","mapping",mapping.bytes); %#ok<AGROW>
             end
-            value = self.complexBufferRows;
-            info = whos("value");
-            entries(end+1,1) = ledgerEntry("horizontal.fullSpectrumBuffer","WVFastTransformDoublyPeriodicMatlab","spectrum-buffer","Reusable inverse-transform Fourier storage",string(class(value)),double(size(value)),double(info.bytes),"persistent","allocated","exact","full-complex",double(info.bytes));
+            potentialShape = [self.fourierStorageLayout.nFourierStorageRows self.Nz];
+            potentialBytes = 16*prod(potentialShape);
+            if isempty(self.complexBufferRows)
+                bufferBytes = 0;
+                allocationState = "unallocated";
+            else
+                bufferBytes = potentialBytes;
+                allocationState = "allocated";
+            end
+            entries(end+1,1) = ledgerEntry("horizontal.fullSpectrumBuffer","WVFastTransformDoublyPeriodicMatlab","spectrum-buffer","Lazily allocated reusable inverse-transform Fourier storage","double",potentialShape,bufferBytes,"persistent",allocationState,"exact","full-complex",potentialBytes);
             spatialBytes = 8*prod([self.wvg.Nx self.wvg.Ny self.Nz]);
             entries(end+1,1) = ledgerEntry("horizontal.forwardSpectrumResult","WVFastTransformDoublyPeriodicMatlab","temporary","Complete forward-FFT result","double",[self.wvg.Nx self.wvg.Ny self.Nz],2*spatialBytes,"transient","allocated","exact","full-complex",2*spatialBytes);
             entries(end+1,1) = ledgerEntry("horizontal.inverseSpatialResult","WVFastTransformDoublyPeriodicMatlab","temporary","Inverse-FFT spatial result","double",[self.wvg.Nx self.wvg.Ny self.Nz],spatialBytes,"transient","allocated","exact","real",spatialBytes);

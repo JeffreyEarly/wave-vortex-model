@@ -197,6 +197,12 @@ classdef TestWVCompiledBackend < matlab.unittest.TestCase
                 testCase.verifyEqual(metadata.contract.version,4);
                 testCase.verifyEqual(metadata.runtimeMetrics.planCount,17);
                 testCase.verifyEqual(metadata.runtimeMetrics.persistentFullHermitianBytes,0);
+                transformLedger = compiledWVT.transformStorageLedger();
+                builtinBuffer = transformLedger.entries(string({transformLedger.entries.identifier}) == "horizontal.fullSpectrumBuffer");
+                testCase.verifyEqual(builtinBuffer.allocationState,"unallocated");
+                testCase.verifyEqual(builtinBuffer.bytes,0);
+                testCase.verifyGreaterThan(builtinBuffer.potentialBytes,0);
+                testCase.verifyFalse(transformLedger.hasPersistentFullSpectrum);
 
                 if definition.isHydrostatic
                     resized = compiledWVT.waveVortexTransformWithResolution([18 14 11]);

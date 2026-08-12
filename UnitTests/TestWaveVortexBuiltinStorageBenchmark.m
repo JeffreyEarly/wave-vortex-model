@@ -21,6 +21,29 @@ classdef TestWaveVortexBuiltinStorageBenchmark < matlab.unittest.TestCase
     end
 
     methods (Test,TestTags="full")
+        function builtinInverseBufferIsAllocatedLazily(testCase)
+            transform = WVTransformConstantStratification([15e3 15e3 1300],[16 16 9]);
+            cleanup = onCleanup(@()delete(transform));
+            ledgerBeforeUse = transform.transformStorageLedger();
+            fullBufferBeforeUse = ledgerBeforeUse.entries(string({ledgerBeforeUse.entries.identifier}) == "horizontal.fullSpectrumBuffer");
+            testCase.verifyEqual(fullBufferBeforeUse.allocationState,"unallocated");
+            testCase.verifyEqual(fullBufferBeforeUse.bytes,0);
+            testCase.verifyEqual(fullBufferBeforeUse.potentialBytes,16*prod([16 16 9]));
+            testCase.verifyFalse(ledgerBeforeUse.hasPersistentFullSpectrum);
+
+            firstBuffer = transform.fastTransform.complexBuffer;
+            ledgerAfterUse = transform.transformStorageLedger();
+            fullBufferAfterUse = ledgerAfterUse.entries(string({ledgerAfterUse.entries.identifier}) == "horizontal.fullSpectrumBuffer");
+            testCase.verifySize(firstBuffer,[16 16 9]);
+            testCase.verifyEqual(fullBufferAfterUse.allocationState,"allocated");
+            testCase.verifyEqual(fullBufferAfterUse.bytes,fullBufferAfterUse.potentialBytes);
+            testCase.verifyTrue(ledgerAfterUse.hasPersistentFullSpectrum);
+
+            secondBuffer = transform.fastTransform.complexBuffer;
+            testCase.verifyEqual(secondBuffer,firstBuffer);
+            clear cleanup
+        end
+
         function ledgerAccountsForKnownBuiltinStorage(testCase)
             transform = WVTransformConstantStratification([15e3 15e3 1300],[16 16 9]);
             transform.initWithRandomFlow;
@@ -40,6 +63,7 @@ classdef TestWaveVortexBuiltinStorageBenchmark < matlab.unittest.TestCase
             testCase.verifyEqual(ledger.knownMaximumLiveBytes,ledger.knownPersistentBytes+ledger.maximumKnownTransientBytes);
             fullBuffer = entries(string({entries.identifier}) == "horizontal.fullSpectrumBuffer");
             testCase.verifyEqual(fullBuffer.bytes,16*prod([16 16 9]));
+            testCase.verifyEqual(fullBuffer.allocationState,"allocated");
             testCase.verifyEqual(nnz(startsWith(string({entries.identifier}),"vertical.matrix.")),4);
         end
 

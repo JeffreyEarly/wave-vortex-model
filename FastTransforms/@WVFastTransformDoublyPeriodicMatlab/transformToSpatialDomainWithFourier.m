@@ -1,5 +1,6 @@
 function u = transformToSpatialDomainWithFourier(self,u_bar)
 layout = self.fourierStorageLayout;
+self.allocateComplexBufferRowsIfNeeded();
 self.complexBufferRows(layout.fourierRowsForDirectWVIndices,:) = u_bar(:,layout.directWVIndices).';
 if ~isempty(layout.hermitianCompletionRows)
     self.complexBufferRows(layout.hermitianCompletionRows,:) = conj(u_bar(:,layout.hermitianSourceWVIndices).');

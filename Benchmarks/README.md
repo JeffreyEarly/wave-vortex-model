@@ -41,6 +41,8 @@ result = runCompiledPreviewBenchmark
 
 Each MATLAB/compiled backend, case, and repeat runs in its own fresh MATLAB process. The raw artifact records active-backend identity, native FFTW identity, exact retained application storage, isolated operation RSS, lifecycle balance, and the availability decision. `publishedWaveVortexBenchmarksFromCompiledPreviewArtifact` converts that one paired artifact into comparable MATLAB and C++ `published-benchmark-v1` datasets. Memory is reported but does not gate preview availability.
 
+`runCompiledMemoryRefinementBenchmark` compares a current candidate with the immutable public-preview artifact without rerunning FFT-provider selection. It preserves the public availability decision while independently recording `MEMORY-QUALIFIED`, `MEMORY-IMPROVED`, or `MEMORY-UNCHANGED`. Memory candidates must keep complete compiled `nonlinearFlux` timing within 3% of the archived compiled baseline in every canonical case.
+
 Normalize a MATLAB artifact with explicit platform identity and repository-relative provenance:
 
 ```matlab
@@ -86,6 +88,6 @@ results = runWaveVortexBuiltinStorageBenchmark
 
 `runWaveVortexRetirementBenchmark` compares archived `v4.2.1` and candidate source snapshots in three fresh processes per `core-v1` case. Each worker rotates implementation order, records the required 7/3 within-process samples, compares the final numerical outputs, and proves that the builtin adapter executed. The same command includes the generic storage/RSS benchmark in its retirement artifact.
 
-The ledger covers compact Fourier mappings, the reused builtin inverse buffer, dense vertical transform matrices, and known forward/inverse result arrays. MATLAB-internal FFT work storage remains explicitly opaque. Each case runs in three fresh MATLAB processes by default while ordinary production caches stay warm.
+The ledger covers compact Fourier mappings, the lazily allocated and reused builtin inverse buffer, dense vertical transform matrices, and known forward/inverse result arrays. Before first builtin inverse use, the ledger records the buffer's potential size without counting it as retained. MATLAB-internal FFT work storage remains explicitly opaque. Each case runs in three fresh MATLAB processes by default while ordinary production caches stay warm.
 
 `WVTransformConstantStratificationSpeedTest`, `ProfileableSpeedTest`, and `ForcingSpectralMaskPerformanceTest` remain historical investigation scripts. Deterministic correctness checks belong in `UnitTests`; mixed scientific investigations belong in `DeveloperExperiments`.
