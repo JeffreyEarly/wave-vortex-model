@@ -98,6 +98,24 @@ classdef TestBenchmarkWebsiteDocumentation < matlab.unittest.TestCase
             testCase.verifySubstring(atGlance,"4.2.2");
         end
 
+        function missingSuiteDatasetIsExplicitlyUnavailable(testCase)
+            [root,buildFolder] = testCase.createFixture("missing-suite");
+            standard = publishedDataset("scaling-standard-v1--matlab-builtin--m5-max--20260810T120000Z","matlab","builtin","m5-max","M5 Max","4.2.1","2026-08-10T12:00:00Z",standardCases(1));
+            large = publishedDataset("scaling-large-v1--matlab-builtin--zen4--20260810T130000Z","matlab","builtin","zen4","Zen 4 workstation","4.2.1","2026-08-10T13:00:00Z",standardCases(1.4));
+            large.benchmark.suiteId = "scaling-large-v1";
+            entries = testCase.publishDatasets(root,{standard,large});
+            testCase.writeCatalog(root,entries);
+
+            generateBenchmarkWebsiteDocumentation(root,buildFolder);
+
+            page = string(fileread(fullfile(buildFolder,"benchmarks.md")));
+            testCase.verifySubstring(page,"No scaling-large-v1 dataset was collected for this environment.");
+            testCase.verifySubstring(page,"No scaling-standard-v1 dataset was collected for this environment.");
+            testCase.verifySubstring(page,"MATLAB R2026a Update 4");
+            testCase.verifySubstring(page,"| scaling-large-v1 | Constant nonhydrostatic | M5 Max");
+            testCase.verifySubstring(page,"| scaling-standard-v1 | Constant nonhydrostatic | Zen 4 workstation");
+        end
+
         function unsafeMissingDuplicateAndMismatchedArtifactsFail(testCase)
             [root,buildFolder] = testCase.createFixture("invalid");
             dataset = publishedDataset("scaling-standard-v1--matlab-builtin--m5-max--20260810T120000Z","matlab","builtin","m5-max","M5 Max","4.2.1","2026-08-10T12:00:00Z",standardCases(1));

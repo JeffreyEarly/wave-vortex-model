@@ -17,5 +17,26 @@
       "rawArtifact": "Benchmarks/results/reference/scaling-large-v1-m5-max-r2026a-builtin/benchmark.json"
     }
   ],
-  "publishedDatasets": []
+  "publishedDatasets": [
+    {
+      "datasetId": "scaling-large-v1--matlab-builtin--lyra--20260811T213524Z",
+      "artifact": "Benchmarks/results/published/scaling-large-v1--matlab-builtin--lyra--20260811T213524Z.json"
+    },
+    {
+      "datasetId": "scaling-large-v1--matlab-builtin--m5-max--20260812T023122Z",
+      "artifact": "Benchmarks/results/published/scaling-large-v1--matlab-builtin--m5-max--20260812T023122Z.json"
+    },
+    {
+      "datasetId": "scaling-standard-v1--matlab-builtin--lyra--20260811T204835Z",
+      "artifact": "Benchmarks/results/published/scaling-standard-v1--matlab-builtin--lyra--20260811T204835Z.json"
+    },
+    {
+      "datasetId": "scaling-standard-v1--matlab-builtin--m5-max--20260812T020708Z",
+      "artifact": "Benchmarks/results/published/scaling-standard-v1--matlab-builtin--m5-max--20260812T020708Z.json"
+    },
+    {
+      "datasetId": "scaling-standard-v1--matlab-builtin--matilda--20260811T205115Z",
+      "artifact": "Benchmarks/results/published/scaling-standard-v1--matlab-builtin--matilda--20260811T205115Z.json"
+    }
+  ]
 }
