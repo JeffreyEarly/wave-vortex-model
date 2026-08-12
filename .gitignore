@@ -2,5 +2,11 @@
 *.asv
 *.mat
 *.nc
+CompiledKernel/build/
+tools/compiled-kernel/build/
+*.a
+*.o
+*.mex*
 Benchmarks/results/runs/
+.compiled-backend-cache/
 *.nc

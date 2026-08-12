@@ -1,0 +1,32 @@
+{
+  "schemaVersion": "1.0.0",
+  "integrationBase": "836508bdccd67f57f853d1602a2233ae93f8d90f",
+  "selectedFeatureSnapshot": "8d0b49236c703dfa7230a8875022fdb3e30283b0",
+  "preparation": {
+    "sharedCoefficientFormulas": "97e28a892f55877a9267b2c4e3ca399b85596a34",
+    "nativeFFTWProvider": "1854d72ec07b0fb58c2b2aa972250d91629e669d"
+  },
+  "contract": {
+    "version": 4,
+    "coefficientShape": "[Nj,Nkl]",
+    "planCount": 17,
+    "knownScratch": "4H+6R",
+    "coefficientWorkers": 2,
+    "persistentFullHermitianSpectrum": false
+  },
+  "selectedSourceSHA256": "f338eedfd6295d22b5cf563c270b8e5037dd7295db2f90c39b9c915a63715369",
+  "keySourceSHA256": {
+    "coefficientFormulas": "78d647608d8919b33c278c280eb6d2b253dfb0acd8d3330141fbdc845e00864a",
+    "kernel": "9aca7fe82982b4c79619e06a4d4e5eeda75d666e5e1bf02591c111f9932d197c",
+    "nativeEngine": "5081f650cf5bf2cee9c210cef8ab1596a73aad4de7d65c712783fa36795e3b4b",
+    "mexGateway": "69001517dcac5b3d06b71bc2a3f07d6cf59925fe664592e1d4c9301af1f573ac",
+    "buildOrchestrator": "e9cc16657780f505793a5fc390ccb150e506d2a4159551098fa43fbbf4188bb2"
+  },
+  "excluded": [
+    "historical benchmark harnesses and canonical engineering artifacts",
+    "provider sweeps and alternative FFT engines",
+    "rejected arena, layout, and workspace schedules",
+    "preparation-branch verification artifacts",
+    "public computationalBackend selection"
+  ]
+}
