@@ -1,0 +1,75 @@
+{
+  "schemaVersion": "1.0.0",
+  "issue": 155,
+  "status": "FEASIBILITY_REJECT",
+  "createdAtUtc": "2026-08-12T04:49:05Z",
+  "source": {
+    "baselineCommit": "be0f78995c49a2bfe4c43d75827856e3812ac278",
+    "scaffoldCommit": "782e9b41b76628eb0f61b1bd87339dd69b884314",
+    "analysisCommit": "071b8a66519854f5f0d886a33f73042428caf832",
+    "reusedIssue128Artifact": "Benchmarks/results/experiments/issue128/20260812T030810Z/results.json",
+    "fftwppCommit": "1a185f41800cd0e9d4df4ddf93e16e362d4e2c45",
+    "fftwppLicense": "LGPL-3.0-or-later"
+  },
+  "environment": {
+    "host": "Lyra",
+    "architecture": "arm64",
+    "toolchain": "Apple clang 21",
+    "matlabUsed": false,
+    "benchmarkTimingPerformed": false
+  },
+  "retention": [
+    {
+      "Nxyz": [128, 128, 33],
+      "Nj": 21,
+      "denseHalfRows": 8320,
+      "retainedHalfRows": 2861,
+      "knownZeroHalfRows": 5459,
+      "knownZeroFraction": 0.6561298076923077,
+      "liveKColumns": 43,
+      "denseKColumns": 65,
+      "retainedCoefficients": 60081,
+      "discardedC2RInputsOrR2COutputs": 114639
+    },
+    {
+      "Nxyz": [256, 256, 65],
+      "Nj": 42,
+      "denseHalfRows": 33024,
+      "retainedHalfRows": 11439,
+      "knownZeroHalfRows": 21585,
+      "knownZeroFraction": 0.6536217555856978,
+      "liveKColumns": 86,
+      "denseKColumns": 129,
+      "retainedCoefficients": 480438,
+      "discardedC2RInputsOrR2COutputs": 906570
+    }
+  ],
+  "model": {
+    "boundedPrunedTransformOnlyCeiling": {
+      "N128": 0.17054263565891473,
+      "N256": 0.16731491712707182
+    },
+    "generousWholeCallCeiling": {
+      "mediumHydrostatic": 0.1453,
+      "mediumNonhydrostatic": 0.1471,
+      "largeHydrostatic": 0.1456,
+      "largeNonhydrostatic": 0.1475
+    },
+    "requiredHorizontalBlockGate": 0.15
+  },
+  "candidates": {
+    "spiralFftx": "REJECT: no qualified masked 2-D real/Hermitian batched arm64 NEON standalone-OpenMP path; generation/reproducibility surface is unbounded before a qualified run.",
+    "partialFft": "REJECT: cited 1-D formulation is not an available radial 2-D real/Hermitian implementation; no qualified source identity or arm64/OpenMP evidence.",
+    "boundedHandPruned": "REJECT: <=14.75% generous complete-call ceiling before unmodeled packing and traffic, below the 15% gate."
+  },
+  "correctness": "PASS: unique retained-mode to half-spectrum-row mapping across production descriptors.",
+  "lifecycle": "PASS: 64 descriptor construction/destruction records completed without exception.",
+  "skipped": [
+    "horizontal prototype",
+    "medium screening",
+    "large screening",
+    "RSS measurement",
+    "production integration",
+    "MATLAB execution"
+  ]
+}
