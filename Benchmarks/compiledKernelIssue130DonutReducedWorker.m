@@ -147,7 +147,7 @@ value = extractBefore(string(strtrim(output))," ");
 end
 
 function value = threadBehavior(mode)
-if mode == "mex", value = "FFTW plans requested 18 pthreads; coefficient worker count 1; MATLAB's bundled libomp may be resident but is not used as the FFTW backend; no isolated LLVM libomp loaded"; else, value = "MATLAB maxNumCompThreads=18; production nonlinearFlux path"; end
+if mode == "mex", value = "FFTW plans requested 18 pthreads; two joined coefficient workers run outside FFTW execution regions; MATLAB's bundled libomp may be resident but is not used as the FFTW backend; no nested threading or isolated LLVM libomp"; else, value = "MATLAB maxNumCompThreads=18; production nonlinearFlux path"; end
 end
 
 function value = boundaryBehavior(mode)

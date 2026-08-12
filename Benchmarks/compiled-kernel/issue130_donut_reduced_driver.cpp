@@ -235,6 +235,7 @@ void run(const Options& options) {
     const auto spectralBytes = count*sizeof(WVComplex64);
     const auto halfFieldBytes = (256/2+1)*256*65*sizeof(WVComplex64);
     const auto phaseReservationBytes = WV_KERNEL_ISSUE130_VARIANT >= 3 ? halfFieldBytes : 0;
+    const auto coefficientWorkerCount = kernel->coefficientWorkerCount();
     const auto persistentBytes = kernel->persistentBytes();
     const auto scratchBytes = kernel->scratchBytes();
     const auto descriptorBytes = metricsAfter.descriptorBytes;
@@ -256,7 +257,7 @@ void run(const Options& options) {
            << "  \"status\": \"" << (cleanupBalanced ? "complete" : "failed") << "\",\n"
            << "  \"variant\": \"" << variantIdentifier() << "\",\n"
            << "  \"case\": \"" << (options.hydrostatic ? "hydrostatic" : "nonhydrostatic") << "\",\n"
-           << "  \"configuration\": {\"Nx\":256,\"Ny\":256,\"Nz\":65,\"Nj\":42,\"threadsRequested\":18,\"threadsEffective\":18,\"threadBehavior\":\"fftw_plan_with_nthreads(18) for every plan; coefficient worker count 1; no OpenMP runtime\",\"warmups\":2,\"samples\":3},\n"
+           << "  \"configuration\": {\"Nx\":256,\"Ny\":256,\"Nz\":65,\"Nj\":42,\"threadsRequested\":18,\"threadsEffective\":18,\"coefficientWorkerCount\":" << coefficientWorkerCount << ",\"threadBehavior\":\"fftw_plan_with_nthreads(18) for every plan; two joined coefficient workers run outside FFTW execution regions; no nested threading or OpenMP runtime\",\"warmups\":2,\"samples\":3},\n"
            << "  \"identity\": {\"fftwVersion\":\"" << identity.version << "\",\"baseLibraryDladdr\":\"" << identity.baseLibrary << "\",\"threadLibraryDladdr\":\"" << identity.threadLibrary << "\",\"openMPRuntimeDladdr\":\"" << identity.openMPRuntimeLibrary << "\",\"compiler\":\"" << __clang_version__ << "\"},\n"
            << "  \"schedule\": \"" << schedule << "\",\n"
            << "  \"timing\": {\"constructionSeconds\":" << constructionSeconds << ",\"samplesSeconds\":";

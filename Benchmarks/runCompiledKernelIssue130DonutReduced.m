@@ -134,7 +134,7 @@ for iCandidate = 1:numel(ids)
     storage = all(arrayfun(@(item)item.native.candidate.memory.persistentFullHermitianBytes==0 && item.mex.candidate.metrics.persistentFullHermitianBytes==0,selected));
     noFallback = all(arrayfun(@(item)~item.native.candidate.fallbackOccurred && ~item.mex.candidate.fallbackOccurred,selected));
     noIsolatedOpenMP = all(arrayfun(@(item)string(item.native.candidate.identity.openMPRuntimeDladdr)=="" && isMatlabRuntimeOrEmpty(item.mex.candidate.moduleInfo.openMPRuntimeLibrary),selected));
-    noOversubscription = noIsolatedOpenMP && all(arrayfun(@(item)item.native.candidate.configuration.threadsEffective==18 && item.mex.candidate.threadCountEffective==18 && item.mex.candidate.metrics.coefficientWorkerCount==1,selected));
+    noOversubscription = noIsolatedOpenMP && all(arrayfun(@(item)item.native.candidate.configuration.threadsEffective==18 && item.native.candidate.configuration.coefficientWorkerCount==2 && item.mex.candidate.threadCountEffective==18 && item.mex.candidate.metrics.coefficientWorkerCount==2,selected));
     required = correctness && cleanup && storage && noFallback && noOversubscription;
     nativePassed = required && all(nativeSpeedups>=1/1.05);
     mexPassed = required && all(mexSpeedups>=1/1.05) && exp(mean(log(mexSpeedups)))>1;
@@ -200,7 +200,7 @@ lines = [lines;"";"## Classification";"";"| Candidate | Overall | Native | MATLA
 for candidate = results.candidates'
     lines(end+1) = sprintf("| %s | `%s` | `%s` | `%s` | %.3fx | %.3fx |",candidate.id,candidate.classification,candidate.nativeClassification,candidate.mexClassification,candidate.nativeGeometricMeanSpeedup,candidate.mexGeometricMeanSpeedup); %#ok<AGROW>
 end
-lines = [lines;"";"All reported native and MEX candidates require relative-infinity error <= 1e-12, balanced plan cleanup, zero fallback, zero persistent full-Hermitian storage, the pinned FFTW libraries by `dladdr`, exactly 18 requested/effective FFTW threads, one coefficient worker, and no isolated LLVM OpenMP runtime. MATLAB's bundled `libomp` may already be resident but is not the FFTW backend. FFTW-owned plan memory is opaque; plan wrapper bytes are a lower bound, while descriptor/scratch/state/output array byte counts are exact."];
+lines = [lines;"";"All reported native and MEX candidates require relative-infinity error <= 1e-12, balanced plan cleanup, zero fallback, zero persistent full-Hermitian storage, the pinned FFTW libraries by `dladdr`, exactly 18 requested/effective FFTW threads, two joined coefficient workers outside FFTW execution regions, and no nested or isolated LLVM OpenMP runtime. MATLAB's bundled `libomp` may already be resident but is not the FFTW backend. FFTW-owned plan memory is opaque; plan wrapper bytes are a lower bound, while descriptor/scratch/state/output array byte counts are exact."];
 markdown = join(lines,newline)+newline;
 end
 
