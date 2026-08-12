@@ -1,0 +1,32 @@
+{
+  "schemaVersion": "1.0.0",
+  "issue": 153,
+  "status": "CORE_REJECT",
+  "baseline": "be0f78995c49a2bfe4c43d75827856e3812ac278",
+  "scaffold": "782e9b41b76628eb0f61b1bd87339dd69b884314",
+  "branch": "experiment/issue-153-decomposed-convolution",
+  "implementationCommit": "none",
+  "correctness": {
+    "case": "hydrostatic 128x128x33, Nj=21, one thread",
+    "nativeExplicitReference": "#128 standalone pthread control",
+    "fftwppHybridControlRelativeInfinityError": 3.911629603890152e-14,
+    "issue152SchedulerRepairCommit": "175e3d649ad7feda9322efd3033cad9217141063",
+    "binary2to1RelativeInfinityErrorBeforeSchedulerRepair": 0.6631488126386262,
+    "groupedVelocityRelativeInfinityErrorBeforeSchedulerRepair": 0.6630791592823405,
+    "binary2to1RelativeInfinityErrorAfterSchedulerRepair": 0.653155794805849,
+    "groupedVelocityRelativeInfinityErrorAfterSchedulerRepair": 0.6528051038299153,
+    "tolerance": 1e-12
+  },
+  "lifecycle": {
+    "binary": "14 FFTW plans created and destroyed; zero outstanding planning bytes; one thread; disjoint worker regions",
+    "grouped": "14 FFTW plans created and destroyed; zero outstanding planning bytes; one thread; disjoint worker regions",
+    "persistentContributionArrays": 0
+  },
+  "transformCounts": {
+    "binary": {"convolutions": 9, "transforms": 27, "sharedVelocityReuse": 0},
+    "grouped": {"convolutions": 3, "logicalTransforms": 21, "physicalTransforms": 24, "sharedVelocityReuse": 6, "implicitResidueReuse": 0}
+  },
+  "blocker": "The #152 two-loop A>B scheduler repair is necessary but insufficient: both decompositions still have approximately 0.653 relative-infinity error. A distinct FFTW++ channel/residue mapping fault remains.",
+  "skippedStages": ["nonhydrostatic correctness", "medium timing", "large timing", "RSS", "finalist sampling", "Donut confirmation"],
+  "candidateCommand": "/private/tmp/issue153-overnight-cache/build/wv_issue153_openmp --Nx 128 --Ny 128 --Nz 33 --Nj 21 --hydrostatic true --seed 153003 --threads 1 --warmups 1 --samples 1 --variant fftwpp-grouped-velocity --reference-input /private/tmp/issue153-overnight-cache/correctness/hydro128.ref --expected-openmp-runtime /private/tmp/issue128-native-cache/providers/native-neon-openmp-872739bfc5992370/install/lib/libwvissue137omp.dylib"
+}
