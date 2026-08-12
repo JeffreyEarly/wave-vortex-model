@@ -3,6 +3,7 @@
 #include "WVFFTEngine.hpp"
 
 #include <memory>
+#include <new>
 #include <vector>
 
 namespace wavevortex {
@@ -14,6 +15,12 @@ struct WVKernelMetrics {
     std::size_t scratchHighWaterBytes = 0;
     std::size_t halfSpectrumScratchCapacityBytes = 0;
     std::size_t realScratchCapacityBytes = 0;
+    std::size_t inPlaceArenaCapacityBytes = 0;
+    std::size_t inPlaceArenaPaddingBytes = 0;
+    std::size_t compactPhaseSpillBytes = 0;
+    std::size_t scratchAllocationCount = 0;
+    std::size_t scratchBaseAlignmentBytes = 0;
+    std::uintptr_t scratchBasePointerAddress = 0;
     std::size_t planCount = 0;
     std::size_t executionCount = 0;
     std::size_t horizontalExecutionCount = 0;
@@ -29,6 +36,12 @@ struct WVKernelMetrics {
     double coefficientAssemblySeconds = 0.0;
     double derivativeCoefficientAssemblySeconds = 0.0;
     double coefficientProjectionSeconds = 0.0;
+};
+
+struct WVAlignedDoubleDeleter {
+    void operator()(double* pointer) const noexcept {
+        ::operator delete[](pointer,std::align_val_t(64));
+    }
 };
 
 class WVTransformConstantStratificationKernel {
@@ -55,7 +68,7 @@ public:
     std::size_t phaseReservationBytes() const noexcept;
     void setStageInstrumentation(bool enabled) noexcept;
     std::size_t persistentBytes() const noexcept;
-    std::size_t scratchBytes() const noexcept { return (halfSpectrumScratch_.size() + realScratch_.size()) * sizeof(double); }
+    std::size_t scratchBytes() const noexcept;
 
     WVKernelStatus transformUVEtaToWaveVortex(const WVRealFieldBundleConstView& fields, double t, double t0, WVMutableCoefficients& coefficients);
     WVKernelStatus transformUVWEtaToWaveVortex(const WVRealFieldBundleConstView& fields, double t, double t0, WVMutableCoefficients& coefficients);
@@ -75,6 +88,8 @@ private:
     WVKernelStatus transformToSpatialDomainWithDerivativesFromStateImpl(const WVState& state, WVComplexConstView phaseValues, std::size_t target, WVRealFieldBundleView& derivatives);
     WVKernelStatus transformSingleDerivativeFromStateImpl(const WVState& state, WVComplexConstView phaseValues, std::size_t target, std::size_t axis, WVRealFieldBundleView& derivative);
     WVKernelStatus projectSingleFluxTargetImpl(const WVRealFieldBundleConstView& field, std::size_t target, WVComplexConstView phaseValues, WVFlux& flux);
+    double* scratchData() noexcept;
+    const double* scratchData() const noexcept;
     WVTransformConstantStratificationDescriptor descriptor_;
     std::unique_ptr<WVFFTEngine> engine_;
     std::string engineIdentifier_;
@@ -82,6 +97,11 @@ private:
     std::vector<std::unique_ptr<WVFFTPlan>> plans_;
     std::vector<double> halfSpectrumScratch_;
     std::vector<double> realScratch_;
+#if defined(WV_KERNEL_ISSUE158_INPLACE_ARENA) && WV_KERNEL_ISSUE158_INPLACE_ARENA
+    std::unique_ptr<double[],WVAlignedDoubleDeleter> inPlaceArenaScratch_;
+    std::size_t inPlaceArenaScratchElements_ = 0;
+    std::vector<WVComplex64> compactPhaseScratch_;
+#endif
     WVKernelMetrics metrics_;
     bool executing_ = false;
     bool stageInstrumentationEnabled_ = false;

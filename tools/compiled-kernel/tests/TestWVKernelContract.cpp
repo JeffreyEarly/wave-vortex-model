@@ -218,7 +218,11 @@ void testNonlinearFlux(bool hydrostatic) {
     for (const auto* array : {&Fp,&Fm,&F0}) {
         for (const auto& value : *array) require(std::isfinite(value.real) && std::isfinite(value.imag),"nonlinear flux produced a non-finite coefficient");
     }
-#if WV_KERNEL_ISSUE130_VARIANT == 4
+#if WV_KERNEL_ISSUE158_INPLACE_ARENA
+    require(kernel->phaseReservationBytes() == shape.elementCount() * sizeof(WVComplex64),"in-place phase reservation is not compact [Nj,Nkl]");
+    require(kernel->metrics().planCount == 17,"in-place arena changed the streamed three-channel plan count");
+    const std::size_t executionsPerCall = hydrostatic ? 18 : 23;
+#elif WV_KERNEL_ISSUE130_VARIANT == 4
     const std::size_t executionsPerCall = hydrostatic ? 27 : 35;
 #elif WV_KERNEL_ISSUE130_VARIANT == 3
     const std::size_t executionsPerCall = hydrostatic ? 18 : 23;
@@ -239,12 +243,30 @@ void testNonlinearFlux(bool hydrostatic) {
 #endif
     const auto halfFieldBytes = (config.Nx / 2 + 1) * config.Ny * config.Nz * sizeof(WVComplex64);
     const auto realFieldBytes = config.Nx * config.Ny * config.Nz * sizeof(double);
-#if WV_KERNEL_ISSUE130_VARIANT == 2
+#if WV_KERNEL_ISSUE158_INPLACE_ARENA
+    (void)halfFieldBytes;
+    (void)realFieldBytes;
+    const auto paddedRealFieldBytes = 2 * (config.Nx / 2 + 1) * config.Ny * config.Nz * sizeof(double);
+    const auto compactPhaseBytes = shape.elementCount() * sizeof(WVComplex64);
+    require(kernel->metrics().halfSpectrumScratchCapacityBytes == 0,"in-place arena retained a separate half-spectrum scratch allocation");
+    require(kernel->metrics().realScratchCapacityBytes == 0,"in-place arena retained a separate real scratch allocation");
+    require(kernel->metrics().inPlaceArenaCapacityBytes == 6 * paddedRealFieldBytes,"in-place arena is not six padded physical fields");
+    require(kernel->metrics().compactPhaseSpillBytes == compactPhaseBytes,"in-place arena phase spill is not compact [Nj,Nkl]");
+    require(kernel->metrics().scratchAllocationCount == 2,"in-place arena did not use exactly one aligned arena plus one compact phase spill");
+    require(kernel->metrics().scratchBasePointerAddress % 64 == 0,"in-place arena base pointer is not 64-byte aligned");
+    const auto stableScratchBase = kernel->metrics().scratchBasePointerAddress;
+    status = kernel->nonlinearFlux(state,flux);
+    require(static_cast<bool>(status),"repeated in-place nonlinear flux failed");
+    require(kernel->metrics().scratchBasePointerAddress == stableScratchBase,"in-place arena base pointer changed across calls");
+#elif WV_KERNEL_ISSUE130_VARIANT == 2
     require(kernel->metrics().halfSpectrumScratchCapacityBytes == (hydrostatic ? 3 : 4) * halfFieldBytes,"velocity-only half-spectrum scratch capacity is not 3H hydrostatic / 4H nonhydrostatic");
 #else
     require(kernel->metrics().halfSpectrumScratchCapacityBytes == 4 * halfFieldBytes,"unexpected half-spectrum scratch capacity");
 #endif
-#if WV_KERNEL_ISSUE130_VARIANT == 4
+#if WV_KERNEL_ISSUE158_INPLACE_ARENA
+    require(kernel->phaseReservationBytes() == shape.elementCount() * sizeof(WVComplex64),"in-place phase reservation is not compact [Nj,Nkl]");
+    require(kernel->metrics().planCount == 17,"in-place arena changed the streamed three-channel plan count");
+#elif WV_KERNEL_ISSUE130_VARIANT == 4
     require(kernel->metrics().realScratchCapacityBytes == 5 * realFieldBytes,"single-output scratch is not 4H+5R");
     require(kernel->phaseReservationBytes() == halfFieldBytes,"single-output phase reservation is not one H region");
     require(kernel->metrics().planCount == 18,"unexpected single-output plan count");

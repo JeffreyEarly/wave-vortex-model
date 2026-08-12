@@ -19,8 +19,14 @@ namespace {
 #define WV_KERNEL_ISSUE130_VARIANT 0
 #endif
 
+#ifndef WV_KERNEL_ISSUE158_INPLACE_ARENA
+#define WV_KERNEL_ISSUE158_INPLACE_ARENA 0
+#endif
+
 static_assert(WV_KERNEL_ISSUE130_VARIANT == 0 || WV_KERNEL_ISSUE130_VARIANT == 2 || WV_KERNEL_ISSUE130_VARIANT == 3 || WV_KERNEL_ISSUE130_VARIANT == 4,
     "WV_KERNEL_ISSUE130_VARIANT must be 0 (control), 2 (velocity only), 3 (streamed three-channel), or 4 (streamed single-output).");
+static_assert(!WV_KERNEL_ISSUE158_INPLACE_ARENA || WV_KERNEL_ISSUE130_VARIANT == 3,
+    "The issue #158 in-place arena requires the streamed three-channel issue #130 schedule.");
 
 #if defined(WV_KERNEL_NATIVE_OPTIMIZATION) && WV_KERNEL_NATIVE_OPTIMIZATION && (defined(__clang__) || defined(__GNUC__))
 #define WV_KERNEL_RESTRICT __restrict__
@@ -146,6 +152,30 @@ WVKernelStatus validateDerivativeOwnership(const WVComplexConstView& Apm, const 
 
 WVFFTPlanSpecification horizontalSpecification(const WVTransformConstantStratificationConfiguration& c, std::size_t fields, bool forward) {
     const std::size_t NxHalf = c.Nx / 2 + 1;
+#if WV_KERNEL_ISSUE158_INPLACE_ARENA
+    const std::size_t paddedNx = 2 * NxHalf;
+    const std::size_t paddedPlane = paddedNx * c.Ny;
+    const std::size_t paddedField = paddedPlane * c.Nz;
+    const std::size_t halfPlane = NxHalf * c.Ny;
+    const std::size_t halfField = halfPlane * c.Nz;
+    WVFFTPlanSpecification specification;
+    specification.kind = forward ? WVFFTPlanKind::horizontalRealToComplex2D : WVFFTPlanKind::horizontalComplexToReal2D;
+    specification.transformDimensions = {
+        {c.Ny, static_cast<std::ptrdiff_t>(paddedNx), static_cast<std::ptrdiff_t>(NxHalf)},
+        {c.Nx, 1, 1}};
+    specification.batchDimensions = {
+        {c.Nz, static_cast<std::ptrdiff_t>(paddedPlane), static_cast<std::ptrdiff_t>(halfPlane)},
+        {fields, static_cast<std::ptrdiff_t>(paddedField), static_cast<std::ptrdiff_t>(halfField)}};
+    specification.inputBytes = fields * paddedField * sizeof(double);
+    specification.outputBytes = specification.inputBytes;
+    specification.destroysInput = !forward;
+    specification.inPlace = true;
+    if (!forward) {
+        for (auto& dimension : specification.transformDimensions) std::swap(dimension.inputStride, dimension.outputStride);
+        for (auto& dimension : specification.batchDimensions) std::swap(dimension.inputStride, dimension.outputStride);
+    }
+    return specification;
+#else
     const std::size_t realPlane = c.Nx * c.Ny;
     const std::size_t realField = realPlane * c.Nz;
     const std::size_t halfRows = NxHalf * c.Ny;
@@ -166,65 +196,127 @@ WVFFTPlanSpecification horizontalSpecification(const WVTransformConstantStratifi
         for (auto& dimension : specification.batchDimensions) std::swap(dimension.inputStride, dimension.outputStride);
     }
     return specification;
+#endif
 }
 
 WVFFTPlanSpecification verticalSpecification(const WVTransformConstantStratificationConfiguration& c, std::size_t halfRows, std::size_t storageChannels, std::size_t transformedChannels, bool sine) {
     WVFFTPlanSpecification specification;
     specification.kind = sine ? WVFFTPlanKind::verticalDSTI : WVFFTPlanKind::verticalDCTI;
     const std::size_t transformLength = sine ? c.Nz - 2 : c.Nz;
+#if WV_KERNEL_ISSUE158_INPLACE_ARENA
+    specification.transformDimensions = {{transformLength, static_cast<std::ptrdiff_t>(2 * halfRows), static_cast<std::ptrdiff_t>(2 * halfRows)}};
+    specification.batchDimensions = {
+        {2, 1, 1},
+        {halfRows, 2, 2},
+        {transformedChannels, static_cast<std::ptrdiff_t>(2 * c.Nz * halfRows), static_cast<std::ptrdiff_t>(2 * c.Nz * halfRows)}};
+#else
     specification.transformDimensions = {{transformLength, 2, 2}};
     specification.batchDimensions = {
         {2, 1, 1},
         {halfRows, static_cast<std::ptrdiff_t>(2 * c.Nz * storageChannels), static_cast<std::ptrdiff_t>(2 * c.Nz * storageChannels)},
         {transformedChannels, static_cast<std::ptrdiff_t>(2 * c.Nz), static_cast<std::ptrdiff_t>(2 * c.Nz)}};
+#endif
     specification.inputBytes = 2 * c.Nz * halfRows * storageChannels * sizeof(double);
     specification.outputBytes = specification.inputBytes;
     specification.inPlace = true;
     return specification;
 }
 
+std::size_t halfIndex(std::size_t row, std::size_t z, std::size_t field, std::size_t Nz, std::size_t channels, std::size_t halfRows) {
+#if WV_KERNEL_ISSUE158_INPLACE_ARENA
+    (void)channels;
+    return row + halfRows * (z + Nz * field);
+#else
+    (void)halfRows;
+    return z + Nz * field + Nz * channels * row;
+#endif
+}
+
+WVComplex64* verticalStart(WVComplex64* half, std::size_t halfRows, std::size_t Nz, std::size_t field, std::size_t z) {
+#if WV_KERNEL_ISSUE158_INPLACE_ARENA
+    return half + halfRows * (z + Nz * field);
+#else
+    (void)halfRows;
+    return half + z + Nz * field;
+#endif
+}
+
+#if WV_KERNEL_ISSUE158_INPLACE_ARENA
+std::size_t paddedPhysicalIndex(const WVTransformConstantStratificationConfiguration& c, std::size_t field, std::size_t x, std::size_t y, std::size_t z) {
+    const auto paddedNx = 2 * (c.Nx / 2 + 1);
+    return x + paddedNx * (y + c.Ny * (z + c.Nz * field));
+}
+
+void copyContiguousToPadded(const double* source, double* destination, const WVTransformConstantStratificationConfiguration& c, std::size_t channels) {
+    const auto fieldElements = c.Nx * c.Ny * c.Nz;
+    for (std::size_t field = 0; field < channels; ++field) for (std::size_t z = 0; z < c.Nz; ++z) for (std::size_t y = 0; y < c.Ny; ++y) {
+        const auto sourceOffset = c.Nx * (y + c.Ny * z) + field * fieldElements;
+        const auto destinationOffset = paddedPhysicalIndex(c,field,0,y,z);
+        std::copy_n(source + sourceOffset,c.Nx,destination + destinationOffset);
+    }
+}
+
+void copyPaddedToContiguous(const double* source, double* destination, const WVTransformConstantStratificationConfiguration& c, std::size_t channels) {
+    const auto fieldElements = c.Nx * c.Ny * c.Nz;
+    for (std::size_t field = 0; field < channels; ++field) for (std::size_t z = 0; z < c.Nz; ++z) for (std::size_t y = 0; y < c.Ny; ++y) {
+        const auto sourceOffset = paddedPhysicalIndex(c,field,0,y,z);
+        const auto destinationOffset = c.Nx * (y + c.Ny * z) + field * fieldElements;
+        std::copy_n(source + sourceOffset,c.Nx,destination + destinationOffset);
+    }
+}
+#endif
+
 void normalizeForwardDCT(WVComplex64* data, std::size_t Nz, std::size_t rows, std::size_t storageChannels, std::size_t firstChannel, std::size_t channels) {
     const double scale = 1.0 / static_cast<double>(Nz - 1);
     for (std::size_t row = 0; row < rows; ++row) for (std::size_t channel = firstChannel; channel < firstChannel + channels; ++channel) {
-        const auto base = Nz * channel + Nz * storageChannels * row;
-        for (std::size_t z = 0; z < Nz; ++z) data[base + z] = multiply(data[base + z],scale);
-        data[base + Nz - 1] = multiply(data[base + Nz - 1],0.5);
+        for (std::size_t z = 0; z < Nz; ++z) {
+            const auto index = halfIndex(row,z,channel,Nz,storageChannels,rows);
+            data[index] = multiply(data[index],scale);
+        }
+        const auto top = halfIndex(row,Nz - 1,channel,Nz,storageChannels,rows);
+        data[top] = multiply(data[top],0.5);
     }
 }
 
 void normalizeForwardDST(WVComplex64* data, std::size_t Nz, std::size_t rows, std::size_t storageChannels, std::size_t firstChannel, std::size_t channels) {
     const double scale = 1.0 / static_cast<double>(Nz - 1);
     for (std::size_t row = 0; row < rows; ++row) for (std::size_t channel = firstChannel; channel < firstChannel + channels; ++channel) {
-            const auto base = Nz * channel + Nz * storageChannels * row;
-            data[base] = {};
-            for (std::size_t z = 1; z + 1 < Nz; ++z) data[base + z] = multiply(data[base + z], scale);
-            data[base + Nz - 1] = {};
+            data[halfIndex(row,0,channel,Nz,storageChannels,rows)] = {};
+            for (std::size_t z = 1; z + 1 < Nz; ++z) {
+                const auto index = halfIndex(row,z,channel,Nz,storageChannels,rows);
+                data[index] = multiply(data[index],scale);
+            }
+            data[halfIndex(row,Nz - 1,channel,Nz,storageChannels,rows)] = {};
     }
 }
 
 void normalizeInverseDCT(WVComplex64* data, std::size_t Nz, std::size_t rows, std::size_t storageChannels, std::size_t firstChannel, std::size_t channels) {
     for (std::size_t row = 0; row < rows; ++row) for (std::size_t channel = firstChannel; channel < firstChannel + channels; ++channel) {
-        const auto base = Nz * channel + Nz * storageChannels * row;
-        for (std::size_t z = 0; z < Nz; ++z) data[base + z] = multiply(data[base + z],0.5);
+        for (std::size_t z = 0; z < Nz; ++z) {
+            const auto index = halfIndex(row,z,channel,Nz,storageChannels,rows);
+            data[index] = multiply(data[index],0.5);
+        }
     }
 }
 
 void normalizeInverseDST(WVComplex64* data, std::size_t Nz, std::size_t rows, std::size_t storageChannels, std::size_t firstChannel, std::size_t channels) {
     for (std::size_t row = 0; row < rows; ++row) for (std::size_t channel = firstChannel; channel < firstChannel + channels; ++channel) {
-            const auto base = Nz * channel + Nz * storageChannels * row;
-            data[base] = {};
-            for (std::size_t z = 1; z + 1 < Nz; ++z) data[base + z] = multiply(data[base + z], 0.5);
-            data[base + Nz - 1] = {};
+            data[halfIndex(row,0,channel,Nz,storageChannels,rows)] = {};
+            for (std::size_t z = 1; z + 1 < Nz; ++z) {
+                const auto index = halfIndex(row,z,channel,Nz,storageChannels,rows);
+                data[index] = multiply(data[index],0.5);
+            }
+            data[halfIndex(row,Nz - 1,channel,Nz,storageChannels,rows)] = {};
     }
 }
 
-WVComplex64 storedValue(const WVComplex64* half, const WVHalfSpectrumMappings& mapping, std::size_t Nz, std::size_t channels, std::size_t field, std::size_t mode, std::size_t z) {
-    auto value = half[z + Nz * field + Nz * channels * mapping.storageRowsByWVIndex[mode]];
+WVComplex64 storedValue(const WVComplex64* half, const WVHalfSpectrumMappings& mapping, std::size_t Nz, std::size_t channels, std::size_t rows, std::size_t field, std::size_t mode, std::size_t z) {
+    auto value = half[halfIndex(mapping.storageRowsByWVIndex[mode],z,field,Nz,channels,rows)];
     return mapping.conjugatesStoredValueByWVIndex[mode] ? conjugate(value) : value;
 }
 
-void storeWVValue(WVComplex64* half, const WVHalfSpectrumMappings& mapping, std::size_t Nz, std::size_t channels, std::size_t field, std::size_t mode, std::size_t z, WVComplex64 value) {
-    half[z + Nz * field + Nz * channels * mapping.storageRowsByWVIndex[mode]] = mapping.conjugatesStoredValueByWVIndex[mode] ? conjugate(value) : value;
+void storeWVValue(WVComplex64* half, const WVHalfSpectrumMappings& mapping, std::size_t Nz, std::size_t channels, std::size_t rows, std::size_t field, std::size_t mode, std::size_t z, WVComplex64 value) {
+    half[halfIndex(mapping.storageRowsByWVIndex[mode],z,field,Nz,channels,rows)] = mapping.conjugatesStoredValueByWVIndex[mode] ? conjugate(value) : value;
 }
 
 struct EvolvedWaveVortexCoefficients {
@@ -240,6 +332,7 @@ void assembleFieldSpectraForMode(
     const WVConstantStratificationModes& modes,
     std::size_t Nz,
     std::size_t Nj,
+    std::size_t halfRows,
     std::size_t mode,
     CoefficientSource&& source) {
     const auto storageRow = mapping.storageRowsByWVIndex[mode];
@@ -256,7 +349,7 @@ void assembleFieldSpectraForMode(
             // the required factor here avoids rewriting the complete dense
             // half spectrum after the vertical transforms.
             values[target] = target >= 2 && (j == 0 || j + 1 == Nz) ? WVComplex64{} : multiply(values[target],0.5);
-            half[j + Nz * target + Nz * 4 * storageRow] = Conjugated ? conjugate(values[target]) : values[target];
+            half[halfIndex(storageRow,j,target,Nz,4,halfRows)] = Conjugated ? conjugate(values[target]) : values[target];
         }
     }
 }
@@ -270,6 +363,7 @@ void assembleDerivativeSpectraForMode(
     const WVCoefficients& coefficients,
     std::size_t Nz,
     std::size_t Nj,
+    std::size_t halfRows,
     std::size_t mode) {
     const auto storageRow = mapping.storageRowsByWVIndex[mode];
     const auto& horizontal = horizontalModes[mode];
@@ -289,9 +383,9 @@ void assembleDerivativeSpectraForMode(
             y = j == 0 || j + 1 == Nz ? WVComplex64{} : multiply(y,0.5);
             z = multiply(z,0.5);
         }
-        half[j + Nz * 0 + Nz * 3 * storageRow] = x;
-        half[j + Nz * 1 + Nz * 3 * storageRow] = y;
-        half[j + Nz * 2 + Nz * 3 * storageRow] = z;
+        half[halfIndex(storageRow,j,0,Nz,3,halfRows)] = x;
+        half[halfIndex(storageRow,j,1,Nz,3,halfRows)] = y;
+        half[halfIndex(storageRow,j,2,Nz,3,halfRows)] = z;
     }
 }
 
@@ -302,6 +396,7 @@ void assembleVelocitySpectraForMode(
     const WVConstantStratificationModes& modes,
     std::size_t Nz,
     std::size_t Nj,
+    std::size_t halfRows,
     std::size_t mode,
     CoefficientSource&& source) {
     const auto storageRow = mapping.storageRowsByWVIndex[mode];
@@ -315,7 +410,7 @@ void assembleVelocitySpectraForMode(
         values[0] = multiply(values[0],0.5);
         values[1] = multiply(values[1],0.5);
         values[2] = j == 0 || j + 1 == Nz ? WVComplex64{} : multiply(values[2],0.5);
-        for (std::size_t target = 0; target < 3; ++target) half[j + Nz * target + Nz * 3 * storageRow] = Conjugated ? conjugate(values[target]) : values[target];
+        for (std::size_t target = 0; target < 3; ++target) half[halfIndex(storageRow,j,target,Nz,3,halfRows)] = Conjugated ? conjugate(values[target]) : values[target];
     }
 }
 
@@ -329,6 +424,7 @@ void assembleDerivativeSpectraForModeFromState(
     WVComplexConstView phaseValues,
     std::size_t Nz,
     std::size_t Nj,
+    std::size_t halfRows,
     std::size_t mode) {
     const auto storageRow = mapping.storageRowsByWVIndex[mode];
     const auto& horizontal = horizontalModes[mode];
@@ -351,9 +447,9 @@ void assembleDerivativeSpectraForModeFromState(
             y = j == 0 || j + 1 == Nz ? WVComplex64{} : multiply(y,0.5);
             z = multiply(z,0.5);
         }
-        half[j + Nz * 0 + Nz * 3 * storageRow] = x;
-        half[j + Nz * 1 + Nz * 3 * storageRow] = y;
-        half[j + Nz * 2 + Nz * 3 * storageRow] = z;
+        half[halfIndex(storageRow,j,0,Nz,3,halfRows)] = x;
+        half[halfIndex(storageRow,j,1,Nz,3,halfRows)] = y;
+        half[halfIndex(storageRow,j,2,Nz,3,halfRows)] = z;
     }
 }
 
@@ -367,6 +463,7 @@ void assembleSingleDerivativeSpectrumForModeFromState(
     WVComplexConstView phaseValues,
     std::size_t Nz,
     std::size_t Nj,
+    std::size_t halfRows,
     std::size_t mode,
     std::size_t axis) {
     const auto storageRow = mapping.storageRowsByWVIndex[mode];
@@ -384,14 +481,14 @@ void assembleSingleDerivativeSpectrumForModeFromState(
         else if (axis == 1) value = multiply(value,WVComplex64{0.0,Conjugated ? -horizontal.l : horizontal.l});
         else value = multiply(value,sourceIsCosine ? -modes.verticalWavenumber[j] : modes.verticalWavenumber[j]);
         value = outputIsCosine || (j > 0 && j + 1 < Nz) ? multiply(value,0.5) : WVComplex64{};
-        half[j + Nz * storageRow] = value;
+        half[halfIndex(storageRow,j,0,Nz,1,halfRows)] = value;
     }
 }
 
-void completeHermitianBoundaries(WVComplex64* half, const WVHalfSpectrumMappings& mapping, std::size_t Nz, std::size_t channels) {
+void completeHermitianBoundaries(WVComplex64* half, const WVHalfSpectrumMappings& mapping, std::size_t Nz, std::size_t channels, std::size_t halfRows) {
     for (std::size_t field = 0; field < channels; ++field) {
-        for (std::size_t i = 0; i < mapping.hermitianCompletionRows.size(); ++i) for (std::size_t z = 0; z < Nz; ++z) half[z + Nz * field + Nz * channels * mapping.hermitianCompletionRows[i]] = conjugate(half[z + Nz * field + Nz * channels * mapping.hermitianSourceRows[i]]);
-        for (const auto row : mapping.selfConjugateRows) for (std::size_t z = 0; z < Nz; ++z) half[z + Nz * field + Nz * channels * row].imag = 0.0;
+        for (std::size_t i = 0; i < mapping.hermitianCompletionRows.size(); ++i) for (std::size_t z = 0; z < Nz; ++z) half[halfIndex(mapping.hermitianCompletionRows[i],z,field,Nz,channels,halfRows)] = conjugate(half[halfIndex(mapping.hermitianSourceRows[i],z,field,Nz,channels,halfRows)]);
+        for (const auto row : mapping.selfConjugateRows) for (std::size_t z = 0; z < Nz; ++z) half[halfIndex(row,z,field,Nz,channels,halfRows)].imag = 0.0;
     }
 }
 
@@ -409,6 +506,19 @@ WVKernelStatus WVTransformConstantStratificationKernel::create(
         candidate->engineIdentifier_ = engine->identifier();
         candidate->engineLibraryIdentity_ = engine->libraryIdentity();
         candidate->engine_ = std::move(engine);
+#if WV_KERNEL_ISSUE158_INPLACE_ARENA
+        const auto paddedNx = checkedProduct(2,candidate->descriptor_.halfSpectrumMappings().NxHalf);
+        const auto paddedFieldElements = checkedProduct(checkedProduct(paddedNx,configuration.Ny),configuration.Nz);
+        candidate->inPlaceArenaScratchElements_ = checkedProduct(6,paddedFieldElements);
+        candidate->inPlaceArenaScratch_.reset(static_cast<double*>(::operator new[](checkedProduct(candidate->inPlaceArenaScratchElements_,sizeof(double)),std::align_val_t(64))));
+        candidate->compactPhaseScratch_.resize(candidate->descriptor_.spectralShape().elementCount());
+        candidate->metrics_.inPlaceArenaCapacityBytes = candidate->inPlaceArenaScratchElements_ * sizeof(double);
+        candidate->metrics_.inPlaceArenaPaddingBytes = 6 * (paddedNx - configuration.Nx) * configuration.Ny * configuration.Nz * sizeof(double);
+        candidate->metrics_.compactPhaseSpillBytes = candidate->compactPhaseScratch_.size() * sizeof(WVComplex64);
+        candidate->metrics_.scratchAllocationCount = 2;
+        candidate->metrics_.scratchBaseAlignmentBytes = 64;
+        candidate->metrics_.scratchBasePointerAddress = reinterpret_cast<std::uintptr_t>(candidate->inPlaceArenaScratch_.get());
+#else
 #if WV_KERNEL_ISSUE130_VARIANT == 2
         const std::size_t halfChannels = configuration.isHydrostatic ? 3 : 4;
 #else
@@ -419,6 +529,7 @@ WVKernelStatus WVTransformConstantStratificationKernel::create(
         const auto realElements = checkedProduct(candidate->descriptor_.spatialShape().elementCount(),realChannels);
         candidate->halfSpectrumScratch_.resize(2 * halfElements);
         candidate->realScratch_.resize(realElements);
+#endif
         candidate->metrics_.descriptorBytes = candidate->descriptor_.persistentBytes();
         candidate->metrics_.halfSpectrumScratchCapacityBytes = candidate->halfSpectrumScratch_.size() * sizeof(double);
         candidate->metrics_.realScratchCapacityBytes = candidate->realScratch_.size() * sizeof(double);
@@ -477,6 +588,30 @@ const char* WVTransformConstantStratificationKernel::nonlinearFluxScheduleIdenti
 #endif
 }
 
+double* WVTransformConstantStratificationKernel::scratchData() noexcept {
+#if WV_KERNEL_ISSUE158_INPLACE_ARENA
+    return inPlaceArenaScratch_.get();
+#else
+    return halfSpectrumScratch_.data();
+#endif
+}
+
+const double* WVTransformConstantStratificationKernel::scratchData() const noexcept {
+#if WV_KERNEL_ISSUE158_INPLACE_ARENA
+    return inPlaceArenaScratch_.get();
+#else
+    return halfSpectrumScratch_.data();
+#endif
+}
+
+std::size_t WVTransformConstantStratificationKernel::scratchBytes() const noexcept {
+#if WV_KERNEL_ISSUE158_INPLACE_ARENA
+    return inPlaceArenaScratchElements_ * sizeof(double) + compactPhaseScratch_.size() * sizeof(WVComplex64);
+#else
+    return (halfSpectrumScratch_.size() + realScratch_.size()) * sizeof(double);
+#endif
+}
+
 const char* WVTransformConstantStratificationKernel::phaseImplementationIdentifier() const noexcept {
     return "scalar-sincos";
 }
@@ -500,7 +635,9 @@ const char* WVTransformConstantStratificationKernel::optimizationImplementationI
 std::size_t WVTransformConstantStratificationKernel::coefficientWorkerCount() const noexcept { return WV_KERNEL_COEFFICIENT_WORKERS; }
 
 const char* WVTransformConstantStratificationKernel::screeningVariantIdentifier() const noexcept {
-#if WV_KERNEL_ISSUE130_VARIANT == 2
+#if WV_KERNEL_ISSUE158_INPLACE_ARENA
+    return "issue158-inplace-six-field-arena";
+#elif WV_KERNEL_ISSUE130_VARIANT == 2
     return "velocity-only";
 #elif WV_KERNEL_ISSUE130_VARIANT == 3
     return "streamed-target-three-channel";
@@ -512,7 +649,9 @@ const char* WVTransformConstantStratificationKernel::screeningVariantIdentifier(
 }
 
 std::size_t WVTransformConstantStratificationKernel::phaseReservationBytes() const noexcept {
-#if WV_KERNEL_ISSUE130_VARIANT >= 3
+#if WV_KERNEL_ISSUE158_INPLACE_ARENA
+    return compactPhaseScratch_.size() * sizeof(WVComplex64);
+#elif WV_KERNEL_ISSUE130_VARIANT >= 3
     const auto& c = descriptor_.configuration();
     return descriptor_.halfSpectrumMappings().NxHalf * c.Ny * c.Nz * sizeof(WVComplex64);
 #else
@@ -553,12 +692,17 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformUVEtaToWaveVort
     const auto& mapping = descriptor_.halfSpectrumMappings();
     const auto& modes = descriptor_.verticalModes();
     const std::size_t halfRows = mapping.NxHalf * c.Ny;
-    auto* half = reinterpret_cast<WVComplex64*>(halfSpectrumScratch_.data());
+    auto* half = reinterpret_cast<WVComplex64*>(scratchData());
+#if WV_KERNEL_ISSUE158_INPLACE_ARENA
+    copyContiguousToPadded(fields.data,scratchData(),c,3);
+    auto execute = plans_[horizontalForward3]->execute(scratchData(),scratchData());
+#else
     auto execute = plans_[horizontalForward3]->execute(fields.data, half);
+#endif
     if (!execute) return execute;
     ++metrics_.executionCount; ++metrics_.horizontalExecutionCount;
     execute = plans_[verticalDCT2Storage3]->execute(half,half); if (!execute) return execute;
-    execute = plans_[verticalDST1Storage3]->execute(half + 2 * c.Nz + 1,half + 2 * c.Nz + 1); if (!execute) return execute;
+    execute = plans_[verticalDST1Storage3]->execute(verticalStart(half,halfRows,c.Nz,2,1),verticalStart(half,halfRows,c.Nz,2,1)); if (!execute) return execute;
     metrics_.executionCount += 2; metrics_.verticalExecutionCount += 2;
     normalizeForwardDCT(half,c.Nz,halfRows,3,0,2);
     normalizeForwardDST(half,c.Nz,halfRows,3,2,1);
@@ -568,9 +712,9 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformUVEtaToWaveVort
     const auto coefficientProjectionStart = std::chrono::steady_clock::now();
     forEachModeBlock(descriptor_.Nkl(),[&](std::size_t begin, std::size_t end) { for (std::size_t iMode = begin; iMode < end; ++iMode) for (std::size_t j = 0; j < c.Nj; ++j) {
         const auto index = j + c.Nj * iMode;
-        const auto U = multiply(storedValue(half,mapping,c.Nz,3,0,iMode,j),horizontalScale);
-        const auto V = multiply(storedValue(half,mapping,c.Nz,3,1,iMode,j),horizontalScale);
-        const auto N = multiply(storedValue(half,mapping,c.Nz,3,2,iMode,j),horizontalScale);
+        const auto U = multiply(storedValue(half,mapping,c.Nz,3,halfRows,0,iMode,j),horizontalScale);
+        const auto V = multiply(storedValue(half,mapping,c.Nz,3,halfRows,1,iMode,j),horizontalScale);
+        const auto N = multiply(storedValue(half,mapping,c.Nz,3,halfRows,2,iMode,j),horizontalScale);
         const auto& horizontal = descriptor_.fourierModes()[iMode];
         const auto divergence = add(multiply(U, WVComplex64{0.0, horizontal.k}), multiply(V, WVComplex64{0.0, horizontal.l}));
         const auto vorticity = subtract(multiply(V, WVComplex64{0.0, horizontal.k}), multiply(U, WVComplex64{0.0, horizontal.l}));
@@ -611,11 +755,16 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformUVWEtaToWaveVor
     const WVRealFieldBundleConstView& fields, double t, double t0, WVMutableCoefficients& coefficients, WVComplexConstView phaseValues) {
     const auto& c = descriptor_.configuration(); const auto& mapping = descriptor_.halfSpectrumMappings(); const auto& modes = descriptor_.verticalModes();
     const std::size_t halfRows = mapping.NxHalf * c.Ny;
-    auto* half = reinterpret_cast<WVComplex64*>(halfSpectrumScratch_.data());
+    auto* half = reinterpret_cast<WVComplex64*>(scratchData());
+#if WV_KERNEL_ISSUE158_INPLACE_ARENA
+    copyContiguousToPadded(fields.data,scratchData(),c,4);
+    auto execute = plans_[horizontalForward4]->execute(scratchData(),scratchData()); if (!execute) return execute;
+#else
     auto execute = plans_[horizontalForward4]->execute(fields.data, half); if (!execute) return execute;
+#endif
     ++metrics_.executionCount; ++metrics_.horizontalExecutionCount;
     execute = plans_[verticalDCT2Storage4]->execute(half,half); if (!execute) return execute;
-    execute = plans_[verticalDST2Storage4]->execute(half + 2 * c.Nz + 1,half + 2 * c.Nz + 1); if (!execute) return execute;
+    execute = plans_[verticalDST2Storage4]->execute(verticalStart(half,halfRows,c.Nz,2,1),verticalStart(half,halfRows,c.Nz,2,1)); if (!execute) return execute;
     metrics_.executionCount += 2; metrics_.verticalExecutionCount += 2;
     normalizeForwardDCT(half,c.Nz,halfRows,4,0,2); normalizeForwardDST(half,c.Nz,halfRows,4,2,2);
     const double horizontalScale = 1.0 / static_cast<double>(c.Nx * c.Ny);
@@ -623,10 +772,10 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformUVWEtaToWaveVor
     const auto coefficientProjectionStart = std::chrono::steady_clock::now();
     forEachModeBlock(descriptor_.Nkl(),[&](std::size_t begin, std::size_t end) { for (std::size_t iMode = begin; iMode < end; ++iMode) for (std::size_t j = 0; j < c.Nj; ++j) {
         const auto index = j + c.Nj * iMode;
-        const auto U = multiply(storedValue(half,mapping,c.Nz,4,0,iMode,j),horizontalScale);
-        const auto V = multiply(storedValue(half,mapping,c.Nz,4,1,iMode,j),horizontalScale);
-        const auto W = multiply(storedValue(half,mapping,c.Nz,4,2,iMode,j),horizontalScale);
-        const auto N = multiply(storedValue(half,mapping,c.Nz,4,3,iMode,j),horizontalScale);
+        const auto U = multiply(storedValue(half,mapping,c.Nz,4,halfRows,0,iMode,j),horizontalScale);
+        const auto V = multiply(storedValue(half,mapping,c.Nz,4,halfRows,1,iMode,j),horizontalScale);
+        const auto W = multiply(storedValue(half,mapping,c.Nz,4,halfRows,2,iMode,j),horizontalScale);
+        const auto N = multiply(storedValue(half,mapping,c.Nz,4,halfRows,3,iMode,j),horizontalScale);
         const auto& horizontal = descriptor_.fourierModes()[iMode];
         const auto vorticity = subtract(multiply(V, WVComplex64{0.0, horizontal.k}), multiply(U, WVComplex64{0.0, horizontal.l}));
         const auto A0 = add(multiply(vorticity,modes.A0FromVorticity[index]),multiply(N,modes.A0FromBuoyancy[index]));
@@ -661,7 +810,7 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformWaveVortexToUVW
 
 WVKernelStatus WVTransformConstantStratificationKernel::transformWaveVortexToUVWEtaImpl(const WVState& state, WVRealFieldBundleView& fields, const WVCoefficients* evolvedCoefficients) {
     const auto& c = descriptor_.configuration(); const auto& mapping = descriptor_.halfSpectrumMappings(); const auto& modes = descriptor_.verticalModes();
-    const std::size_t halfRows = mapping.NxHalf * c.Ny; auto* half = reinterpret_cast<WVComplex64*>(halfSpectrumScratch_.data());
+    const std::size_t halfRows = mapping.NxHalf * c.Ny; auto* half = reinterpret_cast<WVComplex64*>(scratchData());
     std::fill(half,half + c.Nz * 4 * halfRows,WVComplex64{});
     const auto coefficientAssemblyStart = std::chrono::steady_clock::now();
     forEachModeBlock(descriptor_.Nkl(),[&](std::size_t begin, std::size_t end) {
@@ -674,8 +823,8 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformWaveVortexToUVW
                     multiply(state.coefficients.Am.data[index],conjugate(p)),
                     state.coefficients.A0.data[index]};
             };
-            if (mapping.conjugatesStoredValueByWVIndex[iMode]) assembleFieldSpectraForMode<true>(half,mapping,modes,c.Nz,c.Nj,iMode,source);
-            else assembleFieldSpectraForMode<false>(half,mapping,modes,c.Nz,c.Nj,iMode,source);
+            if (mapping.conjugatesStoredValueByWVIndex[iMode]) assembleFieldSpectraForMode<true>(half,mapping,modes,c.Nz,c.Nj,halfRows,iMode,source);
+            else assembleFieldSpectraForMode<false>(half,mapping,modes,c.Nz,c.Nj,halfRows,iMode,source);
         } else {
             auto source = [&](std::size_t index) {
                 return EvolvedWaveVortexCoefficients{
@@ -683,28 +832,40 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformWaveVortexToUVW
                     evolvedCoefficients->Am.data[index],
                     evolvedCoefficients->A0.data[index]};
             };
-            if (mapping.conjugatesStoredValueByWVIndex[iMode]) assembleFieldSpectraForMode<true>(half,mapping,modes,c.Nz,c.Nj,iMode,source);
-            else assembleFieldSpectraForMode<false>(half,mapping,modes,c.Nz,c.Nj,iMode,source);
+            if (mapping.conjugatesStoredValueByWVIndex[iMode]) assembleFieldSpectraForMode<true>(half,mapping,modes,c.Nz,c.Nj,halfRows,iMode,source);
+            else assembleFieldSpectraForMode<false>(half,mapping,modes,c.Nz,c.Nj,halfRows,iMode,source);
         }
         }
     });
     if (stageInstrumentationEnabled_) metrics_.coefficientAssemblySeconds = std::chrono::duration<double>(std::chrono::steady_clock::now() - coefficientAssemblyStart).count();
-    completeHermitianBoundaries(half,mapping,c.Nz,4);
+    completeHermitianBoundaries(half,mapping,c.Nz,4,halfRows);
     auto execute = plans_[verticalDCT2Storage4]->execute(half,half); if (!execute) return execute;
-    execute = plans_[verticalDST2Storage4]->execute(half + 2 * c.Nz + 1,half + 2 * c.Nz + 1); if (!execute) return execute;
+    execute = plans_[verticalDST2Storage4]->execute(verticalStart(half,halfRows,c.Nz,2,1),verticalStart(half,halfRows,c.Nz,2,1)); if (!execute) return execute;
     metrics_.executionCount += 2; metrics_.verticalExecutionCount += 2;
-    execute = plans_[horizontalInverse4]->execute(half, fields.data); if (!execute) return execute;
+    execute = plans_[horizontalInverse4]->execute(half,
+#if WV_KERNEL_ISSUE158_INPLACE_ARENA
+        half
+#else
+        fields.data
+#endif
+    ); if (!execute) return execute;
+#if WV_KERNEL_ISSUE158_INPLACE_ARENA
+    copyPaddedToContiguous(scratchData(),fields.data,c,4);
+#endif
     ++metrics_.executionCount; ++metrics_.horizontalExecutionCount;
     return WVKernelStatus::ok();
 }
 
 WVKernelStatus WVTransformConstantStratificationKernel::transformWaveVortexToUVWImpl(
     const WVState& state, WVRealFieldBundleView& fields, const WVCoefficients* evolvedCoefficients, WVComplexConstView phaseValues) {
+#if WV_KERNEL_ISSUE158_INPLACE_ARENA
+    (void)fields;
+#endif
     const auto& c = descriptor_.configuration();
     const auto& mapping = descriptor_.halfSpectrumMappings();
     const auto& modes = descriptor_.verticalModes();
     const std::size_t halfRows = mapping.NxHalf * c.Ny;
-    auto* half = reinterpret_cast<WVComplex64*>(halfSpectrumScratch_.data());
+    auto* half = reinterpret_cast<WVComplex64*>(scratchData());
     std::fill(half,half + c.Nz * 3 * halfRows,WVComplex64{});
     const auto coefficientAssemblyStart = std::chrono::steady_clock::now();
     forEachModeBlock(descriptor_.Nkl(),[&](std::size_t begin, std::size_t end) {
@@ -714,16 +875,22 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformWaveVortexToUVW
                 const auto p = phaseValues.data[index];
                 return EvolvedWaveVortexCoefficients{multiply(state.coefficients.Ap.data[index],p),multiply(state.coefficients.Am.data[index],conjugate(p)),state.coefficients.A0.data[index]};
             };
-            if (mapping.conjugatesStoredValueByWVIndex[iMode]) assembleVelocitySpectraForMode<true>(half,mapping,modes,c.Nz,c.Nj,iMode,source);
-            else assembleVelocitySpectraForMode<false>(half,mapping,modes,c.Nz,c.Nj,iMode,source);
+            if (mapping.conjugatesStoredValueByWVIndex[iMode]) assembleVelocitySpectraForMode<true>(half,mapping,modes,c.Nz,c.Nj,halfRows,iMode,source);
+            else assembleVelocitySpectraForMode<false>(half,mapping,modes,c.Nz,c.Nj,halfRows,iMode,source);
         }
     });
     if (stageInstrumentationEnabled_) metrics_.coefficientAssemblySeconds = std::chrono::duration<double>(std::chrono::steady_clock::now() - coefficientAssemblyStart).count();
-    completeHermitianBoundaries(half,mapping,c.Nz,3);
+    completeHermitianBoundaries(half,mapping,c.Nz,3,halfRows);
     auto execute = plans_[verticalDCT2Storage3]->execute(half,half); if (!execute) return execute;
-    execute = plans_[verticalDST1Storage3]->execute(half + 2 * c.Nz + 1,half + 2 * c.Nz + 1); if (!execute) return execute;
+    execute = plans_[verticalDST1Storage3]->execute(verticalStart(half,halfRows,c.Nz,2,1),verticalStart(half,halfRows,c.Nz,2,1)); if (!execute) return execute;
     metrics_.executionCount += 2; metrics_.verticalExecutionCount += 2;
-    execute = plans_[horizontalInverse3]->execute(half,fields.data); if (!execute) return execute;
+    execute = plans_[horizontalInverse3]->execute(half,
+#if WV_KERNEL_ISSUE158_INPLACE_ARENA
+        half
+#else
+        fields.data
+#endif
+    ); if (!execute) return execute;
     ++metrics_.executionCount; ++metrics_.horizontalExecutionCount;
     return WVKernelStatus::ok();
 }
@@ -747,25 +914,35 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformToSpatialDomain
     auto initial = transformAllDerivatives(*this, true, Apm, A0, fields); if (initial.code != WVKernelStatusCode::unsupportedOperation) return initial;
     ExecutionGuard guard(executing_); if (!guard.entered()) return {WVKernelStatusCode::reentrantExecution, "Kernel operations are not reentrant."};
     const auto& c = descriptor_.configuration(); const auto& mapping = descriptor_.halfSpectrumMappings(); const auto& modes = descriptor_.verticalModes();
-    const std::size_t halfRows = mapping.NxHalf * c.Ny; auto* half = reinterpret_cast<WVComplex64*>(halfSpectrumScratch_.data());
+    const std::size_t halfRows = mapping.NxHalf * c.Ny; auto* half = reinterpret_cast<WVComplex64*>(scratchData());
     std::fill(half,half + c.Nz * 4 * halfRows,WVComplex64{});
     const auto coefficientAssemblyStart = std::chrono::steady_clock::now();
     forEachModeBlock(descriptor_.Nkl(),[&](std::size_t begin, std::size_t end) { for (std::size_t mode = begin; mode < end; ++mode) for (std::size_t j = 0; j < c.Nj; ++j) {
         const auto index = j + c.Nj * mode;
         const auto value = add(multiply(Apm.data[index],modes.fWaveScale[index]),multiply(A0.data[index],modes.Fg[j]));
         const auto& horizontal = descriptor_.fourierModes()[mode];
-        storeWVValue(half,mapping,c.Nz,4,0,mode,j,value);
-        storeWVValue(half,mapping,c.Nz,4,1,mode,j,multiply(value,WVComplex64{0.0,horizontal.k}));
-        storeWVValue(half,mapping,c.Nz,4,2,mode,j,multiply(value,WVComplex64{0.0,horizontal.l}));
-        storeWVValue(half,mapping,c.Nz,4,3,mode,j,multiply(value,-modes.verticalWavenumber[j]));
+        storeWVValue(half,mapping,c.Nz,4,halfRows,0,mode,j,value);
+        storeWVValue(half,mapping,c.Nz,4,halfRows,1,mode,j,multiply(value,WVComplex64{0.0,horizontal.k}));
+        storeWVValue(half,mapping,c.Nz,4,halfRows,2,mode,j,multiply(value,WVComplex64{0.0,horizontal.l}));
+        storeWVValue(half,mapping,c.Nz,4,halfRows,3,mode,j,multiply(value,-modes.verticalWavenumber[j]));
     }});
     if (stageInstrumentationEnabled_) metrics_.derivativeCoefficientAssemblySeconds += std::chrono::duration<double>(std::chrono::steady_clock::now() - coefficientAssemblyStart).count();
-    completeHermitianBoundaries(half,mapping,c.Nz,4);
+    completeHermitianBoundaries(half,mapping,c.Nz,4,halfRows);
     auto execute = plans_[verticalDCT3Storage4]->execute(half,half); if (!execute) return execute;
-    execute = plans_[verticalDST1Storage4]->execute(half + 3 * c.Nz + 1,half + 3 * c.Nz + 1); if (!execute) return execute;
+    execute = plans_[verticalDST1Storage4]->execute(verticalStart(half,halfRows,c.Nz,3,1),verticalStart(half,halfRows,c.Nz,3,1)); if (!execute) return execute;
     metrics_.executionCount += 2; metrics_.verticalExecutionCount += 2;
     normalizeInverseDCT(half,c.Nz,halfRows,4,0,3); normalizeInverseDST(half,c.Nz,halfRows,4,3,1);
-    execute = plans_[horizontalInverse4]->execute(half, fields.data); if (!execute) return execute; ++metrics_.executionCount; ++metrics_.horizontalExecutionCount; return WVKernelStatus::ok();
+    execute = plans_[horizontalInverse4]->execute(half,
+#if WV_KERNEL_ISSUE158_INPLACE_ARENA
+        half
+#else
+        fields.data
+#endif
+    ); if (!execute) return execute;
+#if WV_KERNEL_ISSUE158_INPLACE_ARENA
+    copyPaddedToContiguous(scratchData(),fields.data,c,4);
+#endif
+    ++metrics_.executionCount; ++metrics_.horizontalExecutionCount; return WVKernelStatus::ok();
 }
 
 WVKernelStatus WVTransformConstantStratificationKernel::transformToSpatialDomainWithGAllDerivatives(const WVComplexConstView& Apm, const WVComplexConstView& A0, WVRealFieldBundleView& fields) {
@@ -775,25 +952,35 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformToSpatialDomain
     auto initial = transformAllDerivatives(*this, false, Apm, A0, fields); if (initial.code != WVKernelStatusCode::unsupportedOperation) return initial;
     ExecutionGuard guard(executing_); if (!guard.entered()) return {WVKernelStatusCode::reentrantExecution, "Kernel operations are not reentrant."};
     const auto& c = descriptor_.configuration(); const auto& mapping = descriptor_.halfSpectrumMappings(); const auto& modes = descriptor_.verticalModes();
-    const std::size_t halfRows = mapping.NxHalf * c.Ny; auto* half = reinterpret_cast<WVComplex64*>(halfSpectrumScratch_.data());
+    const std::size_t halfRows = mapping.NxHalf * c.Ny; auto* half = reinterpret_cast<WVComplex64*>(scratchData());
     std::fill(half,half + c.Nz * 4 * halfRows,WVComplex64{});
     const auto coefficientAssemblyStart = std::chrono::steady_clock::now();
     forEachModeBlock(descriptor_.Nkl(),[&](std::size_t begin, std::size_t end) { for (std::size_t mode = begin; mode < end; ++mode) for (std::size_t j = 0; j < c.Nj; ++j) {
         const auto index = j + c.Nj * mode;
         const auto value = add(multiply(Apm.data[index],modes.gWaveScale[j]),multiply(A0.data[index],modes.Gg[j]));
         const auto& horizontal = descriptor_.fourierModes()[mode];
-        storeWVValue(half,mapping,c.Nz,4,0,mode,j,value);
-        storeWVValue(half,mapping,c.Nz,4,1,mode,j,multiply(value,WVComplex64{0.0,horizontal.k}));
-        storeWVValue(half,mapping,c.Nz,4,2,mode,j,multiply(value,WVComplex64{0.0,horizontal.l}));
-        storeWVValue(half,mapping,c.Nz,4,3,mode,j,multiply(value,modes.verticalWavenumber[j]));
+        storeWVValue(half,mapping,c.Nz,4,halfRows,0,mode,j,value);
+        storeWVValue(half,mapping,c.Nz,4,halfRows,1,mode,j,multiply(value,WVComplex64{0.0,horizontal.k}));
+        storeWVValue(half,mapping,c.Nz,4,halfRows,2,mode,j,multiply(value,WVComplex64{0.0,horizontal.l}));
+        storeWVValue(half,mapping,c.Nz,4,halfRows,3,mode,j,multiply(value,modes.verticalWavenumber[j]));
     }});
     if (stageInstrumentationEnabled_) metrics_.derivativeCoefficientAssemblySeconds += std::chrono::duration<double>(std::chrono::steady_clock::now() - coefficientAssemblyStart).count();
-    completeHermitianBoundaries(half,mapping,c.Nz,4);
-    auto execute = plans_[verticalDST3Storage4]->execute(half + 1,half + 1); if (!execute) return execute;
-    execute = plans_[verticalDCT1Storage4]->execute(half + 3 * c.Nz,half + 3 * c.Nz); if (!execute) return execute;
+    completeHermitianBoundaries(half,mapping,c.Nz,4,halfRows);
+    auto execute = plans_[verticalDST3Storage4]->execute(verticalStart(half,halfRows,c.Nz,0,1),verticalStart(half,halfRows,c.Nz,0,1)); if (!execute) return execute;
+    execute = plans_[verticalDCT1Storage4]->execute(verticalStart(half,halfRows,c.Nz,3,0),verticalStart(half,halfRows,c.Nz,3,0)); if (!execute) return execute;
     metrics_.executionCount += 2; metrics_.verticalExecutionCount += 2;
     normalizeInverseDST(half,c.Nz,halfRows,4,0,3); normalizeInverseDCT(half,c.Nz,halfRows,4,3,1);
-    execute = plans_[horizontalInverse4]->execute(half, fields.data); if (!execute) return execute; ++metrics_.executionCount; ++metrics_.horizontalExecutionCount; return WVKernelStatus::ok();
+    execute = plans_[horizontalInverse4]->execute(half,
+#if WV_KERNEL_ISSUE158_INPLACE_ARENA
+        half
+#else
+        fields.data
+#endif
+    ); if (!execute) return execute;
+#if WV_KERNEL_ISSUE158_INPLACE_ARENA
+    copyPaddedToContiguous(scratchData(),fields.data,c,4);
+#endif
+    ++metrics_.executionCount; ++metrics_.horizontalExecutionCount; return WVKernelStatus::ok();
 }
 
 WVKernelStatus WVTransformConstantStratificationKernel::transformToSpatialDomainWithDerivativesImpl(
@@ -802,7 +989,11 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformToSpatialDomain
     const auto& mapping = descriptor_.halfSpectrumMappings();
     const auto& modes = descriptor_.verticalModes();
     const std::size_t halfRows = mapping.NxHalf * c.Ny;
-    auto* half = reinterpret_cast<WVComplex64*>(halfSpectrumScratch_.data());
+#if WV_KERNEL_ISSUE158_INPLACE_ARENA
+    auto* half = reinterpret_cast<WVComplex64*>(derivatives.data);
+#else
+    auto* half = reinterpret_cast<WVComplex64*>(scratchData());
+#endif
     std::fill(half,half + c.Nz * 3 * halfRows,WVComplex64{});
     const bool cosine = target < 2;
     const auto coefficientAssemblyStart = std::chrono::steady_clock::now();
@@ -810,8 +1001,8 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformToSpatialDomain
         constexpr std::size_t resolvedTarget = decltype(targetConstant)::value;
         forEachModeBlock(descriptor_.Nkl(),[&](std::size_t begin, std::size_t end) {
             for (std::size_t mode = begin; mode < end; ++mode) {
-                if (mapping.conjugatesStoredValueByWVIndex[mode]) assembleDerivativeSpectraForMode<resolvedTarget,true>(half,mapping,modes,descriptor_.fourierModes(),evolvedCoefficients,c.Nz,c.Nj,mode);
-                else assembleDerivativeSpectraForMode<resolvedTarget,false>(half,mapping,modes,descriptor_.fourierModes(),evolvedCoefficients,c.Nz,c.Nj,mode);
+                if (mapping.conjugatesStoredValueByWVIndex[mode]) assembleDerivativeSpectraForMode<resolvedTarget,true>(half,mapping,modes,descriptor_.fourierModes(),evolvedCoefficients,c.Nz,c.Nj,halfRows,mode);
+                else assembleDerivativeSpectraForMode<resolvedTarget,false>(half,mapping,modes,descriptor_.fourierModes(),evolvedCoefficients,c.Nz,c.Nj,halfRows,mode);
             }
         });
     };
@@ -820,18 +1011,24 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformToSpatialDomain
     else if (target == 2) assembleTarget(std::integral_constant<std::size_t,2>{});
     else assembleTarget(std::integral_constant<std::size_t,3>{});
     if (stageInstrumentationEnabled_) metrics_.derivativeCoefficientAssemblySeconds += std::chrono::duration<double>(std::chrono::steady_clock::now() - coefficientAssemblyStart).count();
-    completeHermitianBoundaries(half,mapping,c.Nz,3);
+    completeHermitianBoundaries(half,mapping,c.Nz,3,halfRows);
     WVKernelStatus execute;
     if (cosine) {
         execute = plans_[verticalDCT2Storage3]->execute(half,half); if (!execute) return execute;
-        execute = plans_[verticalDST1Storage3]->execute(half + 2 * c.Nz + 1,half + 2 * c.Nz + 1); if (!execute) return execute;
+        execute = plans_[verticalDST1Storage3]->execute(verticalStart(half,halfRows,c.Nz,2,1),verticalStart(half,halfRows,c.Nz,2,1)); if (!execute) return execute;
     } else {
-        execute = plans_[verticalDST2Storage3]->execute(half + 1,half + 1); if (!execute) return execute;
-        execute = plans_[verticalDCT1Storage3]->execute(half + 2 * c.Nz,half + 2 * c.Nz); if (!execute) return execute;
+        execute = plans_[verticalDST2Storage3]->execute(verticalStart(half,halfRows,c.Nz,0,1),verticalStart(half,halfRows,c.Nz,0,1)); if (!execute) return execute;
+        execute = plans_[verticalDCT1Storage3]->execute(verticalStart(half,halfRows,c.Nz,2,0),verticalStart(half,halfRows,c.Nz,2,0)); if (!execute) return execute;
     }
     metrics_.executionCount += 2;
     metrics_.verticalExecutionCount += 2;
-    execute = plans_[horizontalInverse3]->execute(half,derivatives.data); if (!execute) return execute;
+    execute = plans_[horizontalInverse3]->execute(half,
+#if WV_KERNEL_ISSUE158_INPLACE_ARENA
+        half
+#else
+        derivatives.data
+#endif
+    ); if (!execute) return execute;
     ++metrics_.executionCount;
     ++metrics_.horizontalExecutionCount;
     return WVKernelStatus::ok();
@@ -843,7 +1040,11 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformToSpatialDomain
     const auto& mapping = descriptor_.halfSpectrumMappings();
     const auto& modes = descriptor_.verticalModes();
     const std::size_t halfRows = mapping.NxHalf * c.Ny;
-    auto* half = reinterpret_cast<WVComplex64*>(halfSpectrumScratch_.data());
+#if WV_KERNEL_ISSUE158_INPLACE_ARENA
+    auto* half = reinterpret_cast<WVComplex64*>(derivatives.data);
+#else
+    auto* half = reinterpret_cast<WVComplex64*>(scratchData());
+#endif
     std::fill(half,half + c.Nz * 3 * halfRows,WVComplex64{});
     const bool cosine = target < 2;
     const auto coefficientAssemblyStart = std::chrono::steady_clock::now();
@@ -851,8 +1052,8 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformToSpatialDomain
         constexpr std::size_t resolvedTarget = decltype(targetConstant)::value;
         forEachModeBlock(descriptor_.Nkl(),[&](std::size_t begin, std::size_t end) {
             for (std::size_t mode = begin; mode < end; ++mode) {
-                if (mapping.conjugatesStoredValueByWVIndex[mode]) assembleDerivativeSpectraForModeFromState<resolvedTarget,true>(half,mapping,modes,descriptor_.fourierModes(),state,phaseValues,c.Nz,c.Nj,mode);
-                else assembleDerivativeSpectraForModeFromState<resolvedTarget,false>(half,mapping,modes,descriptor_.fourierModes(),state,phaseValues,c.Nz,c.Nj,mode);
+                if (mapping.conjugatesStoredValueByWVIndex[mode]) assembleDerivativeSpectraForModeFromState<resolvedTarget,true>(half,mapping,modes,descriptor_.fourierModes(),state,phaseValues,c.Nz,c.Nj,halfRows,mode);
+                else assembleDerivativeSpectraForModeFromState<resolvedTarget,false>(half,mapping,modes,descriptor_.fourierModes(),state,phaseValues,c.Nz,c.Nj,halfRows,mode);
             }
         });
     };
@@ -861,17 +1062,23 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformToSpatialDomain
     else if (target == 2) assembleTarget(std::integral_constant<std::size_t,2>{});
     else assembleTarget(std::integral_constant<std::size_t,3>{});
     if (stageInstrumentationEnabled_) metrics_.derivativeCoefficientAssemblySeconds += std::chrono::duration<double>(std::chrono::steady_clock::now() - coefficientAssemblyStart).count();
-    completeHermitianBoundaries(half,mapping,c.Nz,3);
+    completeHermitianBoundaries(half,mapping,c.Nz,3,halfRows);
     WVKernelStatus execute;
     if (cosine) {
         execute = plans_[verticalDCT2Storage3]->execute(half,half); if (!execute) return execute;
-        execute = plans_[verticalDST1Storage3]->execute(half + 2 * c.Nz + 1,half + 2 * c.Nz + 1); if (!execute) return execute;
+        execute = plans_[verticalDST1Storage3]->execute(verticalStart(half,halfRows,c.Nz,2,1),verticalStart(half,halfRows,c.Nz,2,1)); if (!execute) return execute;
     } else {
-        execute = plans_[verticalDST2Storage3]->execute(half + 1,half + 1); if (!execute) return execute;
-        execute = plans_[verticalDCT1Storage3]->execute(half + 2 * c.Nz,half + 2 * c.Nz); if (!execute) return execute;
+        execute = plans_[verticalDST2Storage3]->execute(verticalStart(half,halfRows,c.Nz,0,1),verticalStart(half,halfRows,c.Nz,0,1)); if (!execute) return execute;
+        execute = plans_[verticalDCT1Storage3]->execute(verticalStart(half,halfRows,c.Nz,2,0),verticalStart(half,halfRows,c.Nz,2,0)); if (!execute) return execute;
     }
     metrics_.executionCount += 2; metrics_.verticalExecutionCount += 2;
-    execute = plans_[horizontalInverse3]->execute(half,derivatives.data); if (!execute) return execute;
+    execute = plans_[horizontalInverse3]->execute(half,
+#if WV_KERNEL_ISSUE158_INPLACE_ARENA
+        half
+#else
+        derivatives.data
+#endif
+    ); if (!execute) return execute;
     ++metrics_.executionCount; ++metrics_.horizontalExecutionCount;
     return WVKernelStatus::ok();
 }
@@ -886,15 +1093,15 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformSingleDerivativ
     const auto& mapping = descriptor_.halfSpectrumMappings();
     const auto& modes = descriptor_.verticalModes();
     const std::size_t halfRows = mapping.NxHalf * c.Ny;
-    auto* half = reinterpret_cast<WVComplex64*>(halfSpectrumScratch_.data());
+    auto* half = reinterpret_cast<WVComplex64*>(scratchData());
     std::fill(half,half + c.Nz * halfRows,WVComplex64{});
     const auto coefficientAssemblyStart = std::chrono::steady_clock::now();
     auto assembleTarget = [&](auto targetConstant) {
         constexpr std::size_t resolvedTarget = decltype(targetConstant)::value;
         forEachModeBlock(descriptor_.Nkl(),[&](std::size_t begin, std::size_t end) {
             for (std::size_t mode = begin; mode < end; ++mode) {
-                if (mapping.conjugatesStoredValueByWVIndex[mode]) assembleSingleDerivativeSpectrumForModeFromState<resolvedTarget,true>(half,mapping,modes,descriptor_.fourierModes(),state,phaseValues,c.Nz,c.Nj,mode,axis);
-                else assembleSingleDerivativeSpectrumForModeFromState<resolvedTarget,false>(half,mapping,modes,descriptor_.fourierModes(),state,phaseValues,c.Nz,c.Nj,mode,axis);
+                if (mapping.conjugatesStoredValueByWVIndex[mode]) assembleSingleDerivativeSpectrumForModeFromState<resolvedTarget,true>(half,mapping,modes,descriptor_.fourierModes(),state,phaseValues,c.Nz,c.Nj,halfRows,mode,axis);
+                else assembleSingleDerivativeSpectrumForModeFromState<resolvedTarget,false>(half,mapping,modes,descriptor_.fourierModes(),state,phaseValues,c.Nz,c.Nj,halfRows,mode,axis);
             }
         });
     };
@@ -903,10 +1110,10 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformSingleDerivativ
     else if (target == 2) assembleTarget(std::integral_constant<std::size_t,2>{});
     else assembleTarget(std::integral_constant<std::size_t,3>{});
     if (stageInstrumentationEnabled_) metrics_.derivativeCoefficientAssemblySeconds += std::chrono::duration<double>(std::chrono::steady_clock::now() - coefficientAssemblyStart).count();
-    completeHermitianBoundaries(half,mapping,c.Nz,1);
+    completeHermitianBoundaries(half,mapping,c.Nz,1,halfRows);
     const bool sourceIsCosine = target < 2;
     const bool outputIsCosine = axis < 2 ? sourceIsCosine : !sourceIsCosine;
-    auto execute = outputIsCosine ? plans_[verticalDCT1Storage1]->execute(half,half) : plans_[verticalDST1Storage1]->execute(half + 1,half + 1);
+    auto execute = outputIsCosine ? plans_[verticalDCT1Storage1]->execute(half,half) : plans_[verticalDST1Storage1]->execute(verticalStart(half,halfRows,c.Nz,0,1),verticalStart(half,halfRows,c.Nz,0,1));
     if (!execute) return execute;
     ++metrics_.executionCount; ++metrics_.verticalExecutionCount;
     execute = plans_[horizontalInverse1]->execute(half,derivative.data); if (!execute) return execute;
@@ -925,14 +1132,19 @@ WVKernelStatus WVTransformConstantStratificationKernel::projectSingleFluxTargetI
     const auto& mapping = descriptor_.halfSpectrumMappings();
     const auto& modes = descriptor_.verticalModes();
     const std::size_t halfRows = mapping.NxHalf * c.Ny;
-    auto* half = reinterpret_cast<WVComplex64*>(halfSpectrumScratch_.data());
+#if WV_KERNEL_ISSUE158_INPLACE_ARENA
+    auto* half = reinterpret_cast<WVComplex64*>(const_cast<double*>(field.data));
     auto execute = plans_[horizontalForward1]->execute(field.data,half); if (!execute) return execute;
+#else
+    auto* half = reinterpret_cast<WVComplex64*>(scratchData());
+    auto execute = plans_[horizontalForward1]->execute(field.data,half); if (!execute) return execute;
+#endif
     ++metrics_.executionCount; ++metrics_.horizontalExecutionCount;
     if (target < 2) {
         execute = plans_[verticalDCT1Storage1]->execute(half,half); if (!execute) return execute;
         normalizeForwardDCT(half,c.Nz,halfRows,1,0,1);
     } else {
-        execute = plans_[verticalDST1Storage1]->execute(half + 1,half + 1); if (!execute) return execute;
+        execute = plans_[verticalDST1Storage1]->execute(verticalStart(half,halfRows,c.Nz,0,1),verticalStart(half,halfRows,c.Nz,0,1)); if (!execute) return execute;
         normalizeForwardDST(half,c.Nz,halfRows,1,0,1);
     }
     ++metrics_.executionCount; ++metrics_.verticalExecutionCount;
@@ -940,7 +1152,7 @@ WVKernelStatus WVTransformConstantStratificationKernel::projectSingleFluxTargetI
     forEachModeBlock(descriptor_.Nkl(),[&](std::size_t begin, std::size_t end) {
         for (std::size_t iMode = begin; iMode < end; ++iMode) for (std::size_t j = 0; j < c.Nj; ++j) {
             const auto index = j + c.Nj * iMode;
-            const auto value = multiply(storedValue(half,mapping,c.Nz,1,0,iMode,j),horizontalScale);
+            const auto value = multiply(storedValue(half,mapping,c.Nz,1,halfRows,0,iMode,j),horizontalScale);
             const auto& horizontal = descriptor_.fourierModes()[iMode];
             WVComplex64 A0Contribution{};
             if (target == 0) A0Contribution = multiply(multiply(value,WVComplex64{0.0,-horizontal.l}),modes.A0FromVorticity[index]);
@@ -988,8 +1200,12 @@ WVKernelStatus WVTransformConstantStratificationKernel::nonlinearFlux(const WVSt
     auto stageStart = Clock::now();
 #if WV_KERNEL_ISSUE130_VARIANT >= 3
     const auto& c = descriptor_.configuration();
+#if WV_KERNEL_ISSUE158_INPLACE_ARENA
+    auto* phaseStorage = compactPhaseScratch_.data();
+#else
     const auto halfFieldElements = descriptor_.halfSpectrumMappings().NxHalf * c.Ny * c.Nz;
     auto* phaseStorage = reinterpret_cast<WVComplex64*>(halfSpectrumScratch_.data()) + 3 * halfFieldElements;
+#endif
     const double elapsed = state.t - state.t0;
     for (std::size_t index = 0; index < phaseEvaluationCount; ++index) {
         phaseStorage[index] = phase(modes.omega[index] * elapsed);
@@ -1020,10 +1236,18 @@ WVKernelStatus WVTransformConstantStratificationKernel::nonlinearFlux(const WVSt
 
     const auto spatial = descriptor_.spatialShape();
     const auto fieldElements = spatial.elementCount();
-#if WV_KERNEL_ISSUE130_VARIANT >= 2
-    WVRealFieldBundleView advectingFields{realScratch_.data(),{spatial.first,spatial.second,spatial.third,3}};
+#if WV_KERNEL_ISSUE158_INPLACE_ARENA
+    (void)fieldElements;
+    const auto paddedFieldElements = 2 * descriptor_.halfSpectrumMappings().NxHalf * c.Ny * c.Nz;
+    double* realBase = scratchData();
 #else
-    WVRealFieldBundleView advectingFields{realScratch_.data(),{spatial.first,spatial.second,spatial.third,4}};
+    const auto paddedFieldElements = fieldElements;
+    double* realBase = realScratch_.data();
+#endif
+#if WV_KERNEL_ISSUE130_VARIANT >= 2
+    WVRealFieldBundleView advectingFields{realBase,{spatial.first,spatial.second,spatial.third,3}};
+#else
+    WVRealFieldBundleView advectingFields{realBase,{spatial.first,spatial.second,spatial.third,4}};
 #endif
     stageStart = Clock::now();
 #if WV_KERNEL_ISSUE130_VARIANT >= 3
@@ -1065,7 +1289,7 @@ WVKernelStatus WVTransformConstantStratificationKernel::nonlinearFlux(const WVSt
         const WVRealFieldBundleConstView field{fluxField,{spatial.first,spatial.second,spatial.third,1}};
 #else
 #if WV_KERNEL_ISSUE130_VARIANT >= 3
-        double* derivativeData = realScratch_.data() + 3 * fieldElements;
+        double* derivativeData = realBase + 3 * paddedFieldElements;
 #else
         double* derivativeData = realScratch_.data() + (3 + iTarget) * fieldElements;
 #endif
@@ -1078,14 +1302,21 @@ WVKernelStatus WVTransformConstantStratificationKernel::nonlinearFlux(const WVSt
 #endif
         if (!status) return status;
         if (stageInstrumentationEnabled_) derivativeSeconds += std::chrono::duration<double>(Clock::now() - stageStart).count();
-        const double* WV_KERNEL_RESTRICT U = realScratch_.data();
-        const double* WV_KERNEL_RESTRICT V = U + fieldElements;
-        const double* WV_KERNEL_RESTRICT W = V + fieldElements;
+        const double* WV_KERNEL_RESTRICT U = realBase;
+        const double* WV_KERNEL_RESTRICT V = U + paddedFieldElements;
+        const double* WV_KERNEL_RESTRICT W = V + paddedFieldElements;
         double* WV_KERNEL_RESTRICT dx = derivativeData;
-        const double* WV_KERNEL_RESTRICT dy = dx + fieldElements;
-        const double* WV_KERNEL_RESTRICT dz = dy + fieldElements;
+        const double* WV_KERNEL_RESTRICT dy = dx + paddedFieldElements;
+        const double* WV_KERNEL_RESTRICT dz = dy + paddedFieldElements;
         stageStart = Clock::now();
+#if WV_KERNEL_ISSUE158_INPLACE_ARENA
+        for (std::size_t z = 0; z < c.Nz; ++z) for (std::size_t y = 0; y < c.Ny; ++y) for (std::size_t x = 0; x < c.Nx; ++x) {
+            const auto i = paddedPhysicalIndex(c,0,x,y,z);
+            dx[i] = -(U[i] * dx[i] + V[i] * dy[i] + W[i] * dz[i]);
+        }
+#else
         for (std::size_t i = 0; i < fieldElements; ++i) dx[i] = -(U[i] * dx[i] + V[i] * dy[i] + W[i] * dz[i]);
+#endif
         if (stageInstrumentationEnabled_) productSeconds += std::chrono::duration<double>(Clock::now() - stageStart).count();
 #if WV_KERNEL_ISSUE130_VARIANT >= 3
         const WVRealFieldBundleConstView field{dx,{spatial.first,spatial.second,spatial.third,1}};

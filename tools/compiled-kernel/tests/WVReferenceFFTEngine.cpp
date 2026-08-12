@@ -40,6 +40,11 @@ public:
 private:
     WVKernelStatus r2c(const double* input, WVComplex64* output) {
         if (specification_.transformDimensions.size() != 2) return {WVKernelStatusCode::invalidConfiguration, "Reference r2c requires rank two."};
+        std::vector<double> inPlaceSource;
+        if (static_cast<const void*>(input) == static_cast<const void*>(output)) {
+            inPlaceSource.assign(input,input + specification_.inputBytes / sizeof(double));
+            input = inPlaceSource.data();
+        }
         const auto& yDimension = specification_.transformDimensions[0];
         const auto& xDimension = specification_.transformDimensions[1];
         forEachBatch(specification_, [&](std::ptrdiff_t inputBase, std::ptrdiff_t outputBase) {
@@ -58,6 +63,11 @@ private:
 
     WVKernelStatus c2r(const WVComplex64* input, double* output) {
         if (specification_.transformDimensions.size() != 2) return {WVKernelStatusCode::invalidConfiguration, "Reference c2r requires rank two."};
+        std::vector<WVComplex64> inPlaceSource;
+        if (static_cast<const void*>(input) == static_cast<const void*>(output)) {
+            inPlaceSource.assign(input,input + specification_.inputBytes / sizeof(WVComplex64));
+            input = inPlaceSource.data();
+        }
         const auto& yDimension = specification_.transformDimensions[0];
         const auto& xDimension = specification_.transformDimensions[1];
         forEachBatch(specification_, [&](std::ptrdiff_t inputBase, std::ptrdiff_t outputBase) {

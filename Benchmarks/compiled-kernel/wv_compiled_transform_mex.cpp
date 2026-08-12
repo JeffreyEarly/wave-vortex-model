@@ -286,8 +286,8 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
     }
     if (command == "metrics") {
         if (nrhs != 2 || nlhs != 1) fail("WaveVortexModel:CompiledKernelCommand","metrics requires one handle.");
-        const char* names[] = {"engine","loadedLibrary","nonlinearFluxSchedule","screeningVariant","phaseImplementation","coefficientStorageMode","coefficientArithmeticMode","inverseNormalizationPlacement","optimizationImplementation","coefficientWorkerCount","planMemoryAccounting","contractVersion","planCount","planBytes","descriptorBytes","scratchCapacityBytes","scratchHighWaterBytes","halfSpectrumScratchCapacityBytes","realScratchCapacityBytes","executionCount","horizontalExecutionCount","verticalExecutionCount","nonlinearFluxCallCount","nonlinearFluxPhaseEvaluationCount","phaseWorkspaceBytes","phaseReservationBytes","persistentBytes","stateInputBytes","fluxOutputBytes","knownMaximumLiveOwnedBytes","persistentFullHermitianBytes","gradientMaskBytes","Nx","Ny","Nz","Nj","Nkl","phaseSeconds","reconstructionSeconds","derivativeReconstructionSeconds","productSeconds","projectionSeconds","coefficientAssemblySeconds","derivativeCoefficientAssemblySeconds","coefficientProjectionSeconds"};
-        plhs[0] = mxCreateStructMatrix(1,1,45,names);
+        const char* names[] = {"engine","loadedLibrary","nonlinearFluxSchedule","screeningVariant","phaseImplementation","coefficientStorageMode","coefficientArithmeticMode","inverseNormalizationPlacement","optimizationImplementation","coefficientWorkerCount","planMemoryAccounting","contractVersion","planCount","planBytes","descriptorBytes","scratchCapacityBytes","scratchHighWaterBytes","halfSpectrumScratchCapacityBytes","realScratchCapacityBytes","executionCount","horizontalExecutionCount","verticalExecutionCount","nonlinearFluxCallCount","nonlinearFluxPhaseEvaluationCount","phaseWorkspaceBytes","phaseReservationBytes","persistentBytes","stateInputBytes","fluxOutputBytes","knownMaximumLiveOwnedBytes","persistentFullHermitianBytes","gradientMaskBytes","Nx","Ny","Nz","Nj","Nkl","phaseSeconds","reconstructionSeconds","derivativeReconstructionSeconds","productSeconds","projectionSeconds","coefficientAssemblySeconds","derivativeCoefficientAssemblySeconds","coefficientProjectionSeconds","inPlaceArenaCapacityBytes","inPlaceArenaPaddingBytes","compactPhaseSpillBytes","scratchAllocationCount","scratchBaseAlignmentBytes","scratchBasePointer","completeExactMaximumLiveBytes"};
+        plhs[0] = mxCreateStructMatrix(1,1,52,names);
         const auto& metrics = value.metrics();
         const auto& configuration = value.descriptor().configuration();
         const auto spectralBytes = value.descriptor().spectralShape().elementCount() * sizeof(WVComplex64);
@@ -306,6 +306,13 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
         for (std::size_t i = 0; i < 26; ++i) mxSetField(plhs[0],0,names[i+11],mxCreateDoubleScalar(numbers[i]));
         const double stageSeconds[] = {metrics.phaseSeconds,metrics.reconstructionSeconds,metrics.derivativeReconstructionSeconds,metrics.productSeconds,metrics.projectionSeconds,metrics.coefficientAssemblySeconds,metrics.derivativeCoefficientAssemblySeconds,metrics.coefficientProjectionSeconds};
         for (std::size_t i = 0; i < 8; ++i) mxSetField(plhs[0],0,names[i+37],mxCreateDoubleScalar(stageSeconds[i]));
+        mxSetField(plhs[0],0,"inPlaceArenaCapacityBytes",mxCreateDoubleScalar(static_cast<double>(metrics.inPlaceArenaCapacityBytes)));
+        mxSetField(plhs[0],0,"inPlaceArenaPaddingBytes",mxCreateDoubleScalar(static_cast<double>(metrics.inPlaceArenaPaddingBytes)));
+        mxSetField(plhs[0],0,"compactPhaseSpillBytes",mxCreateDoubleScalar(static_cast<double>(metrics.compactPhaseSpillBytes)));
+        mxSetField(plhs[0],0,"scratchAllocationCount",mxCreateDoubleScalar(static_cast<double>(metrics.scratchAllocationCount)));
+        mxSetField(plhs[0],0,"scratchBaseAlignmentBytes",mxCreateDoubleScalar(static_cast<double>(metrics.scratchBaseAlignmentBytes)));
+        mxSetField(plhs[0],0,"scratchBasePointer",mxCreateDoubleScalar(static_cast<double>(metrics.scratchBasePointerAddress)));
+        mxSetField(plhs[0],0,"completeExactMaximumLiveBytes",mxCreateDoubleScalar(static_cast<double>(value.persistentBytes()+6*spectralBytes)));
         return;
     }
     fail("WaveVortexModel:CompiledKernelCommand","Unknown compiled-kernel command.");

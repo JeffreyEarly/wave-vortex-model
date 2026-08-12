@@ -6,6 +6,10 @@ set_property(CACHE WV_KERNEL_ISSUE130_VARIANT PROPERTY STRINGS 0 2 3 4)
 if(NOT WV_KERNEL_ISSUE130_VARIANT MATCHES "^(0|2|3|4)$")
     message(FATAL_ERROR "WV_KERNEL_ISSUE130_VARIANT must be 0, 2, 3, or 4")
 endif()
+option(WV_KERNEL_ISSUE158_INPLACE_ARENA "Author-only issue #158 in-place arena prototype" OFF)
+if(WV_KERNEL_ISSUE158_INPLACE_ARENA AND NOT WV_KERNEL_ISSUE130_VARIANT STREQUAL "3")
+    message(FATAL_ERROR "WV_KERNEL_ISSUE158_INPLACE_ARENA requires WV_KERNEL_ISSUE130_VARIANT=3")
+endif()
 
 add_library(WaveVortexKernel STATIC
     src/WVKernelTypes.cpp
@@ -20,6 +24,9 @@ target_include_directories(WaveVortexKernel PUBLIC
 )
 target_link_libraries(WaveVortexKernel PUBLIC Threads::Threads)
 target_compile_definitions(WaveVortexKernel PUBLIC WV_KERNEL_ISSUE130_VARIANT=${WV_KERNEL_ISSUE130_VARIANT})
+if(WV_KERNEL_ISSUE158_INPLACE_ARENA)
+    target_compile_definitions(WaveVortexKernel PUBLIC WV_KERNEL_ISSUE158_INPLACE_ARENA=1)
+endif()
 set_target_properties(WaveVortexKernel PROPERTIES
     CXX_EXTENSIONS OFF
     POSITION_INDEPENDENT_CODE ON
