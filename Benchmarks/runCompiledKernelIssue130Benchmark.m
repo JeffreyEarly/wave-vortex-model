@@ -86,7 +86,7 @@ end
 
 comparisons = aggregateComparisons(workerRuns,cases);
 decision = adoptionDecision(comparisons);
-results = struct("schemaVersion","1.0.0","status","complete","generatedAtUTC",utcTimestamp,"source",struct("repository","JeffreyEarly/wave-vortex-model","commit",sourceCommit,"tree",sourceTree,"isDirty",sourceDirty,"baselineCommit","be0f78995c49a2bfe4c43d75827856e3812ac278","files",sourceFiles(repositoryRoot)),"environment",environmentRecord(provider,options),"configuration",struct("suite","core-v1","caseIds",string({cases.id}),"processCount",options.processCount,"warmupCount",options.warmupCount,"mediumSampleCount",options.mediumSampleCount,"largeSampleCount",options.largeSampleCount,"correctnessTolerance",1e-12,"localGate",0.05,"architecturalGate",0.10,"maximumOtherMetricRegression",0.03,"executionOrder","rotated separate fresh-process pairs"),"variants",variants,"workerRuns",workerRuns,"comparisons",comparisons,"decision",decision);
+results = struct("schemaVersion","1.0.0","status","complete","generatedAtUTC",utcTimestamp,"source",struct("repository","JeffreyEarly/wave-vortex-model","commit",sourceCommit,"tree",sourceTree,"isDirty",sourceDirty,"baselineCommit","be0f78995c49a2bfe4c43d75827856e3812ac278","files",sourceFiles(repositoryRoot)),"environment",environmentRecord(provider,options),"configuration",struct("suite","core-v1","caseIds",string({cases.id}),"processCount",options.processCount,"warmupCount",options.warmupCount,"mediumSampleCount",options.mediumSampleCount,"largeSampleCount",options.largeSampleCount,"correctnessTolerance",1e-12,"localGate",0.05,"architecturalGate",0.10,"maximumOtherMetricRegression",0.03,"executionOrder","rotated separate fresh-process pairs"),"supportingEvidence",supportingEvidence(repositoryRoot),"variants",variants,"workerRuns",workerRuns,"comparisons",comparisons,"decision",decision);
 if options.outputDirectory == ""
     options.outputDirectory = fullfile(repositoryRoot,"Benchmarks","results","experiments","issue130",replace(utcTimestamp,["-" ":" "." "T" "Z"],["" "" "" "T" "Z"])+"-maca64-r"+lower(string(version("-release"))));
 end
@@ -103,7 +103,7 @@ config = struct("repositoryRoot",repositoryRoot,"benchmarkFolder",benchmarkFolde
 end
 
 function comparisons = aggregateComparisons(workerRuns,cases)
-comparisons = repmat(struct("caseId","","Nxyz",[],"isHydrostatic",false,"control",struct(),"candidate",struct(),"pairedSpeedups",[],"medianSpeedup",NaN,"exactMaximumLiveReduction",NaN,"peakIncrementRSSReduction",NaN,"persistentIncrementRSSReduction",NaN,"maximumRelativeError",NaN,"metadataPassed",false,"speedRegressionPassed",false,"memoryRegressionPassed",false,"exactMemoryGatePassed",false,"rssMemoryGatePassed",false),numel(cases),1);
+comparisons = repmat(struct("caseId","","Nxyz",[],"isHydrostatic",false,"control",struct(),"candidate",struct(),"byteLedger",struct(),"pairedSpeedups",[],"medianSpeedup",NaN,"exactMaximumLiveReduction",NaN,"peakIncrementRSSReduction",NaN,"persistentIncrementRSSReduction",NaN,"maximumRelativeError",NaN,"metadataPassed",false,"speedRegressionPassed",false,"memoryRegressionPassed",false,"exactMemoryGatePassed",false,"rssMemoryGatePassed",false),numel(cases),1);
 for iCase = 1:numel(cases)
     controlRuns = [workerRuns([workerRuns.caseIndex]==iCase & [workerRuns.variantIndex]==1).result];
     candidateRuns = [workerRuns([workerRuns.caseIndex]==iCase & [workerRuns.variantIndex]==2).result];
@@ -114,7 +114,18 @@ for iCase = 1:numel(cases)
     peakReduction = 1-candidate.medianPeakIncrementRSSBytes/control.medianPeakIncrementRSSBytes;
     persistentReduction = 1-candidate.medianPersistentIncrementRSSBytes/control.medianPersistentIncrementRSSBytes;
     metadataPassed = all(arrayfun(@(item)string(item.metrics.screeningVariant)=="streamed-target-three-channel" && item.metrics.phaseReservationBytes>0 && item.metrics.persistentFullHermitianBytes==0,candidateRuns));
-    comparisons(iCase) = struct("caseId",string(cases(iCase).id),"Nxyz",cases(iCase).Nxyz,"isHydrostatic",cases(iCase).isHydrostatic,"control",control,"candidate",candidate,"pairedSpeedups",pairedSpeedups,"medianSpeedup",median(pairedSpeedups),"exactMaximumLiveReduction",exactReduction,"peakIncrementRSSReduction",peakReduction,"persistentIncrementRSSReduction",persistentReduction,"maximumRelativeError",candidate.maximumRelativeError,"metadataPassed",metadataPassed,"speedRegressionPassed",all(pairedSpeedups>=1/1.03),"memoryRegressionPassed",exactReduction>=-0.03&&peakReduction>=-0.03,"exactMemoryGatePassed",exactReduction>=0.10,"rssMemoryGatePassed",peakReduction>=0.10);
+    comparisons(iCase) = struct("caseId",string(cases(iCase).id),"Nxyz",cases(iCase).Nxyz,"isHydrostatic",cases(iCase).isHydrostatic,"control",control,"candidate",candidate,"byteLedger",byteLedger(cases(iCase),controlRuns(1).metrics,candidateRuns(1).metrics),"pairedSpeedups",pairedSpeedups,"medianSpeedup",median(pairedSpeedups),"exactMaximumLiveReduction",exactReduction,"peakIncrementRSSReduction",peakReduction,"persistentIncrementRSSReduction",persistentReduction,"maximumRelativeError",candidate.maximumRelativeError,"metadataPassed",metadataPassed,"speedRegressionPassed",all(pairedSpeedups>=1/1.03),"memoryRegressionPassed",exactReduction>=-0.03&&peakReduction>=-0.03,"exactMemoryGatePassed",exactReduction>=0.10,"rssMemoryGatePassed",peakReduction>=0.10);
+end
+
+function ledger = byteLedger(definition,control,candidate)
+Nx = definition.Nxyz(1); Ny = definition.Nxyz(2); Nz = definition.Nxyz(3);
+H = (floor(Nx/2)+1)*Ny*Nz;
+R = Nx*Ny*Nz;
+M = candidate.Nj*candidate.Nkl;
+q = conditional(definition.isHydrostatic,3,4);
+complexBytes = 16;
+realBytes = 8;
+ledger = struct("definitions",struct("H",H,"R",R,"M",M,"q",q),"control",struct("halfScratchBytes",control.halfSpectrumScratchCapacityBytes,"realScratchBytes",control.realScratchCapacityBytes,"knownMaximumLiveOwnedBytes",control.knownMaximumLiveOwnedBytes,"denseHalfZeroBytesPerCall",(4+3*q)*H*complexBytes,"phaseAndEvolvedCoefficientWriteBytesPerCall",3*M*complexBytes,"minimumProductWriteBytesPerCall",q*R*realBytes),"candidate",struct("halfScratchBytes",candidate.halfSpectrumScratchCapacityBytes,"realScratchBytes",candidate.realScratchCapacityBytes,"knownMaximumLiveOwnedBytes",candidate.knownMaximumLiveOwnedBytes,"denseHalfZeroBytesPerCall",(3+3*q)*H*complexBytes,"phaseAndAccumulatorInitializationBytesPerCall",4*M*complexBytes,"minimumProductWriteBytesPerCall",q*R*realBytes),"scope","Exact owned allocation and dense-zero/write lower bounds; opaque FFTW plan traffic is reported separately and not estimated.");
 end
 end
 
@@ -164,6 +175,16 @@ paths = ["CompiledKernel/src/WVTransformConstantStratificationKernel.cpp" "Compi
 files = repmat(struct("path","","sha256",""),numel(paths),1);
 for iPath = 1:numel(paths)
     files(iPath) = struct("path",paths(iPath),"sha256",sha256File(fullfile(repositoryRoot,paths(iPath))));
+end
+
+function records = supportingEvidence(repositoryRoot)
+paths = ["Benchmarks/results/experiments/issue130/20260812T052925Z-maca64-r2025b/issue130-screening.json" "Benchmarks/results/experiments/issue130/bounded-fft/20260812T054229Z-maca64-r2025b/issue130-bounded-fft-screening.json"];
+records = repmat(struct("purpose","","path","","sha256",""),numel(paths),1);
+purposes = ["Lyra four-schedule screen" "Lyra bounded-FFT screen"];
+for iPath = 1:numel(paths)
+    pathname = fullfile(repositoryRoot,paths(iPath));
+    records(iPath) = struct("purpose",purposes(iPath),"path",paths(iPath),"sha256",sha256File(pathname));
+end
 end
 end
 
