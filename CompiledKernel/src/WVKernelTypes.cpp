@@ -152,7 +152,7 @@ WVKernelStatus WVTransformConstantStratificationDescriptor::create(
         modes.h0.resize(configuration.Nj);
         modes.verticalWavenumber.resize(configuration.Nj);
         modes.Fg.resize(configuration.Nj); modes.Gg.resize(configuration.Nj);
-        modes.inertialScale.resize(configuration.Nj); modes.gWaveScale.resize(configuration.Nj);
+        modes.inertialScale.resize(configuration.Nj); modes.gWaveScale.resize(configuration.Nj); modes.apmWProjectionPrefactor.resize(configuration.Nj);
         const double dz = configuration.Lz / static_cast<double>(configuration.Nz - 1);
         for (std::size_t i = 0; i < configuration.Nz; ++i) modes.z[i] = dz * static_cast<double>(i) - configuration.Lz;
         for (std::size_t i = 0; i < configuration.Nj; ++i) {
@@ -165,12 +165,12 @@ WVKernelStatus WVTransformConstantStratificationDescriptor::create(
         const auto coefficientCount = checkedProduct(configuration.Nj, candidate.fourierModes_.size());
         modes.omega.resize(coefficientCount);
         modes.fWaveScale.resize(coefficientCount);
-        modes.UApField.resize(coefficientCount); modes.UAmField.resize(coefficientCount); modes.VApField.resize(coefficientCount); modes.VAmField.resize(coefficientCount);
-        modes.WApField.resize(coefficientCount); modes.WAmField.resize(coefficientCount); modes.NApField.resize(coefficientCount); modes.NAmField.resize(coefficientCount);
+        modes.UApField.resize(coefficientCount); modes.VApField.resize(coefficientCount);
+        modes.WApField.resize(coefficientCount); modes.NApField.resize(coefficientCount);
         modes.UA0Field.resize(coefficientCount); modes.VA0Field.resize(coefficientCount); modes.NA0Field.resize(coefficientCount);
         modes.A0FromVorticity.resize(coefficientCount); modes.A0FromBuoyancy.resize(coefficientCount);
         modes.ApmDProjection.resize(coefficientCount); modes.ApmNProjection.resize(coefficientCount);
-        modes.ApmDScaled.resize(coefficientCount); modes.ApmWScaled.resize(coefficientCount);
+        modes.ApmDScaled.resize(coefficientCount);
 
         const double N02 = configuration.N0 * configuration.N0;
         const double f = modes.coriolisFrequency;
@@ -223,7 +223,7 @@ WVKernelStatus WVTransformConstantStratificationDescriptor::create(
 
                 const double prefactor = signNorm * std::sqrt(configuration.g * configuration.Lz / (2.0 * (N02 - f2)));
                 modes.ApmDScaled[index] = (M / 2.0) * prefactor;
-                modes.ApmWScaled[index] = complexValue(0.0, (Kh / 2.0) * prefactor);
+                if (iMode == 0) modes.apmWProjectionPrefactor[iJ] = prefactor;
 
                 if (isWave) {
                     const auto UAp = complexValue(cosAlpha, -(f / omega) * sinAlpha);
@@ -233,18 +233,14 @@ WVKernelStatus WVTransformConstantStratificationDescriptor::create(
                     const auto ApmD = complexValue(0.0, -1.0 / (2.0 * Kh * hpm));
                     const double ApmN = -omega / (2.0 * Kh * hpm);
                     modes.UApField[index] = complexValue(UAp.real * modes.fWaveScale[index],UAp.imag * modes.fWaveScale[index]);
-                    modes.UAmField[index] = complexValue(UAp.real * modes.fWaveScale[index],-UAp.imag * modes.fWaveScale[index]);
                     modes.VApField[index] = complexValue(VAp.real * modes.fWaveScale[index],VAp.imag * modes.fWaveScale[index]);
-                    modes.VAmField[index] = complexValue(VAp.real * modes.fWaveScale[index],-VAp.imag * modes.fWaveScale[index]);
                     modes.WApField[index] = complexValue(WAp.real * modes.gWaveScale[iJ],WAp.imag * modes.gWaveScale[iJ]);
-                    modes.WAmField[index] = modes.WApField[index];
-                    modes.NApField[index] = NAp * modes.gWaveScale[iJ]; modes.NAmField[index] = -modes.NApField[index];
+                    modes.NApField[index] = NAp * modes.gWaveScale[iJ];
                     const double deltaScale = modes.h0[iJ] * Gwg / Fg;
                     modes.ApmDProjection[index] = complexValue(ApmD.real * deltaScale,ApmD.imag * deltaScale);
                     modes.ApmNProjection[index] = ApmN * Gwg / Gg;
                 } else if (isInertial) {
                     modes.UApField[index] = complexValue(modes.fWaveScale[index]); modes.VApField[index] = complexValue(0.0, modes.fWaveScale[index]);
-                    modes.UAmField[index] = complexValue(modes.fWaveScale[index]); modes.VAmField[index] = complexValue(0.0, -modes.fWaveScale[index]);
                 }
 
                 if (isGeostrophic) {
@@ -315,12 +311,12 @@ WVKernelStatus WVTransformConstantStratificationDescriptor::create(
 std::size_t WVTransformConstantStratificationDescriptor::persistentBytes() const noexcept {
     const auto& m = verticalModes_;
     return sizeof(*this) + bytes(fourierModes_) + halfSpectrumMappings_.persistentBytes() + bytes(m.z) + bytes(m.j) + bytes(m.h0) +
-           bytes(m.verticalWavenumber) + bytes(m.Fg) + bytes(m.Gg) + bytes(m.inertialScale) + bytes(m.gWaveScale) +
+           bytes(m.verticalWavenumber) + bytes(m.Fg) + bytes(m.Gg) + bytes(m.inertialScale) + bytes(m.gWaveScale) + bytes(m.apmWProjectionPrefactor) +
            bytes(m.omega) +
-           bytes(m.fWaveScale) + bytes(m.UApField) + bytes(m.UAmField) + bytes(m.VApField) + bytes(m.VAmField) +
-           bytes(m.WApField) + bytes(m.WAmField) + bytes(m.NApField) + bytes(m.NAmField) + bytes(m.UA0Field) + bytes(m.VA0Field) +
+           bytes(m.fWaveScale) + bytes(m.UApField) + bytes(m.VApField) +
+           bytes(m.WApField) + bytes(m.NApField) + bytes(m.UA0Field) + bytes(m.VA0Field) +
            bytes(m.NA0Field) + bytes(m.A0FromVorticity) + bytes(m.A0FromBuoyancy) + bytes(m.ApmDProjection) + bytes(m.ApmNProjection) +
-           bytes(m.ApmDScaled) + bytes(m.ApmWScaled);
+           bytes(m.ApmDScaled);
 }
 
 WVKernelStatus validateStateAndFlux(

@@ -80,8 +80,9 @@ public:
 };
 
 void testDescriptor() {
+    const auto evenConfiguration = configuration(16, 12, false);
     WVTransformConstantStratificationDescriptor even;
-    auto status = WVTransformConstantStratificationDescriptor::create(configuration(16, 12, false), even);
+    auto status = WVTransformConstantStratificationDescriptor::create(evenConfiguration, even);
     require(static_cast<bool>(status), "even descriptor construction failed");
     require(even.spectralShape().rows == 5, "unexpected spectral rows");
     require(even.Nkl() > 0, "empty Fourier modes");
@@ -90,6 +91,14 @@ void testDescriptor() {
     require(even.verticalModes().z.back() == 0.0, "unexpected surface coordinate");
     require(even.verticalModes().h0.front() == 1300.0, "unexpected barotropic equivalent depth");
     require(std::isfinite(even.verticalModes().coriolisFrequency), "non-finite Coriolis frequency");
+    require(even.verticalModes().apmWProjectionPrefactor.size() == even.spectralShape().rows, "compact ApmW prefactor must be vertical-only");
+    for (std::size_t j = 0; j < even.spectralShape().rows; ++j) {
+        const double sign = j % 2 == 0 ? 1.0 : -1.0;
+        const double f = even.verticalModes().coriolisFrequency;
+        const double expected = sign * std::sqrt(evenConfiguration.g * evenConfiguration.Lz /
+            (2.0 * (evenConfiguration.N0 * evenConfiguration.N0 - f * f)));
+        require(std::abs(even.verticalModes().apmWProjectionPrefactor[j] - expected) <= 1e-15 * std::abs(expected), "compact ApmW prefactor changed #126 pre-scaling");
+    }
     require(!even.halfSpectrumMappings().selfConjugateRows.empty(),"even-grid zero/Nyquist boundary mappings are missing");
     require(even.halfSpectrumMappings().hermitianCompletionRows.size() == even.halfSpectrumMappings().hermitianSourceRows.size(),"Hermitian boundary mappings are inconsistent");
 
