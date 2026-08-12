@@ -15,9 +15,13 @@ struct WVKernelMetrics {
     std::size_t halfSpectrumScratchCapacityBytes = 0;
     std::size_t realScratchCapacityBytes = 0;
     std::size_t planCount = 0;
+    std::size_t logicalPlanCount = 0;
     std::size_t executionCount = 0;
     std::size_t horizontalExecutionCount = 0;
     std::size_t verticalExecutionCount = 0;
+    std::size_t nativeExecutionCount = 0;
+    std::size_t horizontalNativeExecutionCount = 0;
+    std::size_t verticalNativeExecutionCount = 0;
     std::size_t nonlinearFluxCallCount = 0;
     std::size_t nonlinearFluxPhaseEvaluationCount = 0;
     std::size_t bytesCopied = 0;
@@ -29,6 +33,8 @@ struct WVKernelMetrics {
     double coefficientAssemblySeconds = 0.0;
     double derivativeCoefficientAssemblySeconds = 0.0;
     double coefficientProjectionSeconds = 0.0;
+    double horizontalFFTSeconds = 0.0;
+    double verticalFFTSeconds = 0.0;
 };
 
 class WVTransformConstantStratificationKernel {
@@ -51,8 +57,11 @@ public:
     const char* inverseNormalizationPlacementIdentifier() const noexcept;
     const char* optimizationImplementationIdentifier() const noexcept;
     const char* screeningVariantIdentifier() const noexcept;
+    const char* fftBatchScheduleIdentifier() const noexcept;
     std::size_t coefficientWorkerCount() const noexcept;
     std::size_t phaseReservationBytes() const noexcept;
+    std::size_t horizontalZBatchSize() const noexcept;
+    std::size_t verticalHalfRowBatchSize() const noexcept;
     void setStageInstrumentation(bool enabled) noexcept;
     std::size_t persistentBytes() const noexcept;
     std::size_t scratchBytes() const noexcept { return (halfSpectrumScratch_.size() + realScratch_.size()) * sizeof(double); }

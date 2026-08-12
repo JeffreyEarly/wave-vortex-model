@@ -226,6 +226,9 @@ void testNonlinearFlux(bool hydrostatic) {
     const std::size_t executionsPerCall = hydrostatic ? 15 : 18;
 #endif
     require(kernel->metrics().executionCount == 2*executionsPerCall,"unexpected nonlinear-flux plan execution count");
+    require(kernel->metrics().nativeExecutionCount == kernel->metrics().executionCount,"small contract workload unexpectedly split native FFT executions");
+    require(kernel->metrics().horizontalNativeExecutionCount == kernel->metrics().horizontalExecutionCount,"small contract workload horizontal native/logical counts differ");
+    require(kernel->metrics().verticalNativeExecutionCount == kernel->metrics().verticalExecutionCount,"small contract workload vertical native/logical counts differ");
     require(kernel->metrics().nonlinearFluxCallCount == 2,"unexpected nonlinear-flux call count");
     require(kernel->metrics().nonlinearFluxPhaseEvaluationCount == 2*count,"nonlinear flux did not evaluate phase exactly once per coefficient");
 #if WV_KERNEL_ISSUE130_VARIANT == 2
@@ -248,14 +251,17 @@ void testNonlinearFlux(bool hydrostatic) {
     require(kernel->metrics().realScratchCapacityBytes == 5 * realFieldBytes,"single-output scratch is not 4H+5R");
     require(kernel->phaseReservationBytes() == halfFieldBytes,"single-output phase reservation is not one H region");
     require(kernel->metrics().planCount == 18,"unexpected single-output plan count");
+    require(kernel->metrics().logicalPlanCount == 18,"unexpected single-output logical plan count");
 #elif WV_KERNEL_ISSUE130_VARIANT == 3
     require(kernel->metrics().realScratchCapacityBytes == 6 * realFieldBytes,"streamed target scratch is not 4H+6R");
     require(kernel->phaseReservationBytes() == halfFieldBytes,"streamed target phase reservation is not one H region");
     require(kernel->metrics().planCount == 17,"unexpected streamed target plan count");
+    require(kernel->metrics().logicalPlanCount == 17,"unexpected streamed target logical plan count");
 #else
     require(kernel->metrics().realScratchCapacityBytes == (hydrostatic ? 8 : 9) * realFieldBytes,"unexpected control/velocity-only real scratch capacity");
     require(kernel->phaseReservationBytes() == 0,"control/velocity-only unexpectedly reserves phase scratch");
     require(kernel->metrics().planCount == 14,"unexpected control/velocity-only plan count");
+    require(kernel->metrics().logicalPlanCount == 14,"unexpected control/velocity-only logical plan count");
 #endif
 
     WVFlux overlapping{{Ap.data(),shape},{Fm.data(),shape},{F0.data(),shape}};

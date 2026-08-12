@@ -19,8 +19,20 @@ namespace {
 #define WV_KERNEL_ISSUE130_VARIANT 0
 #endif
 
+#ifndef WV_KERNEL_HORIZONTAL_Z_BATCH
+#define WV_KERNEL_HORIZONTAL_Z_BATCH 0
+#endif
+
+#ifndef WV_KERNEL_VERTICAL_HALF_ROW_BATCH
+#define WV_KERNEL_VERTICAL_HALF_ROW_BATCH 0
+#endif
+
 static_assert(WV_KERNEL_ISSUE130_VARIANT == 0 || WV_KERNEL_ISSUE130_VARIANT == 2 || WV_KERNEL_ISSUE130_VARIANT == 3 || WV_KERNEL_ISSUE130_VARIANT == 4,
     "WV_KERNEL_ISSUE130_VARIANT must be 0 (control), 2 (velocity only), 3 (streamed three-channel), or 4 (streamed single-output).");
+static_assert(WV_KERNEL_HORIZONTAL_Z_BATCH == 0 || WV_KERNEL_HORIZONTAL_Z_BATCH == 16 || WV_KERNEL_HORIZONTAL_Z_BATCH == 32 || WV_KERNEL_HORIZONTAL_Z_BATCH == 64,
+    "WV_KERNEL_HORIZONTAL_Z_BATCH must be 0 (all), 16, 32, or 64.");
+static_assert(WV_KERNEL_VERTICAL_HALF_ROW_BATCH == 0 || WV_KERNEL_VERTICAL_HALF_ROW_BATCH == 256 || WV_KERNEL_VERTICAL_HALF_ROW_BATCH == 1024 || WV_KERNEL_VERTICAL_HALF_ROW_BATCH == 4096,
+    "WV_KERNEL_VERTICAL_HALF_ROW_BATCH must be 0 (all), 256, 1024, or 4096.");
 
 #if defined(WV_KERNEL_NATIVE_OPTIMIZATION) && WV_KERNEL_NATIVE_OPTIMIZATION && (defined(__clang__) || defined(__GNUC__))
 #define WV_KERNEL_RESTRICT __restrict__
@@ -91,6 +103,56 @@ public:
 private:
     bool& flag_;
     bool entered_;
+};
+
+class BatchedExecutionPlan final : public WVFFTPlan {
+public:
+    BatchedExecutionPlan(
+        std::unique_ptr<WVFFTPlan> mainPlan,
+        std::unique_ptr<WVFFTPlan> tailPlan,
+        std::size_t mainExecutions,
+        std::size_t inputStepBytes,
+        std::size_t outputStepBytes,
+        std::size_t& nativeExecutionCount,
+        std::size_t& categoryNativeExecutionCount,
+        double& categorySeconds,
+        const bool& instrumentationEnabled)
+        : mainPlan_(std::move(mainPlan)),tailPlan_(std::move(tailPlan)),mainExecutions_(mainExecutions),inputStepBytes_(inputStepBytes),outputStepBytes_(outputStepBytes),nativeExecutionCount_(nativeExecutionCount),categoryNativeExecutionCount_(categoryNativeExecutionCount),categorySeconds_(categorySeconds),instrumentationEnabled_(instrumentationEnabled) {}
+
+    WVKernelStatus execute(const void* input, void* output) override {
+        const auto start = std::chrono::steady_clock::now();
+        const auto* inputBytes = static_cast<const unsigned char*>(input);
+        auto* outputBytes = static_cast<unsigned char*>(output);
+        for (std::size_t iExecution = 0; iExecution < mainExecutions_; ++iExecution) {
+            auto status = mainPlan_->execute(inputBytes + iExecution * inputStepBytes_,outputBytes + iExecution * outputStepBytes_);
+            if (!status) return status;
+            ++nativeExecutionCount_;
+            ++categoryNativeExecutionCount_;
+        }
+        if (tailPlan_) {
+            auto status = tailPlan_->execute(inputBytes + mainExecutions_ * inputStepBytes_,outputBytes + mainExecutions_ * outputStepBytes_);
+            if (!status) return status;
+            ++nativeExecutionCount_;
+            ++categoryNativeExecutionCount_;
+        }
+        if (instrumentationEnabled_) categorySeconds_ += std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count();
+        return WVKernelStatus::ok();
+    }
+
+    std::size_t persistentBytes() const noexcept override {
+        return sizeof(*this) + (mainPlan_ ? mainPlan_->persistentBytes() : 0) + (tailPlan_ ? tailPlan_->persistentBytes() : 0);
+    }
+
+private:
+    std::unique_ptr<WVFFTPlan> mainPlan_;
+    std::unique_ptr<WVFFTPlan> tailPlan_;
+    std::size_t mainExecutions_ = 0;
+    std::size_t inputStepBytes_ = 0;
+    std::size_t outputStepBytes_ = 0;
+    std::size_t& nativeExecutionCount_;
+    std::size_t& categoryNativeExecutionCount_;
+    double& categorySeconds_;
+    const bool& instrumentationEnabled_;
 };
 
 WVKernelStatus validateBundle(const WVRealFieldBundleConstView& view, WVShape3D spatial, std::size_t channels, const char* name) {
@@ -453,11 +515,52 @@ WVKernelStatus WVTransformConstantStratificationKernel::preparePlans() {
 #endif
     };
     for (std::size_t i = 0; i < planCount; ++i) {
-        auto status = engine_->createPlan(specifications[i], plans_[i]);
-        if (!status || !plans_[i]) return status ? WVKernelStatus{WVKernelStatusCode::fftPlanFailure, "FFT engine returned an empty plan."} : status;
+        const bool horizontal = specifications[i].kind == WVFFTPlanKind::horizontalRealToComplex2D || specifications[i].kind == WVFFTPlanKind::horizontalComplexToReal2D;
+        const std::size_t totalBatches = horizontal ? c.Nz : halfRows;
+        const std::size_t requestedBatch = horizontal ? WV_KERNEL_HORIZONTAL_Z_BATCH : WV_KERNEL_VERTICAL_HALF_ROW_BATCH;
+        const std::size_t batch = requestedBatch == 0 ? totalBatches : std::min(requestedBatch,totalBatches);
+        const std::size_t mainExecutions = totalBatches / batch;
+        const std::size_t tail = totalBatches % batch;
+        auto mainSpecification = specifications[i];
+        mainSpecification.batchDimensions[horizontal ? 0 : 1].count = batch;
+        std::unique_ptr<WVFFTPlan> mainPlan;
+        auto status = engine_->createPlan(mainSpecification,mainPlan);
+        if (!status || !mainPlan) return status ? WVKernelStatus{WVKernelStatusCode::fftPlanFailure,"FFT engine returned an empty main batch plan."} : status;
+        std::unique_ptr<WVFFTPlan> tailPlan;
+        if (tail != 0) {
+            auto tailSpecification = specifications[i];
+            tailSpecification.batchDimensions[horizontal ? 0 : 1].count = tail;
+            status = engine_->createPlan(tailSpecification,tailPlan);
+            if (!status || !tailPlan) return status ? WVKernelStatus{WVKernelStatusCode::fftPlanFailure,"FFT engine returned an empty tail batch plan."} : status;
+        }
+        std::size_t inputStepBytes = 0;
+        std::size_t outputStepBytes = 0;
+        if (horizontal) {
+            const auto realPlaneBytes = c.Nx * c.Ny * sizeof(double);
+            const auto complexZBytes = sizeof(WVComplex64);
+            if (specifications[i].kind == WVFFTPlanKind::horizontalRealToComplex2D) {
+                inputStepBytes = batch * realPlaneBytes;
+                outputStepBytes = batch * complexZBytes;
+            } else {
+                inputStepBytes = batch * complexZBytes;
+                outputStepBytes = batch * realPlaneBytes;
+            }
+        } else {
+            const auto rowStrideDoubles = static_cast<std::size_t>(mainSpecification.batchDimensions[1].inputStride);
+            inputStepBytes = batch * rowStrideDoubles * sizeof(double);
+            outputStepBytes = inputStepBytes;
+        }
+        try {
+            auto& categoryExecutions = horizontal ? metrics_.horizontalNativeExecutionCount : metrics_.verticalNativeExecutionCount;
+            auto& categorySeconds = horizontal ? metrics_.horizontalFFTSeconds : metrics_.verticalFFTSeconds;
+            plans_[i] = std::make_unique<BatchedExecutionPlan>(std::move(mainPlan),std::move(tailPlan),mainExecutions,inputStepBytes,outputStepBytes,metrics_.nativeExecutionCount,categoryExecutions,categorySeconds,stageInstrumentationEnabled_);
+        } catch (const std::bad_alloc&) {
+            return {WVKernelStatusCode::allocationFailure,"Unable to retain the bounded FFT execution wrapper."};
+        }
+        metrics_.planCount += 1 + static_cast<std::size_t>(tail != 0);
         metrics_.planBytes += plans_[i]->persistentBytes();
     }
-    metrics_.planCount = plans_.size();
+    metrics_.logicalPlanCount = plans_.size();
     return WVKernelStatus::ok();
 }
 
@@ -511,6 +614,18 @@ const char* WVTransformConstantStratificationKernel::screeningVariantIdentifier(
 #endif
 }
 
+const char* WVTransformConstantStratificationKernel::fftBatchScheduleIdentifier() const noexcept {
+#if WV_KERNEL_HORIZONTAL_Z_BATCH == 0 && WV_KERNEL_VERTICAL_HALF_ROW_BATCH == 0
+    return "streamed-all-all";
+#else
+    return "streamed-bounded-main-tail";
+#endif
+}
+
+std::size_t WVTransformConstantStratificationKernel::horizontalZBatchSize() const noexcept { return WV_KERNEL_HORIZONTAL_Z_BATCH; }
+
+std::size_t WVTransformConstantStratificationKernel::verticalHalfRowBatchSize() const noexcept { return WV_KERNEL_VERTICAL_HALF_ROW_BATCH; }
+
 std::size_t WVTransformConstantStratificationKernel::phaseReservationBytes() const noexcept {
 #if WV_KERNEL_ISSUE130_VARIANT >= 3
     const auto& c = descriptor_.configuration();
@@ -531,6 +646,8 @@ void WVTransformConstantStratificationKernel::setStageInstrumentation(bool enabl
     metrics_.coefficientAssemblySeconds = 0.0;
     metrics_.derivativeCoefficientAssemblySeconds = 0.0;
     metrics_.coefficientProjectionSeconds = 0.0;
+    metrics_.horizontalFFTSeconds = 0.0;
+    metrics_.verticalFFTSeconds = 0.0;
 }
 
 WVKernelStatus WVTransformConstantStratificationKernel::transformUVEtaToWaveVortex(
