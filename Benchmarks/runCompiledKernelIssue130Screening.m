@@ -100,10 +100,11 @@ clear stateCleanup
 end
 
 function variants = variantDefinitions
-variants = repmat(struct("id","","number",0,"module","","mexPath","","mexSha256",""),3,1);
+variants = repmat(struct("id","","number",0,"module","","mexPath","","mexSha256",""),4,1);
 variants(1) = struct("id","control-be0f789","number",0,"module","wv_issue130_control","mexPath","","mexSha256","");
 variants(2) = struct("id","velocity-only","number",2,"module","wv_issue130_velocity_only","mexPath","","mexSha256","");
 variants(3) = struct("id","streamed-target-three-channel","number",3,"module","wv_issue130_streamed_three_channel","mexPath","","mexSha256","");
+variants(4) = struct("id","streamed-target-single-output","number",4,"module","wv_issue130_streamed_single_output","mexPath","","mexSha256","");
 end
 
 function cases = caseDefinitions
@@ -133,7 +134,9 @@ function record = metricRecord(before,after)
 stageNames = ["phaseSeconds" "reconstructionSeconds" "derivativeReconstructionSeconds" "productSeconds" "projectionSeconds" "coefficientAssemblySeconds" "derivativeCoefficientAssemblySeconds" "coefficientProjectionSeconds"];
 stages = struct;
 for name = stageNames, stages.(name) = after.(name); end
-record = struct("screeningVariant",string(after.screeningVariant),"nonlinearFluxSchedule",string(after.nonlinearFluxSchedule),"planCount",after.planCount,"executionCount",after.executionCount-before.executionCount,"horizontalExecutionCount",after.horizontalExecutionCount-before.horizontalExecutionCount,"verticalExecutionCount",after.verticalExecutionCount-before.verticalExecutionCount,"phaseEvaluationCount",after.nonlinearFluxPhaseEvaluationCount-before.nonlinearFluxPhaseEvaluationCount,"halfSpectrumScratchBytes",after.halfSpectrumScratchCapacityBytes,"realScratchBytes",after.realScratchCapacityBytes,"scratchBytes",after.scratchCapacityBytes,"phaseReservationBytes",after.phaseReservationBytes,"persistentBytes",after.persistentBytes,"knownMaximumLiveOwnedBytes",after.knownMaximumLiveOwnedBytes,"stages",stages);
+exactMaximumLiveArrayBytes = after.descriptorBytes+after.scratchCapacityBytes+after.stateInputBytes+after.fluxOutputBytes;
+knownMaximumLiveBytes = after.persistentBytes+after.stateInputBytes+after.fluxOutputBytes;
+record = struct("screeningVariant",string(after.screeningVariant),"nonlinearFluxSchedule",string(after.nonlinearFluxSchedule),"planCount",after.planCount,"planBytes",after.planBytes,"planMemoryAccounting",string(after.planMemoryAccounting),"executionCount",after.executionCount-before.executionCount,"horizontalExecutionCount",after.horizontalExecutionCount-before.horizontalExecutionCount,"verticalExecutionCount",after.verticalExecutionCount-before.verticalExecutionCount,"phaseEvaluationCount",after.nonlinearFluxPhaseEvaluationCount-before.nonlinearFluxPhaseEvaluationCount,"halfSpectrumScratchBytes",after.halfSpectrumScratchCapacityBytes,"realScratchBytes",after.realScratchCapacityBytes,"scratchBytes",after.scratchCapacityBytes,"phaseReservationBytes",after.phaseReservationBytes,"descriptorBytes",after.descriptorBytes,"stateInputBytes",after.stateInputBytes,"fluxOutputBytes",after.fluxOutputBytes,"persistentBytes",after.persistentBytes,"exactMaximumLiveArrayBytesExcludingPlans",exactMaximumLiveArrayBytes,"knownMaximumLiveBytesExcludingOpaquePlanInternals",knownMaximumLiveBytes,"stages",stages);
 end
 
 function candidates = candidateSummary(cases)
@@ -152,7 +155,8 @@ lines = ["# Issue #130 Lyra scratch-screening handoff";"";"- Status: `"+results.
 for caseResult = results.cases'
     for variant = caseResult.variants'
         candidate = results.candidates(string({results.candidates.id})==variant.id);
-        lines(end+1) = sprintf("| %s | %s | %s | %.3f | %.2f%% | %.3f MiB | %.3f MiB | %d | %d | %s |",caseResult.id,variant.id,string(variant.correctnessPassed),1e3*variant.totalMedianSeconds,100*variant.completeCallRegression,variant.metrics.scratchBytes/2^20,variant.metrics.phaseReservationBytes/2^20,variant.metrics.planCount,variant.metrics.executionCount,string(candidate.advanceToDonut)); %#ok<AGROW>
+        regression = "--"; if isfinite(variant.completeCallRegression), regression = sprintf("%.2f%%",100*variant.completeCallRegression); end
+        lines(end+1) = sprintf("| %s | %s | %s | %.3f | %s | %.3f MiB | %.3f MiB | %d | %d | %s |",caseResult.id,variant.id,string(variant.correctnessPassed),1e3*variant.totalMedianSeconds,regression,variant.metrics.scratchBytes/2^20,variant.metrics.phaseReservationBytes/2^20,variant.metrics.planCount,variant.metrics.executionCount,string(candidate.advanceToDonut)); %#ok<AGROW>
     end
 end
 markdown = join(lines,newline)+newline;

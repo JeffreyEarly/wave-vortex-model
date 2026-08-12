@@ -4,7 +4,7 @@ arguments
     options.outputDirectory (1,1) string = fullfile(fileparts(mfilename("fullpath")),"build")
     options.outputName (1,1) string = ""
     options.provider (1,1) struct = struct()
-    options.issue130Variant (1,1) double {mustBeMember(options.issue130Variant,[0 2 3])} = 0
+    options.issue130Variant (1,1) double {mustBeMember(options.issue130Variant,[0 2 3 4])} = 0
 end
 repositoryRoot = fileparts(fileparts(mfilename("fullpath")));
 sourceDirectory = fullfile(repositoryRoot,"CompiledKernel","src");
