@@ -114,6 +114,9 @@ classdef TestBenchmarkWebsiteDocumentation < matlab.unittest.TestCase
             testCase.verifySubstring(page,"MATLAB R2026a Update 4");
             testCase.verifySubstring(page,"| scaling-large-v1 | Constant nonhydrostatic | M5 Max");
             testCase.verifySubstring(page,"| scaling-standard-v1 | Constant nonhydrostatic | Zen 4 workstation");
+            chart = string(fileread(fullfile(buildFolder,"assets","benchmarks","runtime-horizontal.svg")));
+            testCase.verifySubstring(chart,"M5 Max — MATLAB R2026a Update 4 — Constant nonhydrostatic");
+            testCase.verifySubstring(chart,"Zen 4 workstation — MATLAB R2026a Update 4 — Constant nonhydrostatic");
         end
 
         function unsafeMissingDuplicateAndMismatchedArtifactsFail(testCase)

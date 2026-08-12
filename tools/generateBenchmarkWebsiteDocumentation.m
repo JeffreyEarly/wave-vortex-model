@@ -236,7 +236,7 @@ for iTemplate = 1:numel(templates)
 end
 templates = templates(eligible);
 environments = latestEnvironmentRecords(records);
-rows = struct("datasetId",{},"datasetLabel",{},"suiteId",{},"transformId",{},"caseId",{},"resolution",{},"status",{},"reason",{},"value",{});
+rows = struct("datasetId",{},"datasetLabel",{},"chartLabel",{},"suiteId",{},"transformId",{},"caseId",{},"resolution",{},"status",{},"reason",{},"value",{});
 for iEnvironment = 1:numel(environments)
     environmentDataset = environments(iEnvironment).dataset;
     environment = environmentKey(environmentDataset);
@@ -262,6 +262,7 @@ for iEnvironment = 1:numel(environments)
         rows(end+1) = struct( ...
             "datasetId",string(dataset.datasetId), ...
             "datasetLabel",datasetLabel(dataset) + " — " + template.suiteId, ...
+            "chartLabel",chartLabel(dataset), ...
             "suiteId",template.suiteId, ...
             "transformId",template.transformId, ...
             "caseId",template.caseId, ...
@@ -377,7 +378,7 @@ for iSeries = 1:numel(seriesKeys)
     row = floor((iSeries-1)/2);
     x = 40 + column*450;
     y = 455 + row*24;
-    label = series(1).datasetLabel + " — " + displayTransform(series(1).transformId);
+    label = series(1).chartLabel + " — " + displayTransform(series(1).transformId);
     svg(end+1) = sprintf('<line x1="%g" y1="%g" x2="%g" y2="%g" stroke="%s" stroke-width="2"/><circle cx="%g" cy="%g" r="4" fill="%s"/>',x,y,x+24,y,color,x+12,y,color);
     svg(end+1) = sprintf('<text x="%g" y="%g" dominant-baseline="middle" font-family="Avenir Next, Avenir, Helvetica, Arial, sans-serif" font-size="10">%s</text>',x+32,y,xmlEscape(label));
 end
@@ -596,6 +597,19 @@ end
 
 function label = datasetLabel(dataset)
 label = string(dataset.platform.displayName) + " — " + string(dataset.implementation.displayName) + " " + string(dataset.implementation.version) + " (" + string(dataset.implementation.backend) + "; " + string(dataset.toolchain.name) + " " + string(dataset.toolchain.version) + ")";
+end
+
+function label = chartLabel(dataset)
+label = string(dataset.platform.displayName) + " — " + string(dataset.toolchain.name);
+if string(dataset.toolchain.kind) == "matlab" && isfield(dataset.toolchain.details,"matlabRelease")
+    label = label + " R" + string(dataset.toolchain.details.matlabRelease);
+    update = string(regexp(string(dataset.toolchain.version),'Update \d+','match','once'));
+    if update ~= ""
+        label = label + " " + update;
+    end
+else
+    label = label + " " + string(dataset.toolchain.version);
+end
 end
 
 function displayName = displayTransform(transformId)
