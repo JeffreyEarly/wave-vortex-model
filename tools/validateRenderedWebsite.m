@@ -44,6 +44,9 @@ for relativePath = htmlFiles'
     if ~isempty(regexp(visibleText,'!?\[[^\]]*\]\([^)]*\)','once'))
         diagnostics(end+1,1) = relativePath + ": raw Markdown link or image remains in rendered content";
     end
+    if ~isempty(regexp(visibleText,'[|]\s*:?-{3,}:?\s*[|]','once'))
+        diagnostics(end+1,1) = relativePath + ": raw Markdown table remains in rendered content";
+    end
     if contains(visibleText,"```")
         diagnostics(end+1,1) = relativePath + ": raw fenced-code marker remains in rendered content";
     elseif contains(visibleText,"`")

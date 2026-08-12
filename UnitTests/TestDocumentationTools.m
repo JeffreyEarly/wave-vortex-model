@@ -192,17 +192,20 @@ classdef TestDocumentationTools < matlab.unittest.TestCase
             testCase.writeText(fullfile(root,"raw-math.html"),'<main><h1>Math</h1><p>Unbalanced $$x</p></main>');
             testCase.writeText(fullfile(root,"table-math.html"),'<main><h1>Table</h1><table><tr><td>$$|x</td><td>|$$</td></tr></table></main>');
             testCase.writeText(fullfile(root,"raw-link.html"),'<main><h1>Link</h1><p>[link](target.html)</p></main>');
+            testCase.writeText(fullfile(root,"raw-table.html"),["<main><h1>Table</h1><p>| Column A | Column B |"; "| --- | --- |"; "| alpha | beta |</p></main>"]);
             testCase.writeText(fullfile(root,"raw-fence.html"),'<main><h1>Fence</h1><p>```matlab</p></main>');
             testCase.writeText(fullfile(root,"raw-backtick.html"),'<main><h1>Code</h1><p>`code`</p></main>');
             testCase.writeText(fullfile(root,"raw-single-dollar.html"),'<main><h1>Math</h1><p>Raw $x$ math.</p></main>');
 
             report = validateRenderedWebsite(root,ShouldFail=false);
+            testCase.verifyTrue(any(report.Diagnostics == "raw-table.html: raw Markdown table remains in rendered content"));
             expected = [
                 "missing main content element"
                 "missing level-one heading"
                 "unbalanced MathJax delimiters"
                 "MathJax expression is split across rendered table cells"
                 "raw Markdown link or image"
+                "raw Markdown table"
                 "raw fenced-code marker"
                 "raw Markdown backtick"
                 "unsupported single-dollar MathJax delimiter"
