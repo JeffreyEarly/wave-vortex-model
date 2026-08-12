@@ -38,6 +38,9 @@ struct WVHorizontalConvolutionMetrics {
     std::size_t hermitianInputFactor = 0;
     std::size_t hermitianPaddedFactor = 0;
     std::size_t hermitianLogicalPadding = 0;
+    std::size_t physicalInputTransformCount = 0;
+    std::size_t sacrificialInputTransformCount = 0;
+    std::size_t outputTransformCount = 0;
     bool workerRegionsDisjoint = true;
     double planningSeconds = 0.0;
     double executionSeconds = 0.0;

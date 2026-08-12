@@ -31,8 +31,8 @@ void updateMaximum(std::atomic<std::size_t>& destination, std::size_t value) {
 void waveVortexMultiplier(Complex** values, std::size_t count, fftwpp::Indices* indices, std::size_t threads) {
     const auto start = Clock::now();
     const auto inputCount = indices->fft->app.A;
-    if (indices->fft->app.B != inputCount || (inputCount != 15 && inputCount != 19)) throw std::invalid_argument("Unsupported WaveVortex MIMO convolution arity.");
-    const auto outputCount = (inputCount - 3) / 4;
+    const auto outputCount = indices->fft->app.B;
+    if (!((inputCount == 15 && outputCount == 3) || (inputCount == 19 && outputCount == 4))) throw std::invalid_argument("Unsupported WaveVortex MIMO convolution arity.");
     const auto sharedInputOffset = outputCount;
     updateMaximum(maximumMultiplierThreads,static_cast<std::size_t>(omp_get_num_threads()));
     updateMaximum(maximumOpenMPLevel,static_cast<std::size_t>(omp_get_active_level()));
@@ -92,11 +92,9 @@ public:
         const auto centeredKCount = 2 * (geometry_.maximumKMode + 1);
         const auto innerX = variant_ == "fftwpp-implicit" ? geometry_.centeredLCount / 2 : geometry_.centeredLCount / 2 + 1;
         const auto innerY = variant_ == "fftwpp-implicit" ? centeredKCount / 2 : centeredKCount / 2 + 1;
-        // FFTW++ cyclically permutes its channel pointer array in the optimized
-        // two-residue path when A>B. General named-channel MIMO expressions are
-        // not invariant under that permutation, so retain A=B internally and
-        // discard the auxiliary outputs after normalization.
-        const auto applicationOutputCount = geometry_.inputCount;
+        // The pinned FFTW++ source must include the issue #152 two-loop
+        // scheduler repair before named asymmetric output counts are safe.
+        const auto applicationOutputCount = geometry_.outputCount;
         appX_ = std::make_unique<fftwpp::Application>(geometry_.inputCount,applicationOutputCount,fftwpp::multNone,threadCount_,false,innerX,1,0);
         fftX_ = std::make_unique<fftwpp::fftPadCentered>(geometry_.centeredLCount,configuration.Ny,*appX_,geometry_.hermitianKCount,geometry_.hermitianKCount);
         appY_ = std::make_unique<fftwpp::Application>(geometry_.inputCount,applicationOutputCount,waveVortexMultiplier,*appX_,innerY,2,0);
@@ -110,6 +108,9 @@ public:
         metrics_.hermitianInputFactor = fftY_->p;
         metrics_.hermitianPaddedFactor = fftY_->q;
         metrics_.hermitianLogicalPadding = fftY_->m * fftY_->p - fftY_->L;
+        metrics_.physicalInputTransformCount = geometry_.inputCount - geometry_.outputCount;
+        metrics_.sacrificialInputTransformCount = geometry_.outputCount;
+        metrics_.outputTransformCount = geometry_.outputCount;
         const bool nonExplicit = fftX_->p != fftX_->q && fftY_->p != fftY_->q;
         const bool actualImplicit = nonExplicit && metrics_.centeredLogicalPadding == 0 && metrics_.hermitianLogicalPadding == 0;
         const bool actualHybrid = nonExplicit && (metrics_.centeredLogicalPadding > 0 || metrics_.hermitianLogicalPadding > 0);
