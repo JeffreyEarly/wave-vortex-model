@@ -183,9 +183,9 @@ for iPath = 1:numel(paths)
 end
 
 function records = supportingEvidence(repositoryRoot)
-paths = ["Benchmarks/results/experiments/issue130/20260812T052925Z-maca64-r2025b/issue130-screening.json" "Benchmarks/results/experiments/issue130/bounded-fft/20260812T054229Z-maca64-r2025b/issue130-bounded-fft-screening.json"];
+paths = ["Benchmarks/results/experiments/issue130/20260812T052925Z-maca64-r2025b/issue130-screening.json" "Benchmarks/results/experiments/issue130/bounded-fft/20260812T054229Z-maca64-r2025b/issue130-bounded-fft-screening.json" "Benchmarks/results/experiments/issue130/20260812T055439Z-donut-reduced/donut-reduced.json"];
 records = repmat(struct("purpose","","path","","sha256",""),numel(paths),1);
-purposes = ["Lyra four-schedule screen" "Lyra bounded-FFT screen"];
+purposes = ["Lyra four-schedule screen" "Lyra bounded-FFT screen" "Donut reduced native/MEX validation"];
 for iPath = 1:numel(paths)
     pathname = fullfile(repositoryRoot,paths(iPath));
     records(iPath) = struct("purpose",purposes(iPath),"path",paths(iPath),"sha256",sha256File(pathname));
