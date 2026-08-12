@@ -85,6 +85,31 @@ classdef TestCompiledKernelNativeFFTW < matlab.unittest.TestCase
             decision = compiledKernelAssemblyDecision(cases);
             testCase.verifyEqual(decision.coreStatus,"CORE-INCOMPLETE");
         end
+
+        function correctedMemoryDecisionAppliesThreePercentGate(testCase)
+            cases = repmat(memoryCase(1.03,1.03),4,1);
+            speed = frozenSpeedCases(1.25);
+            decision = compiledKernelMemoryReassessmentDecision(cases,speed);
+            testCase.verifyEqual(decision.memoryStatus,"MEMORY-NONREGRESSION");
+            testCase.verifyEqual(decision.integrationStatus,"INTEGRATION-READY");
+            cases(2).operationPeakRSSRatio = 1.0301;
+            decision = compiledKernelMemoryReassessmentDecision(cases,speed);
+            testCase.verifyEqual(decision.memoryStatus,"MEMORY-REGRESSION");
+            testCase.verifyEqual(decision.integrationStatus,"INTEGRATION-NOT-READY");
+        end
+
+        function matlabRetainedLedgerCountsCacheAndOutputs(testCase)
+            wvt = WVTransformConstantStratification([15000 12000 1300],[8 6 7],isHydrostatic=false,shouldAntialias=true);
+            cleanup = onCleanup(@()delete(wvt));
+            outputs = cell(1,3); [outputs{:}] = wvt.nonlinearFlux();
+            ledger = compiledKernelMatlabRetainedLedger(wvt,outputs);
+            cacheBytes = 0; names = string(wvt.variableCache.keys);
+            for iName = 1:numel(names), value = wvt.variableCache{names(iName)}; info = whos("value"); cacheBytes = cacheBytes+info.bytes; end %#ok<NASGU>
+            testCase.verifyEqual(ledger.cacheRetainedBytes,double(cacheBytes));
+            testCase.verifyEqual(ledger.exactRetainedApplicationBytes,ledger.transformRetainedBytes+ledger.cacheRetainedBytes+ledger.outputRetainedBytes);
+            testCase.verifyTrue(all(ismember(["phase" "Apt" "Amt" "u" "v" "w" "eta"],names)));
+            clear cleanup
+        end
     end
 
     methods (Test,TestTags="optional")
@@ -147,6 +172,37 @@ classdef TestCompiledKernelNativeFFTW < matlab.unittest.TestCase
             testCase.verifyEqual(string(decoded.failure.stage),"snapshots");
             clear cleanup
         end
+
+
+        function memoryReassessmentSeparatesSampledBackends(testCase)
+            outputDirectory = string(tempname); cleanup = onCleanup(@()removeDirectory(outputDirectory));
+            originalDirectory = pwd; originalPath = path; originalRng = rng;
+            result = runCompiledKernelMemoryReassessmentBenchmark(sizes=[8 6 7],hydrostatic=true,processRunCount=1,warmupCount=0,mediumSampleCount=1,largeSampleCount=1,threadCount=1,samplingIntervalSeconds=0.01,plateauSeconds=0.03,outputHoldSeconds=0.03,outputDirectory=outputDirectory,runId="smoke");
+            testCase.verifyEqual(result.status,"complete");
+            testCase.verifyEqual(numel(result.runs),2);
+            testCase.verifyEqual(sort(string({result.runs.sampledOperation})),sort(["compiled nonlinearFlux only" "MATLAB nonlinearFlux only"]));
+            testCase.verifyEqual([result.runs.referenceCallCount],[0 0]);
+            testCase.verifyTrue(all(arrayfun(@(item)isfinite(item.ledger.exactRetainedApplicationBytes),result.runs)));
+            testCase.verifyTrue(all(arrayfun(@(item)isfinite(item.rss.operationPeakIncrementBytes),result.runs)));
+            testCase.verifyTrue(all(arrayfun(@(item)item.rss.outputsClearedBytes>0 && item.rss.backendDestroyedBytes>0,result.runs)));
+            testCase.verifyEqual(pwd,originalDirectory);
+            testCase.verifyEqual(path,originalPath);
+            testCase.verifyEqual(rng,originalRng);
+            testCase.verifyTrue(isfile(fullfile(outputDirectory,"memory-reassessment.json")));
+            decoded = jsondecode(fileread(fullfile(outputDirectory,"memory-reassessment.json")));
+            testCase.verifyEqual(string(decoded.priorEvidence.artifactCommit),"d023626b6182e382f842595e044c2b87143e0eaa");
+            clear cleanup
+        end
+
+        function memoryReassessmentWritesPartialFailure(testCase)
+            outputDirectory = string(tempname); cleanup = onCleanup(@()removeDirectory(outputDirectory));
+            action = @()runCompiledKernelMemoryReassessmentBenchmark(sizes=[8 6 7],hydrostatic=true,processRunCount=1,warmupCount=0,mediumSampleCount=1,largeSampleCount=1,threadCount=1,samplingIntervalSeconds=0.01,plateauSeconds=0.02,outputHoldSeconds=0.02,outputDirectory=outputDirectory,runId="failure",injectWorkerFailure=true);
+            testCase.verifyError(action,"WaveVortexModel:MemoryWorkerResults");
+            decoded = jsondecode(fileread(fullfile(outputDirectory,"memory-reassessment.json")));
+            testCase.verifyEqual(string(decoded.status),"failed");
+            testCase.verifyEqual(string(decoded.failure.stage),"workers");
+            clear cleanup
+        end
     end
 end
 
@@ -164,6 +220,14 @@ end
 
 function value = assemblyCase(speedup,exactRatio,rssRatio)
 value = struct("status","complete","compiledSpeedup",speedup,"exactMemoryRatio",exactRatio,"peakRSSRatio",rssRatio,"maximumRelativeError",1e-14,"lifecyclePassed",true,"libraryIdentityPassed",true,"nativeExecutionPassed",true,"noFallback",true,"persistentFullHermitianBytes",0);
+end
+
+function value = memoryCase(exactRatio,rssRatio)
+value = struct("id","case","status","complete","exactRetainedRatio",exactRatio,"operationPeakRSSRatio",rssRatio,"libraryIdentityPassed",true,"nativeExecutionPassed",true,"noFallback",true,"planCount",17,"persistentFullHermitianBytes",0);
+end
+
+function values = frozenSpeedCases(speedup)
+values = repmat(struct("id","case","compiledSpeedup",speedup,"maximumRelativeError",1e-14),4,1);
 end
 
 function removeDirectory(pathname)
