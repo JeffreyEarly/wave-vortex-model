@@ -109,6 +109,12 @@ classdef TestCompiledPreviewBenchmark < matlab.unittest.TestCase
             testCase.verifyLessThanOrEqual(max([result.comparison.maximumRelativeError]),1e-12);
             testCase.verifyTrue(all([result.comparison.nativeExecutionPassed]));
             testCase.verifyTrue(all([result.comparison.lifecyclePassed]));
+            compiledRuns = result.runs(string({result.runs.implementation}) == "compiled");
+            for iRun = 1:numel(compiledRuns)
+                buffer = compiledRuns(iRun).ledger.transform.entries(string({compiledRuns(iRun).ledger.transform.entries.identifier}) == "horizontal.fullSpectrumBuffer");
+                testCase.verifyEqual(string(buffer.allocationState),"unallocated");
+                testCase.verifyEqual(buffer.bytes,0);
+            end
         end
 
         function injectedWorkerFailureWritesPartialArtifactAndRestoresState(testCase)

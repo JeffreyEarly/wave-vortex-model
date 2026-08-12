@@ -21,12 +21,12 @@ try
 
     definition = config.caseDefinition;
     backend = string(config.implementation);
-    rng(definition.seed,"twister");
     writePhase(phasePath,"backend-construction");
     constructionTimer = tic;
     wvt = WVTransformConstantStratification([15000 15000 1300],definition.Nxyz,isHydrostatic=definition.isHydrostatic,shouldAntialias=definition.shouldAntialias,computationalBackend=backend);
     constructionSeconds = toc(constructionTimer);
-    state = initializeWaveVortexBenchmarkState(wvt,definition.seed);
+    stateRecord = load(config.statePath,"state");
+    state = stateRecord.state;
     advanceWaveVortexBenchmarkState(wvt,state,0);
     metadata = wvt.computationalBackendMetadata;
     validateActiveBackend(metadata,backend,string(config.expectedModuleHash));

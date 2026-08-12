@@ -23,7 +23,7 @@ benchmarkFolder = fullfile(repositoryRoot,"Benchmarks");
 originalDirectory = pwd;
 originalPath = path;
 originalRng = rng;
-stateCleanup = onCleanup(@()restoreState(originalDirectory,originalPath,originalRng));
+pathStateCleanup = onCleanup(@()restoreState(originalDirectory,originalPath,originalRng));
 addRepositoryPaths(repositoryRoot,benchmarkFolder);
 if options.outputDirectory == ""
     options.outputDirectory = fullfile(benchmarkFolder,"results","runs",options.runId+"-compiled-preview-"+computer("arch")+"-"+version("-release"));
@@ -49,6 +49,7 @@ try
     activeStage = "workers";
     cases = caseDefinitions(options);
     results.cases = cases;
+    [statePaths,fixtureCleanup] = prepareStateFixtures(cases);
     implementations = ["matlab" "compiled"];
     for iRun = 1:options.processRunCount
         caseOrder = mod((0:numel(cases)-1)+(iRun-1),numel(cases))+1;
@@ -57,7 +58,7 @@ try
             for iImplementation = order
                 implementation = implementations(iImplementation);
                 fprintf("Compiled preview: %s, %s, process %d/%d.\n",implementation,cases(iCase).id,iRun,options.processRunCount);
-                results.runs(end+1,1) = runWorker(implementation,iRun,cases(iCase),capabilities,options,repositoryRoot,benchmarkFolder); %#ok<AGROW>
+                results.runs(end+1,1) = runWorker(implementation,iRun,cases(iCase),statePaths(iCase),capabilities,options,repositoryRoot,benchmarkFolder); %#ok<AGROW>
                 checkpoint(results,options);
             end
         end
@@ -77,6 +78,7 @@ try
     results.completedAtUTC = utcTimestamp;
     results.failure = emptyFailure;
     writeArtifacts(results,options);
+    clear fixtureCleanup
 catch exception
     results.status = "failed";
     results.completedAtUTC = utcTimestamp;
@@ -85,7 +87,7 @@ catch exception
     rethrow(exception)
 end
 clear moduleCleanup
-clear stateCleanup
+clear pathStateCleanup
 end
 
 function results = initializeResult(options,repositoryRoot)
@@ -136,12 +138,13 @@ for iSize = 1:size(options.sizes,1)
 end
 end
 
-function run = runWorker(implementation,repeatIndex,definition,capabilities,options,repositoryRoot,benchmarkFolder)
+function run = runWorker(implementation,repeatIndex,definition,statePath,capabilities,options,repositoryRoot,benchmarkFolder)
 config = struct( ...
     "implementation",implementation, ...
     "sourceCommit",gitValue(repositoryRoot,"rev-parse HEAD"), ...
     "repeatIndex",repeatIndex, ...
     "caseDefinition",definition, ...
+    "statePath",statePath, ...
     "expectedModuleHash",string(capabilities.module.sha256), ...
     "repositoryRoot",repositoryRoot, ...
     "benchmarkFolder",benchmarkFolder, ...
@@ -157,6 +160,7 @@ writeText(configPath,jsonencode(config));
 if options.injectWorkerFailure
     configPath = configPath+".missing";
 end
+
 statement = "addpath('"+replace(benchmarkFolder,"'","''")+"'); compiledPreviewBenchmarkWorker('"+replace(configPath,"'","''")+"','"+replace(outputPath,"'","''")+"')";
 command = sprintf('"%s" -batch "%s"',fullfile(matlabroot,"bin","matlab"),replace(statement,'"','\"'));
 [exitCode,commandOutput] = system(command);
@@ -171,6 +175,28 @@ else
     run = normalizeRun(jsondecode(fileread(outputPath)));
 end
 clear cleanup
+end
+
+function [paths,cleanup] = prepareStateFixtures(cases)
+paths = strings(numel(cases),1);
+for iCase = 1:numel(cases)
+    definition = cases(iCase);
+    initializer = WVTransformConstantStratification([15000 15000 1300],definition.Nxyz,isHydrostatic=definition.isHydrostatic,shouldAntialias=definition.shouldAntialias);
+    initializerCleanup = onCleanup(@()delete(initializer));
+    state = initializeWaveVortexBenchmarkState(initializer,definition.seed); %#ok<NASGU>
+    paths(iCase) = string(tempname)+".mat";
+    save(paths(iCase),"state","-v7.3");
+    clear initializerCleanup
+end
+cleanup = onCleanup(@()deleteStateFixtures(paths));
+end
+
+function deleteStateFixtures(paths)
+for pathname = paths'
+    if isfile(pathname)
+        delete(pathname);
+    end
+end
 end
 
 function run = normalizeRun(value)
