@@ -2,7 +2,7 @@
   "schemaVersion": "1.0.0",
   "issue": 161,
   "runId": "20260812T054635Z-matilda",
-  "status": "CORE_REJECT",
+  "status": "ADVANCE",
   "source": {
     "experimentBaseCommit": "be0f78995c49a2bfe4c43d75827856e3812ac278",
     "auditCommit": "7fd33f74aaccfa6e2ac80ad2ede12f19e8740d05"
@@ -96,9 +96,51 @@
   "verification": {
     "candidateCppContract": "passed",
     "auditCppContract": "passed",
-    "matlabMexCorrectness": "blocked",
-    "matlabLifecycle": "blocked",
-    "nativeDirectionalTiming": "blocked",
-    "blocker": "Both MATLAB batch and MATLAB -nojvm -nodisplay abort before project code executes: Incompatible processor; this Qt build requires neon."
+    "candidateMatlabMexCorrectness": {
+      "status": "passed",
+      "cases": ["7x6x7 hydrostatic", "8x8x9 nonhydrostatic", "9x7x9 hydrostatic"],
+      "maximumRelativeInfinityError": 1.0273037067706063e-22,
+      "maximumRepeatError": 0,
+      "pointerStable": true,
+      "lifecyclePassed": true,
+      "fallback": false,
+      "persistentFullHermitianBytes": 0
+    },
+    "nativeDirectionalTiming": {
+      "status": "passed-screening-only",
+      "sameHost": "Matilda",
+      "Nxyz": [256, 256, 65],
+      "threadCount": 1,
+      "warmupCount": 2,
+      "sampleCount": 5,
+      "hydrostatic": {
+        "candidateMedianWallSeconds": 0.5931347916666667,
+        "baselineMedianWallSeconds": 0.5949658333333333,
+        "completeSpeedup": 1.0030870582747666,
+        "relativeInfinityError": 0
+      },
+      "nonhydrostatic": {
+        "candidateMedianWallSeconds": 0.746199375,
+        "baselineMedianWallSeconds": 0.753563625,
+        "completeSpeedup": 1.0098690112143285,
+        "relativeInfinityError": 0
+      }
+    },
+    "independentAudit": {
+      "status": "passed",
+      "commit": "7fd33f74aaccfa6e2ac80ad2ede12f19e8740d05",
+      "variants": ["streamed-target-three-channel", "streamed-target-single-output"],
+      "caseCount": 12,
+      "shapes": ["7x6x7", "8x8x9", "9x7x9"],
+      "maximumRelativeInfinityError": 9.35848032643661e-23,
+      "maximumRepeatError": 0,
+      "pointerStable": true,
+      "fallback": false,
+      "balancedLifecycle": true,
+      "boundedOwnership": true,
+      "persistentFullHermitianBytes": 0,
+      "injectedPlanAllocationExecutionFailuresRejected": true,
+      "recoveredAfterInjectedExecutionFailure": true
+    }
   }
 }

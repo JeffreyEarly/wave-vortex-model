@@ -1,6 +1,6 @@
 # Issue #161 descriptor feasibility — Matilda
 
-Status: `CORE_REJECT` pending a batch-capable MATLAB runtime. The storage gate passes; MATLAB/MEX core correctness, lifecycle, and directional native timing could not run because MATLAB aborts before executing project code with `Incompatible processor. This Qt build requires the following features: neon`.
+Status: `ADVANCE`. The storage gate passes, candidate MATLAB/MEX checks pass, and the independent audit passes. The initial MATLAB Qt/NEON failure was caused by the filesystem sandbox; the unrestricted isolated batch path runs on Matilda.
 
 The experiment begins at `be0f78995c49a2bfe4c43d75827856e3812ac278`; the independent audit checkout is the clean detached `7fd33f74aaccfa6e2ac80ad2ede12f19e8740d05` and remains unmodified.
 
@@ -17,4 +17,8 @@ The complete known-owned figure includes the immutable descriptor, bounded half-
 
 Stored form retains all 232 bytes per coefficient. The adopted generated-at-construction form retains direct pre-scaled fields but replaces exact conjugate/sign arrays and the `[j,kl]` `ApmW` scale. A fully runtime-reconstructed descriptor was rejected: it would save more storage but would add divisions, square roots, and mode classification to every reconstruction/projection pass, creating an unfavorable arithmetic, cache-traffic, and code-complexity tradeoff.
 
-Both the candidate and read-only audit C++ contract suites passed. These cover odd/even descriptor mappings, hydrostatic and nonhydrostatic kernel paths, alias/ownership rejection, repeat-call phase accounting, bounded scratch assertions, and injected planning/execution cleanup. They do not substitute for the blocked MEX comparisons: odd/even/nonsquare MATLAB comparisons, three-channel/single-output streamed variants, pointer stability, native lifecycle, and Matilda timing remain unexecuted.
+Candidate MATLAB/MEX checks cover `7 × 6 × 7` hydrostatic, `8 × 8 × 9` nonhydrostatic, and `9 × 7 × 9` hydrostatic cases. Their maximum relative-infinity error is `1.03e-22`; repeat outputs are exact, descriptor/scratch/persistent pointers are stable, lifecycle is balanced, fallback is false, and persistent full-Hermitian storage is zero.
+
+Same-host Matilda screening at `256 × 256 × 65`, one FFTW thread, two warmups, and five alternating samples reports 0.593135 s versus 0.594966 s for hydrostatic (1.003×) and 0.746199 s versus 0.753564 s for nonhydrostatic (1.010×), candidate versus exact `be0f789` baseline. Both final-output relative errors are zero. This is directional screening evidence only.
+
+The read-only audit at `7fd33f74aaccfa6e2ac80ad2ede12f19e8740d05` builds both `streamed-target-three-channel` and `streamed-target-single-output` variants. Across odd `7 × 6 × 7`, even `8 × 8 × 9`, and nonsquare `9 × 7 × 9` hydrostatic/nonhydrostatic cases (12 total), the maximum relative-infinity error is `9.36e-23` and repeat outputs are exact. Every case has stable ownership, no fallback, balanced lifecycle, bounded scratch, and zero persistent full-Hermitian storage. Injected plan, allocation, and execution failures are rejected; each execution-failure kernel recovers on its next call and cleans up completely.
