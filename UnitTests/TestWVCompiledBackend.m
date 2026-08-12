@@ -168,7 +168,83 @@ classdef TestWVCompiledBackend < matlab.unittest.TestCase
             testCase.verifyEqual(afterRollback.module.sha256,originalHash);
             testCase.verifyFalse(afterRollback.module.loadedAfterInspection);
         end
+
+        function compiledPreviewExecutesWithoutFallback(testCase)
+            capabilities = WVCompiledBackend.capabilities();
+            if ~capabilities.isAvailable
+                capabilities = WVCompiledBackend.build();
+            end
+            testCase.assertTrue(capabilities.isAvailable,capabilities.failure.message);
+            definitions = struct("isHydrostatic",{true,false},"seed",{17201,17202});
+            for iDefinition = 1:numel(definitions)
+                definition = definitions(iDefinition);
+                matlabWVT = WVTransformConstantStratification([15000 12000 1300],[16 12 9],isHydrostatic=definition.isHydrostatic,shouldAntialias=true);
+                compiledWVT = WVTransformConstantStratification([15000 12000 1300],[16 12 9],isHydrostatic=definition.isHydrostatic,shouldAntialias=true,computationalBackend="compiled");
+                transformCleanup = onCleanup(@()deleteTransforms(matlabWVT,compiledWVT));
+                rng(definition.seed,"twister");
+                matlabWVT.initWithRandomFlow(uvMax=0.01);
+                compiledWVT.Ap = matlabWVT.Ap; compiledWVT.Am = matlabWVT.Am; compiledWVT.A0 = matlabWVT.A0;
+                matlabWVT.t = 31; compiledWVT.t = 31;
+                [expectedFp,expectedFm,expectedF0] = matlabWVT.nonlinearFlux();
+                [actualFp,actualFm,actualF0] = compiledWVT.nonlinearFlux();
+                maximumError = max([relativeError(actualFp,expectedFp) relativeError(actualFm,expectedFm) relativeError(actualF0,expectedF0)]);
+                testCase.verifyLessThanOrEqual(maximumError,1e-12);
+                metadata = compiledWVT.computationalBackendMetadata;
+                testCase.verifyEqual(compiledWVT.computationalBackend,"compiled");
+                testCase.verifyEqual(metadata.activeBackend,"compiled");
+                testCase.verifyEqual(metadata.provider.id,"native-neon-pthreads");
+                testCase.verifyTrue(metadata.module.identityValidated);
+                testCase.verifyEqual(metadata.contract.version,4);
+                testCase.verifyEqual(metadata.runtimeMetrics.planCount,17);
+                testCase.verifyEqual(metadata.runtimeMetrics.persistentFullHermitianBytes,0);
+
+                if definition.isHydrostatic
+                    resized = compiledWVT.waveVortexTransformWithResolution([18 14 11]);
+                    resizedCleanup = onCleanup(@()delete(resized));
+                    testCase.verifyEqual(resized.computationalBackend,"compiled");
+                    testCase.verifyError(@()compiledWVT.waveVortexTransformWithExplicitAntialiasing(),"WaveVortexModel:CompiledBackendUnsupportedAntialiasing");
+                    clear resizedCleanup
+
+                    restartPath = string(tempname)+".nc";
+                    restartCleanup = onCleanup(@()deleteIfPresent(restartPath));
+                    ncfile = compiledWVT.writeToFile(char(restartPath),shouldOverwriteExisting=true);
+                    ncfile.close();
+                    restoredMatlab = WVTransform.waveVortexTransformFromFile(char(restartPath));
+                    restoredCompiled = WVTransform.waveVortexTransformFromFile(char(restartPath),computationalBackend="compiled");
+                    restorationCleanup = onCleanup(@()deleteTransforms(restoredMatlab,restoredCompiled));
+                    testCase.verifyEqual(restoredMatlab.computationalBackend,"matlab");
+                    testCase.verifyEqual(restoredCompiled.computationalBackend,"compiled");
+                    clear restorationCleanup restartCleanup
+                end
+
+                compiledWVT.removeAllForcing();
+                testCase.verifyError(@()compiledWVT.nonlinearFlux(),"WaveVortexModel:CompiledBackendUnsupportedForcing");
+                clear transformCleanup
+            end
+            metrics = wv_compiled_backend_mex('moduleMetrics');
+            testCase.verifyEqual(metrics.kernelCount,0);
+            testCase.verifyEqual(metrics.activePlans,0);
+            testCase.verifyEqual(metrics.outstandingPlanningBytes,0);
+        end
     end
+end
+
+function deleteTransforms(varargin)
+for iTransform = 1:numel(varargin)
+    if ~isempty(varargin{iTransform}) && isvalid(varargin{iTransform})
+        delete(varargin{iTransform});
+    end
+end
+end
+
+function value = relativeError(actual,expected)
+value = max(abs(actual(:)-expected(:)),[],'omitmissing')/max(max(abs(expected(:)),[],'omitmissing'),realmin);
+end
+
+function deleteIfPresent(pathname)
+if isfile(pathname)
+    delete(pathname);
+end
 end
 
 function unexpectedDownload(~,~)

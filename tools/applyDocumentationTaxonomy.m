@@ -30,6 +30,9 @@ if className == "WVFourierStorageLayout"
     [topicPath,isDeveloper] = fourierStorageLayoutTopic(name);
 elseif className == "WVCompiledBackend"
     [topicPath,isDeveloper] = compiledBackendTopic(name);
+elseif className == "WVCompiledConstantStratificationBackend"
+    topicPath = "Compiled preview internals";
+    isDeveloper = true;
 elseif startsWith(className,"WVTransform")
     [topicPath,isDeveloper] = transformTopic(className,name);
 elseif className == "WVModel"
@@ -177,7 +180,7 @@ elseif ismember(name,["verticalModes","h","h_0","h_pm","Lr2", ...
     topicPath = "Inspect the domain — Spectral grid — Vertical modes and scaling";
 elseif ismember(name,["FMatrix","FinvMatrix","GMatrix","GinvMatrix"])
     topicPath = "Inspect the domain — Spectral grid — Vertical-mode transformation matrices";
-elseif ismember(name,["isHydrostatic","shouldAntialias"])
+elseif ismember(name,["isHydrostatic","shouldAntialias","computationalBackend","computationalBackendMetadata"])
     topicPath = "Inspect the domain — Transform configuration";
 elseif ismember(name,["diffX","diffY","diffZF","diffZG","intZF","intZG"])
     topicPath = "Differentiate and integrate fields";

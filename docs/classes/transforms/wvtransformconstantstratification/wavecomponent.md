@@ -3,7 +3,7 @@ layout: default
 title: waveComponent
 parent: WVTransformConstantStratification
 grand_parent: Transforms
-nav_order: 298
+nav_order: 300
 mathjax: true
 ---
 

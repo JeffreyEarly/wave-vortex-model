@@ -20,7 +20,7 @@ WaveVortexModel provides five transform families together with model integration
 | `WVTransformStratifiedQG` | Stratified quasigeostrophic flow. |
 | `WVTransformBarotropicQG` | Equivalent-barotropic quasigeostrophic flow. |
 
-The rotating transforms accept either hemisphere for `5 <= abs(latitude) <= 85`, including the endpoints. Horizontal grids may contain independently chosen positive even or odd grid counts. The built-in MATLAB FFT implementation is used by the documented transform constructors.
+The rotating transforms accept either hemisphere for `5 <= abs(latitude) <= 85`, including the endpoints. Horizontal grids may contain independently chosen positive even or odd grid counts. MATLAB remains the default implementation. Constant-stratification transforms may explicitly select the narrower [compiled nonlinear-flux preview](/users-guide/compiled-preview.html).
 
 Mode/index mappings accept scalars and column vectors. Resolution conversion and explicit antialiasing preserve coefficients identified by common integer mode numbers and initialize newly introduced modes to zero. Energy and, where defined, enstrophy agree between spectral and spatial representations within the transform discretization tolerance.
 
@@ -71,4 +71,4 @@ Custom operations and annotated variables use `WVOperation` and `WVVariableAnnot
 
 Optimization Toolbox is optional. `WVNoMotionProfileOperation` uses `lsqnonlin` when it is available and otherwise uses `fminsearch` with an advisory warning.
 
-WaveVortexModel uses MATLAB's builtin Fourier transforms. The experimental WaveVortex FFTW selector was retired after complete nonlinear-advection benchmarks did not justify its additional integration complexity. The reusable FFTWTransforms package remains independent of WaveVortexModel. The low-level barotropic FINUFFT path remains development machinery and is not selected through the documented interpolation options; FINUFFT is not a required package dependency.
+WaveVortexModel's ordinary transform methods use MATLAB's builtin Fourier transforms. The former fine-grained WaveVortex FFTW selector was retired after complete nonlinear-advection benchmarks did not justify its additional integration complexity. The compiled constant-stratification preview is different: it evaluates the complete ordinary nonlinear flux in one coarse C++ call using a locally built native FFTW provider. The reusable FFTWTransforms package remains independent of WaveVortexModel. The low-level barotropic FINUFFT path remains development machinery and is not selected through the documented interpolation options; FINUFFT is not a required package dependency.

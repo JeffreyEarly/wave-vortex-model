@@ -10,7 +10,7 @@ mathjax: true
 
 WaveVortexModel is developing a portable C++ numerical core for the constant-stratification nonlinear calculation. The initial contract deliberately contains no MATLAB, MEX, FFTW, or NetCDF types. MATLAB and a future standalone runtime will call the same numerical interface through separate adapters.
 
-No compiled backend is currently exposed to model users. The optimized MATLAB implementation remains the production path and the performance baseline.
+The optimized MATLAB implementation remains the default and the performance baseline. Constant-stratification transforms may explicitly select the compiled preview after locally building its native provider.
 
 ## Correspondence with MATLAB
 
@@ -88,14 +88,14 @@ The scientific stages retain their MATLAB names even where their execution is fu
 
 ## Thin MEX boundary
 
-The internal MEX adapter has four responsibilities:
+The MEX adapter has four responsibilities:
 
 1. Validate MATLAB types, dimensions, complex layout, and non-aliasing.
 2. Construct or retrieve one C++ context.
 3. Pass non-owning views to the portable entry point.
 4. Translate `WVKernelStatus` into a stable `WaveVortexModel:CompiledKernel:*` error.
 
-It does not implement transforms, retain authoritative MATLAB model state, or duplicate the numerical algorithm. The adapter and core are internal infrastructure; no model constructor selects them yet. Public backend selection, forcing validation, persistence behavior, and user operations remain separate integration work.
+It does not implement transforms, retain authoritative MATLAB model state, or duplicate the numerical algorithm. `WVCompiledConstantStratificationBackend` owns one MEX handle and exposes the core to `WVTransformConstantStratification` without moving numerical formulas into MATLAB.
 
 ## Source-only native provider
 
@@ -112,8 +112,25 @@ The initial provider supports Apple-silicon `maca64` with MATLAB R2025b or later
 
 The repository distributes the core, adapter, and build sources only. The downloaded archive, extracted FFTW source, compiled libraries, build cache, and MEX module are ignored local products and are never exported as package payload.
 
-## Integration boundary
+## MATLAB preview boundary
+
+After building native support explicitly, select the preview with:
+
+```matlab
+WVCompiledBackend.build();
+wvt = WVTransformConstantStratification(Lxyz,Nxyz,computationalBackend="compiled");
+```
+
+The default `computationalBackend="matlab"` path does not query or build native support. An explicit compiled request validates the provider, loaded libraries, contract, and numerical self-tests before creating a kernel. Failure is reported immediately and never falls back to MATLAB.
+
+The preview implements ordinary `nonlinearFlux` only when the forcing registry contains exactly the default `WVNonlinearAdvection`. The transform checks that invariant on every call, so later forcing changes cannot be silently omitted. Transform-level antialiasing remains part of the kernel configuration; conversion to a separate `WVAntialiasing` forcing is unsupported.
+
+Backend selection is runtime-only. Ordinary NetCDF restoration selects MATLAB, while `WVTransform.waveVortexTransformFromFile(path,computationalBackend="compiled")` is an explicit override for constant-stratification files. Provider paths, plans, handles, and backend metadata are never persisted.
+
+`computationalBackendMetadata` reports the requested and active implementation, native identities, contract, thread count, storage estimates, and live kernel metrics. The compiled preview is known to use more memory than MATLAB; explicit selection accepts that documented limitation.
+
+## Shared-runtime boundary
 
 The shared C++ core is intentionally usable by both a MATLAB/MEX preview and a future standalone runtime. It contains no MATLAB, MEX, NetCDF, FFTW, or Apple APIs. `WVFFTEngine` is the only transform boundary, and the native provider is one embedding-specific implementation. A future runtime can supply the same interface without carrying MATLAB ownership or capability machinery.
 
-The currently integrated infrastructure does not add a `computationalBackend` option and does not change package version or dependencies. Historical benchmark harnesses, provider sweeps, rejected schedules, and canonical engineering artifacts remain outside the production tree.
+The preview does not change package version or dependencies. Historical benchmark harnesses, provider sweeps, rejected schedules, and canonical engineering artifacts remain outside the production tree.

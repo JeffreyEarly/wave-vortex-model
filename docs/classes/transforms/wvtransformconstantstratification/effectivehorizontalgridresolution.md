@@ -3,7 +3,7 @@ layout: default
 title: effectiveHorizontalGridResolution
 parent: WVTransformConstantStratification
 grand_parent: Transforms
-nav_order: 107
+nav_order: 109
 mathjax: true
 ---
 

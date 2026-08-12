@@ -22,6 +22,7 @@ Initialize a WVTransform instance from an existing file
 + `path`  path to a NetCDF file
 + `iTime`  (optional) time index to initialize from (default 1).
 + `shouldReadOnly`  (optional) open the returned NetCDFFile read-only (default true).
++ `computationalBackend`  runtime backend override for constant-stratification transforms; default `"matlab"`
 
 ## Returns
 + `wvt`  an instance of a WVTransform subclass

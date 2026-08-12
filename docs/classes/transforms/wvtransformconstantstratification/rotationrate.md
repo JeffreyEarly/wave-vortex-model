@@ -3,7 +3,7 @@ layout: default
 title: rotationRate
 parent: WVTransformConstantStratification
 grand_parent: Transforms
-nav_order: 232
+nav_order: 234
 mathjax: true
 ---
 
