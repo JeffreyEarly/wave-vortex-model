@@ -16,6 +16,7 @@ arguments
     options.shouldWriteArtifacts (1,1) logical = true
     options.requireCleanSource (1,1) logical = true
     options.candidateResult (1,1) struct = struct()
+    options.pairedControlResult (1,1) struct = struct()
 end
 
 repositoryRoot = string(fileparts(fileparts(mfilename("fullpath"))));
@@ -38,7 +39,27 @@ activeStage = "baseline";
 try
     baseline = jsondecode(fileread(options.baselineArtifactPath));
     validateBaseline(baseline,size(options.sizes,1)*numel(options.hydrostatic));
-    results.baseline = struct("artifactPath",repositoryRelativePath(options.baselineArtifactPath,repositoryRoot),"sha256",sha256File(options.baselineArtifactPath),"source",baseline.source,"comparison",baseline.comparison);
+    results.historicalBaseline = struct("artifactPath",repositoryRelativePath(options.baselineArtifactPath,repositoryRoot),"sha256",sha256File(options.baselineArtifactPath),"source",baseline.source,"comparison",baseline.comparison);
+    activeStage = "paired-control";
+    pairedControl = options.pairedControlResult;
+    if isempty(fieldnames(pairedControl))
+        pairedControl = runCompiledPreviewBenchmark( ...
+            sizes=options.sizes, ...
+            hydrostatic=options.hydrostatic, ...
+            processRunCount=options.processRunCount, ...
+            warmupCount=options.warmupCount, ...
+            mediumSampleCount=options.mediumSampleCount, ...
+            largeSampleCount=options.largeSampleCount, ...
+            samplingIntervalSeconds=options.samplingIntervalSeconds, ...
+            plateauSeconds=options.plateauSeconds, ...
+            outputHoldSeconds=options.outputHoldSeconds, ...
+            shouldWriteArtifacts=false, ...
+            materializeBuiltinBufferForCompiled=true);
+    end
+    if pairedControl.status ~= "complete"
+        error("WaveVortexBenchmark:MemoryRefinementControlFailed","The paired eager-buffer control did not complete.");
+    end
+    results.pairedControl = pairedControl;
     activeStage = "candidate";
     candidate = options.candidateResult;
     if isempty(fieldnames(candidate))
@@ -62,7 +83,7 @@ try
     end
     results.candidate = candidate;
     activeStage = "aggregation";
-    results.comparison = comparisonRecords(baseline.comparison,candidate.comparison);
+    results.comparison = comparisonRecords(pairedControl.comparison,candidate.comparison);
     results.decision = compiledMemoryRefinementDecision(results.comparison);
     results.status = "complete";
     results.completedAtUTC = utcTimestamp();
@@ -98,7 +119,8 @@ results = struct( ...
     "completedAtUTC","", ...
     "source",struct("repository","JeffreyEarly/wave-vortex-model","commit",strtrim(string(commit)),"tree",strtrim(string(tree)),"isDirty",strlength(strtrim(string(dirty)))>0), ...
     "configuration",struct("suiteId","core-v1","candidateTimeRatioLimit",1.03,"matlabSpeedFloor",1.25,"correctnessTolerance",1e-12,"localExactReductionThreshold",0.05,"processRunCount",options.processRunCount,"warmupCount",options.warmupCount,"mediumSampleCount",options.mediumSampleCount,"largeSampleCount",options.largeSampleCount,"samplingIntervalSeconds",options.samplingIntervalSeconds), ...
-    "baseline",struct(), ...
+    "historicalBaseline",struct(), ...
+    "pairedControl",struct(), ...
     "candidate",struct(), ...
     "comparison",[], ...
     "decision",struct(), ...
@@ -112,15 +134,15 @@ if string(baseline.schemaVersion) ~= "compiled-preview-benchmark-v1" || string(b
 end
 end
 
-function comparison = comparisonRecords(baseline,candidate)
+function comparison = comparisonRecords(control,candidate)
 comparison = repmat(emptyComparison(),numel(candidate),1);
 for iCandidate = 1:numel(candidate)
     id = string(candidate(iCandidate).id);
-    iBaseline = find(string({baseline.id}) == id,1);
-    if isempty(iBaseline)
-        error("WaveVortexBenchmark:MemoryRefinementCaseMismatch","The baseline does not contain case %s.",id);
+    iControl = find(string({control.id}) == id,1);
+    if isempty(iControl)
+        error("WaveVortexBenchmark:MemoryRefinementCaseMismatch","The paired control does not contain case %s.",id);
     end
-    before = baseline(iBaseline);
+    before = control(iControl);
     after = candidate(iCandidate);
     comparison(iCandidate) = struct( ...
         "id",id, ...

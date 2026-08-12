@@ -84,11 +84,12 @@ classdef TestCompiledPreviewBenchmark < matlab.unittest.TestCase
 
         function memoryRefinementHarnessWritesDecisionArtifacts(testCase)
             baseline = memoryArtifactFixture(100,200,2.0,2.0,80,20);
+            control = memoryArtifactFixture(100,200,2.0,2.0,80,20);
             candidate = memoryArtifactFixture(102,170,1.7,1.7,80,20);
             baselinePath = fullfile(testCase.temporaryFolder,"baseline.json");
             outputDirectory = fullfile(testCase.temporaryFolder,"memory-result");
             writelines(jsonencode(baseline),baselinePath);
-            results = runCompiledMemoryRefinementBenchmark(sizes=[16 12 9],hydrostatic=true,baselineArtifactPath=baselinePath,outputDirectory=outputDirectory,candidateResult=candidate,requireCleanSource=false);
+            results = runCompiledMemoryRefinementBenchmark(sizes=[16 12 9],hydrostatic=true,baselineArtifactPath=baselinePath,outputDirectory=outputDirectory,candidateResult=candidate,pairedControlResult=control,requireCleanSource=false);
             testCase.verifyEqual(results.status,"complete");
             testCase.verifyEqual(results.decision.status,"MEMORY-IMPROVED");
             testCase.verifyTrue(results.decision.previewAvailable);
@@ -115,6 +116,12 @@ classdef TestCompiledPreviewBenchmark < matlab.unittest.TestCase
                 testCase.verifyEqual(string(buffer.allocationState),"unallocated");
                 testCase.verifyEqual(buffer.bytes,0);
             end
+
+            control = runCompiledPreviewBenchmark(sizes=[16 12 9],hydrostatic=true,processRunCount=1,warmupCount=0,mediumSampleCount=1,largeSampleCount=1,samplingIntervalSeconds=0.01,plateauSeconds=0.03,outputHoldSeconds=0.02,shouldWriteArtifacts=false,materializeBuiltinBufferForCompiled=true);
+            controlRun = control.runs(string({control.runs.implementation}) == "compiled");
+            controlBuffer = controlRun.ledger.transform.entries(string({controlRun.ledger.transform.entries.identifier}) == "horizontal.fullSpectrumBuffer");
+            testCase.verifyEqual(string(controlBuffer.allocationState),"allocated");
+            testCase.verifyGreaterThan(controlBuffer.bytes,0);
         end
 
         function injectedWorkerFailureWritesPartialArtifactAndRestoresState(testCase)

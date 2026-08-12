@@ -24,6 +24,10 @@ try
     writePhase(phasePath,"backend-construction");
     constructionTimer = tic;
     wvt = WVTransformConstantStratification([15000 15000 1300],definition.Nxyz,isHydrostatic=definition.isHydrostatic,shouldAntialias=definition.shouldAntialias,computationalBackend=backend);
+    if isfield(config,"materializeBuiltinBuffer") && config.materializeBuiltinBuffer
+        materializedBuffer = wvt.fastTransform.complexBuffer; %#ok<NASGU>
+        clear materializedBuffer
+    end
     constructionSeconds = toc(constructionTimer);
     stateRecord = load(config.statePath,"state");
     state = stateRecord.state;
