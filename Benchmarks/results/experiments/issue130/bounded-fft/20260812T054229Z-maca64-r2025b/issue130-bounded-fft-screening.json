@@ -1,0 +1,2340 @@
+{
+  "schemaVersion": "1.0.0",
+  "status": "complete",
+  "generatedAtUTC": "2026-08-12T05:42:38.888Z",
+  "completedAtUTC": "2026-08-12T05:43:16.786Z",
+  "source": {
+    "commit": "83028bad57a8e50d35603a44bc122ea080f31a14",
+    "tree": "cb68b277da2ff90e3fabaeccf0c578abe3179086",
+    "isDirty": false
+  },
+  "environment": {
+    "host": "Lyra",
+    "matlabRelease": "2025b",
+    "architecture": "maca64",
+    "provider": "native-neon-pthreads",
+    "fftwVersion": "3.3.11",
+    "threadBackend": "pthreads",
+    "threadCount": 16,
+    "baseLibrary": "/private/tmp/issue128-native-cache/providers/native-neon-pthreads-d2b85f7a608fbedd/install/lib/libfftw3.3.dylib",
+    "threadLibrary": "/private/tmp/issue128-native-cache/providers/native-neon-pthreads-d2b85f7a608fbedd/install/lib/libfftw3_threads.3.dylib",
+    "baseLibrarySha256": "8314e2296212c771a81ad52f3f7ac97fb8df700be45070c583f689725cb179d5",
+    "threadLibrarySha256": "b5f847b65919a3e2c1ec6aaa4fe127cd129f6400f20d244dd0fca0c1e3e11199"
+  },
+  "configuration": {
+    "schedule": "streamed-target-three-channel",
+    "horizontalZBatches": [
+      16,
+      32,
+      64,
+      0
+    ],
+    "verticalHalfRowBatches": [
+      256,
+      1024,
+      4096,
+      0
+    ],
+    "microbenchmarkWarmupCount": 1,
+    "microbenchmarkSampleCount": 3,
+    "microbenchmarkGate": 0.03,
+    "completeProcessCount": 1,
+    "completeWarmupCount": 1,
+    "completeSampleCount": 3,
+    "correctnessTolerance": 1E-12,
+    "largeCasesRun": false,
+    "freshProcessRSSRun": false
+  },
+  "builds": [
+    {
+      "id": "zall-rowsall",
+      "horizontalZBatch": 0,
+      "verticalHalfRowBatch": 0,
+      "module": "wv_issue130_zall_rowsall",
+      "mexPath": "/private/tmp/issue130-lyra-6ZrRPy/bounded-mex/wv_issue130_zall_rowsall.mexmaca64",
+      "mexSha256": "bfa11ef53bbd869e55897e4956f7cc0cabf144c9c6e85454b786597c74ba0f0f"
+    },
+    {
+      "id": "zall-rows256",
+      "horizontalZBatch": 0,
+      "verticalHalfRowBatch": 256,
+      "module": "wv_issue130_zall_rows256",
+      "mexPath": "/private/tmp/issue130-lyra-6ZrRPy/bounded-mex/wv_issue130_zall_rows256.mexmaca64",
+      "mexSha256": "80e23ae7953e2b6dfa817af982c7b67d36a36a29201b92655d53d4a77751fd2d"
+    },
+    {
+      "id": "zall-rows1024",
+      "horizontalZBatch": 0,
+      "verticalHalfRowBatch": 1024,
+      "module": "wv_issue130_zall_rows1024",
+      "mexPath": "/private/tmp/issue130-lyra-6ZrRPy/bounded-mex/wv_issue130_zall_rows1024.mexmaca64",
+      "mexSha256": "c91d4962c53027ca27f6a43f86fb8d0977042a381c447a93174daa728fa4c075"
+    },
+    {
+      "id": "zall-rows4096",
+      "horizontalZBatch": 0,
+      "verticalHalfRowBatch": 4096,
+      "module": "wv_issue130_zall_rows4096",
+      "mexPath": "/private/tmp/issue130-lyra-6ZrRPy/bounded-mex/wv_issue130_zall_rows4096.mexmaca64",
+      "mexSha256": "4d7057c8e4cd4a71235e5f5d94f67902b86495df19b2f36601e77411b49396f6"
+    },
+    {
+      "id": "z16-rowsall",
+      "horizontalZBatch": 16,
+      "verticalHalfRowBatch": 0,
+      "module": "wv_issue130_z16_rowsall",
+      "mexPath": "/private/tmp/issue130-lyra-6ZrRPy/bounded-mex/wv_issue130_z16_rowsall.mexmaca64",
+      "mexSha256": "38fb7b12a4b20d42ab159b63f567ad3dae1ac12f93cf28ef9a7ee2a072276ac0"
+    },
+    {
+      "id": "z16-rows256",
+      "horizontalZBatch": 16,
+      "verticalHalfRowBatch": 256,
+      "module": "wv_issue130_z16_rows256",
+      "mexPath": "/private/tmp/issue130-lyra-6ZrRPy/bounded-mex/wv_issue130_z16_rows256.mexmaca64",
+      "mexSha256": "6ec84eddc4d12600ab04bea133e85e2ca2d905f1c8eac981df4532101d753cd7"
+    },
+    {
+      "id": "z16-rows1024",
+      "horizontalZBatch": 16,
+      "verticalHalfRowBatch": 1024,
+      "module": "wv_issue130_z16_rows1024",
+      "mexPath": "/private/tmp/issue130-lyra-6ZrRPy/bounded-mex/wv_issue130_z16_rows1024.mexmaca64",
+      "mexSha256": "dbb823519b5884c09dd9eb1bb1530b5f9378ef4906199000e5bc25f42fd38442"
+    },
+    {
+      "id": "z16-rows4096",
+      "horizontalZBatch": 16,
+      "verticalHalfRowBatch": 4096,
+      "module": "wv_issue130_z16_rows4096",
+      "mexPath": "/private/tmp/issue130-lyra-6ZrRPy/bounded-mex/wv_issue130_z16_rows4096.mexmaca64",
+      "mexSha256": "2abf1ae76b13bd2955a4fbf91d776c228b801c0ed6167b896b44bce35c01b60f"
+    },
+    {
+      "id": "z32-rowsall",
+      "horizontalZBatch": 32,
+      "verticalHalfRowBatch": 0,
+      "module": "wv_issue130_z32_rowsall",
+      "mexPath": "/private/tmp/issue130-lyra-6ZrRPy/bounded-mex/wv_issue130_z32_rowsall.mexmaca64",
+      "mexSha256": "ccd0ebe30a3b2d9f4ceeb0fd65073bb473fe21c389f4fba066b7eec8219675f3"
+    },
+    {
+      "id": "z32-rows256",
+      "horizontalZBatch": 32,
+      "verticalHalfRowBatch": 256,
+      "module": "wv_issue130_z32_rows256",
+      "mexPath": "/private/tmp/issue130-lyra-6ZrRPy/bounded-mex/wv_issue130_z32_rows256.mexmaca64",
+      "mexSha256": "80db0ee99798d6a4cd118fb556bbc48d7984f9eb534c3268744e2afe3d0875d5"
+    },
+    {
+      "id": "z32-rows1024",
+      "horizontalZBatch": 32,
+      "verticalHalfRowBatch": 1024,
+      "module": "wv_issue130_z32_rows1024",
+      "mexPath": "/private/tmp/issue130-lyra-6ZrRPy/bounded-mex/wv_issue130_z32_rows1024.mexmaca64",
+      "mexSha256": "96d2a8de5879de438a877cc4b189da4bba0504368a8fbfe40955eeafa9211b79"
+    },
+    {
+      "id": "z32-rows4096",
+      "horizontalZBatch": 32,
+      "verticalHalfRowBatch": 4096,
+      "module": "wv_issue130_z32_rows4096",
+      "mexPath": "/private/tmp/issue130-lyra-6ZrRPy/bounded-mex/wv_issue130_z32_rows4096.mexmaca64",
+      "mexSha256": "1a659ed4ad2e3ca066a7cb8c87c6088eebc1049703d930592e2945e00cc873d2"
+    },
+    {
+      "id": "z64-rowsall",
+      "horizontalZBatch": 64,
+      "verticalHalfRowBatch": 0,
+      "module": "wv_issue130_z64_rowsall",
+      "mexPath": "/private/tmp/issue130-lyra-6ZrRPy/bounded-mex/wv_issue130_z64_rowsall.mexmaca64",
+      "mexSha256": "f22f5b698700057ca629f85237f28a62486f992b06b83ef0ae8d72e0e6401e65"
+    },
+    {
+      "id": "z64-rows256",
+      "horizontalZBatch": 64,
+      "verticalHalfRowBatch": 256,
+      "module": "wv_issue130_z64_rows256",
+      "mexPath": "/private/tmp/issue130-lyra-6ZrRPy/bounded-mex/wv_issue130_z64_rows256.mexmaca64",
+      "mexSha256": "38267557fa0f07ad0e685dd7bb2d082a14328bc48d6618d81377f9a33ca910cb"
+    },
+    {
+      "id": "z64-rows1024",
+      "horizontalZBatch": 64,
+      "verticalHalfRowBatch": 1024,
+      "module": "wv_issue130_z64_rows1024",
+      "mexPath": "/private/tmp/issue130-lyra-6ZrRPy/bounded-mex/wv_issue130_z64_rows1024.mexmaca64",
+      "mexSha256": "bb4521d9c399abe9c123c827c5aee3575f1c67791f305267575e97513f08679e"
+    },
+    {
+      "id": "z64-rows4096",
+      "horizontalZBatch": 64,
+      "verticalHalfRowBatch": 4096,
+      "module": "wv_issue130_z64_rows4096",
+      "mexPath": "/private/tmp/issue130-lyra-6ZrRPy/bounded-mex/wv_issue130_z64_rows4096.mexmaca64",
+      "mexSha256": "65d2df0ed87a38ab65c747673204b067259f0875ad112793f3896acdba8b60fc"
+    }
+  ],
+  "cases": [
+    {
+      "id": "constant-hydrostatic-256x256x65",
+      "Nxyz": [
+        256,
+        256,
+        65
+      ],
+      "isHydrostatic": true,
+      "seed": 1.302561E+6,
+      "configurations": [
+        {
+          "id": "zall-rowsall",
+          "horizontalZBatch": 0,
+          "verticalHalfRowBatch": 0,
+          "module": "wv_issue130_zall_rowsall",
+          "mexSha256": "bfa11ef53bbd869e55897e4956f7cc0cabf144c9c6e85454b786597c74ba0f0f",
+          "correctnessPassed": true,
+          "errors": {
+            "Fp": 8.951085513040255E-15,
+            "Fm": 9.2221156754775031E-15,
+            "F0": 7.0938308550610454E-15
+          },
+          "maximumRelativeError": 9.2221156754775031E-15,
+          "horizontalFFTSamplesSeconds": [
+            0.016942791,
+            0.017144749,
+            0.01701671
+          ],
+          "horizontalFFTMedianSeconds": 0.01701671,
+          "verticalFFTSamplesSeconds": [
+            0.023862002,
+            0.024166792999999995,
+            0.022788834
+          ],
+          "verticalFFTMedianSeconds": 0.023862002,
+          "affectedPipelineSamplesSeconds": [
+            0.040804793,
+            0.041311541999999993,
+            0.039805544
+          ],
+          "affectedPipelineMedianSeconds": 0.040804793,
+          "affectedPipelineImprovement": 0,
+          "microbenchmarkQualified": true,
+          "complete": {
+            "warmupCount": 1,
+            "sampleCount": 3,
+            "totalSamplesSeconds": [
+              0.05570683333333333,
+              0.056350791666666664,
+              0.05628325
+            ],
+            "totalMedianSeconds": 0.05628325,
+            "internalSamplesSeconds": [
+              0.055567458,
+              0.056186875,
+              0.056124125
+            ],
+            "internalMedianSeconds": 0.056124125,
+            "controlImprovement": 0,
+            "improvesControl": false,
+            "planCount": 17,
+            "planBytes": 1768,
+            "logicalPlanCount": 17,
+            "nativeExecutionCount": 18,
+            "horizontalNativeExecutionCount": 7,
+            "verticalNativeExecutionCount": 11
+          },
+          "metrics": {
+            "fftBatchSchedule": "streamed-all-all",
+            "horizontalZBatchSize": 0,
+            "verticalHalfRowBatchSize": 0,
+            "planCount": 17,
+            "logicalPlanCount": 17,
+            "planBytes": 1768,
+            "nativeExecutionCount": 18,
+            "horizontalNativeExecutionCount": 7,
+            "verticalNativeExecutionCount": 11,
+            "logicalExecutionCount": 18,
+            "horizontalLogicalExecutionCount": 7,
+            "verticalLogicalExecutionCount": 11,
+            "horizontalFFTSeconds": 0.01701671,
+            "verticalFFTSeconds": 0.022788834
+          }
+        },
+        {
+          "id": "zall-rows256",
+          "horizontalZBatch": 0,
+          "verticalHalfRowBatch": 256,
+          "module": "wv_issue130_zall_rows256",
+          "mexSha256": "80e23ae7953e2b6dfa817af982c7b67d36a36a29201b92655d53d4a77751fd2d",
+          "correctnessPassed": true,
+          "errors": {
+            "Fp": 8.951085513040255E-15,
+            "Fm": 9.2221156754775031E-15,
+            "F0": 7.0938308550610454E-15
+          },
+          "maximumRelativeError": 9.2221156754775031E-15,
+          "horizontalFFTSamplesSeconds": [
+            0.018373708000000002,
+            0.018127625999999997,
+            0.017668749
+          ],
+          "horizontalFFTMedianSeconds": 0.018127625999999997,
+          "verticalFFTSamplesSeconds": [
+            0.072691457,
+            0.074334208,
+            0.072354752000000008
+          ],
+          "verticalFFTMedianSeconds": 0.072691457,
+          "affectedPipelineSamplesSeconds": [
+            0.091065165,
+            0.092461833999999993,
+            0.090023501
+          ],
+          "affectedPipelineMedianSeconds": 0.091065165,
+          "affectedPipelineImprovement": -1.2317271649926029,
+          "microbenchmarkQualified": false,
+          "complete": {
+            "warmupCount": 0,
+            "sampleCount": 0,
+            "totalSamplesSeconds": [],
+            "totalMedianSeconds": null,
+            "internalSamplesSeconds": [],
+            "internalMedianSeconds": null,
+            "controlImprovement": null,
+            "improvesControl": false,
+            "planCount": null,
+            "planBytes": null,
+            "logicalPlanCount": null,
+            "nativeExecutionCount": null,
+            "horizontalNativeExecutionCount": null,
+            "verticalNativeExecutionCount": null
+          },
+          "metrics": {
+            "fftBatchSchedule": "streamed-bounded-main-tail",
+            "horizontalZBatchSize": 0,
+            "verticalHalfRowBatchSize": 256,
+            "planCount": 17,
+            "logicalPlanCount": 17,
+            "planBytes": 1768,
+            "nativeExecutionCount": 1426,
+            "horizontalNativeExecutionCount": 7,
+            "verticalNativeExecutionCount": 1419,
+            "logicalExecutionCount": 18,
+            "horizontalLogicalExecutionCount": 7,
+            "verticalLogicalExecutionCount": 11,
+            "horizontalFFTSeconds": 0.017668749,
+            "verticalFFTSeconds": 0.072354752000000008
+          }
+        },
+        {
+          "id": "zall-rows1024",
+          "horizontalZBatch": 0,
+          "verticalHalfRowBatch": 1024,
+          "module": "wv_issue130_zall_rows1024",
+          "mexSha256": "c91d4962c53027ca27f6a43f86fb8d0977042a381c447a93174daa728fa4c075",
+          "correctnessPassed": true,
+          "errors": {
+            "Fp": 8.951085513040255E-15,
+            "Fm": 9.2221156754775031E-15,
+            "F0": 7.0938308550610454E-15
+          },
+          "maximumRelativeError": 9.2221156754775031E-15,
+          "horizontalFFTSamplesSeconds": [
+            0.017293667000000002,
+            0.017380292000000002,
+            0.017767627
+          ],
+          "horizontalFFTMedianSeconds": 0.017380292000000002,
+          "verticalFFTSamplesSeconds": [
+            0.033520793,
+            0.033834667000000006,
+            0.033978500999999994
+          ],
+          "verticalFFTMedianSeconds": 0.033834667000000006,
+          "affectedPipelineSamplesSeconds": [
+            0.050814460000000006,
+            0.051214959000000004,
+            0.051746127999999995
+          ],
+          "affectedPipelineMedianSeconds": 0.051214959000000004,
+          "affectedPipelineImprovement": -0.2551211569680063,
+          "microbenchmarkQualified": false,
+          "complete": {
+            "warmupCount": 0,
+            "sampleCount": 0,
+            "totalSamplesSeconds": [],
+            "totalMedianSeconds": null,
+            "internalSamplesSeconds": [],
+            "internalMedianSeconds": null,
+            "controlImprovement": null,
+            "improvesControl": false,
+            "planCount": null,
+            "planBytes": null,
+            "logicalPlanCount": null,
+            "nativeExecutionCount": null,
+            "horizontalNativeExecutionCount": null,
+            "verticalNativeExecutionCount": null
+          },
+          "metrics": {
+            "fftBatchSchedule": "streamed-bounded-main-tail",
+            "horizontalZBatchSize": 0,
+            "verticalHalfRowBatchSize": 1024,
+            "planCount": 29,
+            "logicalPlanCount": 17,
+            "planBytes": 2056,
+            "nativeExecutionCount": 370,
+            "horizontalNativeExecutionCount": 7,
+            "verticalNativeExecutionCount": 363,
+            "logicalExecutionCount": 18,
+            "horizontalLogicalExecutionCount": 7,
+            "verticalLogicalExecutionCount": 11,
+            "horizontalFFTSeconds": 0.017767627,
+            "verticalFFTSeconds": 0.033978500999999994
+          }
+        },
+        {
+          "id": "zall-rows4096",
+          "horizontalZBatch": 0,
+          "verticalHalfRowBatch": 4096,
+          "module": "wv_issue130_zall_rows4096",
+          "mexSha256": "4d7057c8e4cd4a71235e5f5d94f67902b86495df19b2f36601e77411b49396f6",
+          "correctnessPassed": true,
+          "errors": {
+            "Fp": 8.951085513040255E-15,
+            "Fm": 9.2221156754775031E-15,
+            "F0": 7.0938308550610454E-15
+          },
+          "maximumRelativeError": 9.2221156754775031E-15,
+          "horizontalFFTSamplesSeconds": [
+            0.017392208,
+            0.017404877,
+            0.017358793
+          ],
+          "horizontalFFTMedianSeconds": 0.017392208,
+          "verticalFFTSamplesSeconds": [
+            0.025409126000000004,
+            0.025490874,
+            0.025637374
+          ],
+          "verticalFFTMedianSeconds": 0.025490874,
+          "affectedPipelineSamplesSeconds": [
+            0.042801334,
+            0.042895750999999996,
+            0.042996167
+          ],
+          "affectedPipelineMedianSeconds": 0.042895750999999996,
+          "affectedPipelineImprovement": -0.05124295079747121,
+          "microbenchmarkQualified": false,
+          "complete": {
+            "warmupCount": 0,
+            "sampleCount": 0,
+            "totalSamplesSeconds": [],
+            "totalMedianSeconds": null,
+            "internalSamplesSeconds": [],
+            "internalMedianSeconds": null,
+            "controlImprovement": null,
+            "improvesControl": false,
+            "planCount": null,
+            "planBytes": null,
+            "logicalPlanCount": null,
+            "nativeExecutionCount": null,
+            "horizontalNativeExecutionCount": null,
+            "verticalNativeExecutionCount": null
+          },
+          "metrics": {
+            "fftBatchSchedule": "streamed-bounded-main-tail",
+            "horizontalZBatchSize": 0,
+            "verticalHalfRowBatchSize": 4096,
+            "planCount": 29,
+            "logicalPlanCount": 17,
+            "planBytes": 2056,
+            "nativeExecutionCount": 106,
+            "horizontalNativeExecutionCount": 7,
+            "verticalNativeExecutionCount": 99,
+            "logicalExecutionCount": 18,
+            "horizontalLogicalExecutionCount": 7,
+            "verticalLogicalExecutionCount": 11,
+            "horizontalFFTSeconds": 0.017358793,
+            "verticalFFTSeconds": 0.025637374
+          }
+        },
+        {
+          "id": "z16-rowsall",
+          "horizontalZBatch": 16,
+          "verticalHalfRowBatch": 0,
+          "module": "wv_issue130_z16_rowsall",
+          "mexSha256": "38fb7b12a4b20d42ab159b63f567ad3dae1ac12f93cf28ef9a7ee2a072276ac0",
+          "correctnessPassed": true,
+          "errors": {
+            "Fp": 8.951085513040255E-15,
+            "Fm": 9.2221156754775031E-15,
+            "F0": 7.0938308550610454E-15
+          },
+          "maximumRelativeError": 9.2221156754775031E-15,
+          "horizontalFFTSamplesSeconds": [
+            0.018299415000000003,
+            0.017794209,
+            0.018059167
+          ],
+          "horizontalFFTMedianSeconds": 0.018059167,
+          "verticalFFTSamplesSeconds": [
+            0.022866249,
+            0.022911625,
+            0.022455874
+          ],
+          "verticalFFTMedianSeconds": 0.022866249,
+          "affectedPipelineSamplesSeconds": [
+            0.041165664000000005,
+            0.040705833999999996,
+            0.040515041
+          ],
+          "affectedPipelineMedianSeconds": 0.040705833999999996,
+          "affectedPipelineImprovement": 0.002425180786972847,
+          "microbenchmarkQualified": false,
+          "complete": {
+            "warmupCount": 0,
+            "sampleCount": 0,
+            "totalSamplesSeconds": [],
+            "totalMedianSeconds": null,
+            "internalSamplesSeconds": [],
+            "internalMedianSeconds": null,
+            "controlImprovement": null,
+            "improvesControl": false,
+            "planCount": null,
+            "planBytes": null,
+            "logicalPlanCount": null,
+            "nativeExecutionCount": null,
+            "horizontalNativeExecutionCount": null,
+            "verticalNativeExecutionCount": null
+          },
+          "metrics": {
+            "fftBatchSchedule": "streamed-bounded-main-tail",
+            "horizontalZBatchSize": 16,
+            "verticalHalfRowBatchSize": 0,
+            "planCount": 22,
+            "logicalPlanCount": 17,
+            "planBytes": 1888,
+            "nativeExecutionCount": 46,
+            "horizontalNativeExecutionCount": 35,
+            "verticalNativeExecutionCount": 11,
+            "logicalExecutionCount": 18,
+            "horizontalLogicalExecutionCount": 7,
+            "verticalLogicalExecutionCount": 11,
+            "horizontalFFTSeconds": 0.018059167,
+            "verticalFFTSeconds": 0.022455874
+          }
+        },
+        {
+          "id": "z16-rows256",
+          "horizontalZBatch": 16,
+          "verticalHalfRowBatch": 256,
+          "module": "wv_issue130_z16_rows256",
+          "mexSha256": "6ec84eddc4d12600ab04bea133e85e2ca2d905f1c8eac981df4532101d753cd7",
+          "correctnessPassed": true,
+          "errors": {
+            "Fp": 8.951085513040255E-15,
+            "Fm": 9.2221156754775031E-15,
+            "F0": 7.0938308550610454E-15
+          },
+          "maximumRelativeError": 9.2221156754775031E-15,
+          "horizontalFFTSamplesSeconds": [
+            0.018539833,
+            0.018702292000000002,
+            0.018472124
+          ],
+          "horizontalFFTMedianSeconds": 0.018539833,
+          "verticalFFTSamplesSeconds": [
+            0.072402875,
+            0.072962542,
+            0.073289289999999993
+          ],
+          "verticalFFTMedianSeconds": 0.072962542,
+          "affectedPipelineSamplesSeconds": [
+            0.090942708000000011,
+            0.091664834,
+            0.091761413999999986
+          ],
+          "affectedPipelineMedianSeconds": 0.091664834,
+          "affectedPipelineImprovement": -1.2464232081755688,
+          "microbenchmarkQualified": false,
+          "complete": {
+            "warmupCount": 0,
+            "sampleCount": 0,
+            "totalSamplesSeconds": [],
+            "totalMedianSeconds": null,
+            "internalSamplesSeconds": [],
+            "internalMedianSeconds": null,
+            "controlImprovement": null,
+            "improvesControl": false,
+            "planCount": null,
+            "planBytes": null,
+            "logicalPlanCount": null,
+            "nativeExecutionCount": null,
+            "horizontalNativeExecutionCount": null,
+            "verticalNativeExecutionCount": null
+          },
+          "metrics": {
+            "fftBatchSchedule": "streamed-bounded-main-tail",
+            "horizontalZBatchSize": 16,
+            "verticalHalfRowBatchSize": 256,
+            "planCount": 22,
+            "logicalPlanCount": 17,
+            "planBytes": 1888,
+            "nativeExecutionCount": 1454,
+            "horizontalNativeExecutionCount": 35,
+            "verticalNativeExecutionCount": 1419,
+            "logicalExecutionCount": 18,
+            "horizontalLogicalExecutionCount": 7,
+            "verticalLogicalExecutionCount": 11,
+            "horizontalFFTSeconds": 0.018472124,
+            "verticalFFTSeconds": 0.073289289999999993
+          }
+        },
+        {
+          "id": "z16-rows1024",
+          "horizontalZBatch": 16,
+          "verticalHalfRowBatch": 1024,
+          "module": "wv_issue130_z16_rows1024",
+          "mexSha256": "dbb823519b5884c09dd9eb1bb1530b5f9378ef4906199000e5bc25f42fd38442",
+          "correctnessPassed": true,
+          "errors": {
+            "Fp": 8.951085513040255E-15,
+            "Fm": 9.2221156754775031E-15,
+            "F0": 7.0938308550610454E-15
+          },
+          "maximumRelativeError": 9.2221156754775031E-15,
+          "horizontalFFTSamplesSeconds": [
+            0.018658457999999996,
+            0.018815665,
+            0.018781749
+          ],
+          "horizontalFFTMedianSeconds": 0.018781749,
+          "verticalFFTSamplesSeconds": [
+            0.036808626,
+            0.036847250000000005,
+            0.035649623
+          ],
+          "verticalFFTMedianSeconds": 0.036808626,
+          "affectedPipelineSamplesSeconds": [
+            0.055467083999999993,
+            0.055662915000000007,
+            0.054431372
+          ],
+          "affectedPipelineMedianSeconds": 0.055467083999999993,
+          "affectedPipelineImprovement": -0.35932766525736315,
+          "microbenchmarkQualified": false,
+          "complete": {
+            "warmupCount": 0,
+            "sampleCount": 0,
+            "totalSamplesSeconds": [],
+            "totalMedianSeconds": null,
+            "internalSamplesSeconds": [],
+            "internalMedianSeconds": null,
+            "controlImprovement": null,
+            "improvesControl": false,
+            "planCount": null,
+            "planBytes": null,
+            "logicalPlanCount": null,
+            "nativeExecutionCount": null,
+            "horizontalNativeExecutionCount": null,
+            "verticalNativeExecutionCount": null
+          },
+          "metrics": {
+            "fftBatchSchedule": "streamed-bounded-main-tail",
+            "horizontalZBatchSize": 16,
+            "verticalHalfRowBatchSize": 1024,
+            "planCount": 34,
+            "logicalPlanCount": 17,
+            "planBytes": 2176,
+            "nativeExecutionCount": 398,
+            "horizontalNativeExecutionCount": 35,
+            "verticalNativeExecutionCount": 363,
+            "logicalExecutionCount": 18,
+            "horizontalLogicalExecutionCount": 7,
+            "verticalLogicalExecutionCount": 11,
+            "horizontalFFTSeconds": 0.018781749,
+            "verticalFFTSeconds": 0.035649623
+          }
+        },
+        {
+          "id": "z16-rows4096",
+          "horizontalZBatch": 16,
+          "verticalHalfRowBatch": 4096,
+          "module": "wv_issue130_z16_rows4096",
+          "mexSha256": "2abf1ae76b13bd2955a4fbf91d776c228b801c0ed6167b896b44bce35c01b60f",
+          "correctnessPassed": true,
+          "errors": {
+            "Fp": 8.951085513040255E-15,
+            "Fm": 9.2221156754775031E-15,
+            "F0": 7.0938308550610454E-15
+          },
+          "maximumRelativeError": 9.2221156754775031E-15,
+          "horizontalFFTSamplesSeconds": [
+            0.018574501000000004,
+            0.018723582000000003,
+            0.01852075
+          ],
+          "horizontalFFTMedianSeconds": 0.018574501000000004,
+          "verticalFFTSamplesSeconds": [
+            0.026511748999999998,
+            0.025990501000000006,
+            0.026209126
+          ],
+          "verticalFFTMedianSeconds": 0.026209126,
+          "affectedPipelineSamplesSeconds": [
+            0.04508625,
+            0.044714083000000009,
+            0.044729876
+          ],
+          "affectedPipelineMedianSeconds": 0.044729876,
+          "affectedPipelineImprovement": -0.096191714537064321,
+          "microbenchmarkQualified": false,
+          "complete": {
+            "warmupCount": 0,
+            "sampleCount": 0,
+            "totalSamplesSeconds": [],
+            "totalMedianSeconds": null,
+            "internalSamplesSeconds": [],
+            "internalMedianSeconds": null,
+            "controlImprovement": null,
+            "improvesControl": false,
+            "planCount": null,
+            "planBytes": null,
+            "logicalPlanCount": null,
+            "nativeExecutionCount": null,
+            "horizontalNativeExecutionCount": null,
+            "verticalNativeExecutionCount": null
+          },
+          "metrics": {
+            "fftBatchSchedule": "streamed-bounded-main-tail",
+            "horizontalZBatchSize": 16,
+            "verticalHalfRowBatchSize": 4096,
+            "planCount": 34,
+            "logicalPlanCount": 17,
+            "planBytes": 2176,
+            "nativeExecutionCount": 134,
+            "horizontalNativeExecutionCount": 35,
+            "verticalNativeExecutionCount": 99,
+            "logicalExecutionCount": 18,
+            "horizontalLogicalExecutionCount": 7,
+            "verticalLogicalExecutionCount": 11,
+            "horizontalFFTSeconds": 0.01852075,
+            "verticalFFTSeconds": 0.026209126
+          }
+        },
+        {
+          "id": "z32-rowsall",
+          "horizontalZBatch": 32,
+          "verticalHalfRowBatch": 0,
+          "module": "wv_issue130_z32_rowsall",
+          "mexSha256": "ccd0ebe30a3b2d9f4ceeb0fd65073bb473fe21c389f4fba066b7eec8219675f3",
+          "correctnessPassed": true,
+          "errors": {
+            "Fp": 8.951085513040255E-15,
+            "Fm": 9.2221156754775031E-15,
+            "F0": 7.0938308550610454E-15
+          },
+          "maximumRelativeError": 9.2221156754775031E-15,
+          "horizontalFFTSamplesSeconds": [
+            0.019730416,
+            0.019565876,
+            0.021168373
+          ],
+          "horizontalFFTMedianSeconds": 0.019730416,
+          "verticalFFTSamplesSeconds": [
+            0.025670039999999998,
+            0.024865793,
+            0.026195916
+          ],
+          "verticalFFTMedianSeconds": 0.025670039999999998,
+          "affectedPipelineSamplesSeconds": [
+            0.045400456,
+            0.044431669,
+            0.047364289000000004
+          ],
+          "affectedPipelineMedianSeconds": 0.045400456,
+          "affectedPipelineImprovement": -0.11262556827576597,
+          "microbenchmarkQualified": false,
+          "complete": {
+            "warmupCount": 0,
+            "sampleCount": 0,
+            "totalSamplesSeconds": [],
+            "totalMedianSeconds": null,
+            "internalSamplesSeconds": [],
+            "internalMedianSeconds": null,
+            "controlImprovement": null,
+            "improvesControl": false,
+            "planCount": null,
+            "planBytes": null,
+            "logicalPlanCount": null,
+            "nativeExecutionCount": null,
+            "horizontalNativeExecutionCount": null,
+            "verticalNativeExecutionCount": null
+          },
+          "metrics": {
+            "fftBatchSchedule": "streamed-bounded-main-tail",
+            "horizontalZBatchSize": 32,
+            "verticalHalfRowBatchSize": 0,
+            "planCount": 22,
+            "logicalPlanCount": 17,
+            "planBytes": 1888,
+            "nativeExecutionCount": 32,
+            "horizontalNativeExecutionCount": 21,
+            "verticalNativeExecutionCount": 11,
+            "logicalExecutionCount": 18,
+            "horizontalLogicalExecutionCount": 7,
+            "verticalLogicalExecutionCount": 11,
+            "horizontalFFTSeconds": 0.021168373,
+            "verticalFFTSeconds": 0.026195916
+          }
+        },
+        {
+          "id": "z32-rows256",
+          "horizontalZBatch": 32,
+          "verticalHalfRowBatch": 256,
+          "module": "wv_issue130_z32_rows256",
+          "mexSha256": "80db0ee99798d6a4cd118fb556bbc48d7984f9eb534c3268744e2afe3d0875d5",
+          "correctnessPassed": true,
+          "errors": {
+            "Fp": 8.951085513040255E-15,
+            "Fm": 9.2221156754775031E-15,
+            "F0": 7.0938308550610454E-15
+          },
+          "maximumRelativeError": 9.2221156754775031E-15,
+          "horizontalFFTSamplesSeconds": [
+            0.018470209,
+            0.019582918,
+            0.018451833
+          ],
+          "horizontalFFTMedianSeconds": 0.018470209,
+          "verticalFFTSamplesSeconds": [
+            0.069956456,
+            0.070738040999999988,
+            0.072430041
+          ],
+          "verticalFFTMedianSeconds": 0.070738040999999988,
+          "affectedPipelineSamplesSeconds": [
+            0.088426665,
+            0.090320958999999992,
+            0.090881874
+          ],
+          "affectedPipelineMedianSeconds": 0.090320958999999992,
+          "affectedPipelineImprovement": -1.2134889643969031,
+          "microbenchmarkQualified": false,
+          "complete": {
+            "warmupCount": 0,
+            "sampleCount": 0,
+            "totalSamplesSeconds": [],
+            "totalMedianSeconds": null,
+            "internalSamplesSeconds": [],
+            "internalMedianSeconds": null,
+            "controlImprovement": null,
+            "improvesControl": false,
+            "planCount": null,
+            "planBytes": null,
+            "logicalPlanCount": null,
+            "nativeExecutionCount": null,
+            "horizontalNativeExecutionCount": null,
+            "verticalNativeExecutionCount": null
+          },
+          "metrics": {
+            "fftBatchSchedule": "streamed-bounded-main-tail",
+            "horizontalZBatchSize": 32,
+            "verticalHalfRowBatchSize": 256,
+            "planCount": 22,
+            "logicalPlanCount": 17,
+            "planBytes": 1888,
+            "nativeExecutionCount": 1440,
+            "horizontalNativeExecutionCount": 21,
+            "verticalNativeExecutionCount": 1419,
+            "logicalExecutionCount": 18,
+            "horizontalLogicalExecutionCount": 7,
+            "verticalLogicalExecutionCount": 11,
+            "horizontalFFTSeconds": 0.018451833,
+            "verticalFFTSeconds": 0.072430041
+          }
+        },
+        {
+          "id": "z32-rows1024",
+          "horizontalZBatch": 32,
+          "verticalHalfRowBatch": 1024,
+          "module": "wv_issue130_z32_rows1024",
+          "mexSha256": "96d2a8de5879de438a877cc4b189da4bba0504368a8fbfe40955eeafa9211b79",
+          "correctnessPassed": true,
+          "errors": {
+            "Fp": 8.951085513040255E-15,
+            "Fm": 9.2221156754775031E-15,
+            "F0": 7.0938308550610454E-15
+          },
+          "maximumRelativeError": 9.2221156754775031E-15,
+          "horizontalFFTSamplesSeconds": [
+            0.01907775,
+            0.018012085,
+            0.018403834999999997
+          ],
+          "horizontalFFTMedianSeconds": 0.018403834999999997,
+          "verticalFFTSamplesSeconds": [
+            0.034722665,
+            0.035268918,
+            0.034904501000000004
+          ],
+          "verticalFFTMedianSeconds": 0.034904501000000004,
+          "affectedPipelineSamplesSeconds": [
+            0.053800415000000004,
+            0.053281003000000007,
+            0.053308336
+          ],
+          "affectedPipelineMedianSeconds": 0.053308336,
+          "affectedPipelineImprovement": -0.30642339001695218,
+          "microbenchmarkQualified": false,
+          "complete": {
+            "warmupCount": 0,
+            "sampleCount": 0,
+            "totalSamplesSeconds": [],
+            "totalMedianSeconds": null,
+            "internalSamplesSeconds": [],
+            "internalMedianSeconds": null,
+            "controlImprovement": null,
+            "improvesControl": false,
+            "planCount": null,
+            "planBytes": null,
+            "logicalPlanCount": null,
+            "nativeExecutionCount": null,
+            "horizontalNativeExecutionCount": null,
+            "verticalNativeExecutionCount": null
+          },
+          "metrics": {
+            "fftBatchSchedule": "streamed-bounded-main-tail",
+            "horizontalZBatchSize": 32,
+            "verticalHalfRowBatchSize": 1024,
+            "planCount": 34,
+            "logicalPlanCount": 17,
+            "planBytes": 2176,
+            "nativeExecutionCount": 384,
+            "horizontalNativeExecutionCount": 21,
+            "verticalNativeExecutionCount": 363,
+            "logicalExecutionCount": 18,
+            "horizontalLogicalExecutionCount": 7,
+            "verticalLogicalExecutionCount": 11,
+            "horizontalFFTSeconds": 0.018403834999999997,
+            "verticalFFTSeconds": 0.034904501000000004
+          }
+        },
+        {
+          "id": "z32-rows4096",
+          "horizontalZBatch": 32,
+          "verticalHalfRowBatch": 4096,
+          "module": "wv_issue130_z32_rows4096",
+          "mexSha256": "1a659ed4ad2e3ca066a7cb8c87c6088eebc1049703d930592e2945e00cc873d2",
+          "correctnessPassed": true,
+          "errors": {
+            "Fp": 8.951085513040255E-15,
+            "Fm": 9.2221156754775031E-15,
+            "F0": 7.0938308550610454E-15
+          },
+          "maximumRelativeError": 9.2221156754775031E-15,
+          "horizontalFFTSamplesSeconds": [
+            0.018873958,
+            0.018767625,
+            0.017635040999999997
+          ],
+          "horizontalFFTMedianSeconds": 0.018767625,
+          "verticalFFTSamplesSeconds": [
+            0.026783292,
+            0.027172709000000003,
+            0.027341705
+          ],
+          "verticalFFTMedianSeconds": 0.027172709000000003,
+          "affectedPipelineSamplesSeconds": [
+            0.045657249999999996,
+            0.045940334,
+            0.044976746
+          ],
+          "affectedPipelineMedianSeconds": 0.045657249999999996,
+          "affectedPipelineImprovement": -0.11891879956357077,
+          "microbenchmarkQualified": false,
+          "complete": {
+            "warmupCount": 0,
+            "sampleCount": 0,
+            "totalSamplesSeconds": [],
+            "totalMedianSeconds": null,
+            "internalSamplesSeconds": [],
+            "internalMedianSeconds": null,
+            "controlImprovement": null,
+            "improvesControl": false,
+            "planCount": null,
+            "planBytes": null,
+            "logicalPlanCount": null,
+            "nativeExecutionCount": null,
+            "horizontalNativeExecutionCount": null,
+            "verticalNativeExecutionCount": null
+          },
+          "metrics": {
+            "fftBatchSchedule": "streamed-bounded-main-tail",
+            "horizontalZBatchSize": 32,
+            "verticalHalfRowBatchSize": 4096,
+            "planCount": 34,
+            "logicalPlanCount": 17,
+            "planBytes": 2176,
+            "nativeExecutionCount": 120,
+            "horizontalNativeExecutionCount": 21,
+            "verticalNativeExecutionCount": 99,
+            "logicalExecutionCount": 18,
+            "horizontalLogicalExecutionCount": 7,
+            "verticalLogicalExecutionCount": 11,
+            "horizontalFFTSeconds": 0.017635040999999997,
+            "verticalFFTSeconds": 0.027341705
+          }
+        },
+        {
+          "id": "z64-rowsall",
+          "horizontalZBatch": 64,
+          "verticalHalfRowBatch": 0,
+          "module": "wv_issue130_z64_rowsall",
+          "mexSha256": "f22f5b698700057ca629f85237f28a62486f992b06b83ef0ae8d72e0e6401e65",
+          "correctnessPassed": true,
+          "errors": {
+            "Fp": 8.951085513040255E-15,
+            "Fm": 9.2221156754775031E-15,
+            "F0": 7.0938308550610454E-15
+          },
+          "maximumRelativeError": 9.2221156754775031E-15,
+          "horizontalFFTSamplesSeconds": [
+            0.019455583000000002,
+            0.020796209000000003,
+            0.021611457
+          ],
+          "horizontalFFTMedianSeconds": 0.020796209000000003,
+          "verticalFFTSamplesSeconds": [
+            0.02467921,
+            0.025362083000000004,
+            0.025515082999999997
+          ],
+          "verticalFFTMedianSeconds": 0.025362083000000004,
+          "affectedPipelineSamplesSeconds": [
+            0.044134793000000005,
+            0.046158292000000004,
+            0.047126539999999995
+          ],
+          "affectedPipelineMedianSeconds": 0.046158292000000004,
+          "affectedPipelineImprovement": -0.13119779825865074,
+          "microbenchmarkQualified": false,
+          "complete": {
+            "warmupCount": 0,
+            "sampleCount": 0,
+            "totalSamplesSeconds": [],
+            "totalMedianSeconds": null,
+            "internalSamplesSeconds": [],
+            "internalMedianSeconds": null,
+            "controlImprovement": null,
+            "improvesControl": false,
+            "planCount": null,
+            "planBytes": null,
+            "logicalPlanCount": null,
+            "nativeExecutionCount": null,
+            "horizontalNativeExecutionCount": null,
+            "verticalNativeExecutionCount": null
+          },
+          "metrics": {
+            "fftBatchSchedule": "streamed-bounded-main-tail",
+            "horizontalZBatchSize": 64,
+            "verticalHalfRowBatchSize": 0,
+            "planCount": 22,
+            "logicalPlanCount": 17,
+            "planBytes": 1888,
+            "nativeExecutionCount": 25,
+            "horizontalNativeExecutionCount": 14,
+            "verticalNativeExecutionCount": 11,
+            "logicalExecutionCount": 18,
+            "horizontalLogicalExecutionCount": 7,
+            "verticalLogicalExecutionCount": 11,
+            "horizontalFFTSeconds": 0.021611457,
+            "verticalFFTSeconds": 0.025515082999999997
+          }
+        },
+        {
+          "id": "z64-rows256",
+          "horizontalZBatch": 64,
+          "verticalHalfRowBatch": 256,
+          "module": "wv_issue130_z64_rows256",
+          "mexSha256": "38267557fa0f07ad0e685dd7bb2d082a14328bc48d6618d81377f9a33ca910cb",
+          "correctnessPassed": true,
+          "errors": {
+            "Fp": 8.951085513040255E-15,
+            "Fm": 9.2221156754775031E-15,
+            "F0": 7.0938308550610454E-15
+          },
+          "maximumRelativeError": 9.2221156754775031E-15,
+          "horizontalFFTSamplesSeconds": [
+            0.020599332999999997,
+            0.020838417,
+            0.020835417
+          ],
+          "horizontalFFTMedianSeconds": 0.020835417,
+          "verticalFFTSamplesSeconds": [
+            0.073193332999999985,
+            0.07196908099999999,
+            0.073225042
+          ],
+          "verticalFFTMedianSeconds": 0.073193332999999985,
+          "affectedPipelineSamplesSeconds": [
+            0.093792665999999983,
+            0.092807497999999988,
+            0.094060459
+          ],
+          "affectedPipelineMedianSeconds": 0.093792665999999983,
+          "affectedPipelineImprovement": -1.2985698273239614,
+          "microbenchmarkQualified": false,
+          "complete": {
+            "warmupCount": 0,
+            "sampleCount": 0,
+            "totalSamplesSeconds": [],
+            "totalMedianSeconds": null,
+            "internalSamplesSeconds": [],
+            "internalMedianSeconds": null,
+            "controlImprovement": null,
+            "improvesControl": false,
+            "planCount": null,
+            "planBytes": null,
+            "logicalPlanCount": null,
+            "nativeExecutionCount": null,
+            "horizontalNativeExecutionCount": null,
+            "verticalNativeExecutionCount": null
+          },
+          "metrics": {
+            "fftBatchSchedule": "streamed-bounded-main-tail",
+            "horizontalZBatchSize": 64,
+            "verticalHalfRowBatchSize": 256,
+            "planCount": 22,
+            "logicalPlanCount": 17,
+            "planBytes": 1888,
+            "nativeExecutionCount": 1433,
+            "horizontalNativeExecutionCount": 14,
+            "verticalNativeExecutionCount": 1419,
+            "logicalExecutionCount": 18,
+            "horizontalLogicalExecutionCount": 7,
+            "verticalLogicalExecutionCount": 11,
+            "horizontalFFTSeconds": 0.020835417,
+            "verticalFFTSeconds": 0.073225042
+          }
+        },
+        {
+          "id": "z64-rows1024",
+          "horizontalZBatch": 64,
+          "verticalHalfRowBatch": 1024,
+          "module": "wv_issue130_z64_rows1024",
+          "mexSha256": "bb4521d9c399abe9c123c827c5aee3575f1c67791f305267575e97513f08679e",
+          "correctnessPassed": true,
+          "errors": {
+            "Fp": 8.951085513040255E-15,
+            "Fm": 9.2221156754775031E-15,
+            "F0": 7.0938308550610454E-15
+          },
+          "maximumRelativeError": 9.2221156754775031E-15,
+          "horizontalFFTSamplesSeconds": [
+            0.020154834,
+            0.020145457,
+            0.020990916000000002
+          ],
+          "horizontalFFTMedianSeconds": 0.020154834,
+          "verticalFFTSamplesSeconds": [
+            0.037541458,
+            0.036326371999999996,
+            0.0348315
+          ],
+          "verticalFFTMedianSeconds": 0.036326371999999996,
+          "affectedPipelineSamplesSeconds": [
+            0.057696291999999996,
+            0.056471828999999994,
+            0.055822416
+          ],
+          "affectedPipelineMedianSeconds": 0.056471828999999994,
+          "affectedPipelineImprovement": -0.38395087557483731,
+          "microbenchmarkQualified": false,
+          "complete": {
+            "warmupCount": 0,
+            "sampleCount": 0,
+            "totalSamplesSeconds": [],
+            "totalMedianSeconds": null,
+            "internalSamplesSeconds": [],
+            "internalMedianSeconds": null,
+            "controlImprovement": null,
+            "improvesControl": false,
+            "planCount": null,
+            "planBytes": null,
+            "logicalPlanCount": null,
+            "nativeExecutionCount": null,
+            "horizontalNativeExecutionCount": null,
+            "verticalNativeExecutionCount": null
+          },
+          "metrics": {
+            "fftBatchSchedule": "streamed-bounded-main-tail",
+            "horizontalZBatchSize": 64,
+            "verticalHalfRowBatchSize": 1024,
+            "planCount": 34,
+            "logicalPlanCount": 17,
+            "planBytes": 2176,
+            "nativeExecutionCount": 377,
+            "horizontalNativeExecutionCount": 14,
+            "verticalNativeExecutionCount": 363,
+            "logicalExecutionCount": 18,
+            "horizontalLogicalExecutionCount": 7,
+            "verticalLogicalExecutionCount": 11,
+            "horizontalFFTSeconds": 0.020990916000000002,
+            "verticalFFTSeconds": 0.0348315
+          }
+        },
+        {
+          "id": "z64-rows4096",
+          "horizontalZBatch": 64,
+          "verticalHalfRowBatch": 4096,
+          "module": "wv_issue130_z64_rows4096",
+          "mexSha256": "65d2df0ed87a38ab65c747673204b067259f0875ad112793f3896acdba8b60fc",
+          "correctnessPassed": true,
+          "errors": {
+            "Fp": 8.951085513040255E-15,
+            "Fm": 9.2221156754775031E-15,
+            "F0": 7.0938308550610454E-15
+          },
+          "maximumRelativeError": 9.2221156754775031E-15,
+          "horizontalFFTSamplesSeconds": [
+            0.020099373,
+            0.020120458,
+            0.020594040999999997
+          ],
+          "horizontalFFTMedianSeconds": 0.020120458,
+          "verticalFFTSamplesSeconds": [
+            0.027259413999999996,
+            0.026872084,
+            0.026872252
+          ],
+          "verticalFFTMedianSeconds": 0.026872252,
+          "affectedPipelineSamplesSeconds": [
+            0.047358787,
+            0.046992542,
+            0.047466292999999993
+          ],
+          "affectedPipelineMedianSeconds": 0.047358787,
+          "affectedPipelineImprovement": -0.16061823913676032,
+          "microbenchmarkQualified": false,
+          "complete": {
+            "warmupCount": 0,
+            "sampleCount": 0,
+            "totalSamplesSeconds": [],
+            "totalMedianSeconds": null,
+            "internalSamplesSeconds": [],
+            "internalMedianSeconds": null,
+            "controlImprovement": null,
+            "improvesControl": false,
+            "planCount": null,
+            "planBytes": null,
+            "logicalPlanCount": null,
+            "nativeExecutionCount": null,
+            "horizontalNativeExecutionCount": null,
+            "verticalNativeExecutionCount": null
+          },
+          "metrics": {
+            "fftBatchSchedule": "streamed-bounded-main-tail",
+            "horizontalZBatchSize": 64,
+            "verticalHalfRowBatchSize": 4096,
+            "planCount": 34,
+            "logicalPlanCount": 17,
+            "planBytes": 2176,
+            "nativeExecutionCount": 113,
+            "horizontalNativeExecutionCount": 14,
+            "verticalNativeExecutionCount": 99,
+            "logicalExecutionCount": 18,
+            "horizontalLogicalExecutionCount": 7,
+            "verticalLogicalExecutionCount": 11,
+            "horizontalFFTSeconds": 0.020594040999999997,
+            "verticalFFTSeconds": 0.026872252
+          }
+        }
+      ]
+    },
+    {
+      "id": "constant-nonhydrostatic-256x256x65",
+      "Nxyz": [
+        256,
+        256,
+        65
+      ],
+      "isHydrostatic": false,
+      "seed": 1.302562E+6,
+      "configurations": [
+        {
+          "id": "zall-rowsall",
+          "horizontalZBatch": 0,
+          "verticalHalfRowBatch": 0,
+          "module": "wv_issue130_zall_rowsall",
+          "mexSha256": "bfa11ef53bbd869e55897e4956f7cc0cabf144c9c6e85454b786597c74ba0f0f",
+          "correctnessPassed": true,
+          "errors": {
+            "Fp": 8.2330843333285624E-15,
+            "Fm": 7.8810503291812055E-15,
+            "F0": 7.6210875279737853E-15
+          },
+          "maximumRelativeError": 8.2330843333285624E-15,
+          "horizontalFFTSamplesSeconds": [
+            0.022016292999999996,
+            0.021821,
+            0.022225291999999997
+          ],
+          "horizontalFFTMedianSeconds": 0.022016292999999996,
+          "verticalFFTSamplesSeconds": [
+            0.02883354,
+            0.029269790999999996,
+            0.028335708
+          ],
+          "verticalFFTMedianSeconds": 0.02883354,
+          "affectedPipelineSamplesSeconds": [
+            0.050849833,
+            0.051090790999999997,
+            0.050560999999999995
+          ],
+          "affectedPipelineMedianSeconds": 0.050849833,
+          "affectedPipelineImprovement": 0,
+          "microbenchmarkQualified": true,
+          "complete": {
+            "warmupCount": 1,
+            "sampleCount": 3,
+            "totalSamplesSeconds": [
+              0.071637416666666662,
+              0.072174125,
+              0.072076416666666671
+            ],
+            "totalMedianSeconds": 0.072076416666666671,
+            "internalSamplesSeconds": [
+              0.071485541,
+              0.072000708,
+              0.071898541
+            ],
+            "internalMedianSeconds": 0.071898541,
+            "controlImprovement": 0,
+            "improvesControl": false,
+            "planCount": 17,
+            "planBytes": 1768,
+            "logicalPlanCount": 17,
+            "nativeExecutionCount": 23,
+            "horizontalNativeExecutionCount": 9,
+            "verticalNativeExecutionCount": 14
+          },
+          "metrics": {
+            "fftBatchSchedule": "streamed-all-all",
+            "horizontalZBatchSize": 0,
+            "verticalHalfRowBatchSize": 0,
+            "planCount": 17,
+            "logicalPlanCount": 17,
+            "planBytes": 1768,
+            "nativeExecutionCount": 23,
+            "horizontalNativeExecutionCount": 9,
+            "verticalNativeExecutionCount": 14,
+            "logicalExecutionCount": 23,
+            "horizontalLogicalExecutionCount": 9,
+            "verticalLogicalExecutionCount": 14,
+            "horizontalFFTSeconds": 0.022225291999999997,
+            "verticalFFTSeconds": 0.028335708
+          }
+        },
+        {
+          "id": "zall-rows256",
+          "horizontalZBatch": 0,
+          "verticalHalfRowBatch": 256,
+          "module": "wv_issue130_zall_rows256",
+          "mexSha256": "80e23ae7953e2b6dfa817af982c7b67d36a36a29201b92655d53d4a77751fd2d",
+          "correctnessPassed": true,
+          "errors": {
+            "Fp": 8.2330843333285624E-15,
+            "Fm": 7.8810503291812055E-15,
+            "F0": 7.6210875279737853E-15
+          },
+          "maximumRelativeError": 8.2330843333285624E-15,
+          "horizontalFFTSamplesSeconds": [
+            0.022418127,
+            0.022334291,
+            0.022629418000000002
+          ],
+          "horizontalFFTMedianSeconds": 0.022418127,
+          "verticalFFTSamplesSeconds": [
+            0.088354290999999988,
+            0.089292334,
+            0.088901125
+          ],
+          "verticalFFTMedianSeconds": 0.088901125,
+          "affectedPipelineSamplesSeconds": [
+            0.11077241799999998,
+            0.11162662500000001,
+            0.111530543
+          ],
+          "affectedPipelineMedianSeconds": 0.111530543,
+          "affectedPipelineImprovement": -1.1933315493877825,
+          "microbenchmarkQualified": false,
+          "complete": {
+            "warmupCount": 0,
+            "sampleCount": 0,
+            "totalSamplesSeconds": [],
+            "totalMedianSeconds": null,
+            "internalSamplesSeconds": [],
+            "internalMedianSeconds": null,
+            "controlImprovement": null,
+            "improvesControl": false,
+            "planCount": null,
+            "planBytes": null,
+            "logicalPlanCount": null,
+            "nativeExecutionCount": null,
+            "horizontalNativeExecutionCount": null,
+            "verticalNativeExecutionCount": null
+          },
+          "metrics": {
+            "fftBatchSchedule": "streamed-bounded-main-tail",
+            "horizontalZBatchSize": 0,
+            "verticalHalfRowBatchSize": 256,
+            "planCount": 17,
+            "logicalPlanCount": 17,
+            "planBytes": 1768,
+            "nativeExecutionCount": 1815,
+            "horizontalNativeExecutionCount": 9,
+            "verticalNativeExecutionCount": 1806,
+            "logicalExecutionCount": 23,
+            "horizontalLogicalExecutionCount": 9,
+            "verticalLogicalExecutionCount": 14,
+            "horizontalFFTSeconds": 0.022629418000000002,
+            "verticalFFTSeconds": 0.088901125
+          }
+        },
+        {
+          "id": "zall-rows1024",
+          "horizontalZBatch": 0,
+          "verticalHalfRowBatch": 1024,
+          "module": "wv_issue130_zall_rows1024",
+          "mexSha256": "c91d4962c53027ca27f6a43f86fb8d0977042a381c447a93174daa728fa4c075",
+          "correctnessPassed": true,
+          "errors": {
+            "Fp": 8.2330843333285624E-15,
+            "Fm": 7.8810503291812055E-15,
+            "F0": 7.6210875279737853E-15
+          },
+          "maximumRelativeError": 8.2330843333285624E-15,
+          "horizontalFFTSamplesSeconds": [
+            0.024258752,
+            0.024255418,
+            0.023842165000000002
+          ],
+          "horizontalFFTMedianSeconds": 0.024255418,
+          "verticalFFTSamplesSeconds": [
+            0.040070917,
+            0.040166416,
+            0.040383541999999994
+          ],
+          "verticalFFTMedianSeconds": 0.040166416,
+          "affectedPipelineSamplesSeconds": [
+            0.064329669,
+            0.064421834000000011,
+            0.064225706999999993
+          ],
+          "affectedPipelineMedianSeconds": 0.064329669,
+          "affectedPipelineImprovement": -0.26509105742785843,
+          "microbenchmarkQualified": false,
+          "complete": {
+            "warmupCount": 0,
+            "sampleCount": 0,
+            "totalSamplesSeconds": [],
+            "totalMedianSeconds": null,
+            "internalSamplesSeconds": [],
+            "internalMedianSeconds": null,
+            "controlImprovement": null,
+            "improvesControl": false,
+            "planCount": null,
+            "planBytes": null,
+            "logicalPlanCount": null,
+            "nativeExecutionCount": null,
+            "horizontalNativeExecutionCount": null,
+            "verticalNativeExecutionCount": null
+          },
+          "metrics": {
+            "fftBatchSchedule": "streamed-bounded-main-tail",
+            "horizontalZBatchSize": 0,
+            "verticalHalfRowBatchSize": 1024,
+            "planCount": 29,
+            "logicalPlanCount": 17,
+            "planBytes": 2056,
+            "nativeExecutionCount": 471,
+            "horizontalNativeExecutionCount": 9,
+            "verticalNativeExecutionCount": 462,
+            "logicalExecutionCount": 23,
+            "horizontalLogicalExecutionCount": 9,
+            "verticalLogicalExecutionCount": 14,
+            "horizontalFFTSeconds": 0.023842165000000002,
+            "verticalFFTSeconds": 0.040383541999999994
+          }
+        },
+        {
+          "id": "zall-rows4096",
+          "horizontalZBatch": 0,
+          "verticalHalfRowBatch": 4096,
+          "module": "wv_issue130_zall_rows4096",
+          "mexSha256": "4d7057c8e4cd4a71235e5f5d94f67902b86495df19b2f36601e77411b49396f6",
+          "correctnessPassed": true,
+          "errors": {
+            "Fp": 8.2330843333285624E-15,
+            "Fm": 7.8810503291812055E-15,
+            "F0": 7.6210875279737853E-15
+          },
+          "maximumRelativeError": 8.2330843333285624E-15,
+          "horizontalFFTSamplesSeconds": [
+            0.022329541,
+            0.022262291,
+            0.021967085
+          ],
+          "horizontalFFTMedianSeconds": 0.022262291,
+          "verticalFFTSamplesSeconds": [
+            0.032532291,
+            0.032144084,
+            0.031777789
+          ],
+          "verticalFFTMedianSeconds": 0.032144084,
+          "affectedPipelineSamplesSeconds": [
+            0.054861832,
+            0.054406375000000007,
+            0.053744874
+          ],
+          "affectedPipelineMedianSeconds": 0.054406375000000007,
+          "affectedPipelineImprovement": -0.069942058610104274,
+          "microbenchmarkQualified": false,
+          "complete": {
+            "warmupCount": 0,
+            "sampleCount": 0,
+            "totalSamplesSeconds": [],
+            "totalMedianSeconds": null,
+            "internalSamplesSeconds": [],
+            "internalMedianSeconds": null,
+            "controlImprovement": null,
+            "improvesControl": false,
+            "planCount": null,
+            "planBytes": null,
+            "logicalPlanCount": null,
+            "nativeExecutionCount": null,
+            "horizontalNativeExecutionCount": null,
+            "verticalNativeExecutionCount": null
+          },
+          "metrics": {
+            "fftBatchSchedule": "streamed-bounded-main-tail",
+            "horizontalZBatchSize": 0,
+            "verticalHalfRowBatchSize": 4096,
+            "planCount": 29,
+            "logicalPlanCount": 17,
+            "planBytes": 2056,
+            "nativeExecutionCount": 135,
+            "horizontalNativeExecutionCount": 9,
+            "verticalNativeExecutionCount": 126,
+            "logicalExecutionCount": 23,
+            "horizontalLogicalExecutionCount": 9,
+            "verticalLogicalExecutionCount": 14,
+            "horizontalFFTSeconds": 0.021967085,
+            "verticalFFTSeconds": 0.031777789
+          }
+        },
+        {
+          "id": "z16-rowsall",
+          "horizontalZBatch": 16,
+          "verticalHalfRowBatch": 0,
+          "module": "wv_issue130_z16_rowsall",
+          "mexSha256": "38fb7b12a4b20d42ab159b63f567ad3dae1ac12f93cf28ef9a7ee2a072276ac0",
+          "correctnessPassed": true,
+          "errors": {
+            "Fp": 8.2330843333285624E-15,
+            "Fm": 7.8810503291812055E-15,
+            "F0": 7.6210875279737853E-15
+          },
+          "maximumRelativeError": 8.2330843333285624E-15,
+          "horizontalFFTSamplesSeconds": [
+            0.022746455999999998,
+            0.02383475,
+            0.023252623
+          ],
+          "horizontalFFTMedianSeconds": 0.023252623,
+          "verticalFFTSamplesSeconds": [
+            0.029045666,
+            0.029112709,
+            0.029150206999999997
+          ],
+          "verticalFFTMedianSeconds": 0.029112709,
+          "affectedPipelineSamplesSeconds": [
+            0.051792121999999996,
+            0.052947459,
+            0.05240283
+          ],
+          "affectedPipelineMedianSeconds": 0.05240283,
+          "affectedPipelineImprovement": -0.030540847597277265,
+          "microbenchmarkQualified": false,
+          "complete": {
+            "warmupCount": 0,
+            "sampleCount": 0,
+            "totalSamplesSeconds": [],
+            "totalMedianSeconds": null,
+            "internalSamplesSeconds": [],
+            "internalMedianSeconds": null,
+            "controlImprovement": null,
+            "improvesControl": false,
+            "planCount": null,
+            "planBytes": null,
+            "logicalPlanCount": null,
+            "nativeExecutionCount": null,
+            "horizontalNativeExecutionCount": null,
+            "verticalNativeExecutionCount": null
+          },
+          "metrics": {
+            "fftBatchSchedule": "streamed-bounded-main-tail",
+            "horizontalZBatchSize": 16,
+            "verticalHalfRowBatchSize": 0,
+            "planCount": 22,
+            "logicalPlanCount": 17,
+            "planBytes": 1888,
+            "nativeExecutionCount": 59,
+            "horizontalNativeExecutionCount": 45,
+            "verticalNativeExecutionCount": 14,
+            "logicalExecutionCount": 23,
+            "horizontalLogicalExecutionCount": 9,
+            "verticalLogicalExecutionCount": 14,
+            "horizontalFFTSeconds": 0.023252623,
+            "verticalFFTSeconds": 0.029150206999999997
+          }
+        },
+        {
+          "id": "z16-rows256",
+          "horizontalZBatch": 16,
+          "verticalHalfRowBatch": 256,
+          "module": "wv_issue130_z16_rows256",
+          "mexSha256": "6ec84eddc4d12600ab04bea133e85e2ca2d905f1c8eac981df4532101d753cd7",
+          "correctnessPassed": true,
+          "errors": {
+            "Fp": 8.2330843333285624E-15,
+            "Fm": 7.8810503291812055E-15,
+            "F0": 7.6210875279737853E-15
+          },
+          "maximumRelativeError": 8.2330843333285624E-15,
+          "horizontalFFTSamplesSeconds": [
+            0.023779418,
+            0.023515083,
+            0.023908958
+          ],
+          "horizontalFFTMedianSeconds": 0.023779418,
+          "verticalFFTSamplesSeconds": [
+            0.088088752,
+            0.088499502,
+            0.088383959
+          ],
+          "verticalFFTMedianSeconds": 0.088383959,
+          "affectedPipelineSamplesSeconds": [
+            0.11186817,
+            0.112014585,
+            0.11229291699999999
+          ],
+          "affectedPipelineMedianSeconds": 0.112014585,
+          "affectedPipelineImprovement": -1.202850597365777,
+          "microbenchmarkQualified": false,
+          "complete": {
+            "warmupCount": 0,
+            "sampleCount": 0,
+            "totalSamplesSeconds": [],
+            "totalMedianSeconds": null,
+            "internalSamplesSeconds": [],
+            "internalMedianSeconds": null,
+            "controlImprovement": null,
+            "improvesControl": false,
+            "planCount": null,
+            "planBytes": null,
+            "logicalPlanCount": null,
+            "nativeExecutionCount": null,
+            "horizontalNativeExecutionCount": null,
+            "verticalNativeExecutionCount": null
+          },
+          "metrics": {
+            "fftBatchSchedule": "streamed-bounded-main-tail",
+            "horizontalZBatchSize": 16,
+            "verticalHalfRowBatchSize": 256,
+            "planCount": 22,
+            "logicalPlanCount": 17,
+            "planBytes": 1888,
+            "nativeExecutionCount": 1851,
+            "horizontalNativeExecutionCount": 45,
+            "verticalNativeExecutionCount": 1806,
+            "logicalExecutionCount": 23,
+            "horizontalLogicalExecutionCount": 9,
+            "verticalLogicalExecutionCount": 14,
+            "horizontalFFTSeconds": 0.023908958,
+            "verticalFFTSeconds": 0.088383959
+          }
+        },
+        {
+          "id": "z16-rows1024",
+          "horizontalZBatch": 16,
+          "verticalHalfRowBatch": 1024,
+          "module": "wv_issue130_z16_rows1024",
+          "mexSha256": "dbb823519b5884c09dd9eb1bb1530b5f9378ef4906199000e5bc25f42fd38442",
+          "correctnessPassed": true,
+          "errors": {
+            "Fp": 8.2330843333285624E-15,
+            "Fm": 7.8810503291812055E-15,
+            "F0": 7.6210875279737853E-15
+          },
+          "maximumRelativeError": 8.2330843333285624E-15,
+          "horizontalFFTSamplesSeconds": [
+            0.026618542999999998,
+            0.023824499,
+            0.023265792
+          ],
+          "horizontalFFTMedianSeconds": 0.023824499,
+          "verticalFFTSamplesSeconds": [
+            0.043656416999999996,
+            0.041243417,
+            0.040964329999999993
+          ],
+          "verticalFFTMedianSeconds": 0.041243417,
+          "affectedPipelineSamplesSeconds": [
+            0.07027496,
+            0.065067916,
+            0.064230122
+          ],
+          "affectedPipelineMedianSeconds": 0.065067916,
+          "affectedPipelineImprovement": -0.27960923686809358,
+          "microbenchmarkQualified": false,
+          "complete": {
+            "warmupCount": 0,
+            "sampleCount": 0,
+            "totalSamplesSeconds": [],
+            "totalMedianSeconds": null,
+            "internalSamplesSeconds": [],
+            "internalMedianSeconds": null,
+            "controlImprovement": null,
+            "improvesControl": false,
+            "planCount": null,
+            "planBytes": null,
+            "logicalPlanCount": null,
+            "nativeExecutionCount": null,
+            "horizontalNativeExecutionCount": null,
+            "verticalNativeExecutionCount": null
+          },
+          "metrics": {
+            "fftBatchSchedule": "streamed-bounded-main-tail",
+            "horizontalZBatchSize": 16,
+            "verticalHalfRowBatchSize": 1024,
+            "planCount": 34,
+            "logicalPlanCount": 17,
+            "planBytes": 2176,
+            "nativeExecutionCount": 507,
+            "horizontalNativeExecutionCount": 45,
+            "verticalNativeExecutionCount": 462,
+            "logicalExecutionCount": 23,
+            "horizontalLogicalExecutionCount": 9,
+            "verticalLogicalExecutionCount": 14,
+            "horizontalFFTSeconds": 0.023265792,
+            "verticalFFTSeconds": 0.040964329999999993
+          }
+        },
+        {
+          "id": "z16-rows4096",
+          "horizontalZBatch": 16,
+          "verticalHalfRowBatch": 4096,
+          "module": "wv_issue130_z16_rows4096",
+          "mexSha256": "2abf1ae76b13bd2955a4fbf91d776c228b801c0ed6167b896b44bce35c01b60f",
+          "correctnessPassed": true,
+          "errors": {
+            "Fp": 8.2330843333285624E-15,
+            "Fm": 7.8810503291812055E-15,
+            "F0": 7.6210875279737853E-15
+          },
+          "maximumRelativeError": 8.2330843333285624E-15,
+          "horizontalFFTSamplesSeconds": [
+            0.023269582,
+            0.023599585000000003,
+            0.023452834
+          ],
+          "horizontalFFTMedianSeconds": 0.023452834,
+          "verticalFFTSamplesSeconds": [
+            0.03171496,
+            0.031853958000000009,
+            0.031524457
+          ],
+          "verticalFFTMedianSeconds": 0.03171496,
+          "affectedPipelineSamplesSeconds": [
+            0.054984542,
+            0.055453543000000008,
+            0.054977291
+          ],
+          "affectedPipelineMedianSeconds": 0.054984542,
+          "affectedPipelineImprovement": -0.081312145115599588,
+          "microbenchmarkQualified": false,
+          "complete": {
+            "warmupCount": 0,
+            "sampleCount": 0,
+            "totalSamplesSeconds": [],
+            "totalMedianSeconds": null,
+            "internalSamplesSeconds": [],
+            "internalMedianSeconds": null,
+            "controlImprovement": null,
+            "improvesControl": false,
+            "planCount": null,
+            "planBytes": null,
+            "logicalPlanCount": null,
+            "nativeExecutionCount": null,
+            "horizontalNativeExecutionCount": null,
+            "verticalNativeExecutionCount": null
+          },
+          "metrics": {
+            "fftBatchSchedule": "streamed-bounded-main-tail",
+            "horizontalZBatchSize": 16,
+            "verticalHalfRowBatchSize": 4096,
+            "planCount": 34,
+            "logicalPlanCount": 17,
+            "planBytes": 2176,
+            "nativeExecutionCount": 171,
+            "horizontalNativeExecutionCount": 45,
+            "verticalNativeExecutionCount": 126,
+            "logicalExecutionCount": 23,
+            "horizontalLogicalExecutionCount": 9,
+            "verticalLogicalExecutionCount": 14,
+            "horizontalFFTSeconds": 0.023452834,
+            "verticalFFTSeconds": 0.031524457
+          }
+        },
+        {
+          "id": "z32-rowsall",
+          "horizontalZBatch": 32,
+          "verticalHalfRowBatch": 0,
+          "module": "wv_issue130_z32_rowsall",
+          "mexSha256": "ccd0ebe30a3b2d9f4ceeb0fd65073bb473fe21c389f4fba066b7eec8219675f3",
+          "correctnessPassed": true,
+          "errors": {
+            "Fp": 8.2330843333285624E-15,
+            "Fm": 7.8810503291812055E-15,
+            "F0": 7.6210875279737853E-15
+          },
+          "maximumRelativeError": 8.2330843333285624E-15,
+          "horizontalFFTSamplesSeconds": [
+            0.023172169000000003,
+            0.02312875,
+            0.023431126
+          ],
+          "horizontalFFTMedianSeconds": 0.023172169000000003,
+          "verticalFFTSamplesSeconds": [
+            0.026888499999999996,
+            0.027539334,
+            0.027018753
+          ],
+          "verticalFFTMedianSeconds": 0.027018753,
+          "affectedPipelineSamplesSeconds": [
+            0.050060669,
+            0.050668084,
+            0.050449879
+          ],
+          "affectedPipelineMedianSeconds": 0.050449879,
+          "affectedPipelineImprovement": 0.0078653945628492927,
+          "microbenchmarkQualified": false,
+          "complete": {
+            "warmupCount": 0,
+            "sampleCount": 0,
+            "totalSamplesSeconds": [],
+            "totalMedianSeconds": null,
+            "internalSamplesSeconds": [],
+            "internalMedianSeconds": null,
+            "controlImprovement": null,
+            "improvesControl": false,
+            "planCount": null,
+            "planBytes": null,
+            "logicalPlanCount": null,
+            "nativeExecutionCount": null,
+            "horizontalNativeExecutionCount": null,
+            "verticalNativeExecutionCount": null
+          },
+          "metrics": {
+            "fftBatchSchedule": "streamed-bounded-main-tail",
+            "horizontalZBatchSize": 32,
+            "verticalHalfRowBatchSize": 0,
+            "planCount": 22,
+            "logicalPlanCount": 17,
+            "planBytes": 1888,
+            "nativeExecutionCount": 41,
+            "horizontalNativeExecutionCount": 27,
+            "verticalNativeExecutionCount": 14,
+            "logicalExecutionCount": 23,
+            "horizontalLogicalExecutionCount": 9,
+            "verticalLogicalExecutionCount": 14,
+            "horizontalFFTSeconds": 0.023431126,
+            "verticalFFTSeconds": 0.027018753
+          }
+        },
+        {
+          "id": "z32-rows256",
+          "horizontalZBatch": 32,
+          "verticalHalfRowBatch": 256,
+          "module": "wv_issue130_z32_rows256",
+          "mexSha256": "80db0ee99798d6a4cd118fb556bbc48d7984f9eb534c3268744e2afe3d0875d5",
+          "correctnessPassed": true,
+          "errors": {
+            "Fp": 8.2330843333285624E-15,
+            "Fm": 7.8810503291812055E-15,
+            "F0": 7.6210875279737853E-15
+          },
+          "maximumRelativeError": 8.2330843333285624E-15,
+          "horizontalFFTSamplesSeconds": [
+            0.022914084,
+            0.023297332000000004,
+            0.022900625999999997
+          ],
+          "horizontalFFTMedianSeconds": 0.022914084,
+          "verticalFFTSamplesSeconds": [
+            0.089128585,
+            0.090274917000000024,
+            0.089077832
+          ],
+          "verticalFFTMedianSeconds": 0.089128585,
+          "affectedPipelineSamplesSeconds": [
+            0.112042669,
+            0.11357224900000003,
+            0.11197845799999999
+          ],
+          "affectedPipelineMedianSeconds": 0.112042669,
+          "affectedPipelineImprovement": -1.2034028902317142,
+          "microbenchmarkQualified": false,
+          "complete": {
+            "warmupCount": 0,
+            "sampleCount": 0,
+            "totalSamplesSeconds": [],
+            "totalMedianSeconds": null,
+            "internalSamplesSeconds": [],
+            "internalMedianSeconds": null,
+            "controlImprovement": null,
+            "improvesControl": false,
+            "planCount": null,
+            "planBytes": null,
+            "logicalPlanCount": null,
+            "nativeExecutionCount": null,
+            "horizontalNativeExecutionCount": null,
+            "verticalNativeExecutionCount": null
+          },
+          "metrics": {
+            "fftBatchSchedule": "streamed-bounded-main-tail",
+            "horizontalZBatchSize": 32,
+            "verticalHalfRowBatchSize": 256,
+            "planCount": 22,
+            "logicalPlanCount": 17,
+            "planBytes": 1888,
+            "nativeExecutionCount": 1833,
+            "horizontalNativeExecutionCount": 27,
+            "verticalNativeExecutionCount": 1806,
+            "logicalExecutionCount": 23,
+            "horizontalLogicalExecutionCount": 9,
+            "verticalLogicalExecutionCount": 14,
+            "horizontalFFTSeconds": 0.022900625999999997,
+            "verticalFFTSeconds": 0.089077832
+          }
+        },
+        {
+          "id": "z32-rows1024",
+          "horizontalZBatch": 32,
+          "verticalHalfRowBatch": 1024,
+          "module": "wv_issue130_z32_rows1024",
+          "mexSha256": "96d2a8de5879de438a877cc4b189da4bba0504368a8fbfe40955eeafa9211b79",
+          "correctnessPassed": true,
+          "errors": {
+            "Fp": 8.2330843333285624E-15,
+            "Fm": 7.8810503291812055E-15,
+            "F0": 7.6210875279737853E-15
+          },
+          "maximumRelativeError": 8.2330843333285624E-15,
+          "horizontalFFTSamplesSeconds": [
+            0.023544584000000004,
+            0.023369916,
+            0.023624583
+          ],
+          "horizontalFFTMedianSeconds": 0.023544584000000004,
+          "verticalFFTSamplesSeconds": [
+            0.038487125000000004,
+            0.037940872999999993,
+            0.037908708
+          ],
+          "verticalFFTMedianSeconds": 0.037940872999999993,
+          "affectedPipelineSamplesSeconds": [
+            0.062031709000000004,
+            0.061310788999999991,
+            0.061533291000000004
+          ],
+          "affectedPipelineMedianSeconds": 0.061533291000000004,
+          "affectedPipelineImprovement": -0.21009819245620753,
+          "microbenchmarkQualified": false,
+          "complete": {
+            "warmupCount": 0,
+            "sampleCount": 0,
+            "totalSamplesSeconds": [],
+            "totalMedianSeconds": null,
+            "internalSamplesSeconds": [],
+            "internalMedianSeconds": null,
+            "controlImprovement": null,
+            "improvesControl": false,
+            "planCount": null,
+            "planBytes": null,
+            "logicalPlanCount": null,
+            "nativeExecutionCount": null,
+            "horizontalNativeExecutionCount": null,
+            "verticalNativeExecutionCount": null
+          },
+          "metrics": {
+            "fftBatchSchedule": "streamed-bounded-main-tail",
+            "horizontalZBatchSize": 32,
+            "verticalHalfRowBatchSize": 1024,
+            "planCount": 34,
+            "logicalPlanCount": 17,
+            "planBytes": 2176,
+            "nativeExecutionCount": 489,
+            "horizontalNativeExecutionCount": 27,
+            "verticalNativeExecutionCount": 462,
+            "logicalExecutionCount": 23,
+            "horizontalLogicalExecutionCount": 9,
+            "verticalLogicalExecutionCount": 14,
+            "horizontalFFTSeconds": 0.023624583,
+            "verticalFFTSeconds": 0.037908708
+          }
+        },
+        {
+          "id": "z32-rows4096",
+          "horizontalZBatch": 32,
+          "verticalHalfRowBatch": 4096,
+          "module": "wv_issue130_z32_rows4096",
+          "mexSha256": "1a659ed4ad2e3ca066a7cb8c87c6088eebc1049703d930592e2945e00cc873d2",
+          "correctnessPassed": true,
+          "errors": {
+            "Fp": 8.2330843333285624E-15,
+            "Fm": 7.8810503291812055E-15,
+            "F0": 7.6210875279737853E-15
+          },
+          "maximumRelativeError": 8.2330843333285624E-15,
+          "horizontalFFTSamplesSeconds": [
+            0.023512459000000003,
+            0.023332416,
+            0.023331748999999995
+          ],
+          "horizontalFFTMedianSeconds": 0.023332416,
+          "verticalFFTSamplesSeconds": [
+            0.031567333,
+            0.031520628,
+            0.031385044
+          ],
+          "verticalFFTMedianSeconds": 0.031520628,
+          "affectedPipelineSamplesSeconds": [
+            0.055079792,
+            0.054853044000000004,
+            0.054716793
+          ],
+          "affectedPipelineMedianSeconds": 0.054853044000000004,
+          "affectedPipelineImprovement": -0.078726138589285233,
+          "microbenchmarkQualified": false,
+          "complete": {
+            "warmupCount": 0,
+            "sampleCount": 0,
+            "totalSamplesSeconds": [],
+            "totalMedianSeconds": null,
+            "internalSamplesSeconds": [],
+            "internalMedianSeconds": null,
+            "controlImprovement": null,
+            "improvesControl": false,
+            "planCount": null,
+            "planBytes": null,
+            "logicalPlanCount": null,
+            "nativeExecutionCount": null,
+            "horizontalNativeExecutionCount": null,
+            "verticalNativeExecutionCount": null
+          },
+          "metrics": {
+            "fftBatchSchedule": "streamed-bounded-main-tail",
+            "horizontalZBatchSize": 32,
+            "verticalHalfRowBatchSize": 4096,
+            "planCount": 34,
+            "logicalPlanCount": 17,
+            "planBytes": 2176,
+            "nativeExecutionCount": 153,
+            "horizontalNativeExecutionCount": 27,
+            "verticalNativeExecutionCount": 126,
+            "logicalExecutionCount": 23,
+            "horizontalLogicalExecutionCount": 9,
+            "verticalLogicalExecutionCount": 14,
+            "horizontalFFTSeconds": 0.023331748999999995,
+            "verticalFFTSeconds": 0.031385044
+          }
+        },
+        {
+          "id": "z64-rowsall",
+          "horizontalZBatch": 64,
+          "verticalHalfRowBatch": 0,
+          "module": "wv_issue130_z64_rowsall",
+          "mexSha256": "f22f5b698700057ca629f85237f28a62486f992b06b83ef0ae8d72e0e6401e65",
+          "correctnessPassed": true,
+          "errors": {
+            "Fp": 8.2330843333285624E-15,
+            "Fm": 7.8810503291812055E-15,
+            "F0": 7.6210875279737853E-15
+          },
+          "maximumRelativeError": 8.2330843333285624E-15,
+          "horizontalFFTSamplesSeconds": [
+            0.026204959,
+            0.023926585,
+            0.024234665000000002
+          ],
+          "horizontalFFTMedianSeconds": 0.024234665000000002,
+          "verticalFFTSamplesSeconds": [
+            0.026757667,
+            0.027843708999999998,
+            0.027764333999999998
+          ],
+          "verticalFFTMedianSeconds": 0.027764333999999998,
+          "affectedPipelineSamplesSeconds": [
+            0.052962626,
+            0.051770293999999994,
+            0.051998999000000004
+          ],
+          "affectedPipelineMedianSeconds": 0.051998999000000004,
+          "affectedPipelineImprovement": -0.02259920892955547,
+          "microbenchmarkQualified": false,
+          "complete": {
+            "warmupCount": 0,
+            "sampleCount": 0,
+            "totalSamplesSeconds": [],
+            "totalMedianSeconds": null,
+            "internalSamplesSeconds": [],
+            "internalMedianSeconds": null,
+            "controlImprovement": null,
+            "improvesControl": false,
+            "planCount": null,
+            "planBytes": null,
+            "logicalPlanCount": null,
+            "nativeExecutionCount": null,
+            "horizontalNativeExecutionCount": null,
+            "verticalNativeExecutionCount": null
+          },
+          "metrics": {
+            "fftBatchSchedule": "streamed-bounded-main-tail",
+            "horizontalZBatchSize": 64,
+            "verticalHalfRowBatchSize": 0,
+            "planCount": 22,
+            "logicalPlanCount": 17,
+            "planBytes": 1888,
+            "nativeExecutionCount": 32,
+            "horizontalNativeExecutionCount": 18,
+            "verticalNativeExecutionCount": 14,
+            "logicalExecutionCount": 23,
+            "horizontalLogicalExecutionCount": 9,
+            "verticalLogicalExecutionCount": 14,
+            "horizontalFFTSeconds": 0.024234665000000002,
+            "verticalFFTSeconds": 0.027764333999999998
+          }
+        },
+        {
+          "id": "z64-rows256",
+          "horizontalZBatch": 64,
+          "verticalHalfRowBatch": 256,
+          "module": "wv_issue130_z64_rows256",
+          "mexSha256": "38267557fa0f07ad0e685dd7bb2d082a14328bc48d6618d81377f9a33ca910cb",
+          "correctnessPassed": true,
+          "errors": {
+            "Fp": 8.2330843333285624E-15,
+            "Fm": 7.8810503291812055E-15,
+            "F0": 7.6210875279737853E-15
+          },
+          "maximumRelativeError": 8.2330843333285624E-15,
+          "horizontalFFTSamplesSeconds": [
+            0.025570041999999998,
+            0.027044791000000002,
+            0.026332917999999997
+          ],
+          "horizontalFFTMedianSeconds": 0.026332917999999997,
+          "verticalFFTSamplesSeconds": [
+            0.08870249999999999,
+            0.087461207999999985,
+            0.084070502000000019
+          ],
+          "verticalFFTMedianSeconds": 0.087461207999999985,
+          "affectedPipelineSamplesSeconds": [
+            0.11427254199999999,
+            0.11450599899999998,
+            0.11040342000000002
+          ],
+          "affectedPipelineMedianSeconds": 0.11427254199999999,
+          "affectedPipelineImprovement": -1.2472550106506741,
+          "microbenchmarkQualified": false,
+          "complete": {
+            "warmupCount": 0,
+            "sampleCount": 0,
+            "totalSamplesSeconds": [],
+            "totalMedianSeconds": null,
+            "internalSamplesSeconds": [],
+            "internalMedianSeconds": null,
+            "controlImprovement": null,
+            "improvesControl": false,
+            "planCount": null,
+            "planBytes": null,
+            "logicalPlanCount": null,
+            "nativeExecutionCount": null,
+            "horizontalNativeExecutionCount": null,
+            "verticalNativeExecutionCount": null
+          },
+          "metrics": {
+            "fftBatchSchedule": "streamed-bounded-main-tail",
+            "horizontalZBatchSize": 64,
+            "verticalHalfRowBatchSize": 256,
+            "planCount": 22,
+            "logicalPlanCount": 17,
+            "planBytes": 1888,
+            "nativeExecutionCount": 1824,
+            "horizontalNativeExecutionCount": 18,
+            "verticalNativeExecutionCount": 1806,
+            "logicalExecutionCount": 23,
+            "horizontalLogicalExecutionCount": 9,
+            "verticalLogicalExecutionCount": 14,
+            "horizontalFFTSeconds": 0.026332917999999997,
+            "verticalFFTSeconds": 0.084070502000000019
+          }
+        },
+        {
+          "id": "z64-rows1024",
+          "horizontalZBatch": 64,
+          "verticalHalfRowBatch": 1024,
+          "module": "wv_issue130_z64_rows1024",
+          "mexSha256": "bb4521d9c399abe9c123c827c5aee3575f1c67791f305267575e97513f08679e",
+          "correctnessPassed": true,
+          "errors": {
+            "Fp": 8.2330843333285624E-15,
+            "Fm": 7.8810503291812055E-15,
+            "F0": 7.6210875279737853E-15
+          },
+          "maximumRelativeError": 8.2330843333285624E-15,
+          "horizontalFFTSamplesSeconds": [
+            0.025567333,
+            0.025691001,
+            0.025687834000000007
+          ],
+          "horizontalFFTMedianSeconds": 0.025687834000000007,
+          "verticalFFTSamplesSeconds": [
+            0.039248707,
+            0.039377541000000009,
+            0.040564832999999995
+          ],
+          "verticalFFTMedianSeconds": 0.039377541000000009,
+          "affectedPipelineSamplesSeconds": [
+            0.06481604,
+            0.065068542000000007,
+            0.066252667
+          ],
+          "affectedPipelineMedianSeconds": 0.065068542000000007,
+          "affectedPipelineImprovement": -0.27962154762632174,
+          "microbenchmarkQualified": false,
+          "complete": {
+            "warmupCount": 0,
+            "sampleCount": 0,
+            "totalSamplesSeconds": [],
+            "totalMedianSeconds": null,
+            "internalSamplesSeconds": [],
+            "internalMedianSeconds": null,
+            "controlImprovement": null,
+            "improvesControl": false,
+            "planCount": null,
+            "planBytes": null,
+            "logicalPlanCount": null,
+            "nativeExecutionCount": null,
+            "horizontalNativeExecutionCount": null,
+            "verticalNativeExecutionCount": null
+          },
+          "metrics": {
+            "fftBatchSchedule": "streamed-bounded-main-tail",
+            "horizontalZBatchSize": 64,
+            "verticalHalfRowBatchSize": 1024,
+            "planCount": 34,
+            "logicalPlanCount": 17,
+            "planBytes": 2176,
+            "nativeExecutionCount": 480,
+            "horizontalNativeExecutionCount": 18,
+            "verticalNativeExecutionCount": 462,
+            "logicalExecutionCount": 23,
+            "horizontalLogicalExecutionCount": 9,
+            "verticalLogicalExecutionCount": 14,
+            "horizontalFFTSeconds": 0.025687834000000007,
+            "verticalFFTSeconds": 0.040564832999999995
+          }
+        },
+        {
+          "id": "z64-rows4096",
+          "horizontalZBatch": 64,
+          "verticalHalfRowBatch": 4096,
+          "module": "wv_issue130_z64_rows4096",
+          "mexSha256": "65d2df0ed87a38ab65c747673204b067259f0875ad112793f3896acdba8b60fc",
+          "correctnessPassed": true,
+          "errors": {
+            "Fp": 8.2330843333285624E-15,
+            "Fm": 7.8810503291812055E-15,
+            "F0": 7.6210875279737853E-15
+          },
+          "maximumRelativeError": 8.2330843333285624E-15,
+          "horizontalFFTSamplesSeconds": [
+            0.025493917,
+            0.024820417000000004,
+            0.025678667
+          ],
+          "horizontalFFTMedianSeconds": 0.025493917,
+          "verticalFFTSamplesSeconds": [
+            0.029293417,
+            0.032085247000000004,
+            0.031843334000000008
+          ],
+          "verticalFFTMedianSeconds": 0.031843334000000008,
+          "affectedPipelineSamplesSeconds": [
+            0.054787334,
+            0.056905664000000009,
+            0.057522001
+          ],
+          "affectedPipelineMedianSeconds": 0.056905664000000009,
+          "affectedPipelineImprovement": -0.11909244618364845,
+          "microbenchmarkQualified": false,
+          "complete": {
+            "warmupCount": 0,
+            "sampleCount": 0,
+            "totalSamplesSeconds": [],
+            "totalMedianSeconds": null,
+            "internalSamplesSeconds": [],
+            "internalMedianSeconds": null,
+            "controlImprovement": null,
+            "improvesControl": false,
+            "planCount": null,
+            "planBytes": null,
+            "logicalPlanCount": null,
+            "nativeExecutionCount": null,
+            "horizontalNativeExecutionCount": null,
+            "verticalNativeExecutionCount": null
+          },
+          "metrics": {
+            "fftBatchSchedule": "streamed-bounded-main-tail",
+            "horizontalZBatchSize": 64,
+            "verticalHalfRowBatchSize": 4096,
+            "planCount": 34,
+            "logicalPlanCount": 17,
+            "planBytes": 2176,
+            "nativeExecutionCount": 144,
+            "horizontalNativeExecutionCount": 18,
+            "verticalNativeExecutionCount": 126,
+            "logicalExecutionCount": 23,
+            "horizontalLogicalExecutionCount": 9,
+            "verticalLogicalExecutionCount": 14,
+            "horizontalFFTSeconds": 0.025678667,
+            "verticalFFTSeconds": 0.031843334000000008
+          }
+        }
+      ]
+    }
+  ],
+  "qualifiedConfigurationIds": "zall-rowsall",
+  "selection": {
+    "id": "zall-rowsall",
+    "selectedControl": true,
+    "reason": "No bounded configuration completed the gate and beat all/all by more than the 3% simplicity preference.",
+    "geometricMeanSeconds": 0.063692189304138128,
+    "allAllWithinThreePercent": true
+  }
+}
