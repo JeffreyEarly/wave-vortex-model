@@ -1,0 +1,3936 @@
+{
+  "schemaVersion": "1.0.0",
+  "status": "complete",
+  "runId": "20260812T055439Z-donut-reduced",
+  "generatedAtUTC": "2026-08-12T05:58:06.734Z",
+  "source": {
+    "repository": "JeffreyEarly/wave-vortex-model",
+    "commit": "ad98592908b8073b63f0bca14b753f988a0236e5",
+    "tree": "757349fff35bbc564249dd4acaf85d82f92fad01",
+    "isDirty": false,
+    "pinnedParent": "7fd33f74aaccfa6e2ac80ad2ede12f19e8740d05",
+    "baselineCommit": "be0f78995c49a2bfe4c43d75827856e3812ac278",
+    "baselineTree": "5cb0921bb8a188e3334cca7a7bf4c8d07cca5b75",
+    "baselineIsDirty": false,
+    "files": [
+      {
+        "path": "CompiledKernel/src/WVTransformConstantStratificationKernel.cpp",
+        "sha256": "2b1b1eed7bf1f48cb6aa4fb7ac5fb92b7c472c657d2f0fbb97443d739abc90dd"
+      },
+      {
+        "path": "CompiledKernel/include/WaveVortexKernel/WVTransformConstantStratificationKernel.hpp",
+        "sha256": "c69446f7513e83e90d125a17d0a7579d10a7fcffb2bd3eb05df21f0a6a5c8ab0"
+      },
+      {
+        "path": "Benchmarks/compiled-kernel/issue130_donut_reduced_driver.cpp",
+        "sha256": "0d4962729ceb1cfda5353e0bc3990334bdade3b8341a391d433354557f6e8b3e"
+      },
+      {
+        "path": "Benchmarks/compiledKernelIssue130DonutReducedWorker.m",
+        "sha256": "60ff3da401103eccc38a4c770d3e8f59a7c6a11f90feb93a4decef7ab38756bf"
+      },
+      {
+        "path": "Benchmarks/runCompiledKernelIssue130DonutReduced.m",
+        "sha256": "9a19e306c2c504b0638bd30d50590a0a5ec5d480d5542da3c3118df76e9622c5"
+      }
+    ],
+    "buildProducts": {
+      "controlNativeSha256": "b892939a27efe02e9d9c5760ba1ecf89a3648daa81a7fdcabda5e7ada5c2c1a1",
+      "streamedNativeSha256": "6ae8c9ccc4ba3faa0444cef5d8b0f78757b9c99c8fbdb393e19341c8928ef220",
+      "singleOutputNativeSha256": "ee4d605d0802daef79a145d78c1bb0f37ac124603e38c474f30ab109da9ed904",
+      "controlMexSha256": "6ad87507132b9c1ab34175446b63fe26fff8e513ada0524b378db32e8978c719",
+      "streamedMexSha256": "2d64b1995f2679e29d1aeee885a89bb85494fe0bec4668f31492c69403a2f897",
+      "singleOutputMexSha256": "0c9d4d5f506216ae1d27381ce93942ea8dff37f46529a7c92eda31cf4749f6c8"
+    },
+    "measurementCommit": "ad98592908b8073b63f0bca14b753f988a0236e5",
+    "measurementTree": "757349fff35bbc564249dd4acaf85d82f92fad01",
+    "metadataCorrectionCommit": "894f81ff18a1f28248323bfce57937f49c2579a0",
+    "metadataCorrectionTree": "4c0a0622051d6b839e3ed10f4340794582f8a6be"
+  },
+  "environment": {
+    "host": "donut",
+    "hardwareModel": "Mac17,6",
+    "processor": "Apple M5 Max",
+    "os": "Darwin donut 25.5.0 Darwin Kernel Version 25.5.0: Tue Jun  9 22:28:34 PDT 2026; root:xnu-12377.121.10~1/RELEASE_ARM64_T6050 arm64",
+    "osVersion": "ProductName:\t\tmacOS\nProductVersion:\t\t26.5.2\nBuildVersion:\t\t25F84",
+    "architecture": "maca64",
+    "memoryBytes": 51539607552,
+    "physicalCores": 18,
+    "logicalCores": 18,
+    "matlabVersion": "26.1.0.3312084 (R2026a) Update 4",
+    "matlabRelease": "2026a",
+    "matlabMaximumThreads": 18,
+    "compiler": "Apple clang version 21.0.0 (clang-2100.1.1.101)\nTarget: arm64-apple-darwin25.5.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+    "provider": {
+      "id": "native-neon-pthreads",
+      "version": "3.3.11",
+      "buildKey": "99b0f0e9ae7e3864",
+      "configureFlags": "--host=aarch64-apple-darwin --enable-neon --enable-threads --disable-fortran --disable-openmp --enable-shared --disable-static",
+      "compilerFlags": "-O3 -mcpu=native -mmacosx-version-min=13.3",
+      "baseLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3.3.dylib",
+      "threadLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3_threads.3.dylib",
+      "baseLibrarySha256": "abc08b7b2c328d9659dd89a382494d7ca2e7aaec369c1f1025e255c6a2d99a0b",
+      "threadLibrarySha256": "6e5c9a14b2c3db5fc8ec5f9ba5bd08457677cc9b8c12baa6331379c6145ba0ca"
+    },
+    "openMPRuntimePolicy": "MATLAB's bundled libomp may already be resident; no isolated LLVM libomp may be loaded, and FFTW must resolve the pinned pthreads library."
+  },
+  "configuration": {
+    "protocol": "Donut reduced dual-host validation",
+    "threadCount": 18,
+    "warmupCount": 2,
+    "sampleCount": 3,
+    "caseIds": [
+      "constant-hydrostatic-256x256x65",
+      "constant-nonhydrostatic-256x256x65"
+    ],
+    "largeCasesRun": false,
+    "finalistThreeProcessProtocolRun": false,
+    "rssProtocolRun": false,
+    "correctnessTolerance": 1E-12,
+    "maximumAllowedRegression": 0.05,
+    "nativeExecutionOrder": [
+      {
+        "caseId": "constant-hydrostatic-256x256x65",
+        "order": [
+          "control-be0f789",
+          "streamed-target-three-channel",
+          "streamed-target-single-output-4H+5R"
+        ]
+      },
+      {
+        "caseId": "constant-nonhydrostatic-256x256x65",
+        "order": [
+          "streamed-target-three-channel",
+          "streamed-target-single-output-4H+5R",
+          "control-be0f789"
+        ]
+      }
+    ],
+    "matlabExecutionOrder": [
+      {
+        "caseId": "constant-hydrostatic-256x256x65",
+        "order": [
+          "control-be0f789",
+          "streamed-target-three-channel",
+          "streamed-target-single-output-4H+5R",
+          "production-matlab-wvt-nonlinearFlux"
+        ]
+      },
+      {
+        "caseId": "constant-nonhydrostatic-256x256x65",
+        "order": [
+          "streamed-target-three-channel",
+          "streamed-target-single-output-4H+5R",
+          "production-matlab-wvt-nonlinearFlux",
+          "control-be0f789"
+        ]
+      }
+    ],
+    "deterministicStateAdvancement": "state i uses t=t0+30i and coefficient phases +/-0.017i and 0.017i/3",
+    "freshProcessPolicy": "one fresh process per implementation and case"
+  },
+  "nativeRuns": [
+    {
+      "executionOrdinal": 1,
+      "caseIndex": 1,
+      "variantIndex": 1,
+      "result": {
+        "schemaVersion": "1.0.0",
+        "status": "complete",
+        "variant": "control-be0f78995c49a2bfe4c43d75827856e3812ac278",
+        "case": "hydrostatic",
+        "configuration": {
+          "Nx": 256,
+          "Ny": 256,
+          "Nz": 65,
+          "Nj": 42,
+          "threadsRequested": 18,
+          "threadsEffective": 18,
+          "threadBehavior": "fftw_plan_with_nthreads(18) for every plan; two joined coefficient workers run outside FFTW execution regions; no nested threading or isolated OpenMP runtime",
+          "warmups": 2,
+          "samples": 3,
+          "coefficientWorkerCount": 2
+        },
+        "identity": {
+          "fftwVersion": "fftw-3.3.11-neon",
+          "baseLibraryDladdr": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3.3.dylib",
+          "threadLibraryDladdr": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3_threads.3.dylib",
+          "openMPRuntimeDladdr": "",
+          "compiler": "21.0.0 (clang-2100.1.1.101)"
+        },
+        "schedule": "sequential-phase-once",
+        "timing": {
+          "constructionSeconds": 11.08993,
+          "samplesSeconds": [
+            0.060272,
+            0.060892125,
+            0.060324708
+          ],
+          "diagnosticTotalSeconds": 0.061308333,
+          "stages": {
+            "phaseSeconds": 0.001479584,
+            "reconstructionSeconds": 0.011859084,
+            "derivativeReconstructionSeconds": 0.027988208,
+            "productSeconds": 0.007126792,
+            "projectionSeconds": 0.012854125,
+            "coefficientAssemblySeconds": 0.001311042,
+            "derivativeCoefficientAssemblySeconds": 0.002470625,
+            "coefficientProjectionSeconds": 0.001648
+          }
+        },
+        "memory": {
+          "descriptorBytes": 113012311,
+          "scratchBytes": 4.100096E+8,
+          "halfSpectrumScratchBytes": 1.3737984E+8,
+          "realScratchBytes": 2.7262976E+8,
+          "phaseReservationBytes": 0,
+          "stateInputBytes": 23061024,
+          "fluxOutputBytes": 23061024,
+          "persistentOwnedBytesLowerBound": 523022247,
+          "exactMaximumLiveArrayBytesExcludingOpaquePlans": 569143959,
+          "knownMaximumLiveOwnedBytesLowerBound": 569144295,
+          "persistentFullHermitianBytes": 0
+        },
+        "plans": {
+          "count": 14,
+          "wrapperBytesLowerBound": 336,
+          "memoryAccounting": "wrapper lower bound; FFTW-owned plan memory is opaque",
+          "executionCount": 15,
+          "horizontalExecutionCount": 5,
+          "verticalExecutionCount": 10,
+          "phaseEvaluationCount": 480438
+        },
+        "lifecycle": {
+          "activePlansBefore": 0,
+          "activePlansDuring": 14,
+          "activePlansAfter": 0,
+          "created": 14,
+          "destroyed": 14,
+          "outstandingPlanningBytesAfter": 0,
+          "balancedCleanup": true
+        },
+        "fallbackOccurred": false
+      },
+      "comparison": {
+        "Fp": 0,
+        "Fm": 0,
+        "F0": 0,
+        "maximumRelativeInfinityError": 0
+      }
+    },
+    {
+      "executionOrdinal": 2,
+      "caseIndex": 1,
+      "variantIndex": 2,
+      "result": {
+        "schemaVersion": "1.0.0",
+        "status": "complete",
+        "variant": "streamed-target-three-channel",
+        "case": "hydrostatic",
+        "configuration": {
+          "Nx": 256,
+          "Ny": 256,
+          "Nz": 65,
+          "Nj": 42,
+          "threadsRequested": 18,
+          "threadsEffective": 18,
+          "threadBehavior": "fftw_plan_with_nthreads(18) for every plan; two joined coefficient workers run outside FFTW execution regions; no nested threading or isolated OpenMP runtime",
+          "warmups": 2,
+          "samples": 3,
+          "coefficientWorkerCount": 2
+        },
+        "identity": {
+          "fftwVersion": "fftw-3.3.11-neon",
+          "baseLibraryDladdr": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3.3.dylib",
+          "threadLibraryDladdr": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3_threads.3.dylib",
+          "openMPRuntimeDladdr": "",
+          "compiler": "21.0.0 (clang-2100.1.1.101)"
+        },
+        "schedule": "issue130-streamed-target-three-channel",
+        "timing": {
+          "constructionSeconds": 12.485678,
+          "samplesSeconds": [
+            0.0545885,
+            0.055135542,
+            0.056019833
+          ],
+          "diagnosticTotalSeconds": 0.056358167,
+          "stages": {
+            "phaseSeconds": 0.001294,
+            "reconstructionSeconds": 0.009143083,
+            "derivativeReconstructionSeconds": 0.026761916,
+            "productSeconds": 0.0071722079999999994,
+            "projectionSeconds": 0.011986542,
+            "coefficientAssemblySeconds": 0.001151958,
+            "derivativeCoefficientAssemblySeconds": 0.0024286660000000003,
+            "coefficientProjectionSeconds": 0
+          }
+        },
+        "memory": {
+          "descriptorBytes": 113012311,
+          "scratchBytes": 3.4185216E+8,
+          "halfSpectrumScratchBytes": 1.3737984E+8,
+          "realScratchBytes": 2.0447232E+8,
+          "phaseReservationBytes": 3.434496E+7,
+          "stateInputBytes": 23061024,
+          "fluxOutputBytes": 23061024,
+          "persistentOwnedBytesLowerBound": 454864879,
+          "exactMaximumLiveArrayBytesExcludingOpaquePlans": 500986519,
+          "knownMaximumLiveOwnedBytesLowerBound": 500986927,
+          "persistentFullHermitianBytes": 0
+        },
+        "plans": {
+          "count": 17,
+          "wrapperBytesLowerBound": 408,
+          "memoryAccounting": "wrapper lower bound; FFTW-owned plan memory is opaque",
+          "executionCount": 18,
+          "horizontalExecutionCount": 7,
+          "verticalExecutionCount": 11,
+          "phaseEvaluationCount": 480438
+        },
+        "lifecycle": {
+          "activePlansBefore": 0,
+          "activePlansDuring": 17,
+          "activePlansAfter": 0,
+          "created": 17,
+          "destroyed": 17,
+          "outstandingPlanningBytesAfter": 0,
+          "balancedCleanup": true
+        },
+        "fallbackOccurred": false
+      },
+      "comparison": {
+        "Fp": 7.47487226131698E-14,
+        "Fm": 7.4686025205979254E-14,
+        "F0": 7.0932738491177837E-14,
+        "maximumRelativeInfinityError": 7.47487226131698E-14
+      }
+    },
+    {
+      "executionOrdinal": 3,
+      "caseIndex": 1,
+      "variantIndex": 3,
+      "result": {
+        "schemaVersion": "1.0.0",
+        "status": "complete",
+        "variant": "streamed-target-single-output-4H+5R",
+        "case": "hydrostatic",
+        "configuration": {
+          "Nx": 256,
+          "Ny": 256,
+          "Nz": 65,
+          "Nj": 42,
+          "threadsRequested": 18,
+          "threadsEffective": 18,
+          "threadBehavior": "fftw_plan_with_nthreads(18) for every plan; two joined coefficient workers run outside FFTW execution regions; no nested threading or isolated OpenMP runtime",
+          "warmups": 2,
+          "samples": 3,
+          "coefficientWorkerCount": 2
+        },
+        "identity": {
+          "fftwVersion": "fftw-3.3.11-neon",
+          "baseLibraryDladdr": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3.3.dylib",
+          "threadLibraryDladdr": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3_threads.3.dylib",
+          "openMPRuntimeDladdr": "",
+          "compiler": "21.0.0 (clang-2100.1.1.101)"
+        },
+        "schedule": "issue130-streamed-target-single-output",
+        "timing": {
+          "constructionSeconds": 13.80367425,
+          "samplesSeconds": [
+            0.061624792,
+            0.062423917,
+            0.061970625
+          ],
+          "diagnosticTotalSeconds": 0.06222175,
+          "stages": {
+            "phaseSeconds": 0.00128025,
+            "reconstructionSeconds": 0.008970667,
+            "derivativeReconstructionSeconds": 0.029240709,
+            "productSeconds": 0.010523124,
+            "projectionSeconds": 0.011804667000000001,
+            "coefficientAssemblySeconds": 0.0010995,
+            "derivativeCoefficientAssemblySeconds": 0.004862916,
+            "coefficientProjectionSeconds": 0
+          }
+        },
+        "memory": {
+          "descriptorBytes": 113012311,
+          "scratchBytes": 3.0777344E+8,
+          "halfSpectrumScratchBytes": 1.3737984E+8,
+          "realScratchBytes": 1.703936E+8,
+          "phaseReservationBytes": 3.434496E+7,
+          "stateInputBytes": 23061024,
+          "fluxOutputBytes": 23061024,
+          "persistentOwnedBytesLowerBound": 420786183,
+          "exactMaximumLiveArrayBytesExcludingOpaquePlans": 466907799,
+          "knownMaximumLiveOwnedBytesLowerBound": 466908231,
+          "persistentFullHermitianBytes": 0
+        },
+        "plans": {
+          "count": 18,
+          "wrapperBytesLowerBound": 432,
+          "memoryAccounting": "wrapper lower bound; FFTW-owned plan memory is opaque",
+          "executionCount": 27,
+          "horizontalExecutionCount": 13,
+          "verticalExecutionCount": 14,
+          "phaseEvaluationCount": 480438
+        },
+        "lifecycle": {
+          "activePlansBefore": 0,
+          "activePlansDuring": 18,
+          "activePlansAfter": 0,
+          "created": 18,
+          "destroyed": 18,
+          "outstandingPlanningBytesAfter": 0,
+          "balancedCleanup": true
+        },
+        "fallbackOccurred": false
+      },
+      "comparison": {
+        "Fp": 6.227117662345799E-14,
+        "Fm": 6.2186105587935482E-14,
+        "F0": 7.0245012093175245E-14,
+        "maximumRelativeInfinityError": 7.0245012093175245E-14
+      }
+    },
+    {
+      "executionOrdinal": 4,
+      "caseIndex": 2,
+      "variantIndex": 2,
+      "result": {
+        "schemaVersion": "1.0.0",
+        "status": "complete",
+        "variant": "streamed-target-three-channel",
+        "case": "nonhydrostatic",
+        "configuration": {
+          "Nx": 256,
+          "Ny": 256,
+          "Nz": 65,
+          "Nj": 42,
+          "threadsRequested": 18,
+          "threadsEffective": 18,
+          "threadBehavior": "fftw_plan_with_nthreads(18) for every plan; two joined coefficient workers run outside FFTW execution regions; no nested threading or isolated OpenMP runtime",
+          "warmups": 2,
+          "samples": 3,
+          "coefficientWorkerCount": 2
+        },
+        "identity": {
+          "fftwVersion": "fftw-3.3.11-neon",
+          "baseLibraryDladdr": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3.3.dylib",
+          "threadLibraryDladdr": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3_threads.3.dylib",
+          "openMPRuntimeDladdr": "",
+          "compiler": "21.0.0 (clang-2100.1.1.101)"
+        },
+        "schedule": "issue130-streamed-target-three-channel",
+        "timing": {
+          "constructionSeconds": 12.419516917,
+          "samplesSeconds": [
+            0.068251541,
+            0.068405208,
+            0.067934625
+          ],
+          "diagnosticTotalSeconds": 0.067562625,
+          "stages": {
+            "phaseSeconds": 0.001242208,
+            "reconstructionSeconds": 0.008478458,
+            "derivativeReconstructionSeconds": 0.032156168,
+            "productSeconds": 0.01058404,
+            "projectionSeconds": 0.015100792000000002,
+            "coefficientAssemblySeconds": 0.001142125,
+            "derivativeCoefficientAssemblySeconds": 0.003209292,
+            "coefficientProjectionSeconds": 0
+          }
+        },
+        "memory": {
+          "descriptorBytes": 113012311,
+          "scratchBytes": 3.4185216E+8,
+          "halfSpectrumScratchBytes": 1.3737984E+8,
+          "realScratchBytes": 2.0447232E+8,
+          "phaseReservationBytes": 3.434496E+7,
+          "stateInputBytes": 23061024,
+          "fluxOutputBytes": 23061024,
+          "persistentOwnedBytesLowerBound": 454864879,
+          "exactMaximumLiveArrayBytesExcludingOpaquePlans": 500986519,
+          "knownMaximumLiveOwnedBytesLowerBound": 500986927,
+          "persistentFullHermitianBytes": 0
+        },
+        "plans": {
+          "count": 17,
+          "wrapperBytesLowerBound": 408,
+          "memoryAccounting": "wrapper lower bound; FFTW-owned plan memory is opaque",
+          "executionCount": 23,
+          "horizontalExecutionCount": 9,
+          "verticalExecutionCount": 14,
+          "phaseEvaluationCount": 480438
+        },
+        "lifecycle": {
+          "activePlansBefore": 0,
+          "activePlansDuring": 17,
+          "activePlansAfter": 0,
+          "created": 17,
+          "destroyed": 17,
+          "outstandingPlanningBytesAfter": 0,
+          "balancedCleanup": true
+        },
+        "fallbackOccurred": false
+      },
+      "comparison": {
+        "Fp": 5.6039812935409491E-14,
+        "Fm": 5.6029691124396872E-14,
+        "F0": 6.3053071259485422E-14,
+        "maximumRelativeInfinityError": 6.3053071259485422E-14
+      }
+    },
+    {
+      "executionOrdinal": 5,
+      "caseIndex": 2,
+      "variantIndex": 3,
+      "result": {
+        "schemaVersion": "1.0.0",
+        "status": "complete",
+        "variant": "streamed-target-single-output-4H+5R",
+        "case": "nonhydrostatic",
+        "configuration": {
+          "Nx": 256,
+          "Ny": 256,
+          "Nz": 65,
+          "Nj": 42,
+          "threadsRequested": 18,
+          "threadsEffective": 18,
+          "threadBehavior": "fftw_plan_with_nthreads(18) for every plan; two joined coefficient workers run outside FFTW execution regions; no nested threading or isolated OpenMP runtime",
+          "warmups": 2,
+          "samples": 3,
+          "coefficientWorkerCount": 2
+        },
+        "identity": {
+          "fftwVersion": "fftw-3.3.11-neon",
+          "baseLibraryDladdr": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3.3.dylib",
+          "threadLibraryDladdr": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3_threads.3.dylib",
+          "openMPRuntimeDladdr": "",
+          "compiler": "21.0.0 (clang-2100.1.1.101)"
+        },
+        "schedule": "issue130-streamed-target-single-output",
+        "timing": {
+          "constructionSeconds": 13.433165792,
+          "samplesSeconds": [
+            0.076524458,
+            0.079660541,
+            0.076384333
+          ],
+          "diagnosticTotalSeconds": 0.074907208,
+          "stages": {
+            "phaseSeconds": 0.001237959,
+            "reconstructionSeconds": 0.008680334,
+            "derivativeReconstructionSeconds": 0.035963833,
+            "productSeconds": 0.013946584000000001,
+            "projectionSeconds": 0.014543752,
+            "coefficientAssemblySeconds": 0.001116542,
+            "derivativeCoefficientAssemblySeconds": 0.0061225850000000007,
+            "coefficientProjectionSeconds": 0
+          }
+        },
+        "memory": {
+          "descriptorBytes": 113012311,
+          "scratchBytes": 3.0777344E+8,
+          "halfSpectrumScratchBytes": 1.3737984E+8,
+          "realScratchBytes": 1.703936E+8,
+          "phaseReservationBytes": 3.434496E+7,
+          "stateInputBytes": 23061024,
+          "fluxOutputBytes": 23061024,
+          "persistentOwnedBytesLowerBound": 420786183,
+          "exactMaximumLiveArrayBytesExcludingOpaquePlans": 466907799,
+          "knownMaximumLiveOwnedBytesLowerBound": 466908231,
+          "persistentFullHermitianBytes": 0
+        },
+        "plans": {
+          "count": 18,
+          "wrapperBytesLowerBound": 432,
+          "memoryAccounting": "wrapper lower bound; FFTW-owned plan memory is opaque",
+          "executionCount": 35,
+          "horizontalExecutionCount": 17,
+          "verticalExecutionCount": 18,
+          "phaseEvaluationCount": 480438
+        },
+        "lifecycle": {
+          "activePlansBefore": 0,
+          "activePlansDuring": 18,
+          "activePlansAfter": 0,
+          "created": 18,
+          "destroyed": 18,
+          "outstandingPlanningBytesAfter": 0,
+          "balancedCleanup": true
+        },
+        "fallbackOccurred": false
+      },
+      "comparison": {
+        "Fp": 4.6912438477814819E-14,
+        "Fm": 4.7093871038475752E-14,
+        "F0": 8.7860756848761809E-14,
+        "maximumRelativeInfinityError": 8.7860756848761809E-14
+      }
+    },
+    {
+      "executionOrdinal": 6,
+      "caseIndex": 2,
+      "variantIndex": 1,
+      "result": {
+        "schemaVersion": "1.0.0",
+        "status": "complete",
+        "variant": "control-be0f78995c49a2bfe4c43d75827856e3812ac278",
+        "case": "nonhydrostatic",
+        "configuration": {
+          "Nx": 256,
+          "Ny": 256,
+          "Nz": 65,
+          "Nj": 42,
+          "threadsRequested": 18,
+          "threadsEffective": 18,
+          "threadBehavior": "fftw_plan_with_nthreads(18) for every plan; two joined coefficient workers run outside FFTW execution regions; no nested threading or isolated OpenMP runtime",
+          "warmups": 2,
+          "samples": 3,
+          "coefficientWorkerCount": 2
+        },
+        "identity": {
+          "fftwVersion": "fftw-3.3.11-neon",
+          "baseLibraryDladdr": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3.3.dylib",
+          "threadLibraryDladdr": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3_threads.3.dylib",
+          "openMPRuntimeDladdr": "",
+          "compiler": "21.0.0 (clang-2100.1.1.101)"
+        },
+        "schedule": "sequential-phase-once",
+        "timing": {
+          "constructionSeconds": 10.849375333,
+          "samplesSeconds": [
+            0.071041291,
+            0.077502208,
+            0.068692916
+          ],
+          "diagnosticTotalSeconds": 0.068968458,
+          "stages": {
+            "phaseSeconds": 0.001439584,
+            "reconstructionSeconds": 0.011078791,
+            "derivativeReconstructionSeconds": 0.031450834999999996,
+            "productSeconds": 0.010413291,
+            "projectionSeconds": 0.01458525,
+            "coefficientAssemblySeconds": 0.001371667,
+            "derivativeCoefficientAssemblySeconds": 0.0029925409999999996,
+            "coefficientProjectionSeconds": 0.002007792
+          }
+        },
+        "memory": {
+          "descriptorBytes": 113012311,
+          "scratchBytes": 4.4408832E+8,
+          "halfSpectrumScratchBytes": 1.3737984E+8,
+          "realScratchBytes": 3.0670848E+8,
+          "phaseReservationBytes": 0,
+          "stateInputBytes": 23061024,
+          "fluxOutputBytes": 23061024,
+          "persistentOwnedBytesLowerBound": 557100967,
+          "exactMaximumLiveArrayBytesExcludingOpaquePlans": 603222679,
+          "knownMaximumLiveOwnedBytesLowerBound": 603223015,
+          "persistentFullHermitianBytes": 0
+        },
+        "plans": {
+          "count": 14,
+          "wrapperBytesLowerBound": 336,
+          "memoryAccounting": "wrapper lower bound; FFTW-owned plan memory is opaque",
+          "executionCount": 18,
+          "horizontalExecutionCount": 6,
+          "verticalExecutionCount": 12,
+          "phaseEvaluationCount": 480438
+        },
+        "lifecycle": {
+          "activePlansBefore": 0,
+          "activePlansDuring": 14,
+          "activePlansAfter": 0,
+          "created": 14,
+          "destroyed": 14,
+          "outstandingPlanningBytesAfter": 0,
+          "balancedCleanup": true
+        },
+        "fallbackOccurred": false
+      },
+      "comparison": {
+        "Fp": 0,
+        "Fm": 0,
+        "F0": 0,
+        "maximumRelativeInfinityError": 0
+      }
+    }
+  ],
+  "matlabRuns": [
+    {
+      "executionOrdinal": 1,
+      "caseIndex": 1,
+      "variantIndex": 1,
+      "result": {
+        "schemaVersion": "1.0.0",
+        "status": "complete",
+        "mode": "mex",
+        "variantId": "control-be0f789",
+        "caseId": "constant-hydrostatic-256x256x65",
+        "Nxyz": [
+          256,
+          256,
+          65
+        ],
+        "isHydrostatic": true,
+        "seed": 1302561,
+        "threadCountRequested": 18,
+        "threadCountEffective": 18,
+        "threadBehavior": "FFTW plans requested 18 pthreads; two joined coefficient workers run outside FFTW execution regions; MATLAB bundled libomp may be resident but is not the FFTW backend; no nested threading or isolated LLVM libomp",
+        "warmupCount": 2,
+        "sampleCount": 3,
+        "module": "wv_issue130_donut_control",
+        "mexSha256": "6ad87507132b9c1ab34175446b63fe26fff8e513ada0524b378db32e8978c719",
+        "moduleInfo": {
+          "engine": "fftw",
+          "version": "fftw-3.3.11-neon",
+          "baseLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3.3.dylib",
+          "threadLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3_threads.3.dylib",
+          "openMPRuntimeLibrary": "/Applications/MATLAB_R2026a.app/bin/maca64/libomp.dylib"
+        },
+        "constructionSeconds": 10.918705041666668,
+        "planningSeconds": 10.887517542000001,
+        "totalSamplesSeconds": [
+          0.052803291666666669,
+          0.053128916666666665,
+          0.052940708333333336
+        ],
+        "totalMedianSeconds": 0.052940708333333336,
+        "internalSamplesSeconds": [
+          0.052596709,
+          0.052920167,
+          0.052749792
+        ],
+        "internalMedianSeconds": 0.052749792,
+        "mexBoundaryConversionSamplesSeconds": [
+          0.00020658266666667008,
+          0.00020874966666666744,
+          0.00019091633333333941
+        ],
+        "mexBoundaryConversionMedianSeconds": 0.00020658266666667008,
+        "boundaryConversionBehavior": "interleaved-complex inputs are passed by pointer; three complex outputs are allocated at the MEX boundary; reported boundary is complete call minus C++ entry timing",
+        "errors": {
+          "Fp": 9.5175159905832861E-15,
+          "Fm": 8.6698719378106052E-15,
+          "F0": 8.5128817331336364E-15
+        },
+        "maximumRelativeInfinityError": 9.5175159905832861E-15,
+        "metrics": {
+          "engine": "fftw",
+          "loadedLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3.3.dylib",
+          "nonlinearFluxSchedule": "sequential-phase-once",
+          "phaseImplementation": "scalar-sincos",
+          "coefficientStorageMode": "natural-dimensional",
+          "coefficientArithmeticMode": "natural-dimensional-prescaled",
+          "inverseNormalizationPlacement": "coefficient-production",
+          "optimizationImplementation": "O3-native",
+          "coefficientWorkerCount": 2,
+          "planMemoryAccounting": "wrapper lower bound; FFTW-owned plan memory is opaque",
+          "contractVersion": 4,
+          "planCount": 14,
+          "planBytes": 336,
+          "descriptorBytes": 113012311,
+          "scratchCapacityBytes": 4.100096E+8,
+          "scratchHighWaterBytes": 4.100096E+8,
+          "halfSpectrumScratchCapacityBytes": 1.3737984E+8,
+          "realScratchCapacityBytes": 2.7262976E+8,
+          "executionCount": 105,
+          "horizontalExecutionCount": 35,
+          "verticalExecutionCount": 70,
+          "nonlinearFluxCallCount": 7,
+          "nonlinearFluxPhaseEvaluationCount": 3363066,
+          "phaseWorkspaceBytes": 0,
+          "persistentBytes": 523022247,
+          "stateInputBytes": 23061024,
+          "fluxOutputBytes": 23061024,
+          "knownMaximumLiveOwnedBytes": 546083271,
+          "persistentFullHermitianBytes": 0,
+          "gradientMaskBytes": 0,
+          "Nx": 256,
+          "Ny": 256,
+          "Nz": 65,
+          "Nj": 42,
+          "Nkl": 11439,
+          "phaseSeconds": 0.001785167,
+          "reconstructionSeconds": 0.012620083,
+          "derivativeReconstructionSeconds": 0.022804040999999997,
+          "productSeconds": 0.0076908759999999993,
+          "projectionSeconds": 0.011374208,
+          "coefficientAssemblySeconds": 0.001803333,
+          "derivativeCoefficientAssemblySeconds": 0.002336333,
+          "coefficientProjectionSeconds": 0.001682917,
+          "screeningVariant": "control-be0f789",
+          "phaseReservationBytes": 0,
+          "exactPersistentArrayBytesExcludingOpaquePlans": 523021911,
+          "exactMaximumLiveArrayBytesExcludingOpaquePlans": 569143959,
+          "fallbackOccurred": false
+        },
+        "diagnostic": {
+          "totalSeconds": 0.056543416666666665,
+          "internalSeconds": 0.056292333,
+          "mexBoundaryConversionSeconds": 0.00025108366666666548,
+          "phaseSeconds": 0.001785167,
+          "reconstructionSeconds": 0.012620083,
+          "derivativeReconstructionSeconds": 0.022804040999999997,
+          "productSeconds": 0.0076908759999999993,
+          "projectionSeconds": 0.011374208,
+          "coefficientAssemblySeconds": 0.001803333,
+          "derivativeCoefficientAssemblySeconds": 0.002336333,
+          "coefficientProjectionSeconds": 0.001682917,
+          "executionCount": 15,
+          "horizontalExecutionCount": 5,
+          "verticalExecutionCount": 10,
+          "nonlinearFluxCallCount": 1,
+          "phaseEvaluationCount": 480438
+        },
+        "lifecycle": {
+          "passed": true,
+          "before": {
+            "kernelCount": 0,
+            "moduleLocked": 0,
+            "activePlans": 0,
+            "totalPlansCreated": 0,
+            "totalPlansDestroyed": 0,
+            "outstandingPlanningBytes": 0,
+            "totalPlanningSeconds": 0
+          },
+          "afterDelete": {
+            "kernelCount": 0,
+            "moduleLocked": 0,
+            "activePlans": 0,
+            "totalPlansCreated": 14,
+            "totalPlansDestroyed": 14,
+            "outstandingPlanningBytes": 0,
+            "totalPlanningSeconds": 10.887517542000001
+          }
+        },
+        "fallbackOccurred": false,
+        "failure": {
+          "identifier": "",
+          "message": "",
+          "stack": [],
+          "report": ""
+        }
+      }
+    },
+    {
+      "executionOrdinal": 2,
+      "caseIndex": 1,
+      "variantIndex": 2,
+      "result": {
+        "schemaVersion": "1.0.0",
+        "status": "complete",
+        "mode": "mex",
+        "variantId": "streamed-target-three-channel",
+        "caseId": "constant-hydrostatic-256x256x65",
+        "Nxyz": [
+          256,
+          256,
+          65
+        ],
+        "isHydrostatic": true,
+        "seed": 1302561,
+        "threadCountRequested": 18,
+        "threadCountEffective": 18,
+        "threadBehavior": "FFTW plans requested 18 pthreads; two joined coefficient workers run outside FFTW execution regions; MATLAB bundled libomp may be resident but is not the FFTW backend; no nested threading or isolated LLVM libomp",
+        "warmupCount": 2,
+        "sampleCount": 3,
+        "module": "wv_issue130_donut_streamed",
+        "mexSha256": "2d64b1995f2679e29d1aeee885a89bb85494fe0bec4668f31492c69403a2f897",
+        "moduleInfo": {
+          "engine": "fftw",
+          "version": "fftw-3.3.11-neon",
+          "baseLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3.3.dylib",
+          "threadLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3_threads.3.dylib",
+          "openMPRuntimeLibrary": "/Applications/MATLAB_R2026a.app/bin/maca64/libomp.dylib"
+        },
+        "constructionSeconds": 12.352059375,
+        "planningSeconds": 12.320233333000001,
+        "totalSamplesSeconds": [
+          0.051731666666666669,
+          0.052415833333333335,
+          0.053258791666666666
+        ],
+        "totalMedianSeconds": 0.052415833333333335,
+        "internalSamplesSeconds": [
+          0.051534125,
+          0.052220541,
+          0.053066583
+        ],
+        "internalMedianSeconds": 0.052220541,
+        "mexBoundaryConversionSamplesSeconds": [
+          0.00019754166666666878,
+          0.00019529233333333285,
+          0.00019220866666666558
+        ],
+        "mexBoundaryConversionMedianSeconds": 0.00019529233333333285,
+        "boundaryConversionBehavior": "interleaved-complex inputs are passed by pointer; three complex outputs are allocated at the MEX boundary; reported boundary is complete call minus C++ entry timing",
+        "errors": {
+          "Fp": 9.5519971263754124E-15,
+          "Fm": 8.6361607963850072E-15,
+          "F0": 8.5738970388140459E-15
+        },
+        "maximumRelativeInfinityError": 9.5519971263754124E-15,
+        "metrics": {
+          "engine": "fftw",
+          "loadedLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3.3.dylib",
+          "nonlinearFluxSchedule": "issue130-streamed-target-three-channel",
+          "screeningVariant": "streamed-target-three-channel",
+          "phaseImplementation": "scalar-sincos",
+          "coefficientStorageMode": "natural-dimensional",
+          "coefficientArithmeticMode": "natural-dimensional-prescaled",
+          "inverseNormalizationPlacement": "coefficient-production",
+          "optimizationImplementation": "O3-native",
+          "coefficientWorkerCount": 2,
+          "planMemoryAccounting": "wrapper lower bound; FFTW-owned plan memory is opaque",
+          "contractVersion": 4,
+          "planCount": 17,
+          "planBytes": 408,
+          "descriptorBytes": 113012311,
+          "scratchCapacityBytes": 3.4185216E+8,
+          "scratchHighWaterBytes": 3.4185216E+8,
+          "halfSpectrumScratchCapacityBytes": 1.3737984E+8,
+          "realScratchCapacityBytes": 2.0447232E+8,
+          "executionCount": 126,
+          "horizontalExecutionCount": 49,
+          "verticalExecutionCount": 77,
+          "nonlinearFluxCallCount": 7,
+          "nonlinearFluxPhaseEvaluationCount": 3363066,
+          "phaseWorkspaceBytes": 3.434496E+7,
+          "phaseReservationBytes": 3.434496E+7,
+          "persistentBytes": 454864879,
+          "stateInputBytes": 23061024,
+          "fluxOutputBytes": 23061024,
+          "knownMaximumLiveOwnedBytes": 477925903,
+          "persistentFullHermitianBytes": 0,
+          "gradientMaskBytes": 0,
+          "Nx": 256,
+          "Ny": 256,
+          "Nz": 65,
+          "Nj": 42,
+          "Nkl": 11439,
+          "phaseSeconds": 0.001659167,
+          "reconstructionSeconds": 0.009120667,
+          "derivativeReconstructionSeconds": 0.023169708,
+          "productSeconds": 0.008535958,
+          "projectionSeconds": 0.011008334,
+          "coefficientAssemblySeconds": 0.00144025,
+          "derivativeCoefficientAssemblySeconds": 0.002504876,
+          "coefficientProjectionSeconds": 0,
+          "exactPersistentArrayBytesExcludingOpaquePlans": 454864471,
+          "exactMaximumLiveArrayBytesExcludingOpaquePlans": 500986519,
+          "fallbackOccurred": false
+        },
+        "diagnostic": {
+          "totalSeconds": 0.053746958333333331,
+          "internalSeconds": 0.053494959,
+          "mexBoundaryConversionSeconds": 0.00025199933333332897,
+          "phaseSeconds": 0.001659167,
+          "reconstructionSeconds": 0.009120667,
+          "derivativeReconstructionSeconds": 0.023169708,
+          "productSeconds": 0.008535958,
+          "projectionSeconds": 0.011008334,
+          "coefficientAssemblySeconds": 0.00144025,
+          "derivativeCoefficientAssemblySeconds": 0.002504876,
+          "coefficientProjectionSeconds": 0,
+          "executionCount": 18,
+          "horizontalExecutionCount": 7,
+          "verticalExecutionCount": 11,
+          "nonlinearFluxCallCount": 1,
+          "phaseEvaluationCount": 480438
+        },
+        "lifecycle": {
+          "passed": true,
+          "before": {
+            "kernelCount": 0,
+            "moduleLocked": 0,
+            "activePlans": 0,
+            "totalPlansCreated": 0,
+            "totalPlansDestroyed": 0,
+            "outstandingPlanningBytes": 0,
+            "totalPlanningSeconds": 0
+          },
+          "afterDelete": {
+            "kernelCount": 0,
+            "moduleLocked": 0,
+            "activePlans": 0,
+            "totalPlansCreated": 17,
+            "totalPlansDestroyed": 17,
+            "outstandingPlanningBytes": 0,
+            "totalPlanningSeconds": 12.320233333000001
+          }
+        },
+        "fallbackOccurred": false,
+        "failure": {
+          "identifier": "",
+          "message": "",
+          "stack": [],
+          "report": ""
+        }
+      }
+    },
+    {
+      "executionOrdinal": 3,
+      "caseIndex": 1,
+      "variantIndex": 3,
+      "result": {
+        "schemaVersion": "1.0.0",
+        "status": "complete",
+        "mode": "mex",
+        "variantId": "streamed-target-single-output-4H+5R",
+        "caseId": "constant-hydrostatic-256x256x65",
+        "Nxyz": [
+          256,
+          256,
+          65
+        ],
+        "isHydrostatic": true,
+        "seed": 1302561,
+        "threadCountRequested": 18,
+        "threadCountEffective": 18,
+        "threadBehavior": "FFTW plans requested 18 pthreads; two joined coefficient workers run outside FFTW execution regions; MATLAB bundled libomp may be resident but is not the FFTW backend; no nested threading or isolated LLVM libomp",
+        "warmupCount": 2,
+        "sampleCount": 3,
+        "module": "wv_issue130_donut_single_output",
+        "mexSha256": "0c9d4d5f506216ae1d27381ce93942ea8dff37f46529a7c92eda31cf4749f6c8",
+        "moduleInfo": {
+          "engine": "fftw",
+          "version": "fftw-3.3.11-neon",
+          "baseLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3.3.dylib",
+          "threadLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3_threads.3.dylib",
+          "openMPRuntimeLibrary": "/Applications/MATLAB_R2026a.app/bin/maca64/libomp.dylib"
+        },
+        "constructionSeconds": 13.673501875,
+        "planningSeconds": 13.643047169,
+        "totalSamplesSeconds": [
+          0.057891541666666664,
+          0.05839775,
+          0.0589725
+        ],
+        "totalMedianSeconds": 0.05839775,
+        "internalSamplesSeconds": [
+          0.057685292,
+          0.058203917,
+          0.05876775
+        ],
+        "internalMedianSeconds": 0.058203917,
+        "mexBoundaryConversionSamplesSeconds": [
+          0.00020624966666666494,
+          0.00019383299999999742,
+          0.0002047499999999966
+        ],
+        "mexBoundaryConversionMedianSeconds": 0.0002047499999999966,
+        "boundaryConversionBehavior": "interleaved-complex inputs are passed by pointer; three complex outputs are allocated at the MEX boundary; reported boundary is complete call minus C++ entry timing",
+        "errors": {
+          "Fp": 9.569472712617061E-15,
+          "Fm": 8.646162985551829E-15,
+          "F0": 8.5687351997837643E-15
+        },
+        "maximumRelativeInfinityError": 9.569472712617061E-15,
+        "metrics": {
+          "engine": "fftw",
+          "loadedLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3.3.dylib",
+          "nonlinearFluxSchedule": "issue130-streamed-target-single-output",
+          "screeningVariant": "streamed-target-single-output",
+          "phaseImplementation": "scalar-sincos",
+          "coefficientStorageMode": "natural-dimensional",
+          "coefficientArithmeticMode": "natural-dimensional-prescaled",
+          "inverseNormalizationPlacement": "coefficient-production",
+          "optimizationImplementation": "O3-native",
+          "coefficientWorkerCount": 2,
+          "planMemoryAccounting": "wrapper lower bound; FFTW-owned plan memory is opaque",
+          "contractVersion": 4,
+          "planCount": 18,
+          "planBytes": 432,
+          "descriptorBytes": 113012311,
+          "scratchCapacityBytes": 3.0777344E+8,
+          "scratchHighWaterBytes": 3.0777344E+8,
+          "halfSpectrumScratchCapacityBytes": 1.3737984E+8,
+          "realScratchCapacityBytes": 1.703936E+8,
+          "executionCount": 189,
+          "horizontalExecutionCount": 91,
+          "verticalExecutionCount": 98,
+          "nonlinearFluxCallCount": 7,
+          "nonlinearFluxPhaseEvaluationCount": 3363066,
+          "phaseWorkspaceBytes": 3.434496E+7,
+          "phaseReservationBytes": 3.434496E+7,
+          "persistentBytes": 420786183,
+          "stateInputBytes": 23061024,
+          "fluxOutputBytes": 23061024,
+          "knownMaximumLiveOwnedBytes": 443847207,
+          "persistentFullHermitianBytes": 0,
+          "gradientMaskBytes": 0,
+          "Nx": 256,
+          "Ny": 256,
+          "Nz": 65,
+          "Nj": 42,
+          "Nkl": 11439,
+          "phaseSeconds": 0.001651542,
+          "reconstructionSeconds": 0.009948125,
+          "derivativeReconstructionSeconds": 0.026329584,
+          "productSeconds": 0.010090584000000001,
+          "projectionSeconds": 0.010741125,
+          "coefficientAssemblySeconds": 0.00143675,
+          "derivativeCoefficientAssemblySeconds": 0.005110542,
+          "coefficientProjectionSeconds": 0,
+          "exactPersistentArrayBytesExcludingOpaquePlans": 420785751,
+          "exactMaximumLiveArrayBytesExcludingOpaquePlans": 466907799,
+          "fallbackOccurred": false
+        },
+        "diagnostic": {
+          "totalSeconds": 0.059773458333333335,
+          "internalSeconds": 0.059511667,
+          "mexBoundaryConversionSeconds": 0.00026179133333333743,
+          "phaseSeconds": 0.001651542,
+          "reconstructionSeconds": 0.009948125,
+          "derivativeReconstructionSeconds": 0.026329584,
+          "productSeconds": 0.010090584000000001,
+          "projectionSeconds": 0.010741125,
+          "coefficientAssemblySeconds": 0.00143675,
+          "derivativeCoefficientAssemblySeconds": 0.005110542,
+          "coefficientProjectionSeconds": 0,
+          "executionCount": 27,
+          "horizontalExecutionCount": 13,
+          "verticalExecutionCount": 14,
+          "nonlinearFluxCallCount": 1,
+          "phaseEvaluationCount": 480438
+        },
+        "lifecycle": {
+          "passed": true,
+          "before": {
+            "kernelCount": 0,
+            "moduleLocked": 0,
+            "activePlans": 0,
+            "totalPlansCreated": 0,
+            "totalPlansDestroyed": 0,
+            "outstandingPlanningBytes": 0,
+            "totalPlanningSeconds": 0
+          },
+          "afterDelete": {
+            "kernelCount": 0,
+            "moduleLocked": 0,
+            "activePlans": 0,
+            "totalPlansCreated": 18,
+            "totalPlansDestroyed": 18,
+            "outstandingPlanningBytes": 0,
+            "totalPlanningSeconds": 13.643047169
+          }
+        },
+        "fallbackOccurred": false,
+        "failure": {
+          "identifier": "",
+          "message": "",
+          "stack": [],
+          "report": ""
+        }
+      }
+    },
+    {
+      "executionOrdinal": 4,
+      "caseIndex": 1,
+      "variantIndex": 4,
+      "result": {
+        "schemaVersion": "1.0.0",
+        "status": "complete",
+        "mode": "production",
+        "variantId": "production-matlab-wvt-nonlinearFlux",
+        "caseId": "constant-hydrostatic-256x256x65",
+        "Nxyz": [
+          256,
+          256,
+          65
+        ],
+        "isHydrostatic": true,
+        "seed": 1302561,
+        "threadCountRequested": 18,
+        "threadCountEffective": 18,
+        "threadBehavior": "MATLAB maxNumCompThreads=18; production nonlinearFlux path",
+        "warmupCount": 2,
+        "sampleCount": 3,
+        "module": "",
+        "mexSha256": "",
+        "moduleInfo": {},
+        "constructionSeconds": [],
+        "planningSeconds": [],
+        "totalSamplesSeconds": [
+          0.093192791666666663,
+          0.090676083333333338,
+          0.089818625
+        ],
+        "totalMedianSeconds": 0.090676083333333338,
+        "internalSamplesSeconds": [
+          0.093192791666666663,
+          0.090676083333333338,
+          0.089818625
+        ],
+        "internalMedianSeconds": 0.090676083333333338,
+        "mexBoundaryConversionSamplesSeconds": [
+          0,
+          0,
+          0
+        ],
+        "mexBoundaryConversionMedianSeconds": 0,
+        "boundaryConversionBehavior": "not applicable to production MATLAB",
+        "errors": {
+          "Fp": 0,
+          "Fm": 0,
+          "F0": 0
+        },
+        "maximumRelativeInfinityError": 0,
+        "metrics": {},
+        "diagnostic": {},
+        "lifecycle": {
+          "passed": true,
+          "before": {},
+          "afterDelete": {}
+        },
+        "fallbackOccurred": false,
+        "failure": {
+          "identifier": "",
+          "message": "",
+          "stack": [],
+          "report": ""
+        }
+      }
+    },
+    {
+      "executionOrdinal": 5,
+      "caseIndex": 2,
+      "variantIndex": 2,
+      "result": {
+        "schemaVersion": "1.0.0",
+        "status": "complete",
+        "mode": "mex",
+        "variantId": "streamed-target-three-channel",
+        "caseId": "constant-nonhydrostatic-256x256x65",
+        "Nxyz": [
+          256,
+          256,
+          65
+        ],
+        "isHydrostatic": false,
+        "seed": 1302562,
+        "threadCountRequested": 18,
+        "threadCountEffective": 18,
+        "threadBehavior": "FFTW plans requested 18 pthreads; two joined coefficient workers run outside FFTW execution regions; MATLAB bundled libomp may be resident but is not the FFTW backend; no nested threading or isolated LLVM libomp",
+        "warmupCount": 2,
+        "sampleCount": 3,
+        "module": "wv_issue130_donut_streamed",
+        "mexSha256": "2d64b1995f2679e29d1aeee885a89bb85494fe0bec4668f31492c69403a2f897",
+        "moduleInfo": {
+          "engine": "fftw",
+          "version": "fftw-3.3.11-neon",
+          "baseLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3.3.dylib",
+          "threadLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3_threads.3.dylib",
+          "openMPRuntimeLibrary": "/Applications/MATLAB_R2026a.app/bin/maca64/libomp.dylib"
+        },
+        "constructionSeconds": 12.317625375,
+        "planningSeconds": 12.291520748,
+        "totalSamplesSeconds": [
+          0.069892041666666668,
+          0.06943275,
+          0.069525375
+        ],
+        "totalMedianSeconds": 0.069525375,
+        "internalSamplesSeconds": [
+          0.069681375,
+          0.069225083,
+          0.069338
+        ],
+        "internalMedianSeconds": 0.069338,
+        "mexBoundaryConversionSamplesSeconds": [
+          0.00021066666666666456,
+          0.00020766699999999472,
+          0.00018737500000000351
+        ],
+        "mexBoundaryConversionMedianSeconds": 0.00020766699999999472,
+        "boundaryConversionBehavior": "interleaved-complex inputs are passed by pointer; three complex outputs are allocated at the MEX boundary; reported boundary is complete call minus C++ entry timing",
+        "errors": {
+          "Fp": 6.8078265257677824E-15,
+          "Fm": 7.575808759130208E-15,
+          "F0": 8.4608112649655213E-15
+        },
+        "maximumRelativeInfinityError": 8.4608112649655213E-15,
+        "metrics": {
+          "engine": "fftw",
+          "loadedLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3.3.dylib",
+          "nonlinearFluxSchedule": "issue130-streamed-target-three-channel",
+          "screeningVariant": "streamed-target-three-channel",
+          "phaseImplementation": "scalar-sincos",
+          "coefficientStorageMode": "natural-dimensional",
+          "coefficientArithmeticMode": "natural-dimensional-prescaled",
+          "inverseNormalizationPlacement": "coefficient-production",
+          "optimizationImplementation": "O3-native",
+          "coefficientWorkerCount": 2,
+          "planMemoryAccounting": "wrapper lower bound; FFTW-owned plan memory is opaque",
+          "contractVersion": 4,
+          "planCount": 17,
+          "planBytes": 408,
+          "descriptorBytes": 113012311,
+          "scratchCapacityBytes": 3.4185216E+8,
+          "scratchHighWaterBytes": 3.4185216E+8,
+          "halfSpectrumScratchCapacityBytes": 1.3737984E+8,
+          "realScratchCapacityBytes": 2.0447232E+8,
+          "executionCount": 161,
+          "horizontalExecutionCount": 63,
+          "verticalExecutionCount": 98,
+          "nonlinearFluxCallCount": 7,
+          "nonlinearFluxPhaseEvaluationCount": 3363066,
+          "phaseWorkspaceBytes": 3.434496E+7,
+          "phaseReservationBytes": 3.434496E+7,
+          "persistentBytes": 454864879,
+          "stateInputBytes": 23061024,
+          "fluxOutputBytes": 23061024,
+          "knownMaximumLiveOwnedBytes": 477925903,
+          "persistentFullHermitianBytes": 0,
+          "gradientMaskBytes": 0,
+          "Nx": 256,
+          "Ny": 256,
+          "Nz": 65,
+          "Nj": 42,
+          "Nkl": 11439,
+          "phaseSeconds": 0.00148425,
+          "reconstructionSeconds": 0.00943275,
+          "derivativeReconstructionSeconds": 0.034072792000000005,
+          "productSeconds": 0.010107416000000001,
+          "projectionSeconds": 0.015737541,
+          "coefficientAssemblySeconds": 0.0014825,
+          "derivativeCoefficientAssemblySeconds": 0.003201041,
+          "coefficientProjectionSeconds": 0,
+          "exactPersistentArrayBytesExcludingOpaquePlans": 454864471,
+          "exactMaximumLiveArrayBytesExcludingOpaquePlans": 500986519,
+          "fallbackOccurred": false
+        },
+        "diagnostic": {
+          "totalSeconds": 0.071097416666666663,
+          "internalSeconds": 0.070836,
+          "mexBoundaryConversionSeconds": 0.00026141666666666674,
+          "phaseSeconds": 0.00148425,
+          "reconstructionSeconds": 0.00943275,
+          "derivativeReconstructionSeconds": 0.034072792000000005,
+          "productSeconds": 0.010107416000000001,
+          "projectionSeconds": 0.015737541,
+          "coefficientAssemblySeconds": 0.0014825,
+          "derivativeCoefficientAssemblySeconds": 0.003201041,
+          "coefficientProjectionSeconds": 0,
+          "executionCount": 23,
+          "horizontalExecutionCount": 9,
+          "verticalExecutionCount": 14,
+          "nonlinearFluxCallCount": 1,
+          "phaseEvaluationCount": 480438
+        },
+        "lifecycle": {
+          "passed": true,
+          "before": {
+            "kernelCount": 0,
+            "moduleLocked": 0,
+            "activePlans": 0,
+            "totalPlansCreated": 0,
+            "totalPlansDestroyed": 0,
+            "outstandingPlanningBytes": 0,
+            "totalPlanningSeconds": 0
+          },
+          "afterDelete": {
+            "kernelCount": 0,
+            "moduleLocked": 0,
+            "activePlans": 0,
+            "totalPlansCreated": 17,
+            "totalPlansDestroyed": 17,
+            "outstandingPlanningBytes": 0,
+            "totalPlanningSeconds": 12.291520748
+          }
+        },
+        "fallbackOccurred": false,
+        "failure": {
+          "identifier": "",
+          "message": "",
+          "stack": [],
+          "report": ""
+        }
+      }
+    },
+    {
+      "executionOrdinal": 6,
+      "caseIndex": 2,
+      "variantIndex": 3,
+      "result": {
+        "schemaVersion": "1.0.0",
+        "status": "complete",
+        "mode": "mex",
+        "variantId": "streamed-target-single-output-4H+5R",
+        "caseId": "constant-nonhydrostatic-256x256x65",
+        "Nxyz": [
+          256,
+          256,
+          65
+        ],
+        "isHydrostatic": false,
+        "seed": 1302562,
+        "threadCountRequested": 18,
+        "threadCountEffective": 18,
+        "threadBehavior": "FFTW plans requested 18 pthreads; two joined coefficient workers run outside FFTW execution regions; MATLAB bundled libomp may be resident but is not the FFTW backend; no nested threading or isolated LLVM libomp",
+        "warmupCount": 2,
+        "sampleCount": 3,
+        "module": "wv_issue130_donut_single_output",
+        "mexSha256": "0c9d4d5f506216ae1d27381ce93942ea8dff37f46529a7c92eda31cf4749f6c8",
+        "moduleInfo": {
+          "engine": "fftw",
+          "version": "fftw-3.3.11-neon",
+          "baseLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3.3.dylib",
+          "threadLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3_threads.3.dylib",
+          "openMPRuntimeLibrary": "/Applications/MATLAB_R2026a.app/bin/maca64/libomp.dylib"
+        },
+        "constructionSeconds": 13.669083833333334,
+        "planningSeconds": 13.643177334,
+        "totalSamplesSeconds": [
+          0.071312166666666663,
+          0.071751458333333337,
+          0.07593108333333333
+        ],
+        "totalMedianSeconds": 0.071751458333333337,
+        "internalSamplesSeconds": [
+          0.071108833,
+          0.07155275,
+          0.075739791
+        ],
+        "internalMedianSeconds": 0.07155275,
+        "mexBoundaryConversionSamplesSeconds": [
+          0.0002033336666666663,
+          0.00019870833333333893,
+          0.00019129233333332885
+        ],
+        "mexBoundaryConversionMedianSeconds": 0.00019870833333333893,
+        "boundaryConversionBehavior": "interleaved-complex inputs are passed by pointer; three complex outputs are allocated at the MEX boundary; reported boundary is complete call minus C++ entry timing",
+        "errors": {
+          "Fp": 6.8580412727319455E-15,
+          "Fm": 7.7505180120782745E-15,
+          "F0": 8.314551102863386E-15
+        },
+        "maximumRelativeInfinityError": 8.314551102863386E-15,
+        "metrics": {
+          "engine": "fftw",
+          "loadedLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3.3.dylib",
+          "nonlinearFluxSchedule": "issue130-streamed-target-single-output",
+          "screeningVariant": "streamed-target-single-output",
+          "phaseImplementation": "scalar-sincos",
+          "coefficientStorageMode": "natural-dimensional",
+          "coefficientArithmeticMode": "natural-dimensional-prescaled",
+          "inverseNormalizationPlacement": "coefficient-production",
+          "optimizationImplementation": "O3-native",
+          "coefficientWorkerCount": 2,
+          "planMemoryAccounting": "wrapper lower bound; FFTW-owned plan memory is opaque",
+          "contractVersion": 4,
+          "planCount": 18,
+          "planBytes": 432,
+          "descriptorBytes": 113012311,
+          "scratchCapacityBytes": 3.0777344E+8,
+          "scratchHighWaterBytes": 3.0777344E+8,
+          "halfSpectrumScratchCapacityBytes": 1.3737984E+8,
+          "realScratchCapacityBytes": 1.703936E+8,
+          "executionCount": 245,
+          "horizontalExecutionCount": 119,
+          "verticalExecutionCount": 126,
+          "nonlinearFluxCallCount": 7,
+          "nonlinearFluxPhaseEvaluationCount": 3363066,
+          "phaseWorkspaceBytes": 3.434496E+7,
+          "phaseReservationBytes": 3.434496E+7,
+          "persistentBytes": 420786183,
+          "stateInputBytes": 23061024,
+          "fluxOutputBytes": 23061024,
+          "knownMaximumLiveOwnedBytes": 443847207,
+          "persistentFullHermitianBytes": 0,
+          "gradientMaskBytes": 0,
+          "Nx": 256,
+          "Ny": 256,
+          "Nz": 65,
+          "Nj": 42,
+          "Nkl": 11439,
+          "phaseSeconds": 0.001480333,
+          "reconstructionSeconds": 0.009442792,
+          "derivativeReconstructionSeconds": 0.033780792999999996,
+          "productSeconds": 0.01377554,
+          "projectionSeconds": 0.013910290999999998,
+          "coefficientAssemblySeconds": 0.00145075,
+          "derivativeCoefficientAssemblySeconds": 0.0064943770000000008,
+          "coefficientProjectionSeconds": 0,
+          "exactPersistentArrayBytesExcludingOpaquePlans": 420785751,
+          "exactMaximumLiveArrayBytesExcludingOpaquePlans": 466907799,
+          "fallbackOccurred": false
+        },
+        "diagnostic": {
+          "totalSeconds": 0.073405791666666664,
+          "internalSeconds": 0.073137958,
+          "mexBoundaryConversionSeconds": 0.00026783366666666142,
+          "phaseSeconds": 0.001480333,
+          "reconstructionSeconds": 0.009442792,
+          "derivativeReconstructionSeconds": 0.033780792999999996,
+          "productSeconds": 0.01377554,
+          "projectionSeconds": 0.013910290999999998,
+          "coefficientAssemblySeconds": 0.00145075,
+          "derivativeCoefficientAssemblySeconds": 0.0064943770000000008,
+          "coefficientProjectionSeconds": 0,
+          "executionCount": 35,
+          "horizontalExecutionCount": 17,
+          "verticalExecutionCount": 18,
+          "nonlinearFluxCallCount": 1,
+          "phaseEvaluationCount": 480438
+        },
+        "lifecycle": {
+          "passed": true,
+          "before": {
+            "kernelCount": 0,
+            "moduleLocked": 0,
+            "activePlans": 0,
+            "totalPlansCreated": 0,
+            "totalPlansDestroyed": 0,
+            "outstandingPlanningBytes": 0,
+            "totalPlanningSeconds": 0
+          },
+          "afterDelete": {
+            "kernelCount": 0,
+            "moduleLocked": 0,
+            "activePlans": 0,
+            "totalPlansCreated": 18,
+            "totalPlansDestroyed": 18,
+            "outstandingPlanningBytes": 0,
+            "totalPlanningSeconds": 13.643177334
+          }
+        },
+        "fallbackOccurred": false,
+        "failure": {
+          "identifier": "",
+          "message": "",
+          "stack": [],
+          "report": ""
+        }
+      }
+    },
+    {
+      "executionOrdinal": 7,
+      "caseIndex": 2,
+      "variantIndex": 4,
+      "result": {
+        "schemaVersion": "1.0.0",
+        "status": "complete",
+        "mode": "production",
+        "variantId": "production-matlab-wvt-nonlinearFlux",
+        "caseId": "constant-nonhydrostatic-256x256x65",
+        "Nxyz": [
+          256,
+          256,
+          65
+        ],
+        "isHydrostatic": false,
+        "seed": 1302562,
+        "threadCountRequested": 18,
+        "threadCountEffective": 18,
+        "threadBehavior": "MATLAB maxNumCompThreads=18; production nonlinearFlux path",
+        "warmupCount": 2,
+        "sampleCount": 3,
+        "module": "",
+        "mexSha256": "",
+        "moduleInfo": {},
+        "constructionSeconds": [],
+        "planningSeconds": [],
+        "totalSamplesSeconds": [
+          0.10984095833333334,
+          0.10898958333333333,
+          0.10761820833333334
+        ],
+        "totalMedianSeconds": 0.10898958333333333,
+        "internalSamplesSeconds": [
+          0.10984095833333334,
+          0.10898958333333333,
+          0.10761820833333334
+        ],
+        "internalMedianSeconds": 0.10898958333333333,
+        "mexBoundaryConversionSamplesSeconds": [
+          0,
+          0,
+          0
+        ],
+        "mexBoundaryConversionMedianSeconds": 0,
+        "boundaryConversionBehavior": "not applicable to production MATLAB",
+        "errors": {
+          "Fp": 0,
+          "Fm": 0,
+          "F0": 0
+        },
+        "maximumRelativeInfinityError": 0,
+        "metrics": {},
+        "diagnostic": {},
+        "lifecycle": {
+          "passed": true,
+          "before": {},
+          "afterDelete": {}
+        },
+        "fallbackOccurred": false,
+        "failure": {
+          "identifier": "",
+          "message": "",
+          "stack": [],
+          "report": ""
+        }
+      }
+    },
+    {
+      "executionOrdinal": 8,
+      "caseIndex": 2,
+      "variantIndex": 1,
+      "result": {
+        "schemaVersion": "1.0.0",
+        "status": "complete",
+        "mode": "mex",
+        "variantId": "control-be0f789",
+        "caseId": "constant-nonhydrostatic-256x256x65",
+        "Nxyz": [
+          256,
+          256,
+          65
+        ],
+        "isHydrostatic": false,
+        "seed": 1302562,
+        "threadCountRequested": 18,
+        "threadCountEffective": 18,
+        "threadBehavior": "FFTW plans requested 18 pthreads; two joined coefficient workers run outside FFTW execution regions; MATLAB bundled libomp may be resident but is not the FFTW backend; no nested threading or isolated LLVM libomp",
+        "warmupCount": 2,
+        "sampleCount": 3,
+        "module": "wv_issue130_donut_control",
+        "mexSha256": "6ad87507132b9c1ab34175446b63fe26fff8e513ada0524b378db32e8978c719",
+        "moduleInfo": {
+          "engine": "fftw",
+          "version": "fftw-3.3.11-neon",
+          "baseLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3.3.dylib",
+          "threadLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3_threads.3.dylib",
+          "openMPRuntimeLibrary": "/Applications/MATLAB_R2026a.app/bin/maca64/libomp.dylib"
+        },
+        "constructionSeconds": 11.059668916666666,
+        "planningSeconds": 11.027080626,
+        "totalSamplesSeconds": [
+          0.06776470833333334,
+          0.06831625,
+          0.06646316666666667
+        ],
+        "totalMedianSeconds": 0.06776470833333334,
+        "internalSamplesSeconds": [
+          0.067564875,
+          0.06812325,
+          0.066254042
+        ],
+        "internalMedianSeconds": 0.067564875,
+        "mexBoundaryConversionSamplesSeconds": [
+          0.00019983333333334352,
+          0.00019299999999999873,
+          0.00020912466666667129
+        ],
+        "mexBoundaryConversionMedianSeconds": 0.00019983333333334352,
+        "boundaryConversionBehavior": "interleaved-complex inputs are passed by pointer; three complex outputs are allocated at the MEX boundary; reported boundary is complete call minus C++ entry timing",
+        "errors": {
+          "Fp": 6.7651378639592208E-15,
+          "Fm": 7.7206388308281519E-15,
+          "F0": 8.337058398511295E-15
+        },
+        "maximumRelativeInfinityError": 8.337058398511295E-15,
+        "metrics": {
+          "engine": "fftw",
+          "loadedLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3.3.dylib",
+          "nonlinearFluxSchedule": "sequential-phase-once",
+          "phaseImplementation": "scalar-sincos",
+          "coefficientStorageMode": "natural-dimensional",
+          "coefficientArithmeticMode": "natural-dimensional-prescaled",
+          "inverseNormalizationPlacement": "coefficient-production",
+          "optimizationImplementation": "O3-native",
+          "coefficientWorkerCount": 2,
+          "planMemoryAccounting": "wrapper lower bound; FFTW-owned plan memory is opaque",
+          "contractVersion": 4,
+          "planCount": 14,
+          "planBytes": 336,
+          "descriptorBytes": 113012311,
+          "scratchCapacityBytes": 4.4408832E+8,
+          "scratchHighWaterBytes": 4.4408832E+8,
+          "halfSpectrumScratchCapacityBytes": 1.3737984E+8,
+          "realScratchCapacityBytes": 3.0670848E+8,
+          "executionCount": 126,
+          "horizontalExecutionCount": 42,
+          "verticalExecutionCount": 84,
+          "nonlinearFluxCallCount": 7,
+          "nonlinearFluxPhaseEvaluationCount": 3363066,
+          "phaseWorkspaceBytes": 0,
+          "persistentBytes": 557100967,
+          "stateInputBytes": 23061024,
+          "fluxOutputBytes": 23061024,
+          "knownMaximumLiveOwnedBytes": 580161991,
+          "persistentFullHermitianBytes": 0,
+          "gradientMaskBytes": 0,
+          "Nx": 256,
+          "Ny": 256,
+          "Nz": 65,
+          "Nj": 42,
+          "Nkl": 11439,
+          "phaseSeconds": 0.001755084,
+          "reconstructionSeconds": 0.010974708,
+          "derivativeReconstructionSeconds": 0.031136542,
+          "productSeconds": 0.010275125,
+          "projectionSeconds": 0.014071292,
+          "coefficientAssemblySeconds": 0.001435584,
+          "derivativeCoefficientAssemblySeconds": 0.003119125,
+          "coefficientProjectionSeconds": 0.002071542,
+          "screeningVariant": "control-be0f789",
+          "phaseReservationBytes": 0,
+          "exactPersistentArrayBytesExcludingOpaquePlans": 557100631,
+          "exactMaximumLiveArrayBytesExcludingOpaquePlans": 603222679,
+          "fallbackOccurred": false
+        },
+        "diagnostic": {
+          "totalSeconds": 0.068448125,
+          "internalSeconds": 0.068219125,
+          "mexBoundaryConversionSeconds": 0.0002289999999999931,
+          "phaseSeconds": 0.001755084,
+          "reconstructionSeconds": 0.010974708,
+          "derivativeReconstructionSeconds": 0.031136542,
+          "productSeconds": 0.010275125,
+          "projectionSeconds": 0.014071292,
+          "coefficientAssemblySeconds": 0.001435584,
+          "derivativeCoefficientAssemblySeconds": 0.003119125,
+          "coefficientProjectionSeconds": 0.002071542,
+          "executionCount": 18,
+          "horizontalExecutionCount": 6,
+          "verticalExecutionCount": 12,
+          "nonlinearFluxCallCount": 1,
+          "phaseEvaluationCount": 480438
+        },
+        "lifecycle": {
+          "passed": true,
+          "before": {
+            "kernelCount": 0,
+            "moduleLocked": 0,
+            "activePlans": 0,
+            "totalPlansCreated": 0,
+            "totalPlansDestroyed": 0,
+            "outstandingPlanningBytes": 0,
+            "totalPlanningSeconds": 0
+          },
+          "afterDelete": {
+            "kernelCount": 0,
+            "moduleLocked": 0,
+            "activePlans": 0,
+            "totalPlansCreated": 14,
+            "totalPlansDestroyed": 14,
+            "outstandingPlanningBytes": 0,
+            "totalPlanningSeconds": 11.027080626
+          }
+        },
+        "fallbackOccurred": false,
+        "failure": {
+          "identifier": "",
+          "message": "",
+          "stack": [],
+          "report": ""
+        }
+      }
+    }
+  ],
+  "comparisons": [
+    {
+      "caseId": "constant-hydrostatic-256x256x65",
+      "isHydrostatic": true,
+      "candidateId": "streamed-target-three-channel",
+      "native": {
+        "controlMedianSeconds": 0.060324708,
+        "candidateMedianSeconds": 0.055135542,
+        "speedup": 1.0941165319459449,
+        "exactLiveReduction": 0.1197541091051435,
+        "maximumRelativeInfinityError": 7.47487226131698E-14,
+        "candidate": {
+          "schemaVersion": "1.0.0",
+          "status": "complete",
+          "variant": "streamed-target-three-channel",
+          "case": "hydrostatic",
+          "configuration": {
+            "Nx": 256,
+            "Ny": 256,
+            "Nz": 65,
+            "Nj": 42,
+            "threadsRequested": 18,
+            "threadsEffective": 18,
+            "threadBehavior": "fftw_plan_with_nthreads(18) for every plan; two joined coefficient workers run outside FFTW execution regions; no nested threading or isolated OpenMP runtime",
+            "warmups": 2,
+            "samples": 3,
+            "coefficientWorkerCount": 2
+          },
+          "identity": {
+            "fftwVersion": "fftw-3.3.11-neon",
+            "baseLibraryDladdr": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3.3.dylib",
+            "threadLibraryDladdr": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3_threads.3.dylib",
+            "openMPRuntimeDladdr": "",
+            "compiler": "21.0.0 (clang-2100.1.1.101)"
+          },
+          "schedule": "issue130-streamed-target-three-channel",
+          "timing": {
+            "constructionSeconds": 12.485678,
+            "samplesSeconds": [
+              0.0545885,
+              0.055135542,
+              0.056019833
+            ],
+            "diagnosticTotalSeconds": 0.056358167,
+            "stages": {
+              "phaseSeconds": 0.001294,
+              "reconstructionSeconds": 0.009143083,
+              "derivativeReconstructionSeconds": 0.026761916,
+              "productSeconds": 0.0071722079999999994,
+              "projectionSeconds": 0.011986542,
+              "coefficientAssemblySeconds": 0.001151958,
+              "derivativeCoefficientAssemblySeconds": 0.0024286660000000003,
+              "coefficientProjectionSeconds": 0
+            }
+          },
+          "memory": {
+            "descriptorBytes": 113012311,
+            "scratchBytes": 3.4185216E+8,
+            "halfSpectrumScratchBytes": 1.3737984E+8,
+            "realScratchBytes": 2.0447232E+8,
+            "phaseReservationBytes": 3.434496E+7,
+            "stateInputBytes": 23061024,
+            "fluxOutputBytes": 23061024,
+            "persistentOwnedBytesLowerBound": 454864879,
+            "exactMaximumLiveArrayBytesExcludingOpaquePlans": 500986519,
+            "knownMaximumLiveOwnedBytesLowerBound": 500986927,
+            "persistentFullHermitianBytes": 0
+          },
+          "plans": {
+            "count": 17,
+            "wrapperBytesLowerBound": 408,
+            "memoryAccounting": "wrapper lower bound; FFTW-owned plan memory is opaque",
+            "executionCount": 18,
+            "horizontalExecutionCount": 7,
+            "verticalExecutionCount": 11,
+            "phaseEvaluationCount": 480438
+          },
+          "lifecycle": {
+            "activePlansBefore": 0,
+            "activePlansDuring": 17,
+            "activePlansAfter": 0,
+            "created": 17,
+            "destroyed": 17,
+            "outstandingPlanningBytesAfter": 0,
+            "balancedCleanup": true
+          },
+          "fallbackOccurred": false
+        },
+        "control": {
+          "schemaVersion": "1.0.0",
+          "status": "complete",
+          "variant": "control-be0f78995c49a2bfe4c43d75827856e3812ac278",
+          "case": "hydrostatic",
+          "configuration": {
+            "Nx": 256,
+            "Ny": 256,
+            "Nz": 65,
+            "Nj": 42,
+            "threadsRequested": 18,
+            "threadsEffective": 18,
+            "threadBehavior": "fftw_plan_with_nthreads(18) for every plan; two joined coefficient workers run outside FFTW execution regions; no nested threading or isolated OpenMP runtime",
+            "warmups": 2,
+            "samples": 3,
+            "coefficientWorkerCount": 2
+          },
+          "identity": {
+            "fftwVersion": "fftw-3.3.11-neon",
+            "baseLibraryDladdr": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3.3.dylib",
+            "threadLibraryDladdr": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3_threads.3.dylib",
+            "openMPRuntimeDladdr": "",
+            "compiler": "21.0.0 (clang-2100.1.1.101)"
+          },
+          "schedule": "sequential-phase-once",
+          "timing": {
+            "constructionSeconds": 11.08993,
+            "samplesSeconds": [
+              0.060272,
+              0.060892125,
+              0.060324708
+            ],
+            "diagnosticTotalSeconds": 0.061308333,
+            "stages": {
+              "phaseSeconds": 0.001479584,
+              "reconstructionSeconds": 0.011859084,
+              "derivativeReconstructionSeconds": 0.027988208,
+              "productSeconds": 0.007126792,
+              "projectionSeconds": 0.012854125,
+              "coefficientAssemblySeconds": 0.001311042,
+              "derivativeCoefficientAssemblySeconds": 0.002470625,
+              "coefficientProjectionSeconds": 0.001648
+            }
+          },
+          "memory": {
+            "descriptorBytes": 113012311,
+            "scratchBytes": 4.100096E+8,
+            "halfSpectrumScratchBytes": 1.3737984E+8,
+            "realScratchBytes": 2.7262976E+8,
+            "phaseReservationBytes": 0,
+            "stateInputBytes": 23061024,
+            "fluxOutputBytes": 23061024,
+            "persistentOwnedBytesLowerBound": 523022247,
+            "exactMaximumLiveArrayBytesExcludingOpaquePlans": 569143959,
+            "knownMaximumLiveOwnedBytesLowerBound": 569144295,
+            "persistentFullHermitianBytes": 0
+          },
+          "plans": {
+            "count": 14,
+            "wrapperBytesLowerBound": 336,
+            "memoryAccounting": "wrapper lower bound; FFTW-owned plan memory is opaque",
+            "executionCount": 15,
+            "horizontalExecutionCount": 5,
+            "verticalExecutionCount": 10,
+            "phaseEvaluationCount": 480438
+          },
+          "lifecycle": {
+            "activePlansBefore": 0,
+            "activePlansDuring": 14,
+            "activePlansAfter": 0,
+            "created": 14,
+            "destroyed": 14,
+            "outstandingPlanningBytesAfter": 0,
+            "balancedCleanup": true
+          },
+          "fallbackOccurred": false
+        }
+      },
+      "mex": {
+        "baselineCoreMedianSeconds": 0.052940708333333336,
+        "candidateMedianSeconds": 0.052415833333333335,
+        "productionMedianSeconds": 0.090676083333333338,
+        "speedupVersusBaselineCore": 1.0100136727133977,
+        "speedupVersusProduction": 1.7299368829393154,
+        "exactLiveReduction": 0.12481130922613448,
+        "maximumRelativeInfinityError": 9.5519971263754124E-15,
+        "candidate": {
+          "schemaVersion": "1.0.0",
+          "status": "complete",
+          "mode": "mex",
+          "variantId": "streamed-target-three-channel",
+          "caseId": "constant-hydrostatic-256x256x65",
+          "Nxyz": [
+            256,
+            256,
+            65
+          ],
+          "isHydrostatic": true,
+          "seed": 1302561,
+          "threadCountRequested": 18,
+          "threadCountEffective": 18,
+          "threadBehavior": "FFTW plans requested 18 pthreads; two joined coefficient workers run outside FFTW execution regions; MATLAB bundled libomp may be resident but is not the FFTW backend; no nested threading or isolated LLVM libomp",
+          "warmupCount": 2,
+          "sampleCount": 3,
+          "module": "wv_issue130_donut_streamed",
+          "mexSha256": "2d64b1995f2679e29d1aeee885a89bb85494fe0bec4668f31492c69403a2f897",
+          "moduleInfo": {
+            "engine": "fftw",
+            "version": "fftw-3.3.11-neon",
+            "baseLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3.3.dylib",
+            "threadLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3_threads.3.dylib",
+            "openMPRuntimeLibrary": "/Applications/MATLAB_R2026a.app/bin/maca64/libomp.dylib"
+          },
+          "constructionSeconds": 12.352059375,
+          "planningSeconds": 12.320233333000001,
+          "totalSamplesSeconds": [
+            0.051731666666666669,
+            0.052415833333333335,
+            0.053258791666666666
+          ],
+          "totalMedianSeconds": 0.052415833333333335,
+          "internalSamplesSeconds": [
+            0.051534125,
+            0.052220541,
+            0.053066583
+          ],
+          "internalMedianSeconds": 0.052220541,
+          "mexBoundaryConversionSamplesSeconds": [
+            0.00019754166666666878,
+            0.00019529233333333285,
+            0.00019220866666666558
+          ],
+          "mexBoundaryConversionMedianSeconds": 0.00019529233333333285,
+          "boundaryConversionBehavior": "interleaved-complex inputs are passed by pointer; three complex outputs are allocated at the MEX boundary; reported boundary is complete call minus C++ entry timing",
+          "errors": {
+            "Fp": 9.5519971263754124E-15,
+            "Fm": 8.6361607963850072E-15,
+            "F0": 8.5738970388140459E-15
+          },
+          "maximumRelativeInfinityError": 9.5519971263754124E-15,
+          "metrics": {
+            "engine": "fftw",
+            "loadedLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3.3.dylib",
+            "nonlinearFluxSchedule": "issue130-streamed-target-three-channel",
+            "screeningVariant": "streamed-target-three-channel",
+            "phaseImplementation": "scalar-sincos",
+            "coefficientStorageMode": "natural-dimensional",
+            "coefficientArithmeticMode": "natural-dimensional-prescaled",
+            "inverseNormalizationPlacement": "coefficient-production",
+            "optimizationImplementation": "O3-native",
+            "coefficientWorkerCount": 2,
+            "planMemoryAccounting": "wrapper lower bound; FFTW-owned plan memory is opaque",
+            "contractVersion": 4,
+            "planCount": 17,
+            "planBytes": 408,
+            "descriptorBytes": 113012311,
+            "scratchCapacityBytes": 3.4185216E+8,
+            "scratchHighWaterBytes": 3.4185216E+8,
+            "halfSpectrumScratchCapacityBytes": 1.3737984E+8,
+            "realScratchCapacityBytes": 2.0447232E+8,
+            "executionCount": 126,
+            "horizontalExecutionCount": 49,
+            "verticalExecutionCount": 77,
+            "nonlinearFluxCallCount": 7,
+            "nonlinearFluxPhaseEvaluationCount": 3363066,
+            "phaseWorkspaceBytes": 3.434496E+7,
+            "phaseReservationBytes": 3.434496E+7,
+            "persistentBytes": 454864879,
+            "stateInputBytes": 23061024,
+            "fluxOutputBytes": 23061024,
+            "knownMaximumLiveOwnedBytes": 477925903,
+            "persistentFullHermitianBytes": 0,
+            "gradientMaskBytes": 0,
+            "Nx": 256,
+            "Ny": 256,
+            "Nz": 65,
+            "Nj": 42,
+            "Nkl": 11439,
+            "phaseSeconds": 0.001659167,
+            "reconstructionSeconds": 0.009120667,
+            "derivativeReconstructionSeconds": 0.023169708,
+            "productSeconds": 0.008535958,
+            "projectionSeconds": 0.011008334,
+            "coefficientAssemblySeconds": 0.00144025,
+            "derivativeCoefficientAssemblySeconds": 0.002504876,
+            "coefficientProjectionSeconds": 0,
+            "exactPersistentArrayBytesExcludingOpaquePlans": 454864471,
+            "exactMaximumLiveArrayBytesExcludingOpaquePlans": 500986519,
+            "fallbackOccurred": false
+          },
+          "diagnostic": {
+            "totalSeconds": 0.053746958333333331,
+            "internalSeconds": 0.053494959,
+            "mexBoundaryConversionSeconds": 0.00025199933333332897,
+            "phaseSeconds": 0.001659167,
+            "reconstructionSeconds": 0.009120667,
+            "derivativeReconstructionSeconds": 0.023169708,
+            "productSeconds": 0.008535958,
+            "projectionSeconds": 0.011008334,
+            "coefficientAssemblySeconds": 0.00144025,
+            "derivativeCoefficientAssemblySeconds": 0.002504876,
+            "coefficientProjectionSeconds": 0,
+            "executionCount": 18,
+            "horizontalExecutionCount": 7,
+            "verticalExecutionCount": 11,
+            "nonlinearFluxCallCount": 1,
+            "phaseEvaluationCount": 480438
+          },
+          "lifecycle": {
+            "passed": true,
+            "before": {
+              "kernelCount": 0,
+              "moduleLocked": 0,
+              "activePlans": 0,
+              "totalPlansCreated": 0,
+              "totalPlansDestroyed": 0,
+              "outstandingPlanningBytes": 0,
+              "totalPlanningSeconds": 0
+            },
+            "afterDelete": {
+              "kernelCount": 0,
+              "moduleLocked": 0,
+              "activePlans": 0,
+              "totalPlansCreated": 17,
+              "totalPlansDestroyed": 17,
+              "outstandingPlanningBytes": 0,
+              "totalPlanningSeconds": 12.320233333000001
+            }
+          },
+          "fallbackOccurred": false,
+          "failure": {
+            "identifier": "",
+            "message": "",
+            "stack": [],
+            "report": ""
+          }
+        },
+        "baselineCore": {
+          "schemaVersion": "1.0.0",
+          "status": "complete",
+          "mode": "mex",
+          "variantId": "control-be0f789",
+          "caseId": "constant-hydrostatic-256x256x65",
+          "Nxyz": [
+            256,
+            256,
+            65
+          ],
+          "isHydrostatic": true,
+          "seed": 1302561,
+          "threadCountRequested": 18,
+          "threadCountEffective": 18,
+          "threadBehavior": "FFTW plans requested 18 pthreads; two joined coefficient workers run outside FFTW execution regions; MATLAB bundled libomp may be resident but is not the FFTW backend; no nested threading or isolated LLVM libomp",
+          "warmupCount": 2,
+          "sampleCount": 3,
+          "module": "wv_issue130_donut_control",
+          "mexSha256": "6ad87507132b9c1ab34175446b63fe26fff8e513ada0524b378db32e8978c719",
+          "moduleInfo": {
+            "engine": "fftw",
+            "version": "fftw-3.3.11-neon",
+            "baseLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3.3.dylib",
+            "threadLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3_threads.3.dylib",
+            "openMPRuntimeLibrary": "/Applications/MATLAB_R2026a.app/bin/maca64/libomp.dylib"
+          },
+          "constructionSeconds": 10.918705041666668,
+          "planningSeconds": 10.887517542000001,
+          "totalSamplesSeconds": [
+            0.052803291666666669,
+            0.053128916666666665,
+            0.052940708333333336
+          ],
+          "totalMedianSeconds": 0.052940708333333336,
+          "internalSamplesSeconds": [
+            0.052596709,
+            0.052920167,
+            0.052749792
+          ],
+          "internalMedianSeconds": 0.052749792,
+          "mexBoundaryConversionSamplesSeconds": [
+            0.00020658266666667008,
+            0.00020874966666666744,
+            0.00019091633333333941
+          ],
+          "mexBoundaryConversionMedianSeconds": 0.00020658266666667008,
+          "boundaryConversionBehavior": "interleaved-complex inputs are passed by pointer; three complex outputs are allocated at the MEX boundary; reported boundary is complete call minus C++ entry timing",
+          "errors": {
+            "Fp": 9.5175159905832861E-15,
+            "Fm": 8.6698719378106052E-15,
+            "F0": 8.5128817331336364E-15
+          },
+          "maximumRelativeInfinityError": 9.5175159905832861E-15,
+          "metrics": {
+            "engine": "fftw",
+            "loadedLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3.3.dylib",
+            "nonlinearFluxSchedule": "sequential-phase-once",
+            "phaseImplementation": "scalar-sincos",
+            "coefficientStorageMode": "natural-dimensional",
+            "coefficientArithmeticMode": "natural-dimensional-prescaled",
+            "inverseNormalizationPlacement": "coefficient-production",
+            "optimizationImplementation": "O3-native",
+            "coefficientWorkerCount": 2,
+            "planMemoryAccounting": "wrapper lower bound; FFTW-owned plan memory is opaque",
+            "contractVersion": 4,
+            "planCount": 14,
+            "planBytes": 336,
+            "descriptorBytes": 113012311,
+            "scratchCapacityBytes": 4.100096E+8,
+            "scratchHighWaterBytes": 4.100096E+8,
+            "halfSpectrumScratchCapacityBytes": 1.3737984E+8,
+            "realScratchCapacityBytes": 2.7262976E+8,
+            "executionCount": 105,
+            "horizontalExecutionCount": 35,
+            "verticalExecutionCount": 70,
+            "nonlinearFluxCallCount": 7,
+            "nonlinearFluxPhaseEvaluationCount": 3363066,
+            "phaseWorkspaceBytes": 0,
+            "persistentBytes": 523022247,
+            "stateInputBytes": 23061024,
+            "fluxOutputBytes": 23061024,
+            "knownMaximumLiveOwnedBytes": 546083271,
+            "persistentFullHermitianBytes": 0,
+            "gradientMaskBytes": 0,
+            "Nx": 256,
+            "Ny": 256,
+            "Nz": 65,
+            "Nj": 42,
+            "Nkl": 11439,
+            "phaseSeconds": 0.001785167,
+            "reconstructionSeconds": 0.012620083,
+            "derivativeReconstructionSeconds": 0.022804040999999997,
+            "productSeconds": 0.0076908759999999993,
+            "projectionSeconds": 0.011374208,
+            "coefficientAssemblySeconds": 0.001803333,
+            "derivativeCoefficientAssemblySeconds": 0.002336333,
+            "coefficientProjectionSeconds": 0.001682917,
+            "screeningVariant": "control-be0f789",
+            "phaseReservationBytes": 0,
+            "exactPersistentArrayBytesExcludingOpaquePlans": 523021911,
+            "exactMaximumLiveArrayBytesExcludingOpaquePlans": 569143959,
+            "fallbackOccurred": false
+          },
+          "diagnostic": {
+            "totalSeconds": 0.056543416666666665,
+            "internalSeconds": 0.056292333,
+            "mexBoundaryConversionSeconds": 0.00025108366666666548,
+            "phaseSeconds": 0.001785167,
+            "reconstructionSeconds": 0.012620083,
+            "derivativeReconstructionSeconds": 0.022804040999999997,
+            "productSeconds": 0.0076908759999999993,
+            "projectionSeconds": 0.011374208,
+            "coefficientAssemblySeconds": 0.001803333,
+            "derivativeCoefficientAssemblySeconds": 0.002336333,
+            "coefficientProjectionSeconds": 0.001682917,
+            "executionCount": 15,
+            "horizontalExecutionCount": 5,
+            "verticalExecutionCount": 10,
+            "nonlinearFluxCallCount": 1,
+            "phaseEvaluationCount": 480438
+          },
+          "lifecycle": {
+            "passed": true,
+            "before": {
+              "kernelCount": 0,
+              "moduleLocked": 0,
+              "activePlans": 0,
+              "totalPlansCreated": 0,
+              "totalPlansDestroyed": 0,
+              "outstandingPlanningBytes": 0,
+              "totalPlanningSeconds": 0
+            },
+            "afterDelete": {
+              "kernelCount": 0,
+              "moduleLocked": 0,
+              "activePlans": 0,
+              "totalPlansCreated": 14,
+              "totalPlansDestroyed": 14,
+              "outstandingPlanningBytes": 0,
+              "totalPlanningSeconds": 10.887517542000001
+            }
+          },
+          "fallbackOccurred": false,
+          "failure": {
+            "identifier": "",
+            "message": "",
+            "stack": [],
+            "report": ""
+          }
+        },
+        "production": {
+          "schemaVersion": "1.0.0",
+          "status": "complete",
+          "mode": "production",
+          "variantId": "production-matlab-wvt-nonlinearFlux",
+          "caseId": "constant-hydrostatic-256x256x65",
+          "Nxyz": [
+            256,
+            256,
+            65
+          ],
+          "isHydrostatic": true,
+          "seed": 1302561,
+          "threadCountRequested": 18,
+          "threadCountEffective": 18,
+          "threadBehavior": "MATLAB maxNumCompThreads=18; production nonlinearFlux path",
+          "warmupCount": 2,
+          "sampleCount": 3,
+          "module": "",
+          "mexSha256": "",
+          "moduleInfo": {},
+          "constructionSeconds": [],
+          "planningSeconds": [],
+          "totalSamplesSeconds": [
+            0.093192791666666663,
+            0.090676083333333338,
+            0.089818625
+          ],
+          "totalMedianSeconds": 0.090676083333333338,
+          "internalSamplesSeconds": [
+            0.093192791666666663,
+            0.090676083333333338,
+            0.089818625
+          ],
+          "internalMedianSeconds": 0.090676083333333338,
+          "mexBoundaryConversionSamplesSeconds": [
+            0,
+            0,
+            0
+          ],
+          "mexBoundaryConversionMedianSeconds": 0,
+          "boundaryConversionBehavior": "not applicable to production MATLAB",
+          "errors": {
+            "Fp": 0,
+            "Fm": 0,
+            "F0": 0
+          },
+          "maximumRelativeInfinityError": 0,
+          "metrics": {},
+          "diagnostic": {},
+          "lifecycle": {
+            "passed": true,
+            "before": {},
+            "afterDelete": {}
+          },
+          "fallbackOccurred": false,
+          "failure": {
+            "identifier": "",
+            "message": "",
+            "stack": [],
+            "report": ""
+          }
+        }
+      }
+    },
+    {
+      "caseId": "constant-hydrostatic-256x256x65",
+      "isHydrostatic": true,
+      "candidateId": "streamed-target-single-output-4H+5R",
+      "native": {
+        "controlMedianSeconds": 0.060324708,
+        "candidateMedianSeconds": 0.061970625,
+        "speedup": 0.97344036791625055,
+        "exactLiveReduction": 0.17963118474199935,
+        "maximumRelativeInfinityError": 7.0245012093175245E-14,
+        "candidate": {
+          "schemaVersion": "1.0.0",
+          "status": "complete",
+          "variant": "streamed-target-single-output-4H+5R",
+          "case": "hydrostatic",
+          "configuration": {
+            "Nx": 256,
+            "Ny": 256,
+            "Nz": 65,
+            "Nj": 42,
+            "threadsRequested": 18,
+            "threadsEffective": 18,
+            "threadBehavior": "fftw_plan_with_nthreads(18) for every plan; two joined coefficient workers run outside FFTW execution regions; no nested threading or isolated OpenMP runtime",
+            "warmups": 2,
+            "samples": 3,
+            "coefficientWorkerCount": 2
+          },
+          "identity": {
+            "fftwVersion": "fftw-3.3.11-neon",
+            "baseLibraryDladdr": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3.3.dylib",
+            "threadLibraryDladdr": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3_threads.3.dylib",
+            "openMPRuntimeDladdr": "",
+            "compiler": "21.0.0 (clang-2100.1.1.101)"
+          },
+          "schedule": "issue130-streamed-target-single-output",
+          "timing": {
+            "constructionSeconds": 13.80367425,
+            "samplesSeconds": [
+              0.061624792,
+              0.062423917,
+              0.061970625
+            ],
+            "diagnosticTotalSeconds": 0.06222175,
+            "stages": {
+              "phaseSeconds": 0.00128025,
+              "reconstructionSeconds": 0.008970667,
+              "derivativeReconstructionSeconds": 0.029240709,
+              "productSeconds": 0.010523124,
+              "projectionSeconds": 0.011804667000000001,
+              "coefficientAssemblySeconds": 0.0010995,
+              "derivativeCoefficientAssemblySeconds": 0.004862916,
+              "coefficientProjectionSeconds": 0
+            }
+          },
+          "memory": {
+            "descriptorBytes": 113012311,
+            "scratchBytes": 3.0777344E+8,
+            "halfSpectrumScratchBytes": 1.3737984E+8,
+            "realScratchBytes": 1.703936E+8,
+            "phaseReservationBytes": 3.434496E+7,
+            "stateInputBytes": 23061024,
+            "fluxOutputBytes": 23061024,
+            "persistentOwnedBytesLowerBound": 420786183,
+            "exactMaximumLiveArrayBytesExcludingOpaquePlans": 466907799,
+            "knownMaximumLiveOwnedBytesLowerBound": 466908231,
+            "persistentFullHermitianBytes": 0
+          },
+          "plans": {
+            "count": 18,
+            "wrapperBytesLowerBound": 432,
+            "memoryAccounting": "wrapper lower bound; FFTW-owned plan memory is opaque",
+            "executionCount": 27,
+            "horizontalExecutionCount": 13,
+            "verticalExecutionCount": 14,
+            "phaseEvaluationCount": 480438
+          },
+          "lifecycle": {
+            "activePlansBefore": 0,
+            "activePlansDuring": 18,
+            "activePlansAfter": 0,
+            "created": 18,
+            "destroyed": 18,
+            "outstandingPlanningBytesAfter": 0,
+            "balancedCleanup": true
+          },
+          "fallbackOccurred": false
+        },
+        "control": {
+          "schemaVersion": "1.0.0",
+          "status": "complete",
+          "variant": "control-be0f78995c49a2bfe4c43d75827856e3812ac278",
+          "case": "hydrostatic",
+          "configuration": {
+            "Nx": 256,
+            "Ny": 256,
+            "Nz": 65,
+            "Nj": 42,
+            "threadsRequested": 18,
+            "threadsEffective": 18,
+            "threadBehavior": "fftw_plan_with_nthreads(18) for every plan; two joined coefficient workers run outside FFTW execution regions; no nested threading or isolated OpenMP runtime",
+            "warmups": 2,
+            "samples": 3,
+            "coefficientWorkerCount": 2
+          },
+          "identity": {
+            "fftwVersion": "fftw-3.3.11-neon",
+            "baseLibraryDladdr": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3.3.dylib",
+            "threadLibraryDladdr": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3_threads.3.dylib",
+            "openMPRuntimeDladdr": "",
+            "compiler": "21.0.0 (clang-2100.1.1.101)"
+          },
+          "schedule": "sequential-phase-once",
+          "timing": {
+            "constructionSeconds": 11.08993,
+            "samplesSeconds": [
+              0.060272,
+              0.060892125,
+              0.060324708
+            ],
+            "diagnosticTotalSeconds": 0.061308333,
+            "stages": {
+              "phaseSeconds": 0.001479584,
+              "reconstructionSeconds": 0.011859084,
+              "derivativeReconstructionSeconds": 0.027988208,
+              "productSeconds": 0.007126792,
+              "projectionSeconds": 0.012854125,
+              "coefficientAssemblySeconds": 0.001311042,
+              "derivativeCoefficientAssemblySeconds": 0.002470625,
+              "coefficientProjectionSeconds": 0.001648
+            }
+          },
+          "memory": {
+            "descriptorBytes": 113012311,
+            "scratchBytes": 4.100096E+8,
+            "halfSpectrumScratchBytes": 1.3737984E+8,
+            "realScratchBytes": 2.7262976E+8,
+            "phaseReservationBytes": 0,
+            "stateInputBytes": 23061024,
+            "fluxOutputBytes": 23061024,
+            "persistentOwnedBytesLowerBound": 523022247,
+            "exactMaximumLiveArrayBytesExcludingOpaquePlans": 569143959,
+            "knownMaximumLiveOwnedBytesLowerBound": 569144295,
+            "persistentFullHermitianBytes": 0
+          },
+          "plans": {
+            "count": 14,
+            "wrapperBytesLowerBound": 336,
+            "memoryAccounting": "wrapper lower bound; FFTW-owned plan memory is opaque",
+            "executionCount": 15,
+            "horizontalExecutionCount": 5,
+            "verticalExecutionCount": 10,
+            "phaseEvaluationCount": 480438
+          },
+          "lifecycle": {
+            "activePlansBefore": 0,
+            "activePlansDuring": 14,
+            "activePlansAfter": 0,
+            "created": 14,
+            "destroyed": 14,
+            "outstandingPlanningBytesAfter": 0,
+            "balancedCleanup": true
+          },
+          "fallbackOccurred": false
+        }
+      },
+      "mex": {
+        "baselineCoreMedianSeconds": 0.052940708333333336,
+        "candidateMedianSeconds": 0.05839775,
+        "productionMedianSeconds": 0.090676083333333338,
+        "speedupVersusBaselineCore": 0.90655390547295633,
+        "speedupVersusProduction": 1.5527324825585462,
+        "exactLiveReduction": 0.18721698581387236,
+        "maximumRelativeInfinityError": 9.569472712617061E-15,
+        "candidate": {
+          "schemaVersion": "1.0.0",
+          "status": "complete",
+          "mode": "mex",
+          "variantId": "streamed-target-single-output-4H+5R",
+          "caseId": "constant-hydrostatic-256x256x65",
+          "Nxyz": [
+            256,
+            256,
+            65
+          ],
+          "isHydrostatic": true,
+          "seed": 1302561,
+          "threadCountRequested": 18,
+          "threadCountEffective": 18,
+          "threadBehavior": "FFTW plans requested 18 pthreads; two joined coefficient workers run outside FFTW execution regions; MATLAB bundled libomp may be resident but is not the FFTW backend; no nested threading or isolated LLVM libomp",
+          "warmupCount": 2,
+          "sampleCount": 3,
+          "module": "wv_issue130_donut_single_output",
+          "mexSha256": "0c9d4d5f506216ae1d27381ce93942ea8dff37f46529a7c92eda31cf4749f6c8",
+          "moduleInfo": {
+            "engine": "fftw",
+            "version": "fftw-3.3.11-neon",
+            "baseLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3.3.dylib",
+            "threadLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3_threads.3.dylib",
+            "openMPRuntimeLibrary": "/Applications/MATLAB_R2026a.app/bin/maca64/libomp.dylib"
+          },
+          "constructionSeconds": 13.673501875,
+          "planningSeconds": 13.643047169,
+          "totalSamplesSeconds": [
+            0.057891541666666664,
+            0.05839775,
+            0.0589725
+          ],
+          "totalMedianSeconds": 0.05839775,
+          "internalSamplesSeconds": [
+            0.057685292,
+            0.058203917,
+            0.05876775
+          ],
+          "internalMedianSeconds": 0.058203917,
+          "mexBoundaryConversionSamplesSeconds": [
+            0.00020624966666666494,
+            0.00019383299999999742,
+            0.0002047499999999966
+          ],
+          "mexBoundaryConversionMedianSeconds": 0.0002047499999999966,
+          "boundaryConversionBehavior": "interleaved-complex inputs are passed by pointer; three complex outputs are allocated at the MEX boundary; reported boundary is complete call minus C++ entry timing",
+          "errors": {
+            "Fp": 9.569472712617061E-15,
+            "Fm": 8.646162985551829E-15,
+            "F0": 8.5687351997837643E-15
+          },
+          "maximumRelativeInfinityError": 9.569472712617061E-15,
+          "metrics": {
+            "engine": "fftw",
+            "loadedLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3.3.dylib",
+            "nonlinearFluxSchedule": "issue130-streamed-target-single-output",
+            "screeningVariant": "streamed-target-single-output",
+            "phaseImplementation": "scalar-sincos",
+            "coefficientStorageMode": "natural-dimensional",
+            "coefficientArithmeticMode": "natural-dimensional-prescaled",
+            "inverseNormalizationPlacement": "coefficient-production",
+            "optimizationImplementation": "O3-native",
+            "coefficientWorkerCount": 2,
+            "planMemoryAccounting": "wrapper lower bound; FFTW-owned plan memory is opaque",
+            "contractVersion": 4,
+            "planCount": 18,
+            "planBytes": 432,
+            "descriptorBytes": 113012311,
+            "scratchCapacityBytes": 3.0777344E+8,
+            "scratchHighWaterBytes": 3.0777344E+8,
+            "halfSpectrumScratchCapacityBytes": 1.3737984E+8,
+            "realScratchCapacityBytes": 1.703936E+8,
+            "executionCount": 189,
+            "horizontalExecutionCount": 91,
+            "verticalExecutionCount": 98,
+            "nonlinearFluxCallCount": 7,
+            "nonlinearFluxPhaseEvaluationCount": 3363066,
+            "phaseWorkspaceBytes": 3.434496E+7,
+            "phaseReservationBytes": 3.434496E+7,
+            "persistentBytes": 420786183,
+            "stateInputBytes": 23061024,
+            "fluxOutputBytes": 23061024,
+            "knownMaximumLiveOwnedBytes": 443847207,
+            "persistentFullHermitianBytes": 0,
+            "gradientMaskBytes": 0,
+            "Nx": 256,
+            "Ny": 256,
+            "Nz": 65,
+            "Nj": 42,
+            "Nkl": 11439,
+            "phaseSeconds": 0.001651542,
+            "reconstructionSeconds": 0.009948125,
+            "derivativeReconstructionSeconds": 0.026329584,
+            "productSeconds": 0.010090584000000001,
+            "projectionSeconds": 0.010741125,
+            "coefficientAssemblySeconds": 0.00143675,
+            "derivativeCoefficientAssemblySeconds": 0.005110542,
+            "coefficientProjectionSeconds": 0,
+            "exactPersistentArrayBytesExcludingOpaquePlans": 420785751,
+            "exactMaximumLiveArrayBytesExcludingOpaquePlans": 466907799,
+            "fallbackOccurred": false
+          },
+          "diagnostic": {
+            "totalSeconds": 0.059773458333333335,
+            "internalSeconds": 0.059511667,
+            "mexBoundaryConversionSeconds": 0.00026179133333333743,
+            "phaseSeconds": 0.001651542,
+            "reconstructionSeconds": 0.009948125,
+            "derivativeReconstructionSeconds": 0.026329584,
+            "productSeconds": 0.010090584000000001,
+            "projectionSeconds": 0.010741125,
+            "coefficientAssemblySeconds": 0.00143675,
+            "derivativeCoefficientAssemblySeconds": 0.005110542,
+            "coefficientProjectionSeconds": 0,
+            "executionCount": 27,
+            "horizontalExecutionCount": 13,
+            "verticalExecutionCount": 14,
+            "nonlinearFluxCallCount": 1,
+            "phaseEvaluationCount": 480438
+          },
+          "lifecycle": {
+            "passed": true,
+            "before": {
+              "kernelCount": 0,
+              "moduleLocked": 0,
+              "activePlans": 0,
+              "totalPlansCreated": 0,
+              "totalPlansDestroyed": 0,
+              "outstandingPlanningBytes": 0,
+              "totalPlanningSeconds": 0
+            },
+            "afterDelete": {
+              "kernelCount": 0,
+              "moduleLocked": 0,
+              "activePlans": 0,
+              "totalPlansCreated": 18,
+              "totalPlansDestroyed": 18,
+              "outstandingPlanningBytes": 0,
+              "totalPlanningSeconds": 13.643047169
+            }
+          },
+          "fallbackOccurred": false,
+          "failure": {
+            "identifier": "",
+            "message": "",
+            "stack": [],
+            "report": ""
+          }
+        },
+        "baselineCore": {
+          "schemaVersion": "1.0.0",
+          "status": "complete",
+          "mode": "mex",
+          "variantId": "control-be0f789",
+          "caseId": "constant-hydrostatic-256x256x65",
+          "Nxyz": [
+            256,
+            256,
+            65
+          ],
+          "isHydrostatic": true,
+          "seed": 1302561,
+          "threadCountRequested": 18,
+          "threadCountEffective": 18,
+          "threadBehavior": "FFTW plans requested 18 pthreads; two joined coefficient workers run outside FFTW execution regions; MATLAB bundled libomp may be resident but is not the FFTW backend; no nested threading or isolated LLVM libomp",
+          "warmupCount": 2,
+          "sampleCount": 3,
+          "module": "wv_issue130_donut_control",
+          "mexSha256": "6ad87507132b9c1ab34175446b63fe26fff8e513ada0524b378db32e8978c719",
+          "moduleInfo": {
+            "engine": "fftw",
+            "version": "fftw-3.3.11-neon",
+            "baseLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3.3.dylib",
+            "threadLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3_threads.3.dylib",
+            "openMPRuntimeLibrary": "/Applications/MATLAB_R2026a.app/bin/maca64/libomp.dylib"
+          },
+          "constructionSeconds": 10.918705041666668,
+          "planningSeconds": 10.887517542000001,
+          "totalSamplesSeconds": [
+            0.052803291666666669,
+            0.053128916666666665,
+            0.052940708333333336
+          ],
+          "totalMedianSeconds": 0.052940708333333336,
+          "internalSamplesSeconds": [
+            0.052596709,
+            0.052920167,
+            0.052749792
+          ],
+          "internalMedianSeconds": 0.052749792,
+          "mexBoundaryConversionSamplesSeconds": [
+            0.00020658266666667008,
+            0.00020874966666666744,
+            0.00019091633333333941
+          ],
+          "mexBoundaryConversionMedianSeconds": 0.00020658266666667008,
+          "boundaryConversionBehavior": "interleaved-complex inputs are passed by pointer; three complex outputs are allocated at the MEX boundary; reported boundary is complete call minus C++ entry timing",
+          "errors": {
+            "Fp": 9.5175159905832861E-15,
+            "Fm": 8.6698719378106052E-15,
+            "F0": 8.5128817331336364E-15
+          },
+          "maximumRelativeInfinityError": 9.5175159905832861E-15,
+          "metrics": {
+            "engine": "fftw",
+            "loadedLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3.3.dylib",
+            "nonlinearFluxSchedule": "sequential-phase-once",
+            "phaseImplementation": "scalar-sincos",
+            "coefficientStorageMode": "natural-dimensional",
+            "coefficientArithmeticMode": "natural-dimensional-prescaled",
+            "inverseNormalizationPlacement": "coefficient-production",
+            "optimizationImplementation": "O3-native",
+            "coefficientWorkerCount": 2,
+            "planMemoryAccounting": "wrapper lower bound; FFTW-owned plan memory is opaque",
+            "contractVersion": 4,
+            "planCount": 14,
+            "planBytes": 336,
+            "descriptorBytes": 113012311,
+            "scratchCapacityBytes": 4.100096E+8,
+            "scratchHighWaterBytes": 4.100096E+8,
+            "halfSpectrumScratchCapacityBytes": 1.3737984E+8,
+            "realScratchCapacityBytes": 2.7262976E+8,
+            "executionCount": 105,
+            "horizontalExecutionCount": 35,
+            "verticalExecutionCount": 70,
+            "nonlinearFluxCallCount": 7,
+            "nonlinearFluxPhaseEvaluationCount": 3363066,
+            "phaseWorkspaceBytes": 0,
+            "persistentBytes": 523022247,
+            "stateInputBytes": 23061024,
+            "fluxOutputBytes": 23061024,
+            "knownMaximumLiveOwnedBytes": 546083271,
+            "persistentFullHermitianBytes": 0,
+            "gradientMaskBytes": 0,
+            "Nx": 256,
+            "Ny": 256,
+            "Nz": 65,
+            "Nj": 42,
+            "Nkl": 11439,
+            "phaseSeconds": 0.001785167,
+            "reconstructionSeconds": 0.012620083,
+            "derivativeReconstructionSeconds": 0.022804040999999997,
+            "productSeconds": 0.0076908759999999993,
+            "projectionSeconds": 0.011374208,
+            "coefficientAssemblySeconds": 0.001803333,
+            "derivativeCoefficientAssemblySeconds": 0.002336333,
+            "coefficientProjectionSeconds": 0.001682917,
+            "screeningVariant": "control-be0f789",
+            "phaseReservationBytes": 0,
+            "exactPersistentArrayBytesExcludingOpaquePlans": 523021911,
+            "exactMaximumLiveArrayBytesExcludingOpaquePlans": 569143959,
+            "fallbackOccurred": false
+          },
+          "diagnostic": {
+            "totalSeconds": 0.056543416666666665,
+            "internalSeconds": 0.056292333,
+            "mexBoundaryConversionSeconds": 0.00025108366666666548,
+            "phaseSeconds": 0.001785167,
+            "reconstructionSeconds": 0.012620083,
+            "derivativeReconstructionSeconds": 0.022804040999999997,
+            "productSeconds": 0.0076908759999999993,
+            "projectionSeconds": 0.011374208,
+            "coefficientAssemblySeconds": 0.001803333,
+            "derivativeCoefficientAssemblySeconds": 0.002336333,
+            "coefficientProjectionSeconds": 0.001682917,
+            "executionCount": 15,
+            "horizontalExecutionCount": 5,
+            "verticalExecutionCount": 10,
+            "nonlinearFluxCallCount": 1,
+            "phaseEvaluationCount": 480438
+          },
+          "lifecycle": {
+            "passed": true,
+            "before": {
+              "kernelCount": 0,
+              "moduleLocked": 0,
+              "activePlans": 0,
+              "totalPlansCreated": 0,
+              "totalPlansDestroyed": 0,
+              "outstandingPlanningBytes": 0,
+              "totalPlanningSeconds": 0
+            },
+            "afterDelete": {
+              "kernelCount": 0,
+              "moduleLocked": 0,
+              "activePlans": 0,
+              "totalPlansCreated": 14,
+              "totalPlansDestroyed": 14,
+              "outstandingPlanningBytes": 0,
+              "totalPlanningSeconds": 10.887517542000001
+            }
+          },
+          "fallbackOccurred": false,
+          "failure": {
+            "identifier": "",
+            "message": "",
+            "stack": [],
+            "report": ""
+          }
+        },
+        "production": {
+          "schemaVersion": "1.0.0",
+          "status": "complete",
+          "mode": "production",
+          "variantId": "production-matlab-wvt-nonlinearFlux",
+          "caseId": "constant-hydrostatic-256x256x65",
+          "Nxyz": [
+            256,
+            256,
+            65
+          ],
+          "isHydrostatic": true,
+          "seed": 1302561,
+          "threadCountRequested": 18,
+          "threadCountEffective": 18,
+          "threadBehavior": "MATLAB maxNumCompThreads=18; production nonlinearFlux path",
+          "warmupCount": 2,
+          "sampleCount": 3,
+          "module": "",
+          "mexSha256": "",
+          "moduleInfo": {},
+          "constructionSeconds": [],
+          "planningSeconds": [],
+          "totalSamplesSeconds": [
+            0.093192791666666663,
+            0.090676083333333338,
+            0.089818625
+          ],
+          "totalMedianSeconds": 0.090676083333333338,
+          "internalSamplesSeconds": [
+            0.093192791666666663,
+            0.090676083333333338,
+            0.089818625
+          ],
+          "internalMedianSeconds": 0.090676083333333338,
+          "mexBoundaryConversionSamplesSeconds": [
+            0,
+            0,
+            0
+          ],
+          "mexBoundaryConversionMedianSeconds": 0,
+          "boundaryConversionBehavior": "not applicable to production MATLAB",
+          "errors": {
+            "Fp": 0,
+            "Fm": 0,
+            "F0": 0
+          },
+          "maximumRelativeInfinityError": 0,
+          "metrics": {},
+          "diagnostic": {},
+          "lifecycle": {
+            "passed": true,
+            "before": {},
+            "afterDelete": {}
+          },
+          "fallbackOccurred": false,
+          "failure": {
+            "identifier": "",
+            "message": "",
+            "stack": [],
+            "report": ""
+          }
+        }
+      }
+    },
+    {
+      "caseId": "constant-nonhydrostatic-256x256x65",
+      "isHydrostatic": false,
+      "candidateId": "streamed-target-three-channel",
+      "native": {
+        "controlMedianSeconds": 0.071041291,
+        "candidateMedianSeconds": 0.068251541,
+        "speedup": 1.0408745349793642,
+        "exactLiveReduction": 0.1694830692094863,
+        "maximumRelativeInfinityError": 6.3053071259485422E-14,
+        "candidate": {
+          "schemaVersion": "1.0.0",
+          "status": "complete",
+          "variant": "streamed-target-three-channel",
+          "case": "nonhydrostatic",
+          "configuration": {
+            "Nx": 256,
+            "Ny": 256,
+            "Nz": 65,
+            "Nj": 42,
+            "threadsRequested": 18,
+            "threadsEffective": 18,
+            "threadBehavior": "fftw_plan_with_nthreads(18) for every plan; two joined coefficient workers run outside FFTW execution regions; no nested threading or isolated OpenMP runtime",
+            "warmups": 2,
+            "samples": 3,
+            "coefficientWorkerCount": 2
+          },
+          "identity": {
+            "fftwVersion": "fftw-3.3.11-neon",
+            "baseLibraryDladdr": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3.3.dylib",
+            "threadLibraryDladdr": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3_threads.3.dylib",
+            "openMPRuntimeDladdr": "",
+            "compiler": "21.0.0 (clang-2100.1.1.101)"
+          },
+          "schedule": "issue130-streamed-target-three-channel",
+          "timing": {
+            "constructionSeconds": 12.419516917,
+            "samplesSeconds": [
+              0.068251541,
+              0.068405208,
+              0.067934625
+            ],
+            "diagnosticTotalSeconds": 0.067562625,
+            "stages": {
+              "phaseSeconds": 0.001242208,
+              "reconstructionSeconds": 0.008478458,
+              "derivativeReconstructionSeconds": 0.032156168,
+              "productSeconds": 0.01058404,
+              "projectionSeconds": 0.015100792000000002,
+              "coefficientAssemblySeconds": 0.001142125,
+              "derivativeCoefficientAssemblySeconds": 0.003209292,
+              "coefficientProjectionSeconds": 0
+            }
+          },
+          "memory": {
+            "descriptorBytes": 113012311,
+            "scratchBytes": 3.4185216E+8,
+            "halfSpectrumScratchBytes": 1.3737984E+8,
+            "realScratchBytes": 2.0447232E+8,
+            "phaseReservationBytes": 3.434496E+7,
+            "stateInputBytes": 23061024,
+            "fluxOutputBytes": 23061024,
+            "persistentOwnedBytesLowerBound": 454864879,
+            "exactMaximumLiveArrayBytesExcludingOpaquePlans": 500986519,
+            "knownMaximumLiveOwnedBytesLowerBound": 500986927,
+            "persistentFullHermitianBytes": 0
+          },
+          "plans": {
+            "count": 17,
+            "wrapperBytesLowerBound": 408,
+            "memoryAccounting": "wrapper lower bound; FFTW-owned plan memory is opaque",
+            "executionCount": 23,
+            "horizontalExecutionCount": 9,
+            "verticalExecutionCount": 14,
+            "phaseEvaluationCount": 480438
+          },
+          "lifecycle": {
+            "activePlansBefore": 0,
+            "activePlansDuring": 17,
+            "activePlansAfter": 0,
+            "created": 17,
+            "destroyed": 17,
+            "outstandingPlanningBytesAfter": 0,
+            "balancedCleanup": true
+          },
+          "fallbackOccurred": false
+        },
+        "control": {
+          "schemaVersion": "1.0.0",
+          "status": "complete",
+          "variant": "control-be0f78995c49a2bfe4c43d75827856e3812ac278",
+          "case": "nonhydrostatic",
+          "configuration": {
+            "Nx": 256,
+            "Ny": 256,
+            "Nz": 65,
+            "Nj": 42,
+            "threadsRequested": 18,
+            "threadsEffective": 18,
+            "threadBehavior": "fftw_plan_with_nthreads(18) for every plan; two joined coefficient workers run outside FFTW execution regions; no nested threading or isolated OpenMP runtime",
+            "warmups": 2,
+            "samples": 3,
+            "coefficientWorkerCount": 2
+          },
+          "identity": {
+            "fftwVersion": "fftw-3.3.11-neon",
+            "baseLibraryDladdr": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3.3.dylib",
+            "threadLibraryDladdr": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3_threads.3.dylib",
+            "openMPRuntimeDladdr": "",
+            "compiler": "21.0.0 (clang-2100.1.1.101)"
+          },
+          "schedule": "sequential-phase-once",
+          "timing": {
+            "constructionSeconds": 10.849375333,
+            "samplesSeconds": [
+              0.071041291,
+              0.077502208,
+              0.068692916
+            ],
+            "diagnosticTotalSeconds": 0.068968458,
+            "stages": {
+              "phaseSeconds": 0.001439584,
+              "reconstructionSeconds": 0.011078791,
+              "derivativeReconstructionSeconds": 0.031450834999999996,
+              "productSeconds": 0.010413291,
+              "projectionSeconds": 0.01458525,
+              "coefficientAssemblySeconds": 0.001371667,
+              "derivativeCoefficientAssemblySeconds": 0.0029925409999999996,
+              "coefficientProjectionSeconds": 0.002007792
+            }
+          },
+          "memory": {
+            "descriptorBytes": 113012311,
+            "scratchBytes": 4.4408832E+8,
+            "halfSpectrumScratchBytes": 1.3737984E+8,
+            "realScratchBytes": 3.0670848E+8,
+            "phaseReservationBytes": 0,
+            "stateInputBytes": 23061024,
+            "fluxOutputBytes": 23061024,
+            "persistentOwnedBytesLowerBound": 557100967,
+            "exactMaximumLiveArrayBytesExcludingOpaquePlans": 603222679,
+            "knownMaximumLiveOwnedBytesLowerBound": 603223015,
+            "persistentFullHermitianBytes": 0
+          },
+          "plans": {
+            "count": 14,
+            "wrapperBytesLowerBound": 336,
+            "memoryAccounting": "wrapper lower bound; FFTW-owned plan memory is opaque",
+            "executionCount": 18,
+            "horizontalExecutionCount": 6,
+            "verticalExecutionCount": 12,
+            "phaseEvaluationCount": 480438
+          },
+          "lifecycle": {
+            "activePlansBefore": 0,
+            "activePlansDuring": 14,
+            "activePlansAfter": 0,
+            "created": 14,
+            "destroyed": 14,
+            "outstandingPlanningBytesAfter": 0,
+            "balancedCleanup": true
+          },
+          "fallbackOccurred": false
+        }
+      },
+      "mex": {
+        "baselineCoreMedianSeconds": 0.06776470833333334,
+        "candidateMedianSeconds": 0.069525375,
+        "productionMedianSeconds": 0.10898958333333333,
+        "speedupVersusBaselineCore": 0.97467591269134957,
+        "speedupVersusProduction": 1.5676230920485266,
+        "exactLiveReduction": 0.1762198999348098,
+        "maximumRelativeInfinityError": 8.4608112649655213E-15,
+        "candidate": {
+          "schemaVersion": "1.0.0",
+          "status": "complete",
+          "mode": "mex",
+          "variantId": "streamed-target-three-channel",
+          "caseId": "constant-nonhydrostatic-256x256x65",
+          "Nxyz": [
+            256,
+            256,
+            65
+          ],
+          "isHydrostatic": false,
+          "seed": 1302562,
+          "threadCountRequested": 18,
+          "threadCountEffective": 18,
+          "threadBehavior": "FFTW plans requested 18 pthreads; two joined coefficient workers run outside FFTW execution regions; MATLAB bundled libomp may be resident but is not the FFTW backend; no nested threading or isolated LLVM libomp",
+          "warmupCount": 2,
+          "sampleCount": 3,
+          "module": "wv_issue130_donut_streamed",
+          "mexSha256": "2d64b1995f2679e29d1aeee885a89bb85494fe0bec4668f31492c69403a2f897",
+          "moduleInfo": {
+            "engine": "fftw",
+            "version": "fftw-3.3.11-neon",
+            "baseLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3.3.dylib",
+            "threadLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3_threads.3.dylib",
+            "openMPRuntimeLibrary": "/Applications/MATLAB_R2026a.app/bin/maca64/libomp.dylib"
+          },
+          "constructionSeconds": 12.317625375,
+          "planningSeconds": 12.291520748,
+          "totalSamplesSeconds": [
+            0.069892041666666668,
+            0.06943275,
+            0.069525375
+          ],
+          "totalMedianSeconds": 0.069525375,
+          "internalSamplesSeconds": [
+            0.069681375,
+            0.069225083,
+            0.069338
+          ],
+          "internalMedianSeconds": 0.069338,
+          "mexBoundaryConversionSamplesSeconds": [
+            0.00021066666666666456,
+            0.00020766699999999472,
+            0.00018737500000000351
+          ],
+          "mexBoundaryConversionMedianSeconds": 0.00020766699999999472,
+          "boundaryConversionBehavior": "interleaved-complex inputs are passed by pointer; three complex outputs are allocated at the MEX boundary; reported boundary is complete call minus C++ entry timing",
+          "errors": {
+            "Fp": 6.8078265257677824E-15,
+            "Fm": 7.575808759130208E-15,
+            "F0": 8.4608112649655213E-15
+          },
+          "maximumRelativeInfinityError": 8.4608112649655213E-15,
+          "metrics": {
+            "engine": "fftw",
+            "loadedLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3.3.dylib",
+            "nonlinearFluxSchedule": "issue130-streamed-target-three-channel",
+            "screeningVariant": "streamed-target-three-channel",
+            "phaseImplementation": "scalar-sincos",
+            "coefficientStorageMode": "natural-dimensional",
+            "coefficientArithmeticMode": "natural-dimensional-prescaled",
+            "inverseNormalizationPlacement": "coefficient-production",
+            "optimizationImplementation": "O3-native",
+            "coefficientWorkerCount": 2,
+            "planMemoryAccounting": "wrapper lower bound; FFTW-owned plan memory is opaque",
+            "contractVersion": 4,
+            "planCount": 17,
+            "planBytes": 408,
+            "descriptorBytes": 113012311,
+            "scratchCapacityBytes": 3.4185216E+8,
+            "scratchHighWaterBytes": 3.4185216E+8,
+            "halfSpectrumScratchCapacityBytes": 1.3737984E+8,
+            "realScratchCapacityBytes": 2.0447232E+8,
+            "executionCount": 161,
+            "horizontalExecutionCount": 63,
+            "verticalExecutionCount": 98,
+            "nonlinearFluxCallCount": 7,
+            "nonlinearFluxPhaseEvaluationCount": 3363066,
+            "phaseWorkspaceBytes": 3.434496E+7,
+            "phaseReservationBytes": 3.434496E+7,
+            "persistentBytes": 454864879,
+            "stateInputBytes": 23061024,
+            "fluxOutputBytes": 23061024,
+            "knownMaximumLiveOwnedBytes": 477925903,
+            "persistentFullHermitianBytes": 0,
+            "gradientMaskBytes": 0,
+            "Nx": 256,
+            "Ny": 256,
+            "Nz": 65,
+            "Nj": 42,
+            "Nkl": 11439,
+            "phaseSeconds": 0.00148425,
+            "reconstructionSeconds": 0.00943275,
+            "derivativeReconstructionSeconds": 0.034072792000000005,
+            "productSeconds": 0.010107416000000001,
+            "projectionSeconds": 0.015737541,
+            "coefficientAssemblySeconds": 0.0014825,
+            "derivativeCoefficientAssemblySeconds": 0.003201041,
+            "coefficientProjectionSeconds": 0,
+            "exactPersistentArrayBytesExcludingOpaquePlans": 454864471,
+            "exactMaximumLiveArrayBytesExcludingOpaquePlans": 500986519,
+            "fallbackOccurred": false
+          },
+          "diagnostic": {
+            "totalSeconds": 0.071097416666666663,
+            "internalSeconds": 0.070836,
+            "mexBoundaryConversionSeconds": 0.00026141666666666674,
+            "phaseSeconds": 0.00148425,
+            "reconstructionSeconds": 0.00943275,
+            "derivativeReconstructionSeconds": 0.034072792000000005,
+            "productSeconds": 0.010107416000000001,
+            "projectionSeconds": 0.015737541,
+            "coefficientAssemblySeconds": 0.0014825,
+            "derivativeCoefficientAssemblySeconds": 0.003201041,
+            "coefficientProjectionSeconds": 0,
+            "executionCount": 23,
+            "horizontalExecutionCount": 9,
+            "verticalExecutionCount": 14,
+            "nonlinearFluxCallCount": 1,
+            "phaseEvaluationCount": 480438
+          },
+          "lifecycle": {
+            "passed": true,
+            "before": {
+              "kernelCount": 0,
+              "moduleLocked": 0,
+              "activePlans": 0,
+              "totalPlansCreated": 0,
+              "totalPlansDestroyed": 0,
+              "outstandingPlanningBytes": 0,
+              "totalPlanningSeconds": 0
+            },
+            "afterDelete": {
+              "kernelCount": 0,
+              "moduleLocked": 0,
+              "activePlans": 0,
+              "totalPlansCreated": 17,
+              "totalPlansDestroyed": 17,
+              "outstandingPlanningBytes": 0,
+              "totalPlanningSeconds": 12.291520748
+            }
+          },
+          "fallbackOccurred": false,
+          "failure": {
+            "identifier": "",
+            "message": "",
+            "stack": [],
+            "report": ""
+          }
+        },
+        "baselineCore": {
+          "schemaVersion": "1.0.0",
+          "status": "complete",
+          "mode": "mex",
+          "variantId": "control-be0f789",
+          "caseId": "constant-nonhydrostatic-256x256x65",
+          "Nxyz": [
+            256,
+            256,
+            65
+          ],
+          "isHydrostatic": false,
+          "seed": 1302562,
+          "threadCountRequested": 18,
+          "threadCountEffective": 18,
+          "threadBehavior": "FFTW plans requested 18 pthreads; two joined coefficient workers run outside FFTW execution regions; MATLAB bundled libomp may be resident but is not the FFTW backend; no nested threading or isolated LLVM libomp",
+          "warmupCount": 2,
+          "sampleCount": 3,
+          "module": "wv_issue130_donut_control",
+          "mexSha256": "6ad87507132b9c1ab34175446b63fe26fff8e513ada0524b378db32e8978c719",
+          "moduleInfo": {
+            "engine": "fftw",
+            "version": "fftw-3.3.11-neon",
+            "baseLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3.3.dylib",
+            "threadLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3_threads.3.dylib",
+            "openMPRuntimeLibrary": "/Applications/MATLAB_R2026a.app/bin/maca64/libomp.dylib"
+          },
+          "constructionSeconds": 11.059668916666666,
+          "planningSeconds": 11.027080626,
+          "totalSamplesSeconds": [
+            0.06776470833333334,
+            0.06831625,
+            0.06646316666666667
+          ],
+          "totalMedianSeconds": 0.06776470833333334,
+          "internalSamplesSeconds": [
+            0.067564875,
+            0.06812325,
+            0.066254042
+          ],
+          "internalMedianSeconds": 0.067564875,
+          "mexBoundaryConversionSamplesSeconds": [
+            0.00019983333333334352,
+            0.00019299999999999873,
+            0.00020912466666667129
+          ],
+          "mexBoundaryConversionMedianSeconds": 0.00019983333333334352,
+          "boundaryConversionBehavior": "interleaved-complex inputs are passed by pointer; three complex outputs are allocated at the MEX boundary; reported boundary is complete call minus C++ entry timing",
+          "errors": {
+            "Fp": 6.7651378639592208E-15,
+            "Fm": 7.7206388308281519E-15,
+            "F0": 8.337058398511295E-15
+          },
+          "maximumRelativeInfinityError": 8.337058398511295E-15,
+          "metrics": {
+            "engine": "fftw",
+            "loadedLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3.3.dylib",
+            "nonlinearFluxSchedule": "sequential-phase-once",
+            "phaseImplementation": "scalar-sincos",
+            "coefficientStorageMode": "natural-dimensional",
+            "coefficientArithmeticMode": "natural-dimensional-prescaled",
+            "inverseNormalizationPlacement": "coefficient-production",
+            "optimizationImplementation": "O3-native",
+            "coefficientWorkerCount": 2,
+            "planMemoryAccounting": "wrapper lower bound; FFTW-owned plan memory is opaque",
+            "contractVersion": 4,
+            "planCount": 14,
+            "planBytes": 336,
+            "descriptorBytes": 113012311,
+            "scratchCapacityBytes": 4.4408832E+8,
+            "scratchHighWaterBytes": 4.4408832E+8,
+            "halfSpectrumScratchCapacityBytes": 1.3737984E+8,
+            "realScratchCapacityBytes": 3.0670848E+8,
+            "executionCount": 126,
+            "horizontalExecutionCount": 42,
+            "verticalExecutionCount": 84,
+            "nonlinearFluxCallCount": 7,
+            "nonlinearFluxPhaseEvaluationCount": 3363066,
+            "phaseWorkspaceBytes": 0,
+            "persistentBytes": 557100967,
+            "stateInputBytes": 23061024,
+            "fluxOutputBytes": 23061024,
+            "knownMaximumLiveOwnedBytes": 580161991,
+            "persistentFullHermitianBytes": 0,
+            "gradientMaskBytes": 0,
+            "Nx": 256,
+            "Ny": 256,
+            "Nz": 65,
+            "Nj": 42,
+            "Nkl": 11439,
+            "phaseSeconds": 0.001755084,
+            "reconstructionSeconds": 0.010974708,
+            "derivativeReconstructionSeconds": 0.031136542,
+            "productSeconds": 0.010275125,
+            "projectionSeconds": 0.014071292,
+            "coefficientAssemblySeconds": 0.001435584,
+            "derivativeCoefficientAssemblySeconds": 0.003119125,
+            "coefficientProjectionSeconds": 0.002071542,
+            "screeningVariant": "control-be0f789",
+            "phaseReservationBytes": 0,
+            "exactPersistentArrayBytesExcludingOpaquePlans": 557100631,
+            "exactMaximumLiveArrayBytesExcludingOpaquePlans": 603222679,
+            "fallbackOccurred": false
+          },
+          "diagnostic": {
+            "totalSeconds": 0.068448125,
+            "internalSeconds": 0.068219125,
+            "mexBoundaryConversionSeconds": 0.0002289999999999931,
+            "phaseSeconds": 0.001755084,
+            "reconstructionSeconds": 0.010974708,
+            "derivativeReconstructionSeconds": 0.031136542,
+            "productSeconds": 0.010275125,
+            "projectionSeconds": 0.014071292,
+            "coefficientAssemblySeconds": 0.001435584,
+            "derivativeCoefficientAssemblySeconds": 0.003119125,
+            "coefficientProjectionSeconds": 0.002071542,
+            "executionCount": 18,
+            "horizontalExecutionCount": 6,
+            "verticalExecutionCount": 12,
+            "nonlinearFluxCallCount": 1,
+            "phaseEvaluationCount": 480438
+          },
+          "lifecycle": {
+            "passed": true,
+            "before": {
+              "kernelCount": 0,
+              "moduleLocked": 0,
+              "activePlans": 0,
+              "totalPlansCreated": 0,
+              "totalPlansDestroyed": 0,
+              "outstandingPlanningBytes": 0,
+              "totalPlanningSeconds": 0
+            },
+            "afterDelete": {
+              "kernelCount": 0,
+              "moduleLocked": 0,
+              "activePlans": 0,
+              "totalPlansCreated": 14,
+              "totalPlansDestroyed": 14,
+              "outstandingPlanningBytes": 0,
+              "totalPlanningSeconds": 11.027080626
+            }
+          },
+          "fallbackOccurred": false,
+          "failure": {
+            "identifier": "",
+            "message": "",
+            "stack": [],
+            "report": ""
+          }
+        },
+        "production": {
+          "schemaVersion": "1.0.0",
+          "status": "complete",
+          "mode": "production",
+          "variantId": "production-matlab-wvt-nonlinearFlux",
+          "caseId": "constant-nonhydrostatic-256x256x65",
+          "Nxyz": [
+            256,
+            256,
+            65
+          ],
+          "isHydrostatic": false,
+          "seed": 1302562,
+          "threadCountRequested": 18,
+          "threadCountEffective": 18,
+          "threadBehavior": "MATLAB maxNumCompThreads=18; production nonlinearFlux path",
+          "warmupCount": 2,
+          "sampleCount": 3,
+          "module": "",
+          "mexSha256": "",
+          "moduleInfo": {},
+          "constructionSeconds": [],
+          "planningSeconds": [],
+          "totalSamplesSeconds": [
+            0.10984095833333334,
+            0.10898958333333333,
+            0.10761820833333334
+          ],
+          "totalMedianSeconds": 0.10898958333333333,
+          "internalSamplesSeconds": [
+            0.10984095833333334,
+            0.10898958333333333,
+            0.10761820833333334
+          ],
+          "internalMedianSeconds": 0.10898958333333333,
+          "mexBoundaryConversionSamplesSeconds": [
+            0,
+            0,
+            0
+          ],
+          "mexBoundaryConversionMedianSeconds": 0,
+          "boundaryConversionBehavior": "not applicable to production MATLAB",
+          "errors": {
+            "Fp": 0,
+            "Fm": 0,
+            "F0": 0
+          },
+          "maximumRelativeInfinityError": 0,
+          "metrics": {},
+          "diagnostic": {},
+          "lifecycle": {
+            "passed": true,
+            "before": {},
+            "afterDelete": {}
+          },
+          "fallbackOccurred": false,
+          "failure": {
+            "identifier": "",
+            "message": "",
+            "stack": [],
+            "report": ""
+          }
+        }
+      }
+    },
+    {
+      "caseId": "constant-nonhydrostatic-256x256x65",
+      "isHydrostatic": false,
+      "candidateId": "streamed-target-single-output-4H+5R",
+      "native": {
+        "controlMedianSeconds": 0.071041291,
+        "candidateMedianSeconds": 0.076524458,
+        "speedup": 0.92834752256592268,
+        "exactLiveReduction": 0.22597742561264844,
+        "maximumRelativeInfinityError": 8.7860756848761809E-14,
+        "candidate": {
+          "schemaVersion": "1.0.0",
+          "status": "complete",
+          "variant": "streamed-target-single-output-4H+5R",
+          "case": "nonhydrostatic",
+          "configuration": {
+            "Nx": 256,
+            "Ny": 256,
+            "Nz": 65,
+            "Nj": 42,
+            "threadsRequested": 18,
+            "threadsEffective": 18,
+            "threadBehavior": "fftw_plan_with_nthreads(18) for every plan; two joined coefficient workers run outside FFTW execution regions; no nested threading or isolated OpenMP runtime",
+            "warmups": 2,
+            "samples": 3,
+            "coefficientWorkerCount": 2
+          },
+          "identity": {
+            "fftwVersion": "fftw-3.3.11-neon",
+            "baseLibraryDladdr": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3.3.dylib",
+            "threadLibraryDladdr": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3_threads.3.dylib",
+            "openMPRuntimeDladdr": "",
+            "compiler": "21.0.0 (clang-2100.1.1.101)"
+          },
+          "schedule": "issue130-streamed-target-single-output",
+          "timing": {
+            "constructionSeconds": 13.433165792,
+            "samplesSeconds": [
+              0.076524458,
+              0.079660541,
+              0.076384333
+            ],
+            "diagnosticTotalSeconds": 0.074907208,
+            "stages": {
+              "phaseSeconds": 0.001237959,
+              "reconstructionSeconds": 0.008680334,
+              "derivativeReconstructionSeconds": 0.035963833,
+              "productSeconds": 0.013946584000000001,
+              "projectionSeconds": 0.014543752,
+              "coefficientAssemblySeconds": 0.001116542,
+              "derivativeCoefficientAssemblySeconds": 0.0061225850000000007,
+              "coefficientProjectionSeconds": 0
+            }
+          },
+          "memory": {
+            "descriptorBytes": 113012311,
+            "scratchBytes": 3.0777344E+8,
+            "halfSpectrumScratchBytes": 1.3737984E+8,
+            "realScratchBytes": 1.703936E+8,
+            "phaseReservationBytes": 3.434496E+7,
+            "stateInputBytes": 23061024,
+            "fluxOutputBytes": 23061024,
+            "persistentOwnedBytesLowerBound": 420786183,
+            "exactMaximumLiveArrayBytesExcludingOpaquePlans": 466907799,
+            "knownMaximumLiveOwnedBytesLowerBound": 466908231,
+            "persistentFullHermitianBytes": 0
+          },
+          "plans": {
+            "count": 18,
+            "wrapperBytesLowerBound": 432,
+            "memoryAccounting": "wrapper lower bound; FFTW-owned plan memory is opaque",
+            "executionCount": 35,
+            "horizontalExecutionCount": 17,
+            "verticalExecutionCount": 18,
+            "phaseEvaluationCount": 480438
+          },
+          "lifecycle": {
+            "activePlansBefore": 0,
+            "activePlansDuring": 18,
+            "activePlansAfter": 0,
+            "created": 18,
+            "destroyed": 18,
+            "outstandingPlanningBytesAfter": 0,
+            "balancedCleanup": true
+          },
+          "fallbackOccurred": false
+        },
+        "control": {
+          "schemaVersion": "1.0.0",
+          "status": "complete",
+          "variant": "control-be0f78995c49a2bfe4c43d75827856e3812ac278",
+          "case": "nonhydrostatic",
+          "configuration": {
+            "Nx": 256,
+            "Ny": 256,
+            "Nz": 65,
+            "Nj": 42,
+            "threadsRequested": 18,
+            "threadsEffective": 18,
+            "threadBehavior": "fftw_plan_with_nthreads(18) for every plan; two joined coefficient workers run outside FFTW execution regions; no nested threading or isolated OpenMP runtime",
+            "warmups": 2,
+            "samples": 3,
+            "coefficientWorkerCount": 2
+          },
+          "identity": {
+            "fftwVersion": "fftw-3.3.11-neon",
+            "baseLibraryDladdr": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3.3.dylib",
+            "threadLibraryDladdr": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3_threads.3.dylib",
+            "openMPRuntimeDladdr": "",
+            "compiler": "21.0.0 (clang-2100.1.1.101)"
+          },
+          "schedule": "sequential-phase-once",
+          "timing": {
+            "constructionSeconds": 10.849375333,
+            "samplesSeconds": [
+              0.071041291,
+              0.077502208,
+              0.068692916
+            ],
+            "diagnosticTotalSeconds": 0.068968458,
+            "stages": {
+              "phaseSeconds": 0.001439584,
+              "reconstructionSeconds": 0.011078791,
+              "derivativeReconstructionSeconds": 0.031450834999999996,
+              "productSeconds": 0.010413291,
+              "projectionSeconds": 0.01458525,
+              "coefficientAssemblySeconds": 0.001371667,
+              "derivativeCoefficientAssemblySeconds": 0.0029925409999999996,
+              "coefficientProjectionSeconds": 0.002007792
+            }
+          },
+          "memory": {
+            "descriptorBytes": 113012311,
+            "scratchBytes": 4.4408832E+8,
+            "halfSpectrumScratchBytes": 1.3737984E+8,
+            "realScratchBytes": 3.0670848E+8,
+            "phaseReservationBytes": 0,
+            "stateInputBytes": 23061024,
+            "fluxOutputBytes": 23061024,
+            "persistentOwnedBytesLowerBound": 557100967,
+            "exactMaximumLiveArrayBytesExcludingOpaquePlans": 603222679,
+            "knownMaximumLiveOwnedBytesLowerBound": 603223015,
+            "persistentFullHermitianBytes": 0
+          },
+          "plans": {
+            "count": 14,
+            "wrapperBytesLowerBound": 336,
+            "memoryAccounting": "wrapper lower bound; FFTW-owned plan memory is opaque",
+            "executionCount": 18,
+            "horizontalExecutionCount": 6,
+            "verticalExecutionCount": 12,
+            "phaseEvaluationCount": 480438
+          },
+          "lifecycle": {
+            "activePlansBefore": 0,
+            "activePlansDuring": 14,
+            "activePlansAfter": 0,
+            "created": 14,
+            "destroyed": 14,
+            "outstandingPlanningBytesAfter": 0,
+            "balancedCleanup": true
+          },
+          "fallbackOccurred": false
+        }
+      },
+      "mex": {
+        "baselineCoreMedianSeconds": 0.06776470833333334,
+        "candidateMedianSeconds": 0.071751458333333337,
+        "productionMedianSeconds": 0.10898958333333333,
+        "speedupVersusBaselineCore": 0.94443666940567417,
+        "speedupVersusProduction": 1.5189877093090443,
+        "exactLiveReduction": 0.23495986657974632,
+        "maximumRelativeInfinityError": 8.314551102863386E-15,
+        "candidate": {
+          "schemaVersion": "1.0.0",
+          "status": "complete",
+          "mode": "mex",
+          "variantId": "streamed-target-single-output-4H+5R",
+          "caseId": "constant-nonhydrostatic-256x256x65",
+          "Nxyz": [
+            256,
+            256,
+            65
+          ],
+          "isHydrostatic": false,
+          "seed": 1302562,
+          "threadCountRequested": 18,
+          "threadCountEffective": 18,
+          "threadBehavior": "FFTW plans requested 18 pthreads; two joined coefficient workers run outside FFTW execution regions; MATLAB bundled libomp may be resident but is not the FFTW backend; no nested threading or isolated LLVM libomp",
+          "warmupCount": 2,
+          "sampleCount": 3,
+          "module": "wv_issue130_donut_single_output",
+          "mexSha256": "0c9d4d5f506216ae1d27381ce93942ea8dff37f46529a7c92eda31cf4749f6c8",
+          "moduleInfo": {
+            "engine": "fftw",
+            "version": "fftw-3.3.11-neon",
+            "baseLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3.3.dylib",
+            "threadLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3_threads.3.dylib",
+            "openMPRuntimeLibrary": "/Applications/MATLAB_R2026a.app/bin/maca64/libomp.dylib"
+          },
+          "constructionSeconds": 13.669083833333334,
+          "planningSeconds": 13.643177334,
+          "totalSamplesSeconds": [
+            0.071312166666666663,
+            0.071751458333333337,
+            0.07593108333333333
+          ],
+          "totalMedianSeconds": 0.071751458333333337,
+          "internalSamplesSeconds": [
+            0.071108833,
+            0.07155275,
+            0.075739791
+          ],
+          "internalMedianSeconds": 0.07155275,
+          "mexBoundaryConversionSamplesSeconds": [
+            0.0002033336666666663,
+            0.00019870833333333893,
+            0.00019129233333332885
+          ],
+          "mexBoundaryConversionMedianSeconds": 0.00019870833333333893,
+          "boundaryConversionBehavior": "interleaved-complex inputs are passed by pointer; three complex outputs are allocated at the MEX boundary; reported boundary is complete call minus C++ entry timing",
+          "errors": {
+            "Fp": 6.8580412727319455E-15,
+            "Fm": 7.7505180120782745E-15,
+            "F0": 8.314551102863386E-15
+          },
+          "maximumRelativeInfinityError": 8.314551102863386E-15,
+          "metrics": {
+            "engine": "fftw",
+            "loadedLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3.3.dylib",
+            "nonlinearFluxSchedule": "issue130-streamed-target-single-output",
+            "screeningVariant": "streamed-target-single-output",
+            "phaseImplementation": "scalar-sincos",
+            "coefficientStorageMode": "natural-dimensional",
+            "coefficientArithmeticMode": "natural-dimensional-prescaled",
+            "inverseNormalizationPlacement": "coefficient-production",
+            "optimizationImplementation": "O3-native",
+            "coefficientWorkerCount": 2,
+            "planMemoryAccounting": "wrapper lower bound; FFTW-owned plan memory is opaque",
+            "contractVersion": 4,
+            "planCount": 18,
+            "planBytes": 432,
+            "descriptorBytes": 113012311,
+            "scratchCapacityBytes": 3.0777344E+8,
+            "scratchHighWaterBytes": 3.0777344E+8,
+            "halfSpectrumScratchCapacityBytes": 1.3737984E+8,
+            "realScratchCapacityBytes": 1.703936E+8,
+            "executionCount": 245,
+            "horizontalExecutionCount": 119,
+            "verticalExecutionCount": 126,
+            "nonlinearFluxCallCount": 7,
+            "nonlinearFluxPhaseEvaluationCount": 3363066,
+            "phaseWorkspaceBytes": 3.434496E+7,
+            "phaseReservationBytes": 3.434496E+7,
+            "persistentBytes": 420786183,
+            "stateInputBytes": 23061024,
+            "fluxOutputBytes": 23061024,
+            "knownMaximumLiveOwnedBytes": 443847207,
+            "persistentFullHermitianBytes": 0,
+            "gradientMaskBytes": 0,
+            "Nx": 256,
+            "Ny": 256,
+            "Nz": 65,
+            "Nj": 42,
+            "Nkl": 11439,
+            "phaseSeconds": 0.001480333,
+            "reconstructionSeconds": 0.009442792,
+            "derivativeReconstructionSeconds": 0.033780792999999996,
+            "productSeconds": 0.01377554,
+            "projectionSeconds": 0.013910290999999998,
+            "coefficientAssemblySeconds": 0.00145075,
+            "derivativeCoefficientAssemblySeconds": 0.0064943770000000008,
+            "coefficientProjectionSeconds": 0,
+            "exactPersistentArrayBytesExcludingOpaquePlans": 420785751,
+            "exactMaximumLiveArrayBytesExcludingOpaquePlans": 466907799,
+            "fallbackOccurred": false
+          },
+          "diagnostic": {
+            "totalSeconds": 0.073405791666666664,
+            "internalSeconds": 0.073137958,
+            "mexBoundaryConversionSeconds": 0.00026783366666666142,
+            "phaseSeconds": 0.001480333,
+            "reconstructionSeconds": 0.009442792,
+            "derivativeReconstructionSeconds": 0.033780792999999996,
+            "productSeconds": 0.01377554,
+            "projectionSeconds": 0.013910290999999998,
+            "coefficientAssemblySeconds": 0.00145075,
+            "derivativeCoefficientAssemblySeconds": 0.0064943770000000008,
+            "coefficientProjectionSeconds": 0,
+            "executionCount": 35,
+            "horizontalExecutionCount": 17,
+            "verticalExecutionCount": 18,
+            "nonlinearFluxCallCount": 1,
+            "phaseEvaluationCount": 480438
+          },
+          "lifecycle": {
+            "passed": true,
+            "before": {
+              "kernelCount": 0,
+              "moduleLocked": 0,
+              "activePlans": 0,
+              "totalPlansCreated": 0,
+              "totalPlansDestroyed": 0,
+              "outstandingPlanningBytes": 0,
+              "totalPlanningSeconds": 0
+            },
+            "afterDelete": {
+              "kernelCount": 0,
+              "moduleLocked": 0,
+              "activePlans": 0,
+              "totalPlansCreated": 18,
+              "totalPlansDestroyed": 18,
+              "outstandingPlanningBytes": 0,
+              "totalPlanningSeconds": 13.643177334
+            }
+          },
+          "fallbackOccurred": false,
+          "failure": {
+            "identifier": "",
+            "message": "",
+            "stack": [],
+            "report": ""
+          }
+        },
+        "baselineCore": {
+          "schemaVersion": "1.0.0",
+          "status": "complete",
+          "mode": "mex",
+          "variantId": "control-be0f789",
+          "caseId": "constant-nonhydrostatic-256x256x65",
+          "Nxyz": [
+            256,
+            256,
+            65
+          ],
+          "isHydrostatic": false,
+          "seed": 1302562,
+          "threadCountRequested": 18,
+          "threadCountEffective": 18,
+          "threadBehavior": "FFTW plans requested 18 pthreads; two joined coefficient workers run outside FFTW execution regions; MATLAB bundled libomp may be resident but is not the FFTW backend; no nested threading or isolated LLVM libomp",
+          "warmupCount": 2,
+          "sampleCount": 3,
+          "module": "wv_issue130_donut_control",
+          "mexSha256": "6ad87507132b9c1ab34175446b63fe26fff8e513ada0524b378db32e8978c719",
+          "moduleInfo": {
+            "engine": "fftw",
+            "version": "fftw-3.3.11-neon",
+            "baseLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3.3.dylib",
+            "threadLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3_threads.3.dylib",
+            "openMPRuntimeLibrary": "/Applications/MATLAB_R2026a.app/bin/maca64/libomp.dylib"
+          },
+          "constructionSeconds": 11.059668916666666,
+          "planningSeconds": 11.027080626,
+          "totalSamplesSeconds": [
+            0.06776470833333334,
+            0.06831625,
+            0.06646316666666667
+          ],
+          "totalMedianSeconds": 0.06776470833333334,
+          "internalSamplesSeconds": [
+            0.067564875,
+            0.06812325,
+            0.066254042
+          ],
+          "internalMedianSeconds": 0.067564875,
+          "mexBoundaryConversionSamplesSeconds": [
+            0.00019983333333334352,
+            0.00019299999999999873,
+            0.00020912466666667129
+          ],
+          "mexBoundaryConversionMedianSeconds": 0.00019983333333334352,
+          "boundaryConversionBehavior": "interleaved-complex inputs are passed by pointer; three complex outputs are allocated at the MEX boundary; reported boundary is complete call minus C++ entry timing",
+          "errors": {
+            "Fp": 6.7651378639592208E-15,
+            "Fm": 7.7206388308281519E-15,
+            "F0": 8.337058398511295E-15
+          },
+          "maximumRelativeInfinityError": 8.337058398511295E-15,
+          "metrics": {
+            "engine": "fftw",
+            "loadedLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3.3.dylib",
+            "nonlinearFluxSchedule": "sequential-phase-once",
+            "phaseImplementation": "scalar-sincos",
+            "coefficientStorageMode": "natural-dimensional",
+            "coefficientArithmeticMode": "natural-dimensional-prescaled",
+            "inverseNormalizationPlacement": "coefficient-production",
+            "optimizationImplementation": "O3-native",
+            "coefficientWorkerCount": 2,
+            "planMemoryAccounting": "wrapper lower bound; FFTW-owned plan memory is opaque",
+            "contractVersion": 4,
+            "planCount": 14,
+            "planBytes": 336,
+            "descriptorBytes": 113012311,
+            "scratchCapacityBytes": 4.4408832E+8,
+            "scratchHighWaterBytes": 4.4408832E+8,
+            "halfSpectrumScratchCapacityBytes": 1.3737984E+8,
+            "realScratchCapacityBytes": 3.0670848E+8,
+            "executionCount": 126,
+            "horizontalExecutionCount": 42,
+            "verticalExecutionCount": 84,
+            "nonlinearFluxCallCount": 7,
+            "nonlinearFluxPhaseEvaluationCount": 3363066,
+            "phaseWorkspaceBytes": 0,
+            "persistentBytes": 557100967,
+            "stateInputBytes": 23061024,
+            "fluxOutputBytes": 23061024,
+            "knownMaximumLiveOwnedBytes": 580161991,
+            "persistentFullHermitianBytes": 0,
+            "gradientMaskBytes": 0,
+            "Nx": 256,
+            "Ny": 256,
+            "Nz": 65,
+            "Nj": 42,
+            "Nkl": 11439,
+            "phaseSeconds": 0.001755084,
+            "reconstructionSeconds": 0.010974708,
+            "derivativeReconstructionSeconds": 0.031136542,
+            "productSeconds": 0.010275125,
+            "projectionSeconds": 0.014071292,
+            "coefficientAssemblySeconds": 0.001435584,
+            "derivativeCoefficientAssemblySeconds": 0.003119125,
+            "coefficientProjectionSeconds": 0.002071542,
+            "screeningVariant": "control-be0f789",
+            "phaseReservationBytes": 0,
+            "exactPersistentArrayBytesExcludingOpaquePlans": 557100631,
+            "exactMaximumLiveArrayBytesExcludingOpaquePlans": 603222679,
+            "fallbackOccurred": false
+          },
+          "diagnostic": {
+            "totalSeconds": 0.068448125,
+            "internalSeconds": 0.068219125,
+            "mexBoundaryConversionSeconds": 0.0002289999999999931,
+            "phaseSeconds": 0.001755084,
+            "reconstructionSeconds": 0.010974708,
+            "derivativeReconstructionSeconds": 0.031136542,
+            "productSeconds": 0.010275125,
+            "projectionSeconds": 0.014071292,
+            "coefficientAssemblySeconds": 0.001435584,
+            "derivativeCoefficientAssemblySeconds": 0.003119125,
+            "coefficientProjectionSeconds": 0.002071542,
+            "executionCount": 18,
+            "horizontalExecutionCount": 6,
+            "verticalExecutionCount": 12,
+            "nonlinearFluxCallCount": 1,
+            "phaseEvaluationCount": 480438
+          },
+          "lifecycle": {
+            "passed": true,
+            "before": {
+              "kernelCount": 0,
+              "moduleLocked": 0,
+              "activePlans": 0,
+              "totalPlansCreated": 0,
+              "totalPlansDestroyed": 0,
+              "outstandingPlanningBytes": 0,
+              "totalPlanningSeconds": 0
+            },
+            "afterDelete": {
+              "kernelCount": 0,
+              "moduleLocked": 0,
+              "activePlans": 0,
+              "totalPlansCreated": 14,
+              "totalPlansDestroyed": 14,
+              "outstandingPlanningBytes": 0,
+              "totalPlanningSeconds": 11.027080626
+            }
+          },
+          "fallbackOccurred": false,
+          "failure": {
+            "identifier": "",
+            "message": "",
+            "stack": [],
+            "report": ""
+          }
+        },
+        "production": {
+          "schemaVersion": "1.0.0",
+          "status": "complete",
+          "mode": "production",
+          "variantId": "production-matlab-wvt-nonlinearFlux",
+          "caseId": "constant-nonhydrostatic-256x256x65",
+          "Nxyz": [
+            256,
+            256,
+            65
+          ],
+          "isHydrostatic": false,
+          "seed": 1302562,
+          "threadCountRequested": 18,
+          "threadCountEffective": 18,
+          "threadBehavior": "MATLAB maxNumCompThreads=18; production nonlinearFlux path",
+          "warmupCount": 2,
+          "sampleCount": 3,
+          "module": "",
+          "mexSha256": "",
+          "moduleInfo": {},
+          "constructionSeconds": [],
+          "planningSeconds": [],
+          "totalSamplesSeconds": [
+            0.10984095833333334,
+            0.10898958333333333,
+            0.10761820833333334
+          ],
+          "totalMedianSeconds": 0.10898958333333333,
+          "internalSamplesSeconds": [
+            0.10984095833333334,
+            0.10898958333333333,
+            0.10761820833333334
+          ],
+          "internalMedianSeconds": 0.10898958333333333,
+          "mexBoundaryConversionSamplesSeconds": [
+            0,
+            0,
+            0
+          ],
+          "mexBoundaryConversionMedianSeconds": 0,
+          "boundaryConversionBehavior": "not applicable to production MATLAB",
+          "errors": {
+            "Fp": 0,
+            "Fm": 0,
+            "F0": 0
+          },
+          "maximumRelativeInfinityError": 0,
+          "metrics": {},
+          "diagnostic": {},
+          "lifecycle": {
+            "passed": true,
+            "before": {},
+            "afterDelete": {}
+          },
+          "fallbackOccurred": false,
+          "failure": {
+            "identifier": "",
+            "message": "",
+            "stack": [],
+            "report": ""
+          }
+        }
+      }
+    }
+  ],
+  "candidates": [
+    {
+      "id": "streamed-target-three-channel",
+      "classification": "ADVANCE",
+      "nativeClassification": "ADVANCE",
+      "mexClassification": "MEX_NOT_QUALIFIED",
+      "requiredChecksPassed": true,
+      "nativeMaximumRegression": -0.0392694158668937,
+      "mexMaximumRegression": 0.025982059245440503,
+      "nativeGeometricMeanSpeedup": 1.067163547167195,
+      "mexGeometricMeanSpeedup": 0.9921874814180397,
+      "rationale": "The standalone native candidate passed correctness, lifecycle, storage, provider/thread, and 5% regression gates. MATLAB/MEX did not qualify, but the native result advances independently."
+    },
+    {
+      "id": "streamed-target-single-output-4H+5R",
+      "classification": "CORE_REJECT",
+      "nativeClassification": "CORE_REJECT",
+      "mexClassification": "MEX_NOT_QUALIFIED",
+      "requiredChecksPassed": true,
+      "nativeMaximumRegression": 0.0771828175250926,
+      "mexMaximumRegression": 0.10307836518369218,
+      "nativeGeometricMeanSpeedup": 0.95062661119953473,
+      "mexGeometricMeanSpeedup": 0.92530143797661157,
+      "rationale": "Correctness, lifecycle, storage, and provider/thread checks passed, but the standalone native candidate exceeded 5% regression in the nonhydrostatic medium case."
+    }
+  ],
+  "commands": {
+    "contractTests": "tools/compiled-kernel/run_issue130_donut_reduced_contract_tests.sh <temporary-build-root>",
+    "nativeBuild": "clang++ -std=c++17 -O3 -mcpu=native -pthread -DWV_KERNEL_NATIVE_OPTIMIZATION=1 -DWV_KERNEL_COEFFICIENT_WORKERS=2 -DWV_KERNEL_ISSUE130_VARIANT=<0|3|4> <driver and exact source files> <pinned FFTW thread/base libraries>",
+    "mexBuild": "buildCompiledKernelTransformMex with exact be0f baseline for control and issue130Variant 3/4 from the harness commit for candidates",
+    "benchmark": "runCompiledKernelIssue130DonutReduced(nativeProviderRoot=/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864,baselineRepositoryRoot=/private/tmp/issue130-donut-reduced.N7tL9M/baseline,buildDirectory=/private/tmp/issue130-donut-reduced.N7tL9M/build,controlNativeExecutable=/private/tmp/issue130-donut-reduced.N7tL9M/build/issue130_native_control,streamedNativeExecutable=/private/tmp/issue130-donut-reduced.N7tL9M/build/issue130_native_streamed,singleOutputNativeExecutable=/private/tmp/issue130-donut-reduced.N7tL9M/build/issue130_native_single_output,outputDirectory=/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-130-donut-reduced/Benchmarks/results/experiments/issue130/20260812T055439Z-donut-reduced)"
+  },
+  "derivation": {
+    "kind": "metadata-only correction from completed measurements",
+    "timingsRerun": false,
+    "reason": "The canonical build uses two joined coefficient workers outside the 18-thread FFTW execution regions; completed timing samples were preserved per user direction.",
+    "evidence": "Both MEX metrics and WV_KERNEL_COEFFICIENT_WORKERS record 2; coefficient workers join before FFTW execution regions and do not nest with FFTW pthreads."
+  }
+}
