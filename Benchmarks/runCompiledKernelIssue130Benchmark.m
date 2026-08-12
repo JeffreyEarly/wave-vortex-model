@@ -86,7 +86,7 @@ end
 
 comparisons = aggregateComparisons(workerRuns,cases);
 decision = adoptionDecision(comparisons);
-results = struct("schemaVersion","1.0.0","status","complete","generatedAtUTC",utcTimestamp,"source",struct("repository","JeffreyEarly/wave-vortex-model","commit",sourceCommit,"tree",sourceTree,"isDirty",sourceDirty,"baselineCommit","be0f78995c49a2bfe4c43d75827856e3812ac278","files",sourceFiles(repositoryRoot)),"environment",environmentRecord(provider,options),"configuration",struct("suite","core-v1","caseIds",string({cases.id}),"processCount",options.processCount,"warmupCount",options.warmupCount,"mediumSampleCount",options.mediumSampleCount,"largeSampleCount",options.largeSampleCount,"correctnessTolerance",1e-12,"localGate",0.05,"architecturalGate",0.10,"maximumOtherMetricRegression",0.03,"executionOrder","rotated separate fresh-process pairs"),"supportingEvidence",supportingEvidence(repositoryRoot),"variants",variants,"workerRuns",workerRuns,"comparisons",comparisons,"decision",decision);
+results = struct("schemaVersion","1.0.0","status","complete","generatedAtUTC",utcTimestamp,"source",struct("repository","JeffreyEarly/wave-vortex-model","commit",sourceCommit,"tree",sourceTree,"isDirty",sourceDirty,"baselineCommit","be0f78995c49a2bfe4c43d75827856e3812ac278","files",sourceFiles(repositoryRoot)),"environment",environmentRecord(provider,options),"configuration",struct("suite","core-v1","caseIds",string({cases.id}),"processCount",options.processCount,"warmupCount",options.warmupCount,"mediumSampleCount",options.mediumSampleCount,"largeSampleCount",options.largeSampleCount,"correctnessTolerance",1e-12,"localGate",0.05,"architecturalGate",0.10,"maximumOtherMetricRegression",0.03,"executionOrder","rotated separate fresh-process pairs","originalGate","10% speed or 10% exact maximum-live storage plus 10% peak incremental RSS","coreDispositionGate","10% exact maximum-live storage with no more than 3% runtime regression; RSS is supporting evidence"),"supportingEvidence",supportingEvidence(repositoryRoot),"variants",variants,"workerRuns",workerRuns,"comparisons",comparisons,"decision",decision);
 if options.outputDirectory == ""
     options.outputDirectory = fullfile(repositoryRoot,"Benchmarks","results","experiments","issue130",replace(utcTimestamp,["-" ":" "." "T" "Z"],["" "" "" "T" "Z"])+"-maca64-r"+lower(string(version("-release"))));
 end
@@ -140,17 +140,22 @@ end
 
 function decision = adoptionDecision(comparisons)
 sizes = unique(arrayfun(@(item)item.Nxyz(1),comparisons));
-regions = repmat(struct("horizontalSize",0,"hydrostaticPassed",false,"nonhydrostaticPassed",false,"speedGatePassed",false,"memoryGatePassed",false,"qualified",false),numel(sizes),1);
+regions = repmat(struct("horizontalSize",0,"hydrostaticPassed",false,"nonhydrostaticPassed",false,"speedGatePassed",false,"memoryGatePassed",false,"originalQualified",false,"coreDispositionQualified",false,"absoluteLiveSavingsBytes",[]),numel(sizes),1);
 for iSize = 1:numel(sizes)
     selected = comparisons(arrayfun(@(item)item.Nxyz(1)==sizes(iSize),comparisons));
     common = numel(selected)==2 && any([selected.isHydrostatic]) && any(~[selected.isHydrostatic]);
     correctness = common && all([selected.maximumRelativeError]<=1e-12) && all([selected.metadataPassed]);
     speedGate = correctness && all([selected.medianSpeedup]>=1.10) && all([selected.memoryRegressionPassed]);
     memoryGate = correctness && all([selected.exactMemoryGatePassed]) && all([selected.rssMemoryGatePassed]) && all([selected.speedRegressionPassed]);
-    regions(iSize) = struct("horizontalSize",sizes(iSize),"hydrostaticPassed",common&&selected([selected.isHydrostatic]).metadataPassed,"nonhydrostaticPassed",common&&selected(~[selected.isHydrostatic]).metadataPassed,"speedGatePassed",speedGate,"memoryGatePassed",memoryGate,"qualified",speedGate||memoryGate);
+    coreDispositionGate = correctness && all([selected.exactMemoryGatePassed]) && all([selected.speedRegressionPassed]);
+    liveSavings = arrayfun(@(item)item.control.knownMaximumLiveOwnedBytes-item.candidate.knownMaximumLiveOwnedBytes,selected);
+    regions(iSize) = struct("horizontalSize",sizes(iSize),"hydrostaticPassed",common&&selected([selected.isHydrostatic]).metadataPassed,"nonhydrostaticPassed",common&&selected(~[selected.isHydrostatic]).metadataPassed,"speedGatePassed",speedGate,"memoryGatePassed",memoryGate,"originalQualified",speedGate||memoryGate,"coreDispositionQualified",coreDispositionGate,"absoluteLiveSavingsBytes",liveSavings);
 end
-qualified = any([regions.qualified]);
-decision = struct("outcome",conditional(qualified,"CORE-ADOPT","CORE-REJECT"),"selectedSchedule",conditional(qualified,"streamed-target-three-channel","zero-then-scatter-fused-normalization"),"qualifiedRegions",regions([regions.qualified]),"regions",regions,"rationale",conditional(qualified,"The streamed schedule cleared the 10% speed-or-exact-and-RSS memory gate in a common hydrostatic/nonhydrostatic size region.","The streamed schedule did not clear the 10% speed or exact-and-RSS memory gate without a greater-than-3% regression."));
+originalQualified = any([regions.originalQualified]);
+coreDispositionQualified = any([regions.coreDispositionQualified]);
+originalGate = struct("outcome",conditional(originalQualified,"ORIGINAL-GATE-ADOPT","ORIGINAL-GATE-REJECT"),"selectedSchedule",conditional(originalQualified,"streamed-target-three-channel","zero-then-scatter-fused-normalization"),"qualifiedRegions",regions([regions.originalQualified]),"rationale",conditional(originalQualified,"The streamed schedule cleared the unchanged 10% speed-or-exact-and-RSS memory gate in a common hydrostatic/nonhydrostatic size region.","The streamed schedule did not clear the unchanged 10% speed or exact-and-RSS memory gate."));
+coreDisposition = struct("outcome",conditional(coreDispositionQualified,"CORE-DISPOSITION-ADOPT","CORE-DISPOSITION-REJECT"),"selectedSchedule",conditional(coreDispositionQualified,"streamed-target-three-channel","zero-then-scatter-fused-normalization"),"complexityClassification","contained-internal","rssRole","supporting-evidence","qualifiedRegions",regions([regions.coreDispositionQualified]),"recommendIntegration",coreDispositionQualified,"rationale",conditional(coreDispositionQualified,"The contained streamed schedule reduced exact maximum-live storage by at least 10% for hydrostatic and nonhydrostatic cases at a common size, stayed within the 3% runtime limit, and preserved numerical correctness. Its absolute live-memory savings justify focused integration.","The streamed schedule did not combine at least 10% exact live-memory savings with the required runtime and correctness bounds."));
+decision = struct("outcome",originalGate.outcome,"selectedSchedule",originalGate.selectedSchedule,"regions",regions,"originalGate",originalGate,"coreDisposition",coreDisposition);
 end
 
 function variants = variantDefinitions(buildDirectory)
@@ -189,11 +194,12 @@ end
 end
 
 function markdown = summaryMarkdown(results)
-lines = ["# Issue #130 — Blocked and streamed scratch schedules";"";"- Decision: `"+results.decision.outcome+"`";"- Selected schedule: `"+results.decision.selectedSchedule+"`";"- Source: `"+results.source.commit+"`";"- Provider: native FFTW 3.3.11 NEON/pthreads, 18 threads";"- Protocol: three fresh processes per implementation and case; 7/3 samples";"";"| Case | Control (ms) | Streamed (ms) | Speedup | Exact live reduction | Peak RSS reduction | Error |";"|---|---:|---:|---:|---:|---:|---:|"];
+lines = ["# Issue #130 — Blocked and streamed scratch schedules";"";"- ORIGINAL-GATE: `"+results.decision.originalGate.outcome+"`";"- CORE-DISPOSITION: `"+results.decision.coreDisposition.outcome+"`";"- Source: `"+results.source.commit+"`";"- Provider: native FFTW 3.3.11 NEON/pthreads, 18 threads";"- Protocol: three fresh processes per implementation and case; 7/3 samples";"";"| Case | Control (ms) | Streamed (ms) | Speedup | Exact live reduction | Absolute live savings | Peak RSS reduction | Error |";"|---|---:|---:|---:|---:|---:|---:|---:|"];
 for comparison = results.comparisons'
-    lines(end+1) = sprintf("| %s | %.3f | %.3f | %.3fx | %.1f%% | %.1f%% | %.3g |",comparison.caseId,1e3*comparison.control.medianSeconds,1e3*comparison.candidate.medianSeconds,comparison.medianSpeedup,100*comparison.exactMaximumLiveReduction,100*comparison.peakIncrementRSSReduction,comparison.maximumRelativeError); %#ok<AGROW>
+    absoluteSavingsMiB = (comparison.control.knownMaximumLiveOwnedBytes-comparison.candidate.knownMaximumLiveOwnedBytes)/2^20;
+    lines(end+1) = sprintf("| %s | %.3f | %.3f | %.3fx | %.1f%% | %.3f MiB | %.1f%% | %.3g |",comparison.caseId,1e3*comparison.control.medianSeconds,1e3*comparison.candidate.medianSeconds,comparison.medianSpeedup,100*comparison.exactMaximumLiveReduction,absoluteSavingsMiB,100*comparison.peakIncrementRSSReduction,comparison.maximumRelativeError); %#ok<AGROW>
 end
-lines = [lines;"";"## Decision";"";results.decision.rationale;"";"The candidate preserves four half-spectrum channels, streams one target at a time through the existing three-channel derivative inverse, and reduces real scratch from `(q+5)R` to `6R`. It retains no persistent full Hermitian spectrum."];
+lines = [lines;"";"## ORIGINAL-GATE";"";results.decision.originalGate.rationale;"";"## CORE-DISPOSITION";"";results.decision.coreDisposition.rationale;"";"The candidate preserves four half-spectrum channels, streams one target at a time through the existing three-channel derivative inverse, and reduces real scratch from `(q+5)R` to `6R`. It retains no persistent full Hermitian spectrum. RSS is reported as supporting evidence and does not determine CORE-DISPOSITION."];
 markdown = join(lines,newline)+newline;
 end
 
