@@ -164,17 +164,15 @@ struct WVConstantStratificationModes {
     std::vector<double> inertialScale;
     // G-family wave scaling is vertical-only for constant stratification.
     std::vector<double> gWaveScale;
+    // Retains the #126 pre-scaling used to form ApmW at coefficient production.
+    std::vector<double> apmWProjectionPrefactor;
     // Coefficient arrays use column-major [Nj,Nkl] ordering.
     std::vector<double> omega;
     std::vector<double> fWaveScale;
     std::vector<WVComplex64> UApField;
-    std::vector<WVComplex64> UAmField;
     std::vector<WVComplex64> VApField;
-    std::vector<WVComplex64> VAmField;
     std::vector<WVComplex64> WApField;
-    std::vector<WVComplex64> WAmField;
     std::vector<double> NApField;
-    std::vector<double> NAmField;
     std::vector<WVComplex64> UA0Field;
     std::vector<WVComplex64> VA0Field;
     std::vector<double> NA0Field;
@@ -183,7 +181,6 @@ struct WVConstantStratificationModes {
     std::vector<WVComplex64> ApmDProjection;
     std::vector<double> ApmNProjection;
     std::vector<double> ApmDScaled;
-    std::vector<WVComplex64> ApmWScaled;
 };
 
 class WVTransformConstantStratificationDescriptor {

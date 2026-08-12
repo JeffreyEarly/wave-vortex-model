@@ -58,6 +58,33 @@ classdef TestCompiledKernelNativeFFTW < matlab.unittest.TestCase
             testCase.verifyFalse(decision.confirmed);
             testCase.verifyEqual(decision.status,"CORE-ADOPT-NOT-CONFIRMED");
         end
+
+        function assemblyDecisionAppliesFixedIntegrationBoundaries(testCase)
+            cases = repmat(assemblyCase(1.25,1.03,1.03),4,1);
+            decision = compiledKernelAssemblyDecision(cases);
+            testCase.verifyEqual(decision.coreStatus,"CORE-COMPLETE");
+            testCase.verifyEqual(decision.integrationStatus,"INTEGRATION-READY");
+            cases(1).compiledSpeedup = 1.2499;
+            decision = compiledKernelAssemblyDecision(cases);
+            testCase.verifyEqual(decision.integrationStatus,"INTEGRATION-NOT-READY");
+            cases = repmat(assemblyCase(1/1.03,0.80,0.80),4,1);
+            decision = compiledKernelAssemblyDecision(cases);
+            testCase.verifyEqual(decision.integrationStatus,"MEMORY-ONLY");
+            cases(1).peakRSSRatio = 0.8001;
+            decision = compiledKernelAssemblyDecision(cases);
+            testCase.verifyEqual(decision.integrationStatus,"INTEGRATION-NOT-READY");
+        end
+
+        function assemblyDecisionRejectsFallbackAndPersistentFullSpectrum(testCase)
+            cases = repmat(assemblyCase(1.5,0.7,0.7),4,1);
+            cases(2).noFallback = false;
+            decision = compiledKernelAssemblyDecision(cases);
+            testCase.verifyEqual(decision.coreStatus,"CORE-INCOMPLETE");
+            testCase.verifyEqual(decision.integrationStatus,"INTEGRATION-NOT-READY");
+            cases(2).noFallback = true; cases(3).persistentFullHermitianBytes = 16;
+            decision = compiledKernelAssemblyDecision(cases);
+            testCase.verifyEqual(decision.coreStatus,"CORE-INCOMPLETE");
+        end
     end
 
     methods (Test,TestTags="optional")
@@ -96,6 +123,30 @@ classdef TestCompiledKernelNativeFFTW < matlab.unittest.TestCase
             testCase.verifyEqual(string(decoded.schemaVersion),"1.0.0");
             clear cleanup
         end
+
+        function assemblyDecisionHarnessBuildsIsolatedSnapshots(testCase)
+            outputDirectory = string(tempname); cleanup = onCleanup(@()removeDirectory(outputDirectory));
+            result = runCompiledKernelAssemblyDecisionBenchmark(references=["52de161" "be0f789" "3af6b83" "9ceb932a"],sizes=[8 6 7],hydrostatic=true,processRunCount=1,warmupCount=0,mediumSampleCount=1,largeSampleCount=1,samplingIntervalSeconds=0.01,plateauSeconds=0.02,outputDirectory=outputDirectory,runId="smoke");
+            testCase.verifyEqual(result.status,"complete");
+            testCase.verifyEqual(numel(result.snapshots),4);
+            testCase.verifyEqual(numel(unique(string({result.snapshots.module}))),4);
+            testCase.verifyFalse(any([result.snapshots.moduleUsesOpenMP]));
+            testCase.verifyEqual(result.decision.coreStatus,"CORE-COMPLETE");
+            testCase.verifyTrue(isfile(fullfile(outputDirectory,"compiled-kernel-assembly-decision.json")));
+            testCase.verifyTrue(isfile(fullfile(outputDirectory,"summary.md")));
+            clear cleanup
+        end
+
+        function assemblyDecisionHarnessWritesPartialFailure(testCase)
+            outputDirectory = string(tempname); cleanup = onCleanup(@()removeDirectory(outputDirectory));
+            action = @()runCompiledKernelAssemblyDecisionBenchmark(references=["missing-issue131-ref" "be0f789" "3af6b83" "HEAD"],sizes=[8 6 7],hydrostatic=true,processRunCount=1,warmupCount=0,mediumSampleCount=1,largeSampleCount=1,outputDirectory=outputDirectory,runId="failure");
+            testCase.verifyError(action,"WaveVortexModel:AssemblyGit");
+            testCase.verifyTrue(isfile(fullfile(outputDirectory,"compiled-kernel-assembly-decision.json")));
+            decoded = jsondecode(fileread(fullfile(outputDirectory,"compiled-kernel-assembly-decision.json")));
+            testCase.verifyEqual(string(decoded.status),"failed");
+            testCase.verifyEqual(string(decoded.failure.stage),"snapshots");
+            clear cleanup
+        end
     end
 end
 
@@ -109,6 +160,10 @@ end
 
 function value = confirmationCase(Nxyz,isHydrostatic,speedup,descriptorReduction)
 value = struct("Nxyz",Nxyz,"isHydrostatic",isHydrostatic,"completeCallSpeedup",speedup,"descriptorReduction",descriptorReduction,"maximumRelativeError",1e-14,"lifecyclePassed",true);
+end
+
+function value = assemblyCase(speedup,exactRatio,rssRatio)
+value = struct("status","complete","compiledSpeedup",speedup,"exactMemoryRatio",exactRatio,"peakRSSRatio",rssRatio,"maximumRelativeError",1e-14,"lifecyclePassed",true,"libraryIdentityPassed",true,"nativeExecutionPassed",true,"noFallback",true,"persistentFullHermitianBytes",0);
 end
 
 function removeDirectory(pathname)
