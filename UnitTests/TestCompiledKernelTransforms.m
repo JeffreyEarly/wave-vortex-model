@@ -85,6 +85,7 @@ classdef TestCompiledKernelTransforms < matlab.unittest.TestCase
                 testCase.verifyGreaterThan(metrics.scratchCapacityBytes,0);
                 testCase.verifyEqual(string(metrics.coefficientStorageMode),"natural-dimensional");
                 testCase.verifyEqual(string(metrics.coefficientArithmeticMode),"natural-dimensional-prescaled");
+                testCase.verifyEqual(string(metrics.inverseNormalizationPlacement),"coefficient-production");
                 testCase.verifyEqual(string(metrics.optimizationImplementation),"O3-native");
                 testCase.verifyEqual(metrics.coefficientWorkerCount,2);
                 clear cleanup

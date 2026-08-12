@@ -233,12 +233,16 @@ void assembleFieldSpectraForMode(
     for (std::size_t j = 0; j < Nj; ++j) {
         const auto index = j + Nj * mode;
         const auto coefficients = source(index);
-        const WVComplex64 values[] = {
+        WVComplex64 values[] = {
             coefficientValueForField<0>(modes,index,coefficients.Ap,coefficients.Am,coefficients.A0),
             coefficientValueForField<1>(modes,index,coefficients.Ap,coefficients.Am,coefficients.A0),
             coefficientValueForField<2>(modes,index,coefficients.Ap,coefficients.Am,coefficients.A0),
             coefficientValueForField<3>(modes,index,coefficients.Ap,coefficients.Am,coefficients.A0)};
         for (std::size_t target = 0; target < 4; ++target) {
+            // FFTW's DCT-I/DST-I inverse is unnormalized. By linearity, applying
+            // the required factor here avoids rewriting the complete dense
+            // half spectrum after the vertical transforms.
+            values[target] = target >= 2 && (j == 0 || j + 1 == Nz) ? WVComplex64{} : multiply(values[target],0.5);
             half[j + Nz * target + Nz * 4 * storageRow] = Conjugated ? conjugate(values[target]) : values[target];
         }
     }
@@ -261,9 +265,17 @@ void assembleDerivativeSpectraForMode(
         const auto index = j + Nj * mode;
         auto value = coefficientValueForField<Target>(modes,index,coefficients.Ap.data[index],coefficients.Am.data[index],coefficients.A0.data[index]);
         if constexpr (Conjugated) value = conjugate(value);
-        const auto x = multiply(value,WVComplex64{0.0,Conjugated ? -horizontal.k : horizontal.k});
-        const auto y = multiply(value,WVComplex64{0.0,Conjugated ? -horizontal.l : horizontal.l});
-        const auto z = multiply(value,cosine ? -modes.verticalWavenumber[j] : modes.verticalWavenumber[j]);
+        auto x = multiply(value,WVComplex64{0.0,Conjugated ? -horizontal.k : horizontal.k});
+        auto y = multiply(value,WVComplex64{0.0,Conjugated ? -horizontal.l : horizontal.l});
+        auto z = multiply(value,cosine ? -modes.verticalWavenumber[j] : modes.verticalWavenumber[j]);
+        if constexpr (cosine) {
+            x = multiply(x,0.5); y = multiply(y,0.5);
+            z = j == 0 || j + 1 == Nz ? WVComplex64{} : multiply(z,0.5);
+        } else {
+            x = j == 0 || j + 1 == Nz ? WVComplex64{} : multiply(x,0.5);
+            y = j == 0 || j + 1 == Nz ? WVComplex64{} : multiply(y,0.5);
+            z = multiply(z,0.5);
+        }
         half[j + Nz * 0 + Nz * 3 * storageRow] = x;
         half[j + Nz * 1 + Nz * 3 * storageRow] = y;
         half[j + Nz * 2 + Nz * 3 * storageRow] = z;
@@ -345,6 +357,10 @@ const char* WVTransformConstantStratificationKernel::phaseImplementationIdentifi
 
 const char* WVTransformConstantStratificationKernel::coefficientArithmeticModeIdentifier() const noexcept {
     return "natural-dimensional-prescaled";
+}
+
+const char* WVTransformConstantStratificationKernel::inverseNormalizationPlacementIdentifier() const noexcept {
+    return "coefficient-production";
 }
 
 const char* WVTransformConstantStratificationKernel::optimizationImplementationIdentifier() const noexcept {
@@ -527,7 +543,6 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformWaveVortexToUVW
     auto execute = plans_[verticalDCT2Storage4]->execute(half,half); if (!execute) return execute;
     execute = plans_[verticalDST2Storage4]->execute(half + 2 * c.Nz + 1,half + 2 * c.Nz + 1); if (!execute) return execute;
     metrics_.executionCount += 2; metrics_.verticalExecutionCount += 2;
-    normalizeInverseDCT(half,c.Nz,halfRows,4,0,2); normalizeInverseDST(half,c.Nz,halfRows,4,2,2);
     execute = plans_[horizontalInverse4]->execute(half, fields.data); if (!execute) return execute;
     ++metrics_.executionCount; ++metrics_.horizontalExecutionCount;
     return WVKernelStatus::ok();
@@ -624,13 +639,9 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformToSpatialDomain
     if (cosine) {
         execute = plans_[verticalDCT2Storage3]->execute(half,half); if (!execute) return execute;
         execute = plans_[verticalDST1Storage3]->execute(half + 2 * c.Nz + 1,half + 2 * c.Nz + 1); if (!execute) return execute;
-        normalizeInverseDCT(half,c.Nz,halfRows,3,0,2);
-        normalizeInverseDST(half,c.Nz,halfRows,3,2,1);
     } else {
         execute = plans_[verticalDST2Storage3]->execute(half + 1,half + 1); if (!execute) return execute;
         execute = plans_[verticalDCT1Storage3]->execute(half + 2 * c.Nz,half + 2 * c.Nz); if (!execute) return execute;
-        normalizeInverseDST(half,c.Nz,halfRows,3,0,2);
-        normalizeInverseDCT(half,c.Nz,halfRows,3,2,1);
     }
     metrics_.executionCount += 2;
     metrics_.verticalExecutionCount += 2;
