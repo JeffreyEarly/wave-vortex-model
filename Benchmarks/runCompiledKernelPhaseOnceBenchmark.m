@@ -62,7 +62,7 @@ for iCase=1:numel(candidateCases)
     exactStorageRatio=candidateCompiled.ledger.knownMaximumLiveBytes/baselineCompiled.ledger.knownMaximumLiveBytes;
     peakRSSRatio=candidateCompiled.rss.medianPeakIncrementBytes/baselineCompiled.rss.medianPeakIncrementBytes;
     metrics=candidateCompiled.metrics; expectedPhaseEvaluations=metrics.nonlinearFluxCallCount*metrics.Nj*metrics.Nkl;
-    phaseCountPassed=metrics.nonlinearFluxCallCount>0&&metrics.nonlinearFluxPhaseEvaluationCount==expectedPhaseEvaluations&&metrics.phaseWorkspaceBytes==0&&string(metrics.nonlinearFluxSchedule)=="sequential-phase-once";
+    phaseCountPassed=metrics.nonlinearFluxCallCount>0&&metrics.nonlinearFluxPhaseEvaluationCount==expectedPhaseEvaluations&&metrics.phaseWorkspaceBytes==metrics.phaseReservationBytes&&string(metrics.nonlinearFluxSchedule)=="streamed-target-three-channel";
     correctnessPassed=candidateCompiled.maximumRelativeError<=1e-12&&candidateCompiled.correctnessPassed;
     noSpeedRegression=speedup>=1/1.03; noMemoryRegression=exactStorageRatio<=1&&peakRSSRatio<=1.03;
     cases(iCase)=struct("id",string(candidateCase.id),"Nxyz",candidateCase.Nxyz(:)',"isHydrostatic",candidateCase.isHydrostatic,"status",conditional(string(baselineCase.status)=="complete"&&string(candidateCase.status)=="complete","complete","partial"), ...

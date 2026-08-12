@@ -81,7 +81,7 @@ classdef TestCompiledKernelTransforms < matlab.unittest.TestCase
                 expectedLibrary = string(fullfile(matlabroot,"bin",computer("arch"),"libmwfftw3.3.dylib"));
                 testCase.verifyEqual(string(metrics.loadedLibrary),expectedLibrary);
                 testCase.verifyEqual(metrics.contractVersion,4);
-                testCase.verifyEqual(metrics.planCount,14);
+                testCase.verifyEqual(metrics.planCount,17);
                 testCase.verifyGreaterThan(metrics.scratchCapacityBytes,0);
                 testCase.verifyEqual(string(metrics.coefficientStorageMode),"natural-dimensional");
                 testCase.verifyEqual(string(metrics.coefficientArithmeticMode),"natural-dimensional-prescaled");
@@ -116,9 +116,10 @@ classdef TestCompiledKernelTransforms < matlab.unittest.TestCase
                 expectedPhaseEvaluations = expectedCalls*prod(wvt.spectralMatrixSize);
                 testCase.verifyEqual(after.nonlinearFluxCallCount-before.nonlinearFluxCallCount,expectedCalls);
                 testCase.verifyEqual(after.nonlinearFluxPhaseEvaluationCount-before.nonlinearFluxPhaseEvaluationCount,expectedPhaseEvaluations);
-                testCase.verifyEqual(after.phaseWorkspaceBytes,0);
+                testCase.verifyGreaterThan(after.phaseWorkspaceBytes,0);
+                testCase.verifyEqual(after.phaseWorkspaceBytes,after.phaseReservationBytes);
                 testCase.verifyEqual(after.scratchCapacityBytes,before.scratchCapacityBytes);
-                testCase.verifyEqual(string(after.nonlinearFluxSchedule),"sequential-phase-once");
+                testCase.verifyEqual(string(after.nonlinearFluxSchedule),"streamed-target-three-channel");
                 testCase.verifyEqual(wvt.Ap,Ap);
                 testCase.verifyEqual(wvt.Am,Am);
                 testCase.verifyEqual(wvt.A0,A0);
@@ -238,7 +239,7 @@ classdef TestCompiledKernelTransforms < matlab.unittest.TestCase
             testCase.verifyTrue(result.cases.phaseCountPassed);
             testCase.verifyTrue(result.cases.correctnessPassed);
             testCase.verifyLessThan(result.cases.exactStorageRatio,1);
-            testCase.verifyEqual(string(result.cases.candidate.metrics.nonlinearFluxSchedule),"sequential-phase-once");
+            testCase.verifyEqual(string(result.cases.candidate.metrics.nonlinearFluxSchedule),"streamed-target-three-channel");
             testCase.verifyTrue(isfile(fullfile(outputDirectory,"phase-once-benchmark.json")));
             testCase.verifyTrue(isfile(fullfile(outputDirectory,"summary.md")));
             decoded = jsondecode(fileread(fullfile(outputDirectory,"phase-once-benchmark.json")));
