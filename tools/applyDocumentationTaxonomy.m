@@ -28,6 +28,8 @@ end
 function [topicPath,isDeveloper] = topicForMember(className,name)
 if className == "WVFourierStorageLayout"
     [topicPath,isDeveloper] = fourierStorageLayoutTopic(name);
+elseif className == "WVCompiledBackend"
+    [topicPath,isDeveloper] = compiledBackendTopic(name);
 elseif startsWith(className,"WVTransform")
     [topicPath,isDeveloper] = transformTopic(className,name);
 elseif className == "WVModel"
@@ -46,6 +48,17 @@ elseif contains(className,"FlowComponent") || endsWith(className,"Component")
 else
     topicPath = "Class internals";
     isDeveloper = true;
+end
+end
+
+function [topicPath,isDeveloper] = compiledBackendTopic(name)
+isDeveloper = true;
+if name == "capabilities"
+    topicPath = "Inspect compiled support";
+elseif name == "build"
+    topicPath = "Build compiled support";
+else
+    topicPath = "Test compiled support";
 end
 end
 
