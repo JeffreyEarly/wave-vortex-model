@@ -133,8 +133,8 @@ for iCandidate = 1:numel(ids)
     cleanup = all(arrayfun(@(item)item.native.candidate.lifecycle.balancedCleanup && item.mex.candidate.lifecycle.passed,selected));
     storage = all(arrayfun(@(item)item.native.candidate.memory.persistentFullHermitianBytes==0 && item.mex.candidate.metrics.persistentFullHermitianBytes==0,selected));
     noFallback = all(arrayfun(@(item)~item.native.candidate.fallbackOccurred && ~item.mex.candidate.fallbackOccurred,selected));
-    noOpenMP = all(arrayfun(@(item)string(item.native.candidate.identity.openMPRuntimeDladdr)=="" && string(item.mex.candidate.moduleInfo.openMPRuntimeLibrary)=="",selected));
-    noOversubscription = noOpenMP && all(arrayfun(@(item)item.native.candidate.configuration.threadsEffective==18 && item.mex.candidate.threadCountEffective==18 && item.mex.candidate.metrics.coefficientWorkerCount==1,selected));
+    noIsolatedOpenMP = all(arrayfun(@(item)string(item.native.candidate.identity.openMPRuntimeDladdr)=="" && isMatlabRuntimeOrEmpty(item.mex.candidate.moduleInfo.openMPRuntimeLibrary),selected));
+    noOversubscription = noIsolatedOpenMP && all(arrayfun(@(item)item.native.candidate.configuration.threadsEffective==18 && item.mex.candidate.threadCountEffective==18 && item.mex.candidate.metrics.coefficientWorkerCount==1,selected));
     required = correctness && cleanup && storage && noFallback && noOversubscription;
     nativePassed = required && all(nativeSpeedups>=1/1.05);
     mexPassed = required && all(mexSpeedups>=1/1.05) && exp(mean(log(mexSpeedups)))>1;
@@ -184,7 +184,7 @@ value = struct("repository","JeffreyEarly/wave-vortex-model","commit",commit,"tr
 end
 
 function value = environmentRecord(provider)
-value = struct("host",commandOutput("hostname -s"),"hardwareModel",commandOutput("sysctl -n hw.model"),"processor",commandOutput("sysctl -n machdep.cpu.brand_string"),"os",commandOutput("uname -a"),"osVersion",commandOutput("sw_vers"),"architecture",string(computer("arch")),"memoryBytes",str2double(commandOutput("sysctl -n hw.memsize")),"physicalCores",str2double(commandOutput("sysctl -n hw.physicalcpu")),"logicalCores",str2double(commandOutput("sysctl -n hw.logicalcpu")),"matlabVersion",string(version),"matlabRelease",string(version("-release")),"matlabMaximumThreads",maxNumCompThreads,"compiler",commandOutput("xcrun clang++ --version"),"provider",provider,"openMPRuntimePolicy","No isolated LLVM libomp was loaded; dladdr identities were required to be empty for OpenMP.");
+value = struct("host",commandOutput("hostname -s"),"hardwareModel",commandOutput("sysctl -n hw.model"),"processor",commandOutput("sysctl -n machdep.cpu.brand_string"),"os",commandOutput("uname -a"),"osVersion",commandOutput("sw_vers"),"architecture",string(computer("arch")),"memoryBytes",str2double(commandOutput("sysctl -n hw.memsize")),"physicalCores",str2double(commandOutput("sysctl -n hw.physicalcpu")),"logicalCores",str2double(commandOutput("sysctl -n hw.logicalcpu")),"matlabVersion",string(version),"matlabRelease",string(version("-release")),"matlabMaximumThreads",maxNumCompThreads,"compiler",commandOutput("xcrun clang++ --version"),"provider",provider,"openMPRuntimePolicy","MATLAB's bundled libomp may already be resident; no isolated LLVM libomp may be loaded, and FFTW must resolve the pinned pthreads library.");
 end
 
 function value = commandRecord(options,paths)
@@ -200,7 +200,7 @@ lines = [lines;"";"## Classification";"";"| Candidate | Overall | Native | MATLA
 for candidate = results.candidates'
     lines(end+1) = sprintf("| %s | `%s` | `%s` | `%s` | %.3fx | %.3fx |",candidate.id,candidate.classification,candidate.nativeClassification,candidate.mexClassification,candidate.nativeGeometricMeanSpeedup,candidate.mexGeometricMeanSpeedup); %#ok<AGROW>
 end
-lines = [lines;"";"All reported native and MEX candidates require relative-infinity error <= 1e-12, balanced plan cleanup, zero fallback, zero persistent full-Hermitian storage, the pinned FFTW libraries by `dladdr`, exactly 18 requested/effective FFTW threads, one coefficient worker, and no loaded OpenMP runtime. FFTW-owned plan memory is opaque; plan wrapper bytes are a lower bound, while descriptor/scratch/state/output array byte counts are exact."];
+lines = [lines;"";"All reported native and MEX candidates require relative-infinity error <= 1e-12, balanced plan cleanup, zero fallback, zero persistent full-Hermitian storage, the pinned FFTW libraries by `dladdr`, exactly 18 requested/effective FFTW threads, one coefficient worker, and no isolated LLVM OpenMP runtime. MATLAB's bundled `libomp` may already be resident but is not the FFTW backend. FFTW-owned plan memory is opaque; plan wrapper bytes are a lower bound, while descriptor/scratch/state/output array byte counts are exact."];
 markdown = join(lines,newline)+newline;
 end
 
@@ -235,6 +235,11 @@ end
 function value = commandOutput(command)
 [status,value] = system(command);
 if status ~= 0, value = "unavailable"; else, value = string(strtrim(value)); end
+end
+
+function value = isMatlabRuntimeOrEmpty(pathname)
+pathname = string(pathname);
+value = pathname == "" || startsWith(pathname,string(matlabroot)+filesep);
 end
 
 function hash = sha256File(pathname)

@@ -110,8 +110,9 @@ function validateIdentity(info,config)
 if ~contains(string(info.version),"3.3.11") || string(info.baseLibrary) ~= string(config.provider.baseLibrary) || string(info.threadLibrary) ~= string(config.provider.threadLibrary)
     error("WaveVortexModel:Issue130DonutProviderIdentity","The reduced worker did not resolve the pinned FFTW 3.3.11 NEON/pthreads provider.");
 end
-if string(info.openMPRuntimeLibrary) ~= ""
-    error("WaveVortexModel:Issue130DonutOpenMP","The reduced worker unexpectedly loaded an OpenMP runtime: %s",info.openMPRuntimeLibrary);
+openMPRuntime = string(info.openMPRuntimeLibrary);
+if openMPRuntime ~= "" && ~startsWith(openMPRuntime,string(matlabroot)+filesep)
+    error("WaveVortexModel:Issue130DonutOpenMP","The reduced worker unexpectedly loaded an isolated OpenMP runtime: %s",info.openMPRuntimeLibrary);
 end
 end
 
@@ -146,7 +147,7 @@ value = extractBefore(string(strtrim(output))," ");
 end
 
 function value = threadBehavior(mode)
-if mode == "mex", value = "FFTW plans requested 18 pthreads; coefficient worker count 1; no OpenMP runtime; MATLAB path executed serially outside FFTW"; else, value = "MATLAB maxNumCompThreads=18; production nonlinearFlux path"; end
+if mode == "mex", value = "FFTW plans requested 18 pthreads; coefficient worker count 1; MATLAB's bundled libomp may be resident but is not used as the FFTW backend; no isolated LLVM libomp loaded"; else, value = "MATLAB maxNumCompThreads=18; production nonlinearFlux path"; end
 end
 
 function value = boundaryBehavior(mode)
