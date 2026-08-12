@@ -20,7 +20,7 @@ Published benchmark results will appear here.
 
 ## Scaling with model size
 
-The plots separate horizontal and vertical scaling. Each point is the median of the retained timing samples. Memory plots report the peak resident memory of the MATLAB or C++ process, including the language runtime and numerical libraries.
+The plots separate horizontal and vertical scaling for the representative nonhydrostatic constant-stratification transform. Limiting each chart to one transform keeps the machine and suite comparisons legible; the expandable tables retain results for every transform family. Each point is the median of the retained timing samples. Memory plots report the peak resident memory of the MATLAB or C++ process, including the language runtime and numerical libraries.
 
 <!-- BENCHMARKS:SCALING:START -->
 Published scaling results will appear here.

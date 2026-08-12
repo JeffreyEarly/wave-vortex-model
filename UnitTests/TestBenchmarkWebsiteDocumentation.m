@@ -60,7 +60,9 @@ classdef TestBenchmarkWebsiteDocumentation < matlab.unittest.TestCase
             testCase.verifySubstring(page,"WaveVortexModel C++");
             testCase.verifySubstring(page,"Transform is not implemented");
             testCase.verifySubstring(page,"Case was not recorded in this dataset");
-            testCase.verifySubstring(page,"<details markdown=""1"">");
+            testCase.verifySubstring(page,"<table>");
+            testCase.verifySubstring(page,"<th scope=""col"">");
+            testCase.verifyFalse(contains(page,"| --- |"));
             testCase.verifyFalse(contains(page,"Performance across releases"));
 
             chartNames = ["runtime-horizontal" "runtime-vertical" "memory-horizontal" "memory-vertical"];
@@ -71,7 +73,14 @@ classdef TestBenchmarkWebsiteDocumentation < matlab.unittest.TestCase
                 testCase.verifySubstring(chart,"<title");
                 testCase.verifySubstring(chart,"<desc");
                 testCase.verifySubstring(chart,"viewBox");
+                testCase.verifySubstring(chart,"constant nonhydrostatic transform");
+                testCase.verifyEqual(numel(strfind(chart,'class="legend-label"')),3);
             end
+            horizontalChart = string(fileread(fullfile(firstBuild,"assets","benchmarks","runtime-horizontal.svg")));
+            testCase.verifySubstring(horizontalChart,"Horizontal grid size (Nx = Ny)");
+            testCase.verifySubstring(horizontalChart,"Median nonlinear-flux evaluation time (s)");
+            verticalChart = string(fileread(fullfile(firstBuild,"assets","benchmarks","runtime-vertical.svg")));
+            testCase.verifySubstring(verticalChart,"Vertical grid size (Nz)");
             for dataset = [first second third]
                 testCase.verifyTrue(isfile(fullfile(firstBuild,"benchmarks","data",dataset.datasetId + ".json")));
                 testCase.verifyTrue(isfile(fullfile(firstBuild,"benchmarks","raw",dataset.datasetId + ".json")));
@@ -112,11 +121,13 @@ classdef TestBenchmarkWebsiteDocumentation < matlab.unittest.TestCase
             testCase.verifySubstring(page,"No scaling-large-v1 dataset was collected for this environment.");
             testCase.verifySubstring(page,"No scaling-standard-v1 dataset was collected for this environment.");
             testCase.verifySubstring(page,"MATLAB R2026a Update 4");
-            testCase.verifySubstring(page,"| scaling-large-v1 | Constant nonhydrostatic | M5 Max");
-            testCase.verifySubstring(page,"| scaling-standard-v1 | Constant nonhydrostatic | Zen 4 workstation");
+            testCase.verifySubstring(page,"<td>scaling-large-v1</td>");
+            testCase.verifySubstring(page,"<td>Constant nonhydrostatic</td>");
+            testCase.verifySubstring(page,"<td>scaling-standard-v1</td>");
             chart = string(fileread(fullfile(buildFolder,"assets","benchmarks","runtime-horizontal.svg")));
-            testCase.verifySubstring(chart,"M5 Max — MATLAB R2026a Update 4 — standard — Constant nonhydrostatic");
-            testCase.verifySubstring(chart,"Zen 4 workstation — MATLAB R2026a Update 4 — large — Constant nonhydrostatic");
+            testCase.verifySubstring(chart,"M5 Max — MATLAB R2026a Update 4 — standard");
+            testCase.verifySubstring(chart,"Zen 4 workstation — MATLAB R2026a Update 4 — large");
+            testCase.verifyFalse(contains(chart,"Barotropic QG"));
         end
 
         function unsafeMissingDuplicateAndMismatchedArtifactsFail(testCase)

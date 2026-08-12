@@ -171,7 +171,7 @@ if isempty(rows)
     return
 end
 rows = sortrows(rows,1);
-markdown = markdownTable(["Implementation and platform" "Median runtime" "Peak process memory" "Memory above baseline" "Threads"],rows);
+markdown = htmlTable(["Implementation and platform" "Median runtime" "Peak process memory" "Memory above baseline" "Threads"],rows);
 end
 
 function [runtime,memory,increment] = representativeValues(benchmarkCase)
@@ -196,10 +196,10 @@ if isempty(records)
 end
 
 specifications = [ ...
-    struct("id","runtime-horizontal","title","Runtime versus horizontal resolution","axis","horizontal","metric","runtime","xLabel","Horizontal grid points per dimension","yLabel","Median runtime (s)"), ...
-    struct("id","runtime-vertical","title","Runtime versus vertical resolution","axis","vertical","metric","runtime","xLabel","Vertical grid points","yLabel","Median runtime (s)"), ...
-    struct("id","memory-horizontal","title","Peak process memory versus horizontal resolution","axis","horizontal","metric","memory","xLabel","Horizontal grid points per dimension","yLabel","Peak process memory (GiB)"), ...
-    struct("id","memory-vertical","title","Peak process memory versus vertical resolution","axis","vertical","metric","memory","xLabel","Vertical grid points","yLabel","Peak process memory (GiB)") ...
+    struct("id","runtime-horizontal","title","Runtime versus horizontal resolution","axis","horizontal","metric","runtime","xLabel","Horizontal grid size (Nx = Ny)","yLabel","Median nonlinear-flux evaluation time (s)"), ...
+    struct("id","runtime-vertical","title","Runtime versus vertical resolution","axis","vertical","metric","runtime","xLabel","Vertical grid size (Nz)","yLabel","Median nonlinear-flux evaluation time (s)"), ...
+    struct("id","memory-horizontal","title","Peak process memory versus horizontal resolution","axis","horizontal","metric","memory","xLabel","Horizontal grid size (Nx = Ny)","yLabel","Peak process memory (GiB)"), ...
+    struct("id","memory-vertical","title","Peak process memory versus vertical resolution","axis","vertical","metric","memory","xLabel","Vertical grid size (Nz)","yLabel","Peak process memory (GiB)") ...
     ];
 assetFolder = fullfile(buildFolder,"assets","benchmarks");
 mkdir(assetFolder);
@@ -218,11 +218,20 @@ for iSpecification = 1:numel(specifications)
             scalingTable(rows,specification.metric) + newline + newline + "</details>";
         continue
     end
+    chartRows = rows([rows.transformId] == "constant-nonhydrostatic");
+    if ~any([chartRows.status] == "complete")
+        sections(iSpecification) = "### " + specification.title + newline + newline + ...
+            "No complete representative nonhydrostatic measurements are available." + newline + newline + ...
+            "<details>" + newline + "<summary>View all benchmark data</summary>" + newline + newline + ...
+            scalingTable(rows,specification.metric) + newline + newline + "</details>";
+        continue
+    end
     assetRelativePath = "assets/benchmarks/" + specification.id + ".svg";
-    writeScalingSVG(fullfile(buildFolder,assetRelativePath),specification.title,specification.xLabel,specification.yLabel,rows);
+    chartTitle = specification.title + " — constant nonhydrostatic";
+    writeScalingSVG(fullfile(buildFolder,assetRelativePath),chartTitle,specification.xLabel,specification.yLabel,chartRows);
     sections(iSpecification) = "### " + specification.title + newline + newline + ...
-        "![" + specification.title + "](/" + assetRelativePath + ")" + newline + newline + ...
-        "<details markdown=""1"">" + newline + "<summary>View accessible data table</summary>" + newline + newline + ...
+        "![" + chartTitle + "](/" + assetRelativePath + ")" + newline + newline + ...
+        "<details>" + newline + "<summary>View all benchmark data</summary>" + newline + newline + ...
         scalingTable(rows,specification.metric) + newline + newline + "</details>";
 end
 markdown = strjoin(sections,newline + "" + newline);
@@ -339,9 +348,9 @@ completeRows = rows([rows.status] == "complete");
 seriesKeys = sort(unique([completeRows.datasetId] + "|" + [completeRows.transformId]));
 palette = ["#0072B2" "#D55E00" "#009E73" "#CC79A7" "#E69F00" "#56B4E9" "#000000"];
 width = 960;
-plotX = 85;
+plotX = 100;
 plotY = 55;
-plotWidth = 830;
+plotWidth = 805;
 plotHeight = 360;
 legendRows = ceil(numel(seriesKeys)/2);
 height = 470 + 24*legendRows;
@@ -349,13 +358,13 @@ identifier = regexprep(lower(string(titleText)),'[^a-z0-9]+','-');
 svg = strings(0,1);
 svg(end+1) = sprintf('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 %d %d" role="img" aria-labelledby="%s-title %s-desc">',width,height,identifier,identifier);
 svg(end+1) = '<title id="' + identifier + '-title">' + xmlEscape(titleText) + '</title>';
-svg(end+1) = '<desc id="' + identifier + '-desc">Logarithmic scaling series by dataset and transform family. Exact values and unavailable cases are listed in the following table.</desc>';
+svg(end+1) = '<desc id="' + identifier + '-desc">Logarithmic scaling series for the representative constant nonhydrostatic transform. Exact values for every transform and unavailable cases are listed in the following table.</desc>';
 svg(end+1) = '<rect width="100%" height="100%" fill="white"/>';
 svg(end+1) = '<text x="480" y="24" text-anchor="middle" font-family="Avenir Next, Avenir, Helvetica, Arial, sans-serif" font-size="18" font-weight="600">' + xmlEscape(titleText) + '</text>';
 [xMinimum,xMaximum] = logarithmicLimits([completeRows.resolution]);
 [yMinimum,yMaximum] = logarithmicLimits([completeRows.value]);
 svg(end+1) = sprintf('<rect x="%g" y="%g" width="%g" height="%g" fill="none" stroke="#777"/>',plotX,plotY,plotWidth,plotHeight);
-axisText = chartAxisLabels(plotX,plotY,plotWidth,plotHeight,xMinimum,xMaximum,yMinimum,yMaximum,xLabel,yLabel);
+axisText = chartAxisLabels(plotX,plotY,plotWidth,plotHeight,xMinimum,xMaximum,yMinimum,yMaximum,unique([completeRows.resolution]),logarithmicTicks([completeRows.value]),xLabel,yLabel);
 svg = [svg(:); axisText(:)];
 for iSeries = 1:numel(seriesKeys)
     keyParts = split(seriesKeys(iSeries),"|");
@@ -378,23 +387,41 @@ for iSeries = 1:numel(seriesKeys)
     row = floor((iSeries-1)/2);
     x = 40 + column*450;
     y = 455 + row*24;
-    label = series(1).chartLabel + " — " + displayTransform(series(1).transformId);
+    label = series(1).chartLabel;
     svg(end+1) = sprintf('<line x1="%g" y1="%g" x2="%g" y2="%g" stroke="%s" stroke-width="2"/><circle cx="%g" cy="%g" r="4" fill="%s"/>',x,y,x+24,y,color,x+12,y,color);
-    svg(end+1) = sprintf('<text x="%g" y="%g" dominant-baseline="middle" font-family="Avenir Next, Avenir, Helvetica, Arial, sans-serif" font-size="10">%s</text>',x+32,y,xmlEscape(label));
+    svg(end+1) = sprintf('<text class="legend-label" x="%g" y="%g" dominant-baseline="middle" font-family="Avenir Next, Avenir, Helvetica, Arial, sans-serif" font-size="10">%s</text>',x+32,y,xmlEscape(label));
 end
 svg(end+1) = '</svg>';
 writeText(path,strjoin(svg,newline));
 end
 
-function labels = chartAxisLabels(x,y,width,height,xMinimum,xMaximum,yMinimum,yMaximum,xLabel,yLabel)
-font = 'font-family="Avenir Next, Avenir, Helvetica, Arial, sans-serif" font-size="9" fill="#333"';
+function labels = chartAxisLabels(x,y,width,height,xMinimum,xMaximum,yMinimum,yMaximum,xTicks,yTicks,xLabel,yLabel)
+tickFont = 'font-family="Avenir Next, Avenir, Helvetica, Arial, sans-serif" font-size="11" fill="#333"';
+labelFont = 'font-family="Avenir Next, Avenir, Helvetica, Arial, sans-serif" font-size="12" fill="#222"';
 labels = strings(0,1);
-labels(end+1) = sprintf('<text x="%g" y="%g" %s>%s</text>',x,y+height+13,font,formatNumber(xMinimum));
-labels(end+1) = sprintf('<text x="%g" y="%g" text-anchor="end" %s>%s</text>',x+width,y+height+13,font,formatNumber(xMaximum));
-labels(end+1) = sprintf('<text x="%g" y="%g" %s>%s</text>',x-5,y+height,font,formatNumber(yMinimum));
-labels(end+1) = sprintf('<text x="%g" y="%g" %s>%s</text>',x-5,y+8,font,formatNumber(yMaximum));
-labels(end+1) = sprintf('<text x="%g" y="%g" text-anchor="middle" %s>%s</text>',x+width/2,y+height+27,font,xmlEscape(xLabel));
-labels(end+1) = sprintf('<text x="%g" y="%g" text-anchor="middle" transform="rotate(-90 %g %g)" %s>%s</text>',x-38,y+height/2,x-38,y+height/2,font,xmlEscape(yLabel));
+for tick = sort(xTicks)
+    tickX = x + (log10(tick)-log10(xMinimum))/(log10(xMaximum)-log10(xMinimum))*width;
+    labels(end+1) = sprintf('<line x1="%g" y1="%g" x2="%g" y2="%g" stroke="#e5e5e5"/>',tickX,y,tickX,y+height);
+    labels(end+1) = sprintf('<text x="%g" y="%g" text-anchor="middle" %s>%.0f</text>',tickX,y+17+height,tickFont,tick);
+end
+for tick = yTicks
+    tickY = y + height - (log10(tick)-log10(yMinimum))/(log10(yMaximum)-log10(yMinimum))*height;
+    labels(end+1) = sprintf('<line x1="%g" y1="%g" x2="%g" y2="%g" stroke="#e5e5e5"/>',x,tickY,x+width,tickY);
+    labels(end+1) = sprintf('<text x="%g" y="%g" text-anchor="end" dominant-baseline="middle" %s>%s</text>',x-8,tickY,tickFont,formatNumber(tick));
+end
+labels(end+1) = sprintf('<text x="%g" y="%g" text-anchor="middle" %s>%s</text>',x+width/2,y+height+38,labelFont,xmlEscape(xLabel));
+labels(end+1) = sprintf('<text x="%g" y="%g" text-anchor="middle" transform="rotate(-90 %g %g)" %s>%s</text>',26,y+height/2,26,y+height/2,labelFont,xmlEscape(yLabel));
+end
+
+function ticks = logarithmicTicks(values)
+minimum = min(values);
+maximum = max(values);
+exponents = floor(log10(minimum)):ceil(log10(maximum));
+ticks = sort(reshape([1; 2; 5].*10.^exponents,1,[]));
+ticks = ticks(ticks >= minimum & ticks <= maximum);
+if isempty(ticks)
+    ticks = [minimum maximum];
+end
 end
 
 function [minimum,maximum] = logarithmicLimits(values)
@@ -424,7 +451,7 @@ for iRow = 1:numel(rows)
     body(iRow,:) = [rows(iRow).suiteId,displayTransform(rows(iRow).transformId),rows(iRow).datasetLabel,string(rows(iRow).resolution),value,rows(iRow).status,rows(iRow).reason];
 end
 body = sortrows(body,[1 2 4 3]);
-table = markdownTable(["Suite" "Transform" "Dataset" "Resolution" "Value" "Status" "Reason"],body);
+table = htmlTable(["Suite" "Transform" "Dataset" "Resolution" "Value" "Status" "Reason"],body);
 end
 
 function markdown = computerMarkdown(records)
@@ -446,7 +473,7 @@ for iRecord = 1:numel(records)
         string(dataset.platform.threadCount)];
 end
 rows = sortrows(rows,[2 1]);
-markdown = markdownTable(["Implementation" "Platform" "Processor" "Physical memory" "OS / architecture" "Toolchain" "Threads"],rows);
+markdown = htmlTable(["Implementation" "Platform" "Processor" "Physical memory" "OS / architecture" "Toolchain" "Threads"],rows);
 end
 
 function records = latestEnvironmentRecords(records)
@@ -521,8 +548,8 @@ end
 rows = unique(sortrows(rows,[1 2 4 5 3]),"rows","stable");
 markdown = "## Performance across releases" + newline + newline + ...
     "This section appears only when matching platform, toolchain, suite, and case configurations exist for at least two WaveVortexModel versions." + newline + newline + ...
-    "<details markdown=""1"">" + newline + "<summary>View comparable release history</summary>" + newline + newline + ...
-    markdownTable(["Platform" "Implementation" "Version" "Suite" "Case" "Median runtime" "Peak process memory"],rows) + newline + newline + "</details>";
+    "<details>" + newline + "<summary>View comparable release history</summary>" + newline + newline + ...
+    htmlTable(["Platform" "Implementation" "Version" "Suite" "Case" "Median runtime" "Peak process memory"],rows) + newline + newline + "</details>";
 end
 
 function markdown = downloadsMarkdown(records)
@@ -540,28 +567,49 @@ for iRecord = 1:numel(records)
         string(dataset.platform.displayName), ...
         string(dataset.benchmark.suiteId), ...
         string(dataset.collectedAt), ...
-        "[Published JSON](/benchmarks/data/" + datasetId + ".json)", ...
-        "[Raw JSON](/benchmarks/raw/" + datasetId + ".json)"];
+        "Published JSON", ...
+        "Raw JSON"];
 end
 rows = sortrows(rows,1);
-markdown = markdownTable(["Dataset" "Implementation" "Platform" "Suite" "Collected" "Normalized" "Raw artifact"],rows);
-end
-
-function markdown = markdownTable(headers,rows)
-headers = escapeMarkdownCell(headers);
-rows = escapeMarkdownCell(rows);
-lines = ["| " + strjoin(headers," | ") + " |"; "| " + strjoin(repmat("---",size(headers))," | ") + " |"];
+links = strings(size(rows));
 for iRow = 1:size(rows,1)
-    lines(end+1,1) = "| " + strjoin(rows(iRow,:)," | ") + " |";
+    links(iRow,6) = "/benchmarks/data/" + rows(iRow,1) + ".json";
+    links(iRow,7) = "/benchmarks/raw/" + rows(iRow,1) + ".json";
 end
-markdown = strjoin(lines,newline);
+markdown = htmlTable(["Dataset" "Implementation" "Platform" "Suite" "Collected" "Normalized" "Raw artifact"],rows,links);
 end
 
-function values = escapeMarkdownCell(values)
+function html = htmlTable(headers,rows,links)
+if nargin < 3
+    links = strings(size(rows));
+end
+headers = htmlTableCell(headers);
+rows = htmlTableCell(rows);
+headerCells = strings(size(headers));
+for iColumn = 1:numel(headers)
+    headerCells(iColumn) = "<th scope=""col"">" + headers(iColumn) + "</th>";
+end
+lines = ["<table>"; "  <thead>"; "    <tr>" + strjoin(headerCells,"") + "</tr>"; "  </thead>"; "  <tbody>"];
+for iRow = 1:size(rows,1)
+    cells = strings(1,size(rows,2));
+    for iColumn = 1:size(rows,2)
+        value = rows(iRow,iColumn);
+        if links(iRow,iColumn) ~= ""
+            value = "<a href=""" + xmlEscape(links(iRow,iColumn)) + """>" + value + "</a>";
+        end
+        cells(iColumn) = "<td>" + value + "</td>";
+    end
+    lines(end+1,1) = "    <tr>" + strjoin(cells,"") + "</tr>";
+end
+lines = [lines; "  </tbody>"; "</table>"];
+html = strjoin(lines,newline);
+end
+
+function values = htmlTableCell(values)
 values = string(values);
-values = replace(values,"|","\|");
 values = replace(values,newline," ");
 values(values == "") = "—";
+values = xmlEscape(values);
 end
 
 function benchmarkCase = caseWithId(dataset,caseId)
