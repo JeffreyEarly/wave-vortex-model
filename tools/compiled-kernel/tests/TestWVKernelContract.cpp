@@ -218,11 +218,33 @@ void testNonlinearFlux(bool hydrostatic) {
     for (const auto* array : {&Fp,&Fm,&F0}) {
         for (const auto& value : *array) require(std::isfinite(value.real) && std::isfinite(value.imag),"nonlinear flux produced a non-finite coefficient");
     }
+#if WV_KERNEL_ISSUE130_VARIANT == 3
+    const std::size_t executionsPerCall = hydrostatic ? 18 : 23;
+#else
     const std::size_t executionsPerCall = hydrostatic ? 15 : 18;
+#endif
     require(kernel->metrics().executionCount == 2*executionsPerCall,"unexpected nonlinear-flux plan execution count");
     require(kernel->metrics().nonlinearFluxCallCount == 2,"unexpected nonlinear-flux call count");
     require(kernel->metrics().nonlinearFluxPhaseEvaluationCount == 2*count,"nonlinear flux did not evaluate phase exactly once per coefficient");
+#if WV_KERNEL_ISSUE130_VARIANT == 2
+    require(std::string(kernel->nonlinearFluxScheduleIdentifier()) == "issue130-velocity-only","unexpected nonlinear-flux schedule identifier");
+#elif WV_KERNEL_ISSUE130_VARIANT == 3
+    require(std::string(kernel->nonlinearFluxScheduleIdentifier()) == "issue130-streamed-target-three-channel","unexpected nonlinear-flux schedule identifier");
+#else
     require(std::string(kernel->nonlinearFluxScheduleIdentifier()) == "sequential-phase-once","unexpected nonlinear-flux schedule identifier");
+#endif
+    const auto halfFieldBytes = (config.Nx / 2 + 1) * config.Ny * config.Nz * sizeof(WVComplex64);
+    const auto realFieldBytes = config.Nx * config.Ny * config.Nz * sizeof(double);
+    require(kernel->metrics().halfSpectrumScratchCapacityBytes == 4 * halfFieldBytes,"unexpected half-spectrum scratch capacity");
+#if WV_KERNEL_ISSUE130_VARIANT == 3
+    require(kernel->metrics().realScratchCapacityBytes == 6 * realFieldBytes,"streamed target scratch is not 4H+6R");
+    require(kernel->phaseReservationBytes() == halfFieldBytes,"streamed target phase reservation is not one H region");
+    require(kernel->metrics().planCount == 17,"unexpected streamed target plan count");
+#else
+    require(kernel->metrics().realScratchCapacityBytes == (hydrostatic ? 8 : 9) * realFieldBytes,"unexpected control/velocity-only real scratch capacity");
+    require(kernel->phaseReservationBytes() == 0,"control/velocity-only unexpectedly reserves phase scratch");
+    require(kernel->metrics().planCount == 14,"unexpected control/velocity-only plan count");
+#endif
 
     WVFlux overlapping{{Ap.data(),shape},{Fm.data(),shape},{F0.data(),shape}};
     status = kernel->nonlinearFlux(state,overlapping);
