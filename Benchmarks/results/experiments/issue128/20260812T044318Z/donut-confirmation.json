@@ -1,0 +1,509 @@
+{
+  "schemaVersion": "1.0.0",
+  "status": "passed",
+  "decision": "CORE-REJECT",
+  "host": "Donut",
+  "source": {
+    "repository": "JeffreyEarly/wave-vortex-model",
+    "branch": "experiment/issue-128-fftwpp-implicit-dealiasing",
+    "commit": "782e9b41b76628eb0f61b1bd87339dd69b884314",
+    "baselineCommit": "be0f78995c49a2bfe4c43d75827856e3812ac278",
+    "fftwppCommit": "1a185f41800cd0e9d4df4ddf93e16e362d4e2c45",
+    "pthreadExecutableSha256": "b9d47d78a4259565b64562c7db049ad16a964e6192f5903bf40dca6e83cb9715",
+    "openmpExecutableSha256": "b3283557d41a737c087ccbd128dceff0f857b054806b4ba730271fe4d76e597b"
+  },
+  "configuration": {
+    "size": [
+      128,
+      128,
+      33
+    ],
+    "Nj": 21,
+    "threads": 16,
+    "warmups": 2,
+    "samples": 3,
+    "scope": "Reduced same-host Donut confirmation after the complete Lyra screen"
+  },
+  "runs": [
+    {
+      "implementation": "openmp-explicit",
+      "hydrostatic": true,
+      "variant": "explicit",
+      "threads": 16,
+      "warmups": 2,
+      "medianSeconds": 0.0075953749999999997,
+      "samplesSeconds": [
+        0.0075953749999999997,
+        0.0078476659999999997,
+        0.0075030419999999997
+      ],
+      "relativeInfinityError": 1.9496467088644241E-14,
+      "memory": {
+        "descriptorBytes": 14328485,
+        "planWrapperBytes": 336,
+        "scratchCapacityBytes": 52174848,
+        "persistentBytes": 66503669,
+        "knownMaximumLiveOwnedBytes": 69387557,
+        "retainedSpectrumBytes": 0,
+        "convolutionWorkBytes": 0,
+        "opaquePlanBytes": 0,
+        "maximumRSSBytes": 141459456
+      },
+      "libraries": {
+        "version": "fftw-3.3.11-neon",
+        "base": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-openmp-4b04443d185307d5/install/lib/libfftw3.3.dylib",
+        "thread": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-openmp-4b04443d185307d5/install/lib/libfftw3_omp.3.dylib",
+        "openmp": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-openmp-4b04443d185307d5/install/lib/libwvissue137omp.dylib"
+      },
+      "threadBehavior": {
+        "outerOpenMPThreads": 1,
+        "maximumFFTWThreads": 1,
+        "maximumMultiplierThreads": 1,
+        "maximumOpenMPLevel": 0,
+        "workerRegionsDisjoint": true
+      },
+      "lifecycle": {
+        "activePlans": 0,
+        "created": 14,
+        "destroyed": 14,
+        "outstandingPlanningBytes": 0
+      },
+      "schedule": {
+        "centered": {
+          "m": 0,
+          "p": 0,
+          "q": 0,
+          "logicalPadding": 0
+        },
+        "hermitian": {
+          "m": 0,
+          "p": 0,
+          "q": 0,
+          "logicalPadding": 0
+        }
+      }
+    },
+    {
+      "implementation": "fftwpp-hybrid",
+      "hydrostatic": true,
+      "variant": "fftwpp-hybrid",
+      "threads": 16,
+      "warmups": 2,
+      "medianSeconds": 0.025936750000000001,
+      "samplesSeconds": [
+        0.025916916000000002,
+        0.025936750000000001,
+        0.026278165999999999
+      ],
+      "relativeInfinityError": 1.757031340031771E-14,
+      "memory": {
+        "descriptorBytes": 14328485,
+        "planWrapperBytes": 336,
+        "scratchCapacityBytes": 48578240,
+        "persistentBytes": 62908693,
+        "knownMaximumLiveOwnedBytes": 65792581,
+        "retainedSpectrumBytes": 29288160,
+        "convolutionWorkBytes": 1718240,
+        "opaquePlanBytes": 0,
+        "maximumRSSBytes": 203931648
+      },
+      "libraries": {
+        "version": "fftw-3.3.11-neon",
+        "base": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-openmp-4b04443d185307d5/install/lib/libfftw3.3.dylib",
+        "thread": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-openmp-4b04443d185307d5/install/lib/libfftw3_omp.3.dylib",
+        "openmp": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-openmp-4b04443d185307d5/install/lib/libwvissue137omp.dylib"
+      },
+      "threadBehavior": {
+        "outerOpenMPThreads": 16,
+        "maximumFFTWThreads": 16,
+        "maximumMultiplierThreads": 16,
+        "maximumOpenMPLevel": 1,
+        "workerRegionsDisjoint": true
+      },
+      "lifecycle": {
+        "activePlans": 0,
+        "created": 14,
+        "destroyed": 14,
+        "outstandingPlanningBytes": 0
+      },
+      "schedule": {
+        "centered": {
+          "m": 44,
+          "p": 2,
+          "q": 3,
+          "logicalPadding": 2
+        },
+        "hermitian": {
+          "m": 44,
+          "p": 2,
+          "q": 3,
+          "logicalPadding": 2
+        }
+      }
+    },
+    {
+      "implementation": "fftwpp-implicit",
+      "hydrostatic": true,
+      "variant": "fftwpp-implicit",
+      "threads": 16,
+      "warmups": 2,
+      "medianSeconds": 0.052135958000000003,
+      "samplesSeconds": [
+        0.052135958000000003,
+        0.052203041999999998,
+        0.052065708000000002
+      ],
+      "relativeInfinityError": 2.2668387582197823E-14,
+      "memory": {
+        "descriptorBytes": 14328485,
+        "planWrapperBytes": 336,
+        "scratchCapacityBytes": 48566208,
+        "persistentBytes": 62896661,
+        "knownMaximumLiveOwnedBytes": 65780549,
+        "retainedSpectrumBytes": 29288160,
+        "convolutionWorkBytes": 1706208,
+        "opaquePlanBytes": 0,
+        "maximumRSSBytes": 204029952
+      },
+      "libraries": {
+        "version": "fftw-3.3.11-neon",
+        "base": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-openmp-4b04443d185307d5/install/lib/libfftw3.3.dylib",
+        "thread": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-openmp-4b04443d185307d5/install/lib/libfftw3_omp.3.dylib",
+        "openmp": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-openmp-4b04443d185307d5/install/lib/libwvissue137omp.dylib"
+      },
+      "threadBehavior": {
+        "outerOpenMPThreads": 16,
+        "maximumFFTWThreads": 16,
+        "maximumMultiplierThreads": 16,
+        "maximumOpenMPLevel": 1,
+        "workerRegionsDisjoint": true
+      },
+      "lifecycle": {
+        "activePlans": 0,
+        "created": 14,
+        "destroyed": 14,
+        "outstandingPlanningBytes": 0
+      },
+      "schedule": {
+        "centered": {
+          "m": 43,
+          "p": 2,
+          "q": 3,
+          "logicalPadding": 0
+        },
+        "hermitian": {
+          "m": 43,
+          "p": 2,
+          "q": 3,
+          "logicalPadding": 0
+        }
+      }
+    },
+    {
+      "implementation": "pthread-explicit",
+      "hydrostatic": true,
+      "variant": "explicit",
+      "threads": 16,
+      "warmups": 2,
+      "medianSeconds": 0.0071599580000000001,
+      "samplesSeconds": [
+        0.0072237500000000001,
+        0.0071599580000000001,
+        0.0071365420000000001
+      ],
+      "relativeInfinityError": 0,
+      "memory": {
+        "descriptorBytes": 14328485,
+        "planWrapperBytes": 336,
+        "scratchCapacityBytes": 52174848,
+        "persistentBytes": 66503669,
+        "knownMaximumLiveOwnedBytes": 69387557,
+        "retainedSpectrumBytes": 0,
+        "convolutionWorkBytes": 0,
+        "opaquePlanBytes": 0,
+        "maximumRSSBytes": 139640832
+      },
+      "libraries": {
+        "version": "fftw-3.3.11-neon",
+        "base": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-b5bca2b88cc53ba6/install/lib/libfftw3.3.dylib",
+        "thread": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-b5bca2b88cc53ba6/install/lib/libfftw3_threads.3.dylib",
+        "openmp": ""
+      },
+      "threadBehavior": {
+        "outerOpenMPThreads": 1,
+        "maximumFFTWThreads": 1,
+        "maximumMultiplierThreads": 1,
+        "maximumOpenMPLevel": 0,
+        "workerRegionsDisjoint": true
+      },
+      "lifecycle": {
+        "activePlans": 0,
+        "created": 14,
+        "destroyed": 14,
+        "outstandingPlanningBytes": 0
+      },
+      "schedule": {
+        "centered": {
+          "m": 0,
+          "p": 0,
+          "q": 0,
+          "logicalPadding": 0
+        },
+        "hermitian": {
+          "m": 0,
+          "p": 0,
+          "q": 0,
+          "logicalPadding": 0
+        }
+      }
+    },
+    {
+      "implementation": "openmp-explicit",
+      "hydrostatic": false,
+      "variant": "explicit",
+      "threads": 16,
+      "warmups": 2,
+      "medianSeconds": 0.0096959590000000005,
+      "samplesSeconds": [
+        0.0095118340000000003,
+        0.0096959590000000005,
+        0.0097928749999999995
+      ],
+      "relativeInfinityError": 1.4978350225686387E-14,
+      "memory": {
+        "descriptorBytes": 14328485,
+        "planWrapperBytes": 336,
+        "scratchCapacityBytes": 56500224,
+        "persistentBytes": 70829045,
+        "knownMaximumLiveOwnedBytes": 73712933,
+        "retainedSpectrumBytes": 0,
+        "convolutionWorkBytes": 0,
+        "opaquePlanBytes": 0,
+        "maximumRSSBytes": 145752064
+      },
+      "libraries": {
+        "version": "fftw-3.3.11-neon",
+        "base": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-openmp-4b04443d185307d5/install/lib/libfftw3.3.dylib",
+        "thread": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-openmp-4b04443d185307d5/install/lib/libfftw3_omp.3.dylib",
+        "openmp": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-openmp-4b04443d185307d5/install/lib/libwvissue137omp.dylib"
+      },
+      "threadBehavior": {
+        "outerOpenMPThreads": 1,
+        "maximumFFTWThreads": 1,
+        "maximumMultiplierThreads": 1,
+        "maximumOpenMPLevel": 0,
+        "workerRegionsDisjoint": true
+      },
+      "lifecycle": {
+        "activePlans": 0,
+        "created": 14,
+        "destroyed": 14,
+        "outstandingPlanningBytes": 0
+      },
+      "schedule": {
+        "centered": {
+          "m": 0,
+          "p": 0,
+          "q": 0,
+          "logicalPadding": 0
+        },
+        "hermitian": {
+          "m": 0,
+          "p": 0,
+          "q": 0,
+          "logicalPadding": 0
+        }
+      }
+    },
+    {
+      "implementation": "fftwpp-hybrid",
+      "hydrostatic": false,
+      "variant": "fftwpp-hybrid",
+      "threads": 16,
+      "warmups": 2,
+      "medianSeconds": 0.031706958,
+      "samplesSeconds": [
+        0.031731957999999998,
+        0.031706958,
+        0.031602458
+      ],
+      "relativeInfinityError": 1.9753358993274802E-14,
+      "memory": {
+        "descriptorBytes": 14328485,
+        "planWrapperBytes": 336,
+        "scratchCapacityBytes": 56835264,
+        "persistentBytes": 71165717,
+        "knownMaximumLiveOwnedBytes": 74049605,
+        "retainedSpectrumBytes": 37098336,
+        "convolutionWorkBytes": 2165088,
+        "opaquePlanBytes": 0,
+        "maximumRSSBytes": 228687872
+      },
+      "libraries": {
+        "version": "fftw-3.3.11-neon",
+        "base": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-openmp-4b04443d185307d5/install/lib/libfftw3.3.dylib",
+        "thread": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-openmp-4b04443d185307d5/install/lib/libfftw3_omp.3.dylib",
+        "openmp": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-openmp-4b04443d185307d5/install/lib/libwvissue137omp.dylib"
+      },
+      "threadBehavior": {
+        "outerOpenMPThreads": 16,
+        "maximumFFTWThreads": 16,
+        "maximumMultiplierThreads": 16,
+        "maximumOpenMPLevel": 1,
+        "workerRegionsDisjoint": true
+      },
+      "lifecycle": {
+        "activePlans": 0,
+        "created": 14,
+        "destroyed": 14,
+        "outstandingPlanningBytes": 0
+      },
+      "schedule": {
+        "centered": {
+          "m": 44,
+          "p": 2,
+          "q": 3,
+          "logicalPadding": 2
+        },
+        "hermitian": {
+          "m": 44,
+          "p": 2,
+          "q": 3,
+          "logicalPadding": 2
+        }
+      }
+    },
+    {
+      "implementation": "fftwpp-implicit",
+      "hydrostatic": false,
+      "variant": "fftwpp-implicit",
+      "threads": 16,
+      "warmups": 2,
+      "medianSeconds": 0.063953499999999996,
+      "samplesSeconds": [
+        0.063798250000000001,
+        0.063953499999999996,
+        0.064268792000000005
+      ],
+      "relativeInfinityError": 1.3931524331727183E-14,
+      "memory": {
+        "descriptorBytes": 14328485,
+        "planWrapperBytes": 336,
+        "scratchCapacityBytes": 56820480,
+        "persistentBytes": 71150933,
+        "knownMaximumLiveOwnedBytes": 74034821,
+        "retainedSpectrumBytes": 37098336,
+        "convolutionWorkBytes": 2150304,
+        "opaquePlanBytes": 0,
+        "maximumRSSBytes": 233521152
+      },
+      "libraries": {
+        "version": "fftw-3.3.11-neon",
+        "base": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-openmp-4b04443d185307d5/install/lib/libfftw3.3.dylib",
+        "thread": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-openmp-4b04443d185307d5/install/lib/libfftw3_omp.3.dylib",
+        "openmp": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-openmp-4b04443d185307d5/install/lib/libwvissue137omp.dylib"
+      },
+      "threadBehavior": {
+        "outerOpenMPThreads": 16,
+        "maximumFFTWThreads": 16,
+        "maximumMultiplierThreads": 16,
+        "maximumOpenMPLevel": 1,
+        "workerRegionsDisjoint": true
+      },
+      "lifecycle": {
+        "activePlans": 0,
+        "created": 14,
+        "destroyed": 14,
+        "outstandingPlanningBytes": 0
+      },
+      "schedule": {
+        "centered": {
+          "m": 43,
+          "p": 2,
+          "q": 3,
+          "logicalPadding": 0
+        },
+        "hermitian": {
+          "m": 43,
+          "p": 2,
+          "q": 3,
+          "logicalPadding": 0
+        }
+      }
+    },
+    {
+      "implementation": "pthread-explicit",
+      "hydrostatic": false,
+      "variant": "explicit",
+      "threads": 16,
+      "warmups": 2,
+      "medianSeconds": 0.009216208,
+      "samplesSeconds": [
+        0.0094064999999999999,
+        0.0091911249999999996,
+        0.009216208
+      ],
+      "relativeInfinityError": 0,
+      "memory": {
+        "descriptorBytes": 14328485,
+        "planWrapperBytes": 336,
+        "scratchCapacityBytes": 56500224,
+        "persistentBytes": 70829045,
+        "knownMaximumLiveOwnedBytes": 73712933,
+        "retainedSpectrumBytes": 0,
+        "convolutionWorkBytes": 0,
+        "opaquePlanBytes": 0,
+        "maximumRSSBytes": 143917056
+      },
+      "libraries": {
+        "version": "fftw-3.3.11-neon",
+        "base": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-b5bca2b88cc53ba6/install/lib/libfftw3.3.dylib",
+        "thread": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-b5bca2b88cc53ba6/install/lib/libfftw3_threads.3.dylib",
+        "openmp": ""
+      },
+      "threadBehavior": {
+        "outerOpenMPThreads": 1,
+        "maximumFFTWThreads": 1,
+        "maximumMultiplierThreads": 1,
+        "maximumOpenMPLevel": 0,
+        "workerRegionsDisjoint": true
+      },
+      "lifecycle": {
+        "activePlans": 0,
+        "created": 14,
+        "destroyed": 14,
+        "outstandingPlanningBytes": 0
+      },
+      "schedule": {
+        "centered": {
+          "m": 0,
+          "p": 0,
+          "q": 0,
+          "logicalPadding": 0
+        },
+        "hermitian": {
+          "m": 0,
+          "p": 0,
+          "q": 0,
+          "logicalPadding": 0
+        }
+      }
+    }
+  ],
+  "assessment": {
+    "hydrostatic": {
+      "pthreadExplicitSeconds": 0.007159958,
+      "hybridSeconds": 0.02593675,
+      "hybridSpeedup": 0.2760545557943844,
+      "maximumLiveChangePercent": -5.18100961531186
+    },
+    "nonhydrostatic": {
+      "pthreadExplicitSeconds": 0.009216208,
+      "hybridSeconds": 0.031706958,
+      "hybridSpeedup": 0.29066831324531356,
+      "maximumLiveChangePercent": 0.4567339628176237
+    },
+    "maximumHybridRelativeError": 1.9753358993274802E-14,
+    "reason": "Hybrid was 3.62x slower hydrostatically and 3.44x slower nonhydrostatically; it saved only 5.18% exact maximum-live bytes hydrostatically and increased them 0.46% nonhydrostatically."
+  }
+}
