@@ -1,0 +1,513 @@
+{
+  "schemaVersion": "1.0.0",
+  "status": "passed",
+  "runId": "20260812T043701285Z-maca64-r2026a",
+  "generatedAtUTC": "2026-08-12T04:37:01.722Z",
+  "completedAtUTC": "2026-08-12T04:37:13.078Z",
+  "environment": {
+    "matlabVersion": "26.1.0.3312084 (R2026a) Update 4",
+    "release": "2026a",
+    "architecture": "maca64",
+    "operatingSystem": "Darwin 25.5.0 Darwin Kernel Version 25.5.0: Tue Jun  9 22:28:34 PDT 2026; root:xnu-12377.121.10~1/RELEASE_ARM64_T6050 arm64",
+    "processor": "ABI64 ARM ARM64E",
+    "hardwareThreads": 18
+  },
+  "source": {
+    "repository": "JeffreyEarly/wave-vortex-model",
+    "commit": "b63fef8f6a9e400c6ec560205906578b763d8298",
+    "tree": "398d758d7e3df9b1fbd34d2d7c92408ec50d0b86",
+    "isDirty": false,
+    "baselineCommit": "be0f78995c49a2bfe4c43d75827856e3812ac278",
+    "sourceSha256": "c30be17a5600b958c72101cb7cc56a6870a09dc98a2ec151df095be5ff77d1cd"
+  },
+  "configuration": {
+    "sizes": [
+      [
+        256,
+        256,
+        65
+      ],
+      [
+        512,
+        512,
+        129
+      ]
+    ],
+    "channelCounts": [
+      3,
+      4
+    ],
+    "workerCount": 18,
+    "warmupCount": 1,
+    "sampleCount": 3,
+    "seed": 129,
+    "errorTolerance": 1E-12,
+    "advanceSpeedup": 1.1,
+    "screenBoundary": "complete preallocated batched horizontal r2c/c2r pipeline including all provider-required packing, reorder, split/interleaved conversion, scaling, workspace access, and worker lifecycle"
+  },
+  "build": {
+    "schemaVersion": "1.0.0",
+    "executable": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-129/.pffft-cache/issue129/build/e27534f572e2c069/issue129_dense_engine_screen",
+    "executableSha256": "ec9991b4b81ff594f49616ef7a465917841cc94cbe6eb0294bfa980ef6c59fc9",
+    "source": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-129/Benchmarks/compiled-kernel/issue129_dense_engine_screen.cpp",
+    "sourceSha256": "c30be17a5600b958c72101cb7cc56a6870a09dc98a2ec151df095be5ff77d1cd",
+    "pffft": {
+      "repository": "marton78/pffft",
+      "commit": "a4b03590cc2a4bea56f9721996e3057835799179",
+      "source": "/private/tmp/pffft-plan-inspect"
+    },
+    "fftw": {
+      "id": "native-neon-pthreads",
+      "description": "Explicit Apple ARM NEON with POSIX threads.",
+      "version": "3.3.11",
+      "threadBackend": "pthreads",
+      "simplicityRank": 1,
+      "buildKey": "b5bca2b88cc53ba6",
+      "buildRoot": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-b5bca2b88cc53ba6",
+      "installDirectory": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-b5bca2b88cc53ba6/install",
+      "includeDirectory": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-b5bca2b88cc53ba6/install/include",
+      "baseLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-b5bca2b88cc53ba6/install/lib/libfftw3.3.dylib",
+      "threadLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-b5bca2b88cc53ba6/install/lib/libfftw3_threads.3.dylib",
+      "runtimeLibrary": "",
+      "configureFlags": "--host=aarch64-apple-darwin --enable-neon --enable-threads --disable-fortran --disable-openmp --enable-shared --disable-static",
+      "compilerFlags": "-O3 -mcpu=native -mmacosx-version-min=13.3",
+      "cycleCounterPassed": true,
+      "checkPassed": true,
+      "module": "wv_compiled_transform_mex_native_neon_pthreads",
+      "mexPath": "",
+      "mexSha256": "",
+      "baseLibrarySha256": "aeda1b7b45106c11869523470051ad5b72dc841ff32dfca4ce14bdfe82ec9eae",
+      "threadLibrarySha256": "452290957f5941dcd545f1e7b7dd30e380f05618992406dfc84c4734a3fa8f2d",
+      "logs": {
+        "configure": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-b5bca2b88cc53ba6/logs/configure.log",
+        "make": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-b5bca2b88cc53ba6/logs/make.log",
+        "check": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-b5bca2b88cc53ba6/logs/check.log",
+        "install": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-b5bca2b88cc53ba6/logs/install.log"
+      }
+    },
+    "compiler": {
+      "path": "/Library/Developer/CommandLineTools/usr/bin/clang",
+      "cxxPath": "/Library/Developer/CommandLineTools/usr/bin/clang++",
+      "sdkPath": "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "identity": "Apple clang version 21.0.0 (clang-2100.1.1.101)\nTarget: arm64-apple-darwin25.5.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+    },
+    "buildKey": "e27534f572e2c069"
+  },
+  "runs": [
+    {
+      "size": [
+        256,
+        256,
+        65
+      ],
+      "channels": 3,
+      "planes": 195,
+      "workers": 18,
+      "realBytes": 1.0223616E+8,
+      "halfSpectrumBytes": 1.0303488E+8,
+      "engines": [
+        {
+          "id": "native-fftw",
+          "identity": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-b5bca2b88cc53ba6/install/lib/libfftw3.3.dylib",
+          "vectorPath": "FFTW 3.3.11 NEON/pthreads",
+          "planningSeconds": 0.105168417,
+          "workspaceBytes": 0,
+          "forwardRelativeError": 0,
+          "inverseRelativeError": 4.2455537118387653E-16,
+          "forwardSeconds": [
+            0.001846667,
+            0.00203275,
+            0.002142542
+          ],
+          "inverseSeconds": [
+            0.002113084,
+            0.002212042,
+            0.002225417
+          ],
+          "forwardMedianSeconds": 0.00203275,
+          "inverseMedianSeconds": 0.002212042,
+          "combinedMedianSeconds": 0.0021205019159387713,
+          "forwardSpeedup": 1,
+          "inverseSpeedup": 1,
+          "combinedSpeedup": 1,
+          "maximumRelativeError": 4.2455537118387653E-16,
+          "knownMaximumLiveBytes": 2.0527104E+8
+        },
+        {
+          "id": "pffft",
+          "identity": "marton78/pffft@a4b03590cc2a4bea56f9721996e3057835799179",
+          "vectorPath": "NEON",
+          "planningSeconds": 0.000447792,
+          "workspaceBytes": 9.842688E+6,
+          "forwardRelativeError": 5.134325027206504E-16,
+          "inverseRelativeError": 4.88238676861458E-16,
+          "forwardSeconds": [
+            0.002282583,
+            0.002723291,
+            0.002427084
+          ],
+          "inverseSeconds": [
+            0.002873333,
+            0.002605625,
+            0.002569625
+          ],
+          "forwardMedianSeconds": 0.002427084,
+          "inverseMedianSeconds": 0.002605625,
+          "combinedMedianSeconds": 0.0025147705158721739,
+          "forwardSpeedup": 0.83752766694519021,
+          "inverseSpeedup": 0.84894871671863759,
+          "combinedSpeedup": 0.843218855380662,
+          "maximumRelativeError": 5.134325027206504E-16,
+          "knownMaximumLiveBytes": 2.15113728E+8
+        },
+        {
+          "id": "accelerate-vdsp",
+          "identity": "/System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Versions/A/libvDSP.dylib",
+          "vectorPath": "vDSP double split-complex 2-D radix-2",
+          "planningSeconds": 0.000478458,
+          "workspaceBytes": 9.437184E+6,
+          "forwardRelativeError": 6.2237417889488992E-16,
+          "inverseRelativeError": 7.2174413101259006E-16,
+          "forwardSeconds": [
+            0.016941459,
+            0.016734042,
+            0.017184916
+          ],
+          "inverseSeconds": [
+            0.017282125,
+            0.017349458,
+            0.017520708
+          ],
+          "forwardMedianSeconds": 0.016941459,
+          "inverseMedianSeconds": 0.017349458,
+          "combinedMedianSeconds": 0.017144244847155619,
+          "forwardSpeedup": 0.11998671424934534,
+          "inverseSpeedup": 0.12749919911042754,
+          "combinedSpeedup": 0.12368593279222684,
+          "maximumRelativeError": 7.2174413101259006E-16,
+          "knownMaximumLiveBytes": 2.14708224E+8
+        }
+      ]
+    },
+    {
+      "size": [
+        256,
+        256,
+        65
+      ],
+      "channels": 4,
+      "planes": 260,
+      "workers": 18,
+      "realBytes": 1.3631488E+8,
+      "halfSpectrumBytes": 1.3737984E+8,
+      "engines": [
+        {
+          "id": "native-fftw",
+          "identity": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-b5bca2b88cc53ba6/install/lib/libfftw3.3.dylib",
+          "vectorPath": "FFTW 3.3.11 NEON/pthreads",
+          "planningSeconds": 0.133341125,
+          "workspaceBytes": 0,
+          "forwardRelativeError": 0,
+          "inverseRelativeError": 4.0370918167614666E-16,
+          "forwardSeconds": [
+            0.002888291,
+            0.002461292,
+            0.002526917
+          ],
+          "inverseSeconds": [
+            0.00296625,
+            0.002953209,
+            0.003114792
+          ],
+          "forwardMedianSeconds": 0.002526917,
+          "inverseMedianSeconds": 0.00296625,
+          "combinedMedianSeconds": 0.0027377851543263945,
+          "forwardSpeedup": 1,
+          "inverseSpeedup": 1,
+          "combinedSpeedup": 1,
+          "maximumRelativeError": 4.0370918167614666E-16,
+          "knownMaximumLiveBytes": 2.7369472E+8
+        },
+        {
+          "id": "pffft",
+          "identity": "marton78/pffft@a4b03590cc2a4bea56f9721996e3057835799179",
+          "vectorPath": "NEON",
+          "planningSeconds": 0.000415958,
+          "workspaceBytes": 9.842688E+6,
+          "forwardRelativeError": 5.9210271658841344E-16,
+          "inverseRelativeError": 4.8445101801137605E-16,
+          "forwardSeconds": [
+            0.002934208,
+            0.002951625,
+            0.003739041
+          ],
+          "inverseSeconds": [
+            0.003398958,
+            0.003616167,
+            0.00344925
+          ],
+          "forwardMedianSeconds": 0.002951625,
+          "inverseMedianSeconds": 0.00344925,
+          "combinedMedianSeconds": 0.0031907510920236317,
+          "forwardSpeedup": 0.8561104476347775,
+          "inverseSpeedup": 0.85996955859969559,
+          "combinedSpeedup": 0.85803783352779239,
+          "maximumRelativeError": 5.9210271658841344E-16,
+          "knownMaximumLiveBytes": 2.83537408E+8
+        },
+        {
+          "id": "accelerate-vdsp",
+          "identity": "/System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Versions/A/libvDSP.dylib",
+          "vectorPath": "vDSP double split-complex 2-D radix-2",
+          "planningSeconds": 0.000473792,
+          "workspaceBytes": 9.437184E+6,
+          "forwardRelativeError": 7.2217195852035539E-16,
+          "inverseRelativeError": 6.5855060260921425E-16,
+          "forwardSeconds": [
+            0.022409,
+            0.022107667,
+            0.022408833
+          ],
+          "inverseSeconds": [
+            0.02213875,
+            0.023464208,
+            0.023176167
+          ],
+          "forwardMedianSeconds": 0.022408833,
+          "inverseMedianSeconds": 0.023176167,
+          "combinedMedianSeconds": 0.022789270630783932,
+          "forwardSpeedup": 0.11276432824502731,
+          "inverseSpeedup": 0.12798708259221639,
+          "combinedSpeedup": 0.12013483005586725,
+          "maximumRelativeError": 7.2217195852035539E-16,
+          "knownMaximumLiveBytes": 2.83131904E+8
+        }
+      ]
+    },
+    {
+      "size": [
+        512,
+        512,
+        129
+      ],
+      "channels": 3,
+      "planes": 387,
+      "workers": 18,
+      "realBytes": 8.11597824E+8,
+      "halfSpectrumBytes": 8.14768128E+8,
+      "engines": [
+        {
+          "id": "native-fftw",
+          "identity": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-b5bca2b88cc53ba6/install/lib/libfftw3.3.dylib",
+          "vectorPath": "FFTW 3.3.11 NEON/pthreads",
+          "planningSeconds": 0.763323625,
+          "workspaceBytes": 0,
+          "forwardRelativeError": 0,
+          "inverseRelativeError": 4.4396804461796477E-16,
+          "forwardSeconds": [
+            0.018209917,
+            0.019549,
+            0.01781575
+          ],
+          "inverseSeconds": [
+            0.018639917,
+            0.0187275,
+            0.019104375
+          ],
+          "forwardMedianSeconds": 0.018209917,
+          "inverseMedianSeconds": 0.0187275,
+          "combinedMedianSeconds": 0.01846689526199518,
+          "forwardSpeedup": 1,
+          "inverseSpeedup": 1,
+          "combinedSpeedup": 1,
+          "maximumRelativeError": 4.4396804461796477E-16,
+          "knownMaximumLiveBytes": 1.626365952E+9
+        },
+        {
+          "id": "pffft",
+          "identity": "marton78/pffft@a4b03590cc2a4bea56f9721996e3057835799179",
+          "vectorPath": "NEON",
+          "planningSeconds": 0.002618458,
+          "workspaceBytes": 3.8559744E+7,
+          "forwardRelativeError": 6.6046974270321245E-16,
+          "inverseRelativeError": 5.54960055772456E-16,
+          "forwardSeconds": [
+            0.019084958,
+            0.020106375,
+            0.021232834
+          ],
+          "inverseSeconds": [
+            0.022989291,
+            0.023378375,
+            0.021845625
+          ],
+          "forwardMedianSeconds": 0.020106375,
+          "inverseMedianSeconds": 0.022989291,
+          "combinedMedianSeconds": 0.021499565247467795,
+          "forwardSpeedup": 0.90567877103654937,
+          "inverseSpeedup": 0.8146184238565688,
+          "combinedSpeedup": 0.85894272974520725,
+          "maximumRelativeError": 6.6046974270321245E-16,
+          "knownMaximumLiveBytes": 1.664925696E+9
+        },
+        {
+          "id": "accelerate-vdsp",
+          "identity": "/System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Versions/A/libvDSP.dylib",
+          "vectorPath": "vDSP double split-complex 2-D radix-2",
+          "planningSeconds": 0.002525042,
+          "workspaceBytes": 3.7748736E+7,
+          "forwardRelativeError": 7.2550748620219512E-16,
+          "inverseRelativeError": 7.3994674102994125E-16,
+          "forwardSeconds": [
+            0.153180625,
+            0.212231125,
+            0.155708792
+          ],
+          "inverseSeconds": [
+            0.159216792,
+            0.150851875,
+            0.157580833
+          ],
+          "forwardMedianSeconds": 0.155708792,
+          "inverseMedianSeconds": 0.157580833,
+          "combinedMedianSeconds": 0.15664201591138865,
+          "forwardSpeedup": 0.11694854713149401,
+          "inverseSpeedup": 0.11884376826463407,
+          "combinedSpeedup": 0.11789234934541304,
+          "maximumRelativeError": 7.3994674102994125E-16,
+          "knownMaximumLiveBytes": 1.664114688E+9
+        }
+      ]
+    },
+    {
+      "size": [
+        512,
+        512,
+        129
+      ],
+      "channels": 4,
+      "planes": 516,
+      "workers": 18,
+      "realBytes": 1.082130432E+9,
+      "halfSpectrumBytes": 1.086357504E+9,
+      "engines": [
+        {
+          "id": "native-fftw",
+          "identity": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-b5bca2b88cc53ba6/install/lib/libfftw3.3.dylib",
+          "vectorPath": "FFTW 3.3.11 NEON/pthreads",
+          "planningSeconds": 1.059384875,
+          "workspaceBytes": 0,
+          "forwardRelativeError": 0,
+          "inverseRelativeError": 4.5537120121830882E-16,
+          "forwardSeconds": [
+            0.022560292,
+            0.02163275,
+            0.020913041
+          ],
+          "inverseSeconds": [
+            0.025746708,
+            0.026098959,
+            0.027956
+          ],
+          "forwardMedianSeconds": 0.02163275,
+          "inverseMedianSeconds": 0.026098959,
+          "combinedMedianSeconds": 0.023761150125935614,
+          "forwardSpeedup": 1,
+          "inverseSpeedup": 1,
+          "combinedSpeedup": 1,
+          "maximumRelativeError": 4.5537120121830882E-16,
+          "knownMaximumLiveBytes": 2.168487936E+9
+        },
+        {
+          "id": "pffft",
+          "identity": "marton78/pffft@a4b03590cc2a4bea56f9721996e3057835799179",
+          "vectorPath": "NEON",
+          "planningSeconds": 0.002335833,
+          "workspaceBytes": 3.8559744E+7,
+          "forwardRelativeError": 5.558812667363674E-16,
+          "inverseRelativeError": 5.3126640142136032E-16,
+          "forwardSeconds": [
+            0.025334,
+            0.025570417,
+            0.029792083
+          ],
+          "inverseSeconds": [
+            0.028493417,
+            0.02881725,
+            0.030607959
+          ],
+          "forwardMedianSeconds": 0.025570417,
+          "inverseMedianSeconds": 0.02881725,
+          "combinedMedianSeconds": 0.027145332919182443,
+          "forwardSpeedup": 0.84600693058701382,
+          "inverseSpeedup": 0.90567139473752711,
+          "combinedSpeedup": 0.87533095271580286,
+          "maximumRelativeError": 5.558812667363674E-16,
+          "knownMaximumLiveBytes": 2.20704768E+9
+        },
+        {
+          "id": "accelerate-vdsp",
+          "identity": "/System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Versions/A/libvDSP.dylib",
+          "vectorPath": "vDSP double split-complex 2-D radix-2",
+          "planningSeconds": 0.002445875,
+          "workspaceBytes": 3.7748736E+7,
+          "forwardRelativeError": 6.3873454652126175E-16,
+          "inverseRelativeError": 6.8305680182746323E-16,
+          "forwardSeconds": [
+            0.214994042,
+            0.20571925,
+            0.197723
+          ],
+          "inverseSeconds": [
+            0.201610625,
+            0.20255075,
+            0.204317666
+          ],
+          "forwardMedianSeconds": 0.20571925,
+          "inverseMedianSeconds": 0.20255075,
+          "combinedMedianSeconds": 0.20412885238725442,
+          "forwardSpeedup": 0.10515666375412121,
+          "inverseSpeedup": 0.12885145574627593,
+          "combinedSpeedup": 0.11640270274413807,
+          "maximumRelativeError": 6.8305680182746323E-16,
+          "knownMaximumLiveBytes": 2.206236672E+9
+        }
+      ]
+    }
+  ],
+  "assessment": {
+    "engines": [
+      {
+        "engine": "pffft",
+        "advanced": false,
+        "bestCommonSize": [
+          512,
+          512,
+          129
+        ],
+        "minimumCommonSpeedup": 0.85894272974520725,
+        "maximumRelativeError": 6.6046974270321245E-16,
+        "reason": "Complete transform pipeline did not clear the 1.10x screen for both channel counts at a common size."
+      },
+      {
+        "engine": "accelerate-vdsp",
+        "advanced": false,
+        "bestCommonSize": [
+          256,
+          256,
+          65
+        ],
+        "minimumCommonSpeedup": 0.12013483005586725,
+        "maximumRelativeError": 7.3994674102994125E-16,
+        "reason": "Complete transform pipeline did not clear the 1.10x screen for both channel counts at a common size."
+      }
+    ],
+    "anyAdvanced": false,
+    "fullNonlinearFluxRunRequired": false
+  },
+  "decision": {
+    "outcome": "CORE-REJECT",
+    "reason": "Neither PFFFT nor Accelerate/vDSP was at least 10% faster than selected native FFTW in the complete batched horizontal transform pipeline; no nonlinearFlux integration was warranted."
+  },
+  "failure": {}
+}
