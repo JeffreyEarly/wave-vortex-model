@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 542" role="img" aria-labelledby="runtime-versus-vertical-resolution-constant-nonhydrostatic-title runtime-versus-vertical-resolution-constant-nonhydrostatic-desc">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 560" role="img" aria-labelledby="runtime-versus-vertical-resolution-constant-nonhydrostatic-title runtime-versus-vertical-resolution-constant-nonhydrostatic-desc">
 <title id="runtime-versus-vertical-resolution-constant-nonhydrostatic-title">Runtime versus vertical resolution — constant nonhydrostatic</title>
 <desc id="runtime-versus-vertical-resolution-constant-nonhydrostatic-desc">Logarithmic scaling series for the representative constant nonhydrostatic transform. Exact values for every transform and unavailable cases are listed in the following table.</desc>
 <rect width="100%" height="100%" fill="white"/>
@@ -29,32 +29,32 @@
 <polyline points="622.661,150.275 868.409,87.930" fill="none" stroke="#0072B2" stroke-width="2"/>
 <circle cx="622.661" cy="150.275" r="4" fill="#0072B2"><title>Lyra (Apple M4 Max) — WaveVortexModel MATLAB 4.2.1 (builtin; MATLAB 25.2.0.3150157 (R2025b) Update 4) — scaling-large-v1; Constant nonhydrostatic; resolution 129; value 0.721706</title></circle>
 <circle cx="868.409" cy="87.930" r="4" fill="#0072B2"><title>Lyra (Apple M4 Max) — WaveVortexModel MATLAB 4.2.1 (builtin; MATLAB 25.2.0.3150157 (R2025b) Update 4) — scaling-large-v1; Constant nonhydrostatic; resolution 257; value 1.728</title></circle>
-<line x1="40" y1="455" x2="64" y2="455" stroke="#0072B2" stroke-width="2"/><circle cx="52" cy="455" r="4" fill="#0072B2"/>
-<text class="legend-label" x="72" y="455" dominant-baseline="middle" font-family="Avenir Next, Avenir, Helvetica, Arial, sans-serif" font-size="10">Lyra (Apple M4 Max) — MATLAB R2025b Update 4 — large</text>
+<line x1="40" y1="485" x2="64" y2="485" stroke="#0072B2" stroke-width="2"/><circle cx="52" cy="485" r="4" fill="#0072B2"/>
+<text class="legend-label" x="72" y="485" dominant-baseline="middle" font-family="Avenir Next, Avenir, Helvetica, Arial, sans-serif" font-size="10">Lyra (Apple M4 Max) — MATLAB R2025b Update 4 — large</text>
 <polyline points="622.661,132.391 868.409,71.364" fill="none" stroke="#D55E00" stroke-width="2"/>
 <circle cx="622.661" cy="132.391" r="4" fill="#D55E00"><title>Donut (Apple M5 Max) — WaveVortexModel MATLAB 4.2.1 (builtin; MATLAB 26.1.0.3312084 (R2026a) Update 4) — scaling-large-v1; Constant nonhydrostatic; resolution 129; value 0.92711</title></circle>
 <circle cx="868.409" cy="71.364" r="4" fill="#D55E00"><title>Donut (Apple M5 Max) — WaveVortexModel MATLAB 4.2.1 (builtin; MATLAB 26.1.0.3312084 (R2026a) Update 4) — scaling-large-v1; Constant nonhydrostatic; resolution 257; value 2.17922</title></circle>
-<line x1="490" y1="455" x2="514" y2="455" stroke="#D55E00" stroke-width="2"/><circle cx="502" cy="455" r="4" fill="#D55E00"/>
-<text class="legend-label" x="522" y="455" dominant-baseline="middle" font-family="Avenir Next, Avenir, Helvetica, Arial, sans-serif" font-size="10">Donut (Apple M5 Max) — MATLAB R2026a Update 4 — large</text>
+<line x1="490" y1="485" x2="514" y2="485" stroke="#D55E00" stroke-width="2"/><circle cx="502" cy="485" r="4" fill="#D55E00"/>
+<text class="legend-label" x="522" y="485" dominant-baseline="middle" font-family="Avenir Next, Avenir, Helvetica, Arial, sans-serif" font-size="10">Donut (Apple M5 Max) — MATLAB R2026a Update 4 — large</text>
 <polyline points="136.591,398.636 378.281,364.840 622.661,321.396 868.409,287.104" fill="none" stroke="#009E73" stroke-width="2"/>
 <circle cx="136.591" cy="398.636" r="4" fill="#009E73"><title>Lyra (Apple M4 Max) — WaveVortexModel MATLAB 4.2.1 (builtin; MATLAB 25.2.0.3150157 (R2025b) Update 4) — scaling-standard-v1; Constant nonhydrostatic; resolution 33; value 0.0222757</title></circle>
 <circle cx="378.281" cy="364.840" r="4" fill="#009E73"><title>Lyra (Apple M4 Max) — WaveVortexModel MATLAB 4.2.1 (builtin; MATLAB 25.2.0.3150157 (R2025b) Update 4) — scaling-standard-v1; Constant nonhydrostatic; resolution 65; value 0.0357588</title></circle>
 <circle cx="622.661" cy="321.396" r="4" fill="#009E73"><title>Lyra (Apple M4 Max) — WaveVortexModel MATLAB 4.2.1 (builtin; MATLAB 25.2.0.3150157 (R2025b) Update 4) — scaling-standard-v1; Constant nonhydrostatic; resolution 129; value 0.0657059</title></circle>
 <circle cx="868.409" cy="287.104" r="4" fill="#009E73"><title>Lyra (Apple M4 Max) — WaveVortexModel MATLAB 4.2.1 (builtin; MATLAB 25.2.0.3150157 (R2025b) Update 4) — scaling-standard-v1; Constant nonhydrostatic; resolution 257; value 0.106211</title></circle>
-<line x1="40" y1="479" x2="64" y2="479" stroke="#009E73" stroke-width="2"/><circle cx="52" cy="479" r="4" fill="#009E73"/>
-<text class="legend-label" x="72" y="479" dominant-baseline="middle" font-family="Avenir Next, Avenir, Helvetica, Arial, sans-serif" font-size="10">Lyra (Apple M4 Max) — MATLAB R2025b Update 4 — standard</text>
+<line x1="40" y1="509" x2="64" y2="509" stroke="#009E73" stroke-width="2"/><circle cx="52" cy="509" r="4" fill="#009E73"/>
+<text class="legend-label" x="72" y="509" dominant-baseline="middle" font-family="Avenir Next, Avenir, Helvetica, Arial, sans-serif" font-size="10">Lyra (Apple M4 Max) — MATLAB R2025b Update 4 — standard</text>
 <polyline points="136.591,396.499 378.281,368.251 622.661,319.906 868.409,276.318" fill="none" stroke="#CC79A7" stroke-width="2"/>
 <circle cx="136.591" cy="396.499" r="4" fill="#CC79A7"><title>Donut (Apple M5 Max) — WaveVortexModel MATLAB 4.2.1 (builtin; MATLAB 26.1.0.3312084 (R2026a) Update 4) — scaling-standard-v1; Constant nonhydrostatic; resolution 33; value 0.0229526</title></circle>
 <circle cx="378.281" cy="368.251" r="4" fill="#CC79A7"><title>Donut (Apple M5 Max) — WaveVortexModel MATLAB 4.2.1 (builtin; MATLAB 26.1.0.3312084 (R2026a) Update 4) — scaling-standard-v1; Constant nonhydrostatic; resolution 65; value 0.0340908</title></circle>
 <circle cx="622.661" cy="319.906" r="4" fill="#CC79A7"><title>Donut (Apple M5 Max) — WaveVortexModel MATLAB 4.2.1 (builtin; MATLAB 26.1.0.3312084 (R2026a) Update 4) — scaling-standard-v1; Constant nonhydrostatic; resolution 129; value 0.0670915</title></circle>
 <circle cx="868.409" cy="276.318" r="4" fill="#CC79A7"><title>Donut (Apple M5 Max) — WaveVortexModel MATLAB 4.2.1 (builtin; MATLAB 26.1.0.3312084 (R2026a) Update 4) — scaling-standard-v1; Constant nonhydrostatic; resolution 257; value 0.123529</title></circle>
-<line x1="490" y1="479" x2="514" y2="479" stroke="#CC79A7" stroke-width="2"/><circle cx="502" cy="479" r="4" fill="#CC79A7"/>
-<text class="legend-label" x="522" y="479" dominant-baseline="middle" font-family="Avenir Next, Avenir, Helvetica, Arial, sans-serif" font-size="10">Donut (Apple M5 Max) — MATLAB R2026a Update 4 — standard</text>
+<line x1="490" y1="509" x2="514" y2="509" stroke="#CC79A7" stroke-width="2"/><circle cx="502" cy="509" r="4" fill="#CC79A7"/>
+<text class="legend-label" x="522" y="509" dominant-baseline="middle" font-family="Avenir Next, Avenir, Helvetica, Arial, sans-serif" font-size="10">Donut (Apple M5 Max) — MATLAB R2026a Update 4 — standard</text>
 <polyline points="136.591,341.081 378.281,317.289 622.661,281.218 868.409,245.055" fill="none" stroke="#E69F00" stroke-width="2"/>
 <circle cx="136.591" cy="341.081" r="4" fill="#E69F00"><title>Matilda (Apple M1 Max) — WaveVortexModel MATLAB 4.2.1 (builtin; MATLAB 26.1.0.3312084 (R2026a) Update 4) — scaling-standard-v1; Constant nonhydrostatic; resolution 33; value 0.0498748</title></circle>
 <circle cx="378.281" cy="317.289" r="4" fill="#E69F00"><title>Matilda (Apple M1 Max) — WaveVortexModel MATLAB 4.2.1 (builtin; MATLAB 26.1.0.3312084 (R2026a) Update 4) — scaling-standard-v1; Constant nonhydrostatic; resolution 65; value 0.069596</title></circle>
 <circle cx="622.661" cy="281.218" r="4" fill="#E69F00"><title>Matilda (Apple M1 Max) — WaveVortexModel MATLAB 4.2.1 (builtin; MATLAB 26.1.0.3312084 (R2026a) Update 4) — scaling-standard-v1; Constant nonhydrostatic; resolution 129; value 0.115337</title></circle>
 <circle cx="868.409" cy="245.055" r="4" fill="#E69F00"><title>Matilda (Apple M1 Max) — WaveVortexModel MATLAB 4.2.1 (builtin; MATLAB 26.1.0.3312084 (R2026a) Update 4) — scaling-standard-v1; Constant nonhydrostatic; resolution 257; value 0.191386</title></circle>
-<line x1="40" y1="503" x2="64" y2="503" stroke="#E69F00" stroke-width="2"/><circle cx="52" cy="503" r="4" fill="#E69F00"/>
-<text class="legend-label" x="72" y="503" dominant-baseline="middle" font-family="Avenir Next, Avenir, Helvetica, Arial, sans-serif" font-size="10">Matilda (Apple M1 Max) — MATLAB R2026a Update 4 — standard</text>
+<line x1="40" y1="533" x2="64" y2="533" stroke="#E69F00" stroke-width="2"/><circle cx="52" cy="533" r="4" fill="#E69F00"/>
+<text class="legend-label" x="72" y="533" dominant-baseline="middle" font-family="Avenir Next, Avenir, Helvetica, Arial, sans-serif" font-size="10">Matilda (Apple M1 Max) — MATLAB R2026a Update 4 — standard</text>
 </svg>

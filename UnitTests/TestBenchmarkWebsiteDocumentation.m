@@ -75,6 +75,7 @@ classdef TestBenchmarkWebsiteDocumentation < matlab.unittest.TestCase
                 testCase.verifySubstring(chart,"viewBox");
                 testCase.verifySubstring(chart,"constant nonhydrostatic transform");
                 testCase.verifyEqual(numel(strfind(chart,'class="legend-label"')),3);
+                testCase.verifySubstring(chart,'class="legend-label" x="72" y="485"');
             end
             horizontalChart = string(fileread(fullfile(firstBuild,"assets","benchmarks","runtime-horizontal.svg")));
             testCase.verifySubstring(horizontalChart,"Horizontal grid size (Nx = Ny)");
