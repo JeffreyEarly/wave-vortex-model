@@ -1,10 +1,10 @@
 cmake_minimum_required(VERSION 3.20)
 project(WaveVortexKernel VERSION 0.1.0 LANGUAGES CXX)
 find_package(Threads REQUIRED)
-set(WV_KERNEL_ISSUE130_VARIANT 0 CACHE STRING "Author-only issue #130 screening variant (0, 2, or 3)")
-set_property(CACHE WV_KERNEL_ISSUE130_VARIANT PROPERTY STRINGS 0 2 3)
-if(NOT WV_KERNEL_ISSUE130_VARIANT MATCHES "^(0|2|3)$")
-    message(FATAL_ERROR "WV_KERNEL_ISSUE130_VARIANT must be 0, 2, or 3")
+set(WV_KERNEL_ISSUE130_VARIANT 0 CACHE STRING "Author-only issue #130 screening variant (0, 2, 3, or 4)")
+set_property(CACHE WV_KERNEL_ISSUE130_VARIANT PROPERTY STRINGS 0 2 3 4)
+if(NOT WV_KERNEL_ISSUE130_VARIANT MATCHES "^(0|2|3|4)$")
+    message(FATAL_ERROR "WV_KERNEL_ISSUE130_VARIANT must be 0, 2, 3, or 4")
 endif()
 
 add_library(WaveVortexKernel STATIC

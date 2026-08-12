@@ -73,6 +73,7 @@ private:
     WVKernelStatus transformWaveVortexToUVWImpl(const WVState& state, WVRealFieldBundleView& fields, const WVCoefficients* evolvedCoefficients, WVComplexConstView phaseValues = {});
     WVKernelStatus transformToSpatialDomainWithDerivativesImpl(const WVCoefficients& evolvedCoefficients, std::size_t target, WVRealFieldBundleView& derivatives);
     WVKernelStatus transformToSpatialDomainWithDerivativesFromStateImpl(const WVState& state, WVComplexConstView phaseValues, std::size_t target, WVRealFieldBundleView& derivatives);
+    WVKernelStatus transformSingleDerivativeFromStateImpl(const WVState& state, WVComplexConstView phaseValues, std::size_t target, std::size_t axis, WVRealFieldBundleView& derivative);
     WVKernelStatus projectSingleFluxTargetImpl(const WVRealFieldBundleConstView& field, std::size_t target, WVComplexConstView phaseValues, WVFlux& flux);
     WVTransformConstantStratificationDescriptor descriptor_;
     std::unique_ptr<WVFFTEngine> engine_;

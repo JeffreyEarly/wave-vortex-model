@@ -218,7 +218,9 @@ void testNonlinearFlux(bool hydrostatic) {
     for (const auto* array : {&Fp,&Fm,&F0}) {
         for (const auto& value : *array) require(std::isfinite(value.real) && std::isfinite(value.imag),"nonlinear flux produced a non-finite coefficient");
     }
-#if WV_KERNEL_ISSUE130_VARIANT == 3
+#if WV_KERNEL_ISSUE130_VARIANT == 4
+    const std::size_t executionsPerCall = hydrostatic ? 27 : 35;
+#elif WV_KERNEL_ISSUE130_VARIANT == 3
     const std::size_t executionsPerCall = hydrostatic ? 18 : 23;
 #else
     const std::size_t executionsPerCall = hydrostatic ? 15 : 18;
@@ -230,13 +232,19 @@ void testNonlinearFlux(bool hydrostatic) {
     require(std::string(kernel->nonlinearFluxScheduleIdentifier()) == "issue130-velocity-only","unexpected nonlinear-flux schedule identifier");
 #elif WV_KERNEL_ISSUE130_VARIANT == 3
     require(std::string(kernel->nonlinearFluxScheduleIdentifier()) == "issue130-streamed-target-three-channel","unexpected nonlinear-flux schedule identifier");
+#elif WV_KERNEL_ISSUE130_VARIANT == 4
+    require(std::string(kernel->nonlinearFluxScheduleIdentifier()) == "issue130-streamed-target-single-output","unexpected nonlinear-flux schedule identifier");
 #else
     require(std::string(kernel->nonlinearFluxScheduleIdentifier()) == "sequential-phase-once","unexpected nonlinear-flux schedule identifier");
 #endif
     const auto halfFieldBytes = (config.Nx / 2 + 1) * config.Ny * config.Nz * sizeof(WVComplex64);
     const auto realFieldBytes = config.Nx * config.Ny * config.Nz * sizeof(double);
     require(kernel->metrics().halfSpectrumScratchCapacityBytes == 4 * halfFieldBytes,"unexpected half-spectrum scratch capacity");
-#if WV_KERNEL_ISSUE130_VARIANT == 3
+#if WV_KERNEL_ISSUE130_VARIANT == 4
+    require(kernel->metrics().realScratchCapacityBytes == 5 * realFieldBytes,"single-output scratch is not 4H+5R");
+    require(kernel->phaseReservationBytes() == halfFieldBytes,"single-output phase reservation is not one H region");
+    require(kernel->metrics().planCount == 18,"unexpected single-output plan count");
+#elif WV_KERNEL_ISSUE130_VARIANT == 3
     require(kernel->metrics().realScratchCapacityBytes == 6 * realFieldBytes,"streamed target scratch is not 4H+6R");
     require(kernel->phaseReservationBytes() == halfFieldBytes,"streamed target phase reservation is not one H region");
     require(kernel->metrics().planCount == 17,"unexpected streamed target plan count");

@@ -1,0 +1,446 @@
+{
+  "schemaVersion": "1.0.0",
+  "status": "complete",
+  "generatedAtUTC": "2026-08-12T05:20:11.422Z",
+  "completedAtUTC": "2026-08-12T05:20:31.807Z",
+  "source": {
+    "commit": "db3fbe30600f653718294a35008511f01c7e5162",
+    "tree": "7188ae48ca755779dad56bd95ac959ecddfe4b37",
+    "isDirty": false
+  },
+  "environment": {
+    "host": "Lyra",
+    "matlabRelease": "2025b",
+    "architecture": "maca64",
+    "provider": "native-neon-pthreads",
+    "fftwVersion": "3.3.11",
+    "threadBackend": "pthreads",
+    "threadCount": 16,
+    "baseLibrary": "/private/tmp/issue128-native-cache/providers/native-neon-pthreads-d2b85f7a608fbedd/install/lib/libfftw3.3.dylib",
+    "threadLibrary": "/private/tmp/issue128-native-cache/providers/native-neon-pthreads-d2b85f7a608fbedd/install/lib/libfftw3_threads.3.dylib",
+    "baseLibrarySha256": "8314e2296212c771a81ad52f3f7ac97fb8df700be45070c583f689725cb179d5",
+    "threadLibrarySha256": "b5f847b65919a3e2c1ec6aaa4fe127cd129f6400f20d244dd0fca0c1e3e11199"
+  },
+  "configuration": {
+    "processCount": 1,
+    "warmupCount": 1,
+    "sampleCount": 3,
+    "sizes": [
+      256,
+      256,
+      65
+    ],
+    "hydrostatic": [
+      true,
+      false
+    ],
+    "largeCasesRun": false,
+    "freshProcessRSSRun": false,
+    "fullTestSuiteRun": false,
+    "stopRegression": 0.05,
+    "correctnessTolerance": 1E-12,
+    "timingEnabled": true
+  },
+  "builds": [
+    {
+      "id": "control-be0f789",
+      "number": 0,
+      "module": "wv_issue130_control",
+      "mexPath": "/private/tmp/issue130-lyra-6ZrRPy/mex/wv_issue130_control.mexmaca64",
+      "mexSha256": "37ad2c851c2d3ba8929517f7985e864777f2489e6bde81747186d46930543124"
+    },
+    {
+      "id": "velocity-only",
+      "number": 2,
+      "module": "wv_issue130_velocity_only",
+      "mexPath": "/private/tmp/issue130-lyra-6ZrRPy/mex/wv_issue130_velocity_only.mexmaca64",
+      "mexSha256": "e12e4ce3eff6c94608465f65c2f30fe0605ddd07e49fdcfd7eafd3ab4bc75961"
+    },
+    {
+      "id": "streamed-target-three-channel",
+      "number": 3,
+      "module": "wv_issue130_streamed_three_channel",
+      "mexPath": "/private/tmp/issue130-lyra-6ZrRPy/mex/wv_issue130_streamed_three_channel.mexmaca64",
+      "mexSha256": "df4ce6871917d2921ae8749e95570cee98308a2786ab32ff01aa0eab777ee9c9"
+    }
+  ],
+  "cases": [
+    {
+      "id": "constant-hydrostatic-256x256x65",
+      "Nxyz": [
+        256,
+        256,
+        65
+      ],
+      "isHydrostatic": true,
+      "seed": 1.302561E+6,
+      "variants": [
+        {
+          "id": "control-be0f789",
+          "number": 0,
+          "module": "wv_issue130_control",
+          "mexSha256": "37ad2c851c2d3ba8929517f7985e864777f2489e6bde81747186d46930543124",
+          "status": "complete",
+          "correctnessPassed": true,
+          "errors": {
+            "Fp": 8.9091392911286331E-15,
+            "Fm": 9.2446664216537075E-15,
+            "F0": 7.10716100078818E-15
+          },
+          "maximumRelativeError": 9.2446664216537075E-15,
+          "warmupCount": 1,
+          "sampleCount": 3,
+          "totalSamplesSeconds": [
+            0.066473541666666663,
+            0.065873333333333339,
+            0.066917875
+          ],
+          "totalMedianSeconds": 0.066473541666666663,
+          "internalSamplesSeconds": [
+            0.066364208,
+            0.065681583,
+            0.066704583
+          ],
+          "internalMedianSeconds": 0.066364208,
+          "completeCallRegression": null,
+          "stoppedByRule": false,
+          "metrics": {
+            "screeningVariant": "control-be0f789",
+            "nonlinearFluxSchedule": "sequential-phase-once",
+            "planCount": 14,
+            "executionCount": 15,
+            "horizontalExecutionCount": 5,
+            "verticalExecutionCount": 10,
+            "phaseEvaluationCount": 480438,
+            "halfSpectrumScratchBytes": 1.3737984E+8,
+            "realScratchBytes": 2.7262976E+8,
+            "scratchBytes": 4.100096E+8,
+            "phaseReservationBytes": 0,
+            "persistentBytes": 5.23022247E+8,
+            "knownMaximumLiveOwnedBytes": 5.46083271E+8,
+            "stages": {
+              "phaseSeconds": 0.002156166,
+              "reconstructionSeconds": 0.012831417,
+              "derivativeReconstructionSeconds": 0.028823958,
+              "productSeconds": 0.0068925830000000007,
+              "projectionSeconds": 0.013507875,
+              "coefficientAssemblySeconds": 0.001411333,
+              "derivativeCoefficientAssemblySeconds": 0.002303043,
+              "coefficientProjectionSeconds": 0.001636792
+            }
+          }
+        },
+        {
+          "id": "velocity-only",
+          "number": 2,
+          "module": "wv_issue130_velocity_only",
+          "mexSha256": "e12e4ce3eff6c94608465f65c2f30fe0605ddd07e49fdcfd7eafd3ab4bc75961",
+          "status": "complete",
+          "correctnessPassed": true,
+          "errors": {
+            "Fp": 8.9091392911286331E-15,
+            "Fm": 9.2446664216537075E-15,
+            "F0": 7.10716100078818E-15
+          },
+          "maximumRelativeError": 9.2446664216537075E-15,
+          "warmupCount": 1,
+          "sampleCount": 3,
+          "totalSamplesSeconds": [
+            0.061512875,
+            0.06249925,
+            0.061370916666666664
+          ],
+          "totalMedianSeconds": 0.061512875,
+          "internalSamplesSeconds": [
+            0.061216167,
+            0.062265417,
+            0.061127125
+          ],
+          "internalMedianSeconds": 0.061216167,
+          "completeCallRegression": -0.074626182723075862,
+          "stoppedByRule": false,
+          "metrics": {
+            "screeningVariant": "velocity-only",
+            "nonlinearFluxSchedule": "issue130-velocity-only",
+            "planCount": 14,
+            "executionCount": 15,
+            "horizontalExecutionCount": 5,
+            "verticalExecutionCount": 10,
+            "phaseEvaluationCount": 480438,
+            "halfSpectrumScratchBytes": 1.3737984E+8,
+            "realScratchBytes": 2.7262976E+8,
+            "scratchBytes": 4.100096E+8,
+            "phaseReservationBytes": 0,
+            "persistentBytes": 5.23022247E+8,
+            "knownMaximumLiveOwnedBytes": 5.46083271E+8,
+            "stages": {
+              "phaseSeconds": 0.001540166,
+              "reconstructionSeconds": 0.01015325,
+              "derivativeReconstructionSeconds": 0.029377333,
+              "productSeconds": 0.006872583,
+              "projectionSeconds": 0.013512334,
+              "coefficientAssemblySeconds": 0.001090583,
+              "derivativeCoefficientAssemblySeconds": 0.002292583,
+              "coefficientProjectionSeconds": 0.00145775
+            }
+          }
+        },
+        {
+          "id": "streamed-target-three-channel",
+          "number": 3,
+          "module": "wv_issue130_streamed_three_channel",
+          "mexSha256": "df4ce6871917d2921ae8749e95570cee98308a2786ab32ff01aa0eab777ee9c9",
+          "status": "complete",
+          "correctnessPassed": true,
+          "errors": {
+            "Fp": 8.951085513040255E-15,
+            "Fm": 9.2221156754775031E-15,
+            "F0": 7.0938308550610454E-15
+          },
+          "maximumRelativeError": 9.2221156754775031E-15,
+          "warmupCount": 1,
+          "sampleCount": 3,
+          "totalSamplesSeconds": [
+            0.060351625,
+            0.061592291666666667,
+            0.060040583333333335
+          ],
+          "totalMedianSeconds": 0.060351625,
+          "internalSamplesSeconds": [
+            0.060098958,
+            0.061354917,
+            0.059766417
+          ],
+          "internalMedianSeconds": 0.060098958,
+          "completeCallRegression": -0.092095539265309112,
+          "stoppedByRule": false,
+          "metrics": {
+            "screeningVariant": "streamed-target-three-channel",
+            "nonlinearFluxSchedule": "issue130-streamed-target-three-channel",
+            "planCount": 17,
+            "executionCount": 18,
+            "horizontalExecutionCount": 7,
+            "verticalExecutionCount": 11,
+            "phaseEvaluationCount": 480438,
+            "halfSpectrumScratchBytes": 1.3737984E+8,
+            "realScratchBytes": 2.0447232E+8,
+            "scratchBytes": 3.4185216E+8,
+            "phaseReservationBytes": 3.434496E+7,
+            "persistentBytes": 4.54864879E+8,
+            "knownMaximumLiveOwnedBytes": 4.77925903E+8,
+            "stages": {
+              "phaseSeconds": 0.001485916,
+              "reconstructionSeconds": 0.0103315,
+              "derivativeReconstructionSeconds": 0.029483416,
+              "productSeconds": 0.006801457,
+              "projectionSeconds": 0.011230168,
+              "coefficientAssemblySeconds": 0.001333458,
+              "derivativeCoefficientAssemblySeconds": 0.002293084,
+              "coefficientProjectionSeconds": 0
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "constant-nonhydrostatic-256x256x65",
+      "Nxyz": [
+        256,
+        256,
+        65
+      ],
+      "isHydrostatic": false,
+      "seed": 1.302562E+6,
+      "variants": [
+        {
+          "id": "control-be0f789",
+          "number": 0,
+          "module": "wv_issue130_control",
+          "mexSha256": "37ad2c851c2d3ba8929517f7985e864777f2489e6bde81747186d46930543124",
+          "status": "complete",
+          "correctnessPassed": true,
+          "errors": {
+            "Fp": 8.2195663540397183E-15,
+            "Fm": 7.8809457261132432E-15,
+            "F0": 7.629144326540792E-15
+          },
+          "maximumRelativeError": 8.2195663540397183E-15,
+          "warmupCount": 1,
+          "sampleCount": 3,
+          "totalSamplesSeconds": [
+            0.08192166666666667,
+            0.080105541666666669,
+            0.080680666666666664
+          ],
+          "totalMedianSeconds": 0.080680666666666664,
+          "internalSamplesSeconds": [
+            0.081683917,
+            0.079863166,
+            0.080416
+          ],
+          "internalMedianSeconds": 0.080416,
+          "completeCallRegression": null,
+          "stoppedByRule": false,
+          "metrics": {
+            "screeningVariant": "control-be0f789",
+            "nonlinearFluxSchedule": "sequential-phase-once",
+            "planCount": 14,
+            "executionCount": 18,
+            "horizontalExecutionCount": 6,
+            "verticalExecutionCount": 12,
+            "phaseEvaluationCount": 480438,
+            "halfSpectrumScratchBytes": 1.3737984E+8,
+            "realScratchBytes": 3.0670848E+8,
+            "scratchBytes": 4.4408832E+8,
+            "phaseReservationBytes": 0,
+            "persistentBytes": 5.57100967E+8,
+            "knownMaximumLiveOwnedBytes": 5.80161991E+8,
+            "stages": {
+              "phaseSeconds": 0.001486584,
+              "reconstructionSeconds": 0.01268425,
+              "derivativeReconstructionSeconds": 0.038315625000000006,
+              "productSeconds": 0.009086292000000001,
+              "projectionSeconds": 0.018880125,
+              "coefficientAssemblySeconds": 0.001377,
+              "derivativeCoefficientAssemblySeconds": 0.003062833,
+              "coefficientProjectionSeconds": 0.00192925
+            }
+          }
+        },
+        {
+          "id": "velocity-only",
+          "number": 2,
+          "module": "wv_issue130_velocity_only",
+          "mexSha256": "e12e4ce3eff6c94608465f65c2f30fe0605ddd07e49fdcfd7eafd3ab4bc75961",
+          "status": "complete",
+          "correctnessPassed": true,
+          "errors": {
+            "Fp": 8.2195663540397183E-15,
+            "Fm": 7.8809457261132432E-15,
+            "F0": 7.629144326540792E-15
+          },
+          "maximumRelativeError": 8.2195663540397183E-15,
+          "warmupCount": 1,
+          "sampleCount": 3,
+          "totalSamplesSeconds": [
+            0.068592,
+            0.068880166666666673,
+            0.069351166666666672
+          ],
+          "totalMedianSeconds": 0.068880166666666673,
+          "internalSamplesSeconds": [
+            0.06835,
+            0.06864725,
+            0.069114416
+          ],
+          "internalMedianSeconds": 0.06864725,
+          "completeCallRegression": -0.14626180580229864,
+          "stoppedByRule": false,
+          "metrics": {
+            "screeningVariant": "velocity-only",
+            "nonlinearFluxSchedule": "issue130-velocity-only",
+            "planCount": 14,
+            "executionCount": 18,
+            "horizontalExecutionCount": 6,
+            "verticalExecutionCount": 12,
+            "phaseEvaluationCount": 480438,
+            "halfSpectrumScratchBytes": 1.3737984E+8,
+            "realScratchBytes": 3.0670848E+8,
+            "scratchBytes": 4.4408832E+8,
+            "phaseReservationBytes": 0,
+            "persistentBytes": 5.57100967E+8,
+            "knownMaximumLiveOwnedBytes": 5.80161991E+8,
+            "stages": {
+              "phaseSeconds": 0.001482958,
+              "reconstructionSeconds": 0.008567291,
+              "derivativeReconstructionSeconds": 0.032332125,
+              "productSeconds": 0.008878959,
+              "projectionSeconds": 0.016886542,
+              "coefficientAssemblySeconds": 0.001160917,
+              "derivativeCoefficientAssemblySeconds": 0.0030170830000000003,
+              "coefficientProjectionSeconds": 0.001912625
+            }
+          }
+        },
+        {
+          "id": "streamed-target-three-channel",
+          "number": 3,
+          "module": "wv_issue130_streamed_three_channel",
+          "mexSha256": "df4ce6871917d2921ae8749e95570cee98308a2786ab32ff01aa0eab777ee9c9",
+          "status": "complete",
+          "correctnessPassed": true,
+          "errors": {
+            "Fp": 8.2330843333285624E-15,
+            "Fm": 7.8810503291812055E-15,
+            "F0": 7.6210875279737853E-15
+          },
+          "maximumRelativeError": 8.2330843333285624E-15,
+          "warmupCount": 1,
+          "sampleCount": 3,
+          "totalSamplesSeconds": [
+            0.064203333333333334,
+            0.064213458333333334,
+            0.064041
+          ],
+          "totalMedianSeconds": 0.064203333333333334,
+          "internalSamplesSeconds": [
+            0.063969959,
+            0.063986875,
+            0.06381075
+          ],
+          "internalMedianSeconds": 0.063969959,
+          "completeCallRegression": -0.20422901810429595,
+          "stoppedByRule": false,
+          "metrics": {
+            "screeningVariant": "streamed-target-three-channel",
+            "nonlinearFluxSchedule": "issue130-streamed-target-three-channel",
+            "planCount": 17,
+            "executionCount": 23,
+            "horizontalExecutionCount": 9,
+            "verticalExecutionCount": 14,
+            "phaseEvaluationCount": 480438,
+            "halfSpectrumScratchBytes": 1.3737984E+8,
+            "realScratchBytes": 2.0447232E+8,
+            "scratchBytes": 3.4185216E+8,
+            "phaseReservationBytes": 3.434496E+7,
+            "persistentBytes": 4.54864879E+8,
+            "knownMaximumLiveOwnedBytes": 4.77925903E+8,
+            "stages": {
+              "phaseSeconds": 0.001434584,
+              "reconstructionSeconds": 0.008587334,
+              "derivativeReconstructionSeconds": 0.031678208,
+              "productSeconds": 0.009373375,
+              "projectionSeconds": 0.012891959,
+              "coefficientAssemblySeconds": 0.001300875,
+              "derivativeCoefficientAssemblySeconds": 0.00294575,
+              "coefficientProjectionSeconds": 0
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "candidates": [
+    {
+      "id": "control-be0f789",
+      "correctnessPassed": true,
+      "maximumCompleteCallRegression": null,
+      "stoppedByRule": false,
+      "advanceToDonut": true
+    },
+    {
+      "id": "velocity-only",
+      "correctnessPassed": true,
+      "maximumCompleteCallRegression": -0.074626182723075862,
+      "stoppedByRule": false,
+      "advanceToDonut": true
+    },
+    {
+      "id": "streamed-target-three-channel",
+      "correctnessPassed": true,
+      "maximumCompleteCallRegression": -0.092095539265309112,
+      "stoppedByRule": false,
+      "advanceToDonut": true
+    }
+  ]
+}
