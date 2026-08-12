@@ -6,6 +6,7 @@ add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/../../CompiledKernel ${CMAKE_CURRENT_
 
 add_executable(TestWVKernelContract tests/TestWVKernelContract.cpp tests/WVReferenceFFTEngine.cpp)
 target_link_libraries(TestWVKernelContract PRIVATE WaveVortex::Kernel)
+target_include_directories(TestWVKernelContract PRIVATE ${CMAKE_CURRENT_LIST_DIR}/../../CompiledKernel/src)
 target_compile_features(TestWVKernelContract PRIVATE cxx_std_17)
 set_target_properties(TestWVKernelContract PROPERTIES CXX_EXTENSIONS OFF)
 if(CMAKE_CXX_COMPILER_ID MATCHES "AppleClang|Clang|GNU")

@@ -16,6 +16,7 @@ mkdir -p "$build_directory"
 compiler=${CXX:-c++}
 "$compiler" -std=c++17 -Wall -Wextra -Wpedantic -Werror -pthread \
     -I "$repository_root/CompiledKernel/include" \
+    -I "$repository_root/CompiledKernel/src" \
     "$repository_root/CompiledKernel/src/WVKernelTypes.cpp" \
     "$repository_root/CompiledKernel/src/WVTransformConstantStratificationKernel.cpp" \
     "$script_directory/tests/WVReferenceFFTEngine.cpp" \

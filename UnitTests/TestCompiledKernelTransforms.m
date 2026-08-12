@@ -127,6 +127,95 @@ classdef TestCompiledKernelTransforms < matlab.unittest.TestCase
             end
         end
 
+        function coefficientFormulaModesMatchMatlab(testCase)
+            definitions = struct( ...
+                "size",{[6 8 7],[6 8 7],[8 6 7],[8 6 7]}, ...
+                "hydrostatic",{true,false,true,false});
+            for definition = definitions
+                wvt = WVTransformConstantStratification([15000 12000 1300],definition.size,isHydrostatic=definition.hydrostatic,shouldAntialias=false);
+                wvt.t = wvt.t0 + 37.5;
+                handle = wv_compiled_transform_mex('create',kernelConfiguration(wvt),1);
+                cleanup = onCleanup(@()deleteKernel(handle));
+                layout = WVFourierStorageLayout(wvt,"hermitian-half",compressedDimension=1);
+                directModes = setdiff(layout.directWVIndices,1,"stable");
+                conjugatedModes = layout.conjugatedWVIndices;
+                testCase.assertNotEmpty(directModes,"A nonzero direct mode is required.");
+                testCase.assertNotEmpty(conjugatedModes,"A conjugated mode is required.");
+                waveJ = min(2,wvt.Nj);
+                mdaJ = min(2,wvt.Nj);
+                probeDefinitions = struct( ...
+                    "name",{"direct wave","conjugated wave","geostrophic","mean-density","inertial"}, ...
+                    "family",{"wave","wave","geostrophic","mean-density","inertial"}, ...
+                    "mode",{directModes(1),conjugatedModes(1),directModes(1),1,1}, ...
+                    "j",{waveJ,waveJ,waveJ,mdaJ,waveJ});
+                for probeDefinition = probeDefinitions
+                    zero = complex(zeros(wvt.spectralMatrixSize));
+                    Ap = zero; Am = zero; A0 = zero;
+                    index = {probeDefinition.j,probeDefinition.mode};
+                    switch probeDefinition.family
+                        case "wave"
+                            Ap(index{:}) = 0.23+0.17i;
+                            Am(index{:}) = -0.11+0.07i;
+                        case {"geostrophic","mean-density"}
+                            A0(index{:}) = 0.19-0.13i;
+                        case "inertial"
+                            Ap(index{:}) = 0.21-0.09i;
+                            Am(index{:}) = conj(Ap(index{:}));
+                    end
+                    actualFields = wv_compiled_transform_mex('inverse',handle,Ap,Am,A0,wvt.t,wvt.t0);
+                    [expectedU,expectedV,expectedW,expectedN] = wvt.transformWaveVortexToUVWEta(Ap,Am,A0,wvt.t);
+                    expectedFields = cat(4,expectedU,expectedV,expectedW,expectedN);
+                    verifyScaled(testCase,actualFields,expectedFields,probeDefinition.name+" inverse");
+                    if definition.hydrostatic
+                        [expectedAp,expectedAm,expectedA0] = wvt.transformUVEtaToWaveVortex(expectedU,expectedV,expectedN);
+                        fields = cat(4,expectedU,expectedV,expectedN);
+                    else
+                        [expectedAp,expectedAm,expectedA0] = wvt.transformUVWEtaToWaveVortex(expectedU,expectedV,expectedW,expectedN);
+                        fields = expectedFields;
+                    end
+                    [actualAp,actualAm,actualA0] = wv_compiled_transform_mex('forward',handle,fields,wvt.t,wvt.t0);
+                    verifyScaled(testCase,actualAp,expectedAp,probeDefinition.name+" Ap projection");
+                    verifyScaled(testCase,actualAm,expectedAm,probeDefinition.name+" Am projection");
+                    verifyScaled(testCase,actualA0,expectedA0,probeDefinition.name+" A0 projection");
+                end
+
+                Apm = complex(zeros(wvt.spectralMatrixSize));
+                A0 = complex(zeros(wvt.spectralMatrixSize));
+                Apm(waveJ,directModes(1)) = 0.17-0.12i;
+                Apm(waveJ,conjugatedModes(1)) = -0.08+0.14i;
+                A0(mdaJ,1) = 0.09+0.03i;
+                [value,x,y,z] = wvt.transformToSpatialDomainWithFAllDerivatives(Apm=Apm,A0=A0);
+                verifyScaled(testCase,wv_compiled_transform_mex('fAll',handle,Apm,A0),cat(4,value,x,y,z),"isolated F derivatives");
+                [value,x,y,z] = wvt.transformToSpatialDomainWithGAllDerivatives(Apm=Apm,A0=A0);
+                verifyScaled(testCase,wv_compiled_transform_mex('gAll',handle,Apm,A0),cat(4,value,x,y,z),"isolated G derivatives");
+
+                fields = zeros([wvt.spatialMatrixSize,3+~definition.hydrostatic]);
+                fields(:,:,:,1) = 0.17;
+                fields(:,:,:,2) = -0.11;
+                fields(:,:,:,end) = 0.07;
+                verifyForwardFields(testCase,wvt,handle,fields,"zero mode");
+                if mod(wvt.Nx,2)==0
+                    fields = zeros(size(fields));
+                    fields(:,:,:,1) = repmat(reshape((-1).^(0:wvt.Nx-1),[],1,1),1,wvt.Ny,wvt.Nz);
+                    verifyForwardFields(testCase,wvt,handle,fields,"x Nyquist mode");
+                end
+                if mod(wvt.Ny,2)==0
+                    fields = zeros(size(fields));
+                    fields(:,:,:,2) = repmat(reshape((-1).^(0:wvt.Ny-1),1,[],1),wvt.Nx,1,wvt.Nz);
+                    verifyForwardFields(testCase,wvt,handle,fields,"y Nyquist mode");
+                end
+                metrics = wv_compiled_transform_mex('metrics',handle);
+                testCase.verifyEqual(metrics.contractVersion,4);
+                testCase.verifyEqual([metrics.Nj metrics.Nkl],wvt.spectralMatrixSize);
+                testCase.verifyEqual(metrics.planCount,17);
+                testCase.verifyEqual(metrics.halfSpectrumScratchCapacityBytes,4*(floor(wvt.Nx/2)+1)*wvt.Ny*wvt.Nz*16);
+                testCase.verifyEqual(metrics.realScratchCapacityBytes,6*prod(wvt.spatialMatrixSize)*8);
+                testCase.verifyEqual(metrics.coefficientWorkerCount,2);
+                testCase.verifyEqual(metrics.persistentFullHermitianBytes,0);
+                clear cleanup
+            end
+        end
+
         function transformBenchmarkProducesArtifacts(testCase)
             repositoryRoot = fileparts(fileparts(mfilename("fullpath")));
             addpath(fullfile(repositoryRoot,"Benchmarks"));
@@ -282,6 +371,24 @@ function verifyRelative(testCase,actual,expected,label)
 expectedMaximum = max(max(abs(expected(:)),[],"omitmissing"),realmin);
 error = max(abs(actual(:)-expected(:)),[],"omitmissing")/expectedMaximum;
 testCase.verifyLessThanOrEqual(error,1e-12,label+" relative error was "+error+", maximum ratio "+max(abs(actual(:)))/expectedMaximum);
+end
+
+function verifyScaled(testCase,actual,expected,label)
+scale = max(max(abs(expected(:)),[],"omitmissing"),1);
+error = max(abs(actual(:)-expected(:)),[],"omitmissing")/scale;
+testCase.verifyLessThanOrEqual(error,1e-12,label+" scaled error was "+error);
+end
+
+function verifyForwardFields(testCase,wvt,handle,fields,label)
+if wvt.isHydrostatic
+    [expectedAp,expectedAm,expectedA0] = wvt.transformUVEtaToWaveVortex(fields(:,:,:,1),fields(:,:,:,2),fields(:,:,:,3));
+else
+    [expectedAp,expectedAm,expectedA0] = wvt.transformUVWEtaToWaveVortex(fields(:,:,:,1),fields(:,:,:,2),fields(:,:,:,3),fields(:,:,:,4));
+end
+[actualAp,actualAm,actualA0] = wv_compiled_transform_mex('forward',handle,fields,wvt.t,wvt.t0);
+verifyScaled(testCase,actualAp,expectedAp,label+" Ap projection");
+verifyScaled(testCase,actualAm,expectedAm,label+" Am projection");
+verifyScaled(testCase,actualA0,expectedA0,label+" A0 projection");
 end
 
 function [Fp,Fm,F0] = executeNonlinearFlux(handle,wvt)

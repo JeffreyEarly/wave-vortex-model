@@ -1,4 +1,5 @@
 #include "WaveVortexKernel/WVTransformConstantStratificationKernel.hpp"
+#include "WVCoefficientFormulas.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -51,20 +52,19 @@ enum PlanIndex : std::size_t {
     planCount
 };
 
-WVComplex64 add(WVComplex64 a, WVComplex64 b) { return {a.real + b.real, a.imag + b.imag}; }
-WVComplex64 subtract(WVComplex64 a, WVComplex64 b) { return {a.real - b.real, a.imag - b.imag}; }
-WVComplex64 multiply(WVComplex64 a, WVComplex64 b) { return {a.real * b.real - a.imag * b.imag, a.real * b.imag + a.imag * b.real}; }
-WVComplex64 multiply(WVComplex64 a, double b) { return {a.real * b, a.imag * b}; }
-WVComplex64 conjugate(WVComplex64 a) { return {a.real, -a.imag}; }
-WVComplex64 phase(double angle) { return {std::cos(angle), std::sin(angle)}; }
-
-template <std::size_t Target>
-WVComplex64 coefficientValueForField(const WVConstantStratificationModes& modes, std::size_t index, WVComplex64 Ap, WVComplex64 Am, WVComplex64 A0) {
-    if constexpr (Target == 0) return add(add(multiply(modes.UApField[index],Ap),multiply(conjugate(modes.UApField[index]),Am)),multiply(modes.UA0Field[index],A0));
-    if constexpr (Target == 1) return add(add(multiply(modes.VApField[index],Ap),multiply(conjugate(modes.VApField[index]),Am)),multiply(modes.VA0Field[index],A0));
-    if constexpr (Target == 2) return add(multiply(modes.WApField[index],Ap),multiply(modes.WApField[index],Am));
-    return add(add(multiply(Ap,modes.NApField[index]),multiply(Am,-modes.NApField[index])),multiply(A0,modes.NA0Field[index]));
-}
+using detail::EvolvedWaveVortexCoefficients;
+using detail::add;
+using detail::atReferenceTime;
+using detail::buoyancyProjection;
+using detail::coefficientValueForField;
+using detail::conjugate;
+using detail::evolveWaveVortexCoefficients;
+using detail::geostrophicCoefficient;
+using detail::inertialCoefficientPair;
+using detail::multiply;
+using detail::phase;
+using detail::subtract;
+using detail::waveCoefficientPair;
 
 std::size_t checkedProduct(std::size_t first, std::size_t second) {
     if (first != 0 && second > std::numeric_limits<std::size_t>::max() / first) throw std::overflow_error("kernel scratch size overflow");
@@ -206,20 +206,12 @@ void normalizeInverseDST(WVComplex64* data, std::size_t Nz, std::size_t rows, st
     }
 }
 
+template <bool Conjugated>
 WVComplex64 storedValue(const WVComplex64* half, const WVHalfSpectrumMappings& mapping, std::size_t Nz, std::size_t channels, std::size_t field, std::size_t mode, std::size_t z) {
     auto value = half[z + Nz * field + Nz * channels * mapping.storageRowsByWVIndex[mode]];
-    return mapping.conjugatesStoredValueByWVIndex[mode] ? conjugate(value) : value;
+    if constexpr (Conjugated) value = conjugate(value);
+    return value;
 }
-
-void storeWVValue(WVComplex64* half, const WVHalfSpectrumMappings& mapping, std::size_t Nz, std::size_t channels, std::size_t field, std::size_t mode, std::size_t z, WVComplex64 value) {
-    half[z + Nz * field + Nz * channels * mapping.storageRowsByWVIndex[mode]] = mapping.conjugatesStoredValueByWVIndex[mode] ? conjugate(value) : value;
-}
-
-struct EvolvedWaveVortexCoefficients {
-    WVComplex64 Ap;
-    WVComplex64 Am;
-    WVComplex64 A0;
-};
 
 template <bool Conjugated, typename CoefficientSource>
 void assembleFieldSpectraForMode(
@@ -235,10 +227,10 @@ void assembleFieldSpectraForMode(
         const auto index = j + Nj * mode;
         const auto coefficients = source(index);
         WVComplex64 values[] = {
-            coefficientValueForField<0>(modes,index,coefficients.Ap,coefficients.Am,coefficients.A0),
-            coefficientValueForField<1>(modes,index,coefficients.Ap,coefficients.Am,coefficients.A0),
-            coefficientValueForField<2>(modes,index,coefficients.Ap,coefficients.Am,coefficients.A0),
-            coefficientValueForField<3>(modes,index,coefficients.Ap,coefficients.Am,coefficients.A0)};
+            coefficientValueForField<0>(modes,index,coefficients),
+            coefficientValueForField<1>(modes,index,coefficients),
+            coefficientValueForField<2>(modes,index,coefficients),
+            coefficientValueForField<3>(modes,index,coefficients)};
         for (std::size_t target = 0; target < 4; ++target) {
             // FFTW's DCT-I/DST-I inverse is unnormalized. By linearity, applying
             // the required factor here avoids rewriting the complete dense
@@ -249,37 +241,26 @@ void assembleFieldSpectraForMode(
     }
 }
 
-template <std::size_t Target, bool Conjugated>
+template <std::size_t Target, bool Conjugated, typename CoefficientSource>
 void assembleDerivativeSpectraForMode(
     WVComplex64* half,
     const WVHalfSpectrumMappings& mapping,
     const WVConstantStratificationModes& modes,
     const std::vector<WVFourierMode>& horizontalModes,
-    const WVCoefficients& coefficients,
     std::size_t Nz,
     std::size_t Nj,
-    std::size_t mode) {
+    std::size_t mode,
+    CoefficientSource&& source) {
     const auto storageRow = mapping.storageRowsByWVIndex[mode];
     const auto& horizontal = horizontalModes[mode];
     constexpr bool cosine = Target < 2;
     for (std::size_t j = 0; j < Nj; ++j) {
         const auto index = j + Nj * mode;
-        auto value = coefficientValueForField<Target>(modes,index,coefficients.Ap.data[index],coefficients.Am.data[index],coefficients.A0.data[index]);
-        if constexpr (Conjugated) value = conjugate(value);
-        auto x = multiply(value,WVComplex64{0.0,Conjugated ? -horizontal.k : horizontal.k});
-        auto y = multiply(value,WVComplex64{0.0,Conjugated ? -horizontal.l : horizontal.l});
-        auto z = multiply(value,cosine ? -modes.verticalWavenumber[j] : modes.verticalWavenumber[j]);
-        if constexpr (cosine) {
-            x = multiply(x,0.5); y = multiply(y,0.5);
-            z = j == 0 || j + 1 == Nz ? WVComplex64{} : multiply(z,0.5);
-        } else {
-            x = j == 0 || j + 1 == Nz ? WVComplex64{} : multiply(x,0.5);
-            y = j == 0 || j + 1 == Nz ? WVComplex64{} : multiply(y,0.5);
-            z = multiply(z,0.5);
-        }
-        half[j + Nz * 0 + Nz * 3 * storageRow] = x;
-        half[j + Nz * 1 + Nz * 3 * storageRow] = y;
-        half[j + Nz * 2 + Nz * 3 * storageRow] = z;
+        const auto value = coefficientValueForField<Target>(modes,index,source(index));
+        const auto derivatives = detail::normalizedDerivativeSpectrum<cosine,Conjugated>(value,horizontal.k,horizontal.l,modes.verticalWavenumber[j],j == 0 || j + 1 == Nz);
+        half[j + Nz * 0 + Nz * 3 * storageRow] = derivatives.x;
+        half[j + Nz * 1 + Nz * 3 * storageRow] = derivatives.y;
+        half[j + Nz * 2 + Nz * 3 * storageRow] = derivatives.z;
     }
 }
 
@@ -297,9 +278,9 @@ void assembleVelocitySpectraForMode(
         const auto index = j + Nj * mode;
         const auto coefficients = source(index);
         WVComplex64 values[] = {
-            coefficientValueForField<0>(modes,index,coefficients.Ap,coefficients.Am,coefficients.A0),
-            coefficientValueForField<1>(modes,index,coefficients.Ap,coefficients.Am,coefficients.A0),
-            coefficientValueForField<2>(modes,index,coefficients.Ap,coefficients.Am,coefficients.A0)};
+            coefficientValueForField<0>(modes,index,coefficients),
+            coefficientValueForField<1>(modes,index,coefficients),
+            coefficientValueForField<2>(modes,index,coefficients)};
         values[0] = multiply(values[0],0.5);
         values[1] = multiply(values[1],0.5);
         values[2] = j == 0 || j + 1 == Nz ? WVComplex64{} : multiply(values[2],0.5);
@@ -307,41 +288,143 @@ void assembleVelocitySpectraForMode(
     }
 }
 
-template <std::size_t Target, bool Conjugated>
-void assembleDerivativeSpectraForModeFromState(
+template <bool PhaseProvided>
+WVComplex64 phaseForIndex(const WVConstantStratificationModes& modes, WVComplexConstView phaseValues, std::size_t index, double elapsed) {
+    if constexpr (PhaseProvided) return phaseValues.data[index];
+    return phase(modes.omega[index] * elapsed);
+}
+
+template <bool Conjugated, bool PhaseProvided, bool InertialMode>
+void projectHydrostaticMode(
+    const WVComplex64* half,
+    const WVHalfSpectrumMappings& mapping,
+    const WVConstantStratificationModes& modes,
+    const WVFourierMode& horizontal,
+    WVComplexConstView phaseValues,
+    double elapsed,
+    double horizontalScale,
+    std::size_t Nz,
+    std::size_t Nj,
+    std::size_t mode,
+    WVComplex64* outputAp,
+    WVComplex64* outputAm,
+    WVComplex64* outputA0) {
+    for (std::size_t j = 0; j < Nj; ++j) {
+        const auto index = j + Nj * mode;
+        const auto U = multiply(storedValue<Conjugated>(half,mapping,Nz,3,0,mode,j),horizontalScale);
+        const auto V = multiply(storedValue<Conjugated>(half,mapping,Nz,3,1,mode,j),horizontalScale);
+        const auto N = multiply(storedValue<Conjugated>(half,mapping,Nz,3,2,mode,j),horizontalScale);
+        const auto A0 = geostrophicCoefficient(U,V,N,horizontal.k,horizontal.l,modes.A0FromVorticity[index],modes.A0FromBuoyancy[index]);
+        detail::WaveCoefficientPair coefficients;
+        if constexpr (InertialMode) {
+            coefficients = inertialCoefficientPair(U,V,modes.inertialScale[j]);
+        } else {
+            const auto divergence = add(multiply(U,WVComplex64{0.0,horizontal.k}),multiply(V,WVComplex64{0.0,horizontal.l}));
+            const auto waveContribution = multiply(modes.ApmDProjection[index],divergence);
+            coefficients = waveCoefficientPair(waveContribution,buoyancyProjection(N,A0,modes.NA0Field[index],modes.ApmNProjection[index]));
+        }
+        const auto referenceCoefficients = atReferenceTime(coefficients,phaseForIndex<PhaseProvided>(modes,phaseValues,index,elapsed));
+        outputAp[index] = referenceCoefficients.Ap;
+        outputAm[index] = referenceCoefficients.Am;
+        outputA0[index] = A0;
+    }
+}
+
+template <bool Conjugated, bool PhaseProvided, bool InertialMode>
+void projectNonhydrostaticMode(
+    const WVComplex64* half,
+    const WVHalfSpectrumMappings& mapping,
+    const WVConstantStratificationModes& modes,
+    const WVFourierMode& horizontal,
+    WVComplexConstView phaseValues,
+    double elapsed,
+    double horizontalScale,
+    std::size_t Nz,
+    std::size_t Nj,
+    std::size_t mode,
+    WVComplex64* outputAp,
+    WVComplex64* outputAm,
+    WVComplex64* outputA0) {
+    for (std::size_t j = 0; j < Nj; ++j) {
+        const auto index = j + Nj * mode;
+        const auto U = multiply(storedValue<Conjugated>(half,mapping,Nz,4,0,mode,j),horizontalScale);
+        const auto V = multiply(storedValue<Conjugated>(half,mapping,Nz,4,1,mode,j),horizontalScale);
+        const auto W = multiply(storedValue<Conjugated>(half,mapping,Nz,4,2,mode,j),horizontalScale);
+        const auto N = multiply(storedValue<Conjugated>(half,mapping,Nz,4,3,mode,j),horizontalScale);
+        const auto A0 = geostrophicCoefficient(U,V,N,horizontal.k,horizontal.l,modes.A0FromVorticity[index],modes.A0FromBuoyancy[index]);
+        detail::WaveCoefficientPair coefficients;
+        if constexpr (InertialMode) {
+            coefficients = inertialCoefficientPair(U,V,modes.inertialScale[j]);
+        } else {
+            const auto delta = multiply(add(multiply(U,horizontal.cosAlpha),multiply(V,horizontal.sinAlpha)),modes.ApmDScaled[index]);
+            const auto wBar = multiply(WVComplex64{0.0,(horizontal.Kh / 2.0) * modes.apmWProjectionPrefactor[j]},W);
+            coefficients = waveCoefficientPair(add(delta,wBar),buoyancyProjection(N,A0,modes.NA0Field[index],modes.ApmNProjection[index]));
+        }
+        const auto referenceCoefficients = atReferenceTime(coefficients,phaseForIndex<PhaseProvided>(modes,phaseValues,index,elapsed));
+        outputAp[index] = referenceCoefficients.Ap;
+        outputAm[index] = referenceCoefficients.Am;
+        outputA0[index] = A0;
+    }
+}
+
+template <bool FFamily, bool Conjugated>
+void assembleFieldFamilyDerivativesForMode(
     WVComplex64* half,
     const WVHalfSpectrumMappings& mapping,
     const WVConstantStratificationModes& modes,
-    const std::vector<WVFourierMode>& horizontalModes,
-    const WVState& state,
-    WVComplexConstView phaseValues,
+    const WVFourierMode& horizontal,
+    const WVComplexConstView& Apm,
+    const WVComplexConstView& A0,
     std::size_t Nz,
     std::size_t Nj,
     std::size_t mode) {
     const auto storageRow = mapping.storageRowsByWVIndex[mode];
-    const auto& horizontal = horizontalModes[mode];
-    constexpr bool cosine = Target < 2;
     for (std::size_t j = 0; j < Nj; ++j) {
         const auto index = j + Nj * mode;
-        const auto p = phaseValues.data[index];
-        const auto Ap = multiply(state.coefficients.Ap.data[index],p);
-        const auto Am = multiply(state.coefficients.Am.data[index],conjugate(p));
-        auto value = coefficientValueForField<Target>(modes,index,Ap,Am,state.coefficients.A0.data[index]);
-        if constexpr (Conjugated) value = conjugate(value);
-        auto x = multiply(value,WVComplex64{0.0,Conjugated ? -horizontal.k : horizontal.k});
-        auto y = multiply(value,WVComplex64{0.0,Conjugated ? -horizontal.l : horizontal.l});
-        auto z = multiply(value,cosine ? -modes.verticalWavenumber[j] : modes.verticalWavenumber[j]);
-        if constexpr (cosine) {
-            x = multiply(x,0.5); y = multiply(y,0.5);
-            z = j == 0 || j + 1 == Nz ? WVComplex64{} : multiply(z,0.5);
+        const double waveScale = FFamily ? modes.fWaveScale[index] : modes.gWaveScale[j];
+        const double geostrophicScale = FFamily ? modes.Fg[j] : modes.Gg[j];
+        const auto values = FFamily ? detail::fieldFamilyDerivativeSpectrum<true,Conjugated>(Apm.data[index],A0.data[index],waveScale,geostrophicScale,horizontal.k,horizontal.l,modes.verticalWavenumber[j]) : detail::fieldFamilyDerivativeSpectrum<false,Conjugated>(Apm.data[index],A0.data[index],waveScale,geostrophicScale,horizontal.k,horizontal.l,modes.verticalWavenumber[j]);
+        half[j + Nz * 0 + Nz * 4 * storageRow] = values.value;
+        half[j + Nz * 1 + Nz * 4 * storageRow] = values.x;
+        half[j + Nz * 2 + Nz * 4 * storageRow] = values.y;
+        half[j + Nz * 3 + Nz * 4 * storageRow] = values.z;
+    }
+}
+
+template <std::size_t Target, bool Hydrostatic, bool Conjugated, bool InertialMode>
+void projectFluxTargetMode(
+    const WVComplex64* half,
+    const WVHalfSpectrumMappings& mapping,
+    const WVConstantStratificationModes& modes,
+    const WVFourierMode& horizontal,
+    WVComplexConstView phaseValues,
+    double horizontalScale,
+    std::size_t Nz,
+    std::size_t Nj,
+    std::size_t mode,
+    WVFlux& flux) {
+    for (std::size_t j = 0; j < Nj; ++j) {
+        const auto index = j + Nj * mode;
+        const auto value = multiply(storedValue<Conjugated>(half,mapping,Nz,1,0,mode,j),horizontalScale);
+        WVComplex64 A0Contribution{};
+        if constexpr (Target == 0) A0Contribution = multiply(multiply(value,WVComplex64{0.0,-horizontal.l}),modes.A0FromVorticity[index]);
+        if constexpr (Target == 1) A0Contribution = multiply(multiply(value,WVComplex64{0.0,horizontal.k}),modes.A0FromVorticity[index]);
+        if constexpr (Target == 3) A0Contribution = multiply(value,modes.A0FromBuoyancy[index]);
+        const auto buoyancyValue = subtract(Target == 3 ? value : WVComplex64{},multiply(A0Contribution,modes.NA0Field[index]));
+        const auto buoyancyContribution = multiply(buoyancyValue,modes.ApmNProjection[index]);
+        WVComplex64 waveContribution{};
+        if constexpr (Hydrostatic) {
+            if constexpr (Target == 0) waveContribution = multiply(multiply(value,WVComplex64{0.0,horizontal.k}),modes.ApmDProjection[index]);
+            if constexpr (Target == 1) waveContribution = multiply(multiply(value,WVComplex64{0.0,horizontal.l}),modes.ApmDProjection[index]);
         } else {
-            x = j == 0 || j + 1 == Nz ? WVComplex64{} : multiply(x,0.5);
-            y = j == 0 || j + 1 == Nz ? WVComplex64{} : multiply(y,0.5);
-            z = multiply(z,0.5);
+            if constexpr (Target == 0) waveContribution = multiply(value,horizontal.cosAlpha * modes.ApmDScaled[index]);
+            if constexpr (Target == 1) waveContribution = multiply(value,horizontal.sinAlpha * modes.ApmDScaled[index]);
+            if constexpr (Target == 2) waveContribution = multiply(value,WVComplex64{0.0,(horizontal.Kh / 2.0) * modes.apmWProjectionPrefactor[j]});
         }
-        half[j + Nz * 0 + Nz * 3 * storageRow] = x;
-        half[j + Nz * 1 + Nz * 3 * storageRow] = y;
-        half[j + Nz * 2 + Nz * 3 * storageRow] = z;
+        auto contribution = waveCoefficientPair(waveContribution,buoyancyContribution);
+        if constexpr (InertialMode) contribution = inertialCoefficientPair<Target>(value,modes.inertialScale[j]);
+        detail::accumulateAtReferenceTime(flux.Fp.data[index],flux.Fm.data[index],contribution,phaseValues.data[index]);
+        flux.F0.data[index] = add(flux.F0.data[index],A0Contribution);
     }
 }
 
@@ -492,29 +575,23 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformUVEtaToWaveVort
     auto* WV_KERNEL_RESTRICT outputAp=coefficients.Ap.data; auto* WV_KERNEL_RESTRICT outputAm=coefficients.Am.data; auto* outputA0=coefficients.A0.data;
 
     const auto coefficientProjectionStart = std::chrono::steady_clock::now();
-    forEachModeBlock(descriptor_.Nkl(),[&](std::size_t begin, std::size_t end) { for (std::size_t iMode = begin; iMode < end; ++iMode) for (std::size_t j = 0; j < c.Nj; ++j) {
-        const auto index = j + c.Nj * iMode;
-        const auto U = multiply(storedValue(half,mapping,c.Nz,3,0,iMode,j),horizontalScale);
-        const auto V = multiply(storedValue(half,mapping,c.Nz,3,1,iMode,j),horizontalScale);
-        const auto N = multiply(storedValue(half,mapping,c.Nz,3,2,iMode,j),horizontalScale);
-        const auto& horizontal = descriptor_.fourierModes()[iMode];
-        const auto divergence = add(multiply(U, WVComplex64{0.0, horizontal.k}), multiply(V, WVComplex64{0.0, horizontal.l}));
-        const auto vorticity = subtract(multiply(V, WVComplex64{0.0, horizontal.k}), multiply(U, WVComplex64{0.0, horizontal.l}));
-        const auto A0 = add(multiply(vorticity, modes.A0FromVorticity[index]), multiply(N, modes.A0FromBuoyancy[index]));
-        const auto deltaContribution = multiply(modes.ApmDProjection[index],divergence);
-        const auto buoyancyContribution = multiply(subtract(N,multiply(A0,modes.NA0Field[index])),modes.ApmNProjection[index]);
-        auto Ap = add(deltaContribution,buoyancyContribution);
-        auto Am = subtract(deltaContribution,buoyancyContribution);
-        if (iMode == 0) {
-            const auto inertial = subtract(U, multiply(V, WVComplex64{0.0, 1.0}));
-            Ap = multiply(inertial,modes.inertialScale[j]);
-            Am = conjugate(Ap);
-        }
-        const auto p = phaseValues.data == nullptr ? phase(modes.omega[index] * (t - t0)) : phaseValues.data[index];
-        outputAp[index] = multiply(Ap, conjugate(p));
-        outputAm[index] = multiply(Am, p);
-        outputA0[index] = A0;
-    }});
+    auto projectModes = [&](auto phaseProvidedConstant) {
+        constexpr bool phaseProvided = decltype(phaseProvidedConstant)::value;
+        forEachModeBlock(descriptor_.Nkl(),[&](std::size_t begin, std::size_t end) {
+            for (std::size_t iMode = begin; iMode < end; ++iMode) {
+                const auto& horizontal = descriptor_.fourierModes()[iMode];
+                if (mapping.conjugatesStoredValueByWVIndex[iMode]) {
+                    if (iMode == 0) projectHydrostaticMode<true,phaseProvided,true>(half,mapping,modes,horizontal,phaseValues,t-t0,horizontalScale,c.Nz,c.Nj,iMode,outputAp,outputAm,outputA0);
+                    else projectHydrostaticMode<true,phaseProvided,false>(half,mapping,modes,horizontal,phaseValues,t-t0,horizontalScale,c.Nz,c.Nj,iMode,outputAp,outputAm,outputA0);
+                } else {
+                    if (iMode == 0) projectHydrostaticMode<false,phaseProvided,true>(half,mapping,modes,horizontal,phaseValues,t-t0,horizontalScale,c.Nz,c.Nj,iMode,outputAp,outputAm,outputA0);
+                    else projectHydrostaticMode<false,phaseProvided,false>(half,mapping,modes,horizontal,phaseValues,t-t0,horizontalScale,c.Nz,c.Nj,iMode,outputAp,outputAm,outputA0);
+                }
+            }
+        });
+    };
+    if (phaseValues.data == nullptr) projectModes(std::false_type{});
+    else projectModes(std::true_type{});
     if (stageInstrumentationEnabled_) metrics_.coefficientProjectionSeconds = std::chrono::duration<double>(std::chrono::steady_clock::now() - coefficientProjectionStart).count();
     return WVKernelStatus::ok();
 }
@@ -547,27 +624,23 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformUVWEtaToWaveVor
     const double horizontalScale = 1.0 / static_cast<double>(c.Nx * c.Ny);
     auto* WV_KERNEL_RESTRICT outputAp=coefficients.Ap.data; auto* WV_KERNEL_RESTRICT outputAm=coefficients.Am.data; auto* outputA0=coefficients.A0.data;
     const auto coefficientProjectionStart = std::chrono::steady_clock::now();
-    forEachModeBlock(descriptor_.Nkl(),[&](std::size_t begin, std::size_t end) { for (std::size_t iMode = begin; iMode < end; ++iMode) for (std::size_t j = 0; j < c.Nj; ++j) {
-        const auto index = j + c.Nj * iMode;
-        const auto U = multiply(storedValue(half,mapping,c.Nz,4,0,iMode,j),horizontalScale);
-        const auto V = multiply(storedValue(half,mapping,c.Nz,4,1,iMode,j),horizontalScale);
-        const auto W = multiply(storedValue(half,mapping,c.Nz,4,2,iMode,j),horizontalScale);
-        const auto N = multiply(storedValue(half,mapping,c.Nz,4,3,iMode,j),horizontalScale);
-        const auto& horizontal = descriptor_.fourierModes()[iMode];
-        const auto vorticity = subtract(multiply(V, WVComplex64{0.0, horizontal.k}), multiply(U, WVComplex64{0.0, horizontal.l}));
-        const auto A0 = add(multiply(vorticity,modes.A0FromVorticity[index]),multiply(N,modes.A0FromBuoyancy[index]));
-        const auto delta = multiply(add(multiply(U,horizontal.cosAlpha),multiply(V,horizontal.sinAlpha)),modes.ApmDScaled[index]);
-        const auto wBar = multiply(WVComplex64{0.0, (horizontal.Kh / 2.0) * modes.apmWProjectionPrefactor[j]}, W);
-        const auto buoyancyContribution = multiply(subtract(N,multiply(A0,modes.NA0Field[index])),modes.ApmNProjection[index]);
-        auto Ap = add(add(delta,wBar),buoyancyContribution);
-        auto Am = subtract(add(delta,wBar),buoyancyContribution);
-        if (iMode == 0) {
-            const auto inertial = subtract(U, multiply(V, WVComplex64{0.0, 1.0}));
-            Ap = multiply(inertial,modes.inertialScale[j]);
-            Am = conjugate(Ap);
-        }
-        const auto p = phaseValues.data == nullptr ? phase(modes.omega[index] * (t - t0)) : phaseValues.data[index]; outputAp[index] = multiply(Ap, conjugate(p)); outputAm[index] = multiply(Am, p); outputA0[index] = A0;
-    }});
+    auto projectModes = [&](auto phaseProvidedConstant) {
+        constexpr bool phaseProvided = decltype(phaseProvidedConstant)::value;
+        forEachModeBlock(descriptor_.Nkl(),[&](std::size_t begin, std::size_t end) {
+            for (std::size_t iMode = begin; iMode < end; ++iMode) {
+                const auto& horizontal = descriptor_.fourierModes()[iMode];
+                if (mapping.conjugatesStoredValueByWVIndex[iMode]) {
+                    if (iMode == 0) projectNonhydrostaticMode<true,phaseProvided,true>(half,mapping,modes,horizontal,phaseValues,t-t0,horizontalScale,c.Nz,c.Nj,iMode,outputAp,outputAm,outputA0);
+                    else projectNonhydrostaticMode<true,phaseProvided,false>(half,mapping,modes,horizontal,phaseValues,t-t0,horizontalScale,c.Nz,c.Nj,iMode,outputAp,outputAm,outputA0);
+                } else {
+                    if (iMode == 0) projectNonhydrostaticMode<false,phaseProvided,true>(half,mapping,modes,horizontal,phaseValues,t-t0,horizontalScale,c.Nz,c.Nj,iMode,outputAp,outputAm,outputA0);
+                    else projectNonhydrostaticMode<false,phaseProvided,false>(half,mapping,modes,horizontal,phaseValues,t-t0,horizontalScale,c.Nz,c.Nj,iMode,outputAp,outputAm,outputA0);
+                }
+            }
+        });
+    };
+    if (phaseValues.data == nullptr) projectModes(std::false_type{});
+    else projectModes(std::true_type{});
     if (stageInstrumentationEnabled_) metrics_.coefficientProjectionSeconds = std::chrono::duration<double>(std::chrono::steady_clock::now() - coefficientProjectionStart).count();
     return WVKernelStatus::ok();
 }
@@ -592,19 +665,13 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformWaveVortexToUVW
         if (evolvedCoefficients == nullptr) {
             auto source = [&](std::size_t index) {
                 const auto p = phase(modes.omega[index] * (state.t - state.t0));
-                return EvolvedWaveVortexCoefficients{
-                    multiply(state.coefficients.Ap.data[index],p),
-                    multiply(state.coefficients.Am.data[index],conjugate(p)),
-                    state.coefficients.A0.data[index]};
+                return evolveWaveVortexCoefficients(state.coefficients.Ap.data[index],state.coefficients.Am.data[index],state.coefficients.A0.data[index],p);
             };
             if (mapping.conjugatesStoredValueByWVIndex[iMode]) assembleFieldSpectraForMode<true>(half,mapping,modes,c.Nz,c.Nj,iMode,source);
             else assembleFieldSpectraForMode<false>(half,mapping,modes,c.Nz,c.Nj,iMode,source);
         } else {
             auto source = [&](std::size_t index) {
-                return EvolvedWaveVortexCoefficients{
-                    evolvedCoefficients->Ap.data[index],
-                    evolvedCoefficients->Am.data[index],
-                    evolvedCoefficients->A0.data[index]};
+                return EvolvedWaveVortexCoefficients{evolvedCoefficients->Ap.data[index],evolvedCoefficients->Am.data[index],evolvedCoefficients->A0.data[index]};
             };
             if (mapping.conjugatesStoredValueByWVIndex[iMode]) assembleFieldSpectraForMode<true>(half,mapping,modes,c.Nz,c.Nj,iMode,source);
             else assembleFieldSpectraForMode<false>(half,mapping,modes,c.Nz,c.Nj,iMode,source);
@@ -634,8 +701,7 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformWaveVortexToUVW
         for (std::size_t iMode = begin; iMode < end; ++iMode) {
             auto source = [&](std::size_t index) {
                 if (evolvedCoefficients != nullptr) return EvolvedWaveVortexCoefficients{evolvedCoefficients->Ap.data[index],evolvedCoefficients->Am.data[index],evolvedCoefficients->A0.data[index]};
-                const auto p = phaseValues.data[index];
-                return EvolvedWaveVortexCoefficients{multiply(state.coefficients.Ap.data[index],p),multiply(state.coefficients.Am.data[index],conjugate(p)),state.coefficients.A0.data[index]};
+                return evolveWaveVortexCoefficients(state.coefficients.Ap.data[index],state.coefficients.Am.data[index],state.coefficients.A0.data[index],phaseValues.data[index]);
             };
             if (mapping.conjugatesStoredValueByWVIndex[iMode]) assembleVelocitySpectraForMode<true>(half,mapping,modes,c.Nz,c.Nj,iMode,source);
             else assembleVelocitySpectraForMode<false>(half,mapping,modes,c.Nz,c.Nj,iMode,source);
@@ -670,15 +736,13 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformToSpatialDomain
     const std::size_t halfRows = mapping.NxHalf * c.Ny; auto* half = reinterpret_cast<WVComplex64*>(halfSpectrumScratch_.data());
     std::fill(half,half + c.Nz * 4 * halfRows,WVComplex64{});
     const auto coefficientAssemblyStart = std::chrono::steady_clock::now();
-    forEachModeBlock(descriptor_.Nkl(),[&](std::size_t begin, std::size_t end) { for (std::size_t mode = begin; mode < end; ++mode) for (std::size_t j = 0; j < c.Nj; ++j) {
-        const auto index = j + c.Nj * mode;
-        const auto value = add(multiply(Apm.data[index],modes.fWaveScale[index]),multiply(A0.data[index],modes.Fg[j]));
-        const auto& horizontal = descriptor_.fourierModes()[mode];
-        storeWVValue(half,mapping,c.Nz,4,0,mode,j,value);
-        storeWVValue(half,mapping,c.Nz,4,1,mode,j,multiply(value,WVComplex64{0.0,horizontal.k}));
-        storeWVValue(half,mapping,c.Nz,4,2,mode,j,multiply(value,WVComplex64{0.0,horizontal.l}));
-        storeWVValue(half,mapping,c.Nz,4,3,mode,j,multiply(value,-modes.verticalWavenumber[j]));
-    }});
+    forEachModeBlock(descriptor_.Nkl(),[&](std::size_t begin, std::size_t end) {
+        for (std::size_t mode = begin; mode < end; ++mode) {
+            const auto& horizontal = descriptor_.fourierModes()[mode];
+            if (mapping.conjugatesStoredValueByWVIndex[mode]) assembleFieldFamilyDerivativesForMode<true,true>(half,mapping,modes,horizontal,Apm,A0,c.Nz,c.Nj,mode);
+            else assembleFieldFamilyDerivativesForMode<true,false>(half,mapping,modes,horizontal,Apm,A0,c.Nz,c.Nj,mode);
+        }
+    });
     if (stageInstrumentationEnabled_) metrics_.derivativeCoefficientAssemblySeconds += std::chrono::duration<double>(std::chrono::steady_clock::now() - coefficientAssemblyStart).count();
     completeHermitianBoundaries(half,mapping,c.Nz,4);
     auto execute = plans_[verticalDCT3Storage4]->execute(half,half); if (!execute) return execute;
@@ -695,15 +759,13 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformToSpatialDomain
     const std::size_t halfRows = mapping.NxHalf * c.Ny; auto* half = reinterpret_cast<WVComplex64*>(halfSpectrumScratch_.data());
     std::fill(half,half + c.Nz * 4 * halfRows,WVComplex64{});
     const auto coefficientAssemblyStart = std::chrono::steady_clock::now();
-    forEachModeBlock(descriptor_.Nkl(),[&](std::size_t begin, std::size_t end) { for (std::size_t mode = begin; mode < end; ++mode) for (std::size_t j = 0; j < c.Nj; ++j) {
-        const auto index = j + c.Nj * mode;
-        const auto value = add(multiply(Apm.data[index],modes.gWaveScale[j]),multiply(A0.data[index],modes.Gg[j]));
-        const auto& horizontal = descriptor_.fourierModes()[mode];
-        storeWVValue(half,mapping,c.Nz,4,0,mode,j,value);
-        storeWVValue(half,mapping,c.Nz,4,1,mode,j,multiply(value,WVComplex64{0.0,horizontal.k}));
-        storeWVValue(half,mapping,c.Nz,4,2,mode,j,multiply(value,WVComplex64{0.0,horizontal.l}));
-        storeWVValue(half,mapping,c.Nz,4,3,mode,j,multiply(value,modes.verticalWavenumber[j]));
-    }});
+    forEachModeBlock(descriptor_.Nkl(),[&](std::size_t begin, std::size_t end) {
+        for (std::size_t mode = begin; mode < end; ++mode) {
+            const auto& horizontal = descriptor_.fourierModes()[mode];
+            if (mapping.conjugatesStoredValueByWVIndex[mode]) assembleFieldFamilyDerivativesForMode<false,true>(half,mapping,modes,horizontal,Apm,A0,c.Nz,c.Nj,mode);
+            else assembleFieldFamilyDerivativesForMode<false,false>(half,mapping,modes,horizontal,Apm,A0,c.Nz,c.Nj,mode);
+        }
+    });
     if (stageInstrumentationEnabled_) metrics_.derivativeCoefficientAssemblySeconds += std::chrono::duration<double>(std::chrono::steady_clock::now() - coefficientAssemblyStart).count();
     completeHermitianBoundaries(half,mapping,c.Nz,4);
     auto execute = plans_[verticalDST3Storage4]->execute(half + 1,half + 1); if (!execute) return execute;
@@ -727,8 +789,9 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformToSpatialDomain
         constexpr std::size_t resolvedTarget = decltype(targetConstant)::value;
         forEachModeBlock(descriptor_.Nkl(),[&](std::size_t begin, std::size_t end) {
             for (std::size_t mode = begin; mode < end; ++mode) {
-                if (mapping.conjugatesStoredValueByWVIndex[mode]) assembleDerivativeSpectraForMode<resolvedTarget,true>(half,mapping,modes,descriptor_.fourierModes(),evolvedCoefficients,c.Nz,c.Nj,mode);
-                else assembleDerivativeSpectraForMode<resolvedTarget,false>(half,mapping,modes,descriptor_.fourierModes(),evolvedCoefficients,c.Nz,c.Nj,mode);
+                auto source = [&](std::size_t index) { return EvolvedWaveVortexCoefficients{evolvedCoefficients.Ap.data[index],evolvedCoefficients.Am.data[index],evolvedCoefficients.A0.data[index]}; };
+                if (mapping.conjugatesStoredValueByWVIndex[mode]) assembleDerivativeSpectraForMode<resolvedTarget,true>(half,mapping,modes,descriptor_.fourierModes(),c.Nz,c.Nj,mode,source);
+                else assembleDerivativeSpectraForMode<resolvedTarget,false>(half,mapping,modes,descriptor_.fourierModes(),c.Nz,c.Nj,mode,source);
             }
         });
     };
@@ -768,8 +831,9 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformToSpatialDomain
         constexpr std::size_t resolvedTarget = decltype(targetConstant)::value;
         forEachModeBlock(descriptor_.Nkl(),[&](std::size_t begin, std::size_t end) {
             for (std::size_t mode = begin; mode < end; ++mode) {
-                if (mapping.conjugatesStoredValueByWVIndex[mode]) assembleDerivativeSpectraForModeFromState<resolvedTarget,true>(half,mapping,modes,descriptor_.fourierModes(),state,phaseValues,c.Nz,c.Nj,mode);
-                else assembleDerivativeSpectraForModeFromState<resolvedTarget,false>(half,mapping,modes,descriptor_.fourierModes(),state,phaseValues,c.Nz,c.Nj,mode);
+                auto source = [&](std::size_t index) { return evolveWaveVortexCoefficients(state.coefficients.Ap.data[index],state.coefficients.Am.data[index],state.coefficients.A0.data[index],phaseValues.data[index]); };
+                if (mapping.conjugatesStoredValueByWVIndex[mode]) assembleDerivativeSpectraForMode<resolvedTarget,true>(half,mapping,modes,descriptor_.fourierModes(),c.Nz,c.Nj,mode,source);
+                else assembleDerivativeSpectraForMode<resolvedTarget,false>(half,mapping,modes,descriptor_.fourierModes(),c.Nz,c.Nj,mode,source);
             }
         });
     };
@@ -811,40 +875,30 @@ WVKernelStatus WVTransformConstantStratificationKernel::projectSingleFluxTargetI
     }
     ++metrics_.executionCount; ++metrics_.verticalExecutionCount;
     const double horizontalScale = 1.0 / static_cast<double>(c.Nx * c.Ny);
-    forEachModeBlock(descriptor_.Nkl(),[&](std::size_t begin, std::size_t end) {
-        for (std::size_t iMode = begin; iMode < end; ++iMode) for (std::size_t j = 0; j < c.Nj; ++j) {
-            const auto index = j + c.Nj * iMode;
-            const auto value = multiply(storedValue(half,mapping,c.Nz,1,0,iMode,j),horizontalScale);
-            const auto& horizontal = descriptor_.fourierModes()[iMode];
-            WVComplex64 A0Contribution{};
-            if (target == 0) A0Contribution = multiply(multiply(value,WVComplex64{0.0,-horizontal.l}),modes.A0FromVorticity[index]);
-            else if (target == 1) A0Contribution = multiply(multiply(value,WVComplex64{0.0,horizontal.k}),modes.A0FromVorticity[index]);
-            else if (target == 3) A0Contribution = multiply(value,modes.A0FromBuoyancy[index]);
-            const auto buoyancyValue = subtract(target == 3 ? value : WVComplex64{},multiply(A0Contribution,modes.NA0Field[index]));
-            const auto buoyancyContribution = multiply(buoyancyValue,modes.ApmNProjection[index]);
-            WVComplex64 waveContribution{};
-            if (c.isHydrostatic) {
-                if (target == 0) waveContribution = multiply(multiply(value,WVComplex64{0.0,horizontal.k}),modes.ApmDProjection[index]);
-                else if (target == 1) waveContribution = multiply(multiply(value,WVComplex64{0.0,horizontal.l}),modes.ApmDProjection[index]);
-            } else {
-                if (target == 0) waveContribution = multiply(value,horizontal.cosAlpha * modes.ApmDScaled[index]);
-                else if (target == 1) waveContribution = multiply(value,horizontal.sinAlpha * modes.ApmDScaled[index]);
-                else if (target == 2) waveContribution = multiply(value,WVComplex64{0.0, (horizontal.Kh / 2.0) * modes.apmWProjectionPrefactor[j]});
+    auto projectTarget = [&](auto targetConstant, auto hydrostaticConstant) {
+        constexpr std::size_t resolvedTarget = decltype(targetConstant)::value;
+        constexpr bool hydrostatic = decltype(hydrostaticConstant)::value;
+        forEachModeBlock(descriptor_.Nkl(),[&](std::size_t begin, std::size_t end) {
+            for (std::size_t iMode = begin; iMode < end; ++iMode) {
+                const auto& horizontal = descriptor_.fourierModes()[iMode];
+                if (mapping.conjugatesStoredValueByWVIndex[iMode]) {
+                    if (iMode == 0) projectFluxTargetMode<resolvedTarget,hydrostatic,true,true>(half,mapping,modes,horizontal,phaseValues,horizontalScale,c.Nz,c.Nj,iMode,flux);
+                    else projectFluxTargetMode<resolvedTarget,hydrostatic,true,false>(half,mapping,modes,horizontal,phaseValues,horizontalScale,c.Nz,c.Nj,iMode,flux);
+                } else {
+                    if (iMode == 0) projectFluxTargetMode<resolvedTarget,hydrostatic,false,true>(half,mapping,modes,horizontal,phaseValues,horizontalScale,c.Nz,c.Nj,iMode,flux);
+                    else projectFluxTargetMode<resolvedTarget,hydrostatic,false,false>(half,mapping,modes,horizontal,phaseValues,horizontalScale,c.Nz,c.Nj,iMode,flux);
+                }
             }
-            auto ApContribution = add(waveContribution,buoyancyContribution);
-            auto AmContribution = subtract(waveContribution,buoyancyContribution);
-            if (iMode == 0) {
-                if (target == 0) ApContribution = multiply(value,modes.inertialScale[j]);
-                else if (target == 1) ApContribution = multiply(multiply(value,WVComplex64{0.0,-1.0}),modes.inertialScale[j]);
-                else ApContribution = {};
-                AmContribution = conjugate(ApContribution);
-            }
-            const auto p = phaseValues.data[index];
-            flux.Fp.data[index] = add(flux.Fp.data[index],multiply(ApContribution,conjugate(p)));
-            flux.Fm.data[index] = add(flux.Fm.data[index],multiply(AmContribution,p));
-            flux.F0.data[index] = add(flux.F0.data[index],A0Contribution);
-        }
-    });
+        });
+    };
+    auto dispatchTarget = [&](auto hydrostaticConstant) {
+        if (target == 0) projectTarget(std::integral_constant<std::size_t,0>{},hydrostaticConstant);
+        else if (target == 1) projectTarget(std::integral_constant<std::size_t,1>{},hydrostaticConstant);
+        else if (target == 2) projectTarget(std::integral_constant<std::size_t,2>{},hydrostaticConstant);
+        else projectTarget(std::integral_constant<std::size_t,3>{},hydrostaticConstant);
+    };
+    if (c.isHydrostatic) dispatchTarget(std::true_type{});
+    else dispatchTarget(std::false_type{});
     return WVKernelStatus::ok();
 }
 

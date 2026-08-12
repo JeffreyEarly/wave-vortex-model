@@ -1,8 +1,10 @@
 #include "WaveVortexKernel/WVFFTEngine.hpp"
 #include "WaveVortexKernel/WVTransformConstantStratificationKernel.hpp"
+#include "WVCoefficientFormulas.hpp"
 #include "WVReferenceFFTEngine.hpp"
 
 #include <cmath>
+#include <complex>
 #include <iostream>
 #include <memory>
 #include <stdexcept>
@@ -16,6 +18,67 @@ void require(bool condition, const char* message) {
     if (!condition) {
         throw std::runtime_error(message);
     }
+}
+
+std::complex<double> standardComplex(WVComplex64 value) { return {value.real,value.imag}; }
+
+void requireComplexClose(WVComplex64 actual, std::complex<double> expected, const char* message) {
+    const double tolerance = 2e-14 * std::max(1.0,std::abs(expected));
+    require(std::abs(standardComplex(actual)-expected) <= tolerance,message);
+}
+
+template <std::size_t Target>
+std::complex<double> referenceFieldValue(const WVConstantStratificationModes& modes, std::size_t index, const detail::EvolvedWaveVortexCoefficients& coefficients) {
+    const auto Ap = standardComplex(coefficients.Ap);
+    const auto Am = standardComplex(coefficients.Am);
+    const auto A0 = standardComplex(coefficients.A0);
+    if constexpr (Target == 0) return standardComplex(modes.UApField[index])*Ap + std::conj(standardComplex(modes.UApField[index]))*Am + standardComplex(modes.UA0Field[index])*A0;
+    if constexpr (Target == 1) return standardComplex(modes.VApField[index])*Ap + std::conj(standardComplex(modes.VApField[index]))*Am + standardComplex(modes.VA0Field[index])*A0;
+    if constexpr (Target == 2) return standardComplex(modes.WApField[index])*(Ap+Am);
+    return modes.NApField[index]*(Ap-Am) + modes.NA0Field[index]*A0;
+}
+
+template <std::size_t Target, bool Conjugated>
+void checkFieldAndDerivativeFormula(const WVConstantStratificationModes& modes, const WVFourierMode& horizontal, std::size_t index, std::size_t j, const detail::EvolvedWaveVortexCoefficients& coefficients) {
+    const auto field = detail::coefficientValueForField<Target>(modes,index,coefficients);
+    const auto expectedField = referenceFieldValue<Target>(modes,index,coefficients);
+    requireComplexClose(field,expectedField,"WV-to-field coefficient formula mismatch");
+    const bool endpoint = j == 0;
+    const auto actual = detail::normalizedDerivativeSpectrum<Target < 2,Conjugated>(field,horizontal.k,horizontal.l,modes.verticalWavenumber[j],endpoint);
+    const auto storedField = Conjugated ? std::conj(expectedField) : expectedField;
+    const double storedK = Conjugated ? -horizontal.k : horizontal.k;
+    const double storedL = Conjugated ? -horizontal.l : horizontal.l;
+    auto expectedX = std::complex<double>(0.0,storedK)*storedField;
+    auto expectedY = std::complex<double>(0.0,storedL)*storedField;
+    auto expectedZ = (Target < 2 ? -modes.verticalWavenumber[j] : modes.verticalWavenumber[j])*storedField;
+    if constexpr (Target < 2) {
+        expectedX *= 0.5; expectedY *= 0.5; expectedZ = endpoint ? std::complex<double>{} : 0.5*expectedZ;
+    } else {
+        expectedX = endpoint ? std::complex<double>{} : 0.5*expectedX;
+        expectedY = endpoint ? std::complex<double>{} : 0.5*expectedY;
+        expectedZ *= 0.5;
+    }
+    requireComplexClose(actual.x,expectedX,"x-derivative coefficient formula mismatch");
+    requireComplexClose(actual.y,expectedY,"y-derivative coefficient formula mismatch");
+    requireComplexClose(actual.z,expectedZ,"z-derivative coefficient formula mismatch");
+}
+
+template <bool FFamily, bool Conjugated>
+void checkFieldFamilyFormula(const WVConstantStratificationModes& modes, const WVFourierMode& horizontal, std::size_t index, std::size_t j) {
+    const WVComplex64 Apm{0.17,-0.23};
+    const WVComplex64 A0{-0.31,0.11};
+    const double waveScale = FFamily ? modes.fWaveScale[index] : modes.gWaveScale[j];
+    const double geostrophicScale = FFamily ? modes.Fg[j] : modes.Gg[j];
+    const auto actual = detail::fieldFamilyDerivativeSpectrum<FFamily,Conjugated>(Apm,A0,waveScale,geostrophicScale,horizontal.k,horizontal.l,modes.verticalWavenumber[j]);
+    auto expected = standardComplex(Apm)*waveScale + standardComplex(A0)*geostrophicScale;
+    auto expectedX = std::complex<double>(0.0,horizontal.k)*expected;
+    auto expectedY = std::complex<double>(0.0,horizontal.l)*expected;
+    auto expectedZ = (FFamily ? -modes.verticalWavenumber[j] : modes.verticalWavenumber[j])*expected;
+    if constexpr (Conjugated) { expected=std::conj(expected); expectedX=std::conj(expectedX); expectedY=std::conj(expectedY); expectedZ=std::conj(expectedZ); }
+    requireComplexClose(actual.value,expected,"F/G field coefficient formula mismatch");
+    requireComplexClose(actual.x,expectedX,"F/G x-derivative formula mismatch");
+    requireComplexClose(actual.y,expectedY,"F/G y-derivative formula mismatch");
+    requireComplexClose(actual.z,expectedZ,"F/G z-derivative formula mismatch");
 }
 
 WVTransformConstantStratificationConfiguration configuration(std::size_t Nx, std::size_t Ny, bool hydrostatic) {
@@ -79,12 +142,95 @@ public:
     std::shared_ptr<std::size_t> activePlans;
 };
 
+void testCoefficientFormulaHelpers() {
+    const std::size_t horizontalSizes[][2] = {{6,5},{7,5}};
+    for (const auto& horizontalSize : horizontalSizes) for (const bool hydrostatic : {true,false}) {
+        auto config = configuration(horizontalSize[0],horizontalSize[1],hydrostatic);
+        config.Nz = 7;
+        config.Nj = 6;
+        config.shouldAntialias = false;
+        WVTransformConstantStratificationDescriptor descriptor;
+        const auto status = WVTransformConstantStratificationDescriptor::create(config,descriptor);
+        require(static_cast<bool>(status),"formula-test descriptor construction failed");
+        const auto& mapping = descriptor.halfSpectrumMappings();
+        const auto& modes = descriptor.verticalModes();
+        require(!mapping.directWVIndices.empty(),"formula tests require direct half-spectrum storage");
+        require(!mapping.conjugatedWVIndices.empty(),"formula tests require conjugated half-spectrum storage");
+
+        const std::size_t selectedModes[] = {0,mapping.directWVIndices.back(),mapping.conjugatedWVIndices.front()};
+        const std::size_t selectedVerticalModes[] = {0,1,config.Nj-1};
+        for (const auto mode : selectedModes) for (const auto j : selectedVerticalModes) {
+            const auto index = j + config.Nj * mode;
+            const auto& horizontal = descriptor.fourierModes()[mode];
+            const WVComplex64 Ap{0.13+0.01*static_cast<double>(j),-0.21};
+            const WVComplex64 Am{-0.08,0.19+0.01*static_cast<double>(mode)};
+            const WVComplex64 A0{0.07,-0.17};
+            const double angle = modes.omega[index] * 37.5;
+            const auto phaseValue = detail::phase(angle);
+            requireComplexClose(phaseValue,{std::cos(angle),std::sin(angle)},"phase formula mismatch");
+            const auto evolved = detail::evolveWaveVortexCoefficients(Ap,Am,A0,phaseValue);
+            requireComplexClose(evolved.Ap,standardComplex(Ap)*standardComplex(phaseValue),"positive-wave phase evolution mismatch");
+            requireComplexClose(evolved.Am,standardComplex(Am)*std::conj(standardComplex(phaseValue)),"negative-wave phase evolution mismatch");
+            requireComplexClose(evolved.A0,standardComplex(A0),"geostrophic phase evolution mismatch");
+
+            const bool conjugated = mapping.conjugatesStoredValueByWVIndex[mode] != 0;
+            if (conjugated) {
+                checkFieldAndDerivativeFormula<0,true>(modes,horizontal,index,j,evolved);
+                checkFieldAndDerivativeFormula<1,true>(modes,horizontal,index,j,evolved);
+                checkFieldAndDerivativeFormula<2,true>(modes,horizontal,index,j,evolved);
+                checkFieldAndDerivativeFormula<3,true>(modes,horizontal,index,j,evolved);
+                checkFieldFamilyFormula<true,true>(modes,horizontal,index,j);
+                checkFieldFamilyFormula<false,true>(modes,horizontal,index,j);
+            } else {
+                checkFieldAndDerivativeFormula<0,false>(modes,horizontal,index,j,evolved);
+                checkFieldAndDerivativeFormula<1,false>(modes,horizontal,index,j,evolved);
+                checkFieldAndDerivativeFormula<2,false>(modes,horizontal,index,j,evolved);
+                checkFieldAndDerivativeFormula<3,false>(modes,horizontal,index,j,evolved);
+                checkFieldFamilyFormula<true,false>(modes,horizontal,index,j);
+                checkFieldFamilyFormula<false,false>(modes,horizontal,index,j);
+            }
+
+            const WVComplex64 U{0.23,-0.14};
+            const WVComplex64 V{-0.09,0.31};
+            const WVComplex64 N{0.12,0.05};
+            const auto expectedVorticity = std::complex<double>(0.0,horizontal.k)*standardComplex(V) - std::complex<double>(0.0,horizontal.l)*standardComplex(U);
+            const auto expectedA0 = modes.A0FromVorticity[index]*expectedVorticity + modes.A0FromBuoyancy[index]*standardComplex(N);
+            const auto actualA0 = detail::geostrophicCoefficient(U,V,N,horizontal.k,horizontal.l,modes.A0FromVorticity[index],modes.A0FromBuoyancy[index]);
+            requireComplexClose(actualA0,expectedA0,"field-to-geostrophic coefficient formula mismatch");
+            const auto actualBuoyancy = detail::buoyancyProjection(N,actualA0,modes.NA0Field[index],modes.ApmNProjection[index]);
+            requireComplexClose(actualBuoyancy,(standardComplex(N)-expectedA0*modes.NA0Field[index])*modes.ApmNProjection[index],"field-to-wave buoyancy formula mismatch");
+
+            const auto pair = detail::waveCoefficientPair(WVComplex64{0.19,-0.04},actualBuoyancy);
+            requireComplexClose(pair.Ap,std::complex<double>(0.19,-0.04)+standardComplex(actualBuoyancy),"positive-wave assembly formula mismatch");
+            requireComplexClose(pair.Am,std::complex<double>(0.19,-0.04)-standardComplex(actualBuoyancy),"negative-wave assembly formula mismatch");
+            const auto referencePair = detail::atReferenceTime(pair,phaseValue);
+            requireComplexClose(referencePair.Ap,standardComplex(pair.Ap)*std::conj(standardComplex(phaseValue)),"positive-wave reference-time formula mismatch");
+            requireComplexClose(referencePair.Am,standardComplex(pair.Am)*standardComplex(phaseValue),"negative-wave reference-time formula mismatch");
+        }
+
+        const WVComplex64 U{0.33,-0.27};
+        const WVComplex64 V{-0.15,0.08};
+        const auto inertial = detail::inertialCoefficientPair(U,V,modes.inertialScale[1]);
+        const auto expectedInertial = (standardComplex(U)-std::complex<double>(0.0,1.0)*standardComplex(V))*modes.inertialScale[1];
+        requireComplexClose(inertial.Ap,expectedInertial,"inertial positive-wave formula mismatch");
+        requireComplexClose(inertial.Am,std::conj(expectedInertial),"inertial negative-wave formula mismatch");
+        const auto inertialU = detail::inertialCoefficientPair<0>(U,modes.inertialScale[1]);
+        const auto inertialV = detail::inertialCoefficientPair<1>(V,modes.inertialScale[1]);
+        const auto inertialN = detail::inertialCoefficientPair<3>(V,modes.inertialScale[1]);
+        requireComplexClose(inertialU.Ap,standardComplex(U)*modes.inertialScale[1],"inertial U-target formula mismatch");
+        requireComplexClose(inertialV.Ap,std::complex<double>(0.0,-1.0)*standardComplex(V)*modes.inertialScale[1],"inertial V-target formula mismatch");
+        requireComplexClose(inertialN.Ap,{},"nonvelocity inertial target was not zero");
+    }
+}
+
 void testDescriptor() {
     const auto evenConfiguration = configuration(16, 12, false);
     WVTransformConstantStratificationDescriptor even;
     auto status = WVTransformConstantStratificationDescriptor::create(evenConfiguration, even);
     require(static_cast<bool>(status), "even descriptor construction failed");
+    require(WVKernelContractVersion == 4,"kernel contract version changed");
     require(even.spectralShape().rows == 5, "unexpected spectral rows");
+    require(even.spectralShape().columns == even.Nkl(),"spectral shape is not canonical [Nj,Nkl]");
     require(even.Nkl() > 0, "empty Fourier modes");
     require(even.fourierModes().front().kMode == 0 && even.fourierModes().front().lMode == 0, "zero mode must be first");
     require(even.verticalModes().z.front() == -1300.0, "unexpected bottom coordinate");
@@ -100,6 +246,7 @@ void testDescriptor() {
         require(std::abs(even.verticalModes().apmWProjectionPrefactor[j] - expected) <= 1e-15 * std::abs(expected), "compact ApmW prefactor changed #126 pre-scaling");
     }
     require(!even.halfSpectrumMappings().selfConjugateRows.empty(),"even-grid zero/Nyquist boundary mappings are missing");
+    require(!even.halfSpectrumMappings().directWVIndices.empty() && !even.halfSpectrumMappings().conjugatedWVIndices.empty(),"even-grid direct/conjugated half storage is incomplete");
     require(even.halfSpectrumMappings().hermitianCompletionRows.size() == even.halfSpectrumMappings().hermitianSourceRows.size(),"Hermitian boundary mappings are inconsistent");
 
     WVTransformConstantStratificationDescriptor odd;
@@ -288,6 +435,7 @@ void testNonlinearFlux(bool hydrostatic) {
 } // namespace
 
 int main() {
+    testCoefficientFormulaHelpers();
     testDescriptor();
     testViewsAndAliasing();
     testEngineContract();
