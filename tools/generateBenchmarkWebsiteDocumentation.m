@@ -353,7 +353,7 @@ plotY = 55;
 plotWidth = 805;
 plotHeight = 360;
 legendRows = ceil(numel(seriesKeys)/2);
-height = 470 + 24*legendRows;
+height = 488 + 24*legendRows;
 identifier = regexprep(lower(string(titleText)),'[^a-z0-9]+','-');
 svg = strings(0,1);
 svg(end+1) = sprintf('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 %d %d" role="img" aria-labelledby="%s-title %s-desc">',width,height,identifier,identifier);
@@ -386,7 +386,7 @@ for iSeries = 1:numel(seriesKeys)
     column = mod(iSeries-1,2);
     row = floor((iSeries-1)/2);
     x = 40 + column*450;
-    y = 455 + row*24;
+    y = 485 + row*24;
     label = series(1).chartLabel;
     svg(end+1) = sprintf('<line x1="%g" y1="%g" x2="%g" y2="%g" stroke="%s" stroke-width="2"/><circle cx="%g" cy="%g" r="4" fill="%s"/>',x,y,x+24,y,color,x+12,y,color);
     svg(end+1) = sprintf('<text class="legend-label" x="%g" y="%g" dominant-baseline="middle" font-family="Avenir Next, Avenir, Helvetica, Arial, sans-serif" font-size="10">%s</text>',x+32,y,xmlEscape(label));
