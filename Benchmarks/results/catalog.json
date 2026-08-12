@@ -19,6 +19,14 @@
   ],
   "publishedDatasets": [
     {
+      "datasetId": "core-v1--cpp-native-fftw--m5-max--20260812T195257Z",
+      "artifact": "Benchmarks/results/published/core-v1--cpp-native-fftw--m5-max--20260812T195257Z.json"
+    },
+    {
+      "datasetId": "core-v1--matlab-builtin--m5-max--20260812T195257Z",
+      "artifact": "Benchmarks/results/published/core-v1--matlab-builtin--m5-max--20260812T195257Z.json"
+    },
+    {
       "datasetId": "scaling-large-v1--matlab-builtin--lyra--20260811T213524Z",
       "artifact": "Benchmarks/results/published/scaling-large-v1--matlab-builtin--lyra--20260811T213524Z.json"
     },

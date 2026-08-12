@@ -18,6 +18,14 @@ The representative comparison uses the nonhydrostatic constant-stratification ca
 Published benchmark results will appear here.
 <!-- BENCHMARKS:AT_GLANCE:END -->
 
+## Compiled constant-stratification preview
+
+The source-only compiled preview is an explicit opt-in for ordinary constant-stratification nonlinear flux. MATLAB remains the default. Availability, speed, numerical error, exact retained application storage, and isolated operation memory are shown together because the preview intentionally prioritizes a substantial speed gain while its memory use remains a target for future refinement.
+
+<!-- BENCHMARKS:COMPILED_PREVIEW:START -->
+Published compiled-preview results will appear here.
+<!-- BENCHMARKS:COMPILED_PREVIEW:END -->
+
 ## Scaling with model size
 
 The plots separate horizontal and vertical scaling for the representative nonhydrostatic constant-stratification transform. Limiting each chart to one transform keeps the machine and suite comparisons legible; the expandable tables retain results for every transform family. Each point is the median of the retained timing samples. Memory plots report the peak resident memory of the MATLAB or C++ process, including the language runtime and numerical libraries.

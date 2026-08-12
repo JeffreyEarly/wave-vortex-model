@@ -140,7 +140,9 @@
             "provider": {"type": "string", "minLength": 1},
             "baselineProcessBytes": {"$ref": "#/$defs/nonnegativeNumber"},
             "peakProcessBytes": {"$ref": "#/$defs/nonnegativeNumber"},
-            "peakIncrementBytes": {"$ref": "#/$defs/nonnegativeNumber"}
+            "peakIncrementBytes": {"$ref": "#/$defs/nonnegativeNumber"},
+            "exactRetainedBytes": {"$ref": "#/$defs/nonnegativeNumber"},
+            "exactRetainedDefinition": {"type": "string", "minLength": 1}
           }
         },
         {

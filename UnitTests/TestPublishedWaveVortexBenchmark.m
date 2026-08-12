@@ -31,7 +31,7 @@ classdef TestPublishedWaveVortexBenchmark < matlab.unittest.TestCase
             testCase.verifyEqual(string(catalog.schemaVersion),"benchmark-catalog-v1");
             testCase.verifyEqual(string({catalog.scoringReferences.suiteId}),["core-v1" "scaling-standard-v1" "scaling-large-v1"]);
             testCase.verifyEqual(string({catalog.scoringReferences.backendId}),repmat("builtin",1,3));
-            testCase.verifyNumElements(catalog.publishedDatasets,5);
+            testCase.verifyNumElements(catalog.publishedDatasets,7);
             for iReference = 1:numel(catalog.scoringReferences)
                 reference = catalog.scoringReferences(iReference);
                 relativePath = string(reference.rawArtifact);
@@ -60,8 +60,13 @@ classdef TestPublishedWaveVortexBenchmark < matlab.unittest.TestCase
                 dataset = jsondecode(fileread(fullfile(testCase.repositoryRoot,string(entry.artifact))));
                 testCase.verifyEqual(string(dataset.schemaVersion),"published-benchmark-v1");
                 testCase.verifyEqual(string(dataset.datasetId),string(entry.datasetId));
-                testCase.verifyEqual(string(dataset.implementation.version),"4.2.1");
-                testCase.verifyEqual(string(dataset.implementation.commit),"9652b116b3ffd4ee3372cc5cdeea9700cd6cbc32");
+                if string(dataset.benchmark.suiteId) == "core-v1"
+                    testCase.verifyEqual(string(dataset.implementation.version),"unreleased-preview");
+                    testCase.verifyEqual(string(dataset.implementation.commit),"3b762e518bf5ef92681bab7ac48dfe54b10fc708");
+                else
+                    testCase.verifyEqual(string(dataset.implementation.version),"4.2.1");
+                    testCase.verifyEqual(string(dataset.implementation.commit),"9652b116b3ffd4ee3372cc5cdeea9700cd6cbc32");
+                end
                 testCase.verifyFalse(logical(dataset.implementation.sourceDirty));
                 testCase.verifySubstring(string(dataset.platform.processor),"Apple M");
                 testCase.verifyGreaterThan(double(dataset.platform.physicalMemoryBytes),0);
@@ -73,7 +78,10 @@ classdef TestPublishedWaveVortexBenchmark < matlab.unittest.TestCase
                     cases = num2cell(cases);
                 end
                 statuses = string(cellfun(@(benchmarkCase)benchmarkCase.status,cases,"UniformOutput",false));
-                if string(dataset.benchmark.suiteId) == "scaling-standard-v1"
+                if string(dataset.benchmark.suiteId) == "core-v1"
+                    testCase.verifyNumElements(cases,4);
+                    testCase.verifyEqual(statuses,repmat("complete",size(statuses)));
+                elseif string(dataset.benchmark.suiteId) == "scaling-standard-v1"
                     testCase.verifyNumElements(cases,34);
                     testCase.verifyEqual(statuses,repmat("complete",size(statuses)));
                     standardPlatforms(end+1,1) = string(dataset.platform.id);

@@ -23,11 +23,52 @@ copyPublishedRecords(records,buildFolder);
 latestRecords = latestPublishedRecords(records);
 pageText = string(fileread(pagePath));
 pageText = replaceGeneratedSection(pageText,"AT_GLANCE",atAGlanceMarkdown(latestRecords));
+pageText = replaceGeneratedSection(pageText,"COMPILED_PREVIEW",compiledPreviewMarkdown(latestRecords));
 pageText = replaceGeneratedSection(pageText,"SCALING",scalingMarkdown(latestRecords,buildFolder));
 pageText = replaceGeneratedSection(pageText,"COMPUTERS",computerMarkdown(latestRecords));
 pageText = replaceGeneratedSection(pageText,"HISTORY",historyMarkdown(records));
 pageText = replaceGeneratedSection(pageText,"DOWNLOADS",downloadsMarkdown(records));
 writeText(pagePath,pageText);
+end
+
+function markdown = compiledPreviewMarkdown(records)
+records = records(arrayfun(@(record)string(record.dataset.benchmark.suiteId)=="core-v1",records));
+if isempty(records)
+    markdown = "No approved compiled-preview result has been published yet.";
+    return
+end
+compiledIndex = find(arrayfun(@(record)string(record.dataset.implementation.id)=="cpp" && string(record.dataset.implementation.backend)=="native-fftw",records),1,"last");
+if isempty(compiledIndex)
+    markdown = "No approved compiled-preview result has been published yet.";
+    return
+end
+compiled = records(compiledIndex).dataset;
+matlabIndex = find(arrayfun(@(record)string(record.dataset.implementation.id)=="matlab" && string(record.dataset.platform.id)==string(compiled.platform.id),records),1,"last");
+if isempty(matlabIndex)
+    markdown = "The compiled-preview result is published, but its paired MATLAB control is unavailable.";
+    return
+end
+matlab = records(matlabIndex).dataset;
+rows = strings(0,7);
+available = true;
+for iCase = 1:numel(compiled.cases)
+    compiledCase = itemAt(compiled.cases,iCase);
+    matlabCase = caseWithId(matlab,string(compiledCase.id));
+    if isempty(matlabCase) || string(compiledCase.status)~="complete" || string(matlabCase.status)~="complete"
+        available = false;
+        continue
+    end
+    speedup = matlabCase.timing.medianSeconds/compiledCase.timing.medianSeconds;
+    exactRatio = compiledCase.memory.exactRetainedBytes/matlabCase.memory.exactRetainedBytes;
+    rssRatio = compiledCase.memory.peakIncrementBytes/matlabCase.memory.peakIncrementBytes;
+    rows(end+1,:) = [displayTransform(string(compiledCase.transformId))+" "+join(string(compiledCase.configuration.Nxyz),"×"),sprintf('%.3f',1e3*matlabCase.timing.medianSeconds),sprintf('%.3f',1e3*compiledCase.timing.medianSeconds),sprintf('%.3fx',speedup),sprintf('%.3f',exactRatio),sprintf('%.3f',rssRatio),sprintf('%.3e',compiledCase.correctness.relativeError)]; %#ok<AGROW>
+    available = available && speedup >= 1.25 && compiledCase.correctness.relativeError <= compiled.benchmark.correctnessTolerance;
+end
+status = conditional(available&&size(rows,1)==4,"PREVIEW-AVAILABLE","PREVIEW-NOT-AVAILABLE");
+intro = "**"+status+".** "+string(compiled.platform.displayName)+"; "+string(compiled.toolchain.name)+" "+string(compiled.toolchain.version)+"; provider `"+string(compiled.implementation.backend)+"`. Memory ratios are descriptive and do not gate preview availability.";
+table = htmlTable(["Case" "MATLAB (ms)" "Compiled (ms)" "Speedup" "Exact retained ratio" "Operation RSS ratio" "Relative error"],rows);
+scope = "Supported: constant-stratification hydrostatic and nonhydrostatic models with the default nonlinear-advection forcing. Unavailable: variable stratification, QG transforms, additional forcing, and the explicit-antialias forcing workflow.";
+markdown = intro+newline+newline+table+newline+newline+scope;
 end
 
 function records = loadPublishedRecords(repositoryRoot,catalog,allowedSuites)
@@ -681,6 +722,14 @@ end
 
 function value = formatNumber(number)
 value = sprintf('%.3g',double(number));
+end
+
+function value = conditional(condition,trueValue,falseValue)
+if condition
+    value = trueValue;
+else
+    value = falseValue;
+end
 end
 
 function value = xmlEscape(value)
