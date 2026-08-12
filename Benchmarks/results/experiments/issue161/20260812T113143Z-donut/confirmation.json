@@ -1,0 +1,2776 @@
+{
+  "schemaVersion": "1.0.0",
+  "status": "complete",
+  "generatedAtUTC": "2026-08-12T11:33:58.815Z",
+  "provenance": {
+    "repository": "JeffreyEarly/wave-vortex-model",
+    "featureHead": "3af6b83e7ceac52a66536e8cdb8495e1c2df2016",
+    "requiredAncestor": "be0f78995c49a2bfe4c43d75827856e3812ac278",
+    "candidate": "9ceb932a7f42e3a722f6cb406e7e06fe913aef86",
+    "candidateParent": "3af6b83e7ceac52a66536e8cdb8495e1c2df2016",
+    "branch": "experiment/issue-161-descriptor-confirmation",
+    "candidateUnchanged": true,
+    "implementationCommitRequired": false,
+    "controlWorktree": "/private/tmp/wvm-issue161-canonical-control",
+    "candidateWorktree": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-161-canonical"
+  },
+  "environment": {
+    "hostName": "Donut",
+    "modelName": "MacBook Pro",
+    "modelIdentifier": "Mac17,6",
+    "modelNumber": "MGEE4LL/A",
+    "chip": "Apple M5 Max",
+    "physicalCores": 18,
+    "logicalCores": 18,
+    "coreDescription": "6 Super and 12 Performance",
+    "physicalMemoryBytes": 5.1539607552E+10,
+    "os": "macOS 26.5.2",
+    "osBuild": "25F84",
+    "kernel": "Darwin 25.5.0",
+    "architecture": "arm64/maca64",
+    "matlabVersion": "26.1.0.3312084 (R2026a) Update 4",
+    "matlabRelease": "2026a",
+    "matlabRoot": "/Applications/MATLAB_R2026a.app",
+    "matlabMaximumThreads": 18,
+    "benchmarkThreadCount": 18,
+    "compiler": "Apple clang 21.0.0 (clang-2100.1.1.101)"
+  },
+  "libraries": {
+    "providerId": "native-neon-pthreads",
+    "fftwVersion": "3.3.11",
+    "fftwSourceSha256": "5630c24cdeb33b131612f7eb4b1a9934234754f9f388ff8617458d0be6f239a1",
+    "threadBackend": "pthreads",
+    "baseLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3.3.dylib",
+    "baseLibrarySha256": "abc08b7b2c328d9659dd89a382494d7ca2e7aaec369c1f1025e255c6a2d99a0b",
+    "threadLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3_threads.3.dylib",
+    "threadLibrarySha256": "6e5c9a14b2c3db5fc8ec5f9ba5bd08457677cc9b8c12baa6331379c6145ba0ca",
+    "dladdrCandidate": {
+      "engine": "fftw",
+      "version": "fftw-3.3.11-neon",
+      "baseLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3.3.dylib",
+      "threadLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3_threads.3.dylib",
+      "openMPRuntimeLibrary": "/Applications/MATLAB_R2026a.app/bin/maca64/libomp.dylib"
+    },
+    "dladdrControl": {
+      "engine": "fftw",
+      "version": "fftw-3.3.11-neon",
+      "baseLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3.3.dylib",
+      "threadLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3_threads.3.dylib",
+      "openMPRuntimeLibrary": "/Applications/MATLAB_R2026a.app/bin/maca64/libomp.dylib"
+    },
+    "loadedLibompImages": "/Applications/MATLAB_R2026a.app/bin/maca64/libomp.dylib",
+    "loadedLibompImageCount": 1,
+    "matlabLibompSha256": "b30e3d406c9bb86d081fcb21ddaf438bbfd13a08d9a6eae8e00e612a246731f3",
+    "fftwThreadLibraryHasOpenMPDependency": false,
+    "candidateMexSha256": "e0304652577a8e1556ef7c3eeecb5c7a454cc1ed50297de1a3fb9b802ef1adc9",
+    "controlMexSha256": "aba10372593efccddaa4cc46124380669d3e9929272239cbb51d74251cf99879"
+  },
+  "sourceHashes": {
+    "kernelTypesHeaderSha256": "2719ab7840449b1133e42793a2ba5f7494e7d4b55a83359a5252eadcc61cb923",
+    "kernelTypesSourceSha256": "06ae980ae92436b47e459bfca12e872c11180fa88240a22ba30022188a03d9b6",
+    "kernelSourceSha256": "829ac01fa512b1b6dc224ec8178775b12dbec6ad0bc258414bab826b0b9c67c9",
+    "fftwEngineSha256": "e92d67c90087076b5ef57449e6de88a514db78fc4ccaaed507dd7dcf75d8f952",
+    "mexGatewaySha256": "e119b8466d2afed959c9868bfb8a7ff7f809206178efbd470e6a8a772a0cc084"
+  },
+  "scopeReview": {
+    "changedFiles": [
+      "CompiledKernel/include/WaveVortexKernel/WVKernelTypes.hpp",
+      "CompiledKernel/src/WVKernelTypes.cpp",
+      "CompiledKernel/src/WVTransformConstantStratificationKernel.cpp",
+      "tools/compiled-kernel/WVKernelDescriptorDump.cpp",
+      "tools/compiled-kernel/tests/TestWVKernelContract.cpp"
+    ],
+    "insertions": 67,
+    "deletions": 35,
+    "removedPersistentArrays": [
+      "UAmField[Nj,Nkl]",
+      "VAmField[Nj,Nkl]",
+      "WAmField[Nj,Nkl]",
+      "NAmField[Nj,Nkl]",
+      "ApmWScaled[Nj,Nkl]"
+    ],
+    "addedPersistentArrays": "apmWProjectionPrefactor[Nj]",
+    "ordinaryPathRegeneratesRemovedState": true,
+    "streamedSingleOutputPathRegeneratesRemovedState": true,
+    "preservesIssue126Scaling": true,
+    "preservesCanonicalState": true,
+    "preservesRadialAliasZeroNyquistHermitianSemantics": true,
+    "apiChanges": false,
+    "newTransformsPlansExecutionsProvidersThreads": false,
+    "fullHermitianPersistenceBytes": 0,
+    "secondState": false,
+    "issue158Or160Included": false,
+    "trackedBinariesCachesDependencies": false
+  },
+  "complexity": {
+    "removedBytesPerSpectralCoefficient": 72,
+    "addedBytesPerVerticalMode": 8,
+    "descriptorReductionFormula": "72*Nj*Nkl - 8*Nj bytes",
+    "planCount": 17,
+    "planAccounting": "wrapper-lower-bound; FFTW-owned plan memory is opaque",
+    "scratchChanged": false,
+    "stateOrFluxShapeChanged": false,
+    "schedule": "streamed-target-three-channel",
+    "coefficientStorageMode": "natural-dimensional",
+    "coefficientArithmeticMode": "natural-dimensional-prescaled",
+    "inverseNormalizationPlacement": "coefficient-production",
+    "coefficientWorkerCount": 2
+  },
+  "methodology": {
+    "suite": "core-v1",
+    "sizes": [
+      [
+        256,
+        256,
+        65
+      ],
+      [
+        512,
+        512,
+        129
+      ]
+    ],
+    "configurations": [
+      "hydrostatic",
+      "nonhydrostatic"
+    ],
+    "freshProcessCount": 3,
+    "warmupCount": 2,
+    "mediumSampleCount": 7,
+    "largeSampleCount": 3,
+    "implementationOrder": "repeat 1 control/candidate; repeat 2 candidate/control; repeat 3 control/candidate",
+    "caseOrder": "deterministic one-position rotation per repeat",
+    "rssProvider": "macos-libproc-rss-external",
+    "rssSamplingIntervalSeconds": 0.02,
+    "internalTimingMeaning": "native kernel time reported inside the MEX gateway",
+    "completeTimingMeaning": "end-to-end MATLAB MEX call time",
+    "productionTimingMeaning": "production MATLAB nonlinearFlux call time in the same fresh process",
+    "correctnessTolerance": 1E-12,
+    "standaloneGate": ">=5% exact known max-live reduction in hydrostatic and nonhydrostatic at one common size; native/complete time and persistent/peak RSS each <=3% regression",
+    "mexGate": "independent exact-library, <=1e-12 correctness, lifecycle, plan, thread, and runtime-identity qualification"
+  },
+  "correctness": {
+    "schemaVersion": "1.0.0",
+    "status": "complete",
+    "generatedAtUTC": "2026-08-12T11:12:05.022Z",
+    "controlCommit": "3af6b83e7ceac52a66536e8cdb8495e1c2df2016",
+    "candidateCommit": "9ceb932a7f42e3a722f6cb406e7e06fe913aef86",
+    "threadCount": 18,
+    "provider": "native-neon-pthreads",
+    "candidateModuleInfo": {
+      "engine": "fftw",
+      "version": "fftw-3.3.11-neon",
+      "baseLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3.3.dylib",
+      "threadLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3_threads.3.dylib",
+      "openMPRuntimeLibrary": "/Applications/MATLAB_R2026a.app/bin/maca64/libomp.dylib"
+    },
+    "controlModuleInfo": {
+      "engine": "fftw",
+      "version": "fftw-3.3.11-neon",
+      "baseLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3.3.dylib",
+      "threadLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3_threads.3.dylib",
+      "openMPRuntimeLibrary": "/Applications/MATLAB_R2026a.app/bin/maca64/libomp.dylib"
+    },
+    "loadedLibompImages": "/Applications/MATLAB_R2026a.app/bin/maca64/libomp.dylib",
+    "cases": [
+      {
+        "id": "even-nonsquare-hydrostatic",
+        "Nxyz": [
+          8,
+          6,
+          7
+        ],
+        "isHydrostatic": true,
+        "shouldAntialias": true,
+        "repeatCount": 3,
+        "errors": {
+          "candidateForward": 3.3852173315078324E-16,
+          "controlForward": 3.3852173315078324E-16,
+          "controlCandidateForward": 0,
+          "candidateInverse": 2.6690701239801461E-16,
+          "controlInverse": 2.6690701239801461E-16,
+          "controlCandidateInverse": 0,
+          "candidateFAll": 4.49379734560317E-16,
+          "controlFAll": 4.49379734560317E-16,
+          "controlCandidateFAll": 0,
+          "candidateGAll": 3.0809900708977625E-16,
+          "controlGAll": 3.0809900708977625E-16,
+          "controlCandidateGAll": 0,
+          "candidateNonlinearFlux": 9.6585571093423166E-16,
+          "controlNonlinearFlux": 9.6585571093423166E-16,
+          "controlCandidateNonlinearFlux": 0
+        },
+        "maximumRelativeError": 9.6585571093423166E-16,
+        "candidateMetrics": {
+          "engine": "fftw",
+          "loadedLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3.3.dylib",
+          "nonlinearFluxSchedule": "streamed-target-three-channel",
+          "phaseImplementation": "scalar-sincos",
+          "coefficientStorageMode": "natural-dimensional",
+          "coefficientArithmeticMode": "natural-dimensional-prescaled",
+          "inverseNormalizationPlacement": "coefficient-production",
+          "optimizationImplementation": "O3-native",
+          "coefficientWorkerCount": 2,
+          "planMemoryAccounting": "wrapper-lower-bound; FFTW-owned plan memory is opaque",
+          "contractVersion": 4,
+          "planCount": 17,
+          "planBytes": 408,
+          "descriptorBytes": 8433,
+          "scratchCapacityBytes": 29568,
+          "scratchHighWaterBytes": 29568,
+          "halfSpectrumScratchCapacityBytes": 13440,
+          "realScratchCapacityBytes": 16128,
+          "executionCount": 66,
+          "horizontalExecutionCount": 25,
+          "verticalExecutionCount": 41,
+          "nonlinearFluxCallCount": 3,
+          "nonlinearFluxPhaseEvaluationCount": 108,
+          "phaseWorkspaceBytes": 3360,
+          "phaseReservationBytes": 3360,
+          "persistentBytes": 38409,
+          "stateInputBytes": 1728,
+          "fluxOutputBytes": 1728,
+          "knownMaximumLiveOwnedBytes": 40137,
+          "persistentFullHermitianBytes": 0,
+          "gradientMaskBytes": 0,
+          "Nx": 8,
+          "Ny": 6,
+          "Nz": 7,
+          "Nj": 4,
+          "Nkl": 9,
+          "phaseSeconds": 0,
+          "reconstructionSeconds": 0,
+          "derivativeReconstructionSeconds": 0,
+          "productSeconds": 0,
+          "projectionSeconds": 0,
+          "coefficientAssemblySeconds": 0,
+          "derivativeCoefficientAssemblySeconds": 0,
+          "coefficientProjectionSeconds": 0
+        },
+        "controlMetrics": {
+          "engine": "fftw",
+          "loadedLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3.3.dylib",
+          "nonlinearFluxSchedule": "streamed-target-three-channel",
+          "phaseImplementation": "scalar-sincos",
+          "coefficientStorageMode": "natural-dimensional",
+          "coefficientArithmeticMode": "natural-dimensional-prescaled",
+          "inverseNormalizationPlacement": "coefficient-production",
+          "optimizationImplementation": "O3-native",
+          "coefficientWorkerCount": 2,
+          "planMemoryAccounting": "wrapper-lower-bound; FFTW-owned plan memory is opaque",
+          "contractVersion": 4,
+          "planCount": 17,
+          "planBytes": 408,
+          "descriptorBytes": 11089,
+          "scratchCapacityBytes": 29568,
+          "scratchHighWaterBytes": 29568,
+          "halfSpectrumScratchCapacityBytes": 13440,
+          "realScratchCapacityBytes": 16128,
+          "executionCount": 66,
+          "horizontalExecutionCount": 25,
+          "verticalExecutionCount": 41,
+          "nonlinearFluxCallCount": 3,
+          "nonlinearFluxPhaseEvaluationCount": 108,
+          "phaseWorkspaceBytes": 3360,
+          "phaseReservationBytes": 3360,
+          "persistentBytes": 41065,
+          "stateInputBytes": 1728,
+          "fluxOutputBytes": 1728,
+          "knownMaximumLiveOwnedBytes": 42793,
+          "persistentFullHermitianBytes": 0,
+          "gradientMaskBytes": 0,
+          "Nx": 8,
+          "Ny": 6,
+          "Nz": 7,
+          "Nj": 4,
+          "Nkl": 9,
+          "phaseSeconds": 0,
+          "reconstructionSeconds": 0,
+          "derivativeReconstructionSeconds": 0,
+          "productSeconds": 0,
+          "projectionSeconds": 0,
+          "coefficientAssemblySeconds": 0,
+          "derivativeCoefficientAssemblySeconds": 0,
+          "coefficientProjectionSeconds": 0
+        },
+        "candidateLifecyclePassed": true,
+        "controlLifecyclePassed": true
+      },
+      {
+        "id": "odd-nonsquare-hydrostatic",
+        "Nxyz": [
+          7,
+          5,
+          7
+        ],
+        "isHydrostatic": true,
+        "shouldAntialias": false,
+        "repeatCount": 3,
+        "errors": {
+          "candidateForward": 8.1924318112632219E-16,
+          "controlForward": 8.1924318112632219E-16,
+          "controlCandidateForward": 0,
+          "candidateInverse": 1.3218951839257757E-15,
+          "controlInverse": 1.3218951839257757E-15,
+          "controlCandidateInverse": 0,
+          "candidateFAll": 6.1068698458937721E-16,
+          "controlFAll": 6.1068698458937721E-16,
+          "controlCandidateFAll": 0,
+          "candidateGAll": 1.7251091673020749E-15,
+          "controlGAll": 1.7251091673020749E-15,
+          "controlCandidateGAll": 0,
+          "candidateNonlinearFlux": 1.5566201869470286E-15,
+          "controlNonlinearFlux": 1.5566201869470286E-15,
+          "controlCandidateNonlinearFlux": 0
+        },
+        "maximumRelativeError": 1.7251091673020749E-15,
+        "candidateMetrics": {
+          "engine": "fftw",
+          "loadedLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3.3.dylib",
+          "nonlinearFluxSchedule": "streamed-target-three-channel",
+          "phaseImplementation": "scalar-sincos",
+          "coefficientStorageMode": "natural-dimensional",
+          "coefficientArithmeticMode": "natural-dimensional-prescaled",
+          "inverseNormalizationPlacement": "coefficient-production",
+          "optimizationImplementation": "O3-native",
+          "coefficientWorkerCount": 2,
+          "planMemoryAccounting": "wrapper-lower-bound; FFTW-owned plan memory is opaque",
+          "contractVersion": 4,
+          "planCount": 17,
+          "planBytes": 408,
+          "descriptorBytes": 21538,
+          "scratchCapacityBytes": 20720,
+          "scratchHighWaterBytes": 20720,
+          "halfSpectrumScratchCapacityBytes": 8960,
+          "realScratchCapacityBytes": 11760,
+          "executionCount": 66,
+          "horizontalExecutionCount": 25,
+          "verticalExecutionCount": 41,
+          "nonlinearFluxCallCount": 3,
+          "nonlinearFluxPhaseEvaluationCount": 324,
+          "phaseWorkspaceBytes": 2240,
+          "phaseReservationBytes": 2240,
+          "persistentBytes": 42666,
+          "stateInputBytes": 5184,
+          "fluxOutputBytes": 5184,
+          "knownMaximumLiveOwnedBytes": 47850,
+          "persistentFullHermitianBytes": 0,
+          "gradientMaskBytes": 0,
+          "Nx": 7,
+          "Ny": 5,
+          "Nz": 7,
+          "Nj": 6,
+          "Nkl": 18,
+          "phaseSeconds": 0,
+          "reconstructionSeconds": 0,
+          "derivativeReconstructionSeconds": 0,
+          "productSeconds": 0,
+          "projectionSeconds": 0,
+          "coefficientAssemblySeconds": 0,
+          "derivativeCoefficientAssemblySeconds": 0,
+          "coefficientProjectionSeconds": 0
+        },
+        "controlMetrics": {
+          "engine": "fftw",
+          "loadedLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3.3.dylib",
+          "nonlinearFluxSchedule": "streamed-target-three-channel",
+          "phaseImplementation": "scalar-sincos",
+          "coefficientStorageMode": "natural-dimensional",
+          "coefficientArithmeticMode": "natural-dimensional-prescaled",
+          "inverseNormalizationPlacement": "coefficient-production",
+          "optimizationImplementation": "O3-native",
+          "coefficientWorkerCount": 2,
+          "planMemoryAccounting": "wrapper-lower-bound; FFTW-owned plan memory is opaque",
+          "contractVersion": 4,
+          "planCount": 17,
+          "planBytes": 408,
+          "descriptorBytes": 29362,
+          "scratchCapacityBytes": 20720,
+          "scratchHighWaterBytes": 20720,
+          "halfSpectrumScratchCapacityBytes": 8960,
+          "realScratchCapacityBytes": 11760,
+          "executionCount": 66,
+          "horizontalExecutionCount": 25,
+          "verticalExecutionCount": 41,
+          "nonlinearFluxCallCount": 3,
+          "nonlinearFluxPhaseEvaluationCount": 324,
+          "phaseWorkspaceBytes": 2240,
+          "phaseReservationBytes": 2240,
+          "persistentBytes": 50490,
+          "stateInputBytes": 5184,
+          "fluxOutputBytes": 5184,
+          "knownMaximumLiveOwnedBytes": 55674,
+          "persistentFullHermitianBytes": 0,
+          "gradientMaskBytes": 0,
+          "Nx": 7,
+          "Ny": 5,
+          "Nz": 7,
+          "Nj": 6,
+          "Nkl": 18,
+          "phaseSeconds": 0,
+          "reconstructionSeconds": 0,
+          "derivativeReconstructionSeconds": 0,
+          "productSeconds": 0,
+          "projectionSeconds": 0,
+          "coefficientAssemblySeconds": 0,
+          "derivativeCoefficientAssemblySeconds": 0,
+          "coefficientProjectionSeconds": 0
+        },
+        "candidateLifecyclePassed": true,
+        "controlLifecyclePassed": true
+      },
+      {
+        "id": "even-nonsquare-nonhydrostatic",
+        "Nxyz": [
+          6,
+          8,
+          7
+        ],
+        "isHydrostatic": false,
+        "shouldAntialias": true,
+        "repeatCount": 3,
+        "errors": {
+          "candidateForward": 3.8315641479180418E-16,
+          "controlForward": 3.8315641479180418E-16,
+          "controlCandidateForward": 0,
+          "candidateInverse": 3.4830666770515505E-16,
+          "controlInverse": 3.4830666770515505E-16,
+          "controlCandidateInverse": 0,
+          "candidateFAll": 7.9946347264429217E-16,
+          "controlFAll": 7.9946347264429217E-16,
+          "controlCandidateFAll": 0,
+          "candidateGAll": 3.3457622465869577E-16,
+          "controlGAll": 3.3457622465869577E-16,
+          "controlCandidateGAll": 0,
+          "candidateNonlinearFlux": 1.4196898173716348E-15,
+          "controlNonlinearFlux": 1.4196898173716348E-15,
+          "controlCandidateNonlinearFlux": 0
+        },
+        "maximumRelativeError": 1.4196898173716348E-15,
+        "candidateMetrics": {
+          "engine": "fftw",
+          "loadedLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3.3.dylib",
+          "nonlinearFluxSchedule": "streamed-target-three-channel",
+          "phaseImplementation": "scalar-sincos",
+          "coefficientStorageMode": "natural-dimensional",
+          "coefficientArithmeticMode": "natural-dimensional-prescaled",
+          "inverseNormalizationPlacement": "coefficient-production",
+          "optimizationImplementation": "O3-native",
+          "coefficientWorkerCount": 2,
+          "planMemoryAccounting": "wrapper-lower-bound; FFTW-owned plan memory is opaque",
+          "contractVersion": 4,
+          "planCount": 17,
+          "planBytes": 408,
+          "descriptorBytes": 5165,
+          "scratchCapacityBytes": 30464,
+          "scratchHighWaterBytes": 30464,
+          "halfSpectrumScratchCapacityBytes": 14336,
+          "realScratchCapacityBytes": 16128,
+          "executionCount": 81,
+          "horizontalExecutionCount": 31,
+          "verticalExecutionCount": 50,
+          "nonlinearFluxCallCount": 3,
+          "nonlinearFluxPhaseEvaluationCount": 60,
+          "phaseWorkspaceBytes": 3584,
+          "phaseReservationBytes": 3584,
+          "persistentBytes": 36037,
+          "stateInputBytes": 960,
+          "fluxOutputBytes": 960,
+          "knownMaximumLiveOwnedBytes": 36997,
+          "persistentFullHermitianBytes": 0,
+          "gradientMaskBytes": 0,
+          "Nx": 6,
+          "Ny": 8,
+          "Nz": 7,
+          "Nj": 4,
+          "Nkl": 5,
+          "phaseSeconds": 0,
+          "reconstructionSeconds": 0,
+          "derivativeReconstructionSeconds": 0,
+          "productSeconds": 0,
+          "projectionSeconds": 0,
+          "coefficientAssemblySeconds": 0,
+          "derivativeCoefficientAssemblySeconds": 0,
+          "coefficientProjectionSeconds": 0
+        },
+        "controlMetrics": {
+          "engine": "fftw",
+          "loadedLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3.3.dylib",
+          "nonlinearFluxSchedule": "streamed-target-three-channel",
+          "phaseImplementation": "scalar-sincos",
+          "coefficientStorageMode": "natural-dimensional",
+          "coefficientArithmeticMode": "natural-dimensional-prescaled",
+          "inverseNormalizationPlacement": "coefficient-production",
+          "optimizationImplementation": "O3-native",
+          "coefficientWorkerCount": 2,
+          "planMemoryAccounting": "wrapper-lower-bound; FFTW-owned plan memory is opaque",
+          "contractVersion": 4,
+          "planCount": 17,
+          "planBytes": 408,
+          "descriptorBytes": 6669,
+          "scratchCapacityBytes": 30464,
+          "scratchHighWaterBytes": 30464,
+          "halfSpectrumScratchCapacityBytes": 14336,
+          "realScratchCapacityBytes": 16128,
+          "executionCount": 81,
+          "horizontalExecutionCount": 31,
+          "verticalExecutionCount": 50,
+          "nonlinearFluxCallCount": 3,
+          "nonlinearFluxPhaseEvaluationCount": 60,
+          "phaseWorkspaceBytes": 3584,
+          "phaseReservationBytes": 3584,
+          "persistentBytes": 37541,
+          "stateInputBytes": 960,
+          "fluxOutputBytes": 960,
+          "knownMaximumLiveOwnedBytes": 38501,
+          "persistentFullHermitianBytes": 0,
+          "gradientMaskBytes": 0,
+          "Nx": 6,
+          "Ny": 8,
+          "Nz": 7,
+          "Nj": 4,
+          "Nkl": 5,
+          "phaseSeconds": 0,
+          "reconstructionSeconds": 0,
+          "derivativeReconstructionSeconds": 0,
+          "productSeconds": 0,
+          "projectionSeconds": 0,
+          "coefficientAssemblySeconds": 0,
+          "derivativeCoefficientAssemblySeconds": 0,
+          "coefficientProjectionSeconds": 0
+        },
+        "candidateLifecyclePassed": true,
+        "controlLifecyclePassed": true
+      },
+      {
+        "id": "odd-nonsquare-nonhydrostatic",
+        "Nxyz": [
+          7,
+          9,
+          7
+        ],
+        "isHydrostatic": false,
+        "shouldAntialias": false,
+        "repeatCount": 3,
+        "errors": {
+          "candidateForward": 8.1231146182206114E-16,
+          "controlForward": 8.1231146182206114E-16,
+          "controlCandidateForward": 0,
+          "candidateInverse": 8.4745084339085524E-16,
+          "controlInverse": 8.4745084339085524E-16,
+          "controlCandidateInverse": 0,
+          "candidateFAll": 7.3999515665502168E-16,
+          "controlFAll": 7.3999515665502168E-16,
+          "controlCandidateFAll": 0,
+          "candidateGAll": 1.6963420668377287E-15,
+          "controlGAll": 1.6963420668377287E-15,
+          "controlCandidateGAll": 0,
+          "candidateNonlinearFlux": 1.243816638594765E-15,
+          "controlNonlinearFlux": 1.243816638594765E-15,
+          "controlCandidateNonlinearFlux": 0
+        },
+        "maximumRelativeError": 1.6963420668377287E-15,
+        "candidateMetrics": {
+          "engine": "fftw",
+          "loadedLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3.3.dylib",
+          "nonlinearFluxSchedule": "streamed-target-three-channel",
+          "phaseImplementation": "scalar-sincos",
+          "coefficientStorageMode": "natural-dimensional",
+          "coefficientArithmeticMode": "natural-dimensional-prescaled",
+          "inverseNormalizationPlacement": "coefficient-production",
+          "optimizationImplementation": "O3-native",
+          "coefficientWorkerCount": 2,
+          "planMemoryAccounting": "wrapper-lower-bound; FFTW-owned plan memory is opaque",
+          "contractVersion": 4,
+          "planCount": 17,
+          "planBytes": 408,
+          "descriptorBytes": 35520,
+          "scratchCapacityBytes": 37296,
+          "scratchHighWaterBytes": 37296,
+          "halfSpectrumScratchCapacityBytes": 16128,
+          "realScratchCapacityBytes": 21168,
+          "executionCount": 81,
+          "horizontalExecutionCount": 31,
+          "verticalExecutionCount": 50,
+          "nonlinearFluxCallCount": 3,
+          "nonlinearFluxPhaseEvaluationCount": 576,
+          "phaseWorkspaceBytes": 4032,
+          "phaseReservationBytes": 4032,
+          "persistentBytes": 73224,
+          "stateInputBytes": 9216,
+          "fluxOutputBytes": 9216,
+          "knownMaximumLiveOwnedBytes": 82440,
+          "persistentFullHermitianBytes": 0,
+          "gradientMaskBytes": 0,
+          "Nx": 7,
+          "Ny": 9,
+          "Nz": 7,
+          "Nj": 6,
+          "Nkl": 32,
+          "phaseSeconds": 0,
+          "reconstructionSeconds": 0,
+          "derivativeReconstructionSeconds": 0,
+          "productSeconds": 0,
+          "projectionSeconds": 0,
+          "coefficientAssemblySeconds": 0,
+          "derivativeCoefficientAssemblySeconds": 0,
+          "coefficientProjectionSeconds": 0
+        },
+        "controlMetrics": {
+          "engine": "fftw",
+          "loadedLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3.3.dylib",
+          "nonlinearFluxSchedule": "streamed-target-three-channel",
+          "phaseImplementation": "scalar-sincos",
+          "coefficientStorageMode": "natural-dimensional",
+          "coefficientArithmeticMode": "natural-dimensional-prescaled",
+          "inverseNormalizationPlacement": "coefficient-production",
+          "optimizationImplementation": "O3-native",
+          "coefficientWorkerCount": 2,
+          "planMemoryAccounting": "wrapper-lower-bound; FFTW-owned plan memory is opaque",
+          "contractVersion": 4,
+          "planCount": 17,
+          "planBytes": 408,
+          "descriptorBytes": 49392,
+          "scratchCapacityBytes": 37296,
+          "scratchHighWaterBytes": 37296,
+          "halfSpectrumScratchCapacityBytes": 16128,
+          "realScratchCapacityBytes": 21168,
+          "executionCount": 81,
+          "horizontalExecutionCount": 31,
+          "verticalExecutionCount": 50,
+          "nonlinearFluxCallCount": 3,
+          "nonlinearFluxPhaseEvaluationCount": 576,
+          "phaseWorkspaceBytes": 4032,
+          "phaseReservationBytes": 4032,
+          "persistentBytes": 87096,
+          "stateInputBytes": 9216,
+          "fluxOutputBytes": 9216,
+          "knownMaximumLiveOwnedBytes": 96312,
+          "persistentFullHermitianBytes": 0,
+          "gradientMaskBytes": 0,
+          "Nx": 7,
+          "Ny": 9,
+          "Nz": 7,
+          "Nj": 6,
+          "Nkl": 32,
+          "phaseSeconds": 0,
+          "reconstructionSeconds": 0,
+          "derivativeReconstructionSeconds": 0,
+          "productSeconds": 0,
+          "projectionSeconds": 0,
+          "coefficientAssemblySeconds": 0,
+          "derivativeCoefficientAssemblySeconds": 0,
+          "coefficientProjectionSeconds": 0
+        },
+        "candidateLifecyclePassed": true,
+        "controlLifecyclePassed": true
+      }
+    ],
+    "injection": {
+      "planFailurePassed": true,
+      "allocationFailurePassed": true,
+      "creationCleanupPassed": true,
+      "executionFailurePassed": true,
+      "recoveryPassed": true,
+      "finalCleanupPassed": true,
+      "passed": true
+    },
+    "maximumRelativeError": 1.7251091673020749E-15
+  },
+  "benchmark": {
+    "schemaVersion": "1.0.0",
+    "status": "complete",
+    "generatedAtUTC": "2026-08-12T11:31:38.539Z",
+    "controlCommit": "3af6b83e7ceac52a66536e8cdb8495e1c2df2016",
+    "candidateCommit": "9ceb932a7f42e3a722f6cb406e7e06fe913aef86",
+    "processes": [
+      {
+        "implementation": "control",
+        "sourceCommit": "3af6b83e7ceac52a66536e8cdb8495e1c2df2016",
+        "repeatIndex": 1,
+        "threadCount": 18,
+        "matlabMaximumThreads": 18,
+        "matlabVersion": "26.1.0.3312084 (R2026a) Update 4",
+        "module": "wv_issue161_exact_control_mex",
+        "moduleInfo": {
+          "engine": "fftw",
+          "version": "fftw-3.3.11-neon",
+          "baseLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3.3.dylib",
+          "threadLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3_threads.3.dylib",
+          "openMPRuntimeLibrary": "/Applications/MATLAB_R2026a.app/bin/maca64/libomp.dylib"
+        },
+        "loadedLibompImages": "/Applications/MATLAB_R2026a.app/bin/maca64/libomp.dylib",
+        "rssProvider": "macos-libproc-rss-external",
+        "moduleClearSeconds": 0.023055541666666665,
+        "maximumRelativeError": 2.1598154524673412E-14,
+        "lifecyclePassed": true,
+        "status": "complete"
+      },
+      {
+        "implementation": "control",
+        "sourceCommit": "3af6b83e7ceac52a66536e8cdb8495e1c2df2016",
+        "repeatIndex": 2,
+        "threadCount": 18,
+        "matlabMaximumThreads": 18,
+        "matlabVersion": "26.1.0.3312084 (R2026a) Update 4",
+        "module": "wv_issue161_exact_control_mex",
+        "moduleInfo": {
+          "engine": "fftw",
+          "version": "fftw-3.3.11-neon",
+          "baseLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3.3.dylib",
+          "threadLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3_threads.3.dylib",
+          "openMPRuntimeLibrary": "/Applications/MATLAB_R2026a.app/bin/maca64/libomp.dylib"
+        },
+        "loadedLibompImages": "/Applications/MATLAB_R2026a.app/bin/maca64/libomp.dylib",
+        "rssProvider": "macos-libproc-rss-external",
+        "moduleClearSeconds": 0.02184225,
+        "maximumRelativeError": 2.1684237758351422E-14,
+        "lifecyclePassed": true,
+        "status": "complete"
+      },
+      {
+        "implementation": "control",
+        "sourceCommit": "3af6b83e7ceac52a66536e8cdb8495e1c2df2016",
+        "repeatIndex": 3,
+        "threadCount": 18,
+        "matlabMaximumThreads": 18,
+        "matlabVersion": "26.1.0.3312084 (R2026a) Update 4",
+        "module": "wv_issue161_exact_control_mex",
+        "moduleInfo": {
+          "engine": "fftw",
+          "version": "fftw-3.3.11-neon",
+          "baseLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3.3.dylib",
+          "threadLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3_threads.3.dylib",
+          "openMPRuntimeLibrary": "/Applications/MATLAB_R2026a.app/bin/maca64/libomp.dylib"
+        },
+        "loadedLibompImages": "/Applications/MATLAB_R2026a.app/bin/maca64/libomp.dylib",
+        "rssProvider": "macos-libproc-rss-external",
+        "moduleClearSeconds": 0.021527208333333332,
+        "maximumRelativeError": 2.167635648757323E-14,
+        "lifecyclePassed": true,
+        "status": "complete"
+      },
+      {
+        "implementation": "candidate",
+        "sourceCommit": "9ceb932a7f42e3a722f6cb406e7e06fe913aef86",
+        "repeatIndex": 1,
+        "threadCount": 18,
+        "matlabMaximumThreads": 18,
+        "matlabVersion": "26.1.0.3312084 (R2026a) Update 4",
+        "module": "wv_issue161_exact_candidate_mex",
+        "moduleInfo": {
+          "engine": "fftw",
+          "version": "fftw-3.3.11-neon",
+          "baseLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3.3.dylib",
+          "threadLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3_threads.3.dylib",
+          "openMPRuntimeLibrary": "/Applications/MATLAB_R2026a.app/bin/maca64/libomp.dylib"
+        },
+        "loadedLibompImages": "/Applications/MATLAB_R2026a.app/bin/maca64/libomp.dylib",
+        "rssProvider": "macos-libproc-rss-external",
+        "moduleClearSeconds": 0.02319825,
+        "maximumRelativeError": 2.1703194411223314E-14,
+        "lifecyclePassed": true,
+        "status": "complete"
+      },
+      {
+        "implementation": "candidate",
+        "sourceCommit": "9ceb932a7f42e3a722f6cb406e7e06fe913aef86",
+        "repeatIndex": 2,
+        "threadCount": 18,
+        "matlabMaximumThreads": 18,
+        "matlabVersion": "26.1.0.3312084 (R2026a) Update 4",
+        "module": "wv_issue161_exact_candidate_mex",
+        "moduleInfo": {
+          "engine": "fftw",
+          "version": "fftw-3.3.11-neon",
+          "baseLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3.3.dylib",
+          "threadLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3_threads.3.dylib",
+          "openMPRuntimeLibrary": "/Applications/MATLAB_R2026a.app/bin/maca64/libomp.dylib"
+        },
+        "loadedLibompImages": "/Applications/MATLAB_R2026a.app/bin/maca64/libomp.dylib",
+        "rssProvider": "macos-libproc-rss-external",
+        "moduleClearSeconds": 0.021821625,
+        "maximumRelativeError": 2.1649530751187831E-14,
+        "lifecyclePassed": true,
+        "status": "complete"
+      },
+      {
+        "implementation": "candidate",
+        "sourceCommit": "9ceb932a7f42e3a722f6cb406e7e06fe913aef86",
+        "repeatIndex": 3,
+        "threadCount": 18,
+        "matlabMaximumThreads": 18,
+        "matlabVersion": "26.1.0.3312084 (R2026a) Update 4",
+        "module": "wv_issue161_exact_candidate_mex",
+        "moduleInfo": {
+          "engine": "fftw",
+          "version": "fftw-3.3.11-neon",
+          "baseLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3.3.dylib",
+          "threadLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue-137/.fftw-cache/issue137/providers/native-neon-pthreads-99b0f0e9ae7e3864/install/lib/libfftw3_threads.3.dylib",
+          "openMPRuntimeLibrary": "/Applications/MATLAB_R2026a.app/bin/maca64/libomp.dylib"
+        },
+        "loadedLibompImages": "/Applications/MATLAB_R2026a.app/bin/maca64/libomp.dylib",
+        "rssProvider": "macos-libproc-rss-external",
+        "moduleClearSeconds": 0.022413375,
+        "maximumRelativeError": 2.1649530751187831E-14,
+        "lifecyclePassed": true,
+        "status": "complete"
+      }
+    ],
+    "records": [
+      {
+        "implementation": "control",
+        "sourceCommit": "3af6b83e7ceac52a66536e8cdb8495e1c2df2016",
+        "caseId": "constant-hydrostatic-256x256x65",
+        "Nxyz": [
+          256,
+          256,
+          65
+        ],
+        "isHydrostatic": true,
+        "processCount": 3,
+        "warmupCount": 2,
+        "sampleCount": 7,
+        "construction": {
+          "processSeconds": [
+            14.609318916666666,
+            1.3449818333333334,
+            13.842044875
+          ],
+          "medianSeconds": 13.842044875
+        },
+        "planning": {
+          "processSeconds": [
+            12.553524918,
+            0.00500929100000036,
+            12.514330623999996
+          ],
+          "medianSeconds": 12.514330623999996
+        },
+        "nonlinearFlux": {
+          "completeProcessSamplesSeconds": [
+            [
+              0.053906583333333334,
+              0.052853,
+              0.053556458333333334,
+              0.054616208333333333,
+              0.055296,
+              0.0540245,
+              0.053159458333333333
+            ],
+            [
+              0.05643170833333333,
+              0.054938083333333332,
+              0.054786291666666667,
+              0.056729083333333333,
+              0.05594125,
+              0.055308125,
+              0.055128041666666669
+            ],
+            [
+              0.053346458333333333,
+              0.053974583333333333,
+              0.055677833333333336,
+              0.053681833333333331,
+              0.0550335,
+              0.056856125,
+              0.055256125
+            ]
+          ],
+          "completeProcessMediansSeconds": [
+            0.053906583333333334,
+            0.055308125,
+            0.0550335
+          ],
+          "completeMedianSeconds": 0.0550335,
+          "internalProcessSamplesSeconds": [
+            [
+              0.05366875,
+              0.052633042,
+              0.053350416,
+              0.054401625,
+              0.055052792,
+              0.053811375,
+              0.052953208
+            ],
+            [
+              0.056218458,
+              0.054718333,
+              0.054554208,
+              0.056498083,
+              0.055718542,
+              0.055087583,
+              0.05490425
+            ],
+            [
+              0.053125541,
+              0.053743334,
+              0.055466708,
+              0.053458375,
+              0.054794583,
+              0.056646791,
+              0.055023541
+            ]
+          ],
+          "internalProcessMediansSeconds": [
+            0.05366875,
+            0.055087583,
+            0.054794583
+          ],
+          "internalMedianSeconds": 0.054794583
+        },
+        "productionMatlab": {
+          "processSamplesSeconds": [
+            [
+              0.09353425,
+              0.091412375,
+              0.09114925,
+              0.093698166666666666,
+              0.090391208333333334,
+              0.08521058333333334,
+              0.083860958333333332
+            ],
+            [
+              0.1091835,
+              0.10715158333333333,
+              0.10117845833333333,
+              0.10502129166666667,
+              0.10765166666666667,
+              0.10064233333333333,
+              0.10516133333333333
+            ],
+            [
+              0.097035791666666663,
+              0.095199416666666661,
+              0.09308125,
+              0.09341608333333333,
+              0.095033208333333327,
+              0.093228041666666664,
+              0.094531666666666667
+            ]
+          ],
+          "processMediansSeconds": [
+            0.09114925,
+            0.10516133333333333,
+            0.094531666666666667
+          ],
+          "medianSeconds": 0.094531666666666667
+        },
+        "memory": {
+          "descriptorBytes": 1.13012311E+8,
+          "persistentBytes": 4.54864879E+8,
+          "scratchCapacityBytes": 3.4185216E+8,
+          "knownMaximumLiveOwnedBytes": 4.77925903E+8,
+          "stateInputBytes": 2.3061024E+7,
+          "fluxOutputBytes": 2.3061024E+7,
+          "planBytes": 408,
+          "planCount": 17,
+          "planMemoryAccounting": "wrapper-lower-bound; FFTW-owned plan memory is opaque",
+          "persistentFullHermitianBytes": 0,
+          "persistentRSSProcessBytes": [
+            1.778008064E+9,
+            5.27777792E+8,
+            6.3832064E+8
+          ],
+          "medianPersistentRSSBytes": 6.3832064E+8,
+          "peakRSSProcessBytes": [
+            2.173222912E+9,
+            8.0642048E+8,
+            7.09722112E+8
+          ],
+          "medianPeakRSSBytes": 8.0642048E+8
+        },
+        "counts": {
+          "executionCount": 318,
+          "horizontalExecutionCount": 117,
+          "verticalExecutionCount": 201,
+          "nonlinearFluxCallCount": 11,
+          "nonlinearFluxPhaseEvaluationCount": 5.284818E+6
+        },
+        "stages": {
+          "phaseSeconds": {
+            "processSeconds": [
+              0.001358,
+              0.001615667,
+              0.001400208
+            ],
+            "medianSeconds": 0.001400208
+          },
+          "reconstructionSeconds": {
+            "processSeconds": [
+              0.008918792,
+              0.010782,
+              0.008723375
+            ],
+            "medianSeconds": 0.008918792
+          },
+          "derivativeReconstructionSeconds": {
+            "processSeconds": [
+              0.025438999,
+              0.032605626,
+              0.024327875
+            ],
+            "medianSeconds": 0.025438999
+          },
+          "productSeconds": {
+            "processSeconds": [
+              0.007207333,
+              0.008288041,
+              0.008216124
+            ],
+            "medianSeconds": 0.008216124
+          },
+          "projectionSeconds": {
+            "processSeconds": [
+              0.011738209,
+              0.014791124999999999,
+              0.011871875
+            ],
+            "medianSeconds": 0.011871875
+          },
+          "coefficientAssemblySeconds": {
+            "processSeconds": [
+              0.001689333,
+              0.001496625,
+              0.001460458
+            ],
+            "medianSeconds": 0.001496625
+          },
+          "derivativeCoefficientAssemblySeconds": {
+            "processSeconds": [
+              0.049761413,
+              0.055820247999999989,
+              0.052762496999999992
+            ],
+            "medianSeconds": 0.052762496999999992
+          },
+          "coefficientProjectionSeconds": {
+            "processSeconds": [
+              0.002280625,
+              0.002763167,
+              0.003879875
+            ],
+            "medianSeconds": 0.002763167
+          }
+        },
+        "maximumRelativeError": 9.868154711291112E-15,
+        "lifecyclePassed": true,
+        "schedule": "streamed-target-three-channel",
+        "coefficientStorageMode": "natural-dimensional",
+        "coefficientArithmeticMode": "natural-dimensional-prescaled",
+        "inverseNormalizationPlacement": "coefficient-production",
+        "coefficientWorkerCount": 2
+      },
+      {
+        "implementation": "control",
+        "sourceCommit": "3af6b83e7ceac52a66536e8cdb8495e1c2df2016",
+        "caseId": "constant-nonhydrostatic-256x256x65",
+        "Nxyz": [
+          256,
+          256,
+          65
+        ],
+        "isHydrostatic": false,
+        "processCount": 3,
+        "warmupCount": 2,
+        "sampleCount": 7,
+        "construction": {
+          "processSeconds": [
+            1.4116583333333332,
+            14.990938875,
+            1.2651419166666666
+          ],
+          "medianSeconds": 1.4116583333333332
+        },
+        "planning": {
+          "processSeconds": [
+            0.0047167899999998042,
+            12.817099041,
+            0.0049282920000024433
+          ],
+          "medianSeconds": 0.0049282920000024433
+        },
+        "nonlinearFlux": {
+          "completeProcessSamplesSeconds": [
+            [
+              0.06817075,
+              0.070888875,
+              0.070757291666666666,
+              0.07171941666666666,
+              0.07064575,
+              0.071455958333333333,
+              0.071664875
+            ],
+            [
+              0.065966416666666666,
+              0.067709083333333336,
+              0.068695416666666662,
+              0.070512416666666661,
+              0.072539666666666669,
+              0.071663208333333339,
+              0.072348916666666666
+            ],
+            [
+              0.069546458333333339,
+              0.071234083333333337,
+              0.07008191666666666,
+              0.069867791666666665,
+              0.072645125,
+              0.069606208333333336,
+              0.06930429166666667
+            ]
+          ],
+          "completeProcessMediansSeconds": [
+            0.070888875,
+            0.070512416666666661,
+            0.069867791666666665
+          ],
+          "completeMedianSeconds": 0.070512416666666661,
+          "internalProcessSamplesSeconds": [
+            [
+              0.067959917,
+              0.070685916,
+              0.070542,
+              0.071510792,
+              0.070429167,
+              0.07124525,
+              0.071455875
+            ],
+            [
+              0.065735958,
+              0.067461375,
+              0.068448917,
+              0.070267833,
+              0.0722885,
+              0.071418125,
+              0.072111625
+            ],
+            [
+              0.069327333,
+              0.071021416,
+              0.069846167,
+              0.069645125,
+              0.072422166,
+              0.069396416,
+              0.06908275
+            ]
+          ],
+          "internalProcessMediansSeconds": [
+            0.070685916,
+            0.070267833,
+            0.069645125
+          ],
+          "internalMedianSeconds": 0.070267833
+        },
+        "productionMatlab": {
+          "processSamplesSeconds": [
+            [
+              0.1048285,
+              0.10202195833333333,
+              0.11950354166666667,
+              0.11391708333333334,
+              0.11021633333333333,
+              0.11116416666666666,
+              0.11221083333333333
+            ],
+            [
+              0.12122816666666666,
+              0.12296604166666666,
+              0.11384995833333333,
+              0.11929716666666666,
+              0.11151279166666667,
+              0.10712795833333333,
+              0.10589291666666667
+            ],
+            [
+              0.113581375,
+              0.12065079166666667,
+              0.11146941666666667,
+              0.11363283333333334,
+              0.11735575,
+              0.11543820833333333,
+              0.11520116666666666
+            ]
+          ],
+          "processMediansSeconds": [
+            0.11116416666666666,
+            0.11384995833333333,
+            0.11520116666666666
+          ],
+          "medianSeconds": 0.11384995833333333
+        },
+        "memory": {
+          "descriptorBytes": 1.13012311E+8,
+          "persistentBytes": 4.54864879E+8,
+          "scratchCapacityBytes": 3.4185216E+8,
+          "knownMaximumLiveOwnedBytes": 4.77925903E+8,
+          "stateInputBytes": 2.3061024E+7,
+          "fluxOutputBytes": 2.3061024E+7,
+          "planBytes": 408,
+          "planCount": 17,
+          "planMemoryAccounting": "wrapper-lower-bound; FFTW-owned plan memory is opaque",
+          "persistentFullHermitianBytes": 0,
+          "persistentRSSProcessBytes": [
+            9.09443072E+8,
+            1.778040832E+9,
+            8.31193088E+8
+          ],
+          "medianPersistentRSSBytes": 9.09443072E+8,
+          "peakRSSProcessBytes": [
+            1.287995392E+9,
+            2.200551424E+9,
+            1.216823296E+9
+          ],
+          "medianPeakRSSBytes": 1.287995392E+9
+        },
+        "counts": {
+          "executionCount": 373,
+          "horizontalExecutionCount": 139,
+          "verticalExecutionCount": 234,
+          "nonlinearFluxCallCount": 11,
+          "nonlinearFluxPhaseEvaluationCount": 5.284818E+6
+        },
+        "stages": {
+          "phaseSeconds": {
+            "processSeconds": [
+              0.00132425,
+              0.001370834,
+              0.001445542
+            ],
+            "medianSeconds": 0.001370834
+          },
+          "reconstructionSeconds": {
+            "processSeconds": [
+              0.009765042,
+              0.009340584,
+              0.009041833
+            ],
+            "medianSeconds": 0.009340584
+          },
+          "derivativeReconstructionSeconds": {
+            "processSeconds": [
+              0.034953958,
+              0.033820167,
+              0.031891959
+            ],
+            "medianSeconds": 0.033820167
+          },
+          "productSeconds": {
+            "processSeconds": [
+              0.009640959,
+              0.010513374,
+              0.011530166
+            ],
+            "medianSeconds": 0.010513374
+          },
+          "projectionSeconds": {
+            "processSeconds": [
+              0.015959624,
+              0.015223251,
+              0.015432834
+            ],
+            "medianSeconds": 0.015432834
+          },
+          "coefficientAssemblySeconds": {
+            "processSeconds": [
+              0.001454416,
+              0.001510625,
+              0.00143725
+            ],
+            "medianSeconds": 0.001454416
+          },
+          "derivativeCoefficientAssemblySeconds": {
+            "processSeconds": [
+              0.058136041,
+              0.061944166000000016,
+              0.060652997000000028
+            ],
+            "medianSeconds": 0.060652997000000028
+          },
+          "coefficientProjectionSeconds": {
+            "processSeconds": [
+              0.002603583,
+              0.00499275,
+              0.003312084
+            ],
+            "medianSeconds": 0.003312084
+          }
+        },
+        "maximumRelativeError": 7.7989838367513151E-15,
+        "lifecyclePassed": true,
+        "schedule": "streamed-target-three-channel",
+        "coefficientStorageMode": "natural-dimensional",
+        "coefficientArithmeticMode": "natural-dimensional-prescaled",
+        "inverseNormalizationPlacement": "coefficient-production",
+        "coefficientWorkerCount": 2
+      },
+      {
+        "implementation": "control",
+        "sourceCommit": "3af6b83e7ceac52a66536e8cdb8495e1c2df2016",
+        "caseId": "constant-hydrostatic-512x512x129",
+        "Nxyz": [
+          512,
+          512,
+          129
+        ],
+        "isHydrostatic": true,
+        "processCount": 3,
+        "warmupCount": 2,
+        "sampleCount": 3,
+        "construction": {
+          "processSeconds": [
+            55.885949083333337,
+            56.523640583333332,
+            54.561193208333336
+          ],
+          "medianSeconds": 55.885949083333337
+        },
+        "planning": {
+          "processSeconds": [
+            34.035905960000008,
+            33.59474721,
+            34.169481167
+          ],
+          "medianSeconds": 34.035905960000008
+        },
+        "nonlinearFlux": {
+          "completeProcessSamplesSeconds": [
+            [
+              0.42511941666666669,
+              0.42676441666666665,
+              0.42612904166666665
+            ],
+            [
+              0.42260383333333335,
+              0.46090908333333336,
+              0.44022704166666665
+            ],
+            [
+              0.40898679166666668,
+              0.408611375,
+              0.40010529166666664
+            ]
+          ],
+          "completeProcessMediansSeconds": [
+            0.42612904166666665,
+            0.44022704166666665,
+            0.408611375
+          ],
+          "completeMedianSeconds": 0.42612904166666665,
+          "internalProcessSamplesSeconds": [
+            [
+              0.42419125,
+              0.42587725,
+              0.425215167
+            ],
+            [
+              0.421623042,
+              0.459861375,
+              0.439130834
+            ],
+            [
+              0.406006791,
+              0.407474459,
+              0.399012417
+            ]
+          ],
+          "internalProcessMediansSeconds": [
+            0.425215167,
+            0.439130834,
+            0.406006791
+          ],
+          "internalMedianSeconds": 0.425215167
+        },
+        "productionMatlab": {
+          "processSamplesSeconds": [
+            [
+              0.74158279166666663,
+              0.74427104166666669,
+              0.74077020833333329
+            ],
+            [
+              0.80166233333333337,
+              0.75867254166666664,
+              0.78395195833333331
+            ],
+            [
+              0.70790125,
+              0.69897304166666663,
+              0.69608116666666664
+            ]
+          ],
+          "processMediansSeconds": [
+            0.74158279166666663,
+            0.78395195833333331,
+            0.69897304166666663
+          ],
+          "medianSeconds": 0.74158279166666663
+        },
+        "memory": {
+          "descriptorBytes": 9.08675773E+8,
+          "persistentBytes": 3.618229333E+9,
+          "scratchCapacityBytes": 2.709553152E+9,
+          "knownMaximumLiveOwnedBytes": 3.804950533E+9,
+          "stateInputBytes": 1.867212E+8,
+          "fluxOutputBytes": 1.867212E+8,
+          "planBytes": 408,
+          "planCount": 17,
+          "planMemoryAccounting": "wrapper-lower-bound; FFTW-owned plan memory is opaque",
+          "persistentFullHermitianBytes": 0,
+          "persistentRSSProcessBytes": [
+            1.1173756928E+10,
+            1.0307567616E+10,
+            1.1128963072E+10
+          ],
+          "medianPersistentRSSBytes": 1.1128963072E+10,
+          "peakRSSProcessBytes": [
+            1.308049408E+10,
+            1.3091930112E+10,
+            1.4118567936E+10
+          ],
+          "medianPeakRSSBytes": 1.3091930112E+10
+        },
+        "counts": {
+          "executionCount": 198,
+          "horizontalExecutionCount": 73,
+          "verticalExecutionCount": 125,
+          "nonlinearFluxCallCount": 7,
+          "nonlinearFluxPhaseEvaluationCount": 2.7230175E+7
+        },
+        "stages": {
+          "phaseSeconds": {
+            "processSeconds": [
+              0.010614166,
+              0.012524292,
+              0.011147542
+            ],
+            "medianSeconds": 0.011147542
+          },
+          "reconstructionSeconds": {
+            "processSeconds": [
+              0.068368417,
+              0.069762625,
+              0.0631135
+            ],
+            "medianSeconds": 0.068368417
+          },
+          "derivativeReconstructionSeconds": {
+            "processSeconds": [
+              0.195234042,
+              0.190501042,
+              0.183688084
+            ],
+            "medianSeconds": 0.190501042
+          },
+          "productSeconds": {
+            "processSeconds": [
+              0.056092166,
+              0.060812749,
+              0.058850375
+            ],
+            "medianSeconds": 0.058850375
+          },
+          "projectionSeconds": {
+            "processSeconds": [
+              0.091114,
+              0.09653162400000001,
+              0.089632208
+            ],
+            "medianSeconds": 0.091114
+          },
+          "coefficientAssemblySeconds": {
+            "processSeconds": [
+              0.011522416,
+              0.012326834,
+              0.010768417
+            ],
+            "medianSeconds": 0.011522416
+          },
+          "derivativeCoefficientAssemblySeconds": {
+            "processSeconds": [
+              0.24682587299999995,
+              0.27069283200000005,
+              0.26331883399999995
+            ],
+            "medianSeconds": 0.26331883399999995
+          },
+          "coefficientProjectionSeconds": {
+            "processSeconds": [
+              0.0171905,
+              0.021570416,
+              0.018728375
+            ],
+            "medianSeconds": 0.018728375
+          }
+        },
+        "maximumRelativeError": 2.1684237758351422E-14,
+        "lifecyclePassed": true,
+        "schedule": "streamed-target-three-channel",
+        "coefficientStorageMode": "natural-dimensional",
+        "coefficientArithmeticMode": "natural-dimensional-prescaled",
+        "inverseNormalizationPlacement": "coefficient-production",
+        "coefficientWorkerCount": 2
+      },
+      {
+        "implementation": "control",
+        "sourceCommit": "3af6b83e7ceac52a66536e8cdb8495e1c2df2016",
+        "caseId": "constant-nonhydrostatic-512x512x129",
+        "Nxyz": [
+          512,
+          512,
+          129
+        ],
+        "isHydrostatic": false,
+        "processCount": 3,
+        "warmupCount": 2,
+        "sampleCount": 3,
+        "construction": {
+          "processSeconds": [
+            21.951839958333334,
+            22.785818833333334,
+            22.320089958333334
+          ],
+          "medianSeconds": 22.320089958333334
+        },
+        "planning": {
+          "processSeconds": [
+            0.005502833000001317,
+            0.005650334000002033,
+            0.0056479150000043887
+          ],
+          "medianSeconds": 0.0056479150000043887
+        },
+        "nonlinearFlux": {
+          "completeProcessSamplesSeconds": [
+            [
+              0.53582225,
+              0.53479720833333333,
+              0.53786304166666665
+            ],
+            [
+              0.5888535,
+              0.54217958333333338,
+              0.590129875
+            ],
+            [
+              0.525417875,
+              0.52608570833333335,
+              0.52625608333333329
+            ]
+          ],
+          "completeProcessMediansSeconds": [
+            0.53582225,
+            0.5888535,
+            0.52608570833333335
+          ],
+          "completeMedianSeconds": 0.53582225,
+          "internalProcessSamplesSeconds": [
+            [
+              0.534906208,
+              0.533868583,
+              0.536943459
+            ],
+            [
+              0.587799166,
+              0.541208875,
+              0.589087833
+            ],
+            [
+              0.524471959,
+              0.525013709,
+              0.525267083
+            ]
+          ],
+          "internalProcessMediansSeconds": [
+            0.534906208,
+            0.587799166,
+            0.525013709
+          ],
+          "internalMedianSeconds": 0.534906208
+        },
+        "productionMatlab": {
+          "processSamplesSeconds": [
+            [
+              0.917387,
+              0.906277125,
+              0.91009108333333333
+            ],
+            [
+              0.98943166666666671,
+              0.9949025416666667,
+              0.98553208333333331
+            ],
+            [
+              0.8695070416666667,
+              0.8681855,
+              0.86389245833333328
+            ]
+          ],
+          "processMediansSeconds": [
+            0.91009108333333333,
+            0.98943166666666671,
+            0.8681855
+          ],
+          "medianSeconds": 0.91009108333333333
+        },
+        "memory": {
+          "descriptorBytes": 9.08675773E+8,
+          "persistentBytes": 3.618229333E+9,
+          "scratchCapacityBytes": 2.709553152E+9,
+          "knownMaximumLiveOwnedBytes": 3.804950533E+9,
+          "stateInputBytes": 1.867212E+8,
+          "fluxOutputBytes": 1.867212E+8,
+          "planBytes": 408,
+          "planCount": 17,
+          "planMemoryAccounting": "wrapper-lower-bound; FFTW-owned plan memory is opaque",
+          "persistentFullHermitianBytes": 0,
+          "persistentRSSProcessBytes": [
+            8.886059008E+9,
+            7.251542016E+9,
+            6.2029824E+9
+          ],
+          "medianPersistentRSSBytes": 7.251542016E+9,
+          "peakRSSProcessBytes": [
+            1.2075892736E+10,
+            1.0253336576E+10,
+            9.206611968E+9
+          ],
+          "medianPeakRSSBytes": 1.0253336576E+10
+        },
+        "counts": {
+          "executionCount": 233,
+          "horizontalExecutionCount": 87,
+          "verticalExecutionCount": 146,
+          "nonlinearFluxCallCount": 7,
+          "nonlinearFluxPhaseEvaluationCount": 2.7230175E+7
+        },
+        "stages": {
+          "phaseSeconds": {
+            "processSeconds": [
+              0.010446583,
+              0.012593375,
+              0.011211833
+            ],
+            "medianSeconds": 0.011211833
+          },
+          "reconstructionSeconds": {
+            "processSeconds": [
+              0.0673675,
+              0.070913833,
+              0.0660235
+            ],
+            "medianSeconds": 0.0673675
+          },
+          "derivativeReconstructionSeconds": {
+            "processSeconds": [
+              0.265459874,
+              0.277405042,
+              0.25125158299999995
+            ],
+            "medianSeconds": 0.265459874
+          },
+          "productSeconds": {
+            "processSeconds": [
+              0.078847375,
+              0.088086749999999991,
+              0.078223292
+            ],
+            "medianSeconds": 0.078847375
+          },
+          "projectionSeconds": {
+            "processSeconds": [
+              0.122890168,
+              0.13600416699999998,
+              0.119731293
+            ],
+            "medianSeconds": 0.122890168
+          },
+          "coefficientAssemblySeconds": {
+            "processSeconds": [
+              0.010823042,
+              0.01421675,
+              0.011177416
+            ],
+            "medianSeconds": 0.011177416
+          },
+          "derivativeCoefficientAssemblySeconds": {
+            "processSeconds": [
+              0.297473333,
+              0.33162857799999995,
+              0.313167875
+            ],
+            "medianSeconds": 0.313167875
+          },
+          "coefficientProjectionSeconds": {
+            "processSeconds": [
+              0.018981209,
+              0.020615083,
+              0.020647
+            ],
+            "medianSeconds": 0.020615083
+          }
+        },
+        "maximumRelativeError": 1.6522564250729128E-14,
+        "lifecyclePassed": true,
+        "schedule": "streamed-target-three-channel",
+        "coefficientStorageMode": "natural-dimensional",
+        "coefficientArithmeticMode": "natural-dimensional-prescaled",
+        "inverseNormalizationPlacement": "coefficient-production",
+        "coefficientWorkerCount": 2
+      },
+      {
+        "implementation": "candidate",
+        "sourceCommit": "9ceb932a7f42e3a722f6cb406e7e06fe913aef86",
+        "caseId": "constant-hydrostatic-256x256x65",
+        "Nxyz": [
+          256,
+          256,
+          65
+        ],
+        "isHydrostatic": true,
+        "processCount": 3,
+        "warmupCount": 2,
+        "sampleCount": 7,
+        "construction": {
+          "processSeconds": [
+            14.584929333333333,
+            1.3840945833333334,
+            13.806186333333333
+          ],
+          "medianSeconds": 13.806186333333333
+        },
+        "planning": {
+          "processSeconds": [
+            12.474729625,
+            0.0052010819999992464,
+            12.484083082000005
+          ],
+          "medianSeconds": 12.474729625
+        },
+        "nonlinearFlux": {
+          "completeProcessSamplesSeconds": [
+            [
+              0.051263708333333331,
+              0.051707958333333331,
+              0.050932666666666668,
+              0.052289291666666668,
+              0.05233979166666667,
+              0.052685958333333331,
+              0.052217375
+            ],
+            [
+              0.052170125,
+              0.053933333333333333,
+              0.053898583333333333,
+              0.054328541666666667,
+              0.052319625,
+              0.05328225,
+              0.053638
+            ],
+            [
+              0.05530566666666667,
+              0.056253375,
+              0.057132916666666665,
+              0.05686870833333333,
+              0.056457458333333335,
+              0.055258583333333333,
+              0.0548735
+            ]
+          ],
+          "completeProcessMediansSeconds": [
+            0.052217375,
+            0.053638,
+            0.056253375
+          ],
+          "completeMedianSeconds": 0.053638,
+          "internalProcessSamplesSeconds": [
+            [
+              0.051016,
+              0.051463583,
+              0.050697708,
+              0.052048875,
+              0.052094917,
+              0.052447166,
+              0.051957792
+            ],
+            [
+              0.051917375,
+              0.053688667,
+              0.05366125,
+              0.054102667,
+              0.052077625,
+              0.053034625,
+              0.053397041
+            ],
+            [
+              0.05507225,
+              0.056012667,
+              0.056902958,
+              0.056632458,
+              0.056219792,
+              0.055021583,
+              0.0546385
+            ]
+          ],
+          "internalProcessMediansSeconds": [
+            0.051957792,
+            0.053397041,
+            0.056012667
+          ],
+          "internalMedianSeconds": 0.053397041
+        },
+        "productionMatlab": {
+          "processSamplesSeconds": [
+            [
+              0.094509416666666665,
+              0.092196708333333335,
+              0.091537958333333336,
+              0.09736125,
+              0.09185483333333333,
+              0.088442208333333328,
+              0.086996125
+            ],
+            [
+              0.10357554166666667,
+              0.10248325,
+              0.10034670833333334,
+              0.098762916666666672,
+              0.10387208333333334,
+              0.098591125,
+              0.099118083333333329
+            ],
+            [
+              0.09848675,
+              0.09379733333333333,
+              0.090557041666666671,
+              0.096173791666666661,
+              0.097102208333333329,
+              0.092643833333333328,
+              0.095299
+            ]
+          ],
+          "processMediansSeconds": [
+            0.09185483333333333,
+            0.10034670833333334,
+            0.095299
+          ],
+          "medianSeconds": 0.095299
+        },
+        "memory": {
+          "descriptorBytes": 7.8421015E+7,
+          "persistentBytes": 4.20273583E+8,
+          "scratchCapacityBytes": 3.4185216E+8,
+          "knownMaximumLiveOwnedBytes": 4.43334607E+8,
+          "stateInputBytes": 2.3061024E+7,
+          "fluxOutputBytes": 2.3061024E+7,
+          "planBytes": 408,
+          "planCount": 17,
+          "planMemoryAccounting": "wrapper-lower-bound; FFTW-owned plan memory is opaque",
+          "persistentFullHermitianBytes": 0,
+          "persistentRSSProcessBytes": [
+            1.750827008E+9,
+            8.7785472E+8,
+            1.079574528E+9
+          ],
+          "medianPersistentRSSBytes": 1.079574528E+9,
+          "peakRSSProcessBytes": [
+            2.122924032E+9,
+            1.303560192E+9,
+            1.197047808E+9
+          ],
+          "medianPeakRSSBytes": 1.303560192E+9
+        },
+        "counts": {
+          "executionCount": 318,
+          "horizontalExecutionCount": 117,
+          "verticalExecutionCount": 201,
+          "nonlinearFluxCallCount": 11,
+          "nonlinearFluxPhaseEvaluationCount": 5.284818E+6
+        },
+        "stages": {
+          "phaseSeconds": {
+            "processSeconds": [
+              0.00140325,
+              0.001566083,
+              0.001461917
+            ],
+            "medianSeconds": 0.001461917
+          },
+          "reconstructionSeconds": {
+            "processSeconds": [
+              0.008404167,
+              0.00853275,
+              0.0081175
+            ],
+            "medianSeconds": 0.008404167
+          },
+          "derivativeReconstructionSeconds": {
+            "processSeconds": [
+              0.022939251,
+              0.024376792,
+              0.023141084
+            ],
+            "medianSeconds": 0.023141084
+          },
+          "productSeconds": {
+            "processSeconds": [
+              0.007836499,
+              0.008478208000000001,
+              0.007857332
+            ],
+            "medianSeconds": 0.007857332
+          },
+          "projectionSeconds": {
+            "processSeconds": [
+              0.011034125,
+              0.011965166,
+              0.0115975
+            ],
+            "medianSeconds": 0.0115975
+          },
+          "coefficientAssemblySeconds": {
+            "processSeconds": [
+              0.0011385,
+              0.001242417,
+              0.001200375
+            ],
+            "medianSeconds": 0.001200375
+          },
+          "derivativeCoefficientAssemblySeconds": {
+            "processSeconds": [
+              0.048017499000000026,
+              0.053311750000000012,
+              0.049463710000000015
+            ],
+            "medianSeconds": 0.049463710000000015
+          },
+          "coefficientProjectionSeconds": {
+            "processSeconds": [
+              0.00234025,
+              0.003611458,
+              0.004030875
+            ],
+            "medianSeconds": 0.003611458
+          }
+        },
+        "maximumRelativeError": 9.8729720086863285E-15,
+        "lifecyclePassed": true,
+        "schedule": "streamed-target-three-channel",
+        "coefficientStorageMode": "natural-dimensional",
+        "coefficientArithmeticMode": "natural-dimensional-prescaled",
+        "inverseNormalizationPlacement": "coefficient-production",
+        "coefficientWorkerCount": 2
+      },
+      {
+        "implementation": "candidate",
+        "sourceCommit": "9ceb932a7f42e3a722f6cb406e7e06fe913aef86",
+        "caseId": "constant-nonhydrostatic-256x256x65",
+        "Nxyz": [
+          256,
+          256,
+          65
+        ],
+        "isHydrostatic": false,
+        "processCount": 3,
+        "warmupCount": 2,
+        "sampleCount": 7,
+        "construction": {
+          "processSeconds": [
+            1.3889062916666666,
+            14.464644541666667,
+            1.306802
+          ],
+          "medianSeconds": 1.3889062916666666
+        },
+        "planning": {
+          "processSeconds": [
+            0.004657749999999794,
+            12.327985128,
+            0.005027500999993606
+          ],
+          "medianSeconds": 0.005027500999993606
+        },
+        "nonlinearFlux": {
+          "completeProcessSamplesSeconds": [
+            [
+              0.063820541666666661,
+              0.063457625,
+              0.063483291666666664,
+              0.065112,
+              0.064554083333333331,
+              0.064351125,
+              0.063496791666666663
+            ],
+            [
+              0.062875041666666673,
+              0.064077041666666668,
+              0.063503666666666667,
+              0.064379666666666668,
+              0.065495791666666664,
+              0.0646925,
+              0.066296208333333329
+            ],
+            [
+              0.069988791666666661,
+              0.067705583333333333,
+              0.068666291666666671,
+              0.072244666666666665,
+              0.070683833333333335,
+              0.068625625,
+              0.068691083333333333
+            ]
+          ],
+          "completeProcessMediansSeconds": [
+            0.063820541666666661,
+            0.064379666666666668,
+            0.068691083333333333
+          ],
+          "completeMedianSeconds": 0.064379666666666668,
+          "internalProcessSamplesSeconds": [
+            [
+              0.063593583,
+              0.06324925,
+              0.063281834,
+              0.06489025,
+              0.06433575,
+              0.0641355,
+              0.063289
+            ],
+            [
+              0.062627666,
+              0.06383275,
+              0.063263375,
+              0.064140833,
+              0.065263,
+              0.064434,
+              0.066043583
+            ],
+            [
+              0.069765166,
+              0.067486,
+              0.06844725,
+              0.072004833,
+              0.070452,
+              0.068393542,
+              0.068477333
+            ]
+          ],
+          "internalProcessMediansSeconds": [
+            0.063593583,
+            0.064140833,
+            0.068477333
+          ],
+          "internalMedianSeconds": 0.064140833
+        },
+        "productionMatlab": {
+          "processSamplesSeconds": [
+            [
+              0.10547870833333334,
+              0.10706654166666667,
+              0.12444475,
+              0.11831058333333333,
+              0.11351333333333333,
+              0.11369391666666667,
+              0.11266904166666666
+            ],
+            [
+              0.1132135,
+              0.11155391666666667,
+              0.11053495833333334,
+              0.11565766666666667,
+              0.10845770833333333,
+              0.10434154166666666,
+              0.10410483333333333
+            ],
+            [
+              0.11529329166666667,
+              0.11769733333333333,
+              0.11199191666666666,
+              0.11420529166666667,
+              0.116095875,
+              0.11707683333333334,
+              0.11429908333333333
+            ]
+          ],
+          "processMediansSeconds": [
+            0.11351333333333333,
+            0.11053495833333334,
+            0.11529329166666667
+          ],
+          "medianSeconds": 0.11351333333333333
+        },
+        "memory": {
+          "descriptorBytes": 7.8421015E+7,
+          "persistentBytes": 4.20273583E+8,
+          "scratchCapacityBytes": 3.4185216E+8,
+          "knownMaximumLiveOwnedBytes": 4.43334607E+8,
+          "stateInputBytes": 2.3061024E+7,
+          "fluxOutputBytes": 2.3061024E+7,
+          "planBytes": 408,
+          "planCount": 17,
+          "planMemoryAccounting": "wrapper-lower-bound; FFTW-owned plan memory is opaque",
+          "persistentFullHermitianBytes": 0,
+          "persistentRSSProcessBytes": [
+            8.81917952E+8,
+            1.75341568E+9,
+            8.03979264E+8
+          ],
+          "medianPersistentRSSBytes": 8.81917952E+8,
+          "peakRSSProcessBytes": [
+            1.256341504E+9,
+            2.183790592E+9,
+            1.177747456E+9
+          ],
+          "medianPeakRSSBytes": 1.256341504E+9
+        },
+        "counts": {
+          "executionCount": 373,
+          "horizontalExecutionCount": 139,
+          "verticalExecutionCount": 234,
+          "nonlinearFluxCallCount": 11,
+          "nonlinearFluxPhaseEvaluationCount": 5.284818E+6
+        },
+        "stages": {
+          "phaseSeconds": {
+            "processSeconds": [
+              0.001368708,
+              0.00137175,
+              0.001449041
+            ],
+            "medianSeconds": 0.00137175
+          },
+          "reconstructionSeconds": {
+            "processSeconds": [
+              0.007814084,
+              0.008069875,
+              0.00841725
+            ],
+            "medianSeconds": 0.008069875
+          },
+          "derivativeReconstructionSeconds": {
+            "processSeconds": [
+              0.030387540999999997,
+              0.030824709,
+              0.032565541
+            ],
+            "medianSeconds": 0.030824709
+          },
+          "productSeconds": {
+            "processSeconds": [
+              0.01042321,
+              0.00996875,
+              0.010905749
+            ],
+            "medianSeconds": 0.01042321
+          },
+          "projectionSeconds": {
+            "processSeconds": [
+              0.014254125000000001,
+              0.014396707,
+              0.015557750999999998
+            ],
+            "medianSeconds": 0.014396707
+          },
+          "coefficientAssemblySeconds": {
+            "processSeconds": [
+              0.001099292,
+              0.001176042,
+              0.00114425
+            ],
+            "medianSeconds": 0.00114425
+          },
+          "derivativeCoefficientAssemblySeconds": {
+            "processSeconds": [
+              0.055917299000000011,
+              0.0568535,
+              0.057884455
+            ],
+            "medianSeconds": 0.0568535
+          },
+          "coefficientProjectionSeconds": {
+            "processSeconds": [
+              0.002560958,
+              0.002604375,
+              0.002731167
+            ],
+            "medianSeconds": 0.002604375
+          }
+        },
+        "maximumRelativeError": 7.81935279699574E-15,
+        "lifecyclePassed": true,
+        "schedule": "streamed-target-three-channel",
+        "coefficientStorageMode": "natural-dimensional",
+        "coefficientArithmeticMode": "natural-dimensional-prescaled",
+        "inverseNormalizationPlacement": "coefficient-production",
+        "coefficientWorkerCount": 2
+      },
+      {
+        "implementation": "candidate",
+        "sourceCommit": "9ceb932a7f42e3a722f6cb406e7e06fe913aef86",
+        "caseId": "constant-hydrostatic-512x512x129",
+        "Nxyz": [
+          512,
+          512,
+          129
+        ],
+        "isHydrostatic": true,
+        "processCount": 3,
+        "warmupCount": 2,
+        "sampleCount": 3,
+        "construction": {
+          "processSeconds": [
+            56.521662666666664,
+            56.760947333333334,
+            54.045719625
+          ],
+          "medianSeconds": 56.521662666666664
+        },
+        "planning": {
+          "processSeconds": [
+            34.179523626,
+            33.433265959,
+            34.113423544
+          ],
+          "medianSeconds": 34.113423544
+        },
+        "nonlinearFlux": {
+          "completeProcessSamplesSeconds": [
+            [
+              0.43212954166666667,
+              0.4389915,
+              0.43053641666666664
+            ],
+            [
+              0.43823766666666669,
+              0.44085733333333332,
+              0.42890116666666667
+            ],
+            [
+              0.407986625,
+              0.40542616666666664,
+              0.410327
+            ]
+          ],
+          "completeProcessMediansSeconds": [
+            0.43212954166666667,
+            0.43823766666666669,
+            0.407986625
+          ],
+          "completeMedianSeconds": 0.43212954166666667,
+          "internalProcessSamplesSeconds": [
+            [
+              0.429489458,
+              0.437940125,
+              0.429503833
+            ],
+            [
+              0.437090875,
+              0.439593833,
+              0.427804791
+            ],
+            [
+              0.406892916,
+              0.404351208,
+              0.409273167
+            ]
+          ],
+          "internalProcessMediansSeconds": [
+            0.429503833,
+            0.437090875,
+            0.406892916
+          ],
+          "internalMedianSeconds": 0.429503833
+        },
+        "productionMatlab": {
+          "processSamplesSeconds": [
+            [
+              0.755240375,
+              0.751321125,
+              0.754310875
+            ],
+            [
+              0.7323785,
+              0.78123729166666667,
+              0.803786875
+            ],
+            [
+              0.699744625,
+              0.69814508333333336,
+              0.69117970833333331
+            ]
+          ],
+          "processMediansSeconds": [
+            0.754310875,
+            0.78123729166666667,
+            0.69814508333333336
+          ],
+          "medianSeconds": 0.754310875
+        },
+        "memory": {
+          "descriptorBytes": 6.28594557E+8,
+          "persistentBytes": 3.338148117E+9,
+          "scratchCapacityBytes": 2.709553152E+9,
+          "knownMaximumLiveOwnedBytes": 3.524869317E+9,
+          "stateInputBytes": 1.867212E+8,
+          "fluxOutputBytes": 1.867212E+8,
+          "planBytes": 408,
+          "planCount": 17,
+          "planMemoryAccounting": "wrapper-lower-bound; FFTW-owned plan memory is opaque",
+          "persistentFullHermitianBytes": 0,
+          "persistentRSSProcessBytes": [
+            1.0555916288E+10,
+            1.1124015104E+10,
+            1.1338989568E+10
+          ],
+          "medianPersistentRSSBytes": 1.1124015104E+10,
+          "peakRSSProcessBytes": [
+            1.2879609856E+10,
+            1.270915072E+10,
+            1.4262960128E+10
+          ],
+          "medianPeakRSSBytes": 1.2879609856E+10
+        },
+        "counts": {
+          "executionCount": 198,
+          "horizontalExecutionCount": 73,
+          "verticalExecutionCount": 125,
+          "nonlinearFluxCallCount": 7,
+          "nonlinearFluxPhaseEvaluationCount": 2.7230175E+7
+        },
+        "stages": {
+          "phaseSeconds": {
+            "processSeconds": [
+              0.011210792,
+              0.012346,
+              0.011184
+            ],
+            "medianSeconds": 0.011210792
+          },
+          "reconstructionSeconds": {
+            "processSeconds": [
+              0.070638541,
+              0.066836917,
+              0.064713416
+            ],
+            "medianSeconds": 0.066836917
+          },
+          "derivativeReconstructionSeconds": {
+            "processSeconds": [
+              0.195858959,
+              0.19891637499999998,
+              0.181205166
+            ],
+            "medianSeconds": 0.195858959
+          },
+          "productSeconds": {
+            "processSeconds": [
+              0.059655834000000005,
+              0.067970083,
+              0.060184874
+            ],
+            "medianSeconds": 0.060184874
+          },
+          "projectionSeconds": {
+            "processSeconds": [
+              0.094361458,
+              0.096832084000000013,
+              0.091100793
+            ],
+            "medianSeconds": 0.094361458
+          },
+          "coefficientAssemblySeconds": {
+            "processSeconds": [
+              0.009694916,
+              0.010678125,
+              0.009688459
+            ],
+            "medianSeconds": 0.009694916
+          },
+          "derivativeCoefficientAssemblySeconds": {
+            "processSeconds": [
+              0.247854124,
+              0.26794866799999995,
+              0.254434294
+            ],
+            "medianSeconds": 0.254434294
+          },
+          "coefficientProjectionSeconds": {
+            "processSeconds": [
+              0.017610375,
+              0.018939333,
+              0.018769625
+            ],
+            "medianSeconds": 0.018769625
+          }
+        },
+        "maximumRelativeError": 2.1703194411223314E-14,
+        "lifecyclePassed": true,
+        "schedule": "streamed-target-three-channel",
+        "coefficientStorageMode": "natural-dimensional",
+        "coefficientArithmeticMode": "natural-dimensional-prescaled",
+        "inverseNormalizationPlacement": "coefficient-production",
+        "coefficientWorkerCount": 2
+      },
+      {
+        "implementation": "candidate",
+        "sourceCommit": "9ceb932a7f42e3a722f6cb406e7e06fe913aef86",
+        "caseId": "constant-nonhydrostatic-512x512x129",
+        "Nxyz": [
+          512,
+          512,
+          129
+        ],
+        "isHydrostatic": false,
+        "processCount": 3,
+        "warmupCount": 2,
+        "sampleCount": 3,
+        "construction": {
+          "processSeconds": [
+            22.15256525,
+            22.769998416666667,
+            22.238005958333332
+          ],
+          "medianSeconds": 22.238005958333332
+        },
+        "planning": {
+          "processSeconds": [
+            0.0053668319999999881,
+            0.0049265839999961258,
+            0.0048120840000009935
+          ],
+          "medianSeconds": 0.0049265839999961258
+        },
+        "nonlinearFlux": {
+          "completeProcessSamplesSeconds": [
+            [
+              0.54000291666666667,
+              0.52593291666666664,
+              0.50491795833333331
+            ],
+            [
+              0.53085241666666672,
+              0.54010741666666662,
+              0.57121808333333335
+            ],
+            [
+              0.523656125,
+              0.51836483333333339,
+              0.52906158333333331
+            ]
+          ],
+          "completeProcessMediansSeconds": [
+            0.52593291666666664,
+            0.54010741666666662,
+            0.523656125
+          ],
+          "completeMedianSeconds": 0.52593291666666664,
+          "internalProcessSamplesSeconds": [
+            [
+              0.539068125,
+              0.524981542,
+              0.503957792
+            ],
+            [
+              0.5299135,
+              0.539117958,
+              0.570139708
+            ],
+            [
+              0.522644708,
+              0.517339042,
+              0.528076459
+            ]
+          ],
+          "internalProcessMediansSeconds": [
+            0.524981542,
+            0.539117958,
+            0.522644708
+          ],
+          "internalMedianSeconds": 0.524981542
+        },
+        "productionMatlab": {
+          "processSamplesSeconds": [
+            [
+              0.93915070833333336,
+              0.937334375,
+              0.94075033333333336
+            ],
+            [
+              0.985495625,
+              0.9685071666666667,
+              0.99264954166666663
+            ],
+            [
+              0.8701189583333333,
+              0.85614595833333329,
+              0.864621125
+            ]
+          ],
+          "processMediansSeconds": [
+            0.93915070833333336,
+            0.985495625,
+            0.864621125
+          ],
+          "medianSeconds": 0.93915070833333336
+        },
+        "memory": {
+          "descriptorBytes": 6.28594557E+8,
+          "persistentBytes": 3.338148117E+9,
+          "scratchCapacityBytes": 2.709553152E+9,
+          "knownMaximumLiveOwnedBytes": 3.524869317E+9,
+          "stateInputBytes": 1.867212E+8,
+          "fluxOutputBytes": 1.867212E+8,
+          "planBytes": 408,
+          "planCount": 17,
+          "planMemoryAccounting": "wrapper-lower-bound; FFTW-owned plan memory is opaque",
+          "persistentFullHermitianBytes": 0,
+          "persistentRSSProcessBytes": [
+            6.997622784E+9,
+            7.660388352E+9,
+            7.03913984E+9
+          ],
+          "medianPersistentRSSBytes": 7.03913984E+9,
+          "peakRSSProcessBytes": [
+            9.967484928E+9,
+            1.078738944E+10,
+            1.001054208E+10
+          ],
+          "medianPeakRSSBytes": 1.001054208E+10
+        },
+        "counts": {
+          "executionCount": 233,
+          "horizontalExecutionCount": 87,
+          "verticalExecutionCount": 146,
+          "nonlinearFluxCallCount": 7,
+          "nonlinearFluxPhaseEvaluationCount": 2.7230175E+7
+        },
+        "stages": {
+          "phaseSeconds": {
+            "processSeconds": [
+              0.011179291,
+              0.012854,
+              0.011171666
+            ],
+            "medianSeconds": 0.011179291
+          },
+          "reconstructionSeconds": {
+            "processSeconds": [
+              0.062929625,
+              0.067063875,
+              0.064901125
+            ],
+            "medianSeconds": 0.064901125
+          },
+          "derivativeReconstructionSeconds": {
+            "processSeconds": [
+              0.244827291,
+              0.267775416,
+              0.250462
+            ],
+            "medianSeconds": 0.250462
+          },
+          "productSeconds": {
+            "processSeconds": [
+              0.084912165,
+              0.088912250000000012,
+              0.082237418
+            ],
+            "medianSeconds": 0.084912165
+          },
+          "projectionSeconds": {
+            "processSeconds": [
+              0.12150074999999999,
+              0.131132792,
+              0.121125374
+            ],
+            "medianSeconds": 0.12150074999999999
+          },
+          "coefficientAssemblySeconds": {
+            "processSeconds": [
+              0.0092605,
+              0.010808375,
+              0.00957025
+            ],
+            "medianSeconds": 0.00957025
+          },
+          "derivativeCoefficientAssemblySeconds": {
+            "processSeconds": [
+              0.29818987999999991,
+              0.310188708,
+              0.29930907999999995
+            ],
+            "medianSeconds": 0.29930907999999995
+          },
+          "coefficientProjectionSeconds": {
+            "processSeconds": [
+              0.019708708,
+              0.0197815,
+              0.020252084
+            ],
+            "medianSeconds": 0.0197815
+          }
+        },
+        "maximumRelativeError": 1.6537779618172374E-14,
+        "lifecyclePassed": true,
+        "schedule": "streamed-target-three-channel",
+        "coefficientStorageMode": "natural-dimensional",
+        "coefficientArithmeticMode": "natural-dimensional-prescaled",
+        "inverseNormalizationPlacement": "coefficient-production",
+        "coefficientWorkerCount": 2
+      }
+    ],
+    "comparisons": [
+      {
+        "caseId": "constant-hydrostatic-256x256x65",
+        "Nxyz": [
+          256,
+          256,
+          65
+        ],
+        "isHydrostatic": true,
+        "descriptorReduction": 0.30608431677854986,
+        "persistentReduction": 0.0760474101145101,
+        "maximumLiveReduction": 0.0723779476752906,
+        "completeTimeRegression": -0.025357282382548862,
+        "internalTimeRegression": -0.025505112430548094,
+        "persistentRSSRegression": 0.69127310061601643,
+        "peakRSSRegression": 0.61647704185290531,
+        "candidateMexVsProductionMatlabSpeedup": 1.7767068123345389,
+        "maximumRelativeError": 9.8729720086863285E-15,
+        "lifecyclePassed": true
+      },
+      {
+        "caseId": "constant-nonhydrostatic-256x256x65",
+        "Nxyz": [
+          256,
+          256,
+          65
+        ],
+        "isHydrostatic": false,
+        "descriptorReduction": 0.30608431677854986,
+        "persistentReduction": 0.0760474101145101,
+        "maximumLiveReduction": 0.0723779476752906,
+        "completeTimeRegression": -0.086974043578613158,
+        "internalTimeRegression": -0.0871949473665996,
+        "persistentRSSRegression": -0.030265907616920051,
+        "peakRSSRegression": -0.024576087924389145,
+        "candidateMexVsProductionMatlabSpeedup": 1.7631860991306778,
+        "maximumRelativeError": 7.81935279699574E-15,
+        "lifecyclePassed": true
+      },
+      {
+        "caseId": "constant-hydrostatic-512x512x129",
+        "Nxyz": [
+          512,
+          512,
+          129
+        ],
+        "isHydrostatic": true,
+        "descriptorReduction": 0.30823009077848496,
+        "persistentReduction": 0.077408364761604287,
+        "maximumLiveReduction": 0.073609686530975993,
+        "completeTimeRegression": 0.014081415283339949,
+        "internalTimeRegression": 0.010085872595414713,
+        "persistentRSSRegression": -0.00044460278715896528,
+        "peakRSSRegression": -0.016217643554741312,
+        "candidateMexVsProductionMatlabSpeedup": 1.7455665541650369,
+        "maximumRelativeError": 2.1703194411223314E-14,
+        "lifecyclePassed": true
+      },
+      {
+        "caseId": "constant-nonhydrostatic-512x512x129",
+        "Nxyz": [
+          512,
+          512,
+          129
+        ],
+        "isHydrostatic": false,
+        "descriptorReduction": 0.30823009077848496,
+        "persistentReduction": 0.077408364761604287,
+        "maximumLiveReduction": 0.073609686530975993,
+        "completeTimeRegression": -0.018456369315259735,
+        "internalTimeRegression": -0.018554030317030734,
+        "persistentRSSRegression": -0.029290621985137766,
+        "peakRSSRegression": -0.023679559741392797,
+        "candidateMexVsProductionMatlabSpeedup": 1.7856853575273781,
+        "maximumRelativeError": 1.6537779618172374E-14,
+        "lifecyclePassed": true
+      }
+    ],
+    "commonSizeGates": [
+      {
+        "Nxyz": [
+          256,
+          256,
+          65
+        ],
+        "hydrostaticPassed": false,
+        "nonhydrostaticPassed": true,
+        "passed": false
+      },
+      {
+        "Nxyz": [
+          512,
+          512,
+          129
+        ],
+        "hydrostaticPassed": true,
+        "nonhydrostaticPassed": true,
+        "passed": true
+      }
+    ],
+    "standaloneDisposition": "ADOPT",
+    "mexDisposition": "MEX-QUALIFIED"
+  },
+  "verification": {
+    "portableNativeContractControl": "passed",
+    "portableNativeContractCandidate": "passed",
+    "matlabDescriptorEquivalence": "passed",
+    "matlabFusedOddEvenNonsquareHydroNonhydro": "passed",
+    "streamedThreeChannelAndSingleOutput": "passed",
+    "repeatedCallsAndCanonicalStateOwnership": "passed",
+    "aliasAndOverlapRejection": "passed",
+    "injectedPlanAllocationExecutionCleanup": "passed",
+    "maximumTargetedCorrectnessRelativeError": 1.7251091673020749E-15,
+    "maximumBenchmarkRelativeError": 2.1703194411223314E-14,
+    "candidateLifecyclePassed": true,
+    "controlLifecyclePassed": true,
+    "injection": {
+      "planFailurePassed": true,
+      "allocationFailurePassed": true,
+      "creationCleanupPassed": true,
+      "executionFailurePassed": true,
+      "recoveryPassed": true,
+      "finalCleanupPassed": true,
+      "passed": true
+    }
+  },
+  "decision": {
+    "standaloneDisposition": "ADOPT",
+    "standaloneQualifyingSize": "512x512x129",
+    "commonSizeGates": [
+      {
+        "Nxyz": [
+          256,
+          256,
+          65
+        ],
+        "hydrostaticPassed": false,
+        "nonhydrostaticPassed": true,
+        "passed": false
+      },
+      {
+        "Nxyz": [
+          512,
+          512,
+          129
+        ],
+        "hydrostaticPassed": true,
+        "nonhydrostaticPassed": true,
+        "passed": true
+      }
+    ],
+    "mexDisposition": "MEX-QUALIFIED",
+    "reason": "The exact known max-live reduction is 7.36% in both 512 configurations; complete/native time and repeated-process RSS remain within 3%. The exact provider, correctness, lifecycle, thread, plan, and libomp gates also pass."
+  }
+}
