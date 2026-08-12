@@ -7,6 +7,10 @@ arguments
     options.shouldBuild (1,1) logical = true
     options.shouldTime (1,1) logical = true
     options.shouldWriteArtifacts (1,1) logical = false
+    options.threadCount (1,1) double {mustBeInteger,mustBePositive} = 16
+    options.hostName (1,1) string = "Lyra"
+    options.warmupCount (1,1) double {mustBeInteger,mustBeNonnegative} = 1
+    options.sampleCount (1,1) double {mustBeInteger,mustBePositive} = 3
 end
 
 repositoryRoot = fileparts(fileparts(mfilename("fullpath")));
@@ -51,7 +55,7 @@ for iCase = 1:numel(cases)
         wvt.Ap = state.Ap;
         wvt.Am = state.Am;
         wvt.A0 = state.A0;
-        handle = feval(variant.module,'create',kernelConfiguration(wvt),16);
+        handle = feval(variant.module,'create',kernelConfiguration(wvt),options.threadCount);
         handleCleanup = onCleanup(@()deleteHandle(variant.module,handle));
         info = feval(variant.module,'moduleInfo');
         validateIdentity(info,provider);
@@ -62,10 +66,10 @@ for iCase = 1:numel(cases)
         totalSamplesSeconds = [];
         internalSamplesSeconds = [];
         if correctnessPassed && options.shouldTime
-            execute(variant.module,handle,wvt);
-            totalSamplesSeconds = NaN(1,3);
-            internalSamplesSeconds = NaN(1,3);
-            for iSample = 1:3
+            for iWarmup = 1:options.warmupCount, execute(variant.module,handle,wvt); end
+            totalSamplesSeconds = NaN(1,options.sampleCount);
+            internalSamplesSeconds = NaN(1,options.sampleCount);
+            for iSample = 1:options.sampleCount
                 advanceWaveVortexBenchmarkState(wvt,state,iSample);
                 [~,~,~,internalSamplesSeconds(iSample),totalSamplesSeconds(iSample)] = execute(variant.module,handle,wvt);
             end
@@ -80,7 +84,7 @@ for iCase = 1:numel(cases)
         metricsAfter = feval(variant.module,'metrics',handle);
         feval(variant.module,'setStageInstrumentation',handle,false);
         metrics = metricRecord(metricsBefore,metricsAfter);
-        caseResults(end+1,1) = struct("id",variant.id,"number",variant.number,"module",variant.module,"mexSha256",variant.mexSha256,"status",conditional(correctnessPassed,"complete","failed"),"correctnessPassed",correctnessPassed,"errors",errors,"maximumRelativeError",maximumRelativeError,"warmupCount",double(options.shouldTime&&correctnessPassed),"sampleCount",numel(totalSamplesSeconds),"totalSamplesSeconds",totalSamplesSeconds,"totalMedianSeconds",median(totalSamplesSeconds,"omitmissing"),"internalSamplesSeconds",internalSamplesSeconds,"internalMedianSeconds",median(internalSamplesSeconds,"omitmissing"),"completeCallRegression",regression,"stoppedByRule",stoppedByRule,"metrics",metrics); %#ok<AGROW>
+        caseResults(end+1,1) = struct("id",variant.id,"number",variant.number,"module",variant.module,"mexSha256",variant.mexSha256,"status",conditional(correctnessPassed,"complete","failed"),"correctnessPassed",correctnessPassed,"errors",errors,"maximumRelativeError",maximumRelativeError,"warmupCount",double(options.shouldTime&&correctnessPassed)*options.warmupCount,"sampleCount",numel(totalSamplesSeconds),"totalSamplesSeconds",totalSamplesSeconds,"totalMedianSeconds",median(totalSamplesSeconds,"omitmissing"),"internalSamplesSeconds",internalSamplesSeconds,"internalMedianSeconds",median(internalSamplesSeconds,"omitmissing"),"completeCallRegression",regression,"stoppedByRule",stoppedByRule,"metrics",metrics); %#ok<AGROW>
         clear handleCleanup
         if iVariant == 1 && ~correctnessPassed, error("WaveVortexModel:Issue130ControlIncorrect","The unchanged be0f789 control failed correctness for %s.",definition.id); end
     end
@@ -120,7 +124,7 @@ end
 
 function results = initializeResults(repositoryRoot,provider,variants,options)
 [commit,tree,isDirty] = gitIdentity(repositoryRoot);
-results = struct("schemaVersion","1.0.0","status","running","generatedAtUTC",utcTimestamp,"completedAtUTC","","source",struct("commit",commit,"tree",tree,"isDirty",isDirty),"environment",struct("host","Lyra","matlabRelease",string(version("-release")),"architecture",string(computer("arch")),"provider",provider.id,"fftwVersion",provider.version,"threadBackend",provider.threadBackend,"threadCount",16,"baseLibrary",provider.baseLibrary,"threadLibrary",provider.threadLibrary,"baseLibrarySha256",provider.baseLibrarySha256,"threadLibrarySha256",provider.threadLibrarySha256),"configuration",struct("processCount",1,"warmupCount",1,"sampleCount",3,"sizes",[256 256 65],"hydrostatic",[true false],"largeCasesRun",false,"freshProcessRSSRun",false,"fullTestSuiteRun",false,"stopRegression",0.05,"correctnessTolerance",1e-12,"timingEnabled",options.shouldTime),"builds",variants,"cases",repmat(struct("id","","Nxyz",[],"isHydrostatic",false,"seed",0,"variants",[]),0,1),"candidates",[]);
+results = struct("schemaVersion","1.0.0","status","running","generatedAtUTC",utcTimestamp,"completedAtUTC","","source",struct("commit",commit,"tree",tree,"isDirty",isDirty),"environment",struct("host",options.hostName,"matlabRelease",string(version("-release")),"architecture",string(computer("arch")),"provider",provider.id,"fftwVersion",provider.version,"threadBackend",provider.threadBackend,"threadCount",options.threadCount,"baseLibrary",provider.baseLibrary,"threadLibrary",provider.threadLibrary,"baseLibrarySha256",provider.baseLibrarySha256,"threadLibrarySha256",provider.threadLibrarySha256),"configuration",struct("processCount",1,"warmupCount",options.warmupCount,"sampleCount",options.sampleCount,"sizes",[256 256 65],"hydrostatic",[true false],"largeCasesRun",false,"freshProcessRSSRun",false,"fullTestSuiteRun",false,"stopRegression",0.05,"correctnessTolerance",1e-12,"timingEnabled",options.shouldTime),"builds",variants,"cases",repmat(struct("id","","Nxyz",[],"isHydrostatic",false,"seed",0,"variants",[]),0,1),"candidates",[]);
 end
 
 function [Fp,Fm,F0,internalSeconds,totalSeconds] = execute(module,handle,wvt)
