@@ -1,0 +1,164 @@
+{
+  "schemaVersion": "1.0.0",
+  "issue": 154,
+  "status": "CORE-REJECT",
+  "runId": "20260812T044524Z",
+  "source": {
+    "baselineCommit": "be0f78995c49a2bfe4c43d75827856e3812ac278",
+    "issue128ScaffoldCommit": "782e9b41b76628eb0f61b1bd87339dd69b884314",
+    "phaseShiftImplementationCommit": "153b31d5acef994a36b79b84e7c9f8a5a1248d47",
+    "telemetryCommit": "b457c9d4f24abc7d03e4b9f43c5888c56900ef9f",
+    "branch": "experiment/issue-154-exact-phase-shift",
+    "candidateFiles": {
+      "Benchmarks/buildIssue154Standalone.sh": "f0ebf5c1211263344c0e8aed68271deca0a36b3fa1a2859c685652e6ed5a02e8",
+      "Benchmarks/compiled-kernel/WVFFTWPhaseShiftConvolution.cpp": "096d44461bbe695af88ca437c76061a8046edef07b2c063761d315e722614f35",
+      "Benchmarks/compiled-kernel/WVFFTWPhaseShiftConvolution.hpp": "cedb3b6575883d085fde4c64ac125dc683a1a4e598568ff7d79fdb3d50001010",
+      "tools/compiled-kernel/WVIssue128StandaloneBenchmark.cpp": "a160de04407d0b8f9b4009880ea36a5d8907be69079b8060629b5d34852e3512",
+      "tools/compiled-kernel/WVIssue154PhaseShiftEnumeration.cpp": "1fa21ea6e4f03d15c70a278cd69cfe4127c1ae581d7f7b5be3d608e890ae96e9"
+    }
+  },
+  "environment": {
+    "host": "lyra.ad.nwra.com",
+    "hardware": "Mac Studio Mac16,9; Apple M4 Max; 16 cores (12P+4E); 128 GB",
+    "os": "macOS 26.5.2 (25F84)",
+    "architecture": "arm64",
+    "threadCap": 16,
+    "acceptedLoadGuard": "2026-08-11 21:39 PDT: load averages 1.56/2.71/3.27, 92.5% idle and 66 GB unused per coordinator, no MATLAB workload, benchmark, compiler, RSS sampler, or competing issue workload",
+    "execution": "standalone only; no MATLAB process or library",
+    "rawResultDigestSha256": "7d47f31c64af5b66bb1f524cd0dc96e340045404ff7b1bb9e3e2c130afe7a59e"
+  },
+  "executables": {
+    "pthreadExplicit": {
+      "sha256": "6ab2c57b3d3572c9af1c218574f6fc0046cd45c800eb6bdc7e331f4641fab9c0",
+      "sourceIdentity": "exact be0f789 native explicit control reused from issue #128",
+      "fftwVersion": "fftw-3.3.11-neon",
+      "baseLibrary": "/private/tmp/issue128-native-cache/providers/native-neon-pthreads-d2b85f7a608fbedd/install/lib/libfftw3.3.dylib",
+      "threadLibrary": "/private/tmp/issue128-native-cache/providers/native-neon-pthreads-d2b85f7a608fbedd/install/lib/libfftw3_threads.3.dylib"
+    },
+    "libompExplicit": {
+      "sha256": "e8eefa58c25905a1169b7b86243c407d211fc0bb78fe380239789d84ad7a794e",
+      "sourceIdentity": "matched exact native explicit control reused from issue #128",
+      "fftwVersion": "fftw-3.3.11-neon",
+      "baseLibrary": "/private/tmp/issue128-native-cache/providers/native-neon-openmp-872739bfc5992370/install/lib/libfftw3.3.dylib",
+      "threadLibrary": "/private/tmp/issue128-native-cache/providers/native-neon-openmp-872739bfc5992370/install/lib/libfftw3_omp.3.dylib",
+      "openMPRuntime": "/private/tmp/issue128-native-cache/providers/native-neon-openmp-872739bfc5992370/install/lib/libwvissue137omp.dylib"
+    },
+    "phaseShift": {
+      "sha256": "f6f0ed38277e51391f25178fb48dae573ab2e993e3b95b17238f0d0f0e7d496c",
+      "fftwVersion": "fftw-3.3.11-neon",
+      "baseLibrary": "/private/tmp/issue128-native-cache/providers/native-neon-pthreads-d2b85f7a608fbedd/install/lib/libfftw3.3.dylib",
+      "threadLibrary": "/private/tmp/issue128-native-cache/providers/native-neon-pthreads-d2b85f7a608fbedd/install/lib/libfftw3_threads.3.dylib"
+    },
+    "otoolValidation": "all three standalone executables link only their pinned FFTW/thread runtimes plus libc++ and libSystem; no MATLAB library"
+  },
+  "exactness": {
+    "enumeration": {
+      "geometries": 192,
+      "operatorCases": 384,
+      "aliasSet": [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]],
+      "minimumGeneralShiftSet": [[0,0],[0.5,0],[0,0.5],[0.5,0.5]],
+      "maximumExplicitRelativeInfinityError": 7.9716489297472054e-16,
+      "maximumPhaseRelativeInfinityError": 8.3845930201022017e-16,
+      "twoDiagonalAliasResidual": 1
+    },
+    "smallRerun": {
+      "configurations": [
+        {"Nxyz":[8,7,7],"Nj":4,"hydrostatic":true,"threads":[1,4],"maximumCandidateRelativeInfinityError":6.081579235800782e-15},
+        {"Nxyz":[9,8,7],"Nj":4,"hydrostatic":false,"threads":[1,4],"maximumCandidateRelativeInfinityError":6.16708624043547e-15}
+      ],
+      "lifecyclePassed": true,
+      "corePlans": {"created":14,"destroyed":14,"activeAfterCleanup":0,"outstandingPlanningBytes":0},
+      "phaseShiftPlans": {"created":2,"destroyed":2,"activeAfterCleanup":0},
+      "workerRegionsDisjoint": true
+    },
+    "maximumScreeningRelativeInfinityError": 1.1976489010005134e-13,
+    "tolerance": 1e-12,
+    "passed": true
+  },
+  "algorithm": {
+    "canonicalState": "retained Hermitian half-spectrum channels; no persistent full Hermitian spectrum",
+    "mediumGrids": {"candidateRealGrid":[85,85],"explicitRealGrid":[128,128]},
+    "largeGrids": {"candidateRealGrid":[171,171],"explicitRealGrid":[256,256]},
+    "perCallCounts": {
+      "mediumHydrostatic": {"coreHorizontalPlanExecutions":0,"coreVerticalPlanExecutions":10,"convolutionForwardScalarTransforms":396,"convolutionInverseScalarTransforms":1584,"shifts":4,"nonlinearProductPlanes":1188},
+      "mediumNonhydrostatic": {"coreHorizontalPlanExecutions":0,"coreVerticalPlanExecutions":12,"convolutionForwardScalarTransforms":528,"convolutionInverseScalarTransforms":1980,"shifts":4,"nonlinearProductPlanes":1584},
+      "largeHydrostatic": {"coreHorizontalPlanExecutions":0,"coreVerticalPlanExecutions":10,"convolutionForwardScalarTransforms":780,"convolutionInverseScalarTransforms":3120,"shifts":4,"nonlinearProductPlanes":2340},
+      "largeNonhydrostatic": {"coreHorizontalPlanExecutions":0,"coreVerticalPlanExecutions":12,"convolutionForwardScalarTransforms":1040,"convolutionInverseScalarTransforms":3900,"shifts":4,"nonlinearProductPlanes":3120},
+      "explicitHydrostatic": {"horizontalBatchedPlanExecutions":5,"verticalPlanExecutions":10},
+      "explicitNonhydrostatic": {"horizontalBatchedPlanExecutions":6,"verticalPlanExecutions":12}
+    }
+  },
+  "configuration": {
+    "medium": {"Nxyz":[128,128,33],"Nj":21,"threads":[1,4,8,16],"warmups":2,"samples":3,"freshProcessesPerConfiguration":1,"rotatedImplementationOrder":true},
+    "large": {"Nxyz":[256,256,65],"Nj":42,"threads":[16],"warmups":2,"samples":1,"freshProcessesPerConfiguration":1,"rotatedImplementationOrder":true},
+    "deterministicStateAdvancement": true,
+    "reference": "binary flux written by the pthread explicit control for the same case and deterministic step"
+  },
+  "mediumScreening": {
+    "allMedianSeconds": {
+      "hydrostatic": {
+        "pthreadExplicit": {"1":0.0270525,"4":0.016805958,"8":0.007223375,"16":0.006686958},
+        "libompExplicit": {"1":0.026836166,"4":0.012448625,"8":0.007044333,"16":0.006776209},
+        "phaseShift": {"1":0.101970125,"4":0.1148665,"8":0.147217125,"16":0.47183925}
+      },
+      "nonhydrostatic": {
+        "pthreadExplicit": {"1":0.03444275,"4":0.020317834,"8":0.008755792,"16":0.008491667},
+        "libompExplicit": {"1":0.033891833,"4":0.015888917,"8":0.009065083,"16":0.014911833},
+        "phaseShift": {"1":0.127756584,"4":0.143577542,"8":0.187112167,"16":0.597879833}
+      }
+    },
+    "best": [
+      {"case":"hydrostatic","implementation":"pthread-explicit","threads":16,"medianSeconds":0.006686958,"knownMaximumLiveOwnedBytes":69387557,"maximumRSSBytes":141164544,"constructionSeconds":1.363583291,"cleanupSeconds":0.000051209,"stages":{"phaseSeconds":0.000170583,"reconstructionSeconds":0.001357667,"derivativeReconstructionSeconds":0.003051082,"productSeconds":0.000771834,"projectionSeconds":0.001372084}},
+      {"case":"hydrostatic","implementation":"libomp-explicit","threads":16,"medianSeconds":0.006776209,"knownMaximumLiveOwnedBytes":69387557,"maximumRSSBytes":141262848,"constructionSeconds":4.806822083,"cleanupSeconds":0.000052917,"stages":{"phaseSeconds":0.000162291,"reconstructionSeconds":0.001356292,"derivativeReconstructionSeconds":0.003116083,"productSeconds":0.000711333,"projectionSeconds":0.001411125}},
+      {"case":"hydrostatic","implementation":"phase-shift-tensor4","threads":1,"medianSeconds":0.101970125,"knownMaximumLiveOwnedBytes":64831045,"maximumRSSBytes":107741184,"constructionSeconds":0.208504791,"cleanupSeconds":0.000017291,"mappingSeconds":0.019362543,"convolutionSeconds":0.078799},
+      {"case":"nonhydrostatic","implementation":"pthread-explicit","threads":16,"medianSeconds":0.008491667,"knownMaximumLiveOwnedBytes":73712933,"maximumRSSBytes":145342464,"constructionSeconds":1.369476708,"cleanupSeconds":0.000052709,"stages":{"phaseSeconds":0.000187167,"reconstructionSeconds":0.001367125,"derivativeReconstructionSeconds":0.00409025,"productSeconds":0.000988041,"projectionSeconds":0.001821875}},
+      {"case":"nonhydrostatic","implementation":"libomp-explicit","threads":8,"medianSeconds":0.009065083,"knownMaximumLiveOwnedBytes":73712933,"maximumRSSBytes":145489920,"constructionSeconds":4.533557792,"cleanupSeconds":0.000027666,"stages":{"phaseSeconds":0.000162708,"reconstructionSeconds":0.001460792,"derivativeReconstructionSeconds":0.004397291,"productSeconds":0.001012583,"projectionSeconds":0.001915041}},
+      {"case":"nonhydrostatic","implementation":"phase-shift-tensor4","threads":1,"medianSeconds":0.127756584,"knownMaximumLiveOwnedBytes":72839405,"maximumRSSBytes":115933184,"constructionSeconds":0.208844625,"cleanupSeconds":0.000014166,"mappingSeconds":0.023518083,"convolutionSeconds":0.108526542}
+    ],
+    "candidateVsBestPthread": {
+      "hydrostatic": {"slowdown":15.249105049,"maxLiveChangePercent":-6.56675663,"singleProcessPeakRSSChangePercent":-23.676880223},
+      "nonhydrostatic": {"slowdown":15.0449357,"maxLiveChangePercent":-1.185040351,"singleProcessPeakRSSChangePercent":-20.234471875}
+    }
+  },
+  "largeScreening": {
+    "cases": [
+      {"case":"hydrostatic","implementation":"pthread-explicit","medianSeconds":0.065127208,"relativeInfinityError":0,"knownMaximumLiveOwnedBytes":546083271,"maximumRSSBytes":1056489472,"constructionSeconds":11.301312167,"cleanupSeconds":0.00008775,"stages":{"phaseSeconds":0.00145475,"reconstructionSeconds":0.014145167,"derivativeReconstructionSeconds":0.0287755,"productSeconds":0.006752583,"projectionSeconds":0.015364708}},
+      {"case":"hydrostatic","implementation":"libomp-explicit","medianSeconds":0.070350375,"relativeInfinityError":6.13385757291294e-14,"knownMaximumLiveOwnedBytes":546083271,"maximumRSSBytes":1064845312,"constructionSeconds":11.830869,"cleanupSeconds":0.000080917,"stages":{"phaseSeconds":0.001352333,"reconstructionSeconds":0.013403167,"derivativeReconstructionSeconds":0.0332035,"productSeconds":0.006292334,"projectionSeconds":0.01478375}},
+      {"case":"hydrostatic","implementation":"phase-shift-tensor4","medianSeconds":0.935113583,"relativeInfinityError":3.726793602657959e-14,"knownMaximumLiveOwnedBytes":507313127,"maximumRSSBytes":1025785856,"constructionSeconds":11.648094458,"cleanupSeconds":0.000095834,"mappingSeconds":0.066621208,"convolutionSeconds":0.855894667},
+      {"case":"nonhydrostatic","implementation":"pthread-explicit","medianSeconds":0.09014625,"relativeInfinityError":0,"knownMaximumLiveOwnedBytes":580161991,"maximumRSSBytes":1090863104,"constructionSeconds":11.290357875,"cleanupSeconds":0.000114792,"stages":{"phaseSeconds":0.001463,"reconstructionSeconds":0.014342375,"derivativeReconstructionSeconds":0.04015525,"productSeconds":0.009463708,"projectionSeconds":0.020754583}},
+      {"case":"nonhydrostatic","implementation":"libomp-explicit","medianSeconds":0.087670541,"relativeInfinityError":6.017367049648837e-14,"knownMaximumLiveOwnedBytes":580161991,"maximumRSSBytes":1098858496,"constructionSeconds":11.80105075,"cleanupSeconds":0.000081041,"stages":{"phaseSeconds":0.001385125,"reconstructionSeconds":0.0140535,"derivativeReconstructionSeconds":0.044148208,"productSeconds":0.008352334,"projectionSeconds":0.020787333}},
+      {"case":"nonhydrostatic","implementation":"phase-shift-tensor4","medianSeconds":1.171302333,"relativeInfinityError":1.1976489010005134e-13,"knownMaximumLiveOwnedBytes":569659727,"maximumRSSBytes":1088339968,"constructionSeconds":11.707509166,"cleanupSeconds":0.000091125,"mappingSeconds":0.079814625,"convolutionSeconds":1.072350875}
+    ],
+    "candidateVsPthread": {
+      "hydrostatic": {"slowdown":14.358263032,"maxLiveChangePercent":-7.099676196,"singleProcessPeakRSSChangePercent":-2.90619233},
+      "nonhydrostatic": {"slowdown":12.993356163,"maxLiveChangePercent":-1.810229585,"singleProcessPeakRSSChangePercent":-0.231297217}
+    }
+  },
+  "memoryAccounting": {
+    "candidateMediumHydrostatic": {"exactScratchBytes":47618320,"retainedSpectrumBytes":28947600,"convolutionWorkBytes":1098880,"knownMaximumLiveOwnedBytes":64831045},
+    "candidateMediumNonhydrostatic": {"exactScratchBytes":55626680,"retainedSpectrumBytes":36666960,"convolutionWorkBytes":1387880,"knownMaximumLiveOwnedBytes":72839405},
+    "candidateLargeHydrostatic": {"exactScratchBytes":371239440,"retainedSpectrumBytes":229413600,"convolutionWorkBytes":4446000,"knownMaximumLiveOwnedBytes":507313127},
+    "candidateLargeNonhydrostatic": {"exactScratchBytes":433586040,"retainedSpectrumBytes":290590560,"convolutionWorkBytes":5615640,"knownMaximumLiveOwnedBytes":569659727},
+    "planWrapperBytes": 336,
+    "opaquePlanMemory": {"bytes":null,"status":"unavailable from FFTW API; raw harness field remains zero and is not treated as measured memory"},
+    "rssKind": "single-process ru_maxrss screening evidence only"
+  },
+  "threading": {
+    "candidateMaximumFFTWThreadsObserved": 16,
+    "outerOpenMPThreads": 1,
+    "maximumOpenMPLevel": 0,
+    "workerRegionsDisjoint": true,
+    "oversubscribed": false
+  },
+  "decision": {
+    "required": "relative infinity error <=1e-12, no persistent full Hermitian spectrum, and for both physical configurations at one common size either >=10% faster complete nonlinearFlux or >=10% lower exact maximum-live bytes and repeated-process peak RSS, with <=3% regression in the other metric",
+    "result": "CORE-REJECT",
+    "reason": "The candidate is 13.0x to 15.2x slower than pthread explicit. Exact maximum-live improves by only 1.19% to 7.10%, never reaching 10% in either size/configuration pair. Large single-process RSS improves by only 0.23% to 2.91%. No qualifying path remains.",
+    "finalistProtocol": {"run":false,"reason":"candidate was not plausible after medium and large screening"},
+    "threeFreshProcesses": {"run":false,"reason":"finalist-only stage skipped after early rejection"},
+    "sevenMediumSamples": {"run":false,"reason":"finalist-only stage skipped after early rejection"},
+    "threeLargeSamples": {"run":false,"reason":"finalist-only stage skipped after early rejection"},
+    "repeatedProcessRSS": {"run":false,"reason":"finalist-only stage skipped after early rejection; screening ru_maxrss is non-qualifying context"},
+    "donutHandoff": null
+  }
+}
