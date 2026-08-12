@@ -208,7 +208,7 @@ std::uint64_t maximumRSSBytes() {
     return getrusage(RUSAGE_SELF,&usage) == 0 ? static_cast<std::uint64_t>(usage.ru_maxrss) : 0;
 }
 
-void writeResult(const Options& options, const WVFFTWLibraryIdentity& identity, double constructionSeconds, double firstSeconds, const std::vector<double>& samples, double correctnessError, bool wroteReference, const WVKernelMetrics& kernelMetrics, std::size_t persistentBytes, std::size_t spectralElementCount, const WVHorizontalConvolutionMetrics& convolution, double cleanupSeconds, const WVFFTWLifetimeMetrics& lifetime) {
+void writeResult(const Options& options, const WVFFTWLibraryIdentity& identity, double constructionSeconds, double firstSeconds, const std::vector<double>& samples, double correctnessError, bool wroteReference, const WVKernelMetrics& kernelMetrics, std::size_t persistentBytes, std::size_t spectralElementCount, const WVHorizontalConvolutionMetrics& convolution, double cleanupSeconds, const WVFFTWLifetimeMetrics& lifetime, std::size_t phaseShiftActivePlans, std::size_t phaseShiftCreated, std::size_t phaseShiftDestroyed) {
     std::ostringstream stream;
     stream << std::setprecision(17);
     stream << "{\n";
@@ -230,9 +230,10 @@ void writeResult(const Options& options, const WVFFTWLibraryIdentity& identity, 
     stream << "  \"libraries\":{\"version\":" << quote(identity.version) << ",\"base\":" << quote(identity.baseLibrary) << ",\"thread\":" << quote(identity.threadLibrary) << ",\"openmp\":" << quote(identity.openMPRuntimeLibrary) << "},\n";
     stream << "  \"memory\":{\"descriptorBytes\":" << kernelMetrics.descriptorBytes << ",\"planWrapperBytes\":" << kernelMetrics.planBytes << ",\"scratchCapacityBytes\":" << kernelMetrics.scratchCapacityBytes << ",\"persistentBytes\":" << persistentBytes << ",\"knownMaximumLiveOwnedBytes\":" << persistentBytes + 3*spectralElementCount*sizeof(WVComplex64) << ",\"retainedSpectrumBytes\":" << convolution.retainedSpectrumBytes << ",\"convolutionWorkBytes\":" << convolution.exactWorkBytes << ",\"opaquePlanBytes\":" << convolution.opaquePlanBytes << ",\"maximumRSSBytes\":" << maximumRSSBytes() << "},\n";
     stream << "  \"stages\":{\"phaseSeconds\":" << kernelMetrics.phaseSeconds << ",\"reconstructionSeconds\":" << kernelMetrics.reconstructionSeconds << ",\"derivativeReconstructionSeconds\":" << kernelMetrics.derivativeReconstructionSeconds << ",\"productSeconds\":" << kernelMetrics.productSeconds << ",\"projectionSeconds\":" << kernelMetrics.projectionSeconds << ",\"convolutionMappingSeconds\":" << kernelMetrics.convolutionMappingSeconds << ",\"convolutionSeconds\":" << kernelMetrics.convolutionSeconds << ",\"multiplierSeconds\":" << convolution.multiplierSeconds << "},\n";
+    stream << "  \"operationCounts\":{\"coreHorizontalTransforms\":" << kernelMetrics.horizontalExecutionCount << ",\"coreVerticalTransforms\":" << kernelMetrics.verticalExecutionCount << ",\"convolutionForwardTransforms\":" << convolution.forwardTransformCount << ",\"convolutionInverseTransforms\":" << convolution.inverseTransformCount << ",\"shifts\":" << convolution.shiftCount << ",\"nonlinearProducts\":" << convolution.nonlinearProductCount << "},\n";
     stream << "  \"schedule\":{\"centered\":{\"m\":" << convolution.centeredInnerLength << ",\"p\":" << convolution.centeredInputFactor << ",\"q\":" << convolution.centeredPaddedFactor << ",\"logicalPadding\":" << convolution.centeredLogicalPadding << "},\"hermitian\":{\"m\":" << convolution.hermitianInnerLength << ",\"p\":" << convolution.hermitianInputFactor << ",\"q\":" << convolution.hermitianPaddedFactor << ",\"logicalPadding\":" << convolution.hermitianLogicalPadding << "}},\n";
     stream << "  \"threadBehavior\":{\"outerOpenMPThreads\":" << convolution.outerOpenMPThreads << ",\"maximumFFTWThreads\":" << convolution.maximumFFTWThreads << ",\"maximumMultiplierThreads\":" << convolution.maximumObservedMultiplierThreads << ",\"maximumOpenMPLevel\":" << convolution.maximumObservedOpenMPLevel << ",\"workerRegionsDisjoint\":" << (convolution.workerRegionsDisjoint ? "true" : "false") << "},\n";
-    stream << "  \"lifecycle\":{\"activePlans\":" << lifetime.activePlans << ",\"created\":" << lifetime.totalPlansCreated << ",\"destroyed\":" << lifetime.totalPlansDestroyed << ",\"outstandingPlanningBytes\":" << lifetime.outstandingPlanningBytes << "}\n";
+    stream << "  \"lifecycle\":{\"activePlans\":" << lifetime.activePlans << ",\"created\":" << lifetime.totalPlansCreated << ",\"destroyed\":" << lifetime.totalPlansDestroyed << ",\"outstandingPlanningBytes\":" << lifetime.outstandingPlanningBytes << ",\"phaseShiftActivePlans\":" << phaseShiftActivePlans << ",\"phaseShiftCreated\":" << phaseShiftCreated << ",\"phaseShiftDestroyed\":" << phaseShiftDestroyed << "}\n";
     stream << "}\n";
     if (options.outputPath.empty()) std::cout << stream.str();
     else {
@@ -296,12 +297,18 @@ int main(int argc, char** argv) {
         kernel.reset();
         const auto cleanupSeconds = secondsSince(cleanupStart);
         const auto lifetime = WVFFTWEngine::lifetimeMetrics();
+        std::size_t phaseShiftActivePlans = 0;
+        std::size_t phaseShiftCreated = 0;
+        std::size_t phaseShiftDestroyed = 0;
         if (lifetime.activePlans != 0 || lifetime.outstandingPlanningBytes != 0 || lifetime.totalPlansCreated != lifetime.totalPlansDestroyed) fail("FFTW lifecycle check failed.");
 #if defined(WV_ISSUE154_HAS_PHASE_SHIFT)
         const auto phaseShiftLifetime = WVFFTWPhaseShiftConvolutionFactory::lifetimeMetrics();
+        phaseShiftActivePlans = phaseShiftLifetime.activePlans;
+        phaseShiftCreated = phaseShiftLifetime.totalPlansCreated;
+        phaseShiftDestroyed = phaseShiftLifetime.totalPlansDestroyed;
         if (phaseShiftLifetime.activePlans != 0 || phaseShiftLifetime.totalPlansCreated != phaseShiftLifetime.totalPlansDestroyed) fail("Phase-shift FFTW lifecycle check failed.");
 #endif
-        writeResult(options,identity,constructionSeconds,firstSeconds,samples,correctnessError,wroteReference,kernelMetrics,persistentBytes,count,convolutionMetrics,cleanupSeconds,lifetime);
+        writeResult(options,identity,constructionSeconds,firstSeconds,samples,correctnessError,wroteReference,kernelMetrics,persistentBytes,count,convolutionMetrics,cleanupSeconds,lifetime,phaseShiftActivePlans,phaseShiftCreated,phaseShiftDestroyed);
         return 0;
     } catch (const std::exception& exception) {
         std::cerr << exception.what() << '\n';

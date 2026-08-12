@@ -114,6 +114,10 @@ public:
         metrics_.hermitianInnerLength = realNx_;
         metrics_.hermitianInputFactor = 1;
         metrics_.hermitianPaddedFactor = 1;
+        metrics_.shiftCount = 4;
+        metrics_.inverseTransformCount = metrics_.shiftCount*(geometry_.inputCount-geometry_.outputCount)*geometry_.verticalLevelCount;
+        metrics_.forwardTransformCount = metrics_.shiftCount*geometry_.outputCount*geometry_.verticalLevelCount;
+        metrics_.nonlinearProductCount = metrics_.shiftCount*geometry_.outputCount*3*geometry_.verticalLevelCount;
         metrics_.planningSeconds = std::chrono::duration<double>(Clock::now()-planningStart).count();
     }
 

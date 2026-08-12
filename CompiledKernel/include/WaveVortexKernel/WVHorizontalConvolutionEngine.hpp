@@ -26,6 +26,10 @@ struct WVHorizontalConvolutionMetrics {
     std::size_t planWrapperLowerBoundBytes = 0;
     std::size_t opaquePlanBytes = 0;
     std::size_t executionCount = 0;
+    std::size_t forwardTransformCount = 0;
+    std::size_t inverseTransformCount = 0;
+    std::size_t shiftCount = 0;
+    std::size_t nonlinearProductCount = 0;
     std::size_t outerOpenMPThreads = 1;
     std::size_t maximumFFTWThreads = 1;
     std::size_t maximumObservedMultiplierThreads = 1;
