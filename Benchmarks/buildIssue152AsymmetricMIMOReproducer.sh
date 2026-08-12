@@ -7,9 +7,10 @@ fftwpp_root=$cache_root/fftwpp-source
 provider_root=$cache_root/providers/openmp/install
 openmp_root=$cache_root/openmp/install
 compiler=${CXX:-/usr/bin/clang++}
-expected_fftwpp=1a185f41800cd0e9d4df4ddf93e16e362d4e2c45
+expected_fftwpp=e685733aba768d77e9234ca02092632f7ccb4c86
 
 test "$(git -C "$fftwpp_root" rev-parse HEAD)" = "$expected_fftwpp"
+test -z "$(git -C "$fftwpp_root" status --porcelain)"
 test -f "$provider_root/lib/libfftw3_omp.3.dylib"
 test -f "$provider_root/lib/libfftw3.3.dylib"
 test -f "$provider_root/lib/libwvissue137omp.dylib"

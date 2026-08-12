@@ -31,10 +31,14 @@ struct WVHorizontalConvolutionMetrics {
     std::size_t maximumObservedMultiplierThreads = 1;
     std::size_t maximumObservedOpenMPLevel = 0;
     std::size_t centeredInnerLength = 0;
+    std::size_t centeredResidueBatchCount = 0;
+    bool centeredInPlace = false;
     std::size_t centeredInputFactor = 0;
     std::size_t centeredPaddedFactor = 0;
     std::size_t centeredLogicalPadding = 0;
     std::size_t hermitianInnerLength = 0;
+    std::size_t hermitianResidueBatchCount = 0;
+    bool hermitianInPlace = false;
     std::size_t hermitianInputFactor = 0;
     std::size_t hermitianPaddedFactor = 0;
     std::size_t hermitianLogicalPadding = 0;
@@ -43,6 +47,7 @@ struct WVHorizontalConvolutionMetrics {
     std::size_t outputTransformCount = 0;
     bool workerRegionsDisjoint = true;
     double planningSeconds = 0.0;
+    double optimizerDiscoverySeconds = 0.0;
     double executionSeconds = 0.0;
     double multiplierSeconds = 0.0;
 };

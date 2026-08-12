@@ -9,17 +9,10 @@ openmp_root=$cache_root/providers/openmp/install
 openmp_include=$cache_root/openmp/install/include
 output_root=$cache_root/build
 compiler=${CXX:-/usr/bin/clang++}
-expected_fftwpp=1a185f41800cd0e9d4df4ddf93e16e362d4e2c45
-patch_path=$repository_root/Benchmarks/patches/fftwpp-issue152-asymmetric-mimo.patch
+expected_fftwpp=e685733aba768d77e9234ca02092632f7ccb4c86
 
 test "$(git -C "$fftwpp_root" rev-parse HEAD)" = "$expected_fftwpp"
-if git -C "$fftwpp_root" apply --check "$patch_path" 2>/dev/null; then
-    git -C "$fftwpp_root" apply "$patch_path"
-elif ! git -C "$fftwpp_root" apply --reverse --check "$patch_path" 2>/dev/null; then
-    printf '%s\n' "FFTW++ source is neither clean nor patched exactly for issue #152." >&2
-    exit 1
-fi
-git -C "$fftwpp_root" diff --check
+test -z "$(git -C "$fftwpp_root" status --porcelain)"
 test -f "$pthread_root/lib/libfftw3_threads.3.dylib"
 test -f "$openmp_root/lib/libfftw3_omp.3.dylib"
 test -f "$openmp_root/lib/libwvissue137omp.dylib"

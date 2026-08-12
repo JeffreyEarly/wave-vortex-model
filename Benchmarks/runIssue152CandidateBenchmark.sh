@@ -31,7 +31,7 @@ for hydrostatic in 1 0; do
         --variant explicit --reference-output "$reference" \
         --output "$output_root/$case_name-pthreads-explicit.json"
 
-    for variant in explicit fftwpp-implicit fftwpp-hybrid; do
+    for variant in explicit fftwpp-implicit fftwpp-hybrid fftwpp-auto; do
         OMP_NUM_THREADS=$threads "$openmp_executable" --Nx 128 --Ny 128 --Nz 33 --Nj 21 \
             --threads "$threads" --warmups 2 --samples 3 --hydrostatic "$hydrostatic" \
             --variant "$variant" --reference-input "$reference" \

@@ -7,6 +7,7 @@
 #include <chrono>
 #include <climits>
 #include <cstdint>
+#include <iostream>
 #include <new>
 #include <stdexcept>
 #include <utility>
@@ -66,7 +67,6 @@ void waveVortexMultiplier(Complex** values, std::size_t count, fftwpp::Indices* 
 class FFTWPlusPlusEngine final : public WVHorizontalConvolutionEngine {
 public:
     FFTWPlusPlusEngine(const WVTransformConstantStratificationDescriptor& descriptor, std::string variant, std::size_t threadCount) : variant_(std::move(variant)), threadCount_(threadCount) {
-        const auto planningStart = Clock::now();
         const auto& configuration = descriptor.configuration();
         for (const auto& mode : descriptor.fourierModes()) {
             geometry_.maximumKMode = std::max(geometry_.maximumKMode,static_cast<std::size_t>(std::abs(mode.kMode)));
@@ -90,21 +90,37 @@ public:
         omp_set_max_active_levels(1);
         omp_set_num_threads(static_cast<int>(threadCount_));
         const auto centeredKCount = 2 * (geometry_.maximumKMode + 1);
-        const auto innerX = variant_ == "fftwpp-implicit" ? geometry_.centeredLCount / 2 : geometry_.centeredLCount / 2 + 1;
-        const auto innerY = variant_ == "fftwpp-implicit" ? centeredKCount / 2 : centeredKCount / 2 + 1;
-        // The pinned FFTW++ source must include the issue #152 two-loop
-        // scheduler repair before named asymmetric output counts are safe.
         const auto applicationOutputCount = geometry_.outputCount;
-        appX_ = std::make_unique<fftwpp::Application>(geometry_.inputCount,applicationOutputCount,fftwpp::multNone,threadCount_,false,innerX,1,0);
+        struct Parameters { std::size_t m; std::size_t D; ptrdiff_t I; };
+        const bool automatic = variant_ == "fftwpp-auto";
+        Parameters xParameters{variant_ == "fftwpp-implicit" ? geometry_.centeredLCount / 2 : geometry_.centeredLCount / 2 + 1,1,0};
+        Parameters yParameters{variant_ == "fftwpp-implicit" ? centeredKCount / 2 : centeredKCount / 2 + 1,2,0};
+        if (automatic) {
+            const auto discoveryStart = Clock::now();
+            auto discoveryX = std::make_unique<fftwpp::Application>(geometry_.inputCount,applicationOutputCount,fftwpp::multNone,threadCount_,false,0,0,-1);
+            auto discoveryFFT_X = std::make_unique<fftwpp::fftPadCentered>(geometry_.centeredLCount,configuration.Ny,*discoveryX,geometry_.hermitianKCount,geometry_.hermitianKCount);
+            auto discoveryY = std::make_unique<fftwpp::Application>(geometry_.inputCount,applicationOutputCount,waveVortexMultiplier,*discoveryX,0,0,-1);
+            auto discoveryFFT_Y = std::make_unique<fftwpp::fftPadHermitian>(centeredKCount,configuration.Nx,*discoveryY);
+            xParameters = {discoveryFFT_X->m,discoveryFFT_X->D,discoveryFFT_X->inplace ? 1 : 0};
+            yParameters = {discoveryFFT_Y->m,discoveryFFT_Y->D,discoveryFFT_Y->inplace ? 1 : 0};
+            metrics_.optimizerDiscoverySeconds = std::chrono::duration<double>(Clock::now() - discoveryStart).count();
+            std::cerr << "FFTW++ optimizer selection: centered m=" << xParameters.m << " D=" << xParameters.D << " I=" << xParameters.I << "; Hermitian m=" << yParameters.m << " D=" << yParameters.D << " I=" << yParameters.I << '\n';
+        }
+        const auto planningStart = Clock::now();
+        appX_ = std::make_unique<fftwpp::Application>(geometry_.inputCount,applicationOutputCount,fftwpp::multNone,threadCount_,false,xParameters.m,xParameters.D,xParameters.I);
         fftX_ = std::make_unique<fftwpp::fftPadCentered>(geometry_.centeredLCount,configuration.Ny,*appX_,geometry_.hermitianKCount,geometry_.hermitianKCount);
-        appY_ = std::make_unique<fftwpp::Application>(geometry_.inputCount,applicationOutputCount,waveVortexMultiplier,*appX_,innerY,2,0);
+        appY_ = std::make_unique<fftwpp::Application>(geometry_.inputCount,applicationOutputCount,waveVortexMultiplier,*appX_,yParameters.m,yParameters.D,yParameters.I);
         fftY_ = std::make_unique<fftwpp::fftPadHermitian>(centeredKCount,configuration.Nx,*appY_);
         convolution_ = std::make_unique<fftwpp::Convolution2>(fftX_.get(),fftY_.get());
         metrics_.centeredInnerLength = fftX_->m;
+        metrics_.centeredResidueBatchCount = fftX_->D;
+        metrics_.centeredInPlace = fftX_->inplace;
         metrics_.centeredInputFactor = fftX_->p;
         metrics_.centeredPaddedFactor = fftX_->q;
         metrics_.centeredLogicalPadding = fftX_->m * fftX_->p - fftX_->L;
         metrics_.hermitianInnerLength = fftY_->m;
+        metrics_.hermitianResidueBatchCount = fftY_->D;
+        metrics_.hermitianInPlace = fftY_->inplace;
         metrics_.hermitianInputFactor = fftY_->p;
         metrics_.hermitianPaddedFactor = fftY_->q;
         metrics_.hermitianLogicalPadding = fftY_->m * fftY_->p - fftY_->L;
@@ -176,7 +192,7 @@ private:
 WVFFTWPlusPlusConvolutionFactory::WVFFTWPlusPlusConvolutionFactory(std::string variant, std::size_t threadCount) : variant_(std::move(variant)), threadCount_(threadCount) {}
 
 WVKernelStatus WVFFTWPlusPlusConvolutionFactory::create(const WVTransformConstantStratificationDescriptor& descriptor, std::unique_ptr<WVHorizontalConvolutionEngine>& engine) {
-    if (variant_ != "fftwpp-implicit" && variant_ != "fftwpp-hybrid") return {WVKernelStatusCode::invalidConfiguration,"FFTW++ variant must be fftwpp-implicit or fftwpp-hybrid."};
+    if (variant_ != "fftwpp-implicit" && variant_ != "fftwpp-hybrid" && variant_ != "fftwpp-auto") return {WVKernelStatusCode::invalidConfiguration,"FFTW++ variant must be fftwpp-implicit, fftwpp-hybrid, or fftwpp-auto."};
     if (threadCount_ == 0 || threadCount_ > 16 || threadCount_ > static_cast<std::size_t>(INT_MAX)) return {WVKernelStatusCode::invalidConfiguration,"FFTW++ thread count must lie in [1,16]."};
     try {
         engine = std::make_unique<FFTWPlusPlusEngine>(descriptor,variant_,threadCount_);
