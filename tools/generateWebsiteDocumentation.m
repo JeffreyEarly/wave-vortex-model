@@ -56,6 +56,7 @@ writeClassGroup(classes,buildFolder,websiteFolder,parentName,classFolderName,par
 parentName = "Developer internals";
 websiteFolder = "classes/developer-internals";
 writeClassDocumentation("WVFourierStorageLayout",buildFolder,websiteFolder,parentName,classFolderName,parentName,1,{'handle'},string.empty(0,1));
+writeClassDocumentation("WVCompiledBackend",buildFolder,websiteFolder,parentName,classFolderName,parentName,2,{'handle'},string.empty(0,1));
 end
 
 function writeVersionHistory(repositoryRoot,buildFolder)

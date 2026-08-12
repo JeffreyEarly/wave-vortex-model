@@ -9,4 +9,5 @@ tools/compiled-kernel/build/
 *.mex*
 Benchmarks/results/runs/
 .fftw-cache/
+.compiled-backend-cache/
 *.nc
