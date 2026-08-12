@@ -1,0 +1,194 @@
+{
+  "schemaVersion": "1.0.0",
+  "status": "FEASIBILITY_REJECT",
+  "coreDecision": "CORE-REJECT",
+  "mexDecision": "MEX-NOT-QUALIFIED",
+  "generatedAtUTC": "2026-08-12T06:41:57Z",
+  "completedAtUTC": "2026-08-12T06:41:57Z",
+  "source": {
+    "repository": "JeffreyEarly/wave-vortex-model",
+    "requiredBaseCommit": "be0f78995c49a2bfe4c43d75827856e3812ac278",
+    "harnessCommit": "637a2d48ede2a1c964d140eabe6d202051cea25c",
+    "harnessTree": "8be9041ce62508db0d8de72185c933eef8dabaf3",
+    "harnessPath": "Benchmarks/issue160TransientLayoutFeasibility.cpp",
+    "harnessSha256": "e0133212dd9836c0db7d068623309cbb2e45595777bed527c807e04f9bdaf18b"
+  },
+  "environment": {
+    "host": "Lyra",
+    "os": "Darwin 25.5.0; macOS 26.5.2 (25F84)",
+    "architecture": "arm64",
+    "processor": "Apple M4 Max",
+    "logicalThreads": 16,
+    "memoryBytes": 137438953472,
+    "compiler": "Apple clang 21.0.0 (clang-2100.1.1.101)",
+    "compilerFlags": "-std=c++17 -O3 -march=native -pthread -Wall -Wextra -Wpedantic",
+    "harnessExecutableSha256": "cd06fbfdd2a03763e2f601f0d3accd8700e5b046642ba5aea4b22a3e03c0c26c"
+  },
+  "gate": {
+    "requiredCommonCompleteNativeImprovement": 0.05,
+    "maximumCorrectnessError": 1e-12,
+    "maximumPrimaryMetricRegression": 0.03,
+    "prototypeLimit": 1,
+    "prototypeRun": false,
+    "mediumScreenRun": false,
+    "largeRun": false,
+    "freshProcessRSSRun": false,
+    "reason": "No physical layout has a model prediction above 5% in both hydrostatic and nonhydrostatic cases. The most favorable explicit-pack bound is negative before charging any candidate FFT, DCT/DST, scatter/gather, product, or projection work."
+  },
+  "priorBoundedFFTEvidence": {
+    "artifactCommit": "48f6ee220362cf5e9d730ab5df12a09f3b45c27f",
+    "artifactPath": "Benchmarks/results/experiments/issue130/bounded-fft/20260812T054229Z-maca64-r2025b/issue130-bounded-fft-screening.json",
+    "configurationCount": 16,
+    "caseCount": 2,
+    "allConfigurationsCorrect": true,
+    "maximumHydrostaticRelativeError": 9.222115675477503e-15,
+    "maximumNonhydrostaticRelativeError": 8.233084333328562e-15,
+    "anyCompletePipelineImprovementAtLeastThreePercent": false,
+    "selectedConfiguration": "zall-rowsall",
+    "conclusion": "All 16 z-batch/Fourier-row-batch combinations were correct, but none improved the complete pipeline by at least 3%; all/all remained selected."
+  },
+  "commonCase": {
+    "Nxyz": [256, 256, 65],
+    "Nj": 42,
+    "Nkl": 11439,
+    "shouldAntialias": true,
+    "halfRows": 33024,
+    "channelsInHarness": 4,
+    "halfSpectrumBytes": 137379840,
+    "canonicalStateShape": "[Nj,Nkl]",
+    "canonicalStateChanged": false,
+    "radialRetentionChanged": false,
+    "normalizationChanged": false,
+    "zeroNyquistChanged": false,
+    "omittedHalfHandlingChanged": false,
+    "fullHermitianOwnershipAdded": false
+  },
+  "baseline": {
+    "layout": "[z,channel,Fourier-row] complex dense half spectrum",
+    "incrementalReference": "current Fourier-row baseline, not obsolete pre-row code",
+    "horizontalPlan": {
+      "transformDimensions": [
+        {"count": 256, "inputStride": 256, "outputStrideFormula": "Nz*fields*NxHalf"},
+        {"count": 256, "inputStride": 1, "outputStrideFormula": "Nz*fields"}
+      ],
+      "batchDimensions": [
+        {"count": 65, "inputStride": 65536, "outputStride": 1},
+        {"countFormula": "fields", "inputStrideFormula": "Nx*Ny*Nz", "outputStride": 65}
+      ]
+    },
+    "verticalPlan": {
+      "transformLengthDCT": 65,
+      "transformLengthDST": 63,
+      "transformStrideDoubles": 2,
+      "rowBatchStrideDoublesFormula": "2*Nz*storageChannels",
+      "channelBatchStrideDoubles": 130
+    },
+    "hydrostatic": {
+      "completeSeconds": 0.05628325,
+      "horizontalFFTSeconds": 0.01701671,
+      "verticalDCTDSTSeconds": 0.022788834,
+      "scatterGatherProductsProjectionRemainderSeconds": 0.016477706,
+      "horizontalExecutions": 7,
+      "verticalExecutions": 11,
+      "scratchBytes": 410009600,
+      "knownMaximumLiveBytesExcludingDescriptorAndOpaquePlanMemory": 433070624
+    },
+    "nonhydrostatic": {
+      "completeSeconds": 0.07207641666666667,
+      "horizontalFFTSeconds": 0.022225292,
+      "verticalDCTDSTSeconds": 0.028335708,
+      "scatterGatherProductsProjectionRemainderSeconds": 0.02151541666666667,
+      "horizontalExecutions": 9,
+      "verticalExecutions": 14,
+      "scratchBytes": 444088320,
+      "knownMaximumLiveBytesExcludingDescriptorAndOpaquePlanMemory": 467149344
+    },
+    "timingProvenance": "issue #130 all/all bounded-FFT artifact at commit 48f6ee220362cf5e9d730ab5df12a09f3b45c27f"
+  },
+  "stageModel": [
+    {"stage": "vertical DCT/DST", "baseline": "measured", "candidate": "unchanged only for explicit-pack/hybrid; horizontal-only changes z stride from 2 doubles to 66048 doubles", "incrementalSecondsForPackModel": 0},
+    {"stage": "horizontal FFT", "baseline": "measured", "candidate": "optimistically assigned zero seconds", "incrementalBound": "cannot save more than the complete baseline horizontalFFTSeconds"},
+    {"stage": "scatter/gather", "baseline": "included in measured remainder", "candidate": "modeled unchanged for explicit-pack/hybrid; broad indexing rewrite for horizontal-only", "incrementalSecondsForPackModel": 0},
+    {"stage": "transpose/pack", "baselineSeconds": 0, "candidate": "measured by exact round-trip harness", "bytes": "read plus write for every channel at every vertical/horizontal boundary"},
+    {"stage": "nonlinear products", "baseline": "included in measured remainder", "candidate": "modeled unchanged", "incrementalSecondsForPackModel": 0},
+    {"stage": "projection", "baseline": "included in measured remainder", "candidate": "modeled unchanged; canonical [Nj,Nkl] output retained", "incrementalSecondsForPackModel": 0}
+  ],
+  "layouts": [
+    {
+      "id": "vertical-fourier-row-current",
+      "description": "Current vertically contiguous dense scratch with Fourier rows as the slow dimension.",
+      "packBoundaries": 0,
+      "addedPersistentBytes": 0,
+      "planCountChange": 0,
+      "executionCountChange": 0,
+      "modelDecision": "baseline"
+    },
+    {
+      "id": "horizontal-fourier-row-only",
+      "description": "Dense scratch [Fourier-row,z,channel], contiguous for horizontal FFT planes.",
+      "verticalZStrideComplex": 33024,
+      "verticalZStrideBytes": 528384,
+      "requiredChanges": ["all vertical plan strides", "all WV scatter/gather indexing", "Hermitian completion indexing", "normalization indexing"],
+      "codeComplexity": "large",
+      "prediction": "No consistent positive prediction: the maximum horizontal ceiling is 30.2% hydrostatic and 30.8% nonhydrostatic, but all 11/14 vertical executions and all coefficient access become 528384-byte-strided. This is not the modest single-layout prototype allowed by the funnel and has no evidence above 5%.",
+      "modelDecision": "reject-before-prototype"
+    },
+    {
+      "id": "explicit-pack",
+      "description": "Retain current vertical scratch, add one horizontal-contiguous full half-spectrum buffer, and pack at every transform boundary.",
+      "addedPersistentBytes": 137379840,
+      "hydroBoundaryBytesMoved": 1099038720,
+      "nonhydroBoundaryBytesMoved": 1373798400,
+      "planCountChange": 0,
+      "executionCountChange": 0,
+      "modelDecision": "reject-before-prototype"
+    },
+    {
+      "id": "z-block-pack",
+      "description": "Explicit pack tiled over clipped z blocks 1, 4, 8, 16, and full depth.",
+      "addedPersistentBytes": 137379840,
+      "bytesMovedChangeFromFullPack": 0,
+      "batchChange": "one or two copy workers per z block; FFT plan and transform counts unchanged",
+      "modelDecision": "reject-before-prototype"
+    },
+    {
+      "id": "simplest-hybrid",
+      "description": "Current vertical layout plus a horizontal-native buffer only around horizontal transforms.",
+      "equivalentCostModel": "explicit-pack",
+      "modelDecision": "reject-before-prototype"
+    }
+  ],
+  "harness": {
+    "sampleCount": 3,
+    "warmupCount": 1,
+    "correctness": "bit-exact vertical-to-horizontal-to-vertical round trip",
+    "bytesMovedPerFourChannelPack": 274759680,
+    "bytesMovedPerFourChannelRoundTrip": 549519360,
+    "hydroBoundaryChannelEquivalents": 16,
+    "nonhydroBoundaryChannelEquivalents": 20,
+    "optimisticModel": "candidate complete time = baseline complete time - all measured horizontal FFT time + all measured pack-boundary time; candidate FFT is assigned zero cost and all other stages are assigned zero regression",
+    "results": [
+      {"zBlock": 1, "workers": 1, "packSeconds": 0.013867833, "unpackSeconds": 0.013121958, "hydroBoundarySeconds": 0.05491192575, "nonhydroBoundarySeconds": 0.06859329, "maximumRelativeError": 0, "optimisticHydroImprovement": -0.6732947324470424, "optimisticNonhydroImprovement": -0.6433171893103399},
+      {"zBlock": 4, "workers": 1, "packSeconds": 0.012830334, "unpackSeconds": 0.012063, "hydroBoundarySeconds": 0.0507458355, "nonhydroBoundarySeconds": 0.063384336, "maximumRelativeError": 0, "optimisticHydroImprovement": -0.5992746598677226, "optimisticNonhydroImprovement": -0.5710473094132856},
+      {"zBlock": 8, "workers": 1, "packSeconds": 0.012390708, "unpackSeconds": 0.011442583, "hydroBoundarySeconds": 0.04885173825, "nonhydroBoundarySeconds": 0.061005415, "maximumRelativeError": 0, "optimisticHydroImprovement": -0.5656217124988339, "optimisticNonhydroImprovement": -0.5380417703060905},
+      {"zBlock": 16, "workers": 1, "packSeconds": 0.012460042, "unpackSeconds": 0.011715792, "hydroBoundarySeconds": 0.0492819805, "nonhydroBoundarySeconds": 0.06155596, "maximumRelativeError": 0, "optimisticHydroImprovement": -0.5732659450191664, "optimisticNonhydroImprovement": -0.5456801216963932},
+      {"zBlock": 65, "workers": 1, "packSeconds": 0.011766125, "unpackSeconds": 0.010461834, "hydroBoundarySeconds": 0.04608628175, "nonhydroBoundarySeconds": 0.057526334, "maximumRelativeError": 0, "optimisticHydroImprovement": -0.5164870854117343, "optimisticNonhydroImprovement": -0.4897724313904227},
+      {"zBlock": 1, "workers": 2, "packSeconds": 0.013359458, "unpackSeconds": 0.013006833, "hydroBoundarySeconds": 0.05317336325, "nonhydroBoundarySeconds": 0.066444665, "maximumRelativeError": 0, "optimisticHydroImprovement": -0.6424052138069497, "optimisticNonhydroImprovement": -0.6135068145798646},
+      {"zBlock": 4, "workers": 2, "packSeconds": 0.008234958, "unpackSeconds": 0.01009925, "hydroBoundarySeconds": 0.034338051, "nonhydroBoundarySeconds": 0.043039082, "maximumRelativeError": 0, "optimisticHydroImprovement": -0.3077530348727197, "optimisticNonhydroImprovement": -0.288773927261118},
+      {"zBlock": 8, "workers": 2, "packSeconds": 0.007455584, "unpackSeconds": 0.007029167, "hydroBoundarySeconds": 0.02950252325, "nonhydroBoundarySeconds": 0.036851503, "maximumRelativeError": 0, "optimisticHydroImprovement": -0.2218388819053626, "optimisticNonhydroImprovement": -0.2029264440267612},
+      {"zBlock": 16, "workers": 2, "packSeconds": 0.00720025, "unpackSeconds": 0.007195541, "hydroBoundarySeconds": 0.02879746825, "nonhydroBoundarySeconds": 0.035996541, "maximumRelativeError": 0, "optimisticHydroImprovement": -0.2093119755877636, "optimisticNonhydroImprovement": -0.1910645613807357},
+      {"zBlock": 65, "workers": 2, "packSeconds": 0.006654417, "unpackSeconds": 0.006310792, "hydroBoundarySeconds": 0.02635994925, "nonhydroBoundarySeconds": 0.03292846, "maximumRelativeError": 0, "optimisticHydroImprovement": -0.1660039043587568, "optimisticNonhydroImprovement": -0.1484975036980542}
+    ]
+  },
+  "selection": {
+    "selectedLayout": "vertical-fourier-row-current",
+    "bestRejectedLayout": "simplest-hybrid with two workers and full-depth pack",
+    "bestRejectedHydrostaticPredictedImprovement": -0.1660039043587568,
+    "bestRejectedNonhydrostaticPredictedImprovement": -0.1484975036980542,
+    "exactMaximumLiveReduction": false,
+    "addedPersistentState": false,
+    "implementationCommit": null,
+    "artifactCommit": null,
+    "conclusion": "FEASIBILITY_REJECT without kernel implementation or medium screen."
+  }
+}
