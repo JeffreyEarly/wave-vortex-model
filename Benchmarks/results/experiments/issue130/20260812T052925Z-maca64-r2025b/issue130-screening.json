@@ -1,0 +1,618 @@
+{
+  "schemaVersion": "1.0.0",
+  "status": "complete",
+  "generatedAtUTC": "2026-08-12T05:29:32.920Z",
+  "completedAtUTC": "2026-08-12T05:29:55.898Z",
+  "source": {
+    "commit": "7fd33f74aaccfa6e2ac80ad2ede12f19e8740d05",
+    "tree": "76302acc817191d411550473fd246303ce8c8e3c",
+    "isDirty": false
+  },
+  "environment": {
+    "host": "Lyra",
+    "matlabRelease": "2025b",
+    "architecture": "maca64",
+    "provider": "native-neon-pthreads",
+    "fftwVersion": "3.3.11",
+    "threadBackend": "pthreads",
+    "threadCount": 16,
+    "baseLibrary": "/private/tmp/issue128-native-cache/providers/native-neon-pthreads-d2b85f7a608fbedd/install/lib/libfftw3.3.dylib",
+    "threadLibrary": "/private/tmp/issue128-native-cache/providers/native-neon-pthreads-d2b85f7a608fbedd/install/lib/libfftw3_threads.3.dylib",
+    "baseLibrarySha256": "8314e2296212c771a81ad52f3f7ac97fb8df700be45070c583f689725cb179d5",
+    "threadLibrarySha256": "b5f847b65919a3e2c1ec6aaa4fe127cd129f6400f20d244dd0fca0c1e3e11199"
+  },
+  "configuration": {
+    "processCount": 1,
+    "warmupCount": 1,
+    "sampleCount": 3,
+    "sizes": [
+      256,
+      256,
+      65
+    ],
+    "hydrostatic": [
+      true,
+      false
+    ],
+    "largeCasesRun": false,
+    "freshProcessRSSRun": false,
+    "fullTestSuiteRun": false,
+    "stopRegression": 0.05,
+    "correctnessTolerance": 1E-12,
+    "timingEnabled": true
+  },
+  "builds": [
+    {
+      "id": "control-be0f789",
+      "number": 0,
+      "module": "wv_issue130_control",
+      "mexPath": "/private/tmp/issue130-lyra-6ZrRPy/mex/wv_issue130_control.mexmaca64",
+      "mexSha256": "dafa8840185f02016e24d934b77a2c719df7354c7a24d4d007fdb3a3406579bb"
+    },
+    {
+      "id": "velocity-only",
+      "number": 2,
+      "module": "wv_issue130_velocity_only",
+      "mexPath": "/private/tmp/issue130-lyra-6ZrRPy/mex/wv_issue130_velocity_only.mexmaca64",
+      "mexSha256": "6a23bb45a442a101a7b922e35e50b52e88b61c9a70fe41917996da536caeb970"
+    },
+    {
+      "id": "streamed-target-three-channel",
+      "number": 3,
+      "module": "wv_issue130_streamed_three_channel",
+      "mexPath": "/private/tmp/issue130-lyra-6ZrRPy/mex/wv_issue130_streamed_three_channel.mexmaca64",
+      "mexSha256": "9c6f44d80ff3b7aa31830a1d735df618e8046420159c177c98f027209d328d21"
+    },
+    {
+      "id": "streamed-target-single-output",
+      "number": 4,
+      "module": "wv_issue130_streamed_single_output",
+      "mexPath": "/private/tmp/issue130-lyra-6ZrRPy/mex/wv_issue130_streamed_single_output.mexmaca64",
+      "mexSha256": "30d6b518e72888721efb3c92337450f5c9a105e7fa75567d51e0b606b604f322"
+    }
+  ],
+  "cases": [
+    {
+      "id": "constant-hydrostatic-256x256x65",
+      "Nxyz": [
+        256,
+        256,
+        65
+      ],
+      "isHydrostatic": true,
+      "seed": 1.302561E+6,
+      "variants": [
+        {
+          "id": "control-be0f789",
+          "number": 0,
+          "module": "wv_issue130_control",
+          "mexSha256": "dafa8840185f02016e24d934b77a2c719df7354c7a24d4d007fdb3a3406579bb",
+          "status": "complete",
+          "correctnessPassed": true,
+          "errors": {
+            "Fp": 8.9091392911286331E-15,
+            "Fm": 9.2446664216537075E-15,
+            "F0": 7.10716100078818E-15
+          },
+          "maximumRelativeError": 9.2446664216537075E-15,
+          "warmupCount": 1,
+          "sampleCount": 3,
+          "totalSamplesSeconds": [
+            0.06253179166666667,
+            0.063486583333333332,
+            0.063401125
+          ],
+          "totalMedianSeconds": 0.063401125,
+          "internalSamplesSeconds": [
+            0.062421708,
+            0.063271417,
+            0.063219667
+          ],
+          "internalMedianSeconds": 0.063219667,
+          "completeCallRegression": null,
+          "stoppedByRule": false,
+          "metrics": {
+            "screeningVariant": "control-be0f789",
+            "nonlinearFluxSchedule": "sequential-phase-once",
+            "planCount": 14,
+            "planBytes": 336,
+            "planMemoryAccounting": "wrapper-lower-bound; FFTW-owned plan memory is opaque",
+            "executionCount": 15,
+            "horizontalExecutionCount": 5,
+            "verticalExecutionCount": 10,
+            "phaseEvaluationCount": 480438,
+            "halfSpectrumScratchBytes": 1.3737984E+8,
+            "realScratchBytes": 2.7262976E+8,
+            "scratchBytes": 4.100096E+8,
+            "phaseReservationBytes": 0,
+            "descriptorBytes": 1.13012311E+8,
+            "stateInputBytes": 2.3061024E+7,
+            "fluxOutputBytes": 2.3061024E+7,
+            "persistentBytes": 5.23022247E+8,
+            "exactMaximumLiveArrayBytesExcludingPlans": 5.69143959E+8,
+            "knownMaximumLiveBytesExcludingOpaquePlanInternals": 5.69144295E+8,
+            "stages": {
+              "phaseSeconds": 0.001545458,
+              "reconstructionSeconds": 0.012550916,
+              "derivativeReconstructionSeconds": 0.028275582999999996,
+              "productSeconds": 0.0067930419999999991,
+              "projectionSeconds": 0.013368208,
+              "coefficientAssemblySeconds": 0.001391166,
+              "derivativeCoefficientAssemblySeconds": 0.002289584,
+              "coefficientProjectionSeconds": 0.001555667
+            }
+          }
+        },
+        {
+          "id": "velocity-only",
+          "number": 2,
+          "module": "wv_issue130_velocity_only",
+          "mexSha256": "6a23bb45a442a101a7b922e35e50b52e88b61c9a70fe41917996da536caeb970",
+          "status": "complete",
+          "correctnessPassed": true,
+          "errors": {
+            "Fp": 8.9091392911286331E-15,
+            "Fm": 9.2446664216537075E-15,
+            "F0": 7.10716100078818E-15
+          },
+          "maximumRelativeError": 9.2446664216537075E-15,
+          "warmupCount": 1,
+          "sampleCount": 3,
+          "totalSamplesSeconds": [
+            0.060366208333333331,
+            0.059307291666666664,
+            0.060299875
+          ],
+          "totalMedianSeconds": 0.060299875,
+          "internalSamplesSeconds": [
+            0.060027333,
+            0.059068291,
+            0.060057875
+          ],
+          "internalMedianSeconds": 0.060027333,
+          "completeCallRegression": -0.048914747175227591,
+          "stoppedByRule": false,
+          "metrics": {
+            "screeningVariant": "velocity-only",
+            "nonlinearFluxSchedule": "issue130-velocity-only",
+            "planCount": 14,
+            "planBytes": 336,
+            "planMemoryAccounting": "wrapper-lower-bound; FFTW-owned plan memory is opaque",
+            "executionCount": 15,
+            "horizontalExecutionCount": 5,
+            "verticalExecutionCount": 10,
+            "phaseEvaluationCount": 480438,
+            "halfSpectrumScratchBytes": 1.0303488E+8,
+            "realScratchBytes": 2.7262976E+8,
+            "scratchBytes": 3.7566464E+8,
+            "phaseReservationBytes": 0,
+            "descriptorBytes": 1.13012311E+8,
+            "stateInputBytes": 2.3061024E+7,
+            "fluxOutputBytes": 2.3061024E+7,
+            "persistentBytes": 4.88677287E+8,
+            "exactMaximumLiveArrayBytesExcludingPlans": 5.34798999E+8,
+            "knownMaximumLiveBytesExcludingOpaquePlanInternals": 5.34799335E+8,
+            "stages": {
+              "phaseSeconds": 0.001547917,
+              "reconstructionSeconds": 0.009833417,
+              "derivativeReconstructionSeconds": 0.028372542,
+              "productSeconds": 0.0066848329999999994,
+              "projectionSeconds": 0.013294041,
+              "coefficientAssemblySeconds": 0.001152292,
+              "derivativeCoefficientAssemblySeconds": 0.002220459,
+              "coefficientProjectionSeconds": 0.001572417
+            }
+          }
+        },
+        {
+          "id": "streamed-target-three-channel",
+          "number": 3,
+          "module": "wv_issue130_streamed_three_channel",
+          "mexSha256": "9c6f44d80ff3b7aa31830a1d735df618e8046420159c177c98f027209d328d21",
+          "status": "complete",
+          "correctnessPassed": true,
+          "errors": {
+            "Fp": 8.951085513040255E-15,
+            "Fm": 9.2221156754775031E-15,
+            "F0": 7.0938308550610454E-15
+          },
+          "maximumRelativeError": 9.2221156754775031E-15,
+          "warmupCount": 1,
+          "sampleCount": 3,
+          "totalSamplesSeconds": [
+            0.059550208333333333,
+            0.059471958333333332,
+            0.059111083333333335
+          ],
+          "totalMedianSeconds": 0.059471958333333332,
+          "internalSamplesSeconds": [
+            0.059290209,
+            0.059199833,
+            0.058870916
+          ],
+          "internalMedianSeconds": 0.059199833,
+          "completeCallRegression": -0.061973137963508895,
+          "stoppedByRule": false,
+          "metrics": {
+            "screeningVariant": "streamed-target-three-channel",
+            "nonlinearFluxSchedule": "issue130-streamed-target-three-channel",
+            "planCount": 17,
+            "planBytes": 408,
+            "planMemoryAccounting": "wrapper-lower-bound; FFTW-owned plan memory is opaque",
+            "executionCount": 18,
+            "horizontalExecutionCount": 7,
+            "verticalExecutionCount": 11,
+            "phaseEvaluationCount": 480438,
+            "halfSpectrumScratchBytes": 1.3737984E+8,
+            "realScratchBytes": 2.0447232E+8,
+            "scratchBytes": 3.4185216E+8,
+            "phaseReservationBytes": 3.434496E+7,
+            "descriptorBytes": 1.13012311E+8,
+            "stateInputBytes": 2.3061024E+7,
+            "fluxOutputBytes": 2.3061024E+7,
+            "persistentBytes": 4.54864879E+8,
+            "exactMaximumLiveArrayBytesExcludingPlans": 5.00986519E+8,
+            "knownMaximumLiveBytesExcludingOpaquePlanInternals": 5.00986927E+8,
+            "stages": {
+              "phaseSeconds": 0.00148975,
+              "reconstructionSeconds": 0.009660417,
+              "derivativeReconstructionSeconds": 0.027741541999999998,
+              "productSeconds": 0.006748833,
+              "projectionSeconds": 0.011232501,
+              "coefficientAssemblySeconds": 0.00131875,
+              "derivativeCoefficientAssemblySeconds": 0.002334668,
+              "coefficientProjectionSeconds": 0
+            }
+          }
+        },
+        {
+          "id": "streamed-target-single-output",
+          "number": 4,
+          "module": "wv_issue130_streamed_single_output",
+          "mexSha256": "30d6b518e72888721efb3c92337450f5c9a105e7fa75567d51e0b606b604f322",
+          "status": "complete",
+          "correctnessPassed": true,
+          "errors": {
+            "Fp": 8.951085513040255E-15,
+            "Fm": 9.2221156754775031E-15,
+            "F0": 7.0938308550610454E-15
+          },
+          "maximumRelativeError": 9.2221156754775031E-15,
+          "warmupCount": 1,
+          "sampleCount": 3,
+          "totalSamplesSeconds": [
+            0.063051416666666665,
+            0.062913125,
+            0.061824625
+          ],
+          "totalMedianSeconds": 0.062913125,
+          "internalSamplesSeconds": [
+            0.06274575,
+            0.062631416,
+            0.06157225
+          ],
+          "internalMedianSeconds": 0.062631416,
+          "completeCallRegression": -0.0076970243035908714,
+          "stoppedByRule": false,
+          "metrics": {
+            "screeningVariant": "streamed-target-single-output",
+            "nonlinearFluxSchedule": "issue130-streamed-target-single-output",
+            "planCount": 18,
+            "planBytes": 432,
+            "planMemoryAccounting": "wrapper-lower-bound; FFTW-owned plan memory is opaque",
+            "executionCount": 27,
+            "horizontalExecutionCount": 13,
+            "verticalExecutionCount": 14,
+            "phaseEvaluationCount": 480438,
+            "halfSpectrumScratchBytes": 1.3737984E+8,
+            "realScratchBytes": 1.703936E+8,
+            "scratchBytes": 3.0777344E+8,
+            "phaseReservationBytes": 3.434496E+7,
+            "descriptorBytes": 1.13012311E+8,
+            "stateInputBytes": 2.3061024E+7,
+            "fluxOutputBytes": 2.3061024E+7,
+            "persistentBytes": 4.20786183E+8,
+            "exactMaximumLiveArrayBytesExcludingPlans": 4.66907799E+8,
+            "knownMaximumLiveBytesExcludingOpaquePlanInternals": 4.66908231E+8,
+            "stages": {
+              "phaseSeconds": 0.001472875,
+              "reconstructionSeconds": 0.008853375,
+              "derivativeReconstructionSeconds": 0.026841834000000002,
+              "productSeconds": 0.009045207999999999,
+              "projectionSeconds": 0.010736293000000001,
+              "coefficientAssemblySeconds": 0.00135025,
+              "derivativeCoefficientAssemblySeconds": 0.004770583,
+              "coefficientProjectionSeconds": 0
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "constant-nonhydrostatic-256x256x65",
+      "Nxyz": [
+        256,
+        256,
+        65
+      ],
+      "isHydrostatic": false,
+      "seed": 1.302562E+6,
+      "variants": [
+        {
+          "id": "control-be0f789",
+          "number": 0,
+          "module": "wv_issue130_control",
+          "mexSha256": "dafa8840185f02016e24d934b77a2c719df7354c7a24d4d007fdb3a3406579bb",
+          "status": "complete",
+          "correctnessPassed": true,
+          "errors": {
+            "Fp": 8.2195663540397183E-15,
+            "Fm": 7.8809457261132432E-15,
+            "F0": 7.629144326540792E-15
+          },
+          "maximumRelativeError": 8.2195663540397183E-15,
+          "warmupCount": 1,
+          "sampleCount": 3,
+          "totalSamplesSeconds": [
+            0.081452791666666663,
+            0.080407125,
+            0.079646916666666664
+          ],
+          "totalMedianSeconds": 0.080407125,
+          "internalSamplesSeconds": [
+            0.081161125,
+            0.080166459,
+            0.07941475
+          ],
+          "internalMedianSeconds": 0.080166459,
+          "completeCallRegression": null,
+          "stoppedByRule": false,
+          "metrics": {
+            "screeningVariant": "control-be0f789",
+            "nonlinearFluxSchedule": "sequential-phase-once",
+            "planCount": 14,
+            "planBytes": 336,
+            "planMemoryAccounting": "wrapper-lower-bound; FFTW-owned plan memory is opaque",
+            "executionCount": 18,
+            "horizontalExecutionCount": 6,
+            "verticalExecutionCount": 12,
+            "phaseEvaluationCount": 480438,
+            "halfSpectrumScratchBytes": 1.3737984E+8,
+            "realScratchBytes": 3.0670848E+8,
+            "scratchBytes": 4.4408832E+8,
+            "phaseReservationBytes": 0,
+            "descriptorBytes": 1.13012311E+8,
+            "stateInputBytes": 2.3061024E+7,
+            "fluxOutputBytes": 2.3061024E+7,
+            "persistentBytes": 5.57100967E+8,
+            "exactMaximumLiveArrayBytesExcludingPlans": 6.03222679E+8,
+            "knownMaximumLiveBytesExcludingOpaquePlanInternals": 6.03223015E+8,
+            "stages": {
+              "phaseSeconds": 0.001486333,
+              "reconstructionSeconds": 0.012033625,
+              "derivativeReconstructionSeconds": 0.037008624,
+              "productSeconds": 0.009062417,
+              "projectionSeconds": 0.018640209,
+              "coefficientAssemblySeconds": 0.001354625,
+              "derivativeCoefficientAssemblySeconds": 0.002983583,
+              "coefficientProjectionSeconds": 0.001869584
+            }
+          }
+        },
+        {
+          "id": "velocity-only",
+          "number": 2,
+          "module": "wv_issue130_velocity_only",
+          "mexSha256": "6a23bb45a442a101a7b922e35e50b52e88b61c9a70fe41917996da536caeb970",
+          "status": "complete",
+          "correctnessPassed": true,
+          "errors": {
+            "Fp": 8.2195663540397183E-15,
+            "Fm": 7.8809457261132432E-15,
+            "F0": 7.629144326540792E-15
+          },
+          "maximumRelativeError": 8.2195663540397183E-15,
+          "warmupCount": 1,
+          "sampleCount": 3,
+          "totalSamplesSeconds": [
+            0.078328541666666668,
+            0.0782845,
+            0.078193916666666669
+          ],
+          "totalMedianSeconds": 0.0782845,
+          "internalSamplesSeconds": [
+            0.078080166,
+            0.078062166,
+            0.077963333
+          ],
+          "internalMedianSeconds": 0.078062166,
+          "completeCallRegression": -0.026398469041145178,
+          "stoppedByRule": false,
+          "metrics": {
+            "screeningVariant": "velocity-only",
+            "nonlinearFluxSchedule": "issue130-velocity-only",
+            "planCount": 14,
+            "planBytes": 336,
+            "planMemoryAccounting": "wrapper-lower-bound; FFTW-owned plan memory is opaque",
+            "executionCount": 18,
+            "horizontalExecutionCount": 6,
+            "verticalExecutionCount": 12,
+            "phaseEvaluationCount": 480438,
+            "halfSpectrumScratchBytes": 1.3737984E+8,
+            "realScratchBytes": 3.0670848E+8,
+            "scratchBytes": 4.4408832E+8,
+            "phaseReservationBytes": 0,
+            "descriptorBytes": 1.13012311E+8,
+            "stateInputBytes": 2.3061024E+7,
+            "fluxOutputBytes": 2.3061024E+7,
+            "persistentBytes": 5.57100967E+8,
+            "exactMaximumLiveArrayBytesExcludingPlans": 6.03222679E+8,
+            "knownMaximumLiveBytesExcludingOpaquePlanInternals": 6.03223015E+8,
+            "stages": {
+              "phaseSeconds": 0.00152025,
+              "reconstructionSeconds": 0.009756125,
+              "derivativeReconstructionSeconds": 0.038516959,
+              "productSeconds": 0.0089428320000000013,
+              "projectionSeconds": 0.019489125,
+              "coefficientAssemblySeconds": 0.001138,
+              "derivativeCoefficientAssemblySeconds": 0.0029666659999999997,
+              "coefficientProjectionSeconds": 0.001860792
+            }
+          }
+        },
+        {
+          "id": "streamed-target-three-channel",
+          "number": 3,
+          "module": "wv_issue130_streamed_three_channel",
+          "mexSha256": "9c6f44d80ff3b7aa31830a1d735df618e8046420159c177c98f027209d328d21",
+          "status": "complete",
+          "correctnessPassed": true,
+          "errors": {
+            "Fp": 8.2330843333285624E-15,
+            "Fm": 7.8810503291812055E-15,
+            "F0": 7.6210875279737853E-15
+          },
+          "maximumRelativeError": 8.2330843333285624E-15,
+          "warmupCount": 1,
+          "sampleCount": 3,
+          "totalSamplesSeconds": [
+            0.073050375,
+            0.075818791666666663,
+            0.071807916666666666
+          ],
+          "totalMedianSeconds": 0.073050375,
+          "internalSamplesSeconds": [
+            0.072788584,
+            0.0755915,
+            0.071556292
+          ],
+          "internalMedianSeconds": 0.072788584,
+          "completeCallRegression": -0.091493757549470867,
+          "stoppedByRule": false,
+          "metrics": {
+            "screeningVariant": "streamed-target-three-channel",
+            "nonlinearFluxSchedule": "issue130-streamed-target-three-channel",
+            "planCount": 17,
+            "planBytes": 408,
+            "planMemoryAccounting": "wrapper-lower-bound; FFTW-owned plan memory is opaque",
+            "executionCount": 23,
+            "horizontalExecutionCount": 9,
+            "verticalExecutionCount": 14,
+            "phaseEvaluationCount": 480438,
+            "halfSpectrumScratchBytes": 1.3737984E+8,
+            "realScratchBytes": 2.0447232E+8,
+            "scratchBytes": 3.4185216E+8,
+            "phaseReservationBytes": 3.434496E+7,
+            "descriptorBytes": 1.13012311E+8,
+            "stateInputBytes": 2.3061024E+7,
+            "fluxOutputBytes": 2.3061024E+7,
+            "persistentBytes": 4.54864879E+8,
+            "exactMaximumLiveArrayBytesExcludingPlans": 5.00986519E+8,
+            "knownMaximumLiveBytesExcludingOpaquePlanInternals": 5.00986927E+8,
+            "stages": {
+              "phaseSeconds": 0.001434458,
+              "reconstructionSeconds": 0.0091705,
+              "derivativeReconstructionSeconds": 0.034005291,
+              "productSeconds": 0.0091340839999999989,
+              "projectionSeconds": 0.016190417,
+              "coefficientAssemblySeconds": 0.00132925,
+              "derivativeCoefficientAssemblySeconds": 0.00299475,
+              "coefficientProjectionSeconds": 0
+            }
+          }
+        },
+        {
+          "id": "streamed-target-single-output",
+          "number": 4,
+          "module": "wv_issue130_streamed_single_output",
+          "mexSha256": "30d6b518e72888721efb3c92337450f5c9a105e7fa75567d51e0b606b604f322",
+          "status": "complete",
+          "correctnessPassed": true,
+          "errors": {
+            "Fp": 8.2330843333285624E-15,
+            "Fm": 7.8810503291812055E-15,
+            "F0": 7.6210875279737853E-15
+          },
+          "maximumRelativeError": 8.2330843333285624E-15,
+          "warmupCount": 1,
+          "sampleCount": 3,
+          "totalSamplesSeconds": [
+            0.074307,
+            0.07207725,
+            0.080548625
+          ],
+          "totalMedianSeconds": 0.074307,
+          "internalSamplesSeconds": [
+            0.074044,
+            0.071840833,
+            0.080296167
+          ],
+          "internalMedianSeconds": 0.074044,
+          "completeCallRegression": -0.0758654783391397,
+          "stoppedByRule": false,
+          "metrics": {
+            "screeningVariant": "streamed-target-single-output",
+            "nonlinearFluxSchedule": "issue130-streamed-target-single-output",
+            "planCount": 18,
+            "planBytes": 432,
+            "planMemoryAccounting": "wrapper-lower-bound; FFTW-owned plan memory is opaque",
+            "executionCount": 35,
+            "horizontalExecutionCount": 17,
+            "verticalExecutionCount": 18,
+            "phaseEvaluationCount": 480438,
+            "halfSpectrumScratchBytes": 1.3737984E+8,
+            "realScratchBytes": 1.703936E+8,
+            "scratchBytes": 3.0777344E+8,
+            "phaseReservationBytes": 3.434496E+7,
+            "descriptorBytes": 1.13012311E+8,
+            "stateInputBytes": 2.3061024E+7,
+            "fluxOutputBytes": 2.3061024E+7,
+            "persistentBytes": 4.20786183E+8,
+            "exactMaximumLiveArrayBytesExcludingPlans": 4.66907799E+8,
+            "knownMaximumLiveBytesExcludingOpaquePlanInternals": 4.66908231E+8,
+            "stages": {
+              "phaseSeconds": 0.001521166,
+              "reconstructionSeconds": 0.010600125,
+              "derivativeReconstructionSeconds": 0.039489580999999996,
+              "productSeconds": 0.012063127,
+              "projectionSeconds": 0.015037083,
+              "coefficientAssemblySeconds": 0.001349,
+              "derivativeCoefficientAssemblySeconds": 0.0062597510000000009,
+              "coefficientProjectionSeconds": 0
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "candidates": [
+    {
+      "id": "control-be0f789",
+      "correctnessPassed": true,
+      "maximumCompleteCallRegression": null,
+      "stoppedByRule": false,
+      "advanceToDonut": true
+    },
+    {
+      "id": "velocity-only",
+      "correctnessPassed": true,
+      "maximumCompleteCallRegression": -0.026398469041145178,
+      "stoppedByRule": false,
+      "advanceToDonut": true
+    },
+    {
+      "id": "streamed-target-three-channel",
+      "correctnessPassed": true,
+      "maximumCompleteCallRegression": -0.061973137963508895,
+      "stoppedByRule": false,
+      "advanceToDonut": true
+    },
+    {
+      "id": "streamed-target-single-output",
+      "correctnessPassed": true,
+      "maximumCompleteCallRegression": -0.0076970243035908714,
+      "stoppedByRule": false,
+      "advanceToDonut": true
+    }
+  ]
+}
