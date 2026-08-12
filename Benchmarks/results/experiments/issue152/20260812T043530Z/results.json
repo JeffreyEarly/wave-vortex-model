@@ -1,0 +1,4368 @@
+{
+  "schemaVersion": "2.0.0",
+  "issue": 152,
+  "phase": "Lyra corrected asymmetric FFTW++ MIMO serialized screening",
+  "runId": "20260812T043530Z",
+  "status": "complete",
+  "recommendation": "CORE-REJECT",
+  "source": {
+    "baselineCommit": "be0f78995c49a2bfe4c43d75827856e3812ac278",
+    "scaffoldCommit": "782e9b41b76628eb0f61b1bd87339dd69b884314",
+    "implementationCommit": "175e3d649ad7feda9322efd3033cad9217141063",
+    "handoffCommit": "7907759f9a78d3d897785aad07ebec70c2fdf9e8",
+    "preArtifactTree": "770d7288a38d14c431aa30507131482778505ae3",
+    "branch": "experiment/issue-152-asymmetric-mimo",
+    "patchSha256": "bb5dcd97aa49d4335850ef54d3353c7f770e877a35bae5c72380a43d5ba3f10b"
+  },
+  "environment": {
+    "host": "lyra.ad.nwra.com",
+    "hardware": "Apple M4 Max; 16 hardware cores; 128 GB",
+    "os": "macOS 26.5.2 (25F84)",
+    "architecture": "arm64",
+    "threadCap": 16,
+    "serializedLoadGuard": {
+      "observedAt": "2026-08-11T21:33:36-07:00",
+      "cpuIdlePercent": 91.56,
+      "unusedMemoryGiB": 66,
+      "competingBenchmarkProcesses": 0,
+      "matlabComputeProcesses": 0,
+      "rssSamplers": 0
+    }
+  },
+  "dependencies": {
+    "fftwpp": {
+      "commit": "1a185f41800cd0e9d4df4ddf93e16e362d4e2c45",
+      "tree": "77be88f8f58cd4a7d0b91f5323dcebd667e5b840",
+      "license": "LGPL-3.0-or-later",
+      "localPatch": "Benchmarks/patches/fftwpp-issue152-asymmetric-mimo.patch"
+    },
+    "fftw": {
+      "version": "3.3.11",
+      "provider": "pinned issue #137 NEON builds"
+    },
+    "llvmOpenMP": {
+      "version": "22.1.8",
+      "runtime": "libwvissue137omp.dylib"
+    }
+  },
+  "executables": {
+    "pthreads": {
+      "sha256": "64aae657d835c4071e71c2dcacab0c67c77ba68df45134a1ee23284e283ab103",
+      "matlabLinked": false
+    },
+    "openmp": {
+      "sha256": "7d0bdfaeb611097a7fb5c9151d701bff5a487063b27232468f04616de911f3a0",
+      "matlabLinked": false
+    }
+  },
+  "validation": {
+    "directOracle": {
+      "status": "passed after repair",
+      "maximumRelativeError": 9.995248E-16,
+      "unpatchedExact2DErrors": {
+        "implicit15To3": 0.4996869,
+        "implicit19To4": 0.4985616,
+        "hybrid15To3": 0.4811887,
+        "hybrid19To4": 0.4802951
+      }
+    },
+    "smallSixteenThread": {
+      "status": "passed",
+      "maximumRelativeError": 1.5939538915748614E-14,
+      "plansCreatedPerProcess": 14,
+      "plansDestroyedPerProcess": 14,
+      "activePlansAfterCleanup": 0,
+      "outstandingPlanningBytes": 0,
+      "maximumOpenMPActiveLevel": 1,
+      "workerRegionsDisjoint": true,
+      "oversubscribed": false
+    },
+    "allScreeningErrorsBelow": 1.8210841691483856E-13,
+    "tolerance": 1E-12,
+    "noPersistentFullHermitianSpectrum": true
+  },
+  "configuration": {
+    "small": {
+      "Nxyz": [
+        32,
+        32,
+        9
+      ],
+      "Nj": 5,
+      "threads": 16,
+      "warmups": 1,
+      "samples": 2
+    },
+    "medium": {
+      "Nxyz": [
+        128,
+        128,
+        33
+      ],
+      "Nj": 21,
+      "threads": [
+        1,
+        4,
+        8,
+        16
+      ],
+      "warmups": 2,
+      "samples": 3,
+      "rotatedVariantOrder": true
+    },
+    "large": {
+      "Nxyz": [
+        256,
+        256,
+        65
+      ],
+      "Nj": 42,
+      "threads": [
+        16
+      ],
+      "warmups": 2,
+      "samples": 1,
+      "rotatedVariantOrder": true
+    }
+  },
+  "accounting": {
+    "transformCounts": {
+      "hydrostatic": {
+        "physicalInputs": 12,
+        "sacrificialInputs": 3,
+        "outputs": 3,
+        "libraryTotal": 18,
+        "issue128SquareWorkaroundTotal": 30
+      },
+      "nonhydrostatic": {
+        "physicalInputs": 15,
+        "sacrificialInputs": 4,
+        "outputs": 4,
+        "libraryTotal": 23,
+        "issue128SquareWorkaroundTotal": 38
+      }
+    },
+    "residueWork": {
+      "centered": {
+        "inputFactor": 2,
+        "paddedFactor": 3,
+        "residueCount": 3,
+        "applicationD": 1
+      },
+      "hermitian": {
+        "inputFactor": 2,
+        "paddedFactor": 3,
+        "residueCount": 3,
+        "applicationD": 2,
+        "twoLoopSchedule": true
+      }
+    },
+    "stageInterpretation": {
+      "completeCore": "medianSeconds",
+      "fftwppFFTAndResidues": "stages.convolutionSeconds",
+      "mapping": "stages.convolutionMappingSeconds",
+      "multiplier": "stages.multiplierSeconds",
+      "explicitFFTAndProducts": [
+        "stages.reconstructionSeconds",
+        "stages.derivativeReconstructionSeconds",
+        "stages.productSeconds"
+      ],
+      "projection": "stages.projectionSeconds",
+      "planConstruction": "constructionSeconds",
+      "cleanup": "cleanupSeconds",
+      "exactScratch": [
+        "memory.scratchCapacityBytes",
+        "memory.convolutionWorkBytes"
+      ],
+      "exactMaximumLive": "memory.knownMaximumLiveOwnedBytes",
+      "screeningRSS": "memory.maximumRSSBytes",
+      "opaquePlanMemory": "memory.opaquePlanBytes"
+    },
+    "opaquePlanMemory": {
+      "reportedBytes": 0,
+      "interpretation": "No provider API exposed opaque plan allocations; zero is the recorded lower bound, not proof of zero allocation."
+    }
+  },
+  "fastestMedium": [
+    {
+      "case": "hydrostatic",
+      "pthreadExplicit": {
+        "threads": 8,
+        "seconds": 0.007031666
+      },
+      "openmpExplicit": {
+        "threads": 16,
+        "seconds": 0.006846333
+      },
+      "implicit": {
+        "threads": 16,
+        "seconds": 0.035354875
+      },
+      "hybrid": {
+        "threads": 8,
+        "seconds": 0.0194375
+      }
+    },
+    {
+      "case": "nonhydrostatic",
+      "pthreadExplicit": {
+        "threads": 16,
+        "seconds": 0.008518292
+      },
+      "openmpExplicit": {
+        "threads": 16,
+        "seconds": 0.008563084
+      },
+      "implicit": {
+        "threads": 8,
+        "seconds": 0.043945375
+      },
+      "hybrid": {
+        "threads": 16,
+        "seconds": 0.024137459
+      }
+    }
+  ],
+  "largeSixteenThread": [
+    {
+      "case": "hydrostatic",
+      "pthreadExplicitSeconds": 0.06644975,
+      "openmpExplicitSeconds": 0.071970458,
+      "implicitSeconds": 0.245590792,
+      "hybridSeconds": 0.227744333
+    },
+    {
+      "case": "nonhydrostatic",
+      "pthreadExplicitSeconds": 0.081445625,
+      "openmpExplicitSeconds": 0.091030167,
+      "implicitSeconds": 0.307810292,
+      "hybridSeconds": 0.29155675
+    }
+  ],
+  "correctedVsIssue128SquareWorkaround": {
+    "mediumBest": {
+      "hydrostaticPercent": -24.575,
+      "nonhydrostaticPercent": -26.215
+    },
+    "largeSixteenThread": {
+      "hydrostaticPercent": -32.561,
+      "nonhydrostaticPercent": -31.121
+    },
+    "interpretation": "The corrected arity materially improves the workaround but remains far outside the adoption gate."
+  },
+  "decision": {
+    "gate": {
+      "maximumRelativeError": 1E-12,
+      "requiredCompleteCoreSpeedupPercent": 10,
+      "requiredMaxLiveAndRepeatedRSSImprovementPercent": 10,
+      "maximumOtherMetricRegressionPercent": 3,
+      "bothPhysicalConfigurations": true
+    },
+    "bestCandidate": "fftwpp-hybrid",
+    "mediumVsFastestPthread": {
+      "hydrostatic": {
+        "slowdown": 2.764280897300867,
+        "speedup": 0.3617577363344051,
+        "maxLiveChangePercent": -6.572809588900785,
+        "singleProcessRSSChangePercent": 16.114686951433587
+      },
+      "nonhydrostatic": {
+        "slowdown": 2.8336031448557994,
+        "speedup": 0.3529075699310354,
+        "maxLiveChangePercent": -1.030994113339645,
+        "singleProcessRSSChangePercent": 42.458037625323875
+      }
+    },
+    "largeVsPthread": {
+      "hydrostatic": {
+        "slowdown": 3.4273166264733876,
+        "speedup": 0.2917734510654103,
+        "maxLiveChangePercent": -7.121083919818516,
+        "singleProcessRSSChangePercent": 2.941586937307128
+      },
+      "nonhydrostatic": {
+        "slowdown": 3.579771780252162,
+        "speedup": 0.2793474169265503,
+        "maxLiveChangePercent": -1.8314567594622022,
+        "singleProcessRSSChangePercent": 5.502201782466898
+      }
+    },
+    "rationale": "Hybrid is 2.76x/2.83x slower at medium and 3.43x/3.58x slower at large. Exact max-live improves by less than 10% in every case, and screening RSS does not improve. Neither route is plausible."
+  },
+  "skippedStages": [
+    {
+      "stage": "three fresh processes with seven medium and three large samples",
+      "reason": "No candidate remained plausible after medium and large screening."
+    },
+    {
+      "stage": "repeated-process peak RSS",
+      "reason": "The memory route already failed exact max-live (<10% improvement in both configurations) and single-process RSS increased."
+    },
+    {
+      "stage": "Donut R2026a confirmation",
+      "reason": "Only a gate-passing finalist advances to Donut."
+    }
+  ],
+  "smallRaw": [
+    {
+      "schemaVersion": "1.0.0",
+      "status": "complete",
+      "variant": "explicit",
+      "Nxyz": [
+        32,
+        32,
+        9
+      ],
+      "Nj": 5,
+      "hydrostatic": true,
+      "threads": 16,
+      "warmups": 1,
+      "samplesSeconds": [
+        0.0011310000000000001,
+        0.001179666
+      ],
+      "medianSeconds": 0.0011553330000000001,
+      "firstSeconds": 0.00124675,
+      "constructionSeconds": 0.72508649999999997,
+      "cleanupSeconds": 0.000030416000000000002,
+      "relativeInfinityError": 7.6984937329797749E-15,
+      "referenceWritten": false,
+      "libraries": {
+        "version": "fftw-3.3.11-neon",
+        "base": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libfftw3.3.dylib",
+        "thread": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libfftw3_omp.3.dylib",
+        "openmp": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libwvissue137omp.dylib"
+      },
+      "memory": {
+        "descriptorBytes": 233419,
+        "planWrapperBytes": 336,
+        "scratchCapacityBytes": 903168,
+        "persistentBytes": 1136923,
+        "knownMaximumLiveOwnedBytes": 1179883,
+        "retainedSpectrumBytes": 0,
+        "convolutionWorkBytes": 0,
+        "opaquePlanBytes": 0,
+        "maximumRSSBytes": 7241728
+      },
+      "stages": {
+        "phaseSeconds": 0.000002667,
+        "reconstructionSeconds": 0.00025741700000000002,
+        "derivativeReconstructionSeconds": 0.00061025100000000002,
+        "productSeconds": 0.000017041999999999997,
+        "projectionSeconds": 0.00020975,
+        "convolutionMappingSeconds": 0,
+        "convolutionSeconds": 0,
+        "multiplierSeconds": 0
+      },
+      "schedule": {
+        "centered": {
+          "m": 0,
+          "p": 0,
+          "q": 0,
+          "logicalPadding": 0
+        },
+        "hermitian": {
+          "m": 0,
+          "p": 0,
+          "q": 0,
+          "logicalPadding": 0
+        }
+      },
+      "transformCounts": {
+        "physicalInputs": 0,
+        "sacrificialInputs": 0,
+        "outputs": 0,
+        "libraryTotal": 0
+      },
+      "threadBehavior": {
+        "outerOpenMPThreads": 1,
+        "maximumFFTWThreads": 1,
+        "maximumMultiplierThreads": 1,
+        "maximumOpenMPLevel": 0,
+        "workerRegionsDisjoint": true
+      },
+      "lifecycle": {
+        "activePlans": 0,
+        "created": 14,
+        "destroyed": 14,
+        "outstandingPlanningBytes": 0
+      }
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "status": "complete",
+      "variant": "fftwpp-hybrid",
+      "Nxyz": [
+        32,
+        32,
+        9
+      ],
+      "Nj": 5,
+      "hydrostatic": true,
+      "threads": 16,
+      "warmups": 1,
+      "samplesSeconds": [
+        0.059589000000000003,
+        0.059342916000000002
+      ],
+      "medianSeconds": 0.059465957999999999,
+      "firstSeconds": 0.059708375000000001,
+      "constructionSeconds": 0.729370458,
+      "cleanupSeconds": 0.000030040999999999999,
+      "relativeInfinityError": 1.5939538915748614E-14,
+      "referenceWritten": false,
+      "libraries": {
+        "version": "fftw-3.3.11-neon",
+        "base": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libfftw3.3.dylib",
+        "thread": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libfftw3_omp.3.dylib",
+        "openmp": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libwvissue137omp.dylib"
+      },
+      "memory": {
+        "descriptorBytes": 233419,
+        "planWrapperBytes": 336,
+        "scratchCapacityBytes": 884608,
+        "persistentBytes": 1120019,
+        "knownMaximumLiveOwnedBytes": 1162979,
+        "retainedSpectrumBytes": 522720,
+        "convolutionWorkBytes": 48544,
+        "opaquePlanBytes": 0,
+        "maximumRSSBytes": 35258368
+      },
+      "stages": {
+        "phaseSeconds": 0.0000036669999999999998,
+        "reconstructionSeconds": 0,
+        "derivativeReconstructionSeconds": 0,
+        "productSeconds": 0,
+        "projectionSeconds": 0,
+        "convolutionMappingSeconds": 0.000801292,
+        "convolutionSeconds": 0.058578083000000003,
+        "multiplierSeconds": 0.28867118899999999
+      },
+      "schedule": {
+        "centered": {
+          "m": 12,
+          "p": 2,
+          "q": 3,
+          "logicalPadding": 2
+        },
+        "hermitian": {
+          "m": 12,
+          "p": 2,
+          "q": 3,
+          "logicalPadding": 2
+        }
+      },
+      "transformCounts": {
+        "physicalInputs": 12,
+        "sacrificialInputs": 3,
+        "outputs": 3,
+        "libraryTotal": 18
+      },
+      "threadBehavior": {
+        "outerOpenMPThreads": 1,
+        "maximumFFTWThreads": 16,
+        "maximumMultiplierThreads": 16,
+        "maximumOpenMPLevel": 1,
+        "workerRegionsDisjoint": true
+      },
+      "lifecycle": {
+        "activePlans": 0,
+        "created": 14,
+        "destroyed": 14,
+        "outstandingPlanningBytes": 0
+      }
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "status": "complete",
+      "variant": "fftwpp-implicit",
+      "Nxyz": [
+        32,
+        32,
+        9
+      ],
+      "Nj": 5,
+      "hydrostatic": true,
+      "threads": 16,
+      "warmups": 1,
+      "samplesSeconds": [
+        0.054858667,
+        0.054737624999999998
+      ],
+      "medianSeconds": 0.054798145999999999,
+      "firstSeconds": 0.055523584000000001,
+      "constructionSeconds": 0.72925029200000002,
+      "cleanupSeconds": 0.000033000000000000003,
+      "relativeInfinityError": 1.5667468582247877E-14,
+      "referenceWritten": false,
+      "libraries": {
+        "version": "fftw-3.3.11-neon",
+        "base": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libfftw3.3.dylib",
+        "thread": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libfftw3_omp.3.dylib",
+        "openmp": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libwvissue137omp.dylib"
+      },
+      "memory": {
+        "descriptorBytes": 233419,
+        "planWrapperBytes": 336,
+        "scratchCapacityBytes": 881728,
+        "persistentBytes": 1117139,
+        "knownMaximumLiveOwnedBytes": 1160099,
+        "retainedSpectrumBytes": 522720,
+        "convolutionWorkBytes": 45664,
+        "opaquePlanBytes": 0,
+        "maximumRSSBytes": 36257792
+      },
+      "stages": {
+        "phaseSeconds": 0.0000034589999999999998,
+        "reconstructionSeconds": 0,
+        "derivativeReconstructionSeconds": 0,
+        "productSeconds": 0,
+        "projectionSeconds": 0,
+        "convolutionMappingSeconds": 0.00080158299999999992,
+        "convolutionSeconds": 0.053656292000000001,
+        "multiplierSeconds": 0.26628416700000002
+      },
+      "schedule": {
+        "centered": {
+          "m": 11,
+          "p": 2,
+          "q": 3,
+          "logicalPadding": 0
+        },
+        "hermitian": {
+          "m": 11,
+          "p": 2,
+          "q": 3,
+          "logicalPadding": 0
+        }
+      },
+      "transformCounts": {
+        "physicalInputs": 12,
+        "sacrificialInputs": 3,
+        "outputs": 3,
+        "libraryTotal": 18
+      },
+      "threadBehavior": {
+        "outerOpenMPThreads": 1,
+        "maximumFFTWThreads": 16,
+        "maximumMultiplierThreads": 16,
+        "maximumOpenMPLevel": 1,
+        "workerRegionsDisjoint": true
+      },
+      "lifecycle": {
+        "activePlans": 0,
+        "created": 14,
+        "destroyed": 14,
+        "outstandingPlanningBytes": 0
+      }
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "status": "complete",
+      "variant": "explicit",
+      "Nxyz": [
+        32,
+        32,
+        9
+      ],
+      "Nj": 5,
+      "hydrostatic": true,
+      "threads": 1,
+      "warmups": 1,
+      "samplesSeconds": [
+        0.00052899999999999996,
+        0.00052066700000000005
+      ],
+      "medianSeconds": 0.0005248335,
+      "firstSeconds": 0.00052875000000000003,
+      "constructionSeconds": 0.017475041,
+      "cleanupSeconds": 0.0000047500000000000003,
+      "relativeInfinityError": 0,
+      "referenceWritten": true,
+      "libraries": {
+        "version": "fftw-3.3.11-neon",
+        "base": "/private/tmp/issue152-overnight-cache/providers/pthreads/install/lib/libfftw3.3.dylib",
+        "thread": "/private/tmp/issue152-overnight-cache/providers/pthreads/install/lib/libfftw3_threads.3.dylib",
+        "openmp": ""
+      },
+      "memory": {
+        "descriptorBytes": 233419,
+        "planWrapperBytes": 336,
+        "scratchCapacityBytes": 903168,
+        "persistentBytes": 1136923,
+        "knownMaximumLiveOwnedBytes": 1179883,
+        "retainedSpectrumBytes": 0,
+        "convolutionWorkBytes": 0,
+        "opaquePlanBytes": 0,
+        "maximumRSSBytes": 5521408
+      },
+      "stages": {
+        "phaseSeconds": 0.000003083,
+        "reconstructionSeconds": 0.00012750000000000001,
+        "derivativeReconstructionSeconds": 0.000282708,
+        "productSeconds": 0.000013001,
+        "projectionSeconds": 0.000096167000000000003,
+        "convolutionMappingSeconds": 0,
+        "convolutionSeconds": 0,
+        "multiplierSeconds": 0
+      },
+      "schedule": {
+        "centered": {
+          "m": 0,
+          "p": 0,
+          "q": 0,
+          "logicalPadding": 0
+        },
+        "hermitian": {
+          "m": 0,
+          "p": 0,
+          "q": 0,
+          "logicalPadding": 0
+        }
+      },
+      "transformCounts": {
+        "physicalInputs": 0,
+        "sacrificialInputs": 0,
+        "outputs": 0,
+        "libraryTotal": 0
+      },
+      "threadBehavior": {
+        "outerOpenMPThreads": 1,
+        "maximumFFTWThreads": 1,
+        "maximumMultiplierThreads": 1,
+        "maximumOpenMPLevel": 0,
+        "workerRegionsDisjoint": true
+      },
+      "lifecycle": {
+        "activePlans": 0,
+        "created": 14,
+        "destroyed": 14,
+        "outstandingPlanningBytes": 0
+      }
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "status": "complete",
+      "variant": "explicit",
+      "Nxyz": [
+        32,
+        32,
+        9
+      ],
+      "Nj": 5,
+      "hydrostatic": false,
+      "threads": 16,
+      "warmups": 1,
+      "samplesSeconds": [
+        0.001456333,
+        0.0014172080000000001
+      ],
+      "medianSeconds": 0.0014367705000000001,
+      "firstSeconds": 0.0015150000000000001,
+      "constructionSeconds": 0.71503450000000002,
+      "cleanupSeconds": 0.000031165999999999999,
+      "relativeInfinityError": 0,
+      "referenceWritten": false,
+      "libraries": {
+        "version": "fftw-3.3.11-neon",
+        "base": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libfftw3.3.dylib",
+        "thread": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libfftw3_omp.3.dylib",
+        "openmp": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libwvissue137omp.dylib"
+      },
+      "memory": {
+        "descriptorBytes": 233419,
+        "planWrapperBytes": 336,
+        "scratchCapacityBytes": 976896,
+        "persistentBytes": 1210651,
+        "knownMaximumLiveOwnedBytes": 1253611,
+        "retainedSpectrumBytes": 0,
+        "convolutionWorkBytes": 0,
+        "opaquePlanBytes": 0,
+        "maximumRSSBytes": 7421952
+      },
+      "stages": {
+        "phaseSeconds": 0.0000031250000000000001,
+        "reconstructionSeconds": 0.00025437499999999999,
+        "derivativeReconstructionSeconds": 0.00087987500000000001,
+        "productSeconds": 0.000021834000000000001,
+        "projectionSeconds": 0.00024129199999999999,
+        "convolutionMappingSeconds": 0,
+        "convolutionSeconds": 0,
+        "multiplierSeconds": 0
+      },
+      "schedule": {
+        "centered": {
+          "m": 0,
+          "p": 0,
+          "q": 0,
+          "logicalPadding": 0
+        },
+        "hermitian": {
+          "m": 0,
+          "p": 0,
+          "q": 0,
+          "logicalPadding": 0
+        }
+      },
+      "transformCounts": {
+        "physicalInputs": 0,
+        "sacrificialInputs": 0,
+        "outputs": 0,
+        "libraryTotal": 0
+      },
+      "threadBehavior": {
+        "outerOpenMPThreads": 1,
+        "maximumFFTWThreads": 1,
+        "maximumMultiplierThreads": 1,
+        "maximumOpenMPLevel": 0,
+        "workerRegionsDisjoint": true
+      },
+      "lifecycle": {
+        "activePlans": 0,
+        "created": 14,
+        "destroyed": 14,
+        "outstandingPlanningBytes": 0
+      }
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "status": "complete",
+      "variant": "fftwpp-hybrid",
+      "Nxyz": [
+        32,
+        32,
+        9
+      ],
+      "Nj": 5,
+      "hydrostatic": false,
+      "threads": 16,
+      "warmups": 1,
+      "samplesSeconds": [
+        0.059169291999999998,
+        0.059868207999999999
+      ],
+      "medianSeconds": 0.059518749999999995,
+      "firstSeconds": 0.059866957999999998,
+      "constructionSeconds": 0.73130424999999999,
+      "cleanupSeconds": 0.000037499999999999997,
+      "relativeInfinityError": 9.7791669217647091E-15,
+      "referenceWritten": false,
+      "libraries": {
+        "version": "fftw-3.3.11-neon",
+        "base": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libfftw3.3.dylib",
+        "thread": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libfftw3_omp.3.dylib",
+        "openmp": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libwvissue137omp.dylib"
+      },
+      "memory": {
+        "descriptorBytes": 233419,
+        "planWrapperBytes": 336,
+        "scratchCapacityBytes": 1037088,
+        "persistentBytes": 1272499,
+        "knownMaximumLiveOwnedBytes": 1315459,
+        "retainedSpectrumBytes": 662112,
+        "convolutionWorkBytes": 61632,
+        "opaquePlanBytes": 0,
+        "maximumRSSBytes": 42287104
+      },
+      "stages": {
+        "phaseSeconds": 0.0000028339999999999999,
+        "reconstructionSeconds": 0,
+        "derivativeReconstructionSeconds": 0,
+        "productSeconds": 0,
+        "projectionSeconds": 0,
+        "convolutionMappingSeconds": 0.00066545900000000008,
+        "convolutionSeconds": 0.058710582999999997,
+        "multiplierSeconds": 0.28956966500000003
+      },
+      "schedule": {
+        "centered": {
+          "m": 12,
+          "p": 2,
+          "q": 3,
+          "logicalPadding": 2
+        },
+        "hermitian": {
+          "m": 12,
+          "p": 2,
+          "q": 3,
+          "logicalPadding": 2
+        }
+      },
+      "transformCounts": {
+        "physicalInputs": 15,
+        "sacrificialInputs": 4,
+        "outputs": 4,
+        "libraryTotal": 23
+      },
+      "threadBehavior": {
+        "outerOpenMPThreads": 1,
+        "maximumFFTWThreads": 16,
+        "maximumMultiplierThreads": 16,
+        "maximumOpenMPLevel": 1,
+        "workerRegionsDisjoint": true
+      },
+      "lifecycle": {
+        "activePlans": 0,
+        "created": 14,
+        "destroyed": 14,
+        "outstandingPlanningBytes": 0
+      }
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "status": "complete",
+      "variant": "fftwpp-implicit",
+      "Nxyz": [
+        32,
+        32,
+        9
+      ],
+      "Nj": 5,
+      "hydrostatic": false,
+      "threads": 16,
+      "warmups": 1,
+      "samplesSeconds": [
+        0.054765665999999998,
+        0.054715125000000003
+      ],
+      "medianSeconds": 0.054740395499999997,
+      "firstSeconds": 0.057403416999999998,
+      "constructionSeconds": 0.731986417,
+      "cleanupSeconds": 0.000032874999999999999,
+      "relativeInfinityError": 1.1252242585696252E-14,
+      "referenceWritten": false,
+      "libraries": {
+        "version": "fftw-3.3.11-neon",
+        "base": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libfftw3.3.dylib",
+        "thread": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libfftw3_omp.3.dylib",
+        "openmp": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libwvissue137omp.dylib"
+      },
+      "memory": {
+        "descriptorBytes": 233419,
+        "planWrapperBytes": 336,
+        "scratchCapacityBytes": 1033504,
+        "persistentBytes": 1268915,
+        "knownMaximumLiveOwnedBytes": 1311875,
+        "retainedSpectrumBytes": 662112,
+        "convolutionWorkBytes": 58048,
+        "opaquePlanBytes": 0,
+        "maximumRSSBytes": 44466176
+      },
+      "stages": {
+        "phaseSeconds": 0.0000034999999999999999,
+        "reconstructionSeconds": 0,
+        "derivativeReconstructionSeconds": 0,
+        "productSeconds": 0,
+        "projectionSeconds": 0,
+        "convolutionMappingSeconds": 0.00064558400000000004,
+        "convolutionSeconds": 0.054323666999999999,
+        "multiplierSeconds": 0.26825585299999999
+      },
+      "schedule": {
+        "centered": {
+          "m": 11,
+          "p": 2,
+          "q": 3,
+          "logicalPadding": 0
+        },
+        "hermitian": {
+          "m": 11,
+          "p": 2,
+          "q": 3,
+          "logicalPadding": 0
+        }
+      },
+      "transformCounts": {
+        "physicalInputs": 15,
+        "sacrificialInputs": 4,
+        "outputs": 4,
+        "libraryTotal": 23
+      },
+      "threadBehavior": {
+        "outerOpenMPThreads": 1,
+        "maximumFFTWThreads": 16,
+        "maximumMultiplierThreads": 16,
+        "maximumOpenMPLevel": 1,
+        "workerRegionsDisjoint": true
+      },
+      "lifecycle": {
+        "activePlans": 0,
+        "created": 14,
+        "destroyed": 14,
+        "outstandingPlanningBytes": 0
+      }
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "status": "complete",
+      "variant": "explicit",
+      "Nxyz": [
+        32,
+        32,
+        9
+      ],
+      "Nj": 5,
+      "hydrostatic": false,
+      "threads": 1,
+      "warmups": 1,
+      "samplesSeconds": [
+        0.00054141699999999998,
+        0.00054162500000000001
+      ],
+      "medianSeconds": 0.00054152099999999999,
+      "firstSeconds": 0.00057366700000000004,
+      "constructionSeconds": 0.014820041000000001,
+      "cleanupSeconds": 0.0000052079999999999999,
+      "relativeInfinityError": 0,
+      "referenceWritten": true,
+      "libraries": {
+        "version": "fftw-3.3.11-neon",
+        "base": "/private/tmp/issue152-overnight-cache/providers/pthreads/install/lib/libfftw3.3.dylib",
+        "thread": "/private/tmp/issue152-overnight-cache/providers/pthreads/install/lib/libfftw3_threads.3.dylib",
+        "openmp": ""
+      },
+      "memory": {
+        "descriptorBytes": 233419,
+        "planWrapperBytes": 336,
+        "scratchCapacityBytes": 976896,
+        "persistentBytes": 1210651,
+        "knownMaximumLiveOwnedBytes": 1253611,
+        "retainedSpectrumBytes": 0,
+        "convolutionWorkBytes": 0,
+        "opaquePlanBytes": 0,
+        "maximumRSSBytes": 5586944
+      },
+      "stages": {
+        "phaseSeconds": 0.0000023750000000000001,
+        "reconstructionSeconds": 0.0001065,
+        "derivativeReconstructionSeconds": 0.00031075100000000001,
+        "productSeconds": 0.0000145,
+        "projectionSeconds": 0.00010820899999999999,
+        "convolutionMappingSeconds": 0,
+        "convolutionSeconds": 0,
+        "multiplierSeconds": 0
+      },
+      "schedule": {
+        "centered": {
+          "m": 0,
+          "p": 0,
+          "q": 0,
+          "logicalPadding": 0
+        },
+        "hermitian": {
+          "m": 0,
+          "p": 0,
+          "q": 0,
+          "logicalPadding": 0
+        }
+      },
+      "transformCounts": {
+        "physicalInputs": 0,
+        "sacrificialInputs": 0,
+        "outputs": 0,
+        "libraryTotal": 0
+      },
+      "threadBehavior": {
+        "outerOpenMPThreads": 1,
+        "maximumFFTWThreads": 1,
+        "maximumMultiplierThreads": 1,
+        "maximumOpenMPLevel": 0,
+        "workerRegionsDisjoint": true
+      },
+      "lifecycle": {
+        "activePlans": 0,
+        "created": 14,
+        "destroyed": 14,
+        "outstandingPlanningBytes": 0
+      }
+    }
+  ],
+  "mediumRaw": [
+    {
+      "schemaVersion": "1.0.0",
+      "status": "complete",
+      "variant": "explicit",
+      "Nxyz": [
+        128,
+        128,
+        33
+      ],
+      "Nj": 21,
+      "hydrostatic": true,
+      "threads": 1,
+      "warmups": 2,
+      "samplesSeconds": [
+        0.028687125000000001,
+        0.027753916999999999,
+        0.027876666000000001
+      ],
+      "medianSeconds": 0.027876666000000001,
+      "firstSeconds": 0.029345791999999999,
+      "constructionSeconds": 0.21422050000000001,
+      "cleanupSeconds": 0.000012417,
+      "relativeInfinityError": 1.4046763723055212E-14,
+      "referenceWritten": false,
+      "libraries": {
+        "version": "fftw-3.3.11-neon",
+        "base": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libfftw3.3.dylib",
+        "thread": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libfftw3_omp.3.dylib",
+        "openmp": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libwvissue137omp.dylib"
+      },
+      "memory": {
+        "descriptorBytes": 14328485,
+        "planWrapperBytes": 336,
+        "scratchCapacityBytes": 52174848,
+        "persistentBytes": 66503669,
+        "knownMaximumLiveOwnedBytes": 69387557,
+        "retainedSpectrumBytes": 0,
+        "convolutionWorkBytes": 0,
+        "opaquePlanBytes": 0,
+        "maximumRSSBytes": 112787456
+      },
+      "stages": {
+        "phaseSeconds": 0.00018920800000000001,
+        "reconstructionSeconds": 0.0076072910000000004,
+        "derivativeReconstructionSeconds": 0.016454583000000002,
+        "productSeconds": 0.00080045799999999999,
+        "projectionSeconds": 0.0059362499999999997,
+        "convolutionMappingSeconds": 0,
+        "convolutionSeconds": 0,
+        "multiplierSeconds": 0
+      },
+      "schedule": {
+        "centered": {
+          "m": 0,
+          "p": 0,
+          "q": 0,
+          "logicalPadding": 0
+        },
+        "hermitian": {
+          "m": 0,
+          "p": 0,
+          "q": 0,
+          "logicalPadding": 0
+        }
+      },
+      "transformCounts": {
+        "physicalInputs": 0,
+        "sacrificialInputs": 0,
+        "outputs": 0,
+        "libraryTotal": 0
+      },
+      "threadBehavior": {
+        "outerOpenMPThreads": 1,
+        "maximumFFTWThreads": 1,
+        "maximumMultiplierThreads": 1,
+        "maximumOpenMPLevel": 0,
+        "workerRegionsDisjoint": true
+      },
+      "lifecycle": {
+        "activePlans": 0,
+        "created": 14,
+        "destroyed": 14,
+        "outstandingPlanningBytes": 0
+      }
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "status": "complete",
+      "variant": "explicit",
+      "Nxyz": [
+        128,
+        128,
+        33
+      ],
+      "Nj": 21,
+      "hydrostatic": true,
+      "threads": 16,
+      "warmups": 2,
+      "samplesSeconds": [
+        0.0068595410000000002,
+        0.0068463329999999996,
+        0.0068275000000000002
+      ],
+      "medianSeconds": 0.0068463329999999996,
+      "firstSeconds": 0.0071245420000000002,
+      "constructionSeconds": 4.8394307909999998,
+      "cleanupSeconds": 0.000053584000000000001,
+      "relativeInfinityError": 3.145714822822737E-14,
+      "referenceWritten": false,
+      "libraries": {
+        "version": "fftw-3.3.11-neon",
+        "base": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libfftw3.3.dylib",
+        "thread": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libfftw3_omp.3.dylib",
+        "openmp": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libwvissue137omp.dylib"
+      },
+      "memory": {
+        "descriptorBytes": 14328485,
+        "planWrapperBytes": 336,
+        "scratchCapacityBytes": 52174848,
+        "persistentBytes": 66503669,
+        "knownMaximumLiveOwnedBytes": 69387557,
+        "retainedSpectrumBytes": 0,
+        "convolutionWorkBytes": 0,
+        "opaquePlanBytes": 0,
+        "maximumRSSBytes": 141901824
+      },
+      "stages": {
+        "phaseSeconds": 0.000165625,
+        "reconstructionSeconds": 0.001339083,
+        "derivativeReconstructionSeconds": 0.0031861249999999997,
+        "productSeconds": 0.00070183400000000003,
+        "projectionSeconds": 0.0014370839999999999,
+        "convolutionMappingSeconds": 0,
+        "convolutionSeconds": 0,
+        "multiplierSeconds": 0
+      },
+      "schedule": {
+        "centered": {
+          "m": 0,
+          "p": 0,
+          "q": 0,
+          "logicalPadding": 0
+        },
+        "hermitian": {
+          "m": 0,
+          "p": 0,
+          "q": 0,
+          "logicalPadding": 0
+        }
+      },
+      "transformCounts": {
+        "physicalInputs": 0,
+        "sacrificialInputs": 0,
+        "outputs": 0,
+        "libraryTotal": 0
+      },
+      "threadBehavior": {
+        "outerOpenMPThreads": 1,
+        "maximumFFTWThreads": 1,
+        "maximumMultiplierThreads": 1,
+        "maximumOpenMPLevel": 0,
+        "workerRegionsDisjoint": true
+      },
+      "lifecycle": {
+        "activePlans": 0,
+        "created": 14,
+        "destroyed": 14,
+        "outstandingPlanningBytes": 0
+      }
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "status": "complete",
+      "variant": "explicit",
+      "Nxyz": [
+        128,
+        128,
+        33
+      ],
+      "Nj": 21,
+      "hydrostatic": true,
+      "threads": 4,
+      "warmups": 2,
+      "samplesSeconds": [
+        0.012444458,
+        0.011873333,
+        0.013001250000000001
+      ],
+      "medianSeconds": 0.012444458,
+      "firstSeconds": 0.012503917,
+      "constructionSeconds": 4.4843870419999998,
+      "cleanupSeconds": 0.000018833000000000001,
+      "relativeInfinityError": 1.9627640597953265E-14,
+      "referenceWritten": false,
+      "libraries": {
+        "version": "fftw-3.3.11-neon",
+        "base": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libfftw3.3.dylib",
+        "thread": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libfftw3_omp.3.dylib",
+        "openmp": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libwvissue137omp.dylib"
+      },
+      "memory": {
+        "descriptorBytes": 14328485,
+        "planWrapperBytes": 336,
+        "scratchCapacityBytes": 52174848,
+        "persistentBytes": 66503669,
+        "knownMaximumLiveOwnedBytes": 69387557,
+        "retainedSpectrumBytes": 0,
+        "convolutionWorkBytes": 0,
+        "opaquePlanBytes": 0,
+        "maximumRSSBytes": 140869632
+      },
+      "stages": {
+        "phaseSeconds": 0.000167541,
+        "reconstructionSeconds": 0.0034034999999999998,
+        "derivativeReconstructionSeconds": 0.0064689589999999998,
+        "productSeconds": 0.00073466699999999994,
+        "projectionSeconds": 0.0023990420000000001,
+        "convolutionMappingSeconds": 0,
+        "convolutionSeconds": 0,
+        "multiplierSeconds": 0
+      },
+      "schedule": {
+        "centered": {
+          "m": 0,
+          "p": 0,
+          "q": 0,
+          "logicalPadding": 0
+        },
+        "hermitian": {
+          "m": 0,
+          "p": 0,
+          "q": 0,
+          "logicalPadding": 0
+        }
+      },
+      "transformCounts": {
+        "physicalInputs": 0,
+        "sacrificialInputs": 0,
+        "outputs": 0,
+        "libraryTotal": 0
+      },
+      "threadBehavior": {
+        "outerOpenMPThreads": 1,
+        "maximumFFTWThreads": 1,
+        "maximumMultiplierThreads": 1,
+        "maximumOpenMPLevel": 0,
+        "workerRegionsDisjoint": true
+      },
+      "lifecycle": {
+        "activePlans": 0,
+        "created": 14,
+        "destroyed": 14,
+        "outstandingPlanningBytes": 0
+      }
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "status": "complete",
+      "variant": "explicit",
+      "Nxyz": [
+        128,
+        128,
+        33
+      ],
+      "Nj": 21,
+      "hydrostatic": true,
+      "threads": 8,
+      "warmups": 2,
+      "samplesSeconds": [
+        0.013486625,
+        0.015155750000000001,
+        0.014089542
+      ],
+      "medianSeconds": 0.014089542,
+      "firstSeconds": 0.014357208999999999,
+      "constructionSeconds": 4.5333610000000002,
+      "cleanupSeconds": 0.000042874999999999999,
+      "relativeInfinityError": 1.389592406619015E-14,
+      "referenceWritten": false,
+      "libraries": {
+        "version": "fftw-3.3.11-neon",
+        "base": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libfftw3.3.dylib",
+        "thread": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libfftw3_omp.3.dylib",
+        "openmp": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libwvissue137omp.dylib"
+      },
+      "memory": {
+        "descriptorBytes": 14328485,
+        "planWrapperBytes": 336,
+        "scratchCapacityBytes": 52174848,
+        "persistentBytes": 66503669,
+        "knownMaximumLiveOwnedBytes": 69387557,
+        "retainedSpectrumBytes": 0,
+        "convolutionWorkBytes": 0,
+        "opaquePlanBytes": 0,
+        "maximumRSSBytes": 141410304
+      },
+      "stages": {
+        "phaseSeconds": 0.000166708,
+        "reconstructionSeconds": 0.0036375000000000001,
+        "derivativeReconstructionSeconds": 0.0073665420000000002,
+        "productSeconds": 0.00072729200000000004,
+        "projectionSeconds": 0.002532,
+        "convolutionMappingSeconds": 0,
+        "convolutionSeconds": 0,
+        "multiplierSeconds": 0
+      },
+      "schedule": {
+        "centered": {
+          "m": 0,
+          "p": 0,
+          "q": 0,
+          "logicalPadding": 0
+        },
+        "hermitian": {
+          "m": 0,
+          "p": 0,
+          "q": 0,
+          "logicalPadding": 0
+        }
+      },
+      "transformCounts": {
+        "physicalInputs": 0,
+        "sacrificialInputs": 0,
+        "outputs": 0,
+        "libraryTotal": 0
+      },
+      "threadBehavior": {
+        "outerOpenMPThreads": 1,
+        "maximumFFTWThreads": 1,
+        "maximumMultiplierThreads": 1,
+        "maximumOpenMPLevel": 0,
+        "workerRegionsDisjoint": true
+      },
+      "lifecycle": {
+        "activePlans": 0,
+        "created": 14,
+        "destroyed": 14,
+        "outstandingPlanningBytes": 0
+      }
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "status": "complete",
+      "variant": "fftwpp-hybrid",
+      "Nxyz": [
+        128,
+        128,
+        33
+      ],
+      "Nj": 21,
+      "hydrostatic": true,
+      "threads": 1,
+      "warmups": 2,
+      "samplesSeconds": [
+        0.040060291999999997,
+        0.040140500000000003,
+        0.040391457999999998
+      ],
+      "medianSeconds": 0.040140500000000003,
+      "firstSeconds": 0.040459374999999999,
+      "constructionSeconds": 0.20824462499999999,
+      "cleanupSeconds": 0.0000205,
+      "relativeInfinityError": 1.955358890436359E-14,
+      "referenceWritten": false,
+      "libraries": {
+        "version": "fftw-3.3.11-neon",
+        "base": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libfftw3.3.dylib",
+        "thread": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libfftw3_omp.3.dylib",
+        "openmp": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libwvissue137omp.dylib"
+      },
+      "memory": {
+        "descriptorBytes": 14328485,
+        "planWrapperBytes": 336,
+        "scratchCapacityBytes": 47533184,
+        "persistentBytes": 61863661,
+        "knownMaximumLiveOwnedBytes": 64747549,
+        "retainedSpectrumBytes": 29288160,
+        "convolutionWorkBytes": 673184,
+        "opaquePlanBytes": 0,
+        "maximumRSSBytes": 109477888
+      },
+      "stages": {
+        "phaseSeconds": 0.00016729099999999999,
+        "reconstructionSeconds": 0,
+        "derivativeReconstructionSeconds": 0,
+        "productSeconds": 0,
+        "projectionSeconds": 0,
+        "convolutionMappingSeconds": 0.016543166000000002,
+        "convolutionSeconds": 0.019886667,
+        "multiplierSeconds": 0.042995541000000005
+      },
+      "schedule": {
+        "centered": {
+          "m": 44,
+          "p": 2,
+          "q": 3,
+          "logicalPadding": 2
+        },
+        "hermitian": {
+          "m": 44,
+          "p": 2,
+          "q": 3,
+          "logicalPadding": 2
+        }
+      },
+      "transformCounts": {
+        "physicalInputs": 12,
+        "sacrificialInputs": 3,
+        "outputs": 3,
+        "libraryTotal": 18
+      },
+      "threadBehavior": {
+        "outerOpenMPThreads": 1,
+        "maximumFFTWThreads": 1,
+        "maximumMultiplierThreads": 1,
+        "maximumOpenMPLevel": 0,
+        "workerRegionsDisjoint": true
+      },
+      "lifecycle": {
+        "activePlans": 0,
+        "created": 14,
+        "destroyed": 14,
+        "outstandingPlanningBytes": 0
+      }
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "status": "complete",
+      "variant": "fftwpp-hybrid",
+      "Nxyz": [
+        128,
+        128,
+        33
+      ],
+      "Nj": 21,
+      "hydrostatic": true,
+      "threads": 16,
+      "warmups": 2,
+      "samplesSeconds": [
+        0.020411292000000001,
+        0.020399084000000001,
+        0.02059275
+      ],
+      "medianSeconds": 0.020411292000000001,
+      "firstSeconds": 0.020438542000000001,
+      "constructionSeconds": 4.8156820419999997,
+      "cleanupSeconds": 0.000071542,
+      "relativeInfinityError": 1.955358890436359E-14,
+      "referenceWritten": false,
+      "libraries": {
+        "version": "fftw-3.3.11-neon",
+        "base": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libfftw3.3.dylib",
+        "thread": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libfftw3_omp.3.dylib",
+        "openmp": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libwvissue137omp.dylib"
+      },
+      "memory": {
+        "descriptorBytes": 14328485,
+        "planWrapperBytes": 336,
+        "scratchCapacityBytes": 47703104,
+        "persistentBytes": 62033581,
+        "knownMaximumLiveOwnedBytes": 64917469,
+        "retainedSpectrumBytes": 29288160,
+        "convolutionWorkBytes": 843104,
+        "opaquePlanBytes": 0,
+        "maximumRSSBytes": 187662336
+      },
+      "stages": {
+        "phaseSeconds": 0.00017858300000000001,
+        "reconstructionSeconds": 0,
+        "derivativeReconstructionSeconds": 0,
+        "productSeconds": 0,
+        "projectionSeconds": 0,
+        "convolutionMappingSeconds": 0.006260374,
+        "convolutionSeconds": 0.012804708,
+        "multiplierSeconds": 0.075678196000000017
+      },
+      "schedule": {
+        "centered": {
+          "m": 44,
+          "p": 2,
+          "q": 3,
+          "logicalPadding": 2
+        },
+        "hermitian": {
+          "m": 44,
+          "p": 2,
+          "q": 3,
+          "logicalPadding": 2
+        }
+      },
+      "transformCounts": {
+        "physicalInputs": 12,
+        "sacrificialInputs": 3,
+        "outputs": 3,
+        "libraryTotal": 18
+      },
+      "threadBehavior": {
+        "outerOpenMPThreads": 16,
+        "maximumFFTWThreads": 16,
+        "maximumMultiplierThreads": 16,
+        "maximumOpenMPLevel": 1,
+        "workerRegionsDisjoint": true
+      },
+      "lifecycle": {
+        "activePlans": 0,
+        "created": 14,
+        "destroyed": 14,
+        "outstandingPlanningBytes": 0
+      }
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "status": "complete",
+      "variant": "fftwpp-hybrid",
+      "Nxyz": [
+        128,
+        128,
+        33
+      ],
+      "Nj": 21,
+      "hydrostatic": true,
+      "threads": 4,
+      "warmups": 2,
+      "samplesSeconds": [
+        0.027813208999999998,
+        0.027785167,
+        0.02770825
+      ],
+      "medianSeconds": 0.027785167,
+      "firstSeconds": 0.027872667,
+      "constructionSeconds": 1.1761458330000001,
+      "cleanupSeconds": 0.000031083,
+      "relativeInfinityError": 1.955358890436359E-14,
+      "referenceWritten": false,
+      "libraries": {
+        "version": "fftw-3.3.11-neon",
+        "base": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libfftw3.3.dylib",
+        "thread": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libfftw3_omp.3.dylib",
+        "openmp": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libwvissue137omp.dylib"
+      },
+      "memory": {
+        "descriptorBytes": 14328485,
+        "planWrapperBytes": 336,
+        "scratchCapacityBytes": 47567168,
+        "persistentBytes": 61897645,
+        "knownMaximumLiveOwnedBytes": 64781533,
+        "retainedSpectrumBytes": 29288160,
+        "convolutionWorkBytes": 707168,
+        "opaquePlanBytes": 0,
+        "maximumRSSBytes": 146980864
+      },
+      "stages": {
+        "phaseSeconds": 0.00016316599999999999,
+        "reconstructionSeconds": 0,
+        "derivativeReconstructionSeconds": 0,
+        "productSeconds": 0,
+        "projectionSeconds": 0,
+        "convolutionMappingSeconds": 0.012914833000000001,
+        "convolutionSeconds": 0.012095125,
+        "multiplierSeconds": 0.062193433999999999
+      },
+      "schedule": {
+        "centered": {
+          "m": 44,
+          "p": 2,
+          "q": 3,
+          "logicalPadding": 2
+        },
+        "hermitian": {
+          "m": 44,
+          "p": 2,
+          "q": 3,
+          "logicalPadding": 2
+        }
+      },
+      "transformCounts": {
+        "physicalInputs": 12,
+        "sacrificialInputs": 3,
+        "outputs": 3,
+        "libraryTotal": 18
+      },
+      "threadBehavior": {
+        "outerOpenMPThreads": 4,
+        "maximumFFTWThreads": 4,
+        "maximumMultiplierThreads": 4,
+        "maximumOpenMPLevel": 1,
+        "workerRegionsDisjoint": true
+      },
+      "lifecycle": {
+        "activePlans": 0,
+        "created": 14,
+        "destroyed": 14,
+        "outstandingPlanningBytes": 0
+      }
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "status": "complete",
+      "variant": "fftwpp-hybrid",
+      "Nxyz": [
+        128,
+        128,
+        33
+      ],
+      "Nj": 21,
+      "hydrostatic": true,
+      "threads": 8,
+      "warmups": 2,
+      "samplesSeconds": [
+        0.0194375,
+        0.019658459,
+        0.019407082999999999
+      ],
+      "medianSeconds": 0.0194375,
+      "firstSeconds": 0.019778041999999999,
+      "constructionSeconds": 2.14550325,
+      "cleanupSeconds": 0.000037375,
+      "relativeInfinityError": 1.955358890436359E-14,
+      "referenceWritten": false,
+      "libraries": {
+        "version": "fftw-3.3.11-neon",
+        "base": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libfftw3.3.dylib",
+        "thread": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libfftw3_omp.3.dylib",
+        "openmp": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libwvissue137omp.dylib"
+      },
+      "memory": {
+        "descriptorBytes": 14328485,
+        "planWrapperBytes": 336,
+        "scratchCapacityBytes": 47612480,
+        "persistentBytes": 61942957,
+        "knownMaximumLiveOwnedBytes": 64826845,
+        "retainedSpectrumBytes": 29288160,
+        "convolutionWorkBytes": 752480,
+        "opaquePlanBytes": 0,
+        "maximumRSSBytes": 162562048
+      },
+      "stages": {
+        "phaseSeconds": 0.00017016700000000001,
+        "reconstructionSeconds": 0,
+        "derivativeReconstructionSeconds": 0,
+        "productSeconds": 0,
+        "projectionSeconds": 0,
+        "convolutionMappingSeconds": 0.0064641669999999998,
+        "convolutionSeconds": 0.011907249999999999,
+        "multiplierSeconds": 0.069300037000000009
+      },
+      "schedule": {
+        "centered": {
+          "m": 44,
+          "p": 2,
+          "q": 3,
+          "logicalPadding": 2
+        },
+        "hermitian": {
+          "m": 44,
+          "p": 2,
+          "q": 3,
+          "logicalPadding": 2
+        }
+      },
+      "transformCounts": {
+        "physicalInputs": 12,
+        "sacrificialInputs": 3,
+        "outputs": 3,
+        "libraryTotal": 18
+      },
+      "threadBehavior": {
+        "outerOpenMPThreads": 8,
+        "maximumFFTWThreads": 8,
+        "maximumMultiplierThreads": 8,
+        "maximumOpenMPLevel": 1,
+        "workerRegionsDisjoint": true
+      },
+      "lifecycle": {
+        "activePlans": 0,
+        "created": 14,
+        "destroyed": 14,
+        "outstandingPlanningBytes": 0
+      }
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "status": "complete",
+      "variant": "fftwpp-implicit",
+      "Nxyz": [
+        128,
+        128,
+        33
+      ],
+      "Nj": 21,
+      "hydrostatic": true,
+      "threads": 1,
+      "warmups": 2,
+      "samplesSeconds": [
+        0.086857333999999994,
+        0.085497457999999998,
+        0.085113750000000002
+      ],
+      "medianSeconds": 0.085497457999999998,
+      "firstSeconds": 0.089693124999999999,
+      "constructionSeconds": 0.232264625,
+      "cleanupSeconds": 0.000020000000000000002,
+      "relativeInfinityError": 2.9246645053354367E-14,
+      "referenceWritten": false,
+      "libraries": {
+        "version": "fftw-3.3.11-neon",
+        "base": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libfftw3.3.dylib",
+        "thread": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libfftw3_omp.3.dylib",
+        "openmp": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libwvissue137omp.dylib"
+      },
+      "memory": {
+        "descriptorBytes": 14328485,
+        "planWrapperBytes": 336,
+        "scratchCapacityBytes": 47522112,
+        "persistentBytes": 61852589,
+        "knownMaximumLiveOwnedBytes": 64736477,
+        "retainedSpectrumBytes": 29288160,
+        "convolutionWorkBytes": 662112,
+        "opaquePlanBytes": 0,
+        "maximumRSSBytes": 109150208
+      },
+      "stages": {
+        "phaseSeconds": 0.00016775000000000001,
+        "reconstructionSeconds": 0,
+        "derivativeReconstructionSeconds": 0,
+        "productSeconds": 0,
+        "projectionSeconds": 0,
+        "convolutionMappingSeconds": 0.016384458000000001,
+        "convolutionSeconds": 0.064780000000000004,
+        "multiplierSeconds": 0.042753663000000004
+      },
+      "schedule": {
+        "centered": {
+          "m": 43,
+          "p": 2,
+          "q": 3,
+          "logicalPadding": 0
+        },
+        "hermitian": {
+          "m": 43,
+          "p": 2,
+          "q": 3,
+          "logicalPadding": 0
+        }
+      },
+      "transformCounts": {
+        "physicalInputs": 12,
+        "sacrificialInputs": 3,
+        "outputs": 3,
+        "libraryTotal": 18
+      },
+      "threadBehavior": {
+        "outerOpenMPThreads": 1,
+        "maximumFFTWThreads": 1,
+        "maximumMultiplierThreads": 1,
+        "maximumOpenMPLevel": 0,
+        "workerRegionsDisjoint": true
+      },
+      "lifecycle": {
+        "activePlans": 0,
+        "created": 14,
+        "destroyed": 14,
+        "outstandingPlanningBytes": 0
+      }
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "status": "complete",
+      "variant": "fftwpp-implicit",
+      "Nxyz": [
+        128,
+        128,
+        33
+      ],
+      "Nj": 21,
+      "hydrostatic": true,
+      "threads": 16,
+      "warmups": 2,
+      "samplesSeconds": [
+        0.034913291999999999,
+        0.035421333999999999,
+        0.035354875000000001
+      ],
+      "medianSeconds": 0.035354875000000001,
+      "firstSeconds": 0.035361957999999999,
+      "constructionSeconds": 4.8193876659999999,
+      "cleanupSeconds": 0.000070124999999999997,
+      "relativeInfinityError": 2.9246645053354367E-14,
+      "referenceWritten": false,
+      "libraries": {
+        "version": "fftw-3.3.11-neon",
+        "base": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libfftw3.3.dylib",
+        "thread": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libfftw3_omp.3.dylib",
+        "openmp": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libwvissue137omp.dylib"
+      },
+      "memory": {
+        "descriptorBytes": 14328485,
+        "planWrapperBytes": 336,
+        "scratchCapacityBytes": 47691072,
+        "persistentBytes": 62021549,
+        "knownMaximumLiveOwnedBytes": 64905437,
+        "retainedSpectrumBytes": 29288160,
+        "convolutionWorkBytes": 831072,
+        "opaquePlanBytes": 0,
+        "maximumRSSBytes": 186318848
+      },
+      "stages": {
+        "phaseSeconds": 0.000224708,
+        "reconstructionSeconds": 0,
+        "derivativeReconstructionSeconds": 0,
+        "productSeconds": 0,
+        "projectionSeconds": 0,
+        "convolutionMappingSeconds": 0.0074242919999999999,
+        "convolutionSeconds": 0.02862725,
+        "multiplierSeconds": 0.066113354000000013
+      },
+      "schedule": {
+        "centered": {
+          "m": 43,
+          "p": 2,
+          "q": 3,
+          "logicalPadding": 0
+        },
+        "hermitian": {
+          "m": 43,
+          "p": 2,
+          "q": 3,
+          "logicalPadding": 0
+        }
+      },
+      "transformCounts": {
+        "physicalInputs": 12,
+        "sacrificialInputs": 3,
+        "outputs": 3,
+        "libraryTotal": 18
+      },
+      "threadBehavior": {
+        "outerOpenMPThreads": 16,
+        "maximumFFTWThreads": 16,
+        "maximumMultiplierThreads": 16,
+        "maximumOpenMPLevel": 1,
+        "workerRegionsDisjoint": true
+      },
+      "lifecycle": {
+        "activePlans": 0,
+        "created": 14,
+        "destroyed": 14,
+        "outstandingPlanningBytes": 0
+      }
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "status": "complete",
+      "variant": "fftwpp-implicit",
+      "Nxyz": [
+        128,
+        128,
+        33
+      ],
+      "Nj": 21,
+      "hydrostatic": true,
+      "threads": 4,
+      "warmups": 2,
+      "samplesSeconds": [
+        0.047674208000000003,
+        0.047699958000000001,
+        0.047960165999999999
+      ],
+      "medianSeconds": 0.047699958000000001,
+      "firstSeconds": 0.048435791999999998,
+      "constructionSeconds": 1.1720165,
+      "cleanupSeconds": 0.000032042000000000003,
+      "relativeInfinityError": 2.9246645053354367E-14,
+      "referenceWritten": false,
+      "libraries": {
+        "version": "fftw-3.3.11-neon",
+        "base": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libfftw3.3.dylib",
+        "thread": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libfftw3_omp.3.dylib",
+        "openmp": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libwvissue137omp.dylib"
+      },
+      "memory": {
+        "descriptorBytes": 14328485,
+        "planWrapperBytes": 336,
+        "scratchCapacityBytes": 47555904,
+        "persistentBytes": 61886381,
+        "knownMaximumLiveOwnedBytes": 64770269,
+        "retainedSpectrumBytes": 29288160,
+        "convolutionWorkBytes": 695904,
+        "opaquePlanBytes": 0,
+        "maximumRSSBytes": 148373504
+      },
+      "stages": {
+        "phaseSeconds": 0.00016262500000000001,
+        "reconstructionSeconds": 0,
+        "derivativeReconstructionSeconds": 0,
+        "productSeconds": 0,
+        "projectionSeconds": 0,
+        "convolutionMappingSeconds": 0.012777,
+        "convolutionSeconds": 0.032161500000000003,
+        "multiplierSeconds": 0.053882603000000008
+      },
+      "schedule": {
+        "centered": {
+          "m": 43,
+          "p": 2,
+          "q": 3,
+          "logicalPadding": 0
+        },
+        "hermitian": {
+          "m": 43,
+          "p": 2,
+          "q": 3,
+          "logicalPadding": 0
+        }
+      },
+      "transformCounts": {
+        "physicalInputs": 12,
+        "sacrificialInputs": 3,
+        "outputs": 3,
+        "libraryTotal": 18
+      },
+      "threadBehavior": {
+        "outerOpenMPThreads": 4,
+        "maximumFFTWThreads": 4,
+        "maximumMultiplierThreads": 4,
+        "maximumOpenMPLevel": 1,
+        "workerRegionsDisjoint": true
+      },
+      "lifecycle": {
+        "activePlans": 0,
+        "created": 14,
+        "destroyed": 14,
+        "outstandingPlanningBytes": 0
+      }
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "status": "complete",
+      "variant": "fftwpp-implicit",
+      "Nxyz": [
+        128,
+        128,
+        33
+      ],
+      "Nj": 21,
+      "hydrostatic": true,
+      "threads": 8,
+      "warmups": 2,
+      "samplesSeconds": [
+        0.035101708000000002,
+        0.035409834000000001,
+        0.035504291
+      ],
+      "medianSeconds": 0.035409834000000001,
+      "firstSeconds": 0.034461332999999997,
+      "constructionSeconds": 2.1595989169999998,
+      "cleanupSeconds": 0.000037750000000000003,
+      "relativeInfinityError": 2.9246645053354367E-14,
+      "referenceWritten": false,
+      "libraries": {
+        "version": "fftw-3.3.11-neon",
+        "base": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libfftw3.3.dylib",
+        "thread": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libfftw3_omp.3.dylib",
+        "openmp": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libwvissue137omp.dylib"
+      },
+      "memory": {
+        "descriptorBytes": 14328485,
+        "planWrapperBytes": 336,
+        "scratchCapacityBytes": 47600960,
+        "persistentBytes": 61931437,
+        "knownMaximumLiveOwnedBytes": 64815325,
+        "retainedSpectrumBytes": 29288160,
+        "convolutionWorkBytes": 740960,
+        "opaquePlanBytes": 0,
+        "maximumRSSBytes": 160579584
+      },
+      "stages": {
+        "phaseSeconds": 0.0001775,
+        "reconstructionSeconds": 0,
+        "derivativeReconstructionSeconds": 0,
+        "productSeconds": 0,
+        "projectionSeconds": 0,
+        "convolutionMappingSeconds": 0.0067073759999999993,
+        "convolutionSeconds": 0.027390416000000001,
+        "multiplierSeconds": 0.06412627600000001
+      },
+      "schedule": {
+        "centered": {
+          "m": 43,
+          "p": 2,
+          "q": 3,
+          "logicalPadding": 0
+        },
+        "hermitian": {
+          "m": 43,
+          "p": 2,
+          "q": 3,
+          "logicalPadding": 0
+        }
+      },
+      "transformCounts": {
+        "physicalInputs": 12,
+        "sacrificialInputs": 3,
+        "outputs": 3,
+        "libraryTotal": 18
+      },
+      "threadBehavior": {
+        "outerOpenMPThreads": 8,
+        "maximumFFTWThreads": 8,
+        "maximumMultiplierThreads": 8,
+        "maximumOpenMPLevel": 1,
+        "workerRegionsDisjoint": true
+      },
+      "lifecycle": {
+        "activePlans": 0,
+        "created": 14,
+        "destroyed": 14,
+        "outstandingPlanningBytes": 0
+      }
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "status": "complete",
+      "variant": "explicit",
+      "Nxyz": [
+        128,
+        128,
+        33
+      ],
+      "Nj": 21,
+      "hydrostatic": true,
+      "threads": 1,
+      "warmups": 2,
+      "samplesSeconds": [
+        0.027456583,
+        0.029105042000000001,
+        0.028645667
+      ],
+      "medianSeconds": 0.028645667,
+      "firstSeconds": 0.027478458000000001,
+      "constructionSeconds": 0.22979191700000001,
+      "cleanupSeconds": 0.000015917,
+      "relativeInfinityError": 0,
+      "referenceWritten": true,
+      "libraries": {
+        "version": "fftw-3.3.11-neon",
+        "base": "/private/tmp/issue152-overnight-cache/providers/pthreads/install/lib/libfftw3.3.dylib",
+        "thread": "/private/tmp/issue152-overnight-cache/providers/pthreads/install/lib/libfftw3_threads.3.dylib",
+        "openmp": ""
+      },
+      "memory": {
+        "descriptorBytes": 14328485,
+        "planWrapperBytes": 336,
+        "scratchCapacityBytes": 52174848,
+        "persistentBytes": 66503669,
+        "knownMaximumLiveOwnedBytes": 69387557,
+        "retainedSpectrumBytes": 0,
+        "convolutionWorkBytes": 0,
+        "opaquePlanBytes": 0,
+        "maximumRSSBytes": 111394816
+      },
+      "stages": {
+        "phaseSeconds": 0.00019824999999999999,
+        "reconstructionSeconds": 0.0069176250000000002,
+        "derivativeReconstructionSeconds": 0.014976000999999999,
+        "productSeconds": 0.00079529300000000008,
+        "projectionSeconds": 0.0053311249999999999,
+        "convolutionMappingSeconds": 0,
+        "convolutionSeconds": 0,
+        "multiplierSeconds": 0
+      },
+      "schedule": {
+        "centered": {
+          "m": 0,
+          "p": 0,
+          "q": 0,
+          "logicalPadding": 0
+        },
+        "hermitian": {
+          "m": 0,
+          "p": 0,
+          "q": 0,
+          "logicalPadding": 0
+        }
+      },
+      "transformCounts": {
+        "physicalInputs": 0,
+        "sacrificialInputs": 0,
+        "outputs": 0,
+        "libraryTotal": 0
+      },
+      "threadBehavior": {
+        "outerOpenMPThreads": 1,
+        "maximumFFTWThreads": 1,
+        "maximumMultiplierThreads": 1,
+        "maximumOpenMPLevel": 0,
+        "workerRegionsDisjoint": true
+      },
+      "lifecycle": {
+        "activePlans": 0,
+        "created": 14,
+        "destroyed": 14,
+        "outstandingPlanningBytes": 0
+      }
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "status": "complete",
+      "variant": "explicit",
+      "Nxyz": [
+        128,
+        128,
+        33
+      ],
+      "Nj": 21,
+      "hydrostatic": true,
+      "threads": 16,
+      "warmups": 2,
+      "samplesSeconds": [
+        0.007288208,
+        0.0070952089999999999,
+        0.0070639580000000004
+      ],
+      "medianSeconds": 0.0070952089999999999,
+      "firstSeconds": 0.0068887089999999998,
+      "constructionSeconds": 1.3520905830000001,
+      "cleanupSeconds": 0.000057374999999999999,
+      "relativeInfinityError": 1.4693660124270614E-14,
+      "referenceWritten": false,
+      "libraries": {
+        "version": "fftw-3.3.11-neon",
+        "base": "/private/tmp/issue152-overnight-cache/providers/pthreads/install/lib/libfftw3.3.dylib",
+        "thread": "/private/tmp/issue152-overnight-cache/providers/pthreads/install/lib/libfftw3_threads.3.dylib",
+        "openmp": ""
+      },
+      "memory": {
+        "descriptorBytes": 14328485,
+        "planWrapperBytes": 336,
+        "scratchCapacityBytes": 52174848,
+        "persistentBytes": 66503669,
+        "knownMaximumLiveOwnedBytes": 69387557,
+        "retainedSpectrumBytes": 0,
+        "convolutionWorkBytes": 0,
+        "opaquePlanBytes": 0,
+        "maximumRSSBytes": 141099008
+      },
+      "stages": {
+        "phaseSeconds": 0.000167875,
+        "reconstructionSeconds": 0.001386792,
+        "derivativeReconstructionSeconds": 0.0032352090000000002,
+        "productSeconds": 0.000776,
+        "projectionSeconds": 0.0017009169999999999,
+        "convolutionMappingSeconds": 0,
+        "convolutionSeconds": 0,
+        "multiplierSeconds": 0
+      },
+      "schedule": {
+        "centered": {
+          "m": 0,
+          "p": 0,
+          "q": 0,
+          "logicalPadding": 0
+        },
+        "hermitian": {
+          "m": 0,
+          "p": 0,
+          "q": 0,
+          "logicalPadding": 0
+        }
+      },
+      "transformCounts": {
+        "physicalInputs": 0,
+        "sacrificialInputs": 0,
+        "outputs": 0,
+        "libraryTotal": 0
+      },
+      "threadBehavior": {
+        "outerOpenMPThreads": 1,
+        "maximumFFTWThreads": 1,
+        "maximumMultiplierThreads": 1,
+        "maximumOpenMPLevel": 0,
+        "workerRegionsDisjoint": true
+      },
+      "lifecycle": {
+        "activePlans": 0,
+        "created": 14,
+        "destroyed": 14,
+        "outstandingPlanningBytes": 0
+      }
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "status": "complete",
+      "variant": "explicit",
+      "Nxyz": [
+        128,
+        128,
+        33
+      ],
+      "Nj": 21,
+      "hydrostatic": true,
+      "threads": 4,
+      "warmups": 2,
+      "samplesSeconds": [
+        0.01663125,
+        0.016817249999999999,
+        0.016684666000000001
+      ],
+      "medianSeconds": 0.016684666000000001,
+      "firstSeconds": 0.016980584,
+      "constructionSeconds": 0.93902379199999997,
+      "cleanupSeconds": 0.000019292000000000001,
+      "relativeInfinityError": 1.291308358152281E-14,
+      "referenceWritten": false,
+      "libraries": {
+        "version": "fftw-3.3.11-neon",
+        "base": "/private/tmp/issue152-overnight-cache/providers/pthreads/install/lib/libfftw3.3.dylib",
+        "thread": "/private/tmp/issue152-overnight-cache/providers/pthreads/install/lib/libfftw3_threads.3.dylib",
+        "openmp": ""
+      },
+      "memory": {
+        "descriptorBytes": 14328485,
+        "planWrapperBytes": 336,
+        "scratchCapacityBytes": 52174848,
+        "persistentBytes": 66503669,
+        "knownMaximumLiveOwnedBytes": 69387557,
+        "retainedSpectrumBytes": 0,
+        "convolutionWorkBytes": 0,
+        "opaquePlanBytes": 0,
+        "maximumRSSBytes": 139116544
+      },
+      "stages": {
+        "phaseSeconds": 0.00016308300000000001,
+        "reconstructionSeconds": 0.0039286249999999998,
+        "derivativeReconstructionSeconds": 0.0086718739999999996,
+        "productSeconds": 0.00068133400000000002,
+        "projectionSeconds": 0.003204541,
+        "convolutionMappingSeconds": 0,
+        "convolutionSeconds": 0,
+        "multiplierSeconds": 0
+      },
+      "schedule": {
+        "centered": {
+          "m": 0,
+          "p": 0,
+          "q": 0,
+          "logicalPadding": 0
+        },
+        "hermitian": {
+          "m": 0,
+          "p": 0,
+          "q": 0,
+          "logicalPadding": 0
+        }
+      },
+      "transformCounts": {
+        "physicalInputs": 0,
+        "sacrificialInputs": 0,
+        "outputs": 0,
+        "libraryTotal": 0
+      },
+      "threadBehavior": {
+        "outerOpenMPThreads": 1,
+        "maximumFFTWThreads": 1,
+        "maximumMultiplierThreads": 1,
+        "maximumOpenMPLevel": 0,
+        "workerRegionsDisjoint": true
+      },
+      "lifecycle": {
+        "activePlans": 0,
+        "created": 14,
+        "destroyed": 14,
+        "outstandingPlanningBytes": 0
+      }
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "status": "complete",
+      "variant": "explicit",
+      "Nxyz": [
+        128,
+        128,
+        33
+      ],
+      "Nj": 21,
+      "hydrostatic": true,
+      "threads": 8,
+      "warmups": 2,
+      "samplesSeconds": [
+        0.0070316659999999998,
+        0.0068733750000000001,
+        0.0071417090000000004
+      ],
+      "medianSeconds": 0.0070316659999999998,
+      "firstSeconds": 0.0073725420000000002,
+      "constructionSeconds": 1.2547451670000001,
+      "cleanupSeconds": 0.000028750000000000001,
+      "relativeInfinityError": 1.5619666296502397E-14,
+      "referenceWritten": false,
+      "libraries": {
+        "version": "fftw-3.3.11-neon",
+        "base": "/private/tmp/issue152-overnight-cache/providers/pthreads/install/lib/libfftw3.3.dylib",
+        "thread": "/private/tmp/issue152-overnight-cache/providers/pthreads/install/lib/libfftw3_threads.3.dylib",
+        "openmp": ""
+      },
+      "memory": {
+        "descriptorBytes": 14328485,
+        "planWrapperBytes": 336,
+        "scratchCapacityBytes": 52174848,
+        "persistentBytes": 66503669,
+        "knownMaximumLiveOwnedBytes": 69387557,
+        "retainedSpectrumBytes": 0,
+        "convolutionWorkBytes": 0,
+        "opaquePlanBytes": 0,
+        "maximumRSSBytes": 140001280
+      },
+      "stages": {
+        "phaseSeconds": 0.00018295799999999999,
+        "reconstructionSeconds": 0.0014187920000000001,
+        "derivativeReconstructionSeconds": 0.0031967490000000005,
+        "productSeconds": 0.00074508400000000002,
+        "projectionSeconds": 0.001415709,
+        "convolutionMappingSeconds": 0,
+        "convolutionSeconds": 0,
+        "multiplierSeconds": 0
+      },
+      "schedule": {
+        "centered": {
+          "m": 0,
+          "p": 0,
+          "q": 0,
+          "logicalPadding": 0
+        },
+        "hermitian": {
+          "m": 0,
+          "p": 0,
+          "q": 0,
+          "logicalPadding": 0
+        }
+      },
+      "transformCounts": {
+        "physicalInputs": 0,
+        "sacrificialInputs": 0,
+        "outputs": 0,
+        "libraryTotal": 0
+      },
+      "threadBehavior": {
+        "outerOpenMPThreads": 1,
+        "maximumFFTWThreads": 1,
+        "maximumMultiplierThreads": 1,
+        "maximumOpenMPLevel": 0,
+        "workerRegionsDisjoint": true
+      },
+      "lifecycle": {
+        "activePlans": 0,
+        "created": 14,
+        "destroyed": 14,
+        "outstandingPlanningBytes": 0
+      }
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "status": "complete",
+      "variant": "explicit",
+      "Nxyz": [
+        128,
+        128,
+        33
+      ],
+      "Nj": 21,
+      "hydrostatic": false,
+      "threads": 1,
+      "warmups": 2,
+      "samplesSeconds": [
+        0.038168417000000003,
+        0.038333082999999997,
+        0.038249917000000001
+      ],
+      "medianSeconds": 0.038249917000000001,
+      "firstSeconds": 0.038336250000000002,
+      "constructionSeconds": 0.206335833,
+      "cleanupSeconds": 0.000015709000000000002,
+      "relativeInfinityError": 1.9898867405585726E-14,
+      "referenceWritten": false,
+      "libraries": {
+        "version": "fftw-3.3.11-neon",
+        "base": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libfftw3.3.dylib",
+        "thread": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libfftw3_omp.3.dylib",
+        "openmp": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libwvissue137omp.dylib"
+      },
+      "memory": {
+        "descriptorBytes": 14328485,
+        "planWrapperBytes": 336,
+        "scratchCapacityBytes": 56500224,
+        "persistentBytes": 70829045,
+        "knownMaximumLiveOwnedBytes": 73712933,
+        "retainedSpectrumBytes": 0,
+        "convolutionWorkBytes": 0,
+        "opaquePlanBytes": 0,
+        "maximumRSSBytes": 117047296
+      },
+      "stages": {
+        "phaseSeconds": 0.00016795800000000001,
+        "reconstructionSeconds": 0.0075119590000000003,
+        "derivativeReconstructionSeconds": 0.021810626,
+        "productSeconds": 0.00095504100000000011,
+        "projectionSeconds": 0.0078959579999999998,
+        "convolutionMappingSeconds": 0,
+        "convolutionSeconds": 0,
+        "multiplierSeconds": 0
+      },
+      "schedule": {
+        "centered": {
+          "m": 0,
+          "p": 0,
+          "q": 0,
+          "logicalPadding": 0
+        },
+        "hermitian": {
+          "m": 0,
+          "p": 0,
+          "q": 0,
+          "logicalPadding": 0
+        }
+      },
+      "transformCounts": {
+        "physicalInputs": 0,
+        "sacrificialInputs": 0,
+        "outputs": 0,
+        "libraryTotal": 0
+      },
+      "threadBehavior": {
+        "outerOpenMPThreads": 1,
+        "maximumFFTWThreads": 1,
+        "maximumMultiplierThreads": 1,
+        "maximumOpenMPLevel": 0,
+        "workerRegionsDisjoint": true
+      },
+      "lifecycle": {
+        "activePlans": 0,
+        "created": 14,
+        "destroyed": 14,
+        "outstandingPlanningBytes": 0
+      }
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "status": "complete",
+      "variant": "explicit",
+      "Nxyz": [
+        128,
+        128,
+        33
+      ],
+      "Nj": 21,
+      "hydrostatic": false,
+      "threads": 16,
+      "warmups": 2,
+      "samplesSeconds": [
+        0.0085341659999999993,
+        0.0085662080000000005,
+        0.0085630840000000003
+      ],
+      "medianSeconds": 0.0085630840000000003,
+      "firstSeconds": 0.0087915000000000007,
+      "constructionSeconds": 4.8057270000000001,
+      "cleanupSeconds": 0.000053875000000000002,
+      "relativeInfinityError": 2.4301993508136181E-14,
+      "referenceWritten": false,
+      "libraries": {
+        "version": "fftw-3.3.11-neon",
+        "base": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libfftw3.3.dylib",
+        "thread": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libfftw3_omp.3.dylib",
+        "openmp": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libwvissue137omp.dylib"
+      },
+      "memory": {
+        "descriptorBytes": 14328485,
+        "planWrapperBytes": 336,
+        "scratchCapacityBytes": 56500224,
+        "persistentBytes": 70829045,
+        "knownMaximumLiveOwnedBytes": 73712933,
+        "retainedSpectrumBytes": 0,
+        "convolutionWorkBytes": 0,
+        "opaquePlanBytes": 0,
+        "maximumRSSBytes": 146227200
+      },
+      "stages": {
+        "phaseSeconds": 0.00016433299999999999,
+        "reconstructionSeconds": 0.0014010839999999999,
+        "derivativeReconstructionSeconds": 0.0041448739999999998,
+        "productSeconds": 0.0009900410000000001,
+        "projectionSeconds": 0.0018285840000000001,
+        "convolutionMappingSeconds": 0,
+        "convolutionSeconds": 0,
+        "multiplierSeconds": 0
+      },
+      "schedule": {
+        "centered": {
+          "m": 0,
+          "p": 0,
+          "q": 0,
+          "logicalPadding": 0
+        },
+        "hermitian": {
+          "m": 0,
+          "p": 0,
+          "q": 0,
+          "logicalPadding": 0
+        }
+      },
+      "transformCounts": {
+        "physicalInputs": 0,
+        "sacrificialInputs": 0,
+        "outputs": 0,
+        "libraryTotal": 0
+      },
+      "threadBehavior": {
+        "outerOpenMPThreads": 1,
+        "maximumFFTWThreads": 1,
+        "maximumMultiplierThreads": 1,
+        "maximumOpenMPLevel": 0,
+        "workerRegionsDisjoint": true
+      },
+      "lifecycle": {
+        "activePlans": 0,
+        "created": 14,
+        "destroyed": 14,
+        "outstandingPlanningBytes": 0
+      }
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "status": "complete",
+      "variant": "explicit",
+      "Nxyz": [
+        128,
+        128,
+        33
+      ],
+      "Nj": 21,
+      "hydrostatic": false,
+      "threads": 4,
+      "warmups": 2,
+      "samplesSeconds": [
+        0.016361625000000001,
+        0.015794875,
+        0.015978875
+      ],
+      "medianSeconds": 0.015978875,
+      "firstSeconds": 0.016467499999999999,
+      "constructionSeconds": 4.4711535830000004,
+      "cleanupSeconds": 0.000020582999999999999,
+      "relativeInfinityError": 1.9913657948102537E-14,
+      "referenceWritten": false,
+      "libraries": {
+        "version": "fftw-3.3.11-neon",
+        "base": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libfftw3.3.dylib",
+        "thread": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libfftw3_omp.3.dylib",
+        "openmp": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libwvissue137omp.dylib"
+      },
+      "memory": {
+        "descriptorBytes": 14328485,
+        "planWrapperBytes": 336,
+        "scratchCapacityBytes": 56500224,
+        "persistentBytes": 70829045,
+        "knownMaximumLiveOwnedBytes": 73712933,
+        "retainedSpectrumBytes": 0,
+        "convolutionWorkBytes": 0,
+        "opaquePlanBytes": 0,
+        "maximumRSSBytes": 145260544
+      },
+      "stages": {
+        "phaseSeconds": 0.00017674999999999999,
+        "reconstructionSeconds": 0.003369,
+        "derivativeReconstructionSeconds": 0.0084723339999999998,
+        "productSeconds": 0.0009917490000000001,
+        "projectionSeconds": 0.0032636660000000001,
+        "convolutionMappingSeconds": 0,
+        "convolutionSeconds": 0,
+        "multiplierSeconds": 0
+      },
+      "schedule": {
+        "centered": {
+          "m": 0,
+          "p": 0,
+          "q": 0,
+          "logicalPadding": 0
+        },
+        "hermitian": {
+          "m": 0,
+          "p": 0,
+          "q": 0,
+          "logicalPadding": 0
+        }
+      },
+      "transformCounts": {
+        "physicalInputs": 0,
+        "sacrificialInputs": 0,
+        "outputs": 0,
+        "libraryTotal": 0
+      },
+      "threadBehavior": {
+        "outerOpenMPThreads": 1,
+        "maximumFFTWThreads": 1,
+        "maximumMultiplierThreads": 1,
+        "maximumOpenMPLevel": 0,
+        "workerRegionsDisjoint": true
+      },
+      "lifecycle": {
+        "activePlans": 0,
+        "created": 14,
+        "destroyed": 14,
+        "outstandingPlanningBytes": 0
+      }
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "status": "complete",
+      "variant": "explicit",
+      "Nxyz": [
+        128,
+        128,
+        33
+      ],
+      "Nj": 21,
+      "hydrostatic": false,
+      "threads": 8,
+      "warmups": 2,
+      "samplesSeconds": [
+        0.0088867909999999998,
+        0.0089820839999999996,
+        0.0089565830000000006
+      ],
+      "medianSeconds": 0.0089565830000000006,
+      "firstSeconds": 0.010230875,
+      "constructionSeconds": 4.524650083,
+      "cleanupSeconds": 0.000031958000000000001,
+      "relativeInfinityError": 2.4274696250736953E-14,
+      "referenceWritten": false,
+      "libraries": {
+        "version": "fftw-3.3.11-neon",
+        "base": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libfftw3.3.dylib",
+        "thread": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libfftw3_omp.3.dylib",
+        "openmp": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libwvissue137omp.dylib"
+      },
+      "memory": {
+        "descriptorBytes": 14328485,
+        "planWrapperBytes": 336,
+        "scratchCapacityBytes": 56500224,
+        "persistentBytes": 70829045,
+        "knownMaximumLiveOwnedBytes": 73712933,
+        "retainedSpectrumBytes": 0,
+        "convolutionWorkBytes": 0,
+        "opaquePlanBytes": 0,
+        "maximumRSSBytes": 145457152
+      },
+      "stages": {
+        "phaseSeconds": 0.00016579100000000001,
+        "reconstructionSeconds": 0.001482417,
+        "derivativeReconstructionSeconds": 0.0044374160000000005,
+        "productSeconds": 0.00099441799999999995,
+        "projectionSeconds": 0.001903875,
+        "convolutionMappingSeconds": 0,
+        "convolutionSeconds": 0,
+        "multiplierSeconds": 0
+      },
+      "schedule": {
+        "centered": {
+          "m": 0,
+          "p": 0,
+          "q": 0,
+          "logicalPadding": 0
+        },
+        "hermitian": {
+          "m": 0,
+          "p": 0,
+          "q": 0,
+          "logicalPadding": 0
+        }
+      },
+      "transformCounts": {
+        "physicalInputs": 0,
+        "sacrificialInputs": 0,
+        "outputs": 0,
+        "libraryTotal": 0
+      },
+      "threadBehavior": {
+        "outerOpenMPThreads": 1,
+        "maximumFFTWThreads": 1,
+        "maximumMultiplierThreads": 1,
+        "maximumOpenMPLevel": 0,
+        "workerRegionsDisjoint": true
+      },
+      "lifecycle": {
+        "activePlans": 0,
+        "created": 14,
+        "destroyed": 14,
+        "outstandingPlanningBytes": 0
+      }
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "status": "complete",
+      "variant": "fftwpp-hybrid",
+      "Nxyz": [
+        128,
+        128,
+        33
+      ],
+      "Nj": 21,
+      "hydrostatic": false,
+      "threads": 1,
+      "warmups": 2,
+      "samplesSeconds": [
+        0.050278415999999999,
+        0.050246290999999998,
+        0.050391333000000003
+      ],
+      "medianSeconds": 0.050278415999999999,
+      "firstSeconds": 0.050596416999999998,
+      "constructionSeconds": 0.20690824999999999,
+      "cleanupSeconds": 0.000022041000000000001,
+      "relativeInfinityError": 1.7767231755106556E-14,
+      "referenceWritten": false,
+      "libraries": {
+        "version": "fftw-3.3.11-neon",
+        "base": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libfftw3.3.dylib",
+        "thread": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libfftw3_omp.3.dylib",
+        "openmp": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libwvissue137omp.dylib"
+      },
+      "memory": {
+        "descriptorBytes": 14328485,
+        "planWrapperBytes": 336,
+        "scratchCapacityBytes": 55526432,
+        "persistentBytes": 69856909,
+        "knownMaximumLiveOwnedBytes": 72740797,
+        "retainedSpectrumBytes": 37098336,
+        "convolutionWorkBytes": 856256,
+        "opaquePlanBytes": 0,
+        "maximumRSSBytes": 117063680
+      },
+      "stages": {
+        "phaseSeconds": 0.00016650000000000001,
+        "reconstructionSeconds": 0,
+        "derivativeReconstructionSeconds": 0,
+        "productSeconds": 0,
+        "projectionSeconds": 0,
+        "convolutionMappingSeconds": 0.02072125,
+        "convolutionSeconds": 0.025073708,
+        "multiplierSeconds": 0.054366075
+      },
+      "schedule": {
+        "centered": {
+          "m": 44,
+          "p": 2,
+          "q": 3,
+          "logicalPadding": 2
+        },
+        "hermitian": {
+          "m": 44,
+          "p": 2,
+          "q": 3,
+          "logicalPadding": 2
+        }
+      },
+      "transformCounts": {
+        "physicalInputs": 15,
+        "sacrificialInputs": 4,
+        "outputs": 4,
+        "libraryTotal": 23
+      },
+      "threadBehavior": {
+        "outerOpenMPThreads": 1,
+        "maximumFFTWThreads": 1,
+        "maximumMultiplierThreads": 1,
+        "maximumOpenMPLevel": 0,
+        "workerRegionsDisjoint": true
+      },
+      "lifecycle": {
+        "activePlans": 0,
+        "created": 14,
+        "destroyed": 14,
+        "outstandingPlanningBytes": 0
+      }
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "status": "complete",
+      "variant": "fftwpp-hybrid",
+      "Nxyz": [
+        128,
+        128,
+        33
+      ],
+      "Nj": 21,
+      "hydrostatic": false,
+      "threads": 16,
+      "warmups": 2,
+      "samplesSeconds": [
+        0.024137459,
+        0.024029374999999999,
+        0.024383667000000001
+      ],
+      "medianSeconds": 0.024137459,
+      "firstSeconds": 0.024478333000000001,
+      "constructionSeconds": 4.821847709,
+      "cleanupSeconds": 0.000069832999999999994,
+      "relativeInfinityError": 1.7767231755106556E-14,
+      "referenceWritten": false,
+      "libraries": {
+        "version": "fftw-3.3.11-neon",
+        "base": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libfftw3.3.dylib",
+        "thread": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libfftw3_omp.3.dylib",
+        "openmp": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libwvissue137omp.dylib"
+      },
+      "memory": {
+        "descriptorBytes": 14328485,
+        "planWrapperBytes": 336,
+        "scratchCapacityBytes": 55738592,
+        "persistentBytes": 70069069,
+        "knownMaximumLiveOwnedBytes": 72952957,
+        "retainedSpectrumBytes": 37098336,
+        "convolutionWorkBytes": 1068416,
+        "opaquePlanBytes": 0,
+        "maximumRSSBytes": 207192064
+      },
+      "stages": {
+        "phaseSeconds": 0.000167042,
+        "reconstructionSeconds": 0,
+        "derivativeReconstructionSeconds": 0,
+        "productSeconds": 0,
+        "projectionSeconds": 0,
+        "convolutionMappingSeconds": 0.0079150420000000006,
+        "convolutionSeconds": 0.0146505,
+        "multiplierSeconds": 0.091129952000000014
+      },
+      "schedule": {
+        "centered": {
+          "m": 44,
+          "p": 2,
+          "q": 3,
+          "logicalPadding": 2
+        },
+        "hermitian": {
+          "m": 44,
+          "p": 2,
+          "q": 3,
+          "logicalPadding": 2
+        }
+      },
+      "transformCounts": {
+        "physicalInputs": 15,
+        "sacrificialInputs": 4,
+        "outputs": 4,
+        "libraryTotal": 23
+      },
+      "threadBehavior": {
+        "outerOpenMPThreads": 16,
+        "maximumFFTWThreads": 16,
+        "maximumMultiplierThreads": 16,
+        "maximumOpenMPLevel": 1,
+        "workerRegionsDisjoint": true
+      },
+      "lifecycle": {
+        "activePlans": 0,
+        "created": 14,
+        "destroyed": 14,
+        "outstandingPlanningBytes": 0
+      }
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "status": "complete",
+      "variant": "fftwpp-hybrid",
+      "Nxyz": [
+        128,
+        128,
+        33
+      ],
+      "Nj": 21,
+      "hydrostatic": false,
+      "threads": 4,
+      "warmups": 2,
+      "samplesSeconds": [
+        0.034904207999999999,
+        0.035381333000000001,
+        0.034946791999999997
+      ],
+      "medianSeconds": 0.034946791999999997,
+      "firstSeconds": 0.035165457999999997,
+      "constructionSeconds": 1.180247125,
+      "cleanupSeconds": 0.000029334000000000001,
+      "relativeInfinityError": 1.7767231755106556E-14,
+      "referenceWritten": false,
+      "libraries": {
+        "version": "fftw-3.3.11-neon",
+        "base": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libfftw3.3.dylib",
+        "thread": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libfftw3_omp.3.dylib",
+        "openmp": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libwvissue137omp.dylib"
+      },
+      "memory": {
+        "descriptorBytes": 14328485,
+        "planWrapperBytes": 336,
+        "scratchCapacityBytes": 55568864,
+        "persistentBytes": 69899341,
+        "knownMaximumLiveOwnedBytes": 72783229,
+        "retainedSpectrumBytes": 37098336,
+        "convolutionWorkBytes": 898688,
+        "opaquePlanBytes": 0,
+        "maximumRSSBytes": 154386432
+      },
+      "stages": {
+        "phaseSeconds": 0.000168083,
+        "reconstructionSeconds": 0,
+        "derivativeReconstructionSeconds": 0,
+        "productSeconds": 0,
+        "projectionSeconds": 0,
+        "convolutionMappingSeconds": 0.016643124000000002,
+        "convolutionSeconds": 0.014797332999999999,
+        "multiplierSeconds": 0.075972651000000016
+      },
+      "schedule": {
+        "centered": {
+          "m": 44,
+          "p": 2,
+          "q": 3,
+          "logicalPadding": 2
+        },
+        "hermitian": {
+          "m": 44,
+          "p": 2,
+          "q": 3,
+          "logicalPadding": 2
+        }
+      },
+      "transformCounts": {
+        "physicalInputs": 15,
+        "sacrificialInputs": 4,
+        "outputs": 4,
+        "libraryTotal": 23
+      },
+      "threadBehavior": {
+        "outerOpenMPThreads": 4,
+        "maximumFFTWThreads": 4,
+        "maximumMultiplierThreads": 4,
+        "maximumOpenMPLevel": 1,
+        "workerRegionsDisjoint": true
+      },
+      "lifecycle": {
+        "activePlans": 0,
+        "created": 14,
+        "destroyed": 14,
+        "outstandingPlanningBytes": 0
+      }
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "status": "complete",
+      "variant": "fftwpp-hybrid",
+      "Nxyz": [
+        128,
+        128,
+        33
+      ],
+      "Nj": 21,
+      "hydrostatic": false,
+      "threads": 8,
+      "warmups": 2,
+      "samplesSeconds": [
+        0.037879958999999998,
+        0.036125207999999999,
+        0.038091750000000001
+      ],
+      "medianSeconds": 0.037879958999999998,
+      "firstSeconds": 0.036787250000000001,
+      "constructionSeconds": 2.1587308329999999,
+      "cleanupSeconds": 0.000055417000000000002,
+      "relativeInfinityError": 1.9762677796321239E-14,
+      "referenceWritten": false,
+      "libraries": {
+        "version": "fftw-3.3.11-neon",
+        "base": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libfftw3.3.dylib",
+        "thread": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libfftw3_omp.3.dylib",
+        "openmp": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libwvissue137omp.dylib"
+      },
+      "memory": {
+        "descriptorBytes": 14328485,
+        "planWrapperBytes": 336,
+        "scratchCapacityBytes": 55625440,
+        "persistentBytes": 69955917,
+        "knownMaximumLiveOwnedBytes": 72839805,
+        "retainedSpectrumBytes": 37098336,
+        "convolutionWorkBytes": 955264,
+        "opaquePlanBytes": 0,
+        "maximumRSSBytes": 170491904
+      },
+      "stages": {
+        "phaseSeconds": 0.000166417,
+        "reconstructionSeconds": 0,
+        "derivativeReconstructionSeconds": 0,
+        "productSeconds": 0,
+        "projectionSeconds": 0,
+        "convolutionMappingSeconds": 0.019263041000000002,
+        "convolutionSeconds": 0.014166583999999999,
+        "multiplierSeconds": 0.085421005999999994
+      },
+      "schedule": {
+        "centered": {
+          "m": 44,
+          "p": 2,
+          "q": 3,
+          "logicalPadding": 2
+        },
+        "hermitian": {
+          "m": 44,
+          "p": 2,
+          "q": 3,
+          "logicalPadding": 2
+        }
+      },
+      "transformCounts": {
+        "physicalInputs": 15,
+        "sacrificialInputs": 4,
+        "outputs": 4,
+        "libraryTotal": 23
+      },
+      "threadBehavior": {
+        "outerOpenMPThreads": 8,
+        "maximumFFTWThreads": 8,
+        "maximumMultiplierThreads": 8,
+        "maximumOpenMPLevel": 1,
+        "workerRegionsDisjoint": true
+      },
+      "lifecycle": {
+        "activePlans": 0,
+        "created": 14,
+        "destroyed": 14,
+        "outstandingPlanningBytes": 0
+      }
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "status": "complete",
+      "variant": "fftwpp-implicit",
+      "Nxyz": [
+        128,
+        128,
+        33
+      ],
+      "Nj": 21,
+      "hydrostatic": false,
+      "threads": 1,
+      "warmups": 2,
+      "samplesSeconds": [
+        0.108869416,
+        0.108311375,
+        0.108076833
+      ],
+      "medianSeconds": 0.108311375,
+      "firstSeconds": 0.109054709,
+      "constructionSeconds": 0.20574062500000001,
+      "cleanupSeconds": 0.000020542000000000001,
+      "relativeInfinityError": 3.9237710422148646E-14,
+      "referenceWritten": false,
+      "libraries": {
+        "version": "fftw-3.3.11-neon",
+        "base": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libfftw3.3.dylib",
+        "thread": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libfftw3_omp.3.dylib",
+        "openmp": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libwvissue137omp.dylib"
+      },
+      "memory": {
+        "descriptorBytes": 14328485,
+        "planWrapperBytes": 336,
+        "scratchCapacityBytes": 55512608,
+        "persistentBytes": 69843085,
+        "knownMaximumLiveOwnedBytes": 72726973,
+        "retainedSpectrumBytes": 37098336,
+        "convolutionWorkBytes": 842432,
+        "opaquePlanBytes": 0,
+        "maximumRSSBytes": 117227520
+      },
+      "stages": {
+        "phaseSeconds": 0.00017695800000000001,
+        "reconstructionSeconds": 0,
+        "derivativeReconstructionSeconds": 0,
+        "productSeconds": 0,
+        "projectionSeconds": 0,
+        "convolutionMappingSeconds": 0.020674374999999998,
+        "convolutionSeconds": 0.082969917000000004,
+        "multiplierSeconds": 0.052240775000000003
+      },
+      "schedule": {
+        "centered": {
+          "m": 43,
+          "p": 2,
+          "q": 3,
+          "logicalPadding": 0
+        },
+        "hermitian": {
+          "m": 43,
+          "p": 2,
+          "q": 3,
+          "logicalPadding": 0
+        }
+      },
+      "transformCounts": {
+        "physicalInputs": 15,
+        "sacrificialInputs": 4,
+        "outputs": 4,
+        "libraryTotal": 23
+      },
+      "threadBehavior": {
+        "outerOpenMPThreads": 1,
+        "maximumFFTWThreads": 1,
+        "maximumMultiplierThreads": 1,
+        "maximumOpenMPLevel": 0,
+        "workerRegionsDisjoint": true
+      },
+      "lifecycle": {
+        "activePlans": 0,
+        "created": 14,
+        "destroyed": 14,
+        "outstandingPlanningBytes": 0
+      }
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "status": "complete",
+      "variant": "fftwpp-implicit",
+      "Nxyz": [
+        128,
+        128,
+        33
+      ],
+      "Nj": 21,
+      "hydrostatic": false,
+      "threads": 16,
+      "warmups": 2,
+      "samplesSeconds": [
+        0.045614292000000001,
+        0.046343042000000001,
+        0.046721334000000003
+      ],
+      "medianSeconds": 0.046343042000000001,
+      "firstSeconds": 0.044710291999999999,
+      "constructionSeconds": 4.8064721669999999,
+      "cleanupSeconds": 0.000067667000000000001,
+      "relativeInfinityError": 3.9237710422148646E-14,
+      "referenceWritten": false,
+      "libraries": {
+        "version": "fftw-3.3.11-neon",
+        "base": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libfftw3.3.dylib",
+        "thread": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libfftw3_omp.3.dylib",
+        "openmp": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libwvissue137omp.dylib"
+      },
+      "memory": {
+        "descriptorBytes": 14328485,
+        "planWrapperBytes": 336,
+        "scratchCapacityBytes": 55723808,
+        "persistentBytes": 70054285,
+        "knownMaximumLiveOwnedBytes": 72938173,
+        "retainedSpectrumBytes": 37098336,
+        "convolutionWorkBytes": 1053632,
+        "opaquePlanBytes": 0,
+        "maximumRSSBytes": 190840832
+      },
+      "stages": {
+        "phaseSeconds": 0.00017570899999999999,
+        "reconstructionSeconds": 0,
+        "derivativeReconstructionSeconds": 0,
+        "productSeconds": 0,
+        "projectionSeconds": 0,
+        "convolutionMappingSeconds": 0.0083545410000000001,
+        "convolutionSeconds": 0.036043375000000002,
+        "multiplierSeconds": 0.080840028000000008
+      },
+      "schedule": {
+        "centered": {
+          "m": 43,
+          "p": 2,
+          "q": 3,
+          "logicalPadding": 0
+        },
+        "hermitian": {
+          "m": 43,
+          "p": 2,
+          "q": 3,
+          "logicalPadding": 0
+        }
+      },
+      "transformCounts": {
+        "physicalInputs": 15,
+        "sacrificialInputs": 4,
+        "outputs": 4,
+        "libraryTotal": 23
+      },
+      "threadBehavior": {
+        "outerOpenMPThreads": 16,
+        "maximumFFTWThreads": 16,
+        "maximumMultiplierThreads": 16,
+        "maximumOpenMPLevel": 1,
+        "workerRegionsDisjoint": true
+      },
+      "lifecycle": {
+        "activePlans": 0,
+        "created": 14,
+        "destroyed": 14,
+        "outstandingPlanningBytes": 0
+      }
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "status": "complete",
+      "variant": "fftwpp-implicit",
+      "Nxyz": [
+        128,
+        128,
+        33
+      ],
+      "Nj": 21,
+      "hydrostatic": false,
+      "threads": 4,
+      "warmups": 2,
+      "samplesSeconds": [
+        0.061147082999999998,
+        0.060236417,
+        0.060019875
+      ],
+      "medianSeconds": 0.060236417,
+      "firstSeconds": 0.060791583000000003,
+      "constructionSeconds": 1.1698336659999999,
+      "cleanupSeconds": 0.000029958999999999999,
+      "relativeInfinityError": 3.9237710422148646E-14,
+      "referenceWritten": false,
+      "libraries": {
+        "version": "fftw-3.3.11-neon",
+        "base": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libfftw3.3.dylib",
+        "thread": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libfftw3_omp.3.dylib",
+        "openmp": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libwvissue137omp.dylib"
+      },
+      "memory": {
+        "descriptorBytes": 14328485,
+        "planWrapperBytes": 336,
+        "scratchCapacityBytes": 55554848,
+        "persistentBytes": 69885325,
+        "knownMaximumLiveOwnedBytes": 72769213,
+        "retainedSpectrumBytes": 37098336,
+        "convolutionWorkBytes": 884672,
+        "opaquePlanBytes": 0,
+        "maximumRSSBytes": 156385280
+      },
+      "stages": {
+        "phaseSeconds": 0.00016329199999999999,
+        "reconstructionSeconds": 0,
+        "derivativeReconstructionSeconds": 0,
+        "productSeconds": 0,
+        "projectionSeconds": 0,
+        "convolutionMappingSeconds": 0.016311708000000001,
+        "convolutionSeconds": 0.040481916999999999,
+        "multiplierSeconds": 0.066287963000000005
+      },
+      "schedule": {
+        "centered": {
+          "m": 43,
+          "p": 2,
+          "q": 3,
+          "logicalPadding": 0
+        },
+        "hermitian": {
+          "m": 43,
+          "p": 2,
+          "q": 3,
+          "logicalPadding": 0
+        }
+      },
+      "transformCounts": {
+        "physicalInputs": 15,
+        "sacrificialInputs": 4,
+        "outputs": 4,
+        "libraryTotal": 23
+      },
+      "threadBehavior": {
+        "outerOpenMPThreads": 4,
+        "maximumFFTWThreads": 4,
+        "maximumMultiplierThreads": 4,
+        "maximumOpenMPLevel": 1,
+        "workerRegionsDisjoint": true
+      },
+      "lifecycle": {
+        "activePlans": 0,
+        "created": 14,
+        "destroyed": 14,
+        "outstandingPlanningBytes": 0
+      }
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "status": "complete",
+      "variant": "fftwpp-implicit",
+      "Nxyz": [
+        128,
+        128,
+        33
+      ],
+      "Nj": 21,
+      "hydrostatic": false,
+      "threads": 8,
+      "warmups": 2,
+      "samplesSeconds": [
+        0.043006792000000002,
+        0.043945375000000002,
+        0.044147249999999999
+      ],
+      "medianSeconds": 0.043945375000000002,
+      "firstSeconds": 0.042805666999999999,
+      "constructionSeconds": 2.1381512499999999,
+      "cleanupSeconds": 0.000039375000000000002,
+      "relativeInfinityError": 3.9237710422148646E-14,
+      "referenceWritten": false,
+      "libraries": {
+        "version": "fftw-3.3.11-neon",
+        "base": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libfftw3.3.dylib",
+        "thread": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libfftw3_omp.3.dylib",
+        "openmp": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libwvissue137omp.dylib"
+      },
+      "memory": {
+        "descriptorBytes": 14328485,
+        "planWrapperBytes": 336,
+        "scratchCapacityBytes": 55611168,
+        "persistentBytes": 69941645,
+        "knownMaximumLiveOwnedBytes": 72825533,
+        "retainedSpectrumBytes": 37098336,
+        "convolutionWorkBytes": 940992,
+        "opaquePlanBytes": 0,
+        "maximumRSSBytes": 168656896
+      },
+      "stages": {
+        "phaseSeconds": 0.00017537499999999999,
+        "reconstructionSeconds": 0,
+        "derivativeReconstructionSeconds": 0,
+        "productSeconds": 0,
+        "projectionSeconds": 0,
+        "convolutionMappingSeconds": 0.0084414160000000002,
+        "convolutionSeconds": 0.034122332999999998,
+        "multiplierSeconds": 0.073610401000000006
+      },
+      "schedule": {
+        "centered": {
+          "m": 43,
+          "p": 2,
+          "q": 3,
+          "logicalPadding": 0
+        },
+        "hermitian": {
+          "m": 43,
+          "p": 2,
+          "q": 3,
+          "logicalPadding": 0
+        }
+      },
+      "transformCounts": {
+        "physicalInputs": 15,
+        "sacrificialInputs": 4,
+        "outputs": 4,
+        "libraryTotal": 23
+      },
+      "threadBehavior": {
+        "outerOpenMPThreads": 8,
+        "maximumFFTWThreads": 8,
+        "maximumMultiplierThreads": 8,
+        "maximumOpenMPLevel": 1,
+        "workerRegionsDisjoint": true
+      },
+      "lifecycle": {
+        "activePlans": 0,
+        "created": 14,
+        "destroyed": 14,
+        "outstandingPlanningBytes": 0
+      }
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "status": "complete",
+      "variant": "explicit",
+      "Nxyz": [
+        128,
+        128,
+        33
+      ],
+      "Nj": 21,
+      "hydrostatic": false,
+      "threads": 1,
+      "warmups": 2,
+      "samplesSeconds": [
+        0.038556582999999998,
+        0.038874290999999998,
+        0.038821000000000001
+      ],
+      "medianSeconds": 0.038821000000000001,
+      "firstSeconds": 0.038247999999999997,
+      "constructionSeconds": 0.20629779100000001,
+      "cleanupSeconds": 0.000017084000000000001,
+      "relativeInfinityError": 0,
+      "referenceWritten": true,
+      "libraries": {
+        "version": "fftw-3.3.11-neon",
+        "base": "/private/tmp/issue152-overnight-cache/providers/pthreads/install/lib/libfftw3.3.dylib",
+        "thread": "/private/tmp/issue152-overnight-cache/providers/pthreads/install/lib/libfftw3_threads.3.dylib",
+        "openmp": ""
+      },
+      "memory": {
+        "descriptorBytes": 14328485,
+        "planWrapperBytes": 336,
+        "scratchCapacityBytes": 56500224,
+        "persistentBytes": 70829045,
+        "knownMaximumLiveOwnedBytes": 73712933,
+        "retainedSpectrumBytes": 0,
+        "convolutionWorkBytes": 0,
+        "opaquePlanBytes": 0,
+        "maximumRSSBytes": 116277248
+      },
+      "stages": {
+        "phaseSeconds": 0.00016837500000000001,
+        "reconstructionSeconds": 0.0079175419999999996,
+        "derivativeReconstructionSeconds": 0.021698875999999999,
+        "productSeconds": 0.00092179299999999996,
+        "projectionSeconds": 0.0080836250000000005,
+        "convolutionMappingSeconds": 0,
+        "convolutionSeconds": 0,
+        "multiplierSeconds": 0
+      },
+      "schedule": {
+        "centered": {
+          "m": 0,
+          "p": 0,
+          "q": 0,
+          "logicalPadding": 0
+        },
+        "hermitian": {
+          "m": 0,
+          "p": 0,
+          "q": 0,
+          "logicalPadding": 0
+        }
+      },
+      "transformCounts": {
+        "physicalInputs": 0,
+        "sacrificialInputs": 0,
+        "outputs": 0,
+        "libraryTotal": 0
+      },
+      "threadBehavior": {
+        "outerOpenMPThreads": 1,
+        "maximumFFTWThreads": 1,
+        "maximumMultiplierThreads": 1,
+        "maximumOpenMPLevel": 0,
+        "workerRegionsDisjoint": true
+      },
+      "lifecycle": {
+        "activePlans": 0,
+        "created": 14,
+        "destroyed": 14,
+        "outstandingPlanningBytes": 0
+      }
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "status": "complete",
+      "variant": "explicit",
+      "Nxyz": [
+        128,
+        128,
+        33
+      ],
+      "Nj": 21,
+      "hydrostatic": false,
+      "threads": 16,
+      "warmups": 2,
+      "samplesSeconds": [
+        0.0085182920000000002,
+        0.0085087080000000002,
+        0.0085887919999999996
+      ],
+      "medianSeconds": 0.0085182920000000002,
+      "firstSeconds": 0.0090179160000000008,
+      "constructionSeconds": 1.3602175409999999,
+      "cleanupSeconds": 0.000051916999999999998,
+      "relativeInfinityError": 2.0920667326724961E-14,
+      "referenceWritten": false,
+      "libraries": {
+        "version": "fftw-3.3.11-neon",
+        "base": "/private/tmp/issue152-overnight-cache/providers/pthreads/install/lib/libfftw3.3.dylib",
+        "thread": "/private/tmp/issue152-overnight-cache/providers/pthreads/install/lib/libfftw3_threads.3.dylib",
+        "openmp": ""
+      },
+      "memory": {
+        "descriptorBytes": 14328485,
+        "planWrapperBytes": 336,
+        "scratchCapacityBytes": 56500224,
+        "persistentBytes": 70829045,
+        "knownMaximumLiveOwnedBytes": 73712933,
+        "retainedSpectrumBytes": 0,
+        "convolutionWorkBytes": 0,
+        "opaquePlanBytes": 0,
+        "maximumRSSBytes": 145440768
+      },
+      "stages": {
+        "phaseSeconds": 0.00016741600000000001,
+        "reconstructionSeconds": 0.0013114159999999999,
+        "derivativeReconstructionSeconds": 0.0042900830000000001,
+        "productSeconds": 0.00099837499999999991,
+        "projectionSeconds": 0.001746542,
+        "convolutionMappingSeconds": 0,
+        "convolutionSeconds": 0,
+        "multiplierSeconds": 0
+      },
+      "schedule": {
+        "centered": {
+          "m": 0,
+          "p": 0,
+          "q": 0,
+          "logicalPadding": 0
+        },
+        "hermitian": {
+          "m": 0,
+          "p": 0,
+          "q": 0,
+          "logicalPadding": 0
+        }
+      },
+      "transformCounts": {
+        "physicalInputs": 0,
+        "sacrificialInputs": 0,
+        "outputs": 0,
+        "libraryTotal": 0
+      },
+      "threadBehavior": {
+        "outerOpenMPThreads": 1,
+        "maximumFFTWThreads": 1,
+        "maximumMultiplierThreads": 1,
+        "maximumOpenMPLevel": 0,
+        "workerRegionsDisjoint": true
+      },
+      "lifecycle": {
+        "activePlans": 0,
+        "created": 14,
+        "destroyed": 14,
+        "outstandingPlanningBytes": 0
+      }
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "status": "complete",
+      "variant": "explicit",
+      "Nxyz": [
+        128,
+        128,
+        33
+      ],
+      "Nj": 21,
+      "hydrostatic": false,
+      "threads": 4,
+      "warmups": 2,
+      "samplesSeconds": [
+        0.021368499999999999,
+        0.021197417,
+        0.021289083
+      ],
+      "medianSeconds": 0.021289083,
+      "firstSeconds": 0.021468375000000001,
+      "constructionSeconds": 0.94805008300000004,
+      "cleanupSeconds": 0.000020290999999999999,
+      "relativeInfinityError": 1.9666774908957635E-14,
+      "referenceWritten": false,
+      "libraries": {
+        "version": "fftw-3.3.11-neon",
+        "base": "/private/tmp/issue152-overnight-cache/providers/pthreads/install/lib/libfftw3.3.dylib",
+        "thread": "/private/tmp/issue152-overnight-cache/providers/pthreads/install/lib/libfftw3_threads.3.dylib",
+        "openmp": ""
+      },
+      "memory": {
+        "descriptorBytes": 14328485,
+        "planWrapperBytes": 336,
+        "scratchCapacityBytes": 56500224,
+        "persistentBytes": 70829045,
+        "knownMaximumLiveOwnedBytes": 73712933,
+        "retainedSpectrumBytes": 0,
+        "convolutionWorkBytes": 0,
+        "opaquePlanBytes": 0,
+        "maximumRSSBytes": 143441920
+      },
+      "stages": {
+        "phaseSeconds": 0.00016349999999999999,
+        "reconstructionSeconds": 0.0040124999999999996,
+        "derivativeReconstructionSeconds": 0.011713833999999999,
+        "productSeconds": 0.00092258199999999992,
+        "projectionSeconds": 0.0045024169999999999,
+        "convolutionMappingSeconds": 0,
+        "convolutionSeconds": 0,
+        "multiplierSeconds": 0
+      },
+      "schedule": {
+        "centered": {
+          "m": 0,
+          "p": 0,
+          "q": 0,
+          "logicalPadding": 0
+        },
+        "hermitian": {
+          "m": 0,
+          "p": 0,
+          "q": 0,
+          "logicalPadding": 0
+        }
+      },
+      "transformCounts": {
+        "physicalInputs": 0,
+        "sacrificialInputs": 0,
+        "outputs": 0,
+        "libraryTotal": 0
+      },
+      "threadBehavior": {
+        "outerOpenMPThreads": 1,
+        "maximumFFTWThreads": 1,
+        "maximumMultiplierThreads": 1,
+        "maximumOpenMPLevel": 0,
+        "workerRegionsDisjoint": true
+      },
+      "lifecycle": {
+        "activePlans": 0,
+        "created": 14,
+        "destroyed": 14,
+        "outstandingPlanningBytes": 0
+      }
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "status": "complete",
+      "variant": "explicit",
+      "Nxyz": [
+        128,
+        128,
+        33
+      ],
+      "Nj": 21,
+      "hydrostatic": false,
+      "threads": 8,
+      "warmups": 2,
+      "samplesSeconds": [
+        0.021900208000000001,
+        0.021349041999999999,
+        0.021934624999999999
+      ],
+      "medianSeconds": 0.021900208000000001,
+      "firstSeconds": 0.022239999999999999,
+      "constructionSeconds": 1.2444040409999999,
+      "cleanupSeconds": 0.000042709000000000001,
+      "relativeInfinityError": 2.4236238342213384E-14,
+      "referenceWritten": false,
+      "libraries": {
+        "version": "fftw-3.3.11-neon",
+        "base": "/private/tmp/issue152-overnight-cache/providers/pthreads/install/lib/libfftw3.3.dylib",
+        "thread": "/private/tmp/issue152-overnight-cache/providers/pthreads/install/lib/libfftw3_threads.3.dylib",
+        "openmp": ""
+      },
+      "memory": {
+        "descriptorBytes": 14328485,
+        "planWrapperBytes": 336,
+        "scratchCapacityBytes": 56500224,
+        "persistentBytes": 70829045,
+        "knownMaximumLiveOwnedBytes": 73712933,
+        "retainedSpectrumBytes": 0,
+        "convolutionWorkBytes": 0,
+        "opaquePlanBytes": 0,
+        "maximumRSSBytes": 144408576
+      },
+      "stages": {
+        "phaseSeconds": 0.000162542,
+        "reconstructionSeconds": 0.0041970410000000003,
+        "derivativeReconstructionSeconds": 0.011812290999999999,
+        "productSeconds": 0.001009416,
+        "projectionSeconds": 0.0044700419999999996,
+        "convolutionMappingSeconds": 0,
+        "convolutionSeconds": 0,
+        "multiplierSeconds": 0
+      },
+      "schedule": {
+        "centered": {
+          "m": 0,
+          "p": 0,
+          "q": 0,
+          "logicalPadding": 0
+        },
+        "hermitian": {
+          "m": 0,
+          "p": 0,
+          "q": 0,
+          "logicalPadding": 0
+        }
+      },
+      "transformCounts": {
+        "physicalInputs": 0,
+        "sacrificialInputs": 0,
+        "outputs": 0,
+        "libraryTotal": 0
+      },
+      "threadBehavior": {
+        "outerOpenMPThreads": 1,
+        "maximumFFTWThreads": 1,
+        "maximumMultiplierThreads": 1,
+        "maximumOpenMPLevel": 0,
+        "workerRegionsDisjoint": true
+      },
+      "lifecycle": {
+        "activePlans": 0,
+        "created": 14,
+        "destroyed": 14,
+        "outstandingPlanningBytes": 0
+      }
+    }
+  ],
+  "largeRaw": [
+    {
+      "schemaVersion": "1.0.0",
+      "status": "complete",
+      "variant": "explicit",
+      "Nxyz": [
+        256,
+        256,
+        65
+      ],
+      "Nj": 42,
+      "hydrostatic": true,
+      "threads": 16,
+      "warmups": 2,
+      "samplesSeconds": [
+        0.071970458000000001
+      ],
+      "medianSeconds": 0.071970458000000001,
+      "firstSeconds": 0.072461874999999995,
+      "constructionSeconds": 11.793942124999999,
+      "cleanupSeconds": 0.000070790999999999994,
+      "relativeInfinityError": 4.649722995218349E-14,
+      "referenceWritten": false,
+      "libraries": {
+        "version": "fftw-3.3.11-neon",
+        "base": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libfftw3.3.dylib",
+        "thread": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libfftw3_omp.3.dylib",
+        "openmp": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libwvissue137omp.dylib"
+      },
+      "memory": {
+        "descriptorBytes": 113012311,
+        "planWrapperBytes": 336,
+        "scratchCapacityBytes": 410009600,
+        "persistentBytes": 523022247,
+        "knownMaximumLiveOwnedBytes": 546083271,
+        "retainedSpectrumBytes": 0,
+        "convolutionWorkBytes": 0,
+        "opaquePlanBytes": 0,
+        "maximumRSSBytes": 1065353216
+      },
+      "stages": {
+        "phaseSeconds": 0.0014498340000000001,
+        "reconstructionSeconds": 0.014328083,
+        "derivativeReconstructionSeconds": 0.033535916999999998,
+        "productSeconds": 0.0062459999999999998,
+        "projectionSeconds": 0.015340833,
+        "convolutionMappingSeconds": 0,
+        "convolutionSeconds": 0,
+        "multiplierSeconds": 0
+      },
+      "schedule": {
+        "centered": {
+          "m": 0,
+          "p": 0,
+          "q": 0,
+          "logicalPadding": 0
+        },
+        "hermitian": {
+          "m": 0,
+          "p": 0,
+          "q": 0,
+          "logicalPadding": 0
+        }
+      },
+      "transformCounts": {
+        "physicalInputs": 0,
+        "sacrificialInputs": 0,
+        "outputs": 0,
+        "libraryTotal": 0
+      },
+      "threadBehavior": {
+        "outerOpenMPThreads": 1,
+        "maximumFFTWThreads": 1,
+        "maximumMultiplierThreads": 1,
+        "maximumOpenMPLevel": 0,
+        "workerRegionsDisjoint": true
+      },
+      "lifecycle": {
+        "activePlans": 0,
+        "created": 14,
+        "destroyed": 14,
+        "outstandingPlanningBytes": 0
+      }
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "status": "complete",
+      "variant": "fftwpp-hybrid",
+      "Nxyz": [
+        256,
+        256,
+        65
+      ],
+      "Nj": 42,
+      "hydrostatic": true,
+      "threads": 16,
+      "warmups": 2,
+      "samplesSeconds": [
+        0.22774433299999999
+      ],
+      "medianSeconds": 0.22774433299999999,
+      "firstSeconds": 0.22842483299999999,
+      "constructionSeconds": 11.819887583,
+      "cleanupSeconds": 0.000096874999999999997,
+      "relativeInfinityError": 1.8210841691483856E-13,
+      "referenceWritten": false,
+      "libraries": {
+        "version": "fftw-3.3.11-neon",
+        "base": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libfftw3.3.dylib",
+        "thread": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libfftw3_omp.3.dylib",
+        "openmp": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libwvissue137omp.dylib"
+      },
+      "memory": {
+        "descriptorBytes": 113012311,
+        "planWrapperBytes": 336,
+        "scratchCapacityBytes": 371120896,
+        "persistentBytes": 484135199,
+        "knownMaximumLiveOwnedBytes": 507196223,
+        "retainedSpectrumBytes": 230755200,
+        "convolutionWorkBytes": 2985856,
+        "opaquePlanBytes": 0,
+        "maximumRSSBytes": 1087668224
+      },
+      "stages": {
+        "phaseSeconds": 0.001347916,
+        "reconstructionSeconds": 0,
+        "derivativeReconstructionSeconds": 0,
+        "productSeconds": 0,
+        "projectionSeconds": 0,
+        "convolutionMappingSeconds": 0.059905875999999997,
+        "convolutionSeconds": 0.153743083,
+        "multiplierSeconds": 0.33786933800000007
+      },
+      "schedule": {
+        "centered": {
+          "m": 87,
+          "p": 2,
+          "q": 3,
+          "logicalPadding": 2
+        },
+        "hermitian": {
+          "m": 87,
+          "p": 2,
+          "q": 3,
+          "logicalPadding": 2
+        }
+      },
+      "transformCounts": {
+        "physicalInputs": 12,
+        "sacrificialInputs": 3,
+        "outputs": 3,
+        "libraryTotal": 18
+      },
+      "threadBehavior": {
+        "outerOpenMPThreads": 16,
+        "maximumFFTWThreads": 16,
+        "maximumMultiplierThreads": 16,
+        "maximumOpenMPLevel": 1,
+        "workerRegionsDisjoint": true
+      },
+      "lifecycle": {
+        "activePlans": 0,
+        "created": 14,
+        "destroyed": 14,
+        "outstandingPlanningBytes": 0
+      }
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "status": "complete",
+      "variant": "fftwpp-implicit",
+      "Nxyz": [
+        256,
+        256,
+        65
+      ],
+      "Nj": 42,
+      "hydrostatic": true,
+      "threads": 16,
+      "warmups": 2,
+      "samplesSeconds": [
+        0.245590792
+      ],
+      "medianSeconds": 0.245590792,
+      "firstSeconds": 0.245647167,
+      "constructionSeconds": 11.844103083,
+      "cleanupSeconds": 0.000096292000000000006,
+      "relativeInfinityError": 1.2257403637018385E-13,
+      "referenceWritten": false,
+      "libraries": {
+        "version": "fftw-3.3.11-neon",
+        "base": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libfftw3.3.dylib",
+        "thread": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libfftw3_omp.3.dylib",
+        "openmp": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libwvissue137omp.dylib"
+      },
+      "memory": {
+        "descriptorBytes": 113012311,
+        "planWrapperBytes": 336,
+        "scratchCapacityBytes": 371098880,
+        "persistentBytes": 484113183,
+        "knownMaximumLiveOwnedBytes": 507174207,
+        "retainedSpectrumBytes": 230755200,
+        "convolutionWorkBytes": 2963840,
+        "opaquePlanBytes": 0,
+        "maximumRSSBytes": 1078886400
+      },
+      "stages": {
+        "phaseSeconds": 0.001388834,
+        "reconstructionSeconds": 0,
+        "derivativeReconstructionSeconds": 0,
+        "productSeconds": 0,
+        "projectionSeconds": 0,
+        "convolutionMappingSeconds": 0.061726958999999998,
+        "convolutionSeconds": 0.17247933300000001,
+        "multiplierSeconds": 0.312863693
+      },
+      "schedule": {
+        "centered": {
+          "m": 86,
+          "p": 2,
+          "q": 3,
+          "logicalPadding": 0
+        },
+        "hermitian": {
+          "m": 86,
+          "p": 2,
+          "q": 3,
+          "logicalPadding": 0
+        }
+      },
+      "transformCounts": {
+        "physicalInputs": 12,
+        "sacrificialInputs": 3,
+        "outputs": 3,
+        "libraryTotal": 18
+      },
+      "threadBehavior": {
+        "outerOpenMPThreads": 16,
+        "maximumFFTWThreads": 16,
+        "maximumMultiplierThreads": 16,
+        "maximumOpenMPLevel": 1,
+        "workerRegionsDisjoint": true
+      },
+      "lifecycle": {
+        "activePlans": 0,
+        "created": 14,
+        "destroyed": 14,
+        "outstandingPlanningBytes": 0
+      }
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "status": "complete",
+      "variant": "explicit",
+      "Nxyz": [
+        256,
+        256,
+        65
+      ],
+      "Nj": 42,
+      "hydrostatic": true,
+      "threads": 16,
+      "warmups": 2,
+      "samplesSeconds": [
+        0.066449750000000002
+      ],
+      "medianSeconds": 0.066449750000000002,
+      "firstSeconds": 0.067980417000000001,
+      "constructionSeconds": 10.914080792,
+      "cleanupSeconds": 0.000094041000000000003,
+      "relativeInfinityError": 0,
+      "referenceWritten": true,
+      "libraries": {
+        "version": "fftw-3.3.11-neon",
+        "base": "/private/tmp/issue152-overnight-cache/providers/pthreads/install/lib/libfftw3.3.dylib",
+        "thread": "/private/tmp/issue152-overnight-cache/providers/pthreads/install/lib/libfftw3_threads.3.dylib",
+        "openmp": ""
+      },
+      "memory": {
+        "descriptorBytes": 113012311,
+        "planWrapperBytes": 336,
+        "scratchCapacityBytes": 410009600,
+        "persistentBytes": 523022247,
+        "knownMaximumLiveOwnedBytes": 546083271,
+        "retainedSpectrumBytes": 0,
+        "convolutionWorkBytes": 0,
+        "opaquePlanBytes": 0,
+        "maximumRSSBytes": 1056587776
+      },
+      "stages": {
+        "phaseSeconds": 0.0014707920000000001,
+        "reconstructionSeconds": 0.013428582999999999,
+        "derivativeReconstructionSeconds": 0.029743459,
+        "productSeconds": 0.0069221250000000003,
+        "projectionSeconds": 0.014145,
+        "convolutionMappingSeconds": 0,
+        "convolutionSeconds": 0,
+        "multiplierSeconds": 0
+      },
+      "schedule": {
+        "centered": {
+          "m": 0,
+          "p": 0,
+          "q": 0,
+          "logicalPadding": 0
+        },
+        "hermitian": {
+          "m": 0,
+          "p": 0,
+          "q": 0,
+          "logicalPadding": 0
+        }
+      },
+      "transformCounts": {
+        "physicalInputs": 0,
+        "sacrificialInputs": 0,
+        "outputs": 0,
+        "libraryTotal": 0
+      },
+      "threadBehavior": {
+        "outerOpenMPThreads": 1,
+        "maximumFFTWThreads": 1,
+        "maximumMultiplierThreads": 1,
+        "maximumOpenMPLevel": 0,
+        "workerRegionsDisjoint": true
+      },
+      "lifecycle": {
+        "activePlans": 0,
+        "created": 14,
+        "destroyed": 14,
+        "outstandingPlanningBytes": 0
+      }
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "status": "complete",
+      "variant": "explicit",
+      "Nxyz": [
+        256,
+        256,
+        65
+      ],
+      "Nj": 42,
+      "hydrostatic": false,
+      "threads": 16,
+      "warmups": 2,
+      "samplesSeconds": [
+        0.091030166999999995
+      ],
+      "medianSeconds": 0.091030166999999995,
+      "firstSeconds": 0.088783249999999994,
+      "constructionSeconds": 11.912554500000001,
+      "cleanupSeconds": 0.000079957999999999996,
+      "relativeInfinityError": 6.094249884801936E-14,
+      "referenceWritten": false,
+      "libraries": {
+        "version": "fftw-3.3.11-neon",
+        "base": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libfftw3.3.dylib",
+        "thread": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libfftw3_omp.3.dylib",
+        "openmp": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libwvissue137omp.dylib"
+      },
+      "memory": {
+        "descriptorBytes": 113012311,
+        "planWrapperBytes": 336,
+        "scratchCapacityBytes": 444088320,
+        "persistentBytes": 557100967,
+        "knownMaximumLiveOwnedBytes": 580161991,
+        "retainedSpectrumBytes": 0,
+        "convolutionWorkBytes": 0,
+        "opaquePlanBytes": 0,
+        "maximumRSSBytes": 1098792960
+      },
+      "stages": {
+        "phaseSeconds": 0.0014523330000000001,
+        "reconstructionSeconds": 0.014075666000000001,
+        "derivativeReconstructionSeconds": 0.045615709000000004,
+        "productSeconds": 0.0084707080000000004,
+        "projectionSeconds": 0.021132374999999998,
+        "convolutionMappingSeconds": 0,
+        "convolutionSeconds": 0,
+        "multiplierSeconds": 0
+      },
+      "schedule": {
+        "centered": {
+          "m": 0,
+          "p": 0,
+          "q": 0,
+          "logicalPadding": 0
+        },
+        "hermitian": {
+          "m": 0,
+          "p": 0,
+          "q": 0,
+          "logicalPadding": 0
+        }
+      },
+      "transformCounts": {
+        "physicalInputs": 0,
+        "sacrificialInputs": 0,
+        "outputs": 0,
+        "libraryTotal": 0
+      },
+      "threadBehavior": {
+        "outerOpenMPThreads": 1,
+        "maximumFFTWThreads": 1,
+        "maximumMultiplierThreads": 1,
+        "maximumOpenMPLevel": 0,
+        "workerRegionsDisjoint": true
+      },
+      "lifecycle": {
+        "activePlans": 0,
+        "created": 14,
+        "destroyed": 14,
+        "outstandingPlanningBytes": 0
+      }
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "status": "complete",
+      "variant": "fftwpp-hybrid",
+      "Nxyz": [
+        256,
+        256,
+        65
+      ],
+      "Nj": 42,
+      "hydrostatic": false,
+      "threads": 16,
+      "warmups": 2,
+      "samplesSeconds": [
+        0.29155674999999998
+      ],
+      "medianSeconds": 0.29155674999999998,
+      "firstSeconds": 0.29584954099999999,
+      "constructionSeconds": 11.798102917,
+      "cleanupSeconds": 0.000095000000000000005,
+      "relativeInfinityError": 9.0822002627610482E-14,
+      "referenceWritten": false,
+      "libraries": {
+        "version": "fftw-3.3.11-neon",
+        "base": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libfftw3.3.dylib",
+        "thread": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libfftw3_omp.3.dylib",
+        "openmp": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libwvissue137omp.dylib"
+      },
+      "memory": {
+        "descriptorBytes": 113012311,
+        "planWrapperBytes": 336,
+        "scratchCapacityBytes": 433461248,
+        "persistentBytes": 546475551,
+        "knownMaximumLiveOwnedBytes": 569536575,
+        "retainedSpectrumBytes": 292289920,
+        "convolutionWorkBytes": 3791488,
+        "opaquePlanBytes": 0,
+        "maximumRSSBytes": 1150124032
+      },
+      "stages": {
+        "phaseSeconds": 0.0014305419999999999,
+        "reconstructionSeconds": 0,
+        "derivativeReconstructionSeconds": 0,
+        "productSeconds": 0,
+        "projectionSeconds": 0,
+        "convolutionMappingSeconds": 0.075468541,
+        "convolutionSeconds": 0.195944542,
+        "multiplierSeconds": 0.43746722699999996
+      },
+      "schedule": {
+        "centered": {
+          "m": 87,
+          "p": 2,
+          "q": 3,
+          "logicalPadding": 2
+        },
+        "hermitian": {
+          "m": 87,
+          "p": 2,
+          "q": 3,
+          "logicalPadding": 2
+        }
+      },
+      "transformCounts": {
+        "physicalInputs": 15,
+        "sacrificialInputs": 4,
+        "outputs": 4,
+        "libraryTotal": 23
+      },
+      "threadBehavior": {
+        "outerOpenMPThreads": 16,
+        "maximumFFTWThreads": 16,
+        "maximumMultiplierThreads": 16,
+        "maximumOpenMPLevel": 1,
+        "workerRegionsDisjoint": true
+      },
+      "lifecycle": {
+        "activePlans": 0,
+        "created": 14,
+        "destroyed": 14,
+        "outstandingPlanningBytes": 0
+      }
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "status": "complete",
+      "variant": "fftwpp-implicit",
+      "Nxyz": [
+        256,
+        256,
+        65
+      ],
+      "Nj": 42,
+      "hydrostatic": false,
+      "threads": 16,
+      "warmups": 2,
+      "samplesSeconds": [
+        0.30781029199999999
+      ],
+      "medianSeconds": 0.30781029199999999,
+      "firstSeconds": 0.30584050000000002,
+      "constructionSeconds": 11.840129292,
+      "cleanupSeconds": 0.000101208,
+      "relativeInfinityError": 6.3851477377365138E-14,
+      "referenceWritten": false,
+      "libraries": {
+        "version": "fftw-3.3.11-neon",
+        "base": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libfftw3.3.dylib",
+        "thread": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libfftw3_omp.3.dylib",
+        "openmp": "/private/tmp/issue152-overnight-cache/providers/openmp/install/lib/libwvissue137omp.dylib"
+      },
+      "memory": {
+        "descriptorBytes": 113012311,
+        "planWrapperBytes": 336,
+        "scratchCapacityBytes": 433433728,
+        "persistentBytes": 546448031,
+        "knownMaximumLiveOwnedBytes": 569509055,
+        "retainedSpectrumBytes": 292289920,
+        "convolutionWorkBytes": 3763968,
+        "opaquePlanBytes": 0,
+        "maximumRSSBytes": 1141456896
+      },
+      "stages": {
+        "phaseSeconds": 0.0013342499999999999,
+        "reconstructionSeconds": 0,
+        "derivativeReconstructionSeconds": 0,
+        "productSeconds": 0,
+        "projectionSeconds": 0,
+        "convolutionMappingSeconds": 0.078716332999999999,
+        "convolutionSeconds": 0.21259370799999999,
+        "multiplierSeconds": 0.41002190599999999
+      },
+      "schedule": {
+        "centered": {
+          "m": 86,
+          "p": 2,
+          "q": 3,
+          "logicalPadding": 0
+        },
+        "hermitian": {
+          "m": 86,
+          "p": 2,
+          "q": 3,
+          "logicalPadding": 0
+        }
+      },
+      "transformCounts": {
+        "physicalInputs": 15,
+        "sacrificialInputs": 4,
+        "outputs": 4,
+        "libraryTotal": 23
+      },
+      "threadBehavior": {
+        "outerOpenMPThreads": 16,
+        "maximumFFTWThreads": 16,
+        "maximumMultiplierThreads": 16,
+        "maximumOpenMPLevel": 1,
+        "workerRegionsDisjoint": true
+      },
+      "lifecycle": {
+        "activePlans": 0,
+        "created": 14,
+        "destroyed": 14,
+        "outstandingPlanningBytes": 0
+      }
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "status": "complete",
+      "variant": "explicit",
+      "Nxyz": [
+        256,
+        256,
+        65
+      ],
+      "Nj": 42,
+      "hydrostatic": false,
+      "threads": 16,
+      "warmups": 2,
+      "samplesSeconds": [
+        0.081445624999999994
+      ],
+      "medianSeconds": 0.081445624999999994,
+      "firstSeconds": 0.081463041999999999,
+      "constructionSeconds": 11.683821333999999,
+      "cleanupSeconds": 0.000069292,
+      "relativeInfinityError": 0,
+      "referenceWritten": true,
+      "libraries": {
+        "version": "fftw-3.3.11-neon",
+        "base": "/private/tmp/issue152-overnight-cache/providers/pthreads/install/lib/libfftw3.3.dylib",
+        "thread": "/private/tmp/issue152-overnight-cache/providers/pthreads/install/lib/libfftw3_threads.3.dylib",
+        "openmp": ""
+      },
+      "memory": {
+        "descriptorBytes": 113012311,
+        "planWrapperBytes": 336,
+        "scratchCapacityBytes": 444088320,
+        "persistentBytes": 557100967,
+        "knownMaximumLiveOwnedBytes": 580161991,
+        "retainedSpectrumBytes": 0,
+        "convolutionWorkBytes": 0,
+        "opaquePlanBytes": 0,
+        "maximumRSSBytes": 1090142208
+      },
+      "stages": {
+        "phaseSeconds": 0.0013972500000000001,
+        "reconstructionSeconds": 0.012483833,
+        "derivativeReconstructionSeconds": 0.038779917000000004,
+        "productSeconds": 0.0087368340000000006,
+        "projectionSeconds": 0.020280665999999999,
+        "convolutionMappingSeconds": 0,
+        "convolutionSeconds": 0,
+        "multiplierSeconds": 0
+      },
+      "schedule": {
+        "centered": {
+          "m": 0,
+          "p": 0,
+          "q": 0,
+          "logicalPadding": 0
+        },
+        "hermitian": {
+          "m": 0,
+          "p": 0,
+          "q": 0,
+          "logicalPadding": 0
+        }
+      },
+      "transformCounts": {
+        "physicalInputs": 0,
+        "sacrificialInputs": 0,
+        "outputs": 0,
+        "libraryTotal": 0
+      },
+      "threadBehavior": {
+        "outerOpenMPThreads": 1,
+        "maximumFFTWThreads": 1,
+        "maximumMultiplierThreads": 1,
+        "maximumOpenMPLevel": 0,
+        "workerRegionsDisjoint": true
+      },
+      "lifecycle": {
+        "activePlans": 0,
+        "created": 14,
+        "destroyed": 14,
+        "outstandingPlanningBytes": 0
+      }
+    }
+  ]
+}
