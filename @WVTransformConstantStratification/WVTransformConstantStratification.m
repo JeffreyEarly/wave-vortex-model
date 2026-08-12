@@ -109,6 +109,26 @@ classdef WVTransformConstantStratification < WVGeometryDoublyPeriodicStratifiedC
     properties (GetAccess=public, SetAccess=public)
         shouldUseTrueNoMotionProfile (1,1) logical = false
     end
+    properties (GetAccess=public, SetAccess=private)
+        % Active nonlinear-flux implementation.
+        %
+        % `computationalBackend` is `"matlab"` unless the compiled preview
+        % was requested explicitly and constructed successfully. Backend
+        % selection is runtime-only and is not written to model files.
+        %
+        % - Topic: Transform configuration
+        computationalBackend (1,1) string = "matlab"
+    end
+    properties (Dependent, GetAccess=public, SetAccess=private)
+        % Identity, scope, and storage information for the active backend.
+        %
+        % The returned structure is JSON-safe. For the compiled preview it
+        % includes the native FFTW and MEX identities, kernel contract,
+        % bounded-storage estimates, and current lifecycle metrics.
+        %
+        % - Topic: Transform configuration
+        computationalBackendMetadata
+    end
     properties
         Fu, Fv, Feta
         nonlinearFluxFunction
@@ -117,6 +137,9 @@ classdef WVTransformConstantStratification < WVGeometryDoublyPeriodicStratifiedC
         sin_alpha
         ApmD_scaled
         ApmW_scaled
+    end
+    properties (Access=private)
+        compiledBackend = []
     end
 
     methods
@@ -140,6 +163,7 @@ classdef WVTransformConstantStratification < WVGeometryDoublyPeriodicStratifiedC
             % - Parameter options.isHydrostatic: use hydrostatic dynamics; default `false`
             % - Parameter options.latitude: latitude in the supported domain; default `33`
             % - Parameter options.shouldAntialias: exclude quadratically aliased modes; default `true`
+            % - Parameter options.computationalBackend: nonlinear-flux implementation, `"matlab"` (default) or the explicit `"compiled"` preview
             % - Parameter options.rho0: reference density in kilograms per cubic meter; default `1025`
             % - Returns wvt: new `WVTransformConstantStratification` instance
             arguments
@@ -155,8 +179,11 @@ classdef WVTransformConstantStratification < WVGeometryDoublyPeriodicStratifiedC
                 options.g (1,1) double = 9.81
                 
                 options.isHydrostatic logical = false
+                options.computationalBackend (1,1) string {mustBeMember(options.computationalBackend,["matlab" "compiled"])} = "matlab"
             end
 
+            requestedBackend = options.computationalBackend;
+            options = rmfield(options,"computationalBackend");
             optionArgs = namedargs2cell(options);
             self@WVGeometryDoublyPeriodicStratifiedConstant(Lxyz, Nxyz, optionArgs{:})
             self@WVTransform(WVForcingType(["HydrostaticSpatial","Spectral","SpectralAmplitude"]));
@@ -210,6 +237,36 @@ classdef WVTransformConstantStratification < WVGeometryDoublyPeriodicStratifiedC
             else
                 self.nonlinearFluxFunction = @() self.nonlinearFluxNonhydrostatic();
             end
+            if requestedBackend == "compiled"
+                self.compiledBackend = self.createCompiledBackend();
+                self.computationalBackend = "compiled";
+                self.nonlinearFluxFunction = @() self.nonlinearFluxCompiled();
+            end
+        end
+
+        function metadata = get.computationalBackendMetadata(self)
+            if self.computationalBackend == "compiled"
+                metadata = self.compiledBackend.metadata();
+                return
+            end
+            metadata = struct( ...
+                "schemaVersion","1.0.0", ...
+                "requestedBackend","matlab", ...
+                "activeBackend","matlab", ...
+                "scope","all forcing configurations supported by the MATLAB implementation", ...
+                "provider",struct("id","matlab-builtin","version",string(version("-release"))), ...
+                "libraries",struct(), ...
+                "module",struct(), ...
+                "contract",struct(), ...
+                "storage",struct("status","not-estimated","reason","MATLAB storage is measured by the benchmark ledger."), ...
+                "runtimeMetrics",struct());
+        end
+
+        function delete(self)
+            if ~isempty(self.compiledBackend) && isvalid(self.compiledBackend)
+                delete(self.compiledBackend);
+            end
+            self.compiledBackend = [];
         end
 
         function set.shouldUseTrueNoMotionProfile(self,value)
@@ -222,7 +279,10 @@ classdef WVTransformConstantStratification < WVGeometryDoublyPeriodicStratifiedC
         end
 
         function wvtX2 = waveVortexTransformWithResolution(self,m)
-            names = {'shouldAntialias','N0','rho0','planetaryRadius','rotationRate','latitude','g','isHydrostatic'};
+            if self.computationalBackend == "compiled"
+                self.assertCompiledForcingSupported();
+            end
+            names = {'shouldAntialias','N0','rho0','planetaryRadius','rotationRate','latitude','g','isHydrostatic','computationalBackend'};
             optionArgs = {};
             for i=1:length(names)
                 optionArgs{2*i-1} = names{i};
@@ -242,6 +302,9 @@ classdef WVTransformConstantStratification < WVGeometryDoublyPeriodicStratifiedC
         end
 
         function wvt2 = waveVortexTransformWithExplicitAntialiasing(self)
+            if self.computationalBackend == "compiled"
+                error("WaveVortexModel:CompiledBackendUnsupportedAntialiasing","The compiled preview supports transform-level antialiasing, but not conversion to the explicit WVAntialiasing forcing path. Construct a MATLAB-backed transform for this operation.")
+            end
             if self.shouldAntialias == false
                 error("This function only applies to transforms that are dealiasing.")
             end
@@ -335,6 +398,7 @@ classdef WVTransformConstantStratification < WVGeometryDoublyPeriodicStratifiedC
         function [Fp,Fm,F0] = nonlinearFlux(self)
             [Fp,Fm,F0] = self.nonlinearFluxFunction();
         end
+
         function [Fp,Fm,F0] = nonlinearFluxHydrostatic(self)
             Fu=zeros(self.spatialMatrixSize);Fv=zeros(self.spatialMatrixSize);Feta=zeros(self.spatialMatrixSize); % this isn't good, need to cached
             for i=1:length(self.spatialFluxForcing)
@@ -495,10 +559,12 @@ classdef WVTransformConstantStratification < WVGeometryDoublyPeriodicStratifiedC
             % - Parameter path: path to a NetCDF file
             % - Parameter iTime: (optional) time index to initialize from (default 1)
             % - Parameter shouldReadOnly: (optional) open the returned NetCDFFile read-only (default true)
+            % - Parameter computationalBackend: runtime backend override, `"matlab"` (default) or `"compiled"`
             arguments (Input)
                 path char {mustBeFile}
                 options.iTime (1,1) double {mustBePositive} = 1
                 options.shouldReadOnly logical = true
+                options.computationalBackend (1,1) string {mustBeMember(options.computationalBackend,["matlab" "compiled"])} = "matlab"
             end
             arguments (Output)
                 wvt WVTransform
@@ -506,7 +572,7 @@ classdef WVTransformConstantStratification < WVGeometryDoublyPeriodicStratifiedC
             end
             ncfile = NetCDFFile(path,shouldReadOnly=options.shouldReadOnly);
             try
-                wvt = WVTransformConstantStratification.transformFromGroup(ncfile);
+                wvt = WVTransformConstantStratification.transformFromGroup(ncfile,computationalBackend=options.computationalBackend);
                 wvt.initFromNetCDFFile(ncfile,iTime=options.iTime,shouldDisplayInit=1);
                 wvt.initForcingFromNetCDFFile(ncfile);
             catch exception
@@ -521,17 +587,38 @@ classdef WVTransformConstantStratification < WVGeometryDoublyPeriodicStratifiedC
         end
 
 
-        function wvt = transformFromGroup(group)
+        function wvt = transformFromGroup(group,runtimeOptions)
             arguments (Input)
                 group NetCDFGroup {mustBeNonempty}
+                runtimeOptions.computationalBackend (1,1) string {mustBeMember(runtimeOptions.computationalBackend,["matlab" "compiled"])} = "matlab"
             end
             arguments (Output)
                 wvt WVTransform {mustBeNonempty}
             end  
-            [Lxy, Nxy, options] = WVTransformConstantStratification.requiredPropertiesForTransformFromGroup(group);
-            wvt = WVTransformConstantStratification(Lxy,Nxy,options{:});
+            [Lxyz, Nxyz, constructorOptions] = WVTransformConstantStratification.requiredPropertiesForTransformFromGroup(group);
+            wvt = WVTransformConstantStratification(Lxyz,Nxyz,constructorOptions{:},computationalBackend=runtimeOptions.computationalBackend);
         end
 
+    end
+
+    methods (Access=protected)
+        function backend = createCompiledBackend(self)
+            backend = WVCompiledConstantStratificationBackend.create(self);
+        end
+    end
+
+    methods (Access=private)
+        function [Fp,Fm,F0] = nonlinearFluxCompiled(self)
+            self.assertCompiledForcingSupported();
+            [Fp,Fm,F0] = self.compiledBackend.nonlinearFlux(self.Ap,self.Am,self.A0,self.t,self.t0);
+        end
+
+        function assertCompiledForcingSupported(self)
+            force = self.forcing;
+            if numel(force) ~= 1 || string(class(force(1))) ~= "WVNonlinearAdvection"
+                error("WaveVortexModel:CompiledBackendUnsupportedForcing","The compiled preview requires exactly the default WVNonlinearAdvection forcing. Use computationalBackend=""matlab"" for additional, removed, or replaced forcing.")
+            end
+        end
     end
 
 end

@@ -3,7 +3,7 @@ layout: default
 title: spectrumWithGgTransform
 parent: WVTransformConstantStratification
 grand_parent: Transforms
-nav_order: 250
+nav_order: 252
 mathjax: true
 ---
 

@@ -3,7 +3,7 @@ layout: default
 title: setGeostrophicModes
 parent: WVTransformConstantStratification
 grand_parent: Transforms
-nav_order: 235
+nav_order: 237
 mathjax: true
 ---
 

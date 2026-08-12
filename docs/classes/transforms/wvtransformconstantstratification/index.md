@@ -121,6 +121,8 @@ views are `Apt`, `Amt`, and `A0t`.
       + [`GMatrix`](/classes/transforms/wvtransformconstantstratification/gmatrix.html) Transformation matrix $$G$$ projecting G-grid values onto vertical modes; shape `[Nj Nz]`.
       + [`GinvMatrix`](/classes/transforms/wvtransformconstantstratification/ginvmatrix.html) Transformation matrix $$G^{-1}$$ reconstructing G-grid values from vertical modes; shape `[Nz Nj]`.
   + Transform configuration
+    + [`computationalBackend`](/classes/transforms/wvtransformconstantstratification/computationalbackend.html) Active nonlinear-flux implementation.
+    + [`computationalBackendMetadata`](/classes/transforms/wvtransformconstantstratification/computationalbackendmetadata.html) Identity, scope, and storage information for the active backend.
     + [`isHydrostatic`](/classes/transforms/wvtransformconstantstratification/ishydrostatic.html) Whether the transform uses the hydrostatic approximation.
     + [`shouldAntialias`](/classes/transforms/wvtransformconstantstratification/shouldantialias.html) Whether the spectral grid excludes modes that alias quadratic products.
 + Initialize the flow

@@ -3,7 +3,7 @@ layout: default
 title: maskForNyquistModes
 parent: WVTransformConstantStratification
 grand_parent: Transforms
-nav_order: 184
+nav_order: 186
 mathjax: true
 ---
 
