@@ -5,6 +5,10 @@
 #include "WVFFTWPlusPlusConvolution.hpp"
 #endif
 
+#if defined(WV_ISSUE154_HAS_PHASE_SHIFT)
+#include "WVFFTWPhaseShiftConvolution.hpp"
+#endif
+
 #include <algorithm>
 #include <chrono>
 #include <cmath>
@@ -79,9 +83,12 @@ Options parseOptions(int argc, char** argv) {
     if (const auto found = values.find("expected-openmp-runtime"); found != values.end()) result.expectedOpenMPRuntime = found->second;
     if (result.threads == 0 || result.threads > 16) fail("threads must lie in [1,16].");
     if (result.samples == 0) fail("samples must be positive.");
-    if (result.variant != "explicit" && result.variant != "fftwpp-implicit" && result.variant != "fftwpp-hybrid") fail("Unknown variant.");
+    if (result.variant != "explicit" && result.variant != "fftwpp-implicit" && result.variant != "fftwpp-hybrid" && result.variant != "phase-shift-tensor4") fail("Unknown variant.");
 #if !defined(WV_ISSUE128_HAS_FFTWPP)
-    if (result.variant != "explicit") fail("This executable contains only the pthread explicit control.");
+    if (result.variant == "fftwpp-implicit" || result.variant == "fftwpp-hybrid") fail("This executable does not contain FFTW++.");
+#endif
+#if !defined(WV_ISSUE154_HAS_PHASE_SHIFT)
+    if (result.variant == "phase-shift-tensor4") fail("This executable does not contain exact phase shifting.");
 #endif
     return result;
 }
@@ -247,6 +254,9 @@ int main(int argc, char** argv) {
 #if defined(WV_ISSUE128_HAS_FFTWPP)
         if (options.variant != "explicit") factory = std::make_unique<WVFFTWPlusPlusConvolutionFactory>(options.variant,options.threads);
 #endif
+#if defined(WV_ISSUE154_HAS_PHASE_SHIFT)
+        if (options.variant == "phase-shift-tensor4") factory = std::make_unique<WVFFTWPhaseShiftConvolutionFactory>(options.threads);
+#endif
         std::unique_ptr<WVTransformConstantStratificationKernel> kernel;
         requireStatus(WVTransformConstantStratificationKernel::create(configuration(options),std::move(engine),kernel,std::move(factory)),"kernel creation");
         kernel->setStageInstrumentation(true);
@@ -287,6 +297,10 @@ int main(int argc, char** argv) {
         const auto cleanupSeconds = secondsSince(cleanupStart);
         const auto lifetime = WVFFTWEngine::lifetimeMetrics();
         if (lifetime.activePlans != 0 || lifetime.outstandingPlanningBytes != 0 || lifetime.totalPlansCreated != lifetime.totalPlansDestroyed) fail("FFTW lifecycle check failed.");
+#if defined(WV_ISSUE154_HAS_PHASE_SHIFT)
+        const auto phaseShiftLifetime = WVFFTWPhaseShiftConvolutionFactory::lifetimeMetrics();
+        if (phaseShiftLifetime.activePlans != 0 || phaseShiftLifetime.totalPlansCreated != phaseShiftLifetime.totalPlansDestroyed) fail("Phase-shift FFTW lifecycle check failed.");
+#endif
         writeResult(options,identity,constructionSeconds,firstSeconds,samples,correctnessError,wroteReference,kernelMetrics,persistentBytes,count,convolutionMetrics,cleanupSeconds,lifetime);
         return 0;
     } catch (const std::exception& exception) {
