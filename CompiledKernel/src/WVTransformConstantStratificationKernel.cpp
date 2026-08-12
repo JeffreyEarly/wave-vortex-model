@@ -409,7 +409,11 @@ WVKernelStatus WVTransformConstantStratificationKernel::create(
         candidate->engineIdentifier_ = engine->identifier();
         candidate->engineLibraryIdentity_ = engine->libraryIdentity();
         candidate->engine_ = std::move(engine);
+#if WV_KERNEL_ISSUE130_VARIANT == 2
+        const std::size_t halfChannels = configuration.isHydrostatic ? 3 : 4;
+#else
         constexpr std::size_t halfChannels = 4;
+#endif
         const auto halfElements = checkedProduct(checkedProduct(candidate->descriptor_.halfSpectrumMappings().NxHalf, configuration.Ny), checkedProduct(configuration.Nz, halfChannels));
         const auto realChannels = WV_KERNEL_ISSUE130_VARIANT >= 4 ? 5 : (WV_KERNEL_ISSUE130_VARIANT >= 3 ? 6 : (configuration.isHydrostatic ? 8 : 9));
         const auto realElements = checkedProduct(candidate->descriptor_.spatialShape().elementCount(),realChannels);
@@ -643,6 +647,9 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformUVWEtaToWaveVor
 }
 
 WVKernelStatus WVTransformConstantStratificationKernel::transformWaveVortexToUVWEta(const WVState& state, WVRealFieldBundleView& fields) {
+#if WV_KERNEL_ISSUE130_VARIANT == 2
+    if (descriptor_.configuration().isHydrostatic) return {WVKernelStatusCode::unsupportedOperation,"The hydrostatic velocity-only screening kernel reserves 3H and supports nonlinearFlux rather than the four-field diagnostic inverse."};
+#endif
     auto status = validateBundle(fields, descriptor_.spatialShape(), 4, "Reconstructed fields"); if (!status) return status;
     const auto spectral = descriptor_.spectralShape();
     const WVKernelStatus inputStatuses[] = {validateSpectral(state.coefficients.Ap, spectral, "Ap"), validateSpectral(state.coefficients.Am, spectral, "Am"), validateSpectral(state.coefficients.A0, spectral, "A0")};
@@ -734,6 +741,9 @@ WVKernelStatus transformAllDerivatives(WVTransformConstantStratificationKernel& 
 } // namespace
 
 WVKernelStatus WVTransformConstantStratificationKernel::transformToSpatialDomainWithFAllDerivatives(const WVComplexConstView& Apm, const WVComplexConstView& A0, WVRealFieldBundleView& fields) {
+#if WV_KERNEL_ISSUE130_VARIANT == 2
+    if (descriptor_.configuration().isHydrostatic) return {WVKernelStatusCode::unsupportedOperation,"The hydrostatic velocity-only screening kernel reserves 3H and does not run the four-output F diagnostic transform."};
+#endif
     auto initial = transformAllDerivatives(*this, true, Apm, A0, fields); if (initial.code != WVKernelStatusCode::unsupportedOperation) return initial;
     ExecutionGuard guard(executing_); if (!guard.entered()) return {WVKernelStatusCode::reentrantExecution, "Kernel operations are not reentrant."};
     const auto& c = descriptor_.configuration(); const auto& mapping = descriptor_.halfSpectrumMappings(); const auto& modes = descriptor_.verticalModes();
@@ -759,6 +769,9 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformToSpatialDomain
 }
 
 WVKernelStatus WVTransformConstantStratificationKernel::transformToSpatialDomainWithGAllDerivatives(const WVComplexConstView& Apm, const WVComplexConstView& A0, WVRealFieldBundleView& fields) {
+#if WV_KERNEL_ISSUE130_VARIANT == 2
+    if (descriptor_.configuration().isHydrostatic) return {WVKernelStatusCode::unsupportedOperation,"The hydrostatic velocity-only screening kernel reserves 3H and does not run the four-output G diagnostic transform."};
+#endif
     auto initial = transformAllDerivatives(*this, false, Apm, A0, fields); if (initial.code != WVKernelStatusCode::unsupportedOperation) return initial;
     ExecutionGuard guard(executing_); if (!guard.entered()) return {WVKernelStatusCode::reentrantExecution, "Kernel operations are not reentrant."};
     const auto& c = descriptor_.configuration(); const auto& mapping = descriptor_.halfSpectrumMappings(); const auto& modes = descriptor_.verticalModes();
