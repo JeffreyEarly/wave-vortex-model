@@ -23,7 +23,7 @@ writeClassDocumentation("WVModel",buildFolder,"classes",classFolderName,"",class
 parentName = "Forcing";
 websiteFolder = "classes/forcing";
 writeClassDocumentation("WVForcing",buildFolder,websiteFolder,parentName,"",parentName,1,{'handle','CAAnnotatedClass','matlab.mixin.Heterogeneous'},string.empty(0,1));
-classes = ["WVNonlinearAdvection" "WVBottomFrictionLinear" "WVBottomFrictionQuadratic" "WVFixedAmplitudeForcing" "WVBetaPlanePVAdvection" "WVPseudoTopographicWaveGeneration"];
+classes = ["WVNonlinearAdvection" "WVBottomFrictionLinear" "WVBottomFrictionQuadratic" "WVFixedAmplitudeForcing" "WVNarrowBandGeostrophicForcing" "WVBetaPlanePVAdvection" "WVPseudoTopographicWaveGeneration"];
 writeClassGroup(classes,buildFolder,websiteFolder,parentName,classFolderName,parentName,2,{'handle','WVForcing','CAAnnotatedClass','matlab.mixin.Heterogeneous'},string.empty(0,1));
 
 parentName = "Closures";

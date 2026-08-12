@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- Added persistent, resolution-convertible `WVNarrowBandGeostrophicForcing` and retained the former fixed-amplitude helper as a silent deprecated 4.x delegate.
 - Retired the experimental FFTW backend; WaveVortexModel now uses MATLAB's builtin transforms and has no FFTWTransforms dependency.
 - Removed the obsolete expanded mappings `dftPrimaryIndex`, `dftConjugateIndex`, `wvConjugateIndex`, `indicesFromWVGridToFFTWGrid`, and `expandedLegacyMappings`; `indicesFromWVGridToDFTGrid` remains available explicitly.
 - Updated Fourier-at-position reconstruction to use compact `WVFourierStorageLayout` mappings.

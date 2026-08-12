@@ -84,7 +84,7 @@ In practice you can initialize the flow in any way you want with any arbitrary s
 + Configure forcing
   + [`setWaveForcingCoefficients`](/classes/forcing/wvfixedamplitudeforcing/setwaveforcingcoefficients.html) Select positive- and negative-frequency coefficients to fix.
   + [`setGeostrophicForcingCoefficients`](/classes/forcing/wvfixedamplitudeforcing/setgeostrophicforcingcoefficients.html) Select zero-frequency coefficients to fix.
-  + [`setNarrowBandGeostrophicForcing`](/classes/forcing/wvfixedamplitudeforcing/setnarrowbandgeostrophicforcing.html) Initialize and fix a narrow band of geostrophic coefficients.
+  + [`setNarrowBandGeostrophicForcing`](/classes/forcing/wvfixedamplitudeforcing/setnarrowbandgeostrophicforcing.html) Deprecated 4.x helper for narrow-band geostrophic forcing.
 
 
 ## Developer Topics
