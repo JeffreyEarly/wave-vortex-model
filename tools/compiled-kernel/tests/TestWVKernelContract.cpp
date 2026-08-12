@@ -239,7 +239,11 @@ void testNonlinearFlux(bool hydrostatic) {
 #endif
     const auto halfFieldBytes = (config.Nx / 2 + 1) * config.Ny * config.Nz * sizeof(WVComplex64);
     const auto realFieldBytes = config.Nx * config.Ny * config.Nz * sizeof(double);
+#if WV_KERNEL_ISSUE130_VARIANT == 2
+    require(kernel->metrics().halfSpectrumScratchCapacityBytes == (hydrostatic ? 3 : 4) * halfFieldBytes,"velocity-only half-spectrum scratch capacity is not 3H hydrostatic / 4H nonhydrostatic");
+#else
     require(kernel->metrics().halfSpectrumScratchCapacityBytes == 4 * halfFieldBytes,"unexpected half-spectrum scratch capacity");
+#endif
 #if WV_KERNEL_ISSUE130_VARIANT == 4
     require(kernel->metrics().realScratchCapacityBytes == 5 * realFieldBytes,"single-output scratch is not 4H+5R");
     require(kernel->phaseReservationBytes() == halfFieldBytes,"single-output phase reservation is not one H region");
@@ -284,6 +288,12 @@ void testNonlinearFlux(bool hydrostatic) {
     WVState state{0.25,0.0,{{Ap.data(),spectral},{Am.data(),spectral},{A0.data(),spectral}}};
     WVRealFieldBundleView output{reconstructed.data(),{spatial.first,spatial.second,spatial.third,4}};
     status = kernel->transformWaveVortexToUVWEta(state,output);
+#if WV_KERNEL_ISSUE130_VARIANT == 2
+    if (hydrostatic) {
+        require(status.code == WVKernelStatusCode::unsupportedOperation,"hydrostatic velocity-only four-field inverse did not preserve its 3H bound");
+        return;
+    }
+#endif
     require(static_cast<bool>(status), "fused inverse transform failed");
 
     WVMutableCoefficients repeated{{Ap2.data(),spectral},{Am2.data(),spectral},{A02.data(),spectral}};
