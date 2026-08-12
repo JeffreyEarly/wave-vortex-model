@@ -33,6 +33,14 @@ The detailed MATLAB runner artifact is implementation-specific. It retains const
 
 Public results use the language-neutral schema in `schemas/published-benchmark-v1.schema.json`. One published dataset represents one suite, implementation, backend, platform, and run. It contains the timing samples, median runtime, correctness result, and process-memory measurements needed by the benchmark website without requiring consumers to understand MATLAB runner internals. Missing implementation coverage is recorded as `unavailable`; it is never treated as failed or zero performance.
 
+The source-only compiled preview has a stricter paired runner:
+
+```matlab
+result = runCompiledPreviewBenchmark
+```
+
+Each MATLAB/compiled backend, case, and repeat runs in its own fresh MATLAB process. The raw artifact records active-backend identity, native FFTW identity, exact retained application storage, isolated operation RSS, lifecycle balance, and the availability decision. `publishedWaveVortexBenchmarksFromCompiledPreviewArtifact` converts that one paired artifact into comparable MATLAB and C++ `published-benchmark-v1` datasets. Memory is reported but does not gate preview availability.
+
 Normalize a MATLAB artifact with explicit platform identity and repository-relative provenance:
 
 ```matlab

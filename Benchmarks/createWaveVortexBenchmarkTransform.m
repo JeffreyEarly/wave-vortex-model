@@ -4,15 +4,16 @@ arguments
     benchmarkCase (1,1) struct
     backendId (1,1) string = "builtin"
 end
-if backendId ~= "builtin"
-    error("WaveVortexBenchmark:UnsupportedBackend","Backend %s is not registered for transform construction.",backendId);
+if backendId == "compiled" && ~startsWith(string(benchmarkCase.transformId),"constant-")
+    error("WaveVortexBenchmark:UnsupportedBackend","The compiled preview supports only constant-stratification benchmark cases.");
 end
+computationalBackend = conditional(backendId=="compiled","compiled","matlab");
 
 switch benchmarkCase.transformId
     case "constant-nonhydrostatic"
-        wvt = WVTransformConstantStratification(benchmarkCase.Lxyz,benchmarkCase.Nxyz,isHydrostatic=false,shouldAntialias=benchmarkCase.shouldAntialias);
+        wvt = WVTransformConstantStratification(benchmarkCase.Lxyz,benchmarkCase.Nxyz,isHydrostatic=false,shouldAntialias=benchmarkCase.shouldAntialias,computationalBackend=computationalBackend);
     case "constant-hydrostatic"
-        wvt = WVTransformConstantStratification(benchmarkCase.Lxyz,benchmarkCase.Nxyz,isHydrostatic=true,shouldAntialias=benchmarkCase.shouldAntialias);
+        wvt = WVTransformConstantStratification(benchmarkCase.Lxyz,benchmarkCase.Nxyz,isHydrostatic=true,shouldAntialias=benchmarkCase.shouldAntialias,computationalBackend=computationalBackend);
     case "hydrostatic"
         wvt = WVTransformHydrostatic(benchmarkCase.Lxyz,benchmarkCase.Nxyz,N2=@benchmarkN2,shouldAntialias=benchmarkCase.shouldAntialias);
     case "boussinesq"
@@ -23,6 +24,14 @@ switch benchmarkCase.transformId
         wvt = WVTransformBarotropicQG(benchmarkCase.Lxyz,benchmarkCase.Nxyz,shouldAntialias=benchmarkCase.shouldAntialias);
     otherwise
         error("WaveVortexBenchmark:UnknownTransform","Unknown transform ID %s.",benchmarkCase.transformId);
+end
+
+function value = conditional(condition,trueValue,falseValue)
+if condition
+    value = trueValue;
+else
+    value = falseValue;
+end
 end
 end
 
