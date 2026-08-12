@@ -51,6 +51,7 @@ The supplied forcing and closure classes are:
 - `WVVerticalDamping`
 - `WVVerticalDiffusivity`
 - `WVFixedAmplitudeForcing`
+- `WVNarrowBandGeostrophicForcing`
 - `WVBottomFrictionLinear`
 - `WVBottomFrictionQuadratic`
 - `WVBetaPlanePVAdvection`

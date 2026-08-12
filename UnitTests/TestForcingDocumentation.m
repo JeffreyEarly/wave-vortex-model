@@ -14,6 +14,7 @@ classdef TestForcingDocumentation < matlab.unittest.TestCase
             expectations = {
                 "wvnonlinearadvection", false, "self = WVNonlinearAdvection(wvt)", ["installs this forcing by default" "using linear evolution"]
                 "wvfixedamplitudeforcing", false, "self = WVFixedAmplitudeForcing(wvt,options)", ["`Apbar`" "`A0_indices`" "10^{-6}"]
+                "wvnarrowbandgeostrophicforcing", false, "self = WVNarrowBandGeostrophicForcing(wvt,options)", ["`modelSpectrum`" "`initialPV`" "consume random numbers"]
                 "wvbottomfrictionlinear", false, "self = WVBottomFrictionLinear(wvt,options)", ["`r`" "inverse seconds" "200-day"]
                 "wvbottomfrictionquadratic", false, "self = WVBottomFrictionQuadratic(wvt,options)", ["`Cd`" "dimensionless" "4000"]
                 "wvadaptivedamping", true, "self = WVAdaptiveDamping(wvt)", ["wvt.uvMax*damp" "k_no_damp" "significant damping"]
@@ -65,6 +66,7 @@ classdef TestForcingDocumentation < matlab.unittest.TestCase
             classes = [
                 "WVNonlinearAdvection"
                 "WVFixedAmplitudeForcing"
+                "WVNarrowBandGeostrophicForcing"
                 "WVBottomFrictionLinear"
                 "WVBottomFrictionQuadratic"
                 "WVAdaptiveDamping"
@@ -136,7 +138,8 @@ classdef TestForcingDocumentation < matlab.unittest.TestCase
                 "`r`"
                 "narrow-band"
                 "full-spectrum"
-                "github.com/JeffreyEarly/wave-vortex-model/issues/2"
+                "WVNarrowBandGeostrophicForcing"
+                "Deprecated 4.x helper"
                 ];
             for token = required'
                 testCase.verifySubstring(page,token);

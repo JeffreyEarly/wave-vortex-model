@@ -52,6 +52,23 @@ model.integrateToTime(wvt.inertialPeriod);
 
 Prescribed forcings and closures use the same registration mechanism. For example, `WVFixedAmplitudeForcing` can hold selected wave-vortex coefficients at specified values, while traditional horizontal and vertical damping apply fixed viscosity or diffusivity. The class reference documents each forcing's supported geometry, configuration, and diagnostic scales.
 
+## Maintaining narrow-band geostrophic flow
+
+`WVNarrowBandGeostrophicForcing` combines a geostrophic initial condition with a fixed-amplitude constraint. It selects the radial band centered at `k_f` and vertical mode `j_f`; those coefficients continue to enter the nonlinear dynamics, but their tendencies are zeroed and their saved `A0bar` values are restored after each step.
+
+```matlab
+force = WVNarrowBandGeostrophicForcing(wvt,k_r=2*wvt.dk,k_f=8*wvt.dk,j_f=1,u_rms=0.1);
+wvt.addForcing(force);
+model_spectrum2D = force.modelSpectrum;
+r = force.r;
+```
+
+The default `initialPV="narrow-band"` consumes the current global random stream and replaces `wvt.A0` with a random draw restricted to the selected band. Use `"full-spectrum"` to keep the complete random spectrum or `"none"` to leave `wvt.A0` unchanged and constrain the current band values. Supplying `r` makes it authoritative and derives the effective `k_r`; otherwise the supplied or default `k_r` determines the effective `r`. Both effective values are available as read-only properties. `k_r` and `k_f` use radians per meter, `r` uses inverse seconds, `u_rms` uses meters per second, and `modelSpectrum(k)` returns the configured radial spectrum in cubic meters per square second.
+
+The selected `A0_indices` and `A0bar`, forcing name, and effective scalar configuration are saved with transform NetCDF state. Restoration reconstructs the concrete subclass and its diagnostic spectrum without another random draw or coefficient initialization. Resolution conversion transfers the fixed-amplitude selection to common modes without initializing the target transform.
+
+`WVFixedAmplitudeForcing.setNarrowBandGeostrophicForcing` remains a deprecated, silent WaveVortexModel 4.x compatibility entry point. New code should construct `WVNarrowBandGeostrophicForcing` directly.
+
 
 ## The equations of motion
 

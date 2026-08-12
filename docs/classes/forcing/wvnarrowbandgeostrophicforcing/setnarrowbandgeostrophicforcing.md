@@ -1,9 +1,9 @@
 ---
 layout: default
 title: setNarrowBandGeostrophicForcing
-parent: WVFixedAmplitudeForcing
+parent: WVNarrowBandGeostrophicForcing
 grand_parent: Forcing
-nav_order: 10
+nav_order: 16
 mathjax: true
 ---
 

@@ -20,5 +20,6 @@ All forcing classes derive from [`WVForcing`](/classes/forcing/wvforcing/). New 
 | [`WVBottomFrictionLinear`](/classes/forcing/wvbottomfrictionlinear/) | Linear drag at the bottom boundary |
 | [`WVBottomFrictionQuadratic`](/classes/forcing/wvbottomfrictionquadratic/) | Quadratic drag at the bottom boundary |
 | [`WVFixedAmplitudeForcing`](/classes/forcing/wvfixedamplitudeforcing/) | Hold selected `Ap`, `Am`, or `A0` coefficients fixed |
+| [`WVNarrowBandGeostrophicForcing`](/classes/forcing/wvnarrowbandgeostrophicforcing/) | Initialize and hold a radial band of geostrophic `A0` coefficients |
 | [`WVBetaPlanePVAdvection`](/classes/forcing/wvbetaplanepvadvection/) | Add the $$-\beta v_g$$ tendency to balanced QGPV |
 | [`WVPseudoTopographicWaveGeneration`](/classes/forcing/wvpseudotopographicwavegeneration/) | Project prescribed bottom velocity onto internal-wave modes |
