@@ -7,6 +7,10 @@ arguments
     options.shouldBuild (1,1) logical = true
     options.processCount (1,1) double {mustBeInteger,mustBePositive} = 3
     options.threadCount (1,1) double {mustBeInteger,mustBePositive} = 18
+    options.caseIds (1,:) string = strings(1,0)
+    options.warmupCount (1,1) double {mustBeInteger,mustBeNonnegative} = 2
+    options.mediumSampleCount (1,1) double {mustBeInteger,mustBePositive} = 7
+    options.largeSampleCount (1,1) double {mustBeInteger,mustBePositive} = 3
     options.samplingIntervalSeconds (1,1) double {mustBePositive} = 0.02
     options.plateauSeconds (1,1) double {mustBePositive} = 0.20
 end
@@ -40,9 +44,14 @@ if sourceDirty
 end
 suite = waveVortexBenchmarkSuites("core-v1");
 cases = suite.cases;
+if ~isempty(options.caseIds)
+    unknown = setdiff(options.caseIds,string({cases.id}));
+    if ~isempty(unknown), error("WaveVortexModel:Issue130UnknownCase","Unknown core-v1 case: %s",join(unknown,", ")); end
+    cases = cases(ismember(string({cases.id}),options.caseIds));
+end
 for iCase = 1:numel(cases)
-    cases(iCase).warmupCount = 2;
-    cases(iCase).sampleCount = conditional(cases(iCase).Nxyz(1)>=512,3,7);
+    cases(iCase).warmupCount = options.warmupCount;
+    cases(iCase).sampleCount = conditional(cases(iCase).Nxyz(1)>=512,options.largeSampleCount,options.mediumSampleCount);
 end
 runRoot = string(tempname);
 mkdir(runRoot);
@@ -77,7 +86,7 @@ end
 
 comparisons = aggregateComparisons(workerRuns,cases);
 decision = adoptionDecision(comparisons);
-results = struct("schemaVersion","1.0.0","status","complete","generatedAtUTC",utcTimestamp,"source",struct("repository","JeffreyEarly/wave-vortex-model","commit",sourceCommit,"tree",sourceTree,"isDirty",sourceDirty,"baselineCommit","be0f78995c49a2bfe4c43d75827856e3812ac278","files",sourceFiles(repositoryRoot)),"environment",environmentRecord(provider,options),"configuration",struct("suite","core-v1","processCount",options.processCount,"warmupCount",2,"mediumSampleCount",7,"largeSampleCount",3,"correctnessTolerance",1e-12,"localGate",0.05,"architecturalGate",0.10,"maximumOtherMetricRegression",0.03,"executionOrder","rotated separate fresh-process pairs"),"variants",variants,"workerRuns",workerRuns,"comparisons",comparisons,"decision",decision);
+results = struct("schemaVersion","1.0.0","status","complete","generatedAtUTC",utcTimestamp,"source",struct("repository","JeffreyEarly/wave-vortex-model","commit",sourceCommit,"tree",sourceTree,"isDirty",sourceDirty,"baselineCommit","be0f78995c49a2bfe4c43d75827856e3812ac278","files",sourceFiles(repositoryRoot)),"environment",environmentRecord(provider,options),"configuration",struct("suite","core-v1","caseIds",string({cases.id}),"processCount",options.processCount,"warmupCount",options.warmupCount,"mediumSampleCount",options.mediumSampleCount,"largeSampleCount",options.largeSampleCount,"correctnessTolerance",1e-12,"localGate",0.05,"architecturalGate",0.10,"maximumOtherMetricRegression",0.03,"executionOrder","rotated separate fresh-process pairs"),"variants",variants,"workerRuns",workerRuns,"comparisons",comparisons,"decision",decision);
 if options.outputDirectory == ""
     options.outputDirectory = fullfile(repositoryRoot,"Benchmarks","results","experiments","issue130",replace(utcTimestamp,["-" ":" "." "T" "Z"],["" "" "" "T" "Z"])+"-maca64-r"+lower(string(version("-release"))));
 end
