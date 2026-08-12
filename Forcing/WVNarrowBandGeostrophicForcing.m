@@ -215,9 +215,9 @@ classdef WVNarrowBandGeostrophicForcing < WVFixedAmplitudeForcing
 
         function modelSpectrum = get.modelSpectrum(self)
             [surfaceMag,~,~,~] = WVNarrowBandGeostrophicForcing.scalingFactors(self.wvt,self.j_f);
-            u_rms = surfaceMag*self.u_rms;
+            surfaceU_rms = surfaceMag*self.u_rms;
             m = 3/2;
-            kappa_epsilon = 0.5*u_rms^2/(((3*m+5)/(2*m+2))*self.k_r^(-2/3)-self.k_f^(-2/3));
+            kappa_epsilon = 0.5*surfaceU_rms^2/(((3*m+5)/(2*m+2))*self.k_r^(-2/3)-self.k_f^(-2/3));
             model_viscous = @(k) kappa_epsilon*self.k_r^(-5/3-m)*k.^m;
             model_inverse = @(k) kappa_epsilon*k.^(-5/3);
             model_forward = @(k) kappa_epsilon*self.k_f^(4/3)*k.^(-3);
