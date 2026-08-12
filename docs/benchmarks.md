@@ -32,7 +32,21 @@ The representative comparison uses the nonhydrostatic constant-stratification ca
 The source-only compiled preview is an explicit opt-in for ordinary constant-stratification nonlinear flux. MATLAB remains the default. Availability, speed, numerical error, exact retained application storage, and isolated operation memory are shown together because the preview intentionally prioritizes a substantial speed gain while its memory use remains a target for future refinement.
 
 <!-- BENCHMARKS:COMPILED_PREVIEW:START -->
-No approved compiled-preview result has been published yet.
+**PREVIEW-AVAILABLE.** Donut (Apple M5 Max); Apple Clang + FFTW 21.0.0; provider `native-fftw`. Memory ratios are descriptive and do not gate preview availability.
+
+<table>
+  <thead>
+    <tr><th scope="col">Case</th><th scope="col">MATLAB (ms)</th><th scope="col">Compiled (ms)</th><th scope="col">Speedup</th><th scope="col">Exact retained ratio</th><th scope="col">Operation RSS ratio</th><th scope="col">Relative error</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Constant hydrostatic 256×256×65</td><td>96.716</td><td>57.723</td><td>1.676x</td><td>1.922</td><td>0.160</td><td>8.855e-15</td></tr>
+    <tr><td>Constant nonhydrostatic 256×256×65</td><td>113.332</td><td>66.681</td><td>1.700x</td><td>1.922</td><td>0.127</td><td>8.034e-15</td></tr>
+    <tr><td>Constant hydrostatic 512×512×129</td><td>692.773</td><td>392.815</td><td>1.764x</td><td>1.916</td><td>0.013</td><td>2.298e-14</td></tr>
+    <tr><td>Constant nonhydrostatic 512×512×129</td><td>868.107</td><td>526.656</td><td>1.648x</td><td>1.916</td><td>0.068</td><td>1.568e-14</td></tr>
+  </tbody>
+</table>
+
+Supported: constant-stratification hydrostatic and nonhydrostatic models with the default nonlinear-advection forcing. Unavailable: variable stratification, QG transforms, additional forcing, and the explicit-antialias forcing workflow.
 <!-- BENCHMARKS:COMPILED_PREVIEW:END -->
 
 ## Scaling with model size
@@ -497,7 +511,8 @@ Processor, memory, operating-system, toolchain, and thread information accompany
     <tr><th scope="col">Implementation</th><th scope="col">Platform</th><th scope="col">Processor</th><th scope="col">Physical memory</th><th scope="col">OS / architecture</th><th scope="col">Toolchain</th><th scope="col">Threads</th></tr>
   </thead>
   <tbody>
-    <tr><td>WaveVortexModel MATLAB 4.2.1 (builtin)</td><td>Donut (Apple M5 Max)</td><td>Apple M5 Max</td><td>48 GiB</td><td>Darwin 25.5.0 Darwin Kernel Version 25.5.0: Tue Jun  9 22:28:34 PDT 2026; root:xnu-12377.121.10~1/RELEASE_ARM64_T6050 arm64 / maca64</td><td>MATLAB 26.1.0.3312084 (R2026a) Update 4</td><td>18</td></tr>
+    <tr><td>WaveVortexModel MATLAB unreleased-preview (builtin)</td><td>Donut (Apple M5 Max)</td><td>Apple M5 Max</td><td>48 GiB</td><td>Darwin 25.5.0 Darwin Kernel Version 25.5.0: Tue Jun  9 22:28:34 PDT 2026; root:xnu-12377.121.10~1/RELEASE_ARM64_T6050 arm64 / maca64</td><td>MATLAB 26.1.0.3312084 (R2026a) Update 4</td><td>18</td></tr>
+    <tr><td>WaveVortexModel compiled preview unreleased-preview (native-fftw)</td><td>Donut (Apple M5 Max)</td><td>Apple M5 Max</td><td>48 GiB</td><td>Darwin 25.5.0 Darwin Kernel Version 25.5.0: Tue Jun  9 22:28:34 PDT 2026; root:xnu-12377.121.10~1/RELEASE_ARM64_T6050 arm64 / maca64</td><td>Apple Clang + FFTW 21.0.0</td><td>18</td></tr>
     <tr><td>WaveVortexModel MATLAB 4.2.1 (builtin)</td><td>Lyra (Apple M4 Max)</td><td>Apple M4 Max</td><td>128 GiB</td><td>Darwin 25.5.0 Darwin Kernel Version 25.5.0: Tue Jun  9 22:28:34 PDT 2026; root:xnu-12377.121.10~1/RELEASE_ARM64_T6041 arm64 / maca64</td><td>MATLAB 25.2.0.3150157 (R2025b) Update 4</td><td>16</td></tr>
     <tr><td>WaveVortexModel MATLAB 4.2.1 (builtin)</td><td>Matilda (Apple M1 Max)</td><td>Apple M1 Max</td><td>64 GiB</td><td>Darwin 25.5.0 Darwin Kernel Version 25.5.0: Tue Jun  9 22:18:58 PDT 2026; root:xnu-12377.121.10~1/RELEASE_ARM64_T6000 arm64 / maca64</td><td>MATLAB 26.1.0.3312084 (R2026a) Update 4</td><td>10</td></tr>
   </tbody>
@@ -536,6 +551,8 @@ The normalized files use the language-neutral `published-benchmark-v1` contract.
     <tr><th scope="col">Dataset</th><th scope="col">Implementation</th><th scope="col">Platform</th><th scope="col">Suite</th><th scope="col">Collected</th><th scope="col">Normalized</th><th scope="col">Raw artifact</th></tr>
   </thead>
   <tbody>
+    <tr><td>core-v1--cpp-native-fftw--m5-max--20260812T195257Z</td><td>WaveVortexModel compiled preview unreleased-preview</td><td>Donut (Apple M5 Max)</td><td>core-v1</td><td>2026-08-12T19:52:57Z</td><td><a href="/benchmarks/data/core-v1--cpp-native-fftw--m5-max--20260812T195257Z.json">Published JSON</a></td><td><a href="/benchmarks/raw/core-v1--cpp-native-fftw--m5-max--20260812T195257Z.json">Raw JSON</a></td></tr>
+    <tr><td>core-v1--matlab-builtin--m5-max--20260812T195257Z</td><td>WaveVortexModel MATLAB unreleased-preview</td><td>Donut (Apple M5 Max)</td><td>core-v1</td><td>2026-08-12T19:52:57Z</td><td><a href="/benchmarks/data/core-v1--matlab-builtin--m5-max--20260812T195257Z.json">Published JSON</a></td><td><a href="/benchmarks/raw/core-v1--matlab-builtin--m5-max--20260812T195257Z.json">Raw JSON</a></td></tr>
     <tr><td>scaling-large-v1--matlab-builtin--lyra--20260811T213524Z</td><td>WaveVortexModel MATLAB 4.2.1</td><td>Lyra (Apple M4 Max)</td><td>scaling-large-v1</td><td>2026-08-11T21:35:24Z</td><td><a href="/benchmarks/data/scaling-large-v1--matlab-builtin--lyra--20260811T213524Z.json">Published JSON</a></td><td><a href="/benchmarks/raw/scaling-large-v1--matlab-builtin--lyra--20260811T213524Z.json">Raw JSON</a></td></tr>
     <tr><td>scaling-large-v1--matlab-builtin--m5-max--20260812T023122Z</td><td>WaveVortexModel MATLAB 4.2.1</td><td>Donut (Apple M5 Max)</td><td>scaling-large-v1</td><td>2026-08-12T02:31:22Z</td><td><a href="/benchmarks/data/scaling-large-v1--matlab-builtin--m5-max--20260812T023122Z.json">Published JSON</a></td><td><a href="/benchmarks/raw/scaling-large-v1--matlab-builtin--m5-max--20260812T023122Z.json">Raw JSON</a></td></tr>
     <tr><td>scaling-standard-v1--matlab-builtin--lyra--20260811T204835Z</td><td>WaveVortexModel MATLAB 4.2.1</td><td>Lyra (Apple M4 Max)</td><td>scaling-standard-v1</td><td>2026-08-11T20:48:35Z</td><td><a href="/benchmarks/data/scaling-standard-v1--matlab-builtin--lyra--20260811T204835Z.json">Published JSON</a></td><td><a href="/benchmarks/raw/scaling-standard-v1--matlab-builtin--lyra--20260811T204835Z.json">Raw JSON</a></td></tr>
