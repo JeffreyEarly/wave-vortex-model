@@ -1,6 +1,9 @@
 #include "mex.h"
 
 #include "WVFFTWEngine.hpp"
+#if defined(WV_KERNEL_HAS_FFTWPP) && WV_KERNEL_HAS_FFTWPP
+#include "WVFFTWPlusPlusConvolution.hpp"
+#endif
 #include "WaveVortexKernel/WVTransformConstantStratificationKernel.hpp"
 
 #include <cstdint>
@@ -213,6 +216,22 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
         plhs[0] = mxCreateNumericMatrix(1,1,mxUINT64_CLASS,mxREAL); *mxGetUint64s(plhs[0]) = handle;
         return;
     }
+#if defined(WV_KERNEL_HAS_FFTWPP) && WV_KERNEL_HAS_FFTWPP
+    if (command == "createConvolution") {
+        if (nrhs != 4 || nlhs != 1) fail("WaveVortexModel:CompiledKernelCommand","createConvolution requires configuration, thread count, and variant.");
+        const auto threads = static_cast<std::size_t>(mxGetScalar(prhs[2]));
+        std::unique_ptr<WVFFTEngine> engine;
+        requireStatus(WVFFTWEngine::create(threads,engine));
+        auto factory = std::make_unique<WVFFTWPlusPlusConvolutionFactory>(stringInput(prhs[3],"FFTW++ variant"),threads);
+        std::unique_ptr<WVTransformConstantStratificationKernel> value;
+        requireStatus(WVTransformConstantStratificationKernel::create(configuration(prhs[1]),std::move(engine),value,std::move(factory)));
+        const auto handle = nextHandle++;
+        kernels.emplace(handle,std::move(value));
+        if (kernels.size() == 1) { mexLock(); mexAtExit(cleanup); }
+        plhs[0] = mxCreateNumericMatrix(1,1,mxUINT64_CLASS,mxREAL); *mxGetUint64s(plhs[0]) = handle;
+        return;
+    }
+#endif
     if (command == "createInjectedFailure") {
         if (nrhs != 4 || nlhs > 1) fail("WaveVortexModel:CompiledKernelCommand","createInjectedFailure requires configuration, thread count, and failure mode.");
         const auto mode = stringInput(prhs[3],"Failure mode");
@@ -286,8 +305,8 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
     }
     if (command == "metrics") {
         if (nrhs != 2 || nlhs != 1) fail("WaveVortexModel:CompiledKernelCommand","metrics requires one handle.");
-        const char* names[] = {"engine","loadedLibrary","nonlinearFluxSchedule","phaseImplementation","coefficientStorageMode","coefficientArithmeticMode","inverseNormalizationPlacement","optimizationImplementation","coefficientWorkerCount","planMemoryAccounting","contractVersion","planCount","planBytes","descriptorBytes","scratchCapacityBytes","scratchHighWaterBytes","halfSpectrumScratchCapacityBytes","realScratchCapacityBytes","executionCount","horizontalExecutionCount","verticalExecutionCount","nonlinearFluxCallCount","nonlinearFluxPhaseEvaluationCount","phaseWorkspaceBytes","persistentBytes","stateInputBytes","fluxOutputBytes","knownMaximumLiveOwnedBytes","persistentFullHermitianBytes","gradientMaskBytes","Nx","Ny","Nz","Nj","Nkl","phaseSeconds","reconstructionSeconds","derivativeReconstructionSeconds","productSeconds","projectionSeconds","coefficientAssemblySeconds","derivativeCoefficientAssemblySeconds","coefficientProjectionSeconds"};
-        plhs[0] = mxCreateStructMatrix(1,1,43,names);
+        const char* names[] = {"engine","loadedLibrary","nonlinearFluxSchedule","phaseImplementation","coefficientStorageMode","coefficientArithmeticMode","inverseNormalizationPlacement","optimizationImplementation","coefficientWorkerCount","planMemoryAccounting","contractVersion","planCount","planBytes","descriptorBytes","scratchCapacityBytes","scratchHighWaterBytes","halfSpectrumScratchCapacityBytes","realScratchCapacityBytes","executionCount","horizontalExecutionCount","verticalExecutionCount","nonlinearFluxCallCount","nonlinearFluxPhaseEvaluationCount","phaseWorkspaceBytes","persistentBytes","stateInputBytes","fluxOutputBytes","knownMaximumLiveOwnedBytes","persistentFullHermitianBytes","gradientMaskBytes","Nx","Ny","Nz","Nj","Nkl","phaseSeconds","reconstructionSeconds","derivativeReconstructionSeconds","productSeconds","projectionSeconds","coefficientAssemblySeconds","derivativeCoefficientAssemblySeconds","coefficientProjectionSeconds","convolutionMappingSeconds","convolutionSeconds","convolutionRetainedSpectrumBytes","convolutionExactWorkBytes","convolutionPlanWrapperBytes","convolutionOpaquePlanBytes","convolutionPlanningSeconds","convolutionExecutionSeconds","convolutionMultiplierSeconds","convolutionExecutionCount","convolutionOuterOpenMPThreads","convolutionMaximumFFTWThreads","convolutionMaximumObservedMultiplierThreads","convolutionMaximumObservedOpenMPLevel","convolutionWorkerRegionsDisjoint","convolutionCenteredInnerLength","convolutionCenteredInputFactor","convolutionCenteredPaddedFactor","convolutionCenteredLogicalPadding","convolutionHermitianInnerLength","convolutionHermitianInputFactor","convolutionHermitianPaddedFactor","convolutionHermitianLogicalPadding"};
+        plhs[0] = mxCreateStructMatrix(1,1,66,names);
         const auto& metrics = value.metrics();
         const auto& configuration = value.descriptor().configuration();
         const auto spectralBytes = value.descriptor().spectralShape().elementCount() * sizeof(WVComplex64);
@@ -305,6 +324,11 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
         for (std::size_t i = 0; i < 25; ++i) mxSetField(plhs[0],0,names[i+10],mxCreateDoubleScalar(numbers[i]));
         const double stageSeconds[] = {metrics.phaseSeconds,metrics.reconstructionSeconds,metrics.derivativeReconstructionSeconds,metrics.productSeconds,metrics.projectionSeconds,metrics.coefficientAssemblySeconds,metrics.derivativeCoefficientAssemblySeconds,metrics.coefficientProjectionSeconds};
         for (std::size_t i = 0; i < 8; ++i) mxSetField(plhs[0],0,names[i+35],mxCreateDoubleScalar(stageSeconds[i]));
+        const auto convolution = value.horizontalConvolutionMetrics();
+        const double convolutionNumbers[] = {metrics.convolutionMappingSeconds,metrics.convolutionSeconds,static_cast<double>(convolution.retainedSpectrumBytes),static_cast<double>(convolution.exactWorkBytes),static_cast<double>(convolution.planWrapperLowerBoundBytes),static_cast<double>(convolution.opaquePlanBytes),convolution.planningSeconds,convolution.executionSeconds,convolution.multiplierSeconds,static_cast<double>(convolution.executionCount),static_cast<double>(convolution.outerOpenMPThreads),static_cast<double>(convolution.maximumFFTWThreads),static_cast<double>(convolution.maximumObservedMultiplierThreads),static_cast<double>(convolution.maximumObservedOpenMPLevel),convolution.workerRegionsDisjoint ? 1.0 : 0.0};
+        for (std::size_t i = 0; i < 15; ++i) mxSetField(plhs[0],0,names[i+43],mxCreateDoubleScalar(convolutionNumbers[i]));
+        const double convolutionSchedule[] = {static_cast<double>(convolution.centeredInnerLength),static_cast<double>(convolution.centeredInputFactor),static_cast<double>(convolution.centeredPaddedFactor),static_cast<double>(convolution.centeredLogicalPadding),static_cast<double>(convolution.hermitianInnerLength),static_cast<double>(convolution.hermitianInputFactor),static_cast<double>(convolution.hermitianPaddedFactor),static_cast<double>(convolution.hermitianLogicalPadding)};
+        for (std::size_t i = 0; i < 8; ++i) mxSetField(plhs[0],0,names[i+58],mxCreateDoubleScalar(convolutionSchedule[i]));
         return;
     }
     fail("WaveVortexModel:CompiledKernelCommand","Unknown compiled-kernel command.");

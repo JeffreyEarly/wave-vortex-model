@@ -289,12 +289,32 @@ void completeHermitianBoundaries(WVComplex64* half, const WVHalfSpectrumMappings
     }
 }
 
+std::size_t convolutionIndex(const WVHorizontalConvolutionGeometry& geometry, std::int64_t kMode, std::int64_t lMode, std::size_t z) {
+    const bool conjugated = kMode < 0;
+    const auto storedK = static_cast<std::size_t>(conjugated ? -kMode : kMode);
+    const auto storedL = conjugated ? -lMode : lMode;
+    const auto centeredL = static_cast<std::size_t>(storedL + static_cast<std::int64_t>(geometry.centeredLCount / 2));
+    return storedK + geometry.hermitianKCount * centeredL + geometry.elementsPerLevel() * z;
+}
+
+void storeConvolutionValue(WVHorizontalConvolutionEngine& engine, std::size_t channel, std::size_t z, const WVFourierMode& mode, WVComplex64 value) {
+    const auto index = convolutionIndex(engine.geometry(),mode.kMode,mode.lMode,z);
+    engine.channelData(channel)[index] = mode.kMode < 0 ? conjugate(value) : value;
+}
+
+WVComplex64 convolutionValue(const WVHorizontalConvolutionEngine& engine, std::size_t channel, std::size_t z, const WVFourierMode& mode) {
+    const auto index = convolutionIndex(engine.geometry(),mode.kMode,mode.lMode,z);
+    const auto value = engine.channelData(channel)[index];
+    return mode.kMode < 0 ? conjugate(value) : value;
+}
+
 } // namespace
 
 WVKernelStatus WVTransformConstantStratificationKernel::create(
     const WVTransformConstantStratificationConfiguration& configuration,
     std::unique_ptr<WVFFTEngine> engine,
-    std::unique_ptr<WVTransformConstantStratificationKernel>& kernel) {
+    std::unique_ptr<WVTransformConstantStratificationKernel>& kernel,
+    std::unique_ptr<WVHorizontalConvolutionFactory> convolutionFactory) {
     if (!engine) return {WVKernelStatusCode::invalidPointer, "An FFT engine is required."};
     try {
         auto candidate = std::unique_ptr<WVTransformConstantStratificationKernel>(new WVTransformConstantStratificationKernel());
@@ -303,16 +323,21 @@ WVKernelStatus WVTransformConstantStratificationKernel::create(
         candidate->engineIdentifier_ = engine->identifier();
         candidate->engineLibraryIdentity_ = engine->libraryIdentity();
         candidate->engine_ = std::move(engine);
+        if (convolutionFactory) {
+            status = convolutionFactory->create(candidate->descriptor_,candidate->horizontalConvolution_);
+            if (!status || !candidate->horizontalConvolution_) return status ? WVKernelStatus{WVKernelStatusCode::invalidConfiguration,"Horizontal convolution factory returned an empty engine."} : status;
+        }
         constexpr std::size_t halfChannels = 4;
         const auto halfElements = checkedProduct(checkedProduct(candidate->descriptor_.halfSpectrumMappings().NxHalf, configuration.Ny), checkedProduct(configuration.Nz, halfChannels));
-        const auto realElements = checkedProduct(candidate->descriptor_.spatialShape().elementCount(),configuration.isHydrostatic ? 8 : 9);
+        const auto realElements = candidate->horizontalConvolution_ ? 0 : checkedProduct(candidate->descriptor_.spatialShape().elementCount(),configuration.isHydrostatic ? 8 : 9);
         candidate->halfSpectrumScratch_.resize(2 * halfElements);
         candidate->realScratch_.resize(realElements);
         candidate->metrics_.descriptorBytes = candidate->descriptor_.persistentBytes();
         candidate->metrics_.halfSpectrumScratchCapacityBytes = candidate->halfSpectrumScratch_.size() * sizeof(double);
         candidate->metrics_.realScratchCapacityBytes = candidate->realScratch_.size() * sizeof(double);
-        candidate->metrics_.scratchCapacityBytes = candidate->scratchBytes();
-        candidate->metrics_.scratchHighWaterBytes = candidate->scratchBytes();
+        const auto convolutionBytes = candidate->horizontalConvolution_ ? candidate->horizontalConvolution_->metrics().retainedSpectrumBytes + candidate->horizontalConvolution_->metrics().exactWorkBytes : 0;
+        candidate->metrics_.scratchCapacityBytes = candidate->scratchBytes() + convolutionBytes;
+        candidate->metrics_.scratchHighWaterBytes = candidate->metrics_.scratchCapacityBytes;
         status = candidate->preparePlans();
         if (!status) return status;
         kernel = std::move(candidate);
@@ -344,11 +369,11 @@ WVKernelStatus WVTransformConstantStratificationKernel::preparePlans() {
 }
 
 std::size_t WVTransformConstantStratificationKernel::persistentBytes() const noexcept {
-    return descriptor_.persistentBytes() + metrics_.planBytes + scratchBytes();
+    return descriptor_.persistentBytes() + metrics_.planBytes + scratchBytes() + (horizontalConvolution_ ? horizontalConvolution_->persistentBytes() : 0);
 }
 
 const char* WVTransformConstantStratificationKernel::nonlinearFluxScheduleIdentifier() const noexcept {
-    return "sequential-phase-once";
+    return horizontalConvolution_ ? horizontalConvolution_->identifier() : "sequential-phase-once";
 }
 
 const char* WVTransformConstantStratificationKernel::phaseImplementationIdentifier() const noexcept {
@@ -384,6 +409,8 @@ void WVTransformConstantStratificationKernel::setStageInstrumentation(bool enabl
     metrics_.coefficientAssemblySeconds = 0.0;
     metrics_.derivativeCoefficientAssemblySeconds = 0.0;
     metrics_.coefficientProjectionSeconds = 0.0;
+    metrics_.convolutionMappingSeconds = 0.0;
+    metrics_.convolutionSeconds = 0.0;
 }
 
 WVKernelStatus WVTransformConstantStratificationKernel::transformUVEtaToWaveVortex(
@@ -651,6 +678,150 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformToSpatialDomain
     return WVKernelStatus::ok();
 }
 
+WVKernelStatus WVTransformConstantStratificationKernel::nonlinearFluxWithHorizontalConvolution(
+    const WVState&, WVFlux& flux, const WVCoefficients& evolvedCoefficients, WVComplexConstView phaseValues) {
+    using Clock = std::chrono::steady_clock;
+    const auto& c = descriptor_.configuration();
+    const auto& mapping = descriptor_.halfSpectrumMappings();
+    const auto& modes = descriptor_.verticalModes();
+    const auto& horizontalModes = descriptor_.fourierModes();
+    const auto halfRows = mapping.NxHalf * c.Ny;
+    auto* half = reinterpret_cast<WVComplex64*>(halfSpectrumScratch_.data());
+    auto& convolution = *horizontalConvolution_;
+    const auto& geometry = convolution.geometry();
+    const std::size_t targetCount = c.isHydrostatic ? 3 : 4;
+    const std::size_t hydrostaticTargets[] = {0,1,3};
+    const std::size_t nonhydrostaticTargets[] = {0,1,2,3};
+    const auto* targets = c.isHydrostatic ? hydrostaticTargets : nonhydrostaticTargets;
+    if (geometry.inputCount != 3 + 4 * targetCount || geometry.outputCount != targetCount || geometry.verticalLevelCount != c.Nz) {
+        return {WVKernelStatusCode::invalidConfiguration,"Horizontal convolution geometry does not match the WaveVortex nonlinear product contract."};
+    }
+
+    auto mappingStart = Clock::now();
+    for (std::size_t channel = 0; channel < geometry.inputCount; ++channel) {
+        std::fill(convolution.channelData(channel),convolution.channelData(channel) + geometry.elementsPerChannel(),WVComplex64{});
+    }
+
+    std::fill(half,half + c.Nz * 4 * halfRows,WVComplex64{});
+    forEachModeBlock(descriptor_.Nkl(),[&](std::size_t begin, std::size_t end) {
+        for (std::size_t mode = begin; mode < end; ++mode) {
+            auto source = [&](std::size_t index) {
+                return EvolvedWaveVortexCoefficients{evolvedCoefficients.Ap.data[index],evolvedCoefficients.Am.data[index],evolvedCoefficients.A0.data[index]};
+            };
+            if (mapping.conjugatesStoredValueByWVIndex[mode]) assembleFieldSpectraForMode<true>(half,mapping,modes,c.Nz,c.Nj,mode,source);
+            else assembleFieldSpectraForMode<false>(half,mapping,modes,c.Nz,c.Nj,mode,source);
+        }
+    });
+    completeHermitianBoundaries(half,mapping,c.Nz,4);
+    auto status = plans_[verticalDCT2Storage4]->execute(half,half); if (!status) return status;
+    status = plans_[verticalDST2Storage4]->execute(half + 2 * c.Nz + 1,half + 2 * c.Nz + 1); if (!status) return status;
+    metrics_.executionCount += 2; metrics_.verticalExecutionCount += 2;
+    for (std::size_t mode = 0; mode < descriptor_.Nkl(); ++mode) for (std::size_t z = 0; z < c.Nz; ++z) {
+        for (std::size_t channel = 0; channel < 3; ++channel) storeConvolutionValue(convolution,targetCount + channel,z,horizontalModes[mode],storedValue(half,mapping,c.Nz,4,channel,mode,z));
+    }
+
+    for (std::size_t iTarget = 0; iTarget < targetCount; ++iTarget) {
+        std::fill(half,half + c.Nz * 3 * halfRows,WVComplex64{});
+        const auto target = targets[iTarget];
+        auto assembleTarget = [&](auto targetConstant) {
+            constexpr std::size_t resolvedTarget = decltype(targetConstant)::value;
+            forEachModeBlock(descriptor_.Nkl(),[&](std::size_t begin, std::size_t end) {
+                for (std::size_t mode = begin; mode < end; ++mode) {
+                    if (mapping.conjugatesStoredValueByWVIndex[mode]) assembleDerivativeSpectraForMode<resolvedTarget,true>(half,mapping,modes,horizontalModes,evolvedCoefficients,c.Nz,c.Nj,mode);
+                    else assembleDerivativeSpectraForMode<resolvedTarget,false>(half,mapping,modes,horizontalModes,evolvedCoefficients,c.Nz,c.Nj,mode);
+                }
+            });
+        };
+        if (target == 0) assembleTarget(std::integral_constant<std::size_t,0>{});
+        else if (target == 1) assembleTarget(std::integral_constant<std::size_t,1>{});
+        else if (target == 2) assembleTarget(std::integral_constant<std::size_t,2>{});
+        else assembleTarget(std::integral_constant<std::size_t,3>{});
+        completeHermitianBoundaries(half,mapping,c.Nz,3);
+        if (target < 2) {
+            status = plans_[verticalDCT2Storage3]->execute(half,half); if (!status) return status;
+            status = plans_[verticalDST1Storage3]->execute(half + 2 * c.Nz + 1,half + 2 * c.Nz + 1); if (!status) return status;
+        } else {
+            status = plans_[verticalDST2Storage3]->execute(half + 1,half + 1); if (!status) return status;
+            status = plans_[verticalDCT1Storage3]->execute(half + 2 * c.Nz,half + 2 * c.Nz); if (!status) return status;
+        }
+        metrics_.executionCount += 2; metrics_.verticalExecutionCount += 2;
+        const auto firstChannel = targetCount + 3 + 3 * iTarget;
+        for (std::size_t mode = 0; mode < descriptor_.Nkl(); ++mode) for (std::size_t z = 0; z < c.Nz; ++z) {
+            for (std::size_t derivative = 0; derivative < 3; ++derivative) storeConvolutionValue(convolution,firstChannel + derivative,z,horizontalModes[mode],storedValue(half,mapping,c.Nz,3,derivative,mode,z));
+        }
+    }
+    metrics_.convolutionMappingSeconds = std::chrono::duration<double>(Clock::now() - mappingStart).count();
+
+    const auto convolutionStart = Clock::now();
+    status = convolution.execute();
+    if (!status) return status;
+    metrics_.convolutionSeconds = std::chrono::duration<double>(Clock::now() - convolutionStart).count();
+
+    mappingStart = Clock::now();
+    std::fill(half,half + c.Nz * targetCount * halfRows,WVComplex64{});
+    for (std::size_t mode = 0; mode < descriptor_.Nkl(); ++mode) for (std::size_t z = 0; z < c.Nz; ++z) {
+        for (std::size_t channel = 0; channel < targetCount; ++channel) storeWVValue(half,mapping,c.Nz,targetCount,channel,mode,z,convolutionValue(convolution,channel,z,horizontalModes[mode]));
+    }
+    completeHermitianBoundaries(half,mapping,c.Nz,targetCount);
+    metrics_.convolutionMappingSeconds += std::chrono::duration<double>(Clock::now() - mappingStart).count();
+
+    if (c.isHydrostatic) {
+        status = plans_[verticalDCT2Storage3]->execute(half,half); if (!status) return status;
+        status = plans_[verticalDST1Storage3]->execute(half + 2 * c.Nz + 1,half + 2 * c.Nz + 1); if (!status) return status;
+        normalizeForwardDCT(half,c.Nz,halfRows,3,0,2);
+        normalizeForwardDST(half,c.Nz,halfRows,3,2,1);
+    } else {
+        status = plans_[verticalDCT2Storage4]->execute(half,half); if (!status) return status;
+        status = plans_[verticalDST2Storage4]->execute(half + 2 * c.Nz + 1,half + 2 * c.Nz + 1); if (!status) return status;
+        normalizeForwardDCT(half,c.Nz,halfRows,4,0,2);
+        normalizeForwardDST(half,c.Nz,halfRows,4,2,2);
+    }
+    metrics_.executionCount += 2; metrics_.verticalExecutionCount += 2;
+
+    auto* WV_KERNEL_RESTRICT outputAp = flux.Fp.data;
+    auto* WV_KERNEL_RESTRICT outputAm = flux.Fm.data;
+    auto* outputA0 = flux.F0.data;
+    const auto projectionStart = Clock::now();
+    forEachModeBlock(descriptor_.Nkl(),[&](std::size_t begin, std::size_t end) {
+        for (std::size_t iMode = begin; iMode < end; ++iMode) for (std::size_t j = 0; j < c.Nj; ++j) {
+            const auto index = j + c.Nj * iMode;
+            const auto U = storedValue(half,mapping,c.Nz,targetCount,0,iMode,j);
+            const auto V = storedValue(half,mapping,c.Nz,targetCount,1,iMode,j);
+            const auto N = storedValue(half,mapping,c.Nz,targetCount,targetCount-1,iMode,j);
+            const auto& horizontal = horizontalModes[iMode];
+            const auto vorticity = subtract(multiply(V,WVComplex64{0.0,horizontal.k}),multiply(U,WVComplex64{0.0,horizontal.l}));
+            const auto A0 = add(multiply(vorticity,modes.A0FromVorticity[index]),multiply(N,modes.A0FromBuoyancy[index]));
+            WVComplex64 Ap;
+            WVComplex64 Am;
+            if (c.isHydrostatic) {
+                const auto divergence = add(multiply(U,WVComplex64{0.0,horizontal.k}),multiply(V,WVComplex64{0.0,horizontal.l}));
+                const auto deltaContribution = multiply(modes.ApmDProjection[index],divergence);
+                const auto buoyancyContribution = multiply(subtract(N,multiply(A0,modes.NA0Field[index])),modes.ApmNProjection[index]);
+                Ap = add(deltaContribution,buoyancyContribution);
+                Am = subtract(deltaContribution,buoyancyContribution);
+            } else {
+                const auto W = storedValue(half,mapping,c.Nz,targetCount,2,iMode,j);
+                const auto delta = multiply(add(multiply(U,horizontal.cosAlpha),multiply(V,horizontal.sinAlpha)),modes.ApmDScaled[index]);
+                const auto wBar = multiply(modes.ApmWScaled[index],W);
+                const auto buoyancyContribution = multiply(subtract(N,multiply(A0,modes.NA0Field[index])),modes.ApmNProjection[index]);
+                Ap = add(add(delta,wBar),buoyancyContribution);
+                Am = subtract(add(delta,wBar),buoyancyContribution);
+            }
+            if (iMode == 0) {
+                const auto inertial = subtract(U,multiply(V,WVComplex64{0.0,1.0}));
+                Ap = multiply(inertial,modes.inertialScale[j]);
+                Am = conjugate(Ap);
+            }
+            const auto p = phaseValues.data[index];
+            outputAp[index] = multiply(Ap,conjugate(p));
+            outputAm[index] = multiply(Am,p);
+            outputA0[index] = A0;
+        }
+    });
+    if (stageInstrumentationEnabled_) metrics_.coefficientProjectionSeconds = std::chrono::duration<double>(Clock::now() - projectionStart).count();
+    return WVKernelStatus::ok();
+}
+
 WVKernelStatus WVTransformConstantStratificationKernel::nonlinearFlux(const WVState& state, WVFlux& flux) {
     auto status = validateStateAndFlux(descriptor_,state,flux);
     if (!status) return status;
@@ -676,6 +847,8 @@ WVKernelStatus WVTransformConstantStratificationKernel::nonlinearFlux(const WVSt
     metrics_.nonlinearFluxPhaseEvaluationCount += phaseEvaluationCount;
     const WVCoefficients evolvedCoefficients{{flux.Fp.data,spectral},{flux.Fm.data,spectral},state.coefficients.A0};
     const WVComplexConstView phaseValues{flux.F0.data,spectral};
+
+    if (horizontalConvolution_) return nonlinearFluxWithHorizontalConvolution(state,flux,evolvedCoefficients,phaseValues);
 
     const auto spatial = descriptor_.spatialShape();
     const auto fieldElements = spatial.elementCount();

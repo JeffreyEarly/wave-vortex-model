@@ -1,6 +1,7 @@
 #pragma once
 
 #include "WVFFTEngine.hpp"
+#include "WVHorizontalConvolutionEngine.hpp"
 
 #include <memory>
 #include <vector>
@@ -29,11 +30,13 @@ struct WVKernelMetrics {
     double coefficientAssemblySeconds = 0.0;
     double derivativeCoefficientAssemblySeconds = 0.0;
     double coefficientProjectionSeconds = 0.0;
+    double convolutionMappingSeconds = 0.0;
+    double convolutionSeconds = 0.0;
 };
 
 class WVTransformConstantStratificationKernel {
 public:
-    static WVKernelStatus create(const WVTransformConstantStratificationConfiguration& configuration, std::unique_ptr<WVFFTEngine> engine, std::unique_ptr<WVTransformConstantStratificationKernel>& kernel);
+    static WVKernelStatus create(const WVTransformConstantStratificationConfiguration& configuration, std::unique_ptr<WVFFTEngine> engine, std::unique_ptr<WVTransformConstantStratificationKernel>& kernel, std::unique_ptr<WVHorizontalConvolutionFactory> convolutionFactory = {});
 
     ~WVTransformConstantStratificationKernel() = default;
     WVTransformConstantStratificationKernel(const WVTransformConstantStratificationKernel&) = delete;
@@ -54,6 +57,8 @@ public:
     void setStageInstrumentation(bool enabled) noexcept;
     std::size_t persistentBytes() const noexcept;
     std::size_t scratchBytes() const noexcept { return (halfSpectrumScratch_.size() + realScratch_.size()) * sizeof(double); }
+    bool hasHorizontalConvolution() const noexcept { return static_cast<bool>(horizontalConvolution_); }
+    WVHorizontalConvolutionMetrics horizontalConvolutionMetrics() const noexcept { return horizontalConvolution_ ? horizontalConvolution_->metrics() : WVHorizontalConvolutionMetrics{}; }
 
     WVKernelStatus transformUVEtaToWaveVortex(const WVRealFieldBundleConstView& fields, double t, double t0, WVMutableCoefficients& coefficients);
     WVKernelStatus transformUVWEtaToWaveVortex(const WVRealFieldBundleConstView& fields, double t, double t0, WVMutableCoefficients& coefficients);
@@ -69,8 +74,10 @@ private:
     WVKernelStatus transformUVWEtaToWaveVortexImpl(const WVRealFieldBundleConstView& fields, double t, double t0, WVMutableCoefficients& coefficients, WVComplexConstView phaseValues = {});
     WVKernelStatus transformWaveVortexToUVWEtaImpl(const WVState& state, WVRealFieldBundleView& fields, const WVCoefficients* evolvedCoefficients = nullptr);
     WVKernelStatus transformToSpatialDomainWithDerivativesImpl(const WVCoefficients& evolvedCoefficients, std::size_t target, WVRealFieldBundleView& derivatives);
+    WVKernelStatus nonlinearFluxWithHorizontalConvolution(const WVState& state, WVFlux& flux, const WVCoefficients& evolvedCoefficients, WVComplexConstView phaseValues);
     WVTransformConstantStratificationDescriptor descriptor_;
     std::unique_ptr<WVFFTEngine> engine_;
+    std::unique_ptr<WVHorizontalConvolutionEngine> horizontalConvolution_;
     std::string engineIdentifier_;
     std::string engineLibraryIdentity_;
     std::vector<std::unique_ptr<WVFFTPlan>> plans_;
