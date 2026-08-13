@@ -1,0 +1,248 @@
+{
+  "schemaVersion": "portable-adaptive-rk23-validation-v1",
+  "status": "complete",
+  "createdUTC": "2026-08-13T18:42:03Z",
+  "sourceCommit": "084499fcb01609857d911466ea6b188ff3d84e9e",
+  "runnerPath": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue186/.compiled-backend-cache/runtime-build/wave-vortex-run",
+  "initialStep": 1E-5,
+  "duration": 2E-5,
+  "reference": {
+    "method": "MATLAB ode78",
+    "relativeTolerance": 1E-10,
+    "absoluteToleranceScale": 1E-10
+  },
+  "records": [
+    {
+      "fixture": "forcing-mixed-hydrostatic.nc",
+      "isHydrostatic": true,
+      "relativeTolerance": 0.01,
+      "absoluteTolerance": 1E-5,
+      "relativeInfinityError": 0.0012847915263676194,
+      "acceptedStepCount": 3,
+      "rejectedStepCount": 0,
+      "rightHandSideEvaluationCount": 12,
+      "integrationSeconds": 0.031086167,
+      "fsalReuseCount": 0,
+      "fsalInvalidationCount": 3,
+      "workspaceBytes": 8640,
+      "errorPolicyBytes": 576,
+      "provider": {
+        "id": "native-fftw",
+        "version": "fftw-3.3.11-neon",
+        "threads": 18,
+        "baseLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue186/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+        "threadLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue186/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3_threads.3.dylib"
+      },
+      "execution": {
+        "engine": "fftw",
+        "library": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue186/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+        "schedule": "wave-vortex-forcing-v1:WVNonlinearAdvection,WVBottomFrictionQuadratic,WVPseudoTopographicWaveGeneration,WVAdaptiveDamping,WVBetaPlanePVAdvection,WVFixedAmplitudeForcing",
+        "planCount": 17,
+        "noFallback": true
+      }
+    },
+    {
+      "fixture": "forcing-mixed-hydrostatic.nc",
+      "isHydrostatic": true,
+      "relativeTolerance": 0.003,
+      "absoluteTolerance": 3E-6,
+      "relativeInfinityError": 0.00024171756992976995,
+      "acceptedStepCount": 4,
+      "rejectedStepCount": 2,
+      "rightHandSideEvaluationCount": 22,
+      "integrationSeconds": 0.055670833,
+      "fsalReuseCount": 0,
+      "fsalInvalidationCount": 4,
+      "workspaceBytes": 8640,
+      "errorPolicyBytes": 576,
+      "provider": {
+        "id": "native-fftw",
+        "version": "fftw-3.3.11-neon",
+        "threads": 18,
+        "baseLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue186/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+        "threadLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue186/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3_threads.3.dylib"
+      },
+      "execution": {
+        "engine": "fftw",
+        "library": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue186/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+        "schedule": "wave-vortex-forcing-v1:WVNonlinearAdvection,WVBottomFrictionQuadratic,WVPseudoTopographicWaveGeneration,WVAdaptiveDamping,WVBetaPlanePVAdvection,WVFixedAmplitudeForcing",
+        "planCount": 17,
+        "noFallback": true
+      }
+    },
+    {
+      "fixture": "forcing-mixed-hydrostatic.nc",
+      "isHydrostatic": true,
+      "relativeTolerance": 0.001,
+      "absoluteTolerance": 1E-6,
+      "relativeInfinityError": 8.6910137228783221E-5,
+      "acceptedStepCount": 5,
+      "rejectedStepCount": 2,
+      "rightHandSideEvaluationCount": 26,
+      "integrationSeconds": 0.065705084,
+      "fsalReuseCount": 0,
+      "fsalInvalidationCount": 5,
+      "workspaceBytes": 8640,
+      "errorPolicyBytes": 576,
+      "provider": {
+        "id": "native-fftw",
+        "version": "fftw-3.3.11-neon",
+        "threads": 18,
+        "baseLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue186/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+        "threadLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue186/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3_threads.3.dylib"
+      },
+      "execution": {
+        "engine": "fftw",
+        "library": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue186/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+        "schedule": "wave-vortex-forcing-v1:WVNonlinearAdvection,WVBottomFrictionQuadratic,WVPseudoTopographicWaveGeneration,WVAdaptiveDamping,WVBetaPlanePVAdvection,WVFixedAmplitudeForcing",
+        "planCount": 17,
+        "noFallback": true
+      }
+    },
+    {
+      "fixture": "forcing-mixed-hydrostatic.nc",
+      "isHydrostatic": true,
+      "relativeTolerance": 0.0003,
+      "absoluteTolerance": 3E-7,
+      "relativeInfinityError": 2.5540463588307061E-5,
+      "acceptedStepCount": 8,
+      "rejectedStepCount": 3,
+      "rightHandSideEvaluationCount": 41,
+      "integrationSeconds": 0.106167708,
+      "fsalReuseCount": 0,
+      "fsalInvalidationCount": 8,
+      "workspaceBytes": 8640,
+      "errorPolicyBytes": 576,
+      "provider": {
+        "id": "native-fftw",
+        "version": "fftw-3.3.11-neon",
+        "threads": 18,
+        "baseLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue186/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+        "threadLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue186/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3_threads.3.dylib"
+      },
+      "execution": {
+        "engine": "fftw",
+        "library": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue186/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+        "schedule": "wave-vortex-forcing-v1:WVNonlinearAdvection,WVBottomFrictionQuadratic,WVPseudoTopographicWaveGeneration,WVAdaptiveDamping,WVBetaPlanePVAdvection,WVFixedAmplitudeForcing",
+        "planCount": 17,
+        "noFallback": true
+      }
+    },
+    {
+      "fixture": "forcing-mixed-nonhydrostatic.nc",
+      "isHydrostatic": false,
+      "relativeTolerance": 0.01,
+      "absoluteTolerance": 1E-5,
+      "relativeInfinityError": 0.0014293661147715072,
+      "acceptedStepCount": 2,
+      "rejectedStepCount": 0,
+      "rightHandSideEvaluationCount": 8,
+      "integrationSeconds": 0.024935291,
+      "fsalReuseCount": 0,
+      "fsalInvalidationCount": 2,
+      "workspaceBytes": 8640,
+      "errorPolicyBytes": 576,
+      "provider": {
+        "id": "native-fftw",
+        "version": "fftw-3.3.11-neon",
+        "threads": 18,
+        "baseLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue186/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+        "threadLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue186/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3_threads.3.dylib"
+      },
+      "execution": {
+        "engine": "fftw",
+        "library": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue186/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+        "schedule": "wave-vortex-forcing-v1:WVNonlinearAdvection,WVBottomFrictionQuadratic,WVPseudoTopographicWaveGeneration,WVAdaptiveDamping,WVBetaPlanePVAdvection,WVFixedAmplitudeForcing",
+        "planCount": 17,
+        "noFallback": true
+      }
+    },
+    {
+      "fixture": "forcing-mixed-nonhydrostatic.nc",
+      "isHydrostatic": false,
+      "relativeTolerance": 0.003,
+      "absoluteTolerance": 3E-6,
+      "relativeInfinityError": 0.00037992770192016447,
+      "acceptedStepCount": 4,
+      "rejectedStepCount": 2,
+      "rightHandSideEvaluationCount": 22,
+      "integrationSeconds": 0.069747209,
+      "fsalReuseCount": 0,
+      "fsalInvalidationCount": 4,
+      "workspaceBytes": 8640,
+      "errorPolicyBytes": 576,
+      "provider": {
+        "id": "native-fftw",
+        "version": "fftw-3.3.11-neon",
+        "threads": 18,
+        "baseLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue186/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+        "threadLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue186/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3_threads.3.dylib"
+      },
+      "execution": {
+        "engine": "fftw",
+        "library": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue186/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+        "schedule": "wave-vortex-forcing-v1:WVNonlinearAdvection,WVBottomFrictionQuadratic,WVPseudoTopographicWaveGeneration,WVAdaptiveDamping,WVBetaPlanePVAdvection,WVFixedAmplitudeForcing",
+        "planCount": 17,
+        "noFallback": true
+      }
+    },
+    {
+      "fixture": "forcing-mixed-nonhydrostatic.nc",
+      "isHydrostatic": false,
+      "relativeTolerance": 0.001,
+      "absoluteTolerance": 1E-6,
+      "relativeInfinityError": 9.3767129713527149E-5,
+      "acceptedStepCount": 5,
+      "rejectedStepCount": 2,
+      "rightHandSideEvaluationCount": 26,
+      "integrationSeconds": 0.080214167,
+      "fsalReuseCount": 0,
+      "fsalInvalidationCount": 5,
+      "workspaceBytes": 8640,
+      "errorPolicyBytes": 576,
+      "provider": {
+        "id": "native-fftw",
+        "version": "fftw-3.3.11-neon",
+        "threads": 18,
+        "baseLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue186/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+        "threadLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue186/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3_threads.3.dylib"
+      },
+      "execution": {
+        "engine": "fftw",
+        "library": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue186/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+        "schedule": "wave-vortex-forcing-v1:WVNonlinearAdvection,WVBottomFrictionQuadratic,WVPseudoTopographicWaveGeneration,WVAdaptiveDamping,WVBetaPlanePVAdvection,WVFixedAmplitudeForcing",
+        "planCount": 17,
+        "noFallback": true
+      }
+    },
+    {
+      "fixture": "forcing-mixed-nonhydrostatic.nc",
+      "isHydrostatic": false,
+      "relativeTolerance": 0.0003,
+      "absoluteTolerance": 3E-7,
+      "relativeInfinityError": 3.5472945595672885E-5,
+      "acceptedStepCount": 8,
+      "rejectedStepCount": 3,
+      "rightHandSideEvaluationCount": 41,
+      "integrationSeconds": 0.129791458,
+      "fsalReuseCount": 0,
+      "fsalInvalidationCount": 8,
+      "workspaceBytes": 8640,
+      "errorPolicyBytes": 576,
+      "provider": {
+        "id": "native-fftw",
+        "version": "fftw-3.3.11-neon",
+        "threads": 18,
+        "baseLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue186/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+        "threadLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue186/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3_threads.3.dylib"
+      },
+      "execution": {
+        "engine": "fftw",
+        "library": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue186/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+        "schedule": "wave-vortex-forcing-v1:WVNonlinearAdvection,WVBottomFrictionQuadratic,WVPseudoTopographicWaveGeneration,WVAdaptiveDamping,WVBetaPlanePVAdvection,WVFixedAmplitudeForcing",
+        "planCount": 17,
+        "noFallback": true
+      }
+    }
+  ]
+}
