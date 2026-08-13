@@ -217,6 +217,58 @@ classdef TestPortableCheckpointReader < matlab.unittest.TestCase
             clear fixtureCleanup fixtureToolCleanup
         end
 
+        function portableRK4DenseOutputMatchesWVArrayIntegrator(testCase)
+            repositoryRoot = fileparts(fileparts(mfilename("fullpath")));
+            buildScript = fullfile(repositoryRoot,"tools","compiled-kernel","run_contract_tests.sh");
+            [buildStatus,buildOutput] = system(sprintf('"%s"',buildScript));
+            testCase.assertEqual(buildStatus,0,buildOutput)
+            inspector = fullfile(repositoryRoot,"tools","compiled-kernel","build-portable","wv_portable_rk4_inspect");
+            fixtureDirectory = string(tempname);
+            mkdir(fixtureDirectory)
+            fixtureCleanup = onCleanup(@()rmdir(fixtureDirectory,"s"));
+            addpath(fullfile(repositoryRoot,"tools","portable-runtime"))
+            toolCleanup = onCleanup(@()rmpath(fullfile(repositoryRoot,"tools","portable-runtime")));
+            generateForcingScheduleFixtures(outputDirectory=fixtureDirectory,coefficientMode="physical-small");
+
+            fixtureNames = ["forcing-nonlinear.nc" "forcing-adaptive-damping.nc" "forcing-fixed-amplitude.nc" "forcing-quadratic-bottom-friction.nc" "forcing-pseudo-topographic.nc" "forcing-beta-plane.nc" "forcing-mixed-hydrostatic.nc" "forcing-mixed-nonhydrostatic.nc"];
+            for fixtureName = fixtureNames
+                fixturePath = fullfile(fixtureDirectory,fixtureName);
+                [wvt,ncfile] = WVTransform.waveVortexTransformFromFile(fixturePath,shouldReadOnly=true);
+                transformCleanup = onCleanup(@()TestPortableCheckpointReader.closeIfOpen(ncfile));
+                TestPortableCheckpointReader.restoreFixedAmplitudes(wvt)
+                initialTime = wvt.t;
+                deltaT = 0.037;
+                outputTime = initialTime+0.37*deltaT;
+                finalTime = initialTime+deltaT;
+                y0 = {wvt.Ap;wvt.Am;wvt.A0};
+                matlabIntegrator = WVArrayIntegrator(@(t,y)TestPortableCheckpointReader.rhsAtState(wvt,t,y),[initialTime outputTime finalTime],y0,deltaT);
+                expected = matlabIntegrator.valueAtTime(outputTime);
+
+                command = TestPortableCheckpointReader.sanitizedCommand(sprintf('"%s" "%s" %.17g %.17g %.17g',inspector,fixturePath,finalTime,deltaT,outputTime));
+                [status,output] = system(command);
+                testCase.assertEqual(status,0,output)
+                record = jsondecode(output);
+                shape = [record.shape(1) record.shape(2)];
+                actual = {
+                    complex(reshape(record.outputApReal,shape),reshape(record.outputApImag,shape))
+                    complex(reshape(record.outputAmReal,shape),reshape(record.outputAmImag,shape))
+                    complex(reshape(record.outputA0Real,shape),reshape(record.outputA0Imag,shape))
+                    };
+                for iCoefficient = 1:3
+                    scale = max(max(abs(expected{iCoefficient}),[],"all"),realmin);
+                    testCase.verifyLessThanOrEqual(max(abs(actual{iCoefficient}-expected{iCoefficient}),[],"all")/scale,1e-12,fixtureName)
+                end
+                testCase.verifyEqual(record.outputTime,outputTime,AbsTol=4*eps(outputTime))
+                testCase.verifyEqual(record.rhsEvaluationCount,4)
+                stateBytes = numel(wvt.Ap)*16;
+                testCase.verifyEqual(record.workspaceBytes,12*stateBytes)
+                testCase.verifyEqual(record.interpolationBufferBytes,3*stateBytes)
+                ncfile.close();
+                clear transformCleanup
+            end
+            clear toolCleanup fixtureCleanup
+        end
+
         function standaloneRunnerMatchesMatlab(testCase)
             repositoryRoot = fileparts(fileparts(mfilename("fullpath")));
             fixtureToolDirectory = fullfile(repositoryRoot,"tools","portable-runtime");
@@ -361,6 +413,16 @@ classdef TestPortableCheckpointReader < matlab.unittest.TestCase
                 wvt.Am(force.Am_indices) = force.Ambar;
                 wvt.A0(force.A0_indices) = force.A0bar;
             end
+        end
+
+        function flux = rhsAtState(wvt,t,state)
+            wvt.t = t;
+            wvt.Ap = state{1};
+            wvt.Am = state{2};
+            wvt.A0 = state{3};
+            TestPortableCheckpointReader.restoreFixedAmplitudes(wvt)
+            flux = cell(3,1);
+            [flux{:}] = wvt.nonlinearFlux();
         end
 
         function verifyForcingEquivalent(testCase,expected,actual)

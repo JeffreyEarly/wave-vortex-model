@@ -25,6 +25,7 @@ add_library(WaveVortexPortableRuntime STATIC
     src/WVCheckpointWriter.cpp
     src/WVForcingEngine.cpp
     src/WVFixedStepRK4.cpp
+    src/WVIntegrationDriver.cpp
 )
 add_library(WaveVortex::PortableRuntime ALIAS WaveVortexPortableRuntime)
 add_library(WaveVortex::Checkpoint ALIAS WaveVortexPortableRuntime)
@@ -48,6 +49,7 @@ if(NOT WV_RUNTIME_SOURCE_COMMIT)
     set(WV_RUNTIME_SOURCE_COMMIT "unknown")
 endif()
 target_compile_definitions(wave-vortex-run PRIVATE WV_RUNTIME_SOURCE_COMMIT="${WV_RUNTIME_SOURCE_COMMIT}")
+target_compile_definitions(wave-vortex-run PRIVATE WV_RUNTIME_HAS_DENSE_OUTPUT=1)
 
 if(WV_RUNTIME_ENABLE_NATIVE_FFTW)
     if(NOT APPLE OR NOT CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64")
@@ -150,6 +152,9 @@ if(BUILD_TESTING)
     )
     target_compile_features(TestWVIntegrationContracts PRIVATE cxx_std_17)
     target_link_libraries(TestWVIntegrationContracts PRIVATE WaveVortex::PortableRuntime)
+    target_compile_definitions(TestWVIntegrationContracts PRIVATE
+        WV_CHECKPOINT_FIXTURE_DIR="${CMAKE_CURRENT_LIST_DIR}/../tools/portable-runtime/fixtures"
+    )
     if(CMAKE_CXX_COMPILER_ID MATCHES "AppleClang|Clang|GNU")
         target_compile_options(TestWVIntegrationContracts PRIVATE -Wall -Wextra -Wpedantic -Werror)
     endif()

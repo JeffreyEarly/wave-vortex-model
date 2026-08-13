@@ -1,7 +1,9 @@
 #include "WaveVortexRuntime/WVFixedStepRK4.hpp"
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
+#include <cstdint>
 #include <limits>
 #include <new>
 
@@ -26,9 +28,22 @@ bool matchingShape(WVShape2D expected, WVComplexView value) noexcept {
     return value.data != nullptr && value.shape.rows == expected.rows && value.shape.columns == expected.columns;
 }
 
+bool overlaps(const WVComplex64* first, std::size_t firstCount, const WVComplex64* second, std::size_t secondCount) noexcept {
+    if (first == nullptr || second == nullptr || firstCount == 0 || secondCount == 0) return false;
+    const auto firstBegin = reinterpret_cast<std::uintptr_t>(first);
+    const auto firstEnd = firstBegin+firstCount*sizeof(WVComplex64);
+    const auto secondBegin = reinterpret_cast<std::uintptr_t>(second);
+    const auto secondEnd = secondBegin+secondCount*sizeof(WVComplex64);
+    return firstBegin < secondEnd && secondBegin < firstEnd;
+}
+
+double timeTolerance(double first, double second) noexcept {
+    return 8.0*std::numeric_limits<double>::epsilon()*std::max({1.0,std::abs(first),std::abs(second)});
+}
+
 } // namespace
 
-WVFixedStepRK4::WVFixedStepRK4(WVIntegrationSystem& system) : system_(system) {}
+WVFixedStepRK4::WVFixedStepRK4(WVIntegrationSystem& system, WVFixedStepRK4Options options) : system_(system), options_(options) {}
 
 WVKernelStatus WVFixedStepRK4::ensureWorkspace(const WVMutableState& state) {
     const auto expected = system_.stateShape();
@@ -43,7 +58,9 @@ WVKernelStatus WVFixedStepRK4::ensureWorkspace(const WVMutableState& state) {
         stageState_.resize(values);
         stageFlux_.resize(values);
         weightedFlux_.resize(values);
-        metrics_.workspaceCapacityBytes = (stageState_.capacity()+stageFlux_.capacity()+weightedFlux_.capacity())*sizeof(WVComplex64);
+        if (options_.retainDenseOutput) denseHistory_.resize(values);
+        metrics_.denseHistoryCapacityBytes = denseHistory_.capacity()*sizeof(WVComplex64);
+        metrics_.workspaceCapacityBytes = (stageState_.capacity()+stageFlux_.capacity()+weightedFlux_.capacity()+denseHistory_.capacity())*sizeof(WVComplex64);
         metrics_.workspaceLiveBytes = metrics_.workspaceCapacityBytes;
         metrics_.workspaceMaximumLiveBytes = std::max(metrics_.workspaceMaximumLiveBytes,metrics_.workspaceLiveBytes);
         return WVKernelStatus::ok();
@@ -60,6 +77,83 @@ WVKernelStatus WVFixedStepRK4::prepareStateAfterRestart(WVMutableState& state) {
     const auto constraintStatus = system_.enforceStateConstraints(state.coefficients);
     acceptedStateConstrained_ = static_cast<bool>(constraintStatus);
     return constraintStatus;
+}
+
+double WVFixedStepRK4::initialTime() const noexcept {
+    return hasAcceptedStep_ ? acceptedStep_.initialTime : 0.0;
+}
+
+double WVFixedStepRK4::finalTime() const noexcept {
+    return hasAcceptedStep_ ? acceptedStep_.finalTime : 0.0;
+}
+
+WVShape2D WVFixedStepRK4::stateShape() const noexcept {
+    return shape_;
+}
+
+WVKernelStatus WVFixedStepRK4::evaluate(double time, WVMutableState& output) const {
+    if (!options_.retainDenseOutput || !hasAcceptedStep_) return {WVKernelStatusCode::unsupportedOperation,"RK4 dense output is unavailable for the requested accepted step."};
+    if (evaluatingDenseOutput_) return {WVKernelStatusCode::reentrantExecution,"RK4 dense-output evaluation is not reentrant."};
+    if (!std::isfinite(time)) return {WVKernelStatusCode::invalidConfiguration,"RK4 dense-output time must be finite."};
+    if (!matchingShape(shape_,output.coefficients.Ap) || !matchingShape(shape_,output.coefficients.Am) || !matchingShape(shape_,output.coefficients.A0)) {
+        return {WVKernelStatusCode::invalidShape,"RK4 dense-output storage must use the canonical [Nj,Nkl] shape."};
+    }
+    const auto componentCount = shape_.elementCount();
+    const auto stateCount = 3*componentCount;
+    WVComplexView destinations[] = {output.coefficients.Ap,output.coefficients.Am,output.coefficients.A0};
+    for (std::size_t first = 0; first < 3; ++first) {
+        for (std::size_t second = first+1; second < 3; ++second) {
+            if (overlaps(destinations[first].data,componentCount,destinations[second].data,componentCount)) return {WVKernelStatusCode::overlappingArrays,"RK4 dense-output component arrays must not overlap."};
+        }
+        if (overlaps(destinations[first].data,componentCount,weightedFlux_.data(),stateCount) ||
+            overlaps(destinations[first].data,componentCount,denseHistory_.data(),stateCount) ||
+            overlaps(destinations[first].data,componentCount,stageFlux_.data(),stateCount)) {
+            return {WVKernelStatusCode::overlappingArrays,"RK4 dense-output storage must not alias retained method state or the accepted endpoint."};
+        }
+        const WVComplexConstView endpoints[] = {acceptedStep_.endpoint.coefficients.Ap,acceptedStep_.endpoint.coefficients.Am,acceptedStep_.endpoint.coefficients.A0};
+        for (const auto& endpoint : endpoints) {
+            if (overlaps(destinations[first].data,componentCount,endpoint.data,componentCount)) return {WVKernelStatusCode::overlappingArrays,"RK4 dense-output storage must not alias retained method state or the accepted endpoint."};
+        }
+    }
+    const double tolerance = timeTolerance(acceptedStep_.initialTime,acceptedStep_.finalTime);
+    if (time < acceptedStep_.initialTime-tolerance || time > acceptedStep_.finalTime+tolerance) return {WVKernelStatusCode::invalidConfiguration,"RK4 dense-output time lies outside the accepted interval."};
+
+    evaluatingDenseOutput_ = true;
+    struct Guard { bool& value; ~Guard() { value = false; } } guard{evaluatingDenseOutput_};
+    const auto started = std::chrono::steady_clock::now();
+    const double stepSize = acceptedStep_.finalTime-acceptedStep_.initialTime;
+    double theta = stepSize == 0.0 ? 0.0 : (time-acceptedStep_.initialTime)/stepSize;
+    if (std::abs(time-acceptedStep_.initialTime) <= tolerance) theta = 0.0;
+    if (std::abs(time-acceptedStep_.finalTime) <= tolerance) theta = 1.0;
+    theta = std::max(0.0,std::min(1.0,theta));
+    const double theta2 = theta*theta;
+    const double theta3 = theta2*theta;
+    const double endpointWeight = 3.0*theta2-2.0*theta3;
+    const double initialWeight = 1.0-endpointWeight;
+    const double initialSlopeWeight = stepSize*(theta-2.0*theta2+theta3);
+    const double finalSlopeWeight = stepSize*(theta3-theta2);
+    const WVComplexConstView endpoints[] = {acceptedStep_.endpoint.coefficients.Ap,acceptedStep_.endpoint.coefficients.Am,acceptedStep_.endpoint.coefficients.A0};
+    for (std::size_t component = 0; component < 3; ++component) {
+        for (std::size_t index = 0; index < componentCount; ++index) {
+            const auto flatIndex = component*componentCount+index;
+            const auto initial = weightedFlux_[flatIndex];
+            const auto endpoint = endpoints[component].data[index];
+            const auto initialSlope = denseHistory_[flatIndex];
+            const auto finalSlope = stageFlux_[flatIndex];
+            destinations[component].data[index] = {
+                initialWeight*initial.real+endpointWeight*endpoint.real+initialSlopeWeight*initialSlope.real+finalSlopeWeight*finalSlope.real,
+                initialWeight*initial.imag+endpointWeight*endpoint.imag+initialSlopeWeight*initialSlope.imag+finalSlopeWeight*finalSlope.imag};
+        }
+    }
+    auto status = system_.enforceStateConstraints(output.coefficients);
+    if (!status) return status;
+    output.t = theta == 0.0 ? acceptedStep_.initialTime : (theta == 1.0 ? acceptedStep_.finalTime : time);
+    output.t0 = acceptedStep_.endpoint.t0;
+    ++metrics_.denseOutputEvaluationCount;
+    metrics_.denseOutputElementReads += 4*stateCount;
+    metrics_.denseOutputElementWrites += stateCount;
+    metrics_.denseOutputSeconds += std::chrono::duration<double>(std::chrono::steady_clock::now()-started).count();
+    return WVKernelStatus::ok();
 }
 
 WVKernelStatus WVFixedStepRK4::evaluateAcceptedState(const WVMutableState& state) {
@@ -117,6 +211,7 @@ WVKernelStatus WVFixedStepRK4::step(WVMutableState& state, double deltaT) {
     const double initialTime = state.t;
     status = acceptedStateConstrained_ ? evaluateAcceptedState(state) : evaluateStage(state,state.t,0.0,nullptr);
     if (!status) return status;
+    if (options_.retainDenseOutput) std::copy(stageFlux_.begin(),stageFlux_.end(),denseHistory_.begin());
     std::copy(stageFlux_.begin(),stageFlux_.end(),weightedFlux_.begin());
     metrics_.weightedFluxInitializationElementReads += stageFlux_.size();
     metrics_.weightedFluxInitializationElementWrites += weightedFlux_.size();
@@ -142,6 +237,9 @@ WVKernelStatus WVFixedStepRK4::step(WVMutableState& state, double deltaT) {
     metrics_.finalStateUpdateElementWrites += 3*count;
     status = system_.enforceStateConstraints(candidate);
     if (!status) return status;
+    if (options_.retainDenseOutput) {
+        for (std::size_t component = 0; component < 3; ++component) std::copy_n(sources[component].data,count,weightedFlux_.data()+component*count);
+    }
     WVComplexView destinations[] = {state.coefficients.Ap,state.coefficients.Am,state.coefficients.A0};
     const WVComplexView acceptedSources[] = {{candidate.Ap.data,candidate.Ap.shape},{candidate.Am.data,candidate.Am.shape},{candidate.A0.data,candidate.A0.shape}};
     for (std::size_t component = 0; component < 3; ++component) std::copy_n(acceptedSources[component].data,count,destinations[component].data);
@@ -151,7 +249,7 @@ WVKernelStatus WVFixedStepRK4::step(WVMutableState& state, double deltaT) {
     acceptedStateConstrained_ = true;
     ++metrics_.stepCount;
     metrics_.lastStepSize = deltaT;
-    acceptedStep_ = {initialTime,state.t,state.view(),{1,4,deltaT},nullptr};
+    acceptedStep_ = {initialTime,state.t,state.view(),{1,4,deltaT},options_.retainDenseOutput ? static_cast<const WVDenseOutput*>(this) : nullptr};
     hasAcceptedStep_ = true;
     return WVKernelStatus::ok();
 }

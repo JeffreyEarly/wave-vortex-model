@@ -31,6 +31,8 @@ The forcing engine executes records in frozen stage, priority, and source order.
 
 Classical RK4 uses three canonical three-component arrays: one stage state, one stage tendency, and one weighted accumulator. Its exact integrator workspace is therefore `9*M*sizeof(WVComplex64)`, where `M=Nj*Nkl`. `advanceToTime` uses the requested fixed step and one deterministic shorter final step when needed. FFT plans, derived forcing operators, and RK4 workspace are rebuilt rather than persisted.
 
+Library consumers may opt into fixed-RK4 continuous output with `WVFixedStepRK4Options{true}`. The method then retains one additional three-component history array and exposes a cubic Hermite extension through `WVAcceptedStep`, for exact method storage of `12*M*sizeof(WVComplex64)`. `WVIntegrationDriver` validates an independent ordered schedule, leaves accepted steps unchanged, and lazily allocates one reusable `3*M*sizeof(WVComplex64)` interpolation buffer only when an interior observation is actually requested. The single-target `WVCheckpointOutputSink` writes a requested accepted or interpolated state through the existing transactional writer. These library contracts do not add multi-output options to `wave-vortex-run`.
+
 The authoring contract suite builds this target and its standalone inspector through:
 
 ```sh

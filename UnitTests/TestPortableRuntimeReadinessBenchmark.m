@@ -69,6 +69,19 @@ classdef TestPortableRuntimeReadinessBenchmark < matlab.unittest.TestCase
             testCase.verifyEqual(string(artifact.failure.stage),"workers")
             testCase.verifyTrue(isfile(fullfile(outputDirectory,"summary.md")))
         end
+
+        function reducedDenseOutputBenchmarkPreservesTrajectoryAndStorage(testCase)
+            result = runPortableDenseOutputBenchmark(sizes=[8 6 7],hydrostatic=[true false],processRunCount=1,warmupStepCount=1,mediumSampleCount=2,largeSampleCount=2,deltaT=0.01,shouldWriteArtifacts=false);
+            testCase.verifyEqual(result.status,"complete")
+            testCase.verifyEqual(numel(result.runs),8)
+            testCase.verifyLessThanOrEqual(max([result.comparisons.maximumRelativeError]),1e-12)
+            for comparison = reshape(result.comparisons,1,[])
+                stateBytes = comparison.baselineWorkspaceBytes/9;
+                testCase.verifyEqual(comparison.candidateNoOutputWorkspaceBytes,9*stateBytes)
+                testCase.verifyEqual(comparison.denseMethodWorkspaceBytes,12*stateBytes)
+                testCase.verifyEqual(comparison.denseDriverBytes,3*stateBytes)
+            end
+        end
     end
 end
 
