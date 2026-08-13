@@ -82,6 +82,18 @@ classdef TestPortableRuntimeReadinessBenchmark < matlab.unittest.TestCase
                 testCase.verifyEqual(comparison.denseDriverBytes,3*stateBytes)
             end
         end
+
+        function reducedAffineEntryAuditMeasuresExistingStageConstruction(testCase)
+            result = runPortableAffineEntryAudit(sizes=[8 6 7],hydrostatic=[true false],processRunCount=1,warmupStepCount=1,mediumSampleCount=2,largeSampleCount=2,deltaT=0.01,shouldWriteArtifacts=false);
+            testCase.verifyEqual(result.status,"complete")
+            testCase.verifyEqual(numel(result.runs),4)
+            control = result.runs(string({result.runs.variant}) == "control");
+            instrumented = result.runs(string({result.runs.variant}) == "stage-timed");
+            testCase.verifyEqual([control.stageStateConstructionSeconds],zeros(1,2))
+            testCase.verifyGreaterThan([instrumented.stageStateConstructionSeconds],zeros(1,2))
+            testCase.verifyEqual([instrumented.stageStateWrites],3*[instrumented.stateElementCount].*[instrumented.sampleCount])
+            testCase.verifyLessThanOrEqual(max([result.comparisons.maximumRelativeError]),1e-12)
+        end
     end
 end
 

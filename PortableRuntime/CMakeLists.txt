@@ -3,6 +3,7 @@ project(WaveVortexPortableRuntime VERSION 0.1.0 LANGUAGES CXX)
 
 include(CTest)
 option(WV_RUNTIME_ENABLE_NATIVE_FFTW "Build wave-vortex-run with the pinned native FFTW adapter" OFF)
+option(WV_RUNTIME_ENABLE_STAGE_TIMING "Enable author-only RK stage-state timing" OFF)
 set(WV_RUNTIME_FFTW_ROOT "" CACHE PATH "Prefix containing the validated FFTW 3.3.11 include and lib folders")
 
 if(NOT TARGET WaveVortex::Kernel)
@@ -36,6 +37,7 @@ target_include_directories(WaveVortexPortableRuntime PUBLIC
     $<INSTALL_INTERFACE:include>
 )
 target_link_libraries(WaveVortexPortableRuntime PUBLIC WaveVortex::Kernel PRIVATE ${WAVEVORTEX_NETCDF_TARGET})
+target_compile_definitions(WaveVortexPortableRuntime PRIVATE WV_RUNTIME_ENABLE_STAGE_TIMING=$<BOOL:${WV_RUNTIME_ENABLE_STAGE_TIMING}>)
 set_target_properties(WaveVortexPortableRuntime PROPERTIES
     CXX_EXTENSIONS OFF
     POSITION_INDEPENDENT_CODE ON

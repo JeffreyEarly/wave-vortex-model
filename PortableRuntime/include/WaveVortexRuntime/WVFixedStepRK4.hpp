@@ -21,6 +21,7 @@ struct WVFixedStepRK4Metrics {
     double lastStepSize = 0.0;
     std::size_t stageStateConstructionElementReads = 0;
     std::size_t stageStateConstructionElementWrites = 0;
+    double stageStateConstructionSeconds = 0.0;
     std::size_t stageFluxClearElementWrites = 0;
     std::size_t weightedFluxClearElementWrites = 0;
     std::size_t weightedFluxInitializationElementReads = 0;

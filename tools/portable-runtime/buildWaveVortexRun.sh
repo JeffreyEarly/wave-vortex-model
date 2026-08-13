@@ -35,6 +35,7 @@ if [ ! -f "$provider_root/lib/libfftw3.3.dylib" ] || [ ! -f "$provider_root/lib/
     /usr/bin/make install
 fi
 
-cmake -S "$repository_root/PortableRuntime" -B "$build_directory" -DCMAKE_BUILD_TYPE=Release -DWV_RUNTIME_ENABLE_NATIVE_FFTW=ON -DWV_RUNTIME_FFTW_ROOT="$provider_root"
+stage_timing=${WV_RUNTIME_ENABLE_STAGE_TIMING:-OFF}
+cmake -S "$repository_root/PortableRuntime" -B "$build_directory" -DCMAKE_BUILD_TYPE=Release -DWV_RUNTIME_ENABLE_NATIVE_FFTW=ON -DWV_RUNTIME_FFTW_ROOT="$provider_root" -DWV_RUNTIME_ENABLE_STAGE_TIMING="$stage_timing"
 cmake --build "$build_directory" --parallel --target wave-vortex-run
 printf '%s\n' "$build_directory/wave-vortex-run"

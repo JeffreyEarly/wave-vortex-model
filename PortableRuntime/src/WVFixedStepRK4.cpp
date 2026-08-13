@@ -164,6 +164,9 @@ WVKernelStatus WVFixedStepRK4::evaluateAcceptedState(const WVMutableState& state
 }
 
 void WVFixedStepRK4::setStageFromBase(const WVMutableState& base, double scale, const std::vector<WVComplex64>* increment) {
+#if WV_RUNTIME_ENABLE_STAGE_TIMING
+    const auto started = std::chrono::steady_clock::now();
+#endif
     const auto count = shape_.elementCount();
     const WVComplexView sources[] = {base.coefficients.Ap,base.coefficients.Am,base.coefficients.A0};
     for (std::size_t component = 0; component < 3; ++component) {
@@ -176,6 +179,9 @@ void WVFixedStepRK4::setStageFromBase(const WVMutableState& base, double scale, 
     metrics_.stageStateConstructionElementReads += stateElementCount;
     if (increment != nullptr) metrics_.stageStateConstructionElementReads += stateElementCount;
     metrics_.stageStateConstructionElementWrites += stateElementCount;
+#if WV_RUNTIME_ENABLE_STAGE_TIMING
+    metrics_.stageStateConstructionSeconds += std::chrono::duration<double>(std::chrono::steady_clock::now()-started).count();
+#endif
 }
 
 WVKernelStatus WVFixedStepRK4::evaluateStage(const WVMutableState& base, double stageTime, double scale, const std::vector<WVComplex64>* increment) {
