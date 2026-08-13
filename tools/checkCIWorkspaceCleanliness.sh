@@ -14,7 +14,8 @@ if [[ -n "${repository_status}" ]]; then
     failure=1
 fi
 
-artifact_paths="$(find . -path './.git' -prune -o -type f \( \
+artifact_paths="$(find . -path './.git' -prune -o \
+    -path './tools/portable-runtime/fixtures' -prune -o -type f \( \
     -name '*.nc' -o \
     -name '*.mat' -o \
     -name '*.asv' -o \
