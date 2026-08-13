@@ -131,16 +131,23 @@ WVKernelStatus WVFixedStepRK4::step(WVMutableState& state, double deltaT) {
     accumulateWeightedFlux(1.0);
 
     const auto count = shape_.elementCount();
-    WVComplexView destinations[] = {state.coefficients.Ap,state.coefficients.Am,state.coefficients.A0};
+    auto candidate = coefficientViews(stageState_,shape_);
+    WVComplexView sources[] = {state.coefficients.Ap,state.coefficients.Am,state.coefficients.A0};
+    WVComplexView candidateDestinations[] = {candidate.Ap,candidate.Am,candidate.A0};
     const double scale = deltaT/6.0;
     for (std::size_t component = 0; component < 3; ++component) {
-        for (std::size_t index = 0; index < count; ++index) destinations[component].data[index] = addScaled(destinations[component].data[index],weightedFlux_[component*count+index],scale);
+        for (std::size_t index = 0; index < count; ++index) candidateDestinations[component].data[index] = addScaled(sources[component].data[index],weightedFlux_[component*count+index],scale);
     }
     metrics_.finalStateUpdateElementReads += 6*count;
     metrics_.finalStateUpdateElementWrites += 3*count;
-    state.t += deltaT;
-    status = system_.enforceStateConstraints(state.coefficients);
+    status = system_.enforceStateConstraints(candidate);
     if (!status) return status;
+    WVComplexView destinations[] = {state.coefficients.Ap,state.coefficients.Am,state.coefficients.A0};
+    const WVComplexView acceptedSources[] = {{candidate.Ap.data,candidate.Ap.shape},{candidate.Am.data,candidate.Am.shape},{candidate.A0.data,candidate.A0.shape}};
+    for (std::size_t component = 0; component < 3; ++component) std::copy_n(acceptedSources[component].data,count,destinations[component].data);
+    metrics_.acceptedStateCommitElementReads += 3*count;
+    metrics_.acceptedStateCommitElementWrites += 3*count;
+    state.t += deltaT;
     acceptedStateConstrained_ = true;
     ++metrics_.stepCount;
     metrics_.lastStepSize = deltaT;

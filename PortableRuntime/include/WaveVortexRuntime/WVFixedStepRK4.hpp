@@ -22,6 +22,8 @@ struct WVFixedStepRK4Metrics {
     std::size_t weightedAccumulationElementWrites = 0;
     std::size_t finalStateUpdateElementReads = 0;
     std::size_t finalStateUpdateElementWrites = 0;
+    std::size_t acceptedStateCommitElementReads = 0;
+    std::size_t acceptedStateCommitElementWrites = 0;
     std::size_t workspaceLiveBytes = 0;
     std::size_t workspaceMaximumLiveBytes = 0;
 };

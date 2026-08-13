@@ -81,7 +81,7 @@ Runtime v1 implements `WVNonlinearAdvection`, `WVAdaptiveDamping`, `WVFixedAmpli
 
 Spatial forcing is reconstructed and projected through the shared constant-stratification kernel. Spectral forcing operates directly on canonical `[Nj,Nkl]` coefficients. Fixed-amplitude forcing zeros its selected tendencies and separately restores its prescribed coefficients after restart, before each integration stage, and after each completed step.
 
-Every forcing evaluation completely overwrites caller-owned tendency storage. The first whole-tendency producer writes there directly; only a second whole-tendency producer requires a temporary three-component array. Physical fields are retained only for schedules containing adaptive damping or quadratic bottom friction, and the projected forcing-field array exists only for quadratic bottom friction. The ordinary nonlinear-advection schedule therefore adds no array-sized forcing-engine workspace.
+Every successful forcing evaluation completely overwrites caller-owned tendency storage. A failed evaluation leaves that output storage unspecified, while the immutable input and the integrator's accepted state remain unchanged. The first whole-tendency producer writes there directly; only a second whole-tendency producer requires a temporary three-component array. Physical fields are retained only for schedules containing adaptive damping or quadratic bottom friction, and the projected forcing-field array exists only for quadratic bottom friction. The ordinary nonlinear-advection schedule therefore adds no array-sized forcing-engine workspace.
 
 ## Fixed-step integration
 

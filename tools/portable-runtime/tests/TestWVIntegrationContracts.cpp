@@ -19,6 +19,14 @@ void require(bool condition, const std::string& message) {
     if (!condition) throw std::runtime_error(message);
 }
 
+bool exactlyEqual(const std::vector<WVComplex64>& first, const std::vector<WVComplex64>& second) {
+    if (first.size() != second.size()) return false;
+    for (std::size_t index = 0; index < first.size(); ++index) {
+        if (first[index].real != second[index].real || first[index].imag != second[index].imag) return false;
+    }
+    return true;
+}
+
 struct OwnedState {
     WVShape2D shape{1,1};
     std::vector<WVComplex64> values{{1.0,0.5},{-0.25,0.75},{0.125,-0.5}};
@@ -47,12 +55,14 @@ public:
     WVKernelStatus enforceStateConstraints(WVMutableCoefficients& coefficients) override {
         coefficients.Ap.data[0].real = fixedAmplitude;
         ++constraintCount;
+        if (constraintCount == failConstraintAt) return {WVKernelStatusCode::invalidConfiguration,"injected endpoint-constraint failure"};
         return WVKernelStatus::ok();
     }
 
     static constexpr double fixedAmplitude = 0.375;
     std::size_t evaluationCount = 0;
     std::size_t constraintCount = 0;
+    std::size_t failConstraintAt = 0;
 };
 
 class DenseOutputDouble final : public WVDenseOutput {
@@ -168,8 +178,25 @@ void testExactRK4TrafficAccounting() {
     require(metrics.stageFluxClearElementWrites == 0 && metrics.weightedFluxClearElementWrites == 0,"RK buffer clears were not eliminated");
     require(metrics.weightedFluxInitializationElementReads == 3 && metrics.weightedFluxInitializationElementWrites == 3,"first-stage weighted-flux initialization is not exact");
     require(metrics.weightedAccumulationElementReads == 18 && metrics.weightedAccumulationElementWrites == 9,"weighted-accumulation accounting is not exact");
-    require(metrics.finalStateUpdateElementReads == 6 && metrics.finalStateUpdateElementWrites == 3,"final-state traffic accounting is not exact");
+    require(metrics.finalStateUpdateElementReads == 6 && metrics.finalStateUpdateElementWrites == 3,"final-state candidate traffic accounting is not exact");
+    require(metrics.acceptedStateCommitElementReads == 3 && metrics.acceptedStateCommitElementWrites == 3,"accepted-state commit traffic accounting is not exact");
     require(metrics.workspaceCapacityBytes == 9*sizeof(WVComplex64) && metrics.workspaceLiveBytes == metrics.workspaceCapacityBytes && metrics.workspaceMaximumLiveBytes == metrics.workspaceCapacityBytes,"RK workspace liveness is not exact");
+}
+
+void testFailedEndpointConstraintIsAtomic() {
+    ContractSystem system;
+    system.failConstraintAt = 5;
+    OwnedState owned;
+    auto state = owned.mutableView();
+    WVFixedStepRK4 integrator(system);
+    auto status = integrator.prepareStateAfterRestart(state);
+    require(static_cast<bool>(status),"atomicity test restart preparation failed");
+    const auto originalValues = owned.values;
+    const auto originalTime = state.t;
+    status = integrator.step(state,0.1);
+    require(status.code == WVKernelStatusCode::invalidConfiguration,"endpoint-constraint failure was not propagated");
+    require(exactlyEqual(owned.values,originalValues) && state.t == originalTime,"failed endpoint constraint modified the accepted state");
+    require(integrator.lastAcceptedStep() == nullptr,"failed endpoint constraint published an accepted step");
 }
 
 } // namespace
@@ -179,6 +206,7 @@ int main() {
         testPortableContractsAndImmutableOutput();
         testAcceptedStepLifetimeRestartAndPartialStep();
         testExactRK4TrafficAccounting();
+        testFailedEndpointConstraintIsAtomic();
         return 0;
     } catch (const std::exception& exception) {
         std::cerr << exception.what() << '\n';
