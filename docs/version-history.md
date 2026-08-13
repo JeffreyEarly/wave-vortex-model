@@ -10,6 +10,7 @@ nav_order: 100
 
 - Added an explicit, source-only compiled preview for ordinary constant-stratification nonlinear flux; MATLAB remains the default, native support must be built explicitly, and the preview rejects unsupported forcing without fallback.
 - Added a MATLAB-independent portable forcing engine for the frozen v1 forcing subset and deterministic fixed-step RK4 integration over canonical wave-vortex coefficients.
+- Reduced portable RK4 and forcing-engine array traffic by writing complete right-hand sides directly into caller storage, reusing the accepted state for the first stage, and allocating forcing workspaces only for schedules that require them.
 - Added persistent, resolution-convertible `WVNarrowBandGeostrophicForcing` and retained the former fixed-amplitude helper as a silent deprecated 4.x delegate.
 - Retired the experimental FFTW backend; WaveVortexModel now uses MATLAB's builtin transforms and has no FFTWTransforms dependency.
 - Removed the obsolete expanded mappings `dftPrimaryIndex`, `dftConjugateIndex`, `wvConjugateIndex`, `indicesFromWVGridToFFTWGrid`, and `expandedLegacyMappings`; `indicesFromWVGridToDFTGrid` remains available explicitly.
