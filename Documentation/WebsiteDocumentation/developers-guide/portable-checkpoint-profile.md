@@ -116,6 +116,8 @@ Issue #182 defines these boundaries and exercises dense output, scheduling, and 
 
 The standalone JSON report includes exact element and byte counts for the integration-boundary arrays. Counters distinguish constructed stage states, first-stage weighted-sum initialization, subsequent weighted accumulation, any forcing temporary accumulation, output initialization required by additive-only schedules, final accepted-state update, and exact retained and maximum-live storage. Zero counters explicitly verify that redundant stage clears, nonlinear-only forcing accumulators, and completed-output copies did not execute. The diagnostic deliberately excludes FFT-plan and kernel-scratch internal traffic, which is common to direct compiled `nonlinearFlux` and standalone RK4. No timer is read to collect the counters.
 
+Package authors can reproduce the paired archived-source comparison with `runPortableIntegrationTrafficBenchmark`. It builds the integration-contract baseline and the clean candidate against the same validated native FFTW cache, rotates fresh-process execution order, compares final checkpoints, and writes compact JSON and Markdown evidence.
+
 ## Verification boundary
 
 The portable contract tests compare every supported forcing and mixed hydrostatic/nonhydrostatic schedules directly with MATLAB at relative infinity error at most \(10^{-12}\). A short mixed-forcing RK4 trajectory is independently advanced in MATLAB and C++, including a partial final step and stage-wise fixed-amplitude restoration. The test fixtures also use nondefault gravity, density, and planetary values so the C++ descriptor reproduces established MATLAB normalization conventions rather than silently substituting its own.
