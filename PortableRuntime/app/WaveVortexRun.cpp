@@ -63,6 +63,7 @@ struct Options {
     std::size_t steps = 0;
     std::size_t threads = 0;
     std::size_t benchmarkDenseOutputsPerStep = 0;
+    std::size_t benchmarkOutputCount = 0;
     std::size_t benchmarkWarmupSteps = 0;
     bool hasFinalTime = false;
     bool hasSteps = false;
@@ -150,6 +151,8 @@ bool parseOptions(int argc, char** argv, Options& options, std::string& error) {
             options.phaseFile = value;
         } else if (name == "--benchmark-dense-outputs-per-step") {
             if (!parseSize(value,options.benchmarkDenseOutputsPerStep) || (options.benchmarkDenseOutputsPerStep != 1 && options.benchmarkDenseOutputsPerStep != 4)) { error = "--benchmark-dense-outputs-per-step must be 1 or 4."; return false; }
+        } else if (name == "--benchmark-output-count") {
+            if (!parseSize(value,options.benchmarkOutputCount) || options.benchmarkOutputCount == 0) { error = "--benchmark-output-count must be a positive integer."; return false; }
         } else if (name == "--benchmark-warmup-steps") {
             if (!parseSize(value,options.benchmarkWarmupSteps)) { error = "--benchmark-warmup-steps must be a nonnegative integer."; return false; }
         } else {
@@ -165,6 +168,7 @@ bool parseOptions(int argc, char** argv, Options& options, std::string& error) {
     if (options.provider == "reference" && options.threads > 1) { error = "The reference provider supports only one thread."; return false; }
     if (options.threads == 0) options.threads = options.provider == "reference" ? 1 : std::min<std::size_t>(18,std::max(1U,std::thread::hardware_concurrency()));
     if ((options.benchmarkDenseOutputsPerStep != 0 || options.benchmarkWarmupSteps != 0) && !options.hasSteps) { error = "Author-only benchmark controls require --steps."; return false; }
+    if (options.benchmarkOutputCount != 0 && (!options.hasFinalTime || options.integrator != "adaptive-rk23")) { error = "--benchmark-output-count requires adaptive-rk23 with --final-time."; return false; }
     return true;
 }
 
@@ -185,6 +189,13 @@ std::vector<double> interiorOutputTimes(double initialTime, double stepSize, std
     for (std::size_t step = 0; step < stepCount; ++step) {
         for (std::size_t output = 1; output <= outputsPerStep; ++output) times.push_back(initialTime+(static_cast<double>(step)+static_cast<double>(output)/static_cast<double>(outputsPerStep+1))*stepSize);
     }
+    return times;
+}
+
+std::vector<double> uniformInteriorOutputTimes(double initialTime, double finalTime, std::size_t outputCount) {
+    std::vector<double> times;
+    times.reserve(outputCount);
+    for (std::size_t output = 1; output <= outputCount; ++output) times.push_back(initialTime+(finalTime-initialTime)*static_cast<double>(output)/static_cast<double>(outputCount+1));
     return times;
 }
 #endif
@@ -414,6 +425,13 @@ int main(int argc, char** argv) {
     start = Clock::now();
     if (options.benchmarkWarmupSteps != 0 || options.benchmarkDenseOutputsPerStep != 0) {
         kernelStatus = advanceBenchmarkSteps(options.steps);
+    } else if (options.benchmarkOutputCount != 0) {
+#if WV_RUNTIME_HAS_DENSE_OUTPUT
+        WVOrderedOutputSchedule schedule(uniformInteriorOutputTimes(state.t,options.finalTime,options.benchmarkOutputCount));
+        kernelStatus = driver.advanceToTime(state,options.finalTime,options.deltaT,schedule,benchmarkSink);
+#else
+        kernelStatus = {WVKernelStatusCode::unsupportedOperation,"This archived baseline does not implement dense output."};
+#endif
     } else if (options.hasSteps) {
         for (std::size_t step = 0; step < options.steps && kernelStatus; ++step) {
             kernelStatus = integrator.step(state,proposedStepSize);
@@ -459,11 +477,13 @@ int main(int argc, char** argv) {
     const auto denseHistoryBytes = fixedIntegrator != nullptr ? fixedMetrics.denseHistoryCapacityBytes : 0;
     const auto driverInterpolationBytes = driver.metrics().interpolationBufferCapacityBytes;
     const auto driverInterpolationMaximumLiveBytes = driver.metrics().interpolationBufferMaximumLiveBytes;
+    const auto driverInterpolationSeconds = driver.metrics().interpolationSeconds;
     const auto interpolatedOutputCount = benchmarkSink.interpolatedCount;
 #else
     const std::size_t denseHistoryBytes = 0;
     const std::size_t driverInterpolationBytes = 0;
     const std::size_t driverInterpolationMaximumLiveBytes = 0;
+    const double driverInterpolationSeconds = 0.0;
     const std::size_t interpolatedOutputCount = 0;
 #endif
     const auto checkpointStateBytes = stateBytes(checkpoint);
@@ -480,7 +500,7 @@ int main(int argc, char** argv) {
            << "\"input\":" << quoted(options.input) << ",\"output\":" << quoted(options.output) << ",\"provider\":{\"id\":" << quoted(options.provider) << ",\"version\":" << quoted(providerVersion) << ",\"threads\":" << options.threads << ",\"baseLibrary\":" << quoted(baseLibrary) << ",\"threadLibrary\":" << quoted(threadLibrary) << "},"
            << "\"state\":{\"initialTime\":" << inspection.t << ",\"finalTime\":" << state.t << ",\"deltaT\":" << options.deltaT << ",\"stepCount\":" << stepCount << ",\"rejectedStepCount\":" << rejectedStepCount << ",\"rhsEvaluationCount\":" << rightHandSideEvaluationCount << ",\"shape\":[" << shape.rows << ',' << shape.columns << "]},"
            << "\"integrator\":{\"id\":" << quoted(options.integrator) << ",\"relativeTolerance\":" << options.relativeTolerance << ",\"absoluteTolerance\":" << options.absoluteTolerance << ",\"lastNormalizedError\":" << adaptiveMetrics.lastNormalizedError << ",\"lastProposedStepSize\":" << adaptiveMetrics.lastProposedStepSize << ",\"lastAcceptedStepSize\":" << adaptiveMetrics.lastAcceptedStepSize << ",\"nextStepSize\":" << integrator.nextStepSize() << ",\"fsalReuseCount\":" << adaptiveMetrics.fsalReuseCount << ",\"fsalInvalidationCount\":" << adaptiveMetrics.fsalInvalidationCount << ",\"rejectedInitialDerivativeReuseCount\":" << adaptiveMetrics.rejectedInitialDerivativeReuseCount << ",\"constraintModifiedCoefficientCount\":" << adaptiveMetrics.constraintModifiedCoefficientCount << ",\"denseOutputEvaluationCount\":" << (fixedIntegrator != nullptr ? fixedMetrics.denseOutputEvaluationCount : adaptiveMetrics.denseOutputEvaluationCount) << ",\"denseOutputElementReads\":" << (fixedIntegrator != nullptr ? fixedMetrics.denseOutputElementReads : adaptiveMetrics.denseOutputElementReads) << ",\"denseOutputElementWrites\":" << (fixedIntegrator != nullptr ? fixedMetrics.denseOutputElementWrites : adaptiveMetrics.denseOutputElementWrites) << ",\"denseOutputSeconds\":" << (fixedIntegrator != nullptr ? fixedMetrics.denseOutputSeconds : adaptiveMetrics.denseOutputSeconds) << ",\"errorPolicyBytes\":" << adaptiveMetrics.errorPolicyBytes << "},"
-           << "\"authorBenchmark\":{\"warmupStepCount\":" << options.benchmarkWarmupSteps << ",\"sampleStepCount\":" << (options.hasSteps ? options.steps : 0) << ",\"denseOutputsPerStep\":" << options.benchmarkDenseOutputsPerStep << ",\"interpolatedOutputCount\":" << interpolatedOutputCount << "},"
+           << "\"authorBenchmark\":{\"warmupStepCount\":" << options.benchmarkWarmupSteps << ",\"sampleStepCount\":" << (options.hasSteps ? options.steps : 0) << ",\"denseOutputsPerStep\":" << options.benchmarkDenseOutputsPerStep << ",\"requestedOutputCount\":" << options.benchmarkOutputCount << ",\"interpolatedOutputCount\":" << interpolatedOutputCount << ",\"interpolationSeconds\":" << driverInterpolationSeconds << "},"
            << "\"forcing\":" << forcingJSON(checkpoint.forcingSchedule) << ','
            << "\"timingSeconds\":{\"inspect\":" << timings.inspect << ",\"read\":" << timings.read << ",\"construct\":" << timings.construct << ",\"prepare\":" << timings.prepare << ",\"integrate\":" << timings.integrate << ",\"write\":" << timings.write << ",\"total\":" << timings.total << "},"
            << "\"storageBytes\":{\"checkpointState\":" << checkpointStateBytes << ",\"descriptor\":" << kernelMetrics.descriptorBytes << ",\"planWrapper\":" << kernelMetrics.planBytes << ",\"kernelScratch\":" << kernelMetrics.scratchCapacityBytes << ",\"forcingSchedule\":" << forcingMetrics.scheduleBytes << ",\"forcingDerivedOperators\":" << forcingMetrics.derivedOperatorBytes << ",\"forcingWorkspace\":" << forcingMetrics.workspaceCapacityBytes << ",\"integratorWorkspace\":" << integratorWorkspaceCapacityBytes << ",\"denseHistory\":" << denseHistoryBytes << ",\"driverInterpolation\":" << driverInterpolationBytes << ",\"knownPersistent\":" << knownPersistentBytes+driverInterpolationBytes << ",\"persistentFullHermitian\":0},"

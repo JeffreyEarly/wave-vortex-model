@@ -1,8 +1,8 @@
 #!/bin/sh
 set -eu
 
-if [ "$#" -ne 12 ]; then
-    echo "usage: runPortableRuntimeProcess.sh RUNNER INPUT OUTPUT REPORT PHASE RSS STOP SAMPLER DT STEPS THREADS INTERVAL" >&2
+if [ "$#" -ne 12 ] && [ "$#" -ne 13 ]; then
+    echo "usage: runPortableRuntimeProcess.sh RUNNER INPUT OUTPUT REPORT PHASE RSS STOP SAMPLER DT STEPS THREADS INTERVAL [WARMUP_STEPS]" >&2
     exit 2
 fi
 
@@ -19,9 +19,11 @@ shift 9
 steps=$1
 threads=$2
 interval=$3
+shift 3
+warmup_steps=${1:-0}
 
 printf '%s\n' startup > "$phase"
-"$runner" "$input" "$output" --delta-t "$delta_t" --steps "$steps" --fft-provider native-fftw --threads "$threads" --report "$report" --phase-file "$phase" &
+"$runner" "$input" "$output" --delta-t "$delta_t" --steps "$steps" --benchmark-warmup-steps "$warmup_steps" --fft-provider native-fftw --threads "$threads" --report "$report" --phase-file "$phase" &
 runner_pid=$!
 /bin/sh "$sampler" "$runner_pid" "$phase" "$stop" "$rss" "$interval" &
 sampler_pid=$!

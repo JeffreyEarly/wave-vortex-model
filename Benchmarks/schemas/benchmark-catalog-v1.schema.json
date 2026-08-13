@@ -22,6 +22,19 @@
         }
       }
     },
+    "publishedSuites": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["suiteId", "operation", "displayName"],
+        "properties": {
+          "suiteId": {"enum": ["portable-rk4-v1", "portable-rk23-v1"]},
+          "operation": {"const": "integrate"},
+          "displayName": {"type": "string", "minLength": 1}
+        }
+      }
+    },
     "publishedDatasets": {
       "type": "array",
       "items": {

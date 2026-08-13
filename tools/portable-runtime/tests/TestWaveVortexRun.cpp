@@ -88,6 +88,11 @@ int main() {
         require(run(quote(input)+" "+quote(adaptiveDenseOutput)+" --delta-t 1e-7 --steps 2 --integrator adaptive-rk23 --fft-provider reference --benchmark-dense-outputs-per-step 1 --report "+quote(adaptiveDenseReport)) == 0,"adaptive runner dense-output execution failed");
         const auto adaptiveDenseReportText = text(adaptiveDenseReport);
         require(adaptiveDenseReportText.find("\"denseOutputEvaluationCount\":2") != std::string::npos && adaptiveDenseReportText.find("\"interpolatedOutputCount\":2") != std::string::npos,"adaptive runner did not report its dense-output work");
+        const auto adaptiveScheduledOutput = directory/"adaptive-scheduled-output.nc";
+        const auto adaptiveScheduledReport = directory/"adaptive-scheduled-report.json";
+        require(run(quote(input)+" "+quote(adaptiveScheduledOutput)+" --delta-t 1e-7 --final-time 8.9510002 --integrator adaptive-rk23 --fft-provider reference --benchmark-output-count 4 --report "+quote(adaptiveScheduledReport)) == 0,"adaptive runner scheduled-output execution failed");
+        const auto adaptiveScheduledReportText = text(adaptiveScheduledReport);
+        require(adaptiveScheduledReportText.find("\"requestedOutputCount\":4") != std::string::npos && adaptiveScheduledReportText.find("\"interpolatedOutputCount\":4") != std::string::npos && adaptiveScheduledReportText.find("\"interpolationSeconds\":") != std::string::npos,"adaptive runner did not report scheduled-output work");
         const std::vector<std::string> forcingFixtures{
             "forcing-nonlinear.nc","forcing-adaptive-damping.nc","forcing-fixed-amplitude.nc","forcing-quadratic-bottom-friction.nc",
             "forcing-pseudo-topographic.nc","forcing-beta-plane.nc","forcing-mixed-hydrostatic.nc","forcing-mixed-nonhydrostatic.nc"};
@@ -116,6 +121,7 @@ int main() {
         const auto sentinel = bytes(output);
         require(run(quote(input)+" "+quote(output)+" --delta-t bad --steps 1 --fft-provider reference >/dev/null 2>&1") != 0,"runner accepted malformed deltaT");
         require(run(quote(input)+" "+quote(output)+" --delta-t 0.037 --steps 1 --integrator fixed-rk4 --relative-tolerance 1e-3 --fft-provider reference >/dev/null 2>&1") != 0,"fixed runner accepted adaptive tolerance options");
+        require(run(quote(input)+" "+quote(output)+" --delta-t 0.037 --steps 1 --integrator adaptive-rk23 --benchmark-output-count 2 --fft-provider reference >/dev/null 2>&1") != 0,"adaptive runner accepted scheduled outputs without final-time integration");
         require(run(quote(input)+" "+quote(output)+" --delta-t 0.037 --steps 1 --integrator unknown --fft-provider reference >/dev/null 2>&1") != 0,"runner accepted an unknown integrator");
         require(bytes(output) == sentinel,"argument failure changed an existing output");
         std::filesystem::remove_all(directory);

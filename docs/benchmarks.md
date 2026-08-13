@@ -501,6 +501,14 @@ The plots separate horizontal and vertical scaling for the representative nonhyd
 </details>
 <!-- BENCHMARKS:SCALING:END -->
 
+## Portable runtime integration
+
+The portable runtime uses the same compiled constant-stratification core without MATLAB. Fixed-RK4 results separate product speed against MATLAB builtin transforms from orchestration overhead against MATLAB driving the same compiled core. Adaptive RK3(2) results report work versus reference error and stage-derived continuous output independently.
+
+<!-- BENCHMARKS:PORTABLE_RUNTIME:START -->
+No approved portable-runtime integration result has been published yet.
+<!-- BENCHMARKS:PORTABLE_RUNTIME:END -->
+
 ## Compare computers
 
 Processor, memory, operating-system, toolchain, and thread information accompany every published dataset. Results from different environments remain machine-dependent measurements rather than universal performance guarantees.

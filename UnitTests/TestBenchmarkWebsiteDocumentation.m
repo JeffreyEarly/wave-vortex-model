@@ -108,6 +108,25 @@ classdef TestBenchmarkWebsiteDocumentation < matlab.unittest.TestCase
             testCase.verifySubstring(atGlance,"4.2.2");
         end
 
+        function portableIntegrationResultsRenderIndependentDecisions(testCase)
+            [root,buildFolder] = testCase.createFixture("portable-integration");
+            builtin = integrationDataset("portable-rk4-v1--matlab-builtin--m5-max--20260813T120000Z","matlab","builtin",1.0);
+            compiled = integrationDataset("portable-rk4-v1--matlab-compiled-preview--m5-max--20260813T120000Z","matlab","compiled-preview",0.70);
+            standalone = integrationDataset("portable-rk4-v1--cpp-native-fftw--m5-max--20260813T120000Z","cpp","native-fftw",0.65);
+            adaptive = adaptiveIntegrationDataset;
+            entries = testCase.publishDatasets(root,{builtin,compiled,standalone,adaptive});
+            testCase.writeCatalog(root,entries);
+
+            generateBenchmarkWebsiteDocumentation(root,buildFolder);
+
+            page = string(fileread(fullfile(buildFolder,"benchmarks.md")));
+            testCase.verifySubstring(page,"RUNTIME-PREVIEW-READY")
+            testCase.verifySubstring(page,"ORCHESTRATION-EFFICIENT")
+            testCase.verifySubstring(page,"ADAPTIVE-RK23-AVAILABLE")
+            testCase.verifySubstring(page,"Standalone / compiled MATLAB")
+            testCase.verifySubstring(page,"Reference error")
+        end
+
         function missingSuiteDatasetIsExplicitlyUnavailable(testCase)
             [root,buildFolder] = testCase.createFixture("missing-suite");
             standard = publishedDataset("scaling-standard-v1--matlab-builtin--m5-max--20260810T120000Z","matlab","builtin","m5-max","M5 Max","4.2.1","2026-08-10T12:00:00Z",standardCases(1));
@@ -200,7 +219,8 @@ classdef TestBenchmarkWebsiteDocumentation < matlab.unittest.TestCase
                 struct("suiteId","core-v1","backendId","builtin","rawArtifact","Benchmarks/results/reference/core.json"), ...
                 struct("suiteId","scaling-standard-v1","backendId","builtin","rawArtifact","Benchmarks/results/reference/standard.json"), ...
                 struct("suiteId","scaling-large-v1","backendId","builtin","rawArtifact","Benchmarks/results/reference/large.json")];
-            catalog = struct("schemaVersion","benchmark-catalog-v1","scoringReferences",references,"publishedDatasets",publishedDatasets);
+            publishedSuites = [struct("suiteId","portable-rk4-v1","operation","integrate","displayName","Portable fixed RK4 integration"),struct("suiteId","portable-rk23-v1","operation","integrate","displayName","Portable adaptive RK3(2) integration")];
+            catalog = struct("schemaVersion","benchmark-catalog-v1","scoringReferences",references,"publishedSuites",publishedSuites,"publishedDatasets",publishedDatasets);
             testCase.writeJson(fullfile(root,"Benchmarks","results","catalog.json"),catalog);
         end
 
@@ -229,6 +249,22 @@ implementation = struct("id",implementationId,"displayName",displayName,"version
 platform = struct("id",platformId,"displayName",platformName,"processor",platformName + " processor","physicalMemoryBytes",64*2^30,"os","Example OS","architecture","example64","threadCount",16);
 provenance = struct("rawArtifact","placeholder.json","rawSchemaVersion","1.1.0");
 dataset = struct("schemaVersion","published-benchmark-v1","datasetId",datasetId,"collectedAt",collectedAt,"benchmark",benchmark,"implementation",implementation,"platform",platform,"toolchain",toolchain,"provenance",provenance,"cases",{cases});
+end
+
+function dataset = integrationDataset(datasetId,implementationId,backendId,seconds)
+benchmarkCase = completeCase("constant-nonhydrostatic-256x256x65","constant-nonhydrostatic",[256 256 65],101,seconds);
+benchmarkCase.configuration.integration = struct("initialTime",0,"finalTime",8,"fixedStepSize",1,"fixedStepCount",8,"requestedOutputCount",0);
+benchmarkCase.work = struct("acceptedSteps",8,"rejectedSteps",0,"rightHandSideEvaluations",32,"denseEvaluations",0);
+dataset = publishedDataset(datasetId,implementationId,backendId,"m5-max","M5 Max","unreleased","2026-08-13T12:00:00Z",{benchmarkCase});
+dataset.benchmark = struct("suiteId","portable-rk4-v1","suiteVersion",1,"operation","integrate","method","fixed-rk4","correctnessTolerance",1e-12);
+end
+
+function dataset = adaptiveIntegrationDataset
+benchmarkCase = completeCase("constant-nonhydrostatic-adaptive-rtol-1em03","constant-nonhydrostatic",[8 6 7],102,0.1);
+benchmarkCase.configuration.integration = struct("initialTime",0,"finalTime",2e-5,"initialStepSize",1e-5,"relativeTolerance",1e-3,"absoluteTolerance",1e-6,"requestedOutputCount",0);
+benchmarkCase.work = struct("acceptedSteps",5,"rejectedSteps",2,"rightHandSideEvaluations",26,"denseEvaluations",0);
+dataset = publishedDataset("portable-rk23-v1--cpp-native-fftw--m5-max--20260813T120000Z","cpp","native-fftw","m5-max","M5 Max","unreleased","2026-08-13T12:00:00Z",{benchmarkCase});
+dataset.benchmark = struct("suiteId","portable-rk23-v1","suiteVersion",1,"operation","integrate","method","adaptive-rk23","correctnessTolerance",1e-12);
 end
 
 function cases = standardCases(scale)

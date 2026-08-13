@@ -42,9 +42,16 @@
       "properties": {
         "suiteId": {"$ref": "#/$defs/slug"},
         "suiteVersion": {"$ref": "#/$defs/positiveInteger"},
-        "operation": {"const": "nonlinearFlux"},
+        "operation": {"enum": ["nonlinearFlux", "integrate"]},
+        "method": {"enum": ["fixed-rk4", "adaptive-rk23"]},
         "correctnessTolerance": {"$ref": "#/$defs/positiveNumber"}
-      }
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"operation": {"const": "integrate"}}},
+          "then": {"required": ["method"]}
+        }
+      ]
     },
     "implementation": {
       "type": "object",
@@ -108,7 +115,34 @@
         "shouldAntialias": {"type": "boolean"},
         "seed": {"type": "integer", "minimum": 0},
         "warmupCount": {"type": "integer", "minimum": 0},
-        "sampleCount": {"$ref": "#/$defs/positiveInteger"}
+        "sampleCount": {"$ref": "#/$defs/positiveInteger"},
+        "integration": {"$ref": "#/$defs/integrationConfiguration"}
+      }
+    },
+    "integrationConfiguration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["initialTime", "finalTime", "requestedOutputCount"],
+      "properties": {
+        "initialTime": {"type": "number"},
+        "finalTime": {"type": "number"},
+        "fixedStepSize": {"$ref": "#/$defs/positiveNumber"},
+        "fixedStepCount": {"$ref": "#/$defs/positiveInteger"},
+        "initialStepSize": {"$ref": "#/$defs/positiveNumber"},
+        "relativeTolerance": {"$ref": "#/$defs/positiveNumber"},
+        "absoluteTolerance": {"$ref": "#/$defs/positiveNumber"},
+        "requestedOutputCount": {"type": "integer", "minimum": 0}
+      }
+    },
+    "work": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["acceptedSteps", "rejectedSteps", "rightHandSideEvaluations", "denseEvaluations"],
+      "properties": {
+        "acceptedSteps": {"type": "integer", "minimum": 0},
+        "rejectedSteps": {"type": "integer", "minimum": 0},
+        "rightHandSideEvaluations": {"type": "integer", "minimum": 0},
+        "denseEvaluations": {"type": "integer", "minimum": 0}
       }
     },
     "timing": {
@@ -170,7 +204,8 @@
             "status": {"const": "complete"},
             "timing": {"$ref": "#/$defs/timing"},
             "correctness": {"$ref": "#/$defs/correctness"},
-            "memory": {"$ref": "#/$defs/memory"}
+            "memory": {"$ref": "#/$defs/memory"},
+            "work": {"$ref": "#/$defs/work"}
           }
         },
         {

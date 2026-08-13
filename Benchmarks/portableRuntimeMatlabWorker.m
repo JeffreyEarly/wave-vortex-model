@@ -22,16 +22,21 @@ try
 
     writePhase(phasePath,"construct");
     constructionTimer = tic;
-    [wvt,reader] = WVTransform.waveVortexTransformFromFile(char(config.inputPath),iTime=Inf,shouldReadOnly=true,computationalBackend="compiled");
+    backend = fieldOr(config,"backend","compiled");
+    [wvt,reader] = WVTransform.waveVortexTransformFromFile(char(config.inputPath),iTime=Inf,shouldReadOnly=true,computationalBackend=backend);
     reader.close();
     reader = [];
     metadata = wvt.computationalBackendMetadata;
-    validateActiveBackend(metadata,string(config.expectedModuleHash));
+    validateActiveBackend(metadata,backend,string(fieldOr(config,"expectedModuleHash","")));
     constructionSeconds = toc(constructionTimer);
     writePhase(phasePath,"steady-retained");
     drawnow;
     pause(config.plateauSeconds);
 
+    warmupStepCount = fieldOr(config,"warmupStepCount",0);
+    for iStep = 1:warmupStepCount
+        advanceOneStep(wvt,config.deltaT);
+    end
     writePhase(phasePath,"integrate");
     timer = tic;
     for iStep = 1:config.stepCount
@@ -52,18 +57,18 @@ try
     writeSeconds = toc(writeTimer);
     delete(wvt);
     wvt = [];
-    lifecycle = lifecycleRecord;
+    lifecycle = lifecycleRecord(backend);
     result = struct( ...
         "schemaVersion","portable-runtime-worker-v1", ...
         "status",conditional(rss.status == "complete" && lifecycle.passed,"complete","failed"), ...
-        "implementation","compiled-matlab-preview", ...
+        "implementation",fieldOr(config,"implementation","compiled-matlab-preview"), ...
         "repeatIndex",config.repeatIndex, ...
         "case",config.caseDefinition, ...
         "constructionSeconds",constructionSeconds, ...
         "integrationSeconds",integrationSeconds, ...
         "writeSeconds",writeSeconds, ...
         "totalSeconds",toc(totalTimer), ...
-        "finalTime",config.initialTime+config.stepCount*config.deltaT, ...
+        "finalTime",config.initialTime+(warmupStepCount+config.stepCount)*config.deltaT, ...
         "metadata",metadata, ...
         "rss",rss, ...
         "rssSamples",rssSamples, ...
@@ -97,13 +102,29 @@ wvt.A0 = A00+(h/6)*(k10+2*k20+2*k30+k40);
 wvt.t = t0+h;
 end
 
-function validateActiveBackend(metadata,expectedModuleHash)
-if string(metadata.activeBackend) ~= "compiled" || string(metadata.provider.id) ~= "native-neon-pthreads" || ~metadata.module.identityValidated || string(metadata.module.sha256) ~= expectedModuleHash || metadata.contract.planCount ~= 17 || metadata.libraries.openmp.detected
-    error("WaveVortexBenchmark:PortableRuntimeIdentity","The MATLAB control did not execute the validated compiled preview.")
+function validateActiveBackend(metadata,backend,expectedModuleHash)
+if backend == "matlab"
+    if string(metadata.activeBackend) ~= "matlab"
+        error("WaveVortexBenchmark:PortableRuntimeIdentity","The MATLAB builtin control did not execute the builtin backend.")
+    end
+elseif string(metadata.activeBackend) ~= "compiled" || string(metadata.provider.id) ~= "native-neon-pthreads" || ~metadata.module.identityValidated || string(metadata.module.sha256) ~= expectedModuleHash || metadata.contract.planCount ~= 17 || metadata.libraries.openmp.detected
+    error("WaveVortexBenchmark:PortableRuntimeIdentity","The MATLAB compiled control did not execute the validated compiled preview.")
 end
 end
 
-function value = lifecycleRecord
+function value = fieldOr(source,name,defaultValue)
+if isfield(source,name)
+    value = source.(name);
+else
+    value = defaultValue;
+end
+end
+
+function value = lifecycleRecord(backend)
+if backend == "matlab"
+    value = struct("passed",true,"kernelCount",0,"activePlans",0,"outstandingPlanningBytes",0,"moduleLocked",false);
+    return
+end
 metrics = wv_compiled_backend_mex('moduleMetrics');
 value = struct("passed",metrics.kernelCount == 0 && metrics.activePlans == 0 && metrics.outstandingPlanningBytes == 0 && ~metrics.moduleLocked,"kernelCount",metrics.kernelCount,"activePlans",metrics.activePlans,"outstandingPlanningBytes",metrics.outstandingPlanningBytes,"moduleLocked",metrics.moduleLocked);
 end
