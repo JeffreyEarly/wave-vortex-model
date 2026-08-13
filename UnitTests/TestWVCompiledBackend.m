@@ -104,7 +104,7 @@ classdef TestWVCompiledBackend < matlab.unittest.TestCase
             exportRoot = fullfile(fixture.Folder,"export"); mkdir(exportRoot);
             tracked = splitlines(strtrim(string(runGit(testCase.repositoryRoot,"ls-files"))));
             classFiles = tracked(startsWith(tracked,"@WVCompiledBackend/"));
-            required = [classFiles;"CompiledKernel/adapters/native-fftw/WVNativeFFTWEngine.cpp";"CompiledKernel/adapters/native-fftw/WVNativeFFTWEngine.hpp";"CompiledKernel/adapters/native-fftw/wv_compiled_backend_mex.cpp";"CompiledKernel/src/WVKernelTypes.cpp";"CompiledKernel/src/WVTransformConstantStratificationKernel.cpp"];
+            required = [classFiles;"CompiledKernel/native-fftw-provider.env";"CompiledKernel/adapters/native-fftw/WVNativeFFTWEngine.cpp";"CompiledKernel/adapters/native-fftw/WVNativeFFTWEngine.hpp";"CompiledKernel/adapters/native-fftw/wv_compiled_backend_mex.cpp";"CompiledKernel/src/WVKernelTypes.cpp";"CompiledKernel/src/WVTransformConstantStratificationKernel.cpp"];
             testCase.verifyTrue(all(ismember(required,tracked)));
             for relative = required'
                 destination = fullfile(exportRoot,relative);

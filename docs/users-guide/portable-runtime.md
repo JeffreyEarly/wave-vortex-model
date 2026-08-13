@@ -1,0 +1,76 @@
+---
+layout: default
+title: Portable constant-stratification runtime
+parent: User guide
+nav_order: 5
+---
+
+# Portable constant-stratification runtime
+
+`wave-vortex-run` advances a compatible WaveVortexModel checkpoint without starting MATLAB. It uses the same MATLAB-independent constant-stratification C++ core as the compiled MATLAB preview, the frozen forcing schedule stored in the checkpoint, and deterministic fixed-step RK4 integration.
+
+The runner is source-only. The optimized provider currently targets Apple silicon and builds the pinned FFTW 3.3.11 NEON/pthreads configuration locally. No FFTW library or executable is distributed by WaveVortexModel.
+
+## Build
+
+From an authoring checkout on Apple silicon:
+
+```sh
+tools/portable-runtime/buildWaveVortexRun.sh
+```
+
+The script downloads the official FFTW archive only when the ignored local cache does not already contain it, verifies the recorded SHA-256 checksum, and builds `wave-vortex-run` under `.compiled-backend-cache`. Use the resulting path printed on the final line.
+
+A portable reference build is available for correctness and non-Apple development:
+
+```sh
+cmake -S PortableRuntime -B build/portable-runtime -DCMAKE_BUILD_TYPE=Release
+cmake --build build/portable-runtime --target wave-vortex-run
+```
+
+The reference provider is intentionally not the optimized runtime.
+
+## Run and restart
+
+Select the FFT provider explicitly and specify either a step count or a final time:
+
+```sh
+wave-vortex-run restart.nc continued.nc \
+  --delta-t 1 \
+  --steps 100 \
+  --fft-provider native-fftw \
+  --threads 18 \
+  --report continued.json
+```
+
+or:
+
+```sh
+wave-vortex-run restart.nc continued.nc \
+  --delta-t 1 \
+  --final-time 3600 \
+  --fft-provider native-fftw
+```
+
+If the requested final time is not an integer number of steps from the checkpoint time, the last step is shortened. Input and output may name the same file; replacement is transactional and a failed run preserves the prior checkpoint.
+
+The runner never chooses another FFT provider or omits unsupported forcing. A native provider request fails clearly if the executable was not built with the validated FFTW provider. Unsupported transforms, checkpoint structures, and forcing schedules are rejected before the three coefficient arrays are loaded.
+
+## Supported scope
+
+Runtime v1 supports hydrostatic and nonhydrostatic constant stratification, transform-level antialiasing, and frozen schedules containing:
+
+- `WVNonlinearAdvection`;
+- `WVAdaptiveDamping`;
+- `WVFixedAmplitudeForcing`;
+- `WVBottomFrictionQuadratic`;
+- `WVPseudoTopographicWaveGeneration`;
+- `WVBetaPlanePVAdvection`.
+
+Custom forcing and all other forcing classes remain in MATLAB. See the [portable checkpoint profile](/developers-guide/portable-checkpoint-profile.html) for the exact state, forcing, and restart contract.
+
+## Reports and performance
+
+Every invocation writes a structured JSON record to standard output. `--report` writes the same record to a file. It includes the resolved forcing order, provider and loaded-library identities, plan count, integration and checkpoint timings, known application-owned storage, and the active execution schedule.
+
+Runtime readiness uses the time spent in eight fixed RK4 integration steps. Startup, checkpoint reading, provider construction, preparation, and output writing are reported separately and do not enter the integration-speed gate. Runtime memory is also reported separately and does not change numerical compatibility.

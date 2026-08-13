@@ -108,9 +108,27 @@ struct WVCheckpoint {
     WVFrozenForcingSchedule forcingSchedule;
 };
 
+// Allocation-light checkpoint information used to reject incompatible input
+// before loading the three state-sized coefficient arrays.
+struct WVCheckpointInspection {
+    WVTransformConstantStratificationConfiguration configuration;
+    WVShape2D coefficientShape;
+    double t = 0.0;
+    double t0 = 0.0;
+    WVCheckpointMetadata metadata;
+    WVFrozenForcingSchedule forcingSchedule;
+};
+
 // Read and structurally validate existing WaveVortexModel 4.x NetCDF checkpoints.
 class WVCheckpointReader final {
 public:
+    // Inspect structure, configuration, the selected state shape, and forcing
+    // without allocating or reading Ap, Am, or A0.
+    static WVCheckpointStatus inspect(
+        const std::string& path,
+        WVCheckpointInspection& inspection,
+        WVCheckpointStateSelection selection = WVCheckpointStateSelection::latest());
+
     // On failure, checkpoint is unchanged and all NetCDF handles are closed.
     static WVCheckpointStatus read(
         const std::string& path,

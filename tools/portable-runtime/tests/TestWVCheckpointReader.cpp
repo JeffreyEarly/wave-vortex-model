@@ -113,6 +113,16 @@ void testPositiveFixtures() {
     verifyCheckpoint(read("time-series-hydrostatic.nc", WVCheckpointStateSelection::atIndex(1)), true, "/wave-vortex", 3, 1, 1.75, 220.0);
 }
 
+void testAllocationLightInspection() {
+    WVCheckpointInspection inspection;
+    const auto result = WVCheckpointReader::inspect(fixture("forcing-mixed-nonhydrostatic.nc").string(), inspection);
+    require(static_cast<bool>(result), result.message);
+    require(inspection.coefficientShape.rows == 4 && inspection.coefficientShape.columns == 9, "inspection coefficient shape mismatch");
+    require(inspection.configuration.Nj == 4 && !inspection.configuration.isHydrostatic, "inspection configuration mismatch");
+    require(inspection.forcingSchedule.entries.size() == 6, "inspection did not decode the frozen forcing schedule");
+    require(inspection.t > inspection.t0, "inspection time metadata mismatch");
+}
+
 void testForcingCapabilities() {
     const auto& capabilities = forcingCapabilities();
     require(capabilities.size() == 12, "forcing capability matrix does not cover all supplied classes");
@@ -457,6 +467,7 @@ void testMalformedForcingRecords() {
 int main() {
     try {
         testPositiveFixtures();
+        testAllocationLightInspection();
         testForcingCapabilities();
         testSupportedForcingFixtures();
         testMixedForcingSchedules();

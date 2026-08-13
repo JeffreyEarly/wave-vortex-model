@@ -121,6 +121,57 @@ struct WVConstantStratificationForcingEngine::DerivedForcing {
 
 WVConstantStratificationForcingEngine::~WVConstantStratificationForcingEngine() = default;
 
+WVKernelStatus WVConstantStratificationForcingEngine::validateSchedule(
+    const WVTransformConstantStratificationConfiguration& configuration,
+    const WVFrozenForcingSchedule& schedule,
+    WVShape2D coefficientShape) {
+    if (schedule.profileIdentifier != WVForcingScheduleProfileIdentifier || schedule.profileVersion != WVForcingScheduleProfileVersion) {
+        return {WVKernelStatusCode::unsupportedOperation,"Unsupported frozen forcing schedule profile."};
+    }
+    if (coefficientShape.rows != configuration.Nj || coefficientShape.rows == 0 || coefficientShape.columns == 0) {
+        return {WVKernelStatusCode::invalidShape,"Frozen forcing coefficient shape is incompatible with the model configuration."};
+    }
+    const auto count = coefficientShape.elementCount();
+    std::set<std::string> names;
+    for (const auto& entry : schedule.entries) {
+        if (!supportedKind(entry.kind)) return {WVKernelStatusCode::unsupportedOperation,"The frozen schedule contains an unsupported forcing class."};
+        if (entry.stage != requiredStage(entry.kind)) return {WVKernelStatusCode::invalidConfiguration,"A forcing record is assigned to the wrong execution stage."};
+        if (entry.name.empty() || !names.insert(entry.name).second) return {WVKernelStatusCode::invalidConfiguration,"Forcing names must be nonempty and unique."};
+        if (entry.kind == WVForcingKind::nonlinearAdvection && !std::holds_alternative<WVNonlinearAdvectionRecord>(entry.payload)) return {WVKernelStatusCode::invalidConfiguration,"Nonlinear-advection payload type mismatch."};
+        if (entry.kind == WVForcingKind::adaptiveDamping) {
+            if (!std::holds_alternative<WVAdaptiveDampingRecord>(entry.payload)) return {WVKernelStatusCode::invalidConfiguration,"Adaptive-damping payload type mismatch."};
+            const double latitude = configuration.latitude*pi/180.0;
+            if (2.0*configuration.rotationRate*std::sin(latitude) == 0.0) return {WVKernelStatusCode::unsupportedOperation,"Adaptive damping requires nonzero Coriolis frequency."};
+        }
+        if (entry.kind == WVForcingKind::betaPlanePVAdvection && !std::holds_alternative<WVBetaPlanePVAdvectionRecord>(entry.payload)) return {WVKernelStatusCode::invalidConfiguration,"Beta-plane payload type mismatch."};
+        if (entry.kind == WVForcingKind::bottomFrictionQuadratic) {
+            if (!std::holds_alternative<WVBottomFrictionQuadraticRecord>(entry.payload)) return {WVKernelStatusCode::invalidConfiguration,"Quadratic-bottom-friction payload type mismatch."};
+            const double Cd = std::get<WVBottomFrictionQuadraticRecord>(entry.payload).Cd;
+            if (!std::isfinite(Cd) || Cd < 0.0) return {WVKernelStatusCode::invalidConfiguration,"Quadratic drag coefficient must be finite and nonnegative."};
+        }
+        if (entry.kind == WVForcingKind::fixedAmplitude) {
+            if (!std::holds_alternative<WVFixedAmplitudeForcingRecord>(entry.payload)) return {WVKernelStatusCode::invalidConfiguration,"Fixed-amplitude payload type mismatch."};
+            const auto& record = std::get<WVFixedAmplitudeForcingRecord>(entry.payload);
+            const auto validFamily = [count](const auto& indices,const auto& values) {
+                if (indices.size() != values.size()) return false;
+                std::set<std::size_t> unique;
+                for (std::size_t index = 0; index < indices.size(); ++index) if (indices[index] >= count || !finite(values[index]) || !unique.insert(indices[index]).second) return false;
+                return true;
+            };
+            if (!validFamily(record.ApIndices,record.ApValues) || !validFamily(record.AmIndices,record.AmValues) || !validFamily(record.A0Indices,record.A0Values)) return {WVKernelStatusCode::invalidConfiguration,"Fixed-amplitude indices and values are incompatible with the coefficient shape."};
+        }
+        if (entry.kind == WVForcingKind::pseudoTopographicWaveGeneration) {
+            if (!std::holds_alternative<WVPseudoTopographicWaveGenerationRecord>(entry.payload)) return {WVKernelStatusCode::invalidConfiguration,"Pseudo-topographic payload type mismatch."};
+            const auto& record = std::get<WVPseudoTopographicWaveGenerationRecord>(entry.payload);
+            if (record.topographicShape.rows != configuration.Nx || record.topographicShape.columns != configuration.Ny || record.topographicHeight.size() != configuration.Nx*configuration.Ny) return {WVKernelStatusCode::invalidShape,"Pseudo-topographic height does not match the horizontal grid."};
+            if (!std::isfinite(record.frequency) || record.frequency <= 0.0 || !std::isfinite(record.rampDuration) || record.rampDuration < 0.0 || !std::isfinite(record.startTime)) return {WVKernelStatusCode::invalidConfiguration,"Pseudo-topographic timing parameters are invalid."};
+            for (const auto value : record.topographicHeight) if (!std::isfinite(value)) return {WVKernelStatusCode::invalidConfiguration,"Pseudo-topographic height must be finite."};
+            for (const auto value : record.barotropicVelocityAmplitude) if (!finite(value)) return {WVKernelStatusCode::invalidConfiguration,"Barotropic velocity amplitude must be finite."};
+        }
+    }
+    return WVKernelStatus::ok();
+}
+
 WVKernelStatus WVConstantStratificationForcingEngine::create(
     const WVTransformConstantStratificationConfiguration& configuration,
     const WVFrozenForcingSchedule& schedule,

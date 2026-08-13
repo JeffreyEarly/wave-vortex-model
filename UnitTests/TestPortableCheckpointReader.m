@@ -156,7 +156,7 @@ classdef TestPortableCheckpointReader < matlab.unittest.TestCase
                 wvt.Ap(~waveOrInertial) = 0;
                 wvt.Am(~waveOrInertial) = 0;
                 wvt.A0(~geostrophicOrMDA) = 0;
-                [expected{1:3}] = wvt.nonlinearFlux(); %#ok<AGROW>
+                [expected{1:3}] = wvt.nonlinearFlux();
                 for iCoefficient = 1:3
                     scale = max(max(abs(expected{iCoefficient}),[],"all"),realmin);
                     relativeError = max(abs(actual{iCoefficient}-expected{iCoefficient}),[],"all")/scale;
@@ -215,6 +215,72 @@ classdef TestPortableCheckpointReader < matlab.unittest.TestCase
                 clear transformCleanup
             end
             clear fixtureCleanup fixtureToolCleanup
+        end
+
+        function standaloneRunnerMatchesMatlab(testCase)
+            repositoryRoot = fileparts(fileparts(mfilename("fullpath")));
+            fixtureToolDirectory = fullfile(repositoryRoot,"tools","portable-runtime");
+            addpath(fixtureToolDirectory)
+            fixtureToolCleanup = onCleanup(@()rmpath(fixtureToolDirectory));
+            buildScript = fullfile(repositoryRoot,"tools","compiled-kernel","run_contract_tests.sh");
+            [buildStatus,buildOutput] = system(sprintf('"%s"',buildScript));
+            testCase.assertEqual(buildStatus,0,buildOutput)
+            runner = fullfile(repositoryRoot,"tools","compiled-kernel","build-portable","wave-vortex-run");
+            fixtureDirectory = string(tempname);
+            outputDirectory = string(tempname);
+            mkdir(fixtureDirectory)
+            mkdir(outputDirectory)
+            fixtureCleanup = onCleanup(@()rmdir(fixtureDirectory,"s"));
+            outputCleanup = onCleanup(@()rmdir(outputDirectory,"s"));
+            generateForcingScheduleFixtures(outputDirectory=fixtureDirectory,coefficientMode="physical-small");
+            fixtureNames = ["forcing-nonlinear.nc" "forcing-adaptive-damping.nc" "forcing-fixed-amplitude.nc" "forcing-quadratic-bottom-friction.nc" "forcing-pseudo-topographic.nc" "forcing-beta-plane.nc" "forcing-mixed-hydrostatic.nc" "forcing-mixed-nonhydrostatic.nc"];
+            deltaT = 0.037;
+
+            for fixtureName = fixtureNames
+                inputPath = fullfile(fixtureDirectory,fixtureName);
+                outputPath = fullfile(outputDirectory,fixtureName);
+                reportPath = outputPath+".json";
+                [wvt,ncfile] = WVTransform.waveVortexTransformFromFile(inputPath,shouldReadOnly=true);
+                transformCleanup = onCleanup(@()TestPortableCheckpointReader.closeIfOpen(ncfile));
+                [Ap,Am,A0,t] = TestPortableCheckpointReader.advanceRK4(wvt,wvt.t+2*deltaT,deltaT);
+
+                command = TestPortableCheckpointReader.sanitizedCommand(sprintf('"%s" "%s" "%s" --delta-t %.17g --steps 2 --fft-provider reference --report "%s"',runner,inputPath,outputPath,deltaT,reportPath));
+                [status,output] = system(command);
+                testCase.assertEqual(status,0,output)
+                report = jsondecode(fileread(reportPath));
+                testCase.verifyEqual(string(report.status),"complete")
+                testCase.verifyEqual(report.state.stepCount,2)
+                testCase.verifyEqual(report.state.rhsEvaluationCount,8)
+                testCase.verifyTrue(report.execution.noFallback)
+                testCase.verifyEqual(string(report.provider.id),"reference")
+
+                [actual,actualFile] = WVTransform.waveVortexTransformFromFile(outputPath,shouldReadOnly=true);
+                actualCleanup = onCleanup(@()TestPortableCheckpointReader.closeIfOpen(actualFile));
+                expected = {Ap;Am;A0};
+                observed = {actual.Ap;actual.Am;actual.A0};
+                for iCoefficient = 1:3
+                    scale = max(max(abs(expected{iCoefficient}),[],"all"),realmin);
+                    testCase.verifyLessThanOrEqual(max(abs(observed{iCoefficient}-expected{iCoefficient}),[],"all")/scale,1e-12,fixtureName)
+                end
+                testCase.verifyEqual(actual.t,t,AbsTol=4*eps(t))
+                TestPortableCheckpointReader.verifyForcingEquivalent(testCase,wvt.forcing,actual.forcing)
+                ncfile.close();
+                actualFile.close();
+                clear transformCleanup actualCleanup
+            end
+
+            inPlacePath = fullfile(outputDirectory,"in-place.nc");
+            copyfile(fullfile(fixtureDirectory,"forcing-nonlinear.nc"),inPlacePath);
+            [initial,initialFile] = WVTransform.waveVortexTransformFromFile(inPlacePath,shouldReadOnly=true);
+            initialTime = initial.t;
+            initialFile.close();
+            command = TestPortableCheckpointReader.sanitizedCommand(sprintf('"%s" "%s" "%s" --delta-t %.17g --steps 1 --fft-provider reference',runner,inPlacePath,inPlacePath,deltaT));
+            [status,output] = system(command);
+            testCase.verifyEqual(status,0,output)
+            [actual,actualFile] = WVTransform.waveVortexTransformFromFile(inPlacePath,shouldReadOnly=true);
+            testCase.verifyEqual(actual.t,initialTime+deltaT,AbsTol=4*eps(initialTime+deltaT))
+            actualFile.close();
+            clear outputCleanup fixtureCleanup fixtureToolCleanup
         end
 
         function cppWriterProducesMatlabCompatibleCheckpoints(testCase)
