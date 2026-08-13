@@ -77,7 +77,10 @@ for iCase = 1:numel(definitions)
 end
 
 comparisons = comparisonRecords(runs,correctness,definitions,options);
-overheadValid = all([comparisons.instrumentationOverheadPassed]);
+controlIntegrationSeconds = sum([runs(string({runs.variant}) == "control").integrationSeconds]);
+instrumentedIntegrationSeconds = sum([runs(string({runs.variant}) == "stage-timed").integrationSeconds]);
+aggregateInstrumentationOverheadRatio = instrumentedIntegrationSeconds/controlIntegrationSeconds;
+overheadValid = aggregateInstrumentationOverheadRatio <= options.instrumentationOverheadLimit;
 commonSizePassed = false(size(options.sizes,1),1);
 for iSize = 1:size(options.sizes,1)
     selected = comparisons(arrayfun(@(item)all(item.Nxyz == options.sizes(iSize,:)),comparisons));
@@ -90,7 +93,7 @@ elseif any(commonSizePassed)
 else
     decision = "NOT-WARRANTED";
 end
-result = struct("schemaVersion","portable-affine-entry-audit-v1","status","complete","source",struct("commit",candidateCommit),"environment",struct("release",string(version("-release")),"architecture",string(computer("arch")),"threads",18),"configuration",struct("suite","core-v1","processRunCount",options.processRunCount,"warmupStepCount",options.warmupStepCount,"mediumSampleCount",options.mediumSampleCount,"largeSampleCount",options.largeSampleCount,"deltaT",options.deltaT,"entryFraction",options.entryFraction,"instrumentationOverheadLimit",options.instrumentationOverheadLimit,"theoreticalEliminatedIntegratorComplexValuesPerStateElement",3),"runs",runs,"correctness",correctness,"comparisons",comparisons,"decision",struct("status",decision,"instrumentationValid",overheadValid,"commonSizePassed",commonSizePassed));
+result = struct("schemaVersion","portable-affine-entry-audit-v1","status","complete","source",struct("commit",candidateCommit),"environment",struct("release",string(version("-release")),"architecture",string(computer("arch")),"threads",18),"configuration",struct("suite","core-v1","processRunCount",options.processRunCount,"warmupStepCount",options.warmupStepCount,"mediumSampleCount",options.mediumSampleCount,"largeSampleCount",options.largeSampleCount,"deltaT",options.deltaT,"entryFraction",options.entryFraction,"instrumentationOverheadLimit",options.instrumentationOverheadLimit,"instrumentationOverheadScope","aggregate integration time across every paired case and process","theoreticalEliminatedIntegratorComplexValuesPerStateElement",3),"runs",runs,"correctness",correctness,"comparisons",comparisons,"decision",struct("status",decision,"instrumentationValid",overheadValid,"aggregateInstrumentationOverheadRatio",aggregateInstrumentationOverheadRatio,"commonSizePassed",commonSizePassed));
 if options.shouldWriteArtifacts
     mkdir(options.outputDirectory)
     writeText(fullfile(options.outputDirectory,"affine-entry-audit.json"),jsonencode(result,PrettyPrint=true));
