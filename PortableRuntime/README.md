@@ -1,6 +1,6 @@
 # WaveVortex portable runtime
 
-`WaveVortexPortableRuntime` contains the MATLAB-independent constant-stratification runtime layers built around the shared C++ numerical kernel. It reads existing WaveVortexModel 4.x checkpoints, resolves supported frozen forcing records at construction, evaluates the combined right-hand side, and advances canonical `[Nj,Nkl]` coefficients with deterministic fixed-step RK4.
+`WaveVortexPortableRuntime` contains the MATLAB-independent constant-stratification runtime layers built around the shared C++ numerical kernel. It reads and writes compatible WaveVortexModel 4.x checkpoints, resolves supported frozen forcing records at construction, evaluates the combined right-hand side, and advances canonical `[Nj,Nkl]` coefficients with deterministic fixed-step RK4.
 
 The library deliberately does not reproduce the general MATLAB `NetCDFFile` or `CAAnnotatedClass` APIs. Its private NetCDF-C layer supports only the group, attribute, dimension, variable, hyperslab, and complex-pair reads required by compatible WaveVortex checkpoints.
 
@@ -20,9 +20,9 @@ Transform-level antialiasing is carried by `shouldAntialias`. Explicit `WVAntial
 The numerical target `WaveVortexKernel` has no NetCDF dependency. The portable runtime composes the boundaries without moving NetCDF into the core:
 
 ```text
-existing WaveVortex NetCDF file
+compatible WaveVortex NetCDF file
             |
-   WaveVortexPortableRuntime  -- NetCDF C at the reader boundary
+   WaveVortexPortableRuntime  -- NetCDF C at the checkpoint boundary
             |
       WaveVortexKernel    -- no NetCDF or MATLAB APIs
 ```
@@ -36,9 +36,12 @@ The authoring contract suite builds this target and its standalone inspector thr
 ```sh
 tools/compiled-kernel/run_contract_tests.sh
 tools/compiled-kernel/build-portable/wv_checkpoint_inspect checkpoint.nc
+tools/compiled-kernel/build-portable/wv_checkpoint_roundtrip input.nc output.nc
 tools/compiled-kernel/build-portable/wv_checkpoint_inspect --forcing-capabilities
 tools/compiled-kernel/build-portable/wv_portable_forcing_inspect checkpoint.nc
 tools/compiled-kernel/build-portable/wv_portable_rk4_inspect checkpoint.nc finalTime deltaT
 ```
 
-Checkpoint writing and append/continuation behavior are deferred to the portable runtime restart implementation.
+`WVCheckpointWriter` emits a root-level scalar checkpoint using the existing `[kl,j]` real/imaginary encoding and annotated forcing groups. It validates and re-reads a same-directory temporary file before atomically replacing the destination. A failed validation, write, close, or commit leaves an existing destination unchanged. The writer persists the canonical state and immutable forcing source data only; `deltaT`, plans, derived forcing operators, mappings, caches, and scratch remain runtime-derived.
+
+The v1 writer intentionally does not append records or produce a time-series group. The reader continues accepting both scalar root checkpoints and existing nested time-series files.

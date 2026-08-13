@@ -216,6 +216,45 @@ classdef TestPortableCheckpointReader < matlab.unittest.TestCase
             end
             clear fixtureCleanup fixtureToolCleanup
         end
+
+        function cppWriterProducesMatlabCompatibleCheckpoints(testCase)
+            repositoryRoot = fileparts(fileparts(mfilename("fullpath")));
+            buildScript = fullfile(repositoryRoot,"tools","compiled-kernel","run_contract_tests.sh");
+            [buildStatus,buildOutput] = system(sprintf('"%s"',buildScript));
+            testCase.assertEqual(buildStatus,0,buildOutput)
+            writer = fullfile(repositoryRoot,"tools","compiled-kernel","build-portable","wv_checkpoint_roundtrip");
+            fixtureDirectory = fullfile(repositoryRoot,"tools","portable-runtime","fixtures");
+            outputDirectory = string(tempname);
+            mkdir(outputDirectory)
+            outputCleanup = onCleanup(@()rmdir(outputDirectory,"s"));
+            fixtureNames = ["root-hydrostatic.nc" "root-nonhydrostatic.nc" "time-series-hydrostatic.nc" "time-series-nonhydrostatic.nc" "forcing-nonlinear.nc" "forcing-adaptive-damping.nc" "forcing-fixed-amplitude.nc" "forcing-quadratic-bottom-friction.nc" "forcing-pseudo-topographic.nc" "forcing-beta-plane.nc" "forcing-mixed-hydrostatic.nc" "forcing-mixed-nonhydrostatic.nc"];
+
+            for fixtureName = fixtureNames
+                inputPath = fullfile(fixtureDirectory,fixtureName);
+                outputPath = fullfile(outputDirectory,fixtureName);
+                command = TestPortableCheckpointReader.sanitizedCommand(sprintf('"%s" "%s" "%s"',writer,inputPath,outputPath));
+                [status,output] = system(command);
+                testCase.assertEqual(status,0,output)
+                [expected,expectedFile] = WVTransform.waveVortexTransformFromFile(inputPath,iTime=Inf,shouldReadOnly=true);
+                expectedCleanup = onCleanup(@()TestPortableCheckpointReader.closeIfOpen(expectedFile));
+                [actual,actualFile] = WVTransform.waveVortexTransformFromFile(outputPath,shouldReadOnly=true);
+                actualCleanup = onCleanup(@()TestPortableCheckpointReader.closeIfOpen(actualFile));
+                testCase.verifyEqual([actual.Nx actual.Ny actual.Nz],[expected.Nx expected.Ny expected.Nz])
+                testCase.verifyEqual([actual.Lx actual.Ly actual.Lz],[expected.Lx expected.Ly expected.Lz])
+                testCase.verifyEqual(actual.t,expected.t)
+                testCase.verifyEqual(actual.t0,expected.t0)
+                testCase.verifyEqual(actual.isHydrostatic,expected.isHydrostatic)
+                testCase.verifyEqual(actual.shouldAntialias,expected.shouldAntialias)
+                testCase.verifyTrue(isequaln(actual.Ap,expected.Ap))
+                testCase.verifyTrue(isequaln(actual.Am,expected.Am))
+                testCase.verifyTrue(isequaln(actual.A0,expected.A0))
+                TestPortableCheckpointReader.verifyForcingEquivalent(testCase,expected.forcing,actual.forcing)
+                expectedFile.close();
+                actualFile.close();
+                clear expectedCleanup actualCleanup
+            end
+            clear outputCleanup
+        end
     end
 
     methods (Static, Access=private)
@@ -249,6 +288,35 @@ classdef TestPortableCheckpointReader < matlab.unittest.TestCase
                 wvt.Ap(force.Ap_indices) = force.Apbar;
                 wvt.Am(force.Am_indices) = force.Ambar;
                 wvt.A0(force.A0_indices) = force.A0bar;
+            end
+        end
+
+        function verifyForcingEquivalent(testCase,expected,actual)
+            testCase.verifyEqual(numel(actual),numel(expected))
+            for iForcing = 1:numel(expected)
+                testCase.verifyEqual(class(actual(iForcing)),class(expected(iForcing)))
+                testCase.verifyEqual(string(actual(iForcing).name),string(expected(iForcing).name))
+                testCase.verifyEqual(actual(iForcing).priority,expected(iForcing).priority)
+                if isa(expected(iForcing),"WVBottomFrictionQuadratic")
+                    testCase.verifyEqual(actual(iForcing).Cd,expected(iForcing).Cd)
+                elseif isa(expected(iForcing),"WVFixedAmplitudeForcing")
+                    testCase.verifyEqual(actual(iForcing).Ap_indices,expected(iForcing).Ap_indices)
+                    testCase.verifyEqual(actual(iForcing).Am_indices,expected(iForcing).Am_indices)
+                    testCase.verifyEqual(actual(iForcing).A0_indices,expected(iForcing).A0_indices)
+                    testCase.verifyEqual(actual(iForcing).Apbar,expected(iForcing).Apbar)
+                    testCase.verifyEqual(actual(iForcing).Ambar,expected(iForcing).Ambar)
+                    testCase.verifyEqual(actual(iForcing).A0bar,expected(iForcing).A0bar)
+                elseif isa(expected(iForcing),"WVPseudoTopographicWaveGeneration")
+                    testCase.verifyEqual(actual(iForcing).topographicHeight,expected(iForcing).topographicHeight)
+                    testCase.verifyEqual(actual(iForcing).barotropicVelocityAmplitude,expected(iForcing).barotropicVelocityAmplitude)
+                    testCase.verifyEqual(actual(iForcing).frequency,expected(iForcing).frequency)
+                    testCase.verifyEqual(actual(iForcing).darwinSymbol,expected(iForcing).darwinSymbol)
+                    testCase.verifyEqual(actual(iForcing).rampDuration,expected(iForcing).rampDuration)
+                    testCase.verifyEqual(actual(iForcing).startTime,expected(iForcing).startTime)
+                    testCase.verifyEqual(actual(iForcing).shouldAvoidAdaptiveDamping,expected(iForcing).shouldAvoidAdaptiveDamping)
+                    testCase.verifyEqual(actual(iForcing).maximumForcedHorizontalWavenumber,expected(iForcing).maximumForcedHorizontalWavenumber)
+                    testCase.verifyEqual(actual(iForcing).maximumForcedVerticalMode,expected(iForcing).maximumForcedVerticalMode)
+                end
             end
         end
 

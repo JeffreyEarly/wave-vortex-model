@@ -33,7 +33,9 @@ enum class WVCheckpointStatusCode : std::uint32_t {
     unsupportedForcing,
     malformedForcing,
     duplicateForcing,
-    incompatibleForcing
+    incompatibleForcing,
+    writeFailure,
+    commitFailure
 };
 
 struct WVCheckpointStatus {
