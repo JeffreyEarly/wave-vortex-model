@@ -31,7 +31,7 @@ classdef TestPublishedWaveVortexBenchmark < matlab.unittest.TestCase
             testCase.verifyEqual(string(catalog.schemaVersion),"benchmark-catalog-v1");
             testCase.verifyEqual(string({catalog.scoringReferences.suiteId}),["core-v1" "scaling-standard-v1" "scaling-large-v1"]);
             testCase.verifyEqual(string({catalog.scoringReferences.backendId}),repmat("builtin",1,3));
-            testCase.verifyNumElements(catalog.publishedDatasets,7);
+            testCase.verifyNumElements(catalog.publishedDatasets,11);
             for iReference = 1:numel(catalog.scoringReferences)
                 reference = catalog.scoringReferences(iReference);
                 relativePath = string(reference.rawArtifact);
@@ -60,9 +60,13 @@ classdef TestPublishedWaveVortexBenchmark < matlab.unittest.TestCase
                 dataset = jsondecode(fileread(fullfile(testCase.repositoryRoot,string(entry.artifact))));
                 testCase.verifyEqual(string(dataset.schemaVersion),"published-benchmark-v1");
                 testCase.verifyEqual(string(dataset.datasetId),string(entry.datasetId));
-                if string(dataset.benchmark.suiteId) == "core-v1"
+                suiteId = string(dataset.benchmark.suiteId);
+                if suiteId == "core-v1"
                     testCase.verifyEqual(string(dataset.implementation.version),"unreleased-preview");
                     testCase.verifyEqual(string(dataset.implementation.commit),"3b762e518bf5ef92681bab7ac48dfe54b10fc708");
+                elseif startsWith(suiteId,"portable-")
+                    testCase.verifyEqual(string(dataset.implementation.version),"unreleased-preview");
+                    testCase.verifyEqual(string(dataset.implementation.commit),"b01cfe802f43b47b3631a6bfc8251035c0c52222");
                 else
                     testCase.verifyEqual(string(dataset.implementation.version),"4.2.1");
                     testCase.verifyEqual(string(dataset.implementation.commit),"9652b116b3ffd4ee3372cc5cdeea9700cd6cbc32");
@@ -78,15 +82,23 @@ classdef TestPublishedWaveVortexBenchmark < matlab.unittest.TestCase
                     cases = num2cell(cases);
                 end
                 statuses = string(cellfun(@(benchmarkCase)benchmarkCase.status,cases,"UniformOutput",false));
-                if string(dataset.benchmark.suiteId) == "core-v1"
+                if suiteId == "core-v1"
                     testCase.verifyNumElements(cases,4);
                     testCase.verifyEqual(statuses,repmat("complete",size(statuses)));
-                elseif string(dataset.benchmark.suiteId) == "scaling-standard-v1"
+                elseif suiteId == "portable-rk4-v1"
+                    testCase.verifyNumElements(cases,4);
+                    testCase.verifyEqual(string(dataset.benchmark.method),"fixed-rk4");
+                    testCase.verifyEqual(statuses,repmat("complete",size(statuses)));
+                elseif suiteId == "portable-rk23-v1"
+                    testCase.verifyNumElements(cases,8);
+                    testCase.verifyEqual(string(dataset.benchmark.method),"adaptive-rk23");
+                    testCase.verifyEqual(statuses,repmat("complete",size(statuses)));
+                elseif suiteId == "scaling-standard-v1"
                     testCase.verifyNumElements(cases,34);
                     testCase.verifyEqual(statuses,repmat("complete",size(statuses)));
                     standardPlatforms(end+1,1) = string(dataset.platform.id);
                 else
-                    testCase.verifyEqual(string(dataset.benchmark.suiteId),"scaling-large-v1");
+                    testCase.verifyEqual(suiteId,"scaling-large-v1");
                     testCase.verifyNumElements(cases,19);
                     if string(dataset.platform.id) == "m5-max"
                         testCase.verifyEqual(nnz(statuses == "complete"),16);
@@ -102,7 +114,11 @@ classdef TestPublishedWaveVortexBenchmark < matlab.unittest.TestCase
                     testCase.verifyTrue(logical(benchmarkCase.correctness.passed));
                     testCase.verifyTrue(all(isfinite(benchmarkCase.timing.samplesSeconds)));
                     testCase.verifyGreaterThan(double(benchmarkCase.timing.medianSeconds),0);
-                    testCase.verifyEqual(string(benchmarkCase.memory.status),"complete");
+                    if suiteId == "portable-rk23-v1"
+                        testCase.verifyEqual(string(benchmarkCase.memory.status),"unavailable");
+                    else
+                        testCase.verifyEqual(string(benchmarkCase.memory.status),"complete");
+                    end
                 end
                 toolchainVersions(end+1,1) = string(dataset.toolchain.version);
             end

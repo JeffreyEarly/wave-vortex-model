@@ -506,7 +506,37 @@ The plots separate horizontal and vertical scaling for the representative nonhyd
 The portable runtime uses the same compiled constant-stratification core without MATLAB. Fixed-RK4 results separate product speed against MATLAB builtin transforms from orchestration overhead against MATLAB driving the same compiled core. Adaptive RK3(2) results report work versus reference error and stage-derived continuous output independently.
 
 <!-- BENCHMARKS:PORTABLE_RUNTIME:START -->
-No approved portable-runtime integration result has been published yet.
+**RUNTIME-PREVIEW-READY; ORCHESTRATION-NOT-EFFICIENT.**
+
+<table>
+  <thead>
+    <tr><th scope="col">Case</th><th scope="col">MATLAB builtin (s)</th><th scope="col">MATLAB compiled (s)</th><th scope="col">Standalone (s)</th><th scope="col">Builtin speedup</th><th scope="col">Standalone / compiled MATLAB</th><th scope="col">Error</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Constant hydrostatic 256×256×65</td><td>2.9562</td><td>1.7972</td><td>1.9135</td><td>1.545x</td><td>1.065</td><td>5.587e-17</td></tr>
+    <tr><td>Constant nonhydrostatic 256×256×65</td><td>3.7211</td><td>2.2313</td><td>2.3966</td><td>1.553x</td><td>1.074</td><td>5.684e-17</td></tr>
+    <tr><td>Constant hydrostatic 512×512×129</td><td>25.0021</td><td>13.7483</td><td>14.2514</td><td>1.754x</td><td>1.037</td><td>1.688e-16</td></tr>
+    <tr><td>Constant nonhydrostatic 512×512×129</td><td>31.5553</td><td>17.7690</td><td>18.6765</td><td>1.690x</td><td>1.051</td><td>7.821e-17</td></tr>
+  </tbody>
+</table>
+
+**ADAPTIVE-RK23-AVAILABLE.** Tightening tolerances reduces error; scheduled dense output leaves accepted steps and the final state unchanged.
+
+<table>
+  <thead>
+    <tr><th scope="col">Case</th><th scope="col">RelTol</th><th scope="col">Reference error</th><th scope="col">Accepted</th><th scope="col">Rejected</th><th scope="col">RHS evaluations</th><th scope="col">Time (s)</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Constant hydrostatic</td><td>0.01</td><td>1.285e-03</td><td>3</td><td>0</td><td>12</td><td>0.027957</td></tr>
+    <tr><td>Constant hydrostatic</td><td>0.003</td><td>2.417e-04</td><td>4</td><td>2</td><td>22</td><td>0.050033</td></tr>
+    <tr><td>Constant hydrostatic</td><td>0.001</td><td>8.691e-05</td><td>5</td><td>2</td><td>26</td><td>0.059070</td></tr>
+    <tr><td>Constant hydrostatic</td><td>0.0003</td><td>2.554e-05</td><td>8</td><td>3</td><td>41</td><td>0.094287</td></tr>
+    <tr><td>Constant nonhydrostatic</td><td>0.01</td><td>1.429e-03</td><td>2</td><td>0</td><td>8</td><td>0.023865</td></tr>
+    <tr><td>Constant nonhydrostatic</td><td>0.003</td><td>3.799e-04</td><td>4</td><td>2</td><td>22</td><td>0.066870</td></tr>
+    <tr><td>Constant nonhydrostatic</td><td>0.001</td><td>9.377e-05</td><td>5</td><td>2</td><td>26</td><td>0.078869</td></tr>
+    <tr><td>Constant nonhydrostatic</td><td>0.0003</td><td>3.547e-05</td><td>8</td><td>3</td><td>41</td><td>0.121250</td></tr>
+  </tbody>
+</table>
 <!-- BENCHMARKS:PORTABLE_RUNTIME:END -->
 
 ## Compare computers
@@ -519,6 +549,9 @@ Processor, memory, operating-system, toolchain, and thread information accompany
     <tr><th scope="col">Implementation</th><th scope="col">Platform</th><th scope="col">Processor</th><th scope="col">Physical memory</th><th scope="col">OS / architecture</th><th scope="col">Toolchain</th><th scope="col">Threads</th></tr>
   </thead>
   <tbody>
+    <tr><td>WaveVortex portable C++ unreleased-preview (native-fftw)</td><td>Apple M5 Max</td><td>Apple M5 Max</td><td>48 GiB</td><td>MACA64 / maca64</td><td>Apple Clang + FFTW 21.0.0</td><td>18</td></tr>
+    <tr><td>WaveVortexModel MATLAB unreleased-preview (builtin)</td><td>Apple M5 Max</td><td>Apple M5 Max</td><td>48 GiB</td><td>MACA64 / maca64</td><td>MATLAB 26.1.0.3312084 (R2026a) Update 4</td><td>18</td></tr>
+    <tr><td>WaveVortexModel MATLAB unreleased-preview (compiled-preview)</td><td>Apple M5 Max</td><td>Apple M5 Max</td><td>48 GiB</td><td>MACA64 / maca64</td><td>MATLAB 26.1.0.3312084 (R2026a) Update 4</td><td>18</td></tr>
     <tr><td>WaveVortexModel MATLAB unreleased-preview (builtin)</td><td>Donut (Apple M5 Max)</td><td>Apple M5 Max</td><td>48 GiB</td><td>Darwin 25.5.0 Darwin Kernel Version 25.5.0: Tue Jun  9 22:28:34 PDT 2026; root:xnu-12377.121.10~1/RELEASE_ARM64_T6050 arm64 / maca64</td><td>MATLAB 26.1.0.3312084 (R2026a) Update 4</td><td>18</td></tr>
     <tr><td>WaveVortexModel compiled preview unreleased-preview (native-fftw)</td><td>Donut (Apple M5 Max)</td><td>Apple M5 Max</td><td>48 GiB</td><td>Darwin 25.5.0 Darwin Kernel Version 25.5.0: Tue Jun  9 22:28:34 PDT 2026; root:xnu-12377.121.10~1/RELEASE_ARM64_T6050 arm64 / maca64</td><td>Apple Clang + FFTW 21.0.0</td><td>18</td></tr>
     <tr><td>WaveVortexModel MATLAB 4.2.1 (builtin)</td><td>Lyra (Apple M4 Max)</td><td>Apple M4 Max</td><td>128 GiB</td><td>Darwin 25.5.0 Darwin Kernel Version 25.5.0: Tue Jun  9 22:28:34 PDT 2026; root:xnu-12377.121.10~1/RELEASE_ARM64_T6041 arm64 / maca64</td><td>MATLAB 25.2.0.3150157 (R2025b) Update 4</td><td>16</td></tr>
@@ -561,6 +594,10 @@ The normalized files use the language-neutral `published-benchmark-v1` contract.
   <tbody>
     <tr><td>core-v1--cpp-native-fftw--m5-max--20260812T195257Z</td><td>WaveVortexModel compiled preview unreleased-preview</td><td>Donut (Apple M5 Max)</td><td>core-v1</td><td>2026-08-12T19:52:57Z</td><td><a href="/benchmarks/data/core-v1--cpp-native-fftw--m5-max--20260812T195257Z.json">Published JSON</a></td><td><a href="/benchmarks/raw/core-v1--cpp-native-fftw--m5-max--20260812T195257Z.json">Raw JSON</a></td></tr>
     <tr><td>core-v1--matlab-builtin--m5-max--20260812T195257Z</td><td>WaveVortexModel MATLAB unreleased-preview</td><td>Donut (Apple M5 Max)</td><td>core-v1</td><td>2026-08-12T19:52:57Z</td><td><a href="/benchmarks/data/core-v1--matlab-builtin--m5-max--20260812T195257Z.json">Published JSON</a></td><td><a href="/benchmarks/raw/core-v1--matlab-builtin--m5-max--20260812T195257Z.json">Raw JSON</a></td></tr>
+    <tr><td>portable-rk23-v1--cpp-native-fftw--m5-max--20260813T192740Z</td><td>WaveVortex portable C++ unreleased-preview</td><td>Apple M5 Max</td><td>portable-rk23-v1</td><td>2026-08-13T19:27:40Z</td><td><a href="/benchmarks/data/portable-rk23-v1--cpp-native-fftw--m5-max--20260813T192740Z.json">Published JSON</a></td><td><a href="/benchmarks/raw/portable-rk23-v1--cpp-native-fftw--m5-max--20260813T192740Z.json">Raw JSON</a></td></tr>
+    <tr><td>portable-rk4-v1--cpp-native-fftw--m5-max--20260813T192740Z</td><td>WaveVortex portable C++ unreleased-preview</td><td>Apple M5 Max</td><td>portable-rk4-v1</td><td>2026-08-13T19:27:40Z</td><td><a href="/benchmarks/data/portable-rk4-v1--cpp-native-fftw--m5-max--20260813T192740Z.json">Published JSON</a></td><td><a href="/benchmarks/raw/portable-rk4-v1--cpp-native-fftw--m5-max--20260813T192740Z.json">Raw JSON</a></td></tr>
+    <tr><td>portable-rk4-v1--matlab-builtin--m5-max--20260813T192740Z</td><td>WaveVortexModel MATLAB unreleased-preview</td><td>Apple M5 Max</td><td>portable-rk4-v1</td><td>2026-08-13T19:27:40Z</td><td><a href="/benchmarks/data/portable-rk4-v1--matlab-builtin--m5-max--20260813T192740Z.json">Published JSON</a></td><td><a href="/benchmarks/raw/portable-rk4-v1--matlab-builtin--m5-max--20260813T192740Z.json">Raw JSON</a></td></tr>
+    <tr><td>portable-rk4-v1--matlab-compiled-preview--m5-max--20260813T192740Z</td><td>WaveVortexModel MATLAB unreleased-preview</td><td>Apple M5 Max</td><td>portable-rk4-v1</td><td>2026-08-13T19:27:40Z</td><td><a href="/benchmarks/data/portable-rk4-v1--matlab-compiled-preview--m5-max--20260813T192740Z.json">Published JSON</a></td><td><a href="/benchmarks/raw/portable-rk4-v1--matlab-compiled-preview--m5-max--20260813T192740Z.json">Raw JSON</a></td></tr>
     <tr><td>scaling-large-v1--matlab-builtin--lyra--20260811T213524Z</td><td>WaveVortexModel MATLAB 4.2.1</td><td>Lyra (Apple M4 Max)</td><td>scaling-large-v1</td><td>2026-08-11T21:35:24Z</td><td><a href="/benchmarks/data/scaling-large-v1--matlab-builtin--lyra--20260811T213524Z.json">Published JSON</a></td><td><a href="/benchmarks/raw/scaling-large-v1--matlab-builtin--lyra--20260811T213524Z.json">Raw JSON</a></td></tr>
     <tr><td>scaling-large-v1--matlab-builtin--m5-max--20260812T023122Z</td><td>WaveVortexModel MATLAB 4.2.1</td><td>Donut (Apple M5 Max)</td><td>scaling-large-v1</td><td>2026-08-12T02:31:22Z</td><td><a href="/benchmarks/data/scaling-large-v1--matlab-builtin--m5-max--20260812T023122Z.json">Published JSON</a></td><td><a href="/benchmarks/raw/scaling-large-v1--matlab-builtin--m5-max--20260812T023122Z.json">Raw JSON</a></td></tr>
     <tr><td>scaling-standard-v1--matlab-builtin--lyra--20260811T204835Z</td><td>WaveVortexModel MATLAB 4.2.1</td><td>Lyra (Apple M4 Max)</td><td>scaling-standard-v1</td><td>2026-08-11T20:48:35Z</td><td><a href="/benchmarks/data/scaling-standard-v1--matlab-builtin--lyra--20260811T204835Z.json">Published JSON</a></td><td><a href="/benchmarks/raw/scaling-standard-v1--matlab-builtin--lyra--20260811T204835Z.json">Raw JSON</a></td></tr>
