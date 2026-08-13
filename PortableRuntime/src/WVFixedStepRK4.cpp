@@ -54,9 +54,19 @@ WVKernelStatus WVFixedStepRK4::ensureWorkspace(const WVMutableState& state) {
 
 WVKernelStatus WVFixedStepRK4::prepareStateAfterRestart(WVMutableState& state) {
     hasAcceptedStep_ = false;
+    acceptedStateConstrained_ = false;
     const auto status = ensureWorkspace(state);
     if (!status) return status;
-    return system_.enforceStateConstraints(state.coefficients);
+    const auto constraintStatus = system_.enforceStateConstraints(state.coefficients);
+    acceptedStateConstrained_ = static_cast<bool>(constraintStatus);
+    return constraintStatus;
+}
+
+WVKernelStatus WVFixedStepRK4::evaluateAcceptedState(const WVMutableState& state) {
+    auto flux = fluxViews(stageFlux_,shape_);
+    const auto status = system_.evaluateRightHandSide(state.view(),flux);
+    if (status) ++metrics_.rightHandSideEvaluationCount;
+    return status;
 }
 
 void WVFixedStepRK4::setStageFromBase(const WVMutableState& base, double scale, const std::vector<WVComplex64>* increment) {
@@ -79,8 +89,6 @@ WVKernelStatus WVFixedStepRK4::evaluateStage(const WVMutableState& base, double 
     auto coefficients = coefficientViews(stageState_,shape_);
     auto status = system_.enforceStateConstraints(coefficients);
     if (!status) return status;
-    std::fill(stageFlux_.begin(),stageFlux_.end(),WVComplex64{});
-    metrics_.stageFluxClearElementWrites += stageFlux_.size();
     auto flux = fluxViews(stageFlux_,shape_);
     const WVState stage{stageTime,base.t0,{{coefficients.Ap.data,coefficients.Ap.shape},{coefficients.Am.data,coefficients.Am.shape},{coefficients.A0.data,coefficients.A0.shape}}};
     status = system_.evaluateRightHandSide(stage,flux);
@@ -106,12 +114,12 @@ WVKernelStatus WVFixedStepRK4::step(WVMutableState& state, double deltaT) {
     stepping_ = true;
     struct Guard { bool& value; ~Guard() { value = false; } } guard{stepping_};
 
-    std::fill(weightedFlux_.begin(),weightedFlux_.end(),WVComplex64{});
-    metrics_.weightedFluxClearElementWrites += weightedFlux_.size();
     const double initialTime = state.t;
-    status = evaluateStage(state,state.t,0.0,nullptr);
+    status = acceptedStateConstrained_ ? evaluateAcceptedState(state) : evaluateStage(state,state.t,0.0,nullptr);
     if (!status) return status;
-    accumulateWeightedFlux(1.0);
+    std::copy(stageFlux_.begin(),stageFlux_.end(),weightedFlux_.begin());
+    metrics_.weightedFluxInitializationElementReads += stageFlux_.size();
+    metrics_.weightedFluxInitializationElementWrites += weightedFlux_.size();
     status = evaluateStage(state,state.t+0.5*deltaT,0.5*deltaT,&stageFlux_);
     if (!status) return status;
     accumulateWeightedFlux(2.0);
@@ -123,16 +131,24 @@ WVKernelStatus WVFixedStepRK4::step(WVMutableState& state, double deltaT) {
     accumulateWeightedFlux(1.0);
 
     const auto count = shape_.elementCount();
-    WVComplexView destinations[] = {state.coefficients.Ap,state.coefficients.Am,state.coefficients.A0};
+    auto candidate = coefficientViews(stageState_,shape_);
+    WVComplexView sources[] = {state.coefficients.Ap,state.coefficients.Am,state.coefficients.A0};
+    WVComplexView candidateDestinations[] = {candidate.Ap,candidate.Am,candidate.A0};
     const double scale = deltaT/6.0;
     for (std::size_t component = 0; component < 3; ++component) {
-        for (std::size_t index = 0; index < count; ++index) destinations[component].data[index] = addScaled(destinations[component].data[index],weightedFlux_[component*count+index],scale);
+        for (std::size_t index = 0; index < count; ++index) candidateDestinations[component].data[index] = addScaled(sources[component].data[index],weightedFlux_[component*count+index],scale);
     }
     metrics_.finalStateUpdateElementReads += 6*count;
     metrics_.finalStateUpdateElementWrites += 3*count;
-    state.t += deltaT;
-    status = system_.enforceStateConstraints(state.coefficients);
+    status = system_.enforceStateConstraints(candidate);
     if (!status) return status;
+    WVComplexView destinations[] = {state.coefficients.Ap,state.coefficients.Am,state.coefficients.A0};
+    const WVComplexView acceptedSources[] = {{candidate.Ap.data,candidate.Ap.shape},{candidate.Am.data,candidate.Am.shape},{candidate.A0.data,candidate.A0.shape}};
+    for (std::size_t component = 0; component < 3; ++component) std::copy_n(acceptedSources[component].data,count,destinations[component].data);
+    metrics_.acceptedStateCommitElementReads += 3*count;
+    metrics_.acceptedStateCommitElementWrites += 3*count;
+    state.t += deltaT;
+    acceptedStateConstrained_ = true;
     ++metrics_.stepCount;
     metrics_.lastStepSize = deltaT;
     acceptedStep_ = {initialTime,state.t,state.view(),{1,4,deltaT},nullptr};

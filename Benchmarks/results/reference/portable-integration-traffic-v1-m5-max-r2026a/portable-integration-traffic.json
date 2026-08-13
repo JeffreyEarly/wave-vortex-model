@@ -1,0 +1,137 @@
+{
+  "schemaVersion": "portable-integration-traffic-v1",
+  "status": "complete",
+  "decision": "CORE-ADOPT",
+  "environment": {
+    "host": "Donut",
+    "processor": "Apple M5 Max",
+    "matlabRelease": "R2026a",
+    "architecture": "maca64"
+  },
+  "source": {
+    "baselineCommit": "9228ea7511f92ff45afd3d03b0c66855b1f4a7ff",
+    "baselineRuntimeCommit": "559fc012e5537c01318bb78226eaf4ee3d56d373",
+    "candidateRuntimeCommit": "5aff154eb9d0c8b84ab458fc42e6552be5832dd3",
+    "candidateEvidenceCommit": "14c5afde54ab66924b4dfdd7c3563038b1268369",
+    "baselineTree": "20e3afc0b6b5a187dd90e73401c3599bebe2ec71",
+    "candidateRuntimeTree": "2f78b08a2155b1362d53a4eeca0b2955a8eeae71",
+    "baselineRunnerSha256": "c7bfc803b612307af26c47a6dc77c394a25d21f5aefdaf27e0d147848ab58c61",
+    "candidateRunnerSha256": "24dcc369e61eec83eb842b489d850f85d82c364c12cd800d22a08b81137ba12a",
+    "fixedStepSourceSha256": "a95c250f840395d44aa630b57735c250fd92cb1e7c4796a2edc503d753ffbfe1",
+    "forcingEngineSourceSha256": "13cd90caec2268789dd4d88a5dc0a669c95b212629c0518cc4a9e7875f979361",
+    "benchmarkHarnessSha256": "a43f8a850c290da7a142084acee5efa91febefd0198d079542b49d9df331e511"
+  },
+  "provider": {
+    "id": "native-fftw",
+    "version": "fftw-3.3.11-neon",
+    "threads": 18,
+    "configuration": "native-neon-pthreads",
+    "planCount": 17,
+    "loadedLibraryIdentityValidated": true,
+    "fallbackExecuted": false
+  },
+  "configuration": {
+    "warmupStepsIncludedInSequence": 2,
+    "mediumMeasuredStepsAfterWarmup": 7,
+    "largeMeasuredStepsAfterWarmup": 3,
+    "ordinaryProcessPairs": 3,
+    "largeNonhydrostaticProcessPairs": 6,
+    "deltaT": 1,
+    "deterministicStateAdvancement": true,
+    "rotatedImplementationOrder": true,
+    "note": "The first three large nonhydrostatic pairs crossed the 3% timing guard amid high process variance. Three precommitted supplemental pairs reused the exact binaries and input. The decision uses all six pairs and does not rerun provider selection or the other completed cases."
+  },
+  "cases": [
+    {
+      "id": "constant-hydrostatic-256x256x65",
+      "baselineIntegrationSeconds": [2.117932375, 2.016178375, 2.166809708],
+      "candidateIntegrationSeconds": [1.986712791, 2.058554375, 1.945581791],
+      "baselineMedianSeconds": 2.117932375,
+      "candidateMedianSeconds": 1.986712791,
+      "candidateRelativeToBaseline": 0.9380435440012573,
+      "baselineKnownMaximumLiveBytes": 797190833,
+      "candidateKnownMaximumLiveBytes": 512517745,
+      "knownMaximumLiveRatio": 0.6429047146356235,
+      "baselineTrafficBytes": 13075600608,
+      "candidateTrafficBytes": 5188730400,
+      "trafficRatio": 0.3968253968253968,
+      "baselinePeakIncrementRssLowerBoundBytes": [737280, 720896, 1589248],
+      "candidatePeakIncrementRssLowerBoundBytes": [704512, 704512, 1572864],
+      "passed": true
+    },
+    {
+      "id": "constant-nonhydrostatic-256x256x65",
+      "baselineIntegrationSeconds": [2.608890792, 2.708708042, 2.713625708],
+      "candidateIntegrationSeconds": [2.722977166, 2.655527333, 2.704840083],
+      "baselineMedianSeconds": 2.708708042,
+      "candidateMedianSeconds": 2.704840083,
+      "candidateRelativeToBaseline": 0.9985720280886589,
+      "baselineKnownMaximumLiveBytes": 831269553,
+      "candidateKnownMaximumLiveBytes": 512517745,
+      "knownMaximumLiveRatio": 0.6165481980548372,
+      "baselineTrafficBytes": 13075600608,
+      "candidateTrafficBytes": 5188730400,
+      "trafficRatio": 0.3968253968253968,
+      "baselinePeakIncrementRssLowerBoundBytes": [720896, 737280, 737280],
+      "candidatePeakIncrementRssLowerBoundBytes": [753664, 1572864, 1572864],
+      "passed": true
+    },
+    {
+      "id": "constant-hydrostatic-512x512x129",
+      "baselineIntegrationSeconds": [10.349109709, 10.250461167, 9.417651708],
+      "candidateIntegrationSeconds": [9.131543917, 9.89847725, 8.365653917],
+      "baselineMedianSeconds": 10.250461167,
+      "candidateMedianSeconds": 9.131543917,
+      "candidateRelativeToBaseline": 0.8908422526781327,
+      "baselineKnownMaximumLiveBytes": 6352203639,
+      "candidateKnownMaximumLiveBytes": 4085032983,
+      "knownMaximumLiveRatio": 0.6430891097255643,
+      "baselineTrafficBytes": 58817178000,
+      "candidateTrafficBytes": 23340150000,
+      "trafficRatio": 0.3968253968253968,
+      "baselinePeakIncrementRssLowerBoundBytes": [1092157440, 280657920, 276463616],
+      "candidatePeakIncrementRssLowerBoundBytes": [654131200, 654147584, 654163968],
+      "passed": true
+    },
+    {
+      "id": "constant-nonhydrostatic-512x512x129",
+      "baselineIntegrationSeconds": [11.560580041, 10.810265792, 12.906692166, 12.104436625, 12.03590775, 12.29013025],
+      "candidateIntegrationSeconds": [11.878149958, 12.364626083, 12.628490375, 11.455527667, 12.023111583, 12.369880709],
+      "baselineMedianSeconds": 12.0701721875,
+      "candidateMedianSeconds": 12.193868833,
+      "candidateRelativeToBaseline": 1.0102481260066947,
+      "baselineKnownMaximumLiveBytes": 6622736247,
+      "candidateKnownMaximumLiveBytes": 4085032983,
+      "knownMaximumLiveRatio": 0.6168195184959175,
+      "baselineTrafficBytes": 58817178000,
+      "candidateTrafficBytes": 23340150000,
+      "trafficRatio": 0.3968253968253968,
+      "baselinePeakIncrementRssLowerBoundBytes": [1146880, 491520, 1277952, 5881856, 1048576, 5865472],
+      "candidatePeakIncrementRssLowerBoundBytes": [1032192, 907935744, 1294336, 1465778176, 649838592, 654131200],
+      "passed": true
+    }
+  ],
+  "correctness": {
+    "relativeInfinityTolerance": 1e-12,
+    "largeNonhydrostaticSupplementalCheckpointError": 6.179448321004756e-17,
+    "focusedCppAndMatlabSuitesPassed": true,
+    "benchmarkSmokeDecision": "CORE-ADOPT"
+  },
+  "lifecycle": {
+    "successfulRhsCompletelyOverwritesOutput": true,
+    "failedRhsOutputIsUnspecified": true,
+    "acceptedStateAndTimeRemainUnchangedOnFailure": true,
+    "rkWorkspaceComplexElementsPerStateElement": 9,
+    "nonlinearOnlyForcingWorkspaceBytes": 0,
+    "persistentFullHermitianBytes": 0,
+    "balancedCleanup": true
+  },
+  "adoption": {
+    "qualifyingMetric": "exact integration and forcing maximum-live storage",
+    "requiredImprovement": 0.05,
+    "maximumAllowedTimingRegression": 0.03,
+    "minimumObservedStorageReduction": 0.3569108902744357,
+    "maximumObservedTimingRegression": 0.0102481260066947,
+    "reason": "Every case reduces exact known maximum-live storage by at least 35.7%, integration-boundary traffic by 60.3%, and the combined paired medians remain within the 3% timing guard."
+  }
+}

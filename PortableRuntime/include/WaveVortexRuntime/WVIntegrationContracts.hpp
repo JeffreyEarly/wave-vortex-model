@@ -8,8 +8,10 @@ namespace wavevortex::runtime {
 
 // Internal portable model boundary. evaluateRightHandSide() must completely
 // overwrite every element of the supplied right-hand-side storage, including
-// elements whose mathematical tendency is zero. State constraints are applied
-// separately so the numerical integrator contains no forcing-specific rules.
+// elements whose mathematical tendency is zero when evaluation succeeds. On
+// failure the right-hand-side storage is unspecified, but the immutable input
+// state is unchanged. State constraints are applied separately so the
+// numerical integrator contains no forcing-specific rules.
 class WVIntegrationSystem {
 public:
     virtual ~WVIntegrationSystem() = default;
@@ -48,9 +50,10 @@ struct WVAcceptedStep {
     const WVDenseOutput* denseOutput = nullptr;
 };
 
-// Internal numerical-method boundary. A step mutates only the accepted state;
-// interpolated output is produced later from the returned accepted-step view and
-// is never eligible to become the next integration state.
+// Internal numerical-method boundary. A successful step mutates only the
+// accepted state; a failed step leaves the accepted state and time unchanged.
+// Interpolated output is produced later from the returned accepted-step view
+// and is never eligible to become the next integration state.
 class WVTimeIntegrator {
 public:
     virtual ~WVTimeIntegrator() = default;

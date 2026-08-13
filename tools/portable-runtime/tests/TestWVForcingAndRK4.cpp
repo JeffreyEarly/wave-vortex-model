@@ -156,14 +156,13 @@ void testForcingTrafficAccounting() {
     require(static_cast<bool>(status),"traffic-accounting restart preparation failed");
     status = integrator.step(state,0.1);
     require(static_cast<bool>(status),"traffic-accounting step failed");
-    const auto coefficientValues = 3*state.coefficients.Ap.shape.elementCount();
     const auto& metrics = engine->metrics();
-    require(metrics.accumulatorClearElementWrites == 4*coefficientValues,"forcing-accumulator clear traffic is not exact");
-    require(metrics.temporaryFluxClearElementWrites == 4*coefficientValues,"temporary-flux clear traffic is not exact");
-    require(metrics.kernelOutputInitializationElementWrites == 4*coefficientValues,"kernel-output initialization traffic is not exact");
-    require(metrics.temporaryAccumulationElementReads == 8*coefficientValues && metrics.temporaryAccumulationElementWrites == 4*coefficientValues,"temporary-accumulation traffic is not exact");
-    require(metrics.outputCopyElementReads == 4*coefficientValues && metrics.outputCopyElementWrites == 4*coefficientValues,"forcing output-copy traffic is not exact");
-    require(metrics.workspaceLiveBytes == metrics.workspaceCapacityBytes && metrics.workspaceMaximumLiveBytes == metrics.workspaceCapacityBytes,"forcing-workspace liveness is not exact");
+    require(metrics.accumulatorClearElementWrites == 0,"nonlinear-only forcing still clears an accumulator");
+    require(metrics.temporaryFluxClearElementWrites == 0 && metrics.kernelOutputInitializationElementWrites == 0,"nonlinear-only forcing still initializes an intermediate output");
+    require(metrics.temporaryAccumulationElementReads == 0 && metrics.temporaryAccumulationElementWrites == 0,"nonlinear-only forcing still accumulates through temporary storage");
+    require(metrics.outputCopyElementReads == 0 && metrics.outputCopyElementWrites == 0,"nonlinear-only forcing still copies its completed output");
+    require(metrics.workspaceCapacityBytes == 0,"nonlinear-only forcing retained array-sized workspace");
+    require(metrics.workspaceLiveBytes == 0 && metrics.workspaceMaximumLiveBytes == 0,"nonlinear-only forcing-workspace liveness is not zero");
 }
 
 void testFixedAmplitudeAndRK4() {
@@ -230,12 +229,15 @@ void testSpectralForcing() {
     schedule.entries.push_back(entry(WVForcingKind::betaPlanePVAdvection,"WVBetaPlanePVAdvection","beta",WVForcingStage::spectral,110,WVBetaPlanePVAdvectionRecord{}));
     auto engine = createEngine(false,schedule);
     OwnedState state(engine->kernel().descriptor().spectralShape());
-    std::vector<WVComplex64> values(3*state.shape.elementCount());
+    const WVComplex64 canary{std::numeric_limits<double>::quiet_NaN(),std::numeric_limits<double>::quiet_NaN()};
+    std::vector<WVComplex64> values(3*state.shape.elementCount(),canary);
     auto flux = fluxView(values,state.shape);
     const auto status = engine->nonlinearFlux(state.view(),flux);
     require(static_cast<bool>(status),"adaptive/beta forcing failed");
     requireFinite(values,"adaptive/beta forcing produced non-finite output");
     require(engine->metrics().resolvedSpectralCount == 2,"spectral forcing dispatch was not resolved at construction");
+    const auto expectedWorkspace = 4*configuration(false).Nx*configuration(false).Ny*configuration(false).Nz*sizeof(double);
+    require(engine->metrics().workspaceCapacityBytes == expectedWorkspace,"spectral forcing did not allocate only its required physical-field workspace");
 }
 
 void testQuadraticAndPseudo(bool hydrostatic) {
@@ -252,11 +254,36 @@ void testQuadraticAndPseudo(bool hydrostatic) {
     schedule.entries.push_back(entry(WVForcingKind::pseudoTopographicWaveGeneration,"WVPseudoTopographicWaveGeneration","topography",WVForcingStage::spectral,127,pseudo));
     auto engine = createEngine(hydrostatic,schedule);
     OwnedState state(engine->kernel().descriptor().spectralShape());
-    std::vector<WVComplex64> values(3*state.shape.elementCount());
+    const WVComplex64 canary{std::numeric_limits<double>::quiet_NaN(),std::numeric_limits<double>::quiet_NaN()};
+    std::vector<WVComplex64> values(3*state.shape.elementCount(),canary);
     auto flux = fluxView(values,state.shape);
     const auto status = engine->nonlinearFlux(state.view(),flux);
     require(static_cast<bool>(status),"quadratic/pseudo forcing failed: "+status.message);
     requireFinite(values,"quadratic/pseudo forcing produced non-finite output");
+    const auto& value = configuration(hydrostatic);
+    const auto R = value.Nx*value.Ny*value.Nz;
+    const auto q = hydrostatic ? 3U : 4U;
+    require(engine->metrics().workspaceCapacityBytes == (4+q)*R*sizeof(double),"quadratic forcing did not allocate only its required real-field workspace");
+}
+
+void testMultipleWholeFluxProducers() {
+    auto schedule = nonlinearSchedule();
+    schedule.entries.push_back(entry(WVForcingKind::nonlinearAdvection,"WVNonlinearAdvection","nonlinear-second",WVForcingStage::spatial,128,WVNonlinearAdvectionRecord{}));
+    auto engine = createEngine(true,schedule);
+    auto direct = createEngine(true,nonlinearSchedule());
+    OwnedState state(engine->kernel().descriptor().spectralShape());
+    const WVComplex64 canary{std::numeric_limits<double>::quiet_NaN(),std::numeric_limits<double>::quiet_NaN()};
+    std::vector<WVComplex64> values(3*state.shape.elementCount(),canary),single(values.size(),canary);
+    auto flux = fluxView(values,state.shape);
+    auto singleFlux = fluxView(single,state.shape);
+    auto status = engine->nonlinearFlux(state.view(),flux);
+    require(static_cast<bool>(status),"multiple whole-flux producers failed");
+    status = direct->nonlinearFlux(state.view(),singleFlux);
+    require(static_cast<bool>(status),"single whole-flux control failed");
+    for (std::size_t index = 0; index < values.size(); ++index) {
+        require(std::abs(values[index].real-2.0*single[index].real) <= 1e-13 && std::abs(values[index].imag-2.0*single[index].imag) <= 1e-13,"temporary whole-flux accumulation changed the result");
+    }
+    require(engine->metrics().workspaceCapacityBytes == values.size()*sizeof(WVComplex64),"multiple whole-flux producers did not allocate exactly one temporary tendency");
 }
 
 void testValidation() {
@@ -283,6 +310,7 @@ int main() {
         testSpectralForcing();
         testQuadraticAndPseudo(true);
         testQuadraticAndPseudo(false);
+        testMultipleWholeFluxProducers();
         testValidation();
         std::cout << "Portable forcing and RK4 tests passed.\n";
         return 0;

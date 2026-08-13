@@ -73,7 +73,7 @@ private:
 
     WVKernelStatus initialize(const WVFrozenForcingSchedule& schedule);
     WVKernelStatus ensurePhysicalFields(const WVState& state, WVRealFieldBundleConstView& fields);
-    WVKernelStatus addQuadraticBottomFriction(const WVState& state, const DerivedForcing& forcing, WVFlux& flux);
+    WVKernelStatus computeQuadraticBottomFriction(const WVState& state, const DerivedForcing& forcing, WVFlux& flux);
     WVKernelStatus addAdaptiveDamping(const WVState& state, const DerivedForcing& forcing, WVFlux& flux);
     WVKernelStatus addPseudoTopographicGeneration(const WVState& state, const DerivedForcing& forcing, WVFlux& flux);
     void addBetaPlaneAdvection(const WVState& state, const DerivedForcing& forcing, WVFlux& flux) const;
@@ -84,7 +84,6 @@ private:
     std::vector<DerivedForcing> derivedForcing_;
     std::vector<double> physicalFields_;
     std::vector<double> forcingFields_;
-    std::vector<WVComplex64> accumulatedFlux_;
     std::vector<WVComplex64> temporaryFlux_;
     WVForcingEngineMetrics metrics_;
     std::string scheduleIdentifier_;
