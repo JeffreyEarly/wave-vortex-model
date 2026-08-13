@@ -554,7 +554,7 @@ void setCheckpointWriterFailurePoint(WVCheckpointWriterFailurePoint point) noexc
 
 } // namespace detail
 
-WVCheckpointStatus WVCheckpointWriter::write(const std::string& path, const WVCheckpoint& checkpoint) {
+WVCheckpointStatus WVCheckpointWriter::write(const std::string& path, const WVCheckpoint& checkpoint, WVCheckpointCommitPolicy commitPolicy) {
     if (path.empty()) return status(WVCheckpointStatusCode::writeFailure, "Checkpoint destination path must not be empty.", path);
     try {
         std::vector<const WVFrozenForcingEntry*> sourceOrder;
@@ -566,6 +566,11 @@ WVCheckpointStatus WVCheckpointWriter::write(const std::string& path, const WVCh
         std::error_code filesystemError;
         if (!std::filesystem::exists(parent, filesystemError) || filesystemError) return status(WVCheckpointStatusCode::writeFailure, "Checkpoint destination parent does not exist.", parent.string());
         if (std::filesystem::is_directory(destination, filesystemError)) return status(WVCheckpointStatusCode::writeFailure, "Checkpoint destination is a directory.", destination.string());
+        const auto destinationStatus = std::filesystem::symlink_status(destination, filesystemError);
+        if (filesystemError == std::errc::no_such_file_or_directory) filesystemError.clear();
+        if (commitPolicy == WVCheckpointCommitPolicy::createNew && filesystemError) return status(WVCheckpointStatusCode::commitFailure, "Unable to inspect create-new checkpoint destination: " + filesystemError.message(), destination.string());
+        if (commitPolicy == WVCheckpointCommitPolicy::createNew && destinationStatus.type() != std::filesystem::file_type::not_found) return status(WVCheckpointStatusCode::commitFailure, "Checkpoint destination already exists.", destination.string());
+        filesystemError.clear();
 
         TemporaryPath temporary(temporaryPathFor(destination));
         result = writeTemporary(temporary.value(), checkpoint, sourceOrder);
@@ -574,9 +579,16 @@ WVCheckpointStatus WVCheckpointWriter::write(const std::string& path, const WVCh
         if (!result) return result;
         if (injectedFailure.load(std::memory_order_relaxed) == WVCheckpointWriterFailurePoint::beforeCommit) return status(WVCheckpointStatusCode::commitFailure, "Injected checkpoint failure before commit.", destination.string());
 
-        std::filesystem::rename(temporary.value(), destination, filesystemError);
-        if (filesystemError) return status(WVCheckpointStatusCode::commitFailure, "Unable to atomically replace checkpoint: " + filesystemError.message(), destination.string());
-        temporary.committed();
+        if (commitPolicy == WVCheckpointCommitPolicy::createNew) {
+            std::filesystem::create_hard_link(temporary.value(), destination, filesystemError);
+            if (filesystemError) return status(WVCheckpointStatusCode::commitFailure, "Unable to atomically create checkpoint without replacement: " + filesystemError.message(), destination.string());
+            std::filesystem::remove(temporary.value(), filesystemError);
+            if (!filesystemError) temporary.committed();
+        } else {
+            std::filesystem::rename(temporary.value(), destination, filesystemError);
+            if (filesystemError) return status(WVCheckpointStatusCode::commitFailure, "Unable to atomically replace checkpoint: " + filesystemError.message(), destination.string());
+            temporary.committed();
+        }
         return WVCheckpointStatus::ok();
     } catch (const std::exception& exception) {
         return status(WVCheckpointStatusCode::writeFailure, "Checkpoint writing failed: " + std::string(exception.what()), path);

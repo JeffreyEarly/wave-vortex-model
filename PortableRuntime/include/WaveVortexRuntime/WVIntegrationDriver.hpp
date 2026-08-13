@@ -95,4 +95,51 @@ private:
     bool wroteCheckpoint_ = false;
 };
 
+struct WVCheckpointOutputTarget {
+    double requestedTime = 0.0;
+    std::string destination;
+};
+
+struct WVCheckpointOutputRecord {
+    std::size_t ordinal = 0;
+    double requestedTime = 0.0;
+    double emittedTime = 0.0;
+    WVIntegrationOutputSink::EventKind eventKind = WVIntegrationOutputSink::EventKind::accepted;
+    std::string destination;
+    double writeSeconds = 0.0;
+    bool committed = false;
+    std::string failure;
+};
+
+struct WVCheckpointSeriesOutputSinkMetrics {
+    std::size_t receivedEventCount = 0;
+    std::size_t checkpointWriteCount = 0;
+    std::size_t copiedCoefficientBytes = 0;
+    double checkpointWriteSeconds = 0.0;
+};
+
+// Create a collision-safe series of scalar MATLAB-compatible checkpoints.
+// One checkpoint-sized staging buffer is reused for every requested time.
+class WVCheckpointSeriesOutputSink final : public WVIntegrationOutputSink {
+public:
+    WVCheckpointSeriesOutputSink(
+        std::vector<WVCheckpointOutputTarget> targets,
+        WVCheckpoint checkpointTemplate);
+
+    WVKernelStatus receive(const Event& event, Action& action) override;
+
+    bool wroteAllCheckpoints() const noexcept { return nextTarget_ == targets_.size(); }
+    const std::vector<WVCheckpointOutputTarget>& targets() const noexcept { return targets_; }
+    const std::vector<WVCheckpointOutputRecord>& records() const noexcept { return records_; }
+    const WVCheckpointSeriesOutputSinkMetrics& metrics() const noexcept { return metrics_; }
+    std::size_t persistentBytes() const noexcept;
+
+private:
+    std::vector<WVCheckpointOutputTarget> targets_;
+    WVCheckpoint checkpoint_;
+    std::vector<WVCheckpointOutputRecord> records_;
+    WVCheckpointSeriesOutputSinkMetrics metrics_;
+    std::size_t nextTarget_ = 0;
+};
+
 } // namespace wavevortex::runtime

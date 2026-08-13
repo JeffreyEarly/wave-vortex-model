@@ -6,6 +6,7 @@
 #include <chrono>
 #include <cmath>
 #include <filesystem>
+#include <fstream>
 #include <iostream>
 #include <limits>
 #include <stdexcept>
@@ -405,6 +406,42 @@ void testTransactionalCheckpointSink() {
 #endif
 }
 
+void testCheckpointSeriesOutputSink() {
+#ifdef WV_CHECKPOINT_FIXTURE_DIR
+    WVCheckpoint checkpoint;
+    const auto readStatus = WVCheckpointReader::read((std::filesystem::path(WV_CHECKPOINT_FIXTURE_DIR)/"forcing-mixed-nonhydrostatic.nc").string(),checkpoint);
+    require(static_cast<bool>(readStatus),"checkpoint-series fixture could not be read");
+    const auto directory = std::filesystem::temp_directory_path()/("wv-output-series-"+std::to_string(std::chrono::steady_clock::now().time_since_epoch().count()));
+    std::filesystem::create_directories(directory);
+    const auto first = directory/"checkpoint-000001.nc";
+    const auto second = directory/"checkpoint-000002.nc";
+    WVCheckpointSeriesOutputSink sink({{checkpoint.state.t,first.string()},{checkpoint.state.t+0.1,second.string()}},checkpoint);
+    WVIntegrationOutputSink::Action action;
+    auto state = checkpoint.state.view();
+    auto status = sink.receive({WVIntegrationOutputSink::EventKind::init,state},action);
+    require(static_cast<bool>(status) && std::filesystem::exists(first),"checkpoint series did not write its initial target");
+    state.t += 0.1;
+    status = sink.receive({WVIntegrationOutputSink::EventKind::interpolated,state},action);
+    require(static_cast<bool>(status) && sink.wroteAllCheckpoints() && std::filesystem::exists(second),"checkpoint series did not write its interpolated target");
+    require(sink.records().size() == 2 && sink.records()[0].eventKind == WVIntegrationOutputSink::EventKind::init && sink.records()[1].eventKind == WVIntegrationOutputSink::EventKind::interpolated,"checkpoint series records are incorrect");
+    require(sink.metrics().checkpointWriteCount == 2 && sink.metrics().copiedCoefficientBytes == 6*checkpoint.state.coefficients.shape.elementCount()*sizeof(WVComplex64),"checkpoint series metrics are incorrect");
+
+    const auto protectedDestination = directory/"protected.nc";
+    {
+        std::ofstream output(protectedDestination,std::ios::binary);
+        output << "protected";
+    }
+    const auto protectedBytes = std::filesystem::file_size(protectedDestination);
+    WVCheckpointSeriesOutputSink failingSink({{checkpoint.state.t,protectedDestination.string()}},checkpoint);
+    state = checkpoint.state.view();
+    status = failingSink.receive({WVIntegrationOutputSink::EventKind::accepted,state},action);
+    require(!status && !failingSink.wroteAllCheckpoints(),"checkpoint series replaced an existing destination");
+    require(failingSink.records().size() == 1 && !failingSink.records().front().committed && !failingSink.records().front().failure.empty(),"checkpoint series omitted its failure record");
+    require(std::filesystem::file_size(protectedDestination) == protectedBytes,"checkpoint series collision changed the existing destination");
+    std::filesystem::remove_all(directory);
+#endif
+}
+
 void testAcceptedStepLifetimeRestartAndPartialStep() {
     ContractSystem system;
     OwnedState owned;
@@ -595,6 +632,7 @@ int main() {
         testInteriorTerminationCarriesAcceptedEndpoint();
         testInteriorOutputAndSinkFailuresPreserveAcceptedStateWithoutDone();
         testTransactionalCheckpointSink();
+        testCheckpointSeriesOutputSink();
         testAcceptedStepLifetimeRestartAndPartialStep();
         testExactRK4TrafficAccounting();
         testFailedEndpointConstraintIsAtomic();

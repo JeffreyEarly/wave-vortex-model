@@ -338,6 +338,23 @@ classdef TestPortableCheckpointReader < matlab.unittest.TestCase
             [actual,actualFile] = WVTransform.waveVortexTransformFromFile(inPlacePath,shouldReadOnly=true);
             testCase.verifyEqual(actual.t,initialTime+deltaT,AbsTol=4*eps(initialTime+deltaT))
             actualFile.close();
+
+            scheduledDirectory = fullfile(outputDirectory,"scheduled-checkpoints");
+            scheduledReport = fullfile(outputDirectory,"scheduled-checkpoints.json");
+            scheduledTimes = initialTime+[0 deltaT/2 deltaT 2*deltaT];
+            scheduledArguments = join(" --output-time "+compose("%.17g",scheduledTimes),"");
+            command = TestPortableCheckpointReader.sanitizedCommand(sprintf('"%s" "%s" --delta-t %.17g --final-time %.17g --fft-provider reference%s --output-directory "%s" --report "%s"',runner,fullfile(fixtureDirectory,"forcing-nonlinear.nc"),deltaT,scheduledTimes(end),scheduledArguments,scheduledDirectory,scheduledReport));
+            [status,output] = system(command);
+            testCase.assertEqual(status,0,output)
+            scheduledRecord = jsondecode(fileread(scheduledReport));
+            testCase.verifyEqual(scheduledRecord.scheduledOutput.requestedCount,4)
+            testCase.verifyEqual(scheduledRecord.scheduledOutput.committedCount,4)
+            for iOutput = 1:4
+                scheduledPath = fullfile(scheduledDirectory,sprintf("checkpoint-%06d.nc",iOutput));
+                [scheduledTransform,scheduledFile] = WVTransform.waveVortexTransformFromFile(scheduledPath,shouldReadOnly=true);
+                testCase.verifyEqual(scheduledTransform.t,scheduledTimes(iOutput),AbsTol=4*eps(scheduledTimes(iOutput)))
+                scheduledFile.close();
+            end
             clear outputCleanup fixtureCleanup fixtureToolCleanup
         end
 

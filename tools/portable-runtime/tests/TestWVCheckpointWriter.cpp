@@ -196,6 +196,28 @@ void testTransactionalFailures() {
     requireSameCheckpoint(checkpoint, read(destination));
 }
 
+void testCreateNewCommitPolicy() {
+    const auto checkpoint = read(fixture("forcing-mixed-nonhydrostatic.nc"));
+    const auto directory = temporaryDirectory();
+    DirectoryCleanup cleanup{directory};
+    const auto destination = directory / "scheduled.nc";
+    auto result = WVCheckpointWriter::write(destination.string(),checkpoint,WVCheckpointCommitPolicy::createNew);
+    require(static_cast<bool>(result),result.message);
+    requireSameCheckpoint(checkpoint,read(destination));
+    const auto original = bytes(destination);
+    result = WVCheckpointWriter::write(destination.string(),checkpoint,WVCheckpointCommitPolicy::createNew);
+    require(result.code == WVCheckpointStatusCode::commitFailure,"create-new policy replaced an existing checkpoint");
+    require(bytes(destination) == original,"create-new collision changed the existing checkpoint");
+    requireNoTemporaryFiles(directory);
+
+    const auto failedDestination = directory / "failed.nc";
+    detail::setCheckpointWriterFailurePoint(detail::WVCheckpointWriterFailurePoint::beforeCommit);
+    result = WVCheckpointWriter::write(failedDestination.string(),checkpoint,WVCheckpointCommitPolicy::createNew);
+    detail::setCheckpointWriterFailurePoint(detail::WVCheckpointWriterFailurePoint::none);
+    require(!result && !std::filesystem::exists(failedDestination),"failed create-new commit left a destination");
+    requireNoTemporaryFiles(directory);
+}
+
 void testValidation() {
     auto checkpoint = read(fixture("forcing-mixed-nonhydrostatic.nc"));
     const auto directory = temporaryDirectory();
@@ -219,6 +241,7 @@ int main() {
         testRoundTrips();
         testRestartContinuation();
         testTransactionalFailures();
+        testCreateNewCommitPolicy();
         testValidation();
         std::cout << "Portable checkpoint writer tests passed.\n";
         return 0;

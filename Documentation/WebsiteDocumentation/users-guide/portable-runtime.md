@@ -68,6 +68,29 @@ wave-vortex-run restart.nc continued.nc \
 
 For adaptive execution, `--delta-t` is the initial proposal and `--steps` counts accepted steps. The absolute value is an energy-scale tolerance converted into mode-dependent coefficient tolerances using the same convention as MATLAB `WVCoefficients.errorTolerances`. Rejected attempts do not emit output or alter accepted state. Controller and FSAL state are derived runtime data, so a restart is tolerance-equivalent rather than bitwise trajectory-equivalent.
 
+## Scheduled restart checkpoints
+
+Use repeated `--output-time` options to write several individually restartable checkpoints without forcing solver steps to end at those times:
+
+```sh
+wave-vortex-run restart.nc \
+  --integrator adaptive-rk23 \
+  --delta-t 1 \
+  --final-time 3600 \
+  --output-time 900 \
+  --output-time 1800 \
+  --output-time 3600 \
+  --output-directory checkpoints \
+  --output-pattern 'restart-{index}-{time}.nc' \
+  --fft-provider native-fftw
+```
+
+Scheduled mode uses `--final-time` and omits the positional output file. Only explicitly requested times are written. The default pattern is `checkpoint-{index}.nc`, where `{index}` is a one-based, six-digit ordinal; `{time}` expands to the round-trip-safe requested time. A pattern must be a `.nc` filename containing at least one of these tokens.
+
+The output directory is created when necessary. Every destination is validated before the coefficient arrays and numerical backend are constructed, and scheduled output never replaces an existing path. Each checkpoint is written and validated transactionally, so interruption or a later write failure leaves the input and all earlier checkpoints intact.
+
+These files use the same root-level WaveVortexModel 4.x restart profile as ordinary single output. MATLAB and the portable runtime can read and continue each file. They are separate scalar restart checkpoints, not a multi-time MATLAB observing-system output file.
+
 The runner never chooses another FFT provider or omits unsupported forcing. A native provider request fails clearly if the executable was not built with the validated FFTW provider. Unsupported transforms, checkpoint structures, and forcing schedules are rejected before the three coefficient arrays are loaded.
 
 ## Supported scope
@@ -85,6 +108,6 @@ Custom forcing and all other forcing classes remain in MATLAB. See the [portable
 
 ## Reports and performance
 
-Every invocation writes a structured JSON record to standard output. `--report` writes the same record to a file. It includes the resolved forcing order, provider and loaded-library identities, plan count, integration and checkpoint timings, known application-owned storage, and the active execution schedule.
+Every invocation writes a structured JSON record to standard output. `--report` writes the same record to a file. It includes the resolved forcing order, provider and loaded-library identities, plan count, integration and checkpoint timings, known application-owned storage, and the active execution schedule. Scheduled runs also report each requested and emitted time, exact-endpoint or interpolated status, destination, write duration, and partial failure.
 
 Runtime readiness uses the time spent in eight fixed RK4 integration steps. Startup, checkpoint reading, provider construction, preparation, and output writing are reported separately and do not enter the integration-speed gate. Runtime memory is also reported separately and does not change numerical compatibility.

@@ -121,7 +121,9 @@ An accepted-step endpoint and continuous-extension pointer remain valid until th
 
 `WVFixedStepRK4` supplies its continuous extension only when constructed with `retainDenseOutput=true`. `WVOrderedOutputSchedule` validates the entire finite, strictly increasing request sequence before any event or state mutation. `WVIntegrationDriver` emits `init` once, returns accepted endpoints without interpolation, and lazily allocates one reusable \(3M\) interpolation array only for a true interior request. Thus ordinary integration remains at \(9M\), dense-enabled method history is \(12M\), and the maximum retained method-plus-driver storage after an interior request is \(15M\).
 
-An initial-time request is consumed by the `init` event rather than duplicated. A sink-requested termination emits one `done` event carrying the actual accepted endpoint, which may lie after the last interpolated observation. Schedule, interpolation, or sink failure never promotes interpolation storage into accepted state. `WVCheckpointOutputSink` is the narrow v1 persistence consumer: it accepts one explicit target time, destination, and checkpoint template and delegates replacement to the transactional checkpoint writer. Public multi-output naming and command-line scheduling remain separate work.
+An initial-time request is consumed by the `init` event rather than duplicated. A sink-requested termination emits one `done` event carrying the actual accepted endpoint, which may lie after the last interpolated observation. Schedule, interpolation, or sink failure never promotes interpolation storage into accepted state. `WVCheckpointOutputSink` accepts one explicit target time and replaceable destination. `WVCheckpointSeriesOutputSink` reuses one checkpoint-sized staging buffer across an ordered target list and requires atomic create-new commits, so a later failure cannot replace or corrupt an earlier checkpoint.
+
+The public runner exposes the series through repeated `--output-time` options, an explicit output directory, and a filename-only pattern containing `{index}` or `{time}`. It expands and validates every destination after structural checkpoint inspection but before provider construction or coefficient allocation. Scheduled output uses the same root-level `wave-vortex-4x-v1` checkpoint profile as ordinary output; it does not implement MATLAB's multi-time observing-system file model.
 
 ### Adaptive RK3(2)
 
@@ -154,10 +156,10 @@ Issue #111 established read compatibility and validation. Issue #115 adds compat
 3. load canonical `Ap`, `Am`, and `A0` storage;
 4. construct the selected FFT engine, forcing engine, and RK4 workspace;
 5. rebuild derived state after restart and integrate;
-6. transactionally write a scalar restart checkpoint.
+6. transactionally write one replaceable endpoint checkpoint or an ordered series of create-new scalar restart checkpoints.
 
 Inspection validates coefficient metadata and shape without allocating the three state arrays. A pseudo-topographic record necessarily loads its immutable two-dimensional height field during forcing validation, but no state-sized execution buffer is created until the checkpoint passes preflight.
 
 The optimized executable accepts only the pinned native FFTW provider and reports its version, base and thread-library paths, thread count, 17-plan kernel contract, and no-fallback status. The portable reference provider is available only when selected explicitly and uses one thread. Provider selection is never automatic.
 
-The JSON execution report separates inspection, reading, construction, restart preparation, integration, and writing. The readiness benchmark compares only the same eight fixed RK4 steps in the standalone process and the public compiled MATLAB preview. External RSS sampling uses the retained post-construction state as its baseline; FFTW plan-owned allocations remain opaque while all known descriptor, scratch, forcing, integrator, and checkpoint-state bytes are reported explicitly.
+The JSON execution report separates inspection, reading, construction, restart preparation, integration, and writing. For scheduled execution it also records every requested path, emitted time, event kind, write duration, and committed, failed, or pending status; integration wall time includes synchronous sink writes while their aggregate is reported separately. The readiness benchmark compares only the same eight fixed RK4 steps in the standalone process and the public compiled MATLAB preview. External RSS sampling uses the retained post-construction state as its baseline; FFTW plan-owned allocations remain opaque while all known descriptor, scratch, forcing, integrator, and checkpoint-state bytes are reported explicitly.

@@ -176,4 +176,68 @@ std::size_t WVCheckpointOutputSink::persistentBytes() const noexcept {
     return (checkpoint_.state.coefficients.Ap.capacity()+checkpoint_.state.coefficients.Am.capacity()+checkpoint_.state.coefficients.A0.capacity())*sizeof(WVComplex64)+destination_.capacity();
 }
 
+WVCheckpointSeriesOutputSink::WVCheckpointSeriesOutputSink(
+    std::vector<WVCheckpointOutputTarget> targets,
+    WVCheckpoint checkpointTemplate)
+    : targets_(std::move(targets)), checkpoint_(std::move(checkpointTemplate)) {
+    records_.reserve(targets_.size());
+}
+
+WVKernelStatus WVCheckpointSeriesOutputSink::receive(const Event& event, Action& action) {
+    action = Action::continueIntegration;
+    ++metrics_.receivedEventCount;
+    if (event.kind == EventKind::done || nextTarget_ >= targets_.size()) return WVKernelStatus::ok();
+    const auto& target = targets_[nextTarget_];
+    if (!sameTime(event.state.t,target.requestedTime)) {
+        if (event.kind == EventKind::init) return WVKernelStatus::ok();
+        return {WVKernelStatusCode::invalidConfiguration,"Checkpoint output event does not match the next requested time."};
+    }
+    WVCheckpointOutputRecord record;
+    record.ordinal = nextTarget_+1;
+    record.requestedTime = target.requestedTime;
+    record.emittedTime = event.state.t;
+    record.eventKind = event.kind;
+    record.destination = target.destination;
+    const auto shape = checkpoint_.state.coefficients.shape;
+    if (!matchingShape(shape,event.state.coefficients.Ap.shape) || !matchingShape(shape,event.state.coefficients.Am.shape) || !matchingShape(shape,event.state.coefficients.A0.shape)) {
+        record.failure = "Checkpoint template and output state shapes differ.";
+        records_.push_back(record);
+        return {WVKernelStatusCode::invalidShape,record.failure};
+    }
+    const auto count = shape.elementCount();
+    if (checkpoint_.state.coefficients.Ap.size() != count || checkpoint_.state.coefficients.Am.size() != count || checkpoint_.state.coefficients.A0.size() != count) {
+        record.failure = "Checkpoint template coefficient storage is incomplete.";
+        records_.push_back(record);
+        return {WVKernelStatusCode::invalidShape,record.failure};
+    }
+    const WVComplexConstView sources[] = {event.state.coefficients.Ap,event.state.coefficients.Am,event.state.coefficients.A0};
+    std::vector<WVComplex64>* destinations[] = {&checkpoint_.state.coefficients.Ap,&checkpoint_.state.coefficients.Am,&checkpoint_.state.coefficients.A0};
+    for (std::size_t component = 0; component < 3; ++component) std::copy_n(sources[component].data,count,destinations[component]->data());
+    checkpoint_.state.t = event.state.t;
+    checkpoint_.state.t0 = event.state.t0;
+    const auto started = std::chrono::steady_clock::now();
+    const auto writeStatus = WVCheckpointWriter::write(target.destination,checkpoint_,WVCheckpointCommitPolicy::createNew);
+    record.writeSeconds = std::chrono::duration<double>(std::chrono::steady_clock::now()-started).count();
+    metrics_.checkpointWriteSeconds += record.writeSeconds;
+    if (!writeStatus) {
+        record.failure = "Checkpoint output failed at "+writeStatus.location+": "+writeStatus.message;
+        records_.push_back(record);
+        return {WVKernelStatusCode::unsupportedOperation,record.failure};
+    }
+    record.committed = true;
+    records_.push_back(record);
+    ++nextTarget_;
+    ++metrics_.checkpointWriteCount;
+    metrics_.copiedCoefficientBytes += 3*count*sizeof(WVComplex64);
+    return WVKernelStatus::ok();
+}
+
+std::size_t WVCheckpointSeriesOutputSink::persistentBytes() const noexcept {
+    std::size_t bytes = (checkpoint_.state.coefficients.Ap.capacity()+checkpoint_.state.coefficients.Am.capacity()+checkpoint_.state.coefficients.A0.capacity())*sizeof(WVComplex64);
+    bytes += targets_.capacity()*sizeof(WVCheckpointOutputTarget)+records_.capacity()*sizeof(WVCheckpointOutputRecord);
+    for (const auto& target : targets_) bytes += target.destination.capacity();
+    for (const auto& record : records_) bytes += record.destination.capacity()+record.failure.capacity();
+    return bytes;
+}
+
 } // namespace wavevortex::runtime
