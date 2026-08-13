@@ -1,0 +1,873 @@
+{
+  "schemaVersion": "portable-affine-entry-audit-v1",
+  "status": "complete",
+  "source": {
+    "commit": "c8de4eb4a5496f2eabeb66dff66ca66798ffb03c",
+    "measurementCommit": "c8de4eb4a5496f2eabeb66dff66ca66798ffb03c",
+    "analysisCommit": "babe4156539f5899d60f0fe9e28fc52dd403dc49"
+  },
+  "environment": {
+    "release": "2026a",
+    "architecture": "maca64",
+    "threads": 18
+  },
+  "configuration": {
+    "suite": "core-v1",
+    "processRunCount": 3,
+    "warmupStepCount": 2,
+    "mediumSampleCount": 7,
+    "largeSampleCount": 3,
+    "deltaT": 1,
+    "entryFraction": 0.05,
+    "instrumentationOverheadLimit": 1.01,
+    "theoreticalEliminatedIntegratorComplexValuesPerStateElement": 3,
+    "instrumentationOverheadScope": "aggregate integration time across every paired case and process"
+  },
+  "runs": [
+    {
+      "variant": "control",
+      "caseId": "constant-hydrostatic-256x256x65",
+      "repeatIndex": 1,
+      "sampleCount": 7,
+      "integrationSeconds": 1.586767541,
+      "secondsPerStep": 0.22668107728571427,
+      "stageStateConstructionSeconds": 0,
+      "stageFraction": 0,
+      "stageStateReads": 60535188,
+      "stageStateWrites": 30267594,
+      "stateElementCount": 1441314,
+      "knownMaximumLiveBytes": 512517745,
+      "provider": {
+        "id": "native-fftw",
+        "version": "fftw-3.3.11-neon",
+        "threads": 18,
+        "baseLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue185/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+        "threadLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue185/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3_threads.3.dylib"
+      },
+      "execution": {
+        "engine": "fftw",
+        "library": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue185/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+        "schedule": "wave-vortex-forcing-v1:WVNonlinearAdvection",
+        "planCount": 17,
+        "noFallback": true
+      }
+    },
+    {
+      "variant": "stage-timed",
+      "caseId": "constant-hydrostatic-256x256x65",
+      "repeatIndex": 1,
+      "sampleCount": 7,
+      "integrationSeconds": 1.6242285,
+      "secondsPerStep": 0.23203264285714287,
+      "stageStateConstructionSeconds": 0.011512871999999999,
+      "stageFraction": 0.0070882095714980978,
+      "stageStateReads": 60535188,
+      "stageStateWrites": 30267594,
+      "stateElementCount": 1441314,
+      "knownMaximumLiveBytes": 512517745,
+      "provider": {
+        "id": "native-fftw",
+        "version": "fftw-3.3.11-neon",
+        "threads": 18,
+        "baseLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue185/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+        "threadLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue185/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3_threads.3.dylib"
+      },
+      "execution": {
+        "engine": "fftw",
+        "library": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue185/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+        "schedule": "wave-vortex-forcing-v1:WVNonlinearAdvection",
+        "planCount": 17,
+        "noFallback": true
+      }
+    },
+    {
+      "variant": "stage-timed",
+      "caseId": "constant-hydrostatic-256x256x65",
+      "repeatIndex": 2,
+      "sampleCount": 7,
+      "integrationSeconds": 1.622628958,
+      "secondsPerStep": 0.23180413685714285,
+      "stageStateConstructionSeconds": 0.011690459,
+      "stageFraction": 0.0072046409269123871,
+      "stageStateReads": 60535188,
+      "stageStateWrites": 30267594,
+      "stateElementCount": 1441314,
+      "knownMaximumLiveBytes": 512517745,
+      "provider": {
+        "id": "native-fftw",
+        "version": "fftw-3.3.11-neon",
+        "threads": 18,
+        "baseLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue185/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+        "threadLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue185/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3_threads.3.dylib"
+      },
+      "execution": {
+        "engine": "fftw",
+        "library": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue185/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+        "schedule": "wave-vortex-forcing-v1:WVNonlinearAdvection",
+        "planCount": 17,
+        "noFallback": true
+      }
+    },
+    {
+      "variant": "control",
+      "caseId": "constant-hydrostatic-256x256x65",
+      "repeatIndex": 2,
+      "sampleCount": 7,
+      "integrationSeconds": 1.608997917,
+      "secondsPerStep": 0.22985684528571429,
+      "stageStateConstructionSeconds": 0,
+      "stageFraction": 0,
+      "stageStateReads": 60535188,
+      "stageStateWrites": 30267594,
+      "stateElementCount": 1441314,
+      "knownMaximumLiveBytes": 512517745,
+      "provider": {
+        "id": "native-fftw",
+        "version": "fftw-3.3.11-neon",
+        "threads": 18,
+        "baseLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue185/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+        "threadLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue185/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3_threads.3.dylib"
+      },
+      "execution": {
+        "engine": "fftw",
+        "library": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue185/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+        "schedule": "wave-vortex-forcing-v1:WVNonlinearAdvection",
+        "planCount": 17,
+        "noFallback": true
+      }
+    },
+    {
+      "variant": "control",
+      "caseId": "constant-hydrostatic-256x256x65",
+      "repeatIndex": 3,
+      "sampleCount": 7,
+      "integrationSeconds": 1.580119167,
+      "secondsPerStep": 0.22573130957142859,
+      "stageStateConstructionSeconds": 0,
+      "stageFraction": 0,
+      "stageStateReads": 60535188,
+      "stageStateWrites": 30267594,
+      "stateElementCount": 1441314,
+      "knownMaximumLiveBytes": 512517745,
+      "provider": {
+        "id": "native-fftw",
+        "version": "fftw-3.3.11-neon",
+        "threads": 18,
+        "baseLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue185/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+        "threadLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue185/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3_threads.3.dylib"
+      },
+      "execution": {
+        "engine": "fftw",
+        "library": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue185/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+        "schedule": "wave-vortex-forcing-v1:WVNonlinearAdvection",
+        "planCount": 17,
+        "noFallback": true
+      }
+    },
+    {
+      "variant": "stage-timed",
+      "caseId": "constant-hydrostatic-256x256x65",
+      "repeatIndex": 3,
+      "sampleCount": 7,
+      "integrationSeconds": 1.554110541,
+      "secondsPerStep": 0.22201579157142856,
+      "stageStateConstructionSeconds": 0.011720997000000002,
+      "stageFraction": 0.0075419326301320042,
+      "stageStateReads": 60535188,
+      "stageStateWrites": 30267594,
+      "stateElementCount": 1441314,
+      "knownMaximumLiveBytes": 512517745,
+      "provider": {
+        "id": "native-fftw",
+        "version": "fftw-3.3.11-neon",
+        "threads": 18,
+        "baseLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue185/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+        "threadLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue185/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3_threads.3.dylib"
+      },
+      "execution": {
+        "engine": "fftw",
+        "library": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue185/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+        "schedule": "wave-vortex-forcing-v1:WVNonlinearAdvection",
+        "planCount": 17,
+        "noFallback": true
+      }
+    },
+    {
+      "variant": "stage-timed",
+      "caseId": "constant-nonhydrostatic-256x256x65",
+      "repeatIndex": 1,
+      "sampleCount": 7,
+      "integrationSeconds": 1.974529,
+      "secondsPerStep": 0.28207557142857143,
+      "stageStateConstructionSeconds": 0.011680252999999998,
+      "stageFraction": 0.0059154628774760959,
+      "stageStateReads": 60535188,
+      "stageStateWrites": 30267594,
+      "stateElementCount": 1441314,
+      "knownMaximumLiveBytes": 512517745,
+      "provider": {
+        "id": "native-fftw",
+        "version": "fftw-3.3.11-neon",
+        "threads": 18,
+        "baseLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue185/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+        "threadLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue185/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3_threads.3.dylib"
+      },
+      "execution": {
+        "engine": "fftw",
+        "library": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue185/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+        "schedule": "wave-vortex-forcing-v1:WVNonlinearAdvection",
+        "planCount": 17,
+        "noFallback": true
+      }
+    },
+    {
+      "variant": "control",
+      "caseId": "constant-nonhydrostatic-256x256x65",
+      "repeatIndex": 1,
+      "sampleCount": 7,
+      "integrationSeconds": 2.024325833,
+      "secondsPerStep": 0.28918940471428567,
+      "stageStateConstructionSeconds": 0,
+      "stageFraction": 0,
+      "stageStateReads": 60535188,
+      "stageStateWrites": 30267594,
+      "stateElementCount": 1441314,
+      "knownMaximumLiveBytes": 512517745,
+      "provider": {
+        "id": "native-fftw",
+        "version": "fftw-3.3.11-neon",
+        "threads": 18,
+        "baseLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue185/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+        "threadLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue185/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3_threads.3.dylib"
+      },
+      "execution": {
+        "engine": "fftw",
+        "library": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue185/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+        "schedule": "wave-vortex-forcing-v1:WVNonlinearAdvection",
+        "planCount": 17,
+        "noFallback": true
+      }
+    },
+    {
+      "variant": "control",
+      "caseId": "constant-nonhydrostatic-256x256x65",
+      "repeatIndex": 2,
+      "sampleCount": 7,
+      "integrationSeconds": 2.031412709,
+      "secondsPerStep": 0.2902018155714286,
+      "stageStateConstructionSeconds": 0,
+      "stageFraction": 0,
+      "stageStateReads": 60535188,
+      "stageStateWrites": 30267594,
+      "stateElementCount": 1441314,
+      "knownMaximumLiveBytes": 512517745,
+      "provider": {
+        "id": "native-fftw",
+        "version": "fftw-3.3.11-neon",
+        "threads": 18,
+        "baseLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue185/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+        "threadLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue185/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3_threads.3.dylib"
+      },
+      "execution": {
+        "engine": "fftw",
+        "library": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue185/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+        "schedule": "wave-vortex-forcing-v1:WVNonlinearAdvection",
+        "planCount": 17,
+        "noFallback": true
+      }
+    },
+    {
+      "variant": "stage-timed",
+      "caseId": "constant-nonhydrostatic-256x256x65",
+      "repeatIndex": 2,
+      "sampleCount": 7,
+      "integrationSeconds": 2.037627125,
+      "secondsPerStep": 0.29108958928571432,
+      "stageStateConstructionSeconds": 0.011694958000000002,
+      "stageFraction": 0.0057394985846588595,
+      "stageStateReads": 60535188,
+      "stageStateWrites": 30267594,
+      "stateElementCount": 1441314,
+      "knownMaximumLiveBytes": 512517745,
+      "provider": {
+        "id": "native-fftw",
+        "version": "fftw-3.3.11-neon",
+        "threads": 18,
+        "baseLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue185/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+        "threadLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue185/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3_threads.3.dylib"
+      },
+      "execution": {
+        "engine": "fftw",
+        "library": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue185/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+        "schedule": "wave-vortex-forcing-v1:WVNonlinearAdvection",
+        "planCount": 17,
+        "noFallback": true
+      }
+    },
+    {
+      "variant": "stage-timed",
+      "caseId": "constant-nonhydrostatic-256x256x65",
+      "repeatIndex": 3,
+      "sampleCount": 7,
+      "integrationSeconds": 1.96501425,
+      "secondsPerStep": 0.28071632142857145,
+      "stageStateConstructionSeconds": 0.011673961,
+      "stageFraction": 0.005940903990899811,
+      "stageStateReads": 60535188,
+      "stageStateWrites": 30267594,
+      "stateElementCount": 1441314,
+      "knownMaximumLiveBytes": 512517745,
+      "provider": {
+        "id": "native-fftw",
+        "version": "fftw-3.3.11-neon",
+        "threads": 18,
+        "baseLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue185/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+        "threadLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue185/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3_threads.3.dylib"
+      },
+      "execution": {
+        "engine": "fftw",
+        "library": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue185/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+        "schedule": "wave-vortex-forcing-v1:WVNonlinearAdvection",
+        "planCount": 17,
+        "noFallback": true
+      }
+    },
+    {
+      "variant": "control",
+      "caseId": "constant-nonhydrostatic-256x256x65",
+      "repeatIndex": 3,
+      "sampleCount": 7,
+      "integrationSeconds": 2.035881666,
+      "secondsPerStep": 0.290840238,
+      "stageStateConstructionSeconds": 0,
+      "stageFraction": 0,
+      "stageStateReads": 60535188,
+      "stageStateWrites": 30267594,
+      "stateElementCount": 1441314,
+      "knownMaximumLiveBytes": 512517745,
+      "provider": {
+        "id": "native-fftw",
+        "version": "fftw-3.3.11-neon",
+        "threads": 18,
+        "baseLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue185/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+        "threadLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue185/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3_threads.3.dylib"
+      },
+      "execution": {
+        "engine": "fftw",
+        "library": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue185/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+        "schedule": "wave-vortex-forcing-v1:WVNonlinearAdvection",
+        "planCount": 17,
+        "noFallback": true
+      }
+    },
+    {
+      "variant": "control",
+      "caseId": "constant-hydrostatic-512x512x129",
+      "repeatIndex": 1,
+      "sampleCount": 3,
+      "integrationSeconds": 5.105619417,
+      "secondsPerStep": 1.701873139,
+      "stageStateConstructionSeconds": 0,
+      "stageFraction": 0,
+      "stageStateReads": 2.1006135E+8,
+      "stageStateWrites": 105030675,
+      "stateElementCount": 11670075,
+      "knownMaximumLiveBytes": 4085032983,
+      "provider": {
+        "id": "native-fftw",
+        "version": "fftw-3.3.11-neon",
+        "threads": 18,
+        "baseLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue185/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+        "threadLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue185/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3_threads.3.dylib"
+      },
+      "execution": {
+        "engine": "fftw",
+        "library": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue185/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+        "schedule": "wave-vortex-forcing-v1:WVNonlinearAdvection",
+        "planCount": 17,
+        "noFallback": true
+      }
+    },
+    {
+      "variant": "stage-timed",
+      "caseId": "constant-hydrostatic-512x512x129",
+      "repeatIndex": 1,
+      "sampleCount": 3,
+      "integrationSeconds": 4.880779083,
+      "secondsPerStep": 1.626926361,
+      "stageStateConstructionSeconds": 0.042341040999999996,
+      "stageFraction": 0.0086750578708788481,
+      "stageStateReads": 2.1006135E+8,
+      "stageStateWrites": 105030675,
+      "stateElementCount": 11670075,
+      "knownMaximumLiveBytes": 4085032983,
+      "provider": {
+        "id": "native-fftw",
+        "version": "fftw-3.3.11-neon",
+        "threads": 18,
+        "baseLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue185/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+        "threadLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue185/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3_threads.3.dylib"
+      },
+      "execution": {
+        "engine": "fftw",
+        "library": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue185/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+        "schedule": "wave-vortex-forcing-v1:WVNonlinearAdvection",
+        "planCount": 17,
+        "noFallback": true
+      }
+    },
+    {
+      "variant": "stage-timed",
+      "caseId": "constant-hydrostatic-512x512x129",
+      "repeatIndex": 2,
+      "sampleCount": 3,
+      "integrationSeconds": 5.110591792,
+      "secondsPerStep": 1.7035305973333335,
+      "stageStateConstructionSeconds": 0.041331209,
+      "stageFraction": 0.0080873626151669754,
+      "stageStateReads": 2.1006135E+8,
+      "stageStateWrites": 105030675,
+      "stateElementCount": 11670075,
+      "knownMaximumLiveBytes": 4085032983,
+      "provider": {
+        "id": "native-fftw",
+        "version": "fftw-3.3.11-neon",
+        "threads": 18,
+        "baseLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue185/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+        "threadLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue185/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3_threads.3.dylib"
+      },
+      "execution": {
+        "engine": "fftw",
+        "library": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue185/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+        "schedule": "wave-vortex-forcing-v1:WVNonlinearAdvection",
+        "planCount": 17,
+        "noFallback": true
+      }
+    },
+    {
+      "variant": "control",
+      "caseId": "constant-hydrostatic-512x512x129",
+      "repeatIndex": 2,
+      "sampleCount": 3,
+      "integrationSeconds": 4.935060041,
+      "secondsPerStep": 1.6450200136666666,
+      "stageStateConstructionSeconds": 0,
+      "stageFraction": 0,
+      "stageStateReads": 2.1006135E+8,
+      "stageStateWrites": 105030675,
+      "stateElementCount": 11670075,
+      "knownMaximumLiveBytes": 4085032983,
+      "provider": {
+        "id": "native-fftw",
+        "version": "fftw-3.3.11-neon",
+        "threads": 18,
+        "baseLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue185/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+        "threadLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue185/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3_threads.3.dylib"
+      },
+      "execution": {
+        "engine": "fftw",
+        "library": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue185/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+        "schedule": "wave-vortex-forcing-v1:WVNonlinearAdvection",
+        "planCount": 17,
+        "noFallback": true
+      }
+    },
+    {
+      "variant": "control",
+      "caseId": "constant-hydrostatic-512x512x129",
+      "repeatIndex": 3,
+      "sampleCount": 3,
+      "integrationSeconds": 5.248960625,
+      "secondsPerStep": 1.7496535416666665,
+      "stageStateConstructionSeconds": 0,
+      "stageFraction": 0,
+      "stageStateReads": 2.1006135E+8,
+      "stageStateWrites": 105030675,
+      "stateElementCount": 11670075,
+      "knownMaximumLiveBytes": 4085032983,
+      "provider": {
+        "id": "native-fftw",
+        "version": "fftw-3.3.11-neon",
+        "threads": 18,
+        "baseLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue185/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+        "threadLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue185/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3_threads.3.dylib"
+      },
+      "execution": {
+        "engine": "fftw",
+        "library": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue185/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+        "schedule": "wave-vortex-forcing-v1:WVNonlinearAdvection",
+        "planCount": 17,
+        "noFallback": true
+      }
+    },
+    {
+      "variant": "stage-timed",
+      "caseId": "constant-hydrostatic-512x512x129",
+      "repeatIndex": 3,
+      "sampleCount": 3,
+      "integrationSeconds": 5.257116167,
+      "secondsPerStep": 1.7523720556666669,
+      "stageStateConstructionSeconds": 0.042080873999999983,
+      "stageFraction": 0.0080045547146456991,
+      "stageStateReads": 2.1006135E+8,
+      "stageStateWrites": 105030675,
+      "stateElementCount": 11670075,
+      "knownMaximumLiveBytes": 4085032983,
+      "provider": {
+        "id": "native-fftw",
+        "version": "fftw-3.3.11-neon",
+        "threads": 18,
+        "baseLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue185/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+        "threadLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue185/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3_threads.3.dylib"
+      },
+      "execution": {
+        "engine": "fftw",
+        "library": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue185/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+        "schedule": "wave-vortex-forcing-v1:WVNonlinearAdvection",
+        "planCount": 17,
+        "noFallback": true
+      }
+    },
+    {
+      "variant": "stage-timed",
+      "caseId": "constant-nonhydrostatic-512x512x129",
+      "repeatIndex": 1,
+      "sampleCount": 3,
+      "integrationSeconds": 6.192404084,
+      "secondsPerStep": 2.0641346946666665,
+      "stageStateConstructionSeconds": 0.042194832999999994,
+      "stageFraction": 0.0068139663412830984,
+      "stageStateReads": 2.1006135E+8,
+      "stageStateWrites": 105030675,
+      "stateElementCount": 11670075,
+      "knownMaximumLiveBytes": 4085032983,
+      "provider": {
+        "id": "native-fftw",
+        "version": "fftw-3.3.11-neon",
+        "threads": 18,
+        "baseLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue185/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+        "threadLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue185/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3_threads.3.dylib"
+      },
+      "execution": {
+        "engine": "fftw",
+        "library": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue185/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+        "schedule": "wave-vortex-forcing-v1:WVNonlinearAdvection",
+        "planCount": 17,
+        "noFallback": true
+      }
+    },
+    {
+      "variant": "control",
+      "caseId": "constant-nonhydrostatic-512x512x129",
+      "repeatIndex": 1,
+      "sampleCount": 3,
+      "integrationSeconds": 5.956393542,
+      "secondsPerStep": 1.985464514,
+      "stageStateConstructionSeconds": 0,
+      "stageFraction": 0,
+      "stageStateReads": 2.1006135E+8,
+      "stageStateWrites": 105030675,
+      "stateElementCount": 11670075,
+      "knownMaximumLiveBytes": 4085032983,
+      "provider": {
+        "id": "native-fftw",
+        "version": "fftw-3.3.11-neon",
+        "threads": 18,
+        "baseLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue185/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+        "threadLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue185/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3_threads.3.dylib"
+      },
+      "execution": {
+        "engine": "fftw",
+        "library": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue185/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+        "schedule": "wave-vortex-forcing-v1:WVNonlinearAdvection",
+        "planCount": 17,
+        "noFallback": true
+      }
+    },
+    {
+      "variant": "control",
+      "caseId": "constant-nonhydrostatic-512x512x129",
+      "repeatIndex": 2,
+      "sampleCount": 3,
+      "integrationSeconds": 6.670893208,
+      "secondsPerStep": 2.2236310693333334,
+      "stageStateConstructionSeconds": 0,
+      "stageFraction": 0,
+      "stageStateReads": 2.1006135E+8,
+      "stageStateWrites": 105030675,
+      "stateElementCount": 11670075,
+      "knownMaximumLiveBytes": 4085032983,
+      "provider": {
+        "id": "native-fftw",
+        "version": "fftw-3.3.11-neon",
+        "threads": 18,
+        "baseLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue185/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+        "threadLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue185/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3_threads.3.dylib"
+      },
+      "execution": {
+        "engine": "fftw",
+        "library": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue185/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+        "schedule": "wave-vortex-forcing-v1:WVNonlinearAdvection",
+        "planCount": 17,
+        "noFallback": true
+      }
+    },
+    {
+      "variant": "stage-timed",
+      "caseId": "constant-nonhydrostatic-512x512x129",
+      "repeatIndex": 2,
+      "sampleCount": 3,
+      "integrationSeconds": 6.898840875,
+      "secondsPerStep": 2.299613625,
+      "stageStateConstructionSeconds": 0.044046957,
+      "stageFraction": 0.0063846895149614526,
+      "stageStateReads": 2.1006135E+8,
+      "stageStateWrites": 105030675,
+      "stateElementCount": 11670075,
+      "knownMaximumLiveBytes": 4085032983,
+      "provider": {
+        "id": "native-fftw",
+        "version": "fftw-3.3.11-neon",
+        "threads": 18,
+        "baseLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue185/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+        "threadLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue185/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3_threads.3.dylib"
+      },
+      "execution": {
+        "engine": "fftw",
+        "library": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue185/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+        "schedule": "wave-vortex-forcing-v1:WVNonlinearAdvection",
+        "planCount": 17,
+        "noFallback": true
+      }
+    },
+    {
+      "variant": "stage-timed",
+      "caseId": "constant-nonhydrostatic-512x512x129",
+      "repeatIndex": 3,
+      "sampleCount": 3,
+      "integrationSeconds": 6.535557834,
+      "secondsPerStep": 2.178519278,
+      "stageStateConstructionSeconds": 0.043415083999999993,
+      "stageFraction": 0.0066429041105169713,
+      "stageStateReads": 2.1006135E+8,
+      "stageStateWrites": 105030675,
+      "stateElementCount": 11670075,
+      "knownMaximumLiveBytes": 4085032983,
+      "provider": {
+        "id": "native-fftw",
+        "version": "fftw-3.3.11-neon",
+        "threads": 18,
+        "baseLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue185/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+        "threadLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue185/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3_threads.3.dylib"
+      },
+      "execution": {
+        "engine": "fftw",
+        "library": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue185/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+        "schedule": "wave-vortex-forcing-v1:WVNonlinearAdvection",
+        "planCount": 17,
+        "noFallback": true
+      }
+    },
+    {
+      "variant": "control",
+      "caseId": "constant-nonhydrostatic-512x512x129",
+      "repeatIndex": 3,
+      "sampleCount": 3,
+      "integrationSeconds": 6.986789625,
+      "secondsPerStep": 2.328929875,
+      "stageStateConstructionSeconds": 0,
+      "stageFraction": 0,
+      "stageStateReads": 2.1006135E+8,
+      "stageStateWrites": 105030675,
+      "stateElementCount": 11670075,
+      "knownMaximumLiveBytes": 4085032983,
+      "provider": {
+        "id": "native-fftw",
+        "version": "fftw-3.3.11-neon",
+        "threads": 18,
+        "baseLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue185/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+        "threadLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue185/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3_threads.3.dylib"
+      },
+      "execution": {
+        "engine": "fftw",
+        "library": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue185/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+        "schedule": "wave-vortex-forcing-v1:WVNonlinearAdvection",
+        "planCount": 17,
+        "noFallback": true
+      }
+    }
+  ],
+  "correctness": [
+    {
+      "caseId": "constant-hydrostatic-256x256x65",
+      "repeatIndex": 1,
+      "maximumRelativeError": 2.7935572480617145E-17
+    },
+    {
+      "caseId": "constant-hydrostatic-256x256x65",
+      "repeatIndex": 2,
+      "maximumRelativeError": 4.9620171580968571E-17
+    },
+    {
+      "caseId": "constant-hydrostatic-256x256x65",
+      "repeatIndex": 3,
+      "maximumRelativeError": 0
+    },
+    {
+      "caseId": "constant-nonhydrostatic-256x256x65",
+      "repeatIndex": 1,
+      "maximumRelativeError": 4.5759695093020108E-17
+    },
+    {
+      "caseId": "constant-nonhydrostatic-256x256x65",
+      "repeatIndex": 2,
+      "maximumRelativeError": 4.5759695093020108E-17
+    },
+    {
+      "caseId": "constant-nonhydrostatic-256x256x65",
+      "repeatIndex": 3,
+      "maximumRelativeError": 2.2879847546510054E-17
+    },
+    {
+      "caseId": "constant-hydrostatic-512x512x129",
+      "repeatIndex": 1,
+      "maximumRelativeError": 4.1014218002907651E-17
+    },
+    {
+      "caseId": "constant-hydrostatic-512x512x129",
+      "repeatIndex": 2,
+      "maximumRelativeError": 4.1014218002907651E-17
+    },
+    {
+      "caseId": "constant-hydrostatic-512x512x129",
+      "repeatIndex": 3,
+      "maximumRelativeError": 4.0934346032261282E-17
+    },
+    {
+      "caseId": "constant-nonhydrostatic-512x512x129",
+      "repeatIndex": 1,
+      "maximumRelativeError": 6.9955837751393014E-17
+    },
+    {
+      "caseId": "constant-nonhydrostatic-512x512x129",
+      "repeatIndex": 2,
+      "maximumRelativeError": 6.9955837751393014E-17
+    },
+    {
+      "caseId": "constant-nonhydrostatic-512x512x129",
+      "repeatIndex": 3,
+      "maximumRelativeError": 6.9955837751393014E-17
+    }
+  ],
+  "comparisons": [
+    {
+      "id": "constant-hydrostatic-256x256x65",
+      "Nxyz": [
+        256,
+        256,
+        65
+      ],
+      "isHydrostatic": true,
+      "controlSecondsPerStep": 0.22668107728571427,
+      "instrumentedSecondsPerStep": 0.23180413685714285,
+      "instrumentationOverheadRatio": 1.0226002965610197,
+      "medianStageFraction": 0.0072046409269123871,
+      "stageFractionRange": [
+        0.0070882095714980978,
+        0.0075419326301320042
+      ],
+      "stageStateReads": 60535188,
+      "stageStateWrites": 30267594,
+      "theoreticalEliminatedBytes": 23061024,
+      "knownMaximumLiveBytes": 512517745,
+      "theoreticalMaximumLiveReduction": 0.044995562056100127,
+      "maximumRelativeError": 4.9620171580968571E-17,
+      "instrumentationOverheadPassed": false,
+      "entryFractionPassed": false
+    },
+    {
+      "id": "constant-nonhydrostatic-256x256x65",
+      "Nxyz": [
+        256,
+        256,
+        65
+      ],
+      "isHydrostatic": false,
+      "controlSecondsPerStep": 0.2902018155714286,
+      "instrumentedSecondsPerStep": 0.28207557142857143,
+      "instrumentationOverheadRatio": 0.97199795553705959,
+      "medianStageFraction": 0.0059154628774760959,
+      "stageFractionRange": [
+        0.0057394985846588595,
+        0.005940903990899811
+      ],
+      "stageStateReads": 60535188,
+      "stageStateWrites": 30267594,
+      "theoreticalEliminatedBytes": 23061024,
+      "knownMaximumLiveBytes": 512517745,
+      "theoreticalMaximumLiveReduction": 0.044995562056100127,
+      "maximumRelativeError": 4.5759695093020108E-17,
+      "instrumentationOverheadPassed": true,
+      "entryFractionPassed": false
+    },
+    {
+      "id": "constant-hydrostatic-512x512x129",
+      "Nxyz": [
+        512,
+        512,
+        129
+      ],
+      "isHydrostatic": true,
+      "controlSecondsPerStep": 1.701873139,
+      "instrumentedSecondsPerStep": 1.7035305973333335,
+      "instrumentationOverheadRatio": 1.0009739023992748,
+      "medianStageFraction": 0.0080873626151669754,
+      "stageFractionRange": [
+        0.0080045547146456991,
+        0.0086750578708788481
+      ],
+      "stageStateReads": 2.1006135E+8,
+      "stageStateWrites": 105030675,
+      "theoreticalEliminatedBytes": 1.867212E+8,
+      "knownMaximumLiveBytes": 4085032983,
+      "theoreticalMaximumLiveReduction": 0.045708615028825096,
+      "maximumRelativeError": 4.1014218002907651E-17,
+      "instrumentationOverheadPassed": true,
+      "entryFractionPassed": false
+    },
+    {
+      "id": "constant-nonhydrostatic-512x512x129",
+      "Nxyz": [
+        512,
+        512,
+        129
+      ],
+      "isHydrostatic": false,
+      "controlSecondsPerStep": 2.2236310693333334,
+      "instrumentedSecondsPerStep": 2.178519278,
+      "instrumentationOverheadRatio": 0.97971255575824523,
+      "medianStageFraction": 0.0066429041105169713,
+      "stageFractionRange": [
+        0.0063846895149614526,
+        0.0068139663412830984
+      ],
+      "stageStateReads": 2.1006135E+8,
+      "stageStateWrites": 105030675,
+      "theoreticalEliminatedBytes": 1.867212E+8,
+      "knownMaximumLiveBytes": 4085032983,
+      "theoreticalMaximumLiveReduction": 0.045708615028825096,
+      "maximumRelativeError": 6.9955837751393014E-17,
+      "instrumentationOverheadPassed": true,
+      "entryFractionPassed": false
+    }
+  ],
+  "decision": {
+    "status": "NOT-WARRANTED",
+    "instrumentationValid": true,
+    "commonSizePassed": [
+      false,
+      false
+    ],
+    "aggregateInstrumentationOverheadRatio": 0.9974264815602996
+  }
+}
