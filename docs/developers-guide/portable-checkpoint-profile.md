@@ -81,9 +81,13 @@ Runtime v1 implements `WVNonlinearAdvection`, `WVAdaptiveDamping`, `WVFixedAmpli
 
 Spatial forcing is reconstructed and projected through the shared constant-stratification kernel. Spectral forcing operates directly on canonical `[Nj,Nkl]` coefficients. Fixed-amplitude forcing zeros its selected tendencies and separately restores its prescribed coefficients after restart, before each integration stage, and after each completed step.
 
+Every forcing evaluation completely overwrites caller-owned tendency storage. The first whole-tendency producer writes there directly; only a second whole-tendency producer requires a temporary three-component array. Physical fields are retained only for schedules containing adaptive damping or quadratic bottom friction, and the projected forcing-field array exists only for quadratic bottom friction. The ordinary nonlinear-advection schedule therefore adds no array-sized forcing-engine workspace.
+
 ## Fixed-step integration
 
 `WVFixedStepRK4` implements the classical four-stage Runge--Kutta method with deterministic stage order. The stored state remains the three canonical coefficient arrays `Ap`, `Am`, and `A0`, together with `t` and the coefficient reference time `t0`. For a requested final time that is not an integer number of steps away, the integrator takes one shorter final step.
+
+The first right-hand-side evaluation reads the accepted state directly. Its completed tendency initializes the weighted sum, while the remaining three stages reuse one stage-state and one stage-tendency array. Because `WVIntegrationSystem` requires complete right-hand-side overwrite, RK4 does not clear stage-tendency storage before evaluation.
 
 Let \(M=N_jN_{kl}\). The integrator retains one three-component stage state, one three-component stage tendency, and one three-component weighted accumulator. Its exact workspace is therefore
 
@@ -110,7 +114,7 @@ Issue #182 defines these boundaries and exercises dense output, scheduling, and 
 
 ### Untimed array-traffic diagnostic
 
-The standalone JSON report includes exact element and byte counts for the integration-boundary arrays. Counters cover stage-state construction, stage-tendency and weighted-tendency clears, forcing accumulator and temporary-tendency clears, shared-kernel output initialization, temporary accumulation, forcing output copies, RK weighted accumulation, final accepted-state update, and exact retained and maximum-live storage. The diagnostic deliberately excludes FFT-plan and kernel-scratch internal traffic, which is common to direct compiled `nonlinearFlux` and standalone RK4; this makes their measured difference equal to the reported wrapper and RK traffic within process-measurement uncertainty. No timer is read to collect the counters.
+The standalone JSON report includes exact element and byte counts for the integration-boundary arrays. Counters distinguish constructed stage states, first-stage weighted-sum initialization, subsequent weighted accumulation, any forcing temporary accumulation, output initialization required by additive-only schedules, final accepted-state update, and exact retained and maximum-live storage. Zero counters explicitly verify that redundant stage clears, nonlinear-only forcing accumulators, and completed-output copies did not execute. The diagnostic deliberately excludes FFT-plan and kernel-scratch internal traffic, which is common to direct compiled `nonlinearFlux` and standalone RK4. No timer is read to collect the counters.
 
 ## Verification boundary
 

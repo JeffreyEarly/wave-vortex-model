@@ -144,7 +144,7 @@ void testAcceptedStepLifetimeRestartAndPartialStep() {
     require(accepted->endpoint.t == 0.1 && accepted->endpoint.coefficients.Ap.data[0].real == ContractSystem::fixedAmplitude,"accepted endpoint view is incorrect");
     require(accepted->methodStatistics.acceptedStepCount == 1 && accepted->methodStatistics.rightHandSideEvaluationCount == 4 && accepted->methodStatistics.stepSize == 0.1,"accepted method statistics are incorrect");
     require(accepted->denseOutput == nullptr,"RK4 supplied dense-output behavior reserved for issue #184");
-    require(system.evaluationCount == 4 && system.constraintCount == 6,"constraints were not applied at restart, every stage, and the accepted endpoint");
+    require(system.evaluationCount == 4 && system.constraintCount == 5,"constraints were not applied at restart, each constructed stage, and the accepted endpoint");
 
     status = integrator.advanceToTime(state,0.325,0.1);
     require(static_cast<bool>(status) && state.t == 0.325,"partial final step did not land exactly on the integration bound");
@@ -164,9 +164,10 @@ void testExactRK4TrafficAccounting() {
     status = integrator.step(state,0.1);
     require(static_cast<bool>(status),"traffic test step failed");
     const auto& metrics = integrator.metrics();
-    require(metrics.stageStateConstructionElementReads == 21 && metrics.stageStateConstructionElementWrites == 12,"stage-state traffic accounting is not exact");
-    require(metrics.stageFluxClearElementWrites == 12 && metrics.weightedFluxClearElementWrites == 3,"RK buffer-clear accounting is not exact");
-    require(metrics.weightedAccumulationElementReads == 24 && metrics.weightedAccumulationElementWrites == 12,"weighted-accumulation accounting is not exact");
+    require(metrics.stageStateConstructionElementReads == 18 && metrics.stageStateConstructionElementWrites == 9,"stage-state traffic accounting is not exact");
+    require(metrics.stageFluxClearElementWrites == 0 && metrics.weightedFluxClearElementWrites == 0,"RK buffer clears were not eliminated");
+    require(metrics.weightedFluxInitializationElementReads == 3 && metrics.weightedFluxInitializationElementWrites == 3,"first-stage weighted-flux initialization is not exact");
+    require(metrics.weightedAccumulationElementReads == 18 && metrics.weightedAccumulationElementWrites == 9,"weighted-accumulation accounting is not exact");
     require(metrics.finalStateUpdateElementReads == 6 && metrics.finalStateUpdateElementWrites == 3,"final-state traffic accounting is not exact");
     require(metrics.workspaceCapacityBytes == 9*sizeof(WVComplex64) && metrics.workspaceLiveBytes == metrics.workspaceCapacityBytes && metrics.workspaceMaximumLiveBytes == metrics.workspaceCapacityBytes,"RK workspace liveness is not exact");
 }

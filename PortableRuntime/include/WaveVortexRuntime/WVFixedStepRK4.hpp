@@ -16,6 +16,8 @@ struct WVFixedStepRK4Metrics {
     std::size_t stageStateConstructionElementWrites = 0;
     std::size_t stageFluxClearElementWrites = 0;
     std::size_t weightedFluxClearElementWrites = 0;
+    std::size_t weightedFluxInitializationElementReads = 0;
+    std::size_t weightedFluxInitializationElementWrites = 0;
     std::size_t weightedAccumulationElementReads = 0;
     std::size_t weightedAccumulationElementWrites = 0;
     std::size_t finalStateUpdateElementReads = 0;
@@ -41,6 +43,7 @@ public:
 
 private:
     WVKernelStatus ensureWorkspace(const WVMutableState& state);
+    WVKernelStatus evaluateAcceptedState(const WVMutableState& state);
     WVKernelStatus evaluateStage(const WVMutableState& base, double stageTime, double scale, const std::vector<WVComplex64>* increment);
     void setStageFromBase(const WVMutableState& base, double scale, const std::vector<WVComplex64>* increment);
     void accumulateWeightedFlux(double weight);
@@ -53,6 +56,7 @@ private:
     WVFixedStepRK4Metrics metrics_;
     WVAcceptedStep acceptedStep_;
     bool hasAcceptedStep_ = false;
+    bool acceptedStateConstrained_ = false;
     bool stepping_ = false;
 };
 

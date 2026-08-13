@@ -254,8 +254,9 @@ classdef TestPortableCheckpointReader < matlab.unittest.TestCase
                 testCase.verifyTrue(report.execution.noFallback)
                 testCase.verifyEqual(string(report.provider.id),"reference")
                 stateElementCount = prod(report.state.shape);
-                testCase.verifyEqual(report.arrayTraffic.integrator.stageStateConstructionReads,42*stateElementCount)
-                testCase.verifyEqual(report.arrayTraffic.integrator.stageFluxClearWrites,24*stateElementCount)
+                testCase.verifyEqual(report.arrayTraffic.integrator.stageStateConstructionReads,36*stateElementCount)
+                testCase.verifyEqual(report.arrayTraffic.integrator.stageFluxClearWrites,0)
+                testCase.verifyEqual(report.arrayTraffic.integrator.weightedFluxInitializationReads,6*stateElementCount)
                 testCase.verifyEqual(report.livenessBytes.integratorWorkspaceLive,9*stateElementCount*16)
                 testCase.verifyEqual(report.livenessBytes.contractAbstractionAdditionalArrayStorage,0)
 

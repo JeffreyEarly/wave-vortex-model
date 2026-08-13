@@ -79,11 +79,6 @@ WVFlux fluxViews(std::vector<WVComplex64>& storage, WVShape2D shape) {
     return {{storage.data(),shape},{storage.data()+count,shape},{storage.data()+2*count,shape}};
 }
 
-WVMutableCoefficients coefficientViews(std::vector<WVComplex64>& storage, WVShape2D shape) {
-    const auto count = shape.elementCount();
-    return {{storage.data(),shape},{storage.data()+count,shape},{storage.data()+2*count,shape}};
-}
-
 void addFlux(const WVFlux& source, WVFlux& destination) {
     const auto count = source.Fp.shape.elementCount();
     for (std::size_t index = 0; index < count; ++index) {
@@ -336,9 +331,19 @@ WVKernelStatus WVConstantStratificationForcingEngine::initialize(const WVFrozenF
     scheduleIdentifier_ = identifier.str();
     const auto R = descriptor.spatialShape().elementCount();
     const auto q = configuration.isHydrostatic ? 3U : 4U;
-    physicalFields_.resize(4*R); forcingFields_.resize(q*R);
-    accumulatedFlux_.resize(3*count); temporaryFlux_.resize(3*count);
-    metrics_.workspaceCapacityBytes = vectorBytes(physicalFields_)+vectorBytes(forcingFields_)+vectorBytes(accumulatedFlux_)+vectorBytes(temporaryFlux_);
+    const auto requiresPhysicalFields = std::any_of(derivedForcing_.begin(),derivedForcing_.end(),[](const auto& forcing) {
+        return forcing.kind == WVForcingKind::bottomFrictionQuadratic || forcing.kind == WVForcingKind::adaptiveDamping;
+    });
+    const auto requiresForcingFields = std::any_of(derivedForcing_.begin(),derivedForcing_.end(),[](const auto& forcing) {
+        return forcing.kind == WVForcingKind::bottomFrictionQuadratic;
+    });
+    const auto wholeFluxProducerCount = std::count_if(derivedForcing_.begin(),derivedForcing_.end(),[](const auto& forcing) {
+        return forcing.kind == WVForcingKind::nonlinearAdvection || forcing.kind == WVForcingKind::bottomFrictionQuadratic;
+    });
+    if (requiresPhysicalFields) physicalFields_.resize(4*R);
+    if (requiresForcingFields) forcingFields_.resize(q*R);
+    if (wholeFluxProducerCount > 1) temporaryFlux_.resize(3*count);
+    metrics_.workspaceCapacityBytes = vectorBytes(physicalFields_)+vectorBytes(forcingFields_)+vectorBytes(temporaryFlux_);
     metrics_.workspaceHighWaterBytes = metrics_.workspaceCapacityBytes;
     metrics_.workspaceLiveBytes = metrics_.workspaceCapacityBytes;
     metrics_.workspaceMaximumLiveBytes = metrics_.workspaceCapacityBytes;
@@ -358,7 +363,7 @@ WVKernelStatus WVConstantStratificationForcingEngine::ensurePhysicalFields(const
     return WVKernelStatus::ok();
 }
 
-WVKernelStatus WVConstantStratificationForcingEngine::addQuadraticBottomFriction(const WVState& state, const DerivedForcing& forcing, WVFlux& flux) {
+WVKernelStatus WVConstantStratificationForcingEngine::computeQuadraticBottomFriction(const WVState& state, const DerivedForcing& forcing, WVFlux& flux) {
     WVRealFieldBundleConstView fields;
     auto status = ensurePhysicalFields(state,fields);
     if (!status) return status;
@@ -373,14 +378,10 @@ WVKernelStatus WVConstantStratificationForcingEngine::addQuadraticBottomFriction
         forcingFields_[index] = -forcing.quadraticDrag*u*speed;
         forcingFields_[R+index] = -forcing.quadraticDrag*v*speed;
     }
-    auto coefficients = coefficientViews(temporaryFlux_,kernel_->descriptor().spectralShape());
+    WVMutableCoefficients coefficients{{flux.Fp.data,flux.Fp.shape},{flux.Fm.data,flux.Fm.shape},{flux.F0.data,flux.F0.shape}};
     const auto q = configuration.isHydrostatic ? 3U : 4U;
     const WVRealFieldBundleConstView forcingFields{forcingFields_.data(),{configuration.Nx,configuration.Ny,configuration.Nz,q}};
-    status = configuration.isHydrostatic ? kernel_->transformUVEtaToWaveVortex(forcingFields,state.t,state.t0,coefficients) : kernel_->transformUVWEtaToWaveVortex(forcingFields,state.t,state.t0,coefficients);
-    if (!status) return status;
-    WVFlux source{{coefficients.Ap.data,coefficients.Ap.shape},{coefficients.Am.data,coefficients.Am.shape},{coefficients.A0.data,coefficients.A0.shape}};
-    addFlux(source,flux);
-    return WVKernelStatus::ok();
+    return configuration.isHydrostatic ? kernel_->transformUVEtaToWaveVortex(forcingFields,state.t,state.t0,coefficients) : kernel_->transformUVWEtaToWaveVortex(forcingFields,state.t,state.t0,coefficients);
 }
 
 WVKernelStatus WVConstantStratificationForcingEngine::addAdaptiveDamping(const WVState& state, const DerivedForcing& forcing, WVFlux& flux) {
@@ -431,48 +432,63 @@ WVKernelStatus WVConstantStratificationForcingEngine::nonlinearFlux(const WVStat
     executing_ = true;
     struct Guard { bool& value; ~Guard() { value = false; } } guard{executing_};
     clearEvaluationWorkspace();
-    auto accumulator = fluxViews(accumulatedFlux_,kernel_->descriptor().spectralShape());
-    auto temporary = fluxViews(temporaryFlux_,kernel_->descriptor().spectralShape());
+    const auto coefficientCount = kernel_->descriptor().spectralShape().elementCount();
+    bool outputInitialized = false;
+    const auto initializeWithZeros = [&]() {
+        std::fill_n(flux.Fp.data,coefficientCount,WVComplex64{});
+        std::fill_n(flux.Fm.data,coefficientCount,WVComplex64{});
+        std::fill_n(flux.F0.data,coefficientCount,WVComplex64{});
+        metrics_.accumulatorClearElementWrites += 3*coefficientCount;
+        outputInitialized = true;
+    };
 
     for (const auto& forcing : derivedForcing_) {
         WVKernelStatus status = WVKernelStatus::ok();
         if (forcing.kind == WVForcingKind::nonlinearAdvection) {
-            std::fill(temporaryFlux_.begin(),temporaryFlux_.end(),WVComplex64{});
-            metrics_.temporaryFluxClearElementWrites += temporaryFlux_.size();
-            metrics_.kernelOutputInitializationElementWrites += temporaryFlux_.size();
-            status = kernel_->nonlinearFlux(state,temporary);
-            if (status) {
-                addFlux(temporary,accumulator);
-                metrics_.temporaryAccumulationElementReads += 2*temporaryFlux_.size();
-                metrics_.temporaryAccumulationElementWrites += temporaryFlux_.size();
+            if (!outputInitialized) {
+                status = kernel_->nonlinearFlux(state,flux);
+                if (status) outputInitialized = true;
+            } else {
+                auto temporary = fluxViews(temporaryFlux_,kernel_->descriptor().spectralShape());
+                status = kernel_->nonlinearFlux(state,temporary);
+                if (status) {
+                    addFlux(temporary,flux);
+                    metrics_.temporaryAccumulationElementReads += 2*temporaryFlux_.size();
+                    metrics_.temporaryAccumulationElementWrites += temporaryFlux_.size();
+                }
             }
         } else if (forcing.kind == WVForcingKind::bottomFrictionQuadratic) {
-            status = addQuadraticBottomFriction(state,forcing,accumulator);
-            if (status) {
-                metrics_.temporaryAccumulationElementReads += 2*temporaryFlux_.size();
-                metrics_.temporaryAccumulationElementWrites += temporaryFlux_.size();
+            if (!outputInitialized) {
+                status = computeQuadraticBottomFriction(state,forcing,flux);
+                if (status) outputInitialized = true;
+            } else {
+                auto temporary = fluxViews(temporaryFlux_,kernel_->descriptor().spectralShape());
+                status = computeQuadraticBottomFriction(state,forcing,temporary);
+                if (status) {
+                    addFlux(temporary,flux);
+                    metrics_.temporaryAccumulationElementReads += 2*temporaryFlux_.size();
+                    metrics_.temporaryAccumulationElementWrites += temporaryFlux_.size();
+                }
             }
         } else if (forcing.kind == WVForcingKind::adaptiveDamping) {
-            status = addAdaptiveDamping(state,forcing,accumulator);
+            if (!outputInitialized) initializeWithZeros();
+            status = addAdaptiveDamping(state,forcing,flux);
         } else if (forcing.kind == WVForcingKind::pseudoTopographicWaveGeneration) {
-            status = addPseudoTopographicGeneration(state,forcing,accumulator);
+            if (!outputInitialized) initializeWithZeros();
+            status = addPseudoTopographicGeneration(state,forcing,flux);
         } else if (forcing.kind == WVForcingKind::betaPlanePVAdvection) {
-            addBetaPlaneAdvection(state,forcing,accumulator);
+            if (!outputInitialized) initializeWithZeros();
+            addBetaPlaneAdvection(state,forcing,flux);
         } else if (forcing.kind == WVForcingKind::fixedAmplitude) {
+            if (!outputInitialized) initializeWithZeros();
             const auto& record = std::get<WVFixedAmplitudeForcingRecord>(schedule_.entries[forcing.entryIndex].payload);
-            for (const auto index : record.ApIndices) accumulator.Fp.data[index] = {};
-            for (const auto index : record.AmIndices) accumulator.Fm.data[index] = {};
-            for (const auto index : record.A0Indices) accumulator.F0.data[index] = {};
+            for (const auto index : record.ApIndices) flux.Fp.data[index] = {};
+            for (const auto index : record.AmIndices) flux.Fm.data[index] = {};
+            for (const auto index : record.A0Indices) flux.F0.data[index] = {};
         }
         if (!status) return status;
     }
-
-    const auto count = kernel_->descriptor().spectralShape().elementCount();
-    std::copy_n(accumulator.Fp.data,count,flux.Fp.data);
-    std::copy_n(accumulator.Fm.data,count,flux.Fm.data);
-    std::copy_n(accumulator.F0.data,count,flux.F0.data);
-    metrics_.outputCopyElementReads += 3*count;
-    metrics_.outputCopyElementWrites += 3*count;
+    if (!outputInitialized) initializeWithZeros();
     ++metrics_.evaluationCount;
     return WVKernelStatus::ok();
 }
@@ -493,8 +509,6 @@ WVKernelStatus WVConstantStratificationForcingEngine::restoreForcingAmplitudes(W
 }
 
 void WVConstantStratificationForcingEngine::clearEvaluationWorkspace() noexcept {
-    std::fill(accumulatedFlux_.begin(),accumulatedFlux_.end(),WVComplex64{});
-    metrics_.accumulatorClearElementWrites += accumulatedFlux_.size();
     physicalFieldsValid_ = false;
 }
 
