@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <map>
 #include <new>
 #include <set>
 #include <utility>
@@ -80,23 +81,27 @@ WVPortableObserverDescriptor::create(const WVPortableObserverRecord &record,
   }
   try {
     std::set<std::string> blockIdentifiers;
+    std::map<std::string, const WVStateBlockRecord *> blocksByIdentifier;
     for (const auto &block : record.stateBlocks) {
       if (!validIdentifier(block.identifier))
         return invalid("State-block identifier is empty or contains "
                        "unsupported characters.");
       if (!blockIdentifiers.insert(block.identifier).second)
         return invalid("Duplicate state-block identifier: " + block.identifier);
+      blocksByIdentifier.emplace(block.identifier, &block);
       const auto status = validateDimensions(block);
       if (!status)
         return status;
     }
 
     std::set<std::string> observerIdentifiers;
+    std::map<std::string, WVObserverKind> observerKinds;
     for (const auto &observer : record.observers) {
       if (!validIdentifier(observer.identifier) || observer.name.empty())
         return invalid("Observer identifier and name must be nonempty.");
       if (!observerIdentifiers.insert(observer.identifier).second)
         return invalid("Duplicate observer identifier: " + observer.identifier);
+      observerKinds.emplace(observer.identifier, observer.kind);
       if (!WVObserverFactoryRegistry::supports(observer.kind))
         return {WVKernelStatusCode::unsupportedOperation,
                 "Unsupported observing-system tag."};
@@ -114,6 +119,11 @@ WVPortableObserverDescriptor::create(const WVPortableObserverRecord &record,
               std::vector<std::string>({"Ap", "Am", "A0"}))
         return invalid(
             "WVCoefficients must reference Ap, Am, and A0 in canonical order.");
+      if ((observer.kind == WVObserverKind::eulerianFields ||
+           observer.kind == WVObserverKind::mooring) &&
+          !observer.stateBlockIdentifiers.empty())
+        return invalid(
+            "Sample-only observers cannot own integrated state blocks.");
       if (observer.kind == WVObserverKind::mooring &&
           (observer.x.empty() || observer.x.size() != observer.y.size()))
         return invalid(
@@ -134,10 +144,30 @@ WVPortableObserverDescriptor::create(const WVPortableObserverRecord &record,
              !std::isfinite(observer.verticalAbsoluteTolerance)))
           return invalid(
               "Particle vertical tolerance must be finite and positive.");
+        const std::size_t expectedBlocks = observer.isXYOnly ? 2 : 3;
+        if (observer.stateBlockIdentifiers.size() != expectedBlocks)
+          return invalid("WVLagrangianParticles requires ordered x, y, and "
+                         "optional z state blocks.");
+        for (const auto &identifier : observer.stateBlockIdentifiers) {
+          const auto *block = blocksByIdentifier.at(identifier);
+          if (block->scalarType != WVStateScalarType::real64 ||
+              block->ownership != WVStateOwnership::integratorOwned ||
+              block->dimensions !=
+                  std::vector<std::size_t>({observer.x.size()}))
+            return invalid("Particle state blocks must be integrator-owned "
+                           "real vectors matching the particle count.");
+        }
       }
-      if (observer.kind == WVObserverKind::tracer &&
-          observer.stateBlockIdentifiers.size() != 1)
-        return invalid("WVTracer requires exactly one state block.");
+      if (observer.kind == WVObserverKind::tracer) {
+        if (observer.stateBlockIdentifiers.size() != 1)
+          return invalid("WVTracer requires exactly one state block.");
+        const auto *block =
+            blocksByIdentifier.at(observer.stateBlockIdentifiers.front());
+        if (block->scalarType != WVStateScalarType::real64 ||
+            block->ownership != WVStateOwnership::integratorOwned)
+          return invalid(
+              "WVTracer requires one integrator-owned real state block.");
+      }
     }
 
     std::set<std::string> fileIdentifiers;
@@ -176,8 +206,18 @@ WVPortableObserverDescriptor::create(const WVPortableObserverRecord &record,
             return invalid("Output group " + group.identifier +
                            " repeats observer " + identifier + ".");
         }
-        if (group.containsCompleteCoefficientRestart)
+        if (group.containsCompleteCoefficientRestart) {
           ++restartGroupCount;
+          const bool containsCoefficients = std::any_of(
+              group.observerIdentifiers.begin(),
+              group.observerIdentifiers.end(), [&](const auto &identifier) {
+                return observerKinds.at(identifier) ==
+                       WVObserverKind::coefficients;
+              });
+          if (!containsCoefficients)
+            return invalid("A complete coefficient-restart group must contain "
+                           "WVCoefficients.");
+        }
       }
       if (!file.groups.empty() && restartGroupCount != 1)
         return invalid("Every configured output file must designate exactly "

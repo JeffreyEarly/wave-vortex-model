@@ -29,14 +29,28 @@ WVPortableObserverRecord record() {
                                   WVToleranceKind::coefficientEnergyScaled, 0.0,
                                   WVStateOwnership::integratorOwned,
                                   WVRestartRequirement::requiredDynamicState});
-  result.stateBlocks.push_back({"particlePosition",
+  result.stateBlocks.push_back({"particleX",
                                 WVStateScalarType::real64,
-                                {2, 3},
+                                {3},
+                                WVToleranceKind::uniformAbsolute,
+                                1e-10,
+                                WVStateOwnership::integratorOwned,
+                                WVRestartRequirement::requiredDynamicState});
+  result.stateBlocks.push_back({"particleY",
+                                WVStateScalarType::real64,
+                                {3},
                                 WVToleranceKind::uniformAbsolute,
                                 1e-10,
                                 WVStateOwnership::integratorOwned,
                                 WVRestartRequirement::requiredDynamicState});
   result.stateBlocks.push_back({"tracerAmplitude",
+                                WVStateScalarType::real64,
+                                {2, 2},
+                                WVToleranceKind::uniformAbsolute,
+                                1e-10,
+                                WVStateOwnership::integratorOwned,
+                                WVRestartRequirement::requiredDynamicState});
+  result.stateBlocks.push_back({"complexAuxiliary",
                                 WVStateScalarType::complex64,
                                 {2, 2},
                                 WVToleranceKind::uniformAbsolute,
@@ -60,7 +74,7 @@ WVPortableObserverRecord record() {
   particles.identifier = "particles";
   particles.name = "Particles";
   particles.kind = WVObserverKind::lagrangianParticles;
-  particles.stateBlockIdentifiers = {"particlePosition"};
+  particles.stateBlockIdentifiers = {"particleX", "particleY"};
   particles.x = {0, 1, 2};
   particles.y = {3, 4, 5};
   particles.isXYOnly = true;
@@ -122,8 +136,8 @@ public:
   enforceStateConstraints(WVMutableCompositeState &state) override {
     std::size_t modified = 0;
     for (std::size_t block = 0; block < state.additionalBlockCount; ++block)
-      if (state.additionalBlocks[block].layout->identifier ==
-          "particlePosition")
+      if (state.additionalBlocks[block].layout->identifier == "particleX" ||
+          state.additionalBlocks[block].layout->identifier == "particleY")
         for (std::size_t i = 0;
              i < state.additionalBlocks[block].layout->elementCount; ++i)
           if (state.additionalBlocks[block].realData[i] < 0) {
@@ -211,11 +225,13 @@ void testContracts(WVPortableObserverDescriptor &descriptor,
   require(static_cast<bool>(
               WVCompositeStateLayout::create({2, 3}, descriptor, layout)),
           "composite layout");
-  require(layout.additionalBlocks().size() == 2 &&
-              layout.additionalBlocks()[0].identifier == "particlePosition" &&
-              layout.additionalBlocks()[1].identifier == "tracerAmplitude",
+  require(layout.additionalBlocks().size() == 4 &&
+              layout.additionalBlocks()[0].identifier == "particleX" &&
+              layout.additionalBlocks()[1].identifier == "particleY" &&
+              layout.additionalBlocks()[2].identifier == "tracerAmplitude" &&
+              layout.additionalBlocks()[3].identifier == "complexAuxiliary",
           "derived block excluded and order frozen");
-  require(layout.realElementCount() == 6 && layout.complexElementCount() == 4,
+  require(layout.realElementCount() == 10 && layout.complexElementCount() == 4,
           "composite counts");
   WVCompositeStateLayout badLayout;
   require(!WVCompositeStateLayout::create({3, 2}, descriptor, badLayout),
@@ -225,9 +241,12 @@ void testContracts(WVPortableObserverDescriptor &descriptor,
 void testRK4(LinearCompositeSystem &system) {
   StateFixture leanFixture(system.stateLayout());
   WVCompositeFixedStepRK4 leanRK4(system, false);
+  leanFixture.state.additionalBlocks[0].realData[0] = -1.0;
   require(
       static_cast<bool>(leanRK4.prepareStateAfterRestart(leanFixture.state)),
       "lean RK4 restart preparation");
+  require(leanFixture.state.additionalBlocks[0].realData[0] == 0.0,
+          "restart reconstruction applies composite constraints");
   StateFixture fixture(system.stateLayout());
   WVCompositeFixedStepRK4 rk4(system, true);
   require(static_cast<bool>(rk4.prepareStateAfterRestart(fixture.state)),
@@ -238,7 +257,7 @@ void testRK4(LinearCompositeSystem &system) {
   require(std::abs(fixture.state.additionalBlocks[0].realData[0] -
                    std::exp(-0.02)) < 1e-9,
           "RK4 real block result");
-  require(std::abs(fixture.state.additionalBlocks[1].complexData[0].real -
+  require(std::abs(fixture.state.additionalBlocks[3].complexData[0].real -
                    std::cos(0.01)) < 1e-10,
           "RK4 complex block result");
   require(static_cast<bool>(rk4.evaluateDenseOutput(0.005, fixture.output)),
