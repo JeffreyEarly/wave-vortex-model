@@ -7,7 +7,7 @@ nav_order: 5
 
 # Portable constant-stratification runtime
 
-`wave-vortex-run` advances a compatible WaveVortexModel checkpoint without starting MATLAB. It uses the same MATLAB-independent constant-stratification C++ core as the compiled MATLAB preview, the frozen forcing schedule stored in the checkpoint, and deterministic fixed-step RK4 integration.
+`wave-vortex-run` advances a compatible WaveVortexModel checkpoint without starting MATLAB. It uses the same MATLAB-independent constant-stratification C++ core as the compiled MATLAB preview, the frozen forcing schedule stored in the checkpoint, and either deterministic fixed-step RK4 or adaptive Bogacki--Shampine RK3(2) integration.
 
 The runner is source-only. The optimized provider currently targets Apple silicon and builds the pinned FFTW 3.3.11 NEON/pthreads configuration locally. No FFTW library or executable is distributed by WaveVortexModel.
 
@@ -53,6 +53,20 @@ wave-vortex-run restart.nc continued.nc \
 ```
 
 If the requested final time is not an integer number of steps from the checkpoint time, the last step is shortened. Input and output may name the same file; replacement is transactional and a failed run preserves the prior checkpoint.
+
+Select adaptive RK3(2) explicitly when error-controlled steps are preferred:
+
+```sh
+wave-vortex-run restart.nc continued.nc \
+  --integrator adaptive-rk23 \
+  --delta-t 1 \
+  --final-time 3600 \
+  --relative-tolerance 1e-3 \
+  --absolute-tolerance 1e-6 \
+  --fft-provider native-fftw
+```
+
+For adaptive execution, `--delta-t` is the initial proposal and `--steps` counts accepted steps. The absolute value is an energy-scale tolerance converted into mode-dependent coefficient tolerances using the same convention as MATLAB `WVCoefficients.errorTolerances`. Rejected attempts do not emit output or alter accepted state. Controller and FSAL state are derived runtime data, so a restart is tolerance-equivalent rather than bitwise trajectory-equivalent.
 
 The runner never chooses another FFT provider or omits unsupported forcing. A native provider request fails clearly if the executable was not built with the validated FFTW provider. Unsupported transforms, checkpoint structures, and forcing schedules are rejected before the three coefficient arrays are loaded.
 

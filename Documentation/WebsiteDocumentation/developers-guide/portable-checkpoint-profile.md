@@ -110,6 +110,7 @@ The portable runtime separates model evaluation, numerical advancement, accepted
 | Contract | Responsibility |
 |---|---|
 | `WVIntegrationSystem` | Evaluate a supplied immutable state and time while completely overwriting every supplied right-hand-side element; apply model-owned state constraints separately. |
+| `WVIntegrationErrorPolicy` | Supply component-wise absolute tolerances independently of a concrete Runge--Kutta controller. |
 | `WVTimeIntegrator` | Prepare derived method state after restart, advance accepted mutable state, and expose the most recent accepted step. |
 | `WVAcceptedStep` | Describe the accepted interval, immutable endpoint view, step-local method statistics, and method-owned continuous extension. |
 | `WVDenseOutput` | Evaluate one method-owned continuous extension into caller-owned reusable storage. |
@@ -121,6 +122,16 @@ An accepted-step endpoint and continuous-extension pointer remain valid until th
 `WVFixedStepRK4` supplies its continuous extension only when constructed with `retainDenseOutput=true`. `WVOrderedOutputSchedule` validates the entire finite, strictly increasing request sequence before any event or state mutation. `WVIntegrationDriver` emits `init` once, returns accepted endpoints without interpolation, and lazily allocates one reusable \(3M\) interpolation array only for a true interior request. Thus ordinary integration remains at \(9M\), dense-enabled method history is \(12M\), and the maximum retained method-plus-driver storage after an interior request is \(15M\).
 
 An initial-time request is consumed by the `init` event rather than duplicated. A sink-requested termination emits one `done` event carrying the actual accepted endpoint, which may lie after the last interpolated observation. Schedule, interpolation, or sink failure never promotes interpolation storage into accepted state. `WVCheckpointOutputSink` is the narrow v1 persistence consumer: it accepts one explicit target time, destination, and checkpoint template and delegates replacement to the transactional checkpoint writer. Public multi-output naming and command-line scheduling remain separate work.
+
+### Adaptive RK3(2)
+
+`WVAdaptiveRK23` implements the Bogacki--Shampine four-stage 3(2) pair. The accepted third-order state uses weights ((2/9,1/3,4/9,0)), while the embedded second-order state uses ((7/24,1/4,1/3,1/8)). The normalized error is the maximum over all complex coefficient components of
+
+$$\frac{\lvert\delta A_i\rvert}{\alpha_i+r\max(\lvert A_{n,i}\rvert,\lvert A_{n+1,i}\rvert)},$$
+
+where (r) is the relative tolerance and (alpha_i) is supplied by `WVIntegrationErrorPolicy`. The current WaveVortex policy reproduces the energy-scaled MATLAB coefficient tolerances, but the controller contains no WaveVortex descriptor or forcing logic. Coefficient enumeration and Runge--Kutta state algebra are isolated in the current adapter so a future observing-system composition can supply another state adapter and error policy without changing the tableau or controller.
+
+Rejected attempts remain inside the integrator and are invisible to `WVIntegrationDriver`. The endpoint derivative is reused through FSAL only when state constraints report that reuse is valid. The candidate state and four stage derivatives require exactly (15M) complex values. The continuous extension is evaluated relative to the accepted endpoint, so dense output requires no additional method-owned state-sized array.
 
 ### Untimed array-traffic diagnostic
 

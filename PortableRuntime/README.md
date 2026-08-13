@@ -1,6 +1,6 @@
 # WaveVortex portable runtime
 
-`WaveVortexPortableRuntime` contains the MATLAB-independent constant-stratification runtime layers built around the shared C++ numerical kernel. It reads and writes compatible WaveVortexModel 4.x checkpoints, resolves supported frozen forcing records at construction, evaluates the combined right-hand side, and advances canonical `[Nj,Nkl]` coefficients with deterministic fixed-step RK4.
+`WaveVortexPortableRuntime` contains the MATLAB-independent constant-stratification runtime layers built around the shared C++ numerical kernel. It reads and writes compatible WaveVortexModel 4.x checkpoints, resolves supported frozen forcing records at construction, evaluates the combined right-hand side, and advances canonical `[Nj,Nkl]` coefficients with fixed-step RK4 or adaptive Bogacki--Shampine RK3(2).
 
 The library deliberately does not reproduce the general MATLAB `NetCDFFile` or `CAAnnotatedClass` APIs. Its private NetCDF-C layer supports only the group, attribute, dimension, variable, hyperslab, and complex-pair reads required by compatible WaveVortex checkpoints.
 
@@ -27,11 +27,13 @@ compatible WaveVortex NetCDF file
       WaveVortexKernel    -- no NetCDF or MATLAB APIs
 ```
 
-The forcing engine executes records in frozen stage, priority, and source order. It implements nonlinear advection, adaptive damping, fixed amplitude, quadratic bottom friction, pseudo-topographic wave generation, and beta-plane QGPV advection. Fixed-amplitude coefficients are restored after restart, before each RK4 stage, and after each completed step.
+The forcing engine executes records in frozen stage, priority, and source order. It implements nonlinear advection, adaptive damping, fixed amplitude, quadratic bottom friction, pseudo-topographic wave generation, and beta-plane QGPV advection. Fixed-amplitude coefficients are restored after restart, before each Runge--Kutta stage, and after each completed step.
 
 Classical RK4 uses three canonical three-component arrays: one stage state, one stage tendency, and one weighted accumulator. Its exact integrator workspace is therefore `9*M*sizeof(WVComplex64)`, where `M=Nj*Nkl`. `advanceToTime` uses the requested fixed step and one deterministic shorter final step when needed. FFT plans, derived forcing operators, and RK4 workspace are rebuilt rather than persisted.
 
 Library consumers may opt into fixed-RK4 continuous output with `WVFixedStepRK4Options{true}`. The method then retains one additional three-component history array and exposes a cubic Hermite extension through `WVAcceptedStep`, for exact method storage of `12*M*sizeof(WVComplex64)`. `WVIntegrationDriver` validates an independent ordered schedule, leaves accepted steps unchanged, and lazily allocates one reusable `3*M*sizeof(WVComplex64)` interpolation buffer only when an interior observation is actually requested. The single-target `WVCheckpointOutputSink` writes a requested accepted or interpolated state through the existing transactional writer. These library contracts do not add multi-output options to `wave-vortex-run`.
+
+`WVAdaptiveRK23` uses the four-stage Bogacki--Shampine 3(2) pair, a cubic stage-derived extension, and FSAL endpoint-derivative reuse when state constraints permit it. Rejected attempts leave accepted state unchanged and emit no output. Its atomic candidate plus four derivative arrays retain exactly `15*M*sizeof(WVComplex64)`; two real tolerance arrays reproduce MATLAB's energy-scaled `WVCoefficients.errorTolerances` convention. The RK controller does not construct WaveVortex tolerances or inspect forcing. `WVIntegrationSystem` supplies a method-neutral error policy, while the current coefficient adapter contains the `Ap`, `Am`, and `A0` storage enumeration. This is the first concrete integration adapter rather than a permanent restriction on future observing-system state composition.
 
 The authoring contract suite builds this target and its standalone inspector through:
 
@@ -61,6 +63,7 @@ The executable requires an explicit provider and exactly one endpoint:
 ```sh
 wave-vortex-run input.nc output.nc --delta-t 1 --steps 8 --fft-provider native-fftw --threads 18 --report run.json
 wave-vortex-run input.nc output.nc --delta-t 1 --final-time 100 --fft-provider native-fftw
+wave-vortex-run input.nc output.nc --integrator adaptive-rk23 --delta-t 1 --final-time 100 --relative-tolerance 1e-3 --absolute-tolerance 1e-6 --fft-provider native-fftw
 ```
 
 Exit codes distinguish usage (`2`), checkpoint/preflight (`3`), provider (`4`), integration (`5`), and output (`6`) failures. The JSON report records each execution phase separately. The private `--phase-file` option exists only for the authoring RSS benchmark and is not part of the supported command-line contract.

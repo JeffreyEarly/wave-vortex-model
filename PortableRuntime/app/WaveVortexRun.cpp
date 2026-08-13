@@ -1,5 +1,6 @@
 #include "WaveVortexRuntime/WVCheckpointReader.hpp"
 #include "WaveVortexRuntime/WVCheckpointWriter.hpp"
+#include "WaveVortexRuntime/WVAdaptiveRK23.hpp"
 #include "WaveVortexRuntime/WVFixedStepRK4.hpp"
 #include "WaveVortexRuntime/WVForcingEngine.hpp"
 #ifndef WV_RUNTIME_HAS_DENSE_OUTPUT
@@ -54,7 +55,10 @@ struct Options {
     std::string provider;
     std::string report;
     std::string phaseFile;
+    std::string integrator = "fixed-rk4";
     double deltaT = 0.0;
+    double relativeTolerance = 1e-3;
+    double absoluteTolerance = 1e-6;
     double finalTime = 0.0;
     std::size_t steps = 0;
     std::size_t threads = 0;
@@ -62,6 +66,8 @@ struct Options {
     std::size_t benchmarkWarmupSteps = 0;
     bool hasFinalTime = false;
     bool hasSteps = false;
+    bool hasRelativeTolerance = false;
+    bool hasAbsoluteTolerance = false;
 };
 
 struct Timings {
@@ -128,6 +134,14 @@ bool parseOptions(int argc, char** argv, Options& options, std::string& error) {
             options.hasFinalTime = true;
         } else if (name == "--fft-provider") {
             options.provider = value;
+        } else if (name == "--integrator") {
+            options.integrator = value;
+        } else if (name == "--relative-tolerance") {
+            if (!parseDouble(value,options.relativeTolerance) || options.relativeTolerance <= 0.0) { error = "--relative-tolerance must be finite and positive."; return false; }
+            options.hasRelativeTolerance = true;
+        } else if (name == "--absolute-tolerance") {
+            if (!parseDouble(value,options.absoluteTolerance) || options.absoluteTolerance <= 0.0) { error = "--absolute-tolerance must be finite and positive."; return false; }
+            options.hasAbsoluteTolerance = true;
         } else if (name == "--threads") {
             if (!parseSize(value,options.threads) || options.threads == 0) { error = "--threads must be a positive integer."; return false; }
         } else if (name == "--report") {
@@ -146,6 +160,8 @@ bool parseOptions(int argc, char** argv, Options& options, std::string& error) {
     if (!(options.deltaT > 0.0)) { error = "--delta-t is required."; return false; }
     if (options.hasSteps == options.hasFinalTime) { error = "Exactly one of --steps or --final-time is required."; return false; }
     if (options.provider != "native-fftw" && options.provider != "reference") { error = "--fft-provider must be native-fftw or reference."; return false; }
+    if (options.integrator != "fixed-rk4" && options.integrator != "adaptive-rk23") { error = "--integrator must be fixed-rk4 or adaptive-rk23."; return false; }
+    if (options.integrator == "fixed-rk4" && (options.hasRelativeTolerance || options.hasAbsoluteTolerance)) { error = "Adaptive tolerance options require --integrator adaptive-rk23."; return false; }
     if (options.provider == "reference" && options.threads > 1) { error = "The reference provider supports only one thread."; return false; }
     if (options.threads == 0) options.threads = options.provider == "reference" ? 1 : std::min<std::size_t>(18,std::max(1U,std::thread::hardware_concurrency()));
     if ((options.benchmarkDenseOutputsPerStep != 0 || options.benchmarkWarmupSteps != 0) && !options.hasSteps) { error = "Author-only benchmark controls require --steps."; return false; }
@@ -332,15 +348,25 @@ int main(int argc, char** argv) {
         emit(failureJSON(ExitCode::provider,"construct",kernelStatus.message),options.report,std::cerr);
         return static_cast<int>(ExitCode::provider);
     }
-#if WV_RUNTIME_HAS_DENSE_OUTPUT
-    WVFixedStepRK4 integrator(*forcingEngine,{options.benchmarkDenseOutputsPerStep != 0});
-#else
+#if !WV_RUNTIME_HAS_DENSE_OUTPUT
     if (options.benchmarkDenseOutputsPerStep != 0) {
         emit(failureJSON(ExitCode::usage,"arguments","This archived baseline does not implement dense output."),options.report,std::cerr);
         return static_cast<int>(ExitCode::usage);
     }
-    WVFixedStepRK4 integrator(*forcingEngine);
 #endif
+    std::unique_ptr<WVTimeIntegrator> integratorStorage;
+    WVFixedStepRK4* fixedIntegrator = nullptr;
+    WVAdaptiveRK23* adaptiveIntegrator = nullptr;
+    if (options.integrator == "adaptive-rk23") {
+        auto value = std::make_unique<WVAdaptiveRK23>(*forcingEngine,WVAdaptiveRK23Options{options.relativeTolerance,options.absoluteTolerance});
+        adaptiveIntegrator = value.get();
+        integratorStorage = std::move(value);
+    } else {
+        auto value = std::make_unique<WVFixedStepRK4>(*forcingEngine,WVFixedStepRK4Options{options.benchmarkDenseOutputsPerStep != 0});
+        fixedIntegrator = value.get();
+        integratorStorage = std::move(value);
+    }
+    WVTimeIntegrator& integrator = *integratorStorage;
     const auto shape = forcingEngine->kernel().descriptor().spectralShape();
     WVMutableState state{checkpoint.state.t,checkpoint.state.t0,{{checkpoint.state.coefficients.Ap.data(),shape},{checkpoint.state.coefficients.Am.data(),shape},{checkpoint.state.coefficients.A0.data(),shape}}};
     timings.construct = seconds(start);
@@ -359,12 +385,14 @@ int main(int argc, char** argv) {
     WVIntegrationDriver driver(integrator);
     BenchmarkSink benchmarkSink;
 #endif
+    double proposedStepSize = options.deltaT;
     const auto advanceBenchmarkSteps = [&](std::size_t count) -> WVKernelStatus {
         if (count == 0) return WVKernelStatus::ok();
         if (options.benchmarkDenseOutputsPerStep == 0) {
             for (std::size_t step = 0; step < count; ++step) {
-                const auto stepStatus = integrator.step(state,options.deltaT);
+                const auto stepStatus = integrator.step(state,proposedStepSize);
                 if (!stepStatus) return stepStatus;
+                proposedStepSize = integrator.nextStepSize();
             }
             return WVKernelStatus::ok();
         }
@@ -387,7 +415,10 @@ int main(int argc, char** argv) {
     if (options.benchmarkWarmupSteps != 0 || options.benchmarkDenseOutputsPerStep != 0) {
         kernelStatus = advanceBenchmarkSteps(options.steps);
     } else if (options.hasSteps) {
-        for (std::size_t step = 0; step < options.steps && kernelStatus; ++step) kernelStatus = integrator.step(state,options.deltaT);
+        for (std::size_t step = 0; step < options.steps && kernelStatus; ++step) {
+            kernelStatus = integrator.step(state,proposedStepSize);
+            if (kernelStatus) proposedStepSize = integrator.nextStepSize();
+        }
     } else {
         kernelStatus = integrator.advanceToTime(state,options.finalTime,options.deltaT);
     }
@@ -414,9 +445,18 @@ int main(int argc, char** argv) {
     const auto& kernel = forcingEngine->kernel();
     const auto& kernelMetrics = kernel.metrics();
     const auto& forcingMetrics = forcingEngine->metrics();
-    const auto& integratorMetrics = integrator.metrics();
+    WVFixedStepRK4Metrics fixedMetrics;
+    WVAdaptiveRK23Metrics adaptiveMetrics;
+    if (fixedIntegrator != nullptr) fixedMetrics = fixedIntegrator->metrics();
+    if (adaptiveIntegrator != nullptr) adaptiveMetrics = adaptiveIntegrator->metrics();
+    const auto stepCount = fixedIntegrator != nullptr ? fixedMetrics.stepCount : adaptiveMetrics.acceptedStepCount;
+    const auto rejectedStepCount = adaptiveIntegrator != nullptr ? adaptiveMetrics.rejectedStepCount : 0;
+    const auto rightHandSideEvaluationCount = fixedIntegrator != nullptr ? fixedMetrics.rightHandSideEvaluationCount : adaptiveMetrics.rightHandSideEvaluationCount;
+    const auto integratorWorkspaceCapacityBytes = fixedIntegrator != nullptr ? fixedMetrics.workspaceCapacityBytes : adaptiveMetrics.workspaceCapacityBytes;
+    const auto integratorWorkspaceLiveBytes = fixedIntegrator != nullptr ? fixedMetrics.workspaceLiveBytes : adaptiveMetrics.workspaceLiveBytes;
+    const auto integratorWorkspaceMaximumLiveBytes = fixedIntegrator != nullptr ? fixedMetrics.workspaceMaximumLiveBytes : adaptiveMetrics.workspaceMaximumLiveBytes;
 #if WV_RUNTIME_HAS_DENSE_OUTPUT
-    const auto denseHistoryBytes = integratorMetrics.denseHistoryCapacityBytes;
+    const auto denseHistoryBytes = fixedIntegrator != nullptr ? fixedMetrics.denseHistoryCapacityBytes : 0;
     const auto driverInterpolationBytes = driver.metrics().interpolationBufferCapacityBytes;
     const auto driverInterpolationMaximumLiveBytes = driver.metrics().interpolationBufferMaximumLiveBytes;
     const auto interpolatedOutputCount = benchmarkSink.interpolatedCount;
@@ -428,8 +468,8 @@ int main(int argc, char** argv) {
 #endif
     const auto checkpointStateBytes = stateBytes(checkpoint);
     const auto knownPersistentBytes = checkpointStateBytes+forcingEngine->persistentBytes()+integrator.persistentBytes();
-    const auto integratorElementReads = integratorMetrics.stageStateConstructionElementReads+integratorMetrics.weightedFluxInitializationElementReads+integratorMetrics.weightedAccumulationElementReads+integratorMetrics.finalStateUpdateElementReads+integratorMetrics.acceptedStateCommitElementReads;
-    const auto integratorElementWrites = integratorMetrics.stageStateConstructionElementWrites+integratorMetrics.stageFluxClearElementWrites+integratorMetrics.weightedFluxClearElementWrites+integratorMetrics.weightedFluxInitializationElementWrites+integratorMetrics.weightedAccumulationElementWrites+integratorMetrics.finalStateUpdateElementWrites+integratorMetrics.acceptedStateCommitElementWrites;
+    const auto integratorElementReads = fixedMetrics.stageStateConstructionElementReads+fixedMetrics.weightedFluxInitializationElementReads+fixedMetrics.weightedAccumulationElementReads+fixedMetrics.finalStateUpdateElementReads+fixedMetrics.acceptedStateCommitElementReads;
+    const auto integratorElementWrites = fixedMetrics.stageStateConstructionElementWrites+fixedMetrics.stageFluxClearElementWrites+fixedMetrics.weightedFluxClearElementWrites+fixedMetrics.weightedFluxInitializationElementWrites+fixedMetrics.weightedAccumulationElementWrites+fixedMetrics.finalStateUpdateElementWrites+fixedMetrics.acceptedStateCommitElementWrites;
     const auto forcingElementReads = forcingMetrics.temporaryAccumulationElementReads+forcingMetrics.outputCopyElementReads;
     const auto forcingElementWrites = forcingMetrics.accumulatorClearElementWrites+forcingMetrics.temporaryFluxClearElementWrites+forcingMetrics.kernelOutputInitializationElementWrites+forcingMetrics.temporaryAccumulationElementWrites+forcingMetrics.outputCopyElementWrites+forcingMetrics.stateConstraintElementWrites;
     const auto trafficElementReads = integratorElementReads+forcingElementReads;
@@ -438,13 +478,14 @@ int main(int argc, char** argv) {
     report << std::setprecision(17)
            << "{\"schemaVersion\":\"wave-vortex-run-v1\",\"status\":\"complete\",\"source\":{\"commit\":" << quoted(WV_RUNTIME_SOURCE_COMMIT) << "},"
            << "\"input\":" << quoted(options.input) << ",\"output\":" << quoted(options.output) << ",\"provider\":{\"id\":" << quoted(options.provider) << ",\"version\":" << quoted(providerVersion) << ",\"threads\":" << options.threads << ",\"baseLibrary\":" << quoted(baseLibrary) << ",\"threadLibrary\":" << quoted(threadLibrary) << "},"
-           << "\"state\":{\"initialTime\":" << inspection.t << ",\"finalTime\":" << state.t << ",\"deltaT\":" << options.deltaT << ",\"stepCount\":" << integratorMetrics.stepCount << ",\"rhsEvaluationCount\":" << integratorMetrics.rightHandSideEvaluationCount << ",\"shape\":[" << shape.rows << ',' << shape.columns << "]},"
+           << "\"state\":{\"initialTime\":" << inspection.t << ",\"finalTime\":" << state.t << ",\"deltaT\":" << options.deltaT << ",\"stepCount\":" << stepCount << ",\"rejectedStepCount\":" << rejectedStepCount << ",\"rhsEvaluationCount\":" << rightHandSideEvaluationCount << ",\"shape\":[" << shape.rows << ',' << shape.columns << "]},"
+           << "\"integrator\":{\"id\":" << quoted(options.integrator) << ",\"relativeTolerance\":" << options.relativeTolerance << ",\"absoluteTolerance\":" << options.absoluteTolerance << ",\"lastNormalizedError\":" << adaptiveMetrics.lastNormalizedError << ",\"lastProposedStepSize\":" << adaptiveMetrics.lastProposedStepSize << ",\"lastAcceptedStepSize\":" << adaptiveMetrics.lastAcceptedStepSize << ",\"nextStepSize\":" << integrator.nextStepSize() << ",\"fsalReuseCount\":" << adaptiveMetrics.fsalReuseCount << ",\"fsalInvalidationCount\":" << adaptiveMetrics.fsalInvalidationCount << ",\"rejectedInitialDerivativeReuseCount\":" << adaptiveMetrics.rejectedInitialDerivativeReuseCount << ",\"constraintModifiedCoefficientCount\":" << adaptiveMetrics.constraintModifiedCoefficientCount << ",\"errorPolicyBytes\":" << adaptiveMetrics.errorPolicyBytes << "},"
            << "\"authorBenchmark\":{\"warmupStepCount\":" << options.benchmarkWarmupSteps << ",\"sampleStepCount\":" << (options.hasSteps ? options.steps : 0) << ",\"denseOutputsPerStep\":" << options.benchmarkDenseOutputsPerStep << ",\"interpolatedOutputCount\":" << interpolatedOutputCount << "},"
            << "\"forcing\":" << forcingJSON(checkpoint.forcingSchedule) << ','
            << "\"timingSeconds\":{\"inspect\":" << timings.inspect << ",\"read\":" << timings.read << ",\"construct\":" << timings.construct << ",\"prepare\":" << timings.prepare << ",\"integrate\":" << timings.integrate << ",\"write\":" << timings.write << ",\"total\":" << timings.total << "},"
-           << "\"storageBytes\":{\"checkpointState\":" << checkpointStateBytes << ",\"descriptor\":" << kernelMetrics.descriptorBytes << ",\"planWrapper\":" << kernelMetrics.planBytes << ",\"kernelScratch\":" << kernelMetrics.scratchCapacityBytes << ",\"forcingSchedule\":" << forcingMetrics.scheduleBytes << ",\"forcingDerivedOperators\":" << forcingMetrics.derivedOperatorBytes << ",\"forcingWorkspace\":" << forcingMetrics.workspaceCapacityBytes << ",\"integratorWorkspace\":" << integratorMetrics.workspaceCapacityBytes << ",\"denseHistory\":" << denseHistoryBytes << ",\"driverInterpolation\":" << driverInterpolationBytes << ",\"knownPersistent\":" << knownPersistentBytes+driverInterpolationBytes << ",\"persistentFullHermitian\":0},"
-           << "\"arrayTraffic\":{\"scope\":\"exact integration-boundary arrays; FFT plans and kernel scratch internals excluded\",\"elementBytes\":" << sizeof(WVComplex64) << ",\"integrator\":{\"stageStateConstructionReads\":" << integratorMetrics.stageStateConstructionElementReads << ",\"stageStateConstructionWrites\":" << integratorMetrics.stageStateConstructionElementWrites << ",\"stageFluxClearWrites\":" << integratorMetrics.stageFluxClearElementWrites << ",\"weightedFluxClearWrites\":" << integratorMetrics.weightedFluxClearElementWrites << ",\"weightedFluxInitializationReads\":" << integratorMetrics.weightedFluxInitializationElementReads << ",\"weightedFluxInitializationWrites\":" << integratorMetrics.weightedFluxInitializationElementWrites << ",\"weightedAccumulationReads\":" << integratorMetrics.weightedAccumulationElementReads << ",\"weightedAccumulationWrites\":" << integratorMetrics.weightedAccumulationElementWrites << ",\"finalStateUpdateReads\":" << integratorMetrics.finalStateUpdateElementReads << ",\"finalStateUpdateWrites\":" << integratorMetrics.finalStateUpdateElementWrites << ",\"acceptedStateCommitReads\":" << integratorMetrics.acceptedStateCommitElementReads << ",\"acceptedStateCommitWrites\":" << integratorMetrics.acceptedStateCommitElementWrites << "},\"forcing\":{\"accumulatorClearWrites\":" << forcingMetrics.accumulatorClearElementWrites << ",\"temporaryFluxClearWrites\":" << forcingMetrics.temporaryFluxClearElementWrites << ",\"kernelOutputInitializationWrites\":" << forcingMetrics.kernelOutputInitializationElementWrites << ",\"temporaryAccumulationReads\":" << forcingMetrics.temporaryAccumulationElementReads << ",\"temporaryAccumulationWrites\":" << forcingMetrics.temporaryAccumulationElementWrites << ",\"outputCopyReads\":" << forcingMetrics.outputCopyElementReads << ",\"outputCopyWrites\":" << forcingMetrics.outputCopyElementWrites << ",\"stateConstraintWrites\":" << forcingMetrics.stateConstraintElementWrites << "},\"totals\":{\"elementReads\":" << trafficElementReads << ",\"elementWrites\":" << trafficElementWrites << ",\"bytesRead\":" << trafficElementReads*sizeof(WVComplex64) << ",\"bytesWritten\":" << trafficElementWrites*sizeof(WVComplex64) << "}},"
-           << "\"livenessBytes\":{\"integratorWorkspaceLive\":" << integratorMetrics.workspaceLiveBytes << ",\"integratorWorkspaceMaximumLive\":" << integratorMetrics.workspaceMaximumLiveBytes << ",\"forcingWorkspaceLive\":" << forcingMetrics.workspaceLiveBytes << ",\"forcingWorkspaceMaximumLive\":" << forcingMetrics.workspaceMaximumLiveBytes << ",\"acceptedStepAdditionalArrayStorage\":" << denseHistoryBytes << ",\"contractAbstractionAdditionalArrayStorage\":" << driverInterpolationBytes << ",\"knownRetained\":" << knownPersistentBytes+driverInterpolationBytes << ",\"knownMaximumLive\":" << knownPersistentBytes+driverInterpolationMaximumLiveBytes << "},"
+           << "\"storageBytes\":{\"checkpointState\":" << checkpointStateBytes << ",\"descriptor\":" << kernelMetrics.descriptorBytes << ",\"planWrapper\":" << kernelMetrics.planBytes << ",\"kernelScratch\":" << kernelMetrics.scratchCapacityBytes << ",\"forcingSchedule\":" << forcingMetrics.scheduleBytes << ",\"forcingDerivedOperators\":" << forcingMetrics.derivedOperatorBytes << ",\"forcingWorkspace\":" << forcingMetrics.workspaceCapacityBytes << ",\"integratorWorkspace\":" << integratorWorkspaceCapacityBytes << ",\"denseHistory\":" << denseHistoryBytes << ",\"driverInterpolation\":" << driverInterpolationBytes << ",\"knownPersistent\":" << knownPersistentBytes+driverInterpolationBytes << ",\"persistentFullHermitian\":0},"
+           << "\"arrayTraffic\":{\"scope\":\"exact fixed-RK4 integration-boundary arrays; adaptive traffic is reported through method metrics\",\"elementBytes\":" << sizeof(WVComplex64) << ",\"integrator\":{\"stageStateConstructionReads\":" << fixedMetrics.stageStateConstructionElementReads << ",\"stageStateConstructionWrites\":" << fixedMetrics.stageStateConstructionElementWrites << ",\"stageFluxClearWrites\":" << fixedMetrics.stageFluxClearElementWrites << ",\"weightedFluxClearWrites\":" << fixedMetrics.weightedFluxClearElementWrites << ",\"weightedFluxInitializationReads\":" << fixedMetrics.weightedFluxInitializationElementReads << ",\"weightedFluxInitializationWrites\":" << fixedMetrics.weightedFluxInitializationElementWrites << ",\"weightedAccumulationReads\":" << fixedMetrics.weightedAccumulationElementReads << ",\"weightedAccumulationWrites\":" << fixedMetrics.weightedAccumulationElementWrites << ",\"finalStateUpdateReads\":" << fixedMetrics.finalStateUpdateElementReads << ",\"finalStateUpdateWrites\":" << fixedMetrics.finalStateUpdateElementWrites << ",\"acceptedStateCommitReads\":" << fixedMetrics.acceptedStateCommitElementReads << ",\"acceptedStateCommitWrites\":" << fixedMetrics.acceptedStateCommitElementWrites << "},\"forcing\":{\"accumulatorClearWrites\":" << forcingMetrics.accumulatorClearElementWrites << ",\"temporaryFluxClearWrites\":" << forcingMetrics.temporaryFluxClearElementWrites << ",\"kernelOutputInitializationWrites\":" << forcingMetrics.kernelOutputInitializationElementWrites << ",\"temporaryAccumulationReads\":" << forcingMetrics.temporaryAccumulationElementReads << ",\"temporaryAccumulationWrites\":" << forcingMetrics.temporaryAccumulationElementWrites << ",\"outputCopyReads\":" << forcingMetrics.outputCopyElementReads << ",\"outputCopyWrites\":" << forcingMetrics.outputCopyElementWrites << ",\"stateConstraintWrites\":" << forcingMetrics.stateConstraintElementWrites << "},\"totals\":{\"elementReads\":" << trafficElementReads << ",\"elementWrites\":" << trafficElementWrites << ",\"bytesRead\":" << trafficElementReads*sizeof(WVComplex64) << ",\"bytesWritten\":" << trafficElementWrites*sizeof(WVComplex64) << "}},"
+           << "\"livenessBytes\":{\"integratorWorkspaceLive\":" << integratorWorkspaceLiveBytes << ",\"integratorWorkspaceMaximumLive\":" << integratorWorkspaceMaximumLiveBytes << ",\"forcingWorkspaceLive\":" << forcingMetrics.workspaceLiveBytes << ",\"forcingWorkspaceMaximumLive\":" << forcingMetrics.workspaceMaximumLiveBytes << ",\"acceptedStepAdditionalArrayStorage\":" << denseHistoryBytes << ",\"contractAbstractionAdditionalArrayStorage\":" << driverInterpolationBytes << ",\"knownRetained\":" << knownPersistentBytes+driverInterpolationBytes << ",\"knownMaximumLive\":" << knownPersistentBytes+driverInterpolationMaximumLiveBytes << "},"
            << "\"rssBytes\":{\"integrationBaseline\":" << integrationBaselineRSS << ",\"processPeak\":" << integrationPeakRSS << ",\"peakIncrementLowerBound\":" << (integrationPeakRSS > integrationBaselineRSS ? integrationPeakRSS-integrationBaselineRSS : 0) << "},"
            << "\"execution\":{\"engine\":" << quoted(kernel.engineIdentifier()) << ",\"library\":" << quoted(kernel.engineLibraryIdentity()) << ",\"schedule\":" << quoted(forcingEngine->scheduleIdentifier()) << ",\"planCount\":" << kernelMetrics.planCount << ",\"noFallback\":true}}";
     emit(report.str(),options.report,std::cout);

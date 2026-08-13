@@ -74,9 +74,9 @@ WVKernelStatus WVFixedStepRK4::prepareStateAfterRestart(WVMutableState& state) {
     acceptedStateConstrained_ = false;
     const auto status = ensureWorkspace(state);
     if (!status) return status;
-    const auto constraintStatus = system_.enforceStateConstraints(state.coefficients);
-    acceptedStateConstrained_ = static_cast<bool>(constraintStatus);
-    return constraintStatus;
+    const auto constraintResult = system_.enforceStateConstraints(state.coefficients);
+    acceptedStateConstrained_ = static_cast<bool>(constraintResult);
+    return constraintResult.status;
 }
 
 double WVFixedStepRK4::initialTime() const noexcept {
@@ -145,8 +145,8 @@ WVKernelStatus WVFixedStepRK4::evaluate(double time, WVMutableState& output) con
                 initialWeight*initial.imag+endpointWeight*endpoint.imag+initialSlopeWeight*initialSlope.imag+finalSlopeWeight*finalSlope.imag};
         }
     }
-    auto status = system_.enforceStateConstraints(output.coefficients);
-    if (!status) return status;
+    const auto constraintResult = system_.enforceStateConstraints(output.coefficients);
+    if (!constraintResult) return constraintResult.status;
     output.t = theta == 0.0 ? acceptedStep_.initialTime : (theta == 1.0 ? acceptedStep_.finalTime : time);
     output.t0 = acceptedStep_.endpoint.t0;
     ++metrics_.denseOutputEvaluationCount;
@@ -181,8 +181,9 @@ void WVFixedStepRK4::setStageFromBase(const WVMutableState& base, double scale, 
 WVKernelStatus WVFixedStepRK4::evaluateStage(const WVMutableState& base, double stageTime, double scale, const std::vector<WVComplex64>* increment) {
     setStageFromBase(base,scale,increment);
     auto coefficients = coefficientViews(stageState_,shape_);
-    auto status = system_.enforceStateConstraints(coefficients);
-    if (!status) return status;
+    const auto constraintResult = system_.enforceStateConstraints(coefficients);
+    if (!constraintResult) return constraintResult.status;
+    auto status = WVKernelStatus::ok();
     auto flux = fluxViews(stageFlux_,shape_);
     const WVState stage{stageTime,base.t0,{{coefficients.Ap.data,coefficients.Ap.shape},{coefficients.Am.data,coefficients.Am.shape},{coefficients.A0.data,coefficients.A0.shape}}};
     status = system_.evaluateRightHandSide(stage,flux);
@@ -235,8 +236,8 @@ WVKernelStatus WVFixedStepRK4::step(WVMutableState& state, double deltaT) {
     }
     metrics_.finalStateUpdateElementReads += 6*count;
     metrics_.finalStateUpdateElementWrites += 3*count;
-    status = system_.enforceStateConstraints(candidate);
-    if (!status) return status;
+    const auto constraintResult = system_.enforceStateConstraints(candidate);
+    if (!constraintResult) return constraintResult.status;
     if (options_.retainDenseOutput) {
         for (std::size_t component = 0; component < 3; ++component) std::copy_n(sources[component].data,count,weightedFlux_.data()+component*count);
     }
@@ -249,7 +250,7 @@ WVKernelStatus WVFixedStepRK4::step(WVMutableState& state, double deltaT) {
     acceptedStateConstrained_ = true;
     ++metrics_.stepCount;
     metrics_.lastStepSize = deltaT;
-    acceptedStep_ = {initialTime,state.t,state.view(),{1,4,deltaT},options_.retainDenseOutput ? static_cast<const WVDenseOutput*>(this) : nullptr};
+    acceptedStep_ = {initialTime,state.t,state.view(),{1,0,4,deltaT,deltaT,deltaT,0.0},options_.retainDenseOutput ? static_cast<const WVDenseOutput*>(this) : nullptr};
     hasAcceptedStep_ = true;
     return WVKernelStatus::ok();
 }
