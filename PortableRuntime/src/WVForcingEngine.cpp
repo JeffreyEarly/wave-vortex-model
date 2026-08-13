@@ -96,6 +96,113 @@ WVKernelStatus validateMutableCoefficients(WVShape2D expected, const WVMutableCo
     return WVKernelStatus::ok();
 }
 
+class WVWaveVortexCoefficientErrorPolicy final : public WVIntegrationErrorPolicy {
+public:
+    static WVKernelStatus create(
+        const WVTransformConstantStratificationDescriptor& descriptor,
+        double absoluteToleranceScale,
+        std::unique_ptr<WVIntegrationErrorPolicy>& result) {
+        if (!std::isfinite(absoluteToleranceScale) || absoluteToleranceScale <= 0.0) {
+            return {WVKernelStatusCode::invalidConfiguration,"Adaptive absolute-tolerance scale must be finite and positive."};
+        }
+        try {
+            auto policy = std::unique_ptr<WVWaveVortexCoefficientErrorPolicy>(new WVWaveVortexCoefficientErrorPolicy);
+            const auto& configuration = descriptor.configuration();
+            const auto& horizontalModes = descriptor.fourierModes();
+            const auto& verticalModes = descriptor.verticalModes();
+            const auto shape = descriptor.spectralShape();
+            policy->shape_ = shape;
+            policy->waveTolerance_.assign(shape.elementCount(),1.0);
+            policy->vortexTolerance_.assign(shape.elementCount(),1.0);
+
+            std::vector<double> uniqueKh;
+            uniqueKh.reserve(horizontalModes.size());
+            for (const auto& mode : horizontalModes) uniqueKh.push_back(std::abs(mode.Kh));
+            std::sort(uniqueKh.begin(),uniqueKh.end());
+            uniqueKh.erase(std::unique(uniqueKh.begin(),uniqueKh.end()),uniqueKh.end());
+            if (uniqueKh.size() < 2) return {WVKernelStatusCode::invalidConfiguration,"Adaptive tolerances require at least two distinct horizontal radial wavenumbers."};
+            double deltaK = 0.0;
+            for (std::size_t index = 1; index < uniqueKh.size(); ++index) deltaK = std::max(deltaK,uniqueKh[index]-uniqueKh[index-1]);
+            if (!(deltaK > 0.0) || !std::isfinite(deltaK)) return {WVKernelStatusCode::invalidConfiguration,"Adaptive radial tolerance spacing is invalid."};
+            const double maximumKh = uniqueKh.back();
+            std::vector<double> radialCenters;
+            for (double center = 0.0; center <= maximumKh+0.5*deltaK; center += deltaK) radialCenters.push_back(center);
+            std::vector<std::size_t> radialBin(horizontalModes.size(),radialCenters.size());
+            std::vector<std::size_t> radialCounts(radialCenters.size(),0);
+            for (std::size_t modeIndex = 0; modeIndex < horizontalModes.size(); ++modeIndex) {
+                const double Kh = horizontalModes[modeIndex].Kh;
+                for (std::size_t bin = 0; bin < radialCenters.size(); ++bin) {
+                    if (radialCenters[bin]-0.5*deltaK < Kh && Kh <= radialCenters[bin]+0.5*deltaK) {
+                        radialBin[modeIndex] = bin;
+                        ++radialCounts[bin];
+                        break;
+                    }
+                }
+                if (radialBin[modeIndex] == radialCenters.size()) return {WVKernelStatusCode::invalidConfiguration,"A horizontal mode was not assigned to an adaptive radial tolerance bin."};
+            }
+
+            const double f = verticalModes.coriolisFrequency;
+            const double f2 = f*f;
+            const double N02 = configuration.N0*configuration.N0;
+            for (std::size_t modeIndex = 0; modeIndex < horizontalModes.size(); ++modeIndex) {
+                const double Kh = horizontalModes[modeIndex].Kh;
+                const double Kh2 = Kh*Kh;
+                const auto bin = radialBin[modeIndex];
+                const double center = radialCenters[bin];
+                const double radialEnergy = center+0.5*deltaK-std::max(center-0.5*deltaK,0.0);
+                const double energyPerCoefficient = radialEnergy/static_cast<double>(radialCounts[bin]);
+                for (std::size_t jIndex = 0; jIndex < configuration.Nj; ++jIndex) {
+                    const auto coefficientIndex = jIndex+configuration.Nj*modeIndex;
+                    const double verticalWavenumber = verticalModes.verticalWavenumber[jIndex];
+                    double waveEnergyFactor = 0.0;
+                    if (Kh == 0.0) {
+                        waveEnergyFactor = jIndex == 0 ? configuration.Lz :
+                            (configuration.isHydrostatic ? N02/(configuration.g*verticalWavenumber*verticalWavenumber) :
+                                (N02-f2)/(configuration.g*verticalWavenumber*verticalWavenumber));
+                    } else if (jIndex > 0) {
+                        const double hpm = configuration.isHydrostatic ? N02/(configuration.g*verticalWavenumber*verticalWavenumber) :
+                            (N02-f2)/(configuration.g*(verticalWavenumber*verticalWavenumber+Kh2));
+                        waveEnergyFactor = 2.0*hpm;
+                    }
+                    double vortexEnergyFactor = 0.0;
+                    if (Kh > 0.0) {
+                        const double h0 = verticalModes.h0[jIndex];
+                        const double deformationInverse = jIndex == 0 ? 0.0 : f2/(configuration.g*h0);
+                        vortexEnergyFactor = h0/(Kh2+deformationInverse);
+                    } else if (jIndex > 0) {
+                        vortexEnergyFactor = configuration.g/2.0;
+                    }
+                    if (waveEnergyFactor > 0.0 && std::isfinite(waveEnergyFactor)) {
+                        policy->waveTolerance_[coefficientIndex] = absoluteToleranceScale*std::sqrt(energyPerCoefficient/waveEnergyFactor);
+                    }
+                    if (vortexEnergyFactor > 0.0 && std::isfinite(vortexEnergyFactor)) {
+                        policy->vortexTolerance_[coefficientIndex] = absoluteToleranceScale*std::sqrt(energyPerCoefficient/vortexEnergyFactor);
+                    }
+                }
+            }
+            result = std::move(policy);
+            return WVKernelStatus::ok();
+        } catch (const std::bad_alloc&) {
+            return {WVKernelStatusCode::allocationFailure,"Adaptive tolerance allocation failed."};
+        }
+    }
+
+    std::size_t componentCount() const noexcept override { return 3; }
+    std::size_t elementCount(std::size_t component) const noexcept override { return component < 3 ? shape_.elementCount() : 0; }
+    double absoluteTolerance(std::size_t component, std::size_t index) const noexcept override {
+        if (component > 2 || index >= shape_.elementCount()) return std::numeric_limits<double>::quiet_NaN();
+        return component < 2 ? waveTolerance_[index] : vortexTolerance_[index];
+    }
+    std::size_t persistentBytes() const noexcept override {
+        return vectorBytes(waveTolerance_)+vectorBytes(vortexTolerance_);
+    }
+
+private:
+    WVShape2D shape_;
+    std::vector<double> waveTolerance_;
+    std::vector<double> vortexTolerance_;
+};
+
 } // namespace
 
 struct WVConstantStratificationForcingEngine::DerivedForcing {
@@ -493,19 +600,35 @@ WVKernelStatus WVConstantStratificationForcingEngine::nonlinearFlux(const WVStat
     return WVKernelStatus::ok();
 }
 
-WVKernelStatus WVConstantStratificationForcingEngine::restoreForcingAmplitudes(WVMutableCoefficients& coefficients) {
+WVStateConstraintResult WVConstantStratificationForcingEngine::restoreForcingAmplitudes(WVMutableCoefficients& coefficients) {
     const auto status = validateMutableCoefficients(kernel_->descriptor().spectralShape(),coefficients);
-    if (!status) return status;
+    if (!status) return {status,0,false};
+    std::size_t modifiedCoefficientCount = 0;
+    bool fsalCompatible = true;
     for (const auto& forcing : derivedForcing_) {
         if (forcing.kind != WVForcingKind::fixedAmplitude) continue;
+        fsalCompatible = false;
         const auto& record = std::get<WVFixedAmplitudeForcingRecord>(schedule_.entries[forcing.entryIndex].payload);
-        for (std::size_t index = 0; index < record.ApIndices.size(); ++index) coefficients.Ap.data[record.ApIndices[index]] = record.ApValues[index];
-        for (std::size_t index = 0; index < record.AmIndices.size(); ++index) coefficients.Am.data[record.AmIndices[index]] = record.AmValues[index];
-        for (std::size_t index = 0; index < record.A0Indices.size(); ++index) coefficients.A0.data[record.A0Indices[index]] = record.A0Values[index];
+        const auto restore = [&modifiedCoefficientCount](WVComplexView destination, const std::vector<std::size_t>& indices, const std::vector<WVComplex64>& values) {
+            for (std::size_t index = 0; index < indices.size(); ++index) {
+                const auto previous = destination.data[indices[index]];
+                if (previous.real != values[index].real || previous.imag != values[index].imag) ++modifiedCoefficientCount;
+                destination.data[indices[index]] = values[index];
+            }
+        };
+        restore(coefficients.Ap,record.ApIndices,record.ApValues);
+        restore(coefficients.Am,record.AmIndices,record.AmValues);
+        restore(coefficients.A0,record.A0Indices,record.A0Values);
         metrics_.restoredCoefficientCount += record.ApIndices.size()+record.AmIndices.size()+record.A0Indices.size();
         metrics_.stateConstraintElementWrites += record.ApIndices.size()+record.AmIndices.size()+record.A0Indices.size();
     }
-    return WVKernelStatus::ok();
+    return {WVKernelStatus::ok(),modifiedCoefficientCount,fsalCompatible};
+}
+
+WVKernelStatus WVConstantStratificationForcingEngine::createErrorPolicy(
+    double absoluteToleranceScale,
+    std::unique_ptr<WVIntegrationErrorPolicy>& policy) const {
+    return WVWaveVortexCoefficientErrorPolicy::create(kernel_->descriptor(),absoluteToleranceScale,policy);
 }
 
 void WVConstantStratificationForcingEngine::clearEvaluationWorkspace() noexcept {

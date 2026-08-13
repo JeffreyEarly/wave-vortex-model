@@ -3,8 +3,32 @@
 #include "WaveVortexKernel/WVKernelTypes.hpp"
 
 #include <cstddef>
+#include <limits>
+#include <memory>
 
 namespace wavevortex::runtime {
+
+// Method-neutral absolute-error policy. Components are deliberately addressed
+// by ordinal rather than by WaveVortex names: the current coefficient adapter
+// maps Ap, Am, and A0 to the first three components, while a future composite
+// observing-system adapter may expose a different component sequence without
+// changing an adaptive Runge--Kutta controller.
+class WVIntegrationErrorPolicy {
+public:
+    virtual ~WVIntegrationErrorPolicy() = default;
+    virtual std::size_t componentCount() const noexcept = 0;
+    virtual std::size_t elementCount(std::size_t component) const noexcept = 0;
+    virtual double absoluteTolerance(std::size_t component, std::size_t index) const noexcept = 0;
+    virtual std::size_t persistentBytes() const noexcept = 0;
+};
+
+struct WVStateConstraintResult {
+    WVKernelStatus status;
+    std::size_t modifiedCoefficientCount = 0;
+    bool fsalCompatible = true;
+
+    explicit operator bool() const noexcept { return static_cast<bool>(status); }
+};
 
 // Internal portable model boundary. evaluateRightHandSide() must completely
 // overwrite every element of the supplied right-hand-side storage, including
@@ -17,7 +41,12 @@ public:
     virtual ~WVIntegrationSystem() = default;
     virtual WVShape2D stateShape() const noexcept = 0;
     virtual WVKernelStatus evaluateRightHandSide(const WVState& state, WVFlux& rightHandSide) = 0;
-    virtual WVKernelStatus enforceStateConstraints(WVMutableCoefficients& coefficients) = 0;
+    virtual WVStateConstraintResult enforceStateConstraints(WVMutableCoefficients& coefficients) = 0;
+    virtual WVKernelStatus createErrorPolicy(double absoluteToleranceScale, std::unique_ptr<WVIntegrationErrorPolicy>& policy) const {
+        (void)absoluteToleranceScale;
+        policy.reset();
+        return {WVKernelStatusCode::unsupportedOperation,"This integration system does not provide adaptive error tolerances."};
+    }
 };
 
 // Method-owned continuous extension over one accepted interval. Implementations
@@ -39,8 +68,12 @@ public:
 struct WVAcceptedStep {
     struct MethodStatistics {
         std::size_t acceptedStepCount = 0;
+        std::size_t rejectedStepCount = 0;
         std::size_t rightHandSideEvaluationCount = 0;
         double stepSize = 0.0;
+        double proposedStepSize = 0.0;
+        double nextStepSize = 0.0;
+        double normalizedError = 0.0;
     };
 
     double initialTime = 0.0;
@@ -61,6 +94,7 @@ public:
     virtual WVKernelStatus step(WVMutableState& state, double stepSize) = 0;
     virtual WVKernelStatus advanceToTime(WVMutableState& state, double finalTime, double stepSize) = 0;
     virtual const WVAcceptedStep* lastAcceptedStep() const noexcept = 0;
+    virtual double nextStepSize() const noexcept = 0;
     virtual std::size_t persistentBytes() const noexcept = 0;
 };
 

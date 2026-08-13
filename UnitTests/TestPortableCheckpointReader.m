@@ -341,6 +341,29 @@ classdef TestPortableCheckpointReader < matlab.unittest.TestCase
             clear outputCleanup fixtureCleanup fixtureToolCleanup
         end
 
+        function adaptiveTolerancesMatchMatlab(testCase)
+            repositoryRoot = fileparts(fileparts(mfilename("fullpath")));
+            buildScript = fullfile(repositoryRoot,"tools","compiled-kernel","run_contract_tests.sh");
+            [buildStatus,buildOutput] = system(sprintf('"%s"',buildScript));
+            testCase.assertEqual(buildStatus,0,buildOutput)
+            inspector = fullfile(repositoryRoot,"tools","compiled-kernel","build-portable","wv_adaptive_tolerance_inspect");
+            fixtureDirectory = fullfile(repositoryRoot,"tools","portable-runtime","fixtures");
+            for fixtureName = ["forcing-mixed-hydrostatic.nc" "forcing-mixed-nonhydrostatic.nc"]
+                fixturePath = fullfile(fixtureDirectory,fixtureName);
+                command = TestPortableCheckpointReader.sanitizedCommand(sprintf('"%s" "%s" %.17g',inspector,fixturePath,1e-6));
+                [status,output] = system(command);
+                testCase.assertEqual(status,0,output)
+                record = jsondecode(output);
+                [wvt,ncfile] = WVTransform.waveVortexTransformFromFile(fixturePath,shouldReadOnly=true);
+                cleanup = onCleanup(@()TestPortableCheckpointReader.closeIfOpen(ncfile));
+                [expectedVortex,expectedWave] = WVCoefficients.errorTolerances(wvt,1e-6);
+                testCase.verifyEqual(reshape(record.wave,size(expectedWave)),expectedWave,RelTol=8*eps)
+                testCase.verifyEqual(reshape(record.vortex,size(expectedVortex)),expectedVortex,RelTol=8*eps)
+                ncfile.close();
+                clear cleanup
+            end
+        end
+
         function cppWriterProducesMatlabCompatibleCheckpoints(testCase)
             repositoryRoot = fileparts(fileparts(mfilename("fullpath")));
             buildScript = fullfile(repositoryRoot,"tools","compiled-kernel","run_contract_tests.sh");

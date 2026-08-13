@@ -53,6 +53,7 @@ public:
 
     const WVFixedStepRK4Metrics& metrics() const noexcept { return metrics_; }
     const WVAcceptedStep* lastAcceptedStep() const noexcept override { return hasAcceptedStep_ ? &acceptedStep_ : nullptr; }
+    double nextStepSize() const noexcept override { return metrics_.lastStepSize; }
     std::size_t persistentBytes() const noexcept override { return metrics_.workspaceCapacityBytes; }
 
 private:

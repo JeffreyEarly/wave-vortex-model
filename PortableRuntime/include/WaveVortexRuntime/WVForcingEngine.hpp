@@ -55,10 +55,11 @@ public:
     WVConstantStratificationForcingEngine& operator=(const WVConstantStratificationForcingEngine&) = delete;
 
     WVKernelStatus nonlinearFlux(const WVState& state, WVFlux& flux);
-    WVKernelStatus restoreForcingAmplitudes(WVMutableCoefficients& coefficients);
+    WVStateConstraintResult restoreForcingAmplitudes(WVMutableCoefficients& coefficients);
     WVShape2D stateShape() const noexcept override { return kernel_->descriptor().spectralShape(); }
     WVKernelStatus evaluateRightHandSide(const WVState& state, WVFlux& rightHandSide) override { return nonlinearFlux(state,rightHandSide); }
-    WVKernelStatus enforceStateConstraints(WVMutableCoefficients& coefficients) override { return restoreForcingAmplitudes(coefficients); }
+    WVStateConstraintResult enforceStateConstraints(WVMutableCoefficients& coefficients) override { return restoreForcingAmplitudes(coefficients); }
+    WVKernelStatus createErrorPolicy(double absoluteToleranceScale, std::unique_ptr<WVIntegrationErrorPolicy>& policy) const override;
 
     const WVTransformConstantStratificationKernel& kernel() const noexcept { return *kernel_; }
     WVTransformConstantStratificationKernel& kernel() noexcept { return *kernel_; }
