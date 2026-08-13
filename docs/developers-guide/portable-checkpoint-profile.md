@@ -7,7 +7,7 @@ nav_order: 12
 
 # Portable checkpoint profile
 
-The `wave-vortex-4x-v1` profile is the structurally validated subset of existing WaveVortexModel 4.x NetCDF files consumed by the portable constant-stratification runtime. It does not define another file layout. MATLAB remains the authoritative writer, and the C++ `WaveVortexCheckpoint` library reads the same groups, dimensions, variables, and attributes used by `WVTransform.waveVortexTransformFromFile`.
+The `wave-vortex-4x-v1` profile is the structurally validated subset of existing WaveVortexModel 4.x NetCDF files consumed and produced by the portable constant-stratification runtime. It does not define another file layout. MATLAB and the C++ checkpoint library use the same groups, dimensions, variables, and attributes consumed by `WVTransform.waveVortexTransformFromFile`.
 
 The profile is deliberately narrower than the general [`NetCDFFile`](https://github.com/JeffreyEarly/netcdf) and `CAAnnotatedClass` conventions. It supports the numerical configuration, canonical wave-vortex state, and forcing type headers needed by a portable constant-stratification runtime. It does not reconstruct arbitrary annotated classes, MATLAB function handles, observing systems, or unrelated variables.
 
@@ -61,7 +61,17 @@ The portable forcing capability matrix maps those existing tags and their numeri
 
 ## C++ boundary
 
-`WaveVortexCheckpoint` is a separate C++ library over the NetCDF C API. It depends on `WaveVortexKernel`, but the numerical kernel has no NetCDF, MATLAB, or MEX dependency. The reader owns file handles through a move-only RAII wrapper and reports structured status codes for missing metadata, incompatible types or shapes, unsupported model records, invalid state selection, and NetCDF failures.
+`WaveVortexCheckpoint` is a separate C++ library over the NetCDF C API. It depends on `WaveVortexKernel`, but the numerical kernel has no NetCDF, MATLAB, or MEX dependency. The checkpoint layer owns file handles through move-only RAII wrappers and reports structured status codes for missing metadata, incompatible types or shapes, unsupported model records, invalid state selection, NetCDF failures, write failures, and commit failures.
+
+## Compatible checkpoint writing
+
+`WVCheckpointWriter` writes one root-level scalar checkpoint. It reconstructs the standard `x`, `y`, `z`, `j`, and `kl` coordinates from the validated constant-stratification configuration and writes canonical `[Nj,Nkl]` coefficient memory directly as NetCDF `[kl,j]` real/imaginary pairs. A singleton forcing is stored on `/forcing`; multiple records are restored to one-based source order as `/forcing/forcing-N`. Fixed-amplitude indices are converted from zero-based C++ offsets to the existing one-based NetCDF representation.
+
+The writer accepts only canonical `wave-vortex-forcing-v1` records. It rejects unsupported forcing and any stage, priority, name, ordinal, shape, or payload that would reload with different semantics. It writes immutable forcing source data but not `deltaT`, FFT plans, mappings, antialias selections, derived operators, responses, caches, or scratch.
+
+Output replacement is transactional. The writer validates the in-memory record, writes and synchronizes a uniquely named temporary file beside the destination, closes it, and reads it through `WVCheckpointReader`. Only a structurally valid temporary checkpoint that reproduces the requested state is atomically committed. Failure leaves an existing destination byte-for-byte unchanged and removes the temporary file.
+
+Writer v1 does not append records and does not create a time-series group. Existing scalar and nested time-series files remain valid reader inputs; a selected time-series record may be emitted as a standalone scalar restart.
 
 ## Frozen forcing execution
 
@@ -85,4 +95,4 @@ No previous-stage history is persisted. On restart, the checkpoint state is load
 
 The portable contract tests compare every supported forcing and mixed hydrostatic/nonhydrostatic schedules directly with MATLAB at relative infinity error at most \(10^{-12}\). A short mixed-forcing RK4 trajectory is independently advanced in MATLAB and C++, including a partial final step and stage-wise fixed-amplitude restoration. The test fixtures also use nondefault gravity, density, and planetary values so the C++ descriptor reproduces established MATLAB normalization conventions rather than silently substituting its own.
 
-Issue #111 provides read-only compatibility and validation. Compatible checkpoint creation, appending, and restart continuation remain part of the standalone runtime checkpoint work.
+Issue #111 established read compatibility and validation. Issue #115 adds compatible scalar checkpoint creation and deterministic restart continuation. Appending to a time-series remains outside runtime v1.

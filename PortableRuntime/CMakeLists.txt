@@ -20,6 +20,7 @@ add_library(WaveVortexPortableRuntime STATIC
     src/WVNetCDF.cpp
     src/WVForcingScheduleDecoder.cpp
     src/WVCheckpointReader.cpp
+    src/WVCheckpointWriter.cpp
     src/WVForcingEngine.cpp
     src/WVFixedStepRK4.cpp
 )
@@ -47,6 +48,12 @@ if(BUILD_TESTING)
     )
     target_compile_features(wv_checkpoint_inspect PRIVATE cxx_std_17)
     target_link_libraries(wv_checkpoint_inspect PRIVATE WaveVortex::Checkpoint)
+
+    add_executable(wv_checkpoint_roundtrip
+        ../tools/portable-runtime/WVCheckpointRoundTrip.cpp
+    )
+    target_compile_features(wv_checkpoint_roundtrip PRIVATE cxx_std_17)
+    target_link_libraries(wv_checkpoint_roundtrip PRIVATE WaveVortex::Checkpoint)
 
     add_executable(wv_portable_forcing_inspect
         ../tools/portable-runtime/WVPortableForcingInspect.cpp
@@ -76,6 +83,21 @@ if(BUILD_TESTING)
         target_compile_options(TestWVCheckpointReader PRIVATE -Wall -Wextra -Wpedantic -Werror)
     endif()
     add_test(NAME checkpoint-reader COMMAND TestWVCheckpointReader)
+
+    add_executable(TestWVCheckpointWriter
+        ../tools/portable-runtime/tests/TestWVCheckpointWriter.cpp
+        ../tools/compiled-kernel/tests/WVReferenceFFTEngine.cpp
+    )
+    target_compile_features(TestWVCheckpointWriter PRIVATE cxx_std_17)
+    target_include_directories(TestWVCheckpointWriter PRIVATE src ../tools/compiled-kernel/tests)
+    target_link_libraries(TestWVCheckpointWriter PRIVATE WaveVortex::Checkpoint ${WAVEVORTEX_NETCDF_TARGET})
+    target_compile_definitions(TestWVCheckpointWriter PRIVATE
+        WV_CHECKPOINT_FIXTURE_DIR="${CMAKE_CURRENT_LIST_DIR}/../tools/portable-runtime/fixtures"
+    )
+    if(CMAKE_CXX_COMPILER_ID MATCHES "AppleClang|Clang|GNU")
+        target_compile_options(TestWVCheckpointWriter PRIVATE -Wall -Wextra -Wpedantic -Werror)
+    endif()
+    add_test(NAME checkpoint-writer COMMAND TestWVCheckpointWriter)
 
     add_executable(TestWVForcingAndRK4
         ../tools/portable-runtime/tests/TestWVForcingAndRK4.cpp
