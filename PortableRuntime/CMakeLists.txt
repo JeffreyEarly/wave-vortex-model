@@ -145,6 +145,16 @@ if(BUILD_TESTING)
     endif()
     add_test(NAME forcing-and-rk4 COMMAND TestWVForcingAndRK4)
 
+    add_executable(TestWVIntegrationContracts
+        ../tools/portable-runtime/tests/TestWVIntegrationContracts.cpp
+    )
+    target_compile_features(TestWVIntegrationContracts PRIVATE cxx_std_17)
+    target_link_libraries(TestWVIntegrationContracts PRIVATE WaveVortex::PortableRuntime)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "AppleClang|Clang|GNU")
+        target_compile_options(TestWVIntegrationContracts PRIVATE -Wall -Wextra -Wpedantic -Werror)
+    endif()
+    add_test(NAME integration-contracts COMMAND TestWVIntegrationContracts)
+
     add_executable(TestWaveVortexRun ../tools/portable-runtime/tests/TestWaveVortexRun.cpp)
     target_compile_features(TestWaveVortexRun PRIVATE cxx_std_17)
     target_link_libraries(TestWaveVortexRun PRIVATE WaveVortex::Checkpoint)

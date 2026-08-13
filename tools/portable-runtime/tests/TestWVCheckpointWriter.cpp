@@ -1,6 +1,7 @@
 #include "WaveVortexRuntime/WVCheckpointReader.hpp"
 #include "WaveVortexRuntime/WVCheckpointWriter.hpp"
 #include "WaveVortexRuntime/WVFixedStepRK4.hpp"
+#include "WaveVortexRuntime/WVForcingEngine.hpp"
 #include "WVCheckpointWriterTestHooks.hpp"
 #include "WVReferenceFFTEngine.hpp"
 

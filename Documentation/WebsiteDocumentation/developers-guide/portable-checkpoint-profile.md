@@ -91,6 +91,27 @@ $$9M\operatorname{sizeof}(\texttt{WVComplex64}).$$
 
 No previous-stage history is persisted. On restart, the checkpoint state is loaded, fixed amplitudes are restored, forcing-derived arrays and FFT plans are rebuilt, and RK4 continues from the stored time. This matches WaveVortexModel's persistence boundary: state is persisted; execution machinery is derived.
 
+### Internal integration contracts
+
+The portable runtime separates model evaluation, numerical advancement, accepted-step state, continuous output, requested output times, and output delivery without changing the runner interface or accepted RK4 trajectory.
+
+| Contract | Responsibility |
+|---|---|
+| `WVIntegrationSystem` | Evaluate a supplied immutable state and time while completely overwriting every supplied right-hand-side element; apply model-owned state constraints separately. |
+| `WVTimeIntegrator` | Prepare derived method state after restart, advance accepted mutable state, and expose the most recent accepted step. |
+| `WVAcceptedStep` | Describe the accepted interval, immutable endpoint view, step-local method statistics, and method-owned continuous extension. |
+| `WVDenseOutput` | Evaluate one method-owned continuous extension into caller-owned reusable storage. |
+| `WVOutputSchedule` | Own ordered requested times independently of accepted solver steps. |
+| `WVIntegrationOutputSink` | Receive immutable `init`, interpolated, accepted, and `done` views and optionally request clean termination. |
+
+An accepted-step endpoint and continuous-extension pointer remain valid until the owning integrator is next advanced or prepared after restart. Output sinks receive immutable, non-owning state views; a sink that retains an output must copy it before returning. The schedule is queried only after step acceptance, so requested output times cannot shorten solver steps, and interpolated storage cannot become the next accepted state.
+
+Issue #182 defines these boundaries and exercises dense output, scheduling, and sink semantics with test doubles only. `WVFixedStepRK4` does not yet provide a continuous extension, schedule outputs, or interpolation storage; issue #184 owns that behavior. Consequently the contract layer adds zero array-sized workspace, and the existing exact `9M` RK4 workspace is unchanged.
+
+### Untimed array-traffic diagnostic
+
+The standalone JSON report includes exact element and byte counts for the integration-boundary arrays. Counters cover stage-state construction, stage-tendency and weighted-tendency clears, forcing accumulator and temporary-tendency clears, shared-kernel output initialization, temporary accumulation, forcing output copies, RK weighted accumulation, final accepted-state update, and exact retained and maximum-live storage. The diagnostic deliberately excludes FFT-plan and kernel-scratch internal traffic, which is common to direct compiled `nonlinearFlux` and standalone RK4; this makes their measured difference equal to the reported wrapper and RK traffic within process-measurement uncertainty. No timer is read to collect the counters.
+
 ## Verification boundary
 
 The portable contract tests compare every supported forcing and mixed hydrostatic/nonhydrostatic schedules directly with MATLAB at relative infinity error at most \(10^{-12}\). A short mixed-forcing RK4 trajectory is independently advanced in MATLAB and C++, including a partial final step and stage-wise fixed-amplitude restoration. The test fixtures also use nondefault gravity, density, and planetary values so the C++ descriptor reproduces established MATLAB normalization conventions rather than silently substituting its own.

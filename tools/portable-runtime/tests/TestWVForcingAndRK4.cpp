@@ -1,4 +1,5 @@
 #include "WaveVortexRuntime/WVFixedStepRK4.hpp"
+#include "WaveVortexRuntime/WVForcingEngine.hpp"
 #include "WVReferenceFFTEngine.hpp"
 
 #include <algorithm>
@@ -129,11 +130,13 @@ void testNonlinearCompatibility(bool hydrostatic) {
     require(static_cast<bool>(status),"direct kernel construction failed");
     OwnedState state(direct->descriptor().spectralShape());
     const auto count = state.shape.elementCount();
-    std::vector<WVComplex64> scheduledValues(3*count),directValues(3*count);
+    const WVComplex64 canary{std::numeric_limits<double>::quiet_NaN(),std::numeric_limits<double>::quiet_NaN()};
+    std::vector<WVComplex64> scheduledValues(3*count,canary),directValues(3*count,canary);
     auto scheduledFlux = fluxView(scheduledValues,state.shape);
     auto directFlux = fluxView(directValues,state.shape);
     status = scheduled->nonlinearFlux(state.view(),scheduledFlux);
     require(static_cast<bool>(status),"scheduled nonlinear flux failed");
+    requireFinite(scheduledValues,"integration-system RHS did not completely overwrite canary output storage");
     status = direct->nonlinearFlux(state.view(),directFlux);
     require(static_cast<bool>(status),"direct nonlinear flux failed");
     double error = 0.0;
@@ -142,6 +145,25 @@ void testNonlinearCompatibility(bool hydrostatic) {
         error = std::max(error,std::abs(scheduledValues[index].imag-directValues[index].imag));
     }
     require(error <= 1e-13,"nonlinear-only schedule changed the shared kernel result");
+}
+
+void testForcingTrafficAccounting() {
+    auto engine = createEngine(true,nonlinearSchedule());
+    OwnedState owned(engine->kernel().descriptor().spectralShape());
+    auto state = owned.mutableView();
+    WVFixedStepRK4 integrator(*engine);
+    auto status = integrator.prepareStateAfterRestart(state);
+    require(static_cast<bool>(status),"traffic-accounting restart preparation failed");
+    status = integrator.step(state,0.1);
+    require(static_cast<bool>(status),"traffic-accounting step failed");
+    const auto coefficientValues = 3*state.coefficients.Ap.shape.elementCount();
+    const auto& metrics = engine->metrics();
+    require(metrics.accumulatorClearElementWrites == 4*coefficientValues,"forcing-accumulator clear traffic is not exact");
+    require(metrics.temporaryFluxClearElementWrites == 4*coefficientValues,"temporary-flux clear traffic is not exact");
+    require(metrics.kernelOutputInitializationElementWrites == 4*coefficientValues,"kernel-output initialization traffic is not exact");
+    require(metrics.temporaryAccumulationElementReads == 8*coefficientValues && metrics.temporaryAccumulationElementWrites == 4*coefficientValues,"temporary-accumulation traffic is not exact");
+    require(metrics.outputCopyElementReads == 4*coefficientValues && metrics.outputCopyElementWrites == 4*coefficientValues,"forcing output-copy traffic is not exact");
+    require(metrics.workspaceLiveBytes == metrics.workspaceCapacityBytes && metrics.workspaceMaximumLiveBytes == metrics.workspaceCapacityBytes,"forcing-workspace liveness is not exact");
 }
 
 void testFixedAmplitudeAndRK4() {
@@ -256,6 +278,7 @@ int main() {
         testNonlinearCompatibility(true);
         testNonlinearCompatibility(false);
         testFixedAmplitudeAndRK4();
+        testForcingTrafficAccounting();
         testRK4DeterminismRestartAndFailure();
         testSpectralForcing();
         testQuadraticAndPseudo(true);

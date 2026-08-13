@@ -1,6 +1,7 @@
 #include "WaveVortexRuntime/WVCheckpointReader.hpp"
 #include "WaveVortexRuntime/WVCheckpointWriter.hpp"
 #include "WaveVortexRuntime/WVFixedStepRK4.hpp"
+#include "WaveVortexRuntime/WVForcingEngine.hpp"
 #include "WVReferenceFFTEngine.hpp"
 
 #if WV_RUNTIME_HAS_NATIVE_FFTW
@@ -345,6 +346,12 @@ int main(int argc, char** argv) {
     const auto& integratorMetrics = integrator.metrics();
     const auto checkpointStateBytes = stateBytes(checkpoint);
     const auto knownPersistentBytes = checkpointStateBytes+forcingEngine->persistentBytes()+integrator.persistentBytes();
+    const auto integratorElementReads = integratorMetrics.stageStateConstructionElementReads+integratorMetrics.weightedAccumulationElementReads+integratorMetrics.finalStateUpdateElementReads;
+    const auto integratorElementWrites = integratorMetrics.stageStateConstructionElementWrites+integratorMetrics.stageFluxClearElementWrites+integratorMetrics.weightedFluxClearElementWrites+integratorMetrics.weightedAccumulationElementWrites+integratorMetrics.finalStateUpdateElementWrites;
+    const auto forcingElementReads = forcingMetrics.temporaryAccumulationElementReads+forcingMetrics.outputCopyElementReads;
+    const auto forcingElementWrites = forcingMetrics.accumulatorClearElementWrites+forcingMetrics.temporaryFluxClearElementWrites+forcingMetrics.kernelOutputInitializationElementWrites+forcingMetrics.temporaryAccumulationElementWrites+forcingMetrics.outputCopyElementWrites+forcingMetrics.stateConstraintElementWrites;
+    const auto trafficElementReads = integratorElementReads+forcingElementReads;
+    const auto trafficElementWrites = integratorElementWrites+forcingElementWrites;
     std::ostringstream report;
     report << std::setprecision(17)
            << "{\"schemaVersion\":\"wave-vortex-run-v1\",\"status\":\"complete\",\"source\":{\"commit\":" << quoted(WV_RUNTIME_SOURCE_COMMIT) << "},"
@@ -353,6 +360,8 @@ int main(int argc, char** argv) {
            << "\"forcing\":" << forcingJSON(checkpoint.forcingSchedule) << ','
            << "\"timingSeconds\":{\"inspect\":" << timings.inspect << ",\"read\":" << timings.read << ",\"construct\":" << timings.construct << ",\"prepare\":" << timings.prepare << ",\"integrate\":" << timings.integrate << ",\"write\":" << timings.write << ",\"total\":" << timings.total << "},"
            << "\"storageBytes\":{\"checkpointState\":" << checkpointStateBytes << ",\"descriptor\":" << kernelMetrics.descriptorBytes << ",\"planWrapper\":" << kernelMetrics.planBytes << ",\"kernelScratch\":" << kernelMetrics.scratchCapacityBytes << ",\"forcingSchedule\":" << forcingMetrics.scheduleBytes << ",\"forcingDerivedOperators\":" << forcingMetrics.derivedOperatorBytes << ",\"forcingWorkspace\":" << forcingMetrics.workspaceCapacityBytes << ",\"integratorWorkspace\":" << integratorMetrics.workspaceCapacityBytes << ",\"knownPersistent\":" << knownPersistentBytes << ",\"persistentFullHermitian\":0},"
+           << "\"arrayTraffic\":{\"scope\":\"exact integration-boundary arrays; FFT plans and kernel scratch internals excluded\",\"elementBytes\":" << sizeof(WVComplex64) << ",\"integrator\":{\"stageStateConstructionReads\":" << integratorMetrics.stageStateConstructionElementReads << ",\"stageStateConstructionWrites\":" << integratorMetrics.stageStateConstructionElementWrites << ",\"stageFluxClearWrites\":" << integratorMetrics.stageFluxClearElementWrites << ",\"weightedFluxClearWrites\":" << integratorMetrics.weightedFluxClearElementWrites << ",\"weightedAccumulationReads\":" << integratorMetrics.weightedAccumulationElementReads << ",\"weightedAccumulationWrites\":" << integratorMetrics.weightedAccumulationElementWrites << ",\"finalStateUpdateReads\":" << integratorMetrics.finalStateUpdateElementReads << ",\"finalStateUpdateWrites\":" << integratorMetrics.finalStateUpdateElementWrites << "},\"forcing\":{\"accumulatorClearWrites\":" << forcingMetrics.accumulatorClearElementWrites << ",\"temporaryFluxClearWrites\":" << forcingMetrics.temporaryFluxClearElementWrites << ",\"kernelOutputInitializationWrites\":" << forcingMetrics.kernelOutputInitializationElementWrites << ",\"temporaryAccumulationReads\":" << forcingMetrics.temporaryAccumulationElementReads << ",\"temporaryAccumulationWrites\":" << forcingMetrics.temporaryAccumulationElementWrites << ",\"outputCopyReads\":" << forcingMetrics.outputCopyElementReads << ",\"outputCopyWrites\":" << forcingMetrics.outputCopyElementWrites << ",\"stateConstraintWrites\":" << forcingMetrics.stateConstraintElementWrites << "},\"totals\":{\"elementReads\":" << trafficElementReads << ",\"elementWrites\":" << trafficElementWrites << ",\"bytesRead\":" << trafficElementReads*sizeof(WVComplex64) << ",\"bytesWritten\":" << trafficElementWrites*sizeof(WVComplex64) << "}},"
+           << "\"livenessBytes\":{\"integratorWorkspaceLive\":" << integratorMetrics.workspaceLiveBytes << ",\"integratorWorkspaceMaximumLive\":" << integratorMetrics.workspaceMaximumLiveBytes << ",\"forcingWorkspaceLive\":" << forcingMetrics.workspaceLiveBytes << ",\"forcingWorkspaceMaximumLive\":" << forcingMetrics.workspaceMaximumLiveBytes << ",\"acceptedStepAdditionalArrayStorage\":0,\"contractAbstractionAdditionalArrayStorage\":0,\"knownRetained\":" << knownPersistentBytes << ",\"knownMaximumLive\":" << knownPersistentBytes << "},"
            << "\"rssBytes\":{\"integrationBaseline\":" << integrationBaselineRSS << ",\"processPeak\":" << integrationPeakRSS << ",\"peakIncrementLowerBound\":" << (integrationPeakRSS > integrationBaselineRSS ? integrationPeakRSS-integrationBaselineRSS : 0) << "},"
            << "\"execution\":{\"engine\":" << quoted(kernel.engineIdentifier()) << ",\"library\":" << quoted(kernel.engineLibraryIdentity()) << ",\"schedule\":" << quoted(forcingEngine->scheduleIdentifier()) << ",\"planCount\":" << kernelMetrics.planCount << ",\"noFallback\":true}}";
     emit(report.str(),options.report,std::cout);

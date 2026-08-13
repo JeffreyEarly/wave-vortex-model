@@ -253,6 +253,11 @@ classdef TestPortableCheckpointReader < matlab.unittest.TestCase
                 testCase.verifyEqual(report.state.rhsEvaluationCount,8)
                 testCase.verifyTrue(report.execution.noFallback)
                 testCase.verifyEqual(string(report.provider.id),"reference")
+                stateElementCount = prod(report.state.shape);
+                testCase.verifyEqual(report.arrayTraffic.integrator.stageStateConstructionReads,42*stateElementCount)
+                testCase.verifyEqual(report.arrayTraffic.integrator.stageFluxClearWrites,24*stateElementCount)
+                testCase.verifyEqual(report.livenessBytes.integratorWorkspaceLive,9*stateElementCount*16)
+                testCase.verifyEqual(report.livenessBytes.contractAbstractionAdditionalArrayStorage,0)
 
                 [actual,actualFile] = WVTransform.waveVortexTransformFromFile(outputPath,shouldReadOnly=true);
                 actualCleanup = onCleanup(@()TestPortableCheckpointReader.closeIfOpen(actualFile));

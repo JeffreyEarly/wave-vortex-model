@@ -1,5 +1,6 @@
 #pragma once
 
+#include "WaveVortexRuntime/WVIntegrationContracts.hpp"
 #include "WaveVortexKernel/WVForcingSchedule.hpp"
 #include "WaveVortexKernel/WVTransformConstantStratificationKernel.hpp"
 
@@ -19,12 +20,22 @@ struct WVForcingEngineMetrics {
     std::size_t resolvedSpatialCount = 0;
     std::size_t resolvedSpectralCount = 0;
     std::size_t resolvedAmplitudeCount = 0;
+    std::size_t accumulatorClearElementWrites = 0;
+    std::size_t temporaryFluxClearElementWrites = 0;
+    std::size_t kernelOutputInitializationElementWrites = 0;
+    std::size_t temporaryAccumulationElementReads = 0;
+    std::size_t temporaryAccumulationElementWrites = 0;
+    std::size_t outputCopyElementReads = 0;
+    std::size_t outputCopyElementWrites = 0;
+    std::size_t stateConstraintElementWrites = 0;
+    std::size_t workspaceLiveBytes = 0;
+    std::size_t workspaceMaximumLiveBytes = 0;
 };
 
 // Evaluate a validated, immutable portable forcing schedule around the shared
 // constant-stratification numerical kernel. Schedule construction resolves
 // stage and priority order; evaluate() performs no forcing dispatch discovery.
-class WVConstantStratificationForcingEngine final {
+class WVConstantStratificationForcingEngine final : public WVIntegrationSystem {
 public:
     // Validate the frozen schedule without constructing transforms, plans, or
     // array-sized derived operators and workspaces.
@@ -45,6 +56,9 @@ public:
 
     WVKernelStatus nonlinearFlux(const WVState& state, WVFlux& flux);
     WVKernelStatus restoreForcingAmplitudes(WVMutableCoefficients& coefficients);
+    WVShape2D stateShape() const noexcept override { return kernel_->descriptor().spectralShape(); }
+    WVKernelStatus evaluateRightHandSide(const WVState& state, WVFlux& rightHandSide) override { return nonlinearFlux(state,rightHandSide); }
+    WVKernelStatus enforceStateConstraints(WVMutableCoefficients& coefficients) override { return restoreForcingAmplitudes(coefficients); }
 
     const WVTransformConstantStratificationKernel& kernel() const noexcept { return *kernel_; }
     WVTransformConstantStratificationKernel& kernel() noexcept { return *kernel_; }

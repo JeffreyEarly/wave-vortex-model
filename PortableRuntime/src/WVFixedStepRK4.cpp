@@ -28,10 +28,10 @@ bool matchingShape(WVShape2D expected, WVComplexView value) noexcept {
 
 } // namespace
 
-WVFixedStepRK4::WVFixedStepRK4(WVConstantStratificationForcingEngine& forcingEngine) : forcingEngine_(forcingEngine) {}
+WVFixedStepRK4::WVFixedStepRK4(WVIntegrationSystem& system) : system_(system) {}
 
 WVKernelStatus WVFixedStepRK4::ensureWorkspace(const WVMutableState& state) {
-    const auto expected = forcingEngine_.kernel().descriptor().spectralShape();
+    const auto expected = system_.stateShape();
     if (!matchingShape(expected,state.coefficients.Ap) || !matchingShape(expected,state.coefficients.Am) || !matchingShape(expected,state.coefficients.A0)) {
         return {WVKernelStatusCode::invalidShape,"RK4 state must use the forcing engine's canonical [Nj,Nkl] shape."};
     }
@@ -44,6 +44,8 @@ WVKernelStatus WVFixedStepRK4::ensureWorkspace(const WVMutableState& state) {
         stageFlux_.resize(values);
         weightedFlux_.resize(values);
         metrics_.workspaceCapacityBytes = (stageState_.capacity()+stageFlux_.capacity()+weightedFlux_.capacity())*sizeof(WVComplex64);
+        metrics_.workspaceLiveBytes = metrics_.workspaceCapacityBytes;
+        metrics_.workspaceMaximumLiveBytes = std::max(metrics_.workspaceMaximumLiveBytes,metrics_.workspaceLiveBytes);
         return WVKernelStatus::ok();
     } catch (const std::bad_alloc&) {
         return {WVKernelStatusCode::allocationFailure,"RK4 workspace allocation failed."};
@@ -51,9 +53,10 @@ WVKernelStatus WVFixedStepRK4::ensureWorkspace(const WVMutableState& state) {
 }
 
 WVKernelStatus WVFixedStepRK4::prepareStateAfterRestart(WVMutableState& state) {
+    hasAcceptedStep_ = false;
     const auto status = ensureWorkspace(state);
     if (!status) return status;
-    return forcingEngine_.restoreForcingAmplitudes(state.coefficients);
+    return system_.enforceStateConstraints(state.coefficients);
 }
 
 void WVFixedStepRK4::setStageFromBase(const WVMutableState& base, double scale, const std::vector<WVComplex64>* increment) {
@@ -65,17 +68,22 @@ void WVFixedStepRK4::setStageFromBase(const WVMutableState& base, double scale, 
             stageState_[component*count+index] = addScaled(sources[component].data[index],delta,scale);
         }
     }
+    const auto stateElementCount = 3*count;
+    metrics_.stageStateConstructionElementReads += stateElementCount;
+    if (increment != nullptr) metrics_.stageStateConstructionElementReads += stateElementCount;
+    metrics_.stageStateConstructionElementWrites += stateElementCount;
 }
 
 WVKernelStatus WVFixedStepRK4::evaluateStage(const WVMutableState& base, double stageTime, double scale, const std::vector<WVComplex64>* increment) {
     setStageFromBase(base,scale,increment);
     auto coefficients = coefficientViews(stageState_,shape_);
-    auto status = forcingEngine_.restoreForcingAmplitudes(coefficients);
+    auto status = system_.enforceStateConstraints(coefficients);
     if (!status) return status;
     std::fill(stageFlux_.begin(),stageFlux_.end(),WVComplex64{});
+    metrics_.stageFluxClearElementWrites += stageFlux_.size();
     auto flux = fluxViews(stageFlux_,shape_);
     const WVState stage{stageTime,base.t0,{{coefficients.Ap.data,coefficients.Ap.shape},{coefficients.Am.data,coefficients.Am.shape},{coefficients.A0.data,coefficients.A0.shape}}};
-    status = forcingEngine_.nonlinearFlux(stage,flux);
+    status = system_.evaluateRightHandSide(stage,flux);
     if (status) ++metrics_.rightHandSideEvaluationCount;
     return status;
 }
@@ -85,6 +93,8 @@ void WVFixedStepRK4::accumulateWeightedFlux(double weight) {
         weightedFlux_[index].real += weight*stageFlux_[index].real;
         weightedFlux_[index].imag += weight*stageFlux_[index].imag;
     }
+    metrics_.weightedAccumulationElementReads += 2*stageFlux_.size();
+    metrics_.weightedAccumulationElementWrites += stageFlux_.size();
 }
 
 WVKernelStatus WVFixedStepRK4::step(WVMutableState& state, double deltaT) {
@@ -92,10 +102,13 @@ WVKernelStatus WVFixedStepRK4::step(WVMutableState& state, double deltaT) {
     if (!std::isfinite(deltaT) || deltaT <= 0.0) return {WVKernelStatusCode::invalidConfiguration,"RK4 deltaT must be finite and positive."};
     auto status = ensureWorkspace(state);
     if (!status) return status;
+    hasAcceptedStep_ = false;
     stepping_ = true;
     struct Guard { bool& value; ~Guard() { value = false; } } guard{stepping_};
 
     std::fill(weightedFlux_.begin(),weightedFlux_.end(),WVComplex64{});
+    metrics_.weightedFluxClearElementWrites += weightedFlux_.size();
+    const double initialTime = state.t;
     status = evaluateStage(state,state.t,0.0,nullptr);
     if (!status) return status;
     accumulateWeightedFlux(1.0);
@@ -115,11 +128,15 @@ WVKernelStatus WVFixedStepRK4::step(WVMutableState& state, double deltaT) {
     for (std::size_t component = 0; component < 3; ++component) {
         for (std::size_t index = 0; index < count; ++index) destinations[component].data[index] = addScaled(destinations[component].data[index],weightedFlux_[component*count+index],scale);
     }
+    metrics_.finalStateUpdateElementReads += 6*count;
+    metrics_.finalStateUpdateElementWrites += 3*count;
     state.t += deltaT;
-    status = forcingEngine_.restoreForcingAmplitudes(state.coefficients);
+    status = system_.enforceStateConstraints(state.coefficients);
     if (!status) return status;
     ++metrics_.stepCount;
     metrics_.lastStepSize = deltaT;
+    acceptedStep_ = {initialTime,state.t,state.view(),{1,4,deltaT},nullptr};
+    hasAcceptedStep_ = true;
     return WVKernelStatus::ok();
 }
 
