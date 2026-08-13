@@ -82,7 +82,12 @@ int main() {
         status = WVCheckpointReader::read(adaptiveOutput.string(),adaptiveCheckpoint);
         require(static_cast<bool>(status) && adaptiveCheckpoint.state.t > checkpoint.state.t-0.074,"adaptive runner output is not readable or did not advance");
         const auto adaptiveReportText = text(adaptiveReport);
-        require(adaptiveReportText.find("\"id\":\"adaptive-rk23\"") != std::string::npos && adaptiveReportText.find("\"rejectedStepCount\":") != std::string::npos && adaptiveReportText.find("\"nextStepSize\":") != std::string::npos,"adaptive runner report omitted method diagnostics");
+        require(adaptiveReportText.find("\"id\":\"adaptive-rk23\"") != std::string::npos && adaptiveReportText.find("\"rejectedStepCount\":") != std::string::npos && adaptiveReportText.find("\"nextStepSize\":") != std::string::npos && adaptiveReportText.find("\"denseOutputEvaluationCount\":") != std::string::npos && adaptiveReportText.find("\"denseOutputSeconds\":") != std::string::npos,"adaptive runner report omitted method diagnostics");
+        const auto adaptiveDenseOutput = directory/"adaptive-dense-output.nc";
+        const auto adaptiveDenseReport = directory/"adaptive-dense-report.json";
+        require(run(quote(input)+" "+quote(adaptiveDenseOutput)+" --delta-t 1e-7 --steps 2 --integrator adaptive-rk23 --fft-provider reference --benchmark-dense-outputs-per-step 1 --report "+quote(adaptiveDenseReport)) == 0,"adaptive runner dense-output execution failed");
+        const auto adaptiveDenseReportText = text(adaptiveDenseReport);
+        require(adaptiveDenseReportText.find("\"denseOutputEvaluationCount\":2") != std::string::npos && adaptiveDenseReportText.find("\"interpolatedOutputCount\":2") != std::string::npos,"adaptive runner did not report its dense-output work");
         const std::vector<std::string> forcingFixtures{
             "forcing-nonlinear.nc","forcing-adaptive-damping.nc","forcing-fixed-amplitude.nc","forcing-quadratic-bottom-friction.nc",
             "forcing-pseudo-topographic.nc","forcing-beta-plane.nc","forcing-mixed-hydrostatic.nc","forcing-mixed-nonhydrostatic.nc"};
