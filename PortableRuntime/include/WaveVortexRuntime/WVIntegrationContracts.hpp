@@ -70,7 +70,9 @@ public:
 class WVOutputSchedule {
 public:
     virtual ~WVOutputSchedule() = default;
-    virtual WVKernelStatus reset(double initialTime) = 0;
+    // reset() validates the complete request sequence against the integration
+    // interval before any output event is emitted or accepted state is changed.
+    virtual WVKernelStatus reset(double initialTime, double finalTime) = 0;
     virtual bool nextTimeInInterval(double initialTime, double finalTime, double& outputTime) const noexcept = 0;
     virtual void consumeNextTime() noexcept = 0;
 };

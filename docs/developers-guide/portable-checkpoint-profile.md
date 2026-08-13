@@ -93,7 +93,15 @@ Let \(M=N_jN_{kl}\). The integrator retains one three-component stage state, one
 
 $$9M\operatorname{sizeof}(\texttt{WVComplex64}).$$
 
-No previous-stage history is persisted. On restart, the checkpoint state is loaded, fixed amplitudes are restored, forcing-derived arrays and FFT plans are rebuilt, and RK4 continues from the stored time. This matches WaveVortexModel's persistence boundary: state is persisted; execution machinery is derived.
+No previous-stage history is persisted by default. On restart, the checkpoint state is loaded, fixed amplitudes are restored, forcing-derived arrays and FFT plans are rebuilt, and RK4 continues from the stored time. This matches WaveVortexModel's persistence boundary: state is persisted; execution machinery is derived.
+
+Continuous output is an explicit construction option. When enabled, RK4 retains \(k_1\) in one additional three-component array and reuses its weighted-accumulator storage for the accepted interval's initial state after the endpoint has been formed. The existing stage tendency retains \(k_4\), and the accepted state supplies the endpoint. The method-owned history is therefore exactly \(12M\) complex values; no extra right-hand-side evaluation is performed.
+
+For \(\theta=(t-t_n)/h\), the continuous extension uses the same cubic Hermite formula as `WVArrayIntegrator`:
+
+$$A(t) = (1-3\theta^2+2\theta^3)A_n + (3\theta^2-2\theta^3)A_{n+1} + h(\theta-2\theta^2+\theta^3)k_1 + h(\theta^3-\theta^2)k_4.$$
+
+State constraints are applied to interpolated output after evaluation, but interpolated values never become accepted integration state.
 
 ### Internal integration contracts
 
@@ -110,7 +118,9 @@ The portable runtime separates model evaluation, numerical advancement, accepted
 
 An accepted-step endpoint and continuous-extension pointer remain valid until the owning integrator is next advanced or prepared after restart. Output sinks receive immutable, non-owning state views; a sink that retains an output must copy it before returning. The schedule is queried only after step acceptance, so requested output times cannot shorten solver steps, and interpolated storage cannot become the next accepted state.
 
-Issue #182 defines these boundaries and exercises dense output, scheduling, and sink semantics with test doubles only. `WVFixedStepRK4` does not yet provide a continuous extension, schedule outputs, or interpolation storage; issue #184 owns that behavior. Consequently the contract layer adds zero array-sized workspace, and the existing exact `9M` RK4 workspace is unchanged.
+`WVFixedStepRK4` supplies its continuous extension only when constructed with `retainDenseOutput=true`. `WVOrderedOutputSchedule` validates the entire finite, strictly increasing request sequence before any event or state mutation. `WVIntegrationDriver` emits `init` once, returns accepted endpoints without interpolation, and lazily allocates one reusable \(3M\) interpolation array only for a true interior request. Thus ordinary integration remains at \(9M\), dense-enabled method history is \(12M\), and the maximum retained method-plus-driver storage after an interior request is \(15M\).
+
+An initial-time request is consumed by the `init` event rather than duplicated. A sink-requested termination emits one `done` event carrying the actual accepted endpoint, which may lie after the last interpolated observation. Schedule, interpolation, or sink failure never promotes interpolation storage into accepted state. `WVCheckpointOutputSink` is the narrow v1 persistence consumer: it accepts one explicit target time, destination, and checkpoint template and delegates replacement to the transactional checkpoint writer. Public multi-output naming and command-line scheduling remain separate work.
 
 ### Untimed array-traffic diagnostic
 

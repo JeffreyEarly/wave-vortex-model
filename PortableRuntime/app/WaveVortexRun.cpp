@@ -2,6 +2,12 @@
 #include "WaveVortexRuntime/WVCheckpointWriter.hpp"
 #include "WaveVortexRuntime/WVFixedStepRK4.hpp"
 #include "WaveVortexRuntime/WVForcingEngine.hpp"
+#ifndef WV_RUNTIME_HAS_DENSE_OUTPUT
+#define WV_RUNTIME_HAS_DENSE_OUTPUT 1
+#endif
+#if WV_RUNTIME_HAS_DENSE_OUTPUT
+#include "WaveVortexRuntime/WVIntegrationDriver.hpp"
+#endif
 #include "WVReferenceFFTEngine.hpp"
 
 #if WV_RUNTIME_HAS_NATIVE_FFTW
@@ -52,6 +58,8 @@ struct Options {
     double finalTime = 0.0;
     std::size_t steps = 0;
     std::size_t threads = 0;
+    std::size_t benchmarkDenseOutputsPerStep = 0;
+    std::size_t benchmarkWarmupSteps = 0;
     bool hasFinalTime = false;
     bool hasSteps = false;
 };
@@ -126,6 +134,10 @@ bool parseOptions(int argc, char** argv, Options& options, std::string& error) {
             options.report = value;
         } else if (name == "--phase-file") {
             options.phaseFile = value;
+        } else if (name == "--benchmark-dense-outputs-per-step") {
+            if (!parseSize(value,options.benchmarkDenseOutputsPerStep) || (options.benchmarkDenseOutputsPerStep != 1 && options.benchmarkDenseOutputsPerStep != 4)) { error = "--benchmark-dense-outputs-per-step must be 1 or 4."; return false; }
+        } else if (name == "--benchmark-warmup-steps") {
+            if (!parseSize(value,options.benchmarkWarmupSteps)) { error = "--benchmark-warmup-steps must be a nonnegative integer."; return false; }
         } else {
             error = "Unknown option "+name+".";
             return false;
@@ -136,8 +148,30 @@ bool parseOptions(int argc, char** argv, Options& options, std::string& error) {
     if (options.provider != "native-fftw" && options.provider != "reference") { error = "--fft-provider must be native-fftw or reference."; return false; }
     if (options.provider == "reference" && options.threads > 1) { error = "The reference provider supports only one thread."; return false; }
     if (options.threads == 0) options.threads = options.provider == "reference" ? 1 : std::min<std::size_t>(18,std::max(1U,std::thread::hardware_concurrency()));
+    if ((options.benchmarkDenseOutputsPerStep != 0 || options.benchmarkWarmupSteps != 0) && !options.hasSteps) { error = "Author-only benchmark controls require --steps."; return false; }
     return true;
 }
+
+#if WV_RUNTIME_HAS_DENSE_OUTPUT
+class BenchmarkSink final : public WVIntegrationOutputSink {
+public:
+    WVKernelStatus receive(const Event& event, Action& action) override {
+        action = Action::continueIntegration;
+        if (event.kind == EventKind::interpolated) ++interpolatedCount;
+        return WVKernelStatus::ok();
+    }
+    std::size_t interpolatedCount = 0;
+};
+
+std::vector<double> interiorOutputTimes(double initialTime, double stepSize, std::size_t stepCount, std::size_t outputsPerStep) {
+    std::vector<double> times;
+    times.reserve(stepCount*outputsPerStep);
+    for (std::size_t step = 0; step < stepCount; ++step) {
+        for (std::size_t output = 1; output <= outputsPerStep; ++output) times.push_back(initialTime+(static_cast<double>(step)+static_cast<double>(output)/static_cast<double>(outputsPerStep+1))*stepSize);
+    }
+    return times;
+}
+#endif
 
 void phase(const Options& options, const std::string& value) {
     if (options.phaseFile.empty()) return;
@@ -298,7 +332,15 @@ int main(int argc, char** argv) {
         emit(failureJSON(ExitCode::provider,"construct",kernelStatus.message),options.report,std::cerr);
         return static_cast<int>(ExitCode::provider);
     }
+#if WV_RUNTIME_HAS_DENSE_OUTPUT
+    WVFixedStepRK4 integrator(*forcingEngine,{options.benchmarkDenseOutputsPerStep != 0});
+#else
+    if (options.benchmarkDenseOutputsPerStep != 0) {
+        emit(failureJSON(ExitCode::usage,"arguments","This archived baseline does not implement dense output."),options.report,std::cerr);
+        return static_cast<int>(ExitCode::usage);
+    }
     WVFixedStepRK4 integrator(*forcingEngine);
+#endif
     const auto shape = forcingEngine->kernel().descriptor().spectralShape();
     WVMutableState state{checkpoint.state.t,checkpoint.state.t0,{{checkpoint.state.coefficients.Ap.data(),shape},{checkpoint.state.coefficients.Am.data(),shape},{checkpoint.state.coefficients.A0.data(),shape}}};
     timings.construct = seconds(start);
@@ -313,9 +355,38 @@ int main(int argc, char** argv) {
 
     phasePlateau(options,"steady-retained");
     const auto integrationBaselineRSS = currentRSSBytes();
+#if WV_RUNTIME_HAS_DENSE_OUTPUT
+    WVIntegrationDriver driver(integrator);
+    BenchmarkSink benchmarkSink;
+#endif
+    const auto advanceBenchmarkSteps = [&](std::size_t count) -> WVKernelStatus {
+        if (count == 0) return WVKernelStatus::ok();
+        if (options.benchmarkDenseOutputsPerStep == 0) {
+            for (std::size_t step = 0; step < count; ++step) {
+                const auto stepStatus = integrator.step(state,options.deltaT);
+                if (!stepStatus) return stepStatus;
+            }
+            return WVKernelStatus::ok();
+        }
+#if WV_RUNTIME_HAS_DENSE_OUTPUT
+        WVOrderedOutputSchedule schedule(interiorOutputTimes(state.t,options.deltaT,count,options.benchmarkDenseOutputsPerStep));
+        return driver.advanceToTime(state,state.t+static_cast<double>(count)*options.deltaT,options.deltaT,schedule,benchmarkSink);
+#else
+        return {WVKernelStatusCode::unsupportedOperation,"This archived baseline does not implement dense output."};
+#endif
+    };
+    if (options.benchmarkWarmupSteps != 0) {
+        kernelStatus = advanceBenchmarkSteps(options.benchmarkWarmupSteps);
+        if (!kernelStatus) {
+            emit(failureJSON(ExitCode::integration,"warmup",kernelStatus.message),options.report,std::cerr);
+            return static_cast<int>(ExitCode::integration);
+        }
+    }
     phase(options,"integrate");
     start = Clock::now();
-    if (options.hasSteps) {
+    if (options.benchmarkWarmupSteps != 0 || options.benchmarkDenseOutputsPerStep != 0) {
+        kernelStatus = advanceBenchmarkSteps(options.steps);
+    } else if (options.hasSteps) {
         for (std::size_t step = 0; step < options.steps && kernelStatus; ++step) kernelStatus = integrator.step(state,options.deltaT);
     } else {
         kernelStatus = integrator.advanceToTime(state,options.finalTime,options.deltaT);
@@ -344,6 +415,17 @@ int main(int argc, char** argv) {
     const auto& kernelMetrics = kernel.metrics();
     const auto& forcingMetrics = forcingEngine->metrics();
     const auto& integratorMetrics = integrator.metrics();
+#if WV_RUNTIME_HAS_DENSE_OUTPUT
+    const auto denseHistoryBytes = integratorMetrics.denseHistoryCapacityBytes;
+    const auto driverInterpolationBytes = driver.metrics().interpolationBufferCapacityBytes;
+    const auto driverInterpolationMaximumLiveBytes = driver.metrics().interpolationBufferMaximumLiveBytes;
+    const auto interpolatedOutputCount = benchmarkSink.interpolatedCount;
+#else
+    const std::size_t denseHistoryBytes = 0;
+    const std::size_t driverInterpolationBytes = 0;
+    const std::size_t driverInterpolationMaximumLiveBytes = 0;
+    const std::size_t interpolatedOutputCount = 0;
+#endif
     const auto checkpointStateBytes = stateBytes(checkpoint);
     const auto knownPersistentBytes = checkpointStateBytes+forcingEngine->persistentBytes()+integrator.persistentBytes();
     const auto integratorElementReads = integratorMetrics.stageStateConstructionElementReads+integratorMetrics.weightedFluxInitializationElementReads+integratorMetrics.weightedAccumulationElementReads+integratorMetrics.finalStateUpdateElementReads+integratorMetrics.acceptedStateCommitElementReads;
@@ -357,11 +439,12 @@ int main(int argc, char** argv) {
            << "{\"schemaVersion\":\"wave-vortex-run-v1\",\"status\":\"complete\",\"source\":{\"commit\":" << quoted(WV_RUNTIME_SOURCE_COMMIT) << "},"
            << "\"input\":" << quoted(options.input) << ",\"output\":" << quoted(options.output) << ",\"provider\":{\"id\":" << quoted(options.provider) << ",\"version\":" << quoted(providerVersion) << ",\"threads\":" << options.threads << ",\"baseLibrary\":" << quoted(baseLibrary) << ",\"threadLibrary\":" << quoted(threadLibrary) << "},"
            << "\"state\":{\"initialTime\":" << inspection.t << ",\"finalTime\":" << state.t << ",\"deltaT\":" << options.deltaT << ",\"stepCount\":" << integratorMetrics.stepCount << ",\"rhsEvaluationCount\":" << integratorMetrics.rightHandSideEvaluationCount << ",\"shape\":[" << shape.rows << ',' << shape.columns << "]},"
+           << "\"authorBenchmark\":{\"warmupStepCount\":" << options.benchmarkWarmupSteps << ",\"sampleStepCount\":" << (options.hasSteps ? options.steps : 0) << ",\"denseOutputsPerStep\":" << options.benchmarkDenseOutputsPerStep << ",\"interpolatedOutputCount\":" << interpolatedOutputCount << "},"
            << "\"forcing\":" << forcingJSON(checkpoint.forcingSchedule) << ','
            << "\"timingSeconds\":{\"inspect\":" << timings.inspect << ",\"read\":" << timings.read << ",\"construct\":" << timings.construct << ",\"prepare\":" << timings.prepare << ",\"integrate\":" << timings.integrate << ",\"write\":" << timings.write << ",\"total\":" << timings.total << "},"
-           << "\"storageBytes\":{\"checkpointState\":" << checkpointStateBytes << ",\"descriptor\":" << kernelMetrics.descriptorBytes << ",\"planWrapper\":" << kernelMetrics.planBytes << ",\"kernelScratch\":" << kernelMetrics.scratchCapacityBytes << ",\"forcingSchedule\":" << forcingMetrics.scheduleBytes << ",\"forcingDerivedOperators\":" << forcingMetrics.derivedOperatorBytes << ",\"forcingWorkspace\":" << forcingMetrics.workspaceCapacityBytes << ",\"integratorWorkspace\":" << integratorMetrics.workspaceCapacityBytes << ",\"knownPersistent\":" << knownPersistentBytes << ",\"persistentFullHermitian\":0},"
+           << "\"storageBytes\":{\"checkpointState\":" << checkpointStateBytes << ",\"descriptor\":" << kernelMetrics.descriptorBytes << ",\"planWrapper\":" << kernelMetrics.planBytes << ",\"kernelScratch\":" << kernelMetrics.scratchCapacityBytes << ",\"forcingSchedule\":" << forcingMetrics.scheduleBytes << ",\"forcingDerivedOperators\":" << forcingMetrics.derivedOperatorBytes << ",\"forcingWorkspace\":" << forcingMetrics.workspaceCapacityBytes << ",\"integratorWorkspace\":" << integratorMetrics.workspaceCapacityBytes << ",\"denseHistory\":" << denseHistoryBytes << ",\"driverInterpolation\":" << driverInterpolationBytes << ",\"knownPersistent\":" << knownPersistentBytes+driverInterpolationBytes << ",\"persistentFullHermitian\":0},"
            << "\"arrayTraffic\":{\"scope\":\"exact integration-boundary arrays; FFT plans and kernel scratch internals excluded\",\"elementBytes\":" << sizeof(WVComplex64) << ",\"integrator\":{\"stageStateConstructionReads\":" << integratorMetrics.stageStateConstructionElementReads << ",\"stageStateConstructionWrites\":" << integratorMetrics.stageStateConstructionElementWrites << ",\"stageFluxClearWrites\":" << integratorMetrics.stageFluxClearElementWrites << ",\"weightedFluxClearWrites\":" << integratorMetrics.weightedFluxClearElementWrites << ",\"weightedFluxInitializationReads\":" << integratorMetrics.weightedFluxInitializationElementReads << ",\"weightedFluxInitializationWrites\":" << integratorMetrics.weightedFluxInitializationElementWrites << ",\"weightedAccumulationReads\":" << integratorMetrics.weightedAccumulationElementReads << ",\"weightedAccumulationWrites\":" << integratorMetrics.weightedAccumulationElementWrites << ",\"finalStateUpdateReads\":" << integratorMetrics.finalStateUpdateElementReads << ",\"finalStateUpdateWrites\":" << integratorMetrics.finalStateUpdateElementWrites << ",\"acceptedStateCommitReads\":" << integratorMetrics.acceptedStateCommitElementReads << ",\"acceptedStateCommitWrites\":" << integratorMetrics.acceptedStateCommitElementWrites << "},\"forcing\":{\"accumulatorClearWrites\":" << forcingMetrics.accumulatorClearElementWrites << ",\"temporaryFluxClearWrites\":" << forcingMetrics.temporaryFluxClearElementWrites << ",\"kernelOutputInitializationWrites\":" << forcingMetrics.kernelOutputInitializationElementWrites << ",\"temporaryAccumulationReads\":" << forcingMetrics.temporaryAccumulationElementReads << ",\"temporaryAccumulationWrites\":" << forcingMetrics.temporaryAccumulationElementWrites << ",\"outputCopyReads\":" << forcingMetrics.outputCopyElementReads << ",\"outputCopyWrites\":" << forcingMetrics.outputCopyElementWrites << ",\"stateConstraintWrites\":" << forcingMetrics.stateConstraintElementWrites << "},\"totals\":{\"elementReads\":" << trafficElementReads << ",\"elementWrites\":" << trafficElementWrites << ",\"bytesRead\":" << trafficElementReads*sizeof(WVComplex64) << ",\"bytesWritten\":" << trafficElementWrites*sizeof(WVComplex64) << "}},"
-           << "\"livenessBytes\":{\"integratorWorkspaceLive\":" << integratorMetrics.workspaceLiveBytes << ",\"integratorWorkspaceMaximumLive\":" << integratorMetrics.workspaceMaximumLiveBytes << ",\"forcingWorkspaceLive\":" << forcingMetrics.workspaceLiveBytes << ",\"forcingWorkspaceMaximumLive\":" << forcingMetrics.workspaceMaximumLiveBytes << ",\"acceptedStepAdditionalArrayStorage\":0,\"contractAbstractionAdditionalArrayStorage\":0,\"knownRetained\":" << knownPersistentBytes << ",\"knownMaximumLive\":" << knownPersistentBytes << "},"
+           << "\"livenessBytes\":{\"integratorWorkspaceLive\":" << integratorMetrics.workspaceLiveBytes << ",\"integratorWorkspaceMaximumLive\":" << integratorMetrics.workspaceMaximumLiveBytes << ",\"forcingWorkspaceLive\":" << forcingMetrics.workspaceLiveBytes << ",\"forcingWorkspaceMaximumLive\":" << forcingMetrics.workspaceMaximumLiveBytes << ",\"acceptedStepAdditionalArrayStorage\":" << denseHistoryBytes << ",\"contractAbstractionAdditionalArrayStorage\":" << driverInterpolationBytes << ",\"knownRetained\":" << knownPersistentBytes+driverInterpolationBytes << ",\"knownMaximumLive\":" << knownPersistentBytes+driverInterpolationMaximumLiveBytes << "},"
            << "\"rssBytes\":{\"integrationBaseline\":" << integrationBaselineRSS << ",\"processPeak\":" << integrationPeakRSS << ",\"peakIncrementLowerBound\":" << (integrationPeakRSS > integrationBaselineRSS ? integrationPeakRSS-integrationBaselineRSS : 0) << "},"
            << "\"execution\":{\"engine\":" << quoted(kernel.engineIdentifier()) << ",\"library\":" << quoted(kernel.engineLibraryIdentity()) << ",\"schedule\":" << quoted(forcingEngine->scheduleIdentifier()) << ",\"planCount\":" << kernelMetrics.planCount << ",\"noFallback\":true}}";
     emit(report.str(),options.report,std::cout);

@@ -1,7 +1,10 @@
 #include "WaveVortexRuntime/WVFixedStepRK4.hpp"
+#include "WaveVortexRuntime/WVIntegrationDriver.hpp"
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
+#include <filesystem>
 #include <iostream>
 #include <limits>
 #include <stdexcept>
@@ -82,7 +85,8 @@ public:
 class ScheduleDouble final : public WVOutputSchedule {
 public:
     explicit ScheduleDouble(std::vector<double> requestedTimes) : times_(std::move(requestedTimes)) {}
-    WVKernelStatus reset(double initialTime) override {
+    WVKernelStatus reset(double initialTime, double finalTime) override {
+        (void)finalTime;
         index_ = static_cast<std::size_t>(std::lower_bound(times_.begin(),times_.end(),initialTime)-times_.begin());
         return std::is_sorted(times_.begin(),times_.end()) ? WVKernelStatus::ok() : WVKernelStatus{WVKernelStatusCode::invalidConfiguration,"Output times must be ordered."};
     }
@@ -101,13 +105,58 @@ class SinkDouble final : public WVIntegrationOutputSink {
 public:
     WVKernelStatus receive(const Event& event, Action& action) override {
         kinds.push_back(event.kind);
+        times.push_back(event.state.t);
         retainedValues.push_back(event.state.coefficients.Ap.data[0]);
-        action = event.kind == EventKind::accepted ? Action::terminate : Action::continueIntegration;
+        action = terminateAtKind == event.kind ? Action::terminate : Action::continueIntegration;
+        return WVKernelStatus::ok();
+    }
+    EventKind terminateAtKind = EventKind::accepted;
+    std::vector<EventKind> kinds;
+    std::vector<double> times;
+    std::vector<WVComplex64> retainedValues;
+};
+
+class FailingSink final : public WVIntegrationOutputSink {
+public:
+    WVKernelStatus receive(const Event& event, Action& action) override {
+        action = Action::continueIntegration;
+        kinds.push_back(event.kind);
+        if (event.kind == EventKind::interpolated) return {WVKernelStatusCode::unsupportedOperation,"injected sink failure"};
         return WVKernelStatus::ok();
     }
     std::vector<EventKind> kinds;
-    std::vector<WVComplex64> retainedValues;
 };
+
+class PolynomialSystem final : public WVIntegrationSystem {
+public:
+    WVShape2D stateShape() const noexcept override { return {1,1}; }
+    WVKernelStatus evaluateRightHandSide(const WVState& state, WVFlux& flux) override {
+        const double derivative = 1.0+4.0*state.t+9.0*state.t*state.t;
+        flux.Fp.data[0] = {derivative,0.0};
+        flux.Fm.data[0] = {2.0*derivative,0.0};
+        flux.F0.data[0] = {-derivative,0.0};
+        ++evaluationCount;
+        return WVKernelStatus::ok();
+    }
+    WVKernelStatus enforceStateConstraints(WVMutableCoefficients&) override { return WVKernelStatus::ok(); }
+    std::size_t evaluationCount = 0;
+};
+
+class ExponentialSystem final : public WVIntegrationSystem {
+public:
+    WVShape2D stateShape() const noexcept override { return {1,1}; }
+    WVKernelStatus evaluateRightHandSide(const WVState& state, WVFlux& flux) override {
+        flux.Fp.data[0] = state.coefficients.Ap.data[0];
+        flux.Fm.data[0] = state.coefficients.Am.data[0];
+        flux.F0.data[0] = state.coefficients.A0.data[0];
+        return WVKernelStatus::ok();
+    }
+    WVKernelStatus enforceStateConstraints(WVMutableCoefficients&) override { return WVKernelStatus::ok(); }
+};
+
+double polynomial(double time) {
+    return time+2.0*time*time+3.0*time*time*time;
+}
 
 void testPortableContractsAndImmutableOutput() {
     static_assert(std::is_same_v<decltype(WVState{}.coefficients.Ap.data),const WVComplex64*>);
@@ -121,7 +170,7 @@ void testPortableContractsAndImmutableOutput() {
     require(static_cast<bool>(status) && interpolationState.t == 1.5,"dense-output test double did not write caller-owned storage");
 
     ScheduleDouble schedule({1.25,1.5,1.75});
-    status = schedule.reset(1.0);
+    status = schedule.reset(1.0,2.0);
     require(static_cast<bool>(status),"ordered output schedule was rejected");
     double requestedTime = 0.0;
     require(schedule.nextTimeInInterval(1.0,1.6,requestedTime) && requestedTime == 1.25,"schedule did not own the next ordered request independently of a solver step");
@@ -135,6 +184,187 @@ void testPortableContractsAndImmutableOutput() {
     require(static_cast<bool>(status) && action == WVIntegrationOutputSink::Action::terminate,"sink did not request clean termination");
     interpolation.values[0] = {99.0,0.0};
     require(sink.retainedValues.front().real == 1.5,"sink failed to copy an immutable reusable-storage view it retained");
+}
+
+void testRK4DenseOutputPolynomialEndpointsAndStorage() {
+    PolynomialSystem system;
+    OwnedState owned;
+    owned.values.assign(3,WVComplex64{});
+    auto state = owned.mutableView();
+    WVFixedStepRK4 integrator(system,{true});
+    auto status = integrator.prepareStateAfterRestart(state);
+    require(static_cast<bool>(status),"dense-output restart preparation failed");
+    status = integrator.step(state,0.4);
+    require(static_cast<bool>(status),"dense-output RK4 step failed");
+    const auto* accepted = integrator.lastAcceptedStep();
+    require(accepted != nullptr && accepted->denseOutput != nullptr,"opt-in RK4 did not publish dense output");
+    require(system.evaluationCount == 4,"dense-output retention added a right-hand-side evaluation");
+    require(integrator.metrics().workspaceCapacityBytes == 12*sizeof(WVComplex64),"dense-output RK4 did not retain exactly 12M complex values");
+    require(integrator.metrics().denseHistoryCapacityBytes == 3*sizeof(WVComplex64),"dense-output RK4 history is not exactly 3M complex values");
+
+    OwnedState output;
+    output.values.assign(3,WVComplex64{});
+    auto outputState = output.mutableView();
+    for (const double time : {0.0,0.1,0.25,0.4}) {
+        status = accepted->denseOutput->evaluate(time,outputState);
+        require(static_cast<bool>(status),"polynomial dense-output evaluation failed");
+        require(std::abs(outputState.coefficients.Ap.data[0].real-polynomial(time)) < 2e-15,"polynomial dense output is not exact");
+        require(std::abs(outputState.coefficients.Am.data[0].real-2.0*polynomial(time)) < 4e-15,"polynomial dense output Am is not exact");
+        require(std::abs(outputState.coefficients.A0.data[0].real+polynomial(time)) < 2e-15,"polynomial dense output A0 is not exact");
+    }
+    require(integrator.metrics().denseOutputEvaluationCount == 4,"dense-output evaluation count is incorrect");
+
+    auto aliasedOutput = state;
+    status = accepted->denseOutput->evaluate(0.2,aliasedOutput);
+    require(status.code == WVKernelStatusCode::overlappingArrays,"dense output accepted an alias of the accepted state");
+}
+
+double denseExponentialError(double stepSize) {
+    ExponentialSystem system;
+    OwnedState stateOwner;
+    stateOwner.values.assign(3,WVComplex64{1.0,0.0});
+    auto state = stateOwner.mutableView();
+    WVFixedStepRK4 integrator(system,{true});
+    require(static_cast<bool>(integrator.prepareStateAfterRestart(state)),"exponential restart preparation failed");
+    require(static_cast<bool>(integrator.step(state,stepSize)),"exponential RK4 step failed");
+    OwnedState outputOwner;
+    outputOwner.values.assign(3,WVComplex64{});
+    auto output = outputOwner.mutableView();
+    require(static_cast<bool>(integrator.lastAcceptedStep()->denseOutput->evaluate(0.37*stepSize,output)),"exponential dense output failed");
+    return std::abs(output.coefficients.Ap.data[0].real-std::exp(0.37*stepSize));
+}
+
+void testDenseOutputConvergenceOrder() {
+    const double coarse = denseExponentialError(0.4);
+    const double medium = denseExponentialError(0.2);
+    const double fine = denseExponentialError(0.1);
+    require(std::log2(coarse/medium) > 3.8 && std::log2(medium/fine) > 3.8,"RK4 continuous extension did not demonstrate fourth-order convergence");
+}
+
+void testOrderedScheduleAndIntegrationDriver() {
+    PolynomialSystem system;
+    OwnedState stateOwner;
+    stateOwner.values.assign(3,WVComplex64{});
+    auto state = stateOwner.mutableView();
+    WVFixedStepRK4 integrator(system,{true});
+    require(static_cast<bool>(integrator.prepareStateAfterRestart(state)),"driver restart preparation failed");
+    WVIntegrationDriver driver(integrator);
+    WVOrderedOutputSchedule schedule({0.0,0.1,0.2,0.35,0.4});
+    SinkDouble sink;
+    sink.terminateAtKind = WVIntegrationOutputSink::EventKind::done;
+    auto status = driver.advanceToTime(state,0.4,0.2,schedule,sink);
+    require(static_cast<bool>(status),"integration driver failed");
+    const std::vector<WVIntegrationOutputSink::EventKind> expectedKinds{
+        WVIntegrationOutputSink::EventKind::init,
+        WVIntegrationOutputSink::EventKind::interpolated,
+        WVIntegrationOutputSink::EventKind::accepted,
+        WVIntegrationOutputSink::EventKind::interpolated,
+        WVIntegrationOutputSink::EventKind::accepted,
+        WVIntegrationOutputSink::EventKind::done};
+    require(sink.kinds == expectedKinds,"integration-driver event sequence is incorrect");
+    require(schedule.consumedCount() == schedule.requestCount(),"integration driver did not consume every requested time");
+    require(system.evaluationCount == 8,"scheduled output changed the accepted-step right-hand-side count");
+    require(state.t == 0.4 && std::abs(state.coefficients.Ap.data[0].real-polynomial(0.4)) < 2e-15,"scheduled output changed the accepted trajectory");
+    require(driver.metrics().interpolatedEventCount == 2 && driver.metrics().acceptedEventCount == 2,"integration-driver event metrics are incorrect");
+    require(driver.metrics().interpolationBufferCapacityBytes == 3*sizeof(WVComplex64),"driver did not retain exactly one 3M interpolation buffer");
+}
+
+void testNoOutputDriverAndValidationAtomicity() {
+    PolynomialSystem system;
+    OwnedState stateOwner;
+    stateOwner.values.assign(3,WVComplex64{});
+    auto state = stateOwner.mutableView();
+    WVFixedStepRK4 integrator(system);
+    require(static_cast<bool>(integrator.prepareStateAfterRestart(state)),"no-output restart preparation failed");
+    WVIntegrationDriver driver(integrator);
+    WVOrderedOutputSchedule noOutput({});
+    SinkDouble sink;
+    sink.terminateAtKind = WVIntegrationOutputSink::EventKind::done;
+    auto status = driver.advanceToTime(state,0.4,0.2,noOutput,sink);
+    require(static_cast<bool>(status),"no-output driver failed");
+    require(driver.persistentBytes() == 0 && integrator.persistentBytes() == 9*sizeof(WVComplex64),"no-output execution retained dense-output storage");
+    require(sink.kinds == std::vector<WVIntegrationOutputSink::EventKind>({WVIntegrationOutputSink::EventKind::init,WVIntegrationOutputSink::EventKind::done}),"no-output event sequence is incorrect");
+
+    OwnedState invalidOwner;
+    invalidOwner.values.assign(3,WVComplex64{});
+    auto invalidState = invalidOwner.mutableView();
+    WVOrderedOutputSchedule invalidSchedule({0.2,0.1});
+    SinkDouble invalidSink;
+    status = driver.advanceToTime(invalidState,0.4,0.2,invalidSchedule,invalidSink);
+    require(status.code == WVKernelStatusCode::invalidConfiguration,"invalid schedule was accepted");
+    require(invalidState.t == 0.0 && invalidSink.kinds.empty(),"invalid schedule mutated state or emitted output before validation");
+}
+
+void testInteriorTerminationCarriesAcceptedEndpoint() {
+    PolynomialSystem system;
+    OwnedState stateOwner;
+    stateOwner.values.assign(3,WVComplex64{});
+    auto state = stateOwner.mutableView();
+    WVFixedStepRK4 integrator(system,{true});
+    require(static_cast<bool>(integrator.prepareStateAfterRestart(state)),"termination restart preparation failed");
+    WVIntegrationDriver driver(integrator);
+    WVOrderedOutputSchedule schedule({0.1,0.3});
+    SinkDouble sink;
+    sink.terminateAtKind = WVIntegrationOutputSink::EventKind::interpolated;
+    const auto status = driver.advanceToTime(state,0.4,0.2,schedule,sink);
+    require(static_cast<bool>(status),"interior termination failed");
+    require(sink.kinds == std::vector<WVIntegrationOutputSink::EventKind>({WVIntegrationOutputSink::EventKind::init,WVIntegrationOutputSink::EventKind::interpolated,WVIntegrationOutputSink::EventKind::done}),"termination event sequence is incorrect");
+    require(sink.times.back() == 0.2 && state.t == 0.2,"done event did not carry the actual accepted endpoint");
+}
+
+void testInteriorOutputAndSinkFailuresPreserveAcceptedStateWithoutDone() {
+    PolynomialSystem noDenseSystem;
+    OwnedState noDenseOwner;
+    noDenseOwner.values.assign(3,WVComplex64{});
+    auto noDenseState = noDenseOwner.mutableView();
+    WVFixedStepRK4 noDenseIntegrator(noDenseSystem);
+    require(static_cast<bool>(noDenseIntegrator.prepareStateAfterRestart(noDenseState)),"no-dense failure preparation failed");
+    WVIntegrationDriver noDenseDriver(noDenseIntegrator);
+    WVOrderedOutputSchedule noDenseSchedule({0.1});
+    SinkDouble noDenseSink;
+    noDenseSink.terminateAtKind = WVIntegrationOutputSink::EventKind::done;
+    auto status = noDenseDriver.advanceToTime(noDenseState,0.2,0.2,noDenseSchedule,noDenseSink);
+    require(status.code == WVKernelStatusCode::unsupportedOperation,"interior output unexpectedly succeeded without method history");
+    require(noDenseState.t == 0.2 && noDenseSink.kinds == std::vector<WVIntegrationOutputSink::EventKind>({WVIntegrationOutputSink::EventKind::init}),"interpolation failure changed the accepted endpoint or emitted done");
+
+    PolynomialSystem failingSystem;
+    OwnedState failingOwner;
+    failingOwner.values.assign(3,WVComplex64{});
+    auto failingState = failingOwner.mutableView();
+    WVFixedStepRK4 failingIntegrator(failingSystem,{true});
+    require(static_cast<bool>(failingIntegrator.prepareStateAfterRestart(failingState)),"sink-failure preparation failed");
+    WVIntegrationDriver failingDriver(failingIntegrator);
+    WVOrderedOutputSchedule failingSchedule({0.1});
+    FailingSink failingSink;
+    status = failingDriver.advanceToTime(failingState,0.2,0.2,failingSchedule,failingSink);
+    require(!status && failingState.t == 0.2,"sink failure changed the latest accepted endpoint");
+    require(failingSink.kinds == std::vector<WVIntegrationOutputSink::EventKind>({WVIntegrationOutputSink::EventKind::init,WVIntegrationOutputSink::EventKind::interpolated}),"sink failure emitted an unexpected done event");
+}
+
+std::filesystem::path temporaryCheckpointPath() {
+    return std::filesystem::temp_directory_path()/("wv-output-sink-"+std::to_string(std::chrono::steady_clock::now().time_since_epoch().count())+".nc");
+}
+
+void testTransactionalCheckpointSink() {
+#ifdef WV_CHECKPOINT_FIXTURE_DIR
+    WVCheckpoint checkpoint;
+    const auto readStatus = WVCheckpointReader::read((std::filesystem::path(WV_CHECKPOINT_FIXTURE_DIR)/"forcing-mixed-nonhydrostatic.nc").string(),checkpoint);
+    require(static_cast<bool>(readStatus),"checkpoint-sink fixture could not be read");
+    const auto destination = temporaryCheckpointPath();
+    WVCheckpointOutputSink sink(checkpoint.state.t,destination.string(),checkpoint);
+    WVIntegrationOutputSink::Action action;
+    const auto event = WVIntegrationOutputSink::Event{WVIntegrationOutputSink::EventKind::accepted,checkpoint.state.view()};
+    auto status = sink.receive(event,action);
+    require(static_cast<bool>(status) && sink.wroteCheckpoint(),"checkpoint sink did not write its target");
+    WVCheckpoint roundTrip;
+    require(static_cast<bool>(WVCheckpointReader::read(destination.string(),roundTrip)),"checkpoint sink output is not readable");
+    require(roundTrip.state.t == checkpoint.state.t && exactlyEqual(roundTrip.state.coefficients.Ap,checkpoint.state.coefficients.Ap),"checkpoint sink output changed the delivered state");
+    std::filesystem::remove(destination);
+
+    WVCheckpointOutputSink failingSink(checkpoint.state.t,(destination/"missing"/"output.nc").string(),checkpoint);
+    status = failingSink.receive(event,action);
+    require(!status && !failingSink.wroteCheckpoint(),"checkpoint sink reported success after a transactional write failure");
+#endif
 }
 
 void testAcceptedStepLifetimeRestartAndPartialStep() {
@@ -153,7 +383,7 @@ void testAcceptedStepLifetimeRestartAndPartialStep() {
     require(accepted != nullptr && accepted->initialTime == 0.0 && accepted->finalTime == 0.1,"accepted interval is incorrect");
     require(accepted->endpoint.t == 0.1 && accepted->endpoint.coefficients.Ap.data[0].real == ContractSystem::fixedAmplitude,"accepted endpoint view is incorrect");
     require(accepted->methodStatistics.acceptedStepCount == 1 && accepted->methodStatistics.rightHandSideEvaluationCount == 4 && accepted->methodStatistics.stepSize == 0.1,"accepted method statistics are incorrect");
-    require(accepted->denseOutput == nullptr,"RK4 supplied dense-output behavior reserved for issue #184");
+    require(accepted->denseOutput == nullptr,"default RK4 unexpectedly retained dense-output history");
     require(system.evaluationCount == 4 && system.constraintCount == 5,"constraints were not applied at restart, each constructed stage, and the accepted endpoint");
 
     status = integrator.advanceToTime(state,0.325,0.1);
@@ -204,6 +434,13 @@ void testFailedEndpointConstraintIsAtomic() {
 int main() {
     try {
         testPortableContractsAndImmutableOutput();
+        testRK4DenseOutputPolynomialEndpointsAndStorage();
+        testDenseOutputConvergenceOrder();
+        testOrderedScheduleAndIntegrationDriver();
+        testNoOutputDriverAndValidationAtomicity();
+        testInteriorTerminationCarriesAcceptedEndpoint();
+        testInteriorOutputAndSinkFailuresPreserveAcceptedStateWithoutDone();
+        testTransactionalCheckpointSink();
         testAcceptedStepLifetimeRestartAndPartialStep();
         testExactRK4TrafficAccounting();
         testFailedEndpointConstraintIsAtomic();
