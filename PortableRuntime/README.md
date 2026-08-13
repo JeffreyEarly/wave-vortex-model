@@ -45,3 +45,20 @@ tools/compiled-kernel/build-portable/wv_portable_rk4_inspect checkpoint.nc final
 `WVCheckpointWriter` emits a root-level scalar checkpoint using the existing `[kl,j]` real/imaginary encoding and annotated forcing groups. It validates and re-reads a same-directory temporary file before atomically replacing the destination. A failed validation, write, close, or commit leaves an existing destination unchanged. The writer persists the canonical state and immutable forcing source data only; `deltaT`, plans, derived forcing operators, mappings, caches, and scratch remain runtime-derived.
 
 The v1 writer intentionally does not append records or produce a time-series group. The reader continues accepting both scalar root checkpoints and existing nested time-series files.
+
+## Standalone executable
+
+The default CMake build produces `wave-vortex-run` with the scalar reference FFT engine for portable correctness testing. The optimized Apple-silicon executable is source-only and uses the shared pinned-provider manifest:
+
+```sh
+tools/portable-runtime/buildWaveVortexRun.sh
+```
+
+The executable requires an explicit provider and exactly one endpoint:
+
+```sh
+wave-vortex-run input.nc output.nc --delta-t 1 --steps 8 --fft-provider native-fftw --threads 18 --report run.json
+wave-vortex-run input.nc output.nc --delta-t 1 --final-time 100 --fft-provider native-fftw
+```
+
+Exit codes distinguish usage (`2`), checkpoint/preflight (`3`), provider (`4`), integration (`5`), and output (`6`) failures. The JSON report records each execution phase separately. The private `--phase-file` option exists only for the authoring RSS benchmark and is not part of the supported command-line contract.

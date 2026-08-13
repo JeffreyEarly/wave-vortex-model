@@ -233,7 +233,7 @@ WVCheckpointStatus readComplexCoefficient(
     std::size_t stateCount,
     std::size_t Nj,
     std::size_t Nkl,
-    std::vector<WVComplex64>& output) {
+    std::vector<WVComplex64>* output) {
     const std::string realName = baseName + "_real";
     const std::string imagName = baseName + "_imag";
     int realId = -1;
@@ -283,6 +283,7 @@ WVCheckpointStatus readComplexCoefficient(
     }
 
     if (Nkl > std::numeric_limits<std::size_t>::max() / Nj) return status(WVCheckpointStatusCode::shapeMismatch, "Coefficient shape exceeds addressable storage.", groupPath + "/" + baseName);
+    if (output == nullptr) return WVCheckpointStatus::ok();
     const std::size_t count = Nj * Nkl;
     std::vector<double> real(count);
     std::vector<double> imag(count);
@@ -296,8 +297,8 @@ WVCheckpointStatus readComplexCoefficient(
         if (result == NC_NOERR) result = nc_get_var_double(groupId, imagId, imag.data());
     }
     if (result != NC_NOERR) return detail::netcdfFailure(result, "Complex coefficient read", groupPath + "/" + baseName);
-    output.resize(count);
-    for (std::size_t index = 0; index < count; ++index) output[index] = {real[index], imag[index]};
+    output->resize(count);
+    for (std::size_t index = 0; index < count; ++index) (*output)[index] = {real[index], imag[index]};
     return WVCheckpointStatus::ok();
 }
 
@@ -359,14 +360,15 @@ WVState WVCheckpointState::view() const noexcept {
     return {t, t0, coefficients.view()};
 }
 
-WVCheckpointStatus WVCheckpointReader::read(const std::string& path, WVCheckpoint& checkpoint, WVCheckpointStateSelection selection) {
-    WVNetCDFFile file;
-    auto result = WVNetCDFFile::openReadOnly(path, file);
-    if (!result) return result;
-    const int rootId = file.id();
+namespace {
 
-    WVCheckpoint candidate;
-    result = detail::readTextAttribute(rootId, "model_version", candidate.metadata.modelVersion, "/");
+WVCheckpointStatus inspectOpenFile(
+    int rootId,
+    WVCheckpointStateSelection selection,
+    WVCheckpointInspection& inspection,
+    StateGroupRecord& stateGroup) {
+    WVCheckpointInspection candidate;
+    auto result = detail::readTextAttribute(rootId, "model_version", candidate.metadata.modelVersion, "/");
     if (!result) return result;
     result = validateVersion(candidate.metadata.modelVersion);
     if (!result) return result;
@@ -388,18 +390,17 @@ WVCheckpointStatus WVCheckpointReader::read(const std::string& path, WVCheckpoin
 
     result = readConfiguration(rootId, candidate.configuration);
     if (!result) return result;
-    result = detail::readDoubleScalar(rootId, "t0", candidate.state.t0, "/");
+    result = detail::readDoubleScalar(rootId, "t0", candidate.t0, "/");
     if (!result) return result;
-    if (!std::isfinite(candidate.state.t0)) return status(WVCheckpointStatusCode::invalidValue, "Checkpoint reference time t0 must be finite.", "/t0");
+    if (!std::isfinite(candidate.t0)) return status(WVCheckpointStatusCode::invalidValue, "Checkpoint reference time t0 must be finite.", "/t0");
 
     std::vector<GroupRecord> groups;
     result = inspectGroupTree(rootId, "/", groups);
     if (!result) return result;
-    StateGroupRecord stateGroup;
     result = findStateGroup(groups, stateGroup);
     if (!result) return result;
     candidate.metadata.stateGroupPath = stateGroup.path;
-    result = inspectTime(stateGroup.id, stateGroup.path, selection, candidate.metadata.selectedStateIndex, candidate.metadata.stateCount, candidate.state.t);
+    result = inspectTime(stateGroup.id, stateGroup.path, selection, candidate.metadata.selectedStateIndex, candidate.metadata.stateCount, candidate.t);
     if (!result) return result;
 
     std::size_t Nj = 0;
@@ -410,19 +411,10 @@ WVCheckpointStatus WVCheckpointReader::read(const std::string& path, WVCheckpoin
     if (!result) return result;
     if (Nj == 0 || Nkl == 0) return status(WVCheckpointStatusCode::invalidValue, "Checkpoint spectral dimensions must be nonempty.", stateGroup.path);
     candidate.configuration.Nj = Nj;
-    candidate.state.coefficients.shape = {Nj, Nkl};
-    result = readComplexCoefficient(stateGroup.id, stateGroup.path, "Ap", candidate.metadata.selectedStateIndex, candidate.metadata.stateCount, Nj, Nkl, candidate.state.coefficients.Ap);
-    if (!result) return result;
-    result = readComplexCoefficient(stateGroup.id, stateGroup.path, "Am", candidate.metadata.selectedStateIndex, candidate.metadata.stateCount, Nj, Nkl, candidate.state.coefficients.Am);
-    if (!result) return result;
-    result = readComplexCoefficient(stateGroup.id, stateGroup.path, "A0", candidate.metadata.selectedStateIndex, candidate.metadata.stateCount, Nj, Nkl, candidate.state.coefficients.A0);
-    if (!result) return result;
-
-    WVTransformConstantStratificationDescriptor descriptor;
-    const auto descriptorStatus = WVTransformConstantStratificationDescriptor::create(candidate.configuration, descriptor);
-    if (!descriptorStatus) return status(WVCheckpointStatusCode::descriptorFailure, "Unable to rebuild the constant-stratification descriptor: " + descriptorStatus.message, stateGroup.path);
-    if (descriptor.Nkl() != Nkl || descriptor.spectralShape().rows != Nj) {
-        return status(WVCheckpointStatusCode::shapeMismatch, "Stored coefficient shape does not match the descriptor rebuilt from checkpoint configuration.", stateGroup.path);
+    candidate.coefficientShape = {Nj, Nkl};
+    for (const char* family : {"Ap", "Am", "A0"}) {
+        result = readComplexCoefficient(stateGroup.id, stateGroup.path, family, candidate.metadata.selectedStateIndex, candidate.metadata.stateCount, Nj, Nkl, nullptr);
+        if (!result) return result;
     }
 
     std::vector<detail::WVForcingGroupSource> forcingSources;
@@ -430,6 +422,51 @@ WVCheckpointStatus WVCheckpointReader::read(const std::string& path, WVCheckpoin
     if (!result) return result;
     result = detail::decodeForcingSchedule(forcingSources, candidate.configuration, Nj * Nkl, candidate.forcingSchedule);
     if (!result) return result;
+    WVTransformConstantStratificationDescriptor descriptor;
+    const auto descriptorStatus = WVTransformConstantStratificationDescriptor::create(candidate.configuration, descriptor);
+    if (!descriptorStatus) return status(WVCheckpointStatusCode::descriptorFailure, "Unable to rebuild the constant-stratification descriptor: " + descriptorStatus.message, stateGroup.path);
+    if (descriptor.Nkl() != Nkl || descriptor.spectralShape().rows != Nj) {
+        return status(WVCheckpointStatusCode::shapeMismatch, "Stored coefficient shape does not match the descriptor rebuilt from checkpoint configuration.", stateGroup.path);
+    }
+    inspection = std::move(candidate);
+    return WVCheckpointStatus::ok();
+}
+
+} // namespace
+
+WVCheckpointStatus WVCheckpointReader::inspect(const std::string& path, WVCheckpointInspection& inspection, WVCheckpointStateSelection selection) {
+    WVNetCDFFile file;
+    auto result = WVNetCDFFile::openReadOnly(path, file);
+    if (!result) return result;
+    StateGroupRecord stateGroup;
+    return inspectOpenFile(file.id(), selection, inspection, stateGroup);
+}
+
+WVCheckpointStatus WVCheckpointReader::read(const std::string& path, WVCheckpoint& checkpoint, WVCheckpointStateSelection selection) {
+    WVNetCDFFile file;
+    auto result = WVNetCDFFile::openReadOnly(path, file);
+    if (!result) return result;
+    const int rootId = file.id();
+    WVCheckpointInspection inspection;
+    StateGroupRecord stateGroup;
+    result = inspectOpenFile(rootId, selection, inspection, stateGroup);
+    if (!result) return result;
+    WVCheckpoint candidate;
+    candidate.configuration = inspection.configuration;
+    candidate.metadata = inspection.metadata;
+    candidate.forcingSchedule = inspection.forcingSchedule;
+    candidate.state.t = inspection.t;
+    candidate.state.t0 = inspection.t0;
+    candidate.state.coefficients.shape = inspection.coefficientShape;
+    const auto Nj = inspection.coefficientShape.rows;
+    const auto Nkl = inspection.coefficientShape.columns;
+    result = readComplexCoefficient(stateGroup.id, stateGroup.path, "Ap", candidate.metadata.selectedStateIndex, candidate.metadata.stateCount, Nj, Nkl, &candidate.state.coefficients.Ap);
+    if (!result) return result;
+    result = readComplexCoefficient(stateGroup.id, stateGroup.path, "Am", candidate.metadata.selectedStateIndex, candidate.metadata.stateCount, Nj, Nkl, &candidate.state.coefficients.Am);
+    if (!result) return result;
+    result = readComplexCoefficient(stateGroup.id, stateGroup.path, "A0", candidate.metadata.selectedStateIndex, candidate.metadata.stateCount, Nj, Nkl, &candidate.state.coefficients.A0);
+    if (!result) return result;
+
     checkpoint = std::move(candidate);
     return WVCheckpointStatus::ok();
 }

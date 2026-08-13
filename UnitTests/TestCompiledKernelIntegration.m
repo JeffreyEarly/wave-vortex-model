@@ -61,6 +61,11 @@ classdef TestCompiledKernelIntegration < matlab.unittest.TestCase
                 "CompiledKernel/include/WaveVortexKernel/WVFFTEngine.hpp"
                 "CompiledKernel/src/WVTransformConstantStratificationKernel.cpp"
                 "CompiledKernel/adapters/native-fftw/wv_compiled_backend_mex.cpp"
+                "CompiledKernel/native-fftw-provider.env"
+                "CompiledKernel/adapters/reference/WVReferenceFFTEngine.cpp"
+                "PortableRuntime/CMakeLists.txt"
+                "PortableRuntime/app/WaveVortexRun.cpp"
+                "tools/portable-runtime/buildWaveVortexRun.sh"
                 "@WVCompiledBackend/WVCompiledBackend.m"
                 ];
             testCase.verifyTrue(all(ismember(required,tracked)));

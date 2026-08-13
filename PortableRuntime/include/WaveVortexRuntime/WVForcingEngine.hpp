@@ -26,6 +26,13 @@ struct WVForcingEngineMetrics {
 // stage and priority order; evaluate() performs no forcing dispatch discovery.
 class WVConstantStratificationForcingEngine final {
 public:
+    // Validate the frozen schedule without constructing transforms, plans, or
+    // array-sized derived operators and workspaces.
+    static WVKernelStatus validateSchedule(
+        const WVTransformConstantStratificationConfiguration& configuration,
+        const WVFrozenForcingSchedule& schedule,
+        WVShape2D coefficientShape);
+
     static WVKernelStatus create(
         const WVTransformConstantStratificationConfiguration& configuration,
         const WVFrozenForcingSchedule& schedule,

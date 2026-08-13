@@ -96,3 +96,20 @@ No previous-stage history is persisted. On restart, the checkpoint state is load
 The portable contract tests compare every supported forcing and mixed hydrostatic/nonhydrostatic schedules directly with MATLAB at relative infinity error at most \(10^{-12}\). A short mixed-forcing RK4 trajectory is independently advanced in MATLAB and C++, including a partial final step and stage-wise fixed-amplitude restoration. The test fixtures also use nondefault gravity, density, and planetary values so the C++ descriptor reproduces established MATLAB normalization conventions rather than silently substituting its own.
 
 Issue #111 established read compatibility and validation. Issue #115 adds compatible scalar checkpoint creation and deterministic restart continuation. Appending to a time-series remains outside runtime v1.
+
+## Standalone runner boundary
+
+`wave-vortex-run` is a thin executable over `WaveVortexPortableRuntime`, the shared constant-stratification kernel, and an explicitly selected `WVFFTEngine`. Its execution order is:
+
+1. inspect checkpoint structure and decode the frozen forcing schedule;
+2. validate every forcing record and requested endpoint;
+3. load canonical `Ap`, `Am`, and `A0` storage;
+4. construct the selected FFT engine, forcing engine, and RK4 workspace;
+5. rebuild derived state after restart and integrate;
+6. transactionally write a scalar restart checkpoint.
+
+Inspection validates coefficient metadata and shape without allocating the three state arrays. A pseudo-topographic record necessarily loads its immutable two-dimensional height field during forcing validation, but no state-sized execution buffer is created until the checkpoint passes preflight.
+
+The optimized executable accepts only the pinned native FFTW provider and reports its version, base and thread-library paths, thread count, 17-plan kernel contract, and no-fallback status. The portable reference provider is available only when selected explicitly and uses one thread. Provider selection is never automatic.
+
+The JSON execution report separates inspection, reading, construction, restart preparation, integration, and writing. The readiness benchmark compares only the same eight fixed RK4 steps in the standalone process and the public compiled MATLAB preview. External RSS sampling uses the retained post-construction state as its baseline; FFTW plan-owned allocations remain opaque while all known descriptor, scratch, forcing, integrator, and checkpoint-state bytes are reported explicitly.
