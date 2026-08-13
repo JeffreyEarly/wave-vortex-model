@@ -1,0 +1,119 @@
+{
+  "schemaVersion": "portable-integration-traffic-v1",
+  "scope": "One untimed accepted RK4 step with the nonlinear-only core-v1 forcing schedule; exact integration-boundary array traffic, excluding FFT-plan and kernel-scratch internals.",
+  "baseCommit": "4d67051828cde19ffab55e5df2d929cdd20983b6",
+  "historicalEvidence": {
+    "issue116ArtifactCommit": "65518c11262522df45d3e997d3354c812db09478",
+    "issue116ImplementationCommit": "aba51aecbc123f1eaf8ec592a5efde7c6cce4d04",
+    "directCompiledArtifact": "Benchmarks/results/published/core-v1--cpp-native-fftw--m5-max--20260812T195257Z.json",
+    "providerSelectionRepeated": false,
+    "readinessBaselineRepeated": false
+  },
+  "elementBytes": 16,
+  "perStepMultipliers": {
+    "integrator": {
+      "stageStateConstructionReads": "21M",
+      "stageStateConstructionWrites": "12M",
+      "stageFluxClearWrites": "12M",
+      "weightedFluxClearWrites": "3M",
+      "weightedAccumulationReads": "24M",
+      "weightedAccumulationWrites": "12M",
+      "finalStateUpdateReads": "6M",
+      "finalStateUpdateWrites": "3M"
+    },
+    "forcing": {
+      "accumulatorClearWrites": "12M",
+      "temporaryFluxClearWrites": "12M",
+      "kernelOutputInitializationWrites": "12M",
+      "temporaryAccumulationReads": "24M",
+      "temporaryAccumulationWrites": "12M",
+      "outputCopyReads": "12M",
+      "outputCopyWrites": "12M"
+    },
+    "instrumentedTotals": {
+      "reads": "87M",
+      "writes": "102M"
+    },
+    "incrementBeyondDirectKernel": {
+      "reads": "87M",
+      "writes": "90M"
+    },
+    "retained": {
+      "integratorComplexValues": "9M",
+      "forcingComplexValues": "6M",
+      "callerStateComplexValues": "3M",
+      "contractAbstractionArrayBytes": 0
+    }
+  },
+  "cases": [
+    {
+      "id": "constant-hydrostatic-256x256x65",
+      "M": 732096,
+      "R": 4259840,
+      "instrumentedElementReadsPerStep": 63692352,
+      "instrumentedElementWritesPerStep": 74673792,
+      "instrumentedBytesPerStep": 2213858304,
+      "incrementBeyondDirectKernelBytesPerStep": 2073295872,
+      "integratorRetainedBytes": 105421824,
+      "forcingWorkspaceRetainedBytes": 308832256,
+      "integrationArrayMaximumLiveBytes": 449394688,
+      "directCompiledNonlinearFluxMedianSeconds": 0.05772270833333333,
+      "directCompiledThirtyTwoCallSeconds": 1.8471266666666666,
+      "historicalStandaloneEightStepMedianSeconds": 1.853362584,
+      "medianDifferenceSeconds": 0.006235917333333507,
+      "measurementInterpretation": "Direct-call and standalone process ranges overlap; the median difference is below process-resolution noise."
+    },
+    {
+      "id": "constant-nonhydrostatic-256x256x65",
+      "M": 732096,
+      "R": 4259840,
+      "instrumentedElementReadsPerStep": 63692352,
+      "instrumentedElementWritesPerStep": 74673792,
+      "instrumentedBytesPerStep": 2213858304,
+      "incrementBeyondDirectKernelBytesPerStep": 2073295872,
+      "integratorRetainedBytes": 105421824,
+      "forcingWorkspaceRetainedBytes": 342910976,
+      "integrationArrayMaximumLiveBytes": 483473408,
+      "directCompiledNonlinearFluxMedianSeconds": 0.06668108333333334,
+      "directCompiledThirtyTwoCallSeconds": 2.1337946666666667,
+      "historicalStandaloneEightStepMedianSeconds": 2.401429583,
+      "medianDifferenceSeconds": 0.26763491633333336,
+      "impliedIncrementalBandwidthGBPerSecond": 61.973853050407094
+    },
+    {
+      "id": "constant-hydrostatic-512x512x129",
+      "M": 5857920,
+      "R": 33816576,
+      "instrumentedElementReadsPerStep": 509639040,
+      "instrumentedElementWritesPerStep": 597507840,
+      "instrumentedBytesPerStep": 17714350080,
+      "incrementBeyondDirectKernelBytesPerStep": 16589629440,
+      "integratorRetainedBytes": 843540480,
+      "forcingWorkspaceRetainedBytes": 2456088576,
+      "integrationArrayMaximumLiveBytes": 3580809216,
+      "directCompiledNonlinearFluxMedianSeconds": 0.392814875,
+      "directCompiledThirtyTwoCallSeconds": 12.570076,
+      "historicalStandaloneEightStepMedianSeconds": 14.194922583,
+      "medianDifferenceSeconds": 1.624846583,
+      "impliedIncrementalBandwidthGBPerSecond": 81.67973327977883,
+      "measurementInterpretation": "Direct-call and standalone process ranges overlap; the median delta is consistent with the counted traffic."
+    },
+    {
+      "id": "constant-nonhydrostatic-512x512x129",
+      "M": 5857920,
+      "R": 33816576,
+      "instrumentedElementReadsPerStep": 509639040,
+      "instrumentedElementWritesPerStep": 597507840,
+      "instrumentedBytesPerStep": 17714350080,
+      "incrementBeyondDirectKernelBytesPerStep": 16589629440,
+      "integratorRetainedBytes": 843540480,
+      "forcingWorkspaceRetainedBytes": 2726621184,
+      "integrationArrayMaximumLiveBytes": 3851341824,
+      "directCompiledNonlinearFluxMedianSeconds": 0.5266559166666667,
+      "directCompiledThirtyTwoCallSeconds": 16.852989333333333,
+      "historicalStandaloneEightStepMedianSeconds": 18.574923125,
+      "medianDifferenceSeconds": 1.7219337916666682,
+      "impliedIncrementalBandwidthGBPerSecond": 77.07441259488992
+    }
+  ]
+}

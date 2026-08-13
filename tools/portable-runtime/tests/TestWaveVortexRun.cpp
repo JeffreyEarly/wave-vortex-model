@@ -23,6 +23,11 @@ std::vector<char> bytes(const std::filesystem::path& path) {
     return {std::istreambuf_iterator<char>(input),std::istreambuf_iterator<char>()};
 }
 
+std::string text(const std::filesystem::path& path) {
+    std::ifstream input(path,std::ios::binary);
+    return {std::istreambuf_iterator<char>(input),std::istreambuf_iterator<char>()};
+}
+
 } // namespace
 
 int main() {
@@ -39,6 +44,9 @@ int main() {
         require(static_cast<bool>(status),status.message);
         require(checkpoint.state.t > 8.949 && checkpoint.state.t < 9.025,"runner did not advance the selected state");
         require(std::filesystem::file_size(report) > 0,"runner did not write its report");
+        const auto reportText = text(report);
+        require(reportText.find("\"arrayTraffic\"") != std::string::npos && reportText.find("\"stageStateConstructionReads\":1512") != std::string::npos,"runner omitted exact RK4 traffic diagnostics");
+        require(reportText.find("\"contractAbstractionAdditionalArrayStorage\":0") != std::string::npos,"runner reported array-sized contract workspace");
         require(run(quote(input)+" "+quote(output)+" --delta-t 0.037 --steps 1 --final-time 9 --fft-provider reference >/dev/null 2>&1") != 0,"runner accepted both endpoint modes");
         require(run(quote(input)+" "+quote(output)+" --delta-t 0.037 --steps 1 --fft-provider native-fftw >/dev/null 2>&1") != 0,"reference-only build silently substituted a provider");
         const auto sentinel = bytes(output);

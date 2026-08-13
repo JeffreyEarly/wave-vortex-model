@@ -340,6 +340,8 @@ WVKernelStatus WVConstantStratificationForcingEngine::initialize(const WVFrozenF
     accumulatedFlux_.resize(3*count); temporaryFlux_.resize(3*count);
     metrics_.workspaceCapacityBytes = vectorBytes(physicalFields_)+vectorBytes(forcingFields_)+vectorBytes(accumulatedFlux_)+vectorBytes(temporaryFlux_);
     metrics_.workspaceHighWaterBytes = metrics_.workspaceCapacityBytes;
+    metrics_.workspaceLiveBytes = metrics_.workspaceCapacityBytes;
+    metrics_.workspaceMaximumLiveBytes = metrics_.workspaceCapacityBytes;
     return WVKernelStatus::ok();
 }
 
@@ -436,10 +438,20 @@ WVKernelStatus WVConstantStratificationForcingEngine::nonlinearFlux(const WVStat
         WVKernelStatus status = WVKernelStatus::ok();
         if (forcing.kind == WVForcingKind::nonlinearAdvection) {
             std::fill(temporaryFlux_.begin(),temporaryFlux_.end(),WVComplex64{});
+            metrics_.temporaryFluxClearElementWrites += temporaryFlux_.size();
+            metrics_.kernelOutputInitializationElementWrites += temporaryFlux_.size();
             status = kernel_->nonlinearFlux(state,temporary);
-            if (status) addFlux(temporary,accumulator);
+            if (status) {
+                addFlux(temporary,accumulator);
+                metrics_.temporaryAccumulationElementReads += 2*temporaryFlux_.size();
+                metrics_.temporaryAccumulationElementWrites += temporaryFlux_.size();
+            }
         } else if (forcing.kind == WVForcingKind::bottomFrictionQuadratic) {
             status = addQuadraticBottomFriction(state,forcing,accumulator);
+            if (status) {
+                metrics_.temporaryAccumulationElementReads += 2*temporaryFlux_.size();
+                metrics_.temporaryAccumulationElementWrites += temporaryFlux_.size();
+            }
         } else if (forcing.kind == WVForcingKind::adaptiveDamping) {
             status = addAdaptiveDamping(state,forcing,accumulator);
         } else if (forcing.kind == WVForcingKind::pseudoTopographicWaveGeneration) {
@@ -459,6 +471,8 @@ WVKernelStatus WVConstantStratificationForcingEngine::nonlinearFlux(const WVStat
     std::copy_n(accumulator.Fp.data,count,flux.Fp.data);
     std::copy_n(accumulator.Fm.data,count,flux.Fm.data);
     std::copy_n(accumulator.F0.data,count,flux.F0.data);
+    metrics_.outputCopyElementReads += 3*count;
+    metrics_.outputCopyElementWrites += 3*count;
     ++metrics_.evaluationCount;
     return WVKernelStatus::ok();
 }
@@ -473,12 +487,14 @@ WVKernelStatus WVConstantStratificationForcingEngine::restoreForcingAmplitudes(W
         for (std::size_t index = 0; index < record.AmIndices.size(); ++index) coefficients.Am.data[record.AmIndices[index]] = record.AmValues[index];
         for (std::size_t index = 0; index < record.A0Indices.size(); ++index) coefficients.A0.data[record.A0Indices[index]] = record.A0Values[index];
         metrics_.restoredCoefficientCount += record.ApIndices.size()+record.AmIndices.size()+record.A0Indices.size();
+        metrics_.stateConstraintElementWrites += record.ApIndices.size()+record.AmIndices.size()+record.A0Indices.size();
     }
     return WVKernelStatus::ok();
 }
 
 void WVConstantStratificationForcingEngine::clearEvaluationWorkspace() noexcept {
     std::fill(accumulatedFlux_.begin(),accumulatedFlux_.end(),WVComplex64{});
+    metrics_.accumulatorClearElementWrites += accumulatedFlux_.size();
     physicalFieldsValid_ = false;
 }
 
