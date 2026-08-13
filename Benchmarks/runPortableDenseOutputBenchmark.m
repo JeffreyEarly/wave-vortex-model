@@ -63,7 +63,7 @@ for iCase = 1:numel(definitions)
             denseCount = [0 0 1 4];
             outputPath = fullfile(temporaryRoot,sprintf("%s-%s-%d.nc",variant,definitions(iCase).id,iRun));
             reportPath = outputPath+".json";
-            command = sprintf('"%s" "%s" "%s" --delta-t %.17g --steps %d --fft-provider native-fftw --threads 18 --benchmark-warmup-steps %d --report "%s"',runner,inputPath,outputPath,options.deltaT,sampleCount,options.warmupStepCount,reportPath);
+            command = string(sprintf('"%s" "%s" "%s" --delta-t %.17g --steps %d --fft-provider native-fftw --threads 18 --benchmark-warmup-steps %d --report "%s"',runner,inputPath,outputPath,options.deltaT,sampleCount,options.warmupStepCount,reportPath));
             if denseCount(iVariant) ~= 0, command = command+sprintf(' --benchmark-dense-outputs-per-step %d',denseCount(iVariant)); end
             [status,output] = system(command);
             if status ~= 0 || ~isfile(reportPath), error("WaveVortexBenchmark:PortableDenseOutputWorker","%s",output), end
