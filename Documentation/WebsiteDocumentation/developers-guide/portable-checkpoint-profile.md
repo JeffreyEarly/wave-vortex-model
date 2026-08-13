@@ -116,7 +116,7 @@ Issue #182 defines these boundaries and exercises dense output, scheduling, and 
 
 The standalone JSON report includes exact element and byte counts for the integration-boundary arrays. Counters distinguish constructed stage states, first-stage weighted-sum initialization, subsequent weighted accumulation, any forcing temporary accumulation, output initialization required by additive-only schedules, final accepted-state update, and exact retained and maximum-live storage. Zero counters explicitly verify that redundant stage clears, nonlinear-only forcing accumulators, and completed-output copies did not execute. The diagnostic deliberately excludes FFT-plan and kernel-scratch internal traffic, which is common to direct compiled `nonlinearFlux` and standalone RK4. No timer is read to collect the counters.
 
-Package authors can reproduce the paired archived-source comparison with `runPortableIntegrationTrafficBenchmark`. It builds the integration-contract baseline and the clean candidate against the same validated native FFTW cache, rotates fresh-process execution order, compares final checkpoints, and writes compact JSON and Markdown evidence.
+Package authors can reproduce the paired archived-source comparison with `runPortableIntegrationTrafficBenchmark`. It builds the integration-contract baseline and the clean candidate against the same validated native FFTW cache, rotates fresh-process execution order, compares final checkpoints, and writes compact JSON and Markdown evidence. The canonical configuration uses three fresh-process pairs per case and six for the higher-variance large nonhydrostatic case.
 
 ## Verification boundary
 
