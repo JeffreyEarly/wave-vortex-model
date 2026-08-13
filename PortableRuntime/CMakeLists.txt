@@ -25,6 +25,7 @@ add_library(WaveVortexPortableRuntime STATIC
     src/WVCheckpointWriter.cpp
     src/WVForcingEngine.cpp
     src/WVFixedStepRK4.cpp
+    src/WVAdaptiveRK23.cpp
     src/WVIntegrationDriver.cpp
 )
 add_library(WaveVortex::PortableRuntime ALIAS WaveVortexPortableRuntime)
@@ -106,6 +107,14 @@ if(BUILD_TESTING)
     target_compile_features(wv_portable_rk4_inspect PRIVATE cxx_std_17)
     target_include_directories(wv_portable_rk4_inspect PRIVATE ../tools/compiled-kernel/tests)
     target_link_libraries(wv_portable_rk4_inspect PRIVATE WaveVortex::Checkpoint)
+
+    add_executable(wv_adaptive_tolerance_inspect
+        ../tools/portable-runtime/WVAdaptiveToleranceInspect.cpp
+        ../tools/compiled-kernel/tests/WVReferenceFFTEngine.cpp
+    )
+    target_compile_features(wv_adaptive_tolerance_inspect PRIVATE cxx_std_17)
+    target_include_directories(wv_adaptive_tolerance_inspect PRIVATE ../tools/compiled-kernel/tests)
+    target_link_libraries(wv_adaptive_tolerance_inspect PRIVATE WaveVortex::Checkpoint)
 
     add_executable(TestWVCheckpointReader
         ../tools/portable-runtime/tests/TestWVCheckpointReader.cpp

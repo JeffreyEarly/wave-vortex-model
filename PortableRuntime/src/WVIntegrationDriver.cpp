@@ -107,10 +107,13 @@ WVKernelStatus WVIntegrationDriver::advanceToTime(WVMutableState& state, double 
     while (schedule.nextTimeInInterval(state.t,state.t,requestedTime) && sameTime(requestedTime,state.t)) schedule.consumeNextTime();
     if (terminate) return emitDone(state.view(),sink);
 
+    double proposedStepSize = stepSize;
     while (state.t < finalTime && !sameTime(state.t,finalTime)) {
-        const double currentStepSize = std::min(stepSize,finalTime-state.t);
+        const double currentStepSize = std::min(proposedStepSize,finalTime-state.t);
         status = integrator_.step(state,currentStepSize);
         if (!status) return status;
+        proposedStepSize = integrator_.nextStepSize();
+        if (!std::isfinite(proposedStepSize) || proposedStepSize <= 0.0) return {WVKernelStatusCode::numericalFailure,"Integrator did not publish a finite positive next step size."};
         ++metrics_.acceptedStepCount;
         const auto* acceptedStep = integrator_.lastAcceptedStep();
         if (acceptedStep == nullptr) return {WVKernelStatusCode::numericalFailure,"Integrator succeeded without publishing its accepted step."};

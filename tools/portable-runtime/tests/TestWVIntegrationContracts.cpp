@@ -1,3 +1,4 @@
+#include "WaveVortexRuntime/WVAdaptiveRK23.hpp"
 #include "WaveVortexRuntime/WVFixedStepRK4.hpp"
 #include "WaveVortexRuntime/WVIntegrationDriver.hpp"
 
@@ -42,6 +43,25 @@ struct OwnedState {
     }
 };
 
+class UniformErrorPolicy final : public WVIntegrationErrorPolicy {
+public:
+    UniformErrorPolicy(std::size_t count, double tolerance) : count_(count), tolerance_(tolerance) {}
+    std::size_t componentCount() const noexcept override { return 3; }
+    std::size_t elementCount(std::size_t component) const noexcept override { return component < 3 ? count_ : 0; }
+    double absoluteTolerance(std::size_t component, std::size_t index) const noexcept override {
+        return component < 3 && index < count_ ? tolerance_ : std::numeric_limits<double>::quiet_NaN();
+    }
+    std::size_t persistentBytes() const noexcept override { return 0; }
+private:
+    std::size_t count_;
+    double tolerance_;
+};
+
+WVKernelStatus makeUniformPolicy(WVShape2D shape, double scale, std::unique_ptr<WVIntegrationErrorPolicy>& policy) {
+    policy = std::make_unique<UniformErrorPolicy>(shape.elementCount(),scale);
+    return WVKernelStatus::ok();
+}
+
 class ContractSystem final : public WVIntegrationSystem {
 public:
     WVShape2D stateShape() const noexcept override { return {1,1}; }
@@ -55,12 +75,14 @@ public:
         return WVKernelStatus::ok();
     }
 
-    WVKernelStatus enforceStateConstraints(WVMutableCoefficients& coefficients) override {
+    WVStateConstraintResult enforceStateConstraints(WVMutableCoefficients& coefficients) override {
+        const bool modified = coefficients.Ap.data[0].real != fixedAmplitude;
         coefficients.Ap.data[0].real = fixedAmplitude;
         ++constraintCount;
-        if (constraintCount == failConstraintAt) return {WVKernelStatusCode::invalidConfiguration,"injected endpoint-constraint failure"};
-        return WVKernelStatus::ok();
+        if (constraintCount == failConstraintAt) return {{WVKernelStatusCode::invalidConfiguration,"injected endpoint-constraint failure"},modified ? 1U : 0U,false};
+        return {WVKernelStatus::ok(),modified ? 1U : 0U,false};
     }
+    WVKernelStatus createErrorPolicy(double scale, std::unique_ptr<WVIntegrationErrorPolicy>& policy) const override { return makeUniformPolicy(stateShape(),scale,policy); }
 
     static constexpr double fixedAmplitude = 0.375;
     std::size_t evaluationCount = 0;
@@ -138,7 +160,8 @@ public:
         ++evaluationCount;
         return WVKernelStatus::ok();
     }
-    WVKernelStatus enforceStateConstraints(WVMutableCoefficients&) override { return WVKernelStatus::ok(); }
+    WVStateConstraintResult enforceStateConstraints(WVMutableCoefficients&) override { return {WVKernelStatus::ok(),0}; }
+    WVKernelStatus createErrorPolicy(double scale, std::unique_ptr<WVIntegrationErrorPolicy>& policy) const override { return makeUniformPolicy(stateShape(),scale,policy); }
     std::size_t evaluationCount = 0;
 };
 
@@ -151,7 +174,22 @@ public:
         flux.F0.data[0] = state.coefficients.A0.data[0];
         return WVKernelStatus::ok();
     }
-    WVKernelStatus enforceStateConstraints(WVMutableCoefficients&) override { return WVKernelStatus::ok(); }
+    WVStateConstraintResult enforceStateConstraints(WVMutableCoefficients&) override { return {WVKernelStatus::ok(),0}; }
+    WVKernelStatus createErrorPolicy(double scale, std::unique_ptr<WVIntegrationErrorPolicy>& policy) const override { return makeUniformPolicy(stateShape(),scale,policy); }
+};
+
+class NonFiniteSystem final : public WVIntegrationSystem {
+public:
+    WVShape2D stateShape() const noexcept override { return {1,1}; }
+    WVKernelStatus evaluateRightHandSide(const WVState&, WVFlux& flux) override {
+        const double value = std::numeric_limits<double>::infinity();
+        flux.Fp.data[0] = {value,0.0};
+        flux.Fm.data[0] = {value,0.0};
+        flux.F0.data[0] = {value,0.0};
+        return WVKernelStatus::ok();
+    }
+    WVStateConstraintResult enforceStateConstraints(WVMutableCoefficients&) override { return {WVKernelStatus::ok(),0}; }
+    WVKernelStatus createErrorPolicy(double scale, std::unique_ptr<WVIntegrationErrorPolicy>& policy) const override { return makeUniformPolicy(stateShape(),scale,policy); }
 };
 
 double polynomial(double time) {
@@ -429,6 +467,122 @@ void testFailedEndpointConstraintIsAtomic() {
     require(integrator.lastAcceptedStep() == nullptr,"failed endpoint constraint published an accepted step");
 }
 
+double adaptiveFixedStepError(double stepSize, double* estimator = nullptr) {
+    ExponentialSystem system;
+    OwnedState owner;
+    owner.values.assign(3,WVComplex64{1.0,0.0});
+    auto state = owner.mutableView();
+    WVAdaptiveRK23 integrator(system,{100.0,100.0});
+    require(static_cast<bool>(integrator.prepareStateAfterRestart(state)),"adaptive convergence preparation failed");
+    while (state.t < 1.0-1e-15) {
+        require(static_cast<bool>(integrator.step(state,std::min(stepSize,1.0-state.t))),"adaptive fixed-step convergence execution failed");
+        if (estimator != nullptr && state.t <= stepSize+1e-15) *estimator = integrator.metrics().lastNormalizedError;
+    }
+    return std::abs(state.coefficients.Ap.data[0].real-std::exp(1.0));
+}
+
+void testAdaptiveControllerAndConvergence() {
+    WVAdaptiveRK23Controller controller;
+    require(static_cast<bool>(controller.validate()),"default adaptive controller is invalid");
+    require(controller.stepFactor(0.0,true) == 5.0,"zero adaptive error did not select maximum growth");
+    require(controller.stepFactor(std::numeric_limits<double>::infinity(),false) == 0.2,"nonfinite adaptive error did not select minimum shrinkage");
+    require(controller.stepFactor(1e-12,false) == 1.0,"rejected adaptive step was permitted to grow");
+
+    double estimatorCoarse = 0.0;
+    double estimatorMedium = 0.0;
+    const double coarse = adaptiveFixedStepError(0.2,&estimatorCoarse);
+    const double medium = adaptiveFixedStepError(0.1,&estimatorMedium);
+    const double fine = adaptiveFixedStepError(0.05);
+    require(std::log2(coarse/medium) > 2.8 && std::log2(medium/fine) > 2.8,"Bogacki-Shampine accepted solution did not demonstrate third-order convergence");
+    require(std::log2(estimatorCoarse/estimatorMedium) > 2.8,"Bogacki-Shampine embedded estimate did not scale at third local-error order");
+}
+
+double adaptiveDenseError(double stepSize) {
+    ExponentialSystem system;
+    OwnedState owner;
+    owner.values.assign(3,WVComplex64{1.0,0.0});
+    auto state = owner.mutableView();
+    WVAdaptiveRK23 integrator(system,{100.0,100.0});
+    require(static_cast<bool>(integrator.prepareStateAfterRestart(state)),"adaptive dense preparation failed");
+    require(static_cast<bool>(integrator.step(state,stepSize)),"adaptive dense step failed");
+    OwnedState outputOwner;
+    outputOwner.values.assign(3,WVComplex64{});
+    auto output = outputOwner.mutableView();
+    require(static_cast<bool>(integrator.lastAcceptedStep()->denseOutput->evaluate(0.37*stepSize,output)),"adaptive dense evaluation failed");
+    require(integrator.metrics().workspaceCapacityBytes == 15*sizeof(WVComplex64),"adaptive integrator did not retain exactly 15M complex workspace");
+    return std::abs(output.coefficients.Ap.data[0].real-std::exp(0.37*stepSize));
+}
+
+void testAdaptiveDenseOutputConvergence() {
+    const double coarse = adaptiveDenseError(0.4);
+    const double medium = adaptiveDenseError(0.2);
+    const double fine = adaptiveDenseError(0.1);
+    require(std::log2(coarse/medium) > 3.7 && std::log2(medium/fine) > 3.7,"Bogacki-Shampine continuous extension did not demonstrate its expected local order");
+}
+
+void testAdaptiveRejectionFSALAndConstraintInvalidation() {
+    ExponentialSystem system;
+    OwnedState owner;
+    owner.values.assign(3,WVComplex64{1.0,0.0});
+    auto state = owner.mutableView();
+    WVAdaptiveRK23 integrator(system,{1e-8,1e-10});
+    require(static_cast<bool>(integrator.prepareStateAfterRestart(state)),"adaptive rejection preparation failed");
+    require(static_cast<bool>(integrator.step(state,1.0)),"adaptive rejection/retry failed");
+    require(integrator.metrics().rejectedStepCount > 0 && integrator.metrics().rejectedInitialDerivativeReuseCount == integrator.metrics().rejectedStepCount,"adaptive retry did not reuse its unchanged initial derivative");
+    const auto evaluationsAfterFirst = integrator.metrics().rightHandSideEvaluationCount;
+    require(static_cast<bool>(integrator.step(state,integrator.nextStepSize())),"adaptive FSAL follow-up failed");
+    require(integrator.metrics().fsalReuseCount == 1 && integrator.metrics().rightHandSideEvaluationCount-evaluationsAfterFirst >= 3,"adaptive accepted-step derivative was not reused through FSAL");
+
+    ContractSystem constrainedSystem;
+    OwnedState constrainedOwner;
+    auto constrainedState = constrainedOwner.mutableView();
+    WVAdaptiveRK23 constrained(constrainedSystem,{10.0,10.0});
+    require(static_cast<bool>(constrained.prepareStateAfterRestart(constrainedState)),"constrained adaptive preparation failed");
+    require(static_cast<bool>(constrained.step(constrainedState,0.1)),"constrained adaptive step failed");
+    require(constrained.metrics().fsalInvalidationCount == 1 && constrained.metrics().constraintModifiedCoefficientCount > 0,"fixed-amplitude restoration did not invalidate FSAL");
+}
+
+void testAdaptiveMinimumStepFailureIsAtomic() {
+    NonFiniteSystem system;
+    OwnedState owner;
+    auto state = owner.mutableView();
+    const auto original = owner.values;
+    WVAdaptiveRK23 integrator(system,{1e-3,1e-6});
+    require(static_cast<bool>(integrator.prepareStateAfterRestart(state)),"nonfinite adaptive preparation failed");
+    const auto status = integrator.step(state,1.0);
+    require(status.code == WVKernelStatusCode::numericalFailure,"nonfinite adaptive error did not terminate at the minimum representable step");
+    require(state.t == 0.0 && exactlyEqual(owner.values,original),"failed adaptive retries modified the accepted state");
+    require(integrator.lastAcceptedStep() == nullptr && integrator.metrics().rejectedStepCount > 0,"failed adaptive retries published an accepted step or omitted rejection metrics");
+}
+
+struct AdaptiveDriverResult {
+    std::vector<WVComplex64> values;
+    std::size_t accepted = 0;
+    std::size_t rejected = 0;
+};
+
+AdaptiveDriverResult adaptiveDriverRun(std::vector<double> outputTimes) {
+    ExponentialSystem system;
+    OwnedState owner;
+    owner.values.assign(3,WVComplex64{1.0,0.0});
+    auto state = owner.mutableView();
+    WVAdaptiveRK23 integrator(system,{1e-5,1e-8});
+    require(static_cast<bool>(integrator.prepareStateAfterRestart(state)),"adaptive driver preparation failed");
+    WVIntegrationDriver driver(integrator);
+    WVOrderedOutputSchedule schedule(std::move(outputTimes));
+    SinkDouble sink;
+    sink.terminateAtKind = WVIntegrationOutputSink::EventKind::done;
+    require(static_cast<bool>(driver.advanceToTime(state,1.0,0.2,schedule,sink)),"adaptive integration driver failed");
+    return {owner.values,integrator.metrics().acceptedStepCount,integrator.metrics().rejectedStepCount};
+}
+
+void testAdaptiveOutputScheduleInvariance() {
+    const auto noOutput = adaptiveDriverRun({});
+    const auto scheduled = adaptiveDriverRun({0.03,0.11,0.37,0.82,1.0});
+    require(exactlyEqual(noOutput.values,scheduled.values),"adaptive requested output changed the accepted trajectory");
+    require(noOutput.accepted == scheduled.accepted && noOutput.rejected == scheduled.rejected,"adaptive requested output changed step acceptance");
+}
+
 } // namespace
 
 int main() {
@@ -444,6 +598,11 @@ int main() {
         testAcceptedStepLifetimeRestartAndPartialStep();
         testExactRK4TrafficAccounting();
         testFailedEndpointConstraintIsAtomic();
+        testAdaptiveControllerAndConvergence();
+        testAdaptiveDenseOutputConvergence();
+        testAdaptiveRejectionFSALAndConstraintInvalidation();
+        testAdaptiveMinimumStepFailureIsAtomic();
+        testAdaptiveOutputScheduleInvariance();
         return 0;
     } catch (const std::exception& exception) {
         std::cerr << exception.what() << '\n';
