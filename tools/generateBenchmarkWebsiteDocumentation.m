@@ -16,6 +16,9 @@ if ~isfield(catalog,"schemaVersion") || string(catalog.schemaVersion) ~= "benchm
     error("WaveVortexModel:InvalidBenchmarkCatalog","The benchmark catalog must use schema benchmark-catalog-v1.");
 end
 allowedSuites = string({catalog.scoringReferences.suiteId});
+if isfield(catalog,"publishedSuites") && ~isempty(catalog.publishedSuites)
+    allowedSuites = [allowedSuites string({catalog.publishedSuites.suiteId})];
+end
 records = loadPublishedRecords(repositoryRoot,catalog,allowedSuites);
 validateComparableCases(records);
 copyPublishedRecords(records,buildFolder);
@@ -24,11 +27,60 @@ latestRecords = latestPublishedRecords(records);
 pageText = string(fileread(pagePath));
 pageText = replaceGeneratedSection(pageText,"AT_GLANCE",atAGlanceMarkdown(latestRecords));
 pageText = replaceGeneratedSection(pageText,"COMPILED_PREVIEW",compiledPreviewMarkdown(latestRecords));
+pageText = replaceGeneratedSection(pageText,"PORTABLE_RUNTIME",portableRuntimeMarkdown(latestRecords));
 pageText = replaceGeneratedSection(pageText,"SCALING",scalingMarkdown(latestRecords,buildFolder));
 pageText = replaceGeneratedSection(pageText,"COMPUTERS",computerMarkdown(latestRecords));
 pageText = replaceGeneratedSection(pageText,"HISTORY",historyMarkdown(records));
 pageText = replaceGeneratedSection(pageText,"DOWNLOADS",downloadsMarkdown(records));
 writeText(pagePath,pageText);
+end
+
+function markdown = portableRuntimeMarkdown(records)
+fixed = records(arrayfun(@(record)string(record.dataset.benchmark.suiteId)=="portable-rk4-v1",records));
+adaptive = records(arrayfun(@(record)string(record.dataset.benchmark.suiteId)=="portable-rk23-v1",records));
+if isempty(fixed) && isempty(adaptive)
+    markdown = "No approved portable-runtime integration result has been published yet.";
+    return
+end
+sections = strings(0,1);
+if ~isempty(fixed)
+    builtin = datasetByBackend(fixed,"builtin");
+    compiled = datasetByBackend(fixed,"compiled-preview");
+    standalone = datasetByBackend(fixed,"native-fftw");
+    if ~isempty(builtin) && ~isempty(compiled) && ~isempty(standalone)
+        rows = strings(0,7);
+        previewReady = true;
+        orchestrationEfficient = true;
+        for iCase = 1:numel(standalone.cases)
+            cppCase = itemAt(standalone.cases,iCase);
+            builtinCase = caseWithId(builtin,string(cppCase.id));
+            compiledCase = caseWithId(compiled,string(cppCase.id));
+            speedup = builtinCase.timing.medianSeconds/cppCase.timing.medianSeconds;
+            orchestrationRatio = cppCase.timing.medianSeconds/compiledCase.timing.medianSeconds;
+            rows(end+1,:) = [displayTransform(string(cppCase.transformId))+" "+join(string(cppCase.configuration.Nxyz),"×"),sprintf('%.4f',builtinCase.timing.medianSeconds),sprintf('%.4f',compiledCase.timing.medianSeconds),sprintf('%.4f',cppCase.timing.medianSeconds),sprintf('%.3fx',speedup),sprintf('%.3f',orchestrationRatio),sprintf('%.3e',cppCase.correctness.relativeError)]; %#ok<AGROW>
+            previewReady = previewReady && speedup >= 1.25 && cppCase.correctness.relativeError <= standalone.benchmark.correctnessTolerance;
+            orchestrationEfficient = orchestrationEfficient && orchestrationRatio <= 1.03;
+        end
+        status = "**"+conditional(previewReady,"RUNTIME-PREVIEW-READY","RUNTIME-PREVIEW-NOT-READY")+"; "+conditional(orchestrationEfficient,"ORCHESTRATION-EFFICIENT","ORCHESTRATION-NOT-EFFICIENT")+".**";
+        sections(end+1,1) = status+newline+newline+htmlTable(["Case" "MATLAB builtin (s)" "MATLAB compiled (s)" "Standalone (s)" "Builtin speedup" "Standalone / compiled MATLAB" "Error"],rows); %#ok<AGROW>
+    end
+end
+if ~isempty(adaptive)
+    dataset = adaptive(end).dataset;
+    rows = strings(0,7);
+    for iCase = 1:numel(dataset.cases)
+        benchmarkCase = itemAt(dataset.cases,iCase);
+        rows(end+1,:) = [displayTransform(string(benchmarkCase.transformId)),sprintf('%.3g',benchmarkCase.configuration.integration.relativeTolerance),sprintf('%.3e',benchmarkCase.correctness.relativeError),string(benchmarkCase.work.acceptedSteps),string(benchmarkCase.work.rejectedSteps),string(benchmarkCase.work.rightHandSideEvaluations),sprintf('%.6f',benchmarkCase.timing.medianSeconds)]; %#ok<AGROW>
+    end
+    sections(end+1,1) = "**ADAPTIVE-RK23-AVAILABLE.** Tightening tolerances reduces error; scheduled dense output leaves accepted steps and the final state unchanged."+newline+newline+htmlTable(["Case" "RelTol" "Reference error" "Accepted" "Rejected" "RHS evaluations" "Time (s)"],rows); %#ok<AGROW>
+end
+markdown = join(sections',string(newline)+string(newline));
+end
+
+function dataset = datasetByBackend(records,backend)
+dataset = [];
+index = find(arrayfun(@(record)string(record.dataset.implementation.backend)==backend,records),1,"last");
+if ~isempty(index), dataset = records(index).dataset; end
 end
 
 function markdown = compiledPreviewMarkdown(records)
@@ -158,6 +210,9 @@ signature = struct( ...
     "seed",double(benchmarkCase.configuration.seed), ...
     "warmupCount",double(benchmarkCase.configuration.warmupCount), ...
     "sampleCount",double(benchmarkCase.configuration.sampleCount));
+if isfield(benchmarkCase.configuration,"integration")
+    signature.integration = benchmarkCase.configuration.integration;
+end
 end
 
 function key = comparisonCaseKey(dataset,benchmarkCase)

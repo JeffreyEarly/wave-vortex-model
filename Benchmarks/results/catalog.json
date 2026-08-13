@@ -17,7 +17,35 @@
       "rawArtifact": "Benchmarks/results/reference/scaling-large-v1-m5-max-r2026a-builtin/benchmark.json"
     }
   ],
+  "publishedSuites": [
+    {
+      "suiteId": "portable-rk4-v1",
+      "operation": "integrate",
+      "displayName": "Portable fixed RK4 integration"
+    },
+    {
+      "suiteId": "portable-rk23-v1",
+      "operation": "integrate",
+      "displayName": "Portable adaptive RK3(2) integration"
+    }
+  ],
   "publishedDatasets": [
+    {
+      "datasetId": "portable-rk23-v1--cpp-native-fftw--m5-max--20260813T192740Z",
+      "artifact": "Benchmarks/results/published/portable-rk23-v1--cpp-native-fftw--m5-max--20260813T192740Z.json"
+    },
+    {
+      "datasetId": "portable-rk4-v1--cpp-native-fftw--m5-max--20260813T192740Z",
+      "artifact": "Benchmarks/results/published/portable-rk4-v1--cpp-native-fftw--m5-max--20260813T192740Z.json"
+    },
+    {
+      "datasetId": "portable-rk4-v1--matlab-builtin--m5-max--20260813T192740Z",
+      "artifact": "Benchmarks/results/published/portable-rk4-v1--matlab-builtin--m5-max--20260813T192740Z.json"
+    },
+    {
+      "datasetId": "portable-rk4-v1--matlab-compiled-preview--m5-max--20260813T192740Z",
+      "artifact": "Benchmarks/results/published/portable-rk4-v1--matlab-compiled-preview--m5-max--20260813T192740Z.json"
+    },
     {
       "datasetId": "core-v1--cpp-native-fftw--m5-max--20260812T195257Z",
       "artifact": "Benchmarks/results/published/core-v1--cpp-native-fftw--m5-max--20260812T195257Z.json"

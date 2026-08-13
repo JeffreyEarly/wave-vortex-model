@@ -1,0 +1,266 @@
+{
+  "schemaVersion": "published-benchmark-v1",
+  "datasetId": "portable-rk4-v1--cpp-native-fftw--m5-max--20260813T192740Z",
+  "collectedAt": "2026-08-13T19:27:40Z",
+  "benchmark": {
+    "suiteId": "portable-rk4-v1",
+    "suiteVersion": 1,
+    "operation": "integrate",
+    "method": "fixed-rk4",
+    "correctnessTolerance": 1E-12
+  },
+  "implementation": {
+    "id": "cpp",
+    "displayName": "WaveVortex portable C++",
+    "version": "unreleased-preview",
+    "repository": "https://github.com/JeffreyEarly/wave-vortex-model",
+    "commit": "b01cfe802f43b47b3631a6bfc8251035c0c52222",
+    "backend": "native-fftw",
+    "sourceDirty": false
+  },
+  "platform": {
+    "id": "m5-max",
+    "displayName": "Apple M5 Max",
+    "processor": "Apple M5 Max",
+    "physicalMemoryBytes": 5.1539607552E+10,
+    "os": "MACA64",
+    "architecture": "maca64",
+    "threadCount": 18
+  },
+  "toolchain": {
+    "kind": "cpp",
+    "name": "Apple Clang + FFTW",
+    "version": "21.0.0",
+    "details": {
+      "provider": "native-neon-pthreads",
+      "fftwVersion": "3.3.11",
+      "threads": "18"
+    }
+  },
+  "provenance": {
+    "rawArtifact": "Benchmarks/results/reference/portable-integration-v1-m5-max-r2026a/portable-integration-decision.json",
+    "rawSchemaVersion": "portable-integration-decision-v1"
+  },
+  "cases": [
+    {
+      "id": "constant-hydrostatic-256x256x65",
+      "transformId": "constant-hydrostatic",
+      "scoreFamily": "constant-hydrostatic",
+      "configuration": {
+        "Lxyz": [
+          15000,
+          15000,
+          1300
+        ],
+        "Nxyz": [
+          256,
+          256,
+          65
+        ],
+        "isHydrostatic": true,
+        "shouldAntialias": true,
+        "seed": 2102,
+        "warmupCount": 2,
+        "sampleCount": 3,
+        "integration": {
+          "initialTime": 2,
+          "finalTime": 10,
+          "fixedStepSize": 1,
+          "fixedStepCount": 8,
+          "requestedOutputCount": 0
+        }
+      },
+      "status": "complete",
+      "timing": {
+        "medianSeconds": 1.913525167,
+        "samplesSeconds": [
+          1.812025125,
+          1.955885208,
+          1.913525167
+        ]
+      },
+      "correctness": {
+        "passed": true,
+        "relativeError": 5.587144001655937E-17
+      },
+      "memory": {
+        "status": "complete",
+        "provider": "macos-ps-rss-external",
+        "baselineProcessBytes": 1.035943936E+9,
+        "peakProcessBytes": 1.03596032E+9,
+        "peakIncrementBytes": 16384
+      },
+      "work": {
+        "acceptedSteps": 8,
+        "rejectedSteps": 0,
+        "rightHandSideEvaluations": 32,
+        "denseEvaluations": 0
+      }
+    },
+    {
+      "id": "constant-nonhydrostatic-256x256x65",
+      "transformId": "constant-nonhydrostatic",
+      "scoreFamily": "constant-nonhydrostatic",
+      "configuration": {
+        "Lxyz": [
+          15000,
+          15000,
+          1300
+        ],
+        "Nxyz": [
+          256,
+          256,
+          65
+        ],
+        "isHydrostatic": false,
+        "shouldAntialias": true,
+        "seed": 2101,
+        "warmupCount": 2,
+        "sampleCount": 3,
+        "integration": {
+          "initialTime": 2,
+          "finalTime": 10,
+          "fixedStepSize": 1,
+          "fixedStepCount": 8,
+          "requestedOutputCount": 0
+        }
+      },
+      "status": "complete",
+      "timing": {
+        "medianSeconds": 2.396608,
+        "samplesSeconds": [
+          2.396608,
+          2.52072625,
+          2.357863709
+        ]
+      },
+      "correctness": {
+        "passed": true,
+        "relativeError": 5.6838755764826611E-17
+      },
+      "memory": {
+        "status": "complete",
+        "provider": "macos-ps-rss-external",
+        "baselineProcessBytes": 1.036288E+9,
+        "peakProcessBytes": 1.036304384E+9,
+        "peakIncrementBytes": 16384
+      },
+      "work": {
+        "acceptedSteps": 8,
+        "rejectedSteps": 0,
+        "rightHandSideEvaluations": 32,
+        "denseEvaluations": 0
+      }
+    },
+    {
+      "id": "constant-hydrostatic-512x512x129",
+      "transformId": "constant-hydrostatic",
+      "scoreFamily": "constant-hydrostatic",
+      "configuration": {
+        "Lxyz": [
+          15000,
+          15000,
+          1300
+        ],
+        "Nxyz": [
+          512,
+          512,
+          129
+        ],
+        "isHydrostatic": true,
+        "shouldAntialias": true,
+        "seed": 2104,
+        "warmupCount": 2,
+        "sampleCount": 3,
+        "integration": {
+          "initialTime": 2,
+          "finalTime": 10,
+          "fixedStepSize": 1,
+          "fixedStepCount": 8,
+          "requestedOutputCount": 0
+        }
+      },
+      "status": "complete",
+      "timing": {
+        "medianSeconds": 14.251392375,
+        "samplesSeconds": [
+          14.251392375,
+          14.515396208,
+          14.010557708
+        ]
+      },
+      "correctness": {
+        "passed": true,
+        "relativeError": 1.6878186395892065E-16
+      },
+      "memory": {
+        "status": "complete",
+        "provider": "macos-ps-rss-external",
+        "baselineProcessBytes": 8.079638528E+9,
+        "peakProcessBytes": 8.079654912E+9,
+        "peakIncrementBytes": 49152
+      },
+      "work": {
+        "acceptedSteps": 8,
+        "rejectedSteps": 0,
+        "rightHandSideEvaluations": 32,
+        "denseEvaluations": 0
+      }
+    },
+    {
+      "id": "constant-nonhydrostatic-512x512x129",
+      "transformId": "constant-nonhydrostatic",
+      "scoreFamily": "constant-nonhydrostatic",
+      "configuration": {
+        "Lxyz": [
+          15000,
+          15000,
+          1300
+        ],
+        "Nxyz": [
+          512,
+          512,
+          129
+        ],
+        "isHydrostatic": false,
+        "shouldAntialias": true,
+        "seed": 2103,
+        "warmupCount": 2,
+        "sampleCount": 3,
+        "integration": {
+          "initialTime": 2,
+          "finalTime": 10,
+          "fixedStepSize": 1,
+          "fixedStepCount": 8,
+          "requestedOutputCount": 0
+        }
+      },
+      "status": "complete",
+      "timing": {
+        "medianSeconds": 18.67650525,
+        "samplesSeconds": [
+          19.076265083,
+          18.67650525,
+          17.518891542
+        ]
+      },
+      "correctness": {
+        "passed": true,
+        "relativeError": 7.8214888176242E-17
+      },
+      "memory": {
+        "status": "complete",
+        "provider": "macos-ps-rss-external",
+        "baselineProcessBytes": 6.173851648E+9,
+        "peakProcessBytes": 6.173884416E+9,
+        "peakIncrementBytes": 16384
+      },
+      "work": {
+        "acceptedSteps": 8,
+        "rejectedSteps": 0,
+        "rightHandSideEvaluations": 32,
+        "denseEvaluations": 0
+      }
+    }
+  ]
+}

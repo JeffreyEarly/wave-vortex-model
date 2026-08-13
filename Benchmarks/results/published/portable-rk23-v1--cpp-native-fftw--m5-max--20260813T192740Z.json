@@ -1,0 +1,470 @@
+{
+  "schemaVersion": "published-benchmark-v1",
+  "datasetId": "portable-rk23-v1--cpp-native-fftw--m5-max--20260813T192740Z",
+  "collectedAt": "2026-08-13T19:27:40Z",
+  "benchmark": {
+    "suiteId": "portable-rk23-v1",
+    "suiteVersion": 1,
+    "operation": "integrate",
+    "method": "adaptive-rk23",
+    "correctnessTolerance": 0.01
+  },
+  "implementation": {
+    "id": "cpp",
+    "displayName": "WaveVortex portable C++",
+    "version": "unreleased-preview",
+    "repository": "https://github.com/JeffreyEarly/wave-vortex-model",
+    "commit": "b01cfe802f43b47b3631a6bfc8251035c0c52222",
+    "backend": "native-fftw",
+    "sourceDirty": false
+  },
+  "platform": {
+    "id": "m5-max",
+    "displayName": "Apple M5 Max",
+    "processor": "Apple M5 Max",
+    "physicalMemoryBytes": 5.1539607552E+10,
+    "os": "MACA64",
+    "architecture": "maca64",
+    "threadCount": 18
+  },
+  "toolchain": {
+    "kind": "cpp",
+    "name": "Apple Clang + FFTW",
+    "version": "21.0.0",
+    "details": {
+      "provider": "native-neon-pthreads",
+      "fftwVersion": "3.3.11",
+      "threads": "18"
+    }
+  },
+  "provenance": {
+    "rawArtifact": "Benchmarks/results/reference/portable-integration-v1-m5-max-r2026a/portable-integration-decision.json",
+    "rawSchemaVersion": "portable-integration-decision-v1"
+  },
+  "cases": [
+    {
+      "id": "constant-hydrostatic-adaptive-rtol-1em02",
+      "transformId": "constant-hydrostatic",
+      "scoreFamily": "constant-hydrostatic",
+      "configuration": {
+        "Lxyz": [
+          15000,
+          12000,
+          1300
+        ],
+        "Nxyz": [
+          8,
+          6,
+          7
+        ],
+        "isHydrostatic": true,
+        "shouldAntialias": true,
+        "seed": 0,
+        "warmupCount": 0,
+        "sampleCount": 3,
+        "integration": {
+          "initialTime": 8.95,
+          "finalTime": 8.9500199999999985,
+          "initialStepSize": 1E-5,
+          "relativeTolerance": 0.01,
+          "absoluteTolerance": 1E-5,
+          "requestedOutputCount": 0
+        }
+      },
+      "status": "complete",
+      "timing": {
+        "medianSeconds": 0.027956542,
+        "samplesSeconds": [
+          0.027956542,
+          0.028066583,
+          0.027943333
+        ]
+      },
+      "correctness": {
+        "passed": true,
+        "relativeError": 0.0012847915263676194
+      },
+      "memory": {
+        "status": "unavailable",
+        "reason": "Adaptive validation did not sample process RSS."
+      },
+      "work": {
+        "acceptedSteps": 3,
+        "rejectedSteps": 0,
+        "rightHandSideEvaluations": 12,
+        "denseEvaluations": 0
+      }
+    },
+    {
+      "id": "constant-hydrostatic-adaptive-rtol-3em03",
+      "transformId": "constant-hydrostatic",
+      "scoreFamily": "constant-hydrostatic",
+      "configuration": {
+        "Lxyz": [
+          15000,
+          12000,
+          1300
+        ],
+        "Nxyz": [
+          8,
+          6,
+          7
+        ],
+        "isHydrostatic": true,
+        "shouldAntialias": true,
+        "seed": 0,
+        "warmupCount": 0,
+        "sampleCount": 3,
+        "integration": {
+          "initialTime": 8.95,
+          "finalTime": 8.9500199999999985,
+          "initialStepSize": 1E-5,
+          "relativeTolerance": 0.003,
+          "absoluteTolerance": 3E-6,
+          "requestedOutputCount": 0
+        }
+      },
+      "status": "complete",
+      "timing": {
+        "medianSeconds": 0.050033292,
+        "samplesSeconds": [
+          0.049706292,
+          0.050033292,
+          0.050303334
+        ]
+      },
+      "correctness": {
+        "passed": true,
+        "relativeError": 0.00024171756992976995
+      },
+      "memory": {
+        "status": "unavailable",
+        "reason": "Adaptive validation did not sample process RSS."
+      },
+      "work": {
+        "acceptedSteps": 4,
+        "rejectedSteps": 2,
+        "rightHandSideEvaluations": 22,
+        "denseEvaluations": 0
+      }
+    },
+    {
+      "id": "constant-hydrostatic-adaptive-rtol-1em03",
+      "transformId": "constant-hydrostatic",
+      "scoreFamily": "constant-hydrostatic",
+      "configuration": {
+        "Lxyz": [
+          15000,
+          12000,
+          1300
+        ],
+        "Nxyz": [
+          8,
+          6,
+          7
+        ],
+        "isHydrostatic": true,
+        "shouldAntialias": true,
+        "seed": 0,
+        "warmupCount": 0,
+        "sampleCount": 3,
+        "integration": {
+          "initialTime": 8.95,
+          "finalTime": 8.9500199999999985,
+          "initialStepSize": 1E-5,
+          "relativeTolerance": 0.001,
+          "absoluteTolerance": 1E-6,
+          "requestedOutputCount": 0
+        }
+      },
+      "status": "complete",
+      "timing": {
+        "medianSeconds": 0.059070083,
+        "samplesSeconds": [
+          0.059046375,
+          0.059070083,
+          0.060092125
+        ]
+      },
+      "correctness": {
+        "passed": true,
+        "relativeError": 8.6910137228783221E-5
+      },
+      "memory": {
+        "status": "unavailable",
+        "reason": "Adaptive validation did not sample process RSS."
+      },
+      "work": {
+        "acceptedSteps": 5,
+        "rejectedSteps": 2,
+        "rightHandSideEvaluations": 26,
+        "denseEvaluations": 0
+      }
+    },
+    {
+      "id": "constant-hydrostatic-adaptive-rtol-3em04",
+      "transformId": "constant-hydrostatic",
+      "scoreFamily": "constant-hydrostatic",
+      "configuration": {
+        "Lxyz": [
+          15000,
+          12000,
+          1300
+        ],
+        "Nxyz": [
+          8,
+          6,
+          7
+        ],
+        "isHydrostatic": true,
+        "shouldAntialias": true,
+        "seed": 0,
+        "warmupCount": 0,
+        "sampleCount": 3,
+        "integration": {
+          "initialTime": 8.95,
+          "finalTime": 8.9500199999999985,
+          "initialStepSize": 1E-5,
+          "relativeTolerance": 0.0003,
+          "absoluteTolerance": 3E-7,
+          "requestedOutputCount": 0
+        }
+      },
+      "status": "complete",
+      "timing": {
+        "medianSeconds": 0.094286583,
+        "samplesSeconds": [
+          0.09505175,
+          0.094286583,
+          0.093416875
+        ]
+      },
+      "correctness": {
+        "passed": true,
+        "relativeError": 2.5540463588307061E-5
+      },
+      "memory": {
+        "status": "unavailable",
+        "reason": "Adaptive validation did not sample process RSS."
+      },
+      "work": {
+        "acceptedSteps": 8,
+        "rejectedSteps": 3,
+        "rightHandSideEvaluations": 41,
+        "denseEvaluations": 0
+      }
+    },
+    {
+      "id": "constant-nonhydrostatic-adaptive-rtol-1em02",
+      "transformId": "constant-nonhydrostatic",
+      "scoreFamily": "constant-nonhydrostatic",
+      "configuration": {
+        "Lxyz": [
+          15000,
+          12000,
+          1300
+        ],
+        "Nxyz": [
+          8,
+          6,
+          7
+        ],
+        "isHydrostatic": false,
+        "shouldAntialias": true,
+        "seed": 0,
+        "warmupCount": 0,
+        "sampleCount": 3,
+        "integration": {
+          "initialTime": 9.05,
+          "finalTime": 9.05002,
+          "initialStepSize": 1E-5,
+          "relativeTolerance": 0.01,
+          "absoluteTolerance": 1E-5,
+          "requestedOutputCount": 0
+        }
+      },
+      "status": "complete",
+      "timing": {
+        "medianSeconds": 0.023865042,
+        "samplesSeconds": [
+          0.023865042,
+          0.023591084,
+          0.024140542
+        ]
+      },
+      "correctness": {
+        "passed": true,
+        "relativeError": 0.0014293661147715072
+      },
+      "memory": {
+        "status": "unavailable",
+        "reason": "Adaptive validation did not sample process RSS."
+      },
+      "work": {
+        "acceptedSteps": 2,
+        "rejectedSteps": 0,
+        "rightHandSideEvaluations": 8,
+        "denseEvaluations": 0
+      }
+    },
+    {
+      "id": "constant-nonhydrostatic-adaptive-rtol-3em03",
+      "transformId": "constant-nonhydrostatic",
+      "scoreFamily": "constant-nonhydrostatic",
+      "configuration": {
+        "Lxyz": [
+          15000,
+          12000,
+          1300
+        ],
+        "Nxyz": [
+          8,
+          6,
+          7
+        ],
+        "isHydrostatic": false,
+        "shouldAntialias": true,
+        "seed": 0,
+        "warmupCount": 0,
+        "sampleCount": 3,
+        "integration": {
+          "initialTime": 9.05,
+          "finalTime": 9.05002,
+          "initialStepSize": 1E-5,
+          "relativeTolerance": 0.003,
+          "absoluteTolerance": 3E-6,
+          "requestedOutputCount": 0
+        }
+      },
+      "status": "complete",
+      "timing": {
+        "medianSeconds": 0.066869916,
+        "samplesSeconds": [
+          0.066869916,
+          0.065522917,
+          0.067130875
+        ]
+      },
+      "correctness": {
+        "passed": true,
+        "relativeError": 0.00037992770192016447
+      },
+      "memory": {
+        "status": "unavailable",
+        "reason": "Adaptive validation did not sample process RSS."
+      },
+      "work": {
+        "acceptedSteps": 4,
+        "rejectedSteps": 2,
+        "rightHandSideEvaluations": 22,
+        "denseEvaluations": 0
+      }
+    },
+    {
+      "id": "constant-nonhydrostatic-adaptive-rtol-1em03",
+      "transformId": "constant-nonhydrostatic",
+      "scoreFamily": "constant-nonhydrostatic",
+      "configuration": {
+        "Lxyz": [
+          15000,
+          12000,
+          1300
+        ],
+        "Nxyz": [
+          8,
+          6,
+          7
+        ],
+        "isHydrostatic": false,
+        "shouldAntialias": true,
+        "seed": 0,
+        "warmupCount": 0,
+        "sampleCount": 3,
+        "integration": {
+          "initialTime": 9.05,
+          "finalTime": 9.05002,
+          "initialStepSize": 1E-5,
+          "relativeTolerance": 0.001,
+          "absoluteTolerance": 1E-6,
+          "requestedOutputCount": 0
+        }
+      },
+      "status": "complete",
+      "timing": {
+        "medianSeconds": 0.07886875,
+        "samplesSeconds": [
+          0.084267458,
+          0.0763635,
+          0.07886875
+        ]
+      },
+      "correctness": {
+        "passed": true,
+        "relativeError": 9.3767129713527149E-5
+      },
+      "memory": {
+        "status": "unavailable",
+        "reason": "Adaptive validation did not sample process RSS."
+      },
+      "work": {
+        "acceptedSteps": 5,
+        "rejectedSteps": 2,
+        "rightHandSideEvaluations": 26,
+        "denseEvaluations": 0
+      }
+    },
+    {
+      "id": "constant-nonhydrostatic-adaptive-rtol-3em04",
+      "transformId": "constant-nonhydrostatic",
+      "scoreFamily": "constant-nonhydrostatic",
+      "configuration": {
+        "Lxyz": [
+          15000,
+          12000,
+          1300
+        ],
+        "Nxyz": [
+          8,
+          6,
+          7
+        ],
+        "isHydrostatic": false,
+        "shouldAntialias": true,
+        "seed": 0,
+        "warmupCount": 0,
+        "sampleCount": 3,
+        "integration": {
+          "initialTime": 9.05,
+          "finalTime": 9.05002,
+          "initialStepSize": 1E-5,
+          "relativeTolerance": 0.0003,
+          "absoluteTolerance": 3E-7,
+          "requestedOutputCount": 0
+        }
+      },
+      "status": "complete",
+      "timing": {
+        "medianSeconds": 0.12124975,
+        "samplesSeconds": [
+          0.12471975,
+          0.12124975,
+          0.120385542
+        ]
+      },
+      "correctness": {
+        "passed": true,
+        "relativeError": 3.5472945595672885E-5
+      },
+      "memory": {
+        "status": "unavailable",
+        "reason": "Adaptive validation did not sample process RSS."
+      },
+      "work": {
+        "acceptedSteps": 8,
+        "rejectedSteps": 3,
+        "rightHandSideEvaluations": 41,
+        "denseEvaluations": 0
+      }
+    }
+  ]
+}

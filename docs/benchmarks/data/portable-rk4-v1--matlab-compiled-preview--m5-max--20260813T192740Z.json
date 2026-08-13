@@ -1,0 +1,264 @@
+{
+  "schemaVersion": "published-benchmark-v1",
+  "datasetId": "portable-rk4-v1--matlab-compiled-preview--m5-max--20260813T192740Z",
+  "collectedAt": "2026-08-13T19:27:40Z",
+  "benchmark": {
+    "suiteId": "portable-rk4-v1",
+    "suiteVersion": 1,
+    "operation": "integrate",
+    "method": "fixed-rk4",
+    "correctnessTolerance": 1E-12
+  },
+  "implementation": {
+    "id": "matlab",
+    "displayName": "WaveVortexModel MATLAB",
+    "version": "unreleased-preview",
+    "repository": "https://github.com/JeffreyEarly/wave-vortex-model",
+    "commit": "b01cfe802f43b47b3631a6bfc8251035c0c52222",
+    "backend": "compiled-preview",
+    "sourceDirty": false
+  },
+  "platform": {
+    "id": "m5-max",
+    "displayName": "Apple M5 Max",
+    "processor": "Apple M5 Max",
+    "physicalMemoryBytes": 5.1539607552E+10,
+    "os": "MACA64",
+    "architecture": "maca64",
+    "threadCount": 18
+  },
+  "toolchain": {
+    "kind": "matlab",
+    "name": "MATLAB",
+    "version": "26.1.0.3312084 (R2026a) Update 4",
+    "details": {
+      "release": "2026a"
+    }
+  },
+  "provenance": {
+    "rawArtifact": "Benchmarks/results/reference/portable-integration-v1-m5-max-r2026a/portable-integration-decision.json",
+    "rawSchemaVersion": "portable-integration-decision-v1"
+  },
+  "cases": [
+    {
+      "id": "constant-hydrostatic-256x256x65",
+      "transformId": "constant-hydrostatic",
+      "scoreFamily": "constant-hydrostatic",
+      "configuration": {
+        "Lxyz": [
+          15000,
+          15000,
+          1300
+        ],
+        "Nxyz": [
+          256,
+          256,
+          65
+        ],
+        "isHydrostatic": true,
+        "shouldAntialias": true,
+        "seed": 2102,
+        "warmupCount": 2,
+        "sampleCount": 3,
+        "integration": {
+          "initialTime": 2,
+          "finalTime": 10,
+          "fixedStepSize": 1,
+          "fixedStepCount": 8,
+          "requestedOutputCount": 0
+        }
+      },
+      "status": "complete",
+      "timing": {
+        "medianSeconds": 1.7971754166666667,
+        "samplesSeconds": [
+          1.7971754166666667,
+          1.9257091666666666,
+          1.7903922083333332
+        ]
+      },
+      "correctness": {
+        "passed": true,
+        "relativeError": 5.587144001655937E-17
+      },
+      "memory": {
+        "status": "complete",
+        "provider": "macos-ps-rss-external",
+        "baselineProcessBytes": 2.30146048E+9,
+        "peakProcessBytes": 2.340274176E+9,
+        "peakIncrementBytes": 3.883008E+7
+      },
+      "work": {
+        "acceptedSteps": 8,
+        "rejectedSteps": 0,
+        "rightHandSideEvaluations": 32,
+        "denseEvaluations": 0
+      }
+    },
+    {
+      "id": "constant-nonhydrostatic-256x256x65",
+      "transformId": "constant-nonhydrostatic",
+      "scoreFamily": "constant-nonhydrostatic",
+      "configuration": {
+        "Lxyz": [
+          15000,
+          15000,
+          1300
+        ],
+        "Nxyz": [
+          256,
+          256,
+          65
+        ],
+        "isHydrostatic": false,
+        "shouldAntialias": true,
+        "seed": 2101,
+        "warmupCount": 2,
+        "sampleCount": 3,
+        "integration": {
+          "initialTime": 2,
+          "finalTime": 10,
+          "fixedStepSize": 1,
+          "fixedStepCount": 8,
+          "requestedOutputCount": 0
+        }
+      },
+      "status": "complete",
+      "timing": {
+        "medianSeconds": 2.2313240833333334,
+        "samplesSeconds": [
+          2.1602711666666665,
+          2.2313240833333334,
+          2.4435978333333335
+        ]
+      },
+      "correctness": {
+        "passed": true,
+        "relativeError": 5.6838755764826611E-17
+      },
+      "memory": {
+        "status": "complete",
+        "provider": "macos-ps-rss-external",
+        "baselineProcessBytes": 2.312470528E+9,
+        "peakProcessBytes": 2.341044224E+9,
+        "peakIncrementBytes": 3.014656E+7
+      },
+      "work": {
+        "acceptedSteps": 8,
+        "rejectedSteps": 0,
+        "rightHandSideEvaluations": 32,
+        "denseEvaluations": 0
+      }
+    },
+    {
+      "id": "constant-hydrostatic-512x512x129",
+      "transformId": "constant-hydrostatic",
+      "scoreFamily": "constant-hydrostatic",
+      "configuration": {
+        "Lxyz": [
+          15000,
+          15000,
+          1300
+        ],
+        "Nxyz": [
+          512,
+          512,
+          129
+        ],
+        "isHydrostatic": true,
+        "shouldAntialias": true,
+        "seed": 2104,
+        "warmupCount": 2,
+        "sampleCount": 3,
+        "integration": {
+          "initialTime": 2,
+          "finalTime": 10,
+          "fixedStepSize": 1,
+          "fixedStepCount": 8,
+          "requestedOutputCount": 0
+        }
+      },
+      "status": "complete",
+      "timing": {
+        "medianSeconds": 13.748297375,
+        "samplesSeconds": [
+          13.844225541666667,
+          13.039798083333332,
+          13.748297375
+        ]
+      },
+      "correctness": {
+        "passed": true,
+        "relativeError": 1.6878186395892065E-16
+      },
+      "memory": {
+        "status": "complete",
+        "provider": "macos-ps-rss-external",
+        "baselineProcessBytes": 1.2333563904E+10,
+        "peakProcessBytes": 1.24583936E+10,
+        "peakIncrementBytes": 1.24715008E+8
+      },
+      "work": {
+        "acceptedSteps": 8,
+        "rejectedSteps": 0,
+        "rightHandSideEvaluations": 32,
+        "denseEvaluations": 0
+      }
+    },
+    {
+      "id": "constant-nonhydrostatic-512x512x129",
+      "transformId": "constant-nonhydrostatic",
+      "scoreFamily": "constant-nonhydrostatic",
+      "configuration": {
+        "Lxyz": [
+          15000,
+          15000,
+          1300
+        ],
+        "Nxyz": [
+          512,
+          512,
+          129
+        ],
+        "isHydrostatic": false,
+        "shouldAntialias": true,
+        "seed": 2103,
+        "warmupCount": 2,
+        "sampleCount": 3,
+        "integration": {
+          "initialTime": 2,
+          "finalTime": 10,
+          "fixedStepSize": 1,
+          "fixedStepCount": 8,
+          "requestedOutputCount": 0
+        }
+      },
+      "status": "complete",
+      "timing": {
+        "medianSeconds": 17.768990833333334,
+        "samplesSeconds": [
+          17.768990833333334,
+          18.018027375,
+          16.559541458333332
+        ]
+      },
+      "correctness": {
+        "passed": true,
+        "relativeError": 7.8214888176242E-17
+      },
+      "memory": {
+        "status": "complete",
+        "provider": "macos-ps-rss-external",
+        "baselineProcessBytes": 1.2333678592E+10,
+        "peakProcessBytes": 1.2458344448E+10,
+        "peakIncrementBytes": 1.24706816E+8
+      },
+      "work": {
+        "acceptedSteps": 8,
+        "rejectedSteps": 0,
+        "rightHandSideEvaluations": 32,
+        "denseEvaluations": 0
+      }
+    }
+  ]
+}

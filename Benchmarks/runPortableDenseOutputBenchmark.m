@@ -2,6 +2,7 @@ function result = runPortableDenseOutputBenchmark(options)
 % Compare opt-in fixed-RK4 dense output with its archived no-output baseline.
 arguments
     options.baselineCommit (1,1) string = "0876828d4d77727302bc326f8ae03ef999c70ef6"
+    options.baselineHarnessCommit (1,1) string = "088ef51"
     options.sizes (:,3) double {mustBeInteger,mustBePositive} = [256 256 65;512 512 129]
     options.hydrostatic (1,:) logical = [true false]
     options.processRunCount (1,1) double {mustBeInteger,mustBePositive} = 3
@@ -37,14 +38,16 @@ stateCleanup = onCleanup(@()restoreState(originalDirectory,originalPath,original
 addpath(repositoryRoot,fullfile(repositoryRoot,"Benchmarks"));
 
 baselineSource = fullfile(temporaryRoot,"baseline-source");
+baselineHarnessSource = fullfile(temporaryRoot,"baseline-harness-source");
 candidateSource = fullfile(temporaryRoot,"candidate-source");
-mkdir(baselineSource); mkdir(candidateSource)
+mkdir(baselineSource); mkdir(baselineHarnessSource); mkdir(candidateSource)
 archiveSource(repositoryRoot,options.baselineCommit,baselineSource)
+archiveSource(repositoryRoot,options.baselineHarnessCommit,baselineHarnessSource)
 archiveSource(repositoryRoot,candidateCommit,candidateSource)
 cacheRoot = fullfile(repositoryRoot,".compiled-backend-cache");
 candidateRunner = buildCandidateRunner(candidateSource,fullfile(temporaryRoot,"candidate-build"),cacheRoot);
 providerRoot = fullfile(cacheRoot,"provider","native-neon-pthreads");
-baselineRunner = buildBaselineRunner(baselineSource,candidateSource,fullfile(temporaryRoot,"baseline-build"),providerRoot,options.baselineCommit);
+baselineRunner = buildBaselineRunner(baselineSource,baselineHarnessSource,fullfile(temporaryRoot,"baseline-build"),providerRoot,options.baselineCommit);
 
 definitions = caseDefinitions(options);
 variants = ["baseline-no-output" "candidate-no-output" "candidate-dense-1" "candidate-dense-4"];
@@ -98,7 +101,7 @@ lines = splitlines(strtrim(string(output)));
 runner = lines(end);
 end
 
-function runner = buildBaselineRunner(baselineSource,candidateSource,buildRoot,providerRoot,baselineCommit)
+function runner = buildBaselineRunner(baselineSource,baselineHarnessSource,buildRoot,providerRoot,baselineCommit)
 projectRoot = fullfile(buildRoot,"project");
 mkdir(projectRoot)
 cmake = [
@@ -108,7 +111,7 @@ cmake = [
     "set(WV_RUNTIME_FFTW_ROOT """+cmakePath(providerRoot)+""" CACHE PATH """" FORCE)"
     "set(BUILD_TESTING OFF CACHE BOOL """" FORCE)"
     "add_subdirectory("""+cmakePath(fullfile(baselineSource,"PortableRuntime"))+""" runtime)"
-    "add_executable(wave-vortex-run-dense-baseline """+cmakePath(fullfile(candidateSource,"PortableRuntime","app","WaveVortexRun.cpp"))+""")"
+    "add_executable(wave-vortex-run-dense-baseline """+cmakePath(fullfile(baselineHarnessSource,"PortableRuntime","app","WaveVortexRun.cpp"))+""")"
     "target_compile_features(wave-vortex-run-dense-baseline PRIVATE cxx_std_17)"
     "target_link_libraries(wave-vortex-run-dense-baseline PRIVATE WaveVortex::PortableRuntime WaveVortex::ReferenceFFT WaveVortexNativeFFTW)"
     "target_include_directories(wave-vortex-run-dense-baseline PRIVATE """+cmakePath(fullfile(baselineSource,"CompiledKernel","adapters","native-fftw"))+""")"
