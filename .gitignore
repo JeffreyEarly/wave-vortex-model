@@ -11,3 +11,4 @@ tools/compiled-kernel/build-*/
 Benchmarks/results/runs/
 .compiled-backend-cache/
 *.nc
+!tools/portable-runtime/fixtures/*.nc
