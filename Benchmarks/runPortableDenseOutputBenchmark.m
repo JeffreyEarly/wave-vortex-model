@@ -10,6 +10,7 @@ arguments
     options.mediumSampleCount (1,1) double {mustBeInteger,mustBePositive} = 7
     options.largeSampleCount (1,1) double {mustBeInteger,mustBePositive} = 3
     options.deltaT (1,1) double {mustBePositive} = 1
+    options.includeDenseVariants (1,1) logical = true
     options.outputDirectory (1,1) string = ""
     options.shouldWriteArtifacts (1,1) logical = true
 end
@@ -50,7 +51,10 @@ providerRoot = fullfile(cacheRoot,"provider","native-neon-pthreads");
 baselineRunner = buildBaselineRunner(baselineSource,baselineHarnessSource,fullfile(temporaryRoot,"baseline-build"),providerRoot,options.baselineCommit);
 
 definitions = caseDefinitions(options);
-variants = ["baseline-no-output" "candidate-no-output" "candidate-dense-1" "candidate-dense-4"];
+variants = ["baseline-no-output" "candidate-no-output"];
+if options.includeDenseVariants
+    variants(end+1:end+2) = ["candidate-dense-1" "candidate-dense-4"];
+end
 runs = repmat(emptyRun,0,1);
 correctness = repmat(struct("caseId","","repeatIndex",0,"variant","","maximumRelativeError",NaN),0,1);
 for iCase = 1:numel(definitions)
@@ -63,11 +67,11 @@ for iCase = 1:numel(definitions)
         for iVariant = order
             variant = variants(iVariant);
             runner = conditional(iVariant == 1,baselineRunner,candidateRunner);
-            denseCount = [0 0 1 4];
+            denseCount = double(variant=="candidate-dense-1")+4*double(variant=="candidate-dense-4");
             outputPath = fullfile(temporaryRoot,sprintf("%s-%s-%d.nc",variant,definitions(iCase).id,iRun));
             reportPath = outputPath+".json";
             command = string(sprintf('"%s" "%s" "%s" --delta-t %.17g --steps %d --fft-provider native-fftw --threads 18 --benchmark-warmup-steps %d --report "%s"',runner,inputPath,outputPath,options.deltaT,sampleCount,options.warmupStepCount,reportPath));
-            if denseCount(iVariant) ~= 0, command = command+sprintf(' --benchmark-dense-outputs-per-step %d',denseCount(iVariant)); end
+            if denseCount ~= 0, command = command+sprintf(' --benchmark-dense-outputs-per-step %d',denseCount); end
             [status,output] = system(command);
             if status ~= 0 || ~isfile(reportPath), error("WaveVortexBenchmark:PortableDenseOutputWorker","%s",output), end
             report = jsondecode(fileread(reportPath));
@@ -158,11 +162,16 @@ for iCase = 1:numel(definitions)
     candidate = selected(string({selected.variant}) == "candidate-no-output");
     denseOne = selected(string({selected.variant}) == "candidate-dense-1");
     errors = correctness(string({correctness.caseId}) == definitions(iCase).id);
-    baselineTime = medianTime("baseline-no-output"); candidateTime = medianTime("candidate-no-output"); denseOneTime = medianTime("candidate-dense-1"); denseFourTime = medianTime("candidate-dense-4");
+    baselineTime = medianTime("baseline-no-output"); candidateTime = medianTime("candidate-no-output");
+    denseOneTime = NaN; denseFourTime = NaN; denseMethodBytes = NaN; denseDriverBytes = NaN;
+    if ~isempty(denseOne)
+        denseOneTime = medianTime("candidate-dense-1"); denseFourTime = medianTime("candidate-dense-4");
+        denseMethodBytes = median([denseOne.integratorWorkspaceBytes]); denseDriverBytes = median([denseOne.driverInterpolationBytes]);
+    end
     maximumError = max([errors.maximumRelativeError]);
     noOutputPassed = candidateTime/baselineTime <= 1.03;
     correctnessPassed = maximumError <= 1e-12;
-    comparisons(iCase) = struct("id",definitions(iCase).id,"baselineNoOutputSeconds",baselineTime,"candidateNoOutputSeconds",candidateTime,"candidateNoOutputRatio",candidateTime/baselineTime,"denseOneSeconds",denseOneTime,"denseOneOverheadRatio",denseOneTime/candidateTime,"denseFourSeconds",denseFourTime,"denseFourOverheadRatio",denseFourTime/candidateTime,"baselineWorkspaceBytes",median([baseline.integratorWorkspaceBytes]),"candidateNoOutputWorkspaceBytes",median([candidate.integratorWorkspaceBytes]),"denseMethodWorkspaceBytes",median([denseOne.integratorWorkspaceBytes]),"denseDriverBytes",median([denseOne.driverInterpolationBytes]),"maximumRelativeError",maximumError,"noOutputRegressionPassed",noOutputPassed,"correctnessPassed",correctnessPassed,"passed",noOutputPassed&&correctnessPassed);
+    comparisons(iCase) = struct("id",definitions(iCase).id,"baselineNoOutputSeconds",baselineTime,"candidateNoOutputSeconds",candidateTime,"candidateNoOutputRatio",candidateTime/baselineTime,"denseOneSeconds",denseOneTime,"denseOneOverheadRatio",denseOneTime/candidateTime,"denseFourSeconds",denseFourTime,"denseFourOverheadRatio",denseFourTime/candidateTime,"baselineWorkspaceBytes",median([baseline.integratorWorkspaceBytes]),"candidateNoOutputWorkspaceBytes",median([candidate.integratorWorkspaceBytes]),"denseMethodWorkspaceBytes",denseMethodBytes,"denseDriverBytes",denseDriverBytes,"maximumRelativeError",maximumError,"noOutputRegressionPassed",noOutputPassed,"correctnessPassed",correctnessPassed,"passed",noOutputPassed&&correctnessPassed);
 end
 end
 

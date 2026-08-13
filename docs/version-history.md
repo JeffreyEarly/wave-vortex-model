@@ -13,6 +13,7 @@ nav_order: 100
 - Added opt-in fixed-RK4 continuous output, method-neutral ordered observation delivery, and single-target transactional checkpoint output without changing accepted solver steps or the standalone command-line interface.
 - Added adaptive Bogacki--Shampine RK3(2) with energy-scaled coefficient tolerances, rejected-step control, FSAL reuse, and stage-derived continuous output behind representation-neutral controller and error-policy seams.
 - Added collision-safe scheduled output to `wave-vortex-run`, writing individually restartable MATLAB-compatible checkpoints at fixed-RK4 or adaptive-RK3(2) continuous-output times without changing accepted solver steps.
+- Defined versioned portable records for the five built-in observing systems and added ordered real/complex composite-state integration with fixed RK4 and adaptive RK3(2), while preserving the specialized zero-copy `Ap`/`Am`/`A0` path.
 - Reduced portable RK4 and forcing-engine array traffic by writing complete right-hand sides directly into caller storage, reusing the accepted state for the first stage, and allocating forcing workspaces only for schedules that require them.
 - Added persistent, resolution-convertible `WVNarrowBandGeostrophicForcing` and retained the former fixed-amplitude helper as a silent deprecated 4.x delegate.
 - Retired the experimental FFTW backend; WaveVortexModel now uses MATLAB's builtin transforms and has no FFTWTransforms dependency.

@@ -1,0 +1,3659 @@
+{
+  "schemaVersion": "portable-composite-state-regression-v1",
+  "status": "complete",
+  "source": {
+    "baselineCommit": "0becaa37f768106d3f9b2b469f346a41c3dd6505",
+    "candidateCommit": "7102c234641e8a96de51203e2917c28827177b8c"
+  },
+  "environment": {
+    "release": "2026a",
+    "architecture": "maca64",
+    "threads": 18
+  },
+  "configuration": {
+    "suite": "core-v1",
+    "processRunCount": 3,
+    "warmupStepCount": 2,
+    "mediumSampleCount": 7,
+    "largeSampleCount": 3,
+    "deltaT": 1,
+    "correctnessTolerance": 1E-12,
+    "noOutputRegressionLimit": 1.03,
+    "note": "Paired coefficient-only regression: each fresh process executes the requested warmup steps before timing one aggregate sequence of 7 medium or 3 large state-advanced RK4 calls. Dense-output variants were intentionally excluded."
+  },
+  "runs": [
+    {
+      "variant": "baseline-no-output",
+      "caseId": "constant-hydrostatic-256x256x65",
+      "repeatIndex": 1,
+      "sampleCount": 7,
+      "integrationSeconds": 1.583265917,
+      "secondsPerStep": 0.2261808452857143,
+      "integratorWorkspaceBytes": 6.9183072E+7,
+      "denseHistoryBytes": 0,
+      "driverInterpolationBytes": 0,
+      "knownMaximumLiveBytes": 5.12517745E+8,
+      "rssPeakIncrementLowerBoundBytes": 688128,
+      "rhsEvaluationCount": 36,
+      "interpolatedOutputCount": 0,
+      "metadata": {
+        "schemaVersion": "wave-vortex-run-v1",
+        "status": "complete",
+        "source": {
+          "commit": "0becaa37f768106d3f9b2b469f346a41c3dd6505"
+        },
+        "input": "/private/var/folders/cj/111cr_h11xz0b9rshvpdh_th0000gn/T/tp7cb7dce6_7169_480c_96be_1c0febeac0ff/input-constant-hydrostatic-256x256x65.nc",
+        "output": "/private/var/folders/cj/111cr_h11xz0b9rshvpdh_th0000gn/T/tp7cb7dce6_7169_480c_96be_1c0febeac0ff/baseline-no-output-constant-hydrostatic-256x256x65-1.nc",
+        "provider": {
+          "id": "native-fftw",
+          "version": "fftw-3.3.11-neon",
+          "threads": 18,
+          "baseLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue195-196/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+          "threadLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue195-196/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3_threads.3.dylib"
+        },
+        "state": {
+          "initialTime": 0,
+          "finalTime": 9,
+          "deltaT": 1,
+          "stepCount": 9,
+          "rhsEvaluationCount": 36,
+          "shape": [
+            42,
+            11439
+          ]
+        },
+        "authorBenchmark": {
+          "warmupStepCount": 2,
+          "sampleStepCount": 7,
+          "denseOutputsPerStep": 0,
+          "interpolatedOutputCount": 0
+        },
+        "forcing": {
+          "ordinal": 1,
+          "type": "WVNonlinearAdvection",
+          "name": "nonlinear advection",
+          "stage": 0,
+          "priority": 127
+        },
+        "timingSeconds": {
+          "inspect": 0.018529875,
+          "read": 0.0099,
+          "construct": 12.234522167,
+          "prepare": 0.001195166,
+          "integrate": 1.583265917,
+          "write": 0.019453042,
+          "total": 14.280514292
+        },
+        "storageBytes": {
+          "checkpointState": 2.3061024E+7,
+          "descriptor": 7.8421015E+7,
+          "planWrapper": 408,
+          "kernelScratch": 3.4185216E+8,
+          "forcingSchedule": 66,
+          "forcingDerivedOperators": 0,
+          "forcingWorkspace": 0,
+          "integratorWorkspace": 6.9183072E+7,
+          "denseHistory": 0,
+          "driverInterpolation": 0,
+          "knownPersistent": 5.12517745E+8,
+          "persistentFullHermitian": 0
+        },
+        "arrayTraffic": {
+          "scope": "exact integration-boundary arrays; FFT plans and kernel scratch internals excluded",
+          "elementBytes": 16,
+          "integrator": {
+            "stageStateConstructionReads": 7.7830956E+7,
+            "stageStateConstructionWrites": 3.8915478E+7,
+            "stageFluxClearWrites": 0,
+            "weightedFluxClearWrites": 0,
+            "weightedFluxInitializationReads": 1.2971826E+7,
+            "weightedFluxInitializationWrites": 1.2971826E+7,
+            "weightedAccumulationReads": 7.7830956E+7,
+            "weightedAccumulationWrites": 3.8915478E+7,
+            "finalStateUpdateReads": 2.5943652E+7,
+            "finalStateUpdateWrites": 1.2971826E+7,
+            "acceptedStateCommitReads": 1.2971826E+7,
+            "acceptedStateCommitWrites": 1.2971826E+7
+          },
+          "forcing": {
+            "accumulatorClearWrites": 0,
+            "temporaryFluxClearWrites": 0,
+            "kernelOutputInitializationWrites": 0,
+            "temporaryAccumulationReads": 0,
+            "temporaryAccumulationWrites": 0,
+            "outputCopyReads": 0,
+            "outputCopyWrites": 0,
+            "stateConstraintWrites": 0
+          },
+          "totals": {
+            "elementReads": 2.07549216E+8,
+            "elementWrites": 1.16746434E+8,
+            "bytesRead": 3.320787456E+9,
+            "bytesWritten": 1.867942944E+9
+          }
+        },
+        "livenessBytes": {
+          "integratorWorkspaceLive": 6.9183072E+7,
+          "integratorWorkspaceMaximumLive": 6.9183072E+7,
+          "forcingWorkspaceLive": 0,
+          "forcingWorkspaceMaximumLive": 0,
+          "acceptedStepAdditionalArrayStorage": 0,
+          "contractAbstractionAdditionalArrayStorage": 0,
+          "knownRetained": 5.12517745E+8,
+          "knownMaximumLive": 5.12517745E+8
+        },
+        "rssBytes": {
+          "integrationBaseline": 1.0358784E+9,
+          "processPeak": 1.036566528E+9,
+          "peakIncrementLowerBound": 688128
+        },
+        "execution": {
+          "engine": "fftw",
+          "library": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue195-196/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+          "schedule": "wave-vortex-forcing-v1:WVNonlinearAdvection",
+          "planCount": 17,
+          "noFallback": true
+        }
+      }
+    },
+    {
+      "variant": "candidate-no-output",
+      "caseId": "constant-hydrostatic-256x256x65",
+      "repeatIndex": 1,
+      "sampleCount": 7,
+      "integrationSeconds": 1.573054625,
+      "secondsPerStep": 0.22472208928571427,
+      "integratorWorkspaceBytes": 6.9183072E+7,
+      "denseHistoryBytes": 0,
+      "driverInterpolationBytes": 0,
+      "knownMaximumLiveBytes": 5.12517745E+8,
+      "rssPeakIncrementLowerBoundBytes": 737280,
+      "rhsEvaluationCount": 36,
+      "interpolatedOutputCount": 0,
+      "metadata": {
+        "schemaVersion": "wave-vortex-run-v1",
+        "status": "complete",
+        "source": {
+          "commit": "unknown"
+        },
+        "input": "/private/var/folders/cj/111cr_h11xz0b9rshvpdh_th0000gn/T/tp7cb7dce6_7169_480c_96be_1c0febeac0ff/input-constant-hydrostatic-256x256x65.nc",
+        "output": "/private/var/folders/cj/111cr_h11xz0b9rshvpdh_th0000gn/T/tp7cb7dce6_7169_480c_96be_1c0febeac0ff/candidate-no-output-constant-hydrostatic-256x256x65-1.nc",
+        "provider": {
+          "id": "native-fftw",
+          "version": "fftw-3.3.11-neon",
+          "threads": 18,
+          "baseLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue195-196/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+          "threadLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue195-196/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3_threads.3.dylib"
+        },
+        "state": {
+          "initialTime": 0,
+          "finalTime": 9,
+          "deltaT": 1,
+          "stepCount": 9,
+          "rejectedStepCount": 0,
+          "rhsEvaluationCount": 36,
+          "shape": [
+            42,
+            11439
+          ]
+        },
+        "integrator": {
+          "id": "fixed-rk4",
+          "relativeTolerance": 0.001,
+          "absoluteTolerance": 1E-6,
+          "lastNormalizedError": 0,
+          "lastProposedStepSize": 0,
+          "lastAcceptedStepSize": 0,
+          "nextStepSize": 1,
+          "fsalReuseCount": 0,
+          "fsalInvalidationCount": 0,
+          "rejectedInitialDerivativeReuseCount": 0,
+          "constraintModifiedCoefficientCount": 0,
+          "denseOutputEvaluationCount": 0,
+          "denseOutputElementReads": 0,
+          "denseOutputElementWrites": 0,
+          "denseOutputSeconds": 0,
+          "errorPolicyBytes": 0
+        },
+        "authorBenchmark": {
+          "warmupStepCount": 2,
+          "sampleStepCount": 7,
+          "denseOutputsPerStep": 0,
+          "requestedOutputCount": 0,
+          "interpolatedOutputCount": 0,
+          "interpolationSeconds": 0
+        },
+        "forcing": {
+          "ordinal": 1,
+          "type": "WVNonlinearAdvection",
+          "name": "nonlinear advection",
+          "stage": 0,
+          "priority": 127
+        },
+        "timingSeconds": {
+          "inspect": 0.019418167,
+          "read": 0.009429625,
+          "construct": 12.2671875,
+          "prepare": 0.001238667,
+          "integrate": 1.573054625,
+          "write": 0.020050208,
+          "total": 14.325140667
+        },
+        "storageBytes": {
+          "checkpointState": 2.3061024E+7,
+          "descriptor": 7.8421015E+7,
+          "planWrapper": 408,
+          "kernelScratch": 3.4185216E+8,
+          "forcingSchedule": 66,
+          "forcingDerivedOperators": 0,
+          "forcingWorkspace": 0,
+          "integratorWorkspace": 6.9183072E+7,
+          "denseHistory": 0,
+          "driverInterpolation": 0,
+          "scheduledOutput": 0,
+          "knownPersistent": 5.12517745E+8,
+          "persistentFullHermitian": 0
+        },
+        "arrayTraffic": {
+          "scope": "exact fixed-RK4 integration-boundary arrays; adaptive traffic is reported through method metrics",
+          "elementBytes": 16,
+          "integrator": {
+            "stageStateConstructionReads": 7.7830956E+7,
+            "stageStateConstructionWrites": 3.8915478E+7,
+            "stageFluxClearWrites": 0,
+            "weightedFluxClearWrites": 0,
+            "weightedFluxInitializationReads": 1.2971826E+7,
+            "weightedFluxInitializationWrites": 1.2971826E+7,
+            "weightedAccumulationReads": 7.7830956E+7,
+            "weightedAccumulationWrites": 3.8915478E+7,
+            "finalStateUpdateReads": 2.5943652E+7,
+            "finalStateUpdateWrites": 1.2971826E+7,
+            "acceptedStateCommitReads": 1.2971826E+7,
+            "acceptedStateCommitWrites": 1.2971826E+7
+          },
+          "forcing": {
+            "accumulatorClearWrites": 0,
+            "temporaryFluxClearWrites": 0,
+            "kernelOutputInitializationWrites": 0,
+            "temporaryAccumulationReads": 0,
+            "temporaryAccumulationWrites": 0,
+            "outputCopyReads": 0,
+            "outputCopyWrites": 0,
+            "stateConstraintWrites": 0
+          },
+          "totals": {
+            "elementReads": 2.07549216E+8,
+            "elementWrites": 1.16746434E+8,
+            "bytesRead": 3.320787456E+9,
+            "bytesWritten": 1.867942944E+9
+          }
+        },
+        "livenessBytes": {
+          "integratorWorkspaceLive": 6.9183072E+7,
+          "integratorWorkspaceMaximumLive": 6.9183072E+7,
+          "forcingWorkspaceLive": 0,
+          "forcingWorkspaceMaximumLive": 0,
+          "acceptedStepAdditionalArrayStorage": 0,
+          "contractAbstractionAdditionalArrayStorage": 0,
+          "knownRetained": 5.12517745E+8,
+          "knownMaximumLive": 5.12517745E+8
+        },
+        "rssBytes": {
+          "integrationBaseline": 1.035616256E+9,
+          "processPeak": 1.036353536E+9,
+          "peakIncrementLowerBound": 737280
+        },
+        "execution": {
+          "engine": "fftw",
+          "library": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue195-196/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+          "schedule": "wave-vortex-forcing-v1:WVNonlinearAdvection",
+          "planCount": 17,
+          "noFallback": true
+        }
+      }
+    },
+    {
+      "variant": "candidate-no-output",
+      "caseId": "constant-hydrostatic-256x256x65",
+      "repeatIndex": 2,
+      "sampleCount": 7,
+      "integrationSeconds": 1.619579375,
+      "secondsPerStep": 0.23136848214285716,
+      "integratorWorkspaceBytes": 6.9183072E+7,
+      "denseHistoryBytes": 0,
+      "driverInterpolationBytes": 0,
+      "knownMaximumLiveBytes": 5.12517745E+8,
+      "rssPeakIncrementLowerBoundBytes": 753664,
+      "rhsEvaluationCount": 36,
+      "interpolatedOutputCount": 0,
+      "metadata": {
+        "schemaVersion": "wave-vortex-run-v1",
+        "status": "complete",
+        "source": {
+          "commit": "unknown"
+        },
+        "input": "/private/var/folders/cj/111cr_h11xz0b9rshvpdh_th0000gn/T/tp7cb7dce6_7169_480c_96be_1c0febeac0ff/input-constant-hydrostatic-256x256x65.nc",
+        "output": "/private/var/folders/cj/111cr_h11xz0b9rshvpdh_th0000gn/T/tp7cb7dce6_7169_480c_96be_1c0febeac0ff/candidate-no-output-constant-hydrostatic-256x256x65-2.nc",
+        "provider": {
+          "id": "native-fftw",
+          "version": "fftw-3.3.11-neon",
+          "threads": 18,
+          "baseLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue195-196/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+          "threadLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue195-196/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3_threads.3.dylib"
+        },
+        "state": {
+          "initialTime": 0,
+          "finalTime": 9,
+          "deltaT": 1,
+          "stepCount": 9,
+          "rejectedStepCount": 0,
+          "rhsEvaluationCount": 36,
+          "shape": [
+            42,
+            11439
+          ]
+        },
+        "integrator": {
+          "id": "fixed-rk4",
+          "relativeTolerance": 0.001,
+          "absoluteTolerance": 1E-6,
+          "lastNormalizedError": 0,
+          "lastProposedStepSize": 0,
+          "lastAcceptedStepSize": 0,
+          "nextStepSize": 1,
+          "fsalReuseCount": 0,
+          "fsalInvalidationCount": 0,
+          "rejectedInitialDerivativeReuseCount": 0,
+          "constraintModifiedCoefficientCount": 0,
+          "denseOutputEvaluationCount": 0,
+          "denseOutputElementReads": 0,
+          "denseOutputElementWrites": 0,
+          "denseOutputSeconds": 0,
+          "errorPolicyBytes": 0
+        },
+        "authorBenchmark": {
+          "warmupStepCount": 2,
+          "sampleStepCount": 7,
+          "denseOutputsPerStep": 0,
+          "requestedOutputCount": 0,
+          "interpolatedOutputCount": 0,
+          "interpolationSeconds": 0
+        },
+        "forcing": {
+          "ordinal": 1,
+          "type": "WVNonlinearAdvection",
+          "name": "nonlinear advection",
+          "stage": 0,
+          "priority": 127
+        },
+        "timingSeconds": {
+          "inspect": 0.012283041,
+          "read": 0.006698833,
+          "construct": 12.260400292,
+          "prepare": 0.001173375,
+          "integrate": 1.619579375,
+          "write": 0.019575958,
+          "total": 14.37588425
+        },
+        "storageBytes": {
+          "checkpointState": 2.3061024E+7,
+          "descriptor": 7.8421015E+7,
+          "planWrapper": 408,
+          "kernelScratch": 3.4185216E+8,
+          "forcingSchedule": 66,
+          "forcingDerivedOperators": 0,
+          "forcingWorkspace": 0,
+          "integratorWorkspace": 6.9183072E+7,
+          "denseHistory": 0,
+          "driverInterpolation": 0,
+          "scheduledOutput": 0,
+          "knownPersistent": 5.12517745E+8,
+          "persistentFullHermitian": 0
+        },
+        "arrayTraffic": {
+          "scope": "exact fixed-RK4 integration-boundary arrays; adaptive traffic is reported through method metrics",
+          "elementBytes": 16,
+          "integrator": {
+            "stageStateConstructionReads": 7.7830956E+7,
+            "stageStateConstructionWrites": 3.8915478E+7,
+            "stageFluxClearWrites": 0,
+            "weightedFluxClearWrites": 0,
+            "weightedFluxInitializationReads": 1.2971826E+7,
+            "weightedFluxInitializationWrites": 1.2971826E+7,
+            "weightedAccumulationReads": 7.7830956E+7,
+            "weightedAccumulationWrites": 3.8915478E+7,
+            "finalStateUpdateReads": 2.5943652E+7,
+            "finalStateUpdateWrites": 1.2971826E+7,
+            "acceptedStateCommitReads": 1.2971826E+7,
+            "acceptedStateCommitWrites": 1.2971826E+7
+          },
+          "forcing": {
+            "accumulatorClearWrites": 0,
+            "temporaryFluxClearWrites": 0,
+            "kernelOutputInitializationWrites": 0,
+            "temporaryAccumulationReads": 0,
+            "temporaryAccumulationWrites": 0,
+            "outputCopyReads": 0,
+            "outputCopyWrites": 0,
+            "stateConstraintWrites": 0
+          },
+          "totals": {
+            "elementReads": 2.07549216E+8,
+            "elementWrites": 1.16746434E+8,
+            "bytesRead": 3.320787456E+9,
+            "bytesWritten": 1.867942944E+9
+          }
+        },
+        "livenessBytes": {
+          "integratorWorkspaceLive": 6.9183072E+7,
+          "integratorWorkspaceMaximumLive": 6.9183072E+7,
+          "forcingWorkspaceLive": 0,
+          "forcingWorkspaceMaximumLive": 0,
+          "acceptedStepAdditionalArrayStorage": 0,
+          "contractAbstractionAdditionalArrayStorage": 0,
+          "knownRetained": 5.12517745E+8,
+          "knownMaximumLive": 5.12517745E+8
+        },
+        "rssBytes": {
+          "integrationBaseline": 1.036648448E+9,
+          "processPeak": 1.037402112E+9,
+          "peakIncrementLowerBound": 753664
+        },
+        "execution": {
+          "engine": "fftw",
+          "library": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue195-196/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+          "schedule": "wave-vortex-forcing-v1:WVNonlinearAdvection",
+          "planCount": 17,
+          "noFallback": true
+        }
+      }
+    },
+    {
+      "variant": "baseline-no-output",
+      "caseId": "constant-hydrostatic-256x256x65",
+      "repeatIndex": 2,
+      "sampleCount": 7,
+      "integrationSeconds": 1.618424208,
+      "secondsPerStep": 0.23120345828571429,
+      "integratorWorkspaceBytes": 6.9183072E+7,
+      "denseHistoryBytes": 0,
+      "driverInterpolationBytes": 0,
+      "knownMaximumLiveBytes": 5.12517745E+8,
+      "rssPeakIncrementLowerBoundBytes": 720896,
+      "rhsEvaluationCount": 36,
+      "interpolatedOutputCount": 0,
+      "metadata": {
+        "schemaVersion": "wave-vortex-run-v1",
+        "status": "complete",
+        "source": {
+          "commit": "0becaa37f768106d3f9b2b469f346a41c3dd6505"
+        },
+        "input": "/private/var/folders/cj/111cr_h11xz0b9rshvpdh_th0000gn/T/tp7cb7dce6_7169_480c_96be_1c0febeac0ff/input-constant-hydrostatic-256x256x65.nc",
+        "output": "/private/var/folders/cj/111cr_h11xz0b9rshvpdh_th0000gn/T/tp7cb7dce6_7169_480c_96be_1c0febeac0ff/baseline-no-output-constant-hydrostatic-256x256x65-2.nc",
+        "provider": {
+          "id": "native-fftw",
+          "version": "fftw-3.3.11-neon",
+          "threads": 18,
+          "baseLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue195-196/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+          "threadLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue195-196/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3_threads.3.dylib"
+        },
+        "state": {
+          "initialTime": 0,
+          "finalTime": 9,
+          "deltaT": 1,
+          "stepCount": 9,
+          "rhsEvaluationCount": 36,
+          "shape": [
+            42,
+            11439
+          ]
+        },
+        "authorBenchmark": {
+          "warmupStepCount": 2,
+          "sampleStepCount": 7,
+          "denseOutputsPerStep": 0,
+          "interpolatedOutputCount": 0
+        },
+        "forcing": {
+          "ordinal": 1,
+          "type": "WVNonlinearAdvection",
+          "name": "nonlinear advection",
+          "stage": 0,
+          "priority": 127
+        },
+        "timingSeconds": {
+          "inspect": 0.011176333,
+          "read": 0.006560583,
+          "construct": 12.232483708,
+          "prepare": 0.001273959,
+          "integrate": 1.618424208,
+          "write": 0.021859583,
+          "total": 14.336247917
+        },
+        "storageBytes": {
+          "checkpointState": 2.3061024E+7,
+          "descriptor": 7.8421015E+7,
+          "planWrapper": 408,
+          "kernelScratch": 3.4185216E+8,
+          "forcingSchedule": 66,
+          "forcingDerivedOperators": 0,
+          "forcingWorkspace": 0,
+          "integratorWorkspace": 6.9183072E+7,
+          "denseHistory": 0,
+          "driverInterpolation": 0,
+          "knownPersistent": 5.12517745E+8,
+          "persistentFullHermitian": 0
+        },
+        "arrayTraffic": {
+          "scope": "exact integration-boundary arrays; FFT plans and kernel scratch internals excluded",
+          "elementBytes": 16,
+          "integrator": {
+            "stageStateConstructionReads": 7.7830956E+7,
+            "stageStateConstructionWrites": 3.8915478E+7,
+            "stageFluxClearWrites": 0,
+            "weightedFluxClearWrites": 0,
+            "weightedFluxInitializationReads": 1.2971826E+7,
+            "weightedFluxInitializationWrites": 1.2971826E+7,
+            "weightedAccumulationReads": 7.7830956E+7,
+            "weightedAccumulationWrites": 3.8915478E+7,
+            "finalStateUpdateReads": 2.5943652E+7,
+            "finalStateUpdateWrites": 1.2971826E+7,
+            "acceptedStateCommitReads": 1.2971826E+7,
+            "acceptedStateCommitWrites": 1.2971826E+7
+          },
+          "forcing": {
+            "accumulatorClearWrites": 0,
+            "temporaryFluxClearWrites": 0,
+            "kernelOutputInitializationWrites": 0,
+            "temporaryAccumulationReads": 0,
+            "temporaryAccumulationWrites": 0,
+            "outputCopyReads": 0,
+            "outputCopyWrites": 0,
+            "stateConstraintWrites": 0
+          },
+          "totals": {
+            "elementReads": 2.07549216E+8,
+            "elementWrites": 1.16746434E+8,
+            "bytesRead": 3.320787456E+9,
+            "bytesWritten": 1.867942944E+9
+          }
+        },
+        "livenessBytes": {
+          "integratorWorkspaceLive": 6.9183072E+7,
+          "integratorWorkspaceMaximumLive": 6.9183072E+7,
+          "forcingWorkspaceLive": 0,
+          "forcingWorkspaceMaximumLive": 0,
+          "acceptedStepAdditionalArrayStorage": 0,
+          "contractAbstractionAdditionalArrayStorage": 0,
+          "knownRetained": 5.12517745E+8,
+          "knownMaximumLive": 5.12517745E+8
+        },
+        "rssBytes": {
+          "integrationBaseline": 1.035419648E+9,
+          "processPeak": 1.036140544E+9,
+          "peakIncrementLowerBound": 720896
+        },
+        "execution": {
+          "engine": "fftw",
+          "library": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue195-196/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+          "schedule": "wave-vortex-forcing-v1:WVNonlinearAdvection",
+          "planCount": 17,
+          "noFallback": true
+        }
+      }
+    },
+    {
+      "variant": "baseline-no-output",
+      "caseId": "constant-hydrostatic-256x256x65",
+      "repeatIndex": 3,
+      "sampleCount": 7,
+      "integrationSeconds": 1.600691333,
+      "secondsPerStep": 0.22867019042857145,
+      "integratorWorkspaceBytes": 6.9183072E+7,
+      "denseHistoryBytes": 0,
+      "driverInterpolationBytes": 0,
+      "knownMaximumLiveBytes": 5.12517745E+8,
+      "rssPeakIncrementLowerBoundBytes": 704512,
+      "rhsEvaluationCount": 36,
+      "interpolatedOutputCount": 0,
+      "metadata": {
+        "schemaVersion": "wave-vortex-run-v1",
+        "status": "complete",
+        "source": {
+          "commit": "0becaa37f768106d3f9b2b469f346a41c3dd6505"
+        },
+        "input": "/private/var/folders/cj/111cr_h11xz0b9rshvpdh_th0000gn/T/tp7cb7dce6_7169_480c_96be_1c0febeac0ff/input-constant-hydrostatic-256x256x65.nc",
+        "output": "/private/var/folders/cj/111cr_h11xz0b9rshvpdh_th0000gn/T/tp7cb7dce6_7169_480c_96be_1c0febeac0ff/baseline-no-output-constant-hydrostatic-256x256x65-3.nc",
+        "provider": {
+          "id": "native-fftw",
+          "version": "fftw-3.3.11-neon",
+          "threads": 18,
+          "baseLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue195-196/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+          "threadLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue195-196/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3_threads.3.dylib"
+        },
+        "state": {
+          "initialTime": 0,
+          "finalTime": 9,
+          "deltaT": 1,
+          "stepCount": 9,
+          "rhsEvaluationCount": 36,
+          "shape": [
+            42,
+            11439
+          ]
+        },
+        "authorBenchmark": {
+          "warmupStepCount": 2,
+          "sampleStepCount": 7,
+          "denseOutputsPerStep": 0,
+          "interpolatedOutputCount": 0
+        },
+        "forcing": {
+          "ordinal": 1,
+          "type": "WVNonlinearAdvection",
+          "name": "nonlinear advection",
+          "stage": 0,
+          "priority": 127
+        },
+        "timingSeconds": {
+          "inspect": 0.012565417,
+          "read": 0.006668208,
+          "construct": 12.287714667,
+          "prepare": 0.001193708,
+          "integrate": 1.600691333,
+          "write": 0.020842417,
+          "total": 14.361179375
+        },
+        "storageBytes": {
+          "checkpointState": 2.3061024E+7,
+          "descriptor": 7.8421015E+7,
+          "planWrapper": 408,
+          "kernelScratch": 3.4185216E+8,
+          "forcingSchedule": 66,
+          "forcingDerivedOperators": 0,
+          "forcingWorkspace": 0,
+          "integratorWorkspace": 6.9183072E+7,
+          "denseHistory": 0,
+          "driverInterpolation": 0,
+          "knownPersistent": 5.12517745E+8,
+          "persistentFullHermitian": 0
+        },
+        "arrayTraffic": {
+          "scope": "exact integration-boundary arrays; FFT plans and kernel scratch internals excluded",
+          "elementBytes": 16,
+          "integrator": {
+            "stageStateConstructionReads": 7.7830956E+7,
+            "stageStateConstructionWrites": 3.8915478E+7,
+            "stageFluxClearWrites": 0,
+            "weightedFluxClearWrites": 0,
+            "weightedFluxInitializationReads": 1.2971826E+7,
+            "weightedFluxInitializationWrites": 1.2971826E+7,
+            "weightedAccumulationReads": 7.7830956E+7,
+            "weightedAccumulationWrites": 3.8915478E+7,
+            "finalStateUpdateReads": 2.5943652E+7,
+            "finalStateUpdateWrites": 1.2971826E+7,
+            "acceptedStateCommitReads": 1.2971826E+7,
+            "acceptedStateCommitWrites": 1.2971826E+7
+          },
+          "forcing": {
+            "accumulatorClearWrites": 0,
+            "temporaryFluxClearWrites": 0,
+            "kernelOutputInitializationWrites": 0,
+            "temporaryAccumulationReads": 0,
+            "temporaryAccumulationWrites": 0,
+            "outputCopyReads": 0,
+            "outputCopyWrites": 0,
+            "stateConstraintWrites": 0
+          },
+          "totals": {
+            "elementReads": 2.07549216E+8,
+            "elementWrites": 1.16746434E+8,
+            "bytesRead": 3.320787456E+9,
+            "bytesWritten": 1.867942944E+9
+          }
+        },
+        "livenessBytes": {
+          "integratorWorkspaceLive": 6.9183072E+7,
+          "integratorWorkspaceMaximumLive": 6.9183072E+7,
+          "forcingWorkspaceLive": 0,
+          "forcingWorkspaceMaximumLive": 0,
+          "acceptedStepAdditionalArrayStorage": 0,
+          "contractAbstractionAdditionalArrayStorage": 0,
+          "knownRetained": 5.12517745E+8,
+          "knownMaximumLive": 5.12517745E+8
+        },
+        "rssBytes": {
+          "integrationBaseline": 1.035976704E+9,
+          "processPeak": 1.036681216E+9,
+          "peakIncrementLowerBound": 704512
+        },
+        "execution": {
+          "engine": "fftw",
+          "library": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue195-196/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+          "schedule": "wave-vortex-forcing-v1:WVNonlinearAdvection",
+          "planCount": 17,
+          "noFallback": true
+        }
+      }
+    },
+    {
+      "variant": "candidate-no-output",
+      "caseId": "constant-hydrostatic-256x256x65",
+      "repeatIndex": 3,
+      "sampleCount": 7,
+      "integrationSeconds": 1.666324375,
+      "secondsPerStep": 0.23804633928571431,
+      "integratorWorkspaceBytes": 6.9183072E+7,
+      "denseHistoryBytes": 0,
+      "driverInterpolationBytes": 0,
+      "knownMaximumLiveBytes": 5.12517745E+8,
+      "rssPeakIncrementLowerBoundBytes": 704512,
+      "rhsEvaluationCount": 36,
+      "interpolatedOutputCount": 0,
+      "metadata": {
+        "schemaVersion": "wave-vortex-run-v1",
+        "status": "complete",
+        "source": {
+          "commit": "unknown"
+        },
+        "input": "/private/var/folders/cj/111cr_h11xz0b9rshvpdh_th0000gn/T/tp7cb7dce6_7169_480c_96be_1c0febeac0ff/input-constant-hydrostatic-256x256x65.nc",
+        "output": "/private/var/folders/cj/111cr_h11xz0b9rshvpdh_th0000gn/T/tp7cb7dce6_7169_480c_96be_1c0febeac0ff/candidate-no-output-constant-hydrostatic-256x256x65-3.nc",
+        "provider": {
+          "id": "native-fftw",
+          "version": "fftw-3.3.11-neon",
+          "threads": 18,
+          "baseLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue195-196/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+          "threadLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue195-196/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3_threads.3.dylib"
+        },
+        "state": {
+          "initialTime": 0,
+          "finalTime": 9,
+          "deltaT": 1,
+          "stepCount": 9,
+          "rejectedStepCount": 0,
+          "rhsEvaluationCount": 36,
+          "shape": [
+            42,
+            11439
+          ]
+        },
+        "integrator": {
+          "id": "fixed-rk4",
+          "relativeTolerance": 0.001,
+          "absoluteTolerance": 1E-6,
+          "lastNormalizedError": 0,
+          "lastProposedStepSize": 0,
+          "lastAcceptedStepSize": 0,
+          "nextStepSize": 1,
+          "fsalReuseCount": 0,
+          "fsalInvalidationCount": 0,
+          "rejectedInitialDerivativeReuseCount": 0,
+          "constraintModifiedCoefficientCount": 0,
+          "denseOutputEvaluationCount": 0,
+          "denseOutputElementReads": 0,
+          "denseOutputElementWrites": 0,
+          "denseOutputSeconds": 0,
+          "errorPolicyBytes": 0
+        },
+        "authorBenchmark": {
+          "warmupStepCount": 2,
+          "sampleStepCount": 7,
+          "denseOutputsPerStep": 0,
+          "requestedOutputCount": 0,
+          "interpolatedOutputCount": 0,
+          "interpolationSeconds": 0
+        },
+        "forcing": {
+          "ordinal": 1,
+          "type": "WVNonlinearAdvection",
+          "name": "nonlinear advection",
+          "stage": 0,
+          "priority": 127
+        },
+        "timingSeconds": {
+          "inspect": 0.011961167,
+          "read": 0.006647166,
+          "construct": 12.308584541,
+          "prepare": 0.001218584,
+          "integrate": 1.666324375,
+          "write": 0.020687292,
+          "total": 14.474948292
+        },
+        "storageBytes": {
+          "checkpointState": 2.3061024E+7,
+          "descriptor": 7.8421015E+7,
+          "planWrapper": 408,
+          "kernelScratch": 3.4185216E+8,
+          "forcingSchedule": 66,
+          "forcingDerivedOperators": 0,
+          "forcingWorkspace": 0,
+          "integratorWorkspace": 6.9183072E+7,
+          "denseHistory": 0,
+          "driverInterpolation": 0,
+          "scheduledOutput": 0,
+          "knownPersistent": 5.12517745E+8,
+          "persistentFullHermitian": 0
+        },
+        "arrayTraffic": {
+          "scope": "exact fixed-RK4 integration-boundary arrays; adaptive traffic is reported through method metrics",
+          "elementBytes": 16,
+          "integrator": {
+            "stageStateConstructionReads": 7.7830956E+7,
+            "stageStateConstructionWrites": 3.8915478E+7,
+            "stageFluxClearWrites": 0,
+            "weightedFluxClearWrites": 0,
+            "weightedFluxInitializationReads": 1.2971826E+7,
+            "weightedFluxInitializationWrites": 1.2971826E+7,
+            "weightedAccumulationReads": 7.7830956E+7,
+            "weightedAccumulationWrites": 3.8915478E+7,
+            "finalStateUpdateReads": 2.5943652E+7,
+            "finalStateUpdateWrites": 1.2971826E+7,
+            "acceptedStateCommitReads": 1.2971826E+7,
+            "acceptedStateCommitWrites": 1.2971826E+7
+          },
+          "forcing": {
+            "accumulatorClearWrites": 0,
+            "temporaryFluxClearWrites": 0,
+            "kernelOutputInitializationWrites": 0,
+            "temporaryAccumulationReads": 0,
+            "temporaryAccumulationWrites": 0,
+            "outputCopyReads": 0,
+            "outputCopyWrites": 0,
+            "stateConstraintWrites": 0
+          },
+          "totals": {
+            "elementReads": 2.07549216E+8,
+            "elementWrites": 1.16746434E+8,
+            "bytesRead": 3.320787456E+9,
+            "bytesWritten": 1.867942944E+9
+          }
+        },
+        "livenessBytes": {
+          "integratorWorkspaceLive": 6.9183072E+7,
+          "integratorWorkspaceMaximumLive": 6.9183072E+7,
+          "forcingWorkspaceLive": 0,
+          "forcingWorkspaceMaximumLive": 0,
+          "acceptedStepAdditionalArrayStorage": 0,
+          "contractAbstractionAdditionalArrayStorage": 0,
+          "knownRetained": 5.12517745E+8,
+          "knownMaximumLive": 5.12517745E+8
+        },
+        "rssBytes": {
+          "integrationBaseline": 1.036288E+9,
+          "processPeak": 1.036992512E+9,
+          "peakIncrementLowerBound": 704512
+        },
+        "execution": {
+          "engine": "fftw",
+          "library": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue195-196/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+          "schedule": "wave-vortex-forcing-v1:WVNonlinearAdvection",
+          "planCount": 17,
+          "noFallback": true
+        }
+      }
+    },
+    {
+      "variant": "candidate-no-output",
+      "caseId": "constant-nonhydrostatic-256x256x65",
+      "repeatIndex": 1,
+      "sampleCount": 7,
+      "integrationSeconds": 2.068883375,
+      "secondsPerStep": 0.29555476785714285,
+      "integratorWorkspaceBytes": 6.9183072E+7,
+      "denseHistoryBytes": 0,
+      "driverInterpolationBytes": 0,
+      "knownMaximumLiveBytes": 5.12517745E+8,
+      "rssPeakIncrementLowerBoundBytes": 1.900544E+6,
+      "rhsEvaluationCount": 36,
+      "interpolatedOutputCount": 0,
+      "metadata": {
+        "schemaVersion": "wave-vortex-run-v1",
+        "status": "complete",
+        "source": {
+          "commit": "unknown"
+        },
+        "input": "/private/var/folders/cj/111cr_h11xz0b9rshvpdh_th0000gn/T/tp7cb7dce6_7169_480c_96be_1c0febeac0ff/input-constant-nonhydrostatic-256x256x65.nc",
+        "output": "/private/var/folders/cj/111cr_h11xz0b9rshvpdh_th0000gn/T/tp7cb7dce6_7169_480c_96be_1c0febeac0ff/candidate-no-output-constant-nonhydrostatic-256x256x65-1.nc",
+        "provider": {
+          "id": "native-fftw",
+          "version": "fftw-3.3.11-neon",
+          "threads": 18,
+          "baseLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue195-196/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+          "threadLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue195-196/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3_threads.3.dylib"
+        },
+        "state": {
+          "initialTime": 0,
+          "finalTime": 9,
+          "deltaT": 1,
+          "stepCount": 9,
+          "rejectedStepCount": 0,
+          "rhsEvaluationCount": 36,
+          "shape": [
+            42,
+            11439
+          ]
+        },
+        "integrator": {
+          "id": "fixed-rk4",
+          "relativeTolerance": 0.001,
+          "absoluteTolerance": 1E-6,
+          "lastNormalizedError": 0,
+          "lastProposedStepSize": 0,
+          "lastAcceptedStepSize": 0,
+          "nextStepSize": 1,
+          "fsalReuseCount": 0,
+          "fsalInvalidationCount": 0,
+          "rejectedInitialDerivativeReuseCount": 0,
+          "constraintModifiedCoefficientCount": 0,
+          "denseOutputEvaluationCount": 0,
+          "denseOutputElementReads": 0,
+          "denseOutputElementWrites": 0,
+          "denseOutputSeconds": 0,
+          "errorPolicyBytes": 0
+        },
+        "authorBenchmark": {
+          "warmupStepCount": 2,
+          "sampleStepCount": 7,
+          "denseOutputsPerStep": 0,
+          "requestedOutputCount": 0,
+          "interpolatedOutputCount": 0,
+          "interpolationSeconds": 0
+        },
+        "forcing": {
+          "ordinal": 1,
+          "type": "WVNonlinearAdvection",
+          "name": "nonlinear advection",
+          "stage": 0,
+          "priority": 127
+        },
+        "timingSeconds": {
+          "inspect": 0.0125125,
+          "read": 0.007205541,
+          "construct": 12.265417291,
+          "prepare": 0.001205625,
+          "integrate": 2.068883375,
+          "write": 0.020217333,
+          "total": 14.937265791
+        },
+        "storageBytes": {
+          "checkpointState": 2.3061024E+7,
+          "descriptor": 7.8421015E+7,
+          "planWrapper": 408,
+          "kernelScratch": 3.4185216E+8,
+          "forcingSchedule": 66,
+          "forcingDerivedOperators": 0,
+          "forcingWorkspace": 0,
+          "integratorWorkspace": 6.9183072E+7,
+          "denseHistory": 0,
+          "driverInterpolation": 0,
+          "scheduledOutput": 0,
+          "knownPersistent": 5.12517745E+8,
+          "persistentFullHermitian": 0
+        },
+        "arrayTraffic": {
+          "scope": "exact fixed-RK4 integration-boundary arrays; adaptive traffic is reported through method metrics",
+          "elementBytes": 16,
+          "integrator": {
+            "stageStateConstructionReads": 7.7830956E+7,
+            "stageStateConstructionWrites": 3.8915478E+7,
+            "stageFluxClearWrites": 0,
+            "weightedFluxClearWrites": 0,
+            "weightedFluxInitializationReads": 1.2971826E+7,
+            "weightedFluxInitializationWrites": 1.2971826E+7,
+            "weightedAccumulationReads": 7.7830956E+7,
+            "weightedAccumulationWrites": 3.8915478E+7,
+            "finalStateUpdateReads": 2.5943652E+7,
+            "finalStateUpdateWrites": 1.2971826E+7,
+            "acceptedStateCommitReads": 1.2971826E+7,
+            "acceptedStateCommitWrites": 1.2971826E+7
+          },
+          "forcing": {
+            "accumulatorClearWrites": 0,
+            "temporaryFluxClearWrites": 0,
+            "kernelOutputInitializationWrites": 0,
+            "temporaryAccumulationReads": 0,
+            "temporaryAccumulationWrites": 0,
+            "outputCopyReads": 0,
+            "outputCopyWrites": 0,
+            "stateConstraintWrites": 0
+          },
+          "totals": {
+            "elementReads": 2.07549216E+8,
+            "elementWrites": 1.16746434E+8,
+            "bytesRead": 3.320787456E+9,
+            "bytesWritten": 1.867942944E+9
+          }
+        },
+        "livenessBytes": {
+          "integratorWorkspaceLive": 6.9183072E+7,
+          "integratorWorkspaceMaximumLive": 6.9183072E+7,
+          "forcingWorkspaceLive": 0,
+          "forcingWorkspaceMaximumLive": 0,
+          "acceptedStepAdditionalArrayStorage": 0,
+          "contractAbstractionAdditionalArrayStorage": 0,
+          "knownRetained": 5.12517745E+8,
+          "knownMaximumLive": 5.12517745E+8
+        },
+        "rssBytes": {
+          "integrationBaseline": 1.035730944E+9,
+          "processPeak": 1.037631488E+9,
+          "peakIncrementLowerBound": 1.900544E+6
+        },
+        "execution": {
+          "engine": "fftw",
+          "library": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue195-196/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+          "schedule": "wave-vortex-forcing-v1:WVNonlinearAdvection",
+          "planCount": 17,
+          "noFallback": true
+        }
+      }
+    },
+    {
+      "variant": "baseline-no-output",
+      "caseId": "constant-nonhydrostatic-256x256x65",
+      "repeatIndex": 1,
+      "sampleCount": 7,
+      "integrationSeconds": 2.093381334,
+      "secondsPerStep": 0.2990544762857143,
+      "integratorWorkspaceBytes": 6.9183072E+7,
+      "denseHistoryBytes": 0,
+      "driverInterpolationBytes": 0,
+      "knownMaximumLiveBytes": 5.12517745E+8,
+      "rssPeakIncrementLowerBoundBytes": 770048,
+      "rhsEvaluationCount": 36,
+      "interpolatedOutputCount": 0,
+      "metadata": {
+        "schemaVersion": "wave-vortex-run-v1",
+        "status": "complete",
+        "source": {
+          "commit": "0becaa37f768106d3f9b2b469f346a41c3dd6505"
+        },
+        "input": "/private/var/folders/cj/111cr_h11xz0b9rshvpdh_th0000gn/T/tp7cb7dce6_7169_480c_96be_1c0febeac0ff/input-constant-nonhydrostatic-256x256x65.nc",
+        "output": "/private/var/folders/cj/111cr_h11xz0b9rshvpdh_th0000gn/T/tp7cb7dce6_7169_480c_96be_1c0febeac0ff/baseline-no-output-constant-nonhydrostatic-256x256x65-1.nc",
+        "provider": {
+          "id": "native-fftw",
+          "version": "fftw-3.3.11-neon",
+          "threads": 18,
+          "baseLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue195-196/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+          "threadLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue195-196/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3_threads.3.dylib"
+        },
+        "state": {
+          "initialTime": 0,
+          "finalTime": 9,
+          "deltaT": 1,
+          "stepCount": 9,
+          "rhsEvaluationCount": 36,
+          "shape": [
+            42,
+            11439
+          ]
+        },
+        "authorBenchmark": {
+          "warmupStepCount": 2,
+          "sampleStepCount": 7,
+          "denseOutputsPerStep": 0,
+          "interpolatedOutputCount": 0
+        },
+        "forcing": {
+          "ordinal": 1,
+          "type": "WVNonlinearAdvection",
+          "name": "nonlinear advection",
+          "stage": 0,
+          "priority": 127
+        },
+        "timingSeconds": {
+          "inspect": 0.012425375,
+          "read": 0.007011667,
+          "construct": 12.260677041,
+          "prepare": 0.001255041,
+          "integrate": 2.093381334,
+          "write": 0.021084042,
+          "total": 14.961002625
+        },
+        "storageBytes": {
+          "checkpointState": 2.3061024E+7,
+          "descriptor": 7.8421015E+7,
+          "planWrapper": 408,
+          "kernelScratch": 3.4185216E+8,
+          "forcingSchedule": 66,
+          "forcingDerivedOperators": 0,
+          "forcingWorkspace": 0,
+          "integratorWorkspace": 6.9183072E+7,
+          "denseHistory": 0,
+          "driverInterpolation": 0,
+          "knownPersistent": 5.12517745E+8,
+          "persistentFullHermitian": 0
+        },
+        "arrayTraffic": {
+          "scope": "exact integration-boundary arrays; FFT plans and kernel scratch internals excluded",
+          "elementBytes": 16,
+          "integrator": {
+            "stageStateConstructionReads": 7.7830956E+7,
+            "stageStateConstructionWrites": 3.8915478E+7,
+            "stageFluxClearWrites": 0,
+            "weightedFluxClearWrites": 0,
+            "weightedFluxInitializationReads": 1.2971826E+7,
+            "weightedFluxInitializationWrites": 1.2971826E+7,
+            "weightedAccumulationReads": 7.7830956E+7,
+            "weightedAccumulationWrites": 3.8915478E+7,
+            "finalStateUpdateReads": 2.5943652E+7,
+            "finalStateUpdateWrites": 1.2971826E+7,
+            "acceptedStateCommitReads": 1.2971826E+7,
+            "acceptedStateCommitWrites": 1.2971826E+7
+          },
+          "forcing": {
+            "accumulatorClearWrites": 0,
+            "temporaryFluxClearWrites": 0,
+            "kernelOutputInitializationWrites": 0,
+            "temporaryAccumulationReads": 0,
+            "temporaryAccumulationWrites": 0,
+            "outputCopyReads": 0,
+            "outputCopyWrites": 0,
+            "stateConstraintWrites": 0
+          },
+          "totals": {
+            "elementReads": 2.07549216E+8,
+            "elementWrites": 1.16746434E+8,
+            "bytesRead": 3.320787456E+9,
+            "bytesWritten": 1.867942944E+9
+          }
+        },
+        "livenessBytes": {
+          "integratorWorkspaceLive": 6.9183072E+7,
+          "integratorWorkspaceMaximumLive": 6.9183072E+7,
+          "forcingWorkspaceLive": 0,
+          "forcingWorkspaceMaximumLive": 0,
+          "acceptedStepAdditionalArrayStorage": 0,
+          "contractAbstractionAdditionalArrayStorage": 0,
+          "knownRetained": 5.12517745E+8,
+          "knownMaximumLive": 5.12517745E+8
+        },
+        "rssBytes": {
+          "integrationBaseline": 1.035272192E+9,
+          "processPeak": 1.03604224E+9,
+          "peakIncrementLowerBound": 770048
+        },
+        "execution": {
+          "engine": "fftw",
+          "library": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue195-196/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+          "schedule": "wave-vortex-forcing-v1:WVNonlinearAdvection",
+          "planCount": 17,
+          "noFallback": true
+        }
+      }
+    },
+    {
+      "variant": "baseline-no-output",
+      "caseId": "constant-nonhydrostatic-256x256x65",
+      "repeatIndex": 2,
+      "sampleCount": 7,
+      "integrationSeconds": 2.006699917,
+      "secondsPerStep": 0.28667141671428575,
+      "integratorWorkspaceBytes": 6.9183072E+7,
+      "denseHistoryBytes": 0,
+      "driverInterpolationBytes": 0,
+      "knownMaximumLiveBytes": 5.12517745E+8,
+      "rssPeakIncrementLowerBoundBytes": 1.900544E+6,
+      "rhsEvaluationCount": 36,
+      "interpolatedOutputCount": 0,
+      "metadata": {
+        "schemaVersion": "wave-vortex-run-v1",
+        "status": "complete",
+        "source": {
+          "commit": "0becaa37f768106d3f9b2b469f346a41c3dd6505"
+        },
+        "input": "/private/var/folders/cj/111cr_h11xz0b9rshvpdh_th0000gn/T/tp7cb7dce6_7169_480c_96be_1c0febeac0ff/input-constant-nonhydrostatic-256x256x65.nc",
+        "output": "/private/var/folders/cj/111cr_h11xz0b9rshvpdh_th0000gn/T/tp7cb7dce6_7169_480c_96be_1c0febeac0ff/baseline-no-output-constant-nonhydrostatic-256x256x65-2.nc",
+        "provider": {
+          "id": "native-fftw",
+          "version": "fftw-3.3.11-neon",
+          "threads": 18,
+          "baseLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue195-196/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+          "threadLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue195-196/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3_threads.3.dylib"
+        },
+        "state": {
+          "initialTime": 0,
+          "finalTime": 9,
+          "deltaT": 1,
+          "stepCount": 9,
+          "rhsEvaluationCount": 36,
+          "shape": [
+            42,
+            11439
+          ]
+        },
+        "authorBenchmark": {
+          "warmupStepCount": 2,
+          "sampleStepCount": 7,
+          "denseOutputsPerStep": 0,
+          "interpolatedOutputCount": 0
+        },
+        "forcing": {
+          "ordinal": 1,
+          "type": "WVNonlinearAdvection",
+          "name": "nonlinear advection",
+          "stage": 0,
+          "priority": 127
+        },
+        "timingSeconds": {
+          "inspect": 0.012967875,
+          "read": 0.007113416,
+          "construct": 12.311551417,
+          "prepare": 0.001255709,
+          "integrate": 2.006699917,
+          "write": 0.021381959,
+          "total": 14.908403917
+        },
+        "storageBytes": {
+          "checkpointState": 2.3061024E+7,
+          "descriptor": 7.8421015E+7,
+          "planWrapper": 408,
+          "kernelScratch": 3.4185216E+8,
+          "forcingSchedule": 66,
+          "forcingDerivedOperators": 0,
+          "forcingWorkspace": 0,
+          "integratorWorkspace": 6.9183072E+7,
+          "denseHistory": 0,
+          "driverInterpolation": 0,
+          "knownPersistent": 5.12517745E+8,
+          "persistentFullHermitian": 0
+        },
+        "arrayTraffic": {
+          "scope": "exact integration-boundary arrays; FFT plans and kernel scratch internals excluded",
+          "elementBytes": 16,
+          "integrator": {
+            "stageStateConstructionReads": 7.7830956E+7,
+            "stageStateConstructionWrites": 3.8915478E+7,
+            "stageFluxClearWrites": 0,
+            "weightedFluxClearWrites": 0,
+            "weightedFluxInitializationReads": 1.2971826E+7,
+            "weightedFluxInitializationWrites": 1.2971826E+7,
+            "weightedAccumulationReads": 7.7830956E+7,
+            "weightedAccumulationWrites": 3.8915478E+7,
+            "finalStateUpdateReads": 2.5943652E+7,
+            "finalStateUpdateWrites": 1.2971826E+7,
+            "acceptedStateCommitReads": 1.2971826E+7,
+            "acceptedStateCommitWrites": 1.2971826E+7
+          },
+          "forcing": {
+            "accumulatorClearWrites": 0,
+            "temporaryFluxClearWrites": 0,
+            "kernelOutputInitializationWrites": 0,
+            "temporaryAccumulationReads": 0,
+            "temporaryAccumulationWrites": 0,
+            "outputCopyReads": 0,
+            "outputCopyWrites": 0,
+            "stateConstraintWrites": 0
+          },
+          "totals": {
+            "elementReads": 2.07549216E+8,
+            "elementWrites": 1.16746434E+8,
+            "bytesRead": 3.320787456E+9,
+            "bytesWritten": 1.867942944E+9
+          }
+        },
+        "livenessBytes": {
+          "integratorWorkspaceLive": 6.9183072E+7,
+          "integratorWorkspaceMaximumLive": 6.9183072E+7,
+          "forcingWorkspaceLive": 0,
+          "forcingWorkspaceMaximumLive": 0,
+          "acceptedStepAdditionalArrayStorage": 0,
+          "contractAbstractionAdditionalArrayStorage": 0,
+          "knownRetained": 5.12517745E+8,
+          "knownMaximumLive": 5.12517745E+8
+        },
+        "rssBytes": {
+          "integrationBaseline": 1.036910592E+9,
+          "processPeak": 1.038811136E+9,
+          "peakIncrementLowerBound": 1.900544E+6
+        },
+        "execution": {
+          "engine": "fftw",
+          "library": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue195-196/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+          "schedule": "wave-vortex-forcing-v1:WVNonlinearAdvection",
+          "planCount": 17,
+          "noFallback": true
+        }
+      }
+    },
+    {
+      "variant": "candidate-no-output",
+      "caseId": "constant-nonhydrostatic-256x256x65",
+      "repeatIndex": 2,
+      "sampleCount": 7,
+      "integrationSeconds": 2.084523333,
+      "secondsPerStep": 0.29778904757142854,
+      "integratorWorkspaceBytes": 6.9183072E+7,
+      "denseHistoryBytes": 0,
+      "driverInterpolationBytes": 0,
+      "knownMaximumLiveBytes": 5.12517745E+8,
+      "rssPeakIncrementLowerBoundBytes": 770048,
+      "rhsEvaluationCount": 36,
+      "interpolatedOutputCount": 0,
+      "metadata": {
+        "schemaVersion": "wave-vortex-run-v1",
+        "status": "complete",
+        "source": {
+          "commit": "unknown"
+        },
+        "input": "/private/var/folders/cj/111cr_h11xz0b9rshvpdh_th0000gn/T/tp7cb7dce6_7169_480c_96be_1c0febeac0ff/input-constant-nonhydrostatic-256x256x65.nc",
+        "output": "/private/var/folders/cj/111cr_h11xz0b9rshvpdh_th0000gn/T/tp7cb7dce6_7169_480c_96be_1c0febeac0ff/candidate-no-output-constant-nonhydrostatic-256x256x65-2.nc",
+        "provider": {
+          "id": "native-fftw",
+          "version": "fftw-3.3.11-neon",
+          "threads": 18,
+          "baseLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue195-196/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+          "threadLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue195-196/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3_threads.3.dylib"
+        },
+        "state": {
+          "initialTime": 0,
+          "finalTime": 9,
+          "deltaT": 1,
+          "stepCount": 9,
+          "rejectedStepCount": 0,
+          "rhsEvaluationCount": 36,
+          "shape": [
+            42,
+            11439
+          ]
+        },
+        "integrator": {
+          "id": "fixed-rk4",
+          "relativeTolerance": 0.001,
+          "absoluteTolerance": 1E-6,
+          "lastNormalizedError": 0,
+          "lastProposedStepSize": 0,
+          "lastAcceptedStepSize": 0,
+          "nextStepSize": 1,
+          "fsalReuseCount": 0,
+          "fsalInvalidationCount": 0,
+          "rejectedInitialDerivativeReuseCount": 0,
+          "constraintModifiedCoefficientCount": 0,
+          "denseOutputEvaluationCount": 0,
+          "denseOutputElementReads": 0,
+          "denseOutputElementWrites": 0,
+          "denseOutputSeconds": 0,
+          "errorPolicyBytes": 0
+        },
+        "authorBenchmark": {
+          "warmupStepCount": 2,
+          "sampleStepCount": 7,
+          "denseOutputsPerStep": 0,
+          "requestedOutputCount": 0,
+          "interpolatedOutputCount": 0,
+          "interpolationSeconds": 0
+        },
+        "forcing": {
+          "ordinal": 1,
+          "type": "WVNonlinearAdvection",
+          "name": "nonlinear advection",
+          "stage": 0,
+          "priority": 127
+        },
+        "timingSeconds": {
+          "inspect": 0.01203575,
+          "read": 0.007254792,
+          "construct": 12.2350005,
+          "prepare": 0.001252,
+          "integrate": 2.084523333,
+          "write": 0.021597292,
+          "total": 14.950720542
+        },
+        "storageBytes": {
+          "checkpointState": 2.3061024E+7,
+          "descriptor": 7.8421015E+7,
+          "planWrapper": 408,
+          "kernelScratch": 3.4185216E+8,
+          "forcingSchedule": 66,
+          "forcingDerivedOperators": 0,
+          "forcingWorkspace": 0,
+          "integratorWorkspace": 6.9183072E+7,
+          "denseHistory": 0,
+          "driverInterpolation": 0,
+          "scheduledOutput": 0,
+          "knownPersistent": 5.12517745E+8,
+          "persistentFullHermitian": 0
+        },
+        "arrayTraffic": {
+          "scope": "exact fixed-RK4 integration-boundary arrays; adaptive traffic is reported through method metrics",
+          "elementBytes": 16,
+          "integrator": {
+            "stageStateConstructionReads": 7.7830956E+7,
+            "stageStateConstructionWrites": 3.8915478E+7,
+            "stageFluxClearWrites": 0,
+            "weightedFluxClearWrites": 0,
+            "weightedFluxInitializationReads": 1.2971826E+7,
+            "weightedFluxInitializationWrites": 1.2971826E+7,
+            "weightedAccumulationReads": 7.7830956E+7,
+            "weightedAccumulationWrites": 3.8915478E+7,
+            "finalStateUpdateReads": 2.5943652E+7,
+            "finalStateUpdateWrites": 1.2971826E+7,
+            "acceptedStateCommitReads": 1.2971826E+7,
+            "acceptedStateCommitWrites": 1.2971826E+7
+          },
+          "forcing": {
+            "accumulatorClearWrites": 0,
+            "temporaryFluxClearWrites": 0,
+            "kernelOutputInitializationWrites": 0,
+            "temporaryAccumulationReads": 0,
+            "temporaryAccumulationWrites": 0,
+            "outputCopyReads": 0,
+            "outputCopyWrites": 0,
+            "stateConstraintWrites": 0
+          },
+          "totals": {
+            "elementReads": 2.07549216E+8,
+            "elementWrites": 1.16746434E+8,
+            "bytesRead": 3.320787456E+9,
+            "bytesWritten": 1.867942944E+9
+          }
+        },
+        "livenessBytes": {
+          "integratorWorkspaceLive": 6.9183072E+7,
+          "integratorWorkspaceMaximumLive": 6.9183072E+7,
+          "forcingWorkspaceLive": 0,
+          "forcingWorkspaceMaximumLive": 0,
+          "acceptedStepAdditionalArrayStorage": 0,
+          "contractAbstractionAdditionalArrayStorage": 0,
+          "knownRetained": 5.12517745E+8,
+          "knownMaximumLive": 5.12517745E+8
+        },
+        "rssBytes": {
+          "integrationBaseline": 1.03555072E+9,
+          "processPeak": 1.036320768E+9,
+          "peakIncrementLowerBound": 770048
+        },
+        "execution": {
+          "engine": "fftw",
+          "library": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue195-196/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+          "schedule": "wave-vortex-forcing-v1:WVNonlinearAdvection",
+          "planCount": 17,
+          "noFallback": true
+        }
+      }
+    },
+    {
+      "variant": "candidate-no-output",
+      "caseId": "constant-nonhydrostatic-256x256x65",
+      "repeatIndex": 3,
+      "sampleCount": 7,
+      "integrationSeconds": 2.063184625,
+      "secondsPerStep": 0.29474066071428567,
+      "integratorWorkspaceBytes": 6.9183072E+7,
+      "denseHistoryBytes": 0,
+      "driverInterpolationBytes": 0,
+      "knownMaximumLiveBytes": 5.12517745E+8,
+      "rssPeakIncrementLowerBoundBytes": 737280,
+      "rhsEvaluationCount": 36,
+      "interpolatedOutputCount": 0,
+      "metadata": {
+        "schemaVersion": "wave-vortex-run-v1",
+        "status": "complete",
+        "source": {
+          "commit": "unknown"
+        },
+        "input": "/private/var/folders/cj/111cr_h11xz0b9rshvpdh_th0000gn/T/tp7cb7dce6_7169_480c_96be_1c0febeac0ff/input-constant-nonhydrostatic-256x256x65.nc",
+        "output": "/private/var/folders/cj/111cr_h11xz0b9rshvpdh_th0000gn/T/tp7cb7dce6_7169_480c_96be_1c0febeac0ff/candidate-no-output-constant-nonhydrostatic-256x256x65-3.nc",
+        "provider": {
+          "id": "native-fftw",
+          "version": "fftw-3.3.11-neon",
+          "threads": 18,
+          "baseLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue195-196/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+          "threadLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue195-196/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3_threads.3.dylib"
+        },
+        "state": {
+          "initialTime": 0,
+          "finalTime": 9,
+          "deltaT": 1,
+          "stepCount": 9,
+          "rejectedStepCount": 0,
+          "rhsEvaluationCount": 36,
+          "shape": [
+            42,
+            11439
+          ]
+        },
+        "integrator": {
+          "id": "fixed-rk4",
+          "relativeTolerance": 0.001,
+          "absoluteTolerance": 1E-6,
+          "lastNormalizedError": 0,
+          "lastProposedStepSize": 0,
+          "lastAcceptedStepSize": 0,
+          "nextStepSize": 1,
+          "fsalReuseCount": 0,
+          "fsalInvalidationCount": 0,
+          "rejectedInitialDerivativeReuseCount": 0,
+          "constraintModifiedCoefficientCount": 0,
+          "denseOutputEvaluationCount": 0,
+          "denseOutputElementReads": 0,
+          "denseOutputElementWrites": 0,
+          "denseOutputSeconds": 0,
+          "errorPolicyBytes": 0
+        },
+        "authorBenchmark": {
+          "warmupStepCount": 2,
+          "sampleStepCount": 7,
+          "denseOutputsPerStep": 0,
+          "requestedOutputCount": 0,
+          "interpolatedOutputCount": 0,
+          "interpolationSeconds": 0
+        },
+        "forcing": {
+          "ordinal": 1,
+          "type": "WVNonlinearAdvection",
+          "name": "nonlinear advection",
+          "stage": 0,
+          "priority": 127
+        },
+        "timingSeconds": {
+          "inspect": 0.012793292,
+          "read": 0.006959167,
+          "construct": 12.272729375,
+          "prepare": 0.001180167,
+          "integrate": 2.063184625,
+          "write": 0.0202985,
+          "total": 14.9408645
+        },
+        "storageBytes": {
+          "checkpointState": 2.3061024E+7,
+          "descriptor": 7.8421015E+7,
+          "planWrapper": 408,
+          "kernelScratch": 3.4185216E+8,
+          "forcingSchedule": 66,
+          "forcingDerivedOperators": 0,
+          "forcingWorkspace": 0,
+          "integratorWorkspace": 6.9183072E+7,
+          "denseHistory": 0,
+          "driverInterpolation": 0,
+          "scheduledOutput": 0,
+          "knownPersistent": 5.12517745E+8,
+          "persistentFullHermitian": 0
+        },
+        "arrayTraffic": {
+          "scope": "exact fixed-RK4 integration-boundary arrays; adaptive traffic is reported through method metrics",
+          "elementBytes": 16,
+          "integrator": {
+            "stageStateConstructionReads": 7.7830956E+7,
+            "stageStateConstructionWrites": 3.8915478E+7,
+            "stageFluxClearWrites": 0,
+            "weightedFluxClearWrites": 0,
+            "weightedFluxInitializationReads": 1.2971826E+7,
+            "weightedFluxInitializationWrites": 1.2971826E+7,
+            "weightedAccumulationReads": 7.7830956E+7,
+            "weightedAccumulationWrites": 3.8915478E+7,
+            "finalStateUpdateReads": 2.5943652E+7,
+            "finalStateUpdateWrites": 1.2971826E+7,
+            "acceptedStateCommitReads": 1.2971826E+7,
+            "acceptedStateCommitWrites": 1.2971826E+7
+          },
+          "forcing": {
+            "accumulatorClearWrites": 0,
+            "temporaryFluxClearWrites": 0,
+            "kernelOutputInitializationWrites": 0,
+            "temporaryAccumulationReads": 0,
+            "temporaryAccumulationWrites": 0,
+            "outputCopyReads": 0,
+            "outputCopyWrites": 0,
+            "stateConstraintWrites": 0
+          },
+          "totals": {
+            "elementReads": 2.07549216E+8,
+            "elementWrites": 1.16746434E+8,
+            "bytesRead": 3.320787456E+9,
+            "bytesWritten": 1.867942944E+9
+          }
+        },
+        "livenessBytes": {
+          "integratorWorkspaceLive": 6.9183072E+7,
+          "integratorWorkspaceMaximumLive": 6.9183072E+7,
+          "forcingWorkspaceLive": 0,
+          "forcingWorkspaceMaximumLive": 0,
+          "acceptedStepAdditionalArrayStorage": 0,
+          "contractAbstractionAdditionalArrayStorage": 0,
+          "knownRetained": 5.12517745E+8,
+          "knownMaximumLive": 5.12517745E+8
+        },
+        "rssBytes": {
+          "integrationBaseline": 1.035354112E+9,
+          "processPeak": 1.036091392E+9,
+          "peakIncrementLowerBound": 737280
+        },
+        "execution": {
+          "engine": "fftw",
+          "library": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue195-196/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+          "schedule": "wave-vortex-forcing-v1:WVNonlinearAdvection",
+          "planCount": 17,
+          "noFallback": true
+        }
+      }
+    },
+    {
+      "variant": "baseline-no-output",
+      "caseId": "constant-nonhydrostatic-256x256x65",
+      "repeatIndex": 3,
+      "sampleCount": 7,
+      "integrationSeconds": 2.09181425,
+      "secondsPerStep": 0.29883060714285714,
+      "integratorWorkspaceBytes": 6.9183072E+7,
+      "denseHistoryBytes": 0,
+      "driverInterpolationBytes": 0,
+      "knownMaximumLiveBytes": 5.12517745E+8,
+      "rssPeakIncrementLowerBoundBytes": 753664,
+      "rhsEvaluationCount": 36,
+      "interpolatedOutputCount": 0,
+      "metadata": {
+        "schemaVersion": "wave-vortex-run-v1",
+        "status": "complete",
+        "source": {
+          "commit": "0becaa37f768106d3f9b2b469f346a41c3dd6505"
+        },
+        "input": "/private/var/folders/cj/111cr_h11xz0b9rshvpdh_th0000gn/T/tp7cb7dce6_7169_480c_96be_1c0febeac0ff/input-constant-nonhydrostatic-256x256x65.nc",
+        "output": "/private/var/folders/cj/111cr_h11xz0b9rshvpdh_th0000gn/T/tp7cb7dce6_7169_480c_96be_1c0febeac0ff/baseline-no-output-constant-nonhydrostatic-256x256x65-3.nc",
+        "provider": {
+          "id": "native-fftw",
+          "version": "fftw-3.3.11-neon",
+          "threads": 18,
+          "baseLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue195-196/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+          "threadLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue195-196/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3_threads.3.dylib"
+        },
+        "state": {
+          "initialTime": 0,
+          "finalTime": 9,
+          "deltaT": 1,
+          "stepCount": 9,
+          "rhsEvaluationCount": 36,
+          "shape": [
+            42,
+            11439
+          ]
+        },
+        "authorBenchmark": {
+          "warmupStepCount": 2,
+          "sampleStepCount": 7,
+          "denseOutputsPerStep": 0,
+          "interpolatedOutputCount": 0
+        },
+        "forcing": {
+          "ordinal": 1,
+          "type": "WVNonlinearAdvection",
+          "name": "nonlinear advection",
+          "stage": 0,
+          "priority": 127
+        },
+        "timingSeconds": {
+          "inspect": 0.012052208,
+          "read": 0.006912959,
+          "construct": 12.282977416,
+          "prepare": 0.001216667,
+          "integrate": 2.09181425,
+          "write": 0.021653125,
+          "total": 14.981136334
+        },
+        "storageBytes": {
+          "checkpointState": 2.3061024E+7,
+          "descriptor": 7.8421015E+7,
+          "planWrapper": 408,
+          "kernelScratch": 3.4185216E+8,
+          "forcingSchedule": 66,
+          "forcingDerivedOperators": 0,
+          "forcingWorkspace": 0,
+          "integratorWorkspace": 6.9183072E+7,
+          "denseHistory": 0,
+          "driverInterpolation": 0,
+          "knownPersistent": 5.12517745E+8,
+          "persistentFullHermitian": 0
+        },
+        "arrayTraffic": {
+          "scope": "exact integration-boundary arrays; FFT plans and kernel scratch internals excluded",
+          "elementBytes": 16,
+          "integrator": {
+            "stageStateConstructionReads": 7.7830956E+7,
+            "stageStateConstructionWrites": 3.8915478E+7,
+            "stageFluxClearWrites": 0,
+            "weightedFluxClearWrites": 0,
+            "weightedFluxInitializationReads": 1.2971826E+7,
+            "weightedFluxInitializationWrites": 1.2971826E+7,
+            "weightedAccumulationReads": 7.7830956E+7,
+            "weightedAccumulationWrites": 3.8915478E+7,
+            "finalStateUpdateReads": 2.5943652E+7,
+            "finalStateUpdateWrites": 1.2971826E+7,
+            "acceptedStateCommitReads": 1.2971826E+7,
+            "acceptedStateCommitWrites": 1.2971826E+7
+          },
+          "forcing": {
+            "accumulatorClearWrites": 0,
+            "temporaryFluxClearWrites": 0,
+            "kernelOutputInitializationWrites": 0,
+            "temporaryAccumulationReads": 0,
+            "temporaryAccumulationWrites": 0,
+            "outputCopyReads": 0,
+            "outputCopyWrites": 0,
+            "stateConstraintWrites": 0
+          },
+          "totals": {
+            "elementReads": 2.07549216E+8,
+            "elementWrites": 1.16746434E+8,
+            "bytesRead": 3.320787456E+9,
+            "bytesWritten": 1.867942944E+9
+          }
+        },
+        "livenessBytes": {
+          "integratorWorkspaceLive": 6.9183072E+7,
+          "integratorWorkspaceMaximumLive": 6.9183072E+7,
+          "forcingWorkspaceLive": 0,
+          "forcingWorkspaceMaximumLive": 0,
+          "acceptedStepAdditionalArrayStorage": 0,
+          "contractAbstractionAdditionalArrayStorage": 0,
+          "knownRetained": 5.12517745E+8,
+          "knownMaximumLive": 5.12517745E+8
+        },
+        "rssBytes": {
+          "integrationBaseline": 1.034944512E+9,
+          "processPeak": 1.035698176E+9,
+          "peakIncrementLowerBound": 753664
+        },
+        "execution": {
+          "engine": "fftw",
+          "library": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue195-196/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+          "schedule": "wave-vortex-forcing-v1:WVNonlinearAdvection",
+          "planCount": 17,
+          "noFallback": true
+        }
+      }
+    },
+    {
+      "variant": "baseline-no-output",
+      "caseId": "constant-hydrostatic-512x512x129",
+      "repeatIndex": 1,
+      "sampleCount": 3,
+      "integrationSeconds": 5.586276084,
+      "secondsPerStep": 1.862092028,
+      "integratorWorkspaceBytes": 5.601636E+8,
+      "denseHistoryBytes": 0,
+      "driverInterpolationBytes": 0,
+      "knownMaximumLiveBytes": 4.085032983E+9,
+      "rssPeakIncrementLowerBoundBytes": 1.343488E+6,
+      "rhsEvaluationCount": 20,
+      "interpolatedOutputCount": 0,
+      "metadata": {
+        "schemaVersion": "wave-vortex-run-v1",
+        "status": "complete",
+        "source": {
+          "commit": "0becaa37f768106d3f9b2b469f346a41c3dd6505"
+        },
+        "input": "/private/var/folders/cj/111cr_h11xz0b9rshvpdh_th0000gn/T/tp7cb7dce6_7169_480c_96be_1c0febeac0ff/input-constant-hydrostatic-512x512x129.nc",
+        "output": "/private/var/folders/cj/111cr_h11xz0b9rshvpdh_th0000gn/T/tp7cb7dce6_7169_480c_96be_1c0febeac0ff/baseline-no-output-constant-hydrostatic-512x512x129-1.nc",
+        "provider": {
+          "id": "native-fftw",
+          "version": "fftw-3.3.11-neon",
+          "threads": 18,
+          "baseLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue195-196/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+          "threadLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue195-196/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3_threads.3.dylib"
+        },
+        "state": {
+          "initialTime": 0,
+          "finalTime": 5,
+          "deltaT": 1,
+          "stepCount": 5,
+          "rhsEvaluationCount": 20,
+          "shape": [
+            85,
+            45765
+          ]
+        },
+        "authorBenchmark": {
+          "warmupStepCount": 2,
+          "sampleStepCount": 3,
+          "denseOutputsPerStep": 0,
+          "interpolatedOutputCount": 0
+        },
+        "forcing": {
+          "ordinal": 1,
+          "type": "WVNonlinearAdvection",
+          "name": "nonlinear advection",
+          "stage": 0,
+          "priority": 127
+        },
+        "timingSeconds": {
+          "inspect": 0.065381292,
+          "read": 0.046713292,
+          "construct": 33.804558041,
+          "prepare": 0.009532292,
+          "integrate": 5.586276084,
+          "write": 0.153528375,
+          "total": 43.197521167
+        },
+        "storageBytes": {
+          "checkpointState": 1.867212E+8,
+          "descriptor": 6.28594557E+8,
+          "planWrapper": 408,
+          "kernelScratch": 2.709553152E+9,
+          "forcingSchedule": 66,
+          "forcingDerivedOperators": 0,
+          "forcingWorkspace": 0,
+          "integratorWorkspace": 5.601636E+8,
+          "denseHistory": 0,
+          "driverInterpolation": 0,
+          "knownPersistent": 4.085032983E+9,
+          "persistentFullHermitian": 0
+        },
+        "arrayTraffic": {
+          "scope": "exact integration-boundary arrays; FFT plans and kernel scratch internals excluded",
+          "elementBytes": 16,
+          "integrator": {
+            "stageStateConstructionReads": 3.5010225E+8,
+            "stageStateConstructionWrites": 1.75051125E+8,
+            "stageFluxClearWrites": 0,
+            "weightedFluxClearWrites": 0,
+            "weightedFluxInitializationReads": 5.8350375E+7,
+            "weightedFluxInitializationWrites": 5.8350375E+7,
+            "weightedAccumulationReads": 3.5010225E+8,
+            "weightedAccumulationWrites": 1.75051125E+8,
+            "finalStateUpdateReads": 1.1670075E+8,
+            "finalStateUpdateWrites": 5.8350375E+7,
+            "acceptedStateCommitReads": 5.8350375E+7,
+            "acceptedStateCommitWrites": 5.8350375E+7
+          },
+          "forcing": {
+            "accumulatorClearWrites": 0,
+            "temporaryFluxClearWrites": 0,
+            "kernelOutputInitializationWrites": 0,
+            "temporaryAccumulationReads": 0,
+            "temporaryAccumulationWrites": 0,
+            "outputCopyReads": 0,
+            "outputCopyWrites": 0,
+            "stateConstraintWrites": 0
+          },
+          "totals": {
+            "elementReads": 9.33606E+8,
+            "elementWrites": 5.25153375E+8,
+            "bytesRead": 1.4937696E+10,
+            "bytesWritten": 8.402454E+9
+          }
+        },
+        "livenessBytes": {
+          "integratorWorkspaceLive": 5.601636E+8,
+          "integratorWorkspaceMaximumLive": 5.601636E+8,
+          "forcingWorkspaceLive": 0,
+          "forcingWorkspaceMaximumLive": 0,
+          "acceptedStepAdditionalArrayStorage": 0,
+          "contractAbstractionAdditionalArrayStorage": 0,
+          "knownRetained": 4.085032983E+9,
+          "knownMaximumLive": 4.085032983E+9
+        },
+        "rssBytes": {
+          "integrationBaseline": 8.077672448E+9,
+          "processPeak": 8.079015936E+9,
+          "peakIncrementLowerBound": 1.343488E+6
+        },
+        "execution": {
+          "engine": "fftw",
+          "library": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue195-196/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+          "schedule": "wave-vortex-forcing-v1:WVNonlinearAdvection",
+          "planCount": 17,
+          "noFallback": true
+        }
+      }
+    },
+    {
+      "variant": "candidate-no-output",
+      "caseId": "constant-hydrostatic-512x512x129",
+      "repeatIndex": 1,
+      "sampleCount": 3,
+      "integrationSeconds": 5.24811825,
+      "secondsPerStep": 1.74937275,
+      "integratorWorkspaceBytes": 5.601636E+8,
+      "denseHistoryBytes": 0,
+      "driverInterpolationBytes": 0,
+      "knownMaximumLiveBytes": 4.085032983E+9,
+      "rssPeakIncrementLowerBoundBytes": 1.31072E+6,
+      "rhsEvaluationCount": 20,
+      "interpolatedOutputCount": 0,
+      "metadata": {
+        "schemaVersion": "wave-vortex-run-v1",
+        "status": "complete",
+        "source": {
+          "commit": "unknown"
+        },
+        "input": "/private/var/folders/cj/111cr_h11xz0b9rshvpdh_th0000gn/T/tp7cb7dce6_7169_480c_96be_1c0febeac0ff/input-constant-hydrostatic-512x512x129.nc",
+        "output": "/private/var/folders/cj/111cr_h11xz0b9rshvpdh_th0000gn/T/tp7cb7dce6_7169_480c_96be_1c0febeac0ff/candidate-no-output-constant-hydrostatic-512x512x129-1.nc",
+        "provider": {
+          "id": "native-fftw",
+          "version": "fftw-3.3.11-neon",
+          "threads": 18,
+          "baseLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue195-196/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+          "threadLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue195-196/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3_threads.3.dylib"
+        },
+        "state": {
+          "initialTime": 0,
+          "finalTime": 5,
+          "deltaT": 1,
+          "stepCount": 5,
+          "rejectedStepCount": 0,
+          "rhsEvaluationCount": 20,
+          "shape": [
+            85,
+            45765
+          ]
+        },
+        "integrator": {
+          "id": "fixed-rk4",
+          "relativeTolerance": 0.001,
+          "absoluteTolerance": 1E-6,
+          "lastNormalizedError": 0,
+          "lastProposedStepSize": 0,
+          "lastAcceptedStepSize": 0,
+          "nextStepSize": 1,
+          "fsalReuseCount": 0,
+          "fsalInvalidationCount": 0,
+          "rejectedInitialDerivativeReuseCount": 0,
+          "constraintModifiedCoefficientCount": 0,
+          "denseOutputEvaluationCount": 0,
+          "denseOutputElementReads": 0,
+          "denseOutputElementWrites": 0,
+          "denseOutputSeconds": 0,
+          "errorPolicyBytes": 0
+        },
+        "authorBenchmark": {
+          "warmupStepCount": 2,
+          "sampleStepCount": 3,
+          "denseOutputsPerStep": 0,
+          "requestedOutputCount": 0,
+          "interpolatedOutputCount": 0,
+          "interpolationSeconds": 0
+        },
+        "forcing": {
+          "ordinal": 1,
+          "type": "WVNonlinearAdvection",
+          "name": "nonlinear advection",
+          "stage": 0,
+          "priority": 127
+        },
+        "timingSeconds": {
+          "inspect": 0.067955791,
+          "read": 0.046883333,
+          "construct": 33.835131833,
+          "prepare": 0.008864,
+          "integrate": 5.24811825,
+          "write": 0.139822333,
+          "total": 42.764680167
+        },
+        "storageBytes": {
+          "checkpointState": 1.867212E+8,
+          "descriptor": 6.28594557E+8,
+          "planWrapper": 408,
+          "kernelScratch": 2.709553152E+9,
+          "forcingSchedule": 66,
+          "forcingDerivedOperators": 0,
+          "forcingWorkspace": 0,
+          "integratorWorkspace": 5.601636E+8,
+          "denseHistory": 0,
+          "driverInterpolation": 0,
+          "scheduledOutput": 0,
+          "knownPersistent": 4.085032983E+9,
+          "persistentFullHermitian": 0
+        },
+        "arrayTraffic": {
+          "scope": "exact fixed-RK4 integration-boundary arrays; adaptive traffic is reported through method metrics",
+          "elementBytes": 16,
+          "integrator": {
+            "stageStateConstructionReads": 3.5010225E+8,
+            "stageStateConstructionWrites": 1.75051125E+8,
+            "stageFluxClearWrites": 0,
+            "weightedFluxClearWrites": 0,
+            "weightedFluxInitializationReads": 5.8350375E+7,
+            "weightedFluxInitializationWrites": 5.8350375E+7,
+            "weightedAccumulationReads": 3.5010225E+8,
+            "weightedAccumulationWrites": 1.75051125E+8,
+            "finalStateUpdateReads": 1.1670075E+8,
+            "finalStateUpdateWrites": 5.8350375E+7,
+            "acceptedStateCommitReads": 5.8350375E+7,
+            "acceptedStateCommitWrites": 5.8350375E+7
+          },
+          "forcing": {
+            "accumulatorClearWrites": 0,
+            "temporaryFluxClearWrites": 0,
+            "kernelOutputInitializationWrites": 0,
+            "temporaryAccumulationReads": 0,
+            "temporaryAccumulationWrites": 0,
+            "outputCopyReads": 0,
+            "outputCopyWrites": 0,
+            "stateConstraintWrites": 0
+          },
+          "totals": {
+            "elementReads": 9.33606E+8,
+            "elementWrites": 5.25153375E+8,
+            "bytesRead": 1.4937696E+10,
+            "bytesWritten": 8.402454E+9
+          }
+        },
+        "livenessBytes": {
+          "integratorWorkspaceLive": 5.601636E+8,
+          "integratorWorkspaceMaximumLive": 5.601636E+8,
+          "forcingWorkspaceLive": 0,
+          "forcingWorkspaceMaximumLive": 0,
+          "acceptedStepAdditionalArrayStorage": 0,
+          "contractAbstractionAdditionalArrayStorage": 0,
+          "knownRetained": 4.085032983E+9,
+          "knownMaximumLive": 4.085032983E+9
+        },
+        "rssBytes": {
+          "integrationBaseline": 8.07821312E+9,
+          "processPeak": 8.07952384E+9,
+          "peakIncrementLowerBound": 1.31072E+6
+        },
+        "execution": {
+          "engine": "fftw",
+          "library": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue195-196/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+          "schedule": "wave-vortex-forcing-v1:WVNonlinearAdvection",
+          "planCount": 17,
+          "noFallback": true
+        }
+      }
+    },
+    {
+      "variant": "candidate-no-output",
+      "caseId": "constant-hydrostatic-512x512x129",
+      "repeatIndex": 2,
+      "sampleCount": 3,
+      "integrationSeconds": 5.364099125,
+      "secondsPerStep": 1.7880330416666668,
+      "integratorWorkspaceBytes": 5.601636E+8,
+      "denseHistoryBytes": 0,
+      "driverInterpolationBytes": 0,
+      "knownMaximumLiveBytes": 4.085032983E+9,
+      "rssPeakIncrementLowerBoundBytes": 1.460502528E+9,
+      "rhsEvaluationCount": 20,
+      "interpolatedOutputCount": 0,
+      "metadata": {
+        "schemaVersion": "wave-vortex-run-v1",
+        "status": "complete",
+        "source": {
+          "commit": "unknown"
+        },
+        "input": "/private/var/folders/cj/111cr_h11xz0b9rshvpdh_th0000gn/T/tp7cb7dce6_7169_480c_96be_1c0febeac0ff/input-constant-hydrostatic-512x512x129.nc",
+        "output": "/private/var/folders/cj/111cr_h11xz0b9rshvpdh_th0000gn/T/tp7cb7dce6_7169_480c_96be_1c0febeac0ff/candidate-no-output-constant-hydrostatic-512x512x129-2.nc",
+        "provider": {
+          "id": "native-fftw",
+          "version": "fftw-3.3.11-neon",
+          "threads": 18,
+          "baseLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue195-196/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+          "threadLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue195-196/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3_threads.3.dylib"
+        },
+        "state": {
+          "initialTime": 0,
+          "finalTime": 5,
+          "deltaT": 1,
+          "stepCount": 5,
+          "rejectedStepCount": 0,
+          "rhsEvaluationCount": 20,
+          "shape": [
+            85,
+            45765
+          ]
+        },
+        "integrator": {
+          "id": "fixed-rk4",
+          "relativeTolerance": 0.001,
+          "absoluteTolerance": 1E-6,
+          "lastNormalizedError": 0,
+          "lastProposedStepSize": 0,
+          "lastAcceptedStepSize": 0,
+          "nextStepSize": 1,
+          "fsalReuseCount": 0,
+          "fsalInvalidationCount": 0,
+          "rejectedInitialDerivativeReuseCount": 0,
+          "constraintModifiedCoefficientCount": 0,
+          "denseOutputEvaluationCount": 0,
+          "denseOutputElementReads": 0,
+          "denseOutputElementWrites": 0,
+          "denseOutputSeconds": 0,
+          "errorPolicyBytes": 0
+        },
+        "authorBenchmark": {
+          "warmupStepCount": 2,
+          "sampleStepCount": 3,
+          "denseOutputsPerStep": 0,
+          "requestedOutputCount": 0,
+          "interpolatedOutputCount": 0,
+          "interpolationSeconds": 0
+        },
+        "forcing": {
+          "ordinal": 1,
+          "type": "WVNonlinearAdvection",
+          "name": "nonlinear advection",
+          "stage": 0,
+          "priority": 127
+        },
+        "timingSeconds": {
+          "inspect": 0.064502084,
+          "read": 0.044830334,
+          "construct": 34.011194583,
+          "prepare": 0.008737125,
+          "integrate": 5.364099125,
+          "write": 0.133983667,
+          "total": 43.168184875
+        },
+        "storageBytes": {
+          "checkpointState": 1.867212E+8,
+          "descriptor": 6.28594557E+8,
+          "planWrapper": 408,
+          "kernelScratch": 2.709553152E+9,
+          "forcingSchedule": 66,
+          "forcingDerivedOperators": 0,
+          "forcingWorkspace": 0,
+          "integratorWorkspace": 5.601636E+8,
+          "denseHistory": 0,
+          "driverInterpolation": 0,
+          "scheduledOutput": 0,
+          "knownPersistent": 4.085032983E+9,
+          "persistentFullHermitian": 0
+        },
+        "arrayTraffic": {
+          "scope": "exact fixed-RK4 integration-boundary arrays; adaptive traffic is reported through method metrics",
+          "elementBytes": 16,
+          "integrator": {
+            "stageStateConstructionReads": 3.5010225E+8,
+            "stageStateConstructionWrites": 1.75051125E+8,
+            "stageFluxClearWrites": 0,
+            "weightedFluxClearWrites": 0,
+            "weightedFluxInitializationReads": 5.8350375E+7,
+            "weightedFluxInitializationWrites": 5.8350375E+7,
+            "weightedAccumulationReads": 3.5010225E+8,
+            "weightedAccumulationWrites": 1.75051125E+8,
+            "finalStateUpdateReads": 1.1670075E+8,
+            "finalStateUpdateWrites": 5.8350375E+7,
+            "acceptedStateCommitReads": 5.8350375E+7,
+            "acceptedStateCommitWrites": 5.8350375E+7
+          },
+          "forcing": {
+            "accumulatorClearWrites": 0,
+            "temporaryFluxClearWrites": 0,
+            "kernelOutputInitializationWrites": 0,
+            "temporaryAccumulationReads": 0,
+            "temporaryAccumulationWrites": 0,
+            "outputCopyReads": 0,
+            "outputCopyWrites": 0,
+            "stateConstraintWrites": 0
+          },
+          "totals": {
+            "elementReads": 9.33606E+8,
+            "elementWrites": 5.25153375E+8,
+            "bytesRead": 1.4937696E+10,
+            "bytesWritten": 8.402454E+9
+          }
+        },
+        "livenessBytes": {
+          "integratorWorkspaceLive": 5.601636E+8,
+          "integratorWorkspaceMaximumLive": 5.601636E+8,
+          "forcingWorkspaceLive": 0,
+          "forcingWorkspaceMaximumLive": 0,
+          "acceptedStepAdditionalArrayStorage": 0,
+          "contractAbstractionAdditionalArrayStorage": 0,
+          "knownRetained": 4.085032983E+9,
+          "knownMaximumLive": 4.085032983E+9
+        },
+        "rssBytes": {
+          "integrationBaseline": 6.176735232E+9,
+          "processPeak": 7.63723776E+9,
+          "peakIncrementLowerBound": 1.460502528E+9
+        },
+        "execution": {
+          "engine": "fftw",
+          "library": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue195-196/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+          "schedule": "wave-vortex-forcing-v1:WVNonlinearAdvection",
+          "planCount": 17,
+          "noFallback": true
+        }
+      }
+    },
+    {
+      "variant": "baseline-no-output",
+      "caseId": "constant-hydrostatic-512x512x129",
+      "repeatIndex": 2,
+      "sampleCount": 3,
+      "integrationSeconds": 5.222700667,
+      "secondsPerStep": 1.7409002223333332,
+      "integratorWorkspaceBytes": 5.601636E+8,
+      "denseHistoryBytes": 0,
+      "driverInterpolationBytes": 0,
+      "knownMaximumLiveBytes": 4.085032983E+9,
+      "rssPeakIncrementLowerBoundBytes": 9.05101312E+8,
+      "rhsEvaluationCount": 20,
+      "interpolatedOutputCount": 0,
+      "metadata": {
+        "schemaVersion": "wave-vortex-run-v1",
+        "status": "complete",
+        "source": {
+          "commit": "0becaa37f768106d3f9b2b469f346a41c3dd6505"
+        },
+        "input": "/private/var/folders/cj/111cr_h11xz0b9rshvpdh_th0000gn/T/tp7cb7dce6_7169_480c_96be_1c0febeac0ff/input-constant-hydrostatic-512x512x129.nc",
+        "output": "/private/var/folders/cj/111cr_h11xz0b9rshvpdh_th0000gn/T/tp7cb7dce6_7169_480c_96be_1c0febeac0ff/baseline-no-output-constant-hydrostatic-512x512x129-2.nc",
+        "provider": {
+          "id": "native-fftw",
+          "version": "fftw-3.3.11-neon",
+          "threads": 18,
+          "baseLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue195-196/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+          "threadLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue195-196/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3_threads.3.dylib"
+        },
+        "state": {
+          "initialTime": 0,
+          "finalTime": 5,
+          "deltaT": 1,
+          "stepCount": 5,
+          "rhsEvaluationCount": 20,
+          "shape": [
+            85,
+            45765
+          ]
+        },
+        "authorBenchmark": {
+          "warmupStepCount": 2,
+          "sampleStepCount": 3,
+          "denseOutputsPerStep": 0,
+          "interpolatedOutputCount": 0
+        },
+        "forcing": {
+          "ordinal": 1,
+          "type": "WVNonlinearAdvection",
+          "name": "nonlinear advection",
+          "stage": 0,
+          "priority": 127
+        },
+        "timingSeconds": {
+          "inspect": 0.063395625,
+          "read": 0.04503,
+          "construct": 33.873167875,
+          "prepare": 0.008832542,
+          "integrate": 5.222700667,
+          "write": 0.136662208,
+          "total": 42.829392625
+        },
+        "storageBytes": {
+          "checkpointState": 1.867212E+8,
+          "descriptor": 6.28594557E+8,
+          "planWrapper": 408,
+          "kernelScratch": 2.709553152E+9,
+          "forcingSchedule": 66,
+          "forcingDerivedOperators": 0,
+          "forcingWorkspace": 0,
+          "integratorWorkspace": 5.601636E+8,
+          "denseHistory": 0,
+          "driverInterpolation": 0,
+          "knownPersistent": 4.085032983E+9,
+          "persistentFullHermitian": 0
+        },
+        "arrayTraffic": {
+          "scope": "exact integration-boundary arrays; FFT plans and kernel scratch internals excluded",
+          "elementBytes": 16,
+          "integrator": {
+            "stageStateConstructionReads": 3.5010225E+8,
+            "stageStateConstructionWrites": 1.75051125E+8,
+            "stageFluxClearWrites": 0,
+            "weightedFluxClearWrites": 0,
+            "weightedFluxInitializationReads": 5.8350375E+7,
+            "weightedFluxInitializationWrites": 5.8350375E+7,
+            "weightedAccumulationReads": 3.5010225E+8,
+            "weightedAccumulationWrites": 1.75051125E+8,
+            "finalStateUpdateReads": 1.1670075E+8,
+            "finalStateUpdateWrites": 5.8350375E+7,
+            "acceptedStateCommitReads": 5.8350375E+7,
+            "acceptedStateCommitWrites": 5.8350375E+7
+          },
+          "forcing": {
+            "accumulatorClearWrites": 0,
+            "temporaryFluxClearWrites": 0,
+            "kernelOutputInitializationWrites": 0,
+            "temporaryAccumulationReads": 0,
+            "temporaryAccumulationWrites": 0,
+            "outputCopyReads": 0,
+            "outputCopyWrites": 0,
+            "stateConstraintWrites": 0
+          },
+          "totals": {
+            "elementReads": 9.33606E+8,
+            "elementWrites": 5.25153375E+8,
+            "bytesRead": 1.4937696E+10,
+            "bytesWritten": 8.402454E+9
+          }
+        },
+        "livenessBytes": {
+          "integratorWorkspaceLive": 5.601636E+8,
+          "integratorWorkspaceMaximumLive": 5.601636E+8,
+          "forcingWorkspaceLive": 0,
+          "forcingWorkspaceMaximumLive": 0,
+          "acceptedStepAdditionalArrayStorage": 0,
+          "contractAbstractionAdditionalArrayStorage": 0,
+          "knownRetained": 4.085032983E+9,
+          "knownMaximumLive": 4.085032983E+9
+        },
+        "rssBytes": {
+          "integrationBaseline": 6.442696704E+9,
+          "processPeak": 7.347798016E+9,
+          "peakIncrementLowerBound": 9.05101312E+8
+        },
+        "execution": {
+          "engine": "fftw",
+          "library": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue195-196/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+          "schedule": "wave-vortex-forcing-v1:WVNonlinearAdvection",
+          "planCount": 17,
+          "noFallback": true
+        }
+      }
+    },
+    {
+      "variant": "baseline-no-output",
+      "caseId": "constant-hydrostatic-512x512x129",
+      "repeatIndex": 3,
+      "sampleCount": 3,
+      "integrationSeconds": 4.980781792,
+      "secondsPerStep": 1.6602605973333333,
+      "integratorWorkspaceBytes": 5.601636E+8,
+      "denseHistoryBytes": 0,
+      "driverInterpolationBytes": 0,
+      "knownMaximumLiveBytes": 4.085032983E+9,
+      "rssPeakIncrementLowerBoundBytes": 1.851392E+6,
+      "rhsEvaluationCount": 20,
+      "interpolatedOutputCount": 0,
+      "metadata": {
+        "schemaVersion": "wave-vortex-run-v1",
+        "status": "complete",
+        "source": {
+          "commit": "0becaa37f768106d3f9b2b469f346a41c3dd6505"
+        },
+        "input": "/private/var/folders/cj/111cr_h11xz0b9rshvpdh_th0000gn/T/tp7cb7dce6_7169_480c_96be_1c0febeac0ff/input-constant-hydrostatic-512x512x129.nc",
+        "output": "/private/var/folders/cj/111cr_h11xz0b9rshvpdh_th0000gn/T/tp7cb7dce6_7169_480c_96be_1c0febeac0ff/baseline-no-output-constant-hydrostatic-512x512x129-3.nc",
+        "provider": {
+          "id": "native-fftw",
+          "version": "fftw-3.3.11-neon",
+          "threads": 18,
+          "baseLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue195-196/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+          "threadLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue195-196/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3_threads.3.dylib"
+        },
+        "state": {
+          "initialTime": 0,
+          "finalTime": 5,
+          "deltaT": 1,
+          "stepCount": 5,
+          "rhsEvaluationCount": 20,
+          "shape": [
+            85,
+            45765
+          ]
+        },
+        "authorBenchmark": {
+          "warmupStepCount": 2,
+          "sampleStepCount": 3,
+          "denseOutputsPerStep": 0,
+          "interpolatedOutputCount": 0
+        },
+        "forcing": {
+          "ordinal": 1,
+          "type": "WVNonlinearAdvection",
+          "name": "nonlinear advection",
+          "stage": 0,
+          "priority": 127
+        },
+        "timingSeconds": {
+          "inspect": 0.065419833,
+          "read": 0.045518709,
+          "construct": 34.168396959,
+          "prepare": 0.009563459,
+          "integrate": 4.980781792,
+          "write": 0.153046917,
+          "total": 42.742118417
+        },
+        "storageBytes": {
+          "checkpointState": 1.867212E+8,
+          "descriptor": 6.28594557E+8,
+          "planWrapper": 408,
+          "kernelScratch": 2.709553152E+9,
+          "forcingSchedule": 66,
+          "forcingDerivedOperators": 0,
+          "forcingWorkspace": 0,
+          "integratorWorkspace": 5.601636E+8,
+          "denseHistory": 0,
+          "driverInterpolation": 0,
+          "knownPersistent": 4.085032983E+9,
+          "persistentFullHermitian": 0
+        },
+        "arrayTraffic": {
+          "scope": "exact integration-boundary arrays; FFT plans and kernel scratch internals excluded",
+          "elementBytes": 16,
+          "integrator": {
+            "stageStateConstructionReads": 3.5010225E+8,
+            "stageStateConstructionWrites": 1.75051125E+8,
+            "stageFluxClearWrites": 0,
+            "weightedFluxClearWrites": 0,
+            "weightedFluxInitializationReads": 5.8350375E+7,
+            "weightedFluxInitializationWrites": 5.8350375E+7,
+            "weightedAccumulationReads": 3.5010225E+8,
+            "weightedAccumulationWrites": 1.75051125E+8,
+            "finalStateUpdateReads": 1.1670075E+8,
+            "finalStateUpdateWrites": 5.8350375E+7,
+            "acceptedStateCommitReads": 5.8350375E+7,
+            "acceptedStateCommitWrites": 5.8350375E+7
+          },
+          "forcing": {
+            "accumulatorClearWrites": 0,
+            "temporaryFluxClearWrites": 0,
+            "kernelOutputInitializationWrites": 0,
+            "temporaryAccumulationReads": 0,
+            "temporaryAccumulationWrites": 0,
+            "outputCopyReads": 0,
+            "outputCopyWrites": 0,
+            "stateConstraintWrites": 0
+          },
+          "totals": {
+            "elementReads": 9.33606E+8,
+            "elementWrites": 5.25153375E+8,
+            "bytesRead": 1.4937696E+10,
+            "bytesWritten": 8.402454E+9
+          }
+        },
+        "livenessBytes": {
+          "integratorWorkspaceLive": 5.601636E+8,
+          "integratorWorkspaceMaximumLive": 5.601636E+8,
+          "forcingWorkspaceLive": 0,
+          "forcingWorkspaceMaximumLive": 0,
+          "acceptedStepAdditionalArrayStorage": 0,
+          "contractAbstractionAdditionalArrayStorage": 0,
+          "knownRetained": 4.085032983E+9,
+          "knownMaximumLive": 4.085032983E+9
+        },
+        "rssBytes": {
+          "integrationBaseline": 8.077918208E+9,
+          "processPeak": 8.0797696E+9,
+          "peakIncrementLowerBound": 1.851392E+6
+        },
+        "execution": {
+          "engine": "fftw",
+          "library": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue195-196/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+          "schedule": "wave-vortex-forcing-v1:WVNonlinearAdvection",
+          "planCount": 17,
+          "noFallback": true
+        }
+      }
+    },
+    {
+      "variant": "candidate-no-output",
+      "caseId": "constant-hydrostatic-512x512x129",
+      "repeatIndex": 3,
+      "sampleCount": 3,
+      "integrationSeconds": 5.331955917,
+      "secondsPerStep": 1.777318639,
+      "integratorWorkspaceBytes": 5.601636E+8,
+      "denseHistoryBytes": 0,
+      "driverInterpolationBytes": 0,
+      "knownMaximumLiveBytes": 4.085032983E+9,
+      "rssPeakIncrementLowerBoundBytes": 6.45726208E+8,
+      "rhsEvaluationCount": 20,
+      "interpolatedOutputCount": 0,
+      "metadata": {
+        "schemaVersion": "wave-vortex-run-v1",
+        "status": "complete",
+        "source": {
+          "commit": "unknown"
+        },
+        "input": "/private/var/folders/cj/111cr_h11xz0b9rshvpdh_th0000gn/T/tp7cb7dce6_7169_480c_96be_1c0febeac0ff/input-constant-hydrostatic-512x512x129.nc",
+        "output": "/private/var/folders/cj/111cr_h11xz0b9rshvpdh_th0000gn/T/tp7cb7dce6_7169_480c_96be_1c0febeac0ff/candidate-no-output-constant-hydrostatic-512x512x129-3.nc",
+        "provider": {
+          "id": "native-fftw",
+          "version": "fftw-3.3.11-neon",
+          "threads": 18,
+          "baseLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue195-196/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+          "threadLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue195-196/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3_threads.3.dylib"
+        },
+        "state": {
+          "initialTime": 0,
+          "finalTime": 5,
+          "deltaT": 1,
+          "stepCount": 5,
+          "rejectedStepCount": 0,
+          "rhsEvaluationCount": 20,
+          "shape": [
+            85,
+            45765
+          ]
+        },
+        "integrator": {
+          "id": "fixed-rk4",
+          "relativeTolerance": 0.001,
+          "absoluteTolerance": 1E-6,
+          "lastNormalizedError": 0,
+          "lastProposedStepSize": 0,
+          "lastAcceptedStepSize": 0,
+          "nextStepSize": 1,
+          "fsalReuseCount": 0,
+          "fsalInvalidationCount": 0,
+          "rejectedInitialDerivativeReuseCount": 0,
+          "constraintModifiedCoefficientCount": 0,
+          "denseOutputEvaluationCount": 0,
+          "denseOutputElementReads": 0,
+          "denseOutputElementWrites": 0,
+          "denseOutputSeconds": 0,
+          "errorPolicyBytes": 0
+        },
+        "authorBenchmark": {
+          "warmupStepCount": 2,
+          "sampleStepCount": 3,
+          "denseOutputsPerStep": 0,
+          "requestedOutputCount": 0,
+          "interpolatedOutputCount": 0,
+          "interpolationSeconds": 0
+        },
+        "forcing": {
+          "ordinal": 1,
+          "type": "WVNonlinearAdvection",
+          "name": "nonlinear advection",
+          "stage": 0,
+          "priority": 127
+        },
+        "timingSeconds": {
+          "inspect": 0.071527292,
+          "read": 0.048222667,
+          "construct": 33.982280709,
+          "prepare": 0.008889834,
+          "integrate": 5.331955917,
+          "write": 0.151644417,
+          "total": 43.185088584
+        },
+        "storageBytes": {
+          "checkpointState": 1.867212E+8,
+          "descriptor": 6.28594557E+8,
+          "planWrapper": 408,
+          "kernelScratch": 2.709553152E+9,
+          "forcingSchedule": 66,
+          "forcingDerivedOperators": 0,
+          "forcingWorkspace": 0,
+          "integratorWorkspace": 5.601636E+8,
+          "denseHistory": 0,
+          "driverInterpolation": 0,
+          "scheduledOutput": 0,
+          "knownPersistent": 4.085032983E+9,
+          "persistentFullHermitian": 0
+        },
+        "arrayTraffic": {
+          "scope": "exact fixed-RK4 integration-boundary arrays; adaptive traffic is reported through method metrics",
+          "elementBytes": 16,
+          "integrator": {
+            "stageStateConstructionReads": 3.5010225E+8,
+            "stageStateConstructionWrites": 1.75051125E+8,
+            "stageFluxClearWrites": 0,
+            "weightedFluxClearWrites": 0,
+            "weightedFluxInitializationReads": 5.8350375E+7,
+            "weightedFluxInitializationWrites": 5.8350375E+7,
+            "weightedAccumulationReads": 3.5010225E+8,
+            "weightedAccumulationWrites": 1.75051125E+8,
+            "finalStateUpdateReads": 1.1670075E+8,
+            "finalStateUpdateWrites": 5.8350375E+7,
+            "acceptedStateCommitReads": 5.8350375E+7,
+            "acceptedStateCommitWrites": 5.8350375E+7
+          },
+          "forcing": {
+            "accumulatorClearWrites": 0,
+            "temporaryFluxClearWrites": 0,
+            "kernelOutputInitializationWrites": 0,
+            "temporaryAccumulationReads": 0,
+            "temporaryAccumulationWrites": 0,
+            "outputCopyReads": 0,
+            "outputCopyWrites": 0,
+            "stateConstraintWrites": 0
+          },
+          "totals": {
+            "elementReads": 9.33606E+8,
+            "elementWrites": 5.25153375E+8,
+            "bytesRead": 1.4937696E+10,
+            "bytesWritten": 8.402454E+9
+          }
+        },
+        "livenessBytes": {
+          "integratorWorkspaceLive": 5.601636E+8,
+          "integratorWorkspaceMaximumLive": 5.601636E+8,
+          "forcingWorkspaceLive": 0,
+          "forcingWorkspaceMaximumLive": 0,
+          "acceptedStepAdditionalArrayStorage": 0,
+          "contractAbstractionAdditionalArrayStorage": 0,
+          "knownRetained": 4.085032983E+9,
+          "knownMaximumLive": 4.085032983E+9
+        },
+        "rssBytes": {
+          "integrationBaseline": 6.991822848E+9,
+          "processPeak": 7.637549056E+9,
+          "peakIncrementLowerBound": 6.45726208E+8
+        },
+        "execution": {
+          "engine": "fftw",
+          "library": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue195-196/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+          "schedule": "wave-vortex-forcing-v1:WVNonlinearAdvection",
+          "planCount": 17,
+          "noFallback": true
+        }
+      }
+    },
+    {
+      "variant": "candidate-no-output",
+      "caseId": "constant-nonhydrostatic-512x512x129",
+      "repeatIndex": 1,
+      "sampleCount": 3,
+      "integrationSeconds": 6.448917458,
+      "secondsPerStep": 2.1496391526666669,
+      "integratorWorkspaceBytes": 5.601636E+8,
+      "denseHistoryBytes": 0,
+      "driverInterpolationBytes": 0,
+      "knownMaximumLiveBytes": 4.085032983E+9,
+      "rssPeakIncrementLowerBoundBytes": 1.343488E+6,
+      "rhsEvaluationCount": 20,
+      "interpolatedOutputCount": 0,
+      "metadata": {
+        "schemaVersion": "wave-vortex-run-v1",
+        "status": "complete",
+        "source": {
+          "commit": "unknown"
+        },
+        "input": "/private/var/folders/cj/111cr_h11xz0b9rshvpdh_th0000gn/T/tp7cb7dce6_7169_480c_96be_1c0febeac0ff/input-constant-nonhydrostatic-512x512x129.nc",
+        "output": "/private/var/folders/cj/111cr_h11xz0b9rshvpdh_th0000gn/T/tp7cb7dce6_7169_480c_96be_1c0febeac0ff/candidate-no-output-constant-nonhydrostatic-512x512x129-1.nc",
+        "provider": {
+          "id": "native-fftw",
+          "version": "fftw-3.3.11-neon",
+          "threads": 18,
+          "baseLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue195-196/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+          "threadLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue195-196/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3_threads.3.dylib"
+        },
+        "state": {
+          "initialTime": 0,
+          "finalTime": 5,
+          "deltaT": 1,
+          "stepCount": 5,
+          "rejectedStepCount": 0,
+          "rhsEvaluationCount": 20,
+          "shape": [
+            85,
+            45765
+          ]
+        },
+        "integrator": {
+          "id": "fixed-rk4",
+          "relativeTolerance": 0.001,
+          "absoluteTolerance": 1E-6,
+          "lastNormalizedError": 0,
+          "lastProposedStepSize": 0,
+          "lastAcceptedStepSize": 0,
+          "nextStepSize": 1,
+          "fsalReuseCount": 0,
+          "fsalInvalidationCount": 0,
+          "rejectedInitialDerivativeReuseCount": 0,
+          "constraintModifiedCoefficientCount": 0,
+          "denseOutputEvaluationCount": 0,
+          "denseOutputElementReads": 0,
+          "denseOutputElementWrites": 0,
+          "denseOutputSeconds": 0,
+          "errorPolicyBytes": 0
+        },
+        "authorBenchmark": {
+          "warmupStepCount": 2,
+          "sampleStepCount": 3,
+          "denseOutputsPerStep": 0,
+          "requestedOutputCount": 0,
+          "interpolatedOutputCount": 0,
+          "interpolationSeconds": 0
+        },
+        "forcing": {
+          "ordinal": 1,
+          "type": "WVNonlinearAdvection",
+          "name": "nonlinear advection",
+          "stage": 0,
+          "priority": 127
+        },
+        "timingSeconds": {
+          "inspect": 0.06744725,
+          "read": 0.049809583,
+          "construct": 33.900224375,
+          "prepare": 0.012144917,
+          "integrate": 6.448917458,
+          "write": 0.201824083,
+          "total": 44.898947708
+        },
+        "storageBytes": {
+          "checkpointState": 1.867212E+8,
+          "descriptor": 6.28594557E+8,
+          "planWrapper": 408,
+          "kernelScratch": 2.709553152E+9,
+          "forcingSchedule": 66,
+          "forcingDerivedOperators": 0,
+          "forcingWorkspace": 0,
+          "integratorWorkspace": 5.601636E+8,
+          "denseHistory": 0,
+          "driverInterpolation": 0,
+          "scheduledOutput": 0,
+          "knownPersistent": 4.085032983E+9,
+          "persistentFullHermitian": 0
+        },
+        "arrayTraffic": {
+          "scope": "exact fixed-RK4 integration-boundary arrays; adaptive traffic is reported through method metrics",
+          "elementBytes": 16,
+          "integrator": {
+            "stageStateConstructionReads": 3.5010225E+8,
+            "stageStateConstructionWrites": 1.75051125E+8,
+            "stageFluxClearWrites": 0,
+            "weightedFluxClearWrites": 0,
+            "weightedFluxInitializationReads": 5.8350375E+7,
+            "weightedFluxInitializationWrites": 5.8350375E+7,
+            "weightedAccumulationReads": 3.5010225E+8,
+            "weightedAccumulationWrites": 1.75051125E+8,
+            "finalStateUpdateReads": 1.1670075E+8,
+            "finalStateUpdateWrites": 5.8350375E+7,
+            "acceptedStateCommitReads": 5.8350375E+7,
+            "acceptedStateCommitWrites": 5.8350375E+7
+          },
+          "forcing": {
+            "accumulatorClearWrites": 0,
+            "temporaryFluxClearWrites": 0,
+            "kernelOutputInitializationWrites": 0,
+            "temporaryAccumulationReads": 0,
+            "temporaryAccumulationWrites": 0,
+            "outputCopyReads": 0,
+            "outputCopyWrites": 0,
+            "stateConstraintWrites": 0
+          },
+          "totals": {
+            "elementReads": 9.33606E+8,
+            "elementWrites": 5.25153375E+8,
+            "bytesRead": 1.4937696E+10,
+            "bytesWritten": 8.402454E+9
+          }
+        },
+        "livenessBytes": {
+          "integratorWorkspaceLive": 5.601636E+8,
+          "integratorWorkspaceMaximumLive": 5.601636E+8,
+          "forcingWorkspaceLive": 0,
+          "forcingWorkspaceMaximumLive": 0,
+          "acceptedStepAdditionalArrayStorage": 0,
+          "contractAbstractionAdditionalArrayStorage": 0,
+          "knownRetained": 4.085032983E+9,
+          "knownMaximumLive": 4.085032983E+9
+        },
+        "rssBytes": {
+          "integrationBaseline": 8.077819904E+9,
+          "processPeak": 8.079163392E+9,
+          "peakIncrementLowerBound": 1.343488E+6
+        },
+        "execution": {
+          "engine": "fftw",
+          "library": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue195-196/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+          "schedule": "wave-vortex-forcing-v1:WVNonlinearAdvection",
+          "planCount": 17,
+          "noFallback": true
+        }
+      }
+    },
+    {
+      "variant": "baseline-no-output",
+      "caseId": "constant-nonhydrostatic-512x512x129",
+      "repeatIndex": 1,
+      "sampleCount": 3,
+      "integrationSeconds": 6.727021791,
+      "secondsPerStep": 2.242340597,
+      "integratorWorkspaceBytes": 5.601636E+8,
+      "denseHistoryBytes": 0,
+      "driverInterpolationBytes": 0,
+      "knownMaximumLiveBytes": 4.085032983E+9,
+      "rssPeakIncrementLowerBoundBytes": 6.4995328E+8,
+      "rhsEvaluationCount": 20,
+      "interpolatedOutputCount": 0,
+      "metadata": {
+        "schemaVersion": "wave-vortex-run-v1",
+        "status": "complete",
+        "source": {
+          "commit": "0becaa37f768106d3f9b2b469f346a41c3dd6505"
+        },
+        "input": "/private/var/folders/cj/111cr_h11xz0b9rshvpdh_th0000gn/T/tp7cb7dce6_7169_480c_96be_1c0febeac0ff/input-constant-nonhydrostatic-512x512x129.nc",
+        "output": "/private/var/folders/cj/111cr_h11xz0b9rshvpdh_th0000gn/T/tp7cb7dce6_7169_480c_96be_1c0febeac0ff/baseline-no-output-constant-nonhydrostatic-512x512x129-1.nc",
+        "provider": {
+          "id": "native-fftw",
+          "version": "fftw-3.3.11-neon",
+          "threads": 18,
+          "baseLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue195-196/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+          "threadLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue195-196/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3_threads.3.dylib"
+        },
+        "state": {
+          "initialTime": 0,
+          "finalTime": 5,
+          "deltaT": 1,
+          "stepCount": 5,
+          "rhsEvaluationCount": 20,
+          "shape": [
+            85,
+            45765
+          ]
+        },
+        "authorBenchmark": {
+          "warmupStepCount": 2,
+          "sampleStepCount": 3,
+          "denseOutputsPerStep": 0,
+          "interpolatedOutputCount": 0
+        },
+        "forcing": {
+          "ordinal": 1,
+          "type": "WVNonlinearAdvection",
+          "name": "nonlinear advection",
+          "stage": 0,
+          "priority": 127
+        },
+        "timingSeconds": {
+          "inspect": 0.081547583,
+          "read": 0.055871167,
+          "construct": 33.843858208,
+          "prepare": 0.008709917,
+          "integrate": 6.727021791,
+          "write": 0.156664041,
+          "total": 45.251012875
+        },
+        "storageBytes": {
+          "checkpointState": 1.867212E+8,
+          "descriptor": 6.28594557E+8,
+          "planWrapper": 408,
+          "kernelScratch": 2.709553152E+9,
+          "forcingSchedule": 66,
+          "forcingDerivedOperators": 0,
+          "forcingWorkspace": 0,
+          "integratorWorkspace": 5.601636E+8,
+          "denseHistory": 0,
+          "driverInterpolation": 0,
+          "knownPersistent": 4.085032983E+9,
+          "persistentFullHermitian": 0
+        },
+        "arrayTraffic": {
+          "scope": "exact integration-boundary arrays; FFT plans and kernel scratch internals excluded",
+          "elementBytes": 16,
+          "integrator": {
+            "stageStateConstructionReads": 3.5010225E+8,
+            "stageStateConstructionWrites": 1.75051125E+8,
+            "stageFluxClearWrites": 0,
+            "weightedFluxClearWrites": 0,
+            "weightedFluxInitializationReads": 5.8350375E+7,
+            "weightedFluxInitializationWrites": 5.8350375E+7,
+            "weightedAccumulationReads": 3.5010225E+8,
+            "weightedAccumulationWrites": 1.75051125E+8,
+            "finalStateUpdateReads": 1.1670075E+8,
+            "finalStateUpdateWrites": 5.8350375E+7,
+            "acceptedStateCommitReads": 5.8350375E+7,
+            "acceptedStateCommitWrites": 5.8350375E+7
+          },
+          "forcing": {
+            "accumulatorClearWrites": 0,
+            "temporaryFluxClearWrites": 0,
+            "kernelOutputInitializationWrites": 0,
+            "temporaryAccumulationReads": 0,
+            "temporaryAccumulationWrites": 0,
+            "outputCopyReads": 0,
+            "outputCopyWrites": 0,
+            "stateConstraintWrites": 0
+          },
+          "totals": {
+            "elementReads": 9.33606E+8,
+            "elementWrites": 5.25153375E+8,
+            "bytesRead": 1.4937696E+10,
+            "bytesWritten": 8.402454E+9
+          }
+        },
+        "livenessBytes": {
+          "integratorWorkspaceLive": 5.601636E+8,
+          "integratorWorkspaceMaximumLive": 5.601636E+8,
+          "forcingWorkspaceLive": 0,
+          "forcingWorkspaceMaximumLive": 0,
+          "acceptedStepAdditionalArrayStorage": 0,
+          "contractAbstractionAdditionalArrayStorage": 0,
+          "knownRetained": 4.085032983E+9,
+          "knownMaximumLive": 4.085032983E+9
+        },
+        "rssBytes": {
+          "integrationBaseline": 6.98679296E+9,
+          "processPeak": 7.63674624E+9,
+          "peakIncrementLowerBound": 6.4995328E+8
+        },
+        "execution": {
+          "engine": "fftw",
+          "library": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue195-196/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+          "schedule": "wave-vortex-forcing-v1:WVNonlinearAdvection",
+          "planCount": 17,
+          "noFallback": true
+        }
+      }
+    },
+    {
+      "variant": "baseline-no-output",
+      "caseId": "constant-nonhydrostatic-512x512x129",
+      "repeatIndex": 2,
+      "sampleCount": 3,
+      "integrationSeconds": 6.304046875,
+      "secondsPerStep": 2.1013489583333333,
+      "integratorWorkspaceBytes": 5.601636E+8,
+      "denseHistoryBytes": 0,
+      "driverInterpolationBytes": 0,
+      "knownMaximumLiveBytes": 4.085032983E+9,
+      "rssPeakIncrementLowerBoundBytes": 1.465729024E+9,
+      "rhsEvaluationCount": 20,
+      "interpolatedOutputCount": 0,
+      "metadata": {
+        "schemaVersion": "wave-vortex-run-v1",
+        "status": "complete",
+        "source": {
+          "commit": "0becaa37f768106d3f9b2b469f346a41c3dd6505"
+        },
+        "input": "/private/var/folders/cj/111cr_h11xz0b9rshvpdh_th0000gn/T/tp7cb7dce6_7169_480c_96be_1c0febeac0ff/input-constant-nonhydrostatic-512x512x129.nc",
+        "output": "/private/var/folders/cj/111cr_h11xz0b9rshvpdh_th0000gn/T/tp7cb7dce6_7169_480c_96be_1c0febeac0ff/baseline-no-output-constant-nonhydrostatic-512x512x129-2.nc",
+        "provider": {
+          "id": "native-fftw",
+          "version": "fftw-3.3.11-neon",
+          "threads": 18,
+          "baseLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue195-196/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+          "threadLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue195-196/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3_threads.3.dylib"
+        },
+        "state": {
+          "initialTime": 0,
+          "finalTime": 5,
+          "deltaT": 1,
+          "stepCount": 5,
+          "rhsEvaluationCount": 20,
+          "shape": [
+            85,
+            45765
+          ]
+        },
+        "authorBenchmark": {
+          "warmupStepCount": 2,
+          "sampleStepCount": 3,
+          "denseOutputsPerStep": 0,
+          "interpolatedOutputCount": 0
+        },
+        "forcing": {
+          "ordinal": 1,
+          "type": "WVNonlinearAdvection",
+          "name": "nonlinear advection",
+          "stage": 0,
+          "priority": 127
+        },
+        "timingSeconds": {
+          "inspect": 0.069311333,
+          "read": 0.047282041,
+          "construct": 34.1470535,
+          "prepare": 0.008988292,
+          "integrate": 6.304046875,
+          "write": 0.1561245,
+          "total": 44.848362792
+        },
+        "storageBytes": {
+          "checkpointState": 1.867212E+8,
+          "descriptor": 6.28594557E+8,
+          "planWrapper": 408,
+          "kernelScratch": 2.709553152E+9,
+          "forcingSchedule": 66,
+          "forcingDerivedOperators": 0,
+          "forcingWorkspace": 0,
+          "integratorWorkspace": 5.601636E+8,
+          "denseHistory": 0,
+          "driverInterpolation": 0,
+          "knownPersistent": 4.085032983E+9,
+          "persistentFullHermitian": 0
+        },
+        "arrayTraffic": {
+          "scope": "exact integration-boundary arrays; FFT plans and kernel scratch internals excluded",
+          "elementBytes": 16,
+          "integrator": {
+            "stageStateConstructionReads": 3.5010225E+8,
+            "stageStateConstructionWrites": 1.75051125E+8,
+            "stageFluxClearWrites": 0,
+            "weightedFluxClearWrites": 0,
+            "weightedFluxInitializationReads": 5.8350375E+7,
+            "weightedFluxInitializationWrites": 5.8350375E+7,
+            "weightedAccumulationReads": 3.5010225E+8,
+            "weightedAccumulationWrites": 1.75051125E+8,
+            "finalStateUpdateReads": 1.1670075E+8,
+            "finalStateUpdateWrites": 5.8350375E+7,
+            "acceptedStateCommitReads": 5.8350375E+7,
+            "acceptedStateCommitWrites": 5.8350375E+7
+          },
+          "forcing": {
+            "accumulatorClearWrites": 0,
+            "temporaryFluxClearWrites": 0,
+            "kernelOutputInitializationWrites": 0,
+            "temporaryAccumulationReads": 0,
+            "temporaryAccumulationWrites": 0,
+            "outputCopyReads": 0,
+            "outputCopyWrites": 0,
+            "stateConstraintWrites": 0
+          },
+          "totals": {
+            "elementReads": 9.33606E+8,
+            "elementWrites": 5.25153375E+8,
+            "bytesRead": 1.4937696E+10,
+            "bytesWritten": 8.402454E+9
+          }
+        },
+        "livenessBytes": {
+          "integratorWorkspaceLive": 5.601636E+8,
+          "integratorWorkspaceMaximumLive": 5.601636E+8,
+          "forcingWorkspaceLive": 0,
+          "forcingWorkspaceMaximumLive": 0,
+          "acceptedStepAdditionalArrayStorage": 0,
+          "contractAbstractionAdditionalArrayStorage": 0,
+          "knownRetained": 4.085032983E+9,
+          "knownMaximumLive": 4.085032983E+9
+        },
+        "rssBytes": {
+          "integrationBaseline": 6.171082752E+9,
+          "processPeak": 7.636811776E+9,
+          "peakIncrementLowerBound": 1.465729024E+9
+        },
+        "execution": {
+          "engine": "fftw",
+          "library": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue195-196/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+          "schedule": "wave-vortex-forcing-v1:WVNonlinearAdvection",
+          "planCount": 17,
+          "noFallback": true
+        }
+      }
+    },
+    {
+      "variant": "candidate-no-output",
+      "caseId": "constant-nonhydrostatic-512x512x129",
+      "repeatIndex": 2,
+      "sampleCount": 3,
+      "integrationSeconds": 6.752025666,
+      "secondsPerStep": 2.250675222,
+      "integratorWorkspaceBytes": 5.601636E+8,
+      "denseHistoryBytes": 0,
+      "driverInterpolationBytes": 0,
+      "knownMaximumLiveBytes": 4.085032983E+9,
+      "rssPeakIncrementLowerBoundBytes": 6.45677056E+8,
+      "rhsEvaluationCount": 20,
+      "interpolatedOutputCount": 0,
+      "metadata": {
+        "schemaVersion": "wave-vortex-run-v1",
+        "status": "complete",
+        "source": {
+          "commit": "unknown"
+        },
+        "input": "/private/var/folders/cj/111cr_h11xz0b9rshvpdh_th0000gn/T/tp7cb7dce6_7169_480c_96be_1c0febeac0ff/input-constant-nonhydrostatic-512x512x129.nc",
+        "output": "/private/var/folders/cj/111cr_h11xz0b9rshvpdh_th0000gn/T/tp7cb7dce6_7169_480c_96be_1c0febeac0ff/candidate-no-output-constant-nonhydrostatic-512x512x129-2.nc",
+        "provider": {
+          "id": "native-fftw",
+          "version": "fftw-3.3.11-neon",
+          "threads": 18,
+          "baseLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue195-196/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+          "threadLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue195-196/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3_threads.3.dylib"
+        },
+        "state": {
+          "initialTime": 0,
+          "finalTime": 5,
+          "deltaT": 1,
+          "stepCount": 5,
+          "rejectedStepCount": 0,
+          "rhsEvaluationCount": 20,
+          "shape": [
+            85,
+            45765
+          ]
+        },
+        "integrator": {
+          "id": "fixed-rk4",
+          "relativeTolerance": 0.001,
+          "absoluteTolerance": 1E-6,
+          "lastNormalizedError": 0,
+          "lastProposedStepSize": 0,
+          "lastAcceptedStepSize": 0,
+          "nextStepSize": 1,
+          "fsalReuseCount": 0,
+          "fsalInvalidationCount": 0,
+          "rejectedInitialDerivativeReuseCount": 0,
+          "constraintModifiedCoefficientCount": 0,
+          "denseOutputEvaluationCount": 0,
+          "denseOutputElementReads": 0,
+          "denseOutputElementWrites": 0,
+          "denseOutputSeconds": 0,
+          "errorPolicyBytes": 0
+        },
+        "authorBenchmark": {
+          "warmupStepCount": 2,
+          "sampleStepCount": 3,
+          "denseOutputsPerStep": 0,
+          "requestedOutputCount": 0,
+          "interpolatedOutputCount": 0,
+          "interpolationSeconds": 0
+        },
+        "forcing": {
+          "ordinal": 1,
+          "type": "WVNonlinearAdvection",
+          "name": "nonlinear advection",
+          "stage": 0,
+          "priority": 127
+        },
+        "timingSeconds": {
+          "inspect": 0.0636065,
+          "read": 0.04699225,
+          "construct": 33.914842,
+          "prepare": 0.009370084,
+          "integrate": 6.752025666,
+          "write": 0.148296375,
+          "total": 45.371906583
+        },
+        "storageBytes": {
+          "checkpointState": 1.867212E+8,
+          "descriptor": 6.28594557E+8,
+          "planWrapper": 408,
+          "kernelScratch": 2.709553152E+9,
+          "forcingSchedule": 66,
+          "forcingDerivedOperators": 0,
+          "forcingWorkspace": 0,
+          "integratorWorkspace": 5.601636E+8,
+          "denseHistory": 0,
+          "driverInterpolation": 0,
+          "scheduledOutput": 0,
+          "knownPersistent": 4.085032983E+9,
+          "persistentFullHermitian": 0
+        },
+        "arrayTraffic": {
+          "scope": "exact fixed-RK4 integration-boundary arrays; adaptive traffic is reported through method metrics",
+          "elementBytes": 16,
+          "integrator": {
+            "stageStateConstructionReads": 3.5010225E+8,
+            "stageStateConstructionWrites": 1.75051125E+8,
+            "stageFluxClearWrites": 0,
+            "weightedFluxClearWrites": 0,
+            "weightedFluxInitializationReads": 5.8350375E+7,
+            "weightedFluxInitializationWrites": 5.8350375E+7,
+            "weightedAccumulationReads": 3.5010225E+8,
+            "weightedAccumulationWrites": 1.75051125E+8,
+            "finalStateUpdateReads": 1.1670075E+8,
+            "finalStateUpdateWrites": 5.8350375E+7,
+            "acceptedStateCommitReads": 5.8350375E+7,
+            "acceptedStateCommitWrites": 5.8350375E+7
+          },
+          "forcing": {
+            "accumulatorClearWrites": 0,
+            "temporaryFluxClearWrites": 0,
+            "kernelOutputInitializationWrites": 0,
+            "temporaryAccumulationReads": 0,
+            "temporaryAccumulationWrites": 0,
+            "outputCopyReads": 0,
+            "outputCopyWrites": 0,
+            "stateConstraintWrites": 0
+          },
+          "totals": {
+            "elementReads": 9.33606E+8,
+            "elementWrites": 5.25153375E+8,
+            "bytesRead": 1.4937696E+10,
+            "bytesWritten": 8.402454E+9
+          }
+        },
+        "livenessBytes": {
+          "integratorWorkspaceLive": 5.601636E+8,
+          "integratorWorkspaceMaximumLive": 5.601636E+8,
+          "forcingWorkspaceLive": 0,
+          "forcingWorkspaceMaximumLive": 0,
+          "acceptedStepAdditionalArrayStorage": 0,
+          "contractAbstractionAdditionalArrayStorage": 0,
+          "knownRetained": 4.085032983E+9,
+          "knownMaximumLive": 4.085032983E+9
+        },
+        "rssBytes": {
+          "integrationBaseline": 6.991003648E+9,
+          "processPeak": 7.636680704E+9,
+          "peakIncrementLowerBound": 6.45677056E+8
+        },
+        "execution": {
+          "engine": "fftw",
+          "library": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue195-196/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+          "schedule": "wave-vortex-forcing-v1:WVNonlinearAdvection",
+          "planCount": 17,
+          "noFallback": true
+        }
+      }
+    },
+    {
+      "variant": "candidate-no-output",
+      "caseId": "constant-nonhydrostatic-512x512x129",
+      "repeatIndex": 3,
+      "sampleCount": 3,
+      "integrationSeconds": 6.632033167,
+      "secondsPerStep": 2.2106777223333336,
+      "integratorWorkspaceBytes": 5.601636E+8,
+      "denseHistoryBytes": 0,
+      "driverInterpolationBytes": 0,
+      "knownMaximumLiveBytes": 4.085032983E+9,
+      "rssPeakIncrementLowerBoundBytes": 3.70343936E+8,
+      "rhsEvaluationCount": 20,
+      "interpolatedOutputCount": 0,
+      "metadata": {
+        "schemaVersion": "wave-vortex-run-v1",
+        "status": "complete",
+        "source": {
+          "commit": "unknown"
+        },
+        "input": "/private/var/folders/cj/111cr_h11xz0b9rshvpdh_th0000gn/T/tp7cb7dce6_7169_480c_96be_1c0febeac0ff/input-constant-nonhydrostatic-512x512x129.nc",
+        "output": "/private/var/folders/cj/111cr_h11xz0b9rshvpdh_th0000gn/T/tp7cb7dce6_7169_480c_96be_1c0febeac0ff/candidate-no-output-constant-nonhydrostatic-512x512x129-3.nc",
+        "provider": {
+          "id": "native-fftw",
+          "version": "fftw-3.3.11-neon",
+          "threads": 18,
+          "baseLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue195-196/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+          "threadLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue195-196/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3_threads.3.dylib"
+        },
+        "state": {
+          "initialTime": 0,
+          "finalTime": 5,
+          "deltaT": 1,
+          "stepCount": 5,
+          "rejectedStepCount": 0,
+          "rhsEvaluationCount": 20,
+          "shape": [
+            85,
+            45765
+          ]
+        },
+        "integrator": {
+          "id": "fixed-rk4",
+          "relativeTolerance": 0.001,
+          "absoluteTolerance": 1E-6,
+          "lastNormalizedError": 0,
+          "lastProposedStepSize": 0,
+          "lastAcceptedStepSize": 0,
+          "nextStepSize": 1,
+          "fsalReuseCount": 0,
+          "fsalInvalidationCount": 0,
+          "rejectedInitialDerivativeReuseCount": 0,
+          "constraintModifiedCoefficientCount": 0,
+          "denseOutputEvaluationCount": 0,
+          "denseOutputElementReads": 0,
+          "denseOutputElementWrites": 0,
+          "denseOutputSeconds": 0,
+          "errorPolicyBytes": 0
+        },
+        "authorBenchmark": {
+          "warmupStepCount": 2,
+          "sampleStepCount": 3,
+          "denseOutputsPerStep": 0,
+          "requestedOutputCount": 0,
+          "interpolatedOutputCount": 0,
+          "interpolationSeconds": 0
+        },
+        "forcing": {
+          "ordinal": 1,
+          "type": "WVNonlinearAdvection",
+          "name": "nonlinear advection",
+          "stage": 0,
+          "priority": 127
+        },
+        "timingSeconds": {
+          "inspect": 0.066661167,
+          "read": 0.047097917,
+          "construct": 33.896751042,
+          "prepare": 0.008609041,
+          "integrate": 6.632033167,
+          "write": 0.144347833,
+          "total": 45.19691675
+        },
+        "storageBytes": {
+          "checkpointState": 1.867212E+8,
+          "descriptor": 6.28594557E+8,
+          "planWrapper": 408,
+          "kernelScratch": 2.709553152E+9,
+          "forcingSchedule": 66,
+          "forcingDerivedOperators": 0,
+          "forcingWorkspace": 0,
+          "integratorWorkspace": 5.601636E+8,
+          "denseHistory": 0,
+          "driverInterpolation": 0,
+          "scheduledOutput": 0,
+          "knownPersistent": 4.085032983E+9,
+          "persistentFullHermitian": 0
+        },
+        "arrayTraffic": {
+          "scope": "exact fixed-RK4 integration-boundary arrays; adaptive traffic is reported through method metrics",
+          "elementBytes": 16,
+          "integrator": {
+            "stageStateConstructionReads": 3.5010225E+8,
+            "stageStateConstructionWrites": 1.75051125E+8,
+            "stageFluxClearWrites": 0,
+            "weightedFluxClearWrites": 0,
+            "weightedFluxInitializationReads": 5.8350375E+7,
+            "weightedFluxInitializationWrites": 5.8350375E+7,
+            "weightedAccumulationReads": 3.5010225E+8,
+            "weightedAccumulationWrites": 1.75051125E+8,
+            "finalStateUpdateReads": 1.1670075E+8,
+            "finalStateUpdateWrites": 5.8350375E+7,
+            "acceptedStateCommitReads": 5.8350375E+7,
+            "acceptedStateCommitWrites": 5.8350375E+7
+          },
+          "forcing": {
+            "accumulatorClearWrites": 0,
+            "temporaryFluxClearWrites": 0,
+            "kernelOutputInitializationWrites": 0,
+            "temporaryAccumulationReads": 0,
+            "temporaryAccumulationWrites": 0,
+            "outputCopyReads": 0,
+            "outputCopyWrites": 0,
+            "stateConstraintWrites": 0
+          },
+          "totals": {
+            "elementReads": 9.33606E+8,
+            "elementWrites": 5.25153375E+8,
+            "bytesRead": 1.4937696E+10,
+            "bytesWritten": 8.402454E+9
+          }
+        },
+        "livenessBytes": {
+          "integratorWorkspaceLive": 5.601636E+8,
+          "integratorWorkspaceMaximumLive": 5.601636E+8,
+          "forcingWorkspaceLive": 0,
+          "forcingWorkspaceMaximumLive": 0,
+          "acceptedStepAdditionalArrayStorage": 0,
+          "contractAbstractionAdditionalArrayStorage": 0,
+          "knownRetained": 4.085032983E+9,
+          "knownMaximumLive": 4.085032983E+9
+        },
+        "rssBytes": {
+          "integrationBaseline": 6.98728448E+9,
+          "processPeak": 7.357628416E+9,
+          "peakIncrementLowerBound": 3.70343936E+8
+        },
+        "execution": {
+          "engine": "fftw",
+          "library": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue195-196/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+          "schedule": "wave-vortex-forcing-v1:WVNonlinearAdvection",
+          "planCount": 17,
+          "noFallback": true
+        }
+      }
+    },
+    {
+      "variant": "baseline-no-output",
+      "caseId": "constant-nonhydrostatic-512x512x129",
+      "repeatIndex": 3,
+      "sampleCount": 3,
+      "integrationSeconds": 6.680613042,
+      "secondsPerStep": 2.226871014,
+      "integratorWorkspaceBytes": 5.601636E+8,
+      "denseHistoryBytes": 0,
+      "driverInterpolationBytes": 0,
+      "knownMaximumLiveBytes": 4.085032983E+9,
+      "rssPeakIncrementLowerBoundBytes": 6.49920512E+8,
+      "rhsEvaluationCount": 20,
+      "interpolatedOutputCount": 0,
+      "metadata": {
+        "schemaVersion": "wave-vortex-run-v1",
+        "status": "complete",
+        "source": {
+          "commit": "0becaa37f768106d3f9b2b469f346a41c3dd6505"
+        },
+        "input": "/private/var/folders/cj/111cr_h11xz0b9rshvpdh_th0000gn/T/tp7cb7dce6_7169_480c_96be_1c0febeac0ff/input-constant-nonhydrostatic-512x512x129.nc",
+        "output": "/private/var/folders/cj/111cr_h11xz0b9rshvpdh_th0000gn/T/tp7cb7dce6_7169_480c_96be_1c0febeac0ff/baseline-no-output-constant-nonhydrostatic-512x512x129-3.nc",
+        "provider": {
+          "id": "native-fftw",
+          "version": "fftw-3.3.11-neon",
+          "threads": 18,
+          "baseLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue195-196/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+          "threadLibrary": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue195-196/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3_threads.3.dylib"
+        },
+        "state": {
+          "initialTime": 0,
+          "finalTime": 5,
+          "deltaT": 1,
+          "stepCount": 5,
+          "rhsEvaluationCount": 20,
+          "shape": [
+            85,
+            45765
+          ]
+        },
+        "authorBenchmark": {
+          "warmupStepCount": 2,
+          "sampleStepCount": 3,
+          "denseOutputsPerStep": 0,
+          "interpolatedOutputCount": 0
+        },
+        "forcing": {
+          "ordinal": 1,
+          "type": "WVNonlinearAdvection",
+          "name": "nonlinear advection",
+          "stage": 0,
+          "priority": 127
+        },
+        "timingSeconds": {
+          "inspect": 0.062957459,
+          "read": 0.047061125,
+          "construct": 33.97092875,
+          "prepare": 0.008658417,
+          "integrate": 6.680613042,
+          "write": 0.154182958,
+          "total": 45.328558167
+        },
+        "storageBytes": {
+          "checkpointState": 1.867212E+8,
+          "descriptor": 6.28594557E+8,
+          "planWrapper": 408,
+          "kernelScratch": 2.709553152E+9,
+          "forcingSchedule": 66,
+          "forcingDerivedOperators": 0,
+          "forcingWorkspace": 0,
+          "integratorWorkspace": 5.601636E+8,
+          "denseHistory": 0,
+          "driverInterpolation": 0,
+          "knownPersistent": 4.085032983E+9,
+          "persistentFullHermitian": 0
+        },
+        "arrayTraffic": {
+          "scope": "exact integration-boundary arrays; FFT plans and kernel scratch internals excluded",
+          "elementBytes": 16,
+          "integrator": {
+            "stageStateConstructionReads": 3.5010225E+8,
+            "stageStateConstructionWrites": 1.75051125E+8,
+            "stageFluxClearWrites": 0,
+            "weightedFluxClearWrites": 0,
+            "weightedFluxInitializationReads": 5.8350375E+7,
+            "weightedFluxInitializationWrites": 5.8350375E+7,
+            "weightedAccumulationReads": 3.5010225E+8,
+            "weightedAccumulationWrites": 1.75051125E+8,
+            "finalStateUpdateReads": 1.1670075E+8,
+            "finalStateUpdateWrites": 5.8350375E+7,
+            "acceptedStateCommitReads": 5.8350375E+7,
+            "acceptedStateCommitWrites": 5.8350375E+7
+          },
+          "forcing": {
+            "accumulatorClearWrites": 0,
+            "temporaryFluxClearWrites": 0,
+            "kernelOutputInitializationWrites": 0,
+            "temporaryAccumulationReads": 0,
+            "temporaryAccumulationWrites": 0,
+            "outputCopyReads": 0,
+            "outputCopyWrites": 0,
+            "stateConstraintWrites": 0
+          },
+          "totals": {
+            "elementReads": 9.33606E+8,
+            "elementWrites": 5.25153375E+8,
+            "bytesRead": 1.4937696E+10,
+            "bytesWritten": 8.402454E+9
+          }
+        },
+        "livenessBytes": {
+          "integratorWorkspaceLive": 5.601636E+8,
+          "integratorWorkspaceMaximumLive": 5.601636E+8,
+          "forcingWorkspaceLive": 0,
+          "forcingWorkspaceMaximumLive": 0,
+          "acceptedStepAdditionalArrayStorage": 0,
+          "contractAbstractionAdditionalArrayStorage": 0,
+          "knownRetained": 4.085032983E+9,
+          "knownMaximumLive": 4.085032983E+9
+        },
+        "rssBytes": {
+          "integrationBaseline": 6.987907072E+9,
+          "processPeak": 7.637827584E+9,
+          "peakIncrementLowerBound": 6.49920512E+8
+        },
+        "execution": {
+          "engine": "fftw",
+          "library": "/Users/jearly/Documents/OceanKitRepositories/wave-vortex-model-issue195-196/.compiled-backend-cache/provider/native-neon-pthreads/lib/libfftw3.3.dylib",
+          "schedule": "wave-vortex-forcing-v1:WVNonlinearAdvection",
+          "planCount": 17,
+          "noFallback": true
+        }
+      }
+    }
+  ],
+  "correctness": [
+    {
+      "caseId": "constant-hydrostatic-256x256x65",
+      "repeatIndex": 1,
+      "variant": "candidate-no-output",
+      "maximumRelativeError": 4.9620171580968571E-17
+    },
+    {
+      "caseId": "constant-hydrostatic-256x256x65",
+      "repeatIndex": 2,
+      "variant": "candidate-no-output",
+      "maximumRelativeError": 2.4810085790484285E-17
+    },
+    {
+      "caseId": "constant-hydrostatic-256x256x65",
+      "repeatIndex": 3,
+      "variant": "candidate-no-output",
+      "maximumRelativeError": 4.9620171580968571E-17
+    },
+    {
+      "caseId": "constant-nonhydrostatic-256x256x65",
+      "repeatIndex": 1,
+      "variant": "candidate-no-output",
+      "maximumRelativeError": 2.2879847546510054E-17
+    },
+    {
+      "caseId": "constant-nonhydrostatic-256x256x65",
+      "repeatIndex": 2,
+      "variant": "candidate-no-output",
+      "maximumRelativeError": 4.5759695093020108E-17
+    },
+    {
+      "caseId": "constant-nonhydrostatic-256x256x65",
+      "repeatIndex": 3,
+      "variant": "candidate-no-output",
+      "maximumRelativeError": 4.5759695093020108E-17
+    },
+    {
+      "caseId": "constant-hydrostatic-512x512x129",
+      "repeatIndex": 1,
+      "variant": "candidate-no-output",
+      "maximumRelativeError": 4.1014218002907651E-17
+    },
+    {
+      "caseId": "constant-hydrostatic-512x512x129",
+      "repeatIndex": 2,
+      "variant": "candidate-no-output",
+      "maximumRelativeError": 4.0934346032261282E-17
+    },
+    {
+      "caseId": "constant-hydrostatic-512x512x129",
+      "repeatIndex": 3,
+      "variant": "candidate-no-output",
+      "maximumRelativeError": 4.0934365551273864E-17
+    },
+    {
+      "caseId": "constant-nonhydrostatic-512x512x129",
+      "repeatIndex": 1,
+      "variant": "candidate-no-output",
+      "maximumRelativeError": 3.4977918875696507E-17
+    },
+    {
+      "caseId": "constant-nonhydrostatic-512x512x129",
+      "repeatIndex": 2,
+      "variant": "candidate-no-output",
+      "maximumRelativeError": 3.4977918875696507E-17
+    },
+    {
+      "caseId": "constant-nonhydrostatic-512x512x129",
+      "repeatIndex": 3,
+      "variant": "candidate-no-output",
+      "maximumRelativeError": 3.4994993769989412E-17
+    }
+  ],
+  "comparisons": [
+    {
+      "id": "constant-hydrostatic-256x256x65",
+      "baselineNoOutputSeconds": 0.22867019042857145,
+      "candidateNoOutputSeconds": 0.23136848214285716,
+      "candidateNoOutputRatio": 1.0117999277003644,
+      "denseOneSeconds": null,
+      "denseOneOverheadRatio": null,
+      "denseFourSeconds": null,
+      "denseFourOverheadRatio": null,
+      "baselineWorkspaceBytes": 6.9183072E+7,
+      "candidateNoOutputWorkspaceBytes": 6.9183072E+7,
+      "denseMethodWorkspaceBytes": null,
+      "denseDriverBytes": null,
+      "maximumRelativeError": 4.9620171580968571E-17,
+      "noOutputRegressionPassed": true,
+      "correctnessPassed": true,
+      "passed": true
+    },
+    {
+      "id": "constant-nonhydrostatic-256x256x65",
+      "baselineNoOutputSeconds": 0.29883060714285714,
+      "candidateNoOutputSeconds": 0.29555476785714285,
+      "candidateNoOutputRatio": 0.98903780534050767,
+      "denseOneSeconds": null,
+      "denseOneOverheadRatio": null,
+      "denseFourSeconds": null,
+      "denseFourOverheadRatio": null,
+      "baselineWorkspaceBytes": 6.9183072E+7,
+      "candidateNoOutputWorkspaceBytes": 6.9183072E+7,
+      "denseMethodWorkspaceBytes": null,
+      "denseDriverBytes": null,
+      "maximumRelativeError": 4.5759695093020108E-17,
+      "noOutputRegressionPassed": true,
+      "correctnessPassed": true,
+      "passed": true
+    },
+    {
+      "id": "constant-hydrostatic-512x512x129",
+      "baselineNoOutputSeconds": 1.7409002223333332,
+      "candidateNoOutputSeconds": 1.777318639,
+      "candidateNoOutputRatio": 1.0209193015196787,
+      "denseOneSeconds": null,
+      "denseOneOverheadRatio": null,
+      "denseFourSeconds": null,
+      "denseFourOverheadRatio": null,
+      "baselineWorkspaceBytes": 5.601636E+8,
+      "candidateNoOutputWorkspaceBytes": 5.601636E+8,
+      "denseMethodWorkspaceBytes": null,
+      "denseDriverBytes": null,
+      "maximumRelativeError": 4.1014218002907651E-17,
+      "noOutputRegressionPassed": true,
+      "correctnessPassed": true,
+      "passed": true
+    },
+    {
+      "id": "constant-nonhydrostatic-512x512x129",
+      "baselineNoOutputSeconds": 2.226871014,
+      "candidateNoOutputSeconds": 2.2106777223333336,
+      "candidateNoOutputRatio": 0.99272823097302831,
+      "denseOneSeconds": null,
+      "denseOneOverheadRatio": null,
+      "denseFourSeconds": null,
+      "denseFourOverheadRatio": null,
+      "baselineWorkspaceBytes": 5.601636E+8,
+      "candidateNoOutputWorkspaceBytes": 5.601636E+8,
+      "denseMethodWorkspaceBytes": null,
+      "denseDriverBytes": null,
+      "maximumRelativeError": 3.4994993769989412E-17,
+      "noOutputRegressionPassed": true,
+      "correctnessPassed": true,
+      "passed": true
+    }
+  ],
+  "decision": {
+    "status": "COEFFICIENT-PATH-QUALIFIED",
+    "noOutputRegressionPassed": true,
+    "correctnessPassed": true
+  }
+}

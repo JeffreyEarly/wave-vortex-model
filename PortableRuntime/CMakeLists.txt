@@ -27,6 +27,9 @@ add_library(WaveVortexPortableRuntime STATIC
     src/WVFixedStepRK4.cpp
     src/WVAdaptiveRK23.cpp
     src/WVIntegrationDriver.cpp
+    src/WVObserverContracts.cpp
+    src/WVCompositeState.cpp
+    src/WVCompositeIntegration.cpp
 )
 add_library(WaveVortex::PortableRuntime ALIAS WaveVortexPortableRuntime)
 add_library(WaveVortex::Checkpoint ALIAS WaveVortexPortableRuntime)
@@ -168,6 +171,16 @@ if(BUILD_TESTING)
         target_compile_options(TestWVIntegrationContracts PRIVATE -Wall -Wextra -Wpedantic -Werror)
     endif()
     add_test(NAME integration-contracts COMMAND TestWVIntegrationContracts)
+
+    add_executable(TestWVCompositeIntegration
+        ../tools/portable-runtime/tests/TestWVCompositeIntegration.cpp
+    )
+    target_compile_features(TestWVCompositeIntegration PRIVATE cxx_std_17)
+    target_link_libraries(TestWVCompositeIntegration PRIVATE WaveVortex::PortableRuntime)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "AppleClang|Clang|GNU")
+        target_compile_options(TestWVCompositeIntegration PRIVATE -Wall -Wextra -Wpedantic -Werror)
+    endif()
+    add_test(NAME composite-integration COMMAND TestWVCompositeIntegration)
 
     add_executable(TestWaveVortexRun ../tools/portable-runtime/tests/TestWaveVortexRun.cpp)
     target_compile_features(TestWaveVortexRun PRIVATE cxx_std_17)
