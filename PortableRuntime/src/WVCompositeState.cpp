@@ -45,6 +45,8 @@ WVCompositeStateLayout::create(WVShape2D coefficientShape,
   try {
     WVCompositeStateLayout candidate;
     candidate.coefficientShape_ = coefficientShape;
+    candidate.stateBlockRecords_ = descriptor.stateBlocks();
+    candidate.observerRecords_ = descriptor.observers();
     std::set<std::string> canonicalBlocks;
     for (const auto &record : descriptor.stateBlocks()) {
       bool badCount = false;
@@ -98,10 +100,27 @@ WVCompositeStateLayout::create(WVShape2D coefficientShape,
 
 std::size_t WVCompositeStateLayout::persistentBytes() const noexcept {
   std::size_t bytes =
-      additionalBlocks_.capacity() * sizeof(WVAdditionalStateBlockLayout);
+      additionalBlocks_.capacity() * sizeof(WVAdditionalStateBlockLayout) +
+      stateBlockRecords_.capacity() * sizeof(WVStateBlockRecord) +
+      observerRecords_.capacity() * sizeof(WVObserverRecord);
   for (const auto &block : additionalBlocks_)
     bytes += block.identifier.capacity() +
              block.dimensions.capacity() * sizeof(std::size_t);
+  for (const auto &block : stateBlockRecords_)
+    bytes += block.identifier.capacity() +
+             block.dimensions.capacity() * sizeof(std::size_t);
+  for (const auto &observer : observerRecords_) {
+    bytes += observer.identifier.capacity() + observer.name.capacity() +
+             observer.stateBlockIdentifiers.capacity() * sizeof(std::string) +
+             observer.fieldNames.capacity() * sizeof(std::string) +
+             (observer.x.capacity() + observer.y.capacity() +
+              observer.z.capacity()) *
+                 sizeof(double);
+    for (const auto &identifier : observer.stateBlockIdentifiers)
+      bytes += identifier.capacity();
+    for (const auto &name : observer.fieldNames)
+      bytes += name.capacity();
+  }
   return bytes;
 }
 
