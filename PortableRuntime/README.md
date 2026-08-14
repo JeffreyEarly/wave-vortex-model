@@ -35,6 +35,14 @@ Library consumers may opt into fixed-RK4 continuous output with `WVFixedStepRK4O
 
 `WVAdaptiveRK23` uses the four-stage Bogacki--Shampine 3(2) pair, a cubic stage-derived extension, and FSAL endpoint-derivative reuse when state constraints permit it. Rejected attempts leave accepted state unchanged and emit no output. Its atomic candidate plus four derivative arrays retain exactly `15*M*sizeof(WVComplex64)`; two real tolerance arrays reproduce MATLAB's energy-scaled `WVCoefficients.errorTolerances` convention. The RK controller does not construct WaveVortex tolerances or inspect forcing. `WVIntegrationSystem` supplies a method-neutral error policy, while the current coefficient adapter contains the `Ap`, `Am`, and `A0` storage enumeration. This is the first concrete integration adapter rather than a permanent restriction on future observing-system state composition.
 
+The exported source package builds the optimized Apple-silicon runner through:
+
+```sh
+PortableRuntime/buildWaveVortexRun.sh
+```
+
+The script verifies the pinned FFTW archive before compiling it into an ignored local cache. WaveVortexModel distributes neither that archive nor FFTW libraries, MEX files, or executables. A locally linked executable includes GPL-licensed FFTW, so redistribution of that executable must satisfy FFTW's GPL terms.
+
 The authoring contract suite builds this target and its standalone inspector through:
 
 ```sh
@@ -55,7 +63,7 @@ The v1 writer intentionally does not append records or produce a time-series gro
 The default CMake build produces `wave-vortex-run` with the scalar reference FFT engine for portable correctness testing. The optimized Apple-silicon executable is source-only and uses the shared pinned-provider manifest:
 
 ```sh
-tools/portable-runtime/buildWaveVortexRun.sh
+PortableRuntime/buildWaveVortexRun.sh
 ```
 
 The executable requires an explicit provider and exactly one endpoint:
