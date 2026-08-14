@@ -1,0 +1,537 @@
+#include "WaveVortexRuntime/WVModelOutputNetCDF.hpp"
+
+#include <netcdf.h>
+
+#include <algorithm>
+#include <chrono>
+#include <cmath>
+#include <cstdlib>
+#include <filesystem>
+#include <iostream>
+#include <map>
+#include <stdexcept>
+#include <string>
+#include <vector>
+
+using namespace wavevortex;
+using namespace wavevortex::runtime;
+
+namespace {
+
+void require(bool condition, const std::string &message) {
+  if (!condition)
+    throw std::runtime_error(message);
+}
+
+std::filesystem::path fixture(const std::string &name) {
+  return std::filesystem::path(WV_CHECKPOINT_FIXTURE_DIR) / name;
+}
+
+struct TemporaryDirectory {
+  std::filesystem::path path =
+      std::filesystem::temp_directory_path() /
+      ("wave-vortex-model-output-" +
+       std::to_string(
+           std::chrono::steady_clock::now().time_since_epoch().count()));
+  TemporaryDirectory() { std::filesystem::create_directories(path); }
+  ~TemporaryDirectory() {
+    if (std::getenv("WV_KEEP_MODEL_OUTPUT_FIXTURE") != nullptr) {
+      std::cout << "Retained model-output fixture at " << path << '\n';
+      return;
+    }
+    std::error_code ignored;
+    std::filesystem::remove_all(path, ignored);
+  }
+};
+
+WVCheckpoint checkpointTemplate() {
+  WVCheckpoint checkpoint;
+  const auto result = WVCheckpointReader::read(
+      fixture("forcing-nonlinear.nc").string(), checkpoint);
+  require(static_cast<bool>(result), result.message);
+  return checkpoint;
+}
+
+WVPortableObserverRecord recordFor(const WVCheckpoint &checkpoint,
+                                   const std::filesystem::path &path) {
+  WVPortableObserverRecord record;
+  const std::vector<std::size_t> shape = {
+      checkpoint.state.coefficients.shape.rows,
+      checkpoint.state.coefficients.shape.columns};
+  for (const auto *name : {"Ap", "Am", "A0"})
+    record.stateBlocks.push_back({name, WVStateScalarType::complex64, shape,
+                                  WVToleranceKind::coefficientEnergyScaled,
+                                  1e-6, WVStateOwnership::integratorOwned,
+                                  WVRestartRequirement::requiredDynamicState});
+  WVObserverRecord coefficients;
+  coefficients.identifier = "coefficients";
+  coefficients.name = "wave-vortex coefficient flux";
+  coefficients.kind = WVObserverKind::coefficients;
+  coefficients.stateBlockIdentifiers = {"Ap", "Am", "A0"};
+  record.observers.push_back(coefficients);
+  record.outputFiles = {{"primary",
+                         path.string(),
+                         {{"restart",
+                           "wave-vortex",
+                           {1.0, checkpoint.state.t, checkpoint.state.t + 2.0},
+                           {"coefficients"},
+                           true}}}};
+  return record;
+}
+
+WVPortableObserverDescriptor
+descriptorFor(const WVPortableObserverRecord &record) {
+  WVPortableObserverDescriptor descriptor;
+  const auto status = WVPortableObserverDescriptor::create(record, descriptor);
+  require(static_cast<bool>(status), status.message);
+  return descriptor;
+}
+
+WVCompositeState eventState(const WVCheckpoint &checkpoint) {
+  return {checkpoint.state.view(), nullptr, 0};
+}
+
+class ZeroSampleSource final : public WVObserverSampleSource {
+public:
+  explicit ZeroSampleSource(
+      WVTransformConstantStratificationConfiguration configuration)
+      : configuration_(configuration) {}
+
+  WVKernelStatus specifications(
+      const WVObserverRecord &observer,
+      std::vector<WVObserverOutputVariableSpecification> &output) override {
+    output.clear();
+    if (observer.kind == WVObserverKind::eulerianFields &&
+        std::find(observer.fieldNames.begin(), observer.fieldNames.end(),
+                  "u") != observer.fieldNames.end())
+      output.push_back(
+          {observer.identifier + "-u",
+           "u",
+           WVOutputValueType::real64,
+           {"x", "y", "z"},
+           {configuration_.Nx, configuration_.Ny, configuration_.Nz},
+           "m s-1",
+           "x-component of fluid velocity"});
+    if (observer.kind == WVObserverKind::lagrangianParticles &&
+        !observer.fieldNames.empty())
+      output.push_back({observer.identifier + "-u",
+                        observer.name + "_u",
+                        WVOutputValueType::real64,
+                        {observer.name + "_id"},
+                        {observer.x.size()},
+                        "m s-1",
+                        "particle x-velocity"});
+    if (observer.kind == WVObserverKind::mooring &&
+        !observer.fieldNames.empty())
+      output.push_back({observer.identifier + "-u",
+                        observer.name + "_u",
+                        WVOutputValueType::real64,
+                        {observer.name + "_z", observer.name + "_id"},
+                        {observer.z.size(), observer.x.size()},
+                        "m s-1",
+                        "mooring x-velocity"});
+    return WVKernelStatus::ok();
+  }
+
+  WVKernelStatus prepare(const WVCompositeOutputEvent &) override {
+    return WVKernelStatus::ok();
+  }
+
+  WVKernelStatus value(const WVObserverRecord &,
+                       const WVObserverOutputVariableSpecification &variable,
+                       WVObserverOutputValueView &output) override {
+    std::size_t count = 1;
+    for (const auto dimension : variable.dimensions)
+      count *= dimension;
+    auto &storage = values_[variable.identifier];
+    storage.assign(count, 0.0);
+    output = {WVOutputValueType::real64, storage.data(), nullptr,
+              storage.size()};
+    return WVKernelStatus::ok();
+  }
+
+private:
+  WVTransformConstantStratificationConfiguration configuration_;
+  std::map<std::string, std::vector<double>> values_;
+};
+
+void deliverPlannedEvent(WVModelOutputNetCDFSink &sink,
+                         const WVCompositeOutputPlan &plan,
+                         std::size_t eventIndex,
+                         const WVCheckpoint &checkpoint) {
+  const auto planned = plan.event(eventIndex);
+  require(planned.routeCount == 1, "test plan route count");
+  WVCompositeOutputEvent event;
+  event.eventOrdinal = planned.eventOrdinal;
+  event.scheduledTime = planned.scheduledTime;
+  event.state = eventState(checkpoint);
+  event.routes = planned.routes;
+  event.routeCount = planned.routeCount;
+  WVCompositeOutputDeliveryResult delivery;
+  const auto status = sink.deliver(event, planned.routes[0], delivery);
+  require(static_cast<bool>(status), status.message);
+  require(delivery.writeCount == 7,
+          "coefficient delivery did not report six components and time");
+}
+
+void requireTimeSeries(const std::filesystem::path &path,
+                       const std::vector<double> &expected) {
+  int root = -1;
+  require(nc_open(path.c_str(), NC_NOWRITE, &root) == NC_NOERR,
+          "open output for time inspection");
+  int group = -1;
+  require(nc_inq_ncid(root, "wave-vortex", &group) == NC_NOERR,
+          "locate output group");
+  int variable = -1;
+  require(nc_inq_varid(group, "t", &variable) == NC_NOERR,
+          "locate time variable");
+  std::vector<double> actual(expected.size());
+  require(nc_get_var_double(group, variable, actual.data()) == NC_NOERR,
+          "read time variable");
+  require(actual == expected, "output time lattice changed");
+  require(nc_close(root) == NC_NOERR, "close time inspection");
+}
+
+void testCreateReadAndAppend() {
+  TemporaryDirectory directory;
+  auto checkpoint = checkpointTemplate();
+  const auto path = directory.path / "multigroup.nc";
+  auto record = recordFor(checkpoint, path);
+  auto descriptor = descriptorFor(record);
+  WVCompositeStateLayout layout;
+  auto status = WVCompositeStateLayout::create(
+      checkpoint.state.coefficients.shape, descriptor, layout);
+  require(static_cast<bool>(status), status.message);
+  WVModelOutputNetCDFConfiguration configuration{checkpoint, false};
+  WVModelOutputNetCDFSink sink;
+  auto persistence = WVModelOutputNetCDFSink::createNew(
+      configuration, descriptor, layout, nullptr, sink);
+  require(static_cast<bool>(persistence), persistence.message);
+
+  WVCompositeOutputPlan firstPlan;
+  status = WVCompositeOutputPlan::create(
+      descriptor, checkpoint.state.t, checkpoint.state.t + 1.0, {}, firstPlan);
+  require(static_cast<bool>(status), status.message);
+  auto incompatibleRecord = record;
+  incompatibleRecord.outputFiles.front().groups.front().identifier =
+      "different-group";
+  auto incompatibleDescriptor = descriptorFor(incompatibleRecord);
+  WVCompositeOutputPlan incompatiblePlan;
+  status = WVCompositeOutputPlan::create(
+      incompatibleDescriptor, checkpoint.state.t, checkpoint.state.t + 1.0, {},
+      incompatiblePlan);
+  require(static_cast<bool>(status), status.message);
+  status = sink.preflight(incompatiblePlan);
+  require(!status, "NetCDF sink accepted an incompatible output plan");
+  status = sink.preflight(firstPlan);
+  require(static_cast<bool>(status), status.message);
+  checkpoint.state.t = firstPlan.event(0).scheduledTime;
+  deliverPlannedEvent(sink, firstPlan, 0, checkpoint);
+  checkpoint.state.t = firstPlan.event(1).scheduledTime;
+  deliverPlannedEvent(sink, firstPlan, 1, checkpoint);
+  persistence = sink.close();
+  require(static_cast<bool>(persistence), persistence.message);
+  requireTimeSeries(path, {firstPlan.event(0).scheduledTime,
+                           firstPlan.event(1).scheduledTime});
+
+  WVCheckpoint restored;
+  persistence = WVCheckpointReader::read(path.string(), restored);
+  require(static_cast<bool>(persistence), persistence.message);
+  require(restored.state.t == checkpoint.state.t,
+          "latest output state was not restartable");
+
+  WVModelOutputNetCDFSink append;
+  persistence = WVModelOutputNetCDFSink::openAppend(configuration, descriptor,
+                                                    layout, nullptr, append);
+  require(static_cast<bool>(persistence), persistence.message);
+  WVCompositeOutputPlan appendPlan;
+  status = WVCompositeOutputPlan::create(descriptor, checkpoint.state.t,
+                                         checkpoint.state.t + 1.0,
+                                         append.progress(), appendPlan);
+  require(static_cast<bool>(status), status.message);
+  require(appendPlan.eventCount() == 1,
+          "append plan repeated a committed output time");
+  status = append.preflight(appendPlan);
+  require(static_cast<bool>(status), status.message);
+  checkpoint.state.t = appendPlan.event(0).scheduledTime;
+  deliverPlannedEvent(append, appendPlan, 0, checkpoint);
+  persistence = append.close();
+  require(static_cast<bool>(persistence), persistence.message);
+  requireTimeSeries(
+      path, {restored.state.t - 1.0, restored.state.t, checkpoint.state.t});
+
+  WVModelOutputNetCDFInspection inspection;
+  persistence = WVModelOutputNetCDFSink::inspect({path.string()}, inspection);
+  require(static_cast<bool>(persistence), persistence.message);
+  require(inspection.latestRestart.state.t == checkpoint.state.t,
+          "output inspection selected the wrong restart state");
+  require(inspection.observerRecord.outputFiles.size() == 1 &&
+              inspection.observerRecord.observers.size() == 1 &&
+              inspection.progress.size() == 1,
+          "output inspection did not reconstruct the observer graph");
+
+  int file = -1;
+  require(nc_open(path.c_str(), NC_WRITE, &file) == NC_NOERR,
+          "open output for interrupted-record injection");
+  int group = -1;
+  require(nc_inq_ncid(file, "wave-vortex", &group) == NC_NOERR,
+          "locate interrupted output group");
+  int variable = -1;
+  require(nc_inq_varid(group, "Ap_real", &variable) == NC_NOERR,
+          "locate interrupted output variable");
+  const std::size_t start[] = {2, 0, 0};
+  const std::size_t count[] = {1, 1, 1};
+  const double fill = NC_FILL_DOUBLE;
+  require(nc_put_vara_double(group, variable, start, count, &fill) == NC_NOERR,
+          "inject interrupted output value");
+  require(nc_close(file) == NC_NOERR, "close interrupted-record injection");
+  WVModelOutputNetCDFSink rejected;
+  persistence = WVModelOutputNetCDFSink::openAppend(configuration, descriptor,
+                                                    layout, nullptr, rejected);
+  require(!persistence &&
+              persistence.code == WVCheckpointStatusCode::incompleteRecord,
+          "append accepted an incomplete committed output record");
+  WVModelOutputNetCDFInspection rejectedInspection;
+  persistence =
+      WVModelOutputNetCDFSink::inspect({path.string()}, rejectedInspection);
+  require(!persistence &&
+              persistence.code == WVCheckpointStatusCode::incompleteRecord,
+          "inspection accepted an incomplete committed output record");
+}
+
+void testTransactionalRefusal() {
+  TemporaryDirectory directory;
+  auto checkpoint = checkpointTemplate();
+  const auto path = directory.path / "existing.nc";
+  {
+    int file = -1;
+    require(nc_create(path.c_str(), NC_NETCDF4, &file) == NC_NOERR,
+            "create collision sentinel");
+    require(nc_close(file) == NC_NOERR, "close collision sentinel");
+  }
+  auto record = recordFor(checkpoint, path);
+  auto descriptor = descriptorFor(record);
+  WVCompositeStateLayout layout;
+  auto status = WVCompositeStateLayout::create(
+      checkpoint.state.coefficients.shape, descriptor, layout);
+  require(static_cast<bool>(status), status.message);
+  WVModelOutputNetCDFSink sink;
+  const auto result = WVModelOutputNetCDFSink::createNew(
+      {checkpoint, false}, descriptor, layout, nullptr, sink);
+  require(!result && result.code == WVCheckpointStatusCode::commitFailure,
+          "create-new output replaced an existing destination");
+}
+
+void testMultipleFilesGroupsAndSharedState() {
+  TemporaryDirectory directory;
+  auto checkpoint = checkpointTemplate();
+  WVPortableObserverRecord record;
+  const std::vector<std::size_t> coefficientShape = {
+      checkpoint.state.coefficients.shape.rows,
+      checkpoint.state.coefficients.shape.columns};
+  for (const auto *name : {"Ap", "Am", "A0"})
+    record.stateBlocks.push_back({name, WVStateScalarType::complex64,
+                                  coefficientShape,
+                                  WVToleranceKind::coefficientEnergyScaled,
+                                  1e-6, WVStateOwnership::integratorOwned,
+                                  WVRestartRequirement::requiredDynamicState});
+  for (const auto *name : {"particles-x", "particles-y"})
+    record.stateBlocks.push_back({name,
+                                  WVStateScalarType::real64,
+                                  {2},
+                                  WVToleranceKind::uniformAbsolute,
+                                  1e-4,
+                                  WVStateOwnership::integratorOwned,
+                                  WVRestartRequirement::requiredDynamicState});
+  record.stateBlocks.push_back(
+      {"tracer-state",
+       WVStateScalarType::real64,
+       {checkpoint.configuration.Nx, checkpoint.configuration.Ny},
+       WVToleranceKind::uniformAbsolute,
+       1e-5,
+       WVStateOwnership::integratorOwned,
+       WVRestartRequirement::requiredDynamicState});
+  WVObserverRecord coefficients;
+  coefficients.identifier = "coefficients";
+  coefficients.name = "wave-vortex coefficients";
+  coefficients.kind = WVObserverKind::coefficients;
+  coefficients.stateBlockIdentifiers = {"Ap", "Am", "A0"};
+  WVObserverRecord particles;
+  particles.identifier = "particles";
+  particles.name = "particles";
+  particles.kind = WVObserverKind::lagrangianParticles;
+  particles.stateBlockIdentifiers = {"particles-x", "particles-y"};
+  particles.x = {0.1, 0.2};
+  particles.y = {0.3, 0.4};
+  particles.isXYOnly = true;
+  particles.horizontalAbsoluteTolerance = 1e-4;
+  WVObserverRecord tracer;
+  tracer.identifier = "tracer";
+  tracer.name = "tracer";
+  tracer.kind = WVObserverKind::tracer;
+  tracer.stateBlockIdentifiers = {"tracer-state"};
+  tracer.isXYOnly = true;
+  tracer.shouldAntialias = true;
+  record.observers = {coefficients, particles, tracer};
+  const auto end = checkpoint.state.t + 1.0;
+  const auto first = directory.path / "first.nc";
+  const auto second = directory.path / "second.nc";
+  record.outputFiles = {{"first",
+                         first.string(),
+                         {{"restart",
+                           "wave-vortex",
+                           {1.0, checkpoint.state.t, end},
+                           {"coefficients", "particles", "tracer"},
+                           true},
+                          {"shared",
+                           "shared",
+                           {1.0, checkpoint.state.t, end},
+                           {"particles", "tracer"},
+                           false}}},
+                        {"second",
+                         second.string(),
+                         {{"restart",
+                           "restart",
+                           {1.0, checkpoint.state.t, end},
+                           {"coefficients", "particles", "tracer"},
+                           true}}}};
+  auto descriptor = descriptorFor(record);
+  WVCompositeStateLayout layout;
+  auto status = WVCompositeStateLayout::create(
+      checkpoint.state.coefficients.shape, descriptor, layout);
+  require(static_cast<bool>(status), status.message);
+  WVAdditionalStateStorage additional;
+  status = additional.initialize(layout);
+  require(static_cast<bool>(status), status.message);
+  for (std::size_t block = 0; block < additional.blockCount(); ++block)
+    std::fill_n(additional.mutableBlocks()[block].realData,
+                additional.mutableBlocks()[block].layout->elementCount,
+                static_cast<double>(block + 1));
+  WVModelOutputNetCDFSink sink;
+  auto persistence = WVModelOutputNetCDFSink::createNew(
+      {checkpoint, false}, descriptor, layout, nullptr, sink);
+  require(static_cast<bool>(persistence), persistence.message);
+  WVCompositeOutputPlan plan;
+  status = WVCompositeOutputPlan::create(descriptor, checkpoint.state.t, end,
+                                         {}, plan);
+  require(static_cast<bool>(status), status.message);
+  status = sink.preflight(plan);
+  require(static_cast<bool>(status), status.message);
+  WVCompositeOutputEvent event;
+  const auto planned = plan.event(0);
+  event.eventOrdinal = planned.eventOrdinal;
+  event.scheduledTime = planned.scheduledTime;
+  event.state = {checkpoint.state.view(), additional.constBlocks(),
+                 additional.blockCount()};
+  event.routes = planned.routes;
+  event.routeCount = planned.routeCount;
+  require(planned.routeCount == 3,
+          "coincident multi-file routes were not grouped");
+  for (std::size_t route = 0; route < planned.routeCount; ++route) {
+    WVCompositeOutputDeliveryResult delivery;
+    status = sink.deliver(event, planned.routes[route], delivery);
+    require(static_cast<bool>(status), status.message);
+  }
+  persistence = sink.close();
+  require(static_cast<bool>(persistence), persistence.message);
+  WVModelOutputNetCDFInspection inspection;
+  persistence = WVModelOutputNetCDFSink::inspect(
+      {first.string(), second.string()}, inspection);
+  require(static_cast<bool>(persistence), persistence.message);
+  require(inspection.observerRecord.outputFiles.size() == 2 &&
+              inspection.progress.size() == 3 &&
+              inspection.observerRecord.observers.size() == 3,
+          "multi-file graph or shared observer identity was not reconstructed");
+  require(inspection.additionalState.blockCount() == 3,
+          "shared dynamic state was duplicated during reconstruction");
+}
+
+void testOptionalMatlabFixture() {
+  const char *path = std::getenv("WV_MATLAB_MODEL_OUTPUT_FIXTURE");
+  if (path == nullptr)
+    return;
+  WVModelOutputNetCDFInspection inspection;
+  const auto inspectStatus =
+      WVModelOutputNetCDFSink::inspect({path}, inspection);
+  require(static_cast<bool>(inspectStatus),
+          inspectStatus.message + " at " + inspectStatus.location);
+  require(inspection.observerRecord.observers.size() == 5,
+          "MATLAB observer graph did not restore all observer classes");
+  require(inspection.observerRecord.outputFiles.size() == 1 &&
+              inspection.observerRecord.outputFiles.front().groups.size() == 2,
+          "MATLAB multi-group graph was not reconstructed");
+  require(inspection.additionalState.blockCount() == 4,
+          "MATLAB dynamic particle/tracer state was not reconstructed");
+
+  TemporaryDirectory directory;
+  const auto appendPath = directory.path / "matlab-append.nc";
+  std::filesystem::copy_file(path, appendPath);
+  WVModelOutputNetCDFInspection appendInspection;
+  auto persistence =
+      WVModelOutputNetCDFSink::inspect({appendPath.string()}, appendInspection);
+  require(static_cast<bool>(persistence), persistence.message);
+  appendInspection.observerRecord.outputFiles.front().destination =
+      appendPath.string();
+  auto descriptor = descriptorFor(appendInspection.observerRecord);
+  WVCompositeStateLayout layout;
+  auto status = WVCompositeStateLayout::create(
+      appendInspection.latestRestart.state.coefficients.shape, descriptor,
+      layout);
+  require(static_cast<bool>(status), status.message);
+  ZeroSampleSource samples(appendInspection.latestRestart.configuration);
+  WVModelOutputNetCDFSink sink;
+  persistence = WVModelOutputNetCDFSink::openAppend(
+      {appendInspection.latestRestart, false}, descriptor, layout, &samples,
+      sink);
+  require(static_cast<bool>(persistence), persistence.message);
+  WVCompositeOutputPlan plan;
+  status = WVCompositeOutputPlan::create(
+      descriptor, appendInspection.latestRestart.state.t,
+      appendInspection.latestRestart.state.t + 1.0, sink.progress(), plan);
+  require(static_cast<bool>(status), status.message);
+  require(plan.eventCount() == 1,
+          "MATLAB append plan did not select the next schedule point");
+  status = sink.preflight(plan);
+  require(static_cast<bool>(status), status.message);
+  std::vector<WVAdditionalStateBlockConstView> blocks;
+  blocks.reserve(appendInspection.additionalState.blockCount());
+  for (std::size_t index = 0;
+       index < appendInspection.additionalState.blockCount(); ++index)
+    blocks.push_back(appendInspection.additionalState.constBlocks()[index]);
+  WVCompositeOutputEvent event;
+  const auto planned = plan.event(0);
+  event.eventOrdinal = planned.eventOrdinal;
+  event.scheduledTime = planned.scheduledTime;
+  event.state = {appendInspection.latestRestart.state.view(), blocks.data(),
+                 blocks.size()};
+  event.routes = planned.routes;
+  event.routeCount = planned.routeCount;
+  for (std::size_t route = 0; route < planned.routeCount; ++route) {
+    WVCompositeOutputDeliveryResult delivery;
+    status = sink.deliver(event, planned.routes[route], delivery);
+    require(static_cast<bool>(status), status.message);
+  }
+  persistence = sink.close();
+  require(static_cast<bool>(persistence), persistence.message);
+  WVCheckpoint appended;
+  persistence = WVCheckpointReader::read(appendPath.string(), appended);
+  require(static_cast<bool>(persistence), persistence.message);
+  require(appended.state.t == planned.scheduledTime,
+          "runtime did not append the next MATLAB output time");
+}
+
+} // namespace
+
+int main() {
+  try {
+    testCreateReadAndAppend();
+    testTransactionalRefusal();
+    testMultipleFilesGroupsAndSharedState();
+    testOptionalMatlabFixture();
+    std::cout << "PASS: MATLAB-compatible model-output persistence\n";
+    return 0;
+  } catch (const std::exception &exception) {
+    std::cerr << "FAIL: " << exception.what() << '\n';
+    return 1;
+  }
+}

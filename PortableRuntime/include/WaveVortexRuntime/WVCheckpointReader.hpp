@@ -35,7 +35,11 @@ enum class WVCheckpointStatusCode : std::uint32_t {
     duplicateForcing,
     incompatibleForcing,
     writeFailure,
-    commitFailure
+    commitFailure,
+    schemaMismatch,
+    incompleteRecord,
+    appendConflict,
+    unsupportedObserver
 };
 
 struct WVCheckpointStatus {
