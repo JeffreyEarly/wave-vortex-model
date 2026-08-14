@@ -132,6 +132,13 @@ if(BUILD_TESTING)
     target_include_directories(wv_field_evaluation_inspect PRIVATE ../CompiledKernel/adapters/reference)
     target_link_libraries(wv_field_evaluation_inspect PRIVATE WaveVortex::Checkpoint WaveVortex::ReferenceFFT)
 
+    add_executable(wv_lagrangian_particle_inspect
+        ../tools/portable-runtime/WVLagrangianParticleInspect.cpp
+    )
+    target_compile_features(wv_lagrangian_particle_inspect PRIVATE cxx_std_17)
+    target_include_directories(wv_lagrangian_particle_inspect PRIVATE ../CompiledKernel/adapters/reference)
+    target_link_libraries(wv_lagrangian_particle_inspect PRIVATE WaveVortex::Checkpoint WaveVortex::ReferenceFFT)
+
     add_executable(TestWVCheckpointReader
         ../tools/portable-runtime/tests/TestWVCheckpointReader.cpp
     )

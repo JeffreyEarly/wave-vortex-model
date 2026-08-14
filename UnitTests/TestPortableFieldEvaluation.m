@@ -1,6 +1,7 @@
 classdef TestPortableFieldEvaluation < matlab.unittest.TestCase
     properties (SetAccess = private)
         Inspector
+        ParticleInspector
         TemporaryFolder
     end
 
@@ -14,6 +15,8 @@ classdef TestPortableFieldEvaluation < matlab.unittest.TestCase
             testCase.assertEqual(status,0,output)
             testCase.Inspector = fullfile(repositoryRoot,"tools","compiled-kernel","build-portable","wv_field_evaluation_inspect");
             testCase.assertTrue(isfile(testCase.Inspector),output)
+            testCase.ParticleInspector = fullfile(repositoryRoot,"tools","compiled-kernel","build-portable","wv_lagrangian_particle_inspect");
+            testCase.assertTrue(isfile(testCase.ParticleInspector),output)
         end
     end
 
@@ -131,9 +134,125 @@ classdef TestPortableFieldEvaluation < matlab.unittest.TestCase
                 evidenceMetrics.transformCount,evidenceMetrics.primitiveFieldEvaluationCount, ...
                 evidenceMetrics.primitiveFieldReuseCount,evidenceMetrics.outputElementWriteCount)
         end
+
+        function particleRhsFixedDenseAndAdaptiveTrajectoriesMatchMatlab(testCase)
+            wvt = WVTransformConstantStratification( ...
+                [15000 12000 1300],[6 5 7],N0=5.2e-3,latitude=33, ...
+                isHydrostatic=false,shouldAntialias=true);
+            spectralIndex = reshape(1:numel(wvt.Ap),size(wvt.Ap));
+            positive = 2.3e-3*sin(0.37*spectralIndex) - 1.7e-3i*cos(0.19*spectralIndex);
+            negative = -1.1e-3*cos(0.23*spectralIndex) + 1.9e-3i*sin(0.41*spectralIndex);
+            zeroFrequency = 1.3e-3*sin(0.29*spectralIndex) + 0.7e-3i*cos(0.31*spectralIndex);
+            wvt.Ap = positive.*wvt.waveComponent.maskAp;
+            wvt.Am = negative.*wvt.waveComponent.maskAm;
+            inertialApMask = logical(wvt.inertialComponent.maskAp);
+            inertialAmMask = logical(wvt.inertialComponent.maskAm);
+            wvt.Ap(inertialApMask) = positive(inertialApMask);
+            wvt.Am(inertialAmMask) = conj(wvt.Ap(inertialApMask));
+            wvt.A0 = zeroFrequency.*wvt.geostrophicComponent.maskA0;
+            mdaMask = logical(wvt.mdaComponent.maskA0);
+            wvt.A0(mdaMask) = real(zeroFrequency(mdaMask));
+            wvt.t0 = -3.5;
+            wvt.t = 37.25;
+            checkpointPath = fullfile(testCase.TemporaryFolder,"particle-trajectory.nc");
+            ncfile = wvt.writeToFile(checkpointPath,shouldOverwriteExisting=true);
+            ncfile.close();
+
+            command = TestPortableFieldEvaluation.sanitizedCommand( ...
+                sprintf('"%s" "%s"',testCase.ParticleInspector,checkpointPath));
+            [status,output] = system(command);
+            testCase.assertEqual(status,0,output)
+            actual = jsondecode(output);
+
+            model = WVModel(wvt,shouldUseLinearDynamics=true);
+            dx = wvt.Lx/wvt.Nx;
+            dy = wvt.Ly/wvt.Ny;
+            dz = wvt.Lz/(wvt.Nz-1);
+            surface = WVLagrangianParticles(model,name="surfaceParticles", ...
+                x=[-0.35*dx wvt.Lx+0.4*dx], ...
+                y=[wvt.Ly+0.55*dy -0.3*dy], ...
+                z=[-wvt.Lz+0.4*dz -wvt.Lz+2.25*dz], ...
+                isXYOnly=true,trackedFieldNames={}, ...
+                advectionInterpolation="linear");
+            volume = WVLagrangianParticles(model,name="volumeParticles", ...
+                x=[2.35*dx wvt.Lx-0.2*dx], ...
+                y=[1.7*dy wvt.Ly-0.1*dy], ...
+                z=[-1.3*dz -wvt.Lz+1.6*dz], ...
+                isXYOnly=false,trackedFieldNames={}, ...
+                advectionInterpolation="spline");
+            initial = TestPortableFieldEvaluation.flattenParticleState(actual.initial);
+            testCase.verifyEqual(initial, ...
+                TestPortableFieldEvaluation.particleState(surface,volume),AbsTol=1e-12)
+            t = actual.initialTime;
+            rhs = TestPortableFieldEvaluation.particleFlux(surface,volume,t,initial);
+            rhsError = TestPortableFieldEvaluation.verifyRelative(testCase, ...
+                TestPortableFieldEvaluation.flattenParticleState(actual.rightHandSide),rhs,1e-12,"particle RHS");
+
+            h = actual.stepSize;
+            k1 = rhs;
+            k2 = TestPortableFieldEvaluation.particleFlux(surface,volume,t+h/2,initial+h*k1/2);
+            k3 = TestPortableFieldEvaluation.particleFlux(surface,volume,t+h/2,initial+h*k2/2);
+            k4 = TestPortableFieldEvaluation.particleFlux(surface,volume,t+h,initial+h*k3);
+            endpoint = initial + h*(k1+2*k2+2*k3+k4)/6;
+            fixedError = TestPortableFieldEvaluation.verifyRelative(testCase, ...
+                TestPortableFieldEvaluation.flattenParticleState(actual.fixedEndpoint),endpoint,1e-12,"fixed RK4 trajectory");
+            finalDerivative = TestPortableFieldEvaluation.particleFlux(surface,volume,t+h,endpoint);
+            theta = 0.5;
+            ew = 3*theta^2-2*theta^3;
+            iw = 1-ew;
+            isw = h*(theta-2*theta^2+theta^3);
+            esw = h*(theta^3-theta^2);
+            midpoint = iw*initial + ew*endpoint + isw*k1 + esw*finalDerivative;
+            denseError = TestPortableFieldEvaluation.verifyRelative(testCase, ...
+                TestPortableFieldEvaluation.flattenParticleState(actual.denseMidpoint),midpoint,1e-12,"dense-output trajectory");
+
+            referenceOptions = odeset('RelTol',1e-12,'AbsTol',1e-12);
+            [~,reference] = ode23( ...
+                @(time,state)TestPortableFieldEvaluation.particleFlux(surface,volume,time,state), ...
+                [t actual.adaptiveTime],initial,referenceOptions);
+            adaptive = TestPortableFieldEvaluation.flattenParticleState(actual.adaptiveEndpoint);
+            reference = reference(end,:).';
+            tolerance = 1e-14 + 1e-9*max(abs(adaptive),abs(reference));
+            adaptiveToleranceRatio = max(abs(adaptive-reference)./tolerance);
+            testCase.verifyLessThanOrEqual(adaptiveToleranceRatio,2, ...
+                "adaptive particle trajectory exceeded its tolerance contract")
+            testCase.verifyGreaterThan(actual.adaptiveRejectedSteps,0)
+            testCase.verifyEqual(actual.systemMetrics.velocityTransforms, ...
+                actual.systemMetrics.rhsEvaluations)
+            testCase.verifyGreaterThan(actual.systemMetrics.persistentBytes,0)
+            fprintf("WV_PARTICLE_ORACLE rhs=%.17g fixed=%.17g dense=%.17g adaptive_tolerance_ratio=%.17g\n", ...
+                rhsError,fixedError,denseError,adaptiveToleranceRatio)
+        end
     end
 
     methods (Static, Access = private)
+        function state = flattenParticleState(value)
+            state = [reshape(value.surfaceX,[],1); reshape(value.surfaceY,[],1); ...
+                reshape(value.volumeX,[],1); reshape(value.volumeY,[],1); ...
+                reshape(value.volumeZ,[],1)];
+        end
+
+        function state = particleState(surface,volume)
+            state = [reshape(surface.x,[],1); reshape(surface.y,[],1); ...
+                reshape(volume.x,[],1); reshape(volume.y,[],1); ...
+                reshape(volume.z,[],1)];
+        end
+
+        function derivative = particleFlux(surface,volume,time,state)
+            surfaceFlux = surface.fluxAtTime(time,{state(1:2).',state(3:4).'});
+            volumeFlux = volume.fluxAtTime(time,{state(5:6).',state(7:8).',state(9:10).'});
+            derivative = [reshape(surfaceFlux{1},[],1); reshape(surfaceFlux{2},[],1); ...
+                reshape(volumeFlux{1},[],1); reshape(volumeFlux{2},[],1); ...
+                reshape(volumeFlux{3},[],1)];
+        end
+
+        function error = verifyRelative(testCase,actual,expected,tolerance,label)
+            scale = max(norm(expected,Inf),eps);
+            error = norm(actual-expected,Inf)/scale;
+            testCase.verifyLessThanOrEqual(error,tolerance, ...
+                sprintf("%s relative error %.17g",label,error))
+        end
+
         function value = expectedValue(wvt,fieldName,sampling,positions)
             if sampling == "full"
                 if fieldName == "rho_bar"

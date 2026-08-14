@@ -7,7 +7,7 @@ build_directory=${1:-"$repository_root/tools/compiled-kernel/build-portable"}
 
 if command -v cmake >/dev/null 2>&1; then
     cmake -S "$repository_root/PortableRuntime" -B "$build_directory" -DCMAKE_BUILD_TYPE=Release
-    cmake --build "$build_directory" --parallel --target TestWVFieldEvaluation wv_field_evaluation_inspect
+    cmake --build "$build_directory" --parallel --target TestWVFieldEvaluation wv_field_evaluation_inspect wv_lagrangian_particle_inspect
     ctest --test-dir "$build_directory" --output-on-failure -R '^field-evaluation$'
     printf '%s\n' "$build_directory/wv_field_evaluation_inspect"
     exit 0
