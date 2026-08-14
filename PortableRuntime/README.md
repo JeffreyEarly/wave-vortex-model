@@ -43,6 +43,14 @@ Composite observing-system state exposes the parallel method-neutral `WVComposit
 
 `WVModelOutputNetCDFSink` implements that sink contract with the existing MATLAB 4.x output-file semantics. It stages every new destination before committing the file set and stores one unlimited `t` dimension per named output group. Nonlinear coefficient restarts use real/imaginary `[t,kl,j]` pairs; linear files retain MATLAB's initial-only `[kl,j]` coefficient convention while their output time axis and other time-series fields continue to grow. Payload variables are written before `t`; after `t` is committed the file is synchronized. Inspection and append reject fill-valued partial records, cadence or shape changes, off-lattice or duplicate times, unsupported observer tags, broken shared identities, and files without exactly one complete coefficient restart group. `inspect()` reconstructs the portable descriptor, schedule progress, latest canonical state, and required dynamic observer state from MATLAB- or runtime-produced files. Plans, caches, dense-output history, controller state, and scratch are never persisted.
 
+The exported source package builds the optimized Apple-silicon runner through:
+
+```sh
+PortableRuntime/buildWaveVortexRun.sh
+```
+
+The script verifies the pinned FFTW archive before compiling it into an ignored local cache. WaveVortexModel distributes neither that archive nor FFTW libraries, MEX files, or executables. A locally linked executable includes GPL-licensed FFTW, so redistribution of that executable must satisfy FFTW's GPL terms.
+
 The authoring contract suite builds this target and its standalone inspector through:
 
 ```sh
@@ -77,7 +85,7 @@ The closed version-1 built-in set is registered through the internal `WVObserver
 The default CMake build produces `wave-vortex-run` with the scalar reference FFT engine for portable correctness testing. The optimized Apple-silicon executable is source-only and uses the shared pinned-provider manifest:
 
 ```sh
-tools/portable-runtime/buildWaveVortexRun.sh
+PortableRuntime/buildWaveVortexRun.sh
 ```
 
 The executable requires an explicit provider and exactly one endpoint:

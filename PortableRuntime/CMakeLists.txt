@@ -40,7 +40,6 @@ add_library(WaveVortexPortableRuntime STATIC
     src/WVModelOutputNetCDFWriter.cpp
 )
 add_library(WaveVortex::PortableRuntime ALIAS WaveVortexPortableRuntime)
-add_library(WaveVortex::Checkpoint ALIAS WaveVortexPortableRuntime)
 
 target_compile_features(WaveVortexPortableRuntime PUBLIC cxx_std_17)
 target_include_directories(WaveVortexPortableRuntime PUBLIC
@@ -56,9 +55,11 @@ set_target_properties(WaveVortexPortableRuntime PROPERTIES
 add_executable(wave-vortex-run app/WaveVortexRun.cpp)
 target_compile_features(wave-vortex-run PRIVATE cxx_std_17)
 target_link_libraries(wave-vortex-run PRIVATE WaveVortex::PortableRuntime WaveVortex::ReferenceFFT)
-execute_process(COMMAND git rev-parse HEAD WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/.. OUTPUT_VARIABLE WV_RUNTIME_SOURCE_COMMIT OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
-if(NOT WV_RUNTIME_SOURCE_COMMIT)
-    set(WV_RUNTIME_SOURCE_COMMIT "unknown")
+execute_process(COMMAND git rev-parse HEAD WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/.. RESULT_VARIABLE WV_RUNTIME_GIT_RESULT OUTPUT_VARIABLE WV_RUNTIME_SOURCE_COMMIT OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
+if(NOT WV_RUNTIME_GIT_RESULT EQUAL 0 OR NOT WV_RUNTIME_SOURCE_COMMIT)
+    file(READ "${CMAKE_CURRENT_LIST_DIR}/../resources/mpackage.json" WV_RUNTIME_PACKAGE_MANIFEST)
+    string(JSON WV_RUNTIME_PACKAGE_VERSION GET "${WV_RUNTIME_PACKAGE_MANIFEST}" version)
+    set(WV_RUNTIME_SOURCE_COMMIT "WaveVortexModel-${WV_RUNTIME_PACKAGE_VERSION}")
 endif()
 target_compile_definitions(wave-vortex-run PRIVATE WV_RUNTIME_SOURCE_COMMIT="${WV_RUNTIME_SOURCE_COMMIT}")
 target_compile_definitions(wave-vortex-run PRIVATE WV_RUNTIME_HAS_DENSE_OUTPUT=1)
@@ -106,18 +107,23 @@ if(BUILD_TESTING)
             -DWV_REPOSITORY_ROOT=${CMAKE_CURRENT_LIST_DIR}/..
             -P ${CMAKE_CURRENT_LIST_DIR}/../tools/portable-runtime/tests/CheckWVObserverDispatch.cmake
     )
+    add_test(NAME runtime-architecture-source-policy
+        COMMAND ${CMAKE_COMMAND}
+            -DWV_REPOSITORY_ROOT=${CMAKE_CURRENT_LIST_DIR}/..
+            -P ${CMAKE_CURRENT_LIST_DIR}/../tools/portable-runtime/tests/CheckWVRuntimeArchitecture.cmake
+    )
 
     add_executable(wv_checkpoint_inspect
         ../tools/portable-runtime/WVCheckpointInspect.cpp
     )
     target_compile_features(wv_checkpoint_inspect PRIVATE cxx_std_17)
-    target_link_libraries(wv_checkpoint_inspect PRIVATE WaveVortex::Checkpoint)
+    target_link_libraries(wv_checkpoint_inspect PRIVATE WaveVortex::PortableRuntime)
 
     add_executable(wv_checkpoint_roundtrip
         ../tools/portable-runtime/WVCheckpointRoundTrip.cpp
     )
     target_compile_features(wv_checkpoint_roundtrip PRIVATE cxx_std_17)
-    target_link_libraries(wv_checkpoint_roundtrip PRIVATE WaveVortex::Checkpoint)
+    target_link_libraries(wv_checkpoint_roundtrip PRIVATE WaveVortex::PortableRuntime)
 
     add_executable(wv_portable_forcing_inspect
         ../tools/portable-runtime/WVPortableForcingInspect.cpp
@@ -125,7 +131,7 @@ if(BUILD_TESTING)
     )
     target_compile_features(wv_portable_forcing_inspect PRIVATE cxx_std_17)
     target_include_directories(wv_portable_forcing_inspect PRIVATE ../tools/compiled-kernel/tests)
-    target_link_libraries(wv_portable_forcing_inspect PRIVATE WaveVortex::Checkpoint)
+    target_link_libraries(wv_portable_forcing_inspect PRIVATE WaveVortex::PortableRuntime)
 
     add_executable(wv_portable_rk4_inspect
         ../tools/portable-runtime/WVPortableRK4Inspect.cpp
@@ -133,7 +139,7 @@ if(BUILD_TESTING)
     )
     target_compile_features(wv_portable_rk4_inspect PRIVATE cxx_std_17)
     target_include_directories(wv_portable_rk4_inspect PRIVATE ../tools/compiled-kernel/tests)
-    target_link_libraries(wv_portable_rk4_inspect PRIVATE WaveVortex::Checkpoint)
+    target_link_libraries(wv_portable_rk4_inspect PRIVATE WaveVortex::PortableRuntime)
 
     add_executable(wv_adaptive_tolerance_inspect
         ../tools/portable-runtime/WVAdaptiveToleranceInspect.cpp
@@ -141,34 +147,34 @@ if(BUILD_TESTING)
     )
     target_compile_features(wv_adaptive_tolerance_inspect PRIVATE cxx_std_17)
     target_include_directories(wv_adaptive_tolerance_inspect PRIVATE ../tools/compiled-kernel/tests)
-    target_link_libraries(wv_adaptive_tolerance_inspect PRIVATE WaveVortex::Checkpoint)
+    target_link_libraries(wv_adaptive_tolerance_inspect PRIVATE WaveVortex::PortableRuntime)
 
     add_executable(wv_field_evaluation_inspect
         ../tools/portable-runtime/WVFieldEvaluationInspect.cpp
     )
     target_compile_features(wv_field_evaluation_inspect PRIVATE cxx_std_17)
     target_include_directories(wv_field_evaluation_inspect PRIVATE ../CompiledKernel/adapters/reference)
-    target_link_libraries(wv_field_evaluation_inspect PRIVATE WaveVortex::Checkpoint WaveVortex::ReferenceFFT)
+    target_link_libraries(wv_field_evaluation_inspect PRIVATE WaveVortex::PortableRuntime WaveVortex::ReferenceFFT)
 
     add_executable(wv_lagrangian_particle_inspect
         ../tools/portable-runtime/WVLagrangianParticleInspect.cpp
     )
     target_compile_features(wv_lagrangian_particle_inspect PRIVATE cxx_std_17)
     target_include_directories(wv_lagrangian_particle_inspect PRIVATE ../CompiledKernel/adapters/reference)
-    target_link_libraries(wv_lagrangian_particle_inspect PRIVATE WaveVortex::Checkpoint WaveVortex::ReferenceFFT)
+    target_link_libraries(wv_lagrangian_particle_inspect PRIVATE WaveVortex::PortableRuntime WaveVortex::ReferenceFFT)
 
     add_executable(wv_tracer_inspect
         ../tools/portable-runtime/WVTracerInspect.cpp
     )
     target_compile_features(wv_tracer_inspect PRIVATE cxx_std_17)
     target_include_directories(wv_tracer_inspect PRIVATE ../CompiledKernel/adapters/reference)
-    target_link_libraries(wv_tracer_inspect PRIVATE WaveVortex::Checkpoint WaveVortex::ReferenceFFT)
+    target_link_libraries(wv_tracer_inspect PRIVATE WaveVortex::PortableRuntime WaveVortex::ReferenceFFT)
 
     add_executable(TestWVCheckpointReader
         ../tools/portable-runtime/tests/TestWVCheckpointReader.cpp
     )
     target_compile_features(TestWVCheckpointReader PRIVATE cxx_std_17)
-    target_link_libraries(TestWVCheckpointReader PRIVATE WaveVortex::Checkpoint ${WAVEVORTEX_NETCDF_TARGET})
+    target_link_libraries(TestWVCheckpointReader PRIVATE WaveVortex::PortableRuntime ${WAVEVORTEX_NETCDF_TARGET})
     target_compile_definitions(TestWVCheckpointReader PRIVATE
         WV_CHECKPOINT_FIXTURE_DIR="${CMAKE_CURRENT_LIST_DIR}/../tools/portable-runtime/fixtures"
     )
@@ -183,7 +189,7 @@ if(BUILD_TESTING)
     )
     target_compile_features(TestWVCheckpointWriter PRIVATE cxx_std_17)
     target_include_directories(TestWVCheckpointWriter PRIVATE src ../tools/compiled-kernel/tests)
-    target_link_libraries(TestWVCheckpointWriter PRIVATE WaveVortex::Checkpoint ${WAVEVORTEX_NETCDF_TARGET})
+    target_link_libraries(TestWVCheckpointWriter PRIVATE WaveVortex::PortableRuntime ${WAVEVORTEX_NETCDF_TARGET})
     target_compile_definitions(TestWVCheckpointWriter PRIVATE
         WV_CHECKPOINT_FIXTURE_DIR="${CMAKE_CURRENT_LIST_DIR}/../tools/portable-runtime/fixtures"
     )
@@ -198,7 +204,7 @@ if(BUILD_TESTING)
     )
     target_compile_features(TestWVForcingAndRK4 PRIVATE cxx_std_17)
     target_include_directories(TestWVForcingAndRK4 PRIVATE ../tools/compiled-kernel/tests)
-    target_link_libraries(TestWVForcingAndRK4 PRIVATE WaveVortex::Checkpoint)
+    target_link_libraries(TestWVForcingAndRK4 PRIVATE WaveVortex::PortableRuntime)
     if(CMAKE_CXX_COMPILER_ID MATCHES "AppleClang|Clang|GNU")
         target_compile_options(TestWVForcingAndRK4 PRIVATE -Wall -Wextra -Wpedantic -Werror)
     endif()
@@ -286,7 +292,7 @@ if(BUILD_TESTING)
 
     add_executable(TestWaveVortexRun ../tools/portable-runtime/tests/TestWaveVortexRun.cpp)
     target_compile_features(TestWaveVortexRun PRIVATE cxx_std_17)
-    target_link_libraries(TestWaveVortexRun PRIVATE WaveVortex::Checkpoint)
+    target_link_libraries(TestWaveVortexRun PRIVATE WaveVortex::PortableRuntime)
     target_compile_definitions(TestWaveVortexRun PRIVATE WV_RUNTIME_RUNNER="$<TARGET_FILE:wave-vortex-run>" WV_RUNTIME_FIXTURE_DIR="${CMAKE_CURRENT_LIST_DIR}/../tools/portable-runtime/fixtures")
     if(CMAKE_CXX_COMPILER_ID MATCHES "AppleClang|Clang|GNU")
         target_compile_options(TestWaveVortexRun PRIVATE -Wall -Wextra -Wpedantic -Werror)

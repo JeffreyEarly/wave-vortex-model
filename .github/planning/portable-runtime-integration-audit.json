@@ -1,0 +1,186 @@
+{
+  "schemaVersion": "1.0.0",
+  "repository": "JeffreyEarly/wave-vortex-model",
+  "issue": 216,
+  "recordedAt": "2026-08-14",
+  "outcome": "SAFE_TO_INTEGRATE",
+  "safeToMerge": true,
+  "refs": {
+    "observingSystems": {
+      "branch": "feature/portable-observing-systems-v1",
+      "commit": "e7e46c722e3e5621e7fc3d9597b6d1e27322efa1",
+      "tree": "01ee92ec761a1e4c3596cc25a10e1e56ea846941"
+    },
+    "portableRuntime": {
+      "branch": "feature/portable-runtime-v1",
+      "commit": "d67361771dc1e039c7c3b5936679a10361c19921",
+      "tree": "3cf36e7d3c2d3ec140de650b55c474f97943ce13"
+    },
+    "reconciledBaseline": {
+      "commit": "b865a14c6f56a380250ab855912f9b9a4310fdf8",
+      "tree": "e0570b7a1ddfebfcd8e0db3f00a48f0989104a38"
+    },
+    "simplifiedCandidate": {
+      "commit": "5ed5ec4382dc759c65ab25b9fc049510a29db3f4",
+      "tree": "d6ee0f7a4ee939be35d32cf23bac06c9855697fa"
+    }
+  },
+  "architecture": [
+    {
+      "id": "compiled-kernel",
+      "responsibility": "MATLAB-independent constant-stratification numerical kernel and FFT-engine interface",
+      "allowedDependencies": ["C++17 standard library"],
+      "forbiddenDependencies": ["MATLAB", "MEX", "NetCDF", "FFTW", "Accelerate", "Apple APIs"],
+      "status": "clean"
+    },
+    {
+      "id": "portable-numerics",
+      "responsibility": "Forcing, field evaluation, fixed/adaptive integration, and composite state evolution",
+      "allowedDependencies": ["compiled-kernel", "C++17 standard library"],
+      "forbiddenDependencies": ["MATLAB", "MEX", "NetCDF implementation"],
+      "status": "clean"
+    },
+    {
+      "id": "observing-and-output",
+      "responsibility": "Observer descriptors, output planning, field sampling, and delivery orchestration",
+      "allowedDependencies": ["portable-numerics", "observer adapter"],
+      "forbiddenDependencies": ["MATLAB runtime", "MEX"],
+      "status": "clean"
+    },
+    {
+      "id": "persistence",
+      "responsibility": "MATLAB-compatible checkpoint and model-output NetCDF schema, reading, and transactional writing",
+      "allowedDependencies": ["public runtime records", "NetCDF"],
+      "forbiddenDependencies": ["numerical algorithm ownership"],
+      "status": "clean"
+    },
+    {
+      "id": "standalone-cli",
+      "responsibility": "Compose checkpoint input, provider selection, integration, output, and diagnostics",
+      "allowedDependencies": ["portable runtime public APIs", "FFT provider adapter"],
+      "forbiddenDependencies": ["scientific algorithm reimplementation", "direct NetCDF calls"],
+      "status": "clean"
+    }
+  ],
+  "findings": [
+    {
+      "id": "checkpoint-state-staging",
+      "disposition": "fix-before-integration",
+      "resolved": true,
+      "resolutionCommit": "5ed5ec4382dc759c65ab25b9fc049510a29db3f4",
+      "summary": "Single-target and series checkpoint sinks duplicated shape validation, coefficient staging, time assignment, and capacity accounting.",
+      "resolution": "Use one private staging helper and one capacity helper without changing the public sink contracts or copy count."
+    },
+    {
+      "id": "checkpoint-cmake-alias",
+      "disposition": "fix-before-integration",
+      "resolved": true,
+      "resolutionCommit": "5ed5ec4382dc759c65ab25b9fc049510a29db3f4",
+      "summary": "The WaveVortex::Checkpoint alias named the complete portable runtime library as though it contained only persistence.",
+      "resolution": "Use the existing WaveVortex::PortableRuntime target consistently."
+    },
+    {
+      "id": "parallel-integration-families",
+      "disposition": "follow-up-after-integration",
+      "resolved": false,
+      "followUpIssue": 222,
+      "summary": "Canonical coefficient-only and composite-state integrator, dense-output, and output-driver families are deliberately parallel.",
+      "rationale": "Both are stable and independently tested; converging them before initial integration would change public boundaries and risk numerical and persistence behavior."
+    },
+    {
+      "id": "shared-persistence-records",
+      "disposition": "retain-intentionally",
+      "resolved": true,
+      "summary": "Checkpoint and model-output persistence share WVCheckpoint records and WVCheckpointStatus.",
+      "rationale": "Both encode the same wave-vortex-4x-v1 state and forcing profile; sharing avoids a second conversion and error hierarchy."
+    },
+    {
+      "id": "netcdf-source-size",
+      "disposition": "retain-intentionally",
+      "resolved": true,
+      "summary": "Model-output NetCDF implementation remains large after its schema, reader, and writer split.",
+      "rationale": "Responsibilities and built-in dispatch are now separated; file length alone does not justify another abstraction or visitor hierarchy."
+    },
+    {
+      "id": "closed-observer-registry",
+      "disposition": "retain-intentionally",
+      "resolved": true,
+      "summary": "portable-observers-v1 has a closed five-observer registry and rejects custom MATLAB subclasses.",
+      "rationale": "The flat versioned portable contract intentionally has no plug-in ABI; WVObserverAdapter centralizes all built-in identity and dispatch."
+    },
+    {
+      "id": "standalone-observer-configuration",
+      "disposition": "retain-intentionally",
+      "resolved": true,
+      "summary": "The initial standalone CLI integrates canonical coefficients and does not expose observer-graph configuration.",
+      "rationale": "This is an explicit v1 product limitation, not duplicated implementation; issue 222 may migrate the runner boundary without adding new CLI syntax."
+    },
+    {
+      "id": "repository-boundary",
+      "disposition": "retain-intentionally",
+      "resolved": true,
+      "summary": "CompiledKernel and PortableRuntime remain source directories in WaveVortexModel.",
+      "rationale": "There is one consumer and one release cadence; extraction is deferred until independent consumers or API versioning require it."
+    }
+  ],
+  "followUps": [
+    {
+      "issue": 222,
+      "title": "[Runtime architecture] Converge standalone integration on composite state and output contracts",
+      "blocking": false,
+      "earliestStart": "after-issue-217"
+    }
+  ],
+  "frozenEvidence": [
+    {
+      "id": "portable-integration-decision",
+      "path": "Benchmarks/results/reference/portable-integration-v1-m5-max-r2026a/portable-integration-decision.json",
+      "sha256": "fee728c01a7415067a01f75aa00aef4b4a5bb9bc53f50043177467fa98606a4d",
+      "bytes": 11296195
+    },
+    {
+      "id": "portable-observing-systems-readiness",
+      "path": "Benchmarks/results/reference/portable-observing-systems-v1-m5-max-r2026a/portable-observing-systems-readiness.json",
+      "sha256": "6d3333de093a26f847224691d988ab35d2933578e993e1d1e48754af9a92105d",
+      "bytes": 149869
+    },
+    {
+      "id": "portable-composite-state-regression",
+      "path": "Benchmarks/results/reference/portable-composite-state-v1-m5-max-r2026a/coefficient-path-regression.json",
+      "sha256": "822b8b68de19b821b6f07d41f66572278d975d9b7e3e923942c08ded9c2bd391",
+      "bytes": 142098
+    },
+    {
+      "id": "checkpoint-fixture-manifest",
+      "path": "tools/portable-runtime/fixtures/fixture-manifest.json",
+      "sha256": "8ea349a63253a1a1fcbcdac2c7dd522b780a5b8cc7ae52ac3d6a1c30d451ad3f"
+    },
+    {
+      "id": "deduplicated-core-download",
+      "path": "docs/benchmarks/raw/raw-8856822eac3c90514db3d79064650ab82e586cc265e6c272fec803f226ec11a8.json",
+      "sha256": "8856822eac3c90514db3d79064650ab82e586cc265e6c272fec803f226ec11a8",
+      "bytes": 7402618
+    }
+  ],
+  "verification": {
+    "portableContractsPassed": true,
+    "observerCompatibilityPassed": true,
+    "fixtureBytesPreserved": true,
+    "frozenEvidencePreserved": true,
+    "sourceOnlyExportPassed": true,
+    "compiledKernelBoundaryPassed": true,
+    "codeAnalyzerBlockingFindings": 0,
+    "documentationPassed": true,
+    "performanceBearingSourceChanged": false,
+    "runtimeRegressionBenchmarkRequired": false
+  },
+  "safeToMergeChecklist": {
+    "branchReconciliationComplete": true,
+    "fixBeforeIntegrationFindingsResolved": true,
+    "publicAPIsPreserved": true,
+    "schemaVersionsPreserved": true,
+    "canonicalArtifactsPreserved": true,
+    "generatedProductsExcluded": true,
+    "followUpsRecorded": true
+  }
+}
