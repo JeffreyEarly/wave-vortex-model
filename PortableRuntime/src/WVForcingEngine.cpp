@@ -457,8 +457,19 @@ WVKernelStatus WVConstantStratificationForcingEngine::initialize(const WVFrozenF
     return WVKernelStatus::ok();
 }
 
-WVKernelStatus WVConstantStratificationForcingEngine::ensurePhysicalFields(const WVState& state, WVRealFieldBundleConstView& fields) {
+WVKernelStatus WVConstantStratificationForcingEngine::ensurePhysicalFields(
+    const WVState& state, WVRealFieldBundleConstView& fields,
+    WVRealFieldBundleView* externalFields, bool& externalFieldsPrepared) {
     const auto& configuration = kernel_->descriptor().configuration();
+    if (externalFields != nullptr) {
+        if (!externalFieldsPrepared) {
+            auto status = kernel_->transformWaveVortexToUVW(state,*externalFields);
+            if (!status) return status;
+            externalFieldsPrepared = true;
+        }
+        fields = {externalFields->data,externalFields->shape};
+        return WVKernelStatus::ok();
+    }
     const WVShape4D shape{configuration.Nx,configuration.Ny,configuration.Nz,4};
     if (!physicalFieldsValid_) {
         WVRealFieldBundleView mutableFields{physicalFields_.data(),shape};
@@ -470,9 +481,11 @@ WVKernelStatus WVConstantStratificationForcingEngine::ensurePhysicalFields(const
     return WVKernelStatus::ok();
 }
 
-WVKernelStatus WVConstantStratificationForcingEngine::computeQuadraticBottomFriction(const WVState& state, const DerivedForcing& forcing, WVFlux& flux) {
+WVKernelStatus WVConstantStratificationForcingEngine::computeQuadraticBottomFriction(
+    const WVState& state, const DerivedForcing& forcing, WVFlux& flux,
+    WVRealFieldBundleView* externalFields, bool& externalFieldsPrepared) {
     WVRealFieldBundleConstView fields;
-    auto status = ensurePhysicalFields(state,fields);
+    auto status = ensurePhysicalFields(state,fields,externalFields,externalFieldsPrepared);
     if (!status) return status;
     std::fill(forcingFields_.begin(),forcingFields_.end(),0.0);
     const auto& configuration = kernel_->descriptor().configuration();
@@ -491,9 +504,11 @@ WVKernelStatus WVConstantStratificationForcingEngine::computeQuadraticBottomFric
     return configuration.isHydrostatic ? kernel_->transformUVEtaToWaveVortex(forcingFields,state.t,state.t0,coefficients) : kernel_->transformUVWEtaToWaveVortex(forcingFields,state.t,state.t0,coefficients);
 }
 
-WVKernelStatus WVConstantStratificationForcingEngine::addAdaptiveDamping(const WVState& state, const DerivedForcing& forcing, WVFlux& flux) {
+WVKernelStatus WVConstantStratificationForcingEngine::addAdaptiveDamping(
+    const WVState& state, const DerivedForcing& forcing, WVFlux& flux,
+    WVRealFieldBundleView* externalFields, bool& externalFieldsPrepared) {
     WVRealFieldBundleConstView fields;
-    const auto status = ensurePhysicalFields(state,fields);
+    const auto status = ensurePhysicalFields(state,fields,externalFields,externalFieldsPrepared);
     if (!status) return status;
     const auto R = kernel_->descriptor().spatialShape().elementCount();
     double maximumSpeed = 0.0;
@@ -533,14 +548,30 @@ void WVConstantStratificationForcingEngine::addBetaPlaneAdvection(const WVState&
 }
 
 WVKernelStatus WVConstantStratificationForcingEngine::nonlinearFlux(const WVState& state, WVFlux& flux) {
+    return nonlinearFluxImpl(state,flux,nullptr,nullptr);
+}
+
+WVKernelStatus WVConstantStratificationForcingEngine::evaluateRightHandSideWithContext(
+    const WVState& state, WVFlux& flux,
+    WVRealFieldBundleView& advectionFieldStorage,
+    WVConstantStratificationRightHandSideContext& context) {
+    return nonlinearFluxImpl(state,flux,&advectionFieldStorage,&context);
+}
+
+WVKernelStatus WVConstantStratificationForcingEngine::nonlinearFluxImpl(
+    const WVState& state, WVFlux& flux, WVRealFieldBundleView* externalFields,
+    WVConstantStratificationRightHandSideContext* context) {
     if (executing_) return {WVKernelStatusCode::reentrantExecution,"Forcing-engine execution is not reentrant."};
     const auto validation = validateStateAndFlux(kernel_->descriptor(),state,flux);
     if (!validation) return validation;
+    ++evaluationGeneration_;
+    if (context != nullptr) *context = {};
     executing_ = true;
     struct Guard { bool& value; ~Guard() { value = false; } } guard{executing_};
     clearEvaluationWorkspace();
     const auto coefficientCount = kernel_->descriptor().spectralShape().elementCount();
     bool outputInitialized = false;
+    bool externalFieldsPrepared = false;
     const auto initializeWithZeros = [&]() {
         std::fill_n(flux.Fp.data,coefficientCount,WVComplex64{});
         std::fill_n(flux.Fm.data,coefficientCount,WVComplex64{});
@@ -553,11 +584,21 @@ WVKernelStatus WVConstantStratificationForcingEngine::nonlinearFlux(const WVStat
         WVKernelStatus status = WVKernelStatus::ok();
         if (forcing.kind == WVForcingKind::nonlinearAdvection) {
             if (!outputInitialized) {
-                status = kernel_->nonlinearFlux(state,flux);
+                status = externalFields == nullptr
+                             ? kernel_->nonlinearFlux(state,flux)
+                             : (externalFieldsPrepared
+                                    ? kernel_->nonlinearFluxUsingAdvectionFields(state,flux,{externalFields->data,externalFields->shape})
+                                    : kernel_->nonlinearFluxWithAdvectionFields(state,flux,*externalFields));
+                if (status && externalFields != nullptr) externalFieldsPrepared = true;
                 if (status) outputInitialized = true;
             } else {
                 auto temporary = fluxViews(temporaryFlux_,kernel_->descriptor().spectralShape());
-                status = kernel_->nonlinearFlux(state,temporary);
+                status = externalFields == nullptr
+                             ? kernel_->nonlinearFlux(state,temporary)
+                             : (externalFieldsPrepared
+                                    ? kernel_->nonlinearFluxUsingAdvectionFields(state,temporary,{externalFields->data,externalFields->shape})
+                                    : kernel_->nonlinearFluxWithAdvectionFields(state,temporary,*externalFields));
+                if (status && externalFields != nullptr) externalFieldsPrepared = true;
                 if (status) {
                     addFlux(temporary,flux);
                     metrics_.temporaryAccumulationElementReads += 2*temporaryFlux_.size();
@@ -566,11 +607,11 @@ WVKernelStatus WVConstantStratificationForcingEngine::nonlinearFlux(const WVStat
             }
         } else if (forcing.kind == WVForcingKind::bottomFrictionQuadratic) {
             if (!outputInitialized) {
-                status = computeQuadraticBottomFriction(state,forcing,flux);
+                status = computeQuadraticBottomFriction(state,forcing,flux,externalFields,externalFieldsPrepared);
                 if (status) outputInitialized = true;
             } else {
                 auto temporary = fluxViews(temporaryFlux_,kernel_->descriptor().spectralShape());
-                status = computeQuadraticBottomFriction(state,forcing,temporary);
+                status = computeQuadraticBottomFriction(state,forcing,temporary,externalFields,externalFieldsPrepared);
                 if (status) {
                     addFlux(temporary,flux);
                     metrics_.temporaryAccumulationElementReads += 2*temporaryFlux_.size();
@@ -579,7 +620,7 @@ WVKernelStatus WVConstantStratificationForcingEngine::nonlinearFlux(const WVStat
             }
         } else if (forcing.kind == WVForcingKind::adaptiveDamping) {
             if (!outputInitialized) initializeWithZeros();
-            status = addAdaptiveDamping(state,forcing,flux);
+            status = addAdaptiveDamping(state,forcing,flux,externalFields,externalFieldsPrepared);
         } else if (forcing.kind == WVForcingKind::pseudoTopographicWaveGeneration) {
             if (!outputInitialized) initializeWithZeros();
             status = addPseudoTopographicGeneration(state,forcing,flux);
@@ -596,8 +637,29 @@ WVKernelStatus WVConstantStratificationForcingEngine::nonlinearFlux(const WVStat
         if (!status) return status;
     }
     if (!outputInitialized) initializeWithZeros();
+    if (externalFields != nullptr && !externalFieldsPrepared) {
+        WVRealFieldBundleConstView ignored;
+        auto status = ensurePhysicalFields(state,ignored,externalFields,externalFieldsPrepared);
+        if (!status) return status;
+    }
+    if (context != nullptr) {
+        context->owner_ = this;
+        context->state_ = state;
+        context->advectionFields_ = {externalFields->data,externalFields->shape};
+        context->generation_ = evaluationGeneration_;
+    }
     ++metrics_.evaluationCount;
     return WVKernelStatus::ok();
+}
+
+WVKernelStatus WVConstantStratificationForcingEngine::advectFGridScalar(
+    const WVConstantStratificationRightHandSideContext& context,
+    const WVRealVolumeConstView& scalar, bool shouldAntialias,
+    WVRealVolumeView& rightHandSide) {
+    if (context.owner_ != this || context.generation_ != evaluationGeneration_ ||
+        context.advectionFields_.data == nullptr)
+        return {WVKernelStatusCode::invalidConfiguration,"The RHS evaluation context is stale or belongs to another forcing engine."};
+    return kernel_->advectFGridScalar(scalar,context.advectionFields_,shouldAntialias,rightHandSide);
 }
 
 WVStateConstraintResult WVConstantStratificationForcingEngine::restoreForcingAmplitudes(WVMutableCoefficients& coefficients) {

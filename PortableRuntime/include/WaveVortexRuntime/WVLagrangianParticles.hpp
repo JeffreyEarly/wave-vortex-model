@@ -16,6 +16,7 @@ struct WVLagrangianParticleMetrics {
   std::size_t positionCapacityBytes = 0;
   std::size_t velocityCapacityBytes = 0;
   std::size_t persistentBytes = 0;
+  std::size_t sharedRightHandSideContextCount = 0;
 };
 
 // Resolved MATLAB-compatible particle component. Accepted x and y state is

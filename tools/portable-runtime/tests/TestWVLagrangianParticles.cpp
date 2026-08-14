@@ -195,6 +195,11 @@ void testComposite(bool hydrostatic) {
               "particle RHS was not completely written");
   require(system->metrics().velocityFieldEvaluationCount == 1,
           "particle systems did not share one primitive transform");
+  require(system->metrics().sharedRightHandSideContextCount == 1,
+          "particle systems did not use one shared RHS context");
+  require(system->fieldEvaluationService().metrics().movingPrimitiveTransformCount == 0 &&
+              system->fieldEvaluationService().metrics().primitiveFieldReuseCount == 1,
+          "particle interpolation recomputed prepared advection fields");
   require(system->fieldEvaluationService().metrics().movingPositionCount == 5,
           "moving position count changed");
   const auto persistentBytes = system->persistentBytes();

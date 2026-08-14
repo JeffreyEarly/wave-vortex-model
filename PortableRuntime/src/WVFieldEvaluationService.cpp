@@ -1289,6 +1289,27 @@ WVKernelStatus WVFieldEvaluationService::evaluateMoving(
     const WVMovingFieldEvaluationPlan &plan, const WVState &state,
     WVMovingPositionView positions, WVFieldOutputView *outputs,
     std::size_t outputCount) {
+  return evaluateMovingImpl(plan,state,nullptr,positions,outputs,outputCount);
+}
+
+WVKernelStatus WVFieldEvaluationService::evaluateMovingFromAdvectionFields(
+    const WVMovingFieldEvaluationPlan &plan, const WVState &state,
+    const WVRealFieldBundleConstView &advectionFields,
+    WVMovingPositionView positions, WVFieldOutputView *outputs,
+    std::size_t outputCount) {
+  return evaluateMovingImpl(plan,state,&advectionFields,positions,outputs,outputCount);
+}
+
+WVRealFieldBundleView WVFieldEvaluationService::advectionFieldStorage() noexcept {
+  const auto spatial = transform_->descriptor().spatialShape();
+  return {realScratch_.data(),{spatial.first,spatial.second,spatial.third,3}};
+}
+
+WVKernelStatus WVFieldEvaluationService::evaluateMovingImpl(
+    const WVMovingFieldEvaluationPlan &plan, const WVState &state,
+    const WVRealFieldBundleConstView *preparedAdvectionFields,
+    WVMovingPositionView positions, WVFieldOutputView *outputs,
+    std::size_t outputCount) {
   if (!sameConfiguration(plan.configuration_,
                          transform_->descriptor().configuration()))
     return invalid(
@@ -1329,20 +1350,38 @@ WVKernelStatus WVFieldEvaluationService::evaluateMoving(
   const auto spatial = transform_->descriptor().spatialShape();
   const auto R = spatial.elementCount();
   const auto horizontalCount = configuration.Nx * configuration.Ny;
-  WVRealFieldBundleView fields{
-      realScratch_.data(),
-      {configuration.Nx, configuration.Ny, configuration.Nz, 4}};
-  const auto before = transform_->metrics().executionCount;
-  const auto status = transform_->transformWaveVortexToUVWEta(state, fields);
-  if (!status)
-    return status;
+  const double *primitiveFields = realScratch_.data();
+  if (preparedAdvectionFields == nullptr) {
+    WVRealFieldBundleView fields{
+        realScratch_.data(),
+        {configuration.Nx, configuration.Ny, configuration.Nz, 4}};
+    const auto before = transform_->metrics().executionCount;
+    const auto status = transform_->transformWaveVortexToUVWEta(state, fields);
+    if (!status)
+      return status;
+    metrics_.fftExecutionCount += transform_->metrics().executionCount - before;
+    ++metrics_.movingPrimitiveTransformCount;
+  } else {
+    if (preparedAdvectionFields->data == nullptr ||
+        preparedAdvectionFields->shape.first != configuration.Nx ||
+        preparedAdvectionFields->shape.second != configuration.Ny ||
+        preparedAdvectionFields->shape.third != configuration.Nz ||
+        preparedAdvectionFields->shape.fourth != 3)
+      return {WVKernelStatusCode::invalidShape,
+              "Prepared advection fields must have shape [Nx,Ny,Nz,3]."};
+    if (std::any_of(plan.requests_.begin(),plan.requests_.end(),[](const auto &request) {
+          return request.primitiveChannel > 2;
+        }))
+      return {WVKernelStatusCode::unsupportedOperation,
+              "Prepared advection fields support only u, v, and w requests."};
+    primitiveFields = preparedAdvectionFields->data;
+    ++metrics_.primitiveFieldReuseCount;
+  }
   ++metrics_.evaluationCount;
   ++metrics_.movingEvaluationCount;
-  ++metrics_.movingPrimitiveTransformCount;
   metrics_.movingPositionCount += positions.positionCount;
   ++metrics_.transformCount;
-  metrics_.fftExecutionCount += transform_->metrics().executionCount - before;
-  metrics_.primitiveFieldEvaluationCount += 4;
+  metrics_.primitiveFieldEvaluationCount += preparedAdvectionFields == nullptr ? 4 : 3;
   metrics_.scratchHighWaterBytes =
       std::max(metrics_.scratchHighWaterBytes, 4 * R * sizeof(double));
 
@@ -1360,7 +1399,7 @@ WVKernelStatus WVFieldEvaluationService::evaluateMoving(
   if (needsTotalDensity) {
     totalDensity = realScratch_.data() + 4 * R;
     const auto &vertical = transform_->descriptor().verticalModes().z;
-    const double *eta = realScratch_.data() + 3 * R;
+    const double *eta = primitiveFields + 3 * R;
     for (std::size_t iz = 0; iz < configuration.Nz; ++iz) {
       const double densityNoMotion =
           configuration.rho0 - densityScale * vertical[iz];
@@ -1385,7 +1424,7 @@ WVKernelStatus WVFieldEvaluationService::evaluateMoving(
         const auto channel = std::min<std::size_t>(request.primitiveChannel, 3);
         const double *source = request.primitiveChannel == 5
                                    ? totalDensity
-                                   : realScratch_.data() + channel * R;
+                                   : primitiveFields + channel * R;
         if (request.interpolation == WVPositionInterpolation::linear) {
           const auto x0 = std::min(
               static_cast<std::size_t>(std::floor(x / dx)),

@@ -5,10 +5,25 @@
 #include "WaveVortexKernel/WVTransformConstantStratificationKernel.hpp"
 
 #include <memory>
+#include <cstdint>
 #include <string>
 #include <vector>
 
 namespace wavevortex::runtime {
+
+class WVConstantStratificationRightHandSideContext final {
+public:
+    bool hasAdvectionFields() const noexcept { return advectionFields_.data != nullptr; }
+    WVRealFieldBundleConstView advectionFields() const noexcept { return advectionFields_; }
+    std::uint64_t generation() const noexcept { return generation_; }
+
+private:
+    const void* owner_ = nullptr;
+    WVState state_;
+    WVRealFieldBundleConstView advectionFields_;
+    std::uint64_t generation_ = 0;
+    friend class WVConstantStratificationForcingEngine;
+};
 
 struct WVForcingEngineMetrics {
     std::size_t scheduleBytes = 0;
@@ -55,6 +70,14 @@ public:
     WVConstantStratificationForcingEngine& operator=(const WVConstantStratificationForcingEngine&) = delete;
 
     WVKernelStatus nonlinearFlux(const WVState& state, WVFlux& flux);
+    WVKernelStatus evaluateRightHandSideWithContext(
+        const WVState& state, WVFlux& rightHandSide,
+        WVRealFieldBundleView& advectionFieldStorage,
+        WVConstantStratificationRightHandSideContext& context);
+    WVKernelStatus advectFGridScalar(
+        const WVConstantStratificationRightHandSideContext& context,
+        const WVRealVolumeConstView& scalar, bool shouldAntialias,
+        WVRealVolumeView& rightHandSide);
     WVStateConstraintResult restoreForcingAmplitudes(WVMutableCoefficients& coefficients);
     WVShape2D stateShape() const noexcept override { return kernel_->descriptor().spectralShape(); }
     WVKernelStatus evaluateRightHandSide(const WVState& state, WVFlux& rightHandSide) override { return nonlinearFlux(state,rightHandSide); }
@@ -73,9 +96,10 @@ private:
     WVConstantStratificationForcingEngine() = default;
 
     WVKernelStatus initialize(const WVFrozenForcingSchedule& schedule);
-    WVKernelStatus ensurePhysicalFields(const WVState& state, WVRealFieldBundleConstView& fields);
-    WVKernelStatus computeQuadraticBottomFriction(const WVState& state, const DerivedForcing& forcing, WVFlux& flux);
-    WVKernelStatus addAdaptiveDamping(const WVState& state, const DerivedForcing& forcing, WVFlux& flux);
+    WVKernelStatus nonlinearFluxImpl(const WVState& state, WVFlux& flux, WVRealFieldBundleView* advectionFields, WVConstantStratificationRightHandSideContext* context);
+    WVKernelStatus ensurePhysicalFields(const WVState& state, WVRealFieldBundleConstView& fields, WVRealFieldBundleView* externalFields, bool& externalFieldsPrepared);
+    WVKernelStatus computeQuadraticBottomFriction(const WVState& state, const DerivedForcing& forcing, WVFlux& flux, WVRealFieldBundleView* externalFields, bool& externalFieldsPrepared);
+    WVKernelStatus addAdaptiveDamping(const WVState& state, const DerivedForcing& forcing, WVFlux& flux, WVRealFieldBundleView* externalFields, bool& externalFieldsPrepared);
     WVKernelStatus addPseudoTopographicGeneration(const WVState& state, const DerivedForcing& forcing, WVFlux& flux);
     void addBetaPlaneAdvection(const WVState& state, const DerivedForcing& forcing, WVFlux& flux) const;
     void clearEvaluationWorkspace() noexcept;
@@ -90,6 +114,7 @@ private:
     std::string scheduleIdentifier_;
     bool physicalFieldsValid_ = false;
     bool executing_ = false;
+    std::uint64_t evaluationGeneration_ = 0;
 };
 
 } // namespace wavevortex::runtime

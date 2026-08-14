@@ -213,6 +213,12 @@ public:
                                 WVMovingPositionView positions,
                                 WVFieldOutputView *outputs,
                                 std::size_t outputCount);
+  WVKernelStatus evaluateMovingFromAdvectionFields(
+      const WVMovingFieldEvaluationPlan &plan, const WVState &state,
+      const WVRealFieldBundleConstView &advectionFields,
+      WVMovingPositionView positions, WVFieldOutputView *outputs,
+      std::size_t outputCount);
+  WVRealFieldBundleView advectionFieldStorage() noexcept;
 
   const WVTransformConstantStratificationConfiguration &
   configuration() const noexcept;
@@ -222,6 +228,11 @@ public:
 private:
   WVFieldEvaluationService() = default;
   WVKernelStatus initializeScratch();
+  WVKernelStatus evaluateMovingImpl(
+      const WVMovingFieldEvaluationPlan &plan, const WVState &state,
+      const WVRealFieldBundleConstView *advectionFields,
+      WVMovingPositionView positions, WVFieldOutputView *outputs,
+      std::size_t outputCount);
   class MovingWorkspace;
   std::unique_ptr<WVTransformConstantStratificationKernel> ownedTransform_;
   WVTransformConstantStratificationKernel *transform_ = nullptr;

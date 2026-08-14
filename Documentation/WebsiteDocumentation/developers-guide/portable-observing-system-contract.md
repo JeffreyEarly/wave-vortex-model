@@ -41,6 +41,8 @@ New destinations are initialized as a staged set before any final path becomes v
 
 The reader reconnects repeated observers by the runtime's persisted `portableIdentifier` when present. Existing MATLAB files without that additive attribute use deterministic class/name/configuration identities, and conflicting records are rejected instead of silently duplicated. The reconstructed result owns the latest canonical coefficients, the composite state layout, required particle/tracer state, the multi-file observer graph, and one committed schedule ordinal per group.
 
+Integrated observers consume a short-lived constant-stratification right-hand-side context. The context identifies one immutable state and exposes the advection velocity already reconstructed by the compiled nonlinear flux. Particle interpolation and scalar advection therefore do not independently reconstruct `u`, `v`, or `w`. Spatial differentiation, FFT normalization, and antialias projection remain numerical-kernel responsibilities rather than observer implementations.
+
 ## Validation boundary
 
 Descriptor construction rejects duplicate block, observer, file, group, and destination identities; zero or overflowing dimensions; incompatible canonical coefficient shapes; invalid ownership/restart combinations; unknown tags or references; invalid particle coordinates and tolerances; and ambiguous restart responsibility. Unsupported transform families and custom observers must be rejected by the future runtime factory before any state allocation, integration, or output mutation.

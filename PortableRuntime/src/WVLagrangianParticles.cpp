@@ -158,10 +158,17 @@ WVConstantStratificationCompositeSystem::evaluateRightHandSide(
     bool &value;
     ~Guard() { value = false; }
   } guard{executing_};
-  status = forcing_->evaluateRightHandSide(state.waveVortex,
-                                           rightHandSide.waveVortex);
+  WVConstantStratificationRightHandSideContext context;
+  auto advectionStorage = fields_->advectionFieldStorage();
+  status = particles_.empty()
+               ? forcing_->evaluateRightHandSide(state.waveVortex,
+                                                  rightHandSide.waveVortex)
+               : forcing_->evaluateRightHandSideWithContext(
+                     state.waveVortex,rightHandSide.waveVortex,
+                     advectionStorage,context);
   if (!status)
     return status;
+  if (!particles_.empty()) ++metrics_.sharedRightHandSideContextCount;
   for (std::size_t block = 0; block < rightHandSide.additionalBlockCount;
        ++block) {
     const auto &layout = *rightHandSide.additionalBlocks[block].layout;
@@ -187,8 +194,8 @@ WVConstantStratificationCompositeSystem::evaluateRightHandSide(
                   z_.data() + offset);
   }
   if (!particles_.empty()) {
-    status = fields_->evaluateMoving(
-        velocityPlan_, state.waveVortex,
+    status = fields_->evaluateMovingFromAdvectionFields(
+        velocityPlan_, state.waveVortex, context.advectionFields(),
         {x_.data(), y_.data(), z_.data(), x_.size()}, velocityViews_.data(),
         velocityViews_.size());
     if (!status)
