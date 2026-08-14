@@ -1,5 +1,5 @@
 #include "WaveVortexRuntime/WVCheckpointReader.hpp"
-#include "WaveVortexRuntime/WVLagrangianParticles.hpp"
+#include "WaveVortexRuntime/WVConstantStratificationCompositeSystem.hpp"
 
 #include "WVReferenceFFTEngine.hpp"
 

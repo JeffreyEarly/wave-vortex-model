@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Portable observing-system contract
-parent: Developer guide
+parent: Developers guide
 nav_order: 10
 ---
 
@@ -40,6 +40,12 @@ Particle output follows the MATLAB schema: `<name>_id` is one-based, coordinate 
 New destinations are initialized as a staged set before any final path becomes visible. Each append writes all payload slabs first, writes the scheduled time as the record commit marker, and synchronizes the containing file before advancing its continuation ordinal. A failed route can therefore be retried at the same record index. Inspection rejects incomplete payloads, mismatched schedules or shapes, unsupported annotated observer classes, broken references, and conflicting shared-observer metadata before integration advances.
 
 The reader reconnects repeated observers by the runtime's persisted `portableIdentifier` when present. Existing MATLAB files without that additive attribute use deterministic class/name/configuration identities, and conflicting records are rejected instead of silently duplicated. The reconstructed result owns the latest canonical coefficients, the composite state layout, required particle/tracer state, the multi-file observer graph, and one committed schedule ordinal per group.
+
+## Built-in adapter seam
+
+The runtime treats the five version-1 observers as a closed set. `WVObserverAdapter` is the single internal registration seam for each built-in's `WVObserverKind`, portable tag, MATLAB class name, state contract, metadata field-list convention, and output rule. `WVObserverFactoryRegistry`, descriptor validation, NetCDF reading and writing, and output evaluation resolve those definitions instead of maintaining independent class-name tables. A new built-in must supply one complete adapter definition and its specialized numerical or sampling implementation; unknown or incomplete definitions remain unsupported.
+
+Moving integrated state uses named internal channels (`x`, `y`, `z`, or tracer value) rather than numeric coordinate identifiers. These names select state blocks and MATLAB-compatible variable names without becoming serialized enum values, so the `portable-observers-v1` wire format is unchanged. `WVLagrangianParticles`, `WVTracer`, and `WVConstantStratificationCompositeSystem` retain separate declarations, while NetCDF schema, reading/inspection, and writing are separate source responsibilities behind the existing public sink API.
 
 ## Compatibility decision
 

@@ -1,4 +1,5 @@
 #include "WaveVortexRuntime/WVObserverOutputEvaluationService.hpp"
+#include "WVObserverAdapter.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -274,10 +275,16 @@ WVKernelStatus WVObserverOutputEvaluationService::create(
     std::set<std::string> supportedFields(supportedFieldList.begin(),
                                           supportedFieldList.end());
     for (const auto &observer : impl.descriptor.observers) {
+      const auto *definition = detail::observerDefinition(observer.kind);
+      if (definition == nullptr)
+        return {WVKernelStatusCode::unsupportedOperation,
+                "Observer output evaluation received an unsupported built-in."};
+      const auto outputRule = definition->outputRule;
       auto &outputs = impl.outputsByObserver[observer.identifier];
-      if (observer.kind == WVObserverKind::coefficients ||
-          observer.kind == WVObserverKind::eulerianFields) {
-        for (const auto &field : observer.kind == WVObserverKind::coefficients
+      if (outputRule == detail::WVObserverOutputRule::coefficients ||
+          outputRule == detail::WVObserverOutputRule::eulerianFields) {
+        for (const auto &field : outputRule ==
+                                          detail::WVObserverOutputRule::coefficients
                                      ? std::vector<std::string>{"Ap", "Am", "A0"}
                                      : observer.fieldNames) {
           if (isCoefficient(field)) {
@@ -331,7 +338,7 @@ WVKernelStatus WVObserverOutputEvaluationService::create(
               return status;
           }
         }
-      } else if (observer.kind == WVObserverKind::mooring) {
+      } else if (outputRule == detail::WVObserverOutputRule::mooring) {
         if (observer.x.empty() || observer.x.size() != observer.y.size())
           return invalid("WVMooring requires equal nonempty x and y coordinates.");
         WVFieldSamplingRequest sampling;
@@ -360,7 +367,8 @@ WVKernelStatus WVObserverOutputEvaluationService::create(
             return status;
           outputs.back().specification.longName += ", recorded at the mooring";
         }
-      } else if (observer.kind == WVObserverKind::lagrangianParticles) {
+      } else if (outputRule ==
+                 detail::WVObserverOutputRule::lagrangianParticles) {
         if (observer.z.size() != observer.x.size())
           return invalid("Constant-stratification particles require one z "
                          "coordinate per particle.");
@@ -440,7 +448,10 @@ WVKernelStatus WVObserverOutputEvaluationService::create(
       std::vector<WVMovingFieldRequest> particleRequests;
       particleRequests.reserve(impl.particleFieldStorage.size());
       for (const auto &observer : impl.descriptor.observers) {
-        if (observer.kind != WVObserverKind::lagrangianParticles)
+        const auto *definition = detail::observerDefinition(observer.kind);
+        if (definition == nullptr ||
+            definition->outputRule !=
+                detail::WVObserverOutputRule::lagrangianParticles)
           continue;
         const auto coordinates = std::find_if(
             impl.particleCoordinates.begin(), impl.particleCoordinates.end(),
@@ -533,8 +544,11 @@ WVKernelStatus WVObserverOutputEvaluationService::prepare(
     for (std::size_t observer = 0;
          observer < event.routes[route].observerCount; ++observer) {
       const auto *record = event.routes[route].observers[observer].record;
-      if (record != nullptr &&
-          record->kind == WVObserverKind::lagrangianParticles &&
+      const auto *definition =
+          record == nullptr ? nullptr : detail::observerDefinition(record->kind);
+      if (record != nullptr && definition != nullptr &&
+          definition->outputRule ==
+              detail::WVObserverOutputRule::lagrangianParticles &&
           !record->fieldNames.empty()) {
         needsParticles = true;
         break;

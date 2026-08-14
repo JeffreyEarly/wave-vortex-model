@@ -3,6 +3,7 @@
 *.mat
 *.nc
 CompiledKernel/build/
+/build/
 tools/compiled-kernel/build/
 tools/compiled-kernel/build-*/
 *.a

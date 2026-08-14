@@ -27,15 +27,17 @@ add_library(WaveVortexPortableRuntime STATIC
     src/WVFixedStepRK4.cpp
     src/WVAdaptiveRK23.cpp
     src/WVIntegrationDriver.cpp
+    src/WVObserverAdapter.cpp
     src/WVObserverContracts.cpp
     src/WVCompositeState.cpp
     src/WVCompositeIntegration.cpp
     src/WVCompositeOutputOrchestration.cpp
     src/WVFieldEvaluationService.cpp
-    src/WVLagrangianParticles.cpp
+    src/WVConstantStratificationCompositeSystem.cpp
     src/WVObserverOutputEvaluationService.cpp
     src/WVModelOutputNetCDFSchema.cpp
-    src/WVModelOutputNetCDF.cpp
+    src/WVModelOutputNetCDFReader.cpp
+    src/WVModelOutputNetCDFWriter.cpp
 )
 add_library(WaveVortex::PortableRuntime ALIAS WaveVortexPortableRuntime)
 add_library(WaveVortex::Checkpoint ALIAS WaveVortexPortableRuntime)
@@ -89,6 +91,22 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "AppleClang|Clang|GNU")
 endif()
 
 if(BUILD_TESTING)
+    add_executable(TestWVObserverAdapter
+        ../tools/portable-runtime/tests/TestWVObserverAdapter.cpp
+    )
+    target_compile_features(TestWVObserverAdapter PRIVATE cxx_std_17)
+    target_include_directories(TestWVObserverAdapter PRIVATE src)
+    target_link_libraries(TestWVObserverAdapter PRIVATE WaveVortex::PortableRuntime)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "AppleClang|Clang|GNU")
+        target_compile_options(TestWVObserverAdapter PRIVATE -Wall -Wextra -Wpedantic -Werror)
+    endif()
+    add_test(NAME observer-adapter COMMAND TestWVObserverAdapter)
+    add_test(NAME observer-dispatch-source-policy
+        COMMAND ${CMAKE_COMMAND}
+            -DWV_REPOSITORY_ROOT=${CMAKE_CURRENT_LIST_DIR}/..
+            -P ${CMAKE_CURRENT_LIST_DIR}/../tools/portable-runtime/tests/CheckWVObserverDispatch.cmake
+    )
+
     add_executable(wv_checkpoint_inspect
         ../tools/portable-runtime/WVCheckpointInspect.cpp
     )

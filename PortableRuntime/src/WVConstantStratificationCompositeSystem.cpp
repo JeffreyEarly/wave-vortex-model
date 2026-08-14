@@ -1,4 +1,5 @@
 #include "WaveVortexRuntime/WVConstantStratificationCompositeSystem.hpp"
+#include "WVObserverAdapter.hpp"
 
 #include <algorithm>
 #include <limits>
@@ -53,7 +54,12 @@ WVKernelStatus WVConstantStratificationCompositeSystem::create(
     std::vector<WVMovingFieldRequest> velocityRequests;
     std::size_t positionOffset = 0;
     for (const auto &observer : descriptor.observers()) {
-      if (observer.kind == WVObserverKind::tracer) {
+      const auto *definition = detail::observerDefinition(observer.kind);
+      if (definition == nullptr)
+        return {WVKernelStatusCode::unsupportedOperation,
+                "Composite system received an unsupported observer."};
+      if (definition->stateContract ==
+          detail::WVObserverStateContract::tracerField) {
         const auto block = blockIndex(
             candidate->layout_, observer.stateBlockIdentifiers.front());
         if (block == std::numeric_limits<std::size_t>::max())
@@ -81,7 +87,8 @@ WVKernelStatus WVConstantStratificationCompositeSystem::create(
         candidate->tracers_.push_back(std::move(tracer));
         continue;
       }
-      if (observer.kind != WVObserverKind::lagrangianParticles)
+      if (definition->stateContract !=
+          detail::WVObserverStateContract::particlePosition)
         continue;
       if (observer.isXYOnly && observer.z.size() != observer.x.size())
         return invalid("Constant-stratification XY particles require one fixed "

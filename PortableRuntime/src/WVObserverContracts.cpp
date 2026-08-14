@@ -1,4 +1,5 @@
 #include "WaveVortexRuntime/WVObserverContracts.hpp"
+#include "WVObserverAdapter.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -58,14 +59,6 @@ WVKernelStatus validateDimensions(const WVStateBlockRecord &block) {
   return WVKernelStatus::ok();
 }
 
-bool supportedObserver(WVObserverKind kind) noexcept {
-  return kind == WVObserverKind::coefficients ||
-         kind == WVObserverKind::eulerianFields ||
-         kind == WVObserverKind::mooring ||
-         kind == WVObserverKind::lagrangianParticles ||
-         kind == WVObserverKind::tracer;
-}
-
 std::size_t stringBytes(const std::string &value) noexcept {
   return value.capacity();
 }
@@ -122,68 +115,10 @@ WVPortableObserverDescriptor::create(const WVPortableObserverRecord &record,
           return invalid("Observer " + observer.identifier +
                          " repeats state block " + identifier + ".");
       }
-      if (observer.kind == WVObserverKind::coefficients &&
-          observer.stateBlockIdentifiers !=
-              std::vector<std::string>({"Ap", "Am", "A0"}))
-        return invalid(
-            "WVCoefficients must reference Ap, Am, and A0 in canonical order.");
-      if ((observer.kind == WVObserverKind::eulerianFields ||
-           observer.kind == WVObserverKind::mooring) &&
-          !observer.stateBlockIdentifiers.empty())
-        return invalid(
-            "Sample-only observers cannot own integrated state blocks.");
-      if (observer.kind == WVObserverKind::mooring &&
-          (observer.x.empty() || observer.x.size() != observer.y.size()))
-        return invalid(
-            "WVMooring requires equal nonempty x and y coordinates.");
-      if (observer.kind == WVObserverKind::lagrangianParticles) {
-        if (observer.x.empty() || observer.x.size() != observer.y.size())
-          return invalid("WVLagrangianParticles requires equal nonempty x and "
-                         "y coordinates.");
-        if (!observer.isXYOnly && observer.z.size() != observer.x.size())
-          return invalid("Three-dimensional particles require one z coordinate "
-                         "per particle.");
-        if (!(observer.horizontalAbsoluteTolerance > 0.0) ||
-            !std::isfinite(observer.horizontalAbsoluteTolerance))
-          return invalid(
-              "Particle horizontal tolerance must be finite and positive.");
-        if (!observer.isXYOnly &&
-            (!(observer.verticalAbsoluteTolerance > 0.0) ||
-             !std::isfinite(observer.verticalAbsoluteTolerance)))
-          return invalid(
-              "Particle vertical tolerance must be finite and positive.");
-        const std::size_t expectedBlocks = observer.isXYOnly ? 2 : 3;
-        if (observer.stateBlockIdentifiers.size() != expectedBlocks)
-          return invalid("WVLagrangianParticles requires ordered x, y, and "
-                         "optional z state blocks.");
-        for (const auto &identifier : observer.stateBlockIdentifiers) {
-          const auto *block = blocksByIdentifier.at(identifier);
-          if (block->scalarType != WVStateScalarType::real64 ||
-              block->ownership != WVStateOwnership::integratorOwned ||
-              block->dimensions !=
-                  std::vector<std::size_t>({observer.x.size()}))
-            return invalid("Particle state blocks must be integrator-owned "
-                           "real vectors matching the particle count.");
-          ++integratedBlockOwnerCounts.at(identifier);
-        }
-      }
-      if (observer.kind == WVObserverKind::tracer) {
-        if (observer.stateBlockIdentifiers.size() != 1)
-          return invalid("WVTracer requires exactly one state block.");
-        const auto *block =
-            blocksByIdentifier.at(observer.stateBlockIdentifiers.front());
-        if (block->scalarType != WVStateScalarType::real64 ||
-            block->ownership != WVStateOwnership::integratorOwned)
-          return invalid(
-              "WVTracer requires one integrator-owned real state block.");
-        const std::size_t expectedRank = observer.isXYOnly ? 2 : 3;
-        if (block->dimensions.size() != expectedRank)
-          return invalid(observer.isXYOnly
-                             ? "A two-dimensional WVTracer requires a rank-two state block."
-                             : "A three-dimensional WVTracer requires a rank-three state block.");
-        ++integratedBlockOwnerCounts.at(
-            observer.stateBlockIdentifiers.front());
-      }
+      const auto observerStatus = detail::validateBuiltInObserver(
+          observer, blocksByIdentifier, integratedBlockOwnerCounts);
+      if (!observerStatus)
+        return observerStatus;
     }
 
     for (const auto &[identifier, ownerCount] : integratedBlockOwnerCounts) {
@@ -280,24 +215,13 @@ WVPortableObserverDescriptor::create(const WVPortableObserverRecord &record,
 }
 
 bool WVObserverFactoryRegistry::supports(WVObserverKind kind) noexcept {
-  return supportedObserver(kind);
+  return detail::observerDefinition(kind) != nullptr;
 }
 
 const char *
 WVObserverFactoryRegistry::portableTag(WVObserverKind kind) noexcept {
-  switch (kind) {
-  case WVObserverKind::coefficients:
-    return "WVCoefficients";
-  case WVObserverKind::eulerianFields:
-    return "WVEulerianFields";
-  case WVObserverKind::mooring:
-    return "WVMooring";
-  case WVObserverKind::lagrangianParticles:
-    return "WVLagrangianParticles";
-  case WVObserverKind::tracer:
-    return "WVTracer";
-  }
-  return nullptr;
+  const auto *definition = detail::observerDefinition(kind);
+  return definition == nullptr ? nullptr : definition->portableTag;
 }
 
 std::size_t WVPortableObserverDescriptor::persistentBytes() const noexcept {

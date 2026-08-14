@@ -70,6 +70,8 @@ The service metrics report plan, transform, service, and scratch storage; transf
 
 `WVObserverOutputEvaluationService` adds observer semantics above field evaluation. It exposes `WVCoefficients`, `WVEulerianFields`, `WVMooring`, and `WVLagrangianParticles` using MATLAB class names, variable names, logical dimensions, units, descriptions, and cadence. Coefficients are borrowed directly from immutable event state. Particle coordinates are read from accepted or dense-output composite state, while XY-only z remains fixed configuration. Coincident routed particles share one transform, and events without a particle route do not evaluate particle fields. Call `useFieldEvaluationService` with the composite system's evaluator to reuse its transform and FFT plans. Particle IDs are one-based; x, y, z, and tracked values use `[id,t]` logical order and MATLAB's particle metadata attributes.
 
+The closed version-1 built-in set is registered through the internal `WVObserverAdapter` seam. That table owns portable tags, MATLAB class names, state contracts, metadata conventions, and output rules; persistence and evaluation do not maintain separate tag maps. Particle and tracer state channels are named internally, but no enum value is serialized. Adding a built-in remains a source-level runtime change with compatibility tests, not a third-party plug-in ABI.
+
 ## Standalone executable
 
 The default CMake build produces `wave-vortex-run` with the scalar reference FFT engine for portable correctness testing. The optimized Apple-silicon executable is source-only and uses the shared pinned-provider manifest:

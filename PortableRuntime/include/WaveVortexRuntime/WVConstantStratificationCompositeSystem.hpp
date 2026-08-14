@@ -3,6 +3,8 @@
 #include "WaveVortexRuntime/WVCompositeIntegration.hpp"
 #include "WaveVortexRuntime/WVFieldEvaluationService.hpp"
 #include "WaveVortexRuntime/WVForcingEngine.hpp"
+#include "WaveVortexRuntime/WVLagrangianParticles.hpp"
+#include "WaveVortexRuntime/WVTracer.hpp"
 
 #include <memory>
 #include <vector>
@@ -23,42 +25,6 @@ struct WVIntegratedObserverMetrics {
 };
 
 using WVLagrangianParticleMetrics = WVIntegratedObserverMetrics;
-
-// Resolved MATLAB-compatible particle component. Accepted x and y state is
-// deliberately unwrapped; periodicity is applied only while sampling fields.
-class WVLagrangianParticles final {
-public:
-  const WVObserverRecord &record() const noexcept { return record_; }
-  std::size_t particleCount() const noexcept { return particleCount_; }
-  bool isXYOnly() const noexcept { return record_.isXYOnly; }
-  std::size_t positionOffset() const noexcept { return positionOffset_; }
-
-private:
-  WVObserverRecord record_;
-  std::size_t xBlock_ = 0;
-  std::size_t yBlock_ = 0;
-  std::size_t zBlock_ = 0;
-  std::size_t particleCount_ = 0;
-  std::size_t positionOffset_ = 0;
-  std::size_t uOutput_ = 0;
-  std::size_t vOutput_ = 0;
-  std::size_t wOutput_ = 0;
-  friend class WVConstantStratificationCompositeSystem;
-};
-
-// Resolved MATLAB-compatible three-dimensional tracer. Its numerical
-// differentiation remains owned by the shared constant-stratification kernel.
-class WVTracer final {
-public:
-  const WVObserverRecord &record() const noexcept { return record_; }
-  std::size_t stateBlock() const noexcept { return stateBlock_; }
-  bool shouldAntialias() const noexcept { return record_.shouldAntialias; }
-
-private:
-  WVObserverRecord record_;
-  std::size_t stateBlock_ = 0;
-  friend class WVConstantStratificationCompositeSystem;
-};
 
 // Constant-stratification composite numerical system. The canonical
 // WaveVortex coefficient RHS is delegated to the frozen forcing engine while
