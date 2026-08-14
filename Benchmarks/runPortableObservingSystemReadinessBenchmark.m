@@ -222,30 +222,7 @@ function writeArtifacts(result,options)
 if ~options.shouldWriteArtifacts, return, end
 if ~isfolder(options.outputDirectory), mkdir(options.outputDirectory), end
 writeText(fullfile(options.outputDirectory,"portable-observing-systems-readiness.json"),jsonencode(result,PrettyPrint=true));
-writeText(fullfile(options.outputDirectory,"summary.md"),markdownSummary(result));
-end
-
-function text = markdownSummary(result)
-lines = ["# Portable observing-system readiness";""];
-if result.status == "complete"
-    lines(end+1:end+2,1) = ["Decision: **"+result.decision.status+"**";""];
-    lines(end+1:end+2,1) = ["| Observer | Runtime to MATLAB | MATLAB to runtime |";"|---|---:|---:|"];
-    for observer = unique(string({result.compatibility.observer}),"stable")
-        selected = result.compatibility(string({result.compatibility.observer}) == observer);
-        lines(end+1,1) = "| "+observer+" | "+passText(selected(string({selected.direction}) == "runtime-to-matlab").passed)+" | "+passText(selected(string({selected.direction}) == "matlab-to-runtime").passed)+" |"; %#ok<AGROW>
-    end
-    lines(end+1:end+2,1) = ["";"| Case | Candidate / pre-milestone no-output time | Passed |";"|---|---:|---:|"];
-    for comparison = reshape(result.noOutputComparisons,1,[])
-        lines(end+1,1) = sprintf("| %s | %.4f | %s |",comparison.id,comparison.candidateNoOutputRatio,passText(comparison.candidateNoOutputRatio <= 1.03 && comparison.correctnessPassed)); %#ok<AGROW>
-    end
-else
-    lines(end+1:end+5,1) = ["Status: **failed**";"";"Stage: `"+result.failure.stage+"`";"";result.failure.message];
-end
-text = strjoin(lines,newline)+newline;
-end
-
-function value = passText(passed)
-if passed, value = "yes"; else, value = "no"; end
+writeText(fullfile(options.outputDirectory,"summary.md"),portableObservingSystemReadinessSummary(result));
 end
 
 function value = shellQuote(pathname)

@@ -42,6 +42,18 @@ classdef TestPortableObservingSystemReadinessBenchmark < matlab.unittest.TestCas
             decision = portableObservingSystemReadinessDecision(compatibility,comparisonFixture);
             testCase.verifyEqual(decision.status,"NOT-READY")
         end
+
+        function summaryRendersCompleteAndFailedResults(testCase)
+            complete = struct("status","complete","decision",struct("status","PARTIAL"),"compatibility",compatibilityFixture,"noOutputComparisons",comparisonFixture);
+            summary = portableObservingSystemReadinessSummary(complete);
+            testCase.verifySubstring(summary,"Decision: **PARTIAL**")
+            testCase.verifySubstring(summary,"| WVCoefficients | yes | yes |")
+            testCase.verifySubstring(summary,"| compact-smoke | 1.0200 | yes |")
+            failed = struct("status","failed","failure",struct("stage","compatibility","message","injected failure"));
+            summary = portableObservingSystemReadinessSummary(failed);
+            testCase.verifySubstring(summary,"Stage: `compatibility`")
+            testCase.verifySubstring(summary,"injected failure")
+        end
     end
 
     methods (Test,TestTags="optional")
@@ -77,5 +89,5 @@ end
 end
 
 function value = comparisonFixture
-value = struct("candidateNoOutputRatio",1.02,"correctnessPassed",true);
+value = struct("id","compact-smoke","candidateNoOutputRatio",1.02,"correctnessPassed",true);
 end
