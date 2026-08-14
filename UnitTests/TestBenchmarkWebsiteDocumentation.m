@@ -84,10 +84,33 @@ classdef TestBenchmarkWebsiteDocumentation < matlab.unittest.TestCase
             testCase.verifySubstring(verticalChart,"Vertical grid size (Nz)");
             for dataset = [first second third]
                 testCase.verifyTrue(isfile(fullfile(firstBuild,"benchmarks","data",dataset.datasetId + ".json")));
-                testCase.verifyTrue(isfile(fullfile(firstBuild,"benchmarks","raw",dataset.datasetId + ".json")));
             end
+            rawFiles = dir(fullfile(firstBuild,"benchmarks","raw","raw-*.json"));
+            testCase.verifyNumElements(rawFiles,1);
+            testCase.verifyEqual(count(page,"/benchmarks/raw/" + string(rawFiles(1).name)),3);
+            testCase.verifyEqual(strlength(extractBetween(string(rawFiles(1).name),"raw-",".json")),64);
             report = validateWebsiteDocumentation(firstBuild,ShouldFail=false,ShouldCheckHierarchy=false,ShouldCheckGeneratedContent=false);
             testCase.verifyTrue(report.IsValid,strjoin(report.Diagnostics,newline));
+        end
+
+        function distinctRawPayloadsReceiveDistinctContentAddresses(testCase)
+            [root,buildFolder] = testCase.createFixture("distinct-raw");
+            first = publishedDataset("scaling-standard-v1--matlab-builtin--m5-max--20260810T120000Z","matlab","builtin","m5-max","M5 Max","4.2.1","2026-08-10T12:00:00Z",standardCases(1));
+            second = publishedDataset("scaling-standard-v1--matlab-builtin--zen4--20260810T130000Z","matlab","builtin","zen4","Zen 4 workstation","4.2.1","2026-08-10T13:00:00Z",standardCases(1.4));
+            entries = testCase.publishDatasets(root,{first,second});
+            secondRawPath = fullfile(root,"Benchmarks","results","raw",second.datasetId + ".json");
+            testCase.writeJson(secondRawPath,struct("fixture",true,"variant",2));
+            testCase.writeCatalog(root,entries);
+
+            generateBenchmarkWebsiteDocumentation(root,buildFolder);
+
+            rawFiles = dir(fullfile(buildFolder,"benchmarks","raw","raw-*.json"));
+            testCase.verifyNumElements(rawFiles,2);
+            testCase.verifyNotEqual(string(rawFiles(1).name),string(rawFiles(2).name));
+            page = string(fileread(fullfile(buildFolder,"benchmarks.md")));
+            testCase.verifySubstring(page,"SHA-256");
+            testCase.verifySubstring(page,"/benchmarks/raw/" + string(rawFiles(1).name));
+            testCase.verifySubstring(page,"/benchmarks/raw/" + string(rawFiles(2).name));
         end
 
         function comparableVersionsProduceReleaseHistory(testCase)

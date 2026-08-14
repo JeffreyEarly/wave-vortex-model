@@ -13,6 +13,8 @@ on:
       - "Integrators/**"
       - "ObservingSystems/**"
       - "Operations/**"
+      - "CompiledKernel/**"
+      - "PortableRuntime/**"
       - "Documentation/**"
       - "docs/**"
       - "tools/**"
@@ -83,6 +85,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
+      - name: Install portable-runtime build dependencies
+        run: sudo apt-get update && sudo apt-get install -y libnetcdf-dev pkg-config
+
       - name: Check out WaveVortexModel
         uses: actions/checkout@v6
         with:
@@ -137,6 +142,20 @@ jobs:
             candidate = load(fullfile(outputRoot,"candidate-report.mat"),"report");
             addpath(fullfile(sourceRoot,"tools"));
             verifyWaveVortexModelPackage(candidate.report.exportPath,oceanKitRoot,expectedVersion=candidate.report.version)
+
+      - name: Build and inspect the exported reference runtime
+        shell: bash
+        run: |
+          export_path=$(find "${{ runner.temp }}/wave-vortex-model-release-output" -maxdepth 1 -type d -name 'WaveVortexModel-*' -print -quit)
+          test -n "$export_path"
+          cmake -S "$export_path/PortableRuntime" -B "${{ runner.temp }}/wave-vortex-runtime-build" -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF
+          cmake --build "${{ runner.temp }}/wave-vortex-runtime-build" --parallel --target wave-vortex-run
+          set +e
+          output=$("${{ runner.temp }}/wave-vortex-runtime-build/wave-vortex-run" 2>&1)
+          status=$?
+          set -e
+          test "$status" -eq 2
+          python3 -c 'import json,sys; report=json.loads(sys.stdin.read()); assert report["status"] == "failed"' <<< "$output"
 
       - name: Upload release-candidate diagnostics
         if: failure()
