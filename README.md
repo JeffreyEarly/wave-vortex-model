@@ -35,6 +35,7 @@ The transform stores the decomposed state in the wave–vortex coefficients `Ap`
 
 - [User guide](https://wavevortexmodel.org/users-guide/)
 - [Capabilities and limitations](https://wavevortexmodel.org/users-guide/supported-features.html)
+- [Portable constant-stratification runtime](https://wavevortexmodel.org/users-guide/portable-runtime.html)
 - [Transform API](https://wavevortexmodel.org/classes/transforms/)
 - [WVModel API](https://wavevortexmodel.org/classes/wvmodel/)
 - [Mathematical introduction](https://wavevortexmodel.org/mathematical-introduction/)

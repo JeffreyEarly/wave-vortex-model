@@ -13,13 +13,15 @@ The runner is source-only. The optimized provider currently targets Apple silico
 
 ## Build
 
-From an authoring checkout on Apple silicon:
+From either an authoring checkout or an exported WaveVortexModel source package on Apple silicon:
 
 ```sh
-tools/portable-runtime/buildWaveVortexRun.sh
+PortableRuntime/buildWaveVortexRun.sh
 ```
 
-The script downloads the official FFTW archive only when the ignored local cache does not already contain it, verifies the recorded SHA-256 checksum, and builds `wave-vortex-run` under `.compiled-backend-cache`. Use the resulting path printed on the final line.
+The script downloads the official FFTW archive only when the ignored local cache does not already contain it, verifies the recorded SHA-256 checksum, and builds `wave-vortex-run` under `.compiled-backend-cache`. Set `WV_RUNTIME_CACHE_ROOT` and pass a build-directory argument to keep both locations outside the exported source tree. Use the executable path printed on the final line.
+
+WaveVortexModel distributes source only: the package contains the shared C++ core, portable runtime, provider manifest, and build script, but no FFTW archive or library, MEX file, object file, or executable. A locally linked executable includes GPL-licensed FFTW; anyone redistributing that executable must satisfy FFTW's GPL terms.
 
 A portable reference build is available for correctness and non-Apple development:
 
