@@ -110,6 +110,8 @@ The portable-output contract is documented in the [portable observing-system con
 
 All five built-in observer types are qualified for runtime-to-MATLAB and MATLAB-to-runtime restart, continuation, and append through the portable C++ library. This includes multiple simultaneous files, differently scheduled groups, shared particle or tracer identities, fixed RK4, and adaptive RK3(2). The compatibility guarantee does not extend to custom observing-system subclasses or other transform families.
 
+The current overall readiness record is `PARTIAL`: numerical and file compatibility pass, while one medium nonhydrostatic output-disabled performance case exceeded the 3% non-regression threshold by about one percentage point. This does not change the supported compatibility subset, but it prevents a full readiness claim until that small regression is resolved or deliberately accepted.
+
 The standalone `wave-vortex-run` executable remains intentionally narrower: its command-line interface reads and writes scalar restart checkpoints and scheduled scalar checkpoints. Multi-file observing-system output is currently a library API, not a command-line configuration feature. This distinction keeps the lightweight restart workflow stable while the portable observer graph develops independently.
 
 ## Reports and performance
