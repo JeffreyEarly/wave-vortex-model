@@ -145,7 +145,7 @@ Package authors can reproduce the paired archived-source comparison with `runPor
 
 The portable contract tests compare every supported forcing and mixed hydrostatic/nonhydrostatic schedules directly with MATLAB at relative infinity error at most \(10^{-12}\). A short mixed-forcing RK4 trajectory is independently advanced in MATLAB and C++, including a partial final step and stage-wise fixed-amplitude restoration. The test fixtures also use nondefault gravity, density, and planetary values so the C++ descriptor reproduces established MATLAB normalization conventions rather than silently substituting its own.
 
-Issue #111 established read compatibility and validation. Issue #115 adds compatible scalar checkpoint creation and deterministic restart continuation. Appending to a time-series remains outside runtime v1.
+Issue #111 established read compatibility and validation. Issue #115 added compatible scalar checkpoint creation and deterministic restart continuation. The scalar profile remains the lightweight CLI checkpoint path. Separately, the portable observing-system contract supports MATLAB-compatible multi-file, multi-group time-series creation and append through `WVModelOutputNetCDFSink`; it does not change the scalar checkpoint schema.
 
 ## Standalone runner boundary
 

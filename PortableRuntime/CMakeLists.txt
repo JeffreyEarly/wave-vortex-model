@@ -32,6 +32,8 @@ add_library(WaveVortexPortableRuntime STATIC
     src/WVCompositeIntegration.cpp
     src/WVCompositeOutputOrchestration.cpp
     src/WVFieldEvaluationService.cpp
+    src/WVModelOutputNetCDFSchema.cpp
+    src/WVModelOutputNetCDF.cpp
 )
 add_library(WaveVortex::PortableRuntime ALIAS WaveVortexPortableRuntime)
 add_library(WaveVortex::Checkpoint ALIAS WaveVortexPortableRuntime)
@@ -200,6 +202,19 @@ if(BUILD_TESTING)
         target_compile_options(TestWVCompositeOutputOrchestration PRIVATE -Wall -Wextra -Wpedantic -Werror)
     endif()
     add_test(NAME composite-output-orchestration COMMAND TestWVCompositeOutputOrchestration)
+
+    add_executable(TestWVModelOutputNetCDF
+        ../tools/portable-runtime/tests/TestWVModelOutputNetCDF.cpp
+    )
+    target_compile_features(TestWVModelOutputNetCDF PRIVATE cxx_std_17)
+    target_link_libraries(TestWVModelOutputNetCDF PRIVATE WaveVortex::PortableRuntime ${WAVEVORTEX_NETCDF_TARGET})
+    target_compile_definitions(TestWVModelOutputNetCDF PRIVATE
+        WV_CHECKPOINT_FIXTURE_DIR="${CMAKE_CURRENT_LIST_DIR}/../tools/portable-runtime/fixtures"
+    )
+    if(CMAKE_CXX_COMPILER_ID MATCHES "AppleClang|Clang|GNU")
+        target_compile_options(TestWVModelOutputNetCDF PRIVATE -Wall -Wextra -Wpedantic -Werror)
+    endif()
+    add_test(NAME model-output-netcdf COMMAND TestWVModelOutputNetCDF)
 
     add_executable(TestWVFieldEvaluation
         ../tools/portable-runtime/tests/TestWVFieldEvaluation.cpp
