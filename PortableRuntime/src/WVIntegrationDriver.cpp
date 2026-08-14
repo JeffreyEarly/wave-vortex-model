@@ -27,6 +27,35 @@ bool matchingShape(WVShape2D first, WVShape2D second) noexcept {
     return first.rows == second.rows && first.columns == second.columns;
 }
 
+WVKernelStatus stageCheckpointState(WVCheckpoint& checkpoint, const WVState& state) {
+    const auto shape = checkpoint.state.coefficients.shape;
+    if (!matchingShape(shape,state.coefficients.Ap.shape) ||
+        !matchingShape(shape,state.coefficients.Am.shape) ||
+        !matchingShape(shape,state.coefficients.A0.shape))
+        return {WVKernelStatusCode::invalidShape,"Checkpoint template and output state shapes differ."};
+    const auto count = shape.elementCount();
+    if (checkpoint.state.coefficients.Ap.size() != count ||
+        checkpoint.state.coefficients.Am.size() != count ||
+        checkpoint.state.coefficients.A0.size() != count)
+        return {WVKernelStatusCode::invalidShape,"Checkpoint template coefficient storage is incomplete."};
+    const WVComplexConstView sources[] = {
+        state.coefficients.Ap,state.coefficients.Am,state.coefficients.A0};
+    std::vector<WVComplex64>* destinations[] = {
+        &checkpoint.state.coefficients.Ap,&checkpoint.state.coefficients.Am,
+        &checkpoint.state.coefficients.A0};
+    for (std::size_t component = 0; component < 3; ++component)
+        std::copy_n(sources[component].data,count,destinations[component]->data());
+    checkpoint.state.t = state.t;
+    checkpoint.state.t0 = state.t0;
+    return WVKernelStatus::ok();
+}
+
+std::size_t checkpointCoefficientCapacityBytes(const WVCheckpoint& checkpoint) noexcept {
+    return (checkpoint.state.coefficients.Ap.capacity()+
+            checkpoint.state.coefficients.Am.capacity()+
+            checkpoint.state.coefficients.A0.capacity())*sizeof(WVComplex64);
+}
+
 } // namespace
 
 WVOrderedOutputSchedule::WVOrderedOutputSchedule(std::vector<double> requestedTimes) : requestedTimes_(std::move(requestedTimes)) {}
@@ -153,15 +182,9 @@ WVKernelStatus WVCheckpointOutputSink::receive(const Event& event, Action& actio
     if (!std::isfinite(targetTime_) || destination_.empty()) return {WVKernelStatusCode::invalidConfiguration,"Checkpoint output requires a finite target time and explicit destination."};
     if (event.kind == EventKind::done || !sameTime(event.state.t,targetTime_)) return WVKernelStatus::ok();
     if (wroteCheckpoint_) return {WVKernelStatusCode::invalidConfiguration,"Checkpoint output target was delivered more than once."};
-    const auto shape = checkpoint_.state.coefficients.shape;
-    if (!matchingShape(shape,event.state.coefficients.Ap.shape) || !matchingShape(shape,event.state.coefficients.Am.shape) || !matchingShape(shape,event.state.coefficients.A0.shape)) return {WVKernelStatusCode::invalidShape,"Checkpoint template and output state shapes differ."};
-    const auto count = shape.elementCount();
-    if (checkpoint_.state.coefficients.Ap.size() != count || checkpoint_.state.coefficients.Am.size() != count || checkpoint_.state.coefficients.A0.size() != count) return {WVKernelStatusCode::invalidShape,"Checkpoint template coefficient storage is incomplete."};
-    const WVComplexConstView sources[] = {event.state.coefficients.Ap,event.state.coefficients.Am,event.state.coefficients.A0};
-    std::vector<WVComplex64>* destinations[] = {&checkpoint_.state.coefficients.Ap,&checkpoint_.state.coefficients.Am,&checkpoint_.state.coefficients.A0};
-    for (std::size_t component = 0; component < 3; ++component) std::copy_n(sources[component].data,count,destinations[component]->data());
-    checkpoint_.state.t = event.state.t;
-    checkpoint_.state.t0 = event.state.t0;
+    const auto stageStatus = stageCheckpointState(checkpoint_,event.state);
+    if (!stageStatus) return stageStatus;
+    const auto count = checkpoint_.state.coefficients.shape.elementCount();
     const auto started = std::chrono::steady_clock::now();
     const auto writeStatus = WVCheckpointWriter::write(destination_,checkpoint_);
     metrics_.checkpointWriteSeconds += std::chrono::duration<double>(std::chrono::steady_clock::now()-started).count();
@@ -173,7 +196,7 @@ WVKernelStatus WVCheckpointOutputSink::receive(const Event& event, Action& actio
 }
 
 std::size_t WVCheckpointOutputSink::persistentBytes() const noexcept {
-    return (checkpoint_.state.coefficients.Ap.capacity()+checkpoint_.state.coefficients.Am.capacity()+checkpoint_.state.coefficients.A0.capacity())*sizeof(WVComplex64)+destination_.capacity();
+    return checkpointCoefficientCapacityBytes(checkpoint_)+destination_.capacity();
 }
 
 WVCheckpointSeriesOutputSink::WVCheckpointSeriesOutputSink(
@@ -198,23 +221,13 @@ WVKernelStatus WVCheckpointSeriesOutputSink::receive(const Event& event, Action&
     record.emittedTime = event.state.t;
     record.eventKind = event.kind;
     record.destination = target.destination;
-    const auto shape = checkpoint_.state.coefficients.shape;
-    if (!matchingShape(shape,event.state.coefficients.Ap.shape) || !matchingShape(shape,event.state.coefficients.Am.shape) || !matchingShape(shape,event.state.coefficients.A0.shape)) {
-        record.failure = "Checkpoint template and output state shapes differ.";
+    const auto stageStatus = stageCheckpointState(checkpoint_,event.state);
+    if (!stageStatus) {
+        record.failure = stageStatus.message;
         records_.push_back(record);
-        return {WVKernelStatusCode::invalidShape,record.failure};
+        return stageStatus;
     }
-    const auto count = shape.elementCount();
-    if (checkpoint_.state.coefficients.Ap.size() != count || checkpoint_.state.coefficients.Am.size() != count || checkpoint_.state.coefficients.A0.size() != count) {
-        record.failure = "Checkpoint template coefficient storage is incomplete.";
-        records_.push_back(record);
-        return {WVKernelStatusCode::invalidShape,record.failure};
-    }
-    const WVComplexConstView sources[] = {event.state.coefficients.Ap,event.state.coefficients.Am,event.state.coefficients.A0};
-    std::vector<WVComplex64>* destinations[] = {&checkpoint_.state.coefficients.Ap,&checkpoint_.state.coefficients.Am,&checkpoint_.state.coefficients.A0};
-    for (std::size_t component = 0; component < 3; ++component) std::copy_n(sources[component].data,count,destinations[component]->data());
-    checkpoint_.state.t = event.state.t;
-    checkpoint_.state.t0 = event.state.t0;
+    const auto count = checkpoint_.state.coefficients.shape.elementCount();
     const auto started = std::chrono::steady_clock::now();
     const auto writeStatus = WVCheckpointWriter::write(target.destination,checkpoint_,WVCheckpointCommitPolicy::createNew);
     record.writeSeconds = std::chrono::duration<double>(std::chrono::steady_clock::now()-started).count();
@@ -233,7 +246,7 @@ WVKernelStatus WVCheckpointSeriesOutputSink::receive(const Event& event, Action&
 }
 
 std::size_t WVCheckpointSeriesOutputSink::persistentBytes() const noexcept {
-    std::size_t bytes = (checkpoint_.state.coefficients.Ap.capacity()+checkpoint_.state.coefficients.Am.capacity()+checkpoint_.state.coefficients.A0.capacity())*sizeof(WVComplex64);
+    std::size_t bytes = checkpointCoefficientCapacityBytes(checkpoint_);
     bytes += targets_.capacity()*sizeof(WVCheckpointOutputTarget)+records_.capacity()*sizeof(WVCheckpointOutputRecord);
     for (const auto& target : targets_) bytes += target.destination.capacity();
     for (const auto& record : records_) bytes += record.destination.capacity()+record.failure.capacity();
