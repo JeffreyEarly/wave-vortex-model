@@ -313,7 +313,12 @@ classdef TestPortableFieldEvaluation < matlab.unittest.TestCase
             restoredNames = restored.outputFileNames;
             testCase.verifyGreaterThanOrEqual(numel(restoredNames),1)
             restoredFile = restored.outputFileWithName(restoredNames(1));
+            restoredGroup = restoredFile.outputGroupWithName("wave-vortex");
+            testCase.verifyClass(restoredGroup.observingSystemWithName("eulerian fields"),"WVEulerianFields")
+            testCase.verifyClass(restoredGroup.observingSystemWithName("mooring"),"WVMooring")
             restoredParticles = restoredFile.outputGroupWithName("wave-vortex").observingSystemWithName("particles");
+            restoredTracer = restoredGroup.observingSystemWithName("tracer");
+            testCase.verifyClass(restoredTracer,"WVTracer")
             sharedParticles = restoredFile.outputGroupWithName("shared").observingSystemWithName("particles");
             testCase.verifyTrue(restoredParticles == sharedParticles)
             positions = restoredParticles.initialConditions();

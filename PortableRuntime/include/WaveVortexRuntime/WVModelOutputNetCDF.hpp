@@ -86,6 +86,8 @@ struct WVModelOutputNetCDFMetrics {
   std::size_t committedRecordCount = 0;
   std::size_t synchronizationCount = 0;
   std::size_t writtenBytes = 0;
+  double payloadWriteSeconds = 0.0;
+  double synchronizationSeconds = 0.0;
   std::size_t failureCount = 0;
   std::size_t retainedStorageBytes = 0;
 };
