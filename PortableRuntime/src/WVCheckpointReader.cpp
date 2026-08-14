@@ -130,19 +130,30 @@ WVCheckpointStatus readConfiguration(int rootId, WVTransformConstantStratificati
 }
 
 WVCheckpointStatus findStateGroup(const std::vector<GroupRecord>& groups, StateGroupRecord& stateGroup) {
-    static constexpr std::array<const char*, 6> components = {"Ap_real", "Ap_imag", "Am_real", "Am_imag", "A0_real", "A0_imag"};
     std::vector<StateGroupRecord> candidates;
     for (const auto& group : groups) {
-        std::size_t presentCount = 0;
-        for (const char* component : components) {
-            int variableId = -1;
-            bool present = false;
-            const auto result = detail::variableIdIfPresent(group.id, component, variableId, present, group.path);
+        std::size_t completeFamilies = 0;
+        for (const char* family : {"Ap", "Am", "A0"}) {
+            int plainId = -1;
+            int realId = -1;
+            int imagId = -1;
+            bool plain = false;
+            bool real = false;
+            bool imag = false;
+            auto result = detail::variableIdIfPresent(group.id, family, plainId, plain, group.path);
             if (!result) return result;
-            if (present) ++presentCount;
+            result = detail::variableIdIfPresent(group.id, std::string(family) + "_real", realId, real, group.path);
+            if (!result) return result;
+            result = detail::variableIdIfPresent(group.id, std::string(family) + "_imag", imagId, imag, group.path);
+            if (!result) return result;
+            if (plain && (real || imag))
+                return status(WVCheckpointStatusCode::ambiguousState, "A coefficient family cannot contain both a plain-real variable and a real/imaginary pair.", group.path + "/" + family);
+            if (real != imag)
+                return status(WVCheckpointStatusCode::missingComplexPartner, "A complex coefficient family is missing its real or imaginary partner.", group.path + "/" + family);
+            if (plain || (real && imag)) ++completeFamilies;
         }
-        if (presentCount == 0) continue;
-        if (presentCount != components.size()) {
+        if (completeFamilies == 0) continue;
+        if (completeFamilies != 3) {
             return status(WVCheckpointStatusCode::missingComplexPartner, "A checkpoint state group must contain complete Ap, Am, and A0 real/imaginary pairs.", group.path);
         }
         int timeId = -1;
@@ -239,7 +250,37 @@ WVCheckpointStatus readComplexCoefficient(
     int realId = -1;
     int imagId = -1;
     int result = nc_inq_varid(groupId, realName.c_str(), &realId);
-    if (result == NC_ENOTVAR) return status(WVCheckpointStatusCode::missingComplexPartner, "Missing real component '" + realName + "'.", groupPath + "/" + realName);
+    if (result == NC_ENOTVAR) {
+        int plainId = -1;
+        result = nc_inq_varid(groupId, baseName.c_str(), &plainId);
+        if (result == NC_ENOTVAR) return status(WVCheckpointStatusCode::missingComplexPartner, "Missing coefficient '" + baseName + "' and real component '" + realName + "'.", groupPath + "/" + baseName);
+        if (result != NC_NOERR) return detail::netcdfFailure(result, "Coefficient lookup", groupPath + "/" + baseName);
+        nc_type plainType = NC_NAT;
+        std::vector<int> plainDimensions;
+        auto plainStatus = inquireVariable(groupId, plainId, plainType, plainDimensions, groupPath + "/" + baseName);
+        if (!plainStatus) return plainStatus;
+        if (plainType != NC_DOUBLE || plainDimensions.size() != 2)
+            return status(WVCheckpointStatusCode::shapeMismatch, "A plain-real initial coefficient must use double [kl,j] storage.", groupPath + "/" + baseName);
+        const std::array<const char*, 2> expectedNames = {"kl", "j"};
+        const std::array<std::size_t, 2> expectedLengths = {Nkl, Nj};
+        for (std::size_t index = 0; index < plainDimensions.size(); ++index) {
+            std::string name;
+            std::size_t length = 0;
+            plainStatus = dimensionName(groupId, plainDimensions[index], name, length, groupPath + "/" + baseName);
+            if (!plainStatus) return plainStatus;
+            if (name != expectedNames[index] || length != expectedLengths[index])
+                return status(WVCheckpointStatusCode::shapeMismatch, "A plain-real initial coefficient has incompatible dimensions.", groupPath + "/" + baseName);
+        }
+        if (output != nullptr) {
+            std::vector<double> realValues(Nj * Nkl);
+            result = nc_get_var_double(groupId, plainId, realValues.data());
+            if (result != NC_NOERR) return detail::netcdfFailure(result, "Initial coefficient read", groupPath + "/" + baseName);
+            output->resize(realValues.size());
+            for (std::size_t index = 0; index < realValues.size(); ++index)
+                (*output)[index] = {realValues[index], 0.0};
+        }
+        return WVCheckpointStatus::ok();
+    }
     if (result != NC_NOERR) return detail::netcdfFailure(result, "Complex-component lookup", groupPath + "/" + realName);
     result = nc_inq_varid(groupId, imagName.c_str(), &imagId);
     if (result == NC_ENOTVAR) return status(WVCheckpointStatusCode::missingComplexPartner, "Missing imaginary component '" + imagName + "'.", groupPath + "/" + imagName);
@@ -255,7 +296,11 @@ WVCheckpointStatus readComplexCoefficient(
     if (!checkpointStatus) return checkpointStatus;
     if (realType != NC_DOUBLE || imagType != NC_DOUBLE) return status(WVCheckpointStatusCode::typeMismatch, "Complex coefficient components must be double precision.", groupPath + "/" + baseName);
     if (realDimensions != imagDimensions) return status(WVCheckpointStatusCode::shapeMismatch, "Complex coefficient components must have identical dimensions.", groupPath + "/" + baseName);
-    const bool timeSeries = stateCount > 1 || realDimensions.size() == 3;
+    // Linear WaveVortex files keep Ap/Am/A0 as initial-only [kl,j]
+    // variables while the group's time axis continues to grow. Coefficient
+    // cadence is therefore determined by the coefficient rank, not by the
+    // number of output records in the group.
+    const bool timeSeries = realDimensions.size() == 3;
     const std::size_t expectedDimensions = timeSeries ? 3 : 2;
     if (realDimensions.size() != expectedDimensions) return status(WVCheckpointStatusCode::shapeMismatch, "Coefficient '" + baseName + "' must use [kl,j] or [t,kl,j] NetCDF dimensions.", groupPath + "/" + baseName);
 

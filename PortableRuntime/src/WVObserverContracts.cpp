@@ -214,9 +214,32 @@ WVPortableObserverDescriptor::create(const WVPortableObserverRecord &record,
                 return observerKinds.at(identifier) ==
                        WVObserverKind::coefficients;
               });
-          if (!containsCoefficients)
+          const bool containsEulerianCoefficients = std::any_of(
+              group.observerIdentifiers.begin(),
+              group.observerIdentifiers.end(), [&](const auto &identifier) {
+                if (observerKinds.at(identifier) !=
+                    WVObserverKind::eulerianFields)
+                  return false;
+                const auto observer = std::find_if(
+                    record.observers.begin(), record.observers.end(),
+                    [&](const auto &candidate) {
+                      return candidate.identifier == identifier;
+                    });
+                if (observer == record.observers.end())
+                  return false;
+                return std::find(observer->fieldNames.begin(),
+                                 observer->fieldNames.end(), "Ap") !=
+                           observer->fieldNames.end() &&
+                       std::find(observer->fieldNames.begin(),
+                                 observer->fieldNames.end(), "Am") !=
+                           observer->fieldNames.end() &&
+                       std::find(observer->fieldNames.begin(),
+                                 observer->fieldNames.end(), "A0") !=
+                           observer->fieldNames.end();
+              });
+          if (!containsCoefficients && !containsEulerianCoefficients)
             return invalid("A complete coefficient-restart group must contain "
-                           "WVCoefficients.");
+                           "WVCoefficients or Eulerian Ap, Am, and A0.");
         }
       }
       if (!file.groups.empty() && restartGroupCount != 1)

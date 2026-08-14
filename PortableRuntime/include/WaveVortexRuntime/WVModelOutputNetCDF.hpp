@@ -7,15 +7,34 @@
 #include <cstdint>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace wavevortex::runtime {
 
 enum class WVOutputValueType : std::uint8_t { real64, complex64 };
+enum class WVObserverOutputCadence : std::uint8_t { initialOnly, timeSeries };
+
+struct WVObserverOutputAttribute {
+  std::string name;
+  std::string value;
+};
 
 // One derived observation variable declared before any file is created.
 // Dimensions use MATLAB's logical order; the NetCDF adapter reverses them.
 struct WVObserverOutputVariableSpecification {
+  WVObserverOutputVariableSpecification() = default;
+  WVObserverOutputVariableSpecification(
+      std::string identifierValue, std::string nameValue,
+      WVOutputValueType valueTypeValue,
+      std::vector<std::string> dimensionNamesValue,
+      std::vector<std::size_t> dimensionsValue, std::string unitsValue,
+      std::string longNameValue)
+      : identifier(std::move(identifierValue)), name(std::move(nameValue)),
+        valueType(valueTypeValue),
+        dimensionNames(std::move(dimensionNamesValue)),
+        dimensions(std::move(dimensionsValue)), units(std::move(unitsValue)),
+        longName(std::move(longNameValue)) {}
   std::string identifier;
   std::string name;
   WVOutputValueType valueType = WVOutputValueType::real64;
@@ -23,6 +42,8 @@ struct WVObserverOutputVariableSpecification {
   std::vector<std::size_t> dimensions;
   std::string units;
   std::string longName;
+  WVObserverOutputCadence cadence = WVObserverOutputCadence::timeSeries;
+  std::vector<WVObserverOutputAttribute> attributes;
 };
 
 struct WVObserverOutputValueView {
@@ -40,6 +61,12 @@ public:
   virtual WVKernelStatus specifications(
       const WVObserverRecord &observer,
       std::vector<WVObserverOutputVariableSpecification> &output) = 0;
+  virtual WVKernelStatus preflight(const WVCompositeOutputPlan &) {
+    return WVKernelStatus::ok();
+  }
+  virtual WVKernelStatus prepareInitial(const WVState &) {
+    return WVKernelStatus::ok();
+  }
   virtual WVKernelStatus prepare(const WVCompositeOutputEvent &event) = 0;
   virtual WVKernelStatus
   value(const WVObserverRecord &observer,

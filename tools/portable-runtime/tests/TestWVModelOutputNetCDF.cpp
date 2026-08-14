@@ -1,4 +1,7 @@
 #include "WaveVortexRuntime/WVModelOutputNetCDF.hpp"
+#include "WaveVortexRuntime/WVObserverOutputEvaluationService.hpp"
+
+#include "WVReferenceFFTEngine.hpp"
 
 #include <netcdf.h>
 
@@ -299,6 +302,148 @@ void testCreateReadAndAppend() {
           "inspection accepted an incomplete committed output record");
 }
 
+void testLinearInitialCoefficientsAndPassiveFields() {
+  TemporaryDirectory directory;
+  auto checkpoint = checkpointTemplate();
+  checkpoint.state.coefficients.Ap[1] = {1.0, 2.0};
+  checkpoint.state.coefficients.Am[1] = {3.0, -4.0};
+  checkpoint.state.coefficients.A0[1] = {5.0, 6.0};
+  const auto path = directory.path / "linear-passive.nc";
+  auto record = recordFor(checkpoint, path);
+  record.observers.clear();
+  WVObserverRecord fields;
+  fields.identifier = "eulerian-fields-Ap-Am-A0-u";
+  fields.name = "WVEulerianFields";
+  fields.kind = WVObserverKind::eulerianFields;
+  fields.fieldNames = {"Ap", "Am", "A0", "u", "psi"};
+  record.observers.push_back(fields);
+  WVObserverRecord mooring;
+  mooring.identifier = "mooring-central";
+  mooring.name = "central";
+  mooring.kind = WVObserverKind::mooring;
+  mooring.fieldNames = {"u"};
+  mooring.x = {-1.0, checkpoint.configuration.Lx};
+  mooring.y = {checkpoint.configuration.Ly,
+               0.5 * checkpoint.configuration.Ly};
+  record.observers.push_back(mooring);
+  record.outputFiles.front().groups.front().observerIdentifiers =
+      {fields.identifier, mooring.identifier};
+  auto descriptor = descriptorFor(record);
+  WVCompositeStateLayout layout;
+  auto status = WVCompositeStateLayout::create(
+      checkpoint.state.coefficients.shape, descriptor, layout);
+  require(static_cast<bool>(status), status.message);
+  std::unique_ptr<WVObserverOutputEvaluationService> source;
+  status = WVObserverOutputEvaluationService::create(
+      checkpoint.configuration, true, descriptor,
+      std::make_unique<WVReferenceFFTEngine>(), source);
+  require(static_cast<bool>(status), status.message);
+  WVModelOutputNetCDFConfiguration configuration{checkpoint, true};
+  WVModelOutputNetCDFSink sink;
+  auto persistence = WVModelOutputNetCDFSink::createNew(
+      configuration, descriptor, layout, source.get(), sink);
+  require(static_cast<bool>(persistence), persistence.message);
+
+  WVCompositeOutputPlan plan;
+  status = WVCompositeOutputPlan::create(
+      descriptor, checkpoint.state.t, checkpoint.state.t, {}, plan);
+  require(static_cast<bool>(status), status.message);
+  status = sink.preflight(plan);
+  require(static_cast<bool>(status), status.message);
+  const auto planned = plan.event(0);
+  WVCompositeOutputEvent event;
+  event.eventOrdinal = planned.eventOrdinal;
+  event.scheduledTime = planned.scheduledTime;
+  event.state = eventState(checkpoint);
+  event.routes = planned.routes;
+  event.routeCount = planned.routeCount;
+  WVCompositeOutputDeliveryResult delivery;
+  status = sink.deliver(event, planned.routes[0], delivery);
+  require(static_cast<bool>(status), status.message);
+  require(delivery.writeCount == 3,
+          "linear delivery must write Eulerian u, mooring u, and time");
+  persistence = sink.close();
+  require(static_cast<bool>(persistence), persistence.message);
+
+  int root = -1;
+  require(nc_open(path.c_str(), NC_NOWRITE, &root) == NC_NOERR,
+          "open linear passive output");
+  int group = -1;
+  require(nc_inq_ncid(root, "wave-vortex", &group) == NC_NOERR,
+          "locate linear passive group");
+  int variable = -1;
+  require(nc_inq_varid(group, "Ap_real", &variable) == NC_NOERR,
+          "locate initial coefficient");
+  int rank = 0;
+  require(nc_inq_varndims(group, variable, &rank) == NC_NOERR && rank == 2,
+          "linear coefficient must be initial-only [kl,j]");
+  require(nc_inq_varid(group, "u", &variable) == NC_NOERR,
+          "locate Eulerian u");
+  require(nc_inq_varndims(group, variable, &rank) == NC_NOERR && rank == 4,
+          "linear u must remain [t,z,y,x]");
+  require(nc_inq_varid(group, "psi", &variable) == NC_NOERR &&
+              nc_inq_varndims(group, variable, &rank) == NC_NOERR &&
+              rank == 3,
+          "linear psi must remain initial-only [z,y,x]");
+  require(nc_inq_varid(group, "central_u", &variable) == NC_NOERR &&
+              nc_inq_varndims(group, variable, &rank) == NC_NOERR &&
+              rank == 3,
+          "mooring field must use [t,id,z] NetCDF order");
+  require(nc_inq_varid(group, "central_x", &variable) == NC_NOERR,
+          "mooring x coordinate is absent");
+  std::vector<double> x(2);
+  require(nc_get_var_double(group, variable, x.data()) == NC_NOERR &&
+              x[0] == checkpoint.configuration.Lx - 1.0 && x[1] == 0.0,
+          "mooring periodic x coordinates changed");
+  require(nc_close(root) == NC_NOERR, "close linear passive output");
+
+  WVModelOutputNetCDFInspection inspection;
+  persistence = WVModelOutputNetCDFSink::inspect({path.string()}, inspection);
+  require(static_cast<bool>(persistence), persistence.message);
+  require(inspection.latestRestart.state.coefficients.Ap[1].real == 1.0 &&
+              inspection.latestRestart.state.coefficients.Ap[1].imag == 2.0,
+          "linear initial coefficient did not round-trip");
+
+  auto appendDescriptor = descriptorFor(inspection.observerRecord);
+  std::unique_ptr<WVObserverOutputEvaluationService> appendSource;
+  status = WVObserverOutputEvaluationService::create(
+      inspection.latestRestart.configuration, true, appendDescriptor,
+      std::make_unique<WVReferenceFFTEngine>(), appendSource);
+  require(static_cast<bool>(status), status.message);
+  WVModelOutputNetCDFConfiguration appendConfiguration{
+      inspection.latestRestart, true};
+  WVModelOutputNetCDFSink append;
+  persistence = WVModelOutputNetCDFSink::openAppend(
+      appendConfiguration, appendDescriptor, inspection.stateLayout,
+      appendSource.get(), append);
+  require(static_cast<bool>(persistence), persistence.message);
+  WVCompositeOutputPlan appendPlan;
+  status = WVCompositeOutputPlan::create(
+      appendDescriptor, inspection.latestRestart.state.t,
+      inspection.latestRestart.state.t + 1.0, append.progress(), appendPlan);
+  require(static_cast<bool>(status) && appendPlan.eventCount() == 1,
+          "linear append plan mismatch");
+  status = append.preflight(appendPlan);
+  require(static_cast<bool>(status), status.message);
+  const auto next = appendPlan.event(0);
+  event.eventOrdinal = next.eventOrdinal;
+  event.scheduledTime = next.scheduledTime;
+  event.state = eventState(inspection.latestRestart);
+  event.routes = next.routes;
+  event.routeCount = next.routeCount;
+  delivery = {};
+  status = append.deliver(event, next.routes[0], delivery);
+  require(static_cast<bool>(status), status.message);
+  persistence = append.close();
+  require(static_cast<bool>(persistence), persistence.message);
+  WVCheckpoint reread;
+  persistence = WVCheckpointReader::read(path.string(), reread);
+  require(static_cast<bool>(persistence), persistence.message);
+  require(reread.state.t == next.scheduledTime &&
+              reread.state.coefficients.Ap[1].imag == 2.0,
+          "linear append changed initial coefficients or latest time");
+}
+
 void testTransactionalRefusal() {
   TemporaryDirectory directory;
   auto checkpoint = checkpointTemplate();
@@ -520,14 +665,101 @@ void testOptionalMatlabFixture() {
           "runtime did not append the next MATLAB output time");
 }
 
+void testOptionalMatlabLinearFixture() {
+  const char *path = std::getenv("WV_MATLAB_LINEAR_OUTPUT_FIXTURE");
+  if (path == nullptr)
+    return;
+  WVModelOutputNetCDFInspection inspection;
+  auto persistence = WVModelOutputNetCDFSink::inspect({path}, inspection);
+  require(static_cast<bool>(persistence),
+          persistence.message + " at " + persistence.location);
+  require(inspection.observerRecord.observers.size() == 1 &&
+              inspection.observerRecord.observers.front().kind ==
+                  WVObserverKind::eulerianFields,
+          "MATLAB linear Eulerian observer was not reconstructed");
+  require(inspection.latestRestart.state.coefficients.Ap.size() ==
+              inspection.latestRestart.state.coefficients.shape.elementCount(),
+          "MATLAB linear coefficients were not reconstructed");
+
+  TemporaryDirectory directory;
+  const auto appendPath = directory.path / "matlab-linear-append.nc";
+  std::filesystem::copy_file(path, appendPath);
+  inspection.observerRecord.outputFiles.front().destination =
+      appendPath.string();
+  auto descriptor = descriptorFor(inspection.observerRecord);
+  std::unique_ptr<WVObserverOutputEvaluationService> source;
+  auto status = WVObserverOutputEvaluationService::create(
+      inspection.latestRestart.configuration, true, descriptor,
+      std::make_unique<WVReferenceFFTEngine>(), source);
+  require(static_cast<bool>(status), status.message);
+  WVModelOutputNetCDFSink sink;
+  persistence = WVModelOutputNetCDFSink::openAppend(
+      {inspection.latestRestart, true}, descriptor, inspection.stateLayout,
+      source.get(), sink);
+  require(static_cast<bool>(persistence), persistence.message);
+  WVCompositeOutputPlan plan;
+  status = WVCompositeOutputPlan::create(
+      descriptor, inspection.latestRestart.state.t,
+      inspection.latestRestart.state.t + 1.0, sink.progress(), plan);
+  require(static_cast<bool>(status) && plan.eventCount() == 1,
+          "MATLAB linear append plan mismatch");
+  status = sink.preflight(plan);
+  require(static_cast<bool>(status), status.message);
+  const auto planned = plan.event(0);
+  WVCompositeOutputEvent event;
+  event.eventOrdinal = planned.eventOrdinal;
+  event.scheduledTime = planned.scheduledTime;
+  event.state = eventState(inspection.latestRestart);
+  event.routes = planned.routes;
+  event.routeCount = planned.routeCount;
+  WVCompositeOutputDeliveryResult delivery;
+  status = sink.deliver(event, planned.routes[0], delivery);
+  require(static_cast<bool>(status), status.message);
+  persistence = sink.close();
+  require(static_cast<bool>(persistence), persistence.message);
+  WVCheckpoint appended;
+  persistence = WVCheckpointReader::read(appendPath.string(), appended);
+  require(static_cast<bool>(persistence) &&
+              appended.state.t == planned.scheduledTime,
+          "MATLAB linear file did not append");
+}
+
+void testOptionalMatlabPassiveFixture() {
+  const char *path = std::getenv("WV_MATLAB_PASSIVE_OUTPUT_FIXTURE");
+  if (path == nullptr)
+    return;
+  WVModelOutputNetCDFInspection inspection;
+  const auto persistence =
+      WVModelOutputNetCDFSink::inspect({path}, inspection);
+  require(static_cast<bool>(persistence),
+          persistence.message + " at " + persistence.location);
+  require(inspection.observerRecord.observers.size() == 2,
+          "MATLAB passive observer graph was not reconstructed");
+  const auto coefficients = std::count_if(
+      inspection.observerRecord.observers.begin(),
+      inspection.observerRecord.observers.end(), [](const auto &observer) {
+        return observer.kind == WVObserverKind::coefficients;
+      });
+  const auto eulerian = std::count_if(
+      inspection.observerRecord.observers.begin(),
+      inspection.observerRecord.observers.end(), [](const auto &observer) {
+        return observer.kind == WVObserverKind::eulerianFields;
+      });
+  require(coefficients == 1 && eulerian == 1,
+          "MATLAB coefficient and Eulerian metadata changed");
+}
+
 } // namespace
 
 int main() {
   try {
     testCreateReadAndAppend();
+    testLinearInitialCoefficientsAndPassiveFields();
     testTransactionalRefusal();
     testMultipleFilesGroupsAndSharedState();
     testOptionalMatlabFixture();
+    testOptionalMatlabLinearFixture();
+    testOptionalMatlabPassiveFixture();
     std::cout << "PASS: MATLAB-compatible model-output persistence\n";
     return 0;
   } catch (const std::exception &exception) {

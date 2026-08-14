@@ -450,6 +450,52 @@ WVCheckpointStatus parseObserver(int outputGroup, int metadataGroup,
       if (!result)
         return result;
     }
+  } else if (observer.kind == WVObserverKind::eulerianFields) {
+    const bool hasCompleteCoefficients =
+        std::find(observer.fieldNames.begin(), observer.fieldNames.end(),
+                  "Ap") != observer.fieldNames.end() &&
+        std::find(observer.fieldNames.begin(), observer.fieldNames.end(),
+                  "Am") != observer.fieldNames.end() &&
+        std::find(observer.fieldNames.begin(), observer.fieldNames.end(),
+                  "A0") != observer.fieldNames.end();
+    if (hasCompleteCoefficients) {
+      std::vector<std::string> names;
+      std::vector<std::size_t> dimensions;
+      int coefficient = -1;
+      bool paired = false;
+      result = detail::variableIdIfPresent(outputGroup, "Ap_real", coefficient,
+                                           paired, outputPath);
+      if (!result)
+        return result;
+      result = variableShape(outputGroup, paired ? "Ap_real" : "Ap", names,
+                             dimensions, outputPath);
+      if (!result)
+        return result;
+      if ((names.size() != 2 && names.size() != 3) ||
+          names[names.size() - 2] != "kl" || names.back() != "j")
+        return failure(WVCheckpointStatusCode::shapeMismatch,
+                       "Eulerian coefficients must use [kl,j] or [t,kl,j] "
+                       "NetCDF order.",
+                       outputPath + (paired ? "/Ap_real" : "/Ap"));
+      const std::vector<std::size_t> logical{
+          dimensions.back(), dimensions[dimensions.size() - 2]};
+      for (const char *name : {"Ap", "Am", "A0"}) {
+        const auto existing = std::find_if(
+            portable.stateBlocks.begin(), portable.stateBlocks.end(),
+            [&](const auto &block) { return block.identifier == name; });
+        const double tolerance = existing == portable.stateBlocks.end()
+                                     ? 1e-6
+                                     : existing->absoluteTolerance;
+        result = mergeStateBlock(
+            portable,
+            {name, WVStateScalarType::complex64, logical,
+             WVToleranceKind::coefficientEnergyScaled, tolerance,
+             WVStateOwnership::integratorOwned,
+             WVRestartRequirement::requiredDynamicState});
+        if (!result)
+          return result;
+      }
+    }
   } else if (observer.kind == WVObserverKind::lagrangianParticles) {
     result = detail::readLogicalScalar(metadataGroup, "isXYOnly",
                                        observer.isXYOnly, outputPath);
@@ -732,6 +778,12 @@ WVCheckpointStatus parseOutputFile(const std::string &path,
         groupId, "Ap_real", coefficientVariable, hasCoefficients, groupPath);
     if (!result)
       return result;
+    if (!hasCoefficients) {
+      result = detail::variableIdIfPresent(groupId, "Ap", coefficientVariable,
+                                           hasCoefficients, groupPath);
+      if (!result)
+        return result;
+    }
     group.containsCompleteCoefficientRestart = hasCoefficients;
     restartGroupCount += hasCoefficients ? 1 : 0;
 
@@ -752,15 +804,55 @@ WVCheckpointStatus parseOutputFile(const std::string &path,
                                  groupPath + "/observingSystems");
     if (!result)
       return result;
-    for (const int observerGroup : observers) {
+    std::string rootObserverClass;
+    result = optionalTextAttribute(metadataRoot, "AnnotatedClass",
+                                   rootObserverClass, present,
+                                   groupPath + "/observingSystems");
+    if (!result)
+      return result;
+    if (present) {
       std::string observerIdentifier;
-      result =
-          parseObserver(groupId, observerGroup, groupPath + "/observingSystems",
-                        portable, observerIdentifier);
+      result = parseObserver(groupId, metadataRoot,
+                             groupPath + "/observingSystems", portable,
+                             observerIdentifier);
       if (!result)
         return result;
       group.observerIdentifiers.push_back(std::move(observerIdentifier));
     }
+    std::map<int, std::string> parsedIdentifiers;
+    const auto parseOne = [&](int observerGroup) {
+      std::string observerIdentifier;
+      auto observerResult = parseObserver(
+          groupId, observerGroup, groupPath + "/observingSystems", portable,
+          observerIdentifier);
+      if (observerResult)
+        parsedIdentifiers.emplace(observerGroup, std::move(observerIdentifier));
+      return observerResult;
+    };
+    std::set<int> parsedObservers;
+    for (const int observerGroup : observers) {
+      std::string observerClass;
+      result = optionalTextAttribute(observerGroup, "AnnotatedClass",
+                                     observerClass, present,
+                                     groupPath + "/observingSystems");
+      if (!result)
+        return result;
+      if (present && observerClass == "WVCoefficients") {
+        result = parseOne(observerGroup);
+        if (!result)
+          return result;
+        parsedObservers.insert(observerGroup);
+      }
+    }
+    for (const int observerGroup : observers) {
+      if (parsedObservers.find(observerGroup) != parsedObservers.end())
+        continue;
+      result = parseOne(observerGroup);
+      if (!result)
+        return result;
+    }
+    for (const int observerGroup : observers)
+      group.observerIdentifiers.push_back(parsedIdentifiers.at(observerGroup));
 
     WVOutputScheduleOrdinal ordinal = WVNoCommittedOutputOrdinal;
     result =
@@ -792,6 +884,12 @@ public:
     int imagId = -1;
   };
 
+  struct StaticVariable {
+    std::string name;
+    std::vector<double> values;
+    int id = -1;
+  };
+
   struct DynamicVariable {
     std::string blockIdentifier;
     std::string name;
@@ -809,6 +907,7 @@ public:
     std::array<int, 3> coefficientImag{{-1, -1, -1}};
     std::vector<DynamicVariable> dynamicVariables;
     std::vector<Variable> derivedVariables;
+    std::vector<StaticVariable> staticVariables;
     std::size_t recordCount = 0;
     WVOutputScheduleOrdinal committedOrdinal = WVNoCommittedOutputOrdinal;
   };
@@ -900,9 +999,10 @@ public:
         coefficientTolerances[coefficientIndex++] = block.absoluteTolerance;
       }
     }
-    if (coefficientIndex != coefficientTolerances.size() ||
-        coefficientTolerances[0] != coefficientTolerances[1] ||
-        coefficientTolerances[0] != coefficientTolerances[2])
+    if (!configuration.isDynamicsLinear &&
+        (coefficientIndex != coefficientTolerances.size() ||
+         coefficientTolerances[0] != coefficientTolerances[1] ||
+         coefficientTolerances[0] != coefficientTolerances[2]))
       return failure(WVCheckpointStatusCode::schemaMismatch,
                      "Ap, Am, and A0 must use one common absTolerance.",
                      "/observingSystems/WVCoefficients/absTolerance");
@@ -927,6 +1027,34 @@ public:
         return failure(WVCheckpointStatusCode::schemaMismatch,
                        "Each output file requires one complete restart group.",
                        file.destination);
+      bool hasCoefficientObserver = false;
+      bool hasEulerianCoefficientObserver = false;
+      for (const auto &identifier : restart->observerIdentifiers) {
+        const auto *record = observer(identifier);
+        if (record == nullptr)
+          continue;
+        hasCoefficientObserver =
+            hasCoefficientObserver ||
+            record->kind == WVObserverKind::coefficients;
+        hasEulerianCoefficientObserver =
+            hasEulerianCoefficientObserver ||
+            (record->kind == WVObserverKind::eulerianFields &&
+             std::find(record->fieldNames.begin(), record->fieldNames.end(),
+                       "Ap") != record->fieldNames.end() &&
+             std::find(record->fieldNames.begin(), record->fieldNames.end(),
+                       "Am") != record->fieldNames.end() &&
+             std::find(record->fieldNames.begin(), record->fieldNames.end(),
+                       "A0") != record->fieldNames.end());
+      }
+      if ((configuration.isDynamicsLinear &&
+           !hasEulerianCoefficientObserver) ||
+          (!configuration.isDynamicsLinear && !hasCoefficientObserver))
+        return failure(
+            WVCheckpointStatusCode::schemaMismatch,
+            configuration.isDynamicsLinear
+                ? "Linear output requires initial Eulerian Ap, Am, and A0."
+                : "Nonlinear output requires WVCoefficients.",
+            file.destination + ":/" + restart->name);
       std::set<std::string> restartBlocks{"Ap", "Am", "A0"};
       for (const auto &observerIdentifier : restart->observerIdentifiers) {
         const auto *record = observer(observerIdentifier);
@@ -1117,9 +1245,39 @@ public:
       for (std::size_t family = 0; family < 3; ++family) {
         const std::string name =
             std::array<const char *, 3>{{"Ap", "Am", "A0"}}[family];
-        result = detail::defineComplexVariable(
-            group.id, name,
-            {timeDimension, rootDimensions[1], rootDimensions[0]}, path);
+        const std::vector<int> coefficientDimensions =
+            configuration.isDynamicsLinear
+                ? std::vector<int>{rootDimensions[1], rootDimensions[0]}
+                : std::vector<int>{timeDimension, rootDimensions[1],
+                                   rootDimensions[0]};
+        result = detail::defineComplexVariable(group.id, name,
+                                               coefficientDimensions, path);
+        if (!result)
+          return result;
+        int real = -1;
+        int imag = -1;
+        result = detail::checkedNetCDF(
+            nc_inq_varid(group.id, (name + "_real").c_str(), &real),
+            "Coefficient-variable lookup", path + "/" + name + "_real");
+        if (result)
+          result = detail::checkedNetCDF(
+              nc_inq_varid(group.id, (name + "_imag").c_str(), &imag),
+              "Coefficient-variable lookup", path + "/" + name + "_imag");
+        const std::string units = name == "A0" ? "m2 s-1" : "m s-1";
+        const std::string longName =
+            name == "Ap"
+                ? "positive wave coefficients at reference time t0"
+                : name == "Am"
+                      ? "negative wave coefficients at reference time t0"
+                      : "geostrophic coefficients at reference time t0";
+        for (const int variable : {real, imag}) {
+          if (result)
+            result = detail::putTextAttribute(group.id, variable, "units",
+                                              units, path + "/" + name);
+          if (result)
+            result = detail::putTextAttribute(group.id, variable, "long_name",
+                                              longName, path + "/" + name);
+        }
         if (!result)
           return result;
       }
@@ -1132,6 +1290,8 @@ public:
     if (!result)
       return result;
 
+    std::map<std::string, WVObserverOutputVariableSpecification>
+        definedDerivedVariables;
     for (std::size_t ordinal = 0;
          ordinal < group.record.observerIdentifiers.size(); ++ordinal) {
       const auto *record = observer(group.record.observerIdentifiers[ordinal]);
@@ -1143,7 +1303,86 @@ public:
       if (!result)
         return result;
 
-      if (record->kind == WVObserverKind::lagrangianParticles) {
+      if (record->kind == WVObserverKind::mooring) {
+        int mooringDimension = -1;
+        int verticalDimension = -1;
+        const std::string idName = record->name + "_id";
+        const std::string zName = record->name + "_z";
+        result = detail::checkedNetCDF(
+            nc_def_dim(group.id, idName.c_str(), record->x.size(),
+                       &mooringDimension),
+            "Mooring dimension definition", path + "/" + idName);
+        if (!result)
+          return result;
+        result = detail::checkedNetCDF(
+            nc_def_dim(group.id, zName.c_str(),
+                       configuration.checkpointTemplate.configuration.Nz,
+                       &verticalDimension),
+            "Mooring vertical-dimension definition", path + "/" + zName);
+        if (!result)
+          return result;
+        auto addStatic = [&](const std::string &name,
+                                   std::vector<int> dimensions,
+                                   std::vector<double> values,
+                                   const std::string &units,
+                                   const std::string &longName) {
+          StaticVariable variable;
+          variable.name = name;
+          variable.values = std::move(values);
+          auto definition = detail::defineDoubleVariable(
+              group.id, name, dimensions, variable.id, path);
+          if (!definition)
+            return definition;
+          definition = detail::putTextAttribute(group.id, variable.id, "units",
+                                                units, path + "/" + name);
+          if (!definition)
+            return definition;
+          if (!longName.empty())
+            definition = detail::putTextAttribute(
+                group.id, variable.id, "long_name", longName,
+                path + "/" + name);
+          if (definition)
+            group.staticVariables.push_back(std::move(variable));
+          return definition;
+        };
+        std::vector<double> ids(record->x.size());
+        for (std::size_t index = 0; index < ids.size(); ++index)
+          ids[index] = static_cast<double>(index + 1);
+        result = addStatic(idName, {mooringDimension}, std::move(ids),
+                           "unitless id number", "");
+        if (!result)
+          return result;
+        std::vector<double> z(
+            configuration.checkpointTemplate.configuration.Nz);
+        const auto &model = configuration.checkpointTemplate.configuration;
+        const double dz = model.Lz / static_cast<double>(model.Nz - 1);
+        for (std::size_t index = 0; index < z.size(); ++index)
+          z[index] = -model.Lz + static_cast<double>(index) * dz;
+        result = addStatic(zName, {verticalDimension}, std::move(z), "m",
+                           "z-positions of mooring observations");
+        if (!result)
+          return result;
+        std::vector<double> x = record->x;
+        std::vector<double> y = record->y;
+        for (auto &value : x) {
+          value = std::fmod(value, model.Lx);
+          if (value < 0.0)
+            value += model.Lx;
+        }
+        for (auto &value : y) {
+          value = std::fmod(value, model.Ly);
+          if (value < 0.0)
+            value += model.Ly;
+        }
+        result = addStatic(record->name + "_x", {mooringDimension},
+                           std::move(x), "m", "x position of mooring");
+        if (!result)
+          return result;
+        result = addStatic(record->name + "_y", {mooringDimension},
+                           std::move(y), "m", "y position of mooring");
+        if (!result)
+          return result;
+      } else if (record->kind == WVObserverKind::lagrangianParticles) {
         int particleDimension = -1;
         const std::string dimensionName = record->name + "_id";
         result = detail::checkedNetCDF(
@@ -1231,7 +1470,23 @@ public:
           return failure(WVCheckpointStatusCode::schemaMismatch,
                          "Observer output variable specification is invalid.",
                          path);
-        std::vector<int> dimensions{timeDimension};
+        const auto existing = definedDerivedVariables.find(specification.name);
+        if (existing != definedDerivedVariables.end()) {
+          const auto &prior = existing->second;
+          if (prior.valueType != specification.valueType ||
+              prior.cadence != specification.cadence ||
+              prior.dimensionNames != specification.dimensionNames ||
+              prior.dimensions != specification.dimensions)
+            return failure(WVCheckpointStatusCode::schemaMismatch,
+                           "Observers declare incompatible variables with the "
+                           "same name.",
+                           path + "/" + specification.name);
+          continue;
+        }
+        definedDerivedVariables.emplace(specification.name, specification);
+        std::vector<int> dimensions;
+        if (specification.cadence == WVObserverOutputCadence::timeSeries)
+          dimensions.push_back(timeDimension);
         for (std::size_t reverse = specification.dimensions.size(); reverse > 0;
              --reverse) {
           const auto logicalIndex = reverse - 1;
@@ -1261,6 +1516,52 @@ public:
           if (!result)
             return result;
         }
+        const auto applyAttributes = [&](int variableId,
+                                         const std::string &variablePath) {
+          auto attributeResult = WVCheckpointStatus::ok();
+          if (!specification.units.empty())
+            attributeResult = detail::putTextAttribute(
+                group.id, variableId, "units", specification.units,
+                variablePath);
+          if (attributeResult && !specification.longName.empty())
+            attributeResult = detail::putTextAttribute(
+                group.id, variableId, "long_name", specification.longName,
+                variablePath);
+          for (const auto &attribute : specification.attributes) {
+            if (!attributeResult)
+              break;
+            attributeResult = detail::putTextAttribute(
+                group.id, variableId, attribute.name.c_str(), attribute.value,
+                variablePath);
+          }
+          return attributeResult;
+        };
+        if (specification.valueType == WVOutputValueType::complex64) {
+          int real = -1;
+          int imag = -1;
+          result = detail::checkedNetCDF(
+              nc_inq_varid(group.id, (specification.name + "_real").c_str(),
+                           &real),
+              "Observer-variable lookup", path);
+          if (result)
+            result = detail::checkedNetCDF(
+                nc_inq_varid(group.id,
+                             (specification.name + "_imag").c_str(), &imag),
+                "Observer-variable lookup", path);
+          variable.realId = real;
+          variable.imagId = imag;
+          if (result)
+            result = applyAttributes(real,
+                                     path + "/" + specification.name + "_real");
+          if (result)
+            result = applyAttributes(imag,
+                                     path + "/" + specification.name + "_imag");
+        } else {
+          result = applyAttributes(variable.realId,
+                                   path + "/" + specification.name);
+        }
+        if (!result)
+          return result;
         group.derivedVariables.push_back(std::move(variable));
       }
     }
@@ -1342,7 +1643,113 @@ public:
     return WVCheckpointStatus::ok();
   }
 
+  WVCheckpointStatus writeInitialAndStaticValues(File &file) {
+    const auto coefficientCount =
+        configuration.checkpointTemplate.state.coefficients.shape.elementCount();
+    for (auto &group : file.groups) {
+      const std::string path = "/" + group.record.name;
+      for (const auto &variable : group.staticVariables) {
+        const auto result = detail::checkedNetCDF(
+            nc_put_var_double(group.id, variable.id, variable.values.data()),
+            "Static observer-variable write", path + "/" + variable.name);
+        if (!result)
+          return result;
+      }
+      if (group.record.containsCompleteCoefficientRestart &&
+          configuration.isDynamicsLinear) {
+        const std::array<const WVComplex64 *, 3> values{
+            configuration.checkpointTemplate.state.coefficients.Ap.data(),
+            configuration.checkpointTemplate.state.coefficients.Am.data(),
+            configuration.checkpointTemplate.state.coefficients.A0.data()};
+        for (std::size_t family = 0; family < 3; ++family) {
+          const std::string name =
+              std::array<const char *, 3>{{"Ap", "Am", "A0"}}[family];
+          int real = -1;
+          int imag = -1;
+          auto result = detail::checkedNetCDF(
+              nc_inq_varid(group.id, (name + "_real").c_str(), &real),
+              "Initial coefficient-variable lookup", path + "/" + name);
+          if (result)
+            result = detail::checkedNetCDF(
+                nc_inq_varid(group.id, (name + "_imag").c_str(), &imag),
+                "Initial coefficient-variable lookup", path + "/" + name);
+          if (!result)
+            return result;
+          std::vector<double> realValues(coefficientCount);
+          std::vector<double> imaginaryValues(coefficientCount);
+          for (std::size_t index = 0; index < coefficientCount; ++index) {
+            realValues[index] = values[family][index].real;
+            imaginaryValues[index] = values[family][index].imag;
+          }
+          result = detail::checkedNetCDF(
+              nc_put_var_double(group.id, real, realValues.data()),
+              "Initial coefficient write", path + "/" + name + "_real");
+          if (result)
+            result = detail::checkedNetCDF(
+                nc_put_var_double(group.id, imag, imaginaryValues.data()),
+                "Initial coefficient write", path + "/" + name + "_imag");
+          if (!result)
+            return result;
+        }
+      }
+      for (const auto &variable : group.derivedVariables) {
+        if (variable.specification.cadence !=
+            WVObserverOutputCadence::initialOnly)
+          continue;
+        const auto *record = observer(variable.observerIdentifier);
+        WVObserverOutputValueView value;
+        const auto status = sampleSource->value(
+            *record, variable.specification, value);
+        if (!status)
+          return failure(WVCheckpointStatusCode::unsupportedObserver,
+                         status.message,
+                         path + "/" + variable.specification.name);
+        const auto expected = product(variable.specification.dimensions);
+        if (value.elementCount != expected ||
+            value.valueType != variable.specification.valueType)
+          return failure(WVCheckpointStatusCode::shapeMismatch,
+                         "Initial observer sample does not match its schema.",
+                         path + "/" + variable.specification.name);
+        if (value.valueType == WVOutputValueType::real64) {
+          const auto result = detail::checkedNetCDF(
+              nc_put_var_double(group.id, variable.realId, value.realData),
+              "Initial observer-variable write",
+              path + "/" + variable.specification.name);
+          if (!result)
+            return result;
+        } else {
+          std::vector<double> realValues(expected);
+          std::vector<double> imaginaryValues(expected);
+          for (std::size_t index = 0; index < expected; ++index) {
+            realValues[index] = value.complexData[index].real;
+            imaginaryValues[index] = value.complexData[index].imag;
+          }
+          auto result = detail::checkedNetCDF(
+              nc_put_var_double(group.id, variable.realId, realValues.data()),
+              "Initial observer-variable write",
+              path + "/" + variable.specification.name + "_real");
+          if (result)
+            result = detail::checkedNetCDF(
+                nc_put_var_double(group.id, variable.imagId,
+                                  imaginaryValues.data()),
+                "Initial observer-variable write",
+                path + "/" + variable.specification.name + "_imag");
+          if (!result)
+            return result;
+        }
+      }
+    }
+    return WVCheckpointStatus::ok();
+  }
+
   WVCheckpointStatus stageFiles() {
+    if (sampleSource != nullptr) {
+      const auto status = sampleSource->prepareInitial(
+          configuration.checkpointTemplate.state.view());
+      if (!status)
+        return failure(WVCheckpointStatusCode::unsupportedObserver,
+                       status.message, "/observingSystems");
+    }
     files.clear();
     files.reserve(descriptorRecord.outputFiles.size());
     for (const auto &record : descriptorRecord.outputFiles) {
@@ -1394,6 +1801,9 @@ public:
       if (!result)
         return result;
       result = writeObserverMetadata(staged.id, staged);
+      if (!result)
+        return result;
+      result = writeInitialAndStaticValues(staged);
       if (!result)
         return result;
       result = detail::checkedNetCDF(nc_sync(staged.id),
@@ -1504,6 +1914,17 @@ public:
                            &group.coefficientReal[family]),
               "Coefficient-variable lookup",
               "/" + group.record.name + "/" + name + "_real");
+          if (!result && configuration.isDynamicsLinear) {
+            result = detail::checkedNetCDF(
+                nc_inq_varid(group.id, name.c_str(),
+                             &group.coefficientReal[family]),
+                "Initial coefficient-variable lookup",
+                "/" + group.record.name + "/" + name);
+            group.coefficientImag[family] = -1;
+            if (!result)
+              return result;
+            continue;
+          }
           if (!result)
             return result;
           result = detail::checkedNetCDF(
@@ -1522,6 +1943,25 @@ public:
             "/" + group.record.name + "/" + dynamic.name);
         if (!result)
           return result;
+      }
+      for (auto &variable : group.staticVariables) {
+        result = detail::checkedNetCDF(
+            nc_inq_varid(group.id, variable.name.c_str(), &variable.id),
+            "Static observer-variable lookup",
+            "/" + group.record.name + "/" + variable.name);
+        if (!result)
+          return result;
+        std::vector<double> observed(variable.values.size());
+        result = detail::checkedNetCDF(
+            nc_get_var_double(group.id, variable.id, observed.data()),
+            "Static observer-variable read",
+            "/" + group.record.name + "/" + variable.name);
+        if (!result)
+          return result;
+        if (observed != variable.values)
+          return failure(WVCheckpointStatusCode::appendConflict,
+                         "Static observer coordinates changed.",
+                         "/" + group.record.name + "/" + variable.name);
       }
       for (auto &variable : group.derivedVariables) {
         if (variable.specification.valueType == WVOutputValueType::complex64) {
@@ -1543,6 +1983,133 @@ public:
                            &variable.realId),
               "Observer-variable lookup", "/" + group.record.name);
         }
+        if (!result)
+          return result;
+        const auto validateComponent = [&](int variableId,
+                                           const std::string &variableName) {
+          int rank = 0;
+          auto contract = detail::checkedNetCDF(
+              nc_inq_varndims(group.id, variableId, &rank),
+              "Observer-variable rank inspection",
+              "/" + group.record.name + "/" + variableName);
+          if (!contract)
+            return contract;
+          const std::size_t expectedRank =
+              variable.specification.dimensionNames.size() +
+              (variable.specification.cadence ==
+                       WVObserverOutputCadence::timeSeries
+                   ? 1
+                   : 0);
+          if (static_cast<std::size_t>(rank) != expectedRank)
+            return failure(WVCheckpointStatusCode::appendConflict,
+                           "Observer-variable cadence or rank changed.",
+                           "/" + group.record.name + "/" + variableName);
+          std::vector<int> dimensions(expectedRank);
+          if (rank > 0) {
+            contract = detail::checkedNetCDF(
+                nc_inq_vardimid(group.id, variableId, dimensions.data()),
+                "Observer-variable dimension inspection",
+                "/" + group.record.name + "/" + variableName);
+            if (!contract)
+              return contract;
+          }
+          std::vector<std::string> expectedNames;
+          std::vector<std::size_t> expectedLengths;
+          if (variable.specification.cadence ==
+              WVObserverOutputCadence::timeSeries) {
+            expectedNames.push_back("t");
+            expectedLengths.push_back(group.recordCount);
+          }
+          for (std::size_t reverse =
+                   variable.specification.dimensionNames.size();
+               reverse > 0; --reverse) {
+            expectedNames.push_back(
+                variable.specification.dimensionNames[reverse - 1]);
+            expectedLengths.push_back(
+                variable.specification.dimensions[reverse - 1]);
+          }
+          for (std::size_t index = 0; index < dimensions.size(); ++index) {
+            char name[NC_MAX_NAME + 1] = {};
+            std::size_t length = 0;
+            contract = detail::checkedNetCDF(
+                nc_inq_dim(group.id, dimensions[index], name, &length),
+                "Observer-variable dimension inspection",
+                "/" + group.record.name + "/" + variableName);
+            if (!contract)
+              return contract;
+            if (expectedNames[index] != name ||
+                ((index != 0 || expectedNames[index] != "t") &&
+                 expectedLengths[index] != length))
+              return failure(WVCheckpointStatusCode::appendConflict,
+                             "Observer-variable dimensions changed.",
+                             "/" + group.record.name + "/" + variableName);
+          }
+          const auto requireAttribute = [&](const std::string &name,
+                                            const std::string &expected) {
+            if (expected.empty())
+              return WVCheckpointStatus::ok();
+            std::size_t length = 0;
+            auto attributeStatus = detail::checkedNetCDF(
+                nc_inq_attlen(group.id, variableId, name.c_str(), &length),
+                "Observer-variable attribute inspection",
+                "/" + group.record.name + "/" + variableName + "/@" +
+                    name);
+            if (!attributeStatus)
+              return attributeStatus;
+            std::string observed(length, '\0');
+            attributeStatus = detail::checkedNetCDF(
+                nc_get_att_text(group.id, variableId, name.c_str(),
+                                observed.data()),
+                "Observer-variable attribute read",
+                "/" + group.record.name + "/" + variableName + "/@" +
+                    name);
+            if (!attributeStatus)
+              return attributeStatus;
+            if (observed != expected)
+              return failure(WVCheckpointStatusCode::appendConflict,
+                             "Observer-variable metadata changed.",
+                             "/" + group.record.name + "/" + variableName +
+                                 "/@" + name);
+            return WVCheckpointStatus::ok();
+          };
+          contract = requireAttribute("units", variable.specification.units);
+          if (contract)
+            contract =
+                requireAttribute("long_name", variable.specification.longName);
+          for (const auto &attribute : variable.specification.attributes) {
+            if (!contract)
+              break;
+            contract = requireAttribute(attribute.name, attribute.value);
+          }
+          if (!contract)
+            return contract;
+          if (variable.specification.cadence ==
+              WVObserverOutputCadence::initialOnly) {
+            const auto count = product(variable.specification.dimensions);
+            std::vector<double> values(count);
+            contract = detail::checkedNetCDF(
+                nc_get_var_double(group.id, variableId, values.data()),
+                "Initial observer-variable read",
+                "/" + group.record.name + "/" + variableName);
+            if (!contract)
+              return contract;
+            if (std::find(values.begin(), values.end(), NC_FILL_DOUBLE) !=
+                values.end())
+              return failure(WVCheckpointStatusCode::incompleteRecord,
+                             "Initial observer variable is unwritten.",
+                             "/" + group.record.name + "/" + variableName);
+          }
+          return WVCheckpointStatus::ok();
+        };
+        result = validateComponent(variable.realId,
+                                   variable.specification.valueType ==
+                                           WVOutputValueType::complex64
+                                       ? variable.specification.name + "_real"
+                                       : variable.specification.name);
+        if (result && variable.specification.valueType ==
+                          WVOutputValueType::complex64)
+          result = validateComponent(variable.imagId,
+                                     variable.specification.name + "_imag");
         if (!result)
           return result;
       }
@@ -1689,7 +2256,8 @@ public:
         bytes += group.record.identifier.capacity() +
                  group.record.name.capacity() +
                  group.dynamicVariables.capacity() * sizeof(DynamicVariable) +
-                 group.derivedVariables.capacity() * sizeof(Variable);
+                 group.derivedVariables.capacity() * sizeof(Variable) +
+                 group.staticVariables.capacity() * sizeof(StaticVariable);
         for (const auto &dynamic : group.dynamicVariables)
           bytes += dynamic.blockIdentifier.capacity() + dynamic.name.capacity();
         for (const auto &variable : group.derivedVariables)
@@ -1697,7 +2265,22 @@ public:
                    variable.specification.identifier.capacity() +
                    variable.specification.name.capacity() +
                    variable.specification.units.capacity() +
-                   variable.specification.longName.capacity();
+                   variable.specification.longName.capacity() +
+                   variable.specification.dimensionNames.capacity() *
+                       sizeof(std::string) +
+                   variable.specification.dimensions.capacity() *
+                       sizeof(std::size_t) +
+                   variable.specification.attributes.capacity() *
+                       sizeof(WVObserverOutputAttribute);
+        for (const auto &variable : group.derivedVariables) {
+          for (const auto &name : variable.specification.dimensionNames)
+            bytes += name.capacity();
+          for (const auto &attribute : variable.specification.attributes)
+            bytes += attribute.name.capacity() + attribute.value.capacity();
+        }
+        for (const auto &variable : group.staticVariables)
+          bytes += variable.name.capacity() +
+                   variable.values.capacity() * sizeof(double);
       }
     }
     metrics.retainedStorageBytes = bytes;
@@ -1756,6 +2339,35 @@ public:
               dynamic.elementCount = layout->elementCount;
               group.dynamicVariables.push_back(std::move(dynamic));
             }
+          } else if (recordPointer->kind == WVObserverKind::mooring) {
+            const auto &model = configuration.checkpointTemplate.configuration;
+            std::vector<double> ids(recordPointer->x.size());
+            for (std::size_t index = 0; index < ids.size(); ++index)
+              ids[index] = static_cast<double>(index + 1);
+            std::vector<double> z(model.Nz);
+            const double dz = model.Lz / static_cast<double>(model.Nz - 1);
+            for (std::size_t index = 0; index < z.size(); ++index)
+              z[index] = -model.Lz + static_cast<double>(index) * dz;
+            std::vector<double> x = recordPointer->x;
+            std::vector<double> y = recordPointer->y;
+            for (auto &value : x) {
+              value = std::fmod(value, model.Lx);
+              if (value < 0.0)
+                value += model.Lx;
+            }
+            for (auto &value : y) {
+              value = std::fmod(value, model.Ly);
+              if (value < 0.0)
+                value += model.Ly;
+            }
+            group.staticVariables.push_back(
+                {recordPointer->name + "_id", std::move(ids), -1});
+            group.staticVariables.push_back(
+                {recordPointer->name + "_z", std::move(z), -1});
+            group.staticVariables.push_back(
+                {recordPointer->name + "_x", std::move(x), -1});
+            group.staticVariables.push_back(
+                {recordPointer->name + "_y", std::move(y), -1});
           }
           if (sampleSource != nullptr) {
             std::vector<WVObserverOutputVariableSpecification> specifications;
@@ -1769,9 +2381,29 @@ public:
                   groupRecord.containsCompleteCoefficientRestart &&
                   (specification.name == "Ap" || specification.name == "Am" ||
                    specification.name == "A0");
-              if (!canonicalCoefficient)
-                group.derivedVariables.push_back(
-                    {identifier, specification, -1, -1});
+              if (!canonicalCoefficient) {
+                const auto existing = std::find_if(
+                    group.derivedVariables.begin(),
+                    group.derivedVariables.end(), [&](const auto &variable) {
+                      return variable.specification.name == specification.name;
+                    });
+                if (existing == group.derivedVariables.end())
+                  group.derivedVariables.push_back(
+                      {identifier, specification, -1, -1});
+                else if (existing->specification.valueType !=
+                             specification.valueType ||
+                         existing->specification.cadence !=
+                             specification.cadence ||
+                         existing->specification.dimensions !=
+                             specification.dimensions ||
+                         existing->specification.dimensionNames !=
+                             specification.dimensionNames)
+                  return failure(
+                      WVCheckpointStatusCode::appendConflict,
+                      "Observers declare incompatible variables with the same "
+                      "name.",
+                      file.destination.string());
+              }
             }
           }
         }
@@ -1853,7 +2485,8 @@ public:
     const std::size_t index = group.recordCount;
     const std::size_t coefficientCount =
         stateLayout.coefficientShape().elementCount();
-    if (group.record.containsCompleteCoefficientRestart) {
+    if (group.record.containsCompleteCoefficientRestart &&
+        !configuration.isDynamicsLinear) {
       const std::array<const WVComplex64 *, 3> values = {
           event.state.waveVortex.coefficients.Ap.data,
           event.state.waveVortex.coefficients.Am.data,
@@ -1887,6 +2520,9 @@ public:
       delivery.writtenBytes += dynamic.elementCount * sizeof(double);
     }
     for (const auto &variable : group.derivedVariables) {
+      if (variable.specification.cadence ==
+          WVObserverOutputCadence::initialOnly)
+        continue;
       const auto *record = observer(variable.observerIdentifier);
       WVObserverOutputValueView value;
       const auto sourceStatus =
@@ -2237,6 +2873,11 @@ WVModelOutputNetCDFSink::preflight(const WVCompositeOutputPlan &plan) {
   if (plan.metrics().fileCount != impl_->files.size())
     return {WVKernelStatusCode::invalidConfiguration,
             "Output plan and NetCDF file graph differ."};
+  if (impl_->sampleSource != nullptr) {
+    const auto sourceStatus = impl_->sampleSource->preflight(plan);
+    if (!sourceStatus)
+      return sourceStatus;
+  }
   std::map<std::pair<std::size_t, std::size_t>, WVOutputScheduleOrdinal>
       lastOrdinals;
   for (std::size_t eventIndex = 0; eventIndex < plan.eventCount();
