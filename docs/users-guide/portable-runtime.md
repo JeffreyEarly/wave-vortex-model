@@ -106,7 +106,7 @@ Runtime v1 supports hydrostatic and nonhydrostatic constant stratification, tran
 
 Custom forcing and all other forcing classes remain in MATLAB. See the [portable checkpoint profile](/developers-guide/portable-checkpoint-profile.html) for the exact state, forcing, and restart contract.
 
-The portable-output contract is documented in the [portable observing-system contract](/developers-guide/portable-observing-system-contract.html). The library evaluates and persists passive coefficient, Eulerian-field, and fixed-mooring observers with MATLAB-compatible names, dimensions, metadata, and linear/nonlinear cadence. Integrated particles and tracers retain the composite-state and persistence contracts established separately.
+The portable-output contract is documented in the [portable observing-system contract](/developers-guide/portable-observing-system-contract.html). The library evaluates and persists coefficient, Eulerian-field, fixed-mooring, and integrated Lagrangian-particle observers with MATLAB-compatible names, dimensions, metadata, interpolation, and cadence. Particle coordinates participate in fixed RK4 or adaptive RK3(2) integration and in method-owned dense output; horizontal coordinates remain unwrapped in state while field interpolation is periodic. Tracer integration remains future work.
 
 ## Reports and performance
 
