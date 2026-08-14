@@ -107,6 +107,11 @@ if(BUILD_TESTING)
             -DWV_REPOSITORY_ROOT=${CMAKE_CURRENT_LIST_DIR}/..
             -P ${CMAKE_CURRENT_LIST_DIR}/../tools/portable-runtime/tests/CheckWVObserverDispatch.cmake
     )
+    add_test(NAME runtime-architecture-source-policy
+        COMMAND ${CMAKE_COMMAND}
+            -DWV_REPOSITORY_ROOT=${CMAKE_CURRENT_LIST_DIR}/..
+            -P ${CMAKE_CURRENT_LIST_DIR}/../tools/portable-runtime/tests/CheckWVRuntimeArchitecture.cmake
+    )
 
     add_executable(wv_checkpoint_inspect
         ../tools/portable-runtime/WVCheckpointInspect.cpp

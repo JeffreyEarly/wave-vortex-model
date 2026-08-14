@@ -1,0 +1,90 @@
+cmake_minimum_required(VERSION 3.20)
+
+if(NOT DEFINED WV_REPOSITORY_ROOT)
+    message(FATAL_ERROR "WV_REPOSITORY_ROOT is required.")
+endif()
+
+set(audit_path "${WV_REPOSITORY_ROOT}/.github/planning/portable-runtime-integration-audit.json")
+file(READ "${audit_path}" audit)
+string(JSON schema_version GET "${audit}" schemaVersion)
+if(NOT schema_version STREQUAL "1.0.0")
+    message(FATAL_ERROR "Unexpected portable-runtime audit schema: ${schema_version}")
+endif()
+string(JSON safe_to_merge GET "${audit}" safeToMerge)
+if(NOT safe_to_merge)
+    message(FATAL_ERROR "The portable-runtime audit is not safe to merge.")
+endif()
+
+string(JSON finding_count LENGTH "${audit}" findings)
+math(EXPR last_finding "${finding_count} - 1")
+foreach(index RANGE ${last_finding})
+    string(JSON finding_id GET "${audit}" findings ${index} id)
+    string(JSON disposition GET "${audit}" findings ${index} disposition)
+    string(JSON resolved GET "${audit}" findings ${index} resolved)
+    if(disposition STREQUAL "fix-before-integration" AND NOT resolved)
+        message(FATAL_ERROR "Unresolved integration finding: ${finding_id}")
+    endif()
+endforeach()
+
+string(JSON evidence_count LENGTH "${audit}" frozenEvidence)
+math(EXPR last_evidence "${evidence_count} - 1")
+foreach(index RANGE ${last_evidence})
+    string(JSON relative_path GET "${audit}" frozenEvidence ${index} path)
+    string(JSON expected_hash GET "${audit}" frozenEvidence ${index} sha256)
+    set(evidence_path "${WV_REPOSITORY_ROOT}/${relative_path}")
+    if(NOT EXISTS "${evidence_path}")
+        message(FATAL_ERROR "Frozen audit evidence is missing: ${relative_path}")
+    endif()
+    file(SHA256 "${evidence_path}" actual_hash)
+    if(NOT actual_hash STREQUAL expected_hash)
+        message(FATAL_ERROR "Frozen audit evidence changed: ${relative_path}")
+    endif()
+endforeach()
+
+file(GLOB_RECURSE kernel_sources LIST_DIRECTORIES false
+    "${WV_REPOSITORY_ROOT}/CompiledKernel/include/WaveVortexKernel/*.hpp"
+    "${WV_REPOSITORY_ROOT}/CompiledKernel/src/*.cpp")
+set(kernel_forbidden "mex.h" "matrix.h" "matlabdataarray" "netcdf.h"
+    "fftw3.h" "accelerate/accelerate.h" "dispatch/dispatch.h")
+foreach(source_path IN LISTS kernel_sources)
+    file(READ "${source_path}" source)
+    string(TOLOWER "${source}" source_lower)
+    foreach(token IN LISTS kernel_forbidden)
+        string(FIND "${source_lower}" "${token}" position)
+        if(NOT position EQUAL -1)
+            message(FATAL_ERROR "CompiledKernel source has forbidden dependency '${token}': ${source_path}")
+        endif()
+    endforeach()
+endforeach()
+
+file(READ "${WV_REPOSITORY_ROOT}/PortableRuntime/CMakeLists.txt" runtime_cmake)
+string(FIND "${runtime_cmake}" "WaveVortex::Checkpoint" checkpoint_alias)
+if(NOT checkpoint_alias EQUAL -1)
+    message(FATAL_ERROR "The obsolete WaveVortex::Checkpoint alias was restored.")
+endif()
+
+file(READ "${WV_REPOSITORY_ROOT}/PortableRuntime/app/WaveVortexRun.cpp" runner)
+foreach(token "netcdf.h" "nc_open(" "nc_create(" "nc_def_")
+    string(FIND "${runner}" "${token}" position)
+    if(NOT position EQUAL -1)
+        message(FATAL_ERROR "The standalone CLI bypasses the persistence API with '${token}'.")
+    endif()
+endforeach()
+
+set(numerical_sources
+    "PortableRuntime/src/WVFixedStepRK4.cpp"
+    "PortableRuntime/src/WVAdaptiveRK23.cpp"
+    "PortableRuntime/src/WVCompositeIntegration.cpp"
+    "PortableRuntime/src/WVForcingEngine.cpp"
+    "PortableRuntime/src/WVFieldEvaluationService.cpp")
+foreach(relative_path IN LISTS numerical_sources)
+    file(READ "${WV_REPOSITORY_ROOT}/${relative_path}" source)
+    foreach(token "netcdf.h" "WVCheckpointWriter" "WVModelOutputNetCDF")
+        string(FIND "${source}" "${token}" position)
+        if(NOT position EQUAL -1)
+            message(FATAL_ERROR "Portable numerical source owns persistence behavior: ${relative_path}")
+        endif()
+    endforeach()
+endforeach()
+
+message(STATUS "Portable runtime architecture audit passed (${finding_count} findings, ${evidence_count} frozen records).")
