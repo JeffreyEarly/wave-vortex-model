@@ -43,20 +43,6 @@ std::filesystem::path temporaryPath(const std::filesystem::path &destination) {
           std::to_string(stamp) + "-" + std::to_string(++sequence));
 }
 
-bool sameConfiguration(
-    const WVTransformConstantStratificationConfiguration &left,
-    const WVTransformConstantStratificationConfiguration &right) noexcept {
-  return left.Nx == right.Nx && left.Ny == right.Ny && left.Nz == right.Nz &&
-         left.Nj == right.Nj && left.Lx == right.Lx && left.Ly == right.Ly &&
-         left.Lz == right.Lz && left.N0 == right.N0 &&
-         left.rho0 == right.rho0 && left.g == right.g &&
-         left.planetaryRadius == right.planetaryRadius &&
-         left.rotationRate == right.rotationRate &&
-         left.latitude == right.latitude &&
-         left.isHydrostatic == right.isHydrostatic &&
-         left.shouldAntialias == right.shouldAntialias;
-}
-
 WVCheckpointStatus
 putStringListAttribute(int group, const char *name,
                        const std::vector<std::string> &values,
@@ -2373,8 +2359,9 @@ public:
       auto result = WVCheckpointReader::inspect(record.destination, inspection);
       if (!result)
         return result;
-      if (!sameConfiguration(configuration.checkpointTemplate.configuration,
-                             inspection.configuration))
+      if (!sameTransformConfiguration(
+              configuration.checkpointTemplate.configuration,
+              inspection.configuration))
         return failure(WVCheckpointStatusCode::schemaMismatch,
                        "Append model configuration does not match the file.",
                        record.destination);
@@ -2797,8 +2784,8 @@ WVModelOutputNetCDFSink::inspect(const std::vector<std::string> &paths,
         candidate.latestRestart = std::move(checkpoint);
         selectedPath = path;
       } else {
-        if (!sameConfiguration(candidate.latestRestart.configuration,
-                               checkpoint.configuration))
+        if (!sameTransformConfiguration(candidate.latestRestart.configuration,
+                                        checkpoint.configuration))
           return failure(WVCheckpointStatusCode::schemaMismatch,
                          "Output files do not describe one model.", path);
         if (checkpoint.state.t > candidate.latestRestart.state.t) {

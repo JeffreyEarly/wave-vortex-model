@@ -55,8 +55,8 @@ WVPortableObserverRecord record() {
                                 {2, 2},
                                 WVToleranceKind::uniformAbsolute,
                                 1e-10,
-                                WVStateOwnership::integratorOwned,
-                                WVRestartRequirement::requiredDynamicState});
+                                WVStateOwnership::observerDerived,
+                                WVRestartRequirement::derivedState});
   result.stateBlocks.push_back({"sampledVelocity",
                                 WVStateScalarType::real64,
                                 {3, 2},
@@ -222,16 +222,37 @@ void testContracts(WVPortableObserverDescriptor &descriptor,
   badReference.observers.back().stateBlockIdentifiers = {"missing"};
   require(!WVPortableObserverDescriptor::create(badReference, ignored),
           "unknown state reference rejected");
+  auto orphan = source;
+  orphan.observers.erase(orphan.observers.begin() + 2);
+  require(!WVPortableObserverDescriptor::create(orphan, ignored),
+          "orphan integrator-owned block rejected");
+  auto sharedTracer = source;
+  auto secondTracer = sharedTracer.observers[2];
+  secondTracer.identifier = "secondTracer";
+  secondTracer.name = "Second tracer";
+  sharedTracer.observers.push_back(secondTracer);
+  require(!WVPortableObserverDescriptor::create(sharedTracer, ignored),
+          "state block shared by two tracers rejected");
+  auto sharedParticles = source;
+  auto secondParticles = sharedParticles.observers[1];
+  secondParticles.identifier = "secondParticles";
+  secondParticles.name = "Second particles";
+  sharedParticles.observers.push_back(secondParticles);
+  require(!WVPortableObserverDescriptor::create(sharedParticles, ignored),
+          "state blocks shared by two particle systems rejected");
+  auto mixedOwners = source;
+  mixedOwners.observers[2].stateBlockIdentifiers = {"particleX"};
+  require(!WVPortableObserverDescriptor::create(mixedOwners, ignored),
+          "state block shared by particle and tracer observers rejected");
   require(static_cast<bool>(
               WVCompositeStateLayout::create({2, 3}, descriptor, layout)),
           "composite layout");
-  require(layout.additionalBlocks().size() == 4 &&
+  require(layout.additionalBlocks().size() == 3 &&
               layout.additionalBlocks()[0].identifier == "particleX" &&
               layout.additionalBlocks()[1].identifier == "particleY" &&
-              layout.additionalBlocks()[2].identifier == "tracerAmplitude" &&
-              layout.additionalBlocks()[3].identifier == "complexAuxiliary",
+              layout.additionalBlocks()[2].identifier == "tracerAmplitude",
           "derived block excluded and order frozen");
-  require(layout.realElementCount() == 10 && layout.complexElementCount() == 4,
+  require(layout.realElementCount() == 10 && layout.complexElementCount() == 0,
           "composite counts");
   WVCompositeStateLayout badLayout;
   require(!WVCompositeStateLayout::create({3, 2}, descriptor, badLayout),
@@ -257,9 +278,6 @@ void testRK4(LinearCompositeSystem &system) {
   require(std::abs(fixture.state.additionalBlocks[0].realData[0] -
                    std::exp(-0.02)) < 1e-9,
           "RK4 real block result");
-  require(std::abs(fixture.state.additionalBlocks[3].complexData[0].real -
-                   std::cos(0.01)) < 1e-10,
-          "RK4 complex block result");
   require(static_cast<bool>(rk4.evaluateDenseOutput(0.005, fixture.output)),
           "RK4 composite dense output");
   require(std::abs(fixture.outputCoefficients[0].real - std::exp(-0.005)) <

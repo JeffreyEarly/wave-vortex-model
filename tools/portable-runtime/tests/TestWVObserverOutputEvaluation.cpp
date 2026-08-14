@@ -156,6 +156,31 @@ void testService(bool linear) {
   require(static_cast<bool>(status), "shared field service creation failed");
   status = service->useFieldEvaluationService(*sharedFields);
   require(static_cast<bool>(status), "shared field service binding failed");
+  const auto requireRejectedConfiguration = [&](auto mutation,
+                                                const char *message) {
+    auto incompatibleConfiguration = config;
+    mutation(incompatibleConfiguration);
+    std::unique_ptr<WVFieldEvaluationService> incompatibleFields;
+    auto incompatibleStatus = WVFieldEvaluationService::create(
+        incompatibleConfiguration, std::make_unique<WVReferenceFFTEngine>(),
+        incompatibleFields);
+    require(static_cast<bool>(incompatibleStatus),
+            "incompatible field service construction failed");
+    incompatibleStatus =
+        service->useFieldEvaluationService(*incompatibleFields);
+    require(incompatibleStatus.code ==
+                WVKernelStatusCode::invalidConfiguration,
+            message);
+  };
+  requireRejectedConfiguration(
+      [](auto &value) { value.planetaryRadius += 1.0; },
+      "borrowed field service accepted a different planetary radius");
+  requireRejectedConfiguration(
+      [](auto &value) { value.rotationRate += 1e-8; },
+      "borrowed field service accepted a different rotation rate");
+  requireRejectedConfiguration(
+      [](auto &value) { value.latitude += 1.0; },
+      "borrowed field service accepted a different latitude");
   require(service->metrics().uniqueFieldOutputCount == 4,
           "field requests were not deduplicated");
   require(service->metrics().sharedFieldReuseCount == 1,

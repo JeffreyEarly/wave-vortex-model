@@ -100,6 +100,32 @@ WVTransformConstantStratificationConfiguration configuration(std::size_t Nx, std
     return value;
 }
 
+void testConfigurationIdentity() {
+    const auto original = configuration(8,7,false);
+    require(sameTransformConfiguration(original,original),"identical configurations do not share identity");
+    const auto requireMismatch = [&](auto mutation, const char* message) {
+        auto changed = original;
+        mutation(changed);
+        require(!sameTransformConfiguration(original,changed),message);
+    };
+    requireMismatch([](auto& value) { ++value.contractVersion; },"contract version omitted from configuration identity");
+    requireMismatch([](auto& value) { ++value.Nx; },"Nx omitted from configuration identity");
+    requireMismatch([](auto& value) { ++value.Ny; },"Ny omitted from configuration identity");
+    requireMismatch([](auto& value) { ++value.Nz; },"Nz omitted from configuration identity");
+    requireMismatch([](auto& value) { ++value.Nj; },"Nj omitted from configuration identity");
+    requireMismatch([](auto& value) { value.Lx += 1.0; },"Lx omitted from configuration identity");
+    requireMismatch([](auto& value) { value.Ly += 1.0; },"Ly omitted from configuration identity");
+    requireMismatch([](auto& value) { value.Lz += 1.0; },"Lz omitted from configuration identity");
+    requireMismatch([](auto& value) { value.N0 += 1e-6; },"N0 omitted from configuration identity");
+    requireMismatch([](auto& value) { value.rho0 += 1.0; },"rho0 omitted from configuration identity");
+    requireMismatch([](auto& value) { value.g += 0.01; },"gravity omitted from configuration identity");
+    requireMismatch([](auto& value) { value.planetaryRadius += 1.0; },"planetary radius omitted from configuration identity");
+    requireMismatch([](auto& value) { value.rotationRate += 1e-8; },"rotation rate omitted from configuration identity");
+    requireMismatch([](auto& value) { value.latitude += 1.0; },"latitude omitted from configuration identity");
+    requireMismatch([](auto& value) { value.isHydrostatic = !value.isHydrostatic; },"hydrostatic flag omitted from configuration identity");
+    requireMismatch([](auto& value) { value.shouldAntialias = !value.shouldAntialias; },"antialias flag omitted from configuration identity");
+}
+
 class FakePlan final : public WVFFTPlan {
 public:
     WVKernelStatus execute(const void* input, void* output) override {
@@ -435,6 +461,7 @@ void testNonlinearFlux(bool hydrostatic) {
 } // namespace
 
 int main() {
+    testConfigurationIdentity();
     testCoefficientFormulaHelpers();
     testDescriptor();
     testViewsAndAliasing();

@@ -644,7 +644,6 @@ WVKernelStatus WVConstantStratificationForcingEngine::nonlinearFluxImpl(
     }
     if (context != nullptr) {
         context->owner_ = this;
-        context->state_ = state;
         context->advectionFields_ = {externalFields->data,externalFields->shape};
         context->generation_ = evaluationGeneration_;
     }

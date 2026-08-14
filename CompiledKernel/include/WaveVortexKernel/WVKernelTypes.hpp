@@ -145,6 +145,12 @@ struct WVTransformConstantStratificationConfiguration {
     bool shouldAntialias = true;
 };
 
+// Exact identity for services and plans derived from a frozen transform
+// configuration. Every listed value participates in the derived state.
+bool sameTransformConfiguration(
+    const WVTransformConstantStratificationConfiguration& first,
+    const WVTransformConstantStratificationConfiguration& second) noexcept;
+
 struct WVFourierMode {
     std::int64_t kMode = 0;
     std::int64_t lMode = 0;

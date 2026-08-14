@@ -19,7 +19,6 @@ public:
 
 private:
     const void* owner_ = nullptr;
-    WVState state_;
     WVRealFieldBundleConstView advectionFields_;
     std::uint64_t generation_ = 0;
     friend class WVConstantStratificationForcingEngine;

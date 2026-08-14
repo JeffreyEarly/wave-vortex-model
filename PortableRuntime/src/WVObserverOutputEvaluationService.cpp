@@ -510,14 +510,8 @@ WVKernelStatus WVObserverOutputEvaluationService::preflight(
 
 WVKernelStatus WVObserverOutputEvaluationService::useFieldEvaluationService(
     WVFieldEvaluationService &fieldEvaluationService) {
-  const auto &left = impl_->configuration;
-  const auto &right = fieldEvaluationService.configuration();
-  if (left.contractVersion != right.contractVersion || left.Nx != right.Nx ||
-      left.Ny != right.Ny || left.Nz != right.Nz || left.Nj != right.Nj ||
-      left.Lx != right.Lx || left.Ly != right.Ly || left.Lz != right.Lz ||
-      left.N0 != right.N0 || left.rho0 != right.rho0 || left.g != right.g ||
-      left.isHydrostatic != right.isHydrostatic ||
-      left.shouldAntialias != right.shouldAntialias)
+  if (!sameTransformConfiguration(impl_->configuration,
+                                  fieldEvaluationService.configuration()))
     return invalid("Borrowed field-evaluation service uses an incompatible "
                    "constant-stratification configuration.");
   impl_->ownedFields.reset();

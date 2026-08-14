@@ -96,6 +96,14 @@ WVPortableObserverDescriptor::create(const WVPortableObserverRecord &record,
 
     std::set<std::string> observerIdentifiers;
     std::map<std::string, WVObserverKind> observerKinds;
+    std::map<std::string, std::size_t> integratedBlockOwnerCounts;
+    for (const auto &block : record.stateBlocks) {
+      const bool canonical = block.identifier == "Ap" ||
+                             block.identifier == "Am" ||
+                             block.identifier == "A0";
+      if (!canonical && block.ownership == WVStateOwnership::integratorOwned)
+        integratedBlockOwnerCounts.emplace(block.identifier, 0);
+    }
     for (const auto &observer : record.observers) {
       if (!validIdentifier(observer.identifier) || observer.name.empty())
         return invalid("Observer identifier and name must be nonempty.");
@@ -156,6 +164,7 @@ WVPortableObserverDescriptor::create(const WVPortableObserverRecord &record,
                   std::vector<std::size_t>({observer.x.size()}))
             return invalid("Particle state blocks must be integrator-owned "
                            "real vectors matching the particle count.");
+          ++integratedBlockOwnerCounts.at(identifier);
         }
       }
       if (observer.kind == WVObserverKind::tracer) {
@@ -172,7 +181,18 @@ WVPortableObserverDescriptor::create(const WVPortableObserverRecord &record,
           return invalid(observer.isXYOnly
                              ? "A two-dimensional WVTracer requires a rank-two state block."
                              : "A three-dimensional WVTracer requires a rank-three state block.");
+        ++integratedBlockOwnerCounts.at(
+            observer.stateBlockIdentifiers.front());
       }
+    }
+
+    for (const auto &[identifier, ownerCount] : integratedBlockOwnerCounts) {
+      if (ownerCount == 0)
+        return invalid("Integrator-owned state block " + identifier +
+                       " is not owned by an integrated observer.");
+      if (ownerCount != 1)
+        return invalid("Integrator-owned state block " + identifier +
+                       " is owned by more than one integrated observer.");
     }
 
     std::set<std::string> fileIdentifiers;
