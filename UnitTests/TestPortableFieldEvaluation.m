@@ -2,6 +2,7 @@ classdef TestPortableFieldEvaluation < matlab.unittest.TestCase
     properties (SetAccess = private)
         Inspector
         ParticleInspector
+        ModelOutputTestExecutable
         TemporaryFolder
     end
 
@@ -17,6 +18,8 @@ classdef TestPortableFieldEvaluation < matlab.unittest.TestCase
             testCase.assertTrue(isfile(testCase.Inspector),output)
             testCase.ParticleInspector = fullfile(repositoryRoot,"tools","compiled-kernel","build-portable","wv_lagrangian_particle_inspect");
             testCase.assertTrue(isfile(testCase.ParticleInspector),output)
+            testCase.ModelOutputTestExecutable = fullfile(repositoryRoot,"tools","compiled-kernel","build-portable","TestWVModelOutputNetCDF");
+            testCase.assertTrue(isfile(testCase.ModelOutputTestExecutable),output)
         end
     end
 
@@ -222,6 +225,53 @@ classdef TestPortableFieldEvaluation < matlab.unittest.TestCase
             testCase.verifyGreaterThan(actual.systemMetrics.persistentBytes,0)
             fprintf("WV_PARTICLE_ORACLE rhs=%.17g fixed=%.17g dense=%.17g adaptive_tolerance_ratio=%.17g\n", ...
                 rhsError,fixedError,denseError,adaptiveToleranceRatio)
+        end
+
+        function particleModelOutputIsBidirectionallyRestartable(testCase)
+            matlabPath = fullfile(testCase.TemporaryFolder,"matlab-particles.nc");
+            wvt = WVTransformConstantStratification( ...
+                [4000 3000 1000],[8 6 5],N0=sqrt(2e-5),latitude=45, ...
+                isHydrostatic=false,shouldAntialias=false);
+            model = WVModel(wvt);
+            outputFile = model.createNetCDFFileForModelOutput( ...
+                matlabPath,outputInterval=1,shouldOverwriteExisting=true);
+            model.setFloatPositions([500 1500],[400 1200],[-250 -750],'u', ...
+                advectionInterpolation="spline",trackedVarInterpolation="linear", ...
+                absToleranceXY=3e-4,absToleranceZ=7e-5);
+            model.addTracer(reshape(1:prod(wvt.spatialMatrixSize),wvt.spatialMatrixSize),"dye");
+            defaultGroup = outputFile.outputGroupWithName(model.defaultOutputGroupName());
+            defaultGroup.addObservingSystem(WVMooring(model,name="mooring", ...
+                x=[0 1000],y=[0 900],trackedFieldNames={}));
+            particles = model.fluxedObservingSystemWithName("float");
+            tracer = model.fluxedObservingSystemWithName("dye");
+            shared = outputFile.addNewEvenlySpacedOutputGroup("shared",outputInterval=1);
+            shared.addObservingSystem([particles tracer]);
+            model.setupIntegrator(integratorType="fixed",deltaT=1);
+            model.integrateToTime(2,shouldShowIntegrationDiagnostics=false,callback=@(~)[]);
+            model.closeNetCDFFile();
+
+            runtimePath = fullfile(testCase.TemporaryFolder,"runtime-particles.nc");
+            command = sprintf( ...
+                'WV_MATLAB_MODEL_OUTPUT_FIXTURE="%s" WV_RUNTIME_MODEL_OUTPUT_EXPORT="%s" "%s"', ...
+                matlabPath,runtimePath,testCase.ModelOutputTestExecutable);
+            [status,output] = system(TestPortableFieldEvaluation.sanitizedCommand(command));
+            testCase.assertEqual(status,0,output)
+            testCase.verifyTrue(isfile(runtimePath))
+            testCase.verifyTrue(isfile(runtimePath+".second.nc"))
+
+            restored = WVModel.modelFromFile(char(runtimePath));
+            cleanup = onCleanup(@()restored.closeNetCDFFile());
+            restoredNames = restored.outputFileNames;
+            testCase.verifyGreaterThanOrEqual(numel(restoredNames),1)
+            restoredFile = restored.outputFileWithName(restoredNames(1));
+            restoredParticles = restoredFile.outputGroupWithName("wave-vortex").observingSystemWithName("particles");
+            sharedParticles = restoredFile.outputGroupWithName("shared").observingSystemWithName("particles");
+            testCase.verifyTrue(restoredParticles == sharedParticles)
+            positions = restoredParticles.initialConditions();
+            testCase.verifyEqual(positions,{[1 1],[2 2]})
+            testCase.verifyEqual(restoredParticles.z,[-100 -300])
+            restored.closeNetCDFFile();
+            clear cleanup
         end
     end
 

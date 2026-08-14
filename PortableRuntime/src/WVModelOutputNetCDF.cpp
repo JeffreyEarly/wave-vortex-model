@@ -62,7 +62,7 @@ putStringListAttribute(int group, const char *name,
                        const std::vector<std::string> &values,
                        const std::string &path) {
   if (values.empty())
-    return detail::putTextAttribute(group, NC_GLOBAL, name, "", path);
+    return WVCheckpointStatus::ok();
   std::vector<const char *> raw;
   raw.reserve(values.size());
   for (const auto &value : values)
@@ -414,6 +414,11 @@ WVCheckpointStatus parseObserver(int outputGroup, int metadataGroup,
       return result;
     if (!present)
       observer.fieldNames.clear();
+    else
+      observer.fieldNames.erase(
+          std::remove(observer.fieldNames.begin(), observer.fieldNames.end(),
+                      std::string{}),
+          observer.fieldNames.end());
     if (!hadPortableIdentifier &&
         observer.kind == WVObserverKind::eulerianFields) {
       for (const auto &field : observer.fieldNames)
@@ -2135,7 +2140,9 @@ public:
               return attributeStatus;
             if (observed != expected)
               return failure(WVCheckpointStatusCode::appendConflict,
-                             "Observer-variable metadata changed.",
+                             "Observer-variable metadata changed: expected '" +
+                                 expected + "' but observed '" + observed +
+                                 "'.",
                              "/" + group.record.name + "/" + variableName +
                                  "/@" + name);
             return WVCheckpointStatus::ok();

@@ -197,6 +197,17 @@ void testComposite(bool hydrostatic) {
           "particle systems did not share one primitive transform");
   require(system->fieldEvaluationService().metrics().movingPositionCount == 5,
           "moving position count changed");
+  const auto persistentBytes = system->persistentBytes();
+  const auto interpolationBytes = system->fieldEvaluationService()
+                                      .metrics()
+                                      .movingInterpolationWorkspaceBytes;
+  status = system->evaluateRightHandSide(fixture.constView(), fixture.rhs);
+  require(static_cast<bool>(status), status.message);
+  require(system->persistentBytes() == persistentBytes &&
+              system->fieldEvaluationService()
+                      .metrics()
+                      .movingInterpolationWorkspaceBytes == interpolationBytes,
+          "repeated particle RHS changed bounded persistent storage");
 
   WVCompositeFixedStepRK4 rk4(*system, true);
   status = rk4.prepareStateAfterRestart(fixture.state);
