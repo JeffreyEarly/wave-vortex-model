@@ -655,6 +655,32 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformWaveVortexToUVW
     return transformWaveVortexToUVWEtaImpl(state,fields);
 }
 
+WVKernelStatus WVTransformConstantStratificationKernel::transformStateFieldDerivatives(
+    const WVState& state, WVDynamicalField field, WVRealFieldBundleView& derivatives) {
+    const auto target = static_cast<std::size_t>(field);
+    if (target > static_cast<std::size_t>(WVDynamicalField::eta))
+        return {WVKernelStatusCode::invalidConfiguration,"Unknown dynamical field derivative target."};
+    auto status = validateBundle(derivatives,descriptor_.spatialShape(),3,"Field derivatives");
+    if (!status) return status;
+    const auto spectral = descriptor_.spectralShape();
+    const WVKernelStatus inputStatuses[] = {
+        validateSpectral(state.coefficients.Ap,spectral,"Ap"),
+        validateSpectral(state.coefficients.Am,spectral,"Am"),
+        validateSpectral(state.coefficients.A0,spectral,"A0")};
+    for (const auto& value : inputStatuses) if (!value) return value;
+    if (const auto ownership = validateInverseOwnership(state,derivatives,spectral); !ownership) return ownership;
+    ExecutionGuard guard(executing_);
+    if (!guard.entered()) return {WVKernelStatusCode::reentrantExecution,"Kernel operations are not reentrant."};
+    const auto& c = descriptor_.configuration();
+    const auto halfFieldElements = descriptor_.halfSpectrumMappings().NxHalf * c.Ny * c.Nz;
+    auto* phaseStorage = reinterpret_cast<WVComplex64*>(halfSpectrumScratch_.data()) + 3 * halfFieldElements;
+    const auto coefficientCount = spectral.elementCount();
+    const auto& omega = descriptor_.verticalModes().omega;
+    const double elapsed = state.t-state.t0;
+    for (std::size_t index = 0; index < coefficientCount; ++index) phaseStorage[index] = phase(omega[index]*elapsed);
+    return transformToSpatialDomainWithDerivativesFromStateImpl(state,{phaseStorage,spectral},target,derivatives);
+}
+
 WVKernelStatus WVTransformConstantStratificationKernel::transformWaveVortexToUVWEtaImpl(const WVState& state, WVRealFieldBundleView& fields, const WVCoefficients* evolvedCoefficients) {
     const auto& c = descriptor_.configuration(); const auto& mapping = descriptor_.halfSpectrumMappings(); const auto& modes = descriptor_.verticalModes();
     const std::size_t halfRows = mapping.NxHalf * c.Ny; auto* half = reinterpret_cast<WVComplex64*>(halfSpectrumScratch_.data());
