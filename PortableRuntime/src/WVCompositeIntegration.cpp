@@ -271,6 +271,7 @@ WVCompositeFixedStepRK4::ensureWorkspace(const WVMutableCompositeState &state) {
 WVKernelStatus WVCompositeFixedStepRK4::prepareStateAfterRestart(
     WVMutableCompositeState &state) {
   hasAcceptedStep_ = false;
+  nextStepSize_ = 0.0;
   auto status = ensureWorkspace(state);
   if (!status)
     return status;
@@ -358,7 +359,9 @@ WVKernelStatus WVCompositeFixedStepRK4::step(WVMutableCompositeState &state,
                    retainDenseOutput_ ? 5U : 4U,
                    0,
                    0.0,
-                   h};
+                   h,
+                   retainDenseOutput_ ? this : nullptr};
+  nextStepSize_ = h;
   ++metrics_.acceptedStepCount;
   hasAcceptedStep_ = true;
   return WVKernelStatus::ok();
@@ -608,7 +611,8 @@ WVKernelStatus WVCompositeAdaptiveRK23::step(WVMutableCompositeState &state,
                        metrics_.rightHandSideEvaluationCount,
                        metrics_.rejectedStepCount,
                        error,
-                       nextStepSize_};
+                       nextStepSize_,
+                       this};
       ++metrics_.acceptedStepCount;
       hasAcceptedStep_ = true;
       return WVKernelStatus::ok();

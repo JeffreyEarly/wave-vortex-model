@@ -22,6 +22,19 @@ public:
                                std::size_t index) const noexcept = 0;
 };
 
+// Method-owned continuous extension over one accepted composite-state
+// interval. Implementations write into caller-owned reusable storage; output
+// consumers receive only immutable WVCompositeState views of that storage.
+class WVCompositeDenseOutput {
+public:
+  virtual ~WVCompositeDenseOutput() = default;
+  virtual double initialTime() const noexcept = 0;
+  virtual double finalTime() const noexcept = 0;
+  virtual const WVCompositeStateLayout &stateLayout() const noexcept = 0;
+  virtual WVKernelStatus
+  evaluateState(double time, WVMutableCompositeState &output) const = 0;
+};
+
 struct WVCompositeAcceptedStep {
   double initialTime = 0.0;
   double finalTime = 0.0;
@@ -30,6 +43,28 @@ struct WVCompositeAcceptedStep {
   std::size_t rejectedStepCount = 0;
   double normalizedError = 0.0;
   double nextStepSize = 0.0;
+  // Valid only until the owning integrator is advanced or prepared again.
+  // A null pointer means that this accepted step has no continuous extension.
+  const WVCompositeDenseOutput *denseOutput = nullptr;
+};
+
+// Method-neutral numerical boundary for composite observing-system state.
+// Successful steps mutate only the accepted state. Dense output is evaluated
+// later through WVCompositeAcceptedStep and can never become accepted state.
+class WVCompositeTimeIntegrator {
+public:
+  virtual ~WVCompositeTimeIntegrator() = default;
+  virtual const WVCompositeStateLayout &stateLayout() const noexcept = 0;
+  virtual WVKernelStatus
+  prepareStateAfterRestart(WVMutableCompositeState &state) = 0;
+  virtual WVKernelStatus step(WVMutableCompositeState &state,
+                              double stepSize) = 0;
+  virtual WVKernelStatus advanceToTime(WVMutableCompositeState &state,
+                                       double finalTime,
+                                       double stepSize) = 0;
+  virtual const WVCompositeAcceptedStep *lastAcceptedStep() const noexcept = 0;
+  virtual double nextStepSize() const noexcept = 0;
+  virtual std::size_t persistentBytes() const noexcept = 0;
 };
 
 struct WVCompositeIntegratorMetrics {
@@ -41,18 +76,38 @@ struct WVCompositeIntegratorMetrics {
   std::size_t denseOutputEvaluationCount = 0;
 };
 
-class WVCompositeFixedStepRK4 final {
+class WVCompositeFixedStepRK4 final : public WVCompositeTimeIntegrator,
+                                      public WVCompositeDenseOutput {
 public:
   explicit WVCompositeFixedStepRK4(WVCompositeIntegrationSystem &system,
                                    bool retainDenseOutput = false);
-  WVKernelStatus prepareStateAfterRestart(WVMutableCompositeState &state);
-  WVKernelStatus step(WVMutableCompositeState &state, double stepSize);
+  const WVCompositeStateLayout &stateLayout() const noexcept override {
+    return system_.stateLayout();
+  }
+  WVKernelStatus
+  prepareStateAfterRestart(WVMutableCompositeState &state) override;
+  WVKernelStatus step(WVMutableCompositeState &state,
+                      double stepSize) override;
   WVKernelStatus advanceToTime(WVMutableCompositeState &state, double finalTime,
-                               double stepSize);
+                               double stepSize) override;
   WVKernelStatus evaluateDenseOutput(double time,
                                      WVMutableCompositeState &output) const;
-  const WVCompositeAcceptedStep *lastAcceptedStep() const noexcept {
+  WVKernelStatus
+  evaluateState(double time, WVMutableCompositeState &output) const override {
+    return evaluateDenseOutput(time, output);
+  }
+  double initialTime() const noexcept override {
+    return hasAcceptedStep_ ? acceptedStep_.initialTime : 0.0;
+  }
+  double finalTime() const noexcept override {
+    return hasAcceptedStep_ ? acceptedStep_.finalTime : 0.0;
+  }
+  const WVCompositeAcceptedStep *lastAcceptedStep() const noexcept override {
     return hasAcceptedStep_ ? &acceptedStep_ : nullptr;
+  }
+  double nextStepSize() const noexcept override { return nextStepSize_; }
+  std::size_t persistentBytes() const noexcept override {
+    return metrics_.workspaceCapacityBytes;
   }
   const WVCompositeIntegratorMetrics &metrics() const noexcept {
     return metrics_;
@@ -66,6 +121,7 @@ private:
   Workspace *workspace_ = nullptr;
   WVCompositeAcceptedStep acceptedStep_;
   mutable WVCompositeIntegratorMetrics metrics_;
+  double nextStepSize_ = 0.0;
   bool hasAcceptedStep_ = false;
   bool stepping_ = false;
 
@@ -83,23 +139,42 @@ struct WVCompositeAdaptiveRK23Options {
   double maximumStepFactor = 5.0;
 };
 
-class WVCompositeAdaptiveRK23 final {
+class WVCompositeAdaptiveRK23 final : public WVCompositeTimeIntegrator,
+                                      public WVCompositeDenseOutput {
 public:
   explicit WVCompositeAdaptiveRK23(WVCompositeIntegrationSystem &system,
                                    WVCompositeAdaptiveRK23Options options = {});
-  WVKernelStatus prepareStateAfterRestart(WVMutableCompositeState &state);
-  WVKernelStatus step(WVMutableCompositeState &state, double proposedStepSize);
+  const WVCompositeStateLayout &stateLayout() const noexcept override {
+    return system_.stateLayout();
+  }
+  WVKernelStatus
+  prepareStateAfterRestart(WVMutableCompositeState &state) override;
+  WVKernelStatus step(WVMutableCompositeState &state,
+                      double proposedStepSize) override;
   WVKernelStatus advanceToTime(WVMutableCompositeState &state, double finalTime,
-                               double initialStepSize);
+                               double initialStepSize) override;
   WVKernelStatus evaluateDenseOutput(double time,
                                      WVMutableCompositeState &output) const;
-  const WVCompositeAcceptedStep *lastAcceptedStep() const noexcept {
+  WVKernelStatus
+  evaluateState(double time, WVMutableCompositeState &output) const override {
+    return evaluateDenseOutput(time, output);
+  }
+  double initialTime() const noexcept override {
+    return hasAcceptedStep_ ? acceptedStep_.initialTime : 0.0;
+  }
+  double finalTime() const noexcept override {
+    return hasAcceptedStep_ ? acceptedStep_.finalTime : 0.0;
+  }
+  const WVCompositeAcceptedStep *lastAcceptedStep() const noexcept override {
     return hasAcceptedStep_ ? &acceptedStep_ : nullptr;
   }
   const WVCompositeIntegratorMetrics &metrics() const noexcept {
     return metrics_;
   }
-  double nextStepSize() const noexcept { return nextStepSize_; }
+  double nextStepSize() const noexcept override { return nextStepSize_; }
+  std::size_t persistentBytes() const noexcept override {
+    return metrics_.workspaceCapacityBytes;
+  }
 
 private:
   class Workspace;
