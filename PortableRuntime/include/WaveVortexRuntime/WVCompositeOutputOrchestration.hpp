@@ -119,7 +119,10 @@ struct WVCompositeOutputDeliveryResult {
 
 // Abstract orchestration sink. preflight() must validate all destinations and
 // resources without writing output. deliver() receives immutable state and
-// route views. NetCDF persistence is intentionally outside this issue.
+// route views. A failed delivery must leave its route uncommitted and safe to
+// retry with the same event state; a successfully returned delivery is never
+// repeated by the driver. NetCDF persistence is intentionally outside this
+// issue.
 class WVCompositeOutputSink {
 public:
   virtual ~WVCompositeOutputSink() = default;
@@ -145,6 +148,8 @@ struct WVCompositeOutputDeliveryRecord {
   std::size_t observerCount = 0;
   std::size_t writeCount = 0;
   std::size_t writtenBytes = 0;
+  std::size_t attemptCount = 0;
+  std::size_t failureCount = 0;
   bool attempted = false;
   bool committed = false;
   WVKernelStatusCode failureCode = WVKernelStatusCode::success;
@@ -195,8 +200,11 @@ struct WVCompositeOutputDriverMetrics {
 };
 
 // Method-neutral scheduled-output driver. Solver steps are selected without
-// consulting output times. One reusable composite state is staged for dense
-// output, and coincident routes share that single state evaluation.
+// consulting output times. One reusable composite state is staged for every
+// event, and coincident routes share that single state evaluation. If a route
+// fails, the driver retains that immutable state and route cursor; calling
+// advanceToTime() again replays only the failed route before integration
+// continues from the later accepted state.
 class WVCompositeOutputDriver final {
 public:
   WVCompositeOutputDriver(WVCompositeTimeIntegrator &integrator,
@@ -212,6 +220,7 @@ public:
   const std::vector<WVOutputGroupProgress> &committedProgress() const noexcept;
   const std::vector<WVCompositeOutputDeliveryRecord> &records() const noexcept;
   const WVCompositeOutputDriverMetrics &metrics() const noexcept;
+  bool hasPendingDelivery() const noexcept;
   std::size_t persistentBytes() const noexcept;
 
 private:

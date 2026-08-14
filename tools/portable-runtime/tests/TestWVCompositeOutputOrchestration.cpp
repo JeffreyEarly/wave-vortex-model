@@ -34,6 +34,11 @@ WVPortableObserverRecord outputRecord(double finalTime = 1.0) {
        WVToleranceKind::uniformAbsolute, 1e-10,
        WVStateOwnership::integratorOwned,
        WVRestartRequirement::requiredDynamicState});
+  record.stateBlocks.push_back(
+      {"diagnostic", WVStateScalarType::real64, {1},
+       WVToleranceKind::uniformAbsolute, 1e-10,
+       WVStateOwnership::observerDerived,
+       WVRestartRequirement::derivedState});
   WVObserverRecord coefficients;
   coefficients.identifier = "coefficients";
   coefficients.name = "Wave-vortex coefficients";
@@ -67,6 +72,18 @@ WVPortableObserverDescriptor descriptorFrom(
               WVPortableObserverDescriptor::create(record, descriptor)),
           "observer descriptor creation");
   return descriptor;
+}
+
+WVPortableObserverRecord singleScheduleRecord(double interval,
+                                              double initialTime,
+                                              double finalTime) {
+  auto record = outputRecord();
+  record.outputFiles = {
+      {"single",
+       "single.record",
+       {{"group", "Single group", {interval, initialTime, finalTime},
+         {"coefficients"}, true}}}};
+  return record;
 }
 
 class LinearSystem final : public WVCompositeIntegrationSystem {
@@ -128,9 +145,15 @@ struct StateFixture {
                {coefficients.data() + 2, shape}}},
              additional.mutableBlocks(),
              additional.blockCount()};
-    for (std::size_t block = 0; block < state.additionalBlockCount; ++block)
-      std::fill_n(state.additionalBlocks[block].realData,
-                  state.additionalBlocks[block].layout->elementCount, 1.0);
+    for (std::size_t block = 0; block < state.additionalBlockCount; ++block) {
+      const auto &metadata = *state.additionalBlocks[block].layout;
+      if (metadata.scalarType == WVStateScalarType::real64)
+        std::fill_n(state.additionalBlocks[block].realData,
+                    metadata.elementCount, 1.0);
+      else
+        std::fill_n(state.additionalBlocks[block].complexData,
+                    metadata.elementCount, WVComplex64{1.0, 0.0});
+    }
   }
 
   std::vector<double> values() const {
@@ -139,10 +162,19 @@ struct StateFixture {
       result.push_back(value.real);
       result.push_back(value.imag);
     }
-    for (std::size_t block = 0; block < state.additionalBlockCount; ++block)
-      for (std::size_t index = 0;
-           index < state.additionalBlocks[block].layout->elementCount; ++index)
-        result.push_back(state.additionalBlocks[block].realData[index]);
+    for (std::size_t block = 0; block < state.additionalBlockCount; ++block) {
+      const auto &metadata = *state.additionalBlocks[block].layout;
+      for (std::size_t index = 0; index < metadata.elementCount; ++index) {
+        if (metadata.scalarType == WVStateScalarType::real64)
+          result.push_back(state.additionalBlocks[block].realData[index]);
+        else {
+          result.push_back(
+              state.additionalBlocks[block].complexData[index].real);
+          result.push_back(
+              state.additionalBlocks[block].complexData[index].imag);
+        }
+      }
+    }
     result.push_back(state.waveVortex.t);
     return result;
   }
@@ -157,11 +189,13 @@ struct DeliveredRoute {
   WVCompositeOutputEventKind kind =
       WVCompositeOutputEventKind::acceptedEndpoint;
   const WVObserverRecord *firstObserver = nullptr;
+  double firstCoefficientReal = 0.0;
 };
 
 class RecordingSink final : public WVCompositeOutputSink {
 public:
   WVKernelStatus preflight(const WVCompositeOutputPlan &plan) override {
+    ++preflightAttempts;
     preflightEventCount = plan.eventCount();
     if (preflightFailure)
       return {WVKernelStatusCode::allocationFailure,
@@ -176,7 +210,8 @@ public:
     delivered.push_back(
         {event.eventOrdinal, route.fileOrdinal, route.groupOrdinal,
          route.scheduleOrdinal, event.scheduledTime, event.kind,
-         route.observerCount ? route.observers[0].record : nullptr});
+         route.observerCount ? route.observers[0].record : nullptr,
+         event.state.waveVortex.coefficients.Ap.data[0].real});
     if (failAtAttempt == attempts)
       return {failureCode, failureMessage};
     result.writeCount = route.observerCount;
@@ -192,8 +227,35 @@ public:
   WVKernelStatusCode failureCode = WVKernelStatusCode::numericalFailure;
   std::string failureMessage = "simulated interruption";
   std::size_t preflightEventCount = 0;
+  std::size_t preflightAttempts = 0;
   std::size_t attempts = 0;
   std::vector<DeliveredRoute> delivered;
+};
+
+class ReentrantPreflightSink final : public WVCompositeOutputSink {
+public:
+  WVKernelStatus preflight(const WVCompositeOutputPlan &) override {
+    ++preflightAttempts;
+    nestedStatus =
+        driver->advanceToTime(*state, finalTime, stepSize, *this);
+    return WVKernelStatus::ok();
+  }
+  WVKernelStatus
+  deliver(const WVCompositeOutputEvent &,
+          const WVCompositeOutputRouteView &route,
+          WVCompositeOutputDeliveryResult &result) override {
+    ++deliveries;
+    result.writeCount = route.observerCount;
+    return WVKernelStatus::ok();
+  }
+
+  WVCompositeOutputDriver *driver = nullptr;
+  WVMutableCompositeState *state = nullptr;
+  double finalTime = 0.0;
+  double stepSize = 0.0;
+  WVKernelStatus nestedStatus;
+  std::size_t preflightAttempts = 0;
+  std::size_t deliveries = 0;
 };
 
 struct Context {
@@ -262,6 +324,43 @@ void testPlanningOrderingIdentityAndMetrics(Context &context) {
   require(static_cast<bool>(status) && emptySink.attempts == 0 &&
               emptyFixture.state.waveVortex.t == 1.0,
           "empty schedules advance without deliveries");
+
+  const double nextAfterOne =
+      std::nextafter(1.0, std::numeric_limits<double>::infinity());
+  auto distinctRecord = outputRecord();
+  distinctRecord.outputFiles = {
+      {"distinct",
+       "distinct.record",
+       {{"first", "First", {1.0, 1.0, 1.0}, {"coefficients"}, true},
+        {"second", "Second", {1.0, nextAfterOne, nextAfterOne},
+         {"sharedTracer"}, false}}}};
+  auto distinctDescriptor = descriptorFrom(distinctRecord);
+  WVCompositeOutputPlan distinct;
+  status = WVCompositeOutputPlan::create(distinctDescriptor, 1.0,
+                                         nextAfterOne, {}, distinct);
+  require(static_cast<bool>(status) && distinct.eventCount() == 2 &&
+              distinct.event(0).routeCount == 1 &&
+              distinct.event(1).routeCount == 1,
+          "distinct representable times are not tolerance-aggregated");
+
+  const double largeAnchor = 1.0e16;
+  auto largeAnchorDescriptor = descriptorFrom(
+      singleScheduleRecord(1.0, largeAnchor, largeAnchor + 4.0));
+  WVCompositeOutputPlan indistinguishable;
+  status = WVCompositeOutputPlan::create(
+      largeAnchorDescriptor, largeAnchor, largeAnchor + 4.0, {},
+      indistinguishable);
+  require(status.code == WVKernelStatusCode::invalidConfiguration,
+          "large-anchor indistinguishable ordinals are rejected");
+
+  const double tinyInterval =
+      std::numeric_limits<double>::epsilon() / 4.0;
+  auto tinyDescriptor = descriptorFrom(
+      singleScheduleRecord(tinyInterval, 1.0, nextAfterOne));
+  status = WVCompositeOutputPlan::create(tinyDescriptor, 1.0, nextAfterOne,
+                                         {}, indistinguishable);
+  require(status.code == WVKernelStatusCode::invalidConfiguration,
+          "tiny-interval indistinguishable ordinals are rejected");
 }
 
 void testFixedDeliveryAndExactMetrics(Context &context) {
@@ -406,6 +505,78 @@ void testPreflightAndMalformedProgress(Context &context) {
   require(status.code == WVKernelStatusCode::allocationFailure &&
               fixture.values() == before && rk4.metrics().acceptedStepCount == 0,
           "allocation failure occurs before state mutation");
+  sink.preflightFailure = false;
+  status = driver.advanceToTime(fixture.state, 1.0, 0.2, sink);
+  require(static_cast<bool>(status) && fixture.state.waveVortex.t == 1.0 &&
+              sink.preflightAttempts == 2,
+          "ordinary preflight failure permits a later retry");
+
+  auto requireDescriptorMismatch = [&](const WVPortableObserverRecord &record,
+                                       const std::string &label) {
+    auto mismatchDescriptor = descriptorFrom(record);
+    WVCompositeStateLayout mismatchLayout;
+    require(static_cast<bool>(WVCompositeStateLayout::create(
+                {1, 1}, mismatchDescriptor, mismatchLayout)),
+            label + " layout creation");
+    LinearSystem mismatchSystem(std::move(mismatchLayout));
+    StateFixture mismatchFixture(mismatchSystem.stateLayout());
+    const auto mismatchBefore = mismatchFixture.values();
+    WVCompositeFixedStepRK4 mismatchIntegrator(mismatchSystem, true);
+    require(static_cast<bool>(mismatchIntegrator.prepareStateAfterRestart(
+                mismatchFixture.state)),
+            label + " integrator preparation");
+    RecordingSink mismatchSink;
+    WVCompositeOutputDriver mismatchDriver(mismatchIntegrator, plan);
+    const auto mismatchStatus = mismatchDriver.advanceToTime(
+        mismatchFixture.state, 1.0, 0.2, mismatchSink);
+    require(mismatchStatus.code == WVKernelStatusCode::invalidConfiguration &&
+                mismatchSink.preflightAttempts == 0 &&
+                mismatchIntegrator.metrics().acceptedStepCount == 0 &&
+                mismatchFixture.values() == mismatchBefore,
+            label + " fails before callbacks or state mutation");
+  };
+
+  auto identifierMismatch = outputRecord();
+  identifierMismatch.stateBlocks[3].identifier = "otherTracerAmplitude";
+  identifierMismatch.observers[1].stateBlockIdentifiers = {
+      "otherTracerAmplitude"};
+  requireDescriptorMismatch(identifierMismatch, "state-block identifier mismatch");
+
+  auto orderMismatch = outputRecord();
+  std::swap(orderMismatch.stateBlocks[0], orderMismatch.stateBlocks[1]);
+  requireDescriptorMismatch(orderMismatch, "state-block order mismatch");
+
+  auto typeMismatch = outputRecord();
+  typeMismatch.stateBlocks[4].scalarType = WVStateScalarType::complex64;
+  requireDescriptorMismatch(typeMismatch, "state-block scalar-type mismatch");
+
+  auto dimensionMismatch = outputRecord();
+  dimensionMismatch.stateBlocks[3].dimensions = {1, 2};
+  requireDescriptorMismatch(dimensionMismatch, "state-block dimension mismatch");
+
+  auto observerMismatch = outputRecord();
+  observerMismatch.observers[1].name = "Different observer identity";
+  requireDescriptorMismatch(observerMismatch, "observer descriptor mismatch");
+
+  StateFixture reentrantFixture(context.system.stateLayout());
+  WVCompositeFixedStepRK4 reentrantIntegrator(context.system, true);
+  require(static_cast<bool>(reentrantIntegrator.prepareStateAfterRestart(
+              reentrantFixture.state)),
+          "reentrant-preflight preparation");
+  WVCompositeOutputDriver reentrantDriver(reentrantIntegrator, plan);
+  ReentrantPreflightSink reentrantSink;
+  reentrantSink.driver = &reentrantDriver;
+  reentrantSink.state = &reentrantFixture.state;
+  reentrantSink.finalTime = 1.0;
+  reentrantSink.stepSize = 0.2;
+  status = reentrantDriver.advanceToTime(reentrantFixture.state, 1.0, 0.2,
+                                         reentrantSink);
+  require(static_cast<bool>(status) &&
+              reentrantSink.nestedStatus.code ==
+                  WVKernelStatusCode::reentrantExecution &&
+              reentrantSink.preflightAttempts == 1 &&
+              reentrantSink.deliveries == plan.metrics().scheduledRouteCount,
+          "reentrant sink preflight is rejected while outer run succeeds");
 
   auto malformed = plan.initialProgress();
   malformed[0].fileIdentifier = "wrong";
@@ -483,6 +654,63 @@ void testTerminationInterruptionAndLaterRouteFailure(Context &context) {
               interruptedDriver.metrics().committedDeliveryCount == 3 &&
               interruptedDriver.metrics().failureCount == 1,
           "interruption preserves the latest accepted state and partial records");
+
+  StateFixture resumed(context.system.stateLayout());
+  WVCompositeFixedStepRK4 resumedIntegrator(context.system, true);
+  require(static_cast<bool>(
+              resumedIntegrator.prepareStateAfterRestart(resumed.state)),
+          "interior resume preparation");
+  RecordingSink resumedSink;
+  resumedSink.failAtAttempt = 6;
+  resumedSink.failureMessage = "interior sibling failed";
+  WVCompositeOutputDriver resumedDriver(resumedIntegrator, plan);
+  status = resumedDriver.advanceToTime(resumed.state, 1.0, 0.4, resumedSink);
+  require(!status && resumed.state.waveVortex.t == 0.8 &&
+              resumedDriver.hasPendingDelivery() &&
+              resumedDriver.records()[4].committed &&
+              resumedDriver.records()[4].attemptCount == 1 &&
+              !resumedDriver.records()[5].committed &&
+              resumedDriver.records()[5].attemptCount == 1 &&
+              resumedDriver.records()[5].failureCount == 1,
+          "interior coincident failure retains event state and route cursor");
+  resumedSink.failAtAttempt = std::numeric_limits<std::size_t>::max();
+  status = resumedDriver.advanceToTime(resumed.state, 1.0, 0.4, resumedSink);
+  require(static_cast<bool>(status) && !resumedDriver.hasPendingDelivery() &&
+              resumed.state.waveVortex.t == 1.0 &&
+              resumedDriver.records()[4].attemptCount == 1 &&
+              resumedDriver.records()[5].committed &&
+              resumedDriver.records()[5].attemptCount == 2 &&
+              resumedDriver.records()[5].failureCount == 1 &&
+              resumedDriver.metrics().deliveryAttemptCount == 11 &&
+              resumedDriver.metrics().committedDeliveryCount == 10 &&
+              resumedDriver.metrics().failureCount == 1 &&
+              resumedDriver.metrics().outputStateEvaluationCount == 7 &&
+              resumedDriver.metrics().interpolatedStateEvaluationCount == 5,
+          "retry replays only failed route and continues without reinterpolation");
+  std::size_t committedSiblingDeliveries = 0;
+  std::vector<double> failedRouteValues;
+  for (const auto &delivery : resumedSink.delivered) {
+    if (delivery.fileOrdinal == 0 && delivery.groupOrdinal == 0 &&
+        delivery.scheduleOrdinal == 2)
+      ++committedSiblingDeliveries;
+    if (delivery.fileOrdinal == 0 && delivery.groupOrdinal == 1 &&
+        delivery.scheduleOrdinal == 1)
+      failedRouteValues.push_back(delivery.firstCoefficientReal);
+  }
+  require(committedSiblingDeliveries == 1 && failedRouteValues.size() == 2 &&
+              failedRouteValues[0] == failedRouteValues[1],
+          "resume preserves exact event state without duplicating sibling");
+
+  StateFixture resumeControl(context.system.stateLayout());
+  WVCompositeFixedStepRK4 resumeControlIntegrator(context.system, true);
+  require(static_cast<bool>(resumeControlIntegrator.prepareStateAfterRestart(
+              resumeControl.state)) &&
+              static_cast<bool>(resumeControlIntegrator.advanceToTime(
+                  resumeControl.state, 1.0, 0.4)) &&
+              resumeControl.values() == resumed.values() &&
+              resumeControlIntegrator.metrics().acceptedStepCount ==
+                  resumedIntegrator.metrics().acceptedStepCount,
+          "failed-route resume preserves accepted steps and final state");
 }
 
 struct RunResult {

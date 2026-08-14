@@ -22,7 +22,9 @@ struct WVAdditionalStateBlockLayout {
 };
 
 // Resolves identifiers and offsets once so numerical stages use ordered views
-// without virtual dispatch or repeated name lookup.
+// without virtual dispatch or repeated name lookup. The originating state and
+// observer records remain available for exact cross-boundary compatibility
+// checks.
 class WVCompositeStateLayout final {
 public:
   static WVKernelStatus create(WVShape2D coefficientShape,
@@ -32,6 +34,12 @@ public:
   const std::vector<WVAdditionalStateBlockLayout> &
   additionalBlocks() const noexcept {
     return additionalBlocks_;
+  }
+  const std::vector<WVStateBlockRecord> &stateBlockRecords() const noexcept {
+    return stateBlockRecords_;
+  }
+  const std::vector<WVObserverRecord> &observerRecords() const noexcept {
+    return observerRecords_;
   }
   std::size_t realElementCount() const noexcept { return realElementCount_; }
   std::size_t complexElementCount() const noexcept {
@@ -46,6 +54,8 @@ public:
 private:
   WVShape2D coefficientShape_;
   std::vector<WVAdditionalStateBlockLayout> additionalBlocks_;
+  std::vector<WVStateBlockRecord> stateBlockRecords_;
+  std::vector<WVObserverRecord> observerRecords_;
   std::size_t realElementCount_ = 0;
   std::size_t complexElementCount_ = 0;
 };
