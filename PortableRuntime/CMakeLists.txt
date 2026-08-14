@@ -32,6 +32,7 @@ add_library(WaveVortexPortableRuntime STATIC
     src/WVCompositeIntegration.cpp
     src/WVCompositeOutputOrchestration.cpp
     src/WVFieldEvaluationService.cpp
+    src/WVLagrangianParticles.cpp
     src/WVObserverOutputEvaluationService.cpp
     src/WVModelOutputNetCDFSchema.cpp
     src/WVModelOutputNetCDF.cpp
@@ -130,6 +131,13 @@ if(BUILD_TESTING)
     target_compile_features(wv_field_evaluation_inspect PRIVATE cxx_std_17)
     target_include_directories(wv_field_evaluation_inspect PRIVATE ../CompiledKernel/adapters/reference)
     target_link_libraries(wv_field_evaluation_inspect PRIVATE WaveVortex::Checkpoint WaveVortex::ReferenceFFT)
+
+    add_executable(wv_lagrangian_particle_inspect
+        ../tools/portable-runtime/WVLagrangianParticleInspect.cpp
+    )
+    target_compile_features(wv_lagrangian_particle_inspect PRIVATE cxx_std_17)
+    target_include_directories(wv_lagrangian_particle_inspect PRIVATE ../CompiledKernel/adapters/reference)
+    target_link_libraries(wv_lagrangian_particle_inspect PRIVATE WaveVortex::Checkpoint WaveVortex::ReferenceFFT)
 
     add_executable(TestWVCheckpointReader
         ../tools/portable-runtime/tests/TestWVCheckpointReader.cpp
@@ -239,6 +247,17 @@ if(BUILD_TESTING)
         target_compile_options(TestWVObserverOutputEvaluation PRIVATE -Wall -Wextra -Wpedantic -Werror)
     endif()
     add_test(NAME observer-output-evaluation COMMAND TestWVObserverOutputEvaluation)
+
+    add_executable(TestWVLagrangianParticles
+        ../tools/portable-runtime/tests/TestWVLagrangianParticles.cpp
+    )
+    target_compile_features(TestWVLagrangianParticles PRIVATE cxx_std_17)
+    target_include_directories(TestWVLagrangianParticles PRIVATE ../CompiledKernel/adapters/reference)
+    target_link_libraries(TestWVLagrangianParticles PRIVATE WaveVortex::PortableRuntime WaveVortex::ReferenceFFT)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "AppleClang|Clang|GNU")
+        target_compile_options(TestWVLagrangianParticles PRIVATE -Wall -Wextra -Wpedantic -Werror)
+    endif()
+    add_test(NAME lagrangian-particles COMMAND TestWVLagrangianParticles)
 
     add_executable(TestWaveVortexRun ../tools/portable-runtime/tests/TestWaveVortexRun.cpp)
     target_compile_features(TestWaveVortexRun PRIVATE cxx_std_17)

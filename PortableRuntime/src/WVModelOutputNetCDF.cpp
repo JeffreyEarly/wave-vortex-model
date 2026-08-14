@@ -62,7 +62,7 @@ putStringListAttribute(int group, const char *name,
                        const std::vector<std::string> &values,
                        const std::string &path) {
   if (values.empty())
-    return detail::putTextAttribute(group, NC_GLOBAL, name, "", path);
+    return WVCheckpointStatus::ok();
   std::vector<const char *> raw;
   raw.reserve(values.size());
   for (const auto &value : values)
@@ -414,6 +414,11 @@ WVCheckpointStatus parseObserver(int outputGroup, int metadataGroup,
       return result;
     if (!present)
       observer.fieldNames.clear();
+    else
+      observer.fieldNames.erase(
+          std::remove(observer.fieldNames.begin(), observer.fieldNames.end(),
+                      std::string{}),
+          observer.fieldNames.end());
     if (!hadPortableIdentifier &&
         observer.kind == WVObserverKind::eulerianFields) {
       for (const auto &field : observer.fieldNames)
@@ -533,7 +538,10 @@ WVCheckpointStatus parseObserver(int outputGroup, int metadataGroup,
       return result;
     observer.x.assign(count, 0.0);
     observer.y.assign(count, 0.0);
-    if (!observer.isXYOnly)
+    int fixedZVariable = -1;
+    if (!observer.isXYOnly ||
+        nc_inq_varid(outputGroup, (observer.name + "_z").c_str(),
+                     &fixedZVariable) == NC_NOERR)
       observer.z.assign(count, 0.0);
     const std::size_t coordinateCount = observer.isXYOnly ? 2 : 3;
     for (std::size_t index = 0; index < coordinateCount; ++index) {
@@ -895,6 +903,7 @@ public:
     std::string name;
     WVStateScalarType scalarType = WVStateScalarType::real64;
     std::size_t elementCount = 0;
+    std::vector<double> fixedValues;
     int realId = -1;
     int imagId = -1;
   };
@@ -1396,6 +1405,16 @@ public:
             group.id, dimensionName, {particleDimension}, coordinate, path);
         if (!result)
           return result;
+        result = detail::putTextAttribute(group.id, coordinate, "units",
+                                          "unitless id number",
+                                          path + "/" + dimensionName);
+        if (!result)
+          return result;
+        std::vector<double> particleIds(record->x.size());
+        for (std::size_t index = 0; index < particleIds.size(); ++index)
+          particleIds[index] = static_cast<double>(index + 1);
+        group.staticVariables.push_back(
+            {dimensionName, std::move(particleIds), coordinate});
         for (std::size_t blockIndex = 0;
              blockIndex < record->stateBlockIdentifiers.size(); ++blockIndex) {
           const auto *layout =
@@ -1414,6 +1433,60 @@ public:
           result = detail::defineDoubleVariable(
               group.id, dynamic.name, {timeDimension, particleDimension},
               dynamic.realId, path);
+          if (!result)
+            return result;
+          result = detail::putTextAttribute(group.id, dynamic.realId, "units",
+                                            "m", path + "/" + dynamic.name);
+          if (!result)
+            return result;
+          result = detail::putTextAttribute(
+              group.id, dynamic.realId, "long_name",
+              suffix + std::string(" position of particle"),
+              path + "/" + dynamic.name);
+          if (!result)
+            return result;
+          const std::array<std::pair<const char *, std::string>, 3> attributes{{
+              {"isParticle", "1"},
+              {"particleName", record->name},
+              {"particleVariableName", suffix}}};
+          for (const auto &attribute : attributes) {
+            result = detail::putTextAttribute(
+                group.id, dynamic.realId, attribute.first, attribute.second,
+                path + "/" + dynamic.name);
+            if (!result)
+              return result;
+          }
+          group.dynamicVariables.push_back(std::move(dynamic));
+        }
+        if (record->isXYOnly && !record->z.empty()) {
+          DynamicVariable dynamic;
+          dynamic.name = record->name + "_z";
+          dynamic.scalarType = WVStateScalarType::real64;
+          dynamic.elementCount = record->z.size();
+          dynamic.fixedValues = record->z;
+          result = detail::defineDoubleVariable(
+              group.id, dynamic.name, {timeDimension, particleDimension},
+              dynamic.realId, path);
+          if (!result)
+            return result;
+          result = detail::putTextAttribute(group.id, dynamic.realId, "units",
+                                            "m", path + "/" + dynamic.name);
+          if (result)
+            result = detail::putTextAttribute(
+                group.id, dynamic.realId, "long_name",
+                "z position of particle", path + "/" + dynamic.name);
+          if (result)
+            result = detail::putTextAttribute(group.id, dynamic.realId,
+                                              "isParticle", "1",
+                                              path + "/" + dynamic.name);
+          if (result)
+            result = detail::putTextAttribute(group.id, dynamic.realId,
+                                              "particleName", record->name,
+                                              path + "/" + dynamic.name);
+          if (result)
+            result = detail::putTextAttribute(group.id, dynamic.realId,
+                                              "particleVariableName", "z",
+                                              path + "/" + dynamic.name);
           if (!result)
             return result;
           group.dynamicVariables.push_back(std::move(dynamic));
@@ -2067,7 +2140,9 @@ public:
               return attributeStatus;
             if (observed != expected)
               return failure(WVCheckpointStatusCode::appendConflict,
-                             "Observer-variable metadata changed.",
+                             "Observer-variable metadata changed: expected '" +
+                                 expected + "' but observed '" + observed +
+                                 "'.",
                              "/" + group.record.name + "/" + variableName +
                                  "/@" + name);
             return WVCheckpointStatus::ok();
@@ -2339,6 +2414,12 @@ public:
               dynamic.elementCount = layout->elementCount;
               group.dynamicVariables.push_back(std::move(dynamic));
             }
+            if (recordPointer->kind == WVObserverKind::lagrangianParticles &&
+                recordPointer->isXYOnly && !recordPointer->z.empty())
+              group.dynamicVariables.push_back(
+                  {{}, recordPointer->name + "_z",
+                   WVStateScalarType::real64, recordPointer->z.size(),
+                   recordPointer->z, -1, -1});
           } else if (recordPointer->kind == WVObserverKind::mooring) {
             const auto &model = configuration.checkpointTemplate.configuration;
             std::vector<double> ids(recordPointer->x.size());
@@ -2505,14 +2586,18 @@ public:
       delivery.writtenBytes += 6 * coefficientCount * sizeof(double);
     }
     for (const auto &dynamic : group.dynamicVariables) {
-      const auto *block = findBlock(event, dynamic.blockIdentifier);
-      if (block == nullptr || dynamic.scalarType != WVStateScalarType::real64 ||
-          block->realData == nullptr)
+      const auto *block = dynamic.blockIdentifier.empty()
+                              ? nullptr
+                              : findBlock(event, dynamic.blockIdentifier);
+      const double *values = dynamic.fixedValues.empty()
+                                 ? block == nullptr ? nullptr : block->realData
+                                 : dynamic.fixedValues.data();
+      if (values == nullptr || dynamic.scalarType != WVStateScalarType::real64)
         return failure(WVCheckpointStatusCode::shapeMismatch,
                        "Dynamic observer state is absent or incompatible.",
                        "/" + group.record.name + "/" + dynamic.name);
       auto result = writeRealSlab(group.id, dynamic.realId, index,
-                                  block->realData, dynamic.elementCount,
+                                  values, dynamic.elementCount,
                                   "/" + group.record.name + "/" + dynamic.name);
       if (!result)
         return result;
@@ -2790,7 +2875,7 @@ WVModelOutputNetCDFSink::inspect(const std::vector<std::string> &paths,
           candidate.latestRestart.metadata.stateGroupPath);
       if (!result)
         return result;
-      if (!observer.isXYOnly) {
+      if (!observer.isXYOnly || !observer.z.empty()) {
         result = readLatestRealSlab(
             outputGroup, observer.name + "_z", selectedIndex, observer.z,
             candidate.latestRestart.metadata.stateGroupPath);

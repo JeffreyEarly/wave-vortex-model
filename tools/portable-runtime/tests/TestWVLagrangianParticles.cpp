@@ -1,0 +1,322 @@
+#include "WaveVortexRuntime/WVLagrangianParticles.hpp"
+
+#include "WVReferenceFFTEngine.hpp"
+
+#include <algorithm>
+#include <cmath>
+#include <iostream>
+#include <memory>
+#include <stdexcept>
+#include <string>
+#include <vector>
+
+using namespace wavevortex;
+using namespace wavevortex::runtime;
+
+namespace {
+
+void require(bool condition, const std::string &message) {
+  if (!condition)
+    throw std::runtime_error(message);
+}
+
+WVTransformConstantStratificationConfiguration configuration(bool hydrostatic) {
+  WVTransformConstantStratificationConfiguration value;
+  value.Nx = 6;
+  value.Ny = 5;
+  value.Nz = 7;
+  value.Nj = 4;
+  value.Lx = 15000.0;
+  value.Ly = 12000.0;
+  value.Lz = 1300.0;
+  value.N0 = 5.2e-3;
+  value.rho0 = 1027.0;
+  value.g = 9.80665;
+  value.planetaryRadius = 6.3712e6;
+  value.rotationRate = 7.292115e-5;
+  value.latitude = 33.0;
+  value.isHydrostatic = hydrostatic;
+  value.shouldAntialias = true;
+  return value;
+}
+
+WVPortableObserverDescriptor descriptorFor(
+    const WVTransformConstantStratificationConfiguration &configuration) {
+  WVTransformConstantStratificationDescriptor transform;
+  require(static_cast<bool>(WVTransformConstantStratificationDescriptor::create(
+              configuration, transform)),
+          "transform descriptor");
+  WVPortableObserverRecord record;
+  const std::vector<std::size_t> shape{configuration.Nj, transform.Nkl()};
+  for (const auto *name : {"Ap", "Am", "A0"})
+    record.stateBlocks.push_back(
+        {name, WVStateScalarType::complex64, shape,
+         WVToleranceKind::coefficientEnergyScaled, 1e-6,
+         WVStateOwnership::integratorOwned,
+         WVRestartRequirement::requiredDynamicState});
+  const auto addReal = [&](const char *name, std::size_t count,
+                           double tolerance) {
+    record.stateBlocks.push_back(
+        {name, WVStateScalarType::real64, {count},
+         WVToleranceKind::uniformAbsolute, tolerance,
+         WVStateOwnership::integratorOwned,
+         WVRestartRequirement::requiredDynamicState});
+  };
+  addReal("surface-x", 3, 1e-5);
+  addReal("surface-y", 3, 1e-5);
+  addReal("volume-x", 2, 1e-5);
+  addReal("volume-y", 2, 1e-5);
+  addReal("volume-z", 2, 1e-6);
+  WVObserverRecord coefficients;
+  coefficients.identifier = "coefficients";
+  coefficients.name = "Wave-vortex coefficients";
+  coefficients.kind = WVObserverKind::coefficients;
+  coefficients.stateBlockIdentifiers = {"Ap", "Am", "A0"};
+  record.observers.push_back(coefficients);
+  WVObserverRecord surface;
+  surface.identifier = "surface";
+  surface.name = "surfaceParticles";
+  surface.kind = WVObserverKind::lagrangianParticles;
+  surface.stateBlockIdentifiers = {"surface-x", "surface-y"};
+  surface.x = {-10.0, 1000.0, configuration.Lx + 3.0};
+  surface.y = {20.0, -100.0, 2000.0};
+  surface.z = {-100.0, -300.0, -500.0};
+  surface.isXYOnly = true;
+  surface.advectionInterpolation = WVPositionInterpolation::linear;
+  surface.trackedFieldInterpolation = WVPositionInterpolation::spline;
+  surface.fieldNames = {"u", "rho_e"};
+  surface.horizontalAbsoluteTolerance = 1e-5;
+  record.observers.push_back(surface);
+  WVObserverRecord volume;
+  volume.identifier = "volume";
+  volume.name = "volumeParticles";
+  volume.kind = WVObserverKind::lagrangianParticles;
+  volume.stateBlockIdentifiers = {"volume-x", "volume-y", "volume-z"};
+  volume.x = {200.0, 3000.0};
+  volume.y = {400.0, 5000.0};
+  volume.z = {-200.0, -900.0};
+  volume.isXYOnly = false;
+  volume.advectionInterpolation = WVPositionInterpolation::spline;
+  volume.trackedFieldInterpolation = WVPositionInterpolation::linear;
+  volume.fieldNames = {"eta"};
+  volume.horizontalAbsoluteTolerance = 1e-5;
+  volume.verticalAbsoluteTolerance = 1e-6;
+  record.observers.push_back(volume);
+  WVPortableObserverDescriptor descriptor;
+  const auto status = WVPortableObserverDescriptor::create(record, descriptor);
+  require(static_cast<bool>(status), status.message);
+  return descriptor;
+}
+
+struct Fixture {
+  WVShape2D shape;
+  std::vector<WVComplex64> coefficients;
+  std::vector<WVComplex64> flux;
+  WVAdditionalStateStorage stateStorage;
+  WVAdditionalStateStorage fluxStorage;
+  WVMutableCompositeState state;
+  WVCompositeFlux rhs;
+  std::vector<WVAdditionalStateBlockConstView> constViews;
+
+  explicit Fixture(const WVCompositeStateLayout &layout)
+      : shape(layout.coefficientShape()),
+        coefficients(3 * shape.elementCount()),
+        flux(3 * shape.elementCount()) {
+    require(static_cast<bool>(stateStorage.initialize(layout)),
+            "state storage");
+    require(static_cast<bool>(fluxStorage.initialize(layout)), "flux storage");
+    const auto M = shape.elementCount();
+    for (std::size_t index = 0; index < M; ++index) {
+      const double value = static_cast<double>(index + 1);
+      coefficients[index] = {1e-4 * std::sin(0.17 * value),
+                             1e-4 * std::cos(0.11 * value)};
+      coefficients[M + index] = {1e-4 * std::cos(0.13 * value),
+                                 -1e-4 * std::sin(0.19 * value)};
+      coefficients[2 * M + index] = {1e-4 * std::sin(0.07 * value),
+                                     1e-4 * std::cos(0.23 * value)};
+    }
+    state = {{0.25,
+              -0.5,
+              {{coefficients.data(), shape},
+               {coefficients.data() + M, shape},
+               {coefficients.data() + 2 * M, shape}}},
+             stateStorage.mutableBlocks(), stateStorage.blockCount()};
+    rhs = {{{flux.data(), shape}, {flux.data() + M, shape},
+            {flux.data() + 2 * M, shape}},
+           fluxStorage.mutableBlocks(), fluxStorage.blockCount()};
+  }
+
+  WVCompositeState constView() {
+    return compositeConstView(state, constViews);
+  }
+};
+
+void initializeParticles(Fixture &fixture,
+                         const WVPortableObserverDescriptor &descriptor) {
+  for (const auto &observer : descriptor.observers()) {
+    if (observer.kind != WVObserverKind::lagrangianParticles)
+      continue;
+    const std::array<const std::vector<double> *, 3> values{
+        {&observer.x, &observer.y, &observer.z}};
+    for (std::size_t coordinate = 0;
+         coordinate < observer.stateBlockIdentifiers.size(); ++coordinate)
+      for (std::size_t block = 0; block < fixture.state.additionalBlockCount;
+           ++block)
+        if (fixture.state.additionalBlocks[block].layout->identifier ==
+            observer.stateBlockIdentifiers[coordinate])
+          std::copy(values[coordinate]->begin(), values[coordinate]->end(),
+                    fixture.state.additionalBlocks[block].realData);
+  }
+}
+
+void testComposite(bool hydrostatic) {
+  const auto config = configuration(hydrostatic);
+  const auto descriptor = descriptorFor(config);
+  WVFrozenForcingSchedule emptySchedule;
+  std::unique_ptr<WVConstantStratificationCompositeSystem> system;
+  auto status = WVConstantStratificationCompositeSystem::create(
+      config, emptySchedule, descriptor,
+      std::make_unique<WVReferenceFFTEngine>(), 1e-6, system);
+  require(static_cast<bool>(status), status.message);
+  require(system->particles().size() == 2, "particle systems not resolved");
+  Fixture fixture(system->stateLayout());
+  status = system->initializeParticleState(fixture.state);
+  require(static_cast<bool>(status), status.message);
+  const double unwrapped = fixture.state.additionalBlocks[0].realData[0];
+  status = system->evaluateRightHandSide(fixture.constView(), fixture.rhs);
+  require(static_cast<bool>(status), status.message);
+  require(fixture.state.additionalBlocks[0].realData[0] == unwrapped,
+          "particle evaluation wrapped accepted state");
+  for (std::size_t block = 0; block < fixture.rhs.additionalBlockCount; ++block)
+    for (std::size_t index = 0;
+         index < fixture.rhs.additionalBlocks[block].layout->elementCount;
+         ++index)
+      require(std::isfinite(fixture.rhs.additionalBlocks[block].realData[index]),
+              "particle RHS was not completely written");
+  require(system->metrics().velocityFieldEvaluationCount == 1,
+          "particle systems did not share one primitive transform");
+  require(system->fieldEvaluationService().metrics().movingPositionCount == 5,
+          "moving position count changed");
+  const auto persistentBytes = system->persistentBytes();
+  const auto interpolationBytes = system->fieldEvaluationService()
+                                      .metrics()
+                                      .movingInterpolationWorkspaceBytes;
+  status = system->evaluateRightHandSide(fixture.constView(), fixture.rhs);
+  require(static_cast<bool>(status), status.message);
+  require(system->persistentBytes() == persistentBytes &&
+              system->fieldEvaluationService()
+                      .metrics()
+                      .movingInterpolationWorkspaceBytes == interpolationBytes,
+          "repeated particle RHS changed bounded persistent storage");
+
+  WVCompositeFixedStepRK4 rk4(*system, true);
+  status = rk4.prepareStateAfterRestart(fixture.state);
+  require(static_cast<bool>(status), status.message);
+  status = rk4.step(fixture.state, 1e-3);
+  require(static_cast<bool>(status), status.message);
+  require(rk4.lastAcceptedStep() != nullptr &&
+              rk4.lastAcceptedStep()->denseOutput != nullptr,
+          "particle RK4 dense output missing");
+
+  std::vector<double> acceptedParticleState;
+  for (std::size_t block = 0; block < fixture.state.additionalBlockCount;
+       ++block)
+    acceptedParticleState.insert(
+        acceptedParticleState.end(),
+        fixture.state.additionalBlocks[block].realData,
+        fixture.state.additionalBlocks[block].realData +
+            fixture.state.additionalBlocks[block].layout->elementCount);
+
+  Fixture dense(system->stateLayout());
+  initializeParticles(dense, descriptor);
+  status = rk4.evaluateDenseOutput(fixture.state.waveVortex.t - 5e-4,
+                                   dense.state);
+  require(static_cast<bool>(status), status.message);
+  require(dense.state.waveVortex.t == fixture.state.waveVortex.t - 5e-4,
+          "particle dense-output time changed");
+  std::vector<double> afterDenseOutput;
+  for (std::size_t block = 0; block < fixture.state.additionalBlockCount;
+       ++block)
+    afterDenseOutput.insert(
+        afterDenseOutput.end(), fixture.state.additionalBlocks[block].realData,
+        fixture.state.additionalBlocks[block].realData +
+            fixture.state.additionalBlocks[block].layout->elementCount);
+  require(afterDenseOutput == acceptedParticleState,
+          "particle dense output mutated accepted state");
+
+  WVCompositeAdaptiveRK23Options strictOptions;
+  strictOptions.relativeTolerance = 1e-12;
+  strictOptions.absoluteToleranceScale = 1e-12;
+  WVCompositeAdaptiveRK23 adaptive(*system, strictOptions);
+  Fixture adaptiveFixture(system->stateLayout());
+  status = system->initializeParticleState(adaptiveFixture.state);
+  require(static_cast<bool>(status), status.message);
+  status = adaptive.prepareStateAfterRestart(adaptiveFixture.state);
+  require(static_cast<bool>(status), status.message);
+  status = adaptive.step(adaptiveFixture.state, 100.0);
+  require(static_cast<bool>(status), status.message);
+  require(adaptive.lastAcceptedStep() != nullptr,
+          "particle adaptive step was not accepted");
+  require(adaptive.metrics().rejectedStepCount > 0,
+          "strict particle adaptive step did not exercise rejection");
+  require(adaptive.lastAcceptedStep()->denseOutput != nullptr,
+          "accepted particle adaptive step omitted dense output");
+}
+
+void testValidation() {
+  auto config = configuration(true);
+  auto descriptor = descriptorFor(config);
+  auto record = descriptor.record();
+  auto particle = std::find_if(record.observers.begin(), record.observers.end(),
+                               [](const auto &observer) {
+                                 return observer.identifier == "surface";
+                               });
+  particle->z.clear();
+  WVPortableObserverDescriptor genericDescriptor;
+  require(static_cast<bool>(WVPortableObserverDescriptor::create(
+              record, genericDescriptor)),
+          "generic descriptor should retain future 2-D XY allowance");
+  std::unique_ptr<WVConstantStratificationCompositeSystem> system;
+  const auto status = WVConstantStratificationCompositeSystem::create(
+      config, {}, genericDescriptor, std::make_unique<WVReferenceFFTEngine>(),
+      1e-6, system);
+  require(status.code == WVKernelStatusCode::invalidConfiguration,
+          "constant-stratification XY particles accepted missing fixed z");
+
+  auto tracerRecord = descriptor.record();
+  tracerRecord.stateBlocks.push_back(
+      {"tracer", WVStateScalarType::real64, {config.Nx, config.Ny},
+       WVToleranceKind::uniformAbsolute, 1e-6,
+       WVStateOwnership::integratorOwned,
+       WVRestartRequirement::requiredDynamicState});
+  WVObserverRecord tracer;
+  tracer.identifier = "tracer";
+  tracer.name = "tracer";
+  tracer.kind = WVObserverKind::tracer;
+  tracer.stateBlockIdentifiers = {"tracer"};
+  tracerRecord.observers.push_back(tracer);
+  WVPortableObserverDescriptor tracerDescriptor;
+  require(static_cast<bool>(WVPortableObserverDescriptor::create(
+              tracerRecord, tracerDescriptor)),
+          "generic tracer descriptor");
+  const auto tracerStatus = WVConstantStratificationCompositeSystem::create(
+      config, {}, tracerDescriptor, std::make_unique<WVReferenceFFTEngine>(),
+      1e-6, system);
+  require(tracerStatus.code == WVKernelStatusCode::unsupportedOperation,
+          "particle system did not defer tracers to #202");
+}
+
+} // namespace
+
+int main() {
+  try {
+    testComposite(true);
+    testComposite(false);
+    testValidation();
+    std::cout << "PASS TestWVLagrangianParticles\n";
+    return 0;
+  } catch (const std::exception &error) {
+    std::cerr << "FAIL: " << error.what() << '\n';
+    return 1;
+  }
+}

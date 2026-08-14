@@ -3,6 +3,7 @@
 #include "WVReferenceFFTEngine.hpp"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <iostream>
 #include <memory>
@@ -82,6 +83,12 @@ WVPortableObserverDescriptor descriptor() {
          1e-6,
          WVStateOwnership::integratorOwned,
          WVRestartRequirement::requiredDynamicState});
+  for (const char *name : {"particle-x", "particle-y"})
+    record.stateBlocks.push_back(
+        {name, WVStateScalarType::real64, {2},
+         WVToleranceKind::uniformAbsolute, 1e-5,
+         WVStateOwnership::integratorOwned,
+         WVRestartRequirement::requiredDynamicState});
   WVObserverRecord coefficients;
   coefficients.identifier = "coefficients";
   coefficients.name = "WVCoefficients";
@@ -105,6 +112,19 @@ WVPortableObserverDescriptor descriptor() {
   mooring.x = {-1.0, 8000.0};
   mooring.y = {6000.0, 2999.0};
   record.observers.push_back(mooring);
+  WVObserverRecord particles;
+  particles.identifier = "particles";
+  particles.name = "drifters";
+  particles.kind = WVObserverKind::lagrangianParticles;
+  particles.stateBlockIdentifiers = {"particle-x", "particle-y"};
+  particles.fieldNames = {"u", "rho_e"};
+  particles.x = {-10.0, 8100.0};
+  particles.y = {20.0, -30.0};
+  particles.z = {-200.0, -600.0};
+  particles.isXYOnly = true;
+  particles.horizontalAbsoluteTolerance = 1e-5;
+  particles.trackedFieldInterpolation = WVPositionInterpolation::spline;
+  record.observers.push_back(particles);
   WVPortableObserverDescriptor result;
   require(static_cast<bool>(WVPortableObserverDescriptor::create(record, result)),
           "observer descriptor construction failed");
@@ -130,6 +150,12 @@ void testService(bool linear) {
       config, linear, observers, std::make_unique<WVReferenceFFTEngine>(),
       service);
   require(static_cast<bool>(status), "service construction failed");
+  std::unique_ptr<WVFieldEvaluationService> sharedFields;
+  status = WVFieldEvaluationService::create(
+      config, std::make_unique<WVReferenceFFTEngine>(), sharedFields);
+  require(static_cast<bool>(status), "shared field service creation failed");
+  status = service->useFieldEvaluationService(*sharedFields);
+  require(static_cast<bool>(status), "shared field service binding failed");
   require(service->metrics().uniqueFieldOutputCount == 4,
           "field requests were not deduplicated");
   require(service->metrics().sharedFieldReuseCount == 1,
@@ -166,9 +192,22 @@ void testService(bool linear) {
   event.eventOrdinal = 2;
   event.scheduledTime = 3.0;
   event.state.waveVortex = owned.view();
+  WVAdditionalStateBlockLayout xLayout;
+  xLayout.identifier = "particle-x";
+  xLayout.scalarType = WVStateScalarType::real64;
+  xLayout.elementCount = 2;
+  WVAdditionalStateBlockLayout yLayout = xLayout;
+  yLayout.identifier = "particle-y";
+  const std::array<double, 2> particleX{{-10.0, 8100.0}};
+  const std::array<double, 2> particleY{{20.0, -30.0}};
+  const std::array<WVAdditionalStateBlockConstView, 2> particleBlocks{{
+      {&xLayout, particleX.data(), nullptr},
+      {&yLayout, particleY.data(), nullptr}}};
+  event.state.additionalBlocks = particleBlocks.data();
+  event.state.additionalBlockCount = particleBlocks.size();
   status = service->prepare(event);
   require(static_cast<bool>(status), "observer preparation failed");
-  require(service->metrics().fieldEvaluationCount == (linear ? 2U : 1U),
+  require(service->metrics().fieldEvaluationCount == (linear ? 3U : 2U),
           "initial and time-series plans were not evaluated independently");
 
   WVObserverOutputValueView value;
@@ -194,6 +233,30 @@ void testService(bool linear) {
                           value);
   require(static_cast<bool>(status) && value.elementCount == config.Nz * 2,
           "mooring value mismatch");
+
+  status = service->specifications(observers.observers()[4], specifications);
+  require(static_cast<bool>(status), "particle specification query failed");
+  const auto particleU = find(specifications, "u");
+  require(particleU.name == "drifters_u" &&
+              particleU.dimensions == std::vector<std::size_t>({2}) &&
+              particleU.attributes.size() == 3,
+          "particle tracked-field schema mismatch");
+  status = service->value(observers.observers()[4], particleU, value);
+  require(static_cast<bool>(status) && value.elementCount == 2 &&
+              std::isfinite(value.realData[0]) &&
+              std::isfinite(value.realData[1]),
+          "particle tracked-field value mismatch");
+  WVCompositeOutputObserverView routedObserver{1, &observers.observers()[1]};
+  WVCompositeOutputRouteView passiveRoute;
+  passiveRoute.observers = &routedObserver;
+  passiveRoute.observerCount = 1;
+  event.eventOrdinal = 3;
+  event.routes = &passiveRoute;
+  event.routeCount = 1;
+  status = service->prepare(event);
+  require(static_cast<bool>(status) &&
+              service->metrics().skippedParticleEvaluationCount == 1,
+          "route-aware preparation evaluated unrouted particles");
 }
 
 } // namespace

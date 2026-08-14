@@ -6,6 +6,7 @@
 #include <netcdf.h>
 
 #include <algorithm>
+#include <array>
 #include <chrono>
 #include <cmath>
 #include <cstdlib>
@@ -123,7 +124,8 @@ public:
                         {observer.name + "_id"},
                         {observer.x.size()},
                         "m s-1",
-                        "particle x-velocity"});
+                        "x-component of the fluid velocity, recorded along "
+                        "the particle trajectory"});
     if (observer.kind == WVObserverKind::mooring &&
         !observer.fieldNames.empty())
       output.push_back({observer.identifier + "-u",
@@ -209,7 +211,8 @@ void testCreateReadAndAppend() {
   WVModelOutputNetCDFSink sink;
   auto persistence = WVModelOutputNetCDFSink::createNew(
       configuration, descriptor, layout, nullptr, sink);
-  require(static_cast<bool>(persistence), persistence.message);
+  require(static_cast<bool>(persistence),
+          persistence.message + " at " + persistence.location);
 
   WVCompositeOutputPlan firstPlan;
   status = WVCompositeOutputPlan::create(
@@ -508,6 +511,7 @@ void testMultipleFilesGroupsAndSharedState() {
   particles.stateBlockIdentifiers = {"particles-x", "particles-y"};
   particles.x = {0.1, 0.2};
   particles.y = {0.3, 0.4};
+  particles.z = {-100.0, -300.0};
   particles.isXYOnly = true;
   particles.horizontalAbsoluteTolerance = 1e-4;
   WVObserverRecord tracer;
@@ -519,8 +523,14 @@ void testMultipleFilesGroupsAndSharedState() {
   tracer.shouldAntialias = true;
   record.observers = {coefficients, particles, tracer};
   const auto end = checkpoint.state.t + 1.0;
-  const auto first = directory.path / "first.nc";
-  const auto second = directory.path / "second.nc";
+  const char *exportPath = std::getenv("WV_RUNTIME_MODEL_OUTPUT_EXPORT");
+  const auto first = exportPath == nullptr
+                         ? directory.path / "first.nc"
+                         : std::filesystem::path(exportPath);
+  const auto second = exportPath == nullptr
+                          ? directory.path / "second.nc"
+                          : std::filesystem::path(std::string(exportPath) +
+                                                  ".second.nc");
   record.outputFiles = {{"first",
                          first.string(),
                          {{"restart",
@@ -579,6 +589,34 @@ void testMultipleFilesGroupsAndSharedState() {
   }
   persistence = sink.close();
   require(static_cast<bool>(persistence), persistence.message);
+  {
+    int file = -1;
+    int group = -1;
+    int ids = -1;
+    int z = -1;
+    require(nc_open(first.c_str(), NC_NOWRITE, &file) == NC_NOERR &&
+                nc_inq_ncid(file, "wave-vortex", &group) == NC_NOERR &&
+                nc_inq_varid(group, "particles_id", &ids) == NC_NOERR &&
+                nc_inq_varid(group, "particles_z", &z) == NC_NOERR,
+            "particle MATLAB schema variables missing");
+    std::array<double, 2> idValues{};
+    require(nc_get_var_double(group, ids, idValues.data()) == NC_NOERR &&
+                idValues == std::array<double, 2>{{1.0, 2.0}},
+            "particle identifiers are not one-based");
+    const std::size_t start[] = {0, 0};
+    const std::size_t count[] = {1, 2};
+    std::array<double, 2> zValues{};
+    require(nc_get_vara_double(group, z, start, count, zValues.data()) ==
+                    NC_NOERR &&
+                zValues == std::array<double, 2>{{-100.0, -300.0}},
+            "fixed particle z values were not written on [id,t]");
+    char attribute[64]{};
+    require(nc_get_att_text(group, z, "particleName", attribute) == NC_NOERR &&
+                std::string(attribute, std::string("particles").size()) ==
+                    "particles",
+            "particle metadata attributes missing");
+    require(nc_close(file) == NC_NOERR, "close particle schema inspection");
+  }
   WVModelOutputNetCDFInspection inspection;
   persistence = WVModelOutputNetCDFSink::inspect(
       {first.string(), second.string()}, inspection);
@@ -589,6 +627,14 @@ void testMultipleFilesGroupsAndSharedState() {
           "multi-file graph or shared observer identity was not reconstructed");
   require(inspection.additionalState.blockCount() == 3,
           "shared dynamic state was duplicated during reconstruction");
+  const auto restoredParticles = std::find_if(
+      inspection.observerRecord.observers.begin(),
+      inspection.observerRecord.observers.end(), [](const auto &observer) {
+        return observer.identifier == "particles";
+      });
+  require(restoredParticles != inspection.observerRecord.observers.end() &&
+              restoredParticles->z == std::vector<double>({-100.0, -300.0}),
+          "fixed XY particle z configuration was not reconstructed");
 }
 
 void testOptionalMatlabFixture() {
@@ -600,8 +646,25 @@ void testOptionalMatlabFixture() {
       WVModelOutputNetCDFSink::inspect({path}, inspection);
   require(static_cast<bool>(inspectStatus),
           inspectStatus.message + " at " + inspectStatus.location);
-  require(inspection.observerRecord.observers.size() == 5,
-          "MATLAB observer graph did not restore all observer classes");
+  const auto hasKind = [&](WVObserverKind kind) {
+    return std::any_of(inspection.observerRecord.observers.begin(),
+                       inspection.observerRecord.observers.end(),
+                       [&](const auto &observer) {
+                         return observer.kind == kind;
+                       });
+  };
+  const bool hasCoefficients = hasKind(WVObserverKind::coefficients);
+  const bool hasEulerian = hasKind(WVObserverKind::eulerianFields);
+  const bool hasMooring = hasKind(WVObserverKind::mooring);
+  const bool hasParticles = hasKind(WVObserverKind::lagrangianParticles);
+  const bool hasTracer = hasKind(WVObserverKind::tracer);
+  require(hasEulerian && hasMooring && hasParticles && hasTracer,
+          "MATLAB observer graph kinds: coefficients=" +
+              std::to_string(hasCoefficients) +
+              " eulerian=" + std::to_string(hasEulerian) +
+              " mooring=" + std::to_string(hasMooring) +
+              " particles=" + std::to_string(hasParticles) +
+              " tracer=" + std::to_string(hasTracer));
   require(inspection.observerRecord.outputFiles.size() == 1 &&
               inspection.observerRecord.outputFiles.front().groups.size() == 2,
           "MATLAB multi-group graph was not reconstructed");
@@ -628,7 +691,8 @@ void testOptionalMatlabFixture() {
   persistence = WVModelOutputNetCDFSink::openAppend(
       {appendInspection.latestRestart, false}, descriptor, layout, &samples,
       sink);
-  require(static_cast<bool>(persistence), persistence.message);
+  require(static_cast<bool>(persistence),
+          persistence.message + " at " + persistence.location);
   WVCompositeOutputPlan plan;
   status = WVCompositeOutputPlan::create(
       descriptor, appendInspection.latestRestart.state.t,

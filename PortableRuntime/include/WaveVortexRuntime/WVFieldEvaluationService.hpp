@@ -48,6 +48,47 @@ struct WVFieldOutputView {
   std::size_t elementCount = 0;
 };
 
+// One field sampled from a caller-supplied moving-position array. Offsets and
+// counts refer to the shared coordinate views passed to evaluateMoving().
+struct WVMovingFieldRequest {
+  std::string identifier;
+  std::string fieldName;
+  std::size_t positionOffset = 0;
+  std::size_t positionCount = 0;
+  WVPositionInterpolation interpolation = WVPositionInterpolation::linear;
+};
+
+struct WVMovingPositionView {
+  const double *x = nullptr;
+  const double *y = nullptr;
+  const double *z = nullptr;
+  std::size_t positionCount = 0;
+};
+
+class WVMovingFieldEvaluationPlan final {
+public:
+  const std::vector<WVFieldOutputSpecification> &outputs() const noexcept {
+    return outputs_;
+  }
+  std::size_t outputCount() const noexcept { return outputs_.size(); }
+  std::size_t positionCount() const noexcept { return positionCount_; }
+  std::size_t persistentBytes() const noexcept;
+
+private:
+  struct ResolvedRequest {
+    std::size_t primitiveChannel = 0;
+    std::size_t positionOffset = 0;
+    std::size_t positionCount = 0;
+    WVPositionInterpolation interpolation = WVPositionInterpolation::linear;
+    std::size_t outputIndex = 0;
+  };
+  WVTransformConstantStratificationConfiguration configuration_;
+  std::vector<ResolvedRequest> requests_;
+  std::vector<WVFieldOutputSpecification> outputs_;
+  std::size_t positionCount_ = 0;
+  friend class WVFieldEvaluationService;
+};
+
 class WVFieldEvaluationPlan final {
 public:
   const std::vector<WVFieldOutputSpecification> &outputs() const noexcept {
@@ -127,6 +168,7 @@ struct WVFieldEvaluationMetrics {
   std::size_t transformPersistentBytes = 0;
   std::size_t scratchCapacityBytes = 0;
   std::size_t scratchHighWaterBytes = 0;
+  std::size_t movingInterpolationWorkspaceBytes = 0;
   std::size_t transformCount = 0;
   std::size_t fftExecutionCount = 0;
   std::size_t primitiveFieldEvaluationCount = 0;
@@ -136,6 +178,9 @@ struct WVFieldEvaluationMetrics {
   std::size_t linearInterpolationCount = 0;
   std::size_t splineInterpolationCount = 0;
   std::size_t outputElementWriteCount = 0;
+  std::size_t movingEvaluationCount = 0;
+  std::size_t movingPositionCount = 0;
+  std::size_t movingPrimitiveTransformCount = 0;
 };
 
 class WVFieldEvaluationService final {
@@ -144,12 +189,15 @@ public:
   create(const WVTransformConstantStratificationConfiguration &configuration,
          std::unique_ptr<WVFFTEngine> engine,
          std::unique_ptr<WVFieldEvaluationService> &service);
+  static WVKernelStatus createBorrowing(
+      WVTransformConstantStratificationKernel &transform,
+      std::unique_ptr<WVFieldEvaluationService> &service);
 
   WVFieldEvaluationService(const WVFieldEvaluationService &) = delete;
   WVFieldEvaluationService &operator=(const WVFieldEvaluationService &) = delete;
   WVFieldEvaluationService(WVFieldEvaluationService &&) = delete;
   WVFieldEvaluationService &operator=(WVFieldEvaluationService &&) = delete;
-  ~WVFieldEvaluationService() = default;
+  ~WVFieldEvaluationService();
 
   static std::vector<std::string> supportedFieldNames();
   WVKernelStatus createPlan(const std::vector<WVFieldRequest> &requests,
@@ -157,6 +205,14 @@ public:
   WVKernelStatus evaluate(const WVFieldEvaluationPlan &plan,
                           const WVState &state, WVFieldOutputView *outputs,
                           std::size_t outputCount);
+  WVKernelStatus
+  createMovingPlan(const std::vector<WVMovingFieldRequest> &requests,
+                   WVMovingFieldEvaluationPlan &plan) const;
+  WVKernelStatus evaluateMoving(const WVMovingFieldEvaluationPlan &plan,
+                                const WVState &state,
+                                WVMovingPositionView positions,
+                                WVFieldOutputView *outputs,
+                                std::size_t outputCount);
 
   const WVTransformConstantStratificationConfiguration &
   configuration() const noexcept;
@@ -165,7 +221,11 @@ public:
 
 private:
   WVFieldEvaluationService() = default;
-  std::unique_ptr<WVTransformConstantStratificationKernel> transform_;
+  WVKernelStatus initializeScratch();
+  class MovingWorkspace;
+  std::unique_ptr<WVTransformConstantStratificationKernel> ownedTransform_;
+  WVTransformConstantStratificationKernel *transform_ = nullptr;
+  std::unique_ptr<MovingWorkspace> movingWorkspace_;
   std::vector<double> realScratch_;
   std::vector<WVComplex64> complexScratch_;
   WVFieldEvaluationMetrics metrics_;
