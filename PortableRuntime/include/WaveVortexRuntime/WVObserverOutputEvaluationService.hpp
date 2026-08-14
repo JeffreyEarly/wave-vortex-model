@@ -15,6 +15,8 @@ struct WVObserverOutputEvaluationMetrics {
   std::size_t borrowedCoefficientViewCount = 0;
   std::size_t outputCapacityBytes = 0;
   std::size_t retainedStorageBytes = 0;
+  std::size_t routeAwareParticleEvaluationCount = 0;
+  std::size_t skippedParticleEvaluationCount = 0;
 };
 
 // Evaluates passive MATLAB-compatible observing systems independently of
@@ -34,6 +36,8 @@ public:
       const WVObserverRecord &observer,
       std::vector<WVObserverOutputVariableSpecification> &output) override;
   WVKernelStatus preflight(const WVCompositeOutputPlan &plan) override;
+  WVKernelStatus useFieldEvaluationService(
+      WVFieldEvaluationService &fieldEvaluationService);
   WVKernelStatus prepareInitial(const WVState &state) override;
   WVKernelStatus prepare(const WVCompositeOutputEvent &event) override;
   WVKernelStatus value(

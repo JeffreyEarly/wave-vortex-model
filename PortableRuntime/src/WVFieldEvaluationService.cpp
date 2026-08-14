@@ -129,27 +129,38 @@ public:
 
   std::vector<double> weights(double origin, double spacing, double query,
                               std::size_t circularShift = 0) const {
+    std::vector<double> result;
+    weightsInto(origin, spacing, query, result, circularShift);
+    return result;
+  }
+
+  void weightsInto(double origin, double spacing, double query,
+                   std::vector<double> &result,
+                   std::size_t circularShift = 0,
+                   std::vector<double> *rightHandSideWorkspace = nullptr,
+                   std::vector<double> *shiftedWorkspace = nullptr) const {
     const double normalized = (query - origin) / spacing;
-    auto restoreOriginalOrdering = [&](std::vector<double> shifted) {
-      if (circularShift == 0)
-        return shifted;
-      std::vector<double> original(count_, 0.0);
+    auto restoreOriginalOrdering = [&](const std::vector<double> &shifted) {
+      result.assign(count_, 0.0);
       for (std::size_t shiftedIndex = 0; shiftedIndex < count_;
            ++shiftedIndex) {
         const auto originalIndex =
             (shiftedIndex + count_ - circularShift % count_) % count_;
-        original[originalIndex] += shifted[shiftedIndex];
+        result[originalIndex] += shifted[shiftedIndex];
       }
-      return original;
     };
-    if (count_ == 2)
-      return restoreOriginalOrdering({1.0 - normalized, normalized});
+    if (count_ == 2) {
+      const std::vector<double> linear{1.0 - normalized, normalized};
+      restoreOriginalOrdering(linear);
+      return;
+    }
     if (count_ == 3) {
       std::vector<double> quadratic = {
           (normalized - 1.0) * (normalized - 2.0) / 2.0,
           -normalized * (normalized - 2.0),
           normalized * (normalized - 1.0) / 2.0};
-      return restoreOriginalOrdering(std::move(quadratic));
+      restoreOriginalOrdering(quadratic);
+      return;
     }
     std::size_t interval = normalized <= 0.0
                                ? 0
@@ -159,12 +170,18 @@ public:
                                        0.0, 1.0);
     const double first = 1.0 - fraction;
     const double second = fraction;
-    std::vector<double> rhs(count_, 0.0);
+    std::vector<double> localRightHandSide;
+    auto &rhs = rightHandSideWorkspace == nullptr ? localRightHandSide
+                                                   : *rightHandSideWorkspace;
+    rhs.assign(count_, 0.0);
     rhs[interval] = (first * first * first - first) * spacing * spacing / 6.0;
     rhs[interval + 1] =
         (second * second * second - second) * spacing * spacing / 6.0;
     solve(rhs);
-    std::vector<double> shifted(count_, 0.0);
+    std::vector<double> localShifted;
+    auto &shifted = shiftedWorkspace == nullptr ? localShifted
+                                                : *shiftedWorkspace;
+    shifted.assign(count_, 0.0);
     shifted[interval] += first;
     shifted[interval + 1] += second;
     const double rhsScale = 6.0 / (spacing * spacing);
@@ -173,7 +190,7 @@ public:
       shifted[row] -= 2.0 * rhsScale * rhs[row];
       shifted[row + 1] += rhsScale * rhs[row];
     }
-    return restoreOriginalOrdering(std::move(shifted));
+    restoreOriginalOrdering(shifted);
   }
 
 private:
@@ -247,6 +264,54 @@ private:
 
 } // namespace
 
+class WVFieldEvaluationService::MovingWorkspace final {
+public:
+  explicit MovingWorkspace(
+      const WVTransformConstantStratificationConfiguration &configuration)
+      : xSpline(configuration.Nx), ySpline(configuration.Ny),
+        zSpline(configuration.Nz) {
+    xWeights.reserve(configuration.Nx);
+    yWeights.reserve(configuration.Ny);
+    zWeights.reserve(configuration.Nz);
+    xRightHandSide.reserve(configuration.Nx);
+    yRightHandSide.reserve(configuration.Ny);
+    zRightHandSide.reserve(configuration.Nz);
+    xShifted.reserve(configuration.Nx);
+    yShifted.reserve(configuration.Ny);
+    zShifted.reserve(configuration.Nz);
+  }
+  SplineSystem xSpline;
+  SplineSystem ySpline;
+  SplineSystem zSpline;
+  std::vector<double> xWeights;
+  std::vector<double> yWeights;
+  std::vector<double> zWeights;
+  std::vector<double> xRightHandSide;
+  std::vector<double> yRightHandSide;
+  std::vector<double> zRightHandSide;
+  std::vector<double> xShifted;
+  std::vector<double> yShifted;
+  std::vector<double> zShifted;
+  std::size_t persistentBytes() const noexcept {
+    return sizeof(*this) +
+           (xWeights.capacity() + yWeights.capacity() + zWeights.capacity() +
+            xRightHandSide.capacity() + yRightHandSide.capacity() +
+            zRightHandSide.capacity() + xShifted.capacity() +
+            yShifted.capacity() + zShifted.capacity()) *
+               sizeof(double);
+  }
+};
+
+std::size_t WVMovingFieldEvaluationPlan::persistentBytes() const noexcept {
+  std::size_t bytes = sizeof(*this) +
+                      requests_.capacity() * sizeof(ResolvedRequest) +
+                      outputs_.capacity() * sizeof(WVFieldOutputSpecification);
+  for (const auto &output : outputs_)
+    bytes += output.identifier.capacity() + output.fieldName.capacity() +
+             output.dimensions.capacity() * sizeof(std::size_t);
+  return bytes;
+}
+
 std::size_t WVFieldEvaluationPlan::PositionWeights::persistentBytes() const
     noexcept {
   return xSplineWeights.capacity() * sizeof(double) +
@@ -285,23 +350,13 @@ WVKernelStatus WVFieldEvaluationService::create(
     auto candidate = std::unique_ptr<WVFieldEvaluationService>(
         new WVFieldEvaluationService());
     auto status = WVTransformConstantStratificationKernel::create(
-        configuration, std::move(engine), candidate->transform_);
+        configuration, std::move(engine), candidate->ownedTransform_);
     if (!status)
       return status;
-    const auto fieldElements = candidate->transform_->descriptor()
-                                   .spatialShape()
-                                   .elementCount();
-    const auto coefficientElements = candidate->transform_->descriptor()
-                                         .spectralShape()
-                                         .elementCount();
-    candidate->realScratch_.resize(checkedProduct(6, fieldElements));
-    candidate->complexScratch_.resize(checkedProduct(2, coefficientElements));
-    candidate->metrics_.transformPersistentBytes =
-        candidate->transform_->persistentBytes();
-    candidate->metrics_.scratchCapacityBytes =
-        candidate->realScratch_.capacity() * sizeof(double) +
-        candidate->complexScratch_.capacity() * sizeof(WVComplex64);
-    candidate->metrics_.servicePersistentBytes = candidate->persistentBytes();
+    candidate->transform_ = candidate->ownedTransform_.get();
+    status = candidate->initializeScratch();
+    if (!status)
+      return status;
     service = std::move(candidate);
     return WVKernelStatus::ok();
   } catch (const std::bad_alloc &) {
@@ -311,6 +366,46 @@ WVKernelStatus WVFieldEvaluationService::create(
     return {WVKernelStatusCode::sizeOverflow, error.what()};
   }
 }
+
+WVKernelStatus WVFieldEvaluationService::createBorrowing(
+    WVTransformConstantStratificationKernel &transform,
+    std::unique_ptr<WVFieldEvaluationService> &service) {
+  try {
+    auto candidate = std::unique_ptr<WVFieldEvaluationService>(
+        new WVFieldEvaluationService());
+    candidate->transform_ = &transform;
+    const auto status = candidate->initializeScratch();
+    if (!status)
+      return status;
+    service = std::move(candidate);
+    return WVKernelStatus::ok();
+  } catch (const std::bad_alloc &) {
+    return {WVKernelStatusCode::allocationFailure,
+            "Unable to allocate borrowed field-evaluation storage."};
+  } catch (const std::overflow_error &error) {
+    return {WVKernelStatusCode::sizeOverflow, error.what()};
+  }
+}
+
+WVKernelStatus WVFieldEvaluationService::initializeScratch() {
+  const auto fieldElements = transform_->descriptor().spatialShape().elementCount();
+  const auto coefficientElements =
+      transform_->descriptor().spectralShape().elementCount();
+  realScratch_.resize(checkedProduct(6, fieldElements));
+  complexScratch_.resize(checkedProduct(2, coefficientElements));
+  movingWorkspace_ = std::make_unique<MovingWorkspace>(
+      transform_->descriptor().configuration());
+  metrics_.transformPersistentBytes = transform_->persistentBytes();
+  metrics_.scratchCapacityBytes =
+      realScratch_.capacity() * sizeof(double) +
+      complexScratch_.capacity() * sizeof(WVComplex64);
+  metrics_.movingInterpolationWorkspaceBytes =
+      movingWorkspace_->persistentBytes();
+  metrics_.servicePersistentBytes = persistentBytes();
+  return WVKernelStatus::ok();
+}
+
+WVFieldEvaluationService::~WVFieldEvaluationService() = default;
 
 std::vector<std::string> WVFieldEvaluationService::supportedFieldNames() {
   return {std::begin(fieldNames), std::end(fieldNames)};
@@ -1131,15 +1226,263 @@ WVKernelStatus WVFieldEvaluationService::evaluate(
   return WVKernelStatus::ok();
 }
 
+WVKernelStatus WVFieldEvaluationService::createMovingPlan(
+    const std::vector<WVMovingFieldRequest> &requests,
+    WVMovingFieldEvaluationPlan &plan) const {
+  try {
+    WVMovingFieldEvaluationPlan candidate;
+    candidate.configuration_ = transform_->descriptor().configuration();
+    candidate.requests_.reserve(requests.size());
+    candidate.outputs_.reserve(requests.size());
+    std::set<std::string> identifiers;
+    for (std::size_t index = 0; index < requests.size(); ++index) {
+      const auto &request = requests[index];
+      if (request.identifier.empty() ||
+          !identifiers.insert(request.identifier).second)
+        return invalid(
+            "Moving-field request identifiers must be nonempty and unique.");
+      if (request.positionCount == 0 ||
+          request.positionOffset >
+              std::numeric_limits<std::size_t>::max() -
+                  request.positionCount)
+        return invalid("Moving-field request position range is invalid.");
+      if (request.interpolation != WVPositionInterpolation::linear &&
+          request.interpolation != WVPositionInterpolation::spline)
+        return invalid("Moving-field interpolation method is invalid.");
+      std::size_t channel = 0;
+      if (request.fieldName == "u")
+        channel = 0;
+      else if (request.fieldName == "v")
+        channel = 1;
+      else if (request.fieldName == "w")
+        channel = 2;
+      else if (request.fieldName == "eta")
+        channel = 3;
+      else if (request.fieldName == "rho_e")
+        channel = 4;
+      else if (request.fieldName == "rho_total")
+        channel = 5;
+      else
+        return {WVKernelStatusCode::unsupportedOperation,
+                "Moving-position sampling does not support field " +
+                    request.fieldName + "."};
+      candidate.positionCount_ =
+          std::max(candidate.positionCount_,
+                   request.positionOffset + request.positionCount);
+      candidate.requests_.push_back({channel, request.positionOffset,
+                                     request.positionCount,
+                                     request.interpolation, index});
+      candidate.outputs_.push_back(
+          {request.identifier, request.fieldName,
+           WVFieldSamplingKind::positions, {request.positionCount},
+           request.positionCount});
+    }
+    plan = std::move(candidate);
+    return WVKernelStatus::ok();
+  } catch (const std::bad_alloc &) {
+    return {WVKernelStatusCode::allocationFailure,
+            "Unable to allocate a moving-field evaluation plan."};
+  }
+}
+
+WVKernelStatus WVFieldEvaluationService::evaluateMoving(
+    const WVMovingFieldEvaluationPlan &plan, const WVState &state,
+    WVMovingPositionView positions, WVFieldOutputView *outputs,
+    std::size_t outputCount) {
+  if (!sameConfiguration(plan.configuration_,
+                         transform_->descriptor().configuration()))
+    return invalid(
+        "The moving-field plan belongs to a different transform configuration.");
+  if (positions.positionCount != plan.positionCount_ ||
+      (positions.positionCount != 0 &&
+       (positions.x == nullptr || positions.y == nullptr ||
+        positions.z == nullptr)))
+    return {WVKernelStatusCode::invalidShape,
+            "Moving coordinates must match the plan's shared position count."};
+  if (outputCount != plan.outputs_.size() ||
+      (outputCount != 0 && outputs == nullptr))
+    return {WVKernelStatusCode::invalidShape,
+            "Moving-field outputs must match the plan."};
+  const auto spectral = transform_->descriptor().spectralShape();
+  for (const auto view : {state.coefficients.Ap, state.coefficients.Am,
+                          state.coefficients.A0})
+    if (view.data == nullptr || view.shape.rows != spectral.rows ||
+        view.shape.columns != spectral.columns)
+      return {WVKernelStatusCode::invalidShape,
+              "Moving-field coefficients must have shape [Nj,Nkl]."};
+  for (std::size_t index = 0; index < outputCount; ++index)
+    if (outputs[index].data == nullptr ||
+        outputs[index].elementCount != plan.outputs_[index].elementCount)
+      return {WVKernelStatusCode::invalidShape,
+              "Moving-field output shape does not match its request."};
+  for (std::size_t index = 0; index < positions.positionCount; ++index)
+    if (!std::isfinite(positions.x[index]) ||
+        !std::isfinite(positions.y[index]) ||
+        !std::isfinite(positions.z[index]))
+      return invalid("Moving coordinates must be finite.");
+  ExecutionGuard guard(executing_);
+  if (!guard.entered())
+    return {WVKernelStatusCode::reentrantExecution,
+            "Field evaluation is not reentrant."};
+
+  const auto &configuration = transform_->descriptor().configuration();
+  const auto spatial = transform_->descriptor().spatialShape();
+  const auto R = spatial.elementCount();
+  const auto horizontalCount = configuration.Nx * configuration.Ny;
+  WVRealFieldBundleView fields{
+      realScratch_.data(),
+      {configuration.Nx, configuration.Ny, configuration.Nz, 4}};
+  const auto before = transform_->metrics().executionCount;
+  const auto status = transform_->transformWaveVortexToUVWEta(state, fields);
+  if (!status)
+    return status;
+  ++metrics_.evaluationCount;
+  ++metrics_.movingEvaluationCount;
+  ++metrics_.movingPrimitiveTransformCount;
+  metrics_.movingPositionCount += positions.positionCount;
+  ++metrics_.transformCount;
+  metrics_.fftExecutionCount += transform_->metrics().executionCount - before;
+  metrics_.primitiveFieldEvaluationCount += 4;
+  metrics_.scratchHighWaterBytes =
+      std::max(metrics_.scratchHighWaterBytes, 4 * R * sizeof(double));
+
+  const double dx = configuration.Lx / static_cast<double>(configuration.Nx);
+  const double dy = configuration.Ly / static_cast<double>(configuration.Ny);
+  const double dz = configuration.Lz / static_cast<double>(configuration.Nz - 1);
+  const double densityScale =
+      configuration.rho0 * configuration.N0 * configuration.N0 /
+      configuration.g;
+  const bool needsTotalDensity = std::any_of(
+      plan.requests_.begin(), plan.requests_.end(), [](const auto &request) {
+        return request.primitiveChannel == 5;
+      });
+  double *totalDensity = nullptr;
+  if (needsTotalDensity) {
+    totalDensity = realScratch_.data() + 4 * R;
+    const auto &vertical = transform_->descriptor().verticalModes().z;
+    const double *eta = realScratch_.data() + 3 * R;
+    for (std::size_t iz = 0; iz < configuration.Nz; ++iz) {
+      const double densityNoMotion =
+          configuration.rho0 - densityScale * vertical[iz];
+      for (std::size_t horizontal = 0; horizontal < horizontalCount;
+           ++horizontal) {
+        const auto index = horizontal + horizontalCount * iz;
+        totalDensity[index] = densityNoMotion + densityScale * eta[index];
+      }
+    }
+    metrics_.scratchHighWaterBytes =
+        std::max(metrics_.scratchHighWaterBytes, 5 * R * sizeof(double));
+  }
+  for (const auto &request : plan.requests_) {
+    auto &output = outputs[request.outputIndex];
+    for (std::size_t local = 0; local < request.positionCount; ++local) {
+      const auto position = request.positionOffset + local;
+      const double x = wrapped(positions.x[position], configuration.Lx);
+      const double y = wrapped(positions.y[position], configuration.Ly);
+      const double z = positions.z[position];
+      double value = 0.0;
+      if (z >= -configuration.Lz && z <= 0.0) {
+        const auto channel = std::min<std::size_t>(request.primitiveChannel, 3);
+        const double *source = request.primitiveChannel == 5
+                                   ? totalDensity
+                                   : realScratch_.data() + channel * R;
+        if (request.interpolation == WVPositionInterpolation::linear) {
+          const auto x0 = std::min(
+              static_cast<std::size_t>(std::floor(x / dx)),
+              configuration.Nx - 1);
+          const auto y0 = std::min(
+              static_cast<std::size_t>(std::floor(y / dy)),
+              configuration.Ny - 1);
+          const double normalizedZ = (z + configuration.Lz) / dz;
+          const auto z0 = std::min(
+              static_cast<std::size_t>(
+                  std::max(0.0, std::floor(normalizedZ))),
+              configuration.Nz - 2);
+          const double wx1 = (x - static_cast<double>(x0) * dx) / dx;
+          const double wy1 = (y - static_cast<double>(y0) * dy) / dy;
+          const double wz1 = std::clamp(normalizedZ - static_cast<double>(z0),
+                                        0.0, 1.0);
+          const std::array<std::size_t, 2> xi{{x0,
+                                               (x0 + 1) % configuration.Nx}};
+          const std::array<std::size_t, 2> yi{{y0,
+                                               (y0 + 1) % configuration.Ny}};
+          const std::array<double, 2> wx{{1.0 - wx1, wx1}};
+          const std::array<double, 2> wy{{1.0 - wy1, wy1}};
+          const std::array<double, 2> wz{{1.0 - wz1, wz1}};
+          for (std::size_t iz = 0; iz < 2; ++iz)
+            for (std::size_t iy = 0; iy < 2; ++iy)
+              for (std::size_t ix = 0; ix < 2; ++ix)
+                value += source[xi[ix] + configuration.Nx * yi[iy] +
+                                horizontalCount * (z0 + iz)] *
+                         wx[ix] * wy[iy] * wz[iz];
+          ++metrics_.linearInterpolationCount;
+        } else {
+          const auto xLower = std::min(
+              static_cast<std::size_t>(std::floor(x / dx)),
+              configuration.Nx - 1);
+          const auto yLower = std::min(
+              static_cast<std::size_t>(std::floor(y / dy)),
+              configuration.Ny - 1);
+          const bool xBoundary =
+              xLower < 3 || xLower > configuration.Nx - 4;
+          const bool yBoundary =
+              yLower < 3 || yLower > configuration.Ny - 4;
+          const std::size_t xShift = xBoundary ? 4 : 0;
+          const std::size_t yShift = yBoundary ? 4 : 0;
+          const double xQuery =
+              xBoundary ? wrapped(x + 4.0 * dx, configuration.Lx) : x;
+          const double yQuery =
+              yBoundary ? wrapped(y + 4.0 * dy, configuration.Ly) : y;
+          if (xQuery <= static_cast<double>(configuration.Nx - 1) * dx &&
+              yQuery <= static_cast<double>(configuration.Ny - 1) * dy) {
+            movingWorkspace_->xSpline.weightsInto(
+                0.0, dx, xQuery, movingWorkspace_->xWeights, xShift,
+                &movingWorkspace_->xRightHandSide,
+                &movingWorkspace_->xShifted);
+            movingWorkspace_->ySpline.weightsInto(
+                0.0, dy, yQuery, movingWorkspace_->yWeights, yShift,
+                &movingWorkspace_->yRightHandSide,
+                &movingWorkspace_->yShifted);
+            movingWorkspace_->zSpline.weightsInto(
+                -configuration.Lz, dz, z, movingWorkspace_->zWeights, 0,
+                &movingWorkspace_->zRightHandSide,
+                &movingWorkspace_->zShifted);
+            for (std::size_t iz = 0; iz < configuration.Nz; ++iz)
+              for (std::size_t iy = 0; iy < configuration.Ny; ++iy)
+                for (std::size_t ix = 0; ix < configuration.Nx; ++ix)
+                  value += source[ix + configuration.Nx * iy +
+                                  horizontalCount * iz] *
+                           movingWorkspace_->xWeights[ix] *
+                           movingWorkspace_->yWeights[iy] *
+                           movingWorkspace_->zWeights[iz];
+          }
+          ++metrics_.splineInterpolationCount;
+        }
+        if (request.primitiveChannel == 4)
+          value *= densityScale;
+      } else if (request.interpolation == WVPositionInterpolation::linear) {
+        ++metrics_.linearInterpolationCount;
+      } else {
+        ++metrics_.splineInterpolationCount;
+      }
+      output.data[local] = value;
+    }
+    metrics_.outputElementWriteCount += output.elementCount;
+  }
+  return WVKernelStatus::ok();
+}
+
 const WVTransformConstantStratificationConfiguration &
 WVFieldEvaluationService::configuration() const noexcept {
   return transform_->descriptor().configuration();
 }
 
 std::size_t WVFieldEvaluationService::persistentBytes() const noexcept {
-  return sizeof(*this) + transform_->persistentBytes() +
+  return sizeof(*this) +
+         (ownedTransform_ ? transform_->persistentBytes() : 0) +
          realScratch_.capacity() * sizeof(double) +
-         complexScratch_.capacity() * sizeof(WVComplex64);
+         complexScratch_.capacity() * sizeof(WVComplex64) +
+         (movingWorkspace_ ? movingWorkspace_->persistentBytes() : 0);
 }
 
 } // namespace wavevortex::runtime

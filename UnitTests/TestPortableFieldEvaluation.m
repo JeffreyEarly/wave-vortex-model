@@ -80,6 +80,23 @@ classdef TestPortableFieldEvaluation < matlab.unittest.TestCase
                         sprintf("%s relative error %.17g",identifier,relativeError))
                     expectedWriteCount = expectedWriteCount + numel(expectedValues);
                 end
+                movingRecords = reshape(actual.movingOutputs,1,[]);
+                for iRecord = 1:numel(movingRecords)
+                    record = movingRecords(iRecord);
+                    identifier = string(record.identifier);
+                    separator = strfind(identifier,"__");
+                    interpolation = extractBefore(identifier,separator(1));
+                    expected = wvt.variableAtPositionWithName( ...
+                        positions.x,positions.y,positions.z,char(record.field), ...
+                        interpolationMethod=char(interpolation));
+                    actualValues = reshape(record.values,[],1);
+                    expectedValues = reshape(expected,[],1);
+                    scale = max(norm(expectedValues,Inf),eps);
+                    relativeError = norm(actualValues-expectedValues,Inf)/scale;
+                    maximumRelativeError = max(maximumRelativeError,relativeError);
+                    testCase.verifyLessThanOrEqual(relativeError,1e-12, ...
+                        sprintf("moving %s relative error %.17g",identifier,relativeError))
+                end
                 metrics = actual.metrics;
                 testCase.verifyEqual(metrics.evaluationCount,1)
                 testCase.verifyEqual(metrics.coincidentBatchCount,1)
@@ -91,6 +108,10 @@ classdef TestPortableFieldEvaluation < matlab.unittest.TestCase
                 testCase.verifyEqual(metrics.linearInterpolationCount,96)
                 testCase.verifyEqual(metrics.splineInterpolationCount,96)
                 testCase.verifyEqual(metrics.outputElementWriteCount,expectedWriteCount)
+                testCase.verifyEqual(actual.movingMetrics.evaluationCount,1)
+                testCase.verifyEqual(actual.movingMetrics.positionCount,numel(positions.x))
+                testCase.verifyEqual(actual.movingMetrics.primitiveTransformCount,1)
+                testCase.verifyGreaterThan(actual.movingMetrics.workspaceBytes,0)
                 testCase.verifyGreaterThan(metrics.servicePersistentBytes,metrics.transformPersistentBytes)
                 testCase.verifyGreaterThan(metrics.lastPlanBytes,0)
                 testCase.verifyEqual(metrics.lastPlanBytes,metrics.maximumPlanBytes)

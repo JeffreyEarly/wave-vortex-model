@@ -6,6 +6,7 @@
 #include <netcdf.h>
 
 #include <algorithm>
+#include <array>
 #include <chrono>
 #include <cmath>
 #include <cstdlib>
@@ -508,6 +509,7 @@ void testMultipleFilesGroupsAndSharedState() {
   particles.stateBlockIdentifiers = {"particles-x", "particles-y"};
   particles.x = {0.1, 0.2};
   particles.y = {0.3, 0.4};
+  particles.z = {-100.0, -300.0};
   particles.isXYOnly = true;
   particles.horizontalAbsoluteTolerance = 1e-4;
   WVObserverRecord tracer;
@@ -579,6 +581,34 @@ void testMultipleFilesGroupsAndSharedState() {
   }
   persistence = sink.close();
   require(static_cast<bool>(persistence), persistence.message);
+  {
+    int file = -1;
+    int group = -1;
+    int ids = -1;
+    int z = -1;
+    require(nc_open(first.c_str(), NC_NOWRITE, &file) == NC_NOERR &&
+                nc_inq_ncid(file, "wave-vortex", &group) == NC_NOERR &&
+                nc_inq_varid(group, "particles_id", &ids) == NC_NOERR &&
+                nc_inq_varid(group, "particles_z", &z) == NC_NOERR,
+            "particle MATLAB schema variables missing");
+    std::array<double, 2> idValues{};
+    require(nc_get_var_double(group, ids, idValues.data()) == NC_NOERR &&
+                idValues == std::array<double, 2>{{1.0, 2.0}},
+            "particle identifiers are not one-based");
+    const std::size_t start[] = {0, 0};
+    const std::size_t count[] = {1, 2};
+    std::array<double, 2> zValues{};
+    require(nc_get_vara_double(group, z, start, count, zValues.data()) ==
+                    NC_NOERR &&
+                zValues == std::array<double, 2>{{-100.0, -300.0}},
+            "fixed particle z values were not written on [id,t]");
+    char attribute[64]{};
+    require(nc_get_att_text(group, z, "particleName", attribute) == NC_NOERR &&
+                std::string(attribute, std::string("particles").size()) ==
+                    "particles",
+            "particle metadata attributes missing");
+    require(nc_close(file) == NC_NOERR, "close particle schema inspection");
+  }
   WVModelOutputNetCDFInspection inspection;
   persistence = WVModelOutputNetCDFSink::inspect(
       {first.string(), second.string()}, inspection);
@@ -589,6 +619,14 @@ void testMultipleFilesGroupsAndSharedState() {
           "multi-file graph or shared observer identity was not reconstructed");
   require(inspection.additionalState.blockCount() == 3,
           "shared dynamic state was duplicated during reconstruction");
+  const auto restoredParticles = std::find_if(
+      inspection.observerRecord.observers.begin(),
+      inspection.observerRecord.observers.end(), [](const auto &observer) {
+        return observer.identifier == "particles";
+      });
+  require(restoredParticles != inspection.observerRecord.observers.end() &&
+              restoredParticles->z == std::vector<double>({-100.0, -300.0}),
+          "fixed XY particle z configuration was not reconstructed");
 }
 
 void testOptionalMatlabFixture() {

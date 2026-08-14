@@ -139,6 +139,43 @@ int main(int argc, char **argv) {
     std::cerr << status.message << '\n';
     return 6;
   }
+  const auto fixedMetrics = service->metrics();
+
+  const std::vector<std::string> movingFields = {
+      "u", "v", "w", "eta", "rho_e", "rho_total"};
+  std::vector<WVMovingFieldRequest> movingRequests;
+  for (const auto interpolation : {WVPositionInterpolation::linear,
+                                   WVPositionInterpolation::spline}) {
+    const std::string prefix = interpolation == WVPositionInterpolation::linear
+                                   ? "linear__"
+                                   : "spline__";
+    for (const auto &name : movingFields)
+      movingRequests.push_back({prefix + name, name, 0, positions.x.size(),
+                                interpolation});
+  }
+  WVMovingFieldEvaluationPlan movingPlan;
+  status = service->createMovingPlan(movingRequests, movingPlan);
+  if (!status) {
+    std::cerr << status.message << '\n';
+    return 7;
+  }
+  std::vector<std::vector<double>> movingStorage;
+  std::vector<WVFieldOutputView> movingOutputs;
+  movingStorage.reserve(movingPlan.outputCount());
+  movingOutputs.reserve(movingPlan.outputCount());
+  for (const auto &specification : movingPlan.outputs())
+    movingStorage.emplace_back(specification.elementCount, 0.0);
+  for (auto &values : movingStorage)
+    movingOutputs.push_back({values.data(), values.size()});
+  status = service->evaluateMoving(
+      movingPlan, checkpoint.state.view(),
+      {positions.x.data(), positions.y.data(), positions.z.data(),
+       positions.x.size()},
+      movingOutputs.data(), movingOutputs.size());
+  if (!status) {
+    std::cerr << status.message << '\n';
+    return 8;
+  }
 
   std::cout << std::setprecision(17);
   std::cout << "{\"outputs\":[";
@@ -154,7 +191,21 @@ int main(int argc, char **argv) {
     printArray(storage[index]);
     std::cout << '}';
   }
-  const auto &metrics = service->metrics();
+  std::cout << "],\"movingOutputs\":[";
+  for (std::size_t index = 0; index < movingPlan.outputCount(); ++index) {
+    if (index != 0)
+      std::cout << ',';
+    const auto &specification = movingPlan.outputs()[index];
+    std::cout << "{\"identifier\":\"" << escaped(specification.identifier)
+              << "\",\"field\":\"" << escaped(specification.fieldName)
+              << "\",\"dimensions\":";
+    printDimensions(specification.dimensions);
+    std::cout << ",\"values\":";
+    printArray(movingStorage[index]);
+    std::cout << '}';
+  }
+  const auto &metrics = fixedMetrics;
+  const auto &movingMetrics = service->metrics();
   std::cout << "],\"positions\":{\"x\":";
   printArray(positions.x);
   std::cout << ",\"y\":";
@@ -185,6 +236,13 @@ int main(int argc, char **argv) {
             << ",\"splineInterpolationCount\":"
             << metrics.splineInterpolationCount
             << ",\"outputElementWriteCount\":"
-            << metrics.outputElementWriteCount << "}}\n";
+            << metrics.outputElementWriteCount
+            << "},\"movingMetrics\":{\"evaluationCount\":"
+            << movingMetrics.movingEvaluationCount
+            << ",\"positionCount\":" << movingMetrics.movingPositionCount
+            << ",\"primitiveTransformCount\":"
+            << movingMetrics.movingPrimitiveTransformCount
+            << ",\"workspaceBytes\":"
+            << movingMetrics.movingInterpolationWorkspaceBytes << "}}\n";
   return 0;
 }

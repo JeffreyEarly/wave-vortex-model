@@ -211,13 +211,34 @@ WVKernelStatus validateCompositeState(const WVCompositeStateLayout &layout,
 WVKernelStatus
 validateMutableCompositeState(const WVCompositeStateLayout &layout,
                               const WVMutableCompositeState &state) {
-  try {
-    std::vector<WVAdditionalStateBlockConstView> views;
-    return validateCompositeState(layout, compositeConstView(state, views));
-  } catch (const std::bad_alloc &) {
-    return {WVKernelStatusCode::allocationFailure,
-            "Composite state validation allocation failed."};
+  if (!std::isfinite(state.waveVortex.t) ||
+      !std::isfinite(state.waveVortex.t0))
+    return invalid("Composite state times must be finite.");
+  const auto shape = layout.coefficientShape();
+  const auto &c = state.waveVortex.coefficients;
+  if (c.Ap.data == nullptr || c.Am.data == nullptr || c.A0.data == nullptr ||
+      !sameShape(c.Ap.shape, shape) || !sameShape(c.Am.shape, shape) ||
+      !sameShape(c.A0.shape, shape))
+    return {WVKernelStatusCode::invalidShape,
+            "Composite coefficients must use the resolved [Nj,Nkl] shape."};
+  if (state.additionalBlockCount != layout.additionalBlocks().size() ||
+      (state.additionalBlockCount && state.additionalBlocks == nullptr))
+    return {WVKernelStatusCode::invalidShape,
+            "Composite state-block count does not match its layout."};
+  for (std::size_t index = 0; index < state.additionalBlockCount; ++index) {
+    const auto &expected = layout.additionalBlocks()[index];
+    const auto &actual = state.additionalBlocks[index];
+    if (actual.layout != &expected)
+      return invalid(
+          "Composite state-block order does not match its frozen layout.");
+    if ((expected.scalarType == WVStateScalarType::real64 &&
+         actual.realData == nullptr) ||
+        (expected.scalarType == WVStateScalarType::complex64 &&
+         actual.complexData == nullptr))
+      return {WVKernelStatusCode::invalidPointer,
+              "Composite state block has a null data pointer."};
   }
+  return WVKernelStatus::ok();
 }
 
 } // namespace wavevortex::runtime

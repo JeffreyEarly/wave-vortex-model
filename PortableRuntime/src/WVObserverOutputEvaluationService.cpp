@@ -89,18 +89,38 @@ public:
     std::size_t coefficientFamily = 0;
     std::size_t fieldOutput = 0;
     bool initialField = false;
+    bool particleField = false;
+  };
+
+  struct ParticleCoordinates {
+    std::string observerIdentifier;
+    std::string xBlock;
+    std::string yBlock;
+    std::string zBlock;
+    std::vector<double> fixedZ;
+    std::size_t offset = 0;
+    std::size_t count = 0;
+    bool isXYOnly = false;
   };
 
   WVTransformConstantStratificationConfiguration configuration;
   bool isDynamicsLinear = false;
   WVPortableObserverRecord descriptor;
-  std::unique_ptr<WVFieldEvaluationService> fields;
+  std::unique_ptr<WVFieldEvaluationService> ownedFields;
+  WVFieldEvaluationService *fields = nullptr;
   WVFieldEvaluationPlan initialFieldPlan;
   WVFieldEvaluationPlan timeSeriesFieldPlan;
   std::vector<std::vector<double>> initialFieldStorage;
   std::vector<std::vector<double>> timeSeriesFieldStorage;
   std::vector<WVFieldOutputView> initialFieldViews;
   std::vector<WVFieldOutputView> timeSeriesFieldViews;
+  WVMovingFieldEvaluationPlan particleFieldPlan;
+  std::vector<std::vector<double>> particleFieldStorage;
+  std::vector<WVFieldOutputView> particleFieldViews;
+  std::vector<ParticleCoordinates> particleCoordinates;
+  std::vector<double> particleX;
+  std::vector<double> particleY;
+  std::vector<double> particleZ;
   std::map<std::string, std::vector<Output>> outputsByObserver;
   std::map<std::string, std::pair<std::string, std::size_t>> outputLookup;
   WVState preparedState;
@@ -108,6 +128,8 @@ public:
   bool running = false;
 
   WVKernelStatus evaluate(const WVState &state, bool initial,
+                          const WVCompositeState *composite,
+                          bool evaluateParticles,
                           WVObserverOutputEvaluationMetrics &metrics) {
     if (running)
       return invalid("Observer evaluation is not reentrant.");
@@ -123,6 +145,52 @@ public:
         return status;
       }
       ++metrics.fieldEvaluationCount;
+    }
+    if (!initial && !particleFieldViews.empty() && evaluateParticles) {
+      if (composite == nullptr) {
+        reset();
+        return invalid("Particle output requires composite event state.");
+      }
+      const auto findBlock = [&](const std::string &identifier) {
+        for (std::size_t index = 0; index < composite->additionalBlockCount;
+             ++index)
+          if (composite->additionalBlocks[index].layout->identifier == identifier)
+            return composite->additionalBlocks + index;
+        return static_cast<const WVAdditionalStateBlockConstView *>(nullptr);
+      };
+      for (const auto &coordinates : particleCoordinates) {
+        const auto *x = findBlock(coordinates.xBlock);
+        const auto *y = findBlock(coordinates.yBlock);
+        const auto *z = coordinates.isXYOnly ? nullptr : findBlock(coordinates.zBlock);
+        if (x == nullptr || y == nullptr ||
+            (!coordinates.isXYOnly && z == nullptr)) {
+          reset();
+          return invalid("Particle output state blocks are absent from the event.");
+        }
+        std::copy_n(x->realData, coordinates.count,
+                    particleX.data() + coordinates.offset);
+        std::copy_n(y->realData, coordinates.count,
+                    particleY.data() + coordinates.offset);
+        if (coordinates.isXYOnly)
+          std::copy(coordinates.fixedZ.begin(), coordinates.fixedZ.end(),
+                    particleZ.data() + coordinates.offset);
+        else
+          std::copy_n(z->realData, coordinates.count,
+                      particleZ.data() + coordinates.offset);
+      }
+      const auto status = fields->evaluateMoving(
+          particleFieldPlan, state,
+          {particleX.data(), particleY.data(), particleZ.data(),
+           particleX.size()},
+          particleFieldViews.data(), particleFieldViews.size());
+      if (!status) {
+        reset();
+        return status;
+      }
+      ++metrics.fieldEvaluationCount;
+      ++metrics.routeAwareParticleEvaluationCount;
+    } else if (!initial && !particleFieldViews.empty()) {
+      ++metrics.skippedParticleEvaluationCount;
     }
     preparedState = state;
     prepared = true;
@@ -149,9 +217,10 @@ WVKernelStatus WVObserverOutputEvaluationService::create(
     impl.isDynamicsLinear = isDynamicsLinear;
     impl.descriptor = descriptor.record();
     auto status = WVFieldEvaluationService::create(
-        configuration, std::move(engine), impl.fields);
+        configuration, std::move(engine), impl.ownedFields);
     if (!status)
       return status;
+    impl.fields = impl.ownedFields.get();
 
     std::vector<WVFieldRequest> initialRequests;
     std::vector<WVFieldRequest> timeSeriesRequests;
@@ -196,7 +265,7 @@ WVKernelStatus WVObserverOutputEvaluationService::create(
         specification.attributes.push_back(
             {metadata->second.attributeName, metadata->second.attributeValue});
       outputs.push_back(
-          {std::move(specification), false, 0, index, initialField});
+          {std::move(specification), false, 0, index, initialField, false});
       return WVKernelStatus::ok();
     };
 
@@ -236,7 +305,7 @@ WVKernelStatus WVObserverOutputEvaluationService::create(
                           : "geostrophic coefficients at reference time t0";
             const std::size_t family = field == "Ap" ? 0 : field == "Am" ? 1 : 2;
             outputs.push_back(
-                {std::move(specification), true, family, 0, false});
+                {std::move(specification), true, family, 0, false, false});
           } else {
             if (supportedFields.find(field) == supportedFields.end())
               return invalid("Unsupported WVEulerianFields variable: " + field + ".");
@@ -291,6 +360,46 @@ WVKernelStatus WVObserverOutputEvaluationService::create(
             return status;
           outputs.back().specification.longName += ", recorded at the mooring";
         }
+      } else if (observer.kind == WVObserverKind::lagrangianParticles) {
+        if (observer.z.size() != observer.x.size())
+          return invalid("Constant-stratification particles require one z "
+                         "coordinate per particle.");
+        const std::size_t offset = impl.particleX.size();
+        impl.particleX.resize(offset + observer.x.size());
+        impl.particleY.resize(offset + observer.x.size());
+        impl.particleZ.resize(offset + observer.x.size());
+        impl.particleCoordinates.push_back(
+            {observer.identifier, observer.stateBlockIdentifiers[0],
+             observer.stateBlockIdentifiers[1],
+             observer.isXYOnly ? std::string{}
+                               : observer.stateBlockIdentifiers[2],
+             observer.z, offset, observer.x.size(), observer.isXYOnly});
+        for (const auto &field : observer.fieldNames) {
+          const auto metadata = fieldMetadata().find(field);
+          if (metadata == fieldMetadata().end())
+            return invalid("Unsupported particle tracked field: " + field + ".");
+          WVObserverOutputVariableSpecification specification;
+          specification.identifier = field;
+          specification.name = observer.name + '_' + field;
+          specification.dimensionNames = {observer.name + "_id"};
+          specification.dimensions = {observer.x.size()};
+          specification.units = metadata->second.units;
+          specification.longName =
+              std::string(metadata->second.longName) +
+              ", recorded along the particle trajectory";
+          specification.attributes.push_back(
+              {"isParticle", "1"});
+          specification.attributes.push_back(
+              {"particleName", observer.name});
+          specification.attributes.push_back(
+              {"particleVariableName", field});
+          const auto index = impl.particleFieldStorage.size();
+          outputs.push_back(
+              {std::move(specification), false, 0, index, false, true});
+          impl.particleFieldStorage.emplace_back(observer.x.size());
+          impl.particleFieldViews.push_back(
+              {impl.particleFieldStorage.back().data(), observer.x.size()});
+        }
       }
       for (std::size_t index = 0; index < outputs.size(); ++index)
         impl.outputLookup.emplace(
@@ -327,6 +436,34 @@ WVKernelStatus WVObserverOutputEvaluationService::create(
                        impl.timeSeriesFieldViews);
     if (!status)
       return status;
+    if (!impl.particleFieldStorage.empty()) {
+      std::vector<WVMovingFieldRequest> particleRequests;
+      particleRequests.reserve(impl.particleFieldStorage.size());
+      for (const auto &observer : impl.descriptor.observers) {
+        if (observer.kind != WVObserverKind::lagrangianParticles)
+          continue;
+        const auto coordinates = std::find_if(
+            impl.particleCoordinates.begin(), impl.particleCoordinates.end(),
+            [&](const auto &candidate) {
+              return candidate.observerIdentifier == observer.identifier;
+            });
+        for (const auto &field : observer.fieldNames)
+          particleRequests.push_back(
+              {observer.identifier + '-' + field, field, coordinates->offset,
+               coordinates->count, observer.trackedFieldInterpolation});
+      }
+      status = impl.fields->createMovingPlan(particleRequests,
+                                             impl.particleFieldPlan);
+      if (!status)
+        return status;
+      for (std::size_t index = 0; index < impl.particleFieldViews.size(); ++index)
+        impl.particleFieldViews[index] = {
+            impl.particleFieldStorage[index].data(),
+            impl.particleFieldStorage[index].size()};
+      for (const auto &storage : impl.particleFieldStorage)
+        candidate->metrics_.outputCapacityBytes +=
+            storage.capacity() * sizeof(double);
+    }
     candidate->metrics_.uniqueFieldOutputCount =
         initialRequests.size() + timeSeriesRequests.size();
     candidate->metrics_.retainedStorageBytes = candidate->persistentBytes();
@@ -352,18 +489,65 @@ WVKernelStatus WVObserverOutputEvaluationService::specifications(
 }
 
 WVKernelStatus WVObserverOutputEvaluationService::preflight(
-    const WVCompositeOutputPlan &) {
+    const WVCompositeOutputPlan &plan) {
+  for (std::size_t eventIndex = 0; eventIndex < plan.eventCount(); ++eventIndex) {
+    const auto event = plan.event(eventIndex);
+    for (std::size_t routeIndex = 0; routeIndex < event.routeCount; ++routeIndex)
+      for (std::size_t observerIndex = 0;
+           observerIndex < event.routes[routeIndex].observerCount;
+           ++observerIndex) {
+        const auto *record =
+            event.routes[routeIndex].observers[observerIndex].record;
+        if (record == nullptr ||
+            impl_->outputsByObserver.find(record->identifier) ==
+                impl_->outputsByObserver.end())
+          return invalid("Output plan references an observer outside this "
+                         "evaluation service.");
+      }
+  }
+  return WVKernelStatus::ok();
+}
+
+WVKernelStatus WVObserverOutputEvaluationService::useFieldEvaluationService(
+    WVFieldEvaluationService &fieldEvaluationService) {
+  const auto &left = impl_->configuration;
+  const auto &right = fieldEvaluationService.configuration();
+  if (left.contractVersion != right.contractVersion || left.Nx != right.Nx ||
+      left.Ny != right.Ny || left.Nz != right.Nz || left.Nj != right.Nj ||
+      left.Lx != right.Lx || left.Ly != right.Ly || left.Lz != right.Lz ||
+      left.N0 != right.N0 || left.rho0 != right.rho0 || left.g != right.g ||
+      left.isHydrostatic != right.isHydrostatic ||
+      left.shouldAntialias != right.shouldAntialias)
+    return invalid("Borrowed field-evaluation service uses an incompatible "
+                   "constant-stratification configuration.");
+  impl_->ownedFields.reset();
+  impl_->fields = &fieldEvaluationService;
+  metrics_.retainedStorageBytes = persistentBytes();
   return WVKernelStatus::ok();
 }
 
 WVKernelStatus
 WVObserverOutputEvaluationService::prepareInitial(const WVState &state) {
-  return impl_->evaluate(state, true, metrics_);
+  return impl_->evaluate(state, true, nullptr, false, metrics_);
 }
 
 WVKernelStatus WVObserverOutputEvaluationService::prepare(
     const WVCompositeOutputEvent &event) {
-  return impl_->evaluate(event.state.waveVortex, false, metrics_);
+  bool needsParticles = event.routes == nullptr;
+  for (std::size_t route = 0; route < event.routeCount && !needsParticles;
+       ++route)
+    for (std::size_t observer = 0;
+         observer < event.routes[route].observerCount; ++observer) {
+      const auto *record = event.routes[route].observers[observer].record;
+      if (record != nullptr &&
+          record->kind == WVObserverKind::lagrangianParticles &&
+          !record->fieldNames.empty()) {
+        needsParticles = true;
+        break;
+      }
+    }
+  return impl_->evaluate(event.state.waveVortex, false, &event.state,
+                         needsParticles, metrics_);
 }
 
 WVKernelStatus WVObserverOutputEvaluationService::value(
@@ -387,8 +571,10 @@ WVKernelStatus WVObserverOutputEvaluationService::value(
     output.elementCount = coefficients.Ap.shape.elementCount();
     ++metrics_.borrowedCoefficientViewCount;
   } else {
-    const auto &storage = entry.initialField ? impl_->initialFieldStorage
-                                             : impl_->timeSeriesFieldStorage;
+    const auto &storage = entry.particleField
+                              ? impl_->particleFieldStorage
+                              : entry.initialField ? impl_->initialFieldStorage
+                                                   : impl_->timeSeriesFieldStorage;
     output.realData = storage[entry.fieldOutput].data();
     output.elementCount = storage[entry.fieldOutput].size();
   }
@@ -399,13 +585,20 @@ std::size_t WVObserverOutputEvaluationService::persistentBytes() const noexcept 
   if (!impl_)
     return sizeof(*this);
   std::size_t bytes = sizeof(*this) + sizeof(Impl) +
-                      (impl_->fields ? impl_->fields->persistentBytes() : 0) +
+                      (impl_->ownedFields
+                           ? impl_->ownedFields->persistentBytes()
+                           : 0) +
                       impl_->initialFieldPlan.persistentBytes() +
                       impl_->timeSeriesFieldPlan.persistentBytes();
   for (const auto &storage : impl_->initialFieldStorage)
     bytes += storage.capacity() * sizeof(double);
   for (const auto &storage : impl_->timeSeriesFieldStorage)
     bytes += storage.capacity() * sizeof(double);
+  bytes += impl_->particleFieldPlan.persistentBytes();
+  for (const auto &storage : impl_->particleFieldStorage)
+    bytes += storage.capacity() * sizeof(double);
+  bytes += (impl_->particleX.capacity() + impl_->particleY.capacity() +
+            impl_->particleZ.capacity()) * sizeof(double);
   return bytes;
 }
 

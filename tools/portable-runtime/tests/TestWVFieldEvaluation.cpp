@@ -3,6 +3,7 @@
 #include "WVReferenceFFTEngine.hpp"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstddef>
 #include <iostream>
@@ -467,6 +468,41 @@ void verifyEvaluation(std::size_t nx, std::size_t ny, bool hydrostatic,
           "service persistent storage metric is not exact");
   require(metrics.scratchHighWaterBytes <= metrics.scratchCapacityBytes,
           "scratch high-water exceeds bounded capacity");
+
+  WVMovingFieldEvaluationPlan movingPlan;
+  status = service->createMovingPlan(
+      {{"moving-linear", "u", 0, linear.x.size(),
+        WVPositionInterpolation::linear},
+       {"moving-spline", "u", 0, spline.x.size(),
+        WVPositionInterpolation::spline}},
+      movingPlan);
+  require(static_cast<bool>(status), "moving plan creation failed");
+  std::vector<double> movingLinear(linear.x.size());
+  std::vector<double> movingSpline(spline.x.size());
+  std::array<WVFieldOutputView, 2> movingViews{{
+      {movingLinear.data(), movingLinear.size()},
+      {movingSpline.data(), movingSpline.size()}}};
+  status = service->evaluateMoving(
+      movingPlan, state.view(),
+      {linear.x.data(), linear.y.data(), linear.z.data(), linear.x.size()},
+      movingViews.data(), movingViews.size());
+  require(static_cast<bool>(status), "moving evaluation failed");
+  for (std::size_t index = 0; index < linear.x.size(); ++index) {
+    requireClose(movingLinear[index], linearOutput[index],
+                 "moving linear interpolation differs from fixed positions");
+    requireClose(movingSpline[index], splineOutput[index],
+                 "moving spline interpolation differs from fixed positions");
+  }
+  const auto movingWorkspaceBytes =
+      service->metrics().movingInterpolationWorkspaceBytes;
+  status = service->evaluateMoving(
+      movingPlan, state.view(),
+      {linear.x.data(), linear.y.data(), linear.z.data(), linear.x.size()},
+      movingViews.data(), movingViews.size());
+  require(static_cast<bool>(status) &&
+              service->metrics().movingInterpolationWorkspaceBytes ==
+                  movingWorkspaceBytes,
+          "repeated moving evaluation changed bounded interpolation storage");
 
   WVFieldOutputView badShape{views[0].data, views[0].elementCount - 1};
   status = service->evaluate(plan, state.view(), &badShape, 1);
