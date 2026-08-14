@@ -124,7 +124,7 @@ markdown = intro+newline+newline+table+newline+newline+scope;
 end
 
 function records = loadPublishedRecords(repositoryRoot,catalog,allowedSuites)
-records = struct("dataset",{},"artifactPath",{},"rawPath",{});
+records = struct("dataset",{},"artifactPath",{},"rawPath",{},"rawHash",{},"rawDownloadName",{});
 if isempty(catalog.publishedDatasets)
     return
 end
@@ -144,7 +144,8 @@ for iEntry = 1:numel(entries)
         continue
     end
     rawPath = repositoryFile(repositoryRoot,string(dataset.provenance.rawArtifact),"raw benchmark artifact");
-    records(end+1) = struct("dataset",dataset,"artifactPath",artifactPath,"rawPath",rawPath);
+    rawHash = sha256File(rawPath);
+    records(end+1) = struct("dataset",dataset,"artifactPath",artifactPath,"rawPath",rawPath,"rawHash",rawHash,"rawDownloadName","raw-" + rawHash + ".json");
 end
 end
 
@@ -230,7 +231,10 @@ mkdir(rawFolder);
 for iRecord = 1:numel(records)
     datasetId = string(records(iRecord).dataset.datasetId);
     copyfile(records(iRecord).artifactPath,fullfile(dataFolder,datasetId + ".json"),"f");
-    copyfile(records(iRecord).rawPath,fullfile(rawFolder,datasetId + ".json"),"f");
+    rawDestination = fullfile(rawFolder,records(iRecord).rawDownloadName);
+    if ~isfile(rawDestination)
+        copyfile(records(iRecord).rawPath,rawDestination,"f");
+    end
 end
 end
 
@@ -653,7 +657,7 @@ if isempty(records)
     markdown = "No approved result files have been published yet.";
     return
 end
-rows = strings(numel(records),7);
+rows = strings(numel(records),8);
 for iRecord = 1:numel(records)
     dataset = records(iRecord).dataset;
     datasetId = string(dataset.datasetId);
@@ -663,16 +667,36 @@ for iRecord = 1:numel(records)
         string(dataset.platform.displayName), ...
         string(dataset.benchmark.suiteId), ...
         string(dataset.collectedAt), ...
+        records(iRecord).rawHash, ...
         "Published JSON", ...
         "Raw JSON"];
 end
 rows = sortrows(rows,1);
 links = strings(size(rows));
 for iRow = 1:size(rows,1)
-    links(iRow,6) = "/benchmarks/data/" + rows(iRow,1) + ".json";
-    links(iRow,7) = "/benchmarks/raw/" + rows(iRow,1) + ".json";
+    links(iRow,7) = "/benchmarks/data/" + rows(iRow,1) + ".json";
+    links(iRow,8) = "/benchmarks/raw/raw-" + rows(iRow,6) + ".json";
 end
-markdown = htmlTable(["Dataset" "Implementation" "Platform" "Suite" "Collected" "Normalized" "Raw artifact"],rows,links);
+markdown = htmlTable(["Dataset" "Implementation" "Platform" "Suite" "Collected" "SHA-256" "Normalized" "Raw artifact"],rows,links);
+end
+
+function hash = sha256File(pathname)
+fileId = fopen(pathname,"rb");
+if fileId < 0
+    error("WaveVortexModel:UnreadableBenchmarkArtifact","Unable to read %s.",pathname);
+end
+cleanup = onCleanup(@()fclose(fileId));
+digest = java.security.MessageDigest.getInstance("SHA-256");
+while true
+    bytes = fread(fileId,1024*1024,"*uint8");
+    if isempty(bytes)
+        break
+    end
+    digest.update(bytes);
+end
+hashBytes = typecast(digest.digest(),"uint8");
+hash = lower(string(reshape(dec2hex(hashBytes,2).',1,[])));
+clear cleanup
 end
 
 function html = htmlTable(headers,rows,links)
