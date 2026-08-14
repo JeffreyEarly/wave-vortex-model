@@ -1,4 +1,4 @@
-#include "WaveVortexRuntime/WVLagrangianParticles.hpp"
+#include "WaveVortexRuntime/WVConstantStratificationCompositeSystem.hpp"
 
 #include "WVReferenceFFTEngine.hpp"
 
@@ -108,6 +108,31 @@ WVPortableObserverDescriptor descriptorFor(
   return descriptor;
 }
 
+WVPortableObserverDescriptor descriptorWithTracers(
+    const WVTransformConstantStratificationConfiguration &configuration) {
+  auto record = descriptorFor(configuration).record();
+  const std::vector<std::size_t> shape{
+      configuration.Nx, configuration.Ny, configuration.Nz};
+  for (const auto *identifier : {"dye", "temperature"}) {
+    record.stateBlocks.push_back(
+        {identifier, WVStateScalarType::real64, shape,
+         WVToleranceKind::uniformAbsolute, 1e-8,
+         WVStateOwnership::integratorOwned,
+         WVRestartRequirement::requiredDynamicState});
+    WVObserverRecord tracer;
+    tracer.identifier = identifier;
+    tracer.name = identifier;
+    tracer.kind = WVObserverKind::tracer;
+    tracer.stateBlockIdentifiers = {identifier};
+    tracer.shouldAntialias = std::string(identifier) == "dye";
+    record.observers.push_back(std::move(tracer));
+  }
+  WVPortableObserverDescriptor descriptor;
+  const auto status = WVPortableObserverDescriptor::create(record, descriptor);
+  require(static_cast<bool>(status), status.message);
+  return descriptor;
+}
+
 struct Fixture {
   WVShape2D shape;
   std::vector<WVComplex64> coefficients;
@@ -169,6 +194,144 @@ void initializeParticles(Fixture &fixture,
   }
 }
 
+std::size_t blockIndex(const WVMutableCompositeState &state,
+                       const std::string &identifier) {
+  for (std::size_t index = 0; index < state.additionalBlockCount; ++index)
+    if (state.additionalBlocks[index].layout->identifier == identifier)
+      return index;
+  throw std::runtime_error("missing state block " + identifier);
+}
+
+void initializeTracer(Fixture &fixture, const std::string &identifier,
+                      const WVTransformConstantStratificationConfiguration &config,
+                      double scale) {
+  auto &block = fixture.state.additionalBlocks[blockIndex(fixture.state, identifier)];
+  const double pi = std::acos(-1.0);
+  for (std::size_t z = 0; z < config.Nz; ++z)
+    for (std::size_t y = 0; y < config.Ny; ++y)
+      for (std::size_t x = 0; x < config.Nx; ++x) {
+        const auto index = x + config.Nx * (y + config.Ny * z);
+        block.realData[index] =
+            scale * (std::sin(2.0 * pi * static_cast<double>(x) /
+                              static_cast<double>(config.Nx)) +
+                     0.25 * std::cos(2.0 * pi * static_cast<double>(y) /
+                                     static_cast<double>(config.Ny)) +
+                     0.1 * std::cos(pi * static_cast<double>(z) /
+                                    static_cast<double>(config.Nz - 1)));
+      }
+}
+
+void testTracers(bool hydrostatic) {
+  const auto config = configuration(hydrostatic);
+  const auto descriptor = descriptorWithTracers(config);
+  std::unique_ptr<WVConstantStratificationCompositeSystem> system;
+  auto status = WVConstantStratificationCompositeSystem::create(
+      config, {}, descriptor, std::make_unique<WVReferenceFFTEngine>(), 1e-6,
+      system);
+  require(static_cast<bool>(status), status.message);
+  require(system->tracers().size() == 2, "tracers were not resolved");
+  Fixture fixture(system->stateLayout());
+  status = system->initializeParticleState(fixture.state);
+  require(static_cast<bool>(status), status.message);
+  initializeTracer(fixture, "dye", config, 1.0);
+  initializeTracer(fixture, "temperature", config, -0.5);
+  const auto scratchCapacityBytes =
+      system->kernelMetrics().scratchCapacityBytes;
+  const auto planCount = system->kernelMetrics().planCount;
+  status = system->evaluateRightHandSide(fixture.constView(), fixture.rhs);
+  require(static_cast<bool>(status), status.message);
+
+  for (const auto *identifier : {"dye", "temperature"}) {
+    const auto index = blockIndex(fixture.state, identifier);
+    const auto &flux = fixture.rhs.additionalBlocks[index];
+    bool hasNonzeroValue = false;
+    for (std::size_t value = 0; value < flux.layout->elementCount; ++value) {
+      require(std::isfinite(flux.realData[value]),
+              std::string(identifier) + " tracer flux was not finite");
+      hasNonzeroValue = hasNonzeroValue || std::abs(flux.realData[value]) > 0.0;
+    }
+    require(hasNonzeroValue,
+            std::string(identifier) + " tracer flux was not evaluated");
+  }
+  require(system->metrics().tracerEvaluationCount == 2 &&
+              system->metrics().antialiasedTracerEvaluationCount == 1,
+          "mixed tracer antialias dispatch changed");
+  require(system->kernelMetrics().advectionVelocityReconstructionCount == 1 &&
+              system->kernelMetrics().scalarAdvectionCount == 2 &&
+              system->kernelMetrics().scalarAntialiasCount == 1,
+          "tracers did not share exactly one RHS velocity reconstruction");
+  require(system->kernelMetrics().scratchCapacityBytes == scratchCapacityBytes &&
+              system->kernelMetrics().planCount == planCount + 1,
+          "tracer evaluation added array-sized scratch or unexpected plans");
+  require(system->fieldEvaluationService().metrics().movingPrimitiveTransformCount == 0,
+          "tracer RHS invoked the particle interpolation transform");
+
+  const auto persistentBytes = system->persistentBytes();
+  WVCompositeFixedStepRK4 rk4(*system, true);
+  status = rk4.prepareStateAfterRestart(fixture.state);
+  require(static_cast<bool>(status), status.message);
+  status = rk4.step(fixture.state, 1e-4);
+  require(static_cast<bool>(status), status.message);
+  require(rk4.lastAcceptedStep() != nullptr &&
+              rk4.lastAcceptedStep()->denseOutput != nullptr,
+          "tracer RK4 dense output missing");
+  require(system->persistentBytes() == persistentBytes,
+          "tracer integration grew persistent storage");
+}
+
+void testScalarAdvectionOperator(bool shouldAntialias) {
+  const auto config = configuration(true);
+  std::unique_ptr<WVTransformConstantStratificationKernel> kernel;
+  auto status = WVTransformConstantStratificationKernel::create(
+      config, std::make_unique<WVReferenceFFTEngine>(), kernel);
+  require(static_cast<bool>(status), status.message);
+  const WVShape3D shape{config.Nx, config.Ny, config.Nz};
+  const auto R = shape.elementCount();
+  std::vector<double> scalar(R);
+  std::vector<double> fields(3 * R, 0.0);
+  std::vector<double> flux(R, 0.0);
+  const double pi = std::acos(-1.0);
+  const double u = 0.75;
+  const double v = -0.4;
+  for (std::size_t z = 0; z < config.Nz; ++z)
+    for (std::size_t y = 0; y < config.Ny; ++y)
+      for (std::size_t x = 0; x < config.Nx; ++x) {
+        const auto index = x + config.Nx * (y + config.Ny * z);
+        scalar[index] =
+            std::sin(2.0 * pi * static_cast<double>(x) /
+                     static_cast<double>(config.Nx)) +
+            0.25 * std::cos(2.0 * pi * static_cast<double>(y) /
+                            static_cast<double>(config.Ny));
+        fields[index] = u;
+        fields[R + index] = v;
+      }
+  const WVRealVolumeConstView scalarView{scalar.data(), shape};
+  const WVRealFieldBundleConstView fieldView{
+      fields.data(), {config.Nx, config.Ny, config.Nz, 3}};
+  WVRealVolumeView fluxView{flux.data(), shape};
+  status = kernel->advectFGridScalar(scalarView, fieldView, shouldAntialias,
+                                     fluxView);
+  require(static_cast<bool>(status), status.message);
+  const double k = 2.0 * pi / config.Lx;
+  const double l = 2.0 * pi / config.Ly;
+  double maximumError = 0.0;
+  for (std::size_t z = 0; z < config.Nz; ++z)
+    for (std::size_t y = 0; y < config.Ny; ++y)
+      for (std::size_t x = 0; x < config.Nx; ++x) {
+        const auto index = x + config.Nx * (y + config.Ny * z);
+        const double expected =
+            -u * k * std::cos(2.0 * pi * static_cast<double>(x) /
+                              static_cast<double>(config.Nx)) +
+            v * 0.25 * l *
+                std::sin(2.0 * pi * static_cast<double>(y) /
+                         static_cast<double>(config.Ny));
+        maximumError = std::max(maximumError,
+                                std::abs(flux[index] - expected));
+      }
+  require(maximumError <= 1e-12,
+          "shared scalar differential operator changed its sign or scaling");
+}
+
 void testComposite(bool hydrostatic) {
   const auto config = configuration(hydrostatic);
   const auto descriptor = descriptorFor(config);
@@ -195,6 +358,11 @@ void testComposite(bool hydrostatic) {
               "particle RHS was not completely written");
   require(system->metrics().velocityFieldEvaluationCount == 1,
           "particle systems did not share one primitive transform");
+  require(system->metrics().sharedRightHandSideContextCount == 1,
+          "particle systems did not use one shared RHS context");
+  require(system->fieldEvaluationService().metrics().movingPrimitiveTransformCount == 0 &&
+              system->fieldEvaluationService().metrics().primitiveFieldReuseCount == 1,
+          "particle interpolation recomputed prepared advection fields");
   require(system->fieldEvaluationService().metrics().movingPositionCount == 5,
           "moving position count changed");
   const auto persistentBytes = system->persistentBytes();
@@ -294,6 +462,7 @@ void testValidation() {
   tracer.name = "tracer";
   tracer.kind = WVObserverKind::tracer;
   tracer.stateBlockIdentifiers = {"tracer"};
+  tracer.isXYOnly = true;
   tracerRecord.observers.push_back(tracer);
   WVPortableObserverDescriptor tracerDescriptor;
   require(static_cast<bool>(WVPortableObserverDescriptor::create(
@@ -303,7 +472,7 @@ void testValidation() {
       config, {}, tracerDescriptor, std::make_unique<WVReferenceFFTEngine>(),
       1e-6, system);
   require(tracerStatus.code == WVKernelStatusCode::unsupportedOperation,
-          "particle system did not defer tracers to #202");
+          "constant-stratification system did not defer two-dimensional tracers");
 }
 
 } // namespace
@@ -312,6 +481,10 @@ int main() {
   try {
     testComposite(true);
     testComposite(false);
+    testTracers(true);
+    testTracers(false);
+    testScalarAdvectionOperator(false);
+    testScalarAdvectionOperator(true);
     testValidation();
     std::cout << "PASS TestWVLagrangianParticles\n";
     return 0;

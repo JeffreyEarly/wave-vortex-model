@@ -30,7 +30,7 @@ WVPortableObserverRecord outputRecord(double finalTime = 1.0) {
          WVStateOwnership::integratorOwned,
          WVRestartRequirement::requiredDynamicState});
   record.stateBlocks.push_back(
-      {"tracerAmplitude", WVStateScalarType::real64, {2},
+      {"tracerAmplitude", WVStateScalarType::real64, {1, 1, 2},
        WVToleranceKind::uniformAbsolute, 1e-10,
        WVStateOwnership::integratorOwned,
        WVRestartRequirement::requiredDynamicState});
@@ -551,7 +551,7 @@ void testPreflightAndMalformedProgress(Context &context) {
   requireDescriptorMismatch(typeMismatch, "state-block scalar-type mismatch");
 
   auto dimensionMismatch = outputRecord();
-  dimensionMismatch.stateBlocks[3].dimensions = {1, 2};
+  dimensionMismatch.stateBlocks[3].dimensions = {2, 1, 1};
   requireDescriptorMismatch(dimensionMismatch, "state-block dimension mismatch");
 
   auto observerMismatch = outputRecord();

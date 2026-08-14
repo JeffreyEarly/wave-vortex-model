@@ -286,6 +286,32 @@ void testMultipleWholeFluxProducers() {
     require(engine->metrics().workspaceCapacityBytes == values.size()*sizeof(WVComplex64),"multiple whole-flux producers did not allocate exactly one temporary tendency");
 }
 
+void testRightHandSideContextIdentity() {
+    auto first = createEngine(true,nonlinearSchedule());
+    auto second = createEngine(true,nonlinearSchedule());
+    OwnedState state(first->kernel().descriptor().spectralShape());
+    std::vector<WVComplex64> values(3*state.shape.elementCount());
+    auto flux = fluxView(values,state.shape);
+    const auto spatial = first->kernel().descriptor().spatialShape();
+    const auto R = spatial.elementCount();
+    std::vector<double> fields(3*R),scalar(R,1.0),scalarFlux(R);
+    WVRealFieldBundleView fieldView{fields.data(),{spatial.first,spatial.second,spatial.third,3}};
+    WVConstantStratificationRightHandSideContext context;
+    auto status = first->evaluateRightHandSideWithContext(state.view(),flux,fieldView,context);
+    require(static_cast<bool>(status) && context.hasAdvectionFields(),"RHS context was not prepared");
+    const WVRealVolumeConstView scalarView{scalar.data(),spatial};
+    WVRealVolumeView scalarFluxView{scalarFlux.data(),spatial};
+    status = second->advectFGridScalar(context,scalarView,false,scalarFluxView);
+    require(status.code == WVKernelStatusCode::invalidConfiguration,"a foreign RHS context was accepted");
+    WVConstantStratificationRightHandSideContext replacement;
+    status = first->evaluateRightHandSideWithContext(state.view(),flux,fieldView,replacement);
+    require(static_cast<bool>(status),"replacement RHS context failed");
+    status = first->advectFGridScalar(context,scalarView,false,scalarFluxView);
+    require(status.code == WVKernelStatusCode::invalidConfiguration,"a stale RHS context was accepted");
+    status = first->advectFGridScalar(replacement,scalarView,false,scalarFluxView);
+    require(static_cast<bool>(status),"current RHS context was rejected");
+}
+
 void testValidation() {
     auto schedule = nonlinearSchedule();
     schedule.profileVersion = 99;
@@ -311,6 +337,7 @@ int main() {
         testQuadraticAndPseudo(true);
         testQuadraticAndPseudo(false);
         testMultipleWholeFluxProducers();
+        testRightHandSideContextIdentity();
         testValidation();
         std::cout << "Portable forcing and RK4 tests passed.\n";
         return 0;

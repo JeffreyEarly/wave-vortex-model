@@ -1,4 +1,4 @@
-#include "WaveVortexRuntime/WVLagrangianParticles.hpp"
+#include "WaveVortexRuntime/WVConstantStratificationCompositeSystem.hpp"
 
 #include <algorithm>
 #include <limits>
@@ -46,6 +46,30 @@ WVKernelStatus WVConstantStratificationCompositeSystem::create(
                                             descriptor, candidate->layout_);
     if (!status)
       return status;
+    for (const auto &observer : descriptor.observers()) {
+      if (observer.kind != WVObserverKind::tracer)
+        continue;
+      const auto block = blockIndex(candidate->layout_,
+                                    observer.stateBlockIdentifiers.front());
+      if (block == std::numeric_limits<std::size_t>::max())
+        return invalid(
+            "Tracer state block is absent from the composite layout.");
+      const auto &dimensions =
+          candidate->layout_.additionalBlocks()[block].dimensions;
+      if (observer.isXYOnly) {
+        if (dimensions != std::vector<std::size_t>(
+                              {configuration.Nx, configuration.Ny}))
+          return {WVKernelStatusCode::invalidShape,
+                  "A two-dimensional tracer must have shape [Nx,Ny]."};
+        return {WVKernelStatusCode::unsupportedOperation,
+                "Two-dimensional tracer integration requires a future barotropic runtime; the constant-stratification runtime supports three-dimensional tracers only."};
+      }
+      if (dimensions != std::vector<std::size_t>(
+                            {configuration.Nx, configuration.Ny,
+                             configuration.Nz}))
+        return {WVKernelStatusCode::invalidShape,
+                "A constant-stratification tracer must have shape [Nx,Ny,Nz]."};
+    }
     status = WVConstantStratificationForcingEngine::create(
         configuration, schedule, std::move(engine), candidate->forcing_);
     if (!status)
@@ -63,10 +87,14 @@ WVKernelStatus WVConstantStratificationCompositeSystem::create(
     std::vector<WVMovingFieldRequest> velocityRequests;
     std::size_t positionOffset = 0;
     for (const auto &observer : descriptor.observers()) {
-      if (observer.kind == WVObserverKind::tracer)
-        return {WVKernelStatusCode::unsupportedOperation,
-                "Portable tracers require issue #202 and cannot be integrated "
-                "by the particle composite system."};
+      if (observer.kind == WVObserverKind::tracer) {
+        WVTracer tracer;
+        tracer.record_ = observer;
+        tracer.stateBlock_ = blockIndex(candidate->layout_,
+                                        observer.stateBlockIdentifiers.front());
+        candidate->tracers_.push_back(std::move(tracer));
+        continue;
+      }
       if (observer.kind != WVObserverKind::lagrangianParticles)
         continue;
       if (observer.isXYOnly && observer.z.size() != observer.x.size())
@@ -158,10 +186,18 @@ WVConstantStratificationCompositeSystem::evaluateRightHandSide(
     bool &value;
     ~Guard() { value = false; }
   } guard{executing_};
-  status = forcing_->evaluateRightHandSide(state.waveVortex,
-                                           rightHandSide.waveVortex);
+  WVConstantStratificationRightHandSideContext context;
+  auto advectionStorage = fields_->advectionFieldStorage();
+  const bool needsAdvectionContext = !particles_.empty() || !tracers_.empty();
+  status = !needsAdvectionContext
+               ? forcing_->evaluateRightHandSide(state.waveVortex,
+                                                  rightHandSide.waveVortex)
+               : forcing_->evaluateRightHandSideWithContext(
+                     state.waveVortex, rightHandSide.waveVortex,
+                     advectionStorage, context);
   if (!status)
     return status;
+  if (needsAdvectionContext) ++metrics_.sharedRightHandSideContextCount;
   for (std::size_t block = 0; block < rightHandSide.additionalBlockCount;
        ++block) {
     const auto &layout = *rightHandSide.additionalBlocks[block].layout;
@@ -186,9 +222,26 @@ WVConstantStratificationCompositeSystem::evaluateRightHandSide(
       std::copy_n(state.additionalBlocks[particles.zBlock_].realData, count,
                   z_.data() + offset);
   }
+  const auto spatial = forcing_->kernel().descriptor().spatialShape();
+  for (const auto &tracer : tracers_) {
+    const auto &input = state.additionalBlocks[tracer.stateBlock_];
+    auto &output = rightHandSide.additionalBlocks[tracer.stateBlock_];
+    const WVRealVolumeConstView scalar{
+        input.realData, {spatial.first, spatial.second, spatial.third}};
+    WVRealVolumeView tracerFlux{
+        output.realData, {spatial.first, spatial.second, spatial.third}};
+    status = forcing_->advectFGridScalar(
+        context, scalar, tracer.shouldAntialias(), tracerFlux);
+    if (!status)
+      return status;
+    ++metrics_.tracerEvaluationCount;
+    metrics_.tracerValueWriteCount += spatial.elementCount();
+    if (tracer.shouldAntialias())
+      ++metrics_.antialiasedTracerEvaluationCount;
+  }
   if (!particles_.empty()) {
-    status = fields_->evaluateMoving(
-        velocityPlan_, state.waveVortex,
+    status = fields_->evaluateMovingFromAdvectionFields(
+        velocityPlan_, state.waveVortex, context.advectionFields(),
         {x_.data(), y_.data(), z_.data(), x_.size()}, velocityViews_.data(),
         velocityViews_.size());
     if (!status)
@@ -249,12 +302,16 @@ WVConstantStratificationCompositeSystem::persistentBytes() const noexcept {
                       forcing_->persistentBytes() + fields_->persistentBytes() +
                       velocityPlan_.persistentBytes() +
                       particles_.capacity() * sizeof(WVLagrangianParticles) +
+                      tracers_.capacity() * sizeof(WVTracer) +
                       metrics_.positionCapacityBytes +
                       metrics_.velocityCapacityBytes +
                       velocityViews_.capacity() * sizeof(WVFieldOutputView);
   for (const auto &particles : particles_)
     bytes += particles.record_.identifier.capacity() +
              particles.record_.name.capacity();
+  for (const auto &tracer : tracers_)
+    bytes += tracer.record_.identifier.capacity() +
+             tracer.record_.name.capacity();
   return bytes;
 }
 

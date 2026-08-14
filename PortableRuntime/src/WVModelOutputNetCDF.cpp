@@ -1516,6 +1516,10 @@ public:
         dynamic.elementCount = layout->elementCount;
         result = detail::defineDoubleVariable(group.id, dynamic.name,
                                               dimensions, dynamic.realId, path);
+        if (result)
+          result = detail::putTextAttribute(group.id, dynamic.realId,
+                                            "isTracer", "1",
+                                            path + "/" + dynamic.name);
         if (!result)
           return result;
         group.dynamicVariables.push_back(std::move(dynamic));

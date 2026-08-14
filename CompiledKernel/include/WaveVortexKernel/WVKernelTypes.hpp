@@ -77,7 +77,16 @@ struct WVFieldBundleView {
     bool empty() const noexcept { return shape.first == 0 || shape.second == 0 || shape.third == 0 || shape.fourth == 0; }
 };
 
+template <typename T>
+struct WVVolumeView {
+    T* data = nullptr;
+    WVShape3D shape;
+    bool empty() const noexcept { return shape.first == 0 || shape.second == 0 || shape.third == 0; }
+};
+
 using WVRealConstView = WVMatrixView<const double>;
+using WVRealVolumeConstView = WVVolumeView<const double>;
+using WVRealVolumeView = WVVolumeView<double>;
 using WVComplexConstView = WVMatrixView<const WVComplex64>;
 using WVComplexView = WVMatrixView<WVComplex64>;
 using WVRealFieldBundleConstView = WVFieldBundleView<const double>;

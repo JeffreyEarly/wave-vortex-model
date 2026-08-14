@@ -2,6 +2,7 @@ classdef TestPortableFieldEvaluation < matlab.unittest.TestCase
     properties (SetAccess = private)
         Inspector
         ParticleInspector
+        TracerInspector
         ModelOutputTestExecutable
         TemporaryFolder
     end
@@ -18,6 +19,8 @@ classdef TestPortableFieldEvaluation < matlab.unittest.TestCase
             testCase.assertTrue(isfile(testCase.Inspector),output)
             testCase.ParticleInspector = fullfile(repositoryRoot,"tools","compiled-kernel","build-portable","wv_lagrangian_particle_inspect");
             testCase.assertTrue(isfile(testCase.ParticleInspector),output)
+            testCase.TracerInspector = fullfile(repositoryRoot,"tools","compiled-kernel","build-portable","wv_tracer_inspect");
+            testCase.assertTrue(isfile(testCase.TracerInspector),output)
             testCase.ModelOutputTestExecutable = fullfile(repositoryRoot,"tools","compiled-kernel","build-portable","TestWVModelOutputNetCDF");
             testCase.assertTrue(isfile(testCase.ModelOutputTestExecutable),output)
         end
@@ -225,6 +228,52 @@ classdef TestPortableFieldEvaluation < matlab.unittest.TestCase
             testCase.verifyGreaterThan(actual.systemMetrics.persistentBytes,0)
             fprintf("WV_PARTICLE_ORACLE rhs=%.17g fixed=%.17g dense=%.17g adaptive_tolerance_ratio=%.17g\n", ...
                 rhsError,fixedError,denseError,adaptiveToleranceRatio)
+        end
+
+        function tracerRightHandSideMatchesMatlab(testCase)
+            wvt = WVTransformConstantStratification( ...
+                [15000 12000 1300],[6 5 7],N0=5.2e-3,latitude=33, ...
+                isHydrostatic=false,shouldAntialias=true);
+            spectralIndex = reshape(1:numel(wvt.Ap),size(wvt.Ap));
+            positive = 2.3e-3*sin(0.37*spectralIndex) - 1.7e-3i*cos(0.19*spectralIndex);
+            negative = -1.1e-3*cos(0.23*spectralIndex) + 1.9e-3i*sin(0.41*spectralIndex);
+            zeroFrequency = 1.3e-3*sin(0.29*spectralIndex) + 0.7e-3i*cos(0.31*spectralIndex);
+            wvt.Ap = positive.*wvt.waveComponent.maskAp;
+            wvt.Am = negative.*wvt.waveComponent.maskAm;
+            inertialApMask = logical(wvt.inertialComponent.maskAp);
+            inertialAmMask = logical(wvt.inertialComponent.maskAm);
+            wvt.Ap(inertialApMask) = positive(inertialApMask);
+            wvt.Am(inertialAmMask) = conj(wvt.Ap(inertialApMask));
+            wvt.A0 = zeroFrequency.*wvt.geostrophicComponent.maskA0;
+            mdaMask = logical(wvt.mdaComponent.maskA0);
+            wvt.A0(mdaMask) = real(zeroFrequency(mdaMask));
+            wvt.t0 = -3.5;
+            wvt.t = 37.25;
+            checkpointPath = fullfile(testCase.TemporaryFolder,"tracer-rhs.nc");
+            ncfile = wvt.writeToFile(checkpointPath,shouldOverwriteExisting=true);
+            ncfile.close();
+
+            command = TestPortableFieldEvaluation.sanitizedCommand( ...
+                sprintf('"%s" "%s"',testCase.TracerInspector,checkpointPath));
+            [status,output] = system(command);
+            testCase.assertEqual(status,0,output)
+            actual = jsondecode(output);
+            phi = reshape(actual.initial,wvt.spatialMatrixSize);
+            expected = -wvt.u.*wvt.diffX(phi) - wvt.v.*wvt.diffY(phi) - ...
+                wvt.w.*wvt.diffZF(phi);
+            expected = wvt.transformToSpatialDomainWithFourier( ...
+                wvt.transformFromSpatialDomainWithFourier(expected));
+            actualFlux = reshape(actual.rightHandSide,wvt.spatialMatrixSize);
+            scale = max(norm(expected(:),Inf),eps);
+            difference = actualFlux-expected;
+            relativeError = norm(difference(:),Inf)/scale;
+            testCase.verifyLessThanOrEqual(relativeError,1e-12)
+            testCase.verifyEqual(actual.metrics.rhsEvaluations,1)
+            testCase.verifyEqual(actual.metrics.tracerEvaluations,1)
+            testCase.verifyEqual(actual.metrics.velocityReconstructions,1)
+            testCase.verifyEqual(actual.metrics.scalarAdvections,1)
+            testCase.verifyEqual(actual.metrics.scalarAntialiases,1)
+            fprintf("WV_TRACER_ORACLE rhs=%.17g\n",relativeError)
         end
 
         function particleModelOutputIsBidirectionallyRestartable(testCase)
