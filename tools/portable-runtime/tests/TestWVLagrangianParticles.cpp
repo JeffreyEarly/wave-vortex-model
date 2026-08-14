@@ -434,6 +434,12 @@ void testComposite(bool hydrostatic) {
 void testValidation() {
   auto config = configuration(true);
   auto descriptor = descriptorFor(config);
+  std::unique_ptr<WVConstantStratificationCompositeSystem> system;
+  auto status = WVConstantStratificationCompositeSystem::create(
+      config, {}, descriptor, std::make_unique<WVReferenceFFTEngine>(), 1e-6,
+      system);
+  require(static_cast<bool>(status) && system,
+          "valid composite system construction failed");
   auto record = descriptor.record();
   auto particle = std::find_if(record.observers.begin(), record.observers.end(),
                                [](const auto &observer) {
@@ -444,11 +450,10 @@ void testValidation() {
   require(static_cast<bool>(WVPortableObserverDescriptor::create(
               record, genericDescriptor)),
           "generic descriptor should retain future 2-D XY allowance");
-  std::unique_ptr<WVConstantStratificationCompositeSystem> system;
-  const auto status = WVConstantStratificationCompositeSystem::create(
+  status = WVConstantStratificationCompositeSystem::create(
       config, {}, genericDescriptor, std::make_unique<WVReferenceFFTEngine>(),
       1e-6, system);
-  require(status.code == WVKernelStatusCode::invalidConfiguration,
+  require(status.code == WVKernelStatusCode::invalidConfiguration && !system,
           "constant-stratification XY particles accepted missing fixed z");
 
   auto tracerRecord = descriptor.record();

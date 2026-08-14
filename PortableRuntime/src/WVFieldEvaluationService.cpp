@@ -69,21 +69,6 @@ double squaredMagnitude(WVComplex64 value) noexcept {
   return value.real * value.real + value.imag * value.imag;
 }
 
-bool sameConfiguration(
-    const WVTransformConstantStratificationConfiguration &first,
-    const WVTransformConstantStratificationConfiguration &second) noexcept {
-  return first.contractVersion == second.contractVersion && first.Nx == second.Nx &&
-         first.Ny == second.Ny && first.Nz == second.Nz &&
-         first.Nj == second.Nj && first.Lx == second.Lx &&
-         first.Ly == second.Ly && first.Lz == second.Lz &&
-         first.N0 == second.N0 && first.rho0 == second.rho0 &&
-         first.g == second.g && first.planetaryRadius == second.planetaryRadius &&
-         first.rotationRate == second.rotationRate &&
-         first.latitude == second.latitude &&
-         first.isHydrostatic == second.isHydrostatic &&
-         first.shouldAntialias == second.shouldAntialias;
-}
-
 double wrapped(double coordinate, double length) noexcept {
   double value = std::fmod(coordinate, length);
   if (value < 0.0)
@@ -682,8 +667,8 @@ WVKernelStatus WVFieldEvaluationService::createPlan(
 WVKernelStatus WVFieldEvaluationService::evaluate(
     const WVFieldEvaluationPlan &plan, const WVState &state,
     WVFieldOutputView *outputs, std::size_t outputCount) {
-  if (!sameConfiguration(plan.configuration_,
-                         transform_->descriptor().configuration()))
+  if (!sameTransformConfiguration(
+          plan.configuration_, transform_->descriptor().configuration()))
     return invalid("The evaluation plan was created for a different transform configuration.");
   if (outputCount != plan.outputs_.size())
     return {WVKernelStatusCode::invalidShape,
@@ -1310,8 +1295,8 @@ WVKernelStatus WVFieldEvaluationService::evaluateMovingImpl(
     const WVRealFieldBundleConstView *preparedAdvectionFields,
     WVMovingPositionView positions, WVFieldOutputView *outputs,
     std::size_t outputCount) {
-  if (!sameConfiguration(plan.configuration_,
-                         transform_->descriptor().configuration()))
+  if (!sameTransformConfiguration(
+          plan.configuration_, transform_->descriptor().configuration()))
     return invalid(
         "The moving-field plan belongs to a different transform configuration.");
   if (positions.positionCount != plan.positionCount_ ||

@@ -95,6 +95,22 @@ std::size_t WVShape2D::elementCount() const { return checkedProduct(rows, column
 std::size_t WVShape3D::elementCount() const { return checkedProduct(checkedProduct(first, second), third); }
 std::size_t WVShape4D::elementCount() const { return checkedProduct(checkedProduct(checkedProduct(first, second), third), fourth); }
 
+bool sameTransformConfiguration(
+    const WVTransformConstantStratificationConfiguration& first,
+    const WVTransformConstantStratificationConfiguration& second) noexcept {
+    return first.contractVersion == second.contractVersion &&
+           first.Nx == second.Nx && first.Ny == second.Ny &&
+           first.Nz == second.Nz && first.Nj == second.Nj &&
+           first.Lx == second.Lx && first.Ly == second.Ly &&
+           first.Lz == second.Lz && first.N0 == second.N0 &&
+           first.rho0 == second.rho0 && first.g == second.g &&
+           first.planetaryRadius == second.planetaryRadius &&
+           first.rotationRate == second.rotationRate &&
+           first.latitude == second.latitude &&
+           first.isHydrostatic == second.isHydrostatic &&
+           first.shouldAntialias == second.shouldAntialias;
+}
+
 std::size_t WVHalfSpectrumMappings::persistentBytes() const noexcept {
     return bytes(directRows) + bytes(directWVIndices) + bytes(conjugatedRows) + bytes(conjugatedWVIndices) +
            bytes(storageRowsByWVIndex) + bytes(conjugatesStoredValueByWVIndex) + bytes(hermitianCompletionRows) + bytes(hermitianSourceRows) + bytes(selfConjugateRows);

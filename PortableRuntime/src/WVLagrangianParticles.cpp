@@ -33,6 +33,7 @@ WVKernelStatus WVConstantStratificationCompositeSystem::create(
     std::unique_ptr<WVFFTEngine> engine,
     double coefficientAbsoluteToleranceScale,
     std::unique_ptr<WVConstantStratificationCompositeSystem> &system) {
+  system.reset();
   try {
     auto candidate =
         std::unique_ptr<WVConstantStratificationCompositeSystem>(
@@ -46,52 +47,37 @@ WVKernelStatus WVConstantStratificationCompositeSystem::create(
                                             descriptor, candidate->layout_);
     if (!status)
       return status;
-    for (const auto &observer : descriptor.observers()) {
-      if (observer.kind != WVObserverKind::tracer)
-        continue;
-      const auto block = blockIndex(candidate->layout_,
-                                    observer.stateBlockIdentifiers.front());
-      if (block == std::numeric_limits<std::size_t>::max())
-        return invalid(
-            "Tracer state block is absent from the composite layout.");
-      const auto &dimensions =
-          candidate->layout_.additionalBlocks()[block].dimensions;
-      if (observer.isXYOnly) {
-        if (dimensions != std::vector<std::size_t>(
-                              {configuration.Nx, configuration.Ny}))
-          return {WVKernelStatusCode::invalidShape,
-                  "A two-dimensional tracer must have shape [Nx,Ny]."};
-        return {WVKernelStatusCode::unsupportedOperation,
-                "Two-dimensional tracer integration requires a future barotropic runtime; the constant-stratification runtime supports three-dimensional tracers only."};
-      }
-      if (dimensions != std::vector<std::size_t>(
-                            {configuration.Nx, configuration.Ny,
-                             configuration.Nz}))
-        return {WVKernelStatusCode::invalidShape,
-                "A constant-stratification tracer must have shape [Nx,Ny,Nz]."};
-    }
-    status = WVConstantStratificationForcingEngine::create(
-        configuration, schedule, std::move(engine), candidate->forcing_);
-    if (!status)
-      return status;
-    status = candidate->forcing_->createErrorPolicy(
-        coefficientAbsoluteToleranceScale,
-        candidate->coefficientErrorPolicy_);
-    if (!status)
-      return status;
-    status = WVFieldEvaluationService::createBorrowing(
-        candidate->forcing_->kernel(), candidate->fields_);
-    if (!status)
-      return status;
 
+    std::vector<std::size_t> ownerCounts(
+        candidate->layout_.additionalBlocks().size(), 0);
     std::vector<WVMovingFieldRequest> velocityRequests;
     std::size_t positionOffset = 0;
     for (const auto &observer : descriptor.observers()) {
       if (observer.kind == WVObserverKind::tracer) {
+        const auto block = blockIndex(
+            candidate->layout_, observer.stateBlockIdentifiers.front());
+        if (block == std::numeric_limits<std::size_t>::max())
+          return invalid(
+              "Tracer state block is absent from the composite layout.");
+        const auto &dimensions =
+            candidate->layout_.additionalBlocks()[block].dimensions;
+        if (observer.isXYOnly) {
+          if (dimensions != std::vector<std::size_t>(
+                                {configuration.Nx, configuration.Ny}))
+            return {WVKernelStatusCode::invalidShape,
+                    "A two-dimensional tracer must have shape [Nx,Ny]."};
+          return {WVKernelStatusCode::unsupportedOperation,
+                  "Two-dimensional tracer integration requires a future barotropic runtime; the constant-stratification runtime supports three-dimensional tracers only."};
+        }
+        if (dimensions != std::vector<std::size_t>(
+                              {configuration.Nx, configuration.Ny,
+                               configuration.Nz}))
+          return {WVKernelStatusCode::invalidShape,
+                  "A constant-stratification tracer must have shape [Nx,Ny,Nz]."};
+        ++ownerCounts[block];
         WVTracer tracer;
         tracer.record_ = observer;
-        tracer.stateBlock_ = blockIndex(candidate->layout_,
-                                        observer.stateBlockIdentifiers.front());
+        tracer.stateBlock_ = block;
         candidate->tracers_.push_back(std::move(tracer));
         continue;
       }
@@ -118,6 +104,10 @@ WVKernelStatus WVConstantStratificationCompositeSystem::create(
            particles.zBlock_ == std::numeric_limits<std::size_t>::max()))
         return invalid("Particle state blocks are absent from the composite "
                        "layout or appear in an incompatible order.");
+      ++ownerCounts[particles.xBlock_];
+      ++ownerCounts[particles.yBlock_];
+      if (!observer.isXYOnly)
+        ++ownerCounts[particles.zBlock_];
       const auto addVelocity = [&](const char *field) {
         const auto output = velocityRequests.size();
         velocityRequests.push_back(
@@ -133,6 +123,26 @@ WVKernelStatus WVConstantStratificationCompositeSystem::create(
       positionOffset += particles.particleCount_;
       candidate->particles_.push_back(std::move(particles));
     }
+    for (std::size_t block = 0; block < ownerCounts.size(); ++block) {
+      if (ownerCounts[block] != 1)
+        return invalid("Composite state block " +
+                       candidate->layout_.additionalBlocks()[block].identifier +
+                       " must resolve to exactly one integrated observer.");
+    }
+
+    status = WVConstantStratificationForcingEngine::create(
+        configuration, schedule, std::move(engine), candidate->forcing_);
+    if (!status)
+      return status;
+    status = candidate->forcing_->createErrorPolicy(
+        coefficientAbsoluteToleranceScale,
+        candidate->coefficientErrorPolicy_);
+    if (!status)
+      return status;
+    status = WVFieldEvaluationService::createBorrowing(
+        candidate->forcing_->kernel(), candidate->fields_);
+    if (!status)
+      return status;
     status = candidate->fields_->createMovingPlan(
         velocityRequests, candidate->velocityPlan_);
     if (!status)

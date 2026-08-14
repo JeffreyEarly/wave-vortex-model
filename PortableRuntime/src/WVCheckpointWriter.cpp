@@ -463,15 +463,11 @@ WVCheckpointStatus writeForcingEntry(int group, const WVFrozenForcingEntry& entr
     }
 }
 
-bool configurationMatches(const WVTransformConstantStratificationConfiguration& left, const WVTransformConstantStratificationConfiguration& right) noexcept {
-    return left.Nx == right.Nx && left.Ny == right.Ny && left.Nz == right.Nz && left.Nj == right.Nj && left.Lx == right.Lx && left.Ly == right.Ly && left.Lz == right.Lz && left.N0 == right.N0 && left.rho0 == right.rho0 && left.g == right.g && left.planetaryRadius == right.planetaryRadius && left.rotationRate == right.rotationRate && left.latitude == right.latitude && left.isHydrostatic == right.isHydrostatic && left.shouldAntialias == right.shouldAntialias;
-}
-
 WVCheckpointStatus verifyTemporary(const std::string& path, const WVCheckpoint& expected) {
     WVCheckpoint actual;
     auto result = WVCheckpointReader::read(path, actual);
     if (!result) return status(WVCheckpointStatusCode::writeFailure, "The temporary checkpoint failed structural validation: " + result.message, result.location);
-    if (!configurationMatches(expected.configuration, actual.configuration) || expected.state.t != actual.state.t || expected.state.t0 != actual.state.t0 || expected.state.coefficients.shape.rows != actual.state.coefficients.shape.rows || expected.state.coefficients.shape.columns != actual.state.coefficients.shape.columns || !sameComplex(expected.state.coefficients.Ap, actual.state.coefficients.Ap) || !sameComplex(expected.state.coefficients.Am, actual.state.coefficients.Am) || !sameComplex(expected.state.coefficients.A0, actual.state.coefficients.A0) || expected.forcingSchedule.entries.size() != actual.forcingSchedule.entries.size()) {
+    if (!sameTransformConfiguration(expected.configuration, actual.configuration) || expected.state.t != actual.state.t || expected.state.t0 != actual.state.t0 || expected.state.coefficients.shape.rows != actual.state.coefficients.shape.rows || expected.state.coefficients.shape.columns != actual.state.coefficients.shape.columns || !sameComplex(expected.state.coefficients.Ap, actual.state.coefficients.Ap) || !sameComplex(expected.state.coefficients.Am, actual.state.coefficients.Am) || !sameComplex(expected.state.coefficients.A0, actual.state.coefficients.A0) || expected.forcingSchedule.entries.size() != actual.forcingSchedule.entries.size()) {
         return status(WVCheckpointStatusCode::writeFailure, "The temporary checkpoint did not reproduce the requested checkpoint state.", path);
     }
     return WVCheckpointStatus::ok();
