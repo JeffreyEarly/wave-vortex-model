@@ -64,6 +64,7 @@ classdef TestCompiledKernelIntegration < matlab.unittest.TestCase
                 "CompiledKernel/native-fftw-provider.env"
                 "CompiledKernel/adapters/reference/WVReferenceFFTEngine.cpp"
                 "PortableRuntime/CMakeLists.txt"
+                "PortableRuntime/buildWaveVortexRun.sh"
                 "PortableRuntime/app/WaveVortexRun.cpp"
                 "tools/portable-runtime/buildWaveVortexRun.sh"
                 "@WVCompiledBackend/WVCompiledBackend.m"
