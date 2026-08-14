@@ -210,13 +210,16 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
         const auto realScratchCapacityBytes = descriptor.spatialShape().elementCount() * 6 * sizeof(double);
         const auto scratchCapacityBytes = halfSpectrumScratchCapacityBytes + realScratchCapacityBytes;
         const auto spectralBytes = descriptor.spectralShape().elementCount() * sizeof(WVComplex64);
-        const auto persistentBytesLowerBound = descriptor.persistentBytes() + scratchCapacityBytes;
+        const auto descriptorBytes = descriptor.persistentBytes() +
+                                     descriptor.halfSpectrumMappings().NxHalf *
+                                         c.Ny * sizeof(std::uint8_t);
+        const auto persistentBytesLowerBound = descriptorBytes + scratchCapacityBytes;
         const char* names[] = {"contractVersion","planCount","planMemoryAccounting","descriptorBytes","halfSpectrumScratchCapacityBytes","realScratchCapacityBytes","scratchCapacityBytes","persistentBytesLowerBound","stateInputBytes","fluxOutputBytes","knownMaximumLiveOwnedBytesLowerBound","Nx","Ny","Nz","Nj","Nkl"};
         plhs[0] = mxCreateStructMatrix(1,1,16,names);
         mxSetField(plhs[0],0,"contractVersion",mxCreateDoubleScalar(static_cast<double>(WVKernelContractVersion)));
         mxSetField(plhs[0],0,"planCount",mxCreateDoubleScalar(17.0));
         mxSetField(plhs[0],0,"planMemoryAccounting",mxCreateString("FFTW plan storage is opaque before construction"));
-        const double values[] = {static_cast<double>(descriptor.persistentBytes()),static_cast<double>(halfSpectrumScratchCapacityBytes),static_cast<double>(realScratchCapacityBytes),static_cast<double>(scratchCapacityBytes),static_cast<double>(persistentBytesLowerBound),static_cast<double>(3*spectralBytes),static_cast<double>(3*spectralBytes),static_cast<double>(persistentBytesLowerBound+3*spectralBytes),static_cast<double>(c.Nx),static_cast<double>(c.Ny),static_cast<double>(c.Nz),static_cast<double>(c.Nj),static_cast<double>(descriptor.Nkl())};
+        const double values[] = {static_cast<double>(descriptorBytes),static_cast<double>(halfSpectrumScratchCapacityBytes),static_cast<double>(realScratchCapacityBytes),static_cast<double>(scratchCapacityBytes),static_cast<double>(persistentBytesLowerBound),static_cast<double>(3*spectralBytes),static_cast<double>(3*spectralBytes),static_cast<double>(persistentBytesLowerBound+3*spectralBytes),static_cast<double>(c.Nx),static_cast<double>(c.Ny),static_cast<double>(c.Nz),static_cast<double>(c.Nj),static_cast<double>(descriptor.Nkl())};
         for (std::size_t i = 0; i < 13; ++i) mxSetField(plhs[0],0,names[i+3],mxCreateDoubleScalar(values[i]));
         return;
     }

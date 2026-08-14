@@ -167,6 +167,11 @@ WVPortableObserverDescriptor::create(const WVPortableObserverRecord &record,
             block->ownership != WVStateOwnership::integratorOwned)
           return invalid(
               "WVTracer requires one integrator-owned real state block.");
+        const std::size_t expectedRank = observer.isXYOnly ? 2 : 3;
+        if (block->dimensions.size() != expectedRank)
+          return invalid(observer.isXYOnly
+                             ? "A two-dimensional WVTracer requires a rank-two state block."
+                             : "A three-dimensional WVTracer requires a rank-three state block.");
       }
     }
 

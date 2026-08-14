@@ -494,7 +494,8 @@ void testMultipleFilesGroupsAndSharedState() {
   record.stateBlocks.push_back(
       {"tracer-state",
        WVStateScalarType::real64,
-       {checkpoint.configuration.Nx, checkpoint.configuration.Ny},
+       {checkpoint.configuration.Nx, checkpoint.configuration.Ny,
+        checkpoint.configuration.Nz},
        WVToleranceKind::uniformAbsolute,
        1e-5,
        WVStateOwnership::integratorOwned,
@@ -519,7 +520,7 @@ void testMultipleFilesGroupsAndSharedState() {
   tracer.name = "tracer";
   tracer.kind = WVObserverKind::tracer;
   tracer.stateBlockIdentifiers = {"tracer-state"};
-  tracer.isXYOnly = true;
+  tracer.isXYOnly = false;
   tracer.shouldAntialias = true;
   record.observers = {coefficients, particles, tracer};
   const auto end = checkpoint.state.t + 1.0;
@@ -594,10 +595,12 @@ void testMultipleFilesGroupsAndSharedState() {
     int group = -1;
     int ids = -1;
     int z = -1;
+    int tracerVariable = -1;
     require(nc_open(first.c_str(), NC_NOWRITE, &file) == NC_NOERR &&
                 nc_inq_ncid(file, "wave-vortex", &group) == NC_NOERR &&
                 nc_inq_varid(group, "particles_id", &ids) == NC_NOERR &&
-                nc_inq_varid(group, "particles_z", &z) == NC_NOERR,
+                nc_inq_varid(group, "particles_z", &z) == NC_NOERR &&
+                nc_inq_varid(group, "tracer", &tracerVariable) == NC_NOERR,
             "particle MATLAB schema variables missing");
     std::array<double, 2> idValues{};
     require(nc_get_var_double(group, ids, idValues.data()) == NC_NOERR &&
@@ -615,6 +618,11 @@ void testMultipleFilesGroupsAndSharedState() {
                 std::string(attribute, std::string("particles").size()) ==
                     "particles",
             "particle metadata attributes missing");
+    std::fill(std::begin(attribute), std::end(attribute), '\0');
+    require(nc_get_att_text(group, tracerVariable, "isTracer", attribute) ==
+                    NC_NOERR &&
+                attribute[0] == '1',
+            "tracer marker attribute missing");
     require(nc_close(file) == NC_NOERR, "close particle schema inspection");
   }
   WVModelOutputNetCDFInspection inspection;

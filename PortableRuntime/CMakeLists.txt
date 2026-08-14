@@ -139,6 +139,13 @@ if(BUILD_TESTING)
     target_include_directories(wv_lagrangian_particle_inspect PRIVATE ../CompiledKernel/adapters/reference)
     target_link_libraries(wv_lagrangian_particle_inspect PRIVATE WaveVortex::Checkpoint WaveVortex::ReferenceFFT)
 
+    add_executable(wv_tracer_inspect
+        ../tools/portable-runtime/WVTracerInspect.cpp
+    )
+    target_compile_features(wv_tracer_inspect PRIVATE cxx_std_17)
+    target_include_directories(wv_tracer_inspect PRIVATE ../CompiledKernel/adapters/reference)
+    target_link_libraries(wv_tracer_inspect PRIVATE WaveVortex::Checkpoint WaveVortex::ReferenceFFT)
+
     add_executable(TestWVCheckpointReader
         ../tools/portable-runtime/tests/TestWVCheckpointReader.cpp
     )

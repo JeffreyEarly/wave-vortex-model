@@ -45,7 +45,7 @@ WVPortableObserverRecord record() {
                                 WVRestartRequirement::requiredDynamicState});
   result.stateBlocks.push_back({"tracerAmplitude",
                                 WVStateScalarType::real64,
-                                {2, 2},
+                                {1, 2, 2},
                                 WVToleranceKind::uniformAbsolute,
                                 1e-10,
                                 WVStateOwnership::integratorOwned,

@@ -459,7 +459,6 @@ WVKernelStatus WVTransformConstantStratificationKernel::create(
         const auto realElements = checkedProduct(candidate->descriptor_.spatialShape().elementCount(),realChannels);
         candidate->halfSpectrumScratch_.resize(2 * halfElements);
         candidate->realScratch_.resize(realElements);
-        candidate->metrics_.descriptorBytes = candidate->descriptor_.persistentBytes();
         candidate->metrics_.halfSpectrumScratchCapacityBytes = candidate->halfSpectrumScratch_.size() * sizeof(double);
         candidate->metrics_.realScratchCapacityBytes = candidate->realScratch_.size() * sizeof(double);
         candidate->metrics_.scratchCapacityBytes = candidate->scratchBytes();
@@ -470,6 +469,9 @@ WVKernelStatus WVTransformConstantStratificationKernel::create(
         for (const auto row : mappings.storageRowsByWVIndex) candidate->scalarAntialiasRows_[row] = 1;
         for (const auto row : mappings.hermitianCompletionRows) candidate->scalarAntialiasRows_[row] = 1;
         for (const auto row : mappings.hermitianSourceRows) candidate->scalarAntialiasRows_[row] = 1;
+        candidate->metrics_.descriptorBytes =
+            candidate->descriptor_.persistentBytes() +
+            candidate->scalarAntialiasRows_.capacity() * sizeof(std::uint8_t);
         status = candidate->preparePlans();
         if (!status) return status;
         kernel = std::move(candidate);
