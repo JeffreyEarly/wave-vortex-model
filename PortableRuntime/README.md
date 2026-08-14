@@ -44,11 +44,21 @@ tools/compiled-kernel/build-portable/wv_checkpoint_roundtrip input.nc output.nc
 tools/compiled-kernel/build-portable/wv_checkpoint_inspect --forcing-capabilities
 tools/compiled-kernel/build-portable/wv_portable_forcing_inspect checkpoint.nc
 tools/compiled-kernel/build-portable/wv_portable_rk4_inspect checkpoint.nc finalTime deltaT
+tools/portable-runtime/runFieldEvaluationContracts.sh
+tools/compiled-kernel/build-portable/wv_field_evaluation_inspect checkpoint.nc
 ```
 
 `WVCheckpointWriter` emits a root-level scalar checkpoint using the existing `[kl,j]` real/imaginary encoding and annotated forcing groups. It validates and re-reads a same-directory temporary file before atomically replacing the destination. A failed validation, write, close, or commit leaves an existing destination unchanged. The writer persists the canonical state and immutable forcing source data only; `deltaT`, plans, derived forcing operators, mappings, caches, and scratch remain runtime-derived.
 
 The v1 writer intentionally does not append records or produce a time-series group. The reader continues accepting both scalar root checkpoints and existing nested time-series files.
+
+## Field evaluation
+
+`WVFieldEvaluationService` is the backend-neutral diagnostic boundary for constant-stratification fields. Construction owns the transform, FFT plans, mappings, and bounded reusable scratch. An immutable `WVFieldEvaluationPlan` resolves field dependencies and interpolation weights once; evaluation accepts a transient coefficient-state view and writes every requested value into caller-owned output buffers. Coefficient streams and static model metadata remain outside this service.
+
+Plans can request full native grids, fixed vertical profiles using MATLAB one-based horizontal indices, or arbitrary positions using periodic-horizontal `linear` or `spline` interpolation. Coincident requests share primitive transforms and field sources. The supported dynamic catalog is `u`, `v`, `w`, `eta`, `pi`, `p`, `psi`, `qgpv`, `rho_e`, `rho_total`, `rho_bar`, `zeta_x`, `zeta_y`, `zeta_z`, `ssu`, `ssv`, `ssh`, `energy`, `uvMax`, and `wMax`.
+
+The service metrics report plan, transform, service, and scratch storage; transform and FFT execution counts; coincident batches and source reuse; sampling operations; and exact caller-output element writes. Scratch high-water storage never exceeds the fixed service capacity, and repeated evaluations do not retain coefficient states or sampled results.
 
 ## Standalone executable
 

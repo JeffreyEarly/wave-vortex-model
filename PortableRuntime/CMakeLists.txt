@@ -30,6 +30,7 @@ add_library(WaveVortexPortableRuntime STATIC
     src/WVObserverContracts.cpp
     src/WVCompositeState.cpp
     src/WVCompositeIntegration.cpp
+    src/WVFieldEvaluationService.cpp
 )
 add_library(WaveVortex::PortableRuntime ALIAS WaveVortexPortableRuntime)
 add_library(WaveVortex::Checkpoint ALIAS WaveVortexPortableRuntime)
@@ -119,6 +120,13 @@ if(BUILD_TESTING)
     target_include_directories(wv_adaptive_tolerance_inspect PRIVATE ../tools/compiled-kernel/tests)
     target_link_libraries(wv_adaptive_tolerance_inspect PRIVATE WaveVortex::Checkpoint)
 
+    add_executable(wv_field_evaluation_inspect
+        ../tools/portable-runtime/WVFieldEvaluationInspect.cpp
+    )
+    target_compile_features(wv_field_evaluation_inspect PRIVATE cxx_std_17)
+    target_include_directories(wv_field_evaluation_inspect PRIVATE ../CompiledKernel/adapters/reference)
+    target_link_libraries(wv_field_evaluation_inspect PRIVATE WaveVortex::Checkpoint WaveVortex::ReferenceFFT)
+
     add_executable(TestWVCheckpointReader
         ../tools/portable-runtime/tests/TestWVCheckpointReader.cpp
     )
@@ -181,6 +189,17 @@ if(BUILD_TESTING)
         target_compile_options(TestWVCompositeIntegration PRIVATE -Wall -Wextra -Wpedantic -Werror)
     endif()
     add_test(NAME composite-integration COMMAND TestWVCompositeIntegration)
+
+    add_executable(TestWVFieldEvaluation
+        ../tools/portable-runtime/tests/TestWVFieldEvaluation.cpp
+    )
+    target_compile_features(TestWVFieldEvaluation PRIVATE cxx_std_17)
+    target_include_directories(TestWVFieldEvaluation PRIVATE ../CompiledKernel/adapters/reference)
+    target_link_libraries(TestWVFieldEvaluation PRIVATE WaveVortex::PortableRuntime WaveVortex::ReferenceFFT)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "AppleClang|Clang|GNU")
+        target_compile_options(TestWVFieldEvaluation PRIVATE -Wall -Wextra -Wpedantic -Werror)
+    endif()
+    add_test(NAME field-evaluation COMMAND TestWVFieldEvaluation)
 
     add_executable(TestWaveVortexRun ../tools/portable-runtime/tests/TestWaveVortexRun.cpp)
     target_compile_features(TestWaveVortexRun PRIVATE cxx_std_17)
