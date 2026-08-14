@@ -306,6 +306,30 @@ void testFixedDeliveryAndExactMetrics(Context &context) {
                   metrics.interpolationBufferCapacityBytes &&
               metrics.retainedStorageBytes == driver.persistentBytes(),
           "bounded staging and exact retained storage");
+  std::cout << "METRICS schedule_events=" << plan.metrics().scheduledEventCount
+            << " schedule_routes=" << plan.metrics().scheduledRouteCount
+            << " maximum_coincident_routes="
+            << plan.metrics().maximumCoincidentRouteCount
+            << " plan_retained_bytes=" << plan.metrics().retainedStorageBytes
+            << " output_state_evaluations="
+            << metrics.outputStateEvaluationCount
+            << " interpolations="
+            << metrics.interpolatedStateEvaluationCount
+            << " deliveries=" << metrics.committedDeliveryCount
+            << " writes=" << metrics.writeCount
+            << " written_bytes=" << metrics.writtenBytes
+            << " failures=" << metrics.failureCount
+            << " interpolation_capacity_bytes="
+            << metrics.interpolationBufferCapacityBytes
+            << " driver_retained_bytes=" << metrics.retainedStorageBytes
+            << " alpha_deliveries="
+            << metrics.files[0].committedDeliveryCount
+            << " alpha_fast_deliveries="
+            << metrics.files[0].groups[0].committedDeliveryCount
+            << " alpha_slow_deliveries="
+            << metrics.files[0].groups[1].committedDeliveryCount
+            << " beta_deliveries="
+            << metrics.files[1].committedDeliveryCount << '\n';
 }
 
 void testSegmentedContinuation(Context &context) {
@@ -533,6 +557,10 @@ void testSolverInvariance(Context &context) {
               adaptiveControl.rejected == adaptiveOutput.rejected &&
               adaptiveOutput.rejected > 0,
           "adaptive RK3(2) output does not change acceptance or final state");
+  std::cout << "SOLVER_METRICS fixed_accepted=" << fixedOutput.accepted
+            << " fixed_rejected=" << fixedOutput.rejected
+            << " adaptive_accepted=" << adaptiveOutput.accepted
+            << " adaptive_rejected=" << adaptiveOutput.rejected << '\n';
 }
 
 } // namespace
