@@ -236,7 +236,7 @@ void testService(bool linear) {
 
   status = service->specifications(observers.observers()[4], specifications);
   require(static_cast<bool>(status), "particle specification query failed");
-  const auto &particleU = find(specifications, "u");
+  const auto particleU = find(specifications, "u");
   require(particleU.name == "drifters_u" &&
               particleU.dimensions == std::vector<std::size_t>({2}) &&
               particleU.attributes.size() == 3,
