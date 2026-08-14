@@ -35,6 +35,10 @@ Library consumers may opt into fixed-RK4 continuous output with `WVFixedStepRK4O
 
 `WVAdaptiveRK23` uses the four-stage Bogacki--Shampine 3(2) pair, a cubic stage-derived extension, and FSAL endpoint-derivative reuse when state constraints permit it. Rejected attempts leave accepted state unchanged and emit no output. Its atomic candidate plus four derivative arrays retain exactly `15*M*sizeof(WVComplex64)`; two real tolerance arrays reproduce MATLAB's energy-scaled `WVCoefficients.errorTolerances` convention. The RK controller does not construct WaveVortex tolerances or inspect forcing. `WVIntegrationSystem` supplies a method-neutral error policy, while the current coefficient adapter contains the `Ap`, `Am`, and `A0` storage enumeration. This is the first concrete integration adapter rather than a permanent restriction on future observing-system state composition.
 
+Composite observing-system state exposes the parallel method-neutral `WVCompositeTimeIntegrator`, `WVCompositeAcceptedStep`, and `WVCompositeDenseOutput` boundaries. `WVCompositeOutputPlan` resolves all configured files, named groups, observer references, and bounded schedule occurrences before integration. Schedule ordinals remain anchored to each group's original `initialTime + ordinal*outputInterval` lattice, and caller-supplied `WVOutputGroupProgress` excludes committed ordinals during segmented continuation. Only exactly equal occurrence times are aggregated into one immutable state event; each group's selected ordinals must map to strictly increasing finite times. Events are delivered in file, group, then observer order while shared observers retain one resolved record identity.
+
+`WVCompositeOutputDriver` verifies that the plan's complete state-block and observer descriptor matches the integrator layout, then preallocates one reusable composite event state and all delivery/progress records before calling an abstract sink's guarded, non-writing `preflight` boundary. Accepted steps never consult output times and interpolated state never becomes accepted state. A failed route leaves its exact event state and route cursor staged, so a later call retries only that uncommitted route before continuing from the later accepted endpoint; sinks must therefore make failed delivery attempts uncommitted and retry-safe. Metrics report exact schedule/event, attempt, commit, write, failure, interpolation, and retained-capacity counts. The orchestration layer has no NetCDF implementation; multi-group persistence belongs to the subsequent persistence milestone.
+
 The authoring contract suite builds this target and its standalone inspector through:
 
 ```sh
@@ -44,11 +48,21 @@ tools/compiled-kernel/build-portable/wv_checkpoint_roundtrip input.nc output.nc
 tools/compiled-kernel/build-portable/wv_checkpoint_inspect --forcing-capabilities
 tools/compiled-kernel/build-portable/wv_portable_forcing_inspect checkpoint.nc
 tools/compiled-kernel/build-portable/wv_portable_rk4_inspect checkpoint.nc finalTime deltaT
+tools/portable-runtime/runFieldEvaluationContracts.sh
+tools/compiled-kernel/build-portable/wv_field_evaluation_inspect checkpoint.nc
 ```
 
 `WVCheckpointWriter` emits a root-level scalar checkpoint using the existing `[kl,j]` real/imaginary encoding and annotated forcing groups. It validates and re-reads a same-directory temporary file before atomically replacing the destination. A failed validation, write, close, or commit leaves an existing destination unchanged. The writer persists the canonical state and immutable forcing source data only; `deltaT`, plans, derived forcing operators, mappings, caches, and scratch remain runtime-derived.
 
 The v1 writer intentionally does not append records or produce a time-series group. The reader continues accepting both scalar root checkpoints and existing nested time-series files.
+
+## Field evaluation
+
+`WVFieldEvaluationService` is the backend-neutral diagnostic boundary for constant-stratification fields. Construction owns the transform, FFT plans, mappings, and bounded reusable scratch. An immutable `WVFieldEvaluationPlan` resolves field dependencies and interpolation weights once; evaluation accepts a transient coefficient-state view and writes every requested value into caller-owned output buffers. Coefficient streams and static model metadata remain outside this service.
+
+Plans can request full native grids, fixed vertical profiles using MATLAB one-based horizontal indices, or arbitrary positions using periodic-horizontal `linear` or `spline` interpolation. Coincident requests share primitive transforms and field sources. The supported dynamic catalog is `u`, `v`, `w`, `eta`, `pi`, `p`, `psi`, `qgpv`, `rho_e`, `rho_total`, `rho_bar`, `zeta_x`, `zeta_y`, `zeta_z`, `ssu`, `ssv`, `ssh`, `energy`, `uvMax`, and `wMax`.
+
+The service metrics report plan, transform, service, and scratch storage; transform and FFT execution counts; coincident batches and source reuse; sampling operations; and exact caller-output element writes. Scratch high-water storage never exceeds the fixed service capacity, and repeated evaluations do not retain coefficient states or sampled results.
 
 ## Standalone executable
 

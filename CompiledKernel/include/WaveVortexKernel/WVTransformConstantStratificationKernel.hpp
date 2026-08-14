@@ -7,6 +7,8 @@
 
 namespace wavevortex {
 
+enum class WVDynamicalField : std::uint8_t { u, v, w, eta };
+
 struct WVKernelMetrics {
     std::size_t descriptorBytes = 0;
     std::size_t planBytes = 0;
@@ -59,6 +61,7 @@ public:
     WVKernelStatus transformUVEtaToWaveVortex(const WVRealFieldBundleConstView& fields, double t, double t0, WVMutableCoefficients& coefficients);
     WVKernelStatus transformUVWEtaToWaveVortex(const WVRealFieldBundleConstView& fields, double t, double t0, WVMutableCoefficients& coefficients);
     WVKernelStatus transformWaveVortexToUVWEta(const WVState& state, WVRealFieldBundleView& fields);
+    WVKernelStatus transformStateFieldDerivatives(const WVState& state, WVDynamicalField field, WVRealFieldBundleView& derivatives);
     WVKernelStatus transformToSpatialDomainWithFAllDerivatives(const WVComplexConstView& Apm, const WVComplexConstView& A0, WVRealFieldBundleView& fields);
     WVKernelStatus transformToSpatialDomainWithGAllDerivatives(const WVComplexConstView& Apm, const WVComplexConstView& A0, WVRealFieldBundleView& fields);
     WVKernelStatus nonlinearFlux(const WVState& state, WVFlux& flux);
