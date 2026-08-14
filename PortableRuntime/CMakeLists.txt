@@ -32,6 +32,7 @@ add_library(WaveVortexPortableRuntime STATIC
     src/WVCompositeIntegration.cpp
     src/WVCompositeOutputOrchestration.cpp
     src/WVFieldEvaluationService.cpp
+    src/WVObserverOutputEvaluationService.cpp
     src/WVModelOutputNetCDFSchema.cpp
     src/WVModelOutputNetCDF.cpp
 )
@@ -207,7 +208,8 @@ if(BUILD_TESTING)
         ../tools/portable-runtime/tests/TestWVModelOutputNetCDF.cpp
     )
     target_compile_features(TestWVModelOutputNetCDF PRIVATE cxx_std_17)
-    target_link_libraries(TestWVModelOutputNetCDF PRIVATE WaveVortex::PortableRuntime ${WAVEVORTEX_NETCDF_TARGET})
+    target_include_directories(TestWVModelOutputNetCDF PRIVATE ../CompiledKernel/adapters/reference)
+    target_link_libraries(TestWVModelOutputNetCDF PRIVATE WaveVortex::PortableRuntime WaveVortex::ReferenceFFT ${WAVEVORTEX_NETCDF_TARGET})
     target_compile_definitions(TestWVModelOutputNetCDF PRIVATE
         WV_CHECKPOINT_FIXTURE_DIR="${CMAKE_CURRENT_LIST_DIR}/../tools/portable-runtime/fixtures"
     )
@@ -226,6 +228,17 @@ if(BUILD_TESTING)
         target_compile_options(TestWVFieldEvaluation PRIVATE -Wall -Wextra -Wpedantic -Werror)
     endif()
     add_test(NAME field-evaluation COMMAND TestWVFieldEvaluation)
+
+    add_executable(TestWVObserverOutputEvaluation
+        ../tools/portable-runtime/tests/TestWVObserverOutputEvaluation.cpp
+    )
+    target_compile_features(TestWVObserverOutputEvaluation PRIVATE cxx_std_17)
+    target_include_directories(TestWVObserverOutputEvaluation PRIVATE ../CompiledKernel/adapters/reference)
+    target_link_libraries(TestWVObserverOutputEvaluation PRIVATE WaveVortex::PortableRuntime WaveVortex::ReferenceFFT)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "AppleClang|Clang|GNU")
+        target_compile_options(TestWVObserverOutputEvaluation PRIVATE -Wall -Wextra -Wpedantic -Werror)
+    endif()
+    add_test(NAME observer-output-evaluation COMMAND TestWVObserverOutputEvaluation)
 
     add_executable(TestWaveVortexRun ../tools/portable-runtime/tests/TestWaveVortexRun.cpp)
     target_compile_features(TestWaveVortexRun PRIVATE cxx_std_17)
