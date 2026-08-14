@@ -13,6 +13,7 @@
 - Added portable constant-stratification Lagrangian-particle integration with shared moving-position field evaluation, fixed or adaptive dense output, and MATLAB-compatible particle NetCDF metadata and restart state.
 - Added portable three-dimensional tracer integration with shared per-RHS velocity reconstruction, core-owned spatial differentiation and antialiasing, fixed/adaptive dense output, and MATLAB-compatible NetCDF restart metadata.
 - Hardened portable integrated-state ownership, exact shared-service configuration identity, and per-RHS context lifetime validation.
+- Qualified all five built-in observing systems for bidirectional MATLAB-compatible multi-file output, restart, continuation, and append with fixed RK4 or adaptive RK3(2); custom observing-system subclasses remain unsupported.
 - Reduced portable RK4 and forcing-engine array traffic by writing complete right-hand sides directly into caller storage, reusing the accepted state for the first stage, and allocating forcing workspaces only for schedules that require them.
 - Added persistent, resolution-convertible `WVNarrowBandGeostrophicForcing` and retained the former fixed-amplitude helper as a silent deprecated 4.x delegate.
 - Retired the experimental FFTW backend; WaveVortexModel now uses MATLAB's builtin transforms and has no FFTWTransforms dependency.

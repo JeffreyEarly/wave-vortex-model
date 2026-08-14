@@ -1347,12 +1347,18 @@ public:
                            "unitless id number", "");
         if (!result)
           return result;
-        std::vector<double> z(
-            configuration.checkpointTemplate.configuration.Nz);
+        std::vector<double> z = record->z;
         const auto &model = configuration.checkpointTemplate.configuration;
-        const double dz = model.Lz / static_cast<double>(model.Nz - 1);
-        for (std::size_t index = 0; index < z.size(); ++index)
-          z[index] = -model.Lz + static_cast<double>(index) * dz;
+        if (z.empty()) {
+          z.resize(model.Nz);
+          const double dz = model.Lz / static_cast<double>(model.Nz - 1);
+          for (std::size_t index = 0; index < z.size(); ++index)
+            z[index] = -model.Lz + static_cast<double>(index) * dz;
+        }
+        if (z.size() != model.Nz)
+          return failure(WVCheckpointStatusCode::shapeMismatch,
+                         "Mooring vertical coordinates do not match Nz.",
+                         path + "/" + zName);
         result = addStatic(zName, {verticalDimension}, std::move(z), "m",
                            "z-positions of mooring observations");
         if (!result)
@@ -2021,7 +2027,16 @@ public:
             "/" + group.record.name + "/" + variable.name);
         if (!result)
           return result;
-        if (observed != variable.values)
+        const bool coordinatesMatch =
+            observed.size() == variable.values.size() &&
+            std::equal(observed.begin(), observed.end(),
+                       variable.values.begin(), [](double first,
+                                                   double second) {
+                         const double scale =
+                             std::max({1.0, std::abs(first), std::abs(second)});
+                         return std::abs(first - second) <= 1e-12 * scale;
+                       });
+        if (!coordinatesMatch)
           return failure(WVCheckpointStatusCode::appendConflict,
                          "Static observer coordinates changed.",
                          "/" + group.record.name + "/" + variable.name);
@@ -2548,6 +2563,7 @@ public:
   WVCheckpointStatus writeRoute(const WVCompositeOutputEvent &event,
                                 const WVCompositeOutputRouteView &route,
                                 WVCompositeOutputDeliveryResult &delivery) {
+    const auto payloadStarted = std::chrono::steady_clock::now();
     if (route.fileOrdinal >= files.size() ||
         route.groupOrdinal >= files[route.fileOrdinal].groups.size())
       return failure(WVCheckpointStatusCode::schemaMismatch,
@@ -2640,10 +2656,15 @@ public:
         "Output-time commit", "/" + group.record.name + "/t");
     if (!result)
       return result;
+    metrics.payloadWriteSeconds += std::chrono::duration<double>(
+        std::chrono::steady_clock::now() - payloadStarted).count();
+    const auto synchronizationStarted = std::chrono::steady_clock::now();
     result = detail::checkedNetCDF(nc_sync(file.id), "Output-route sync",
                                    file.destination.string());
     if (!result)
       return result;
+    metrics.synchronizationSeconds += std::chrono::duration<double>(
+        std::chrono::steady_clock::now() - synchronizationStarted).count();
     ++group.recordCount;
     group.committedOrdinal = route.scheduleOrdinal;
     ++metrics.committedRecordCount;
