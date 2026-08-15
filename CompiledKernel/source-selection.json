@@ -8,6 +8,7 @@
   },
   "postSelectionExtensions": {
     "sharedRightHandSideEvaluation": "bcbf315dc46d2becc5964300ccf252452a9768d5",
+    "fullGridTracerVerticalDifferentiation": "2704ca5a2d3f495745d4bb1ce4642423adc663fe",
     "description": "Shared per-RHS advection fields and core-owned F-grid scalar differentiation for integrated observers.",
     "kernelTypesSHA256": "1d53775cda4e5d7692a8889b9ad9df994bef6039f97eabf7a407f7a71ea156bb",
     "kernelInterfaceSHA256": "1f6f1c7bf21df86e4d286dbcf474a18294327259d77882fbb9d4593f3e74b103",
@@ -25,7 +26,7 @@
   "selectedSourceSHA256": "f338eedfd6295d22b5cf563c270b8e5037dd7295db2f90c39b9c915a63715369",
   "keySourceSHA256": {
     "coefficientFormulas": "78d647608d8919b33c278c280eb6d2b253dfb0acd8d3330141fbdc845e00864a",
-    "kernel": "49392ae45d3e688d5d8d12b7ce1ea73ec6c0b209ad9be7ac36a5b70fa81ff409",
+    "kernel": "158de695703984671945aa577dde91e7dad2019a98ecd82b831f4ebf54469e97",
     "nativeEngine": "5081f650cf5bf2cee9c210cef8ab1596a73aad4de7d65c712783fa36795e3b4b",
     "mexGateway": "62608acb8eb06bca83e53dd14cc1812df85b6484230fb7f02e332bb945775526",
     "buildOrchestrator": "e9cc16657780f505793a5fc390ccb150e506d2a4159551098fa43fbbf4188bb2"
