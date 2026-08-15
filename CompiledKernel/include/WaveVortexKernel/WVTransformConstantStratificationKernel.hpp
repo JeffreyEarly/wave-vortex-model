@@ -34,6 +34,12 @@ struct WVKernelMetrics {
     double coefficientAssemblySeconds = 0.0;
     double derivativeCoefficientAssemblySeconds = 0.0;
     double coefficientProjectionSeconds = 0.0;
+    double scalarForwardSeconds = 0.0;
+    double scalarDerivativeAssemblySeconds = 0.0;
+    double scalarVerticalDerivativeSeconds = 0.0;
+    double scalarInverseSeconds = 0.0;
+    double scalarProductSeconds = 0.0;
+    double scalarAntialiasSeconds = 0.0;
 };
 
 class WVTransformConstantStratificationKernel {
@@ -71,6 +77,7 @@ public:
     WVKernelStatus nonlinearFlux(const WVState& state, WVFlux& flux);
     WVKernelStatus nonlinearFluxWithAdvectionFields(const WVState& state, WVFlux& flux, WVRealFieldBundleView& advectionFields);
     WVKernelStatus nonlinearFluxUsingAdvectionFields(const WVState& state, WVFlux& flux, const WVRealFieldBundleConstView& advectionFields);
+    WVKernelStatus prepareScalarAdvection();
     WVKernelStatus advectFGridScalar(const WVRealVolumeConstView& scalar, const WVRealFieldBundleConstView& advectionFields, bool shouldAntialias, WVRealVolumeView& rightHandSide);
 
 private:

@@ -18,6 +18,7 @@ classdef TestCompiledKernelIntegration < matlab.unittest.TestCase
             testCase.verifyEqual(string(testCase.selection.preparation.sharedCoefficientFormulas),"97e28a892f55877a9267b2c4e3ca399b85596a34");
             testCase.verifyEqual(string(testCase.selection.preparation.nativeFFTWProvider),"1854d72ec07b0fb58c2b2aa972250d91629e669d");
             testCase.verifyEqual(string(testCase.selection.postSelectionExtensions.sharedRightHandSideEvaluation),"bcbf315dc46d2becc5964300ccf252452a9768d5");
+            testCase.verifyEqual(string(testCase.selection.postSelectionExtensions.eagerScalarAdvectionPlanning),"issue-218");
             testCase.verifyEqual(testCase.selection.contract.version,4);
             testCase.verifyEqual(string(testCase.selection.contract.coefficientShape),"[Nj,Nkl]");
             testCase.verifyEqual(testCase.selection.contract.planCount,17);
@@ -30,6 +31,7 @@ classdef TestCompiledKernelIntegration < matlab.unittest.TestCase
             entries = {
                 "CompiledKernel/src/WVCoefficientFormulas.hpp","coefficientFormulas"
                 "CompiledKernel/src/WVTransformConstantStratificationKernel.cpp","kernel"
+                "PortableRuntime/src/WVConstantStratificationIntegrationSystem.cpp","integrationSystem"
                 "CompiledKernel/adapters/native-fftw/WVNativeFFTWEngine.cpp","nativeEngine"
                 "CompiledKernel/adapters/native-fftw/wv_compiled_backend_mex.cpp","mexGateway"
                 "@WVCompiledBackend/private/wvCompiledBackendBuild.m","buildOrchestrator"
