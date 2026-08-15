@@ -17,6 +17,7 @@ struct WVObserverOutputEvaluationMetrics {
   std::size_t retainedStorageBytes = 0;
   std::size_t routeAwareParticleEvaluationCount = 0;
   std::size_t skippedParticleEvaluationCount = 0;
+  double evaluationSeconds = 0.0;
 };
 
 // Evaluates passive MATLAB-compatible observing systems independently of

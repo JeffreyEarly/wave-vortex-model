@@ -22,6 +22,11 @@ struct WVIntegratedObserverMetrics {
   std::size_t velocityCapacityBytes = 0;
   std::size_t persistentBytes = 0;
   std::size_t sharedRightHandSideContextCount = 0;
+  double rightHandSideSeconds = 0.0;
+  double waveVortexFluxSeconds = 0.0;
+  double additionalStateClearSeconds = 0.0;
+  double tracerAdvectionSeconds = 0.0;
+  double particleAdvectionSeconds = 0.0;
 };
 
 using WVLagrangianParticleMetrics = WVIntegratedObserverMetrics;

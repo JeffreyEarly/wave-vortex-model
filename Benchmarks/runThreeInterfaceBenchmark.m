@@ -202,6 +202,7 @@ else
     run.integrationSeconds = value.timingSeconds.integrate; run.interfaceTotalSeconds = value.timingSeconds.total;
     run.memory = memory;
     run.integrator = struct("requested",definition.requestedIntegrator,"actual",string(value.integrator.id),"matched",definition.requestedIntegrator==string(value.integrator.id)); run.finalState = value.state; run.output = struct("kind","model-output","path",inputPath);
+    if isfield(value,"integrationBreakdownSeconds"), run.diagnostics = value.integrationBreakdownSeconds; end
 end
 noFallback = true;
 if isfield(value.execution,"noFallback"), noFallback = logical(value.execution.noFallback); end
@@ -436,4 +437,4 @@ function value=utcTimestamp, value=string(datetime("now","TimeZone","UTC","Forma
 function value=conditional(condition,a,b), if condition,value=a;else,value=b;end,end
 function value=emptyFailure, value=struct("stage","","identifier","","message","","report",""); end
 function value=emptyOutputGraph, value=struct("kind","","passed",true,"maximumRelativeError",0,"maximumAbsoluteError",0,"variableCount",0,"recordCount",0,"categories",repmat(struct("name","","variableCount",0,"maximumAbsoluteError",0,"maximumRelativeError",0,"passed",true),0,1),"differences",strings(0,1)); end
-function value=emptyRun, value=struct("schemaVersion","three-interface-worker-v1","status","failed","interface","","case",struct(),"repeatIndex",0,"sourceCommit","","processWallSeconds",NaN,"interfaceTotalSeconds",NaN,"integrationSeconds",NaN,"memory",struct(),"provider",struct(),"integrator",struct(),"finalState",struct(),"output",struct(),"failure",struct("identifier","","message","","report","")); end
+function value=emptyRun, value=struct("schemaVersion","three-interface-worker-v1","status","failed","interface","","case",struct(),"repeatIndex",0,"sourceCommit","","processWallSeconds",NaN,"interfaceTotalSeconds",NaN,"integrationSeconds",NaN,"memory",struct(),"provider",struct(),"integrator",struct(),"finalState",struct(),"output",struct(),"diagnostics",struct(),"failure",struct("identifier","","message","","report","")); end

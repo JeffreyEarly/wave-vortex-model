@@ -2,6 +2,7 @@
 #include "WVObserverAdapter.hpp"
 
 #include <algorithm>
+#include <chrono>
 #include <limits>
 #include <new>
 
@@ -247,6 +248,7 @@ WVConstantStratificationIntegrationSystem::~WVConstantStratificationIntegrationS
 WVKernelStatus
 WVConstantStratificationIntegrationSystem::evaluateRightHandSide(
     const WVIntegrationState &state, WVIntegrationFlux &rightHandSide) {
+  const auto rightHandSideStarted = std::chrono::steady_clock::now();
   if (executing_)
     return {WVKernelStatusCode::reentrantExecution,
             "The constant-stratification integration system is not reentrant."};
@@ -268,6 +270,7 @@ WVConstantStratificationIntegrationSystem::evaluateRightHandSide(
   auto advectionStorage = needsAdvectionContext
                               ? fields_->advectionFieldStorage()
                               : WVRealFieldBundleView{};
+  const auto waveVortexFluxStarted = std::chrono::steady_clock::now();
   status = !needsAdvectionContext
                ? forcing_->nonlinearFlux(state.waveVortex,
                                          rightHandSide.waveVortex)
@@ -276,7 +279,10 @@ WVConstantStratificationIntegrationSystem::evaluateRightHandSide(
                      advectionStorage, context);
   if (!status)
     return status;
+  metrics_.waveVortexFluxSeconds += std::chrono::duration<double>(
+      std::chrono::steady_clock::now() - waveVortexFluxStarted).count();
   if (needsAdvectionContext) ++metrics_.sharedRightHandSideContextCount;
+  const auto additionalStateClearStarted = std::chrono::steady_clock::now();
   for (std::size_t block = 0; block < rightHandSide.additionalBlockCount;
        ++block) {
     const auto &layout = *rightHandSide.additionalBlocks[block].layout;
@@ -287,6 +293,8 @@ WVConstantStratificationIntegrationSystem::evaluateRightHandSide(
       std::fill_n(rightHandSide.additionalBlocks[block].complexData,
                   layout.elementCount, WVComplex64{});
   }
+  metrics_.additionalStateClearSeconds += std::chrono::duration<double>(
+      std::chrono::steady_clock::now() - additionalStateClearStarted).count();
   for (const auto &particles : particles_) {
     const auto offset = particles.positionOffset_;
     const auto count = particles.particleCount_;
@@ -302,6 +310,7 @@ WVConstantStratificationIntegrationSystem::evaluateRightHandSide(
                   z_.data() + offset);
   }
   const auto spatial = forcing_->kernel().descriptor().spatialShape();
+  const auto tracerStarted = std::chrono::steady_clock::now();
   for (const auto &tracer : tracers_) {
     const auto &input = state.additionalBlocks[tracer.stateBlock_];
     auto &output = rightHandSide.additionalBlocks[tracer.stateBlock_];
@@ -318,6 +327,9 @@ WVConstantStratificationIntegrationSystem::evaluateRightHandSide(
     if (tracer.shouldAntialias())
       ++metrics_.antialiasedTracerEvaluationCount;
   }
+  metrics_.tracerAdvectionSeconds += std::chrono::duration<double>(
+      std::chrono::steady_clock::now() - tracerStarted).count();
+  const auto particleStarted = std::chrono::steady_clock::now();
   if (!particles_.empty()) {
     status = fields_->evaluateMovingFromAdvectionFields(
         velocityPlan_, state.waveVortex, context.advectionFields(),
@@ -339,7 +351,11 @@ WVConstantStratificationIntegrationSystem::evaluateRightHandSide(
     metrics_.particleValueWriteCount +=
         count * (particles.isXYOnly() ? 2 : 3);
   }
+  metrics_.particleAdvectionSeconds += std::chrono::duration<double>(
+      std::chrono::steady_clock::now() - particleStarted).count();
   ++metrics_.rightHandSideEvaluationCount;
+  metrics_.rightHandSideSeconds += std::chrono::duration<double>(
+      std::chrono::steady_clock::now() - rightHandSideStarted).count();
   return WVKernelStatus::ok();
 }
 

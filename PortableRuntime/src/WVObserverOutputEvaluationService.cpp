@@ -2,6 +2,7 @@
 #include "WVObserverAdapter.hpp"
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <map>
 #include <new>
@@ -536,11 +537,16 @@ WVKernelStatus WVObserverOutputEvaluationService::useFieldEvaluationService(
 
 WVKernelStatus
 WVObserverOutputEvaluationService::prepareInitial(const WVState &state) {
-  return impl_->evaluate(state, true, nullptr, false, metrics_);
+  const auto started = std::chrono::steady_clock::now();
+  const auto status = impl_->evaluate(state, true, nullptr, false, metrics_);
+  metrics_.evaluationSeconds += std::chrono::duration<double>(
+      std::chrono::steady_clock::now() - started).count();
+  return status;
 }
 
 WVKernelStatus WVObserverOutputEvaluationService::prepare(
     const WVOutputEvent &event) {
+  const auto started = std::chrono::steady_clock::now();
   bool needsParticles = event.routes == nullptr;
   for (std::size_t route = 0; route < event.routeCount && !needsParticles;
        ++route)
@@ -557,8 +563,11 @@ WVKernelStatus WVObserverOutputEvaluationService::prepare(
         break;
       }
     }
-  return impl_->evaluate(event.state.waveVortex, false, &event.state,
-                         needsParticles, metrics_);
+  const auto status = impl_->evaluate(event.state.waveVortex, false,
+                                      &event.state, needsParticles, metrics_);
+  metrics_.evaluationSeconds += std::chrono::duration<double>(
+      std::chrono::steady_clock::now() - started).count();
+  return status;
 }
 
 WVKernelStatus WVObserverOutputEvaluationService::value(

@@ -134,6 +134,7 @@ int main() {
         require(reportText.find("\"arrayTraffic\"") != std::string::npos && reportText.find("\"stageStateConstructionReads\":1296") != std::string::npos,"runner omitted exact RK4 traffic diagnostics");
         require(reportText.find("\"stageFluxClearWrites\":0") != std::string::npos && reportText.find("\"weightedFluxInitializationReads\":216") != std::string::npos,"runner omitted eliminated-clear and first-stage initialization diagnostics");
         require(reportText.find("\"contractAbstractionAdditionalArrayStorage\":0") != std::string::npos,"runner reported array-sized contract workspace");
+        require(reportText.find("\"integrationBreakdownSeconds\"") != std::string::npos && reportText.find("\"waveVortexFlux\"") != std::string::npos && reportText.find("\"tracerAdvection\"") != std::string::npos && reportText.find("\"observerEvaluation\"") != std::string::npos,"runner omitted the integration cost decomposition");
         const auto protectedOutput = directory/"protected-output.nc";
         {
             std::ofstream stream(protectedOutput,std::ios::binary);
