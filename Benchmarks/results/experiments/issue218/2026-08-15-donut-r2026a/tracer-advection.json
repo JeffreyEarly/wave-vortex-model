@@ -1,0 +1,79 @@
+{
+  "schemaVersion": "1.0.0",
+  "issue": 218,
+  "status": "RESOLVED",
+  "host": "Donut",
+  "matlabRelease": "R2026a",
+  "shape": [256, 256, 129],
+  "deltaT": 0.001,
+  "processCount": 3,
+  "baselineCommit": "b23d25733e647f3f0299d890039c3bdcb24d0994",
+  "candidateCommit": "2162717abbee06392446d87198c08f743f8e9d8f",
+  "provider": {
+    "library": "FFTW 3.3.11",
+    "configuration": "native-neon-pthreads",
+    "threadCount": 18
+  },
+  "change": "Construct the scalar inverse FFTW plan with the integration system when any tracer requests antialiasing.",
+  "hydrostatic": {
+    "control": {
+      "integrateSeconds": [3.784767291, 3.8272055, 3.493665958],
+      "tracerSeconds": [3.194558874, 3.198254166, 2.881700876],
+      "constructionSeconds": [17.572216792, 17.568991583, 19.389918333],
+      "processPeakRssBytes": [4616273920, 4616323072, 4615618560]
+    },
+    "candidate": {
+      "integrateSeconds": [0.809887625, 0.752141792, 0.773984625],
+      "tracerSeconds": [0.172065959, 0.163142793, 0.165450167],
+      "tracerAntialiasSeconds": [0.028826, 0.028389501, 0.028803832],
+      "constructionSeconds": [21.81678675, 20.488486625, 20.952913125],
+      "processPeakRssBytes": [3999334400, 4266704896, 4479860736]
+    },
+    "median": {
+      "integrateSpeedup": 4.890,
+      "tracerSpeedup": 19.309,
+      "integrateReductionFraction": 0.7955,
+      "tracerReductionFraction": 0.9482
+    },
+    "outputGraph": {
+      "passed": true,
+      "variableCount": 54,
+      "recordCount": 80,
+      "maximumRelativeError": 2.70453134948864e-16,
+      "maximumAbsoluteError": 2.6020852139652106e-18
+    }
+  },
+  "nonhydrostatic": {
+    "control": {
+      "integrateSeconds": [3.793430125, 3.972831959, 3.853653417],
+      "tracerSeconds": [3.082058791, 3.254969333, 3.082529042],
+      "constructionSeconds": [18.431618166, 18.616088834, 18.607583125],
+      "processPeakRssBytes": [4615503872, 4616159232, 4615569408]
+    },
+    "candidate": {
+      "integrateSeconds": [0.893927625, 0.971990458, 0.889283541],
+      "tracerSeconds": [0.165975416, 0.171134583, 0.163660624],
+      "tracerAntialiasSeconds": [0.028395875, 0.028443333, 0.027520042],
+      "constructionSeconds": [21.2929135, 21.365096458, 22.165005666],
+      "processPeakRssBytes": [4479778816, 4479991808, 4479434752]
+    },
+    "median": {
+      "integrateSpeedup": 4.311,
+      "tracerSpeedup": 18.572,
+      "integrateReductionFraction": 0.7680,
+      "tracerReductionFraction": 0.9462
+    },
+    "outputGraph": {
+      "passed": true,
+      "maximumRelativeError": 1.7497918383427742e-19,
+      "maximumAbsoluteError": 1.3552527156068805e-20
+    }
+  },
+  "decision": {
+    "classification": "RESOLVED",
+    "reason": "The apparent tracer cost was first-use FFTW planning inside the timed RK4 step, not steady tracer arithmetic. Eager plan creation removes it with one contained preparation call and no numerical or memory regression.",
+    "integrationGatePassed": true,
+    "tracerGatePassed": true,
+    "maximumAllowedRelativeError": 1e-12
+  }
+}
