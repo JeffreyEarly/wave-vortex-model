@@ -202,6 +202,15 @@ WVKernelStatus WVConstantStratificationIntegrationSystem::createImpl(
                        " must resolve to exactly one integrated observer.");
     }
 
+    const bool requiresScalarAntialiasPlan = std::any_of(
+        candidate->tracers_.begin(), candidate->tracers_.end(),
+        [](const auto &tracer) { return tracer.shouldAntialias(); });
+    if (requiresScalarAntialiasPlan) {
+      status = candidate->forcing_->kernel().prepareScalarAdvection();
+      if (!status)
+        return status;
+    }
+
     // Coefficient-only integration is the zero-additional-block case. It must
     // not retain the field-evaluation scratch used by observing systems.
     if (!observers.empty()) {
