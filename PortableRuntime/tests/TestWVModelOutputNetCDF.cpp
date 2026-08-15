@@ -11,8 +11,10 @@
 #include <cmath>
 #include <cstdlib>
 #include <filesystem>
+#include <iomanip>
 #include <iostream>
 #include <map>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -31,6 +33,13 @@ void require(bool condition, const std::string &message) {
 
 std::filesystem::path fixture(const std::string &name) {
   return std::filesystem::path(WV_CHECKPOINT_FIXTURE_DIR) / name;
+}
+
+std::string shellQuote(const std::filesystem::path &path) {
+  std::string result = "'";
+  for (const auto character : path.string())
+    result += character == '\'' ? "'\\''" : std::string(1, character);
+  return result + "'";
 }
 
 struct TemporaryDirectory {
@@ -553,7 +562,8 @@ void testMultipleFilesGroupsAndSharedState() {
   mooring.x = {0.0, 0.5 * checkpoint.configuration.Lx};
   mooring.y = {0.0, 0.5 * checkpoint.configuration.Ly};
   record.observers = {coefficients, fields, mooring, particles, tracer};
-  const auto end = checkpoint.state.t + 1.0;
+  const auto outputInterval = 1e-7;
+  const auto end = checkpoint.state.t + 2.0 * outputInterval;
   const char *exportPath = std::getenv("WV_RUNTIME_MODEL_OUTPUT_EXPORT");
   const auto first = exportPath == nullptr
                          ? directory.path / "first.nc"
@@ -566,20 +576,20 @@ void testMultipleFilesGroupsAndSharedState() {
                          first.string(),
                          {{"restart",
                            "wave-vortex",
-                           {1.0, checkpoint.state.t, end},
+                           {outputInterval, checkpoint.state.t, end},
                            {"coefficients", "fields", "mooring", "particles",
                             "tracer"},
                            true},
                           {"shared",
                            "shared",
-                           {1.0, checkpoint.state.t, end},
+                           {outputInterval, checkpoint.state.t, end},
                            {"fields", "mooring", "particles", "tracer"},
                            false}}},
                         {"second",
                          second.string(),
                          {{"restart",
                            "restart",
-                           {1.0, checkpoint.state.t, end},
+                           {outputInterval, checkpoint.state.t, end},
                            {"coefficients", "fields", "mooring", "particles",
                             "tracer"},
                            true}}}};
@@ -672,6 +682,16 @@ void testMultipleFilesGroupsAndSharedState() {
           "multi-file graph or shared observer identity was not reconstructed");
   require(inspection.additionalState.blockCount() == 3,
           "shared dynamic state was duplicated during reconstruction");
+  for (std::size_t block = 0;
+       block < inspection.additionalState.blockCount(); ++block) {
+    const auto &view = inspection.additionalState.constBlocks()[block];
+    require(view.layout != nullptr && view.realData != nullptr,
+            "restored dynamic-state view is invalid");
+    require(std::all_of(view.realData,
+                        view.realData + view.layout->elementCount,
+                        [](double value) { return std::isfinite(value); }),
+            "restored dynamic state contains nonfinite values");
+  }
   const auto restoredParticles = std::find_if(
       inspection.observerRecord.observers.begin(),
       inspection.observerRecord.observers.end(), [](const auto &observer) {
@@ -680,6 +700,38 @@ void testMultipleFilesGroupsAndSharedState() {
   require(restoredParticles != inspection.observerRecord.observers.end() &&
               restoredParticles->z == std::vector<double>({-100.0, -300.0}),
           "fixed XY particle z configuration was not reconstructed");
+  std::ostringstream fixedCommand;
+  fixedCommand << shellQuote(WV_RUNTIME_RUNNER) << ' ' << shellQuote(first)
+               << " --restart-mode model --delta-t " << outputInterval
+               << " --final-time " << std::setprecision(17) << end
+               << " --fft-provider reference >/dev/null";
+  require(std::system(fixedCommand.str().c_str()) == 0,
+          "fixed-step full-model continuation failed");
+  WVModelOutputNetCDFInspection continued;
+  persistence = WVModelOutputNetCDFSink::inspect({first.string()}, continued);
+  require(static_cast<bool>(persistence), persistence.message);
+  require(std::abs(continued.latestRestart.state.t - end) <= 1e-14 &&
+              continued.observerRecord.observers.size() == 5 &&
+              continued.additionalState.blockCount() == 3,
+          "fixed-step continuation did not preserve the complete model graph");
+
+  std::ostringstream adaptiveCommand;
+  adaptiveCommand << shellQuote(WV_RUNTIME_RUNNER) << ' ' << shellQuote(second)
+                  << " --restart-mode model --delta-t " << outputInterval
+                  << " --final-time " << std::setprecision(17) << end
+                  << " --integrator adaptive-rk23 --relative-tolerance 1e-6"
+                     " --absolute-tolerance 1e-8 --fft-provider reference"
+                     " >/dev/null";
+  require(std::system(adaptiveCommand.str().c_str()) == 0,
+          "adaptive full-model continuation failed");
+  WVModelOutputNetCDFInspection adaptiveContinued;
+  persistence =
+      WVModelOutputNetCDFSink::inspect({second.string()}, adaptiveContinued);
+  require(static_cast<bool>(persistence), persistence.message);
+  require(std::abs(adaptiveContinued.latestRestart.state.t - end) <= 1e-14 &&
+              adaptiveContinued.observerRecord.observers.size() == 5 &&
+              adaptiveContinued.additionalState.blockCount() == 3,
+          "adaptive continuation did not preserve the complete model graph");
   std::cout << "OUTPUT_METRICS files=" << sink.metrics().fileCount
             << " groups=" << sink.metrics().groupCount
             << " records=" << sink.metrics().committedRecordCount

@@ -43,6 +43,37 @@ WVCheckpointStatus optionalTextAttribute(int group, const char *name,
   return detail::readTextAttribute(group, name, value, path);
 }
 
+WVCheckpointStatus optionalLogicalAttribute(int group, const char *name,
+                                            bool &value, bool &present,
+                                            const std::string &path) {
+  nc_type type = NC_NAT;
+  std::size_t length = 0;
+  const int inquiry = nc_inq_att(group, NC_GLOBAL, name, &type, &length);
+  if (inquiry == NC_ENOTATT) {
+    present = false;
+    value = false;
+    return WVCheckpointStatus::ok();
+  }
+  if (inquiry != NC_NOERR)
+    return detail::netcdfFailure(inquiry, "Attribute inspection",
+                                 path + "/@" + name);
+  if ((type != NC_BYTE && type != NC_UBYTE) || length != 1)
+    return failure(WVCheckpointStatusCode::typeMismatch,
+                   "Logical attributes must contain one byte.",
+                   path + "/@" + name);
+  unsigned char raw = 0;
+  const int read = nc_get_att_uchar(group, NC_GLOBAL, name, &raw);
+  if (read != NC_NOERR)
+    return detail::netcdfFailure(read, "Attribute read", path + "/@" + name);
+  if (raw > 1)
+    return failure(WVCheckpointStatusCode::invalidValue,
+                   "Logical attributes must contain zero or one.",
+                   path + "/@" + name);
+  present = true;
+  value = raw != 0;
+  return WVCheckpointStatus::ok();
+}
+
 WVCheckpointStatus stringListAttribute(int group, const char *name,
                                        std::vector<std::string> &values,
                                        bool &present, const std::string &path) {
@@ -610,12 +641,19 @@ validateReadableHistory(int group, const WVOutputScheduleRecord &schedule,
 WVCheckpointStatus parseOutputFile(const std::string &path,
                                    WVPortableObserverRecord &portable,
                                    std::vector<WVOutputGroupProgress> &progress,
-                                   WVOutputFileRecord &fileRecord) {
+                                   WVOutputFileRecord &fileRecord,
+                                   bool &isDynamicsLinear) {
   detail::WVNetCDFFile file;
   auto result = detail::WVNetCDFFile::openReadOnly(path, file);
   if (!result)
     return result;
   bool present = false;
+  result = optionalLogicalAttribute(file.id(), "WVModelIsDynamicsLinear",
+                                    isDynamicsLinear, present, "/");
+  if (!result)
+    return result;
+  if (!present)
+    isDynamicsLinear = false;
   result = optionalTextAttribute(file.id(), "portableFileIdentifier",
                                  fileRecord.identifier, present, "/");
   if (!result)
@@ -780,27 +818,39 @@ WVModelOutputNetCDFSink::inspect(const std::vector<std::string> &paths,
     WVModelOutputNetCDFInspection candidate;
     candidate.paths = paths;
     std::string selectedPath;
+    WVCheckpointInspection selectedCheckpoint;
+    bool firstFile = true;
     for (const auto &path : paths) {
       WVOutputFileRecord fileRecord;
+      bool isDynamicsLinear = false;
       auto result = parseOutputFile(path, candidate.observerRecord,
-                                    candidate.progress, fileRecord);
+                                    candidate.progress, fileRecord,
+                                    isDynamicsLinear);
       if (!result)
         return result;
+      if (firstFile) {
+        candidate.isDynamicsLinear = isDynamicsLinear;
+        firstFile = false;
+      } else if (candidate.isDynamicsLinear != isDynamicsLinear) {
+        return failure(WVCheckpointStatusCode::schemaMismatch,
+                       "Output files disagree on the model dynamics mode.",
+                       path);
+      }
       candidate.observerRecord.outputFiles.push_back(std::move(fileRecord));
-      WVCheckpoint checkpoint;
-      result = WVCheckpointReader::read(path, checkpoint);
+      WVCheckpointInspection checkpoint;
+      result = WVCheckpointReader::inspect(path, checkpoint);
       if (!result)
         return result;
       if (selectedPath.empty()) {
-        candidate.latestRestart = std::move(checkpoint);
+        selectedCheckpoint = std::move(checkpoint);
         selectedPath = path;
       } else {
-        if (!sameTransformConfiguration(candidate.latestRestart.configuration,
+        if (!sameTransformConfiguration(selectedCheckpoint.configuration,
                                         checkpoint.configuration))
           return failure(WVCheckpointStatusCode::schemaMismatch,
                          "Output files do not describe one model.", path);
-        if (checkpoint.state.t > candidate.latestRestart.state.t) {
-          candidate.latestRestart = std::move(checkpoint);
+        if (checkpoint.t > selectedCheckpoint.t) {
+          selectedCheckpoint = std::move(checkpoint);
           selectedPath = path;
         }
       }
@@ -818,8 +868,8 @@ WVModelOutputNetCDFSink::inspect(const std::vector<std::string> &paths,
                      "Selected restart file is absent from the output graph.",
                      selectedPath);
     const std::string selectedGroupName =
-        candidate.latestRestart.metadata.stateGroupPath.size() > 1
-            ? candidate.latestRestart.metadata.stateGroupPath.substr(1)
+        selectedCheckpoint.metadata.stateGroupPath.size() > 1
+            ? selectedCheckpoint.metadata.stateGroupPath.substr(1)
             : std::string{};
     auto selectedGroup = std::find_if(
         selectedFile->groups.begin(), selectedFile->groups.end(),
@@ -827,7 +877,7 @@ WVModelOutputNetCDFSink::inspect(const std::vector<std::string> &paths,
     if (selectedGroup == selectedFile->groups.end())
       return failure(WVCheckpointStatusCode::schemaMismatch,
                      "Selected restart group is absent from the output graph.",
-                     candidate.latestRestart.metadata.stateGroupPath);
+                     selectedCheckpoint.metadata.stateGroupPath);
     std::set<std::string> restartBlocks{"Ap", "Am", "A0"};
     for (const auto &observerIdentifier : selectedGroup->observerIdentifiers) {
       const auto observer = std::find_if(
@@ -846,11 +896,29 @@ WVModelOutputNetCDFSink::inspect(const std::vector<std::string> &paths,
         return failure(WVCheckpointStatusCode::schemaMismatch,
                        "The complete coefficient group omits required dynamic "
                        "observer state.",
-                       candidate.latestRestart.metadata.stateGroupPath);
+                       selectedCheckpoint.metadata.stateGroupPath);
     }
 
+    WVPortableObserverDescriptor descriptor;
+    const auto descriptorStatus = WVPortableObserverDescriptor::create(
+        candidate.observerRecord, descriptor);
+    if (!descriptorStatus)
+      return failure(WVCheckpointStatusCode::descriptorFailure,
+                     descriptorStatus.message, "/observingSystems");
+    const auto layoutStatus = WVIntegrationStateLayout::create(
+        selectedCheckpoint.coefficientShape, descriptor,
+        candidate.stateLayout);
+    if (!layoutStatus)
+      return failure(WVCheckpointStatusCode::descriptorFailure,
+                     layoutStatus.message, "/observingSystems");
+
+    auto result = WVCheckpointReader::read(selectedPath,
+                                           candidate.latestRestart);
+    if (!result)
+      return result;
+
     detail::WVNetCDFFile selected;
-    auto result = detail::WVNetCDFFile::openReadOnly(selectedPath, selected);
+    result = detail::WVNetCDFFile::openReadOnly(selectedPath, selected);
     if (!result)
       return result;
     int outputGroup = -1;
@@ -888,18 +956,6 @@ WVModelOutputNetCDFSink::inspect(const std::vector<std::string> &paths,
       }
     }
 
-    WVPortableObserverDescriptor descriptor;
-    const auto descriptorStatus = WVPortableObserverDescriptor::create(
-        candidate.observerRecord, descriptor);
-    if (!descriptorStatus)
-      return failure(WVCheckpointStatusCode::descriptorFailure,
-                     descriptorStatus.message, "/observingSystems");
-    const auto layoutStatus = WVIntegrationStateLayout::create(
-        candidate.latestRestart.state.coefficients.shape, descriptor,
-        candidate.stateLayout);
-    if (!layoutStatus)
-      return failure(WVCheckpointStatusCode::descriptorFailure,
-                     layoutStatus.message, "/observingSystems");
     const auto storageStatus =
         candidate.additionalState.initialize(candidate.stateLayout);
     if (!storageStatus)

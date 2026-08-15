@@ -7,7 +7,7 @@ nav_order: 5
 
 # Portable constant-stratification runtime
 
-WaveVortexModel includes an optional MATLAB-independent runtime for advanced constant-stratification workflows. MATLAB remains the primary interface. The portable program reads a compatible checkpoint, advances it, and writes a restartable checkpoint without distributing a binary.
+WaveVortexModel includes an optional MATLAB-independent runtime for advanced constant-stratification workflows. MATLAB remains the primary interface. The portable program can restore a supported saved `WVModel` graph, continue its observing systems and output schedules in place, and produce MATLAB-compatible restart data without distributing a binary.
 
 ## Supported scope
 
@@ -42,20 +42,31 @@ ctest --test-dir build/portable --output-on-failure
 
 ## Run and restart
 
-The optimized runner requires an explicit provider and either a step count or final time:
+Complete-model continuation is the default restart mode. It restores the selected file's dynamics mode, forcing order, output groups and schedules, shared observer identities, particles, tracers, committed progress, and latest complete state. Runtime integrator objects are not persisted, matching `WVModel.modelFromFile`; select fixed RK4 or adaptive RK3(2) for the continuation. A final time bounds the restored schedules:
 
 ```sh
-wave-vortex-run input.nc output.nc \
-    --delta-t 1 --steps 8 \
+wave-vortex-run saved-model.nc \
+    --restart-mode model \
+    --delta-t 1 --final-time 100 \
     --fft-provider native-fftw --threads 18
 
-wave-vortex-run output.nc continued.nc \
+wave-vortex-run saved-model.nc \
+    --restart-mode model \
     --integrator adaptive-rk23 \
     --delta-t 1 --final-time 100 \
     --relative-tolerance 1e-3 --absolute-tolerance 1e-6 \
     --fft-provider native-fftw
 ```
 
-The output is restartable by the documented MATLAB and C++ readers. Plans, caches, continuous-output history, derived forcing operators, and scratch are rebuilt rather than persisted.
+For a deliberately coefficient-only workflow, name that reduced boundary explicitly and supply a new checkpoint destination:
+
+```sh
+wave-vortex-run input.nc output.nc \
+    --restart-mode coefficients \
+    --delta-t 1 --steps 8 \
+    --fft-provider native-fftw --threads 18
+```
+
+The output is restartable by the documented MATLAB and C++ readers. Plans, caches, continuous-output history, derived forcing operators, and scratch are rebuilt rather than persisted. Unsupported model graphs are rejected during allocation-light preflight, before the numerical core is constructed or output is opened for append.
 
 The command-line program is intentionally small. Use MATLAB's `WVModel` for general forcing, custom observing systems, interactive configuration, and ordinary model output.

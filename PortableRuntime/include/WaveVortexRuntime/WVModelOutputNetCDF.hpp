@@ -96,6 +96,7 @@ struct WVModelOutputNetCDFInspection {
   // Latest complete coefficient restart among paths. Required additional
   // particle and tracer state is owned separately below.
   WVCheckpoint latestRestart;
+  bool isDynamicsLinear = false;
   // Reconstructed shared observer graph and its resolved integration layout.
   WVPortableObserverRecord observerRecord;
   WVIntegrationStateLayout stateLayout;

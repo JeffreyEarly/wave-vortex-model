@@ -28,10 +28,16 @@ void require(bool condition, const std::string& message) { if (!condition) throw
 
 std::string quote(const std::filesystem::path& path) { return "\""+path.string()+"\""; }
 
-int run(const std::string& arguments) { return std::system((quote(WV_RUNTIME_RUNNER)+" "+arguments).c_str()); }
+std::string explicitRestartMode(std::string arguments) {
+    if (arguments.find("--restart-mode") == std::string::npos)
+        arguments += " --restart-mode coefficients";
+    return arguments;
+}
+
+int run(const std::string& arguments) { return std::system((quote(WV_RUNTIME_RUNNER)+" "+explicitRestartMode(arguments)).c_str()); }
 
 int runWithPid(const std::string& arguments, const std::filesystem::path& pidFile) {
-    return std::system((quote(WV_RUNTIME_RUNNER)+" "+arguments+" >/dev/null 2>&1 & echo $! > "+quote(pidFile)+"; wait $!").c_str());
+    return std::system((quote(WV_RUNTIME_RUNNER)+" "+explicitRestartMode(arguments)+" >/dev/null 2>&1 & echo $! > "+quote(pidFile)+"; wait $!").c_str());
 }
 
 std::vector<char> bytes(const std::filesystem::path& path) {

@@ -31,19 +31,23 @@ The script verifies the pinned FFTW 3.3.11 archive, builds it in the ignored `.c
 
 ## Run and restart
 
-The optimized command-line program requires an explicit FFT provider and either a step count or final time:
+The optimized command-line program requires an explicit FFT provider. Complete-model continuation restores and appends the selected file's supported observing-system graph and schedules:
 
 ```sh
-wave-vortex-run input.nc output.nc \
-    --delta-t 1 --steps 8 \
+wave-vortex-run saved-model.nc \
+    --restart-mode model \
+    --delta-t 1 --final-time 100 \
     --fft-provider native-fftw --threads 18
 
-wave-vortex-run output.nc continued.nc \
+wave-vortex-run saved-model.nc \
+    --restart-mode model \
     --integrator adaptive-rk23 \
     --delta-t 1 --final-time 100 \
     --relative-tolerance 1e-3 --absolute-tolerance 1e-6 \
     --fft-provider native-fftw
 ```
+
+Use `--restart-mode coefficients` with positional input and output paths for an explicit reduced checkpoint-only workflow.
 
 Plans, caches, integrator history, derived forcing operators, and scratch are rebuilt after restart rather than persisted.
 

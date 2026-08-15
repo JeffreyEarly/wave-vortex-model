@@ -529,6 +529,7 @@ WVKernelStatus WVObserverOutputEvaluationService::useFieldEvaluationService(
                    "constant-stratification configuration.");
   impl_->ownedFields.reset();
   impl_->fields = &fieldEvaluationService;
+  impl_->ownedFields.reset();
   metrics_.retainedStorageBytes = persistentBytes();
   return WVKernelStatus::ok();
 }
