@@ -109,6 +109,26 @@ classdef TestBenchmarkWebsiteDocumentation < matlab.unittest.TestCase
             testCase.verifySubstring(atGlance,"4.2.2");
         end
 
+        function matchedInterfaceResultUsesConsistentPublicPresentation(testCase)
+            [root,buildFolder] = testCase.createFixture("interfaces");
+            [entry,dataset] = testCase.publishInterfaceDataset(root);
+            testCase.writeCatalog(root,struct([]),entry);
+
+            generateBenchmarkWebsiteDocumentation(root,buildFolder);
+
+            page = string(fileread(fullfile(buildFolder,"benchmarks.md")));
+            testCase.verifySubstring(page,"[256 256 129]");
+            testCase.verifySubstring(page,"Adaptive RK3(2) + output");
+            testCase.verifySubstring(page,"2.000×");
+            testCase.verifySubstring(page,"75.0%");
+            testCase.verifySubstring(page,"Total peak RSS");
+            testCase.verifySubstring(page,string(dataset.schemaVersion));
+            testCase.verifySubstring(page,"/benchmarks/data/"+dataset.datasetId+".json");
+            testCase.verifySubstring(page,"/benchmarks/raw/"+dataset.datasetId+".json");
+            testCase.verifyTrue(isfile(fullfile(buildFolder,"benchmarks","data",dataset.datasetId+".json")));
+            testCase.verifyTrue(isfile(fullfile(buildFolder,"benchmarks","raw",dataset.datasetId+".json")));
+        end
+
         function missingSuiteDatasetIsExplicitlyUnavailable(testCase)
             [root,buildFolder] = testCase.createFixture("missing-suite");
             standard = publishedDataset("scaling-standard-v1--matlab-builtin--m5-max--20260810T120000Z","matlab","builtin","m5-max","M5 Max","4.2.1","2026-08-10T12:00:00Z",standardCases(1));
@@ -196,12 +216,39 @@ classdef TestBenchmarkWebsiteDocumentation < matlab.unittest.TestCase
             end
         end
 
-        function writeCatalog(testCase,root,publishedDatasets)
+        function [entry,dataset] = publishInterfaceDataset(testCase,root)
+            interfaces = { ...
+                struct("id","matlab-builtin","processWallSeconds",4,"interfaceTotalSeconds",3,"integrationSeconds",2,"totalPeakRSSBytes",4*2^30,"incrementalPeakRSSBytes",2*2^30,"processWallRatio",1,"integrationRatio",1,"totalRSSRatio",1,"incrementalRSSRatio",1,"processWallSamplesSeconds",[3.9 4 4.1],"integrationSamplesSeconds",[1.9 2 2.1]), ...
+                struct("id","matlab-compiled","processWallSeconds",3,"interfaceTotalSeconds",2,"integrationSeconds",1,"totalPeakRSSBytes",3*2^30,"incrementalPeakRSSBytes",1*2^30,"processWallRatio",0.75,"integrationRatio",0.5,"totalRSSRatio",0.75,"incrementalRSSRatio",0.5,"processWallSamplesSeconds",[2.9 3 3.1],"integrationSamplesSeconds",[0.9 1 1.1]), ...
+                struct("id","standalone-compiled","processWallSeconds",1,"interfaceTotalSeconds",0.8,"integrationSeconds",0.5,"totalPeakRSSBytes",1*2^30,"incrementalPeakRSSBytes",0.5*2^30,"processWallRatio",0.25,"integrationRatio",0.25,"totalRSSRatio",0.25,"incrementalRSSRatio",0.25,"processWallSamplesSeconds",[0.9 1 1.1],"integrationSamplesSeconds",[0.4 0.5 0.6])};
+            contract = struct("Nxyz",[256 256 129],"Lxyz",[15000 15000 1300],"forcing","default WVNonlinearAdvection","shouldAntialias",true,"integrator","none","deltaT",1e-3,"finalTime",2e-3,"relativeTolerance",1e-3,"absoluteTolerance",1e-6,"outputInterval",5e-4,"observerGraph","fixture","processRunCount",3,"warmupCount",0,"samplesPerProcess",1);
+            definitions = ["nonlinear-flux" "fixed-rk4-continuation" "adaptive-rk23-observer-output"];
+            cases = cell(1,3);
+            for iCase = 1:3
+                cases{iCase} = struct("id",definitions(iCase),"operation","model-continuation","contract",contract,"interfaces",{interfaces},"correctness",struct("passed",true,"maximumRelativeError",1e-14,"outputAgreementPassed",true));
+            end
+            datasetId = "three-interface--m5-max--20260815T120000Z";
+            rawArtifact = "Benchmarks/results/raw/"+datasetId+".json";
+            provenance = struct("rawArtifact",rawArtifact,"rawSchemaVersion","three-interface-benchmark-v1");
+            source = struct("repository","https://github.com/JeffreyEarly/wave-vortex-model","commit",repmat('a',1,40),"tree",repmat('b',1,40),"sourceDirty",false,"version","unreleased-preview");
+            platform = struct("id","m5-max","displayName","Apple M5 Max","processor","Apple M5 Max","physicalMemoryBytes",64*2^30,"os","macOS","architecture","maca64","matlabVersion","R2026a Update 4","threadCount",18);
+            provider = struct("id","native-neon-pthreads","version","3.3.11","threadBackend","pthreads","moduleSHA256",repmat('c',1,64),"identityValidated",true,"openMPDetected",false);
+            dataset = struct("schemaVersion","published-three-interface-v1","datasetId",datasetId,"collectedAt","2026-08-15T12:00:00Z","source",source,"platform",platform,"provider",provider,"provenance",provenance,"cases",{cases});
+            artifact = "Benchmarks/results/published/"+datasetId+".json";
+            testCase.writeJson(fullfile(root,artifact),dataset);
+            testCase.writeJson(fullfile(root,rawArtifact),struct("fixture",true));
+            entry = struct("datasetId",datasetId,"artifact",artifact);
+        end
+
+        function writeCatalog(testCase,root,publishedDatasets,interfaceComparisons)
+            if nargin < 4
+                interfaceComparisons = struct([]);
+            end
             references = [ ...
                 struct("suiteId","core-v1","backendId","builtin","rawArtifact","Benchmarks/results/reference/core.json"), ...
                 struct("suiteId","scaling-standard-v1","backendId","builtin","rawArtifact","Benchmarks/results/reference/standard.json"), ...
                 struct("suiteId","scaling-large-v1","backendId","builtin","rawArtifact","Benchmarks/results/reference/large.json")];
-            catalog = struct("schemaVersion","benchmark-catalog-v1","scoringReferences",references,"publishedDatasets",publishedDatasets);
+            catalog = struct("schemaVersion","benchmark-catalog-v1","scoringReferences",references,"publishedDatasets",publishedDatasets,"interfaceComparisons",interfaceComparisons);
             testCase.writeJson(fullfile(root,"Benchmarks","results","catalog.json"),catalog);
         end
 

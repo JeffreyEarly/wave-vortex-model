@@ -8,7 +8,7 @@ permalink: /benchmarks
 
 # Benchmarks
 
-These benchmarks measure the cost of one state-advanced nonlinear-flux evaluation across WaveVortexModel transform families and grid sizes. They are intended to help you estimate runtime and memory requirements, compare computers, and reproduce the measurements on your own hardware.
+These benchmarks cover both state-advanced nonlinear-flux scaling and matched complete-workflow execution. They are intended to help you estimate runtime and memory requirements, compare computers and execution interfaces, and reproduce the measurements on your own hardware.
 
 ## Performance at a glance
 
@@ -51,25 +51,48 @@ Supported: constant-stratification hydrostatic and nonhydrostatic models with th
 
 ## Complete-workflow interface comparison
 
-The matched comparison below separates a single nonlinear-flux evaluation from fixed-step and adaptive model continuations. Each row uses the same initial model, forcing, integration settings, observer graph, output schedule, provider, thread policy, and fresh-process boundary across MATLAB builtin, MATLAB compiled, and standalone compiled execution.
+The matched comparison below separates a single nonlinear-flux evaluation from fixed-step and adaptive model continuations. Each row uses the same initial model, forcing, integration settings, observer graph, output schedule, provider, thread policy, and fresh-process boundary across MATLAB builtin, MATLAB compiled, and standalone compiled execution. Total peak process memory is the practical footprint of the interface, including MATLAB itself when MATLAB is used.
 
 <!-- BENCHMARKS:THREE_INTERFACES:START -->
-Matched on Apple M5 Max with `native-neon-pthreads` 3.3.11 at 18 threads. Ratios are relative to MATLAB builtin within each case; process wall includes interface launch, while integration time isolates the matched operation and output work.
+Matched nonhydrostatic constant-stratification workload `[64 48 17]` on Apple M5 Max with `native-neon-pthreads` 3.3.11 at 18 threads. Each value is the median of 3 fresh processes with no within-process warmup. Speedup is MATLAB-builtin time divided by interface time, so larger values are faster.
+
+### Runtime — 64×48×17
 
 <table>
   <thead>
-    <tr><th scope="col">Case</th><th scope="col">Interface</th><th scope="col">Process wall</th><th scope="col">Integration only</th><th scope="col">Peak RSS</th><th scope="col">RSS above baseline</th><th scope="col">Integration ratio</th><th scope="col">Maximum error</th></tr>
+    <tr><th scope="col">Case</th><th scope="col">Interface</th><th scope="col">Process wall</th><th scope="col">Process speedup</th><th scope="col">Matched work</th><th scope="col">Work speedup</th><th scope="col">Maximum error</th></tr>
   </thead>
   <tbody>
-    <tr><td>nonlinear-flux</td><td>MATLAB builtin</td><td>4.593 s</td><td>0.07759 s</td><td>0.841 GiB</td><td>0.00517 GiB</td><td>1.000×</td><td>8.755e-13</td></tr>
-    <tr><td>nonlinear-flux</td><td>MATLAB compiled</td><td>5.824 s</td><td>0.00531 s</td><td>0.847 GiB</td><td>0.00346 GiB</td><td>0.068×</td><td>8.755e-13</td></tr>
-    <tr><td>nonlinear-flux</td><td>Standalone compiled</td><td>1.287 s</td><td>0.003978 s</td><td>0.0307 GiB</td><td>0.000549 GiB</td><td>0.051×</td><td>8.755e-13</td></tr>
-    <tr><td>fixed-rk4-continuation</td><td>MATLAB builtin</td><td>5.546 s</td><td>0.9732 s</td><td>0.923 GiB</td><td>0.0262 GiB</td><td>1.000×</td><td>4.523e-16</td></tr>
-    <tr><td>fixed-rk4-continuation</td><td>MATLAB compiled</td><td>7.105 s</td><td>0.7337 s</td><td>0.938 GiB</td><td>0.0261 GiB</td><td>0.754×</td><td>4.523e-16</td></tr>
-    <tr><td>fixed-rk4-continuation</td><td>Standalone compiled</td><td>1.449 s</td><td>0.1471 s</td><td>0.0513 GiB</td><td>0.018 GiB</td><td>0.151×</td><td>4.523e-16</td></tr>
-    <tr><td>adaptive-rk23-observer-output</td><td>MATLAB builtin</td><td>5.573 s</td><td>0.9774 s</td><td>0.926 GiB</td><td>0.0289 GiB</td><td>1.000×</td><td>5.057e-16</td></tr>
-    <tr><td>adaptive-rk23-observer-output</td><td>MATLAB compiled</td><td>7.122 s</td><td>0.7411 s</td><td>0.94 GiB</td><td>0.026 GiB</td><td>0.758×</td><td>5.057e-16</td></tr>
-    <tr><td>adaptive-rk23-observer-output</td><td>Standalone compiled</td><td>1.46 s</td><td>0.1492 s</td><td>0.0518 GiB</td><td>0.0187 GiB</td><td>0.153×</td><td>5.057e-16</td></tr>
+    <tr><td>Nonlinear flux</td><td>MATLAB builtin</td><td>4.593 s</td><td>1.000×</td><td>0.07759 s</td><td>1.000×</td><td>8.755e-13</td></tr>
+    <tr><td>Nonlinear flux</td><td>MATLAB compiled</td><td>5.824 s</td><td>0.789×</td><td>0.00531 s</td><td>14.611×</td><td>8.755e-13</td></tr>
+    <tr><td>Nonlinear flux</td><td>Standalone compiled</td><td>1.287 s</td><td>3.567×</td><td>0.003978 s</td><td>19.503×</td><td>8.755e-13</td></tr>
+    <tr><td>Fixed RK4 continuation</td><td>MATLAB builtin</td><td>5.546 s</td><td>1.000×</td><td>0.9732 s</td><td>1.000×</td><td>4.523e-16</td></tr>
+    <tr><td>Fixed RK4 continuation</td><td>MATLAB compiled</td><td>7.105 s</td><td>0.781×</td><td>0.7337 s</td><td>1.326×</td><td>4.523e-16</td></tr>
+    <tr><td>Fixed RK4 continuation</td><td>Standalone compiled</td><td>1.449 s</td><td>3.829×</td><td>0.1471 s</td><td>6.616×</td><td>4.523e-16</td></tr>
+    <tr><td>Adaptive RK3(2) + output</td><td>MATLAB builtin</td><td>5.573 s</td><td>1.000×</td><td>0.9774 s</td><td>1.000×</td><td>5.057e-16</td></tr>
+    <tr><td>Adaptive RK3(2) + output</td><td>MATLAB compiled</td><td>7.122 s</td><td>0.783×</td><td>0.7411 s</td><td>1.319×</td><td>5.057e-16</td></tr>
+    <tr><td>Adaptive RK3(2) + output</td><td>Standalone compiled</td><td>1.46 s</td><td>3.818×</td><td>0.1492 s</td><td>6.550×</td><td>5.057e-16</td></tr>
+  </tbody>
+</table>
+
+### Process memory — 64×48×17
+
+Total peak RSS includes the language runtime and numerical libraries. RSS above retained state isolates additional activity after the model and backend are constructed.
+
+<table>
+  <thead>
+    <tr><th scope="col">Case</th><th scope="col">Interface</th><th scope="col">Total peak RSS</th><th scope="col">Total RSS saved</th><th scope="col">RSS above retained state</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Nonlinear flux</td><td>MATLAB builtin</td><td>0.841 GiB</td><td>—</td><td>0.00517 GiB</td></tr>
+    <tr><td>Nonlinear flux</td><td>MATLAB compiled</td><td>0.847 GiB</td><td>0.7% more</td><td>0.00346 GiB</td></tr>
+    <tr><td>Nonlinear flux</td><td>Standalone compiled</td><td>0.0307 GiB</td><td>96.3%</td><td>0.000549 GiB</td></tr>
+    <tr><td>Fixed RK4 continuation</td><td>MATLAB builtin</td><td>0.923 GiB</td><td>—</td><td>0.0262 GiB</td></tr>
+    <tr><td>Fixed RK4 continuation</td><td>MATLAB compiled</td><td>0.938 GiB</td><td>1.6% more</td><td>0.0261 GiB</td></tr>
+    <tr><td>Fixed RK4 continuation</td><td>Standalone compiled</td><td>0.0513 GiB</td><td>94.4%</td><td>0.018 GiB</td></tr>
+    <tr><td>Adaptive RK3(2) + output</td><td>MATLAB builtin</td><td>0.926 GiB</td><td>—</td><td>0.0289 GiB</td></tr>
+    <tr><td>Adaptive RK3(2) + output</td><td>MATLAB compiled</td><td>0.94 GiB</td><td>1.5% more</td><td>0.026 GiB</td></tr>
+    <tr><td>Adaptive RK3(2) + output</td><td>Standalone compiled</td><td>0.0518 GiB</td><td>94.4%</td><td>0.0187 GiB</td></tr>
   </tbody>
 </table>
 <!-- BENCHMARKS:THREE_INTERFACES:END -->
@@ -558,31 +581,38 @@ results = runWaveVortexBenchmark(suites="scaling-standard-v1")
 
 The larger `scaling-large-v1` suite can require substantially more memory. The [benchmark authoring guide](https://github.com/JeffreyEarly/wave-vortex-model/tree/main/Benchmarks) explains suite selection, reference generation, raw artifacts, and normalization for publication.
 
+The matched workflow comparison uses the large `[256 256 129]` case and requires the validated native FFTW provider. It also creates substantial temporary NetCDF output:
+
+```matlab
+results = runThreeInterfaceBenchmark
+```
+
 ## Methodology and interpretation
 
-The measured operation advances the coefficient state and evaluates `nonlinearFlux` with ordinary production caches retained. It is not a complete model time step. Published cases must pass their numerical correctness tolerance before their timing can be shown.
+The scaling suites advance the coefficient state and evaluate `nonlinearFlux` with ordinary production caches retained; those measurements are not complete model steps. The matched interface suite separately measures one nonlinear-flux call, a fixed-RK4 continuation, and an adaptive RK3(2) continuation with observer and file output. Published cases must pass their numerical correctness tolerance before their timing can be shown.
 
-Runtime is the median of the recorded post-warmup samples. **Peak process memory** is the largest observed resident-memory value for the process. **Memory above baseline** subtracts the fresh-process value measured before constructing the model; it is the better estimate of the additional memory associated with WaveVortexModel, while still including allocator and library behavior.
+Scaling runtime is the median of the recorded post-warmup samples. Matched-interface runtime is the median of three independent fresh-process continuations with no within-process warmup. **Peak process memory** is the largest observed resident-memory value for the process. Scaling-suite memory above baseline subtracts the fresh-process value measured before constructing the model; matched-interface incremental RSS subtracts the steady retained-model value measured after constructing the selected backend. Both retain allocator and library behavior.
 
 Only datasets approved in the benchmark catalog are published. Comparisons require the same suite contract, operation, case, domain, resolution, numerical options, random seed, warmup count, and sample count. MATLAB release and update are recorded as part of the toolchain: when two machines use different MATLAB releases, their measurements reflect both hardware and MATLAB implementation differences rather than isolating hardware alone. Missing implementation or suite coverage is reported as unavailable and never as zero runtime or memory.
 
 ## Downloadable results
 
-The normalized files use the language-neutral `published-benchmark-v1` contract. The corresponding raw artifacts retain implementation-specific diagnostics and provenance.
+Scaling and compiled-preview datasets use the language-neutral `published-benchmark-v1` contract. Matched workflow datasets use `published-three-interface-v1`. The corresponding raw artifacts retain implementation-specific diagnostics and provenance.
 
 <!-- BENCHMARKS:DOWNLOADS:START -->
 <table>
   <thead>
-    <tr><th scope="col">Dataset</th><th scope="col">Implementation</th><th scope="col">Platform</th><th scope="col">Suite</th><th scope="col">Collected</th><th scope="col">Normalized</th><th scope="col">Raw artifact</th></tr>
+    <tr><th scope="col">Dataset</th><th scope="col">Implementation</th><th scope="col">Platform</th><th scope="col">Suite</th><th scope="col">Collected</th><th scope="col">Schema</th><th scope="col">Normalized</th><th scope="col">Raw artifact</th></tr>
   </thead>
   <tbody>
-    <tr><td>core-v1--cpp-native-fftw--m5-max--20260812T195257Z</td><td>WaveVortexModel compiled preview unreleased-preview</td><td>Donut (Apple M5 Max)</td><td>core-v1</td><td>2026-08-12T19:52:57Z</td><td><a href="/benchmarks/data/core-v1--cpp-native-fftw--m5-max--20260812T195257Z.json">Published JSON</a></td><td><a href="/benchmarks/raw/core-v1--cpp-native-fftw--m5-max--20260812T195257Z.json">Raw JSON</a></td></tr>
-    <tr><td>core-v1--matlab-builtin--m5-max--20260812T195257Z</td><td>WaveVortexModel MATLAB unreleased-preview</td><td>Donut (Apple M5 Max)</td><td>core-v1</td><td>2026-08-12T19:52:57Z</td><td><a href="/benchmarks/data/core-v1--matlab-builtin--m5-max--20260812T195257Z.json">Published JSON</a></td><td><a href="/benchmarks/raw/core-v1--matlab-builtin--m5-max--20260812T195257Z.json">Raw JSON</a></td></tr>
-    <tr><td>scaling-large-v1--matlab-builtin--lyra--20260811T213524Z</td><td>WaveVortexModel MATLAB 4.2.1</td><td>Lyra (Apple M4 Max)</td><td>scaling-large-v1</td><td>2026-08-11T21:35:24Z</td><td><a href="/benchmarks/data/scaling-large-v1--matlab-builtin--lyra--20260811T213524Z.json">Published JSON</a></td><td><a href="/benchmarks/raw/scaling-large-v1--matlab-builtin--lyra--20260811T213524Z.json">Raw JSON</a></td></tr>
-    <tr><td>scaling-large-v1--matlab-builtin--m5-max--20260812T023122Z</td><td>WaveVortexModel MATLAB 4.2.1</td><td>Donut (Apple M5 Max)</td><td>scaling-large-v1</td><td>2026-08-12T02:31:22Z</td><td><a href="/benchmarks/data/scaling-large-v1--matlab-builtin--m5-max--20260812T023122Z.json">Published JSON</a></td><td><a href="/benchmarks/raw/scaling-large-v1--matlab-builtin--m5-max--20260812T023122Z.json">Raw JSON</a></td></tr>
-    <tr><td>scaling-standard-v1--matlab-builtin--lyra--20260811T204835Z</td><td>WaveVortexModel MATLAB 4.2.1</td><td>Lyra (Apple M4 Max)</td><td>scaling-standard-v1</td><td>2026-08-11T20:48:35Z</td><td><a href="/benchmarks/data/scaling-standard-v1--matlab-builtin--lyra--20260811T204835Z.json">Published JSON</a></td><td><a href="/benchmarks/raw/scaling-standard-v1--matlab-builtin--lyra--20260811T204835Z.json">Raw JSON</a></td></tr>
-    <tr><td>scaling-standard-v1--matlab-builtin--m5-max--20260812T020708Z</td><td>WaveVortexModel MATLAB 4.2.1</td><td>Donut (Apple M5 Max)</td><td>scaling-standard-v1</td><td>2026-08-12T02:07:08Z</td><td><a href="/benchmarks/data/scaling-standard-v1--matlab-builtin--m5-max--20260812T020708Z.json">Published JSON</a></td><td><a href="/benchmarks/raw/scaling-standard-v1--matlab-builtin--m5-max--20260812T020708Z.json">Raw JSON</a></td></tr>
-    <tr><td>scaling-standard-v1--matlab-builtin--matilda--20260811T205115Z</td><td>WaveVortexModel MATLAB 4.2.1</td><td>Matilda (Apple M1 Max)</td><td>scaling-standard-v1</td><td>2026-08-11T20:51:15Z</td><td><a href="/benchmarks/data/scaling-standard-v1--matlab-builtin--matilda--20260811T205115Z.json">Published JSON</a></td><td><a href="/benchmarks/raw/scaling-standard-v1--matlab-builtin--matilda--20260811T205115Z.json">Raw JSON</a></td></tr>
+    <tr><td>core-v1--cpp-native-fftw--m5-max--20260812T195257Z</td><td>WaveVortexModel compiled preview unreleased-preview</td><td>Donut (Apple M5 Max)</td><td>core-v1</td><td>2026-08-12T19:52:57Z</td><td>published-benchmark-v1</td><td><a href="/benchmarks/data/core-v1--cpp-native-fftw--m5-max--20260812T195257Z.json">Published JSON</a></td><td><a href="/benchmarks/raw/core-v1--cpp-native-fftw--m5-max--20260812T195257Z.json">Raw JSON</a></td></tr>
+    <tr><td>core-v1--matlab-builtin--m5-max--20260812T195257Z</td><td>WaveVortexModel MATLAB unreleased-preview</td><td>Donut (Apple M5 Max)</td><td>core-v1</td><td>2026-08-12T19:52:57Z</td><td>published-benchmark-v1</td><td><a href="/benchmarks/data/core-v1--matlab-builtin--m5-max--20260812T195257Z.json">Published JSON</a></td><td><a href="/benchmarks/raw/core-v1--matlab-builtin--m5-max--20260812T195257Z.json">Raw JSON</a></td></tr>
+    <tr><td>scaling-large-v1--matlab-builtin--lyra--20260811T213524Z</td><td>WaveVortexModel MATLAB 4.2.1</td><td>Lyra (Apple M4 Max)</td><td>scaling-large-v1</td><td>2026-08-11T21:35:24Z</td><td>published-benchmark-v1</td><td><a href="/benchmarks/data/scaling-large-v1--matlab-builtin--lyra--20260811T213524Z.json">Published JSON</a></td><td><a href="/benchmarks/raw/scaling-large-v1--matlab-builtin--lyra--20260811T213524Z.json">Raw JSON</a></td></tr>
+    <tr><td>scaling-large-v1--matlab-builtin--m5-max--20260812T023122Z</td><td>WaveVortexModel MATLAB 4.2.1</td><td>Donut (Apple M5 Max)</td><td>scaling-large-v1</td><td>2026-08-12T02:31:22Z</td><td>published-benchmark-v1</td><td><a href="/benchmarks/data/scaling-large-v1--matlab-builtin--m5-max--20260812T023122Z.json">Published JSON</a></td><td><a href="/benchmarks/raw/scaling-large-v1--matlab-builtin--m5-max--20260812T023122Z.json">Raw JSON</a></td></tr>
+    <tr><td>scaling-standard-v1--matlab-builtin--lyra--20260811T204835Z</td><td>WaveVortexModel MATLAB 4.2.1</td><td>Lyra (Apple M4 Max)</td><td>scaling-standard-v1</td><td>2026-08-11T20:48:35Z</td><td>published-benchmark-v1</td><td><a href="/benchmarks/data/scaling-standard-v1--matlab-builtin--lyra--20260811T204835Z.json">Published JSON</a></td><td><a href="/benchmarks/raw/scaling-standard-v1--matlab-builtin--lyra--20260811T204835Z.json">Raw JSON</a></td></tr>
+    <tr><td>scaling-standard-v1--matlab-builtin--m5-max--20260812T020708Z</td><td>WaveVortexModel MATLAB 4.2.1</td><td>Donut (Apple M5 Max)</td><td>scaling-standard-v1</td><td>2026-08-12T02:07:08Z</td><td>published-benchmark-v1</td><td><a href="/benchmarks/data/scaling-standard-v1--matlab-builtin--m5-max--20260812T020708Z.json">Published JSON</a></td><td><a href="/benchmarks/raw/scaling-standard-v1--matlab-builtin--m5-max--20260812T020708Z.json">Raw JSON</a></td></tr>
+    <tr><td>scaling-standard-v1--matlab-builtin--matilda--20260811T205115Z</td><td>WaveVortexModel MATLAB 4.2.1</td><td>Matilda (Apple M1 Max)</td><td>scaling-standard-v1</td><td>2026-08-11T20:51:15Z</td><td>published-benchmark-v1</td><td><a href="/benchmarks/data/scaling-standard-v1--matlab-builtin--matilda--20260811T205115Z.json">Published JSON</a></td><td><a href="/benchmarks/raw/scaling-standard-v1--matlab-builtin--matilda--20260811T205115Z.json">Raw JSON</a></td></tr>
+    <tr><td>three-interface--m5-max--20260815T142025Z</td><td>MATLAB builtin / MATLAB compiled / standalone compiled</td><td>Apple M5 Max</td><td>three-interface-v1</td><td>2026-08-15T14:20:25Z</td><td>published-three-interface-v1</td><td><a href="/benchmarks/data/three-interface--m5-max--20260815T142025Z.json">Published JSON</a></td><td><a href="/benchmarks/raw/three-interface--m5-max--20260815T142025Z.json">Raw JSON</a></td></tr>
   </tbody>
 </table>
 <!-- BENCHMARKS:DOWNLOADS:END -->

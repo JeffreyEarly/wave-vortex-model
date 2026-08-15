@@ -1,7 +1,7 @@
 function results = runThreeInterfaceBenchmark(options)
 % Compare matched MATLAB builtin, MATLAB compiled, and standalone compiled work.
 arguments
-    options.Nxyz (1,3) double {mustBeInteger,mustBePositive} = [64 48 17]
+    options.Nxyz (1,3) double {mustBeInteger,mustBePositive} = [256 256 129]
     options.processRunCount (1,1) double {mustBeInteger,mustBePositive} = 3
     options.deltaT (1,1) double {mustBePositive} = 1e-3
     options.relativeTolerance (1,1) double {mustBePositive} = 1e-3
@@ -36,6 +36,7 @@ results = initializeResult(options,repositoryRoot);
 workFolder = string(tempname);
 mkdir(workFolder);
 workCleanup = onCleanup(@()removeFolder(workFolder));
+verifyTemporaryCapacity(workFolder,options);
 activeStage = "provider";
 try
     capabilities = WVCompiledBackend.capabilities();
@@ -99,12 +100,12 @@ results = struct( ...
     "completedAtUTC","", ...
     "source",struct("repository","JeffreyEarly/wave-vortex-model","commit",commit,"tree",tree,"isDirty",isDirty), ...
     "environment",environmentRecord, ...
-    "configuration",struct("Nxyz",options.Nxyz,"Lxyz",[15000 12000 1300],"processRunCount",options.processRunCount,"warmupCount",0,"samplesPerProcess",1,"deltaT",options.deltaT,"relativeTolerance",options.relativeTolerance,"absoluteTolerance",options.absoluteTolerance,"threadCount",min(18,maxNumCompThreads),"samplingIntervalSeconds",options.samplingIntervalSeconds,"fixtureSHA256","","correctnessTolerance",1e-12,"timingBoundary","process wall includes interface launch; integration-only includes the matched numerical continuation and observer/file work","rssBoundary","total process peak and increment above post-load steady-retained state"), ...
+    "configuration",struct("Nxyz",options.Nxyz,"Lxyz",[15000 15000 1300],"processRunCount",options.processRunCount,"warmupCount",0,"samplesPerProcess",1,"deltaT",options.deltaT,"relativeTolerance",options.relativeTolerance,"absoluteTolerance",options.absoluteTolerance,"threadCount",min(18,maxNumCompThreads),"samplingIntervalSeconds",options.samplingIntervalSeconds,"fixtureSHA256","","correctnessTolerance",1e-12,"timingBoundary","process wall includes interface launch; matched work includes the numerical operation and observer/file work","rssBoundary","total process peak and increment above post-load steady-retained state"), ...
     "provider",struct(),"cases",[],"runs",repmat(emptyRun,0,1),"comparison",[],"failure",emptyFailure);
 end
 
 function definitions = caseDefinitions(options)
-common = struct("Nxyz",options.Nxyz,"deltaT",options.deltaT,"finalTime",2*options.deltaT,"relativeTolerance",options.relativeTolerance,"absoluteTolerance",options.absoluteTolerance,"outputInterval",options.deltaT/2,"observerGraph","Eulerian u, one mooring, two 3-D particles, one 3-D tracer","forcing","default WVNonlinearAdvection","shouldAntialias",true,"seed",230);
+common = struct("Nxyz",options.Nxyz,"deltaT",options.deltaT,"finalTime",2*options.deltaT,"relativeTolerance",options.relativeTolerance,"absoluteTolerance",options.absoluteTolerance,"outputInterval",options.deltaT/2,"observerGraph","Eulerian u, one mooring, two 3-D particles, one 3-D tracer","forcing","default WVNonlinearAdvection","shouldAntialias",true,"seed",4001);
 definitions = [ ...
     mergeStruct(common,struct("id","nonlinear-flux","operation","nonlinearFlux","integrator","none")); ...
     mergeStruct(common,struct("id","fixed-rk4-continuation","operation","model-continuation","integrator","fixed-rk4")); ...
@@ -231,8 +232,8 @@ clear modelCleanup
 end
 
 function createMatchedFixture(pathname,options)
-wvt = WVTransformConstantStratification([15000 12000 1300],options.Nxyz,N0=sqrt(2e-5),latitude=45,isHydrostatic=false,shouldAntialias=true);
-state = initializeWaveVortexBenchmarkState(wvt,230); advanceWaveVortexBenchmarkState(wvt,state,0);
+wvt = WVTransformConstantStratification([15000 15000 1300],options.Nxyz,N0=sqrt(2e-5),latitude=45,isHydrostatic=false,shouldAntialias=true);
+state = initializeWaveVortexBenchmarkState(wvt,4001); advanceWaveVortexBenchmarkState(wvt,state,0);
 model = WVModel(wvt); cleanup = onCleanup(@()closeModels(model));
 outputFile = model.createNetCDFFileForModelOutput(pathname,outputInterval=options.deltaT/2,shouldOverwriteExisting=true);
 model.eulerianObservingSystem.addNetCDFOutputVariables('u');
@@ -293,6 +294,21 @@ function value=numberText(value), value=string(sprintf('%.17g',value)); end
 function value=shellQuote(value), value="'"+replace(string(value),"'","'""'""'")+"'"; end
 function closeModels(varargin), for i=1:numel(varargin), value=varargin{i}; if ~isempty(value)&&isvalid(value), try, value.closeNetCDFFile(); catch, end; delete(value); end, end, end
 function removeFolder(pathname), if isfolder(pathname), rmdir(pathname,"s"); end, end
+function verifyTemporaryCapacity(pathname,options)
+realGridBytes = prod(double(options.Nxyz))*8;
+requiredBytes = max(256*2^20,ceil(360*realGridBytes*options.processRunCount/3));
+[status,output] = system("/bin/df -Pk "+shellQuote(pathname));
+lines = splitlines(strtrim(string(output)));
+if status~=0 || numel(lines)<2
+    error("WaveVortexBenchmark:ThreeInterfaceDiskCapacity","Unable to determine free space for the three-interface benchmark temporary directory.");
+end
+fields = split(strtrim(lines(end)));
+fields(fields=="") = [];
+availableBytes = 1024*str2double(fields(4));
+if ~isfinite(availableBytes) || availableBytes<requiredBytes
+    error("WaveVortexBenchmark:ThreeInterfaceDiskCapacity","The canonical benchmark requires approximately %.1f GiB of temporary free space, but %.1f GiB is available.",requiredBytes/2^30,availableBytes/2^30);
+end
+end
 function restoreState(directory,originalPath,originalRng), cd(directory); path(originalPath); rng(originalRng); end
 function addRepositoryPaths(root,benchmark), addpath(root,benchmark); metadata=jsondecode(fileread(fullfile(root,"resources","mpackage.json"))); for item=reshape(metadata.folders,1,[]), folder=fullfile(root,item.path); if isfolder(folder), addpath(folder); end, end, end
 function writeText(pathname,contents), parent=fileparts(pathname); if ~isfolder(parent), mkdir(parent); end, fileId=fopen(pathname,"w"); if fileId<0, error("WaveVortexBenchmark:ArtifactWriteFailed","Unable to open %s",pathname); end, cleanup=onCleanup(@()fclose(fileId)); fprintf(fileId,"%s",contents); clear cleanup, end

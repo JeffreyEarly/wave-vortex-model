@@ -89,12 +89,12 @@ end
 provider = struct("provider",struct("id","native-neon-pthreads","version","3.3.11","threadBackend","pthreads"),"module",struct("sha256",repmat('b',1,64),"identityValidated",true),"libraries",struct("openmp",struct("detected",false)));
 environment = struct("processor","Apple M5 Max","physicalMemoryBytes",64*2^30,"os","macOS","architecture","maca64","matlabVersion","R2026a Update 4");
 source = struct("commit",repmat('a',1,40),"tree",repmat('c',1,40),"isDirty",false);
-configuration = struct("Lxyz",[15000 12000 1300],"processRunCount",1,"warmupCount",0,"samplesPerProcess",1,"threadCount",18);
+configuration = struct("Lxyz",[15000 15000 1300],"processRunCount",1,"warmupCount",0,"samplesPerProcess",1,"threadCount",18);
 raw = struct("schemaVersion","three-interface-benchmark-v1","status","complete","runId","20260815T120000000Z","source",source,"environment",environment,"configuration",configuration,"provider",provider,"cases",definitions,"runs",runs,"comparison",comparison);
 end
 
 function value = caseDefinition(identifier,operation,integrator)
-value = struct("id",identifier,"operation",operation,"integrator",integrator,"Nxyz",[64 48 17],"forcing","default WVNonlinearAdvection","shouldAntialias",true,"deltaT",1e-3,"finalTime",2e-3,"relativeTolerance",1e-3,"absoluteTolerance",1e-6,"outputInterval",5e-4,"observerGraph","fields, particles, tracers");
+value = struct("id",identifier,"operation",operation,"integrator",integrator,"Nxyz",[256 256 129],"forcing","default WVNonlinearAdvection","shouldAntialias",true,"deltaT",1e-3,"finalTime",2e-3,"relativeTolerance",1e-3,"absoluteTolerance",1e-6,"outputInterval",5e-4,"observerGraph","fields, particles, tracers");
 end
 
 function value = interfaceRecord(identifier,processRatio,integrationRatio,totalRatio,incrementRatio)
