@@ -124,6 +124,12 @@ classdef TestWVCompiledBackend < matlab.unittest.TestCase
 
     methods (Test, TestTags="optional")
         function nativeBuildHasExactIdentitiesSelfTestsLifecycleAndRollback(testCase)
+            if ~isCanonicalNativePlatform
+                capabilities = WVCompiledBackend.build();
+                testCase.verifyEqual(capabilities.status,"unsupported");
+                testCase.verifyFalse(capabilities.isAvailable);
+                return
+            end
             capabilities = WVCompiledBackend.build();
             testCase.assertEqual(capabilities.status,"available",capabilities.failure.message);
             testCase.verifyEqual(capabilities.schemaVersion,"1.0.0");
@@ -171,6 +177,12 @@ classdef TestWVCompiledBackend < matlab.unittest.TestCase
         end
 
         function compiledPreviewExecutesWithoutFallback(testCase)
+            if ~isCanonicalNativePlatform
+                capabilities = WVCompiledBackend.capabilities();
+                testCase.verifyEqual(capabilities.status,"unsupported");
+                testCase.verifyFalse(capabilities.isAvailable);
+                return
+            end
             capabilities = WVCompiledBackend.capabilities();
             if ~capabilities.isAvailable
                 capabilities = WVCompiledBackend.build();
@@ -228,6 +240,10 @@ classdef TestWVCompiledBackend < matlab.unittest.TestCase
             testCase.verifyEqual(metrics.outstandingPlanningBytes,0);
         end
     end
+end
+
+function value = isCanonicalNativePlatform
+value = ismac && computer("arch") == "maca64";
 end
 
 function deleteTransforms(varargin)

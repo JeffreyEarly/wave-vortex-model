@@ -57,6 +57,10 @@ classdef TestThreeInterfaceBenchmark < matlab.unittest.TestCase
 
     methods (Test,TestTags="optional")
         function reducedMatchedBenchmarkRunsAllInterfaces(testCase)
+            if ~isCanonicalNativePlatform
+                testCase.verifyError(@()runThreeInterfaceBenchmark(shouldWriteArtifacts=false),"WaveVortexBenchmark:ThreeInterfaceUnsupportedPlatform")
+                return
+            end
             result = runThreeInterfaceBenchmark(Nxyz=[8 6 5],processRunCount=1,deltaT=1e-4,samplingIntervalSeconds=0.01,plateauSeconds=0.02,shouldWriteArtifacts=false);
             testCase.verifyEqual(result.status,"complete")
             testCase.verifyEqual(string({result.comparison.id}),["nonlinear-flux" "fixed-rk4-continuation" "adaptive-rk23-observer-output"])
@@ -65,6 +69,10 @@ classdef TestThreeInterfaceBenchmark < matlab.unittest.TestCase
             testCase.verifyTrue(all(arrayfun(@(item)item.matchedContractPassed,result.comparison)))
         end
     end
+end
+
+function value = isCanonicalNativePlatform
+value = ismac && computer("arch") == "maca64";
 end
 
 function raw = rawFixture
