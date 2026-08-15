@@ -21,6 +21,7 @@ try
     interfaceTimer = tic;
     backend = string(config.backend);
     benchmarkCase = string(config.case.id);
+    requestedIntegrator = string(config.case.requestedIntegrator);
     if benchmarkCase == "nonlinear-flux"
         [wvt,reader] = WVTransform.waveVortexTransformFromFile(config.inputPath,iTime=Inf,shouldReadOnly=true,computationalBackend=backend);
         reader.close();
@@ -34,16 +35,20 @@ try
         writeComplexBinary(config.comparisonPath,Fp,Fm,F0);
         finalState = stateRecord(wvt);
         outputAgreement = struct("kind","flux-binary","path",string(config.comparisonPath));
+        actualIntegrator = "none";
     else
         model = benchmarkModelFromFile(config.inputPath,backend);
         wvt = model.wvt;
         validateBackend(wvt,backend);
         provider = providerRecord(wvt,backend,config);
-        if benchmarkCase == "fixed-rk4"
+        if requestedIntegrator == "fixed-rk4"
             model.setupIntegrator(integratorType="fixed",deltaT=config.case.deltaT);
-        else
+        elseif requestedIntegrator == "adaptive-rk23"
             model.setupIntegrator(integratorType="adaptive",integrator=@ode23,relTolerance=config.case.relativeTolerance,absTolerance=config.case.absoluteTolerance,shouldShowIntegrationStats=0);
+        else
+            error("WaveVortexBenchmark:UnknownIntegrator","Unsupported requested integrator %s.",requestedIntegrator);
         end
+        actualIntegrator = activeIntegrator(model);
         writePhase(phasePath,"steady-retained");
         pause(config.plateauSeconds);
         operationTimer = tic;
@@ -76,6 +81,7 @@ try
         "timing",struct("interfaceTotalSeconds",interfaceTotalSeconds,"integrationSeconds",integrationSeconds), ...
         "memory",rss, ...
         "provider",provider, ...
+        "integrator",struct("requested",requestedIntegrator,"actual",actualIntegrator,"matched",requestedIntegrator==actualIntegrator), ...
         "finalState",finalState, ...
         "output",outputAgreement, ...
         "failure",emptyFailure);
@@ -91,6 +97,16 @@ catch exception
     end
     stopSampler(sampler,stopPath,config.samplingIntervalSeconds);
     result.failure = struct("identifier",string(exception.identifier),"message",string(exception.message),"report",string(getReport(exception,"extended","hyperlinks","off")));
+end
+
+function identifier = activeIntegrator(model)
+if string(model.integratorType) == "fixed"
+    identifier = "fixed-rk4";
+elseif string(model.integratorType) == "adaptive" && string(func2str(model.odeIntegrator)) == "ode23"
+    identifier = "adaptive-rk23";
+else
+    identifier = string(model.integratorType)+":"+string(func2str(model.odeIntegrator));
+end
 end
 writeText(outputPath,jsonencode(result,PrettyPrint=true));
 clear temporaryCleanup stateCleanup
@@ -279,5 +295,5 @@ value = struct("identifier","","message","","report","");
 end
 
 function value = failedResult(config)
-value = struct("schemaVersion","three-interface-worker-v1","status","failed","interface",string(config.interface),"case",config.case,"sourceCommit",string(config.sourceCommit),"timing",struct(),"memory",struct(),"provider",struct(),"finalState",struct(),"output",struct(),"failure",emptyFailure);
+value = struct("schemaVersion","three-interface-worker-v1","status","failed","interface",string(config.interface),"case",config.case,"sourceCommit",string(config.sourceCommit),"timing",struct(),"memory",struct(),"provider",struct(),"integrator",struct(),"finalState",struct(),"output",struct(),"failure",emptyFailure);
 end

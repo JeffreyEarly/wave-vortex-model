@@ -107,9 +107,9 @@ end
 function definitions = caseDefinitions(options)
 common = struct("Nxyz",options.Nxyz,"deltaT",options.deltaT,"finalTime",2*options.deltaT,"relativeTolerance",options.relativeTolerance,"absoluteTolerance",options.absoluteTolerance,"outputInterval",options.deltaT/2,"observerGraph","Eulerian u, one mooring, two 3-D particles, one 3-D tracer","forcing","default WVNonlinearAdvection","shouldAntialias",true,"seed",4001);
 definitions = [ ...
-    mergeStruct(common,struct("id","nonlinear-flux","operation","nonlinearFlux","integrator","none")); ...
-    mergeStruct(common,struct("id","fixed-rk4-continuation","operation","model-continuation","integrator","fixed-rk4")); ...
-    mergeStruct(common,struct("id","adaptive-rk23-observer-output","operation","model-continuation","integrator","adaptive-rk23"))];
+    mergeStruct(common,struct("id","nonlinear-flux","operation","nonlinearFlux","requestedIntegrator","none")); ...
+    mergeStruct(common,struct("id","fixed-rk4-continuation","operation","model-continuation","requestedIntegrator","fixed-rk4")); ...
+    mergeStruct(common,struct("id","adaptive-rk23-observer-output","operation","model-continuation","requestedIntegrator","adaptive-rk23"))];
 end
 
 function run = runOne(interface,definition,repeatIndex,fixturePath,executables,capabilities,options,repositoryRoot,benchmarkFolder,workFolder)
@@ -146,8 +146,9 @@ else
         command = shellQuote(executables.kernel)+" "+shellQuote(inputPath)+" "+string(min(18,maxNumCompThreads))+" 0 1 "+shellQuote(comparisonPath);
     else
         command = shellQuote(executables.runner)+" "+shellQuote(inputPath)+" --restart-mode model --output-policy append --delta-t "+numberText(definition.deltaT)+" --final-time "+numberText(definition.finalTime)+" --fft-provider native-fftw --threads "+string(min(18,maxNumCompThreads));
-        if definition.integrator == "adaptive-rk23"
-            command = command+" --integrator adaptive-rk23 --relative-tolerance "+numberText(definition.relativeTolerance)+" --absolute-tolerance "+numberText(definition.absoluteTolerance);
+        command = command+" --integrator "+definition.requestedIntegrator;
+        if definition.requestedIntegrator == "adaptive-rk23"
+            command = command+" --relative-tolerance "+numberText(definition.relativeTolerance)+" --absolute-tolerance "+numberText(definition.absoluteTolerance);
         end
     end
     [exitCode,commandOutput] = system(command);
@@ -168,7 +169,7 @@ run.schemaVersion = string(value.schemaVersion); run.status = string(value.statu
 if run.status ~= "complete"
     return
 end
-run.integrationSeconds = value.timing.integrationSeconds; run.interfaceTotalSeconds = value.timing.interfaceTotalSeconds; run.memory = value.memory; run.provider = value.provider; run.finalState = value.finalState; run.output = value.output;
+run.integrationSeconds = value.timing.integrationSeconds; run.interfaceTotalSeconds = value.timing.interfaceTotalSeconds; run.memory = value.memory; run.provider = value.provider; run.integrator = value.integrator; run.finalState = value.finalState; run.output = value.output;
 end
 
 function run = normalizeStandaloneRun(value,definition,repeatIndex,processWallSeconds,inputPath,comparisonPath,capabilities)
@@ -179,11 +180,11 @@ run.schemaVersion = string(value.schemaVersion); run.status = string(value.statu
 if definition.id == "nonlinear-flux"
     run.integrationSeconds = value.timing.medianSeconds; run.interfaceTotalSeconds = processWallSeconds;
     run.memory = struct("status","complete","provider","getrusage/current-rss","baselineProcessBytes",value.memory.baselineProcessBytes,"peakProcessBytes",value.memory.peakProcessBytes,"peakIncrementBytes",value.memory.peakIncrementBytes,"samples",[]);
-    run.finalState = struct(); run.output = struct("kind","flux-binary","path",comparisonPath);
+    run.integrator = struct("requested","none","actual","none","matched",true); run.finalState = struct(); run.output = struct("kind","flux-binary","path",comparisonPath);
 else
     run.integrationSeconds = value.timingSeconds.integrate; run.interfaceTotalSeconds = value.timingSeconds.total;
     run.memory = struct("status","complete","provider","getrusage/current-rss","baselineProcessBytes",value.rssBytes.integrationBaseline,"peakProcessBytes",value.rssBytes.processPeak,"peakIncrementBytes",value.rssBytes.peakIncrementLowerBound,"samples",[]);
-    run.finalState = value.state; run.output = struct("kind","model-output","path",inputPath);
+    run.integrator = struct("requested",definition.requestedIntegrator,"actual",string(value.integrator.id),"matched",definition.requestedIntegrator==string(value.integrator.id)); run.finalState = value.state; run.output = struct("kind","model-output","path",inputPath);
 end
 noFallback = true;
 if isfield(value.execution,"noFallback"), noFallback = logical(value.execution.noFallback); end
@@ -213,7 +214,8 @@ for iCase = 1:numel(definitions)
         end
     end
     providersPassed = all(arrayfun(@(item)item.provider.noFallback,selected)) && all(arrayfun(@(item)item.interface=="matlab-builtin" || string(item.provider.id)=="native-neon-pthreads",selected));
-    comparison(iCase) = struct("id",definitions(iCase).id,"interfaces",records,"maximumRelativeError",maximumError,"outputAgreementPassed",outputPassed,"matchedContractPassed",providersPassed&&maximumError<=tolerance&&outputPassed);
+    integratorsPassed = all(arrayfun(@(item)logical(item.integrator.matched) && string(item.integrator.requested)==definitions(iCase).requestedIntegrator && string(item.integrator.actual)==definitions(iCase).requestedIntegrator,selected));
+    comparison(iCase) = struct("id",definitions(iCase).id,"interfaces",records,"maximumRelativeError",maximumError,"outputAgreementPassed",outputPassed,"integratorAgreementPassed",integratorsPassed,"matchedContractPassed",providersPassed&&integratorsPassed&&maximumError<=tolerance&&outputPassed);
 end
 end
 
@@ -319,4 +321,4 @@ function value=environmentRecord, [~,processor]=system("/usr/sbin/sysctl -n mach
 function value=utcTimestamp, value=string(datetime("now","TimeZone","UTC","Format","yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")); end
 function value=conditional(condition,a,b), if condition,value=a;else,value=b;end,end
 function value=emptyFailure, value=struct("stage","","identifier","","message","","report",""); end
-function value=emptyRun, value=struct("schemaVersion","three-interface-worker-v1","status","failed","interface","","case",struct(),"repeatIndex",0,"sourceCommit","","processWallSeconds",NaN,"interfaceTotalSeconds",NaN,"integrationSeconds",NaN,"memory",struct(),"provider",struct(),"finalState",struct(),"output",struct(),"failure",struct("identifier","","message","","report","")); end
+function value=emptyRun, value=struct("schemaVersion","three-interface-worker-v1","status","failed","interface","","case",struct(),"repeatIndex",0,"sourceCommit","","processWallSeconds",NaN,"interfaceTotalSeconds",NaN,"integrationSeconds",NaN,"memory",struct(),"provider",struct(),"integrator",struct(),"finalState",struct(),"output",struct(),"failure",struct("identifier","","message","","report","")); end
