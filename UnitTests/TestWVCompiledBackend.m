@@ -65,7 +65,7 @@ classdef TestWVCompiledBackend < matlab.unittest.TestCase
         function compilerDownloadChecksumAndBuildFailuresAreStructured(testCase)
             fixture = testCase.applyFixture(matlab.unittest.fixtures.TemporaryFolderFixture);
             root = string(fixture.Folder);
-            common = struct("PackageRoot",root,"Architecture","maca64","OperatingSystem","macOS","Release","R2025b","MaxThreads",2);
+            common = struct("PackageRoot",root,"Architecture","maca64","OperatingSystem","macOS","Release","R2025b","MaxThreads",2,"CompilerAvailable",true);
             compilerOptions = common; compilerOptions.CompilerAvailable = false;
             compilerFailure = WVCompiledBackend.buildForTesting(compilerOptions);
             testCase.verifyEqual(compilerFailure.status,"build-failed");

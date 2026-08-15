@@ -14,9 +14,9 @@ classdef TestPortableRuntimeCompatibility < matlab.unittest.TestCase
             configure = "cmake -S " + shellQuote(fullfile(testCase.RepositoryRoot,"PortableRuntime")) + ...
                 " -B " + shellQuote(buildDirectory) + ...
                 " -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF";
-            [status,output] = system(configure);
+            [status,output] = systemWithoutMatlabRuntime(configure);
             testCase.assertEqual(status,0,output)
-            [status,output] = system("cmake --build " + shellQuote(buildDirectory) + ...
+            [status,output] = systemWithoutMatlabRuntime("cmake --build " + shellQuote(buildDirectory) + ...
                 " --parallel --target wave-vortex-run");
             testCase.assertEqual(status,0,output)
             testCase.Runner = fullfile(buildDirectory,"wave-vortex-run");
@@ -33,7 +33,7 @@ classdef TestPortableRuntimeCompatibility < matlab.unittest.TestCase
                 " " + shellQuote(outputPath) + ...
                 " --restart-mode coefficients --output-policy create" + ...
                 " --delta-t 0.01 --steps 1 --fft-provider reference";
-            [status,output] = system(command);
+            [status,output] = systemWithoutMatlabRuntime(command);
             testCase.assertEqual(status,0,output)
             report = jsondecode(output);
             testCase.verifyEqual(string(report.status),"complete")
@@ -62,7 +62,7 @@ classdef TestPortableRuntimeCompatibility < matlab.unittest.TestCase
             command = shellQuote(testCase.Runner) + " " + shellQuote(sourcePath) + ...
                 " --restart-mode model --output-policy append" + ...
                 " --delta-t 1e-4 --final-time 2e-4 --fft-provider reference";
-            [status,output] = system(command);
+            [status,output] = systemWithoutMatlabRuntime(command);
             testCase.assertEqual(status,0,output)
             report = jsondecode(output);
             testCase.verifyEqual(string(report.status),"complete")
@@ -107,7 +107,7 @@ classdef TestPortableRuntimeCompatibility < matlab.unittest.TestCase
                 " --integrator adaptive-rk23 --relative-tolerance 1e-6" + ...
                 " --absolute-tolerance 1e-8 --delta-t 1e-4" + ...
                 " --final-time 2e-4 --fft-provider reference";
-            [status,output] = system(command);
+            [status,output] = systemWithoutMatlabRuntime(command);
             testCase.assertEqual(status,0,output)
             restored = WVModel.modelFromFile(char(sourcePath));
             cleanup = onCleanup(@()restored.closeNetCDFFile());
@@ -178,4 +178,11 @@ end
 
 function value = shellQuote(value)
 value = "'" + replace(string(value),"'","'""'""'") + "'";
+end
+
+function [status,output] = systemWithoutMatlabRuntime(command)
+if isunix && ~ismac
+    command = "env -u LD_LIBRARY_PATH -u DYLD_LIBRARY_PATH " + string(command);
+end
+[status,output] = system(command);
 end

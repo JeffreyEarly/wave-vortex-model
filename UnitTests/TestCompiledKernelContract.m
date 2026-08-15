@@ -3,7 +3,7 @@ classdef TestCompiledKernelContract < matlab.unittest.TestCase
         function buildStandaloneTools(testCase)
             repositoryRoot = fileparts(fileparts(mfilename("fullpath")));
             scriptPath = fullfile(repositoryRoot,"tools","compiled-kernel","run_contract_tests.sh");
-            [status,output] = system(sprintf('"%s"',scriptPath));
+            [status,output] = systemWithoutMatlabRuntime(sprintf('"%s"',scriptPath));
             testCase.assertEqual(status,0,output);
         end
     end
@@ -85,9 +85,16 @@ repositoryRoot = fileparts(fileparts(mfilename("fullpath")));
 executable = fullfile(repositoryRoot,"tools","compiled-kernel","build","WVKernelDescriptorDump");
 arguments = [definition.Nxyz(1:3) Nj definition.Lxyz 5.2e-3 definition.rho0 definition.g definition.rotationRate 33 definition.isHydrostatic definition.shouldAntialias definition.planetaryRadius];
 command = sprintf('"%s" %s',executable,strjoin(compose("%.17g",arguments)," "));
-[status,output] = system(command);
+[status,output] = systemWithoutMatlabRuntime(command);
 if status ~= 0
     error("WaveVortexModel:KernelDescriptorDumpFailed","%s",output);
 end
 actual = jsondecode(output);
+end
+
+function [status,output] = systemWithoutMatlabRuntime(command)
+if isunix && ~ismac
+    command = "env -u LD_LIBRARY_PATH -u DYLD_LIBRARY_PATH " + string(command);
+end
+[status,output] = system(command);
 end
