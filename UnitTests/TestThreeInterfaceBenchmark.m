@@ -173,9 +173,10 @@ classdef TestThreeInterfaceBenchmark < matlab.unittest.TestCase
                 testCase.verifyError(@()runThreeInterfaceBenchmark(shouldWriteArtifacts=false),"WaveVortexBenchmark:ThreeInterfaceUnsupportedPlatform")
                 return
             end
-            outputDirectory = fullfile(testCase.TemporaryFolder,"result");
+            outputDirectory = fullfile(testCase.TemporaryFolder,"results");
             archiveDirectory = fullfile(testCase.TemporaryFolder,"archive");
-            result = runThreeInterfaceBenchmark(Nxyz=[8 6 5],processRunCount=1,deltaT=1e-4,samplingIntervalSeconds=0.005,plateauSeconds=0.1,outputDirectory=outputDirectory,archiveDirectory=archiveDirectory);
+            result = runThreeInterfaceBenchmarkComparison(resolutions=[8 6 5],processRunCount=1,deltaT=1e-4,samplingIntervalSeconds=0.005,plateauSeconds=0.1,outputRoot=outputDirectory,archiveDirectory=archiveDirectory);
+            testCase.verifySize(result,[1 1])
             testCase.verifyEqual(result.status,"complete")
             testCase.verifyEqual(string({result.comparison.id}),["nonlinear-flux" "fixed-rk4-continuation" "adaptive-rk23-observer-output"])
             testCase.verifyTrue(all([result.comparison.outputAgreementPassed]))
