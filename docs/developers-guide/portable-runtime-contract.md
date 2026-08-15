@@ -19,7 +19,9 @@ The runtime supplies classical fixed RK4 and Bogacki--Shampine RK3(2). Rejected 
 
 ## Observers and fields
 
-`WVObserverAdapter` is the single registry for the five supported built-in records. It owns the portable tag, MATLAB class name, state contract, metadata, evaluation, and persistence dispatch. Adding a built-in requires updating that registry and its compatibility tests; there is no third-party binary plug-in ABI.
+`WVObserverFactoryRegistry` is the single source-level extension point for observer kinds. Each registration binds a portable tag and MATLAB class name to one state contract and one output rule. Validation, integration-state dependencies, field evaluation, NetCDF schema creation, writing, restoration, and append all consult that registration; none dispatch directly on the observer kind. The five qualified MATLAB observers are pre-registered through the same mechanism.
+
+The registry is intentionally a native source API rather than a third-party binary plug-in ABI. A new observer can reuse the existing coefficient, full-grid field, mooring, particle, or tracer behavior without editing the runtime subsystems. A genuinely new state or output behavior first requires a new shared contract implementation, after which observer kinds select it declaratively. Register adapters before constructing descriptors or starting concurrent runtime work; registrations are immutable for the process lifetime.
 
 `WVFieldEvaluationService` owns transform plans and bounded scratch and shares primitive field reconstruction across coincident observers. Particle and tracer tendencies consume the same per-RHS velocity context produced for nonlinear advection, so the runtime does not independently reconstruct or differentiate equivalent quantities.
 
@@ -28,6 +30,10 @@ The runtime supplies classical fixed RK4 and Bogacki--Shampine RK3(2). Rejected 
 `WVOutputPlan` represents explicit or evenly spaced events independently of the integration method. `WVOutputDriver` validates exact state-layout compatibility, stages failed routes for retry, and delivers immutable event state to a sink. Sink callbacks are non-reentrant.
 
 `WVModelOutputNetCDFSink` writes MATLAB-compatible records transactionally: payload variables precede the time commit, incomplete records are rejected, and dynamic particle or tracer state is restored with the canonical coefficients. Plans, mappings, derived operators, caches, integrator history, and scratch are never checkpoint data.
+
+`wave-vortex-run` treats that reconstructed record as the model boundary. Its allocation-light preflight resolves the dynamics mode, frozen forcing order, observer identities and dependencies, output schedules, committed ordinals, and integration layout before coefficient-sized state or numerical workspaces are allocated. Full-model continuation uses the same descriptor for the integration system, observer evaluation, output plan, and append sink. The reduced coefficient-only reader remains available only through an explicit restart mode.
+
+The command-line mutation policy is separate from the restart mode. Full-model continuation requires explicit in-place `append`; coefficient-only output requires safe `create` or authorized `replace`. Path aliases, incompatible append graphs, and existing create destinations are rejected before integration. Replacement uses the checkpoint writer's verified temporary-file commit rather than truncating a destination in place.
 
 The command-line program exposes one checkpoint input and output. Multi-file and named-group orchestration remain C++ library APIs until a separate user-facing configuration contract is designed.
 
@@ -42,8 +48,8 @@ For a new integrator:
 For a new integrated observer:
 
 1. Define its immutable record and dynamic state blocks.
-2. Register its metadata, evaluation, and persistence in `WVObserverAdapter`.
+2. Register its portable tag, MATLAB class name, state contract, and output rule with `WVObserverFactoryRegistry`.
 3. Consume shared field services rather than rebuilding transforms or derivatives.
-4. Add MATLAB/C++ round-trip and restart-continuation tests.
+4. Add a test-only adapter that proves validation, evaluation, persistence, restoration, and restart continuation without another subsystem switch.
 
 For a new sink, implement guarded preflight and transactional route delivery without inspecting the integration method.
