@@ -80,6 +80,7 @@ try
     end
     activeStage = "correctness";
     results.comparison = aggregate(results.runs,definitions,1e-12);
+    validateThreeInterfaceBenchmarkContract(results);
     results.status = "complete";
     results.completedAtUTC = utcTimestamp;
     results.failure = emptyFailure;
@@ -227,7 +228,7 @@ for iCase = 1:numel(definitions)
         if iInterface > 1
             for iRepeat = 1:numel(candidate)
                 reference = builtin([builtin.repeatIndex]==candidate(iRepeat).repeatIndex);
-                [errorValue,agreement,details] = compareOutputs(reference,candidate(iRepeat));
+                [errorValue,agreement,details] = compareOutputs(reference,candidate(iRepeat),tolerance);
                 maximumError = max(maximumError,errorValue); outputPassed = outputPassed && agreement;
                 outputGraph = mergeOutputGraph(outputGraph,details);
             end
@@ -239,10 +240,10 @@ for iCase = 1:numel(definitions)
 end
 end
 
-function [errorValue,agreement,details] = compareOutputs(reference,candidate)
+function [errorValue,agreement,details] = compareOutputs(reference,candidate,tolerance)
 if string(reference.output.kind) == "flux-binary"
     expected = readBinary(reference.output.path); actual = readBinary(candidate.output.path);
-    errorValue = max(abs(actual-expected))/max(max(abs(expected)),realmin("double")); agreement = isfinite(errorValue);
+    errorValue = max(abs(actual-expected))/max(max(abs(expected)),realmin("double")); agreement = isfinite(errorValue) && errorValue <= tolerance;
     details = struct("kind","flux-arrays","passed",agreement,"maximumRelativeError",errorValue,"maximumAbsoluteError",max(abs(actual-expected)),"variableCount",3,"recordCount",0,"categories",struct("name","coefficients","variableCount",3,"maximumAbsoluteError",max(abs(actual-expected)),"maximumRelativeError",errorValue,"passed",agreement),"differences",strings(0,1));
     return
 end

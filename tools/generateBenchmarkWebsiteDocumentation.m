@@ -84,7 +84,7 @@ for iCase=1:numel(dataset.cases)
 end
 contract=itemAt(dataset.cases,1).contract;
 resolution=join(string(contract.Nxyz),"×");
-intro="Matched nonhydrostatic constant-stratification workload `["+join(string(contract.Nxyz)," ")+"]` on "+string(dataset.platform.displayName)+" with `"+string(dataset.provider.id)+"` "+string(dataset.provider.version)+" at "+string(dataset.platform.threadCount)+" threads. Each value is the median of "+string(contract.processRunCount)+" fresh processes with no within-process warmup. Speedup is MATLAB-builtin time divided by interface time, so larger values are faster.";
+intro="Matched nonhydrostatic constant-stratification workload `["+join(string(contract.Nxyz)," ")+"]` on "+string(dataset.platform.displayName)+" at "+string(dataset.platform.threadCount)+" threads. MATLAB builtin uses MATLAB transforms; MATLAB compiled and standalone compiled share validated `"+string(dataset.provider.id)+"` "+string(dataset.provider.version)+". Each value is the median of "+string(contract.processRunCount)+" fresh processes with no within-process warmup. Speedup is MATLAB-builtin time divided by interface time, so larger values are faster.";
 performance="### Runtime — "+resolution+newline+newline+htmlTable(["Case" "Interface" "Process wall" "Process speedup" "Matched work" "Work speedup" "Maximum error"],performanceRows);
 memory="### Process memory — "+resolution+newline+newline+"Total peak RSS includes the language runtime and numerical libraries. RSS above retained state isolates additional activity after the model and backend are constructed."+newline+newline+htmlTable(["Case" "Interface" "Total peak RSS" "Total RSS saved" "RSS above retained state"],memoryRows);
 markdown=intro+newline+newline+performance+newline+newline+memory;

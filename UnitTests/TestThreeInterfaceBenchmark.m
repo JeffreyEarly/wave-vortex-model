@@ -26,10 +26,13 @@ classdef TestThreeInterfaceBenchmark < matlab.unittest.TestCase
             dataset = publishedThreeInterfaceBenchmarkFromArtifact(rawPath,platformId="m5-max",platformName="Apple M5 Max");
             testCase.verifyEqual(dataset.schemaVersion,"published-three-interface-v1")
             testCase.verifyEqual(dataset.datasetId,"three-interface--m5-max--20260815T120000Z")
+            testCase.verifyEqual(dataset.provider.scope,"compiled-interfaces-only")
             testCase.verifyNumElements(dataset.cases,3)
             for benchmarkCase = dataset.cases
                 testCase.verifyNumElements(benchmarkCase{1}.interfaces,3)
                 testCase.verifyTrue(benchmarkCase{1}.correctness.passed)
+                testCase.verifyEqual(benchmarkCase{1}.interfaces{1}.providerId,"matlab-builtin")
+                testCase.verifyEqual(benchmarkCase{1}.interfaces{2}.providerId,"native-neon-pthreads")
                 testCase.verifyEqual(benchmarkCase{1}.interfaces{2}.integrationRatio,0.5)
                 testCase.verifyEqual(benchmarkCase{1}.interfaces{3}.totalRSSRatio,0.25)
             end
@@ -72,6 +75,42 @@ classdef TestThreeInterfaceBenchmark < matlab.unittest.TestCase
             testCase.verifyError(@()publishedThreeInterfaceBenchmarkFromArtifact(rawPath),"WaveVortexBenchmark:OutputGraphMismatch")
         end
 
+        function failedMatchedContractCannotBePublished(testCase)
+            raw = rawFixture;
+            raw.comparison(1).matchedContractPassed = false;
+            rawPath = fullfile(testCase.TemporaryFolder,"raw.json");
+            writelines(jsonencode(raw),rawPath);
+            testCase.verifyError(@()validateThreeInterfaceBenchmarkContract(raw),"WaveVortexBenchmark:MatchedContractFailed")
+            testCase.verifyError(@()publishedThreeInterfaceBenchmarkFromArtifact(rawPath),"WaveVortexBenchmark:MatchedContractFailed")
+        end
+
+        function finiteNonlinearFluxErrorAboveToleranceCannotBePublished(testCase)
+            raw = rawFixture;
+            raw.comparison(1).maximumRelativeError = 2e-12;
+            raw.comparison(1).outputGraph.maximumRelativeError = 2e-12;
+            raw.comparison(1).outputGraph.categories.maximumRelativeError = 2e-12;
+            rawPath = fullfile(testCase.TemporaryFolder,"raw.json");
+            writelines(jsonencode(raw),rawPath);
+            testCase.verifyError(@()validateThreeInterfaceBenchmarkContract(raw),"WaveVortexBenchmark:NumericalMismatch")
+            testCase.verifyError(@()publishedThreeInterfaceBenchmarkFromArtifact(rawPath),"WaveVortexBenchmark:NumericalMismatch")
+        end
+
+        function outputAgreementFlagCannotBePublished(testCase)
+            raw = rawFixture;
+            raw.comparison(2).outputAgreementPassed = false;
+            rawPath = fullfile(testCase.TemporaryFolder,"raw.json");
+            writelines(jsonencode(raw),rawPath);
+            testCase.verifyError(@()publishedThreeInterfaceBenchmarkFromArtifact(rawPath),"WaveVortexBenchmark:OutputGraphMismatch")
+        end
+
+        function providerMismatchCannotBePublished(testCase)
+            raw = rawFixture;
+            raw.runs(2).provider.id = "matlab-bundled";
+            rawPath = fullfile(testCase.TemporaryFolder,"raw.json");
+            writelines(jsonencode(raw),rawPath);
+            testCase.verifyError(@()publishedThreeInterfaceBenchmarkFromArtifact(rawPath),"WaveVortexBenchmark:ProviderMismatch")
+        end
+
         function benchmarkWorkerRemainsAuthorOnly(testCase)
             manifest = string(fileread(fullfile(testCase.RepositoryRoot,"resources","mpackage.json")));
             testCase.verifyFalse(contains(manifest,"Benchmarks"))
@@ -88,6 +127,9 @@ classdef TestThreeInterfaceBenchmark < matlab.unittest.TestCase
             testCase.verifyFalse(any(forbidden),"Verbose three-interface results must remain in the external compressed archive.")
             compact = tracked(startsWith(tracked,"Benchmarks/results/published/three-interface--") | startsWith(tracked,"docs/benchmarks/data/three-interface--"));
             for path = reshape(compact,1,[])
+                if ~isfile(fullfile(testCase.RepositoryRoot,path))
+                    continue
+                end
                 information = dir(fullfile(testCase.RepositoryRoot,path));
                 testCase.verifyLessThanOrEqual(information.bytes,512*1024,"Published three-interface records must remain compact.")
             end
@@ -213,10 +255,10 @@ for iCase = 1:3
         runs(end+1,1) = runRecord(identifier,definitions(iCase)); %#ok<AGROW>
     end
 end
-provider = struct("provider",struct("id","native-neon-pthreads","version","3.3.11","threadBackend","pthreads"),"module",struct("sha256",repmat('b',1,64),"identityValidated",true),"libraries",struct("openmp",struct("detected",false)));
+provider = struct("status","available","isAvailable",true,"provider",struct("id","native-neon-pthreads","version","3.3.11","threadBackend","pthreads"),"module",struct("sha256",repmat('b',1,64),"identityValidated",true),"libraries",struct("base",struct("path","/tmp/libfftw3.3.dylib"),"thread",struct("path","/tmp/libfftw3_threads.3.dylib"),"openmp",struct("detected",false)),"contract",struct("threadCount",18),"featureValidation",struct("maximumRelativeError",1e-14));
 environment = struct("processor","Apple M5 Max","physicalMemoryBytes",64*2^30,"os","macOS","architecture","maca64","matlabVersion","R2026a Update 4");
 source = struct("commit",repmat('a',1,40),"tree",repmat('c',1,40),"isDirty",false);
-configuration = struct("Lxyz",[15000 15000 1300],"processRunCount",1,"warmupCount",0,"samplesPerProcess",1,"threadCount",18);
+configuration = struct("Lxyz",[15000 15000 1300],"processRunCount",1,"warmupCount",0,"samplesPerProcess",1,"threadCount",18,"correctnessTolerance",1e-12);
 raw = struct("schemaVersion","three-interface-benchmark-v1","status","complete","runId","20260815T120000000Z","source",source,"environment",environment,"configuration",configuration,"provider",provider,"cases",definitions,"runs",runs,"comparison",comparison);
 end
 
@@ -240,5 +282,11 @@ value = struct("id",identifier,"processWallSeconds",processRatio,"interfaceTotal
 end
 
 function value = runRecord(identifier,definition)
-value = struct("interface",identifier,"case",definition,"processWallSeconds",1,"integrationSeconds",1,"memory",struct("status","complete","provider","macos-ps-process-tree","totalPeakRSSBytes",2^30),"integrator",struct("requested",definition.requestedIntegrator,"actual",definition.requestedIntegrator,"matched",true));
+if identifier == "matlab-builtin"
+    provider = struct("id","matlab-builtin","version","R2026a Update 4","threads",18,"baseLibrary","","threadLibrary","","noFallback",true);
+else
+    provider = struct("id","native-neon-pthreads","version","3.3.11","threads",18,"baseLibrary","/tmp/libfftw3.3.dylib","threadLibrary","/tmp/libfftw3_threads.3.dylib","noFallback",true);
+end
+memory = struct("status","complete","provider","macos-ps-process-tree","totalPeakRSSBytes",2^30,"peakIncrementBytes",2^28,"finalRSSBytes",2^29);
+value = struct("schemaVersion","three-interface-worker-v1","status","complete","interface",identifier,"case",definition,"processWallSeconds",1,"integrationSeconds",1,"memory",memory,"provider",provider,"integrator",struct("requested",definition.requestedIntegrator,"actual",definition.requestedIntegrator,"matched",true));
 end

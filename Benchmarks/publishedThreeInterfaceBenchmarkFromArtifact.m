@@ -13,10 +13,11 @@ raw = jsondecode(fileread(rawArtifactPath));
 if string(raw.schemaVersion) ~= "three-interface-benchmark-v1" || string(raw.status) ~= "complete" || logical(raw.source.isDirty)
     error("WaveVortexBenchmark:InvalidThreeInterfaceArtifact","Publication requires a complete clean three-interface-benchmark-v1 artifact.");
 end
+validateThreeInterfaceBenchmarkContract(raw);
 [collectedAt,timestamp] = collectionTime(raw.runId);
 datasetId = "three-interface--"+options.platformId+"--"+timestamp;
 platform = struct("id",options.platformId,"displayName",options.platformName,"processor",string(raw.environment.processor),"physicalMemoryBytes",double(raw.environment.physicalMemoryBytes),"os",string(raw.environment.os),"architecture",string(raw.environment.architecture),"matlabVersion",string(raw.environment.matlabVersion),"threadCount",double(raw.configuration.threadCount));
-provider = struct("id",string(raw.provider.provider.id),"version",string(raw.provider.provider.version),"threadBackend",string(raw.provider.provider.threadBackend),"moduleSHA256",string(raw.provider.module.sha256),"identityValidated",logical(raw.provider.module.identityValidated),"openMPDetected",logical(raw.provider.libraries.openmp.detected));
+provider = struct("id",string(raw.provider.provider.id),"version",string(raw.provider.provider.version),"threadBackend",string(raw.provider.provider.threadBackend),"scope","compiled-interfaces-only","moduleSHA256",string(raw.provider.module.sha256),"identityValidated",logical(raw.provider.module.identityValidated),"openMPDetected",logical(raw.provider.libraries.openmp.detected));
 cases = cell(1,numel(raw.comparison));
 for iCase = 1:numel(raw.comparison)
     comparison = raw.comparison(iCase);
@@ -49,7 +50,7 @@ for iCase = 1:numel(raw.comparison)
         if any(arrayfun(@(run)string(run.memory.status)~="complete" || string(run.memory.provider)~="macos-ps-process-tree" || ~isfinite(run.memory.totalPeakRSSBytes),selected))
             error("WaveVortexBenchmark:IncomparableMemory","Publication found a missing or incomparable primary memory measurement.");
         end
-        interfaces{iInterface} = struct("id",string(item.id),"processWallSeconds",double(item.processWallSeconds),"interfaceTotalSeconds",double(item.interfaceTotalSeconds),"integrationSeconds",double(item.integrationSeconds),"totalPeakRSSBytes",double(item.totalPeakRSSBytes),"incrementalPeakRSSBytes",double(item.incrementalPeakRSSBytes),"finalRSSBytes",double(item.finalRSSBytes),"processWallRatio",double(item.processWallRatio),"integrationRatio",double(item.integrationRatio),"totalRSSRatio",double(item.totalRSSRatio),"incrementalRSSRatio",double(item.incrementalRSSRatio),"processWallSamplesSeconds",double([selected.processWallSeconds]),"integrationSamplesSeconds",double([selected.integrationSeconds]));
+        interfaces{iInterface} = struct("id",string(item.id),"providerId",string(selected(1).provider.id),"processWallSeconds",double(item.processWallSeconds),"interfaceTotalSeconds",double(item.interfaceTotalSeconds),"integrationSeconds",double(item.integrationSeconds),"totalPeakRSSBytes",double(item.totalPeakRSSBytes),"incrementalPeakRSSBytes",double(item.incrementalPeakRSSBytes),"finalRSSBytes",double(item.finalRSSBytes),"processWallRatio",double(item.processWallRatio),"integrationRatio",double(item.integrationRatio),"totalRSSRatio",double(item.totalRSSRatio),"incrementalRSSRatio",double(item.incrementalRSSRatio),"processWallSamplesSeconds",double([selected.processWallSeconds]),"integrationSamplesSeconds",double([selected.integrationSeconds]));
     end
     contract = struct("Nxyz",double(definition.Nxyz(:)'),"Lxyz",double(raw.configuration.Lxyz(:)'),"forcing",string(definition.forcing),"shouldAntialias",logical(definition.shouldAntialias),"integrator",string(definition.requestedIntegrator),"deltaT",double(definition.deltaT),"finalTime",double(definition.finalTime),"relativeTolerance",double(definition.relativeTolerance),"absoluteTolerance",double(definition.absoluteTolerance),"outputInterval",double(definition.outputInterval),"observerGraph",string(definition.observerGraph),"processRunCount",double(raw.configuration.processRunCount),"warmupCount",double(raw.configuration.warmupCount),"samplesPerProcess",double(raw.configuration.samplesPerProcess));
     graph = comparison.outputGraph;
