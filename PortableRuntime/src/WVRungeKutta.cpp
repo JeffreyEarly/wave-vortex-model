@@ -124,11 +124,34 @@ public:
   }
   void setAffine(const WVIntegrationState &base, const IntegrationBuffer &increment,
                  double scale) noexcept {
-    copyFrom(base);
-    for (std::size_t i = 0; i < complex_.size(); ++i)
-      complex_[i] = scaledSum(complex_[i], increment.complex_[i], scale);
-    for (std::size_t i = 0; i < real_.size(); ++i)
-      real_[i] += scale * increment.real_[i];
+    const WVComplexConstView coefficients[] = {
+        base.waveVortex.coefficients.Ap, base.waveVortex.coefficients.Am,
+        base.waveVortex.coefficients.A0};
+    for (std::size_t component = 0; component < 3; ++component)
+      for (std::size_t index = 0; index < coefficientCount_; ++index) {
+        const auto flatIndex = component * coefficientCount_ + index;
+        complex_[flatIndex] =
+            scaledSum(coefficients[component].data[index],
+                      increment.complex_[flatIndex], scale);
+      }
+    for (std::size_t block = 0; block < base.additionalBlockCount; ++block) {
+      const auto &layout = *base.additionalBlocks[block].layout;
+      if (layout.scalarType == WVStateScalarType::real64) {
+        for (std::size_t index = 0; index < layout.elementCount; ++index) {
+          const auto flatIndex = layout.scalarOffset + index;
+          real_[flatIndex] = base.additionalBlocks[block].realData[index] +
+                             scale * increment.real_[flatIndex];
+        }
+      } else {
+        for (std::size_t index = 0; index < layout.elementCount; ++index) {
+          const auto flatIndex =
+              3 * coefficientCount_ + layout.scalarOffset + index;
+          complex_[flatIndex] =
+              scaledSum(base.additionalBlocks[block].complexData[index],
+                        increment.complex_[flatIndex], scale);
+        }
+      }
+    }
   }
   void addScaled(const IntegrationBuffer &source, double scale) noexcept {
     for (std::size_t i = 0; i < complex_.size(); ++i)
@@ -381,8 +404,7 @@ WVKernelStatus WVFixedStepRK4::step(WVMutableIntegrationState &state,
       2 * workspace_->derivative.complex().size();
   metrics_.weightedAccumulationElementWrites +=
       workspace_->weighted.complex().size();
-  workspace_->stage.copyFrom(baseView);
-  workspace_->stage.addScaled(workspace_->weighted, h / 6.0);
+  workspace_->stage.setAffine(baseView, workspace_->weighted, h / 6.0);
   metrics_.finalStateUpdateElementReads +=
       2 * workspace_->weighted.complex().size();
   metrics_.finalStateUpdateElementWrites += workspace_->stage.complex().size();
