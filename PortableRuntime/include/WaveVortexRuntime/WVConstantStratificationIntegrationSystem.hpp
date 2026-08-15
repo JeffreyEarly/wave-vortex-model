@@ -67,8 +67,8 @@ public:
     return particles_;
   }
   const std::vector<WVTracer> &tracers() const noexcept { return tracers_; }
-  WVFieldEvaluationService &fieldEvaluationService() noexcept {
-    return *fields_;
+  WVFieldEvaluationService *fieldEvaluationService() noexcept {
+    return fields_.get();
   }
   const WVIntegratedObserverMetrics &metrics() const noexcept {
     return metrics_;

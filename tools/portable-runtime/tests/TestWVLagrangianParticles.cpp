@@ -263,7 +263,7 @@ void testTracers(bool hydrostatic) {
   require(system->kernelMetrics().scratchCapacityBytes == scratchCapacityBytes &&
               system->kernelMetrics().planCount == planCount + 1,
           "tracer evaluation added array-sized scratch or unexpected plans");
-  require(system->fieldEvaluationService().metrics().movingPrimitiveTransformCount == 0,
+  require(system->fieldEvaluationService()->metrics().movingPrimitiveTransformCount == 0,
           "tracer RHS invoked the particle interpolation transform");
 
   const auto persistentBytes = system->persistentBytes();
@@ -360,20 +360,20 @@ void testIntegratedObservers(bool hydrostatic) {
           "particle systems did not share one primitive transform");
   require(system->metrics().sharedRightHandSideContextCount == 1,
           "particle systems did not use one shared RHS context");
-  require(system->fieldEvaluationService().metrics().movingPrimitiveTransformCount == 0 &&
-              system->fieldEvaluationService().metrics().primitiveFieldReuseCount == 1,
+  require(system->fieldEvaluationService()->metrics().movingPrimitiveTransformCount == 0 &&
+              system->fieldEvaluationService()->metrics().primitiveFieldReuseCount == 1,
           "particle interpolation recomputed prepared advection fields");
-  require(system->fieldEvaluationService().metrics().movingPositionCount == 5,
+  require(system->fieldEvaluationService()->metrics().movingPositionCount == 5,
           "moving position count changed");
   const auto persistentBytes = system->persistentBytes();
   const auto interpolationBytes = system->fieldEvaluationService()
-                                      .metrics()
+                                      ->metrics()
                                       .movingInterpolationWorkspaceBytes;
   status = system->evaluateRightHandSide(fixture.constView(), fixture.rhs);
   require(static_cast<bool>(status), status.message);
   require(system->persistentBytes() == persistentBytes &&
               system->fieldEvaluationService()
-                      .metrics()
+                      ->metrics()
                       .movingInterpolationWorkspaceBytes == interpolationBytes,
           "repeated particle RHS changed bounded persistent storage");
 

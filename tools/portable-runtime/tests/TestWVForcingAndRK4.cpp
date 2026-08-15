@@ -164,6 +164,8 @@ void testNonlinearCompatibility(bool hydrostatic) {
 
 void testForcingTrafficAccounting() {
     auto system = createSystem(true,nonlinearSchedule());
+    require(system->stateLayout().additionalBlocks().empty(),"coefficient-only integration gained additional state blocks");
+    require(system->fieldEvaluationService() == nullptr,"coefficient-only integration retained observing-system field scratch");
     OwnedState owned(system->kernel().descriptor().spectralShape());
     auto state = owned.integrationView();
     WVFixedStepRK4 integrator(*system);

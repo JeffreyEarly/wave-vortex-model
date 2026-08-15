@@ -215,14 +215,18 @@ WVKernelStatus WVConstantStratificationIntegrationSystem::create(
         configuration, schedule, std::move(engine), candidate->forcing_);
     if (!status)
       return status;
-    status = WVFieldEvaluationService::createBorrowing(
-        candidate->forcing_->kernel(), candidate->fields_);
-    if (!status)
-      return status;
-    status = candidate->fields_->createMovingPlan(
-        velocityRequests, candidate->velocityPlan_);
-    if (!status)
-      return status;
+    // Coefficient-only integration is the zero-additional-block case. It must
+    // not retain the field-evaluation scratch used by observing systems.
+    if (!descriptor.observers().empty()) {
+      status = WVFieldEvaluationService::createBorrowing(
+          candidate->forcing_->kernel(), candidate->fields_);
+      if (!status)
+        return status;
+      status = candidate->fields_->createMovingPlan(
+          velocityRequests, candidate->velocityPlan_);
+      if (!status)
+        return status;
+    }
     candidate->x_.resize(positionOffset);
     candidate->y_.resize(positionOffset);
     candidate->z_.resize(positionOffset);
@@ -273,9 +277,11 @@ WVConstantStratificationIntegrationSystem::evaluateRightHandSide(
     bool &value;
     ~Guard() { value = false; }
   } guard{executing_};
-  WVConstantStratificationRightHandSideContext context;
-  auto advectionStorage = fields_->advectionFieldStorage();
   const bool needsAdvectionContext = !particles_.empty() || !tracers_.empty();
+  WVConstantStratificationRightHandSideContext context;
+  auto advectionStorage = needsAdvectionContext
+                              ? fields_->advectionFieldStorage()
+                              : WVRealFieldBundleView{};
   status = !needsAdvectionContext
                ? forcing_->nonlinearFlux(state.waveVortex,
                                          rightHandSide.waveVortex)
@@ -399,7 +405,8 @@ WVKernelStatus WVConstantStratificationIntegrationSystem::createErrorPolicy(
 std::size_t
 WVConstantStratificationIntegrationSystem::persistentBytes() const noexcept {
   std::size_t bytes = sizeof(*this) + layout_.persistentBytes() +
-                      forcing_->persistentBytes() + fields_->persistentBytes() +
+                      forcing_->persistentBytes() +
+                      (fields_ ? fields_->persistentBytes() : 0) +
                       velocityPlan_.persistentBytes() +
                       particles_.capacity() * sizeof(WVLagrangianParticles) +
                       tracers_.capacity() * sizeof(WVTracer) +
