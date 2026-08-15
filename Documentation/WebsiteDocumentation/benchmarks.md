@@ -80,7 +80,7 @@ Only datasets approved in the benchmark catalog are published. Comparisons requi
 
 ## Downloadable results
 
-Scaling and compiled-preview datasets use the language-neutral `published-benchmark-v1` contract. Matched workflow datasets use `published-three-interface-v1`. The corresponding raw artifacts retain implementation-specific diagnostics and provenance.
+Scaling and compiled-preview datasets use the language-neutral `published-benchmark-v1` contract. Matched workflow datasets use `published-three-interface-v1`. Their compact records include the filename, SHA-256, and size of a compressed author archive retained outside the source tree; verbose samples are not distributed with the website or package.
 
 <!-- BENCHMARKS:DOWNLOADS:START -->
 Published result downloads will appear here.

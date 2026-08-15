@@ -47,10 +47,5 @@
       "artifact": "Benchmarks/results/published/scaling-standard-v1--matlab-builtin--matilda--20260811T205115Z.json"
     }
   ],
-  "interfaceComparisons": [
-    {
-      "datasetId": "three-interface--m5-max--20260815T154902Z",
-      "artifact": "Benchmarks/results/published/three-interface--m5-max--20260815T154902Z.json"
-    }
-  ]
+  "interfaceComparisons": []
 }

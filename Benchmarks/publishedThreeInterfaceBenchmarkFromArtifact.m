@@ -4,7 +4,9 @@ arguments
     rawArtifactPath (1,1) string {mustBeFile}
     options.platformId (1,1) string = "m5-max"
     options.platformName (1,1) string = "Apple M5 Max"
-    options.provenancePath (1,1) string
+    options.archiveFileName (1,1) string = ""
+    options.archiveSHA256 (1,1) string = ""
+    options.archiveCompressedBytes (1,1) double {mustBeNonnegative} = 0
     options.implementationVersion (1,1) string = "unreleased-preview"
 end
 raw = jsondecode(fileread(rawArtifactPath));
@@ -55,7 +57,7 @@ for iCase = 1:numel(raw.comparison)
     correctness = struct("passed",logical(comparison.matchedContractPassed),"maximumRelativeError",double(comparison.maximumRelativeError),"outputAgreementPassed",logical(comparison.outputAgreementPassed),"completeOutputGraph",graphSummary);
     cases{iCase} = struct("id",string(comparison.id),"operation",string(definition.operation),"contract",contract,"interfaces",{interfaces},"correctness",correctness);
 end
-provenance = struct("rawArtifact",options.provenancePath,"rawSchemaVersion",string(raw.schemaVersion));
+provenance = struct("rawSchemaVersion",string(raw.schemaVersion),"externalArchive",struct("fileName",options.archiveFileName,"sha256",options.archiveSHA256,"compressedBytes",options.archiveCompressedBytes));
 source = struct("repository","https://github.com/JeffreyEarly/wave-vortex-model","commit",string(raw.source.commit),"tree",string(raw.source.tree),"sourceDirty",false,"version",options.implementationVersion);
 dataset = struct("schemaVersion","published-three-interface-v1","datasetId",datasetId,"collectedAt",collectedAt,"source",source,"platform",platform,"provider",provider,"provenance",provenance,"cases",{cases});
 end

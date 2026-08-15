@@ -23,7 +23,7 @@ classdef TestThreeInterfaceBenchmark < matlab.unittest.TestCase
             raw = rawFixture;
             rawPath = fullfile(testCase.TemporaryFolder,"three-interface-benchmark.json");
             writelines(jsonencode(raw),rawPath);
-            dataset = publishedThreeInterfaceBenchmarkFromArtifact(rawPath,platformId="m5-max",platformName="Apple M5 Max",provenancePath="Benchmarks/results/reference/three-interface/raw.json");
+            dataset = publishedThreeInterfaceBenchmarkFromArtifact(rawPath,platformId="m5-max",platformName="Apple M5 Max");
             testCase.verifyEqual(dataset.schemaVersion,"published-three-interface-v1")
             testCase.verifyEqual(dataset.datasetId,"three-interface--m5-max--20260815T120000Z")
             testCase.verifyNumElements(dataset.cases,3)
@@ -40,10 +40,10 @@ classdef TestThreeInterfaceBenchmark < matlab.unittest.TestCase
             rawPath = fullfile(testCase.TemporaryFolder,"raw.json");
             raw.source.isDirty = true;
             writelines(jsonencode(raw),rawPath);
-            testCase.verifyError(@()publishedThreeInterfaceBenchmarkFromArtifact(rawPath,provenancePath="raw.json"),"WaveVortexBenchmark:InvalidThreeInterfaceArtifact")
+            testCase.verifyError(@()publishedThreeInterfaceBenchmarkFromArtifact(rawPath),"WaveVortexBenchmark:InvalidThreeInterfaceArtifact")
             raw.source.isDirty = false; raw.status = "failed";
             writelines(jsonencode(raw),rawPath);
-            testCase.verifyError(@()publishedThreeInterfaceBenchmarkFromArtifact(rawPath,provenancePath="raw.json"),"WaveVortexBenchmark:InvalidThreeInterfaceArtifact")
+            testCase.verifyError(@()publishedThreeInterfaceBenchmarkFromArtifact(rawPath),"WaveVortexBenchmark:InvalidThreeInterfaceArtifact")
         end
 
         function integratorMismatchCannotBePublished(testCase)
@@ -52,7 +52,7 @@ classdef TestThreeInterfaceBenchmark < matlab.unittest.TestCase
             raw.runs(2).integrator.matched = false;
             rawPath = fullfile(testCase.TemporaryFolder,"raw.json");
             writelines(jsonencode(raw),rawPath);
-            testCase.verifyError(@()publishedThreeInterfaceBenchmarkFromArtifact(rawPath,provenancePath="raw.json"),"WaveVortexBenchmark:IntegratorMismatch")
+            testCase.verifyError(@()publishedThreeInterfaceBenchmarkFromArtifact(rawPath),"WaveVortexBenchmark:IntegratorMismatch")
         end
 
         function incomparableMemoryCannotBePublished(testCase)
@@ -60,7 +60,7 @@ classdef TestThreeInterfaceBenchmark < matlab.unittest.TestCase
             raw.runs(1).memory.status = "failed";
             rawPath = fullfile(testCase.TemporaryFolder,"raw.json");
             writelines(jsonencode(raw),rawPath);
-            testCase.verifyError(@()publishedThreeInterfaceBenchmarkFromArtifact(rawPath,provenancePath="raw.json"),"WaveVortexBenchmark:IncomparableMemory")
+            testCase.verifyError(@()publishedThreeInterfaceBenchmarkFromArtifact(rawPath),"WaveVortexBenchmark:IncomparableMemory")
         end
 
         function outputGraphMismatchCannotBePublished(testCase)
@@ -69,7 +69,7 @@ classdef TestThreeInterfaceBenchmark < matlab.unittest.TestCase
             raw.comparison(2).outputGraph.passed = false;
             rawPath = fullfile(testCase.TemporaryFolder,"raw.json");
             writelines(jsonencode(raw),rawPath);
-            testCase.verifyError(@()publishedThreeInterfaceBenchmarkFromArtifact(rawPath,provenancePath="raw.json"),"WaveVortexBenchmark:OutputGraphMismatch")
+            testCase.verifyError(@()publishedThreeInterfaceBenchmarkFromArtifact(rawPath),"WaveVortexBenchmark:OutputGraphMismatch")
         end
 
         function benchmarkWorkerRemainsAuthorOnly(testCase)
@@ -78,6 +78,19 @@ classdef TestThreeInterfaceBenchmark < matlab.unittest.TestCase
             cmake = string(fileread(fullfile(testCase.RepositoryRoot,"PortableRuntime","CMakeLists.txt")));
             testCase.verifySubstring(cmake,"WV_RUNTIME_BUILD_BENCHMARKS")
             testCase.verifySubstring(cmake,"wv-standalone-nonlinear-flux-benchmark")
+        end
+
+        function verboseThreeInterfaceArtifactsAreNotTracked(testCase)
+            [status,output] = system("git -C "+shellQuote(testCase.RepositoryRoot)+" ls-files");
+            testCase.assertEqual(status,0)
+            tracked = splitlines(strtrim(string(output)));
+            forbidden = endsWith(tracked,"/three-interface-benchmark.json") | startsWith(tracked,"docs/benchmarks/raw/three-interface--");
+            testCase.verifyFalse(any(forbidden),"Verbose three-interface results must remain in the external compressed archive.")
+            compact = tracked(startsWith(tracked,"Benchmarks/results/published/three-interface--") | startsWith(tracked,"docs/benchmarks/data/three-interface--"));
+            for path = reshape(compact,1,[])
+                information = dir(fullfile(testCase.RepositoryRoot,path));
+                testCase.verifyLessThanOrEqual(information.bytes,512*1024,"Published three-interface records must remain compact.")
+            end
         end
 
         function completeOutputGraphRejectsPayloadAndMetadataDifferences(testCase)
@@ -118,12 +131,19 @@ classdef TestThreeInterfaceBenchmark < matlab.unittest.TestCase
                 testCase.verifyError(@()runThreeInterfaceBenchmark(shouldWriteArtifacts=false),"WaveVortexBenchmark:ThreeInterfaceUnsupportedPlatform")
                 return
             end
-            result = runThreeInterfaceBenchmark(Nxyz=[8 6 5],processRunCount=1,deltaT=1e-4,samplingIntervalSeconds=0.01,plateauSeconds=0.02,shouldWriteArtifacts=false);
+            outputDirectory = fullfile(testCase.TemporaryFolder,"result");
+            archiveDirectory = fullfile(testCase.TemporaryFolder,"archive");
+            result = runThreeInterfaceBenchmark(Nxyz=[8 6 5],processRunCount=1,deltaT=1e-4,samplingIntervalSeconds=0.005,plateauSeconds=0.1,outputDirectory=outputDirectory,archiveDirectory=archiveDirectory);
             testCase.verifyEqual(result.status,"complete")
             testCase.verifyEqual(string({result.comparison.id}),["nonlinear-flux" "fixed-rk4-continuation" "adaptive-rk23-observer-output"])
             testCase.verifyTrue(all([result.comparison.outputAgreementPassed]))
             testCase.verifyLessThanOrEqual(max([result.comparison.maximumRelativeError]),1e-12)
+            testCase.verifyTrue(all([result.comparison.integratorAgreementPassed]))
+            testCase.verifyTrue(all([result.comparison.memoryAgreementPassed]))
             testCase.verifyTrue(all(arrayfun(@(item)item.matchedContractPassed,result.comparison)))
+            testCase.verifyTrue(isfile(fullfile(archiveDirectory,result.externalArchive.fileName)))
+            testCase.verifyEqual(strlength(result.externalArchive.sha256),64)
+            testCase.verifyGreaterThan(result.externalArchive.compressedBytes,0)
         end
     end
 end
@@ -173,6 +193,11 @@ if condition
 else
     value = falseValue;
 end
+end
+
+
+function value = shellQuote(value)
+value = "'"+replace(string(value),"'","'""'""'")+"'";
 end
 
 function raw = rawFixture

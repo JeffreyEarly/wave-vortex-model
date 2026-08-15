@@ -11,7 +11,24 @@
     "source": {"type": "object"},
     "platform": {"type": "object"},
     "provider": {"type": "object"},
-    "provenance": {"type": "object"},
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["rawSchemaVersion", "externalArchive"],
+      "properties": {
+        "rawSchemaVersion": {"const": "three-interface-benchmark-v1"},
+        "externalArchive": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["fileName", "sha256", "compressedBytes"],
+          "properties": {
+            "fileName": {"type": "string", "minLength": 1},
+            "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+            "compressedBytes": {"type": "integer", "minimum": 1}
+          }
+        }
+      }
+    },
     "cases": {"type": "array", "minItems": 3, "maxItems": 3}
   },
   "additionalProperties": false

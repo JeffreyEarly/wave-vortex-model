@@ -35,7 +35,7 @@ writeText(pagePath,pageText);
 end
 
 function records = loadInterfaceRecords(repositoryRoot,catalog)
-records = struct("dataset",{},"artifactPath",{},"rawPath",{});
+records = struct("dataset",{},"artifactPath",{});
 if ~isfield(catalog,"interfaceComparisons") || isempty(catalog.interfaceComparisons)
     return
 end
@@ -53,8 +53,11 @@ for iEntry = 1:numel(catalog.interfaceComparisons)
     if numel(dataset.cases)~=3 || ~all(arrayfun(@(i)logical(itemAt(dataset.cases,i).correctness.passed),1:numel(dataset.cases)))
         error("WaveVortexModel:InvalidThreeInterfaceBenchmark","Interface comparison %s does not contain three passing matched cases.",datasetId);
     end
-    rawPath = repositoryFile(repositoryRoot,string(dataset.provenance.rawArtifact),"raw interface benchmark");
-    records(end+1)=struct("dataset",dataset,"artifactPath",artifactPath,"rawPath",rawPath); %#ok<AGROW>
+    archive = dataset.provenance.externalArchive;
+    if strlength(string(archive.fileName))==0 || isempty(regexp(string(archive.sha256),'^[0-9a-f]{64}$','once')) || double(archive.compressedBytes)<=0
+        error("WaveVortexModel:InvalidThreeInterfaceBenchmark","Interface comparison %s lacks a valid external archive record.",datasetId);
+    end
+    records(end+1)=struct("dataset",dataset,"artifactPath",artifactPath); %#ok<AGROW>
 end
 end
 
@@ -117,13 +120,11 @@ end
 
 function copyInterfaceRecords(records,buildFolder)
 if isempty(records), return, end
-dataFolder=fullfile(buildFolder,"benchmarks","data"); rawFolder=fullfile(buildFolder,"benchmarks","raw");
+dataFolder=fullfile(buildFolder,"benchmarks","data");
 if ~isfolder(dataFolder), mkdir(dataFolder); end
-if ~isfolder(rawFolder), mkdir(rawFolder); end
 for iRecord=1:numel(records)
     datasetId=string(records(iRecord).dataset.datasetId);
     copyfile(records(iRecord).artifactPath,fullfile(dataFolder,datasetId+".json"),"f");
-    copyfile(records(iRecord).rawPath,fullfile(rawFolder,datasetId+".json"),"f");
 end
 end
 
@@ -711,13 +712,15 @@ for iRecord = 1:numel(interfaceRecords)
     dataset = interfaceRecords(iRecord).dataset;
     datasetId = string(dataset.datasetId);
     iRow = numel(records)+iRecord;
-    rows(iRow,:) = [datasetId,"MATLAB builtin / MATLAB compiled / standalone compiled",string(dataset.platform.displayName),"three-interface-v1",string(dataset.collectedAt),string(dataset.schemaVersion),"Published JSON","Raw JSON"];
+    rows(iRow,:) = [datasetId,"MATLAB builtin / MATLAB compiled / standalone compiled",string(dataset.platform.displayName),"three-interface-v1",string(dataset.collectedAt),string(dataset.schemaVersion),"Published JSON","External archive: "+extractBefore(string(dataset.provenance.externalArchive.sha256),13)+"…"];
 end
 rows = sortrows(rows,1);
 links = strings(size(rows));
 for iRow = 1:size(rows,1)
     links(iRow,7) = "/benchmarks/data/" + rows(iRow,1) + ".json";
-    links(iRow,8) = "/benchmarks/raw/" + rows(iRow,1) + ".json";
+    if rows(iRow,4)~="three-interface-v1"
+        links(iRow,8) = "/benchmarks/raw/" + rows(iRow,1) + ".json";
+    end
 end
 markdown = htmlTable(["Dataset" "Implementation" "Platform" "Suite" "Collected" "Schema" "Normalized" "Raw artifact"],rows,links);
 end

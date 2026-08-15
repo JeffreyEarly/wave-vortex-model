@@ -9,6 +9,7 @@ arguments
     options.samplingIntervalSeconds (1,1) double {mustBePositive} = 0.005
     options.plateauSeconds (1,1) double {mustBePositive} = 0.05
     options.outputDirectory (1,1) string = ""
+    options.archiveDirectory (1,1) string = ""
     options.runId (1,1) string = string(datetime("now","TimeZone","UTC","Format","yyyyMMdd'T'HHmmssSSS'Z'"))
     options.shouldWriteArtifacts (1,1) logical = true
     options.injectWorkerFailure (1,1) logical = false
@@ -25,6 +26,9 @@ stateCleanup = onCleanup(@()restoreState(originalDirectory,originalPath,original
 addRepositoryPaths(repositoryRoot,benchmarkFolder);
 if options.outputDirectory == ""
     options.outputDirectory = fullfile(benchmarkFolder,"results","runs",options.runId+"-three-interface");
+end
+if options.archiveDirectory == ""
+    options.archiveDirectory = fullfile(fileparts(repositoryRoot),"wave-vortex-model-benchmark-artifacts","three-interface");
 end
 if options.shouldWriteArtifacts && isfolder(options.outputDirectory)
     error("WaveVortexBenchmark:ThreeInterfaceOutputExists","Output already exists: %s",options.outputDirectory);
@@ -80,6 +84,10 @@ try
     results.completedAtUTC = utcTimestamp;
     results.failure = emptyFailure;
     writeArtifacts(results,options);
+    if options.shouldWriteArtifacts
+        activeStage = "archive";
+        results.externalArchive = archiveDetailedArtifact(options);
+    end
 catch exception
     results.status = "failed";
     results.completedAtUTC = utcTimestamp;
@@ -310,6 +318,22 @@ function checkpoint(results,options)
 if options.shouldWriteArtifacts, writeArtifacts(results,options); end
 end
 
+function archive = archiveDetailedArtifact(options)
+if ~isfolder(options.archiveDirectory)
+    mkdir(options.archiveDirectory);
+end
+rawPath = fullfile(options.outputDirectory,"three-interface-benchmark.json");
+archiveName = options.runId+"-three-interface-benchmark.json.gz";
+generated = gzip(rawPath,options.archiveDirectory);
+generatedPath = string(generated{1});
+archivePath = fullfile(options.archiveDirectory,archiveName);
+if generatedPath ~= archivePath
+    movefile(generatedPath,archivePath,"f");
+end
+information = dir(archivePath);
+archive = struct("fileName",archiveName,"sha256",sha256File(archivePath),"compressedBytes",information.bytes,"location","external author archive; not distributed with source");
+end
+
 function markdown = summaryMarkdown(results)
 lines = ["# Matched three-interface benchmark"; ""; "Status: `"+results.status+"`."; ""; "| Case | Interface | Process wall (s) | Integration (s) | Peak RSS (GiB) | Increment RSS (GiB) |"; "|---|---|---:|---:|---:|---:|"];
 if ~isempty(results.comparison)
@@ -347,28 +371,35 @@ if ~isfile(samplePath)
 end
 lines = splitlines(strtrim(string(fileread(samplePath))));
 lines(lines=="") = [];
-samples = repmat(struct("sampleIndex",0,"elapsedSeconds",0,"phase","","rssBytes",0,"processCount",0),numel(lines),1);
+samples = repmat(struct("sampleIndex",0,"elapsedSeconds",0,"phase","","rssBytes",0,"processCount",0),0,1);
 for iLine = 1:numel(lines)
     fields = split(lines(iLine),sprintf('\t'));
     if numel(fields) < 4
-        return
+        continue
     end
     index = str2double(fields(1));
-    samples(iLine) = struct("sampleIndex",index,"elapsedSeconds",index*interval,"phase",fields(2),"rssBytes",1024*str2double(fields(3)),"processCount",str2double(fields(4)));
+    rssBytes = 1024*str2double(fields(3));
+    processCount = str2double(fields(4));
+    if ~isfinite(index) || ~isfinite(rssBytes) || rssBytes<=0 || ~isfinite(processCount) || processCount<1
+        continue
+    end
+    samples(end+1,1) = struct("sampleIndex",index,"elapsedSeconds",index*interval,"phase",fields(2),"rssBytes",rssBytes,"processCount",processCount); %#ok<AGROW>
 end
 bytes = [samples.rssBytes];
 phases = string({samples.phase});
 baseline = bytes(phases=="steady-retained");
-if isempty(samples) || isempty(baseline) || any(~isfinite(bytes)) || any(bytes<=0)
+memory.samples = samples;
+if isempty(samples)
     return
 end
 memory.status = "complete";
 memory.totalPeakRSSBytes = max(bytes);
-memory.baselineProcessBytes = median(baseline);
-memory.peakIncrementBytes = max(0,memory.totalPeakRSSBytes-memory.baselineProcessBytes);
+if ~isempty(baseline)
+    memory.baselineProcessBytes = median(baseline);
+    memory.peakIncrementBytes = max(0,memory.totalPeakRSSBytes-memory.baselineProcessBytes);
+end
 memory.finalRSSBytes = bytes(end);
 memory.maximumProcessCount = max([samples.processCount]);
-memory.samples = samples;
 end
 
 function value = mergeStruct(first,second)
