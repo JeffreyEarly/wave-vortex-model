@@ -54,7 +54,24 @@ Supported: constant-stratification hydrostatic and nonhydrostatic models with th
 The matched comparison below separates a single nonlinear-flux evaluation from fixed-step and adaptive model continuations. Each row uses the same initial model, forcing, integration settings, observer graph, output schedule, provider, thread policy, and fresh-process boundary across MATLAB builtin, MATLAB compiled, and standalone compiled execution.
 
 <!-- BENCHMARKS:THREE_INTERFACES:START -->
-No approved matched three-interface result has been published yet.
+Matched on Apple M5 Max with `native-neon-pthreads` 3.3.11 at 18 threads. Ratios are relative to MATLAB builtin within each case; process wall includes interface launch, while integration time isolates the matched operation and output work.
+
+<table>
+  <thead>
+    <tr><th scope="col">Case</th><th scope="col">Interface</th><th scope="col">Process wall</th><th scope="col">Integration only</th><th scope="col">Peak RSS</th><th scope="col">RSS above baseline</th><th scope="col">Integration ratio</th><th scope="col">Maximum error</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>nonlinear-flux</td><td>MATLAB builtin</td><td>4.593 s</td><td>0.07759 s</td><td>0.841 GiB</td><td>0.00517 GiB</td><td>1.000×</td><td>8.755e-13</td></tr>
+    <tr><td>nonlinear-flux</td><td>MATLAB compiled</td><td>5.824 s</td><td>0.00531 s</td><td>0.847 GiB</td><td>0.00346 GiB</td><td>0.068×</td><td>8.755e-13</td></tr>
+    <tr><td>nonlinear-flux</td><td>Standalone compiled</td><td>1.287 s</td><td>0.003978 s</td><td>0.0307 GiB</td><td>0.000549 GiB</td><td>0.051×</td><td>8.755e-13</td></tr>
+    <tr><td>fixed-rk4-continuation</td><td>MATLAB builtin</td><td>5.546 s</td><td>0.9732 s</td><td>0.923 GiB</td><td>0.0262 GiB</td><td>1.000×</td><td>4.523e-16</td></tr>
+    <tr><td>fixed-rk4-continuation</td><td>MATLAB compiled</td><td>7.105 s</td><td>0.7337 s</td><td>0.938 GiB</td><td>0.0261 GiB</td><td>0.754×</td><td>4.523e-16</td></tr>
+    <tr><td>fixed-rk4-continuation</td><td>Standalone compiled</td><td>1.449 s</td><td>0.1471 s</td><td>0.0513 GiB</td><td>0.018 GiB</td><td>0.151×</td><td>4.523e-16</td></tr>
+    <tr><td>adaptive-rk23-observer-output</td><td>MATLAB builtin</td><td>5.573 s</td><td>0.9774 s</td><td>0.926 GiB</td><td>0.0289 GiB</td><td>1.000×</td><td>5.057e-16</td></tr>
+    <tr><td>adaptive-rk23-observer-output</td><td>MATLAB compiled</td><td>7.122 s</td><td>0.7411 s</td><td>0.94 GiB</td><td>0.026 GiB</td><td>0.758×</td><td>5.057e-16</td></tr>
+    <tr><td>adaptive-rk23-observer-output</td><td>Standalone compiled</td><td>1.46 s</td><td>0.1492 s</td><td>0.0518 GiB</td><td>0.0187 GiB</td><td>0.153×</td><td>5.057e-16</td></tr>
+  </tbody>
+</table>
 <!-- BENCHMARKS:THREE_INTERFACES:END -->
 
 ## Scaling with model size

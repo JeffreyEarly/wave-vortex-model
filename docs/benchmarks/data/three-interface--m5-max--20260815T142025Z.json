@@ -1,0 +1,339 @@
+{
+  "schemaVersion": "published-three-interface-v1",
+  "datasetId": "three-interface--m5-max--20260815T142025Z",
+  "collectedAt": "2026-08-15T14:20:25Z",
+  "source": {
+    "repository": "https://github.com/JeffreyEarly/wave-vortex-model",
+    "commit": "047b49fe8222d5952f6ba335db270937d0572391",
+    "tree": "16ee7a1d9c3da9c5480cdc89dbea9617779b8696",
+    "sourceDirty": false,
+    "version": "unreleased-preview"
+  },
+  "platform": {
+    "id": "m5-max",
+    "displayName": "Apple M5 Max",
+    "processor": "Apple M5 Max",
+    "physicalMemoryBytes": 5.1539607552E+10,
+    "os": "Darwin 25.5.0 Darwin Kernel Version 25.5.0: Tue Jun  9 22:28:34 PDT 2026; root:xnu-12377.121.10~1/RELEASE_ARM64_T6050 arm64",
+    "architecture": "maca64",
+    "matlabVersion": "26.1.0.3312084 (R2026a) Update 4",
+    "threadCount": 18
+  },
+  "provider": {
+    "id": "native-neon-pthreads",
+    "version": "3.3.11",
+    "threadBackend": "pthreads",
+    "moduleSHA256": "cfa4a787f45be19d4c4cb54bdd4243cb17bc2cbc5b26406c2c7e81ed70cba312",
+    "identityValidated": true,
+    "openMPDetected": false
+  },
+  "provenance": {
+    "rawArtifact": "Benchmarks/results/reference/three-interface-v1-m5-max-r2026a/three-interface-benchmark.json",
+    "rawSchemaVersion": "three-interface-benchmark-v1"
+  },
+  "cases": [
+    {
+      "id": "nonlinear-flux",
+      "operation": "nonlinearFlux",
+      "contract": {
+        "Nxyz": [
+          64,
+          48,
+          17
+        ],
+        "Lxyz": [
+          15000,
+          12000,
+          1300
+        ],
+        "forcing": "default WVNonlinearAdvection",
+        "shouldAntialias": true,
+        "integrator": "none",
+        "deltaT": 0.001,
+        "finalTime": 0.002,
+        "relativeTolerance": 0.001,
+        "absoluteTolerance": 1E-6,
+        "outputInterval": 0.0005,
+        "observerGraph": "Eulerian u, one mooring, two 3-D particles, one 3-D tracer",
+        "processRunCount": 3,
+        "warmupCount": 0,
+        "samplesPerProcess": 1
+      },
+      "interfaces": [
+        {
+          "id": "matlab-builtin",
+          "processWallSeconds": 4.5926770416666667,
+          "interfaceTotalSeconds": 1.5317154166666667,
+          "integrationSeconds": 0.077588833333333329,
+          "totalPeakRSSBytes": 9.03053312E+8,
+          "incrementalPeakRSSBytes": 5.545984E+6,
+          "processWallRatio": 1,
+          "integrationRatio": 1,
+          "totalRSSRatio": 1,
+          "incrementalRSSRatio": 1,
+          "processWallSamplesSeconds": [
+            4.547410375,
+            4.5926770416666667,
+            4.623000291666667
+          ],
+          "integrationSamplesSeconds": [
+            0.078821125,
+            0.077588833333333329,
+            0.07693
+          ]
+        },
+        {
+          "id": "matlab-compiled",
+          "processWallSeconds": 5.8241192083333333,
+          "interfaceTotalSeconds": 2.9626876666666666,
+          "integrationSeconds": 0.0053102083333333334,
+          "totalPeakRSSBytes": 9.09426688E+8,
+          "incrementalPeakRSSBytes": 3.719168E+6,
+          "processWallRatio": 1.2681316703731862,
+          "integrationRatio": 0.068440368351975048,
+          "totalRSSRatio": 1.0070575855437425,
+          "incrementalRSSRatio": 0.670605612998523,
+          "processWallSamplesSeconds": [
+            5.7914615,
+            5.8241192083333333,
+            5.8408674166666668
+          ],
+          "integrationSamplesSeconds": [
+            0.0050867916666666665,
+            0.0053102083333333334,
+            0.0054122916666666668
+          ]
+        },
+        {
+          "id": "standalone-compiled",
+          "processWallSeconds": 1.287440625,
+          "interfaceTotalSeconds": 1.287440625,
+          "integrationSeconds": 0.003978334,
+          "totalPeakRSSBytes": 3.2980992E+7,
+          "incrementalPeakRSSBytes": 589824,
+          "processWallRatio": 0.28032465886884833,
+          "integrationRatio": 0.051274569149770265,
+          "totalRSSRatio": 0.036521644471860369,
+          "incrementalRSSRatio": 0.10635155096011817,
+          "processWallSamplesSeconds": [
+            1.5550213333333334,
+            1.287440625,
+            1.2815495416666667
+          ],
+          "integrationSamplesSeconds": [
+            0.003968625,
+            0.003982708,
+            0.003978334
+          ]
+        }
+      ],
+      "correctness": {
+        "passed": true,
+        "maximumRelativeError": 8.7550610607887373E-13,
+        "outputAgreementPassed": true
+      }
+    },
+    {
+      "id": "fixed-rk4-continuation",
+      "operation": "model-continuation",
+      "contract": {
+        "Nxyz": [
+          64,
+          48,
+          17
+        ],
+        "Lxyz": [
+          15000,
+          12000,
+          1300
+        ],
+        "forcing": "default WVNonlinearAdvection",
+        "shouldAntialias": true,
+        "integrator": "fixed-rk4",
+        "deltaT": 0.001,
+        "finalTime": 0.002,
+        "relativeTolerance": 0.001,
+        "absoluteTolerance": 1E-6,
+        "outputInterval": 0.0005,
+        "observerGraph": "Eulerian u, one mooring, two 3-D particles, one 3-D tracer",
+        "processRunCount": 3,
+        "warmupCount": 0,
+        "samplesPerProcess": 1
+      },
+      "interfaces": [
+        {
+          "id": "matlab-builtin",
+          "processWallSeconds": 5.5463675833333337,
+          "interfaceTotalSeconds": 2.7287279583333333,
+          "integrationSeconds": 0.9732017083333333,
+          "totalPeakRSSBytes": 9.90937088E+8,
+          "incrementalPeakRSSBytes": 2.8082176E+7,
+          "processWallRatio": 1,
+          "integrationRatio": 1,
+          "totalRSSRatio": 1,
+          "incrementalRSSRatio": 1,
+          "processWallSamplesSeconds": [
+            5.5287643333333332,
+            5.5463675833333337,
+            5.8973983333333333
+          ],
+          "integrationSamplesSeconds": [
+            0.96699733333333338,
+            0.9732017083333333,
+            0.979570875
+          ]
+        },
+        {
+          "id": "matlab-compiled",
+          "processWallSeconds": 7.1051046666666666,
+          "interfaceTotalSeconds": 4.0053284583333335,
+          "integrationSeconds": 0.73374125,
+          "totalPeakRSSBytes": 1.006895104E+9,
+          "incrementalPeakRSSBytes": 2.8049408E+7,
+          "processWallRatio": 1.2810374645952589,
+          "integrationRatio": 0.75394570695583363,
+          "totalRSSRatio": 1.0161039648159782,
+          "incrementalRSSRatio": 0.99883313885647607,
+          "processWallSamplesSeconds": [
+            6.7959679166666671,
+            7.1051046666666666,
+            7.131508875
+          ],
+          "integrationSamplesSeconds": [
+            0.73137833333333335,
+            0.73374125,
+            0.734762
+          ]
+        },
+        {
+          "id": "standalone-compiled",
+          "processWallSeconds": 1.4485567083333333,
+          "interfaceTotalSeconds": 1.439111291,
+          "integrationSeconds": 0.147101834,
+          "totalPeakRSSBytes": 5.5083008E+7,
+          "incrementalPeakRSSBytes": 1.9316736E+7,
+          "processWallRatio": 0.26117214313133558,
+          "integrationRatio": 0.15115246175627944,
+          "totalRSSRatio": 0.055586786151251615,
+          "incrementalRSSRatio": 0.68786464410735126,
+          "processWallSamplesSeconds": [
+            1.6684468333333333,
+            1.4434967916666666,
+            1.4485567083333333
+          ],
+          "integrationSamplesSeconds": [
+            0.152187541,
+            0.147043916,
+            0.147101834
+          ]
+        }
+      ],
+      "correctness": {
+        "passed": true,
+        "maximumRelativeError": 4.5225580960983072E-16,
+        "outputAgreementPassed": true
+      }
+    },
+    {
+      "id": "adaptive-rk23-observer-output",
+      "operation": "model-continuation",
+      "contract": {
+        "Nxyz": [
+          64,
+          48,
+          17
+        ],
+        "Lxyz": [
+          15000,
+          12000,
+          1300
+        ],
+        "forcing": "default WVNonlinearAdvection",
+        "shouldAntialias": true,
+        "integrator": "adaptive-rk23",
+        "deltaT": 0.001,
+        "finalTime": 0.002,
+        "relativeTolerance": 0.001,
+        "absoluteTolerance": 1E-6,
+        "outputInterval": 0.0005,
+        "observerGraph": "Eulerian u, one mooring, two 3-D particles, one 3-D tracer",
+        "processRunCount": 3,
+        "warmupCount": 0,
+        "samplesPerProcess": 1
+      },
+      "interfaces": [
+        {
+          "id": "matlab-builtin",
+          "processWallSeconds": 5.573089,
+          "interfaceTotalSeconds": 2.7383439166666665,
+          "integrationSeconds": 0.977385375,
+          "totalPeakRSSBytes": 9.94377728E+8,
+          "incrementalPeakRSSBytes": 3.1064064E+7,
+          "processWallRatio": 1,
+          "integrationRatio": 1,
+          "totalRSSRatio": 1,
+          "incrementalRSSRatio": 1,
+          "processWallSamplesSeconds": [
+            5.5802012083333334,
+            5.5711965833333332,
+            5.573089
+          ],
+          "integrationSamplesSeconds": [
+            0.970559125,
+            0.97817754166666671,
+            0.977385375
+          ]
+        },
+        {
+          "id": "matlab-compiled",
+          "processWallSeconds": 7.1217376666666663,
+          "interfaceTotalSeconds": 4.0450697083333331,
+          "integrationSeconds": 0.74112895833333337,
+          "totalPeakRSSBytes": 1.009319936E+9,
+          "incrementalPeakRSSBytes": 2.7951104E+7,
+          "processWallRatio": 1.2778797659012202,
+          "integrationRatio": 0.758277110841088,
+          "totalRSSRatio": 1.0150266921505307,
+          "incrementalRSSRatio": 0.89978902953586493,
+          "processWallSamplesSeconds": [
+            7.1303934166666663,
+            7.0918083333333337,
+            7.1217376666666663
+          ],
+          "integrationSamplesSeconds": [
+            0.72940666666666665,
+            0.78754770833333332,
+            0.74112895833333337
+          ]
+        },
+        {
+          "id": "standalone-compiled",
+          "processWallSeconds": 1.4596277083333333,
+          "interfaceTotalSeconds": 1.450066416,
+          "integrationSeconds": 0.149222209,
+          "totalPeakRSSBytes": 5.5656448E+7,
+          "incrementalPeakRSSBytes": 2.0037632E+7,
+          "processWallRatio": 0.26190640564565421,
+          "integrationRatio": 0.15267489448570887,
+          "totalRSSRatio": 0.0559711329335003,
+          "incrementalRSSRatio": 0.645042194092827,
+          "processWallSamplesSeconds": [
+            1.46252525,
+            1.4532162916666667,
+            1.4596277083333333
+          ],
+          "integrationSamplesSeconds": [
+            0.149460167,
+            0.148410334,
+            0.149222209
+          ]
+        }
+      ],
+      "correctness": {
+        "passed": true,
+        "maximumRelativeError": 5.0567686812970737E-16,
+        "outputAgreementPassed": true
+      }
+    }
+  ]
+}
