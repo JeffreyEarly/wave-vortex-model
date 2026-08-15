@@ -62,6 +62,7 @@ struct Options {
     std::string outputPattern = "checkpoint-{index}.nc";
     std::string integrator = "fixed-rk4";
     std::string restartMode = "model";
+    std::string outputPolicy;
     double deltaT = 0.0;
     double relativeTolerance = 1e-3;
     double absoluteTolerance = 1e-6;
@@ -155,6 +156,8 @@ bool parseOptions(int argc, char** argv, Options& options, std::string& error) {
             options.integrator = value;
         } else if (name == "--restart-mode") {
             options.restartMode = value;
+        } else if (name == "--output-policy") {
+            options.outputPolicy = value;
         } else if (name == "--relative-tolerance") {
             if (!parseDouble(value,options.relativeTolerance) || options.relativeTolerance <= 0.0) { error = "--relative-tolerance must be finite and positive."; return false; }
             options.hasRelativeTolerance = true;
@@ -190,6 +193,9 @@ bool parseOptions(int argc, char** argv, Options& options, std::string& error) {
     if (!(options.deltaT > 0.0)) { error = "--delta-t is required."; return false; }
     if (options.hasSteps == options.hasFinalTime) { error = "Exactly one of --steps or --final-time is required."; return false; }
     if (options.restartMode != "model" && options.restartMode != "coefficients") { error = "--restart-mode must be model or coefficients."; return false; }
+    if (options.outputPolicy != "create" && options.outputPolicy != "replace" && options.outputPolicy != "append") { error = "--output-policy must be create, replace, or append."; return false; }
+    if (options.restartMode == "model" && options.outputPolicy != "append") { error = "Model-graph continuation requires --output-policy append."; return false; }
+    if (options.restartMode == "coefficients" && options.outputPolicy == "append") { error = "Coefficient-only continuation supports create or replace, not append."; return false; }
     if (options.restartMode == "model" && !options.output.empty()) { error = "Model-graph continuation appends its restored output and does not accept positional OUTPUT."; return false; }
     if (options.restartMode == "model" && options.scheduledOutput()) { error = "Model-graph continuation uses its restored output schedules."; return false; }
     if (options.restartMode == "model" && options.hasSteps) { error = "Model-graph continuation requires --final-time so restored schedules have a bounded continuation interval."; return false; }
@@ -516,6 +522,36 @@ int main(int argc, char** argv) {
         emit(failureJSON(ExitCode::checkpoint,"inspect",checkpointStatus.message,checkpointStatus.location),options.report,std::cerr);
         return static_cast<int>(ExitCode::checkpoint);
     }
+    if (options.restartMode == "coefficients" && !options.scheduledOutput()) {
+        const auto inputPath = normalizedPath(options.input);
+        const auto outputPath = normalizedPath(options.output);
+        if (inputPath == outputPath) {
+            emit(failureJSON(ExitCode::usage,"output-preflight",
+                             "Coefficient output must not alias its input."),
+                 options.report,std::cerr);
+            return static_cast<int>(ExitCode::usage);
+        }
+        std::error_code destinationError;
+        const auto destinationStatus =
+            std::filesystem::symlink_status(outputPath,destinationError);
+        if (destinationError == std::errc::no_such_file_or_directory)
+            destinationError.clear();
+        if (destinationError) {
+            emit(failureJSON(ExitCode::output,"output-preflight",
+                             "Unable to inspect output destination: " +
+                                 destinationError.message(),
+                             outputPath.string()),options.report,std::cerr);
+            return static_cast<int>(ExitCode::output);
+        }
+        if (options.outputPolicy == "create" &&
+            destinationStatus.type() != std::filesystem::file_type::not_found) {
+            emit(failureJSON(ExitCode::output,"output-preflight",
+                             "Output destination already exists; use "
+                             "--output-policy replace to authorize replacement.",
+                             outputPath.string()),options.report,std::cerr);
+            return static_cast<int>(ExitCode::output);
+        }
+    }
     WVModelOutputNetCDFInspection modelInspection;
     if (options.restartMode == "model") {
         checkpointStatus = WVModelOutputNetCDFSink::inspect(
@@ -810,7 +846,11 @@ int main(int argc, char** argv) {
         checkpoint.state.t0 = state.waveVortex.t0;
         start = Clock::now();
         phase(options,"write");
-        checkpointStatus = WVCheckpointWriter::write(options.output,checkpoint);
+        checkpointStatus = WVCheckpointWriter::write(
+            options.output,checkpoint,
+            options.outputPolicy == "replace"
+                ? WVCheckpointCommitPolicy::replaceExisting
+                : WVCheckpointCommitPolicy::createNew);
         timings.write = seconds(start);
     }
     timings.total = seconds(totalStart);
@@ -858,7 +898,7 @@ int main(int argc, char** argv) {
     std::ostringstream report;
     report << std::setprecision(17)
            << "{\"schemaVersion\":\"wave-vortex-run-v1\",\"status\":\"complete\",\"source\":{\"commit\":" << quoted(WV_RUNTIME_SOURCE_COMMIT) << "},"
-           << "\"input\":" << quoted(options.input) << ",\"output\":" << quoted(options.output) << ",\"restartMode\":" << quoted(options.restartMode) << ",\"provider\":{\"id\":" << quoted(options.provider) << ",\"version\":" << quoted(providerVersion) << ",\"threads\":" << options.threads << ",\"baseLibrary\":" << quoted(baseLibrary) << ",\"threadLibrary\":" << quoted(threadLibrary) << "},"
+           << "\"input\":" << quoted(options.input) << ",\"output\":" << quoted(options.output) << ",\"restartMode\":" << quoted(options.restartMode) << ",\"outputPolicy\":" << quoted(options.outputPolicy) << ",\"provider\":{\"id\":" << quoted(options.provider) << ",\"version\":" << quoted(providerVersion) << ",\"threads\":" << options.threads << ",\"baseLibrary\":" << quoted(baseLibrary) << ",\"threadLibrary\":" << quoted(threadLibrary) << "},"
            << "\"state\":{\"initialTime\":" << inspection.t << ",\"finalTime\":" << state.waveVortex.t << ",\"deltaT\":" << options.deltaT << ",\"stepCount\":" << stepCount << ",\"rejectedStepCount\":" << rejectedStepCount << ",\"rhsEvaluationCount\":" << rightHandSideEvaluationCount << ",\"shape\":[" << shape.rows << ',' << shape.columns << "]},"
            << "\"integrator\":{\"id\":" << quoted(options.integrator) << ",\"relativeTolerance\":" << options.relativeTolerance << ",\"absoluteTolerance\":" << options.absoluteTolerance << ",\"lastNormalizedError\":" << adaptiveMetrics.normalizedError << ",\"lastProposedStepSize\":" << adaptiveMetrics.lastProposedStepSize << ",\"lastAcceptedStepSize\":" << adaptiveMetrics.lastAcceptedStepSize << ",\"nextStepSize\":" << integrator.nextStepSize() << ",\"fsalReuseCount\":" << adaptiveMetrics.fsalReuseCount << ",\"fsalInvalidationCount\":" << adaptiveMetrics.fsalInvalidationCount << ",\"rejectedInitialDerivativeReuseCount\":" << adaptiveMetrics.rejectedInitialDerivativeReuseCount << ",\"constraintModifiedCoefficientCount\":" << adaptiveMetrics.constraintModifiedCoefficientCount << ",\"denseOutputEvaluationCount\":" << (fixedIntegrator != nullptr ? fixedMetrics.denseOutputEvaluationCount : adaptiveMetrics.denseOutputEvaluationCount) << ",\"denseOutputElementReads\":" << (fixedIntegrator != nullptr ? fixedMetrics.denseOutputElementReads : adaptiveMetrics.denseOutputElementReads) << ",\"denseOutputElementWrites\":" << (fixedIntegrator != nullptr ? fixedMetrics.denseOutputElementWrites : adaptiveMetrics.denseOutputElementWrites) << ",\"denseOutputSeconds\":" << (fixedIntegrator != nullptr ? fixedMetrics.denseOutputSeconds : adaptiveMetrics.denseOutputSeconds) << ",\"errorPolicyBytes\":" << adaptiveMetrics.errorPolicyBytes << "},"
            << "\"authorBenchmark\":{\"warmupStepCount\":" << options.benchmarkWarmupSteps << ",\"sampleStepCount\":" << (options.hasSteps ? options.steps : 0) << ",\"denseOutputsPerStep\":" << options.benchmarkDenseOutputsPerStep << ",\"requestedOutputCount\":" << options.benchmarkOutputCount << ",\"interpolatedOutputCount\":" << interpolatedOutputCount << ",\"interpolationSeconds\":" << driverInterpolationSeconds << "},"

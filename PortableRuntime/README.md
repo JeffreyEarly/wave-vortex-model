@@ -36,18 +36,20 @@ The optimized command-line program requires an explicit FFT provider. Complete-m
 ```sh
 wave-vortex-run saved-model.nc \
     --restart-mode model \
+    --output-policy append \
     --delta-t 1 --final-time 100 \
     --fft-provider native-fftw --threads 18
 
 wave-vortex-run saved-model.nc \
     --restart-mode model \
+    --output-policy append \
     --integrator adaptive-rk23 \
     --delta-t 1 --final-time 100 \
     --relative-tolerance 1e-3 --absolute-tolerance 1e-6 \
     --fft-provider native-fftw
 ```
 
-Use `--restart-mode coefficients` with positional input and output paths for an explicit reduced checkpoint-only workflow.
+Use `--restart-mode coefficients --output-policy create` with positional input and output paths for an explicit reduced checkpoint-only workflow. `create` refuses existing files; `replace` must be named to authorize atomic replacement. Complete-model continuation accepts only `append` and validates compatibility before mutation.
 
 Plans, caches, integrator history, derived forcing operators, and scratch are rebuilt after restart rather than persisted.
 

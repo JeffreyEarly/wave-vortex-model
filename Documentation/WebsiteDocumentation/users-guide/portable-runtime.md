@@ -47,11 +47,13 @@ Complete-model continuation is the default restart mode. It restores the selecte
 ```sh
 wave-vortex-run saved-model.nc \
     --restart-mode model \
+    --output-policy append \
     --delta-t 1 --final-time 100 \
     --fft-provider native-fftw --threads 18
 
 wave-vortex-run saved-model.nc \
     --restart-mode model \
+    --output-policy append \
     --integrator adaptive-rk23 \
     --delta-t 1 --final-time 100 \
     --relative-tolerance 1e-3 --absolute-tolerance 1e-6 \
@@ -63,9 +65,12 @@ For a deliberately coefficient-only workflow, name that reduced boundary explici
 ```sh
 wave-vortex-run input.nc output.nc \
     --restart-mode coefficients \
+    --output-policy create \
     --delta-t 1 --steps 8 \
     --fft-provider native-fftw --threads 18
 ```
+
+The output policy is always explicit. `append` is valid only for complete-model continuation and retains earlier compatible records. `create` refuses an existing coefficient-checkpoint destination. Use `replace` instead of `create` only when replacement is intentional; the writer validates a temporary checkpoint before atomically committing it. Input/output aliases are rejected, and validation or integration failures leave existing files recoverable.
 
 The output is restartable by the documented MATLAB and C++ readers. Plans, caches, continuous-output history, derived forcing operators, and scratch are rebuilt rather than persisted. Unsupported model graphs are rejected during allocation-light preflight, before the numerical core is constructed or output is opened for append.
 

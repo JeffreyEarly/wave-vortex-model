@@ -31,6 +31,10 @@ std::string quote(const std::filesystem::path& path) { return "\""+path.string()
 std::string explicitRestartMode(std::string arguments) {
     if (arguments.find("--restart-mode") == std::string::npos)
         arguments += " --restart-mode coefficients";
+    if (arguments.find("--output-policy") == std::string::npos)
+        arguments += arguments.find("--restart-mode model") == std::string::npos
+                         ? " --output-policy create"
+                         : " --output-policy append";
     return arguments;
 }
 
@@ -130,6 +134,27 @@ int main() {
         require(reportText.find("\"arrayTraffic\"") != std::string::npos && reportText.find("\"stageStateConstructionReads\":1296") != std::string::npos,"runner omitted exact RK4 traffic diagnostics");
         require(reportText.find("\"stageFluxClearWrites\":0") != std::string::npos && reportText.find("\"weightedFluxInitializationReads\":216") != std::string::npos,"runner omitted eliminated-clear and first-stage initialization diagnostics");
         require(reportText.find("\"contractAbstractionAdditionalArrayStorage\":0") != std::string::npos,"runner reported array-sized contract workspace");
+        const auto protectedOutput = directory/"protected-output.nc";
+        {
+            std::ofstream stream(protectedOutput,std::ios::binary);
+            stream << "protected destination";
+        }
+        const auto protectedBytes = bytes(protectedOutput);
+        require(run(quote(input)+" "+quote(protectedOutput)+" --restart-mode coefficients --output-policy create --delta-t 1e-7 --steps 1 --fft-provider reference >/dev/null 2>&1") != 0,
+                "create policy replaced an existing destination");
+        require(bytes(protectedOutput) == protectedBytes,
+                "failed create changed the existing destination");
+        require(run(quote(input)+" "+quote(protectedOutput)+" --restart-mode coefficients --output-policy replace --delta-t 1e-7 --steps 1 --fft-provider reference >/dev/null 2>&1") == 0,
+                "explicit replacement did not succeed");
+        WVCheckpoint replacedCheckpoint;
+        require(static_cast<bool>(WVCheckpointReader::read(
+                    protectedOutput.string(),replacedCheckpoint)),
+                "explicit replacement did not produce a checkpoint");
+        const auto inputBytes = bytes(input);
+        require(run(quote(input)+" "+quote(input)+" --restart-mode coefficients --output-policy replace --delta-t 1e-7 --steps 1 --fft-provider reference >/dev/null 2>&1") != 0,
+                "coefficient replacement accepted an input/output alias");
+        require(bytes(input) == inputBytes,
+                "input/output alias failure changed the source");
         WVCheckpoint initialCheckpoint;
         require(static_cast<bool>(WVCheckpointReader::read(input.string(),initialCheckpoint)),"scheduled-output input is unreadable");
         const double scheduledMidpoint = initialCheckpoint.state.t+5e-6;

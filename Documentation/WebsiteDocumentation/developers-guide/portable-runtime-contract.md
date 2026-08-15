@@ -33,6 +33,8 @@ The registry is intentionally a native source API rather than a third-party bina
 
 `wave-vortex-run` treats that reconstructed record as the model boundary. Its allocation-light preflight resolves the dynamics mode, frozen forcing order, observer identities and dependencies, output schedules, committed ordinals, and integration layout before coefficient-sized state or numerical workspaces are allocated. Full-model continuation uses the same descriptor for the integration system, observer evaluation, output plan, and append sink. The reduced coefficient-only reader remains available only through an explicit restart mode.
 
+The command-line mutation policy is separate from the restart mode. Full-model continuation requires explicit in-place `append`; coefficient-only output requires safe `create` or authorized `replace`. Path aliases, incompatible append graphs, and existing create destinations are rejected before integration. Replacement uses the checkpoint writer's verified temporary-file commit rather than truncating a destination in place.
+
 The command-line program exposes one checkpoint input and output. Multi-file and named-group orchestration remain C++ library APIs until a separate user-facing configuration contract is designed.
 
 ## Extension checklist

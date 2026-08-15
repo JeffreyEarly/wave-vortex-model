@@ -702,7 +702,8 @@ void testMultipleFilesGroupsAndSharedState() {
           "fixed XY particle z configuration was not reconstructed");
   std::ostringstream fixedCommand;
   fixedCommand << shellQuote(WV_RUNTIME_RUNNER) << ' ' << shellQuote(first)
-               << " --restart-mode model --delta-t " << outputInterval
+               << " --restart-mode model --output-policy append --delta-t "
+               << outputInterval
                << " --final-time " << std::setprecision(17) << end
                << " --fft-provider reference >/dev/null";
   require(std::system(fixedCommand.str().c_str()) == 0,
@@ -717,10 +718,11 @@ void testMultipleFilesGroupsAndSharedState() {
 
   std::ostringstream adaptiveCommand;
   adaptiveCommand << shellQuote(WV_RUNTIME_RUNNER) << ' ' << shellQuote(second)
-                  << " --restart-mode model --delta-t " << outputInterval
+                  << " --restart-mode model --output-policy append --delta-t "
+                  << outputInterval
                   << " --final-time " << std::setprecision(17) << end
-                  << " --integrator adaptive-rk23 --relative-tolerance 1e-6"
-                     " --absolute-tolerance 1e-8 --fft-provider reference"
+                  << " --integrator adaptive-rk23 --relative-tolerance 1e-3"
+                     " --absolute-tolerance 1e-6 --fft-provider reference"
                      " >/dev/null";
   require(std::system(adaptiveCommand.str().c_str()) == 0,
           "adaptive full-model continuation failed");
