@@ -973,6 +973,10 @@ WVKernelStatus WVTransformConstantStratificationKernel::ensureScalarInversePlan(
     return WVKernelStatus::ok();
 }
 
+WVKernelStatus WVTransformConstantStratificationKernel::prepareScalarAdvection() {
+    return ensureScalarInversePlan();
+}
+
 WVKernelStatus WVTransformConstantStratificationKernel::antialiasScalarInPlace(WVRealVolumeView& scalar) {
     auto status = ensureScalarInversePlan();
     if (!status) return status;
@@ -1023,11 +1027,15 @@ WVKernelStatus WVTransformConstantStratificationKernel::advectFGridScalar(
     const std::size_t NxHalf = descriptor_.halfSpectrumMappings().NxHalf;
     const std::size_t halfRows = NxHalf*c.Ny;
     auto* half = reinterpret_cast<WVComplex64*>(halfSpectrumScratch_.data());
+    auto stageStarted = std::chrono::steady_clock::now();
     status = plans_[horizontalForward1]->execute(scalar.data,half);
     if (!status) return status;
+    metrics_.scalarForwardSeconds += std::chrono::duration<double>(
+        std::chrono::steady_clock::now()-stageStarted).count();
     ++metrics_.executionCount;
     ++metrics_.horizontalExecutionCount;
     const double horizontalScale = 1.0/static_cast<double>(c.Nx*c.Ny);
+    stageStarted = std::chrono::steady_clock::now();
     for (std::size_t reverse = 0; reverse < halfRows; ++reverse) {
         const std::size_t row = halfRows-1-reverse;
         const std::size_t kIndex = row%NxHalf;
@@ -1042,6 +1050,9 @@ WVKernelStatus WVTransformConstantStratificationKernel::advectFGridScalar(
             half[z+c.Nz*2+c.Nz*3*row] = value;
         }
     }
+    metrics_.scalarDerivativeAssemblySeconds += std::chrono::duration<double>(
+        std::chrono::steady_clock::now()-stageStarted).count();
+    stageStarted = std::chrono::steady_clock::now();
     status = plans_[verticalDCT1Storage3]->execute(half+2*c.Nz,half+2*c.Nz);
     if (!status) return status;
     ++metrics_.executionCount;
@@ -1067,8 +1078,13 @@ WVKernelStatus WVTransformConstantStratificationKernel::advectFGridScalar(
             half[z+c.Nz*1+c.Nz*3*row].imag = 0.0;
             half[z+c.Nz*2+c.Nz*3*row].imag = 0.0;
         }
+    metrics_.scalarVerticalDerivativeSeconds += std::chrono::duration<double>(
+        std::chrono::steady_clock::now()-stageStarted).count();
+    stageStarted = std::chrono::steady_clock::now();
     status = plans_[horizontalInverse3]->execute(half,realScratch_.data()+3*R);
     if (!status) return status;
+    metrics_.scalarInverseSeconds += std::chrono::duration<double>(
+        std::chrono::steady_clock::now()-stageStarted).count();
     ++metrics_.executionCount;
     ++metrics_.horizontalExecutionCount;
     const double* U = advectionFields.data;
@@ -1077,10 +1093,19 @@ WVKernelStatus WVTransformConstantStratificationKernel::advectFGridScalar(
     const double* dx = realScratch_.data()+3*R;
     const double* dy = dx+R;
     const double* dz = dy+R;
+    stageStarted = std::chrono::steady_clock::now();
     for (std::size_t index = 0; index < R; ++index)
         rightHandSide.data[index] = -(U[index]*dx[index]+V[index]*dy[index]+W[index]*dz[index]);
+    metrics_.scalarProductSeconds += std::chrono::duration<double>(
+        std::chrono::steady_clock::now()-stageStarted).count();
     ++metrics_.scalarAdvectionCount;
-    if (shouldAntialias) return antialiasScalarInPlace(rightHandSide);
+    if (shouldAntialias) {
+        stageStarted = std::chrono::steady_clock::now();
+        status = antialiasScalarInPlace(rightHandSide);
+        metrics_.scalarAntialiasSeconds += std::chrono::duration<double>(
+            std::chrono::steady_clock::now()-stageStarted).count();
+        return status;
+    }
     return WVKernelStatus::ok();
 }
 

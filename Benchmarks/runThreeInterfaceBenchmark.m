@@ -53,7 +53,7 @@ try
     executables = buildStandaloneWorkers(repositoryRoot,capabilities);
     activeStage = "fixture";
     fixturePath = fullfile(workFolder,"matched-model.nc");
-    createMatchedFixture(fixturePath,options);
+    createThreeInterfaceBenchmarkFixture(fixturePath,options);
     results.configuration.fixtureSHA256 = sha256File(fixturePath);
     checkpoint(results,options);
 
@@ -271,28 +271,6 @@ for category = reshape(value.categories,1,[])
         result.categories(index).passed = result.categories(index).passed && category.passed;
     end
 end
-end
-
-function createMatchedFixture(pathname,options)
-wvt = WVTransformConstantStratification([15000 15000 1300],options.Nxyz,N0=sqrt(2e-5),latitude=45,isHydrostatic=false,shouldAntialias=true);
-state = initializeWaveVortexBenchmarkState(wvt,4001); advanceWaveVortexBenchmarkState(wvt,state,0);
-model = WVModel(wvt); cleanup = onCleanup(@()closeModels(model));
-outputFile = model.createNetCDFFileForModelOutput(pathname,outputInterval=options.deltaT/2,shouldOverwriteExisting=true);
-model.eulerianObservingSystem.addNetCDFOutputVariables('u');
-model.setFloatPositions([1000 7000],[900 6500],[-250 -850],'u',absToleranceXY=1e-8,absToleranceZ=1e-8);
-model.addTracer(sin(2*pi*wvt.X/wvt.Lx).*cos(2*pi*wvt.Y/wvt.Ly),"dye");
-group = outputFile.outputGroupWithName(model.defaultOutputGroupName());
-particles = model.fluxedObservingSystemWithName("float");
-tracer = model.fluxedObservingSystemWithName("dye");
-group.removeObservingSystem([particles tracer]);
-particleGroup = outputFile.addNewEvenlySpacedOutputGroup("particles",outputInterval=options.deltaT/2);
-particleGroup.addObservingSystem(particles);
-tracerGroup = outputFile.addNewEvenlySpacedOutputGroup("tracers",outputInterval=options.deltaT/2);
-tracerGroup.addObservingSystem(tracer);
-group.addObservingSystem(WVMooring(model,name="mooring",x=[0 5000],y=[0 4000],trackedFieldNames={'u'}));
-model.setupIntegrator(integratorType="fixed",deltaT=options.deltaT);
-model.integrateToTime(options.deltaT,shouldShowIntegrationDiagnostics=false,callback=@(~)[]);
-model.closeNetCDFFile(); clear cleanup
 end
 
 function executables = buildStandaloneWorkers(repositoryRoot,capabilities)

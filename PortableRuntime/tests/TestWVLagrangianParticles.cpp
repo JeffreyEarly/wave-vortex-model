@@ -238,6 +238,8 @@ void testTracers(bool hydrostatic) {
   const auto scratchCapacityBytes =
       system->kernelMetrics().scratchCapacityBytes;
   const auto planCount = system->kernelMetrics().planCount;
+  require(planCount == 18,
+          "antialiased tracer did not prepare the scalar inverse plan");
   status = system->evaluateRightHandSide(fixture.constView(), fixture.rhs);
   require(static_cast<bool>(status), status.message);
 
@@ -261,8 +263,15 @@ void testTracers(bool hydrostatic) {
               system->kernelMetrics().scalarAntialiasCount == 1,
           "tracers did not share exactly one RHS velocity reconstruction");
   require(system->kernelMetrics().scratchCapacityBytes == scratchCapacityBytes &&
-              system->kernelMetrics().planCount == planCount + 1,
-          "tracer evaluation added array-sized scratch or unexpected plans");
+              system->kernelMetrics().planCount == planCount,
+          "tracer evaluation added array-sized scratch or lazily created a plan");
+  require(system->kernelMetrics().scalarForwardSeconds >= 0.0 &&
+              system->kernelMetrics().scalarDerivativeAssemblySeconds >= 0.0 &&
+              system->kernelMetrics().scalarVerticalDerivativeSeconds >= 0.0 &&
+              system->kernelMetrics().scalarInverseSeconds >= 0.0 &&
+              system->kernelMetrics().scalarProductSeconds >= 0.0 &&
+              system->kernelMetrics().scalarAntialiasSeconds >= 0.0,
+          "tracer stage timing metrics were invalid");
   require(system->fieldEvaluationService()->metrics().movingPrimitiveTransformCount == 0,
           "tracer RHS invoked the particle interpolation transform");
 
