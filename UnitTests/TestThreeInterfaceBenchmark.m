@@ -168,7 +168,6 @@ nccreate(pathname,"/wave-vortex/Ap_real",Dimensions={"kl",2,"j",2,"t",2});
 ncwrite(pathname,"/wave-vortex/Ap_real",reshape(1:8,2,2,2));
 nccreate(pathname,"/wave-vortex/mooring_u",Dimensions={"id",2,"t",2});
 ncwrite(pathname,"/wave-vortex/mooring_u",reshape(1:4,2,2));
-ncwriteatt(pathname,"/wave-vortex/mooring_u","mooringName","mooring");
 nccreate(pathname,"/particles/t",Dimensions={"t",2});
 ncwrite(pathname,"/particles/t",[0; 1]);
 particleCount = conditional(wrongShape,3,2);

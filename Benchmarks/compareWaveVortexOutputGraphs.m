@@ -135,7 +135,9 @@ end
 function category = variableCategory(variable)
 name = string(variable.Name);
 attributeNames = structStrings(variable.Attributes,"Name");
-if name == "t"
+if startsWith(name,"mooring_")
+    category = "moorings";
+elseif name == "t"
     category = "times";
 elseif any(attributeNames=="isParticle")
     category = "particles";
