@@ -1,7 +1,7 @@
 #pragma once
 
 #include "WaveVortexRuntime/WVCheckpointReader.hpp"
-#include "WaveVortexRuntime/WVCompositeOutputOrchestration.hpp"
+#include "WaveVortexRuntime/WVOutputOrchestration.hpp"
 
 #include <cstddef>
 #include <cstdint>
@@ -61,13 +61,13 @@ public:
   virtual WVKernelStatus specifications(
       const WVObserverRecord &observer,
       std::vector<WVObserverOutputVariableSpecification> &output) = 0;
-  virtual WVKernelStatus preflight(const WVCompositeOutputPlan &) {
+  virtual WVKernelStatus preflight(const WVOutputPlan &) {
     return WVKernelStatus::ok();
   }
   virtual WVKernelStatus prepareInitial(const WVState &) {
     return WVKernelStatus::ok();
   }
-  virtual WVKernelStatus prepare(const WVCompositeOutputEvent &event) = 0;
+  virtual WVKernelStatus prepare(const WVOutputEvent &event) = 0;
   virtual WVKernelStatus
   value(const WVObserverRecord &observer,
         const WVObserverOutputVariableSpecification &variable,
@@ -96,9 +96,9 @@ struct WVModelOutputNetCDFInspection {
   // Latest complete coefficient restart among paths. Required additional
   // particle and tracer state is owned separately below.
   WVCheckpoint latestRestart;
-  // Reconstructed shared observer graph and its resolved composite layout.
+  // Reconstructed shared observer graph and its resolved integration layout.
   WVPortableObserverRecord observerRecord;
-  WVCompositeStateLayout stateLayout;
+  WVIntegrationStateLayout stateLayout;
   WVAdditionalStateStorage additionalState;
   // Last committed original-lattice ordinal for every file/group pair.
   std::vector<WVOutputGroupProgress> progress;
@@ -117,7 +117,7 @@ struct WVModelOutputNetCDFInspection {
 // deliver() writes all payloads at the group's next record index, writes time
 // last as the commit marker, then synchronizes the file. A failed call leaves
 // the route uncommitted and safe to retry with the same immutable event.
-class WVModelOutputNetCDFSink final : public WVCompositeOutputSink {
+class WVModelOutputNetCDFSink final : public WVOutputSink {
 public:
   WVModelOutputNetCDFSink();
   ~WVModelOutputNetCDFSink() override;
@@ -129,24 +129,24 @@ public:
   static WVCheckpointStatus
   createNew(const WVModelOutputNetCDFConfiguration &configuration,
             const WVPortableObserverDescriptor &descriptor,
-            const WVCompositeStateLayout &stateLayout,
+            const WVIntegrationStateLayout &stateLayout,
             WVObserverSampleSource *sampleSource,
             WVModelOutputNetCDFSink &sink);
 
   static WVCheckpointStatus
   openAppend(const WVModelOutputNetCDFConfiguration &configuration,
              const WVPortableObserverDescriptor &descriptor,
-             const WVCompositeStateLayout &stateLayout,
+             const WVIntegrationStateLayout &stateLayout,
              WVObserverSampleSource *sampleSource,
              WVModelOutputNetCDFSink &sink);
 
   static WVCheckpointStatus inspect(const std::vector<std::string> &paths,
                                     WVModelOutputNetCDFInspection &inspection);
 
-  WVKernelStatus preflight(const WVCompositeOutputPlan &plan) override;
-  WVKernelStatus deliver(const WVCompositeOutputEvent &event,
-                         const WVCompositeOutputRouteView &route,
-                         WVCompositeOutputDeliveryResult &result) override;
+  WVKernelStatus preflight(const WVOutputPlan &plan) override;
+  WVKernelStatus deliver(const WVOutputEvent &event,
+                         const WVOutputRouteView &route,
+                         WVOutputDeliveryResult &result) override;
 
   const std::vector<WVOutputGroupProgress> &progress() const noexcept;
   const WVModelOutputNetCDFMetrics &metrics() const noexcept;

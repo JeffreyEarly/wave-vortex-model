@@ -7,7 +7,7 @@
 
 namespace wavevortex::runtime {
 
-class WVConstantStratificationCompositeSystem;
+class WVConstantStratificationIntegrationSystem;
 
 // Resolved MATLAB-compatible particle component. Accepted x and y state is
 // deliberately unwrapped; periodicity is applied only while sampling fields.
@@ -28,7 +28,7 @@ private:
   std::size_t uOutput_ = 0;
   std::size_t vOutput_ = 0;
   std::size_t wOutput_ = std::numeric_limits<std::size_t>::max();
-  friend class WVConstantStratificationCompositeSystem;
+  friend class WVConstantStratificationIntegrationSystem;
 };
 
 } // namespace wavevortex::runtime

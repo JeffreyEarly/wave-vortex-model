@@ -45,7 +45,7 @@ try
     if buildStatus ~= 0
         error("WaveVortexBenchmark:PortableObservingSystemsBuild","%s",buildOutput)
     end
-    ctestCommand = sprintf('cmake --build "%s" --parallel --target TestWVCompositeIntegration TestWVCompositeOutputOrchestration TestWVObserverOutputEvaluation TestWVLagrangianParticles TestWVModelOutputNetCDF && ctest --test-dir "%s" --output-on-failure -R "^(composite-integration|composite-output-orchestration|observer-output-evaluation|lagrangian-particles|model-output-netcdf)$"',buildDirectory,buildDirectory);
+    ctestCommand = sprintf('cmake --build "%s" --parallel --target TestWVUnifiedIntegration TestWVOutputOrchestration TestWVObserverOutputEvaluation TestWVLagrangianParticles TestWVModelOutputNetCDF && ctest --test-dir "%s" --output-on-failure -R "^(unified-integration|output-orchestration|observer-output-evaluation|lagrangian-particles|model-output-netcdf)$"',buildDirectory,buildDirectory);
     [contractStatus,contractOutput] = system(ctestCommand);
     if contractStatus ~= 0
         error("WaveVortexBenchmark:PortableObservingSystemsContracts","%s",contractOutput)

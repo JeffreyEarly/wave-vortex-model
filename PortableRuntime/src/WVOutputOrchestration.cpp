@@ -1,4 +1,4 @@
-#include "WaveVortexRuntime/WVCompositeOutputOrchestration.hpp"
+#include "WaveVortexRuntime/WVOutputOrchestration.hpp"
 
 #include <algorithm>
 #include <chrono>
@@ -121,7 +121,7 @@ bool sameObserverRecord(const WVObserverRecord &first,
 
 WVKernelStatus validateDescriptorLayout(
     const WVPortableObserverRecord &record,
-    const WVCompositeStateLayout &layout) {
+    const WVIntegrationStateLayout &layout) {
   if (record.stateBlocks.size() != layout.stateBlockRecords().size() ||
       !std::equal(record.stateBlocks.begin(), record.stateBlocks.end(),
                   layout.stateBlockRecords().begin(),
@@ -169,13 +169,13 @@ WVKernelStatus validateDescriptorLayout(
   return WVKernelStatus::ok();
 }
 
-WVKernelStatus copyCompositeState(const WVCompositeStateLayout &layout,
-                                  const WVCompositeState &source,
-                                  WVMutableCompositeState &destination) {
-  auto status = validateCompositeState(layout, source);
+WVKernelStatus copyIntegrationState(const WVIntegrationStateLayout &layout,
+                                  const WVIntegrationState &source,
+                                  WVMutableIntegrationState &destination) {
+  auto status = validateIntegrationState(layout, source);
   if (!status)
     return status;
-  status = validateMutableCompositeState(layout, destination);
+  status = validateMutableIntegrationState(layout, destination);
   if (!status)
     return status;
   const auto count = layout.coefficientShape().elementCount();
@@ -205,9 +205,48 @@ WVKernelStatus copyCompositeState(const WVCompositeStateLayout &layout,
   return WVKernelStatus::ok();
 }
 
+WVKernelStatus stageCheckpointState(WVCheckpoint &checkpoint,
+                                    const WVIntegrationState &state) {
+  const auto shape = checkpoint.state.coefficients.shape;
+  const auto actual = state.waveVortex.coefficients.Ap.shape;
+  if (shape.rows != actual.rows || shape.columns != actual.columns ||
+      state.waveVortex.coefficients.Am.shape.rows != shape.rows ||
+      state.waveVortex.coefficients.Am.shape.columns != shape.columns ||
+      state.waveVortex.coefficients.A0.shape.rows != shape.rows ||
+      state.waveVortex.coefficients.A0.shape.columns != shape.columns)
+    return {WVKernelStatusCode::invalidShape,
+            "Checkpoint template and output state shapes differ."};
+  const auto count = shape.elementCount();
+  if (checkpoint.state.coefficients.Ap.size() != count ||
+      checkpoint.state.coefficients.Am.size() != count ||
+      checkpoint.state.coefficients.A0.size() != count)
+    return {WVKernelStatusCode::invalidShape,
+            "Checkpoint template coefficient storage is incomplete."};
+  const WVComplexConstView sources[] = {
+      state.waveVortex.coefficients.Ap, state.waveVortex.coefficients.Am,
+      state.waveVortex.coefficients.A0};
+  std::vector<WVComplex64> *destinations[] = {
+      &checkpoint.state.coefficients.Ap, &checkpoint.state.coefficients.Am,
+      &checkpoint.state.coefficients.A0};
+  for (std::size_t component = 0; component < 3; ++component)
+    std::copy_n(sources[component].data, count,
+                destinations[component]->data());
+  checkpoint.state.t = state.waveVortex.t;
+  checkpoint.state.t0 = state.waveVortex.t0;
+  return WVKernelStatus::ok();
+}
+
+std::size_t checkpointCoefficientCapacityBytes(
+    const WVCheckpoint &checkpoint) noexcept {
+  return (checkpoint.state.coefficients.Ap.capacity() +
+          checkpoint.state.coefficients.Am.capacity() +
+          checkpoint.state.coefficients.A0.capacity()) *
+         sizeof(WVComplex64);
+}
+
 } // namespace
 
-class WVCompositeOutputPlan::Impl {
+class WVOutputPlan::Impl {
 public:
   struct Group {
     std::size_t fileOrdinal = 0;
@@ -215,23 +254,24 @@ public:
     std::size_t progressIndex = 0;
     const WVOutputFileRecord *file = nullptr;
     const WVOutputGroupRecord *group = nullptr;
-    std::vector<WVCompositeOutputObserverView> observers;
+    std::vector<WVOutputObserverView> observers;
   };
 
   struct Event {
     double scheduledTime = 0.0;
     std::size_t firstRouteOrdinal = 0;
-    std::vector<WVCompositeOutputRouteView> routes;
+    std::vector<WVOutputRouteView> routes;
     std::vector<std::size_t> progressIndices;
   };
 
   WVPortableObserverRecord record;
+  WVIntegrationStateLayout stateLayout;
   double initialTime = 0.0;
   double finalTime = 0.0;
   std::vector<Group> groups;
   std::vector<Event> events;
   std::vector<WVOutputGroupProgress> progress;
-  WVCompositeOutputPlanMetrics metrics;
+  WVOutputPlanMetrics metrics;
 
   std::size_t persistentBytes() const noexcept {
     std::size_t bytes = stringBytes(record.schemaIdentifier) +
@@ -260,9 +300,9 @@ public:
     }
     for (const auto &group : groups)
       bytes += group.observers.capacity() *
-               sizeof(WVCompositeOutputObserverView);
+               sizeof(WVOutputObserverView);
     for (const auto &event : events)
-      bytes += event.routes.capacity() * sizeof(WVCompositeOutputRouteView) +
+      bytes += event.routes.capacity() * sizeof(WVOutputRouteView) +
                event.progressIndices.capacity() * sizeof(std::size_t);
     for (const auto &item : progress)
       bytes += stringBytes(item.fileIdentifier) +
@@ -271,24 +311,40 @@ public:
   }
 };
 
-WVCompositeOutputPlan::WVCompositeOutputPlan() : impl_(new Impl) {}
-WVCompositeOutputPlan::~WVCompositeOutputPlan() = default;
-WVCompositeOutputPlan::WVCompositeOutputPlan(WVCompositeOutputPlan &&) noexcept =
+WVOutputPlan::WVOutputPlan() : impl_(new Impl) {}
+WVOutputPlan::~WVOutputPlan() = default;
+WVOutputPlan::WVOutputPlan(WVOutputPlan &&) noexcept =
     default;
-WVCompositeOutputPlan &
-WVCompositeOutputPlan::operator=(WVCompositeOutputPlan &&) noexcept = default;
+WVOutputPlan &
+WVOutputPlan::operator=(WVOutputPlan &&) noexcept = default;
 
-WVKernelStatus WVCompositeOutputPlan::create(
+WVKernelStatus WVOutputPlan::create(
     const WVPortableObserverDescriptor &descriptor, double initialTime,
     double finalTime, const std::vector<WVOutputGroupProgress> &suppliedProgress,
-    WVCompositeOutputPlan &plan) {
+    WVOutputPlan &plan) {
   if (!std::isfinite(initialTime) || !std::isfinite(finalTime) ||
       finalTime < initialTime)
-    return invalid("Composite output planning requires a finite, nondecreasing "
+    return invalid("Output planning requires a finite, nondecreasing "
                    "integration interval.");
   try {
     auto candidate = std::make_unique<Impl>();
     candidate->record = descriptor.record();
+    const auto canonical = std::find_if(
+        candidate->record.stateBlocks.begin(),
+        candidate->record.stateBlocks.end(),
+        [](const auto &block) { return block.identifier == "Ap"; });
+    if (canonical == candidate->record.stateBlocks.end() ||
+        canonical->dimensions.size() != 2)
+      return invalid("Output planning requires a canonical [Nj,Nkl] Ap block.");
+    auto layoutStatus = WVIntegrationStateLayout::create(
+        {canonical->dimensions[0], canonical->dimensions[1]}, descriptor,
+        candidate->stateLayout);
+    if (!layoutStatus)
+      return layoutStatus;
+    layoutStatus = validateDescriptorLayout(candidate->record,
+                                            candidate->stateLayout);
+    if (!layoutStatus)
+      return layoutStatus;
     candidate->initialTime = initialTime;
     candidate->finalTime = finalTime;
     candidate->metrics.fileCount = candidate->record.outputFiles.size();
@@ -483,21 +539,83 @@ WVKernelStatus WVCompositeOutputPlan::create(
     return WVKernelStatus::ok();
   } catch (const std::bad_alloc &) {
     return {WVKernelStatusCode::allocationFailure,
-            "Composite output planning allocation failed."};
+            "Output planning allocation failed."};
   }
 }
 
-double WVCompositeOutputPlan::initialTime() const noexcept {
+WVKernelStatus WVOutputPlan::createExplicit(
+    const WVIntegrationStateLayout &layout, double initialTime,
+    double finalTime, const std::vector<WVExplicitOutputTarget> &targets,
+    WVOutputPlan &plan) {
+  try {
+    WVPortableObserverRecord record;
+    record.stateBlocks = layout.stateBlockRecords();
+    record.observers = layout.observerRecords();
+    auto coefficientObserver = std::find_if(
+        record.observers.begin(), record.observers.end(), [](const auto &item) {
+          return item.kind == WVObserverKind::coefficients;
+        });
+    std::string coefficientIdentifier;
+    if (coefficientObserver == record.observers.end()) {
+      WVObserverRecord observer;
+      observer.identifier = "explicit-checkpoint-coefficients";
+      observer.name = WVObserverFactoryRegistry::portableTag(
+          WVObserverKind::coefficients);
+      observer.kind = WVObserverKind::coefficients;
+      observer.stateBlockIdentifiers = {"Ap", "Am", "A0"};
+      coefficientIdentifier = observer.identifier;
+      record.observers.push_back(std::move(observer));
+    } else {
+      coefficientIdentifier = coefficientObserver->identifier;
+    }
+    record.outputFiles.reserve(targets.size());
+    for (std::size_t index = 0; index < targets.size(); ++index) {
+      const auto &target = targets[index];
+      if (!std::isfinite(target.requestedTime) || target.destination.empty() ||
+          target.requestedTime < initialTime -
+                                     timeTolerance(initialTime, finalTime) ||
+          target.requestedTime > finalTime +
+                                     timeTolerance(initialTime, finalTime))
+        return invalid("Explicit output target is outside the planned interval "
+                       "or has an empty destination.");
+      WVOutputFileRecord file;
+      file.identifier = "explicit-file-" + std::to_string(index + 1);
+      file.destination = target.destination;
+      WVOutputGroupRecord group;
+      group.identifier = "checkpoint";
+      group.name = "checkpoint";
+      group.schedule = {1.0, target.requestedTime, target.requestedTime};
+      group.observerIdentifiers = {coefficientIdentifier};
+      group.containsCompleteCoefficientRestart = true;
+      file.groups.push_back(std::move(group));
+      record.outputFiles.push_back(std::move(file));
+    }
+    WVPortableObserverDescriptor descriptor;
+    auto status = WVPortableObserverDescriptor::create(record, descriptor);
+    if (!status)
+      return status;
+    status = WVOutputPlan::create(descriptor, initialTime, finalTime, {}, plan);
+    if (!status)
+      return status;
+    plan.impl_->stateLayout = layout;
+    return WVKernelStatus::ok();
+  } catch (const std::bad_alloc &) {
+    return {WVKernelStatusCode::allocationFailure,
+            "Explicit output planning allocation failed."};
+  }
+}
+
+double WVOutputPlan::initialTime() const noexcept {
   return impl_->initialTime;
 }
-double WVCompositeOutputPlan::finalTime() const noexcept {
+double WVOutputPlan::finalTime() const noexcept {
   return impl_->finalTime;
 }
-std::size_t WVCompositeOutputPlan::eventCount() const noexcept {
+std::size_t WVOutputPlan::eventCount() const noexcept {
   return impl_->events.size();
 }
-WVCompositeOutputPlannedEventView
-WVCompositeOutputPlan::event(std::size_t index) const noexcept {
+WVOutputPlannedEventView
+WVOutputPlan::event(std::size_t index) const noexcept {
   if (index >= impl_->events.size())
     return {};
   const auto &value = impl_->events[index];
@@ -505,39 +623,42 @@ WVCompositeOutputPlan::event(std::size_t index) const noexcept {
           value.routes.size()};
 }
 const std::vector<WVOutputGroupProgress> &
-WVCompositeOutputPlan::initialProgress() const noexcept {
+WVOutputPlan::initialProgress() const noexcept {
   return impl_->progress;
 }
-const WVCompositeOutputPlanMetrics &
-WVCompositeOutputPlan::metrics() const noexcept {
+const WVOutputPlanMetrics &
+WVOutputPlan::metrics() const noexcept {
   return impl_->metrics;
 }
-std::size_t WVCompositeOutputPlan::persistentBytes() const noexcept {
+const WVIntegrationStateLayout &WVOutputPlan::stateLayout() const noexcept {
+  return impl_->stateLayout;
+}
+std::size_t WVOutputPlan::persistentBytes() const noexcept {
   return impl_->persistentBytes();
 }
 
-class WVCompositeOutputDriver::Impl {
+class WVOutputDriver::Impl {
 public:
-  Impl(WVCompositeTimeIntegrator &integrator,
-       const WVCompositeOutputPlan &plan)
+  Impl(WVTimeIntegrator &integrator,
+       const WVOutputPlan &plan)
       : integrator(integrator), plan(plan) {}
 
-  WVCompositeTimeIntegrator &integrator;
-  const WVCompositeOutputPlan &plan;
+  WVTimeIntegrator &integrator;
+  const WVOutputPlan &plan;
   std::vector<WVComplex64> interpolationCoefficients;
   WVAdditionalStateStorage interpolationAdditional;
-  WVMutableCompositeState interpolationState;
+  WVMutableIntegrationState interpolationState;
   std::vector<WVAdditionalStateBlockConstView> interpolationConstViews;
   std::vector<WVAdditionalStateBlockConstView> sourceConstViews;
   std::vector<WVOutputGroupProgress> progress;
-  std::vector<WVCompositeOutputDeliveryRecord> records;
-  WVCompositeOutputDriverMetrics metrics;
+  std::vector<WVOutputDeliveryRecord> records;
+  WVOutputDriverMetrics metrics;
   std::size_t nextEventIndex = 0;
   std::size_t nextRouteIndex = 0;
   double proposedStepSize = 0.0;
   double acceptedStateTime = 0.0;
-  WVCompositeOutputEventKind stagedEventKind =
-      WVCompositeOutputEventKind::acceptedEndpoint;
+  WVOutputEventKind stagedEventKind =
+      WVOutputEventKind::acceptedEndpoint;
   bool running = false;
   bool started = false;
   bool completed = false;
@@ -552,8 +673,8 @@ public:
         sourceConstViews.capacity() *
             sizeof(WVAdditionalStateBlockConstView) +
         progress.capacity() * sizeof(WVOutputGroupProgress) +
-        records.capacity() * sizeof(WVCompositeOutputDeliveryRecord) +
-        metrics.files.capacity() * sizeof(WVCompositeOutputFileMetrics);
+        records.capacity() * sizeof(WVOutputDeliveryRecord) +
+        metrics.files.capacity() * sizeof(WVOutputFileMetrics);
     for (const auto &item : progress)
       bytes += stringBytes(item.fileIdentifier) +
                stringBytes(item.groupIdentifier);
@@ -564,7 +685,7 @@ public:
                stringBytes(record.failure);
     for (const auto &file : metrics.files) {
       bytes += stringBytes(file.fileIdentifier) + stringBytes(file.destination) +
-               file.groups.capacity() * sizeof(WVCompositeOutputGroupMetrics);
+               file.groups.capacity() * sizeof(WVOutputGroupMetrics);
       for (const auto &group : file.groups)
         bytes += stringBytes(group.fileIdentifier) +
                  stringBytes(group.groupIdentifier);
@@ -578,7 +699,7 @@ public:
       metrics = {};
       metrics.files.reserve(plan.impl_->record.outputFiles.size());
       for (const auto &file : plan.impl_->record.outputFiles) {
-        WVCompositeOutputFileMetrics fileMetrics;
+        WVOutputFileMetrics fileMetrics;
         fileMetrics.fileIdentifier = file.identifier;
         fileMetrics.destination = file.destination;
         fileMetrics.groups.reserve(file.groups.size());
@@ -600,7 +721,7 @@ public:
                              route.groupOrdinal,
                              route.scheduleOrdinal,
                              event.scheduledTime,
-                             WVCompositeOutputEventKind::acceptedEndpoint,
+                             WVOutputEventKind::acceptedEndpoint,
                              std::string(route.fileIdentifier),
                              std::string(route.destination),
                              std::string(route.groupIdentifier),
@@ -622,7 +743,7 @@ public:
       return WVKernelStatus::ok();
     } catch (const std::bad_alloc &) {
       return {WVKernelStatusCode::allocationFailure,
-              "Composite output delivery tracking allocation failed."};
+              "Output delivery tracking allocation failed."};
     }
   }
 
@@ -634,7 +755,7 @@ public:
       const auto count = layout.coefficientShape().elementCount();
       if (count > std::numeric_limits<std::size_t>::max() / 3)
         return {WVKernelStatusCode::sizeOverflow,
-                "Composite interpolation coefficient count overflows size_t."};
+                "Integration interpolation coefficient count overflows size_t."};
       interpolationCoefficients.assign(3 * count, WVComplex64{});
       auto status = interpolationAdditional.initialize(layout);
       if (!status)
@@ -660,46 +781,46 @@ public:
       return WVKernelStatus::ok();
     } catch (const std::bad_alloc &) {
       return {WVKernelStatusCode::allocationFailure,
-              "Composite output interpolation staging allocation failed."};
+              "Output interpolation staging allocation failed."};
     }
   }
 
-  void markStagedEvent(WVCompositeOutputEventKind kind) {
+  void markStagedEvent(WVOutputEventKind kind) {
     stagedEventKind = kind;
     hasStagedEvent = true;
     ++metrics.outputStateEvaluationCount;
     switch (kind) {
-    case WVCompositeOutputEventKind::initial:
+    case WVOutputEventKind::initial:
       ++metrics.initialStateEventCount;
       break;
-    case WVCompositeOutputEventKind::interpolated:
+    case WVOutputEventKind::interpolated:
       ++metrics.interpolatedStateEvaluationCount;
       break;
-    case WVCompositeOutputEventKind::acceptedEndpoint:
+    case WVOutputEventKind::acceptedEndpoint:
       ++metrics.acceptedEndpointStateEventCount;
       break;
     }
   }
 
-  WVKernelStatus stageEventState(WVCompositeOutputEventKind kind,
-                                 const WVCompositeState &state) {
+  WVKernelStatus stageEventState(WVOutputEventKind kind,
+                                 const WVIntegrationState &state) {
     auto status =
-        copyCompositeState(integrator.stateLayout(), state, interpolationState);
+        copyIntegrationState(integrator.stateLayout(), state, interpolationState);
     if (!status)
       return status;
     markStagedEvent(kind);
     return WVKernelStatus::ok();
   }
 
-  WVKernelStatus deliverStagedEvent(WVCompositeOutputSink &sink,
+  WVKernelStatus deliverStagedEvent(WVOutputSink &sink,
                                     bool &terminate) {
     if (!hasStagedEvent || nextEventIndex >= plan.impl_->events.size())
       return {WVKernelStatusCode::numericalFailure,
-              "Composite output resume cursor has no staged event."};
+              "Output resume cursor has no staged event."};
     const auto &planned = plan.impl_->events[nextEventIndex];
     const auto state =
-        compositeConstView(interpolationState, interpolationConstViews);
-    WVCompositeOutputEvent event{nextEventIndex, planned.scheduledTime,
+        integrationConstView(interpolationState, interpolationConstViews);
+    WVOutputEvent event{nextEventIndex, planned.scheduledTime,
                                  stagedEventKind, state,
                                  planned.routes.data(), planned.routes.size()};
     std::size_t recordIndex = planned.firstRouteOrdinal + nextRouteIndex;
@@ -714,7 +835,7 @@ public:
       ++metrics.deliveryAttemptCount;
       ++file.attemptedDeliveryCount;
       ++group.attemptedDeliveryCount;
-      WVCompositeOutputDeliveryResult result;
+      WVOutputDeliveryResult result;
       auto status =
           sink.deliver(event, planned.routes[nextRouteIndex], result);
       if (!status) {
@@ -743,7 +864,7 @@ public:
           planned.routes[nextRouteIndex].scheduleOrdinal;
       terminate = terminate ||
                   result.action ==
-                      WVCompositeOutputDeliveryResult::Action::terminate;
+                      WVOutputDeliveryResult::Action::terminate;
     }
     hasStagedEvent = false;
     nextRouteIndex = 0;
@@ -752,36 +873,36 @@ public:
   }
 };
 
-WVCompositeOutputDriver::WVCompositeOutputDriver(
-    WVCompositeTimeIntegrator &integrator, const WVCompositeOutputPlan &plan)
+WVOutputDriver::WVOutputDriver(
+    WVTimeIntegrator &integrator, const WVOutputPlan &plan)
     : impl_(new Impl(integrator, plan)) {}
-WVCompositeOutputDriver::~WVCompositeOutputDriver() = default;
+WVOutputDriver::~WVOutputDriver() = default;
 
-WVKernelStatus WVCompositeOutputDriver::advanceToTime(
-    WVMutableCompositeState &state, double finalTime, double initialStepSize,
-    WVCompositeOutputSink &sink) {
+WVKernelStatus WVOutputDriver::advanceToTime(
+    WVMutableIntegrationState &state, double finalTime, double initialStepSize,
+    WVOutputSink &sink) {
   if (impl_->running)
     return {WVKernelStatusCode::reentrantExecution,
-            "Composite output orchestration is not reentrant."};
+            "Output orchestration is not reentrant."};
   if (impl_->completed)
-    return invalid("Composite output orchestration has already completed.");
+    return invalid("Output orchestration has already completed.");
   if (!std::isfinite(state.waveVortex.t) || !std::isfinite(finalTime) ||
       !std::isfinite(initialStepSize) || initialStepSize <= 0.0 ||
       finalTime < state.waveVortex.t ||
       !sameTime(finalTime, impl_->plan.finalTime()))
-    return invalid("Composite output execution must use the planned final "
+    return invalid("Output execution must use the planned final "
                    "time and a positive initial step size.");
   if ((!impl_->started &&
        !sameTime(state.waveVortex.t, impl_->plan.initialTime())) ||
       (impl_->started &&
        !sameTime(state.waveVortex.t, impl_->acceptedStateTime)))
-    return invalid("Composite output continuation state does not match the "
+    return invalid("Output continuation state does not match the "
                    "planned start or retained accepted-state cursor.");
-  auto status = validateDescriptorLayout(impl_->plan.impl_->record,
-                                         impl_->integrator.stateLayout());
-  if (!status)
-    return status;
-  status = validateMutableCompositeState(impl_->integrator.stateLayout(), state);
+  if (!sameIntegrationStateLayout(impl_->plan.impl_->stateLayout,
+                                  impl_->integrator.stateLayout()))
+    return invalid("Output plan and integrator state layouts differ.");
+  auto status =
+      validateMutableIntegrationState(impl_->integrator.stateLayout(), state);
   if (!status)
     return status;
   if (!impl_->started) {
@@ -826,8 +947,8 @@ WVKernelStatus WVCompositeOutputDriver::advanceToTime(
          impl_->plan.impl_->events[impl_->nextEventIndex].scheduledTime ==
              impl_->plan.initialTime() &&
          state.waveVortex.t == impl_->plan.initialTime()) {
-    const auto initial = compositeConstView(state, impl_->sourceConstViews);
-    status = impl_->stageEventState(WVCompositeOutputEventKind::initial,
+    const auto initial = integrationConstView(state, impl_->sourceConstViews);
+    status = impl_->stageEventState(WVOutputEventKind::initial,
                                     initial);
     if (!status)
       return status;
@@ -840,7 +961,7 @@ WVKernelStatus WVCompositeOutputDriver::advanceToTime(
     }
   }
 
-  auto processAcceptedEvents = [&](const WVCompositeAcceptedStep &accepted) {
+  auto processAcceptedEvents = [&](const WVAcceptedStep &accepted) {
     while (impl_->nextEventIndex < impl_->plan.impl_->events.size() &&
            impl_->plan.impl_->events[impl_->nextEventIndex].scheduledTime <=
                accepted.finalTime +
@@ -859,14 +980,14 @@ WVKernelStatus WVCompositeOutputDriver::advanceToTime(
             "event."};
       if (sameTime(outputTime, accepted.finalTime)) {
         auto stageStatus = impl_->stageEventState(
-            WVCompositeOutputEventKind::acceptedEndpoint, accepted.endpoint);
+            WVOutputEventKind::acceptedEndpoint, accepted.endpoint);
         if (!stageStatus)
           return stageStatus;
       } else {
         if (accepted.denseOutput == nullptr)
           return WVKernelStatus{
               WVKernelStatusCode::unsupportedOperation,
-              "An interior composite output requires method-owned dense "
+              "An interior integration-state output requires method-owned dense "
               "output."};
         const auto start = std::chrono::steady_clock::now();
         auto stageStatus = accepted.denseOutput->evaluateState(
@@ -876,7 +997,7 @@ WVKernelStatus WVCompositeOutputDriver::advanceToTime(
             std::chrono::duration<double>(stop - start).count();
         if (!stageStatus)
           return stageStatus;
-        impl_->markStagedEvent(WVCompositeOutputEventKind::interpolated);
+        impl_->markStagedEvent(WVOutputEventKind::interpolated);
       }
       auto deliveryStatus = impl_->deliverStagedEvent(sink, terminate);
       if (!deliveryStatus)
@@ -912,12 +1033,12 @@ WVKernelStatus WVCompositeOutputDriver::advanceToTime(
     if (!std::isfinite(impl_->proposedStepSize) ||
         impl_->proposedStepSize <= 0.0)
       return {WVKernelStatusCode::numericalFailure,
-              "Composite integrator did not publish a finite positive next "
+              "Integrator did not publish a finite positive next "
               "step size."};
     const auto *accepted = impl_->integrator.lastAcceptedStep();
     if (accepted == nullptr)
       return {WVKernelStatusCode::numericalFailure,
-              "Composite integrator succeeded without an accepted-step "
+              "Integrator succeeded without an accepted-step "
               "view."};
     status = processAcceptedEvents(*accepted);
     if (!status)
@@ -928,29 +1049,99 @@ WVKernelStatus WVCompositeOutputDriver::advanceToTime(
   if (!terminate &&
       impl_->nextEventIndex != impl_->plan.impl_->events.size())
     return {WVKernelStatusCode::numericalFailure,
-            "Composite integration ended before the complete output plan was "
+            "Integration ended before the complete output plan was "
             "delivered."};
   impl_->completed = true;
   return WVKernelStatus::ok();
 }
 
 const std::vector<WVOutputGroupProgress> &
-WVCompositeOutputDriver::committedProgress() const noexcept {
+WVOutputDriver::committedProgress() const noexcept {
   return impl_->progress;
 }
-const std::vector<WVCompositeOutputDeliveryRecord> &
-WVCompositeOutputDriver::records() const noexcept {
+const std::vector<WVOutputDeliveryRecord> &
+WVOutputDriver::records() const noexcept {
   return impl_->records;
 }
-const WVCompositeOutputDriverMetrics &
-WVCompositeOutputDriver::metrics() const noexcept {
+const WVOutputDriverMetrics &
+WVOutputDriver::metrics() const noexcept {
   return impl_->metrics;
 }
-bool WVCompositeOutputDriver::hasPendingDelivery() const noexcept {
+bool WVOutputDriver::hasPendingDelivery() const noexcept {
   return impl_->hasStagedEvent;
 }
-std::size_t WVCompositeOutputDriver::persistentBytes() const noexcept {
+std::size_t WVOutputDriver::persistentBytes() const noexcept {
   return impl_->persistentBytes();
+}
+
+WVCheckpointOutputSink::WVCheckpointOutputSink(
+    WVCheckpoint checkpointTemplate)
+    : checkpoint_(std::move(checkpointTemplate)) {}
+
+WVKernelStatus WVCheckpointOutputSink::preflight(const WVOutputPlan &plan) {
+  const auto shape = plan.stateLayout().coefficientShape();
+  if (checkpoint_.state.coefficients.shape.rows != shape.rows ||
+      checkpoint_.state.coefficients.shape.columns != shape.columns)
+    return {WVKernelStatusCode::invalidShape,
+            "Checkpoint template and output plan coefficient shapes differ."};
+  try {
+    records_.reserve(plan.metrics().scheduledRouteCount);
+    preflighted_ = true;
+    return WVKernelStatus::ok();
+  } catch (const std::bad_alloc &) {
+    return {WVKernelStatusCode::allocationFailure,
+            "Checkpoint output tracking allocation failed."};
+  }
+}
+
+WVKernelStatus WVCheckpointOutputSink::deliver(
+    const WVOutputEvent &event, const WVOutputRouteView &route,
+    WVOutputDeliveryResult &result) {
+  if (!preflighted_)
+    return invalid("Checkpoint output sink was not preflighted.");
+  ++metrics_.receivedEventCount;
+  WVCheckpointOutputRecord record;
+  record.ordinal = records_.size() + 1;
+  record.requestedTime = event.scheduledTime;
+  record.emittedTime = event.state.waveVortex.t;
+  record.eventKind = event.kind;
+  record.destination = std::string(route.destination);
+  auto status = stageCheckpointState(checkpoint_, event.state);
+  if (!status) {
+    record.failure = status.message;
+    records_.push_back(std::move(record));
+    return status;
+  }
+  const auto started = std::chrono::steady_clock::now();
+  const auto written = WVCheckpointWriter::write(
+      record.destination, checkpoint_, WVCheckpointCommitPolicy::createNew);
+  record.writeSeconds =
+      std::chrono::duration<double>(std::chrono::steady_clock::now() - started)
+          .count();
+  metrics_.checkpointWriteSeconds += record.writeSeconds;
+  if (!written) {
+    record.failure = "Checkpoint output failed at " + written.location +
+                     ": " + written.message;
+    records_.push_back(std::move(record));
+    return {WVKernelStatusCode::unsupportedOperation,
+            records_.back().failure};
+  }
+  record.committed = true;
+  const auto count = checkpoint_.state.coefficients.shape.elementCount();
+  ++metrics_.checkpointWriteCount;
+  metrics_.copiedCoefficientBytes += 3 * count * sizeof(WVComplex64);
+  result.writeCount = 1;
+  result.writtenBytes = 3 * count * sizeof(WVComplex64);
+  records_.push_back(std::move(record));
+  return WVKernelStatus::ok();
+}
+
+std::size_t WVCheckpointOutputSink::persistentBytes() const noexcept {
+  std::size_t bytes = checkpointCoefficientCapacityBytes(checkpoint_) +
+                      records_.capacity() * sizeof(WVCheckpointOutputRecord);
+  for (const auto &record : records_)
+    bytes += record.destination.capacity() + record.failure.capacity();
+  return bytes;
 }
 
 } // namespace wavevortex::runtime

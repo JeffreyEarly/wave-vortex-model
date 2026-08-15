@@ -892,7 +892,7 @@ WVModelOutputNetCDFSink::inspect(const std::vector<std::string> &paths,
     if (!descriptorStatus)
       return failure(WVCheckpointStatusCode::descriptorFailure,
                      descriptorStatus.message, "/observingSystems");
-    const auto layoutStatus = WVCompositeStateLayout::create(
+    const auto layoutStatus = WVIntegrationStateLayout::create(
         candidate.latestRestart.state.coefficients.shape, descriptor,
         candidate.stateLayout);
     if (!layoutStatus)

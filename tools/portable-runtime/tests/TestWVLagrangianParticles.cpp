@@ -1,4 +1,4 @@
-#include "WaveVortexRuntime/WVConstantStratificationCompositeSystem.hpp"
+#include "WaveVortexRuntime/WVConstantStratificationIntegrationSystem.hpp"
 
 #include "WVReferenceFFTEngine.hpp"
 
@@ -139,11 +139,11 @@ struct Fixture {
   std::vector<WVComplex64> flux;
   WVAdditionalStateStorage stateStorage;
   WVAdditionalStateStorage fluxStorage;
-  WVMutableCompositeState state;
-  WVCompositeFlux rhs;
+  WVMutableIntegrationState state;
+  WVIntegrationFlux rhs;
   std::vector<WVAdditionalStateBlockConstView> constViews;
 
-  explicit Fixture(const WVCompositeStateLayout &layout)
+  explicit Fixture(const WVIntegrationStateLayout &layout)
       : shape(layout.coefficientShape()),
         coefficients(3 * shape.elementCount()),
         flux(3 * shape.elementCount()) {
@@ -171,8 +171,8 @@ struct Fixture {
            fluxStorage.mutableBlocks(), fluxStorage.blockCount()};
   }
 
-  WVCompositeState constView() {
-    return compositeConstView(state, constViews);
+  WVIntegrationState constView() {
+    return integrationConstView(state, constViews);
   }
 };
 
@@ -194,7 +194,7 @@ void initializeParticles(Fixture &fixture,
   }
 }
 
-std::size_t blockIndex(const WVMutableCompositeState &state,
+std::size_t blockIndex(const WVMutableIntegrationState &state,
                        const std::string &identifier) {
   for (std::size_t index = 0; index < state.additionalBlockCount; ++index)
     if (state.additionalBlocks[index].layout->identifier == identifier)
@@ -224,9 +224,9 @@ void initializeTracer(Fixture &fixture, const std::string &identifier,
 void testTracers(bool hydrostatic) {
   const auto config = configuration(hydrostatic);
   const auto descriptor = descriptorWithTracers(config);
-  std::unique_ptr<WVConstantStratificationCompositeSystem> system;
-  auto status = WVConstantStratificationCompositeSystem::create(
-      config, {}, descriptor, std::make_unique<WVReferenceFFTEngine>(), 1e-6,
+  std::unique_ptr<WVConstantStratificationIntegrationSystem> system;
+  auto status = WVConstantStratificationIntegrationSystem::create(
+      config, {}, descriptor, std::make_unique<WVReferenceFFTEngine>(),
       system);
   require(static_cast<bool>(status), status.message);
   require(system->tracers().size() == 2, "tracers were not resolved");
@@ -263,11 +263,11 @@ void testTracers(bool hydrostatic) {
   require(system->kernelMetrics().scratchCapacityBytes == scratchCapacityBytes &&
               system->kernelMetrics().planCount == planCount + 1,
           "tracer evaluation added array-sized scratch or unexpected plans");
-  require(system->fieldEvaluationService().metrics().movingPrimitiveTransformCount == 0,
+  require(system->fieldEvaluationService()->metrics().movingPrimitiveTransformCount == 0,
           "tracer RHS invoked the particle interpolation transform");
 
   const auto persistentBytes = system->persistentBytes();
-  WVCompositeFixedStepRK4 rk4(*system, true);
+  WVFixedStepRK4 rk4(*system, {true});
   status = rk4.prepareStateAfterRestart(fixture.state);
   require(static_cast<bool>(status), status.message);
   status = rk4.step(fixture.state, 1e-4);
@@ -332,14 +332,14 @@ void testScalarAdvectionOperator(bool shouldAntialias) {
           "shared scalar differential operator changed its sign or scaling");
 }
 
-void testComposite(bool hydrostatic) {
+void testIntegratedObservers(bool hydrostatic) {
   const auto config = configuration(hydrostatic);
   const auto descriptor = descriptorFor(config);
   WVFrozenForcingSchedule emptySchedule;
-  std::unique_ptr<WVConstantStratificationCompositeSystem> system;
-  auto status = WVConstantStratificationCompositeSystem::create(
+  std::unique_ptr<WVConstantStratificationIntegrationSystem> system;
+  auto status = WVConstantStratificationIntegrationSystem::create(
       config, emptySchedule, descriptor,
-      std::make_unique<WVReferenceFFTEngine>(), 1e-6, system);
+      std::make_unique<WVReferenceFFTEngine>(), system);
   require(static_cast<bool>(status), status.message);
   require(system->particles().size() == 2, "particle systems not resolved");
   Fixture fixture(system->stateLayout());
@@ -360,24 +360,24 @@ void testComposite(bool hydrostatic) {
           "particle systems did not share one primitive transform");
   require(system->metrics().sharedRightHandSideContextCount == 1,
           "particle systems did not use one shared RHS context");
-  require(system->fieldEvaluationService().metrics().movingPrimitiveTransformCount == 0 &&
-              system->fieldEvaluationService().metrics().primitiveFieldReuseCount == 1,
+  require(system->fieldEvaluationService()->metrics().movingPrimitiveTransformCount == 0 &&
+              system->fieldEvaluationService()->metrics().primitiveFieldReuseCount == 1,
           "particle interpolation recomputed prepared advection fields");
-  require(system->fieldEvaluationService().metrics().movingPositionCount == 5,
+  require(system->fieldEvaluationService()->metrics().movingPositionCount == 5,
           "moving position count changed");
   const auto persistentBytes = system->persistentBytes();
   const auto interpolationBytes = system->fieldEvaluationService()
-                                      .metrics()
+                                      ->metrics()
                                       .movingInterpolationWorkspaceBytes;
   status = system->evaluateRightHandSide(fixture.constView(), fixture.rhs);
   require(static_cast<bool>(status), status.message);
   require(system->persistentBytes() == persistentBytes &&
               system->fieldEvaluationService()
-                      .metrics()
+                      ->metrics()
                       .movingInterpolationWorkspaceBytes == interpolationBytes,
           "repeated particle RHS changed bounded persistent storage");
 
-  WVCompositeFixedStepRK4 rk4(*system, true);
+  WVFixedStepRK4 rk4(*system, {true});
   status = rk4.prepareStateAfterRestart(fixture.state);
   require(static_cast<bool>(status), status.message);
   status = rk4.step(fixture.state, 1e-3);
@@ -412,10 +412,10 @@ void testComposite(bool hydrostatic) {
   require(afterDenseOutput == acceptedParticleState,
           "particle dense output mutated accepted state");
 
-  WVCompositeAdaptiveRK23Options strictOptions;
+  WVAdaptiveRK23Options strictOptions;
   strictOptions.relativeTolerance = 1e-12;
   strictOptions.absoluteToleranceScale = 1e-12;
-  WVCompositeAdaptiveRK23 adaptive(*system, strictOptions);
+  WVAdaptiveRK23 adaptive(*system, strictOptions);
   Fixture adaptiveFixture(system->stateLayout());
   status = system->initializeParticleState(adaptiveFixture.state);
   require(static_cast<bool>(status), status.message);
@@ -434,12 +434,12 @@ void testComposite(bool hydrostatic) {
 void testValidation() {
   auto config = configuration(true);
   auto descriptor = descriptorFor(config);
-  std::unique_ptr<WVConstantStratificationCompositeSystem> system;
-  auto status = WVConstantStratificationCompositeSystem::create(
-      config, {}, descriptor, std::make_unique<WVReferenceFFTEngine>(), 1e-6,
+  std::unique_ptr<WVConstantStratificationIntegrationSystem> system;
+  auto status = WVConstantStratificationIntegrationSystem::create(
+      config, {}, descriptor, std::make_unique<WVReferenceFFTEngine>(),
       system);
   require(static_cast<bool>(status) && system,
-          "valid composite system construction failed");
+          "valid integration system construction failed");
   auto record = descriptor.record();
   auto particle = std::find_if(record.observers.begin(), record.observers.end(),
                                [](const auto &observer) {
@@ -450,9 +450,9 @@ void testValidation() {
   require(static_cast<bool>(WVPortableObserverDescriptor::create(
               record, genericDescriptor)),
           "generic descriptor should retain future 2-D XY allowance");
-  status = WVConstantStratificationCompositeSystem::create(
+  status = WVConstantStratificationIntegrationSystem::create(
       config, {}, genericDescriptor, std::make_unique<WVReferenceFFTEngine>(),
-      1e-6, system);
+      system);
   require(status.code == WVKernelStatusCode::invalidConfiguration && !system,
           "constant-stratification XY particles accepted missing fixed z");
 
@@ -473,9 +473,9 @@ void testValidation() {
   require(static_cast<bool>(WVPortableObserverDescriptor::create(
               tracerRecord, tracerDescriptor)),
           "generic tracer descriptor");
-  const auto tracerStatus = WVConstantStratificationCompositeSystem::create(
+  const auto tracerStatus = WVConstantStratificationIntegrationSystem::create(
       config, {}, tracerDescriptor, std::make_unique<WVReferenceFFTEngine>(),
-      1e-6, system);
+      system);
   require(tracerStatus.code == WVKernelStatusCode::unsupportedOperation,
           "constant-stratification system did not defer two-dimensional tracers");
 }
@@ -484,8 +484,8 @@ void testValidation() {
 
 int main() {
   try {
-    testComposite(true);
-    testComposite(false);
+    testIntegratedObservers(true);
+    testIntegratedObservers(false);
     testTracers(true);
     testTracers(false);
     testScalarAdvectionOperator(false);

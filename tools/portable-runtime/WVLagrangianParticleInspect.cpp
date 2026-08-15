@@ -1,5 +1,5 @@
 #include "WaveVortexRuntime/WVCheckpointReader.hpp"
-#include "WaveVortexRuntime/WVConstantStratificationCompositeSystem.hpp"
+#include "WaveVortexRuntime/WVConstantStratificationIntegrationSystem.hpp"
 
 #include "WVReferenceFFTEngine.hpp"
 
@@ -92,10 +92,10 @@ WVPortableObserverDescriptor descriptorFor(
 struct Fixture {
   std::vector<WVComplex64> coefficients;
   WVAdditionalStateStorage storage;
-  WVMutableCompositeState state;
+  WVMutableIntegrationState state;
 
   Fixture(const WVCheckpoint &checkpoint,
-          const WVCompositeStateLayout &layout)
+          const WVIntegrationStateLayout &layout)
       : coefficients(3 * checkpoint.state.coefficients.shape.elementCount()) {
     const auto count = checkpoint.state.coefficients.shape.elementCount();
     std::copy(checkpoint.state.coefficients.Ap.begin(),
@@ -120,7 +120,7 @@ struct Fixture {
   }
 };
 
-const WVAdditionalStateBlockView &block(const WVMutableCompositeState &state,
+const WVAdditionalStateBlockView &block(const WVMutableIntegrationState &state,
                                         const std::string &identifier) {
   for (std::size_t index = 0; index < state.additionalBlockCount; ++index)
     if (state.additionalBlocks[index].layout->identifier == identifier)
@@ -128,7 +128,7 @@ const WVAdditionalStateBlockView &block(const WVMutableCompositeState &state,
   throw std::runtime_error("missing particle block " + identifier);
 }
 
-void printState(const WVMutableCompositeState &state) {
+void printState(const WVMutableIntegrationState &state) {
   std::cout << '{';
   bool first = true;
   const std::vector<std::pair<const char *, const char *>> blocks{
@@ -162,10 +162,10 @@ int main(int argc, char **argv) {
     }
     const auto descriptor = descriptorFor(
         checkpoint.configuration, checkpoint.state.coefficients.shape);
-    std::unique_ptr<WVConstantStratificationCompositeSystem> system;
-    auto status = WVConstantStratificationCompositeSystem::create(
+    std::unique_ptr<WVConstantStratificationIntegrationSystem> system;
+    auto status = WVConstantStratificationIntegrationSystem::create(
         checkpoint.configuration, {}, descriptor,
-        std::make_unique<WVReferenceFFTEngine>(), 1e-6, system);
+        std::make_unique<WVReferenceFFTEngine>(), system);
     if (!status)
       throw std::runtime_error(status.message);
 
@@ -179,17 +179,17 @@ int main(int argc, char **argv) {
       throw std::runtime_error(status.message);
     const auto shape = checkpoint.state.coefficients.shape;
     std::vector<WVComplex64> coefficientRhs(3 * shape.elementCount());
-    WVCompositeFlux rhs{
+    WVIntegrationFlux rhs{
         {{coefficientRhs.data(), shape},
          {coefficientRhs.data() + shape.elementCount(), shape},
          {coefficientRhs.data() + 2 * shape.elementCount(), shape}},
         rhsStorage.mutableBlocks(), rhsStorage.blockCount()};
     std::vector<WVAdditionalStateBlockConstView> initialViews;
     status = system->evaluateRightHandSide(
-        compositeConstView(initial.state, initialViews), rhs);
+        integrationConstView(initial.state, initialViews), rhs);
     if (!status)
       throw std::runtime_error(status.message);
-    WVMutableCompositeState rhsState{
+    WVMutableIntegrationState rhsState{
         {initial.state.waveVortex.t, initial.state.waveVortex.t0,
          {{coefficientRhs.data(), shape},
           {coefficientRhs.data() + shape.elementCount(), shape},
@@ -201,7 +201,7 @@ int main(int argc, char **argv) {
     status = system->initializeParticleState(fixed.state);
     if (!status)
       throw std::runtime_error(status.message);
-    WVCompositeFixedStepRK4 fixedIntegrator(*system, true);
+    WVFixedStepRK4 fixedIntegrator(*system, {true});
     status = fixedIntegrator.prepareStateAfterRestart(fixed.state);
     if (status)
       status = fixedIntegrator.step(fixed.state, stepSize);
@@ -217,10 +217,10 @@ int main(int argc, char **argv) {
     status = system->initializeParticleState(adaptive.state);
     if (!status)
       throw std::runtime_error(status.message);
-    WVCompositeAdaptiveRK23Options adaptiveOptions;
+    WVAdaptiveRK23Options adaptiveOptions;
     adaptiveOptions.relativeTolerance = 1e-9;
     adaptiveOptions.absoluteToleranceScale = 1e-9;
-    WVCompositeAdaptiveRK23 adaptiveIntegrator(*system, adaptiveOptions);
+    WVAdaptiveRK23 adaptiveIntegrator(*system, adaptiveOptions);
     status = adaptiveIntegrator.prepareStateAfterRestart(adaptive.state);
     if (status)
       status = adaptiveIntegrator.step(adaptive.state, 100.0);

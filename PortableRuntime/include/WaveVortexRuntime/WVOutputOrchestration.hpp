@@ -1,6 +1,7 @@
 #pragma once
 
-#include "WaveVortexRuntime/WVCompositeIntegration.hpp"
+#include "WaveVortexRuntime/WVCheckpointWriter.hpp"
+#include "WaveVortexRuntime/WVRungeKutta.hpp"
 
 #include <cstddef>
 #include <cstdint>
@@ -26,7 +27,7 @@ struct WVOutputGroupProgress {
 // A shared observer identity resolved once by the output plan. The same
 // record pointer is used whenever an observer is routed to several groups or
 // destinations.
-struct WVCompositeOutputObserverView {
+struct WVOutputObserverView {
   std::size_t observerOrdinal = 0;
   const WVObserverRecord *record = nullptr;
 };
@@ -34,7 +35,7 @@ struct WVCompositeOutputObserverView {
 // Immutable route occurrence for one group on one original schedule ordinal.
 // All strings and observer arrays are owned by the plan and remain valid for
 // the plan's lifetime.
-struct WVCompositeOutputRouteView {
+struct WVOutputRouteView {
   std::size_t fileOrdinal = 0;
   std::size_t groupOrdinal = 0;
   WVOutputScheduleOrdinal scheduleOrdinal = WVNoCommittedOutputOrdinal;
@@ -42,18 +43,18 @@ struct WVCompositeOutputRouteView {
   std::string_view destination;
   std::string_view groupIdentifier;
   std::string_view groupName;
-  const WVCompositeOutputObserverView *observers = nullptr;
+  const WVOutputObserverView *observers = nullptr;
   std::size_t observerCount = 0;
 };
 
-struct WVCompositeOutputPlannedEventView {
+struct WVOutputPlannedEventView {
   std::size_t eventOrdinal = 0;
   double scheduledTime = 0.0;
-  const WVCompositeOutputRouteView *routes = nullptr;
+  const WVOutputRouteView *routes = nullptr;
   std::size_t routeCount = 0;
 };
 
-struct WVCompositeOutputPlanMetrics {
+struct WVOutputPlanMetrics {
   std::size_t fileCount = 0;
   std::size_t groupCount = 0;
   std::size_t distinctObserverCount = 0;
@@ -63,54 +64,68 @@ struct WVCompositeOutputPlanMetrics {
   std::size_t retainedStorageBytes = 0;
 };
 
+// One arbitrary output occurrence. This is the coefficient-checkpoint bridge
+// used by the command-line runtime; regular observing systems use descriptor
+// output groups and their evenly spaced schedule lattices.
+struct WVExplicitOutputTarget {
+  double requestedTime = 0.0;
+  std::string destination;
+};
+
 // Fully resolved, immutable multi-file/multi-group schedule. create()
 // validates every route and enumerates the complete bounded integration
 // window before an integrator or output sink can mutate state.
-class WVCompositeOutputPlan final {
+class WVOutputPlan final {
 public:
-  WVCompositeOutputPlan();
-  ~WVCompositeOutputPlan();
-  WVCompositeOutputPlan(WVCompositeOutputPlan &&) noexcept;
-  WVCompositeOutputPlan &operator=(WVCompositeOutputPlan &&) noexcept;
-  WVCompositeOutputPlan(const WVCompositeOutputPlan &) = delete;
-  WVCompositeOutputPlan &operator=(const WVCompositeOutputPlan &) = delete;
+  WVOutputPlan();
+  ~WVOutputPlan();
+  WVOutputPlan(WVOutputPlan &&) noexcept;
+  WVOutputPlan &operator=(WVOutputPlan &&) noexcept;
+  WVOutputPlan(const WVOutputPlan &) = delete;
+  WVOutputPlan &operator=(const WVOutputPlan &) = delete;
 
   static WVKernelStatus
   create(const WVPortableObserverDescriptor &descriptor, double initialTime,
          double finalTime, const std::vector<WVOutputGroupProgress> &progress,
-         WVCompositeOutputPlan &plan);
+         WVOutputPlan &plan);
+  static WVKernelStatus
+  createExplicit(const WVIntegrationStateLayout &layout, double initialTime,
+                 double finalTime,
+                 const std::vector<WVExplicitOutputTarget> &targets,
+                 WVOutputPlan &plan);
 
   double initialTime() const noexcept;
   double finalTime() const noexcept;
   std::size_t eventCount() const noexcept;
-  WVCompositeOutputPlannedEventView event(std::size_t index) const noexcept;
+  WVOutputPlannedEventView event(std::size_t index) const noexcept;
   const std::vector<WVOutputGroupProgress> &initialProgress() const noexcept;
-  const WVCompositeOutputPlanMetrics &metrics() const noexcept;
+  const WVOutputPlanMetrics &metrics() const noexcept;
+  const WVIntegrationStateLayout &stateLayout() const noexcept;
   std::size_t persistentBytes() const noexcept;
 
 private:
   class Impl;
   std::unique_ptr<Impl> impl_;
-  friend class WVCompositeOutputDriver;
+  friend class WVOutputDriver;
 };
 
-enum class WVCompositeOutputEventKind : std::uint8_t {
+enum class WVOutputEventKind : std::uint8_t {
   initial,
   interpolated,
   acceptedEndpoint
 };
 
-struct WVCompositeOutputEvent {
+struct WVOutputEvent {
   std::size_t eventOrdinal = 0;
   double scheduledTime = 0.0;
-  WVCompositeOutputEventKind kind =
-      WVCompositeOutputEventKind::acceptedEndpoint;
-  WVCompositeState state;
-  const WVCompositeOutputRouteView *routes = nullptr;
+  WVOutputEventKind kind =
+      WVOutputEventKind::acceptedEndpoint;
+  WVIntegrationState state;
+  const WVOutputRouteView *routes = nullptr;
   std::size_t routeCount = 0;
 };
 
-struct WVCompositeOutputDeliveryResult {
+struct WVOutputDeliveryResult {
   enum class Action : std::uint8_t { continueIntegration, terminate };
   Action action = Action::continueIntegration;
   std::size_t writeCount = 0;
@@ -123,25 +138,25 @@ struct WVCompositeOutputDeliveryResult {
 // retry with the same event state; a successfully returned delivery is never
 // repeated by the driver. NetCDF persistence is intentionally outside this
 // issue.
-class WVCompositeOutputSink {
+class WVOutputSink {
 public:
-  virtual ~WVCompositeOutputSink() = default;
-  virtual WVKernelStatus preflight(const WVCompositeOutputPlan &plan) = 0;
+  virtual ~WVOutputSink() = default;
+  virtual WVKernelStatus preflight(const WVOutputPlan &plan) = 0;
   virtual WVKernelStatus
-  deliver(const WVCompositeOutputEvent &event,
-          const WVCompositeOutputRouteView &route,
-          WVCompositeOutputDeliveryResult &result) = 0;
+  deliver(const WVOutputEvent &event,
+          const WVOutputRouteView &route,
+          WVOutputDeliveryResult &result) = 0;
 };
 
-struct WVCompositeOutputDeliveryRecord {
+struct WVOutputDeliveryRecord {
   std::size_t eventOrdinal = 0;
   std::size_t routeOrdinal = 0;
   std::size_t fileOrdinal = 0;
   std::size_t groupOrdinal = 0;
   WVOutputScheduleOrdinal scheduleOrdinal = WVNoCommittedOutputOrdinal;
   double scheduledTime = 0.0;
-  WVCompositeOutputEventKind eventKind =
-      WVCompositeOutputEventKind::acceptedEndpoint;
+  WVOutputEventKind eventKind =
+      WVOutputEventKind::acceptedEndpoint;
   std::string fileIdentifier;
   std::string destination;
   std::string groupIdentifier;
@@ -156,7 +171,7 @@ struct WVCompositeOutputDeliveryRecord {
   std::string failure;
 };
 
-struct WVCompositeOutputGroupMetrics {
+struct WVOutputGroupMetrics {
   std::string fileIdentifier;
   std::string groupIdentifier;
   std::size_t scheduledDeliveryCount = 0;
@@ -167,7 +182,7 @@ struct WVCompositeOutputGroupMetrics {
   std::size_t failureCount = 0;
 };
 
-struct WVCompositeOutputFileMetrics {
+struct WVOutputFileMetrics {
   std::string fileIdentifier;
   std::string destination;
   std::size_t scheduledDeliveryCount = 0;
@@ -176,10 +191,10 @@ struct WVCompositeOutputFileMetrics {
   std::size_t writeCount = 0;
   std::size_t writtenBytes = 0;
   std::size_t failureCount = 0;
-  std::vector<WVCompositeOutputGroupMetrics> groups;
+  std::vector<WVOutputGroupMetrics> groups;
 };
 
-struct WVCompositeOutputDriverMetrics {
+struct WVOutputDriverMetrics {
   std::size_t acceptedStepCount = 0;
   std::size_t outputStateEvaluationCount = 0;
   std::size_t initialStateEventCount = 0;
@@ -196,36 +211,82 @@ struct WVCompositeOutputDriverMetrics {
   std::size_t routeStagingMaximumLiveBytes = 0;
   double interpolationSeconds = 0.0;
   std::size_t retainedStorageBytes = 0;
-  std::vector<WVCompositeOutputFileMetrics> files;
+  std::vector<WVOutputFileMetrics> files;
 };
 
 // Method-neutral scheduled-output driver. Solver steps are selected without
-// consulting output times. One reusable composite state is staged for every
+// consulting output times. One reusable integration state is staged for every
 // event, and coincident routes share that single state evaluation. If a route
 // fails, the driver retains that immutable state and route cursor; calling
 // advanceToTime() again replays only the failed route before integration
 // continues from the later accepted state.
-class WVCompositeOutputDriver final {
+class WVOutputDriver final {
 public:
-  WVCompositeOutputDriver(WVCompositeTimeIntegrator &integrator,
-                          const WVCompositeOutputPlan &plan);
-  ~WVCompositeOutputDriver();
-  WVCompositeOutputDriver(const WVCompositeOutputDriver &) = delete;
-  WVCompositeOutputDriver &operator=(const WVCompositeOutputDriver &) = delete;
+  WVOutputDriver(WVTimeIntegrator &integrator,
+                          const WVOutputPlan &plan);
+  ~WVOutputDriver();
+  WVOutputDriver(const WVOutputDriver &) = delete;
+  WVOutputDriver &operator=(const WVOutputDriver &) = delete;
 
-  WVKernelStatus advanceToTime(WVMutableCompositeState &state,
+  WVKernelStatus advanceToTime(WVMutableIntegrationState &state,
                                double finalTime, double initialStepSize,
-                               WVCompositeOutputSink &sink);
+                               WVOutputSink &sink);
 
   const std::vector<WVOutputGroupProgress> &committedProgress() const noexcept;
-  const std::vector<WVCompositeOutputDeliveryRecord> &records() const noexcept;
-  const WVCompositeOutputDriverMetrics &metrics() const noexcept;
+  const std::vector<WVOutputDeliveryRecord> &records() const noexcept;
+  const WVOutputDriverMetrics &metrics() const noexcept;
   bool hasPendingDelivery() const noexcept;
   std::size_t persistentBytes() const noexcept;
 
 private:
   class Impl;
   std::unique_ptr<Impl> impl_;
+};
+
+struct WVCheckpointOutputRecord {
+  std::size_t ordinal = 0;
+  double requestedTime = 0.0;
+  double emittedTime = 0.0;
+  WVOutputEventKind eventKind = WVOutputEventKind::acceptedEndpoint;
+  std::string destination;
+  double writeSeconds = 0.0;
+  bool committed = false;
+  std::string failure;
+};
+
+struct WVCheckpointOutputSinkMetrics {
+  std::size_t receivedEventCount = 0;
+  std::size_t checkpointWriteCount = 0;
+  std::size_t copiedCoefficientBytes = 0;
+  double checkpointWriteSeconds = 0.0;
+};
+
+// Transactional coefficient-checkpoint sink for explicit output plans. The
+// route owns the destination and scheduled time; the sink owns one reusable
+// checkpoint-sized staging buffer. Additional integrated blocks are not yet
+// part of the legacy coefficient checkpoint format.
+class WVCheckpointOutputSink final : public WVOutputSink {
+public:
+  explicit WVCheckpointOutputSink(WVCheckpoint checkpointTemplate);
+
+  WVKernelStatus preflight(const WVOutputPlan &plan) override;
+  WVKernelStatus deliver(const WVOutputEvent &event,
+                         const WVOutputRouteView &route,
+                         WVOutputDeliveryResult &result) override;
+
+  const std::vector<WVCheckpointOutputRecord> &records() const noexcept {
+    return records_;
+  }
+  const WVCheckpointOutputSinkMetrics &metrics() const noexcept {
+    return metrics_;
+  }
+  std::size_t persistentBytes() const noexcept;
+
+private:
+  WVCheckpoint checkpoint_;
+  std::vector<WVCheckpointOutputRecord> records_;
+  WVCheckpointOutputSinkMetrics metrics_;
+  bool preflighted_ = false;
 };
 
 } // namespace wavevortex::runtime

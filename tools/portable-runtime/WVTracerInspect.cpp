@@ -1,5 +1,5 @@
 #include "WaveVortexRuntime/WVCheckpointReader.hpp"
-#include "WaveVortexRuntime/WVConstantStratificationCompositeSystem.hpp"
+#include "WaveVortexRuntime/WVConstantStratificationIntegrationSystem.hpp"
 
 #include "WVReferenceFFTEngine.hpp"
 
@@ -73,10 +73,10 @@ int main(int argc, char **argv) {
     }
     const auto descriptor = descriptorFor(
         checkpoint.configuration, checkpoint.state.coefficients.shape);
-    std::unique_ptr<WVConstantStratificationCompositeSystem> system;
-    auto status = WVConstantStratificationCompositeSystem::create(
+    std::unique_ptr<WVConstantStratificationIntegrationSystem> system;
+    auto status = WVConstantStratificationIntegrationSystem::create(
         checkpoint.configuration, {}, descriptor,
-        std::make_unique<WVReferenceFFTEngine>(), 1e-6, system);
+        std::make_unique<WVReferenceFFTEngine>(), system);
     if (!status)
       throw std::runtime_error(status.message);
 
@@ -97,7 +97,7 @@ int main(int argc, char **argv) {
       status = fluxStorage.initialize(system->stateLayout());
     if (!status)
       throw std::runtime_error(status.message);
-    WVMutableCompositeState state{
+    WVMutableIntegrationState state{
         {checkpoint.state.t, checkpoint.state.t0,
          {{coefficients.data(), shape}, {coefficients.data() + M, shape},
           {coefficients.data() + 2 * M, shape}}},
@@ -118,12 +118,12 @@ int main(int argc, char **argv) {
                              static_cast<double>(configuration.Nz - 1));
         }
     std::vector<WVComplex64> coefficientFlux(3 * M);
-    WVCompositeFlux flux{
+    WVIntegrationFlux flux{
         {{coefficientFlux.data(), shape}, {coefficientFlux.data() + M, shape},
          {coefficientFlux.data() + 2 * M, shape}},
         fluxStorage.mutableBlocks(), fluxStorage.blockCount()};
     std::vector<WVAdditionalStateBlockConstView> views;
-    status = system->evaluateRightHandSide(compositeConstView(state, views), flux);
+    status = system->evaluateRightHandSide(integrationConstView(state, views), flux);
     if (!status)
       throw std::runtime_error(status.message);
 

@@ -1,10 +1,9 @@
-#include "WaveVortexRuntime/WVConstantStratificationCompositeSystem.hpp"
+#include "WaveVortexRuntime/WVConstantStratificationIntegrationSystem.hpp"
 #include "WVObserverAdapter.hpp"
 
 #include <algorithm>
 #include <limits>
 #include <new>
-#include <set>
 
 namespace wavevortex::runtime {
 namespace {
@@ -13,7 +12,7 @@ WVKernelStatus invalid(std::string message) {
   return {WVKernelStatusCode::invalidConfiguration, std::move(message)};
 }
 
-std::size_t blockIndex(const WVCompositeStateLayout &layout,
+std::size_t blockIndex(const WVIntegrationStateLayout &layout,
                        const std::string &identifier) {
   const auto &blocks = layout.additionalBlocks();
   const auto found = std::find_if(
@@ -25,27 +24,89 @@ std::size_t blockIndex(const WVCompositeStateLayout &layout,
              : static_cast<std::size_t>(found - blocks.begin());
 }
 
+class UnifiedErrorPolicy final : public WVIntegrationErrorPolicy {
+public:
+  UnifiedErrorPolicy(std::unique_ptr<WVIntegrationErrorPolicy> coefficients,
+                     const WVIntegrationStateLayout &layout, double scale)
+      : coefficients_(std::move(coefficients)) {
+    counts_.reserve(3 + layout.additionalBlocks().size());
+    tolerances_.reserve(3 + layout.additionalBlocks().size());
+    for (std::size_t component = 0; component < 3; ++component) {
+      counts_.push_back(coefficients_->elementCount(component));
+      tolerances_.push_back(0.0);
+    }
+    for (const auto &block : layout.additionalBlocks()) {
+      counts_.push_back(block.elementCount);
+      tolerances_.push_back(block.absoluteTolerance * scale);
+    }
+  }
+
+  std::size_t componentCount() const noexcept override {
+    return counts_.size();
+  }
+  std::size_t elementCount(std::size_t component) const noexcept override {
+    return component < counts_.size() ? counts_[component] : 0;
+  }
+  double absoluteTolerance(std::size_t component,
+                           std::size_t index) const noexcept override {
+    if (component < 3)
+      return coefficients_->absoluteTolerance(component, index);
+    return component < tolerances_.size() ? tolerances_[component] : 0.0;
+  }
+  std::size_t persistentBytes() const noexcept override {
+    return sizeof(*this) + coefficients_->persistentBytes() +
+           counts_.capacity() * sizeof(std::size_t) +
+           tolerances_.capacity() * sizeof(double);
+  }
+
+private:
+  std::unique_ptr<WVIntegrationErrorPolicy> coefficients_;
+  std::vector<std::size_t> counts_;
+  std::vector<double> tolerances_;
+};
+
 } // namespace
 
-WVKernelStatus WVConstantStratificationCompositeSystem::create(
+WVKernelStatus WVConstantStratificationIntegrationSystem::create(
+    const WVTransformConstantStratificationConfiguration &configuration,
+    const WVFrozenForcingSchedule &schedule,
+    std::unique_ptr<WVFFTEngine> engine,
+    std::unique_ptr<WVConstantStratificationIntegrationSystem> &system) {
+  return createImpl(configuration, schedule, nullptr, std::move(engine), system);
+}
+
+WVKernelStatus WVConstantStratificationIntegrationSystem::create(
     const WVTransformConstantStratificationConfiguration &configuration,
     const WVFrozenForcingSchedule &schedule,
     const WVPortableObserverDescriptor &descriptor,
     std::unique_ptr<WVFFTEngine> engine,
-    double coefficientAbsoluteToleranceScale,
-    std::unique_ptr<WVConstantStratificationCompositeSystem> &system) {
+    std::unique_ptr<WVConstantStratificationIntegrationSystem> &system) {
+  return createImpl(configuration, schedule, &descriptor, std::move(engine),
+                    system);
+}
+
+WVKernelStatus WVConstantStratificationIntegrationSystem::createImpl(
+    const WVTransformConstantStratificationConfiguration &configuration,
+    const WVFrozenForcingSchedule &schedule,
+    const WVPortableObserverDescriptor *descriptor,
+    std::unique_ptr<WVFFTEngine> engine,
+    std::unique_ptr<WVConstantStratificationIntegrationSystem> &system) {
   system.reset();
   try {
     auto candidate =
-        std::unique_ptr<WVConstantStratificationCompositeSystem>(
-            new WVConstantStratificationCompositeSystem());
-    WVTransformConstantStratificationDescriptor transformDescriptor;
-    auto status = WVTransformConstantStratificationDescriptor::create(
-        configuration, transformDescriptor);
+        std::unique_ptr<WVConstantStratificationIntegrationSystem>(
+            new WVConstantStratificationIntegrationSystem());
+    auto status = WVConstantStratificationForcingEngine::create(
+        configuration, schedule, std::move(engine), candidate->forcing_);
     if (!status)
       return status;
-    status = WVCompositeStateLayout::create(transformDescriptor.spectralShape(),
-                                            descriptor, candidate->layout_);
+    const auto coefficientShape =
+        candidate->forcing_->kernel().descriptor().spectralShape();
+    status = descriptor == nullptr
+                 ? WVIntegrationStateLayout::createCoefficientOnly(
+                       coefficientShape, candidate->layout_)
+                 : WVIntegrationStateLayout::create(
+                       coefficientShape, *descriptor, candidate->layout_);
     if (!status)
       return status;
 
@@ -53,18 +114,21 @@ WVKernelStatus WVConstantStratificationCompositeSystem::create(
         candidate->layout_.additionalBlocks().size(), 0);
     std::vector<WVMovingFieldRequest> velocityRequests;
     std::size_t positionOffset = 0;
-    for (const auto &observer : descriptor.observers()) {
+    static const std::vector<WVObserverRecord> noObservers;
+    const auto &observers =
+        descriptor == nullptr ? noObservers : descriptor->observers();
+    for (const auto &observer : observers) {
       const auto *definition = detail::observerDefinition(observer.kind);
       if (definition == nullptr)
         return {WVKernelStatusCode::unsupportedOperation,
-                "Composite system received an unsupported observer."};
+                "Integration system received an unsupported observer."};
       if (definition->stateContract ==
           detail::WVObserverStateContract::tracerField) {
         const auto block = blockIndex(
             candidate->layout_, observer.stateBlockIdentifiers.front());
         if (block == std::numeric_limits<std::size_t>::max())
           return invalid(
-              "Tracer state block is absent from the composite layout.");
+              "Tracer state block is absent from the integration layout.");
         const auto &dimensions =
             candidate->layout_.additionalBlocks()[block].dimensions;
         if (observer.isXYOnly) {
@@ -109,7 +173,7 @@ WVKernelStatus WVConstantStratificationCompositeSystem::create(
           particles.yBlock_ == std::numeric_limits<std::size_t>::max() ||
           (!observer.isXYOnly &&
            particles.zBlock_ == std::numeric_limits<std::size_t>::max()))
-        return invalid("Particle state blocks are absent from the composite "
+        return invalid("Particle state blocks are absent from the integration "
                        "layout or appear in an incompatible order.");
       ++ownerCounts[particles.xBlock_];
       ++ownerCounts[particles.yBlock_];
@@ -132,28 +196,23 @@ WVKernelStatus WVConstantStratificationCompositeSystem::create(
     }
     for (std::size_t block = 0; block < ownerCounts.size(); ++block) {
       if (ownerCounts[block] != 1)
-        return invalid("Composite state block " +
+        return invalid("Integration state block " +
                        candidate->layout_.additionalBlocks()[block].identifier +
                        " must resolve to exactly one integrated observer.");
     }
 
-    status = WVConstantStratificationForcingEngine::create(
-        configuration, schedule, std::move(engine), candidate->forcing_);
-    if (!status)
-      return status;
-    status = candidate->forcing_->createErrorPolicy(
-        coefficientAbsoluteToleranceScale,
-        candidate->coefficientErrorPolicy_);
-    if (!status)
-      return status;
-    status = WVFieldEvaluationService::createBorrowing(
-        candidate->forcing_->kernel(), candidate->fields_);
-    if (!status)
-      return status;
-    status = candidate->fields_->createMovingPlan(
-        velocityRequests, candidate->velocityPlan_);
-    if (!status)
-      return status;
+    // Coefficient-only integration is the zero-additional-block case. It must
+    // not retain the field-evaluation scratch used by observing systems.
+    if (!observers.empty()) {
+      status = WVFieldEvaluationService::createBorrowing(
+          candidate->forcing_->kernel(), candidate->fields_);
+      if (!status)
+        return status;
+      status = candidate->fields_->createMovingPlan(
+          velocityRequests, candidate->velocityPlan_);
+      if (!status)
+        return status;
+    }
     candidate->x_.resize(positionOffset);
     candidate->y_.resize(positionOffset);
     candidate->z_.resize(positionOffset);
@@ -182,33 +241,36 @@ WVKernelStatus WVConstantStratificationCompositeSystem::create(
   }
 }
 
-WVConstantStratificationCompositeSystem::~WVConstantStratificationCompositeSystem() =
+WVConstantStratificationIntegrationSystem::~WVConstantStratificationIntegrationSystem() =
     default;
 
 WVKernelStatus
-WVConstantStratificationCompositeSystem::evaluateRightHandSide(
-    const WVCompositeState &state, WVCompositeFlux &rightHandSide) {
+WVConstantStratificationIntegrationSystem::evaluateRightHandSide(
+    const WVIntegrationState &state, WVIntegrationFlux &rightHandSide) {
   if (executing_)
     return {WVKernelStatusCode::reentrantExecution,
-            "The particle composite system is not reentrant."};
-  auto status = validateCompositeState(layout_, state);
+            "The constant-stratification integration system is not reentrant."};
+  auto status = validateIntegrationState(layout_, state);
   if (!status)
     return status;
   if (rightHandSide.additionalBlockCount != layout_.additionalBlocks().size() ||
-      rightHandSide.additionalBlocks == nullptr)
+      (rightHandSide.additionalBlockCount != 0 &&
+       rightHandSide.additionalBlocks == nullptr))
     return {WVKernelStatusCode::invalidShape,
-            "Composite RHS storage does not match the frozen layout."};
+            "Integration RHS storage does not match the frozen layout."};
   executing_ = true;
   struct Guard {
     bool &value;
     ~Guard() { value = false; }
   } guard{executing_};
-  WVConstantStratificationRightHandSideContext context;
-  auto advectionStorage = fields_->advectionFieldStorage();
   const bool needsAdvectionContext = !particles_.empty() || !tracers_.empty();
+  WVConstantStratificationRightHandSideContext context;
+  auto advectionStorage = needsAdvectionContext
+                              ? fields_->advectionFieldStorage()
+                              : WVRealFieldBundleView{};
   status = !needsAdvectionContext
-               ? forcing_->evaluateRightHandSide(state.waveVortex,
-                                                  rightHandSide.waveVortex)
+               ? forcing_->nonlinearFlux(state.waveVortex,
+                                         rightHandSide.waveVortex)
                : forcing_->evaluateRightHandSideWithContext(
                      state.waveVortex, rightHandSide.waveVortex,
                      advectionStorage, context);
@@ -282,18 +344,18 @@ WVConstantStratificationCompositeSystem::evaluateRightHandSide(
 }
 
 WVStateConstraintResult
-WVConstantStratificationCompositeSystem::enforceStateConstraints(
-    WVMutableCompositeState &state) {
-  const auto status = validateMutableCompositeState(layout_, state);
+WVConstantStratificationIntegrationSystem::enforceStateConstraints(
+    WVMutableIntegrationState &state) {
+  const auto status = validateMutableIntegrationState(layout_, state);
   if (!status)
     return {status, 0, false};
-  return forcing_->enforceStateConstraints(state.waveVortex.coefficients);
+  return forcing_->restoreForcingAmplitudes(state.waveVortex.coefficients);
 }
 
 WVKernelStatus
-WVConstantStratificationCompositeSystem::initializeParticleState(
-    WVMutableCompositeState &state) const {
-  const auto status = validateMutableCompositeState(layout_, state);
+WVConstantStratificationIntegrationSystem::initializeParticleState(
+    WVMutableIntegrationState &state) const {
+  const auto status = validateMutableIntegrationState(layout_, state);
   if (!status)
     return status;
   for (const auto &particles : particles_) {
@@ -308,15 +370,29 @@ WVConstantStratificationCompositeSystem::initializeParticleState(
   return WVKernelStatus::ok();
 }
 
-double WVConstantStratificationCompositeSystem::coefficientAbsoluteTolerance(
-    std::size_t component, std::size_t index) const noexcept {
-  return coefficientErrorPolicy_->absoluteTolerance(component, index);
+WVKernelStatus WVConstantStratificationIntegrationSystem::createErrorPolicy(
+    double absoluteToleranceScale,
+    std::unique_ptr<WVIntegrationErrorPolicy> &policy) const {
+  policy.reset();
+  std::unique_ptr<WVIntegrationErrorPolicy> coefficients;
+  auto status = forcing_->createErrorPolicy(absoluteToleranceScale, coefficients);
+  if (!status)
+    return status;
+  try {
+    policy = std::make_unique<UnifiedErrorPolicy>(
+        std::move(coefficients), layout_, absoluteToleranceScale);
+    return WVKernelStatus::ok();
+  } catch (const std::bad_alloc &) {
+    return {WVKernelStatusCode::allocationFailure,
+            "Integration error-policy allocation failed."};
+  }
 }
 
 std::size_t
-WVConstantStratificationCompositeSystem::persistentBytes() const noexcept {
+WVConstantStratificationIntegrationSystem::persistentBytes() const noexcept {
   std::size_t bytes = sizeof(*this) + layout_.persistentBytes() +
-                      forcing_->persistentBytes() + fields_->persistentBytes() +
+                      forcing_->persistentBytes() +
+                      (fields_ ? fields_->persistentBytes() : 0) +
                       velocityPlan_.persistentBytes() +
                       particles_.capacity() * sizeof(WVLagrangianParticles) +
                       tracers_.capacity() * sizeof(WVTracer) +
