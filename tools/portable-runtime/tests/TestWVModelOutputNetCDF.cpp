@@ -95,7 +95,7 @@ descriptorFor(const WVPortableObserverRecord &record) {
   return descriptor;
 }
 
-WVCompositeState eventState(const WVCheckpoint &checkpoint) {
+WVIntegrationState eventState(const WVCheckpoint &checkpoint) {
   return {checkpoint.state.view(), nullptr, 0};
 }
 
@@ -143,7 +143,7 @@ public:
     return WVKernelStatus::ok();
   }
 
-  WVKernelStatus prepare(const WVCompositeOutputEvent &) override {
+  WVKernelStatus prepare(const WVOutputEvent &) override {
     return WVKernelStatus::ok();
   }
 
@@ -166,18 +166,18 @@ private:
 };
 
 void deliverPlannedEvent(WVModelOutputNetCDFSink &sink,
-                         const WVCompositeOutputPlan &plan,
+                         const WVOutputPlan &plan,
                          std::size_t eventIndex,
                          const WVCheckpoint &checkpoint) {
   const auto planned = plan.event(eventIndex);
   require(planned.routeCount == 1, "test plan route count");
-  WVCompositeOutputEvent event;
+  WVOutputEvent event;
   event.eventOrdinal = planned.eventOrdinal;
   event.scheduledTime = planned.scheduledTime;
   event.state = eventState(checkpoint);
   event.routes = planned.routes;
   event.routeCount = planned.routeCount;
-  WVCompositeOutputDeliveryResult delivery;
+  WVOutputDeliveryResult delivery;
   const auto status = sink.deliver(event, planned.routes[0], delivery);
   require(static_cast<bool>(status), status.message);
   require(delivery.writeCount == 7,
@@ -208,8 +208,8 @@ void testCreateReadAndAppend() {
   const auto path = directory.path / "multigroup.nc";
   auto record = recordFor(checkpoint, path);
   auto descriptor = descriptorFor(record);
-  WVCompositeStateLayout layout;
-  auto status = WVCompositeStateLayout::create(
+  WVIntegrationStateLayout layout;
+  auto status = WVIntegrationStateLayout::create(
       checkpoint.state.coefficients.shape, descriptor, layout);
   require(static_cast<bool>(status), status.message);
   WVModelOutputNetCDFConfiguration configuration{checkpoint, false};
@@ -219,16 +219,16 @@ void testCreateReadAndAppend() {
   require(static_cast<bool>(persistence),
           persistence.message + " at " + persistence.location);
 
-  WVCompositeOutputPlan firstPlan;
-  status = WVCompositeOutputPlan::create(
+  WVOutputPlan firstPlan;
+  status = WVOutputPlan::create(
       descriptor, checkpoint.state.t, checkpoint.state.t + 1.0, {}, firstPlan);
   require(static_cast<bool>(status), status.message);
   auto incompatibleRecord = record;
   incompatibleRecord.outputFiles.front().groups.front().identifier =
       "different-group";
   auto incompatibleDescriptor = descriptorFor(incompatibleRecord);
-  WVCompositeOutputPlan incompatiblePlan;
-  status = WVCompositeOutputPlan::create(
+  WVOutputPlan incompatiblePlan;
+  status = WVOutputPlan::create(
       incompatibleDescriptor, checkpoint.state.t, checkpoint.state.t + 1.0, {},
       incompatiblePlan);
   require(static_cast<bool>(status), status.message);
@@ -260,8 +260,8 @@ void testCreateReadAndAppend() {
   persistence = WVModelOutputNetCDFSink::openAppend(configuration, descriptor,
                                                     layout, nullptr, append);
   require(static_cast<bool>(persistence), persistence.message);
-  WVCompositeOutputPlan appendPlan;
-  status = WVCompositeOutputPlan::create(descriptor, checkpoint.state.t,
+  WVOutputPlan appendPlan;
+  status = WVOutputPlan::create(descriptor, checkpoint.state.t,
                                          checkpoint.state.t + 1.0,
                                          append.progress(), appendPlan);
   require(static_cast<bool>(status), status.message);
@@ -342,8 +342,8 @@ void testLinearInitialCoefficientsAndPassiveFields() {
   record.outputFiles.front().groups.front().observerIdentifiers =
       {fields.identifier, mooring.identifier};
   auto descriptor = descriptorFor(record);
-  WVCompositeStateLayout layout;
-  auto status = WVCompositeStateLayout::create(
+  WVIntegrationStateLayout layout;
+  auto status = WVIntegrationStateLayout::create(
       checkpoint.state.coefficients.shape, descriptor, layout);
   require(static_cast<bool>(status), status.message);
   std::unique_ptr<WVObserverOutputEvaluationService> source;
@@ -357,20 +357,20 @@ void testLinearInitialCoefficientsAndPassiveFields() {
       configuration, descriptor, layout, source.get(), sink);
   require(static_cast<bool>(persistence), persistence.message);
 
-  WVCompositeOutputPlan plan;
-  status = WVCompositeOutputPlan::create(
+  WVOutputPlan plan;
+  status = WVOutputPlan::create(
       descriptor, checkpoint.state.t, checkpoint.state.t, {}, plan);
   require(static_cast<bool>(status), status.message);
   status = sink.preflight(plan);
   require(static_cast<bool>(status), status.message);
   const auto planned = plan.event(0);
-  WVCompositeOutputEvent event;
+  WVOutputEvent event;
   event.eventOrdinal = planned.eventOrdinal;
   event.scheduledTime = planned.scheduledTime;
   event.state = eventState(checkpoint);
   event.routes = planned.routes;
   event.routeCount = planned.routeCount;
-  WVCompositeOutputDeliveryResult delivery;
+  WVOutputDeliveryResult delivery;
   status = sink.deliver(event, planned.routes[0], delivery);
   require(static_cast<bool>(status), status.message);
   require(delivery.writeCount == 3,
@@ -430,8 +430,8 @@ void testLinearInitialCoefficientsAndPassiveFields() {
       appendConfiguration, appendDescriptor, inspection.stateLayout,
       appendSource.get(), append);
   require(static_cast<bool>(persistence), persistence.message);
-  WVCompositeOutputPlan appendPlan;
-  status = WVCompositeOutputPlan::create(
+  WVOutputPlan appendPlan;
+  status = WVOutputPlan::create(
       appendDescriptor, inspection.latestRestart.state.t,
       inspection.latestRestart.state.t + 1.0, append.progress(), appendPlan);
   require(static_cast<bool>(status) && appendPlan.eventCount() == 1,
@@ -469,8 +469,8 @@ void testTransactionalRefusal() {
   }
   auto record = recordFor(checkpoint, path);
   auto descriptor = descriptorFor(record);
-  WVCompositeStateLayout layout;
-  auto status = WVCompositeStateLayout::create(
+  WVIntegrationStateLayout layout;
+  auto status = WVIntegrationStateLayout::create(
       checkpoint.state.coefficients.shape, descriptor, layout);
   require(static_cast<bool>(status), status.message);
   WVModelOutputNetCDFSink sink;
@@ -576,8 +576,8 @@ void testMultipleFilesGroupsAndSharedState() {
                             "tracer"},
                            true}}}};
   auto descriptor = descriptorFor(record);
-  WVCompositeStateLayout layout;
-  auto status = WVCompositeStateLayout::create(
+  WVIntegrationStateLayout layout;
+  auto status = WVIntegrationStateLayout::create(
       checkpoint.state.coefficients.shape, descriptor, layout);
   require(static_cast<bool>(status), status.message);
   WVAdditionalStateStorage additional;
@@ -596,13 +596,13 @@ void testMultipleFilesGroupsAndSharedState() {
   auto persistence = WVModelOutputNetCDFSink::createNew(
       {checkpoint, false}, descriptor, layout, source.get(), sink);
   require(static_cast<bool>(persistence), persistence.message);
-  WVCompositeOutputPlan plan;
-  status = WVCompositeOutputPlan::create(descriptor, checkpoint.state.t, end,
+  WVOutputPlan plan;
+  status = WVOutputPlan::create(descriptor, checkpoint.state.t, end,
                                          {}, plan);
   require(static_cast<bool>(status), status.message);
   status = sink.preflight(plan);
   require(static_cast<bool>(status), status.message);
-  WVCompositeOutputEvent event;
+  WVOutputEvent event;
   const auto planned = plan.event(0);
   event.eventOrdinal = planned.eventOrdinal;
   event.scheduledTime = planned.scheduledTime;
@@ -613,7 +613,7 @@ void testMultipleFilesGroupsAndSharedState() {
   require(planned.routeCount == 3,
           "coincident multi-file routes were not grouped");
   for (std::size_t route = 0; route < planned.routeCount; ++route) {
-    WVCompositeOutputDeliveryResult delivery;
+    WVOutputDeliveryResult delivery;
     status = sink.deliver(event, planned.routes[route], delivery);
     require(static_cast<bool>(status), status.message);
   }
@@ -732,8 +732,8 @@ void testOptionalMatlabFixture() {
   appendInspection.observerRecord.outputFiles.front().destination =
       appendPath.string();
   auto descriptor = descriptorFor(appendInspection.observerRecord);
-  WVCompositeStateLayout layout;
-  auto status = WVCompositeStateLayout::create(
+  WVIntegrationStateLayout layout;
+  auto status = WVIntegrationStateLayout::create(
       appendInspection.latestRestart.state.coefficients.shape, descriptor,
       layout);
   require(static_cast<bool>(status), status.message);
@@ -744,8 +744,8 @@ void testOptionalMatlabFixture() {
       sink);
   require(static_cast<bool>(persistence),
           persistence.message + " at " + persistence.location);
-  WVCompositeOutputPlan plan;
-  status = WVCompositeOutputPlan::create(
+  WVOutputPlan plan;
+  status = WVOutputPlan::create(
       descriptor, appendInspection.latestRestart.state.t,
       appendInspection.latestRestart.state.t + 1.0, sink.progress(), plan);
   require(static_cast<bool>(status), status.message);
@@ -758,7 +758,7 @@ void testOptionalMatlabFixture() {
   for (std::size_t index = 0;
        index < appendInspection.additionalState.blockCount(); ++index)
     blocks.push_back(appendInspection.additionalState.constBlocks()[index]);
-  WVCompositeOutputEvent event;
+  WVOutputEvent event;
   const auto planned = plan.event(0);
   event.eventOrdinal = planned.eventOrdinal;
   event.scheduledTime = planned.scheduledTime;
@@ -767,7 +767,7 @@ void testOptionalMatlabFixture() {
   event.routes = planned.routes;
   event.routeCount = planned.routeCount;
   for (std::size_t route = 0; route < planned.routeCount; ++route) {
-    WVCompositeOutputDeliveryResult delivery;
+    WVOutputDeliveryResult delivery;
     status = sink.deliver(event, planned.routes[route], delivery);
     require(static_cast<bool>(status), status.message);
   }
@@ -812,8 +812,8 @@ void testOptionalMatlabLinearFixture() {
       {inspection.latestRestart, true}, descriptor, inspection.stateLayout,
       source.get(), sink);
   require(static_cast<bool>(persistence), persistence.message);
-  WVCompositeOutputPlan plan;
-  status = WVCompositeOutputPlan::create(
+  WVOutputPlan plan;
+  status = WVOutputPlan::create(
       descriptor, inspection.latestRestart.state.t,
       inspection.latestRestart.state.t + 1.0, sink.progress(), plan);
   require(static_cast<bool>(status) && plan.eventCount() == 1,
@@ -821,13 +821,13 @@ void testOptionalMatlabLinearFixture() {
   status = sink.preflight(plan);
   require(static_cast<bool>(status), status.message);
   const auto planned = plan.event(0);
-  WVCompositeOutputEvent event;
+  WVOutputEvent event;
   event.eventOrdinal = planned.eventOrdinal;
   event.scheduledTime = planned.scheduledTime;
   event.state = eventState(inspection.latestRestart);
   event.routes = planned.routes;
   event.routeCount = planned.routeCount;
-  WVCompositeOutputDeliveryResult delivery;
+  WVOutputDeliveryResult delivery;
   status = sink.deliver(event, planned.routes[0], delivery);
   require(static_cast<bool>(status), status.message);
   persistence = sink.close();

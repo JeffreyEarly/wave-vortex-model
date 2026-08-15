@@ -72,9 +72,8 @@ foreach(token "netcdf.h" "nc_open(" "nc_create(" "nc_def_")
 endforeach()
 
 set(numerical_sources
-    "PortableRuntime/src/WVFixedStepRK4.cpp"
-    "PortableRuntime/src/WVAdaptiveRK23.cpp"
-    "PortableRuntime/src/WVCompositeIntegration.cpp"
+    "PortableRuntime/src/WVRungeKutta.cpp"
+    "PortableRuntime/src/WVIntegrationState.cpp"
     "PortableRuntime/src/WVForcingEngine.cpp"
     "PortableRuntime/src/WVFieldEvaluationService.cpp")
 foreach(relative_path IN LISTS numerical_sources)

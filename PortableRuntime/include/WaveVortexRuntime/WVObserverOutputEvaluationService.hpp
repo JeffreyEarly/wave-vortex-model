@@ -35,11 +35,11 @@ public:
   WVKernelStatus specifications(
       const WVObserverRecord &observer,
       std::vector<WVObserverOutputVariableSpecification> &output) override;
-  WVKernelStatus preflight(const WVCompositeOutputPlan &plan) override;
+  WVKernelStatus preflight(const WVOutputPlan &plan) override;
   WVKernelStatus useFieldEvaluationService(
       WVFieldEvaluationService &fieldEvaluationService);
   WVKernelStatus prepareInitial(const WVState &state) override;
-  WVKernelStatus prepare(const WVCompositeOutputEvent &event) override;
+  WVKernelStatus prepare(const WVOutputEvent &event) override;
   WVKernelStatus value(
       const WVObserverRecord &observer,
       const WVObserverOutputVariableSpecification &variable,

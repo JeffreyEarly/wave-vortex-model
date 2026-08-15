@@ -6,7 +6,7 @@
 
 namespace wavevortex::runtime {
 
-class WVConstantStratificationCompositeSystem;
+class WVConstantStratificationIntegrationSystem;
 
 // Resolved MATLAB-compatible three-dimensional tracer. Its numerical
 // differentiation remains owned by the shared constant-stratification kernel.
@@ -19,7 +19,7 @@ public:
 private:
   WVObserverRecord record_;
   std::size_t stateBlock_ = 0;
-  friend class WVConstantStratificationCompositeSystem;
+  friend class WVConstantStratificationIntegrationSystem;
 };
 
 } // namespace wavevortex::runtime

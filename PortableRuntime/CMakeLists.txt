@@ -24,16 +24,13 @@ add_library(WaveVortexPortableRuntime STATIC
     src/WVCheckpointReader.cpp
     src/WVCheckpointWriter.cpp
     src/WVForcingEngine.cpp
-    src/WVFixedStepRK4.cpp
-    src/WVAdaptiveRK23.cpp
-    src/WVIntegrationDriver.cpp
+    src/WVIntegrationState.cpp
+    src/WVRungeKutta.cpp
+    src/WVOutputOrchestration.cpp
     src/WVObserverAdapter.cpp
     src/WVObserverContracts.cpp
-    src/WVCompositeState.cpp
-    src/WVCompositeIntegration.cpp
-    src/WVCompositeOutputOrchestration.cpp
     src/WVFieldEvaluationService.cpp
-    src/WVConstantStratificationCompositeSystem.cpp
+    src/WVConstantStratificationIntegrationSystem.cpp
     src/WVObserverOutputEvaluationService.cpp
     src/WVModelOutputNetCDFSchema.cpp
     src/WVModelOutputNetCDFReader.cpp
@@ -210,38 +207,25 @@ if(BUILD_TESTING)
     endif()
     add_test(NAME forcing-and-rk4 COMMAND TestWVForcingAndRK4)
 
-    add_executable(TestWVIntegrationContracts
-        ../tools/portable-runtime/tests/TestWVIntegrationContracts.cpp
+    add_executable(TestWVUnifiedIntegration
+        ../tools/portable-runtime/tests/TestWVUnifiedIntegration.cpp
     )
-    target_compile_features(TestWVIntegrationContracts PRIVATE cxx_std_17)
-    target_link_libraries(TestWVIntegrationContracts PRIVATE WaveVortex::PortableRuntime)
-    target_compile_definitions(TestWVIntegrationContracts PRIVATE
-        WV_CHECKPOINT_FIXTURE_DIR="${CMAKE_CURRENT_LIST_DIR}/../tools/portable-runtime/fixtures"
-    )
+    target_compile_features(TestWVUnifiedIntegration PRIVATE cxx_std_17)
+    target_link_libraries(TestWVUnifiedIntegration PRIVATE WaveVortex::PortableRuntime)
     if(CMAKE_CXX_COMPILER_ID MATCHES "AppleClang|Clang|GNU")
-        target_compile_options(TestWVIntegrationContracts PRIVATE -Wall -Wextra -Wpedantic -Werror)
+        target_compile_options(TestWVUnifiedIntegration PRIVATE -Wall -Wextra -Wpedantic -Werror)
     endif()
-    add_test(NAME integration-contracts COMMAND TestWVIntegrationContracts)
+    add_test(NAME unified-integration COMMAND TestWVUnifiedIntegration)
 
-    add_executable(TestWVCompositeIntegration
-        ../tools/portable-runtime/tests/TestWVCompositeIntegration.cpp
+    add_executable(TestWVOutputOrchestration
+        ../tools/portable-runtime/tests/TestWVOutputOrchestration.cpp
     )
-    target_compile_features(TestWVCompositeIntegration PRIVATE cxx_std_17)
-    target_link_libraries(TestWVCompositeIntegration PRIVATE WaveVortex::PortableRuntime)
+    target_compile_features(TestWVOutputOrchestration PRIVATE cxx_std_17)
+    target_link_libraries(TestWVOutputOrchestration PRIVATE WaveVortex::PortableRuntime)
     if(CMAKE_CXX_COMPILER_ID MATCHES "AppleClang|Clang|GNU")
-        target_compile_options(TestWVCompositeIntegration PRIVATE -Wall -Wextra -Wpedantic -Werror)
+        target_compile_options(TestWVOutputOrchestration PRIVATE -Wall -Wextra -Wpedantic -Werror)
     endif()
-    add_test(NAME composite-integration COMMAND TestWVCompositeIntegration)
-
-    add_executable(TestWVCompositeOutputOrchestration
-        ../tools/portable-runtime/tests/TestWVCompositeOutputOrchestration.cpp
-    )
-    target_compile_features(TestWVCompositeOutputOrchestration PRIVATE cxx_std_17)
-    target_link_libraries(TestWVCompositeOutputOrchestration PRIVATE WaveVortex::PortableRuntime)
-    if(CMAKE_CXX_COMPILER_ID MATCHES "AppleClang|Clang|GNU")
-        target_compile_options(TestWVCompositeOutputOrchestration PRIVATE -Wall -Wextra -Wpedantic -Werror)
-    endif()
-    add_test(NAME composite-output-orchestration COMMAND TestWVCompositeOutputOrchestration)
+    add_test(NAME output-orchestration COMMAND TestWVOutputOrchestration)
 
     add_executable(TestWVModelOutputNetCDF
         ../tools/portable-runtime/tests/TestWVModelOutputNetCDF.cpp

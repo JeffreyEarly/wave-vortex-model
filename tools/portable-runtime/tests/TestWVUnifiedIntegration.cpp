@@ -1,4 +1,4 @@
-#include "WaveVortexRuntime/WVCompositeIntegration.hpp"
+#include "WaveVortexRuntime/WVRungeKutta.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -96,15 +96,33 @@ WVPortableObserverRecord record() {
   return result;
 }
 
-class LinearCompositeSystem final : public WVCompositeIntegrationSystem {
+class LinearIntegrationSystem final : public WVIntegrationSystem {
 public:
-  explicit LinearCompositeSystem(WVCompositeStateLayout layout)
+  class ErrorPolicy final : public WVIntegrationErrorPolicy {
+  public:
+    explicit ErrorPolicy(const WVIntegrationStateLayout &layout)
+        : layout_(layout) {}
+    std::size_t componentCount() const noexcept override {
+      return 3 + layout_.additionalBlocks().size();
+    }
+    std::size_t elementCount(std::size_t component) const noexcept override {
+      return component < 3 ? layout_.coefficientShape().elementCount()
+                           : layout_.additionalBlocks()[component - 3].elementCount;
+    }
+    double absoluteTolerance(std::size_t, std::size_t) const noexcept override {
+      return 1e-10;
+    }
+    std::size_t persistentBytes() const noexcept override { return 0; }
+  private:
+    const WVIntegrationStateLayout &layout_;
+  };
+  explicit LinearIntegrationSystem(WVIntegrationStateLayout layout)
       : layout_(std::move(layout)) {}
-  const WVCompositeStateLayout &stateLayout() const noexcept override {
+  const WVIntegrationStateLayout &stateLayout() const noexcept override {
     return layout_;
   }
-  WVKernelStatus evaluateRightHandSide(const WVCompositeState &state,
-                                       WVCompositeFlux &rhs) override {
+  WVKernelStatus evaluateRightHandSide(const WVIntegrationState &state,
+                                       WVIntegrationFlux &rhs) override {
     if (rhs.additionalBlockCount != state.additionalBlockCount)
       return {WVKernelStatusCode::invalidShape, "RHS layout mismatch."};
     const WVComplexConstView source[] = {state.waveVortex.coefficients.Ap,
@@ -133,7 +151,7 @@ public:
     return WVKernelStatus::ok();
   }
   WVStateConstraintResult
-  enforceStateConstraints(WVMutableCompositeState &state) override {
+  enforceStateConstraints(WVMutableIntegrationState &state) override {
     std::size_t modified = 0;
     for (std::size_t block = 0; block < state.additionalBlockCount; ++block)
       if (state.additionalBlocks[block].layout->identifier == "particleX" ||
@@ -146,14 +164,15 @@ public:
           }
     return {WVKernelStatus::ok(), modified, modified == 0};
   }
-  double coefficientAbsoluteTolerance(std::size_t,
-                                      std::size_t) const noexcept override {
-    return 1e-10;
+  WVKernelStatus createErrorPolicy(
+      double, std::unique_ptr<WVIntegrationErrorPolicy> &policy) const override {
+    policy = std::make_unique<ErrorPolicy>(layout_);
+    return WVKernelStatus::ok();
   }
   std::size_t evaluations = 0;
 
 private:
-  WVCompositeStateLayout layout_;
+  WVIntegrationStateLayout layout_;
 };
 
 struct StateFixture {
@@ -161,11 +180,11 @@ struct StateFixture {
   std::vector<WVComplex64> coefficients =
       std::vector<WVComplex64>(18, {1.0, 0.5});
   WVAdditionalStateStorage extra;
-  WVMutableCompositeState state;
+  WVMutableIntegrationState state;
   std::vector<WVComplex64> outputCoefficients = std::vector<WVComplex64>(18);
   WVAdditionalStateStorage outputExtra;
-  WVMutableCompositeState output;
-  explicit StateFixture(const WVCompositeStateLayout &layout) {
+  WVMutableIntegrationState output;
+  explicit StateFixture(const WVIntegrationStateLayout &layout) {
     require(static_cast<bool>(extra.initialize(layout)),
             "initialize additional state");
     require(static_cast<bool>(outputExtra.initialize(layout)),
@@ -197,7 +216,7 @@ struct StateFixture {
 };
 
 void testContracts(WVPortableObserverDescriptor &descriptor,
-                   WVCompositeStateLayout &layout) {
+                   WVIntegrationStateLayout &layout) {
   auto source = record();
   require(static_cast<bool>(
               WVPortableObserverDescriptor::create(source, descriptor)),
@@ -245,31 +264,31 @@ void testContracts(WVPortableObserverDescriptor &descriptor,
   require(!WVPortableObserverDescriptor::create(mixedOwners, ignored),
           "state block shared by particle and tracer observers rejected");
   require(static_cast<bool>(
-              WVCompositeStateLayout::create({2, 3}, descriptor, layout)),
-          "composite layout");
+              WVIntegrationStateLayout::create({2, 3}, descriptor, layout)),
+          "integration layout");
   require(layout.additionalBlocks().size() == 3 &&
               layout.additionalBlocks()[0].identifier == "particleX" &&
               layout.additionalBlocks()[1].identifier == "particleY" &&
               layout.additionalBlocks()[2].identifier == "tracerAmplitude",
           "derived block excluded and order frozen");
   require(layout.realElementCount() == 10 && layout.complexElementCount() == 0,
-          "composite counts");
-  WVCompositeStateLayout badLayout;
-  require(!WVCompositeStateLayout::create({3, 2}, descriptor, badLayout),
+          "integration-state counts");
+  WVIntegrationStateLayout badLayout;
+  require(!WVIntegrationStateLayout::create({3, 2}, descriptor, badLayout),
           "coefficient shape mismatch rejected");
 }
 
-void testRK4(LinearCompositeSystem &system) {
+void testRK4(LinearIntegrationSystem &system) {
   StateFixture leanFixture(system.stateLayout());
-  WVCompositeFixedStepRK4 leanRK4(system, false);
+  WVFixedStepRK4 leanRK4(system, {false});
   leanFixture.state.additionalBlocks[0].realData[0] = -1.0;
   require(
       static_cast<bool>(leanRK4.prepareStateAfterRestart(leanFixture.state)),
       "lean RK4 restart preparation");
   require(leanFixture.state.additionalBlocks[0].realData[0] == 0.0,
-          "restart reconstruction applies composite constraints");
+          "restart reconstruction applies integration-state constraints");
   StateFixture fixture(system.stateLayout());
-  WVCompositeFixedStepRK4 rk4(system, true);
+  WVFixedStepRK4 rk4(system, {true});
   require(static_cast<bool>(rk4.prepareStateAfterRestart(fixture.state)),
           "RK4 restart preparation");
   require(static_cast<bool>(rk4.step(fixture.state, 0.01)), "RK4 step");
@@ -279,7 +298,7 @@ void testRK4(LinearCompositeSystem &system) {
                    std::exp(-0.02)) < 1e-9,
           "RK4 real block result");
   require(static_cast<bool>(rk4.evaluateDenseOutput(0.005, fixture.output)),
-          "RK4 composite dense output");
+          "RK4 integration-state dense output");
   require(std::abs(fixture.outputCoefficients[0].real - std::exp(-0.005)) <
               1e-7,
           "RK4 dense coefficient result");
@@ -292,13 +311,13 @@ void testRK4(LinearCompositeSystem &system) {
           "RK4 dense history allocated only when requested");
 }
 
-void testRK23(LinearCompositeSystem &system) {
+void testRK23(LinearIntegrationSystem &system) {
   StateFixture fixture(system.stateLayout());
-  WVCompositeAdaptiveRK23Options options;
+  WVAdaptiveRK23Options options;
   options.relativeTolerance = 1e-8;
   options.absoluteToleranceScale = 1.0;
   options.maximumStepFactor = 2.0;
-  WVCompositeAdaptiveRK23 rk23(system, options);
+  WVAdaptiveRK23 rk23(system, options);
   require(static_cast<bool>(rk23.prepareStateAfterRestart(fixture.state)),
           "RK23 restart preparation");
   require(static_cast<bool>(rk23.step(fixture.state, 0.5)),
@@ -308,7 +327,7 @@ void testRK23(LinearCompositeSystem &system) {
   require(accepted && accepted->finalTime > 0, "RK23 accepted step");
   const auto midpoint = 0.5 * (accepted->initialTime + accepted->finalTime);
   require(static_cast<bool>(rk23.evaluateDenseOutput(midpoint, fixture.output)),
-          "RK23 composite dense output");
+          "RK23 integration-state dense output");
   require(std::abs(fixture.outputCoefficients[0].real - std::exp(-midpoint)) <
               1e-6,
           "RK23 dense coefficient result");
@@ -319,12 +338,12 @@ void testRK23(LinearCompositeSystem &system) {
 
 int main() {
   WVPortableObserverDescriptor descriptor;
-  WVCompositeStateLayout layout;
+  WVIntegrationStateLayout layout;
   testContracts(descriptor, layout);
-  LinearCompositeSystem system(std::move(layout));
+  LinearIntegrationSystem system(std::move(layout));
   testRK4(system);
   testRK23(system);
-  std::cout << "PASS: portable observer contracts and composite RK4/RK23 "
+  std::cout << "PASS: portable observer contracts and unified RK4/RK23 "
                "integration\n";
   return 0;
 }

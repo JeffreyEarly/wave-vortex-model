@@ -1,4 +1,5 @@
-#include "WaveVortexRuntime/WVFixedStepRK4.hpp"
+#include "WaveVortexRuntime/WVRungeKutta.hpp"
+#include "WaveVortexRuntime/WVConstantStratificationIntegrationSystem.hpp"
 #include "WaveVortexRuntime/WVForcingEngine.hpp"
 #include "WVReferenceFFTEngine.hpp"
 
@@ -81,6 +82,17 @@ std::unique_ptr<WVConstantStratificationForcingEngine> createEngine(bool hydrost
     return engine;
 }
 
+std::unique_ptr<WVConstantStratificationIntegrationSystem> createSystem(
+    bool hydrostatic, const WVFrozenForcingSchedule& schedule,
+    std::unique_ptr<WVFFTEngine> fft =
+        std::make_unique<wavevortex::test::WVReferenceFFTEngine>()) {
+    std::unique_ptr<WVConstantStratificationIntegrationSystem> system;
+    const auto status = WVConstantStratificationIntegrationSystem::create(
+        configuration(hydrostatic),schedule,std::move(fft),system);
+    require(static_cast<bool>(status),status.message);
+    return system;
+}
+
 struct OwnedState {
     WVShape2D shape;
     std::vector<WVComplex64> values;
@@ -103,6 +115,9 @@ struct OwnedState {
     WVState view() const {
         const auto count = shape.elementCount();
         return {t,t0,{{values.data(),shape},{values.data()+count,shape},{values.data()+2*count,shape}}};
+    }
+    WVMutableIntegrationState integrationView() {
+        return {mutableView(),nullptr,0};
     }
 };
 
@@ -148,15 +163,15 @@ void testNonlinearCompatibility(bool hydrostatic) {
 }
 
 void testForcingTrafficAccounting() {
-    auto engine = createEngine(true,nonlinearSchedule());
-    OwnedState owned(engine->kernel().descriptor().spectralShape());
-    auto state = owned.mutableView();
-    WVFixedStepRK4 integrator(*engine);
+    auto system = createSystem(true,nonlinearSchedule());
+    OwnedState owned(system->kernel().descriptor().spectralShape());
+    auto state = owned.integrationView();
+    WVFixedStepRK4 integrator(*system);
     auto status = integrator.prepareStateAfterRestart(state);
     require(static_cast<bool>(status),"traffic-accounting restart preparation failed");
     status = integrator.step(state,0.1);
     require(static_cast<bool>(status),"traffic-accounting step failed");
-    const auto& metrics = engine->metrics();
+    const auto& metrics = system->forcingMetrics();
     require(metrics.accumulatorClearElementWrites == 0,"nonlinear-only forcing still clears an accumulator");
     require(metrics.temporaryFluxClearElementWrites == 0 && metrics.kernelOutputInitializationElementWrites == 0,"nonlinear-only forcing still initializes an intermediate output");
     require(metrics.temporaryAccumulationElementReads == 0 && metrics.temporaryAccumulationElementWrites == 0,"nonlinear-only forcing still accumulates through temporary storage");
@@ -172,55 +187,53 @@ void testFixedAmplitudeAndRK4() {
     fixed.A0Indices = {2}; fixed.A0Values = {{0.375,0.625}};
     WVFrozenForcingSchedule schedule;
     schedule.entries.push_back(entry(WVForcingKind::fixedAmplitude,"WVFixedAmplitudeForcing","fixed",WVForcingStage::spectralAmplitude,255,fixed));
-    auto engine = createEngine(true,schedule);
-    OwnedState owned(engine->kernel().descriptor().spectralShape());
-    auto state = owned.mutableView();
-    WVFixedStepRK4 integrator(*engine);
+    auto system = createSystem(true,schedule);
+    OwnedState owned(system->kernel().descriptor().spectralShape());
+    auto state = owned.integrationView();
+    WVFixedStepRK4 integrator(*system);
     auto status = integrator.prepareStateAfterRestart(state);
     require(static_cast<bool>(status),"restart amplitude restoration failed");
-    require(state.coefficients.Ap.data[0].real == 0.125 && state.coefficients.Ap.data[0].imag == -0.25,"Ap fixed amplitude was not restored");
-    require(state.coefficients.Am.data[1].real == -0.75 && state.coefficients.A0.data[2].imag == 0.625,"fixed amplitudes were not restored");
+    require(state.waveVortex.coefficients.Ap.data[0].real == 0.125 && state.waveVortex.coefficients.Ap.data[0].imag == -0.25,"Ap fixed amplitude was not restored");
+    require(state.waveVortex.coefficients.Am.data[1].real == -0.75 && state.waveVortex.coefficients.A0.data[2].imag == 0.625,"fixed amplitudes were not restored");
     status = integrator.advanceToTime(state,0.725,0.1);
     require(static_cast<bool>(status),"fixed-amplitude RK4 integration failed");
-    require(state.t == 0.725 && integrator.metrics().stepCount == 3 && integrator.metrics().lastStepSize > 0.024999999999 && integrator.metrics().lastStepSize < 0.025000000001,"partial final RK4 step was not deterministic");
-    require(state.coefficients.Ap.data[0].real == 0.125 && state.coefficients.Am.data[1].real == -0.75 && state.coefficients.A0.data[2].imag == 0.625,"RK4 did not preserve fixed amplitudes");
-    const auto expectedBytes = 9*state.coefficients.Ap.shape.elementCount()*sizeof(WVComplex64);
+    require(state.waveVortex.t == 0.725 && integrator.metrics().stepCount == 3 && integrator.metrics().lastStepSize > 0.024999999999 && integrator.metrics().lastStepSize < 0.025000000001,"partial final RK4 step was not deterministic");
+    require(state.waveVortex.coefficients.Ap.data[0].real == 0.125 && state.waveVortex.coefficients.Am.data[1].real == -0.75 && state.waveVortex.coefficients.A0.data[2].imag == 0.625,"RK4 did not preserve fixed amplitudes");
+    const auto expectedBytes = 9*state.waveVortex.coefficients.Ap.shape.elementCount()*sizeof(WVComplex64);
     require(integrator.metrics().workspaceCapacityBytes == expectedBytes,"RK4 workspace is not the bounded 9M complex schedule");
 }
 
 void testRK4DeterminismRestartAndFailure() {
-    auto firstEngine = createEngine(false,nonlinearSchedule());
-    auto secondEngine = createEngine(false,nonlinearSchedule());
-    OwnedState first(firstEngine->kernel().descriptor().spectralShape());
-    OwnedState second(secondEngine->kernel().descriptor().spectralShape());
-    auto firstState = first.mutableView();
-    auto secondState = second.mutableView();
-    WVFixedStepRK4 firstIntegrator(*firstEngine);
-    WVFixedStepRK4 secondIntegrator(*secondEngine);
+    auto firstSystem = createSystem(false,nonlinearSchedule());
+    auto secondSystem = createSystem(false,nonlinearSchedule());
+    OwnedState first(firstSystem->kernel().descriptor().spectralShape());
+    OwnedState second(secondSystem->kernel().descriptor().spectralShape());
+    auto firstState = first.integrationView();
+    auto secondState = second.integrationView();
+    WVFixedStepRK4 firstIntegrator(*firstSystem);
+    WVFixedStepRK4 secondIntegrator(*secondSystem);
     auto status = firstIntegrator.advanceToTime(firstState,0.7,0.1);
     require(static_cast<bool>(status),"first deterministic integration failed");
     status = secondIntegrator.advanceToTime(secondState,0.6,0.1);
     require(static_cast<bool>(status),"restart prefix integration failed");
-    WVFixedStepRK4 restartedIntegrator(*secondEngine);
+    WVFixedStepRK4 restartedIntegrator(*secondSystem);
     status = restartedIntegrator.prepareStateAfterRestart(secondState);
     require(static_cast<bool>(status),"restart preparation failed");
     status = restartedIntegrator.advanceToTime(secondState,0.7,0.1);
     require(static_cast<bool>(status),"restart continuation failed");
-    require(firstState.t == secondState.t && exactlyEqual(first.values,second.values),"restart continuation is not bitwise equivalent to uninterrupted fixed-step RK4");
+    require(firstState.waveVortex.t == secondState.waveVortex.t && exactlyEqual(first.values,second.values),"restart continuation is not bitwise equivalent to uninterrupted fixed-step RK4");
 
     auto counter = std::make_shared<FailureCounter>();
     counter->failAt = 1;
-    std::unique_ptr<WVConstantStratificationForcingEngine> failingEngine;
-    status = WVConstantStratificationForcingEngine::create(configuration(true),nonlinearSchedule(),std::make_unique<FailingEngine>(counter),failingEngine);
-    require(static_cast<bool>(status),"failing engine construction failed");
-    OwnedState failed(failingEngine->kernel().descriptor().spectralShape());
+    auto failingSystem = createSystem(true,nonlinearSchedule(),std::make_unique<FailingEngine>(counter));
+    OwnedState failed(failingSystem->kernel().descriptor().spectralShape());
     const auto originalValues = failed.values;
     const auto originalTime = failed.t;
-    auto failedState = failed.mutableView();
-    WVFixedStepRK4 failingIntegrator(*failingEngine);
+    auto failedState = failed.integrationView();
+    WVFixedStepRK4 failingIntegrator(*failingSystem);
     status = failingIntegrator.step(failedState,0.1);
     require(status.code == WVKernelStatusCode::fftExecutionFailure,"RK4 did not preserve the injected RHS failure");
-    require(exactlyEqual(failed.values,originalValues) && failedState.t == originalTime,"failed RK4 step modified the caller-owned state");
+    require(exactlyEqual(failed.values,originalValues) && failedState.waveVortex.t == originalTime,"failed RK4 step modified the caller-owned state");
 }
 
 void testSpectralForcing() {

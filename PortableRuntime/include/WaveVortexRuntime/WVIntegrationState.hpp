@@ -25,11 +25,13 @@ struct WVAdditionalStateBlockLayout {
 // without virtual dispatch or repeated name lookup. The originating state and
 // observer records remain available for exact cross-boundary compatibility
 // checks.
-class WVCompositeStateLayout final {
+class WVIntegrationStateLayout final {
 public:
+  static WVKernelStatus createCoefficientOnly(WVShape2D coefficientShape,
+                                              WVIntegrationStateLayout &layout);
   static WVKernelStatus create(WVShape2D coefficientShape,
                                const WVPortableObserverDescriptor &descriptor,
-                               WVCompositeStateLayout &layout);
+                               WVIntegrationStateLayout &layout);
   WVShape2D coefficientShape() const noexcept { return coefficientShape_; }
   const std::vector<WVAdditionalStateBlockLayout> &
   additionalBlocks() const noexcept {
@@ -72,19 +74,19 @@ struct WVAdditionalStateBlockView {
   WVComplex64 *complexData = nullptr;
 };
 
-struct WVCompositeState {
+struct WVIntegrationState {
   WVState waveVortex;
   const WVAdditionalStateBlockConstView *additionalBlocks = nullptr;
   std::size_t additionalBlockCount = 0;
 };
 
-struct WVMutableCompositeState {
+struct WVMutableIntegrationState {
   WVMutableState waveVortex;
   WVAdditionalStateBlockView *additionalBlocks = nullptr;
   std::size_t additionalBlockCount = 0;
 };
 
-struct WVCompositeFlux {
+struct WVIntegrationFlux {
   WVFlux waveVortex;
   WVAdditionalStateBlockView *additionalBlocks = nullptr;
   std::size_t additionalBlockCount = 0;
@@ -93,7 +95,7 @@ struct WVCompositeFlux {
 // Owns only additional state; canonical Ap, Am, and A0 remain caller-owned.
 class WVAdditionalStateStorage final {
 public:
-  WVKernelStatus initialize(const WVCompositeStateLayout &layout);
+  WVKernelStatus initialize(const WVIntegrationStateLayout &layout);
   WVAdditionalStateBlockView *mutableBlocks() noexcept {
     return mutableViews_.data();
   }
@@ -111,13 +113,15 @@ private:
   std::vector<WVAdditionalStateBlockConstView> constViews_;
 };
 
-WVCompositeState
-compositeConstView(const WVMutableCompositeState &state,
+WVIntegrationState
+integrationConstView(const WVMutableIntegrationState &state,
                    std::vector<WVAdditionalStateBlockConstView> &blockViews);
-WVKernelStatus validateCompositeState(const WVCompositeStateLayout &layout,
-                                      const WVCompositeState &state);
+WVKernelStatus validateIntegrationState(const WVIntegrationStateLayout &layout,
+                                      const WVIntegrationState &state);
 WVKernelStatus
-validateMutableCompositeState(const WVCompositeStateLayout &layout,
-                              const WVMutableCompositeState &state);
+validateMutableIntegrationState(const WVIntegrationStateLayout &layout,
+                              const WVMutableIntegrationState &state);
+bool sameIntegrationStateLayout(const WVIntegrationStateLayout &first,
+                                const WVIntegrationStateLayout &second) noexcept;
 
 } // namespace wavevortex::runtime

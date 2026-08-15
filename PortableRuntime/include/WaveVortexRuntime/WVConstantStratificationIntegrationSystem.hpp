@@ -1,6 +1,6 @@
 #pragma once
 
-#include "WaveVortexRuntime/WVCompositeIntegration.hpp"
+#include "WaveVortexRuntime/WVRungeKutta.hpp"
 #include "WaveVortexRuntime/WVFieldEvaluationService.hpp"
 #include "WaveVortexRuntime/WVForcingEngine.hpp"
 #include "WaveVortexRuntime/WVLagrangianParticles.hpp"
@@ -26,37 +26,42 @@ struct WVIntegratedObserverMetrics {
 
 using WVLagrangianParticleMetrics = WVIntegratedObserverMetrics;
 
-// Constant-stratification composite numerical system. The canonical
+// Constant-stratification integration numerical system. The canonical
 // WaveVortex coefficient RHS is delegated to the frozen forcing engine while
 // integrated observers consume one shared per-RHS evaluation context.
-class WVConstantStratificationCompositeSystem final
-    : public WVCompositeIntegrationSystem {
+class WVConstantStratificationIntegrationSystem final
+    : public WVIntegrationSystem {
 public:
+  static WVKernelStatus create(
+      const WVTransformConstantStratificationConfiguration &configuration,
+      const WVFrozenForcingSchedule &schedule,
+      std::unique_ptr<WVFFTEngine> engine,
+      std::unique_ptr<WVConstantStratificationIntegrationSystem> &system);
   static WVKernelStatus create(
       const WVTransformConstantStratificationConfiguration &configuration,
       const WVFrozenForcingSchedule &schedule,
       const WVPortableObserverDescriptor &descriptor,
       std::unique_ptr<WVFFTEngine> engine,
-      double coefficientAbsoluteToleranceScale,
-      std::unique_ptr<WVConstantStratificationCompositeSystem> &system);
+      std::unique_ptr<WVConstantStratificationIntegrationSystem> &system);
 
-  ~WVConstantStratificationCompositeSystem() override;
-  WVConstantStratificationCompositeSystem(
-      const WVConstantStratificationCompositeSystem &) = delete;
-  WVConstantStratificationCompositeSystem &operator=(
-      const WVConstantStratificationCompositeSystem &) = delete;
+  ~WVConstantStratificationIntegrationSystem() override;
+  WVConstantStratificationIntegrationSystem(
+      const WVConstantStratificationIntegrationSystem &) = delete;
+  WVConstantStratificationIntegrationSystem &operator=(
+      const WVConstantStratificationIntegrationSystem &) = delete;
 
-  const WVCompositeStateLayout &stateLayout() const noexcept override {
+  const WVIntegrationStateLayout &stateLayout() const noexcept override {
     return layout_;
   }
-  WVKernelStatus evaluateRightHandSide(const WVCompositeState &state,
-                                       WVCompositeFlux &rightHandSide) override;
+  WVKernelStatus evaluateRightHandSide(const WVIntegrationState &state,
+                                       WVIntegrationFlux &rightHandSide) override;
   WVStateConstraintResult
-  enforceStateConstraints(WVMutableCompositeState &state) override;
+  enforceStateConstraints(WVMutableIntegrationState &state) override;
   WVKernelStatus
-  initializeParticleState(WVMutableCompositeState &state) const;
-  double coefficientAbsoluteTolerance(
-      std::size_t component, std::size_t index) const noexcept override;
+  initializeParticleState(WVMutableIntegrationState &state) const;
+  WVKernelStatus createErrorPolicy(
+      double absoluteToleranceScale,
+      std::unique_ptr<WVIntegrationErrorPolicy> &policy) const override;
 
   const std::vector<WVLagrangianParticles> &particles() const noexcept {
     return particles_;
@@ -71,13 +76,21 @@ public:
   const WVKernelMetrics &kernelMetrics() const noexcept {
     return forcing_->kernel().metrics();
   }
+  const WVTransformConstantStratificationKernel &kernel() const noexcept {
+    return forcing_->kernel();
+  }
+  const WVForcingEngineMetrics &forcingMetrics() const noexcept {
+    return forcing_->metrics();
+  }
+  const std::string &scheduleIdentifier() const noexcept {
+    return forcing_->scheduleIdentifier();
+  }
   std::size_t persistentBytes() const noexcept;
 
 private:
-  WVConstantStratificationCompositeSystem() = default;
-  WVCompositeStateLayout layout_;
+  WVConstantStratificationIntegrationSystem() = default;
+  WVIntegrationStateLayout layout_;
   std::unique_ptr<WVConstantStratificationForcingEngine> forcing_;
-  std::unique_ptr<WVIntegrationErrorPolicy> coefficientErrorPolicy_;
   std::unique_ptr<WVFieldEvaluationService> fields_;
   WVMovingFieldEvaluationPlan velocityPlan_;
   std::vector<WVLagrangianParticles> particles_;

@@ -129,7 +129,7 @@ public:
   bool running = false;
 
   WVKernelStatus evaluate(const WVState &state, bool initial,
-                          const WVCompositeState *composite,
+                          const WVIntegrationState *integrationState,
                           bool evaluateParticles,
                           WVObserverOutputEvaluationMetrics &metrics) {
     if (running)
@@ -148,15 +148,17 @@ public:
       ++metrics.fieldEvaluationCount;
     }
     if (!initial && !particleFieldViews.empty() && evaluateParticles) {
-      if (composite == nullptr) {
+      if (integrationState == nullptr) {
         reset();
-        return invalid("Particle output requires composite event state.");
+        return invalid("Particle output requires complete integration state.");
       }
       const auto findBlock = [&](const std::string &identifier) {
-        for (std::size_t index = 0; index < composite->additionalBlockCount;
+        for (std::size_t index = 0;
+             index < integrationState->additionalBlockCount;
              ++index)
-          if (composite->additionalBlocks[index].layout->identifier == identifier)
-            return composite->additionalBlocks + index;
+          if (integrationState->additionalBlocks[index].layout->identifier ==
+              identifier)
+            return integrationState->additionalBlocks + index;
         return static_cast<const WVAdditionalStateBlockConstView *>(nullptr);
       };
       for (const auto &coordinates : particleCoordinates) {
@@ -500,7 +502,7 @@ WVKernelStatus WVObserverOutputEvaluationService::specifications(
 }
 
 WVKernelStatus WVObserverOutputEvaluationService::preflight(
-    const WVCompositeOutputPlan &plan) {
+    const WVOutputPlan &plan) {
   for (std::size_t eventIndex = 0; eventIndex < plan.eventCount(); ++eventIndex) {
     const auto event = plan.event(eventIndex);
     for (std::size_t routeIndex = 0; routeIndex < event.routeCount; ++routeIndex)
@@ -537,7 +539,7 @@ WVObserverOutputEvaluationService::prepareInitial(const WVState &state) {
 }
 
 WVKernelStatus WVObserverOutputEvaluationService::prepare(
-    const WVCompositeOutputEvent &event) {
+    const WVOutputEvent &event) {
   bool needsParticles = event.routes == nullptr;
   for (std::size_t route = 0; route < event.routeCount && !needsParticles;
        ++route)

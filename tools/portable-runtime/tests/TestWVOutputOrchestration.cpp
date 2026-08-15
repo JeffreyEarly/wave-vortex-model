@@ -1,4 +1,4 @@
-#include "WaveVortexRuntime/WVCompositeOutputOrchestration.hpp"
+#include "WaveVortexRuntime/WVOutputOrchestration.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -86,15 +86,33 @@ WVPortableObserverRecord singleScheduleRecord(double interval,
   return record;
 }
 
-class LinearSystem final : public WVCompositeIntegrationSystem {
+class LinearSystem final : public WVIntegrationSystem {
 public:
-  explicit LinearSystem(WVCompositeStateLayout layout)
+  class ErrorPolicy final : public WVIntegrationErrorPolicy {
+  public:
+    explicit ErrorPolicy(const WVIntegrationStateLayout &layout)
+        : layout_(layout) {}
+    std::size_t componentCount() const noexcept override {
+      return 3 + layout_.additionalBlocks().size();
+    }
+    std::size_t elementCount(std::size_t component) const noexcept override {
+      return component < 3 ? layout_.coefficientShape().elementCount()
+                           : layout_.additionalBlocks()[component - 3].elementCount;
+    }
+    double absoluteTolerance(std::size_t, std::size_t) const noexcept override {
+      return 1e-10;
+    }
+    std::size_t persistentBytes() const noexcept override { return 0; }
+  private:
+    const WVIntegrationStateLayout &layout_;
+  };
+  explicit LinearSystem(WVIntegrationStateLayout layout)
       : layout_(std::move(layout)) {}
-  const WVCompositeStateLayout &stateLayout() const noexcept override {
+  const WVIntegrationStateLayout &stateLayout() const noexcept override {
     return layout_;
   }
-  WVKernelStatus evaluateRightHandSide(const WVCompositeState &state,
-                                       WVCompositeFlux &rhs) override {
+  WVKernelStatus evaluateRightHandSide(const WVIntegrationState &state,
+                                       WVIntegrationFlux &rhs) override {
     const WVComplexConstView source[] = {
         state.waveVortex.coefficients.Ap, state.waveVortex.coefficients.Am,
         state.waveVortex.coefficients.A0};
@@ -115,16 +133,17 @@ public:
     return WVKernelStatus::ok();
   }
   WVStateConstraintResult
-  enforceStateConstraints(WVMutableCompositeState &) override {
+  enforceStateConstraints(WVMutableIntegrationState &) override {
     return {WVKernelStatus::ok(), 0, true};
   }
-  double coefficientAbsoluteTolerance(std::size_t,
-                                      std::size_t) const noexcept override {
-    return 1e-10;
+  WVKernelStatus createErrorPolicy(
+      double, std::unique_ptr<WVIntegrationErrorPolicy> &policy) const override {
+    policy = std::make_unique<ErrorPolicy>(layout_);
+    return WVKernelStatus::ok();
   }
 
 private:
-  WVCompositeStateLayout layout_;
+  WVIntegrationStateLayout layout_;
 };
 
 struct StateFixture {
@@ -133,9 +152,9 @@ struct StateFixture {
                                         {0.8, -0.2},
                                         {0.3, 0.1}};
   WVAdditionalStateStorage additional;
-  WVMutableCompositeState state;
+  WVMutableIntegrationState state;
 
-  StateFixture(const WVCompositeStateLayout &layout, double time = 0.0) {
+  StateFixture(const WVIntegrationStateLayout &layout, double time = 0.0) {
     require(static_cast<bool>(additional.initialize(layout)),
             "state storage initialization");
     state = {{time,
@@ -186,15 +205,15 @@ struct DeliveredRoute {
   std::size_t groupOrdinal = 0;
   WVOutputScheduleOrdinal scheduleOrdinal = 0;
   double time = 0.0;
-  WVCompositeOutputEventKind kind =
-      WVCompositeOutputEventKind::acceptedEndpoint;
+  WVOutputEventKind kind =
+      WVOutputEventKind::acceptedEndpoint;
   const WVObserverRecord *firstObserver = nullptr;
   double firstCoefficientReal = 0.0;
 };
 
-class RecordingSink final : public WVCompositeOutputSink {
+class RecordingSink final : public WVOutputSink {
 public:
-  WVKernelStatus preflight(const WVCompositeOutputPlan &plan) override {
+  WVKernelStatus preflight(const WVOutputPlan &plan) override {
     ++preflightAttempts;
     preflightEventCount = plan.eventCount();
     if (preflightFailure)
@@ -203,9 +222,9 @@ public:
     return WVKernelStatus::ok();
   }
   WVKernelStatus
-  deliver(const WVCompositeOutputEvent &event,
-          const WVCompositeOutputRouteView &route,
-          WVCompositeOutputDeliveryResult &result) override {
+  deliver(const WVOutputEvent &event,
+          const WVOutputRouteView &route,
+          WVOutputDeliveryResult &result) override {
     ++attempts;
     delivered.push_back(
         {event.eventOrdinal, route.fileOrdinal, route.groupOrdinal,
@@ -217,7 +236,7 @@ public:
     result.writeCount = route.observerCount;
     result.writtenBytes = route.observerCount * 16;
     if (terminateAtAttempt == attempts)
-      result.action = WVCompositeOutputDeliveryResult::Action::terminate;
+      result.action = WVOutputDeliveryResult::Action::terminate;
     return WVKernelStatus::ok();
   }
 
@@ -232,25 +251,25 @@ public:
   std::vector<DeliveredRoute> delivered;
 };
 
-class ReentrantPreflightSink final : public WVCompositeOutputSink {
+class ReentrantPreflightSink final : public WVOutputSink {
 public:
-  WVKernelStatus preflight(const WVCompositeOutputPlan &) override {
+  WVKernelStatus preflight(const WVOutputPlan &) override {
     ++preflightAttempts;
     nestedStatus =
         driver->advanceToTime(*state, finalTime, stepSize, *this);
     return WVKernelStatus::ok();
   }
   WVKernelStatus
-  deliver(const WVCompositeOutputEvent &,
-          const WVCompositeOutputRouteView &route,
-          WVCompositeOutputDeliveryResult &result) override {
+  deliver(const WVOutputEvent &,
+          const WVOutputRouteView &route,
+          WVOutputDeliveryResult &result) override {
     ++deliveries;
     result.writeCount = route.observerCount;
     return WVKernelStatus::ok();
   }
 
-  WVCompositeOutputDriver *driver = nullptr;
-  WVMutableCompositeState *state = nullptr;
+  WVOutputDriver *driver = nullptr;
+  WVMutableIntegrationState *state = nullptr;
   double finalTime = 0.0;
   double stepSize = 0.0;
   WVKernelStatus nestedStatus;
@@ -258,26 +277,85 @@ public:
   std::size_t deliveries = 0;
 };
 
+// Test-only method proving that output orchestration depends only on the
+// method-neutral integrator contract. The method intentionally leaves every
+// state value unchanged while advancing accepted endpoints.
+class EndpointOnlyIntegrator final : public WVTimeIntegrator {
+public:
+  explicit EndpointOnlyIntegrator(const WVIntegrationStateLayout &layout)
+      : layout_(layout) {}
+  const WVIntegrationStateLayout &stateLayout() const noexcept override {
+    return layout_;
+  }
+  WVKernelStatus
+  prepareStateAfterRestart(WVMutableIntegrationState &state) override {
+    accepted_ = {};
+    return validateMutableIntegrationState(layout_, state);
+  }
+  WVKernelStatus step(WVMutableIntegrationState &state,
+                      double stepSize) override {
+    auto status = validateMutableIntegrationState(layout_, state);
+    if (!status)
+      return status;
+    if (!(stepSize > 0.0) || !std::isfinite(stepSize))
+      return {WVKernelStatusCode::invalidConfiguration,
+              "Endpoint-only test step must be finite and positive."};
+    const double initial = state.waveVortex.t;
+    state.waveVortex.t += stepSize;
+    const auto endpoint = integrationConstView(state, views_);
+    accepted_ = {initial,
+                 state.waveVortex.t,
+                 endpoint,
+                 {++acceptedCount_, 0, 0, stepSize, stepSize, stepSize, 0.0},
+                 nullptr};
+    nextStepSize_ = stepSize;
+    return WVKernelStatus::ok();
+  }
+  WVKernelStatus advanceToTime(WVMutableIntegrationState &state,
+                               double finalTime,
+                               double stepSize) override {
+    while (state.waveVortex.t < finalTime) {
+      const auto status = step(
+          state, std::min(stepSize, finalTime - state.waveVortex.t));
+      if (!status)
+        return status;
+    }
+    return WVKernelStatus::ok();
+  }
+  const WVAcceptedStep *lastAcceptedStep() const noexcept override {
+    return acceptedCount_ == 0 ? nullptr : &accepted_;
+  }
+  double nextStepSize() const noexcept override { return nextStepSize_; }
+  std::size_t persistentBytes() const noexcept override { return 0; }
+
+private:
+  const WVIntegrationStateLayout &layout_;
+  std::vector<WVAdditionalStateBlockConstView> views_;
+  WVAcceptedStep accepted_;
+  std::size_t acceptedCount_ = 0;
+  double nextStepSize_ = 0.0;
+};
+
 struct Context {
   WVPortableObserverDescriptor descriptor;
-  WVCompositeStateLayout layout;
+  WVIntegrationStateLayout layout;
   LinearSystem system;
 
   Context()
       : descriptor(descriptorFrom(outputRecord())),
         layout([&] {
-          WVCompositeStateLayout value;
-          require(static_cast<bool>(WVCompositeStateLayout::create(
+          WVIntegrationStateLayout value;
+          require(static_cast<bool>(WVIntegrationStateLayout::create(
                       {1, 1}, descriptor, value)),
-                  "composite layout creation");
+                  "integration layout creation");
           return value;
         }()),
         system(std::move(layout)) {}
 };
 
 void testPlanningOrderingIdentityAndMetrics(Context &context) {
-  WVCompositeOutputPlan plan;
-  auto status = WVCompositeOutputPlan::create(context.descriptor, 0.0, 1.0,
+  WVOutputPlan plan;
+  auto status = WVOutputPlan::create(context.descriptor, 0.0, 1.0,
                                               {}, plan);
   require(static_cast<bool>(status), "complete output plan");
   require(plan.metrics().fileCount == 2 && plan.metrics().groupCount == 3 &&
@@ -309,17 +387,17 @@ void testPlanningOrderingIdentityAndMetrics(Context &context) {
   emptyRecord.outputFiles[0].groups[1].schedule.initialTime = 2.0;
   emptyRecord.outputFiles[1].groups[0].schedule.initialTime = 2.125;
   auto emptyDescriptor = descriptorFrom(emptyRecord);
-  WVCompositeOutputPlan empty;
-  status = WVCompositeOutputPlan::create(emptyDescriptor, 0.0, 1.0, {}, empty);
+  WVOutputPlan empty;
+  status = WVOutputPlan::create(emptyDescriptor, 0.0, 1.0, {}, empty);
   require(static_cast<bool>(status) && empty.eventCount() == 0,
           "empty bounded schedules");
   StateFixture emptyFixture(context.system.stateLayout());
-  WVCompositeFixedStepRK4 emptyIntegrator(context.system, true);
+  WVFixedStepRK4 emptyIntegrator(context.system, {true});
   require(static_cast<bool>(
               emptyIntegrator.prepareStateAfterRestart(emptyFixture.state)),
           "empty-schedule preparation");
   RecordingSink emptySink;
-  WVCompositeOutputDriver emptyDriver(emptyIntegrator, empty);
+  WVOutputDriver emptyDriver(emptyIntegrator, empty);
   status = emptyDriver.advanceToTime(emptyFixture.state, 1.0, 0.2, emptySink);
   require(static_cast<bool>(status) && emptySink.attempts == 0 &&
               emptyFixture.state.waveVortex.t == 1.0,
@@ -335,8 +413,8 @@ void testPlanningOrderingIdentityAndMetrics(Context &context) {
         {"second", "Second", {1.0, nextAfterOne, nextAfterOne},
          {"sharedTracer"}, false}}}};
   auto distinctDescriptor = descriptorFrom(distinctRecord);
-  WVCompositeOutputPlan distinct;
-  status = WVCompositeOutputPlan::create(distinctDescriptor, 1.0,
+  WVOutputPlan distinct;
+  status = WVOutputPlan::create(distinctDescriptor, 1.0,
                                          nextAfterOne, {}, distinct);
   require(static_cast<bool>(status) && distinct.eventCount() == 2 &&
               distinct.event(0).routeCount == 1 &&
@@ -346,8 +424,8 @@ void testPlanningOrderingIdentityAndMetrics(Context &context) {
   const double largeAnchor = 1.0e16;
   auto largeAnchorDescriptor = descriptorFrom(
       singleScheduleRecord(1.0, largeAnchor, largeAnchor + 4.0));
-  WVCompositeOutputPlan indistinguishable;
-  status = WVCompositeOutputPlan::create(
+  WVOutputPlan indistinguishable;
+  status = WVOutputPlan::create(
       largeAnchorDescriptor, largeAnchor, largeAnchor + 4.0, {},
       indistinguishable);
   require(status.code == WVKernelStatusCode::invalidConfiguration,
@@ -357,7 +435,7 @@ void testPlanningOrderingIdentityAndMetrics(Context &context) {
       std::numeric_limits<double>::epsilon() / 4.0;
   auto tinyDescriptor = descriptorFrom(
       singleScheduleRecord(tinyInterval, 1.0, nextAfterOne));
-  status = WVCompositeOutputPlan::create(tinyDescriptor, 1.0, nextAfterOne,
+  status = WVOutputPlan::create(tinyDescriptor, 1.0, nextAfterOne,
                                          {}, indistinguishable);
   require(status.code == WVKernelStatusCode::invalidConfiguration,
           "tiny-interval indistinguishable ordinals are rejected");
@@ -365,15 +443,15 @@ void testPlanningOrderingIdentityAndMetrics(Context &context) {
 
 void testFixedDeliveryAndExactMetrics(Context &context) {
   StateFixture fixture(context.system.stateLayout());
-  WVCompositeFixedStepRK4 rk4(context.system, true);
+  WVFixedStepRK4 rk4(context.system, {true});
   require(static_cast<bool>(rk4.prepareStateAfterRestart(fixture.state)),
           "fixed restart preparation");
-  WVCompositeOutputPlan plan;
-  require(static_cast<bool>(WVCompositeOutputPlan::create(
+  WVOutputPlan plan;
+  require(static_cast<bool>(WVOutputPlan::create(
               context.descriptor, 0.0, 1.0, {}, plan)),
           "fixed plan");
   RecordingSink sink;
-  WVCompositeOutputDriver driver(rk4, plan);
+  WVOutputDriver driver(rk4, plan);
   const auto status = driver.advanceToTime(fixture.state, 1.0, 0.2, sink);
   require(static_cast<bool>(status), "fixed scheduled delivery");
   const auto &metrics = driver.metrics();
@@ -433,22 +511,22 @@ void testFixedDeliveryAndExactMetrics(Context &context) {
 
 void testSegmentedContinuation(Context &context) {
   StateFixture fixture(context.system.stateLayout());
-  WVCompositeFixedStepRK4 firstIntegrator(context.system, true);
+  WVFixedStepRK4 firstIntegrator(context.system, {true});
   require(static_cast<bool>(
               firstIntegrator.prepareStateAfterRestart(fixture.state)),
           "first segment preparation");
-  WVCompositeOutputPlan firstPlan;
-  require(static_cast<bool>(WVCompositeOutputPlan::create(
+  WVOutputPlan firstPlan;
+  require(static_cast<bool>(WVOutputPlan::create(
               context.descriptor, 0.0, 0.5, {}, firstPlan)),
           "first segment plan");
   RecordingSink firstSink;
-  WVCompositeOutputDriver firstDriver(firstIntegrator, firstPlan);
+  WVOutputDriver firstDriver(firstIntegrator, firstPlan);
   require(static_cast<bool>(firstDriver.advanceToTime(fixture.state, 0.5, 0.2,
                                                       firstSink)),
           "first segment delivery");
 
-  WVCompositeOutputPlan secondPlan;
-  require(static_cast<bool>(WVCompositeOutputPlan::create(
+  WVOutputPlan secondPlan;
+  require(static_cast<bool>(WVOutputPlan::create(
               context.descriptor, 0.5, 1.0, firstDriver.committedProgress(),
               secondPlan)),
           "second segment plan");
@@ -473,12 +551,12 @@ void testSegmentedContinuation(Context &context) {
   }
   require(foundAnchoredFastRoute,
           "segment remains anchored to original lattice ordinal");
-  WVCompositeFixedStepRK4 secondIntegrator(context.system, true);
+  WVFixedStepRK4 secondIntegrator(context.system, {true});
   require(static_cast<bool>(
               secondIntegrator.prepareStateAfterRestart(fixture.state)),
           "second segment preparation");
   RecordingSink secondSink;
-  WVCompositeOutputDriver secondDriver(secondIntegrator, secondPlan);
+  WVOutputDriver secondDriver(secondIntegrator, secondPlan);
   require(static_cast<bool>(secondDriver.advanceToTime(
               fixture.state, 1.0, 0.2, secondSink)),
           "second segment delivery");
@@ -489,18 +567,18 @@ void testSegmentedContinuation(Context &context) {
 }
 
 void testPreflightAndMalformedProgress(Context &context) {
-  WVCompositeOutputPlan plan;
-  require(static_cast<bool>(WVCompositeOutputPlan::create(
+  WVOutputPlan plan;
+  require(static_cast<bool>(WVOutputPlan::create(
               context.descriptor, 0.0, 1.0, {}, plan)),
           "preflight plan");
   StateFixture fixture(context.system.stateLayout());
   const auto before = fixture.values();
-  WVCompositeFixedStepRK4 rk4(context.system, true);
+  WVFixedStepRK4 rk4(context.system, {true});
   require(static_cast<bool>(rk4.prepareStateAfterRestart(fixture.state)),
           "allocation-failure preparation");
   RecordingSink sink;
   sink.preflightFailure = true;
-  WVCompositeOutputDriver driver(rk4, plan);
+  WVOutputDriver driver(rk4, plan);
   auto status = driver.advanceToTime(fixture.state, 1.0, 0.2, sink);
   require(status.code == WVKernelStatusCode::allocationFailure &&
               fixture.values() == before && rk4.metrics().acceptedStepCount == 0,
@@ -514,19 +592,19 @@ void testPreflightAndMalformedProgress(Context &context) {
   auto requireDescriptorMismatch = [&](const WVPortableObserverRecord &record,
                                        const std::string &label) {
     auto mismatchDescriptor = descriptorFrom(record);
-    WVCompositeStateLayout mismatchLayout;
-    require(static_cast<bool>(WVCompositeStateLayout::create(
+    WVIntegrationStateLayout mismatchLayout;
+    require(static_cast<bool>(WVIntegrationStateLayout::create(
                 {1, 1}, mismatchDescriptor, mismatchLayout)),
             label + " layout creation");
     LinearSystem mismatchSystem(std::move(mismatchLayout));
     StateFixture mismatchFixture(mismatchSystem.stateLayout());
     const auto mismatchBefore = mismatchFixture.values();
-    WVCompositeFixedStepRK4 mismatchIntegrator(mismatchSystem, true);
+    WVFixedStepRK4 mismatchIntegrator(mismatchSystem, {true});
     require(static_cast<bool>(mismatchIntegrator.prepareStateAfterRestart(
                 mismatchFixture.state)),
             label + " integrator preparation");
     RecordingSink mismatchSink;
-    WVCompositeOutputDriver mismatchDriver(mismatchIntegrator, plan);
+    WVOutputDriver mismatchDriver(mismatchIntegrator, plan);
     const auto mismatchStatus = mismatchDriver.advanceToTime(
         mismatchFixture.state, 1.0, 0.2, mismatchSink);
     require(mismatchStatus.code == WVKernelStatusCode::invalidConfiguration &&
@@ -559,11 +637,11 @@ void testPreflightAndMalformedProgress(Context &context) {
   requireDescriptorMismatch(observerMismatch, "observer descriptor mismatch");
 
   StateFixture reentrantFixture(context.system.stateLayout());
-  WVCompositeFixedStepRK4 reentrantIntegrator(context.system, true);
+  WVFixedStepRK4 reentrantIntegrator(context.system, {true});
   require(static_cast<bool>(reentrantIntegrator.prepareStateAfterRestart(
               reentrantFixture.state)),
           "reentrant-preflight preparation");
-  WVCompositeOutputDriver reentrantDriver(reentrantIntegrator, plan);
+  WVOutputDriver reentrantDriver(reentrantIntegrator, plan);
   ReentrantPreflightSink reentrantSink;
   reentrantSink.driver = &reentrantDriver;
   reentrantSink.state = &reentrantFixture.state;
@@ -580,38 +658,38 @@ void testPreflightAndMalformedProgress(Context &context) {
 
   auto malformed = plan.initialProgress();
   malformed[0].fileIdentifier = "wrong";
-  WVCompositeOutputPlan ignored;
-  status = WVCompositeOutputPlan::create(context.descriptor, 0.0, 1.0,
+  WVOutputPlan ignored;
+  status = WVOutputPlan::create(context.descriptor, 0.0, 1.0,
                                          malformed, ignored);
   require(status.code == WVKernelStatusCode::invalidConfiguration,
           "misnamed progress rejected");
   malformed = plan.initialProgress();
   malformed[0].committedOrdinal = 3;
-  status = WVCompositeOutputPlan::create(context.descriptor, 0.0, 1.0,
+  status = WVOutputPlan::create(context.descriptor, 0.0, 1.0,
                                          malformed, ignored);
   require(status.code == WVKernelStatusCode::invalidConfiguration,
           "future progress rejected");
   malformed.pop_back();
-  status = WVCompositeOutputPlan::create(context.descriptor, 0.0, 1.0,
+  status = WVOutputPlan::create(context.descriptor, 0.0, 1.0,
                                          malformed, ignored);
   require(status.code == WVKernelStatusCode::invalidConfiguration,
           "incomplete progress rejected");
 }
 
 void testTerminationInterruptionAndLaterRouteFailure(Context &context) {
-  WVCompositeOutputPlan plan;
-  require(static_cast<bool>(WVCompositeOutputPlan::create(
+  WVOutputPlan plan;
+  require(static_cast<bool>(WVOutputPlan::create(
               context.descriptor, 0.0, 1.0, {}, plan)),
           "failure plan");
 
   StateFixture terminated(context.system.stateLayout());
-  WVCompositeFixedStepRK4 terminatingIntegrator(context.system, true);
+  WVFixedStepRK4 terminatingIntegrator(context.system, {true});
   require(static_cast<bool>(
               terminatingIntegrator.prepareStateAfterRestart(terminated.state)),
           "termination preparation");
   RecordingSink terminatingSink;
   terminatingSink.terminateAtAttempt = 1;
-  WVCompositeOutputDriver terminatingDriver(terminatingIntegrator, plan);
+  WVOutputDriver terminatingDriver(terminatingIntegrator, plan);
   require(static_cast<bool>(terminatingDriver.advanceToTime(
               terminated.state, 1.0, 0.2, terminatingSink)) &&
               terminated.state.waveVortex.t == 0.0 &&
@@ -619,14 +697,14 @@ void testTerminationInterruptionAndLaterRouteFailure(Context &context) {
           "termination completes coincident routes then stops cleanly");
 
   StateFixture laterFailure(context.system.stateLayout());
-  WVCompositeFixedStepRK4 laterIntegrator(context.system, true);
+  WVFixedStepRK4 laterIntegrator(context.system, {true});
   require(static_cast<bool>(
               laterIntegrator.prepareStateAfterRestart(laterFailure.state)),
           "later-route failure preparation");
   RecordingSink laterSink;
   laterSink.failAtAttempt = 2;
   laterSink.failureMessage = "later route failed";
-  WVCompositeOutputDriver laterDriver(laterIntegrator, plan);
+  WVOutputDriver laterDriver(laterIntegrator, plan);
   auto status = laterDriver.advanceToTime(laterFailure.state, 1.0, 0.2,
                                           laterSink);
   require(!status && laterFailure.state.waveVortex.t == 0.0 &&
@@ -638,14 +716,14 @@ void testTerminationInterruptionAndLaterRouteFailure(Context &context) {
           "later coincident route failure records partial delivery");
 
   StateFixture interrupted(context.system.stateLayout());
-  WVCompositeFixedStepRK4 interruptedIntegrator(context.system, true);
+  WVFixedStepRK4 interruptedIntegrator(context.system, {true});
   require(static_cast<bool>(interruptedIntegrator.prepareStateAfterRestart(
               interrupted.state)),
           "interruption preparation");
   RecordingSink interruptedSink;
   interruptedSink.failAtAttempt = 4;
   interruptedSink.failureMessage = "interrupted";
-  WVCompositeOutputDriver interruptedDriver(interruptedIntegrator, plan);
+  WVOutputDriver interruptedDriver(interruptedIntegrator, plan);
   status = interruptedDriver.advanceToTime(interrupted.state, 1.0, 0.2,
                                            interruptedSink);
   require(!status && interrupted.state.waveVortex.t == 0.4 &&
@@ -656,14 +734,14 @@ void testTerminationInterruptionAndLaterRouteFailure(Context &context) {
           "interruption preserves the latest accepted state and partial records");
 
   StateFixture resumed(context.system.stateLayout());
-  WVCompositeFixedStepRK4 resumedIntegrator(context.system, true);
+  WVFixedStepRK4 resumedIntegrator(context.system, {true});
   require(static_cast<bool>(
               resumedIntegrator.prepareStateAfterRestart(resumed.state)),
           "interior resume preparation");
   RecordingSink resumedSink;
   resumedSink.failAtAttempt = 6;
   resumedSink.failureMessage = "interior sibling failed";
-  WVCompositeOutputDriver resumedDriver(resumedIntegrator, plan);
+  WVOutputDriver resumedDriver(resumedIntegrator, plan);
   status = resumedDriver.advanceToTime(resumed.state, 1.0, 0.4, resumedSink);
   require(!status && resumed.state.waveVortex.t == 0.8 &&
               resumedDriver.hasPendingDelivery() &&
@@ -702,7 +780,7 @@ void testTerminationInterruptionAndLaterRouteFailure(Context &context) {
           "resume preserves exact event state without duplicating sibling");
 
   StateFixture resumeControl(context.system.stateLayout());
-  WVCompositeFixedStepRK4 resumeControlIntegrator(context.system, true);
+  WVFixedStepRK4 resumeControlIntegrator(context.system, {true});
   require(static_cast<bool>(resumeControlIntegrator.prepareStateAfterRestart(
               resumeControl.state)) &&
               static_cast<bool>(resumeControlIntegrator.advanceToTime(
@@ -721,16 +799,16 @@ struct RunResult {
 
 RunResult fixedRun(Context &context, bool withOutput) {
   StateFixture fixture(context.system.stateLayout());
-  WVCompositeFixedStepRK4 integrator(context.system, true);
+  WVFixedStepRK4 integrator(context.system, {true});
   require(static_cast<bool>(integrator.prepareStateAfterRestart(fixture.state)),
           "fixed invariance preparation");
   if (withOutput) {
-    WVCompositeOutputPlan plan;
-    require(static_cast<bool>(WVCompositeOutputPlan::create(
+    WVOutputPlan plan;
+    require(static_cast<bool>(WVOutputPlan::create(
                 context.descriptor, 0.0, 1.0, {}, plan)),
             "fixed invariance plan");
     RecordingSink sink;
-    WVCompositeOutputDriver driver(integrator, plan);
+    WVOutputDriver driver(integrator, plan);
     require(static_cast<bool>(
                 driver.advanceToTime(fixture.state, 1.0, 0.2, sink)),
             "fixed output invariance run");
@@ -745,20 +823,20 @@ RunResult fixedRun(Context &context, bool withOutput) {
 
 RunResult adaptiveRun(Context &context, bool withOutput) {
   StateFixture fixture(context.system.stateLayout());
-  WVCompositeAdaptiveRK23Options options;
+  WVAdaptiveRK23Options options;
   options.relativeTolerance = 1e-7;
   options.absoluteToleranceScale = 1.0;
   options.maximumStepFactor = 2.0;
-  WVCompositeAdaptiveRK23 integrator(context.system, options);
+  WVAdaptiveRK23 integrator(context.system, options);
   require(static_cast<bool>(integrator.prepareStateAfterRestart(fixture.state)),
           "adaptive invariance preparation");
   if (withOutput) {
-    WVCompositeOutputPlan plan;
-    require(static_cast<bool>(WVCompositeOutputPlan::create(
+    WVOutputPlan plan;
+    require(static_cast<bool>(WVOutputPlan::create(
                 context.descriptor, 0.0, 1.0, {}, plan)),
             "adaptive invariance plan");
     RecordingSink sink;
-    WVCompositeOutputDriver driver(integrator, plan);
+    WVOutputDriver driver(integrator, plan);
     require(static_cast<bool>(
                 driver.advanceToTime(fixture.state, 1.0, 0.5, sink)),
             "adaptive output invariance run");
@@ -791,6 +869,34 @@ void testSolverInvariance(Context &context) {
             << " adaptive_rejected=" << adaptiveOutput.rejected << '\n';
 }
 
+void testIntegratorExtensionBoundary(Context &context) {
+  StateFixture fixture(context.system.stateLayout());
+  const auto initialValues = fixture.values();
+  EndpointOnlyIntegrator integrator(context.system.stateLayout());
+  require(static_cast<bool>(integrator.prepareStateAfterRestart(fixture.state)),
+          "test-only integrator preparation");
+  WVOutputPlan plan;
+  require(static_cast<bool>(WVOutputPlan::createExplicit(
+              context.system.stateLayout(), 0.0, 0.4,
+              {{0.2, "test-method-first"}, {0.4, "test-method-second"}},
+              plan)),
+          "test-only integrator output plan");
+  RecordingSink sink;
+  WVOutputDriver driver(integrator, plan);
+  require(static_cast<bool>(
+              driver.advanceToTime(fixture.state, 0.4, 0.2, sink)) &&
+              sink.delivered.size() == 2 &&
+              driver.metrics().acceptedStepCount == 2 &&
+              fixture.state.additionalBlockCount != 0,
+          "test-only integrator works with the unchanged output driver and "
+          "additional state blocks");
+  auto finalValues = fixture.values();
+  require(initialValues.size() == finalValues.size() &&
+              std::equal(initialValues.begin(), initialValues.end() - 1,
+                         finalValues.begin()),
+          "test-only integrator preserves all coefficient and observer state");
+}
+
 } // namespace
 
 int main() {
@@ -801,6 +907,7 @@ int main() {
   testPreflightAndMalformedProgress(context);
   testTerminationInterruptionAndLaterRouteFailure(context);
   testSolverInvariance(context);
-  std::cout << "PASS: composite multi-file/multi-group output orchestration\n";
+  testIntegratorExtensionBoundary(context);
+  std::cout << "PASS: unified multi-file/multi-group output orchestration\n";
   return 0;
 }

@@ -213,7 +213,7 @@ void testService(bool linear) {
     require(static_cast<bool>(status) && initialValue.realData != nullptr,
             "initial-only field value failed");
   }
-  WVCompositeOutputEvent event;
+  WVOutputEvent event;
   event.eventOrdinal = 2;
   event.scheduledTime = 3.0;
   event.state.waveVortex = owned.view();
@@ -271,8 +271,8 @@ void testService(bool linear) {
               std::isfinite(value.realData[0]) &&
               std::isfinite(value.realData[1]),
           "particle tracked-field value mismatch");
-  WVCompositeOutputObserverView routedObserver{1, &observers.observers()[1]};
-  WVCompositeOutputRouteView passiveRoute;
+  WVOutputObserverView routedObserver{1, &observers.observers()[1]};
+  WVOutputRouteView passiveRoute;
   passiveRoute.observers = &routedObserver;
   passiveRoute.observerCount = 1;
   event.eventOrdinal = 3;

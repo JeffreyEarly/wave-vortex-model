@@ -49,7 +49,7 @@ struct WVForcingEngineMetrics {
 // Evaluate a validated, immutable portable forcing schedule around the shared
 // constant-stratification numerical kernel. Schedule construction resolves
 // stage and priority order; evaluate() performs no forcing dispatch discovery.
-class WVConstantStratificationForcingEngine final : public WVIntegrationSystem {
+class WVConstantStratificationForcingEngine final {
 public:
     // Validate the frozen schedule without constructing transforms, plans, or
     // array-sized derived operators and workspaces.
@@ -78,10 +78,8 @@ public:
         const WVRealVolumeConstView& scalar, bool shouldAntialias,
         WVRealVolumeView& rightHandSide);
     WVStateConstraintResult restoreForcingAmplitudes(WVMutableCoefficients& coefficients);
-    WVShape2D stateShape() const noexcept override { return kernel_->descriptor().spectralShape(); }
-    WVKernelStatus evaluateRightHandSide(const WVState& state, WVFlux& rightHandSide) override { return nonlinearFlux(state,rightHandSide); }
-    WVStateConstraintResult enforceStateConstraints(WVMutableCoefficients& coefficients) override { return restoreForcingAmplitudes(coefficients); }
-    WVKernelStatus createErrorPolicy(double absoluteToleranceScale, std::unique_ptr<WVIntegrationErrorPolicy>& policy) const override;
+    WVShape2D stateShape() const noexcept { return kernel_->descriptor().spectralShape(); }
+    WVKernelStatus createErrorPolicy(double absoluteToleranceScale, std::unique_ptr<WVIntegrationErrorPolicy>& policy) const;
 
     const WVTransformConstantStratificationKernel& kernel() const noexcept { return *kernel_; }
     WVTransformConstantStratificationKernel& kernel() noexcept { return *kernel_; }

@@ -108,7 +108,7 @@ std::size_t product(const std::vector<std::size_t> &dimensions) {
 }
 
 const WVAdditionalStateBlockConstView *
-findBlock(const WVCompositeOutputEvent &event, const std::string &identifier) {
+findBlock(const WVOutputEvent &event, const std::string &identifier) {
   for (std::size_t index = 0; index < event.state.additionalBlockCount;
        ++index) {
     const auto &block = event.state.additionalBlocks[index];
@@ -168,7 +168,7 @@ public:
 
   WVModelOutputNetCDFConfiguration configuration;
   WVPortableObserverRecord descriptorRecord;
-  WVCompositeStateLayout stateLayout;
+  WVIntegrationStateLayout stateLayout;
   WVObserverSampleSource *sampleSource = nullptr;
   std::vector<File> files;
   std::vector<WVOutputGroupProgress> progress;
@@ -1808,9 +1808,9 @@ public:
                          path + "_imag");
   }
 
-  WVCheckpointStatus writeRoute(const WVCompositeOutputEvent &event,
-                                const WVCompositeOutputRouteView &route,
-                                WVCompositeOutputDeliveryResult &delivery) {
+  WVCheckpointStatus writeRoute(const WVOutputEvent &event,
+                                const WVOutputRouteView &route,
+                                WVOutputDeliveryResult &delivery) {
     const auto payloadStarted = std::chrono::steady_clock::now();
     if (route.fileOrdinal >= files.size() ||
         route.groupOrdinal >= files[route.fileOrdinal].groups.size())
@@ -1954,7 +1954,7 @@ WVModelOutputNetCDFSink &WVModelOutputNetCDFSink::operator=(
 WVCheckpointStatus WVModelOutputNetCDFSink::createNew(
     const WVModelOutputNetCDFConfiguration &configuration,
     const WVPortableObserverDescriptor &descriptor,
-    const WVCompositeStateLayout &stateLayout,
+    const WVIntegrationStateLayout &stateLayout,
     WVObserverSampleSource *sampleSource, WVModelOutputNetCDFSink &sink) {
   try {
     auto candidate = std::make_unique<Impl>();
@@ -1996,7 +1996,7 @@ WVCheckpointStatus WVModelOutputNetCDFSink::createNew(
 WVCheckpointStatus WVModelOutputNetCDFSink::openAppend(
     const WVModelOutputNetCDFConfiguration &configuration,
     const WVPortableObserverDescriptor &descriptor,
-    const WVCompositeStateLayout &stateLayout,
+    const WVIntegrationStateLayout &stateLayout,
     WVObserverSampleSource *sampleSource, WVModelOutputNetCDFSink &sink) {
   try {
     auto candidate = std::make_unique<Impl>();
@@ -2029,7 +2029,7 @@ WVCheckpointStatus WVModelOutputNetCDFSink::openAppend(
 }
 
 WVKernelStatus
-WVModelOutputNetCDFSink::preflight(const WVCompositeOutputPlan &plan) {
+WVModelOutputNetCDFSink::preflight(const WVOutputPlan &plan) {
   if (!impl_ || impl_->closed)
     return {WVKernelStatusCode::invalidConfiguration,
             "NetCDF output sink is closed."};
@@ -2092,9 +2092,9 @@ WVModelOutputNetCDFSink::preflight(const WVCompositeOutputPlan &plan) {
 }
 
 WVKernelStatus
-WVModelOutputNetCDFSink::deliver(const WVCompositeOutputEvent &event,
-                                 const WVCompositeOutputRouteView &route,
-                                 WVCompositeOutputDeliveryResult &result) {
+WVModelOutputNetCDFSink::deliver(const WVOutputEvent &event,
+                                 const WVOutputRouteView &route,
+                                 WVOutputDeliveryResult &result) {
   if (!impl_ || !impl_->preflightComplete || impl_->closed)
     return {WVKernelStatusCode::invalidConfiguration,
             "NetCDF output sink has not completed preflight."};

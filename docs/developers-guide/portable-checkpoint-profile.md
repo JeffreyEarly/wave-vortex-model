@@ -114,14 +114,15 @@ The portable runtime separates model evaluation, numerical advancement, accepted
 | `WVTimeIntegrator` | Prepare derived method state after restart, advance accepted mutable state, and expose the most recent accepted step. |
 | `WVAcceptedStep` | Describe the accepted interval, immutable endpoint view, step-local method statistics, and method-owned continuous extension. |
 | `WVDenseOutput` | Evaluate one method-owned continuous extension into caller-owned reusable storage. |
-| `WVOutputSchedule` | Own ordered requested times independently of accepted solver steps. |
-| `WVIntegrationOutputSink` | Receive immutable `init`, interpolated, accepted, and `done` views and optionally request clean termination. |
+| `WVOutputPlan` | Resolve descriptor schedules or arbitrary explicit targets independently of accepted solver steps. |
+| `WVOutputSink` | Preflight resources and receive immutable event state one route at a time. |
+| `WVOutputDriver` | Match plan and integrator layouts, advance accepted state, evaluate dense output, and commit route progress. |
 
 An accepted-step endpoint and continuous-extension pointer remain valid until the owning integrator is next advanced or prepared after restart. Output sinks receive immutable, non-owning state views; a sink that retains an output must copy it before returning. The schedule is queried only after step acceptance, so requested output times cannot shorten solver steps, and interpolated storage cannot become the next accepted state.
 
-`WVFixedStepRK4` supplies its continuous extension only when constructed with `retainDenseOutput=true`. `WVOrderedOutputSchedule` validates the entire finite, strictly increasing request sequence before any event or state mutation. `WVIntegrationDriver` emits `init` once, returns accepted endpoints without interpolation, and lazily allocates one reusable \(3M\) interpolation array only for a true interior request. Thus ordinary integration remains at \(9M\), dense-enabled method history is \(12M\), and the maximum retained method-plus-driver storage after an interior request is \(15M\).
+`WVFixedStepRK4` supplies its continuous extension only when constructed with `retainDenseOutput=true`. `WVOutputPlan` validates either the complete observing-system schedule or an ordered set of explicit targets before any event or state mutation. `WVOutputDriver` returns accepted endpoints without interpolation and allocates one reusable state-layout-sized event buffer. Thus coefficient-only RK4 remains at \(9M\), dense-enabled method history is \(12M\), and output staging adds one integration state only when output is requested.
 
-An initial-time request is consumed by the `init` event rather than duplicated. A sink-requested termination emits one `done` event carrying the actual accepted endpoint, which may lie after the last interpolated observation. Schedule, interpolation, or sink failure never promotes interpolation storage into accepted state. `WVCheckpointOutputSink` accepts one explicit target time and replaceable destination. `WVCheckpointSeriesOutputSink` reuses one checkpoint-sized staging buffer across an ordered target list and requires atomic create-new commits, so a later failure cannot replace or corrupt an earlier checkpoint.
+An initial-time request is delivered directly from the caller state. Schedule, interpolation, or sink failure never promotes event storage into accepted state. A route failure retains the exact staged event and route cursor, so retry does not lose an interior output after the solver has advanced beyond it. `WVCheckpointOutputSink` uses one reusable checkpoint-sized staging buffer across explicit targets and requires atomic create-new commits, so a later failure cannot replace or corrupt an earlier checkpoint.
 
 The public runner exposes the series through repeated `--output-time` options, an explicit output directory, and a filename-only pattern containing `{index}` or `{time}`. It expands and validates every destination after structural checkpoint inspection but before provider construction or coefficient allocation. Scheduled output uses the same root-level `wave-vortex-4x-v1` checkpoint profile as ordinary output; it does not implement MATLAB's multi-time observing-system file model.
 
@@ -133,7 +134,7 @@ $$\frac{\lvert\delta A_i\rvert}{\alpha_i+r\max(\lvert A_{n,i}\rvert,\lvert A_{n+
 
 where (r) is the relative tolerance and (alpha_i) is supplied by `WVIntegrationErrorPolicy`. The current WaveVortex policy reproduces the energy-scaled MATLAB coefficient tolerances, but the controller contains no WaveVortex descriptor or forcing logic. Coefficient enumeration and Runge--Kutta state algebra are isolated in the current adapter so a future observing-system composition can supply another state adapter and error policy without changing the tableau or controller.
 
-Rejected attempts remain inside the integrator and are invisible to `WVIntegrationDriver`. The endpoint derivative is reused through FSAL only when state constraints report that reuse is valid. The candidate state and four stage derivatives require exactly (15M) complex values. The continuous extension is evaluated relative to the accepted endpoint, so dense output requires no additional method-owned state-sized array.
+Rejected attempts remain inside the integrator and are invisible to `WVOutputDriver`. The endpoint derivative is reused through FSAL only when state constraints report that reuse is valid. In a coefficient-only run, the candidate state and four stage derivatives require exactly \(15M\) complex values. The continuous extension is evaluated relative to the accepted endpoint, so dense output requires no additional method-owned state-sized array.
 
 ### Untimed array-traffic diagnostic
 

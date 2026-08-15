@@ -1,6 +1,7 @@
 #include "WaveVortexRuntime/WVCheckpointReader.hpp"
 #include "WaveVortexRuntime/WVCheckpointWriter.hpp"
-#include "WaveVortexRuntime/WVFixedStepRK4.hpp"
+#include "WaveVortexRuntime/WVConstantStratificationIntegrationSystem.hpp"
+#include "WaveVortexRuntime/WVRungeKutta.hpp"
 #include "WaveVortexRuntime/WVForcingEngine.hpp"
 #include "WVCheckpointWriterTestHooks.hpp"
 #include "WVReferenceFFTEngine.hpp"
@@ -108,40 +109,40 @@ void testRoundTrips() {
     }
 }
 
-std::unique_ptr<WVConstantStratificationForcingEngine> engine(const WVCheckpoint& checkpoint) {
-    std::unique_ptr<WVConstantStratificationForcingEngine> result;
-    const auto creation = WVConstantStratificationForcingEngine::create(checkpoint.configuration, checkpoint.forcingSchedule, std::make_unique<wavevortex::test::WVReferenceFFTEngine>(), result);
+std::unique_ptr<WVConstantStratificationIntegrationSystem> system(const WVCheckpoint& checkpoint) {
+    std::unique_ptr<WVConstantStratificationIntegrationSystem> result;
+    const auto creation = WVConstantStratificationIntegrationSystem::create(checkpoint.configuration, checkpoint.forcingSchedule, std::make_unique<wavevortex::test::WVReferenceFFTEngine>(), result);
     require(static_cast<bool>(creation), creation.message);
     return result;
 }
 
-WVMutableState mutableState(WVCheckpoint& checkpoint) {
+WVMutableIntegrationState mutableState(WVCheckpoint& checkpoint) {
     const auto shape = checkpoint.state.coefficients.shape;
-    return {checkpoint.state.t, checkpoint.state.t0, {{checkpoint.state.coefficients.Ap.data(), shape}, {checkpoint.state.coefficients.Am.data(), shape}, {checkpoint.state.coefficients.A0.data(), shape}}};
+    return {{checkpoint.state.t, checkpoint.state.t0, {{checkpoint.state.coefficients.Ap.data(), shape}, {checkpoint.state.coefficients.Am.data(), shape}, {checkpoint.state.coefficients.A0.data(), shape}}},nullptr,0};
 }
 
-void synchronizeTime(WVCheckpoint& checkpoint, const WVMutableState& state) {
-    checkpoint.state.t = state.t;
-    checkpoint.state.t0 = state.t0;
+void synchronizeTime(WVCheckpoint& checkpoint, const WVMutableIntegrationState& state) {
+    checkpoint.state.t = state.waveVortex.t;
+    checkpoint.state.t0 = state.waveVortex.t0;
 }
 
 void testRestartContinuation() {
     for (const char* name : {"forcing-mixed-hydrostatic.nc", "forcing-mixed-nonhydrostatic.nc"}) {
         auto uninterrupted = read(fixture(name));
         auto prefix = uninterrupted;
-        auto uninterruptedEngine = engine(uninterrupted);
-        auto prefixEngine = engine(prefix);
-        WVFixedStepRK4 uninterruptedIntegrator(*uninterruptedEngine);
-        WVFixedStepRK4 prefixIntegrator(*prefixEngine);
+        auto uninterruptedSystem = system(uninterrupted);
+        auto prefixSystem = system(prefix);
+        WVFixedStepRK4 uninterruptedIntegrator(*uninterruptedSystem);
+        WVFixedStepRK4 prefixIntegrator(*prefixSystem);
         auto uninterruptedState = mutableState(uninterrupted);
         auto prefixState = mutableState(prefix);
         auto result = uninterruptedIntegrator.prepareStateAfterRestart(uninterruptedState);
         require(static_cast<bool>(result), result.message);
         result = prefixIntegrator.prepareStateAfterRestart(prefixState);
         require(static_cast<bool>(result), result.message);
-        result = uninterruptedIntegrator.advanceToTime(uninterruptedState, uninterruptedState.t + 0.275, 0.1);
+        result = uninterruptedIntegrator.advanceToTime(uninterruptedState, uninterruptedState.waveVortex.t + 0.275, 0.1);
         require(static_cast<bool>(result), result.message);
-        result = prefixIntegrator.advanceToTime(prefixState, prefixState.t + 0.2, 0.1);
+        result = prefixIntegrator.advanceToTime(prefixState, prefixState.waveVortex.t + 0.2, 0.1);
         require(static_cast<bool>(result), result.message);
         synchronizeTime(prefix, prefixState);
 
@@ -151,14 +152,14 @@ void testRestartContinuation() {
         const auto writeResult = WVCheckpointWriter::write(path.string(), prefix);
         require(static_cast<bool>(writeResult), writeResult.message);
         auto restarted = read(path);
-        auto restartedEngine = engine(restarted);
-        WVFixedStepRK4 restartedIntegrator(*restartedEngine);
+        auto restartedSystem = system(restarted);
+        WVFixedStepRK4 restartedIntegrator(*restartedSystem);
         auto restartedState = mutableState(restarted);
         result = restartedIntegrator.prepareStateAfterRestart(restartedState);
         require(static_cast<bool>(result), result.message);
-        result = restartedIntegrator.advanceToTime(restartedState, uninterruptedState.t, 0.1);
+        result = restartedIntegrator.advanceToTime(restartedState, uninterruptedState.waveVortex.t, 0.1);
         require(static_cast<bool>(result), result.message);
-        require(restartedState.t == uninterruptedState.t && sameComplex(restarted.state.coefficients.Ap, uninterrupted.state.coefficients.Ap) && sameComplex(restarted.state.coefficients.Am, uninterrupted.state.coefficients.Am) && sameComplex(restarted.state.coefficients.A0, uninterrupted.state.coefficients.A0), "checkpoint restart continuation differs from uninterrupted RK4");
+        require(restartedState.waveVortex.t == uninterruptedState.waveVortex.t && sameComplex(restarted.state.coefficients.Ap, uninterrupted.state.coefficients.Ap) && sameComplex(restarted.state.coefficients.Am, uninterrupted.state.coefficients.Am) && sameComplex(restarted.state.coefficients.A0, uninterrupted.state.coefficients.A0), "checkpoint restart continuation differs from uninterrupted RK4");
     }
 }
 

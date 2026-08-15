@@ -1,4 +1,4 @@
-#include "WaveVortexRuntime/WVCompositeState.hpp"
+#include "WaveVortexRuntime/WVIntegrationState.hpp"
 
 #include <cmath>
 #include <limits>
@@ -36,14 +36,40 @@ std::size_t checkedCount(const std::vector<std::size_t> &dimensions,
 
 } // namespace
 
-WVKernelStatus
-WVCompositeStateLayout::create(WVShape2D coefficientShape,
-                               const WVPortableObserverDescriptor &descriptor,
-                               WVCompositeStateLayout &layout) {
+WVKernelStatus WVIntegrationStateLayout::createCoefficientOnly(
+    WVShape2D coefficientShape, WVIntegrationStateLayout &layout) {
   if (coefficientShape.rows == 0 || coefficientShape.columns == 0)
-    return invalid("Composite coefficient shape must be nonzero.");
+    return invalid("Integration coefficient shape must be nonzero.");
   try {
-    WVCompositeStateLayout candidate;
+    WVIntegrationStateLayout candidate;
+    candidate.coefficientShape_ = coefficientShape;
+    for (const char *identifier : {"Ap", "Am", "A0"}) {
+      WVStateBlockRecord record;
+      record.identifier = identifier;
+      record.scalarType = WVStateScalarType::complex64;
+      record.dimensions = {coefficientShape.rows, coefficientShape.columns};
+      record.toleranceKind = WVToleranceKind::coefficientEnergyScaled;
+      record.ownership = WVStateOwnership::integratorOwned;
+      record.restartRequirement =
+          WVRestartRequirement::requiredDynamicState;
+      candidate.stateBlockRecords_.push_back(std::move(record));
+    }
+    layout = std::move(candidate);
+    return WVKernelStatus::ok();
+  } catch (const std::bad_alloc &) {
+    return {WVKernelStatusCode::allocationFailure,
+            "Integration state-layout allocation failed."};
+  }
+}
+
+WVKernelStatus
+WVIntegrationStateLayout::create(WVShape2D coefficientShape,
+                               const WVPortableObserverDescriptor &descriptor,
+                               WVIntegrationStateLayout &layout) {
+  if (coefficientShape.rows == 0 || coefficientShape.columns == 0)
+    return invalid("Integration coefficient shape must be nonzero.");
+  try {
+    WVIntegrationStateLayout candidate;
     candidate.coefficientShape_ = coefficientShape;
     candidate.stateBlockRecords_ = descriptor.stateBlocks();
     candidate.observerRecords_ = descriptor.observers();
@@ -53,7 +79,7 @@ WVCompositeStateLayout::create(WVShape2D coefficientShape,
       const auto count = checkedCount(record.dimensions, badCount);
       if (badCount)
         return {WVKernelStatusCode::sizeOverflow,
-                "Composite state-block element count is invalid."};
+                "Integration state-block element count is invalid."};
       if (canonical(record.identifier)) {
         canonicalBlocks.insert(record.identifier);
         if (record.scalarType != WVStateScalarType::complex64 ||
@@ -82,23 +108,23 @@ WVCompositeStateLayout::create(WVShape2D coefficientShape,
                         : candidate.complexElementCount_;
       if (total > std::numeric_limits<std::size_t>::max() - count)
         return {WVKernelStatusCode::sizeOverflow,
-                "Composite state storage overflows size_t."};
+                "Integration state storage overflows size_t."};
       block.scalarOffset = total;
       total += count;
       candidate.additionalBlocks_.push_back(std::move(block));
     }
     if (canonicalBlocks != std::set<std::string>({"A0", "Am", "Ap"}))
       return invalid(
-          "Composite layout requires canonical Ap, Am, and A0 blocks.");
+          "Integration layout requires canonical Ap, Am, and A0 blocks.");
     layout = std::move(candidate);
     return WVKernelStatus::ok();
   } catch (const std::bad_alloc &) {
     return {WVKernelStatusCode::allocationFailure,
-            "Composite state-layout allocation failed."};
+            "Integration state-layout allocation failed."};
   }
 }
 
-std::size_t WVCompositeStateLayout::persistentBytes() const noexcept {
+std::size_t WVIntegrationStateLayout::persistentBytes() const noexcept {
   std::size_t bytes =
       additionalBlocks_.capacity() * sizeof(WVAdditionalStateBlockLayout) +
       stateBlockRecords_.capacity() * sizeof(WVStateBlockRecord) +
@@ -125,7 +151,7 @@ std::size_t WVCompositeStateLayout::persistentBytes() const noexcept {
 }
 
 WVKernelStatus
-WVAdditionalStateStorage::initialize(const WVCompositeStateLayout &layout) {
+WVAdditionalStateStorage::initialize(const WVIntegrationStateLayout &layout) {
   try {
     realStorage_.assign(layout.realElementCount(), 0.0);
     complexStorage_.assign(layout.complexElementCount(), WVComplex64{});
@@ -165,8 +191,8 @@ void WVAdditionalStateStorage::clear() noexcept {
   constViews_.clear();
 }
 
-WVCompositeState
-compositeConstView(const WVMutableCompositeState &state,
+WVIntegrationState
+integrationConstView(const WVMutableIntegrationState &state,
                    std::vector<WVAdditionalStateBlockConstView> &blockViews) {
   blockViews.clear();
   blockViews.reserve(state.additionalBlockCount);
@@ -177,68 +203,103 @@ compositeConstView(const WVMutableCompositeState &state,
   return {state.waveVortex.view(), blockViews.data(), blockViews.size()};
 }
 
-WVKernelStatus validateCompositeState(const WVCompositeStateLayout &layout,
-                                      const WVCompositeState &state) {
+WVKernelStatus validateIntegrationState(const WVIntegrationStateLayout &layout,
+                                      const WVIntegrationState &state) {
   if (!std::isfinite(state.waveVortex.t) || !std::isfinite(state.waveVortex.t0))
-    return invalid("Composite state times must be finite.");
+    return invalid("Integration state times must be finite.");
   const auto shape = layout.coefficientShape();
   const auto &c = state.waveVortex.coefficients;
   if (c.Ap.data == nullptr || c.Am.data == nullptr || c.A0.data == nullptr ||
       !sameShape(c.Ap.shape, shape) || !sameShape(c.Am.shape, shape) ||
       !sameShape(c.A0.shape, shape))
     return {WVKernelStatusCode::invalidShape,
-            "Composite coefficients must use the resolved [Nj,Nkl] shape."};
+            "Integration coefficients must use the resolved [Nj,Nkl] shape."};
   if (state.additionalBlockCount != layout.additionalBlocks().size() ||
       (state.additionalBlockCount && state.additionalBlocks == nullptr))
     return {WVKernelStatusCode::invalidShape,
-            "Composite state-block count does not match its layout."};
+            "Integration state-block count does not match its layout."};
   for (std::size_t index = 0; index < state.additionalBlockCount; ++index) {
     const auto &expected = layout.additionalBlocks()[index];
     const auto &actual = state.additionalBlocks[index];
     if (actual.layout != &expected)
       return invalid(
-          "Composite state-block order does not match its frozen layout.");
+          "Integration state-block order does not match its frozen layout.");
     if ((expected.scalarType == WVStateScalarType::real64 &&
          actual.realData == nullptr) ||
         (expected.scalarType == WVStateScalarType::complex64 &&
          actual.complexData == nullptr))
       return {WVKernelStatusCode::invalidPointer,
-              "Composite state block has a null data pointer."};
+              "Integration state block has a null data pointer."};
   }
   return WVKernelStatus::ok();
 }
 
 WVKernelStatus
-validateMutableCompositeState(const WVCompositeStateLayout &layout,
-                              const WVMutableCompositeState &state) {
+validateMutableIntegrationState(const WVIntegrationStateLayout &layout,
+                              const WVMutableIntegrationState &state) {
   if (!std::isfinite(state.waveVortex.t) ||
       !std::isfinite(state.waveVortex.t0))
-    return invalid("Composite state times must be finite.");
+    return invalid("Integration state times must be finite.");
   const auto shape = layout.coefficientShape();
   const auto &c = state.waveVortex.coefficients;
   if (c.Ap.data == nullptr || c.Am.data == nullptr || c.A0.data == nullptr ||
       !sameShape(c.Ap.shape, shape) || !sameShape(c.Am.shape, shape) ||
       !sameShape(c.A0.shape, shape))
     return {WVKernelStatusCode::invalidShape,
-            "Composite coefficients must use the resolved [Nj,Nkl] shape."};
+            "Integration coefficients must use the resolved [Nj,Nkl] shape."};
   if (state.additionalBlockCount != layout.additionalBlocks().size() ||
       (state.additionalBlockCount && state.additionalBlocks == nullptr))
     return {WVKernelStatusCode::invalidShape,
-            "Composite state-block count does not match its layout."};
+            "Integration state-block count does not match its layout."};
   for (std::size_t index = 0; index < state.additionalBlockCount; ++index) {
     const auto &expected = layout.additionalBlocks()[index];
     const auto &actual = state.additionalBlocks[index];
     if (actual.layout != &expected)
       return invalid(
-          "Composite state-block order does not match its frozen layout.");
+          "Integration state-block order does not match its frozen layout.");
     if ((expected.scalarType == WVStateScalarType::real64 &&
          actual.realData == nullptr) ||
         (expected.scalarType == WVStateScalarType::complex64 &&
          actual.complexData == nullptr))
       return {WVKernelStatusCode::invalidPointer,
-              "Composite state block has a null data pointer."};
+              "Integration state block has a null data pointer."};
   }
   return WVKernelStatus::ok();
+}
+
+bool sameIntegrationStateLayout(const WVIntegrationStateLayout &first,
+                                const WVIntegrationStateLayout &second) noexcept {
+  if (!sameShape(first.coefficientShape(), second.coefficientShape()) ||
+      first.stateBlockRecords().size() != second.stateBlockRecords().size() ||
+      first.observerRecords().size() != second.observerRecords().size())
+    return false;
+  for (std::size_t i = 0; i < first.stateBlockRecords().size(); ++i) {
+    const auto &a = first.stateBlockRecords()[i];
+    const auto &b = second.stateBlockRecords()[i];
+    if (a.identifier != b.identifier || a.scalarType != b.scalarType ||
+        a.dimensions != b.dimensions || a.toleranceKind != b.toleranceKind ||
+        a.absoluteTolerance != b.absoluteTolerance ||
+        a.ownership != b.ownership ||
+        a.restartRequirement != b.restartRequirement)
+      return false;
+  }
+  const auto &aObservers = first.observerRecords();
+  const auto &bObservers = second.observerRecords();
+  for (std::size_t i = 0; i < aObservers.size(); ++i) {
+    const auto &a = aObservers[i];
+    const auto &b = bObservers[i];
+    if (a.identifier != b.identifier || a.name != b.name || a.kind != b.kind ||
+        a.stateBlockIdentifiers != b.stateBlockIdentifiers ||
+        a.fieldNames != b.fieldNames || a.x != b.x || a.y != b.y ||
+        a.z != b.z || a.isXYOnly != b.isXYOnly ||
+        a.shouldAntialias != b.shouldAntialias ||
+        a.advectionInterpolation != b.advectionInterpolation ||
+        a.trackedFieldInterpolation != b.trackedFieldInterpolation ||
+        a.horizontalAbsoluteTolerance != b.horizontalAbsoluteTolerance ||
+        a.verticalAbsoluteTolerance != b.verticalAbsoluteTolerance)
+      return false;
+  }
+  return true;
 }
 
 } // namespace wavevortex::runtime
