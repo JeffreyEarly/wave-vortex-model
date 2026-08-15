@@ -28,7 +28,7 @@ Published compiled-preview results will appear here.
 
 ## Complete-workflow interface comparison
 
-The matched comparison below separates a single nonlinear-flux evaluation from fixed-step and adaptive model continuations. Each row uses the same initial model, forcing, integration settings, observer graph, output schedule, provider, thread policy, and fresh-process boundary across MATLAB builtin, MATLAB compiled, and standalone compiled execution. Total peak process memory is the practical footprint of the interface, including MATLAB itself when MATLAB is used.
+The matched comparison below separates a single nonlinear-flux evaluation from fixed-step and adaptive model continuations. Each row uses the same initial model, forcing, integration settings, observer graph, output schedule, provider, thread policy, and fresh-process boundary across MATLAB builtin, MATLAB compiled, and standalone compiled execution. An external process-tree sampler measures every interface from worker launch through exit. Total peak RSS is the primary practical footprint and includes MATLAB itself when MATLAB is used; the increment above the retained model and final RSS are secondary lifecycle diagnostics.
 
 <!-- BENCHMARKS:THREE_INTERFACES:START -->
 Published matched interface results will appear here.

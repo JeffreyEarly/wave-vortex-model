@@ -5,11 +5,7 @@ originalDirectory = pwd;
 originalPath = path;
 originalRng = rng;
 stateCleanup = onCleanup(@()restoreState(originalDirectory,originalPath,originalRng));
-phasePath = string(tempname)+".phase";
-stopPath = string(tempname)+".stop";
-samplePath = string(tempname)+".rss";
-temporaryCleanup = onCleanup(@()deleteTemporaryFiles(phasePath,stopPath,samplePath));
-sampler = emptySampler;
+phasePath = string(config.phasePath);
 result = failedResult(config);
 model = [];
 wvt = [];
@@ -17,7 +13,6 @@ try
     path(config.matlabPath);
     addRepositoryPaths(config.repositoryRoot,config.benchmarkFolder);
     writePhase(phasePath,"startup");
-    sampler = startSampler(config.samplerPath,phasePath,stopPath,samplePath,config.samplingIntervalSeconds);
     interfaceTimer = tic;
     backend = string(config.backend);
     benchmarkCase = string(config.case.id);
@@ -69,9 +64,6 @@ try
         wvt = [];
     end
     writePhase(phasePath,"complete");
-    sampler = stopSampler(sampler,stopPath,config.samplingIntervalSeconds);
-    rssSamples = samplerResult(sampler,samplePath,config.samplingIntervalSeconds);
-    rss = phaseRSS(rssSamples);
     result = struct( ...
         "schemaVersion","three-interface-worker-v1", ...
         "status","complete", ...
@@ -79,7 +71,7 @@ try
         "case",config.case, ...
         "sourceCommit",string(config.sourceCommit), ...
         "timing",struct("interfaceTotalSeconds",interfaceTotalSeconds,"integrationSeconds",integrationSeconds), ...
-        "memory",rss, ...
+        "memory",struct(), ...
         "provider",provider, ...
         "integrator",struct("requested",requestedIntegrator,"actual",actualIntegrator,"matched",requestedIntegrator==actualIntegrator), ...
         "finalState",finalState, ...
@@ -95,7 +87,7 @@ catch exception
     elseif ~isempty(wvt) && isvalid(wvt)
         delete(wvt);
     end
-    stopSampler(sampler,stopPath,config.samplingIntervalSeconds);
+    writePhase(phasePath,"failed");
     result.failure = struct("identifier",string(exception.identifier),"message",string(exception.message),"report",string(getReport(exception,"extended","hyperlinks","off")));
 end
 
@@ -109,7 +101,7 @@ else
 end
 end
 writeText(outputPath,jsonencode(result,PrettyPrint=true));
-clear temporaryCleanup stateCleanup
+clear stateCleanup
 end
 
 function model = benchmarkModelFromFile(pathname,backend)
@@ -171,66 +163,6 @@ end
 clear cleanup
 end
 
-function sampler = startSampler(samplerPath,phasePath,stopPath,samplePath,interval)
-sampler = emptySampler;
-if ~(ismac||isunix) || ~isfile(samplerPath)
-    sampler.reason = "External RSS sampler unavailable.";
-    return
-end
-command = sprintf('"/bin/sh" "%s" "%d" "%s" "%s" "%s" "%.6f" >/dev/null 2>&1 & echo $!',samplerPath,matlabProcessID,phasePath,stopPath,samplePath,interval);
-[status,output] = system(command);
-samplerPid = str2double(strtrim(output));
-if status ~= 0 || ~isfinite(samplerPid)
-    sampler.reason = "Unable to launch RSS sampler.";
-    return
-end
-sampler.status = "running";
-sampler.processId = samplerPid;
-sampler.provider = conditional(ismac,"macos-ps-rss-external","linux-ps-rss-external");
-end
-
-function sampler = stopSampler(sampler,stopPath,interval)
-if sampler.status ~= "running"
-    return
-end
-writeText(stopPath,"stop");
-pause(max(0.05,2*interval));
-system(sprintf('kill %d >/dev/null 2>&1',sampler.processId));
-sampler.status = "complete";
-end
-
-function rss = samplerResult(sampler,samplePath,interval)
-rss = struct("status",sampler.status,"provider",sampler.provider,"reason",sampler.reason,"samplingIntervalSeconds",interval,"samples",[]);
-if sampler.status ~= "complete" || ~isfile(samplePath)
-    return
-end
-lines = splitlines(strtrim(string(fileread(samplePath))));
-samples = repmat(struct("sampleIndex",0,"elapsedSeconds",0,"phase","","rssBytes",0),numel(lines),1);
-for iLine = 1:numel(lines)
-    fields = split(lines(iLine),sprintf('\t'));
-    index = str2double(fields(1));
-    samples(iLine) = struct("sampleIndex",index,"elapsedSeconds",index*interval,"phase",fields(2),"rssBytes",1024*str2double(fields(3)));
-end
-rss.samples = samples;
-end
-
-function value = phaseRSS(rss)
-value = struct("status",rss.status,"provider",rss.provider,"baselineProcessBytes",NaN,"peakProcessBytes",NaN,"peakIncrementBytes",NaN,"samples",rss.samples);
-if rss.status ~= "complete" || isempty(rss.samples)
-    return
-end
-phases = string({rss.samples.phase});
-bytes = [rss.samples.rssBytes];
-baseline = bytes(phases=="steady-retained");
-if isempty(baseline)
-    value.status = "unsupported";
-    return
-end
-value.baselineProcessBytes = median(baseline);
-value.peakProcessBytes = max(bytes);
-value.peakIncrementBytes = max(0,value.peakProcessBytes-value.baselineProcessBytes);
-end
-
 function writePhase(pathname,phase)
 temporary = pathname+".tmp";
 writeText(temporary,phase);
@@ -264,14 +196,6 @@ fprintf(fileId,"%s",contents);
 clear cleanup
 end
 
-function deleteTemporaryFiles(varargin)
-for iFile = 1:numel(varargin)
-    if isfile(varargin{iFile})
-        delete(varargin{iFile});
-    end
-end
-end
-
 function restoreState(directory,originalPath,originalRng)
 cd(directory);
 path(originalPath);
@@ -284,10 +208,6 @@ if condition
 else
     value = falseValue;
 end
-end
-
-function value = emptySampler
-value = struct("status","unsupported","provider","","reason","","processId",NaN);
 end
 
 function value = emptyFailure

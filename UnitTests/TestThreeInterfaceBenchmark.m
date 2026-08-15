@@ -55,6 +55,14 @@ classdef TestThreeInterfaceBenchmark < matlab.unittest.TestCase
             testCase.verifyError(@()publishedThreeInterfaceBenchmarkFromArtifact(rawPath,provenancePath="raw.json"),"WaveVortexBenchmark:IntegratorMismatch")
         end
 
+        function incomparableMemoryCannotBePublished(testCase)
+            raw = rawFixture;
+            raw.runs(1).memory.status = "failed";
+            rawPath = fullfile(testCase.TemporaryFolder,"raw.json");
+            writelines(jsonencode(raw),rawPath);
+            testCase.verifyError(@()publishedThreeInterfaceBenchmarkFromArtifact(rawPath,provenancePath="raw.json"),"WaveVortexBenchmark:IncomparableMemory")
+        end
+
         function benchmarkWorkerRemainsAuthorOnly(testCase)
             manifest = string(fileread(fullfile(testCase.RepositoryRoot,"resources","mpackage.json")));
             testCase.verifyFalse(contains(manifest,"Benchmarks"))
@@ -87,7 +95,7 @@ end
 function raw = rawFixture
 interfaces = [interfaceRecord("matlab-builtin",1,1,1,1); interfaceRecord("matlab-compiled",0.5,0.5,2,2); interfaceRecord("standalone-compiled",0.25,0.25,0.25,0.25)];
 definitions = [caseDefinition("nonlinear-flux","nonlinearFlux","none"); caseDefinition("fixed-rk4-continuation","model-continuation","fixed-rk4"); caseDefinition("adaptive-rk23-observer-output","model-continuation","adaptive-rk23")];
-comparison = repmat(struct("id","","interfaces",interfaces,"maximumRelativeError",1e-14,"outputAgreementPassed",true,"integratorAgreementPassed",true,"matchedContractPassed",true),3,1);
+comparison = repmat(struct("id","","interfaces",interfaces,"maximumRelativeError",1e-14,"outputAgreementPassed",true,"integratorAgreementPassed",true,"memoryAgreementPassed",true,"matchedContractPassed",true),3,1);
 runs = repmat(runRecord("matlab-builtin",definitions(1)),0,1);
 for iCase = 1:3
     comparison(iCase).id = definitions(iCase).id;
@@ -107,9 +115,9 @@ value = struct("id",identifier,"operation",operation,"requestedIntegrator",integ
 end
 
 function value = interfaceRecord(identifier,processRatio,integrationRatio,totalRatio,incrementRatio)
-value = struct("id",identifier,"processWallSeconds",processRatio,"interfaceTotalSeconds",processRatio,"integrationSeconds",integrationRatio,"totalPeakRSSBytes",totalRatio*2^30,"incrementalPeakRSSBytes",incrementRatio*2^28,"processWallRatio",processRatio,"integrationRatio",integrationRatio,"totalRSSRatio",totalRatio,"incrementalRSSRatio",incrementRatio);
+value = struct("id",identifier,"processWallSeconds",processRatio,"interfaceTotalSeconds",processRatio,"integrationSeconds",integrationRatio,"totalPeakRSSBytes",totalRatio*2^30,"incrementalPeakRSSBytes",incrementRatio*2^28,"finalRSSBytes",totalRatio*2^29,"processWallRatio",processRatio,"integrationRatio",integrationRatio,"totalRSSRatio",totalRatio,"incrementalRSSRatio",incrementRatio);
 end
 
 function value = runRecord(identifier,definition)
-value = struct("interface",identifier,"case",definition,"processWallSeconds",1,"integrationSeconds",1,"integrator",struct("requested",definition.requestedIntegrator,"actual",definition.requestedIntegrator,"matched",true));
+value = struct("interface",identifier,"case",definition,"processWallSeconds",1,"integrationSeconds",1,"memory",struct("status","complete","provider","macos-ps-process-tree","totalPeakRSSBytes",2^30),"integrator",struct("requested",definition.requestedIntegrator,"actual",definition.requestedIntegrator,"matched",true));
 end

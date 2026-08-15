@@ -100,7 +100,7 @@ results = struct( ...
     "completedAtUTC","", ...
     "source",struct("repository","JeffreyEarly/wave-vortex-model","commit",commit,"tree",tree,"isDirty",isDirty), ...
     "environment",environmentRecord, ...
-    "configuration",struct("Nxyz",options.Nxyz,"Lxyz",[15000 15000 1300],"processRunCount",options.processRunCount,"warmupCount",0,"samplesPerProcess",1,"deltaT",options.deltaT,"relativeTolerance",options.relativeTolerance,"absoluteTolerance",options.absoluteTolerance,"threadCount",min(18,maxNumCompThreads),"samplingIntervalSeconds",options.samplingIntervalSeconds,"fixtureSHA256","","correctnessTolerance",1e-12,"timingBoundary","process wall includes interface launch; matched work includes the numerical operation and observer/file work","rssBoundary","total process peak and increment above post-load steady-retained state"), ...
+    "configuration",struct("Nxyz",options.Nxyz,"Lxyz",[15000 15000 1300],"processRunCount",options.processRunCount,"warmupCount",0,"samplesPerProcess",1,"deltaT",options.deltaT,"relativeTolerance",options.relativeTolerance,"absoluteTolerance",options.absoluteTolerance,"threadCount",min(18,maxNumCompThreads),"samplingIntervalSeconds",options.samplingIntervalSeconds,"fixtureSHA256","","correctnessTolerance",1e-12,"timingBoundary","process wall includes interface launch; matched work includes the numerical operation and observer/file work","rssBoundary","external process-tree RSS sampled from worker launch through exit; total peak is primary, increment above steady-retained and final nonzero RSS are secondary"), ...
     "provider",struct(),"cases",[],"runs",repmat(emptyRun,0,1),"comparison",[],"failure",emptyFailure);
 end
 
@@ -118,11 +118,16 @@ mkdir(sampleFolder);
 inputPath = fullfile(sampleFolder,"model.nc");
 copyfile(fixturePath,inputPath);
 comparisonPath = fullfile(sampleFolder,"comparison.bin");
+phasePath = fullfile(sampleFolder,"phase.txt");
+samplePath = fullfile(sampleFolder,"rss.tsv");
+stdoutPath = fullfile(sampleFolder,"stdout.txt");
+stderrPath = fullfile(sampleFolder,"stderr.txt");
+writeText(phasePath,"launch");
 processTimer = tic;
 if startsWith(interface,"matlab-")
     backend = extractAfter(interface,"matlab-");
     if backend == "builtin", backend = "matlab"; end
-    config = struct("interface",interface,"backend",backend,"sourceCommit",gitValue(repositoryRoot,"rev-parse HEAD"),"case",definition,"inputPath",inputPath,"comparisonPath",comparisonPath,"threadCount",min(18,maxNumCompThreads),"repositoryRoot",repositoryRoot,"benchmarkFolder",benchmarkFolder,"matlabPath",path,"samplerPath",fullfile(benchmarkFolder,"sampleProcessRSS.sh"),"samplingIntervalSeconds",options.samplingIntervalSeconds,"plateauSeconds",options.plateauSeconds);
+    config = struct("interface",interface,"backend",backend,"sourceCommit",gitValue(repositoryRoot,"rev-parse HEAD"),"case",definition,"inputPath",inputPath,"comparisonPath",comparisonPath,"threadCount",min(18,maxNumCompThreads),"repositoryRoot",repositoryRoot,"benchmarkFolder",benchmarkFolder,"matlabPath",path,"phasePath",phasePath,"plateauSeconds",options.plateauSeconds);
     configPath = fullfile(sampleFolder,"config.json");
     outputPath = fullfile(sampleFolder,"worker.json");
     writeText(configPath,jsonencode(config));
@@ -130,9 +135,11 @@ if startsWith(interface,"matlab-")
         configPath = configPath+".missing";
     end
     statement = "addpath('"+replace(benchmarkFolder,"'","''")+"'); threeInterfaceMatlabWorker('"+replace(configPath,"'","''")+"','"+replace(outputPath,"'","''")+"')";
-    command = sprintf('"%s" -batch "%s"',fullfile(matlabroot,"bin","matlab"),replace(statement,'"','\"'));
-    [exitCode,commandOutput] = system(command);
+    workerCommand = sprintf('"%s" -batch "%s"',fullfile(matlabroot,"bin","matlab"),replace(statement,'"','\"'));
+    command = sampledCommand(workerCommand,samplePath,phasePath,stdoutPath,stderrPath,options,benchmarkFolder);
+    [exitCode,~] = system(command);
     processWallSeconds = toc(processTimer);
+    commandOutput = readCommandOutput(stdoutPath,stderrPath);
     if exitCode ~= 0 || ~isfile(outputPath)
         run = emptyRun;
         run.interface = interface; run.case = definition; run.repeatIndex = repeatIndex;
@@ -140,50 +147,52 @@ if startsWith(interface,"matlab-")
         return
     end
     value = jsondecode(fileread(outputPath));
-    run = normalizeMatlabRun(value,repeatIndex,processWallSeconds);
+    run = normalizeMatlabRun(value,repeatIndex,processWallSeconds,processMemory(samplePath,options.samplingIntervalSeconds));
 else
     if definition.id == "nonlinear-flux"
-        command = shellQuote(executables.kernel)+" "+shellQuote(inputPath)+" "+string(min(18,maxNumCompThreads))+" 0 1 "+shellQuote(comparisonPath);
+        workerCommand = shellQuote(executables.kernel)+" "+shellQuote(inputPath)+" "+string(min(18,maxNumCompThreads))+" 0 1 "+shellQuote(comparisonPath)+" --phase-file "+shellQuote(phasePath);
     else
-        command = shellQuote(executables.runner)+" "+shellQuote(inputPath)+" --restart-mode model --output-policy append --delta-t "+numberText(definition.deltaT)+" --final-time "+numberText(definition.finalTime)+" --fft-provider native-fftw --threads "+string(min(18,maxNumCompThreads));
-        command = command+" --integrator "+definition.requestedIntegrator;
+        workerCommand = shellQuote(executables.runner)+" "+shellQuote(inputPath)+" --restart-mode model --output-policy append --delta-t "+numberText(definition.deltaT)+" --final-time "+numberText(definition.finalTime)+" --fft-provider native-fftw --threads "+string(min(18,maxNumCompThreads))+" --phase-file "+shellQuote(phasePath);
+        workerCommand = workerCommand+" --integrator "+definition.requestedIntegrator;
         if definition.requestedIntegrator == "adaptive-rk23"
-            command = command+" --relative-tolerance "+numberText(definition.relativeTolerance)+" --absolute-tolerance "+numberText(definition.absoluteTolerance);
+            workerCommand = workerCommand+" --relative-tolerance "+numberText(definition.relativeTolerance)+" --absolute-tolerance "+numberText(definition.absoluteTolerance);
         end
     end
-    [exitCode,commandOutput] = system(command);
+    command = sampledCommand(workerCommand,samplePath,phasePath,stdoutPath,stderrPath,options,benchmarkFolder);
+    [exitCode,~] = system(command);
     processWallSeconds = toc(processTimer);
+    commandOutput = readCommandOutput(stdoutPath,stderrPath);
     if exitCode ~= 0
         run = emptyRun; run.interface = interface; run.case = definition; run.repeatIndex = repeatIndex;
         run.failure = struct("identifier","WaveVortexBenchmark:StandaloneInterfaceWorkerFailed","message",string(commandOutput),"report",string(commandOutput));
         return
     end
-    value = jsondecode(commandOutput);
-    run = normalizeStandaloneRun(value,definition,repeatIndex,processWallSeconds,inputPath,comparisonPath,capabilities);
+    value = jsondecode(fileread(stdoutPath));
+    run = normalizeStandaloneRun(value,definition,repeatIndex,processWallSeconds,inputPath,comparisonPath,capabilities,processMemory(samplePath,options.samplingIntervalSeconds));
 end
 end
 
-function run = normalizeMatlabRun(value,repeatIndex,processWallSeconds)
+function run = normalizeMatlabRun(value,repeatIndex,processWallSeconds,memory)
 run = emptyRun;
 run.schemaVersion = string(value.schemaVersion); run.status = string(value.status); run.interface = string(value.interface); run.case = value.case; run.repeatIndex = repeatIndex; run.sourceCommit = string(value.sourceCommit); run.processWallSeconds = processWallSeconds; run.failure = value.failure;
 if run.status ~= "complete"
     return
 end
-run.integrationSeconds = value.timing.integrationSeconds; run.interfaceTotalSeconds = value.timing.interfaceTotalSeconds; run.memory = value.memory; run.provider = value.provider; run.integrator = value.integrator; run.finalState = value.finalState; run.output = value.output;
+run.integrationSeconds = value.timing.integrationSeconds; run.interfaceTotalSeconds = value.timing.interfaceTotalSeconds; run.memory = memory; run.provider = value.provider; run.integrator = value.integrator; run.finalState = value.finalState; run.output = value.output;
 end
 
-function run = normalizeStandaloneRun(value,definition,repeatIndex,processWallSeconds,inputPath,comparisonPath,capabilities)
+function run = normalizeStandaloneRun(value,definition,repeatIndex,processWallSeconds,inputPath,comparisonPath,capabilities,memory)
 run = emptyRun;
 sourceCommit = "";
 if isfield(value,"sourceCommit"), sourceCommit = string(value.sourceCommit); elseif isfield(value,"source") && isfield(value.source,"commit"), sourceCommit = string(value.source.commit); end
 run.schemaVersion = string(value.schemaVersion); run.status = string(value.status); run.interface = "standalone-compiled"; run.case = definition; run.repeatIndex = repeatIndex; run.sourceCommit = sourceCommit; run.processWallSeconds = processWallSeconds;
 if definition.id == "nonlinear-flux"
     run.integrationSeconds = value.timing.medianSeconds; run.interfaceTotalSeconds = processWallSeconds;
-    run.memory = struct("status","complete","provider","getrusage/current-rss","baselineProcessBytes",value.memory.baselineProcessBytes,"peakProcessBytes",value.memory.peakProcessBytes,"peakIncrementBytes",value.memory.peakIncrementBytes,"samples",[]);
+    run.memory = memory;
     run.integrator = struct("requested","none","actual","none","matched",true); run.finalState = struct(); run.output = struct("kind","flux-binary","path",comparisonPath);
 else
     run.integrationSeconds = value.timingSeconds.integrate; run.interfaceTotalSeconds = value.timingSeconds.total;
-    run.memory = struct("status","complete","provider","getrusage/current-rss","baselineProcessBytes",value.rssBytes.integrationBaseline,"peakProcessBytes",value.rssBytes.processPeak,"peakIncrementBytes",value.rssBytes.peakIncrementLowerBound,"samples",[]);
+    run.memory = memory;
     run.integrator = struct("requested",definition.requestedIntegrator,"actual",string(value.integrator.id),"matched",definition.requestedIntegrator==string(value.integrator.id)); run.finalState = value.state; run.output = struct("kind","model-output","path",inputPath);
 end
 noFallback = true;
@@ -197,14 +206,15 @@ interfaces = ["matlab-builtin" "matlab-compiled" "standalone-compiled"];
 comparison = repmat(struct("id","","interfaces",[],"maximumRelativeError",NaN,"outputAgreementPassed",false,"matchedContractPassed",false),numel(definitions),1);
 for iCase = 1:numel(definitions)
     selected = runs(string(arrayfun(@(item)item.case.id,runs,"UniformOutput",false))==definitions(iCase).id);
-    records = repmat(struct("id","","processWallSeconds",NaN,"interfaceTotalSeconds",NaN,"integrationSeconds",NaN,"totalPeakRSSBytes",NaN,"incrementalPeakRSSBytes",NaN,"processWallRatio",NaN,"integrationRatio",NaN,"totalRSSRatio",NaN,"incrementalRSSRatio",NaN),numel(interfaces),1);
+    records = repmat(struct("id","","processWallSeconds",NaN,"interfaceTotalSeconds",NaN,"integrationSeconds",NaN,"totalPeakRSSBytes",NaN,"incrementalPeakRSSBytes",NaN,"finalRSSBytes",NaN,"processWallRatio",NaN,"integrationRatio",NaN,"totalRSSRatio",NaN,"incrementalRSSRatio",NaN),numel(interfaces),1);
     builtin = selected(string({selected.interface})=="matlab-builtin");
-    builtinProcess = median([builtin.processWallSeconds]); builtinIntegration = median([builtin.integrationSeconds]); builtinPeak = median(arrayfun(@(item)item.memory.peakProcessBytes,builtin)); builtinIncrement = median(arrayfun(@(item)item.memory.peakIncrementBytes,builtin));
+    memoryPassed = all(arrayfun(@(item)string(item.memory.status)=="complete" && isfinite(item.memory.totalPeakRSSBytes) && item.memory.totalPeakRSSBytes>0,selected));
+    builtinProcess = median([builtin.processWallSeconds]); builtinIntegration = median([builtin.integrationSeconds]); builtinPeak = median(arrayfun(@(item)item.memory.totalPeakRSSBytes,builtin)); builtinIncrement = median(arrayfun(@(item)item.memory.peakIncrementBytes,builtin));
     maximumError = 0; outputPassed = true;
     for iInterface = 1:numel(interfaces)
         candidate = selected(string({selected.interface})==interfaces(iInterface));
-        processValue = median([candidate.processWallSeconds]); integrationValue = median([candidate.integrationSeconds]); peakValue = median(arrayfun(@(item)item.memory.peakProcessBytes,candidate)); incrementValue = median(arrayfun(@(item)item.memory.peakIncrementBytes,candidate));
-        records(iInterface) = struct("id",interfaces(iInterface),"processWallSeconds",processValue,"interfaceTotalSeconds",median([candidate.interfaceTotalSeconds]),"integrationSeconds",integrationValue,"totalPeakRSSBytes",peakValue,"incrementalPeakRSSBytes",incrementValue,"processWallRatio",processValue/builtinProcess,"integrationRatio",integrationValue/builtinIntegration,"totalRSSRatio",peakValue/builtinPeak,"incrementalRSSRatio",safeRatio(incrementValue,builtinIncrement));
+        processValue = median([candidate.processWallSeconds]); integrationValue = median([candidate.integrationSeconds]); peakValue = median(arrayfun(@(item)item.memory.totalPeakRSSBytes,candidate)); incrementValue = median(arrayfun(@(item)item.memory.peakIncrementBytes,candidate)); finalValue = median(arrayfun(@(item)item.memory.finalRSSBytes,candidate));
+        records(iInterface) = struct("id",interfaces(iInterface),"processWallSeconds",processValue,"interfaceTotalSeconds",median([candidate.interfaceTotalSeconds]),"integrationSeconds",integrationValue,"totalPeakRSSBytes",peakValue,"incrementalPeakRSSBytes",incrementValue,"finalRSSBytes",finalValue,"processWallRatio",processValue/builtinProcess,"integrationRatio",integrationValue/builtinIntegration,"totalRSSRatio",peakValue/builtinPeak,"incrementalRSSRatio",safeRatio(incrementValue,builtinIncrement));
         if iInterface > 1
             for iRepeat = 1:numel(candidate)
                 reference = builtin([builtin.repeatIndex]==candidate(iRepeat).repeatIndex);
@@ -215,7 +225,7 @@ for iCase = 1:numel(definitions)
     end
     providersPassed = all(arrayfun(@(item)item.provider.noFallback,selected)) && all(arrayfun(@(item)item.interface=="matlab-builtin" || string(item.provider.id)=="native-neon-pthreads",selected));
     integratorsPassed = all(arrayfun(@(item)logical(item.integrator.matched) && string(item.integrator.requested)==definitions(iCase).requestedIntegrator && string(item.integrator.actual)==definitions(iCase).requestedIntegrator,selected));
-    comparison(iCase) = struct("id",definitions(iCase).id,"interfaces",records,"maximumRelativeError",maximumError,"outputAgreementPassed",outputPassed,"integratorAgreementPassed",integratorsPassed,"matchedContractPassed",providersPassed&&integratorsPassed&&maximumError<=tolerance&&outputPassed);
+    comparison(iCase) = struct("id",definitions(iCase).id,"interfaces",records,"maximumRelativeError",maximumError,"outputAgreementPassed",outputPassed,"integratorAgreementPassed",integratorsPassed,"memoryAgreementPassed",memoryPassed,"matchedContractPassed",providersPassed&&integratorsPassed&&memoryPassed&&maximumError<=tolerance&&outputPassed);
 end
 end
 
@@ -286,6 +296,51 @@ end
 
 function value = readBinary(pathname)
 fileId=fopen(pathname,"r"); cleanup=onCleanup(@()fclose(fileId)); values=fread(fileId,Inf,"double"); value=complex(values(1:2:end),values(2:2:end)); clear cleanup
+end
+
+function command = sampledCommand(workerCommand,samplePath,phasePath,stdoutPath,stderrPath,options,benchmarkFolder)
+sampler = fullfile(benchmarkFolder,"runProcessWithRSS.sh");
+if ~isfile(sampler)
+    error("WaveVortexBenchmark:MissingRSSSampler","The process-tree RSS sampler is missing.");
+end
+command = shellQuote(sampler)+" "+shellQuote(samplePath)+" "+shellQuote(phasePath)+" "+numberText(options.samplingIntervalSeconds)+" "+shellQuote(stdoutPath)+" "+shellQuote(stderrPath)+" -- /bin/sh -c "+shellQuote(workerCommand);
+end
+
+function output = readCommandOutput(stdoutPath,stderrPath)
+output = "";
+if isfile(stdoutPath), output = string(fileread(stdoutPath)); end
+if isfile(stderrPath), output = output+newline+string(fileread(stderrPath)); end
+end
+
+function memory = processMemory(samplePath,interval)
+memory = struct("status","failed","provider","macos-ps-process-tree","samplingIntervalSeconds",interval,"totalPeakRSSBytes",NaN,"baselineProcessBytes",NaN,"peakIncrementBytes",NaN,"finalRSSBytes",NaN,"maximumProcessCount",0,"samples",[]);
+if ~isfile(samplePath)
+    return
+end
+lines = splitlines(strtrim(string(fileread(samplePath))));
+lines(lines=="") = [];
+samples = repmat(struct("sampleIndex",0,"elapsedSeconds",0,"phase","","rssBytes",0,"processCount",0),numel(lines),1);
+for iLine = 1:numel(lines)
+    fields = split(lines(iLine),sprintf('\t'));
+    if numel(fields) < 4
+        return
+    end
+    index = str2double(fields(1));
+    samples(iLine) = struct("sampleIndex",index,"elapsedSeconds",index*interval,"phase",fields(2),"rssBytes",1024*str2double(fields(3)),"processCount",str2double(fields(4)));
+end
+bytes = [samples.rssBytes];
+phases = string({samples.phase});
+baseline = bytes(phases=="steady-retained");
+if isempty(samples) || isempty(baseline) || any(~isfinite(bytes)) || any(bytes<=0)
+    return
+end
+memory.status = "complete";
+memory.totalPeakRSSBytes = max(bytes);
+memory.baselineProcessBytes = median(baseline);
+memory.peakIncrementBytes = max(0,memory.totalPeakRSSBytes-memory.baselineProcessBytes);
+memory.finalRSSBytes = bytes(end);
+memory.maximumProcessCount = max([samples.processCount]);
+memory.samples = samples;
 end
 
 function value = mergeStruct(first,second)

@@ -22,6 +22,9 @@ for iCase = 1:numel(raw.comparison)
     if ~isfield(comparison,"integratorAgreementPassed") || ~logical(comparison.integratorAgreementPassed)
         error("WaveVortexBenchmark:IntegratorMismatch","Publication requires the requested integrator to execute in every interface.");
     end
+    if ~isfield(comparison,"memoryAgreementPassed") || ~logical(comparison.memoryAgreementPassed)
+        error("WaveVortexBenchmark:IncomparableMemory","Publication requires complete process-tree RSS measurements for every interface.");
+    end
     caseRuns = raw.runs(reshape(string(arrayfun(@(run)run.case.id,raw.runs,"UniformOutput",false)),[],1)==string(comparison.id));
     if any(arrayfun(@(run)~logical(run.integrator.matched) || string(run.integrator.requested)~=string(definition.requestedIntegrator) || string(run.integrator.actual)~=string(definition.requestedIntegrator),caseRuns))
         error("WaveVortexBenchmark:IntegratorMismatch","Publication found a requested/actual integrator mismatch.");
@@ -30,7 +33,10 @@ for iCase = 1:numel(raw.comparison)
     for iInterface = 1:numel(comparison.interfaces)
         item = comparison.interfaces(iInterface);
         selected = raw.runs(reshape(string({raw.runs.interface}),[],1)==string(item.id) & reshape(string(arrayfun(@(run)run.case.id,raw.runs,"UniformOutput",false)),[],1)==string(comparison.id));
-        interfaces{iInterface} = struct("id",string(item.id),"processWallSeconds",double(item.processWallSeconds),"interfaceTotalSeconds",double(item.interfaceTotalSeconds),"integrationSeconds",double(item.integrationSeconds),"totalPeakRSSBytes",double(item.totalPeakRSSBytes),"incrementalPeakRSSBytes",double(item.incrementalPeakRSSBytes),"processWallRatio",double(item.processWallRatio),"integrationRatio",double(item.integrationRatio),"totalRSSRatio",double(item.totalRSSRatio),"incrementalRSSRatio",double(item.incrementalRSSRatio),"processWallSamplesSeconds",double([selected.processWallSeconds]),"integrationSamplesSeconds",double([selected.integrationSeconds]));
+        if any(arrayfun(@(run)string(run.memory.status)~="complete" || string(run.memory.provider)~="macos-ps-process-tree" || ~isfinite(run.memory.totalPeakRSSBytes),selected))
+            error("WaveVortexBenchmark:IncomparableMemory","Publication found a missing or incomparable primary memory measurement.");
+        end
+        interfaces{iInterface} = struct("id",string(item.id),"processWallSeconds",double(item.processWallSeconds),"interfaceTotalSeconds",double(item.interfaceTotalSeconds),"integrationSeconds",double(item.integrationSeconds),"totalPeakRSSBytes",double(item.totalPeakRSSBytes),"incrementalPeakRSSBytes",double(item.incrementalPeakRSSBytes),"finalRSSBytes",double(item.finalRSSBytes),"processWallRatio",double(item.processWallRatio),"integrationRatio",double(item.integrationRatio),"totalRSSRatio",double(item.totalRSSRatio),"incrementalRSSRatio",double(item.incrementalRSSRatio),"processWallSamplesSeconds",double([selected.processWallSeconds]),"integrationSamplesSeconds",double([selected.integrationSeconds]));
     end
     contract = struct("Nxyz",double(definition.Nxyz(:)'),"Lxyz",double(raw.configuration.Lxyz(:)'),"forcing",string(definition.forcing),"shouldAntialias",logical(definition.shouldAntialias),"integrator",string(definition.requestedIntegrator),"deltaT",double(definition.deltaT),"finalTime",double(definition.finalTime),"relativeTolerance",double(definition.relativeTolerance),"absoluteTolerance",double(definition.absoluteTolerance),"outputInterval",double(definition.outputInterval),"observerGraph",string(definition.observerGraph),"processRunCount",double(raw.configuration.processRunCount),"warmupCount",double(raw.configuration.warmupCount),"samplesPerProcess",double(raw.configuration.samplesPerProcess));
     correctness = struct("passed",logical(comparison.matchedContractPassed),"maximumRelativeError",double(comparison.maximumRelativeError),"outputAgreementPassed",logical(comparison.outputAgreementPassed));

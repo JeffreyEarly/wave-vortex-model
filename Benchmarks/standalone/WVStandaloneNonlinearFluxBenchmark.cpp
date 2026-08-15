@@ -14,6 +14,7 @@
 #include <memory>
 #include <sstream>
 #include <string>
+#include <thread>
 #include <vector>
 
 #if defined(__APPLE__)
@@ -73,13 +74,32 @@ void emitFailure(const std::string &stage, const std::string &message) {
             << escape(stage) << "\",\"message\":\"" << escape(message)
             << "\"}}\n";
 }
+
+void phase(const std::string &path, const std::string &value,
+           bool plateau = false) {
+  if (path.empty()) return;
+  const auto temporary = path + ".tmp";
+  {
+    std::ofstream output(temporary, std::ios::trunc);
+    output << value;
+  }
+  std::error_code ignored;
+  std::filesystem::rename(temporary, path, ignored);
+  if (plateau) std::this_thread::sleep_for(std::chrono::milliseconds(100));
+}
 }  // namespace
 
 int main(int argc, char **argv) {
-  if (argc != 6) {
-    emitFailure("arguments", "Usage: worker INPUT THREADS WARMUPS SAMPLES OUTPUT");
+  if (argc != 6 && argc != 8) {
+    emitFailure("arguments", "Usage: worker INPUT THREADS WARMUPS SAMPLES OUTPUT [--phase-file PATH]");
     return 2;
   }
+  if (argc == 8 && std::string(argv[6]) != "--phase-file") {
+    emitFailure("arguments", "The optional argument must be --phase-file PATH.");
+    return 2;
+  }
+  const std::string phasePath = argc == 8 ? argv[7] : "";
+  phase(phasePath, "startup");
   std::size_t threads = 0, warmups = 0, samples = 0;
   if (!parseCount(argv[2], threads) || threads == 0 ||
       !parseCount(argv[3], warmups) || !parseCount(argv[4], samples) ||
@@ -89,6 +109,7 @@ int main(int argc, char **argv) {
   }
 
   WVCheckpoint checkpoint;
+  phase(phasePath, "read");
   auto checkpointStatus = WVCheckpointReader::read(argv[1], checkpoint);
   if (!checkpointStatus) {
     emitFailure("read", checkpointStatus.message);
@@ -102,6 +123,7 @@ int main(int argc, char **argv) {
   }
 
   std::unique_ptr<WVFFTEngine> fft;
+  phase(phasePath, "construct");
   auto status = WVFFTWEngine::create(threads, fft);
   if (!status) {
     emitFailure("provider", status.message);
@@ -146,8 +168,10 @@ int main(int argc, char **argv) {
       return 5;
     }
   }
+  phase(phasePath, "steady-retained", true);
   const auto baselineRSS = currentRSSBytes();
   std::vector<double> raw(samples);
+  phase(phasePath, "integrate");
   for (std::size_t index = 0; index < samples; ++index) {
     const auto start = Clock::now();
     status = forcing->nonlinearFlux(state, flux);
@@ -184,6 +208,7 @@ int main(int argc, char **argv) {
       return 6;
     }
   }
+  phase(phasePath, "outputs-held", true);
 
   std::cout << std::setprecision(17)
             << "{\"schemaVersion\":\"three-interface-worker-v1\","
@@ -207,5 +232,6 @@ int main(int argc, char **argv) {
             << "\",\"library\":\"" << escape(forcing->kernel().engineLibraryIdentity())
             << "\",\"planCount\":" << metrics.planCount
             << ",\"checksum\":" << checksum << "}}\n";
+  phase(phasePath, "complete");
   return 0;
 }
