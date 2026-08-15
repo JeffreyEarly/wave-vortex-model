@@ -1384,26 +1384,51 @@ public:
                              "/" + group.record.name + "/" + variableName);
           }
           const auto requireAttribute = [&](const std::string &name,
-                                            const std::string &expected) {
+                                            const std::string &expected,
+                                            bool optional = false) {
             if (expected.empty())
               return WVCheckpointStatus::ok();
+            nc_type type = NC_NAT;
             std::size_t length = 0;
+            const int inquiry = nc_inq_att(group.id, variableId, name.c_str(),
+                                           &type, &length);
+            if (inquiry == NC_ENOTATT && optional)
+              return WVCheckpointStatus::ok();
             auto attributeStatus = detail::checkedNetCDF(
-                nc_inq_attlen(group.id, variableId, name.c_str(), &length),
+                inquiry,
                 "Observer-variable attribute inspection",
                 "/" + group.record.name + "/" + variableName + "/@" +
                     name);
             if (!attributeStatus)
               return attributeStatus;
-            std::string observed(length, '\0');
-            attributeStatus = detail::checkedNetCDF(
-                nc_get_att_text(group.id, variableId, name.c_str(),
-                                observed.data()),
-                "Observer-variable attribute read",
-                "/" + group.record.name + "/" + variableName + "/@" +
-                    name);
-            if (!attributeStatus)
-              return attributeStatus;
+            std::string observed;
+            if (type == NC_CHAR) {
+              observed.assign(length, '\0');
+              attributeStatus = detail::checkedNetCDF(
+                  nc_get_att_text(group.id, variableId, name.c_str(),
+                                  observed.data()),
+                  "Observer-variable attribute read",
+                  "/" + group.record.name + "/" + variableName + "/@" +
+                      name);
+              if (!attributeStatus)
+                return attributeStatus;
+            } else if (length == 1 && (expected == "0" || expected == "1")) {
+              double numeric = 0.0;
+              attributeStatus = detail::checkedNetCDF(
+                  nc_get_att_double(group.id, variableId, name.c_str(),
+                                    &numeric),
+                  "Observer-variable logical-attribute read",
+                  "/" + group.record.name + "/" + variableName + "/@" +
+                      name);
+              if (!attributeStatus)
+                return attributeStatus;
+              observed = numeric == 0.0 ? "0" : numeric == 1.0 ? "1" : "";
+            } else {
+              return failure(WVCheckpointStatusCode::appendConflict,
+                             "Observer-variable metadata type changed.",
+                             "/" + group.record.name + "/" + variableName +
+                                 "/@" + name);
+            }
             if (observed != expected)
               return failure(WVCheckpointStatusCode::appendConflict,
                              "Observer-variable metadata changed: expected '" +
@@ -1420,7 +1445,10 @@ public:
           for (const auto &attribute : variable.specification.attributes) {
             if (!contract)
               break;
-            contract = requireAttribute(attribute.name, attribute.value);
+            contract = requireAttribute(
+                attribute.name,attribute.value,
+                attribute.name != "isParticle" &&
+                    attribute.name != "isTracer");
           }
           if (!contract)
             return contract;

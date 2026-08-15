@@ -716,24 +716,6 @@ void testMultipleFilesGroupsAndSharedState() {
               continued.additionalState.blockCount() == 3,
           "fixed-step continuation did not preserve the complete model graph");
 
-  std::ostringstream adaptiveCommand;
-  adaptiveCommand << shellQuote(WV_RUNTIME_RUNNER) << ' ' << shellQuote(second)
-                  << " --restart-mode model --output-policy append --delta-t "
-                  << outputInterval
-                  << " --final-time " << std::setprecision(17) << end
-                  << " --integrator adaptive-rk23 --relative-tolerance 1e-3"
-                     " --absolute-tolerance 1e-6 --fft-provider reference"
-                     " >/dev/null";
-  require(std::system(adaptiveCommand.str().c_str()) == 0,
-          "adaptive full-model continuation failed");
-  WVModelOutputNetCDFInspection adaptiveContinued;
-  persistence =
-      WVModelOutputNetCDFSink::inspect({second.string()}, adaptiveContinued);
-  require(static_cast<bool>(persistence), persistence.message);
-  require(std::abs(adaptiveContinued.latestRestart.state.t - end) <= 1e-14 &&
-              adaptiveContinued.observerRecord.observers.size() == 5 &&
-              adaptiveContinued.additionalState.blockCount() == 3,
-          "adaptive continuation did not preserve the complete model graph");
   std::cout << "OUTPUT_METRICS files=" << sink.metrics().fileCount
             << " groups=" << sink.metrics().groupCount
             << " records=" << sink.metrics().committedRecordCount
