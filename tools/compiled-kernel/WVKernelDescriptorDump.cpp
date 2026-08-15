@@ -65,8 +65,8 @@ double argument(char** values, int index) {
 } // namespace
 
 int main(int argc, char** argv) {
-    if (argc != 15) {
-        std::cerr << "usage: descriptor Nx Ny Nz Nj Lx Ly Lz N0 rho0 g rotationRate latitude isHydrostatic shouldAntialias\n";
+    if (argc != 16) {
+        std::cerr << "usage: descriptor Nx Ny Nz Nj Lx Ly Lz N0 rho0 g rotationRate latitude isHydrostatic shouldAntialias planetaryRadius\n";
         return 2;
     }
     WVTransformConstantStratificationConfiguration configuration;
@@ -80,7 +80,7 @@ int main(int argc, char** argv) {
     configuration.N0 = argument(argv, 8);
     configuration.rho0 = argument(argv, 9);
     configuration.g = argument(argv, 10);
-    configuration.planetaryRadius = 6.371e6;
+    configuration.planetaryRadius = argument(argv, 15);
     configuration.rotationRate = argument(argv, 11);
     configuration.latitude = argument(argv, 12);
     configuration.isHydrostatic = argument(argv, 13) != 0.0;

@@ -3,6 +3,9 @@
 ## [Unreleased]
 
 - Added an explicit, source-only compiled preview for ordinary constant-stratification nonlinear flux; MATLAB remains the default, native support must be built explicitly, and the preview rejects unsupported forcing without fallback.
+- Added an optional source-only constant-stratification runtime with fixed RK4 and adaptive RK3(2), MATLAB-compatible restart, and a lightweight checkpoint-to-checkpoint command-line interface.
+- Added a unified C++ integration contract for canonical coefficients and observer-owned state, continuous output, failure-safe scheduled output, and the five built-in observing-system records.
+- Added the frozen portable forcing subset, shared field evaluation for particles and tracers, and transactional NetCDF output while keeping MATLAB as the primary WaveVortexModel interface.
 - Added persistent, resolution-convertible `WVNarrowBandGeostrophicForcing` and retained the former fixed-amplitude helper as a silent deprecated 4.x delegate.
 - Retired the experimental FFTW backend; WaveVortexModel now uses MATLAB's builtin transforms and has no FFTWTransforms dependency.
 - Removed the obsolete expanded mappings `dftPrimaryIndex`, `dftConjugateIndex`, `wvConjugateIndex`, `indicesFromWVGridToFFTWGrid`, and `expandedLegacyMappings`; `indicesFromWVGridToDFTGrid` remains available explicitly.

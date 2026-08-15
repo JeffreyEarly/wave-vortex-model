@@ -29,9 +29,19 @@ jobs:
           path: source
           persist-credentials: false
 
+      - name: Install NetCDF C development library
+        run: sudo apt-get update && sudo apt-get install --yes libnetcdf-dev pkg-config
+
       - name: Build and test without MATLAB headers
         working-directory: source
         run: tools/compiled-kernel/run_contract_tests.sh
+
+      - name: Build and test portable checkpoint contracts
+        working-directory: source
+        run: |
+          cmake -S PortableRuntime -B "$RUNNER_TEMP/wave-vortex-portable-runtime" -DCMAKE_BUILD_TYPE=Release
+          cmake --build "$RUNNER_TEMP/wave-vortex-portable-runtime" --parallel
+          ctest --test-dir "$RUNNER_TEMP/wave-vortex-portable-runtime" --output-on-failure
 
       - name: Reject forbidden core dependencies and tracked build products
         working-directory: source

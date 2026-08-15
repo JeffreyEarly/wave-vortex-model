@@ -77,7 +77,16 @@ struct WVFieldBundleView {
     bool empty() const noexcept { return shape.first == 0 || shape.second == 0 || shape.third == 0 || shape.fourth == 0; }
 };
 
+template <typename T>
+struct WVVolumeView {
+    T* data = nullptr;
+    WVShape3D shape;
+    bool empty() const noexcept { return shape.first == 0 || shape.second == 0 || shape.third == 0; }
+};
+
 using WVRealConstView = WVMatrixView<const double>;
+using WVRealVolumeConstView = WVVolumeView<const double>;
+using WVRealVolumeView = WVVolumeView<double>;
 using WVComplexConstView = WVMatrixView<const WVComplex64>;
 using WVComplexView = WVMatrixView<WVComplex64>;
 using WVRealFieldBundleConstView = WVFieldBundleView<const double>;
@@ -99,6 +108,16 @@ struct WVState {
     double t = 0.0;
     double t0 = 0.0;
     WVCoefficients coefficients;
+};
+
+struct WVMutableState {
+    double t = 0.0;
+    double t0 = 0.0;
+    WVMutableCoefficients coefficients;
+
+    WVState view() const noexcept {
+        return {t,t0,{{coefficients.Ap.data,coefficients.Ap.shape},{coefficients.Am.data,coefficients.Am.shape},{coefficients.A0.data,coefficients.A0.shape}}};
+    }
 };
 
 struct WVFlux {
@@ -125,6 +144,12 @@ struct WVTransformConstantStratificationConfiguration {
     bool isHydrostatic = false;
     bool shouldAntialias = true;
 };
+
+// Exact identity for services and plans derived from a frozen transform
+// configuration. Every listed value participates in the derived state.
+bool sameTransformConfiguration(
+    const WVTransformConstantStratificationConfiguration& first,
+    const WVTransformConstantStratificationConfiguration& second) noexcept;
 
 struct WVFourierMode {
     std::int64_t kMode = 0;

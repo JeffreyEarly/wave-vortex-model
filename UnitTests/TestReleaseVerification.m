@@ -76,8 +76,28 @@ classdef TestReleaseVerification < matlab.unittest.TestCase
             testCase.verifySubstring(workflow,"verifyWaveVortexModelPackage(sourceRoot,oceanKitRoot)");
             testCase.verifySubstring(workflow,"candidate.report.exportPath");
             testCase.verifySubstring(workflow,"candidate.report.version");
+            testCase.verifySubstring(workflow,'- "CompiledKernel/**"');
+            testCase.verifySubstring(workflow,'- "PortableRuntime/**"');
+            testCase.verifySubstring(workflow,"Build and inspect the exported reference runtime");
+            testCase.verifySubstring(workflow,"-DBUILD_TESTING=OFF");
             testCase.verifyFalse(contains(contract,'expectedVersion="4.2.0"'));
             testCase.verifyFalse(contains(contract,'WaveVortexModel-4.2.1'));
+        end
+
+        function portableRuntimeExportContractIsSourceOnly(testCase)
+            helper = testCase.readFile("tools/prepareWaveVortexModelReleaseCandidate.m");
+            buildScript = testCase.readFile(fullfile("PortableRuntime","buildWaveVortexRun.sh"));
+            cmake = testCase.readFile(fullfile("PortableRuntime","CMakeLists.txt"));
+            for required = [
+                    "CompiledKernel/native-fftw-provider.env"
+                    "PortableRuntime/buildWaveVortexRun.sh"
+                    "PortableRuntime/app/WaveVortexRun.cpp"
+                    ]'
+                testCase.verifySubstring(helper,required);
+            end
+            testCase.verifySubstring(buildScript,'repository_root=$(CDPATH= cd -- "$script_directory/.." && pwd)');
+            testCase.verifySubstring(cmake,'WaveVortexModel-${WV_RUNTIME_PACKAGE_VERSION}');
+            testCase.verifySubstring(helper,"compiled product or downloaded archive");
         end
 
         function routineWorkflowsUsePilotDependencySnapshot(testCase)

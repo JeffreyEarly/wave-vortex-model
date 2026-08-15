@@ -1,0 +1,594 @@
+#include "WaveVortexRuntime/WVCheckpointWriter.hpp"
+
+#include "WVCheckpointWriterTestHooks.hpp"
+#include "WVNetCDF.hpp"
+
+#include "WaveVortexKernel/WVKernelTypes.hpp"
+
+#include <netcdf.h>
+
+#include <algorithm>
+#include <array>
+#include <atomic>
+#include <chrono>
+#include <cmath>
+#include <cstddef>
+#include <cstdint>
+#include <filesystem>
+#include <iomanip>
+#include <limits>
+#include <set>
+#include <sstream>
+#include <string>
+#include <system_error>
+#include <unordered_set>
+#include <utility>
+#include <variant>
+#include <vector>
+
+namespace wavevortex::runtime {
+
+namespace {
+
+using detail::WVCheckpointWriterFailurePoint;
+
+std::atomic<WVCheckpointWriterFailurePoint> injectedFailure{WVCheckpointWriterFailurePoint::none};
+std::atomic<std::uint64_t> temporarySequence{0};
+
+WVCheckpointStatus status(WVCheckpointStatusCode code, std::string message, std::string location) {
+    return {code, std::move(message), std::move(location)};
+}
+
+bool finite(WVComplex64 value) noexcept {
+    return std::isfinite(value.real) && std::isfinite(value.imag);
+}
+
+bool sameComplex(const std::vector<WVComplex64>& left, const std::vector<WVComplex64>& right) noexcept {
+    if (left.size() != right.size()) return false;
+    for (std::size_t index = 0; index < left.size(); ++index) {
+        const bool sameReal = left[index].real == right[index].real || (std::isnan(left[index].real) && std::isnan(right[index].real));
+        const bool sameImag = left[index].imag == right[index].imag || (std::isnan(left[index].imag) && std::isnan(right[index].imag));
+        if (!sameReal || !sameImag) return false;
+    }
+    return true;
+}
+
+bool compatibleModelVersion(const std::string& version) {
+    const auto separator = version.find('.');
+    return !version.empty() && (separator == std::string::npos ? version : version.substr(0, separator)) == "4";
+}
+
+WVCheckpointStatus validateFixedFamily(
+    const std::vector<std::size_t>& indices,
+    const std::vector<WVComplex64>& values,
+    std::size_t coefficientCount,
+    const std::string& family) {
+    if (indices.size() != values.size()) return status(WVCheckpointStatusCode::malformedForcing, family + " fixed-amplitude indices and values have different lengths.", "/forcing/" + family);
+    std::unordered_set<std::size_t> observed;
+    for (std::size_t index = 0; index < indices.size(); ++index) {
+        if (indices[index] >= coefficientCount) return status(WVCheckpointStatusCode::incompatibleForcing, family + " fixed-amplitude index is outside the checkpoint coefficient array.", "/forcing/" + family + "_indices");
+        if (!observed.insert(indices[index]).second) return status(WVCheckpointStatusCode::duplicateForcing, family + " fixed-amplitude indices contain a duplicate.", "/forcing/" + family + "_indices");
+        if (!finite(values[index])) return status(WVCheckpointStatusCode::malformedForcing, family + " fixed-amplitude value is not finite.", "/forcing/" + family + "bar");
+    }
+    return WVCheckpointStatus::ok();
+}
+
+WVCheckpointStatus validateEntry(
+    const WVFrozenForcingEntry& entry,
+    const WVTransformConstantStratificationConfiguration& configuration,
+    std::size_t coefficientCount) {
+    const auto* capability = forcingCapability(entry.typeIdentifier);
+    if (capability == nullptr || !capability->isSupported || capability->kind != entry.kind) {
+        return status(WVCheckpointStatusCode::unsupportedForcing, "The checkpoint contains a forcing entry that portable runtime v1 cannot write.", "/forcing/@AnnotatedClass");
+    }
+    if (entry.name.empty()) return status(WVCheckpointStatusCode::malformedForcing, "Forcing names must not be empty.", "/forcing/@name");
+    switch (entry.kind) {
+        case WVForcingKind::nonlinearAdvection:
+            if (entry.stage != WVForcingStage::spatial || entry.priority != 127 || entry.name != "nonlinear advection" || !std::holds_alternative<WVNonlinearAdvectionRecord>(entry.payload)) break;
+            return WVCheckpointStatus::ok();
+        case WVForcingKind::adaptiveDamping:
+            if (entry.stage != WVForcingStage::spectral || entry.priority != 255 || entry.name != "adaptive damping" || !std::holds_alternative<WVAdaptiveDampingRecord>(entry.payload)) break;
+            return WVCheckpointStatus::ok();
+        case WVForcingKind::betaPlanePVAdvection:
+            if (entry.stage != WVForcingStage::spectral || entry.priority != 255 || entry.name != "beta-plane advection of qgpv" || !std::holds_alternative<WVBetaPlanePVAdvectionRecord>(entry.payload)) break;
+            return WVCheckpointStatus::ok();
+        case WVForcingKind::bottomFrictionQuadratic: {
+            if (entry.stage != WVForcingStage::spatial || entry.priority != 255 || entry.name != "quadratic bottom friction" || !std::holds_alternative<WVBottomFrictionQuadraticRecord>(entry.payload)) break;
+            const double coefficient = std::get<WVBottomFrictionQuadraticRecord>(entry.payload).Cd;
+            if (!std::isfinite(coefficient) || coefficient < 0.0) return status(WVCheckpointStatusCode::malformedForcing, "Quadratic drag coefficient Cd must be finite and nonnegative.", "/forcing/Cd");
+            return WVCheckpointStatus::ok();
+        }
+        case WVForcingKind::fixedAmplitude: {
+            if (entry.stage != WVForcingStage::spectralAmplitude || entry.priority != 255 || !std::holds_alternative<WVFixedAmplitudeForcingRecord>(entry.payload)) break;
+            const auto& record = std::get<WVFixedAmplitudeForcingRecord>(entry.payload);
+            auto result = validateFixedFamily(record.ApIndices, record.ApValues, coefficientCount, "Ap");
+            if (!result) return result;
+            result = validateFixedFamily(record.AmIndices, record.AmValues, coefficientCount, "Am");
+            if (!result) return result;
+            return validateFixedFamily(record.A0Indices, record.A0Values, coefficientCount, "A0");
+        }
+        case WVForcingKind::pseudoTopographicWaveGeneration: {
+            if (entry.stage != WVForcingStage::spectral || entry.priority != 255 || !std::holds_alternative<WVPseudoTopographicWaveGenerationRecord>(entry.payload)) break;
+            const auto& record = std::get<WVPseudoTopographicWaveGenerationRecord>(entry.payload);
+            if (record.topographicShape.rows != configuration.Nx || record.topographicShape.columns != configuration.Ny || record.topographicHeight.size() != configuration.Nx * configuration.Ny) {
+                return status(WVCheckpointStatusCode::incompatibleForcing, "Topographic height does not match the horizontal checkpoint grid.", "/forcing/topographicHeight");
+            }
+            if (std::any_of(record.topographicHeight.begin(), record.topographicHeight.end(), [](double value) { return !std::isfinite(value); })) return status(WVCheckpointStatusCode::malformedForcing, "Topographic height must be finite.", "/forcing/topographicHeight");
+            if (!finite(record.barotropicVelocityAmplitude[0]) || !finite(record.barotropicVelocityAmplitude[1]) || !std::isfinite(record.frequency) || record.frequency <= 0.0 || !std::isfinite(record.rampDuration) || record.rampDuration < 0.0 || !std::isfinite(record.startTime)) {
+                return status(WVCheckpointStatusCode::malformedForcing, "Pseudo-topographic forcing contains an invalid scalar or amplitude.", "/forcing");
+            }
+            const std::set<std::string> symbols = {"", "M2", "S2", "N2", "K1", "O1"};
+            if (symbols.find(record.darwinSymbol) == symbols.end()) return status(WVCheckpointStatusCode::malformedForcing, "Pseudo-topographic Darwin symbol is not recognized.", "/forcing/@darwinSymbol");
+            for (double bound : {record.maximumForcedHorizontalWavenumber, record.maximumForcedVerticalMode}) {
+                if (std::isnan(bound) || bound < 0.0) return status(WVCheckpointStatusCode::malformedForcing, "Pseudo-topographic forcing bounds must be nonnegative or positive infinity.", "/forcing");
+            }
+            return WVCheckpointStatus::ok();
+        }
+        default:
+            return status(WVCheckpointStatusCode::unsupportedForcing, "The checkpoint contains an unsupported forcing kind.", "/forcing/@AnnotatedClass");
+    }
+    return status(WVCheckpointStatusCode::malformedForcing, "Forcing metadata or payload does not match the canonical portable runtime contract.", "/forcing");
+}
+
+WVCheckpointStatus validateCheckpoint(const WVCheckpoint& checkpoint, std::vector<const WVFrozenForcingEntry*>& sourceOrder) {
+    if (checkpoint.metadata.profileIdentifier != WVCheckpointProfileIdentifier || checkpoint.metadata.profileVersion != WVCheckpointProfileVersion) return status(WVCheckpointStatusCode::invalidValue, "Unsupported checkpoint profile.", "/");
+    if (!compatibleModelVersion(checkpoint.metadata.modelVersion)) return status(WVCheckpointStatusCode::unsupportedModelVersion, "The writer accepts only WaveVortexModel 4.x checkpoints.", "/@model_version");
+    if (checkpoint.metadata.transformClass != "WVTransformConstantStratification") return status(WVCheckpointStatusCode::unsupportedTransform, "The writer supports only WVTransformConstantStratification.", "/");
+    if (checkpoint.forcingSchedule.profileIdentifier != WVForcingScheduleProfileIdentifier || checkpoint.forcingSchedule.profileVersion != WVForcingScheduleProfileVersion) return status(WVCheckpointStatusCode::unsupportedForcing, "Unsupported frozen forcing schedule profile.", "/forcing");
+    if (!std::isfinite(checkpoint.state.t) || !std::isfinite(checkpoint.state.t0)) return status(WVCheckpointStatusCode::invalidValue, "Checkpoint times must be finite.", "/t");
+
+    WVTransformConstantStratificationDescriptor descriptor;
+    const auto descriptorStatus = WVTransformConstantStratificationDescriptor::create(checkpoint.configuration, descriptor);
+    if (!descriptorStatus) return status(WVCheckpointStatusCode::descriptorFailure, "Unable to validate the checkpoint descriptor: " + descriptorStatus.message, "/");
+    const auto shape = checkpoint.state.coefficients.shape;
+    if (shape.rows != checkpoint.configuration.Nj || shape.columns != descriptor.Nkl()) return status(WVCheckpointStatusCode::shapeMismatch, "Checkpoint coefficient shape does not match the rebuilt descriptor.", "/");
+    const std::size_t coefficientCount = shape.elementCount();
+    for (const auto* values : {&checkpoint.state.coefficients.Ap, &checkpoint.state.coefficients.Am, &checkpoint.state.coefficients.A0}) {
+        if (values->size() != coefficientCount) return status(WVCheckpointStatusCode::shapeMismatch, "Checkpoint coefficient arrays have incompatible lengths.", "/");
+    }
+
+    sourceOrder.clear();
+    sourceOrder.reserve(checkpoint.forcingSchedule.entries.size());
+    for (const auto& entry : checkpoint.forcingSchedule.entries) sourceOrder.push_back(&entry);
+    std::sort(sourceOrder.begin(), sourceOrder.end(), [](const auto* left, const auto* right) { return left->ordinal < right->ordinal; });
+    std::unordered_set<std::string> names;
+    for (std::size_t index = 0; index < sourceOrder.size(); ++index) {
+        const auto& entry = *sourceOrder[index];
+        if (entry.ordinal != index + 1) return status(WVCheckpointStatusCode::invalidValue, "Forcing ordinals must be contiguous and one-based.", "/forcing");
+        if (!names.insert(entry.name).second) return status(WVCheckpointStatusCode::duplicateForcing, "Forcing names must be unique.", "/forcing/@name");
+        const auto result = validateEntry(entry, checkpoint.configuration, coefficientCount);
+        if (!result) return result;
+    }
+    return WVCheckpointStatus::ok();
+}
+
+class WritableNetCDFFile final {
+public:
+    WritableNetCDFFile() = default;
+    ~WritableNetCDFFile() { if (id_ >= 0) nc_close(id_); }
+    WritableNetCDFFile(const WritableNetCDFFile&) = delete;
+    WritableNetCDFFile& operator=(const WritableNetCDFFile&) = delete;
+
+    static WVCheckpointStatus create(const std::string& path, WritableNetCDFFile& output) {
+        int id = -1;
+        const int result = nc_create(path.c_str(), NC_NETCDF4 | NC_NOCLOBBER, &id);
+        if (result != NC_NOERR) return status(WVCheckpointStatusCode::writeFailure, "Unable to create temporary checkpoint: " + std::string(nc_strerror(result)), path);
+        output.id_ = id;
+        return WVCheckpointStatus::ok();
+    }
+
+    int id() const noexcept { return id_; }
+    WVCheckpointStatus sync(const std::string& path) {
+        const int result = nc_sync(id_);
+        return result == NC_NOERR ? WVCheckpointStatus::ok() : detail::netcdfFailure(result, "Checkpoint synchronization", path);
+    }
+    WVCheckpointStatus close(const std::string& path) {
+        const int id = std::exchange(id_, -1);
+        const int result = nc_close(id);
+        return result == NC_NOERR ? WVCheckpointStatus::ok() : detail::netcdfFailure(result, "Checkpoint close", path);
+    }
+
+private:
+    int id_ = -1;
+};
+
+WVCheckpointStatus checked(int netcdfStatus, const std::string& operation, const std::string& location) {
+    return netcdfStatus == NC_NOERR ? WVCheckpointStatus::ok() : detail::netcdfFailure(netcdfStatus, operation, location);
+}
+
+WVCheckpointStatus textAttribute(int group, int variable, const char* name, const std::string& value, const std::string& location) {
+    return checked(nc_put_att_text(group, variable, name, value.size(), value.data()), "Text-attribute definition", location + "/@" + name);
+}
+
+WVCheckpointStatus byteAttribute(int group, int variable, const char* name, unsigned char value, const std::string& location) {
+    return checked(nc_put_att_uchar(group, variable, name, NC_UBYTE, 1, &value), "Byte-attribute definition", location + "/@" + name);
+}
+
+WVCheckpointStatus defineDouble(int group, const char* name, const std::vector<int>& dimensions, int& variable, const std::string& path) {
+    return checked(nc_def_var(group, name, NC_DOUBLE, static_cast<int>(dimensions.size()), dimensions.empty() ? nullptr : dimensions.data(), &variable), "Variable definition", path + "/" + name);
+}
+
+WVCheckpointStatus defineLogical(int group, const char* name, int& variable, const std::string& path) {
+    auto result = checked(nc_def_var(group, name, NC_UBYTE, 0, nullptr, &variable), "Variable definition", path + "/" + name);
+    if (!result) return result;
+    return byteAttribute(group, variable, "isLogicalType", 1, path + "/" + name);
+}
+
+WVCheckpointStatus markComplex(int group, int variable, bool realPart, const std::string& path) {
+    for (const auto& marker : std::array<std::pair<const char*, unsigned char>, 3>{{
+            {"isComplex", 1}, {"isRealPart", static_cast<unsigned char>(realPart)}, {"isImaginaryPart", static_cast<unsigned char>(!realPart)}}}) {
+        const auto result = byteAttribute(group, variable, marker.first, marker.second, path);
+        if (!result) return result;
+    }
+    return WVCheckpointStatus::ok();
+}
+
+WVCheckpointStatus defineComplexPair(int group, const std::string& base, const std::vector<int>& dimensions, const std::string& path) {
+    int real = -1;
+    int imag = -1;
+    auto result = defineDouble(group, (base + "_real").c_str(), dimensions, real, path);
+    if (!result) return result;
+    result = defineDouble(group, (base + "_imag").c_str(), dimensions, imag, path);
+    if (!result) return result;
+    result = markComplex(group, real, true, path + "/" + base + "_real");
+    if (!result) return result;
+    return markComplex(group, imag, false, path + "/" + base + "_imag");
+}
+
+WVCheckpointStatus defineRoot(int root, const WVCheckpoint& checkpoint, std::array<int, 5>& dimensions) {
+    const auto& configuration = checkpoint.configuration;
+    const std::array<std::pair<const char*, std::size_t>, 5> definitions = {{{"j", configuration.Nj}, {"kl", checkpoint.state.coefficients.shape.columns}, {"x", configuration.Nx}, {"y", configuration.Ny}, {"z", configuration.Nz}}};
+    for (std::size_t index = 0; index < definitions.size(); ++index) {
+        auto result = checked(nc_def_dim(root, definitions[index].first, definitions[index].second, &dimensions[index]), "Dimension definition", "/" + std::string(definitions[index].first));
+        if (!result) return result;
+        int variable = -1;
+        result = defineDouble(root, definitions[index].first, {dimensions[index]}, variable, "/");
+        if (!result) return result;
+    }
+    for (const char* name : {"Lx", "Ly", "Lz", "N0", "g", "latitude", "planetaryRadius", "rho0", "rotationRate", "t", "t0"}) {
+        int variable = -1;
+        const auto result = defineDouble(root, name, {}, variable, "/");
+        if (!result) return result;
+    }
+    for (const char* name : {"isHydrostatic", "shouldAntialias"}) {
+        int variable = -1;
+        const auto result = defineLogical(root, name, variable, "/");
+        if (!result) return result;
+    }
+    for (const char* base : {"Ap", "Am", "A0"}) {
+        const auto result = defineComplexPair(root, base, {dimensions[1], dimensions[0]}, "/");
+        if (!result) return result;
+    }
+    auto result = textAttribute(root, NC_GLOBAL, "AnnotatedClass", "WVTransformConstantStratification", "/");
+    if (!result) return result;
+    result = textAttribute(root, NC_GLOBAL, "WVTransform", "WVTransformConstantStratification", "/");
+    if (!result) return result;
+    result = textAttribute(root, NC_GLOBAL, "model_version", checkpoint.metadata.modelVersion, "/");
+    if (!result) return result;
+    result = textAttribute(root, NC_GLOBAL, "source", "Created with the WaveVortex portable runtime", "/");
+    if (!result) return result;
+    result = textAttribute(root, NC_GLOBAL, "history", "Transactional root-level checkpoint written by the WaveVortex portable runtime.", "/");
+    if (!result) return result;
+    const auto now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+    std::tm utc{};
+#if defined(_WIN32)
+    gmtime_s(&utc, &now);
+#else
+    gmtime_r(&now, &utc);
+#endif
+    std::ostringstream date;
+    date << std::put_time(&utc, "%Y-%m-%d %H:%M:%S UTC");
+    return textAttribute(root, NC_GLOBAL, "date_created", date.str(), "/");
+}
+
+WVCheckpointStatus defineFixedFamily(int group, const char* prefix, std::size_t length, const std::string& path) {
+    if (length == 0) return WVCheckpointStatus::ok();
+    const std::string indexName = std::string(prefix) + "_indices";
+    int dimension = -1;
+    auto result = checked(nc_def_dim(group, indexName.c_str(), length, &dimension), "Forcing dimension definition", path + "/" + indexName);
+    if (!result) return result;
+    int indices = -1;
+    result = checked(nc_def_var(group, indexName.c_str(), NC_UINT64, 1, &dimension, &indices), "Forcing variable definition", path + "/" + indexName);
+    if (!result) return result;
+    return defineComplexPair(group, std::string(prefix) + "bar", {dimension}, path);
+}
+
+WVCheckpointStatus defineForcingEntry(int group, const WVFrozenForcingEntry& entry, const std::array<int, 5>& rootDimensions, const std::string& path) {
+    auto result = textAttribute(group, NC_GLOBAL, "AnnotatedClass", entry.typeIdentifier, path);
+    if (!result) return result;
+    switch (entry.kind) {
+        case WVForcingKind::nonlinearAdvection:
+        case WVForcingKind::adaptiveDamping:
+        case WVForcingKind::betaPlanePVAdvection:
+            return WVCheckpointStatus::ok();
+        case WVForcingKind::bottomFrictionQuadratic: {
+            int variable = -1;
+            return defineDouble(group, "Cd", {}, variable, path);
+        }
+        case WVForcingKind::fixedAmplitude: {
+            result = textAttribute(group, NC_GLOBAL, "name", entry.name, path);
+            if (!result) return result;
+            const auto& record = std::get<WVFixedAmplitudeForcingRecord>(entry.payload);
+            result = defineFixedFamily(group, "Ap", record.ApIndices.size(), path);
+            if (!result) return result;
+            result = defineFixedFamily(group, "Am", record.AmIndices.size(), path);
+            if (!result) return result;
+            return defineFixedFamily(group, "A0", record.A0Indices.size(), path);
+        }
+        case WVForcingKind::pseudoTopographicWaveGeneration: {
+            result = textAttribute(group, NC_GLOBAL, "name", entry.name, path);
+            if (!result) return result;
+            if (!std::get<WVPseudoTopographicWaveGenerationRecord>(entry.payload).darwinSymbol.empty()) {
+                result = textAttribute(group, NC_GLOBAL, "darwinSymbol", std::get<WVPseudoTopographicWaveGenerationRecord>(entry.payload).darwinSymbol, path);
+                if (!result) return result;
+            }
+            int componentDimension = -1;
+            result = checked(nc_def_dim(group, "barotropicVelocityComponent", 2, &componentDimension), "Forcing dimension definition", path + "/barotropicVelocityComponent");
+            if (!result) return result;
+            int variable = -1;
+            result = defineDouble(group, "barotropicVelocityComponent", {componentDimension}, variable, path);
+            if (!result) return result;
+            result = defineComplexPair(group, "barotropicVelocityAmplitude", {componentDimension}, path);
+            if (!result) return result;
+            for (const char* name : {"frequency", "rampDuration", "startTime", "maximumForcedHorizontalWavenumber", "maximumForcedVerticalMode"}) {
+                result = defineDouble(group, name, {}, variable, path);
+                if (!result) return result;
+            }
+            result = defineLogical(group, "shouldAvoidAdaptiveDamping", variable, path);
+            if (!result) return result;
+            return defineDouble(group, "topographicHeight", {rootDimensions[3], rootDimensions[2]}, variable, path);
+        }
+        default:
+            return status(WVCheckpointStatusCode::unsupportedForcing, "Unsupported forcing reached checkpoint definition.", path);
+    }
+}
+
+WVCheckpointStatus variableId(int group, const std::string& name, int& variable, const std::string& path) {
+    return checked(nc_inq_varid(group, name.c_str(), &variable), "Variable lookup", path + "/" + name);
+}
+
+WVCheckpointStatus writeDouble(int group, const std::string& name, double value, const std::string& path) {
+    int variable = -1;
+    auto result = variableId(group, name, variable, path);
+    if (!result) return result;
+    return checked(nc_put_var_double(group, variable, &value), "Variable write", path + "/" + name);
+}
+
+WVCheckpointStatus writeLogical(int group, const std::string& name, bool value, const std::string& path) {
+    int variable = -1;
+    auto result = variableId(group, name, variable, path);
+    if (!result) return result;
+    const unsigned char raw = value ? 1 : 0;
+    return checked(nc_put_var_uchar(group, variable, &raw), "Variable write", path + "/" + name);
+}
+
+WVCheckpointStatus writeDoubles(int group, const std::string& name, const std::vector<double>& values, const std::string& path) {
+    int variable = -1;
+    auto result = variableId(group, name, variable, path);
+    if (!result) return result;
+    return checked(nc_put_var_double(group, variable, values.data()), "Variable write", path + "/" + name);
+}
+
+WVCheckpointStatus writeComplexPair(int group, const std::string& base, const std::vector<WVComplex64>& values, const std::string& path) {
+    std::vector<double> real(values.size());
+    std::vector<double> imag(values.size());
+    for (std::size_t index = 0; index < values.size(); ++index) {
+        real[index] = values[index].real;
+        imag[index] = values[index].imag;
+    }
+    auto result = writeDoubles(group, base + "_real", real, path);
+    if (!result) return result;
+    return writeDoubles(group, base + "_imag", imag, path);
+}
+
+WVCheckpointStatus writeRoot(int root, const WVCheckpoint& checkpoint) {
+    const auto& configuration = checkpoint.configuration;
+    std::vector<double> j(configuration.Nj), kl(checkpoint.state.coefficients.shape.columns), x(configuration.Nx), y(configuration.Ny), z(configuration.Nz);
+    for (std::size_t index = 0; index < j.size(); ++index) j[index] = static_cast<double>(index);
+    for (std::size_t index = 0; index < kl.size(); ++index) kl[index] = static_cast<double>(index);
+    for (std::size_t index = 0; index < x.size(); ++index) x[index] = static_cast<double>(index) * configuration.Lx / static_cast<double>(configuration.Nx);
+    for (std::size_t index = 0; index < y.size(); ++index) y[index] = static_cast<double>(index) * configuration.Ly / static_cast<double>(configuration.Ny);
+    for (std::size_t index = 0; index < z.size(); ++index) z[index] = -configuration.Lz + static_cast<double>(index) * configuration.Lz / static_cast<double>(configuration.Nz - 1);
+    for (const auto& coordinate : std::array<std::pair<const char*, const std::vector<double>*>, 5>{{{"j", &j}, {"kl", &kl}, {"x", &x}, {"y", &y}, {"z", &z}}}) {
+        const auto result = writeDoubles(root, coordinate.first, *coordinate.second, "/");
+        if (!result) return result;
+    }
+    for (const auto& scalar : std::array<std::pair<const char*, double>, 11>{{
+            {"Lx", configuration.Lx}, {"Ly", configuration.Ly}, {"Lz", configuration.Lz}, {"N0", configuration.N0}, {"g", configuration.g},
+            {"latitude", configuration.latitude}, {"planetaryRadius", configuration.planetaryRadius}, {"rho0", configuration.rho0}, {"rotationRate", configuration.rotationRate},
+            {"t", checkpoint.state.t}, {"t0", checkpoint.state.t0}}}) {
+        const auto result = writeDouble(root, scalar.first, scalar.second, "/");
+        if (!result) return result;
+    }
+    auto result = writeLogical(root, "isHydrostatic", configuration.isHydrostatic, "/");
+    if (!result) return result;
+    result = writeLogical(root, "shouldAntialias", configuration.shouldAntialias, "/");
+    if (!result) return result;
+    result = writeComplexPair(root, "Ap", checkpoint.state.coefficients.Ap, "/");
+    if (!result) return result;
+    result = writeComplexPair(root, "Am", checkpoint.state.coefficients.Am, "/");
+    if (!result) return result;
+    return writeComplexPair(root, "A0", checkpoint.state.coefficients.A0, "/");
+}
+
+WVCheckpointStatus writeFixedFamily(int group, const char* prefix, const std::vector<std::size_t>& indices, const std::vector<WVComplex64>& values, const std::string& path) {
+    if (indices.empty()) return WVCheckpointStatus::ok();
+    std::vector<unsigned long long> oneBased(indices.size());
+    for (std::size_t index = 0; index < indices.size(); ++index) oneBased[index] = static_cast<unsigned long long>(indices[index] + 1);
+    int variable = -1;
+    const std::string indexName = std::string(prefix) + "_indices";
+    auto result = variableId(group, indexName, variable, path);
+    if (!result) return result;
+    result = checked(nc_put_var_ulonglong(group, variable, oneBased.data()), "Forcing index write", path + "/" + indexName);
+    if (!result) return result;
+    return writeComplexPair(group, std::string(prefix) + "bar", values, path);
+}
+
+WVCheckpointStatus writeForcingEntry(int group, const WVFrozenForcingEntry& entry, const std::string& path) {
+    switch (entry.kind) {
+        case WVForcingKind::nonlinearAdvection:
+        case WVForcingKind::adaptiveDamping:
+        case WVForcingKind::betaPlanePVAdvection:
+            return WVCheckpointStatus::ok();
+        case WVForcingKind::bottomFrictionQuadratic:
+            return writeDouble(group, "Cd", std::get<WVBottomFrictionQuadraticRecord>(entry.payload).Cd, path);
+        case WVForcingKind::fixedAmplitude: {
+            const auto& record = std::get<WVFixedAmplitudeForcingRecord>(entry.payload);
+            auto result = writeFixedFamily(group, "Ap", record.ApIndices, record.ApValues, path);
+            if (!result) return result;
+            result = writeFixedFamily(group, "Am", record.AmIndices, record.AmValues, path);
+            if (!result) return result;
+            return writeFixedFamily(group, "A0", record.A0Indices, record.A0Values, path);
+        }
+        case WVForcingKind::pseudoTopographicWaveGeneration: {
+            const auto& record = std::get<WVPseudoTopographicWaveGenerationRecord>(entry.payload);
+            auto result = writeDoubles(group, "topographicHeight", record.topographicHeight, path);
+            if (!result) return result;
+            const std::vector<double> components = {1.0, 2.0};
+            result = writeDoubles(group, "barotropicVelocityComponent", components, path);
+            if (!result) return result;
+            const std::vector<WVComplex64> amplitude(record.barotropicVelocityAmplitude.begin(), record.barotropicVelocityAmplitude.end());
+            result = writeComplexPair(group, "barotropicVelocityAmplitude", amplitude, path);
+            if (!result) return result;
+            for (const auto& scalar : std::array<std::pair<const char*, double>, 5>{{
+                    {"frequency", record.frequency}, {"rampDuration", record.rampDuration}, {"startTime", record.startTime},
+                    {"maximumForcedHorizontalWavenumber", record.maximumForcedHorizontalWavenumber}, {"maximumForcedVerticalMode", record.maximumForcedVerticalMode}}}) {
+                result = writeDouble(group, scalar.first, scalar.second, path);
+                if (!result) return result;
+            }
+            return writeLogical(group, "shouldAvoidAdaptiveDamping", record.shouldAvoidAdaptiveDamping, path);
+        }
+        default:
+            return status(WVCheckpointStatusCode::unsupportedForcing, "Unsupported forcing reached checkpoint writing.", path);
+    }
+}
+
+WVCheckpointStatus verifyTemporary(const std::string& path, const WVCheckpoint& expected) {
+    WVCheckpoint actual;
+    auto result = WVCheckpointReader::read(path, actual);
+    if (!result) return status(WVCheckpointStatusCode::writeFailure, "The temporary checkpoint failed structural validation: " + result.message, result.location);
+    if (!sameTransformConfiguration(expected.configuration, actual.configuration) || expected.state.t != actual.state.t || expected.state.t0 != actual.state.t0 || expected.state.coefficients.shape.rows != actual.state.coefficients.shape.rows || expected.state.coefficients.shape.columns != actual.state.coefficients.shape.columns || !sameComplex(expected.state.coefficients.Ap, actual.state.coefficients.Ap) || !sameComplex(expected.state.coefficients.Am, actual.state.coefficients.Am) || !sameComplex(expected.state.coefficients.A0, actual.state.coefficients.A0) || expected.forcingSchedule.entries.size() != actual.forcingSchedule.entries.size()) {
+        return status(WVCheckpointStatusCode::writeFailure, "The temporary checkpoint did not reproduce the requested checkpoint state.", path);
+    }
+    return WVCheckpointStatus::ok();
+}
+
+std::filesystem::path temporaryPathFor(const std::filesystem::path& destination) {
+    const auto parent = destination.has_parent_path() ? destination.parent_path() : std::filesystem::current_path();
+    const auto sequence = temporarySequence.fetch_add(1, std::memory_order_relaxed);
+    const auto stamp = std::chrono::steady_clock::now().time_since_epoch().count();
+    return parent / (destination.filename().string() + ".tmp-" + std::to_string(stamp) + "-" + std::to_string(sequence));
+}
+
+class TemporaryPath final {
+public:
+    explicit TemporaryPath(std::filesystem::path value) : value_(std::move(value)) {}
+    ~TemporaryPath() { if (!committed_) { std::error_code ignored; std::filesystem::remove(value_, ignored); } }
+    const std::filesystem::path& value() const noexcept { return value_; }
+    void committed() noexcept { committed_ = true; }
+private:
+    std::filesystem::path value_;
+    bool committed_ = false;
+};
+
+WVCheckpointStatus writeTemporary(
+    const std::filesystem::path& path,
+    const WVCheckpoint& checkpoint,
+    const std::vector<const WVFrozenForcingEntry*>& sourceOrder) {
+    WritableNetCDFFile file;
+    auto result = WritableNetCDFFile::create(path.string(), file);
+    if (!result) return result;
+    std::array<int, 5> rootDimensions{};
+    result = defineRoot(file.id(), checkpoint, rootDimensions);
+    if (!result) return result;
+
+    std::vector<int> forcingGroups;
+    forcingGroups.reserve(sourceOrder.size());
+    if (!sourceOrder.empty()) {
+        int forcingRoot = -1;
+        result = checked(nc_def_grp(file.id(), "forcing", &forcingRoot), "Forcing-group definition", "/forcing");
+        if (!result) return result;
+        if (sourceOrder.size() == 1) {
+            forcingGroups.push_back(forcingRoot);
+            result = defineForcingEntry(forcingRoot, *sourceOrder.front(), rootDimensions, "/forcing");
+            if (!result) return result;
+        } else {
+            for (std::size_t index = 0; index < sourceOrder.size(); ++index) {
+                int group = -1;
+                const std::string name = "forcing-" + std::to_string(index + 1);
+                result = checked(nc_def_grp(forcingRoot, name.c_str(), &group), "Forcing-group definition", "/forcing/" + name);
+                if (!result) return result;
+                forcingGroups.push_back(group);
+                result = defineForcingEntry(group, *sourceOrder[index], rootDimensions, "/forcing/" + name);
+                if (!result) return result;
+            }
+        }
+    }
+    if (injectedFailure.load(std::memory_order_relaxed) == WVCheckpointWriterFailurePoint::afterDefinition) return status(WVCheckpointStatusCode::writeFailure, "Injected checkpoint failure after definition.", path.string());
+    result = checked(nc_enddef(file.id()), "End checkpoint definition", path.string());
+    if (!result) return result;
+    result = writeRoot(file.id(), checkpoint);
+    if (!result) return result;
+    for (std::size_t index = 0; index < sourceOrder.size(); ++index) {
+        const std::string groupPath = sourceOrder.size() == 1 ? "/forcing" : "/forcing/forcing-" + std::to_string(index + 1);
+        result = writeForcingEntry(forcingGroups[index], *sourceOrder[index], groupPath);
+        if (!result) return result;
+    }
+    if (injectedFailure.load(std::memory_order_relaxed) == WVCheckpointWriterFailurePoint::afterWrite) return status(WVCheckpointStatusCode::writeFailure, "Injected checkpoint failure after writing.", path.string());
+    result = file.sync(path.string());
+    if (!result) return result;
+    return file.close(path.string());
+}
+
+} // namespace
+
+namespace detail {
+
+void setCheckpointWriterFailurePoint(WVCheckpointWriterFailurePoint point) noexcept {
+    injectedFailure.store(point, std::memory_order_relaxed);
+}
+
+} // namespace detail
+
+WVCheckpointStatus WVCheckpointWriter::write(const std::string& path, const WVCheckpoint& checkpoint, WVCheckpointCommitPolicy commitPolicy) {
+    if (path.empty()) return status(WVCheckpointStatusCode::writeFailure, "Checkpoint destination path must not be empty.", path);
+    try {
+        std::vector<const WVFrozenForcingEntry*> sourceOrder;
+        auto result = validateCheckpoint(checkpoint, sourceOrder);
+        if (!result) return result;
+
+        const std::filesystem::path destination = std::filesystem::absolute(path).lexically_normal();
+        const auto parent = destination.parent_path();
+        std::error_code filesystemError;
+        if (!std::filesystem::exists(parent, filesystemError) || filesystemError) return status(WVCheckpointStatusCode::writeFailure, "Checkpoint destination parent does not exist.", parent.string());
+        if (std::filesystem::is_directory(destination, filesystemError)) return status(WVCheckpointStatusCode::writeFailure, "Checkpoint destination is a directory.", destination.string());
+        const auto destinationStatus = std::filesystem::symlink_status(destination, filesystemError);
+        if (filesystemError == std::errc::no_such_file_or_directory) filesystemError.clear();
+        if (commitPolicy == WVCheckpointCommitPolicy::createNew && filesystemError) return status(WVCheckpointStatusCode::commitFailure, "Unable to inspect create-new checkpoint destination: " + filesystemError.message(), destination.string());
+        if (commitPolicy == WVCheckpointCommitPolicy::createNew && destinationStatus.type() != std::filesystem::file_type::not_found) return status(WVCheckpointStatusCode::commitFailure, "Checkpoint destination already exists.", destination.string());
+        filesystemError.clear();
+
+        TemporaryPath temporary(temporaryPathFor(destination));
+        result = writeTemporary(temporary.value(), checkpoint, sourceOrder);
+        if (!result) return result;
+        result = verifyTemporary(temporary.value().string(), checkpoint);
+        if (!result) return result;
+        if (injectedFailure.load(std::memory_order_relaxed) == WVCheckpointWriterFailurePoint::beforeCommit) return status(WVCheckpointStatusCode::commitFailure, "Injected checkpoint failure before commit.", destination.string());
+
+        if (commitPolicy == WVCheckpointCommitPolicy::createNew) {
+            std::filesystem::create_hard_link(temporary.value(), destination, filesystemError);
+            if (filesystemError) return status(WVCheckpointStatusCode::commitFailure, "Unable to atomically create checkpoint without replacement: " + filesystemError.message(), destination.string());
+            std::filesystem::remove(temporary.value(), filesystemError);
+            if (!filesystemError) temporary.committed();
+        } else {
+            std::filesystem::rename(temporary.value(), destination, filesystemError);
+            if (filesystemError) return status(WVCheckpointStatusCode::commitFailure, "Unable to atomically replace checkpoint: " + filesystemError.message(), destination.string());
+            temporary.committed();
+        }
+        return WVCheckpointStatus::ok();
+    } catch (const std::exception& exception) {
+        return status(WVCheckpointStatusCode::writeFailure, "Checkpoint writing failed: " + std::string(exception.what()), path);
+    }
+}
+
+} // namespace wavevortex::runtime
