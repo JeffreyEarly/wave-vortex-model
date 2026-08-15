@@ -65,7 +65,7 @@ classdef TestWVCompiledBackend < matlab.unittest.TestCase
         function compilerDownloadChecksumAndBuildFailuresAreStructured(testCase)
             fixture = testCase.applyFixture(matlab.unittest.fixtures.TemporaryFolderFixture);
             root = string(fixture.Folder);
-            common = struct("PackageRoot",root,"Architecture","maca64","OperatingSystem","macOS","Release","R2025b","MaxThreads",2,"CompilerAvailable",true);
+            common = struct("PackageRoot",root,"Architecture","maca64","OperatingSystem","macOS","Release","R2025b","MaxThreads",2,"CompilerRecord",fakeCompilerRecord(root));
             compilerOptions = common; compilerOptions.CompilerAvailable = false;
             compilerFailure = WVCompiledBackend.buildForTesting(compilerOptions);
             testCase.verifyEqual(compilerFailure.status,"build-failed");
@@ -244,6 +244,10 @@ end
 
 function value = isCanonicalNativePlatform
 value = ismac && computer("arch") == "maca64";
+end
+
+function value = fakeCompilerRecord(sdkPath)
+value = struct("c","/usr/bin/clang","cxx","/usr/bin/clang++","identity","Apple Clang test double","sdkPath",string(sdkPath),"mexName","test","mexManufacturer","test","mexVersion","test");
 end
 
 function deleteTransforms(varargin)
