@@ -120,7 +120,22 @@ end
 end
 
 function key = interfaceCompatibilityKey(dataset)
-key = strjoin([string(dataset.source.tree),string(dataset.platform.id),string(dataset.platform.matlabVersion),string(dataset.platform.threadCount),string(dataset.provider.id),string(dataset.provider.version),string(dataset.provider.moduleSHA256)],"|");
+key = strjoin([string(dataset.source.tree),string(dataset.platform.id),string(dataset.platform.matlabVersion),string(dataset.platform.threadCount),string(dataset.provider.id),string(dataset.provider.version),string(dataset.provider.moduleSHA256),interfaceStudySignature(dataset)],"|");
+end
+
+function signature = interfaceStudySignature(dataset)
+entries = strings(1,numel(dataset.cases));
+for iCase = 1:numel(dataset.cases)
+    benchmarkCase = itemAt(dataset.cases,iCase);
+    contract = benchmarkCase.contract;
+    contract = rmfield(contract,"Nxyz");
+    interfaceIds = strings(1,numel(benchmarkCase.interfaces));
+    for iInterface = 1:numel(benchmarkCase.interfaces)
+        interfaceIds(iInterface) = string(itemAt(benchmarkCase.interfaces,iInterface).id);
+    end
+    entries(iCase) = string(benchmarkCase.id)+"|"+string(benchmarkCase.operation)+"|"+jsonencode(orderfields(contract))+"|"+strjoin(sort(interfaceIds),",");
+end
+signature = strjoin(sort(entries),"||");
 end
 
 function resolution = interfaceResolution(dataset)

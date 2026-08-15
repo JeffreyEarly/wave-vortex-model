@@ -144,7 +144,7 @@ classdef TestBenchmarkWebsiteDocumentation < matlab.unittest.TestCase
             testCase.verifyError(@()generateBenchmarkWebsiteDocumentation(root,buildFolder),"WaveVortexModel:IncompleteInterfaceComparison");
 
             [secondEntry,second] = testCase.publishInterfaceDataset(root,[512 512 257],"20260815T130000Z");
-            second.source.tree = repmat('f',1,40);
+            second.cases{2}.contract.deltaT = 2e-3;
             testCase.writeJson(fullfile(root,secondEntry.artifact),second);
             testCase.writeCatalog(root,struct([]),[firstEntry secondEntry]);
             testCase.verifyError(@()generateBenchmarkWebsiteDocumentation(root,buildFolder),"WaveVortexModel:IncompleteInterfaceComparison");
