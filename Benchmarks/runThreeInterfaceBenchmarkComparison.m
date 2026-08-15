@@ -1,0 +1,29 @@
+function results = runThreeInterfaceBenchmarkComparison(options)
+% Run the canonical matched interface comparison at both published resolutions.
+arguments
+    options.resolutions (:,3) double {mustBeInteger,mustBePositive} = [256 256 129; 512 512 257]
+    options.processRunCount (1,1) double {mustBeInteger,mustBePositive} = 3
+    options.deltaT (1,1) double {mustBePositive} = 1e-3
+    options.relativeTolerance (1,1) double {mustBePositive} = 1e-3
+    options.absoluteTolerance (1,1) double {mustBePositive} = 1e-6
+    options.samplingIntervalSeconds (1,1) double {mustBePositive} = 0.005
+    options.plateauSeconds (1,1) double {mustBePositive} = 0.05
+    options.archiveDirectory (1,1) string = ""
+    options.shouldWriteArtifacts (1,1) logical = true
+end
+
+collected = cell(size(options.resolutions,1),1);
+for iResolution = 1:size(options.resolutions,1)
+    collected{iResolution} = runThreeInterfaceBenchmark( ...
+        Nxyz=options.resolutions(iResolution,:), ...
+        processRunCount=options.processRunCount, ...
+        deltaT=options.deltaT, ...
+        relativeTolerance=options.relativeTolerance, ...
+        absoluteTolerance=options.absoluteTolerance, ...
+        samplingIntervalSeconds=options.samplingIntervalSeconds, ...
+        plateauSeconds=options.plateauSeconds, ...
+        archiveDirectory=options.archiveDirectory, ...
+        shouldWriteArtifacts=options.shouldWriteArtifacts);
+end
+results = vertcat(collected{:});
+end

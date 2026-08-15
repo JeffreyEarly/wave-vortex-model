@@ -24,9 +24,7 @@ copyInterfaceRecords(interfaceRecords,buildFolder);
 
 latestRecords = latestPublishedRecords(records);
 pageText = string(fileread(pagePath));
-pageText = replaceGeneratedSection(pageText,"AT_GLANCE",atAGlanceMarkdown(latestRecords));
-pageText = replaceGeneratedSection(pageText,"COMPILED_PREVIEW",compiledPreviewMarkdown(latestRecords));
-pageText = replaceGeneratedSection(pageText,"THREE_INTERFACES",threeInterfaceMarkdown(interfaceRecords));
+pageText = replaceGeneratedSection(pageText,"INTERFACE_COMPARISON",interfaceComparisonMarkdown(interfaceRecords));
 pageText = replaceGeneratedSection(pageText,"SCALING",scalingMarkdown(latestRecords,buildFolder));
 pageText = replaceGeneratedSection(pageText,"COMPUTERS",computerMarkdown(latestRecords));
 pageText = replaceGeneratedSection(pageText,"HISTORY",historyMarkdown(records));
@@ -61,60 +59,121 @@ for iEntry = 1:numel(catalog.interfaceComparisons)
 end
 end
 
-function markdown = threeInterfaceMarkdown(records)
+function markdown = interfaceComparisonMarkdown(records)
 if isempty(records)
     markdown = "No approved matched three-interface result has been published yet.";
     return
 end
-[~,latest] = max(arrayfun(@(record)datenum(datetime(string(record.dataset.collectedAt),"InputFormat","yyyy-MM-dd'T'HH:mm:ss'Z'","TimeZone","UTC")),records)); %#ok<DATNM>
-dataset = records(latest).dataset;
-performanceRows = strings(0,7);
-memoryRows = strings(0,5);
-for iCase=1:numel(dataset.cases)
-    benchmarkCase=itemAt(dataset.cases,iCase);
-    builtin=itemAt(benchmarkCase.interfaces,1);
-    for iInterface=1:numel(benchmarkCase.interfaces)
-        item=itemAt(benchmarkCase.interfaces,iInterface);
-        processSpeedup=builtin.processWallSeconds/item.processWallSeconds;
-        workSpeedup=builtin.integrationSeconds/item.integrationSeconds;
-        rssSaved=100*(1-item.totalPeakRSSBytes/builtin.totalPeakRSSBytes);
-        performanceRows(end+1,:)=[displayInterfaceCase(string(benchmarkCase.id)),displayInterface(string(item.id)),formatSeconds(item.processWallSeconds),sprintf('%.3f×',processSpeedup),formatSeconds(item.integrationSeconds),sprintf('%.3f×',workSpeedup),sprintf('%.3e',benchmarkCase.correctness.maximumRelativeError)]; %#ok<AGROW>
-        memoryRows(end+1,:)=[displayInterfaceCase(string(benchmarkCase.id)),displayInterface(string(item.id)),formatBytes(item.totalPeakRSSBytes),formatSavedPercent(rssSaved),formatBytes(item.incrementalPeakRSSBytes)]; %#ok<AGROW>
+requiredResolutions = [256 256 129; 512 512 257];
+selected = selectCompatibleInterfaceRecords(records,requiredResolutions);
+dataset = selected(1).dataset;
+caseOrder = ["nonlinear-flux" "fixed-rk4-continuation" "adaptive-rk23-observer-output"];
+rows = strings(0,5);
+for iResolution = 1:size(requiredResolutions,1)
+    current = selected(iResolution).dataset;
+    for caseId = caseOrder
+        benchmarkCase = interfaceCaseWithId(current,caseId);
+        builtin = interfaceWithId(benchmarkCase,"matlab-builtin");
+        matlabCompiled = interfaceWithId(benchmarkCase,"matlab-compiled");
+        standalone = interfaceWithId(benchmarkCase,"standalone-compiled");
+        rows(end+1,:) = [join(string(requiredResolutions(iResolution,:)),"×"),displayInterfaceCase(caseId),interfaceCell(builtin,builtin),interfaceCell(matlabCompiled,builtin),interfaceCell(standalone,builtin)]; %#ok<AGROW>
     end
 end
-contract=itemAt(dataset.cases,1).contract;
-resolution=join(string(contract.Nxyz),"×");
-intro="Matched nonhydrostatic constant-stratification workload `["+join(string(contract.Nxyz)," ")+"]` on "+string(dataset.platform.displayName)+" at "+string(dataset.platform.threadCount)+" threads. MATLAB builtin uses MATLAB transforms; MATLAB compiled and standalone compiled share validated `"+string(dataset.provider.id)+"` "+string(dataset.provider.version)+". Each value is the median of "+string(contract.processRunCount)+" fresh processes with no within-process warmup. Speedup is MATLAB-builtin time divided by interface time, so larger values are faster.";
-performance="### Runtime — "+resolution+newline+newline+htmlTable(["Case" "Interface" "Process wall" "Process speedup" "Matched work" "Work speedup" "Maximum error"],performanceRows);
-memory="### Process memory — "+resolution+newline+newline+"Total peak RSS includes the language runtime and numerical libraries. RSS above retained state isolates additional activity after the model and backend are constructed."+newline+newline+htmlTable(["Case" "Interface" "Total peak RSS" "Total RSS saved" "RSS above retained state"],memoryRows);
-markdown=intro+newline+newline+performance+newline+newline+memory;
+contract = itemAt(dataset.cases,1).contract;
+intro = "Matched nonhydrostatic constant-stratification workloads on "+string(dataset.platform.displayName)+" at "+string(dataset.platform.threadCount)+" threads. MATLAB builtin uses MATLAB transforms; MATLAB + compiled core and standalone C++ share validated `"+string(dataset.provider.id)+"` "+string(dataset.provider.version)+". Each cell reports runtime followed by total peak process-tree RSS. Parentheses show speed relative to MATLAB builtin and memory change relative to MATLAB builtin. Values are medians of "+string(contract.processRunCount)+" fresh processes.";
+markdown = intro+newline+newline+htmlTable(["Resolution" "Workload" "MATLAB builtin" "MATLAB + compiled core" "Standalone C++"],rows);
 end
 
-function value=displayInterface(identifier)
-switch identifier
-    case "matlab-builtin", value="MATLAB builtin";
-    case "matlab-compiled", value="MATLAB compiled";
-    case "standalone-compiled", value="Standalone compiled";
-    otherwise, value=identifier;
+function selected = selectCompatibleInterfaceRecords(records,requiredResolutions)
+keys = strings(1,numel(records));
+for iRecord = 1:numel(records)
+    keys(iRecord) = interfaceCompatibilityKey(records(iRecord).dataset);
+end
+candidateKeys = unique(keys,"stable");
+selected = struct("dataset",{},"artifactPath",{});
+selectedTime = -Inf;
+for key = candidateKeys
+    candidate = records(keys==key);
+    current = repmat(struct("dataset",struct(),"artifactPath",""),1,size(requiredResolutions,1));
+    complete = true;
+    latestTime = -Inf;
+    for iResolution = 1:size(requiredResolutions,1)
+        matches = arrayfun(@(record)isequal(interfaceResolution(record.dataset),requiredResolutions(iResolution,:)),candidate);
+        if ~any(matches)
+            complete = false;
+            break
+        end
+        matching = candidate(matches);
+        times = arrayfun(@(record)datenum(collectionTime(record.dataset)),matching); %#ok<DATNM>
+        [timeValue,index] = max(times);
+        current(iResolution) = matching(index);
+        latestTime = max(latestTime,timeValue);
+    end
+    if complete && latestTime > selectedTime
+        selected = current;
+        selectedTime = latestTime;
+    end
+end
+if isempty(selected)
+    error("WaveVortexModel:IncompleteInterfaceComparison","Published interface results must contain compatible [256 256 129] and [512 512 257] datasets from one source, platform, and provider.");
+end
+end
+
+function key = interfaceCompatibilityKey(dataset)
+key = strjoin([string(dataset.source.tree),string(dataset.platform.id),string(dataset.platform.matlabVersion),string(dataset.platform.threadCount),string(dataset.provider.id),string(dataset.provider.version),string(dataset.provider.moduleSHA256)],"|");
+end
+
+function resolution = interfaceResolution(dataset)
+resolution = double(itemAt(dataset.cases,1).contract.Nxyz(:)');
+if any(arrayfun(@(i)~isequal(double(itemAt(dataset.cases,i).contract.Nxyz(:)'),resolution),1:numel(dataset.cases)))
+    error("WaveVortexModel:InconsistentInterfaceResolution","Every case in an interface dataset must use one resolution.");
+end
+end
+
+function benchmarkCase = interfaceCaseWithId(dataset,identifier)
+matches = arrayfun(@(i)string(itemAt(dataset.cases,i).id)==identifier,1:numel(dataset.cases));
+if nnz(matches)~=1
+    error("WaveVortexModel:IncompleteInterfaceComparison","Interface dataset %s must contain exactly one %s case.",string(dataset.datasetId),identifier);
+end
+benchmarkCase = itemAt(dataset.cases,find(matches,1));
+end
+
+function item = interfaceWithId(benchmarkCase,identifier)
+matches = arrayfun(@(i)string(itemAt(benchmarkCase.interfaces,i).id)==identifier,1:numel(benchmarkCase.interfaces));
+if nnz(matches)~=1
+    error("WaveVortexModel:IncompleteInterfaceComparison","Case %s must contain exactly one %s interface.",string(benchmarkCase.id),identifier);
+end
+item = itemAt(benchmarkCase.interfaces,find(matches,1));
+end
+
+function value = interfaceCell(item,builtin)
+runtime = formatSeconds(item.integrationSeconds);
+memory = formatBytes(item.totalPeakRSSBytes);
+if string(item.id)=="matlab-builtin"
+    value = runtime+" · "+memory;
+    return
+end
+speed = builtin.integrationSeconds/item.integrationSeconds;
+memoryChange = 100*(item.totalPeakRSSBytes/builtin.totalPeakRSSBytes-1);
+value = runtime+" ("+sprintf('%.3f×',speed)+") · "+memory+" ("+formatMemoryChange(memoryChange)+")";
+end
+
+function value = formatMemoryChange(percent)
+if abs(percent)<0.05
+    value = "same memory";
+elseif percent>0
+    value = sprintf('+%.1f%% memory',percent);
+else
+    value = sprintf('−%.1f%% memory',-percent);
 end
 end
 
 function value=displayInterfaceCase(identifier)
 switch identifier
     case "nonlinear-flux", value="Nonlinear flux";
-    case "fixed-rk4-continuation", value="Fixed RK4 continuation";
+    case "fixed-rk4-continuation", value="Fixed RK4";
     case "adaptive-rk23-observer-output", value="Adaptive RK3(2) + output";
     otherwise, value=identifier;
-end
-end
-
-function value=formatSavedPercent(percent)
-if abs(percent)<0.05
-    value="—";
-elseif percent>0
-    value=sprintf('%.1f%%',percent);
-else
-    value=sprintf('%.1f%% more',-percent);
 end
 end
 
@@ -126,46 +185,6 @@ for iRecord=1:numel(records)
     datasetId=string(records(iRecord).dataset.datasetId);
     copyfile(records(iRecord).artifactPath,fullfile(dataFolder,datasetId+".json"),"f");
 end
-end
-
-function markdown = compiledPreviewMarkdown(records)
-records = records(arrayfun(@(record)string(record.dataset.benchmark.suiteId)=="core-v1",records));
-if isempty(records)
-    markdown = "No approved compiled-preview result has been published yet.";
-    return
-end
-compiledIndex = find(arrayfun(@(record)string(record.dataset.implementation.id)=="cpp" && string(record.dataset.implementation.backend)=="native-fftw",records),1,"last");
-if isempty(compiledIndex)
-    markdown = "No approved compiled-preview result has been published yet.";
-    return
-end
-compiled = records(compiledIndex).dataset;
-matlabIndex = find(arrayfun(@(record)string(record.dataset.implementation.id)=="matlab" && string(record.dataset.platform.id)==string(compiled.platform.id),records),1,"last");
-if isempty(matlabIndex)
-    markdown = "The compiled-preview result is published, but its paired MATLAB control is unavailable.";
-    return
-end
-matlab = records(matlabIndex).dataset;
-rows = strings(0,7);
-available = true;
-for iCase = 1:numel(compiled.cases)
-    compiledCase = itemAt(compiled.cases,iCase);
-    matlabCase = caseWithId(matlab,string(compiledCase.id));
-    if isempty(matlabCase) || string(compiledCase.status)~="complete" || string(matlabCase.status)~="complete"
-        available = false;
-        continue
-    end
-    speedup = matlabCase.timing.medianSeconds/compiledCase.timing.medianSeconds;
-    exactRatio = compiledCase.memory.exactRetainedBytes/matlabCase.memory.exactRetainedBytes;
-    rssRatio = compiledCase.memory.peakIncrementBytes/matlabCase.memory.peakIncrementBytes;
-    rows(end+1,:) = [displayTransform(string(compiledCase.transformId))+" "+join(string(compiledCase.configuration.Nxyz),"×"),sprintf('%.3f',1e3*matlabCase.timing.medianSeconds),sprintf('%.3f',1e3*compiledCase.timing.medianSeconds),sprintf('%.3fx',speedup),sprintf('%.3f',exactRatio),sprintf('%.3f',rssRatio),sprintf('%.3e',compiledCase.correctness.relativeError)]; %#ok<AGROW>
-    available = available && speedup >= 1.25 && compiledCase.correctness.relativeError <= compiled.benchmark.correctnessTolerance;
-end
-status = conditional(available&&size(rows,1)==4,"PREVIEW-AVAILABLE","PREVIEW-NOT-AVAILABLE");
-intro = "**"+status+".** "+string(compiled.platform.displayName)+"; "+string(compiled.toolchain.name)+" "+string(compiled.toolchain.version)+"; provider `"+string(compiled.implementation.backend)+"`. Memory ratios are descriptive and do not gate preview availability.";
-table = htmlTable(["Case" "MATLAB (ms)" "Compiled (ms)" "Speedup" "Exact retained ratio" "Operation RSS ratio" "Relative error"],rows);
-scope = "Supported: constant-stratification hydrostatic and nonhydrostatic models with the default nonlinear-advection forcing. Unavailable: variable stratification, QG transforms, additional forcing, and the explicit-antialias forcing workflow.";
-markdown = intro+newline+newline+table+newline+newline+scope;
 end
 
 function records = loadPublishedRecords(repositoryRoot,catalog,allowedSuites)
@@ -290,40 +309,6 @@ for iRecord = 1:numel(records)
 end
 indices = sort(cell2mat(values(latestByKey)));
 records = records(indices);
-end
-
-function markdown = atAGlanceMarkdown(records)
-representativeId = "constant-nonhydrostatic-256x256x65";
-rows = strings(0,5);
-for iRecord = 1:numel(records)
-    dataset = records(iRecord).dataset;
-    if string(dataset.benchmark.suiteId) ~= "scaling-standard-v1" || double(dataset.benchmark.suiteVersion) ~= 1
-        continue
-    end
-    benchmarkCase = caseWithId(dataset,representativeId);
-    [runtime,memory,increment] = representativeValues(benchmarkCase);
-    rows(end+1,:) = [datasetLabel(dataset),runtime,memory,increment,string(dataset.platform.threadCount)];
-end
-if isempty(rows)
-    markdown = "No approved benchmark datasets have been published yet. Approved results will appear here when they are added to the benchmark catalog.";
-    return
-end
-rows = sortrows(rows,1);
-markdown = htmlTable(["Implementation and platform" "Median runtime" "Peak process memory" "Memory above baseline" "Threads"],rows);
-end
-
-function [runtime,memory,increment] = representativeValues(benchmarkCase)
-runtime = "Unavailable";
-memory = "Unavailable";
-increment = "Unavailable";
-if isempty(benchmarkCase) || string(benchmarkCase.status) ~= "complete"
-    return
-end
-runtime = formatSeconds(benchmarkCase.timing.medianSeconds);
-if string(benchmarkCase.memory.status) == "complete"
-    memory = formatBytes(benchmarkCase.memory.peakProcessBytes);
-    increment = formatBytes(benchmarkCase.memory.peakIncrementBytes);
-end
 end
 
 function markdown = scalingMarkdown(records,buildFolder)
@@ -827,14 +812,6 @@ end
 
 function value = formatNumber(number)
 value = sprintf('%.3g',double(number));
-end
-
-function value = conditional(condition,trueValue,falseValue)
-if condition
-    value = trueValue;
-else
-    value = falseValue;
-end
 end
 
 function value = xmlEscape(value)

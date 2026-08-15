@@ -8,33 +8,17 @@ permalink: /benchmarks
 
 # Benchmarks
 
-These benchmarks cover both state-advanced nonlinear-flux scaling and matched complete-workflow execution. They are intended to help you estimate runtime and memory requirements, compare computers and execution interfaces, and reproduce the measurements on your own hardware.
+These benchmarks help estimate the integration time and total peak memory required by a model. The primary comparison uses the same constant-stratification model through MATLAB's builtin implementation, MATLAB with the compiled C++ core, and the standalone C++ runtime. Additional scaling results cover MATLAB's builtin transforms across other model families and computers.
 
-## Performance at a glance
+## Constant-stratification execution comparison
 
-The representative comparison uses the nonhydrostatic constant-stratification case with resolution `[256 256 65]`. Absolute measurements are shown because benchmark scores can obscure the practical time and memory required by a model.
+The comparison uses identical initial state, forcing, integration settings, observer graph, output schedule, hardware, thread policy, and measured work for all three interfaces. MATLAB builtin remains the default. The compiled interfaces are source-built options for the supported constant-stratification configuration; see the [compiled constant-stratification preview](https://wavevortexmodel.org/users-guide/compiled-preview.html) for availability and build instructions.
 
-<!-- BENCHMARKS:AT_GLANCE:START -->
-Published benchmark results will appear here.
-<!-- BENCHMARKS:AT_GLANCE:END -->
-
-## Compiled constant-stratification preview
-
-The source-only compiled preview is an explicit opt-in for ordinary constant-stratification nonlinear flux. MATLAB remains the default. Availability, speed, numerical error, exact retained application storage, and isolated operation memory are shown together because the preview intentionally prioritizes a substantial speed gain while its memory use remains a target for future refinement.
-
-<!-- BENCHMARKS:COMPILED_PREVIEW:START -->
-Published compiled-preview results will appear here.
-<!-- BENCHMARKS:COMPILED_PREVIEW:END -->
-
-## Complete-workflow interface comparison
-
-The matched comparison below separates a single nonlinear-flux evaluation from fixed-step and adaptive model continuations. Each row uses the same initial model, forcing, integration settings, observer graph, output schedule, hardware, thread policy, measured work, and fresh-process boundary. MATLAB builtin uses MATLAB's transforms, while MATLAB compiled and standalone compiled use the same validated native FFTW provider. An external process-tree sampler measures every interface from worker launch through exit. Total peak RSS is the primary practical footprint and includes MATLAB itself when MATLAB is used; the increment above the retained model and final RSS are secondary lifecycle diagnostics.
-
-<!-- BENCHMARKS:THREE_INTERFACES:START -->
+<!-- BENCHMARKS:INTERFACE_COMPARISON:START -->
 Published matched interface results will appear here.
-<!-- BENCHMARKS:THREE_INTERFACES:END -->
+<!-- BENCHMARKS:INTERFACE_COMPARISON:END -->
 
-## Scaling with model size
+## MATLAB builtin scaling across transform families
 
 The plots separate horizontal and vertical scaling for the representative nonhydrostatic constant-stratification transform. Limiting each chart to one transform keeps the machine and suite comparisons legible; the expandable tables retain results for every transform family. Each point is the median of the retained timing samples. Memory plots report the peak resident memory of the MATLAB or C++ process, including the language runtime and numerical libraries.
 
@@ -64,17 +48,17 @@ results = runWaveVortexBenchmark(suites="scaling-standard-v1")
 
 The larger `scaling-large-v1` suite can require substantially more memory. The [benchmark authoring guide](https://github.com/JeffreyEarly/wave-vortex-model/tree/main/Benchmarks) explains suite selection, reference generation, raw artifacts, and normalization for publication.
 
-The matched workflow comparison uses the large `[256 256 129]` case and requires the validated native FFTW provider. It also creates substantial temporary NetCDF output:
+The matched interface comparison uses `[256 256 129]` and `[512 512 257]` and requires the validated native FFTW provider. The larger run requires substantial memory and temporary NetCDF output:
 
 ```matlab
-results = runThreeInterfaceBenchmark
+results = runThreeInterfaceBenchmarkComparison
 ```
 
 ## Methodology and interpretation
 
-The scaling suites advance the coefficient state and evaluate `nonlinearFlux` with ordinary production caches retained; those measurements are not complete model steps. The matched interface suite separately measures one nonlinear-flux call, a fixed-RK4 continuation, and an adaptive RK3(2) continuation with observer and file output. Published cases must pass their numerical correctness tolerance before their timing can be shown.
+The scaling suites advance the coefficient state and evaluate `nonlinearFlux` with ordinary production caches retained; those measurements are not complete model steps. The matched interface suite separately measures one nonlinear-flux call, a fixed-RK4 continuation, and an adaptive RK3(2) continuation with observer and file output. Published cases must pass their numerical correctness tolerance, execute the requested integrator and provider, and reproduce the complete saved output graph before their runtime and memory can be shown.
 
-Scaling runtime is the median of the recorded post-warmup samples. Matched-interface runtime is the median of three independent fresh-process continuations with no within-process warmup. **Peak process memory** is the largest observed resident-memory value for the process. Scaling-suite memory above baseline subtracts the fresh-process value measured before constructing the model; matched-interface incremental RSS subtracts the steady retained-model value measured after constructing the selected backend. Both retain allocator and library behavior.
+Scaling runtime is the median of the recorded post-warmup samples. Matched-interface runtime is the median numerical-operation or integration time from three independent fresh processes; process launch and model construction are excluded. **Peak process memory** is the largest observed process-tree resident-memory value over the complete run, including MATLAB where applicable.
 
 Only datasets approved in the benchmark catalog are published. Comparisons require the same suite contract, operation, case, domain, resolution, numerical options, random seed, warmup count, and sample count. MATLAB release and update are recorded as part of the toolchain: when two machines use different MATLAB releases, their measurements reflect both hardware and MATLAB implementation differences rather than isolating hardware alone. Missing implementation or suite coverage is reported as unavailable and never as zero runtime or memory.
 

@@ -26,7 +26,6 @@ classdef TestBenchmarkWebsiteDocumentation < matlab.unittest.TestCase
             generateBenchmarkWebsiteDocumentation(root,buildFolder);
 
             page = string(fileread(fullfile(buildFolder,"benchmarks.md")));
-            testCase.verifySubstring(page,"No approved benchmark datasets have been published yet");
             testCase.verifySubstring(page,"No approved scaling datasets have been published yet");
             testCase.verifySubstring(page,"No approved computer results have been published yet");
             testCase.verifySubstring(page,"No approved result files have been published yet");
@@ -104,29 +103,51 @@ classdef TestBenchmarkWebsiteDocumentation < matlab.unittest.TestCase
             testCase.verifySubstring(page,"## Performance across releases");
             testCase.verifySubstring(page,"4.2.1");
             testCase.verifySubstring(page,"4.2.2");
-            atGlance = extractBetween(page,"<!-- BENCHMARKS:AT_GLANCE:START -->","<!-- BENCHMARKS:AT_GLANCE:END -->");
-            testCase.verifyFalse(contains(atGlance,"4.2.1"));
-            testCase.verifySubstring(atGlance,"4.2.2");
+            testCase.verifyFalse(contains(page,"BENCHMARKS:AT_GLANCE"));
         end
 
         function matchedInterfaceResultUsesConsistentPublicPresentation(testCase)
             [root,buildFolder] = testCase.createFixture("interfaces");
-            [entry,dataset] = testCase.publishInterfaceDataset(root);
-            testCase.writeCatalog(root,struct([]),entry);
+            [firstEntry,first] = testCase.publishInterfaceDataset(root,[256 256 129],"20260815T120000Z");
+            [secondEntry,second] = testCase.publishInterfaceDataset(root,[512 512 257],"20260815T130000Z");
+            testCase.writeCatalog(root,struct([]),[firstEntry secondEntry]);
 
             generateBenchmarkWebsiteDocumentation(root,buildFolder);
 
             page = string(fileread(fullfile(buildFolder,"benchmarks.md")));
-            testCase.verifySubstring(page,"[256 256 129]");
+            comparison = extractBetween(page,"<!-- BENCHMARKS:INTERFACE_COMPARISON:START -->","<!-- BENCHMARKS:INTERFACE_COMPARISON:END -->");
+            testCase.verifySubstring(comparison,"256×256×129");
+            testCase.verifySubstring(comparison,"512×512×257");
             testCase.verifySubstring(page,"Adaptive RK3(2) + output");
-            testCase.verifySubstring(page,"2.000×");
-            testCase.verifySubstring(page,"75.0%");
-            testCase.verifySubstring(page,"Total peak RSS");
-            testCase.verifySubstring(page,string(dataset.schemaVersion));
-            testCase.verifySubstring(page,"/benchmarks/data/"+dataset.datasetId+".json");
+            testCase.verifySubstring(comparison,"2.000×");
+            testCase.verifySubstring(comparison,"−25.0% memory");
+            testCase.verifySubstring(comparison,"MATLAB + compiled core");
+            testCase.verifySubstring(comparison,"Standalone C++");
+            testCase.verifyFalse(contains(comparison,"Process wall"));
+            testCase.verifyFalse(contains(comparison,"Maximum error"));
+            testCase.verifyFalse(contains(comparison,"incremental"));
+            testCase.verifyFalse(contains(comparison,"final RSS","IgnoreCase",true));
+            testCase.verifyFalse(contains(comparison,"PREVIEW-AVAILABLE"));
+            testCase.verifySubstring(page,string(first.schemaVersion));
+            testCase.verifySubstring(page,"/benchmarks/data/"+first.datasetId+".json");
+            testCase.verifySubstring(page,"/benchmarks/data/"+second.datasetId+".json");
             testCase.verifySubstring(page,"External archive:");
-            testCase.verifyTrue(isfile(fullfile(buildFolder,"benchmarks","data",dataset.datasetId+".json")));
-            testCase.verifyFalse(isfile(fullfile(buildFolder,"benchmarks","raw",dataset.datasetId+".json")));
+            testCase.verifyTrue(isfile(fullfile(buildFolder,"benchmarks","data",first.datasetId+".json")));
+            testCase.verifyTrue(isfile(fullfile(buildFolder,"benchmarks","data",second.datasetId+".json")));
+            testCase.verifyFalse(isfile(fullfile(buildFolder,"benchmarks","raw",first.datasetId+".json")));
+        end
+
+        function incompleteOrIncompatibleInterfacePairFails(testCase)
+            [root,buildFolder] = testCase.createFixture("incomplete-interfaces");
+            [firstEntry,~] = testCase.publishInterfaceDataset(root,[256 256 129],"20260815T120000Z");
+            testCase.writeCatalog(root,struct([]),firstEntry);
+            testCase.verifyError(@()generateBenchmarkWebsiteDocumentation(root,buildFolder),"WaveVortexModel:IncompleteInterfaceComparison");
+
+            [secondEntry,second] = testCase.publishInterfaceDataset(root,[512 512 257],"20260815T130000Z");
+            second.source.tree = repmat('f',1,40);
+            testCase.writeJson(fullfile(root,secondEntry.artifact),second);
+            testCase.writeCatalog(root,struct([]),[firstEntry secondEntry]);
+            testCase.verifyError(@()generateBenchmarkWebsiteDocumentation(root,buildFolder),"WaveVortexModel:IncompleteInterfaceComparison");
         end
 
         function missingSuiteDatasetIsExplicitlyUnavailable(testCase)
@@ -216,12 +237,12 @@ classdef TestBenchmarkWebsiteDocumentation < matlab.unittest.TestCase
             end
         end
 
-        function [entry,dataset] = publishInterfaceDataset(testCase,root)
+        function [entry,dataset] = publishInterfaceDataset(testCase,root,resolution,timestamp)
             interfaces = { ...
                 struct("id","matlab-builtin","processWallSeconds",4,"interfaceTotalSeconds",3,"integrationSeconds",2,"totalPeakRSSBytes",4*2^30,"incrementalPeakRSSBytes",2*2^30,"processWallRatio",1,"integrationRatio",1,"totalRSSRatio",1,"incrementalRSSRatio",1,"processWallSamplesSeconds",[3.9 4 4.1],"integrationSamplesSeconds",[1.9 2 2.1]), ...
                 struct("id","matlab-compiled","processWallSeconds",3,"interfaceTotalSeconds",2,"integrationSeconds",1,"totalPeakRSSBytes",3*2^30,"incrementalPeakRSSBytes",1*2^30,"processWallRatio",0.75,"integrationRatio",0.5,"totalRSSRatio",0.75,"incrementalRSSRatio",0.5,"processWallSamplesSeconds",[2.9 3 3.1],"integrationSamplesSeconds",[0.9 1 1.1]), ...
                 struct("id","standalone-compiled","processWallSeconds",1,"interfaceTotalSeconds",0.8,"integrationSeconds",0.5,"totalPeakRSSBytes",1*2^30,"incrementalPeakRSSBytes",0.5*2^30,"processWallRatio",0.25,"integrationRatio",0.25,"totalRSSRatio",0.25,"incrementalRSSRatio",0.25,"processWallSamplesSeconds",[0.9 1 1.1],"integrationSamplesSeconds",[0.4 0.5 0.6])};
-            contract = struct("Nxyz",[256 256 129],"Lxyz",[15000 15000 1300],"forcing","default WVNonlinearAdvection","shouldAntialias",true,"integrator","none","deltaT",1e-3,"finalTime",2e-3,"relativeTolerance",1e-3,"absoluteTolerance",1e-6,"outputInterval",5e-4,"observerGraph","fixture","processRunCount",3,"warmupCount",0,"samplesPerProcess",1);
+            contract = struct("Nxyz",resolution,"Lxyz",[15000 15000 1300],"forcing","default WVNonlinearAdvection","shouldAntialias",true,"integrator","none","deltaT",1e-3,"finalTime",2e-3,"relativeTolerance",1e-3,"absoluteTolerance",1e-6,"outputInterval",5e-4,"observerGraph","fixture","processRunCount",3,"warmupCount",0,"samplesPerProcess",1);
             definitions = ["nonlinear-flux" "fixed-rk4-continuation" "adaptive-rk23-observer-output"];
             cases = cell(1,3);
             categories = arrayfun(@(name)struct("name",name,"variableCount",1,"maximumAbsoluteError",0,"maximumRelativeError",1e-14,"passed",true),["coefficients" "eulerianFields" "moorings" "particles" "tracers" "times"]);
@@ -229,10 +250,10 @@ classdef TestBenchmarkWebsiteDocumentation < matlab.unittest.TestCase
             for iCase = 1:3
                 cases{iCase} = struct("id",definitions(iCase),"operation","model-continuation","contract",contract,"interfaces",{interfaces},"correctness",struct("passed",true,"maximumRelativeError",1e-14,"outputAgreementPassed",true,"completeOutputGraph",graph));
             end
-            datasetId = "three-interface--m5-max--20260815T120000Z";
+            datasetId = "three-interface--lyra--"+timestamp;
             provenance = struct("rawSchemaVersion","three-interface-benchmark-v1","externalArchive",struct("fileName",datasetId+".json.gz","sha256",repmat('d',1,64),"compressedBytes",1024));
             source = struct("repository","https://github.com/JeffreyEarly/wave-vortex-model","commit",repmat('a',1,40),"tree",repmat('b',1,40),"sourceDirty",false,"version","unreleased-preview");
-            platform = struct("id","m5-max","displayName","Apple M5 Max","processor","Apple M5 Max","physicalMemoryBytes",64*2^30,"os","macOS","architecture","maca64","matlabVersion","R2026a Update 4","threadCount",18);
+            platform = struct("id","lyra","displayName","Lyra (Apple M4 Max)","processor","Apple M4 Max","physicalMemoryBytes",128*2^30,"os","macOS","architecture","maca64","matlabVersion","R2025b Update 4","threadCount",16);
             provider = struct("id","native-neon-pthreads","version","3.3.11","threadBackend","pthreads","moduleSHA256",repmat('c',1,64),"identityValidated",true,"openMPDetected",false);
             dataset = struct("schemaVersion","published-three-interface-v1","datasetId",datasetId,"collectedAt","2026-08-15T12:00:00Z","source",source,"platform",platform,"provider",provider,"provenance",provenance,"cases",{cases});
             artifact = "Benchmarks/results/published/"+datasetId+".json";
