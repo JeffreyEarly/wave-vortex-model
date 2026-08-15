@@ -2,30 +2,12 @@
 
 #include "WaveVortexRuntime/WVObserverContracts.hpp"
 
-#include <array>
+#include <deque>
 #include <map>
 #include <string>
 #include <vector>
 
 namespace wavevortex::runtime::detail {
-
-// Internal closed-world dispatch for the portable-observers-v1 built-ins.
-// Adding a built-in observer begins here; the serialized contract deliberately
-// exposes no third-party binary plug-in ABI.
-enum class WVObserverStateContract : std::uint8_t {
-  canonicalCoefficients,
-  sampleOnly,
-  particlePosition,
-  tracerField
-};
-
-enum class WVObserverOutputRule : std::uint8_t {
-  coefficients,
-  eulerianFields,
-  mooring,
-  lagrangianParticles,
-  tracer
-};
 
 enum class WVMovingFieldChannel : std::uint8_t {
   x,
@@ -36,17 +18,19 @@ enum class WVMovingFieldChannel : std::uint8_t {
 
 struct WVObserverDefinition {
   WVObserverKind kind;
-  const char *portableTag;
-  const char *matlabClassName;
+  std::string portableTag;
+  std::string matlabClassName;
   WVObserverStateContract stateContract;
   WVObserverOutputRule outputRule;
-  const char *fieldListAttribute;
+  std::string fieldListAttribute;
 };
 
-const std::array<WVObserverDefinition, 5> &observerDefinitions() noexcept;
+const std::deque<WVObserverDefinition> &observerDefinitions() noexcept;
 const WVObserverDefinition *observerDefinition(WVObserverKind kind) noexcept;
 const WVObserverDefinition *
 observerDefinitionForMatlabClass(const std::string &className) noexcept;
+WVKernelStatus registerObserverDefinition(
+    WVObserverFactoryRegistry::Registration registration);
 
 const char *movingFieldChannelName(WVMovingFieldChannel channel) noexcept;
 std::vector<WVMovingFieldChannel>
@@ -54,7 +38,7 @@ movingFieldChannels(const WVObserverRecord &observer);
 std::string movingFieldVariableName(const WVObserverRecord &observer,
                                     WVMovingFieldChannel channel);
 
-WVKernelStatus validateBuiltInObserver(
+WVKernelStatus validateObserver(
     const WVObserverRecord &observer,
     const std::map<std::string, const WVStateBlockRecord *> &blocksByIdentifier,
     std::map<std::string, std::size_t> &integratedBlockOwnerCounts);

@@ -51,6 +51,6 @@ Plans, caches, integrator history, derived forcing operators, and scratch are re
 
 `WVIntegrationStateLayout` describes canonical `Ap`, `Am`, and `A0` plus any observer-owned state blocks. `WVIntegrationSystem` supplies the right-hand side and constraints, `WVTimeIntegrator` advances accepted state, and `WVDenseOutput` evaluates within an accepted step. Output orchestration depends only on those contracts, so another integrator or state block does not require changes to the driver.
 
-`WVObserverAdapter` is the single registry for the supported observer records. `WVFieldEvaluationService` shares primitive field reconstruction across observers, and `WVModelOutputNetCDFSink` owns transactional MATLAB-compatible persistence. The numerical kernel has no MATLAB, MEX, NetCDF, or Apple API dependency.
+`WVObserverFactoryRegistry` is the source-level extension point for supported observer records. A registration selects reusable state and output contracts that are honored consistently by validation, evaluation, and persistence; the five built-ins use the same path. `WVFieldEvaluationService` shares primitive field reconstruction across observers, and `WVModelOutputNetCDFSink` owns transactional MATLAB-compatible persistence. The numerical kernel has no MATLAB, MEX, NetCDF, or Apple API dependency.
 
 See the website's portable-runtime user and developer pages for the supported compatibility profile and extension boundaries.

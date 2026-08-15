@@ -30,6 +30,19 @@ enum class WVObserverKind : std::uint8_t {
   lagrangianParticles,
   tracer
 };
+enum class WVObserverStateContract : std::uint8_t {
+  canonicalCoefficients,
+  sampleOnly,
+  particlePosition,
+  tracerField
+};
+enum class WVObserverOutputRule : std::uint8_t {
+  coefficients,
+  eulerianFields,
+  mooring,
+  lagrangianParticles,
+  tracer
+};
 enum class WVPositionInterpolation : std::uint8_t { linear, spline };
 
 struct WVStateBlockRecord {
@@ -115,8 +128,24 @@ private:
 // no third-party binary plugin ABI.
 class WVObserverFactoryRegistry final {
 public:
+  struct Registration {
+    WVObserverKind kind = WVObserverKind::coefficients;
+    std::string portableTag;
+    std::string matlabClassName;
+    WVObserverStateContract stateContract =
+        WVObserverStateContract::sampleOnly;
+    WVObserverOutputRule outputRule = WVObserverOutputRule::eulerianFields;
+    std::string fieldListAttribute;
+  };
+
   static bool supports(WVObserverKind kind) noexcept;
   static const char *portableTag(WVObserverKind kind) noexcept;
+  static const char *matlabClassName(WVObserverKind kind) noexcept;
+
+  // Register one source-level native observer adapter before constructing a
+  // descriptor. The serialized observer record remains portable-observers-v1;
+  // this is not a stable third-party binary plug-in ABI.
+  static WVKernelStatus registerAdapter(Registration registration);
 };
 
 } // namespace wavevortex::runtime

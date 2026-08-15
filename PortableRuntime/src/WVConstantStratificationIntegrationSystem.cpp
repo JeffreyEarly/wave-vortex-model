@@ -123,7 +123,7 @@ WVKernelStatus WVConstantStratificationIntegrationSystem::createImpl(
         return {WVKernelStatusCode::unsupportedOperation,
                 "Integration system received an unsupported observer."};
       if (definition->stateContract ==
-          detail::WVObserverStateContract::tracerField) {
+          WVObserverStateContract::tracerField) {
         const auto block = blockIndex(
             candidate->layout_, observer.stateBlockIdentifiers.front());
         if (block == std::numeric_limits<std::size_t>::max())
@@ -152,7 +152,7 @@ WVKernelStatus WVConstantStratificationIntegrationSystem::createImpl(
         continue;
       }
       if (definition->stateContract !=
-          detail::WVObserverStateContract::particlePosition)
+          WVObserverStateContract::particlePosition)
         continue;
       if (observer.isXYOnly && observer.z.size() != observer.x.size())
         return invalid("Constant-stratification XY particles require one fixed "

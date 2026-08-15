@@ -19,7 +19,9 @@ The runtime supplies classical fixed RK4 and Bogacki--Shampine RK3(2). Rejected 
 
 ## Observers and fields
 
-`WVObserverAdapter` is the single registry for the five supported built-in records. It owns the portable tag, MATLAB class name, state contract, metadata, evaluation, and persistence dispatch. Adding a built-in requires updating that registry and its compatibility tests; there is no third-party binary plug-in ABI.
+`WVObserverFactoryRegistry` is the single source-level extension point for observer kinds. Each registration binds a portable tag and MATLAB class name to one state contract and one output rule. Validation, integration-state dependencies, field evaluation, NetCDF schema creation, writing, restoration, and append all consult that registration; none dispatch directly on the observer kind. The five qualified MATLAB observers are pre-registered through the same mechanism.
+
+The registry is intentionally a native source API rather than a third-party binary plug-in ABI. A new observer can reuse the existing coefficient, full-grid field, mooring, particle, or tracer behavior without editing the runtime subsystems. A genuinely new state or output behavior first requires a new shared contract implementation, after which observer kinds select it declaratively. Register adapters before constructing descriptors or starting concurrent runtime work; registrations are immutable for the process lifetime.
 
 `WVFieldEvaluationService` owns transform plans and bounded scratch and shares primitive field reconstruction across coincident observers. Particle and tracer tendencies consume the same per-RHS velocity context produced for nonlinear advection, so the runtime does not independently reconstruct or differentiate equivalent quantities.
 
@@ -42,8 +44,8 @@ For a new integrator:
 For a new integrated observer:
 
 1. Define its immutable record and dynamic state blocks.
-2. Register its metadata, evaluation, and persistence in `WVObserverAdapter`.
+2. Register its portable tag, MATLAB class name, state contract, and output rule with `WVObserverFactoryRegistry`.
 3. Consume shared field services rather than rebuilding transforms or derivatives.
-4. Add MATLAB/C++ round-trip and restart-continuation tests.
+4. Add a test-only adapter that proves validation, evaluation, persistence, restoration, and restart continuation without another subsystem switch.
 
 For a new sink, implement guarded preflight and transactional route delivery without inspecting the integration method.

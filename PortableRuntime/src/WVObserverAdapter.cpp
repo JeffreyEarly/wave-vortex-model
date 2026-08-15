@@ -1,15 +1,18 @@
 #include "WVObserverAdapter.hpp"
 
 #include <cmath>
+#include <mutex>
+#include <set>
 #include <utility>
 
 namespace wavevortex::runtime::detail {
 namespace {
 
-constexpr std::array<WVObserverDefinition, 5> definitions{{
+std::deque<WVObserverDefinition> &mutableDefinitions() {
+  static std::deque<WVObserverDefinition> definitions{{
     {WVObserverKind::coefficients, "WVCoefficients", "WVCoefficients",
      WVObserverStateContract::canonicalCoefficients,
-     WVObserverOutputRule::coefficients, nullptr},
+     WVObserverOutputRule::coefficients, ""},
     {WVObserverKind::eulerianFields, "WVEulerianFields", "WVEulerianFields",
      WVObserverStateContract::sampleOnly,
      WVObserverOutputRule::eulerianFields, "fieldNames"},
@@ -21,8 +24,15 @@ constexpr std::array<WVObserverDefinition, 5> definitions{{
      WVObserverOutputRule::lagrangianParticles, "trackedFieldNames"},
     {WVObserverKind::tracer, "WVTracer", "WVTracer",
      WVObserverStateContract::tracerField, WVObserverOutputRule::tracer,
-     nullptr},
-}};
+     ""},
+  }};
+  return definitions;
+}
+
+std::mutex &registryMutex() {
+  static std::mutex value;
+  return value;
+}
 
 WVKernelStatus invalid(std::string message) {
   return {WVKernelStatusCode::invalidConfiguration, std::move(message)};
@@ -30,12 +40,12 @@ WVKernelStatus invalid(std::string message) {
 
 } // namespace
 
-const std::array<WVObserverDefinition, 5> &observerDefinitions() noexcept {
-  return definitions;
+const std::deque<WVObserverDefinition> &observerDefinitions() noexcept {
+  return mutableDefinitions();
 }
 
 const WVObserverDefinition *observerDefinition(WVObserverKind kind) noexcept {
-  for (const auto &definition : definitions)
+  for (const auto &definition : mutableDefinitions())
     if (definition.kind == kind)
       return &definition;
   return nullptr;
@@ -43,10 +53,28 @@ const WVObserverDefinition *observerDefinition(WVObserverKind kind) noexcept {
 
 const WVObserverDefinition *
 observerDefinitionForMatlabClass(const std::string &className) noexcept {
-  for (const auto &definition : definitions)
+  for (const auto &definition : mutableDefinitions())
     if (className == definition.matlabClassName)
       return &definition;
   return nullptr;
+}
+
+WVKernelStatus registerObserverDefinition(
+    WVObserverFactoryRegistry::Registration registration) {
+  if (registration.portableTag.empty() || registration.matlabClassName.empty())
+    return invalid("Observer adapter tags and MATLAB class names must be nonempty.");
+  std::lock_guard<std::mutex> lock(registryMutex());
+  for (const auto &definition : mutableDefinitions()) {
+    if (definition.kind == registration.kind ||
+        definition.portableTag == registration.portableTag ||
+        definition.matlabClassName == registration.matlabClassName)
+      return invalid("Observer adapter kind, portable tag, and MATLAB class name must be unique.");
+  }
+  mutableDefinitions().push_back(
+      {registration.kind, std::move(registration.portableTag),
+       std::move(registration.matlabClassName), registration.stateContract,
+       registration.outputRule, std::move(registration.fieldListAttribute)});
+  return WVKernelStatus::ok();
 }
 
 const char *movingFieldChannelName(WVMovingFieldChannel channel) noexcept {
@@ -87,7 +115,7 @@ std::string movingFieldVariableName(const WVObserverRecord &observer,
   return observer.name + '_' + movingFieldChannelName(channel);
 }
 
-WVKernelStatus validateBuiltInObserver(
+WVKernelStatus validateObserver(
     const WVObserverRecord &observer,
     const std::map<std::string, const WVStateBlockRecord *> &blocksByIdentifier,
     std::map<std::string, std::size_t> &integratedBlockOwnerCounts) {

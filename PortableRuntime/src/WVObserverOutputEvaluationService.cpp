@@ -283,10 +283,10 @@ WVKernelStatus WVObserverOutputEvaluationService::create(
                 "Observer output evaluation received an unsupported built-in."};
       const auto outputRule = definition->outputRule;
       auto &outputs = impl.outputsByObserver[observer.identifier];
-      if (outputRule == detail::WVObserverOutputRule::coefficients ||
-          outputRule == detail::WVObserverOutputRule::eulerianFields) {
+      if (outputRule == WVObserverOutputRule::coefficients ||
+          outputRule == WVObserverOutputRule::eulerianFields) {
         for (const auto &field : outputRule ==
-                                          detail::WVObserverOutputRule::coefficients
+                                          WVObserverOutputRule::coefficients
                                      ? std::vector<std::string>{"Ap", "Am", "A0"}
                                      : observer.fieldNames) {
           if (isCoefficient(field)) {
@@ -340,7 +340,7 @@ WVKernelStatus WVObserverOutputEvaluationService::create(
               return status;
           }
         }
-      } else if (outputRule == detail::WVObserverOutputRule::mooring) {
+      } else if (outputRule == WVObserverOutputRule::mooring) {
         if (observer.x.empty() || observer.x.size() != observer.y.size())
           return invalid("WVMooring requires equal nonempty x and y coordinates.");
         WVFieldSamplingRequest sampling;
@@ -370,7 +370,7 @@ WVKernelStatus WVObserverOutputEvaluationService::create(
           outputs.back().specification.longName += ", recorded at the mooring";
         }
       } else if (outputRule ==
-                 detail::WVObserverOutputRule::lagrangianParticles) {
+                 WVObserverOutputRule::lagrangianParticles) {
         if (observer.z.size() != observer.x.size())
           return invalid("Constant-stratification particles require one z "
                          "coordinate per particle.");
@@ -453,7 +453,7 @@ WVKernelStatus WVObserverOutputEvaluationService::create(
         const auto *definition = detail::observerDefinition(observer.kind);
         if (definition == nullptr ||
             definition->outputRule !=
-                detail::WVObserverOutputRule::lagrangianParticles)
+                WVObserverOutputRule::lagrangianParticles)
           continue;
         const auto coordinates = std::find_if(
             impl.particleCoordinates.begin(), impl.particleCoordinates.end(),
@@ -550,7 +550,7 @@ WVKernelStatus WVObserverOutputEvaluationService::prepare(
           record == nullptr ? nullptr : detail::observerDefinition(record->kind);
       if (record != nullptr && definition != nullptr &&
           definition->outputRule ==
-              detail::WVObserverOutputRule::lagrangianParticles &&
+              WVObserverOutputRule::lagrangianParticles &&
           !record->fieldNames.empty()) {
         needsParticles = true;
         break;

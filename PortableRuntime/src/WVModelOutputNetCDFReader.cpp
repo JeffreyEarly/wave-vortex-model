@@ -281,17 +281,17 @@ WVCheckpointStatus parseObserver(int outputGroup, int metadataGroup,
     return result;
   const bool hadPortableIdentifier = present;
   if (!hadPortableIdentifier) {
-    if (outputRule == detail::WVObserverOutputRule::coefficients)
+    if (outputRule == WVObserverOutputRule::coefficients)
       observer.identifier = "coefficients";
-    else if (outputRule == detail::WVObserverOutputRule::eulerianFields)
+    else if (outputRule == WVObserverOutputRule::eulerianFields)
       observer.identifier = "eulerian-fields";
     else
       observer.identifier = portableIdentifier(className + "-" + observer.name);
   }
   identifier = observer.identifier;
 
-  if (definition->fieldListAttribute != nullptr) {
-    result = stringListAttribute(metadataGroup, definition->fieldListAttribute,
+  if (!definition->fieldListAttribute.empty()) {
+    result = stringListAttribute(metadataGroup, definition->fieldListAttribute.c_str(),
                                  observer.fieldNames, present, outputPath);
     if (!result)
       return result;
@@ -303,14 +303,14 @@ WVCheckpointStatus parseObserver(int outputGroup, int metadataGroup,
                       std::string{}),
           observer.fieldNames.end());
     if (!hadPortableIdentifier &&
-        outputRule == detail::WVObserverOutputRule::eulerianFields) {
+        outputRule == WVObserverOutputRule::eulerianFields) {
       for (const auto &field : observer.fieldNames)
         observer.identifier += "-" + portableIdentifier(field);
       identifier = observer.identifier;
     }
   }
 
-  if (outputRule == detail::WVObserverOutputRule::coefficients) {
+  if (outputRule == WVObserverOutputRule::coefficients) {
     double tolerance = 0.0;
     result = detail::readDoubleScalar(metadataGroup, "absTolerance", tolerance,
                                       outputPath);
@@ -338,7 +338,7 @@ WVCheckpointStatus parseObserver(int outputGroup, int metadataGroup,
       if (!result)
         return result;
     }
-  } else if (outputRule == detail::WVObserverOutputRule::eulerianFields) {
+  } else if (outputRule == WVObserverOutputRule::eulerianFields) {
     const bool hasCompleteCoefficients =
         std::find(observer.fieldNames.begin(), observer.fieldNames.end(),
                   "Ap") != observer.fieldNames.end() &&
@@ -384,7 +384,7 @@ WVCheckpointStatus parseObserver(int outputGroup, int metadataGroup,
           return result;
       }
     }
-  } else if (outputRule == detail::WVObserverOutputRule::lagrangianParticles) {
+  } else if (outputRule == WVObserverOutputRule::lagrangianParticles) {
     result = detail::readLogicalScalar(metadataGroup, "isXYOnly",
                                        observer.isXYOnly, outputPath);
     if (!result)
@@ -444,7 +444,7 @@ WVCheckpointStatus parseObserver(int outputGroup, int metadataGroup,
       if (!result)
         return result;
     }
-  } else if (outputRule == detail::WVObserverOutputRule::tracer) {
+  } else if (outputRule == WVObserverOutputRule::tracer) {
     result = detail::readLogicalScalar(metadataGroup, "isXYOnly",
                                        observer.isXYOnly, outputPath);
     if (!result)
@@ -480,7 +480,7 @@ WVCheckpointStatus parseObserver(int outputGroup, int metadataGroup,
                                    WVRestartRequirement::requiredDynamicState});
     if (!result)
       return result;
-  } else if (outputRule == detail::WVObserverOutputRule::mooring) {
+  } else if (outputRule == WVObserverOutputRule::mooring) {
     result = readWholeDoubleVariable(outputGroup, observer.name + "_x",
                                      observer.x, outputPath);
     if (!result)
@@ -732,7 +732,7 @@ WVCheckpointStatus parseOutputFile(const std::string &path,
           detail::observerDefinitionForMatlabClass(observerClass);
       if (present && definition != nullptr &&
           definition->outputRule ==
-              detail::WVObserverOutputRule::coefficients) {
+              WVObserverOutputRule::coefficients) {
         result = parseOne(observerGroup);
         if (!result)
           return result;
@@ -863,7 +863,9 @@ WVModelOutputNetCDFSink::inspect(const std::vector<std::string> &paths,
     const auto selectedIndex =
         candidate.latestRestart.metadata.selectedStateIndex;
     for (auto &observer : candidate.observerRecord.observers) {
-      if (observer.kind != WVObserverKind::lagrangianParticles ||
+      const auto *definition = detail::observerDefinition(observer.kind);
+      if (definition == nullptr ||
+          definition->outputRule != WVObserverOutputRule::lagrangianParticles ||
           restartBlocks.find(observer.stateBlockIdentifiers.front()) ==
               restartBlocks.end())
         continue;
@@ -906,7 +908,11 @@ WVModelOutputNetCDFSink::inspect(const std::vector<std::string> &paths,
     for (const auto &observer : candidate.observerRecord.observers) {
       if (observer.stateBlockIdentifiers.empty())
         continue;
-      if (observer.kind == WVObserverKind::lagrangianParticles) {
+      const auto *definition = detail::observerDefinition(observer.kind);
+      const auto rule = definition == nullptr
+                            ? WVObserverOutputRule::eulerianFields
+                            : definition->outputRule;
+      if (rule == WVObserverOutputRule::lagrangianParticles) {
         const std::array<const std::vector<double> *, 3> coordinates{
             {&observer.x, &observer.y, &observer.z}};
         for (std::size_t coordinate = 0;
@@ -920,7 +926,7 @@ WVModelOutputNetCDFSink::inspect(const std::vector<std::string> &paths,
                         coordinates[coordinate]->end(), view.realData);
           }
         }
-      } else if (observer.kind == WVObserverKind::tracer &&
+      } else if (rule == WVObserverOutputRule::tracer &&
                  restartBlocks.find(observer.stateBlockIdentifiers.front()) !=
                      restartBlocks.end()) {
         std::vector<double> values;

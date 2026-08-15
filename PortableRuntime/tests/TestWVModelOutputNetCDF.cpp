@@ -22,6 +22,8 @@ using namespace wavevortex::runtime;
 
 namespace {
 
+constexpr auto testFieldObserverKind = static_cast<WVObserverKind>(200);
+
 void require(bool condition, const std::string &message) {
   if (!condition)
     throw std::runtime_error(message);
@@ -326,8 +328,8 @@ void testLinearInitialCoefficientsAndPassiveFields() {
   record.observers.clear();
   WVObserverRecord fields;
   fields.identifier = "eulerian-fields-Ap-Am-A0-u";
-  fields.name = "WVEulerianFields";
-  fields.kind = WVObserverKind::eulerianFields;
+  fields.name = "WVTestFields";
+  fields.kind = testFieldObserverKind;
   fields.fieldNames = {"Ap", "Am", "A0", "u", "psi"};
   record.observers.push_back(fields);
   WVObserverRecord mooring;
@@ -416,6 +418,12 @@ void testLinearInitialCoefficientsAndPassiveFields() {
   require(inspection.latestRestart.state.coefficients.Ap[1].real == 1.0 &&
               inspection.latestRestart.state.coefficients.Ap[1].imag == 2.0,
           "linear initial coefficient did not round-trip");
+  require(inspection.observerRecord.observers.size() == 2 &&
+              inspection.observerRecord.observers.front().kind ==
+                  testFieldObserverKind &&
+              inspection.observerRecord.observers.front().name ==
+                  "WVTestFields",
+          "registered field observer did not round-trip through NetCDF");
 
   auto appendDescriptor = descriptorFor(inspection.observerRecord);
   std::unique_ptr<WVObserverOutputEvaluationService> appendSource;
@@ -868,6 +876,11 @@ void testOptionalMatlabPassiveFixture() {
 
 int main() {
   try {
+    auto registration = WVObserverFactoryRegistry::registerAdapter(
+        {testFieldObserverKind, "WVTestFields", "WVTestFields",
+         WVObserverStateContract::sampleOnly,
+         WVObserverOutputRule::eulerianFields, "fieldNames"});
+    require(static_cast<bool>(registration), registration.message);
     testCreateReadAndAppend();
     testLinearInitialCoefficientsAndPassiveFields();
     testTransactionalRefusal();

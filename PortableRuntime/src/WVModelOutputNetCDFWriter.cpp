@@ -23,6 +23,12 @@
 namespace wavevortex::runtime {
 namespace {
 
+WVObserverOutputRule outputRule(const WVObserverRecord &record) {
+  const auto *definition = detail::observerDefinition(record.kind);
+  return definition == nullptr ? WVObserverOutputRule::eulerianFields
+                               : definition->outputRule;
+}
+
 WVCheckpointStatus failure(WVCheckpointStatusCode code, std::string message,
                            std::string location) {
   return {code, std::move(message), std::move(location)};
@@ -253,10 +259,11 @@ public:
                      "Ap, Am, and A0 must use one common absTolerance.",
                      "/observingSystems/WVCoefficients/absTolerance");
     for (const auto &record : descriptorRecord.observers) {
+      const auto rule = outputRule(record);
       const bool requiresDerivedValues =
-          record.kind == WVObserverKind::eulerianFields ||
-          record.kind == WVObserverKind::mooring ||
-          (record.kind == WVObserverKind::lagrangianParticles &&
+          rule == WVObserverOutputRule::eulerianFields ||
+          rule == WVObserverOutputRule::mooring ||
+          (rule == WVObserverOutputRule::lagrangianParticles &&
            !record.fieldNames.empty());
       if (requiresDerivedValues && sampleSource == nullptr)
         return failure(WVCheckpointStatusCode::unsupportedObserver,
@@ -281,10 +288,10 @@ public:
           continue;
         hasCoefficientObserver =
             hasCoefficientObserver ||
-            record->kind == WVObserverKind::coefficients;
+            outputRule(*record) == WVObserverOutputRule::coefficients;
         hasEulerianCoefficientObserver =
             hasEulerianCoefficientObserver ||
-            (record->kind == WVObserverKind::eulerianFields &&
+            (outputRule(*record) == WVObserverOutputRule::eulerianFields &&
              std::find(record->fieldNames.begin(), record->fieldNames.end(),
                        "Ap") != record->fieldNames.end() &&
              std::find(record->fieldNames.begin(), record->fieldNames.end(),
@@ -378,33 +385,34 @@ public:
                                       record.identifier, observerPath);
     if (!result)
       return result;
-    if (record.kind != WVObserverKind::eulerianFields) {
+    const auto rule = definition->outputRule;
+    if (rule != WVObserverOutputRule::eulerianFields) {
       result = detail::putTextAttribute(group, NC_GLOBAL, "name", record.name,
                                         observerPath);
       if (!result)
         return result;
     }
-    if (definition->fieldListAttribute != nullptr) {
-      result = putStringListAttribute(group, definition->fieldListAttribute,
+    if (!definition->fieldListAttribute.empty()) {
+      result = putStringListAttribute(group, definition->fieldListAttribute.c_str(),
                                       record.fieldNames, observerPath);
       if (!result)
         return result;
     }
-    if (record.kind == WVObserverKind::coefficients) {
+    if (rule == WVObserverOutputRule::coefficients) {
       int variable = -1;
       result = defineScalar(group, "absTolerance", variable, observerPath);
       if (!result)
         return result;
       return WVCheckpointStatus::ok();
     }
-    if (record.kind == WVObserverKind::lagrangianParticles ||
-        record.kind == WVObserverKind::tracer) {
+    if (rule == WVObserverOutputRule::lagrangianParticles ||
+        rule == WVObserverOutputRule::tracer) {
       int variable = -1;
       result = defineLogicalScalar(group, "isXYOnly", variable, observerPath);
       if (!result)
         return result;
     }
-    if (record.kind == WVObserverKind::lagrangianParticles) {
+    if (rule == WVObserverOutputRule::lagrangianParticles) {
       for (const char *name : {"absToleranceXY", "absToleranceZ"}) {
         int variable = -1;
         result = defineScalar(group, name, variable, observerPath);
@@ -426,7 +434,7 @@ public:
               : "spline",
           observerPath);
     }
-    if (record.kind == WVObserverKind::tracer) {
+    if (rule == WVObserverOutputRule::tracer) {
       int variable = -1;
       result = defineScalar(group, "absTolerance", variable, observerPath);
       if (!result)
@@ -547,7 +555,8 @@ public:
       if (!result)
         return result;
 
-      if (record->kind == WVObserverKind::mooring) {
+      const auto rule = outputRule(*record);
+      if (rule == WVObserverOutputRule::mooring) {
         int mooringDimension = -1;
         int verticalDimension = -1;
         const std::string idName = record->name + "_id";
@@ -632,7 +641,7 @@ public:
                            std::move(y), "m", "y position of mooring");
         if (!result)
           return result;
-      } else if (record->kind == WVObserverKind::lagrangianParticles) {
+      } else if (rule == WVObserverOutputRule::lagrangianParticles) {
         int particleDimension = -1;
         const std::string dimensionName = record->name + "_id";
         result = detail::checkedNetCDF(
@@ -734,7 +743,7 @@ public:
             return result;
           group.dynamicVariables.push_back(std::move(dynamic));
         }
-      } else if (record->kind == WVObserverKind::tracer) {
+      } else if (rule == WVObserverOutputRule::tracer) {
         const auto *layout = blockLayout(record->stateBlockIdentifiers.front());
         if (layout == nullptr)
           return failure(WVCheckpointStatusCode::schemaMismatch,
@@ -924,12 +933,13 @@ public:
           return result;
         const std::string metadataPath =
             path + "/observingSystems/" + groupName;
-        if (record->kind == WVObserverKind::coefficients) {
+        const auto rule = outputRule(*record);
+        if (rule == WVObserverOutputRule::coefficients) {
           const auto *block = stateBlockRecord("Ap");
           result = writeScalar(
               metadata, "absTolerance",
               block == nullptr ? 1e-6 : block->absoluteTolerance, metadataPath);
-        } else if (record->kind == WVObserverKind::lagrangianParticles) {
+        } else if (rule == WVObserverOutputRule::lagrangianParticles) {
           result = writeByteScalar(metadata, "isXYOnly", record->isXYOnly,
                                    metadataPath);
           if (result)
@@ -940,7 +950,7 @@ public:
             result =
                 writeScalar(metadata, "absToleranceZ",
                             record->verticalAbsoluteTolerance, metadataPath);
-        } else if (record->kind == WVObserverKind::tracer) {
+        } else if (rule == WVObserverOutputRule::tracer) {
           result = writeByteScalar(metadata, "isXYOnly", record->isXYOnly,
                                    metadataPath);
           if (result) {
@@ -1653,8 +1663,9 @@ public:
             return failure(WVCheckpointStatusCode::schemaMismatch,
                            "Append group references an unknown observer.",
                            file.destination.string());
-          if (recordPointer->kind == WVObserverKind::lagrangianParticles ||
-              recordPointer->kind == WVObserverKind::tracer) {
+          const auto rule = outputRule(*recordPointer);
+          if (rule == WVObserverOutputRule::lagrangianParticles ||
+              rule == WVObserverOutputRule::tracer) {
             const auto channels = detail::movingFieldChannels(*recordPointer);
             for (std::size_t blockIndex = 0; blockIndex < channels.size();
                  ++blockIndex) {
@@ -1668,13 +1679,13 @@ public:
               dynamic.elementCount = layout->elementCount;
               group.dynamicVariables.push_back(std::move(dynamic));
             }
-            if (recordPointer->kind == WVObserverKind::lagrangianParticles &&
+            if (rule == WVObserverOutputRule::lagrangianParticles &&
                 recordPointer->isXYOnly && !recordPointer->z.empty())
               group.dynamicVariables.push_back(
                   {{}, recordPointer->name + "_z",
                    WVStateScalarType::real64, recordPointer->z.size(),
                    recordPointer->z, -1, -1});
-          } else if (recordPointer->kind == WVObserverKind::mooring) {
+          } else if (rule == WVObserverOutputRule::mooring) {
             const auto &model = configuration.checkpointTemplate.configuration;
             std::vector<double> ids(recordPointer->x.size());
             for (std::size_t index = 0; index < ids.size(); ++index)

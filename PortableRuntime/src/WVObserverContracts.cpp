@@ -88,7 +88,7 @@ WVPortableObserverDescriptor::create(const WVPortableObserverRecord &record,
     }
 
     std::set<std::string> observerIdentifiers;
-    std::map<std::string, WVObserverKind> observerKinds;
+    std::map<std::string, WVObserverOutputRule> observerOutputRules;
     std::map<std::string, std::size_t> integratedBlockOwnerCounts;
     for (const auto &block : record.stateBlocks) {
       const bool canonical = block.identifier == "Ap" ||
@@ -102,10 +102,12 @@ WVPortableObserverDescriptor::create(const WVPortableObserverRecord &record,
         return invalid("Observer identifier and name must be nonempty.");
       if (!observerIdentifiers.insert(observer.identifier).second)
         return invalid("Duplicate observer identifier: " + observer.identifier);
-      observerKinds.emplace(observer.identifier, observer.kind);
-      if (!WVObserverFactoryRegistry::supports(observer.kind))
+      const auto *definition = detail::observerDefinition(observer.kind);
+      if (definition == nullptr)
         return {WVKernelStatusCode::unsupportedOperation,
                 "Unsupported observing-system tag."};
+      observerOutputRules.emplace(observer.identifier,
+                                  definition->outputRule);
       std::set<std::string> observerBlocks;
       for (const auto &identifier : observer.stateBlockIdentifiers) {
         if (blockIdentifiers.find(identifier) == blockIdentifiers.end())
@@ -115,7 +117,7 @@ WVPortableObserverDescriptor::create(const WVPortableObserverRecord &record,
           return invalid("Observer " + observer.identifier +
                          " repeats state block " + identifier + ".");
       }
-      const auto observerStatus = detail::validateBuiltInObserver(
+      const auto observerStatus = detail::validateObserver(
           observer, blocksByIdentifier, integratedBlockOwnerCounts);
       if (!observerStatus)
         return observerStatus;
@@ -171,14 +173,14 @@ WVPortableObserverDescriptor::create(const WVPortableObserverRecord &record,
           const bool containsCoefficients = std::any_of(
               group.observerIdentifiers.begin(),
               group.observerIdentifiers.end(), [&](const auto &identifier) {
-                return observerKinds.at(identifier) ==
-                       WVObserverKind::coefficients;
+                return observerOutputRules.at(identifier) ==
+                       WVObserverOutputRule::coefficients;
               });
           const bool containsEulerianCoefficients = std::any_of(
               group.observerIdentifiers.begin(),
               group.observerIdentifiers.end(), [&](const auto &identifier) {
-                if (observerKinds.at(identifier) !=
-                    WVObserverKind::eulerianFields)
+                if (observerOutputRules.at(identifier) !=
+                    WVObserverOutputRule::eulerianFields)
                   return false;
                 const auto observer = std::find_if(
                     record.observers.begin(), record.observers.end(),
@@ -221,7 +223,18 @@ bool WVObserverFactoryRegistry::supports(WVObserverKind kind) noexcept {
 const char *
 WVObserverFactoryRegistry::portableTag(WVObserverKind kind) noexcept {
   const auto *definition = detail::observerDefinition(kind);
-  return definition == nullptr ? nullptr : definition->portableTag;
+  return definition == nullptr ? nullptr : definition->portableTag.c_str();
+}
+
+const char *
+WVObserverFactoryRegistry::matlabClassName(WVObserverKind kind) noexcept {
+  const auto *definition = detail::observerDefinition(kind);
+  return definition == nullptr ? nullptr : definition->matlabClassName.c_str();
+}
+
+WVKernelStatus WVObserverFactoryRegistry::registerAdapter(
+    Registration registration) {
+  return detail::registerObserverDefinition(std::move(registration));
 }
 
 std::size_t WVPortableObserverDescriptor::persistentBytes() const noexcept {
