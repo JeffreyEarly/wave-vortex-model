@@ -49,12 +49,13 @@ classdef TestWVCompiledBackend < matlab.unittest.TestCase
         function capabilityAndUnsupportedBuildRestoreState(testCase)
             fixture = testCase.applyFixture(matlab.unittest.fixtures.TemporaryFolderFixture);
             originalDirectory = string(pwd); originalPath = path; originalRng = rng; originalWarnings = warning;
+            addpath(testCase.repositoryRoot,"-begin"); expectedPath = path;
             cd(fixture.Folder); rng(169,"twister"); expectedRng = rng;
             cleanup = onCleanup(@()restoreState(originalDirectory,originalPath,originalRng,originalWarnings));
             WVCompiledBackend.capabilitiesForTesting(struct("PackageRoot",string(fixture.Folder),"Architecture","glnxa64","OperatingSystem","Linux","Release","R2026a"));
             WVCompiledBackend.buildForTesting(struct("PackageRoot",string(fixture.Folder),"Architecture","glnxa64","OperatingSystem","Linux","Release","R2026a"));
             testCase.verifyEqual(string(pwd),string(fixture.Folder));
-            testCase.verifyEqual(path,originalPath);
+            testCase.verifyEqual(path,expectedPath);
             testCase.verifyEqual(rng,expectedRng);
             clear cleanup
         end
@@ -64,7 +65,7 @@ classdef TestWVCompiledBackend < matlab.unittest.TestCase
         function compilerDownloadChecksumAndBuildFailuresAreStructured(testCase)
             fixture = testCase.applyFixture(matlab.unittest.fixtures.TemporaryFolderFixture);
             root = string(fixture.Folder);
-            common = struct("PackageRoot",root,"Architecture","maca64","OperatingSystem","macOS","Release","R2025b","MaxThreads",2);
+            common = struct("PackageRoot",root,"Architecture","maca64","OperatingSystem","macOS","Release","R2025b","MaxThreads",2,"CompilerRecord",fakeCompilerRecord(root));
             compilerOptions = common; compilerOptions.CompilerAvailable = false;
             compilerFailure = WVCompiledBackend.buildForTesting(compilerOptions);
             testCase.verifyEqual(compilerFailure.status,"build-failed");
@@ -104,7 +105,7 @@ classdef TestWVCompiledBackend < matlab.unittest.TestCase
             exportRoot = fullfile(fixture.Folder,"export"); mkdir(exportRoot);
             tracked = splitlines(strtrim(string(runGit(testCase.repositoryRoot,"ls-files"))));
             classFiles = tracked(startsWith(tracked,"@WVCompiledBackend/"));
-            required = [classFiles;"CompiledKernel/adapters/native-fftw/WVNativeFFTWEngine.cpp";"CompiledKernel/adapters/native-fftw/WVNativeFFTWEngine.hpp";"CompiledKernel/adapters/native-fftw/wv_compiled_backend_mex.cpp";"CompiledKernel/src/WVKernelTypes.cpp";"CompiledKernel/src/WVTransformConstantStratificationKernel.cpp"];
+            required = [classFiles;"CompiledKernel/native-fftw-provider.env";"CompiledKernel/adapters/native-fftw/WVNativeFFTWEngine.cpp";"CompiledKernel/adapters/native-fftw/WVNativeFFTWEngine.hpp";"CompiledKernel/adapters/native-fftw/wv_compiled_backend_mex.cpp";"CompiledKernel/src/WVKernelTypes.cpp";"CompiledKernel/src/WVTransformConstantStratificationKernel.cpp"];
             testCase.verifyTrue(all(ismember(required,tracked)));
             for relative = required'
                 destination = fullfile(exportRoot,relative);
@@ -123,6 +124,12 @@ classdef TestWVCompiledBackend < matlab.unittest.TestCase
 
     methods (Test, TestTags="optional")
         function nativeBuildHasExactIdentitiesSelfTestsLifecycleAndRollback(testCase)
+            if ~isCanonicalNativePlatform
+                capabilities = WVCompiledBackend.build();
+                testCase.verifyEqual(capabilities.status,"unsupported");
+                testCase.verifyFalse(capabilities.isAvailable);
+                return
+            end
             capabilities = WVCompiledBackend.build();
             testCase.assertEqual(capabilities.status,"available",capabilities.failure.message);
             testCase.verifyEqual(capabilities.schemaVersion,"1.0.0");
@@ -170,6 +177,12 @@ classdef TestWVCompiledBackend < matlab.unittest.TestCase
         end
 
         function compiledPreviewExecutesWithoutFallback(testCase)
+            if ~isCanonicalNativePlatform
+                capabilities = WVCompiledBackend.capabilities();
+                testCase.verifyEqual(capabilities.status,"unsupported");
+                testCase.verifyFalse(capabilities.isAvailable);
+                return
+            end
             capabilities = WVCompiledBackend.capabilities();
             if ~capabilities.isAvailable
                 capabilities = WVCompiledBackend.build();
@@ -227,6 +240,14 @@ classdef TestWVCompiledBackend < matlab.unittest.TestCase
             testCase.verifyEqual(metrics.outstandingPlanningBytes,0);
         end
     end
+end
+
+function value = isCanonicalNativePlatform
+value = ismac && computer("arch") == "maca64";
+end
+
+function value = fakeCompilerRecord(sdkPath)
+value = struct("c","/usr/bin/clang","cxx","/usr/bin/clang++","identity","Apple Clang test double","sdkPath",string(sdkPath),"mexName","test","mexManufacturer","test","mexVersion","test");
 end
 
 function deleteTransforms(varargin)

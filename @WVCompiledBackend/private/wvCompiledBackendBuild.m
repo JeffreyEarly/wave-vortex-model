@@ -135,6 +135,10 @@ function compiler = compilerRecord(overrides)
 if isfield(overrides,"CompilerAvailable") && ~overrides.CompilerAvailable
     error("WaveVortexModel:CompiledBackendCompilerUnavailable","Apple Clang is unavailable.");
 end
+if isfield(overrides,"CompilerRecord")
+    compiler = overrides.CompilerRecord;
+    return
+end
 [status,clang] = system("/usr/bin/xcrun --find clang");
 if status ~= 0, error("WaveVortexModel:CompiledBackendCompilerUnavailable","Apple Clang is unavailable."); end
 [status,clangxx] = system("/usr/bin/xcrun --find clang++");

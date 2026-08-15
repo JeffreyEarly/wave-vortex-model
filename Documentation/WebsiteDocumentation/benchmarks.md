@@ -8,7 +8,7 @@ permalink: /benchmarks
 
 # Benchmarks
 
-These benchmarks measure the cost of one state-advanced nonlinear-flux evaluation across WaveVortexModel transform families and grid sizes. They are intended to help you estimate runtime and memory requirements, compare computers, and reproduce the measurements on your own hardware.
+These benchmarks cover both state-advanced nonlinear-flux scaling and matched complete-workflow execution. They are intended to help you estimate runtime and memory requirements, compare computers and execution interfaces, and reproduce the measurements on your own hardware.
 
 ## Performance at a glance
 
@@ -25,6 +25,14 @@ The source-only compiled preview is an explicit opt-in for ordinary constant-str
 <!-- BENCHMARKS:COMPILED_PREVIEW:START -->
 Published compiled-preview results will appear here.
 <!-- BENCHMARKS:COMPILED_PREVIEW:END -->
+
+## Complete-workflow interface comparison
+
+The matched comparison below separates a single nonlinear-flux evaluation from fixed-step and adaptive model continuations. Each row uses the same initial model, forcing, integration settings, observer graph, output schedule, hardware, thread policy, measured work, and fresh-process boundary. MATLAB builtin uses MATLAB's transforms, while MATLAB compiled and standalone compiled use the same validated native FFTW provider. An external process-tree sampler measures every interface from worker launch through exit. Total peak RSS is the primary practical footprint and includes MATLAB itself when MATLAB is used; the increment above the retained model and final RSS are secondary lifecycle diagnostics.
+
+<!-- BENCHMARKS:THREE_INTERFACES:START -->
+Published matched interface results will appear here.
+<!-- BENCHMARKS:THREE_INTERFACES:END -->
 
 ## Scaling with model size
 
@@ -56,17 +64,23 @@ results = runWaveVortexBenchmark(suites="scaling-standard-v1")
 
 The larger `scaling-large-v1` suite can require substantially more memory. The [benchmark authoring guide](https://github.com/JeffreyEarly/wave-vortex-model/tree/main/Benchmarks) explains suite selection, reference generation, raw artifacts, and normalization for publication.
 
+The matched workflow comparison uses the large `[256 256 129]` case and requires the validated native FFTW provider. It also creates substantial temporary NetCDF output:
+
+```matlab
+results = runThreeInterfaceBenchmark
+```
+
 ## Methodology and interpretation
 
-The measured operation advances the coefficient state and evaluates `nonlinearFlux` with ordinary production caches retained. It is not a complete model time step. Published cases must pass their numerical correctness tolerance before their timing can be shown.
+The scaling suites advance the coefficient state and evaluate `nonlinearFlux` with ordinary production caches retained; those measurements are not complete model steps. The matched interface suite separately measures one nonlinear-flux call, a fixed-RK4 continuation, and an adaptive RK3(2) continuation with observer and file output. Published cases must pass their numerical correctness tolerance before their timing can be shown.
 
-Runtime is the median of the recorded post-warmup samples. **Peak process memory** is the largest observed resident-memory value for the process. **Memory above baseline** subtracts the fresh-process value measured before constructing the model; it is the better estimate of the additional memory associated with WaveVortexModel, while still including allocator and library behavior.
+Scaling runtime is the median of the recorded post-warmup samples. Matched-interface runtime is the median of three independent fresh-process continuations with no within-process warmup. **Peak process memory** is the largest observed resident-memory value for the process. Scaling-suite memory above baseline subtracts the fresh-process value measured before constructing the model; matched-interface incremental RSS subtracts the steady retained-model value measured after constructing the selected backend. Both retain allocator and library behavior.
 
 Only datasets approved in the benchmark catalog are published. Comparisons require the same suite contract, operation, case, domain, resolution, numerical options, random seed, warmup count, and sample count. MATLAB release and update are recorded as part of the toolchain: when two machines use different MATLAB releases, their measurements reflect both hardware and MATLAB implementation differences rather than isolating hardware alone. Missing implementation or suite coverage is reported as unavailable and never as zero runtime or memory.
 
 ## Downloadable results
 
-The normalized files use the language-neutral `published-benchmark-v1` contract. The corresponding raw artifacts retain implementation-specific diagnostics and provenance.
+Scaling and compiled-preview datasets use the language-neutral `published-benchmark-v1` contract. Matched workflow datasets use `published-three-interface-v1`. Their compact records include the filename, SHA-256, and size of a compressed author archive retained outside the source tree; verbose samples are not distributed with the website or package.
 
 <!-- BENCHMARKS:DOWNLOADS:START -->
 Published result downloads will appear here.

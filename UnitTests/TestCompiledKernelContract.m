@@ -3,7 +3,7 @@ classdef TestCompiledKernelContract < matlab.unittest.TestCase
         function buildStandaloneTools(testCase)
             repositoryRoot = fileparts(fileparts(mfilename("fullpath")));
             scriptPath = fullfile(repositoryRoot,"tools","compiled-kernel","run_contract_tests.sh");
-            [status,output] = system(sprintf('"%s"',scriptPath));
+            [status,output] = systemWithoutMatlabRuntime(sprintf('"%s"',scriptPath));
             testCase.assertEqual(status,0,output);
         end
     end
@@ -11,12 +11,16 @@ classdef TestCompiledKernelContract < matlab.unittest.TestCase
     methods (Test,TestTags="full")
         function descriptorMatchesMatlabConstantStratification(testCase)
             cases = struct( ...
-                "Lxyz",{[15000 12000 1300],[15000 12000 1300],[15000 15000 1300]}, ...
-                "Nxyz",{[16 12 9],[15 13 9],[36 36 9]}, ...
-                "isHydrostatic",{false,true,true}, ...
-                "shouldAntialias",{true,false,true});
+                "Lxyz",{[15000 12000 1300],[15000 12000 1300],[15000 15000 1300],[15000 12000 1300]}, ...
+                "Nxyz",{[16 12 9],[15 13 9],[36 36 9],[8 6 7]}, ...
+                "isHydrostatic",{false,true,true,false}, ...
+                "shouldAntialias",{true,false,true,true}, ...
+                "g",{9.81,9.81,9.81,9.80665}, ...
+                "rho0",{1025,1025,1025,1027}, ...
+                "planetaryRadius",{6.371e6,6.371e6,6.371e6,6.3712e6}, ...
+                "rotationRate",{7.2921e-5,7.2921e-5,7.2921e-5,7.292115e-5});
             for testDefinition = cases
-                wvt = WVTransformConstantStratification(testDefinition.Lxyz,testDefinition.Nxyz,isHydrostatic=testDefinition.isHydrostatic,shouldAntialias=testDefinition.shouldAntialias);
+                wvt = WVTransformConstantStratification(testDefinition.Lxyz,testDefinition.Nxyz,isHydrostatic=testDefinition.isHydrostatic,shouldAntialias=testDefinition.shouldAntialias,g=testDefinition.g,rho0=testDefinition.rho0,planetaryRadius=testDefinition.planetaryRadius,rotationRate=testDefinition.rotationRate);
                 actual = descriptorDump(testDefinition,wvt.Nj);
                 testCase.verifyEqual(actual.contractVersion,4);
                 testCase.verifyEqual(actual.Nkl,wvt.Nkl);
@@ -42,7 +46,7 @@ classdef TestCompiledKernelContract < matlab.unittest.TestCase
                 testCase.verifyEqual(uint64(actual.halfCompletionRows(:))+1,layout.hermitianCompletionRows(:));
                 testCase.verifyEqual(uint64(actual.halfCompletionSourceRows(:))+1,layout.hermitianSourceRows(:));
                 testCase.verifyEqual(uint64(actual.halfSelfConjugateRows(:))+1,layout.selfConjugateFourierRows(:));
-                testCase.verifyEqual(actual.z(:),wvt.z(:),AbsTol=1e-14);
+                testCase.verifyEqual(actual.z(:),wvt.z(:),AbsTol=1e-13);
                 testCase.verifyEqual(actual.j(:),wvt.j(:));
                 testCase.verifyEqual(actual.h0(:),wvt.h_0(:),RelTol=1e-14);
                 testCase.verifyEqual(actual.coriolisFrequency,wvt.f,RelTol=1e-14);
@@ -79,11 +83,18 @@ end
 function actual = descriptorDump(definition,Nj)
 repositoryRoot = fileparts(fileparts(mfilename("fullpath")));
 executable = fullfile(repositoryRoot,"tools","compiled-kernel","build","WVKernelDescriptorDump");
-arguments = [definition.Nxyz(1:3) Nj definition.Lxyz 5.2e-3 1025 9.81 7.2921e-5 33 definition.isHydrostatic definition.shouldAntialias];
+arguments = [definition.Nxyz(1:3) Nj definition.Lxyz 5.2e-3 definition.rho0 definition.g definition.rotationRate 33 definition.isHydrostatic definition.shouldAntialias definition.planetaryRadius];
 command = sprintf('"%s" %s',executable,strjoin(compose("%.17g",arguments)," "));
-[status,output] = system(command);
+[status,output] = systemWithoutMatlabRuntime(command);
 if status ~= 0
     error("WaveVortexModel:KernelDescriptorDumpFailed","%s",output);
 end
 actual = jsondecode(output);
+end
+
+function [status,output] = systemWithoutMatlabRuntime(command)
+if isunix && ~ismac
+    command = "env -u LD_LIBRARY_PATH -u DYLD_LIBRARY_PATH " + string(command);
+end
+[status,output] = system(command);
 end

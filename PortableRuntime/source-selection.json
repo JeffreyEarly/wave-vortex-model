@@ -1,0 +1,18 @@
+{
+  "schemaVersion": "1.0.0",
+  "integrationBase": "9dcb7c93e703bd2541fa94f00f1ac41b2b8b8529",
+  "testedFeatureCommit": "005ac7e24fa069fea0d2f825cc1e9913c3e23f11",
+  "retained": {
+    "compiledCore": "CompiledKernel",
+    "portableRuntime": "PortableRuntime/include, PortableRuntime/src, PortableRuntime/app",
+    "contracts": "PortableRuntime/tests",
+    "buildAndExport": ".github/workflows, tools/prepareWaveVortexModelReleaseCandidate.m"
+  },
+  "excluded": [
+    "benchmark harnesses and payloads",
+    "planning and audit artifacts",
+    "standalone inspector programs",
+    "experimental and rejected implementations",
+    "downloaded or compiled products"
+  ]
+}

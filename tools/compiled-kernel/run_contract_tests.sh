@@ -1,6 +1,11 @@
 #!/bin/sh
 set -eu
 
+if [ "$(uname -s)" = "Linux" ]; then
+    unset LD_LIBRARY_PATH
+    unset DYLD_LIBRARY_PATH
+fi
+
 script_directory=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 repository_root=$(CDPATH= cd -- "$script_directory/../.." && pwd)
 build_directory=${1:-"$script_directory/build"}

@@ -65,6 +65,10 @@ classdef TestCompiledPreviewBenchmark < matlab.unittest.TestCase
 
     methods (Test,TestTags="optional")
         function reducedPublicBenchmarkRunsBothBackends(testCase)
+            if ~isCanonicalNativePlatform
+                testCase.verifyError(@()runCompiledPreviewBenchmark(shouldWriteArtifacts=false),"WaveVortexBenchmark:CompiledPreviewUnsupportedPlatform")
+                return
+            end
             result = runCompiledPreviewBenchmark(sizes=[16 12 9],hydrostatic=[true false],processRunCount=1,warmupCount=0,mediumSampleCount=1,largeSampleCount=1,samplingIntervalSeconds=0.01,plateauSeconds=0.03,outputHoldSeconds=0.02,shouldWriteArtifacts=false);
             testCase.verifyEqual(result.status,"complete");
             testCase.verifyEqual(string({result.comparison.status}),["complete" "complete"]);
@@ -74,6 +78,10 @@ classdef TestCompiledPreviewBenchmark < matlab.unittest.TestCase
         end
 
         function injectedWorkerFailureWritesPartialArtifactAndRestoresState(testCase)
+            if ~isCanonicalNativePlatform
+                testCase.verifyError(@()runCompiledPreviewBenchmark(shouldWriteArtifacts=false),"WaveVortexBenchmark:CompiledPreviewUnsupportedPlatform")
+                return
+            end
             originalDirectory = pwd;
             originalPath = path;
             originalRng = rng;
@@ -93,6 +101,10 @@ classdef TestCompiledPreviewBenchmark < matlab.unittest.TestCase
             testCase.verifyTrue(isfile(fullfile(outputDirectory,"summary.md")));
         end
     end
+end
+
+function value = isCanonicalNativePlatform
+value = ismac && computer("arch") == "maca64" && startsWith(string(version("-release")),"2026a",IgnoreCase=true);
 end
 
 function value = comparisonFixture

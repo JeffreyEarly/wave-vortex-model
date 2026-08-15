@@ -24,6 +24,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
+      - name: Install portable-runtime build dependencies
+        run: sudo apt-get update && sudo apt-get install --yes libnetcdf-dev pkg-config
+
       - name: Check out WaveVortexModel
         uses: actions/checkout@v6
         with:

@@ -17,18 +17,115 @@ if ~isfield(catalog,"schemaVersion") || string(catalog.schemaVersion) ~= "benchm
 end
 allowedSuites = string({catalog.scoringReferences.suiteId});
 records = loadPublishedRecords(repositoryRoot,catalog,allowedSuites);
+interfaceRecords = loadInterfaceRecords(repositoryRoot,catalog);
 validateComparableCases(records);
 copyPublishedRecords(records,buildFolder);
+copyInterfaceRecords(interfaceRecords,buildFolder);
 
 latestRecords = latestPublishedRecords(records);
 pageText = string(fileread(pagePath));
 pageText = replaceGeneratedSection(pageText,"AT_GLANCE",atAGlanceMarkdown(latestRecords));
 pageText = replaceGeneratedSection(pageText,"COMPILED_PREVIEW",compiledPreviewMarkdown(latestRecords));
+pageText = replaceGeneratedSection(pageText,"THREE_INTERFACES",threeInterfaceMarkdown(interfaceRecords));
 pageText = replaceGeneratedSection(pageText,"SCALING",scalingMarkdown(latestRecords,buildFolder));
 pageText = replaceGeneratedSection(pageText,"COMPUTERS",computerMarkdown(latestRecords));
 pageText = replaceGeneratedSection(pageText,"HISTORY",historyMarkdown(records));
-pageText = replaceGeneratedSection(pageText,"DOWNLOADS",downloadsMarkdown(records));
+pageText = replaceGeneratedSection(pageText,"DOWNLOADS",downloadsMarkdown(records,interfaceRecords));
 writeText(pagePath,pageText);
+end
+
+function records = loadInterfaceRecords(repositoryRoot,catalog)
+records = struct("dataset",{},"artifactPath",{});
+if ~isfield(catalog,"interfaceComparisons") || isempty(catalog.interfaceComparisons)
+    return
+end
+seen = strings(0,1);
+for iEntry = 1:numel(catalog.interfaceComparisons)
+    entry = itemAt(catalog.interfaceComparisons,iEntry);
+    artifactPath = repositoryFile(repositoryRoot,string(entry.artifact),"published interface comparison");
+    dataset = jsondecode(fileread(artifactPath));
+    datasetId = string(dataset.datasetId);
+    if string(dataset.schemaVersion)~="published-three-interface-v1" || datasetId~=string(entry.datasetId) || isempty(regexp(datasetId,'^three-interface--[a-z0-9][a-z0-9-]*--\d{8}T\d{6}Z$','once')) || logical(dataset.source.sourceDirty)
+        error("WaveVortexModel:InvalidThreeInterfaceBenchmark","Interface comparison %s is invalid.",string(entry.datasetId));
+    end
+    if any(seen==datasetId), error("WaveVortexModel:DuplicateThreeInterfaceBenchmark","Interface comparison %s is duplicated.",datasetId); end
+    seen(end+1,1)=datasetId;
+    if numel(dataset.cases)~=3 || ~all(arrayfun(@(i)logical(itemAt(dataset.cases,i).correctness.passed),1:numel(dataset.cases)))
+        error("WaveVortexModel:InvalidThreeInterfaceBenchmark","Interface comparison %s does not contain three passing matched cases.",datasetId);
+    end
+    archive = dataset.provenance.externalArchive;
+    if strlength(string(archive.fileName))==0 || isempty(regexp(string(archive.sha256),'^[0-9a-f]{64}$','once')) || double(archive.compressedBytes)<=0
+        error("WaveVortexModel:InvalidThreeInterfaceBenchmark","Interface comparison %s lacks a valid external archive record.",datasetId);
+    end
+    records(end+1)=struct("dataset",dataset,"artifactPath",artifactPath); %#ok<AGROW>
+end
+end
+
+function markdown = threeInterfaceMarkdown(records)
+if isempty(records)
+    markdown = "No approved matched three-interface result has been published yet.";
+    return
+end
+[~,latest] = max(arrayfun(@(record)datenum(datetime(string(record.dataset.collectedAt),"InputFormat","yyyy-MM-dd'T'HH:mm:ss'Z'","TimeZone","UTC")),records)); %#ok<DATNM>
+dataset = records(latest).dataset;
+performanceRows = strings(0,7);
+memoryRows = strings(0,5);
+for iCase=1:numel(dataset.cases)
+    benchmarkCase=itemAt(dataset.cases,iCase);
+    builtin=itemAt(benchmarkCase.interfaces,1);
+    for iInterface=1:numel(benchmarkCase.interfaces)
+        item=itemAt(benchmarkCase.interfaces,iInterface);
+        processSpeedup=builtin.processWallSeconds/item.processWallSeconds;
+        workSpeedup=builtin.integrationSeconds/item.integrationSeconds;
+        rssSaved=100*(1-item.totalPeakRSSBytes/builtin.totalPeakRSSBytes);
+        performanceRows(end+1,:)=[displayInterfaceCase(string(benchmarkCase.id)),displayInterface(string(item.id)),formatSeconds(item.processWallSeconds),sprintf('%.3f×',processSpeedup),formatSeconds(item.integrationSeconds),sprintf('%.3f×',workSpeedup),sprintf('%.3e',benchmarkCase.correctness.maximumRelativeError)]; %#ok<AGROW>
+        memoryRows(end+1,:)=[displayInterfaceCase(string(benchmarkCase.id)),displayInterface(string(item.id)),formatBytes(item.totalPeakRSSBytes),formatSavedPercent(rssSaved),formatBytes(item.incrementalPeakRSSBytes)]; %#ok<AGROW>
+    end
+end
+contract=itemAt(dataset.cases,1).contract;
+resolution=join(string(contract.Nxyz),"×");
+intro="Matched nonhydrostatic constant-stratification workload `["+join(string(contract.Nxyz)," ")+"]` on "+string(dataset.platform.displayName)+" at "+string(dataset.platform.threadCount)+" threads. MATLAB builtin uses MATLAB transforms; MATLAB compiled and standalone compiled share validated `"+string(dataset.provider.id)+"` "+string(dataset.provider.version)+". Each value is the median of "+string(contract.processRunCount)+" fresh processes with no within-process warmup. Speedup is MATLAB-builtin time divided by interface time, so larger values are faster.";
+performance="### Runtime — "+resolution+newline+newline+htmlTable(["Case" "Interface" "Process wall" "Process speedup" "Matched work" "Work speedup" "Maximum error"],performanceRows);
+memory="### Process memory — "+resolution+newline+newline+"Total peak RSS includes the language runtime and numerical libraries. RSS above retained state isolates additional activity after the model and backend are constructed."+newline+newline+htmlTable(["Case" "Interface" "Total peak RSS" "Total RSS saved" "RSS above retained state"],memoryRows);
+markdown=intro+newline+newline+performance+newline+newline+memory;
+end
+
+function value=displayInterface(identifier)
+switch identifier
+    case "matlab-builtin", value="MATLAB builtin";
+    case "matlab-compiled", value="MATLAB compiled";
+    case "standalone-compiled", value="Standalone compiled";
+    otherwise, value=identifier;
+end
+end
+
+function value=displayInterfaceCase(identifier)
+switch identifier
+    case "nonlinear-flux", value="Nonlinear flux";
+    case "fixed-rk4-continuation", value="Fixed RK4 continuation";
+    case "adaptive-rk23-observer-output", value="Adaptive RK3(2) + output";
+    otherwise, value=identifier;
+end
+end
+
+function value=formatSavedPercent(percent)
+if abs(percent)<0.05
+    value="—";
+elseif percent>0
+    value=sprintf('%.1f%%',percent);
+else
+    value=sprintf('%.1f%% more',-percent);
+end
+end
+
+function copyInterfaceRecords(records,buildFolder)
+if isempty(records), return, end
+dataFolder=fullfile(buildFolder,"benchmarks","data");
+if ~isfolder(dataFolder), mkdir(dataFolder); end
+for iRecord=1:numel(records)
+    datasetId=string(records(iRecord).dataset.datasetId);
+    copyfile(records(iRecord).artifactPath,fullfile(dataFolder,datasetId+".json"),"f");
+end
 end
 
 function markdown = compiledPreviewMarkdown(records)
@@ -593,12 +690,12 @@ markdown = "## Performance across releases" + newline + newline + ...
     htmlTable(["Platform" "Implementation" "Version" "Suite" "Case" "Median runtime" "Peak process memory"],rows) + newline + newline + "</details>";
 end
 
-function markdown = downloadsMarkdown(records)
-if isempty(records)
+function markdown = downloadsMarkdown(records,interfaceRecords)
+if isempty(records) && isempty(interfaceRecords)
     markdown = "No approved result files have been published yet.";
     return
 end
-rows = strings(numel(records),7);
+rows = strings(numel(records)+numel(interfaceRecords),8);
 for iRecord = 1:numel(records)
     dataset = records(iRecord).dataset;
     datasetId = string(dataset.datasetId);
@@ -607,17 +704,25 @@ for iRecord = 1:numel(records)
         string(dataset.implementation.displayName) + " " + string(dataset.implementation.version), ...
         string(dataset.platform.displayName), ...
         string(dataset.benchmark.suiteId), ...
-        string(dataset.collectedAt), ...
+        string(dataset.collectedAt),string(dataset.schemaVersion), ...
         "Published JSON", ...
         "Raw JSON"];
+end
+for iRecord = 1:numel(interfaceRecords)
+    dataset = interfaceRecords(iRecord).dataset;
+    datasetId = string(dataset.datasetId);
+    iRow = numel(records)+iRecord;
+    rows(iRow,:) = [datasetId,"MATLAB builtin / MATLAB compiled / standalone compiled",string(dataset.platform.displayName),"three-interface-v1",string(dataset.collectedAt),string(dataset.schemaVersion),"Published JSON","External archive: "+extractBefore(string(dataset.provenance.externalArchive.sha256),13)+"…"];
 end
 rows = sortrows(rows,1);
 links = strings(size(rows));
 for iRow = 1:size(rows,1)
-    links(iRow,6) = "/benchmarks/data/" + rows(iRow,1) + ".json";
-    links(iRow,7) = "/benchmarks/raw/" + rows(iRow,1) + ".json";
+    links(iRow,7) = "/benchmarks/data/" + rows(iRow,1) + ".json";
+    if rows(iRow,4)~="three-interface-v1"
+        links(iRow,8) = "/benchmarks/raw/" + rows(iRow,1) + ".json";
+    end
 end
-markdown = htmlTable(["Dataset" "Implementation" "Platform" "Suite" "Collected" "Normalized" "Raw artifact"],rows,links);
+markdown = htmlTable(["Dataset" "Implementation" "Platform" "Suite" "Collected" "Schema" "Normalized" "Raw artifact"],rows,links);
 end
 
 function html = htmlTable(headers,rows,links)
