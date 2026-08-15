@@ -15,6 +15,20 @@
     "threadCount": 18
   },
   "change": "Construct the scalar inverse FFTW plan with the integration system when any tracer requests antialiasing.",
+  "pipeline": {
+    "horizontalExecutionsPerTracerRhs": 4,
+    "verticalExecutionsPerTracerRhs": 2,
+    "horizontalSchedule": ["scalar-r2c", "three-channel-derivative-c2r", "antialias-r2c", "antialias-c2r"],
+    "knownScratchBytes": 678445056,
+    "knownScratchFormula": "4H complex + 6R real",
+    "persistentFullHermitianSpectrum": false,
+    "additionalPersistentArrayBytes": 0,
+    "applicationVisibleTrafficLowerBoundPerTracerRhs": {
+      "bytesRead": 950034432,
+      "bytesWritten": 747134976,
+      "scope": "Scalar, velocity, half-spectrum and derivative/result array boundaries; excludes opaque FFT and vertical-normalization internal traffic."
+    }
+  },
   "hydrostatic": {
     "control": {
       "integrateSeconds": [3.784767291, 3.8272055, 3.493665958],
@@ -34,6 +48,14 @@
       "tracerSpeedup": 19.309,
       "integrateReductionFraction": 0.7955,
       "tracerReductionFraction": 0.9482
+    },
+    "matlabComparison": {
+      "operation": "WVTracer.fluxAtTime",
+      "processMedianSeconds": [0.045902333333333337, 0.042559875, 0.042359541666666667],
+      "medianSeconds": 0.042559875,
+      "cppMedianPerRhsSeconds": 0.04136254175,
+      "cppToMatlabRatio": 0.9719,
+      "interpretation": "After preparation, the complete C++ and MATLAB tracer pipelines are within 3%."
     },
     "outputGraph": {
       "passed": true,
@@ -62,6 +84,14 @@
       "tracerSpeedup": 18.572,
       "integrateReductionFraction": 0.7680,
       "tracerReductionFraction": 0.9462
+    },
+    "matlabComparison": {
+      "operation": "WVTracer.fluxAtTime",
+      "processMedianSeconds": [0.042555416666666665, 0.043061625, 0.042468],
+      "medianSeconds": 0.042555416666666665,
+      "cppMedianPerRhsSeconds": 0.041493854,
+      "cppToMatlabRatio": 0.9751,
+      "interpretation": "After preparation, the complete C++ and MATLAB tracer pipelines are within 3%."
     },
     "outputGraph": {
       "passed": true,
