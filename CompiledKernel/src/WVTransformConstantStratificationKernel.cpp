@@ -1020,7 +1020,6 @@ WVKernelStatus WVTransformConstantStratificationKernel::advectFGridScalar(
     if (!guard.entered()) return {WVKernelStatusCode::reentrantExecution,"Kernel operations are not reentrant."};
 
     const auto& c = descriptor_.configuration();
-    const auto& modes = descriptor_.verticalModes();
     const std::size_t NxHalf = descriptor_.halfSpectrumMappings().NxHalf;
     const std::size_t halfRows = NxHalf*c.Ny;
     auto* half = reinterpret_cast<WVComplex64*>(halfSpectrumScratch_.data());
@@ -1051,8 +1050,10 @@ WVKernelStatus WVTransformConstantStratificationKernel::advectFGridScalar(
     for (std::size_t row = 0; row < halfRows; ++row) {
         const auto base = 2*c.Nz+3*c.Nz*row;
         half[base] = {};
-        for (std::size_t j = 1; j+1 < c.Nz; ++j)
-            half[base+j] = multiply(half[base+j],-modes.verticalWavenumber[j]);
+        for (std::size_t j = 1; j+1 < c.Nz; ++j) {
+            const double verticalWavenumber = pi*static_cast<double>(j)/c.Lz;
+            half[base+j] = multiply(half[base+j],-verticalWavenumber);
+        }
         half[base+c.Nz-1] = {};
     }
     normalizeInverseDST(half,c.Nz,halfRows,3,2,1);

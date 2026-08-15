@@ -293,6 +293,8 @@ void testScalarAdvectionOperator(bool shouldAntialias) {
   const double pi = std::acos(-1.0);
   const double u = 0.75;
   const double v = -0.4;
+  const double w = 0.2;
+  const auto verticalMode = config.Nz - 2;
   for (std::size_t z = 0; z < config.Nz; ++z)
     for (std::size_t y = 0; y < config.Ny; ++y)
       for (std::size_t x = 0; x < config.Nx; ++x) {
@@ -301,9 +303,12 @@ void testScalarAdvectionOperator(bool shouldAntialias) {
             std::sin(2.0 * pi * static_cast<double>(x) /
                      static_cast<double>(config.Nx)) +
             0.25 * std::cos(2.0 * pi * static_cast<double>(y) /
-                            static_cast<double>(config.Ny));
+                            static_cast<double>(config.Ny)) +
+            0.1 * std::cos(pi * static_cast<double>(verticalMode * z) /
+                           static_cast<double>(config.Nz - 1));
         fields[index] = u;
         fields[R + index] = v;
+        fields[2 * R + index] = w;
       }
   const WVRealVolumeConstView scalarView{scalar.data(), shape};
   const WVRealFieldBundleConstView fieldView{
@@ -324,7 +329,10 @@ void testScalarAdvectionOperator(bool shouldAntialias) {
                               static_cast<double>(config.Nx)) +
             v * 0.25 * l *
                 std::sin(2.0 * pi * static_cast<double>(y) /
-                         static_cast<double>(config.Ny));
+                         static_cast<double>(config.Ny)) +
+            w * 0.1 * pi * static_cast<double>(verticalMode) / config.Lz *
+                std::sin(pi * static_cast<double>(verticalMode * z) /
+                         static_cast<double>(config.Nz - 1));
         maximumError = std::max(maximumError,
                                 std::abs(flux[index] - expected));
       }
