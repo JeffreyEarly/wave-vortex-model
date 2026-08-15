@@ -88,6 +88,12 @@ public:
   std::size_t persistentBytes() const noexcept;
 
 private:
+  static WVKernelStatus createImpl(
+      const WVTransformConstantStratificationConfiguration &configuration,
+      const WVFrozenForcingSchedule &schedule,
+      const WVPortableObserverDescriptor *descriptor,
+      std::unique_ptr<WVFFTEngine> engine,
+      std::unique_ptr<WVConstantStratificationIntegrationSystem> &system);
   WVConstantStratificationIntegrationSystem() = default;
   WVIntegrationStateLayout layout_;
   std::unique_ptr<WVConstantStratificationForcingEngine> forcing_;

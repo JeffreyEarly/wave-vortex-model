@@ -4,7 +4,6 @@
 #include <algorithm>
 #include <limits>
 #include <new>
-#include <set>
 
 namespace wavevortex::runtime {
 namespace {
@@ -23,22 +22,6 @@ std::size_t blockIndex(const WVIntegrationStateLayout &layout,
   return found == blocks.end()
              ? std::numeric_limits<std::size_t>::max()
              : static_cast<std::size_t>(found - blocks.begin());
-}
-
-WVKernelStatus coefficientOnlyDescriptor(
-    WVShape2D shape, WVPortableObserverDescriptor &descriptor) {
-  WVPortableObserverRecord record;
-  for (const char *identifier : {"Ap", "Am", "A0"}) {
-    WVStateBlockRecord block;
-    block.identifier = identifier;
-    block.scalarType = WVStateScalarType::complex64;
-    block.dimensions = {shape.rows, shape.columns};
-    block.toleranceKind = WVToleranceKind::coefficientEnergyScaled;
-    block.ownership = WVStateOwnership::integratorOwned;
-    block.restartRequirement = WVRestartRequirement::requiredDynamicState;
-    record.stateBlocks.push_back(std::move(block));
-  }
-  return WVPortableObserverDescriptor::create(record, descriptor);
 }
 
 class UnifiedErrorPolicy final : public WVIntegrationErrorPolicy {
@@ -89,17 +72,7 @@ WVKernelStatus WVConstantStratificationIntegrationSystem::create(
     const WVFrozenForcingSchedule &schedule,
     std::unique_ptr<WVFFTEngine> engine,
     std::unique_ptr<WVConstantStratificationIntegrationSystem> &system) {
-  WVTransformConstantStratificationDescriptor transformDescriptor;
-  auto status = WVTransformConstantStratificationDescriptor::create(
-      configuration, transformDescriptor);
-  if (!status)
-    return status;
-  WVPortableObserverDescriptor descriptor;
-  status = coefficientOnlyDescriptor(transformDescriptor.spectralShape(),
-                                     descriptor);
-  if (!status)
-    return status;
-  return create(configuration, schedule, descriptor, std::move(engine), system);
+  return createImpl(configuration, schedule, nullptr, std::move(engine), system);
 }
 
 WVKernelStatus WVConstantStratificationIntegrationSystem::create(
@@ -108,18 +81,32 @@ WVKernelStatus WVConstantStratificationIntegrationSystem::create(
     const WVPortableObserverDescriptor &descriptor,
     std::unique_ptr<WVFFTEngine> engine,
     std::unique_ptr<WVConstantStratificationIntegrationSystem> &system) {
+  return createImpl(configuration, schedule, &descriptor, std::move(engine),
+                    system);
+}
+
+WVKernelStatus WVConstantStratificationIntegrationSystem::createImpl(
+    const WVTransformConstantStratificationConfiguration &configuration,
+    const WVFrozenForcingSchedule &schedule,
+    const WVPortableObserverDescriptor *descriptor,
+    std::unique_ptr<WVFFTEngine> engine,
+    std::unique_ptr<WVConstantStratificationIntegrationSystem> &system) {
   system.reset();
   try {
     auto candidate =
         std::unique_ptr<WVConstantStratificationIntegrationSystem>(
             new WVConstantStratificationIntegrationSystem());
-    WVTransformConstantStratificationDescriptor transformDescriptor;
-    auto status = WVTransformConstantStratificationDescriptor::create(
-        configuration, transformDescriptor);
+    auto status = WVConstantStratificationForcingEngine::create(
+        configuration, schedule, std::move(engine), candidate->forcing_);
     if (!status)
       return status;
-    status = WVIntegrationStateLayout::create(transformDescriptor.spectralShape(),
-                                            descriptor, candidate->layout_);
+    const auto coefficientShape =
+        candidate->forcing_->kernel().descriptor().spectralShape();
+    status = descriptor == nullptr
+                 ? WVIntegrationStateLayout::createCoefficientOnly(
+                       coefficientShape, candidate->layout_)
+                 : WVIntegrationStateLayout::create(
+                       coefficientShape, *descriptor, candidate->layout_);
     if (!status)
       return status;
 
@@ -127,7 +114,10 @@ WVKernelStatus WVConstantStratificationIntegrationSystem::create(
         candidate->layout_.additionalBlocks().size(), 0);
     std::vector<WVMovingFieldRequest> velocityRequests;
     std::size_t positionOffset = 0;
-    for (const auto &observer : descriptor.observers()) {
+    static const std::vector<WVObserverRecord> noObservers;
+    const auto &observers =
+        descriptor == nullptr ? noObservers : descriptor->observers();
+    for (const auto &observer : observers) {
       const auto *definition = detail::observerDefinition(observer.kind);
       if (definition == nullptr)
         return {WVKernelStatusCode::unsupportedOperation,
@@ -211,13 +201,9 @@ WVKernelStatus WVConstantStratificationIntegrationSystem::create(
                        " must resolve to exactly one integrated observer.");
     }
 
-    status = WVConstantStratificationForcingEngine::create(
-        configuration, schedule, std::move(engine), candidate->forcing_);
-    if (!status)
-      return status;
     // Coefficient-only integration is the zero-additional-block case. It must
     // not retain the field-evaluation scratch used by observing systems.
-    if (!descriptor.observers().empty()) {
+    if (!observers.empty()) {
       status = WVFieldEvaluationService::createBorrowing(
           candidate->forcing_->kernel(), candidate->fields_);
       if (!status)
