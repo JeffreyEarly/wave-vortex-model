@@ -49,12 +49,13 @@ classdef TestWVCompiledBackend < matlab.unittest.TestCase
         function capabilityAndUnsupportedBuildRestoreState(testCase)
             fixture = testCase.applyFixture(matlab.unittest.fixtures.TemporaryFolderFixture);
             originalDirectory = string(pwd); originalPath = path; originalRng = rng; originalWarnings = warning;
+            addpath(testCase.repositoryRoot,"-begin"); expectedPath = path;
             cd(fixture.Folder); rng(169,"twister"); expectedRng = rng;
             cleanup = onCleanup(@()restoreState(originalDirectory,originalPath,originalRng,originalWarnings));
             WVCompiledBackend.capabilitiesForTesting(struct("PackageRoot",string(fixture.Folder),"Architecture","glnxa64","OperatingSystem","Linux","Release","R2026a"));
             WVCompiledBackend.buildForTesting(struct("PackageRoot",string(fixture.Folder),"Architecture","glnxa64","OperatingSystem","Linux","Release","R2026a"));
             testCase.verifyEqual(string(pwd),string(fixture.Folder));
-            testCase.verifyEqual(path,originalPath);
+            testCase.verifyEqual(path,expectedPath);
             testCase.verifyEqual(rng,expectedRng);
             clear cleanup
         end
