@@ -87,6 +87,8 @@ classdef TestPortableRuntimeCompatibility < matlab.unittest.TestCase
             testCase.verifyEqual(runtimeZ,controlZ,AbsTol=1e-10)
             testCase.verifyEqual(runtimeModel.tracer("dye"),controlModel.tracer("dye"),AbsTol=1e-8)
             testCase.verifyEqual(runtimeModel.outputFileWithName("matlab-model.nc").outputGroupWithName("wave-vortex").incrementsWrittenToGroup,uint64(3))
+            testCase.verifyEqual(runtimeModel.outputFileWithName("matlab-model.nc").outputGroupWithName("particles").incrementsWrittenToGroup,uint64(3))
+            testCase.verifyEqual(runtimeModel.outputFileWithName("matlab-model.nc").outputGroupWithName("tracers").incrementsWrittenToGroup,uint64(3))
             clear runtimeCleanup controlCleanup
         end
 
@@ -146,6 +148,13 @@ classdef TestPortableRuntimeCompatibility < matlab.unittest.TestCase
             tracer = sin(2*pi*wvt.X/wvt.Lx);
             model.addTracer(tracer,"dye");
             group = outputFile.outputGroupWithName(model.defaultOutputGroupName());
+            particles = model.fluxedObservingSystemWithName("float");
+            tracerObserver = model.fluxedObservingSystemWithName("dye");
+            group.removeObservingSystem([particles tracerObserver]);
+            particleGroup = outputFile.addNewEvenlySpacedOutputGroup("particles",outputInterval=1e-4);
+            particleGroup.addObservingSystem(particles);
+            tracerGroup = outputFile.addNewEvenlySpacedOutputGroup("tracers",outputInterval=1e-4);
+            tracerGroup.addObservingSystem(tracerObserver);
             group.addObservingSystem(WVMooring(model,name="mooring", ...
                 x=[0 1000],y=[0 900],trackedFieldNames={'u'}));
             model.setupIntegrator(integratorType="fixed",deltaT=1e-4);
@@ -163,15 +172,17 @@ classdef TestPortableRuntimeCompatibility < matlab.unittest.TestCase
             actualFile = actual.outputFiles(1);
             expectedFile = expected.outputFiles(1);
             testCase.verifyEqual(sort(actualFile.outputGroupNames),sort(expectedFile.outputGroupNames))
-            actualGroup = actualFile.outputGroupWithName("wave-vortex");
-            expectedGroup = expectedFile.outputGroupWithName("wave-vortex");
-            testCase.verifyEqual(string(arrayfun(@class,actualGroup.observingSystems,UniformOutput=false)), ...
-                string(arrayfun(@class,expectedGroup.observingSystems,UniformOutput=false)))
-            testCase.verifyEqual(string({actualGroup.observingSystems.name}), ...
-                string({expectedGroup.observingSystems.name}))
-            testCase.verifyEqual(actualGroup.outputInterval,expectedGroup.outputInterval)
-            testCase.verifyEqual(actualGroup.initialTime,expectedGroup.initialTime)
-            testCase.verifyEqual(actualGroup.finalTime,expectedGroup.finalTime)
+            for groupName = reshape(expectedFile.outputGroupNames,1,[])
+                actualGroup = actualFile.outputGroupWithName(groupName);
+                expectedGroup = expectedFile.outputGroupWithName(groupName);
+                testCase.verifyEqual(string(arrayfun(@class,actualGroup.observingSystems,UniformOutput=false)), ...
+                    string(arrayfun(@class,expectedGroup.observingSystems,UniformOutput=false)))
+                testCase.verifyEqual(string({actualGroup.observingSystems.name}), ...
+                    string({expectedGroup.observingSystems.name}))
+                testCase.verifyEqual(actualGroup.outputInterval,expectedGroup.outputInterval)
+                testCase.verifyEqual(actualGroup.initialTime,expectedGroup.initialTime)
+                testCase.verifyEqual(actualGroup.finalTime,expectedGroup.finalTime)
+            end
         end
     end
 end

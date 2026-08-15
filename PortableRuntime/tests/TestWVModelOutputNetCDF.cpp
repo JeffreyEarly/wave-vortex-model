@@ -577,8 +577,7 @@ void testMultipleFilesGroupsAndSharedState() {
                          {{"restart",
                            "wave-vortex",
                            {outputInterval, checkpoint.state.t, end},
-                           {"coefficients", "fields", "mooring", "particles",
-                            "tracer"},
+                           {"coefficients", "fields", "mooring"},
                            true},
                           {"shared",
                            "shared",
@@ -644,7 +643,7 @@ void testMultipleFilesGroupsAndSharedState() {
     int z = -1;
     int tracerVariable = -1;
     require(nc_open(first.c_str(), NC_NOWRITE, &file) == NC_NOERR &&
-                nc_inq_ncid(file, "wave-vortex", &group) == NC_NOERR &&
+                nc_inq_ncid(file, "shared", &group) == NC_NOERR &&
                 nc_inq_varid(group, "particles_id", &ids) == NC_NOERR &&
                 nc_inq_varid(group, "particles_z", &z) == NC_NOERR &&
                 nc_inq_varid(group, "tracer", &tracerVariable) == NC_NOERR,
@@ -682,6 +681,28 @@ void testMultipleFilesGroupsAndSharedState() {
           "multi-file graph or shared observer identity was not reconstructed");
   require(inspection.additionalState.blockCount() == 3,
           "shared dynamic state was duplicated during reconstruction");
+  const auto particleX = std::find_if(
+      inspection.additionalState.constBlocks(),
+      inspection.additionalState.constBlocks() +
+          inspection.additionalState.blockCount(),
+      [](const auto &view) {
+        return view.layout->identifier == "particles-x";
+      });
+  const auto tracerState = std::find_if(
+      inspection.additionalState.constBlocks(),
+      inspection.additionalState.constBlocks() +
+          inspection.additionalState.blockCount(),
+      [](const auto &view) {
+        return view.layout->identifier == "tracer-state";
+      });
+  require(particleX != inspection.additionalState.constBlocks() +
+                           inspection.additionalState.blockCount() &&
+              particleX->realData[0] == 1.0 &&
+              tracerState != inspection.additionalState.constBlocks() +
+                                 inspection.additionalState.blockCount() &&
+              tracerState->realData[0] == 3.0,
+          "dynamic state stored outside the coefficient group was not "
+          "restored");
   for (std::size_t block = 0;
        block < inspection.additionalState.blockCount(); ++block) {
     const auto &view = inspection.additionalState.constBlocks()[block];
@@ -700,6 +721,28 @@ void testMultipleFilesGroupsAndSharedState() {
   require(restoredParticles != inspection.observerRecord.observers.end() &&
               restoredParticles->z == std::vector<double>({-100.0, -300.0}),
           "fixed XY particle z configuration was not reconstructed");
+  {
+    int file = -1;
+    int group = -1;
+    int variable = -1;
+    require(nc_open(second.c_str(), NC_WRITE, &file) == NC_NOERR &&
+                nc_inq_ncid(file, "restart", &group) == NC_NOERR &&
+                nc_inq_varid(group, "particles_x", &variable) == NC_NOERR,
+            "open duplicate particle state for ambiguity test");
+    const std::size_t start[] = {0, 0};
+    const std::size_t count[] = {1, 1};
+    double conflicting = 99.0;
+    require(nc_put_vara_double(group, variable, start, count, &conflicting) ==
+                    NC_NOERR &&
+                nc_close(file) == NC_NOERR,
+            "write conflicting duplicate particle state");
+    WVModelOutputNetCDFInspection rejected;
+    const auto rejectedStatus = WVModelOutputNetCDFSink::inspect(
+        {first.string(), second.string()}, rejected);
+    require(!rejectedStatus &&
+                rejectedStatus.code == WVCheckpointStatusCode::ambiguousState,
+            "conflicting cross-group restart state was not rejected");
+  }
   std::ostringstream fixedCommand;
   fixedCommand << shellQuote(WV_RUNTIME_RUNNER) << ' ' << shellQuote(first)
                << " --restart-mode model --output-policy append --delta-t "

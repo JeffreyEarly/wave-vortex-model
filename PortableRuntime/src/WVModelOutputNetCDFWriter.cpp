@@ -309,20 +309,22 @@ public:
                 : "Nonlinear output requires WVCoefficients.",
             file.destination + ":/" + restart->name);
       std::set<std::string> restartBlocks{"Ap", "Am", "A0"};
-      for (const auto &observerIdentifier : restart->observerIdentifiers) {
-        const auto *record = observer(observerIdentifier);
-        if (record != nullptr)
-          restartBlocks.insert(record->stateBlockIdentifiers.begin(),
-                               record->stateBlockIdentifiers.end());
+      for (const auto &group : file.groups) {
+        for (const auto &observerIdentifier : group.observerIdentifiers) {
+          const auto *record = observer(observerIdentifier);
+          if (record != nullptr)
+            restartBlocks.insert(record->stateBlockIdentifiers.begin(),
+                                 record->stateBlockIdentifiers.end());
+        }
       }
       for (const auto &block : stateLayout.stateBlockRecords()) {
         if (block.restartRequirement ==
                 WVRestartRequirement::requiredDynamicState &&
             restartBlocks.find(block.identifier) == restartBlocks.end())
           return failure(WVCheckpointStatusCode::schemaMismatch,
-                         "A complete restart group omits required dynamic "
-                         "observer state.",
-                         file.destination + ":/" + restart->name);
+                         "The output file omits required dynamic observer "
+                         "state from its restart graph.",
+                         file.destination);
       }
     }
     return WVCheckpointStatus::ok();
