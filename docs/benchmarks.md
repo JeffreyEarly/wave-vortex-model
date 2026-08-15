@@ -54,28 +54,28 @@ Supported: constant-stratification hydrostatic and nonhydrostatic models with th
 The matched comparison below separates a single nonlinear-flux evaluation from fixed-step and adaptive model continuations. Each row uses the same initial model, forcing, integration settings, observer graph, output schedule, provider, thread policy, and fresh-process boundary across MATLAB builtin, MATLAB compiled, and standalone compiled execution. Total peak process memory is the practical footprint of the interface, including MATLAB itself when MATLAB is used.
 
 <!-- BENCHMARKS:THREE_INTERFACES:START -->
-Matched nonhydrostatic constant-stratification workload `[64 48 17]` on Apple M5 Max with `native-neon-pthreads` 3.3.11 at 18 threads. Each value is the median of 3 fresh processes with no within-process warmup. Speedup is MATLAB-builtin time divided by interface time, so larger values are faster.
+Matched nonhydrostatic constant-stratification workload `[256 256 129]` on Apple M5 Max with `native-neon-pthreads` 3.3.11 at 18 threads. Each value is the median of 3 fresh processes with no within-process warmup. Speedup is MATLAB-builtin time divided by interface time, so larger values are faster.
 
-### Runtime — 64×48×17
+### Runtime — 256×256×129
 
 <table>
   <thead>
     <tr><th scope="col">Case</th><th scope="col">Interface</th><th scope="col">Process wall</th><th scope="col">Process speedup</th><th scope="col">Matched work</th><th scope="col">Work speedup</th><th scope="col">Maximum error</th></tr>
   </thead>
   <tbody>
-    <tr><td>Nonlinear flux</td><td>MATLAB builtin</td><td>4.593 s</td><td>1.000×</td><td>0.07759 s</td><td>1.000×</td><td>8.755e-13</td></tr>
-    <tr><td>Nonlinear flux</td><td>MATLAB compiled</td><td>5.824 s</td><td>0.789×</td><td>0.00531 s</td><td>14.611×</td><td>8.755e-13</td></tr>
-    <tr><td>Nonlinear flux</td><td>Standalone compiled</td><td>1.287 s</td><td>3.567×</td><td>0.003978 s</td><td>19.503×</td><td>8.755e-13</td></tr>
-    <tr><td>Fixed RK4 continuation</td><td>MATLAB builtin</td><td>5.546 s</td><td>1.000×</td><td>0.9732 s</td><td>1.000×</td><td>4.523e-16</td></tr>
-    <tr><td>Fixed RK4 continuation</td><td>MATLAB compiled</td><td>7.105 s</td><td>0.781×</td><td>0.7337 s</td><td>1.326×</td><td>4.523e-16</td></tr>
-    <tr><td>Fixed RK4 continuation</td><td>Standalone compiled</td><td>1.449 s</td><td>3.829×</td><td>0.1471 s</td><td>6.616×</td><td>4.523e-16</td></tr>
-    <tr><td>Adaptive RK3(2) + output</td><td>MATLAB builtin</td><td>5.573 s</td><td>1.000×</td><td>0.9774 s</td><td>1.000×</td><td>5.057e-16</td></tr>
-    <tr><td>Adaptive RK3(2) + output</td><td>MATLAB compiled</td><td>7.122 s</td><td>0.783×</td><td>0.7411 s</td><td>1.319×</td><td>5.057e-16</td></tr>
-    <tr><td>Adaptive RK3(2) + output</td><td>Standalone compiled</td><td>1.46 s</td><td>3.818×</td><td>0.1492 s</td><td>6.550×</td><td>5.057e-16</td></tr>
+    <tr><td>Nonlinear flux</td><td>MATLAB builtin</td><td>5.148 s</td><td>1.000×</td><td>0.3665 s</td><td>1.000×</td><td>1.691e-14</td></tr>
+    <tr><td>Nonlinear flux</td><td>MATLAB compiled</td><td>24.04 s</td><td>0.214×</td><td>0.1363 s</td><td>2.689×</td><td>1.691e-14</td></tr>
+    <tr><td>Nonlinear flux</td><td>Standalone compiled</td><td>18.42 s</td><td>0.280×</td><td>0.1305 s</td><td>2.808×</td><td>1.691e-14</td></tr>
+    <tr><td>Fixed RK4 continuation</td><td>MATLAB builtin</td><td>20.34 s</td><td>1.000×</td><td>12.55 s</td><td>1.000×</td><td>3.580e-16</td></tr>
+    <tr><td>Fixed RK4 continuation</td><td>MATLAB compiled</td><td>37.41 s</td><td>0.544×</td><td>10.31 s</td><td>1.217×</td><td>3.580e-16</td></tr>
+    <tr><td>Fixed RK4 continuation</td><td>Standalone compiled</td><td>22.2 s</td><td>0.916×</td><td>3.684 s</td><td>3.408×</td><td>3.580e-16</td></tr>
+    <tr><td>Adaptive RK3(2) + output</td><td>MATLAB builtin</td><td>20.07 s</td><td>1.000×</td><td>12.2 s</td><td>1.000×</td><td>3.580e-16</td></tr>
+    <tr><td>Adaptive RK3(2) + output</td><td>MATLAB compiled</td><td>37.35 s</td><td>0.537×</td><td>10.43 s</td><td>1.170×</td><td>3.580e-16</td></tr>
+    <tr><td>Adaptive RK3(2) + output</td><td>Standalone compiled</td><td>22.41 s</td><td>0.896×</td><td>3.768 s</td><td>3.237×</td><td>3.580e-16</td></tr>
   </tbody>
 </table>
 
-### Process memory — 64×48×17
+### Process memory — 256×256×129
 
 Total peak RSS includes the language runtime and numerical libraries. RSS above retained state isolates additional activity after the model and backend are constructed.
 
@@ -84,15 +84,15 @@ Total peak RSS includes the language runtime and numerical libraries. RSS above 
     <tr><th scope="col">Case</th><th scope="col">Interface</th><th scope="col">Total peak RSS</th><th scope="col">Total RSS saved</th><th scope="col">RSS above retained state</th></tr>
   </thead>
   <tbody>
-    <tr><td>Nonlinear flux</td><td>MATLAB builtin</td><td>0.841 GiB</td><td>—</td><td>0.00517 GiB</td></tr>
-    <tr><td>Nonlinear flux</td><td>MATLAB compiled</td><td>0.847 GiB</td><td>0.7% more</td><td>0.00346 GiB</td></tr>
-    <tr><td>Nonlinear flux</td><td>Standalone compiled</td><td>0.0307 GiB</td><td>96.3%</td><td>0.000549 GiB</td></tr>
-    <tr><td>Fixed RK4 continuation</td><td>MATLAB builtin</td><td>0.923 GiB</td><td>—</td><td>0.0262 GiB</td></tr>
-    <tr><td>Fixed RK4 continuation</td><td>MATLAB compiled</td><td>0.938 GiB</td><td>1.6% more</td><td>0.0261 GiB</td></tr>
-    <tr><td>Fixed RK4 continuation</td><td>Standalone compiled</td><td>0.0513 GiB</td><td>94.4%</td><td>0.018 GiB</td></tr>
-    <tr><td>Adaptive RK3(2) + output</td><td>MATLAB builtin</td><td>0.926 GiB</td><td>—</td><td>0.0289 GiB</td></tr>
-    <tr><td>Adaptive RK3(2) + output</td><td>MATLAB compiled</td><td>0.94 GiB</td><td>1.5% more</td><td>0.026 GiB</td></tr>
-    <tr><td>Adaptive RK3(2) + output</td><td>Standalone compiled</td><td>0.0518 GiB</td><td>94.4%</td><td>0.0187 GiB</td></tr>
+    <tr><td>Nonlinear flux</td><td>MATLAB builtin</td><td>2.77 GiB</td><td>—</td><td>0.54 GiB</td></tr>
+    <tr><td>Nonlinear flux</td><td>MATLAB compiled</td><td>3.4 GiB</td><td>22.6% more</td><td>0.0307 GiB</td></tr>
+    <tr><td>Nonlinear flux</td><td>Standalone compiled</td><td>1.91 GiB</td><td>31.3%</td><td>0.00171 GiB</td></tr>
+    <tr><td>Fixed RK4 continuation</td><td>MATLAB builtin</td><td>6.34 GiB</td><td>—</td><td>0.312 GiB</td></tr>
+    <tr><td>Fixed RK4 continuation</td><td>MATLAB compiled</td><td>6.86 GiB</td><td>8.1% more</td><td>0.315 GiB</td></tr>
+    <tr><td>Fixed RK4 continuation</td><td>Standalone compiled</td><td>4.31 GiB</td><td>32.1%</td><td>1.44 GiB</td></tr>
+    <tr><td>Adaptive RK3(2) + output</td><td>MATLAB builtin</td><td>6.34 GiB</td><td>—</td><td>0.31 GiB</td></tr>
+    <tr><td>Adaptive RK3(2) + output</td><td>MATLAB compiled</td><td>6.86 GiB</td><td>8.1% more</td><td>0.318 GiB</td></tr>
+    <tr><td>Adaptive RK3(2) + output</td><td>Standalone compiled</td><td>4.43 GiB</td><td>30.2%</td><td>1.45 GiB</td></tr>
   </tbody>
 </table>
 <!-- BENCHMARKS:THREE_INTERFACES:END -->
@@ -612,7 +612,7 @@ Scaling and compiled-preview datasets use the language-neutral `published-benchm
     <tr><td>scaling-standard-v1--matlab-builtin--lyra--20260811T204835Z</td><td>WaveVortexModel MATLAB 4.2.1</td><td>Lyra (Apple M4 Max)</td><td>scaling-standard-v1</td><td>2026-08-11T20:48:35Z</td><td>published-benchmark-v1</td><td><a href="/benchmarks/data/scaling-standard-v1--matlab-builtin--lyra--20260811T204835Z.json">Published JSON</a></td><td><a href="/benchmarks/raw/scaling-standard-v1--matlab-builtin--lyra--20260811T204835Z.json">Raw JSON</a></td></tr>
     <tr><td>scaling-standard-v1--matlab-builtin--m5-max--20260812T020708Z</td><td>WaveVortexModel MATLAB 4.2.1</td><td>Donut (Apple M5 Max)</td><td>scaling-standard-v1</td><td>2026-08-12T02:07:08Z</td><td>published-benchmark-v1</td><td><a href="/benchmarks/data/scaling-standard-v1--matlab-builtin--m5-max--20260812T020708Z.json">Published JSON</a></td><td><a href="/benchmarks/raw/scaling-standard-v1--matlab-builtin--m5-max--20260812T020708Z.json">Raw JSON</a></td></tr>
     <tr><td>scaling-standard-v1--matlab-builtin--matilda--20260811T205115Z</td><td>WaveVortexModel MATLAB 4.2.1</td><td>Matilda (Apple M1 Max)</td><td>scaling-standard-v1</td><td>2026-08-11T20:51:15Z</td><td>published-benchmark-v1</td><td><a href="/benchmarks/data/scaling-standard-v1--matlab-builtin--matilda--20260811T205115Z.json">Published JSON</a></td><td><a href="/benchmarks/raw/scaling-standard-v1--matlab-builtin--matilda--20260811T205115Z.json">Raw JSON</a></td></tr>
-    <tr><td>three-interface--m5-max--20260815T142025Z</td><td>MATLAB builtin / MATLAB compiled / standalone compiled</td><td>Apple M5 Max</td><td>three-interface-v1</td><td>2026-08-15T14:20:25Z</td><td>published-three-interface-v1</td><td><a href="/benchmarks/data/three-interface--m5-max--20260815T142025Z.json">Published JSON</a></td><td><a href="/benchmarks/raw/three-interface--m5-max--20260815T142025Z.json">Raw JSON</a></td></tr>
+    <tr><td>three-interface--m5-max--20260815T154902Z</td><td>MATLAB builtin / MATLAB compiled / standalone compiled</td><td>Apple M5 Max</td><td>three-interface-v1</td><td>2026-08-15T15:49:02Z</td><td>published-three-interface-v1</td><td><a href="/benchmarks/data/three-interface--m5-max--20260815T154902Z.json">Published JSON</a></td><td><a href="/benchmarks/raw/three-interface--m5-max--20260815T154902Z.json">Raw JSON</a></td></tr>
   </tbody>
 </table>
 <!-- BENCHMARKS:DOWNLOADS:END -->
