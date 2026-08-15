@@ -105,7 +105,7 @@ results = struct( ...
 end
 
 function definitions = caseDefinitions(options)
-common = struct("Nxyz",options.Nxyz,"deltaT",options.deltaT,"finalTime",2*options.deltaT,"relativeTolerance",options.relativeTolerance,"absoluteTolerance",options.absoluteTolerance,"outputInterval",options.deltaT/2,"observerGraph","Eulerian u, one mooring, two 3-D particles, one 3-D tracer","forcing","default WVNonlinearAdvection","shouldAntialias",true,"seed",4001);
+common = struct("Nxyz",options.Nxyz,"deltaT",options.deltaT,"finalTime",2*options.deltaT,"relativeTolerance",options.relativeTolerance,"absoluteTolerance",options.absoluteTolerance,"outputInterval",options.deltaT/2,"observerGraph","cross-group Eulerian u, one mooring, two 3-D particles with tracked u, and one 3-D tracer","forcing","default WVNonlinearAdvection","shouldAntialias",true,"seed",4001);
 definitions = [ ...
     mergeStruct(common,struct("id","nonlinear-flux","operation","nonlinearFlux","requestedIntegrator","none")); ...
     mergeStruct(common,struct("id","fixed-rk4-continuation","operation","model-continuation","requestedIntegrator","fixed-rk4")); ...
@@ -203,14 +203,14 @@ end
 
 function comparison = aggregate(runs,definitions,tolerance)
 interfaces = ["matlab-builtin" "matlab-compiled" "standalone-compiled"];
-comparison = repmat(struct("id","","interfaces",[],"maximumRelativeError",NaN,"outputAgreementPassed",false,"matchedContractPassed",false),numel(definitions),1);
+comparison = repmat(struct("id","","interfaces",[],"maximumRelativeError",NaN,"outputAgreementPassed",false,"outputGraph",emptyOutputGraph,"integratorAgreementPassed",false,"memoryAgreementPassed",false,"matchedContractPassed",false),numel(definitions),1);
 for iCase = 1:numel(definitions)
     selected = runs(string(arrayfun(@(item)item.case.id,runs,"UniformOutput",false))==definitions(iCase).id);
     records = repmat(struct("id","","processWallSeconds",NaN,"interfaceTotalSeconds",NaN,"integrationSeconds",NaN,"totalPeakRSSBytes",NaN,"incrementalPeakRSSBytes",NaN,"finalRSSBytes",NaN,"processWallRatio",NaN,"integrationRatio",NaN,"totalRSSRatio",NaN,"incrementalRSSRatio",NaN),numel(interfaces),1);
     builtin = selected(string({selected.interface})=="matlab-builtin");
     memoryPassed = all(arrayfun(@(item)string(item.memory.status)=="complete" && isfinite(item.memory.totalPeakRSSBytes) && item.memory.totalPeakRSSBytes>0,selected));
     builtinProcess = median([builtin.processWallSeconds]); builtinIntegration = median([builtin.integrationSeconds]); builtinPeak = median(arrayfun(@(item)item.memory.totalPeakRSSBytes,builtin)); builtinIncrement = median(arrayfun(@(item)item.memory.peakIncrementBytes,builtin));
-    maximumError = 0; outputPassed = true;
+    maximumError = 0; outputPassed = true; outputGraph = emptyOutputGraph;
     for iInterface = 1:numel(interfaces)
         candidate = selected(string({selected.interface})==interfaces(iInterface));
         processValue = median([candidate.processWallSeconds]); integrationValue = median([candidate.integrationSeconds]); peakValue = median(arrayfun(@(item)item.memory.totalPeakRSSBytes,candidate)); incrementValue = median(arrayfun(@(item)item.memory.peakIncrementBytes,candidate)); finalValue = median(arrayfun(@(item)item.memory.finalRSSBytes,candidate));
@@ -218,29 +218,50 @@ for iCase = 1:numel(definitions)
         if iInterface > 1
             for iRepeat = 1:numel(candidate)
                 reference = builtin([builtin.repeatIndex]==candidate(iRepeat).repeatIndex);
-                [errorValue,agreement] = compareOutputs(reference,candidate(iRepeat));
+                [errorValue,agreement,details] = compareOutputs(reference,candidate(iRepeat));
                 maximumError = max(maximumError,errorValue); outputPassed = outputPassed && agreement;
+                outputGraph = mergeOutputGraph(outputGraph,details);
             end
         end
     end
     providersPassed = all(arrayfun(@(item)item.provider.noFallback,selected)) && all(arrayfun(@(item)item.interface=="matlab-builtin" || string(item.provider.id)=="native-neon-pthreads",selected));
     integratorsPassed = all(arrayfun(@(item)logical(item.integrator.matched) && string(item.integrator.requested)==definitions(iCase).requestedIntegrator && string(item.integrator.actual)==definitions(iCase).requestedIntegrator,selected));
-    comparison(iCase) = struct("id",definitions(iCase).id,"interfaces",records,"maximumRelativeError",maximumError,"outputAgreementPassed",outputPassed,"integratorAgreementPassed",integratorsPassed,"memoryAgreementPassed",memoryPassed,"matchedContractPassed",providersPassed&&integratorsPassed&&memoryPassed&&maximumError<=tolerance&&outputPassed);
+    comparison(iCase) = struct("id",definitions(iCase).id,"interfaces",records,"maximumRelativeError",maximumError,"outputAgreementPassed",outputPassed,"outputGraph",outputGraph,"integratorAgreementPassed",integratorsPassed,"memoryAgreementPassed",memoryPassed,"matchedContractPassed",providersPassed&&integratorsPassed&&memoryPassed&&maximumError<=tolerance&&outputPassed);
 end
 end
 
-function [errorValue,agreement] = compareOutputs(reference,candidate)
+function [errorValue,agreement,details] = compareOutputs(reference,candidate)
 if string(reference.output.kind) == "flux-binary"
     expected = readBinary(reference.output.path); actual = readBinary(candidate.output.path);
     errorValue = max(abs(actual-expected))/max(max(abs(expected)),realmin("double")); agreement = isfinite(errorValue);
+    details = struct("kind","flux-arrays","passed",agreement,"maximumRelativeError",errorValue,"maximumAbsoluteError",max(abs(actual-expected)),"variableCount",3,"recordCount",0,"categories",struct("name","coefficients","variableCount",3,"maximumAbsoluteError",max(abs(actual-expected)),"maximumRelativeError",errorValue,"passed",agreement),"differences",strings(0,1));
     return
 end
-expectedModel = WVModel.modelFromFile(char(reference.output.path)); actualModel = WVModel.modelFromFile(char(candidate.output.path)); modelCleanup = onCleanup(@()closeModels(expectedModel,actualModel));
-expectedWVT = expectedModel.wvt; actualWVT = actualModel.wvt;
-numerator = max([max(abs(actualWVT.Ap-expectedWVT.Ap),[],"all"),max(abs(actualWVT.Am-expectedWVT.Am),[],"all"),max(abs(actualWVT.A0-expectedWVT.A0),[],"all")]); denominator = max([max(abs(expectedWVT.Ap),[],"all"),max(abs(expectedWVT.Am),[],"all"),max(abs(expectedWVT.A0),[],"all"),realmin("double")]); errorValue = numerator/denominator;
-expectedGroup = expectedModel.outputFiles(1).outputGroupWithName("wave-vortex"); actualGroup = actualModel.outputFiles(1).outputGroupWithName("wave-vortex");
-agreement = actualWVT.t==expectedWVT.t && actualGroup.incrementsWrittenToGroup==expectedGroup.incrementsWrittenToGroup && isequal(string({actualGroup.observingSystems.name}),string({expectedGroup.observingSystems.name}));
-clear modelCleanup
+details = compareWaveVortexOutputGraphs(reference.output.path,candidate.output.path);
+details.kind = "complete-netcdf-output-graph";
+errorValue = details.maximumRelativeError;
+agreement = details.passed;
+end
+
+function result = mergeOutputGraph(result,value)
+if result.kind == "", result = value; return, end
+result.passed = result.passed && value.passed;
+result.maximumRelativeError = max(result.maximumRelativeError,value.maximumRelativeError);
+result.maximumAbsoluteError = max(result.maximumAbsoluteError,value.maximumAbsoluteError);
+result.variableCount = max(result.variableCount,value.variableCount);
+result.recordCount = max(result.recordCount,value.recordCount);
+result.differences = unique([result.differences(:); value.differences(:)],"stable");
+for category = reshape(value.categories,1,[])
+    index = find(string({result.categories.name})==string(category.name),1);
+    if isempty(index)
+        result.categories(end+1) = category;
+    else
+        result.categories(index).variableCount = max(result.categories(index).variableCount,category.variableCount);
+        result.categories(index).maximumAbsoluteError = max(result.categories(index).maximumAbsoluteError,category.maximumAbsoluteError);
+        result.categories(index).maximumRelativeError = max(result.categories(index).maximumRelativeError,category.maximumRelativeError);
+        result.categories(index).passed = result.categories(index).passed && category.passed;
+    end
+end
 end
 
 function createMatchedFixture(pathname,options)
@@ -252,6 +273,13 @@ model.eulerianObservingSystem.addNetCDFOutputVariables('u');
 model.setFloatPositions([1000 7000],[900 6500],[-250 -850],'u',absToleranceXY=1e-8,absToleranceZ=1e-8);
 model.addTracer(sin(2*pi*wvt.X/wvt.Lx).*cos(2*pi*wvt.Y/wvt.Ly),"dye");
 group = outputFile.outputGroupWithName(model.defaultOutputGroupName());
+particles = model.fluxedObservingSystemWithName("float");
+tracer = model.fluxedObservingSystemWithName("dye");
+group.removeObservingSystem([particles tracer]);
+particleGroup = outputFile.addNewEvenlySpacedOutputGroup("particles",outputInterval=options.deltaT/2);
+particleGroup.addObservingSystem(particles);
+tracerGroup = outputFile.addNewEvenlySpacedOutputGroup("tracers",outputInterval=options.deltaT/2);
+tracerGroup.addObservingSystem(tracer);
 group.addObservingSystem(WVMooring(model,name="mooring",x=[0 5000],y=[0 4000],trackedFieldNames={'u'}));
 model.setupIntegrator(integratorType="fixed",deltaT=options.deltaT);
 model.integrateToTime(options.deltaT,shouldShowIntegrationDiagnostics=false,callback=@(~)[]);
@@ -376,4 +404,5 @@ function value=environmentRecord, [~,processor]=system("/usr/sbin/sysctl -n mach
 function value=utcTimestamp, value=string(datetime("now","TimeZone","UTC","Format","yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")); end
 function value=conditional(condition,a,b), if condition,value=a;else,value=b;end,end
 function value=emptyFailure, value=struct("stage","","identifier","","message","","report",""); end
+function value=emptyOutputGraph, value=struct("kind","","passed",true,"maximumRelativeError",0,"maximumAbsoluteError",0,"variableCount",0,"recordCount",0,"categories",repmat(struct("name","","variableCount",0,"maximumAbsoluteError",0,"maximumRelativeError",0,"passed",true),0,1),"differences",strings(0,1)); end
 function value=emptyRun, value=struct("schemaVersion","three-interface-worker-v1","status","failed","interface","","case",struct(),"repeatIndex",0,"sourceCommit","","processWallSeconds",NaN,"interfaceTotalSeconds",NaN,"integrationSeconds",NaN,"memory",struct(),"provider",struct(),"integrator",struct(),"finalState",struct(),"output",struct(),"failure",struct("identifier","","message","","report","")); end

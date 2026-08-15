@@ -25,6 +25,17 @@ for iCase = 1:numel(raw.comparison)
     if ~isfield(comparison,"memoryAgreementPassed") || ~logical(comparison.memoryAgreementPassed)
         error("WaveVortexBenchmark:IncomparableMemory","Publication requires complete process-tree RSS measurements for every interface.");
     end
+    if ~isfield(comparison,"outputGraph") || ~logical(comparison.outputGraph.passed)
+        error("WaveVortexBenchmark:OutputGraphMismatch","Publication requires agreement across the complete saved output graph.");
+    end
+    requiredCategories = "coefficients";
+    if string(definition.operation) == "model-continuation"
+        requiredCategories = [requiredCategories "eulerianFields" "moorings" "particles" "tracers" "times"];
+    end
+    availableCategories = string({comparison.outputGraph.categories.name});
+    if ~all(ismember(requiredCategories,availableCategories)) || any(~[comparison.outputGraph.categories.passed])
+        error("WaveVortexBenchmark:OutputGraphMismatch","Publication requires every expected output category to be present and equivalent.");
+    end
     caseRuns = raw.runs(reshape(string(arrayfun(@(run)run.case.id,raw.runs,"UniformOutput",false)),[],1)==string(comparison.id));
     if any(arrayfun(@(run)~logical(run.integrator.matched) || string(run.integrator.requested)~=string(definition.requestedIntegrator) || string(run.integrator.actual)~=string(definition.requestedIntegrator),caseRuns))
         error("WaveVortexBenchmark:IntegratorMismatch","Publication found a requested/actual integrator mismatch.");
@@ -39,7 +50,9 @@ for iCase = 1:numel(raw.comparison)
         interfaces{iInterface} = struct("id",string(item.id),"processWallSeconds",double(item.processWallSeconds),"interfaceTotalSeconds",double(item.interfaceTotalSeconds),"integrationSeconds",double(item.integrationSeconds),"totalPeakRSSBytes",double(item.totalPeakRSSBytes),"incrementalPeakRSSBytes",double(item.incrementalPeakRSSBytes),"finalRSSBytes",double(item.finalRSSBytes),"processWallRatio",double(item.processWallRatio),"integrationRatio",double(item.integrationRatio),"totalRSSRatio",double(item.totalRSSRatio),"incrementalRSSRatio",double(item.incrementalRSSRatio),"processWallSamplesSeconds",double([selected.processWallSeconds]),"integrationSamplesSeconds",double([selected.integrationSeconds]));
     end
     contract = struct("Nxyz",double(definition.Nxyz(:)'),"Lxyz",double(raw.configuration.Lxyz(:)'),"forcing",string(definition.forcing),"shouldAntialias",logical(definition.shouldAntialias),"integrator",string(definition.requestedIntegrator),"deltaT",double(definition.deltaT),"finalTime",double(definition.finalTime),"relativeTolerance",double(definition.relativeTolerance),"absoluteTolerance",double(definition.absoluteTolerance),"outputInterval",double(definition.outputInterval),"observerGraph",string(definition.observerGraph),"processRunCount",double(raw.configuration.processRunCount),"warmupCount",double(raw.configuration.warmupCount),"samplesPerProcess",double(raw.configuration.samplesPerProcess));
-    correctness = struct("passed",logical(comparison.matchedContractPassed),"maximumRelativeError",double(comparison.maximumRelativeError),"outputAgreementPassed",logical(comparison.outputAgreementPassed));
+    graph = comparison.outputGraph;
+    graphSummary = struct("passed",logical(graph.passed),"variableCount",double(graph.variableCount),"recordCount",double(graph.recordCount),"maximumAbsoluteError",double(graph.maximumAbsoluteError),"maximumRelativeError",double(graph.maximumRelativeError),"categories",graph.categories);
+    correctness = struct("passed",logical(comparison.matchedContractPassed),"maximumRelativeError",double(comparison.maximumRelativeError),"outputAgreementPassed",logical(comparison.outputAgreementPassed),"completeOutputGraph",graphSummary);
     cases{iCase} = struct("id",string(comparison.id),"operation",string(definition.operation),"contract",contract,"interfaces",{interfaces},"correctness",correctness);
 end
 provenance = struct("rawArtifact",options.provenancePath,"rawSchemaVersion",string(raw.schemaVersion));
