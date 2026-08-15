@@ -46,5 +46,6 @@
       "datasetId": "scaling-standard-v1--matlab-builtin--matilda--20260811T205115Z",
       "artifact": "Benchmarks/results/published/scaling-standard-v1--matlab-builtin--matilda--20260811T205115Z.json"
     }
-  ]
+  ],
+  "interfaceComparisons": []
 }

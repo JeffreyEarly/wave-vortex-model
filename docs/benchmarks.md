@@ -49,6 +49,14 @@ The source-only compiled preview is an explicit opt-in for ordinary constant-str
 Supported: constant-stratification hydrostatic and nonhydrostatic models with the default nonlinear-advection forcing. Unavailable: variable stratification, QG transforms, additional forcing, and the explicit-antialias forcing workflow.
 <!-- BENCHMARKS:COMPILED_PREVIEW:END -->
 
+## Complete-workflow interface comparison
+
+The matched comparison below separates a single nonlinear-flux evaluation from fixed-step and adaptive model continuations. Each row uses the same initial model, forcing, integration settings, observer graph, output schedule, provider, thread policy, and fresh-process boundary across MATLAB builtin, MATLAB compiled, and standalone compiled execution.
+
+<!-- BENCHMARKS:THREE_INTERFACES:START -->
+No approved matched three-interface result has been published yet.
+<!-- BENCHMARKS:THREE_INTERFACES:END -->
+
 ## Scaling with model size
 
 The plots separate horizontal and vertical scaling for the representative nonhydrostatic constant-stratification transform. Limiting each chart to one transform keeps the machine and suite comparisons legible; the expandable tables retain results for every transform family. Each point is the median of the retained timing samples. Memory plots report the peak resident memory of the MATLAB or C++ process, including the language runtime and numerical libraries.

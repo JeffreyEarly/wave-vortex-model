@@ -30,6 +30,7 @@ classdef TestBenchmarkWebsiteDocumentation < matlab.unittest.TestCase
             testCase.verifySubstring(page,"No approved scaling datasets have been published yet");
             testCase.verifySubstring(page,"No approved computer results have been published yet");
             testCase.verifySubstring(page,"No approved result files have been published yet");
+            testCase.verifySubstring(page,"No approved matched three-interface result has been published yet");
             testCase.verifyFalse(isfolder(fullfile(buildFolder,"assets","benchmarks")));
             testCase.verifyFalse(contains(page,"Performance across releases"));
         end

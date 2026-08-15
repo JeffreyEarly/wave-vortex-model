@@ -41,6 +41,8 @@ result = runCompiledPreviewBenchmark
 
 Each MATLAB/compiled backend, case, and repeat runs in its own fresh MATLAB process. The raw artifact records active-backend identity, native FFTW identity, exact retained application storage, isolated operation RSS, lifecycle balance, and the availability decision. `publishedWaveVortexBenchmarksFromCompiledPreviewArtifact` converts that one paired artifact into comparable MATLAB and C++ `published-benchmark-v1` datasets. Memory is reported but does not gate preview availability.
 
+`runThreeInterfaceBenchmark` is the matched complete-workflow companion. It compares MATLAB builtin, MATLAB compiled, and standalone compiled execution for one `nonlinearFlux`, one fixed-RK4 continuation, and one adaptive-RK3(2) continuation with observer output. Every sample uses a fresh process and an identical frozen model file. The author-only standalone kernel worker is built only when `WV_RUNTIME_BUILD_BENCHMARKS=ON`; it is not part of the package or ordinary `wave-vortex-run` interface. `publishedThreeInterfaceBenchmarkFromArtifact` creates the small catalog-approved website record while the raw artifact remains under authoring-only benchmark results.
+
 Normalize a MATLAB artifact with explicit platform identity and repository-relative provenance:
 
 ```matlab

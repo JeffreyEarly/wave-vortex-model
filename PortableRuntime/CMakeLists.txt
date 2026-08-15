@@ -3,6 +3,7 @@ project(WaveVortexPortableRuntime VERSION 0.1.0 LANGUAGES CXX)
 
 include(CTest)
 option(WV_RUNTIME_ENABLE_NATIVE_FFTW "Build wave-vortex-run with the pinned native FFTW adapter" OFF)
+option(WV_RUNTIME_BUILD_BENCHMARKS "Build author-only portable-runtime benchmark workers" OFF)
 set(WV_RUNTIME_FFTW_ROOT "" CACHE PATH "Prefix containing the validated FFTW 3.3.11 include and lib folders")
 
 if(NOT TARGET WaveVortex::Kernel)
@@ -78,6 +79,34 @@ if(WV_RUNTIME_ENABLE_NATIVE_FFTW)
     set_target_properties(wave-vortex-run PROPERTIES BUILD_RPATH "${WV_RUNTIME_FFTW_ROOT}/lib")
 else()
     target_compile_definitions(wave-vortex-run PRIVATE WV_RUNTIME_HAS_NATIVE_FFTW=0 WV_RUNTIME_EXPECTED_FFTW_ROOT="")
+endif()
+
+if(WV_RUNTIME_BUILD_BENCHMARKS)
+    if(NOT WV_RUNTIME_ENABLE_NATIVE_FFTW)
+        message(FATAL_ERROR "Portable-runtime benchmarks require the validated native FFTW provider.")
+    endif()
+    add_executable(wv-standalone-nonlinear-flux-benchmark
+        ../Benchmarks/standalone/WVStandaloneNonlinearFluxBenchmark.cpp)
+    target_compile_features(wv-standalone-nonlinear-flux-benchmark PRIVATE cxx_std_17)
+    target_include_directories(wv-standalone-nonlinear-flux-benchmark PRIVATE
+        src
+        ../CompiledKernel/adapters/native-fftw
+    )
+    target_link_libraries(wv-standalone-nonlinear-flux-benchmark PRIVATE
+        WaveVortex::PortableRuntime
+        WaveVortexNativeFFTW
+        ${WAVEVORTEX_NETCDF_TARGET}
+    )
+    target_compile_definitions(wv-standalone-nonlinear-flux-benchmark PRIVATE
+        WV_RUNTIME_EXPECTED_FFTW_ROOT="${WV_RUNTIME_FFTW_ROOT}"
+        WV_RUNTIME_SOURCE_COMMIT="${WV_RUNTIME_SOURCE_COMMIT}"
+    )
+    set_target_properties(wv-standalone-nonlinear-flux-benchmark PROPERTIES
+        BUILD_RPATH "${WV_RUNTIME_FFTW_ROOT}/lib")
+    if(CMAKE_CXX_COMPILER_ID MATCHES "AppleClang|Clang|GNU")
+        target_compile_options(wv-standalone-nonlinear-flux-benchmark PRIVATE
+            -Wall -Wextra -Wpedantic -Werror)
+    endif()
 endif()
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "AppleClang|Clang|GNU")
