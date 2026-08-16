@@ -96,6 +96,18 @@ classdef TestThreeInterfaceBenchmark < matlab.unittest.TestCase
             testCase.verifyError(@()publishedThreeInterfaceBenchmarkFromArtifact(rawPath),"WaveVortexBenchmark:AdaptiveWorkMismatch")
         end
 
+        function toleranceFingerprintMismatchIsDiagnostic(testCase)
+            raw = rawFixture;
+            adaptiveRuns = find(arrayfun(@(run)string(run.case.id)=="adaptive-rk23-observer-output",raw.runs));
+            raw.runs(adaptiveRuns(end)).integrator.absoluteToleranceHash = "different";
+            raw.runs(adaptiveRuns(end)).integrator.absoluteToleranceComponentHashes(1) = "different";
+            raw.comparison(3).absoluteToleranceFingerprintAgreementPassed = false;
+            rawPath = fullfile(testCase.TemporaryFolder,"raw.json");
+            writelines(jsonencode(raw),rawPath);
+            validateThreeInterfaceBenchmarkContract(raw)
+            publishedThreeInterfaceBenchmarkFromArtifact(rawPath);
+        end
+
         function mixedOutputSchedulesAreRejected(testCase)
             if ~isCanonicalNativePlatform
                 return
@@ -295,7 +307,7 @@ end
 function raw = rawFixture
 interfaces = [interfaceRecord("matlab-builtin",1,1,1,1); interfaceRecord("matlab-compiled",0.5,0.5,2,2); interfaceRecord("standalone-compiled",0.25,0.25,0.25,0.25)];
 definitions = [caseDefinition("nonlinear-flux","nonlinearFlux","none"); caseDefinition("fixed-rk4-continuation","model-continuation","fixed-rk4"); caseDefinition("adaptive-rk23-observer-output","model-continuation","adaptive-rk23")];
-comparison = repmat(struct("id","","interfaces",interfaces,"maximumRelativeError",1e-14,"outputAgreementPassed",true,"outputGraph",modelOutputGraph,"integratorAgreementPassed",true,"adaptiveWorkAgreementPassed",true,"memoryAgreementPassed",true,"matchedContractPassed",true),3,1);
+comparison = repmat(struct("id","","interfaces",interfaces,"maximumRelativeError",1e-14,"outputAgreementPassed",true,"outputGraph",modelOutputGraph,"integratorAgreementPassed",true,"adaptiveWorkAgreementPassed",true,"absoluteToleranceFingerprintAgreementPassed",true,"memoryAgreementPassed",true,"matchedContractPassed",true),3,1);
 runs = repmat(runRecord("matlab-builtin",definitions(1)),0,1);
 for iCase = 1:3
     comparison(iCase).id = definitions(iCase).id;

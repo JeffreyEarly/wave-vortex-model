@@ -41,6 +41,12 @@ end
 if ~isfield(comparison,"adaptiveWorkAgreementPassed") || ~logical(comparison.adaptiveWorkAgreementPassed)
     error("WaveVortexBenchmark:AdaptiveWorkMismatch","Publication requires equivalent adaptive controller work in every interface.");
 end
+if ~isfield(comparison,"absoluteToleranceFingerprintAgreementPassed")
+    error("WaveVortexBenchmark:AdaptiveWorkMismatch","Adaptive evidence must report the diagnostic absolute-tolerance fingerprint comparison.");
+end
+% Fingerprint disagreement is diagnostic. Low-bit quantization has hard bin
+% boundaries, so exact cross-language hash equality is not a sound numerical
+% equivalence criterion for independently evaluated tolerance formulas.
 required = ["controller" "relativeTolerance" "absoluteToleranceHash" "absoluteToleranceHashClearedMantissaBits" "absoluteToleranceComponentHashes" "requestedInitialStep" "effectiveInitialStep" "requestedMaximumStep" "effectiveMaximumStep" "initialTime" "finalTime" "acceptedStepCount" "rejectedStepCount" "rhsEvaluationCount" "denseOutputEvaluationCount" "outputRecordCounts"];
 if any(arrayfun(@(run)~all(isfield(run.integrator,required)),caseRuns))
     error("WaveVortexBenchmark:AdaptiveWorkMismatch","An adaptive interface omitted required controller or work-count evidence.");

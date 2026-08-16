@@ -60,6 +60,7 @@ for iCase = 1:numel(raw.comparison)
     if string(definition.requestedIntegrator) == "adaptive-rk23"
         exemplar = caseRuns(1).integrator;
         adaptiveWork = rmfield(exemplar,["requested" "actual" "matched"]);
+        adaptiveWork.absoluteToleranceFingerprintAgreementPassed = logical(comparison.absoluteToleranceFingerprintAgreementPassed);
     end
     graph = comparison.outputGraph;
     graphSummary = struct("passed",logical(graph.passed),"variableCount",double(graph.variableCount),"recordCount",double(graph.recordCount),"maximumAbsoluteError",double(graph.maximumAbsoluteError),"maximumRelativeError",double(graph.maximumRelativeError),"categories",graph.categories);

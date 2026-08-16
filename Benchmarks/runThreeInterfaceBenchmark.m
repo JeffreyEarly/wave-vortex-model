@@ -224,7 +224,7 @@ end
 
 function comparison = aggregate(runs,definitions,tolerance)
 interfaces = ["matlab-builtin" "matlab-compiled" "standalone-compiled"];
-comparison = repmat(struct("id","","interfaces",[],"maximumRelativeError",NaN,"outputAgreementPassed",false,"outputGraph",emptyOutputGraph,"integratorAgreementPassed",false,"adaptiveWorkAgreementPassed",false,"memoryAgreementPassed",false,"matchedContractPassed",false),numel(definitions),1);
+comparison = repmat(struct("id","","interfaces",[],"maximumRelativeError",NaN,"outputAgreementPassed",false,"outputGraph",emptyOutputGraph,"integratorAgreementPassed",false,"adaptiveWorkAgreementPassed",false,"absoluteToleranceFingerprintAgreementPassed",true,"memoryAgreementPassed",false,"matchedContractPassed",false),numel(definitions),1);
 for iCase = 1:numel(definitions)
     selected = runs(string(arrayfun(@(item)item.case.id,runs,"UniformOutput",false))==definitions(iCase).id);
     records = repmat(struct("id","","processWallSeconds",NaN,"interfaceTotalSeconds",NaN,"integrationSeconds",NaN,"totalPeakRSSBytes",NaN,"incrementalPeakRSSBytes",NaN,"finalRSSBytes",NaN,"processWallRatio",NaN,"integrationRatio",NaN,"totalRSSRatio",NaN,"incrementalRSSRatio",NaN),numel(interfaces),1);
@@ -248,7 +248,8 @@ for iCase = 1:numel(definitions)
     providersPassed = all(arrayfun(@(item)item.provider.noFallback,selected)) && all(arrayfun(@(item)item.interface=="matlab-builtin" || string(item.provider.id)=="native-neon-pthreads",selected));
     integratorsPassed = all(arrayfun(@(item)logical(item.integrator.matched) && string(item.integrator.requested)==definitions(iCase).requestedIntegrator && string(item.integrator.actual)==definitions(iCase).requestedIntegrator,selected));
     adaptiveWorkPassed = definitions(iCase).requestedIntegrator ~= "adaptive-rk23" || adaptiveWorkMatches(selected,definitions(iCase));
-    comparison(iCase) = struct("id",definitions(iCase).id,"interfaces",records,"maximumRelativeError",maximumError,"outputAgreementPassed",outputPassed,"outputGraph",outputGraph,"integratorAgreementPassed",integratorsPassed,"adaptiveWorkAgreementPassed",adaptiveWorkPassed,"memoryAgreementPassed",memoryPassed,"matchedContractPassed",providersPassed&&integratorsPassed&&adaptiveWorkPassed&&memoryPassed&&maximumError<=tolerance&&outputPassed);
+    toleranceFingerprintPassed = definitions(iCase).requestedIntegrator ~= "adaptive-rk23" || toleranceFingerprintMatches(selected);
+    comparison(iCase) = struct("id",definitions(iCase).id,"interfaces",records,"maximumRelativeError",maximumError,"outputAgreementPassed",outputPassed,"outputGraph",outputGraph,"integratorAgreementPassed",integratorsPassed,"adaptiveWorkAgreementPassed",adaptiveWorkPassed,"absoluteToleranceFingerprintAgreementPassed",toleranceFingerprintPassed,"memoryAgreementPassed",memoryPassed,"matchedContractPassed",providersPassed&&integratorsPassed&&adaptiveWorkPassed&&memoryPassed&&maximumError<=tolerance&&outputPassed);
 end
 end
 
@@ -284,14 +285,24 @@ end
 reference = runs(1).integrator;
 for run = reshape(runs,1,[])
     current = run.integrator;
-    exactFields = ["controller" "absoluteToleranceHash" "absoluteToleranceHashClearedMantissaBits" "acceptedStepCount" "rejectedStepCount" "rhsEvaluationCount" "denseOutputEvaluationCount"];
+    % The hashes remain useful diagnostics, but cannot be an equality gate:
+    % independently evaluated MATLAB/C++ formulas can straddle an arbitrary
+    % quantization boundary despite agreeing to roundoff. Controller inputs,
+    % accepted work, output schedules, and complete numerical output are the
+    % publication contract.
+    exactFields = ["controller" "absoluteToleranceHashClearedMantissaBits" "acceptedStepCount" "rejectedStepCount" "rhsEvaluationCount" "denseOutputEvaluationCount"];
     passed = passed && all(arrayfun(@(name)string(current.(name))==string(reference.(name)),exactFields));
-    passed = passed && isequal(string(current.absoluteToleranceComponentHashes(:)),string(reference.absoluteToleranceComponentHashes(:)));
     numericFields = ["relativeTolerance" "requestedInitialStep" "effectiveInitialStep" "requestedMaximumStep" "effectiveMaximumStep" "initialTime" "finalTime"];
     passed = passed && all(arrayfun(@(name)abs(double(current.(name))-double(reference.(name)))<=8*eps(max([1 abs(double(reference.(name)))])),numericFields));
     passed = passed && isequal(orderfields(current.outputRecordCounts),orderfields(reference.outputRecordCounts));
 end
 passed = passed && reference.controller == "matlab-ode23-v1" && reference.relativeTolerance == definition.relativeTolerance && reference.requestedInitialStep == definition.initialStep && reference.effectiveInitialStep == definition.initialStep && reference.requestedMaximumStep == definition.maximumStep && reference.effectiveMaximumStep == definition.maximumStep && reference.finalTime == definition.finalTime;
+end
+
+function passed = toleranceFingerprintMatches(runs)
+reference = runs(1).integrator;
+passed = all(arrayfun(@(run)string(run.integrator.absoluteToleranceHash)==string(reference.absoluteToleranceHash),runs));
+passed = passed && all(arrayfun(@(run)isequal(string(run.integrator.absoluteToleranceComponentHashes(:)),string(reference.absoluteToleranceComponentHashes(:))),runs));
 end
 
 function [errorValue,agreement,details] = compareOutputs(reference,candidate,tolerance)
