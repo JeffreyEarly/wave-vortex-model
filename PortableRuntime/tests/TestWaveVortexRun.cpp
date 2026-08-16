@@ -234,12 +234,12 @@ int main() {
         require(std::abs(fixedInterpolatedRestartCheckpoint.state.t-scheduledFinalTime) <= 1e-12 && hasFiniteState(fixedInterpolatedRestartCheckpoint),"fixed interpolated checkpoint did not produce a finite restart at the requested final time");
         const auto adaptiveOutput = directory/"adaptive-output.nc";
         const auto adaptiveReport = directory/"adaptive-report.json";
-        require(run(quote(input)+" "+quote(adaptiveOutput)+" --delta-t 0.037 --steps 2 --integrator adaptive-rk23 --relative-tolerance 1e-3 --absolute-tolerance 1e-6 --fft-provider reference --report "+quote(adaptiveReport)) == 0,"adaptive runner execution failed");
+        require(run(quote(input)+" "+quote(adaptiveOutput)+" --delta-t 0.037 --initial-step 0.02 --maximum-step 0.01 --steps 2 --integrator adaptive-rk23 --relative-tolerance 1e-3 --absolute-tolerance 1e-6 --fft-provider reference --report "+quote(adaptiveReport)) == 0,"adaptive runner execution failed");
         WVCheckpoint adaptiveCheckpoint;
         status = WVCheckpointReader::read(adaptiveOutput.string(),adaptiveCheckpoint);
         require(static_cast<bool>(status) && adaptiveCheckpoint.state.t > checkpoint.state.t-0.074,"adaptive runner output is not readable or did not advance");
         const auto adaptiveReportText = text(adaptiveReport);
-        require(adaptiveReportText.find("\"id\":\"adaptive-rk23\"") != std::string::npos && adaptiveReportText.find("\"rejectedStepCount\":") != std::string::npos && adaptiveReportText.find("\"nextStepSize\":") != std::string::npos && adaptiveReportText.find("\"denseOutputEvaluationCount\":") != std::string::npos && adaptiveReportText.find("\"denseOutputSeconds\":") != std::string::npos,"adaptive runner report omitted method diagnostics");
+        require(adaptiveReportText.find("\"id\":\"adaptive-rk23\"") != std::string::npos && adaptiveReportText.find("\"controller\":\"matlab-ode23-v1\"") != std::string::npos && adaptiveReportText.find("\"requestedInitialStep\":0.020000") != std::string::npos && adaptiveReportText.find("\"effectiveInitialStep\":0.01") != std::string::npos && adaptiveReportText.find("\"effectiveMaximumStep\":0.01") != std::string::npos && adaptiveReportText.find("\"toleranceHash\":") != std::string::npos && adaptiveReportText.find("\"acceptedSteps\":[") != std::string::npos && adaptiveReportText.find("\"rejectedStepCount\":") != std::string::npos && adaptiveReportText.find("\"nextStepSize\":") != std::string::npos && adaptiveReportText.find("\"denseOutputEvaluationCount\":") != std::string::npos && adaptiveReportText.find("\"denseOutputSeconds\":") != std::string::npos,"adaptive runner report omitted method diagnostics");
         const auto adaptiveSeriesDirectory = directory/"scheduled-adaptive";
         const auto adaptiveSeriesReport = directory/"scheduled-adaptive-report.json";
         const auto adaptiveSeriesArguments = std::string(" --delta-t 1e-5 --final-time ")+number(scheduledFinalTime)+" --integrator adaptive-rk23 --relative-tolerance 1e-6 --absolute-tolerance 1e-8 --fft-provider reference --output-time "+number(scheduledMidpoint)+" --output-time "+number(scheduledFinalTime)+" --output-directory "+quote(adaptiveSeriesDirectory)+" --output-pattern 'state-{index}-{time}.nc' --report "+quote(adaptiveSeriesReport);
@@ -305,6 +305,8 @@ int main() {
         const auto sentinel = bytes(output);
         require(run(quote(input)+" "+quote(output)+" --delta-t bad --steps 1 --fft-provider reference >/dev/null 2>&1") != 0,"runner accepted malformed deltaT");
         require(run(quote(input)+" "+quote(output)+" --delta-t 0.037 --steps 1 --integrator fixed-rk4 --relative-tolerance 1e-3 --fft-provider reference >/dev/null 2>&1") != 0,"fixed runner accepted adaptive tolerance options");
+        require(run(quote(input)+" "+quote(output)+" --delta-t 0.037 --initial-step 0.01 --steps 1 --integrator fixed-rk4 --fft-provider reference >/dev/null 2>&1") != 0,"fixed runner accepted adaptive step-control options");
+        require(run(quote(input)+" "+quote(output)+" --delta-t 0.037 --maximum-step bad --steps 1 --integrator adaptive-rk23 --fft-provider reference >/dev/null 2>&1") != 0,"adaptive runner accepted malformed maximum step");
         require(run(quote(input)+" "+quote(output)+" --delta-t 0.037 --steps 1 --integrator adaptive-rk23 --benchmark-output-count 2 --fft-provider reference >/dev/null 2>&1") != 0,"adaptive runner accepted scheduled outputs without final-time integration");
         require(run(quote(input)+" "+quote(output)+" --delta-t 0.037 --steps 1 --integrator unknown --fft-provider reference >/dev/null 2>&1") != 0,"runner accepted an unknown integrator");
         const auto invalidSeriesDirectory = directory/"invalid-series";

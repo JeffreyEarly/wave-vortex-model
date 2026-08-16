@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <chrono>
 #include <cmath>
+#include <cstdint>
+#include <cstring>
 #include <limits>
 #include <new>
 #include <utility>
@@ -19,6 +21,14 @@ WVComplex64 scaledSum(WVComplex64 value, WVComplex64 increment,
 double timeTolerance(double first, double second) noexcept {
   return 8.0 * std::numeric_limits<double>::epsilon() *
          std::max({1.0, std::abs(first), std::abs(second)});
+}
+
+std::uint64_t hashTolerance(std::uint64_t hash, double value) noexcept {
+  std::uint64_t bits = 0;
+  static_assert(sizeof(bits) == sizeof(value));
+  std::memcpy(&bits, &value, sizeof(bits));
+  hash ^= bits;
+  return hash * UINT64_C(1099511628211);
 }
 
 class IntegrationBuffer {
@@ -541,10 +551,11 @@ WVAdaptiveRK23::ensureWorkspace(const WVMutableIntegrationState &state) {
   if (!(options_.relativeTolerance > 0.0) ||
       !(options_.absoluteToleranceScale > 0.0) ||
       !(options_.safetyFactor > 0.0 && options_.safetyFactor <= 1.0) ||
-      !(options_.minimumStepFactor > 0.0 &&
-        options_.minimumStepFactor < 1.0) ||
+      !(options_.rejectionFloorFactor > 0.0 &&
+        options_.rejectionFloorFactor < 1.0) ||
       !(options_.maximumStepFactor >= 1.0 &&
-        options_.maximumStepFactor >= options_.minimumStepFactor))
+        options_.maximumStepFactor >= options_.rejectionFloorFactor) ||
+      !(options_.maximumStepSize > 0.0))
     return {WVKernelStatusCode::invalidConfiguration,
             "Adaptive integration tolerances must be positive."};
   if (workspace_)
@@ -569,6 +580,14 @@ WVAdaptiveRK23::ensureWorkspace(const WVMutableIntegrationState &state) {
         system_.stateLayout().additionalBlocks()[block].elementCount)
       return {WVKernelStatusCode::invalidShape,
               "Adaptive state-block tolerance shape does not match the integration layout."};
+  toleranceHash_ = UINT64_C(1469598103934665603);
+  for (std::size_t component = 0;
+       component < errorPolicy_->componentCount(); ++component)
+    for (std::size_t index = 0;
+         index < errorPolicy_->elementCount(component); ++index)
+      toleranceHash_ =
+          hashTolerance(toleranceHash_,
+                        errorPolicy_->absoluteTolerance(component, index));
   try {
     workspace_ = new Workspace;
   } catch (const std::bad_alloc &) {
@@ -598,6 +617,7 @@ WVKernelStatus WVAdaptiveRK23::prepareStateAfterRestart(
   hasAcceptedStep_ = false;
   fsalAvailable_ = false;
   nextStepSize_ = 0.0;
+  stepDiagnostics_.clear();
   auto status = ensureWorkspace(state);
   if (!status)
     return status;
@@ -626,11 +646,13 @@ WVKernelStatus WVAdaptiveRK23::step(WVMutableIntegrationState &state,
   std::vector<WVAdditionalStateBlockConstView> views;
   const auto baseView = integrationConstView(state, views);
   const auto t = state.waveVortex.t, t0 = state.waveVortex.t0;
-  double h = proposedStepSize;
+  double h = std::min(proposedStepSize, options_.maximumStepSize);
   bool initialDerivativeAvailable = false;
+  bool reusedFSALDerivative = false;
   if (fsalAvailable_) {
     std::swap(workspace_->k1, workspace_->k4);
     initialDerivativeAvailable = true;
+    reusedFSALDerivative = true;
     fsalAvailable_ = false;
     ++metrics_.fsalReuseCount;
   }
@@ -739,10 +761,10 @@ WVKernelStatus WVAdaptiveRK23::step(WVMutableIntegrationState &state,
           }
         }
       }
-      const auto valueScale =
-          absTol + options_.relativeTolerance *
-                       std::max(std::hypot(initial.real, initial.imag),
-                                std::hypot(cc[i].real, cc[i].imag));
+      const auto valueScale = std::max(
+          absTol, options_.relativeTolerance *
+                      std::max(std::hypot(initial.real, initial.imag),
+                               std::hypot(cc[i].real, cc[i].imag)));
       const auto ratio = std::hypot(e.real, e.imag) / valueScale;
       if (!std::isfinite(ratio)) {
         error = std::numeric_limits<double>::infinity();
@@ -766,11 +788,12 @@ WVKernelStatus WVAdaptiveRK23::step(WVMutableIntegrationState &state,
                  (1.0 / 3.0 - 0.25) * workspace_->k2.real()[i] +
                  (4.0 / 9.0 - 1.0 / 3.0) * workspace_->k3.real()[i] -
                  0.125 * workspace_->k4.real()[i]);
-        const auto scale =
-            errorPolicy_->absoluteTolerance(3 + blockIndex, j) +
+        const auto scale = std::max(
+            errorPolicy_->absoluteTolerance(3 + blockIndex, j),
             options_.relativeTolerance *
-                std::max(std::abs(baseView.additionalBlocks[blockIndex].realData[j]),
-                         std::abs(cr[i]));
+                std::max(
+                    std::abs(baseView.additionalBlocks[blockIndex].realData[j]),
+                    std::abs(cr[i])));
         const auto ratio = std::abs(e) / scale;
         if (!std::isfinite(ratio)) {
           error = std::numeric_limits<double>::infinity();
@@ -782,14 +805,20 @@ WVKernelStatus WVAdaptiveRK23::step(WVMutableIntegrationState &state,
       ++blockIndex;
     }
     const bool accepted = std::isfinite(error) && error <= 1.0;
-    double factor = error == 0.0
-                        ? options_.maximumStepFactor
-                        : options_.safetyFactor * std::pow(error, -1.0 / 3.0);
-    factor = std::max(options_.minimumStepFactor,
-                      std::min(options_.maximumStepFactor, factor));
-    if (!accepted)
-      factor = std::min(1.0, factor);
-    nextStepSize_ = h * factor;
+    double factor = 1.0;
+    if (accepted) {
+      if (rejectedThisStep == 0) {
+        const auto temp = 1.25 * std::cbrt(error);
+        factor = temp > 0.2 ? 1.0 / temp : options_.maximumStepFactor;
+      }
+    } else if (rejectedThisStep == 0) {
+      factor = std::max(options_.rejectionFloorFactor,
+                        options_.safetyFactor * std::pow(error, -1.0 / 3.0));
+    } else {
+      factor = options_.rejectionFloorFactor;
+    }
+    nextStepSize_ =
+        std::min(options_.maximumStepSize, h * factor);
     metrics_.lastProposedStepSize = proposedStepSize;
     metrics_.normalizedError = error;
     metrics_.nextStepSize = nextStepSize_;
@@ -812,6 +841,10 @@ WVKernelStatus WVAdaptiveRK23::step(WVMutableIntegrationState &state,
       if (!fsalAvailable_)
         ++metrics_.fsalInvalidationCount;
       hasAcceptedStep_ = true;
+      if (stepDiagnostics_.size() < options_.maximumRecordedStepDiagnostics)
+        stepDiagnostics_.push_back(
+            {t, h, error, nextStepSize_, rejectedThisStep,
+             evaluationsThisStep, reusedFSALDerivative});
       return WVKernelStatus::ok();
     }
     ++rejectedThisStep;
@@ -831,7 +864,12 @@ WVAdaptiveRK23::advanceToTime(WVMutableIntegrationState &state,
     return {WVKernelStatusCode::invalidConfiguration,
             "RK23 cannot advance backward or to a nonfinite time."};
   while (state.waveVortex.t < finalTime) {
-    const auto use = std::min(h, finalTime - state.waveVortex.t);
+    const auto remaining = finalTime - state.waveVortex.t;
+    if (remaining <= timeTolerance(state.waveVortex.t, finalTime)) {
+      state.waveVortex.t = finalTime;
+      break;
+    }
+    const auto use = std::min(h, remaining);
     const auto status = step(state, use);
     if (!status)
       return status;

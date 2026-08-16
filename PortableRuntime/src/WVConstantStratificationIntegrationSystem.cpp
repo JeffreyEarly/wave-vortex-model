@@ -28,7 +28,7 @@ std::size_t blockIndex(const WVIntegrationStateLayout &layout,
 class UnifiedErrorPolicy final : public WVIntegrationErrorPolicy {
 public:
   UnifiedErrorPolicy(std::unique_ptr<WVIntegrationErrorPolicy> coefficients,
-                     const WVIntegrationStateLayout &layout, double scale)
+                     const WVIntegrationStateLayout &layout)
       : coefficients_(std::move(coefficients)) {
     counts_.reserve(3 + layout.additionalBlocks().size());
     tolerances_.reserve(3 + layout.additionalBlocks().size());
@@ -38,7 +38,7 @@ public:
     }
     for (const auto &block : layout.additionalBlocks()) {
       counts_.push_back(block.elementCount);
-      tolerances_.push_back(block.absoluteTolerance * scale);
+      tolerances_.push_back(block.absoluteTolerance);
     }
   }
 
@@ -405,7 +405,7 @@ WVKernelStatus WVConstantStratificationIntegrationSystem::createErrorPolicy(
     return status;
   try {
     policy = std::make_unique<UnifiedErrorPolicy>(
-        std::move(coefficients), layout_, absoluteToleranceScale);
+        std::move(coefficients), layout_);
     return WVKernelStatus::ok();
   } catch (const std::bad_alloc &) {
     return {WVKernelStatusCode::allocationFailure,
