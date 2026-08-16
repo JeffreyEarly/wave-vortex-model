@@ -54,6 +54,7 @@ classdef TestThreeInterfaceBenchmark < matlab.unittest.TestCase
             adaptiveRaw.comparison = adaptiveRaw.comparison(3);
             adaptiveRaw.runs = adaptiveRaw.runs(arrayfun(@(run)string(run.case.id)=="adaptive-rk23-observer-output",adaptiveRaw.runs));
             adaptive = publishedThreeInterfaceBenchmarkFromArtifact(writeRaw(testCase,adaptiveRaw,"adaptive.json"),platformId="lyra",platformName="Apple M3 Max");
+            adaptive.provider.moduleSHA256 = repmat('c',1,64);
             frozenPath = writeRaw(testCase,frozen,"frozen-published.json");
             adaptivePath = writeRaw(testCase,adaptive,"adaptive-published.json");
             composed = composePublishedThreeInterfaceBenchmark(frozenPath,adaptivePath);
@@ -61,7 +62,25 @@ classdef TestThreeInterfaceBenchmark < matlab.unittest.TestCase
             testCase.verifyEqual(arrayfun(@(index)string(composed.cases{index}.id),1:numel(composed.cases)),["nonlinear-flux" "fixed-rk4-continuation" "adaptive-rk23-observer-output"])
             testCase.verifyEqual(composed.cases{1}.evidence.datasetId,frozen.datasetId)
             testCase.verifyEqual(composed.cases{3}.evidence.datasetId,adaptive.datasetId)
+            testCase.verifyEqual(composed.cases{1}.evidence.provider.moduleSHA256,frozen.provider.moduleSHA256)
+            testCase.verifyEqual(composed.cases{3}.evidence.provider.moduleSHA256,adaptive.provider.moduleSHA256)
+            testCase.verifyEqual(composed.provider.moduleSHA256,"per-case-evidence")
+            testCase.verifyEqual(composed.provider.moduleIdentityScope,"case-evidence")
             testCase.verifyEqual(composed.provenance.composition,"frozen-valid-v1-plus-corrected-adaptive")
+        end
+
+        function compositionRejectsIncompatibleProviderConfiguration(testCase)
+            frozen = publishedThreeInterfaceBenchmarkFromArtifact(writeRaw(testCase,rawFixture,"frozen.json"),platformId="lyra",platformName="Apple M3 Max");
+            adaptiveRaw = rawFixture;
+            adaptiveRaw.runId = "20260816T120000000Z";
+            adaptiveRaw.cases = adaptiveRaw.cases(3);
+            adaptiveRaw.comparison = adaptiveRaw.comparison(3);
+            adaptiveRaw.runs = adaptiveRaw.runs(arrayfun(@(run)string(run.case.id)=="adaptive-rk23-observer-output",adaptiveRaw.runs));
+            adaptive = publishedThreeInterfaceBenchmarkFromArtifact(writeRaw(testCase,adaptiveRaw,"adaptive.json"),platformId="lyra",platformName="Apple M3 Max");
+            adaptive.provider.threadBackend = "openmp";
+            frozenPath = writeRaw(testCase,frozen,"frozen-published.json");
+            adaptivePath = writeRaw(testCase,adaptive,"adaptive-published.json");
+            testCase.verifyError(@()composePublishedThreeInterfaceBenchmark(frozenPath,adaptivePath),"WaveVortexBenchmark:IncompatiblePublishedEvidence")
         end
 
         function dirtyOrIncompleteArtifactsCannotBePublished(testCase)

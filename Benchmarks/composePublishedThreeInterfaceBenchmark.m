@@ -8,8 +8,8 @@ frozen = jsondecode(fileread(frozenArtifactPath));
 adaptive = jsondecode(fileread(adaptiveArtifactPath));
 validateInput(frozen,"frozen");
 validateInput(adaptive,"adaptive");
-if string(jsonencode(orderfields(frozen.platform))) ~= string(jsonencode(orderfields(adaptive.platform))) || string(jsonencode(orderfields(frozen.provider))) ~= string(jsonencode(orderfields(adaptive.provider)))
-    error("WaveVortexBenchmark:IncompatiblePublishedEvidence","Frozen and adaptive evidence must use the same platform and provider.");
+if string(jsonencode(orderfields(frozen.platform))) ~= string(jsonencode(orderfields(adaptive.platform))) || ~compatibleProviders(frozen.provider,adaptive.provider)
+    error("WaveVortexBenchmark:IncompatiblePublishedEvidence","Frozen and adaptive evidence must use the same platform and provider configuration.");
 end
 frozenIds = arrayfun(@(index)string(itemAt(frozen.cases,index).id),1:numel(frozen.cases));
 adaptiveIds = arrayfun(@(index)string(itemAt(adaptive.cases,index).id),1:numel(adaptive.cases));
@@ -25,7 +25,8 @@ if any(cellfun(@(value)~isequal(double(value.contract.Nxyz(:)'),resolution),case
     error("WaveVortexBenchmark:IncompatiblePublishedEvidence","Every composed case must use the same resolution.");
 end
 sources = [evidenceRecord(frozen) evidenceRecord(adaptive)];
-dataset = struct("schemaVersion","published-three-interface-v2","datasetId",string(adaptive.datasetId),"collectedAt",string(adaptive.collectedAt),"source",adaptive.source,"platform",adaptive.platform,"provider",adaptive.provider,"provenance",struct("composition","frozen-valid-v1-plus-corrected-adaptive","sourceDatasets",sources),"cases",{cases});
+provider = compositeProvider(frozen.provider,adaptive.provider);
+dataset = struct("schemaVersion","published-three-interface-v2","datasetId",string(adaptive.datasetId),"collectedAt",string(adaptive.collectedAt),"source",adaptive.source,"platform",adaptive.platform,"provider",provider,"provenance",struct("composition","frozen-valid-v1-plus-corrected-adaptive","sourceDatasets",sources),"cases",{cases});
 end
 
 function validateInput(dataset,role)
@@ -52,7 +53,27 @@ value.evidence = evidenceRecord(dataset);
 end
 
 function value = evidenceRecord(dataset)
-value = struct("datasetId",string(dataset.datasetId),"collectedAt",string(dataset.collectedAt),"source",dataset.source,"externalArchive",dataset.provenance.externalArchive);
+value = struct("datasetId",string(dataset.datasetId),"collectedAt",string(dataset.collectedAt),"source",dataset.source,"provider",dataset.provider,"externalArchive",dataset.provenance.externalArchive);
+end
+
+function tf = compatibleProviders(first,second)
+fields = ["id" "version" "threadBackend" "scope"];
+tf = all(arrayfun(@(name)isfield(first,name) && isfield(second,name) && string(first.(name))==string(second.(name)),fields));
+tf = tf && validModuleIdentity(first) && validModuleIdentity(second);
+end
+
+function tf = validModuleIdentity(provider)
+tf = isfield(provider,"moduleSHA256") && ~isempty(regexp(string(provider.moduleSHA256),'^[0-9a-f]{64}$','once'));
+tf = tf && isfield(provider,"identityValidated") && logical(provider.identityValidated);
+tf = tf && isfield(provider,"openMPDetected") && ~logical(provider.openMPDetected);
+end
+
+function provider = compositeProvider(first,second)
+provider = first;
+provider.moduleSHA256 = "per-case-evidence";
+provider.moduleIdentityScope = "case-evidence";
+provider.identityValidated = logical(first.identityValidated) && logical(second.identityValidated);
+provider.openMPDetected = logical(first.openMPDetected) || logical(second.openMPDetected);
 end
 
 function item = itemAt(values,index)

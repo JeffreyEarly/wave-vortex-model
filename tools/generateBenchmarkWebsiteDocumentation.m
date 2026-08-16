@@ -62,9 +62,12 @@ for iEntry = 1:numel(catalog.interfaceComparisons)
         end
         for iCase=1:numel(dataset.cases)
             benchmarkCase=itemAt(dataset.cases,iCase);
-            if ~isfield(benchmarkCase,"evidence") || logical(benchmarkCase.evidence.source.sourceDirty)
+            if ~isfield(benchmarkCase,"evidence") || logical(benchmarkCase.evidence.source.sourceDirty) || ~validInterfaceProvider(benchmarkCase.evidence.provider)
                 error("WaveVortexModel:InvalidThreeInterfaceBenchmark","Composite interface comparison %s lacks clean case-level evidence.",datasetId);
             end
+        end
+        if string(dataset.provider.moduleSHA256)~="per-case-evidence" || string(dataset.provider.moduleIdentityScope)~="case-evidence" || ~logical(dataset.provider.identityValidated) || logical(dataset.provider.openMPDetected)
+            error("WaveVortexModel:InvalidThreeInterfaceBenchmark","Composite interface comparison %s misrepresents its case-level provider identity.",datasetId);
         end
     end
     records(end+1)=struct("dataset",dataset,"artifactPath",artifactPath); %#ok<AGROW>
@@ -132,7 +135,7 @@ end
 end
 
 function key = interfaceCompatibilityKey(dataset)
-key = strjoin([interfaceSourceSignature(dataset),string(dataset.platform.id),string(dataset.platform.matlabVersion),string(dataset.platform.threadCount),string(dataset.provider.id),string(dataset.provider.version),string(dataset.provider.moduleSHA256),interfaceStudySignature(dataset)],"|");
+key = strjoin([interfaceSourceSignature(dataset),string(dataset.platform.id),string(dataset.platform.matlabVersion),string(dataset.platform.threadCount),string(dataset.provider.id),string(dataset.provider.version),interfaceProviderSignature(dataset),interfaceStudySignature(dataset)],"|");
 end
 
 function value = interfaceSourceSignature(dataset)
@@ -140,12 +143,21 @@ values = strings(1,numel(dataset.cases));
 for iCase=1:numel(dataset.cases)
     benchmarkCase=itemAt(dataset.cases,iCase);
     if isfield(benchmarkCase,"evidence")
-        values(iCase)=string(benchmarkCase.id)+":"+string(benchmarkCase.evidence.source.tree);
+        values(iCase)=string(benchmarkCase.id)+":"+string(benchmarkCase.evidence.source.tree)+":"+string(benchmarkCase.evidence.provider.moduleSHA256);
     else
-        values(iCase)=string(benchmarkCase.id)+":"+string(dataset.source.tree);
+        values(iCase)=string(benchmarkCase.id)+":"+string(dataset.source.tree)+":"+string(dataset.provider.moduleSHA256);
     end
 end
 value=strjoin(sort(values),",");
+end
+
+function value = interfaceProviderSignature(dataset)
+value = strjoin([string(dataset.provider.id),string(dataset.provider.version),string(dataset.provider.threadBackend),string(dataset.provider.scope)],":");
+end
+
+function tf = validInterfaceProvider(provider)
+tf = ~isempty(regexp(string(provider.moduleSHA256),'^[0-9a-f]{64}$','once'));
+tf = tf && logical(provider.identityValidated) && ~logical(provider.openMPDetected);
 end
 
 function validateInterfaceArchive(archive,datasetId)
