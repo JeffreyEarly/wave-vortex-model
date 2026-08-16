@@ -3,6 +3,8 @@
 #include "WaveVortexRuntime/WVIntegrationContracts.hpp"
 
 #include <cstddef>
+#include <cstdint>
+#include <limits>
 #include <memory>
 #include <vector>
 
@@ -112,9 +114,21 @@ public:
 struct WVAdaptiveRK23Options {
   double relativeTolerance = 1e-3;
   double absoluteToleranceScale = 1e-6;
-  double safetyFactor = 0.9;
-  double minimumStepFactor = 0.2;
+  double safetyFactor = 0.8;
+  double rejectionFloorFactor = 0.5;
   double maximumStepFactor = 5.0;
+  double maximumStepSize = std::numeric_limits<double>::infinity();
+  std::size_t maximumRecordedStepDiagnostics = 512;
+};
+
+struct WVAdaptiveRK23StepDiagnostic {
+  double initialTime = 0.0;
+  double acceptedStepSize = 0.0;
+  double normalizedError = 0.0;
+  double nextStepSize = 0.0;
+  std::size_t rejectedAttemptCount = 0;
+  std::size_t rightHandSideEvaluationCount = 0;
+  bool reusedFSALDerivative = false;
 };
 
 class WVAdaptiveRK23 final : public WVTimeIntegrator,
@@ -149,9 +163,21 @@ public:
   const WVIntegratorMetrics &metrics() const noexcept {
     return metrics_;
   }
+  const std::vector<WVAdaptiveRK23StepDiagnostic> &stepDiagnostics() const
+      noexcept {
+    return stepDiagnostics_;
+  }
+  std::uint64_t toleranceHash() const noexcept { return toleranceHash_; }
+  bool stepDiagnosticsComplete() const noexcept {
+    return stepDiagnostics_.size() == metrics_.acceptedStepCount;
+  }
+  static constexpr const char *controllerIdentifier() noexcept {
+    return "matlab-ode23-v1";
+  }
   double nextStepSize() const noexcept override { return nextStepSize_; }
   std::size_t persistentBytes() const noexcept override {
-    return metrics_.workspaceCapacityBytes;
+    return metrics_.workspaceCapacityBytes +
+           stepDiagnostics_.capacity() * sizeof(WVAdaptiveRK23StepDiagnostic);
   }
 
 private:
@@ -163,6 +189,8 @@ private:
   Workspace *workspace_ = nullptr;
   WVAcceptedStep acceptedStep_;
   mutable WVIntegratorMetrics metrics_;
+  std::vector<WVAdaptiveRK23StepDiagnostic> stepDiagnostics_;
+  std::uint64_t toleranceHash_ = 0;
   double nextStepSize_ = 0.0;
   bool hasAcceptedStep_ = false;
   bool fsalAvailable_ = false;

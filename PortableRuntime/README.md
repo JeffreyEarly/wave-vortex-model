@@ -44,10 +44,12 @@ wave-vortex-run saved-model.nc \
     --restart-mode model \
     --output-policy append \
     --integrator adaptive-rk23 \
-    --delta-t 1 --final-time 100 \
+    --delta-t 1 --initial-step 1 --maximum-step 10 --final-time 100 \
     --relative-tolerance 1e-3 --absolute-tolerance 1e-6 \
     --fft-provider native-fftw
 ```
+
+For adaptive integration, `--delta-t` remains the backward-compatible initial-step default. `--initial-step` overrides it explicitly. `--maximum-step` defaults to one tenth of the requested continuation interval, matching MATLAB `ode23`; name it explicitly when comparing runs or continuing the same controller policy across segments. The run report records the controller, effective limits, tolerance hash, accepted and rejected work, and bounded accepted-step diagnostics.
 
 Use `--restart-mode coefficients --output-policy create` with positional input and output paths for an explicit reduced checkpoint-only workflow. `create` refuses existing files; `replace` must be named to authorize atomic replacement. Complete-model continuation accepts only `append` and validates compatibility before mutation.
 

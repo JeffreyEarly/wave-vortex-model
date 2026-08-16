@@ -11,10 +11,11 @@
     "fullGridTracerVerticalDifferentiation": "2704ca5a2d3f495745d4bb1ce4642423adc663fe",
     "portableCompilerTestInjection": "1946c47ff70db06cb36d2622a2d094861ea4686c",
     "eagerScalarAdvectionPlanning": "issue-218",
-    "description": "Shared per-RHS advection fields, core-owned F-grid scalar differentiation, and construction-time preparation of required scalar plans for integrated observers.",
+    "adaptiveRK23MatlabParity": "issue-240",
+    "description": "Shared per-RHS advection fields, core-owned F-grid scalar differentiation, construction-time preparation of required scalar plans, and MATLAB-compatible adaptive tolerances for integrated observers.",
     "kernelTypesSHA256": "1d53775cda4e5d7692a8889b9ad9df994bef6039f97eabf7a407f7a71ea156bb",
     "kernelInterfaceSHA256": "6f04c9deb091ba02d372901b80c9cff6a1f136c9f1cdd98a38843577923bafd6",
-    "integrationSystemSHA256": "30cd8dcc24129dd102d896942187c4d776a80ef981871f472122398326d9ec0e",
+    "integrationSystemSHA256": "8d9d7f61cc14152970b67c2e83f1391af558a1ef6fb47b28a57d33bb9c962950",
     "forcingEngineSHA256": "caf15f61a2b9c08ba97d347b7508f816056fcb145c0a45227525ad26d1f78e58",
     "forcingInterfaceSHA256": "ca8f55f7445d66dd2492b2b7f0de4b7482c077dc722cc9656fd1a3232c9ba0b1"
   },
@@ -30,7 +31,7 @@
   "keySourceSHA256": {
     "coefficientFormulas": "78d647608d8919b33c278c280eb6d2b253dfb0acd8d3330141fbdc845e00864a",
     "kernel": "c6193e5b1d97c59b90d5e17b7941aec63cd66ffa81f62177578681814cb5c3e7",
-    "integrationSystem": "30cd8dcc24129dd102d896942187c4d776a80ef981871f472122398326d9ec0e",
+    "integrationSystem": "8d9d7f61cc14152970b67c2e83f1391af558a1ef6fb47b28a57d33bb9c962950",
     "nativeEngine": "5081f650cf5bf2cee9c210cef8ab1596a73aad4de7d65c712783fa36795e3b4b",
     "mexGateway": "62608acb8eb06bca83e53dd14cc1812df85b6484230fb7f02e332bb945775526",
     "buildOrchestrator": "ca2bf8bca7fef4acd41e19fa7f2ccf25f1cb1ed6bbd9f39129293dd600031cfe"

@@ -457,6 +457,12 @@ void testValidation() {
       system);
   require(static_cast<bool>(status) && system,
           "valid integration system construction failed");
+  std::unique_ptr<WVIntegrationErrorPolicy> errorPolicy;
+  status = system->createErrorPolicy(1e-12, errorPolicy);
+  require(static_cast<bool>(status) && errorPolicy,
+          "particle error policy construction failed");
+  require(std::abs(errorPolicy->absoluteTolerance(3, 0) - 1e-5) < 1e-20,
+          "particle absolute tolerance was rescaled by the coefficient tolerance");
   auto record = descriptor.record();
   auto particle = std::find_if(record.observers.begin(), record.observers.end(),
                                [](const auto &observer) {

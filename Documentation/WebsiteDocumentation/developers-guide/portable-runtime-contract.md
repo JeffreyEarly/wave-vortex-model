@@ -15,7 +15,7 @@ The portable runtime composes the MATLAB-independent `WaveVortexKernel` with int
 
 `WVIntegrationSystem` owns right-hand-side evaluation, constraints, and error scaling. `WVTimeIntegrator` advances accepted state. `WVDenseOutput` evaluates state inside an accepted step from that method's Runge--Kutta data. Output scheduling consumes only these interfaces: adding another integrator must not add method branches to the output driver, and adding another state block must not change an integrator.
 
-The runtime supplies classical fixed RK4 and Bogacki--Shampine RK3(2). Rejected adaptive attempts do not mutate accepted state or emit output. Interpolated output never becomes accepted state.
+The runtime supplies classical fixed RK4 and Bogacki--Shampine RK3(2). The adaptive controller uses the `matlab-ode23-v1` contract: componentwise scale `max(absTol, relTol*max(abs(y),abs(ynew)))`, MATLAB's accepted/rejected step factors, a bounded maximum step, and FSAL reuse only when constraints preserve the endpoint derivative. Coefficient tolerances use the model-wide requested scale; particle, tracer, and other observing-system blocks retain their declared absolute tolerances without an additional global factor. Rejected adaptive attempts do not mutate accepted state or emit output. Interpolated output never becomes accepted state.
 
 ## Observers and fields
 

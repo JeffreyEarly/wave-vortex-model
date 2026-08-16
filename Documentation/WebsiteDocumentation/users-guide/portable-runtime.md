@@ -59,10 +59,12 @@ wave-vortex-run saved-model.nc \
     --restart-mode model \
     --output-policy append \
     --integrator adaptive-rk23 \
-    --delta-t 1 --final-time 100 \
+    --delta-t 1 --initial-step 1 --maximum-step 10 --final-time 100 \
     --relative-tolerance 1e-3 --absolute-tolerance 1e-6 \
     --fft-provider native-fftw
 ```
+
+For adaptive RK3(2), `--delta-t` is the backward-compatible default initial step and `--initial-step` makes that request explicit. Unless `--maximum-step` is supplied, the runtime limits accepted steps to one tenth of the requested continuation interval, matching MATLAB `ode23`. Specify both controls for reproducible segmented runs and benchmark comparisons. The runtime uses MATLAB-compatible componentwise relative/absolute error scaling and preserves each observing-system state's own absolute tolerance.
 
 For a deliberately coefficient-only workflow, name that reduced boundary explicitly and supply a new checkpoint destination:
 
