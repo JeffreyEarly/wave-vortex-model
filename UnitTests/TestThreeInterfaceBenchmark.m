@@ -38,6 +38,29 @@ classdef TestThreeInterfaceBenchmark < matlab.unittest.TestCase
             end
         end
 
+        function toleranceHashMatchesPortableReference(testCase)
+            testCase.verifyEqual(threeInterfaceToleranceHash([1e-6 1e-5]),"6411767373634975995")
+            testCase.verifyEqual(threeInterfaceToleranceHash([1e-8 1e-8]),"17908975794538723579")
+        end
+
+        function compositionPreservesFrozenCasesAndCorrectedAdaptiveEvidence(testCase)
+            frozen = publishedThreeInterfaceBenchmarkFromArtifact(writeRaw(testCase,rawFixture,"frozen.json"),platformId="lyra",platformName="Apple M3 Max");
+            adaptiveRaw = rawFixture;
+            adaptiveRaw.runId = "20260816T120000000Z";
+            adaptiveRaw.cases = adaptiveRaw.cases(3);
+            adaptiveRaw.comparison = adaptiveRaw.comparison(3);
+            adaptiveRaw.runs = adaptiveRaw.runs(arrayfun(@(run)string(run.case.id)=="adaptive-rk23-observer-output",adaptiveRaw.runs));
+            adaptive = publishedThreeInterfaceBenchmarkFromArtifact(writeRaw(testCase,adaptiveRaw,"adaptive.json"),platformId="lyra",platformName="Apple M3 Max");
+            frozenPath = writeRaw(testCase,frozen,"frozen-published.json");
+            adaptivePath = writeRaw(testCase,adaptive,"adaptive-published.json");
+            composed = composePublishedThreeInterfaceBenchmark(frozenPath,adaptivePath);
+            testCase.verifyEqual(composed.schemaVersion,"published-three-interface-v2")
+            testCase.verifyEqual(arrayfun(@(index)string(composed.cases{index}.id),1:numel(composed.cases)),["nonlinear-flux" "fixed-rk4-continuation" "adaptive-rk23-observer-output"])
+            testCase.verifyEqual(composed.cases{1}.evidence.datasetId,frozen.datasetId)
+            testCase.verifyEqual(composed.cases{3}.evidence.datasetId,adaptive.datasetId)
+            testCase.verifyEqual(composed.provenance.composition,"frozen-valid-v1-plus-corrected-adaptive")
+        end
+
         function dirtyOrIncompleteArtifactsCannotBePublished(testCase)
             raw = rawFixture;
             rawPath = fullfile(testCase.TemporaryFolder,"raw.json");
@@ -56,6 +79,25 @@ classdef TestThreeInterfaceBenchmark < matlab.unittest.TestCase
             rawPath = fullfile(testCase.TemporaryFolder,"raw.json");
             writelines(jsonencode(raw),rawPath);
             testCase.verifyError(@()publishedThreeInterfaceBenchmarkFromArtifact(rawPath),"WaveVortexBenchmark:IntegratorMismatch")
+        end
+
+        function adaptiveWorkMismatchCannotBePublished(testCase)
+            raw = rawFixture;
+            adaptiveRun = find(arrayfun(@(run)string(run.case.id)=="adaptive-rk23-observer-output",raw.runs),1);
+            raw.runs(adaptiveRun).integrator.rhsEvaluationCount = raw.runs(adaptiveRun).integrator.rhsEvaluationCount+1;
+            raw.comparison(3).adaptiveWorkAgreementPassed = false;
+            raw.comparison(3).matchedContractPassed = false;
+            rawPath = fullfile(testCase.TemporaryFolder,"raw.json");
+            writelines(jsonencode(raw),rawPath);
+            testCase.verifyError(@()validateThreeInterfaceBenchmarkContract(raw),"WaveVortexBenchmark:AdaptiveWorkMismatch")
+            testCase.verifyError(@()publishedThreeInterfaceBenchmarkFromArtifact(rawPath),"WaveVortexBenchmark:AdaptiveWorkMismatch")
+        end
+
+        function mixedOutputSchedulesAreRejected(testCase)
+            if ~isCanonicalNativePlatform
+                return
+            end
+            testCase.verifyError(@()runThreeInterfaceBenchmark(caseIds=["fixed-rk4-continuation" "adaptive-rk23-observer-output"],shouldWriteArtifacts=false),"WaveVortexBenchmark:MixedOutputSchedules")
         end
 
         function incomparableMemoryCannotBePublished(testCase)
@@ -175,10 +217,10 @@ classdef TestThreeInterfaceBenchmark < matlab.unittest.TestCase
             end
             outputDirectory = fullfile(testCase.TemporaryFolder,"results");
             archiveDirectory = fullfile(testCase.TemporaryFolder,"archive");
-            result = runThreeInterfaceBenchmarkComparison(resolutions=[8 6 5],processRunCount=1,deltaT=1e-4,samplingIntervalSeconds=0.005,plateauSeconds=0.1,outputRoot=outputDirectory,archiveDirectory=archiveDirectory);
+            result = runThreeInterfaceBenchmarkComparison(resolutions=[8 6 5],processRunCount=1,deltaT=1e-4,caseIds="adaptive-rk23-observer-output",adaptiveStepCount=10,adaptiveOutputCount=2,samplingIntervalSeconds=0.005,plateauSeconds=0.1,outputRoot=outputDirectory,archiveDirectory=archiveDirectory);
             testCase.verifySize(result,[1 1])
             testCase.verifyEqual(result.status,"complete")
-            testCase.verifyEqual(string({result.comparison.id}),["nonlinear-flux" "fixed-rk4-continuation" "adaptive-rk23-observer-output"])
+            testCase.verifyEqual(string({result.comparison.id}),"adaptive-rk23-observer-output")
             testCase.verifyTrue(all([result.comparison.outputAgreementPassed]))
             testCase.verifyLessThanOrEqual(max([result.comparison.maximumRelativeError]),1e-12)
             testCase.verifyTrue(all([result.comparison.integratorAgreementPassed]))
@@ -242,10 +284,15 @@ function value = shellQuote(value)
 value = "'"+replace(string(value),"'","'""'""'")+"'";
 end
 
+function pathname = writeRaw(testCase,value,name)
+pathname = fullfile(testCase.TemporaryFolder,name);
+writelines(jsonencode(value),pathname);
+end
+
 function raw = rawFixture
 interfaces = [interfaceRecord("matlab-builtin",1,1,1,1); interfaceRecord("matlab-compiled",0.5,0.5,2,2); interfaceRecord("standalone-compiled",0.25,0.25,0.25,0.25)];
 definitions = [caseDefinition("nonlinear-flux","nonlinearFlux","none"); caseDefinition("fixed-rk4-continuation","model-continuation","fixed-rk4"); caseDefinition("adaptive-rk23-observer-output","model-continuation","adaptive-rk23")];
-comparison = repmat(struct("id","","interfaces",interfaces,"maximumRelativeError",1e-14,"outputAgreementPassed",true,"outputGraph",modelOutputGraph,"integratorAgreementPassed",true,"memoryAgreementPassed",true,"matchedContractPassed",true),3,1);
+comparison = repmat(struct("id","","interfaces",interfaces,"maximumRelativeError",1e-14,"outputAgreementPassed",true,"outputGraph",modelOutputGraph,"integratorAgreementPassed",true,"adaptiveWorkAgreementPassed",true,"memoryAgreementPassed",true,"matchedContractPassed",true),3,1);
 runs = repmat(runRecord("matlab-builtin",definitions(1)),0,1);
 for iCase = 1:3
     comparison(iCase).id = definitions(iCase).id;
@@ -275,7 +322,7 @@ value = struct("kind","flux-arrays","passed",true,"maximumRelativeError",1e-14,"
 end
 
 function value = caseDefinition(identifier,operation,integrator)
-value = struct("id",identifier,"operation",operation,"requestedIntegrator",integrator,"Nxyz",[256 256 129],"forcing","default WVNonlinearAdvection","shouldAntialias",true,"deltaT",1e-3,"finalTime",2e-3,"relativeTolerance",1e-3,"absoluteTolerance",1e-6,"outputInterval",5e-4,"observerGraph","fields, particles, tracers");
+value = struct("id",identifier,"operation",operation,"requestedIntegrator",integrator,"Nxyz",[256 256 129],"forcing","default WVNonlinearAdvection","shouldAntialias",true,"deltaT",1e-3,"finalTime",2e-3,"relativeTolerance",1e-3,"absoluteTolerance",1e-6,"initialStep",1e-3,"maximumStep",1e-3,"outputInterval",5e-4,"observerGraph","fields, particles, tracers");
 end
 
 function value = interfaceRecord(identifier,processRatio,integrationRatio,totalRatio,incrementRatio)
@@ -289,5 +336,23 @@ else
     provider = struct("id","native-neon-pthreads","version","3.3.11","threads",18,"baseLibrary","/tmp/libfftw3.3.dylib","threadLibrary","/tmp/libfftw3_threads.3.dylib","noFallback",true);
 end
 memory = struct("status","complete","provider","macos-ps-process-tree","totalPeakRSSBytes",2^30,"peakIncrementBytes",2^28,"finalRSSBytes",2^29);
-value = struct("schemaVersion","three-interface-worker-v1","status","complete","interface",identifier,"case",definition,"processWallSeconds",1,"integrationSeconds",1,"memory",memory,"provider",provider,"integrator",struct("requested",definition.requestedIntegrator,"actual",definition.requestedIntegrator,"matched",true));
+integrator = struct("requested",definition.requestedIntegrator,"actual",definition.requestedIntegrator,"matched",true);
+if definition.requestedIntegrator == "adaptive-rk23"
+    integrator.controller = "matlab-ode23-v1";
+    integrator.relativeTolerance = definition.relativeTolerance;
+    integrator.absoluteToleranceHash = "12345";
+    integrator.absoluteToleranceComponentHashes = repmat("123",1,7);
+    integrator.requestedInitialStep = definition.initialStep;
+    integrator.effectiveInitialStep = definition.initialStep;
+    integrator.requestedMaximumStep = definition.maximumStep;
+    integrator.effectiveMaximumStep = definition.maximumStep;
+    integrator.initialTime = definition.deltaT;
+    integrator.finalTime = definition.finalTime;
+    integrator.acceptedStepCount = 1;
+    integrator.rejectedStepCount = 0;
+    integrator.rhsEvaluationCount = 4;
+    integrator.denseOutputEvaluationCount = 0;
+    integrator.outputRecordCounts = struct("waveVortex",3,"particles",3,"tracers",3);
+end
+value = struct("schemaVersion","three-interface-worker-v1","status","complete","interface",identifier,"case",definition,"processWallSeconds",1,"integrationSeconds",1,"memory",memory,"provider",provider,"integrator",integrator);
 end

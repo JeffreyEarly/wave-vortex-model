@@ -25,6 +25,9 @@ for iCase = 1:numel(raw.comparison)
     if ~isfield(comparison,"integratorAgreementPassed") || ~logical(comparison.integratorAgreementPassed)
         error("WaveVortexBenchmark:IntegratorMismatch","Publication requires the requested integrator to execute in every interface.");
     end
+    if string(definition.requestedIntegrator) == "adaptive-rk23" && (~isfield(comparison,"adaptiveWorkAgreementPassed") || ~logical(comparison.adaptiveWorkAgreementPassed))
+        error("WaveVortexBenchmark:AdaptiveWorkMismatch","Publication requires matched adaptive controller and work-count evidence.");
+    end
     if ~isfield(comparison,"memoryAgreementPassed") || ~logical(comparison.memoryAgreementPassed)
         error("WaveVortexBenchmark:IncomparableMemory","Publication requires complete process-tree RSS measurements for every interface.");
     end
@@ -53,10 +56,15 @@ for iCase = 1:numel(raw.comparison)
         interfaces{iInterface} = struct("id",string(item.id),"providerId",string(selected(1).provider.id),"processWallSeconds",double(item.processWallSeconds),"interfaceTotalSeconds",double(item.interfaceTotalSeconds),"integrationSeconds",double(item.integrationSeconds),"totalPeakRSSBytes",double(item.totalPeakRSSBytes),"incrementalPeakRSSBytes",double(item.incrementalPeakRSSBytes),"finalRSSBytes",double(item.finalRSSBytes),"processWallRatio",double(item.processWallRatio),"integrationRatio",double(item.integrationRatio),"totalRSSRatio",double(item.totalRSSRatio),"incrementalRSSRatio",double(item.incrementalRSSRatio),"processWallSamplesSeconds",double([selected.processWallSeconds]),"integrationSamplesSeconds",double([selected.integrationSeconds]));
     end
     contract = struct("Nxyz",double(definition.Nxyz(:)'),"Lxyz",double(raw.configuration.Lxyz(:)'),"forcing",string(definition.forcing),"shouldAntialias",logical(definition.shouldAntialias),"integrator",string(definition.requestedIntegrator),"deltaT",double(definition.deltaT),"finalTime",double(definition.finalTime),"relativeTolerance",double(definition.relativeTolerance),"absoluteTolerance",double(definition.absoluteTolerance),"outputInterval",double(definition.outputInterval),"observerGraph",string(definition.observerGraph),"processRunCount",double(raw.configuration.processRunCount),"warmupCount",double(raw.configuration.warmupCount),"samplesPerProcess",double(raw.configuration.samplesPerProcess));
+    adaptiveWork = struct();
+    if string(definition.requestedIntegrator) == "adaptive-rk23"
+        exemplar = caseRuns(1).integrator;
+        adaptiveWork = rmfield(exemplar,["requested" "actual" "matched"]);
+    end
     graph = comparison.outputGraph;
     graphSummary = struct("passed",logical(graph.passed),"variableCount",double(graph.variableCount),"recordCount",double(graph.recordCount),"maximumAbsoluteError",double(graph.maximumAbsoluteError),"maximumRelativeError",double(graph.maximumRelativeError),"categories",graph.categories);
     correctness = struct("passed",logical(comparison.matchedContractPassed),"maximumRelativeError",double(comparison.maximumRelativeError),"outputAgreementPassed",logical(comparison.outputAgreementPassed),"completeOutputGraph",graphSummary);
-    cases{iCase} = struct("id",string(comparison.id),"operation",string(definition.operation),"contract",contract,"interfaces",{interfaces},"correctness",correctness);
+    cases{iCase} = struct("id",string(comparison.id),"operation",string(definition.operation),"contract",contract,"adaptiveWork",adaptiveWork,"interfaces",{interfaces},"correctness",correctness);
 end
 provenance = struct("rawSchemaVersion",string(raw.schemaVersion),"externalArchive",struct("fileName",options.archiveFileName,"sha256",options.archiveSHA256,"compressedBytes",options.archiveCompressedBytes));
 source = struct("repository","https://github.com/JeffreyEarly/wave-vortex-model","commit",string(raw.source.commit),"tree",string(raw.source.tree),"sourceDirty",false,"version",options.implementationVersion);

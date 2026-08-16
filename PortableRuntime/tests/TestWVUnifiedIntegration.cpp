@@ -424,6 +424,9 @@ void testRK23MatlabOde23ParityFixture() {
   require(rk23.stepDiagnosticsComplete() &&
               rk23.stepDiagnostics().size() == 159,
           "MATLAB ode23 parity diagnostics");
+  require(rk23.toleranceComponentHashes().size() == 3 &&
+              rk23.toleranceHash() != 0,
+          "MATLAB ode23 parity tolerance audit");
   require(std::abs(rk23.stepDiagnostics().front().acceptedStepSize -
                    0.0078125) < 1e-15,
           "MATLAB ode23 parity first accepted step");
