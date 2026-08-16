@@ -49,16 +49,12 @@
   ],
   "interfaceComparisons": [
     {
-      "datasetId": "three-interface--m5-max--20260815T195404Z",
-      "artifact": "Benchmarks/results/published/three-interface--m5-max--20260815T195404Z.json"
+      "datasetId": "three-interface--lyra--20260816T044250Z",
+      "artifact": "Benchmarks/results/published/three-interface--lyra--20260816T044250Z.json"
     },
     {
-      "datasetId": "three-interface--lyra--20260815T225645Z",
-      "artifact": "Benchmarks/results/published/three-interface--lyra--20260815T225645Z.json"
-    },
-    {
-      "datasetId": "three-interface--lyra--20260815T230743Z",
-      "artifact": "Benchmarks/results/published/three-interface--lyra--20260815T230743Z.json"
+      "datasetId": "three-interface--lyra--20260816T034908Z",
+      "artifact": "Benchmarks/results/published/three-interface--lyra--20260816T034908Z.json"
     }
   ]
 }

@@ -31,6 +31,7 @@ try
         finalState = stateRecord(wvt);
         outputAgreement = struct("kind","flux-binary","path",string(config.comparisonPath));
         actualIntegrator = "none";
+        integrator = struct("requested",requestedIntegrator,"actual",actualIntegrator,"matched",requestedIntegrator==actualIntegrator);
     else
         model = benchmarkModelFromFile(config.inputPath,backend);
         wvt = model.wvt;
@@ -40,17 +41,34 @@ try
             model.setupIntegrator(integratorType="fixed",deltaT=config.case.deltaT);
         elseif requestedIntegrator == "adaptive-rk23"
             model.setupIntegrator(integratorType="adaptive",integrator=@ode23,relTolerance=config.case.relativeTolerance,absTolerance=config.case.absoluteTolerance,shouldShowIntegrationStats=0);
+            model.odeOptions = odeset(model.odeOptions,'InitialStep',config.case.initialStep,'MaxStep',config.case.maximumStep,'Stats','on');
         else
             error("WaveVortexBenchmark:UnknownIntegrator","Unsupported requested integrator %s.",requestedIntegrator);
         end
         actualIntegrator = activeIntegrator(model);
+        integrator = struct("requested",requestedIntegrator,"actual",actualIntegrator,"matched",requestedIntegrator==actualIntegrator);
+        if requestedIntegrator == "adaptive-rk23"
+            integrator = adaptiveIntegratorRecordBeforeRun(model,config.case,integrator);
+        end
         writePhase(phasePath,"steady-retained");
         pause(config.plateauSeconds);
+        rhsEvaluationsBefore = double(model.nFluxComputations);
         operationTimer = tic;
-        model.integrateToTime(config.case.finalTime,shouldShowIntegrationDiagnostics=false,callback=@(~)[]);
+        if requestedIntegrator == "adaptive-rk23"
+            statisticsText = evalc("runIntegration(model,config.case.finalTime)");
+        else
+            runIntegration(model,config.case.finalTime);
+            statisticsText = "";
+        end
         integrationSeconds = toc(operationTimer);
+        if requestedIntegrator == "adaptive-rk23"
+            integrator = completeAdaptiveIntegratorRecord(integrator,statisticsText,double(model.nFluxComputations)-rhsEvaluationsBefore);
+        end
         finalState = stateRecord(wvt);
         model.closeNetCDFFile();
+        if requestedIntegrator == "adaptive-rk23"
+            integrator.outputRecordCounts = outputRecordCounts(config.inputPath);
+        end
         outputAgreement = struct("kind","model-output","path",string(config.inputPath));
     end
     interfaceTotalSeconds = toc(interfaceTimer);
@@ -73,7 +91,7 @@ try
         "timing",struct("interfaceTotalSeconds",interfaceTotalSeconds,"integrationSeconds",integrationSeconds), ...
         "memory",struct(), ...
         "provider",provider, ...
-        "integrator",struct("requested",requestedIntegrator,"actual",actualIntegrator,"matched",requestedIntegrator==actualIntegrator), ...
+        "integrator",integrator, ...
         "finalState",finalState, ...
         "output",outputAgreement, ...
         "failure",emptyFailure);
@@ -90,6 +108,51 @@ catch exception
     writePhase(phasePath,"failed");
     result.failure = struct("identifier",string(exception.identifier),"message",string(exception.message),"report",string(getReport(exception,"extended","hyperlinks","off")));
 end
+writeText(outputPath,jsonencode(result,PrettyPrint=true));
+clear stateCleanup
+end
+
+function runIntegration(model,finalTime)
+model.integrateToTime(finalTime,shouldShowIntegrationDiagnostics=false,callback=@(~)[]);
+end
+
+function value = adaptiveIntegratorRecordBeforeRun(model,definition,value)
+value.controller = "matlab-ode23-v1";
+value.relativeTolerance = double(odeget(model.odeOptions,'RelTol'));
+tolerances = odeget(model.odeOptions,'AbsTol');
+value.absoluteToleranceHash = threeInterfaceToleranceHash(tolerances);
+value.absoluteToleranceHashClearedMantissaBits = 20;
+value.absoluteToleranceComponentHashes = arrayfun(@(index)threeInterfaceToleranceHash(tolerances(model.arrayStartIndex(index):model.arrayEndIndex(index))),1:numel(model.arrayStartIndex));
+value.requestedInitialStep = double(definition.initialStep);
+value.effectiveInitialStep = double(odeget(model.odeOptions,'InitialStep'));
+value.requestedMaximumStep = double(definition.maximumStep);
+value.effectiveMaximumStep = double(odeget(model.odeOptions,'MaxStep'));
+value.initialTime = double(model.t);
+value.finalTime = double(definition.finalTime);
+end
+
+function value = completeAdaptiveIntegratorRecord(value,statisticsText,rhsEvaluationCount)
+value.acceptedStepCount = statisticCount(statisticsText,"successful steps");
+value.rejectedStepCount = statisticCount(statisticsText,"failed attempts");
+reportedEvaluations = statisticCount(statisticsText,"function evaluations");
+if reportedEvaluations ~= rhsEvaluationCount
+    error("WaveVortexBenchmark:AdaptiveWorkCountMismatch","MATLAB ode23 reported %d function evaluations, but WVModel counted %d.",reportedEvaluations,rhsEvaluationCount);
+end
+value.rhsEvaluationCount = rhsEvaluationCount;
+value.denseOutputEvaluationCount = 0;
+end
+
+function value = statisticCount(text,label)
+token = regexp(text,'(?m)^\s*(\d+)\s+'+label,"tokens","once");
+if isempty(token)
+    error("WaveVortexBenchmark:MissingAdaptiveStatistics","MATLAB ode23 did not report %s.",label);
+end
+value = str2double(token{1});
+end
+
+function value = outputRecordCounts(pathname)
+value = struct("waveVortex",numel(ncread(pathname,"/wave-vortex/t")),"particles",numel(ncread(pathname,"/particles/t")),"tracers",numel(ncread(pathname,"/tracers/t")));
+end
 
 function identifier = activeIntegrator(model)
 if string(model.integratorType) == "fixed"
@@ -99,9 +162,6 @@ elseif string(model.integratorType) == "adaptive" && string(func2str(model.odeIn
 else
     identifier = string(model.integratorType)+":"+string(func2str(model.odeIntegrator));
 end
-end
-writeText(outputPath,jsonencode(result,PrettyPrint=true));
-clear stateCleanup
 end
 
 function model = benchmarkModelFromFile(pathname,backend)
@@ -170,7 +230,6 @@ movefile(temporary,pathname,"f");
 end
 
 function addRepositoryPaths(repositoryRoot,benchmarkFolder)
-addpath(repositoryRoot,benchmarkFolder);
 metadata = jsondecode(fileread(fullfile(repositoryRoot,"resources","mpackage.json")));
 for iFolder = 1:numel(metadata.folders)
     folder = fullfile(repositoryRoot,metadata.folders(iFolder).path);
@@ -178,6 +237,8 @@ for iFolder = 1:numel(metadata.folders)
         addpath(folder);
     end
 end
+addpath(repositoryRoot);
+addpath(benchmarkFolder);
 end
 
 function closeReader(reader)

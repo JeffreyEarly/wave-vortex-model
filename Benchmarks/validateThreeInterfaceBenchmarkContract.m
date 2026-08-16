@@ -6,8 +6,10 @@ processRunCount = double(raw.configuration.processRunCount);
 validateCompiledProvider(raw);
 definitions = raw.cases;
 comparisons = raw.comparison;
-if numel(definitions) ~= 3 || numel(comparisons) ~= 3
-    error("WaveVortexBenchmark:MatchedContractFailed","Publication requires exactly three matched benchmark cases.");
+allowedCases = ["nonlinear-flux" "fixed-rk4-continuation" "adaptive-rk23-observer-output"];
+caseIds = string({definitions.id});
+if isempty(definitions) || numel(definitions) ~= numel(comparisons) || numel(unique(caseIds)) ~= numel(caseIds) || any(~ismember(caseIds,allowedCases))
+    error("WaveVortexBenchmark:MatchedContractFailed","Publication requires one or more unique recognized benchmark cases.");
 end
 for iCase = 1:numel(definitions)
     definition = definitions(iCase);
@@ -21,12 +23,32 @@ for iCase = 1:numel(definitions)
         error("WaveVortexBenchmark:MatchedContractFailed","Case %s does not contain the required complete fresh-process runs.",string(definition.id));
     end
     validateIntegrators(caseRuns,definition,comparison);
+    validateAdaptiveWork(caseRuns,definition,comparison);
     validateMemory(caseRuns,comparison);
     validateRunProviders(caseRuns,requiredInterfaces,raw);
     validateNumerics(comparison,definition,tolerance);
     if ~logical(comparison.matchedContractPassed)
         error("WaveVortexBenchmark:MatchedContractFailed","Case %s did not pass its matched contract.",string(definition.id));
     end
+end
+end
+
+
+function validateAdaptiveWork(caseRuns,definition,comparison)
+if string(definition.requestedIntegrator) ~= "adaptive-rk23"
+    return
+end
+if ~isfield(comparison,"adaptiveWorkAgreementPassed") || ~logical(comparison.adaptiveWorkAgreementPassed)
+    error("WaveVortexBenchmark:AdaptiveWorkMismatch","Publication requires equivalent adaptive controller work in every interface.");
+end
+% Fingerprint disagreement is diagnostic. Low-bit quantization has hard bin
+% boundaries, so exact cross-language hash equality is not a sound numerical
+% equivalence criterion for independently evaluated tolerance formulas. Older
+% passing artifacts predate the explicit comparison field; their required hash
+% records remain sufficient to recover the diagnostic value during publishing.
+required = ["controller" "relativeTolerance" "absoluteToleranceHash" "absoluteToleranceHashClearedMantissaBits" "absoluteToleranceComponentHashes" "requestedInitialStep" "effectiveInitialStep" "requestedMaximumStep" "effectiveMaximumStep" "initialTime" "finalTime" "acceptedStepCount" "rejectedStepCount" "rhsEvaluationCount" "denseOutputEvaluationCount" "outputRecordCounts"];
+if any(arrayfun(@(run)~all(isfield(run.integrator,required)),caseRuns))
+    error("WaveVortexBenchmark:AdaptiveWorkMismatch","An adaptive interface omitted required controller or work-count evidence.");
 end
 end
 

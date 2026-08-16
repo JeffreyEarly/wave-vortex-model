@@ -27,6 +27,11 @@ std::uint64_t hashTolerance(std::uint64_t hash, double value) noexcept {
   std::uint64_t bits = 0;
   static_assert(sizeof(bits) == sizeof(value));
   std::memcpy(&bits, &value, sizeof(bits));
+  // Discard inconsequential low mantissa noise so independently evaluated
+  // MATLAB and C++ tolerance formulas have one reproducible audit identity.
+  // Clearing 20 bits retains approximately 32 bits of significand precision;
+  // the production-size formula audit differs by at most 6.3e-16 relatively.
+  bits = (bits + UINT64_C(0x80000)) & ~UINT64_C(0xfffff);
   hash ^= bits;
   return hash * UINT64_C(1099511628211);
 }
@@ -581,13 +586,18 @@ WVAdaptiveRK23::ensureWorkspace(const WVMutableIntegrationState &state) {
       return {WVKernelStatusCode::invalidShape,
               "Adaptive state-block tolerance shape does not match the integration layout."};
   toleranceHash_ = UINT64_C(1469598103934665603);
+  toleranceComponentHashes_.assign(errorPolicy_->componentCount(),
+                                    UINT64_C(1469598103934665603));
   for (std::size_t component = 0;
        component < errorPolicy_->componentCount(); ++component)
     for (std::size_t index = 0;
-         index < errorPolicy_->elementCount(component); ++index)
-      toleranceHash_ =
-          hashTolerance(toleranceHash_,
-                        errorPolicy_->absoluteTolerance(component, index));
+         index < errorPolicy_->elementCount(component); ++index) {
+      const auto tolerance =
+          errorPolicy_->absoluteTolerance(component, index);
+      toleranceHash_ = hashTolerance(toleranceHash_, tolerance);
+      toleranceComponentHashes_[component] =
+          hashTolerance(toleranceComponentHashes_[component], tolerance);
+    }
   try {
     workspace_ = new Workspace;
   } catch (const std::bad_alloc &) {

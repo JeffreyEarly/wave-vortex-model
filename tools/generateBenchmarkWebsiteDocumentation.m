@@ -43,7 +43,7 @@ for iEntry = 1:numel(catalog.interfaceComparisons)
     artifactPath = repositoryFile(repositoryRoot,string(entry.artifact),"published interface comparison");
     dataset = jsondecode(fileread(artifactPath));
     datasetId = string(dataset.datasetId);
-    if string(dataset.schemaVersion)~="published-three-interface-v1" || datasetId~=string(entry.datasetId) || isempty(regexp(datasetId,'^three-interface--[a-z0-9][a-z0-9-]*--\d{8}T\d{6}Z$','once')) || logical(dataset.source.sourceDirty)
+    if ~ismember(string(dataset.schemaVersion),["published-three-interface-v1" "published-three-interface-v2"]) || datasetId~=string(entry.datasetId) || isempty(regexp(datasetId,'^three-interface--[a-z0-9][a-z0-9-]*--\d{8}T\d{6}Z$','once')) || logical(dataset.source.sourceDirty)
         error("WaveVortexModel:InvalidThreeInterfaceBenchmark","Interface comparison %s is invalid.",string(entry.datasetId));
     end
     if any(seen==datasetId), error("WaveVortexModel:DuplicateThreeInterfaceBenchmark","Interface comparison %s is duplicated.",datasetId); end
@@ -51,9 +51,27 @@ for iEntry = 1:numel(catalog.interfaceComparisons)
     if numel(dataset.cases)~=3 || ~all(arrayfun(@(i)logical(itemAt(dataset.cases,i).correctness.passed),1:numel(dataset.cases)))
         error("WaveVortexModel:InvalidThreeInterfaceBenchmark","Interface comparison %s does not contain three passing matched cases.",datasetId);
     end
-    archive = dataset.provenance.externalArchive;
-    if strlength(string(archive.fileName))==0 || isempty(regexp(string(archive.sha256),'^[0-9a-f]{64}$','once')) || double(archive.compressedBytes)<=0
-        error("WaveVortexModel:InvalidThreeInterfaceBenchmark","Interface comparison %s lacks a valid external archive record.",datasetId);
+    if string(dataset.schemaVersion)=="published-three-interface-v1"
+        if ~validInterfaceProvider(dataset.provider)
+            error("WaveVortexModel:InvalidThreeInterfaceBenchmark","Interface comparison %s lacks validated provider identity.",datasetId);
+        end
+        validateInterfaceArchive(dataset.provenance.externalArchive,datasetId);
+    else
+        if string(dataset.provenance.composition)~="frozen-valid-v1-plus-corrected-adaptive" || numel(dataset.provenance.sourceDatasets)~=2
+            error("WaveVortexModel:InvalidThreeInterfaceBenchmark","Composite interface comparison %s lacks its two source datasets.",datasetId);
+        end
+        for iSource=1:numel(dataset.provenance.sourceDatasets)
+            validateInterfaceArchive(dataset.provenance.sourceDatasets(iSource).externalArchive,datasetId);
+        end
+        for iCase=1:numel(dataset.cases)
+            benchmarkCase=itemAt(dataset.cases,iCase);
+            if ~isfield(benchmarkCase,"evidence") || logical(benchmarkCase.evidence.source.sourceDirty) || ~validInterfaceProvider(benchmarkCase.evidence.provider)
+                error("WaveVortexModel:InvalidThreeInterfaceBenchmark","Composite interface comparison %s lacks clean case-level evidence.",datasetId);
+            end
+        end
+        if string(dataset.provider.moduleSHA256)~="per-case-evidence" || string(dataset.provider.moduleIdentityScope)~="case-evidence" || ~logical(dataset.provider.identityValidated) || logical(dataset.provider.openMPDetected)
+            error("WaveVortexModel:InvalidThreeInterfaceBenchmark","Composite interface comparison %s misrepresents its case-level provider identity.",datasetId);
+        end
     end
     records(end+1)=struct("dataset",dataset,"artifactPath",artifactPath); %#ok<AGROW>
 end
@@ -120,7 +138,39 @@ end
 end
 
 function key = interfaceCompatibilityKey(dataset)
-key = strjoin([string(dataset.source.tree),string(dataset.platform.id),string(dataset.platform.matlabVersion),string(dataset.platform.threadCount),string(dataset.provider.id),string(dataset.provider.version),string(dataset.provider.moduleSHA256),interfaceStudySignature(dataset)],"|");
+key = strjoin([interfaceSourceSignature(dataset),string(dataset.platform.id),string(dataset.platform.matlabVersion),string(dataset.platform.threadCount),string(dataset.provider.id),string(dataset.provider.version),interfaceProviderSignature(dataset),interfaceStudySignature(dataset)],"|");
+end
+
+function value = interfaceSourceSignature(dataset)
+values = strings(1,numel(dataset.cases));
+for iCase=1:numel(dataset.cases)
+    benchmarkCase=itemAt(dataset.cases,iCase);
+    if isfield(benchmarkCase,"evidence")
+        values(iCase)=string(benchmarkCase.id)+":"+string(benchmarkCase.evidence.source.tree);
+    else
+        values(iCase)=string(benchmarkCase.id)+":"+string(dataset.source.tree);
+    end
+end
+value=strjoin(sort(values),",");
+end
+
+function value = interfaceProviderSignature(dataset)
+scope = "compiled-interfaces-only";
+if isfield(dataset.provider,"scope")
+    scope = string(dataset.provider.scope);
+end
+value = strjoin([string(dataset.provider.id),string(dataset.provider.version),string(dataset.provider.threadBackend),scope],":");
+end
+
+function tf = validInterfaceProvider(provider)
+tf = ~isempty(regexp(string(provider.moduleSHA256),'^[0-9a-f]{64}$','once'));
+tf = tf && logical(provider.identityValidated) && ~logical(provider.openMPDetected);
+end
+
+function validateInterfaceArchive(archive,datasetId)
+if strlength(string(archive.fileName))==0 || isempty(regexp(string(archive.sha256),'^[0-9a-f]{64}$','once')) || double(archive.compressedBytes)<=0
+    error("WaveVortexModel:InvalidThreeInterfaceBenchmark","Interface comparison %s lacks a valid external archive record.",datasetId);
+end
 end
 
 function signature = interfaceStudySignature(dataset)
@@ -712,17 +762,27 @@ for iRecord = 1:numel(interfaceRecords)
     dataset = interfaceRecords(iRecord).dataset;
     datasetId = string(dataset.datasetId);
     iRow = numel(records)+iRecord;
-    rows(iRow,:) = [datasetId,"MATLAB builtin / MATLAB compiled / standalone compiled",string(dataset.platform.displayName),"three-interface-v1",string(dataset.collectedAt),string(dataset.schemaVersion),"Published JSON","External archive: "+extractBefore(string(dataset.provenance.externalArchive.sha256),13)+"…"];
+    rows(iRow,:) = [datasetId,"MATLAB builtin / MATLAB compiled / standalone compiled",string(dataset.platform.displayName),"three-interface",string(dataset.collectedAt),string(dataset.schemaVersion),"Published JSON",interfaceArchiveSummary(dataset)];
 end
 rows = sortrows(rows,1);
 links = strings(size(rows));
 for iRow = 1:size(rows,1)
     links(iRow,7) = "/benchmarks/data/" + rows(iRow,1) + ".json";
-    if rows(iRow,4)~="three-interface-v1"
+    if iRow<=numel(records)
         links(iRow,8) = "/benchmarks/raw/" + rows(iRow,1) + ".json";
     end
 end
 markdown = htmlTable(["Dataset" "Implementation" "Platform" "Suite" "Collected" "Schema" "Normalized" "Raw artifact"],rows,links);
+end
+
+function value = interfaceArchiveSummary(dataset)
+if string(dataset.schemaVersion)=="published-three-interface-v1"
+    value = "External archive: "+extractBefore(string(dataset.provenance.externalArchive.sha256),13)+"…";
+    return
+end
+hashes = arrayfun(@(index)string(dataset.provenance.sourceDatasets(index).externalArchive.sha256),1:numel(dataset.provenance.sourceDatasets));
+hashes = unique(hashes,"stable");
+value = "External archives: "+strjoin(extractBefore(hashes,13)+"…",", ");
 end
 
 function html = htmlTable(headers,rows,links)

@@ -168,6 +168,9 @@ public:
     return stepDiagnostics_;
   }
   std::uint64_t toleranceHash() const noexcept { return toleranceHash_; }
+  const std::vector<std::uint64_t> &toleranceComponentHashes() const noexcept {
+    return toleranceComponentHashes_;
+  }
   bool stepDiagnosticsComplete() const noexcept {
     return stepDiagnostics_.size() == metrics_.acceptedStepCount;
   }
@@ -177,7 +180,8 @@ public:
   double nextStepSize() const noexcept override { return nextStepSize_; }
   std::size_t persistentBytes() const noexcept override {
     return metrics_.workspaceCapacityBytes +
-           stepDiagnostics_.capacity() * sizeof(WVAdaptiveRK23StepDiagnostic);
+           stepDiagnostics_.capacity() * sizeof(WVAdaptiveRK23StepDiagnostic) +
+           toleranceComponentHashes_.capacity() * sizeof(std::uint64_t);
   }
 
 private:
@@ -190,6 +194,7 @@ private:
   WVAcceptedStep acceptedStep_;
   mutable WVIntegratorMetrics metrics_;
   std::vector<WVAdaptiveRK23StepDiagnostic> stepDiagnostics_;
+  std::vector<std::uint64_t> toleranceComponentHashes_;
   std::uint64_t toleranceHash_ = 0;
   double nextStepSize_ = 0.0;
   bool hasAcceptedStep_ = false;

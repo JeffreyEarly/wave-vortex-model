@@ -6,6 +6,9 @@ arguments
     options.deltaT (1,1) double {mustBePositive} = 1e-3
     options.relativeTolerance (1,1) double {mustBePositive} = 1e-3
     options.absoluteTolerance (1,1) double {mustBePositive} = 1e-6
+    options.caseIds (1,:) string {mustBeMember(options.caseIds,["nonlinear-flux" "fixed-rk4-continuation" "adaptive-rk23-observer-output"])} = "adaptive-rk23-observer-output"
+    options.adaptiveStepCount (1,1) double {mustBeInteger,mustBePositive} = 10
+    options.adaptiveOutputCount (1,1) double {mustBeInteger,mustBePositive} = 2
     options.samplingIntervalSeconds (1,1) double {mustBePositive} = 0.005
     options.plateauSeconds (1,1) double {mustBePositive} = 0.05
     options.outputDirectory (1,1) string = ""
@@ -16,6 +19,9 @@ arguments
 end
 if ~ismac || string(computer("arch")) ~= "maca64" || isMATLABReleaseOlderThan("R2025b")
     error("WaveVortexBenchmark:ThreeInterfaceUnsupportedPlatform","The three-interface benchmark requires MATLAB R2025b or later on Apple silicon.");
+end
+if numel(options.caseIds) > 1 && any(options.caseIds == "adaptive-rk23-observer-output")
+    error("WaveVortexBenchmark:MixedOutputSchedules","The adaptive benchmark uses its own output schedule and must run separately from the frozen nonlinear-flux and fixed-RK4 cases.");
 end
 repositoryRoot = string(fileparts(fileparts(mfilename("fullpath"))));
 benchmarkFolder = fullfile(repositoryRoot,"Benchmarks");
@@ -109,16 +115,21 @@ results = struct( ...
     "completedAtUTC","", ...
     "source",struct("repository","JeffreyEarly/wave-vortex-model","commit",commit,"tree",tree,"isDirty",isDirty), ...
     "environment",environmentRecord, ...
-    "configuration",struct("Nxyz",options.Nxyz,"Lxyz",[15000 15000 1300],"processRunCount",options.processRunCount,"warmupCount",0,"samplesPerProcess",1,"deltaT",options.deltaT,"relativeTolerance",options.relativeTolerance,"absoluteTolerance",options.absoluteTolerance,"threadCount",min(18,maxNumCompThreads),"samplingIntervalSeconds",options.samplingIntervalSeconds,"fixtureSHA256","","correctnessTolerance",1e-12,"timingBoundary","process wall includes interface launch; matched work includes the numerical operation and observer/file work","rssBoundary","external process-tree RSS sampled from worker launch through exit; total peak is primary, increment above steady-retained and final nonzero RSS are secondary"), ...
+    "configuration",struct("Nxyz",options.Nxyz,"Lxyz",[15000 15000 1300],"processRunCount",options.processRunCount,"warmupCount",0,"samplesPerProcess",1,"deltaT",options.deltaT,"relativeTolerance",options.relativeTolerance,"absoluteTolerance",options.absoluteTolerance,"caseIds",options.caseIds,"adaptiveStepCount",options.adaptiveStepCount,"adaptiveOutputCount",options.adaptiveOutputCount,"threadCount",min(18,maxNumCompThreads),"samplingIntervalSeconds",options.samplingIntervalSeconds,"fixtureSHA256","","correctnessTolerance",1e-12,"timingBoundary","process wall includes interface launch; matched work includes the numerical operation and observer/file work","rssBoundary","external process-tree RSS sampled from worker launch through exit; total peak is primary, increment above steady-retained and final nonzero RSS are secondary"), ...
     "provider",struct(),"cases",[],"runs",repmat(emptyRun,0,1),"comparison",[],"failure",emptyFailure);
 end
 
 function definitions = caseDefinitions(options)
-common = struct("Nxyz",options.Nxyz,"deltaT",options.deltaT,"finalTime",2*options.deltaT,"relativeTolerance",options.relativeTolerance,"absoluteTolerance",options.absoluteTolerance,"outputInterval",options.deltaT/2,"observerGraph","cross-group Eulerian u, one mooring, two 3-D particles with tracked u, and one 3-D tracer","forcing","default WVNonlinearAdvection","shouldAntialias",true,"seed",4001);
-definitions = [ ...
+fixtureOutputInterval = options.deltaT/2;
+if options.caseIds == "adaptive-rk23-observer-output"
+    fixtureOutputInterval = options.adaptiveStepCount*options.deltaT/options.adaptiveOutputCount;
+end
+common = struct("Nxyz",options.Nxyz,"deltaT",options.deltaT,"finalTime",2*options.deltaT,"relativeTolerance",options.relativeTolerance,"absoluteTolerance",options.absoluteTolerance,"initialStep",options.deltaT,"maximumStep",options.deltaT,"outputInterval",fixtureOutputInterval,"observerGraph","cross-group Eulerian u, one mooring, two 3-D particles with tracked u, and one 3-D tracer","forcing","default WVNonlinearAdvection","shouldAntialias",true,"seed",4001);
+available = [ ...
     mergeStruct(common,struct("id","nonlinear-flux","operation","nonlinearFlux","requestedIntegrator","none")); ...
     mergeStruct(common,struct("id","fixed-rk4-continuation","operation","model-continuation","requestedIntegrator","fixed-rk4")); ...
-    mergeStruct(common,struct("id","adaptive-rk23-observer-output","operation","model-continuation","requestedIntegrator","adaptive-rk23"))];
+    mergeStruct(common,struct("id","adaptive-rk23-observer-output","operation","model-continuation","requestedIntegrator","adaptive-rk23","finalTime",(1+options.adaptiveStepCount)*options.deltaT))];
+definitions = available(ismember(string({available.id}),options.caseIds));
 end
 
 function run = runOne(interface,definition,repeatIndex,fixturePath,executables,capabilities,options,repositoryRoot,benchmarkFolder,workFolder)
@@ -164,7 +175,7 @@ else
         workerCommand = shellQuote(executables.runner)+" "+shellQuote(inputPath)+" --restart-mode model --output-policy append --delta-t "+numberText(definition.deltaT)+" --final-time "+numberText(definition.finalTime)+" --fft-provider native-fftw --threads "+string(min(18,maxNumCompThreads))+" --phase-file "+shellQuote(phasePath);
         workerCommand = workerCommand+" --integrator "+definition.requestedIntegrator;
         if definition.requestedIntegrator == "adaptive-rk23"
-            workerCommand = workerCommand+" --relative-tolerance "+numberText(definition.relativeTolerance)+" --absolute-tolerance "+numberText(definition.absoluteTolerance);
+            workerCommand = workerCommand+" --relative-tolerance "+numberText(definition.relativeTolerance)+" --absolute-tolerance "+numberText(definition.absoluteTolerance)+" --initial-step "+numberText(definition.initialStep)+" --maximum-step "+numberText(definition.maximumStep);
         end
     end
     command = sampledCommand(workerCommand,samplePath,phasePath,stdoutPath,stderrPath,options,benchmarkFolder);
@@ -202,7 +213,7 @@ if definition.id == "nonlinear-flux"
 else
     run.integrationSeconds = value.timingSeconds.integrate; run.interfaceTotalSeconds = value.timingSeconds.total;
     run.memory = memory;
-    run.integrator = struct("requested",definition.requestedIntegrator,"actual",string(value.integrator.id),"matched",definition.requestedIntegrator==string(value.integrator.id)); run.finalState = value.state; run.output = struct("kind","model-output","path",inputPath);
+    run.integrator = standaloneIntegratorRecord(value,definition,inputPath); run.finalState = value.state; run.output = struct("kind","model-output","path",inputPath);
     if isfield(value,"integrationBreakdownSeconds"), run.diagnostics = value.integrationBreakdownSeconds; end
 end
 noFallback = true;
@@ -213,7 +224,7 @@ end
 
 function comparison = aggregate(runs,definitions,tolerance)
 interfaces = ["matlab-builtin" "matlab-compiled" "standalone-compiled"];
-comparison = repmat(struct("id","","interfaces",[],"maximumRelativeError",NaN,"outputAgreementPassed",false,"outputGraph",emptyOutputGraph,"integratorAgreementPassed",false,"memoryAgreementPassed",false,"matchedContractPassed",false),numel(definitions),1);
+comparison = repmat(struct("id","","interfaces",[],"maximumRelativeError",NaN,"outputAgreementPassed",false,"outputGraph",emptyOutputGraph,"integratorAgreementPassed",false,"adaptiveWorkAgreementPassed",false,"absoluteToleranceFingerprintAgreementPassed",true,"memoryAgreementPassed",false,"matchedContractPassed",false),numel(definitions),1);
 for iCase = 1:numel(definitions)
     selected = runs(string(arrayfun(@(item)item.case.id,runs,"UniformOutput",false))==definitions(iCase).id);
     records = repmat(struct("id","","processWallSeconds",NaN,"interfaceTotalSeconds",NaN,"integrationSeconds",NaN,"totalPeakRSSBytes",NaN,"incrementalPeakRSSBytes",NaN,"finalRSSBytes",NaN,"processWallRatio",NaN,"integrationRatio",NaN,"totalRSSRatio",NaN,"incrementalRSSRatio",NaN),numel(interfaces),1);
@@ -236,8 +247,62 @@ for iCase = 1:numel(definitions)
     end
     providersPassed = all(arrayfun(@(item)item.provider.noFallback,selected)) && all(arrayfun(@(item)item.interface=="matlab-builtin" || string(item.provider.id)=="native-neon-pthreads",selected));
     integratorsPassed = all(arrayfun(@(item)logical(item.integrator.matched) && string(item.integrator.requested)==definitions(iCase).requestedIntegrator && string(item.integrator.actual)==definitions(iCase).requestedIntegrator,selected));
-    comparison(iCase) = struct("id",definitions(iCase).id,"interfaces",records,"maximumRelativeError",maximumError,"outputAgreementPassed",outputPassed,"outputGraph",outputGraph,"integratorAgreementPassed",integratorsPassed,"memoryAgreementPassed",memoryPassed,"matchedContractPassed",providersPassed&&integratorsPassed&&memoryPassed&&maximumError<=tolerance&&outputPassed);
+    adaptiveWorkPassed = definitions(iCase).requestedIntegrator ~= "adaptive-rk23" || adaptiveWorkMatches(selected,definitions(iCase));
+    toleranceFingerprintPassed = definitions(iCase).requestedIntegrator ~= "adaptive-rk23" || toleranceFingerprintMatches(selected);
+    comparison(iCase) = struct("id",definitions(iCase).id,"interfaces",records,"maximumRelativeError",maximumError,"outputAgreementPassed",outputPassed,"outputGraph",outputGraph,"integratorAgreementPassed",integratorsPassed,"adaptiveWorkAgreementPassed",adaptiveWorkPassed,"absoluteToleranceFingerprintAgreementPassed",toleranceFingerprintPassed,"memoryAgreementPassed",memoryPassed,"matchedContractPassed",providersPassed&&integratorsPassed&&adaptiveWorkPassed&&memoryPassed&&maximumError<=tolerance&&outputPassed);
 end
+end
+
+function value = standaloneIntegratorRecord(report,definition,pathname)
+value = struct("requested",definition.requestedIntegrator,"actual",string(report.integrator.id),"matched",definition.requestedIntegrator==string(report.integrator.id));
+if definition.requestedIntegrator ~= "adaptive-rk23"
+    return
+end
+value.controller = string(report.integrator.controller);
+value.relativeTolerance = double(report.integrator.relativeTolerance);
+value.absoluteToleranceHash = string(report.integrator.toleranceHash);
+value.absoluteToleranceHashClearedMantissaBits = double(report.integrator.toleranceHashClearedMantissaBits);
+value.absoluteToleranceComponentHashes = string(report.integrator.toleranceComponentHashes(:)');
+value.requestedInitialStep = double(report.integrator.requestedInitialStep);
+value.effectiveInitialStep = double(report.integrator.effectiveInitialStep);
+value.requestedMaximumStep = double(report.integrator.requestedMaximumStep);
+value.effectiveMaximumStep = double(report.integrator.effectiveMaximumStep);
+value.initialTime = double(report.state.initialTime);
+value.finalTime = double(report.state.finalTime);
+value.acceptedStepCount = double(report.state.stepCount);
+value.rejectedStepCount = double(report.state.rejectedStepCount);
+value.rhsEvaluationCount = double(report.state.rhsEvaluationCount);
+value.denseOutputEvaluationCount = double(report.integrator.denseOutputEvaluationCount);
+value.outputRecordCounts = outputRecordCounts(pathname);
+end
+
+function passed = adaptiveWorkMatches(runs,definition)
+required = ["controller" "relativeTolerance" "absoluteToleranceHash" "absoluteToleranceHashClearedMantissaBits" "absoluteToleranceComponentHashes" "requestedInitialStep" "effectiveInitialStep" "requestedMaximumStep" "effectiveMaximumStep" "initialTime" "finalTime" "acceptedStepCount" "rejectedStepCount" "rhsEvaluationCount" "denseOutputEvaluationCount" "outputRecordCounts"];
+passed = all(arrayfun(@(run)all(isfield(run.integrator,required)),runs));
+if ~passed
+    return
+end
+reference = runs(1).integrator;
+for run = reshape(runs,1,[])
+    current = run.integrator;
+    % The hashes remain useful diagnostics, but cannot be an equality gate:
+    % independently evaluated MATLAB/C++ formulas can straddle an arbitrary
+    % quantization boundary despite agreeing to roundoff. Controller inputs,
+    % accepted work, output schedules, and complete numerical output are the
+    % publication contract.
+    exactFields = ["controller" "absoluteToleranceHashClearedMantissaBits" "acceptedStepCount" "rejectedStepCount" "rhsEvaluationCount" "denseOutputEvaluationCount"];
+    passed = passed && all(arrayfun(@(name)string(current.(name))==string(reference.(name)),exactFields));
+    numericFields = ["relativeTolerance" "requestedInitialStep" "effectiveInitialStep" "requestedMaximumStep" "effectiveMaximumStep" "initialTime" "finalTime"];
+    passed = passed && all(arrayfun(@(name)abs(double(current.(name))-double(reference.(name)))<=8*eps(max([1 abs(double(reference.(name)))])),numericFields));
+    passed = passed && isequal(orderfields(current.outputRecordCounts),orderfields(reference.outputRecordCounts));
+end
+passed = passed && reference.controller == "matlab-ode23-v1" && reference.relativeTolerance == definition.relativeTolerance && reference.requestedInitialStep == definition.initialStep && reference.effectiveInitialStep == definition.initialStep && reference.requestedMaximumStep == definition.maximumStep && reference.effectiveMaximumStep == definition.maximumStep && reference.finalTime == definition.finalTime;
+end
+
+function passed = toleranceFingerprintMatches(runs)
+reference = runs(1).integrator;
+passed = all(arrayfun(@(run)string(run.integrator.absoluteToleranceHash)==string(reference.absoluteToleranceHash),runs));
+passed = passed && all(arrayfun(@(run)isequal(string(run.integrator.absoluteToleranceComponentHashes(:)),string(reference.absoluteToleranceComponentHashes(:))),runs));
 end
 
 function [errorValue,agreement,details] = compareOutputs(reference,candidate,tolerance)
@@ -275,25 +340,31 @@ end
 end
 
 function createMatchedFixture(pathname,options)
+definitions = caseDefinitions(options);
+outputInterval = definitions(1).outputInterval;
 wvt = WVTransformConstantStratification([15000 15000 1300],options.Nxyz,N0=sqrt(2e-5),latitude=45,isHydrostatic=false,shouldAntialias=true);
 state = initializeWaveVortexBenchmarkState(wvt,4001); advanceWaveVortexBenchmarkState(wvt,state,0);
 model = WVModel(wvt); cleanup = onCleanup(@()closeModels(model));
-outputFile = model.createNetCDFFileForModelOutput(pathname,outputInterval=options.deltaT/2,shouldOverwriteExisting=true);
 model.eulerianObservingSystem.addNetCDFOutputVariables('u');
 model.setFloatPositions([1000 7000],[900 6500],[-250 -850],'u',absToleranceXY=1e-8,absToleranceZ=1e-8);
 model.addTracer(sin(2*pi*wvt.X/wvt.Lx).*cos(2*pi*wvt.Y/wvt.Ly),"dye");
+model.setupIntegrator(integratorType="fixed",deltaT=options.deltaT);
+model.integrateToTime(options.deltaT,shouldShowIntegrationDiagnostics=false,callback=@(~)[]);
+outputFile = model.createNetCDFFileForModelOutput(pathname,outputInterval=outputInterval,shouldOverwriteExisting=true);
 group = outputFile.outputGroupWithName(model.defaultOutputGroupName());
 particles = model.fluxedObservingSystemWithName("float");
 tracer = model.fluxedObservingSystemWithName("dye");
 group.removeObservingSystem([particles tracer]);
-particleGroup = outputFile.addNewEvenlySpacedOutputGroup("particles",outputInterval=options.deltaT/2);
+particleGroup = outputFile.addNewEvenlySpacedOutputGroup("particles",outputInterval=outputInterval);
 particleGroup.addObservingSystem(particles);
-tracerGroup = outputFile.addNewEvenlySpacedOutputGroup("tracers",outputInterval=options.deltaT/2);
+tracerGroup = outputFile.addNewEvenlySpacedOutputGroup("tracers",outputInterval=outputInterval);
 tracerGroup.addObservingSystem(tracer);
 group.addObservingSystem(WVMooring(model,name="mooring",x=[0 5000],y=[0 4000],trackedFieldNames={'u'}));
-model.setupIntegrator(integratorType="fixed",deltaT=options.deltaT);
-model.integrateToTime(options.deltaT,shouldShowIntegrationDiagnostics=false,callback=@(~)[]);
-model.closeNetCDFFile(); clear cleanup
+model.outputTimesForIntegrationPeriod(model.t,model.t);
+model.writeTimeStepToNetCDFFile(model.t);
+model.recordNetCDFFileHistory();
+model.closeNetCDFFile();
+clear cleanup
 end
 
 function executables = buildStandaloneWorkers(repositoryRoot,capabilities)
@@ -428,7 +499,7 @@ if ~isfinite(availableBytes) || availableBytes<requiredBytes
 end
 end
 function restoreState(directory,originalPath,originalRng), cd(directory); path(originalPath); rng(originalRng); end
-function addRepositoryPaths(root,benchmark), addpath(root,benchmark); metadata=jsondecode(fileread(fullfile(root,"resources","mpackage.json"))); for item=reshape(metadata.folders,1,[]), folder=fullfile(root,item.path); if isfolder(folder), addpath(folder); end, end, end
+function addRepositoryPaths(root,benchmark), metadata=jsondecode(fileread(fullfile(root,"resources","mpackage.json"))); for item=reshape(metadata.folders,1,[]), folder=fullfile(root,item.path); if isfolder(folder), addpath(folder); end, end, addpath(root); addpath(benchmark); end
 function writeText(pathname,contents), parent=fileparts(pathname); if ~isfolder(parent), mkdir(parent); end, fileId=fopen(pathname,"w"); if fileId<0, error("WaveVortexBenchmark:ArtifactWriteFailed","Unable to open %s",pathname); end, cleanup=onCleanup(@()fclose(fileId)); fprintf(fileId,"%s",contents); clear cleanup, end
 function value=sha256File(pathname), [status,output]=system(sprintf('/usr/bin/shasum -a 256 %s',shellQuote(pathname))); if status~=0, error("WaveVortexBenchmark:HashFailed","%s",output); end, value=string(extractBefore(strtrim(output),65)); end
 function [commit,tree,isDirty]=gitIdentity(root), commit=gitValue(root,"rev-parse HEAD"); tree=gitValue(root,"rev-parse HEAD^{tree}"); [status,~]=system("git -C "+shellQuote(root)+" diff --quiet && git -C "+shellQuote(root)+" diff --cached --quiet"); isDirty=status~=0; end
@@ -439,3 +510,4 @@ function value=conditional(condition,a,b), if condition,value=a;else,value=b;end
 function value=emptyFailure, value=struct("stage","","identifier","","message","","report",""); end
 function value=emptyOutputGraph, value=struct("kind","","passed",true,"maximumRelativeError",0,"maximumAbsoluteError",0,"variableCount",0,"recordCount",0,"categories",repmat(struct("name","","variableCount",0,"maximumAbsoluteError",0,"maximumRelativeError",0,"passed",true),0,1),"differences",strings(0,1)); end
 function value=emptyRun, value=struct("schemaVersion","three-interface-worker-v1","status","failed","interface","","case",struct(),"repeatIndex",0,"sourceCommit","","processWallSeconds",NaN,"interfaceTotalSeconds",NaN,"integrationSeconds",NaN,"memory",struct(),"provider",struct(),"integrator",struct(),"finalState",struct(),"output",struct(),"diagnostics",struct(),"failure",struct("identifier","","message","","report","")); end
+function value=outputRecordCounts(pathname), value=struct("waveVortex",numel(ncread(pathname,"/wave-vortex/t")),"particles",numel(ncread(pathname,"/particles/t")),"tracers",numel(ncread(pathname,"/tracers/t"))); end
