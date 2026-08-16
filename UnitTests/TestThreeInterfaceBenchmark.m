@@ -39,8 +39,11 @@ classdef TestThreeInterfaceBenchmark < matlab.unittest.TestCase
         end
 
         function toleranceHashMatchesPortableReference(testCase)
-            testCase.verifyEqual(threeInterfaceToleranceHash([1e-6 1e-5]),"6411767373634975995")
-            testCase.verifyEqual(threeInterfaceToleranceHash([1e-8 1e-8]),"17908975794538723579")
+            testCase.verifyEqual(threeInterfaceToleranceHash([1e-6 1e-5]),"11095511005457332475")
+            testCase.verifyEqual(threeInterfaceToleranceHash([1e-8 1e-8]),"3713629807952050427")
+            values = [1e-6 1e-8 1e-10];
+            testCase.verifyEqual(threeInterfaceToleranceHash(values.*(1+eps)),threeInterfaceToleranceHash(values))
+            testCase.verifyNotEqual(threeInterfaceToleranceHash(values.*(1+1e-8)),threeInterfaceToleranceHash(values))
         end
 
         function compositionPreservesFrozenCasesAndCorrectedAdaptiveEvidence(testCase)
@@ -341,6 +344,7 @@ if definition.requestedIntegrator == "adaptive-rk23"
     integrator.controller = "matlab-ode23-v1";
     integrator.relativeTolerance = definition.relativeTolerance;
     integrator.absoluteToleranceHash = "12345";
+    integrator.absoluteToleranceHashClearedMantissaBits = 20;
     integrator.absoluteToleranceComponentHashes = repmat("123",1,7);
     integrator.requestedInitialStep = definition.initialStep;
     integrator.effectiveInitialStep = definition.initialStep;

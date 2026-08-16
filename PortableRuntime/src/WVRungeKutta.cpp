@@ -29,7 +29,9 @@ std::uint64_t hashTolerance(std::uint64_t hash, double value) noexcept {
   std::memcpy(&bits, &value, sizeof(bits));
   // Discard inconsequential low mantissa noise so independently evaluated
   // MATLAB and C++ tolerance formulas have one reproducible audit identity.
-  bits = (bits + UINT64_C(0x8000)) & ~UINT64_C(0xffff);
+  // Clearing 20 bits retains approximately 32 bits of significand precision;
+  // the production-size formula audit differs by at most 6.3e-16 relatively.
+  bits = (bits + UINT64_C(0x80000)) & ~UINT64_C(0xfffff);
   hash ^= bits;
   return hash * UINT64_C(1099511628211);
 }

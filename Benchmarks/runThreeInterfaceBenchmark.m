@@ -260,6 +260,7 @@ end
 value.controller = string(report.integrator.controller);
 value.relativeTolerance = double(report.integrator.relativeTolerance);
 value.absoluteToleranceHash = string(report.integrator.toleranceHash);
+value.absoluteToleranceHashClearedMantissaBits = double(report.integrator.toleranceHashClearedMantissaBits);
 value.absoluteToleranceComponentHashes = string(report.integrator.toleranceComponentHashes(:)');
 value.requestedInitialStep = double(report.integrator.requestedInitialStep);
 value.effectiveInitialStep = double(report.integrator.effectiveInitialStep);
@@ -275,7 +276,7 @@ value.outputRecordCounts = outputRecordCounts(pathname);
 end
 
 function passed = adaptiveWorkMatches(runs,definition)
-required = ["controller" "relativeTolerance" "absoluteToleranceHash" "absoluteToleranceComponentHashes" "requestedInitialStep" "effectiveInitialStep" "requestedMaximumStep" "effectiveMaximumStep" "initialTime" "finalTime" "acceptedStepCount" "rejectedStepCount" "rhsEvaluationCount" "denseOutputEvaluationCount" "outputRecordCounts"];
+required = ["controller" "relativeTolerance" "absoluteToleranceHash" "absoluteToleranceHashClearedMantissaBits" "absoluteToleranceComponentHashes" "requestedInitialStep" "effectiveInitialStep" "requestedMaximumStep" "effectiveMaximumStep" "initialTime" "finalTime" "acceptedStepCount" "rejectedStepCount" "rhsEvaluationCount" "denseOutputEvaluationCount" "outputRecordCounts"];
 passed = all(arrayfun(@(run)all(isfield(run.integrator,required)),runs));
 if ~passed
     return
@@ -283,7 +284,7 @@ end
 reference = runs(1).integrator;
 for run = reshape(runs,1,[])
     current = run.integrator;
-    exactFields = ["controller" "absoluteToleranceHash" "acceptedStepCount" "rejectedStepCount" "rhsEvaluationCount" "denseOutputEvaluationCount"];
+    exactFields = ["controller" "absoluteToleranceHash" "absoluteToleranceHashClearedMantissaBits" "acceptedStepCount" "rejectedStepCount" "rhsEvaluationCount" "denseOutputEvaluationCount"];
     passed = passed && all(arrayfun(@(name)string(current.(name))==string(reference.(name)),exactFields));
     passed = passed && isequal(string(current.absoluteToleranceComponentHashes(:)),string(reference.absoluteToleranceComponentHashes(:)));
     numericFields = ["relativeTolerance" "requestedInitialStep" "effectiveInitialStep" "requestedMaximumStep" "effectiveMaximumStep" "initialTime" "finalTime"];

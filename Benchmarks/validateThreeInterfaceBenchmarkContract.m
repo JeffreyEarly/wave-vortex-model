@@ -41,7 +41,7 @@ end
 if ~isfield(comparison,"adaptiveWorkAgreementPassed") || ~logical(comparison.adaptiveWorkAgreementPassed)
     error("WaveVortexBenchmark:AdaptiveWorkMismatch","Publication requires equivalent adaptive controller work in every interface.");
 end
-required = ["controller" "relativeTolerance" "absoluteToleranceHash" "absoluteToleranceComponentHashes" "requestedInitialStep" "effectiveInitialStep" "requestedMaximumStep" "effectiveMaximumStep" "initialTime" "finalTime" "acceptedStepCount" "rejectedStepCount" "rhsEvaluationCount" "denseOutputEvaluationCount" "outputRecordCounts"];
+required = ["controller" "relativeTolerance" "absoluteToleranceHash" "absoluteToleranceHashClearedMantissaBits" "absoluteToleranceComponentHashes" "requestedInitialStep" "effectiveInitialStep" "requestedMaximumStep" "effectiveMaximumStep" "initialTime" "finalTime" "acceptedStepCount" "rejectedStepCount" "rhsEvaluationCount" "denseOutputEvaluationCount" "outputRecordCounts"];
 if any(arrayfun(@(run)~all(isfield(run.integrator,required)),caseRuns))
     error("WaveVortexBenchmark:AdaptiveWorkMismatch","An adaptive interface omitted required controller or work-count evidence.");
 end

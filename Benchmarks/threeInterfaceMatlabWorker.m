@@ -121,6 +121,7 @@ value.controller = "matlab-ode23-v1";
 value.relativeTolerance = double(odeget(model.odeOptions,'RelTol'));
 tolerances = odeget(model.odeOptions,'AbsTol');
 value.absoluteToleranceHash = threeInterfaceToleranceHash(tolerances);
+value.absoluteToleranceHashClearedMantissaBits = 20;
 value.absoluteToleranceComponentHashes = arrayfun(@(index)threeInterfaceToleranceHash(tolerances(model.arrayStartIndex(index):model.arrayEndIndex(index))),1:numel(model.arrayStartIndex));
 value.requestedInitialStep = double(definition.initialStep);
 value.effectiveInitialStep = double(odeget(model.odeOptions,'InitialStep'));
