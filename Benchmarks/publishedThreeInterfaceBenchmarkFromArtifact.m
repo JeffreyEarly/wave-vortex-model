@@ -60,7 +60,7 @@ for iCase = 1:numel(raw.comparison)
     if string(definition.requestedIntegrator) == "adaptive-rk23"
         exemplar = caseRuns(1).integrator;
         adaptiveWork = rmfield(exemplar,["requested" "actual" "matched"]);
-        adaptiveWork.absoluteToleranceFingerprintAgreementPassed = logical(comparison.absoluteToleranceFingerprintAgreementPassed);
+        adaptiveWork.absoluteToleranceFingerprintAgreementPassed = toleranceFingerprintAgreement(comparison,caseRuns);
     end
     graph = comparison.outputGraph;
     graphSummary = struct("passed",logical(graph.passed),"variableCount",double(graph.variableCount),"recordCount",double(graph.recordCount),"maximumAbsoluteError",double(graph.maximumAbsoluteError),"maximumRelativeError",double(graph.maximumRelativeError),"categories",graph.categories);
@@ -70,6 +70,16 @@ end
 provenance = struct("rawSchemaVersion",string(raw.schemaVersion),"externalArchive",struct("fileName",options.archiveFileName,"sha256",options.archiveSHA256,"compressedBytes",options.archiveCompressedBytes));
 source = struct("repository","https://github.com/JeffreyEarly/wave-vortex-model","commit",string(raw.source.commit),"tree",string(raw.source.tree),"sourceDirty",false,"version",options.implementationVersion);
 dataset = struct("schemaVersion","published-three-interface-v1","datasetId",datasetId,"collectedAt",collectedAt,"source",source,"platform",platform,"provider",provider,"provenance",provenance,"cases",{cases});
+end
+
+function value = toleranceFingerprintAgreement(comparison,runs)
+if isfield(comparison,"absoluteToleranceFingerprintAgreementPassed")
+    value = logical(comparison.absoluteToleranceFingerprintAgreementPassed);
+    return
+end
+reference = runs(1).integrator;
+value = all(arrayfun(@(run)string(run.integrator.absoluteToleranceHash)==string(reference.absoluteToleranceHash),runs));
+value = value && all(arrayfun(@(run)isequal(string(run.integrator.absoluteToleranceComponentHashes(:)),string(reference.absoluteToleranceComponentHashes(:))),runs));
 end
 
 function [collectedAt,timestamp] = collectionTime(runId)

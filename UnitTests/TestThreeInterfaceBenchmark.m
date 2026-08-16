@@ -108,6 +108,16 @@ classdef TestThreeInterfaceBenchmark < matlab.unittest.TestCase
             publishedThreeInterfaceBenchmarkFromArtifact(rawPath);
         end
 
+        function matchingLegacyFingerprintIsRecovered(testCase)
+            raw = rawFixture;
+            raw.comparison = rmfield(raw.comparison,"absoluteToleranceFingerprintAgreementPassed");
+            rawPath = fullfile(testCase.TemporaryFolder,"raw.json");
+            writelines(jsonencode(raw),rawPath);
+            validateThreeInterfaceBenchmarkContract(raw)
+            published = publishedThreeInterfaceBenchmarkFromArtifact(rawPath);
+            testCase.verifyTrue(published.cases{3}.adaptiveWork.absoluteToleranceFingerprintAgreementPassed)
+        end
+
         function mixedOutputSchedulesAreRejected(testCase)
             if ~isCanonicalNativePlatform
                 return
