@@ -52,6 +52,9 @@ for iEntry = 1:numel(catalog.interfaceComparisons)
         error("WaveVortexModel:InvalidThreeInterfaceBenchmark","Interface comparison %s does not contain three passing matched cases.",datasetId);
     end
     if string(dataset.schemaVersion)=="published-three-interface-v1"
+        if ~validInterfaceProvider(dataset.provider)
+            error("WaveVortexModel:InvalidThreeInterfaceBenchmark","Interface comparison %s lacks validated provider identity.",datasetId);
+        end
         validateInterfaceArchive(dataset.provenance.externalArchive,datasetId);
     else
         if string(dataset.provenance.composition)~="frozen-valid-v1-plus-corrected-adaptive" || numel(dataset.provenance.sourceDatasets)~=2
@@ -143,9 +146,9 @@ values = strings(1,numel(dataset.cases));
 for iCase=1:numel(dataset.cases)
     benchmarkCase=itemAt(dataset.cases,iCase);
     if isfield(benchmarkCase,"evidence")
-        values(iCase)=string(benchmarkCase.id)+":"+string(benchmarkCase.evidence.source.tree)+":"+string(benchmarkCase.evidence.provider.moduleSHA256);
+        values(iCase)=string(benchmarkCase.id)+":"+string(benchmarkCase.evidence.source.tree);
     else
-        values(iCase)=string(benchmarkCase.id)+":"+string(dataset.source.tree)+":"+string(dataset.provider.moduleSHA256);
+        values(iCase)=string(benchmarkCase.id)+":"+string(dataset.source.tree);
     end
 end
 value=strjoin(sort(values),",");

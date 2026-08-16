@@ -110,6 +110,8 @@ classdef TestBenchmarkWebsiteDocumentation < matlab.unittest.TestCase
             [root,buildFolder] = testCase.createFixture("interfaces");
             [firstEntry,first] = testCase.publishInterfaceDataset(root,[256 256 129],"20260815T120000Z");
             [secondEntry,second] = testCase.publishInterfaceDataset(root,[512 512 257],"20260815T130000Z");
+            second.provider.moduleSHA256 = repmat('e',1,64);
+            testCase.writeJson(fullfile(root,secondEntry.artifact),second);
             testCase.writeCatalog(root,struct([]),[firstEntry secondEntry]);
 
             generateBenchmarkWebsiteDocumentation(root,buildFolder);
