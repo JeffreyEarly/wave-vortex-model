@@ -152,7 +152,11 @@ value=strjoin(sort(values),",");
 end
 
 function value = interfaceProviderSignature(dataset)
-value = strjoin([string(dataset.provider.id),string(dataset.provider.version),string(dataset.provider.threadBackend),string(dataset.provider.scope)],":");
+scope = "compiled-interfaces-only";
+if isfield(dataset.provider,"scope")
+    scope = string(dataset.provider.scope);
+end
+value = strjoin([string(dataset.provider.id),string(dataset.provider.version),string(dataset.provider.threadBackend),scope],":");
 end
 
 function tf = validInterfaceProvider(provider)
