@@ -762,17 +762,27 @@ for iRecord = 1:numel(interfaceRecords)
     dataset = interfaceRecords(iRecord).dataset;
     datasetId = string(dataset.datasetId);
     iRow = numel(records)+iRecord;
-    rows(iRow,:) = [datasetId,"MATLAB builtin / MATLAB compiled / standalone compiled",string(dataset.platform.displayName),"three-interface-v1",string(dataset.collectedAt),string(dataset.schemaVersion),"Published JSON","External archive: "+extractBefore(string(dataset.provenance.externalArchive.sha256),13)+"…"];
+    rows(iRow,:) = [datasetId,"MATLAB builtin / MATLAB compiled / standalone compiled",string(dataset.platform.displayName),"three-interface",string(dataset.collectedAt),string(dataset.schemaVersion),"Published JSON",interfaceArchiveSummary(dataset)];
 end
 rows = sortrows(rows,1);
 links = strings(size(rows));
 for iRow = 1:size(rows,1)
     links(iRow,7) = "/benchmarks/data/" + rows(iRow,1) + ".json";
-    if rows(iRow,4)~="three-interface-v1"
+    if iRow<=numel(records)
         links(iRow,8) = "/benchmarks/raw/" + rows(iRow,1) + ".json";
     end
 end
 markdown = htmlTable(["Dataset" "Implementation" "Platform" "Suite" "Collected" "Schema" "Normalized" "Raw artifact"],rows,links);
+end
+
+function value = interfaceArchiveSummary(dataset)
+if string(dataset.schemaVersion)=="published-three-interface-v1"
+    value = "External archive: "+extractBefore(string(dataset.provenance.externalArchive.sha256),13)+"…";
+    return
+end
+hashes = arrayfun(@(index)string(dataset.provenance.sourceDatasets(index).externalArchive.sha256),1:numel(dataset.provenance.sourceDatasets));
+hashes = unique(hashes,"stable");
+value = "External archives: "+strjoin(extractBefore(hashes,13)+"…",", ");
 end
 
 function html = htmlTable(headers,rows,links)

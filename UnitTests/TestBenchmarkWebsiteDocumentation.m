@@ -111,6 +111,9 @@ classdef TestBenchmarkWebsiteDocumentation < matlab.unittest.TestCase
             [firstEntry,first] = testCase.publishInterfaceDataset(root,[256 256 129],"20260815T120000Z");
             [secondEntry,second] = testCase.publishInterfaceDataset(root,[512 512 257],"20260815T130000Z");
             second.provider.moduleSHA256 = repmat('e',1,64);
+            first = compositeInterfaceFixture(first);
+            second = compositeInterfaceFixture(second);
+            testCase.writeJson(fullfile(root,firstEntry.artifact),first);
             testCase.writeJson(fullfile(root,secondEntry.artifact),second);
             testCase.writeCatalog(root,struct([]),[firstEntry secondEntry]);
 
@@ -133,7 +136,7 @@ classdef TestBenchmarkWebsiteDocumentation < matlab.unittest.TestCase
             testCase.verifySubstring(page,string(first.schemaVersion));
             testCase.verifySubstring(page,"/benchmarks/data/"+first.datasetId+".json");
             testCase.verifySubstring(page,"/benchmarks/data/"+second.datasetId+".json");
-            testCase.verifySubstring(page,"External archive:");
+            testCase.verifySubstring(page,"External archives:");
             testCase.verifyTrue(isfile(fullfile(buildFolder,"benchmarks","data",first.datasetId+".json")));
             testCase.verifyTrue(isfile(fullfile(buildFolder,"benchmarks","data",second.datasetId+".json")));
             testCase.verifyFalse(isfile(fullfile(buildFolder,"benchmarks","raw",first.datasetId+".json")));
@@ -286,6 +289,20 @@ classdef TestBenchmarkWebsiteDocumentation < matlab.unittest.TestCase
             clear cleanup
         end
     end
+end
+
+function dataset = compositeInterfaceFixture(dataset)
+provider = dataset.provider;
+evidence = struct("datasetId",dataset.datasetId,"collectedAt",dataset.collectedAt,"source",dataset.source,"provider",provider,"externalArchive",dataset.provenance.externalArchive);
+for iCase = 1:numel(dataset.cases)
+    dataset.cases{iCase}.evidence = evidence;
+end
+dataset.schemaVersion = "published-three-interface-v2";
+dataset.provider.moduleSHA256 = "per-case-evidence";
+dataset.provider.moduleIdentityScope = "case-evidence";
+dataset.provenance = struct;
+dataset.provenance.composition = "frozen-valid-v1-plus-corrected-adaptive";
+dataset.provenance.sourceDatasets = [evidence evidence];
 end
 
 function dataset = publishedDataset(datasetId,implementationId,backendId,platformId,platformName,version,collectedAt,cases)
