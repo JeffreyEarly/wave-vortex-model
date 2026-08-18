@@ -136,10 +136,11 @@ WVKernelStatus WVModelOutputGroup::evenlySpaced(
     std::string name, double outputInterval, double initialTime,
     double finalTime, WVModelOutputGroup &group, std::string identifier) {
   if (name.empty() || !std::isfinite(outputInterval) || outputInterval <= 0.0 ||
-      !std::isfinite(initialTime) || !std::isfinite(finalTime) ||
+      !std::isfinite(initialTime) || std::isnan(finalTime) ||
       finalTime < initialTime)
     return invalid("An evenly spaced output group requires a name, positive "
-                   "finite interval, and finite nondecreasing time bounds.");
+                   "finite interval, a finite initial time, and a "
+                   "nondecreasing finite or unbounded final time.");
   WVModelOutputGroup candidate;
   candidate.record_.name = std::move(name);
   candidate.record_.identifier = std::move(identifier);

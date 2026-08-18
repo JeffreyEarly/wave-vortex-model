@@ -31,7 +31,8 @@ public:
          bool isDynamicsLinear,
          const WVPortableObserverDescriptor &descriptor,
          std::unique_ptr<WVFFTEngine> engine,
-         std::unique_ptr<WVObserverOutputEvaluationService> &service);
+         std::unique_ptr<WVObserverOutputEvaluationService> &service,
+         WVFieldEvaluationService *borrowedFieldEvaluationService = nullptr);
 
   WVKernelStatus specifications(
       const WVObserverRecord &observer,

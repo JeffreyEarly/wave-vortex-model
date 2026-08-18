@@ -11,7 +11,9 @@ The runtime supports:
 
 Arbitrary MATLAB forcing or observing-system subclasses are not supported. Multi-file, named-group observing-system output is available through the C++ library; the command-line program intentionally exposes only checkpoint-to-checkpoint execution.
 
-Library clients may configure that graph with the provisional C++ `WVModelOutputFile` and `WVModelOutputGroup` builders. Their MATLAB-shaped methods compile once into the existing immutable descriptor, output plan, driver, and NetCDF sink. Builders are consumed before integration and add no runtime graph or state-sized storage. One create, replace, or append policy applies to the complete file set.
+`WVModel` is the thin, move-only runtime façade. It owns the resolved forcing, observers, numerical system, integrator, output evaluation, driver, and sink; `WVModelState` separately owns canonical coefficients and dynamic observer state. The same façade backs the standalone runner and the production MEX right-hand-side path. It adds no numerical algorithm or state-sized copy.
+
+Library clients may configure output with the provisional C++ `WVModelOutputFile` and `WVModelOutputGroup` builders. Their MATLAB-shaped methods compile once into the existing immutable descriptor, output plan, driver, and NetCDF sink. Builders are consumed before integration and add no runtime graph or state-sized storage. One create, replace, or append policy applies to the complete file set. `WVModel::createFromModelOutputFiles` instead consumes a complete MATLAB-authored sibling NetCDF set and may remap destinations by stable file identifier without changing observers, groups, or schedules.
 
 ## Build
 
@@ -60,6 +62,8 @@ Plans, caches, integrator history, derived forcing operators, and scratch are re
 ## Architecture
 
 `WVIntegrationStateLayout` describes canonical `Ap`, `Am`, and `A0` plus any observer-owned state blocks. `WVIntegrationSystem` supplies the right-hand side and constraints, `WVTimeIntegrator` advances accepted state, and `WVDenseOutput` evaluates within an accepted step. Output orchestration depends only on those contracts, so another integrator or state block does not require changes to the driver.
+
+`WVModel` composes these services but does not replace them. High-level restart, RHS, step, integration, output progress, and metrics operations delegate to the same contracts used before the façade. Model-output construction inspects all sibling files together, restores the latest complete compatible state, and compiles the recovered graph directly into the existing plan and sink.
 
 `WVObserverFactoryRegistry` is the source-level extension point for supported observer records. A registration selects reusable state and output contracts that are honored consistently by validation, evaluation, and persistence; the five built-ins use the same path. `WVFieldEvaluationService` shares primitive field reconstruction across observers, and `WVModelOutputNetCDFSink` owns transactional MATLAB-compatible persistence. The numerical kernel has no MATLAB, MEX, NetCDF, or Apple API dependency.
 
