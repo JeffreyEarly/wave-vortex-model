@@ -1,13 +1,16 @@
 #include "WaveVortexRuntime/generated/WVPortableVariableCatalog.hpp"
 
-#include <cassert>
 #include <cstddef>
+#include <cstdlib>
 #include <set>
 #include <string>
 
 using namespace wavevortex::runtime;
 
 int main() {
+  const auto require = [](const bool condition) {
+    if (!condition) std::abort();
+  };
   static_assert(WVPortableVariableCatalog.size() == 23);
   static_assert(portableVariableCatalogBytes() ==
                 sizeof(WVPortableVariableCatalog));
@@ -21,45 +24,45 @@ int main() {
   for (std::size_t index = 0; index < WVPortableVariableCatalog.size();
        ++index) {
     const auto &variable = WVPortableVariableCatalog[index];
-    assert(variable.ordinal == index);
-    assert(static_cast<std::size_t>(variable.identifier) == index);
-    assert(names.insert(variable.name).second);
-    assert(ordinals.insert(variable.ordinal).second);
-    assert(portableVariableMetadata(variable.identifier) == &variable);
-    assert(findPortableVariable(variable.name) == &variable);
+    require(variable.ordinal == index);
+    require(static_cast<std::size_t>(variable.identifier) == index);
+    require(names.insert(variable.name).second);
+    require(ordinals.insert(variable.ordinal).second);
+    require(portableVariableMetadata(variable.identifier) == &variable);
+    require(findPortableVariable(variable.name) == &variable);
   }
 
   const auto *Ap = findPortableVariable("Ap");
-  assert(Ap != nullptr);
-  assert(Ap->kind == WVPortableVariableKind::coefficient);
-  assert(Ap->naturalRank == WVPortableNaturalRank::coefficient);
-  assert(Ap->isComplex);
-  assert(!Ap->isVariableWithLinearTimeStep);
-  assert(Ap->samplingMask == portableCoefficientSampling);
+  require(Ap != nullptr);
+  require(Ap->kind == WVPortableVariableKind::coefficient);
+  require(Ap->naturalRank == WVPortableNaturalRank::coefficient);
+  require(Ap->isComplex);
+  require(!Ap->isVariableWithLinearTimeStep);
+  require(Ap->samplingMask == portableCoefficientSampling);
 
   const auto *u = findPortableVariable("u");
-  assert(u != nullptr);
-  assert(u->kind == WVPortableVariableKind::field);
-  assert(u->naturalRank == WVPortableNaturalRank::volume);
-  assert((u->samplingMask & portableFullGridSampling) != 0);
-  assert((u->samplingMask & portableFixedVerticalProfileSampling) != 0);
-  assert((u->samplingMask & portablePositionSampling) != 0);
-  assert(u->primitiveDependencyMask == 1);
-  assert(u->movingPrimitiveChannel == 0);
-  assert(u->netCDFAttributeCount == 1);
-  assert(std::string(u->netCDFAttribute.name) == "standard_name");
+  require(u != nullptr);
+  require(u->kind == WVPortableVariableKind::field);
+  require(u->naturalRank == WVPortableNaturalRank::volume);
+  require((u->samplingMask & portableFullGridSampling) != 0);
+  require((u->samplingMask & portableFixedVerticalProfileSampling) != 0);
+  require((u->samplingMask & portablePositionSampling) != 0);
+  require(u->primitiveDependencyMask == 1);
+  require(u->movingPrimitiveChannel == 0);
+  require(u->netCDFAttributeCount == 1);
+  require(std::string(u->netCDFAttribute.name) == "standard_name");
 
   const auto *rhoBar = findPortableVariable("rho_bar");
-  assert(rhoBar != nullptr);
-  assert(rhoBar->naturalRank == WVPortableNaturalRank::vertical);
-  assert(rhoBar->samplingMask == portableFullGridSampling);
-  assert(rhoBar->dimensionCount == 1);
-  assert(std::string(rhoBar->dimensions[0]) == "z");
+  require(rhoBar != nullptr);
+  require(rhoBar->naturalRank == WVPortableNaturalRank::vertical);
+  require(rhoBar->samplingMask == portableFullGridSampling);
+  require(rhoBar->dimensionCount == 1);
+  require(std::string(rhoBar->dimensions[0]) == "z");
 
   const auto *zetaZ = findPortableVariable("zeta_z");
-  assert(zetaZ != nullptr);
-  assert(zetaZ->primitiveDependencyMask == (16 | 32));
-  assert(std::string(zetaZ->netCDFAttribute.name) == "short_name");
+  require(zetaZ != nullptr);
+  require(zetaZ->primitiveDependencyMask == (16 | 32));
+  require(std::string(zetaZ->netCDFAttribute.name) == "short_name");
 
   return 0;
 }
