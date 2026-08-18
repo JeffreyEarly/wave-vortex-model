@@ -134,6 +134,15 @@ public:
             WVObserverSampleSource *sampleSource,
             WVModelOutputNetCDFSink &sink);
 
+  // Stages the complete file set before replacing any destination. Failure
+  // restores every original destination byte-for-byte.
+  static WVCheckpointStatus
+  replaceExisting(const WVModelOutputNetCDFConfiguration &configuration,
+                  const WVPortableObserverDescriptor &descriptor,
+                  const WVIntegrationStateLayout &stateLayout,
+                  WVObserverSampleSource *sampleSource,
+                  WVModelOutputNetCDFSink &sink);
+
   static WVCheckpointStatus
   openAppend(const WVModelOutputNetCDFConfiguration &configuration,
              const WVPortableObserverDescriptor &descriptor,

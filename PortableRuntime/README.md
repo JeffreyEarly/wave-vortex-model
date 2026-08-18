@@ -11,6 +11,8 @@ The runtime supports:
 
 Arbitrary MATLAB forcing or observing-system subclasses are not supported. Multi-file, named-group observing-system output is available through the C++ library; the command-line program intentionally exposes only checkpoint-to-checkpoint execution.
 
+Library clients may configure that graph with the provisional C++ `WVModelOutputFile` and `WVModelOutputGroup` builders. Their MATLAB-shaped methods compile once into the existing immutable descriptor, output plan, driver, and NetCDF sink. Builders are consumed before integration and add no runtime graph or state-sized storage. One create, replace, or append policy applies to the complete file set.
+
 ## Build
 
 A portable reference build requires CMake 3.20, a C++17 compiler, and NetCDF C:

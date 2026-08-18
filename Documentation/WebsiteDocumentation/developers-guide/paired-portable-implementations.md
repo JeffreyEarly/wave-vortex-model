@@ -27,6 +27,33 @@ Forcing registrations follow the same lifetime rule and are sealed when a frozen
 
 Configuration descriptors are immutable after construction. Evolving particle, tracer, forcing, and coefficient values live in explicit integration-state blocks. Observer output is produced through the existing output plan, driver, and sinks; observers do not define or write NetCDF storage themselves.
 
+## Output configuration
+
+The provisional C++ `WVModelOutputFile` and `WVModelOutputGroup` builders mirror the names and configuration flow of their MATLAB counterparts. They are mutable only before `WVModelOutputConfiguration::build()`. The build operation consumes the builders, resolves observer identifiers through the sealed paired-observer registry, validates the complete multi-file graph, and produces the existing immutable `WVPortableObserverDescriptor` and `WVOutputPlan`. It does not create or mutate output.
+
+One policy applies to the complete graph. `create` requires every destination to be absent. `replace` stages every new file before transactionally replacing the destination set and restores the original files if installation fails. `append` requires compatible existing files and recovers their committed schedule ordinals. A graph cannot mix policies among files.
+
+Default file identifiers are deterministic functions of normalized destinations; default group identifiers are deterministic functions of the file identity and group name. Explicit identifiers remain available for restart compatibility. Runtime routes contain only resolved ordinals and pointers. Builder objects, observer-name lookups, and a second output graph are not retained after compilation; NetCDF schema definition and writing remain exclusively in `WVModelOutputNetCDFSink`.
+
+```cpp
+WVModelOutputFile file;
+WVModelOutputFile::create("output.nc", file);
+WVModelOutputGroup *group = nullptr;
+file.addNewEvenlySpacedOutputGroup(
+    "wave-vortex", 60.0, initialTime, finalTime, group);
+group->addObservingSystem("coefficients");
+group->containsCompleteCoefficientRestart(true);
+
+WVModelOutputConfiguration output;
+std::vector<WVModelOutputFile> files;
+files.push_back(std::move(file));
+WVModelOutputConfiguration::build(
+    observerRecord, std::move(files), WVModelOutputPolicy::create,
+    initialTime, finalTime, output);
+```
+
+Every status must be checked in production code. The abbreviated example emphasizes the MATLAB-shaped construction sequence; integration consumes `output.plan()`, while `output.openNetCDFSink(...)` creates the existing persistence sink.
+
 The source-level extension surface deliberately provides no binary plug-in ABI and does not execute MATLAB subclass code in C++. It introduces no second persistence graph, per-element virtual dispatch, hot-loop string lookup, or state-sized façade copy.
 
 ## Add a paired implementation
@@ -39,7 +66,7 @@ The source-level extension surface deliberately provides no binary plug-in ABI a
 6. Verify that the integrator, output driver, persistence sink, and central dispatch code require no feature-specific edits.
 7. Run numerical, lifecycle, complete-integration runtime, and retained-memory checks.
 
-The MATLAB hooks and concrete observer and forcing records are added by their focused implementation issues. The common contract defines their shared identity and capability behavior without imposing a generic mutable base class.
+The common contract defines shared identity and capability behavior without imposing a generic mutable observer or forcing base class.
 
 ## Performance budget
 

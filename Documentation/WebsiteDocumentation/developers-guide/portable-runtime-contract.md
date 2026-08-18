@@ -35,6 +35,8 @@ Portable observers and forcings follow the [paired MATLAB and C++ implementation
 
 `WVOutputPlan` represents explicit or evenly spaced events independently of the integration method. `WVOutputDriver` validates exact state-layout compatibility, stages failed routes for retry, and delivers immutable event state to a sink. Sink callbacks are non-reentrant.
 
+Developer-facing `WVModelOutputFile` and `WVModelOutputGroup` builders provide MATLAB-shaped output configuration without changing this runtime boundary. `WVModelOutputConfiguration::build()` consumes the mutable builders and compiles them directly into the authoritative observer descriptor and output plan. Create, transactional replace, and compatible append are graph-wide policies implemented by the existing NetCDF sink; no second scheduler, route graph, or persistence schema is introduced.
+
 `WVModelOutputNetCDFSink` writes MATLAB-compatible records transactionally: payload variables precede the time commit, incomplete records are rejected, and dynamic particle or tracer state is restored with the canonical coefficients. Plans, mappings, derived operators, caches, integrator history, and scratch are never checkpoint data.
 
 `wave-vortex-run` treats that reconstructed record as the model boundary. Its allocation-light preflight resolves the dynamics mode, frozen forcing order, observer identities and dependencies, output schedules, committed ordinals, and integration layout before coefficient-sized state or numerical workspaces are allocated. Full-model continuation uses the same descriptor for the integration system, observer evaluation, output plan, and append sink. The reduced coefficient-only reader remains available only through an explicit restart mode.

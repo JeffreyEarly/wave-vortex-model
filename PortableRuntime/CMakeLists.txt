@@ -38,6 +38,7 @@ add_library(WaveVortexPortableRuntime STATIC
     src/WVModelOutputNetCDFSchema.cpp
     src/WVModelOutputNetCDFReader.cpp
     src/WVModelOutputNetCDFWriter.cpp
+    src/WVModelOutputConfiguration.cpp
 )
 add_library(WaveVortex::PortableRuntime ALIAS WaveVortexPortableRuntime)
 
@@ -153,6 +154,7 @@ if(BUILD_TESTING)
     wv_add_runtime_test(TestWVUnifiedIntegration TestWVUnifiedIntegration.cpp unified-integration)
     wv_add_runtime_test(TestWVOutputOrchestration TestWVOutputOrchestration.cpp output-orchestration)
     wv_add_runtime_test(TestWVModelOutputNetCDF TestWVModelOutputNetCDF.cpp model-output-netcdf)
+    wv_add_runtime_test(TestWVModelOutputConfiguration TestWVModelOutputConfiguration.cpp model-output-configuration)
     wv_add_runtime_test(TestWVFieldEvaluation TestWVFieldEvaluation.cpp field-evaluation)
     wv_add_runtime_test(TestWVObserverOutputEvaluation TestWVObserverOutputEvaluation.cpp observer-output-evaluation)
     wv_add_runtime_test(TestWVLagrangianParticles TestWVLagrangianParticles.cpp lagrangian-particles)
