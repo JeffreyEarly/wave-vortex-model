@@ -6,6 +6,7 @@
 #include <array>
 #include <cmath>
 #include <iostream>
+#include <map>
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -20,6 +21,37 @@ void require(bool condition, const std::string &message) {
   if (!condition)
     throw std::runtime_error(message);
 }
+
+class WVTestPortablePointDiagnosticImplementation final
+    : public WVObservingSystem {
+public:
+  const std::string &typeIdentifier() const noexcept override {
+    static const std::string value = "WVTestPortablePointDiagnostic";
+    return value;
+  }
+  std::uint32_t contractVersion() const noexcept override { return 1; }
+  const std::string &fieldListAttribute() const noexcept override {
+    static const std::string value = "fieldNames";
+    return value;
+  }
+  bool recordsFixedPoints() const noexcept override { return true; }
+  WVKernelStatus validate(
+      const WVObserverRecord &record,
+      const std::map<std::string, const WVStateBlockRecord *> &,
+      std::map<std::string, std::size_t> &) const override {
+    if (!record.stateBlockIdentifiers.empty() || record.fieldNames.size() != 1 ||
+        record.x.empty() || record.x.size() != record.y.size() ||
+        record.x.size() != record.z.size() ||
+        !std::isfinite(record.outputScale) ||
+        !std::isfinite(record.outputOffset))
+      return {WVKernelStatusCode::invalidConfiguration,
+              "Point diagnostic configuration is invalid."};
+    return WVKernelStatus::ok();
+  }
+  std::size_t persistentBytes() const noexcept override {
+    return sizeof(*this);
+  }
+};
 
 WVTransformConstantStratificationConfiguration configuration() {
   WVTransformConstantStratificationConfiguration value;
@@ -92,13 +124,13 @@ WVPortableObserverDescriptor descriptor() {
   WVObserverRecord coefficients;
   coefficients.identifier = "coefficients";
   coefficients.name = "WVCoefficients";
-  coefficients.kind = WVObserverKind::coefficients;
+  coefficients.typeIdentifier = "WVCoefficients";
   coefficients.stateBlockIdentifiers = {"Ap", "Am", "A0"};
   record.observers.push_back(coefficients);
   WVObserverRecord fields;
   fields.identifier = "fields-a";
   fields.name = "WVEulerianFields";
-  fields.kind = WVObserverKind::eulerianFields;
+  fields.typeIdentifier = "WVEulerianFields";
   fields.fieldNames = {"Ap", "u", "psi"};
   record.observers.push_back(fields);
   fields.identifier = "fields-b";
@@ -107,7 +139,7 @@ WVPortableObserverDescriptor descriptor() {
   WVObserverRecord mooring;
   mooring.identifier = "mooring";
   mooring.name = "central";
-  mooring.kind = WVObserverKind::mooring;
+  mooring.typeIdentifier = "WVMooring";
   mooring.fieldNames = {"u", "eta"};
   mooring.x = {-1.0, 8000.0};
   mooring.y = {6000.0, 2999.0};
@@ -115,7 +147,7 @@ WVPortableObserverDescriptor descriptor() {
   WVObserverRecord particles;
   particles.identifier = "particles";
   particles.name = "drifters";
-  particles.kind = WVObserverKind::lagrangianParticles;
+  particles.typeIdentifier = "WVLagrangianParticles";
   particles.stateBlockIdentifiers = {"particle-x", "particle-y"};
   particles.fieldNames = {"u", "rho_e"};
   particles.x = {-10.0, 8100.0};
@@ -125,6 +157,17 @@ WVPortableObserverDescriptor descriptor() {
   particles.horizontalAbsoluteTolerance = 1e-5;
   particles.trackedFieldInterpolation = WVPositionInterpolation::spline;
   record.observers.push_back(particles);
+  WVObserverRecord diagnostic;
+  diagnostic.identifier = "point-diagnostic";
+  diagnostic.name = "diagnostic";
+  diagnostic.typeIdentifier = "WVTestPortablePointDiagnostic";
+  diagnostic.fieldNames = {"u"};
+  diagnostic.x = {1000.0, 3500.0};
+  diagnostic.y = {1200.0, 4200.0};
+  diagnostic.z = {-250.0, -750.0};
+  diagnostic.outputScale = 2.5;
+  diagnostic.outputOffset = -1.25;
+  record.observers.push_back(diagnostic);
   WVPortableObserverDescriptor result;
   require(static_cast<bool>(WVPortableObserverDescriptor::create(record, result)),
           "observer descriptor construction failed");
@@ -181,7 +224,7 @@ void testService(bool linear) {
   requireRejectedConfiguration(
       [](auto &value) { value.latitude += 1.0; },
       "borrowed field service accepted a different latitude");
-  require(service->metrics().uniqueFieldOutputCount == 4,
+  require(service->metrics().uniqueFieldOutputCount == 5,
           "field requests were not deduplicated");
   require(service->metrics().sharedFieldReuseCount == 1,
           "shared full-grid field was not recorded");
@@ -271,7 +314,38 @@ void testService(bool linear) {
               std::isfinite(value.realData[0]) &&
               std::isfinite(value.realData[1]),
           "particle tracked-field value mismatch");
-  WVOutputObserverView routedObserver{1, &observers.observers()[1]};
+
+  status = service->specifications(observers.observers()[5], specifications);
+  require(static_cast<bool>(status),
+          "point-diagnostic specification query failed");
+  const auto diagnosticU = find(specifications, "u");
+  require(diagnosticU.name == "diagnostic_value" &&
+              diagnosticU.dimensions == std::vector<std::size_t>({2}),
+          "point-diagnostic schema mismatch");
+  status = service->value(observers.observers()[5], diagnosticU, value);
+  require(static_cast<bool>(status) && value.elementCount == 2,
+          "point-diagnostic value failed");
+  WVFieldSamplingRequest sampling;
+  sampling.kind = WVFieldSamplingKind::positions;
+  sampling.x = observers.observers()[5].x;
+  sampling.y = observers.observers()[5].y;
+  sampling.z = observers.observers()[5].z;
+  WVFieldEvaluationPlan diagnosticPlan;
+  status = sharedFields->createPlan({{"diagnostic-u", "u", sampling}},
+                                    diagnosticPlan);
+  require(static_cast<bool>(status),
+          "point-diagnostic reference plan failed");
+  std::array<double, 2> raw{};
+  WVFieldOutputView rawView{raw.data(), raw.size()};
+  status = sharedFields->evaluate(diagnosticPlan, owned.view(), &rawView, 1);
+  require(static_cast<bool>(status),
+          "point-diagnostic reference evaluation failed");
+  for (std::size_t index = 0; index < raw.size(); ++index)
+    require(std::abs(value.realData[index] - (2.5 * raw[index] - 1.25)) < 1e-12,
+            "point-diagnostic affine output changed");
+  WVOutputObserverView routedObserver{
+      1, &observers.observers()[1],
+      observers.implementation(observers.observers()[1])};
   WVOutputRouteView passiveRoute;
   passiveRoute.observers = &routedObserver;
   passiveRoute.observerCount = 1;
@@ -288,6 +362,9 @@ void testService(bool linear) {
 
 int main() {
   try {
+    require(static_cast<bool>(WVObserverFactoryRegistry::registerImplementation(
+                std::make_shared<WVTestPortablePointDiagnosticImplementation>())),
+            "point-diagnostic registration failed");
     testService(false);
     testService(true);
     std::cout << "Passive observer output evaluation contracts passed.\n";

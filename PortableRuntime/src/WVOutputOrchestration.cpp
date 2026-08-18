@@ -1,4 +1,5 @@
 #include "WaveVortexRuntime/WVOutputOrchestration.hpp"
+#include "WVObserverAdapter.hpp"
 
 #include <algorithm>
 #include <chrono>
@@ -105,7 +106,8 @@ bool sameStateBlockRecord(const WVStateBlockRecord &first,
 bool sameObserverRecord(const WVObserverRecord &first,
                         const WVObserverRecord &second) noexcept {
   return first.identifier == second.identifier && first.name == second.name &&
-         first.kind == second.kind &&
+         first.typeIdentifier == second.typeIdentifier &&
+         first.contractVersion == second.contractVersion &&
          first.stateBlockIdentifiers == second.stateBlockIdentifiers &&
          first.fieldNames == second.fieldNames && first.x == second.x &&
          first.y == second.y && first.z == second.z &&
@@ -116,7 +118,9 @@ bool sameObserverRecord(const WVObserverRecord &first,
              second.trackedFieldInterpolation &&
          first.horizontalAbsoluteTolerance ==
              second.horizontalAbsoluteTolerance &&
-         first.verticalAbsoluteTolerance == second.verticalAbsoluteTolerance;
+         first.verticalAbsoluteTolerance == second.verticalAbsoluteTolerance &&
+         first.outputScale == second.outputScale &&
+         first.outputOffset == second.outputOffset;
 }
 
 WVKernelStatus validateDescriptorLayout(
@@ -427,7 +431,9 @@ WVKernelStatus WVOutputPlan::create(
             return invalid("Output route references an unresolved observer: " +
                            identifier);
           resolved.observers.push_back(
-              {found->second, &candidate->record.observers[found->second]});
+              {found->second, &candidate->record.observers[found->second],
+               descriptor.implementation(
+                   descriptor.observers()[found->second])});
         }
         candidate->groups.push_back(std::move(resolved));
       }
@@ -553,15 +559,25 @@ WVKernelStatus WVOutputPlan::createExplicit(
     record.observers = layout.observerRecords();
     auto coefficientObserver = std::find_if(
         record.observers.begin(), record.observers.end(), [](const auto &item) {
-          return item.kind == WVObserverKind::coefficients;
+          const auto implementation = detail::observerImplementation(
+              item.typeIdentifier, item.contractVersion);
+          return implementation && implementation->recordsCoefficients();
         });
     std::string coefficientIdentifier;
     if (coefficientObserver == record.observers.end()) {
+      const auto implementation = std::find_if(
+          detail::observerImplementations().begin(),
+          detail::observerImplementations().end(), [](const auto &candidate) {
+            return candidate->recordsCoefficients();
+          });
+      if (implementation == detail::observerImplementations().end())
+        return {WVKernelStatusCode::unsupportedOperation,
+                "No coefficient observer implementation is registered."};
       WVObserverRecord observer;
       observer.identifier = "explicit-checkpoint-coefficients";
-      observer.name = WVObserverFactoryRegistry::portableTag(
-          WVObserverKind::coefficients);
-      observer.kind = WVObserverKind::coefficients;
+      observer.name = (*implementation)->typeIdentifier();
+      observer.typeIdentifier = (*implementation)->typeIdentifier();
+      observer.contractVersion = (*implementation)->contractVersion();
       observer.stateBlockIdentifiers = {"Ap", "Am", "A0"};
       coefficientIdentifier = observer.identifier;
       record.observers.push_back(std::move(observer));

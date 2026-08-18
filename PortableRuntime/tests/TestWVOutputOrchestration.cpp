@@ -42,13 +42,13 @@ WVPortableObserverRecord outputRecord(double finalTime = 1.0) {
   WVObserverRecord coefficients;
   coefficients.identifier = "coefficients";
   coefficients.name = "Wave-vortex coefficients";
-  coefficients.kind = WVObserverKind::coefficients;
+  coefficients.typeIdentifier = "WVCoefficients";
   coefficients.stateBlockIdentifiers = {"Ap", "Am", "A0"};
   record.observers.push_back(coefficients);
   WVObserverRecord tracer;
   tracer.identifier = "sharedTracer";
   tracer.name = "Shared tracer";
-  tracer.kind = WVObserverKind::tracer;
+  tracer.typeIdentifier = "WVTracer";
   tracer.stateBlockIdentifiers = {"tracerAmplitude"};
   record.observers.push_back(tracer);
   record.outputFiles = {

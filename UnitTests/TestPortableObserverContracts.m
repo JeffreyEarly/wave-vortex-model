@@ -55,5 +55,17 @@ classdef TestPortableObserverContracts < matlab.unittest.TestCase
             testCase.verifyEqual(contract.typeIdentifier,"WVTestPortableTracer");
             testCase.verifyEqual(contract.payload.stateShape,uint64(size(phi)));
         end
+
+        function pointDiagnosticUsesDistinctConfigurationAndSampling(testCase)
+            observer = WVTestPortablePointDiagnostic(testCase.model,x=[10; 20],y=[30; 40],z=[-10; -20],fieldName="u",scale=2.5,offset=-1.25,interpolation="spline");
+            contract = observer.portableImplementationContract();
+            testCase.verifyEqual(contract.capabilityStatus,"supported");
+            testCase.verifyEqual(contract.typeIdentifier,"WVTestPortablePointDiagnostic");
+            testCase.verifyEqual(contract.payload.fieldNames,"u");
+            testCase.verifyEqual(contract.payload.x,[10; 20]);
+            testCase.verifyEqual(contract.payload.outputScale,2.5);
+            testCase.verifyEqual(contract.payload.outputOffset,-1.25);
+            testCase.verifyEqual(contract.payload.trackedFieldInterpolation,"spline");
+        end
     end
 end

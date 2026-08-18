@@ -288,7 +288,9 @@ bool sameIntegrationStateLayout(const WVIntegrationStateLayout &first,
   for (std::size_t i = 0; i < aObservers.size(); ++i) {
     const auto &a = aObservers[i];
     const auto &b = bObservers[i];
-    if (a.identifier != b.identifier || a.name != b.name || a.kind != b.kind ||
+    if (a.identifier != b.identifier || a.name != b.name ||
+        a.typeIdentifier != b.typeIdentifier ||
+        a.contractVersion != b.contractVersion ||
         a.stateBlockIdentifiers != b.stateBlockIdentifiers ||
         a.fieldNames != b.fieldNames || a.x != b.x || a.y != b.y ||
         a.z != b.z || a.isXYOnly != b.isXYOnly ||
@@ -296,7 +298,8 @@ bool sameIntegrationStateLayout(const WVIntegrationStateLayout &first,
         a.advectionInterpolation != b.advectionInterpolation ||
         a.trackedFieldInterpolation != b.trackedFieldInterpolation ||
         a.horizontalAbsoluteTolerance != b.horizontalAbsoluteTolerance ||
-        a.verticalAbsoluteTolerance != b.verticalAbsoluteTolerance)
+        a.verticalAbsoluteTolerance != b.verticalAbsoluteTolerance ||
+        a.outputScale != b.outputScale || a.outputOffset != b.outputOffset)
       return false;
   }
   return true;

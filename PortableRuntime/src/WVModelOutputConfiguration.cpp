@@ -66,7 +66,8 @@ bool sameStateBlock(const WVStateBlockRecord &left,
 bool sameObserver(const WVObserverRecord &left,
                   const WVObserverRecord &right) noexcept {
   return left.identifier == right.identifier && left.name == right.name &&
-         left.kind == right.kind &&
+         left.typeIdentifier == right.typeIdentifier &&
+         left.contractVersion == right.contractVersion &&
          left.stateBlockIdentifiers == right.stateBlockIdentifiers &&
          left.fieldNames == right.fieldNames && left.x == right.x &&
          left.y == right.y && left.z == right.z &&
@@ -76,7 +77,9 @@ bool sameObserver(const WVObserverRecord &left,
          left.trackedFieldInterpolation == right.trackedFieldInterpolation &&
          left.horizontalAbsoluteTolerance ==
              right.horizontalAbsoluteTolerance &&
-         left.verticalAbsoluteTolerance == right.verticalAbsoluteTolerance;
+         left.verticalAbsoluteTolerance == right.verticalAbsoluteTolerance &&
+         left.outputScale == right.outputScale &&
+         left.outputOffset == right.outputOffset;
 }
 
 bool sameOutputFile(const WVOutputFileRecord &left,

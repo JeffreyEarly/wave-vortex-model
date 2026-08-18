@@ -89,7 +89,8 @@ WVPortableObserverDescriptor::create(const WVPortableObserverRecord &record,
     }
 
     std::set<std::string> observerIdentifiers;
-    std::map<std::string, WVObserverOutputRule> observerOutputRules;
+    std::map<std::string, std::shared_ptr<const WVObservingSystem>>
+        observerImplementations;
     std::map<std::string, std::size_t> integratedBlockOwnerCounts;
     for (const auto &block : record.stateBlocks) {
       const bool canonical = block.identifier == "Ap" ||
@@ -103,12 +104,12 @@ WVPortableObserverDescriptor::create(const WVPortableObserverRecord &record,
         return invalid("Observer identifier and name must be nonempty.");
       if (!observerIdentifiers.insert(observer.identifier).second)
         return invalid("Duplicate observer identifier: " + observer.identifier);
-      const auto *definition = detail::observerDefinition(observer.kind);
-      if (definition == nullptr)
+      const auto implementation = detail::observerImplementation(
+          observer.typeIdentifier, observer.contractVersion);
+      if (!implementation)
         return {WVKernelStatusCode::unsupportedOperation,
-                "Unsupported observing-system tag."};
-      observerOutputRules.emplace(observer.identifier,
-                                  definition->outputRule);
+                "Unsupported observing-system identity or contract version."};
+      observerImplementations.emplace(observer.identifier, implementation);
       std::set<std::string> observerBlocks;
       for (const auto &identifier : observer.stateBlockIdentifiers) {
         if (blockIdentifiers.find(identifier) == blockIdentifiers.end())
@@ -118,7 +119,7 @@ WVPortableObserverDescriptor::create(const WVPortableObserverRecord &record,
           return invalid("Observer " + observer.identifier +
                          " repeats state block " + identifier + ".");
       }
-      const auto observerStatus = detail::validateObserver(
+      const auto observerStatus = implementation->validate(
           observer, blocksByIdentifier, integratedBlockOwnerCounts);
       if (!observerStatus)
         return observerStatus;
@@ -174,14 +175,14 @@ WVPortableObserverDescriptor::create(const WVPortableObserverRecord &record,
           const bool containsCoefficients = std::any_of(
               group.observerIdentifiers.begin(),
               group.observerIdentifiers.end(), [&](const auto &identifier) {
-                return observerOutputRules.at(identifier) ==
-                       WVObserverOutputRule::coefficients;
+                return observerImplementations.at(identifier)
+                    ->recordsCoefficients();
               });
           const bool containsEulerianCoefficients = std::any_of(
               group.observerIdentifiers.begin(),
               group.observerIdentifiers.end(), [&](const auto &identifier) {
-                if (observerOutputRules.at(identifier) !=
-                    WVObserverOutputRule::eulerianFields)
+                if (!observerImplementations.at(identifier)
+                         ->recordsEulerianFields())
                   return false;
                 const auto observer = std::find_if(
                     record.observers.begin(), record.observers.end(),
@@ -210,6 +211,11 @@ WVPortableObserverDescriptor::create(const WVPortableObserverRecord &record,
                        "one complete coefficient-restart group.");
     }
     descriptor.record_ = record;
+    descriptor.implementations_.clear();
+    descriptor.implementations_.reserve(record.observers.size());
+    for (const auto &observer : record.observers)
+      descriptor.implementations_.push_back(
+          observerImplementations.at(observer.identifier));
     return WVKernelStatus::ok();
   } catch (const std::bad_alloc &) {
     return {WVKernelStatusCode::allocationFailure,
@@ -217,30 +223,28 @@ WVPortableObserverDescriptor::create(const WVPortableObserverRecord &record,
   }
 }
 
-bool WVObserverFactoryRegistry::supports(WVObserverKind kind) noexcept {
-  return detail::observerDefinition(kind) != nullptr;
-}
-
-const char *
-WVObserverFactoryRegistry::portableTag(WVObserverKind kind) noexcept {
-  const auto *definition = detail::observerDefinition(kind);
-  return definition == nullptr ? nullptr : definition->portableTag.c_str();
-}
-
-const char *
-WVObserverFactoryRegistry::matlabClassName(WVObserverKind kind) noexcept {
-  const auto *definition = detail::observerDefinition(kind);
-  return definition == nullptr ? nullptr : definition->matlabClassName.c_str();
+bool WVObserverFactoryRegistry::supports(
+    const std::string &typeIdentifier,
+    std::uint32_t contractVersion) noexcept {
+  return static_cast<bool>(
+      detail::observerImplementation(typeIdentifier, contractVersion));
 }
 
 WVPortableCapability WVObserverFactoryRegistry::capability(
     std::string typeIdentifier, std::uint32_t contractVersion) {
-  const auto *definition =
-      detail::observerDefinitionForMatlabClass(typeIdentifier);
+  const auto implementation = detail::observerImplementation(
+      typeIdentifier, contractVersion);
   std::optional<WVPortableImplementationIdentity> available;
-  if (definition != nullptr)
-    available = WVPortableImplementationIdentity{definition->matlabClassName,
-                                                   definition->contractVersion};
+  if (implementation)
+    available = WVPortableImplementationIdentity{
+        implementation->typeIdentifier(), implementation->contractVersion()};
+  else
+    for (const auto &candidate : detail::observerImplementations())
+      if (candidate->typeIdentifier() == typeIdentifier) {
+        available = WVPortableImplementationIdentity{
+            candidate->typeIdentifier(), candidate->contractVersion()};
+        break;
+      }
   return evaluatePortableCapability(
       {std::move(typeIdentifier), contractVersion}, std::move(available));
 }
@@ -249,9 +253,17 @@ bool WVObserverFactoryRegistry::isSealed() noexcept {
   return detail::observerDefinitionsSealed();
 }
 
-WVKernelStatus WVObserverFactoryRegistry::registerAdapter(
-    Registration registration) {
-  return detail::registerObserverDefinition(std::move(registration));
+WVKernelStatus WVObserverFactoryRegistry::registerImplementation(
+    std::shared_ptr<const WVObservingSystem> implementation) {
+  return detail::registerObserverImplementation(std::move(implementation));
+}
+
+const WVObservingSystem *WVPortableObserverDescriptor::implementation(
+    const WVObserverRecord &observer) const noexcept {
+  for (std::size_t index = 0; index < record_.observers.size(); ++index)
+    if (record_.observers[index].identifier == observer.identifier)
+      return implementations_[index].get();
+  return nullptr;
 }
 
 std::size_t WVPortableObserverDescriptor::persistentBytes() const noexcept {
@@ -265,6 +277,7 @@ std::size_t WVPortableObserverDescriptor::persistentBytes() const noexcept {
              block.dimensions.capacity() * sizeof(std::size_t);
   for (const auto &observer : record_.observers) {
     bytes += stringBytes(observer.identifier) + stringBytes(observer.name) +
+             stringBytes(observer.typeIdentifier) +
              observer.stateBlockIdentifiers.capacity() * sizeof(std::string) +
              observer.fieldNames.capacity() * sizeof(std::string);
     for (const auto &value : observer.stateBlockIdentifiers)
@@ -275,6 +288,8 @@ std::size_t WVPortableObserverDescriptor::persistentBytes() const noexcept {
               observer.z.capacity()) *
              sizeof(double);
   }
+  bytes += implementations_.capacity() *
+           sizeof(std::shared_ptr<const WVObservingSystem>);
   for (const auto &file : record_.outputFiles) {
     bytes += stringBytes(file.identifier) + stringBytes(file.destination) +
              file.groups.capacity() * sizeof(WVOutputGroupRecord);

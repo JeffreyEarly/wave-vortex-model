@@ -55,6 +55,9 @@ public:
     std::size_t fieldOutput = 0;
     bool initialField = false;
     bool particleField = false;
+    double scale = 1.0;
+    double offset = 0.0;
+    bool affine = false;
   };
 
   struct ParticleCoordinates {
@@ -88,6 +91,7 @@ public:
   std::vector<double> particleZ;
   std::map<std::string, std::vector<Output>> outputsByObserver;
   std::map<std::string, std::pair<std::string, std::size_t>> outputLookup;
+  std::map<std::string, std::vector<double>> affineStorage;
   WVState preparedState;
   bool prepared = false;
   bool running = false;
@@ -243,16 +247,16 @@ WVKernelStatus WVObserverOutputEvaluationService::create(
     };
 
     for (const auto &observer : impl.descriptor.observers) {
-      const auto *definition = detail::observerDefinition(observer.kind);
-      if (definition == nullptr)
+      const auto implementation = detail::observerImplementation(
+          observer.typeIdentifier, observer.contractVersion);
+      if (!implementation)
         return {WVKernelStatusCode::unsupportedOperation,
                 "Observer output evaluation received an unsupported built-in."};
-      const auto outputRule = definition->outputRule;
+      const auto &behavior = *implementation;
       auto &outputs = impl.outputsByObserver[observer.identifier];
-      if (outputRule == WVObserverOutputRule::coefficients ||
-          outputRule == WVObserverOutputRule::eulerianFields) {
-        for (const auto &field : outputRule ==
-                                          WVObserverOutputRule::coefficients
+      if (behavior.recordsCoefficients() ||
+          behavior.recordsEulerianFields()) {
+        for (const auto &field : behavior.recordsCoefficients()
                                      ? std::vector<std::string>{"Ap", "Am", "A0"}
                                      : observer.fieldNames) {
           const auto *metadata = findPortableVariable(field);
@@ -310,7 +314,7 @@ WVKernelStatus WVObserverOutputEvaluationService::create(
               return status;
           }
         }
-      } else if (outputRule == WVObserverOutputRule::mooring) {
+      } else if (behavior.recordsFixedProfiles()) {
         if (observer.x.empty() || observer.x.size() != observer.y.size())
           return invalid("WVMooring requires equal nonempty x and y coordinates.");
         WVFieldSamplingRequest sampling;
@@ -339,8 +343,31 @@ WVKernelStatus WVObserverOutputEvaluationService::create(
             return status;
           outputs.back().specification.longName += ", recorded at the mooring";
         }
-      } else if (outputRule ==
-                 WVObserverOutputRule::lagrangianParticles) {
+      } else if (behavior.recordsFixedPoints()) {
+        if (observer.fieldNames.size() != 1 || observer.x.empty() ||
+            observer.x.size() != observer.y.size() ||
+            observer.x.size() != observer.z.size())
+          return invalid("A fixed-point diagnostic requires one field and "
+                         "equal nonempty x/y/z coordinate vectors.");
+        WVFieldSamplingRequest sampling;
+        sampling.kind = WVFieldSamplingKind::positions;
+        sampling.x = observer.x;
+        sampling.y = observer.y;
+        sampling.z = observer.z;
+        sampling.interpolation = observer.trackedFieldInterpolation;
+        const auto &field = observer.fieldNames.front();
+        status = addField(field, sampling, observer.name + "_value",
+                          {observer.name + "_id"}, {observer.x.size()},
+                          outputs);
+        if (!status)
+          return status;
+        outputs.back().scale = observer.outputScale;
+        outputs.back().offset = observer.outputOffset;
+        outputs.back().affine = observer.outputScale != 1.0 ||
+                                observer.outputOffset != 0.0;
+        outputs.back().specification.longName +=
+            ", sampled and affinely transformed by the observing system";
+      } else if (behavior.recordsMovingParticles()) {
         if (observer.z.size() != observer.x.size())
           return invalid("Constant-stratification particles require one z "
                          "coordinate per particle.");
@@ -422,10 +449,9 @@ WVKernelStatus WVObserverOutputEvaluationService::create(
       std::vector<WVMovingFieldRequest> particleRequests;
       particleRequests.reserve(impl.particleFieldStorage.size());
       for (const auto &observer : impl.descriptor.observers) {
-        const auto *definition = detail::observerDefinition(observer.kind);
-        if (definition == nullptr ||
-            definition->outputRule !=
-                WVObserverOutputRule::lagrangianParticles)
+        const auto implementation = detail::observerImplementation(
+            observer.typeIdentifier, observer.contractVersion);
+        if (!implementation || !implementation->recordsMovingParticles())
           continue;
         const auto coordinates = std::find_if(
             impl.particleCoordinates.begin(), impl.particleCoordinates.end(),
@@ -481,9 +507,10 @@ WVKernelStatus WVObserverOutputEvaluationService::preflight(
       for (std::size_t observerIndex = 0;
            observerIndex < event.routes[routeIndex].observerCount;
            ++observerIndex) {
-        const auto *record =
-            event.routes[routeIndex].observers[observerIndex].record;
-        if (record == nullptr ||
+        const auto &resolved =
+            event.routes[routeIndex].observers[observerIndex];
+        const auto *record = resolved.record;
+        if (record == nullptr || resolved.implementation == nullptr ||
             impl_->outputsByObserver.find(record->identifier) ==
                 impl_->outputsByObserver.end())
           return invalid("Output plan references an observer outside this "
@@ -523,12 +550,10 @@ WVKernelStatus WVObserverOutputEvaluationService::prepare(
        ++route)
     for (std::size_t observer = 0;
          observer < event.routes[route].observerCount; ++observer) {
-      const auto *record = event.routes[route].observers[observer].record;
-      const auto *definition =
-          record == nullptr ? nullptr : detail::observerDefinition(record->kind);
-      if (record != nullptr && definition != nullptr &&
-          definition->outputRule ==
-              WVObserverOutputRule::lagrangianParticles &&
+      const auto &resolved = event.routes[route].observers[observer];
+      const auto *record = resolved.record;
+      if (record != nullptr && resolved.implementation != nullptr &&
+          resolved.implementation->recordsMovingParticles() &&
           !record->fieldNames.empty()) {
         needsParticles = true;
         break;
@@ -566,8 +591,21 @@ WVKernelStatus WVObserverOutputEvaluationService::value(
                               ? impl_->particleFieldStorage
                               : entry.initialField ? impl_->initialFieldStorage
                                                    : impl_->timeSeriesFieldStorage;
-    output.realData = storage[entry.fieldOutput].data();
-    output.elementCount = storage[entry.fieldOutput].size();
+    if (entry.affine) {
+      auto &transformed = impl_->affineStorage[outputKey(
+          observer, variable.identifier)];
+      transformed.resize(storage[entry.fieldOutput].size());
+      std::transform(storage[entry.fieldOutput].begin(),
+                     storage[entry.fieldOutput].end(), transformed.begin(),
+                     [&](double value) {
+                       return entry.scale * value + entry.offset;
+                     });
+      output.realData = transformed.data();
+      output.elementCount = transformed.size();
+    } else {
+      output.realData = storage[entry.fieldOutput].data();
+      output.elementCount = storage[entry.fieldOutput].size();
+    }
   }
   return WVKernelStatus::ok();
 }
@@ -590,6 +628,8 @@ std::size_t WVObserverOutputEvaluationService::persistentBytes() const noexcept 
     bytes += storage.capacity() * sizeof(double);
   bytes += (impl_->particleX.capacity() + impl_->particleY.capacity() +
             impl_->particleZ.capacity()) * sizeof(double);
+  for (const auto &[key, storage] : impl_->affineStorage)
+    bytes += key.capacity() + storage.capacity() * sizeof(double);
   return bytes;
 }
 
