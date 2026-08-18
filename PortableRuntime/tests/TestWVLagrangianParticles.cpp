@@ -15,6 +15,8 @@ using namespace wavevortex::runtime;
 
 namespace {
 
+constexpr auto testPortableTracerKind = static_cast<WVObserverKind>(200);
+
 void require(bool condition, const std::string &message) {
   if (!condition)
     throw std::runtime_error(message);
@@ -122,7 +124,9 @@ WVPortableObserverDescriptor descriptorWithTracers(
     WVObserverRecord tracer;
     tracer.identifier = identifier;
     tracer.name = identifier;
-    tracer.kind = WVObserverKind::tracer;
+    tracer.kind = std::string(identifier) == "temperature"
+                      ? testPortableTracerKind
+                      : WVObserverKind::tracer;
     tracer.stateBlockIdentifiers = {identifier};
     tracer.shouldAntialias = std::string(identifier) == "dye";
     record.observers.push_back(std::move(tracer));
@@ -507,6 +511,11 @@ void testValidation() {
 
 int main() {
   try {
+    const auto registration = WVObserverFactoryRegistry::registerAdapter(
+        {testPortableTracerKind, "WVTestPortableTracer", "WVTestPortableTracer",
+         WVPortablePairContractVersion, WVObserverStateContract::tracerField,
+         WVObserverOutputRule::tracer, ""});
+    require(static_cast<bool>(registration), registration.message);
     testIntegratedObservers(true);
     testIntegratedObservers(false);
     testTracers(true);

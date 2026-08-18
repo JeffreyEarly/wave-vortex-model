@@ -61,4 +61,6 @@ Plans, caches, integrator history, derived forcing operators, and scratch are re
 
 `WVObserverFactoryRegistry` is the source-level extension point for supported observer records. A registration selects reusable state and output contracts that are honored consistently by validation, evaluation, and persistence; the five built-ins use the same path. `WVFieldEvaluationService` shares primitive field reconstruction across observers, and `WVModelOutputNetCDFSink` owns transactional MATLAB-compatible persistence. The numerical kernel has no MATLAB, MEX, NetCDF, or Apple API dependency.
 
+Registrations include the exact paired MATLAB/C++ identity and contract version and must be installed before the first observer descriptor is constructed. Descriptor construction seals the registry; integration performs no registration discovery or class-name lookup.
+
 See the website's portable-runtime user and developer pages for the supported compatibility profile and extension boundaries.

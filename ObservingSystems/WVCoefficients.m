@@ -53,6 +53,17 @@ classdef WVCoefficients < WVObservingSystem
             end
         end
 
+        function contract = portableImplementationContract(self)
+            % Return the paired portable implementation contract.
+            %
+            % - Topic: Internal
+            % - Declaration: contract = portableImplementationContract(self)
+            % - Returns contract: versioned data-only observer contract
+            % - Developer: true
+            payload = struct("name",string(self.name),"absTolerance",double(self.absTolerance));
+            contract = self.supportedPortableImplementationContract("WVCoefficients",payload);
+        end
+
         function Y0 = absErrorTolerance(self)
             alpha0 = ones(self.wvt.spectralMatrixSize);
             alphapm = ones(self.wvt.spectralMatrixSize);

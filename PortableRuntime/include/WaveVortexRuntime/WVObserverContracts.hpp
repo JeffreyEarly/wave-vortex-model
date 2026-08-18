@@ -1,5 +1,6 @@
 #pragma once
 
+#include "WaveVortexRuntime/WVPortableImplementationContract.hpp"
 #include "WaveVortexKernel/WVKernelTypes.hpp"
 
 #include <cstddef>
@@ -132,6 +133,7 @@ public:
     WVObserverKind kind = WVObserverKind::coefficients;
     std::string portableTag;
     std::string matlabClassName;
+    std::uint32_t contractVersion = WVPortablePairContractVersion;
     WVObserverStateContract stateContract =
         WVObserverStateContract::sampleOnly;
     WVObserverOutputRule outputRule = WVObserverOutputRule::eulerianFields;
@@ -141,6 +143,10 @@ public:
   static bool supports(WVObserverKind kind) noexcept;
   static const char *portableTag(WVObserverKind kind) noexcept;
   static const char *matlabClassName(WVObserverKind kind) noexcept;
+  static WVPortableCapability capability(
+      std::string typeIdentifier,
+      std::uint32_t contractVersion = WVPortablePairContractVersion);
+  static bool isSealed() noexcept;
 
   // Register one source-level native observer adapter before constructing a
   // descriptor. The serialized observer record remains portable-observers-v1;
