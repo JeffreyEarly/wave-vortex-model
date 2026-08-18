@@ -30,6 +30,8 @@ int main() {
             "portable tag is absent");
     require(!definition.matlabClassName.empty(),
             "MATLAB class name is absent");
+    require(definition.contractVersion == WVPortablePairContractVersion,
+            "observer pair contract version changed");
     require(tags.insert(definition.portableTag).second,
             "portable tag is duplicated");
     require(classes.insert(definition.matlabClassName).second,
@@ -48,33 +50,57 @@ int main() {
 
   constexpr auto testKind = static_cast<WVObserverKind>(200);
   auto registration = WVObserverFactoryRegistry::Registration{
-      testKind, "WVTestFields", "WVTestFields",
-      WVObserverStateContract::sampleOnly,
-      WVObserverOutputRule::eulerianFields, "fieldNames"};
+      testKind, "WVTestPortableTracer", "WVTestPortableTracer",
+      WVPortablePairContractVersion,
+      WVObserverStateContract::tracerField,
+      WVObserverOutputRule::tracer, ""};
   require(static_cast<bool>(
               WVObserverFactoryRegistry::registerAdapter(registration)),
           "test observer adapter registration failed");
   require(WVObserverFactoryRegistry::supports(testKind),
           "registered test observer is unsupported");
   require(std::string(WVObserverFactoryRegistry::portableTag(testKind)) ==
-              "WVTestFields" &&
+              "WVTestPortableTracer" &&
               std::string(WVObserverFactoryRegistry::matlabClassName(testKind)) ==
-                  "WVTestFields",
+                  "WVTestPortableTracer",
           "registered test observer identity was not preserved");
   require(!WVObserverFactoryRegistry::registerAdapter(registration),
           "duplicate observer adapter registration succeeded");
+  require(WVObserverFactoryRegistry::capability(
+              "WVTestPortableTracer", WVPortablePairContractVersion)
+              .isSupported(),
+          "registered observer pair is unavailable");
+  require(WVObserverFactoryRegistry::capability("WVTestPortableTracer", 2).status ==
+              WVPortableCapabilityStatus::versionMismatch,
+          "observer contract mismatch was accepted");
+  require(WVObserverFactoryRegistry::capability("WVCustomObserver", 1).status ==
+              WVPortableCapabilityStatus::unavailable,
+          "missing observer pair did not report unavailability");
 
   WVPortableObserverRecord testRecord;
+  WVStateBlockRecord testBlock;
+  testBlock.identifier = "test-tracer-state";
+  testBlock.dimensions = {2, 2, 2};
+  testBlock.absoluteTolerance = 1e-6;
+  testRecord.stateBlocks.push_back(testBlock);
   WVObserverRecord testObserver;
-  testObserver.identifier = "test-fields";
-  testObserver.name = "test fields";
+  testObserver.identifier = "test-portable-tracer";
+  testObserver.name = "test portable tracer";
   testObserver.kind = testKind;
-  testObserver.fieldNames = {"u"};
+  testObserver.stateBlockIdentifiers = {testBlock.identifier};
   testRecord.observers.push_back(testObserver);
   WVPortableObserverDescriptor testDescriptor;
-  require(static_cast<bool>(
-              WVPortableObserverDescriptor::create(testRecord, testDescriptor)),
-          "registered test observer descriptor validation failed");
+  const auto descriptorStatus =
+      WVPortableObserverDescriptor::create(testRecord, testDescriptor);
+  require(static_cast<bool>(descriptorStatus), descriptorStatus.message.c_str());
+  require(WVObserverFactoryRegistry::isSealed(),
+          "observer registry was not sealed by descriptor construction");
+  auto lateRegistration = registration;
+  lateRegistration.kind = static_cast<WVObserverKind>(201);
+  lateRegistration.portableTag = "WVLateObserver";
+  lateRegistration.matlabClassName = "WVLateObserver";
+  require(!WVObserverFactoryRegistry::registerAdapter(lateRegistration),
+          "late observer registration succeeded");
   require(detail::observerDefinition(static_cast<WVObserverKind>(255)) ==
               nullptr,
           "unknown observer kind was accepted");

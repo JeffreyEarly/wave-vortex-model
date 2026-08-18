@@ -957,6 +957,7 @@ int main() {
   try {
     auto registration = WVObserverFactoryRegistry::registerAdapter(
         {testFieldObserverKind, "WVTestFields", "WVTestFields",
+         WVPortablePairContractVersion,
          WVObserverStateContract::sampleOnly,
          WVObserverOutputRule::eulerianFields, "fieldNames"});
     require(static_cast<bool>(registration), registration.message);

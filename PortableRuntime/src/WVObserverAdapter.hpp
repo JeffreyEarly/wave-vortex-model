@@ -20,6 +20,7 @@ struct WVObserverDefinition {
   WVObserverKind kind;
   std::string portableTag;
   std::string matlabClassName;
+  std::uint32_t contractVersion;
   WVObserverStateContract stateContract;
   WVObserverOutputRule outputRule;
   std::string fieldListAttribute;
@@ -31,6 +32,8 @@ const WVObserverDefinition *
 observerDefinitionForMatlabClass(const std::string &className) noexcept;
 WVKernelStatus registerObserverDefinition(
     WVObserverFactoryRegistry::Registration registration);
+void sealObserverDefinitions() noexcept;
+bool observerDefinitionsSealed() noexcept;
 
 const char *movingFieldChannelName(WVMovingFieldChannel channel) noexcept;
 std::vector<WVMovingFieldChannel>

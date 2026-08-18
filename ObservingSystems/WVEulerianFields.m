@@ -53,6 +53,17 @@ classdef WVEulerianFields < WVObservingSystem
             names = string(self.netCDFOutputVariables);
         end
 
+        function contract = portableImplementationContract(self)
+            % Return the paired portable implementation contract.
+            %
+            % - Topic: Internal
+            % - Declaration: contract = portableImplementationContract(self)
+            % - Returns contract: versioned data-only observer contract
+            % - Developer: true
+            payload = struct("name",string(self.name),"fieldNames",string(self.fieldNames));
+            contract = self.supportedPortableImplementationContract("WVEulerianFields",payload);
+        end
+
         function nOutputVariables = get.nOutputVariables(self)
             nOutputVariables = length(self.netCDFOutputVariables);
         end

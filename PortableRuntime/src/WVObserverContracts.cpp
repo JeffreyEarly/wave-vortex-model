@@ -72,6 +72,7 @@ WVPortableObserverDescriptor::create(const WVPortableObserverRecord &record,
       record.schemaVersion != WVPortableObserverContractVersion) {
     return invalid("Unsupported portable observing-system contract schema.");
   }
+  detail::sealObserverDefinitions();
   try {
     std::set<std::string> blockIdentifiers;
     std::map<std::string, const WVStateBlockRecord *> blocksByIdentifier;
@@ -230,6 +231,22 @@ const char *
 WVObserverFactoryRegistry::matlabClassName(WVObserverKind kind) noexcept {
   const auto *definition = detail::observerDefinition(kind);
   return definition == nullptr ? nullptr : definition->matlabClassName.c_str();
+}
+
+WVPortableCapability WVObserverFactoryRegistry::capability(
+    std::string typeIdentifier, std::uint32_t contractVersion) {
+  const auto *definition =
+      detail::observerDefinitionForMatlabClass(typeIdentifier);
+  std::optional<WVPortableImplementationIdentity> available;
+  if (definition != nullptr)
+    available = WVPortableImplementationIdentity{definition->matlabClassName,
+                                                   definition->contractVersion};
+  return evaluatePortableCapability(
+      {std::move(typeIdentifier), contractVersion}, std::move(available));
+}
+
+bool WVObserverFactoryRegistry::isSealed() noexcept {
+  return detail::observerDefinitionsSealed();
 }
 
 WVKernelStatus WVObserverFactoryRegistry::registerAdapter(

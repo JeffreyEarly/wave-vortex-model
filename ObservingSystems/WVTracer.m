@@ -55,6 +55,17 @@ classdef WVTracer < WVObservingSystem
             nArray = numel(self.phi);
         end
 
+        function contract = portableImplementationContract(self)
+            % Return the paired portable implementation contract.
+            %
+            % - Topic: Internal
+            % - Declaration: contract = portableImplementationContract(self)
+            % - Returns contract: versioned data-only observer contract
+            % - Developer: true
+            payload = struct("name",string(self.name),"isXYOnly",logical(self.isXYOnly),"stateShape",uint64(size(self.phi)),"absTolerance",double(self.absTolerance),"shouldAntialias",logical(self.shouldAntialias));
+            contract = self.supportedPortableImplementationContract("WVTracer",payload);
+        end
+
         function Y0 = absErrorTolerance(self)
             Y0 = {self.absTolerance};
         end

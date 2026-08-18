@@ -75,6 +75,22 @@ classdef WVObservingSystem < handle & matlab.mixin.Heterogeneous & CAAnnotatedCl
             aString = "An instance of " + class(self) + " named " + self.name;
         end
 
+        function contract = portableImplementationContract(self)
+            % Describe availability of the paired portable C++ implementation.
+            %
+            % The base class is intentionally unavailable. A supported
+            % concrete observing system overrides this method with a
+            % versioned, data-only contract. The portable runtime still
+            % requires an exact source-level C++ registration.
+            %
+            % - Topic: Internal
+            % - Declaration: contract = portableImplementationContract(self)
+            % - Parameter self: observing system to inspect
+            % - Returns contract: scalar portable implementation contract
+            % - Developer: true
+            contract = self.portableContractEnvelope("unavailable",class(self),"No matching portable C++ observing-system implementation is declared.",struct());
+        end
+
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         %
         % Integrated variables
@@ -146,6 +162,21 @@ classdef WVObservingSystem < handle & matlab.mixin.Heterogeneous & CAAnnotatedCl
             % and write to the NetCDFGroup at the particular outputIndex.
             %
             % - Topic: Required subclass overrides
+        end
+    end
+
+    methods (Access=protected)
+        function contract = supportedPortableImplementationContract(self,typeIdentifier,payload)
+            actualType = string(class(self));
+            if actualType ~= typeIdentifier
+                contract = self.portableContractEnvelope("invalidContract",actualType,"An inherited portable contract cannot advertise a different MATLAB class.",struct());
+                return
+            end
+            contract = self.portableContractEnvelope("supported",typeIdentifier,"",payload);
+        end
+
+        function contract = portableContractEnvelope(~,capabilityStatus,typeIdentifier,reason,payload)
+            contract = struct("schemaIdentifier","wave-vortex-portable-pair-v1","schemaVersion",uint32(1),"typeIdentifier",string(typeIdentifier),"contractVersion",uint32(1),"capabilityStatus",string(capabilityStatus),"reason",string(reason),"payload",payload);
         end
     end
 

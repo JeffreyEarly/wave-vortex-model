@@ -48,6 +48,7 @@ state when requested or written to output.
 These items document internal implementation details and are not part of the primary public API.
 + Observing-system internals
   + [`absErrorTolerance`](/classes/observing-systems/wvobservingsystem/abserrortolerance.html) return a cell array of the absolute tolerances of the
+  + [`portableImplementationContract`](/classes/observing-systems/wvobservingsystem/portableimplementationcontract.html) Describe availability of the paired portable C++ implementation.
   + [`updateIntegratorValues`](/classes/observing-systems/wvobservingsystem/updateintegratorvalues.html) passes updated values of the variables being integrated.
 + Observing-system persistence
   + [`initializeStorage`](/classes/observing-systems/wvobservingsystem/initializestorage.html) called once to allow the observing system to initialize its storage space in the NetCDFGroup

@@ -11,19 +11,24 @@ namespace {
 std::deque<WVObserverDefinition> &mutableDefinitions() {
   static std::deque<WVObserverDefinition> definitions{{
     {WVObserverKind::coefficients, "WVCoefficients", "WVCoefficients",
+     WVPortablePairContractVersion,
      WVObserverStateContract::canonicalCoefficients,
      WVObserverOutputRule::coefficients, ""},
     {WVObserverKind::eulerianFields, "WVEulerianFields", "WVEulerianFields",
+     WVPortablePairContractVersion,
      WVObserverStateContract::sampleOnly,
      WVObserverOutputRule::eulerianFields, "fieldNames"},
     {WVObserverKind::mooring, "WVMooring", "WVMooring",
+     WVPortablePairContractVersion,
      WVObserverStateContract::sampleOnly, WVObserverOutputRule::mooring,
      "trackedFieldNames"},
     {WVObserverKind::lagrangianParticles, "WVLagrangianParticles",
-     "WVLagrangianParticles", WVObserverStateContract::particlePosition,
+     "WVLagrangianParticles", WVPortablePairContractVersion,
+     WVObserverStateContract::particlePosition,
      WVObserverOutputRule::lagrangianParticles, "trackedFieldNames"},
     {WVObserverKind::tracer, "WVTracer", "WVTracer",
-     WVObserverStateContract::tracerField, WVObserverOutputRule::tracer,
+     WVPortablePairContractVersion, WVObserverStateContract::tracerField,
+     WVObserverOutputRule::tracer,
      ""},
   }};
   return definitions;
@@ -31,6 +36,11 @@ std::deque<WVObserverDefinition> &mutableDefinitions() {
 
 std::mutex &registryMutex() {
   static std::mutex value;
+  return value;
+}
+
+bool &registrySealed() {
+  static bool value = false;
   return value;
 }
 
@@ -64,6 +74,10 @@ WVKernelStatus registerObserverDefinition(
   if (registration.portableTag.empty() || registration.matlabClassName.empty())
     return invalid("Observer adapter tags and MATLAB class names must be nonempty.");
   std::lock_guard<std::mutex> lock(registryMutex());
+  if (registrySealed())
+    return invalid("Observer adapters must be registered before descriptor construction.");
+  if (registration.contractVersion == 0)
+    return invalid("Observer adapter contract versions must be positive.");
   for (const auto &definition : mutableDefinitions()) {
     if (definition.kind == registration.kind ||
         definition.portableTag == registration.portableTag ||
@@ -72,9 +86,20 @@ WVKernelStatus registerObserverDefinition(
   }
   mutableDefinitions().push_back(
       {registration.kind, std::move(registration.portableTag),
-       std::move(registration.matlabClassName), registration.stateContract,
+       std::move(registration.matlabClassName), registration.contractVersion,
+       registration.stateContract,
        registration.outputRule, std::move(registration.fieldListAttribute)});
   return WVKernelStatus::ok();
+}
+
+void sealObserverDefinitions() noexcept {
+  std::lock_guard<std::mutex> lock(registryMutex());
+  registrySealed() = true;
+}
+
+bool observerDefinitionsSealed() noexcept {
+  std::lock_guard<std::mutex> lock(registryMutex());
+  return registrySealed();
 }
 
 const char *movingFieldChannelName(WVMovingFieldChannel channel) noexcept {
