@@ -22,7 +22,7 @@ The runtime supports hydrostatic and nonhydrostatic constant stratification, fix
 - `WVPseudoTopographicWaveGeneration`
 - `WVBetaPlanePVAdvection`
 
-Its qualified built-in observer records are `WVCoefficients`, `WVEulerianFields`, `WVMooring`, `WVLagrangianParticles`, and `WVTracer`. Arbitrary MATLAB subclasses are rejected before execution. Multi-file, named-group output is a C++ library capability, not a command-line configuration interface.
+Its qualified built-in observer records are `WVCoefficients`, `WVEulerianFields`, `WVMooring`, `WVLagrangianParticles`, and `WVTracer`. Arbitrary MATLAB subclasses are rejected before execution. MATLAB authors multi-file, named-group output; the C++ command line executes that recovered graph without independently configuring it.
 
 The tested interoperability boundary includes linear and nonlinear dynamics, the frozen forcing types listed above in their persisted execution order, fixed RK4 and adaptive RK3(2), evenly spaced output groups, shared observer identities, particle and tracer state, and in-place append progress. Other transform families, custom forcing or observer subclasses, two-dimensional tracers, and newly configured multi-file graphs are rejected before execution. There is no silent fallback to a reduced checkpoint or MATLAB implementation.
 
@@ -44,9 +44,26 @@ cmake --build build/portable --parallel
 ctest --test-dir build/portable --output-on-failure
 ```
 
-## Run and restart
+## Run a MATLAB-authored model bundle
 
-Complete-model continuation is the default restart mode. It restores the selected file's dynamics mode, forcing order, output groups and schedules, shared observer identities, particles, tracers, committed progress, and latest complete state. Runtime integrator objects are not persisted, matching `WVModel.modelFromFile`; select fixed RK4 or adaptive RK3(2) for the continuation. A final time bounds the restored schedules:
+The portable boundary intentionally separates scientific state from execution choices:
+
+- The NetCDF file set is authoritative for model configuration, state, forcing, observers, output membership, schedules, and restart progress.
+- A versioned JSON request names those files and selects the integrator, final time, output destinations, FFT provider, threads, and report path.
+
+Starting from output files created by MATLAB, copy `PortableRuntime/examples/portable-run-request-v1.json`, list every sibling file needed to reconstruct the graph, and map each stable file identifier to a destination. Then run:
+
+```sh
+wave-vortex-run --request portable-run-request-v1.json
+```
+
+Relative paths are interpreted relative to the JSON file. `create` and `replace` require a complete destination map and cannot alias a source file. `append` may use the existing destinations with an empty map, or it may provide a complete map to an existing compatible set. The runner rejects unknown JSON fields, incomplete sibling sets, unsupported paired implementations, incompatible graphs, and invalid destinations before constructing the FFT provider, allocating model state, advancing integration, or mutating output.
+
+The request describes execution, not another model. It cannot change forcing, observers, groups, schedules, or state. A future MATLAB API will generate this request automatically; the v1 schema is committed at `PortableRuntime/contracts/wave-vortex-run-request-v1.schema.json`.
+
+## Legacy run and restart
+
+The original single-file command remains supported. Complete-model continuation restores the selected file's dynamics mode, forcing order, output groups and schedules, shared observer identities, particles, tracers, committed progress, and latest complete state. Runtime integrator objects are not persisted, matching `WVModel.modelFromFile`; select fixed RK4 or adaptive RK3(2) for the continuation. A final time bounds the restored schedules:
 
 ```sh
 wave-vortex-run saved-model.nc \
@@ -88,4 +105,4 @@ model = WVModel.modelFromFile("saved-model.nc");
 
 The mandatory compatibility test performs this MATLAB-to-standalone-to-MATLAB round trip and compares the graph, state, schedules, output ordinals, particles, and tracer. Future `WVModel` features enter the standalone runtime by extending these shared graph contracts rather than bypassing them.
 
-The command-line program is intentionally small. Use MATLAB's `WVModel` for general forcing, custom observing systems, interactive configuration, and ordinary model output.
+The command-line program is intentionally small. Use MATLAB's `WVModel` to author initial conditions, forcing, observing systems, and output graphs; use the request only to execute a supported portable bundle.

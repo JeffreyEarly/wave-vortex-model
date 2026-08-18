@@ -54,8 +54,15 @@ set_target_properties(WaveVortexPortableRuntime PROPERTIES
     POSITION_INDEPENDENT_CODE ON
 )
 
-add_executable(wave-vortex-run app/WaveVortexRun.cpp)
+add_executable(wave-vortex-run
+    app/WaveVortexRun.cpp
+    app/WVRunRequest.cpp
+)
 target_compile_features(wave-vortex-run PRIVATE cxx_std_17)
+target_include_directories(wave-vortex-run PRIVATE
+    app
+    third_party
+)
 target_link_libraries(wave-vortex-run PRIVATE WaveVortex::PortableRuntime WaveVortex::ReferenceFFT)
 execute_process(COMMAND git rev-parse HEAD WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/.. RESULT_VARIABLE WV_RUNTIME_GIT_RESULT OUTPUT_VARIABLE WV_RUNTIME_SOURCE_COMMIT OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
 if(NOT WV_RUNTIME_GIT_RESULT EQUAL 0 OR NOT WV_RUNTIME_SOURCE_COMMIT)
@@ -161,6 +168,18 @@ if(BUILD_TESTING)
     wv_add_runtime_test(TestWVObserverOutputEvaluation TestWVObserverOutputEvaluation.cpp observer-output-evaluation)
     wv_add_runtime_test(TestWVLagrangianParticles TestWVLagrangianParticles.cpp lagrangian-particles)
     wv_add_runtime_test(TestWaveVortexRun TestWaveVortexRun.cpp standalone-runner)
+
+    add_executable(TestWVRunRequest
+        tests/TestWVRunRequest.cpp
+        app/WVRunRequest.cpp
+    )
+    target_compile_features(TestWVRunRequest PRIVATE cxx_std_17)
+    target_include_directories(TestWVRunRequest PRIVATE app third_party)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "AppleClang|Clang|GNU")
+        target_compile_options(TestWVRunRequest PRIVATE
+            -Wall -Wextra -Wpedantic -Werror)
+    endif()
+    add_test(NAME run-request COMMAND TestWVRunRequest)
 
     add_test(NAME observer-dispatch-source-policy
         COMMAND ${CMAKE_COMMAND}

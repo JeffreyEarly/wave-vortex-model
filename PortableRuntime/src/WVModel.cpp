@@ -53,9 +53,10 @@ WVKernelStatus compileOutputConfiguration(
                      "file identifiers and paths.");
   }
   if ((request.policy == WVModelOutputPolicy::create ||
-       request.policy == WVModelOutputPolicy::replace) &&
+       request.policy == WVModelOutputPolicy::replace ||
+       !request.destinations.empty()) &&
       request.destinations.size() != inspection.observerRecord.outputFiles.size())
-    return invalid("Create and replace output require one destination for "
+    return invalid("Output destination remapping requires one destination for "
                    "every output-file identifier.");
 
   std::vector<WVModelOutputFile> files;
@@ -63,10 +64,8 @@ WVKernelStatus compileOutputConfiguration(
   for (const auto &record : inspection.observerRecord.outputFiles) {
     const auto *mapped = remappedDestination(request.destinations,
                                              record.identifier);
-    if (mapped == nullptr && !request.destinations.empty()) {
-      if (request.policy != WVModelOutputPolicy::append)
-        return invalid("The output destination map is incomplete.");
-    }
+    if (mapped == nullptr && !request.destinations.empty())
+      return invalid("The output destination map is incomplete.");
     const std::string &path = mapped == nullptr ? record.destination : *mapped;
     WVModelOutputFile file;
     auto status = WVModelOutputFile::create(path, file, record.identifier);
@@ -317,6 +316,50 @@ WVKernelStatus WVModel::createFromModelOutputInspection(
     WVModel &model, WVModelState &state) {
 #if !defined(WV_MODEL_ENABLE_OUTPUT) || WV_MODEL_ENABLE_OUTPUT
 
+  WVModelOutputConfiguration outputConfiguration;
+  auto status = prepareModelOutput(inspection, outputRequest,
+                                   outputConfiguration);
+  if (!status)
+    return status;
+  return createFromModelOutputInspection(
+      std::move(inspection), std::move(outputConfiguration),
+      std::move(engine), integratorConfiguration, model, state);
+#else
+  (void)inspection;
+  (void)outputRequest;
+  (void)engine;
+  (void)integratorConfiguration;
+  (void)model;
+  (void)state;
+  return {WVKernelStatusCode::unsupportedOperation,
+          "This adapter does not include model-output persistence."};
+#endif
+}
+
+WVKernelStatus WVModel::prepareModelOutput(
+    const WVModelOutputNetCDFInspection &inspection,
+    const WVModelOutputRequest &outputRequest,
+    WVModelOutputConfiguration &configuration) {
+#if !defined(WV_MODEL_ENABLE_OUTPUT) || WV_MODEL_ENABLE_OUTPUT
+  return compileOutputConfiguration(inspection, outputRequest,
+                                    configuration);
+#else
+  (void)inspection;
+  (void)outputRequest;
+  (void)configuration;
+  return {WVKernelStatusCode::unsupportedOperation,
+          "This adapter does not include model-output persistence."};
+#endif
+}
+
+WVKernelStatus WVModel::createFromModelOutputInspection(
+    WVModelOutputNetCDFInspection inspection,
+    WVModelOutputConfiguration outputConfiguration,
+    std::unique_ptr<WVFFTEngine> engine,
+    const WVModelIntegratorConfiguration &integratorConfiguration,
+    WVModel &model, WVModelState &state) {
+#if !defined(WV_MODEL_ENABLE_OUTPUT) || WV_MODEL_ENABLE_OUTPUT
+
   auto forcingSchedule = inspection.latestRestart.forcingSchedule;
   if (inspection.isDynamicsLinear)
     forcingSchedule.entries.clear();
@@ -340,13 +383,6 @@ WVKernelStatus WVModel::createFromModelOutputInspection(
   if (!status)
     return status;
 
-  auto outputConfiguration =
-      std::make_unique<WVModelOutputConfiguration>();
-  status = compileOutputConfiguration(inspection, outputRequest,
-                                      *outputConfiguration);
-  if (!status)
-    return status;
-
   std::unique_ptr<WVObserverOutputEvaluationService> outputEvaluation;
   status = WVObserverOutputEvaluationService::create(
       candidateState.checkpoint().configuration, inspection.isDynamicsLinear,
@@ -357,22 +393,24 @@ WVKernelStatus WVModel::createFromModelOutputInspection(
 
   WVModelOutputNetCDFConfiguration sinkConfiguration{
       candidateState.checkpoint(), inspection.isDynamicsLinear};
-  auto checkpointStatus = outputConfiguration->openNetCDFSink(
+  auto checkpointStatus = outputConfiguration.openNetCDFSink(
       sinkConfiguration, candidate.stateLayout(), outputEvaluation.get(),
       candidate.impl_->outputSink);
   if (!checkpointStatus)
     return fromCheckpoint(checkpointStatus);
 
-  candidate.impl_->outputFinalTime = outputRequest.finalTime;
+  candidate.impl_->outputFinalTime = outputConfiguration.plan().finalTime();
   candidate.impl_->outputOpen = true;
   candidate.impl_->outputEvaluation = std::move(outputEvaluation);
-  candidate.impl_->outputConfiguration = std::move(outputConfiguration);
+  candidate.impl_->outputConfiguration =
+      std::make_unique<WVModelOutputConfiguration>(
+          std::move(outputConfiguration));
   state = std::move(candidateState);
   model = std::move(candidate);
   return WVKernelStatus::ok();
 #else
   (void)inspection;
-  (void)outputRequest;
+  (void)outputConfiguration;
   (void)engine;
   (void)integratorConfiguration;
   (void)model;

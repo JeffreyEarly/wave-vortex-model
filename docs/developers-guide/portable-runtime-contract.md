@@ -43,9 +43,17 @@ Developer-facing `WVModelOutputFile` and `WVModelOutputGroup` builders provide M
 
 `WVModel::createFromModelOutputFiles()` treats the complete reconstructed sibling-file record as the model boundary. Its allocation-light preflight resolves the dynamics mode, frozen forcing order, observer identities and dependencies, output schedules, committed ordinals, and integration layout before numerical execution. Full-model continuation uses the same descriptor for the integration system, observer evaluation, output plan, and sink. Destination remapping changes paths by stable file identifier only. The reduced coefficient-only reader remains available for the explicit legacy workflow.
 
-The command-line mutation policy is separate from the restart mode. Full-model continuation requires explicit in-place `append`; coefficient-only output requires safe `create` or authorized `replace`. Path aliases, incompatible append graphs, and existing create destinations are rejected before integration. Replacement uses the checkpoint writer's verified temporary-file commit rather than truncating a destination in place.
+The command-line mutation policy is separate from the restart mode. Coefficient-only output requires safe `create` or authorized `replace`. Complete-model requests may create or transactionally replace a complete destination set, or append to a complete compatible set. Path aliases, incompatible append graphs, and existing create destinations are rejected before integration.
 
-The command-line program exposes one checkpoint input and output. Multi-file and named-group orchestration remain C++ library APIs until a separate user-facing configuration contract is designed.
+## NetCDF and run-request boundary
+
+The standalone CLI consumes a MATLAB-authored NetCDF bundle plus `wave-vortex-run-request-v1` JSON. NetCDF remains the only scientific configuration and restart representation. The JSON decoder is confined to the CLI and produces paths, integration settings, destination policy, and execution settings; it never constructs an observer, forcing, or output schedule.
+
+Validation proceeds in dependency order: strict JSON decoding, complete sibling-file inspection, paired implementation and forcing validation, integrator bounds, destination remapping, and immutable output-configuration compilation. Only after those allocation-light checks succeed may the CLI construct the FFT provider and `WVModelState`. The prepared `WVModelOutputConfiguration` is moved into `WVModel`, so request handling does not retain or rebuild a second output graph.
+
+Destination remapping is keyed by stable file identifier. Any nonempty remap is complete. Create and replace destinations cannot alias source files; append targets must already contain the same graph and compatible progress. NetCDF definition, transaction handling, committed progress, and payload writing remain owned by `WVModelOutputNetCDFSink`.
+
+The vendored `nlohmann/json` header is pinned to 3.11.3 and used only by the CLI decoder. It adds no runtime binary dependency and does not enter the portable numerical library.
 
 ## Extension checklist
 

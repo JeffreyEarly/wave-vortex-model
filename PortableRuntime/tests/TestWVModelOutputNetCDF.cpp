@@ -11,6 +11,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <filesystem>
+#include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <map>
@@ -40,6 +41,12 @@ std::string shellQuote(const std::filesystem::path &path) {
   for (const auto character : path.string())
     result += character == '\'' ? "'\\''" : std::string(1, character);
   return result + "'";
+}
+
+std::vector<char> fileBytes(const std::filesystem::path &path) {
+  std::ifstream input(path, std::ios::binary);
+  return {std::istreambuf_iterator<char>(input),
+          std::istreambuf_iterator<char>()};
 }
 
 struct TemporaryDirectory {
@@ -721,6 +728,76 @@ void testMultipleFilesGroupsAndSharedState() {
   require(restoredParticles != inspection.observerRecord.observers.end() &&
               restoredParticles->z == std::vector<double>({-100.0, -300.0}),
           "fixed XY particle z configuration was not reconstructed");
+  {
+    const auto sourceFirstBytes = fileBytes(first);
+    const auto sourceSecondBytes = fileBytes(second);
+    const auto requestPath = directory.path / "portable-run.json";
+    const auto requestedFirst = directory.path / "requested-first.nc";
+    const auto requestedSecond = directory.path / "requested-second.nc";
+    const auto requestedReport = directory.path / "portable-run-report.json";
+    std::ofstream request(requestPath, std::ios::binary | std::ios::trunc);
+    request << std::setprecision(17)
+            << "{\"schemaIdentifier\":\"wave-vortex-run-request-v1\","
+               "\"schemaVersion\":1,\"modelFiles\":["
+            << "\"" << first.string() << "\",\"" << second.string()
+            << "\"],\"integration\":{\"method\":\"fixed-rk4\","
+               "\"finalTime\":"
+            << end << ",\"initialStep\":" << outputInterval
+            << "},\"output\":{\"policy\":\"create\",\"destinations\":{"
+               "\"first\":\""
+            << requestedFirst.string() << "\",\"second\":\""
+            << requestedSecond.string()
+            << "\"}},\"execution\":{\"fftProvider\":\"reference\","
+               "\"threads\":1},\"report\":\""
+            << requestedReport.string() << "\"}";
+    request.close();
+    std::ostringstream command;
+    command << shellQuote(WV_RUNTIME_RUNNER) << " --request "
+            << shellQuote(requestPath) << " >/dev/null";
+    require(std::system(command.str().c_str()) == 0,
+            "MATLAB-authored multi-file run request failed");
+    WVModelOutputNetCDFInspection requested;
+    persistence = WVModelOutputNetCDFSink::inspect(
+        {requestedFirst.string(), requestedSecond.string()}, requested);
+    require(static_cast<bool>(persistence), persistence.message);
+    require(std::abs(requested.latestRestart.state.t - end) <= 1e-14 &&
+                requested.observerRecord.observers.size() == 5 &&
+                requested.additionalState.blockCount() == 3,
+            "run request did not preserve the complete model graph");
+    require(fileBytes(first) == sourceFirstBytes &&
+                fileBytes(second) == sourceSecondBytes,
+            "create request mutated its MATLAB-authored source bundle");
+    require(std::filesystem::exists(requestedReport),
+            "run request did not write its report");
+
+    const auto partialPath = directory.path / "partial-run.json";
+    std::ofstream partial(partialPath, std::ios::binary | std::ios::trunc);
+    partial << std::setprecision(17)
+            << "{\"schemaIdentifier\":\"wave-vortex-run-request-v1\","
+               "\"schemaVersion\":1,\"modelFiles\":[\""
+            << first.string() << "\",\"" << second.string()
+            << "\"],\"integration\":{\"method\":\"fixed-rk4\","
+               "\"finalTime\":"
+            << end << ",\"initialStep\":" << outputInterval
+            << "},\"output\":{\"policy\":\"create\",\"destinations\":{"
+               "\"first\":\""
+            << (directory.path / "partial.nc").string()
+            << "\"}},\"execution\":{\"fftProvider\":\"native-fftw\","
+               "\"threads\":1},\"report\":\""
+            << (directory.path / "partial-report.json").string() << "\"}";
+    partial.close();
+    require(std::system((shellQuote(WV_RUNTIME_RUNNER) + " --request " +
+                         shellQuote(partialPath) + " >/dev/null 2>&1")
+                            .c_str()) != 0,
+            "incomplete destination map passed graph preflight");
+    require(!std::filesystem::exists(directory.path / "partial.nc"),
+            "failed graph preflight mutated output before provider construction");
+    require(std::system((shellQuote(WV_RUNTIME_RUNNER) + " --request " +
+                         shellQuote(requestPath) +
+                         " --threads 1 >/dev/null 2>&1")
+                            .c_str()) != 0,
+            "request mode accepted legacy semantic overrides");
+  }
   {
     int file = -1;
     int group = -1;

@@ -111,6 +111,24 @@ public:
       const WVModelIntegratorConfiguration &integratorConfiguration,
       WVModel &model, WVModelState &state);
 
+  // Validate and compile destination policy before provider construction or
+  // runtime-state allocation. The returned configuration owns the sole
+  // immutable output graph used by createFromModelOutputInspection().
+  static WVKernelStatus prepareModelOutput(
+      const WVModelOutputNetCDFInspection &inspection,
+      const WVModelOutputRequest &outputRequest,
+      WVModelOutputConfiguration &configuration);
+
+  // Consume a configuration produced by prepareModelOutput(). This overload
+  // prevents request-mode callers from retaining or rebuilding a second
+  // observer/output graph after preflight.
+  static WVKernelStatus createFromModelOutputInspection(
+      WVModelOutputNetCDFInspection inspection,
+      WVModelOutputConfiguration outputConfiguration,
+      std::unique_ptr<WVFFTEngine> engine,
+      const WVModelIntegratorConfiguration &integratorConfiguration,
+      WVModel &model, WVModelState &state);
+
   static WVKernelStatus create(
       const WVTransformConstantStratificationConfiguration &configuration,
       const WVFrozenForcingSchedule &forcingSchedule,
