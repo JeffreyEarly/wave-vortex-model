@@ -35,7 +35,7 @@ Portable observers and forcings follow the [paired MATLAB and C++ implementation
 
 ## Output and restart
 
-`WVOutputPlan` represents explicit or evenly spaced events independently of the integration method. `WVOutputDriver` validates exact state-layout compatibility, stages failed routes for retry, and delivers immutable event state to a sink. Sink callbacks are non-reentrant.
+`WVOutputPlan` represents explicit, evenly spaced, or source-linked algorithmic schedules independently of the integration method. It retains immutable group schedules rather than enumerating a complete future window. `WVOutputDriver` owns one bounded cursor and cached occurrence per group, finds the next exact timestamp with a simple group scan, validates exact state-layout compatibility, stages failed routes for retry, and commits a proposed cursor only after its route succeeds. Exact coincident timestamps share one state evaluation; tolerance-based timestamp merging is not used. Legacy evenly spaced files retain their original scalar schedule variables. New providers persist exact identity/version, a construction-only typed configuration, and a text-free cursor envelope limited to 4 KiB. State-triggered schedules remain explicitly unsupported.
 
 Developer-facing `WVModelOutputFile` and `WVModelOutputGroup` builders provide MATLAB-shaped output configuration without changing this runtime boundary. `WVModelOutputConfiguration::build()` consumes the mutable builders and compiles them directly into the authoritative observer descriptor and output plan. Create, transactional replace, and compatible append are graph-wide policies implemented by the existing NetCDF sink; no second scheduler, route graph, or persistence schema is introduced.
 
