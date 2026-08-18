@@ -14,10 +14,11 @@
     "adaptiveRK23MatlabParity": "issue-240",
     "wvModelRuntimeFacade": "issue-248",
     "wvModelRuntimeFacadeSHA256": "fdefaee9d72f64f9972d95d56c725b94937963bbdd132f33fe2446b5e8abdc42",
-    "description": "Shared per-RHS advection fields, core-owned F-grid scalar differentiation, construction-time preparation of required scalar plans, MATLAB-compatible adaptive tolerances for integrated observers, and one thin WVModel owner shared by the CLI and production MEX RHS path.",
+    "resolvedObservingSystems": "issue-258",
+    "description": "Shared per-RHS advection fields, core-owned F-grid scalar differentiation, construction-time preparation of required scalar plans, MATLAB-compatible adaptive tolerances for integrated observers, one thin WVModel owner shared by the CLI and production MEX RHS path, and construction-time resolution of source-linked observing-system implementations.",
     "kernelTypesSHA256": "1d53775cda4e5d7692a8889b9ad9df994bef6039f97eabf7a407f7a71ea156bb",
     "kernelInterfaceSHA256": "6f04c9deb091ba02d372901b80c9cff6a1f136c9f1cdd98a38843577923bafd6",
-    "integrationSystemSHA256": "8d9d7f61cc14152970b67c2e83f1391af558a1ef6fb47b28a57d33bb9c962950",
+    "integrationSystemSHA256": "4b9fca1a03c16b92cc281125e906e18cadfa93041ef9f4c8fd71b91cd6d60661",
     "forcingEngineSHA256": "caf15f61a2b9c08ba97d347b7508f816056fcb145c0a45227525ad26d1f78e58",
     "forcingInterfaceSHA256": "ca8f55f7445d66dd2492b2b7f0de4b7482c077dc722cc9656fd1a3232c9ba0b1"
   },
@@ -33,7 +34,7 @@
   "keySourceSHA256": {
     "coefficientFormulas": "78d647608d8919b33c278c280eb6d2b253dfb0acd8d3330141fbdc845e00864a",
     "kernel": "c6193e5b1d97c59b90d5e17b7941aec63cd66ffa81f62177578681814cb5c3e7",
-    "integrationSystem": "8d9d7f61cc14152970b67c2e83f1391af558a1ef6fb47b28a57d33bb9c962950",
+    "integrationSystem": "4b9fca1a03c16b92cc281125e906e18cadfa93041ef9f4c8fd71b91cd6d60661",
     "nativeEngine": "5081f650cf5bf2cee9c210cef8ab1596a73aad4de7d65c712783fa36795e3b4b",
     "mexGateway": "1d980047b59f629ac75a9422c588e13d44b72e0b724a726a9742eb54762ba09e",
     "buildOrchestrator": "4230525cc47c299d39f4d85bb75d06ebea0de9b650a2360a7525d875a9bbc0bf"

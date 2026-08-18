@@ -25,12 +25,67 @@ using namespace wavevortex::runtime;
 
 namespace {
 
-constexpr auto testFieldObserverKind = static_cast<WVObserverKind>(200);
-
 void require(bool condition, const std::string &message) {
   if (!condition)
     throw std::runtime_error(message);
 }
+
+class WVTestFieldsImplementation final : public WVObservingSystem {
+public:
+  const std::string &typeIdentifier() const noexcept override {
+    static const std::string value = "WVTestFields";
+    return value;
+  }
+  std::uint32_t contractVersion() const noexcept override { return 1; }
+  const std::string &fieldListAttribute() const noexcept override {
+    static const std::string value = "fieldNames";
+    return value;
+  }
+  bool recordsEulerianFields() const noexcept override { return true; }
+  WVKernelStatus validate(
+      const WVObserverRecord &record,
+      const std::map<std::string, const WVStateBlockRecord *> &,
+      std::map<std::string, std::size_t> &) const override {
+    return record.stateBlockIdentifiers.empty()
+               ? WVKernelStatus::ok()
+               : WVKernelStatus{WVKernelStatusCode::invalidConfiguration,
+                                "Test fields cannot own state blocks."};
+  }
+  std::size_t persistentBytes() const noexcept override {
+    return sizeof(*this);
+  }
+};
+
+class WVTestPortablePointDiagnosticImplementation final
+    : public WVObservingSystem {
+public:
+  const std::string &typeIdentifier() const noexcept override {
+    static const std::string value = "WVTestPortablePointDiagnostic";
+    return value;
+  }
+  std::uint32_t contractVersion() const noexcept override { return 1; }
+  const std::string &fieldListAttribute() const noexcept override {
+    static const std::string value = "fieldNames";
+    return value;
+  }
+  bool recordsFixedPoints() const noexcept override { return true; }
+  WVKernelStatus validate(
+      const WVObserverRecord &record,
+      const std::map<std::string, const WVStateBlockRecord *> &,
+      std::map<std::string, std::size_t> &) const override {
+    if (!record.stateBlockIdentifiers.empty() || record.fieldNames.size() != 1 ||
+        record.x.empty() || record.x.size() != record.y.size() ||
+        record.x.size() != record.z.size() ||
+        !std::isfinite(record.outputScale) ||
+        !std::isfinite(record.outputOffset))
+      return {WVKernelStatusCode::invalidConfiguration,
+              "Point diagnostic configuration is invalid."};
+    return WVKernelStatus::ok();
+  }
+  std::size_t persistentBytes() const noexcept override {
+    return sizeof(*this);
+  }
+};
 
 std::filesystem::path fixture(const std::string &name) {
   return std::filesystem::path(WV_CHECKPOINT_FIXTURE_DIR) / name;
@@ -92,7 +147,7 @@ WVPortableObserverRecord recordFor(const WVCheckpoint &checkpoint,
   WVObserverRecord coefficients;
   coefficients.identifier = "coefficients";
   coefficients.name = "wave-vortex coefficient flux";
-  coefficients.kind = WVObserverKind::coefficients;
+  coefficients.typeIdentifier = "WVCoefficients";
   coefficients.stateBlockIdentifiers = {"Ap", "Am", "A0"};
   record.observers.push_back(coefficients);
   record.outputFiles = {{"primary",
@@ -127,7 +182,7 @@ public:
       const WVObserverRecord &observer,
       std::vector<WVObserverOutputVariableSpecification> &output) override {
     output.clear();
-    if (observer.kind == WVObserverKind::eulerianFields &&
+    if (observer.typeIdentifier == "WVEulerianFields" &&
         std::find(observer.fieldNames.begin(), observer.fieldNames.end(),
                   "u") != observer.fieldNames.end())
       output.push_back(
@@ -138,7 +193,7 @@ public:
            {configuration_.Nx, configuration_.Ny, configuration_.Nz},
            "m s-1",
            "x-component of the fluid velocity"});
-    if (observer.kind == WVObserverKind::lagrangianParticles &&
+    if (observer.typeIdentifier == "WVLagrangianParticles" &&
         !observer.fieldNames.empty())
       output.push_back({observer.identifier + "-u",
                         observer.name + "_u",
@@ -148,7 +203,7 @@ public:
                         "m s-1",
                         "x-component of the fluid velocity, recorded along "
                         "the particle trajectory"});
-    if (observer.kind == WVObserverKind::mooring &&
+    if (observer.typeIdentifier == "WVMooring" &&
         !observer.fieldNames.empty())
       output.push_back({observer.identifier + "-u",
                         observer.name + "_u",
@@ -158,6 +213,14 @@ public:
                         "m s-1",
                         "x-component of the fluid velocity, recorded at the "
                         "mooring"});
+    if (observer.typeIdentifier == "WVTestPortablePointDiagnostic")
+      output.push_back({observer.identifier + "-value",
+                        observer.name + "_value",
+                        WVOutputValueType::real64,
+                        {observer.name + "_id"},
+                        {observer.x.size()},
+                        "m s-1",
+                        "affinely transformed point diagnostic"});
     return WVKernelStatus::ok();
   }
 
@@ -345,20 +408,31 @@ void testLinearInitialCoefficientsAndPassiveFields() {
   WVObserverRecord fields;
   fields.identifier = "eulerian-fields-Ap-Am-A0-u";
   fields.name = "WVTestFields";
-  fields.kind = testFieldObserverKind;
+  fields.typeIdentifier = "WVTestFields";
   fields.fieldNames = {"Ap", "Am", "A0", "u", "psi"};
   record.observers.push_back(fields);
   WVObserverRecord mooring;
   mooring.identifier = "mooring-central";
   mooring.name = "central";
-  mooring.kind = WVObserverKind::mooring;
+  mooring.typeIdentifier = "WVMooring";
   mooring.fieldNames = {"u"};
   mooring.x = {-1.0, checkpoint.configuration.Lx};
   mooring.y = {checkpoint.configuration.Ly,
                0.5 * checkpoint.configuration.Ly};
   record.observers.push_back(mooring);
+  WVObserverRecord diagnostic;
+  diagnostic.identifier = "point-diagnostic";
+  diagnostic.name = "diagnostic";
+  diagnostic.typeIdentifier = "WVTestPortablePointDiagnostic";
+  diagnostic.fieldNames = {"u"};
+  diagnostic.x = {100.0, 200.0};
+  diagnostic.y = {300.0, 400.0};
+  diagnostic.z = {-100.0, -200.0};
+  diagnostic.outputScale = 2.5;
+  diagnostic.outputOffset = -1.25;
+  record.observers.push_back(diagnostic);
   record.outputFiles.front().groups.front().observerIdentifiers =
-      {fields.identifier, mooring.identifier};
+      {fields.identifier, mooring.identifier, diagnostic.identifier};
   auto descriptor = descriptorFor(record);
   WVIntegrationStateLayout layout;
   auto status = WVIntegrationStateLayout::create(
@@ -391,8 +465,8 @@ void testLinearInitialCoefficientsAndPassiveFields() {
   WVOutputDeliveryResult delivery;
   status = sink.deliver(event, planned.routes[0], delivery);
   require(static_cast<bool>(status), status.message);
-  require(delivery.writeCount == 3,
-          "linear delivery must write Eulerian u, mooring u, and time");
+  require(delivery.writeCount == 4,
+          "linear delivery must write Eulerian, mooring, diagnostic, and time");
   persistence = sink.close();
   require(static_cast<bool>(persistence), persistence.message);
 
@@ -426,6 +500,9 @@ void testLinearInitialCoefficientsAndPassiveFields() {
   require(nc_get_var_double(group, variable, x.data()) == NC_NOERR &&
               x[0] == checkpoint.configuration.Lx - 1.0 && x[1] == 0.0,
           "mooring periodic x coordinates changed");
+  require(nc_inq_varid(group, "diagnostic_value", &variable) == NC_NOERR &&
+              nc_inq_varndims(group, variable, &rank) == NC_NOERR && rank == 2,
+          "point-diagnostic output must use [t,id] NetCDF order");
   require(nc_close(root) == NC_NOERR, "close linear passive output");
 
   WVModelOutputNetCDFInspection inspection;
@@ -434,12 +511,26 @@ void testLinearInitialCoefficientsAndPassiveFields() {
   require(inspection.latestRestart.state.coefficients.Ap[1].real == 1.0 &&
               inspection.latestRestart.state.coefficients.Ap[1].imag == 2.0,
           "linear initial coefficient did not round-trip");
-  require(inspection.observerRecord.observers.size() == 2 &&
-              inspection.observerRecord.observers.front().kind ==
-                  testFieldObserverKind &&
+  require(inspection.observerRecord.observers.size() == 3 &&
+              inspection.observerRecord.observers.front().typeIdentifier ==
+                  "WVTestFields" &&
               inspection.observerRecord.observers.front().name ==
                   "WVTestFields",
           "registered field observer did not round-trip through NetCDF");
+  const auto restoredDiagnostic = std::find_if(
+      inspection.observerRecord.observers.begin(),
+      inspection.observerRecord.observers.end(), [](const auto &observer) {
+        return observer.typeIdentifier == "WVTestPortablePointDiagnostic";
+      });
+  require(restoredDiagnostic != inspection.observerRecord.observers.end() &&
+              restoredDiagnostic->fieldNames ==
+                  std::vector<std::string>({"u"}) &&
+              restoredDiagnostic->x == diagnostic.x &&
+              restoredDiagnostic->y == diagnostic.y &&
+              restoredDiagnostic->z == diagnostic.z &&
+              restoredDiagnostic->outputScale == diagnostic.outputScale &&
+              restoredDiagnostic->outputOffset == diagnostic.outputOffset,
+          "point-diagnostic configuration did not round-trip through NetCDF");
 
   auto appendDescriptor = descriptorFor(inspection.observerRecord);
   std::unique_ptr<WVObserverOutputEvaluationService> appendSource;
@@ -537,12 +628,12 @@ void testMultipleFilesGroupsAndSharedState() {
   WVObserverRecord coefficients;
   coefficients.identifier = "coefficients";
   coefficients.name = "wave-vortex coefficients";
-  coefficients.kind = WVObserverKind::coefficients;
+  coefficients.typeIdentifier = "WVCoefficients";
   coefficients.stateBlockIdentifiers = {"Ap", "Am", "A0"};
   WVObserverRecord particles;
   particles.identifier = "particles";
   particles.name = "particles";
-  particles.kind = WVObserverKind::lagrangianParticles;
+  particles.typeIdentifier = "WVLagrangianParticles";
   particles.stateBlockIdentifiers = {"particles-x", "particles-y"};
   particles.x = {0.1, 0.2};
   particles.y = {0.3, 0.4};
@@ -552,19 +643,19 @@ void testMultipleFilesGroupsAndSharedState() {
   WVObserverRecord tracer;
   tracer.identifier = "tracer";
   tracer.name = "tracer";
-  tracer.kind = WVObserverKind::tracer;
+  tracer.typeIdentifier = "WVTracer";
   tracer.stateBlockIdentifiers = {"tracer-state"};
   tracer.isXYOnly = false;
   tracer.shouldAntialias = true;
   WVObserverRecord fields;
   fields.identifier = "fields";
   fields.name = "WVEulerianFields";
-  fields.kind = WVObserverKind::eulerianFields;
+  fields.typeIdentifier = "WVEulerianFields";
   fields.fieldNames = {"u", "v", "rho_e"};
   WVObserverRecord mooring;
   mooring.identifier = "mooring";
   mooring.name = "mooring";
-  mooring.kind = WVObserverKind::mooring;
+  mooring.typeIdentifier = "WVMooring";
   mooring.fieldNames = {"u", "v"};
   mooring.x = {0.0, 0.5 * checkpoint.configuration.Lx};
   mooring.y = {0.0, 0.5 * checkpoint.configuration.Ly};
@@ -861,18 +952,18 @@ void testOptionalMatlabFixture() {
       WVModelOutputNetCDFSink::inspect(paths, inspection);
   require(static_cast<bool>(inspectStatus),
           inspectStatus.message + " at " + inspectStatus.location);
-  const auto hasKind = [&](WVObserverKind kind) {
+  const auto hasType = [&](const std::string &typeIdentifier) {
     return std::any_of(inspection.observerRecord.observers.begin(),
                        inspection.observerRecord.observers.end(),
                        [&](const auto &observer) {
-                         return observer.kind == kind;
+                         return observer.typeIdentifier == typeIdentifier;
                        });
   };
-  const bool hasCoefficients = hasKind(WVObserverKind::coefficients);
-  const bool hasEulerian = hasKind(WVObserverKind::eulerianFields);
-  const bool hasMooring = hasKind(WVObserverKind::mooring);
-  const bool hasParticles = hasKind(WVObserverKind::lagrangianParticles);
-  const bool hasTracer = hasKind(WVObserverKind::tracer);
+  const bool hasCoefficients = hasType("WVCoefficients");
+  const bool hasEulerian = hasType("WVEulerianFields");
+  const bool hasMooring = hasType("WVMooring");
+  const bool hasParticles = hasType("WVLagrangianParticles");
+  const bool hasTracer = hasType("WVTracer");
   require(hasEulerian && hasMooring && hasParticles && hasTracer,
           "MATLAB observer graph kinds: coefficients=" +
               std::to_string(hasCoefficients) +
@@ -953,8 +1044,8 @@ void testOptionalMatlabLinearFixture() {
   require(static_cast<bool>(persistence),
           persistence.message + " at " + persistence.location);
   require(inspection.observerRecord.observers.size() == 1 &&
-              inspection.observerRecord.observers.front().kind ==
-                  WVObserverKind::eulerianFields,
+              inspection.observerRecord.observers.front().typeIdentifier ==
+                  "WVEulerianFields",
           "MATLAB linear Eulerian observer was not reconstructed");
   require(inspection.latestRestart.state.coefficients.Ap.size() ==
               inspection.latestRestart.state.coefficients.shape.elementCount(),
@@ -1017,12 +1108,12 @@ void testOptionalMatlabPassiveFixture() {
   const auto coefficients = std::count_if(
       inspection.observerRecord.observers.begin(),
       inspection.observerRecord.observers.end(), [](const auto &observer) {
-        return observer.kind == WVObserverKind::coefficients;
+        return observer.typeIdentifier == "WVCoefficients";
       });
   const auto eulerian = std::count_if(
       inspection.observerRecord.observers.begin(),
       inspection.observerRecord.observers.end(), [](const auto &observer) {
-        return observer.kind == WVObserverKind::eulerianFields;
+        return observer.typeIdentifier == "WVEulerianFields";
       });
   require(coefficients == 1 && eulerian == 1,
           "MATLAB coefficient and Eulerian metadata changed");
@@ -1032,11 +1123,11 @@ void testOptionalMatlabPassiveFixture() {
 
 int main() {
   try {
-    auto registration = WVObserverFactoryRegistry::registerAdapter(
-        {testFieldObserverKind, "WVTestFields", "WVTestFields",
-         WVPortablePairContractVersion,
-         WVObserverStateContract::sampleOnly,
-         WVObserverOutputRule::eulerianFields, "fieldNames"});
+    auto registration = WVObserverFactoryRegistry::registerImplementation(
+        std::make_shared<WVTestFieldsImplementation>());
+    require(static_cast<bool>(registration), registration.message);
+    registration = WVObserverFactoryRegistry::registerImplementation(
+        std::make_shared<WVTestPortablePointDiagnosticImplementation>());
     require(static_cast<bool>(registration), registration.message);
     testCreateReadAndAppend();
     testLinearInitialCoefficientsAndPassiveFields();

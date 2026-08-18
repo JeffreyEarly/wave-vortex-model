@@ -24,3 +24,19 @@ foreach(source IN LISTS observer_sources)
         endif()
     endforeach()
 endforeach()
+
+set(retired_dispatch_symbols
+    WVObserverKind
+    WVObserverStateContract
+    WVObserverOutputRule)
+
+foreach(source IN LISTS observer_sources)
+    file(READ "${source}" contents)
+    foreach(symbol IN LISTS retired_dispatch_symbols)
+        string(FIND "${contents}" "${symbol}" occurrence)
+        if(NOT occurrence EQUAL -1)
+            message(FATAL_ERROR
+                "${source} retains retired closed observer dispatch symbol ${symbol}.")
+        endif()
+    endforeach()
+endforeach()

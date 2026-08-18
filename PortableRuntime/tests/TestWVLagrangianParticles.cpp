@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cmath>
 #include <iostream>
+#include <map>
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -15,12 +16,45 @@ using namespace wavevortex::runtime;
 
 namespace {
 
-constexpr auto testPortableTracerKind = static_cast<WVObserverKind>(200);
-
 void require(bool condition, const std::string &message) {
   if (!condition)
     throw std::runtime_error(message);
 }
+
+class WVTestPortableTracerImplementation final : public WVObservingSystem {
+public:
+  const std::string &typeIdentifier() const noexcept override {
+    static const std::string value = "WVTestPortableTracer";
+    return value;
+  }
+  std::uint32_t contractVersion() const noexcept override { return 1; }
+  const std::string &fieldListAttribute() const noexcept override {
+    static const std::string value;
+    return value;
+  }
+  bool recordsTracerState() const noexcept override { return true; }
+  bool contributesRightHandSide() const noexcept override { return true; }
+  bool ownsTracerState() const noexcept override { return true; }
+  WVKernelStatus validate(
+      const WVObserverRecord &observer,
+      const std::map<std::string, const WVStateBlockRecord *> &blocks,
+      std::map<std::string, std::size_t> &owners) const override {
+    if (observer.stateBlockIdentifiers.size() != 1)
+      return {WVKernelStatusCode::invalidConfiguration,
+              "Test tracer requires one state block."};
+    const auto found = blocks.find(observer.stateBlockIdentifiers.front());
+    if (found == blocks.end() ||
+        found->second->scalarType != WVStateScalarType::real64 ||
+        found->second->ownership != WVStateOwnership::integratorOwned)
+      return {WVKernelStatusCode::invalidConfiguration,
+              "Test tracer state block is incompatible."};
+    ++owners.at(observer.stateBlockIdentifiers.front());
+    return WVKernelStatus::ok();
+  }
+  std::size_t persistentBytes() const noexcept override {
+    return sizeof(*this);
+  }
+};
 
 WVTransformConstantStratificationConfiguration configuration(bool hydrostatic) {
   WVTransformConstantStratificationConfiguration value;
@@ -72,13 +106,13 @@ WVPortableObserverDescriptor descriptorFor(
   WVObserverRecord coefficients;
   coefficients.identifier = "coefficients";
   coefficients.name = "Wave-vortex coefficients";
-  coefficients.kind = WVObserverKind::coefficients;
+  coefficients.typeIdentifier = "WVCoefficients";
   coefficients.stateBlockIdentifiers = {"Ap", "Am", "A0"};
   record.observers.push_back(coefficients);
   WVObserverRecord surface;
   surface.identifier = "surface";
   surface.name = "surfaceParticles";
-  surface.kind = WVObserverKind::lagrangianParticles;
+  surface.typeIdentifier = "WVLagrangianParticles";
   surface.stateBlockIdentifiers = {"surface-x", "surface-y"};
   surface.x = {-10.0, 1000.0, configuration.Lx + 3.0};
   surface.y = {20.0, -100.0, 2000.0};
@@ -92,7 +126,7 @@ WVPortableObserverDescriptor descriptorFor(
   WVObserverRecord volume;
   volume.identifier = "volume";
   volume.name = "volumeParticles";
-  volume.kind = WVObserverKind::lagrangianParticles;
+  volume.typeIdentifier = "WVLagrangianParticles";
   volume.stateBlockIdentifiers = {"volume-x", "volume-y", "volume-z"};
   volume.x = {200.0, 3000.0};
   volume.y = {400.0, 5000.0};
@@ -124,9 +158,9 @@ WVPortableObserverDescriptor descriptorWithTracers(
     WVObserverRecord tracer;
     tracer.identifier = identifier;
     tracer.name = identifier;
-    tracer.kind = std::string(identifier) == "temperature"
-                      ? testPortableTracerKind
-                      : WVObserverKind::tracer;
+    tracer.typeIdentifier = std::string(identifier) == "temperature"
+                                ? "WVTestPortableTracer"
+                                : "WVTracer";
     tracer.stateBlockIdentifiers = {identifier};
     tracer.shouldAntialias = std::string(identifier) == "dye";
     record.observers.push_back(std::move(tracer));
@@ -183,7 +217,7 @@ struct Fixture {
 void initializeParticles(Fixture &fixture,
                          const WVPortableObserverDescriptor &descriptor) {
   for (const auto &observer : descriptor.observers()) {
-    if (observer.kind != WVObserverKind::lagrangianParticles)
+    if (observer.typeIdentifier != "WVLagrangianParticles")
       continue;
     const std::array<const std::vector<double> *, 3> values{
         {&observer.x, &observer.y, &observer.z}};
@@ -492,7 +526,7 @@ void testValidation() {
   WVObserverRecord tracer;
   tracer.identifier = "tracer";
   tracer.name = "tracer";
-  tracer.kind = WVObserverKind::tracer;
+  tracer.typeIdentifier = "WVTracer";
   tracer.stateBlockIdentifiers = {"tracer"};
   tracer.isXYOnly = true;
   tracerRecord.observers.push_back(tracer);
@@ -511,10 +545,8 @@ void testValidation() {
 
 int main() {
   try {
-    const auto registration = WVObserverFactoryRegistry::registerAdapter(
-        {testPortableTracerKind, "WVTestPortableTracer", "WVTestPortableTracer",
-         WVPortablePairContractVersion, WVObserverStateContract::tracerField,
-         WVObserverOutputRule::tracer, ""});
+    const auto registration = WVObserverFactoryRegistry::registerImplementation(
+        std::make_shared<WVTestPortableTracerImplementation>());
     require(static_cast<bool>(registration), registration.message);
     testIntegratedObservers(true);
     testIntegratedObservers(false);

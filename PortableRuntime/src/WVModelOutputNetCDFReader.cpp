@@ -132,7 +132,9 @@ std::string portableIdentifier(std::string value) {
 
 bool sameObserverConfiguration(const WVObserverRecord &left,
                                const WVObserverRecord &right) {
-  return left.name == right.name && left.kind == right.kind &&
+  return left.name == right.name &&
+         left.typeIdentifier == right.typeIdentifier &&
+         left.contractVersion == right.contractVersion &&
          left.stateBlockIdentifiers == right.stateBlockIdentifiers &&
          left.fieldNames == right.fieldNames && left.x == right.x &&
          left.y == right.y && left.z == right.z &&
@@ -142,7 +144,9 @@ bool sameObserverConfiguration(const WVObserverRecord &left,
          left.trackedFieldInterpolation == right.trackedFieldInterpolation &&
          left.horizontalAbsoluteTolerance ==
              right.horizontalAbsoluteTolerance &&
-         left.verticalAbsoluteTolerance == right.verticalAbsoluteTolerance;
+         left.verticalAbsoluteTolerance == right.verticalAbsoluteTolerance &&
+         left.outputScale == right.outputScale &&
+         left.outputOffset == right.outputOffset;
 }
 
 bool sameRestartValues(const std::vector<double> &left,
@@ -285,13 +289,14 @@ WVCheckpointStatus readObserverStateAtTime(
   if (!result || !found)
     return result;
 
-  const auto *definition = detail::observerDefinition(observer.kind);
-  if (definition == nullptr)
+  const auto implementation = detail::observerImplementation(
+      observer.typeIdentifier, observer.contractVersion);
+  if (!implementation)
     return failure(WVCheckpointStatusCode::unsupportedObserver,
                    "Dynamic observer state uses an unsupported observer.",
                    groupPath);
   values.clear();
-  if (definition->outputRule == WVObserverOutputRule::lagrangianParticles) {
+  if (implementation->recordsMovingParticles()) {
     const auto channels = detail::movingFieldChannels(observer);
     values.resize(channels.size());
     for (std::size_t index = 0; index < channels.size(); ++index) {
@@ -309,7 +314,7 @@ WVCheckpointStatus readObserverStateAtTime(
       if (!result)
         return result;
     }
-  } else if (definition->outputRule == WVObserverOutputRule::tracer) {
+  } else if (implementation->recordsTracerState()) {
     values.resize(1);
     result = readLatestRealSlab(group, observer.name, recordIndex, values[0],
                                 groupPath);
@@ -394,16 +399,17 @@ WVCheckpointStatus parseObserver(int outputGroup, int metadataGroup,
                                           className, outputPath);
   if (!result)
     return result;
-  const auto *definition =
-      detail::observerDefinitionForMatlabClass(className);
-  if (definition == nullptr)
+  const auto implementation = detail::observerImplementation(
+      className, WVPortablePairContractVersion);
+  if (!implementation)
     return failure(WVCheckpointStatusCode::unsupportedObserver,
                    "Unsupported MATLAB observing-system class '" + className +
                        "'.",
                    outputPath + "/@AnnotatedClass");
   WVObserverRecord observer;
-  observer.kind = definition->kind;
-  const auto outputRule = definition->outputRule;
+  observer.typeIdentifier = className;
+  observer.contractVersion = implementation->contractVersion();
+  const auto &behavior = *implementation;
 
   bool present = false;
   result = optionalTextAttribute(metadataGroup, "name", observer.name, present,
@@ -418,17 +424,17 @@ WVCheckpointStatus parseObserver(int outputGroup, int metadataGroup,
     return result;
   const bool hadPortableIdentifier = present;
   if (!hadPortableIdentifier) {
-    if (outputRule == WVObserverOutputRule::coefficients)
+    if (behavior.recordsCoefficients())
       observer.identifier = "coefficients";
-    else if (outputRule == WVObserverOutputRule::eulerianFields)
+    else if (behavior.recordsEulerianFields())
       observer.identifier = "eulerian-fields";
     else
       observer.identifier = portableIdentifier(className + "-" + observer.name);
   }
   identifier = observer.identifier;
 
-  if (!definition->fieldListAttribute.empty()) {
-    result = stringListAttribute(metadataGroup, definition->fieldListAttribute.c_str(),
+  if (!implementation->fieldListAttribute().empty()) {
+    result = stringListAttribute(metadataGroup, implementation->fieldListAttribute().c_str(),
                                  observer.fieldNames, present, outputPath);
     if (!result)
       return result;
@@ -440,14 +446,14 @@ WVCheckpointStatus parseObserver(int outputGroup, int metadataGroup,
                       std::string{}),
           observer.fieldNames.end());
     if (!hadPortableIdentifier &&
-        outputRule == WVObserverOutputRule::eulerianFields) {
+        behavior.recordsEulerianFields()) {
       for (const auto &field : observer.fieldNames)
         observer.identifier += "-" + portableIdentifier(field);
       identifier = observer.identifier;
     }
   }
 
-  if (outputRule == WVObserverOutputRule::coefficients) {
+  if (behavior.recordsCoefficients()) {
     double tolerance = 0.0;
     result = detail::readDoubleScalar(metadataGroup, "absTolerance", tolerance,
                                       outputPath);
@@ -475,7 +481,7 @@ WVCheckpointStatus parseObserver(int outputGroup, int metadataGroup,
       if (!result)
         return result;
     }
-  } else if (outputRule == WVObserverOutputRule::eulerianFields) {
+  } else if (behavior.recordsEulerianFields()) {
     const bool hasCompleteCoefficients =
         std::find(observer.fieldNames.begin(), observer.fieldNames.end(),
                   "Ap") != observer.fieldNames.end() &&
@@ -521,7 +527,7 @@ WVCheckpointStatus parseObserver(int outputGroup, int metadataGroup,
           return result;
       }
     }
-  } else if (outputRule == WVObserverOutputRule::lagrangianParticles) {
+  } else if (behavior.recordsMovingParticles()) {
     result = detail::readLogicalScalar(metadataGroup, "isXYOnly",
                                        observer.isXYOnly, outputPath);
     if (!result)
@@ -581,7 +587,7 @@ WVCheckpointStatus parseObserver(int outputGroup, int metadataGroup,
       if (!result)
         return result;
     }
-  } else if (outputRule == WVObserverOutputRule::tracer) {
+  } else if (behavior.recordsTracerState()) {
     result = detail::readLogicalScalar(metadataGroup, "isXYOnly",
                                        observer.isXYOnly, outputPath);
     if (!result)
@@ -617,7 +623,36 @@ WVCheckpointStatus parseObserver(int outputGroup, int metadataGroup,
                                    WVRestartRequirement::requiredDynamicState});
     if (!result)
       return result;
-  } else if (outputRule == WVObserverOutputRule::mooring) {
+  } else if (behavior.recordsFixedPoints()) {
+    result = detail::readDoubleScalar(metadataGroup, "outputScale",
+                                      observer.outputScale, outputPath);
+    if (!result)
+      return result;
+    result = detail::readDoubleScalar(metadataGroup, "outputOffset",
+                                      observer.outputOffset, outputPath);
+    if (!result)
+      return result;
+    std::string interpolation;
+    result = optionalTextAttribute(metadataGroup, "trackedVarInterpolation",
+                                   interpolation, present, outputPath);
+    if (!result)
+      return result;
+    observer.trackedFieldInterpolation = interpolation == "spline"
+                                             ? WVPositionInterpolation::spline
+                                             : WVPositionInterpolation::linear;
+    result = readWholeDoubleVariable(outputGroup, observer.name + "_x",
+                                     observer.x, outputPath);
+    if (!result)
+      return result;
+    result = readWholeDoubleVariable(outputGroup, observer.name + "_y",
+                                     observer.y, outputPath);
+    if (!result)
+      return result;
+    result = readWholeDoubleVariable(outputGroup, observer.name + "_z",
+                                     observer.z, outputPath);
+    if (!result)
+      return result;
+  } else if (behavior.recordsFixedProfiles()) {
     result = readWholeDoubleVariable(outputGroup, observer.name + "_x",
                                      observer.x, outputPath);
     if (!result)
@@ -872,11 +907,10 @@ WVCheckpointStatus parseOutputFile(const std::string &path,
                                      groupPath + "/observingSystems");
       if (!result)
         return result;
-      const auto *definition =
-          detail::observerDefinitionForMatlabClass(observerClass);
-      if (present && definition != nullptr &&
-          definition->outputRule ==
-              WVObserverOutputRule::coefficients) {
+      const auto implementation = detail::observerImplementation(
+          observerClass, WVPortablePairContractVersion);
+      if (present && implementation &&
+          implementation->recordsCoefficients()) {
         result = parseOne(observerGroup);
         if (!result)
           return result;
@@ -986,11 +1020,11 @@ WVModelOutputNetCDFSink::inspect(const std::vector<std::string> &paths,
                      selectedCheckpoint.metadata.stateGroupPath);
     std::map<std::string, std::vector<std::vector<double>>> resolvedState;
     for (auto &observer : candidate.observerRecord.observers) {
-      const auto *definition = detail::observerDefinition(observer.kind);
-      if (definition == nullptr || observer.stateBlockIdentifiers.empty() ||
-          (definition->outputRule !=
-               WVObserverOutputRule::lagrangianParticles &&
-           definition->outputRule != WVObserverOutputRule::tracer))
+      const auto implementation = detail::observerImplementation(
+          observer.typeIdentifier, observer.contractVersion);
+      if (!implementation || observer.stateBlockIdentifiers.empty() ||
+          (!implementation->recordsMovingParticles() &&
+           !implementation->recordsTracerState()))
         continue;
       std::vector<std::vector<double>> selectedValues;
       std::string selectedLocation;
@@ -1037,8 +1071,7 @@ WVModelOutputNetCDFSink::inspect(const std::vector<std::string> &paths,
                        "state at the selected restart time.",
                        "/observingSystems/" + observer.identifier);
       const bool hasFixedParticleZ =
-          definition->outputRule ==
-              WVObserverOutputRule::lagrangianParticles &&
+          implementation->recordsMovingParticles() &&
           observer.isXYOnly && !observer.z.empty();
       if (selectedValues.size() != observer.stateBlockIdentifiers.size() +
                                        (hasFixedParticleZ ? 1 : 0))
@@ -1046,8 +1079,7 @@ WVModelOutputNetCDFSink::inspect(const std::vector<std::string> &paths,
                        "Dynamic observer state has an incompatible block "
                        "count.",
                        selectedLocation);
-      if (definition->outputRule ==
-          WVObserverOutputRule::lagrangianParticles) {
+      if (implementation->recordsMovingParticles()) {
         observer.x = selectedValues[0];
         observer.y = selectedValues[1];
         if (hasFixedParticleZ)

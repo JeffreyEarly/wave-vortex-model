@@ -24,10 +24,10 @@
 namespace wavevortex::runtime {
 namespace {
 
-WVObserverOutputRule outputRule(const WVObserverRecord &record) {
-  const auto *definition = detail::observerDefinition(record.kind);
-  return definition == nullptr ? WVObserverOutputRule::eulerianFields
-                               : definition->outputRule;
+std::shared_ptr<const WVObservingSystem>
+observerImplementation(const WVObserverRecord &record) {
+  return detail::observerImplementation(record.typeIdentifier,
+                                        record.contractVersion);
 }
 
 WVCheckpointStatus failure(WVCheckpointStatusCode code, std::string message,
@@ -269,11 +269,12 @@ public:
                      "Ap, Am, and A0 must use one common absTolerance.",
                      "/observingSystems/WVCoefficients/absTolerance");
     for (const auto &record : descriptorRecord.observers) {
-      const auto rule = outputRule(record);
+      const auto observerBehavior = observerImplementation(record);
       const bool requiresDerivedValues =
-          rule == WVObserverOutputRule::eulerianFields ||
-          rule == WVObserverOutputRule::mooring ||
-          (rule == WVObserverOutputRule::lagrangianParticles &&
+          observerBehavior->recordsEulerianFields() ||
+          observerBehavior->recordsFixedProfiles() ||
+          observerBehavior->recordsFixedPoints() ||
+          (observerBehavior->recordsMovingParticles() &&
            !record.fieldNames.empty());
       if (requiresDerivedValues && sampleSource == nullptr)
         return failure(WVCheckpointStatusCode::unsupportedObserver,
@@ -298,10 +299,10 @@ public:
           continue;
         hasCoefficientObserver =
             hasCoefficientObserver ||
-            outputRule(*record) == WVObserverOutputRule::coefficients;
+            observerImplementation(*record)->recordsCoefficients();
         hasEulerianCoefficientObserver =
             hasEulerianCoefficientObserver ||
-            (outputRule(*record) == WVObserverOutputRule::eulerianFields &&
+            (observerImplementation(*record)->recordsEulerianFields() &&
              std::find(record->fieldNames.begin(), record->fieldNames.end(),
                        "Ap") != record->fieldNames.end() &&
              std::find(record->fieldNames.begin(), record->fieldNames.end(),
@@ -384,47 +385,46 @@ public:
     if (!result)
       return result;
     const std::string observerPath = path + "/" + groupName;
-    const auto *definition = detail::observerDefinition(record.kind);
-    if (definition == nullptr)
+    const auto observerBehavior = observerImplementation(record);
+    if (!observerBehavior)
       return failure(WVCheckpointStatusCode::unsupportedObserver,
                      "Unsupported observer metadata definition.", observerPath);
     result = detail::putTextAttribute(
         group, NC_GLOBAL, "AnnotatedClass",
-        definition->matlabClassName, observerPath);
+        observerBehavior->typeIdentifier(), observerPath);
     if (!result)
       return result;
     result = detail::putTextAttribute(group, NC_GLOBAL, "portableIdentifier",
                                       record.identifier, observerPath);
     if (!result)
       return result;
-    const auto rule = definition->outputRule;
-    if (rule != WVObserverOutputRule::eulerianFields) {
+    if (!observerBehavior->recordsEulerianFields()) {
       result = detail::putTextAttribute(group, NC_GLOBAL, "name", record.name,
                                         observerPath);
       if (!result)
         return result;
     }
-    if (!definition->fieldListAttribute.empty()) {
-      result = putStringListAttribute(group, definition->fieldListAttribute.c_str(),
+    if (!observerBehavior->fieldListAttribute().empty()) {
+      result = putStringListAttribute(group, observerBehavior->fieldListAttribute().c_str(),
                                       record.fieldNames, observerPath);
       if (!result)
         return result;
     }
-    if (rule == WVObserverOutputRule::coefficients) {
+    if (observerBehavior->recordsCoefficients()) {
       int variable = -1;
       result = defineScalar(group, "absTolerance", variable, observerPath);
       if (!result)
         return result;
       return WVCheckpointStatus::ok();
     }
-    if (rule == WVObserverOutputRule::lagrangianParticles ||
-        rule == WVObserverOutputRule::tracer) {
+    if (observerBehavior->recordsMovingParticles() ||
+        observerBehavior->recordsTracerState()) {
       int variable = -1;
       result = defineLogicalScalar(group, "isXYOnly", variable, observerPath);
       if (!result)
         return result;
     }
-    if (rule == WVObserverOutputRule::lagrangianParticles) {
+    if (observerBehavior->recordsMovingParticles()) {
       for (const char *name : {"absToleranceXY", "absToleranceZ"}) {
         int variable = -1;
         result = defineScalar(group, name, variable, observerPath);
@@ -446,13 +446,28 @@ public:
               : "spline",
           observerPath);
     }
-    if (rule == WVObserverOutputRule::tracer) {
+    if (observerBehavior->recordsTracerState()) {
       int variable = -1;
       result = defineScalar(group, "absTolerance", variable, observerPath);
       if (!result)
         return result;
       return defineLogicalScalar(group, "shouldAntialias", variable,
                                  observerPath);
+    }
+    if (observerBehavior->recordsFixedPoints()) {
+      int variable = -1;
+      result = defineScalar(group, "outputScale", variable, observerPath);
+      if (!result)
+        return result;
+      result = defineScalar(group, "outputOffset", variable, observerPath);
+      if (!result)
+        return result;
+      return detail::putTextAttribute(
+          group, NC_GLOBAL, "trackedVarInterpolation",
+          record.trackedFieldInterpolation == WVPositionInterpolation::linear
+              ? "linear"
+              : "spline",
+          observerPath);
     }
     return WVCheckpointStatus::ok();
   }
@@ -567,8 +582,8 @@ public:
       if (!result)
         return result;
 
-      const auto rule = outputRule(*record);
-      if (rule == WVObserverOutputRule::mooring) {
+      const auto observerBehavior = observerImplementation(*record);
+      if (observerBehavior->recordsFixedProfiles()) {
         int mooringDimension = -1;
         int verticalDimension = -1;
         const std::string idName = record->name + "_id";
@@ -653,7 +668,52 @@ public:
                            std::move(y), "m", "y position of mooring");
         if (!result)
           return result;
-      } else if (rule == WVObserverOutputRule::lagrangianParticles) {
+      } else if (observerBehavior->recordsFixedPoints()) {
+        int pointDimension = -1;
+        const std::string dimensionName = record->name + "_id";
+        result = detail::checkedNetCDF(
+            nc_def_dim(group.id, dimensionName.c_str(), record->x.size(),
+                       &pointDimension),
+            "Point-observer dimension definition", path + "/" + dimensionName);
+        if (!result)
+          return result;
+        const auto addStaticPoint = [&](const std::string &name,
+                                        std::vector<double> values,
+                                        const std::string &units,
+                                        const std::string &longName) {
+          StaticVariable variable;
+          variable.name = name;
+          variable.values = std::move(values);
+          auto definition = detail::defineDoubleVariable(
+              group.id, name, {pointDimension}, variable.id, path);
+          if (definition)
+            definition = detail::putTextAttribute(
+                group.id, variable.id, "units", units, path + "/" + name);
+          if (definition && !longName.empty())
+            definition = detail::putTextAttribute(
+                group.id, variable.id, "long_name", longName,
+                path + "/" + name);
+          if (definition)
+            group.staticVariables.push_back(std::move(variable));
+          return definition;
+        };
+        std::vector<double> identifiers(record->x.size());
+        for (std::size_t index = 0; index < identifiers.size(); ++index)
+          identifiers[index] = static_cast<double>(index + 1);
+        result = addStaticPoint(dimensionName, std::move(identifiers),
+                                "unitless id number", "");
+        if (!result)
+          return result;
+        for (const auto &[suffix, values] :
+             std::array<std::pair<const char *, const std::vector<double> *>, 3>{
+                 {{"x", &record->x}, {"y", &record->y}, {"z", &record->z}}}) {
+          result = addStaticPoint(record->name + '_' + suffix, *values, "m",
+                                  std::string(suffix) +
+                                      " position of fixed observation");
+          if (!result)
+            return result;
+        }
+      } else if (observerBehavior->recordsMovingParticles()) {
         int particleDimension = -1;
         const std::string dimensionName = record->name + "_id";
         result = detail::checkedNetCDF(
@@ -755,7 +815,7 @@ public:
             return result;
           group.dynamicVariables.push_back(std::move(dynamic));
         }
-      } else if (rule == WVObserverOutputRule::tracer) {
+      } else if (observerBehavior->recordsTracerState()) {
         const auto *layout = blockLayout(record->stateBlockIdentifiers.front());
         if (layout == nullptr)
           return failure(WVCheckpointStatusCode::schemaMismatch,
@@ -944,13 +1004,13 @@ public:
           return result;
         const std::string metadataPath =
             path + "/observingSystems/" + groupName;
-        const auto rule = outputRule(*record);
-        if (rule == WVObserverOutputRule::coefficients) {
+        const auto observerBehavior = observerImplementation(*record);
+        if (observerBehavior->recordsCoefficients()) {
           const auto *block = stateBlockRecord("Ap");
           result = writeScalar(
               metadata, "absTolerance",
               block == nullptr ? 1e-6 : block->absoluteTolerance, metadataPath);
-        } else if (rule == WVObserverOutputRule::lagrangianParticles) {
+        } else if (observerBehavior->recordsMovingParticles()) {
           result = writeByteScalar(metadata, "isXYOnly", record->isXYOnly,
                                    metadataPath);
           if (result)
@@ -961,7 +1021,7 @@ public:
             result =
                 writeScalar(metadata, "absToleranceZ",
                             record->verticalAbsoluteTolerance, metadataPath);
-        } else if (rule == WVObserverOutputRule::tracer) {
+        } else if (observerBehavior->recordsTracerState()) {
           result = writeByteScalar(metadata, "isXYOnly", record->isXYOnly,
                                    metadataPath);
           if (result) {
@@ -975,6 +1035,12 @@ public:
           if (result)
             result = writeByteScalar(metadata, "shouldAntialias",
                                      record->shouldAntialias, metadataPath);
+        } else if (observerBehavior->recordsFixedPoints()) {
+          result = writeScalar(metadata, "outputScale", record->outputScale,
+                               metadataPath);
+          if (result)
+            result = writeScalar(metadata, "outputOffset",
+                                 record->outputOffset, metadataPath);
         }
         if (!result)
           return result;
@@ -1801,9 +1867,9 @@ public:
             return failure(WVCheckpointStatusCode::schemaMismatch,
                            "Append group references an unknown observer.",
                            file.destination.string());
-          const auto rule = outputRule(*recordPointer);
-          if (rule == WVObserverOutputRule::lagrangianParticles ||
-              rule == WVObserverOutputRule::tracer) {
+          const auto observerBehavior = observerImplementation(*recordPointer);
+          if (observerBehavior->recordsMovingParticles() ||
+              observerBehavior->recordsTracerState()) {
             const auto channels = detail::movingFieldChannels(*recordPointer);
             for (std::size_t blockIndex = 0; blockIndex < channels.size();
                  ++blockIndex) {
@@ -1817,13 +1883,13 @@ public:
               dynamic.elementCount = layout->elementCount;
               group.dynamicVariables.push_back(std::move(dynamic));
             }
-            if (rule == WVObserverOutputRule::lagrangianParticles &&
+            if (observerBehavior->recordsMovingParticles() &&
                 recordPointer->isXYOnly && !recordPointer->z.empty())
               group.dynamicVariables.push_back(
                   {{}, recordPointer->name + "_z",
                    WVStateScalarType::real64, recordPointer->z.size(),
                    recordPointer->z, -1, -1});
-          } else if (rule == WVObserverOutputRule::mooring) {
+          } else if (observerBehavior->recordsFixedProfiles()) {
             const auto &model = configuration.checkpointTemplate.configuration;
             std::vector<double> ids(recordPointer->x.size());
             for (std::size_t index = 0; index < ids.size(); ++index)

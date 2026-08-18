@@ -67,13 +67,13 @@ WVPortableObserverRecord record() {
   WVObserverRecord coefficients;
   coefficients.identifier = "coefficients";
   coefficients.name = "Wave-vortex coefficients";
-  coefficients.kind = WVObserverKind::coefficients;
+  coefficients.typeIdentifier = "WVCoefficients";
   coefficients.stateBlockIdentifiers = {"Ap", "Am", "A0"};
   result.observers.push_back(coefficients);
   WVObserverRecord particles;
   particles.identifier = "particles";
   particles.name = "Particles";
-  particles.kind = WVObserverKind::lagrangianParticles;
+  particles.typeIdentifier = "WVLagrangianParticles";
   particles.stateBlockIdentifiers = {"particleX", "particleY"};
   particles.x = {0, 1, 2};
   particles.y = {3, 4, 5};
@@ -83,7 +83,7 @@ WVPortableObserverRecord record() {
   WVObserverRecord tracer;
   tracer.identifier = "tracer";
   tracer.name = "Tracer";
-  tracer.kind = WVObserverKind::tracer;
+  tracer.typeIdentifier = "WVTracer";
   tracer.stateBlockIdentifiers = {"tracerAmplitude"};
   result.observers.push_back(tracer);
   result.outputFiles.push_back({"history",
@@ -245,11 +245,10 @@ void testContracts(WVPortableObserverDescriptor &descriptor,
               roundTrip.outputFiles[0].groups[0].observerIdentifiers ==
                   source.outputFiles[0].groups[0].observerIdentifiers,
           "deterministic descriptor record");
-  require(std::string(WVObserverFactoryRegistry::portableTag(
-              WVObserverKind::lagrangianParticles)) == "WVLagrangianParticles",
-          "factory tag");
-  require(!WVObserverFactoryRegistry::supports(static_cast<WVObserverKind>(99)),
-          "unknown tag rejected");
+  require(WVObserverFactoryRegistry::supports("WVLagrangianParticles"),
+          "factory identity");
+  require(!WVObserverFactoryRegistry::supports("WVUnknownObserver"),
+          "unknown identity rejected");
   auto duplicate = source;
   duplicate.stateBlocks.push_back(duplicate.stateBlocks.front());
   WVPortableObserverDescriptor ignored;

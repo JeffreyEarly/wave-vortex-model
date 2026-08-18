@@ -30,6 +30,7 @@ struct WVOutputGroupProgress {
 struct WVOutputObserverView {
   std::size_t observerOrdinal = 0;
   const WVObserverRecord *record = nullptr;
+  const WVObservingSystem *implementation = nullptr;
 };
 
 // Immutable route occurrence for one group on one original schedule ordinal.

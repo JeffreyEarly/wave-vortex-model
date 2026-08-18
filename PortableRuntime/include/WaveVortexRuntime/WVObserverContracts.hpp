@@ -1,10 +1,12 @@
 #pragma once
 
+#include "WaveVortexRuntime/WVObservingSystem.hpp"
 #include "WaveVortexRuntime/WVPortableImplementationContract.hpp"
 #include "WaveVortexKernel/WVKernelTypes.hpp"
 
 #include <cstddef>
 #include <cstdint>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -24,26 +26,6 @@ enum class WVRestartRequirement : std::uint8_t {
   derivedState
 };
 enum class WVStateOwnership : std::uint8_t { integratorOwned, observerDerived };
-enum class WVObserverKind : std::uint8_t {
-  coefficients,
-  eulerianFields,
-  mooring,
-  lagrangianParticles,
-  tracer
-};
-enum class WVObserverStateContract : std::uint8_t {
-  canonicalCoefficients,
-  sampleOnly,
-  particlePosition,
-  tracerField
-};
-enum class WVObserverOutputRule : std::uint8_t {
-  coefficients,
-  eulerianFields,
-  mooring,
-  lagrangianParticles,
-  tracer
-};
 enum class WVPositionInterpolation : std::uint8_t { linear, spline };
 
 struct WVStateBlockRecord {
@@ -60,7 +42,8 @@ struct WVStateBlockRecord {
 struct WVObserverRecord {
   std::string identifier;
   std::string name;
-  WVObserverKind kind = WVObserverKind::coefficients;
+  std::string typeIdentifier;
+  std::uint32_t contractVersion = WVPortablePairContractVersion;
   std::vector<std::string> stateBlockIdentifiers;
   std::vector<std::string> fieldNames;
   std::vector<double> x;
@@ -74,6 +57,8 @@ struct WVObserverRecord {
       WVPositionInterpolation::linear;
   double horizontalAbsoluteTolerance = 0.0;
   double verticalAbsoluteTolerance = 0.0;
+  double outputScale = 1.0;
+  double outputOffset = 0.0;
 };
 
 struct WVOutputScheduleRecord {
@@ -119,30 +104,22 @@ public:
   const std::vector<WVOutputFileRecord> &outputFiles() const noexcept {
     return record_.outputFiles;
   }
+  const WVObservingSystem *implementation(
+      const WVObserverRecord &observer) const noexcept;
   std::size_t persistentBytes() const noexcept;
 
 private:
   WVPortableObserverRecord record_;
+  std::vector<std::shared_ptr<const WVObservingSystem>> implementations_;
 };
 
 // Registry seam for built-in tagged records. Version 1 intentionally exposes
 // no third-party binary plugin ABI.
 class WVObserverFactoryRegistry final {
 public:
-  struct Registration {
-    WVObserverKind kind = WVObserverKind::coefficients;
-    std::string portableTag;
-    std::string matlabClassName;
-    std::uint32_t contractVersion = WVPortablePairContractVersion;
-    WVObserverStateContract stateContract =
-        WVObserverStateContract::sampleOnly;
-    WVObserverOutputRule outputRule = WVObserverOutputRule::eulerianFields;
-    std::string fieldListAttribute;
-  };
-
-  static bool supports(WVObserverKind kind) noexcept;
-  static const char *portableTag(WVObserverKind kind) noexcept;
-  static const char *matlabClassName(WVObserverKind kind) noexcept;
+  static bool supports(const std::string &typeIdentifier,
+                       std::uint32_t contractVersion =
+                           WVPortablePairContractVersion) noexcept;
   static WVPortableCapability capability(
       std::string typeIdentifier,
       std::uint32_t contractVersion = WVPortablePairContractVersion);
@@ -151,7 +128,8 @@ public:
   // Register one source-level native observer adapter before constructing a
   // descriptor. The serialized observer record remains portable-observers-v1;
   // this is not a stable third-party binary plug-in ABI.
-  static WVKernelStatus registerAdapter(Registration registration);
+  static WVKernelStatus registerImplementation(
+      std::shared_ptr<const WVObservingSystem> implementation);
 };
 
 } // namespace wavevortex::runtime
