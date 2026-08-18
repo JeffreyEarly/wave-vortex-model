@@ -53,5 +53,21 @@ classdef TestPortableForcingContracts < matlab.unittest.TestCase
             testCase.verifyEqual(contract.capabilityStatus,"supported");
             testCase.verifyEqual(contract.typeIdentifier,"WVTestPortableFixedAmplitudeForcing");
         end
+
+        function linearCoefficientPairHasMatchingCoarseFormula(testCase)
+            forcing = WVTestPortableLinearCoefficientForcing(testCase.wvt,0.375);
+            contract = forcing.portableImplementationContract();
+            testCase.verifyEqual(contract.capabilityStatus,"supported");
+            testCase.verifyEqual(contract.typeIdentifier,"WVTestPortableLinearCoefficientForcing");
+            testCase.verifyEqual(contract.payload.rate,0.375);
+            testCase.wvt.Ap = complex(reshape(1:testCase.wvt.Nj*testCase.wvt.Nkl,testCase.wvt.Nj,testCase.wvt.Nkl));
+            testCase.wvt.Am = -testCase.wvt.Ap;
+            testCase.wvt.A0 = 2*testCase.wvt.Ap;
+            zero = zeros(size(testCase.wvt.Ap));
+            [Fp,Fm,F0] = forcing.addSpectralForcing(testCase.wvt,zero,zero,zero);
+            testCase.verifyEqual(Fp,0.375*testCase.wvt.Ap);
+            testCase.verifyEqual(Fm,0.375*testCase.wvt.Am);
+            testCase.verifyEqual(F0,0.375*testCase.wvt.A0);
+        end
     end
 end

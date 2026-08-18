@@ -3,6 +3,7 @@
 #include "WaveVortexRuntime/WVForcingEngine.hpp"
 #include "WaveVortexRuntime/WVForcingContracts.hpp"
 #include "WVReferenceFFTEngine.hpp"
+#include "WVTestLinearCoefficientForcing.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -66,13 +67,56 @@ WVTransformConstantStratificationConfiguration configuration(bool hydrostatic) {
     return value;
 }
 
-WVFrozenForcingEntry entry(WVForcingKind kind, const char* identifier, const char* name, WVForcingStage stage, std::uint8_t priority, WVForcingPayload payload) {
-    return {kind,identifier,name,stage,priority,0,"test",std::move(payload)};
+WVPortableTypedRecord forcingConfiguration() {
+    return {"wave-vortex-forcing-configuration-v1",1,{}};
+}
+
+WVPortableNamedValue realValue(std::string name, std::vector<double> values) {
+    const auto size = values.size();
+    return {std::move(name),size == 1 ? std::vector<std::size_t>{} : std::vector<std::size_t>{size},std::move(values)};
+}
+
+WVPortableNamedValue integerValue(std::string name, const std::vector<std::size_t>& values) {
+    std::vector<std::int64_t> converted(values.begin(),values.end());
+    return {std::move(name),{values.size()},std::move(converted)};
+}
+
+WVPortableTypedRecord fixedConfiguration(const WVFixedAmplitudeConfiguration& fixed) {
+    auto result = forcingConfiguration();
+    auto append = [&](const char* family, const auto& indices, const auto& values) {
+        if (indices.empty()) return;
+        std::vector<double> real(values.size()), imag(values.size());
+        for (std::size_t index = 0; index < values.size(); ++index) { real[index] = values[index].real; imag[index] = values[index].imag; }
+        result.values.push_back(integerValue(std::string(family)+"Indices",indices));
+        result.values.push_back(realValue(std::string(family)+"ValuesReal",std::move(real)));
+        result.values.push_back(realValue(std::string(family)+"ValuesImag",std::move(imag)));
+    };
+    append("Ap",fixed.ApIndices,fixed.ApValues); append("Am",fixed.AmIndices,fixed.AmValues); append("A0",fixed.A0Indices,fixed.A0Values);
+    return result;
+}
+
+WVPortableTypedRecord pseudoConfiguration(const WVPseudoTopographicConfiguration& pseudo) {
+    auto result = forcingConfiguration();
+    result.values.push_back({"topographicHeight",{pseudo.topographicShape.columns,pseudo.topographicShape.rows},pseudo.topographicHeight});
+    result.values.push_back(realValue("barotropicVelocityAmplitudeReal",{pseudo.barotropicVelocityAmplitude[0].real,pseudo.barotropicVelocityAmplitude[1].real}));
+    result.values.push_back(realValue("barotropicVelocityAmplitudeImag",{pseudo.barotropicVelocityAmplitude[0].imag,pseudo.barotropicVelocityAmplitude[1].imag}));
+    result.values.push_back(realValue("frequency",{pseudo.frequency}));
+    result.values.push_back({"darwinSymbol",{},std::vector<std::string>{pseudo.darwinSymbol}});
+    result.values.push_back(realValue("rampDuration",{pseudo.rampDuration}));
+    result.values.push_back(realValue("startTime",{pseudo.startTime}));
+    result.values.push_back({"shouldAvoidAdaptiveDamping",{},std::vector<std::uint8_t>{static_cast<std::uint8_t>(pseudo.shouldAvoidAdaptiveDamping)}});
+    result.values.push_back(realValue("maximumForcedHorizontalWavenumber",{pseudo.maximumForcedHorizontalWavenumber}));
+    result.values.push_back(realValue("maximumForcedVerticalMode",{pseudo.maximumForcedVerticalMode}));
+    return result;
+}
+
+WVFrozenForcingEntry entry(const char* identifier, const char* name, WVForcingStage stage, std::uint8_t priority, WVPortableTypedRecord values = forcingConfiguration()) {
+    return {identifier,WVPortablePairContractVersion,name,stage,priority,0,"test",std::move(values)};
 }
 
 WVFrozenForcingSchedule nonlinearSchedule() {
     WVFrozenForcingSchedule schedule;
-    schedule.entries.push_back(entry(WVForcingKind::nonlinearAdvection,"WVNonlinearAdvection","nonlinear",WVForcingStage::spatial,127,WVNonlinearAdvectionRecord{}));
+    schedule.entries.push_back(entry("WVNonlinearAdvection","nonlinear",WVForcingStage::spatial,127));
     return schedule;
 }
 
@@ -184,12 +228,12 @@ void testForcingTrafficAccounting() {
 }
 
 void testFixedAmplitudeAndRK4() {
-    WVFixedAmplitudeForcingRecord fixed;
+    WVFixedAmplitudeConfiguration fixed;
     fixed.ApIndices = {0}; fixed.ApValues = {{0.125,-0.25}};
     fixed.AmIndices = {1}; fixed.AmValues = {{-0.75,0.5}};
     fixed.A0Indices = {2}; fixed.A0Values = {{0.375,0.625}};
     WVFrozenForcingSchedule schedule;
-    schedule.entries.push_back(entry(WVForcingKind::fixedAmplitude,"WVTestPortableFixedAmplitudeForcing","fixed",WVForcingStage::spectralAmplitude,255,fixed));
+    schedule.entries.push_back(entry("WVFixedAmplitudeForcing","fixed",WVForcingStage::spectralAmplitude,255,fixedConfiguration(fixed)));
     auto system = createSystem(true,schedule);
     OwnedState owned(system->kernel().descriptor().spectralShape());
     auto state = owned.integrationView();
@@ -241,8 +285,8 @@ void testRK4DeterminismRestartAndFailure() {
 
 void testSpectralForcing() {
     WVFrozenForcingSchedule schedule;
-    schedule.entries.push_back(entry(WVForcingKind::adaptiveDamping,"WVAdaptiveDamping","adaptive",WVForcingStage::spectral,100,WVAdaptiveDampingRecord{}));
-    schedule.entries.push_back(entry(WVForcingKind::betaPlanePVAdvection,"WVBetaPlanePVAdvection","beta",WVForcingStage::spectral,110,WVBetaPlanePVAdvectionRecord{}));
+    schedule.entries.push_back(entry("WVAdaptiveDamping","adaptive",WVForcingStage::spectral,100));
+    schedule.entries.push_back(entry("WVBetaPlanePVAdvection","beta",WVForcingStage::spectral,110));
     auto engine = createEngine(false,schedule);
     OwnedState state(engine->kernel().descriptor().spectralShape());
     const WVComplex64 canary{std::numeric_limits<double>::quiet_NaN(),std::numeric_limits<double>::quiet_NaN()};
@@ -256,8 +300,30 @@ void testSpectralForcing() {
     require(engine->metrics().workspaceCapacityBytes == expectedWorkspace,"spectral forcing did not allocate only its required physical-field workspace");
 }
 
+void testSourceLinkedLinearCoefficientExtension() {
+    WVFrozenForcingSchedule schedule;
+    auto values = forcingConfiguration();
+    values.values.push_back(realValue("rate",{0.375}));
+    schedule.entries.push_back(entry(test::LinearCoefficientForcingIdentifier,"linear",WVForcingStage::spectral,90,std::move(values)));
+    auto engine = createEngine(false,schedule);
+    OwnedState state(engine->kernel().descriptor().spectralShape());
+    std::vector<WVComplex64> valuesOut(3*state.shape.elementCount());
+    auto flux = fluxView(valuesOut,state.shape);
+    const auto status = engine->nonlinearFlux(state.view(),flux);
+    require(static_cast<bool>(status),"test linear forcing failed");
+    const auto count = state.shape.elementCount();
+    for (std::size_t index = 0; index < count; ++index) {
+        require(valuesOut[index].real == 0.375*state.values[index].real && valuesOut[index].imag == 0.375*state.values[index].imag,
+                "test linear forcing changed the Ap tendency formula");
+        require(valuesOut[count+index].real == 0.375*state.values[count+index].real && valuesOut[count+index].imag == 0.375*state.values[count+index].imag,
+                "test linear forcing changed the Am tendency formula");
+        require(valuesOut[2*count+index].real == 0.375*state.values[2*count+index].real && valuesOut[2*count+index].imag == 0.375*state.values[2*count+index].imag,
+                "test linear forcing changed the A0 tendency formula");
+    }
+}
+
 void testQuadraticAndPseudo(bool hydrostatic) {
-    WVPseudoTopographicWaveGenerationRecord pseudo;
+    WVPseudoTopographicConfiguration pseudo;
     pseudo.topographicShape = {6,5};
     pseudo.topographicHeight.resize(30);
     for (std::size_t index = 0; index < pseudo.topographicHeight.size(); ++index) pseudo.topographicHeight[index] = 10.0*std::sin(0.2*static_cast<double>(index+1));
@@ -266,8 +332,9 @@ void testQuadraticAndPseudo(bool hydrostatic) {
     pseudo.maximumForcedHorizontalWavenumber = std::numeric_limits<double>::infinity();
     pseudo.maximumForcedVerticalMode = std::numeric_limits<double>::infinity();
     WVFrozenForcingSchedule schedule;
-    schedule.entries.push_back(entry(WVForcingKind::bottomFrictionQuadratic,"WVBottomFrictionQuadratic","drag",WVForcingStage::spatial,128,WVBottomFrictionQuadraticRecord{1.7e-3}));
-    schedule.entries.push_back(entry(WVForcingKind::pseudoTopographicWaveGeneration,"WVPseudoTopographicWaveGeneration","topography",WVForcingStage::spectral,127,pseudo));
+    auto drag = forcingConfiguration(); drag.values.push_back(realValue("Cd",{1.7e-3}));
+    schedule.entries.push_back(entry("WVBottomFrictionQuadratic","drag",WVForcingStage::spatial,128,std::move(drag)));
+    schedule.entries.push_back(entry("WVPseudoTopographicWaveGeneration","topography",WVForcingStage::spectral,127,pseudoConfiguration(pseudo)));
     auto engine = createEngine(hydrostatic,schedule);
     OwnedState state(engine->kernel().descriptor().spectralShape());
     const WVComplex64 canary{std::numeric_limits<double>::quiet_NaN(),std::numeric_limits<double>::quiet_NaN()};
@@ -284,7 +351,7 @@ void testQuadraticAndPseudo(bool hydrostatic) {
 
 void testMultipleWholeFluxProducers() {
     auto schedule = nonlinearSchedule();
-    schedule.entries.push_back(entry(WVForcingKind::nonlinearAdvection,"WVNonlinearAdvection","nonlinear-second",WVForcingStage::spatial,128,WVNonlinearAdvectionRecord{}));
+    schedule.entries.push_back(entry("WVNonlinearAdvection","nonlinear-second",WVForcingStage::spatial,128));
     auto engine = createEngine(true,schedule);
     auto direct = createEngine(true,nonlinearSchedule());
     OwnedState state(engine->kernel().descriptor().spectralShape());
@@ -344,18 +411,15 @@ void testValidation() {
 
 int main() {
     try {
-        const auto registration = WVForcingFactoryRegistry::registerAdapter(
-            {WVForcingKind::fixedAmplitude,
-             "WVTestPortableFixedAmplitudeForcing",
-             WVPortablePairContractVersion,
-             {"SpectralAmplitude", "PVSpectralAmplitude"}, true, ""});
-        require(static_cast<bool>(registration), registration.message);
+        const auto registration = test::registerLinearCoefficientForcing();
+        require(static_cast<bool>(registration),registration.message);
         testNonlinearCompatibility(true);
         testNonlinearCompatibility(false);
         testFixedAmplitudeAndRK4();
         testForcingTrafficAccounting();
         testRK4DeterminismRestartAndFailure();
         testSpectralForcing();
+        testSourceLinkedLinearCoefficientExtension();
         testQuadraticAndPseudo(true);
         testQuadraticAndPseudo(false);
         testMultipleWholeFluxProducers();

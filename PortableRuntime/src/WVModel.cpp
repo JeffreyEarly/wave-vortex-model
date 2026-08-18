@@ -588,25 +588,4 @@ WVTimeIntegrator &WVModel::internalIntegrator() noexcept {
   return *impl_->integrator;
 }
 
-WVFrozenForcingSchedule defaultNonlinearAdvectionSchedule() {
-  WVFrozenForcingSchedule schedule;
-  WVFrozenForcingEntry entry;
-  entry.kind = WVForcingKind::nonlinearAdvection;
-  const auto &registrations = WVForcingFactoryRegistry::registrations();
-  const auto registration = std::find_if(
-      registrations.begin(), registrations.end(), [](const auto &candidate) {
-        return candidate.operation == WVForcingKind::nonlinearAdvection;
-      });
-  if (registration == registrations.end())
-    return schedule;
-  entry.typeIdentifier = registration->matlabClassName;
-  entry.name = "nonlinear advection";
-  entry.stage = WVForcingStage::spatial;
-  entry.priority = 127;
-  entry.ordinal = 1;
-  entry.payload = WVNonlinearAdvectionRecord{};
-  schedule.entries.push_back(std::move(entry));
-  return schedule;
-}
-
 } // namespace wavevortex::runtime

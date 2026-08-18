@@ -116,8 +116,8 @@ int main(int argc, char **argv) {
     return 3;
   }
   if (checkpoint.forcingSchedule.entries.size() != 1 ||
-      checkpoint.forcingSchedule.entries.front().kind !=
-          WVForcingKind::nonlinearAdvection) {
+      checkpoint.forcingSchedule.entries.front().typeIdentifier !=
+          "WVNonlinearAdvection") {
     emitFailure("forcing", "The matched kernel case requires only nonlinear advection.");
     return 3;
   }

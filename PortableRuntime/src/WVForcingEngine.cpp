@@ -1,5 +1,6 @@
 #include "WaveVortexRuntime/WVForcingEngine.hpp"
 #include "WaveVortexRuntime/WVForcingContracts.hpp"
+#include "WVForcingImplementations.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -19,31 +20,8 @@ WVComplex64 add(WVComplex64 a, WVComplex64 b) noexcept { return {a.real+b.real,a
 WVComplex64 multiply(WVComplex64 a, WVComplex64 b) noexcept { return {a.real*b.real-a.imag*b.imag,a.real*b.imag+a.imag*b.real}; }
 WVComplex64 multiply(WVComplex64 a, double b) noexcept { return {a.real*b,a.imag*b}; }
 WVComplex64 conjugate(WVComplex64 a) noexcept { return {a.real,-a.imag}; }
-bool finite(WVComplex64 value) noexcept { return std::isfinite(value.real) && std::isfinite(value.imag); }
 
 std::size_t stageRank(WVForcingStage stage) noexcept { return static_cast<std::size_t>(stage); }
-
-WVForcingStage requiredStage(WVForcingKind kind) noexcept {
-    switch (kind) {
-        case WVForcingKind::nonlinearAdvection:
-        case WVForcingKind::bottomFrictionQuadratic:
-            return WVForcingStage::spatial;
-        case WVForcingKind::adaptiveDamping:
-        case WVForcingKind::pseudoTopographicWaveGeneration:
-        case WVForcingKind::betaPlanePVAdvection:
-            return WVForcingStage::spectral;
-        case WVForcingKind::fixedAmplitude:
-            return WVForcingStage::spectralAmplitude;
-        default:
-            return WVForcingStage::spectral;
-    }
-}
-
-bool supportedKind(WVForcingKind kind) noexcept {
-    return kind == WVForcingKind::nonlinearAdvection || kind == WVForcingKind::adaptiveDamping ||
-        kind == WVForcingKind::fixedAmplitude || kind == WVForcingKind::bottomFrictionQuadratic ||
-        kind == WVForcingKind::pseudoTopographicWaveGeneration || kind == WVForcingKind::betaPlanePVAdvection;
-}
 
 template <typename T>
 std::size_t vectorBytes(const std::vector<T>& values) noexcept { return values.capacity()*sizeof(T); }
@@ -58,7 +36,7 @@ double vanishingFilter(double value, double cutoff, double maximum) noexcept {
 }
 
 WVComplex64 normalizedTerrainCoefficient(
-    const WVPseudoTopographicWaveGenerationRecord& record,
+    const WVPseudoTopographicConfiguration& record,
     std::int64_t kMode,
     std::int64_t lMode) {
     const auto Nx = record.topographicShape.rows;
@@ -206,21 +184,303 @@ private:
 
 } // namespace
 
-struct WVConstantStratificationForcingEngine::DerivedForcing {
-    std::size_t entryIndex = 0;
-    WVForcingKind kind = WVForcingKind::nonlinearAdvection;
-    double quadraticDrag = 0.0;
-    std::vector<double> damping;
-    std::vector<WVComplex64> betaA0;
-    std::vector<WVComplex64> responsePlusX;
-    std::vector<WVComplex64> responsePlusY;
-    std::vector<WVComplex64> responseMinusX;
-    std::vector<WVComplex64> responseMinusY;
+namespace {
 
-    std::size_t persistentBytes() const noexcept {
-        return vectorBytes(damping)+vectorBytes(betaA0)+vectorBytes(responsePlusX)+vectorBytes(responsePlusY)+vectorBytes(responseMinusX)+vectorBytes(responseMinusY);
+const std::vector<double>* realValues(const WVPortableTypedRecord& record, const char* name) {
+    const auto* value = record.value(name);
+    return value == nullptr ? nullptr : std::get_if<std::vector<double>>(&value->storage);
+}
+
+const std::vector<std::int64_t>* integerValues(const WVPortableTypedRecord& record, const char* name) {
+    const auto* value = record.value(name);
+    return value == nullptr ? nullptr : std::get_if<std::vector<std::int64_t>>(&value->storage);
+}
+
+const std::vector<std::uint8_t>* booleanValues(const WVPortableTypedRecord& record, const char* name) {
+    const auto* value = record.value(name);
+    return value == nullptr ? nullptr : std::get_if<std::vector<std::uint8_t>>(&value->storage);
+}
+
+const std::vector<std::string>* textValues(const WVPortableTypedRecord& record, const char* name) {
+    const auto* value = record.value(name);
+    return value == nullptr ? nullptr : std::get_if<std::vector<std::string>>(&value->storage);
+}
+
+class ResolvedForcing : public WVForcing {
+public:
+    explicit ResolvedForcing(const WVFrozenForcingEntry& entry)
+        : typeIdentifier_(entry.typeIdentifier), name_(entry.name),
+          contractVersion_(entry.contractVersion), stage_(entry.stage),
+          priority_(entry.priority), ordinal_(entry.ordinal) {}
+    const std::string& typeIdentifier() const noexcept override { return typeIdentifier_; }
+    std::uint32_t contractVersion() const noexcept override { return contractVersion_; }
+    const std::string& name() const noexcept override { return name_; }
+    WVForcingStage stage() const noexcept override { return stage_; }
+    std::uint8_t priority() const noexcept override { return priority_; }
+    std::size_t ordinal() const noexcept override { return ordinal_; }
+    std::size_t persistentBytes() const noexcept override {
+        return sizeof(*this)+metadataDynamicBytes();
     }
+protected:
+    std::size_t metadataDynamicBytes() const noexcept {
+        return typeIdentifier_.capacity()+name_.capacity();
+    }
+    std::string typeIdentifier_;
+    std::string name_;
+    std::uint32_t contractVersion_ = 0;
+    WVForcingStage stage_ = WVForcingStage::spatial;
+    std::uint8_t priority_ = 255;
+    std::size_t ordinal_ = 0;
 };
+
+class NonlinearAdvectionForcing final : public ResolvedForcing {
+public:
+    using ResolvedForcing::ResolvedForcing;
+    bool producesCompleteFlux() const noexcept override { return true; }
+    WVKernelStatus addRightHandSide(WVForcingExecutionContext& context) const override { return context.nonlinearAdvection(); }
+};
+
+class QuadraticBottomFrictionForcing final : public ResolvedForcing {
+public:
+    QuadraticBottomFrictionForcing(WVFrozenForcingEntry entry, double value) : ResolvedForcing(std::move(entry)), drag_(value) {}
+    bool requiresPhysicalFields() const noexcept override { return true; }
+    bool requiresForcingFields() const noexcept override { return true; }
+    bool producesCompleteFlux() const noexcept override { return true; }
+    WVKernelStatus addRightHandSide(WVForcingExecutionContext& context) const override { return context.quadraticBottomFriction(drag_); }
+    std::size_t persistentBytes() const noexcept override { return sizeof(*this)+metadataDynamicBytes(); }
+private:
+    double drag_ = 0.0;
+};
+
+class AdaptiveDampingForcing final : public ResolvedForcing {
+public:
+    AdaptiveDampingForcing(WVFrozenForcingEntry entry, std::vector<double> values) : ResolvedForcing(std::move(entry)), damping_(std::move(values)) {}
+    bool requiresPhysicalFields() const noexcept override { return true; }
+    std::size_t persistentBytes() const noexcept override { return sizeof(*this)+metadataDynamicBytes()+vectorBytes(damping_); }
+    WVKernelStatus addRightHandSide(WVForcingExecutionContext& context) const override { return context.adaptiveDamping(damping_); }
+private:
+    std::vector<double> damping_;
+};
+
+class BetaPlaneForcing final : public ResolvedForcing {
+public:
+    BetaPlaneForcing(WVFrozenForcingEntry entry, std::vector<WVComplex64> values) : ResolvedForcing(std::move(entry)), betaA0_(std::move(values)) {}
+    std::size_t persistentBytes() const noexcept override { return sizeof(*this)+metadataDynamicBytes()+vectorBytes(betaA0_); }
+    WVKernelStatus addRightHandSide(WVForcingExecutionContext& context) const override { return context.betaPlaneAdvection(betaA0_); }
+private:
+    std::vector<WVComplex64> betaA0_;
+};
+
+class PseudoTopographicForcing final : public ResolvedForcing {
+public:
+    PseudoTopographicForcing(WVFrozenForcingEntry entry, WVPseudoTopographicOperators values) : ResolvedForcing(std::move(entry)), operators_(std::move(values)) {}
+    std::size_t persistentBytes() const noexcept override {
+        return sizeof(*this)+metadataDynamicBytes()+vectorBytes(operators_.configuration.topographicHeight)+operators_.configuration.darwinSymbol.capacity()+vectorBytes(operators_.responsePlusX)+vectorBytes(operators_.responsePlusY)+vectorBytes(operators_.responseMinusX)+vectorBytes(operators_.responseMinusY);
+    }
+    WVKernelStatus addRightHandSide(WVForcingExecutionContext& context) const override { return context.pseudoTopographicGeneration(operators_); }
+private:
+    WVPseudoTopographicOperators operators_;
+};
+
+class FixedAmplitudeForcing final : public ResolvedForcing {
+public:
+    FixedAmplitudeForcing(WVFrozenForcingEntry entry, WVFixedAmplitudeConfiguration values) : ResolvedForcing(std::move(entry)), values_(std::move(values)) {}
+    WVKernelStatus addRightHandSide(WVForcingExecutionContext& context) const override { context.zeroSelectedTendencies(values_); return WVKernelStatus::ok(); }
+    WVStateConstraintResult applyConstraint(WVMutableCoefficients& coefficients) const override {
+        std::size_t modified = 0;
+        const auto restore = [&modified](WVComplexView destination, const auto& indices, const auto& values) {
+            for (std::size_t index = 0; index < indices.size(); ++index) {
+                const auto previous = destination.data[indices[index]];
+                if (previous.real != values[index].real || previous.imag != values[index].imag) ++modified;
+                destination.data[indices[index]] = values[index];
+            }
+        };
+        restore(coefficients.Ap,values_.ApIndices,values_.ApValues);
+        restore(coefficients.Am,values_.AmIndices,values_.AmValues);
+        restore(coefficients.A0,values_.A0Indices,values_.A0Values);
+        return {WVKernelStatus::ok(),modified,false};
+    }
+    std::size_t constraintWriteCount() const noexcept override { return values_.ApIndices.size()+values_.AmIndices.size()+values_.A0Indices.size(); }
+    std::size_t persistentBytes() const noexcept override {
+        return sizeof(*this)+metadataDynamicBytes()+vectorBytes(values_.ApIndices)+vectorBytes(values_.ApValues)+vectorBytes(values_.AmIndices)+vectorBytes(values_.AmValues)+vectorBytes(values_.A0Indices)+vectorBytes(values_.A0Values);
+    }
+private:
+    WVFixedAmplitudeConfiguration values_;
+};
+
+std::vector<double> adaptiveDampingOperator(const WVTransformConstantStratificationDescriptor& descriptor, WVKernelStatus& status) {
+    const auto& configuration = descriptor.configuration();
+    const auto& modes = descriptor.verticalModes();
+    const double f2 = modes.coriolisFrequency*modes.coriolisFrequency;
+    if (!(f2 > 0.0)) { status = {WVKernelStatusCode::unsupportedOperation,"Adaptive damping requires nonzero Coriolis frequency."}; return {}; }
+    double maximumComponent = 0.0;
+    for (const auto& horizontal : descriptor.fourierModes()) maximumComponent = std::max(maximumComponent,std::max(std::abs(horizontal.k),std::abs(horizontal.l)));
+    if (!(maximumComponent > 0.0)) { status = {WVKernelStatusCode::invalidConfiguration,"Adaptive damping requires resolved horizontal wavenumbers."}; return {}; }
+    const double effectiveResolution = pi/maximumComponent;
+    const double dklMinimum = std::min(2.0*pi/configuration.Lx,2.0*pi/configuration.Ly);
+    const double klCutoff = dklMinimum*std::pow(maximumComponent/dklMinimum,0.75);
+    const double jMaximum = static_cast<double>(configuration.Nj-1);
+    const double jCutoff = configuration.Nj > 2 ? std::pow(jMaximum,0.75) : 0.0;
+    const double prefactorXY = effectiveResolution/(pi*pi);
+    const double referenceLr2 = configuration.g*modes.h0.back()/f2;
+    const double prefactorZ = (pi*pi*referenceLr2/(effectiveResolution*effectiveResolution))*prefactorXY;
+    std::vector<double> damping(descriptor.spectralShape().elementCount());
+    for (std::size_t iMode = 0; iMode < descriptor.Nkl(); ++iMode) {
+        const auto& horizontal = descriptor.fourierModes()[iMode];
+        const double Qkl = vanishingFilter(horizontal.Kh,klCutoff,maximumComponent);
+        for (std::size_t iJ = 0; iJ < configuration.Nj; ++iJ) {
+            const auto index = iJ+configuration.Nj*iMode;
+            const double Qj = configuration.Nj > 2 ? vanishingFilter(modes.j[iJ],jCutoff,jMaximum) : 1.0;
+            const double Lr2Inverse = iJ == 0 ? 0.0 : f2/(configuration.g*modes.h0[iJ]);
+            damping[index] = -prefactorXY*Qkl*horizontal.Kh*horizontal.Kh-prefactorZ*Qj*Lr2Inverse;
+        }
+    }
+    status = WVKernelStatus::ok();
+    return damping;
+}
+
+bool emptyConfiguration(const WVFrozenForcingEntry& entry) { return entry.configuration.values.empty(); }
+
+} // namespace
+
+namespace detail {
+
+WVKernelStatus createNonlinearAdvectionForcing(
+    const WVFrozenForcingEntry& entry,
+    const WVTransformConstantStratificationDescriptor&, bool,
+    std::unique_ptr<WVForcing>& forcing) {
+    if (!emptyConfiguration(entry)) return {WVKernelStatusCode::invalidConfiguration,"Nonlinear advection does not accept configuration values."};
+    forcing = std::make_unique<NonlinearAdvectionForcing>(entry);
+    return WVKernelStatus::ok();
+}
+
+WVKernelStatus createAdaptiveDampingForcing(
+    const WVFrozenForcingEntry& entry,
+    const WVTransformConstantStratificationDescriptor& descriptor, bool,
+    std::unique_ptr<WVForcing>& forcing) {
+    if (!emptyConfiguration(entry)) return {WVKernelStatusCode::invalidConfiguration,"Adaptive damping does not accept configuration values."};
+    WVKernelStatus status;
+    auto damping = adaptiveDampingOperator(descriptor,status);
+    if (!status) return status;
+    forcing = std::make_unique<AdaptiveDampingForcing>(entry,std::move(damping));
+    return WVKernelStatus::ok();
+}
+
+WVKernelStatus createQuadraticBottomFriction(
+    const WVFrozenForcingEntry& entry,
+    const WVTransformConstantStratificationDescriptor& descriptor, bool,
+    std::unique_ptr<WVForcing>& forcing) {
+    const auto* values = realValues(entry.configuration,"Cd");
+    if (values == nullptr || values->size() != 1 || !std::isfinite(values->front()) || values->front() < 0.0) return {WVKernelStatusCode::invalidConfiguration,"Quadratic drag coefficient must be one finite nonnegative scalar."};
+    const auto& configuration = descriptor.configuration();
+    const double dz = configuration.Lz/static_cast<double>(configuration.Nz-1);
+    forcing = std::make_unique<QuadraticBottomFrictionForcing>(entry,values->front()/(0.5*dz));
+    return WVKernelStatus::ok();
+}
+
+WVKernelStatus createFixedAmplitudeForcing(
+    const WVFrozenForcingEntry& entry,
+    const WVTransformConstantStratificationDescriptor& descriptor, bool,
+    std::unique_ptr<WVForcing>& forcing) {
+    WVFixedAmplitudeConfiguration configuration;
+    const auto decode = [&](const char* indexName, const char* realName, const char* imagName, auto& indices, auto& values) -> bool {
+        const auto* sourceIndices = integerValues(entry.configuration,indexName);
+        const auto* real = realValues(entry.configuration,realName);
+        const auto* imag = realValues(entry.configuration,imagName);
+        if (sourceIndices == nullptr && real == nullptr && imag == nullptr) return true;
+        if (sourceIndices == nullptr || real == nullptr || imag == nullptr || sourceIndices->size() != real->size() || real->size() != imag->size()) return false;
+        std::set<std::size_t> unique;
+        for (std::size_t index = 0; index < sourceIndices->size(); ++index) {
+            if ((*sourceIndices)[index] < 0 || static_cast<std::size_t>((*sourceIndices)[index]) >= descriptor.spectralShape().elementCount() || !std::isfinite((*real)[index]) || !std::isfinite((*imag)[index])) return false;
+            const auto converted = static_cast<std::size_t>((*sourceIndices)[index]);
+            if (!unique.insert(converted).second) return false;
+            indices.push_back(converted);
+            values.push_back({(*real)[index],(*imag)[index]});
+        }
+        return true;
+    };
+    if (!decode("ApIndices","ApValuesReal","ApValuesImag",configuration.ApIndices,configuration.ApValues) ||
+        !decode("AmIndices","AmValuesReal","AmValuesImag",configuration.AmIndices,configuration.AmValues) ||
+        !decode("A0Indices","A0ValuesReal","A0ValuesImag",configuration.A0Indices,configuration.A0Values)) return {WVKernelStatusCode::invalidConfiguration,"Fixed-amplitude configuration is malformed or outside the coefficient shape."};
+    forcing = std::make_unique<FixedAmplitudeForcing>(entry,std::move(configuration));
+    return WVKernelStatus::ok();
+}
+
+WVKernelStatus createBetaPlaneForcing(
+    const WVFrozenForcingEntry& entry,
+    const WVTransformConstantStratificationDescriptor& descriptor, bool,
+    std::unique_ptr<WVForcing>& forcing) {
+    if (!emptyConfiguration(entry)) return {WVKernelStatusCode::invalidConfiguration,"Beta-plane advection does not accept configuration values."};
+    const auto& configuration = descriptor.configuration();
+    const auto& modes = descriptor.verticalModes();
+    const double beta = 2.0*configuration.rotationRate*std::cos(configuration.latitude*pi/180.0)/configuration.planetaryRadius;
+    std::vector<WVComplex64> betaA0(descriptor.spectralShape().elementCount());
+    for (std::size_t iMode = 0; iMode < descriptor.Nkl(); ++iMode)
+        for (std::size_t iJ = 0; iJ < configuration.Nj; ++iJ) {
+            const auto index = iJ+configuration.Nj*iMode;
+            betaA0[index] = iMode == 0 ? WVComplex64{} : multiply(modes.VA0Field[index],-beta/modes.Fg[iJ]);
+        }
+    forcing = std::make_unique<BetaPlaneForcing>(entry,std::move(betaA0));
+    return WVKernelStatus::ok();
+}
+
+WVKernelStatus createPseudoTopographicForcing(
+    const WVFrozenForcingEntry& entry,
+    const WVTransformConstantStratificationDescriptor& descriptor,
+    bool hasAdaptiveDamping, std::unique_ptr<WVForcing>& forcing) {
+    WVPseudoTopographicOperators operators;
+    auto& record = operators.configuration;
+    const auto& configuration = descriptor.configuration();
+    const auto& modes = descriptor.verticalModes();
+    const auto* height = realValues(entry.configuration,"topographicHeight");
+    const auto* velocityReal = realValues(entry.configuration,"barotropicVelocityAmplitudeReal");
+    const auto* velocityImag = realValues(entry.configuration,"barotropicVelocityAmplitudeImag");
+    const auto* frequency = realValues(entry.configuration,"frequency");
+    const auto* ramp = realValues(entry.configuration,"rampDuration");
+    const auto* start = realValues(entry.configuration,"startTime");
+    const auto* avoid = booleanValues(entry.configuration,"shouldAvoidAdaptiveDamping");
+    const auto* maximumK = realValues(entry.configuration,"maximumForcedHorizontalWavenumber");
+    const auto* maximumJ = realValues(entry.configuration,"maximumForcedVerticalMode");
+    const auto* symbol = textValues(entry.configuration,"darwinSymbol");
+    if (height == nullptr || height->size() != configuration.Nx*configuration.Ny || velocityReal == nullptr || velocityImag == nullptr || velocityReal->size() != 2 || velocityImag->size() != 2 || frequency == nullptr || frequency->size() != 1 || ramp == nullptr || ramp->size() != 1 || start == nullptr || start->size() != 1 || avoid == nullptr || avoid->size() != 1 || maximumK == nullptr || maximumK->size() != 1 || maximumJ == nullptr || maximumJ->size() != 1) return {WVKernelStatusCode::invalidConfiguration,"Pseudo-topographic forcing configuration is incomplete."};
+    record.topographicShape = {configuration.Nx,configuration.Ny};
+    record.topographicHeight = *height;
+    record.barotropicVelocityAmplitude = {{{(*velocityReal)[0],(*velocityImag)[0]},{(*velocityReal)[1],(*velocityImag)[1]}}};
+    record.frequency = frequency->front(); record.rampDuration = ramp->front(); record.startTime = start->front();
+    record.shouldAvoidAdaptiveDamping = avoid->front() != 0;
+    record.maximumForcedHorizontalWavenumber = maximumK->front(); record.maximumForcedVerticalMode = maximumJ->front();
+    record.darwinSymbol = symbol == nullptr || symbol->empty() ? std::string{} : symbol->front();
+    static const std::set<std::string> validSymbols = {"","M2","S2","N2","K1","O1"};
+    if (!std::isfinite(record.frequency) || record.frequency <= 0.0 || !std::isfinite(record.rampDuration) || record.rampDuration < 0.0 || !std::isfinite(record.startTime) || std::isnan(record.maximumForcedHorizontalWavenumber) || record.maximumForcedHorizontalWavenumber < 0.0 || std::isnan(record.maximumForcedVerticalMode) || record.maximumForcedVerticalMode < 0.0 || validSymbols.count(record.darwinSymbol) == 0) return {WVKernelStatusCode::invalidConfiguration,"Pseudo-topographic forcing values are invalid."};
+    WVKernelStatus dampingStatus = WVKernelStatus::ok();
+    const auto damping = hasAdaptiveDamping && record.shouldAvoidAdaptiveDamping ? adaptiveDampingOperator(descriptor,dampingStatus) : std::vector<double>{};
+    if (!dampingStatus) return dampingStatus;
+    const auto count = descriptor.spectralShape().elementCount();
+    operators.responsePlusX.assign(count,{}); operators.responsePlusY.assign(count,{}); operators.responseMinusX.assign(count,{}); operators.responseMinusY.assign(count,{});
+    for (std::size_t iMode = 0; iMode < descriptor.Nkl(); ++iMode) {
+        const auto& horizontal = descriptor.fourierModes()[iMode];
+        const auto terrain = normalizedTerrainCoefficient(record,horizontal.kMode,horizontal.lMode);
+        const auto dHdx = multiply(WVComplex64{-terrain.imag,terrain.real},horizontal.k);
+        const auto dHdy = multiply(WVComplex64{-terrain.imag,terrain.real},horizontal.l);
+        for (std::size_t iJ = 1; iJ < configuration.Nj; ++iJ) {
+            const auto index = iJ+configuration.Nj*iMode;
+            if (!(horizontal.Kh > 0.0) || horizontal.Kh > record.maximumForcedHorizontalWavenumber || modes.j[iJ] > record.maximumForcedVerticalMode || (!damping.empty() && damping[index] != 0.0)) continue;
+            const double NAp = modes.NApField[index]/modes.gWaveScale[iJ];
+            const double hpm = -NAp*modes.omega[index]/horizontal.Kh;
+            if (!(2.0*hpm > 0.0)) continue;
+            const WVComplex64 piPlus{configuration.g*modes.fWaveScale[index]*NAp,0.0};
+            const WVComplex64 piMinus{-piPlus.real,0.0};
+            operators.responsePlusX[index] = multiply(multiply(conjugate(piPlus),dHdx),1.0/(2.0*hpm));
+            operators.responsePlusY[index] = multiply(multiply(conjugate(piPlus),dHdy),1.0/(2.0*hpm));
+            operators.responseMinusX[index] = multiply(multiply(conjugate(piMinus),dHdx),1.0/(2.0*hpm));
+            operators.responseMinusY[index] = multiply(multiply(conjugate(piMinus),dHdy),1.0/(2.0*hpm));
+        }
+    }
+    forcing = std::make_unique<PseudoTopographicForcing>(entry,std::move(operators));
+    return WVKernelStatus::ok();
+}
+
+} // namespace detail
 
 WVConstantStratificationForcingEngine::~WVConstantStratificationForcingEngine() = default;
 
@@ -235,45 +495,14 @@ WVKernelStatus WVConstantStratificationForcingEngine::validateSchedule(
     if (coefficientShape.rows != configuration.Nj || coefficientShape.rows == 0 || coefficientShape.columns == 0) {
         return {WVKernelStatusCode::invalidShape,"Frozen forcing coefficient shape is incompatible with the model configuration."};
     }
-    const auto count = coefficientShape.elementCount();
     std::set<std::string> names;
     for (const auto& entry : schedule.entries) {
         const auto* registration = WVForcingFactoryRegistry::registration(entry.typeIdentifier);
-        if (registration == nullptr || !registration->isSupported || registration->contractVersion != WVPortablePairContractVersion || registration->operation != entry.kind) return {WVKernelStatusCode::unsupportedOperation,"The frozen schedule has no matching paired C++ forcing registration."};
-        if (!supportedKind(entry.kind)) return {WVKernelStatusCode::unsupportedOperation,"The frozen schedule contains an unsupported forcing class."};
-        if (entry.stage != requiredStage(entry.kind)) return {WVKernelStatusCode::invalidConfiguration,"A forcing record is assigned to the wrong execution stage."};
+        if (registration == nullptr || !registration->isSupported || !registration->factory || registration->contractVersion != entry.contractVersion) return {WVKernelStatusCode::unsupportedOperation,"The frozen schedule has no matching paired C++ forcing implementation."};
+        if (entry.stage != registration->stage) return {WVKernelStatusCode::invalidConfiguration,"A forcing record is assigned to the wrong execution stage."};
         if (entry.name.empty() || !names.insert(entry.name).second) return {WVKernelStatusCode::invalidConfiguration,"Forcing names must be nonempty and unique."};
-        if (entry.kind == WVForcingKind::nonlinearAdvection && !std::holds_alternative<WVNonlinearAdvectionRecord>(entry.payload)) return {WVKernelStatusCode::invalidConfiguration,"Nonlinear-advection payload type mismatch."};
-        if (entry.kind == WVForcingKind::adaptiveDamping) {
-            if (!std::holds_alternative<WVAdaptiveDampingRecord>(entry.payload)) return {WVKernelStatusCode::invalidConfiguration,"Adaptive-damping payload type mismatch."};
-            const double latitude = configuration.latitude*pi/180.0;
-            if (2.0*configuration.rotationRate*std::sin(latitude) == 0.0) return {WVKernelStatusCode::unsupportedOperation,"Adaptive damping requires nonzero Coriolis frequency."};
-        }
-        if (entry.kind == WVForcingKind::betaPlanePVAdvection && !std::holds_alternative<WVBetaPlanePVAdvectionRecord>(entry.payload)) return {WVKernelStatusCode::invalidConfiguration,"Beta-plane payload type mismatch."};
-        if (entry.kind == WVForcingKind::bottomFrictionQuadratic) {
-            if (!std::holds_alternative<WVBottomFrictionQuadraticRecord>(entry.payload)) return {WVKernelStatusCode::invalidConfiguration,"Quadratic-bottom-friction payload type mismatch."};
-            const double Cd = std::get<WVBottomFrictionQuadraticRecord>(entry.payload).Cd;
-            if (!std::isfinite(Cd) || Cd < 0.0) return {WVKernelStatusCode::invalidConfiguration,"Quadratic drag coefficient must be finite and nonnegative."};
-        }
-        if (entry.kind == WVForcingKind::fixedAmplitude) {
-            if (!std::holds_alternative<WVFixedAmplitudeForcingRecord>(entry.payload)) return {WVKernelStatusCode::invalidConfiguration,"Fixed-amplitude payload type mismatch."};
-            const auto& record = std::get<WVFixedAmplitudeForcingRecord>(entry.payload);
-            const auto validFamily = [count](const auto& indices,const auto& values) {
-                if (indices.size() != values.size()) return false;
-                std::set<std::size_t> unique;
-                for (std::size_t index = 0; index < indices.size(); ++index) if (indices[index] >= count || !finite(values[index]) || !unique.insert(indices[index]).second) return false;
-                return true;
-            };
-            if (!validFamily(record.ApIndices,record.ApValues) || !validFamily(record.AmIndices,record.AmValues) || !validFamily(record.A0Indices,record.A0Values)) return {WVKernelStatusCode::invalidConfiguration,"Fixed-amplitude indices and values are incompatible with the coefficient shape."};
-        }
-        if (entry.kind == WVForcingKind::pseudoTopographicWaveGeneration) {
-            if (!std::holds_alternative<WVPseudoTopographicWaveGenerationRecord>(entry.payload)) return {WVKernelStatusCode::invalidConfiguration,"Pseudo-topographic payload type mismatch."};
-            const auto& record = std::get<WVPseudoTopographicWaveGenerationRecord>(entry.payload);
-            if (record.topographicShape.rows != configuration.Nx || record.topographicShape.columns != configuration.Ny || record.topographicHeight.size() != configuration.Nx*configuration.Ny) return {WVKernelStatusCode::invalidShape,"Pseudo-topographic height does not match the horizontal grid."};
-            if (!std::isfinite(record.frequency) || record.frequency <= 0.0 || !std::isfinite(record.rampDuration) || record.rampDuration < 0.0 || !std::isfinite(record.startTime)) return {WVKernelStatusCode::invalidConfiguration,"Pseudo-topographic timing parameters are invalid."};
-            for (const auto value : record.topographicHeight) if (!std::isfinite(value)) return {WVKernelStatusCode::invalidConfiguration,"Pseudo-topographic height must be finite."};
-            for (const auto value : record.barotropicVelocityAmplitude) if (!finite(value)) return {WVKernelStatusCode::invalidConfiguration,"Barotropic velocity amplitude must be finite."};
-        }
+        const auto recordStatus = WVForcingFactoryRegistry::validateConfiguration(entry);
+        if (!recordStatus) return recordStatus;
     }
     return WVKernelStatus::ok();
 }
@@ -287,6 +516,8 @@ WVKernelStatus WVConstantStratificationForcingEngine::create(
     try {
         auto candidate = std::unique_ptr<WVConstantStratificationForcingEngine>(new WVConstantStratificationForcingEngine());
         auto status = WVTransformConstantStratificationKernel::create(configuration,std::move(fftEngine),candidate->kernel_);
+        if (!status) return status;
+        status = validateSchedule(configuration,schedule,candidate->kernel_->descriptor().spectralShape());
         if (!status) return status;
         status = candidate->initialize(schedule);
         if (!status) return status;
@@ -303,154 +534,53 @@ WVKernelStatus WVConstantStratificationForcingEngine::initialize(const WVFrozenF
     if (schedule.profileIdentifier != WVForcingScheduleProfileIdentifier || schedule.profileVersion != WVForcingScheduleProfileVersion) {
         return {WVKernelStatusCode::unsupportedOperation,"Unsupported frozen forcing schedule profile."};
     }
-    schedule_ = schedule;
-    std::stable_sort(schedule_.entries.begin(),schedule_.entries.end(),[](const auto& left,const auto& right) {
-        if (stageRank(left.stage) != stageRank(right.stage)) return stageRank(left.stage) < stageRank(right.stage);
-        if (left.priority != right.priority) return left.priority < right.priority;
-        return left.ordinal < right.ordinal;
+    std::vector<const WVFrozenForcingEntry*> entries;
+    entries.reserve(schedule.entries.size());
+    for (const auto& entry : schedule.entries) entries.push_back(&entry);
+    std::stable_sort(entries.begin(),entries.end(),[](const auto* left,const auto* right) {
+        if (stageRank(left->stage) != stageRank(right->stage)) return stageRank(left->stage) < stageRank(right->stage);
+        if (left->priority != right->priority) return left->priority < right->priority;
+        return left->ordinal < right->ordinal;
     });
 
     std::set<std::string> names;
     const auto& descriptor = kernel_->descriptor();
-    const auto shape = descriptor.spectralShape();
-    const auto count = shape.elementCount();
+    const auto count = descriptor.spectralShape().elementCount();
     const auto& configuration = descriptor.configuration();
-    const auto& modes = descriptor.verticalModes();
-    bool hasAdaptiveDamping = false;
-    std::vector<double> adaptiveDamping;
+    const bool hasAdaptiveDamping = std::any_of(
+        entries.begin(), entries.end(), [](const auto* entry) {
+            const auto* registration = WVForcingFactoryRegistry::registration(entry->typeIdentifier);
+            return registration != nullptr && registration->providesAdaptiveDamping;
+        });
 
-    for (std::size_t entryIndex = 0; entryIndex < schedule_.entries.size(); ++entryIndex) {
-        const auto& entry = schedule_.entries[entryIndex];
-        if (!supportedKind(entry.kind)) return {WVKernelStatusCode::unsupportedOperation,"The frozen schedule contains an unsupported forcing class."};
-        if (entry.stage != requiredStage(entry.kind)) return {WVKernelStatusCode::invalidConfiguration,"A forcing record is assigned to the wrong execution stage."};
+    for (const auto* entryPointer : entries) {
+        const auto& entry = *entryPointer;
         if (entry.name.empty() || !names.insert(entry.name).second) return {WVKernelStatusCode::invalidConfiguration,"Forcing names must be nonempty and unique."};
-
-        DerivedForcing derived;
-        derived.entryIndex = entryIndex;
-        derived.kind = entry.kind;
+        std::unique_ptr<WVForcing> resolved;
+        auto status = WVForcingFactoryRegistry::create(entry,descriptor,hasAdaptiveDamping,resolved);
+        if (!status) return status;
+        if (!resolved || resolved->stage() != entry.stage) return {WVKernelStatusCode::invalidConfiguration,"A forcing factory returned an incompatible implementation."};
         if (entry.stage == WVForcingStage::spatial) ++metrics_.resolvedSpatialCount;
         else if (entry.stage == WVForcingStage::spectral) ++metrics_.resolvedSpectralCount;
         else ++metrics_.resolvedAmplitudeCount;
-
-        if (entry.kind == WVForcingKind::nonlinearAdvection) {
-            if (!std::holds_alternative<WVNonlinearAdvectionRecord>(entry.payload)) return {WVKernelStatusCode::invalidConfiguration,"Nonlinear-advection payload type mismatch."};
-        } else if (entry.kind == WVForcingKind::bottomFrictionQuadratic) {
-            if (!std::holds_alternative<WVBottomFrictionQuadraticRecord>(entry.payload)) return {WVKernelStatusCode::invalidConfiguration,"Quadratic-bottom-friction payload type mismatch."};
-            const double Cd = std::get<WVBottomFrictionQuadraticRecord>(entry.payload).Cd;
-            if (!std::isfinite(Cd) || Cd < 0.0) return {WVKernelStatusCode::invalidConfiguration,"Quadratic drag coefficient must be finite and nonnegative."};
-            const double dz = configuration.Lz/static_cast<double>(configuration.Nz-1);
-            derived.quadraticDrag = Cd/(0.5*dz);
-        } else if (entry.kind == WVForcingKind::adaptiveDamping) {
-            if (!std::holds_alternative<WVAdaptiveDampingRecord>(entry.payload)) return {WVKernelStatusCode::invalidConfiguration,"Adaptive-damping payload type mismatch."};
-            const double f2 = modes.coriolisFrequency*modes.coriolisFrequency;
-            if (!(f2 > 0.0)) return {WVKernelStatusCode::unsupportedOperation,"Adaptive damping requires nonzero Coriolis frequency."};
-            double maximumComponent = 0.0;
-            for (const auto& horizontal : descriptor.fourierModes()) maximumComponent = std::max(maximumComponent,std::max(std::abs(horizontal.k),std::abs(horizontal.l)));
-            if (!(maximumComponent > 0.0)) return {WVKernelStatusCode::invalidConfiguration,"Adaptive damping requires resolved horizontal wavenumbers."};
-            const double effectiveResolution = pi/maximumComponent;
-            const double klMaximum = maximumComponent;
-            const double dklMinimum = std::min(2.0*pi/configuration.Lx,2.0*pi/configuration.Ly);
-            const double klCutoff = dklMinimum*std::pow(klMaximum/dklMinimum,0.75);
-            const double jMaximum = static_cast<double>(configuration.Nj-1);
-            const double jCutoff = configuration.Nj > 2 ? std::pow(jMaximum,0.75) : 0.0;
-            const double prefactorXY = effectiveResolution/(pi*pi);
-            const double referenceLr2 = configuration.g*modes.h0.back()/f2;
-            const double prefactorZ = (pi*pi*referenceLr2/(effectiveResolution*effectiveResolution))*prefactorXY;
-            derived.damping.resize(count);
-            for (std::size_t iMode = 0; iMode < descriptor.Nkl(); ++iMode) {
-                const auto& horizontal = descriptor.fourierModes()[iMode];
-                const double Qkl = vanishingFilter(horizontal.Kh,klCutoff,klMaximum);
-                for (std::size_t iJ = 0; iJ < configuration.Nj; ++iJ) {
-                    const auto index = iJ+configuration.Nj*iMode;
-                    const double Qj = configuration.Nj > 2 ? vanishingFilter(modes.j[iJ],jCutoff,jMaximum) : 1.0;
-                    const double Lr2Inverse = iJ == 0 ? 0.0 : f2/(configuration.g*modes.h0[iJ]);
-                    derived.damping[index] = -prefactorXY*Qkl*horizontal.Kh*horizontal.Kh-prefactorZ*Qj*Lr2Inverse;
-                }
-            }
-            hasAdaptiveDamping = true;
-            adaptiveDamping = derived.damping;
-        } else if (entry.kind == WVForcingKind::fixedAmplitude) {
-            if (!std::holds_alternative<WVFixedAmplitudeForcingRecord>(entry.payload)) return {WVKernelStatusCode::invalidConfiguration,"Fixed-amplitude payload type mismatch."};
-            const auto& record = std::get<WVFixedAmplitudeForcingRecord>(entry.payload);
-            const auto validate = [count](const auto& indices,const auto& values) {
-                if (indices.size() != values.size()) return false;
-                std::set<std::size_t> unique;
-                for (std::size_t index = 0; index < indices.size(); ++index) if (indices[index] >= count || !finite(values[index]) || !unique.insert(indices[index]).second) return false;
-                return true;
-            };
-            if (!validate(record.ApIndices,record.ApValues) || !validate(record.AmIndices,record.AmValues) || !validate(record.A0Indices,record.A0Values)) {
-                return {WVKernelStatusCode::invalidConfiguration,"Fixed-amplitude indices and values are incompatible with the coefficient shape."};
-            }
-        } else if (entry.kind == WVForcingKind::betaPlanePVAdvection) {
-            if (!std::holds_alternative<WVBetaPlanePVAdvectionRecord>(entry.payload)) return {WVKernelStatusCode::invalidConfiguration,"Beta-plane payload type mismatch."};
-            const double beta = 2.0*configuration.rotationRate*std::cos(configuration.latitude*pi/180.0)/configuration.planetaryRadius;
-            derived.betaA0.resize(count);
-            for (std::size_t iMode = 0; iMode < descriptor.Nkl(); ++iMode) {
-                for (std::size_t iJ = 0; iJ < configuration.Nj; ++iJ) {
-                    const auto index = iJ+configuration.Nj*iMode;
-                    const auto value = modes.VA0Field[index];
-                    derived.betaA0[index] = iMode == 0 ? WVComplex64{} : multiply(value,-beta/modes.Fg[iJ]);
-                }
-            }
-        } else if (entry.kind == WVForcingKind::pseudoTopographicWaveGeneration) {
-            if (!std::holds_alternative<WVPseudoTopographicWaveGenerationRecord>(entry.payload)) return {WVKernelStatusCode::invalidConfiguration,"Pseudo-topographic payload type mismatch."};
-            const auto& record = std::get<WVPseudoTopographicWaveGenerationRecord>(entry.payload);
-            if (record.topographicShape.rows != configuration.Nx || record.topographicShape.columns != configuration.Ny || record.topographicHeight.size() != configuration.Nx*configuration.Ny) {
-                return {WVKernelStatusCode::invalidShape,"Pseudo-topographic height does not match the horizontal grid."};
-            }
-            if (!std::isfinite(record.frequency) || record.frequency <= 0.0 || !std::isfinite(record.rampDuration) || record.rampDuration < 0.0 || !std::isfinite(record.startTime)) {
-                return {WVKernelStatusCode::invalidConfiguration,"Pseudo-topographic timing parameters are invalid."};
-            }
-            for (const auto value : record.topographicHeight) if (!std::isfinite(value)) return {WVKernelStatusCode::invalidConfiguration,"Pseudo-topographic height must be finite."};
-            for (const auto value : record.barotropicVelocityAmplitude) if (!finite(value)) return {WVKernelStatusCode::invalidConfiguration,"Barotropic velocity amplitude must be finite."};
-            derived.responsePlusX.assign(count,{}); derived.responsePlusY.assign(count,{});
-            derived.responseMinusX.assign(count,{}); derived.responseMinusY.assign(count,{});
-            for (std::size_t iMode = 0; iMode < descriptor.Nkl(); ++iMode) {
-                const auto& horizontal = descriptor.fourierModes()[iMode];
-                const auto terrain = normalizedTerrainCoefficient(record,horizontal.kMode,horizontal.lMode);
-                const auto dHdx = multiply(WVComplex64{-terrain.imag,terrain.real},horizontal.k);
-                const auto dHdy = multiply(WVComplex64{-terrain.imag,terrain.real},horizontal.l);
-                for (std::size_t iJ = 1; iJ < configuration.Nj; ++iJ) {
-                    const auto index = iJ+configuration.Nj*iMode;
-                    if (!(horizontal.Kh > 0.0) || horizontal.Kh > record.maximumForcedHorizontalWavenumber || modes.j[iJ] > record.maximumForcedVerticalMode) continue;
-                    if (record.shouldAvoidAdaptiveDamping && hasAdaptiveDamping && adaptiveDamping[index] != 0.0) continue;
-                    const double NAp = modes.NApField[index]/modes.gWaveScale[iJ];
-                    const double bottomF = modes.fWaveScale[index];
-                    const double hpm = -NAp*modes.omega[index]/horizontal.Kh;
-                    const double energyFactor = 2.0*hpm;
-                    if (!(energyFactor > 0.0)) continue;
-                    const WVComplex64 piPlus{configuration.g*bottomF*NAp,0.0};
-                    const WVComplex64 piMinus{-piPlus.real,0.0};
-                    derived.responsePlusX[index] = multiply(multiply(conjugate(piPlus),dHdx),1.0/energyFactor);
-                    derived.responsePlusY[index] = multiply(multiply(conjugate(piPlus),dHdy),1.0/energyFactor);
-                    derived.responseMinusX[index] = multiply(multiply(conjugate(piMinus),dHdx),1.0/energyFactor);
-                    derived.responseMinusY[index] = multiply(multiply(conjugate(piMinus),dHdy),1.0/energyFactor);
-                }
-            }
-        }
-        metrics_.derivedOperatorBytes += derived.persistentBytes();
-        derivedForcing_.push_back(std::move(derived));
+        metrics_.derivedOperatorBytes += resolved->persistentBytes();
+        forcing_.push_back(std::move(resolved));
     }
 
     std::ostringstream identifier;
     identifier << WVForcingScheduleProfileIdentifier << ':';
-    for (std::size_t index = 0; index < schedule_.entries.size(); ++index) {
+    for (std::size_t index = 0; index < entries.size(); ++index) {
         if (index != 0) identifier << ',';
-        identifier << schedule_.entries[index].typeIdentifier;
-        metrics_.scheduleBytes += schedule_.entries[index].typeIdentifier.capacity()+schedule_.entries[index].name.capacity()+schedule_.entries[index].sourceGroupPath.capacity();
+        identifier << entries[index]->typeIdentifier;
     }
     scheduleIdentifier_ = identifier.str();
+    metrics_.scheduleBytes = scheduleIdentifier_.capacity()+
+        forcing_.capacity()*sizeof(std::unique_ptr<WVForcing>);
     const auto R = descriptor.spatialShape().elementCount();
     const auto q = configuration.isHydrostatic ? 3U : 4U;
-    const auto requiresPhysicalFields = std::any_of(derivedForcing_.begin(),derivedForcing_.end(),[](const auto& forcing) {
-        return forcing.kind == WVForcingKind::bottomFrictionQuadratic || forcing.kind == WVForcingKind::adaptiveDamping;
-    });
-    const auto requiresForcingFields = std::any_of(derivedForcing_.begin(),derivedForcing_.end(),[](const auto& forcing) {
-        return forcing.kind == WVForcingKind::bottomFrictionQuadratic;
-    });
-    const auto wholeFluxProducerCount = std::count_if(derivedForcing_.begin(),derivedForcing_.end(),[](const auto& forcing) {
-        return forcing.kind == WVForcingKind::nonlinearAdvection || forcing.kind == WVForcingKind::bottomFrictionQuadratic;
-    });
+    const auto requiresPhysicalFields = std::any_of(forcing_.begin(),forcing_.end(),[](const auto& forcing) { return forcing->requiresPhysicalFields(); });
+    const auto requiresForcingFields = std::any_of(forcing_.begin(),forcing_.end(),[](const auto& forcing) { return forcing->requiresForcingFields(); });
+    const auto wholeFluxProducerCount = std::count_if(forcing_.begin(),forcing_.end(),[](const auto& forcing) { return forcing->producesCompleteFlux(); });
     if (requiresPhysicalFields) physicalFields_.resize(4*R);
     if (requiresForcingFields) forcingFields_.resize(q*R);
     if (wholeFluxProducerCount > 1) temporaryFlux_.resize(3*count);
@@ -486,7 +616,7 @@ WVKernelStatus WVConstantStratificationForcingEngine::ensurePhysicalFields(
 }
 
 WVKernelStatus WVConstantStratificationForcingEngine::computeQuadraticBottomFriction(
-    const WVState& state, const DerivedForcing& forcing, WVFlux& flux,
+    const WVState& state, double dragCoefficient, WVFlux& flux,
     WVRealFieldBundleView* externalFields, bool& externalFieldsPrepared) {
     WVRealFieldBundleConstView fields;
     auto status = ensurePhysicalFields(state,fields,externalFields,externalFieldsPrepared);
@@ -499,8 +629,8 @@ WVKernelStatus WVConstantStratificationForcingEngine::computeQuadraticBottomFric
         const double u = fields.data[index];
         const double v = fields.data[R+index];
         const double speed = std::sqrt(u*u+v*v);
-        forcingFields_[index] = -forcing.quadraticDrag*u*speed;
-        forcingFields_[R+index] = -forcing.quadraticDrag*v*speed;
+        forcingFields_[index] = -dragCoefficient*u*speed;
+        forcingFields_[R+index] = -dragCoefficient*v*speed;
     }
     WVMutableCoefficients coefficients{{flux.Fp.data,flux.Fp.shape},{flux.Fm.data,flux.Fm.shape},{flux.F0.data,flux.F0.shape}};
     const auto q = configuration.isHydrostatic ? 3U : 4U;
@@ -509,7 +639,7 @@ WVKernelStatus WVConstantStratificationForcingEngine::computeQuadraticBottomFric
 }
 
 WVKernelStatus WVConstantStratificationForcingEngine::addAdaptiveDamping(
-    const WVState& state, const DerivedForcing& forcing, WVFlux& flux,
+    const WVState& state, const std::vector<double>& damping, WVFlux& flux,
     WVRealFieldBundleView* externalFields, bool& externalFieldsPrepared) {
     WVRealFieldBundleConstView fields;
     const auto status = ensurePhysicalFields(state,fields,externalFields,externalFieldsPrepared);
@@ -517,17 +647,17 @@ WVKernelStatus WVConstantStratificationForcingEngine::addAdaptiveDamping(
     const auto R = kernel_->descriptor().spatialShape().elementCount();
     double maximumSpeed = 0.0;
     for (std::size_t index = 0; index < R; ++index) maximumSpeed = std::max(maximumSpeed,std::sqrt(fields.data[index]*fields.data[index]+fields.data[R+index]*fields.data[R+index]));
-    const auto count = forcing.damping.size();
+    const auto count = damping.size();
     for (std::size_t index = 0; index < count; ++index) {
-        flux.Fp.data[index] = add(flux.Fp.data[index],multiply(state.coefficients.Ap.data[index],maximumSpeed*forcing.damping[index]));
-        flux.Fm.data[index] = add(flux.Fm.data[index],multiply(state.coefficients.Am.data[index],maximumSpeed*forcing.damping[index]));
-        flux.F0.data[index] = add(flux.F0.data[index],multiply(state.coefficients.A0.data[index],maximumSpeed*forcing.damping[index]));
+        flux.Fp.data[index] = add(flux.Fp.data[index],multiply(state.coefficients.Ap.data[index],maximumSpeed*damping[index]));
+        flux.Fm.data[index] = add(flux.Fm.data[index],multiply(state.coefficients.Am.data[index],maximumSpeed*damping[index]));
+        flux.F0.data[index] = add(flux.F0.data[index],multiply(state.coefficients.A0.data[index],maximumSpeed*damping[index]));
     }
     return WVKernelStatus::ok();
 }
 
-WVKernelStatus WVConstantStratificationForcingEngine::addPseudoTopographicGeneration(const WVState& state, const DerivedForcing& forcing, WVFlux& flux) {
-    const auto& record = std::get<WVPseudoTopographicWaveGenerationRecord>(schedule_.entries[forcing.entryIndex].payload);
+WVKernelStatus WVConstantStratificationForcingEngine::addPseudoTopographicGeneration(const WVState& state, const WVPseudoTopographicOperators& operators, WVFlux& flux) {
+    const auto& record = operators.configuration;
     const double elapsed = state.t-record.startTime;
     if (elapsed < 0.0) return WVKernelStatus::ok();
     const double ramp = record.rampDuration == 0.0 || elapsed >= record.rampDuration ? 1.0 : 0.5*(1.0-std::cos(pi*elapsed/record.rampDuration));
@@ -535,20 +665,101 @@ WVKernelStatus WVConstantStratificationForcingEngine::addPseudoTopographicGenera
     const double velocityX = ramp*multiply(record.barotropicVelocityAmplitude[0],oscillation).real;
     const double velocityY = ramp*multiply(record.barotropicVelocityAmplitude[1],oscillation).real;
     const auto& modes = kernel_->descriptor().verticalModes();
-    const auto count = forcing.responsePlusX.size();
+    const auto count = operators.responsePlusX.size();
     for (std::size_t index = 0; index < count; ++index) {
         const double angle = modes.omega[index]*(state.t-state.t0);
         const WVComplex64 phase{std::cos(angle),std::sin(angle)};
-        const auto plus = add(multiply(forcing.responsePlusX[index],velocityX),multiply(forcing.responsePlusY[index],velocityY));
-        const auto minus = add(multiply(forcing.responseMinusX[index],velocityX),multiply(forcing.responseMinusY[index],velocityY));
+        const auto plus = add(multiply(operators.responsePlusX[index],velocityX),multiply(operators.responsePlusY[index],velocityY));
+        const auto minus = add(multiply(operators.responseMinusX[index],velocityX),multiply(operators.responseMinusY[index],velocityY));
         flux.Fp.data[index] = add(flux.Fp.data[index],multiply(plus,conjugate(phase)));
         flux.Fm.data[index] = add(flux.Fm.data[index],multiply(minus,phase));
     }
     return WVKernelStatus::ok();
 }
 
-void WVConstantStratificationForcingEngine::addBetaPlaneAdvection(const WVState& state, const DerivedForcing& forcing, WVFlux& flux) const {
-    for (std::size_t index = 0; index < forcing.betaA0.size(); ++index) flux.F0.data[index] = add(flux.F0.data[index],multiply(forcing.betaA0[index],state.coefficients.A0.data[index]));
+void WVConstantStratificationForcingEngine::addBetaPlaneAdvection(const WVState& state, const std::vector<WVComplex64>& betaA0, WVFlux& flux) const {
+    for (std::size_t index = 0; index < betaA0.size(); ++index) flux.F0.data[index] = add(flux.F0.data[index],multiply(betaA0[index],state.coefficients.A0.data[index]));
+}
+
+WVKernelStatus WVConstantStratificationForcingEngine::addLinearCoefficientTendency(const WVState& state, double rate, WVFlux& flux) const {
+    if (!std::isfinite(rate)) return {WVKernelStatusCode::invalidConfiguration,"Linear coefficient forcing rate must be finite."};
+    const auto count = kernel_->descriptor().spectralShape().elementCount();
+    for (std::size_t index = 0; index < count; ++index) {
+        flux.Fp.data[index] = add(flux.Fp.data[index],multiply(state.coefficients.Ap.data[index],rate));
+        flux.Fm.data[index] = add(flux.Fm.data[index],multiply(state.coefficients.Am.data[index],rate));
+        flux.F0.data[index] = add(flux.F0.data[index],multiply(state.coefficients.A0.data[index],rate));
+    }
+    return WVKernelStatus::ok();
+}
+
+void WVConstantStratificationForcingEngine::initializeOutputWithZeros(WVFlux& flux, bool& outputInitialized) {
+    const auto count = kernel_->descriptor().spectralShape().elementCount();
+    std::fill_n(flux.Fp.data,count,WVComplex64{});
+    std::fill_n(flux.Fm.data,count,WVComplex64{});
+    std::fill_n(flux.F0.data,count,WVComplex64{});
+    metrics_.accumulatorClearElementWrites += 3*count;
+    outputInitialized = true;
+}
+
+WVKernelStatus WVConstantStratificationForcingEngine::addCompleteFlux(
+    const WVState& state, WVFlux& flux, bool& outputInitialized,
+    WVRealFieldBundleView* externalFields, bool& externalFieldsPrepared,
+    bool quadratic, double dragCoefficient) {
+    const auto evaluate = [&](WVFlux& destination) {
+        if (quadratic) return computeQuadraticBottomFriction(state,dragCoefficient,destination,externalFields,externalFieldsPrepared);
+        if (externalFields == nullptr) return kernel_->nonlinearFlux(state,destination);
+        auto status = externalFieldsPrepared ? kernel_->nonlinearFluxUsingAdvectionFields(state,destination,{externalFields->data,externalFields->shape}) : kernel_->nonlinearFluxWithAdvectionFields(state,destination,*externalFields);
+        if (status) externalFieldsPrepared = true;
+        return status;
+    };
+    if (!outputInitialized) {
+        const auto status = evaluate(flux);
+        if (status) outputInitialized = true;
+        return status;
+    }
+    auto temporary = fluxViews(temporaryFlux_,kernel_->descriptor().spectralShape());
+    const auto status = evaluate(temporary);
+    if (!status) return status;
+    addFlux(temporary,flux);
+    metrics_.temporaryAccumulationElementReads += 2*temporaryFlux_.size();
+    metrics_.temporaryAccumulationElementWrites += temporaryFlux_.size();
+    return WVKernelStatus::ok();
+}
+
+WVKernelStatus WVForcingExecutionContext::nonlinearAdvection() {
+    return engine_->addCompleteFlux(*state_,*flux_,*outputInitialized_,externalFields_,*externalFieldsPrepared_,false,0.0);
+}
+
+WVKernelStatus WVForcingExecutionContext::quadraticBottomFriction(double dragCoefficient) {
+    return engine_->addCompleteFlux(*state_,*flux_,*outputInitialized_,externalFields_,*externalFieldsPrepared_,true,dragCoefficient);
+}
+
+WVKernelStatus WVForcingExecutionContext::adaptiveDamping(const std::vector<double>& values) {
+    if (!*outputInitialized_) engine_->initializeOutputWithZeros(*flux_,*outputInitialized_);
+    return engine_->addAdaptiveDamping(*state_,values,*flux_,externalFields_,*externalFieldsPrepared_);
+}
+
+WVKernelStatus WVForcingExecutionContext::pseudoTopographicGeneration(const WVPseudoTopographicOperators& operators) {
+    if (!*outputInitialized_) engine_->initializeOutputWithZeros(*flux_,*outputInitialized_);
+    return engine_->addPseudoTopographicGeneration(*state_,operators,*flux_);
+}
+
+WVKernelStatus WVForcingExecutionContext::betaPlaneAdvection(const std::vector<WVComplex64>& values) {
+    if (!*outputInitialized_) engine_->initializeOutputWithZeros(*flux_,*outputInitialized_);
+    engine_->addBetaPlaneAdvection(*state_,values,*flux_);
+    return WVKernelStatus::ok();
+}
+
+void WVForcingExecutionContext::zeroSelectedTendencies(const WVFixedAmplitudeConfiguration& values) {
+    if (!*outputInitialized_) engine_->initializeOutputWithZeros(*flux_,*outputInitialized_);
+    for (const auto index : values.ApIndices) flux_->Fp.data[index] = {};
+    for (const auto index : values.AmIndices) flux_->Fm.data[index] = {};
+    for (const auto index : values.A0Indices) flux_->F0.data[index] = {};
+}
+
+WVKernelStatus WVForcingExecutionContext::linearCoefficientTendency(double rate) {
+    if (!*outputInitialized_) engine_->initializeOutputWithZeros(*flux_,*outputInitialized_);
+    return engine_->addLinearCoefficientTendency(*state_,rate,*flux_);
 }
 
 WVKernelStatus WVConstantStratificationForcingEngine::nonlinearFlux(const WVState& state, WVFlux& flux) {
@@ -573,74 +784,20 @@ WVKernelStatus WVConstantStratificationForcingEngine::nonlinearFluxImpl(
     executing_ = true;
     struct Guard { bool& value; ~Guard() { value = false; } } guard{executing_};
     clearEvaluationWorkspace();
-    const auto coefficientCount = kernel_->descriptor().spectralShape().elementCount();
     bool outputInitialized = false;
     bool externalFieldsPrepared = false;
-    const auto initializeWithZeros = [&]() {
-        std::fill_n(flux.Fp.data,coefficientCount,WVComplex64{});
-        std::fill_n(flux.Fm.data,coefficientCount,WVComplex64{});
-        std::fill_n(flux.F0.data,coefficientCount,WVComplex64{});
-        metrics_.accumulatorClearElementWrites += 3*coefficientCount;
-        outputInitialized = true;
-    };
-
-    for (const auto& forcing : derivedForcing_) {
-        WVKernelStatus status = WVKernelStatus::ok();
-        if (forcing.kind == WVForcingKind::nonlinearAdvection) {
-            if (!outputInitialized) {
-                status = externalFields == nullptr
-                             ? kernel_->nonlinearFlux(state,flux)
-                             : (externalFieldsPrepared
-                                    ? kernel_->nonlinearFluxUsingAdvectionFields(state,flux,{externalFields->data,externalFields->shape})
-                                    : kernel_->nonlinearFluxWithAdvectionFields(state,flux,*externalFields));
-                if (status && externalFields != nullptr) externalFieldsPrepared = true;
-                if (status) outputInitialized = true;
-            } else {
-                auto temporary = fluxViews(temporaryFlux_,kernel_->descriptor().spectralShape());
-                status = externalFields == nullptr
-                             ? kernel_->nonlinearFlux(state,temporary)
-                             : (externalFieldsPrepared
-                                    ? kernel_->nonlinearFluxUsingAdvectionFields(state,temporary,{externalFields->data,externalFields->shape})
-                                    : kernel_->nonlinearFluxWithAdvectionFields(state,temporary,*externalFields));
-                if (status && externalFields != nullptr) externalFieldsPrepared = true;
-                if (status) {
-                    addFlux(temporary,flux);
-                    metrics_.temporaryAccumulationElementReads += 2*temporaryFlux_.size();
-                    metrics_.temporaryAccumulationElementWrites += temporaryFlux_.size();
-                }
-            }
-        } else if (forcing.kind == WVForcingKind::bottomFrictionQuadratic) {
-            if (!outputInitialized) {
-                status = computeQuadraticBottomFriction(state,forcing,flux,externalFields,externalFieldsPrepared);
-                if (status) outputInitialized = true;
-            } else {
-                auto temporary = fluxViews(temporaryFlux_,kernel_->descriptor().spectralShape());
-                status = computeQuadraticBottomFriction(state,forcing,temporary,externalFields,externalFieldsPrepared);
-                if (status) {
-                    addFlux(temporary,flux);
-                    metrics_.temporaryAccumulationElementReads += 2*temporaryFlux_.size();
-                    metrics_.temporaryAccumulationElementWrites += temporaryFlux_.size();
-                }
-            }
-        } else if (forcing.kind == WVForcingKind::adaptiveDamping) {
-            if (!outputInitialized) initializeWithZeros();
-            status = addAdaptiveDamping(state,forcing,flux,externalFields,externalFieldsPrepared);
-        } else if (forcing.kind == WVForcingKind::pseudoTopographicWaveGeneration) {
-            if (!outputInitialized) initializeWithZeros();
-            status = addPseudoTopographicGeneration(state,forcing,flux);
-        } else if (forcing.kind == WVForcingKind::betaPlanePVAdvection) {
-            if (!outputInitialized) initializeWithZeros();
-            addBetaPlaneAdvection(state,forcing,flux);
-        } else if (forcing.kind == WVForcingKind::fixedAmplitude) {
-            if (!outputInitialized) initializeWithZeros();
-            const auto& record = std::get<WVFixedAmplitudeForcingRecord>(schedule_.entries[forcing.entryIndex].payload);
-            for (const auto index : record.ApIndices) flux.Fp.data[index] = {};
-            for (const auto index : record.AmIndices) flux.Fm.data[index] = {};
-            for (const auto index : record.A0Indices) flux.F0.data[index] = {};
-        }
+    WVForcingExecutionContext forcingContext;
+    forcingContext.engine_ = this;
+    forcingContext.state_ = &state;
+    forcingContext.flux_ = &flux;
+    forcingContext.outputInitialized_ = &outputInitialized;
+    forcingContext.externalFields_ = externalFields;
+    forcingContext.externalFieldsPrepared_ = &externalFieldsPrepared;
+    for (const auto& forcing : forcing_) {
+        const auto status = forcing->addRightHandSide(forcingContext);
         if (!status) return status;
     }
-    if (!outputInitialized) initializeWithZeros();
+    if (!outputInitialized) initializeOutputWithZeros(flux,outputInitialized);
     if (externalFields != nullptr && !externalFieldsPrepared) {
         WVRealFieldBundleConstView ignored;
         auto status = ensurePhysicalFields(state,ignored,externalFields,externalFieldsPrepared);
@@ -670,22 +827,13 @@ WVStateConstraintResult WVConstantStratificationForcingEngine::restoreForcingAmp
     if (!status) return {status,0,false};
     std::size_t modifiedCoefficientCount = 0;
     bool fsalCompatible = true;
-    for (const auto& forcing : derivedForcing_) {
-        if (forcing.kind != WVForcingKind::fixedAmplitude) continue;
-        fsalCompatible = false;
-        const auto& record = std::get<WVFixedAmplitudeForcingRecord>(schedule_.entries[forcing.entryIndex].payload);
-        const auto restore = [&modifiedCoefficientCount](WVComplexView destination, const std::vector<std::size_t>& indices, const std::vector<WVComplex64>& values) {
-            for (std::size_t index = 0; index < indices.size(); ++index) {
-                const auto previous = destination.data[indices[index]];
-                if (previous.real != values[index].real || previous.imag != values[index].imag) ++modifiedCoefficientCount;
-                destination.data[indices[index]] = values[index];
-            }
-        };
-        restore(coefficients.Ap,record.ApIndices,record.ApValues);
-        restore(coefficients.Am,record.AmIndices,record.AmValues);
-        restore(coefficients.A0,record.A0Indices,record.A0Values);
-        metrics_.restoredCoefficientCount += record.ApIndices.size()+record.AmIndices.size()+record.A0Indices.size();
-        metrics_.stateConstraintElementWrites += record.ApIndices.size()+record.AmIndices.size()+record.A0Indices.size();
+    for (const auto& forcing : forcing_) {
+        const auto result = forcing->applyConstraint(coefficients);
+        if (!result.status) return result;
+        modifiedCoefficientCount += result.modifiedCoefficientCount;
+        fsalCompatible = fsalCompatible && result.fsalCompatible;
+        metrics_.restoredCoefficientCount += forcing->constraintWriteCount();
+        metrics_.stateConstraintElementWrites += forcing->constraintWriteCount();
     }
     return {WVKernelStatus::ok(),modifiedCoefficientCount,fsalCompatible};
 }

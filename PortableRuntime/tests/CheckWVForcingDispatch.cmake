@@ -26,6 +26,17 @@ foreach(source IN LISTS forcing_sources)
     endforeach()
 endforeach()
 
+foreach(source IN LISTS forcing_sources)
+    file(READ "${source}" contents)
+    foreach(closed_token "WVForcingKind" "WVForcingPayload")
+        string(FIND "${contents}" "${closed_token}" occurrence)
+        if(NOT occurrence EQUAL -1)
+            message(FATAL_ERROR
+                "${source} retains closed forcing dispatch token ${closed_token}.")
+        endif()
+    endforeach()
+endforeach()
+
 file(READ "${WV_REPOSITORY_ROOT}/PortableRuntime/src/WVForcingEngine.cpp" engine)
 foreach(token "typeIdentifier ==" "typeIdentifier !=" "matlabClassName")
     string(FIND "${engine}" "${token}" occurrence)
