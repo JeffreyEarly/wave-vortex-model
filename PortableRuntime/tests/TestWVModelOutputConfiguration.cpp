@@ -133,6 +133,31 @@ WVPortableObserverRecord coefficientRecord(const WVCheckpoint &checkpoint) {
   return record;
 }
 
+bool sameOutputGraph(const std::vector<WVOutputFileRecord> &left,
+                     const std::vector<WVOutputFileRecord> &right) {
+  if (left.size() != right.size())
+    return false;
+  for (std::size_t file = 0; file < left.size(); ++file) {
+    if (left[file].identifier != right[file].identifier ||
+        left[file].destination != right[file].destination ||
+        left[file].groups.size() != right[file].groups.size())
+      return false;
+    for (std::size_t group = 0; group < left[file].groups.size(); ++group) {
+      const auto &a = left[file].groups[group];
+      const auto &b = right[file].groups[group];
+      if (a.identifier != b.identifier || a.name != b.name ||
+          a.schedule.outputInterval != b.schedule.outputInterval ||
+          a.schedule.initialTime != b.schedule.initialTime ||
+          a.schedule.finalTime != b.schedule.finalTime ||
+          a.observerIdentifiers != b.observerIdentifiers ||
+          a.containsCompleteCoefficientRestart !=
+              b.containsCompleteCoefficientRestart)
+        return false;
+    }
+  }
+  return true;
+}
+
 WVModelOutputFile fileBuilder(const std::filesystem::path &path,
                               const std::string &identifier,
                               double initialTime, double finalTime,
@@ -207,6 +232,36 @@ void testStructuralCompilation() {
   require(!files.front().addObservingSystem("fields"),
           "file-level addition accepted multiple groups");
 
+  const auto firstPath = std::filesystem::absolute(directory.path / "first.nc")
+                             .lexically_normal()
+                             .string();
+  const auto secondPath =
+      std::filesystem::absolute(directory.path / "second.nc")
+          .lexically_normal()
+          .string();
+  const std::vector<std::string> allObservers{
+      "coefficients", "fields", "mooring", "particles", "tracer"};
+  const std::vector<WVOutputFileRecord> expectedFiles{
+      {"first",
+       firstPath,
+       {{"restart",
+         "wave-vortex",
+         {1.0, checkpoint.state.t, checkpoint.state.t + 2.0},
+         allObservers,
+         true},
+        {"diagnostics",
+         "diagnostics",
+         {0.5, checkpoint.state.t, checkpoint.state.t + 2.0},
+         {"fields", "mooring", "particles", "tracer"},
+         false}}},
+      {"second",
+       secondPath,
+       {{"restart",
+         "wave-vortex",
+         {1.0, checkpoint.state.t, checkpoint.state.t + 2.0},
+         allObservers,
+         true}}}};
+
   WVModelOutputConfiguration configuration;
   status = WVModelOutputConfiguration::build(
       std::move(record), std::move(files), WVModelOutputPolicy::create,
@@ -214,10 +269,26 @@ void testStructuralCompilation() {
   require(static_cast<bool>(status), status.message);
   require(configuration.descriptor().outputFiles().size() == 2,
           "compiled descriptor lost output files");
+  require(sameOutputGraph(configuration.descriptor().outputFiles(),
+                          expectedFiles),
+          "facade-built and direct low-level output records differ");
   require(configuration.plan().metrics().fileCount == 2 &&
               configuration.plan().metrics().groupCount == 3 &&
               configuration.plan().metrics().distinctObserverCount == 5,
           "compiled plan does not match the builder graph");
+  require(configuration.plan().eventCount() == 5,
+          "coincident bounded schedule event count changed");
+  const std::vector<double> expectedTimes{
+      checkpoint.state.t, checkpoint.state.t + 0.5,
+      checkpoint.state.t + 1.0, checkpoint.state.t + 1.5,
+      checkpoint.state.t + 2.0};
+  const std::vector<std::size_t> expectedRouteCounts{3, 1, 3, 1, 3};
+  for (std::size_t event = 0; event < expectedTimes.size(); ++event)
+    require(configuration.plan().event(event).scheduledTime ==
+                    expectedTimes[event] &&
+                configuration.plan().event(event).routeCount ==
+                    expectedRouteCounts[event],
+            "facade-built plan changed endpoint or coincident routing");
   require(configuration.policy() == WVModelOutputPolicy::create &&
               configuration.persistentBytes() >=
                   configuration.plan().persistentBytes(),
