@@ -21,11 +21,27 @@ Shared scientific variables follow the [portable variable metadata contract](por
 
 The runtime resolves type identifiers, versions, dependencies, layouts, and dispatch targets during descriptor construction and preflight. Unsupported or version-mismatched features fail before coefficient-sized allocation, state advancement, or output mutation.
 
-Observer registrations must be installed before the first portable observer descriptor is constructed. Descriptor construction seals the process registry, making later or concurrent registration a deterministic error. Registration binds a paired identity to reusable state and output contracts; it does not give the observer ownership of NetCDF definition or writing.
+Observer registrations must be installed before the first portable observer descriptor is constructed. Descriptor construction seals the process registry, making later or concurrent registration a deterministic error. Registration binds a paired identity to one immutable, source-linked C++ `WVObservingSystem` implementation. The descriptor retains the resolved implementation, so integration and output routes use pointers and variable ordinals rather than repeating class-name lookup. Registration does not give the observer ownership of NetCDF definition or writing.
 
 Forcing registrations follow the same lifetime rule and are sealed when a frozen schedule is decoded or validated. A registration maps an exact MATLAB identity and version to an existing typed payload and execution operation. Stage, priority, derived operators, tendency behavior, and post-step constraints are therefore resolved before integration; the forcing engine executes operation enums rather than MATLAB class names.
 
 Configuration descriptors are immutable after construction. Evolving particle, tracer, forcing, and coefficient values live in explicit integration-state blocks. Observer output is produced through the existing output plan, driver, and sinks; observers do not define or write NetCDF storage themselves.
+
+## Resolved observing systems
+
+The C++ `WVObservingSystem` name intentionally matches the MATLAB abstraction, but its responsibilities are narrower. A resolved implementation owns immutable observer-specific interpretation and declares, through coarse operations:
+
+- state-block ownership, tolerances, and restart requirements;
+- resolved portable-variable dependencies;
+- initialization and restoration behavior;
+- an optional right-hand-side contribution;
+- fixed-shape sample metadata and event-level sampling behavior.
+
+The five supported MATLAB observers—`WVCoefficients`, `WVEulerianFields`, `WVMooring`, `WVLagrangianParticles`, and `WVTracer`—are registered through this boundary. Their numerical kernels, variable names, coefficient ordering, dense interpolation, and NetCDF schemas are unchanged. Particle and tracer element loops remain specialized and are selected during construction; a virtual call is permitted at observer, stage, or output-event granularity, never for each grid point, particle, or tracer value.
+
+Persistence remains deliberately inverted relative to an object-oriented NetCDF design. An observing-system implementation supplies data-only metadata, state references, and sample descriptions. `WVModelOutputNetCDFSink` alone defines and writes files, while the reader resolves the recorded MATLAB identity and contract version before reconstructing state. This preserves transactional multi-file output and failure-safe continuation as one graph-wide concern.
+
+The test-only paired `WVTestPortablePointDiagnostic` demonstrates the extension seam with immutable field and point coordinates plus affine scale and offset. Its C++ factory reuses the fixed-position field-sampling contract; adding the paired identity requires no observer-specific change to the integrator, output driver, graph reader, persistence dispatcher, field evaluator, sink, or central type switch. Lazy schedules and variable-size event batches are separate contracts and are not implied by this fixed-shape proof.
 
 ## Output configuration
 
@@ -74,7 +90,7 @@ The source-level extension surface deliberately provides no binary plug-in ABI a
 6. Verify that the integrator, output driver, persistence sink, and central dispatch code require no feature-specific edits.
 7. Run numerical, lifecycle, complete-integration runtime, and retained-memory checks.
 
-The common contract defines shared identity and capability behavior without imposing a generic mutable observer or forcing base class.
+The common contract defines shared identity and capability behavior without imposing a generic mutable observer or forcing base class. Observer implementations are statically linked source extensions; their configuration becomes immutable when the descriptor is built.
 
 ## Performance budget
 
