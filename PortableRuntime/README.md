@@ -9,7 +9,7 @@ The runtime supports:
 - the five qualified built-in observer records (`WVCoefficients`, `WVEulerianFields`, `WVMooring`, `WVLagrangianParticles`, and `WVTracer`);
 - MATLAB-compatible checkpoint and time-series NetCDF data for the documented constant-stratification subset.
 
-Arbitrary MATLAB forcing or observing-system subclasses are not supported. Multi-file, named-group observing-system output is available through the C++ library; the command-line program intentionally exposes only checkpoint-to-checkpoint execution.
+Arbitrary MATLAB forcing or observing-system subclasses are not supported. Multi-file, named-group observing-system output is authored in MATLAB and executed by the command-line program without reproducing that scientific configuration in a second format.
 
 `WVModel` is the thin, move-only runtime façade. It owns the resolved forcing, observers, numerical system, integrator, output evaluation, driver, and sink; `WVModelState` separately owns canonical coefficients and dynamic observer state. The same façade backs the standalone runner and the production MEX right-hand-side path. It adds no numerical algorithm or state-sized copy.
 
@@ -33,7 +33,24 @@ PortableRuntime/buildWaveVortexRun.sh
 
 The script verifies the pinned FFTW 3.3.11 archive, builds it in the ignored `.compiled-backend-cache`, and links the runner locally. WaveVortexModel distributes no FFTW archive, library, MEX file, or executable. Redistributing a locally linked executable requires compliance with FFTW's GPL license.
 
-## Run and restart
+## MATLAB-authored run bundles
+
+A portable run has two parts:
+
+- one or more NetCDF files authored by MATLAB, which remain authoritative for model configuration, state, forcing, observers, output groups, schedules, and restart progress;
+- a small JSON request, which selects integration, execution, destination paths, and the report location.
+
+Copy [`examples/portable-run-request-v1.json`](examples/portable-run-request-v1.json), list the complete sibling NetCDF set, and map every stable output-file identifier when using `create` or `replace`. Paths are resolved relative to the request file.
+
+```sh
+wave-vortex-run --request portable-run-request-v1.json
+```
+
+The runner first parses the strict versioned schema, inspects the complete NetCDF graph, resolves every paired forcing and observer, validates the integrator and complete destination policy, and compiles the sole output graph. Only then does it construct the FFT provider and state-sized runtime storage. The JSON cannot add observers, forcings, groups, or schedules. A future MATLAB helper will write this small request automatically; until then it is deliberately straightforward to author alongside the NetCDF bundle.
+
+`create` and `replace` require a complete destination map and never mutate source files. `append` may use the source destinations with an empty map or a complete remap to an existing compatible file set. A partial remap, source alias, incompatible graph, or unsupported paired implementation fails before output mutation.
+
+## Legacy run and restart
 
 The optimized command-line program requires an explicit FFT provider. Complete-model continuation restores and appends the selected file's supported observing-system graph and schedules:
 
@@ -55,7 +72,7 @@ wave-vortex-run saved-model.nc \
 
 For adaptive integration, `--delta-t` remains the backward-compatible initial-step default. `--initial-step` overrides it explicitly. `--maximum-step` defaults to one tenth of the requested continuation interval, matching MATLAB `ode23`; name it explicitly when comparing runs or continuing the same controller policy across segments. The run report records the controller, effective limits, tolerance hash, accepted and rejected work, and bounded accepted-step diagnostics.
 
-Use `--restart-mode coefficients --output-policy create` with positional input and output paths for an explicit reduced checkpoint-only workflow. `create` refuses existing files; `replace` must be named to authorize atomic replacement. Complete-model continuation accepts only `append` and validates compatibility before mutation.
+Use `--restart-mode coefficients --output-policy create` with positional input and output paths for an explicit reduced checkpoint-only workflow. `create` refuses existing files; `replace` must be named to authorize atomic replacement. The legacy complete-model form accepts only `append` and validates compatibility before mutation. It remains available for scripts that operate on a single output file; `--request` is the preferred complete multi-file boundary and cannot be mixed with legacy semantic flags.
 
 Plans, caches, integrator history, derived forcing operators, and scratch are rebuilt after restart rather than persisted.
 

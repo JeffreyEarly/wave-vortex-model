@@ -9,7 +9,7 @@ nav_order: 100
 ## [Unreleased]
 
 - Added an explicit, source-only compiled preview for ordinary constant-stratification nonlinear flux; MATLAB remains the default, native support must be built explicitly, and the preview rejects unsupported forcing without fallback.
-- Added an optional source-only constant-stratification runtime with fixed RK4 and adaptive RK3(2), MATLAB-compatible restart, and a lightweight checkpoint-to-checkpoint command-line interface.
+- Added an optional source-only constant-stratification runtime with fixed RK4 and adaptive RK3(2), MATLAB-compatible restart, and a lightweight command-line interface for executing complete MATLAB-authored NetCDF bundles through versioned JSON run requests.
 - Matched the portable adaptive RK3(2) controller, componentwise tolerances, maximum-step default, and work diagnostics to MATLAB `ode23` semantics.
 - Added a unified C++ integration contract for canonical coefficients and observer-owned state, continuous output, failure-safe scheduled output, and the five built-in observing-system records.
 - Added the frozen portable forcing subset, shared field evaluation for particles and tracers, and transactional NetCDF output while keeping MATLAB as the primary WaveVortexModel interface.

@@ -4,6 +4,7 @@
 #include "WaveVortexRuntime/WVModel.hpp"
 #include "WaveVortexRuntime/WVModelOutputNetCDF.hpp"
 #include "WaveVortexRuntime/WVObserverOutputEvaluationService.hpp"
+#include "WVRunRequest.hpp"
 #ifndef WV_RUNTIME_HAS_DENSE_OUTPUT
 #define WV_RUNTIME_HAS_DENSE_OUTPUT 1
 #endif
@@ -53,6 +54,7 @@ enum class ExitCode : int { success = 0, usage = 2, checkpoint = 3, provider = 4
 
 struct Options {
     std::string input;
+    std::vector<std::string> modelFiles;
     std::string output;
     std::string provider;
     std::string report;
@@ -74,6 +76,7 @@ struct Options {
     std::size_t benchmarkOutputCount = 0;
     std::size_t benchmarkWarmupSteps = 0;
     std::vector<double> outputTimes;
+    std::vector<WVModelOutputDestination> outputDestinations;
     bool hasFinalTime = false;
     bool hasSteps = false;
     bool hasRelativeTolerance = false;
@@ -81,6 +84,8 @@ struct Options {
     bool hasInitialStep = false;
     bool hasMaximumStep = false;
     bool hasOutputPattern = false;
+    bool requestMode = false;
+    std::string requestPath;
 
     bool scheduledOutput() const noexcept { return !outputTimes.empty() || !outputDirectory.empty() || hasOutputPattern; }
 };
@@ -136,7 +141,7 @@ bool parseSize(const std::string& text, std::size_t& value) {
     return true;
 }
 
-bool parseOptions(int argc, char** argv, Options& options, std::string& error) {
+bool parseLegacyOptions(int argc, char** argv, Options& options, std::string& error) {
     if (argc < 2) { error = "INPUT is required."; return false; }
     options.input = argv[1];
     int firstOption = 2;
@@ -225,6 +230,52 @@ bool parseOptions(int argc, char** argv, Options& options, std::string& error) {
     if ((options.benchmarkDenseOutputsPerStep != 0 || options.benchmarkWarmupSteps != 0) && !options.hasSteps) { error = "Author-only benchmark controls require --steps."; return false; }
     if (options.benchmarkOutputCount != 0 && (!options.hasFinalTime || options.integrator != "adaptive-rk23")) { error = "--benchmark-output-count requires adaptive-rk23 with --final-time."; return false; }
     if (options.scheduledOutput() && (options.benchmarkDenseOutputsPerStep != 0 || options.benchmarkOutputCount != 0 || options.benchmarkWarmupSteps != 0)) { error = "Scheduled output cannot be combined with author-only output benchmark controls."; return false; }
+    options.modelFiles = {options.input};
+    return true;
+}
+
+bool parseOptions(int argc, char** argv, Options& options, std::string& error) {
+    bool namesRequest = false;
+    for (int index = 1; index < argc; ++index)
+        namesRequest |= std::string(argv[index]) == "--request";
+    if (!namesRequest) return parseLegacyOptions(argc,argv,options,error);
+    if (argc != 3 || std::string(argv[1]) != "--request") {
+        error = "--request must be the only command-line option and requires one JSON path.";
+        return false;
+    }
+    cli::WVRunRequest request;
+    const auto status = cli::decodeRunRequest(argv[2],request);
+    if (!status) {
+        error = status.message;
+        return false;
+    }
+    options.requestMode = true;
+    options.requestPath = request.requestPath;
+    options.modelFiles = std::move(request.modelFiles);
+    options.input = options.modelFiles.front();
+    options.integrator = request.integrator;
+    options.restartMode = "model";
+    options.outputPolicy = request.outputPolicy;
+    options.deltaT = request.initialStep;
+    options.initialStep = request.initialStep;
+    options.maximumStep = request.maximumStep;
+    options.relativeTolerance = request.relativeTolerance;
+    options.absoluteTolerance = request.absoluteToleranceScale;
+    options.finalTime = request.finalTime;
+    options.threads = request.threads;
+    options.provider = request.fftProvider;
+    options.report = request.report;
+    options.outputDestinations.reserve(request.destinations.size());
+    for (auto &destination : request.destinations)
+        options.outputDestinations.push_back(
+            {std::move(destination.fileIdentifier),std::move(destination.path)});
+    options.hasFinalTime = true;
+    if (options.integrator == "adaptive-rk23") {
+        options.hasInitialStep = true;
+        options.hasMaximumStep = true;
+        options.hasRelativeTolerance = true;
+        options.hasAbsoluteTolerance = true;
+    }
     return true;
 }
 
@@ -467,6 +518,30 @@ std::string unsignedIntegerArrayJSON(const std::vector<std::uint64_t>& values) {
     return output.str();
 }
 
+std::string stringArrayJSON(const std::vector<std::string>& values) {
+    std::ostringstream output;
+    output << '[';
+    for (std::size_t index = 0; index < values.size(); ++index) {
+        if (index != 0) output << ',';
+        output << quoted(values[index]);
+    }
+    output << ']';
+    return output.str();
+}
+
+std::string destinationMapJSON(
+    const std::vector<WVModelOutputDestination>& destinations) {
+    std::ostringstream output;
+    output << '{';
+    for (std::size_t index = 0; index < destinations.size(); ++index) {
+        if (index != 0) output << ',';
+        output << quoted(destinations[index].fileIdentifier) << ':'
+               << quoted(destinations[index].path);
+    }
+    output << '}';
+    return output.str();
+}
+
 const char* eventKindName(WVOutputEventKind kind) noexcept {
     switch (kind) {
         case WVOutputEventKind::initial: return "initial";
@@ -554,11 +629,33 @@ int main(int argc, char** argv) {
     Timings timings;
     phase(options,"inspect");
     WVCheckpointInspection inspection;
+    WVModelOutputNetCDFInspection modelInspection;
     auto start = Clock::now();
-    auto checkpointStatus = WVCheckpointReader::inspect(options.input,inspection);
+    WVCheckpointStatus checkpointStatus;
+    if (options.restartMode == "model") {
+        checkpointStatus = WVModelOutputNetCDFSink::inspect(
+            options.modelFiles, modelInspection);
+        if (checkpointStatus) {
+            inspection.configuration =
+                modelInspection.latestRestart.configuration;
+            inspection.coefficientShape =
+                modelInspection.latestRestart.state.coefficients.shape;
+            inspection.t = modelInspection.latestRestart.state.t;
+            inspection.t0 = modelInspection.latestRestart.state.t0;
+            inspection.metadata = modelInspection.latestRestart.metadata;
+            inspection.forcingSchedule =
+                modelInspection.latestRestart.forcingSchedule;
+        }
+    } else {
+        checkpointStatus = WVCheckpointReader::inspect(options.input,inspection);
+    }
     timings.inspect = seconds(start);
     if (!checkpointStatus) {
-        emit(failureJSON(ExitCode::checkpoint,"inspect",checkpointStatus.message,checkpointStatus.location),options.report,std::cerr);
+        emit(failureJSON(ExitCode::checkpoint,
+                         options.restartMode == "model"
+                             ? "model-graph-preflight" : "inspect",
+                         checkpointStatus.message,checkpointStatus.location),
+             options.report,std::cerr);
         return static_cast<int>(ExitCode::checkpoint);
     }
     if (options.restartMode == "coefficients" && !options.scheduledOutput()) {
@@ -589,18 +686,6 @@ int main(int argc, char** argv) {
                              "--output-policy replace to authorize replacement.",
                              outputPath.string()),options.report,std::cerr);
             return static_cast<int>(ExitCode::output);
-        }
-    }
-    WVModelOutputNetCDFInspection modelInspection;
-    if (options.restartMode == "model") {
-        checkpointStatus = WVModelOutputNetCDFSink::inspect(
-            {options.input}, modelInspection);
-        if (!checkpointStatus) {
-            emit(failureJSON(ExitCode::checkpoint,"model-graph-preflight",
-                             checkpointStatus.message,
-                             checkpointStatus.location),
-                 options.report,std::cerr);
-            return static_cast<int>(ExitCode::checkpoint);
         }
     }
     auto activeForcingSchedule = inspection.forcingSchedule;
@@ -636,6 +721,25 @@ int main(int argc, char** argv) {
         if (!prepareScheduledOutput(options,inspection.t,scheduledPlan,failureCode,error)) {
             emit(failureJSON(failureCode,"output-preflight",error,options.outputDirectory,scheduledOutputJSON(options,scheduledPlan,nullptr)),options.report,std::cerr);
             return static_cast<int>(failureCode);
+        }
+    }
+
+    WVModelOutputConfiguration preparedOutputConfiguration;
+    if (options.restartMode == "model") {
+        WVModelOutputRequest outputRequest;
+        outputRequest.policy = options.outputPolicy == "create"
+            ? WVModelOutputPolicy::create
+            : options.outputPolicy == "replace"
+                ? WVModelOutputPolicy::replace
+                : WVModelOutputPolicy::append;
+        outputRequest.finalTime = options.finalTime;
+        outputRequest.destinations = options.outputDestinations;
+        const auto outputStatus = WVModel::prepareModelOutput(
+            modelInspection,outputRequest,preparedOutputConfiguration);
+        if (!outputStatus) {
+            emit(failureJSON(ExitCode::output,"model-output-preflight",
+                             outputStatus.message),options.report,std::cerr);
+            return static_cast<int>(ExitCode::output);
         }
     }
 
@@ -689,11 +793,9 @@ int main(int argc, char** argv) {
     WVModel model;
     WVModelState modelState;
     if (options.restartMode == "model") {
-        WVModelOutputRequest outputRequest;
-        outputRequest.policy = WVModelOutputPolicy::append;
-        outputRequest.finalTime = options.finalTime;
         kernelStatus = WVModel::createFromModelOutputInspection(
-            std::move(modelInspection),outputRequest,std::move(fftEngine),
+            std::move(modelInspection),
+            std::move(preparedOutputConfiguration),std::move(fftEngine),
             integratorConfiguration,model,modelState);
     } else {
         kernelStatus = WVModel::create(
@@ -918,6 +1020,7 @@ int main(int argc, char** argv) {
     report << std::setprecision(17)
            << "{\"schemaVersion\":\"wave-vortex-run-v1\",\"status\":\"complete\",\"source\":{\"commit\":" << quoted(WV_RUNTIME_SOURCE_COMMIT) << "},"
            << "\"input\":" << quoted(options.input) << ",\"output\":" << quoted(options.output) << ",\"restartMode\":" << quoted(options.restartMode) << ",\"outputPolicy\":" << quoted(options.outputPolicy) << ",\"provider\":{\"id\":" << quoted(options.provider) << ",\"version\":" << quoted(providerVersion) << ",\"threads\":" << options.threads << ",\"baseLibrary\":" << quoted(baseLibrary) << ",\"threadLibrary\":" << quoted(threadLibrary) << "},"
+           << "\"request\":{\"active\":" << (options.requestMode ? "true" : "false") << ",\"path\":" << quoted(options.requestPath) << ",\"schemaIdentifier\":" << quoted(options.requestMode ? cli::WVRunRequest::schemaIdentifier : "") << ",\"schemaVersion\":" << (options.requestMode ? cli::WVRunRequest::schemaVersion : 0) << ",\"modelFiles\":" << stringArrayJSON(options.modelFiles) << ",\"destinations\":" << destinationMapJSON(options.outputDestinations) << "},"
            << "\"state\":{\"initialTime\":" << inspection.t << ",\"finalTime\":" << state.waveVortex.t << ",\"deltaT\":" << options.deltaT << ",\"stepCount\":" << stepCount << ",\"rejectedStepCount\":" << rejectedStepCount << ",\"rhsEvaluationCount\":" << rightHandSideEvaluationCount << ",\"shape\":[" << shape.rows << ',' << shape.columns << "]},"
            << "\"integrator\":{\"id\":" << quoted(options.integrator) << ",\"controller\":" << quoted(adaptiveIntegrator != nullptr ? WVAdaptiveRK23::controllerIdentifier() : "fixed-rk4") << ",\"relativeTolerance\":" << options.relativeTolerance << ",\"absoluteTolerance\":" << options.absoluteTolerance << ",\"requestedInitialStep\":" << (options.hasInitialStep ? std::to_string(options.initialStep) : "null") << ",\"effectiveInitialStep\":" << integrationInitialStep << ",\"requestedMaximumStep\":" << (options.hasMaximumStep ? std::to_string(options.maximumStep) : "null") << ",\"effectiveMaximumStep\":" << (adaptiveIntegrator != nullptr ? effectiveMaximumStep : options.deltaT) << ",\"toleranceHash\":" << quoted(adaptiveIntegrator != nullptr ? std::to_string(adaptiveIntegrator->toleranceHash()) : "") << ",\"toleranceHashClearedMantissaBits\":20,\"toleranceComponentHashes\":" << (adaptiveIntegrator != nullptr ? unsignedIntegerArrayJSON(adaptiveIntegrator->toleranceComponentHashes()) : "[]") << ",\"lastNormalizedError\":" << adaptiveMetrics.normalizedError << ",\"lastProposedStepSize\":" << adaptiveMetrics.lastProposedStepSize << ",\"lastAcceptedStepSize\":" << adaptiveMetrics.lastAcceptedStepSize << ",\"nextStepSize\":" << integrator.nextStepSize() << ",\"fsalReuseCount\":" << adaptiveMetrics.fsalReuseCount << ",\"fsalInvalidationCount\":" << adaptiveMetrics.fsalInvalidationCount << ",\"rejectedInitialDerivativeReuseCount\":" << adaptiveMetrics.rejectedInitialDerivativeReuseCount << ",\"constraintModifiedCoefficientCount\":" << adaptiveMetrics.constraintModifiedCoefficientCount << ",\"denseOutputEvaluationCount\":" << (fixedIntegrator != nullptr ? fixedMetrics.denseOutputEvaluationCount : adaptiveMetrics.denseOutputEvaluationCount) << ",\"denseOutputElementReads\":" << (fixedIntegrator != nullptr ? fixedMetrics.denseOutputElementReads : adaptiveMetrics.denseOutputElementReads) << ",\"denseOutputElementWrites\":" << (fixedIntegrator != nullptr ? fixedMetrics.denseOutputElementWrites : adaptiveMetrics.denseOutputElementWrites) << ",\"denseOutputSeconds\":" << (fixedIntegrator != nullptr ? fixedMetrics.denseOutputSeconds : adaptiveMetrics.denseOutputSeconds) << ",\"errorPolicyBytes\":" << adaptiveMetrics.errorPolicyBytes << ",\"acceptedStepDiagnosticsComplete\":" << (adaptiveIntegrator == nullptr || adaptiveIntegrator->stepDiagnosticsComplete() ? "true" : "false") << ",\"acceptedSteps\":" << (adaptiveIntegrator != nullptr ? adaptiveStepDiagnosticsJSON(adaptiveIntegrator->stepDiagnostics()) : "[]") << "},"
            << "\"authorBenchmark\":{\"warmupStepCount\":" << options.benchmarkWarmupSteps << ",\"sampleStepCount\":" << (options.hasSteps ? options.steps : 0) << ",\"denseOutputsPerStep\":" << options.benchmarkDenseOutputsPerStep << ",\"requestedOutputCount\":" << options.benchmarkOutputCount << ",\"interpolatedOutputCount\":" << interpolatedOutputCount << ",\"interpolationSeconds\":" << driverInterpolationSeconds << "},"

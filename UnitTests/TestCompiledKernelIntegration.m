@@ -72,6 +72,12 @@ classdef TestCompiledKernelIntegration < matlab.unittest.TestCase
                 "PortableRuntime/source-selection.json"
                 "PortableRuntime/buildWaveVortexRun.sh"
                 "PortableRuntime/app/WaveVortexRun.cpp"
+                "PortableRuntime/app/WVRunRequest.cpp"
+                "PortableRuntime/app/WVRunRequest.hpp"
+                "PortableRuntime/contracts/wave-vortex-run-request-v1.schema.json"
+                "PortableRuntime/examples/portable-run-request-v1.json"
+                "PortableRuntime/third_party/nlohmann/json.hpp"
+                "PortableRuntime/third_party/nlohmann/LICENSE.MIT"
                 "@WVCompiledBackend/WVCompiledBackend.m"
                 ];
             testCase.verifyTrue(all(ismember(required,tracked)));

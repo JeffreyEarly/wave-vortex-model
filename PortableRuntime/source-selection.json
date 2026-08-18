@@ -4,7 +4,7 @@
   "testedFeatureCommit": "005ac7e24fa069fea0d2f825cc1e9913c3e23f11",
   "retained": {
     "compiledCore": "CompiledKernel",
-    "portableRuntime": "PortableRuntime/include, PortableRuntime/src, PortableRuntime/app",
+    "portableRuntime": "PortableRuntime/include, PortableRuntime/src, PortableRuntime/app, PortableRuntime/contracts, PortableRuntime/examples, PortableRuntime/third_party/nlohmann",
     "contracts": "PortableRuntime/tests",
     "buildAndExport": ".github/workflows, tools/prepareWaveVortexModelReleaseCandidate.m"
   },
