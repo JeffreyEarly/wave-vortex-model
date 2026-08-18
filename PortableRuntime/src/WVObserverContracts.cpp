@@ -1,4 +1,5 @@
 #include "WaveVortexRuntime/WVObserverContracts.hpp"
+#include "WaveVortexRuntime/WVOutputSchedule.hpp"
 #include "WVObserverAdapter.hpp"
 
 #include <algorithm>
@@ -155,12 +156,11 @@ WVPortableObserverDescriptor::create(const WVPortableObserverRecord &record,
             !groupNames.insert(group.name).second)
           return invalid("Duplicate output-group identifier or name in " +
                          file.identifier + ".");
-        if (!std::isfinite(group.schedule.outputInterval) ||
-            group.schedule.outputInterval <= 0.0 ||
-            std::isnan(group.schedule.initialTime) ||
-            std::isnan(group.schedule.finalTime) ||
-            group.schedule.finalTime < group.schedule.initialTime)
-          return invalid("Output-group schedule is invalid.");
+        std::shared_ptr<const WVOutputSchedule> scheduleImplementation;
+        auto scheduleStatus = WVOutputScheduleFactoryRegistry::resolve(
+            group.schedule, scheduleImplementation);
+        if (!scheduleStatus)
+          return scheduleStatus;
         std::set<std::string> groupObservers;
         for (const auto &identifier : group.observerIdentifiers) {
           if (observerIdentifiers.find(identifier) == observerIdentifiers.end())
@@ -295,6 +295,9 @@ std::size_t WVPortableObserverDescriptor::persistentBytes() const noexcept {
              file.groups.capacity() * sizeof(WVOutputGroupRecord);
     for (const auto &group : file.groups) {
       bytes += stringBytes(group.identifier) + stringBytes(group.name) +
+               stringBytes(group.schedule.typeIdentifier) +
+               group.schedule.configuration.persistentBytes() -
+                   sizeof(WVPortableTypedRecord) +
                group.observerIdentifiers.capacity() * sizeof(std::string);
       for (const auto &value : group.observerIdentifiers)
         bytes += stringBytes(value);

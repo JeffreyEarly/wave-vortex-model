@@ -501,21 +501,18 @@ WVKernelStatus WVObserverOutputEvaluationService::specifications(
 
 WVKernelStatus WVObserverOutputEvaluationService::preflight(
     const WVOutputPlan &plan) {
-  for (std::size_t eventIndex = 0; eventIndex < plan.eventCount(); ++eventIndex) {
-    const auto event = plan.event(eventIndex);
-    for (std::size_t routeIndex = 0; routeIndex < event.routeCount; ++routeIndex)
-      for (std::size_t observerIndex = 0;
-           observerIndex < event.routes[routeIndex].observerCount;
-           ++observerIndex) {
-        const auto &resolved =
-            event.routes[routeIndex].observers[observerIndex];
+  for (std::size_t groupIndex = 0; groupIndex < plan.groupCount(); ++groupIndex) {
+    const auto route = plan.groupRoute(groupIndex);
+    for (std::size_t observerIndex = 0;
+         observerIndex < route.observerCount; ++observerIndex) {
+        const auto &resolved = route.observers[observerIndex];
         const auto *record = resolved.record;
         if (record == nullptr || resolved.implementation == nullptr ||
             impl_->outputsByObserver.find(record->identifier) ==
                 impl_->outputsByObserver.end())
           return invalid("Output plan references an observer outside this "
                          "evaluation service.");
-      }
+    }
   }
   return WVKernelStatus::ok();
 }

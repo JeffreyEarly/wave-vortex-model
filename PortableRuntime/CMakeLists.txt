@@ -22,6 +22,7 @@ endif()
 add_library(WaveVortexPortableRuntime STATIC
     src/WVPortableImplementationContract.cpp
     src/WVPortableTypedRecord.cpp
+    src/WVOutputSchedule.cpp
     src/WVForcingContracts.cpp
     src/WVNetCDF.cpp
     src/WVForcingScheduleDecoder.cpp
@@ -197,5 +198,10 @@ if(BUILD_TESTING)
         COMMAND ${CMAKE_COMMAND}
             -DWV_REPOSITORY_ROOT=${CMAKE_CURRENT_LIST_DIR}/..
             -P ${CMAKE_CURRENT_LIST_DIR}/tests/CheckWVRuntimeArchitecture.cmake
+    )
+    add_test(NAME output-schedule-dispatch-source-policy
+        COMMAND ${CMAKE_COMMAND}
+            -DWV_REPOSITORY_ROOT=${CMAKE_CURRENT_LIST_DIR}/..
+            -P ${CMAKE_CURRENT_LIST_DIR}/tests/CheckWVOutputScheduleDispatch.cmake
     )
 endif()

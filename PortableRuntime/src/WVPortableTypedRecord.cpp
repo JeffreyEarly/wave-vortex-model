@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstring>
 #include <limits>
 #include <set>
 #include <type_traits>
@@ -38,6 +39,42 @@ std::size_t expectedCount(const std::vector<std::size_t> &dimensions,
     result *= dimension;
   }
   return result;
+}
+
+} // namespace
+
+namespace {
+
+template <typename Value>
+void appendScalar(std::vector<std::uint8_t> &bytes, Value value) {
+  const auto *source = reinterpret_cast<const std::uint8_t *>(&value);
+  bytes.insert(bytes.end(), source, source + sizeof(Value));
+}
+
+void appendString(std::vector<std::uint8_t> &bytes, const std::string &value) {
+  appendScalar<std::uint64_t>(bytes, value.size());
+  bytes.insert(bytes.end(), value.begin(), value.end());
+}
+
+template <typename Value>
+bool readScalar(const std::vector<std::uint8_t> &bytes, std::size_t &offset,
+                Value &value) {
+  if (offset > bytes.size() || sizeof(Value) > bytes.size() - offset)
+    return false;
+  std::memcpy(&value, bytes.data() + offset, sizeof(Value));
+  offset += sizeof(Value);
+  return true;
+}
+
+bool readString(const std::vector<std::uint8_t> &bytes, std::size_t &offset,
+                std::string &value) {
+  std::uint64_t count = 0;
+  if (!readScalar(bytes, offset, count) || count > bytes.size() - offset)
+    return false;
+  value.assign(reinterpret_cast<const char *>(bytes.data() + offset),
+               static_cast<std::size_t>(count));
+  offset += static_cast<std::size_t>(count);
+  return true;
 }
 
 } // namespace
@@ -100,10 +137,10 @@ std::size_t WVPortableNamedValue::persistentBytes() const noexcept {
 
 const WVPortableNamedValue *
 WVPortableTypedRecord::value(const std::string &name) const noexcept {
-  const auto found = std::find_if(values.begin(), values.end(),
-                                  [&](const auto &candidate) {
-                                    return candidate.name == name;
-                                  });
+  const auto found =
+      std::find_if(values.begin(), values.end(), [&](const auto &candidate) {
+        return candidate.name == name;
+      });
   return found == values.end() ? nullptr : &*found;
 }
 
@@ -123,9 +160,9 @@ std::size_t WVPortableTypedRecord::persistentBytes() const noexcept {
   return result;
 }
 
-WVKernelStatus validatePortableTypedRecord(
-    const WVPortableTypedRecord &record,
-    WVPortableTypedRecordValidation validation) {
+WVKernelStatus
+validatePortableTypedRecord(const WVPortableTypedRecord &record,
+                            WVPortableTypedRecordValidation validation) {
   if (record.schemaIdentifier.empty() || record.schemaVersion == 0)
     return {WVKernelStatusCode::invalidConfiguration,
             "A portable typed record requires a schema identifier and "
@@ -145,8 +182,7 @@ WVKernelStatus validatePortableTypedRecord(
       return {WVKernelStatusCode::invalidShape,
               "A portable typed-record value does not match its declared "
               "dimensions."};
-    if (value.valueType() == WVPortableValueType::text &&
-        !validation.allowText)
+    if (value.valueType() == WVPortableValueType::text && !validation.allowText)
       return {WVKernelStatusCode::invalidConfiguration,
               "Text values are not permitted in this portable typed record."};
     if (value.valueType() == WVPortableValueType::boolean) {
@@ -173,6 +209,136 @@ WVKernelStatus validatePortableTypedRecord(
     return {WVKernelStatusCode::sizeOverflow,
             "Portable typed record exceeds its encoded-size limit."};
   return WVKernelStatus::ok();
+}
+
+WVKernelStatus encodePortableTypedRecord(const WVPortableTypedRecord &record,
+                                         std::vector<std::uint8_t> &bytes) {
+  auto status = validatePortableTypedRecord(record);
+  if (!status)
+    return status;
+  try {
+    std::vector<std::uint8_t> candidate;
+    candidate.reserve(record.encodedBytes());
+    appendString(candidate, record.schemaIdentifier);
+    appendScalar(candidate, record.schemaVersion);
+    appendScalar<std::uint64_t>(candidate, record.values.size());
+    for (const auto &value : record.values) {
+      appendString(candidate, value.name);
+      appendScalar(candidate, static_cast<std::uint8_t>(value.valueType()));
+      appendScalar<std::uint64_t>(candidate, value.dimensions.size());
+      for (const auto dimension : value.dimensions)
+        appendScalar<std::uint64_t>(candidate, dimension);
+      appendScalar<std::uint64_t>(candidate, value.valueCount());
+      std::visit(
+          [&](const auto &values) {
+            using Element = typename std::decay_t<decltype(values)>::value_type;
+            if constexpr (std::is_same_v<Element, std::string>) {
+              for (const auto &item : values)
+                appendString(candidate, item);
+            } else {
+              const auto *source =
+                  reinterpret_cast<const std::uint8_t *>(values.data());
+              candidate.insert(candidate.end(), source,
+                               source + values.size() * sizeof(Element));
+            }
+          },
+          value.storage);
+    }
+    bytes = std::move(candidate);
+    return WVKernelStatus::ok();
+  } catch (const std::bad_alloc &) {
+    return {WVKernelStatusCode::allocationFailure,
+            "Portable typed-record encoding allocation failed."};
+  }
+}
+
+WVKernelStatus
+decodePortableTypedRecord(const std::vector<std::uint8_t> &bytes,
+                          WVPortableTypedRecord &record,
+                          WVPortableTypedRecordValidation validation) {
+  if (bytes.size() > validation.maximumEncodedBytes)
+    return {WVKernelStatusCode::sizeOverflow,
+            "Portable typed record exceeds its encoded-size limit."};
+  try {
+    WVPortableTypedRecord candidate;
+    std::size_t offset = 0;
+    std::uint64_t valueCount = 0;
+    if (!readString(bytes, offset, candidate.schemaIdentifier) ||
+        !readScalar(bytes, offset, candidate.schemaVersion) ||
+        !readScalar(bytes, offset, valueCount) || valueCount > bytes.size())
+      return {WVKernelStatusCode::invalidConfiguration,
+              "Portable typed-record encoding is truncated or malformed."};
+    candidate.values.reserve(static_cast<std::size_t>(valueCount));
+    for (std::uint64_t valueIndex = 0; valueIndex < valueCount; ++valueIndex) {
+      WVPortableNamedValue value;
+      std::uint8_t type = 0;
+      std::uint64_t dimensionCount = 0, count = 0;
+      if (!readString(bytes, offset, value.name) ||
+          !readScalar(bytes, offset, type) || type > 3 ||
+          !readScalar(bytes, offset, dimensionCount) ||
+          dimensionCount > bytes.size())
+        return {WVKernelStatusCode::invalidConfiguration,
+                "Portable typed-record value header is malformed."};
+      value.dimensions.reserve(static_cast<std::size_t>(dimensionCount));
+      for (std::uint64_t dimension = 0; dimension < dimensionCount;
+           ++dimension) {
+        std::uint64_t extent = 0;
+        if (!readScalar(bytes, offset, extent) ||
+            extent > std::numeric_limits<std::size_t>::max())
+          return {WVKernelStatusCode::sizeOverflow,
+                  "Portable typed-record dimension is invalid."};
+        value.dimensions.push_back(static_cast<std::size_t>(extent));
+      }
+      if (!readScalar(bytes, offset, count) || count > bytes.size())
+        return {WVKernelStatusCode::invalidConfiguration,
+                "Portable typed-record value count is malformed."};
+      if (type == static_cast<std::uint8_t>(WVPortableValueType::text)) {
+        std::vector<std::string> values;
+        values.reserve(static_cast<std::size_t>(count));
+        for (std::uint64_t item = 0; item < count; ++item) {
+          std::string text;
+          if (!readString(bytes, offset, text))
+            return {WVKernelStatusCode::invalidConfiguration,
+                    "Portable typed-record text value is truncated."};
+          values.push_back(std::move(text));
+        }
+        value.storage = std::move(values);
+      } else {
+        const std::size_t widths[] = {sizeof(std::uint8_t),
+                                      sizeof(std::int64_t), sizeof(double)};
+        const auto width = widths[type];
+        if (count > (bytes.size() - offset) / width)
+          return {WVKernelStatusCode::invalidConfiguration,
+                  "Portable typed-record numeric value is truncated."};
+        if (type == 0) {
+          std::vector<std::uint8_t> values(count);
+          std::memcpy(values.data(), bytes.data() + offset, count * width);
+          value.storage = std::move(values);
+        } else if (type == 1) {
+          std::vector<std::int64_t> values(count);
+          std::memcpy(values.data(), bytes.data() + offset, count * width);
+          value.storage = std::move(values);
+        } else {
+          std::vector<double> values(count);
+          std::memcpy(values.data(), bytes.data() + offset, count * width);
+          value.storage = std::move(values);
+        }
+        offset += static_cast<std::size_t>(count) * width;
+      }
+      candidate.values.push_back(std::move(value));
+    }
+    if (offset != bytes.size())
+      return {WVKernelStatusCode::invalidConfiguration,
+              "Portable typed-record encoding has trailing bytes."};
+    auto status = validatePortableTypedRecord(candidate, validation);
+    if (!status)
+      return status;
+    record = std::move(candidate);
+    return WVKernelStatus::ok();
+  } catch (const std::bad_alloc &) {
+    return {WVKernelStatusCode::allocationFailure,
+            "Portable typed-record decoding allocation failed."};
+  }
 }
 
 } // namespace wavevortex::runtime

@@ -19,14 +19,10 @@ WVPortableTypedRecord record() {
   WVPortableTypedRecord result;
   result.schemaIdentifier = "test-record-v1";
   result.schemaVersion = 1;
-  result.values.push_back(
-      {"enabled", {}, std::vector<std::uint8_t>{1}});
-  result.values.push_back(
-      {"ordinal", {}, std::vector<std::int64_t>{17}});
-  result.values.push_back(
-      {"position", {2}, std::vector<double>{1.5, 2.5}});
-  result.values.push_back(
-      {"label", {}, std::vector<std::string>{"sample"}});
+  result.values.push_back({"enabled", {}, std::vector<std::uint8_t>{1}});
+  result.values.push_back({"ordinal", {}, std::vector<std::int64_t>{17}});
+  result.values.push_back({"position", {2}, std::vector<double>{1.5, 2.5}});
+  result.values.push_back({"label", {}, std::vector<std::string>{"sample"}});
   return result;
 }
 
@@ -87,6 +83,24 @@ void verifyContextRules() {
           "exact encoded-size boundary was rejected");
 }
 
+void verifyCodec() {
+  const auto value = record();
+  std::vector<std::uint8_t> bytes;
+  require(static_cast<bool>(encodePortableTypedRecord(value, bytes)) &&
+              !bytes.empty(),
+          "typed record did not encode");
+  WVPortableTypedRecord decoded;
+  require(static_cast<bool>(decodePortableTypedRecord(bytes, decoded)),
+          "typed record did not decode");
+  std::vector<std::uint8_t> roundTrip;
+  require(static_cast<bool>(encodePortableTypedRecord(decoded, roundTrip)) &&
+              roundTrip == bytes,
+          "typed-record codec is not deterministic");
+  bytes.pop_back();
+  require(!decodePortableTypedRecord(bytes, decoded),
+          "truncated typed-record encoding was accepted");
+}
+
 } // namespace
 
 int main() {
@@ -94,11 +108,11 @@ int main() {
     verifyValidRecord();
     verifyMalformedRecords();
     verifyContextRules();
+    verifyCodec();
     std::cout << "Portable typed-record tests passed.\n";
     return 0;
   } catch (const std::exception &error) {
-    std::cerr << "Portable typed-record tests failed: " << error.what()
-              << '\n';
+    std::cerr << "Portable typed-record tests failed: " << error.what() << '\n';
     return 1;
   }
 }

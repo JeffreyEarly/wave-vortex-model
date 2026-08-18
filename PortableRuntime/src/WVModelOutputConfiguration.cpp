@@ -47,9 +47,24 @@ std::string stableIdentifier(const std::string &prefix,
 
 bool sameSchedule(const WVOutputScheduleRecord &left,
                   const WVOutputScheduleRecord &right) noexcept {
-  return left.outputInterval == right.outputInterval &&
-         left.initialTime == right.initialTime &&
-         left.finalTime == right.finalTime;
+  if (left.outputInterval != right.outputInterval ||
+      left.initialTime != right.initialTime ||
+      left.finalTime != right.finalTime ||
+      left.typeIdentifier != right.typeIdentifier ||
+      left.contractVersion != right.contractVersion ||
+      left.configuration.schemaIdentifier !=
+          right.configuration.schemaIdentifier ||
+      left.configuration.schemaVersion != right.configuration.schemaVersion ||
+      left.configuration.values.size() != right.configuration.values.size())
+    return false;
+  for (std::size_t index = 0; index < left.configuration.values.size(); ++index) {
+    const auto &a = left.configuration.values[index];
+    const auto &b = right.configuration.values[index];
+    if (a.name != b.name || a.dimensions != b.dimensions ||
+        a.storage != b.storage)
+      return false;
+  }
+  return true;
 }
 
 bool sameStateBlock(const WVStateBlockRecord &left,
@@ -455,9 +470,16 @@ WVModelOutputPolicy WVModelOutputConfiguration::policy() const noexcept {
 }
 
 std::size_t WVModelOutputConfiguration::persistentBytes() const noexcept {
-  return sizeof(*this) + sizeof(Impl) + impl_->descriptor.persistentBytes() +
-         impl_->plan.persistentBytes() +
-         impl_->progress.capacity() * sizeof(WVOutputGroupProgress);
+  std::size_t bytes = sizeof(*this) + sizeof(Impl) +
+                      impl_->descriptor.persistentBytes() +
+                      impl_->plan.persistentBytes() +
+                      impl_->progress.capacity() * sizeof(WVOutputGroupProgress);
+  for (const auto &progress : impl_->progress)
+    bytes += progress.fileIdentifier.capacity() +
+             progress.groupIdentifier.capacity() +
+             progress.scheduleCursor.persistentBytes() -
+                 sizeof(WVPortableTypedRecord);
+  return bytes;
 }
 
 } // namespace wavevortex::runtime
