@@ -3,6 +3,7 @@
 #include "WaveVortexRuntime/WVConstantStratificationIntegrationSystem.hpp"
 #include "WaveVortexRuntime/WVRungeKutta.hpp"
 #include "WaveVortexRuntime/WVForcingEngine.hpp"
+#include "WaveVortexRuntime/WVForcingContracts.hpp"
 #include "WVCheckpointWriterTestHooks.hpp"
 #include "WVReferenceFFTEngine.hpp"
 
@@ -219,6 +220,20 @@ void testCreateNewCommitPolicy() {
     requireNoTemporaryFiles(directory);
 }
 
+void testRegisteredPairRoundTrip() {
+    auto checkpoint = read(fixture("forcing-fixed-amplitude.nc"));
+    checkpoint.forcingSchedule.entries.front().typeIdentifier =
+        "WVTestPortableFixedAmplitudeForcing";
+    checkpoint.metadata.forcingHeaders.front().annotatedClass =
+        "WVTestPortableFixedAmplitudeForcing";
+    const auto directory = temporaryDirectory();
+    DirectoryCleanup cleanup{directory};
+    const auto destination = directory / "paired-fixed-amplitude.nc";
+    const auto result = WVCheckpointWriter::write(destination.string(), checkpoint);
+    require(static_cast<bool>(result), result.message);
+    requireSameCheckpoint(checkpoint, read(destination));
+}
+
 void testValidation() {
     auto checkpoint = read(fixture("forcing-mixed-nonhydrostatic.nc"));
     const auto directory = temporaryDirectory();
@@ -239,10 +254,17 @@ void testValidation() {
 
 int main() {
     try {
+        const auto registration = WVForcingFactoryRegistry::registerAdapter(
+            {WVForcingKind::fixedAmplitude,
+             "WVTestPortableFixedAmplitudeForcing",
+             WVPortablePairContractVersion,
+             {"SpectralAmplitude", "PVSpectralAmplitude"}, true, ""});
+        require(static_cast<bool>(registration), registration.message);
         testRoundTrips();
         testRestartContinuation();
         testTransactionalFailures();
         testCreateNewCommitPolicy();
+        testRegisteredPairRoundTrip();
         testValidation();
         std::cout << "Portable checkpoint writer tests passed.\n";
         return 0;

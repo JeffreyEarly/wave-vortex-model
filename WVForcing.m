@@ -128,6 +128,22 @@ classdef WVForcing < handle & matlab.mixin.Heterogeneous & CAAnnotatedClass
             self.forcingType = forcingType;
         end
 
+        function contract = portableImplementationContract(self)
+            % Describe availability of the paired portable C++ implementation.
+            %
+            % The base class is intentionally unavailable. A supported
+            % concrete forcing overrides this method with a versioned,
+            % data-only contract. Portable execution still requires an exact
+            % source-level C++ registration.
+            %
+            % - Topic: Forcing internals
+            % - Declaration: contract = portableImplementationContract(self)
+            % - Parameter self: forcing to inspect
+            % - Returns contract: scalar portable implementation contract
+            % - Developer: true
+            contract = WVInternal.portableImplementationContract(string(class(self)),string(class(self)),"unavailable","No matching portable C++ forcing implementation is declared.",struct());
+        end
+
         function [Fu, Fv, Feta] = addHydrostaticSpatialForcing(self, wvt, Fu, Fv, Feta)
             % Add hydrostatic physical-space tendencies.
             %
@@ -303,6 +319,12 @@ classdef WVForcing < handle & matlab.mixin.Heterogeneous & CAAnnotatedClass
             force = WVForcing(wvtX2,self.name);
         end
 
+    end
+
+    methods (Access=protected)
+        function contract = supportedPortableImplementationContract(self,typeIdentifier,payload)
+            contract = WVInternal.portableImplementationContract(string(class(self)),string(typeIdentifier),"supported","",payload);
+        end
     end
 
     methods (Sealed)

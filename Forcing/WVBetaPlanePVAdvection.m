@@ -45,6 +45,17 @@ classdef WVBetaPlanePVAdvection < WVForcing
         betaA0
     end
     methods
+        function contract = portableImplementationContract(self)
+            % Return the paired portable implementation contract.
+            %
+            % - Topic: Forcing internals
+            % - Declaration: contract = portableImplementationContract(self)
+            % - Returns contract: versioned data-only forcing contract
+            % - Developer: true
+            payload = struct("name",string(self.name),"forcingTypes",string(self.forcingType),"priority",self.priority);
+            contract = self.supportedPortableImplementationContract("WVBetaPlanePVAdvection",payload);
+        end
+
         function self = WVBetaPlanePVAdvection(wvt)
             % Create beta-plane QGPV advection for a transform.
             %

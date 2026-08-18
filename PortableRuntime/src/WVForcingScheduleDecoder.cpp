@@ -1,6 +1,7 @@
 #include "WVForcingScheduleDecoder.hpp"
 
 #include "WVNetCDF.hpp"
+#include "WaveVortexRuntime/WVForcingContracts.hpp"
 
 #include <netcdf.h>
 
@@ -259,25 +260,25 @@ WVCheckpointStatus commonRecord(WVForcingKind kind, const WVForcingGroupSource& 
 }
 
 WVCheckpointStatus decodeSupported(const WVForcingGroupSource& source, const WVTransformConstantStratificationConfiguration& configuration, std::size_t coefficientCount, WVFrozenForcingEntry& entry) {
-    const auto* capability = forcingCapability(source.annotatedClass);
-    if (capability == nullptr) return status(WVCheckpointStatusCode::unsupportedForcing, "Unknown forcing class '" + source.annotatedClass + "'.", source.groupPath + "/@AnnotatedClass");
-    if (!capability->isSupported) return status(WVCheckpointStatusCode::unsupportedForcing, capability->unavailabilityReason, source.groupPath + "/@AnnotatedClass");
+    const auto* registration = WVForcingFactoryRegistry::registration(source.annotatedClass);
+    if (registration == nullptr) return status(WVCheckpointStatusCode::unsupportedForcing, "Unknown forcing class '" + source.annotatedClass + "'.", source.groupPath + "/@AnnotatedClass");
+    if (!registration->isSupported) return status(WVCheckpointStatusCode::unsupportedForcing, registration->unavailabilityReason, source.groupPath + "/@AnnotatedClass");
 
-    switch (capability->kind) {
+    switch (registration->operation) {
         case WVForcingKind::nonlinearAdvection: {
             auto result = validateVariables(source.groupId, {}, source.groupPath);
             if (!result) return result;
-            return commonRecord(capability->kind, source, "nonlinear advection", WVForcingStage::spatial, 127, WVNonlinearAdvectionRecord{}, entry);
+            return commonRecord(registration->operation, source, "nonlinear advection", WVForcingStage::spatial, 127, WVNonlinearAdvectionRecord{}, entry);
         }
         case WVForcingKind::adaptiveDamping: {
             auto result = validateVariables(source.groupId, {}, source.groupPath);
             if (!result) return result;
-            return commonRecord(capability->kind, source, "adaptive damping", WVForcingStage::spectral, 255, WVAdaptiveDampingRecord{}, entry);
+            return commonRecord(registration->operation, source, "adaptive damping", WVForcingStage::spectral, 255, WVAdaptiveDampingRecord{}, entry);
         }
         case WVForcingKind::betaPlanePVAdvection: {
             auto result = validateVariables(source.groupId, {}, source.groupPath);
             if (!result) return result;
-            return commonRecord(capability->kind, source, "beta-plane advection of qgpv", WVForcingStage::spectral, 255, WVBetaPlanePVAdvectionRecord{}, entry);
+            return commonRecord(registration->operation, source, "beta-plane advection of qgpv", WVForcingStage::spectral, 255, WVBetaPlanePVAdvectionRecord{}, entry);
         }
         case WVForcingKind::bottomFrictionQuadratic: {
             auto result = validateVariables(source.groupId, {"Cd"}, source.groupPath);
@@ -286,7 +287,7 @@ WVCheckpointStatus decodeSupported(const WVForcingGroupSource& source, const WVT
             result = readFiniteScalar(source.groupId, "Cd", record.Cd, source.groupPath);
             if (!result) return result;
             if (record.Cd < 0.0) return status(WVCheckpointStatusCode::malformedForcing, "Quadratic drag coefficient Cd must be nonnegative.", source.groupPath + "/Cd");
-            return commonRecord(capability->kind, source, "quadratic bottom friction", WVForcingStage::spatial, 255, std::move(record), entry);
+            return commonRecord(registration->operation, source, "quadratic bottom friction", WVForcingStage::spatial, 255, std::move(record), entry);
         }
         case WVForcingKind::fixedAmplitude: {
             const std::set<std::string> variables = {"Ap_indices", "Apbar_real", "Apbar_imag", "Am_indices", "Ambar_real", "Ambar_imag", "A0_indices", "A0bar_real", "A0bar_imag"};
@@ -302,7 +303,7 @@ WVCheckpointStatus decodeSupported(const WVForcingGroupSource& source, const WVT
             if (!result) return result;
             result = readSelectedCoefficients(source.groupId, "A0", coefficientCount, record.A0Indices, record.A0Values, source.groupPath);
             if (!result) return result;
-            return commonRecord(capability->kind, source, std::move(name), WVForcingStage::spectralAmplitude, 255, std::move(record), entry);
+            return commonRecord(registration->operation, source, std::move(name), WVForcingStage::spectralAmplitude, 255, std::move(record), entry);
         }
         case WVForcingKind::pseudoTopographicWaveGeneration: {
             const std::set<std::string> variables = {"topographicHeight", "barotropicVelocityComponent", "barotropicVelocityAmplitude_real", "barotropicVelocityAmplitude_imag", "frequency", "rampDuration", "startTime", "shouldAvoidAdaptiveDamping", "maximumForcedHorizontalWavenumber", "maximumForcedVerticalMode"};
@@ -334,7 +335,7 @@ WVCheckpointStatus decodeSupported(const WVForcingGroupSource& source, const WVT
             if (!result) return result;
             result = readBoundScalar(source.groupId, "maximumForcedVerticalMode", record.maximumForcedVerticalMode, source.groupPath);
             if (!result) return result;
-            return commonRecord(capability->kind, source, std::move(name), WVForcingStage::spectral, 255, std::move(record), entry);
+            return commonRecord(registration->operation, source, std::move(name), WVForcingStage::spectral, 255, std::move(record), entry);
         }
         default:
             return status(WVCheckpointStatusCode::unsupportedForcing, "Forcing class is not supported by portable runtime v1.", source.groupPath + "/@AnnotatedClass");
@@ -352,6 +353,7 @@ WVCheckpointStatus decodeForcingSchedule(
     const WVTransformConstantStratificationConfiguration& configuration,
     std::size_t coefficientCount,
     WVFrozenForcingSchedule& schedule) {
+    WVForcingFactoryRegistry::seal();
     WVFrozenForcingSchedule candidate;
     candidate.entries.reserve(sources.size());
     std::unordered_set<std::string> names;

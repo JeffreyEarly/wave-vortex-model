@@ -27,6 +27,8 @@ The registry is intentionally a native source API rather than a third-party bina
 
 Portable observers and forcings follow the [paired MATLAB and C++ implementation contract](paired-portable-implementations.html). MATLAB remains authoritative, while the runtime accepts only an exact versioned C++ match resolved during preflight.
 
+`WVForcingFactoryRegistry` is separate from the observer registry. Its registrations map the six qualified MATLAB forcing identities to the existing typed payload and execution contracts. The frozen schedule retains MATLAB-compatible names, order, payloads, and persistence, but hot paths dispatch only on resolved operations. The registry is sealed at schedule construction; duplicate, missing, version-mismatched, and late registrations fail before integration.
+
 `WVFieldEvaluationService` owns transform plans and bounded scratch and shares primitive field reconstruction across coincident observers. Particle and tracer tendencies consume the same per-RHS velocity context produced for nonlinear advection, so the runtime does not independently reconstruct or differentiate equivalent quantities.
 
 ## Output and restart
@@ -55,5 +57,12 @@ For a new integrated observer:
 2. Register its portable tag, MATLAB class name, state contract, and output rule with `WVObserverFactoryRegistry`.
 3. Consume shared field services rather than rebuilding transforms or derivatives.
 4. Add a test-only adapter that proves validation, evaluation, persistence, restoration, and restart continuation without another subsystem switch.
+
+For a paired forcing:
+
+1. Keep the MATLAB forcing as the authoritative scientific implementation and return its exact versioned immutable contract.
+2. Register the MATLAB identity with one existing typed payload and execution operation before schedule construction.
+3. Resolve stage, priority, payload validation, derived operators, tendency, constraint, and restart behavior during preflight.
+4. Prove numerical and persistence equivalence without adding class-name dispatch to the forcing engine or integrator.
 
 For a new sink, implement guarded preflight and transactional route delivery without inspecting the integration method.

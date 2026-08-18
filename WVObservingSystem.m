@@ -88,7 +88,7 @@ classdef WVObservingSystem < handle & matlab.mixin.Heterogeneous & CAAnnotatedCl
             % - Parameter self: observing system to inspect
             % - Returns contract: scalar portable implementation contract
             % - Developer: true
-            contract = self.portableContractEnvelope("unavailable",class(self),"No matching portable C++ observing-system implementation is declared.",struct());
+            contract = WVInternal.portableImplementationContract(string(class(self)),string(class(self)),"unavailable","No matching portable C++ observing-system implementation is declared.",struct());
         end
 
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -167,16 +167,7 @@ classdef WVObservingSystem < handle & matlab.mixin.Heterogeneous & CAAnnotatedCl
 
     methods (Access=protected)
         function contract = supportedPortableImplementationContract(self,typeIdentifier,payload)
-            actualType = string(class(self));
-            if actualType ~= typeIdentifier
-                contract = self.portableContractEnvelope("invalidContract",actualType,"An inherited portable contract cannot advertise a different MATLAB class.",struct());
-                return
-            end
-            contract = self.portableContractEnvelope("supported",typeIdentifier,"",payload);
-        end
-
-        function contract = portableContractEnvelope(~,capabilityStatus,typeIdentifier,reason,payload)
-            contract = struct("schemaIdentifier","wave-vortex-portable-pair-v1","schemaVersion",uint32(1),"typeIdentifier",string(typeIdentifier),"contractVersion",uint32(1),"capabilityStatus",string(capabilityStatus),"reason",string(reason),"payload",payload);
+            contract = WVInternal.portableImplementationContract(string(class(self)),string(typeIdentifier),"supported","",payload);
         end
     end
 

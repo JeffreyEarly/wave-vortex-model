@@ -1,4 +1,5 @@
 #include "WaveVortexRuntime/WVForcingEngine.hpp"
+#include "WaveVortexRuntime/WVForcingContracts.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -227,6 +228,7 @@ WVKernelStatus WVConstantStratificationForcingEngine::validateSchedule(
     const WVTransformConstantStratificationConfiguration& configuration,
     const WVFrozenForcingSchedule& schedule,
     WVShape2D coefficientShape) {
+    WVForcingFactoryRegistry::seal();
     if (schedule.profileIdentifier != WVForcingScheduleProfileIdentifier || schedule.profileVersion != WVForcingScheduleProfileVersion) {
         return {WVKernelStatusCode::unsupportedOperation,"Unsupported frozen forcing schedule profile."};
     }
@@ -236,6 +238,8 @@ WVKernelStatus WVConstantStratificationForcingEngine::validateSchedule(
     const auto count = coefficientShape.elementCount();
     std::set<std::string> names;
     for (const auto& entry : schedule.entries) {
+        const auto* registration = WVForcingFactoryRegistry::registration(entry.typeIdentifier);
+        if (registration == nullptr || !registration->isSupported || registration->contractVersion != WVPortablePairContractVersion || registration->operation != entry.kind) return {WVKernelStatusCode::unsupportedOperation,"The frozen schedule has no matching paired C++ forcing registration."};
         if (!supportedKind(entry.kind)) return {WVKernelStatusCode::unsupportedOperation,"The frozen schedule contains an unsupported forcing class."};
         if (entry.stage != requiredStage(entry.kind)) return {WVKernelStatusCode::invalidConfiguration,"A forcing record is assigned to the wrong execution stage."};
         if (entry.name.empty() || !names.insert(entry.name).second) return {WVKernelStatusCode::invalidConfiguration,"Forcing names must be nonempty and unique."};
