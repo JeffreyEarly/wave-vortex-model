@@ -112,7 +112,8 @@ end
 require(attributeStatus && attributes.UserExecute, ...
     "The exported portable-runtime build script is not executable.");
 exportedFiles = string({dir(fullfile(exportPath,"**","*")).name});
-forbiddenNames = endsWith(exportedFiles,[".a" ".o" ".dylib" ".so" ".tar.gz"]) | startsWith(exportedFiles,"wave-vortex-run");
+compiledRunnerNames = exportedFiles == "wave-vortex-run" | exportedFiles == "wave-vortex-run.exe";
+forbiddenNames = endsWith(exportedFiles,[".a" ".o" ".dylib" ".so" ".tar.gz"]) | compiledRunnerNames;
 require(~any(forbiddenNames), ...
     "The exported package contains a compiled product or downloaded archive.");
 

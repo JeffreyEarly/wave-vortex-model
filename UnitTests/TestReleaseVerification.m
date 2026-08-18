@@ -98,6 +98,9 @@ classdef TestReleaseVerification < matlab.unittest.TestCase
             testCase.verifySubstring(buildScript,'repository_root=$(CDPATH= cd -- "$script_directory/.." && pwd)');
             testCase.verifySubstring(cmake,'WaveVortexModel-${WV_RUNTIME_PACKAGE_VERSION}');
             testCase.verifySubstring(helper,"compiled product or downloaded archive");
+            testCase.verifySubstring(helper,'exportedFiles == "wave-vortex-run"');
+            testCase.verifySubstring(helper,'exportedFiles == "wave-vortex-run.exe"');
+            testCase.verifyFalse(contains(helper,'startsWith(exportedFiles,"wave-vortex-run")'));
         end
 
         function routineWorkflowsUsePilotDependencySnapshot(testCase)
