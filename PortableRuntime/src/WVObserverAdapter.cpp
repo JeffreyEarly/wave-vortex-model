@@ -216,8 +216,10 @@ WVKernelStatus registerObserverImplementation(
     return invalid(
         "Observer implementations must be registered before descriptor construction.");
   for (const auto &existing : mutableImplementations())
-    if (existing->typeIdentifier() == implementation->typeIdentifier())
-      return invalid("Observer implementation identities must be unique.");
+    if (existing->typeIdentifier() == implementation->typeIdentifier() &&
+        existing->contractVersion() == implementation->contractVersion())
+      return invalid(
+          "Observer implementation identity/version pairs must be unique.");
   mutableImplementations().push_back(std::move(implementation));
   return WVKernelStatus::ok();
 }

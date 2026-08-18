@@ -46,6 +46,29 @@ public:
   }
 };
 
+class WVTestPortablePointDiagnosticV2 final : public WVObservingSystem {
+public:
+  const std::string &typeIdentifier() const noexcept override {
+    static const std::string value = "WVTestPortablePointDiagnostic";
+    return value;
+  }
+  std::uint32_t contractVersion() const noexcept override { return 2; }
+  const std::string &fieldListAttribute() const noexcept override {
+    static const std::string value = "fieldNames";
+    return value;
+  }
+  WVKernelStatus validate(
+      const WVObserverRecord &,
+      const std::map<std::string, const WVStateBlockRecord *> &,
+      std::map<std::string, std::size_t> &) const override {
+    return WVKernelStatus::ok();
+  }
+  bool recordsFixedPoints() const noexcept override { return true; }
+  std::size_t persistentBytes() const noexcept override {
+    return sizeof(*this);
+  }
+};
+
 } // namespace
 
 int main() {
@@ -81,14 +104,23 @@ int main() {
   require(!WVObserverFactoryRegistry::registerImplementation(
               testImplementation),
           "duplicate observer implementation registration succeeded");
+  auto testImplementationV2 =
+      std::make_shared<WVTestPortablePointDiagnosticV2>();
+  require(static_cast<bool>(WVObserverFactoryRegistry::registerImplementation(
+              testImplementationV2)),
+          "a second contract version could not be registered");
   require(WVObserverFactoryRegistry::capability(
               "WVTestPortablePointDiagnostic", 1)
               .isSupported(),
           "registered observer pair is unavailable");
   require(WVObserverFactoryRegistry::capability(
               "WVTestPortablePointDiagnostic", 2)
+              .isSupported(),
+          "the second observer contract version is unavailable");
+  require(WVObserverFactoryRegistry::capability(
+              "WVTestPortablePointDiagnostic", 3)
               .status == WVPortableCapabilityStatus::versionMismatch,
-          "observer contract mismatch was accepted");
+          "an unavailable observer contract version was accepted");
   require(WVObserverFactoryRegistry::capability("WVCustomObserver", 1).status ==
               WVPortableCapabilityStatus::unavailable,
           "missing observer pair did not report unavailability");
