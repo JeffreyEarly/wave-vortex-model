@@ -124,6 +124,17 @@ classdef WVAdaptiveDamping < WVForcing
     end
 
     methods
+        function contract = portableImplementationContract(self)
+            % Return the paired portable implementation contract.
+            %
+            % - Topic: Forcing internals
+            % - Declaration: contract = portableImplementationContract(self)
+            % - Returns contract: versioned data-only forcing contract
+            % - Developer: true
+            payload = struct("name",string(self.name),"forcingTypes",string(self.forcingType),"priority",self.priority,"assumedEffectiveHorizontalGridResolution",double(self.assumedEffectiveHorizontalGridResolution),"kNoDamp",double(self.k_no_damp),"jNoDamp",double(self.j_no_damp));
+            contract = self.supportedPortableImplementationContract("WVAdaptiveDamping",payload);
+        end
+
         function self = WVAdaptiveDamping(wvt)
             % Create adaptive spectral damping for a transform.
             %

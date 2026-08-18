@@ -105,6 +105,17 @@ classdef WVFixedAmplitudeForcing < WVForcing
     end
 
     methods
+        function contract = portableImplementationContract(self)
+            % Return the paired portable implementation contract.
+            %
+            % - Topic: Forcing internals
+            % - Declaration: contract = portableImplementationContract(self)
+            % - Returns contract: versioned data-only forcing contract
+            % - Developer: true
+            payload = struct("name",string(self.name),"forcingTypes",string(self.forcingType),"priority",self.priority,"ApIndices",self.Ap_indices,"ApValues",self.Apbar,"AmIndices",self.Am_indices,"AmValues",self.Ambar,"A0Indices",self.A0_indices,"A0Values",self.A0bar);
+            contract = self.supportedPortableImplementationContract("WVFixedAmplitudeForcing",payload);
+        end
+
         function self = WVFixedAmplitudeForcing(wvt,options)
             % Create fixed-amplitude forcing for selected coefficients.
             %

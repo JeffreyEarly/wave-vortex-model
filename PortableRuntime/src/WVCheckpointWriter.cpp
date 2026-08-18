@@ -1,4 +1,5 @@
 #include "WaveVortexRuntime/WVCheckpointWriter.hpp"
+#include "WaveVortexRuntime/WVForcingContracts.hpp"
 
 #include "WVCheckpointWriterTestHooks.hpp"
 #include "WVNetCDF.hpp"
@@ -77,8 +78,8 @@ WVCheckpointStatus validateEntry(
     const WVFrozenForcingEntry& entry,
     const WVTransformConstantStratificationConfiguration& configuration,
     std::size_t coefficientCount) {
-    const auto* capability = forcingCapability(entry.typeIdentifier);
-    if (capability == nullptr || !capability->isSupported || capability->kind != entry.kind) {
+    const auto* registration = WVForcingFactoryRegistry::registration(entry.typeIdentifier);
+    if (registration == nullptr || !registration->isSupported || registration->operation != entry.kind) {
         return status(WVCheckpointStatusCode::unsupportedForcing, "The checkpoint contains a forcing entry that portable runtime v1 cannot write.", "/forcing/@AnnotatedClass");
     }
     if (entry.name.empty()) return status(WVCheckpointStatusCode::malformedForcing, "Forcing names must not be empty.", "/forcing/@name");

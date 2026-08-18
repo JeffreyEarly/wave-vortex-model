@@ -35,39 +35,6 @@ enum class WVForcingStage : std::uint8_t {
     spectralAmplitude
 };
 
-struct WVForcingCapability {
-    WVForcingKind kind;
-    const char* typeIdentifier;
-    std::vector<std::string> forcingTypes;
-    bool isSupported;
-    const char* unavailabilityReason;
-};
-
-inline const std::array<WVForcingCapability, 12>& forcingCapabilities() {
-    static const std::array<WVForcingCapability, 12> capabilities = {{
-        {WVForcingKind::nonlinearAdvection, "WVNonlinearAdvection", {"HydrostaticSpatial", "NonhydrostaticSpatial", "PVSpatial"}, true, ""},
-        {WVForcingKind::antialiasing, "WVAntialiasing", {"Spectral", "PVSpectral"}, false, "Transform-level antialiasing is represented by shouldAntialias; the diagnostic WVAntialiasing closure is not supported."},
-        {WVForcingKind::adaptiveDamping, "WVAdaptiveDamping", {"Spectral", "PVSpectral"}, true, ""},
-        {WVForcingKind::fixedAmplitude, "WVFixedAmplitudeForcing", {"SpectralAmplitude", "PVSpectralAmplitude"}, true, ""},
-        {WVForcingKind::bottomFrictionQuadratic, "WVBottomFrictionQuadratic", {"HydrostaticSpatial", "NonhydrostaticSpatial", "PVSpatial"}, true, ""},
-        {WVForcingKind::pseudoTopographicWaveGeneration, "WVPseudoTopographicWaveGeneration", {"Spectral"}, true, ""},
-        {WVForcingKind::betaPlanePVAdvection, "WVBetaPlanePVAdvection", {"Spectral", "PVSpatial"}, true, ""},
-        {WVForcingKind::horizontalDamping, "WVHorizontalDamping", {"HydrostaticSpatial", "NonhydrostaticSpatial"}, false, "WVHorizontalDamping is not implemented by portable runtime v1."},
-        {WVForcingKind::verticalDamping, "WVVerticalDamping", {"HydrostaticSpatial", "NonhydrostaticSpatial"}, false, "WVVerticalDamping is not implemented by portable runtime v1."},
-        {WVForcingKind::thermalDamping, "WVThermalDamping", {"PVSpatial"}, false, "WVThermalDamping is not implemented by portable runtime v1."},
-        {WVForcingKind::bottomFrictionLinear, "WVBottomFrictionLinear", {"HydrostaticSpatial", "NonhydrostaticSpatial", "PVSpatial"}, false, "WVBottomFrictionLinear is not implemented by portable runtime v1."},
-        {WVForcingKind::verticalDiffusivity, "WVVerticalDiffusivity", {"HydrostaticSpatial", "NonhydrostaticSpatial", "PVSpatial"}, false, "WVVerticalDiffusivity is not implemented by portable runtime v1."}
-    }};
-    return capabilities;
-}
-
-inline const WVForcingCapability* forcingCapability(const std::string& typeIdentifier) {
-    for (const auto& capability : forcingCapabilities()) {
-        if (typeIdentifier == capability.typeIdentifier) return &capability;
-    }
-    return nullptr;
-}
-
 inline const char* forcingStageName(WVForcingStage stage) noexcept {
     switch (stage) {
         case WVForcingStage::spatial: return "spatial";

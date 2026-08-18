@@ -1,6 +1,7 @@
 #include "WaveVortexRuntime/WVRungeKutta.hpp"
 #include "WaveVortexRuntime/WVConstantStratificationIntegrationSystem.hpp"
 #include "WaveVortexRuntime/WVForcingEngine.hpp"
+#include "WaveVortexRuntime/WVForcingContracts.hpp"
 #include "WVReferenceFFTEngine.hpp"
 
 #include <algorithm>
@@ -188,7 +189,7 @@ void testFixedAmplitudeAndRK4() {
     fixed.AmIndices = {1}; fixed.AmValues = {{-0.75,0.5}};
     fixed.A0Indices = {2}; fixed.A0Values = {{0.375,0.625}};
     WVFrozenForcingSchedule schedule;
-    schedule.entries.push_back(entry(WVForcingKind::fixedAmplitude,"WVFixedAmplitudeForcing","fixed",WVForcingStage::spectralAmplitude,255,fixed));
+    schedule.entries.push_back(entry(WVForcingKind::fixedAmplitude,"WVTestPortableFixedAmplitudeForcing","fixed",WVForcingStage::spectralAmplitude,255,fixed));
     auto system = createSystem(true,schedule);
     OwnedState owned(system->kernel().descriptor().spectralShape());
     auto state = owned.integrationView();
@@ -343,6 +344,12 @@ void testValidation() {
 
 int main() {
     try {
+        const auto registration = WVForcingFactoryRegistry::registerAdapter(
+            {WVForcingKind::fixedAmplitude,
+             "WVTestPortableFixedAmplitudeForcing",
+             WVPortablePairContractVersion,
+             {"SpectralAmplitude", "PVSpectralAmplitude"}, true, ""});
+        require(static_cast<bool>(registration), registration.message);
         testNonlinearCompatibility(true);
         testNonlinearCompatibility(false);
         testFixedAmplitudeAndRK4();

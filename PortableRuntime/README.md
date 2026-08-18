@@ -63,4 +63,6 @@ Plans, caches, integrator history, derived forcing operators, and scratch are re
 
 Registrations include the exact paired MATLAB/C++ identity and contract version and must be installed before the first observer descriptor is constructed. Descriptor construction seals the registry; integration performs no registration discovery or class-name lookup.
 
+`WVForcingFactoryRegistry` provides the corresponding source-level seam for forcing pairs. It maps exact MATLAB identities to the existing typed payload and execution operations, then seals when a schedule is constructed. The forcing engine and integrators see only the resolved operation contracts; they contain no MATLAB class-name dispatch.
+
 See the website's portable-runtime user and developer pages for the supported compatibility profile and extension boundaries.

@@ -1,4 +1,5 @@
 #include "WaveVortexRuntime/WVCheckpointReader.hpp"
+#include "WaveVortexRuntime/WVForcingContracts.hpp"
 
 #include <netcdf.h>
 
@@ -30,6 +31,8 @@ void require(bool condition, const std::string& message) {
 void requireNetCDF(int status, const std::string& operation) {
     if (status != NC_NOERR) throw std::runtime_error(operation + ": " + nc_strerror(status));
 }
+
+void overwriteTextAttribute(int groupId, const char* name, const std::string& value);
 
 std::filesystem::path fixture(const std::string& name) {
     return std::filesystem::path(WV_CHECKPOINT_FIXTURE_DIR) / name;
@@ -124,21 +127,41 @@ void testAllocationLightInspection() {
 }
 
 void testForcingCapabilities() {
-    const auto& capabilities = forcingCapabilities();
-    require(capabilities.size() == 12, "forcing capability matrix does not cover all supplied classes");
+    const auto& capabilities = WVForcingFactoryRegistry::registrations();
+    require(capabilities.size() == 13, "forcing capability matrix does not cover supplied and test classes");
     std::size_t supported = 0;
     std::set<std::string> identifiers;
     for (const auto& capability : capabilities) {
-        require(identifiers.insert(capability.typeIdentifier).second, "forcing capability identifier repeated");
+        require(identifiers.insert(capability.matlabClassName).second, "forcing capability identifier repeated");
         require(!capability.forcingTypes.empty(), "forcing capability omitted WVForcingType names");
         if (capability.isSupported) {
             ++supported;
-            require(std::string(capability.unavailabilityReason).empty(), "supported forcing has an unavailability reason");
+            require(capability.unavailabilityReason.empty(), "supported forcing has an unavailability reason");
         } else {
-            require(!std::string(capability.unavailabilityReason).empty(), "unsupported forcing omitted its reason");
+            require(!capability.unavailabilityReason.empty(), "unsupported forcing omitted its reason");
         }
     }
-    require(supported == 6, "forcing capability matrix must expose six runtime-v1 classes");
+    require(supported == 7, "forcing capability matrix must expose six production pairs and one test pair");
+    require(WVForcingFactoryRegistry::capability("WVTestPortableFixedAmplitudeForcing").isSupported(), "registered test forcing pair is unavailable");
+    require(WVForcingFactoryRegistry::capability("WVTestPortableFixedAmplitudeForcing", 2).status == WVPortableCapabilityStatus::versionMismatch, "forcing pair version mismatch was accepted");
+    require(WVForcingFactoryRegistry::capability("WVUserForcing").status == WVPortableCapabilityStatus::unavailable, "missing forcing pair did not report unavailability");
+}
+
+void testRegisteredFixedAmplitudePair() {
+    TemporaryFile file(temporaryCopy("forcing-fixed-amplitude.nc"));
+    int id = -1;
+    requireNetCDF(nc_open(file.path.string().c_str(), NC_WRITE, &id), "open paired fixed-amplitude fixture");
+    int forcingId = -1;
+    requireNetCDF(nc_inq_ncid(id, "forcing", &forcingId), "find paired fixed-amplitude forcing");
+    overwriteTextAttribute(forcingId, "AnnotatedClass", "WVTestPortableFixedAmplitudeForcing");
+    requireNetCDF(nc_close(id), "close paired fixed-amplitude fixture");
+    WVCheckpoint checkpoint;
+    const auto result = WVCheckpointReader::read(file.path.string(), checkpoint);
+    require(static_cast<bool>(result), result.message);
+    require(checkpoint.forcingSchedule.entries.size() == 1 &&
+                checkpoint.forcingSchedule.entries.front().kind == WVForcingKind::fixedAmplitude &&
+                checkpoint.forcingSchedule.entries.front().typeIdentifier == "WVTestPortableFixedAmplitudeForcing",
+            "registered fixed-amplitude pair did not reuse the typed payload contract");
 }
 
 void testSupportedForcingFixtures() {
@@ -466,9 +489,18 @@ void testMalformedForcingRecords() {
 
 int main() {
     try {
+        const auto testPair = WVForcingFactoryRegistry::Registration{
+            WVForcingKind::fixedAmplitude,
+            "WVTestPortableFixedAmplitudeForcing",
+            WVPortablePairContractVersion,
+            {"SpectralAmplitude", "PVSpectralAmplitude"}, true, ""};
+        const auto registration = WVForcingFactoryRegistry::registerAdapter(testPair);
+        require(static_cast<bool>(registration), registration.message);
+        require(!WVForcingFactoryRegistry::registerAdapter(testPair), "duplicate forcing pair registration succeeded");
         testPositiveFixtures();
         testAllocationLightInspection();
         testForcingCapabilities();
+        testRegisteredFixedAmplitudePair();
         testSupportedForcingFixtures();
         testMixedForcingSchedules();
         testUnsupportedVersionAndTransform();
@@ -478,6 +510,10 @@ int main() {
         testOrderedForcingHeaders();
         testUnsupportedForcingClasses();
         testMalformedForcingRecords();
+        require(WVForcingFactoryRegistry::isSealed(), "forcing registry was not sealed during schedule construction");
+        auto latePair = testPair;
+        latePair.matlabClassName = "WVLateForcing";
+        require(!WVForcingFactoryRegistry::registerAdapter(std::move(latePair)), "late forcing registration succeeded");
         std::cout << "WaveVortex checkpoint reader tests passed.\n";
         return 0;
     } catch (const std::exception& exception) {

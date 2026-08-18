@@ -68,6 +68,17 @@ classdef WVNonlinearAdvection < WVForcing
     end
 
     methods
+        function contract = portableImplementationContract(self)
+            % Return the paired portable implementation contract.
+            %
+            % - Topic: Forcing internals
+            % - Declaration: contract = portableImplementationContract(self)
+            % - Returns contract: versioned data-only forcing contract
+            % - Developer: true
+            payload = struct("name",string(self.name),"forcingTypes",string(self.forcingType),"priority",self.priority);
+            contract = self.supportedPortableImplementationContract("WVNonlinearAdvection",payload);
+        end
+
         function self = WVNonlinearAdvection(wvt)
             % Create nonlinear advection for a transform.
             %

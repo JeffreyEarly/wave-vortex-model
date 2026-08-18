@@ -152,6 +152,17 @@ classdef WVPseudoTopographicWaveGeneration < WVForcing
     end
 
     methods
+        function contract = portableImplementationContract(self)
+            % Return the paired portable implementation contract.
+            %
+            % - Topic: Forcing internals
+            % - Declaration: contract = portableImplementationContract(self)
+            % - Returns contract: versioned data-only forcing contract
+            % - Developer: true
+            payload = struct("name",string(self.name),"forcingTypes",string(self.forcingType),"priority",self.priority,"topographicHeight",self.topographicHeight,"barotropicVelocityAmplitude",self.barotropicVelocityAmplitude,"frequency",self.frequency,"darwinSymbol",self.darwinSymbol,"rampDuration",self.rampDuration,"startTime",self.startTime,"shouldAvoidAdaptiveDamping",self.shouldAvoidAdaptiveDamping,"maximumForcedHorizontalWavenumber",self.maximumForcedHorizontalWavenumber,"maximumForcedVerticalMode",self.maximumForcedVerticalMode);
+            contract = self.supportedPortableImplementationContract("WVPseudoTopographicWaveGeneration",payload);
+        end
+
         function self = WVPseudoTopographicWaveGeneration(wvt,options)
             % Create a prescribed bottom wave-generation forcing.
             %
