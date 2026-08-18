@@ -88,6 +88,6 @@ The registry deliberately has process lifetime: the first descriptor seals it, s
 
 Registrations include the exact paired MATLAB/C++ identity and contract version and must be installed before the first observer descriptor is constructed. Descriptor construction seals the registry; integration performs no registration discovery or class-name lookup.
 
-`WVForcingFactoryRegistry` provides the corresponding source-level seam for forcing pairs. It maps exact MATLAB identities to the existing typed payload and execution operations, then seals when a schedule is constructed. The forcing engine and integrators see only the resolved operation contracts; they contain no MATLAB class-name dispatch.
+`WVForcingFactoryRegistry` provides the corresponding source-level seam for forcing pairs. It maps exact MATLAB identities and versions to construction-time factories and generic persistence schemas, then seals when a schedule is constructed. Each factory returns an immutable source-linked `WVForcing` that owns typed configuration and derived operators and is called once per forcing stage or constraint pass. The engine, integrators, reader, writer, and checkpoint code contain no forcing-class switch, and no string lookup occurs in coefficient or grid loops.
 
 See the website's portable-runtime user and developer pages for the supported compatibility profile and extension boundaries.
