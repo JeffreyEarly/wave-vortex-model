@@ -174,7 +174,8 @@ WVKernelStatus WVObserverOutputEvaluationService::create(
     const WVTransformConstantStratificationConfiguration &configuration,
     bool isDynamicsLinear, const WVPortableObserverDescriptor &descriptor,
     std::unique_ptr<WVFFTEngine> engine,
-    std::unique_ptr<WVObserverOutputEvaluationService> &service) {
+    std::unique_ptr<WVObserverOutputEvaluationService> &service,
+    WVFieldEvaluationService *borrowedFieldEvaluationService) {
   try {
     auto candidate = std::unique_ptr<WVObserverOutputEvaluationService>(
         new WVObserverOutputEvaluationService());
@@ -183,11 +184,16 @@ WVKernelStatus WVObserverOutputEvaluationService::create(
     impl.configuration = configuration;
     impl.isDynamicsLinear = isDynamicsLinear;
     impl.descriptor = descriptor.record();
-    auto status = WVFieldEvaluationService::create(
-        configuration, std::move(engine), impl.ownedFields);
-    if (!status)
-      return status;
-    impl.fields = impl.ownedFields.get();
+    WVKernelStatus status;
+    if (borrowedFieldEvaluationService == nullptr) {
+      status = WVFieldEvaluationService::create(
+          configuration, std::move(engine), impl.ownedFields);
+      if (!status)
+        return status;
+      impl.fields = impl.ownedFields.get();
+    } else {
+      impl.fields = borrowedFieldEvaluationService;
+    }
 
     std::vector<WVFieldRequest> initialRequests;
     std::vector<WVFieldRequest> timeSeriesRequests;

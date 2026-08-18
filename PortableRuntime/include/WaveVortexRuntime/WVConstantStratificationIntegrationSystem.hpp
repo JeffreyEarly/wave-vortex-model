@@ -84,6 +84,9 @@ public:
   const WVTransformConstantStratificationKernel &kernel() const noexcept {
     return forcing_->kernel();
   }
+  WVTransformConstantStratificationKernel &kernel() noexcept {
+    return forcing_->kernel();
+  }
   const WVForcingEngineMetrics &forcingMetrics() const noexcept {
     return forcing_->metrics();
   }

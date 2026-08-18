@@ -1,6 +1,7 @@
 #include "mex.h"
 
 #include "WVNativeFFTWEngine.hpp"
+#include "WaveVortexRuntime/WVModel.hpp"
 #include "WaveVortexKernel/WVTransformConstantStratificationKernel.hpp"
 
 #include <cstdint>
@@ -10,10 +11,11 @@
 #include <unordered_map>
 
 using namespace wavevortex;
+using namespace wavevortex::runtime;
 
 namespace {
 
-std::unordered_map<std::uint64_t,std::unique_ptr<WVTransformConstantStratificationKernel>> kernels;
+std::unordered_map<std::uint64_t,std::unique_ptr<WVModel>> models;
 std::uint64_t nextHandle = 1;
 
 void fail(const char* identifier, const std::string& message) { mexErrMsgIdAndTxt(identifier,"%s",message.c_str()); }
@@ -42,8 +44,15 @@ std::uint64_t scalarHandle(const mxArray* value) {
 
 WVTransformConstantStratificationKernel& kernel(const mxArray* value) {
     const auto handle = scalarHandle(value);
-    const auto iterator = kernels.find(handle);
-    if (iterator == kernels.end()) fail("WaveVortexModel:CompiledKernelHandle","Kernel handle is invalid or deleted.");
+    const auto iterator = models.find(handle);
+    if (iterator == models.end()) fail("WaveVortexModel:CompiledKernelHandle","Kernel handle is invalid or deleted.");
+    return iterator->second->internalIntegrationSystem().kernel();
+}
+
+WVModel& model(const mxArray* value) {
+    const auto handle = scalarHandle(value);
+    const auto iterator = models.find(handle);
+    if (iterator == models.end()) fail("WaveVortexModel:CompiledKernelHandle","Kernel handle is invalid or deleted.");
     return *iterator->second;
 }
 
@@ -162,7 +171,7 @@ mxArray* realBundleOutput(WVShape3D spatial, std::size_t channels, WVRealFieldBu
     return value;
 }
 
-void cleanup() { kernels.clear(); }
+void cleanup() { models.clear(); }
 
 mxArray* scalarString(const std::string& value) { return mxCreateString(value.c_str()); }
 
@@ -196,7 +205,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
         const char* names[] = {"kernelCount","moduleLocked","activePlans","totalPlansCreated","totalPlansDestroyed","outstandingPlanningBytes","totalPlanningSeconds"};
         plhs[0] = mxCreateStructMatrix(1,1,7,names);
         const auto lifetime = WVFFTWEngine::lifetimeMetrics();
-        const double values[] = {static_cast<double>(kernels.size()),kernels.empty() ? 0.0 : 1.0,static_cast<double>(lifetime.activePlans),static_cast<double>(lifetime.totalPlansCreated),static_cast<double>(lifetime.totalPlansDestroyed),static_cast<double>(lifetime.outstandingPlanningBytes),lifetime.totalPlanningSeconds};
+        const double values[] = {static_cast<double>(models.size()),models.empty() ? 0.0 : 1.0,static_cast<double>(lifetime.activePlans),static_cast<double>(lifetime.totalPlansCreated),static_cast<double>(lifetime.totalPlansDestroyed),static_cast<double>(lifetime.outstandingPlanningBytes),lifetime.totalPlanningSeconds};
         for (std::size_t i = 0; i < 7; ++i) mxSetField(plhs[0],0,names[i],mxCreateDoubleScalar(values[i]));
         return;
     }
@@ -227,11 +236,13 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
         if (nrhs != 3 || nlhs != 1) fail("WaveVortexModel:CompiledKernelCommand","create requires configuration and thread count.");
         std::unique_ptr<WVFFTEngine> engine;
         requireStatus(WVFFTWEngine::create(static_cast<std::size_t>(mxGetScalar(prhs[2])),engine));
-        std::unique_ptr<WVTransformConstantStratificationKernel> value;
-        requireStatus(WVTransformConstantStratificationKernel::create(configuration(prhs[1]),std::move(engine),value));
+        auto value = std::make_unique<WVModel>();
+        requireStatus(WVModel::create(configuration(prhs[1]),
+                                      defaultNonlinearAdvectionSchedule(),
+                                      std::move(engine),{},*value));
         const auto handle = nextHandle++;
-        kernels.emplace(handle,std::move(value));
-        if (kernels.size() == 1) { mexLock(); mexAtExit(cleanup); }
+        models.emplace(handle,std::move(value));
+        if (models.size() == 1) { mexLock(); mexAtExit(cleanup); }
         plhs[0] = mxCreateNumericMatrix(1,1,mxUINT64_CLASS,mxREAL); *mxGetUint64s(plhs[0]) = handle;
         return;
     }
@@ -240,18 +251,20 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
         const auto mode = stringInput(prhs[3],"Failure mode");
         if (mode == "execution" && nlhs != 1) fail("WaveVortexModel:CompiledKernelCommand","The execution failure mode returns a handle.");
         auto engine = injectedEngine(mode,static_cast<std::size_t>(mxGetScalar(prhs[2])));
-        std::unique_ptr<WVTransformConstantStratificationKernel> value;
-        requireStatus(WVTransformConstantStratificationKernel::create(configuration(prhs[1]),std::move(engine),value));
+        auto value = std::make_unique<WVModel>();
+        requireStatus(WVModel::create(configuration(prhs[1]),
+                                      defaultNonlinearAdvectionSchedule(),
+                                      std::move(engine),{},*value));
         const auto handle = nextHandle++;
-        kernels.emplace(handle,std::move(value));
-        if (kernels.size() == 1) { mexLock(); mexAtExit(cleanup); }
+        models.emplace(handle,std::move(value));
+        if (models.size() == 1) { mexLock(); mexAtExit(cleanup); }
         plhs[0] = mxCreateNumericMatrix(1,1,mxUINT64_CLASS,mxREAL); *mxGetUint64s(plhs[0]) = handle;
         return;
     }
     if (command == "delete") {
         if (nrhs != 2 || nlhs != 0) fail("WaveVortexModel:CompiledKernelCommand","delete requires one handle.");
-        if (kernels.erase(scalarHandle(prhs[1])) == 0) fail("WaveVortexModel:CompiledKernelHandle","Kernel handle is invalid or deleted.");
-        if (kernels.empty()) mexUnlock();
+        if (models.erase(scalarHandle(prhs[1])) == 0) fail("WaveVortexModel:CompiledKernelHandle","Kernel handle is invalid or deleted.");
+        if (models.empty()) mexUnlock();
         return;
     }
     auto& value = kernel(nrhs > 1 ? prhs[1] : nullptr);
@@ -297,7 +310,10 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
         WVFlux flux;
         plhs[0] = complexOutput(spectral,flux.Fp); plhs[1] = complexOutput(spectral,flux.Fm); plhs[2] = complexOutput(spectral,flux.F0);
         const auto start = std::chrono::steady_clock::now();
-        requireStatus(value.nonlinearFlux(state,flux));
+        WVIntegrationState integrationState{state,nullptr,0};
+        WVIntegrationFlux integrationFlux{flux,nullptr,0};
+        requireStatus(model(prhs[1]).evaluateRightHandSide(
+            integrationState,integrationFlux));
         if (timed) plhs[3] = mxCreateDoubleScalar(std::chrono::duration<double>(std::chrono::steady_clock::now()-start).count());
         return;
     }

@@ -54,6 +54,14 @@ WVModelOutputConfiguration::build(
 
 Every status must be checked in production code. The abbreviated example emphasizes the MATLAB-shaped construction sequence; integration consumes `output.plan()`, while `output.openNetCDFSink(...)` creates the existing persistence sink.
 
+## Runtime façade
+
+The provisional move-only `WVModel` façade is the common owner used by the standalone program and the production MEX right-hand-side path. It owns immutable resolved services: forcing, observer behavior, numerical system, integrator, output evaluation, driver, sink, and metrics. `WVModelState` separately owns canonical `[Nj,Nkl]` coefficients and explicit particle or tracer state blocks. This separation follows MATLAB's distinction between model configuration and evolving state without copying state into a façade layer.
+
+`WVModel::createFromModelOutputFiles()` inspects a complete sibling NetCDF set together, selects the latest complete compatible state, and rebuilds derived services. A destination map may replace file paths by stable file identifier, but cannot change observer membership, group schedules, or progress. The transient inspection and builder records are consumed; runtime routes retain resolved ordinals and pointers.
+
+The façade deliberately provides high-level restart, right-hand-side, integration, output, capability, and metrics operations rather than a broad public transform API. Numerical stages remain in the existing kernel and field services, and persistence remains in the existing sink.
+
 The source-level extension surface deliberately provides no binary plug-in ABI and does not execute MATLAB subclass code in C++. It introduces no second persistence graph, per-element virtual dispatch, hot-loop string lookup, or state-sized façade copy.
 
 ## Add a paired implementation

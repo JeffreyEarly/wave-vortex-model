@@ -5,6 +5,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <limits>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -298,6 +299,12 @@ void testStructuralCompilation() {
 void testValidationAndDeterministicIdentifiers() {
   TemporaryDirectory directory;
   const auto checkpoint = checkpointTemplate();
+  WVModelOutputGroup unbounded;
+  auto unboundedStatus = WVModelOutputGroup::evenlySpaced(
+      "unbounded", 1.0, checkpoint.state.t,
+      std::numeric_limits<double>::infinity(), unbounded);
+  require(static_cast<bool>(unboundedStatus),
+          "MATLAB's unbounded evenly spaced schedule was rejected");
   WVModelOutputFile first;
   WVModelOutputFile second;
   auto status = WVModelOutputFile::create(

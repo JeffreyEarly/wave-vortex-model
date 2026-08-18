@@ -9,6 +9,8 @@ nav_order: 12
 
 The portable runtime composes the MATLAB-independent `WaveVortexKernel` with integration, field evaluation, observing-system adapters, and NetCDF persistence. MATLAB/MEX, NetCDF, FFTW, and Apple APIs remain outside the numerical core.
 
+The move-only `WVModel` façade owns that composition, while `WVModelState` owns evolving canonical coefficients and explicit observer state. The façade delegates to the contracts below; it does not introduce another numerical, output, or persistence implementation. Both the standalone runner and production MEX right-hand-side path use this owner.
+
 ## Integration boundaries
 
 `WVIntegrationStateLayout` describes canonical `Ap`, `Am`, and `A0` plus zero or more typed observer-owned blocks. Coefficient-only execution is the same representation with no additional blocks.
@@ -39,7 +41,7 @@ Developer-facing `WVModelOutputFile` and `WVModelOutputGroup` builders provide M
 
 `WVModelOutputNetCDFSink` writes MATLAB-compatible records transactionally: payload variables precede the time commit, incomplete records are rejected, and dynamic particle or tracer state is restored with the canonical coefficients. Plans, mappings, derived operators, caches, integrator history, and scratch are never checkpoint data.
 
-`wave-vortex-run` treats that reconstructed record as the model boundary. Its allocation-light preflight resolves the dynamics mode, frozen forcing order, observer identities and dependencies, output schedules, committed ordinals, and integration layout before coefficient-sized state or numerical workspaces are allocated. Full-model continuation uses the same descriptor for the integration system, observer evaluation, output plan, and append sink. The reduced coefficient-only reader remains available only through an explicit restart mode.
+`WVModel::createFromModelOutputFiles()` treats the complete reconstructed sibling-file record as the model boundary. Its allocation-light preflight resolves the dynamics mode, frozen forcing order, observer identities and dependencies, output schedules, committed ordinals, and integration layout before numerical execution. Full-model continuation uses the same descriptor for the integration system, observer evaluation, output plan, and sink. Destination remapping changes paths by stable file identifier only. The reduced coefficient-only reader remains available for the explicit legacy workflow.
 
 The command-line mutation policy is separate from the restart mode. Full-model continuation requires explicit in-place `append`; coefficient-only output requires safe `create` or authorized `replace`. Path aliases, incompatible append graphs, and existing create destinations are rejected before integration. Replacement uses the checkpoint writer's verified temporary-file commit rather than truncating a destination in place.
 

@@ -33,6 +33,17 @@ foreach(token "netcdf.h" "nc_open(" "nc_create(" "nc_def_")
         message(FATAL_ERROR "The standalone CLI bypasses the persistence API with '${token}'.")
     endif()
 endforeach()
+string(FIND "${runner}" "WVConstantStratificationIntegrationSystem::create" direct_system_create)
+if(NOT direct_system_create EQUAL -1)
+    message(FATAL_ERROR "The standalone CLI bypasses the WVModel façade.")
+endif()
+
+file(READ "${WV_REPOSITORY_ROOT}/CompiledKernel/adapters/native-fftw/wv_compiled_backend_mex.cpp" mex_gateway)
+string(FIND "${mex_gateway}" "std::unique_ptr<WVModel>" model_owner)
+string(FIND "${mex_gateway}" "std::unique_ptr<WVTransformConstantStratificationKernel>" kernel_owner)
+if(model_owner EQUAL -1 OR NOT kernel_owner EQUAL -1)
+    message(FATAL_ERROR "The production MEX handle must own WVModel rather than a raw kernel.")
+endif()
 
 set(numerical_sources
     "PortableRuntime/src/WVRungeKutta.cpp"
