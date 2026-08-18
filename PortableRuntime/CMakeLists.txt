@@ -21,6 +21,7 @@ endif()
 
 add_library(WaveVortexPortableRuntime STATIC
     src/WVPortableImplementationContract.cpp
+    src/WVPortableTypedRecord.cpp
     src/WVForcingContracts.cpp
     src/WVNetCDF.cpp
     src/WVForcingScheduleDecoder.cpp
@@ -154,6 +155,7 @@ if(BUILD_TESTING)
     endfunction()
 
     wv_add_runtime_test(TestWVPortableImplementationContract TestWVPortableImplementationContract.cpp portable-implementation-contract)
+    wv_add_runtime_test(TestWVPortableTypedRecord TestWVPortableTypedRecord.cpp portable-typed-record)
     wv_add_runtime_test(TestWVPortableVariableCatalog TestWVPortableVariableCatalog.cpp portable-variable-catalog)
     wv_add_runtime_test(TestWVObserverAdapter TestWVObserverAdapter.cpp observer-adapter)
     wv_add_runtime_test(TestWVCheckpointReader TestWVCheckpointReader.cpp checkpoint-reader)
