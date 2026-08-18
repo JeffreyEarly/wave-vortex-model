@@ -1218,6 +1218,105 @@ public:
     return WVCheckpointStatus::ok();
   }
 
+  WVCheckpointStatus replaceStagedFiles() {
+    for (auto &file : files) {
+      if (file.id >= 0) {
+        const int id = std::exchange(file.id, -1);
+        const auto result = detail::checkedNetCDF(
+            nc_close(id), "Output-file initialization close",
+            file.staging.string());
+        if (!result)
+          return result;
+      }
+    }
+
+    struct Replacement {
+      std::filesystem::path destination;
+      std::filesystem::path backup;
+      bool moved = false;
+      bool installed = false;
+    };
+    std::vector<Replacement> replacements;
+    replacements.reserve(files.size());
+    for (const auto &file : files)
+      replacements.push_back(
+          {file.destination, temporaryPath(file.destination), false, false});
+
+    auto rollback = [&]() noexcept {
+      for (auto &file : files) {
+        if (file.id >= 0)
+          nc_close(std::exchange(file.id, -1));
+      }
+      for (auto iterator = replacements.rbegin();
+           iterator != replacements.rend(); ++iterator) {
+        std::error_code ignored;
+        if (iterator->installed)
+          std::filesystem::remove(iterator->destination, ignored);
+        if (iterator->moved)
+          std::filesystem::rename(iterator->backup, iterator->destination,
+                                  ignored);
+      }
+    };
+
+    for (auto &replacement : replacements) {
+      std::error_code error;
+      std::filesystem::rename(replacement.destination, replacement.backup,
+                              error);
+      if (error) {
+        rollback();
+        return failure(WVCheckpointStatusCode::commitFailure,
+                       "Unable to stage the existing output set for "
+                       "replacement: " +
+                           error.message(),
+                       replacement.destination.string());
+      }
+      replacement.moved = true;
+    }
+    for (std::size_t index = 0; index < files.size(); ++index) {
+      std::error_code error;
+      std::filesystem::create_hard_link(files[index].staging,
+                                        files[index].destination, error);
+      if (error) {
+        rollback();
+        return failure(WVCheckpointStatusCode::commitFailure,
+                       "Unable to install the replacement output set: " +
+                           error.message(),
+                       files[index].destination.string());
+      }
+      replacements[index].installed = true;
+    }
+
+    for (auto &file : files) {
+      int id = -1;
+      auto result = detail::checkedNetCDF(
+          nc_open(file.destination.c_str(), NC_WRITE, &id),
+          "Replacement output-file open", file.destination.string());
+      if (!result) {
+        rollback();
+        return result;
+      }
+      file.id = id;
+      result = resolveFile(file);
+      if (!result) {
+        rollback();
+        return result;
+      }
+    }
+
+    // Replacement is committed once every new file has opened and resolved.
+    // Backup cleanup is best-effort: a cleanup failure must not report a
+    // rollback-safe failure after an earlier backup has already been removed.
+    for (const auto &replacement : replacements) {
+      std::error_code ignored;
+      std::filesystem::remove(replacement.backup, ignored);
+    }
+    for (auto &file : files) {
+      std::error_code ignored;
+      std::filesystem::remove(file.staging, ignored);
+    }
+    return WVCheckpointStatus::ok();
+  }
+
   WVCheckpointStatus resolveFile(File &file) {
     for (auto &group : file.groups) {
       auto result = detail::checkedNetCDF(
@@ -2037,6 +2136,48 @@ WVCheckpointStatus WVModelOutputNetCDFSink::createNew(
   } catch (const std::exception &exception) {
     return failure(WVCheckpointStatusCode::writeFailure,
                    "Output persistence creation failed: " +
+                       std::string(exception.what()),
+                   "/");
+  }
+}
+
+WVCheckpointStatus WVModelOutputNetCDFSink::replaceExisting(
+    const WVModelOutputNetCDFConfiguration &configuration,
+    const WVPortableObserverDescriptor &descriptor,
+    const WVIntegrationStateLayout &stateLayout,
+    WVObserverSampleSource *sampleSource, WVModelOutputNetCDFSink &sink) {
+  try {
+    auto candidate = std::make_unique<Impl>();
+    candidate->configuration = configuration;
+    candidate->descriptorRecord = descriptor.record();
+    candidate->stateLayout = stateLayout;
+    candidate->sampleSource = sampleSource;
+    auto result = candidate->validateConfiguration();
+    if (!result)
+      return result;
+    result = candidate->validateDestinations(true);
+    if (!result)
+      return result;
+    result = candidate->stageFiles();
+    if (!result)
+      return result;
+    result = candidate->replaceStagedFiles();
+    if (!result)
+      return result;
+    candidate->rebuildProgress();
+    candidate->metrics.fileCount = candidate->files.size();
+    for (const auto &file : candidate->files)
+      candidate->metrics.groupCount += file.groups.size();
+    candidate->metrics.initializedFileCount = candidate->files.size();
+    candidate->updateRetainedStorageMetric();
+    sink.impl_ = std::move(candidate);
+    return WVCheckpointStatus::ok();
+  } catch (const std::bad_alloc &) {
+    return failure(WVCheckpointStatusCode::writeFailure,
+                   "Output replacement allocation failed.", "/");
+  } catch (const std::exception &exception) {
+    return failure(WVCheckpointStatusCode::writeFailure,
+                   "Output replacement failed: " +
                        std::string(exception.what()),
                    "/");
   }
