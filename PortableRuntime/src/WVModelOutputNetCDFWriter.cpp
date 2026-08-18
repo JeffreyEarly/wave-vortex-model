@@ -1,4 +1,5 @@
 #include "WaveVortexRuntime/WVModelOutputNetCDF.hpp"
+#include "WaveVortexRuntime/generated/WVPortableVariableCatalog.hpp"
 
 #include "WVModelOutputNetCDFSchema.hpp"
 #include "WVObserverAdapter.hpp"
@@ -32,6 +33,15 @@ WVObserverOutputRule outputRule(const WVObserverRecord &record) {
 WVCheckpointStatus failure(WVCheckpointStatusCode code, std::string message,
                            std::string location) {
   return {code, std::move(message), std::move(location)};
+}
+
+const WVPortableVariableMetadata *coefficientMetadata(
+    std::string_view name) noexcept {
+  const auto *metadata = findPortableVariable(name);
+  return metadata != nullptr &&
+                 metadata->kind == WVPortableVariableKind::coefficient
+             ? metadata
+             : nullptr;
 }
 
 WVKernelStatus kernelFailure(const WVCheckpointStatus &status) {
@@ -517,20 +527,20 @@ public:
           result = detail::checkedNetCDF(
               nc_inq_varid(group.id, (name + "_imag").c_str(), &imag),
               "Coefficient-variable lookup", path + "/" + name + "_imag");
-        const std::string units = name == "A0" ? "m2 s-1" : "m s-1";
-        const std::string longName =
-            name == "Ap"
-                ? "positive wave coefficients at reference time t0"
-                : name == "Am"
-                      ? "negative wave coefficients at reference time t0"
-                      : "geostrophic coefficients at reference time t0";
+        const auto *metadata = coefficientMetadata(name);
+        if (metadata == nullptr)
+          return failure(WVCheckpointStatusCode::schemaMismatch,
+                         "Canonical coefficient metadata is unavailable.",
+                         path + "/" + name);
         for (const int variable : {real, imag}) {
           if (result)
             result = detail::putTextAttribute(group.id, variable, "units",
-                                              units, path + "/" + name);
+                                              metadata->units,
+                                              path + "/" + name);
           if (result)
             result = detail::putTextAttribute(group.id, variable, "long_name",
-                                              longName, path + "/" + name);
+                                              metadata->description,
+                                              path + "/" + name);
         }
         if (!result)
           return result;
@@ -790,8 +800,7 @@ public:
       for (const auto &specification : specifications) {
         const bool canonicalCoefficient =
             group.record.containsCompleteCoefficientRestart &&
-            (specification.name == "Ap" || specification.name == "Am" ||
-             specification.name == "A0");
+            coefficientMetadata(specification.name) != nullptr;
         if (canonicalCoefficient)
           continue;
         if (specification.identifier.empty() || specification.name.empty() ||
@@ -1755,8 +1764,7 @@ public:
             for (const auto &specification : specifications) {
               const bool canonicalCoefficient =
                   groupRecord.containsCompleteCoefficientRestart &&
-                  (specification.name == "Ap" || specification.name == "Am" ||
-                   specification.name == "A0");
+                  coefficientMetadata(specification.name) != nullptr;
               if (!canonicalCoefficient) {
                 const auto existing = std::find_if(
                     group.derivedVariables.begin(),

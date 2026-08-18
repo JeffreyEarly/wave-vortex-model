@@ -17,41 +17,8 @@ WVKernelStatus invalid(std::string message) {
   return {WVKernelStatusCode::invalidConfiguration, std::move(message)};
 }
 
-struct FieldMetadata {
-  const char *units;
-  const char *longName;
-  const char *attributeName = nullptr;
-  const char *attributeValue = nullptr;
-};
-
-const std::map<std::string, FieldMetadata> &fieldMetadata() {
-  static const std::map<std::string, FieldMetadata> values{
-      {"u", {"m s-1", "x-component of the fluid velocity", "standard_name", "eastward_sea_water_velocity"}},
-      {"v", {"m s-1", "y-component of the fluid velocity", "standard_name", "northward_sea_water_velocity"}},
-      {"w", {"m s-1", "z-component of the fluid velocity", "standard_name", "upwardward_sea_water_velocity"}},
-      {"eta", {"m", "approximate isopycnal deviation"}},
-      {"pi", {"m", "height anomaly"}},
-      {"p", {"kg m-1 s-2", "pressure anomaly"}},
-      {"psi", {"m2 s-1", "geostrophic streamfunction"}},
-      {"qgpv", {"s-1", "quasigeostrophic potential vorticity"}},
-      {"rho_e", {"kg m-3", "excess density"}},
-      {"rho_total", {"kg m-3", "total potential density"}},
-      {"rho_bar", {"kg m-3", "mean density"}},
-      {"zeta_x", {"s-1", "x-component component of relative vorticity"}},
-      {"zeta_y", {"s-1", "y-component component of relative vorticity"}},
-      {"zeta_z", {"s-1", "vertical component of relative vorticity", "short_name", "ocean_relative_vorticity"}},
-      {"ssu", {"m s-1", "x-component of the fluid velocity at the surface"}},
-      {"ssv", {"m s-1", "y-component of the fluid velocity at the surface"}},
-      {"ssh", {"m", "sea-surface height"}},
-      {"energy", {"m3 s-2", "horizontally-averaged depth-integrated energy computed spectrally from wave-vortex coefficients"}},
-      {"uvMax", {"m s-1", "max horizontal fluid speed"}},
-      {"wMax", {"m s-1", "max vertical fluid speed"}}};
-  return values;
-}
-
-bool linearInitialOnly(const std::string &name) {
-  return name == "Ap" || name == "Am" || name == "A0" || name == "psi" ||
-         name == "qgpv" || name == "energy";
+bool linearInitialOnly(const WVPortableVariableMetadata &metadata) {
+  return !metadata.isVariableWithLinearTimeStep;
 }
 
 std::string samplingKey(const std::string &field,
@@ -75,10 +42,6 @@ std::string samplingKey(const std::string &field,
 std::string outputKey(const WVObserverRecord &observer,
                       const std::string &identifier) {
   return observer.identifier + '/' + identifier;
-}
-
-bool isCoefficient(const std::string &name) {
-  return name == "Ap" || name == "Am" || name == "A0";
 }
 
 } // namespace
@@ -236,10 +199,10 @@ WVKernelStatus WVObserverOutputEvaluationService::create(
                               std::vector<std::string> dimensionNames,
                               std::vector<std::size_t> dimensions,
                               std::vector<Impl::Output> &outputs) mutable {
-      const auto metadata = fieldMetadata().find(field);
-      if (metadata == fieldMetadata().end())
+      const auto *metadata = findPortableVariable(field);
+      if (metadata == nullptr || metadata->kind != WVPortableVariableKind::field)
         return invalid("Unsupported observer field: " + field + ".");
-      const bool initialField = isDynamicsLinear && linearInitialOnly(field);
+      const bool initialField = isDynamicsLinear && linearInitialOnly(*metadata);
       auto &requests = initialField ? initialRequests : timeSeriesRequests;
       auto &requestIndex =
           initialField ? initialRequestIndex : timeSeriesRequestIndex;
@@ -258,25 +221,21 @@ WVKernelStatus WVObserverOutputEvaluationService::create(
       specification.identifier = field;
       specification.name = variableName;
       specification.cadence =
-          isDynamicsLinear && linearInitialOnly(field)
+          isDynamicsLinear && linearInitialOnly(*metadata)
               ? WVObserverOutputCadence::initialOnly
               : WVObserverOutputCadence::timeSeries;
       specification.dimensionNames = std::move(dimensionNames);
       specification.dimensions = std::move(dimensions);
-      specification.units = metadata->second.units;
-      specification.longName = metadata->second.longName;
-      if (metadata->second.attributeName != nullptr)
+      specification.units = metadata->units;
+      specification.longName = metadata->description;
+      if (metadata->netCDFAttributeCount != 0)
         specification.attributes.push_back(
-            {metadata->second.attributeName, metadata->second.attributeValue});
+            {metadata->netCDFAttribute.name, metadata->netCDFAttribute.value});
       outputs.push_back(
           {std::move(specification), false, 0, index, initialField, false});
       return WVKernelStatus::ok();
     };
 
-    const auto supportedFieldList =
-        WVFieldEvaluationService::supportedFieldNames();
-    std::set<std::string> supportedFields(supportedFieldList.begin(),
-                                          supportedFieldList.end());
     for (const auto &observer : impl.descriptor.observers) {
       const auto *definition = detail::observerDefinition(observer.kind);
       if (definition == nullptr)
@@ -290,7 +249,9 @@ WVKernelStatus WVObserverOutputEvaluationService::create(
                                           WVObserverOutputRule::coefficients
                                      ? std::vector<std::string>{"Ap", "Am", "A0"}
                                      : observer.fieldNames) {
-          if (isCoefficient(field)) {
+          const auto *metadata = findPortableVariable(field);
+          if (metadata != nullptr &&
+              metadata->kind == WVPortableVariableKind::coefficient) {
             WVObserverOutputVariableSpecification specification;
             specification.identifier = field;
             specification.name = field;
@@ -298,7 +259,10 @@ WVKernelStatus WVObserverOutputEvaluationService::create(
             specification.cadence = isDynamicsLinear
                                         ? WVObserverOutputCadence::initialOnly
                                         : WVObserverOutputCadence::timeSeries;
-            specification.dimensionNames = {"j", "kl"};
+            for (std::size_t dimension = 0;
+                 dimension < metadata->dimensionCount; ++dimension)
+              specification.dimensionNames.emplace_back(
+                  metadata->dimensions[dimension]);
             specification.dimensions = {configuration.Nj, 0};
             WVTransformConstantStratificationDescriptor transform;
             status = WVTransformConstantStratificationDescriptor::create(
@@ -306,33 +270,32 @@ WVKernelStatus WVObserverOutputEvaluationService::create(
             if (!status)
               return status;
             specification.dimensions[1] = transform.Nkl();
-            specification.units = field == "A0" ? "m2 s-1" : "m s-1";
-            specification.longName =
-                field == "Ap"
-                    ? "positive wave coefficients at reference time t0"
-                    : field == "Am"
-                          ? "negative wave coefficients at reference time t0"
-                          : "geostrophic coefficients at reference time t0";
-            const std::size_t family = field == "Ap" ? 0 : field == "Am" ? 1 : 2;
+            specification.units = metadata->units;
+            specification.longName = metadata->description;
+            const std::size_t family =
+                metadata->identifier == WVPortableVariable::Ap
+                    ? 0
+                    : metadata->identifier == WVPortableVariable::Am ? 1 : 2;
             outputs.push_back(
                 {std::move(specification), true, family, 0, false, false});
           } else {
-            if (supportedFields.find(field) == supportedFields.end())
+            if (metadata == nullptr ||
+                metadata->kind != WVPortableVariableKind::field)
               return invalid("Unsupported WVEulerianFields variable: " + field + ".");
             WVFieldSamplingRequest sampling;
             std::vector<std::string> names;
             std::vector<std::size_t> dimensions;
-            if (field == "rho_bar") {
-              names = {"z"};
+            for (std::size_t dimension = 0;
+                 dimension < metadata->dimensionCount; ++dimension)
+              names.emplace_back(metadata->dimensions[dimension]);
+            if (metadata->naturalRank == WVPortableNaturalRank::vertical) {
               dimensions = {configuration.Nz};
-            } else if (field == "ssu" || field == "ssv" || field == "ssh") {
-              names = {"x", "y"};
+            } else if (metadata->naturalRank ==
+                       WVPortableNaturalRank::horizontal) {
               dimensions = {configuration.Nx, configuration.Ny};
-            } else if (field == "energy" || field == "uvMax" || field == "wMax") {
-              names = {};
+            } else if (metadata->naturalRank == WVPortableNaturalRank::scalar) {
               dimensions = {};
             } else {
-              names = {"x", "y", "z"};
               dimensions = {configuration.Nx, configuration.Ny, configuration.Nz};
             }
             status = addField(field, sampling, field, std::move(names),
@@ -386,17 +349,19 @@ WVKernelStatus WVObserverOutputEvaluationService::create(
                                : observer.stateBlockIdentifiers[2],
              observer.z, offset, observer.x.size(), observer.isXYOnly});
         for (const auto &field : observer.fieldNames) {
-          const auto metadata = fieldMetadata().find(field);
-          if (metadata == fieldMetadata().end())
+          const auto *metadata = findPortableVariable(field);
+          if (metadata == nullptr ||
+              metadata->kind != WVPortableVariableKind::field ||
+              metadata->movingPrimitiveChannel < 0)
             return invalid("Unsupported particle tracked field: " + field + ".");
           WVObserverOutputVariableSpecification specification;
           specification.identifier = field;
           specification.name = observer.name + '_' + field;
           specification.dimensionNames = {observer.name + "_id"};
           specification.dimensions = {observer.x.size()};
-          specification.units = metadata->second.units;
+          specification.units = metadata->units;
           specification.longName =
-              std::string(metadata->second.longName) +
+              std::string(metadata->description) +
               ", recorded along the particle trajectory";
           specification.attributes.push_back(
               {"isParticle", "1"});

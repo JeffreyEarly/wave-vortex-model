@@ -49,4 +49,26 @@ foreach(relative_path IN LISTS numerical_sources)
     endforeach()
 endforeach()
 
+set(catalog_header
+    "${WV_REPOSITORY_ROOT}/PortableRuntime/include/WaveVortexRuntime/generated/WVPortableVariableCatalog.hpp")
+if(NOT EXISTS "${catalog_header}")
+    message(FATAL_ERROR "The generated portable variable catalog is missing.")
+endif()
+
+file(READ "${WV_REPOSITORY_ROOT}/PortableRuntime/src/WVFieldEvaluationService.cpp" field_service)
+foreach(token "constexpr const char *fieldNames" "request.fieldName ==" "request.fieldName !=")
+    string(FIND "${field_service}" "${token}" position)
+    if(NOT position EQUAL -1)
+        message(FATAL_ERROR "Field evaluation restored runtime name dispatch or duplicate metadata: ${token}")
+    endif()
+endforeach()
+
+file(READ "${WV_REPOSITORY_ROOT}/PortableRuntime/src/WVObserverOutputEvaluationService.cpp" output_service)
+foreach(token "struct FieldMetadata" "linearInitialOnly(const std::string")
+    string(FIND "${output_service}" "${token}" position)
+    if(NOT position EQUAL -1)
+        message(FATAL_ERROR "Observer output restored duplicate variable metadata: ${token}")
+    endif()
+endforeach()
+
 message(STATUS "Portable runtime architecture policy passed.")

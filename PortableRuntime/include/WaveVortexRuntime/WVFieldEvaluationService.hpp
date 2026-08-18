@@ -2,6 +2,7 @@
 
 #include "WaveVortexKernel/WVTransformConstantStratificationKernel.hpp"
 #include "WaveVortexRuntime/WVObserverContracts.hpp"
+#include "WaveVortexRuntime/generated/WVPortableVariableCatalog.hpp"
 
 #include <array>
 #include <cstddef>
@@ -98,31 +99,8 @@ public:
   std::size_t persistentBytes() const noexcept;
 
 private:
-  enum class Field : std::uint8_t {
-    u,
-    v,
-    w,
-    eta,
-    pi,
-    p,
-    psi,
-    qgpv,
-    rhoE,
-    rhoTotal,
-    rhoBar,
-    zetaX,
-    zetaY,
-    zetaZ,
-    ssu,
-    ssv,
-    ssh,
-    energy,
-    uvMax,
-    wMax,
-    count
-  };
-
-  enum class NativeRank : std::uint8_t { scalar, vertical, horizontal, volume };
+  using Field = WVPortableVariable;
+  using NativeRank = WVPortableNaturalRank;
 
   struct PositionWeights {
     bool outsideInterpolationDomain = false;
@@ -181,6 +159,7 @@ struct WVFieldEvaluationMetrics {
   std::size_t movingEvaluationCount = 0;
   std::size_t movingPositionCount = 0;
   std::size_t movingPrimitiveTransformCount = 0;
+  std::size_t catalogBytes = portableVariableCatalogBytes();
 };
 
 class WVFieldEvaluationService final {
