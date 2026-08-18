@@ -20,6 +20,7 @@ else()
 endif()
 
 add_library(WaveVortexPortableRuntime STATIC
+    src/WVPortableImplementationContract.cpp
     src/WVNetCDF.cpp
     src/WVForcingScheduleDecoder.cpp
     src/WVCheckpointReader.cpp
@@ -142,6 +143,7 @@ if(BUILD_TESTING)
         add_test(NAME ${test_name} COMMAND ${target})
     endfunction()
 
+    wv_add_runtime_test(TestWVPortableImplementationContract TestWVPortableImplementationContract.cpp portable-implementation-contract)
     wv_add_runtime_test(TestWVObserverAdapter TestWVObserverAdapter.cpp observer-adapter)
     wv_add_runtime_test(TestWVCheckpointReader TestWVCheckpointReader.cpp checkpoint-reader)
     wv_add_runtime_test(TestWVCheckpointWriter TestWVCheckpointWriter.cpp checkpoint-writer)
