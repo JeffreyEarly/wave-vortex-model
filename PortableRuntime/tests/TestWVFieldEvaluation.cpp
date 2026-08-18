@@ -466,6 +466,8 @@ void verifyEvaluation(std::size_t nx, std::size_t ny, bool hydrostatic,
           "plan storage metrics are not exact");
   require(metrics.servicePersistentBytes == service->persistentBytes(),
           "service persistent storage metric is not exact");
+  require(metrics.catalogBytes == portableVariableCatalogBytes(),
+          "static catalog storage metric is not exact");
   require(metrics.scratchHighWaterBytes <= metrics.scratchCapacityBytes,
           "scratch high-water exceeds bounded capacity");
 

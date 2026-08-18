@@ -11,12 +11,6 @@
 namespace wavevortex::runtime {
 namespace {
 
-constexpr const char *fieldNames[] = {
-    "u",       "v",         "w",       "eta",    "pi",
-    "p",       "psi",       "qgpv",    "rho_e",  "rho_total",
-    "rho_bar", "zeta_x",    "zeta_y",  "zeta_z", "ssu",
-    "ssv",     "ssh",       "energy",  "uvMax",  "wMax"};
-
 enum Dependency : std::uint64_t {
   primitiveValues = 1ULL << 0,
   pressureHeight = 1ULL << 1,
@@ -393,7 +387,12 @@ WVKernelStatus WVFieldEvaluationService::initializeScratch() {
 WVFieldEvaluationService::~WVFieldEvaluationService() = default;
 
 std::vector<std::string> WVFieldEvaluationService::supportedFieldNames() {
-  return {std::begin(fieldNames), std::end(fieldNames)};
+  std::vector<std::string> result;
+  result.reserve(WVPortableVariableCatalog.size());
+  for (const auto &variable : WVPortableVariableCatalog)
+    if (variable.kind == WVPortableVariableKind::field)
+      result.emplace_back(variable.name);
+  return result;
 }
 
 WVKernelStatus WVFieldEvaluationService::createPlan(
@@ -431,26 +430,12 @@ WVKernelStatus WVFieldEvaluationService::createPlan(
       if (!identifiers.insert(request.identifier).second)
         return invalid("Field request identifiers must be unique: " +
                        request.identifier + ".");
-      const auto fieldIterator =
-          std::find(std::begin(fieldNames), std::end(fieldNames), request.fieldName);
-      if (fieldIterator == std::end(fieldNames))
+      const auto *metadata = findPortableVariable(request.fieldName);
+      if (metadata == nullptr || metadata->kind != WVPortableVariableKind::field)
         return invalid("Unknown or unsupported field: " + request.fieldName + ".");
-      const auto fieldIndex =
-          static_cast<std::size_t>(fieldIterator - std::begin(fieldNames));
-      const auto field =
-          static_cast<WVFieldEvaluationPlan::Field>(fieldIndex);
-      WVFieldEvaluationPlan::NativeRank rank =
-          WVFieldEvaluationPlan::NativeRank::volume;
-      if (field == WVFieldEvaluationPlan::Field::rhoBar)
-        rank = WVFieldEvaluationPlan::NativeRank::vertical;
-      else if (field == WVFieldEvaluationPlan::Field::ssu ||
-               field == WVFieldEvaluationPlan::Field::ssv ||
-               field == WVFieldEvaluationPlan::Field::ssh)
-        rank = WVFieldEvaluationPlan::NativeRank::horizontal;
-      else if (field == WVFieldEvaluationPlan::Field::energy ||
-               field == WVFieldEvaluationPlan::Field::uvMax ||
-               field == WVFieldEvaluationPlan::Field::wMax)
-        rank = WVFieldEvaluationPlan::NativeRank::scalar;
+      const auto fieldIndex = static_cast<std::size_t>(metadata->ordinal);
+      const auto field = metadata->identifier;
+      const auto rank = metadata->naturalRank;
 
       WVFieldEvaluationPlan::ResolvedRequest resolved;
       if (request.sampling.kind != WVFieldSamplingKind::fullGrid &&
@@ -458,6 +443,16 @@ WVKernelStatus WVFieldEvaluationService::createPlan(
               WVFieldSamplingKind::fixedVerticalProfiles &&
           request.sampling.kind != WVFieldSamplingKind::positions)
         return invalid("Unknown field-sampling kind.");
+      const std::uint8_t requestedSampling =
+          request.sampling.kind == WVFieldSamplingKind::fullGrid
+              ? portableFullGridSampling
+              : request.sampling.kind ==
+                        WVFieldSamplingKind::fixedVerticalProfiles
+                    ? portableFixedVerticalProfileSampling
+                    : portablePositionSampling;
+      if ((metadata->samplingMask & requestedSampling) == 0)
+        return invalid("Sampling mode is unsupported for field " +
+                       request.fieldName + ".");
       if (request.sampling.kind == WVFieldSamplingKind::positions &&
           request.sampling.interpolation != WVPositionInterpolation::linear &&
           request.sampling.interpolation != WVPositionInterpolation::spline)
@@ -605,50 +600,12 @@ WVKernelStatus WVFieldEvaluationService::createPlan(
       for (const auto dimension : output.dimensions)
         output.elementCount = checkedProduct(output.elementCount, dimension);
       candidate.requestedFieldMask_ |= 1ULL << fieldIndex;
-      switch (field) {
-      case WVFieldEvaluationPlan::Field::u:
-      case WVFieldEvaluationPlan::Field::v:
-      case WVFieldEvaluationPlan::Field::w:
-      case WVFieldEvaluationPlan::Field::eta:
-      case WVFieldEvaluationPlan::Field::rhoE:
-      case WVFieldEvaluationPlan::Field::rhoTotal:
-      case WVFieldEvaluationPlan::Field::rhoBar:
-      case WVFieldEvaluationPlan::Field::ssu:
-      case WVFieldEvaluationPlan::Field::ssv:
-      case WVFieldEvaluationPlan::Field::uvMax:
-      case WVFieldEvaluationPlan::Field::wMax:
-        candidate.dependencyMask_ |= primitiveValues;
-        break;
-      case WVFieldEvaluationPlan::Field::pi:
-      case WVFieldEvaluationPlan::Field::p:
-      case WVFieldEvaluationPlan::Field::ssh:
-        candidate.dependencyMask_ |= pressureHeight;
-        break;
-      case WVFieldEvaluationPlan::Field::psi:
-        if (transform_->descriptor().verticalModes().coriolisFrequency == 0.0)
-          return {WVKernelStatusCode::unsupportedOperation,
-                  "Streamfunction evaluation is undefined when the Coriolis "
-                  "frequency is zero."};
-        candidate.dependencyMask_ |= streamfunction;
-        break;
-      case WVFieldEvaluationPlan::Field::qgpv:
-        candidate.dependencyMask_ |= potentialVorticity;
-        break;
-      case WVFieldEvaluationPlan::Field::zetaX:
-        candidate.dependencyMask_ |= vDerivatives | wDerivatives;
-        break;
-      case WVFieldEvaluationPlan::Field::zetaY:
-        candidate.dependencyMask_ |= uDerivatives | wDerivatives;
-        break;
-      case WVFieldEvaluationPlan::Field::zetaZ:
-        candidate.dependencyMask_ |= uDerivatives | vDerivatives;
-        break;
-      case WVFieldEvaluationPlan::Field::energy:
-        candidate.dependencyMask_ |= spectralEnergy;
-        break;
-      case WVFieldEvaluationPlan::Field::count:
-        break;
-      }
+      if (field == WVFieldEvaluationPlan::Field::psi &&
+          transform_->descriptor().verticalModes().coriolisFrequency == 0.0)
+        return {WVKernelStatusCode::unsupportedOperation,
+                "Streamfunction evaluation is undefined when the Coriolis "
+                "frequency is zero."};
+      candidate.dependencyMask_ |= metadata->primitiveDependencyMask;
       candidate.requests_.push_back(std::move(resolved));
       candidate.outputs_.push_back(std::move(output));
     }
@@ -1234,23 +1191,15 @@ WVKernelStatus WVFieldEvaluationService::createMovingPlan(
       if (request.interpolation != WVPositionInterpolation::linear &&
           request.interpolation != WVPositionInterpolation::spline)
         return invalid("Moving-field interpolation method is invalid.");
-      std::size_t channel = 0;
-      if (request.fieldName == "u")
-        channel = 0;
-      else if (request.fieldName == "v")
-        channel = 1;
-      else if (request.fieldName == "w")
-        channel = 2;
-      else if (request.fieldName == "eta")
-        channel = 3;
-      else if (request.fieldName == "rho_e")
-        channel = 4;
-      else if (request.fieldName == "rho_total")
-        channel = 5;
-      else
+      const auto *metadata = findPortableVariable(request.fieldName);
+      if (metadata == nullptr || metadata->kind != WVPortableVariableKind::field ||
+          metadata->movingPrimitiveChannel < 0 ||
+          (metadata->samplingMask & portablePositionSampling) == 0)
         return {WVKernelStatusCode::unsupportedOperation,
                 "Moving-position sampling does not support field " +
                     request.fieldName + "."};
+      const auto channel =
+          static_cast<std::size_t>(metadata->movingPrimitiveChannel);
       candidate.positionCount_ =
           std::max(candidate.positionCount_,
                    request.positionOffset + request.positionCount);
