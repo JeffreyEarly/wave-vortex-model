@@ -25,10 +25,57 @@ foreach(source IN LISTS observer_sources)
     endforeach()
 endforeach()
 
+set(generic_observation_consumers
+    "PortableRuntime/src/WVModelOutputNetCDFWriter.cpp"
+    "PortableRuntime/src/WVModelOutputNetCDFReader.cpp"
+    "PortableRuntime/src/WVObserverOutputEvaluationService.cpp"
+    "PortableRuntime/src/WVOutputOrchestration.cpp"
+    "PortableRuntime/src/WVConstantStratificationIntegrationSystem.cpp")
+set(observer_kind_dispatch
+    "observerImplementation("
+    "recordsCoefficients("
+    "recordsEulerianFields("
+    "recordsFixedProfiles("
+    "recordsFixedPoints("
+    "recordsMovingParticles("
+    "recordsTracerState(")
+foreach(relative_path IN LISTS generic_observation_consumers)
+    file(READ "${WV_REPOSITORY_ROOT}/${relative_path}" contents)
+    foreach(token IN LISTS observer_kind_dispatch)
+        string(FIND "${contents}" "${token}" occurrence)
+        if(NOT occurrence EQUAL -1)
+            message(FATAL_ERROR
+                "${relative_path} branches on observer implementation kind via ${token}; "
+                "route observation data through schemas and batches instead.")
+        endif()
+    endforeach()
+endforeach()
+
+file(READ
+    "${WV_REPOSITORY_ROOT}/PortableRuntime/src/WVObserverOutputEvaluationService.cpp"
+    evaluator_contents)
+foreach(token IN ITEMS WVObserverSamplingTopology "executionPlan(")
+    string(FIND "${evaluator_contents}" "${token}" occurrence)
+    if(NOT occurrence EQUAL -1)
+        message(FATAL_ERROR
+            "WVObserverOutputEvaluationService.cpp retains observer-topology dispatch via ${token}; "
+            "resolved observer providers must declare plans and produce batches.")
+    endif()
+endforeach()
+
 set(retired_dispatch_symbols
     WVObserverKind
     WVObserverStateContract
-    WVObserverOutputRule)
+    WVObserverOutputRule
+    recordsCoefficients
+    recordsEulerianFields
+    recordsFixedProfiles
+    recordsFixedPoints
+    recordsMovingParticles
+    recordsTracerState
+    contributesRightHandSide
+    ownsParticleState
+    ownsTracerState)
 
 foreach(source IN LISTS observer_sources)
     file(READ "${source}" contents)

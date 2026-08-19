@@ -25,9 +25,17 @@ public:
     return value;
   }
   std::uint32_t contractVersion() const noexcept override { return 1; }
-  const std::string &fieldListAttribute() const noexcept override {
-    static const std::string value = "fieldNames";
-    return value;
+  WVKernelStatus executionPlan(const WVObserverRecord &record,
+                               WVObserverExecutionPlan &plan) const override {
+    plan = {};
+    plan.sampling = WVObserverSamplingTopology::fixedPositions;
+    plan.fieldListAttribute = "fieldNames";
+    plan.persistedName = record.name;
+    const auto *field = record.configuration.value("field");
+    plan.outputFields =
+        field == nullptr ? record.fieldNames
+                         : std::get<std::vector<std::string>>(field->storage);
+    return WVKernelStatus::ok();
   }
   WVKernelStatus validate(
       const WVObserverRecord &record,
@@ -40,7 +48,6 @@ public:
               "Point diagnostic requires one field and equal fixed x/y/z points."};
     return WVKernelStatus::ok();
   }
-  bool recordsFixedPoints() const noexcept override { return true; }
   std::size_t persistentBytes() const noexcept override {
     return sizeof(*this);
   }
@@ -53,9 +60,14 @@ public:
     return value;
   }
   std::uint32_t contractVersion() const noexcept override { return 2; }
-  const std::string &fieldListAttribute() const noexcept override {
-    static const std::string value = "fieldNames";
-    return value;
+  WVKernelStatus executionPlan(const WVObserverRecord &record,
+                               WVObserverExecutionPlan &plan) const override {
+    plan = {};
+    plan.sampling = WVObserverSamplingTopology::fixedPositions;
+    plan.fieldListAttribute = "fieldNames";
+    plan.persistedName = record.name;
+    plan.outputFields = record.fieldNames;
+    return WVKernelStatus::ok();
   }
   WVKernelStatus validate(
       const WVObserverRecord &,
@@ -63,7 +75,6 @@ public:
       std::map<std::string, std::size_t> &) const override {
     return WVKernelStatus::ok();
   }
-  bool recordsFixedPoints() const noexcept override { return true; }
   std::size_t persistentBytes() const noexcept override {
     return sizeof(*this);
   }
@@ -134,6 +145,16 @@ int main() {
   observer.x = {0.1, 0.2};
   observer.y = {0.3, 0.4};
   observer.z = {-0.5, -0.6};
+  observer.configuration.schemaIdentifier = "test-point-configuration-v1";
+  observer.configuration.schemaVersion = 1;
+  observer.configuration.values = {
+      {"field", {}, std::vector<std::string>{"u"}},
+      {"x", {2}, std::vector<double>{0.1, 0.2}},
+      {"y", {2}, std::vector<double>{0.3, 0.4}},
+      {"z", {2}, std::vector<double>{-0.5, -0.6}}};
+  record.observers.push_back(observer);
+  observer.identifier = "test-point-diagnostic-2";
+  observer.name = "second test point diagnostic";
   record.observers.push_back(observer);
   WVPortableObserverDescriptor descriptor;
   const auto descriptorStatus =
@@ -143,6 +164,20 @@ int main() {
   require(descriptor.implementation(descriptor.observers().front()) ==
               testImplementation.get(),
           "descriptor did not retain the resolved implementation");
+  const auto *firstResolved =
+      descriptor.resolvedObserver(descriptor.observers()[0]);
+  const auto *secondResolved =
+      descriptor.resolvedObserver(descriptor.observers()[1]);
+  require(firstResolved != nullptr && secondResolved != nullptr &&
+              firstResolved != secondResolved &&
+              &firstResolved->implementation() ==
+                  &secondResolved->implementation() &&
+              firstResolved->configuration().schemaIdentifier ==
+                  "test-point-configuration-v1" &&
+              firstResolved->configuration().value("x") != nullptr &&
+              firstResolved->executionPlan().outputFields ==
+                  std::vector<std::string>{"u"},
+          "descriptor did not create immutable per-record resolved observers");
   require(WVObserverFactoryRegistry::isSealed(),
           "observer registry was not sealed by descriptor construction");
   require(!WVObserverFactoryRegistry::registerImplementation(

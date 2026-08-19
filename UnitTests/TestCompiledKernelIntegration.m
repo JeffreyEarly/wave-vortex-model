@@ -22,6 +22,7 @@ classdef TestCompiledKernelIntegration < matlab.unittest.TestCase
             testCase.verifyEqual(string(testCase.selection.postSelectionExtensions.adaptiveRK23MatlabParity),"issue-240");
             testCase.verifyEqual(string(testCase.selection.postSelectionExtensions.wvModelRuntimeFacade),"issue-248");
             testCase.verifyEqual(string(testCase.selection.postSelectionExtensions.resolvedObservingSystems),"issue-258");
+            testCase.verifyEqual(string(testCase.selection.postSelectionExtensions.observationBatches),"issue-260");
             testCase.verifyEqual(string(testCase.selection.postSelectionExtensions.resolvedForcings),"issue-261");
             testCase.verifyEqual(string(testCase.selection.postSelectionExtensions.linearBottomFriction),"issue-262");
             testCase.verifyEqual(testCase.selection.contract.version,4);

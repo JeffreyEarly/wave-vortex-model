@@ -1,4 +1,5 @@
 #include "WaveVortexRuntime/WVObserverContracts.hpp"
+#include "WaveVortexRuntime/WVObserverOutputProvider.hpp"
 #include "WaveVortexRuntime/WVOutputSchedule.hpp"
 #include "WVObserverAdapter.hpp"
 
@@ -64,7 +65,186 @@ std::size_t stringBytes(const std::string &value) noexcept {
   return value.capacity();
 }
 
+const WVObservationVariable *
+observationVariable(const WVObservationSchema &schema,
+                    const std::string &identifier) noexcept {
+  const auto found =
+      std::find_if(schema.variables.begin(), schema.variables.end(),
+                   [&](const auto &value) {
+                     return value.identifier == identifier;
+                   });
+  return found == schema.variables.end() ? nullptr : &*found;
+}
+
+bool belongsToBatch(const WVObservationVariable &variable,
+                    WVObservationBatchKind kind) noexcept {
+  const bool initial =
+      variable.layout == WVObservationValueLayout::staticValue ||
+      variable.layout == WVObservationValueLayout::initialValue;
+  return initial == (kind == WVObservationBatchKind::initial);
+}
+
+WVKernelStatus borrowValue(const WVObservationValue &value,
+                           WVObservationValue &output) {
+  switch (value.scalarType) {
+  case WVObservationScalarType::real64:
+    output = WVObservationValue::borrowReal(
+        value.variableIdentifier, value.extents, value.real64Data());
+    break;
+  case WVObservationScalarType::complex64:
+    output = WVObservationValue::borrowComplex(
+        value.variableIdentifier, value.extents, value.complex64Data());
+    break;
+  case WVObservationScalarType::integer64:
+    output = WVObservationValue::borrowInteger(
+        value.variableIdentifier, value.extents, value.integer64Data());
+    break;
+  case WVObservationScalarType::boolean8:
+    output = WVObservationValue::borrowBoolean(
+        value.variableIdentifier, value.extents, value.boolean8Data());
+    break;
+  case WVObservationScalarType::text:
+    output = WVObservationValue::borrowText(
+        value.variableIdentifier, value.extents, value.textData());
+    break;
+  }
+  return WVKernelStatus::ok();
+}
+
+WVKernelStatus borrowValue(const std::string &identifier,
+                           const WVObserverBorrowedValueView &value,
+                           WVObservationValue &output) {
+  switch (value.scalarType) {
+  case WVObservationScalarType::real64:
+    output = WVObservationValue::borrowReal(identifier, value.extents,
+                                             value.real64);
+    break;
+  case WVObservationScalarType::complex64:
+    output = WVObservationValue::borrowComplex(identifier, value.extents,
+                                                value.complex64);
+    break;
+  case WVObservationScalarType::integer64:
+    output = WVObservationValue::borrowInteger(identifier, value.extents,
+                                                value.integer64);
+    break;
+  case WVObservationScalarType::boolean8:
+    output = WVObservationValue::borrowBoolean(identifier, value.extents,
+                                                value.boolean8);
+    break;
+  case WVObservationScalarType::text:
+    output = WVObservationValue::borrowText(identifier, value.extents,
+                                             value.text);
+    break;
+  }
+  if (output.elementCount() != value.elementCount)
+    return invalid("Observer output context returned inconsistent extents.");
+  return WVKernelStatus::ok();
+}
+
 } // namespace
+
+const WVStateBlockRecord *WVObserverOutputPlanningContext::stateBlock(
+    const std::string &identifier) const noexcept {
+  for (std::size_t index = 0; index < stateBlockCount; ++index)
+    if (stateBlocks[index].identifier == identifier)
+      return stateBlocks + index;
+  return nullptr;
+}
+
+WVKernelStatus WVObservingSystem::outputPlan(
+    const WVObserverRecord &, const WVObserverOutputPlanningContext &,
+    WVObserverOutputPlan &) const {
+  return {WVKernelStatusCode::unsupportedOperation,
+          "Observer implementation does not declare an output plan."};
+}
+
+WVKernelStatus WVObservingSystem::observationBatch(
+    const WVObserverRecord &, const WVObserverOutputPlan &plan,
+    const WVObserverOutputEvaluationContext &context,
+    WVObservationBatchKind kind, WVObservationBatch &output) const {
+  WVObservationBatch candidate;
+  candidate.schemaIdentifier = plan.schema.identifier;
+  candidate.schemaVersion = plan.schema.version;
+  candidate.kind = kind;
+  for (const auto &constant : plan.constantValues) {
+    const auto *variable =
+        observationVariable(plan.schema, constant.variableIdentifier);
+    if (variable == nullptr || !belongsToBatch(*variable, kind))
+      continue;
+    WVObservationValue borrowed;
+    auto status = borrowValue(constant, borrowed);
+    if (!status)
+      return status;
+    candidate.values.push_back(std::move(borrowed));
+  }
+  for (const auto &channel : plan.channels) {
+    const auto *variable =
+        observationVariable(plan.schema, channel.variableIdentifier);
+    if (variable == nullptr)
+      return invalid("Observer output channel references an unknown schema "
+                     "variable.");
+    if (!belongsToBatch(*variable, kind))
+      continue;
+    WVObserverBorrowedValueView value;
+    auto status = context.value(channel.variableIdentifier, value);
+    if (!status)
+      return status;
+    if (value.scalarType != variable->scalarType)
+      return invalid("Observer output context returned the wrong scalar type.");
+    WVObservationValue borrowed;
+    status = borrowValue(channel.variableIdentifier, value, borrowed);
+    if (!status)
+      return status;
+    candidate.values.push_back(std::move(borrowed));
+  }
+  const auto status = validateObservationBatch(plan.schema, candidate);
+  if (!status)
+    return status;
+  output = std::move(candidate);
+  return WVKernelStatus::ok();
+}
+
+WVKernelStatus WVResolvedObserver::outputPlan(
+    const WVObserverRecord &observer,
+    const WVObserverOutputPlanningContext &context,
+    WVObserverOutputPlan &plan) const {
+  return implementation_->outputPlan(observer, context, plan);
+}
+
+WVKernelStatus WVResolvedObserver::observationBatch(
+    const WVObserverRecord &observer, const WVObserverOutputPlan &plan,
+    const WVObserverOutputEvaluationContext &context,
+    WVObservationBatchKind kind, WVObservationBatch &batch) const {
+  return implementation_->observationBatch(observer, plan, context, kind,
+                                             batch);
+}
+
+std::size_t observerOutputPlanRetainedBytes(
+    const WVObserverOutputPlan &plan) noexcept {
+  std::size_t bytes = observationSchemaRetainedBytes(plan.schema) +
+                      plan.constantValues.capacity() *
+                          sizeof(WVObservationValue) +
+                      plan.channels.capacity() *
+                          sizeof(WVObserverOutputChannel);
+  for (const auto &value : plan.constantValues)
+    bytes += value.retainedBytes();
+  for (const auto &channel : plan.channels) {
+    bytes += channel.variableIdentifier.capacity() +
+             channel.sourceIdentifier.capacity() +
+             channel.sampling.xIndices.capacity() * sizeof(std::size_t) +
+             channel.sampling.yIndices.capacity() * sizeof(std::size_t) +
+             (channel.sampling.x.capacity() + channel.sampling.y.capacity() +
+              channel.sampling.z.capacity()) *
+                 sizeof(double);
+  }
+  bytes += plan.movingPositions.stateBlockIdentifiers.capacity() *
+               sizeof(std::string) +
+           plan.movingPositions.fixedZ.capacity() * sizeof(double);
+  for (const auto &identifier :
+       plan.movingPositions.stateBlockIdentifiers)
+    bytes += identifier.capacity();
+  return bytes;
+}
 
 WVKernelStatus
 WVPortableObserverDescriptor::create(const WVPortableObserverRecord &record,
@@ -92,6 +272,8 @@ WVPortableObserverDescriptor::create(const WVPortableObserverRecord &record,
     std::set<std::string> observerIdentifiers;
     std::map<std::string, std::shared_ptr<const WVObservingSystem>>
         observerImplementations;
+    std::map<std::string, WVPortableTypedRecord> observerConfigurations;
+    std::map<std::string, WVObserverExecutionPlan> observerExecutionPlans;
     std::map<std::string, std::size_t> integratedBlockOwnerCounts;
     for (const auto &block : record.stateBlocks) {
       const bool canonical = block.identifier == "Ap" ||
@@ -111,6 +293,13 @@ WVPortableObserverDescriptor::create(const WVPortableObserverRecord &record,
         return {WVKernelStatusCode::unsupportedOperation,
                 "Unsupported observing-system identity or contract version."};
       observerImplementations.emplace(observer.identifier, implementation);
+      WVPortableTypedRecord configuration;
+      const auto configurationStatus =
+          detail::resolveObserverConfiguration(observer, configuration);
+      if (!configurationStatus)
+        return configurationStatus;
+      observerConfigurations.emplace(observer.identifier,
+                                     std::move(configuration));
       std::set<std::string> observerBlocks;
       for (const auto &identifier : observer.stateBlockIdentifiers) {
         if (blockIdentifiers.find(identifier) == blockIdentifiers.end())
@@ -124,6 +313,16 @@ WVPortableObserverDescriptor::create(const WVPortableObserverRecord &record,
           observer, blocksByIdentifier, integratedBlockOwnerCounts);
       if (!observerStatus)
         return observerStatus;
+      auto configuredObserver = observer;
+      configuredObserver.configuration =
+          observerConfigurations.at(observer.identifier);
+      WVObserverExecutionPlan executionPlan;
+      const auto planStatus =
+          implementation->executionPlan(configuredObserver, executionPlan);
+      if (!planStatus)
+        return planStatus;
+      observerExecutionPlans.emplace(observer.identifier,
+                                     std::move(executionPlan));
     }
 
     for (const auto &[identifier, ownerCount] : integratedBlockOwnerCounts) {
@@ -172,38 +371,17 @@ WVPortableObserverDescriptor::create(const WVPortableObserverRecord &record,
         }
         if (group.containsCompleteCoefficientRestart) {
           ++restartGroupCount;
-          const bool containsCoefficients = std::any_of(
-              group.observerIdentifiers.begin(),
-              group.observerIdentifiers.end(), [&](const auto &identifier) {
-                return observerImplementations.at(identifier)
-                    ->recordsCoefficients();
-              });
-          const bool containsEulerianCoefficients = std::any_of(
-              group.observerIdentifiers.begin(),
-              group.observerIdentifiers.end(), [&](const auto &identifier) {
-                if (!observerImplementations.at(identifier)
-                         ->recordsEulerianFields())
-                  return false;
-                const auto observer = std::find_if(
-                    record.observers.begin(), record.observers.end(),
-                    [&](const auto &candidate) {
-                      return candidate.identifier == identifier;
-                    });
-                if (observer == record.observers.end())
-                  return false;
-                return std::find(observer->fieldNames.begin(),
-                                 observer->fieldNames.end(), "Ap") !=
-                           observer->fieldNames.end() &&
-                       std::find(observer->fieldNames.begin(),
-                                 observer->fieldNames.end(), "Am") !=
-                           observer->fieldNames.end() &&
-                       std::find(observer->fieldNames.begin(),
-                                 observer->fieldNames.end(), "A0") !=
-                           observer->fieldNames.end();
-              });
-          if (!containsCoefficients && !containsEulerianCoefficients)
+          std::set<std::string> restartFamilies;
+          for (const auto &identifier : group.observerIdentifiers) {
+            const auto &families = observerExecutionPlans.at(identifier)
+                                       .coefficientRestartFamilies;
+            restartFamilies.insert(families.begin(), families.end());
+          }
+          if (restartFamilies.find("Ap") == restartFamilies.end() ||
+              restartFamilies.find("Am") == restartFamilies.end() ||
+              restartFamilies.find("A0") == restartFamilies.end())
             return invalid("A complete coefficient-restart group must contain "
-                           "WVCoefficients or Eulerian Ap, Am, and A0.");
+                           "providers for Ap, Am, and A0.");
         }
       }
       if (!file.groups.empty() && restartGroupCount != 1)
@@ -211,11 +389,19 @@ WVPortableObserverDescriptor::create(const WVPortableObserverRecord &record,
                        "one complete coefficient-restart group.");
     }
     descriptor.record_ = record;
-    descriptor.implementations_.clear();
-    descriptor.implementations_.reserve(record.observers.size());
-    for (const auto &observer : record.observers)
-      descriptor.implementations_.push_back(
-          observerImplementations.at(observer.identifier));
+    descriptor.resolvedObservers_.clear();
+    descriptor.resolvedObservers_.reserve(record.observers.size());
+    for (auto &observer : descriptor.record_.observers) {
+      observer.configuration = observerConfigurations.at(observer.identifier);
+      auto resolved = std::make_unique<WVResolvedObserver>();
+      resolved->identifier_ = observer.identifier;
+      resolved->configuration_ = observer.configuration;
+      resolved->executionPlan_ =
+          observerExecutionPlans.at(observer.identifier);
+      resolved->implementation_ =
+          observerImplementations.at(observer.identifier);
+      descriptor.resolvedObservers_.push_back(std::move(resolved));
+    }
     return WVKernelStatus::ok();
   } catch (const std::bad_alloc &) {
     return {WVKernelStatusCode::allocationFailure,
@@ -260,10 +446,32 @@ WVKernelStatus WVObserverFactoryRegistry::registerImplementation(
 
 const WVObservingSystem *WVPortableObserverDescriptor::implementation(
     const WVObserverRecord &observer) const noexcept {
+  const auto *resolved = resolvedObserver(observer);
+  return resolved == nullptr ? nullptr : &resolved->implementation();
+}
+
+const WVResolvedObserver *WVPortableObserverDescriptor::resolvedObserver(
+    const WVObserverRecord &observer) const noexcept {
   for (std::size_t index = 0; index < record_.observers.size(); ++index)
     if (record_.observers[index].identifier == observer.identifier)
-      return implementations_[index].get();
+      return resolvedObservers_[index].get();
   return nullptr;
+}
+
+std::size_t WVResolvedObserver::persistentBytes() const noexcept {
+  std::size_t bytes = sizeof(*this) + identifier_.capacity() +
+         configuration_.persistentBytes() - sizeof(WVPortableTypedRecord) +
+         implementation_->persistentBytes();
+  bytes += executionPlan_.fieldListAttribute.capacity() +
+           executionPlan_.persistedName.capacity() +
+           executionPlan_.outputFields.capacity() * sizeof(std::string) +
+           executionPlan_.coefficientRestartFamilies.capacity() *
+               sizeof(std::string);
+  for (const auto &value : executionPlan_.outputFields)
+    bytes += value.capacity();
+  for (const auto &value : executionPlan_.coefficientRestartFamilies)
+    bytes += value.capacity();
+  return bytes;
 }
 
 std::size_t WVPortableObserverDescriptor::persistentBytes() const noexcept {
@@ -278,6 +486,8 @@ std::size_t WVPortableObserverDescriptor::persistentBytes() const noexcept {
   for (const auto &observer : record_.observers) {
     bytes += stringBytes(observer.identifier) + stringBytes(observer.name) +
              stringBytes(observer.typeIdentifier) +
+             observer.configuration.persistentBytes() -
+                 sizeof(WVPortableTypedRecord) +
              observer.stateBlockIdentifiers.capacity() * sizeof(std::string) +
              observer.fieldNames.capacity() * sizeof(std::string);
     for (const auto &value : observer.stateBlockIdentifiers)
@@ -288,8 +498,10 @@ std::size_t WVPortableObserverDescriptor::persistentBytes() const noexcept {
               observer.z.capacity()) *
              sizeof(double);
   }
-  bytes += implementations_.capacity() *
-           sizeof(std::shared_ptr<const WVObservingSystem>);
+  bytes += resolvedObservers_.capacity() *
+           sizeof(std::unique_ptr<const WVResolvedObserver>);
+  for (const auto &observer : resolvedObservers_)
+    bytes += observer->persistentBytes();
   for (const auto &file : record_.outputFiles) {
     bytes += stringBytes(file.identifier) + stringBytes(file.destination) +
              file.groups.capacity() * sizeof(WVOutputGroupRecord);

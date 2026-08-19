@@ -22,6 +22,7 @@ endif()
 add_library(WaveVortexPortableRuntime STATIC
     src/WVPortableImplementationContract.cpp
     src/WVPortableTypedRecord.cpp
+    src/WVObservation.cpp
     src/WVOutputSchedule.cpp
     src/WVForcingContracts.cpp
     src/WVNetCDF.cpp
@@ -34,11 +35,13 @@ add_library(WaveVortexPortableRuntime STATIC
     src/WVOutputOrchestration.cpp
     src/WVObserverAdapter.cpp
     src/WVObserverContracts.cpp
+    src/WVObserverSampleSource.cpp
     src/WVFieldEvaluationService.cpp
     src/WVConstantStratificationIntegrationSystem.cpp
     src/WVObserverOutputEvaluationService.cpp
     src/WVModelOutputNetCDFSchema.cpp
     src/WVModelOutputNetCDFReader.cpp
+    src/WVLegacyObservationNetCDFAdapter.cpp
     src/WVModelOutputNetCDFWriter.cpp
     src/WVModelOutputConfiguration.cpp
     src/WVModel.cpp
@@ -157,6 +160,7 @@ if(BUILD_TESTING)
 
     wv_add_runtime_test(TestWVPortableImplementationContract TestWVPortableImplementationContract.cpp portable-implementation-contract)
     wv_add_runtime_test(TestWVPortableTypedRecord TestWVPortableTypedRecord.cpp portable-typed-record)
+    wv_add_runtime_test(TestWVObservation TestWVObservation.cpp observation-schema-batch)
     wv_add_runtime_test(TestWVPortableVariableCatalog TestWVPortableVariableCatalog.cpp portable-variable-catalog)
     wv_add_runtime_test(TestWVObserverAdapter TestWVObserverAdapter.cpp observer-adapter)
     wv_add_runtime_test(TestWVCheckpointReader TestWVCheckpointReader.cpp checkpoint-reader)

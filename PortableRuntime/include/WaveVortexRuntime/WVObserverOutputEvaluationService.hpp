@@ -17,6 +17,8 @@ struct WVObserverOutputEvaluationMetrics {
   std::size_t retainedStorageBytes = 0;
   std::size_t routeAwareParticleEvaluationCount = 0;
   std::size_t skippedParticleEvaluationCount = 0;
+  std::size_t batchRetainedStorageBytes = 0;
+  std::size_t batchMaximumLiveBytes = 0;
   double evaluationSeconds = 0.0;
 };
 
@@ -37,6 +39,15 @@ public:
   WVKernelStatus specifications(
       const WVObserverRecord &observer,
       std::vector<WVObserverOutputVariableSpecification> &output) override;
+  WVKernelStatus observationSchema(
+      const WVObserverRecord &observer,
+      WVObservationSchema &output) override;
+  WVKernelStatus initialObservationBatch(
+      const WVObserverRecord &observer,
+      WVObservationBatch &output) override;
+  WVKernelStatus observationBatch(
+      const WVObserverRecord &observer,
+      WVObservationBatch &output) override;
   WVKernelStatus preflight(const WVOutputPlan &plan) override;
   WVKernelStatus useFieldEvaluationService(
       WVFieldEvaluationService &fieldEvaluationService);
@@ -54,6 +65,9 @@ public:
 
 private:
   WVObserverOutputEvaluationService() = default;
+  WVKernelStatus observationBatchForKind(
+      const WVObserverRecord &observer, WVObservationBatchKind kind,
+      WVObservationBatch &output);
   class Impl;
   std::unique_ptr<Impl> impl_;
   WVObserverOutputEvaluationMetrics metrics_;

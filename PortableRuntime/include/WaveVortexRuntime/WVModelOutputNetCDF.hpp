@@ -1,6 +1,7 @@
 #pragma once
 
 #include "WaveVortexRuntime/WVCheckpointReader.hpp"
+#include "WaveVortexRuntime/WVObservation.hpp"
 #include "WaveVortexRuntime/WVOutputOrchestration.hpp"
 
 #include <cstddef>
@@ -58,9 +59,20 @@ struct WVObserverOutputValueView {
 class WVObserverSampleSource {
 public:
   virtual ~WVObserverSampleSource() = default;
+  // Complete provisional schema/batch boundary. The default implementation
+  // adapts the fixed real/complex specification/value API below so existing
+  // source-linked providers retain their exact schema.
+  virtual WVKernelStatus observationSchema(
+      const WVObserverRecord &observer, WVObservationSchema &output);
+  virtual WVKernelStatus initialObservationBatch(
+      const WVObserverRecord &observer, WVObservationBatch &output);
+  virtual WVKernelStatus observationBatch(const WVObserverRecord &observer,
+                                           WVObservationBatch &output);
+
+  // Legacy fixed-shape adapter retained during the provisional source API.
   virtual WVKernelStatus specifications(
       const WVObserverRecord &observer,
-      std::vector<WVObserverOutputVariableSpecification> &output) = 0;
+      std::vector<WVObserverOutputVariableSpecification> &output);
   virtual WVKernelStatus preflight(const WVOutputPlan &) {
     return WVKernelStatus::ok();
   }
@@ -71,7 +83,7 @@ public:
   virtual WVKernelStatus
   value(const WVObserverRecord &observer,
         const WVObserverOutputVariableSpecification &variable,
-        WVObserverOutputValueView &output) = 0;
+        WVObserverOutputValueView &output);
 };
 
 struct WVModelOutputNetCDFConfiguration {
@@ -90,6 +102,13 @@ struct WVModelOutputNetCDFMetrics {
   double synchronizationSeconds = 0.0;
   std::size_t failureCount = 0;
   std::size_t retainedStorageBytes = 0;
+  std::size_t batchRetainedStorageBytes = 0;
+  std::size_t batchMaximumLiveBytes = 0;
+};
+
+struct WVInspectedObservationSchema {
+  std::string observerIdentifier;
+  WVObservationSchema schema;
 };
 
 struct WVModelOutputNetCDFInspection {
@@ -99,6 +118,10 @@ struct WVModelOutputNetCDFInspection {
   bool isDynamicsLinear = false;
   // Reconstructed shared observer graph and its resolved integration layout.
   WVPortableObserverRecord observerRecord;
+  // Provisional nonlegacy schemas reconstructed from persisted variable and
+  // axis declarations. Legacy MATLAB observers remain represented by the
+  // exact observer graph above.
+  std::vector<WVInspectedObservationSchema> observationSchemas;
   WVIntegrationStateLayout stateLayout;
   WVAdditionalStateStorage additionalState;
   // Last committed original-lattice ordinal for every file/group pair.

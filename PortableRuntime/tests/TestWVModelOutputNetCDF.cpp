@@ -1,5 +1,6 @@
 #include "WaveVortexRuntime/WVModelOutputNetCDF.hpp"
 #include "WaveVortexRuntime/WVObserverOutputEvaluationService.hpp"
+#include "WaveVortexRuntime/WVObserverOutputProvider.hpp"
 
 #include "WVReferenceFFTEngine.hpp"
 #include "WVTestQuadraticSchedule.hpp"
@@ -39,11 +40,100 @@ public:
     return value;
   }
   std::uint32_t contractVersion() const noexcept override { return 1; }
-  const std::string &fieldListAttribute() const noexcept override {
-    static const std::string value = "fieldNames";
-    return value;
+  WVKernelStatus executionPlan(const WVObserverRecord &record,
+                               WVObserverExecutionPlan &plan) const override {
+    plan = {};
+    plan.fieldListAttribute = "fieldNames";
+    plan.outputFields = record.fieldNames;
+    for (const auto *family : {"Ap", "Am", "A0"})
+      if (std::find(record.fieldNames.begin(), record.fieldNames.end(),
+                    family) != record.fieldNames.end())
+        plan.coefficientRestartFamilies.emplace_back(family);
+    return WVKernelStatus::ok();
   }
-  bool recordsEulerianFields() const noexcept override { return true; }
+  WVKernelStatus outputPlan(
+      const WVObserverRecord &record,
+      const WVObserverOutputPlanningContext &context,
+      WVObserverOutputPlan &plan) const override {
+    if (context.configuration == nullptr)
+      return {WVKernelStatusCode::invalidConfiguration,
+              "Test field output requires a transform configuration."};
+    WVObserverOutputPlan candidate;
+    candidate.schema.identifier =
+        "legacy-" + record.identifier + "-observation-v1";
+    candidate.schema.preservesLegacyEncoding = true;
+    candidate.schema.metadata.attributes = {
+        {"AnnotatedClass", typeIdentifier()},
+        {"portableIdentifier", record.identifier}};
+    candidate.schema.metadata.stringListAttributes = {
+        {"fieldNames", record.fieldNames}};
+    for (const auto &field : record.fieldNames) {
+      const auto *metadata = findPortableVariable(field);
+      if (metadata == nullptr)
+        return {WVKernelStatusCode::invalidConfiguration,
+                "Test field output is unsupported."};
+      std::vector<std::string> names;
+      for (std::size_t dimension = 0; dimension < metadata->dimensionCount;
+           ++dimension)
+        names.emplace_back(metadata->dimensions[dimension]);
+      std::vector<std::size_t> extents;
+      WVObserverOutputChannel channel;
+      channel.sourceIdentifier = field;
+      if (metadata->kind == WVPortableVariableKind::coefficient) {
+        WVTransformConstantStratificationDescriptor transform;
+        auto status = WVTransformConstantStratificationDescriptor::create(
+            *context.configuration, transform);
+        if (!status)
+          return status;
+        extents = {context.configuration->Nj, transform.Nkl()};
+        channel.source = WVObserverOutputChannelSource::coefficient;
+        channel.coefficientFamily =
+            metadata->identifier == WVPortableVariable::Ap
+                ? 0
+                : metadata->identifier == WVPortableVariable::Am ? 1 : 2;
+      } else {
+        channel.source = WVObserverOutputChannelSource::sampledField;
+        if (metadata->naturalRank == WVPortableNaturalRank::vertical)
+          extents = {context.configuration->Nz};
+        else if (metadata->naturalRank == WVPortableNaturalRank::horizontal)
+          extents = {context.configuration->Nx, context.configuration->Ny};
+        else if (metadata->naturalRank == WVPortableNaturalRank::scalar)
+          extents = {};
+        else
+          extents = {context.configuration->Nx, context.configuration->Ny,
+                     context.configuration->Nz};
+      }
+      for (std::size_t index = 0; index < names.size(); ++index) {
+        const auto found = std::find_if(
+            candidate.schema.axes.begin(), candidate.schema.axes.end(),
+            [&](const auto &axis) { return axis.identifier == names[index]; });
+        if (found == candidate.schema.axes.end())
+          candidate.schema.axes.push_back(
+              {names[index], names[index], WVObservationAxisKind::fixed,
+               extents[index], WVObservationCoordinateRole::none});
+      }
+      WVObservationVariable variable;
+      variable.identifier = "derived-" + field;
+      variable.name = field;
+      variable.scalarType =
+          metadata->kind == WVPortableVariableKind::coefficient
+              ? WVObservationScalarType::complex64
+              : WVObservationScalarType::real64;
+      variable.dimensionIdentifiers = names;
+      variable.layout =
+          context.isDynamicsLinear &&
+                  !metadata->isVariableWithLinearTimeStep
+              ? WVObservationValueLayout::initialValue
+              : WVObservationValueLayout::record;
+      variable.units = metadata->units;
+      variable.description = metadata->description;
+      channel.variableIdentifier = variable.identifier;
+      candidate.schema.variables.push_back(std::move(variable));
+      candidate.channels.push_back(std::move(channel));
+    }
+    plan = std::move(candidate);
+    return WVKernelStatus::ok();
+  }
   WVKernelStatus
   validate(const WVObserverRecord &record,
            const std::map<std::string, const WVStateBlockRecord *> &,
@@ -66,11 +156,101 @@ public:
     return value;
   }
   std::uint32_t contractVersion() const noexcept override { return 1; }
-  const std::string &fieldListAttribute() const noexcept override {
-    static const std::string value = "fieldNames";
-    return value;
+  WVKernelStatus executionPlan(const WVObserverRecord &record,
+                               WVObserverExecutionPlan &plan) const override {
+    plan = {};
+    plan.sampling = WVObserverSamplingTopology::fixedPositions;
+    plan.fieldListAttribute = "fieldNames";
+    plan.persistedName = record.name;
+    plan.outputFields = record.fieldNames;
+    return WVKernelStatus::ok();
   }
-  bool recordsFixedPoints() const noexcept override { return true; }
+  WVKernelStatus outputPlan(
+      const WVObserverRecord &record,
+      const WVObserverOutputPlanningContext &context,
+      WVObserverOutputPlan &plan) const override {
+    if (context.configuration == nullptr || record.fieldNames.size() != 1)
+      return {WVKernelStatusCode::invalidConfiguration,
+              "Point diagnostic output planning is invalid."};
+    const auto *metadata = findPortableVariable(record.fieldNames.front());
+    if (metadata == nullptr ||
+        metadata->kind != WVPortableVariableKind::field)
+      return {WVKernelStatusCode::invalidConfiguration,
+              "Point diagnostic field is unsupported."};
+    WVObserverOutputPlan candidate;
+    candidate.schema.identifier =
+        "legacy-" + record.identifier + "-observation-v1";
+    candidate.schema.preservesLegacyEncoding = true;
+    candidate.schema.metadata.attributes = {
+        {"AnnotatedClass", typeIdentifier()},
+        {"portableIdentifier", record.identifier}, {"name", record.name},
+        {"trackedVarInterpolation", "linear"}};
+    candidate.schema.metadata.stringListAttributes = {
+        {"fieldNames", record.fieldNames}};
+    candidate.schema.metadata.variables.push_back(
+        {"outputScale",
+         WVObservationValue::ownReal("outputScale", {}, {record.outputScale}),
+         false});
+    candidate.schema.metadata.variables.push_back(
+        {"outputOffset",
+         WVObservationValue::ownReal("outputOffset", {}, {record.outputOffset}),
+         false});
+    const std::string idName = record.name + "_id";
+    candidate.schema.axes.push_back(
+        {idName, idName, WVObservationAxisKind::fixed, record.x.size(),
+         WVObservationCoordinateRole::identifier});
+    const auto addConstant = [&](std::string identifier, std::string name,
+                                 const std::vector<double> &values,
+                                 WVObservationCoordinateRole role,
+                                 std::string description) {
+      candidate.schema.variables.push_back(
+          {identifier, std::move(name), WVObservationScalarType::real64,
+           {idName}, WVObservationValueLayout::staticValue, "m",
+           std::move(description), {}, role,
+           WVObservationRaggedRole::none, {}});
+      candidate.constantValues.push_back(WVObservationValue::ownReal(
+          std::move(identifier), {values.size()}, values));
+    };
+    std::vector<double> identifiers(record.x.size());
+    for (std::size_t index = 0; index < identifiers.size(); ++index)
+      identifiers[index] = static_cast<double>(index + 1);
+    addConstant("static-" + idName, idName, identifiers,
+                WVObservationCoordinateRole::identifier, "");
+    addConstant("static-x", record.name + "_x", record.x,
+                WVObservationCoordinateRole::x,
+                "x position of fixed observation");
+    addConstant("static-y", record.name + "_y", record.y,
+                WVObservationCoordinateRole::y,
+                "y position of fixed observation");
+    addConstant("static-z", record.name + "_z", record.z,
+                WVObservationCoordinateRole::z,
+                "z position of fixed observation");
+    WVObservationVariable value;
+    value.identifier = "derived-" + record.fieldNames.front();
+    value.name = record.name + "_value";
+    value.dimensionIdentifiers = {idName};
+    value.layout =
+        context.isDynamicsLinear && !metadata->isVariableWithLinearTimeStep
+            ? WVObservationValueLayout::initialValue
+            : WVObservationValueLayout::record;
+    value.units = metadata->units;
+    value.description = std::string(metadata->description) +
+                        ", sampled and affinely transformed by the observing system";
+    candidate.schema.variables.push_back(value);
+    WVObserverOutputChannel channel;
+    channel.variableIdentifier = value.identifier;
+    channel.source = WVObserverOutputChannelSource::sampledField;
+    channel.sourceIdentifier = record.fieldNames.front();
+    channel.sampling.kind = WVFieldSamplingKind::positions;
+    channel.sampling.x = record.x;
+    channel.sampling.y = record.y;
+    channel.sampling.z = record.z;
+    channel.scale = record.outputScale;
+    channel.offset = record.outputOffset;
+    candidate.channels.push_back(std::move(channel));
+    plan = std::move(candidate);
+    return WVKernelStatus::ok();
+  }
   WVKernelStatus
   validate(const WVObserverRecord &record,
            const std::map<std::string, const WVStateBlockRecord *> &,
@@ -88,6 +268,610 @@ public:
   std::size_t persistentBytes() const noexcept override {
     return sizeof(*this);
   }
+};
+
+class WVTestObservationBatchesImplementation final : public WVObservingSystem {
+public:
+  const std::string &typeIdentifier() const noexcept override {
+    static const std::string value = "WVTestObservationBatches";
+    return value;
+  }
+  std::uint32_t contractVersion() const noexcept override { return 1; }
+  WVKernelStatus executionPlan(const WVObserverRecord &record,
+                               WVObserverExecutionPlan &plan) const override {
+    plan = {};
+    plan.persistedName = record.name;
+    return WVKernelStatus::ok();
+  }
+  WVKernelStatus outputPlan(
+      const WVObserverRecord &record,
+      const WVObserverOutputPlanningContext &,
+      WVObserverOutputPlan &output) const override {
+    WVObserverOutputPlan plan;
+    plan.schema.identifier = "synthetic-variable-observation";
+    plan.schema.metadata.attributes = {
+        {"AnnotatedClass", record.typeIdentifier},
+        {"portableIdentifier", record.identifier}, {"name", record.name}};
+    plan.schema.axes = {
+        {"depth", "synthetic_depth", WVObservationAxisKind::fixed, 2,
+         WVObservationCoordinateRole::depth},
+        {"profile", "synthetic_profile", WVObservationAxisKind::unlimited, 0,
+         WVObservationCoordinateRole::profile},
+        {"sample", "synthetic_sample", WVObservationAxisKind::unlimited, 0,
+         WVObservationCoordinateRole::identifier}};
+    plan.schema.variables = {
+        {"depth", "synthetic_depth", WVObservationScalarType::real64,
+         {"depth"}, WVObservationValueLayout::staticValue, "m",
+         "fixed depth-bin axis", {}, WVObservationCoordinateRole::depth,
+         WVObservationRaggedRole::none, {}},
+        {"profile-id", "synthetic_profile_id",
+         WVObservationScalarType::integer64, {"profile"},
+         WVObservationValueLayout::flat, "1", "profile identifier", {},
+         WVObservationCoordinateRole::profile,
+         WVObservationRaggedRole::none, {}},
+        {"row-count", "synthetic_row_count",
+         WVObservationScalarType::integer64, {"profile"},
+         WVObservationValueLayout::flat, "1", "samples in each profile", {},
+         WVObservationCoordinateRole::none,
+         WVObservationRaggedRole::rowCount, "sample"},
+        {"time", "synthetic_time", WVObservationScalarType::real64,
+         {"sample"}, WVObservationValueLayout::flat, "s", "sample time", {},
+         WVObservationCoordinateRole::sampleTime,
+         WVObservationRaggedRole::none, {}},
+        {"x", "synthetic_x", WVObservationScalarType::real64, {"sample"},
+         WVObservationValueLayout::flat, "m", "moving x coordinate", {},
+         WVObservationCoordinateRole::x, WVObservationRaggedRole::none, {}},
+        {"y", "synthetic_y", WVObservationScalarType::real64, {"sample"},
+         WVObservationValueLayout::flat, "m", "moving y coordinate", {},
+         WVObservationCoordinateRole::y, WVObservationRaggedRole::none, {}},
+        {"z", "synthetic_z", WVObservationScalarType::real64, {"sample"},
+         WVObservationValueLayout::flat, "m", "moving z coordinate", {},
+         WVObservationCoordinateRole::z, WVObservationRaggedRole::none, {}},
+        {"bins", "synthetic_bins", WVObservationScalarType::complex64,
+         {"depth", "sample"}, WVObservationValueLayout::flat, "m s-1",
+         "fixed-depth-bin samples", {{"provider", "fixed-bin"}},
+         WVObservationCoordinateRole::none, WVObservationRaggedRole::none, {}},
+        {"valid", "synthetic_valid", WVObservationScalarType::boolean8,
+         {"sample"}, WVObservationValueLayout::flat, "1", "sample validity",
+         {}, WVObservationCoordinateRole::none,
+         WVObservationRaggedRole::none, {}},
+        {"label", "synthetic_label", WVObservationScalarType::text,
+         {"profile"}, WVObservationValueLayout::flat, "", "profile label",
+         {}, WVObservationCoordinateRole::none,
+         WVObservationRaggedRole::none, {}},
+        {"pass", "synthetic_pass", WVObservationScalarType::integer64, {},
+         WVObservationValueLayout::record, "1", "pass identifier", {},
+         WVObservationCoordinateRole::pass,
+         WVObservationRaggedRole::none, {}}};
+    plan.constantValues.push_back(WVObservationValue::ownReal(
+        "depth", {2}, std::vector<double>{-10.0, -20.0}));
+    output = std::move(plan);
+    return WVKernelStatus::ok();
+  }
+  WVKernelStatus observationBatch(
+      const WVObserverRecord &record, const WVObserverOutputPlan &plan,
+      const WVObserverOutputEvaluationContext &context,
+      WVObservationBatchKind kind, WVObservationBatch &output) const override {
+    if (kind == WVObservationBatchKind::initial)
+      return WVObservingSystem::observationBatch(record, plan, context, kind,
+                                                  output);
+    ++batchCounts_[record.identifier];
+    const bool empty = context.eventOrdinal() % 2 == 1;
+    const std::size_t profileCount = empty ? 0 : 2;
+    const std::size_t sampleCount = empty ? 0 : 3;
+    WVObservationBatch batch;
+    batch.schemaIdentifier = plan.schema.identifier;
+    batch.schemaVersion = plan.schema.version;
+    batch.values.push_back(WVObservationValue::ownInteger(
+        "profile-id", {profileCount},
+        empty ? std::vector<std::int64_t>{}
+              : std::vector<std::int64_t>{10, 11}));
+    batch.values.push_back(WVObservationValue::ownInteger(
+        "row-count", {profileCount},
+        empty ? std::vector<std::int64_t>{}
+              : std::vector<std::int64_t>{1, 2}));
+    batch.values.push_back(WVObservationValue::ownReal(
+        "time", {sampleCount},
+        empty ? std::vector<double>{}
+              : std::vector<double>{context.scheduledTime(),
+                                    context.scheduledTime() + 0.1,
+                                    context.scheduledTime() + 0.2}));
+    batch.values.push_back(WVObservationValue::ownReal(
+        "x", {sampleCount},
+        empty ? std::vector<double>{}
+              : std::vector<double>{1.0, 2.0, 3.0}));
+    batch.values.push_back(WVObservationValue::ownReal(
+        "y", {sampleCount},
+        empty ? std::vector<double>{}
+              : std::vector<double>{4.0, 5.0, 6.0}));
+    batch.values.push_back(WVObservationValue::ownReal(
+        "z", {sampleCount},
+        empty ? std::vector<double>{}
+              : std::vector<double>{-1.0, -2.0, -3.0}));
+    batch.values.push_back(WVObservationValue::ownComplex(
+        "bins", {2, sampleCount},
+        empty ? std::vector<WVComplex64>{}
+              : std::vector<WVComplex64>{{1.0, -1.0}, {2.0, -2.0},
+                                         {3.0, -3.0}, {4.0, -4.0},
+                                         {5.0, -5.0}, {6.0, -6.0}}));
+    batch.values.push_back(WVObservationValue::ownBoolean(
+        "valid", {sampleCount},
+        empty ? std::vector<std::uint8_t>{}
+              : std::vector<std::uint8_t>{1, 0, 1}));
+    batch.values.push_back(WVObservationValue::ownText(
+        "label", {profileCount},
+        empty ? std::vector<std::string>{}
+              : std::vector<std::string>{"pass-a", "pass-b"}));
+    batch.values.push_back(WVObservationValue::ownInteger(
+        "pass", {}, {static_cast<std::int64_t>(context.eventOrdinal())}));
+    output = std::move(batch);
+    return WVKernelStatus::ok();
+  }
+  WVKernelStatus
+  validate(const WVObserverRecord &record,
+           const std::map<std::string, const WVStateBlockRecord *> &,
+           std::map<std::string, std::size_t> &) const override {
+    return record.stateBlockIdentifiers.empty()
+               ? WVKernelStatus::ok()
+               : WVKernelStatus{WVKernelStatusCode::invalidConfiguration,
+                                "Synthetic batches cannot own state blocks."};
+  }
+  std::size_t persistentBytes() const noexcept override {
+    return sizeof(*this);
+  }
+  std::size_t batchCount(const std::string &identifier) const {
+    const auto found = batchCounts_.find(identifier);
+    return found == batchCounts_.end() ? 0 : found->second;
+  }
+  void resetCounts() const { batchCounts_.clear(); }
+
+private:
+  mutable std::map<std::string, std::size_t> batchCounts_;
+};
+
+std::shared_ptr<WVTestObservationBatchesImplementation> registeredBatches;
+
+enum class TestTopology { fixedBin, movingTrack, variablePass, raggedProfile };
+
+class WVTestTopologyImplementation final : public WVObservingSystem {
+public:
+  WVTestTopologyImplementation(std::string identifier, TestTopology topology)
+      : identifier_(std::move(identifier)), topology_(topology) {}
+  const std::string &typeIdentifier() const noexcept override {
+    return identifier_;
+  }
+  std::uint32_t contractVersion() const noexcept override { return 1; }
+  WVKernelStatus executionPlan(const WVObserverRecord &,
+                               WVObserverExecutionPlan &plan) const override {
+    plan = {};
+    return WVKernelStatus::ok();
+  }
+  WVKernelStatus validate(
+      const WVObserverRecord &record,
+      const std::map<std::string, const WVStateBlockRecord *> &,
+      std::map<std::string, std::size_t> &) const override {
+    return record.stateBlockIdentifiers.empty()
+               ? WVKernelStatus::ok()
+               : WVKernelStatus{WVKernelStatusCode::invalidConfiguration,
+                                "Test topology providers are sample-only."};
+  }
+  WVKernelStatus outputPlan(
+      const WVObserverRecord &record,
+      const WVObserverOutputPlanningContext &,
+      WVObserverOutputPlan &output) const override {
+    WVObserverOutputPlan plan;
+    plan.schema.identifier = schemaIdentifier();
+    plan.schema.metadata.attributes = {
+        {"AnnotatedClass", identifier_},
+        {"portableIdentifier", record.identifier}, {"name", record.name}};
+    if (topology_ == TestTopology::fixedBin) {
+      plan.schema.axes = {
+          {"depth", "fixed_bin_depth", WVObservationAxisKind::fixed, 3,
+           WVObservationCoordinateRole::depth}};
+      plan.schema.variables = {
+          {"depth", "fixed_bin_depth", WVObservationScalarType::real64,
+           {"depth"}, WVObservationValueLayout::staticValue, "m",
+           "fixed depth bins", {}, WVObservationCoordinateRole::depth,
+           WVObservationRaggedRole::none, {}},
+          {"value", "fixed_bin_value", WVObservationScalarType::complex64,
+           {"depth"}, WVObservationValueLayout::record, "m s-1",
+           "fixed-bin values", {{"ordered-a", "1"}, {"ordered-b", "2"}},
+           WVObservationCoordinateRole::none,
+           WVObservationRaggedRole::none, {}}};
+      plan.constantValues.push_back(WVObservationValue::ownReal(
+          "depth", {3}, {-5.0, -15.0, -25.0}));
+    } else if (topology_ == TestTopology::movingTrack) {
+      plan.schema.axes = {
+          {"sample", "moving_track_sample",
+           WVObservationAxisKind::unlimited, 0,
+           WVObservationCoordinateRole::identifier}};
+      plan.schema.variables = {
+          {"time", "moving_track_time", WVObservationScalarType::real64,
+           {"sample"}, WVObservationValueLayout::flat, "s", "sample time",
+           {}, WVObservationCoordinateRole::sampleTime,
+           WVObservationRaggedRole::none, {}},
+          {"x", "moving_track_x", WVObservationScalarType::real64,
+           {"sample"}, WVObservationValueLayout::flat, "m", "moving x", {},
+           WVObservationCoordinateRole::x, WVObservationRaggedRole::none, {}},
+          {"y", "moving_track_y", WVObservationScalarType::real64,
+           {"sample"}, WVObservationValueLayout::flat, "m", "moving y", {},
+           WVObservationCoordinateRole::y, WVObservationRaggedRole::none, {}},
+          {"z", "moving_track_z", WVObservationScalarType::real64,
+           {"sample"}, WVObservationValueLayout::flat, "m", "moving z", {},
+           WVObservationCoordinateRole::z, WVObservationRaggedRole::none, {}}};
+    } else if (topology_ == TestTopology::variablePass) {
+      plan.schema.axes = {
+          {"pass", "variable_pass", WVObservationAxisKind::unlimited, 0,
+           WVObservationCoordinateRole::pass}};
+      plan.schema.variables = {
+          {"pass", "variable_pass_id", WVObservationScalarType::integer64,
+           {"pass"}, WVObservationValueLayout::flat, "1", "pass id", {},
+           WVObservationCoordinateRole::pass,
+           WVObservationRaggedRole::none, {}},
+          {"label", "variable_pass_label", WVObservationScalarType::text,
+           {"pass"}, WVObservationValueLayout::flat, "", "pass label", {},
+           WVObservationCoordinateRole::none,
+           WVObservationRaggedRole::none, {}}};
+    } else {
+      plan.schema.axes = {
+          {"profile", "ragged_profile", WVObservationAxisKind::unlimited, 0,
+           WVObservationCoordinateRole::profile},
+          {"sample", "ragged_sample", WVObservationAxisKind::unlimited, 0,
+           WVObservationCoordinateRole::identifier}};
+      plan.schema.variables = {
+          {"profile", "ragged_profile_id",
+           WVObservationScalarType::integer64, {"profile"},
+           WVObservationValueLayout::flat, "1", "profile id", {},
+           WVObservationCoordinateRole::profile,
+           WVObservationRaggedRole::none, {}},
+          {"row-count", "ragged_row_count",
+           WVObservationScalarType::integer64, {"profile"},
+           WVObservationValueLayout::flat, "1", "row count", {},
+           WVObservationCoordinateRole::none,
+           WVObservationRaggedRole::rowCount, "sample"},
+          {"value", "ragged_value", WVObservationScalarType::real64,
+           {"sample"}, WVObservationValueLayout::flat, "1", "sample value",
+           {}, WVObservationCoordinateRole::none,
+           WVObservationRaggedRole::none, {}}};
+    }
+    output = std::move(plan);
+    return WVKernelStatus::ok();
+  }
+  WVKernelStatus observationBatch(
+      const WVObserverRecord &record, const WVObserverOutputPlan &plan,
+      const WVObserverOutputEvaluationContext &context,
+      WVObservationBatchKind kind, WVObservationBatch &output) const override {
+    if (kind == WVObservationBatchKind::initial)
+      return WVObservingSystem::observationBatch(record, plan, context, kind,
+                                                  output);
+    ++batchCounts_[record.identifier];
+    WVObservationBatch batch;
+    batch.schemaIdentifier = plan.schema.identifier;
+    batch.schemaVersion = plan.schema.version;
+    if (topology_ == TestTopology::fixedBin) {
+      batch.values.push_back(WVObservationValue::ownComplex(
+          "value", {3}, {{1.0, -1.0}, {2.0, -2.0}, {3.0, -3.0}}));
+    } else if (topology_ == TestTopology::movingTrack) {
+      const std::size_t count = context.eventOrdinal() % 2 == 0 ? 2 : 1;
+      batch.values.push_back(WVObservationValue::ownReal(
+          "time", {count},
+          count == 2 ? std::vector<double>{context.scheduledTime(),
+                                           context.scheduledTime() + 0.25}
+                     : std::vector<double>{context.scheduledTime()}));
+      batch.values.push_back(WVObservationValue::ownReal(
+          "x", {count}, count == 2 ? std::vector<double>{1.0, 2.0}
+                                     : std::vector<double>{3.0}));
+      batch.values.push_back(WVObservationValue::ownReal(
+          "y", {count}, count == 2 ? std::vector<double>{4.0, 5.0}
+                                     : std::vector<double>{6.0}));
+      batch.values.push_back(WVObservationValue::ownReal(
+          "z", {count}, count == 2 ? std::vector<double>{-1.0, -2.0}
+                                     : std::vector<double>{-3.0}));
+    } else if (topology_ == TestTopology::variablePass) {
+      const std::size_t count = context.eventOrdinal() % 2 == 0 ? 2 : 1;
+      batch.values.push_back(WVObservationValue::ownInteger(
+          "pass", {count}, count == 2 ? std::vector<std::int64_t>{7, 8}
+                                       : std::vector<std::int64_t>{9}));
+      batch.values.push_back(WVObservationValue::ownText(
+          "label", {count}, count == 2
+                                ? std::vector<std::string>{"out", "back"}
+                                : std::vector<std::string>{"final"}));
+    } else {
+      const bool malformed = record.name == "malformed";
+      batch.values.push_back(WVObservationValue::ownInteger(
+          "profile", {2}, {1, 2}));
+      batch.values.push_back(WVObservationValue::ownInteger(
+          "row-count", {2}, malformed ? std::vector<std::int64_t>{2, 2}
+                                        : std::vector<std::int64_t>{1, 2}));
+      batch.values.push_back(WVObservationValue::ownReal(
+          "value", {3}, {10.0, 20.0, 30.0}));
+    }
+    output = std::move(batch);
+    return WVKernelStatus::ok();
+  }
+  std::size_t persistentBytes() const noexcept override {
+    return sizeof(*this) + identifier_.capacity();
+  }
+  std::size_t batchCount(const std::string &identifier) const {
+    const auto found = batchCounts_.find(identifier);
+    return found == batchCounts_.end() ? 0 : found->second;
+  }
+  void resetCounts() const { batchCounts_.clear(); }
+
+private:
+  std::string schemaIdentifier() const {
+    if (topology_ == TestTopology::fixedBin)
+      return "test-fixed-bin-v1";
+    if (topology_ == TestTopology::movingTrack)
+      return "test-moving-track-v1";
+    if (topology_ == TestTopology::variablePass)
+      return "test-variable-pass-v1";
+    return "test-ragged-profile-v1";
+  }
+  std::string identifier_;
+  TestTopology topology_;
+  mutable std::map<std::string, std::size_t> batchCounts_;
+};
+
+std::shared_ptr<WVTestTopologyImplementation> fixedBinProvider;
+std::shared_ptr<WVTestTopologyImplementation> movingTrackProvider;
+std::shared_ptr<WVTestTopologyImplementation> variablePassProvider;
+std::shared_ptr<WVTestTopologyImplementation> raggedProfileProvider;
+
+class VariableBatchSource final : public WVObserverSampleSource {
+public:
+  explicit VariableBatchSource(std::uint32_t version = 1,
+                               bool failFirstBatch = false)
+      : version_(version), failFirstBatch_(failFirstBatch) {}
+
+  WVKernelStatus observationSchema(const WVObserverRecord &observer,
+                                   WVObservationSchema &output) override {
+    WVObservationSchema schema;
+    if (observer.typeIdentifier != "WVTestObservationBatches") {
+      schema.identifier = "legacy-coefficient-observation-v1";
+      schema.preservesLegacyEncoding = true;
+      schema.metadata.attributes = {{"AnnotatedClass", observer.typeIdentifier},
+                                    {"portableIdentifier", observer.identifier},
+                                    {"name", observer.name}};
+      WVObservationMetadataVariable tolerance;
+      tolerance.name = "absTolerance";
+      tolerance.value =
+          WVObservationValue::ownReal("absTolerance", {}, {1e-6});
+      schema.metadata.variables.push_back(std::move(tolerance));
+      output = std::move(schema);
+      return WVKernelStatus::ok();
+    }
+    schema.identifier = "synthetic-variable-observation";
+    schema.version = version_;
+    schema.metadata.attributes = {{"AnnotatedClass", observer.typeIdentifier},
+                                  {"portableIdentifier", observer.identifier},
+                                  {"name", observer.name}};
+    schema.axes = {
+        {"depth", "synthetic_depth", WVObservationAxisKind::fixed, 2,
+         WVObservationCoordinateRole::depth},
+        {"profile", "synthetic_profile", WVObservationAxisKind::unlimited, 0,
+         WVObservationCoordinateRole::profile},
+        {"sample", "synthetic_sample", WVObservationAxisKind::unlimited, 0,
+         WVObservationCoordinateRole::identifier}};
+    schema.variables = {
+        {"depth", "synthetic_depth", WVObservationScalarType::real64,
+         {"depth"}, WVObservationValueLayout::staticValue, "m",
+         "fixed depth-bin axis", {}, WVObservationCoordinateRole::depth,
+         WVObservationRaggedRole::none, {}},
+        {"profile-id", "synthetic_profile_id",
+         WVObservationScalarType::integer64, {"profile"},
+         WVObservationValueLayout::flat, "1", "profile identifier", {},
+         WVObservationCoordinateRole::profile,
+         WVObservationRaggedRole::none, {}},
+        {"row-count", "synthetic_row_count",
+         WVObservationScalarType::integer64, {"profile"},
+         WVObservationValueLayout::flat, "1", "samples in each profile", {},
+         WVObservationCoordinateRole::none,
+         WVObservationRaggedRole::rowCount, "sample"},
+        {"time", "synthetic_time", WVObservationScalarType::real64,
+         {"sample"}, WVObservationValueLayout::flat, "s", "sample time", {},
+         WVObservationCoordinateRole::sampleTime,
+         WVObservationRaggedRole::none, {}},
+        {"x", "synthetic_x", WVObservationScalarType::real64, {"sample"},
+         WVObservationValueLayout::flat, "m", "moving x coordinate", {},
+         WVObservationCoordinateRole::x, WVObservationRaggedRole::none, {}},
+        {"y", "synthetic_y", WVObservationScalarType::real64, {"sample"},
+         WVObservationValueLayout::flat, "m", "moving y coordinate", {},
+         WVObservationCoordinateRole::y, WVObservationRaggedRole::none, {}},
+        {"z", "synthetic_z", WVObservationScalarType::real64, {"sample"},
+         WVObservationValueLayout::flat, "m", "moving z coordinate", {},
+         WVObservationCoordinateRole::z, WVObservationRaggedRole::none, {}},
+        {"bins", "synthetic_bins", WVObservationScalarType::complex64,
+         {"depth", "sample"}, WVObservationValueLayout::flat, "m s-1",
+         "fixed-depth-bin samples", {}, WVObservationCoordinateRole::none,
+         WVObservationRaggedRole::none, {}},
+        {"valid", "synthetic_valid", WVObservationScalarType::boolean8,
+         {"sample"}, WVObservationValueLayout::flat, "1", "sample validity",
+         {}, WVObservationCoordinateRole::none,
+         WVObservationRaggedRole::none, {}},
+        {"label", "synthetic_label", WVObservationScalarType::text,
+         {"profile"}, WVObservationValueLayout::flat, "", "profile label",
+         {}, WVObservationCoordinateRole::none,
+         WVObservationRaggedRole::none, {}},
+        {"pass", "synthetic_pass", WVObservationScalarType::integer64, {},
+         WVObservationValueLayout::record, "1", "pass identifier", {},
+         WVObservationCoordinateRole::pass,
+         WVObservationRaggedRole::none, {}}};
+    output = std::move(schema);
+    return WVKernelStatus::ok();
+  }
+
+  WVKernelStatus initialObservationBatch(
+      const WVObserverRecord &observer, WVObservationBatch &output) override {
+    WVObservationSchema schema;
+    auto status = observationSchema(observer, schema);
+    if (!status)
+      return status;
+    WVObservationBatch batch;
+    batch.schemaIdentifier = schema.identifier;
+    batch.schemaVersion = schema.version;
+    batch.kind = WVObservationBatchKind::initial;
+    if (observer.typeIdentifier == "WVTestObservationBatches")
+      batch.values.push_back(WVObservationValue::ownReal(
+          "depth", {2}, std::vector<double>{-10.0, -20.0}));
+    output = std::move(batch);
+    return WVKernelStatus::ok();
+  }
+
+  WVKernelStatus prepare(const WVOutputEvent &event) override {
+    ++prepareCount_;
+    eventOrdinal_ = event.eventOrdinal;
+    scheduledTime_ = event.scheduledTime;
+    return WVKernelStatus::ok();
+  }
+
+  WVKernelStatus observationBatch(const WVObserverRecord &observer,
+                                  WVObservationBatch &output) override {
+    ++batchCounts_[observer.identifier];
+    WVObservationSchema schema;
+    auto status = observationSchema(observer, schema);
+    if (!status)
+      return status;
+    WVObservationBatch batch;
+    batch.schemaIdentifier = schema.identifier;
+    batch.schemaVersion = schema.version;
+    if (observer.typeIdentifier != "WVTestObservationBatches") {
+      output = std::move(batch);
+      return WVKernelStatus::ok();
+    }
+    const bool empty = eventOrdinal_ % 2 == 1;
+    const std::size_t profileCount = empty ? 0 : 2;
+    const std::size_t sampleCount = empty ? 0 : 3;
+    batch.values.push_back(WVObservationValue::ownInteger(
+        "profile-id", {profileCount},
+        empty ? std::vector<std::int64_t>{}
+              : std::vector<std::int64_t>{10, 11}));
+    batch.values.push_back(WVObservationValue::ownInteger(
+        "row-count", {profileCount},
+        empty ? std::vector<std::int64_t>{}
+              : failFirstBatch_ && !failedOnce_
+                    ? std::vector<std::int64_t>{2, 2}
+                    : std::vector<std::int64_t>{1, 2}));
+    batch.values.push_back(WVObservationValue::ownReal(
+        "time", {sampleCount},
+        empty ? std::vector<double>{}
+              : std::vector<double>{scheduledTime_, scheduledTime_ + 0.1,
+                                    scheduledTime_ + 0.2}));
+    batch.values.push_back(WVObservationValue::ownReal(
+        "x", {sampleCount},
+        empty ? std::vector<double>{}
+              : std::vector<double>{1.0, 2.0, 3.0}));
+    batch.values.push_back(WVObservationValue::ownReal(
+        "y", {sampleCount},
+        empty ? std::vector<double>{}
+              : std::vector<double>{4.0, 5.0, 6.0}));
+    batch.values.push_back(WVObservationValue::ownReal(
+        "z", {sampleCount},
+        empty ? std::vector<double>{}
+              : std::vector<double>{-1.0, -2.0, -3.0}));
+    batch.values.push_back(WVObservationValue::ownComplex(
+        "bins", {2, sampleCount},
+        empty ? std::vector<WVComplex64>{}
+              : std::vector<WVComplex64>{{1.0, -1.0}, {2.0, -2.0},
+                                         {3.0, -3.0}, {4.0, -4.0},
+                                         {5.0, -5.0}, {6.0, -6.0}}));
+    batch.values.push_back(WVObservationValue::ownBoolean(
+        "valid", {sampleCount},
+        empty ? std::vector<std::uint8_t>{}
+              : std::vector<std::uint8_t>{1, 0, 1}));
+    batch.values.push_back(WVObservationValue::ownText(
+        "label", {profileCount},
+        empty ? std::vector<std::string>{}
+              : std::vector<std::string>{"pass-a", "pass-b"}));
+    batch.values.push_back(WVObservationValue::ownInteger(
+        "pass", {},
+        std::vector<std::int64_t>{static_cast<std::int64_t>(eventOrdinal_)}));
+    if (failFirstBatch_ && !failedOnce_)
+      failedOnce_ = true;
+    output = std::move(batch);
+    return WVKernelStatus::ok();
+  }
+
+  std::size_t prepareCount() const noexcept { return prepareCount_; }
+
+  std::size_t batchCount(const std::string &observerIdentifier) const {
+    const auto found = batchCounts_.find(observerIdentifier);
+    return found == batchCounts_.end() ? 0 : found->second;
+  }
+
+private:
+  std::uint32_t version_ = 1;
+  bool failFirstBatch_ = false;
+  bool failedOnce_ = false;
+  std::size_t eventOrdinal_ = 0;
+  double scheduledTime_ = 0.0;
+  std::size_t prepareCount_ = 0;
+  std::map<std::string, std::size_t> batchCounts_;
+};
+
+class ConflictingSchemaSource final : public WVObserverSampleSource {
+public:
+  explicit ConflictingSchemaSource(bool conflictingAxis)
+      : conflictingAxis_(conflictingAxis) {}
+  WVKernelStatus observationSchema(const WVObserverRecord &observer,
+                                   WVObservationSchema &output) override {
+    WVObservationSchema schema;
+    if (observer.typeIdentifier != "WVTestObservationBatches") {
+      schema.identifier = "legacy-coefficient-observation-v1";
+      schema.preservesLegacyEncoding = true;
+      output = std::move(schema);
+      return WVKernelStatus::ok();
+    }
+    schema.identifier = "conflict-" + observer.identifier;
+    const std::size_t extent =
+        conflictingAxis_ && observer.identifier == "conflict-b" ? 3 : 2;
+    schema.axes = {{"shared", "shared_axis", WVObservationAxisKind::fixed,
+                    extent, WVObservationCoordinateRole::identifier}};
+    schema.variables = {
+        {"value",
+         conflictingAxis_ ? observer.identifier + "_value" : "shared_value",
+         WVObservationScalarType::real64, {"shared"},
+         WVObservationValueLayout::record, "1", "conflict probe", {},
+         WVObservationCoordinateRole::none,
+         WVObservationRaggedRole::none, {}}};
+    output = std::move(schema);
+    return WVKernelStatus::ok();
+  }
+  WVKernelStatus initialObservationBatch(
+      const WVObserverRecord &observer, WVObservationBatch &output) override {
+    WVObservationSchema schema;
+    auto status = observationSchema(observer, schema);
+    if (!status)
+      return status;
+    WVObservationBatch batch;
+    batch.schemaIdentifier = schema.identifier;
+    batch.schemaVersion = schema.version;
+    batch.kind = WVObservationBatchKind::initial;
+    output = std::move(batch);
+    return WVKernelStatus::ok();
+  }
+  WVKernelStatus prepare(const WVOutputEvent &) override {
+    return WVKernelStatus::ok();
+  }
+  WVKernelStatus observationBatch(const WVObserverRecord &observer,
+                                  WVObservationBatch &output) override {
+    WVObservationSchema schema;
+    auto status = observationSchema(observer, schema);
+    if (!status)
+      return status;
+    WVObservationBatch batch;
+    batch.schemaIdentifier = schema.identifier;
+    batch.schemaVersion = schema.version;
+    const auto extent = schema.axes.empty() ? 0 : schema.axes.front().extent;
+    if (!schema.variables.empty())
+      batch.values.push_back(WVObservationValue::ownReal(
+          "value", {extent}, std::vector<double>(extent, 0.0)));
+    output = std::move(batch);
+    return WVKernelStatus::ok();
+  }
+
+private:
+  bool conflictingAxis_ = false;
 };
 
 std::filesystem::path fixture(const std::string &name) {
@@ -545,6 +1329,23 @@ void testLinearInitialCoefficientsAndPassiveFields() {
               restoredDiagnostic->outputScale == diagnostic.outputScale &&
               restoredDiagnostic->outputOffset == diagnostic.outputOffset,
           "point-diagnostic configuration did not round-trip through NetCDF");
+
+  require(nc_open(path.c_str(), NC_WRITE, &root) == NC_NOERR &&
+              nc_inq_ncid(root, "wave-vortex", &group) == NC_NOERR &&
+              nc_redef(root) == NC_NOERR,
+          "open legacy MATLAB attribute spelling injection");
+  for (const auto &[name, description] :
+       std::array<std::pair<const char *, const char *>, 2>{{
+           {"central_x", "x coordinate position of mooring"},
+           {"central_y", "y coordinate position of mooring"}}}) {
+    require(nc_inq_varid(group, name, &variable) == NC_NOERR &&
+                nc_put_att_text(group, variable, "long_name",
+                                std::char_traits<char>::length(description),
+                                description) == NC_NOERR,
+            "inject legacy MATLAB long_name spelling");
+  }
+  require(nc_enddef(root) == NC_NOERR && nc_close(root) == NC_NOERR,
+          "close legacy MATLAB attribute spelling injection");
 
   auto appendDescriptor = descriptorFor(inspection.observerRecord);
   std::unique_ptr<WVObserverOutputEvaluationService> appendSource;
@@ -1191,6 +1992,580 @@ void testAlgorithmicSchedulePersistence() {
   require(static_cast<bool>(persistence), persistence.message);
 }
 
+void testVariableObservationBatches() {
+  TemporaryDirectory directory;
+  auto checkpoint = checkpointTemplate();
+  const auto initialTime = checkpoint.state.t;
+  const auto path = directory.path / "variable-observations.nc";
+  WVObserverRecord synthetic;
+  synthetic.identifier = "synthetic-observations";
+  synthetic.name = "synthetic";
+  synthetic.typeIdentifier = "WVTestObservationBatches";
+  const auto configuredRecord = [&](const std::filesystem::path &destination) {
+    auto configured = recordFor(checkpoint, destination);
+    configured.observers.push_back(synthetic);
+    configured.outputFiles[0].groups[0].observerIdentifiers.push_back(
+        synthetic.identifier);
+    return configured;
+  };
+  const auto invalidPath = directory.path / "invalid-observations.nc";
+  auto invalidRecord = configuredRecord(invalidPath);
+  auto invalidDescriptor = descriptorFor(invalidRecord);
+  WVIntegrationStateLayout invalidLayout;
+  auto status = WVIntegrationStateLayout::create(
+      checkpoint.state.coefficients.shape, invalidDescriptor, invalidLayout);
+  require(static_cast<bool>(status), status.message);
+  WVModelOutputNetCDFConfiguration configuration{checkpoint, false};
+  VariableBatchSource malformedSource(1, true);
+  WVModelOutputNetCDFSink malformedSink;
+  auto persistence = WVModelOutputNetCDFSink::createNew(
+      configuration, invalidDescriptor, invalidLayout, &malformedSource,
+      malformedSink);
+  require(static_cast<bool>(persistence), persistence.message);
+  WVOutputPlan invalidPlan;
+  status = WVOutputPlan::create(invalidDescriptor, initialTime,
+                                initialTime + 1.0, {}, invalidPlan);
+  require(static_cast<bool>(status) && invalidPlan.eventCount() == 2,
+          "malformed variable-batch output plan");
+  status = malformedSink.preflight(invalidPlan);
+  require(static_cast<bool>(status), status.message);
+
+  WVOutputEvent invalidEvent;
+  invalidEvent.eventOrdinal = invalidPlan.event(0).eventOrdinal;
+  invalidEvent.scheduledTime = invalidPlan.event(0).scheduledTime;
+  invalidEvent.state = eventState(checkpoint);
+  invalidEvent.routes = invalidPlan.event(0).routes;
+  invalidEvent.routeCount = invalidPlan.event(0).routeCount;
+  WVOutputDeliveryResult delivery;
+  status = malformedSink.deliver(invalidEvent, invalidEvent.routes[0], delivery);
+  require(!status, "malformed ragged batch was written");
+  delivery = {};
+  status = malformedSink.deliver(invalidEvent, invalidEvent.routes[0], delivery);
+  require(!status, "an exact-event retry accepted its malformed batch");
+  require(malformedSource.prepareCount() == 1,
+          "an exact-event retry repeated source preparation: " +
+              std::to_string(malformedSource.prepareCount()));
+  require(malformedSource.batchCount(synthetic.identifier) == 1,
+          "an exact-event retry regenerated its malformed observation batch: " +
+              std::to_string(
+                  malformedSource.batchCount(synthetic.identifier)));
+  int file = -1, group = -1, timeDimension = -1;
+  std::size_t timeCount = 99;
+  require(nc_open(invalidPath.c_str(), NC_NOWRITE, &file) == NC_NOERR &&
+              nc_inq_ncid(file, "wave-vortex", &group) == NC_NOERR &&
+              nc_inq_dimid(group, "t", &timeDimension) == NC_NOERR &&
+              nc_inq_dimlen(group, timeDimension, &timeCount) == NC_NOERR &&
+              timeCount == 0 && nc_close(file) == NC_NOERR,
+          "failed batch mutated the output before validation");
+  persistence = malformedSink.close();
+  require(static_cast<bool>(persistence), persistence.message);
+
+  auto record = configuredRecord(path);
+  auto descriptor = descriptorFor(record);
+  WVIntegrationStateLayout layout;
+  status = WVIntegrationStateLayout::create(
+      checkpoint.state.coefficients.shape, descriptor, layout);
+  require(static_cast<bool>(status), status.message);
+  registeredBatches->resetCounts();
+  std::unique_ptr<WVObserverOutputEvaluationService> source;
+  status = WVObserverOutputEvaluationService::create(
+      checkpoint.configuration, false, descriptor,
+      std::make_unique<WVReferenceFFTEngine>(), source);
+  require(static_cast<bool>(status), status.message);
+  WVModelOutputNetCDFSink sink;
+  persistence = WVModelOutputNetCDFSink::createNew(
+      configuration, descriptor, layout, source.get(), sink);
+  require(static_cast<bool>(persistence), persistence.message);
+  WVOutputPlan plan;
+  status = WVOutputPlan::create(descriptor, initialTime, initialTime + 1.0, {},
+                                plan);
+  require(static_cast<bool>(status) && plan.eventCount() == 2,
+          "variable-batch output plan");
+  status = sink.preflight(plan);
+  require(static_cast<bool>(status), status.message);
+
+  WVOutputEvent event;
+  event.eventOrdinal = plan.event(0).eventOrdinal;
+  event.scheduledTime = plan.event(0).scheduledTime;
+  event.state = eventState(checkpoint);
+  event.routes = plan.event(0).routes;
+  event.routeCount = plan.event(0).routeCount;
+  delivery = {};
+  status = sink.deliver(event, event.routes[0], delivery);
+  require(static_cast<bool>(status), status.message);
+  event.eventOrdinal = plan.event(1).eventOrdinal;
+  event.scheduledTime = plan.event(1).scheduledTime;
+  event.routes = plan.event(1).routes;
+  event.routeCount = plan.event(1).routeCount;
+  delivery = {};
+  status = sink.deliver(event, event.routes[0], delivery);
+  require(static_cast<bool>(status), status.message);
+  require(sink.metrics().batchMaximumLiveBytes > 0 &&
+              sink.metrics().batchRetainedStorageBytes > 0 &&
+              sink.metrics().failureCount == 0 &&
+              source->metrics().preparedEventCount == 3 &&
+              registeredBatches->batchCount(synthetic.identifier) == 2,
+          "variable-batch storage/failure metrics are incomplete");
+  persistence = sink.close();
+  require(static_cast<bool>(persistence), persistence.message);
+
+  file = -1;
+  group = -1;
+  require(nc_open(path.c_str(), NC_NOWRITE, &file) == NC_NOERR &&
+              nc_inq_ncid(file, "wave-vortex", &group) == NC_NOERR,
+          "open variable observation output");
+  int sampleDimension = -1, profileDimension = -1;
+  std::size_t sampleCount = 0, profileCount = 0;
+  require(nc_inq_dimid(group, "synthetic_sample", &sampleDimension) ==
+                  NC_NOERR &&
+              nc_inq_dimlen(group, sampleDimension, &sampleCount) == NC_NOERR &&
+              sampleCount == 3 &&
+              nc_inq_dimid(group, "synthetic_profile", &profileDimension) ==
+                  NC_NOERR &&
+              nc_inq_dimlen(group, profileDimension, &profileCount) ==
+                  NC_NOERR &&
+              profileCount == 2,
+          "flat variable observation axes have the wrong committed extent");
+  int progressVariable = -1;
+  std::array<long long, 2> sampleProgress{};
+  require(nc_inq_varid(group, "portableCommitted_synthetic_sample",
+                       &progressVariable) == NC_NOERR &&
+              nc_get_var_longlong(group, progressVariable,
+                                  sampleProgress.data()) == NC_NOERR &&
+              sampleProgress == std::array<long long, 2>{3, 3},
+          "zero-length batch changed committed sample progress");
+  int integerVariable = -1, booleanVariable = -1, textVariable = -1;
+  nc_type integerType = NC_NAT, booleanType = NC_NAT, textType = NC_NAT;
+  require(nc_inq_varid(group, "synthetic_pass", &integerVariable) == NC_NOERR &&
+              nc_inq_vartype(group, integerVariable, &integerType) == NC_NOERR &&
+              integerType == NC_INT64 &&
+              nc_inq_varid(group, "synthetic_valid", &booleanVariable) ==
+                  NC_NOERR &&
+              nc_inq_vartype(group, booleanVariable, &booleanType) == NC_NOERR &&
+              booleanType == NC_UBYTE &&
+              nc_inq_varid(group, "synthetic_label", &textVariable) ==
+                  NC_NOERR &&
+              nc_inq_vartype(group, textVariable, &textType) == NC_NOERR &&
+              textType == NC_STRING,
+          "integer/Boolean/text observation types were not preserved");
+  int metadataRoot = -1, metadata = -1;
+  std::size_t schemaLength = 0;
+  require(nc_inq_ncid(group, "observingSystems", &metadataRoot) == NC_NOERR &&
+              nc_inq_ncid(metadataRoot, "observingSystems-2", &metadata) ==
+                  NC_NOERR &&
+              nc_inq_attlen(metadata, NC_GLOBAL,
+                            "portableObservationSchemaIdentifier",
+                            &schemaLength) == NC_NOERR &&
+              schemaLength == std::string("synthetic-variable-observation").size() &&
+              nc_close(file) == NC_NOERR,
+          "observation schema identity was not persisted");
+
+  WVModelOutputNetCDFInspection inspection;
+  persistence = WVModelOutputNetCDFSink::inspect({path.string()}, inspection);
+  require(static_cast<bool>(persistence) &&
+              inspection.observerRecord.observers.size() == 2,
+          "generic graph reader reconstructed " +
+              std::to_string(inspection.observerRecord.observers.size()) +
+              " observers: " + persistence.message);
+  require(inspection.observationSchemas.size() == 1 &&
+              inspection.observationSchemas[0].observerIdentifier ==
+                  synthetic.identifier &&
+              inspection.observationSchemas[0].schema.identifier ==
+                  "synthetic-variable-observation" &&
+              inspection.observationSchemas[0].schema.axes.size() == 3 &&
+              inspection.observationSchemas[0].schema.variables.size() == 11,
+          "generic graph reader did not reconstruct the provisional schema");
+  const auto &inspectedSchema = inspection.observationSchemas[0].schema;
+  const auto inspectedBins = std::find_if(
+      inspectedSchema.variables.begin(), inspectedSchema.variables.end(),
+      [](const auto &variable) { return variable.identifier == "bins"; });
+  const auto inspectedRows = std::find_if(
+      inspectedSchema.variables.begin(), inspectedSchema.variables.end(),
+      [](const auto &variable) { return variable.identifier == "row-count"; });
+  require(inspectedBins != inspectedSchema.variables.end() &&
+              inspectedBins->scalarType ==
+                  WVObservationScalarType::complex64 &&
+              inspectedBins->dimensionIdentifiers ==
+                  std::vector<std::string>{"depth", "sample"} &&
+              inspectedRows != inspectedSchema.variables.end() &&
+              inspectedRows->raggedRole ==
+                  WVObservationRaggedRole::rowCount &&
+              inspectedRows->raggedChildAxisIdentifier == "sample",
+          "generic graph reader changed typed or ragged schema declarations");
+
+  const auto requireRejectedTextAttribute =
+      [&](const std::string &label, const std::string &variableName,
+          const char *attributeName, const std::string &value) {
+        const auto malformedPath = directory.path / (label + ".nc");
+        std::filesystem::copy_file(path, malformedPath);
+        int malformedFile = -1;
+        int malformedGroup = -1;
+        int malformedVariable = -1;
+        require(nc_open(malformedPath.c_str(), NC_WRITE, &malformedFile) ==
+                    NC_NOERR &&
+                    nc_inq_ncid(malformedFile, "wave-vortex",
+                                &malformedGroup) == NC_NOERR &&
+                    nc_inq_varid(malformedGroup, variableName.c_str(),
+                                 &malformedVariable) == NC_NOERR &&
+                    nc_redef(malformedFile) == NC_NOERR &&
+                    nc_put_att_text(malformedGroup, malformedVariable,
+                                    attributeName, value.size(),
+                                    value.c_str()) == NC_NOERR &&
+                    nc_enddef(malformedFile) == NC_NOERR &&
+                    nc_close(malformedFile) == NC_NOERR,
+                "failed to create malformed " + label + " fixture");
+        WVModelOutputNetCDFInspection malformedInspection;
+        const auto malformedStatus = WVModelOutputNetCDFSink::inspect(
+            {malformedPath.string()}, malformedInspection);
+        require(!malformedStatus,
+                "reader accepted malformed " + label + " metadata");
+      };
+  requireRejectedTextAttribute(
+      "unknown-layout", "synthetic_pass",
+      "portableObservationValueLayout", "unknown");
+  requireRejectedTextAttribute(
+      "unknown-coordinate", "synthetic_time", "portableCoordinateRole",
+      "unknown");
+  requireRejectedTextAttribute(
+      "unknown-ragged", "synthetic_row_count", "portableRaggedRole",
+      "unknown");
+  requireRejectedTextAttribute("custom-attribute-drift",
+                               "synthetic_bins_real", "provider", "changed");
+  const auto axisRolePath = directory.path / "unknown-axis-role.nc";
+  std::filesystem::copy_file(path, axisRolePath);
+  int axisFile = -1;
+  int axisGroup = -1;
+  int axisVariable = -1;
+  const char *unknownRole = "unknown";
+  require(nc_open(axisRolePath.c_str(), NC_WRITE, &axisFile) == NC_NOERR &&
+              nc_inq_ncid(axisFile, "wave-vortex", &axisGroup) == NC_NOERR &&
+              nc_inq_varid(axisGroup, "synthetic_time", &axisVariable) ==
+                  NC_NOERR &&
+              nc_redef(axisFile) == NC_NOERR &&
+              nc_put_att_string(axisGroup, axisVariable,
+                                "portableObservationAxisCoordinateRoles", 1,
+                                &unknownRole) == NC_NOERR &&
+              nc_enddef(axisFile) == NC_NOERR &&
+              nc_close(axisFile) == NC_NOERR,
+          "failed to create malformed axis-role fixture");
+  WVModelOutputNetCDFInspection malformedAxisInspection;
+  persistence = WVModelOutputNetCDFSink::inspect(
+      {axisRolePath.string()}, malformedAxisInspection);
+  require(!persistence, "reader accepted an unknown axis coordinate role");
+
+  VariableBatchSource driftedSource(2);
+  WVModelOutputNetCDFSink drifted;
+  persistence = WVModelOutputNetCDFSink::openAppend(
+      configuration, descriptor, layout, &driftedSource, drifted);
+  require(!persistence &&
+              persistence.code == WVCheckpointStatusCode::appendConflict,
+          "append accepted observation schema drift");
+
+  std::unique_ptr<WVObserverOutputEvaluationService> appendSource;
+  status = WVObserverOutputEvaluationService::create(
+      checkpoint.configuration, false, descriptor,
+      std::make_unique<WVReferenceFFTEngine>(), appendSource);
+  require(static_cast<bool>(status), status.message);
+  WVModelOutputNetCDFSink append;
+  persistence = WVModelOutputNetCDFSink::openAppend(
+      configuration, descriptor, layout, appendSource.get(), append);
+  require(static_cast<bool>(persistence), persistence.message);
+  WVOutputPlan appendPlan;
+  status = WVOutputPlan::create(descriptor, initialTime + 1.0,
+                                initialTime + 2.0, append.progress(),
+                                appendPlan);
+  require(static_cast<bool>(status) && appendPlan.eventCount() == 1,
+          "variable-batch append plan");
+  status = append.preflight(appendPlan);
+  require(static_cast<bool>(status), status.message);
+  event.eventOrdinal = appendPlan.event(0).eventOrdinal;
+  event.scheduledTime = appendPlan.event(0).scheduledTime;
+  event.routes = appendPlan.event(0).routes;
+  event.routeCount = appendPlan.event(0).routeCount;
+  delivery = {};
+  status = append.deliver(event, event.routes[0], delivery);
+  require(static_cast<bool>(status), status.message);
+  persistence = append.close();
+  require(static_cast<bool>(persistence), persistence.message);
+}
+
+void testRegisteredTopologyProviders() {
+  TemporaryDirectory directory;
+  auto checkpoint = checkpointTemplate();
+  const auto initialTime = checkpoint.state.t;
+  const auto path = directory.path / "registered-topologies.nc";
+  auto record = recordFor(checkpoint, path);
+  const auto addObserver = [&](std::string identifier, std::string name,
+                               std::string type) {
+    WVObserverRecord observer;
+    observer.identifier = std::move(identifier);
+    observer.name = std::move(name);
+    observer.typeIdentifier = std::move(type);
+    record.observers.push_back(std::move(observer));
+  };
+  addObserver("fixed-bin", "fixed-bin", "WVTestFixedBin");
+  addObserver("moving-track", "moving-track", "WVTestMovingTrack");
+  addObserver("variable-pass", "variable-pass", "WVTestVariablePass");
+  addObserver("ragged-a", "ragged-a", "WVTestRaggedProfile");
+  addObserver("ragged-b", "ragged-b", "WVTestRaggedProfile");
+  auto &primary = record.outputFiles[0].groups[0];
+  primary.observerIdentifiers.insert(primary.observerIdentifiers.end(),
+                                     {"fixed-bin", "moving-track",
+                                      "variable-pass", "ragged-a"});
+  auto secondary = primary;
+  secondary.identifier = "ragged-secondary";
+  secondary.name = "ragged-secondary";
+  secondary.containsCompleteCoefficientRestart = false;
+  secondary.observerIdentifiers = {"ragged-b"};
+  record.outputFiles[0].groups.push_back(std::move(secondary));
+
+  auto descriptor = descriptorFor(record);
+  WVIntegrationStateLayout layout;
+  auto status = WVIntegrationStateLayout::create(
+      checkpoint.state.coefficients.shape, descriptor, layout);
+  require(static_cast<bool>(status), status.message);
+  std::unique_ptr<WVObserverOutputEvaluationService> source;
+  status = WVObserverOutputEvaluationService::create(
+      checkpoint.configuration, false, descriptor,
+      std::make_unique<WVReferenceFFTEngine>(), source);
+  require(static_cast<bool>(status), status.message);
+  WVModelOutputNetCDFSink sink;
+  auto persistence = WVModelOutputNetCDFSink::createNew(
+      {checkpoint, false}, descriptor, layout, source.get(), sink);
+  require(static_cast<bool>(persistence), persistence.message);
+  WVOutputPlan plan;
+  status = WVOutputPlan::create(descriptor, initialTime, initialTime + 1.0, {},
+                                plan);
+  require(static_cast<bool>(status) && plan.groupCount() == 2,
+          "registered topology plan did not retain both groups");
+  status = sink.preflight(plan);
+  require(static_cast<bool>(status), status.message);
+  for (std::size_t eventIndex = 0; eventIndex < plan.eventCount(); ++eventIndex) {
+    const auto planned = plan.event(eventIndex);
+    WVOutputEvent event;
+    event.eventOrdinal = planned.eventOrdinal;
+    event.scheduledTime = planned.scheduledTime;
+    event.state = eventState(checkpoint);
+    event.routes = planned.routes;
+    event.routeCount = planned.routeCount;
+    for (std::size_t route = 0; route < planned.routeCount; ++route) {
+      WVOutputDeliveryResult delivery;
+      status = sink.deliver(event, planned.routes[route], delivery);
+      require(static_cast<bool>(status), status.message);
+    }
+  }
+  persistence = sink.close();
+  require(static_cast<bool>(persistence), persistence.message);
+
+  WVModelOutputNetCDFInspection inspection;
+  persistence = WVModelOutputNetCDFSink::inspect({path.string()}, inspection);
+  require(static_cast<bool>(persistence), persistence.message);
+  const auto raggedSchemas = std::count_if(
+      inspection.observationSchemas.begin(),
+      inspection.observationSchemas.end(), [](const auto &candidate) {
+        return candidate.schema.identifier == "test-ragged-profile-v1" &&
+               (candidate.observerIdentifier == "ragged-a" ||
+                candidate.observerIdentifier == "ragged-b");
+      });
+  const auto fixedSchema = std::find_if(
+      inspection.observationSchemas.begin(),
+      inspection.observationSchemas.end(), [](const auto &candidate) {
+        return candidate.observerIdentifier == "fixed-bin";
+      });
+  require(raggedSchemas == 2 &&
+              inspection.observationSchemas.size() == 5 &&
+              fixedSchema != inspection.observationSchemas.end(),
+          "registered providers or same-provider ownership did not round trip");
+  const auto fixedValue = std::find_if(
+      fixedSchema->schema.variables.begin(), fixedSchema->schema.variables.end(),
+      [](const auto &variable) { return variable.identifier == "value"; });
+  require(fixedValue != fixedSchema->schema.variables.end() &&
+              fixedValue->attributes.size() == 2 &&
+              fixedValue->attributes[0].name == "ordered-a" &&
+              fixedValue->attributes[1].name == "ordered-b",
+          "ordered schema attributes did not round trip");
+
+  std::unique_ptr<WVObserverOutputEvaluationService> appendSource;
+  status = WVObserverOutputEvaluationService::create(
+      checkpoint.configuration, false, descriptor,
+      std::make_unique<WVReferenceFFTEngine>(), appendSource);
+  require(static_cast<bool>(status), status.message);
+  WVModelOutputNetCDFSink append;
+  persistence = WVModelOutputNetCDFSink::openAppend(
+      {checkpoint, false}, descriptor, layout, appendSource.get(), append);
+  require(static_cast<bool>(persistence), persistence.message);
+  WVOutputPlan appendPlan;
+  status = WVOutputPlan::create(descriptor, initialTime + 1.0,
+                                initialTime + 2.0, append.progress(),
+                                appendPlan);
+  require(static_cast<bool>(status) && appendPlan.eventCount() == 1,
+          "same-provider append plan is incorrect");
+  status = append.preflight(appendPlan);
+  require(static_cast<bool>(status), status.message);
+  const auto planned = appendPlan.event(0);
+  WVOutputEvent appendEvent;
+  appendEvent.eventOrdinal = planned.eventOrdinal;
+  appendEvent.scheduledTime = planned.scheduledTime;
+  appendEvent.state = eventState(checkpoint);
+  appendEvent.routes = planned.routes;
+  appendEvent.routeCount = planned.routeCount;
+  for (std::size_t route = 0; route < planned.routeCount; ++route) {
+    WVOutputDeliveryResult delivery;
+    status = append.deliver(appendEvent, planned.routes[route], delivery);
+    require(static_cast<bool>(status), status.message);
+  }
+  persistence = append.close();
+  require(static_cast<bool>(persistence), persistence.message);
+
+  const auto invalidPath = directory.path / "registered-ragged-retry.nc";
+  auto invalidRecord = recordFor(checkpoint, invalidPath);
+  WVObserverRecord malformed;
+  malformed.identifier = "malformed-ragged";
+  malformed.name = "malformed";
+  malformed.typeIdentifier = "WVTestRaggedProfile";
+  invalidRecord.observers.push_back(malformed);
+  invalidRecord.outputFiles[0].groups[0].observerIdentifiers.push_back(
+      malformed.identifier);
+  auto invalidDescriptor = descriptorFor(invalidRecord);
+  WVIntegrationStateLayout invalidLayout;
+  status = WVIntegrationStateLayout::create(
+      checkpoint.state.coefficients.shape, invalidDescriptor, invalidLayout);
+  require(static_cast<bool>(status), status.message);
+  raggedProfileProvider->resetCounts();
+  std::unique_ptr<WVObserverOutputEvaluationService> invalidSource;
+  status = WVObserverOutputEvaluationService::create(
+      checkpoint.configuration, false, invalidDescriptor,
+      std::make_unique<WVReferenceFFTEngine>(), invalidSource);
+  require(static_cast<bool>(status), status.message);
+  WVModelOutputNetCDFSink invalidSink;
+  persistence = WVModelOutputNetCDFSink::createNew(
+      {checkpoint, false}, invalidDescriptor, invalidLayout,
+      invalidSource.get(), invalidSink);
+  require(static_cast<bool>(persistence), persistence.message);
+  WVOutputPlan invalidPlan;
+  status = WVOutputPlan::create(invalidDescriptor, initialTime, initialTime, {},
+                                invalidPlan);
+  require(static_cast<bool>(status), status.message);
+  status = invalidSink.preflight(invalidPlan);
+  require(static_cast<bool>(status), status.message);
+  const auto invalidPlanned = invalidPlan.event(0);
+  WVOutputEvent invalidEvent;
+  invalidEvent.eventOrdinal = invalidPlanned.eventOrdinal;
+  invalidEvent.scheduledTime = invalidPlanned.scheduledTime;
+  invalidEvent.state = eventState(checkpoint);
+  invalidEvent.routes = invalidPlanned.routes;
+  invalidEvent.routeCount = invalidPlanned.routeCount;
+  WVOutputDeliveryResult delivery;
+  status = invalidSink.deliver(invalidEvent, invalidPlanned.routes[0], delivery);
+  require(!status, "malformed registered ragged batch was accepted");
+  delivery = {};
+  status = invalidSink.deliver(invalidEvent, invalidPlanned.routes[0], delivery);
+  require(!status &&
+              raggedProfileProvider->batchCount(malformed.identifier) == 1,
+          "registered exact-event retry regenerated its retained batch");
+  persistence = invalidSink.close();
+  require(static_cast<bool>(persistence), persistence.message);
+}
+
+void testObservationGraphCollisionPreflight() {
+  TemporaryDirectory directory;
+  auto checkpoint = checkpointTemplate();
+  const auto requireRejected = [&](bool conflictingAxis,
+                                   const std::string &filename) {
+    const auto path = directory.path / filename;
+    auto record = recordFor(checkpoint, path);
+    for (const auto &identifier : {"conflict-a", "conflict-b"}) {
+      WVObserverRecord observer;
+      observer.identifier = identifier;
+      observer.name = identifier;
+      observer.typeIdentifier = "WVTestObservationBatches";
+      record.observers.push_back(observer);
+      record.outputFiles[0].groups[0].observerIdentifiers.push_back(identifier);
+    }
+    auto descriptor = descriptorFor(record);
+    WVIntegrationStateLayout layout;
+    auto status = WVIntegrationStateLayout::create(
+        checkpoint.state.coefficients.shape, descriptor, layout);
+    require(static_cast<bool>(status), status.message);
+    ConflictingSchemaSource source(conflictingAxis);
+    WVModelOutputNetCDFSink sink;
+    const auto persistence = WVModelOutputNetCDFSink::createNew(
+        {checkpoint, false}, descriptor, layout, &source, sink);
+    require(!persistence && !std::filesystem::exists(path),
+            conflictingAxis
+                ? "incompatible shared axes survived complete-graph preflight"
+                : "duplicate persisted variable names survived complete-graph preflight");
+  };
+  requireRejected(false, "variable-collision.nc");
+  requireRejected(true, "axis-collision.nc");
+}
+
+void testCoincidentRoutesShareExactEventBatches() {
+  TemporaryDirectory directory;
+  auto checkpoint = checkpointTemplate();
+  const auto initialTime = checkpoint.state.t;
+  const auto primaryPath = directory.path / "coincident-primary.nc";
+  const auto secondaryPath = directory.path / "coincident-secondary.nc";
+  auto record = recordFor(checkpoint, primaryPath);
+  WVObserverRecord synthetic;
+  synthetic.identifier = "coincident-observations";
+  synthetic.name = "coincident";
+  synthetic.typeIdentifier = "WVTestObservationBatches";
+  record.observers.push_back(synthetic);
+  record.outputFiles[0].groups[0].observerIdentifiers.push_back(
+      synthetic.identifier);
+  auto secondary = record.outputFiles[0];
+  secondary.identifier = "secondary";
+  secondary.destination = secondaryPath.string();
+  secondary.groups[0].identifier = "secondary-restart";
+  secondary.groups[0].name = "wave-vortex-secondary";
+  record.outputFiles.push_back(std::move(secondary));
+
+  auto descriptor = descriptorFor(record);
+  WVIntegrationStateLayout layout;
+  auto status = WVIntegrationStateLayout::create(
+      checkpoint.state.coefficients.shape, descriptor, layout);
+  require(static_cast<bool>(status), status.message);
+  registeredBatches->resetCounts();
+  std::unique_ptr<WVObserverOutputEvaluationService> source;
+  status = WVObserverOutputEvaluationService::create(
+      checkpoint.configuration, false, descriptor,
+      std::make_unique<WVReferenceFFTEngine>(), source);
+  require(static_cast<bool>(status), status.message);
+  WVModelOutputNetCDFSink sink;
+  auto persistence = WVModelOutputNetCDFSink::createNew(
+      {checkpoint, false}, descriptor, layout, source.get(), sink);
+  require(static_cast<bool>(persistence), persistence.message);
+  WVOutputPlan plan;
+  status = WVOutputPlan::create(descriptor, initialTime, initialTime, {}, plan);
+  require(static_cast<bool>(status) && plan.eventCount() == 1 &&
+              plan.event(0).routeCount == 2,
+          "coincident-route output plan did not preserve two routes");
+  status = sink.preflight(plan);
+  require(static_cast<bool>(status), status.message);
+
+  WVOutputEvent event;
+  event.eventOrdinal = plan.event(0).eventOrdinal;
+  event.scheduledTime = plan.event(0).scheduledTime;
+  event.state = eventState(checkpoint);
+  event.routes = plan.event(0).routes;
+  event.routeCount = plan.event(0).routeCount;
+  WVOutputDeliveryResult delivery;
+  status = sink.deliver(event, event.routes[0], delivery);
+  require(static_cast<bool>(status) &&
+              source->metrics().preparedEventCount == 2 &&
+              registeredBatches->batchCount(synthetic.identifier) == 1,
+          "first coincident route did not evaluate its exact event once");
+  delivery = {};
+  status = sink.deliver(event, event.routes[1], delivery);
+  require(static_cast<bool>(status) &&
+              source->metrics().preparedEventCount == 2 &&
+              registeredBatches->batchCount(synthetic.identifier) == 1,
+          "second coincident route regenerated an exact-event batch");
+  persistence = sink.close();
+  require(static_cast<bool>(persistence), persistence.message);
+}
+
 } // namespace
 
 int main() {
@@ -1201,6 +2576,26 @@ int main() {
     registration = WVObserverFactoryRegistry::registerImplementation(
         std::make_shared<WVTestPortablePointDiagnosticImplementation>());
     require(static_cast<bool>(registration), registration.message);
+    registeredBatches =
+        std::make_shared<WVTestObservationBatchesImplementation>();
+    registration = WVObserverFactoryRegistry::registerImplementation(
+        registeredBatches);
+    require(static_cast<bool>(registration), registration.message);
+    fixedBinProvider = std::make_shared<WVTestTopologyImplementation>(
+        "WVTestFixedBin", TestTopology::fixedBin);
+    movingTrackProvider = std::make_shared<WVTestTopologyImplementation>(
+        "WVTestMovingTrack", TestTopology::movingTrack);
+    variablePassProvider = std::make_shared<WVTestTopologyImplementation>(
+        "WVTestVariablePass", TestTopology::variablePass);
+    raggedProfileProvider = std::make_shared<WVTestTopologyImplementation>(
+        "WVTestRaggedProfile", TestTopology::raggedProfile);
+    for (const auto &provider :
+         {fixedBinProvider, movingTrackProvider, variablePassProvider,
+          raggedProfileProvider}) {
+      registration =
+          WVObserverFactoryRegistry::registerImplementation(provider);
+      require(static_cast<bool>(registration), registration.message);
+    }
     require(static_cast<bool>(registerQuadraticSchedule()),
             "quadratic schedule registration");
     testCreateReadAndAppend();
@@ -1211,6 +2606,10 @@ int main() {
     testOptionalMatlabLinearFixture();
     testOptionalMatlabPassiveFixture();
     testAlgorithmicSchedulePersistence();
+    testVariableObservationBatches();
+    testRegisteredTopologyProviders();
+    testObservationGraphCollisionPreflight();
+    testCoincidentRoutesShareExactEventBatches();
     std::cout << "PASS: MATLAB-compatible model-output persistence\n";
     return 0;
   } catch (const std::exception &exception) {

@@ -26,6 +26,10 @@ WVKernelStatus registerObserverImplementation(
     std::shared_ptr<const WVObservingSystem> implementation);
 void sealObserverDefinitions() noexcept;
 bool observerDefinitionsSealed() noexcept;
+WVKernelStatus resolveObserverConfiguration(
+    const WVObserverRecord &observer, WVPortableTypedRecord &configuration);
+WVKernelStatus canonicalCoefficientObserver(std::string identifier,
+                                            WVObserverRecord &observer);
 
 const char *movingFieldChannelName(WVMovingFieldChannel channel) noexcept;
 std::vector<WVMovingFieldChannel>

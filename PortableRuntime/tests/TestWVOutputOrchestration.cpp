@@ -724,11 +724,11 @@ void testTerminationInterruptionAndLaterRouteFailure(Context &context) {
   auto status =
       laterDriver.advanceToTime(laterFailure.state, 1.0, 0.2, laterSink);
   require(!status && laterFailure.state.waveVortex.t == 0.0 &&
+              laterDriver.records().size() == 2 &&
               laterDriver.records()[0].committed &&
               laterDriver.records()[1].attempted &&
               !laterDriver.records()[1].committed &&
-              laterDriver.records()[1].failure == "later route failed" &&
-              !laterDriver.records()[2].attempted,
+              laterDriver.records()[1].failure == "later route failed",
           "later coincident route failure records partial delivery");
 
   StateFixture interrupted(context.system.stateLayout());

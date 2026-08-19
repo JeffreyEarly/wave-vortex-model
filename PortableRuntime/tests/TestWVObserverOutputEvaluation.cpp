@@ -1,4 +1,5 @@
 #include "WaveVortexRuntime/WVObserverOutputEvaluationService.hpp"
+#include "WaveVortexRuntime/WVObserverOutputProvider.hpp"
 
 #include "WVReferenceFFTEngine.hpp"
 
@@ -30,11 +31,101 @@ public:
     return value;
   }
   std::uint32_t contractVersion() const noexcept override { return 1; }
-  const std::string &fieldListAttribute() const noexcept override {
-    static const std::string value = "fieldNames";
-    return value;
+  WVKernelStatus executionPlan(const WVObserverRecord &record,
+                               WVObserverExecutionPlan &plan) const override {
+    plan = {};
+    plan.sampling = WVObserverSamplingTopology::fixedPositions;
+    plan.fieldListAttribute = "fieldNames";
+    plan.persistedName = record.name;
+    plan.outputFields = record.fieldNames;
+    return WVKernelStatus::ok();
   }
-  bool recordsFixedPoints() const noexcept override { return true; }
+  WVKernelStatus outputPlan(
+      const WVObserverRecord &record,
+      const WVObserverOutputPlanningContext &context,
+      WVObserverOutputPlan &plan) const override {
+    if (context.configuration == nullptr || record.fieldNames.size() != 1)
+      return {WVKernelStatusCode::invalidConfiguration,
+              "Point diagnostic output planning is invalid."};
+    const auto *metadata = findPortableVariable(record.fieldNames.front());
+    if (metadata == nullptr ||
+        metadata->kind != WVPortableVariableKind::field)
+      return {WVKernelStatusCode::invalidConfiguration,
+              "Point diagnostic field is unsupported."};
+    WVObserverOutputPlan candidate;
+    candidate.schema.identifier =
+        "legacy-" + record.identifier + "-observation-v1";
+    candidate.schema.preservesLegacyEncoding = true;
+    candidate.schema.metadata.attributes = {
+        {"AnnotatedClass", typeIdentifier()},
+        {"portableIdentifier", record.identifier}, {"name", record.name},
+        {"trackedVarInterpolation", "linear"}};
+    candidate.schema.metadata.stringListAttributes = {
+        {"fieldNames", record.fieldNames}};
+    candidate.schema.metadata.variables.push_back(
+        {"outputScale",
+         WVObservationValue::ownReal("outputScale", {}, {record.outputScale}),
+         false});
+    candidate.schema.metadata.variables.push_back(
+        {"outputOffset",
+         WVObservationValue::ownReal("outputOffset", {}, {record.outputOffset}),
+         false});
+    const std::string idName = record.name + "_id";
+    candidate.schema.axes.push_back(
+        {idName, idName, WVObservationAxisKind::fixed, record.x.size(),
+         WVObservationCoordinateRole::identifier});
+    const auto addConstant = [&](std::string identifier, std::string name,
+                                 const std::vector<double> &values,
+                                 WVObservationCoordinateRole role,
+                                 std::string description) {
+      candidate.schema.variables.push_back(
+          {identifier, std::move(name), WVObservationScalarType::real64,
+           {idName}, WVObservationValueLayout::staticValue, "m",
+           std::move(description), {}, role,
+           WVObservationRaggedRole::none, {}});
+      candidate.constantValues.push_back(WVObservationValue::ownReal(
+          std::move(identifier), {values.size()}, values));
+    };
+    std::vector<double> identifiers(record.x.size());
+    for (std::size_t index = 0; index < identifiers.size(); ++index)
+      identifiers[index] = static_cast<double>(index + 1);
+    addConstant("static-" + idName, idName, identifiers,
+                WVObservationCoordinateRole::identifier, "");
+    addConstant("static-x", record.name + "_x", record.x,
+                WVObservationCoordinateRole::x,
+                "x position of fixed observation");
+    addConstant("static-y", record.name + "_y", record.y,
+                WVObservationCoordinateRole::y,
+                "y position of fixed observation");
+    addConstant("static-z", record.name + "_z", record.z,
+                WVObservationCoordinateRole::z,
+                "z position of fixed observation");
+    WVObservationVariable value;
+    value.identifier = "derived-" + record.fieldNames.front();
+    value.name = record.name + "_value";
+    value.dimensionIdentifiers = {idName};
+    value.layout =
+        context.isDynamicsLinear && !metadata->isVariableWithLinearTimeStep
+            ? WVObservationValueLayout::initialValue
+            : WVObservationValueLayout::record;
+    value.units = metadata->units;
+    value.description = std::string(metadata->description) +
+                        ", sampled and affinely transformed by the observing system";
+    candidate.schema.variables.push_back(value);
+    WVObserverOutputChannel channel;
+    channel.variableIdentifier = value.identifier;
+    channel.source = WVObserverOutputChannelSource::sampledField;
+    channel.sourceIdentifier = record.fieldNames.front();
+    channel.sampling.kind = WVFieldSamplingKind::positions;
+    channel.sampling.x = record.x;
+    channel.sampling.y = record.y;
+    channel.sampling.z = record.z;
+    channel.scale = record.outputScale;
+    channel.offset = record.outputOffset;
+    candidate.channels.push_back(std::move(channel));
+    plan = std::move(candidate);
+    return WVKernelStatus::ok();
+  }
   WVKernelStatus validate(
       const WVObserverRecord &record,
       const std::map<std::string, const WVStateBlockRecord *> &,
@@ -345,7 +436,7 @@ void testService(bool linear) {
             "point-diagnostic affine output changed");
   WVOutputObserverView routedObserver{
       1, &observers.observers()[1],
-      observers.implementation(observers.observers()[1])};
+      observers.resolvedObserver(observers.observers()[1])};
   WVOutputRouteView passiveRoute;
   passiveRoute.observers = &routedObserver;
   passiveRoute.observerCount = 1;
