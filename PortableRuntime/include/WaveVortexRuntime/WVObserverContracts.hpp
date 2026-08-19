@@ -1,8 +1,9 @@
 #pragma once
 
+#include "WaveVortexKernel/WVKernelTypes.hpp"
 #include "WaveVortexRuntime/WVObservingSystem.hpp"
 #include "WaveVortexRuntime/WVPortableImplementationContract.hpp"
-#include "WaveVortexKernel/WVKernelTypes.hpp"
+#include "WaveVortexRuntime/WVPortableTypedRecord.hpp"
 
 #include <cstddef>
 #include <cstdint>
@@ -62,9 +63,17 @@ struct WVObserverRecord {
 };
 
 struct WVOutputScheduleRecord {
+  WVOutputScheduleRecord() = default;
+  WVOutputScheduleRecord(double interval, double initial, double final)
+      : outputInterval(interval), initialTime(initial), finalTime(final) {}
   double outputInterval = 0.0;
   double initialTime = 0.0;
   double finalTime = 0.0;
+  // Empty identifies the legacy evenly-spaced schedule. New source-linked
+  // providers use an exact identity/version and a construction-only record.
+  std::string typeIdentifier;
+  std::uint32_t contractVersion = 1;
+  WVPortableTypedRecord configuration;
 };
 
 struct WVOutputGroupRecord {
@@ -104,8 +113,8 @@ public:
   const std::vector<WVOutputFileRecord> &outputFiles() const noexcept {
     return record_.outputFiles;
   }
-  const WVObservingSystem *implementation(
-      const WVObserverRecord &observer) const noexcept;
+  const WVObservingSystem *
+  implementation(const WVObserverRecord &observer) const noexcept;
   std::size_t persistentBytes() const noexcept;
 
 private:
@@ -117,12 +126,12 @@ private:
 // no third-party binary plugin ABI.
 class WVObserverFactoryRegistry final {
 public:
-  static bool supports(const std::string &typeIdentifier,
-                       std::uint32_t contractVersion =
-                           WVPortablePairContractVersion) noexcept;
-  static WVPortableCapability capability(
-      std::string typeIdentifier,
-      std::uint32_t contractVersion = WVPortablePairContractVersion);
+  static bool supports(
+      const std::string &typeIdentifier,
+      std::uint32_t contractVersion = WVPortablePairContractVersion) noexcept;
+  static WVPortableCapability
+  capability(std::string typeIdentifier,
+             std::uint32_t contractVersion = WVPortablePairContractVersion);
   static bool isSealed() noexcept;
 
   // Register one source-level native observer adapter before constructing a

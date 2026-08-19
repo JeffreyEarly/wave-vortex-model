@@ -2,8 +2,8 @@
 #include "WaveVortexRuntime/generated/WVPortableVariableCatalog.hpp"
 
 #include "WVModelOutputNetCDFSchema.hpp"
-#include "WVObserverAdapter.hpp"
 #include "WVNetCDF.hpp"
+#include "WVObserverAdapter.hpp"
 
 #include <netcdf.h>
 
@@ -35,8 +35,8 @@ WVCheckpointStatus failure(WVCheckpointStatusCode code, std::string message,
   return {code, std::move(message), std::move(location)};
 }
 
-const WVPortableVariableMetadata *coefficientMetadata(
-    std::string_view name) noexcept {
+const WVPortableVariableMetadata *
+coefficientMetadata(std::string_view name) noexcept {
   const auto *metadata = findPortableVariable(name);
   return metadata != nullptr &&
                  metadata->kind == WVPortableVariableKind::coefficient
@@ -134,6 +134,39 @@ findBlock(const WVOutputEvent &event, const std::string &identifier) {
   return nullptr;
 }
 
+std::string hexEncode(const std::vector<std::uint8_t> &bytes) {
+  static constexpr char digits[] = "0123456789abcdef";
+  std::string result(bytes.size() * 2, '0');
+  for (std::size_t index = 0; index < bytes.size(); ++index) {
+    result[2 * index] = digits[bytes[index] >> 4U];
+    result[2 * index + 1] = digits[bytes[index] & 0x0fU];
+  }
+  return result;
+}
+
+bool hexDecode(const std::string &text, std::vector<std::uint8_t> &bytes) {
+  if (text.size() % 2 != 0)
+    return false;
+  auto digit = [](char value) -> int {
+    if (value >= '0' && value <= '9')
+      return value - '0';
+    if (value >= 'a' && value <= 'f')
+      return value - 'a' + 10;
+    if (value >= 'A' && value <= 'F')
+      return value - 'A' + 10;
+    return -1;
+  };
+  bytes.resize(text.size() / 2);
+  for (std::size_t index = 0; index < bytes.size(); ++index) {
+    const auto high = digit(text[2 * index]);
+    const auto low = digit(text[2 * index + 1]);
+    if (high < 0 || low < 0)
+      return false;
+    bytes[index] = static_cast<std::uint8_t>((high << 4) | low);
+  }
+  return true;
+}
+
 } // namespace
 
 class WVModelOutputNetCDFSink::Impl {
@@ -165,6 +198,8 @@ public:
     WVOutputGroupRecord record;
     int id = -1;
     int timeId = -1;
+    int scheduleOrdinalId = -1;
+    int scheduleCursorId = -1;
     std::array<int, 3> coefficientReal{{-1, -1, -1}};
     std::array<int, 3> coefficientImag{{-1, -1, -1}};
     std::vector<DynamicVariable> dynamicVariables;
@@ -172,6 +207,7 @@ public:
     std::vector<StaticVariable> staticVariables;
     std::size_t recordCount = 0;
     WVOutputScheduleOrdinal committedOrdinal = WVNoCommittedOutputOrdinal;
+    WVPortableTypedRecord scheduleCursor;
   };
 
   struct File {
@@ -310,8 +346,7 @@ public:
              std::find(record->fieldNames.begin(), record->fieldNames.end(),
                        "A0") != record->fieldNames.end());
       }
-      if ((configuration.isDynamicsLinear &&
-           !hasEulerianCoefficientObserver) ||
+      if ((configuration.isDynamicsLinear && !hasEulerianCoefficientObserver) ||
           (!configuration.isDynamicsLinear && !hasCoefficientObserver))
         return failure(
             WVCheckpointStatusCode::schemaMismatch,
@@ -389,9 +424,9 @@ public:
     if (!observerBehavior)
       return failure(WVCheckpointStatusCode::unsupportedObserver,
                      "Unsupported observer metadata definition.", observerPath);
-    result = detail::putTextAttribute(
-        group, NC_GLOBAL, "AnnotatedClass",
-        observerBehavior->typeIdentifier(), observerPath);
+    result = detail::putTextAttribute(group, NC_GLOBAL, "AnnotatedClass",
+                                      observerBehavior->typeIdentifier(),
+                                      observerPath);
     if (!result)
       return result;
     result = detail::putTextAttribute(group, NC_GLOBAL, "portableIdentifier",
@@ -405,8 +440,9 @@ public:
         return result;
     }
     if (!observerBehavior->fieldListAttribute().empty()) {
-      result = putStringListAttribute(group, observerBehavior->fieldListAttribute().c_str(),
-                                      record.fieldNames, observerPath);
+      result = putStringListAttribute(
+          group, observerBehavior->fieldListAttribute().c_str(),
+          record.fieldNames, observerPath);
       if (!result)
         return result;
     }
@@ -498,6 +534,31 @@ public:
       if (!result)
         return result;
     }
+    if (!group.record.schedule.typeIdentifier.empty()) {
+      result = detail::putTextAttribute(
+          group.id, NC_GLOBAL, "portableScheduleTypeIdentifier",
+          group.record.schedule.typeIdentifier, path);
+      if (!result)
+        return result;
+      result = detail::checkedNetCDF(
+          nc_put_att_uint(group.id, NC_GLOBAL,
+                          "portableScheduleContractVersion", NC_UINT, 1,
+                          &group.record.schedule.contractVersion),
+          "Schedule-version attribute definition", path);
+      if (!result)
+        return result;
+      std::vector<std::uint8_t> configuration;
+      const auto encoded = encodePortableTypedRecord(
+          group.record.schedule.configuration, configuration);
+      if (!encoded)
+        return failure(WVCheckpointStatusCode::invalidValue, encoded.message,
+                       path);
+      result = detail::putTextAttribute(group.id, NC_GLOBAL,
+                                        "portableScheduleConfiguration",
+                                        hexEncode(configuration), path);
+      if (!result)
+        return result;
+    }
     int timeDimension = -1;
     result = detail::checkedNetCDF(
         nc_def_dim(group.id, "t", NC_UNLIMITED, &timeDimension),
@@ -517,6 +578,20 @@ public:
               {"units", "seconds since 1970-01-01 00:00:00"}}}) {
       result = detail::putTextAttribute(group.id, group.timeId, attribute.first,
                                         attribute.second, path + "/t");
+      if (!result)
+        return result;
+    }
+    if (!group.record.schedule.typeIdentifier.empty()) {
+      result = detail::checkedNetCDF(
+          nc_def_var(group.id, "portableScheduleOrdinal", NC_INT64, 1,
+                     &timeDimension, &group.scheduleOrdinalId),
+          "Schedule-ordinal variable definition", path);
+      if (!result)
+        return result;
+      result = detail::checkedNetCDF(
+          nc_def_var(group.id, "portableScheduleCursor", NC_STRING, 1,
+                     &timeDimension, &group.scheduleCursorId),
+          "Schedule-cursor variable definition", path);
       if (!result)
         return result;
     }
@@ -549,9 +624,9 @@ public:
                          path + "/" + name);
         for (const int variable : {real, imag}) {
           if (result)
-            result = detail::putTextAttribute(group.id, variable, "units",
-                                              metadata->units,
-                                              path + "/" + name);
+            result =
+                detail::putTextAttribute(group.id, variable, "units",
+                                         metadata->units, path + "/" + name);
           if (result)
             result = detail::putTextAttribute(group.id, variable, "long_name",
                                               metadata->description,
@@ -602,10 +677,10 @@ public:
         if (!result)
           return result;
         auto addStatic = [&](const std::string &name,
-                                   std::vector<int> dimensions,
-                                   std::vector<double> values,
-                                   const std::string &units,
-                                   const std::string &longName) {
+                             std::vector<int> dimensions,
+                             std::vector<double> values,
+                             const std::string &units,
+                             const std::string &longName) {
           StaticVariable variable;
           variable.name = name;
           variable.values = std::move(values);
@@ -618,9 +693,9 @@ public:
           if (!definition)
             return definition;
           if (!longName.empty())
-            definition = detail::putTextAttribute(
-                group.id, variable.id, "long_name", longName,
-                path + "/" + name);
+            definition =
+                detail::putTextAttribute(group.id, variable.id, "long_name",
+                                         longName, path + "/" + name);
           if (definition)
             group.staticVariables.push_back(std::move(variable));
           return definition;
@@ -677,26 +752,25 @@ public:
             "Point-observer dimension definition", path + "/" + dimensionName);
         if (!result)
           return result;
-        const auto addStaticPoint = [&](const std::string &name,
-                                        std::vector<double> values,
-                                        const std::string &units,
-                                        const std::string &longName) {
-          StaticVariable variable;
-          variable.name = name;
-          variable.values = std::move(values);
-          auto definition = detail::defineDoubleVariable(
-              group.id, name, {pointDimension}, variable.id, path);
-          if (definition)
-            definition = detail::putTextAttribute(
-                group.id, variable.id, "units", units, path + "/" + name);
-          if (definition && !longName.empty())
-            definition = detail::putTextAttribute(
-                group.id, variable.id, "long_name", longName,
-                path + "/" + name);
-          if (definition)
-            group.staticVariables.push_back(std::move(variable));
-          return definition;
-        };
+        const auto addStaticPoint =
+            [&](const std::string &name, std::vector<double> values,
+                const std::string &units, const std::string &longName) {
+              StaticVariable variable;
+              variable.name = name;
+              variable.values = std::move(values);
+              auto definition = detail::defineDoubleVariable(
+                  group.id, name, {pointDimension}, variable.id, path);
+              if (definition)
+                definition = detail::putTextAttribute(
+                    group.id, variable.id, "units", units, path + "/" + name);
+              if (definition && !longName.empty())
+                definition =
+                    detail::putTextAttribute(group.id, variable.id, "long_name",
+                                             longName, path + "/" + name);
+              if (definition)
+                group.staticVariables.push_back(std::move(variable));
+              return definition;
+            };
         std::vector<double> identifiers(record->x.size());
         for (std::size_t index = 0; index < identifiers.size(); ++index)
           identifiers[index] = static_cast<double>(index + 1);
@@ -705,7 +779,8 @@ public:
         if (!result)
           return result;
         for (const auto &[suffix, values] :
-             std::array<std::pair<const char *, const std::vector<double> *>, 3>{
+             std::array<std::pair<const char *, const std::vector<double> *>,
+                        3>{
                  {{"x", &record->x}, {"y", &record->y}, {"z", &record->z}}}) {
           result = addStaticPoint(record->name + '_' + suffix, *values, "m",
                                   std::string(suffix) +
@@ -769,14 +844,14 @@ public:
               path + "/" + dynamic.name);
           if (!result)
             return result;
-          const std::array<std::pair<const char *, std::string>, 3> attributes{{
-              {"isParticle", "1"},
-              {"particleName", record->name},
-              {"particleVariableName", suffix}}};
+          const std::array<std::pair<const char *, std::string>, 3> attributes{
+              {{"isParticle", "1"},
+               {"particleName", record->name},
+               {"particleVariableName", suffix}}};
           for (const auto &attribute : attributes) {
-            result = detail::putTextAttribute(
-                group.id, dynamic.realId, attribute.first, attribute.second,
-                path + "/" + dynamic.name);
+            result = detail::putTextAttribute(group.id, dynamic.realId,
+                                              attribute.first, attribute.second,
+                                              path + "/" + dynamic.name);
             if (!result)
               return result;
           }
@@ -797,12 +872,12 @@ public:
                                             "m", path + "/" + dynamic.name);
           if (result)
             result = detail::putTextAttribute(
-                group.id, dynamic.realId, "long_name",
-                "z position of particle", path + "/" + dynamic.name);
+                group.id, dynamic.realId, "long_name", "z position of particle",
+                path + "/" + dynamic.name);
           if (result)
-            result = detail::putTextAttribute(group.id, dynamic.realId,
-                                              "isParticle", "1",
-                                              path + "/" + dynamic.name);
+            result =
+                detail::putTextAttribute(group.id, dynamic.realId, "isParticle",
+                                         "1", path + "/" + dynamic.name);
           if (result)
             result = detail::putTextAttribute(group.id, dynamic.realId,
                                               "particleName", record->name,
@@ -841,9 +916,9 @@ public:
         result = detail::defineDoubleVariable(group.id, dynamic.name,
                                               dimensions, dynamic.realId, path);
         if (result)
-          result = detail::putTextAttribute(group.id, dynamic.realId,
-                                            "isTracer", "1",
-                                            path + "/" + dynamic.name);
+          result =
+              detail::putTextAttribute(group.id, dynamic.realId, "isTracer",
+                                       "1", path + "/" + dynamic.name);
         if (!result)
           return result;
         group.dynamicVariables.push_back(std::move(dynamic));
@@ -920,13 +995,13 @@ public:
                                          const std::string &variablePath) {
           auto attributeResult = WVCheckpointStatus::ok();
           if (!specification.units.empty())
-            attributeResult = detail::putTextAttribute(
-                group.id, variableId, "units", specification.units,
-                variablePath);
+            attributeResult =
+                detail::putTextAttribute(group.id, variableId, "units",
+                                         specification.units, variablePath);
           if (attributeResult && !specification.longName.empty())
-            attributeResult = detail::putTextAttribute(
-                group.id, variableId, "long_name", specification.longName,
-                variablePath);
+            attributeResult =
+                detail::putTextAttribute(group.id, variableId, "long_name",
+                                         specification.longName, variablePath);
           for (const auto &attribute : specification.attributes) {
             if (!attributeResult)
               break;
@@ -945,8 +1020,8 @@ public:
               "Observer-variable lookup", path);
           if (result)
             result = detail::checkedNetCDF(
-                nc_inq_varid(group.id,
-                             (specification.name + "_imag").c_str(), &imag),
+                nc_inq_varid(group.id, (specification.name + "_imag").c_str(),
+                             &imag),
                 "Observer-variable lookup", path);
           variable.realId = real;
           variable.imagId = imag;
@@ -957,8 +1032,8 @@ public:
             result = applyAttributes(imag,
                                      path + "/" + specification.name + "_imag");
         } else {
-          result = applyAttributes(variable.realId,
-                                   path + "/" + specification.name);
+          result =
+              applyAttributes(variable.realId, path + "/" + specification.name);
         }
         if (!result)
           return result;
@@ -1039,8 +1114,8 @@ public:
           result = writeScalar(metadata, "outputScale", record->outputScale,
                                metadataPath);
           if (result)
-            result = writeScalar(metadata, "outputOffset",
-                                 record->outputOffset, metadataPath);
+            result = writeScalar(metadata, "outputOffset", record->outputOffset,
+                                 metadataPath);
         }
         if (!result)
           return result;
@@ -1051,8 +1126,8 @@ public:
   }
 
   WVCheckpointStatus writeInitialAndStaticValues(File &file) {
-    const auto coefficientCount =
-        configuration.checkpointTemplate.state.coefficients.shape.elementCount();
+    const auto coefficientCount = configuration.checkpointTemplate.state
+                                      .coefficients.shape.elementCount();
     for (auto &group : file.groups) {
       const std::string path = "/" + group.record.name;
       for (const auto &variable : group.staticVariables) {
@@ -1105,8 +1180,8 @@ public:
           continue;
         const auto *record = observer(variable.observerIdentifier);
         WVObserverOutputValueView value;
-        const auto status = sampleSource->value(
-            *record, variable.specification, value);
+        const auto status =
+            sampleSource->value(*record, variable.specification, value);
         if (!status)
           return failure(WVCheckpointStatusCode::unsupportedObserver,
                          status.message,
@@ -1406,11 +1481,59 @@ public:
                          "configuration.",
                          "/" + group.record.name + "/" + expected.first);
       }
+      if (!group.record.schedule.typeIdentifier.empty()) {
+        std::string observedType;
+        result = detail::readTextAttribute(
+            group.id, "portableScheduleTypeIdentifier", observedType,
+            "/" + group.record.name);
+        if (!result || observedType != group.record.schedule.typeIdentifier)
+          return failure(WVCheckpointStatusCode::appendConflict,
+                         "Existing algorithmic schedule identity differs.",
+                         "/" + group.record.name);
+        unsigned int observedVersion = 0;
+        result = detail::checkedNetCDF(
+            nc_get_att_uint(group.id, NC_GLOBAL,
+                            "portableScheduleContractVersion",
+                            &observedVersion),
+            "Schedule-version attribute read", "/" + group.record.name);
+        if (!result || observedVersion != group.record.schedule.contractVersion)
+          return failure(WVCheckpointStatusCode::appendConflict,
+                         "Existing algorithmic schedule version differs.",
+                         "/" + group.record.name);
+        std::vector<std::uint8_t> configuration;
+        const auto encoded = encodePortableTypedRecord(
+            group.record.schedule.configuration, configuration);
+        if (!encoded)
+          return failure(WVCheckpointStatusCode::invalidValue, encoded.message,
+                         "/" + group.record.name);
+        std::string observedConfiguration;
+        result = detail::readTextAttribute(
+            group.id, "portableScheduleConfiguration", observedConfiguration,
+            "/" + group.record.name);
+        if (!result || observedConfiguration != hexEncode(configuration))
+          return failure(WVCheckpointStatusCode::appendConflict,
+                         "Existing algorithmic schedule configuration differs.",
+                         "/" + group.record.name);
+      }
       result = detail::checkedNetCDF(nc_inq_varid(group.id, "t", &group.timeId),
                                      "Time-variable lookup",
                                      "/" + group.record.name + "/t");
       if (!result)
         return result;
+      if (!group.record.schedule.typeIdentifier.empty()) {
+        result = detail::checkedNetCDF(
+            nc_inq_varid(group.id, "portableScheduleOrdinal",
+                         &group.scheduleOrdinalId),
+            "Schedule-ordinal variable lookup", "/" + group.record.name);
+        if (!result)
+          return result;
+        result = detail::checkedNetCDF(
+            nc_inq_varid(group.id, "portableScheduleCursor",
+                         &group.scheduleCursorId),
+            "Schedule-cursor variable lookup", "/" + group.record.name);
+        if (!result)
+          return result;
+      }
       if (group.record.containsCompleteCoefficientRestart) {
         for (std::size_t family = 0; family < 3; ++family) {
           const std::string name =
@@ -1467,8 +1590,8 @@ public:
         const bool coordinatesMatch =
             observed.size() == variable.values.size() &&
             std::equal(observed.begin(), observed.end(),
-                       variable.values.begin(), [](double first,
-                                                   double second) {
+                       variable.values.begin(),
+                       [](double first, double second) {
                          const double scale =
                              std::max({1.0, std::abs(first), std::abs(second)});
                          return std::abs(first - second) <= 1e-12 * scale;
@@ -1566,15 +1689,13 @@ public:
               return WVCheckpointStatus::ok();
             nc_type type = NC_NAT;
             std::size_t length = 0;
-            const int inquiry = nc_inq_att(group.id, variableId, name.c_str(),
-                                           &type, &length);
+            const int inquiry =
+                nc_inq_att(group.id, variableId, name.c_str(), &type, &length);
             if (inquiry == NC_ENOTATT && optional)
               return WVCheckpointStatus::ok();
             auto attributeStatus = detail::checkedNetCDF(
-                inquiry,
-                "Observer-variable attribute inspection",
-                "/" + group.record.name + "/" + variableName + "/@" +
-                    name);
+                inquiry, "Observer-variable attribute inspection",
+                "/" + group.record.name + "/" + variableName + "/@" + name);
             if (!attributeStatus)
               return attributeStatus;
             std::string observed;
@@ -1584,8 +1705,7 @@ public:
                   nc_get_att_text(group.id, variableId, name.c_str(),
                                   observed.data()),
                   "Observer-variable attribute read",
-                  "/" + group.record.name + "/" + variableName + "/@" +
-                      name);
+                  "/" + group.record.name + "/" + variableName + "/@" + name);
               if (!attributeStatus)
                 return attributeStatus;
             } else if (length == 1 && (expected == "0" || expected == "1")) {
@@ -1594,8 +1714,7 @@ public:
                   nc_get_att_double(group.id, variableId, name.c_str(),
                                     &numeric),
                   "Observer-variable logical-attribute read",
-                  "/" + group.record.name + "/" + variableName + "/@" +
-                      name);
+                  "/" + group.record.name + "/" + variableName + "/@" + name);
               if (!attributeStatus)
                 return attributeStatus;
               observed = numeric == 0.0 ? "0" : numeric == 1.0 ? "1" : "";
@@ -1606,12 +1725,11 @@ public:
                                  "/@" + name);
             }
             if (observed != expected)
-              return failure(WVCheckpointStatusCode::appendConflict,
-                             "Observer-variable metadata changed: expected '" +
-                                 expected + "' but observed '" + observed +
-                                 "'.",
-                             "/" + group.record.name + "/" + variableName +
-                                 "/@" + name);
+              return failure(
+                  WVCheckpointStatusCode::appendConflict,
+                  "Observer-variable metadata changed: expected '" + expected +
+                      "' but observed '" + observed + "'.",
+                  "/" + group.record.name + "/" + variableName + "/@" + name);
             return WVCheckpointStatus::ok();
           };
           contract = requireAttribute("units", variable.specification.units);
@@ -1621,10 +1739,9 @@ public:
           for (const auto &attribute : variable.specification.attributes) {
             if (!contract)
               break;
-            contract = requireAttribute(
-                attribute.name,attribute.value,
-                attribute.name != "isParticle" &&
-                    attribute.name != "isTracer");
+            contract = requireAttribute(attribute.name, attribute.value,
+                                        attribute.name != "isParticle" &&
+                                            attribute.name != "isTracer");
           }
           if (!contract)
             return contract;
@@ -1651,8 +1768,8 @@ public:
                                            WVOutputValueType::complex64
                                        ? variable.specification.name + "_real"
                                        : variable.specification.name);
-        if (result && variable.specification.valueType ==
-                          WVOutputValueType::complex64)
+        if (result &&
+            variable.specification.valueType == WVOutputValueType::complex64)
           result = validateComponent(variable.imagId,
                                      variable.specification.name + "_imag");
         if (!result)
@@ -1678,27 +1795,74 @@ public:
             "Output-time read", "/" + group.record.name + "/t");
         if (!result)
           return result;
-        for (std::size_t timeIndex = 0; timeIndex < times.size(); ++timeIndex) {
-          const double observed = times[timeIndex];
-          const double raw = (observed - group.record.schedule.initialTime) /
-                             group.record.schedule.outputInterval;
-          const auto ordinal =
-              static_cast<WVOutputScheduleOrdinal>(std::llround(raw));
-          const double expected = group.record.schedule.initialTime +
-                                  static_cast<double>(ordinal) *
-                                      group.record.schedule.outputInterval;
-          const double tolerance =
-              8 * std::numeric_limits<double>::epsilon() *
-              std::max({1.0, std::abs(observed), std::abs(expected)});
-          if (!std::isfinite(observed) ||
-              std::abs(observed - expected) > tolerance || ordinal < 0 ||
-              (timeIndex > 0 && !(observed > times[timeIndex - 1])))
-            return failure(
-                WVCheckpointStatusCode::appendConflict,
-                "Existing output times are not a strictly increasing subset "
-                "of the configured schedule lattice.",
-                "/" + group.record.name + "/t");
-          group.committedOrdinal = ordinal;
+        if (group.record.schedule.typeIdentifier.empty()) {
+          for (std::size_t timeIndex = 0; timeIndex < times.size();
+               ++timeIndex) {
+            const double observed = times[timeIndex];
+            const double raw = (observed - group.record.schedule.initialTime) /
+                               group.record.schedule.outputInterval;
+            const auto ordinal =
+                static_cast<WVOutputScheduleOrdinal>(std::llround(raw));
+            const double expected = group.record.schedule.initialTime +
+                                    static_cast<double>(ordinal) *
+                                        group.record.schedule.outputInterval;
+            const double tolerance =
+                8 * std::numeric_limits<double>::epsilon() *
+                std::max({1.0, std::abs(observed), std::abs(expected)});
+            if (!std::isfinite(observed) ||
+                std::abs(observed - expected) > tolerance || ordinal < 0 ||
+                (timeIndex > 0 && !(observed > times[timeIndex - 1])))
+              return failure(
+                  WVCheckpointStatusCode::appendConflict,
+                  "Existing output times are not a strictly increasing subset "
+                  "of the configured schedule lattice.",
+                  "/" + group.record.name + "/t");
+            group.committedOrdinal = ordinal;
+          }
+        } else {
+          std::vector<long long> ordinals(length);
+          result = detail::checkedNetCDF(
+              nc_get_var_longlong(group.id, group.scheduleOrdinalId,
+                                  ordinals.data()),
+              "Schedule-ordinal read", "/" + group.record.name);
+          if (!result)
+            return result;
+          for (std::size_t timeIndex = 0; timeIndex < times.size();
+               ++timeIndex) {
+            if (!std::isfinite(times[timeIndex]) || ordinals[timeIndex] < 0 ||
+                (timeIndex > 0 &&
+                 (!(times[timeIndex] > times[timeIndex - 1]) ||
+                  ordinals[timeIndex] <= ordinals[timeIndex - 1])))
+              return failure(WVCheckpointStatusCode::appendConflict,
+                             "Existing algorithmic output history is not "
+                             "strictly monotone.",
+                             "/" + group.record.name);
+            const std::size_t position[] = {timeIndex};
+            char *cursorText = nullptr;
+            result = detail::checkedNetCDF(
+                nc_get_var1_string(group.id, group.scheduleCursorId, position,
+                                   &cursorText),
+                "Schedule-cursor read", "/" + group.record.name);
+            if (!result)
+              return result;
+            const std::string encoded = cursorText == nullptr ? "" : cursorText;
+            if (cursorText != nullptr)
+              nc_free_string(1, &cursorText);
+            std::vector<std::uint8_t> cursorBytes;
+            if (!hexDecode(encoded, cursorBytes) ||
+                cursorBytes.size() > WVMaximumOutputScheduleCursorBytes)
+              return failure(WVCheckpointStatusCode::appendConflict,
+                             "Existing algorithmic output cursor is malformed.",
+                             "/" + group.record.name);
+            const auto decoded = decodePortableTypedRecord(
+                cursorBytes, group.scheduleCursor,
+                {WVMaximumOutputScheduleCursorBytes, true, false});
+            if (!decoded)
+              return failure(WVCheckpointStatusCode::appendConflict,
+                             decoded.message, "/" + group.record.name);
+            group.committedOrdinal =
+                static_cast<WVOutputScheduleOrdinal>(ordinals[timeIndex]);
+          }
         }
 
         int variableCount = 0;
@@ -1784,9 +1948,11 @@ public:
   void rebuildProgress() {
     progress.clear();
     for (const auto &file : files)
-      for (const auto &group : file.groups)
+      for (const auto &group : file.groups) {
         progress.push_back({file.record.identifier, group.record.identifier,
                             group.committedOrdinal});
+        progress.back().scheduleCursor = group.scheduleCursor;
+      }
   }
 
   void updateRetainedStorageMetric() {
@@ -1800,6 +1966,8 @@ public:
       for (const auto &group : file.groups) {
         bytes += group.record.identifier.capacity() +
                  group.record.name.capacity() +
+                 group.scheduleCursor.persistentBytes() -
+                 sizeof(WVPortableTypedRecord) +
                  group.dynamicVariables.capacity() * sizeof(DynamicVariable) +
                  group.derivedVariables.capacity() * sizeof(Variable) +
                  group.staticVariables.capacity() * sizeof(StaticVariable);
@@ -1828,6 +1996,10 @@ public:
                    variable.values.capacity() * sizeof(double);
       }
     }
+    for (const auto &item : progress)
+      bytes +=
+          item.fileIdentifier.capacity() + item.groupIdentifier.capacity() +
+          item.scheduleCursor.persistentBytes() - sizeof(WVPortableTypedRecord);
     metrics.retainedStorageBytes = bytes;
   }
 
@@ -1885,10 +2057,13 @@ public:
             }
             if (observerBehavior->recordsMovingParticles() &&
                 recordPointer->isXYOnly && !recordPointer->z.empty())
-              group.dynamicVariables.push_back(
-                  {{}, recordPointer->name + "_z",
-                   WVStateScalarType::real64, recordPointer->z.size(),
-                   recordPointer->z, -1, -1});
+              group.dynamicVariables.push_back({{},
+                                                recordPointer->name + "_z",
+                                                WVStateScalarType::real64,
+                                                recordPointer->z.size(),
+                                                recordPointer->z,
+                                                -1,
+                                                -1});
           } else if (observerBehavior->recordsFixedProfiles()) {
             const auto &model = configuration.checkpointTemplate.configuration;
             std::vector<double> ids(recordPointer->x.size());
@@ -2065,8 +2240,8 @@ public:
         return failure(WVCheckpointStatusCode::shapeMismatch,
                        "Dynamic observer state is absent or incompatible.",
                        "/" + group.record.name + "/" + dynamic.name);
-      auto result = writeRealSlab(group.id, dynamic.realId, index,
-                                  values, dynamic.elementCount,
+      auto result = writeRealSlab(group.id, dynamic.realId, index, values,
+                                  dynamic.elementCount,
                                   "/" + group.record.name + "/" + dynamic.name);
       if (!result)
         return result;
@@ -2112,23 +2287,62 @@ public:
     }
     const std::size_t start[] = {index};
     const std::size_t count[] = {1};
+    if (!group.record.schedule.typeIdentifier.empty()) {
+      if (route.proposedScheduleCursor == nullptr)
+        return failure(WVCheckpointStatusCode::invalidValue,
+                       "Algorithmic output route has no proposed cursor.",
+                       "/" + group.record.name);
+      std::vector<std::uint8_t> cursorBytes;
+      auto cursorStatus =
+          encodePortableTypedRecord(*route.proposedScheduleCursor, cursorBytes);
+      if (!cursorStatus)
+        return failure(WVCheckpointStatusCode::invalidValue,
+                       cursorStatus.message, "/" + group.record.name);
+      if (cursorBytes.size() > WVMaximumOutputScheduleCursorBytes)
+        return failure(WVCheckpointStatusCode::invalidValue,
+                       "Algorithmic output cursor exceeds 4 KiB.",
+                       "/" + group.record.name);
+      const auto cursorHex = hexEncode(cursorBytes);
+      const char *cursorText = cursorHex.c_str();
+      const auto ordinal = static_cast<long long>(route.scheduleOrdinal);
+      auto scheduleResult = detail::checkedNetCDF(
+          nc_put_var1_longlong(group.id, group.scheduleOrdinalId, start,
+                               &ordinal),
+          "Schedule-ordinal write", "/" + group.record.name);
+      if (!scheduleResult)
+        return scheduleResult;
+      scheduleResult = detail::checkedNetCDF(
+          nc_put_var1_string(group.id, group.scheduleCursorId, start,
+                             &cursorText),
+          "Schedule-cursor write", "/" + group.record.name);
+      if (!scheduleResult)
+        return scheduleResult;
+      delivery.writeCount += 2;
+      delivery.writtenBytes += sizeof(std::int64_t) + cursorHex.size();
+    }
     auto result = detail::checkedNetCDF(
         nc_put_vara_double(group.id, group.timeId, start, count,
                            &event.scheduledTime),
         "Output-time commit", "/" + group.record.name + "/t");
     if (!result)
       return result;
-    metrics.payloadWriteSeconds += std::chrono::duration<double>(
-        std::chrono::steady_clock::now() - payloadStarted).count();
+    metrics.payloadWriteSeconds +=
+        std::chrono::duration<double>(std::chrono::steady_clock::now() -
+                                      payloadStarted)
+            .count();
     const auto synchronizationStarted = std::chrono::steady_clock::now();
     result = detail::checkedNetCDF(nc_sync(file.id), "Output-route sync",
                                    file.destination.string());
     if (!result)
       return result;
-    metrics.synchronizationSeconds += std::chrono::duration<double>(
-        std::chrono::steady_clock::now() - synchronizationStarted).count();
+    metrics.synchronizationSeconds +=
+        std::chrono::duration<double>(std::chrono::steady_clock::now() -
+                                      synchronizationStarted)
+            .count();
     ++group.recordCount;
     group.committedOrdinal = route.scheduleOrdinal;
+    if (route.proposedScheduleCursor != nullptr)
+      group.scheduleCursor = *route.proposedScheduleCursor;
     ++metrics.committedRecordCount;
     ++metrics.synchronizationCount;
     metrics.writtenBytes += delivery.writtenBytes + sizeof(double);
@@ -2242,10 +2456,9 @@ WVCheckpointStatus WVModelOutputNetCDFSink::replaceExisting(
     return failure(WVCheckpointStatusCode::writeFailure,
                    "Output replacement allocation failed.", "/");
   } catch (const std::exception &exception) {
-    return failure(WVCheckpointStatusCode::writeFailure,
-                   "Output replacement failed: " +
-                       std::string(exception.what()),
-                   "/");
+    return failure(
+        WVCheckpointStatusCode::writeFailure,
+        "Output replacement failed: " + std::string(exception.what()), "/");
   }
 }
 
@@ -2284,8 +2497,7 @@ WVCheckpointStatus WVModelOutputNetCDFSink::openAppend(
   }
 }
 
-WVKernelStatus
-WVModelOutputNetCDFSink::preflight(const WVOutputPlan &plan) {
+WVKernelStatus WVModelOutputNetCDFSink::preflight(const WVOutputPlan &plan) {
   if (!impl_ || impl_->closed)
     return {WVKernelStatusCode::invalidConfiguration,
             "NetCDF output sink is closed."};
@@ -2297,51 +2509,36 @@ WVModelOutputNetCDFSink::preflight(const WVOutputPlan &plan) {
     if (!sourceStatus)
       return sourceStatus;
   }
-  std::map<std::pair<std::size_t, std::size_t>, WVOutputScheduleOrdinal>
-      lastOrdinals;
-  for (std::size_t eventIndex = 0; eventIndex < plan.eventCount();
-       ++eventIndex) {
-    const auto event = plan.event(eventIndex);
-    for (std::size_t routeIndex = 0; routeIndex < event.routeCount;
-         ++routeIndex) {
-      const auto &route = event.routes[routeIndex];
-      if (route.fileOrdinal >= impl_->files.size() ||
-          route.groupOrdinal >= impl_->files[route.fileOrdinal].groups.size())
+  for (std::size_t groupIndex = 0; groupIndex < plan.groupCount();
+       ++groupIndex) {
+    const auto route = plan.groupRoute(groupIndex);
+    if (route.fileOrdinal >= impl_->files.size() ||
+        route.groupOrdinal >= impl_->files[route.fileOrdinal].groups.size())
+      return {WVKernelStatusCode::invalidConfiguration,
+              "Output plan contains an out-of-range NetCDF route."};
+    const auto &file = impl_->files[route.fileOrdinal];
+    const auto &group = file.groups[route.groupOrdinal];
+    if (route.fileIdentifier != file.record.identifier ||
+        route.destination != file.record.destination ||
+        route.groupIdentifier != group.record.identifier ||
+        route.groupName != group.record.name ||
+        route.observerCount != group.record.observerIdentifiers.size())
+      return {WVKernelStatusCode::invalidConfiguration,
+              "Output plan and NetCDF route identity differ."};
+    for (std::size_t observerIndex = 0; observerIndex < route.observerCount;
+         ++observerIndex) {
+      if (route.observers[observerIndex].record == nullptr ||
+          route.observers[observerIndex].record->identifier !=
+              group.record.observerIdentifiers[observerIndex])
         return {WVKernelStatusCode::invalidConfiguration,
-                "Output plan contains an out-of-range NetCDF route."};
-      const auto &file = impl_->files[route.fileOrdinal];
-      const auto &group = file.groups[route.groupOrdinal];
-      if (route.fileIdentifier != file.record.identifier ||
-          route.destination != file.record.destination ||
-          route.groupIdentifier != group.record.identifier ||
-          route.groupName != group.record.name ||
-          route.observerCount != group.record.observerIdentifiers.size())
-        return {WVKernelStatusCode::invalidConfiguration,
-                "Output plan and NetCDF route identity differ."};
-      for (std::size_t observerIndex = 0; observerIndex < route.observerCount;
-           ++observerIndex) {
-        if (route.observers[observerIndex].record == nullptr ||
-            route.observers[observerIndex].record->identifier !=
-                group.record.observerIdentifiers[observerIndex])
-          return {WVKernelStatusCode::invalidConfiguration,
-                  "Output plan and NetCDF observer route differ."};
-      }
-      const double expected = group.record.schedule.initialTime +
-                              static_cast<double>(route.scheduleOrdinal) *
-                                  group.record.schedule.outputInterval;
-      const double tolerance =
-          8 * std::numeric_limits<double>::epsilon() *
-          std::max({1.0, std::abs(expected), std::abs(event.scheduledTime)});
-      const auto key = std::make_pair(route.fileOrdinal, route.groupOrdinal);
-      auto position = lastOrdinals.emplace(key, group.committedOrdinal).first;
-      auto &last = position->second;
-      if (route.scheduleOrdinal <= group.committedOrdinal ||
-          route.scheduleOrdinal <= last ||
-          std::abs(event.scheduledTime - expected) > tolerance)
-        return {WVKernelStatusCode::invalidConfiguration,
-                "Output plan is incompatible with committed NetCDF progress."};
-      last = route.scheduleOrdinal;
+                "Output plan and NetCDF observer route differ."};
     }
+    const auto &progress = plan.initialProgress()[groupIndex];
+    if (progress.fileIdentifier != file.record.identifier ||
+        progress.groupIdentifier != group.record.identifier ||
+        progress.committedOrdinal != group.committedOrdinal)
+      return {WVKernelStatusCode::invalidConfiguration,
+              "Output plan is incompatible with committed NetCDF progress."};
   }
   impl_->preflightComplete = true;
   return WVKernelStatus::ok();

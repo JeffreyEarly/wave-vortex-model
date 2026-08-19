@@ -15,6 +15,8 @@ Arbitrary MATLAB forcing or observing-system subclasses are not supported. Multi
 
 Library clients may configure output with the provisional C++ `WVModelOutputFile` and `WVModelOutputGroup` builders. Their MATLAB-shaped methods compile once into the existing immutable descriptor, output plan, driver, and NetCDF sink. Builders are consumed before integration and add no runtime graph or state-sized storage. One create, replace, or append policy applies to the complete file set. `WVModel::createFromModelOutputFiles` instead consumes a complete MATLAB-authored sibling NetCDF set and may remap destinations by stable file identifier without changing observers, groups, or schedules.
 
+Output schedules are resolved once by exact source-linked identity and version. `WVOutputPlan` retains one immutable schedule per group, while `WVOutputDriver` owns one small cursor and one cached occurrence per group. A cursor advances only after its route is committed, so a failed coincident route can be replayed without repeating successful routes. The legacy evenly spaced schedule retains its existing NetCDF scalars and ordinal semantics; new algorithmic providers persist a typed configuration and a bounded cursor envelope. Cursor records are limited to 4 KiB and contain only Boolean, integer, finite-real, or text-free values. State-triggered schedules are reserved but unsupported.
+
 ## Build
 
 A portable reference build requires CMake 3.20, a C++17 compiler, and NetCDF C:
