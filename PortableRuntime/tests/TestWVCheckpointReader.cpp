@@ -150,7 +150,7 @@ void testForcingCapabilities() {
             require(!capability.unavailabilityReason.empty(), "unsupported forcing omitted its reason");
         }
     }
-    require(supported == 8, "forcing capability matrix must expose six production pairs and two test pairs");
+    require(supported == 9, "forcing capability matrix must expose seven production pairs and two test pairs");
     require(WVForcingFactoryRegistry::capability("WVTestPortableFixedAmplitudeForcing").isSupported(), "registered test forcing pair is unavailable");
     require(WVForcingFactoryRegistry::capability("WVTestPortableFixedAmplitudeForcing", 2).status == WVPortableCapabilityStatus::versionMismatch, "forcing pair version mismatch was accepted");
     require(WVForcingFactoryRegistry::capability(test::LinearCoefficientForcingIdentifier).isSupported(), "registered linear coefficient forcing pair is unavailable");
@@ -195,6 +195,25 @@ void testSupportedForcingFixtures() {
 
     const auto quadratic = read("forcing-quadratic-bottom-friction.nc").forcingSchedule.entries.front();
     require(storedValue<std::vector<double>>(quadratic,"Cd").front() == 1.7e-3, "quadratic drag coefficient mismatch");
+
+    TemporaryFile linearFile(temporaryCopy("forcing-quadratic-bottom-friction.nc"));
+    int linearId = -1;
+    requireNetCDF(nc_open(linearFile.path.string().c_str(), NC_WRITE, &linearId), "open linear forcing fixture");
+    int linearForcingId = -1;
+    requireNetCDF(nc_inq_ncid(linearId, "forcing", &linearForcingId), "find linear forcing group");
+    overwriteTextAttribute(linearForcingId, "AnnotatedClass", "WVBottomFrictionLinear");
+    overwriteTextAttribute(linearForcingId, "name", "linear bottom friction");
+    int rateId = -1;
+    requireNetCDF(nc_inq_varid(linearForcingId, "Cd", &rateId), "find source drag variable");
+    requireNetCDF(nc_rename_var(linearForcingId, rateId, "r"), "rename linear drag variable");
+    const double rate = 2.5e-7;
+    requireNetCDF(nc_put_var_double(linearForcingId, rateId, &rate), "write linear drag rate");
+    requireNetCDF(nc_close(linearId), "close linear forcing fixture");
+    WVCheckpoint linearCheckpoint;
+    const auto linearResult = WVCheckpointReader::read(linearFile.path.string(),linearCheckpoint);
+    require(static_cast<bool>(linearResult),linearResult.message);
+    const auto& linear = linearCheckpoint.forcingSchedule.entries.front();
+    require(linear.typeIdentifier == "WVBottomFrictionLinear" && storedValue<std::vector<double>>(linear,"r").front() == rate,"generic forcing persistence did not decode linear drag");
 
     const auto pseudo = read("forcing-pseudo-topographic.nc").forcingSchedule.entries.front();
     const auto* topography = pseudo.configuration.value("topographicHeight");
@@ -411,7 +430,7 @@ void testOrderedForcingHeaders() {
 }
 
 void testUnsupportedForcingClasses() {
-    const std::array<const char*, 7> unsupported = {"WVAntialiasing", "WVHorizontalDamping", "WVVerticalDamping", "WVThermalDamping", "WVBottomFrictionLinear", "WVVerticalDiffusivity", "WVUserForcing"};
+    const std::array<const char*, 6> unsupported = {"WVAntialiasing", "WVHorizontalDamping", "WVVerticalDamping", "WVThermalDamping", "WVVerticalDiffusivity", "WVUserForcing"};
     for (const char* typeIdentifier : unsupported) {
         TemporaryFile file(temporaryCopy("forcing-nonlinear.nc"));
         int id = -1;
@@ -428,6 +447,24 @@ void testUnsupportedForcingClasses() {
 }
 
 void testMalformedForcingRecords() {
+    {
+        TemporaryFile file(temporaryCopy("forcing-quadratic-bottom-friction.nc"));
+        int id = -1;
+        requireNetCDF(nc_open(file.path.string().c_str(), NC_WRITE, &id), "open invalid r fixture");
+        int forcingId = -1;
+        requireNetCDF(nc_inq_ncid(id, "forcing", &forcingId), "find linear forcing group");
+        overwriteTextAttribute(forcingId, "AnnotatedClass", "WVBottomFrictionLinear");
+        int variableId = -1;
+        requireNetCDF(nc_inq_varid(forcingId, "Cd", &variableId), "find source r variable");
+        requireNetCDF(nc_rename_var(forcingId, variableId, "r"), "rename invalid r variable");
+        const double invalid = -1.0;
+        requireNetCDF(nc_put_var_double(forcingId, variableId, &invalid), "write invalid r");
+        requireNetCDF(nc_close(id), "close invalid r fixture");
+        WVCheckpoint checkpoint;
+        const auto result = WVCheckpointReader::read(file.path.string(), checkpoint);
+        require(result.code == WVCheckpointStatusCode::malformedForcing, "negative r was accepted");
+        verifyWritableAfterFailure(file.path);
+    }
     {
         TemporaryFile file(temporaryCopy("forcing-quadratic-bottom-friction.nc"));
         int id = -1;

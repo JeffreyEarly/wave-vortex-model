@@ -68,6 +68,12 @@ classdef TestPortableRuntimeCompatibility < matlab.unittest.TestCase
             testCase.verifyEqual(string(report.status),"complete")
             testCase.verifyEqual(string(report.restartMode),"model")
             testCase.verifyEqual(string(report.outputPolicy),"append")
+            testCase.verifySubstring(string(report.execution.schedule),"WVBottomFrictionLinear")
+            testCase.verifyTrue(report.execution.noFallback)
+            testCase.verifyGreaterThan(report.forcingOperations.physicalFieldReconstructionCount,0)
+            testCase.verifyEqual(report.forcingOperations.physicalFieldReconstructionCount,report.forcingOperations.evaluationCount)
+            testCase.verifyEqual(report.forcingOperations.spatialTendencyProjectionCount,2*report.forcingOperations.physicalFieldReconstructionCount)
+            testCase.verifyGreaterThan(report.forcingOperations.spatialTendencyClearElementWrites,0)
 
             runtimeModel = WVModel.modelFromFile(char(sourcePath));
             runtimeCleanup = onCleanup(@()runtimeModel.closeNetCDFFile());
@@ -77,9 +83,9 @@ classdef TestPortableRuntimeCompatibility < matlab.unittest.TestCase
             controlModel.integrateToTime(2e-4,shouldShowIntegrationDiagnostics=false,callback=@(~)[]);
 
             testCase.verifyModelGraphsEqual(runtimeModel,controlModel)
-            testCase.verifyEqual(runtimeModel.wvt.Ap,controlModel.wvt.Ap,AbsTol=1e-11)
-            testCase.verifyEqual(runtimeModel.wvt.Am,controlModel.wvt.Am,AbsTol=1e-11)
-            testCase.verifyEqual(runtimeModel.wvt.A0,controlModel.wvt.A0,AbsTol=1e-11)
+            testCase.verifyEqual(runtimeModel.wvt.Ap,controlModel.wvt.Ap,AbsTol=1e-12)
+            testCase.verifyEqual(runtimeModel.wvt.Am,controlModel.wvt.Am,AbsTol=1e-12)
+            testCase.verifyEqual(runtimeModel.wvt.A0,controlModel.wvt.A0,AbsTol=1e-12)
             [runtimeX,runtimeY,runtimeZ] = runtimeModel.floatPositions();
             [controlX,controlY,controlZ] = controlModel.floatPositions();
             testCase.verifyEqual(runtimeX,controlX,AbsTol=1e-8)
@@ -119,6 +125,53 @@ classdef TestPortableRuntimeCompatibility < matlab.unittest.TestCase
             testCase.verifyEqual(restored.outputFileWithName("linear-model.nc").outputGroupWithName("wave-vortex").incrementsWrittenToGroup,uint64(3))
             clear cleanup
         end
+
+        function linearBottomFrictionMatchesMatlabFixedAndAdaptive(testCase)
+            cases = {
+                true, "fixed", 5, 0; ...
+                false, "fixed", 7, 2.5e-7; ...
+                true, "adaptive", 7, 2.5e-7; ...
+                false, "adaptive", 5, 2.5e-7};
+            for iCase = 1:size(cases,1)
+                isHydrostatic = cases{iCase,1};
+                integratorType = cases{iCase,2};
+                Nz = cases{iCase,3};
+                r = cases{iCase,4};
+                caseName = sprintf("linear-%s-h%d-nz%d",integratorType,isHydrostatic,Nz);
+                sourcePath = fullfile(testCase.TemporaryFolder,caseName+"-source.nc");
+                controlPath = fullfile(testCase.TemporaryFolder,caseName+"-control.nc");
+                model = testCase.createLinearBottomFrictionModel(sourcePath,isHydrostatic,Nz,r,integratorType);
+                model.integrateToTime(1e-4,shouldShowIntegrationDiagnostics=false,callback=@(~)[]);
+                model.closeNetCDFFile();
+                copyfile(sourcePath,controlPath)
+
+                command = shellQuote(testCase.Runner) + " " + shellQuote(sourcePath) + ...
+                    " --restart-mode model --output-policy append" + ...
+                    " --delta-t 1e-5 --final-time 2e-4 --fft-provider reference";
+                if integratorType == "adaptive"
+                    command = command + " --integrator adaptive-rk23" + ...
+                        " --relative-tolerance 1e-8 --absolute-tolerance 1e-10" + ...
+                        " --maximum-step 1e-5";
+                end
+                [status,output] = systemWithoutMatlabRuntime(command);
+                testCase.assertEqual(status,0,output)
+                report = jsondecode(output);
+                testCase.verifySubstring(string(report.execution.schedule),"WVBottomFrictionLinear")
+                testCase.verifyTrue(report.execution.noFallback)
+                testCase.verifyEqual(report.forcingOperations.physicalFieldReconstructionCount,report.forcingOperations.evaluationCount)
+
+                runtimeModel = WVModel.modelFromFile(char(sourcePath));
+                runtimeCleanup = onCleanup(@()runtimeModel.closeNetCDFFile());
+                controlModel = WVModel.modelFromFile(char(controlPath));
+                controlCleanup = onCleanup(@()controlModel.closeNetCDFFile());
+                testCase.configureLinearIntegrator(controlModel,integratorType);
+                controlModel.integrateToTime(2e-4,shouldShowIntegrationDiagnostics=false,callback=@(~)[]);
+                testCase.verifyEqual(runtimeModel.wvt.forcingWithName("linear bottom friction").r,r)
+                testCase.verifyEqual(runtimeModel.wvt.forcingWithName("linear bottom friction").r_scaled,2*(Nz-1)*r,RelTol=10*eps)
+                testCase.verifyLessThanOrEqual(testCase.normalizedCoefficientError(runtimeModel.wvt,controlModel.wvt),1e-12,caseName)
+                clear runtimeCleanup controlCleanup
+            end
+        end
     end
 
     methods (Access = private)
@@ -131,6 +184,7 @@ classdef TestPortableRuntimeCompatibility < matlab.unittest.TestCase
             [x,y] = ndgrid(wvt.x,wvt.y);
             wvt.addForcing([ ...
                 WVAdaptiveDamping(wvt) ...
+                WVBottomFrictionLinear(wvt,r=2.5e-7) ...
                 WVBottomFrictionQuadratic(wvt,Cd=1e-3) ...
                 WVBetaPlanePVAdvection(wvt) ...
                 WVPseudoTopographicWaveGeneration(wvt, ...
@@ -160,8 +214,34 @@ classdef TestPortableRuntimeCompatibility < matlab.unittest.TestCase
             model.setupIntegrator(integratorType="fixed",deltaT=1e-4);
             forcingNames = wvt.forcingNames;
             testCase.assertEqual(string(forcingNames(:)), ...
-                ["nonlinear advection"; "quadratic bottom friction"; "adaptive damping"; ...
+                ["nonlinear advection"; "linear bottom friction"; "quadratic bottom friction"; "adaptive damping"; ...
                  "beta-plane advection of qgpv"; "terrain"; "fixed"])
+        end
+
+        function model = createLinearBottomFrictionModel(testCase,path,isHydrostatic,Nz,r,integratorType)
+            wvt = WVTransformConstantStratification([4000 3000 1000],[8 6 Nz], ...
+                N0=sqrt(2e-5),latitude=45,isHydrostatic=isHydrostatic,shouldAntialias=false);
+            wvt.Ap(2) = 2e-6 + 1e-6i;
+            wvt.Am(3) = -1e-6 + 0.5e-6i;
+            wvt.A0(4) = 0.75e-6i;
+            wvt.addForcing(WVBottomFrictionLinear(wvt,r=r));
+            model = WVModel(wvt);
+            model.createNetCDFFileForModelOutput(path,outputInterval=1e-4,shouldOverwriteExisting=true);
+            testCase.configureLinearIntegrator(model,integratorType);
+        end
+
+        function configureLinearIntegrator(~,model,integratorType)
+            if integratorType == "adaptive"
+                model.setupIntegrator(integratorType="adaptive",integrator=@ode23,absTolerance=1e-10,relTolerance=1e-8);
+            else
+                model.setupIntegrator(integratorType="fixed",deltaT=1e-5);
+            end
+        end
+
+        function errorValue = normalizedCoefficientError(~,actual,reference)
+            absoluteError = max([max(abs(actual.Ap-reference.Ap),[],"all"),max(abs(actual.Am-reference.Am),[],"all"),max(abs(actual.A0-reference.A0),[],"all")]);
+            referenceScale = max([max(abs(reference.Ap),[],"all"),max(abs(reference.Am),[],"all"),max(abs(reference.A0),[],"all"),eps]);
+            errorValue = absoluteError/referenceScale;
         end
 
         function verifyModelGraphsEqual(testCase,actual,expected)
