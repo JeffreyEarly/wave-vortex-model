@@ -246,7 +246,46 @@ public:
     bool requiresPhysicalFields() const noexcept override { return true; }
     bool requiresForcingFields() const noexcept override { return true; }
     bool producesCompleteFlux() const noexcept override { return true; }
-    WVKernelStatus addRightHandSide(WVForcingExecutionContext& context) const override { return context.quadraticBottomFriction(drag_); }
+    WVKernelStatus addRightHandSide(WVForcingExecutionContext& context) const override {
+        WVRealFieldBundleConstView fields;
+        auto status = context.physicalFields(fields);
+        if (!status) return status;
+        auto tendency = context.clearedSpatialTendency();
+        const auto R = fields.shape.first*fields.shape.second*fields.shape.third;
+        const auto horizontalCount = fields.shape.first*fields.shape.second;
+        for (std::size_t index = 0; index < horizontalCount; ++index) {
+            const double u = fields.data[index];
+            const double v = fields.data[R+index];
+            const double speed = std::sqrt(u*u+v*v);
+            tendency.data[index] = -drag_*u*speed;
+            tendency.data[R+index] = -drag_*v*speed;
+        }
+        return context.projectSpatialTendency({tendency.data,tendency.shape});
+    }
+    std::size_t persistentBytes() const noexcept override { return sizeof(*this)+metadataDynamicBytes(); }
+private:
+    double drag_ = 0.0;
+};
+
+class LinearBottomFrictionForcing final : public ResolvedForcing {
+public:
+    LinearBottomFrictionForcing(WVFrozenForcingEntry entry, double value) : ResolvedForcing(std::move(entry)), drag_(value) {}
+    bool requiresPhysicalFields() const noexcept override { return true; }
+    bool requiresForcingFields() const noexcept override { return true; }
+    bool producesCompleteFlux() const noexcept override { return true; }
+    WVKernelStatus addRightHandSide(WVForcingExecutionContext& context) const override {
+        WVRealFieldBundleConstView fields;
+        auto status = context.physicalFields(fields);
+        if (!status) return status;
+        auto tendency = context.clearedSpatialTendency();
+        const auto R = fields.shape.first*fields.shape.second*fields.shape.third;
+        const auto horizontalCount = fields.shape.first*fields.shape.second;
+        for (std::size_t index = 0; index < horizontalCount; ++index) {
+            tendency.data[index] = -drag_*fields.data[index];
+            tendency.data[R+index] = -drag_*fields.data[R+index];
+        }
+        return context.projectSpatialTendency({tendency.data,tendency.shape});
+    }
     std::size_t persistentBytes() const noexcept override { return sizeof(*this)+metadataDynamicBytes(); }
 private:
     double drag_ = 0.0;
@@ -372,9 +411,19 @@ WVKernelStatus createQuadraticBottomFriction(
     std::unique_ptr<WVForcing>& forcing) {
     const auto* values = realValues(entry.configuration,"Cd");
     if (values == nullptr || values->size() != 1 || !std::isfinite(values->front()) || values->front() < 0.0) return {WVKernelStatusCode::invalidConfiguration,"Quadratic drag coefficient must be one finite nonnegative scalar."};
-    const auto& configuration = descriptor.configuration();
-    const double dz = configuration.Lz/static_cast<double>(configuration.Nz-1);
-    forcing = std::make_unique<QuadraticBottomFrictionForcing>(entry,values->front()/(0.5*dz));
+    forcing = std::make_unique<QuadraticBottomFrictionForcing>(entry,values->front()/descriptor.bottomQuadratureWeight());
+    return WVKernelStatus::ok();
+}
+
+WVKernelStatus createLinearBottomFriction(
+    const WVFrozenForcingEntry& entry,
+    const WVTransformConstantStratificationDescriptor& descriptor, bool,
+    std::unique_ptr<WVForcing>& forcing) {
+    const auto* values = realValues(entry.configuration,"r");
+    if (values == nullptr || values->size() != 1 || !std::isfinite(values->front()) || values->front() < 0.0) return {WVKernelStatusCode::invalidConfiguration,"Linear drag rate must be one finite nonnegative scalar."};
+    const auto Nz = descriptor.configuration().Nz;
+    const double scaledRate = 2.0*static_cast<double>(Nz-1)*values->front();
+    forcing = std::make_unique<LinearBottomFrictionForcing>(entry,scaledRate);
     return WVKernelStatus::ok();
 }
 
@@ -600,6 +649,7 @@ WVKernelStatus WVConstantStratificationForcingEngine::ensurePhysicalFields(
             auto status = kernel_->transformWaveVortexToUVW(state,*externalFields);
             if (!status) return status;
             externalFieldsPrepared = true;
+            ++metrics_.physicalFieldReconstructionCount;
         }
         fields = {externalFields->data,externalFields->shape};
         return WVKernelStatus::ok();
@@ -610,32 +660,43 @@ WVKernelStatus WVConstantStratificationForcingEngine::ensurePhysicalFields(
         const auto status = kernel_->transformWaveVortexToUVWEta(state,mutableFields);
         if (!status) return status;
         physicalFieldsValid_ = true;
+        ++metrics_.physicalFieldReconstructionCount;
     }
     fields = {physicalFields_.data(),shape};
     return WVKernelStatus::ok();
 }
 
-WVKernelStatus WVConstantStratificationForcingEngine::computeQuadraticBottomFriction(
-    const WVState& state, double dragCoefficient, WVFlux& flux,
-    WVRealFieldBundleView* externalFields, bool& externalFieldsPrepared) {
-    WVRealFieldBundleConstView fields;
-    auto status = ensurePhysicalFields(state,fields,externalFields,externalFieldsPrepared);
-    if (!status) return status;
+WVRealFieldBundleView WVConstantStratificationForcingEngine::clearedSpatialTendency() {
     std::fill(forcingFields_.begin(),forcingFields_.end(),0.0);
     const auto& configuration = kernel_->descriptor().configuration();
-    const auto R = kernel_->descriptor().spatialShape().elementCount();
-    const auto horizontalCount = configuration.Nx*configuration.Ny;
-    for (std::size_t index = 0; index < horizontalCount; ++index) {
-        const double u = fields.data[index];
-        const double v = fields.data[R+index];
-        const double speed = std::sqrt(u*u+v*v);
-        forcingFields_[index] = -dragCoefficient*u*speed;
-        forcingFields_[R+index] = -dragCoefficient*v*speed;
-    }
-    WVMutableCoefficients coefficients{{flux.Fp.data,flux.Fp.shape},{flux.Fm.data,flux.Fm.shape},{flux.F0.data,flux.F0.shape}};
+    metrics_.spatialTendencyClearElementWrites += forcingFields_.size();
     const auto q = configuration.isHydrostatic ? 3U : 4U;
-    const WVRealFieldBundleConstView forcingFields{forcingFields_.data(),{configuration.Nx,configuration.Ny,configuration.Nz,q}};
-    return configuration.isHydrostatic ? kernel_->transformUVEtaToWaveVortex(forcingFields,state.t,state.t0,coefficients) : kernel_->transformUVWEtaToWaveVortex(forcingFields,state.t,state.t0,coefficients);
+    return {forcingFields_.data(),{configuration.Nx,configuration.Ny,configuration.Nz,q}};
+}
+
+WVKernelStatus WVConstantStratificationForcingEngine::projectSpatialTendency(
+    const WVState& state, const WVRealFieldBundleConstView& tendency,
+    WVFlux& flux) {
+    WVMutableCoefficients coefficients{{flux.Fp.data,flux.Fp.shape},{flux.Fm.data,flux.Fm.shape},{flux.F0.data,flux.F0.shape}};
+    ++metrics_.spatialTendencyProjectionCount;
+    return kernel_->descriptor().configuration().isHydrostatic ? kernel_->transformUVEtaToWaveVortex(tendency,state.t,state.t0,coefficients) : kernel_->transformUVWEtaToWaveVortex(tendency,state.t,state.t0,coefficients);
+}
+
+WVKernelStatus WVConstantStratificationForcingEngine::addProjectedSpatialTendency(
+    const WVState& state, const WVRealFieldBundleConstView& tendency,
+    WVFlux& flux, bool& outputInitialized) {
+    if (!outputInitialized) {
+        const auto status = projectSpatialTendency(state,tendency,flux);
+        if (status) outputInitialized = true;
+        return status;
+    }
+    auto temporary = fluxViews(temporaryFlux_,kernel_->descriptor().spectralShape());
+    const auto status = projectSpatialTendency(state,tendency,temporary);
+    if (!status) return status;
+    addFlux(temporary,flux);
+    metrics_.temporaryAccumulationElementReads += 2*temporaryFlux_.size();
+    metrics_.temporaryAccumulationElementWrites += temporaryFlux_.size();
+    return WVKernelStatus::ok();
 }
 
 WVKernelStatus WVConstantStratificationForcingEngine::addAdaptiveDamping(
@@ -701,15 +762,17 @@ void WVConstantStratificationForcingEngine::initializeOutputWithZeros(WVFlux& fl
     outputInitialized = true;
 }
 
-WVKernelStatus WVConstantStratificationForcingEngine::addCompleteFlux(
+WVKernelStatus WVConstantStratificationForcingEngine::addNonlinearFlux(
     const WVState& state, WVFlux& flux, bool& outputInitialized,
-    WVRealFieldBundleView* externalFields, bool& externalFieldsPrepared,
-    bool quadratic, double dragCoefficient) {
+    WVRealFieldBundleView* externalFields, bool& externalFieldsPrepared) {
     const auto evaluate = [&](WVFlux& destination) {
-        if (quadratic) return computeQuadraticBottomFriction(state,dragCoefficient,destination,externalFields,externalFieldsPrepared);
         if (externalFields == nullptr) return kernel_->nonlinearFlux(state,destination);
+        const bool reconstructsFields = !externalFieldsPrepared;
         auto status = externalFieldsPrepared ? kernel_->nonlinearFluxUsingAdvectionFields(state,destination,{externalFields->data,externalFields->shape}) : kernel_->nonlinearFluxWithAdvectionFields(state,destination,*externalFields);
-        if (status) externalFieldsPrepared = true;
+        if (status) {
+            externalFieldsPrepared = true;
+            if (reconstructsFields) ++metrics_.physicalFieldReconstructionCount;
+        }
         return status;
     };
     if (!outputInitialized) {
@@ -727,11 +790,21 @@ WVKernelStatus WVConstantStratificationForcingEngine::addCompleteFlux(
 }
 
 WVKernelStatus WVForcingExecutionContext::nonlinearAdvection() {
-    return engine_->addCompleteFlux(*state_,*flux_,*outputInitialized_,externalFields_,*externalFieldsPrepared_,false,0.0);
+    return engine_->addNonlinearFlux(*state_,*flux_,*outputInitialized_,externalFields_,*externalFieldsPrepared_);
 }
 
-WVKernelStatus WVForcingExecutionContext::quadraticBottomFriction(double dragCoefficient) {
-    return engine_->addCompleteFlux(*state_,*flux_,*outputInitialized_,externalFields_,*externalFieldsPrepared_,true,dragCoefficient);
+WVKernelStatus WVForcingExecutionContext::physicalFields(
+    WVRealFieldBundleConstView& fields) {
+    return engine_->ensurePhysicalFields(*state_,fields,externalFields_,*externalFieldsPrepared_);
+}
+
+WVRealFieldBundleView WVForcingExecutionContext::clearedSpatialTendency() {
+    return engine_->clearedSpatialTendency();
+}
+
+WVKernelStatus WVForcingExecutionContext::projectSpatialTendency(
+    const WVRealFieldBundleConstView& tendency) {
+    return engine_->addProjectedSpatialTendency(*state_,tendency,*flux_,*outputInitialized_);
 }
 
 WVKernelStatus WVForcingExecutionContext::adaptiveDamping(const std::vector<double>& values) {

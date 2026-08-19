@@ -547,6 +547,10 @@ WVModelIntegratorKind WVModel::integratorKind() const noexcept {
   return impl_->integratorKind;
 }
 
+const std::string &WVModel::forcingScheduleIdentifier() const noexcept {
+  return impl_->system->scheduleIdentifier();
+}
+
 WVModelMetrics WVModel::metrics(const WVModelState *state) const noexcept {
   WVModelMetrics result;
   result.modelPersistentBytes = sizeof(*this) + sizeof(Impl);

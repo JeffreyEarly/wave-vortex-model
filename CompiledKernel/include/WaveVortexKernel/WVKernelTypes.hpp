@@ -219,6 +219,7 @@ public:
     std::size_t Nkl() const noexcept { return fourierModes_.size(); }
     WVShape2D spectralShape() const noexcept { return {configuration_.Nj, Nkl()}; }
     WVShape3D spatialShape() const noexcept { return {configuration_.Nx, configuration_.Ny, configuration_.Nz}; }
+    double bottomQuadratureWeight() const noexcept { return configuration_.Lz/(2.0*static_cast<double>(configuration_.Nz-1)); }
     std::size_t persistentBytes() const noexcept;
 
 private:
