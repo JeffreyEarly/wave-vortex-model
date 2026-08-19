@@ -15,7 +15,7 @@ namespace wavevortex::runtime {
 enum class WVModelOutputPolicy : std::uint8_t { create, replace, append };
 
 // Provisional, developer-facing configuration for one MATLAB-shaped evenly
-// spaced output group. This builder owns names and identifiers only until
+// spaced output group. This builder owns one canonical record only until
 // WVModelOutputConfiguration::build() resolves and consumes the graph.
 // Runtime scheduling remains owned by WVOutputPlan.
 class WVModelOutputGroup final {
@@ -33,12 +33,18 @@ public:
                                      WVModelOutputGroup &group,
                                      std::string identifier = {});
 
+  // Construct an arbitrary canonical group without translating its schedule
+  // through the evenly-spaced convenience API.
+  static WVKernelStatus fromRecord(WVOutputGroupRecord record,
+                                   WVModelOutputGroup &group);
+
   // Add one authoritative observer identifier. Duplicate membership fails.
   WVKernelStatus addObservingSystem(std::string observerIdentifier);
   // Mark this group as the file's complete restart group.
   WVKernelStatus containsCompleteCoefficientRestart(bool value);
-  // Supply an append cursor for validation against persisted progress.
-  WVKernelStatus committedOrdinal(WVOutputScheduleOrdinal value);
+  // Supply complete source schedule state for segmented continuation.
+  WVKernelStatus
+  scheduleContinuation(WVOutputScheduleCursor continuation);
 
   const std::string &name() const noexcept { return record_.name; }
   const std::string &identifier() const noexcept { return record_.identifier; }
@@ -53,8 +59,8 @@ public:
 
 private:
   WVOutputGroupRecord record_;
-  WVOutputScheduleOrdinal committedOrdinal_ = WVNoCommittedOutputOrdinal;
-  bool hasExplicitProgress_ = false;
+  WVOutputScheduleCursor continuation_;
+  bool hasExplicitContinuation_ = false;
   bool sealed_ = false;
 
   friend class WVModelOutputFile;
@@ -112,8 +118,8 @@ private:
 };
 
 // Move-only compiled output configuration. The transient builders are not
-// retained. This object owns only the existing authoritative descriptor and
-// plan plus graph-wide policy and committed progress.
+// retained. This object owns the authoritative shared descriptor, its plan,
+// graph-wide policy, source continuations, and destination progress.
 class WVModelOutputConfiguration final {
 public:
   WVModelOutputConfiguration();
@@ -135,6 +141,19 @@ public:
         double initialTime, double finalTime,
         WVModelOutputConfiguration &configuration);
 
+  // Authoritative compiler for both builder-authored and NetCDF-restored
+  // canonical records. Builders are merely one producer of these records.
+  static WVKernelStatus compile(
+      WVPortableObserverRecord observerRecord,
+      std::vector<WVInspectedObservationSchema> observationSchemas,
+      std::vector<WVOutputScheduleContinuation> scheduleContinuations,
+      WVModelOutputPolicy policy,
+      std::shared_ptr<const WVExtensionCatalog> catalog, double initialTime,
+      double finalTime, WVModelOutputConfiguration &configuration,
+      const WVTransformConstantStratificationConfiguration
+          *planningConfiguration = nullptr,
+      bool isDynamicsLinear = false);
+
   // Construct the existing NetCDF sink according to the compiled graph-wide
   // policy. sampleSource is non-owning and must outlive the sink.
   WVCheckpointStatus openNetCDFSink(
@@ -146,7 +165,12 @@ public:
   const WVPortableObserverDescriptor &descriptor() const noexcept;
   const std::shared_ptr<const WVExtensionCatalog> &catalog() const noexcept;
   const WVOutputPlan &plan() const noexcept;
-  const std::vector<WVOutputGroupProgress> &progress() const noexcept;
+  const std::vector<WVOutputScheduleContinuation> &
+  scheduleContinuations() const noexcept;
+  const std::vector<WVOutputDestinationProgress> &
+  destinationProgress() const noexcept;
+  const std::vector<WVInspectedObservationSchema> &
+  observationSchemas() const noexcept;
   WVModelOutputPolicy policy() const noexcept;
   std::size_t persistentBytes() const noexcept;
 

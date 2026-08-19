@@ -260,7 +260,7 @@ WVObservationVariable fieldVariable(
 }
 
 WVKernelStatus buildLegacyOutputPlan(
-    const WVObservingSystem &implementation,
+    const std::string &typeIdentifier,
     const WVObserverRecord &observer,
     const WVObserverExecutionPlan &execution,
     const WVLegacyObserverOperationResolver &resolveOperation,
@@ -274,7 +274,7 @@ WVKernelStatus buildLegacyOutputPlan(
       "legacy-" + observer.identifier + "-observation-v1";
   plan.schema.preservesLegacyEncoding = true;
   plan.schema.metadata.attributes.push_back(
-      {"AnnotatedClass", implementation.typeIdentifier()});
+      {"AnnotatedClass", typeIdentifier});
   plan.schema.metadata.attributes.push_back(
       {"portableIdentifier", observer.identifier});
   if (!execution.persistedName.empty())
@@ -607,6 +607,49 @@ WVKernelStatus buildLegacyOutputPlan(
   return WVKernelStatus::ok();
 }
 
+using BuiltInExecutionPlanResolver = WVKernelStatus (*)(
+    const WVObserverRecord &, WVObserverExecutionPlan &);
+
+WVKernelStatus coefficientExecutionPlan(const WVObserverRecord &observer,
+                                        WVObserverExecutionPlan &plan) {
+  plan = {};
+  plan.persistedName = observer.name;
+  plan.outputFields = {"Ap", "Am", "A0"};
+  plan.coefficientRestartFamilies = plan.outputFields;
+  return WVKernelStatus::ok();
+}
+
+WVKernelStatus eulerianExecutionPlan(const WVObserverRecord &observer,
+                                     WVObserverExecutionPlan &plan) {
+  plan = {};
+  plan.fieldListAttribute = "fieldNames";
+  auto status = configuredText(observer, "fieldNames", observer.fieldNames,
+                               plan.outputFields);
+  if (!status)
+    return status;
+  for (const auto *family : {"Ap", "Am", "A0"})
+    if (std::find(observer.fieldNames.begin(), observer.fieldNames.end(),
+                  family) != observer.fieldNames.end())
+      plan.coefficientRestartFamilies.emplace_back(family);
+  return WVKernelStatus::ok();
+}
+
+WVKernelStatus trackedFieldExecutionPlan(const WVObserverRecord &observer,
+                                         WVObserverExecutionPlan &plan) {
+  plan = {};
+  plan.fieldListAttribute = "trackedFieldNames";
+  plan.persistedName = observer.name;
+  return configuredText(observer, "trackedFieldNames", observer.fieldNames,
+                        plan.outputFields);
+}
+
+WVKernelStatus tracerExecutionPlan(const WVObserverRecord &observer,
+                                   WVObserverExecutionPlan &plan) {
+  plan = {};
+  plan.persistedName = observer.name;
+  return WVKernelStatus::ok();
+}
+
 class BuiltInObservingSystem : public WVObservingSystem {
 public:
   BuiltInObservingSystem(std::string typeIdentifier,
@@ -630,7 +673,7 @@ public:
     const auto status = executionPlan(observer, execution);
     if (!status)
       return status;
-    return buildLegacyOutputPlan(*this, observer, execution,
+    return buildLegacyOutputPlan(typeIdentifier(), observer, execution,
                                  resolveOperation_, context, plan);
   }
   std::size_t persistentBytes() const noexcept override {
@@ -659,11 +702,7 @@ public:
                                &selectFullFieldOperation) {}
   WVKernelStatus executionPlan(const WVObserverRecord &observer,
                                WVObserverExecutionPlan &plan) const override {
-    plan = {};
-    plan.persistedName = observer.name;
-    plan.outputFields = {"Ap", "Am", "A0"};
-    plan.coefficientRestartFamilies = plan.outputFields;
-    return WVKernelStatus::ok();
+    return coefficientExecutionPlan(observer, plan);
   }
   WVKernelStatus validate(
       const WVObserverRecord &observer,
@@ -684,17 +723,7 @@ public:
                                &selectFullFieldOperation) {}
   WVKernelStatus executionPlan(const WVObserverRecord &observer,
                                WVObserverExecutionPlan &plan) const override {
-    plan = {};
-    plan.fieldListAttribute = "fieldNames";
-    auto status = configuredText(observer, "fieldNames", observer.fieldNames,
-                                 plan.outputFields);
-    if (!status)
-      return status;
-    for (const auto *family : {"Ap", "Am", "A0"})
-      if (std::find(observer.fieldNames.begin(), observer.fieldNames.end(),
-                    family) != observer.fieldNames.end())
-        plan.coefficientRestartFamilies.emplace_back(family);
-    return WVKernelStatus::ok();
+    return eulerianExecutionPlan(observer, plan);
   }
   WVKernelStatus validate(
       const WVObserverRecord &observer,
@@ -711,11 +740,7 @@ public:
                                &selectFixedVerticalProfileOperation) {}
   WVKernelStatus executionPlan(const WVObserverRecord &observer,
                                WVObserverExecutionPlan &plan) const override {
-    plan = {};
-    plan.fieldListAttribute = "trackedFieldNames";
-    plan.persistedName = observer.name;
-    return configuredText(observer, "trackedFieldNames", observer.fieldNames,
-                          plan.outputFields);
+    return trackedFieldExecutionPlan(observer, plan);
   }
   WVKernelStatus validate(
       const WVObserverRecord &observer,
@@ -740,11 +765,7 @@ public:
                                &selectMovingPositionOperation) {}
   WVKernelStatus executionPlan(const WVObserverRecord &observer,
                                WVObserverExecutionPlan &plan) const override {
-    plan = {};
-    plan.fieldListAttribute = "trackedFieldNames";
-    plan.persistedName = observer.name;
-    return configuredText(observer, "trackedFieldNames", observer.fieldNames,
-                          plan.outputFields);
+    return trackedFieldExecutionPlan(observer, plan);
   }
   WVKernelStatus bindIntegration(
       const WVObserverRecord &observer,
@@ -799,9 +820,7 @@ public:
                                &selectIntegratedStateOperation) {}
   WVKernelStatus executionPlan(const WVObserverRecord &observer,
                                WVObserverExecutionPlan &plan) const override {
-    plan = {};
-    plan.persistedName = observer.name;
-    return WVKernelStatus::ok();
+    return tracerExecutionPlan(observer, plan);
   }
   WVKernelStatus bindIntegration(
       const WVObserverRecord &observer,
@@ -840,7 +859,20 @@ WVKernelStatus addBuiltInObserverFactories(
   const auto add = [&](std::string identity, auto constructor,
                        LegacyConfigurationPopulator populate,
                        WVLegacyObserverOperationResolver resolveOperation,
+                       BuiltInExecutionPlanResolver resolveExecutionPlan,
                        WVLegacyObserverPersistenceMetadata persistence) {
+    WVObserverOutputPlanResolver resolveOutputPlan =
+        [identity, resolveOperation, resolveExecutionPlan](
+            const WVObserverRecord &observer,
+            const WVObserverOutputPlanningContext &context,
+            WVObserverOutputPlan &plan) {
+          WVObserverExecutionPlan execution;
+          auto status = resolveExecutionPlan(observer, execution);
+          if (!status)
+            return status;
+          return buildLegacyOutputPlan(identity, observer, execution,
+                                       resolveOperation, context, plan);
+        };
     return builder.addObserverFactory(
         {std::move(identity), WVPortablePairContractVersion,
          [constructor](const WVObserverRecord &,
@@ -859,31 +891,37 @@ WVKernelStatus addBuiltInObserverFactories(
            return resolveLegacyConfiguration(observer, populate,
                                              configuration);
          },
-         std::move(resolveOperation), std::move(persistence)});
+         std::move(resolveOperation), std::move(persistence),
+         std::move(resolveOutputPlan)});
   };
   auto status = add("WVCoefficients", [](const auto &configuration) {
     return std::make_shared<WVCoefficientsImplementation>(configuration);
   }, &populateCoefficientConfiguration, &selectFullFieldOperation,
+  &coefficientExecutionPlan,
   {{}, {"Ap", "Am", "A0"}, "coefficients", false});
   if (!status) return status;
   status = add("WVEulerianFields", [](const auto &configuration) {
     return std::make_shared<WVEulerianFieldsImplementation>(configuration);
   }, &populateEulerianConfiguration, &selectFullFieldOperation,
+  &eulerianExecutionPlan,
   {"fieldNames", {}, "eulerian-fields", true});
   if (!status) return status;
   status = add("WVMooring", [](const auto &configuration) {
     return std::make_shared<WVMooringImplementation>(configuration);
   }, &populateMooringConfiguration, &selectFixedVerticalProfileOperation,
+  &trackedFieldExecutionPlan,
   {"trackedFieldNames", {}, {}, false});
   if (!status) return status;
   status = add("WVLagrangianParticles", [](const auto &configuration) {
     return std::make_shared<WVLagrangianParticlesImplementation>(configuration);
   }, &populateParticleConfiguration, &selectMovingPositionOperation,
+  &trackedFieldExecutionPlan,
   {"trackedFieldNames", {}, {}, false});
   if (!status) return status;
   return add("WVTracer", [](const auto &configuration) {
     return std::make_shared<WVTracerImplementation>(configuration);
   }, &populateTracerConfiguration, &selectIntegratedStateOperation,
+  &tracerExecutionPlan,
   {});
 }
 

@@ -271,6 +271,7 @@ struct DeliveredRoute {
   WVOutputEventKind kind = WVOutputEventKind::acceptedEndpoint;
   const WVObserverRecord *firstObserver = nullptr;
   double firstCoefficientReal = 0.0;
+  WVOutputScheduleCursor proposedCursor;
 };
 
 class RecordingSink final : public WVOutputSink {
@@ -291,7 +292,11 @@ public:
         {event.eventOrdinal, route.fileOrdinal, route.groupOrdinal,
          route.scheduleOrdinal, event.scheduledTime, event.kind,
          route.observerCount ? route.observers[0].record : nullptr,
-         event.state.waveVortex.coefficients.Ap.data[0].real});
+         event.state.waveVortex.coefficients.Ap.data[0].real,
+         {route.scheduleOrdinal,
+          route.proposedScheduleCursor == nullptr
+              ? WVPortableTypedRecord{}
+              : *route.proposedScheduleCursor}});
     if (failAtAttempt == attempts)
       return {failureCode, failureMessage};
     result.writeCount = route.observerCount;
@@ -586,7 +591,7 @@ void testSegmentedContinuation(Context &context) {
   WVOutputPlan secondPlan;
   require(static_cast<bool>(WVOutputPlan::create(
               context.descriptor, test::extensionCatalog(), 0.5, 1.0,
-              firstDriver.committedProgress(),
+              firstDriver.committedContinuations(),
               secondPlan)),
           "second segment plan");
   require(secondPlan.eventCount() > 0 &&
@@ -619,9 +624,12 @@ void testSegmentedContinuation(Context &context) {
   require(static_cast<bool>(
               secondDriver.advanceToTime(fixture.state, 1.0, 0.2, secondSink)),
           "second segment delivery");
-  require(secondDriver.committedProgress()[0].committedOrdinal == 4 &&
-              secondDriver.committedProgress()[1].committedOrdinal == 2 &&
-              secondDriver.committedProgress()[2].committedOrdinal == 1,
+  require(secondDriver.committedContinuations()[0]
+                      .cursor.committedOrdinal == 4 &&
+              secondDriver.committedContinuations()[1]
+                      .cursor.committedOrdinal == 2 &&
+              secondDriver.committedContinuations()[2]
+                      .cursor.committedOrdinal == 1,
           "segmented committed progress");
 }
 
@@ -719,15 +727,15 @@ void testPreflightAndMalformedProgress(Context &context) {
                   reentrantDriver.metrics().generatedRouteCount,
           "reentrant sink preflight is rejected while outer run succeeds");
 
-  auto malformed = plan.initialProgress();
+  auto malformed = plan.initialContinuations();
   malformed[0].fileIdentifier = "wrong";
   WVOutputPlan ignored;
   status =
       WVOutputPlan::create(context.descriptor, test::extensionCatalog(), 0.0, 1.0, malformed, ignored);
   require(status.code == WVKernelStatusCode::invalidConfiguration,
           "misnamed progress rejected");
-  malformed = plan.initialProgress();
-  malformed[0].committedOrdinal = 3;
+  malformed = plan.initialContinuations();
+  malformed[0].cursor.committedOrdinal = 3;
   status =
       WVOutputPlan::create(context.descriptor, test::extensionCatalog(), 0.0, 1.0, malformed, ignored);
   require(status.code == WVKernelStatusCode::invalidConfiguration,
@@ -986,11 +994,68 @@ void testLazyQuadraticSchedule() {
   require(static_cast<bool>(status) && longer.persistentBytes() == retained,
           "lazy schedule storage is independent of future event count");
 
-  WVOutputGroupProgress progress{record.outputFiles[0].identifier,
-                                 record.outputFiles[0].groups[0].identifier, 2};
-  progress.scheduleCursor.schemaIdentifier = "quadratic-cursor-v1";
-  progress.scheduleCursor.schemaVersion = 1;
-  progress.scheduleCursor.values.push_back(
+  WVIntegrationStateLayout retryLayout;
+  require(static_cast<bool>(WVIntegrationStateLayout::create(
+              {1, 1}, descriptor, retryLayout)),
+          "quadratic retry layout");
+  LinearSystem retrySystem(std::move(retryLayout));
+  StateFixture retryState(retrySystem.stateLayout());
+  WVFixedStepRK4 retryIntegrator(retrySystem, {true});
+  require(static_cast<bool>(
+              retryIntegrator.prepareStateAfterRestart(retryState.state)),
+          "quadratic retry integrator preparation");
+  RecordingSink retrySink;
+  retrySink.failAtAttempt = 2;
+  WVOutputDriver retryDriver(retryIntegrator, longer);
+  status = retryDriver.advanceToTime(retryState.state, 9.0, 2.0, retrySink);
+  require(!status && retryDriver.hasPendingDelivery() &&
+              retryDriver.committedContinuations()[0]
+                      .cursor.committedOrdinal == 0 &&
+              retryDriver.committedContinuations()[0]
+                      .cursor.values.value("nextOrdinal") != nullptr,
+          "algorithmic route failure changed its committed destination "
+          "cursor");
+  const auto failedCursor = retrySink.delivered.back().proposedCursor;
+  retrySink.failAtAttempt = std::numeric_limits<std::size_t>::max();
+  status = retryDriver.advanceToTime(retryState.state, 9.0, 2.0, retrySink);
+  require(static_cast<bool>(status) && !retryDriver.hasPendingDelivery(),
+          "algorithmic route retry did not complete");
+  std::size_t firstSuccessfulAttempts = 0;
+  std::vector<WVOutputScheduleCursor> retriedCursors;
+  for (const auto &delivery : retrySink.delivered) {
+    if (delivery.scheduleOrdinal == 0)
+      ++firstSuccessfulAttempts;
+    if (delivery.scheduleOrdinal == 1)
+      retriedCursors.push_back(delivery.proposedCursor);
+  }
+  const auto sameTypedCursor = [](const WVOutputScheduleCursor &left,
+                                  const WVOutputScheduleCursor &right) {
+    if (left.committedOrdinal != right.committedOrdinal ||
+        left.values.schemaIdentifier != right.values.schemaIdentifier ||
+        left.values.schemaVersion != right.values.schemaVersion ||
+        left.values.values.size() != right.values.values.size())
+      return false;
+    for (std::size_t index = 0; index < left.values.values.size(); ++index) {
+      const auto &a = left.values.values[index];
+      const auto &b = right.values.values[index];
+      if (a.name != b.name || a.dimensions != b.dimensions ||
+          a.storage != b.storage)
+        return false;
+    }
+    return true;
+  };
+  require(firstSuccessfulAttempts == 1 && retriedCursors.size() == 2 &&
+              sameTypedCursor(failedCursor, retriedCursors[0]) &&
+              sameTypedCursor(retriedCursors[0], retriedCursors[1]),
+          "algorithmic retry repeated a successful route or changed the full "
+          "typed cursor replay");
+
+  WVOutputScheduleContinuation progress{
+      record.outputFiles[0].identifier,
+      record.outputFiles[0].groups[0].identifier, {2, {}}};
+  progress.cursor.values.schemaIdentifier = "quadratic-cursor-v1";
+  progress.cursor.values.schemaVersion = 1;
+  progress.cursor.values.values.push_back(
       {"nextOrdinal", {}, std::vector<std::int64_t>{3}});
   WVOutputPlan resumed;
   status = WVOutputPlan::create(descriptor, test::extensionCatalog(), 4.0, 9.0, {progress}, resumed);
@@ -998,7 +1063,7 @@ void testLazyQuadraticSchedule() {
               resumed.event(0).scheduledTime == 9.0,
           "quadratic cursor resumes from a large committed ordinal");
 
-  progress.scheduleCursor.values[0].storage =
+  progress.cursor.values.values[0].storage =
       std::vector<std::int64_t>(1024, 3);
   status = WVOutputPlan::create(descriptor, test::extensionCatalog(), 4.0, 9.0, {progress}, resumed);
   require(!status, "oversized or malformed cursors fail preflight");

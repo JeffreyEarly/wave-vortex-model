@@ -347,6 +347,205 @@ readObserverStateAtTime(const std::string &filePath,
   return WVCheckpointStatus::ok();
 }
 
+struct RestartStateLocation {
+  const WVOutputFileRecord *file = nullptr;
+  const WVOutputGroupRecord *group = nullptr;
+  std::size_t recordIndex = 0;
+};
+
+std::string restartStateLocation(const RestartStateLocation &location) {
+  return location.file->destination + "/" + location.group->name;
+}
+
+WVCheckpointStatus inspectRestartSlab(const RestartStateLocation &location,
+                                      const std::string &name) {
+  detail::WVNetCDFFile file;
+  auto result = detail::WVNetCDFFile::openReadOnly(
+      location.file->destination, file);
+  if (!result)
+    return result;
+  int group = -1;
+  const auto path = restartStateLocation(location);
+  result = detail::checkedNetCDF(
+      nc_inq_ncid(file.id(), location.group->name.c_str(), &group),
+      "Observer restart-group lookup", path);
+  if (!result)
+    return result;
+  std::vector<std::string> dimensionNames;
+  std::vector<std::size_t> dimensionLengths;
+  result = variableShape(group, name, dimensionNames, dimensionLengths, path);
+  if (!result)
+    return result;
+  if (dimensionNames.empty() || dimensionNames.front() != "t" ||
+      location.recordIndex >= dimensionLengths.front())
+    return failure(WVCheckpointStatusCode::shapeMismatch,
+                   "Dynamic observer values must begin with time.",
+                   path + "/" + name);
+  return WVCheckpointStatus::ok();
+}
+
+WVCheckpointStatus compareRestartSlabs(
+    const RestartStateLocation &left, const RestartStateLocation &right,
+    const std::string &name) {
+  detail::WVNetCDFFile leftFile;
+  detail::WVNetCDFFile rightFile;
+  auto result = detail::WVNetCDFFile::openReadOnly(left.file->destination,
+                                                   leftFile);
+  if (!result)
+    return result;
+  result = detail::WVNetCDFFile::openReadOnly(right.file->destination,
+                                              rightFile);
+  if (!result)
+    return result;
+  int leftGroup = -1;
+  int rightGroup = -1;
+  const auto leftPath = restartStateLocation(left);
+  const auto rightPath = restartStateLocation(right);
+  result = detail::checkedNetCDF(
+      nc_inq_ncid(leftFile.id(), left.group->name.c_str(), &leftGroup),
+      "Observer restart-group lookup", leftPath);
+  if (!result)
+    return result;
+  result = detail::checkedNetCDF(
+      nc_inq_ncid(rightFile.id(), right.group->name.c_str(), &rightGroup),
+      "Observer restart-group lookup", rightPath);
+  if (!result)
+    return result;
+  int leftVariable = -1;
+  int rightVariable = -1;
+  result = detail::checkedNetCDF(
+      nc_inq_varid(leftGroup, name.c_str(), &leftVariable),
+      "Dynamic observer-state lookup", leftPath + "/" + name);
+  if (!result)
+    return result;
+  result = detail::checkedNetCDF(
+      nc_inq_varid(rightGroup, name.c_str(), &rightVariable),
+      "Dynamic observer-state lookup", rightPath + "/" + name);
+  if (!result)
+    return result;
+  std::vector<std::string> leftNames;
+  std::vector<std::string> rightNames;
+  std::vector<std::size_t> leftDimensions;
+  std::vector<std::size_t> rightDimensions;
+  result = variableShape(leftGroup, name, leftNames, leftDimensions, leftPath);
+  if (!result)
+    return result;
+  result =
+      variableShape(rightGroup, name, rightNames, rightDimensions, rightPath);
+  if (!result)
+    return result;
+  if (leftNames != rightNames || leftNames.empty() ||
+      leftNames.front() != "t" || leftDimensions.size() != rightDimensions.size() ||
+      !std::equal(leftDimensions.begin() + 1, leftDimensions.end(),
+                  rightDimensions.begin() + 1) ||
+      left.recordIndex >= leftDimensions.front() ||
+      right.recordIndex >= rightDimensions.front())
+    return failure(WVCheckpointStatusCode::ambiguousState,
+                   "Dynamic observer state has incompatible shapes across "
+                   "output groups.",
+                   leftPath + " and " + rightPath);
+
+  if (leftDimensions.size() == 1) {
+    const std::size_t leftIndex[] = {left.recordIndex};
+    const std::size_t rightIndex[] = {right.recordIndex};
+    double leftValue = 0.0;
+    double rightValue = 0.0;
+    result = detail::checkedNetCDF(
+        nc_get_var1_double(leftGroup, leftVariable, leftIndex, &leftValue),
+        "Dynamic observer-state read", leftPath + "/" + name);
+    if (!result)
+      return result;
+    result = detail::checkedNetCDF(
+        nc_get_var1_double(rightGroup, rightVariable, rightIndex, &rightValue),
+        "Dynamic observer-state read", rightPath + "/" + name);
+    if (!result)
+      return result;
+    const double scale =
+        std::max({1.0, std::abs(leftValue), std::abs(rightValue)});
+    if (!std::isfinite(leftValue) || !std::isfinite(rightValue) ||
+        std::abs(leftValue - rightValue) >
+            32 * std::numeric_limits<double>::epsilon() * scale)
+      return failure(WVCheckpointStatusCode::ambiguousState,
+                     "Dynamic observer state conflicts across output groups.",
+                     leftPath + " and " + rightPath);
+    return WVCheckpointStatus::ok();
+  }
+
+  constexpr std::size_t maximumChunkElements = 4096;
+  const std::size_t lastDimension = leftDimensions.size() - 1;
+  const std::size_t innerCount = leftDimensions[lastDimension];
+  std::size_t outerCount = 1;
+  for (std::size_t dimension = 1; dimension < lastDimension; ++dimension)
+    outerCount *= leftDimensions[dimension];
+  std::vector<double> leftValues(std::min(innerCount, maximumChunkElements));
+  std::vector<double> rightValues(leftValues.size());
+  std::vector<std::size_t> leftStart(leftDimensions.size(), 0);
+  std::vector<std::size_t> rightStart(rightDimensions.size(), 0);
+  std::vector<std::size_t> count(leftDimensions.size(), 1);
+  leftStart.front() = left.recordIndex;
+  rightStart.front() = right.recordIndex;
+  for (std::size_t outer = 0; outer < outerCount; ++outer) {
+    std::size_t remainder = outer;
+    for (std::size_t dimension = lastDimension; dimension-- > 1;) {
+      leftStart[dimension] = remainder % leftDimensions[dimension];
+      rightStart[dimension] = leftStart[dimension];
+      remainder /= leftDimensions[dimension];
+    }
+    for (std::size_t offset = 0; offset < innerCount;
+         offset += maximumChunkElements) {
+      const auto chunk =
+          std::min(maximumChunkElements, innerCount - offset);
+      leftStart[lastDimension] = offset;
+      rightStart[lastDimension] = offset;
+      count[lastDimension] = chunk;
+      result = detail::checkedNetCDF(
+          nc_get_vara_double(leftGroup, leftVariable, leftStart.data(),
+                             count.data(), leftValues.data()),
+          "Dynamic observer-state read", leftPath + "/" + name);
+      if (!result)
+        return result;
+      result = detail::checkedNetCDF(
+          nc_get_vara_double(rightGroup, rightVariable, rightStart.data(),
+                             count.data(), rightValues.data()),
+          "Dynamic observer-state read", rightPath + "/" + name);
+      if (!result)
+        return result;
+      for (std::size_t index = 0; index < chunk; ++index) {
+        const double scale =
+            std::max({1.0, std::abs(leftValues[index]),
+                      std::abs(rightValues[index])});
+        if (!std::isfinite(leftValues[index]) ||
+            !std::isfinite(rightValues[index]) ||
+            std::abs(leftValues[index] - rightValues[index]) >
+                32 * std::numeric_limits<double>::epsilon() * scale)
+          return failure(
+              WVCheckpointStatusCode::ambiguousState,
+              "Dynamic observer state conflicts across output groups.",
+              leftPath + " and " + rightPath);
+      }
+    }
+  }
+  return WVCheckpointStatus::ok();
+}
+
+WVCheckpointStatus readRestartConfigurationSlab(
+    const RestartStateLocation &location, const std::string &name,
+    std::vector<double> &values) {
+  detail::WVNetCDFFile file;
+  auto result = detail::WVNetCDFFile::openReadOnly(
+      location.file->destination, file);
+  if (!result)
+    return result;
+  int group = -1;
+  const auto path = restartStateLocation(location);
+  result = detail::checkedNetCDF(
+      nc_inq_ncid(file.id(), location.group->name.c_str(), &group),
+      "Observer restart-group lookup", path);
+  if (!result)
+    return result;
+  return readLatestRealSlab(group, name, location.recordIndex, values, path);
+}
+
 WVCheckpointStatus readWholeDoubleVariable(int group, const std::string &name,
                                            std::vector<double> &values,
                                            const std::string &path) {
@@ -439,57 +638,39 @@ WVCheckpointStatus parseObserver(int outputGroup, int metadataGroup,
         "Observation-schema version read", outputPath);
     if (!result)
       return result;
-    unsigned int observerVersion = WVPortablePairContractVersion;
-    const int versionInquiry = nc_inq_att(
-        metadataGroup, NC_GLOBAL, "portableObserverContractVersion", nullptr,
-        nullptr);
-    if (versionInquiry == NC_NOERR) {
-      result = detail::checkedNetCDF(
-          nc_get_att_uint(metadataGroup, NC_GLOBAL,
-                          "portableObserverContractVersion", &observerVersion),
-          "Observer contract-version read", outputPath);
-      if (!result)
-        return result;
-    } else if (versionInquiry != NC_ENOTATT) {
-      return detail::netcdfFailure(versionInquiry,
-                                   "Observer contract-version inspection",
-                                   outputPath);
-    }
+    unsigned int observerVersion = 0;
+    result = detail::checkedNetCDF(
+        nc_get_att_uint(metadataGroup, NC_GLOBAL,
+                        "portableObserverContractVersion", &observerVersion),
+        "Observer contract-version read", outputPath);
+    if (!result)
+      return result;
     observer.contractVersion = observerVersion;
     std::string encodedConfiguration;
-    bool hasConfiguration = false;
-    result = optionalTextAttribute(metadataGroup,
-                                   "portableObserverConfiguration",
-                                   encodedConfiguration, hasConfiguration,
-                                   outputPath);
+    result = detail::readTextAttribute(metadataGroup,
+                                       "portableObserverConfiguration",
+                                       encodedConfiguration, outputPath);
     if (!result)
       return result;
-    if (hasConfiguration) {
-      std::vector<std::uint8_t> configurationBytes;
-      if (!hexDecode(encodedConfiguration, configurationBytes))
-        return failure(WVCheckpointStatusCode::invalidValue,
-                       "Portable observer configuration is malformed.",
-                       outputPath);
-      const auto decoded = decodePortableTypedRecord(
-          configurationBytes, observer.configuration,
-          {1024 * 1024, true, true});
-      if (!decoded)
-        return failure(WVCheckpointStatusCode::invalidValue, decoded.message,
-                       outputPath);
-    }
-    result = optionalTextAttribute(metadataGroup, "name", observer.name,
-                                   present, outputPath);
+    std::vector<std::uint8_t> configurationBytes;
+    if (!hexDecode(encodedConfiguration, configurationBytes))
+      return failure(WVCheckpointStatusCode::invalidValue,
+                     "Portable observer configuration is malformed.",
+                     outputPath);
+    const auto decoded = decodePortableTypedRecord(
+        configurationBytes, observer.configuration,
+        {1024 * 1024, true, true});
+    if (!decoded)
+      return failure(WVCheckpointStatusCode::invalidValue, decoded.message,
+                     outputPath);
+    result = detail::readTextAttribute(metadataGroup, "name", observer.name,
+                                       outputPath);
     if (!result)
       return result;
-    if (!present)
-      observer.name = className;
-    result = optionalTextAttribute(metadataGroup, "portableIdentifier",
-                                   observer.identifier, present, outputPath);
+    result = detail::readTextAttribute(metadataGroup, "portableIdentifier",
+                                       observer.identifier, outputPath);
     if (!result)
       return result;
-    if (!present)
-      observer.identifier = portableIdentifier(schemaIdentifier + "-" +
-                                               observer.name);
     identifier = observer.identifier;
     return mergeObserver(portable, std::move(observer));
   }
@@ -852,6 +1033,112 @@ bool legacyObservationAttributeMatches(std::string_view name,
          (expected == "z position of particle" &&
           observed ==
               "z coordinate, recorded along the particle trajectory");
+}
+
+WVCheckpointStatus inspectPersistedObserverRestartState(
+    const std::vector<WVOutputFileRecord> &files,
+    std::vector<WVObserverRecord> &observers, double selectedTime,
+    const WVExtensionCatalog &catalog) {
+  for (auto &observer : observers) {
+    const auto *registration = catalog.observers().registration(
+        observer.typeIdentifier, observer.contractVersion);
+    if (registration == nullptr || !registration->legacyOperationResolver ||
+        observer.stateBlockIdentifiers.empty())
+      continue;
+    std::vector<std::string> stateVariables;
+    std::string fixedConfigurationVariable;
+    WVLegacyObserverOperationBinder operations;
+    const auto noDynamicState = [] { return WVKernelStatus::ok(); };
+    operations.fullField = noDynamicState;
+    operations.fixedVerticalProfiles = noDynamicState;
+    operations.fixedPositions = noDynamicState;
+    operations.movingPositions = [&] {
+      const auto channels = particlePositionChannels(observer.isXYOnly);
+      stateVariables.reserve(channels.size());
+      for (const auto channel : channels)
+        stateVariables.push_back(
+            observer.name + "_" + movingFieldChannelName(channel));
+      if (observer.isXYOnly && !observer.z.empty())
+        fixedConfigurationVariable = observer.name + "_z";
+      return WVKernelStatus::ok();
+    };
+    operations.integratedState = [&] {
+      stateVariables = {observer.name};
+      return WVKernelStatus::ok();
+    };
+    const auto operationStatus =
+        registration->legacyOperationResolver(observer, operations);
+    if (!operationStatus)
+      return failure(WVCheckpointStatusCode::unsupportedObserver,
+                     operationStatus.message,
+                     "/observingSystems/" + observer.identifier);
+    if (stateVariables.empty())
+      continue;
+
+    RestartStateLocation reference;
+    bool foundReference = false;
+    for (const auto &fileRecord : files) {
+      for (const auto &groupRecord : fileRecord.groups) {
+        if (std::find(groupRecord.observerIdentifiers.begin(),
+                      groupRecord.observerIdentifiers.end(),
+                      observer.identifier) ==
+            groupRecord.observerIdentifiers.end())
+          continue;
+        WVNetCDFFile file;
+        auto result = WVNetCDFFile::openReadOnly(fileRecord.destination, file);
+        if (!result)
+          return result;
+        int group = -1;
+        const std::string groupPath = "/" + groupRecord.name;
+        result = checkedNetCDF(
+            nc_inq_ncid(file.id(), groupRecord.name.c_str(), &group),
+            "Observer restart-group lookup", groupPath);
+        if (!result)
+          return result;
+        RestartStateLocation candidate{&fileRecord, &groupRecord, 0};
+        bool found = false;
+        result = recordAtTime(group, selectedTime, candidate.recordIndex, found,
+                              groupPath);
+        if (!result)
+          return result;
+        if (!found)
+          continue;
+        if (!foundReference) {
+          for (const auto &name : stateVariables) {
+            result = inspectRestartSlab(candidate, name);
+            if (!result)
+              return result;
+          }
+          if (!fixedConfigurationVariable.empty()) {
+            result = readRestartConfigurationSlab(
+                candidate, fixedConfigurationVariable, observer.z);
+            if (!result)
+              return result;
+          }
+          reference = candidate;
+          foundReference = true;
+          continue;
+        }
+        for (const auto &name : stateVariables) {
+          result = compareRestartSlabs(reference, candidate, name);
+          if (!result)
+            return result;
+        }
+        if (!fixedConfigurationVariable.empty()) {
+          result = compareRestartSlabs(reference, candidate,
+                                       fixedConfigurationVariable);
+          if (!result)
+            return result;
+        }
+      }
+    }
+    if (!foundReference)
+      return failure(WVCheckpointStatusCode::missingVariable,
+                     "No output group contains required dynamic observer "
+                     "state at the selected restart time.",
+                     "/observingSystems/" + observer.identifier);
+  }
+  return WVCheckpointStatus::ok();
 }
 
 WVCheckpointStatus resolvePersistedObserverRestartState(

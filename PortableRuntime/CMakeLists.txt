@@ -196,6 +196,10 @@ if(BUILD_TESTING)
             -Wall -Wextra -Wpedantic -Werror)
     endif()
     add_test(NAME extended-runner-composition COMMAND TestWVExtendedRunner)
+    target_compile_definitions(TestWVModelOutputNetCDF PRIVATE
+        WV_RUNTIME_EXTENDED_RUNNER="$<TARGET_FILE:TestWVExtendedRunner>"
+    )
+    add_dependencies(TestWVModelOutputNetCDF TestWVExtendedRunner)
 
     add_executable(TestWVRunRequest
         tests/TestWVRunRequest.cpp

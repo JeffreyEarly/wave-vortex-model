@@ -67,6 +67,55 @@ if(NOT direct_system_create EQUAL -1)
     message(FATAL_ERROR "The standalone CLI bypasses the WVModel façade.")
 endif()
 
+file(READ "${WV_REPOSITORY_ROOT}/PortableRuntime/src/WVModel.cpp" model)
+foreach(token "addNewEvenlySpacedOutputGroup" "WVModelOutputGroup::evenlySpaced")
+    string(FIND "${model}" "${token}" position)
+    if(NOT position EQUAL -1)
+        message(FATAL_ERROR
+            "WVModel translates restored output records through a schedule-specific builder: ${token}")
+    endif()
+endforeach()
+string(FIND "${model}" "WVModelOutputConfiguration::compile" record_compiler)
+if(record_compiler EQUAL -1)
+    message(FATAL_ERROR
+        "WVModel does not route restored records through the authoritative output compiler.")
+endif()
+string(FIND "${model}" "WVOutputDriver driver(" local_output_driver)
+if(NOT local_output_driver EQUAL -1)
+    message(FATAL_ERROR
+        "WVModel destroys retry state by constructing a call-local output driver.")
+endif()
+
+file(READ "${WV_REPOSITORY_ROOT}/PortableRuntime/src/WVModelOutputConfiguration.cpp" output_compiler)
+string(FIND "${output_compiler}" "resolveOutputPlan" schema_preflight)
+string(FIND "${output_compiler}" "WVPortableObserverDescriptor::create" observer_construction)
+if(schema_preflight EQUAL -1 OR observer_construction EQUAL -1 OR
+   schema_preflight GREATER observer_construction)
+    message(FATAL_ERROR
+        "Canonical schema preflight must precede observer-provider construction.")
+endif()
+
+file(READ "${WV_REPOSITORY_ROOT}/PortableRuntime/src/WVModelOutputNetCDFReader.cpp" output_reader)
+string(FIND "${output_reader}" "maximumValidationChunkElements = 4096" bounded_payload_validation)
+string(FIND "${output_reader}" "slab(slabSize)" state_sized_payload_validation)
+string(FIND "${output_reader}" "resolveOutputPlan" raw_schema_resolution)
+if(bounded_payload_validation EQUAL -1 OR
+   NOT state_sized_payload_validation EQUAL -1 OR
+   NOT raw_schema_resolution EQUAL -1)
+    message(FATAL_ERROR
+        "Raw output inspection must retain bounded data-only payload validation.")
+endif()
+
+foreach(relative_path
+        "PortableRuntime/src/WVModelOutputNetCDFWriter.cpp"
+        "PortableRuntime/src/WVObserverOutputEvaluationService.cpp")
+    file(READ "${WV_REPOSITORY_ROOT}/${relative_path}" source)
+    if(source MATCHES "WVPortableObserverRecord[ \t\r\n]+descriptor(Record)?[ \t\r\n]*;")
+        message(FATAL_ERROR
+            "${relative_path} retains a duplicate compiled observer/output graph.")
+    endif()
+endforeach()
+
 file(READ "${WV_REPOSITORY_ROOT}/CompiledKernel/adapters/native-fftw/wv_compiled_backend_mex.cpp" mex_gateway)
 string(FIND "${mex_gateway}" "std::unique_ptr<WVModel>" model_owner)
 string(FIND "${mex_gateway}" "std::unique_ptr<WVTransformConstantStratificationKernel>" kernel_owner)

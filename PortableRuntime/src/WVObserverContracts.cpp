@@ -372,11 +372,10 @@ WVPortableObserverDescriptor::create(const WVPortableObserverRecord &record,
             !groupNames.insert(group.name).second)
           return invalid("Duplicate output-group identifier or name in " +
                          file.identifier + ".");
-        std::shared_ptr<const WVOutputSchedule> scheduleImplementation;
-        auto scheduleStatus = catalog->outputSchedules().resolve(
-            group.schedule, scheduleImplementation);
-        if (!scheduleStatus)
-          return scheduleStatus;
+        if (catalog->outputSchedules().registration(group.schedule) == nullptr)
+          return {WVKernelStatusCode::unsupportedOperation,
+                  "No output-schedule implementation is available for output "
+                  "group " + group.identifier + "."};
         std::set<std::string> groupObservers;
         for (const auto &identifier : group.observerIdentifiers) {
           if (observerIdentifiers.find(identifier) == observerIdentifiers.end())

@@ -1,5 +1,6 @@
 #include "WaveVortexRuntime/WVModelOutputConfiguration.hpp"
 #include "WVTestExtensionCatalog.hpp"
+#include "WVTestQuadraticSchedule.hpp"
 
 #include <chrono>
 #include <cstdlib>
@@ -148,6 +149,14 @@ bool sameOutputGraph(const std::vector<WVOutputFileRecord> &left,
       const auto &a = left[file].groups[group];
       const auto &b = right[file].groups[group];
       if (a.identifier != b.identifier || a.name != b.name ||
+          a.schedule.typeIdentifier != b.schedule.typeIdentifier ||
+          a.schedule.contractVersion != b.schedule.contractVersion ||
+          a.schedule.configuration.schemaIdentifier !=
+              b.schedule.configuration.schemaIdentifier ||
+          a.schedule.configuration.schemaVersion !=
+              b.schedule.configuration.schemaVersion ||
+          a.schedule.configuration.values.size() !=
+              b.schedule.configuration.values.size() ||
           a.schedule.outputInterval != b.schedule.outputInterval ||
           a.schedule.initialTime != b.schedule.initialTime ||
           a.schedule.finalTime != b.schedule.finalTime ||
@@ -155,6 +164,14 @@ bool sameOutputGraph(const std::vector<WVOutputFileRecord> &left,
           a.containsCompleteCoefficientRestart !=
               b.containsCompleteCoefficientRestart)
         return false;
+      for (std::size_t value = 0;
+           value < a.schedule.configuration.values.size(); ++value) {
+        const auto &av = a.schedule.configuration.values[value];
+        const auto &bv = b.schedule.configuration.values[value];
+        if (av.name != bv.name || av.dimensions != bv.dimensions ||
+            av.storage != bv.storage)
+          return false;
+      }
     }
   }
   return true;
@@ -218,13 +235,14 @@ void testStructuralCompilation() {
   auto *stable = files.front().outputGroupWithName("wave-vortex");
   require(stable != nullptr, "group lookup failed");
   WVModelOutputGroup extra;
-  auto status = WVModelOutputGroup::evenlySpaced(
-      "diagnostics", 0.5, checkpoint.state.t, checkpoint.state.t + 2.0,
-      extra, "diagnostics");
+  WVOutputGroupRecord diagnosticRecord{
+      "diagnostics", "diagnostics", {},
+      {"fields", "mooring", "particles", "tracer"}, false};
+  diagnosticRecord.schedule = test::quadraticSchedule(
+      checkpoint.state.t + 2.0, checkpoint.state.t, 0.5);
+  auto status =
+      WVModelOutputGroup::fromRecord(std::move(diagnosticRecord), extra);
   require(static_cast<bool>(status), status.message);
-  for (const auto *observer : {"fields", "mooring", "particles", "tracer"})
-    require(static_cast<bool>(extra.addObservingSystem(observer)),
-            "failed to configure diagnostic group");
   status = files.front().addOutputGroup(std::move(extra));
   require(static_cast<bool>(status), status.message);
   require(stable == files.front().outputGroupWithName("wave-vortex"),
@@ -253,7 +271,8 @@ void testStructuralCompilation() {
          true},
         {"diagnostics",
          "diagnostics",
-         {0.5, checkpoint.state.t, checkpoint.state.t + 2.0},
+         test::quadraticSchedule(checkpoint.state.t + 2.0,
+                                 checkpoint.state.t, 0.5),
          {"fields", "mooring", "particles", "tracer"},
          false}}},
       {"second",
@@ -278,13 +297,12 @@ void testStructuralCompilation() {
               configuration.plan().metrics().groupCount == 3 &&
               configuration.plan().metrics().distinctObserverCount == 5,
           "compiled plan does not match the builder graph");
-  require(configuration.plan().eventCount() == 5,
+  require(configuration.plan().eventCount() == 4,
           "coincident bounded schedule event count changed");
   const std::vector<double> expectedTimes{
       checkpoint.state.t, checkpoint.state.t + 0.5,
-      checkpoint.state.t + 1.0, checkpoint.state.t + 1.5,
-      checkpoint.state.t + 2.0};
-  const std::vector<std::size_t> expectedRouteCounts{3, 1, 3, 1, 3};
+      checkpoint.state.t + 1.0, checkpoint.state.t + 2.0};
+  const std::vector<std::size_t> expectedRouteCounts{3, 1, 2, 3};
   for (std::size_t event = 0; event < expectedTimes.size(); ++event)
     require(configuration.plan().event(event).scheduledTime ==
                     expectedTimes[event] &&
@@ -378,7 +396,7 @@ void testCreateReplaceAndAppendPolicies() {
                                    checkpoint.state.t + 2.0, false);
   require(static_cast<bool>(
               wrongProgress.outputGroupWithName("wave-vortex")
-                  ->committedOrdinal(1)),
+                  ->scheduleContinuation({1, {}})),
           "explicit append progress setup failed");
   files.push_back(std::move(wrongProgress));
   status = WVModelOutputConfiguration::build(
@@ -430,8 +448,14 @@ void testCreateReplaceAndAppendPolicies() {
       record, std::move(files), WVModelOutputPolicy::append,
       test::extensionCatalog(), checkpoint.state.t, checkpoint.state.t + 2.0, append);
   require(static_cast<bool>(status), status.message);
-  require(append.progress().size() == 1 &&
-              append.progress().front().committedOrdinal == 0,
+  require(append.scheduleContinuations().size() == 1 &&
+              append.scheduleContinuations()
+                      .front()
+                      .cursor.committedOrdinal == 0 &&
+              append.destinationProgress().size() == 1 &&
+              append.destinationProgress()
+                      .front()
+                      .committedScheduleCursor.committedOrdinal == 0,
           "append progress was not recovered");
   persistence = append.openNetCDFSink({test::extensionCatalog(), checkpoint, false}, layout, nullptr,
                                       sink);

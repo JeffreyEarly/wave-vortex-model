@@ -14,19 +14,40 @@
 
 namespace wavevortex::runtime {
 
-// Caller-owned continuation cursor for one named output group. Ordinals are
-// anchored to the group's original initialTime + ordinal*outputInterval
-// lattice, not to the start of a segmented integration.
-struct WVOutputGroupProgress {
-  WVOutputGroupProgress() = default;
-  WVOutputGroupProgress(std::string file, std::string group,
-                        WVOutputScheduleOrdinal ordinal)
+// Complete schedule state from which one group resumes. This is independent
+// of records already committed in any particular output destination.
+struct WVOutputScheduleContinuation {
+  WVOutputScheduleContinuation() = default;
+  WVOutputScheduleContinuation(std::string file, std::string group,
+                               WVOutputScheduleCursor value)
       : fileIdentifier(std::move(file)), groupIdentifier(std::move(group)),
-        committedOrdinal(ordinal) {}
+        cursor(std::move(value)) {}
   std::string fileIdentifier;
   std::string groupIdentifier;
-  WVOutputScheduleOrdinal committedOrdinal = WVNoCommittedOutputOrdinal;
-  WVPortableTypedRecord scheduleCursor;
+  WVOutputScheduleCursor cursor;
+};
+
+// One sink-owned unlimited-axis offset. physicalCount is retained separately
+// so a partially committed ragged destination cannot be mistaken for valid
+// schedule continuation state.
+struct WVOutputDestinationAxisProgress {
+  std::string axisIdentifier;
+  std::size_t committedCount = 0;
+  std::size_t physicalCount = 0;
+};
+
+// Complete commit state of one destination group. The schedule cursor stored
+// with the last committed record is evidence about that destination; it is
+// never used as the execution continuation unless the compiler first proves
+// that the two complete typed cursors agree.
+struct WVOutputDestinationProgress {
+  std::string fileIdentifier;
+  std::string groupIdentifier;
+  std::size_t recordCount = 0;
+  bool hasCommittedTime = false;
+  double lastCommittedTime = 0.0;
+  WVOutputScheduleCursor committedScheduleCursor;
+  std::vector<WVOutputDestinationAxisProgress> unlimitedAxes;
 };
 
 // A shared observer identity resolved once by the output plan. The same
@@ -94,7 +115,8 @@ public:
   static WVKernelStatus
   create(const WVPortableObserverDescriptor &descriptor,
          std::shared_ptr<const WVExtensionCatalog> catalog, double initialTime,
-         double finalTime, const std::vector<WVOutputGroupProgress> &progress,
+         double finalTime,
+         const std::vector<WVOutputScheduleContinuation> &continuations,
          WVOutputPlan &plan);
   static WVKernelStatus
   createExplicit(const WVIntegrationStateLayout &layout,
@@ -112,7 +134,8 @@ public:
   // orchestration never calls these methods or retains the full window.
   std::size_t eventCount() const noexcept;
   WVOutputPlannedEventView event(std::size_t index) const noexcept;
-  const std::vector<WVOutputGroupProgress> &initialProgress() const noexcept;
+  const std::vector<WVOutputScheduleContinuation> &
+  initialContinuations() const noexcept;
   const WVOutputPlanMetrics &metrics() const noexcept;
   const WVIntegrationStateLayout &stateLayout() const noexcept;
   std::size_t persistentBytes() const noexcept;
@@ -245,7 +268,8 @@ public:
                                double finalTime, double initialStepSize,
                                WVOutputSink &sink);
 
-  const std::vector<WVOutputGroupProgress> &committedProgress() const noexcept;
+  const std::vector<WVOutputScheduleContinuation> &
+  committedContinuations() const noexcept;
   const std::vector<WVOutputDeliveryRecord> &records() const noexcept;
   const WVOutputDriverMetrics &metrics() const noexcept;
   bool hasPendingDelivery() const noexcept;

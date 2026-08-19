@@ -1,5 +1,6 @@
 #include "WaveVortexRuntime/WVModelOutputConfiguration.hpp"
 #include "WaveVortexRuntime/WVExtensionCatalog.hpp"
+#include "WaveVortexRuntime/WVObserverOutputProvider.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -46,6 +47,9 @@ std::string stableIdentifier(const std::string &prefix,
   return stream.str();
 }
 
+bool sameTypedRecord(const WVPortableTypedRecord &left,
+                     const WVPortableTypedRecord &right) noexcept;
+
 bool sameSchedule(const WVOutputScheduleRecord &left,
                   const WVOutputScheduleRecord &right) noexcept {
   if (left.outputInterval != right.outputInterval ||
@@ -84,6 +88,7 @@ bool sameObserver(const WVObserverRecord &left,
   return left.identifier == right.identifier && left.name == right.name &&
          left.typeIdentifier == right.typeIdentifier &&
          left.contractVersion == right.contractVersion &&
+         sameTypedRecord(left.configuration, right.configuration) &&
          left.stateBlockIdentifiers == right.stateBlockIdentifiers &&
          left.fieldNames == right.fieldNames && left.x == right.x &&
          left.y == right.y && left.z == right.z &&
@@ -137,16 +142,64 @@ bool sameGraph(const WVPortableObserverRecord &left,
   return true;
 }
 
-bool sameProgress(const std::vector<WVOutputGroupProgress> &left,
-                  const std::vector<WVOutputGroupProgress> &right) noexcept {
+bool sameTypedRecord(const WVPortableTypedRecord &left,
+                     const WVPortableTypedRecord &right) noexcept {
+  if (left.schemaIdentifier != right.schemaIdentifier ||
+      left.schemaVersion != right.schemaVersion ||
+      left.values.size() != right.values.size())
+    return false;
+  for (std::size_t index = 0; index < left.values.size(); ++index) {
+    const auto &a = left.values[index];
+    const auto &b = right.values[index];
+    if (a.name != b.name || a.dimensions != b.dimensions ||
+        a.storage != b.storage)
+      return false;
+  }
+  return true;
+}
+
+bool sameCursor(const WVOutputScheduleCursor &left,
+                const WVOutputScheduleCursor &right) noexcept {
+  return left.committedOrdinal == right.committedOrdinal &&
+         sameTypedRecord(left.values, right.values);
+}
+
+bool sameObservationSchema(const WVObservationSchema &left,
+                           const WVObservationSchema &right) noexcept {
+  std::vector<std::uint8_t> leftBytes;
+  std::vector<std::uint8_t> rightBytes;
+  return encodeObservationSchemaManifest(left, leftBytes) &&
+         encodeObservationSchemaManifest(right, rightBytes) &&
+         leftBytes == rightBytes;
+}
+
+bool sameObservationSchemas(
+    const std::vector<WVInspectedObservationSchema> &left,
+    const std::vector<WVInspectedObservationSchema> &right) noexcept {
   if (left.size() != right.size())
     return false;
   for (std::size_t index = 0; index < left.size(); ++index)
-    if (left[index].fileIdentifier != right[index].fileIdentifier ||
-        left[index].groupIdentifier != right[index].groupIdentifier ||
-        left[index].committedOrdinal != right[index].committedOrdinal)
+    if (left[index].observerIdentifier != right[index].observerIdentifier ||
+        !sameObservationSchema(left[index].schema, right[index].schema))
       return false;
   return true;
+}
+
+bool validIdentifier(const std::string &value) noexcept {
+  return !value.empty() &&
+         std::all_of(value.begin(), value.end(), [](unsigned char character) {
+           return (character >= 'a' && character <= 'z') ||
+                  (character >= 'A' && character <= 'Z') ||
+                  (character >= '0' && character <= '9') || character == '-' ||
+                  character == '_' || character == '.';
+         });
+}
+
+bool sameTime(double first, double second) noexcept {
+  const double tolerance =
+      8.0 * std::numeric_limits<double>::epsilon() *
+      std::max({1.0, std::abs(first), std::abs(second)});
+  return std::abs(first - second) <= tolerance;
 }
 
 } // namespace
@@ -164,6 +217,16 @@ WVKernelStatus WVModelOutputGroup::evenlySpaced(
   candidate.record_.name = std::move(name);
   candidate.record_.identifier = std::move(identifier);
   candidate.record_.schedule = {outputInterval, initialTime, finalTime};
+  group = std::move(candidate);
+  return WVKernelStatus::ok();
+}
+
+WVKernelStatus WVModelOutputGroup::fromRecord(WVOutputGroupRecord record,
+                                              WVModelOutputGroup &group) {
+  if (record.name.empty())
+    return invalid("An output group record requires a name.");
+  WVModelOutputGroup candidate;
+  candidate.record_ = std::move(record);
   group = std::move(candidate);
   return WVKernelStatus::ok();
 }
@@ -190,14 +253,14 @@ WVModelOutputGroup::containsCompleteCoefficientRestart(bool value) {
   return WVKernelStatus::ok();
 }
 
-WVKernelStatus
-WVModelOutputGroup::committedOrdinal(WVOutputScheduleOrdinal value) {
+WVKernelStatus WVModelOutputGroup::scheduleContinuation(
+    WVOutputScheduleCursor continuation) {
   if (sealed_)
     return invalid("The output group is sealed.");
-  if (value < WVNoCommittedOutputOrdinal)
-    return invalid("A committed output ordinal cannot be less than -1.");
-  committedOrdinal_ = value;
-  hasExplicitProgress_ = true;
+  if (continuation.committedOrdinal < WVNoCommittedOutputOrdinal)
+    return invalid("An output schedule ordinal cannot be less than -1.");
+  continuation_ = std::move(continuation);
+  hasExplicitContinuation_ = true;
   return WVKernelStatus::ok();
 }
 
@@ -327,7 +390,9 @@ public:
   std::shared_ptr<const WVExtensionCatalog> catalog;
   WVPortableObserverDescriptor descriptor;
   WVOutputPlan plan;
-  std::vector<WVOutputGroupProgress> progress;
+  std::vector<WVOutputScheduleContinuation> scheduleContinuations;
+  std::vector<WVOutputDestinationProgress> destinationProgress;
+  std::vector<WVInspectedObservationSchema> observationSchemas;
   WVModelOutputPolicy policy = WVModelOutputPolicy::create;
 };
 
@@ -350,29 +415,14 @@ WVKernelStatus WVModelOutputConfiguration::build(
   if (files.empty())
     return invalid("At least one output file is required.");
   try {
-    std::set<std::string> destinations;
-    std::set<std::string> fileIdentifiers;
     observerRecord.outputFiles.clear();
-    std::vector<WVOutputGroupProgress> explicitProgress;
-    bool hasAnyExplicitProgress = false;
-    bool hasAnyImplicitProgress = false;
-    std::vector<std::string> appendPaths;
+    std::vector<WVOutputScheduleContinuation> continuations;
+    bool hasAnyExplicitContinuation = false;
+    bool hasAnyImplicitContinuation = false;
     for (auto &file : files) {
       if (file.sealed_)
         return invalid("An output file builder was already consumed.");
       file.destination_ = normalizedDestination(file.destination_);
-      if (!destinations.insert(file.destination_).second)
-        return invalid("Output destinations must be unique across the graph.");
-      if (!fileIdentifiers.insert(file.identifier_).second)
-        return invalid("Output file identifiers must be unique.");
-      const bool exists = std::filesystem::exists(file.destination_);
-      if (policy == WVModelOutputPolicy::create && exists)
-        return invalid("Create policy requires every destination to be absent.");
-      if ((policy == WVModelOutputPolicy::replace ||
-           policy == WVModelOutputPolicy::append) &&
-          !exists)
-        return invalid("Replace and append policies require every destination "
-                       "to exist.");
       WVOutputFileRecord record{file.identifier_, file.destination_, {}};
       for (auto &group : file.groups_) {
         if (group.sealed_)
@@ -381,55 +431,334 @@ WVKernelStatus WVModelOutputConfiguration::build(
           group.record_.identifier = stableIdentifier(
               "output-group", file.identifier_ + ":" + group.name());
         record.groups.push_back(group.record_);
-        explicitProgress.push_back({file.identifier_, group.identifier(),
-                                    group.committedOrdinal_});
-        hasAnyExplicitProgress |= group.hasExplicitProgress_;
-        hasAnyImplicitProgress |= !group.hasExplicitProgress_;
+        continuations.push_back({file.identifier_, group.identifier(),
+                                 group.continuation_});
+        hasAnyExplicitContinuation |= group.hasExplicitContinuation_;
+        hasAnyImplicitContinuation |= !group.hasExplicitContinuation_;
         group.sealed_ = true;
       }
       file.sealed_ = true;
       observerRecord.outputFiles.push_back(std::move(record));
-      appendPaths.push_back(file.destination_);
     }
-    if (hasAnyExplicitProgress && hasAnyImplicitProgress)
-      return invalid("Committed progress must be supplied for every output "
+    if (hasAnyExplicitContinuation && hasAnyImplicitContinuation)
+      return invalid("Schedule continuation must be supplied for every output "
                      "group or for none of them.");
+    files.clear();
+    if (!hasAnyExplicitContinuation)
+      continuations.clear();
+    return compile(std::move(observerRecord), {}, std::move(continuations),
+                   policy, std::move(catalog), initialTime, finalTime,
+                   configuration);
+  } catch (const std::bad_alloc &) {
+    return {WVKernelStatusCode::allocationFailure,
+            "Output configuration allocation failed."};
+  } catch (const std::exception &error) {
+    return invalid(std::string("Output configuration failed: ") + error.what());
+  }
+}
 
-    auto candidate = std::make_unique<Impl>();
-    candidate->catalog = std::move(catalog);
-    auto status = WVPortableObserverDescriptor::create(observerRecord,
-                                                        candidate->catalog,
-                                                        candidate->descriptor);
+WVKernelStatus WVModelOutputConfiguration::compile(
+    WVPortableObserverRecord observerRecord,
+    std::vector<WVInspectedObservationSchema> observationSchemas,
+    std::vector<WVOutputScheduleContinuation> scheduleContinuations,
+    WVModelOutputPolicy policy,
+    std::shared_ptr<const WVExtensionCatalog> catalog, double initialTime,
+    double finalTime, WVModelOutputConfiguration &configuration,
+    const WVTransformConstantStratificationConfiguration
+        *planningConfiguration,
+    bool isDynamicsLinear) {
+  if (!catalog)
+    return invalid("Output configuration requires an extension catalog.");
+  if (!std::isfinite(initialTime) || !std::isfinite(finalTime) ||
+      finalTime < initialTime)
+    return invalid("Output compilation requires a finite nondecreasing time "
+                   "interval.");
+  if (observerRecord.outputFiles.empty())
+    return invalid("At least one output file is required.");
+  try {
+    if (observerRecord.schemaIdentifier !=
+            WVPortableObserverContractIdentifier ||
+        observerRecord.schemaVersion != WVPortableObserverContractVersion)
+      return invalid("Unsupported portable observing-system contract schema.");
+
+    std::set<std::string> blockIdentifiers;
+    const WVStateBlockRecord *canonicalAp = nullptr;
+    for (const auto &block : observerRecord.stateBlocks) {
+      if (!validIdentifier(block.identifier) ||
+          !blockIdentifiers.insert(block.identifier).second)
+        return invalid("State-block identifiers must be unique portable "
+                       "identifiers.");
+      if (block.identifier == "Ap")
+        canonicalAp = &block;
+    }
+    if (canonicalAp == nullptr || canonicalAp->dimensions.size() != 2)
+      return invalid("Output compilation requires a canonical [Nj,Nkl] Ap "
+                     "state block.");
+    WVIntegrationStateLayout rawLayout;
+    auto status = WVIntegrationStateLayout::create(
+        {canonicalAp->dimensions[0], canonicalAp->dimensions[1]},
+        observerRecord, rawLayout);
     if (!status)
       return status;
 
+    std::set<std::string> observerIdentifiers;
+    for (auto &observer : observerRecord.observers) {
+      if (!validIdentifier(observer.identifier) || observer.name.empty() ||
+          !observerIdentifiers.insert(observer.identifier).second)
+        return invalid("Observer identifiers must be unique portable "
+                       "identifiers and observer names must be nonempty.");
+      if (catalog->observers().registration(observer.typeIdentifier,
+                                            observer.contractVersion) ==
+          nullptr)
+        return {WVKernelStatusCode::unsupportedOperation,
+                "Unsupported observing-system identity or contract version."};
+      WVPortableTypedRecord canonicalConfiguration;
+      status = catalog->observers().resolveConfiguration(
+          observer, canonicalConfiguration);
+      if (!status)
+        return status;
+      observer.configuration = std::move(canonicalConfiguration);
+      std::set<std::string> referencedBlocks;
+      for (const auto &identifier : observer.stateBlockIdentifiers)
+        if (blockIdentifiers.find(identifier) == blockIdentifiers.end() ||
+            !referencedBlocks.insert(identifier).second)
+          return invalid("Observer state-block references must be unique and "
+                         "resolve within the canonical graph.");
+    }
+
+    std::set<std::string> declaredSchemaObservers;
+    for (const auto &declared : observationSchemas) {
+      if (observerIdentifiers.find(declared.observerIdentifier) ==
+              observerIdentifiers.end() ||
+          !declaredSchemaObservers.insert(declared.observerIdentifier).second)
+        return invalid("Declared observation schemas must reference distinct "
+                       "canonical observers.");
+      status = validateObservationSchema(declared.schema);
+      if (!status)
+        return status;
+    }
+    if (!observationSchemas.empty()) {
+      if (planningConfiguration == nullptr)
+        return invalid("Declared observation schemas require a transform "
+                       "configuration for semantic preflight.");
+      WVObserverOutputPlanningContext planningContext;
+      planningContext.configuration = planningConfiguration;
+      planningContext.stateBlocks = observerRecord.stateBlocks.data();
+      planningContext.stateBlockCount = observerRecord.stateBlocks.size();
+      planningContext.isDynamicsLinear = isDynamicsLinear;
+      for (const auto &observer : observerRecord.observers) {
+        const auto declared = std::find_if(
+            observationSchemas.begin(), observationSchemas.end(),
+            [&](const auto &candidate) {
+              return candidate.observerIdentifier == observer.identifier;
+            });
+        if (declared == observationSchemas.end())
+          continue;
+        WVObserverOutputPlan plan;
+        status = catalog->observers().resolveOutputPlan(
+            observer, planningContext, plan);
+        if (!status)
+          return status;
+        status = validateObservationSchema(plan.schema);
+        if (!status)
+          return status;
+        if (!sameObservationSchema(declared->schema, plan.schema))
+          return invalid("The registered observer output plan differs from "
+                         "the canonical schema restored from NetCDF.");
+      }
+    }
+
+    std::set<std::string> destinations;
+    std::set<std::string> fileIdentifiers;
+    std::size_t groupCount = 0;
+    std::vector<std::string> destinationPaths;
+    for (auto &file : observerRecord.outputFiles) {
+      file.destination = normalizedDestination(file.destination);
+      if (!validIdentifier(file.identifier) ||
+          !fileIdentifiers.insert(file.identifier).second ||
+          !destinations.insert(file.destination).second)
+        return invalid("Output file identifiers and destinations must be "
+                       "unique and nonempty.");
+      std::error_code error;
+      const bool exists = std::filesystem::exists(file.destination, error);
+      if (error)
+        return invalid("An output destination cannot be inspected: " +
+                       error.message());
+      if (policy == WVModelOutputPolicy::create && exists)
+        return invalid("Create policy requires every destination to be absent.");
+      if (policy != WVModelOutputPolicy::create && !exists)
+        return invalid("Replace and append policies require every destination "
+                       "to exist.");
+      destinationPaths.push_back(file.destination);
+      std::set<std::string> groupIdentifiers;
+      std::set<std::string> groupNames;
+      std::size_t restartGroupCount = 0;
+      for (const auto &group : file.groups) {
+        if (!validIdentifier(group.identifier) || group.name.empty() ||
+            !groupIdentifiers.insert(group.identifier).second ||
+            !groupNames.insert(group.name).second)
+          return invalid("Output group identifiers and names must be unique "
+                         "within each file.");
+        std::set<std::string> groupObservers;
+        for (const auto &identifier : group.observerIdentifiers)
+          if (observerIdentifiers.find(identifier) == observerIdentifiers.end() ||
+              !groupObservers.insert(identifier).second)
+            return invalid("Output group observer membership must be unique "
+                           "and resolve within the canonical graph.");
+        restartGroupCount +=
+            group.containsCompleteCoefficientRestart ? 1U : 0U;
+        ++groupCount;
+      }
+      if (restartGroupCount != 1)
+        return invalid("Every output file must designate exactly one complete "
+                       "coefficient-restart group.");
+    }
+
+    WVModelOutputNetCDFInspection appendInspection;
+    std::vector<WVOutputDestinationProgress> destinationProgress;
     if (policy == WVModelOutputPolicy::append) {
-      WVModelOutputNetCDFInspection inspection;
-      const auto inspected =
-          WVModelOutputNetCDFSink::inspect(appendPaths, *candidate->catalog,
-                                           inspection);
+      const auto inspected = WVModelOutputNetCDFSink::inspect(
+          destinationPaths, *catalog, appendInspection);
       if (!inspected)
         return fromCheckpoint(inspected);
-      if (!sameGraph(observerRecord, inspection.observerRecord))
-        return invalid("Append destinations do not contain the configured "
-                       "observer and output graph.");
-      candidate->progress = inspection.progress;
-      if (hasAnyExplicitProgress &&
-          !sameProgress(candidate->progress, explicitProgress))
-        return invalid("Explicit committed ordinals do not match the append "
-                       "destinations.");
-    } else if (hasAnyExplicitProgress) {
-      candidate->progress = std::move(explicitProgress);
+      for (auto &observer : appendInspection.observerRecord.observers) {
+        WVPortableTypedRecord canonicalConfiguration;
+        status = catalog->observers().resolveConfiguration(
+            observer, canonicalConfiguration);
+        if (!status)
+          return status;
+        observer.configuration = std::move(canonicalConfiguration);
+      }
+      if (!sameGraph(observerRecord, appendInspection.observerRecord))
+        return invalid("Append destinations do not contain the complete "
+                       "configured observer and output graph.");
+      if (observationSchemas.empty())
+        observationSchemas = appendInspection.observationSchemas;
+      else if (!sameObservationSchemas(observationSchemas,
+                                       appendInspection.observationSchemas))
+        return invalid("Append destinations contain incompatible declared "
+                       "observation schemas.");
+      destinationProgress = appendInspection.destinationProgress;
+    } else {
+      destinationProgress.reserve(groupCount);
+      for (const auto &file : observerRecord.outputFiles)
+        for (const auto &group : file.groups) {
+          WVOutputDestinationProgress progress;
+          progress.fileIdentifier = file.identifier;
+          progress.groupIdentifier = group.identifier;
+          destinationProgress.push_back(std::move(progress));
+        }
     }
 
-    status = WVOutputPlan::create(candidate->descriptor, candidate->catalog,
-                                  initialTime, finalTime,
-                                  candidate->progress, candidate->plan);
+    if (scheduleContinuations.empty()) {
+      scheduleContinuations.reserve(groupCount);
+      std::size_t destinationIndex = 0;
+      for (const auto &file : observerRecord.outputFiles)
+        for (const auto &group : file.groups) {
+          WVOutputScheduleCursor cursor;
+          if (policy == WVModelOutputPolicy::append)
+            cursor = destinationProgress[destinationIndex]
+                         .committedScheduleCursor;
+          scheduleContinuations.push_back(
+              {file.identifier, group.identifier, std::move(cursor)});
+          ++destinationIndex;
+        }
+    }
+    if (scheduleContinuations.size() != groupCount ||
+        destinationProgress.size() != groupCount)
+      return invalid("Schedule continuation and destination progress must each "
+                     "contain one entry per output group.");
+
+    std::size_t groupIndex = 0;
+    for (const auto &file : observerRecord.outputFiles) {
+      for (const auto &group : file.groups) {
+        const auto &continuation = scheduleContinuations[groupIndex];
+        const auto &progress = destinationProgress[groupIndex];
+        if (continuation.fileIdentifier != file.identifier ||
+            continuation.groupIdentifier != group.identifier ||
+            progress.fileIdentifier != file.identifier ||
+            progress.groupIdentifier != group.identifier)
+          return invalid("Schedule continuation or destination progress does "
+                         "not match deterministic file/group order.");
+        std::shared_ptr<const WVOutputSchedule> schedule;
+        status = catalog->outputSchedules().resolve(group.schedule, schedule);
+        if (!status)
+          return status;
+        status = schedule->validateCursor(continuation.cursor);
+        if (!status)
+          return status;
+        double continuationCommittedTime = 0.0;
+        bool hasContinuationCommittedTime = false;
+        status = schedule->committedTime(continuation.cursor,
+                                         continuationCommittedTime,
+                                         hasContinuationCommittedTime);
+        if (!status)
+          return status;
+        if (hasContinuationCommittedTime &&
+            continuationCommittedTime > initialTime &&
+            !sameTime(continuationCommittedTime, initialTime))
+          return invalid("Schedule continuation lies beyond the selected "
+                         "restart time.");
+        if (policy == WVModelOutputPolicy::append) {
+          status = schedule->validateCursor(progress.committedScheduleCursor);
+          if (!status)
+            return status;
+          double destinationCommittedTime = 0.0;
+          bool hasDestinationCommittedTime = false;
+          status = schedule->committedTime(progress.committedScheduleCursor,
+                                           destinationCommittedTime,
+                                           hasDestinationCommittedTime);
+          if (!status)
+            return status;
+          if (!sameCursor(continuation.cursor,
+                          progress.committedScheduleCursor))
+            return invalid("Append schedule continuation cursor differs from "
+                           "the destination's complete typed cursor (source " +
+                           std::to_string(
+                               continuation.cursor.committedOrdinal) +
+                           ", destination " +
+                           std::to_string(progress.committedScheduleCursor
+                                              .committedOrdinal) +
+                           ").");
+          if (hasDestinationCommittedTime != progress.hasCommittedTime)
+            return invalid("Append schedule state and destination time-last "
+                           "marker availability differ.");
+          if (progress.hasCommittedTime &&
+              !sameTime(destinationCommittedTime,
+                        progress.lastCommittedTime))
+            return invalid("Append schedule time differs from the destination "
+                           "time-last commit marker.");
+          if ((progress.hasCommittedTime && progress.recordCount == 0) ||
+              (!progress.hasCommittedTime && progress.recordCount != 0))
+            return invalid("Append destination record count and time-last "
+                           "commit marker disagree.");
+          for (const auto &axis : progress.unlimitedAxes)
+            if (axis.committedCount != axis.physicalCount)
+              return invalid("Append ragged-axis committed and physical "
+                             "offsets differ.");
+        }
+        ++groupIndex;
+      }
+    }
+
+    // Runtime implementations are constructed only after every raw graph,
+    // cursor, destination, and append-progress check above has passed.
+    auto candidate = std::make_unique<Impl>();
+    candidate->catalog = std::move(catalog);
+    status = WVPortableObserverDescriptor::create(
+        observerRecord, candidate->catalog, candidate->descriptor);
     if (!status)
       return status;
-    candidate->progress = candidate->plan.initialProgress();
+    status = WVOutputPlan::create(candidate->descriptor, candidate->catalog,
+                                  initialTime, finalTime,
+                                  scheduleContinuations, candidate->plan);
+    if (!status)
+      return status;
+    candidate->scheduleContinuations =
+        candidate->plan.initialContinuations();
+    candidate->destinationProgress = std::move(destinationProgress);
+    candidate->observationSchemas = std::move(observationSchemas);
     candidate->policy = policy;
-    files.clear();
     configuration.impl_ = std::move(candidate);
     return WVKernelStatus::ok();
   } catch (const std::bad_alloc &) {
@@ -454,7 +783,8 @@ WVCheckpointStatus WVModelOutputConfiguration::openNetCDFSink(
         configuration, impl_->descriptor, stateLayout, sampleSource, sink);
   case WVModelOutputPolicy::append:
     return WVModelOutputNetCDFSink::openAppend(
-        configuration, impl_->descriptor, stateLayout, sampleSource, sink);
+        configuration, impl_->descriptor, stateLayout, sampleSource,
+        impl_->destinationProgress, sink);
   }
   return {WVCheckpointStatusCode::invalidValue,
           "Unsupported output policy.", {}};
@@ -474,9 +804,19 @@ const WVOutputPlan &WVModelOutputConfiguration::plan() const noexcept {
   return impl_->plan;
 }
 
-const std::vector<WVOutputGroupProgress> &
-WVModelOutputConfiguration::progress() const noexcept {
-  return impl_->progress;
+const std::vector<WVOutputScheduleContinuation> &
+WVModelOutputConfiguration::scheduleContinuations() const noexcept {
+  return impl_->scheduleContinuations;
+}
+
+const std::vector<WVOutputDestinationProgress> &
+WVModelOutputConfiguration::destinationProgress() const noexcept {
+  return impl_->destinationProgress;
+}
+
+const std::vector<WVInspectedObservationSchema> &
+WVModelOutputConfiguration::observationSchemas() const noexcept {
+  return impl_->observationSchemas;
 }
 
 WVModelOutputPolicy WVModelOutputConfiguration::policy() const noexcept {
@@ -487,12 +827,30 @@ std::size_t WVModelOutputConfiguration::persistentBytes() const noexcept {
   std::size_t bytes = sizeof(*this) + sizeof(Impl) +
                       impl_->descriptor.persistentBytes() +
                       impl_->plan.persistentBytes() +
-                      impl_->progress.capacity() * sizeof(WVOutputGroupProgress);
-  for (const auto &progress : impl_->progress)
+                      impl_->scheduleContinuations.capacity() *
+                          sizeof(WVOutputScheduleContinuation) +
+                      impl_->destinationProgress.capacity() *
+                          sizeof(WVOutputDestinationProgress) +
+                      impl_->observationSchemas.capacity() *
+                          sizeof(WVInspectedObservationSchema);
+  for (const auto &continuation : impl_->scheduleContinuations)
+    bytes += continuation.fileIdentifier.capacity() +
+             continuation.groupIdentifier.capacity() +
+             continuation.cursor.values.persistentBytes() -
+                 sizeof(WVPortableTypedRecord);
+  for (const auto &progress : impl_->destinationProgress) {
     bytes += progress.fileIdentifier.capacity() +
              progress.groupIdentifier.capacity() +
-             progress.scheduleCursor.persistentBytes() -
-                 sizeof(WVPortableTypedRecord);
+             progress.committedScheduleCursor.values.persistentBytes() -
+                 sizeof(WVPortableTypedRecord) +
+             progress.unlimitedAxes.capacity() *
+                 sizeof(WVOutputDestinationAxisProgress);
+    for (const auto &axis : progress.unlimitedAxes)
+      bytes += axis.axisIdentifier.capacity();
+  }
+  for (const auto &schema : impl_->observationSchemas)
+    bytes += schema.observerIdentifier.capacity() +
+             observationSchemaRetainedBytes(schema.schema);
   return bytes;
 }
 

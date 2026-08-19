@@ -121,7 +121,8 @@ makeQuadraticSchedule(const WVOutputScheduleRecord &record,
 }
 
 inline WVOutputScheduleRecord quadraticSchedule(double finalTime,
-                                                double initialTime = 0.0) {
+                                                double initialTime = 0.0,
+                                                double scale = 1.0) {
   WVOutputScheduleRecord result;
   result.typeIdentifier = quadraticScheduleType;
   result.contractVersion = 1;
@@ -129,7 +130,7 @@ inline WVOutputScheduleRecord quadraticSchedule(double finalTime,
   result.configuration.schemaVersion = 1;
   result.configuration.values = {
       {"anchor", {}, std::vector<double>{initialTime}},
-      {"scale", {}, std::vector<double>{1.0}},
+      {"scale", {}, std::vector<double>{scale}},
       {"finalTime", {}, std::vector<double>{finalTime}}};
   return result;
 }
