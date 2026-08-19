@@ -33,7 +33,11 @@ jobs:
 
       - name: Install NetCDF C development library
         run: |
-          sudo sed -i 's|http://azure.archive.ubuntu.com/ubuntu|https://archive.ubuntu.com/ubuntu|g' /etc/apt/sources.list.d/ubuntu.sources
+          for source_file in /etc/apt/sources.list.d/ubuntu.sources /etc/apt/apt-mirrors.txt; do
+            if [ -f "$source_file" ]; then
+              sudo sed -i 's|http://azure.archive.ubuntu.com/ubuntu|https://archive.ubuntu.com/ubuntu|g' "$source_file"
+            fi
+          done
           sudo apt-get -o Acquire::Retries=3 -o Acquire::https::Timeout=20 update
           sudo apt-get -o Acquire::Retries=3 -o Acquire::https::Timeout=20 install --yes libnetcdf-dev pkg-config
 
