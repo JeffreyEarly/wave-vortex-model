@@ -1,6 +1,6 @@
 #pragma once
 
-#include "WaveVortexKernel/WVForcingSchedule.hpp"
+#include "WaveVortexRuntime/WVForcingSchedule.hpp"
 #include "WaveVortexKernel/WVKernelTypes.hpp"
 
 #include <cstddef>

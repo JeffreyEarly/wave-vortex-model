@@ -1,7 +1,7 @@
 #pragma once
 
 #include "WaveVortexRuntime/WVIntegrationContracts.hpp"
-#include "WaveVortexKernel/WVForcingSchedule.hpp"
+#include "WaveVortexRuntime/WVForcing.hpp"
 #include "WaveVortexKernel/WVTransformConstantStratificationKernel.hpp"
 
 #include <memory>
@@ -83,27 +83,27 @@ public:
 
     const WVTransformConstantStratificationKernel& kernel() const noexcept { return *kernel_; }
     WVTransformConstantStratificationKernel& kernel() noexcept { return *kernel_; }
-    const WVFrozenForcingSchedule& schedule() const noexcept { return schedule_; }
     const WVForcingEngineMetrics& metrics() const noexcept { return metrics_; }
     const std::string& scheduleIdentifier() const noexcept { return scheduleIdentifier_; }
     std::size_t persistentBytes() const noexcept;
 
 private:
-    struct DerivedForcing;
     WVConstantStratificationForcingEngine() = default;
 
     WVKernelStatus initialize(const WVFrozenForcingSchedule& schedule);
     WVKernelStatus nonlinearFluxImpl(const WVState& state, WVFlux& flux, WVRealFieldBundleView* advectionFields, WVConstantStratificationRightHandSideContext* context);
     WVKernelStatus ensurePhysicalFields(const WVState& state, WVRealFieldBundleConstView& fields, WVRealFieldBundleView* externalFields, bool& externalFieldsPrepared);
-    WVKernelStatus computeQuadraticBottomFriction(const WVState& state, const DerivedForcing& forcing, WVFlux& flux, WVRealFieldBundleView* externalFields, bool& externalFieldsPrepared);
-    WVKernelStatus addAdaptiveDamping(const WVState& state, const DerivedForcing& forcing, WVFlux& flux, WVRealFieldBundleView* externalFields, bool& externalFieldsPrepared);
-    WVKernelStatus addPseudoTopographicGeneration(const WVState& state, const DerivedForcing& forcing, WVFlux& flux);
-    void addBetaPlaneAdvection(const WVState& state, const DerivedForcing& forcing, WVFlux& flux) const;
+    WVKernelStatus computeQuadraticBottomFriction(const WVState& state, double dragCoefficient, WVFlux& flux, WVRealFieldBundleView* externalFields, bool& externalFieldsPrepared);
+    WVKernelStatus addAdaptiveDamping(const WVState& state, const std::vector<double>& damping, WVFlux& flux, WVRealFieldBundleView* externalFields, bool& externalFieldsPrepared);
+    WVKernelStatus addPseudoTopographicGeneration(const WVState& state, const WVPseudoTopographicOperators& operators, WVFlux& flux);
+    void addBetaPlaneAdvection(const WVState& state, const std::vector<WVComplex64>& betaA0, WVFlux& flux) const;
+    WVKernelStatus addLinearCoefficientTendency(const WVState& state, double rate, WVFlux& flux) const;
+    void initializeOutputWithZeros(WVFlux& flux, bool& outputInitialized);
+    WVKernelStatus addCompleteFlux(const WVState& state, WVFlux& flux, bool& outputInitialized, WVRealFieldBundleView* externalFields, bool& externalFieldsPrepared, bool quadratic, double dragCoefficient);
     void clearEvaluationWorkspace() noexcept;
 
     std::unique_ptr<WVTransformConstantStratificationKernel> kernel_;
-    WVFrozenForcingSchedule schedule_;
-    std::vector<DerivedForcing> derivedForcing_;
+    std::vector<std::unique_ptr<WVForcing>> forcing_;
     std::vector<double> physicalFields_;
     std::vector<double> forcingFields_;
     std::vector<WVComplex64> temporaryFlux_;
@@ -112,6 +112,7 @@ private:
     bool physicalFieldsValid_ = false;
     bool executing_ = false;
     std::uint64_t evaluationGeneration_ = 0;
+    friend class WVForcingExecutionContext;
 };
 
 } // namespace wavevortex::runtime
