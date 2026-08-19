@@ -25,6 +25,31 @@ foreach(source IN LISTS observer_sources)
     endforeach()
 endforeach()
 
+set(generic_observation_consumers
+    "PortableRuntime/src/WVModelOutputNetCDFWriter.cpp"
+    "PortableRuntime/src/WVModelOutputNetCDFReader.cpp"
+    "PortableRuntime/src/WVOutputOrchestration.cpp"
+    "PortableRuntime/src/WVConstantStratificationIntegrationSystem.cpp")
+set(observer_kind_dispatch
+    "observerImplementation("
+    "recordsCoefficients("
+    "recordsEulerianFields("
+    "recordsFixedProfiles("
+    "recordsFixedPoints("
+    "recordsMovingParticles("
+    "recordsTracerState(")
+foreach(relative_path IN LISTS generic_observation_consumers)
+    file(READ "${WV_REPOSITORY_ROOT}/${relative_path}" contents)
+    foreach(token IN LISTS observer_kind_dispatch)
+        string(FIND "${contents}" "${token}" occurrence)
+        if(NOT occurrence EQUAL -1)
+            message(FATAL_ERROR
+                "${relative_path} branches on observer implementation kind via ${token}; "
+                "route observation data through schemas and batches instead.")
+        endif()
+    endforeach()
+endforeach()
+
 set(retired_dispatch_symbols
     WVObserverKind
     WVObserverStateContract

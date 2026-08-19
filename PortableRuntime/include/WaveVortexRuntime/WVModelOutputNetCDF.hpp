@@ -106,6 +106,11 @@ struct WVModelOutputNetCDFMetrics {
   std::size_t batchMaximumLiveBytes = 0;
 };
 
+struct WVInspectedObservationSchema {
+  std::string observerIdentifier;
+  WVObservationSchema schema;
+};
+
 struct WVModelOutputNetCDFInspection {
   // Latest complete coefficient restart among paths. Required additional
   // particle and tracer state is owned separately below.
@@ -113,6 +118,10 @@ struct WVModelOutputNetCDFInspection {
   bool isDynamicsLinear = false;
   // Reconstructed shared observer graph and its resolved integration layout.
   WVPortableObserverRecord observerRecord;
+  // Provisional nonlegacy schemas reconstructed from persisted variable and
+  // axis declarations. Legacy MATLAB observers remain represented by the
+  // exact observer graph above.
+  std::vector<WVInspectedObservationSchema> observationSchemas;
   WVIntegrationStateLayout stateLayout;
   WVAdditionalStateStorage additionalState;
   // Last committed original-lattice ordinal for every file/group pair.

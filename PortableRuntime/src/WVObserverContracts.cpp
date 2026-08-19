@@ -92,6 +92,7 @@ WVPortableObserverDescriptor::create(const WVPortableObserverRecord &record,
     std::set<std::string> observerIdentifiers;
     std::map<std::string, std::shared_ptr<const WVObservingSystem>>
         observerImplementations;
+    std::map<std::string, WVPortableTypedRecord> observerConfigurations;
     std::map<std::string, std::size_t> integratedBlockOwnerCounts;
     for (const auto &block : record.stateBlocks) {
       const bool canonical = block.identifier == "Ap" ||
@@ -111,6 +112,13 @@ WVPortableObserverDescriptor::create(const WVPortableObserverRecord &record,
         return {WVKernelStatusCode::unsupportedOperation,
                 "Unsupported observing-system identity or contract version."};
       observerImplementations.emplace(observer.identifier, implementation);
+      WVPortableTypedRecord configuration;
+      const auto configurationStatus =
+          detail::resolveObserverConfiguration(observer, configuration);
+      if (!configurationStatus)
+        return configurationStatus;
+      observerConfigurations.emplace(observer.identifier,
+                                     std::move(configuration));
       std::set<std::string> observerBlocks;
       for (const auto &identifier : observer.stateBlockIdentifiers) {
         if (blockIdentifiers.find(identifier) == blockIdentifiers.end())
@@ -211,11 +219,17 @@ WVPortableObserverDescriptor::create(const WVPortableObserverRecord &record,
                        "one complete coefficient-restart group.");
     }
     descriptor.record_ = record;
-    descriptor.implementations_.clear();
-    descriptor.implementations_.reserve(record.observers.size());
-    for (const auto &observer : record.observers)
-      descriptor.implementations_.push_back(
-          observerImplementations.at(observer.identifier));
+    descriptor.resolvedObservers_.clear();
+    descriptor.resolvedObservers_.reserve(record.observers.size());
+    for (auto &observer : descriptor.record_.observers) {
+      observer.configuration = observerConfigurations.at(observer.identifier);
+      auto resolved = std::make_unique<WVResolvedObserver>();
+      resolved->identifier_ = observer.identifier;
+      resolved->configuration_ = observer.configuration;
+      resolved->implementation_ =
+          observerImplementations.at(observer.identifier);
+      descriptor.resolvedObservers_.push_back(std::move(resolved));
+    }
     return WVKernelStatus::ok();
   } catch (const std::bad_alloc &) {
     return {WVKernelStatusCode::allocationFailure,
@@ -260,10 +274,22 @@ WVKernelStatus WVObserverFactoryRegistry::registerImplementation(
 
 const WVObservingSystem *WVPortableObserverDescriptor::implementation(
     const WVObserverRecord &observer) const noexcept {
+  const auto *resolved = resolvedObserver(observer);
+  return resolved == nullptr ? nullptr : &resolved->implementation();
+}
+
+const WVResolvedObserver *WVPortableObserverDescriptor::resolvedObserver(
+    const WVObserverRecord &observer) const noexcept {
   for (std::size_t index = 0; index < record_.observers.size(); ++index)
     if (record_.observers[index].identifier == observer.identifier)
-      return implementations_[index].get();
+      return resolvedObservers_[index].get();
   return nullptr;
+}
+
+std::size_t WVResolvedObserver::persistentBytes() const noexcept {
+  return sizeof(*this) + identifier_.capacity() +
+         configuration_.persistentBytes() - sizeof(WVPortableTypedRecord) +
+         implementation_->persistentBytes();
 }
 
 std::size_t WVPortableObserverDescriptor::persistentBytes() const noexcept {
@@ -278,6 +304,8 @@ std::size_t WVPortableObserverDescriptor::persistentBytes() const noexcept {
   for (const auto &observer : record_.observers) {
     bytes += stringBytes(observer.identifier) + stringBytes(observer.name) +
              stringBytes(observer.typeIdentifier) +
+             observer.configuration.persistentBytes() -
+                 sizeof(WVPortableTypedRecord) +
              observer.stateBlockIdentifiers.capacity() * sizeof(std::string) +
              observer.fieldNames.capacity() * sizeof(std::string);
     for (const auto &value : observer.stateBlockIdentifiers)
@@ -288,8 +316,10 @@ std::size_t WVPortableObserverDescriptor::persistentBytes() const noexcept {
               observer.z.capacity()) *
              sizeof(double);
   }
-  bytes += implementations_.capacity() *
-           sizeof(std::shared_ptr<const WVObservingSystem>);
+  bytes += resolvedObservers_.capacity() *
+           sizeof(std::unique_ptr<const WVResolvedObserver>);
+  for (const auto &observer : resolvedObservers_)
+    bytes += observer->persistentBytes();
   for (const auto &file : record_.outputFiles) {
     bytes += stringBytes(file.identifier) + stringBytes(file.destination) +
              file.groups.capacity() * sizeof(WVOutputGroupRecord);

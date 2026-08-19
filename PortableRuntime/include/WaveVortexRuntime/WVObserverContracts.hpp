@@ -45,6 +45,10 @@ struct WVObserverRecord {
   std::string name;
   std::string typeIdentifier;
   std::uint32_t contractVersion = WVPortablePairContractVersion;
+  // Construction-only, per-record configuration resolved before integration.
+  // Legacy fixed-schema readers may infer this record from the compatibility
+  // fields below; new observer providers should populate it directly.
+  WVPortableTypedRecord configuration;
   std::vector<std::string> stateBlockIdentifiers;
   std::vector<std::string> fieldNames;
   std::vector<double> x;
@@ -60,6 +64,24 @@ struct WVObserverRecord {
   double verticalAbsoluteTolerance = 0.0;
   double outputScale = 1.0;
   double outputOffset = 0.0;
+};
+
+class WVResolvedObserver final {
+public:
+  const std::string &identifier() const noexcept { return identifier_; }
+  const WVPortableTypedRecord &configuration() const noexcept {
+    return configuration_;
+  }
+  const WVObservingSystem &implementation() const noexcept {
+    return *implementation_;
+  }
+  std::size_t persistentBytes() const noexcept;
+
+private:
+  friend class WVPortableObserverDescriptor;
+  std::string identifier_;
+  WVPortableTypedRecord configuration_;
+  std::shared_ptr<const WVObservingSystem> implementation_;
 };
 
 struct WVOutputScheduleRecord {
@@ -115,11 +137,13 @@ public:
   }
   const WVObservingSystem *
   implementation(const WVObserverRecord &observer) const noexcept;
+  const WVResolvedObserver *
+  resolvedObserver(const WVObserverRecord &observer) const noexcept;
   std::size_t persistentBytes() const noexcept;
 
 private:
   WVPortableObserverRecord record_;
-  std::vector<std::shared_ptr<const WVObservingSystem>> implementations_;
+  std::vector<std::unique_ptr<const WVResolvedObserver>> resolvedObservers_;
 };
 
 // Registry seam for built-in tagged records. Version 1 intentionally exposes

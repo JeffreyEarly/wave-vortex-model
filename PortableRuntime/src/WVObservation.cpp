@@ -1,4 +1,5 @@
 #include "WaveVortexRuntime/WVObservation.hpp"
+#include "WaveVortexRuntime/WVPortableTypedRecord.hpp"
 
 #include <algorithm>
 #include <limits>
@@ -268,6 +269,44 @@ const std::string *WVObservationValue::textData() const noexcept {
              : nullptr;
 }
 
+std::size_t
+observationSchemaRetainedBytes(const WVObservationSchema &schema) noexcept {
+  std::size_t bytes = schema.identifier.capacity() +
+                      schema.axes.capacity() * sizeof(WVObservationAxis) +
+                      schema.variables.capacity() *
+                          sizeof(WVObservationVariable) +
+                      schema.metadata.attributes.capacity() *
+                          sizeof(WVObservationAttribute) +
+                      schema.metadata.stringListAttributes.capacity() *
+                          sizeof(WVObservationStringListAttribute) +
+                      schema.metadata.variables.capacity() *
+                          sizeof(WVObservationMetadataVariable);
+  for (const auto &axis : schema.axes)
+    bytes += axis.identifier.capacity() + axis.name.capacity();
+  for (const auto &variable : schema.variables) {
+    bytes += variable.identifier.capacity() + variable.name.capacity() +
+             variable.units.capacity() + variable.description.capacity() +
+             variable.raggedChildAxisIdentifier.capacity() +
+             variable.dimensionIdentifiers.capacity() * sizeof(std::string) +
+             variable.attributes.capacity() * sizeof(WVObservationAttribute);
+    for (const auto &identifier : variable.dimensionIdentifiers)
+      bytes += identifier.capacity();
+    for (const auto &attribute : variable.attributes)
+      bytes += attribute.name.capacity() + attribute.value.capacity();
+  }
+  for (const auto &attribute : schema.metadata.attributes)
+    bytes += attribute.name.capacity() + attribute.value.capacity();
+  for (const auto &attribute : schema.metadata.stringListAttributes) {
+    bytes += attribute.name.capacity() +
+             attribute.values.capacity() * sizeof(std::string);
+    for (const auto &value : attribute.values)
+      bytes += value.capacity();
+  }
+  for (const auto &variable : schema.metadata.variables)
+    bytes += variable.name.capacity() + variable.value.retainedBytes();
+  return bytes;
+}
+
 WVObservationBatchMetrics WVObservationBatch::metrics() const noexcept {
   WVObservationBatchMetrics result;
   for (const auto &value : values) {
@@ -473,6 +512,263 @@ WVKernelStatus validateObservationBatch(const WVObservationSchema &schema,
           return invalid("Ragged row offsets are malformed.");
     }
   }
+  return WVKernelStatus::ok();
+}
+
+WVKernelStatus encodeObservationSchemaManifest(
+    const WVObservationSchema &schema, std::vector<std::uint8_t> &bytes) {
+  const auto schemaStatus = validateObservationSchema(schema);
+  if (!schemaStatus)
+    return schemaStatus;
+  WVPortableTypedRecord manifest;
+  manifest.schemaIdentifier = "portable-observation-schema-manifest-v1";
+  manifest.schemaVersion = 1;
+  const auto addText = [&](std::string name,
+                           std::vector<std::string> values) {
+    const auto count = values.size();
+    manifest.values.push_back(
+        {std::move(name), {count}, std::move(values)});
+  };
+  const auto addInteger = [&](std::string name,
+                              std::vector<std::int64_t> values) {
+    const auto count = values.size();
+    manifest.values.push_back(
+        {std::move(name), {count}, std::move(values)});
+  };
+  manifest.values.push_back(
+      {"schemaIdentifier", {}, std::vector<std::string>{schema.identifier}});
+  manifest.values.push_back(
+      {"schemaVersion", {},
+       std::vector<std::int64_t>{static_cast<std::int64_t>(schema.version)}});
+
+  std::vector<std::string> axisIdentifiers;
+  std::vector<std::string> axisNames;
+  std::vector<std::int64_t> axisKinds;
+  std::vector<std::int64_t> axisExtents;
+  std::vector<std::int64_t> axisRoles;
+  for (const auto &axis : schema.axes) {
+    if (axis.extent >
+        static_cast<std::size_t>(std::numeric_limits<std::int64_t>::max()))
+      return {WVKernelStatusCode::sizeOverflow,
+              "Observation schema axis extent exceeds int64."};
+    axisIdentifiers.push_back(axis.identifier);
+    axisNames.push_back(axis.name);
+    axisKinds.push_back(static_cast<std::int64_t>(axis.kind));
+    axisExtents.push_back(static_cast<std::int64_t>(axis.extent));
+    axisRoles.push_back(static_cast<std::int64_t>(axis.coordinateRole));
+  }
+  addText("axisIdentifiers", std::move(axisIdentifiers));
+  addText("axisNames", std::move(axisNames));
+  addInteger("axisKinds", std::move(axisKinds));
+  addInteger("axisExtents", std::move(axisExtents));
+  addInteger("axisRoles", std::move(axisRoles));
+
+  std::vector<std::string> variableIdentifiers;
+  std::vector<std::string> variableNames;
+  std::vector<std::int64_t> variableTypes;
+  std::vector<std::int64_t> variableLayouts;
+  std::vector<std::string> variableUnits;
+  std::vector<std::string> variableDescriptions;
+  std::vector<std::int64_t> variableRoles;
+  std::vector<std::int64_t> variableRaggedRoles;
+  std::vector<std::string> variableRaggedChildren;
+  std::vector<std::int64_t> dimensionCounts;
+  std::vector<std::string> dimensions;
+  std::vector<std::int64_t> attributeCounts;
+  std::vector<std::string> attributeNames;
+  std::vector<std::string> attributeValues;
+  for (const auto &variable : schema.variables) {
+    variableIdentifiers.push_back(variable.identifier);
+    variableNames.push_back(variable.name);
+    variableTypes.push_back(static_cast<std::int64_t>(variable.scalarType));
+    variableLayouts.push_back(static_cast<std::int64_t>(variable.layout));
+    variableUnits.push_back(variable.units);
+    variableDescriptions.push_back(variable.description);
+    variableRoles.push_back(
+        static_cast<std::int64_t>(variable.coordinateRole));
+    variableRaggedRoles.push_back(
+        static_cast<std::int64_t>(variable.raggedRole));
+    variableRaggedChildren.push_back(variable.raggedChildAxisIdentifier);
+    dimensionCounts.push_back(
+        static_cast<std::int64_t>(variable.dimensionIdentifiers.size()));
+    dimensions.insert(dimensions.end(), variable.dimensionIdentifiers.begin(),
+                      variable.dimensionIdentifiers.end());
+    attributeCounts.push_back(
+        static_cast<std::int64_t>(variable.attributes.size()));
+    for (const auto &attribute : variable.attributes) {
+      attributeNames.push_back(attribute.name);
+      attributeValues.push_back(attribute.value);
+    }
+  }
+  addText("variableIdentifiers", std::move(variableIdentifiers));
+  addText("variableNames", std::move(variableNames));
+  addInteger("variableTypes", std::move(variableTypes));
+  addInteger("variableLayouts", std::move(variableLayouts));
+  addText("variableUnits", std::move(variableUnits));
+  addText("variableDescriptions", std::move(variableDescriptions));
+  addInteger("variableRoles", std::move(variableRoles));
+  addInteger("variableRaggedRoles", std::move(variableRaggedRoles));
+  addText("variableRaggedChildren", std::move(variableRaggedChildren));
+  addInteger("dimensionCounts", std::move(dimensionCounts));
+  addText("dimensions", std::move(dimensions));
+  addInteger("attributeCounts", std::move(attributeCounts));
+  addText("attributeNames", std::move(attributeNames));
+  addText("attributeValues", std::move(attributeValues));
+  return encodePortableTypedRecord(manifest, bytes);
+}
+
+WVKernelStatus decodeObservationSchemaManifest(
+    const std::vector<std::uint8_t> &bytes, WVObservationSchema &schema) {
+  WVPortableTypedRecord manifest;
+  auto status = decodePortableTypedRecord(
+      bytes, manifest, {4 * 1024 * 1024, false, true});
+  if (!status)
+    return status;
+  if (manifest.schemaIdentifier !=
+          "portable-observation-schema-manifest-v1" ||
+      manifest.schemaVersion != 1)
+    return invalid("Unsupported observation-schema manifest.");
+  const auto texts = [&](const char *name)
+      -> const std::vector<std::string> * {
+    const auto *value = manifest.value(name);
+    return value != nullptr &&
+                   std::holds_alternative<std::vector<std::string>>(
+                       value->storage)
+               ? &std::get<std::vector<std::string>>(value->storage)
+               : nullptr;
+  };
+  const auto integers = [&](const char *name)
+      -> const std::vector<std::int64_t> * {
+    const auto *value = manifest.value(name);
+    return value != nullptr &&
+                   std::holds_alternative<std::vector<std::int64_t>>(
+                       value->storage)
+               ? &std::get<std::vector<std::int64_t>>(value->storage)
+               : nullptr;
+  };
+  const auto *schemaIdentifiers = texts("schemaIdentifier");
+  const auto *schemaVersions = integers("schemaVersion");
+  const auto *axisIdentifiers = texts("axisIdentifiers");
+  const auto *axisNames = texts("axisNames");
+  const auto *axisKinds = integers("axisKinds");
+  const auto *axisExtents = integers("axisExtents");
+  const auto *axisRoles = integers("axisRoles");
+  const auto *variableIdentifiers = texts("variableIdentifiers");
+  const auto *variableNames = texts("variableNames");
+  const auto *variableTypes = integers("variableTypes");
+  const auto *variableLayouts = integers("variableLayouts");
+  const auto *variableUnits = texts("variableUnits");
+  const auto *variableDescriptions = texts("variableDescriptions");
+  const auto *variableRoles = integers("variableRoles");
+  const auto *variableRaggedRoles = integers("variableRaggedRoles");
+  const auto *variableRaggedChildren = texts("variableRaggedChildren");
+  const auto *dimensionCounts = integers("dimensionCounts");
+  const auto *dimensions = texts("dimensions");
+  const auto *attributeCounts = integers("attributeCounts");
+  const auto *attributeNames = texts("attributeNames");
+  const auto *attributeValues = texts("attributeValues");
+  if (schemaIdentifiers == nullptr || schemaIdentifiers->size() != 1 ||
+      schemaVersions == nullptr || schemaVersions->size() != 1 ||
+      axisIdentifiers == nullptr || axisNames == nullptr ||
+      axisKinds == nullptr || axisExtents == nullptr || axisRoles == nullptr ||
+      variableIdentifiers == nullptr || variableNames == nullptr ||
+      variableTypes == nullptr || variableLayouts == nullptr ||
+      variableUnits == nullptr || variableDescriptions == nullptr ||
+      variableRoles == nullptr || variableRaggedRoles == nullptr ||
+      variableRaggedChildren == nullptr || dimensionCounts == nullptr ||
+      dimensions == nullptr || attributeCounts == nullptr ||
+      attributeNames == nullptr || attributeValues == nullptr)
+    return invalid("Observation-schema manifest is incomplete.");
+  const auto axisCount = axisIdentifiers->size();
+  if (axisNames->size() != axisCount || axisKinds->size() != axisCount ||
+      axisExtents->size() != axisCount || axisRoles->size() != axisCount)
+    return invalid("Observation-schema manifest axes are inconsistent.");
+  const auto variableCount = variableIdentifiers->size();
+  if (variableNames->size() != variableCount ||
+      variableTypes->size() != variableCount ||
+      variableLayouts->size() != variableCount ||
+      variableUnits->size() != variableCount ||
+      variableDescriptions->size() != variableCount ||
+      variableRoles->size() != variableCount ||
+      variableRaggedRoles->size() != variableCount ||
+      variableRaggedChildren->size() != variableCount ||
+      dimensionCounts->size() != variableCount ||
+      attributeCounts->size() != variableCount ||
+      attributeNames->size() != attributeValues->size())
+    return invalid("Observation-schema manifest variables are inconsistent.");
+  if ((*schemaVersions)[0] <= 0 ||
+      static_cast<std::uint64_t>((*schemaVersions)[0]) >
+          std::numeric_limits<std::uint32_t>::max())
+    return invalid("Observation-schema manifest version is invalid.");
+
+  WVObservationSchema candidate;
+  candidate.identifier = (*schemaIdentifiers)[0];
+  candidate.version = static_cast<std::uint32_t>((*schemaVersions)[0]);
+  for (std::size_t index = 0; index < axisCount; ++index) {
+    if ((*axisKinds)[index] < 0 || (*axisKinds)[index] > 1 ||
+        (*axisExtents)[index] < 0 || (*axisRoles)[index] < 0 ||
+        (*axisRoles)[index] >
+            static_cast<std::int64_t>(WVObservationCoordinateRole::profile))
+      return invalid("Observation-schema manifest axis value is invalid.");
+    candidate.axes.push_back(
+        {(*axisIdentifiers)[index], (*axisNames)[index],
+         static_cast<WVObservationAxisKind>((*axisKinds)[index]),
+         static_cast<std::size_t>((*axisExtents)[index]),
+         static_cast<WVObservationCoordinateRole>((*axisRoles)[index])});
+  }
+  std::size_t dimensionOffset = 0;
+  std::size_t attributeOffset = 0;
+  for (std::size_t index = 0; index < variableCount; ++index) {
+    if ((*variableTypes)[index] < 0 || (*variableTypes)[index] > 4 ||
+        (*variableLayouts)[index] < 0 || (*variableLayouts)[index] > 3 ||
+        (*variableRoles)[index] < 0 ||
+        (*variableRoles)[index] >
+            static_cast<std::int64_t>(WVObservationCoordinateRole::profile) ||
+        (*variableRaggedRoles)[index] < 0 ||
+        (*variableRaggedRoles)[index] > 2 || (*dimensionCounts)[index] < 0 ||
+        (*attributeCounts)[index] < 0)
+      return invalid("Observation-schema manifest variable value is invalid.");
+    const auto dimensionCount =
+        static_cast<std::size_t>((*dimensionCounts)[index]);
+    const auto attributeCount =
+        static_cast<std::size_t>((*attributeCounts)[index]);
+    if (dimensionCount > dimensions->size() - dimensionOffset ||
+        attributeCount > attributeNames->size() - attributeOffset)
+      return invalid("Observation-schema manifest offsets are invalid.");
+    WVObservationVariable variable;
+    variable.identifier = (*variableIdentifiers)[index];
+    variable.name = (*variableNames)[index];
+    variable.scalarType =
+        static_cast<WVObservationScalarType>((*variableTypes)[index]);
+    variable.layout =
+        static_cast<WVObservationValueLayout>((*variableLayouts)[index]);
+    variable.units = (*variableUnits)[index];
+    variable.description = (*variableDescriptions)[index];
+    variable.coordinateRole =
+        static_cast<WVObservationCoordinateRole>((*variableRoles)[index]);
+    variable.raggedRole =
+        static_cast<WVObservationRaggedRole>((*variableRaggedRoles)[index]);
+    variable.raggedChildAxisIdentifier = (*variableRaggedChildren)[index];
+    variable.dimensionIdentifiers.insert(
+        variable.dimensionIdentifiers.end(),
+        dimensions->begin() + static_cast<std::ptrdiff_t>(dimensionOffset),
+        dimensions->begin() +
+            static_cast<std::ptrdiff_t>(dimensionOffset + dimensionCount));
+    for (std::size_t attribute = 0; attribute < attributeCount; ++attribute)
+      variable.attributes.push_back(
+          {(*attributeNames)[attributeOffset + attribute],
+           (*attributeValues)[attributeOffset + attribute]});
+    dimensionOffset += dimensionCount;
+    attributeOffset += attributeCount;
+    candidate.variables.push_back(std::move(variable));
+  }
+  if (dimensionOffset != dimensions->size() ||
+      attributeOffset != attributeNames->size())
+    return invalid("Observation-schema manifest has trailing values.");
+  status = validateObservationSchema(candidate);
+  if (!status)
+    return status;
+  schema = std::move(candidate);
   return WVKernelStatus::ok();
 }
 

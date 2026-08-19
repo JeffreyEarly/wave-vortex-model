@@ -94,6 +94,23 @@ int main() {
   require(values.metrics().liveBytes > 0 &&
               values.metrics().retainedStorageBytes > 0,
           "observation batch storage metrics were not reported");
+  std::vector<std::uint8_t> manifest;
+  require(static_cast<bool>(
+              encodeObservationSchemaManifest(declaration, manifest)) &&
+              !manifest.empty(),
+          "observation schema manifest was not encoded");
+  WVObservationSchema decoded;
+  require(static_cast<bool>(
+              decodeObservationSchemaManifest(manifest, decoded)) &&
+              decoded.identifier == declaration.identifier &&
+              decoded.axes.size() == declaration.axes.size() &&
+              decoded.variables.size() == declaration.variables.size() &&
+              decoded.variables[0].raggedRole ==
+                  WVObservationRaggedRole::rowCount &&
+              decoded.variables[0].raggedChildAxisIdentifier == "sample" &&
+              decoded.variables[3].scalarType ==
+                  WVObservationScalarType::complex64,
+          "observation schema manifest did not preserve its contract");
 
   auto zero = batch();
   zero.values[0] = WVObservationValue::ownInteger("profile-count", {0}, {});

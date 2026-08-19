@@ -32,6 +32,9 @@ std::size_t stringBytes(const std::string &value) noexcept {
 std::size_t observerRecordBytes(const WVObserverRecord &observer) noexcept {
   std::size_t bytes =
       stringBytes(observer.identifier) + stringBytes(observer.name) +
+      stringBytes(observer.typeIdentifier) +
+      observer.configuration.persistentBytes() -
+          sizeof(WVPortableTypedRecord) +
       observer.stateBlockIdentifiers.capacity() * sizeof(std::string) +
       observer.fieldNames.capacity() * sizeof(std::string) +
       (observer.x.capacity() + observer.y.capacity() + observer.z.capacity()) *
@@ -59,10 +62,16 @@ bool sameStateBlockRecord(const WVStateBlockRecord &first,
 }
 
 bool sameObserverRecord(const WVObserverRecord &first,
-                        const WVObserverRecord &second) noexcept {
+                        const WVObserverRecord &second) {
+  std::vector<std::uint8_t> firstConfiguration;
+  std::vector<std::uint8_t> secondConfiguration;
+  if (!encodePortableTypedRecord(first.configuration, firstConfiguration) ||
+      !encodePortableTypedRecord(second.configuration, secondConfiguration))
+    return false;
   return first.identifier == second.identifier && first.name == second.name &&
          first.typeIdentifier == second.typeIdentifier &&
          first.contractVersion == second.contractVersion &&
+         firstConfiguration == secondConfiguration &&
          first.stateBlockIdentifiers == second.stateBlockIdentifiers &&
          first.fieldNames == second.fieldNames && first.x == second.x &&
          first.y == second.y && first.z == second.z &&
@@ -486,26 +495,16 @@ WVOutputPlan::createExplicit(const WVIntegrationStateLayout &layout,
     record.observers = layout.observerRecords();
     auto coefficientObserver = std::find_if(
         record.observers.begin(), record.observers.end(), [](const auto &item) {
-          const auto implementation = detail::observerImplementation(
-              item.typeIdentifier, item.contractVersion);
-          return implementation && implementation->recordsCoefficients();
+          return item.stateBlockIdentifiers ==
+                 std::vector<std::string>{"Ap", "Am", "A0"};
         });
     std::string coefficientIdentifier;
     if (coefficientObserver == record.observers.end()) {
-      const auto implementation = std::find_if(
-          detail::observerImplementations().begin(),
-          detail::observerImplementations().end(), [](const auto &candidate) {
-            return candidate->recordsCoefficients();
-          });
-      if (implementation == detail::observerImplementations().end())
-        return {WVKernelStatusCode::unsupportedOperation,
-                "No coefficient observer implementation is registered."};
       WVObserverRecord observer;
-      observer.identifier = "explicit-checkpoint-coefficients";
-      observer.name = (*implementation)->typeIdentifier();
-      observer.typeIdentifier = (*implementation)->typeIdentifier();
-      observer.contractVersion = (*implementation)->contractVersion();
-      observer.stateBlockIdentifiers = {"Ap", "Am", "A0"};
+      const auto observerStatus = detail::canonicalCoefficientObserver(
+          "explicit-checkpoint-coefficients", observer);
+      if (!observerStatus)
+        return observerStatus;
       coefficientIdentifier = observer.identifier;
       record.observers.push_back(std::move(observer));
     } else {

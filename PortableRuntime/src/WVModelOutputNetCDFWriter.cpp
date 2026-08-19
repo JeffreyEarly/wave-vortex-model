@@ -601,6 +601,34 @@ public:
           "Observation-schema version definition", observerPath);
       if (!result)
         return result;
+      result = detail::checkedNetCDF(
+          nc_put_att_uint(group, NC_GLOBAL, "portableObserverContractVersion",
+                          NC_UINT, 1, &record.contractVersion),
+          "Observer contract-version definition", observerPath);
+      if (!result)
+        return result;
+      std::vector<std::uint8_t> encodedConfiguration;
+      const auto encoded = encodePortableTypedRecord(
+          record.configuration, encodedConfiguration);
+      if (!encoded)
+        return failure(WVCheckpointStatusCode::schemaMismatch,
+                       encoded.message, observerPath);
+      result = detail::putTextAttribute(
+          group, NC_GLOBAL, "portableObserverConfiguration",
+          hexEncode(encodedConfiguration), observerPath);
+      if (!result)
+        return result;
+      std::vector<std::uint8_t> schemaManifest;
+      const auto manifestStatus =
+          encodeObservationSchemaManifest(*schema, schemaManifest);
+      if (!manifestStatus)
+        return failure(WVCheckpointStatusCode::schemaMismatch,
+                       manifestStatus.message, observerPath);
+      result = detail::putTextAttribute(
+          group, NC_GLOBAL, "portableObservationSchemaManifest",
+          hexEncode(schemaManifest), observerPath);
+      if (!result)
+        return result;
     }
     for (const auto &metadataVariable : schema->metadata.variables) {
       int variable = -1;
@@ -1678,6 +1706,58 @@ public:
                            "Observation schema version changed.",
                            "/" + group.record.name + "/observingSystems/" +
                                metadataName);
+          const auto *observerRecord = observer(schema->observerIdentifier);
+          if (observerRecord == nullptr)
+            return failure(WVCheckpointStatusCode::schemaMismatch,
+                           "Observation schema has no resolved observer.",
+                           "/" + group.record.name + "/observingSystems/" +
+                               metadataName);
+          unsigned int observedObserverVersion = 0;
+          result = detail::checkedNetCDF(
+              nc_get_att_uint(metadata, NC_GLOBAL,
+                              "portableObserverContractVersion",
+                              &observedObserverVersion),
+              "Observer contract-version read",
+              "/" + group.record.name + "/observingSystems/" + metadataName);
+          if (!result ||
+              observedObserverVersion != observerRecord->contractVersion)
+            return failure(WVCheckpointStatusCode::appendConflict,
+                           "Observer contract version changed.",
+                           "/" + group.record.name + "/observingSystems/" +
+                               metadataName);
+          std::vector<std::uint8_t> configurationBytes;
+          const auto encoded = encodePortableTypedRecord(
+              observerRecord->configuration, configurationBytes);
+          if (!encoded)
+            return failure(WVCheckpointStatusCode::schemaMismatch,
+                           encoded.message, "/" + group.record.name);
+          std::string observedConfiguration;
+          result = detail::readTextAttribute(
+              metadata, "portableObserverConfiguration",
+              observedConfiguration,
+              "/" + group.record.name + "/observingSystems/" + metadataName);
+          if (!result || observedConfiguration != hexEncode(configurationBytes))
+            return failure(WVCheckpointStatusCode::appendConflict,
+                           "Observer typed configuration changed.",
+                           "/" + group.record.name + "/observingSystems/" +
+                               metadataName);
+          std::vector<std::uint8_t> manifestBytes;
+          const auto manifestStatus = encodeObservationSchemaManifest(
+              schema->schema, manifestBytes);
+          if (!manifestStatus)
+            return failure(WVCheckpointStatusCode::schemaMismatch,
+                           manifestStatus.message,
+                           "/" + group.record.name);
+          std::string observedManifest;
+          result = detail::readTextAttribute(
+              metadata, "portableObservationSchemaManifest",
+              observedManifest,
+              "/" + group.record.name + "/observingSystems/" + metadataName);
+          if (!result || observedManifest != hexEncode(manifestBytes))
+            return failure(WVCheckpointStatusCode::appendConflict,
+                           "Observation schema manifest changed.",
+                           "/" + group.record.name + "/observingSystems/" +
+                               metadataName);
         }
       }
       result = detail::checkedNetCDF(nc_inq_varid(group.id, "t", &group.timeId),
@@ -2216,6 +2296,9 @@ public:
         }
         for (const auto &axisDefinition : group.unlimitedAxes)
           bytes += axisDefinition.name.capacity();
+        for (const auto &observerSchema : group.observerSchemas)
+          bytes += observerSchema.observerIdentifier.capacity() +
+                   observationSchemaRetainedBytes(observerSchema.schema);
       }
     }
     for (const auto &item : progress)

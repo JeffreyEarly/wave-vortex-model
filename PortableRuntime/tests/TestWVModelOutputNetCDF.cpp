@@ -1577,6 +1577,31 @@ void testVariableObservationBatches() {
           "generic graph reader reconstructed " +
               std::to_string(inspection.observerRecord.observers.size()) +
               " observers: " + persistence.message);
+  require(inspection.observationSchemas.size() == 1 &&
+              inspection.observationSchemas[0].observerIdentifier ==
+                  synthetic.identifier &&
+              inspection.observationSchemas[0].schema.identifier ==
+                  "synthetic-variable-observation" &&
+              inspection.observationSchemas[0].schema.axes.size() == 3 &&
+              inspection.observationSchemas[0].schema.variables.size() == 11,
+          "generic graph reader did not reconstruct the provisional schema");
+  const auto &inspectedSchema = inspection.observationSchemas[0].schema;
+  const auto inspectedBins = std::find_if(
+      inspectedSchema.variables.begin(), inspectedSchema.variables.end(),
+      [](const auto &variable) { return variable.identifier == "bins"; });
+  const auto inspectedRows = std::find_if(
+      inspectedSchema.variables.begin(), inspectedSchema.variables.end(),
+      [](const auto &variable) { return variable.identifier == "row-count"; });
+  require(inspectedBins != inspectedSchema.variables.end() &&
+              inspectedBins->scalarType ==
+                  WVObservationScalarType::complex64 &&
+              inspectedBins->dimensionIdentifiers ==
+                  std::vector<std::string>{"depth", "sample"} &&
+              inspectedRows != inspectedSchema.variables.end() &&
+              inspectedRows->raggedRole ==
+                  WVObservationRaggedRole::rowCount &&
+              inspectedRows->raggedChildAxisIdentifier == "sample",
+          "generic graph reader changed typed or ragged schema declarations");
 
   VariableBatchSource driftedSource(2);
   WVModelOutputNetCDFSink drifted;

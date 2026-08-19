@@ -134,6 +134,16 @@ int main() {
   observer.x = {0.1, 0.2};
   observer.y = {0.3, 0.4};
   observer.z = {-0.5, -0.6};
+  observer.configuration.schemaIdentifier = "test-point-configuration-v1";
+  observer.configuration.schemaVersion = 1;
+  observer.configuration.values = {
+      {"field", {}, std::vector<std::string>{"u"}},
+      {"x", {2}, std::vector<double>{0.1, 0.2}},
+      {"y", {2}, std::vector<double>{0.3, 0.4}},
+      {"z", {2}, std::vector<double>{-0.5, -0.6}}};
+  record.observers.push_back(observer);
+  observer.identifier = "test-point-diagnostic-2";
+  observer.name = "second test point diagnostic";
   record.observers.push_back(observer);
   WVPortableObserverDescriptor descriptor;
   const auto descriptorStatus =
@@ -143,6 +153,18 @@ int main() {
   require(descriptor.implementation(descriptor.observers().front()) ==
               testImplementation.get(),
           "descriptor did not retain the resolved implementation");
+  const auto *firstResolved =
+      descriptor.resolvedObserver(descriptor.observers()[0]);
+  const auto *secondResolved =
+      descriptor.resolvedObserver(descriptor.observers()[1]);
+  require(firstResolved != nullptr && secondResolved != nullptr &&
+              firstResolved != secondResolved &&
+              &firstResolved->implementation() ==
+                  &secondResolved->implementation() &&
+              firstResolved->configuration().schemaIdentifier ==
+                  "test-point-configuration-v1" &&
+              firstResolved->configuration().value("x") != nullptr,
+          "descriptor did not create immutable per-record resolved observers");
   require(WVObserverFactoryRegistry::isSealed(),
           "observer registry was not sealed by descriptor construction");
   require(!WVObserverFactoryRegistry::registerImplementation(

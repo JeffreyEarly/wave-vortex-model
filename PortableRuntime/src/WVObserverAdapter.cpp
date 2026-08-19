@@ -234,6 +234,120 @@ bool observerDefinitionsSealed() noexcept {
   return registrySealed();
 }
 
+WVKernelStatus resolveObserverConfiguration(
+    const WVObserverRecord &observer, WVPortableTypedRecord &configuration) {
+  if (!observer.configuration.schemaIdentifier.empty()) {
+    const auto status = validatePortableTypedRecord(
+        observer.configuration, {1024 * 1024, true, true});
+    if (!status)
+      return status;
+    configuration = observer.configuration;
+    return WVKernelStatus::ok();
+  }
+
+  WVPortableTypedRecord candidate;
+  candidate.schemaIdentifier =
+      "legacy-" + observer.typeIdentifier + "-configuration-v1";
+  candidate.schemaVersion = 1;
+  const auto addText = [&](std::string name,
+                           const std::vector<std::string> &values) {
+    if (!values.empty())
+      candidate.values.push_back(
+          {std::move(name), {values.size()}, values});
+  };
+  const auto addReal = [&](std::string name,
+                           const std::vector<double> &values) {
+    if (!values.empty())
+      candidate.values.push_back(
+          {std::move(name), {values.size()}, values});
+  };
+  const auto addBoolean = [&](std::string name, bool value) {
+    candidate.values.push_back(
+        {std::move(name), {},
+         std::vector<std::uint8_t>{static_cast<std::uint8_t>(value ? 1 : 0)}});
+  };
+  const auto addScalar = [&](std::string name, double value) {
+    candidate.values.push_back(
+        {std::move(name), {}, std::vector<double>{value}});
+  };
+  const auto interpolation = [](WVPositionInterpolation value) {
+    return value == WVPositionInterpolation::spline ? std::string("spline")
+                                                     : std::string("linear");
+  };
+
+  if (observer.typeIdentifier == "WVEulerianFields") {
+    addText("fieldNames", observer.fieldNames);
+  } else if (observer.typeIdentifier == "WVMooring") {
+    addText("trackedFieldNames", observer.fieldNames);
+    addReal("x", observer.x);
+    addReal("y", observer.y);
+    addReal("z", observer.z);
+  } else if (observer.typeIdentifier == "WVLagrangianParticles") {
+    addText("trackedFieldNames", observer.fieldNames);
+    addReal("x", observer.x);
+    addReal("y", observer.y);
+    addReal("z", observer.z);
+    addBoolean("isXYOnly", observer.isXYOnly);
+    candidate.values.push_back(
+        {"advectionInterpolation", {},
+         std::vector<std::string>{
+             interpolation(observer.advectionInterpolation)}});
+    candidate.values.push_back(
+        {"trackedFieldInterpolation", {},
+         std::vector<std::string>{
+             interpolation(observer.trackedFieldInterpolation)}});
+    addScalar("horizontalAbsoluteTolerance",
+              observer.horizontalAbsoluteTolerance);
+    addScalar("verticalAbsoluteTolerance", observer.verticalAbsoluteTolerance);
+  } else if (observer.typeIdentifier == "WVTracer") {
+    addBoolean("isXYOnly", observer.isXYOnly);
+    addBoolean("shouldAntialias", observer.shouldAntialias);
+  } else if (observer.typeIdentifier != "WVCoefficients") {
+    // Source-linked implementations without a built-in compatibility mapping
+    // receive a sparse typed record. Providers should supply an explicit
+    // schema to avoid this legacy inference path.
+    addText("fieldNames", observer.fieldNames);
+    addReal("x", observer.x);
+    addReal("y", observer.y);
+    addReal("z", observer.z);
+    addBoolean("isXYOnly", observer.isXYOnly);
+    addBoolean("shouldAntialias", observer.shouldAntialias);
+    addScalar("horizontalAbsoluteTolerance",
+              observer.horizontalAbsoluteTolerance);
+    addScalar("verticalAbsoluteTolerance", observer.verticalAbsoluteTolerance);
+    addScalar("outputScale", observer.outputScale);
+    addScalar("outputOffset", observer.outputOffset);
+  }
+  const auto status =
+      validatePortableTypedRecord(candidate, {1024 * 1024, true, true});
+  if (!status)
+    return status;
+  configuration = std::move(candidate);
+  return WVKernelStatus::ok();
+}
+
+WVKernelStatus canonicalCoefficientObserver(std::string identifier,
+                                            WVObserverRecord &observer) {
+  const auto implementation = std::find_if(
+      mutableImplementations().begin(), mutableImplementations().end(),
+      [](const auto &candidate) { return candidate->recordsCoefficients(); });
+  if (implementation == mutableImplementations().end())
+    return {WVKernelStatusCode::unsupportedOperation,
+            "No coefficient observer implementation is registered."};
+  WVObserverRecord candidate;
+  candidate.identifier = std::move(identifier);
+  candidate.name = (*implementation)->typeIdentifier();
+  candidate.typeIdentifier = (*implementation)->typeIdentifier();
+  candidate.contractVersion = (*implementation)->contractVersion();
+  candidate.stateBlockIdentifiers = {"Ap", "Am", "A0"};
+  const auto configurationStatus =
+      resolveObserverConfiguration(candidate, candidate.configuration);
+  if (!configurationStatus)
+    return configurationStatus;
+  observer = std::move(candidate);
+  return WVKernelStatus::ok();
+}
+
 const char *movingFieldChannelName(WVMovingFieldChannel channel) noexcept {
   switch (channel) {
   case WVMovingFieldChannel::x:

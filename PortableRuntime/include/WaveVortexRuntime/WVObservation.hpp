@@ -202,5 +202,11 @@ struct WVObservationBatch {
 WVKernelStatus validateObservationSchema(const WVObservationSchema &schema);
 WVKernelStatus validateObservationBatch(const WVObservationSchema &schema,
                                         const WVObservationBatch &batch);
+std::size_t
+observationSchemaRetainedBytes(const WVObservationSchema &schema) noexcept;
+WVKernelStatus encodeObservationSchemaManifest(
+    const WVObservationSchema &schema, std::vector<std::uint8_t> &bytes);
+WVKernelStatus decodeObservationSchemaManifest(
+    const std::vector<std::uint8_t> &bytes, WVObservationSchema &schema);
 
 } // namespace wavevortex::runtime

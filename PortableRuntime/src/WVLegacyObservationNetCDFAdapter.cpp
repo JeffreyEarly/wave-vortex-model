@@ -17,6 +17,29 @@
 namespace wavevortex::runtime {
 namespace {
 
+bool hexDecode(const std::string &text, std::vector<std::uint8_t> &bytes) {
+  if (text.size() % 2 != 0)
+    return false;
+  const auto digit = [](char value) {
+    if (value >= '0' && value <= '9')
+      return value - '0';
+    if (value >= 'a' && value <= 'f')
+      return value - 'a' + 10;
+    if (value >= 'A' && value <= 'F')
+      return value - 'A' + 10;
+    return -1;
+  };
+  bytes.resize(text.size() / 2);
+  for (std::size_t index = 0; index < bytes.size(); ++index) {
+    const int high = digit(text[2 * index]);
+    const int low = digit(text[2 * index + 1]);
+    if (high < 0 || low < 0)
+      return false;
+    bytes[index] = static_cast<std::uint8_t>((high << 4) | low);
+  }
+  return true;
+}
+
 WVCheckpointStatus failure(WVCheckpointStatusCode code, std::string message,
                            std::string location) {
   return {code, std::move(message), std::move(location)};
@@ -98,9 +121,22 @@ std::string portableIdentifier(std::string value) {
 
 bool sameObserverConfiguration(const WVObserverRecord &left,
                                const WVObserverRecord &right) {
+  const auto sameTypedConfiguration = [&]() {
+    if (left.configuration.schemaIdentifier.empty() &&
+        right.configuration.schemaIdentifier.empty())
+      return true;
+    std::vector<std::uint8_t> leftBytes;
+    std::vector<std::uint8_t> rightBytes;
+    return static_cast<bool>(
+               encodePortableTypedRecord(left.configuration, leftBytes)) &&
+           static_cast<bool>(
+               encodePortableTypedRecord(right.configuration, rightBytes)) &&
+           leftBytes == rightBytes;
+  };
   return left.name == right.name &&
          left.typeIdentifier == right.typeIdentifier &&
          left.contractVersion == right.contractVersion &&
+         sameTypedConfiguration() &&
          left.stateBlockIdentifiers == right.stateBlockIdentifiers &&
          left.fieldNames == right.fieldNames && left.x == right.x &&
          left.y == right.y && left.z == right.z &&
@@ -372,18 +408,14 @@ WVCheckpointStatus parseObserver(int outputGroup, int metadataGroup,
   WVObserverRecord observer;
   observer.typeIdentifier = className;
   bool present = false;
-  if (!implementation) {
-    std::string schemaIdentifier;
-    result = optionalTextAttribute(metadataGroup,
-                                   "portableObservationSchemaIdentifier",
-                                   schemaIdentifier, present, outputPath);
-    if (!result)
-      return result;
-    if (!present)
-      return failure(WVCheckpointStatusCode::unsupportedObserver,
-                     "Unsupported MATLAB observing-system class '" +
-                         className + "'.",
-                     outputPath + "/@AnnotatedClass");
+  std::string schemaIdentifier;
+  result = optionalTextAttribute(metadataGroup,
+                                 "portableObservationSchemaIdentifier",
+                                 schemaIdentifier, present, outputPath);
+  if (!result)
+    return result;
+  const bool hasPortableSchema = present;
+  if (hasPortableSchema) {
     unsigned int schemaVersion = 0;
     result = detail::checkedNetCDF(
         nc_get_att_uint(metadataGroup, NC_GLOBAL,
@@ -391,7 +423,46 @@ WVCheckpointStatus parseObserver(int outputGroup, int metadataGroup,
         "Observation-schema version read", outputPath);
     if (!result)
       return result;
-    observer.contractVersion = schemaVersion;
+    unsigned int observerVersion =
+        implementation == nullptr ? WVPortablePairContractVersion
+                                  : implementation->contractVersion();
+    const int versionInquiry = nc_inq_att(
+        metadataGroup, NC_GLOBAL, "portableObserverContractVersion", nullptr,
+        nullptr);
+    if (versionInquiry == NC_NOERR) {
+      result = detail::checkedNetCDF(
+          nc_get_att_uint(metadataGroup, NC_GLOBAL,
+                          "portableObserverContractVersion", &observerVersion),
+          "Observer contract-version read", outputPath);
+      if (!result)
+        return result;
+    } else if (versionInquiry != NC_ENOTATT) {
+      return detail::netcdfFailure(versionInquiry,
+                                   "Observer contract-version inspection",
+                                   outputPath);
+    }
+    observer.contractVersion = observerVersion;
+    std::string encodedConfiguration;
+    bool hasConfiguration = false;
+    result = optionalTextAttribute(metadataGroup,
+                                   "portableObserverConfiguration",
+                                   encodedConfiguration, hasConfiguration,
+                                   outputPath);
+    if (!result)
+      return result;
+    if (hasConfiguration) {
+      std::vector<std::uint8_t> configurationBytes;
+      if (!hexDecode(encodedConfiguration, configurationBytes))
+        return failure(WVCheckpointStatusCode::invalidValue,
+                       "Portable observer configuration is malformed.",
+                       outputPath);
+      const auto decoded = decodePortableTypedRecord(
+          configurationBytes, observer.configuration,
+          {1024 * 1024, true, true});
+      if (!decoded)
+        return failure(WVCheckpointStatusCode::invalidValue, decoded.message,
+                       outputPath);
+    }
     result = optionalTextAttribute(metadataGroup, "name", observer.name,
                                    present, outputPath);
     if (!result)
@@ -408,6 +479,11 @@ WVCheckpointStatus parseObserver(int outputGroup, int metadataGroup,
     identifier = observer.identifier;
     return mergeObserver(portable, std::move(observer));
   }
+  if (!implementation)
+    return failure(WVCheckpointStatusCode::unsupportedObserver,
+                   "Unsupported MATLAB observing-system class '" + className +
+                       "'.",
+                   outputPath + "/@AnnotatedClass");
   observer.contractVersion = implementation->contractVersion();
   const auto &behavior = *implementation;
 

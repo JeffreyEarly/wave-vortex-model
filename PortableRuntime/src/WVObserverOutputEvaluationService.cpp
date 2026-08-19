@@ -1062,6 +1062,31 @@ std::size_t WVObserverOutputEvaluationService::persistentBytes() const noexcept 
             impl_->particleZ.capacity()) * sizeof(double);
   for (const auto &[key, storage] : impl_->affineStorage)
     bytes += key.capacity() + storage.capacity() * sizeof(double);
+  for (const auto &[identifier, schema] : impl_->schemasByObserver)
+    bytes += identifier.capacity() + sizeof(WVObservationSchema) +
+             observationSchemaRetainedBytes(schema);
+  for (const auto &[identifier, bindings] :
+       impl_->observationBindingsByObserver) {
+    bytes += identifier.capacity() +
+             bindings.capacity() * sizeof(Impl::ObservationBinding);
+    for (const auto &binding : bindings) {
+      bytes += binding.stateBlockIdentifier.capacity() +
+               binding.fixedReal.capacity() * sizeof(double) +
+               binding.variable.identifier.capacity() +
+               binding.variable.name.capacity() +
+               binding.variable.units.capacity() +
+               binding.variable.description.capacity() +
+               binding.variable.raggedChildAxisIdentifier.capacity() +
+               binding.variable.dimensionIdentifiers.capacity() *
+                   sizeof(std::string) +
+               binding.variable.attributes.capacity() *
+                   sizeof(WVObservationAttribute);
+      for (const auto &axis : binding.variable.dimensionIdentifiers)
+        bytes += axis.capacity();
+      for (const auto &attribute : binding.variable.attributes)
+        bytes += attribute.name.capacity() + attribute.value.capacity();
+    }
+  }
   return bytes;
 }
 
