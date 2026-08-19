@@ -415,6 +415,28 @@ void testBottomFrictionReusesNonlinearFields(bool hydrostatic) {
             "linear bottom friction did not reuse nonlinear-advection physical fields");
 }
 
+void testLinearBottomFrictionAdaptiveIntegration(bool hydrostatic) {
+    WVFrozenForcingSchedule schedule;
+    auto drag = forcingConfiguration();
+    drag.values.push_back(realValue("r",{2.5e-7}));
+    schedule.entries.push_back(entry("WVBottomFrictionLinear","linear drag",WVForcingStage::spatial,128,std::move(drag)));
+    auto system = createSystem(hydrostatic,schedule);
+    OwnedState owned(system->kernel().descriptor().spectralShape());
+    auto state = owned.integrationView();
+    WVAdaptiveRK23Options options;
+    options.relativeTolerance = 1e-6;
+    options.absoluteToleranceScale = 1e-8;
+    options.maximumStepSize = 0.01;
+    WVAdaptiveRK23 integrator(*system,options);
+    auto status = integrator.prepareStateAfterRestart(state);
+    require(static_cast<bool>(status),"linear bottom-friction adaptive restart preparation failed");
+    status = integrator.advanceToTime(state,0.52,0.01);
+    require(static_cast<bool>(status),"linear bottom-friction adaptive integration failed");
+    require(state.waveVortex.t == 0.52 && integrator.metrics().acceptedStepCount == 2,
+            "linear bottom-friction adaptive integration used an unexpected interval");
+    requireFinite(owned.values,"linear bottom-friction adaptive integration produced non-finite coefficients");
+}
+
 void testMultipleWholeFluxProducers() {
     auto schedule = nonlinearSchedule();
     schedule.entries.push_back(entry("WVNonlinearAdvection","nonlinear-second",WVForcingStage::spatial,128));
@@ -498,6 +520,8 @@ int main() {
         testLinearBottomFriction(false);
         testBottomFrictionReusesNonlinearFields(true);
         testBottomFrictionReusesNonlinearFields(false);
+        testLinearBottomFrictionAdaptiveIntegration(true);
+        testLinearBottomFrictionAdaptiveIntegration(false);
         testMultipleWholeFluxProducers();
         testRightHandSideContextIdentity();
         testValidation();
