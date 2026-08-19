@@ -84,7 +84,7 @@ int main() {
   const auto declaration = schema();
   require(static_cast<bool>(validateObservationSchema(declaration)),
           "valid observation schema was rejected");
-  const auto values = batch();
+  auto values = batch();
   require(static_cast<bool>(validateObservationBatch(declaration, values)),
           "valid mixed typed/ragged observation batch was rejected");
   require(values.values[1].ownership ==
@@ -95,7 +95,7 @@ int main() {
               values.metrics().retainedStorageBytes > 0,
           "observation batch storage metrics were not reported");
 
-  auto zero = values;
+  auto zero = batch();
   zero.values[0] = WVObservationValue::ownInteger("profile-count", {0}, {});
   zero.values[1] = WVObservationValue::borrowReal("sample-time", {0}, nullptr);
   zero.values[2] = WVObservationValue::ownReal("sample-x", {0}, {});
@@ -106,23 +106,23 @@ int main() {
   require(static_cast<bool>(validateObservationBatch(declaration, zero)),
           "zero-length observation occurrence was rejected");
 
-  auto inconsistent = values;
+  auto inconsistent = batch();
   inconsistent.values[2].extents = {2};
   require(!validateObservationBatch(declaration, inconsistent),
           "inconsistent unlimited extents were accepted");
-  auto undeclared = values;
+  auto undeclared = batch();
   undeclared.values.back().variableIdentifier = "undeclared";
   require(!validateObservationBatch(declaration, undeclared),
           "undeclared observation variable was accepted");
-  auto malformed = values;
+  auto malformed = batch();
   malformed.values[0].ownedInteger64 = {2, 2};
   require(!validateObservationBatch(declaration, malformed),
           "malformed ragged row counts were accepted");
-  auto drifted = values;
+  auto drifted = batch();
   drifted.schemaVersion = 2;
   require(!validateObservationBatch(declaration, drifted),
           "observation schema drift was accepted");
-  auto badBoolean = values;
+  auto badBoolean = batch();
   badBoolean.values[4].ownedBoolean8[1] = 2;
   require(!validateObservationBatch(declaration, badBoolean),
           "invalid Boolean observation value was accepted");

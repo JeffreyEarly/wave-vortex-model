@@ -185,6 +185,12 @@ struct WVObservationBatchMetrics {
 };
 
 struct WVObservationBatch {
+  WVObservationBatch() = default;
+  WVObservationBatch(WVObservationBatch &&) noexcept = default;
+  WVObservationBatch &operator=(WVObservationBatch &&) noexcept = default;
+  WVObservationBatch(const WVObservationBatch &) = delete;
+  WVObservationBatch &operator=(const WVObservationBatch &) = delete;
+
   std::string schemaIdentifier;
   std::uint32_t schemaVersion = WVObservationSchemaContractVersion;
   WVObservationBatchKind kind = WVObservationBatchKind::event;
