@@ -93,6 +93,7 @@ WVPortableObserverDescriptor::create(const WVPortableObserverRecord &record,
     std::map<std::string, std::shared_ptr<const WVObservingSystem>>
         observerImplementations;
     std::map<std::string, WVPortableTypedRecord> observerConfigurations;
+    std::map<std::string, WVObserverExecutionPlan> observerExecutionPlans;
     std::map<std::string, std::size_t> integratedBlockOwnerCounts;
     for (const auto &block : record.stateBlocks) {
       const bool canonical = block.identifier == "Ap" ||
@@ -132,6 +133,16 @@ WVPortableObserverDescriptor::create(const WVPortableObserverRecord &record,
           observer, blocksByIdentifier, integratedBlockOwnerCounts);
       if (!observerStatus)
         return observerStatus;
+      auto configuredObserver = observer;
+      configuredObserver.configuration =
+          observerConfigurations.at(observer.identifier);
+      WVObserverExecutionPlan executionPlan;
+      const auto planStatus =
+          implementation->executionPlan(configuredObserver, executionPlan);
+      if (!planStatus)
+        return planStatus;
+      observerExecutionPlans.emplace(observer.identifier,
+                                     std::move(executionPlan));
     }
 
     for (const auto &[identifier, ownerCount] : integratedBlockOwnerCounts) {
@@ -180,38 +191,17 @@ WVPortableObserverDescriptor::create(const WVPortableObserverRecord &record,
         }
         if (group.containsCompleteCoefficientRestart) {
           ++restartGroupCount;
-          const bool containsCoefficients = std::any_of(
-              group.observerIdentifiers.begin(),
-              group.observerIdentifiers.end(), [&](const auto &identifier) {
-                return observerImplementations.at(identifier)
-                    ->recordsCoefficients();
-              });
-          const bool containsEulerianCoefficients = std::any_of(
-              group.observerIdentifiers.begin(),
-              group.observerIdentifiers.end(), [&](const auto &identifier) {
-                if (!observerImplementations.at(identifier)
-                         ->recordsEulerianFields())
-                  return false;
-                const auto observer = std::find_if(
-                    record.observers.begin(), record.observers.end(),
-                    [&](const auto &candidate) {
-                      return candidate.identifier == identifier;
-                    });
-                if (observer == record.observers.end())
-                  return false;
-                return std::find(observer->fieldNames.begin(),
-                                 observer->fieldNames.end(), "Ap") !=
-                           observer->fieldNames.end() &&
-                       std::find(observer->fieldNames.begin(),
-                                 observer->fieldNames.end(), "Am") !=
-                           observer->fieldNames.end() &&
-                       std::find(observer->fieldNames.begin(),
-                                 observer->fieldNames.end(), "A0") !=
-                           observer->fieldNames.end();
-              });
-          if (!containsCoefficients && !containsEulerianCoefficients)
+          std::set<std::string> restartFamilies;
+          for (const auto &identifier : group.observerIdentifiers) {
+            const auto &families = observerExecutionPlans.at(identifier)
+                                       .coefficientRestartFamilies;
+            restartFamilies.insert(families.begin(), families.end());
+          }
+          if (restartFamilies.find("Ap") == restartFamilies.end() ||
+              restartFamilies.find("Am") == restartFamilies.end() ||
+              restartFamilies.find("A0") == restartFamilies.end())
             return invalid("A complete coefficient-restart group must contain "
-                           "WVCoefficients or Eulerian Ap, Am, and A0.");
+                           "providers for Ap, Am, and A0.");
         }
       }
       if (!file.groups.empty() && restartGroupCount != 1)
@@ -226,6 +216,8 @@ WVPortableObserverDescriptor::create(const WVPortableObserverRecord &record,
       auto resolved = std::make_unique<WVResolvedObserver>();
       resolved->identifier_ = observer.identifier;
       resolved->configuration_ = observer.configuration;
+      resolved->executionPlan_ =
+          observerExecutionPlans.at(observer.identifier);
       resolved->implementation_ =
           observerImplementations.at(observer.identifier);
       descriptor.resolvedObservers_.push_back(std::move(resolved));
@@ -287,9 +279,19 @@ const WVResolvedObserver *WVPortableObserverDescriptor::resolvedObserver(
 }
 
 std::size_t WVResolvedObserver::persistentBytes() const noexcept {
-  return sizeof(*this) + identifier_.capacity() +
+  std::size_t bytes = sizeof(*this) + identifier_.capacity() +
          configuration_.persistentBytes() - sizeof(WVPortableTypedRecord) +
          implementation_->persistentBytes();
+  bytes += executionPlan_.fieldListAttribute.capacity() +
+           executionPlan_.persistedName.capacity() +
+           executionPlan_.outputFields.capacity() * sizeof(std::string) +
+           executionPlan_.coefficientRestartFamilies.capacity() *
+               sizeof(std::string);
+  for (const auto &value : executionPlan_.outputFields)
+    bytes += value.capacity();
+  for (const auto &value : executionPlan_.coefficientRestartFamilies)
+    bytes += value.capacity();
+  return bytes;
 }
 
 std::size_t WVPortableObserverDescriptor::persistentBytes() const noexcept {

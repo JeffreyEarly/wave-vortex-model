@@ -30,11 +30,15 @@ public:
     return value;
   }
   std::uint32_t contractVersion() const noexcept override { return 1; }
-  const std::string &fieldListAttribute() const noexcept override {
-    static const std::string value = "fieldNames";
-    return value;
+  WVKernelStatus executionPlan(const WVObserverRecord &record,
+                               WVObserverExecutionPlan &plan) const override {
+    plan = {};
+    plan.sampling = WVObserverSamplingTopology::fixedPositions;
+    plan.fieldListAttribute = "fieldNames";
+    plan.persistedName = record.name;
+    plan.outputFields = record.fieldNames;
+    return WVKernelStatus::ok();
   }
-  bool recordsFixedPoints() const noexcept override { return true; }
   WVKernelStatus validate(
       const WVObserverRecord &record,
       const std::map<std::string, const WVStateBlockRecord *> &,
@@ -345,7 +349,7 @@ void testService(bool linear) {
             "point-diagnostic affine output changed");
   WVOutputObserverView routedObserver{
       1, &observers.observers()[1],
-      observers.implementation(observers.observers()[1])};
+      observers.resolvedObserver(observers.observers()[1])};
   WVOutputRouteView passiveRoute;
   passiveRoute.observers = &routedObserver;
   passiveRoute.observerCount = 1;

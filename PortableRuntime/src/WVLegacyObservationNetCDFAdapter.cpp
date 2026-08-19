@@ -299,8 +299,14 @@ readObserverStateAtTime(const std::string &filePath,
     return failure(WVCheckpointStatusCode::unsupportedObserver,
                    "Dynamic observer state uses an unsupported observer.",
                    groupPath);
+  WVObserverExecutionPlan execution;
+  const auto planStatus = implementation->executionPlan(observer, execution);
+  if (!planStatus)
+    return failure(WVCheckpointStatusCode::descriptorFailure,
+                   planStatus.message, groupPath);
   values.clear();
-  if (implementation->recordsMovingParticles()) {
+  if (execution.integratedOperation ==
+      WVObserverIntegratedOperation::advectedPositions) {
     const auto channels = detail::movingFieldChannels(observer);
     values.resize(channels.size());
     for (std::size_t index = 0; index < channels.size(); ++index) {
@@ -318,7 +324,8 @@ readObserverStateAtTime(const std::string &filePath,
       if (!result)
         return result;
     }
-  } else if (implementation->recordsTracerState()) {
+  } else if (execution.integratedOperation ==
+             WVObserverIntegratedOperation::advectedScalar) {
     values.resize(1);
     result = readLatestRealSlab(group, observer.name, recordIndex, values[0],
                                 groupPath);
@@ -485,7 +492,11 @@ WVCheckpointStatus parseObserver(int outputGroup, int metadataGroup,
                        "'.",
                    outputPath + "/@AnnotatedClass");
   observer.contractVersion = implementation->contractVersion();
-  const auto &behavior = *implementation;
+  WVObserverExecutionPlan execution;
+  auto executionStatus = implementation->executionPlan(observer, execution);
+  if (!executionStatus)
+    return failure(WVCheckpointStatusCode::descriptorFailure,
+                   executionStatus.message, outputPath);
 
   result = optionalTextAttribute(metadataGroup, "name", observer.name, present,
                                  outputPath);
@@ -499,18 +510,21 @@ WVCheckpointStatus parseObserver(int outputGroup, int metadataGroup,
     return result;
   const bool hadPortableIdentifier = present;
   if (!hadPortableIdentifier) {
-    if (behavior.recordsCoefficients())
+    if (execution.coefficientRestartFamilies ==
+            std::vector<std::string>({"Ap", "Am", "A0"}) &&
+        execution.fieldListAttribute.empty())
       observer.identifier = "coefficients";
-    else if (behavior.recordsEulerianFields())
+    else if (execution.sampling == WVObserverSamplingTopology::fullField &&
+             !execution.fieldListAttribute.empty())
       observer.identifier = "eulerian-fields";
     else
       observer.identifier = portableIdentifier(className + "-" + observer.name);
   }
   identifier = observer.identifier;
 
-  if (!implementation->fieldListAttribute().empty()) {
+  if (!execution.fieldListAttribute.empty()) {
     result = stringListAttribute(metadataGroup,
-                                 implementation->fieldListAttribute().c_str(),
+                                 execution.fieldListAttribute.c_str(),
                                  observer.fieldNames, present, outputPath);
     if (!result)
       return result;
@@ -521,14 +535,24 @@ WVCheckpointStatus parseObserver(int outputGroup, int metadataGroup,
                                             observer.fieldNames.end(),
                                             std::string{}),
                                 observer.fieldNames.end());
-    if (!hadPortableIdentifier && behavior.recordsEulerianFields()) {
+    executionStatus = implementation->executionPlan(observer, execution);
+    if (!executionStatus)
+      return failure(WVCheckpointStatusCode::descriptorFailure,
+                     executionStatus.message, outputPath);
+    if (!hadPortableIdentifier &&
+        execution.sampling == WVObserverSamplingTopology::fullField &&
+        !execution.fieldListAttribute.empty()) {
       for (const auto &field : observer.fieldNames)
         observer.identifier += "-" + portableIdentifier(field);
       identifier = observer.identifier;
     }
   }
 
-  if (behavior.recordsCoefficients()) {
+  const bool canonicalCoefficientProvider =
+      execution.coefficientRestartFamilies ==
+          std::vector<std::string>({"Ap", "Am", "A0"}) &&
+      execution.fieldListAttribute.empty();
+  if (canonicalCoefficientProvider) {
     double tolerance = 0.0;
     result = detail::readDoubleScalar(metadataGroup, "absTolerance", tolerance,
                                       outputPath);
@@ -556,7 +580,7 @@ WVCheckpointStatus parseObserver(int outputGroup, int metadataGroup,
       if (!result)
         return result;
     }
-  } else if (behavior.recordsEulerianFields()) {
+  } else if (execution.sampling == WVObserverSamplingTopology::fullField) {
     const bool hasCompleteCoefficients =
         std::find(observer.fieldNames.begin(), observer.fieldNames.end(),
                   "Ap") != observer.fieldNames.end() &&
@@ -601,7 +625,8 @@ WVCheckpointStatus parseObserver(int outputGroup, int metadataGroup,
           return result;
       }
     }
-  } else if (behavior.recordsMovingParticles()) {
+  } else if (execution.sampling ==
+             WVObserverSamplingTopology::movingPositions) {
     result = detail::readLogicalScalar(metadataGroup, "isXYOnly",
                                        observer.isXYOnly, outputPath);
     if (!result)
@@ -660,7 +685,7 @@ WVCheckpointStatus parseObserver(int outputGroup, int metadataGroup,
       if (!result)
         return result;
     }
-  } else if (behavior.recordsTracerState()) {
+  } else if (execution.sampling == WVObserverSamplingTopology::integratedState) {
     result = detail::readLogicalScalar(metadataGroup, "isXYOnly",
                                        observer.isXYOnly, outputPath);
     if (!result)
@@ -696,7 +721,7 @@ WVCheckpointStatus parseObserver(int outputGroup, int metadataGroup,
                                    WVRestartRequirement::requiredDynamicState});
     if (!result)
       return result;
-  } else if (behavior.recordsFixedPoints()) {
+  } else if (execution.sampling == WVObserverSamplingTopology::fixedPositions) {
     result = detail::readDoubleScalar(metadataGroup, "outputScale",
                                       observer.outputScale, outputPath);
     if (!result)
@@ -725,7 +750,8 @@ WVCheckpointStatus parseObserver(int outputGroup, int metadataGroup,
                                      observer.z, outputPath);
     if (!result)
       return result;
-  } else if (behavior.recordsFixedProfiles()) {
+  } else if (execution.sampling ==
+             WVObserverSamplingTopology::fixedVerticalProfiles) {
     result = readWholeDoubleVariable(outputGroup, observer.name + "_x",
                                      observer.x, outputPath);
     if (!result)
@@ -762,7 +788,11 @@ bool persistedObserverCarriesCoefficientState(int metadataGroup) noexcept {
     return false;
   const auto implementation = observerImplementation(
       className, WVPortablePairContractVersion);
-  return implementation && implementation->recordsCoefficients();
+  WVObserverExecutionPlan execution;
+  return implementation && implementation->executionPlan({}, execution) &&
+         execution.coefficientRestartFamilies ==
+             std::vector<std::string>({"Ap", "Am", "A0"}) &&
+         execution.fieldListAttribute.empty();
 }
 
 WVCheckpointStatus resolvePersistedObserverRestartState(
@@ -773,9 +803,11 @@ WVCheckpointStatus resolvePersistedObserverRestartState(
   for (auto &observer : observers) {
     const auto implementation = observerImplementation(
         observer.typeIdentifier, observer.contractVersion);
-    if (!implementation || observer.stateBlockIdentifiers.empty() ||
-        (!implementation->recordsMovingParticles() &&
-         !implementation->recordsTracerState()))
+    WVObserverExecutionPlan execution;
+    if (!implementation ||
+        !implementation->executionPlan(observer, execution) ||
+        observer.stateBlockIdentifiers.empty() ||
+        execution.integratedOperation == WVObserverIntegratedOperation::none)
       continue;
     std::vector<std::vector<double>> selectedValues;
     std::string selectedLocation;
@@ -820,15 +852,17 @@ WVCheckpointStatus resolvePersistedObserverRestartState(
                      "state at the selected restart time.",
                      "/observingSystems/" + observer.identifier);
     const bool hasFixedParticleZ =
-        implementation->recordsMovingParticles() && observer.isXYOnly &&
-        !observer.z.empty();
+        execution.integratedOperation ==
+            WVObserverIntegratedOperation::advectedPositions &&
+        observer.isXYOnly && !observer.z.empty();
     if (selectedValues.size() !=
         observer.stateBlockIdentifiers.size() + (hasFixedParticleZ ? 1 : 0))
       return failure(WVCheckpointStatusCode::shapeMismatch,
                      "Dynamic observer state has an incompatible block "
                      "count.",
                      selectedLocation);
-    if (implementation->recordsMovingParticles()) {
+    if (execution.integratedOperation ==
+        WVObserverIntegratedOperation::advectedPositions) {
       observer.x = selectedValues[0];
       observer.y = selectedValues[1];
       if (hasFixedParticleZ)

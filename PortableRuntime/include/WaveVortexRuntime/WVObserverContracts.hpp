@@ -75,12 +75,16 @@ public:
   const WVObservingSystem &implementation() const noexcept {
     return *implementation_;
   }
+  const WVObserverExecutionPlan &executionPlan() const noexcept {
+    return executionPlan_;
+  }
   std::size_t persistentBytes() const noexcept;
 
 private:
   friend class WVPortableObserverDescriptor;
   std::string identifier_;
   WVPortableTypedRecord configuration_;
+  WVObserverExecutionPlan executionPlan_;
   std::shared_ptr<const WVObservingSystem> implementation_;
 };
 

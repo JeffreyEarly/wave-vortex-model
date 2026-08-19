@@ -457,7 +457,7 @@ WVOutputPlan::create(const WVPortableObserverDescriptor &descriptor,
                            identifier);
           resolved.observers.push_back(
               {found->second, &candidate->record.observers[found->second],
-               descriptor.implementation(
+               descriptor.resolvedObserver(
                    descriptor.observers()[found->second])});
         }
         resolved.route = {fileIndex,

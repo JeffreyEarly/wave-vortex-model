@@ -28,6 +28,7 @@ endforeach()
 set(generic_observation_consumers
     "PortableRuntime/src/WVModelOutputNetCDFWriter.cpp"
     "PortableRuntime/src/WVModelOutputNetCDFReader.cpp"
+    "PortableRuntime/src/WVObserverOutputEvaluationService.cpp"
     "PortableRuntime/src/WVOutputOrchestration.cpp"
     "PortableRuntime/src/WVConstantStratificationIntegrationSystem.cpp")
 set(observer_kind_dispatch
@@ -53,7 +54,16 @@ endforeach()
 set(retired_dispatch_symbols
     WVObserverKind
     WVObserverStateContract
-    WVObserverOutputRule)
+    WVObserverOutputRule
+    recordsCoefficients
+    recordsEulerianFields
+    recordsFixedProfiles
+    recordsFixedPoints
+    recordsMovingParticles
+    recordsTracerState
+    contributesRightHandSide
+    ownsParticleState
+    ownsTracerState)
 
 foreach(source IN LISTS observer_sources)
     file(READ "${source}" contents)

@@ -1,5 +1,6 @@
 #include "WVObserverAdapter.hpp"
 
+#include <algorithm>
 #include <cmath>
 #include <mutex>
 #include <utility>
@@ -11,12 +12,28 @@ WVKernelStatus invalid(std::string message) {
   return {WVKernelStatusCode::invalidConfiguration, std::move(message)};
 }
 
+WVKernelStatus configuredText(const WVObserverRecord &observer,
+                              const char *name,
+                              const std::vector<std::string> &fallback,
+                              std::vector<std::string> &output) {
+  const auto *value = observer.configuration.value(name);
+  if (value == nullptr) {
+    output = fallback;
+    return WVKernelStatus::ok();
+  }
+  const auto *text =
+      std::get_if<std::vector<std::string>>(&value->storage);
+  if (text == nullptr)
+    return invalid(std::string("Observer configuration value '") + name +
+                   "' must contain text.");
+  output = *text;
+  return WVKernelStatus::ok();
+}
+
 class BuiltInObservingSystem : public WVObservingSystem {
 public:
-  BuiltInObservingSystem(std::string typeIdentifier,
-                         std::string fieldListAttribute = {})
-      : typeIdentifier_(std::move(typeIdentifier)),
-        fieldListAttribute_(std::move(fieldListAttribute)) {}
+  explicit BuiltInObservingSystem(std::string typeIdentifier)
+      : typeIdentifier_(std::move(typeIdentifier)) {}
 
   const std::string &typeIdentifier() const noexcept override {
     return typeIdentifier_;
@@ -24,12 +41,8 @@ public:
   std::uint32_t contractVersion() const noexcept override {
     return WVPortablePairContractVersion;
   }
-  const std::string &fieldListAttribute() const noexcept override {
-    return fieldListAttribute_;
-  }
   std::size_t persistentBytes() const noexcept override {
-    return sizeof(*this) + typeIdentifier_.capacity() +
-           fieldListAttribute_.capacity();
+    return sizeof(*this) + typeIdentifier_.capacity();
   }
 
 protected:
@@ -42,13 +55,19 @@ protected:
 
 private:
   std::string typeIdentifier_;
-  std::string fieldListAttribute_;
 };
 
 class WVCoefficientsImplementation final : public BuiltInObservingSystem {
 public:
   WVCoefficientsImplementation() : BuiltInObservingSystem("WVCoefficients") {}
-  bool recordsCoefficients() const noexcept override { return true; }
+  WVKernelStatus executionPlan(const WVObserverRecord &observer,
+                               WVObserverExecutionPlan &plan) const override {
+    plan = {};
+    plan.persistedName = observer.name;
+    plan.outputFields = {"Ap", "Am", "A0"};
+    plan.coefficientRestartFamilies = plan.outputFields;
+    return WVKernelStatus::ok();
+  }
   WVKernelStatus validate(
       const WVObserverRecord &observer,
       const std::map<std::string, const WVStateBlockRecord *> &,
@@ -64,8 +83,21 @@ public:
 class WVEulerianFieldsImplementation final : public BuiltInObservingSystem {
 public:
   WVEulerianFieldsImplementation()
-      : BuiltInObservingSystem("WVEulerianFields", "fieldNames") {}
-  bool recordsEulerianFields() const noexcept override { return true; }
+      : BuiltInObservingSystem("WVEulerianFields") {}
+  WVKernelStatus executionPlan(const WVObserverRecord &observer,
+                               WVObserverExecutionPlan &plan) const override {
+    plan = {};
+    plan.fieldListAttribute = "fieldNames";
+    auto status = configuredText(observer, "fieldNames", observer.fieldNames,
+                                 plan.outputFields);
+    if (!status)
+      return status;
+    for (const auto *family : {"Ap", "Am", "A0"})
+      if (std::find(observer.fieldNames.begin(), observer.fieldNames.end(),
+                    family) != observer.fieldNames.end())
+        plan.coefficientRestartFamilies.emplace_back(family);
+    return WVKernelStatus::ok();
+  }
   WVKernelStatus validate(
       const WVObserverRecord &observer,
       const std::map<std::string, const WVStateBlockRecord *> &,
@@ -77,8 +109,16 @@ public:
 class WVMooringImplementation final : public BuiltInObservingSystem {
 public:
   WVMooringImplementation()
-      : BuiltInObservingSystem("WVMooring", "trackedFieldNames") {}
-  bool recordsFixedProfiles() const noexcept override { return true; }
+      : BuiltInObservingSystem("WVMooring") {}
+  WVKernelStatus executionPlan(const WVObserverRecord &observer,
+                               WVObserverExecutionPlan &plan) const override {
+    plan = {};
+    plan.sampling = WVObserverSamplingTopology::fixedVerticalProfiles;
+    plan.fieldListAttribute = "trackedFieldNames";
+    plan.persistedName = observer.name;
+    return configuredText(observer, "trackedFieldNames", observer.fieldNames,
+                          plan.outputFields);
+  }
   WVKernelStatus validate(
       const WVObserverRecord &observer,
       const std::map<std::string, const WVStateBlockRecord *> &,
@@ -96,10 +136,18 @@ class WVLagrangianParticlesImplementation final
     : public BuiltInObservingSystem {
 public:
   WVLagrangianParticlesImplementation()
-      : BuiltInObservingSystem("WVLagrangianParticles", "trackedFieldNames") {}
-  bool recordsMovingParticles() const noexcept override { return true; }
-  bool contributesRightHandSide() const noexcept override { return true; }
-  bool ownsParticleState() const noexcept override { return true; }
+      : BuiltInObservingSystem("WVLagrangianParticles") {}
+  WVKernelStatus executionPlan(const WVObserverRecord &observer,
+                               WVObserverExecutionPlan &plan) const override {
+    plan = {};
+    plan.sampling = WVObserverSamplingTopology::movingPositions;
+    plan.integratedOperation =
+        WVObserverIntegratedOperation::advectedPositions;
+    plan.fieldListAttribute = "trackedFieldNames";
+    plan.persistedName = observer.name;
+    return configuredText(observer, "trackedFieldNames", observer.fieldNames,
+                          plan.outputFields);
+  }
   WVKernelStatus validate(
       const WVObserverRecord &observer,
       const std::map<std::string, const WVStateBlockRecord *> &blocks,
@@ -142,9 +190,14 @@ public:
 class WVTracerImplementation final : public BuiltInObservingSystem {
 public:
   WVTracerImplementation() : BuiltInObservingSystem("WVTracer") {}
-  bool recordsTracerState() const noexcept override { return true; }
-  bool contributesRightHandSide() const noexcept override { return true; }
-  bool ownsTracerState() const noexcept override { return true; }
+  WVKernelStatus executionPlan(const WVObserverRecord &observer,
+                               WVObserverExecutionPlan &plan) const override {
+    plan = {};
+    plan.sampling = WVObserverSamplingTopology::integratedState;
+    plan.integratedOperation = WVObserverIntegratedOperation::advectedScalar;
+    plan.persistedName = observer.name;
+    return WVKernelStatus::ok();
+  }
   WVKernelStatus validate(
       const WVObserverRecord &observer,
       const std::map<std::string, const WVStateBlockRecord *> &blocks,
@@ -330,7 +383,12 @@ WVKernelStatus canonicalCoefficientObserver(std::string identifier,
                                             WVObserverRecord &observer) {
   const auto implementation = std::find_if(
       mutableImplementations().begin(), mutableImplementations().end(),
-      [](const auto &candidate) { return candidate->recordsCoefficients(); });
+      [](const auto &candidate) {
+        WVObserverExecutionPlan plan;
+        return candidate->executionPlan({}, plan) &&
+               plan.coefficientRestartFamilies ==
+                   std::vector<std::string>({"Ap", "Am", "A0"});
+      });
   if (implementation == mutableImplementations().end())
     return {WVKernelStatusCode::unsupportedOperation,
             "No coefficient observer implementation is registered."};
@@ -368,14 +426,18 @@ movingFieldChannels(const WVObserverRecord &observer) {
       observer.typeIdentifier, observer.contractVersion);
   if (!implementation)
     return {};
-  if (implementation->ownsParticleState())
+  WVObserverExecutionPlan plan;
+  if (!implementation->executionPlan(observer, plan))
+    return {};
+  if (plan.integratedOperation ==
+      WVObserverIntegratedOperation::advectedPositions)
     return observer.isXYOnly
                ? std::vector<WVMovingFieldChannel>{WVMovingFieldChannel::x,
                                                    WVMovingFieldChannel::y}
                : std::vector<WVMovingFieldChannel>{WVMovingFieldChannel::x,
                                                    WVMovingFieldChannel::y,
                                                    WVMovingFieldChannel::z};
-  if (implementation->ownsTracerState())
+  if (plan.integratedOperation == WVObserverIntegratedOperation::advectedScalar)
     return {WVMovingFieldChannel::tracerValue};
   return {};
 }

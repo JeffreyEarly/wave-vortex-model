@@ -39,11 +39,17 @@ public:
     return value;
   }
   std::uint32_t contractVersion() const noexcept override { return 1; }
-  const std::string &fieldListAttribute() const noexcept override {
-    static const std::string value = "fieldNames";
-    return value;
+  WVKernelStatus executionPlan(const WVObserverRecord &record,
+                               WVObserverExecutionPlan &plan) const override {
+    plan = {};
+    plan.fieldListAttribute = "fieldNames";
+    plan.outputFields = record.fieldNames;
+    for (const auto *family : {"Ap", "Am", "A0"})
+      if (std::find(record.fieldNames.begin(), record.fieldNames.end(),
+                    family) != record.fieldNames.end())
+        plan.coefficientRestartFamilies.emplace_back(family);
+    return WVKernelStatus::ok();
   }
-  bool recordsEulerianFields() const noexcept override { return true; }
   WVKernelStatus
   validate(const WVObserverRecord &record,
            const std::map<std::string, const WVStateBlockRecord *> &,
@@ -66,11 +72,15 @@ public:
     return value;
   }
   std::uint32_t contractVersion() const noexcept override { return 1; }
-  const std::string &fieldListAttribute() const noexcept override {
-    static const std::string value = "fieldNames";
-    return value;
+  WVKernelStatus executionPlan(const WVObserverRecord &record,
+                               WVObserverExecutionPlan &plan) const override {
+    plan = {};
+    plan.sampling = WVObserverSamplingTopology::fixedPositions;
+    plan.fieldListAttribute = "fieldNames";
+    plan.persistedName = record.name;
+    plan.outputFields = record.fieldNames;
+    return WVKernelStatus::ok();
   }
-  bool recordsFixedPoints() const noexcept override { return true; }
   WVKernelStatus
   validate(const WVObserverRecord &record,
            const std::map<std::string, const WVStateBlockRecord *> &,
@@ -97,9 +107,11 @@ public:
     return value;
   }
   std::uint32_t contractVersion() const noexcept override { return 1; }
-  const std::string &fieldListAttribute() const noexcept override {
-    static const std::string value;
-    return value;
+  WVKernelStatus executionPlan(const WVObserverRecord &record,
+                               WVObserverExecutionPlan &plan) const override {
+    plan = {};
+    plan.persistedName = record.name;
+    return WVKernelStatus::ok();
   }
   WVKernelStatus
   validate(const WVObserverRecord &record,
@@ -1635,6 +1647,65 @@ void testVariableObservationBatches() {
   require(static_cast<bool>(persistence), persistence.message);
 }
 
+void testCoincidentRoutesShareExactEventBatches() {
+  TemporaryDirectory directory;
+  auto checkpoint = checkpointTemplate();
+  const auto initialTime = checkpoint.state.t;
+  const auto primaryPath = directory.path / "coincident-primary.nc";
+  const auto secondaryPath = directory.path / "coincident-secondary.nc";
+  auto record = recordFor(checkpoint, primaryPath);
+  WVObserverRecord synthetic;
+  synthetic.identifier = "coincident-observations";
+  synthetic.name = "coincident";
+  synthetic.typeIdentifier = "WVTestObservationBatches";
+  record.observers.push_back(synthetic);
+  record.outputFiles[0].groups[0].observerIdentifiers.push_back(
+      synthetic.identifier);
+  auto secondary = record.outputFiles[0];
+  secondary.identifier = "secondary";
+  secondary.destination = secondaryPath.string();
+  secondary.groups[0].identifier = "secondary-restart";
+  secondary.groups[0].name = "wave-vortex-secondary";
+  record.outputFiles.push_back(std::move(secondary));
+
+  auto descriptor = descriptorFor(record);
+  WVIntegrationStateLayout layout;
+  auto status = WVIntegrationStateLayout::create(
+      checkpoint.state.coefficients.shape, descriptor, layout);
+  require(static_cast<bool>(status), status.message);
+  VariableBatchSource source;
+  WVModelOutputNetCDFSink sink;
+  auto persistence = WVModelOutputNetCDFSink::createNew(
+      {checkpoint, false}, descriptor, layout, &source, sink);
+  require(static_cast<bool>(persistence), persistence.message);
+  WVOutputPlan plan;
+  status = WVOutputPlan::create(descriptor, initialTime, initialTime, {}, plan);
+  require(static_cast<bool>(status) && plan.eventCount() == 1 &&
+              plan.event(0).routeCount == 2,
+          "coincident-route output plan did not preserve two routes");
+  status = sink.preflight(plan);
+  require(static_cast<bool>(status), status.message);
+
+  WVOutputEvent event;
+  event.eventOrdinal = plan.event(0).eventOrdinal;
+  event.scheduledTime = plan.event(0).scheduledTime;
+  event.state = eventState(checkpoint);
+  event.routes = plan.event(0).routes;
+  event.routeCount = plan.event(0).routeCount;
+  WVOutputDeliveryResult delivery;
+  status = sink.deliver(event, event.routes[0], delivery);
+  require(static_cast<bool>(status) && source.prepareCount() == 1 &&
+              source.batchCount(synthetic.identifier) == 1,
+          "first coincident route did not evaluate its exact event once");
+  delivery = {};
+  status = sink.deliver(event, event.routes[1], delivery);
+  require(static_cast<bool>(status) && source.prepareCount() == 1 &&
+              source.batchCount(synthetic.identifier) == 1,
+          "second coincident route regenerated an exact-event batch");
+  persistence = sink.close();
+  require(static_cast<bool>(persistence), persistence.message);
+}
+
 } // namespace
 
 int main() {
@@ -1659,6 +1730,7 @@ int main() {
     testOptionalMatlabPassiveFixture();
     testAlgorithmicSchedulePersistence();
     testVariableObservationBatches();
+    testCoincidentRoutesShareExactEventBatches();
     std::cout << "PASS: MATLAB-compatible model-output persistence\n";
     return 0;
   } catch (const std::exception &exception) {

@@ -28,13 +28,14 @@ public:
     return value;
   }
   std::uint32_t contractVersion() const noexcept override { return 1; }
-  const std::string &fieldListAttribute() const noexcept override {
-    static const std::string value;
-    return value;
+  WVKernelStatus executionPlan(const WVObserverRecord &observer,
+                               WVObserverExecutionPlan &plan) const override {
+    plan = {};
+    plan.sampling = WVObserverSamplingTopology::integratedState;
+    plan.integratedOperation = WVObserverIntegratedOperation::advectedScalar;
+    plan.persistedName = observer.name;
+    return WVKernelStatus::ok();
   }
-  bool recordsTracerState() const noexcept override { return true; }
-  bool contributesRightHandSide() const noexcept override { return true; }
-  bool ownsTracerState() const noexcept override { return true; }
   WVKernelStatus validate(
       const WVObserverRecord &observer,
       const std::map<std::string, const WVStateBlockRecord *> &blocks,

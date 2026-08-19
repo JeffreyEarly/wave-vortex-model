@@ -269,18 +269,14 @@ WVKernelStatus WVObserverOutputEvaluationService::create(
     };
 
     for (const auto &observer : impl.descriptor.observers) {
-      const auto implementation = detail::observerImplementation(
-          observer.typeIdentifier, observer.contractVersion);
-      if (!implementation)
+      const auto *resolved = descriptor.resolvedObserver(observer);
+      if (resolved == nullptr)
         return {WVKernelStatusCode::unsupportedOperation,
-                "Observer output evaluation received an unsupported built-in."};
-      const auto &behavior = *implementation;
+                "Observer output evaluation received an unresolved observer."};
+      const auto &execution = resolved->executionPlan();
       auto &outputs = impl.outputsByObserver[observer.identifier];
-      if (behavior.recordsCoefficients() ||
-          behavior.recordsEulerianFields()) {
-        for (const auto &field : behavior.recordsCoefficients()
-                                     ? std::vector<std::string>{"Ap", "Am", "A0"}
-                                     : observer.fieldNames) {
+      if (execution.sampling == WVObserverSamplingTopology::fullField) {
+        for (const auto &field : execution.outputFields) {
           const auto *metadata = findPortableVariable(field);
           if (metadata != nullptr &&
               metadata->kind == WVPortableVariableKind::coefficient) {
@@ -336,7 +332,8 @@ WVKernelStatus WVObserverOutputEvaluationService::create(
               return status;
           }
         }
-      } else if (behavior.recordsFixedProfiles()) {
+      } else if (execution.sampling ==
+                 WVObserverSamplingTopology::fixedVerticalProfiles) {
         if (observer.x.empty() || observer.x.size() != observer.y.size())
           return invalid("WVMooring requires equal nonempty x and y coordinates.");
         WVFieldSamplingRequest sampling;
@@ -357,7 +354,7 @@ WVKernelStatus WVObserverOutputEvaluationService::create(
               std::min(configuration.Ny,
                        static_cast<std::size_t>(std::floor(y / dy)) + 1));
         }
-        for (const auto &field : observer.fieldNames) {
+        for (const auto &field : execution.outputFields) {
           status = addField(field, sampling, observer.name + '_' + field,
                             {observer.name + "_z", observer.name + "_id"},
                             {configuration.Nz, observer.x.size()}, outputs);
@@ -365,8 +362,9 @@ WVKernelStatus WVObserverOutputEvaluationService::create(
             return status;
           outputs.back().specification.longName += ", recorded at the mooring";
         }
-      } else if (behavior.recordsFixedPoints()) {
-        if (observer.fieldNames.size() != 1 || observer.x.empty() ||
+      } else if (execution.sampling ==
+                 WVObserverSamplingTopology::fixedPositions) {
+        if (execution.outputFields.size() != 1 || observer.x.empty() ||
             observer.x.size() != observer.y.size() ||
             observer.x.size() != observer.z.size())
           return invalid("A fixed-point diagnostic requires one field and "
@@ -377,7 +375,7 @@ WVKernelStatus WVObserverOutputEvaluationService::create(
         sampling.y = observer.y;
         sampling.z = observer.z;
         sampling.interpolation = observer.trackedFieldInterpolation;
-        const auto &field = observer.fieldNames.front();
+        const auto &field = execution.outputFields.front();
         status = addField(field, sampling, observer.name + "_value",
                           {observer.name + "_id"}, {observer.x.size()},
                           outputs);
@@ -389,7 +387,8 @@ WVKernelStatus WVObserverOutputEvaluationService::create(
                                 observer.outputOffset != 0.0;
         outputs.back().specification.longName +=
             ", sampled and affinely transformed by the observing system";
-      } else if (behavior.recordsMovingParticles()) {
+      } else if (execution.sampling ==
+                 WVObserverSamplingTopology::movingPositions) {
         if (observer.z.size() != observer.x.size())
           return invalid("Constant-stratification particles require one z "
                          "coordinate per particle.");
@@ -403,7 +402,7 @@ WVKernelStatus WVObserverOutputEvaluationService::create(
              observer.isXYOnly ? std::string{}
                                : observer.stateBlockIdentifiers[2],
              observer.z, offset, observer.x.size(), observer.isXYOnly});
-        for (const auto &field : observer.fieldNames) {
+        for (const auto &field : execution.outputFields) {
           const auto *metadata = findPortableVariable(field);
           if (metadata == nullptr ||
               metadata->kind != WVPortableVariableKind::field ||
@@ -471,16 +470,17 @@ WVKernelStatus WVObserverOutputEvaluationService::create(
       std::vector<WVMovingFieldRequest> particleRequests;
       particleRequests.reserve(impl.particleFieldStorage.size());
       for (const auto &observer : impl.descriptor.observers) {
-        const auto implementation = detail::observerImplementation(
-            observer.typeIdentifier, observer.contractVersion);
-        if (!implementation || !implementation->recordsMovingParticles())
+        const auto *resolved = descriptor.resolvedObserver(observer);
+        if (resolved == nullptr ||
+            resolved->executionPlan().sampling !=
+                WVObserverSamplingTopology::movingPositions)
           continue;
         const auto coordinates = std::find_if(
             impl.particleCoordinates.begin(), impl.particleCoordinates.end(),
             [&](const auto &candidate) {
               return candidate.observerIdentifier == observer.identifier;
             });
-        for (const auto &field : observer.fieldNames)
+        for (const auto &field : resolved->executionPlan().outputFields)
           particleRequests.push_back(
               {observer.identifier + '-' + field, field, coordinates->offset,
                coordinates->count, observer.trackedFieldInterpolation});
@@ -617,33 +617,35 @@ WVKernelStatus WVObserverOutputEvaluationService::create(
     };
 
     for (const auto &observer : impl.descriptor.observers) {
-      const auto implementation = detail::observerImplementation(
-          observer.typeIdentifier, observer.contractVersion);
-      if (!implementation)
+      const auto *resolved = descriptor.resolvedObserver(observer);
+      if (resolved == nullptr)
         return {WVKernelStatusCode::unsupportedOperation,
-                "Observer schema construction received an unsupported implementation."};
-      const auto &behavior = *implementation;
+                "Observer schema construction received an unresolved observer."};
+      const auto &execution = resolved->executionPlan();
       WVObservationSchema schema;
       schema.identifier = "legacy-" + observer.identifier + "-observation-v1";
       schema.preservesLegacyEncoding = true;
       schema.metadata.attributes.push_back(
-          {"AnnotatedClass", behavior.typeIdentifier()});
+          {"AnnotatedClass", resolved->implementation().typeIdentifier()});
       schema.metadata.attributes.push_back(
           {"portableIdentifier", observer.identifier});
-      if (!behavior.recordsEulerianFields())
-        schema.metadata.attributes.push_back({"name", observer.name});
-      if (!behavior.fieldListAttribute().empty())
+      if (!execution.persistedName.empty())
+        schema.metadata.attributes.push_back(
+            {"name", execution.persistedName});
+      if (!execution.fieldListAttribute.empty())
         schema.metadata.stringListAttributes.push_back(
-            {behavior.fieldListAttribute(), observer.fieldNames});
+            {execution.fieldListAttribute, execution.outputFields});
       auto &bindings =
           impl.observationBindingsByObserver[observer.identifier];
 
-      if (behavior.recordsCoefficients()) {
+      if (observer.stateBlockIdentifiers ==
+          std::vector<std::string>({"Ap", "Am", "A0"})) {
         const auto *block = stateBlock("Ap");
         schema.metadata.variables.push_back(
             metadataReal("absTolerance",
                          block == nullptr ? 1e-6 : block->absoluteTolerance));
-      } else if (behavior.recordsMovingParticles()) {
+      } else if (execution.sampling ==
+                 WVObserverSamplingTopology::movingPositions) {
         schema.metadata.variables.push_back(
             metadataBoolean("isXYOnly", observer.isXYOnly));
         schema.metadata.variables.push_back(metadataReal(
@@ -698,7 +700,8 @@ WVKernelStatus WVObserverOutputEvaluationService::create(
               {{"isParticle", "1"},
                {"particleName", observer.name},
                {"particleVariableName", "z"}});
-      } else if (behavior.recordsTracerState()) {
+      } else if (execution.sampling ==
+                 WVObserverSamplingTopology::integratedState) {
         schema.metadata.variables.push_back(
             metadataBoolean("isXYOnly", observer.isXYOnly));
         const auto *block = stateBlock(observer.stateBlockIdentifiers.front());
@@ -721,7 +724,8 @@ WVKernelStatus WVObserverOutputEvaluationService::create(
                      observer.stateBlockIdentifiers.front(), "", "",
                      WVObservationCoordinateRole::none,
                      {{"isTracer", "1"}});
-      } else if (behavior.recordsFixedProfiles()) {
+      } else if (execution.sampling ==
+                 WVObserverSamplingTopology::fixedVerticalProfiles) {
         const std::string idName = observer.name + "_id";
         const std::string zName = observer.name + "_z";
         addAxis(schema, idName, observer.x.size(),
@@ -767,7 +771,8 @@ WVKernelStatus WVObserverOutputEvaluationService::create(
                      {idName}, WVObservationValueLayout::staticValue,
                      std::move(y), "m", "y position of mooring",
                      WVObservationCoordinateRole::y);
-      } else if (behavior.recordsFixedPoints()) {
+      } else if (execution.sampling ==
+                 WVObserverSamplingTopology::fixedPositions) {
         schema.metadata.variables.push_back(
             metadataReal("outputScale", observer.outputScale));
         schema.metadata.variables.push_back(
@@ -942,7 +947,7 @@ WVKernelStatus WVObserverOutputEvaluationService::preflight(
          observerIndex < route.observerCount; ++observerIndex) {
         const auto &resolved = route.observers[observerIndex];
         const auto *record = resolved.record;
-        if (record == nullptr || resolved.implementation == nullptr ||
+        if (record == nullptr || resolved.resolved == nullptr ||
             impl_->outputsByObserver.find(record->identifier) ==
                 impl_->outputsByObserver.end())
           return invalid("Output plan references an observer outside this "
@@ -984,9 +989,10 @@ WVKernelStatus WVObserverOutputEvaluationService::prepare(
          observer < event.routes[route].observerCount; ++observer) {
       const auto &resolved = event.routes[route].observers[observer];
       const auto *record = resolved.record;
-      if (record != nullptr && resolved.implementation != nullptr &&
-          resolved.implementation->recordsMovingParticles() &&
-          !record->fieldNames.empty()) {
+      if (record != nullptr && resolved.resolved != nullptr &&
+          resolved.resolved->executionPlan().sampling ==
+              WVObserverSamplingTopology::movingPositions &&
+          !resolved.resolved->executionPlan().outputFields.empty()) {
         needsParticles = true;
         break;
       }
