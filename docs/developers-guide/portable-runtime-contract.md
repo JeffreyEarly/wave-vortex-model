@@ -21,7 +21,7 @@ The runtime supplies classical fixed RK4 and Bogacki--Shampine RK3(2). The adapt
 
 ## Observers and fields
 
-`WVObserverFactoryRegistry` is the single source-level extension point for observer kinds. Each registration binds a portable tag and MATLAB class name to one state contract and one output rule. Validation, integration-state dependencies, field evaluation, NetCDF schema creation, writing, restoration, and append all consult that registration; none dispatch directly on the observer kind. The five qualified MATLAB observers are pre-registered through the same mechanism.
+`WVObserverFactoryRegistry` is the single source-level extension point for observer implementations. Each registration binds an exact identity and version to immutable typed construction configuration and state or sampling behavior. Descriptor construction creates a distinct resolved observer for each record, even when several records share one stateless implementation, and freezes a declarative execution plan on that instance. Observation persistence crosses the separate data-only `WVObservationSchema`/`WVObservationBatch` boundary: the sink, graph reader, output evaluator, output driver, and integrator do not branch on observer class or kind. The five qualified MATLAB observers are pre-registered and adapted through the same boundary without changing their fixed-shape NetCDF encoding.
 
 Each registration also carries the exact `wave-vortex-portable-pair-v1` contract version. MATLAB's `portableImplementationContract()` and the C++ registry must agree on the class identity and version before descriptor construction. The registry is sealed by the first descriptor construction so integration never observes changing dispatch state.
 
