@@ -152,6 +152,7 @@ public:
   const WVIntegrationStateLayout &stateLayout() const noexcept;
   double nextStepSize() const noexcept;
   WVModelIntegratorKind integratorKind() const noexcept;
+  const std::string &forcingScheduleIdentifier() const noexcept;
   WVModelMetrics metrics(const WVModelState *state = nullptr) const noexcept;
 
   // Internal services are exposed only to existing adapters while they are

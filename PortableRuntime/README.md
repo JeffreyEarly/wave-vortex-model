@@ -5,7 +5,7 @@ This directory contains the optional, MATLAB-independent constant-stratification
 The runtime supports:
 
 - fixed-step RK4 and adaptive Bogacki--Shampine RK3(2), including continuous output derived from each method's Runge--Kutta stages;
-- the frozen v1 forcing subset (`WVNonlinearAdvection`, `WVAdaptiveDamping`, `WVFixedAmplitudeForcing`, `WVBottomFrictionQuadratic`, `WVPseudoTopographicWaveGeneration`, and `WVBetaPlanePVAdvection`);
+- the frozen v1 forcing subset (`WVNonlinearAdvection`, `WVAdaptiveDamping`, `WVFixedAmplitudeForcing`, `WVBottomFrictionLinear`, `WVBottomFrictionQuadratic`, `WVPseudoTopographicWaveGeneration`, and `WVBetaPlanePVAdvection`);
 - the five qualified built-in observer records (`WVCoefficients`, `WVEulerianFields`, `WVMooring`, `WVLagrangianParticles`, and `WVTracer`);
 - MATLAB-compatible checkpoint and time-series NetCDF data for the documented constant-stratification subset.
 

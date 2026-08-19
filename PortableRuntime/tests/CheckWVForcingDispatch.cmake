@@ -8,6 +8,7 @@ set(forcing_class_literals
     WVAdaptiveDamping
     WVFixedAmplitudeForcing
     WVBottomFrictionQuadratic
+    WVBottomFrictionLinear
     WVPseudoTopographicWaveGeneration
     WVBetaPlanePVAdvection)
 

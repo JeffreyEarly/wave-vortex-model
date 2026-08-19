@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- Added the paired portable `WVBottomFrictionLinear` implementation with exact persisted-rate reconstruction, shared physical-field reuse, and MATLAB-aligned bottom-quadrature scaling.
 - Added an explicit, source-only compiled preview for ordinary constant-stratification nonlinear flux; MATLAB remains the default, native support must be built explicitly, and the preview rejects unsupported forcing without fallback.
 - Added an optional source-only constant-stratification runtime with fixed RK4 and adaptive RK3(2), MATLAB-compatible restart, and a lightweight command-line interface for executing complete MATLAB-authored NetCDF bundles through versioned JSON run requests.
 - Matched the portable adaptive RK3(2) controller, componentwise tolerances, maximum-step default, and work diagnostics to MATLAB `ode23` semantics.

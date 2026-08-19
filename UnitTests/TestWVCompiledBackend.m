@@ -211,6 +211,7 @@ classdef TestWVCompiledBackend < matlab.unittest.TestCase
                 testCase.verifyEqual(metadata.contract.version,4);
                 testCase.verifyEqual(metadata.runtimeMetrics.planCount,17);
                 testCase.verifyEqual(metadata.runtimeMetrics.persistentFullHermitianBytes,0);
+                testCase.verifyEqual(string(metadata.runtimeMetrics.activeForcingSchedule),"wave-vortex-forcing-v1:WVNonlinearAdvection");
 
                 if definition.isHydrostatic
                     resized = compiledWVT.waveVortexTransformWithResolution([18 14 11]);
