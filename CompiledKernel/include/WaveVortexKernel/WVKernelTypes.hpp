@@ -179,6 +179,10 @@ struct WVHalfSpectrumMappings {
 
 struct WVConstantStratificationModes {
     double coriolisFrequency = 0.0;
+    // Trapezoidal quadrature weight at z=-Lz. Spatial bottom forcings use
+    // Lz/bottomQuadratureWeight so their integrated strength is independent
+    // of vertical resolution.
+    double bottomQuadratureWeight = 0.0;
     std::vector<double> z;
     std::vector<double> j;
     std::vector<double> h0;

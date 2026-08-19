@@ -347,6 +347,72 @@ void testQuadraticAndPseudo(bool hydrostatic) {
     const auto R = value.Nx*value.Ny*value.Nz;
     const auto q = hydrostatic ? 3U : 4U;
     require(engine->metrics().workspaceCapacityBytes == (4+q)*R*sizeof(double),"quadratic forcing did not allocate only its required real-field workspace");
+    require(engine->metrics().physicalFieldReconstructionCount == 1 && engine->metrics().spatialTendencyProjectionCount == 1,
+            "quadratic bottom friction did not use the generic reconstruction/projection path");
+}
+
+void testLinearBottomFriction(bool hydrostatic) {
+    const double r = 2.5e-7;
+    WVFrozenForcingSchedule schedule;
+    auto drag = forcingConfiguration();
+    drag.values.push_back(realValue("r",{r}));
+    schedule.entries.push_back(entry("WVBottomFrictionLinear","linear drag",WVForcingStage::spatial,128,std::move(drag)));
+    auto engine = createEngine(hydrostatic,schedule);
+    OwnedState state(engine->kernel().descriptor().spectralShape());
+    const auto count = state.shape.elementCount();
+    std::vector<WVComplex64> actualValues(3*count),expectedValues(3*count);
+    auto actual = fluxView(actualValues,state.shape);
+    auto expected = fluxView(expectedValues,state.shape);
+    auto status = engine->nonlinearFlux(state.view(),actual);
+    require(static_cast<bool>(status),"linear bottom friction failed: "+status.message);
+
+    const auto& descriptor = engine->kernel().descriptor();
+    const auto& config = descriptor.configuration();
+    require(descriptor.verticalModes().bottomQuadratureWeight == config.Lz/(2.0*static_cast<double>(config.Nz-1)),
+            "constant-stratification descriptor stored the wrong bottom quadrature weight");
+    const auto R = descriptor.spatialShape().elementCount();
+    const auto q = hydrostatic ? 3U : 4U;
+    std::vector<double> fields(4*R),tendency(q*R,0.0);
+    WVRealFieldBundleView fieldView{fields.data(),{config.Nx,config.Ny,config.Nz,4}};
+    status = engine->kernel().transformWaveVortexToUVWEta(state.view(),fieldView);
+    require(static_cast<bool>(status),"linear bottom friction reference field reconstruction failed");
+    const auto rScaled = config.Lz*r/descriptor.verticalModes().bottomQuadratureWeight;
+    const auto horizontalCount = config.Nx*config.Ny;
+    for (std::size_t index = 0; index < horizontalCount; ++index) {
+        tendency[index] = -rScaled*fields[index];
+        tendency[R+index] = -rScaled*fields[R+index];
+    }
+    WVMutableCoefficients coefficients{{expected.Fp.data,expected.Fp.shape},{expected.Fm.data,expected.Fm.shape},{expected.F0.data,expected.F0.shape}};
+    const WVRealFieldBundleConstView tendencyView{tendency.data(),{config.Nx,config.Ny,config.Nz,q}};
+    status = hydrostatic ? engine->kernel().transformUVEtaToWaveVortex(tendencyView,state.t,state.t0,coefficients) : engine->kernel().transformUVWEtaToWaveVortex(tendencyView,state.t,state.t0,coefficients);
+    require(static_cast<bool>(status),"linear bottom friction reference projection failed");
+    double error = 0.0;
+    for (std::size_t index = 0; index < actualValues.size(); ++index) {
+        error = std::max(error,std::abs(actualValues[index].real-expectedValues[index].real));
+        error = std::max(error,std::abs(actualValues[index].imag-expectedValues[index].imag));
+    }
+    require(error <= 1e-13,"linear bottom friction changed the MATLAB-shaped tendency formula");
+    require(engine->metrics().physicalFieldReconstructionCount == 1 && engine->metrics().spatialTendencyProjectionCount == 1,
+            "linear bottom friction did not use one shared reconstruction and projection");
+    require(engine->metrics().spatialTendencyClearElementWrites == q*R,
+            "linear bottom friction did not clear exactly the shared tendency workspace");
+}
+
+void testBottomFrictionReusesNonlinearFields(bool hydrostatic) {
+    auto schedule = nonlinearSchedule();
+    auto drag = forcingConfiguration();
+    drag.values.push_back(realValue("r",{2.5e-7}));
+    schedule.entries.push_back(entry("WVBottomFrictionLinear","linear drag",WVForcingStage::spatial,128,std::move(drag)));
+    auto engine = createEngine(hydrostatic,schedule);
+    OwnedState state(engine->kernel().descriptor().spectralShape());
+    std::vector<WVComplex64> values(3*state.shape.elementCount());
+    auto flux = fluxView(values,state.shape);
+    const auto status = engine->nonlinearFlux(state.view(),flux);
+    require(static_cast<bool>(status),"nonlinear plus linear bottom friction failed");
+    require(engine->metrics().physicalFieldReconstructionCount == 1,
+            "nonlinear advection and bottom friction reconstructed physical fields more than once");
+    require(engine->metrics().physicalFieldReuseCount >= 1,
+            "linear bottom friction did not reuse nonlinear-advection physical fields");
 }
 
 void testMultipleWholeFluxProducers() {
@@ -405,6 +471,12 @@ void testValidation() {
     schedule.entries.front().stage = WVForcingStage::spectral;
     status = WVConstantStratificationForcingEngine::create(configuration(true),schedule,std::make_unique<WVReferenceFFTEngine>(),engine);
     require(status.code == WVKernelStatusCode::invalidConfiguration && !engine,"wrong forcing stage was accepted");
+    schedule.entries.clear();
+    auto invalidDrag = forcingConfiguration();
+    invalidDrag.values.push_back(realValue("r",{-1.0}));
+    schedule.entries.push_back(entry("WVBottomFrictionLinear","invalid linear drag",WVForcingStage::spatial,128,std::move(invalidDrag)));
+    status = WVConstantStratificationForcingEngine::create(configuration(true),schedule,std::make_unique<WVReferenceFFTEngine>(),engine);
+    require(status.code == WVKernelStatusCode::invalidConfiguration && !engine,"negative linear bottom friction was accepted");
 }
 
 } // namespace
@@ -422,6 +494,10 @@ int main() {
         testSourceLinkedLinearCoefficientExtension();
         testQuadraticAndPseudo(true);
         testQuadraticAndPseudo(false);
+        testLinearBottomFriction(true);
+        testLinearBottomFriction(false);
+        testBottomFrictionReusesNonlinearFields(true);
+        testBottomFrictionReusesNonlinearFields(false);
         testMultipleWholeFluxProducers();
         testRightHandSideContextIdentity();
         testValidation();

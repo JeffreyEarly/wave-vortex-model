@@ -174,6 +174,7 @@ WVKernelStatus WVTransformConstantStratificationDescriptor::create(
         modes.Fg.resize(configuration.Nj); modes.Gg.resize(configuration.Nj);
         modes.inertialScale.resize(configuration.Nj); modes.gWaveScale.resize(configuration.Nj); modes.apmWProjectionPrefactor.resize(configuration.Nj);
         const double dz = configuration.Lz / static_cast<double>(configuration.Nz - 1);
+        modes.bottomQuadratureWeight = 0.5 * dz;
         for (std::size_t i = 0; i < configuration.Nz; ++i) modes.z[i] = dz * static_cast<double>(i) - configuration.Lz;
         for (std::size_t i = 0; i < configuration.Nj; ++i) {
             modes.j[i] = static_cast<double>(i);

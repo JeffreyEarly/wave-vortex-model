@@ -25,9 +25,10 @@ classdef TestPortableForcingContracts < matlab.unittest.TestCase
                 WVAdaptiveDamping(testCase.wvt), ...
                 fixed, ...
                 WVBottomFrictionQuadratic(testCase.wvt), ...
+                WVBottomFrictionLinear(testCase.wvt), ...
                 pseudo, ...
                 WVBetaPlanePVAdvection(testCase.wvt)};
-            expected = ["WVNonlinearAdvection" "WVAdaptiveDamping" "WVFixedAmplitudeForcing" "WVBottomFrictionQuadratic" "WVPseudoTopographicWaveGeneration" "WVBetaPlanePVAdvection"];
+            expected = ["WVNonlinearAdvection" "WVAdaptiveDamping" "WVFixedAmplitudeForcing" "WVBottomFrictionQuadratic" "WVBottomFrictionLinear" "WVPseudoTopographicWaveGeneration" "WVBetaPlanePVAdvection"];
             for iForcing = 1:numel(forcings)
                 contract = forcings{iForcing}.portableImplementationContract();
                 testCase.verifyEqual(contract.schemaIdentifier,"wave-vortex-portable-pair-v1");
@@ -38,6 +39,8 @@ classdef TestPortableForcingContracts < matlab.unittest.TestCase
                 testCase.verifyEqual(contract.reason,"");
                 testCase.verifyTrue(isscalar(contract));
             end
+            linearContract = forcings{5}.portableImplementationContract();
+            testCase.verifyEqual(linearContract.payload.r,double(forcings{5}.r));
         end
 
         function inheritedContractCannotAdvertiseParentClass(testCase)

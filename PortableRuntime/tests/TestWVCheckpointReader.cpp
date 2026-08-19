@@ -150,7 +150,7 @@ void testForcingCapabilities() {
             require(!capability.unavailabilityReason.empty(), "unsupported forcing omitted its reason");
         }
     }
-    require(supported == 8, "forcing capability matrix must expose six production pairs and two test pairs");
+    require(supported == 9, "forcing capability matrix must expose seven production pairs and two test pairs");
     require(WVForcingFactoryRegistry::capability("WVTestPortableFixedAmplitudeForcing").isSupported(), "registered test forcing pair is unavailable");
     require(WVForcingFactoryRegistry::capability("WVTestPortableFixedAmplitudeForcing", 2).status == WVPortableCapabilityStatus::versionMismatch, "forcing pair version mismatch was accepted");
     require(WVForcingFactoryRegistry::capability(test::LinearCoefficientForcingIdentifier).isSupported(), "registered linear coefficient forcing pair is unavailable");
@@ -171,6 +171,29 @@ void testRegisteredFixedAmplitudePair() {
     require(checkpoint.forcingSchedule.entries.size() == 1 &&
                 checkpoint.forcingSchedule.entries.front().typeIdentifier == "WVTestPortableFixedAmplitudeForcing",
             "registered fixed-amplitude pair did not reuse the typed payload contract");
+}
+
+void testLinearBottomFrictionPair() {
+    TemporaryFile file(temporaryCopy("forcing-quadratic-bottom-friction.nc"));
+    int id = -1;
+    requireNetCDF(nc_open(file.path.string().c_str(), NC_WRITE, &id), "open linear bottom-friction fixture");
+    int forcingId = -1;
+    requireNetCDF(nc_inq_ncid(id, "forcing", &forcingId), "find bottom-friction forcing");
+    overwriteTextAttribute(forcingId,"AnnotatedClass","WVBottomFrictionLinear");
+    overwriteTextAttribute(forcingId,"name","linear bottom friction");
+    int variableId = -1;
+    requireNetCDF(nc_inq_varid(forcingId,"Cd",&variableId),"find quadratic coefficient for fixture conversion");
+    requireNetCDF(nc_redef(id),"enter linear bottom-friction define mode");
+    requireNetCDF(nc_rename_var(forcingId,variableId,"r"),"rename linear drag variable");
+    requireNetCDF(nc_enddef(id),"leave linear bottom-friction define mode");
+    const double r = 2.5e-7;
+    requireNetCDF(nc_put_var_double(forcingId,variableId,&r),"write linear drag rate");
+    requireNetCDF(nc_close(id),"close linear bottom-friction fixture");
+    WVCheckpoint checkpoint;
+    const auto result = WVCheckpointReader::read(file.path.string(),checkpoint);
+    require(static_cast<bool>(result),result.message);
+    require(checkpoint.forcingSchedule.entries.size() == 1 && checkpoint.forcingSchedule.entries.front().typeIdentifier == "WVBottomFrictionLinear","linear bottom-friction pair did not decode");
+    require(storedValue<std::vector<double>>(checkpoint.forcingSchedule.entries.front(),"r").front() == r,"linear bottom-friction rate changed during decoding");
 }
 
 void testSupportedForcingFixtures() {
@@ -411,7 +434,7 @@ void testOrderedForcingHeaders() {
 }
 
 void testUnsupportedForcingClasses() {
-    const std::array<const char*, 7> unsupported = {"WVAntialiasing", "WVHorizontalDamping", "WVVerticalDamping", "WVThermalDamping", "WVBottomFrictionLinear", "WVVerticalDiffusivity", "WVUserForcing"};
+    const std::array<const char*, 6> unsupported = {"WVAntialiasing", "WVHorizontalDamping", "WVVerticalDamping", "WVThermalDamping", "WVVerticalDiffusivity", "WVUserForcing"};
     for (const char* typeIdentifier : unsupported) {
         TemporaryFile file(temporaryCopy("forcing-nonlinear.nc"));
         int id = -1;
@@ -508,6 +531,7 @@ int main() {
         testAllocationLightInspection();
         testForcingCapabilities();
         testRegisteredFixedAmplitudePair();
+        testLinearBottomFrictionPair();
         testSupportedForcingFixtures();
         testMixedForcingSchedules();
         testUnsupportedVersionAndTransform();

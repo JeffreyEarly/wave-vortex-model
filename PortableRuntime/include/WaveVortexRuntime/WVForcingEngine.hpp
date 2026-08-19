@@ -42,6 +42,10 @@ struct WVForcingEngineMetrics {
     std::size_t outputCopyElementReads = 0;
     std::size_t outputCopyElementWrites = 0;
     std::size_t stateConstraintElementWrites = 0;
+    std::size_t physicalFieldReconstructionCount = 0;
+    std::size_t physicalFieldReuseCount = 0;
+    std::size_t spatialTendencyClearElementWrites = 0;
+    std::size_t spatialTendencyProjectionCount = 0;
     std::size_t workspaceLiveBytes = 0;
     std::size_t workspaceMaximumLiveBytes = 0;
 };
@@ -93,13 +97,14 @@ private:
     WVKernelStatus initialize(const WVFrozenForcingSchedule& schedule);
     WVKernelStatus nonlinearFluxImpl(const WVState& state, WVFlux& flux, WVRealFieldBundleView* advectionFields, WVConstantStratificationRightHandSideContext* context);
     WVKernelStatus ensurePhysicalFields(const WVState& state, WVRealFieldBundleConstView& fields, WVRealFieldBundleView* externalFields, bool& externalFieldsPrepared);
-    WVKernelStatus computeQuadraticBottomFriction(const WVState& state, double dragCoefficient, WVFlux& flux, WVRealFieldBundleView* externalFields, bool& externalFieldsPrepared);
+    WVKernelStatus clearSpatialTendency(WVRealFieldBundleView& tendency);
+    WVKernelStatus projectSpatialTendency(const WVState& state, const WVRealFieldBundleConstView& tendency, WVFlux& flux, bool& outputInitialized);
     WVKernelStatus addAdaptiveDamping(const WVState& state, const std::vector<double>& damping, WVFlux& flux, WVRealFieldBundleView* externalFields, bool& externalFieldsPrepared);
     WVKernelStatus addPseudoTopographicGeneration(const WVState& state, const WVPseudoTopographicOperators& operators, WVFlux& flux);
     void addBetaPlaneAdvection(const WVState& state, const std::vector<WVComplex64>& betaA0, WVFlux& flux) const;
     WVKernelStatus addLinearCoefficientTendency(const WVState& state, double rate, WVFlux& flux) const;
     void initializeOutputWithZeros(WVFlux& flux, bool& outputInitialized);
-    WVKernelStatus addCompleteFlux(const WVState& state, WVFlux& flux, bool& outputInitialized, WVRealFieldBundleView* externalFields, bool& externalFieldsPrepared, bool quadratic, double dragCoefficient);
+    WVKernelStatus addCompleteFlux(const WVState& state, WVFlux& flux, bool& outputInitialized, WVRealFieldBundleView* externalFields, bool& externalFieldsPrepared);
     void clearEvaluationWorkspace() noexcept;
 
     std::unique_ptr<WVTransformConstantStratificationKernel> kernel_;

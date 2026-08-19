@@ -15,12 +15,14 @@
     "wvModelRuntimeFacade": "issue-248",
     "wvModelRuntimeFacadeSHA256": "fdefaee9d72f64f9972d95d56c725b94937963bbdd132f33fe2446b5e8abdc42",
     "resolvedObservingSystems": "issue-258",
-    "description": "Shared per-RHS advection fields, core-owned F-grid scalar differentiation, construction-time preparation of required scalar plans, MATLAB-compatible adaptive tolerances for integrated observers, one thin WVModel owner shared by the CLI and production MEX RHS path, and construction-time resolution of source-linked observing-system implementations.",
-    "kernelTypesSHA256": "1d53775cda4e5d7692a8889b9ad9df994bef6039f97eabf7a407f7a71ea156bb",
+    "resolvedForcings": "issue-261",
+    "linearBottomFriction": "issue-262",
+    "description": "Shared per-RHS advection fields, core-owned F-grid scalar differentiation, construction-time preparation of required scalar plans, MATLAB-compatible adaptive tolerances for integrated observers, one thin WVModel owner shared by the CLI and production MEX RHS path, construction-time resolution of source-linked observer and forcing implementations, and shared coarse spatial-forcing operations for linear and quadratic bottom friction.",
+    "kernelTypesSHA256": "689d07c43c4f44129e8751eac2897d80ce001b78d10e0903c78430534c210c64",
     "kernelInterfaceSHA256": "6f04c9deb091ba02d372901b80c9cff6a1f136c9f1cdd98a38843577923bafd6",
     "integrationSystemSHA256": "4b9fca1a03c16b92cc281125e906e18cadfa93041ef9f4c8fd71b91cd6d60661",
-    "forcingEngineSHA256": "caf15f61a2b9c08ba97d347b7508f816056fcb145c0a45227525ad26d1f78e58",
-    "forcingInterfaceSHA256": "ca8f55f7445d66dd2492b2b7f0de4b7482c077dc722cc9656fd1a3232c9ba0b1"
+    "forcingEngineSHA256": "a111b2d69c8a3be59b1675eff267b7bdf31719834056b054577c5bd933330800",
+    "forcingInterfaceSHA256": "809fb52c76eb21c2396a8d499a47d0ebb1c97b37613d32b058b710c7e7ea7234"
   },
   "contract": {
     "version": 4,

@@ -68,6 +68,9 @@ classdef TestPortableRuntimeCompatibility < matlab.unittest.TestCase
             testCase.verifyEqual(string(report.status),"complete")
             testCase.verifyEqual(string(report.restartMode),"model")
             testCase.verifyEqual(string(report.outputPolicy),"append")
+            testCase.verifyEqual(report.forcingMetrics.physicalFieldReconstructionCount,report.state.rhsEvaluationCount)
+            testCase.verifyGreaterThanOrEqual(report.forcingMetrics.physicalFieldReuseCount,2*report.state.rhsEvaluationCount)
+            testCase.verifyEqual(report.forcingMetrics.spatialTendencyProjectionCount,2*report.state.rhsEvaluationCount)
 
             runtimeModel = WVModel.modelFromFile(char(sourcePath));
             runtimeCleanup = onCleanup(@()runtimeModel.closeNetCDFFile());
@@ -77,9 +80,9 @@ classdef TestPortableRuntimeCompatibility < matlab.unittest.TestCase
             controlModel.integrateToTime(2e-4,shouldShowIntegrationDiagnostics=false,callback=@(~)[]);
 
             testCase.verifyModelGraphsEqual(runtimeModel,controlModel)
-            testCase.verifyEqual(runtimeModel.wvt.Ap,controlModel.wvt.Ap,AbsTol=1e-11)
-            testCase.verifyEqual(runtimeModel.wvt.Am,controlModel.wvt.Am,AbsTol=1e-11)
-            testCase.verifyEqual(runtimeModel.wvt.A0,controlModel.wvt.A0,AbsTol=1e-11)
+            testCase.verifyEqual(runtimeModel.wvt.Ap,controlModel.wvt.Ap,AbsTol=1e-12)
+            testCase.verifyEqual(runtimeModel.wvt.Am,controlModel.wvt.Am,AbsTol=1e-12)
+            testCase.verifyEqual(runtimeModel.wvt.A0,controlModel.wvt.A0,AbsTol=1e-12)
             [runtimeX,runtimeY,runtimeZ] = runtimeModel.floatPositions();
             [controlX,controlY,controlZ] = controlModel.floatPositions();
             testCase.verifyEqual(runtimeX,controlX,AbsTol=1e-8)
@@ -132,6 +135,7 @@ classdef TestPortableRuntimeCompatibility < matlab.unittest.TestCase
             wvt.addForcing([ ...
                 WVAdaptiveDamping(wvt) ...
                 WVBottomFrictionQuadratic(wvt,Cd=1e-3) ...
+                WVBottomFrictionLinear(wvt,r=2e-7) ...
                 WVBetaPlanePVAdvection(wvt) ...
                 WVPseudoTopographicWaveGeneration(wvt, ...
                     topographicHeight=2*cos(2*pi*x/wvt.Lx)+sin(2*pi*y/wvt.Ly), ...
@@ -160,7 +164,7 @@ classdef TestPortableRuntimeCompatibility < matlab.unittest.TestCase
             model.setupIntegrator(integratorType="fixed",deltaT=1e-4);
             forcingNames = wvt.forcingNames;
             testCase.assertEqual(string(forcingNames(:)), ...
-                ["nonlinear advection"; "quadratic bottom friction"; "adaptive damping"; ...
+                ["nonlinear advection"; "quadratic bottom friction"; "linear bottom friction"; "adaptive damping"; ...
                  "beta-plane advection of qgpv"; "terrain"; "fixed"])
         end
 

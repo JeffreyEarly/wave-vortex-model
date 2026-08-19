@@ -71,6 +71,17 @@ classdef WVBottomFrictionLinear < WVForcing
     end
 
     methods
+        function contract = portableImplementationContract(self)
+            % Return the paired portable implementation contract.
+            %
+            % - Topic: Forcing persistence
+            % - Declaration: contract = portableImplementationContract(self)
+            % - Returns contract: versioned data-only forcing contract
+            % - Developer: true
+            payload = struct("name",string(self.name),"forcingTypes",string(self.forcingType),"priority",self.priority,"r",double(self.r));
+            contract = self.supportedPortableImplementationContract("WVBottomFrictionLinear",payload);
+        end
+
         function self = WVBottomFrictionLinear(wvt,options)
             % Create linear bottom friction for a transform.
             %

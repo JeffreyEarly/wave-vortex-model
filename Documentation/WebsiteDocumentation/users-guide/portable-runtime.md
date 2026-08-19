@@ -19,6 +19,7 @@ The runtime supports hydrostatic and nonhydrostatic constant stratification, fix
 - `WVAdaptiveDamping`
 - `WVFixedAmplitudeForcing`
 - `WVBottomFrictionQuadratic`
+- `WVBottomFrictionLinear`
 - `WVPseudoTopographicWaveGeneration`
 - `WVBetaPlanePVAdvection`
 

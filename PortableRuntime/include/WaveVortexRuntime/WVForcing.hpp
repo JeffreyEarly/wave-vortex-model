@@ -49,7 +49,10 @@ struct WVPseudoTopographicOperators {
 class WVForcingExecutionContext final {
 public:
   WVKernelStatus nonlinearAdvection();
-  WVKernelStatus quadraticBottomFriction(double dragCoefficient);
+  WVKernelStatus physicalFields(WVRealFieldBundleConstView &fields);
+  WVKernelStatus clearedSpatialTendency(WVRealFieldBundleView &tendency);
+  WVKernelStatus
+  projectSpatialTendency(const WVRealFieldBundleConstView &tendency);
   WVKernelStatus adaptiveDamping(const std::vector<double> &operatorValues);
   WVKernelStatus pseudoTopographicGeneration(
       const WVPseudoTopographicOperators &operators);
