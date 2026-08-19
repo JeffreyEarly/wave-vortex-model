@@ -41,6 +41,7 @@ add_library(WaveVortexPortableRuntime STATIC
     src/WVObserverOutputEvaluationService.cpp
     src/WVModelOutputNetCDFSchema.cpp
     src/WVModelOutputNetCDFReader.cpp
+    src/WVLegacyObservationNetCDFAdapter.cpp
     src/WVModelOutputNetCDFWriter.cpp
     src/WVModelOutputConfiguration.cpp
     src/WVModel.cpp

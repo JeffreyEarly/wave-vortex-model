@@ -8,6 +8,7 @@
 #include <new>
 #include <set>
 #include <sstream>
+#include <tuple>
 #include <utility>
 
 namespace wavevortex::runtime {
@@ -71,6 +72,20 @@ public:
     bool isXYOnly = false;
   };
 
+  enum class ObservationSource : std::uint8_t {
+    derived,
+    additionalState,
+    fixedReal
+  };
+
+  struct ObservationBinding {
+    WVObservationVariable variable;
+    ObservationSource source = ObservationSource::derived;
+    std::size_t outputIndex = 0;
+    std::string stateBlockIdentifier;
+    std::vector<double> fixedReal;
+  };
+
   WVTransformConstantStratificationConfiguration configuration;
   bool isDynamicsLinear = false;
   WVPortableObserverRecord descriptor;
@@ -91,8 +106,12 @@ public:
   std::vector<double> particleZ;
   std::map<std::string, std::vector<Output>> outputsByObserver;
   std::map<std::string, std::pair<std::string, std::size_t>> outputLookup;
+  std::map<std::string, WVObservationSchema> schemasByObserver;
+  std::map<std::string, std::vector<ObservationBinding>>
+      observationBindingsByObserver;
   std::map<std::string, std::vector<double>> affineStorage;
   WVState preparedState;
+  WVIntegrationState preparedIntegrationState;
   bool prepared = false;
   bool running = false;
 
@@ -164,6 +183,9 @@ public:
       ++metrics.skippedParticleEvaluationCount;
     }
     preparedState = state;
+    preparedIntegrationState = integrationState == nullptr
+                                   ? WVIntegrationState{state, nullptr, 0}
+                                   : *integrationState;
     prepared = true;
     ++metrics.preparedEventCount;
     reset();
@@ -475,6 +497,314 @@ WVKernelStatus WVObserverOutputEvaluationService::create(
         candidate->metrics_.outputCapacityBytes +=
             storage.capacity() * sizeof(double);
     }
+
+    const auto stateBlock = [&](const std::string &identifier) {
+      const auto found = std::find_if(
+          impl.descriptor.stateBlocks.begin(), impl.descriptor.stateBlocks.end(),
+          [&](const auto &candidate) {
+            return candidate.identifier == identifier;
+          });
+      return found == impl.descriptor.stateBlocks.end() ? nullptr : &*found;
+    };
+    const auto addAxis = [](WVObservationSchema &schema,
+                            const std::string &name, std::size_t extent,
+                            WVObservationCoordinateRole role) {
+      const auto found =
+          std::find_if(schema.axes.begin(), schema.axes.end(),
+                       [&](const auto &axis) { return axis.identifier == name; });
+      if (found == schema.axes.end())
+        schema.axes.push_back(
+            {name, name, WVObservationAxisKind::fixed, extent, role});
+    };
+    const auto addFixedReal = [&](WVObservationSchema &schema,
+                                  std::vector<Impl::ObservationBinding> &bindings,
+                                  std::string identifier, std::string name,
+                                  std::vector<std::string> dimensions,
+                                  WVObservationValueLayout layout,
+                                  std::vector<double> values,
+                                  std::string units, std::string description,
+                                  WVObservationCoordinateRole role,
+                                  std::vector<WVObservationAttribute> attributes = {}) {
+      WVObservationVariable variable;
+      variable.identifier = std::move(identifier);
+      variable.name = std::move(name);
+      variable.dimensionIdentifiers = std::move(dimensions);
+      variable.layout = layout;
+      variable.units = std::move(units);
+      variable.description = std::move(description);
+      variable.attributes = std::move(attributes);
+      variable.coordinateRole = role;
+      schema.variables.push_back(variable);
+      Impl::ObservationBinding binding;
+      binding.variable = std::move(variable);
+      binding.source = Impl::ObservationSource::fixedReal;
+      binding.fixedReal = std::move(values);
+      bindings.push_back(std::move(binding));
+    };
+    const auto addStateReal = [&](WVObservationSchema &schema,
+                                  std::vector<Impl::ObservationBinding> &bindings,
+                                  std::string identifier, std::string name,
+                                  std::vector<std::string> dimensions,
+                                  std::string blockIdentifier,
+                                  std::string units, std::string description,
+                                  WVObservationCoordinateRole role,
+                                  std::vector<WVObservationAttribute> attributes = {}) {
+      WVObservationVariable variable;
+      variable.identifier = std::move(identifier);
+      variable.name = std::move(name);
+      variable.dimensionIdentifiers = std::move(dimensions);
+      variable.layout = WVObservationValueLayout::record;
+      variable.units = std::move(units);
+      variable.description = std::move(description);
+      variable.attributes = std::move(attributes);
+      variable.coordinateRole = role;
+      schema.variables.push_back(variable);
+      Impl::ObservationBinding binding;
+      binding.variable = std::move(variable);
+      binding.source = Impl::ObservationSource::additionalState;
+      binding.stateBlockIdentifier = std::move(blockIdentifier);
+      bindings.push_back(std::move(binding));
+    };
+    const auto addDerived = [&](const WVObserverRecord &observer,
+                                WVObservationSchema &schema,
+                                std::vector<Impl::ObservationBinding> &bindings) {
+      const auto &outputs = impl.outputsByObserver.at(observer.identifier);
+      for (std::size_t outputIndex = 0; outputIndex < outputs.size();
+           ++outputIndex) {
+        const auto &specification = outputs[outputIndex].specification;
+        WVObservationVariable variable;
+        variable.identifier = "derived-" + specification.identifier;
+        variable.name = specification.name;
+        variable.scalarType =
+            specification.valueType == WVOutputValueType::complex64
+                ? WVObservationScalarType::complex64
+                : WVObservationScalarType::real64;
+        variable.dimensionIdentifiers = specification.dimensionNames;
+        variable.layout =
+            specification.cadence == WVObserverOutputCadence::initialOnly
+                ? WVObservationValueLayout::initialValue
+                : WVObservationValueLayout::record;
+        variable.units = specification.units;
+        variable.description = specification.longName;
+        for (const auto &attribute : specification.attributes)
+          variable.attributes.push_back({attribute.name, attribute.value});
+        for (std::size_t dimension = 0;
+             dimension < specification.dimensionNames.size(); ++dimension)
+          addAxis(schema, specification.dimensionNames[dimension],
+                  specification.dimensions[dimension],
+                  WVObservationCoordinateRole::none);
+        schema.variables.push_back(variable);
+        Impl::ObservationBinding binding;
+        binding.variable = std::move(variable);
+        binding.source = Impl::ObservationSource::derived;
+        binding.outputIndex = outputIndex;
+        bindings.push_back(std::move(binding));
+      }
+    };
+    const auto metadataReal = [](const std::string &name, double value) {
+      WVObservationMetadataVariable variable;
+      variable.name = name;
+      variable.value = WVObservationValue::ownReal(name, {}, {value});
+      return variable;
+    };
+    const auto metadataBoolean = [](const std::string &name, bool value) {
+      WVObservationMetadataVariable variable;
+      variable.name = name;
+      variable.value = WVObservationValue::ownBoolean(
+          name, {}, {static_cast<std::uint8_t>(value ? 1 : 0)});
+      variable.isLogicalType = true;
+      return variable;
+    };
+
+    for (const auto &observer : impl.descriptor.observers) {
+      const auto implementation = detail::observerImplementation(
+          observer.typeIdentifier, observer.contractVersion);
+      if (!implementation)
+        return {WVKernelStatusCode::unsupportedOperation,
+                "Observer schema construction received an unsupported implementation."};
+      const auto &behavior = *implementation;
+      WVObservationSchema schema;
+      schema.identifier = "legacy-" + observer.identifier + "-observation-v1";
+      schema.preservesLegacyEncoding = true;
+      schema.metadata.attributes.push_back(
+          {"AnnotatedClass", behavior.typeIdentifier()});
+      schema.metadata.attributes.push_back(
+          {"portableIdentifier", observer.identifier});
+      if (!behavior.recordsEulerianFields())
+        schema.metadata.attributes.push_back({"name", observer.name});
+      if (!behavior.fieldListAttribute().empty())
+        schema.metadata.stringListAttributes.push_back(
+            {behavior.fieldListAttribute(), observer.fieldNames});
+      auto &bindings =
+          impl.observationBindingsByObserver[observer.identifier];
+
+      if (behavior.recordsCoefficients()) {
+        const auto *block = stateBlock("Ap");
+        schema.metadata.variables.push_back(
+            metadataReal("absTolerance",
+                         block == nullptr ? 1e-6 : block->absoluteTolerance));
+      } else if (behavior.recordsMovingParticles()) {
+        schema.metadata.variables.push_back(
+            metadataBoolean("isXYOnly", observer.isXYOnly));
+        schema.metadata.variables.push_back(metadataReal(
+            "absToleranceXY", observer.horizontalAbsoluteTolerance));
+        schema.metadata.variables.push_back(metadataReal(
+            "absToleranceZ", observer.verticalAbsoluteTolerance));
+        schema.metadata.attributes.push_back(
+            {"advectionInterpolation",
+             observer.advectionInterpolation == WVPositionInterpolation::linear
+                 ? "linear"
+                 : "spline"});
+        schema.metadata.attributes.push_back(
+            {"trackedVarInterpolation",
+             observer.trackedFieldInterpolation == WVPositionInterpolation::linear
+                 ? "linear"
+                 : "spline"});
+        const std::string idName = observer.name + "_id";
+        addAxis(schema, idName, observer.x.size(),
+                WVObservationCoordinateRole::identifier);
+        std::vector<double> identifiers(observer.x.size());
+        for (std::size_t index = 0; index < identifiers.size(); ++index)
+          identifiers[index] = static_cast<double>(index + 1);
+        addFixedReal(schema, bindings, "static-" + idName, idName, {idName},
+                     WVObservationValueLayout::staticValue,
+                     std::move(identifiers), "unitless id number", "",
+                     WVObservationCoordinateRole::identifier);
+        const auto channels = detail::movingFieldChannels(observer);
+        for (std::size_t index = 0; index < channels.size(); ++index) {
+          const std::string suffix =
+              detail::movingFieldChannelName(channels[index]);
+          const std::string name =
+              detail::movingFieldVariableName(observer, channels[index]);
+          const WVObservationCoordinateRole role =
+              channels[index] == detail::WVMovingFieldChannel::x
+                  ? WVObservationCoordinateRole::x
+                  : channels[index] == detail::WVMovingFieldChannel::y
+                        ? WVObservationCoordinateRole::y
+                        : WVObservationCoordinateRole::z;
+          addStateReal(
+              schema, bindings, "state-" + suffix, name, {idName},
+              observer.stateBlockIdentifiers[index], "m",
+              suffix + " position of particle", role,
+              {{"isParticle", "1"},
+               {"particleName", observer.name},
+               {"particleVariableName", suffix}});
+        }
+        if (observer.isXYOnly && !observer.z.empty())
+          addFixedReal(
+              schema, bindings, "fixed-z", observer.name + "_z", {idName},
+              WVObservationValueLayout::record, observer.z, "m",
+              "z position of particle", WVObservationCoordinateRole::z,
+              {{"isParticle", "1"},
+               {"particleName", observer.name},
+               {"particleVariableName", "z"}});
+      } else if (behavior.recordsTracerState()) {
+        schema.metadata.variables.push_back(
+            metadataBoolean("isXYOnly", observer.isXYOnly));
+        const auto *block = stateBlock(observer.stateBlockIdentifiers.front());
+        schema.metadata.variables.push_back(metadataReal(
+            "absTolerance", block == nullptr ? 1e-5 : block->absoluteTolerance));
+        schema.metadata.variables.push_back(
+            metadataBoolean("shouldAntialias", observer.shouldAntialias));
+        const auto &dimensions = block->dimensions;
+        const std::vector<std::string> names =
+            dimensions.size() == 2
+                ? std::vector<std::string>{"x", "y"}
+                : std::vector<std::string>{"x", "y", "z"};
+        for (std::size_t index = 0; index < names.size(); ++index)
+          addAxis(schema, names[index], dimensions[index],
+                  names[index] == "x"
+                      ? WVObservationCoordinateRole::x
+                      : names[index] == "y" ? WVObservationCoordinateRole::y
+                                             : WVObservationCoordinateRole::z);
+        addStateReal(schema, bindings, "state-tracer", observer.name, names,
+                     observer.stateBlockIdentifiers.front(), "", "",
+                     WVObservationCoordinateRole::none,
+                     {{"isTracer", "1"}});
+      } else if (behavior.recordsFixedProfiles()) {
+        const std::string idName = observer.name + "_id";
+        const std::string zName = observer.name + "_z";
+        addAxis(schema, idName, observer.x.size(),
+                WVObservationCoordinateRole::identifier);
+        addAxis(schema, zName, configuration.Nz,
+                WVObservationCoordinateRole::z);
+        std::vector<double> identifiers(observer.x.size());
+        for (std::size_t index = 0; index < identifiers.size(); ++index)
+          identifiers[index] = static_cast<double>(index + 1);
+        addFixedReal(schema, bindings, "static-" + idName, idName, {idName},
+                     WVObservationValueLayout::staticValue,
+                     std::move(identifiers), "unitless id number", "",
+                     WVObservationCoordinateRole::identifier);
+        std::vector<double> z = observer.z;
+        if (z.empty()) {
+          z.resize(configuration.Nz);
+          const double dz = configuration.Lz /
+                            static_cast<double>(configuration.Nz - 1);
+          for (std::size_t index = 0; index < z.size(); ++index)
+            z[index] = -configuration.Lz + static_cast<double>(index) * dz;
+        }
+        addFixedReal(schema, bindings, "static-" + zName, zName, {zName},
+                     WVObservationValueLayout::staticValue, std::move(z), "m",
+                     "z-positions of mooring observations",
+                     WVObservationCoordinateRole::z);
+        std::vector<double> x = observer.x;
+        std::vector<double> y = observer.y;
+        for (auto &value : x) {
+          value = std::fmod(value, configuration.Lx);
+          if (value < 0.0)
+            value += configuration.Lx;
+        }
+        for (auto &value : y) {
+          value = std::fmod(value, configuration.Ly);
+          if (value < 0.0)
+            value += configuration.Ly;
+        }
+        addFixedReal(schema, bindings, "static-x", observer.name + "_x",
+                     {idName}, WVObservationValueLayout::staticValue,
+                     std::move(x), "m", "x position of mooring",
+                     WVObservationCoordinateRole::x);
+        addFixedReal(schema, bindings, "static-y", observer.name + "_y",
+                     {idName}, WVObservationValueLayout::staticValue,
+                     std::move(y), "m", "y position of mooring",
+                     WVObservationCoordinateRole::y);
+      } else if (behavior.recordsFixedPoints()) {
+        schema.metadata.variables.push_back(
+            metadataReal("outputScale", observer.outputScale));
+        schema.metadata.variables.push_back(
+            metadataReal("outputOffset", observer.outputOffset));
+        schema.metadata.attributes.push_back(
+            {"trackedVarInterpolation",
+             observer.trackedFieldInterpolation == WVPositionInterpolation::linear
+                 ? "linear"
+                 : "spline"});
+        const std::string idName = observer.name + "_id";
+        addAxis(schema, idName, observer.x.size(),
+                WVObservationCoordinateRole::identifier);
+        std::vector<double> identifiers(observer.x.size());
+        for (std::size_t index = 0; index < identifiers.size(); ++index)
+          identifiers[index] = static_cast<double>(index + 1);
+        addFixedReal(schema, bindings, "static-" + idName, idName, {idName},
+                     WVObservationValueLayout::staticValue,
+                     std::move(identifiers), "unitless id number", "",
+                     WVObservationCoordinateRole::identifier);
+        for (const auto &[suffix, values, role] :
+             std::array<std::tuple<const char *, const std::vector<double> *,
+                                   WVObservationCoordinateRole>, 3>{
+                 {{"x", &observer.x, WVObservationCoordinateRole::x},
+                  {"y", &observer.y, WVObservationCoordinateRole::y},
+                  {"z", &observer.z, WVObservationCoordinateRole::z}}})
+          addFixedReal(schema, bindings, "static-" + std::string(suffix),
+                       observer.name + '_' + suffix, {idName},
+                       WVObservationValueLayout::staticValue, *values, "m",
+                       std::string(suffix) + " position of fixed observation",
+                       role);
+      }
+      addDerived(observer, schema, bindings);
+      const auto schemaStatus = validateObservationSchema(schema);
+      if (!schemaStatus)
+        return schemaStatus;
+      impl.schemasByObserver.emplace(observer.identifier, std::move(schema));
+    }
     candidate->metrics_.uniqueFieldOutputCount =
         initialRequests.size() + timeSeriesRequests.size();
     candidate->metrics_.retainedStorageBytes = candidate->persistentBytes();
@@ -497,6 +827,111 @@ WVKernelStatus WVObserverOutputEvaluationService::specifications(
   for (const auto &value : found->second)
     output.push_back(value.specification);
   return WVKernelStatus::ok();
+}
+
+WVKernelStatus WVObserverOutputEvaluationService::observationSchema(
+    const WVObserverRecord &observer, WVObservationSchema &output) {
+  const auto found = impl_->schemasByObserver.find(observer.identifier);
+  if (found == impl_->schemasByObserver.end())
+    return invalid("Observer is not part of this evaluation service.");
+  output = found->second;
+  return WVKernelStatus::ok();
+}
+
+WVKernelStatus WVObserverOutputEvaluationService::observationBatchForKind(
+    const WVObserverRecord &observer, WVObservationBatchKind kind,
+    WVObservationBatch &output) {
+  const auto schema = impl_->schemasByObserver.find(observer.identifier);
+  const auto bindings =
+      impl_->observationBindingsByObserver.find(observer.identifier);
+  if (schema == impl_->schemasByObserver.end() ||
+      bindings == impl_->observationBindingsByObserver.end())
+    return invalid("Observer is not part of this evaluation service.");
+  if (!impl_->prepared)
+    return invalid("Observation batch was requested before prepare().");
+  WVObservationBatch batch;
+  batch.schemaIdentifier = schema->second.identifier;
+  batch.schemaVersion = schema->second.version;
+  batch.kind = kind;
+  for (const auto &binding : bindings->second) {
+    const bool initial =
+        binding.variable.layout == WVObservationValueLayout::staticValue ||
+        binding.variable.layout == WVObservationValueLayout::initialValue;
+    if ((kind == WVObservationBatchKind::initial) != initial)
+      continue;
+    std::vector<std::size_t> extents;
+    extents.reserve(binding.variable.dimensionIdentifiers.size());
+    for (const auto &identifier : binding.variable.dimensionIdentifiers) {
+      const auto axis = std::find_if(
+          schema->second.axes.begin(), schema->second.axes.end(),
+          [&](const auto &candidate) {
+            return candidate.identifier == identifier;
+          });
+      if (axis == schema->second.axes.end() ||
+          axis->kind != WVObservationAxisKind::fixed)
+        return invalid("Built-in observation binding has an invalid axis.");
+      extents.push_back(axis->extent);
+    }
+    if (binding.source == Impl::ObservationSource::fixedReal) {
+      batch.values.push_back(WVObservationValue::borrowReal(
+          binding.variable.identifier, std::move(extents),
+          binding.fixedReal.data()));
+      continue;
+    }
+    if (binding.source == Impl::ObservationSource::additionalState) {
+      const WVAdditionalStateBlockConstView *block = nullptr;
+      for (std::size_t index = 0;
+           index < impl_->preparedIntegrationState.additionalBlockCount;
+           ++index)
+        if (impl_->preparedIntegrationState.additionalBlocks[index]
+                .layout->identifier == binding.stateBlockIdentifier) {
+          block = impl_->preparedIntegrationState.additionalBlocks + index;
+          break;
+        }
+      if (block == nullptr || block->realData == nullptr)
+        return invalid("Observation batch dynamic state is unavailable.");
+      batch.values.push_back(WVObservationValue::borrowReal(
+          binding.variable.identifier, std::move(extents), block->realData));
+      continue;
+    }
+    const auto &entry =
+        impl_->outputsByObserver.at(observer.identifier)[binding.outputIndex];
+    WVObserverOutputValueView valueView;
+    auto status = value(observer, entry.specification, valueView);
+    if (!status)
+      return status;
+    if (valueView.valueType == WVOutputValueType::complex64)
+      batch.values.push_back(WVObservationValue::borrowComplex(
+          binding.variable.identifier, std::move(extents),
+          valueView.complexData));
+    else
+      batch.values.push_back(WVObservationValue::borrowReal(
+          binding.variable.identifier, std::move(extents),
+          valueView.realData));
+  }
+  const auto status = validateObservationBatch(schema->second, batch);
+  if (!status)
+    return status;
+  const auto batchMetrics = batch.metrics();
+  metrics_.batchRetainedStorageBytes =
+      std::max(metrics_.batchRetainedStorageBytes,
+               batchMetrics.retainedStorageBytes);
+  metrics_.batchMaximumLiveBytes =
+      std::max(metrics_.batchMaximumLiveBytes, batchMetrics.liveBytes);
+  output = std::move(batch);
+  return WVKernelStatus::ok();
+}
+
+WVKernelStatus WVObserverOutputEvaluationService::initialObservationBatch(
+    const WVObserverRecord &observer, WVObservationBatch &output) {
+  return observationBatchForKind(observer, WVObservationBatchKind::initial,
+                                 output);
+}
+
+WVKernelStatus WVObserverOutputEvaluationService::observationBatch(
+    const WVObserverRecord &observer, WVObservationBatch &output) {
+  return observationBatchForKind(observer, WVObservationBatchKind::event,
+                                 output);
 }
 
 WVKernelStatus WVObserverOutputEvaluationService::preflight(

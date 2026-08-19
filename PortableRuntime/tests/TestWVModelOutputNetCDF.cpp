@@ -127,11 +127,22 @@ public:
     if (observer.typeIdentifier != "WVTestObservationBatches") {
       schema.identifier = "legacy-coefficient-observation-v1";
       schema.preservesLegacyEncoding = true;
+      schema.metadata.attributes = {{"AnnotatedClass", observer.typeIdentifier},
+                                    {"portableIdentifier", observer.identifier},
+                                    {"name", observer.name}};
+      WVObservationMetadataVariable tolerance;
+      tolerance.name = "absTolerance";
+      tolerance.value =
+          WVObservationValue::ownReal("absTolerance", {}, {1e-6});
+      schema.metadata.variables.push_back(std::move(tolerance));
       output = std::move(schema);
       return WVKernelStatus::ok();
     }
     schema.identifier = "synthetic-variable-observation";
     schema.version = version_;
+    schema.metadata.attributes = {{"AnnotatedClass", observer.typeIdentifier},
+                                  {"portableIdentifier", observer.identifier},
+                                  {"name", observer.name}};
     schema.axes = {
         {"depth", "synthetic_depth", WVObservationAxisKind::fixed, 2,
          WVObservationCoordinateRole::depth},
@@ -205,6 +216,7 @@ public:
   }
 
   WVKernelStatus prepare(const WVOutputEvent &event) override {
+    ++prepareCount_;
     eventOrdinal_ = event.eventOrdinal;
     scheduledTime_ = event.scheduledTime;
     return WVKernelStatus::ok();
@@ -212,6 +224,7 @@ public:
 
   WVKernelStatus observationBatch(const WVObserverRecord &observer,
                                   WVObservationBatch &output) override {
+    ++batchCounts_[observer.identifier];
     WVObservationSchema schema;
     auto status = observationSchema(observer, schema);
     if (!status)
@@ -276,12 +289,21 @@ public:
     return WVKernelStatus::ok();
   }
 
+  std::size_t prepareCount() const noexcept { return prepareCount_; }
+
+  std::size_t batchCount(const std::string &observerIdentifier) const {
+    const auto found = batchCounts_.find(observerIdentifier);
+    return found == batchCounts_.end() ? 0 : found->second;
+  }
+
 private:
   std::uint32_t version_ = 1;
   bool failFirstBatch_ = false;
   bool failedOnce_ = false;
   std::size_t eventOrdinal_ = 0;
   double scheduledTime_ = 0.0;
+  std::size_t prepareCount_ = 0;
+  std::map<std::string, std::size_t> batchCounts_;
 };
 
 std::filesystem::path fixture(const std::string &name) {
@@ -1390,23 +1412,78 @@ void testVariableObservationBatches() {
   auto checkpoint = checkpointTemplate();
   const auto initialTime = checkpoint.state.t;
   const auto path = directory.path / "variable-observations.nc";
-  auto record = recordFor(checkpoint, path);
   WVObserverRecord synthetic;
   synthetic.identifier = "synthetic-observations";
   synthetic.name = "synthetic";
   synthetic.typeIdentifier = "WVTestObservationBatches";
-  record.observers.push_back(synthetic);
-  record.outputFiles[0].groups[0].observerIdentifiers.push_back(
-      synthetic.identifier);
-  auto descriptor = descriptorFor(record);
-  WVIntegrationStateLayout layout;
+  const auto configuredRecord = [&](const std::filesystem::path &destination) {
+    auto configured = recordFor(checkpoint, destination);
+    configured.observers.push_back(synthetic);
+    configured.outputFiles[0].groups[0].observerIdentifiers.push_back(
+        synthetic.identifier);
+    return configured;
+  };
+  const auto invalidPath = directory.path / "invalid-observations.nc";
+  auto invalidRecord = configuredRecord(invalidPath);
+  auto invalidDescriptor = descriptorFor(invalidRecord);
+  WVIntegrationStateLayout invalidLayout;
   auto status = WVIntegrationStateLayout::create(
-      checkpoint.state.coefficients.shape, descriptor, layout);
+      checkpoint.state.coefficients.shape, invalidDescriptor, invalidLayout);
   require(static_cast<bool>(status), status.message);
   WVModelOutputNetCDFConfiguration configuration{checkpoint, false};
-  VariableBatchSource source(1, true);
-  WVModelOutputNetCDFSink sink;
+  VariableBatchSource malformedSource(1, true);
+  WVModelOutputNetCDFSink malformedSink;
   auto persistence = WVModelOutputNetCDFSink::createNew(
+      configuration, invalidDescriptor, invalidLayout, &malformedSource,
+      malformedSink);
+  require(static_cast<bool>(persistence), persistence.message);
+  WVOutputPlan invalidPlan;
+  status = WVOutputPlan::create(invalidDescriptor, initialTime,
+                                initialTime + 1.0, {}, invalidPlan);
+  require(static_cast<bool>(status) && invalidPlan.eventCount() == 2,
+          "malformed variable-batch output plan");
+  status = malformedSink.preflight(invalidPlan);
+  require(static_cast<bool>(status), status.message);
+
+  WVOutputEvent invalidEvent;
+  invalidEvent.eventOrdinal = invalidPlan.event(0).eventOrdinal;
+  invalidEvent.scheduledTime = invalidPlan.event(0).scheduledTime;
+  invalidEvent.state = eventState(checkpoint);
+  invalidEvent.routes = invalidPlan.event(0).routes;
+  invalidEvent.routeCount = invalidPlan.event(0).routeCount;
+  WVOutputDeliveryResult delivery;
+  status = malformedSink.deliver(invalidEvent, invalidEvent.routes[0], delivery);
+  require(!status, "malformed ragged batch was written");
+  delivery = {};
+  status = malformedSink.deliver(invalidEvent, invalidEvent.routes[0], delivery);
+  require(!status, "an exact-event retry accepted its malformed batch");
+  require(malformedSource.prepareCount() == 1,
+          "an exact-event retry repeated source preparation: " +
+              std::to_string(malformedSource.prepareCount()));
+  require(malformedSource.batchCount(synthetic.identifier) == 1,
+          "an exact-event retry regenerated its malformed observation batch: " +
+              std::to_string(
+                  malformedSource.batchCount(synthetic.identifier)));
+  int file = -1, group = -1, timeDimension = -1;
+  std::size_t timeCount = 99;
+  require(nc_open(invalidPath.c_str(), NC_NOWRITE, &file) == NC_NOERR &&
+              nc_inq_ncid(file, "wave-vortex", &group) == NC_NOERR &&
+              nc_inq_dimid(group, "t", &timeDimension) == NC_NOERR &&
+              nc_inq_dimlen(group, timeDimension, &timeCount) == NC_NOERR &&
+              timeCount == 0 && nc_close(file) == NC_NOERR,
+          "failed batch mutated the output before validation");
+  persistence = malformedSink.close();
+  require(static_cast<bool>(persistence), persistence.message);
+
+  auto record = configuredRecord(path);
+  auto descriptor = descriptorFor(record);
+  WVIntegrationStateLayout layout;
+  status = WVIntegrationStateLayout::create(
+      checkpoint.state.coefficients.shape, descriptor, layout);
+  require(static_cast<bool>(status), status.message);
+  VariableBatchSource source;
+  WVModelOutputNetCDFSink sink;
+  persistence = WVModelOutputNetCDFSink::createNew(
       configuration, descriptor, layout, &source, sink);
   require(static_cast<bool>(persistence), persistence.message);
   WVOutputPlan plan;
@@ -1423,18 +1500,6 @@ void testVariableObservationBatches() {
   event.state = eventState(checkpoint);
   event.routes = plan.event(0).routes;
   event.routeCount = plan.event(0).routeCount;
-  WVOutputDeliveryResult delivery;
-  status = sink.deliver(event, event.routes[0], delivery);
-  require(!status, "malformed ragged batch was written");
-  int file = -1, group = -1, timeDimension = -1;
-  std::size_t timeCount = 99;
-  require(nc_open(path.c_str(), NC_NOWRITE, &file) == NC_NOERR &&
-              nc_inq_ncid(file, "wave-vortex", &group) == NC_NOERR &&
-              nc_inq_dimid(group, "t", &timeDimension) == NC_NOERR &&
-              nc_inq_dimlen(group, timeDimension, &timeCount) == NC_NOERR &&
-              timeCount == 0 && nc_close(file) == NC_NOERR,
-          "failed batch mutated the output before validation");
-
   delivery = {};
   status = sink.deliver(event, event.routes[0], delivery);
   require(static_cast<bool>(status), status.message);
@@ -1447,7 +1512,9 @@ void testVariableObservationBatches() {
   require(static_cast<bool>(status), status.message);
   require(sink.metrics().batchMaximumLiveBytes > 0 &&
               sink.metrics().batchRetainedStorageBytes > 0 &&
-              sink.metrics().failureCount == 1,
+              sink.metrics().failureCount == 0 &&
+              source.prepareCount() == 2 &&
+              source.batchCount(synthetic.identifier) == 2,
           "variable-batch storage/failure metrics are incomplete");
   persistence = sink.close();
   require(static_cast<bool>(persistence), persistence.message);
@@ -1507,7 +1574,9 @@ void testVariableObservationBatches() {
   persistence = WVModelOutputNetCDFSink::inspect({path.string()}, inspection);
   require(static_cast<bool>(persistence) &&
               inspection.observerRecord.observers.size() == 2,
-          "generic graph reader dropped the variable-batch observer");
+          "generic graph reader reconstructed " +
+              std::to_string(inspection.observerRecord.observers.size()) +
+              " observers: " + persistence.message);
 
   VariableBatchSource driftedSource(2);
   WVModelOutputNetCDFSink drifted;
