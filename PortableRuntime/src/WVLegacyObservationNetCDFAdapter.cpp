@@ -795,6 +795,28 @@ bool persistedObserverCarriesCoefficientState(int metadataGroup) noexcept {
          execution.fieldListAttribute.empty();
 }
 
+bool legacyObservationAttributeMatches(std::string_view name,
+                                       std::string_view expected,
+                                       std::string_view observed) noexcept {
+  if (expected == observed)
+    return true;
+  if (name != "long_name")
+    return false;
+  return (expected == "x position of mooring" &&
+          observed == "x coordinate position of mooring") ||
+         (expected == "y position of mooring" &&
+          observed == "y coordinate position of mooring") ||
+         (expected == "x position of particle" &&
+          observed ==
+              "x coordinate, recorded along the particle trajectory") ||
+         (expected == "y position of particle" &&
+          observed ==
+              "y coordinate, recorded along the particle trajectory") ||
+         (expected == "z position of particle" &&
+          observed ==
+              "z coordinate, recorded along the particle trajectory");
+}
+
 WVCheckpointStatus resolvePersistedObserverRestartState(
     const std::vector<WVOutputFileRecord> &files,
     std::vector<WVObserverRecord> &observers, double selectedTime,

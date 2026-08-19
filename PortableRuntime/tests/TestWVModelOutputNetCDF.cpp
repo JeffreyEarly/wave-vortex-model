@@ -774,6 +774,23 @@ void testLinearInitialCoefficientsAndPassiveFields() {
               restoredDiagnostic->outputOffset == diagnostic.outputOffset,
           "point-diagnostic configuration did not round-trip through NetCDF");
 
+  require(nc_open(path.c_str(), NC_WRITE, &root) == NC_NOERR &&
+              nc_inq_ncid(root, "wave-vortex", &group) == NC_NOERR &&
+              nc_redef(root) == NC_NOERR,
+          "open legacy MATLAB attribute spelling injection");
+  for (const auto &[name, description] :
+       std::array<std::pair<const char *, const char *>, 2>{{
+           {"central_x", "x coordinate position of mooring"},
+           {"central_y", "y coordinate position of mooring"}}}) {
+    require(nc_inq_varid(group, name, &variable) == NC_NOERR &&
+                nc_put_att_text(group, variable, "long_name",
+                                std::char_traits<char>::length(description),
+                                description) == NC_NOERR,
+            "inject legacy MATLAB long_name spelling");
+  }
+  require(nc_enddef(root) == NC_NOERR && nc_close(root) == NC_NOERR,
+          "close legacy MATLAB attribute spelling injection");
+
   auto appendDescriptor = descriptorFor(inspection.observerRecord);
   std::unique_ptr<WVObserverOutputEvaluationService> appendSource;
   status = WVObserverOutputEvaluationService::create(

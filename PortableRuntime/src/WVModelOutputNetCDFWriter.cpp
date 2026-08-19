@@ -1,6 +1,7 @@
 #include "WaveVortexRuntime/WVModelOutputNetCDF.hpp"
 #include "WaveVortexRuntime/generated/WVPortableVariableCatalog.hpp"
 
+#include "WVLegacyObservationNetCDFAdapter.hpp"
 #include "WVModelOutputNetCDFSchema.hpp"
 #include "WVNetCDF.hpp"
 
@@ -1829,6 +1830,15 @@ public:
           return result;
       }
       for (auto &variable : group.derivedVariables) {
+        const auto observerSchema = std::find_if(
+            group.observerSchemas.begin(), group.observerSchemas.end(),
+            [&](const auto &candidate) {
+              return candidate.observerIdentifier ==
+                     variable.observerIdentifier;
+            });
+        const bool preservesLegacyEncoding =
+            observerSchema != group.observerSchemas.end() &&
+            observerSchema->schema.preservesLegacyEncoding;
         if (variable.specification.scalarType ==
             WVObservationScalarType::complex64) {
           result = detail::checkedNetCDF(
@@ -1972,7 +1982,10 @@ public:
                              "/" + group.record.name + "/" + variableName +
                                  "/@" + name);
             }
-            if (observed != expected)
+            if (observed != expected &&
+                !(preservesLegacyEncoding &&
+                  detail::legacyObservationAttributeMatches(
+                      name, expected, observed)))
               return failure(
                   WVCheckpointStatusCode::appendConflict,
                   "Observer-variable metadata changed: expected '" + expected +

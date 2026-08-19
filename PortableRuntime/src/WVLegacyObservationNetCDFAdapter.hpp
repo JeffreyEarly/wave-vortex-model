@@ -4,6 +4,7 @@
 
 #include <map>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace wavevortex::runtime::detail {
@@ -16,6 +17,14 @@ WVCheckpointStatus parsePersistedObserver(
     WVPortableObserverRecord &portable, std::string &identifier);
 
 bool persistedObserverCarriesCoefficientState(int metadataGroup) noexcept;
+
+// Historical MATLAB releases used a small number of presentation-only
+// attribute spellings that differ from the portable writer's byte-compatible
+// legacy encoding. Accept those spellings when appending without changing the
+// attributes emitted for newly created files.
+bool legacyObservationAttributeMatches(std::string_view name,
+                                       std::string_view expected,
+                                       std::string_view observed) noexcept;
 
 WVCheckpointStatus resolvePersistedObserverRestartState(
     const std::vector<WVOutputFileRecord> &files,

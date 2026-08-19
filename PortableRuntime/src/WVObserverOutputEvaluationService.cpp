@@ -671,7 +671,10 @@ WVKernelStatus WVObserverOutputEvaluationService::create(
         addFixedReal(schema, bindings, "static-" + idName, idName, {idName},
                      WVObservationValueLayout::staticValue,
                      std::move(identifiers), "unitless id number", "",
-                     WVObservationCoordinateRole::identifier);
+                     WVObservationCoordinateRole::identifier,
+                     {{"isParticle", "1"},
+                      {"particleName", observer.name},
+                      {"particleVariableName", "id"}});
         const auto channels = detail::movingFieldChannels(observer);
         for (std::size_t index = 0; index < channels.size(); ++index) {
           const std::string suffix =
