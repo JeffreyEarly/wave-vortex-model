@@ -76,12 +76,63 @@ classdef TestReleaseVerification < matlab.unittest.TestCase
             testCase.verifySubstring(workflow,"verifyWaveVortexModelPackage(sourceRoot,oceanKitRoot)");
             testCase.verifySubstring(workflow,"candidate.report.exportPath");
             testCase.verifySubstring(workflow,"candidate.report.version");
-            testCase.verifySubstring(workflow,'- "CompiledKernel/**"');
-            testCase.verifySubstring(workflow,'- "PortableRuntime/**"');
+            testCase.verifyFalse(contains(workflow,newline + "    paths:"));
+            testCase.verifySubstring(workflow,"final-integration");
+            testCase.verifySubstring(workflow,"types: [opened, synchronize, reopened, labeled, unlabeled, closed]");
             testCase.verifySubstring(workflow,"Build and inspect the exported reference runtime");
             testCase.verifySubstring(workflow,"-DBUILD_TESTING=OFF");
             testCase.verifyFalse(contains(contract,'expectedVersion="4.2.0"'));
             testCase.verifyFalse(contains(contract,'WaveVortexModel-4.2.1'));
+        end
+
+        function workflowTopologySeparatesFocusedAndFinalGates(testCase)
+            requiredWorkflow = testCase.readFile(fullfile(".github","workflows","ci.yml"));
+            packageWorkflow = testCase.readFile(fullfile(".github","workflows","release-verification.yml"));
+            extendedWorkflow = testCase.readFile(fullfile(".github","workflows","extended-ci.yml"));
+            focusedJob = testCase.sectionBetween(requiredWorkflow,"  focused-matlab:","  smoke:");
+
+            for required = [
+                    "Focused MATLAB / R2025b"
+                    "Required / WaveVortexModel"
+                    "Portable C++ kernel contract"
+                    "final-integration"
+                    "buildtool(taskArguments{:})"
+                    "WVM_RUN_ANALYZER"
+                    "WVM_RUN_DOCUMENTATION"
+                    "MATLAB provisioning incident"
+                    "timeout-minutes: 10"
+                    "cache restore/populate details only in its step log"
+                    ]'
+                testCase.verifySubstring(requiredWorkflow,required);
+            end
+            testCase.verifyEqual(count(focusedJob,"matlab-actions/setup-matlab@v3"),1);
+            testCase.verifyEqual(count(focusedJob,"matlab-actions/run-command@v3"),1);
+            testCase.verifyEqual(count(focusedJob,"buildtool test:smoke"),0);
+            testCase.verifySubstring(focusedJob,'tasks = "test:smoke"');
+
+            for workflow = [requiredWorkflow packageWorkflow extendedWorkflow]
+                testCase.verifySubstring(workflow,"workflow_dispatch:");
+                testCase.verifySubstring(workflow,"pull_request:");
+                testCase.verifySubstring(workflow,"types: [opened, synchronize, reopened, labeled, unlabeled, closed]");
+                testCase.verifySubstring(workflow,"cancel-in-progress: true");
+                testCase.verifySubstring(workflow,"retain-final");
+                testCase.verifySubstring(workflow,"github.base_ref == 'main'");
+                testCase.verifySubstring(workflow,"final-integration");
+            end
+            testCase.verifyFalse(contains(packageWorkflow,newline + "    paths:"));
+            testCase.verifyFalse(contains(extendedWorkflow,newline + "    paths:"));
+            for context = [
+                    "Smoke / MATLAB R2025b"
+                    "Documentation / MATLAB R2025b"
+                    "Code Analyzer / MATLAB R2025b"
+                    "Clean install / MATLAB R2025b"
+                    "Exported package / MATLAB R2025b"
+                    "Full / MATLAB R2025b"
+                    "Exhaustive / MATLAB R2025b"
+                    "Optional / MATLAB R2025b"
+                    ]'
+                testCase.verifyTrue(contains(requiredWorkflow + packageWorkflow + extendedWorkflow,context));
+            end
         end
 
         function portableRuntimeExportContractIsSourceOnly(testCase)
@@ -178,6 +229,15 @@ classdef TestReleaseVerification < matlab.unittest.TestCase
     end
 
     methods (Access=private)
+        function section = sectionBetween(testCase,contents,startMarker,endMarker)
+            startIndex = strfind(contents,startMarker);
+            endIndex = strfind(contents,endMarker);
+            testCase.assertNotEmpty(startIndex);
+            testCase.assertNotEmpty(endIndex);
+            testCase.assertLessThan(startIndex(1),endIndex(1));
+            section = extractBetween(contents,startIndex(1),endIndex(1)-1);
+        end
+
         function contents = readFile(testCase,path)
             if ~isfile(path)
                 path = fullfile(testCase.repositoryRoot,path);
