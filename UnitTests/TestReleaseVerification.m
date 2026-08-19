@@ -109,6 +109,7 @@ classdef TestReleaseVerification < matlab.unittest.TestCase
             testCase.verifyEqual(count(focusedJob,"matlab-actions/run-command@v3"),1);
             testCase.verifyEqual(count(focusedJob,"buildtool test:smoke"),0);
             testCase.verifySubstring(focusedJob,'tasks = "test:smoke"');
+            testCase.verifyEqual(count(focusedJob,"end;"),3);
 
             for workflow = [requiredWorkflow packageWorkflow extendedWorkflow]
                 testCase.verifySubstring(workflow,"workflow_dispatch:");

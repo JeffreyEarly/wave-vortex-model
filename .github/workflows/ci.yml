@@ -156,11 +156,11 @@ jobs:
             oceanKitRoot = fullfile(pwd,"OceanKit");
             mpmAddRepository("OceanKit",oceanKitRoot);
             addpath(fullfile(sourceRoot,"tools"));
-            if string(getenv("WVM_RUN_DOCUMENTATION")) == "true", configureCIEnvironment(sourceRoot,oceanKitRoot,documentationPackageSpecifier="ClassDocumentation@1.3.2"); else, configureCIEnvironment(sourceRoot,oceanKitRoot); end
+            if string(getenv("WVM_RUN_DOCUMENTATION")) == "true", configureCIEnvironment(sourceRoot,oceanKitRoot,documentationPackageSpecifier="ClassDocumentation@1.3.2"); else, configureCIEnvironment(sourceRoot,oceanKitRoot); end;
             cd(sourceRoot);
             tasks = "test:smoke";
-            if string(getenv("WVM_RUN_ANALYZER")) == "true", tasks(end+1) = "analyze"; end
-            if string(getenv("WVM_RUN_DOCUMENTATION")) == "true", tasks(end+1) = "docs:check"; end
+            if string(getenv("WVM_RUN_ANALYZER")) == "true", tasks(end+1) = "analyze"; end;
+            if string(getenv("WVM_RUN_DOCUMENTATION")) == "true", tasks(end+1) = "docs:check"; end;
             fprintf("Focused MATLAB tasks: %s\n",strjoin(tasks,", "));
             taskArguments = cellstr(tasks);
             buildtool(taskArguments{:})
