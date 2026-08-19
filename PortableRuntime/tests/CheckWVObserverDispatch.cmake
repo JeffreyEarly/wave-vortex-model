@@ -25,6 +25,20 @@ foreach(source IN LISTS observer_sources)
     endforeach()
 endforeach()
 
+# Registration sites may name the implementation they construct, but no
+# production source may branch on those serialized identities.
+foreach(source IN LISTS observer_sources)
+    file(READ "${source}" contents)
+    foreach(class_name IN LISTS observer_class_literals)
+        if(contents MATCHES
+           "typeIdentifier[ \t\r\n]*[!=]=[ \t\r\n]*\"${class_name}\"|\"${class_name}\"[ \t\r\n]*[!=]=[ \t\r\n]*[^;\n]*typeIdentifier")
+            message(FATAL_ERROR
+                "${source} branches on built-in observer identity ${class_name}; "
+                "resolve the operation through WVExtensionCatalog metadata.")
+        endif()
+    endforeach()
+endforeach()
+
 set(generic_observation_consumers
     "PortableRuntime/src/WVModelOutputNetCDFWriter.cpp"
     "PortableRuntime/src/WVModelOutputNetCDFReader.cpp"
@@ -67,6 +81,9 @@ set(retired_dispatch_symbols
     WVObserverKind
     WVObserverStateContract
     WVObserverOutputRule
+    WVObserverSamplingTopology
+    WVObserverIntegratedOperation
+    legacyExecutionPlan
     recordsCoefficients
     recordsEulerianFields
     recordsFixedProfiles

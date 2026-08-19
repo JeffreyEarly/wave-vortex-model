@@ -26,6 +26,35 @@ if(NOT checkpoint_alias EQUAL -1)
     message(FATAL_ERROR "The obsolete WaveVortex::Checkpoint alias was restored.")
 endif()
 
+file(GLOB_RECURSE runtime_production_sources LIST_DIRECTORIES false
+    "${WV_REPOSITORY_ROOT}/PortableRuntime/include/*.hpp"
+    "${WV_REPOSITORY_ROOT}/PortableRuntime/src/*.cpp"
+    "${WV_REPOSITORY_ROOT}/PortableRuntime/src/*.hpp"
+    "${WV_REPOSITORY_ROOT}/PortableRuntime/app/*.cpp"
+    "${WV_REPOSITORY_ROOT}/PortableRuntime/app/*.hpp")
+foreach(source_path IN LISTS runtime_production_sources)
+    file(READ "${source_path}" source)
+    foreach(token
+            WVObserverFactoryRegistry
+            WVOutputScheduleFactoryRegistry
+            WVForcingFactoryRegistry)
+        string(FIND "${source}" "${token}" position)
+        if(NOT position EQUAL -1)
+            message(FATAL_ERROR
+                "Portable runtime restored retired process-global registry ${token}: ${source_path}")
+        endif()
+    endforeach()
+    if(source MATCHES "seal[A-Za-z_]*(Factory)?Registration|sealRegistration")
+        message(FATAL_ERROR
+            "Portable runtime restored a registration-seal API: ${source_path}")
+    endif()
+    if(source MATCHES
+       "static[ \t\r\n]+std::(map|unordered_map|mutex)[ \t\r\n]*[<A-Za-z_]")
+        message(FATAL_ERROR
+            "Portable runtime contains process-global mutable registry storage: ${source_path}")
+    endif()
+endforeach()
+
 file(READ "${WV_REPOSITORY_ROOT}/PortableRuntime/app/WaveVortexRun.cpp" runner)
 foreach(token "netcdf.h" "nc_open(" "nc_create(" "nc_def_")
     string(FIND "${runner}" "${token}" position)

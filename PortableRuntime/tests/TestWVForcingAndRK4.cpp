@@ -1,4 +1,5 @@
 #include "WaveVortexRuntime/WVRungeKutta.hpp"
+#include "WVTestExtensionCatalog.hpp"
 #include "WaveVortexRuntime/WVConstantStratificationIntegrationSystem.hpp"
 #include "WaveVortexRuntime/WVForcingEngine.hpp"
 #include "WaveVortexRuntime/WVForcingContracts.hpp"
@@ -124,7 +125,7 @@ std::unique_ptr<WVConstantStratificationForcingEngine> createEngine(
     const WVTransformConstantStratificationConfiguration& value,
     const WVFrozenForcingSchedule& schedule) {
     std::unique_ptr<WVConstantStratificationForcingEngine> engine;
-    const auto status = WVConstantStratificationForcingEngine::create(value,schedule,std::make_unique<WVReferenceFFTEngine>(),engine);
+    const auto status = WVConstantStratificationForcingEngine::create(value,schedule,test::extensionCatalog(),std::make_unique<WVReferenceFFTEngine>(),engine);
     require(static_cast<bool>(status),status.message);
     return engine;
 }
@@ -139,7 +140,8 @@ std::unique_ptr<WVConstantStratificationIntegrationSystem> createSystem(
         std::make_unique<WVReferenceFFTEngine>()) {
     std::unique_ptr<WVConstantStratificationIntegrationSystem> system;
     const auto status = WVConstantStratificationIntegrationSystem::create(
-        configuration(hydrostatic),schedule,std::move(fft),system);
+        configuration(hydrostatic), schedule, test::extensionCatalog(),
+        std::move(fft), system);
     require(static_cast<bool>(status),status.message);
     return system;
 }
@@ -440,11 +442,11 @@ void testLinearBottomFrictionIntegrationAndFailures(bool hydrostatic) {
     auto invalidSchedule = schedule;
     invalidSchedule.entries.back().configuration.values.front() = realValue("r",{-1.0});
     std::unique_ptr<WVConstantStratificationForcingEngine> invalidEngine;
-    status = WVConstantStratificationForcingEngine::create(configuration(hydrostatic),invalidSchedule,std::make_unique<WVReferenceFFTEngine>(),invalidEngine);
+    status = WVConstantStratificationForcingEngine::create(configuration(hydrostatic),invalidSchedule,test::extensionCatalog(),std::make_unique<WVReferenceFFTEngine>(),invalidEngine);
     require(!status && !invalidEngine,"negative linear drag was accepted");
     invalidSchedule = schedule;
     invalidSchedule.entries.back().contractVersion = WVPortablePairContractVersion+1;
-    status = WVConstantStratificationForcingEngine::create(configuration(hydrostatic),invalidSchedule,std::make_unique<WVReferenceFFTEngine>(),invalidEngine);
+    status = WVConstantStratificationForcingEngine::create(configuration(hydrostatic),invalidSchedule,test::extensionCatalog(),std::make_unique<WVReferenceFFTEngine>(),invalidEngine);
     require(!status && !invalidEngine,"linear drag contract-version mismatch was accepted");
 
     WVFrozenForcingSchedule failureSchedule;
@@ -540,11 +542,11 @@ void testValidation() {
     auto schedule = nonlinearSchedule();
     schedule.profileVersion = 99;
     std::unique_ptr<WVConstantStratificationForcingEngine> engine;
-    auto status = WVConstantStratificationForcingEngine::create(configuration(true),schedule,std::make_unique<WVReferenceFFTEngine>(),engine);
+    auto status = WVConstantStratificationForcingEngine::create(configuration(true),schedule,test::extensionCatalog(),std::make_unique<WVReferenceFFTEngine>(),engine);
     require(status.code == WVKernelStatusCode::unsupportedOperation && !engine,"unsupported schedule profile was accepted");
     schedule = nonlinearSchedule();
     schedule.entries.front().stage = WVForcingStage::spectral;
-    status = WVConstantStratificationForcingEngine::create(configuration(true),schedule,std::make_unique<WVReferenceFFTEngine>(),engine);
+    status = WVConstantStratificationForcingEngine::create(configuration(true),schedule,test::extensionCatalog(),std::make_unique<WVReferenceFFTEngine>(),engine);
     require(status.code == WVKernelStatusCode::invalidConfiguration && !engine,"wrong forcing stage was accepted");
 }
 
@@ -552,8 +554,6 @@ void testValidation() {
 
 int main() {
     try {
-        const auto registration = test::registerLinearCoefficientForcing();
-        require(static_cast<bool>(registration),registration.message);
         testNonlinearCompatibility(true);
         testNonlinearCompatibility(false);
         testFixedAmplitudeAndRK4();

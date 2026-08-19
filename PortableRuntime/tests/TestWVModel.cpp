@@ -1,4 +1,5 @@
 #include "WaveVortexRuntime/WVCheckpointReader.hpp"
+#include "WVTestExtensionCatalog.hpp"
 #include "WaveVortexRuntime/WVModel.hpp"
 #include "WVReferenceFFTEngine.hpp"
 
@@ -38,7 +39,7 @@ WVCheckpoint readFixture() {
   WVCheckpoint checkpoint;
   const auto status = WVCheckpointReader::read(
       std::string(WV_RUNTIME_FIXTURE_DIR) + "/forcing-nonlinear.nc",
-      checkpoint);
+      *test::extensionCatalog(), checkpoint);
   require(static_cast<bool>(status), status.message);
   return checkpoint;
 }
@@ -50,6 +51,7 @@ void fixedFacadeMatchesDirectIntegrator() {
   std::unique_ptr<WVConstantStratificationIntegrationSystem> directSystem;
   auto status = WVConstantStratificationIntegrationSystem::create(
       directCheckpoint.configuration, directCheckpoint.forcingSchedule,
+      test::extensionCatalog(),
       std::make_unique<WVReferenceFFTEngine>(), directSystem);
   require(static_cast<bool>(status), status.message);
   WVAdditionalStateStorage directAdditional;
@@ -69,7 +71,8 @@ void fixedFacadeMatchesDirectIntegrator() {
 
   WVModel model;
   status = WVModel::create(
-      facadeCheckpoint.configuration, facadeCheckpoint.forcingSchedule,
+      test::extensionCatalog(), facadeCheckpoint.configuration,
+      facadeCheckpoint.forcingSchedule,
       std::make_unique<WVReferenceFFTEngine>(), {}, model);
   require(static_cast<bool>(status), status.message);
   WVModelState state;
@@ -99,7 +102,8 @@ void adaptiveFacadeAdvances() {
   options.adaptive.maximumStepSize = 1e-5;
   WVModel model;
   auto status = WVModel::create(
-      checkpoint.configuration, checkpoint.forcingSchedule,
+      test::extensionCatalog(), checkpoint.configuration,
+      checkpoint.forcingSchedule,
       std::make_unique<WVReferenceFFTEngine>(), options, model);
   require(static_cast<bool>(status), status.message);
   WVModelState state;

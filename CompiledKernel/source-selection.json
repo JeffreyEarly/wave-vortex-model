@@ -18,12 +18,13 @@
     "observationBatches": "issue-260",
     "resolvedForcings": "issue-261",
     "linearBottomFriction": "issue-262",
-    "description": "Shared per-RHS advection fields, core-owned F-grid scalar differentiation, construction-time preparation of required scalar plans, MATLAB-compatible adaptive tolerances for integrated observers, one thin WVModel owner shared by the CLI and production MEX RHS path, source-linked observing-system and forcing implementations, generic event-scoped observation batches, and linear bottom friction.",
+    "explicitExtensionCatalog": "issue-271",
+    "description": "Shared per-RHS advection fields, core-owned F-grid scalar differentiation, construction-time preparation of required scalar plans, MATLAB-compatible adaptive tolerances for integrated observers, one thin WVModel owner shared by the CLI and production MEX RHS path, source-linked observing-system and forcing implementations resolved through an explicit immutable typed catalog, generic event-scoped observation batches, and linear bottom friction.",
     "kernelTypesSHA256": "4b7cf55649b02eaae224bfaf618f756122a81c1caaff92c751b4e35f827ea1cc",
     "kernelInterfaceSHA256": "6f04c9deb091ba02d372901b80c9cff6a1f136c9f1cdd98a38843577923bafd6",
-    "integrationSystemSHA256": "28f0cb1b0ac4a947a7d2f4475bb2ec57ac3e6d30889e34c30f959fb55fe4fea9",
-    "forcingEngineSHA256": "883864576ceb37355a1984b8e82585adde18c368c525e2d8a68a10595c5e3700",
-    "forcingInterfaceSHA256": "88bfc0f9c25d35a57d2a738bccf4aa1bbfd185ad74a8c510d03508eda1f20ff8"
+    "integrationSystemSHA256": "8ee39c4b635d5e0304675debdb7f75d2fd5e797c5fed820184c6766ee3ac32a3",
+    "forcingEngineSHA256": "6f27859f43d38dfaf8355adb6d066c5f2ae30ec10e95bc07ade3141430af5ca9",
+    "forcingInterfaceSHA256": "0e08bd27b5e069fdee2de7b1428ab549051580e943ce576dde090a705cd8e56f"
   },
   "contract": {
     "version": 4,
@@ -37,10 +38,10 @@
   "keySourceSHA256": {
     "coefficientFormulas": "78d647608d8919b33c278c280eb6d2b253dfb0acd8d3330141fbdc845e00864a",
     "kernel": "c6193e5b1d97c59b90d5e17b7941aec63cd66ffa81f62177578681814cb5c3e7",
-    "integrationSystem": "28f0cb1b0ac4a947a7d2f4475bb2ec57ac3e6d30889e34c30f959fb55fe4fea9",
+    "integrationSystem": "8ee39c4b635d5e0304675debdb7f75d2fd5e797c5fed820184c6766ee3ac32a3",
     "nativeEngine": "5081f650cf5bf2cee9c210cef8ab1596a73aad4de7d65c712783fa36795e3b4b",
-    "mexGateway": "daa2516e2a6af3c31053176e2a12270fa732d3bb149dc09673c4bd1fd77f9e8b",
-    "buildOrchestrator": "21144410801985ff4126480d0aa966055bde642dbbc7ddc2775a1498100992c8"
+    "mexGateway": "15765502e7541305605dd3ad7e60e14fce27a59bfd3a391538307dbd0aa23454",
+    "buildOrchestrator": "1944fa21c82d0dc94cd0f6be7b4e27a77cf41c72f32150ebaa05c15b436754c1"
   },
   "excluded": [
     "historical benchmark harnesses and canonical engineering artifacts",

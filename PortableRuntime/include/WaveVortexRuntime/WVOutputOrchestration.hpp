@@ -92,11 +92,14 @@ public:
   WVOutputPlan &operator=(const WVOutputPlan &) = delete;
 
   static WVKernelStatus
-  create(const WVPortableObserverDescriptor &descriptor, double initialTime,
+  create(const WVPortableObserverDescriptor &descriptor,
+         std::shared_ptr<const WVExtensionCatalog> catalog, double initialTime,
          double finalTime, const std::vector<WVOutputGroupProgress> &progress,
          WVOutputPlan &plan);
   static WVKernelStatus
-  createExplicit(const WVIntegrationStateLayout &layout, double initialTime,
+  createExplicit(const WVIntegrationStateLayout &layout,
+                 std::shared_ptr<const WVExtensionCatalog> catalog,
+                 double initialTime,
                  double finalTime,
                  const std::vector<WVExplicitOutputTarget> &targets,
                  WVOutputPlan &plan);
@@ -277,7 +280,8 @@ struct WVCheckpointOutputSinkMetrics {
 // part of the legacy coefficient checkpoint format.
 class WVCheckpointOutputSink final : public WVOutputSink {
 public:
-  explicit WVCheckpointOutputSink(WVCheckpoint checkpointTemplate);
+  WVCheckpointOutputSink(std::shared_ptr<const WVExtensionCatalog> catalog,
+                         WVCheckpoint checkpointTemplate);
 
   WVKernelStatus preflight(const WVOutputPlan &plan) override;
   WVKernelStatus deliver(const WVOutputEvent &event,
@@ -293,6 +297,7 @@ public:
   std::size_t persistentBytes() const noexcept;
 
 private:
+  std::shared_ptr<const WVExtensionCatalog> catalog_;
   WVCheckpoint checkpoint_;
   std::vector<WVCheckpointOutputRecord> records_;
   WVCheckpointOutputSinkMetrics metrics_;

@@ -1,4 +1,5 @@
 #include "WaveVortexRuntime/WVObserverOutputEvaluationService.hpp"
+#include "WVTestExtensionCatalog.hpp"
 #include "WaveVortexRuntime/WVObserverOutputProvider.hpp"
 
 #include "WVReferenceFFTEngine.hpp"
@@ -34,7 +35,6 @@ public:
   WVKernelStatus executionPlan(const WVObserverRecord &record,
                                WVObserverExecutionPlan &plan) const override {
     plan = {};
-    plan.sampling = WVObserverSamplingTopology::fixedPositions;
     plan.fieldListAttribute = "fieldNames";
     plan.persistedName = record.name;
     plan.outputFields = record.fieldNames;
@@ -143,6 +143,29 @@ public:
     return sizeof(*this);
   }
 };
+
+const std::shared_ptr<const WVExtensionCatalog> &extensionCatalog() {
+  static const auto catalog = [] {
+    WVExtensionCatalogBuilder builder;
+    auto status = addBuiltInExtensions(builder);
+    if (status)
+      status = builder.addObserverFactory(
+          {"WVTestPortablePointDiagnostic", 1,
+           [](const WVObserverRecord &, const WVPortableTypedRecord &,
+              std::shared_ptr<const WVObservingSystem> &result) {
+             result = std::make_shared<
+                 WVTestPortablePointDiagnosticImplementation>();
+             return WVKernelStatus::ok();
+           }});
+    std::shared_ptr<const WVExtensionCatalog> result;
+    if (status)
+      status = builder.freeze(result);
+    if (!status)
+      throw std::runtime_error(status.message);
+    return result;
+  }();
+  return catalog;
+}
 
 WVTransformConstantStratificationConfiguration configuration() {
   WVTransformConstantStratificationConfiguration value;
@@ -260,7 +283,7 @@ WVPortableObserverDescriptor descriptor() {
   diagnostic.outputOffset = -1.25;
   record.observers.push_back(diagnostic);
   WVPortableObserverDescriptor result;
-  require(static_cast<bool>(WVPortableObserverDescriptor::create(record, result)),
+  require(static_cast<bool>(WVPortableObserverDescriptor::create(record, extensionCatalog(), result)),
           "observer descriptor construction failed");
   return result;
 }
@@ -453,9 +476,6 @@ void testService(bool linear) {
 
 int main() {
   try {
-    require(static_cast<bool>(WVObserverFactoryRegistry::registerImplementation(
-                std::make_shared<WVTestPortablePointDiagnosticImplementation>())),
-            "point-diagnostic registration failed");
     testService(false);
     testService(true);
     std::cout << "Passive observer output evaluation contracts passed.\n";

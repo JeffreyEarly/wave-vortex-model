@@ -14,9 +14,11 @@ namespace wavevortex::runtime::detail {
 // data-only mapping between legacy class metadata and portable records.
 WVCheckpointStatus parsePersistedObserver(
     int outputGroup, int metadataGroup, const std::string &outputPath,
+    const WVExtensionCatalog &catalog,
     WVPortableObserverRecord &portable, std::string &identifier);
 
-bool persistedObserverCarriesCoefficientState(int metadataGroup) noexcept;
+bool persistedObserverCarriesCoefficientState(
+    int metadataGroup, const WVExtensionCatalog &catalog) noexcept;
 
 // Historical MATLAB releases used a small number of presentation-only
 // attribute spellings that differ from the portable writer's byte-compatible
@@ -29,6 +31,7 @@ bool legacyObservationAttributeMatches(std::string_view name,
 WVCheckpointStatus resolvePersistedObserverRestartState(
     const std::vector<WVOutputFileRecord> &files,
     std::vector<WVObserverRecord> &observers, double selectedTime,
+    const WVExtensionCatalog &catalog,
     std::map<std::string, std::vector<std::vector<double>>> &resolvedState);
 
 } // namespace wavevortex::runtime::detail

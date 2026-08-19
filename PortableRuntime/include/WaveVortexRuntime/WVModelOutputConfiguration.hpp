@@ -131,6 +131,7 @@ public:
   static WVKernelStatus
   build(WVPortableObserverRecord observerRecord,
         std::vector<WVModelOutputFile> files, WVModelOutputPolicy policy,
+        std::shared_ptr<const WVExtensionCatalog> catalog,
         double initialTime, double finalTime,
         WVModelOutputConfiguration &configuration);
 
@@ -143,6 +144,7 @@ public:
       WVModelOutputNetCDFSink &sink) const;
 
   const WVPortableObserverDescriptor &descriptor() const noexcept;
+  const std::shared_ptr<const WVExtensionCatalog> &catalog() const noexcept;
   const WVOutputPlan &plan() const noexcept;
   const std::vector<WVOutputGroupProgress> &progress() const noexcept;
   WVModelOutputPolicy policy() const noexcept;

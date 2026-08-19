@@ -29,6 +29,20 @@ WVCheckpointStatus failure(WVCheckpointStatusCode code, std::string message,
   return {code, std::move(message), std::move(location)};
 }
 
+WVCheckpointStatus validateCatalogIdentity(
+    const WVModelOutputNetCDFConfiguration &configuration,
+    const WVPortableObserverDescriptor &descriptor) {
+  if (!configuration.catalog)
+    return failure(WVCheckpointStatusCode::schemaMismatch,
+                   "Output configuration has no extension catalog.", "/");
+  if (descriptor.catalog() != configuration.catalog)
+    return failure(WVCheckpointStatusCode::schemaMismatch,
+                   "The output configuration and observer descriptor require "
+                   "the same extension catalog.",
+                   "/");
+  return WVCheckpointStatus::ok();
+}
+
 const WVPortableVariableMetadata *
 coefficientMetadata(std::string_view name) noexcept {
   const auto *metadata = findPortableVariable(name);
@@ -503,6 +517,9 @@ public:
   }
 
   WVCheckpointStatus validateConfiguration() const {
+    if (!configuration.catalog)
+      return failure(WVCheckpointStatusCode::schemaMismatch,
+                     "Output configuration has no extension catalog.", "/");
     if (configuration.checkpointTemplate.metadata.profileIdentifier !=
             WVCheckpointProfileIdentifier ||
         configuration.checkpointTemplate.metadata.profileVersion !=
@@ -1511,6 +1528,7 @@ public:
       std::vector<const WVFrozenForcingEntry *> forcingEntries;
       result = detail::defineModelOutputRoot(
           staged.id, configuration.checkpointTemplate,
+          configuration.catalog->forcings(),
           configuration.isDynamicsLinear, rootDimensions, forcingGroups,
           forcingEntries);
       if (!result)
@@ -1536,6 +1554,7 @@ public:
         return result;
       result = detail::writeModelOutputRoot(staged.id,
                                             configuration.checkpointTemplate,
+                                            configuration.catalog->forcings(),
                                             forcingGroups, forcingEntries);
       if (!result)
         return result;
@@ -2446,7 +2465,9 @@ public:
     files.reserve(descriptorRecord.outputFiles.size());
     for (const auto &record : descriptorRecord.outputFiles) {
       WVCheckpointInspection inspection;
-      auto result = WVCheckpointReader::inspect(record.destination, inspection);
+      auto result = WVCheckpointReader::inspect(record.destination,
+                                                *configuration.catalog,
+                                                inspection);
       if (!result)
         return result;
       if (!sameTransformConfiguration(
@@ -2840,6 +2861,9 @@ WVCheckpointStatus WVModelOutputNetCDFSink::createNew(
     const WVPortableObserverDescriptor &descriptor,
     const WVIntegrationStateLayout &stateLayout,
     WVObserverSampleSource *sampleSource, WVModelOutputNetCDFSink &sink) {
+  auto catalogStatus = validateCatalogIdentity(configuration, descriptor);
+  if (!catalogStatus)
+    return catalogStatus;
   try {
     auto candidate = std::make_unique<Impl>();
     candidate->configuration = configuration;
@@ -2882,6 +2906,9 @@ WVCheckpointStatus WVModelOutputNetCDFSink::replaceExisting(
     const WVPortableObserverDescriptor &descriptor,
     const WVIntegrationStateLayout &stateLayout,
     WVObserverSampleSource *sampleSource, WVModelOutputNetCDFSink &sink) {
+  auto catalogStatus = validateCatalogIdentity(configuration, descriptor);
+  if (!catalogStatus)
+    return catalogStatus;
   try {
     auto candidate = std::make_unique<Impl>();
     candidate->configuration = configuration;
@@ -2923,6 +2950,9 @@ WVCheckpointStatus WVModelOutputNetCDFSink::openAppend(
     const WVPortableObserverDescriptor &descriptor,
     const WVIntegrationStateLayout &stateLayout,
     WVObserverSampleSource *sampleSource, WVModelOutputNetCDFSink &sink) {
+  auto catalogStatus = validateCatalogIdentity(configuration, descriptor);
+  if (!catalogStatus)
+    return catalogStatus;
   try {
     auto candidate = std::make_unique<Impl>();
     candidate->configuration = configuration;

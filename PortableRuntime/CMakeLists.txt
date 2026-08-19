@@ -20,6 +20,8 @@ else()
 endif()
 
 add_library(WaveVortexPortableRuntime STATIC
+    include/WaveVortexRuntime/WVExtensionCatalog.hpp
+    src/WVExtensionCatalog.cpp
     src/WVPortableImplementationContract.cpp
     src/WVPortableTypedRecord.cpp
     src/WVObservation.cpp
@@ -59,24 +61,31 @@ set_target_properties(WaveVortexPortableRuntime PROPERTIES
     POSITION_INDEPENDENT_CODE ON
 )
 
-add_executable(wave-vortex-run
+add_library(WaveVortexRunner STATIC
+    include/WaveVortexRuntime/WVRunner.hpp
     app/WaveVortexRun.cpp
     app/WVRunRequest.cpp
 )
-target_compile_features(wave-vortex-run PRIVATE cxx_std_17)
-target_include_directories(wave-vortex-run PRIVATE
+add_library(WaveVortex::Runner ALIAS WaveVortexRunner)
+target_compile_features(WaveVortexRunner PUBLIC cxx_std_17)
+target_include_directories(WaveVortexRunner PRIVATE
     app
     third_party
 )
-target_link_libraries(wave-vortex-run PRIVATE WaveVortex::PortableRuntime WaveVortex::ReferenceFFT)
+target_link_libraries(WaveVortexRunner PUBLIC WaveVortex::PortableRuntime PRIVATE WaveVortex::ReferenceFFT)
+set_target_properties(WaveVortexRunner PROPERTIES CXX_EXTENSIONS OFF POSITION_INDEPENDENT_CODE ON)
+
+add_executable(wave-vortex-run app/WaveVortexRunMain.cpp)
+target_compile_features(wave-vortex-run PRIVATE cxx_std_17)
+target_link_libraries(wave-vortex-run PRIVATE WaveVortex::Runner)
 execute_process(COMMAND git rev-parse HEAD WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/.. RESULT_VARIABLE WV_RUNTIME_GIT_RESULT OUTPUT_VARIABLE WV_RUNTIME_SOURCE_COMMIT OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
 if(NOT WV_RUNTIME_GIT_RESULT EQUAL 0 OR NOT WV_RUNTIME_SOURCE_COMMIT)
     file(READ "${CMAKE_CURRENT_LIST_DIR}/../resources/mpackage.json" WV_RUNTIME_PACKAGE_MANIFEST)
     string(JSON WV_RUNTIME_PACKAGE_VERSION GET "${WV_RUNTIME_PACKAGE_MANIFEST}" version)
     set(WV_RUNTIME_SOURCE_COMMIT "WaveVortexModel-${WV_RUNTIME_PACKAGE_VERSION}")
 endif()
-target_compile_definitions(wave-vortex-run PRIVATE WV_RUNTIME_SOURCE_COMMIT="${WV_RUNTIME_SOURCE_COMMIT}")
-target_compile_definitions(wave-vortex-run PRIVATE WV_RUNTIME_HAS_DENSE_OUTPUT=1)
+target_compile_definitions(WaveVortexRunner PRIVATE WV_RUNTIME_SOURCE_COMMIT="${WV_RUNTIME_SOURCE_COMMIT}")
+target_compile_definitions(WaveVortexRunner PRIVATE WV_RUNTIME_HAS_DENSE_OUTPUT=1)
 
 if(WV_RUNTIME_ENABLE_NATIVE_FFTW)
     if(NOT APPLE OR NOT CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64")
@@ -90,11 +99,11 @@ if(WV_RUNTIME_ENABLE_NATIVE_FFTW)
     target_include_directories(WaveVortexNativeFFTW PUBLIC ../CompiledKernel/adapters/native-fftw ${WV_RUNTIME_FFTW_INCLUDE})
     target_link_libraries(WaveVortexNativeFFTW PUBLIC WaveVortex::Kernel ${WV_RUNTIME_FFTW_THREADS} ${WV_RUNTIME_FFTW_BASE} ${CMAKE_DL_LIBS})
     set_target_properties(WaveVortexNativeFFTW PROPERTIES CXX_EXTENSIONS OFF POSITION_INDEPENDENT_CODE ON)
-    target_link_libraries(wave-vortex-run PRIVATE WaveVortexNativeFFTW)
-    target_compile_definitions(wave-vortex-run PRIVATE WV_RUNTIME_HAS_NATIVE_FFTW=1 WV_RUNTIME_EXPECTED_FFTW_ROOT="${WV_RUNTIME_FFTW_ROOT}")
+    target_link_libraries(WaveVortexRunner PRIVATE WaveVortexNativeFFTW)
+    target_compile_definitions(WaveVortexRunner PRIVATE WV_RUNTIME_HAS_NATIVE_FFTW=1 WV_RUNTIME_EXPECTED_FFTW_ROOT="${WV_RUNTIME_FFTW_ROOT}")
     set_target_properties(wave-vortex-run PROPERTIES BUILD_RPATH "${WV_RUNTIME_FFTW_ROOT}/lib")
 else()
-    target_compile_definitions(wave-vortex-run PRIVATE WV_RUNTIME_HAS_NATIVE_FFTW=0 WV_RUNTIME_EXPECTED_FFTW_ROOT="")
+    target_compile_definitions(WaveVortexRunner PRIVATE WV_RUNTIME_HAS_NATIVE_FFTW=0 WV_RUNTIME_EXPECTED_FFTW_ROOT="")
 endif()
 
 if(WV_RUNTIME_BUILD_BENCHMARKS)
@@ -127,6 +136,7 @@ endif()
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "AppleClang|Clang|GNU")
     target_compile_options(WaveVortexPortableRuntime PRIVATE -Wall -Wextra -Wpedantic -Werror)
+    target_compile_options(WaveVortexRunner PRIVATE -Wall -Wextra -Wpedantic -Werror)
     target_compile_options(wave-vortex-run PRIVATE -Wall -Wextra -Wpedantic -Werror)
     if(TARGET WaveVortexNativeFFTW)
         target_compile_options(WaveVortexNativeFFTW PRIVATE -Wall -Wextra -Wpedantic -Werror)
@@ -163,6 +173,7 @@ if(BUILD_TESTING)
     wv_add_runtime_test(TestWVObservation TestWVObservation.cpp observation-schema-batch)
     wv_add_runtime_test(TestWVPortableVariableCatalog TestWVPortableVariableCatalog.cpp portable-variable-catalog)
     wv_add_runtime_test(TestWVObserverAdapter TestWVObserverAdapter.cpp observer-adapter)
+    wv_add_runtime_test(TestWVExtensionCatalog TestWVExtensionCatalog.cpp extension-catalog)
     wv_add_runtime_test(TestWVCheckpointReader TestWVCheckpointReader.cpp checkpoint-reader)
     wv_add_runtime_test(TestWVCheckpointWriter TestWVCheckpointWriter.cpp checkpoint-writer)
     wv_add_runtime_test(TestWVForcingAndRK4 TestWVForcingAndRK4.cpp forcing-and-rk4)
@@ -175,6 +186,16 @@ if(BUILD_TESTING)
     wv_add_runtime_test(TestWVObserverOutputEvaluation TestWVObserverOutputEvaluation.cpp observer-output-evaluation)
     wv_add_runtime_test(TestWVLagrangianParticles TestWVLagrangianParticles.cpp lagrangian-particles)
     wv_add_runtime_test(TestWaveVortexRun TestWaveVortexRun.cpp standalone-runner)
+
+    add_executable(TestWVExtendedRunner tests/TestWVExtendedRunner.cpp)
+    target_compile_features(TestWVExtendedRunner PRIVATE cxx_std_17)
+    target_include_directories(TestWVExtendedRunner PRIVATE tests)
+    target_link_libraries(TestWVExtendedRunner PRIVATE WaveVortex::Runner)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "AppleClang|Clang|GNU")
+        target_compile_options(TestWVExtendedRunner PRIVATE
+            -Wall -Wextra -Wpedantic -Werror)
+    endif()
+    add_test(NAME extended-runner-composition COMMAND TestWVExtendedRunner)
 
     add_executable(TestWVRunRequest
         tests/TestWVRunRequest.cpp

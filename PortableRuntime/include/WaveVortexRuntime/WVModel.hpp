@@ -23,10 +23,14 @@ struct WVModelIntegratorConfiguration {
 
 struct WVModelMetrics {
   std::size_t modelPersistentBytes = 0;
+  std::size_t catalogPersistentBytes = 0;
   std::size_t statePersistentBytes = 0;
   std::size_t integrationSystemPersistentBytes = 0;
   std::size_t integratorPersistentBytes = 0;
   std::size_t outputPersistentBytes = 0;
+  std::size_t outputConfigurationPersistentBytes = 0;
+  std::size_t outputEvaluationPersistentBytes = 0;
+  std::size_t outputSinkPersistentBytes = 0;
   WVKernelMetrics kernel;
   WVForcingEngineMetrics forcing;
   WVIntegratedObserverMetrics integratedObservers;
@@ -86,6 +90,7 @@ public:
   WVModel &operator=(const WVModel &) = delete;
 
   static WVKernelStatus create(
+      std::shared_ptr<const WVExtensionCatalog> catalog,
       const WVTransformConstantStratificationConfiguration &configuration,
       const WVFrozenForcingSchedule &forcingSchedule,
       std::unique_ptr<WVFFTEngine> engine,
@@ -96,6 +101,7 @@ public:
   // state, reconstruct the authoritative forcing/observer/output graph, and
   // optionally remap destinations by stable output-file identifier.
   static WVKernelStatus createFromModelOutputFiles(
+      std::shared_ptr<const WVExtensionCatalog> catalog,
       const std::vector<std::string> &paths,
       const WVModelOutputRequest &outputRequest,
       std::unique_ptr<WVFFTEngine> engine,
@@ -105,6 +111,7 @@ public:
   // Consume an already inspected graph so callers that perform an explicit
   // preflight do not repeat NetCDF inspection or retain its state twice.
   static WVKernelStatus createFromModelOutputInspection(
+      std::shared_ptr<const WVExtensionCatalog> catalog,
       WVModelOutputNetCDFInspection inspection,
       const WVModelOutputRequest &outputRequest,
       std::unique_ptr<WVFFTEngine> engine,
@@ -115,6 +122,7 @@ public:
   // runtime-state allocation. The returned configuration owns the sole
   // immutable output graph used by createFromModelOutputInspection().
   static WVKernelStatus prepareModelOutput(
+      std::shared_ptr<const WVExtensionCatalog> catalog,
       const WVModelOutputNetCDFInspection &inspection,
       const WVModelOutputRequest &outputRequest,
       WVModelOutputConfiguration &configuration);
@@ -123,6 +131,7 @@ public:
   // prevents request-mode callers from retaining or rebuilding a second
   // observer/output graph after preflight.
   static WVKernelStatus createFromModelOutputInspection(
+      std::shared_ptr<const WVExtensionCatalog> catalog,
       WVModelOutputNetCDFInspection inspection,
       WVModelOutputConfiguration outputConfiguration,
       std::unique_ptr<WVFFTEngine> engine,
@@ -130,6 +139,7 @@ public:
       WVModel &model, WVModelState &state);
 
   static WVKernelStatus create(
+      std::shared_ptr<const WVExtensionCatalog> catalog,
       const WVTransformConstantStratificationConfiguration &configuration,
       const WVFrozenForcingSchedule &forcingSchedule,
       const WVPortableObserverDescriptor &observerDescriptor,

@@ -3,15 +3,10 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
-#include <map>
-#include <mutex>
-#include <tuple>
 #include <utility>
 
 namespace wavevortex::runtime {
 namespace {
-
-using Key = std::pair<std::string, std::uint32_t>;
 
 double tolerance(double first, double second) noexcept {
   return 8.0 * std::numeric_limits<double>::epsilon() *
@@ -119,23 +114,10 @@ private:
   double final_ = 0.0;
 };
 
-std::map<Key, WVOutputScheduleFactoryRegistry::Factory> &factories() {
-  static std::map<Key, WVOutputScheduleFactoryRegistry::Factory> value;
-  return value;
-}
+} // namespace
 
-std::mutex &factoryMutex() {
-  static std::mutex value;
-  return value;
-}
-
-bool &sealed() {
-  static bool value = false;
-  return value;
-}
-
-std::shared_ptr<const WVOutputSchedule>
-makeEvenlySpaced(const WVOutputScheduleRecord &record, WVKernelStatus &status) {
+std::shared_ptr<const WVOutputSchedule> makeEvenlySpacedOutputSchedule(
+    const WVOutputScheduleRecord &record, WVKernelStatus &status) {
   if (!std::isfinite(record.initialTime) ||
       !std::isfinite(record.outputInterval) || record.outputInterval <= 0.0 ||
       std::isnan(record.finalTime) || record.finalTime < record.initialTime) {
@@ -178,77 +160,6 @@ makeEvenlySpaced(const WVOutputScheduleRecord &record, WVKernelStatus &status) {
               "Unable to allocate an output schedule."};
     return {};
   }
-}
-
-void ensureBuiltins() {
-  auto &items = factories();
-  const Key key{WVEvenlySpacedOutputScheduleType, 1};
-  if (items.find(key) == items.end())
-    items.emplace(key, &makeEvenlySpaced);
-}
-
-} // namespace
-
-WVKernelStatus
-WVOutputScheduleFactoryRegistry::registerFactory(std::string typeIdentifier,
-                                                 std::uint32_t contractVersion,
-                                                 Factory factory) {
-  if (typeIdentifier.empty() || contractVersion == 0 || factory == nullptr)
-    return invalid("An output-schedule factory requires an identity, positive "
-                   "version, and function.");
-  std::lock_guard<std::mutex> lock(factoryMutex());
-  ensureBuiltins();
-  if (sealed())
-    return invalid("Output-schedule registration is sealed.");
-  if (!factories()
-           .emplace(Key{std::move(typeIdentifier), contractVersion}, factory)
-           .second)
-    return invalid("An output-schedule factory is already registered for this "
-                   "identity and version.");
-  return WVKernelStatus::ok();
-}
-
-WVKernelStatus WVOutputScheduleFactoryRegistry::resolve(
-    const WVOutputScheduleRecord &record,
-    std::shared_ptr<const WVOutputSchedule> &result) {
-  Factory factory = nullptr;
-  WVOutputScheduleRecord normalized = record;
-  if (normalized.typeIdentifier.empty()) {
-    normalized.typeIdentifier = WVEvenlySpacedOutputScheduleType;
-    normalized.contractVersion = 1;
-  }
-  {
-    std::lock_guard<std::mutex> lock(factoryMutex());
-    ensureBuiltins();
-    sealed() = true;
-    const auto found = factories().find(
-        Key{normalized.typeIdentifier, normalized.contractVersion});
-    if (found == factories().end() &&
-        normalized.typeIdentifier == WVStateTriggeredOutputScheduleType)
-      return {WVKernelStatusCode::unsupportedOperation,
-              "State-triggered output schedules are reserved but unsupported."};
-    if (found == factories().end())
-      return {WVKernelStatusCode::unsupportedOperation,
-              "No output-schedule implementation is registered for " +
-                  normalized.typeIdentifier + " version " +
-                  std::to_string(normalized.contractVersion) + "."};
-    factory = found->second;
-  }
-  WVKernelStatus status;
-  auto candidate = factory(normalized, status);
-  if (!status)
-    return status;
-  if (!candidate || candidate->typeIdentifier() != normalized.typeIdentifier ||
-      candidate->contractVersion() != normalized.contractVersion)
-    return invalid("An output-schedule factory returned an incompatible "
-                   "implementation.");
-  result = std::move(candidate);
-  return WVKernelStatus::ok();
-}
-
-bool WVOutputScheduleFactoryRegistry::isSealed() noexcept {
-  std::lock_guard<std::mutex> lock(factoryMutex());
-  return sealed();
 }
 
 } // namespace wavevortex::runtime

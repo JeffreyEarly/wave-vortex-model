@@ -1,4 +1,5 @@
 #include "WaveVortexRuntime/WVModelOutputConfiguration.hpp"
+#include "WaveVortexRuntime/WVExtensionCatalog.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -323,6 +324,7 @@ std::size_t WVModelOutputFile::persistentBytes() const noexcept {
 
 class WVModelOutputConfiguration::Impl final {
 public:
+  std::shared_ptr<const WVExtensionCatalog> catalog;
   WVPortableObserverDescriptor descriptor;
   WVOutputPlan plan;
   std::vector<WVOutputGroupProgress> progress;
@@ -340,8 +342,11 @@ WVModelOutputConfiguration &WVModelOutputConfiguration::operator=(
 WVKernelStatus WVModelOutputConfiguration::build(
     WVPortableObserverRecord observerRecord,
     std::vector<WVModelOutputFile> files, WVModelOutputPolicy policy,
+    std::shared_ptr<const WVExtensionCatalog> catalog,
     double initialTime, double finalTime,
     WVModelOutputConfiguration &configuration) {
+  if (!catalog)
+    return invalid("Output configuration requires an extension catalog.");
   if (files.empty())
     return invalid("At least one output file is required.");
   try {
@@ -391,7 +396,9 @@ WVKernelStatus WVModelOutputConfiguration::build(
                      "group or for none of them.");
 
     auto candidate = std::make_unique<Impl>();
+    candidate->catalog = std::move(catalog);
     auto status = WVPortableObserverDescriptor::create(observerRecord,
+                                                        candidate->catalog,
                                                         candidate->descriptor);
     if (!status)
       return status;
@@ -399,7 +406,8 @@ WVKernelStatus WVModelOutputConfiguration::build(
     if (policy == WVModelOutputPolicy::append) {
       WVModelOutputNetCDFInspection inspection;
       const auto inspected =
-          WVModelOutputNetCDFSink::inspect(appendPaths, inspection);
+          WVModelOutputNetCDFSink::inspect(appendPaths, *candidate->catalog,
+                                           inspection);
       if (!inspected)
         return fromCheckpoint(inspected);
       if (!sameGraph(observerRecord, inspection.observerRecord))
@@ -414,7 +422,8 @@ WVKernelStatus WVModelOutputConfiguration::build(
       candidate->progress = std::move(explicitProgress);
     }
 
-    status = WVOutputPlan::create(candidate->descriptor, initialTime, finalTime,
+    status = WVOutputPlan::create(candidate->descriptor, candidate->catalog,
+                                  initialTime, finalTime,
                                   candidate->progress, candidate->plan);
     if (!status)
       return status;
@@ -454,6 +463,11 @@ WVCheckpointStatus WVModelOutputConfiguration::openNetCDFSink(
 const WVPortableObserverDescriptor &
 WVModelOutputConfiguration::descriptor() const noexcept {
   return impl_->descriptor;
+}
+
+const std::shared_ptr<const WVExtensionCatalog> &
+WVModelOutputConfiguration::catalog() const noexcept {
+  return impl_->catalog;
 }
 
 const WVOutputPlan &WVModelOutputConfiguration::plan() const noexcept {

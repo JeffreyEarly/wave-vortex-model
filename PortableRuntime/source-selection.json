@@ -8,6 +8,10 @@
     "contracts": "PortableRuntime/tests",
     "buildAndExport": ".github/workflows, tools/prepareWaveVortexModelReleaseCandidate.m"
   },
+  "postSelectionExtensions": {
+    "explicitExtensionCatalog": "issue-271",
+    "description": "Source-linked observer, output-schedule, and forcing implementations are resolved through an explicitly owned immutable typed catalog; the reusable runner accepts that frozen catalog."
+  },
   "excluded": [
     "benchmark harnesses and payloads",
     "planning and audit artifacts",

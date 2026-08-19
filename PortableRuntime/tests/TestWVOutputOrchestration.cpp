@@ -1,4 +1,5 @@
 #include "WVTestQuadraticSchedule.hpp"
+#include "WVTestExtensionCatalog.hpp"
 #include "WaveVortexRuntime/WVOutputOrchestration.hpp"
 
 #include <algorithm>
@@ -84,7 +85,7 @@ WVPortableObserverRecord outputRecord(double finalTime = 1.0) {
 WVPortableObserverDescriptor
 descriptorFrom(const WVPortableObserverRecord &record) {
   WVPortableObserverDescriptor descriptor;
-  const auto status = WVPortableObserverDescriptor::create(record, descriptor);
+  const auto status = WVPortableObserverDescriptor::create(record, test::extensionCatalog(), descriptor);
   require(static_cast<bool>(status),
           "observer descriptor creation: " + status.message);
   return descriptor;
@@ -101,6 +102,50 @@ singleScheduleRecord(double interval, double initialTime, double finalTime) {
                            {"coefficients"},
                            true}}}};
   return record;
+}
+
+inline constexpr const char *emptyCursorScheduleType =
+    "WVTestEmptyCursorOutputSchedule";
+
+class EmptyCursorSchedule final : public WVOutputSchedule {
+public:
+  const char *typeIdentifier() const noexcept override {
+    return emptyCursorScheduleType;
+  }
+  std::uint32_t contractVersion() const noexcept override { return 1; }
+  WVKernelStatus
+  validateCursor(const WVOutputScheduleCursor &cursor) const override {
+    if (cursor.committedOrdinal == WVNoCommittedOutputOrdinal)
+      return WVKernelStatus::ok();
+    return {WVKernelStatusCode::invalidConfiguration,
+            "test algorithmic schedule requires a typed cursor"};
+  }
+  WVKernelStatus committedTime(const WVOutputScheduleCursor &, double &,
+                               bool &available) const override {
+    available = false;
+    return WVKernelStatus::ok();
+  }
+  WVKernelStatus peek(const WVOutputScheduleCursor &cursor, double lowerBound,
+                      double, WVOutputScheduleOccurrence &occurrence,
+                      bool &available) const override {
+    if (cursor.committedOrdinal >= 0) {
+      available = false;
+      return WVKernelStatus::ok();
+    }
+    occurrence = {lowerBound, 0, {0, {}}};
+    available = true;
+    return WVKernelStatus::ok();
+  }
+  std::size_t persistentBytes() const noexcept override {
+    return sizeof(*this);
+  }
+};
+
+std::shared_ptr<const WVOutputSchedule>
+makeEmptyCursorSchedule(const WVOutputScheduleRecord &,
+                        WVKernelStatus &status) {
+  status = WVKernelStatus::ok();
+  return std::make_shared<EmptyCursorSchedule>();
 }
 
 class LinearSystem final : public WVIntegrationSystem {
@@ -366,7 +411,7 @@ struct Context {
 
 void testPlanningOrderingIdentityAndMetrics(Context &context) {
   WVOutputPlan plan;
-  auto status = WVOutputPlan::create(context.descriptor, 0.0, 1.0, {}, plan);
+  auto status = WVOutputPlan::create(context.descriptor, test::extensionCatalog(), 0.0, 1.0, {}, plan);
   require(static_cast<bool>(status), "complete output plan");
   require(plan.metrics().fileCount == 2 && plan.metrics().groupCount == 3 &&
               plan.metrics().distinctObserverCount == 2,
@@ -396,7 +441,7 @@ void testPlanningOrderingIdentityAndMetrics(Context &context) {
   emptyRecord.outputFiles[1].groups[0].schedule.initialTime = 2.125;
   auto emptyDescriptor = descriptorFrom(emptyRecord);
   WVOutputPlan empty;
-  status = WVOutputPlan::create(emptyDescriptor, 0.0, 1.0, {}, empty);
+  status = WVOutputPlan::create(emptyDescriptor, test::extensionCatalog(), 0.0, 1.0, {}, empty);
   require(static_cast<bool>(status) && empty.eventCount() == 0,
           "empty bounded schedules");
   StateFixture emptyFixture(context.system.stateLayout());
@@ -426,7 +471,7 @@ void testPlanningOrderingIdentityAndMetrics(Context &context) {
   auto distinctDescriptor = descriptorFrom(distinctRecord);
   WVOutputPlan distinct;
   status =
-      WVOutputPlan::create(distinctDescriptor, 1.0, nextAfterOne, {}, distinct);
+      WVOutputPlan::create(distinctDescriptor, test::extensionCatalog(), 1.0, nextAfterOne, {}, distinct);
   require(static_cast<bool>(status) && distinct.eventCount() == 2 &&
               distinct.event(0).routeCount == 1 &&
               distinct.event(1).routeCount == 1,
@@ -436,10 +481,10 @@ void testPlanningOrderingIdentityAndMetrics(Context &context) {
   WVPortableObserverDescriptor largeAnchorDescriptor;
   status = WVPortableObserverDescriptor::create(
       singleScheduleRecord(1.0, largeAnchor, largeAnchor + 4.0),
-      largeAnchorDescriptor);
+      test::extensionCatalog(), largeAnchorDescriptor);
   WVOutputPlan indistinguishable;
   if (status)
-    status = WVOutputPlan::create(largeAnchorDescriptor, largeAnchor,
+    status = WVOutputPlan::create(largeAnchorDescriptor, test::extensionCatalog(), largeAnchor,
                                   largeAnchor + 4.0, {}, indistinguishable);
   require(status.code == WVKernelStatusCode::invalidConfiguration,
           "large-anchor indistinguishable ordinals are rejected");
@@ -447,9 +492,10 @@ void testPlanningOrderingIdentityAndMetrics(Context &context) {
   const double tinyInterval = std::numeric_limits<double>::epsilon() / 4.0;
   WVPortableObserverDescriptor tinyDescriptor;
   status = WVPortableObserverDescriptor::create(
-      singleScheduleRecord(tinyInterval, 1.0, nextAfterOne), tinyDescriptor);
+      singleScheduleRecord(tinyInterval, 1.0, nextAfterOne),
+      test::extensionCatalog(), tinyDescriptor);
   if (status)
-    status = WVOutputPlan::create(tinyDescriptor, 1.0, nextAfterOne, {},
+    status = WVOutputPlan::create(tinyDescriptor, test::extensionCatalog(), 1.0, nextAfterOne, {},
                                   indistinguishable);
   require(status.code == WVKernelStatusCode::invalidConfiguration,
           "tiny-interval indistinguishable ordinals are rejected");
@@ -462,7 +508,7 @@ void testFixedDeliveryAndExactMetrics(Context &context) {
           "fixed restart preparation");
   WVOutputPlan plan;
   require(static_cast<bool>(
-              WVOutputPlan::create(context.descriptor, 0.0, 1.0, {}, plan)),
+              WVOutputPlan::create(context.descriptor, test::extensionCatalog(), 0.0, 1.0, {}, plan)),
           "fixed plan");
   RecordingSink sink;
   WVOutputDriver driver(rk4, plan);
@@ -528,7 +574,7 @@ void testSegmentedContinuation(Context &context) {
               firstIntegrator.prepareStateAfterRestart(fixture.state)),
           "first segment preparation");
   WVOutputPlan firstPlan;
-  require(static_cast<bool>(WVOutputPlan::create(context.descriptor, 0.0, 0.5,
+  require(static_cast<bool>(WVOutputPlan::create(context.descriptor, test::extensionCatalog(), 0.0, 0.5,
                                                  {}, firstPlan)),
           "first segment plan");
   RecordingSink firstSink;
@@ -539,7 +585,8 @@ void testSegmentedContinuation(Context &context) {
 
   WVOutputPlan secondPlan;
   require(static_cast<bool>(WVOutputPlan::create(
-              context.descriptor, 0.5, 1.0, firstDriver.committedProgress(),
+              context.descriptor, test::extensionCatalog(), 0.5, 1.0,
+              firstDriver.committedProgress(),
               secondPlan)),
           "second segment plan");
   require(secondPlan.eventCount() > 0 &&
@@ -581,7 +628,7 @@ void testSegmentedContinuation(Context &context) {
 void testPreflightAndMalformedProgress(Context &context) {
   WVOutputPlan plan;
   require(static_cast<bool>(
-              WVOutputPlan::create(context.descriptor, 0.0, 1.0, {}, plan)),
+              WVOutputPlan::create(context.descriptor, test::extensionCatalog(), 0.0, 1.0, {}, plan)),
           "preflight plan");
   StateFixture fixture(context.system.stateLayout());
   const auto before = fixture.values();
@@ -676,18 +723,18 @@ void testPreflightAndMalformedProgress(Context &context) {
   malformed[0].fileIdentifier = "wrong";
   WVOutputPlan ignored;
   status =
-      WVOutputPlan::create(context.descriptor, 0.0, 1.0, malformed, ignored);
+      WVOutputPlan::create(context.descriptor, test::extensionCatalog(), 0.0, 1.0, malformed, ignored);
   require(status.code == WVKernelStatusCode::invalidConfiguration,
           "misnamed progress rejected");
   malformed = plan.initialProgress();
   malformed[0].committedOrdinal = 3;
   status =
-      WVOutputPlan::create(context.descriptor, 0.0, 1.0, malformed, ignored);
+      WVOutputPlan::create(context.descriptor, test::extensionCatalog(), 0.0, 1.0, malformed, ignored);
   require(status.code == WVKernelStatusCode::invalidConfiguration,
           "future progress rejected");
   malformed.pop_back();
   status =
-      WVOutputPlan::create(context.descriptor, 0.0, 1.0, malformed, ignored);
+      WVOutputPlan::create(context.descriptor, test::extensionCatalog(), 0.0, 1.0, malformed, ignored);
   require(status.code == WVKernelStatusCode::invalidConfiguration,
           "incomplete progress rejected");
 }
@@ -695,7 +742,7 @@ void testPreflightAndMalformedProgress(Context &context) {
 void testTerminationInterruptionAndLaterRouteFailure(Context &context) {
   WVOutputPlan plan;
   require(static_cast<bool>(
-              WVOutputPlan::create(context.descriptor, 0.0, 1.0, {}, plan)),
+              WVOutputPlan::create(context.descriptor, test::extensionCatalog(), 0.0, 1.0, {}, plan)),
           "failure plan");
 
   StateFixture terminated(context.system.stateLayout());
@@ -822,7 +869,7 @@ RunResult fixedRun(Context &context, bool withOutput) {
   if (withOutput) {
     WVOutputPlan plan;
     require(static_cast<bool>(
-                WVOutputPlan::create(context.descriptor, 0.0, 1.0, {}, plan)),
+                WVOutputPlan::create(context.descriptor, test::extensionCatalog(), 0.0, 1.0, {}, plan)),
             "fixed invariance plan");
     RecordingSink sink;
     WVOutputDriver driver(integrator, plan);
@@ -850,7 +897,7 @@ RunResult adaptiveRun(Context &context, bool withOutput) {
   if (withOutput) {
     WVOutputPlan plan;
     require(static_cast<bool>(
-                WVOutputPlan::create(context.descriptor, 0.0, 1.0, {}, plan)),
+                WVOutputPlan::create(context.descriptor, test::extensionCatalog(), 0.0, 1.0, {}, plan)),
             "adaptive invariance plan");
     RecordingSink sink;
     WVOutputDriver driver(integrator, plan);
@@ -893,8 +940,14 @@ void testIntegratorExtensionBoundary(Context &context) {
   require(static_cast<bool>(integrator.prepareStateAfterRestart(fixture.state)),
           "test-only integrator preparation");
   WVOutputPlan plan;
+  WVOutputPlan nullCatalogPlan;
+  require(WVOutputPlan::createExplicit(
+              context.system.stateLayout(), {}, 0.0, 0.4,
+              {{0.2, "unreachable"}}, nullCatalogPlan)
+                  .code == WVKernelStatusCode::invalidConfiguration,
+          "explicit output planning dereferenced a null catalog");
   require(static_cast<bool>(WVOutputPlan::createExplicit(
-              context.system.stateLayout(), 0.0, 0.4,
+              context.system.stateLayout(), test::extensionCatalog(), 0.0, 0.4,
               {{0.2, "test-method-first"}, {0.4, "test-method-second"}}, plan)),
           "test-only integrator output plan");
   RecordingSink sink;
@@ -920,7 +973,7 @@ void testLazyQuadraticSchedule() {
   record.outputFiles[0].groups[0].schedule = quadraticSchedule(1.0e12);
   auto descriptor = descriptorFrom(record);
   WVOutputPlan plan;
-  auto status = WVOutputPlan::create(descriptor, 0.0, 9.0, {}, plan);
+  auto status = WVOutputPlan::create(descriptor, test::extensionCatalog(), 0.0, 9.0, {}, plan);
   require(static_cast<bool>(status) && plan.eventCount() == 4 &&
               plan.event(0).scheduledTime == 0.0 &&
               plan.event(3).scheduledTime == 9.0,
@@ -929,7 +982,7 @@ void testLazyQuadraticSchedule() {
   record.outputFiles[0].groups[0].schedule = quadraticSchedule(1.0e15);
   descriptor = descriptorFrom(record);
   WVOutputPlan longer;
-  status = WVOutputPlan::create(descriptor, 0.0, 9.0, {}, longer);
+  status = WVOutputPlan::create(descriptor, test::extensionCatalog(), 0.0, 9.0, {}, longer);
   require(static_cast<bool>(status) && longer.persistentBytes() == retained,
           "lazy schedule storage is independent of future event count");
 
@@ -940,14 +993,14 @@ void testLazyQuadraticSchedule() {
   progress.scheduleCursor.values.push_back(
       {"nextOrdinal", {}, std::vector<std::int64_t>{3}});
   WVOutputPlan resumed;
-  status = WVOutputPlan::create(descriptor, 4.0, 9.0, {progress}, resumed);
+  status = WVOutputPlan::create(descriptor, test::extensionCatalog(), 4.0, 9.0, {progress}, resumed);
   require(static_cast<bool>(status) && resumed.eventCount() == 1 &&
               resumed.event(0).scheduledTime == 9.0,
           "quadratic cursor resumes from a large committed ordinal");
 
   progress.scheduleCursor.values[0].storage =
       std::vector<std::int64_t>(1024, 3);
-  status = WVOutputPlan::create(descriptor, 4.0, 9.0, {progress}, resumed);
+  status = WVOutputPlan::create(descriptor, test::extensionCatalog(), 4.0, 9.0, {progress}, resumed);
   require(!status, "oversized or malformed cursors fail preflight");
 
   record.outputFiles[0].groups[0].schedule = {};
@@ -955,16 +1008,61 @@ void testLazyQuadraticSchedule() {
       WVStateTriggeredOutputScheduleType;
   record.outputFiles[0].groups[0].schedule.contractVersion = 1;
   WVPortableObserverDescriptor unsupported;
-  status = WVPortableObserverDescriptor::create(record, unsupported);
+  status = WVPortableObserverDescriptor::create(record, test::extensionCatalog(), unsupported);
   require(status.code == WVKernelStatusCode::unsupportedOperation,
           "state-triggered schedules fail before allocation");
+}
+
+void testScheduleOwnsProposedCursorContract() {
+  WVExtensionCatalogBuilder builder;
+  auto status = addBuiltInExtensions(builder);
+  if (status)
+    status = builder.addOutputScheduleFactory(
+        {emptyCursorScheduleType, 1, &makeEmptyCursorSchedule});
+  std::shared_ptr<const WVExtensionCatalog> catalog;
+  if (status)
+    status = builder.freeze(catalog);
+  require(static_cast<bool>(status), "test schedule catalog construction");
+
+  auto record = outputRecord();
+  record.outputFiles.resize(1);
+  record.outputFiles[0].groups.resize(1);
+  record.outputFiles[0].groups[0].schedule = {};
+  record.outputFiles[0].groups[0].schedule.typeIdentifier =
+      emptyCursorScheduleType;
+  record.outputFiles[0].groups[0].schedule.contractVersion = 1;
+  WVPortableObserverDescriptor descriptor;
+  require(static_cast<bool>(
+              WVPortableObserverDescriptor::create(record, catalog,
+                                                   descriptor)),
+          "test schedule descriptor construction");
+  WVOutputPlan plan;
+  require(static_cast<bool>(
+              WVOutputPlan::create(descriptor, catalog, 0.0, 1.0, {}, plan)),
+          "test schedule output planning");
+  WVIntegrationStateLayout layout;
+  require(static_cast<bool>(WVIntegrationStateLayout::create(
+              {1, 1}, descriptor, layout)),
+          "test schedule state layout");
+  LinearSystem system(std::move(layout));
+  StateFixture fixture(system.stateLayout());
+  const auto before = fixture.values();
+  WVFixedStepRK4 integrator(system, {true});
+  require(static_cast<bool>(integrator.prepareStateAfterRestart(fixture.state)),
+          "test schedule integrator preparation");
+  RecordingSink sink;
+  WVOutputDriver driver(integrator, plan);
+  status = driver.advanceToTime(fixture.state, 1.0, 0.2, sink);
+  require(status.code == WVKernelStatusCode::invalidConfiguration &&
+              fixture.values() == before &&
+              integrator.metrics().acceptedStepCount == 0,
+          "resolved schedule validates its proposed cursor without identity "
+          "dispatch");
 }
 
 } // namespace
 
 int main() {
-  require(static_cast<bool>(registerQuadraticSchedule()),
-          "quadratic schedule registration");
   Context context;
   testPlanningOrderingIdentityAndMetrics(context);
   testFixedDeliveryAndExactMetrics(context);
@@ -974,6 +1072,7 @@ int main() {
   testSolverInvariance(context);
   testIntegratorExtensionBoundary(context);
   testLazyQuadraticSchedule();
+  testScheduleOwnsProposedCursorContract();
   std::cout << "PASS: unified multi-file/multi-group output orchestration\n";
   return 0;
 }

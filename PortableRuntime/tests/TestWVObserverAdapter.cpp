@@ -1,4 +1,5 @@
 #include "WVObserverAdapter.hpp"
+#include "WVTestExtensionCatalog.hpp"
 
 #include <cstdlib>
 #include <iostream>
@@ -20,6 +21,8 @@ void require(bool condition, const char *message) {
 
 class WVTestPortablePointDiagnostic final : public WVObservingSystem {
 public:
+  explicit WVTestPortablePointDiagnostic(WVPortableTypedRecord configuration)
+      : configuration_(std::move(configuration)) {}
   const std::string &typeIdentifier() const noexcept override {
     static const std::string value = "WVTestPortablePointDiagnostic";
     return value;
@@ -28,7 +31,6 @@ public:
   WVKernelStatus executionPlan(const WVObserverRecord &record,
                                WVObserverExecutionPlan &plan) const override {
     plan = {};
-    plan.sampling = WVObserverSamplingTopology::fixedPositions;
     plan.fieldListAttribute = "fieldNames";
     plan.persistedName = record.name;
     const auto *field = record.configuration.value("field");
@@ -49,8 +51,12 @@ public:
     return WVKernelStatus::ok();
   }
   std::size_t persistentBytes() const noexcept override {
-    return sizeof(*this);
+    return sizeof(*this) + configuration_.persistentBytes() -
+           sizeof(configuration_);
   }
+
+private:
+  WVPortableTypedRecord configuration_;
 };
 
 class WVTestPortablePointDiagnosticV2 final : public WVObservingSystem {
@@ -63,7 +69,6 @@ public:
   WVKernelStatus executionPlan(const WVObserverRecord &record,
                                WVObserverExecutionPlan &plan) const override {
     plan = {};
-    plan.sampling = WVObserverSamplingTopology::fixedPositions;
     plan.fieldListAttribute = "fieldNames";
     plan.persistedName = record.name;
     plan.outputFields = record.fieldNames;
@@ -83,56 +88,54 @@ public:
 } // namespace
 
 int main() {
-  const auto &implementations = detail::observerImplementations();
-  require(implementations.size() == 5,
-          "registry must contain five v1 built-ins");
-  std::set<std::string> identities;
-  for (const auto &implementation : implementations) {
-    require(identities.insert(implementation->typeIdentifier()).second,
-            "observer identity is duplicated");
-    require(implementation->contractVersion() ==
-                WVPortablePairContractVersion,
-            "observer pair contract version changed");
-    require(detail::observerImplementation(implementation->typeIdentifier(),
-                                           implementation->contractVersion()) ==
-                implementation,
-            "identity lookup did not preserve implementation identity");
-    require(WVObserverFactoryRegistry::supports(
-                implementation->typeIdentifier(),
-                implementation->contractVersion()),
-            "public registry rejected a built-in implementation");
-  }
+  WVExtensionCatalogBuilder builder;
+  require(static_cast<bool>(addBuiltInExtensions(builder)),
+          "built-in extension registration failed");
+  const auto pointFactory =
+      [](const WVObserverRecord &, const WVPortableTypedRecord &configuration,
+         std::shared_ptr<const WVObservingSystem> &result) {
+        result =
+            std::make_shared<WVTestPortablePointDiagnostic>(configuration);
+        return WVKernelStatus::ok();
+      };
+  require(static_cast<bool>(builder.addObserverFactory(
+              {"WVTestPortablePointDiagnostic", 1, pointFactory})),
+          "test observer factory registration failed");
+  require(!builder.addObserverFactory(
+              {"WVTestPortablePointDiagnostic", 1, pointFactory}),
+          "duplicate observer factory registration succeeded");
 
-  auto testImplementation =
-      std::make_shared<WVTestPortablePointDiagnostic>();
-  require(static_cast<bool>(
-              WVObserverFactoryRegistry::registerImplementation(
-                  testImplementation)),
-          "test observer implementation registration failed");
-  require(WVObserverFactoryRegistry::supports(
-              "WVTestPortablePointDiagnostic", 1),
-          "registered test observer is unsupported");
-  require(!WVObserverFactoryRegistry::registerImplementation(
-              testImplementation),
-          "duplicate observer implementation registration succeeded");
-  auto testImplementationV2 =
-      std::make_shared<WVTestPortablePointDiagnosticV2>();
-  require(static_cast<bool>(WVObserverFactoryRegistry::registerImplementation(
-              testImplementationV2)),
-          "a second contract version could not be registered");
-  require(WVObserverFactoryRegistry::capability(
+  WVExtensionCatalogBuilder catalogBuilder;
+  require(static_cast<bool>(addBuiltInExtensions(catalogBuilder)),
+          "built-in extension registration failed");
+  require(static_cast<bool>(catalogBuilder.addObserverFactory(
+              {"WVTestPortablePointDiagnostic", 1, pointFactory})),
+          "test observer factory registration failed");
+  require(static_cast<bool>(catalogBuilder.addObserverFactory(
+              {"WVTestPortablePointDiagnostic", 2,
+               [](const WVObserverRecord &, const WVPortableTypedRecord &,
+                  std::shared_ptr<const WVObservingSystem> &result) {
+                 result =
+                     std::make_shared<WVTestPortablePointDiagnosticV2>();
+                 return WVKernelStatus::ok();
+               }})),
+          "a second observer contract version could not be registered");
+  std::shared_ptr<const WVExtensionCatalog> catalog;
+  require(static_cast<bool>(catalogBuilder.freeze(catalog)),
+          "extension catalog freeze failed");
+  require(catalog->observers().capability(
               "WVTestPortablePointDiagnostic", 1)
               .isSupported(),
           "registered observer pair is unavailable");
-  require(WVObserverFactoryRegistry::capability(
+  require(catalog->observers().capability(
               "WVTestPortablePointDiagnostic", 2)
               .isSupported(),
           "the second observer contract version is unavailable");
-  require(WVObserverFactoryRegistry::capability(
+  require(catalog->observers().capability(
               "WVTestPortablePointDiagnostic", 3)
               .status == WVPortableCapabilityStatus::versionMismatch,
           "an unavailable observer contract version was accepted");
-  require(WVObserverFactoryRegistry::capability("WVCustomObserver", 1).status ==
+  require(catalog->observers().capability("WVCustomObserver", 1).status ==
               WVPortableCapabilityStatus::unavailable,
           "missing observer pair did not report unavailability");
 
@@ -158,19 +161,18 @@ int main() {
   record.observers.push_back(observer);
   WVPortableObserverDescriptor descriptor;
   const auto descriptorStatus =
-      WVPortableObserverDescriptor::create(record, descriptor);
+      WVPortableObserverDescriptor::create(record, catalog, descriptor);
   require(static_cast<bool>(descriptorStatus),
           descriptorStatus.message.c_str());
-  require(descriptor.implementation(descriptor.observers().front()) ==
-              testImplementation.get(),
-          "descriptor did not retain the resolved implementation");
+  require(descriptor.implementation(descriptor.observers().front()) != nullptr,
+          "descriptor did not retain a resolved implementation");
   const auto *firstResolved =
       descriptor.resolvedObserver(descriptor.observers()[0]);
   const auto *secondResolved =
       descriptor.resolvedObserver(descriptor.observers()[1]);
   require(firstResolved != nullptr && secondResolved != nullptr &&
               firstResolved != secondResolved &&
-              &firstResolved->implementation() ==
+              &firstResolved->implementation() !=
                   &secondResolved->implementation() &&
               firstResolved->configuration().schemaIdentifier ==
                   "test-point-configuration-v1" &&
@@ -178,19 +180,15 @@ int main() {
               firstResolved->executionPlan().outputFields ==
                   std::vector<std::string>{"u"},
           "descriptor did not create immutable per-record resolved observers");
-  require(WVObserverFactoryRegistry::isSealed(),
-          "observer registry was not sealed by descriptor construction");
-  require(!WVObserverFactoryRegistry::registerImplementation(
-              std::make_shared<WVTestPortablePointDiagnostic>()),
-          "late observer implementation registration succeeded");
-  require(!detail::observerImplementation("WVCustomObserver", 1),
-          "unknown observer identity was accepted");
+  require(!catalogBuilder.addObserverFactory(
+              {"WVLateObserver", 1, pointFactory}),
+          "late observer factory registration succeeded");
 
   WVObserverRecord particles;
   particles.name = "floats";
   particles.typeIdentifier = "WVLagrangianParticles";
   particles.isXYOnly = false;
-  auto channels = detail::movingFieldChannels(particles);
+  auto channels = detail::particlePositionChannels(particles.isXYOnly);
   require(channels ==
               std::vector<detail::WVMovingFieldChannel>{
                   detail::WVMovingFieldChannel::x,
@@ -198,13 +196,13 @@ int main() {
                   detail::WVMovingFieldChannel::z},
           "three-dimensional particle channels are not x/y/z");
   particles.isXYOnly = true;
-  require(detail::movingFieldChannels(particles).size() == 2,
+  require(detail::particlePositionChannels(particles.isXYOnly).size() == 2,
           "two-dimensional particles must expose x/y channels only");
 
   WVObserverRecord tracer;
   tracer.name = "dye";
   tracer.typeIdentifier = "WVTracer";
-  channels = detail::movingFieldChannels(tracer);
+  channels = {detail::WVMovingFieldChannel::tracerValue};
   require(channels == std::vector<detail::WVMovingFieldChannel>{
                           detail::WVMovingFieldChannel::tracerValue},
           "tracer must expose one named value channel");

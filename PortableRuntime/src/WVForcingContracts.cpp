@@ -1,17 +1,14 @@
 #include "WaveVortexRuntime/WVForcingContracts.hpp"
 #include "WVForcingImplementations.hpp"
 
-#include <mutex>
-#include <cmath>
-#include <limits>
-#include <optional>
-#include <set>
 #include <utility>
 
 namespace wavevortex::runtime {
 namespace {
 
-std::deque<WVForcingFactoryRegistry::Registration> &mutableRegistrations() {
+} // namespace
+
+std::vector<WVForcingFactoryRegistration> builtInForcingFactories() {
   using Encoding = WVForcingPersistenceEncoding;
   using Dimensions = WVForcingDimensionRule;
   const auto field = [](Encoding encoding, std::string recordName,
@@ -26,7 +23,7 @@ std::deque<WVForcingFactoryRegistry::Registration> &mutableRegistrations() {
                                      std::move(reference), optional,
                                      nonnegative, positive, allowInfinity};
   };
-  static std::deque<WVForcingFactoryRegistry::Registration> values{
+  return {
       {"WVNonlinearAdvection", WVPortablePairContractVersion,
        {"HydrostaticSpatial", "NonhydrostaticSpatial", "PVSpatial"},
        "nonlinear advection", WVForcingStage::spatial, 127, {},
@@ -116,158 +113,16 @@ std::deque<WVForcingFactoryRegistry::Registration> &mutableRegistrations() {
        {"HydrostaticSpatial", "NonhydrostaticSpatial", "PVSpatial"},
        "vertical diffusivity", WVForcingStage::spectral, 255, {}, {}, false,
        "WVVerticalDiffusivity is not implemented by portable runtime v1."}};
-  return values;
-}
-
-std::mutex &registryMutex() {
-  static std::mutex value;
-  return value;
-}
-
-bool &registrySealed() {
-  static bool value = false;
-  return value;
-}
-
-WVKernelStatus invalid(std::string message) {
-  return {WVKernelStatusCode::invalidConfiguration, std::move(message)};
-}
-
-} // namespace
-
-const std::deque<WVForcingFactoryRegistry::Registration> &
-WVForcingFactoryRegistry::registrations() noexcept {
-  return mutableRegistrations();
-}
-
-const WVForcingFactoryRegistry::Registration *
-WVForcingFactoryRegistry::registration(
-    const std::string &typeIdentifier) noexcept {
-  for (const auto &value : mutableRegistrations())
-    if (value.matlabClassName == typeIdentifier)
-      return &value;
-  return nullptr;
-}
-
-WVPortableCapability WVForcingFactoryRegistry::capability(
-    std::string typeIdentifier, std::uint32_t contractVersion) {
-  const auto *value = registration(typeIdentifier);
-  std::optional<WVPortableImplementationIdentity> available;
-  if (value != nullptr && value->isSupported)
-    available = WVPortableImplementationIdentity{value->matlabClassName,
-                                                  value->contractVersion};
-  auto result = evaluatePortableCapability(
-      {std::move(typeIdentifier), contractVersion}, std::move(available));
-  if (value != nullptr && !value->isSupported &&
-      result.status == WVPortableCapabilityStatus::unavailable)
-    result.reason = value->unavailabilityReason;
-  return result;
-}
-
-WVKernelStatus WVForcingFactoryRegistry::registerAdapter(
-    Registration registrationValue) {
-  if (registrationValue.matlabClassName.empty())
-    return invalid("Forcing adapter MATLAB class names must be nonempty.");
-  if (registrationValue.contractVersion == 0)
-    return invalid("Forcing adapter contract versions must be positive.");
-  if (registrationValue.isSupported &&
-      !registrationValue.unavailabilityReason.empty())
-    return invalid("Supported forcing adapters cannot declare an unavailability reason.");
-  if (!registrationValue.isSupported &&
-      registrationValue.unavailabilityReason.empty())
-    return invalid("Unavailable forcing adapters require an actionable reason.");
-  if (registrationValue.isSupported && !registrationValue.factory)
-    return invalid("Supported forcing implementations require a factory.");
-  std::lock_guard<std::mutex> lock(registryMutex());
-  if (registrySealed())
-    return invalid("Forcing adapters must be registered before schedule construction.");
-  for (const auto &value : mutableRegistrations())
-    if (value.matlabClassName == registrationValue.matlabClassName)
-      return invalid("Forcing adapter identities must be unique.");
-  mutableRegistrations().push_back(std::move(registrationValue));
-  return WVKernelStatus::ok();
-}
-
-WVKernelStatus WVForcingFactoryRegistry::create(
-    const WVFrozenForcingEntry &entry,
-    const WVTransformConstantStratificationDescriptor &descriptor,
-    bool hasAdaptiveDamping, std::unique_ptr<WVForcing> &forcing) {
-  const auto *value = registration(entry.typeIdentifier);
-  if (value == nullptr || !value->isSupported || !value->factory)
-    return {WVKernelStatusCode::unsupportedOperation,
-            "Unsupported forcing identity."};
-  if (entry.contractVersion != value->contractVersion)
-    return {WVKernelStatusCode::unsupportedOperation,
-            "Forcing contract version mismatch."};
-  return value->factory(entry, descriptor, hasAdaptiveDamping, forcing);
-}
-
-WVKernelStatus WVForcingFactoryRegistry::validateConfiguration(
-    const WVFrozenForcingEntry &entry) {
-  const auto *value = registration(entry.typeIdentifier);
-  if (value == nullptr || !value->isSupported ||
-      value->contractVersion != entry.contractVersion)
-    return invalid("Forcing configuration has no matching registered implementation.");
-  const auto recordStatus = validatePortableTypedRecord(
-      entry.configuration,
-      {std::numeric_limits<std::size_t>::max(), false, true});
-  if (!recordStatus)
-    return recordStatus;
-  if (entry.configuration.schemaIdentifier !=
-          "wave-vortex-forcing-configuration-v1" ||
-      entry.configuration.schemaVersion != 1)
-    return invalid("Forcing configuration uses an unsupported schema.");
-  std::set<std::string> allowed;
-  for (const auto &field : value->persistence.fields) {
-    allowed.insert(field.recordName);
-    if (!field.imaginaryRecordName.empty())
-      allowed.insert(field.imaginaryRecordName);
-    const auto *stored = entry.configuration.value(field.recordName);
-    if (stored == nullptr) {
-      if (field.optional)
-        continue;
-      return invalid("Required forcing configuration value is missing.");
-    }
-    if (field.encoding == WVForcingPersistenceEncoding::realVariable) {
-      const auto *reals = std::get_if<std::vector<double>>(&stored->storage);
-      if (reals == nullptr)
-        return invalid("Forcing real configuration has the wrong type.");
-      for (const double scalar : *reals) {
-        if (std::isnan(scalar) || (!field.allowInfinity && !std::isfinite(scalar)) ||
-            (field.positive && !(scalar > 0.0)) ||
-            (field.nonnegative && scalar < 0.0))
-          return invalid("Forcing real configuration violates its registered bounds.");
-      }
-    }
-  }
-  for (const auto &stored : entry.configuration.values)
-    if (allowed.count(stored.name) == 0)
-      return invalid("Forcing configuration contains an undeclared value.");
-  return WVKernelStatus::ok();
-}
-
-void WVForcingFactoryRegistry::seal() noexcept {
-  std::lock_guard<std::mutex> lock(registryMutex());
-  registrySealed() = true;
-}
-
-bool WVForcingFactoryRegistry::isSealed() noexcept {
-  std::lock_guard<std::mutex> lock(registryMutex());
-  return registrySealed();
 }
 
 WVFrozenForcingSchedule defaultNonlinearAdvectionSchedule() {
   WVFrozenForcingSchedule schedule;
-  const auto *registration =
-      WVForcingFactoryRegistry::registration("WVNonlinearAdvection");
-  if (registration == nullptr)
-    return schedule;
   WVFrozenForcingEntry entry;
-  entry.typeIdentifier = registration->matlabClassName;
-  entry.contractVersion = registration->contractVersion;
-  entry.name = registration->defaultName;
-  entry.stage = registration->stage;
-  entry.priority = registration->priority;
+  entry.typeIdentifier = "WVNonlinearAdvection";
+  entry.contractVersion = WVPortablePairContractVersion;
+  entry.name = "nonlinear advection";
+  entry.stage = WVForcingStage::spatial;
+  entry.priority = 127;
   entry.ordinal = 1;
   entry.configuration.schemaIdentifier =
       "wave-vortex-forcing-configuration-v1";

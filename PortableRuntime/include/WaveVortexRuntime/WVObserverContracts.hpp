@@ -13,6 +13,8 @@
 
 namespace wavevortex::runtime {
 
+class WVExtensionCatalog;
+
 inline constexpr std::uint32_t WVPortableObserverContractVersion = 1;
 inline constexpr const char *WVPortableObserverContractIdentifier =
     "portable-observers-v1";
@@ -139,46 +141,23 @@ struct WVPortableObserverRecord {
 class WVPortableObserverDescriptor final {
 public:
   static WVKernelStatus create(const WVPortableObserverRecord &record,
+                               std::shared_ptr<const WVExtensionCatalog> catalog,
                                WVPortableObserverDescriptor &descriptor);
 
-  WVPortableObserverRecord record() const { return record_; }
-  const std::vector<WVStateBlockRecord> &stateBlocks() const noexcept {
-    return record_.stateBlocks;
-  }
-  const std::vector<WVObserverRecord> &observers() const noexcept {
-    return record_.observers;
-  }
-  const std::vector<WVOutputFileRecord> &outputFiles() const noexcept {
-    return record_.outputFiles;
-  }
+  const WVPortableObserverRecord &record() const noexcept;
+  const std::vector<WVStateBlockRecord> &stateBlocks() const noexcept;
+  const std::vector<WVObserverRecord> &observers() const noexcept;
+  const std::vector<WVOutputFileRecord> &outputFiles() const noexcept;
   const WVObservingSystem *
   implementation(const WVObserverRecord &observer) const noexcept;
   const WVResolvedObserver *
   resolvedObserver(const WVObserverRecord &observer) const noexcept;
+  const std::shared_ptr<const WVExtensionCatalog> &catalog() const noexcept;
   std::size_t persistentBytes() const noexcept;
 
 private:
-  WVPortableObserverRecord record_;
-  std::vector<std::unique_ptr<const WVResolvedObserver>> resolvedObservers_;
-};
-
-// Registry seam for built-in tagged records. Version 1 intentionally exposes
-// no third-party binary plugin ABI.
-class WVObserverFactoryRegistry final {
-public:
-  static bool supports(
-      const std::string &typeIdentifier,
-      std::uint32_t contractVersion = WVPortablePairContractVersion) noexcept;
-  static WVPortableCapability
-  capability(std::string typeIdentifier,
-             std::uint32_t contractVersion = WVPortablePairContractVersion);
-  static bool isSealed() noexcept;
-
-  // Register one source-level native observer adapter before constructing a
-  // descriptor. The serialized observer record remains portable-observers-v1;
-  // this is not a stable third-party binary plug-in ABI.
-  static WVKernelStatus registerImplementation(
-      std::shared_ptr<const WVObservingSystem> implementation);
+  class Impl;
+  std::shared_ptr<const Impl> impl_;
 };
 
 } // namespace wavevortex::runtime

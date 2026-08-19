@@ -1,4 +1,5 @@
 #include "WaveVortexRuntime/WVRungeKutta.hpp"
+#include "WVTestExtensionCatalog.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -237,7 +238,7 @@ void testContracts(WVPortableObserverDescriptor &descriptor,
                    WVIntegrationStateLayout &layout) {
   auto source = record();
   require(static_cast<bool>(
-              WVPortableObserverDescriptor::create(source, descriptor)),
+              WVPortableObserverDescriptor::create(source, test::extensionCatalog(), descriptor)),
           "valid observer descriptor");
   const auto roundTrip = descriptor.record();
   require(roundTrip.schemaIdentifier == source.schemaIdentifier &&
@@ -245,40 +246,42 @@ void testContracts(WVPortableObserverDescriptor &descriptor,
               roundTrip.outputFiles[0].groups[0].observerIdentifiers ==
                   source.outputFiles[0].groups[0].observerIdentifiers,
           "deterministic descriptor record");
-  require(WVObserverFactoryRegistry::supports("WVLagrangianParticles"),
+  require(test::extensionCatalog()->observers().registration(
+              "WVLagrangianParticles", WVPortablePairContractVersion) != nullptr,
           "factory identity");
-  require(!WVObserverFactoryRegistry::supports("WVUnknownObserver"),
+  require(test::extensionCatalog()->observers().registration(
+              "WVUnknownObserver", WVPortablePairContractVersion) == nullptr,
           "unknown identity rejected");
   auto duplicate = source;
   duplicate.stateBlocks.push_back(duplicate.stateBlocks.front());
   WVPortableObserverDescriptor ignored;
-  require(!WVPortableObserverDescriptor::create(duplicate, ignored),
+  require(!WVPortableObserverDescriptor::create(duplicate, test::extensionCatalog(), ignored),
           "duplicate block rejected");
   auto badReference = source;
   badReference.observers.back().stateBlockIdentifiers = {"missing"};
-  require(!WVPortableObserverDescriptor::create(badReference, ignored),
+  require(!WVPortableObserverDescriptor::create(badReference, test::extensionCatalog(), ignored),
           "unknown state reference rejected");
   auto orphan = source;
   orphan.observers.erase(orphan.observers.begin() + 2);
-  require(!WVPortableObserverDescriptor::create(orphan, ignored),
+  require(!WVPortableObserverDescriptor::create(orphan, test::extensionCatalog(), ignored),
           "orphan integrator-owned block rejected");
   auto sharedTracer = source;
   auto secondTracer = sharedTracer.observers[2];
   secondTracer.identifier = "secondTracer";
   secondTracer.name = "Second tracer";
   sharedTracer.observers.push_back(secondTracer);
-  require(!WVPortableObserverDescriptor::create(sharedTracer, ignored),
+  require(!WVPortableObserverDescriptor::create(sharedTracer, test::extensionCatalog(), ignored),
           "state block shared by two tracers rejected");
   auto sharedParticles = source;
   auto secondParticles = sharedParticles.observers[1];
   secondParticles.identifier = "secondParticles";
   secondParticles.name = "Second particles";
   sharedParticles.observers.push_back(secondParticles);
-  require(!WVPortableObserverDescriptor::create(sharedParticles, ignored),
+  require(!WVPortableObserverDescriptor::create(sharedParticles, test::extensionCatalog(), ignored),
           "state blocks shared by two particle systems rejected");
   auto mixedOwners = source;
   mixedOwners.observers[2].stateBlockIdentifiers = {"particleX"};
-  require(!WVPortableObserverDescriptor::create(mixedOwners, ignored),
+  require(!WVPortableObserverDescriptor::create(mixedOwners, test::extensionCatalog(), ignored),
           "state block shared by particle and tracer observers rejected");
   require(static_cast<bool>(
               WVIntegrationStateLayout::create({2, 3}, descriptor, layout)),
