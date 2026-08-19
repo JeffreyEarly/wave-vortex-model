@@ -2,6 +2,7 @@
 #include "WVObserverAdapter.hpp"
 
 #include <algorithm>
+#include <cmath>
 #include <limits>
 #include <new>
 #include <optional>
