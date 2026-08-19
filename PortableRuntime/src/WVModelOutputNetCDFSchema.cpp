@@ -35,6 +35,7 @@ WVCheckpointStatus defineLogical(int group, const std::string &name,
 
 WVCheckpointStatus defineForcingEntry(int group,
                                       const WVFrozenForcingEntry &entry,
+                                      const WVForcingCatalog &catalog,
                                       const std::array<int, 5> &rootDimensions,
                                       const std::string &path) {
   auto result = putTextAttribute(group, NC_GLOBAL, "AnnotatedClass",
@@ -42,7 +43,7 @@ WVCheckpointStatus defineForcingEntry(int group,
   if (!result)
     return result;
   const auto *registration =
-      WVForcingFactoryRegistry::registration(entry.typeIdentifier);
+      catalog.registration(entry.typeIdentifier, entry.contractVersion);
   if (registration == nullptr || !registration->isSupported)
     return failed(WVCheckpointStatusCode::unsupportedForcing,
                   "Unsupported forcing reached output definition.", path);
@@ -174,9 +175,10 @@ WVCheckpointStatus writeDoubles(int group, const std::string &name,
 
 WVCheckpointStatus writeForcingEntry(int group,
                                      const WVFrozenForcingEntry &entry,
+                                     const WVForcingCatalog &catalog,
                                      const std::string &path) {
   const auto *registration =
-      WVForcingFactoryRegistry::registration(entry.typeIdentifier);
+      catalog.registration(entry.typeIdentifier, entry.contractVersion);
   if (registration == nullptr || !registration->isSupported)
     return failed(WVCheckpointStatusCode::unsupportedForcing,
                   "Unsupported forcing reached output writing.", path);
@@ -316,7 +318,8 @@ WVCheckpointStatus defineComplexVariable(int group, const std::string &name,
 }
 
 WVCheckpointStatus defineModelOutputRoot(
-    int root, const WVCheckpoint &checkpoint, bool isDynamicsLinear,
+    int root, const WVCheckpoint &checkpoint, const WVForcingCatalog &catalog,
+    bool isDynamicsLinear,
     std::array<int, 5> &dimensions, std::vector<int> &forcingGroups,
     std::vector<const WVFrozenForcingEntry *> &forcingEntries) {
   const auto &configuration = checkpoint.configuration;
@@ -410,7 +413,7 @@ WVCheckpointStatus defineModelOutputRoot(
   forcingGroups.reserve(forcingEntries.size());
   if (forcingEntries.size() == 1) {
     forcingGroups.push_back(forcingRoot);
-    return defineForcingEntry(forcingRoot, *forcingEntries.front(), dimensions,
+    return defineForcingEntry(forcingRoot, *forcingEntries.front(), catalog, dimensions,
                               "/forcing");
   }
   for (std::size_t index = 0; index < forcingEntries.size(); ++index) {
@@ -421,7 +424,7 @@ WVCheckpointStatus defineModelOutputRoot(
     if (!result)
       return result;
     forcingGroups.push_back(group);
-    result = defineForcingEntry(group, *forcingEntries[index], dimensions,
+    result = defineForcingEntry(group, *forcingEntries[index], catalog, dimensions,
                                 "/forcing/" + name);
     if (!result)
       return result;
@@ -431,6 +434,7 @@ WVCheckpointStatus defineModelOutputRoot(
 
 WVCheckpointStatus writeModelOutputRoot(
     int root, const WVCheckpoint &checkpoint,
+    const WVForcingCatalog &catalog,
     const std::vector<int> &forcingGroups,
     const std::vector<const WVFrozenForcingEntry *> &forcingEntries) {
   const auto &configuration = checkpoint.configuration;
@@ -488,7 +492,7 @@ WVCheckpointStatus writeModelOutputRoot(
             ? "/forcing"
             : "/forcing/forcing-" + std::to_string(index + 1);
     result =
-        writeForcingEntry(forcingGroups[index], *forcingEntries[index], path);
+        writeForcingEntry(forcingGroups[index], *forcingEntries[index], catalog, path);
     if (!result)
       return result;
   }

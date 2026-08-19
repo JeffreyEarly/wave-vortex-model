@@ -47,18 +47,11 @@ public:
   virtual std::size_t persistentBytes() const noexcept = 0;
 };
 
-class WVOutputScheduleFactoryRegistry final {
-public:
-  using Factory = std::shared_ptr<const WVOutputSchedule> (*)(
-      const WVOutputScheduleRecord &, WVKernelStatus &);
+using WVOutputScheduleFactory = std::shared_ptr<const WVOutputSchedule> (*)(
+    const WVOutputScheduleRecord &, WVKernelStatus &);
 
-  static WVKernelStatus registerFactory(std::string typeIdentifier,
-                                        std::uint32_t contractVersion,
-                                        Factory factory);
-  static WVKernelStatus
-  resolve(const WVOutputScheduleRecord &record,
-          std::shared_ptr<const WVOutputSchedule> &result);
-  static bool isSealed() noexcept;
-};
+std::shared_ptr<const WVOutputSchedule>
+makeEvenlySpacedOutputSchedule(const WVOutputScheduleRecord &record,
+                              WVKernelStatus &status);
 
 } // namespace wavevortex::runtime

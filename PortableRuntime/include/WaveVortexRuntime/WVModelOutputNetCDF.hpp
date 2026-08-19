@@ -87,6 +87,7 @@ public:
 };
 
 struct WVModelOutputNetCDFConfiguration {
+  std::shared_ptr<const WVExtensionCatalog> catalog;
   WVCheckpoint checkpointTemplate;
   bool isDynamicsLinear = false;
 };
@@ -174,6 +175,7 @@ public:
              WVModelOutputNetCDFSink &sink);
 
   static WVCheckpointStatus inspect(const std::vector<std::string> &paths,
+                                    const WVExtensionCatalog &catalog,
                                     WVModelOutputNetCDFInspection &inspection);
 
   WVKernelStatus preflight(const WVOutputPlan &plan) override;

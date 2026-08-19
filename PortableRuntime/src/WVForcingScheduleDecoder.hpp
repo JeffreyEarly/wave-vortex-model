@@ -19,6 +19,7 @@ WVCheckpointStatus decodeForcingSchedule(
     const std::vector<WVForcingGroupSource>& sources,
     const WVTransformConstantStratificationConfiguration& configuration,
     std::size_t coefficientCount,
+    const WVExtensionCatalog& catalog,
     WVFrozenForcingSchedule& schedule);
 
 } // namespace wavevortex::runtime::detail

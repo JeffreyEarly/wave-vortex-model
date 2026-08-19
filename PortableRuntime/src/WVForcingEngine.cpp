@@ -1,4 +1,5 @@
 #include "WaveVortexRuntime/WVForcingEngine.hpp"
+#include "WaveVortexRuntime/WVExtensionCatalog.hpp"
 #include "WaveVortexRuntime/WVForcingContracts.hpp"
 #include "WVForcingImplementations.hpp"
 
@@ -536,8 +537,7 @@ WVConstantStratificationForcingEngine::~WVConstantStratificationForcingEngine() 
 WVKernelStatus WVConstantStratificationForcingEngine::validateSchedule(
     const WVTransformConstantStratificationConfiguration& configuration,
     const WVFrozenForcingSchedule& schedule,
-    WVShape2D coefficientShape) {
-    WVForcingFactoryRegistry::seal();
+    WVShape2D coefficientShape, const WVExtensionCatalog& catalog) {
     if (schedule.profileIdentifier != WVForcingScheduleProfileIdentifier || schedule.profileVersion != WVForcingScheduleProfileVersion) {
         return {WVKernelStatusCode::unsupportedOperation,"Unsupported frozen forcing schedule profile."};
     }
@@ -546,11 +546,11 @@ WVKernelStatus WVConstantStratificationForcingEngine::validateSchedule(
     }
     std::set<std::string> names;
     for (const auto& entry : schedule.entries) {
-        const auto* registration = WVForcingFactoryRegistry::registration(entry.typeIdentifier);
+        const auto* registration = catalog.forcings().registration(entry.typeIdentifier, entry.contractVersion);
         if (registration == nullptr || !registration->isSupported || !registration->factory || registration->contractVersion != entry.contractVersion) return {WVKernelStatusCode::unsupportedOperation,"The frozen schedule has no matching paired C++ forcing implementation."};
         if (entry.stage != registration->stage) return {WVKernelStatusCode::invalidConfiguration,"A forcing record is assigned to the wrong execution stage."};
         if (entry.name.empty() || !names.insert(entry.name).second) return {WVKernelStatusCode::invalidConfiguration,"Forcing names must be nonempty and unique."};
-        const auto recordStatus = WVForcingFactoryRegistry::validateConfiguration(entry);
+        const auto recordStatus = catalog.forcings().validateConfiguration(entry);
         if (!recordStatus) return recordStatus;
     }
     return WVKernelStatus::ok();
@@ -559,14 +559,17 @@ WVKernelStatus WVConstantStratificationForcingEngine::validateSchedule(
 WVKernelStatus WVConstantStratificationForcingEngine::create(
     const WVTransformConstantStratificationConfiguration& configuration,
     const WVFrozenForcingSchedule& schedule,
+    std::shared_ptr<const WVExtensionCatalog> catalog,
     std::unique_ptr<WVFFTEngine> fftEngine,
     std::unique_ptr<WVConstantStratificationForcingEngine>& forcingEngine) {
+    if (!catalog) return {WVKernelStatusCode::invalidPointer,"Forcing-engine construction requires an extension catalog."};
     if (!fftEngine) return {WVKernelStatusCode::invalidPointer,"Forcing-engine construction requires an FFT engine."};
     try {
         auto candidate = std::unique_ptr<WVConstantStratificationForcingEngine>(new WVConstantStratificationForcingEngine());
+        candidate->catalog_ = std::move(catalog);
         auto status = WVTransformConstantStratificationKernel::create(configuration,std::move(fftEngine),candidate->kernel_);
         if (!status) return status;
-        status = validateSchedule(configuration,schedule,candidate->kernel_->descriptor().spectralShape());
+        status = validateSchedule(configuration,schedule,candidate->kernel_->descriptor().spectralShape(),*candidate->catalog_);
         if (!status) return status;
         status = candidate->initialize(schedule);
         if (!status) return status;
@@ -597,8 +600,8 @@ WVKernelStatus WVConstantStratificationForcingEngine::initialize(const WVFrozenF
     const auto count = descriptor.spectralShape().elementCount();
     const auto& configuration = descriptor.configuration();
     const bool hasAdaptiveDamping = std::any_of(
-        entries.begin(), entries.end(), [](const auto* entry) {
-            const auto* registration = WVForcingFactoryRegistry::registration(entry->typeIdentifier);
+        entries.begin(), entries.end(), [this](const auto* entry) {
+            const auto* registration = catalog_->forcings().registration(entry->typeIdentifier, entry->contractVersion);
             return registration != nullptr && registration->providesAdaptiveDamping;
         });
 
@@ -606,7 +609,7 @@ WVKernelStatus WVConstantStratificationForcingEngine::initialize(const WVFrozenF
         const auto& entry = *entryPointer;
         if (entry.name.empty() || !names.insert(entry.name).second) return {WVKernelStatusCode::invalidConfiguration,"Forcing names must be nonempty and unique."};
         std::unique_ptr<WVForcing> resolved;
-        auto status = WVForcingFactoryRegistry::create(entry,descriptor,hasAdaptiveDamping,resolved);
+        auto status = catalog_->forcings().create(entry,descriptor,hasAdaptiveDamping,resolved);
         if (!status) return status;
         if (!resolved || resolved->stage() != entry.stage) return {WVKernelStatusCode::invalidConfiguration,"A forcing factory returned an incompatible implementation."};
         if (entry.stage == WVForcingStage::spatial) ++metrics_.resolvedSpatialCount;

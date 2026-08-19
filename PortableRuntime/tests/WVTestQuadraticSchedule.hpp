@@ -1,6 +1,6 @@
 #pragma once
 
-#include "WaveVortexRuntime/WVOutputSchedule.hpp"
+#include "WaveVortexRuntime/WVExtensionCatalog.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -35,7 +35,10 @@ public:
       return {WVKernelStatusCode::invalidConfiguration,
               "quadratic cursor ordinal"};
     if (cursor.values.schemaIdentifier.empty())
-      return WVKernelStatus::ok();
+      return cursor.committedOrdinal == WVNoCommittedOutputOrdinal
+                 ? WVKernelStatus::ok()
+                 : WVKernelStatus{WVKernelStatusCode::invalidConfiguration,
+                                  "quadratic committed cursor payload"};
     const auto status = validatePortableTypedRecord(
         cursor.values, {WVMaximumOutputScheduleCursorBytes, true, false});
     if (!status)
@@ -131,9 +134,10 @@ inline WVOutputScheduleRecord quadraticSchedule(double finalTime,
   return result;
 }
 
-inline WVKernelStatus registerQuadraticSchedule() {
-  return WVOutputScheduleFactoryRegistry::registerFactory(
-      quadraticScheduleType, 1, &makeQuadraticSchedule);
+inline WVKernelStatus registerQuadraticSchedule(
+    WVExtensionCatalogBuilder &builder) {
+  return builder.addOutputScheduleFactory(
+      {quadraticScheduleType, 1, &makeQuadraticSchedule});
 }
 
 } // namespace wavevortex::runtime::test

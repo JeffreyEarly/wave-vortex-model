@@ -11,6 +11,8 @@
 
 namespace wavevortex::runtime {
 
+class WVExtensionCatalog;
+
 class WVConstantStratificationRightHandSideContext final {
 public:
     bool hasAdvectionFields() const noexcept { return advectionFields_.data != nullptr; }
@@ -60,11 +62,13 @@ public:
     static WVKernelStatus validateSchedule(
         const WVTransformConstantStratificationConfiguration& configuration,
         const WVFrozenForcingSchedule& schedule,
-        WVShape2D coefficientShape);
+        WVShape2D coefficientShape,
+        const WVExtensionCatalog& catalog);
 
     static WVKernelStatus create(
         const WVTransformConstantStratificationConfiguration& configuration,
         const WVFrozenForcingSchedule& schedule,
+        std::shared_ptr<const WVExtensionCatalog> catalog,
         std::unique_ptr<WVFFTEngine> fftEngine,
         std::unique_ptr<WVConstantStratificationForcingEngine>& forcingEngine);
 
@@ -109,6 +113,7 @@ private:
     void clearEvaluationWorkspace() noexcept;
 
     std::unique_ptr<WVTransformConstantStratificationKernel> kernel_;
+    std::shared_ptr<const WVExtensionCatalog> catalog_;
     std::vector<std::unique_ptr<WVForcing>> forcing_;
     std::vector<double> physicalFields_;
     std::vector<double> forcingFields_;

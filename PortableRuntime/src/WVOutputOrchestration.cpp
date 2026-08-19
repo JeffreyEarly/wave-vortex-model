@@ -1,4 +1,5 @@
 #include "WaveVortexRuntime/WVOutputOrchestration.hpp"
+#include "WaveVortexRuntime/WVExtensionCatalog.hpp"
 #include "WVObserverAdapter.hpp"
 
 #include <algorithm>
@@ -27,23 +28,6 @@ WVKernelStatus invalid(std::string message) {
 
 std::size_t stringBytes(const std::string &value) noexcept {
   return value.capacity();
-}
-
-std::size_t observerRecordBytes(const WVObserverRecord &observer) noexcept {
-  std::size_t bytes =
-      stringBytes(observer.identifier) + stringBytes(observer.name) +
-      stringBytes(observer.typeIdentifier) +
-      observer.configuration.persistentBytes() -
-          sizeof(WVPortableTypedRecord) +
-      observer.stateBlockIdentifiers.capacity() * sizeof(std::string) +
-      observer.fieldNames.capacity() * sizeof(std::string) +
-      (observer.x.capacity() + observer.y.capacity() + observer.z.capacity()) *
-          sizeof(double);
-  for (const auto &value : observer.stateBlockIdentifiers)
-    bytes += stringBytes(value);
-  for (const auto &value : observer.fieldNames)
-    bytes += stringBytes(value);
-  return bytes;
 }
 
 bool canonicalBlock(const std::string &identifier) noexcept {
@@ -225,7 +209,7 @@ public:
     WVOutputRouteView route;
   };
 
-  WVPortableObserverRecord record;
+  WVPortableObserverDescriptor descriptor;
   WVIntegrationStateLayout stateLayout;
   double initialTime = 0.0;
   double finalTime = 0.0;
@@ -242,32 +226,10 @@ public:
 
   std::size_t persistentBytes() const noexcept {
     std::size_t bytes =
-        stringBytes(record.schemaIdentifier) +
-        record.stateBlocks.capacity() * sizeof(WVStateBlockRecord) +
-        record.observers.capacity() * sizeof(WVObserverRecord) +
-        record.outputFiles.capacity() * sizeof(WVOutputFileRecord) +
         groups.capacity() * sizeof(Group) +
         diagnosticRoutes.capacity() * sizeof(WVOutputRouteView) +
         diagnosticCursors.capacity() * sizeof(WVOutputScheduleCursor) +
         progress.capacity() * sizeof(WVOutputGroupProgress);
-    for (const auto &block : record.stateBlocks)
-      bytes += stringBytes(block.identifier) +
-               block.dimensions.capacity() * sizeof(std::size_t);
-    for (const auto &observer : record.observers)
-      bytes += observerRecordBytes(observer);
-    for (const auto &file : record.outputFiles) {
-      bytes += stringBytes(file.identifier) + stringBytes(file.destination) +
-               file.groups.capacity() * sizeof(WVOutputGroupRecord);
-      for (const auto &group : file.groups) {
-        bytes += stringBytes(group.identifier) + stringBytes(group.name) +
-                 stringBytes(group.schedule.typeIdentifier) +
-                 group.schedule.configuration.persistentBytes() -
-                 sizeof(WVPortableTypedRecord) +
-                 group.observerIdentifiers.capacity() * sizeof(std::string);
-        for (const auto &identifier : group.observerIdentifiers)
-          bytes += stringBytes(identifier);
-      }
-    }
     for (const auto &group : groups)
       bytes += group.observers.capacity() * sizeof(WVOutputObserverView);
     for (const auto &item : progress) {
@@ -350,21 +312,26 @@ WVOutputPlan &WVOutputPlan::operator=(WVOutputPlan &&) noexcept = default;
 
 WVKernelStatus
 WVOutputPlan::create(const WVPortableObserverDescriptor &descriptor,
+                     std::shared_ptr<const WVExtensionCatalog> catalog,
                      double initialTime, double finalTime,
                      const std::vector<WVOutputGroupProgress> &suppliedProgress,
                      WVOutputPlan &plan) {
+  if (!catalog)
+    return invalid("Output planning requires an extension catalog.");
   if (!std::isfinite(initialTime) || !std::isfinite(finalTime) ||
       finalTime < initialTime)
     return invalid("Output planning requires a finite, nondecreasing "
                    "integration interval.");
   try {
     auto candidate = std::make_unique<Impl>();
-    candidate->record = descriptor.record();
+    if (descriptor.catalog() != catalog)
+      return invalid("Output plan and observer descriptor require the same catalog.");
+    candidate->descriptor = descriptor;
+    const auto &record = candidate->descriptor.record();
     const auto canonical = std::find_if(
-        candidate->record.stateBlocks.begin(),
-        candidate->record.stateBlocks.end(),
+        record.stateBlocks.begin(), record.stateBlocks.end(),
         [](const auto &block) { return block.identifier == "Ap"; });
-    if (canonical == candidate->record.stateBlocks.end() ||
+    if (canonical == record.stateBlocks.end() ||
         canonical->dimensions.size() != 2)
       return invalid("Output planning requires a canonical [Nj,Nkl] Ap block.");
     auto layoutStatus = WVIntegrationStateLayout::create(
@@ -373,17 +340,17 @@ WVOutputPlan::create(const WVPortableObserverDescriptor &descriptor,
     if (!layoutStatus)
       return layoutStatus;
     layoutStatus =
-        validateDescriptorLayout(candidate->record, candidate->stateLayout);
+        validateDescriptorLayout(record, candidate->stateLayout);
     if (!layoutStatus)
       return layoutStatus;
     candidate->initialTime = initialTime;
     candidate->finalTime = finalTime;
-    candidate->metrics.fileCount = candidate->record.outputFiles.size();
+    candidate->metrics.fileCount = record.outputFiles.size();
     candidate->metrics.distinctObserverCount =
-        candidate->record.observers.size();
+        record.observers.size();
 
     std::size_t groupCount = 0;
-    for (const auto &file : candidate->record.outputFiles) {
+    for (const auto &file : record.outputFiles) {
       if (groupCount >
           std::numeric_limits<std::size_t>::max() - file.groups.size())
         return {WVKernelStatusCode::sizeOverflow,
@@ -399,15 +366,15 @@ WVOutputPlan::create(const WVPortableObserverDescriptor &descriptor,
                      "contain exactly one entry per configured group.");
 
     std::map<std::string, std::size_t> observerOrdinals;
-    for (std::size_t index = 0; index < candidate->record.observers.size();
+    for (std::size_t index = 0; index < record.observers.size();
          ++index)
-      observerOrdinals.emplace(candidate->record.observers[index].identifier,
+      observerOrdinals.emplace(record.observers[index].identifier,
                                index);
 
     std::size_t progressIndex = 0;
     for (std::size_t fileIndex = 0;
-         fileIndex < candidate->record.outputFiles.size(); ++fileIndex) {
-      const auto &file = candidate->record.outputFiles[fileIndex];
+         fileIndex < record.outputFiles.size(); ++fileIndex) {
+      const auto &file = record.outputFiles[fileIndex];
       for (std::size_t groupIndex = 0; groupIndex < file.groups.size();
            ++groupIndex, ++progressIndex) {
         const auto &group = file.groups[groupIndex];
@@ -428,7 +395,7 @@ WVOutputPlan::create(const WVPortableObserverDescriptor &descriptor,
         resolved.progressIndex = progressIndex;
         resolved.file = &file;
         resolved.group = &group;
-        auto scheduleStatus = WVOutputScheduleFactoryRegistry::resolve(
+        auto scheduleStatus = catalog->outputSchedules().resolve(
             group.schedule, resolved.schedule);
         if (!scheduleStatus)
           return scheduleStatus;
@@ -456,7 +423,7 @@ WVOutputPlan::create(const WVPortableObserverDescriptor &descriptor,
             return invalid("Output route references an unresolved observer: " +
                            identifier);
           resolved.observers.push_back(
-              {found->second, &candidate->record.observers[found->second],
+              {found->second, &record.observers[found->second],
                descriptor.resolvedObserver(
                    descriptor.observers()[found->second])});
         }
@@ -486,9 +453,12 @@ WVOutputPlan::create(const WVPortableObserverDescriptor &descriptor,
 
 WVKernelStatus
 WVOutputPlan::createExplicit(const WVIntegrationStateLayout &layout,
+                             std::shared_ptr<const WVExtensionCatalog> catalog,
                              double initialTime, double finalTime,
                              const std::vector<WVExplicitOutputTarget> &targets,
                              WVOutputPlan &plan) {
+  if (!catalog)
+    return invalid("Explicit output planning requires an extension catalog.");
   try {
     WVPortableObserverRecord record;
     record.stateBlocks = layout.stateBlockRecords();
@@ -502,7 +472,7 @@ WVOutputPlan::createExplicit(const WVIntegrationStateLayout &layout,
     if (coefficientObserver == record.observers.end()) {
       WVObserverRecord observer;
       const auto observerStatus = detail::canonicalCoefficientObserver(
-          "explicit-checkpoint-coefficients", observer);
+          "explicit-checkpoint-coefficients", *catalog, observer);
       if (!observerStatus)
         return observerStatus;
       coefficientIdentifier = observer.identifier;
@@ -533,10 +503,10 @@ WVOutputPlan::createExplicit(const WVIntegrationStateLayout &layout,
       record.outputFiles.push_back(std::move(file));
     }
     WVPortableObserverDescriptor descriptor;
-    auto status = WVPortableObserverDescriptor::create(record, descriptor);
+    auto status = WVPortableObserverDescriptor::create(record, catalog, descriptor);
     if (!status)
       return status;
-    status = WVOutputPlan::create(descriptor, initialTime, finalTime, {}, plan);
+    status = WVOutputPlan::create(descriptor, catalog, initialTime, finalTime, {}, plan);
     if (!status)
       return status;
     plan.impl_->stateLayout = layout;
@@ -663,8 +633,9 @@ public:
     try {
       progress = plan.impl_->progress;
       metrics = {};
-      metrics.files.reserve(plan.impl_->record.outputFiles.size());
-      for (const auto &file : plan.impl_->record.outputFiles) {
+      const auto &record = plan.impl_->descriptor.record();
+      metrics.files.reserve(record.outputFiles.size());
+      for (const auto &file : record.outputFiles) {
         WVOutputFileMetrics fileMetrics;
         fileMetrics.fileIdentifier = file.identifier;
         fileMetrics.destination = file.destination;
@@ -764,11 +735,6 @@ public:
           auto cursorStatus = validatePortableTypedRecord(
               next.proposedCursor.values,
               {WVMaximumOutputScheduleCursorBytes, true, false});
-          if (std::string_view(group.schedule->typeIdentifier()) !=
-                  WVEvenlySpacedOutputScheduleType &&
-              next.proposedCursor.values.schemaIdentifier.empty())
-            return invalid("An algorithmic output schedule returned an empty "
-                           "cursor envelope.");
           if (!next.proposedCursor.values.schemaIdentifier.empty() &&
               !cursorStatus)
             return cursorStatus;
@@ -776,6 +742,10 @@ public:
               WVMaximumOutputScheduleCursorBytes)
             return {WVKernelStatusCode::sizeOverflow,
                     "An output schedule cursor exceeds 4 KiB."};
+          cursorStatus =
+              group.schedule->validateCursor(next.proposedCursor);
+          if (!cursorStatus)
+            return cursorStatus;
         }
         occurrenceAvailable[index] = available ? 1 : 0;
         occurrenceNeedsRefresh[index] = 0;
@@ -1129,10 +1099,14 @@ std::size_t WVOutputDriver::persistentBytes() const noexcept {
   return impl_->persistentBytes();
 }
 
-WVCheckpointOutputSink::WVCheckpointOutputSink(WVCheckpoint checkpointTemplate)
-    : checkpoint_(std::move(checkpointTemplate)) {}
+WVCheckpointOutputSink::WVCheckpointOutputSink(
+    std::shared_ptr<const WVExtensionCatalog> catalog,
+    WVCheckpoint checkpointTemplate)
+    : catalog_(std::move(catalog)), checkpoint_(std::move(checkpointTemplate)) {}
 
 WVKernelStatus WVCheckpointOutputSink::preflight(const WVOutputPlan &plan) {
+  if (!catalog_)
+    return invalid("Checkpoint output sink requires an extension catalog.");
   const auto shape = plan.stateLayout().coefficientShape();
   if (checkpoint_.state.coefficients.shape.rows != shape.rows ||
       checkpoint_.state.coefficients.shape.columns != shape.columns)
@@ -1168,7 +1142,8 @@ WVKernelStatus WVCheckpointOutputSink::deliver(const WVOutputEvent &event,
   }
   const auto started = std::chrono::steady_clock::now();
   const auto written = WVCheckpointWriter::write(
-      record.destination, checkpoint_, WVCheckpointCommitPolicy::createNew);
+      record.destination, *catalog_, checkpoint_,
+      WVCheckpointCommitPolicy::createNew);
   record.writeSeconds =
       std::chrono::duration<double>(std::chrono::steady_clock::now() - started)
           .count();

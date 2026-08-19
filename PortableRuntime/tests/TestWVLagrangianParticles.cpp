@@ -1,4 +1,5 @@
 #include "WaveVortexRuntime/WVConstantStratificationIntegrationSystem.hpp"
+#include "WVTestExtensionCatalog.hpp"
 
 #include "WVReferenceFFTEngine.hpp"
 
@@ -31,10 +32,16 @@ public:
   WVKernelStatus executionPlan(const WVObserverRecord &observer,
                                WVObserverExecutionPlan &plan) const override {
     plan = {};
-    plan.sampling = WVObserverSamplingTopology::integratedState;
-    plan.integratedOperation = WVObserverIntegratedOperation::advectedScalar;
     plan.persistedName = observer.name;
     return WVKernelStatus::ok();
+  }
+  WVKernelStatus bindIntegration(
+      const WVObserverRecord &observer,
+      const WVObserverIntegrationBinder &binder) const override {
+    return binder.advectedScalar
+               ? binder.advectedScalar(observer)
+               : WVKernelStatus{WVKernelStatusCode::unsupportedOperation,
+                                "Test tracer binding is unavailable."};
   }
   WVKernelStatus validate(
       const WVObserverRecord &observer,
@@ -56,6 +63,28 @@ public:
     return sizeof(*this);
   }
 };
+
+const std::shared_ptr<const WVExtensionCatalog> &extensionCatalog() {
+  static const auto catalog = [] {
+    WVExtensionCatalogBuilder builder;
+    auto status = addBuiltInExtensions(builder);
+    if (status)
+      status = builder.addObserverFactory(
+          {"WVTestPortableTracer", 1,
+           [](const WVObserverRecord &, const WVPortableTypedRecord &,
+              std::shared_ptr<const WVObservingSystem> &result) {
+             result = std::make_shared<WVTestPortableTracerImplementation>();
+             return WVKernelStatus::ok();
+           }});
+    std::shared_ptr<const WVExtensionCatalog> result;
+    if (status)
+      status = builder.freeze(result);
+    if (!status)
+      throw std::runtime_error(status.message);
+    return result;
+  }();
+  return catalog;
+}
 
 WVTransformConstantStratificationConfiguration configuration(bool hydrostatic) {
   WVTransformConstantStratificationConfiguration value;
@@ -140,7 +169,7 @@ WVPortableObserverDescriptor descriptorFor(
   volume.verticalAbsoluteTolerance = 1e-6;
   record.observers.push_back(volume);
   WVPortableObserverDescriptor descriptor;
-  const auto status = WVPortableObserverDescriptor::create(record, descriptor);
+  const auto status = WVPortableObserverDescriptor::create(record, extensionCatalog(), descriptor);
   require(static_cast<bool>(status), status.message);
   return descriptor;
 }
@@ -167,7 +196,7 @@ WVPortableObserverDescriptor descriptorWithTracers(
     record.observers.push_back(std::move(tracer));
   }
   WVPortableObserverDescriptor descriptor;
-  const auto status = WVPortableObserverDescriptor::create(record, descriptor);
+  const auto status = WVPortableObserverDescriptor::create(record, extensionCatalog(), descriptor);
   require(static_cast<bool>(status), status.message);
   return descriptor;
 }
@@ -265,7 +294,8 @@ void testTracers(bool hydrostatic) {
   const auto descriptor = descriptorWithTracers(config);
   std::unique_ptr<WVConstantStratificationIntegrationSystem> system;
   auto status = WVConstantStratificationIntegrationSystem::create(
-      config, {}, descriptor, std::make_unique<WVReferenceFFTEngine>(),
+      config, {}, descriptor, extensionCatalog(),
+      std::make_unique<WVReferenceFFTEngine>(),
       system);
   require(static_cast<bool>(status), status.message);
   require(system->tracers().size() == 2, "tracers were not resolved");
@@ -394,7 +424,7 @@ void testIntegratedObservers(bool hydrostatic) {
   WVFrozenForcingSchedule emptySchedule;
   std::unique_ptr<WVConstantStratificationIntegrationSystem> system;
   auto status = WVConstantStratificationIntegrationSystem::create(
-      config, emptySchedule, descriptor,
+      config, emptySchedule, descriptor, extensionCatalog(),
       std::make_unique<WVReferenceFFTEngine>(), system);
   require(static_cast<bool>(status), status.message);
   require(system->particles().size() == 2, "particle systems not resolved");
@@ -492,7 +522,8 @@ void testValidation() {
   auto descriptor = descriptorFor(config);
   std::unique_ptr<WVConstantStratificationIntegrationSystem> system;
   auto status = WVConstantStratificationIntegrationSystem::create(
-      config, {}, descriptor, std::make_unique<WVReferenceFFTEngine>(),
+      config, {}, descriptor, extensionCatalog(),
+      std::make_unique<WVReferenceFFTEngine>(),
       system);
   require(static_cast<bool>(status) && system,
           "valid integration system construction failed");
@@ -510,10 +541,11 @@ void testValidation() {
   particle->z.clear();
   WVPortableObserverDescriptor genericDescriptor;
   require(static_cast<bool>(WVPortableObserverDescriptor::create(
-              record, genericDescriptor)),
+              record, extensionCatalog(), genericDescriptor)),
           "generic descriptor should retain future 2-D XY allowance");
   status = WVConstantStratificationIntegrationSystem::create(
-      config, {}, genericDescriptor, std::make_unique<WVReferenceFFTEngine>(),
+      config, {}, genericDescriptor, extensionCatalog(),
+      std::make_unique<WVReferenceFFTEngine>(),
       system);
   require(status.code == WVKernelStatusCode::invalidConfiguration && !system,
           "constant-stratification XY particles accepted missing fixed z");
@@ -533,10 +565,11 @@ void testValidation() {
   tracerRecord.observers.push_back(tracer);
   WVPortableObserverDescriptor tracerDescriptor;
   require(static_cast<bool>(WVPortableObserverDescriptor::create(
-              tracerRecord, tracerDescriptor)),
+              tracerRecord, extensionCatalog(), tracerDescriptor)),
           "generic tracer descriptor");
   const auto tracerStatus = WVConstantStratificationIntegrationSystem::create(
-      config, {}, tracerDescriptor, std::make_unique<WVReferenceFFTEngine>(),
+      config, {}, tracerDescriptor, extensionCatalog(),
+      std::make_unique<WVReferenceFFTEngine>(),
       system);
   require(tracerStatus.code == WVKernelStatusCode::unsupportedOperation,
           "constant-stratification system did not defer two-dimensional tracers");
@@ -546,9 +579,6 @@ void testValidation() {
 
 int main() {
   try {
-    const auto registration = WVObserverFactoryRegistry::registerImplementation(
-        std::make_shared<WVTestPortableTracerImplementation>());
-    require(static_cast<bool>(registration), registration.message);
     testIntegratedObservers(true);
     testIntegratedObservers(false);
     testTracers(true);

@@ -4,6 +4,7 @@
 #include "WaveVortexRuntime/WVModel.hpp"
 #include "WaveVortexRuntime/WVModelOutputNetCDF.hpp"
 #include "WaveVortexRuntime/WVObserverOutputEvaluationService.hpp"
+#include "WaveVortexRuntime/WVRunner.hpp"
 #include "WVRunRequest.hpp"
 #ifndef WV_RUNTIME_HAS_DENSE_OUTPUT
 #define WV_RUNTIME_HAS_DENSE_OUTPUT 1
@@ -421,8 +422,11 @@ void phasePlateau(const Options& options, const std::string& value) {
 
 class PhaseReportingCheckpointSink final : public WVOutputSink {
 public:
-    PhaseReportingCheckpointSink(WVCheckpoint checkpointTemplate, const Options& options)
-        : sink_(std::move(checkpointTemplate)), options_(options) {}
+    PhaseReportingCheckpointSink(
+        std::shared_ptr<const WVExtensionCatalog> catalog,
+        WVCheckpoint checkpointTemplate, const Options& options)
+        : sink_(std::move(catalog), std::move(checkpointTemplate)),
+          options_(options) {}
 
     WVKernelStatus preflight(const WVOutputPlan& plan) override {
         return sink_.preflight(plan);
@@ -617,10 +621,16 @@ std::unique_ptr<WVFFTEngine> provider(const Options& options, std::string& versi
 
 } // namespace
 
-int main(int argc, char** argv) {
+int wavevortex::runtime::runWaveVortex(
+    int argc, char** argv,
+    std::shared_ptr<const WVExtensionCatalog> catalog) {
     const auto totalStart = Clock::now();
     Options options;
     std::string error;
+    if (!catalog) {
+        std::cerr << "The WaveVortex runner requires a frozen extension catalog.\n";
+        return static_cast<int>(ExitCode::usage);
+    }
     if (!parseOptions(argc,argv,options,error)) {
         emit(failureJSON(ExitCode::usage,"arguments",error),options.report,std::cerr);
         return static_cast<int>(ExitCode::usage);
@@ -634,7 +644,7 @@ int main(int argc, char** argv) {
     WVCheckpointStatus checkpointStatus;
     if (options.restartMode == "model") {
         checkpointStatus = WVModelOutputNetCDFSink::inspect(
-            options.modelFiles, modelInspection);
+            options.modelFiles, *catalog, modelInspection);
         if (checkpointStatus) {
             inspection.configuration =
                 modelInspection.latestRestart.configuration;
@@ -647,7 +657,7 @@ int main(int argc, char** argv) {
                 modelInspection.latestRestart.forcingSchedule;
         }
     } else {
-        checkpointStatus = WVCheckpointReader::inspect(options.input,inspection);
+        checkpointStatus = WVCheckpointReader::inspect(options.input,*catalog,inspection);
     }
     timings.inspect = seconds(start);
     if (!checkpointStatus) {
@@ -691,7 +701,7 @@ int main(int argc, char** argv) {
     auto activeForcingSchedule = inspection.forcingSchedule;
     if (options.restartMode == "model" && modelInspection.isDynamicsLinear)
         activeForcingSchedule.entries.clear();
-    const auto forcingStatus = WVConstantStratificationForcingEngine::validateSchedule(inspection.configuration,activeForcingSchedule,inspection.coefficientShape);
+    const auto forcingStatus = WVConstantStratificationForcingEngine::validateSchedule(inspection.configuration,activeForcingSchedule,inspection.coefficientShape,*catalog);
     if (!forcingStatus) {
         emit(failureJSON(ExitCode::checkpoint,"forcing-preflight",forcingStatus.message),options.report,std::cerr);
         return static_cast<int>(ExitCode::checkpoint);
@@ -735,7 +745,7 @@ int main(int argc, char** argv) {
         outputRequest.finalTime = options.finalTime;
         outputRequest.destinations = options.outputDestinations;
         const auto outputStatus = WVModel::prepareModelOutput(
-            modelInspection,outputRequest,preparedOutputConfiguration);
+            catalog,modelInspection,outputRequest,preparedOutputConfiguration);
         if (!outputStatus) {
             emit(failureJSON(ExitCode::output,"model-output-preflight",
                              outputStatus.message),options.report,std::cerr);
@@ -757,24 +767,14 @@ int main(int argc, char** argv) {
     start = Clock::now();
     checkpointStatus = options.restartMode == "model"
                            ? WVCheckpointStatus::ok()
-                           : WVCheckpointReader::read(options.input,sourceCheckpoint);
+                           : WVCheckpointReader::read(options.input,*catalog,sourceCheckpoint);
     timings.read = seconds(start);
     if (!checkpointStatus) {
         emit(failureJSON(ExitCode::checkpoint,"read",checkpointStatus.message,checkpointStatus.location,options.scheduledOutput() ? scheduledOutputJSON(options,scheduledPlan,nullptr) : std::string{}),options.report,std::cerr);
         return static_cast<int>(ExitCode::checkpoint);
     }
 
-    WVPortableObserverDescriptor observerDescriptor;
     WVKernelStatus kernelStatus;
-    if (options.restartMode == "model") {
-        kernelStatus = WVPortableObserverDescriptor::create(
-            modelInspection.observerRecord, observerDescriptor);
-        if (!kernelStatus) {
-            emit(failureJSON(ExitCode::checkpoint,"model-graph-descriptor",
-                             kernelStatus.message),options.report,std::cerr);
-            return static_cast<int>(ExitCode::checkpoint);
-        }
-    }
     phase(options,"construct");
     start = Clock::now();
     WVModelIntegratorConfiguration integratorConfiguration;
@@ -794,12 +794,12 @@ int main(int argc, char** argv) {
     WVModelState modelState;
     if (options.restartMode == "model") {
         kernelStatus = WVModel::createFromModelOutputInspection(
-            std::move(modelInspection),
+            catalog,std::move(modelInspection),
             std::move(preparedOutputConfiguration),std::move(fftEngine),
             integratorConfiguration,model,modelState);
     } else {
         kernelStatus = WVModel::create(
-            sourceCheckpoint.configuration,activeForcingSchedule,
+            catalog,sourceCheckpoint.configuration,activeForcingSchedule,
             std::move(fftEngine),integratorConfiguration,model);
         if (kernelStatus)
             kernelStatus = WVModelState::create(
@@ -847,13 +847,13 @@ int main(int argc, char** argv) {
     WVOutputDriverMetrics outputDriverMetrics;
     std::unique_ptr<PhaseReportingCheckpointSink> scheduledSink;
     if (options.scheduledOutput()) {
-        scheduledSink = std::make_unique<PhaseReportingCheckpointSink>(checkpoint,options);
+        scheduledSink = std::make_unique<PhaseReportingCheckpointSink>(catalog,checkpoint,options);
     }
     const auto runOutput = [&](const std::vector<WVExplicitOutputTarget>& targets,
                                double finalTime,
                                WVOutputSink& sink) -> WVKernelStatus {
         WVOutputPlan plan;
-        auto status = WVOutputPlan::createExplicit(model.stateLayout(),state.waveVortex.t,finalTime,targets,plan);
+        auto status = WVOutputPlan::createExplicit(model.stateLayout(),catalog,state.waveVortex.t,finalTime,targets,plan);
         if (!status) return status;
         status = model.advanceToTime(modelState,finalTime,integrationInitialStep,
                                      plan,sink);
@@ -961,7 +961,7 @@ int main(int argc, char** argv) {
         start = Clock::now();
         phase(options,"write");
         checkpointStatus = WVCheckpointWriter::write(
-            options.output,checkpoint,
+            options.output,*catalog,checkpoint,
             options.outputPolicy == "replace"
                 ? WVCheckpointCommitPolicy::replaceExisting
                 : WVCheckpointCommitPolicy::createNew);
@@ -1009,7 +1009,25 @@ int main(int argc, char** argv) {
     const std::size_t scheduledOutputBytes = 0;
 #endif
     const auto checkpointStateBytes = stateBytes(checkpoint);
-    const auto knownPersistentBytes = checkpointStateBytes+integrationSystem.persistentBytes()+integrator.persistentBytes()+scheduledOutputBytes;
+    const auto knownPersistentBytes =
+        modelMetrics.modelPersistentBytes + modelMetrics.catalogPersistentBytes +
+        checkpointStateBytes +
+        modelMetrics.integrationSystemPersistentBytes +
+        modelMetrics.integratorPersistentBytes +
+        modelMetrics.outputConfigurationPersistentBytes + scheduledOutputBytes;
+    const auto fullModelPersistentBytes =
+        knownPersistentBytes +
+        (modelMetrics.statePersistentBytes > checkpointStateBytes
+             ? modelMetrics.statePersistentBytes - checkpointStateBytes
+             : 0) +
+        modelMetrics.outputEvaluationPersistentBytes +
+        modelMetrics.outputSinkPersistentBytes;
+    const auto fullModelRetainedBytes =
+        fullModelPersistentBytes + driverInterpolationBytes;
+    const auto fullModelMaximumLiveBytes =
+        fullModelPersistentBytes +
+        std::max(driverInterpolationBytes,
+                 driverInterpolationMaximumLiveBytes);
     const auto integratorElementReads = fixedMetrics.stageStateConstructionElementReads+fixedMetrics.weightedFluxInitializationElementReads+fixedMetrics.weightedAccumulationElementReads+fixedMetrics.finalStateUpdateElementReads+fixedMetrics.acceptedStateCommitElementReads;
     const auto integratorElementWrites = fixedMetrics.stageStateConstructionElementWrites+fixedMetrics.stageFluxClearElementWrites+fixedMetrics.weightedFluxClearElementWrites+fixedMetrics.weightedFluxInitializationElementWrites+fixedMetrics.weightedAccumulationElementWrites+fixedMetrics.finalStateUpdateElementWrites+fixedMetrics.acceptedStateCommitElementWrites;
     const auto forcingElementReads = forcingMetrics.temporaryAccumulationElementReads+forcingMetrics.outputCopyElementReads;
@@ -1026,10 +1044,10 @@ int main(int argc, char** argv) {
            << "\"authorBenchmark\":{\"warmupStepCount\":" << options.benchmarkWarmupSteps << ",\"sampleStepCount\":" << (options.hasSteps ? options.steps : 0) << ",\"denseOutputsPerStep\":" << options.benchmarkDenseOutputsPerStep << ",\"requestedOutputCount\":" << options.benchmarkOutputCount << ",\"interpolatedOutputCount\":" << interpolatedOutputCount << ",\"interpolationSeconds\":" << driverInterpolationSeconds << "},"
            << "\"forcing\":" << forcingJSON(activeForcingSchedule) << ','
            << "\"timingSeconds\":{\"inspect\":" << timings.inspect << ",\"read\":" << timings.read << ",\"construct\":" << timings.construct << ",\"prepare\":" << timings.prepare << ",\"integrate\":" << timings.integrate << ",\"write\":" << timings.write << ",\"total\":" << timings.total << "},"
-           << "\"storageBytes\":{\"checkpointState\":" << checkpointStateBytes << ",\"descriptor\":" << kernelMetrics.descriptorBytes << ",\"planWrapper\":" << kernelMetrics.planBytes << ",\"kernelScratch\":" << kernelMetrics.scratchCapacityBytes << ",\"forcingSchedule\":" << forcingMetrics.scheduleBytes << ",\"forcingDerivedOperators\":" << forcingMetrics.derivedOperatorBytes << ",\"forcingWorkspace\":" << forcingMetrics.workspaceCapacityBytes << ",\"integratorWorkspace\":" << integratorWorkspaceCapacityBytes << ",\"integratorDiagnostics\":" << integratorDiagnosticBytes << ",\"denseHistory\":" << denseHistoryBytes << ",\"driverInterpolation\":" << driverInterpolationBytes << ",\"scheduledOutput\":" << scheduledOutputBytes << ",\"knownPersistent\":" << knownPersistentBytes+driverInterpolationBytes << ",\"persistentFullHermitian\":0},"
+           << "\"storageBytes\":{\"checkpointState\":" << checkpointStateBytes << ",\"modelFacade\":" << modelMetrics.modelPersistentBytes << ",\"modelState\":" << modelMetrics.statePersistentBytes << ",\"extensionCatalog\":" << modelMetrics.catalogPersistentBytes << ",\"modelOutputConfiguration\":" << modelMetrics.outputConfigurationPersistentBytes << ",\"modelOutputEvaluation\":" << modelMetrics.outputEvaluationPersistentBytes << ",\"modelOutputSink\":" << modelMetrics.outputSinkPersistentBytes << ",\"modelOutput\":" << modelMetrics.outputPersistentBytes << ",\"descriptor\":" << kernelMetrics.descriptorBytes << ",\"planWrapper\":" << kernelMetrics.planBytes << ",\"kernelScratch\":" << kernelMetrics.scratchCapacityBytes << ",\"forcingSchedule\":" << forcingMetrics.scheduleBytes << ",\"forcingDerivedOperators\":" << forcingMetrics.derivedOperatorBytes << ",\"forcingWorkspace\":" << forcingMetrics.workspaceCapacityBytes << ",\"integratorWorkspace\":" << integratorWorkspaceCapacityBytes << ",\"integratorDiagnostics\":" << integratorDiagnosticBytes << ",\"denseHistory\":" << denseHistoryBytes << ",\"driverInterpolation\":" << driverInterpolationBytes << ",\"scheduledOutput\":" << scheduledOutputBytes << ",\"knownPersistent\":" << knownPersistentBytes+driverInterpolationBytes << ",\"fullModelPersistent\":" << fullModelRetainedBytes << ",\"persistentFullHermitian\":0},"
            << "\"arrayTraffic\":{\"scope\":\"exact fixed-RK4 integration-boundary arrays; adaptive traffic is reported through method metrics\",\"elementBytes\":" << sizeof(WVComplex64) << ",\"integrator\":{\"stageStateConstructionReads\":" << fixedMetrics.stageStateConstructionElementReads << ",\"stageStateConstructionWrites\":" << fixedMetrics.stageStateConstructionElementWrites << ",\"stageFluxClearWrites\":" << fixedMetrics.stageFluxClearElementWrites << ",\"weightedFluxClearWrites\":" << fixedMetrics.weightedFluxClearElementWrites << ",\"weightedFluxInitializationReads\":" << fixedMetrics.weightedFluxInitializationElementReads << ",\"weightedFluxInitializationWrites\":" << fixedMetrics.weightedFluxInitializationElementWrites << ",\"weightedAccumulationReads\":" << fixedMetrics.weightedAccumulationElementReads << ",\"weightedAccumulationWrites\":" << fixedMetrics.weightedAccumulationElementWrites << ",\"finalStateUpdateReads\":" << fixedMetrics.finalStateUpdateElementReads << ",\"finalStateUpdateWrites\":" << fixedMetrics.finalStateUpdateElementWrites << ",\"acceptedStateCommitReads\":" << fixedMetrics.acceptedStateCommitElementReads << ",\"acceptedStateCommitWrites\":" << fixedMetrics.acceptedStateCommitElementWrites << "},\"forcing\":{\"accumulatorClearWrites\":" << forcingMetrics.accumulatorClearElementWrites << ",\"temporaryFluxClearWrites\":" << forcingMetrics.temporaryFluxClearElementWrites << ",\"kernelOutputInitializationWrites\":" << forcingMetrics.kernelOutputInitializationElementWrites << ",\"temporaryAccumulationReads\":" << forcingMetrics.temporaryAccumulationElementReads << ",\"temporaryAccumulationWrites\":" << forcingMetrics.temporaryAccumulationElementWrites << ",\"outputCopyReads\":" << forcingMetrics.outputCopyElementReads << ",\"outputCopyWrites\":" << forcingMetrics.outputCopyElementWrites << ",\"stateConstraintWrites\":" << forcingMetrics.stateConstraintElementWrites << "},\"totals\":{\"elementReads\":" << trafficElementReads << ",\"elementWrites\":" << trafficElementWrites << ",\"bytesRead\":" << trafficElementReads*sizeof(WVComplex64) << ",\"bytesWritten\":" << trafficElementWrites*sizeof(WVComplex64) << "}},"
            << "\"forcingOperations\":{\"evaluationCount\":" << forcingMetrics.evaluationCount << ",\"physicalFieldReconstructionCount\":" << forcingMetrics.physicalFieldReconstructionCount << ",\"physicalFieldReuseCount\":" << forcingMetrics.physicalFieldReuseCount << ",\"spatialTendencyProjectionCount\":" << forcingMetrics.spatialTendencyProjectionCount << ",\"spatialTendencyClearElementWrites\":" << forcingMetrics.spatialTendencyClearElementWrites << "},"
-           << "\"livenessBytes\":{\"integratorWorkspaceLive\":" << integratorWorkspaceLiveBytes << ",\"integratorWorkspaceMaximumLive\":" << integratorWorkspaceMaximumLiveBytes << ",\"forcingWorkspaceLive\":" << forcingMetrics.workspaceLiveBytes << ",\"forcingWorkspaceMaximumLive\":" << forcingMetrics.workspaceMaximumLiveBytes << ",\"acceptedStepAdditionalArrayStorage\":" << denseHistoryBytes << ",\"contractAbstractionAdditionalArrayStorage\":" << driverInterpolationBytes << ",\"knownRetained\":" << knownPersistentBytes+driverInterpolationBytes << ",\"knownMaximumLive\":" << knownPersistentBytes+driverInterpolationMaximumLiveBytes << "},"
+           << "\"livenessBytes\":{\"integratorWorkspaceLive\":" << integratorWorkspaceLiveBytes << ",\"integratorWorkspaceMaximumLive\":" << integratorWorkspaceMaximumLiveBytes << ",\"forcingWorkspaceLive\":" << forcingMetrics.workspaceLiveBytes << ",\"forcingWorkspaceMaximumLive\":" << forcingMetrics.workspaceMaximumLiveBytes << ",\"acceptedStepAdditionalArrayStorage\":" << denseHistoryBytes << ",\"contractAbstractionAdditionalArrayStorage\":" << driverInterpolationBytes << ",\"contractAbstractionMaximumLiveArrayStorage\":" << driverInterpolationMaximumLiveBytes << ",\"knownRetained\":" << knownPersistentBytes+driverInterpolationBytes << ",\"knownMaximumLive\":" << knownPersistentBytes+driverInterpolationMaximumLiveBytes << ",\"fullModelRetained\":" << fullModelRetainedBytes << ",\"fullModelMaximumLive\":" << fullModelMaximumLiveBytes << "},"
            << "\"rssBytes\":{\"integrationBaseline\":" << integrationBaselineRSS << ",\"processPeak\":" << integrationPeakRSS << ",\"peakIncrementLowerBound\":" << (integrationPeakRSS > integrationBaselineRSS ? integrationPeakRSS-integrationBaselineRSS : 0) << "},"
            << "\"integrationBreakdownSeconds\":{\"rightHandSide\":" << integratedObserverMetrics.rightHandSideSeconds << ",\"waveVortexFlux\":" << integratedObserverMetrics.waveVortexFluxSeconds << ",\"additionalStateClear\":" << integratedObserverMetrics.additionalStateClearSeconds << ",\"tracerAdvection\":" << integratedObserverMetrics.tracerAdvectionSeconds << ",\"tracerForward\":" << kernelMetrics.scalarForwardSeconds << ",\"tracerDerivativeAssembly\":" << kernelMetrics.scalarDerivativeAssemblySeconds << ",\"tracerVerticalDerivative\":" << kernelMetrics.scalarVerticalDerivativeSeconds << ",\"tracerInverse\":" << kernelMetrics.scalarInverseSeconds << ",\"tracerProduct\":" << kernelMetrics.scalarProductSeconds << ",\"tracerAntialias\":" << kernelMetrics.scalarAntialiasSeconds << ",\"particleAdvection\":" << integratedObserverMetrics.particleAdvectionSeconds << ",\"denseInterpolation\":" << driverInterpolationSeconds << ",\"observerEvaluation\":" << outputEvaluationMetrics.evaluationSeconds << ",\"outputPayloadWrite\":" << modelOutputMetrics.payloadWriteSeconds << ",\"outputSynchronization\":" << modelOutputMetrics.synchronizationSeconds << "},"
            << "\"execution\":{\"engine\":" << quoted(kernel.engineIdentifier()) << ",\"library\":" << quoted(kernel.engineLibraryIdentity()) << ",\"schedule\":" << quoted(integrationSystem.scheduleIdentifier()) << ",\"planCount\":" << kernelMetrics.planCount << ",\"noFallback\":true}";

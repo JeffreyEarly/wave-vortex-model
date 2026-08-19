@@ -1,4 +1,5 @@
 #include "WaveVortexRuntime/WVModelOutputConfiguration.hpp"
+#include "WVTestExtensionCatalog.hpp"
 
 #include <chrono>
 #include <cstdlib>
@@ -37,7 +38,7 @@ WVCheckpoint checkpointTemplate() {
   WVCheckpoint checkpoint;
   const auto path = std::filesystem::path(WV_RUNTIME_FIXTURE_DIR) /
                     "forcing-nonlinear.nc";
-  const auto status = WVCheckpointReader::read(path.string(), checkpoint);
+  const auto status = WVCheckpointReader::read(path.string(), *test::extensionCatalog(), checkpoint);
   require(static_cast<bool>(status), status.message);
   return checkpoint;
 }
@@ -266,7 +267,7 @@ void testStructuralCompilation() {
   WVModelOutputConfiguration configuration;
   status = WVModelOutputConfiguration::build(
       std::move(record), std::move(files), WVModelOutputPolicy::create,
-      checkpoint.state.t, checkpoint.state.t + 2.0, configuration);
+      test::extensionCatalog(), checkpoint.state.t, checkpoint.state.t + 2.0, configuration);
   require(static_cast<bool>(status), status.message);
   require(configuration.descriptor().outputFiles().size() == 2,
           "compiled descriptor lost output files");
@@ -334,7 +335,7 @@ void testValidationAndDeterministicIdentifiers() {
   WVModelOutputConfiguration rejected;
   status = WVModelOutputConfiguration::build(
       std::move(record), std::move(files), WVModelOutputPolicy::create,
-      checkpoint.state.t, checkpoint.state.t + 1.0, rejected);
+      test::extensionCatalog(), checkpoint.state.t, checkpoint.state.t + 1.0, rejected);
   require(!status, "an unresolved observing system was accepted");
 }
 
@@ -349,14 +350,14 @@ void testCreateReplaceAndAppendPolicies() {
   WVModelOutputConfiguration create;
   auto status = WVModelOutputConfiguration::build(
       record, std::move(files), WVModelOutputPolicy::create,
-      checkpoint.state.t, checkpoint.state.t + 2.0, create);
+      test::extensionCatalog(), checkpoint.state.t, checkpoint.state.t + 2.0, create);
   require(static_cast<bool>(status), status.message);
   WVIntegrationStateLayout layout;
   status = WVIntegrationStateLayout::create(
       checkpoint.state.coefficients.shape, create.descriptor(), layout);
   require(static_cast<bool>(status), status.message);
   WVModelOutputNetCDFSink sink;
-  auto persistence = create.openNetCDFSink({checkpoint, false}, layout,
+  auto persistence = create.openNetCDFSink({test::extensionCatalog(), checkpoint, false}, layout,
                                            nullptr, sink);
   require(static_cast<bool>(persistence), persistence.message);
   deliverFirstEvent(sink, create.plan(), checkpoint);
@@ -369,7 +370,7 @@ void testCreateReplaceAndAppendPolicies() {
   WVModelOutputConfiguration rejectedAppend;
   status = WVModelOutputConfiguration::build(
       record, std::move(files), WVModelOutputPolicy::append,
-      checkpoint.state.t, checkpoint.state.t + 3.0, rejectedAppend);
+      test::extensionCatalog(), checkpoint.state.t, checkpoint.state.t + 3.0, rejectedAppend);
   require(!status, "append accepted a changed schedule graph");
 
   files.clear();
@@ -382,7 +383,7 @@ void testCreateReplaceAndAppendPolicies() {
   files.push_back(std::move(wrongProgress));
   status = WVModelOutputConfiguration::build(
       record, std::move(files), WVModelOutputPolicy::append,
-      checkpoint.state.t, checkpoint.state.t + 2.0, rejectedAppend);
+      test::extensionCatalog(), checkpoint.state.t, checkpoint.state.t + 2.0, rejectedAppend);
   require(!status, "append accepted mismatched committed progress");
 
   const auto original = fileBytes(path);
@@ -392,7 +393,7 @@ void testCreateReplaceAndAppendPolicies() {
   WVModelOutputConfiguration failedReplacement;
   status = WVModelOutputConfiguration::build(
       allObserverRecord(checkpoint), std::move(files),
-      WVModelOutputPolicy::replace, checkpoint.state.t,
+      WVModelOutputPolicy::replace, test::extensionCatalog(), checkpoint.state.t,
       checkpoint.state.t + 2.0, failedReplacement);
   require(static_cast<bool>(status), status.message);
   WVIntegrationStateLayout allLayout;
@@ -402,7 +403,7 @@ void testCreateReplaceAndAppendPolicies() {
   require(static_cast<bool>(status), status.message);
   FailingSampleSource failure;
   persistence = failedReplacement.openNetCDFSink(
-      {checkpoint, false}, allLayout, &failure, sink);
+      {test::extensionCatalog(), checkpoint, false}, allLayout, &failure, sink);
   require(!persistence && fileBytes(path) == original,
           "failed replacement changed the original destination");
 
@@ -412,9 +413,9 @@ void testCreateReplaceAndAppendPolicies() {
   WVModelOutputConfiguration replace;
   status = WVModelOutputConfiguration::build(
       record, std::move(files), WVModelOutputPolicy::replace,
-      checkpoint.state.t, checkpoint.state.t + 2.0, replace);
+      test::extensionCatalog(), checkpoint.state.t, checkpoint.state.t + 2.0, replace);
   require(static_cast<bool>(status), status.message);
-  persistence = replace.openNetCDFSink({checkpoint, false}, layout, nullptr,
+  persistence = replace.openNetCDFSink({test::extensionCatalog(), checkpoint, false}, layout, nullptr,
                                        sink);
   require(static_cast<bool>(persistence), persistence.message);
   deliverFirstEvent(sink, replace.plan(), checkpoint);
@@ -427,12 +428,12 @@ void testCreateReplaceAndAppendPolicies() {
   WVModelOutputConfiguration append;
   status = WVModelOutputConfiguration::build(
       record, std::move(files), WVModelOutputPolicy::append,
-      checkpoint.state.t, checkpoint.state.t + 2.0, append);
+      test::extensionCatalog(), checkpoint.state.t, checkpoint.state.t + 2.0, append);
   require(static_cast<bool>(status), status.message);
   require(append.progress().size() == 1 &&
               append.progress().front().committedOrdinal == 0,
           "append progress was not recovered");
-  persistence = append.openNetCDFSink({checkpoint, false}, layout, nullptr,
+  persistence = append.openNetCDFSink({test::extensionCatalog(), checkpoint, false}, layout, nullptr,
                                       sink);
   require(static_cast<bool>(persistence), persistence.message);
   persistence = sink.close();
@@ -444,7 +445,7 @@ void testCreateReplaceAndAppendPolicies() {
   WVModelOutputConfiguration collision;
   status = WVModelOutputConfiguration::build(
       record, std::move(files), WVModelOutputPolicy::create,
-      checkpoint.state.t, checkpoint.state.t + 2.0, collision);
+      test::extensionCatalog(), checkpoint.state.t, checkpoint.state.t + 2.0, collision);
   require(!status, "create policy accepted an existing destination");
 }
 

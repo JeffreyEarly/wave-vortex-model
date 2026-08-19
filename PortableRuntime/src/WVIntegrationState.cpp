@@ -66,15 +66,22 @@ WVKernelStatus
 WVIntegrationStateLayout::create(WVShape2D coefficientShape,
                                const WVPortableObserverDescriptor &descriptor,
                                WVIntegrationStateLayout &layout) {
+  return create(coefficientShape, descriptor.record(), layout);
+}
+
+WVKernelStatus
+WVIntegrationStateLayout::create(WVShape2D coefficientShape,
+                               const WVPortableObserverRecord &source,
+                               WVIntegrationStateLayout &layout) {
   if (coefficientShape.rows == 0 || coefficientShape.columns == 0)
     return invalid("Integration coefficient shape must be nonzero.");
   try {
     WVIntegrationStateLayout candidate;
     candidate.coefficientShape_ = coefficientShape;
-    candidate.stateBlockRecords_ = descriptor.stateBlocks();
-    candidate.observerRecords_ = descriptor.observers();
+    candidate.stateBlockRecords_ = source.stateBlocks;
+    candidate.observerRecords_ = source.observers;
     std::set<std::string> canonicalBlocks;
-    for (const auto &record : descriptor.stateBlocks()) {
+    for (const auto &record : source.stateBlocks) {
       bool badCount = false;
       const auto count = checkedCount(record.dimensions, badCount);
       if (badCount)

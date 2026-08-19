@@ -1,4 +1,5 @@
 #include "WVForcingScheduleDecoder.hpp"
+#include "WaveVortexRuntime/WVExtensionCatalog.hpp"
 
 #include "WVNetCDF.hpp"
 #include "WaveVortexRuntime/WVForcingContracts.hpp"
@@ -246,8 +247,8 @@ WVCheckpointStatus readBoundScalar(int groupId, const std::string& name, double&
     return WVCheckpointStatus::ok();
 }
 
-WVCheckpointStatus decodeSupported(const WVForcingGroupSource& source, const WVTransformConstantStratificationConfiguration& configuration, std::size_t coefficientCount, WVFrozenForcingEntry& entry) {
-    const auto* registration = WVForcingFactoryRegistry::registration(source.annotatedClass);
+WVCheckpointStatus decodeSupported(const WVForcingGroupSource& source, const WVTransformConstantStratificationConfiguration& configuration, std::size_t coefficientCount, const WVExtensionCatalog& catalog, WVFrozenForcingEntry& entry) {
+    const auto* registration = catalog.forcings().registration(source.annotatedClass, WVPortablePairContractVersion);
     if (registration == nullptr) return status(WVCheckpointStatusCode::unsupportedForcing, "Unknown forcing class '" + source.annotatedClass + "'.", source.groupPath + "/@AnnotatedClass");
     if (!registration->isSupported) return status(WVCheckpointStatusCode::unsupportedForcing, registration->unavailabilityReason, source.groupPath + "/@AnnotatedClass");
     std::set<std::string> allowedVariables;
@@ -339,7 +340,7 @@ WVCheckpointStatus decodeSupported(const WVForcingGroupSource& source, const WVT
             entry.configuration.values.push_back({field.imaginaryRecordName,{2},std::vector<double>{values[0].imag,values[1].imag}});
         }
     }
-    const auto validation = WVForcingFactoryRegistry::validateConfiguration(entry);
+    const auto validation = catalog.forcings().validateConfiguration(entry);
     return validation ? WVCheckpointStatus::ok()
                       : status(WVCheckpointStatusCode::malformedForcing,
                                validation.message, source.groupPath);
@@ -355,14 +356,14 @@ WVCheckpointStatus decodeForcingSchedule(
     const std::vector<WVForcingGroupSource>& sources,
     const WVTransformConstantStratificationConfiguration& configuration,
     std::size_t coefficientCount,
+    const WVExtensionCatalog& catalog,
     WVFrozenForcingSchedule& schedule) {
-    WVForcingFactoryRegistry::seal();
     WVFrozenForcingSchedule candidate;
     candidate.entries.reserve(sources.size());
     std::unordered_set<std::string> names;
     for (const auto& source : sources) {
         WVFrozenForcingEntry entry;
-        auto result = decodeSupported(source, configuration, coefficientCount, entry);
+        auto result = decodeSupported(source, configuration, coefficientCount, catalog, entry);
         if (!result) return result;
         if (!names.insert(entry.name).second) return status(WVCheckpointStatusCode::duplicateForcing, "Forcing names must be unique; duplicate name '" + entry.name + "'.", source.groupPath + "/@name");
         candidate.entries.push_back(std::move(entry));

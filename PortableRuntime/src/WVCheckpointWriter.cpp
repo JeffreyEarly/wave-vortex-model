@@ -57,19 +57,20 @@ bool compatibleModelVersion(const std::string& version) {
 
 WVCheckpointStatus validateEntry(
     const WVFrozenForcingEntry& entry,
+    const WVForcingCatalog& catalog,
     const WVTransformConstantStratificationConfiguration&,
     std::size_t) {
-    const auto* registration = WVForcingFactoryRegistry::registration(entry.typeIdentifier);
+    const auto* registration = catalog.registration(entry.typeIdentifier, entry.contractVersion);
     if (registration == nullptr || !registration->isSupported || !registration->factory || registration->contractVersion != entry.contractVersion) {
         return status(WVCheckpointStatusCode::unsupportedForcing, "The checkpoint contains a forcing entry that portable runtime v1 cannot write.", "/forcing/@AnnotatedClass");
     }
     if (entry.name.empty()) return status(WVCheckpointStatusCode::malformedForcing, "Forcing names must not be empty.", "/forcing/@name");
     if (entry.stage != registration->stage) return status(WVCheckpointStatusCode::malformedForcing, "Forcing stage does not match its registered implementation.", "/forcing");
-    const auto validation = WVForcingFactoryRegistry::validateConfiguration(entry);
+    const auto validation = catalog.validateConfiguration(entry);
     return validation ? WVCheckpointStatus::ok() : status(WVCheckpointStatusCode::malformedForcing,validation.message,"/forcing");
 }
 
-WVCheckpointStatus validateCheckpoint(const WVCheckpoint& checkpoint, std::vector<const WVFrozenForcingEntry*>& sourceOrder) {
+WVCheckpointStatus validateCheckpoint(const WVCheckpoint& checkpoint, const WVForcingCatalog& catalog, std::vector<const WVFrozenForcingEntry*>& sourceOrder) {
     if (checkpoint.metadata.profileIdentifier != WVCheckpointProfileIdentifier || checkpoint.metadata.profileVersion != WVCheckpointProfileVersion) return status(WVCheckpointStatusCode::invalidValue, "Unsupported checkpoint profile.", "/");
     if (!compatibleModelVersion(checkpoint.metadata.modelVersion)) return status(WVCheckpointStatusCode::unsupportedModelVersion, "The writer accepts only WaveVortexModel 4.x checkpoints.", "/@model_version");
     if (checkpoint.metadata.transformClass != "WVTransformConstantStratification") return status(WVCheckpointStatusCode::unsupportedTransform, "The writer supports only WVTransformConstantStratification.", "/");
@@ -95,7 +96,7 @@ WVCheckpointStatus validateCheckpoint(const WVCheckpoint& checkpoint, std::vecto
         const auto& entry = *sourceOrder[index];
         if (entry.ordinal != index + 1) return status(WVCheckpointStatusCode::invalidValue, "Forcing ordinals must be contiguous and one-based.", "/forcing");
         if (!names.insert(entry.name).second) return status(WVCheckpointStatusCode::duplicateForcing, "Forcing names must be unique.", "/forcing/@name");
-        const auto result = validateEntry(entry, checkpoint.configuration, coefficientCount);
+        const auto result = validateEntry(entry, catalog, checkpoint.configuration, coefficientCount);
         if (!result) return result;
     }
     return WVCheckpointStatus::ok();
@@ -220,10 +221,10 @@ WVCheckpointStatus defineRoot(int root, const WVCheckpoint& checkpoint, std::arr
     return textAttribute(root, NC_GLOBAL, "date_created", date.str(), "/");
 }
 
-WVCheckpointStatus defineForcingEntry(int group, const WVFrozenForcingEntry& entry, const std::array<int, 5>& rootDimensions, const std::string& path) {
+WVCheckpointStatus defineForcingEntry(int group, const WVFrozenForcingEntry& entry, const WVForcingCatalog& catalog, const std::array<int, 5>& rootDimensions, const std::string& path) {
     auto result = textAttribute(group, NC_GLOBAL, "AnnotatedClass", entry.typeIdentifier, path);
     if (!result) return result;
-    const auto* registration = WVForcingFactoryRegistry::registration(entry.typeIdentifier);
+    const auto* registration = catalog.registration(entry.typeIdentifier, entry.contractVersion);
     if (registration == nullptr || !registration->isSupported) return status(WVCheckpointStatusCode::unsupportedForcing,"Unsupported forcing reached checkpoint definition.",path);
     if (registration->persistence.writesNameAttribute) {
         result = textAttribute(group,NC_GLOBAL,"name",entry.name,path);
@@ -342,8 +343,8 @@ WVCheckpointStatus writeRoot(int root, const WVCheckpoint& checkpoint) {
     return writeComplexPair(root, "A0", checkpoint.state.coefficients.A0, "/");
 }
 
-WVCheckpointStatus writeForcingEntry(int group, const WVFrozenForcingEntry& entry, const std::string& path) {
-    const auto* registration = WVForcingFactoryRegistry::registration(entry.typeIdentifier);
+WVCheckpointStatus writeForcingEntry(int group, const WVFrozenForcingEntry& entry, const WVForcingCatalog& catalog, const std::string& path) {
+    const auto* registration = catalog.registration(entry.typeIdentifier, entry.contractVersion);
     if (registration == nullptr || !registration->isSupported) return status(WVCheckpointStatusCode::unsupportedForcing,"Unsupported forcing reached checkpoint writing.",path);
     for (const auto& field : registration->persistence.fields) {
         const auto* value = entry.configuration.value(field.recordName);
@@ -382,9 +383,9 @@ WVCheckpointStatus writeForcingEntry(int group, const WVFrozenForcingEntry& entr
     return WVCheckpointStatus::ok();
 }
 
-WVCheckpointStatus verifyTemporary(const std::string& path, const WVCheckpoint& expected) {
+WVCheckpointStatus verifyTemporary(const std::string& path, const WVExtensionCatalog& catalog, const WVCheckpoint& expected) {
     WVCheckpoint actual;
-    auto result = WVCheckpointReader::read(path, actual);
+    auto result = WVCheckpointReader::read(path, catalog, actual);
     if (!result) return status(WVCheckpointStatusCode::writeFailure, "The temporary checkpoint failed structural validation: " + result.message, result.location);
     if (!sameTransformConfiguration(expected.configuration, actual.configuration) || expected.state.t != actual.state.t || expected.state.t0 != actual.state.t0 || expected.state.coefficients.shape.rows != actual.state.coefficients.shape.rows || expected.state.coefficients.shape.columns != actual.state.coefficients.shape.columns || !sameComplex(expected.state.coefficients.Ap, actual.state.coefficients.Ap) || !sameComplex(expected.state.coefficients.Am, actual.state.coefficients.Am) || !sameComplex(expected.state.coefficients.A0, actual.state.coefficients.A0) || expected.forcingSchedule.entries.size() != actual.forcingSchedule.entries.size()) {
         return status(WVCheckpointStatusCode::writeFailure, "The temporary checkpoint did not reproduce the requested checkpoint state.", path);
@@ -412,6 +413,7 @@ private:
 
 WVCheckpointStatus writeTemporary(
     const std::filesystem::path& path,
+    const WVForcingCatalog& catalog,
     const WVCheckpoint& checkpoint,
     const std::vector<const WVFrozenForcingEntry*>& sourceOrder) {
     WritableNetCDFFile file;
@@ -429,7 +431,7 @@ WVCheckpointStatus writeTemporary(
         if (!result) return result;
         if (sourceOrder.size() == 1) {
             forcingGroups.push_back(forcingRoot);
-            result = defineForcingEntry(forcingRoot, *sourceOrder.front(), rootDimensions, "/forcing");
+            result = defineForcingEntry(forcingRoot, *sourceOrder.front(), catalog, rootDimensions, "/forcing");
             if (!result) return result;
         } else {
             for (std::size_t index = 0; index < sourceOrder.size(); ++index) {
@@ -438,7 +440,7 @@ WVCheckpointStatus writeTemporary(
                 result = checked(nc_def_grp(forcingRoot, name.c_str(), &group), "Forcing-group definition", "/forcing/" + name);
                 if (!result) return result;
                 forcingGroups.push_back(group);
-                result = defineForcingEntry(group, *sourceOrder[index], rootDimensions, "/forcing/" + name);
+                result = defineForcingEntry(group, *sourceOrder[index], catalog, rootDimensions, "/forcing/" + name);
                 if (!result) return result;
             }
         }
@@ -450,7 +452,7 @@ WVCheckpointStatus writeTemporary(
     if (!result) return result;
     for (std::size_t index = 0; index < sourceOrder.size(); ++index) {
         const std::string groupPath = sourceOrder.size() == 1 ? "/forcing" : "/forcing/forcing-" + std::to_string(index + 1);
-        result = writeForcingEntry(forcingGroups[index], *sourceOrder[index], groupPath);
+        result = writeForcingEntry(forcingGroups[index], *sourceOrder[index], catalog, groupPath);
         if (!result) return result;
     }
     if (injectedFailure.load(std::memory_order_relaxed) == WVCheckpointWriterFailurePoint::afterWrite) return status(WVCheckpointStatusCode::writeFailure, "Injected checkpoint failure after writing.", path.string());
@@ -469,11 +471,11 @@ void setCheckpointWriterFailurePoint(WVCheckpointWriterFailurePoint point) noexc
 
 } // namespace detail
 
-WVCheckpointStatus WVCheckpointWriter::write(const std::string& path, const WVCheckpoint& checkpoint, WVCheckpointCommitPolicy commitPolicy) {
+WVCheckpointStatus WVCheckpointWriter::write(const std::string& path, const WVExtensionCatalog& catalog, const WVCheckpoint& checkpoint, WVCheckpointCommitPolicy commitPolicy) {
     if (path.empty()) return status(WVCheckpointStatusCode::writeFailure, "Checkpoint destination path must not be empty.", path);
     try {
         std::vector<const WVFrozenForcingEntry*> sourceOrder;
-        auto result = validateCheckpoint(checkpoint, sourceOrder);
+        auto result = validateCheckpoint(checkpoint, catalog.forcings(), sourceOrder);
         if (!result) return result;
 
         const std::filesystem::path destination = std::filesystem::absolute(path).lexically_normal();
@@ -488,9 +490,9 @@ WVCheckpointStatus WVCheckpointWriter::write(const std::string& path, const WVCh
         filesystemError.clear();
 
         TemporaryPath temporary(temporaryPathFor(destination));
-        result = writeTemporary(temporary.value(), checkpoint, sourceOrder);
+        result = writeTemporary(temporary.value(), catalog.forcings(), checkpoint, sourceOrder);
         if (!result) return result;
-        result = verifyTemporary(temporary.value().string(), checkpoint);
+        result = verifyTemporary(temporary.value().string(), catalog, checkpoint);
         if (!result) return result;
         if (injectedFailure.load(std::memory_order_relaxed) == WVCheckpointWriterFailurePoint::beforeCommit) return status(WVCheckpointStatusCode::commitFailure, "Injected checkpoint failure before commit.", destination.string());
 

@@ -38,6 +38,7 @@ const std::string *remappedDestination(
 }
 
 WVKernelStatus compileOutputConfiguration(
+    std::shared_ptr<const WVExtensionCatalog> catalog,
     const WVModelOutputNetCDFInspection &inspection,
     const WVModelOutputRequest &request,
     WVModelOutputConfiguration &configuration) {
@@ -119,6 +120,7 @@ WVKernelStatus compileOutputConfiguration(
   }
   return WVModelOutputConfiguration::build(
       inspection.observerRecord, std::move(files), request.policy,
+      std::move(catalog),
       inspection.latestRestart.state.t, request.finalTime, configuration);
 }
 #endif
@@ -220,6 +222,7 @@ public:
       const WVModelIntegratorConfiguration &configuration);
 
   std::unique_ptr<WVConstantStratificationIntegrationSystem> system;
+  std::shared_ptr<const WVExtensionCatalog> catalog;
   std::unique_ptr<WVTimeIntegrator> integrator;
   WVModelIntegratorKind integratorKind = WVModelIntegratorKind::fixedRK4;
 #if !defined(WV_MODEL_ENABLE_OUTPUT) || WV_MODEL_ENABLE_OUTPUT
@@ -257,20 +260,25 @@ WVKernelStatus WVModel::Impl::configureIntegrator(
 }
 
 WVKernelStatus WVModel::create(
+    std::shared_ptr<const WVExtensionCatalog> catalog,
     const WVTransformConstantStratificationConfiguration &configuration,
     const WVFrozenForcingSchedule &forcingSchedule,
     std::unique_ptr<WVFFTEngine> engine,
     const WVModelIntegratorConfiguration &integratorConfiguration,
     WVModel &model) {
+  if (!catalog)
+    return invalid("WVModel requires an extension catalog.");
   try {
     auto candidate = std::make_unique<Impl>();
     auto status = WVConstantStratificationIntegrationSystem::create(
-        configuration, forcingSchedule, std::move(engine), candidate->system);
+        configuration, forcingSchedule, catalog, std::move(engine),
+        candidate->system);
     if (!status)
       return status;
     status = candidate->configureIntegrator(integratorConfiguration);
     if (!status)
       return status;
+    candidate->catalog = std::move(catalog);
     model.impl_ = std::move(candidate);
     return WVKernelStatus::ok();
   } catch (const std::bad_alloc &) {
@@ -280,6 +288,7 @@ WVKernelStatus WVModel::create(
 }
 
 WVKernelStatus WVModel::createFromModelOutputFiles(
+    std::shared_ptr<const WVExtensionCatalog> catalog,
     const std::vector<std::string> &paths,
     const WVModelOutputRequest &outputRequest,
     std::unique_ptr<WVFFTEngine> engine,
@@ -289,12 +298,15 @@ WVKernelStatus WVModel::createFromModelOutputFiles(
   if (paths.empty())
     return invalid("At least one model-output NetCDF path is required.");
   WVModelOutputNetCDFInspection inspection;
-  auto checkpointStatus = WVModelOutputNetCDFSink::inspect(paths, inspection);
+  if (!catalog)
+    return invalid("WVModel requires an extension catalog.");
+  auto checkpointStatus = WVModelOutputNetCDFSink::inspect(paths, *catalog,
+                                                           inspection);
   if (!checkpointStatus)
     return fromCheckpoint(checkpointStatus);
 
   return createFromModelOutputInspection(
-      std::move(inspection), outputRequest, std::move(engine),
+      std::move(catalog), std::move(inspection), outputRequest, std::move(engine),
       integratorConfiguration, model, state);
 #else
   (void)paths;
@@ -309,6 +321,7 @@ WVKernelStatus WVModel::createFromModelOutputFiles(
 }
 
 WVKernelStatus WVModel::createFromModelOutputInspection(
+    std::shared_ptr<const WVExtensionCatalog> catalog,
     WVModelOutputNetCDFInspection inspection,
     const WVModelOutputRequest &outputRequest,
     std::unique_ptr<WVFFTEngine> engine,
@@ -317,12 +330,12 @@ WVKernelStatus WVModel::createFromModelOutputInspection(
 #if !defined(WV_MODEL_ENABLE_OUTPUT) || WV_MODEL_ENABLE_OUTPUT
 
   WVModelOutputConfiguration outputConfiguration;
-  auto status = prepareModelOutput(inspection, outputRequest,
+  auto status = prepareModelOutput(catalog, inspection, outputRequest,
                                    outputConfiguration);
   if (!status)
     return status;
   return createFromModelOutputInspection(
-      std::move(inspection), std::move(outputConfiguration),
+      std::move(catalog), std::move(inspection), std::move(outputConfiguration),
       std::move(engine), integratorConfiguration, model, state);
 #else
   (void)inspection;
@@ -337,11 +350,12 @@ WVKernelStatus WVModel::createFromModelOutputInspection(
 }
 
 WVKernelStatus WVModel::prepareModelOutput(
+    std::shared_ptr<const WVExtensionCatalog> catalog,
     const WVModelOutputNetCDFInspection &inspection,
     const WVModelOutputRequest &outputRequest,
     WVModelOutputConfiguration &configuration) {
 #if !defined(WV_MODEL_ENABLE_OUTPUT) || WV_MODEL_ENABLE_OUTPUT
-  return compileOutputConfiguration(inspection, outputRequest,
+  return compileOutputConfiguration(std::move(catalog), inspection, outputRequest,
                                     configuration);
 #else
   (void)inspection;
@@ -353,6 +367,7 @@ WVKernelStatus WVModel::prepareModelOutput(
 }
 
 WVKernelStatus WVModel::createFromModelOutputInspection(
+    std::shared_ptr<const WVExtensionCatalog> catalog,
     WVModelOutputNetCDFInspection inspection,
     WVModelOutputConfiguration outputConfiguration,
     std::unique_ptr<WVFFTEngine> engine,
@@ -360,17 +375,15 @@ WVKernelStatus WVModel::createFromModelOutputInspection(
     WVModel &model, WVModelState &state) {
 #if !defined(WV_MODEL_ENABLE_OUTPUT) || WV_MODEL_ENABLE_OUTPUT
 
+  if (!catalog || outputConfiguration.catalog() != catalog)
+    return invalid("Prepared output and model must share one extension catalog.");
   auto forcingSchedule = inspection.latestRestart.forcingSchedule;
   if (inspection.isDynamicsLinear)
     forcingSchedule.entries.clear();
-  WVPortableObserverDescriptor descriptor;
-  auto status = WVPortableObserverDescriptor::create(
-      inspection.observerRecord, descriptor);
-  if (!status)
-    return status;
+  const auto &descriptor = outputConfiguration.descriptor();
 
   WVModel candidate;
-  status = WVModel::create(inspection.latestRestart.configuration,
+  auto status = WVModel::create(catalog, inspection.latestRestart.configuration,
                            forcingSchedule, descriptor, std::move(engine),
                            integratorConfiguration, candidate);
   if (!status)
@@ -392,7 +405,7 @@ WVKernelStatus WVModel::createFromModelOutputInspection(
     return status;
 
   WVModelOutputNetCDFConfiguration sinkConfiguration{
-      candidateState.checkpoint(), inspection.isDynamicsLinear};
+      catalog, candidateState.checkpoint(), inspection.isDynamicsLinear};
   auto checkpointStatus = outputConfiguration.openNetCDFSink(
       sinkConfiguration, candidate.stateLayout(), outputEvaluation.get(),
       candidate.impl_->outputSink);
@@ -421,22 +434,30 @@ WVKernelStatus WVModel::createFromModelOutputInspection(
 }
 
 WVKernelStatus WVModel::create(
+    std::shared_ptr<const WVExtensionCatalog> catalog,
     const WVTransformConstantStratificationConfiguration &configuration,
     const WVFrozenForcingSchedule &forcingSchedule,
     const WVPortableObserverDescriptor &observerDescriptor,
     std::unique_ptr<WVFFTEngine> engine,
     const WVModelIntegratorConfiguration &integratorConfiguration,
     WVModel &model) {
+  if (!catalog)
+    return invalid("WVModel requires an extension catalog.");
+  if (observerDescriptor.catalog() != catalog)
+    return invalid("WVModel and its observer descriptor require the same "
+                   "extension catalog.");
   try {
     auto candidate = std::make_unique<Impl>();
     auto status = WVConstantStratificationIntegrationSystem::create(
-        configuration, forcingSchedule, observerDescriptor, std::move(engine),
+        configuration, forcingSchedule, observerDescriptor, catalog,
+        std::move(engine),
         candidate->system);
     if (!status)
       return status;
     status = candidate->configureIntegrator(integratorConfiguration);
     if (!status)
       return status;
+    candidate->catalog = std::move(catalog);
     model.impl_ = std::move(candidate);
     return WVKernelStatus::ok();
   } catch (const std::bad_alloc &) {
@@ -554,6 +575,8 @@ const std::string &WVModel::forcingScheduleIdentifier() const noexcept {
 WVModelMetrics WVModel::metrics(const WVModelState *state) const noexcept {
   WVModelMetrics result;
   result.modelPersistentBytes = sizeof(*this) + sizeof(Impl);
+  result.catalogPersistentBytes =
+      impl_->catalog == nullptr ? 0 : impl_->catalog->persistentBytes();
   result.statePersistentBytes = state == nullptr ? 0 : state->persistentBytes();
   result.integrationSystemPersistentBytes = impl_->system->persistentBytes();
   result.integratorPersistentBytes = impl_->integrator->persistentBytes();
@@ -573,12 +596,18 @@ WVModelMetrics WVModel::metrics(const WVModelState *state) const noexcept {
   result.output = impl_->outputOpen ? impl_->outputSink.metrics()
                                     : impl_->outputMetrics;
   if (impl_->outputConfiguration != nullptr)
-    result.outputPersistentBytes =
-        impl_->outputConfiguration->persistentBytes() +
-        (impl_->outputEvaluation == nullptr
-             ? 0
-             : impl_->outputEvaluation->persistentBytes()) +
-        impl_->outputSink.metrics().retainedStorageBytes;
+    result.outputConfigurationPersistentBytes =
+        impl_->outputConfiguration->persistentBytes();
+  result.outputEvaluationPersistentBytes =
+      impl_->outputEvaluation == nullptr
+          ? 0
+          : impl_->outputEvaluation->persistentBytes();
+  result.outputSinkPersistentBytes =
+      impl_->outputSink.metrics().retainedStorageBytes;
+  result.outputPersistentBytes =
+      result.outputConfigurationPersistentBytes +
+      result.outputEvaluationPersistentBytes +
+      result.outputSinkPersistentBytes;
 #endif
   return result;
 }

@@ -1,6 +1,7 @@
 #include "mex.h"
 
 #include "WVNativeFFTWEngine.hpp"
+#include "WaveVortexRuntime/WVExtensionCatalog.hpp"
 #include "WaveVortexRuntime/WVModel.hpp"
 #include "WaveVortexKernel/WVTransformConstantStratificationKernel.hpp"
 
@@ -75,6 +76,12 @@ const char* statusIdentifier(WVKernelStatusCode code) {
 }
 
 void requireStatus(const WVKernelStatus& status) { if (!status) fail(statusIdentifier(status.code),status.message); }
+
+std::shared_ptr<const WVExtensionCatalog> makeModelCatalog() {
+    std::shared_ptr<const WVExtensionCatalog> catalog;
+    requireStatus(makeBuiltInExtensionCatalog(catalog));
+    return catalog;
+}
 
 std::string stringInput(const mxArray* value, const char* name) {
     if (!mxIsChar(value)) fail("WaveVortexModel:CompiledKernelCommand",std::string(name) + " must be a character vector.");
@@ -237,7 +244,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
         std::unique_ptr<WVFFTEngine> engine;
         requireStatus(WVFFTWEngine::create(static_cast<std::size_t>(mxGetScalar(prhs[2])),engine));
         auto value = std::make_unique<WVModel>();
-        requireStatus(WVModel::create(configuration(prhs[1]),
+        requireStatus(WVModel::create(makeModelCatalog(),configuration(prhs[1]),
                                       defaultNonlinearAdvectionSchedule(),
                                       std::move(engine),{},*value));
         const auto handle = nextHandle++;
@@ -252,7 +259,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
         if (mode == "execution" && nlhs != 1) fail("WaveVortexModel:CompiledKernelCommand","The execution failure mode returns a handle.");
         auto engine = injectedEngine(mode,static_cast<std::size_t>(mxGetScalar(prhs[2])));
         auto value = std::make_unique<WVModel>();
-        requireStatus(WVModel::create(configuration(prhs[1]),
+        requireStatus(WVModel::create(makeModelCatalog(),configuration(prhs[1]),
                                       defaultNonlinearAdvectionSchedule(),
                                       std::move(engine),{},*value));
         const auto handle = nextHandle++;

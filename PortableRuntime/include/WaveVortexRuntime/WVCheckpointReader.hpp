@@ -10,6 +10,8 @@
 
 namespace wavevortex::runtime {
 
+class WVExtensionCatalog;
+
 // Version of the reader contract. This identifier is not written into 4.x files.
 inline constexpr std::uint32_t WVCheckpointProfileVersion = 1;
 inline constexpr const char* WVCheckpointProfileIdentifier = "wave-vortex-4x-v1";
@@ -130,12 +132,14 @@ public:
     // without allocating or reading Ap, Am, or A0.
     static WVCheckpointStatus inspect(
         const std::string& path,
+        const WVExtensionCatalog& catalog,
         WVCheckpointInspection& inspection,
         WVCheckpointStateSelection selection = WVCheckpointStateSelection::latest());
 
     // On failure, checkpoint is unchanged and all NetCDF handles are closed.
     static WVCheckpointStatus read(
         const std::string& path,
+        const WVExtensionCatalog& catalog,
         WVCheckpoint& checkpoint,
         WVCheckpointStateSelection selection = WVCheckpointStateSelection::latest());
 };

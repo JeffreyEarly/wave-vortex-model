@@ -25,6 +25,7 @@ classdef TestCompiledKernelIntegration < matlab.unittest.TestCase
             testCase.verifyEqual(string(testCase.selection.postSelectionExtensions.observationBatches),"issue-260");
             testCase.verifyEqual(string(testCase.selection.postSelectionExtensions.resolvedForcings),"issue-261");
             testCase.verifyEqual(string(testCase.selection.postSelectionExtensions.linearBottomFriction),"issue-262");
+            testCase.verifyEqual(string(testCase.selection.postSelectionExtensions.explicitExtensionCatalog),"issue-271");
             testCase.verifyEqual(testCase.selection.contract.version,4);
             testCase.verifyEqual(string(testCase.selection.contract.coefficientShape),"[Nj,Nkl]");
             testCase.verifyEqual(testCase.selection.contract.planCount,17);
@@ -75,7 +76,11 @@ classdef TestCompiledKernelIntegration < matlab.unittest.TestCase
                 "PortableRuntime/CMakeLists.txt"
                 "PortableRuntime/source-selection.json"
                 "PortableRuntime/buildWaveVortexRun.sh"
+                "PortableRuntime/include/WaveVortexRuntime/WVExtensionCatalog.hpp"
+                "PortableRuntime/include/WaveVortexRuntime/WVRunner.hpp"
+                "PortableRuntime/src/WVExtensionCatalog.cpp"
                 "PortableRuntime/app/WaveVortexRun.cpp"
+                "PortableRuntime/app/WaveVortexRunMain.cpp"
                 "PortableRuntime/app/WVRunRequest.cpp"
                 "PortableRuntime/app/WVRunRequest.hpp"
                 "PortableRuntime/contracts/wave-vortex-run-request-v1.schema.json"

@@ -40,12 +40,14 @@ public:
   static WVKernelStatus create(
       const WVTransformConstantStratificationConfiguration &configuration,
       const WVFrozenForcingSchedule &schedule,
+      std::shared_ptr<const WVExtensionCatalog> catalog,
       std::unique_ptr<WVFFTEngine> engine,
       std::unique_ptr<WVConstantStratificationIntegrationSystem> &system);
   static WVKernelStatus create(
       const WVTransformConstantStratificationConfiguration &configuration,
       const WVFrozenForcingSchedule &schedule,
       const WVPortableObserverDescriptor &descriptor,
+      std::shared_ptr<const WVExtensionCatalog> catalog,
       std::unique_ptr<WVFFTEngine> engine,
       std::unique_ptr<WVConstantStratificationIntegrationSystem> &system);
 
@@ -100,6 +102,7 @@ private:
       const WVTransformConstantStratificationConfiguration &configuration,
       const WVFrozenForcingSchedule &schedule,
       const WVPortableObserverDescriptor *descriptor,
+      std::shared_ptr<const WVExtensionCatalog> catalog,
       std::unique_ptr<WVFFTEngine> engine,
       std::unique_ptr<WVConstantStratificationIntegrationSystem> &system);
   WVConstantStratificationIntegrationSystem() = default;

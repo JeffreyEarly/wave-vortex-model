@@ -1,6 +1,6 @@
 #pragma once
 
-#include "WaveVortexRuntime/WVForcingContracts.hpp"
+#include "WaveVortexRuntime/WVExtensionCatalog.hpp"
 
 #include <cmath>
 #include <memory>
@@ -66,7 +66,7 @@ inline WVKernelStatus createLinearCoefficientForcing(
   return WVKernelStatus::ok();
 }
 
-inline WVForcingFactoryRegistry::Registration
+inline WVForcingFactoryRegistration
 linearCoefficientRegistration() {
   WVForcingPersistenceSchema persistence;
   persistence.writesNameAttribute = true;
@@ -86,9 +86,9 @@ linearCoefficientRegistration() {
           false};
 }
 
-inline WVKernelStatus registerLinearCoefficientForcing() {
-  return WVForcingFactoryRegistry::registerAdapter(
-      linearCoefficientRegistration());
+inline WVKernelStatus registerLinearCoefficientForcing(
+    WVExtensionCatalogBuilder &builder) {
+  return builder.addForcingFactory(linearCoefficientRegistration());
 }
 
 } // namespace wavevortex::runtime::test

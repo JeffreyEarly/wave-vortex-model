@@ -143,9 +143,21 @@ classdef TestReleaseVerification < matlab.unittest.TestCase
             for required = [
                     "CompiledKernel/native-fftw-provider.env"
                     "PortableRuntime/buildWaveVortexRun.sh"
+                    "PortableRuntime/include/WaveVortexRuntime/WVExtensionCatalog.hpp"
+                    "PortableRuntime/include/WaveVortexRuntime/WVRunner.hpp"
+                    "PortableRuntime/src/WVExtensionCatalog.cpp"
                     "PortableRuntime/app/WaveVortexRun.cpp"
+                    "PortableRuntime/app/WaveVortexRunMain.cpp"
                     ]'
                 testCase.verifySubstring(helper,required);
+            end
+            for required = [
+                    "include/WaveVortexRuntime/WVExtensionCatalog.hpp"
+                    "include/WaveVortexRuntime/WVRunner.hpp"
+                    "src/WVExtensionCatalog.cpp"
+                    "app/WaveVortexRunMain.cpp"
+                    ]'
+                testCase.verifySubstring(cmake,required);
             end
             testCase.verifySubstring(buildScript,'repository_root=$(CDPATH= cd -- "$script_directory/.." && pwd)');
             testCase.verifySubstring(cmake,'WaveVortexModel-${WV_RUNTIME_PACKAGE_VERSION}');

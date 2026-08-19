@@ -2,13 +2,16 @@
 
 #include "WaveVortexRuntime/WVObserverContracts.hpp"
 
-#include <deque>
 #include <map>
 #include <memory>
 #include <string>
 #include <vector>
 
-namespace wavevortex::runtime::detail {
+namespace wavevortex::runtime {
+
+class WVExtensionCatalogBuilder;
+
+namespace detail {
 
 enum class WVMovingFieldChannel : std::uint8_t {
   x,
@@ -17,24 +20,17 @@ enum class WVMovingFieldChannel : std::uint8_t {
   tracerValue
 };
 
-const std::deque<std::shared_ptr<const WVObservingSystem>> &
-observerImplementations() noexcept;
-std::shared_ptr<const WVObservingSystem>
-observerImplementation(const std::string &typeIdentifier,
-                       std::uint32_t contractVersion) noexcept;
-WVKernelStatus registerObserverImplementation(
-    std::shared_ptr<const WVObservingSystem> implementation);
-void sealObserverDefinitions() noexcept;
-bool observerDefinitionsSealed() noexcept;
-WVKernelStatus resolveObserverConfiguration(
-    const WVObserverRecord &observer, WVPortableTypedRecord &configuration);
-WVKernelStatus canonicalCoefficientObserver(std::string identifier,
-                                            WVObserverRecord &observer);
+WVKernelStatus addBuiltInObserverFactories(
+    wavevortex::runtime::WVExtensionCatalogBuilder &builder);
+WVKernelStatus canonicalCoefficientObserver(
+    std::string identifier, const WVExtensionCatalog &catalog,
+    WVObserverRecord &observer);
 
 const char *movingFieldChannelName(WVMovingFieldChannel channel) noexcept;
 std::vector<WVMovingFieldChannel>
-movingFieldChannels(const WVObserverRecord &observer);
+particlePositionChannels(bool isXYOnly);
 std::string movingFieldVariableName(const WVObserverRecord &observer,
                                     WVMovingFieldChannel channel);
 
-} // namespace wavevortex::runtime::detail
+} // namespace detail
+} // namespace wavevortex::runtime

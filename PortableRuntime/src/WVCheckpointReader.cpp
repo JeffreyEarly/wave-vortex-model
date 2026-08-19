@@ -1,4 +1,5 @@
 #include "WaveVortexRuntime/WVCheckpointReader.hpp"
+#include "WaveVortexRuntime/WVExtensionCatalog.hpp"
 
 #include "WVForcingScheduleDecoder.hpp"
 #include "WVNetCDF.hpp"
@@ -410,6 +411,7 @@ namespace {
 WVCheckpointStatus inspectOpenFile(
     int rootId,
     WVCheckpointStateSelection selection,
+    const WVExtensionCatalog& catalog,
     WVCheckpointInspection& inspection,
     StateGroupRecord& stateGroup) {
     WVCheckpointInspection candidate;
@@ -465,7 +467,7 @@ WVCheckpointStatus inspectOpenFile(
     std::vector<detail::WVForcingGroupSource> forcingSources;
     result = readForcingHeaders(groups, candidate.metadata.forcingHeaders, forcingSources);
     if (!result) return result;
-    result = detail::decodeForcingSchedule(forcingSources, candidate.configuration, Nj * Nkl, candidate.forcingSchedule);
+    result = detail::decodeForcingSchedule(forcingSources, candidate.configuration, Nj * Nkl, catalog, candidate.forcingSchedule);
     if (!result) return result;
     WVTransformConstantStratificationDescriptor descriptor;
     const auto descriptorStatus = WVTransformConstantStratificationDescriptor::create(candidate.configuration, descriptor);
@@ -479,22 +481,22 @@ WVCheckpointStatus inspectOpenFile(
 
 } // namespace
 
-WVCheckpointStatus WVCheckpointReader::inspect(const std::string& path, WVCheckpointInspection& inspection, WVCheckpointStateSelection selection) {
+WVCheckpointStatus WVCheckpointReader::inspect(const std::string& path, const WVExtensionCatalog& catalog, WVCheckpointInspection& inspection, WVCheckpointStateSelection selection) {
     WVNetCDFFile file;
     auto result = WVNetCDFFile::openReadOnly(path, file);
     if (!result) return result;
     StateGroupRecord stateGroup;
-    return inspectOpenFile(file.id(), selection, inspection, stateGroup);
+    return inspectOpenFile(file.id(), selection, catalog, inspection, stateGroup);
 }
 
-WVCheckpointStatus WVCheckpointReader::read(const std::string& path, WVCheckpoint& checkpoint, WVCheckpointStateSelection selection) {
+WVCheckpointStatus WVCheckpointReader::read(const std::string& path, const WVExtensionCatalog& catalog, WVCheckpoint& checkpoint, WVCheckpointStateSelection selection) {
     WVNetCDFFile file;
     auto result = WVNetCDFFile::openReadOnly(path, file);
     if (!result) return result;
     const int rootId = file.id();
     WVCheckpointInspection inspection;
     StateGroupRecord stateGroup;
-    result = inspectOpenFile(rootId, selection, inspection, stateGroup);
+    result = inspectOpenFile(rootId, selection, catalog, inspection, stateGroup);
     if (!result) return result;
     WVCheckpoint candidate;
     candidate.configuration = inspection.configuration;
