@@ -120,11 +120,17 @@ WVFrozenForcingSchedule nonlinearSchedule() {
     return schedule;
 }
 
-std::unique_ptr<WVConstantStratificationForcingEngine> createEngine(bool hydrostatic, const WVFrozenForcingSchedule& schedule) {
+std::unique_ptr<WVConstantStratificationForcingEngine> createEngine(
+    const WVTransformConstantStratificationConfiguration& value,
+    const WVFrozenForcingSchedule& schedule) {
     std::unique_ptr<WVConstantStratificationForcingEngine> engine;
-    const auto status = WVConstantStratificationForcingEngine::create(configuration(hydrostatic),schedule,std::make_unique<WVReferenceFFTEngine>(),engine);
+    const auto status = WVConstantStratificationForcingEngine::create(value,schedule,std::make_unique<WVReferenceFFTEngine>(),engine);
     require(static_cast<bool>(status),status.message);
     return engine;
+}
+
+std::unique_ptr<WVConstantStratificationForcingEngine> createEngine(bool hydrostatic, const WVFrozenForcingSchedule& schedule) {
+    return createEngine(configuration(hydrostatic),schedule);
 }
 
 std::unique_ptr<WVConstantStratificationIntegrationSystem> createSystem(
@@ -181,6 +187,16 @@ bool exactlyEqual(const std::vector<WVComplex64>& first, const std::vector<WVCom
         if (first[index].real != second[index].real || first[index].imag != second[index].imag) return false;
     }
     return true;
+}
+
+double maximumDifference(const std::vector<WVComplex64>& first, const std::vector<WVComplex64>& second) {
+    require(first.size() == second.size(),"coefficient vectors have different sizes");
+    double result = 0.0;
+    for (std::size_t index = 0; index < first.size(); ++index) {
+        result = std::max(result,std::abs(first[index].real-second[index].real));
+        result = std::max(result,std::abs(first[index].imag-second[index].imag));
+    }
+    return result;
 }
 
 void testNonlinearCompatibility(bool hydrostatic) {
@@ -322,6 +338,131 @@ void testSourceLinkedLinearCoefficientExtension() {
     }
 }
 
+void testLinearBottomFrictionFormula(bool hydrostatic, std::size_t Nz, double rate) {
+    auto value = configuration(hydrostatic);
+    value.Nz = Nz;
+    value.Nj = Nz-1;
+    auto drag = forcingConfiguration();
+    drag.values.push_back(realValue("r",{rate}));
+    WVFrozenForcingSchedule schedule;
+    schedule.entries.push_back(entry("WVBottomFrictionLinear","linear bottom friction",WVForcingStage::spatial,255,std::move(drag)));
+    auto engine = createEngine(value,schedule);
+    OwnedState state(engine->kernel().descriptor().spectralShape());
+    const auto spatial = engine->kernel().descriptor().spatialShape();
+    const auto R = spatial.elementCount();
+    const auto q = hydrostatic ? 3U : 4U;
+    std::vector<WVComplex64> actual(3*state.shape.elementCount()),expected(actual.size());
+    auto actualFlux = fluxView(actual,state.shape);
+    auto status = engine->nonlinearFlux(state.view(),actualFlux);
+    require(static_cast<bool>(status),"linear bottom friction failed: "+status.message);
+
+    std::vector<double> fields(4*R),tendency(q*R);
+    WVRealFieldBundleView fieldView{fields.data(),{spatial.first,spatial.second,spatial.third,4}};
+    status = engine->kernel().transformWaveVortexToUVWEta(state.view(),fieldView);
+    require(static_cast<bool>(status),"linear bottom-friction control reconstruction failed");
+    const double scaledRate = 2.0*static_cast<double>(Nz-1)*rate;
+    const auto horizontalCount = value.Nx*value.Ny;
+    for (std::size_t index = 0; index < horizontalCount; ++index) {
+        tendency[index] = -scaledRate*fields[index];
+        tendency[R+index] = -scaledRate*fields[R+index];
+    }
+    auto expectedFlux = fluxView(expected,state.shape);
+    WVMutableCoefficients expectedCoefficients{expectedFlux.Fp,expectedFlux.Fm,expectedFlux.F0};
+    const WVRealFieldBundleConstView tendencyView{tendency.data(),{spatial.first,spatial.second,spatial.third,q}};
+    status = hydrostatic ? engine->kernel().transformUVEtaToWaveVortex(tendencyView,state.t,state.t0,expectedCoefficients) : engine->kernel().transformUVWEtaToWaveVortex(tendencyView,state.t,state.t0,expectedCoefficients);
+    require(static_cast<bool>(status),"linear bottom-friction control projection failed");
+    require(maximumDifference(actual,expected) <= 1e-12,"linear bottom-friction tendency differs from the MATLAB formula");
+    if (rate == 0.0) {
+        for (const auto coefficient : actual) require(coefficient.real == 0.0 && coefficient.imag == 0.0,"zero linear drag produced a nonzero tendency");
+    }
+    const double expectedWeight = value.Lz/(2.0*static_cast<double>(Nz-1));
+    require(engine->kernel().descriptor().bottomQuadratureWeight() == expectedWeight,"descriptor bottom quadrature weight changed");
+    require(engine->kernel().descriptor().verticalModes().bottomQuadratureWeight == expectedWeight,"descriptor did not retain its bottom quadrature weight");
+    require(engine->metrics().workspaceCapacityBytes == (4+q)*R*sizeof(double),"linear friction added storage beyond the shared physical and tendency fields");
+    require(engine->metrics().physicalFieldReconstructionCount == 1 && engine->metrics().spatialTendencyProjectionCount == 1,"linear friction did not use one reconstruction and one generic projection");
+}
+
+void testSharedBottomFrictionOperations(bool hydrostatic) {
+    WVFrozenForcingSchedule schedule;
+    auto linear = forcingConfiguration(); linear.values.push_back(realValue("r",{2.5e-7}));
+    auto quadratic = forcingConfiguration(); quadratic.values.push_back(realValue("Cd",{1.7e-3}));
+    schedule.entries.push_back(entry("WVBottomFrictionLinear","linear",WVForcingStage::spatial,129,std::move(linear)));
+    schedule.entries.push_back(entry("WVBottomFrictionQuadratic","quadratic",WVForcingStage::spatial,128,std::move(quadratic)));
+    schedule.entries.push_back(entry("WVNonlinearAdvection","nonlinear",WVForcingStage::spatial,127));
+    auto engine = createEngine(hydrostatic,schedule);
+    OwnedState state(engine->kernel().descriptor().spectralShape());
+    std::vector<WVComplex64> values(3*state.shape.elementCount());
+    auto flux = fluxView(values,state.shape);
+    const auto spatial = engine->kernel().descriptor().spatialShape();
+    const auto R = spatial.elementCount();
+    std::vector<double> fields(3*R);
+    WVRealFieldBundleView fieldView{fields.data(),{spatial.first,spatial.second,spatial.third,3}};
+    WVConstantStratificationRightHandSideContext context;
+    const auto status = engine->evaluateRightHandSideWithContext(state.view(),flux,fieldView,context);
+    require(static_cast<bool>(status),"ordered shared bottom-friction evaluation failed: "+status.message);
+    requireFinite(values,"shared bottom-friction evaluation produced non-finite output");
+    require(engine->scheduleIdentifier() == "wave-vortex-forcing-v1:WVNonlinearAdvection,WVBottomFrictionQuadratic,WVBottomFrictionLinear","stage/priority ordering did not select the exact active pairs");
+    require(engine->metrics().physicalFieldReconstructionCount == 1,"nonlinear and bottom-friction forcings redundantly reconstructed physical fields");
+    require(engine->metrics().physicalFieldReuseCount >= 2,"bottom-friction forcings did not reuse nonlinear-advection physical fields");
+    require(engine->metrics().spatialTendencyProjectionCount == 2,"bottom-friction forcings did not share generic projection");
+    const auto q = hydrostatic ? 3U : 4U;
+    require(engine->metrics().spatialTendencyClearElementWrites == 2*q*R,"bottom-friction forcings did not clear the shared tendency exactly once each");
+}
+
+void testLinearBottomFrictionIntegrationAndFailures(bool hydrostatic) {
+    auto drag = forcingConfiguration(); drag.values.push_back(realValue("r",{2.5e-7}));
+    auto schedule = nonlinearSchedule();
+    schedule.entries.push_back(entry("WVBottomFrictionLinear","linear",WVForcingStage::spatial,255,std::move(drag)));
+    auto fixedSystem = createSystem(hydrostatic,schedule);
+    OwnedState fixedState(fixedSystem->kernel().descriptor().spectralShape());
+    auto fixedView = fixedState.integrationView();
+    WVFixedStepRK4 fixed(*fixedSystem);
+    auto status = fixed.prepareStateAfterRestart(fixedView);
+    require(static_cast<bool>(status),"linear-friction RK4 restart preparation failed");
+    status = fixed.advanceToTime(fixedView,0.52,0.01);
+    require(static_cast<bool>(status),"linear-friction RK4 continuation failed");
+    requireFinite(fixedState.values,"linear-friction RK4 produced non-finite state");
+
+    auto adaptiveSystem = createSystem(hydrostatic,schedule);
+    OwnedState adaptiveState(adaptiveSystem->kernel().descriptor().spectralShape());
+    auto adaptiveView = adaptiveState.integrationView();
+    WVAdaptiveRK23Options options;
+    options.relativeTolerance = 1e-7;
+    options.absoluteToleranceScale = 1e-10;
+    options.maximumStepSize = 0.01;
+    WVAdaptiveRK23 adaptive(*adaptiveSystem,options);
+    status = adaptive.prepareStateAfterRestart(adaptiveView);
+    require(static_cast<bool>(status),"linear-friction RK23 restart preparation failed");
+    status = adaptive.advanceToTime(adaptiveView,0.52,0.01);
+    require(static_cast<bool>(status),"linear-friction RK23 continuation failed");
+    requireFinite(adaptiveState.values,"linear-friction RK23 produced non-finite state");
+
+    auto invalidSchedule = schedule;
+    invalidSchedule.entries.back().configuration.values.front() = realValue("r",{-1.0});
+    std::unique_ptr<WVConstantStratificationForcingEngine> invalidEngine;
+    status = WVConstantStratificationForcingEngine::create(configuration(hydrostatic),invalidSchedule,std::make_unique<WVReferenceFFTEngine>(),invalidEngine);
+    require(!status && !invalidEngine,"negative linear drag was accepted");
+    invalidSchedule = schedule;
+    invalidSchedule.entries.back().contractVersion = WVPortablePairContractVersion+1;
+    status = WVConstantStratificationForcingEngine::create(configuration(hydrostatic),invalidSchedule,std::make_unique<WVReferenceFFTEngine>(),invalidEngine);
+    require(!status && !invalidEngine,"linear drag contract-version mismatch was accepted");
+
+    WVFrozenForcingSchedule failureSchedule;
+    auto failureDrag = forcingConfiguration(); failureDrag.values.push_back(realValue("r",{2.5e-7}));
+    failureSchedule.entries.push_back(entry("WVBottomFrictionLinear","linear",WVForcingStage::spatial,255,std::move(failureDrag)));
+    auto counter = std::make_shared<FailureCounter>();
+    counter->failAt = 1;
+    auto failingSystem = createSystem(hydrostatic,failureSchedule,std::make_unique<FailingEngine>(counter));
+    OwnedState failed(failingSystem->kernel().descriptor().spectralShape());
+    const auto originalValues = failed.values;
+    const auto originalTime = failed.t;
+    auto failedView = failed.integrationView();
+    WVFixedStepRK4 failingIntegrator(*failingSystem);
+    status = failingIntegrator.step(failedView,0.01);
+    require(status.code == WVKernelStatusCode::fftExecutionFailure,"linear-friction reconstruction failure was not preserved");
+    require(exactlyEqual(failed.values,originalValues) && failedView.waveVortex.t == originalTime,"failed linear-friction step modified accepted state");
+}
+
 void testQuadraticAndPseudo(bool hydrostatic) {
     WVPseudoTopographicConfiguration pseudo;
     pseudo.topographicShape = {6,5};
@@ -420,6 +561,14 @@ int main() {
         testRK4DeterminismRestartAndFailure();
         testSpectralForcing();
         testSourceLinkedLinearCoefficientExtension();
+        testLinearBottomFrictionFormula(true,5,0.0);
+        testLinearBottomFrictionFormula(false,5,2.5e-7);
+        testLinearBottomFrictionFormula(true,9,2.5e-7);
+        testLinearBottomFrictionFormula(false,9,2.5e-7);
+        testSharedBottomFrictionOperations(true);
+        testSharedBottomFrictionOperations(false);
+        testLinearBottomFrictionIntegrationAndFailures(true);
+        testLinearBottomFrictionIntegrationAndFailures(false);
         testQuadraticAndPseudo(true);
         testQuadraticAndPseudo(false);
         testMultipleWholeFluxProducers();

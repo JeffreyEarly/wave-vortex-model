@@ -20,6 +20,10 @@ WVKernelStatus createQuadraticBottomFriction(
     const WVFrozenForcingEntry &,
     const WVTransformConstantStratificationDescriptor &, bool,
     std::unique_ptr<WVForcing> &);
+WVKernelStatus createLinearBottomFriction(
+    const WVFrozenForcingEntry &,
+    const WVTransformConstantStratificationDescriptor &, bool,
+    std::unique_ptr<WVForcing> &);
 WVKernelStatus createPseudoTopographicForcing(
     const WVFrozenForcingEntry &,
     const WVTransformConstantStratificationDescriptor &, bool,

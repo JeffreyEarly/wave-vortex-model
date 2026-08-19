@@ -13,7 +13,7 @@ The initial contract is `wave-vortex-portable-pair-v1`. Every paired observer or
 
 MATLAB observers expose this record through the developer-facing `portableImplementationContract()` method. The base `WVObservingSystem` implementation reports `unavailable`; each supported concrete class returns its exact MATLAB class name and contract version. A subclass cannot inherit portability accidentally because a contract whose type identifier differs from `class(observer)` is invalid.
 
-MATLAB forcings use the same hook and exact-class rule. `WVForcing` defaults to `unavailable`; the six portable forcing classes return their immutable typed configuration. Shared envelope validation lives in `WVInternal.portableImplementationContract`, while observers and forcings retain separate typed registries and behavior contracts.
+MATLAB forcings use the same hook and exact-class rule. `WVForcing` defaults to `unavailable`; the seven portable forcing classes return their immutable typed configuration. Shared envelope validation lives in `WVInternal.portableImplementationContract`, while observers and forcings retain separate typed registries and behavior contracts.
 
 Shared scientific variables follow the [portable variable metadata contract](portable-variable-metadata.md). MATLAB annotations remain authoritative, while the C++ runtime resolves field names to generated ordinals during construction.
 
@@ -23,7 +23,7 @@ The runtime resolves type identifiers, versions, dependencies, layouts, and disp
 
 Observer registrations must be installed before the first portable observer descriptor is constructed. Descriptor construction seals the process registry, making later or concurrent registration a deterministic error. Registration binds a paired identity to one immutable, source-linked C++ `WVObservingSystem` implementation. The descriptor retains the resolved implementation, so integration and output routes use pointers and variable ordinals rather than repeating class-name lookup. Registration does not give the observer ownership of NetCDF definition or writing.
 
-Forcing registrations follow the same lifetime rule and are sealed when a frozen schedule is decoded or validated. A registration maps an exact MATLAB identity and version to an existing typed payload and execution operation. Stage, priority, derived operators, tendency behavior, and post-step constraints are therefore resolved before integration; the forcing engine executes operation enums rather than MATLAB class names.
+Forcing registrations follow the same lifetime rule and are sealed when a frozen schedule is decoded or validated. A registration maps an exact MATLAB identity and version to an immutable source-linked implementation. Stage, priority, derived operators, tendency behavior, and post-step constraints are therefore resolved before integration; the forcing engine invokes coarse implementation operations rather than dispatching on MATLAB class names.
 
 Configuration descriptors are immutable after construction. Evolving particle, tracer, forcing, and coefficient values live in explicit integration-state blocks. Observer output is produced through the existing output plan, driver, and sinks; observers do not define or write NetCDF storage themselves.
 

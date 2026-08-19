@@ -24,10 +24,11 @@ classdef TestPortableForcingContracts < matlab.unittest.TestCase
                 WVNonlinearAdvection(testCase.wvt), ...
                 WVAdaptiveDamping(testCase.wvt), ...
                 fixed, ...
+                WVBottomFrictionLinear(testCase.wvt), ...
                 WVBottomFrictionQuadratic(testCase.wvt), ...
                 pseudo, ...
                 WVBetaPlanePVAdvection(testCase.wvt)};
-            expected = ["WVNonlinearAdvection" "WVAdaptiveDamping" "WVFixedAmplitudeForcing" "WVBottomFrictionQuadratic" "WVPseudoTopographicWaveGeneration" "WVBetaPlanePVAdvection"];
+            expected = ["WVNonlinearAdvection" "WVAdaptiveDamping" "WVFixedAmplitudeForcing" "WVBottomFrictionLinear" "WVBottomFrictionQuadratic" "WVPseudoTopographicWaveGeneration" "WVBetaPlanePVAdvection"];
             for iForcing = 1:numel(forcings)
                 contract = forcings{iForcing}.portableImplementationContract();
                 testCase.verifyEqual(contract.schemaIdentifier,"wave-vortex-portable-pair-v1");
@@ -38,6 +39,17 @@ classdef TestPortableForcingContracts < matlab.unittest.TestCase
                 testCase.verifyEqual(contract.reason,"");
                 testCase.verifyTrue(isscalar(contract));
             end
+        end
+
+        function linearBottomFrictionContractPersistsOnlyConfiguredRate(testCase)
+            forcing = WVBottomFrictionLinear(testCase.wvt,r=2.5e-7);
+            contract = forcing.portableImplementationContract();
+            testCase.verifyEqual(contract.typeIdentifier,"WVBottomFrictionLinear");
+            testCase.verifyEqual(contract.payload.r,2.5e-7);
+            testCase.verifyFalse(isfield(contract.payload,"r_scaled"));
+            testCase.verifyEqual(forcing.r_scaled,2*(testCase.wvt.Nz-1)*forcing.r,RelTol=10*eps);
+            testCase.verifyError(@()WVBottomFrictionLinear(testCase.wvt,r=Inf),"MATLAB:validators:mustBeFinite");
+            testCase.verifyError(@()WVBottomFrictionLinear(testCase.wvt,r=-eps),"MATLAB:validators:mustBeNonnegative");
         end
 
         function inheritedContractCannotAdvertiseParentClass(testCase)

@@ -52,7 +52,7 @@ classdef WVBottomFrictionLinear < WVForcing
     % - Topic: Forcing persistence
     %
     % - Declaration: WVBottomFrictionLinear < [WVForcing](/classes/forcing/wvforcing/)
-    properties
+    properties (SetAccess = private)
         % Configured linear drag rate in $$\mathrm{s^{-1}}$$.
         %
         % The constructor default is `1/(200*86400)`, corresponding to a
@@ -71,6 +71,17 @@ classdef WVBottomFrictionLinear < WVForcing
     end
 
     methods
+        function contract = portableImplementationContract(self)
+            % Return the paired portable implementation contract.
+            %
+            % - Topic: Forcing persistence
+            % - Declaration: contract = portableImplementationContract(self)
+            % - Returns contract: versioned data-only forcing contract
+            % - Developer: true
+            payload = struct("name",string(self.name),"forcingTypes",string(self.forcingType),"priority",self.priority,"r",double(self.r));
+            contract = self.supportedPortableImplementationContract("WVBottomFrictionLinear",payload);
+        end
+
         function self = WVBottomFrictionLinear(wvt,options)
             % Create linear bottom friction for a transform.
             %
@@ -85,7 +96,7 @@ classdef WVBottomFrictionLinear < WVForcing
             % - Returns self: linear bottom-friction forcing owned by `wvt`
             arguments
                 wvt WVTransform {mustBeNonempty}
-                options.r (1,1) double {mustBeNonnegative} = 1/(200*86400) % linear bottom friction, try 1/(200*86400) https://www.nemo-ocean.eu/doc/node70.html
+                options.r (1,1) double {mustBeReal,mustBeFinite,mustBeNonnegative} = 1/(200*86400) % linear bottom friction, try 1/(200*86400) https://www.nemo-ocean.eu/doc/node70.html
             end
             self@WVForcing(wvt,"linear bottom friction",WVForcingType(["HydrostaticSpatial" "NonhydrostaticSpatial" "PVSpatial"]));
             self.r = options.r;
