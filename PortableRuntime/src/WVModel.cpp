@@ -37,13 +37,22 @@ const std::string *remappedDestination(
   return found == destinations.end() ? nullptr : &found->path;
 }
 
+bool sameObservationSchema(const WVObservationSchema &left,
+                           const WVObservationSchema &right) {
+  std::vector<std::uint8_t> leftBytes;
+  std::vector<std::uint8_t> rightBytes;
+  return encodeObservationSchemaManifest(left, leftBytes) &&
+         encodeObservationSchemaManifest(right, rightBytes) &&
+         leftBytes == rightBytes;
+}
+
 WVKernelStatus compileOutputConfiguration(
     std::shared_ptr<const WVExtensionCatalog> catalog,
     const WVModelOutputNetCDFInspection &inspection,
     const WVModelOutputRequest &request,
     WVModelOutputConfiguration &configuration) {
   if (!std::isfinite(request.finalTime) ||
-      request.finalTime < inspection.latestRestart.state.t)
+      request.finalTime < inspection.latestRestart.t)
     return invalid("The output request final time must be finite and cannot "
                    "precede the selected restart state.");
   std::set<std::string> requestedIdentifiers;
@@ -60,68 +69,54 @@ WVKernelStatus compileOutputConfiguration(
     return invalid("Output destination remapping requires one destination for "
                    "every output-file identifier.");
 
-  std::vector<WVModelOutputFile> files;
-  files.reserve(inspection.observerRecord.outputFiles.size());
-  for (const auto &record : inspection.observerRecord.outputFiles) {
+  auto observerRecord = inspection.observerRecord;
+  std::set<std::string> normalizedDestinations;
+  for (auto &record : observerRecord.outputFiles) {
     const auto *mapped = remappedDestination(request.destinations,
                                              record.identifier);
     if (mapped == nullptr && !request.destinations.empty())
       return invalid("The output destination map is incomplete.");
     const std::string &path = mapped == nullptr ? record.destination : *mapped;
-    WVModelOutputFile file;
-    auto status = WVModelOutputFile::create(path, file, record.identifier);
-    if (!status)
-      return status;
-    for (const auto &groupRecord : record.groups) {
-      WVModelOutputGroup *group = nullptr;
-      status = file.addNewEvenlySpacedOutputGroup(
-          groupRecord.name, groupRecord.schedule.outputInterval,
-          groupRecord.schedule.initialTime, groupRecord.schedule.finalTime,
-          group, groupRecord.identifier);
-      if (!status)
-        return status;
-      for (const auto &observer : groupRecord.observerIdentifiers) {
-        status = group->addObservingSystem(observer);
-        if (!status)
-          return status;
-      }
-      status = group->containsCompleteCoefficientRestart(
-          groupRecord.containsCompleteCoefficientRestart);
-      if (!status)
-        return status;
-      if (request.policy == WVModelOutputPolicy::append) {
-        const auto progress = std::find_if(
-            inspection.progress.begin(), inspection.progress.end(),
-            [&](const auto &candidate) {
-              return candidate.fileIdentifier == record.identifier &&
-                     candidate.groupIdentifier == groupRecord.identifier;
-            });
-        if (progress == inspection.progress.end())
-          return invalid("The inspected output graph has incomplete committed "
-                         "progress.");
-        status = group->committedOrdinal(progress->committedOrdinal);
-        if (!status)
-          return status;
+    try {
+      record.destination =
+          std::filesystem::absolute(std::filesystem::path(path))
+              .lexically_normal()
+              .string();
+    } catch (const std::exception &error) {
+      return invalid(std::string("The output destination cannot be resolved: ") +
+                     error.what());
+    }
+    if (!normalizedDestinations.insert(record.destination).second)
+      return invalid("Output destinations must not alias each other.");
+    if (request.policy != WVModelOutputPolicy::append) {
+      for (const auto &source : inspection.paths) {
+        const auto normalizedSource =
+            std::filesystem::absolute(std::filesystem::path(source))
+                .lexically_normal()
+                .string();
+        if (record.destination == normalizedSource)
+          return invalid("Create and replace destinations must not alias a "
+                         "source model-output file.");
       }
     }
-    files.push_back(std::move(file));
   }
   if (requestedIdentifiers.size() != request.destinations.size())
     return invalid("The output destination map is invalid.");
   for (const auto &identifier : requestedIdentifiers) {
     const auto found = std::find_if(
-        inspection.observerRecord.outputFiles.begin(),
-        inspection.observerRecord.outputFiles.end(), [&](const auto &file) {
+        observerRecord.outputFiles.begin(), observerRecord.outputFiles.end(),
+        [&](const auto &file) {
           return file.identifier == identifier;
         });
-    if (found == inspection.observerRecord.outputFiles.end())
+    if (found == observerRecord.outputFiles.end())
       return invalid("The output destination map contains an unknown file "
                      "identifier.");
   }
-  return WVModelOutputConfiguration::build(
-      inspection.observerRecord, std::move(files), request.policy,
-      std::move(catalog),
-      inspection.latestRestart.state.t, request.finalTime, configuration);
+  return WVModelOutputConfiguration::compile(
+      std::move(observerRecord), inspection.observationSchemas,
+      inspection.scheduleContinuations, request.policy, std::move(catalog),
+      inspection.latestRestart.t, request.finalTime, configuration,
+      &inspection.latestRestart.configuration, inspection.isDynamicsLinear);
 }
 #endif
 
@@ -230,6 +225,9 @@ public:
   std::unique_ptr<WVObserverOutputEvaluationService> outputEvaluation;
   WVModelOutputNetCDFSink outputSink;
   WVModelOutputNetCDFMetrics outputMetrics;
+  std::unique_ptr<WVOutputDriver> outputDriver;
+  const WVOutputPlan *outputDriverPlan = nullptr;
+  WVOutputSink *outputDriverSink = nullptr;
   double outputFinalTime = 0.0;
   bool outputOpen = false;
 #endif
@@ -389,10 +387,18 @@ WVKernelStatus WVModel::createFromModelOutputInspection(
   if (!status)
     return status;
 
+  WVCheckpoint restoredCheckpoint;
+  WVAdditionalStateStorage restoredAdditionalState;
+  auto checkpointStatus = WVModelOutputNetCDFSink::restoreState(
+      inspection, *catalog, candidate.stateLayout(), restoredCheckpoint,
+      restoredAdditionalState);
+  if (!checkpointStatus)
+    return fromCheckpoint(checkpointStatus);
+
   WVModelState candidateState;
-  status = WVModelState::create(std::move(inspection.latestRestart),
+  status = WVModelState::create(std::move(restoredCheckpoint),
                                 candidate.stateLayout(), candidateState,
-                                &inspection.additionalState);
+                                &restoredAdditionalState);
   if (!status)
     return status;
 
@@ -403,10 +409,27 @@ WVKernelStatus WVModel::createFromModelOutputInspection(
       candidate.impl_->system->fieldEvaluationService());
   if (!status)
     return status;
+  for (const auto &declared : outputConfiguration.observationSchemas()) {
+    const auto observer = std::find_if(
+        descriptor.observers().begin(), descriptor.observers().end(),
+        [&](const auto &candidateObserver) {
+          return candidateObserver.identifier == declared.observerIdentifier;
+        });
+    if (observer == descriptor.observers().end())
+      return invalid("A declared observation schema references an unknown "
+                     "compiled observer.");
+    WVObservationSchema resolvedSchema;
+    status = outputEvaluation->observationSchema(*observer, resolvedSchema);
+    if (!status)
+      return status;
+    if (!sameObservationSchema(declared.schema, resolvedSchema))
+      return invalid("The resolved observer schema differs from the canonical "
+                     "schema restored from NetCDF.");
+  }
 
   WVModelOutputNetCDFConfiguration sinkConfiguration{
       catalog, candidateState.checkpoint(), inspection.isDynamicsLinear};
-  auto checkpointStatus = outputConfiguration.openNetCDFSink(
+  checkpointStatus = outputConfiguration.openNetCDFSink(
       sinkConfiguration, candidate.stateLayout(), outputEvaluation.get(),
       candidate.impl_->outputSink);
   if (!checkpointStatus)
@@ -514,8 +537,12 @@ WVCheckpointStatus WVModel::closeOutput() noexcept {
     return WVCheckpointStatus::ok();
   const auto status = impl_->outputSink.close();
   impl_->outputMetrics = impl_->outputSink.metrics();
-  if (status)
+  if (status) {
+    impl_->outputDriver.reset();
+    impl_->outputDriverPlan = nullptr;
+    impl_->outputDriverSink = nullptr;
     impl_->outputOpen = false;
+  }
   return status;
 #else
   return WVCheckpointStatus::ok();
@@ -536,13 +563,30 @@ WVKernelStatus WVModel::advanceToTime(WVModelState &state, double finalTime,
                                       WVOutputSink &sink) {
 #if !defined(WV_MODEL_ENABLE_OUTPUT) || WV_MODEL_ENABLE_OUTPUT
   auto view = state.mutableView();
-  WVOutputDriver driver(*impl_->integrator, plan);
-  const auto status =
-      driver.advanceToTime(view, finalTime, initialStepSize, sink);
-  impl_->outputDriverMetrics = driver.metrics();
+  if (impl_->outputDriver == nullptr) {
+    try {
+      impl_->outputDriver =
+          std::make_unique<WVOutputDriver>(*impl_->integrator, plan);
+    } catch (const std::bad_alloc &) {
+      return {WVKernelStatusCode::allocationFailure,
+              "WVModel output-driver allocation failed."};
+    }
+    impl_->outputDriverPlan = &plan;
+    impl_->outputDriverSink = &sink;
+  } else if (impl_->outputDriverPlan != &plan ||
+             impl_->outputDriverSink != &sink) {
+    return invalid("A failed output delivery must be retried with the same "
+                   "output plan and sink.");
+  }
+  const auto status = impl_->outputDriver->advanceToTime(
+      view, finalTime, initialStepSize, sink);
+  impl_->outputDriverMetrics = impl_->outputDriver->metrics();
+  state.checkpoint().state.t = view.waveVortex.t;
+  state.checkpoint().state.t0 = view.waveVortex.t0;
   if (status) {
-    state.checkpoint().state.t = view.waveVortex.t;
-    state.checkpoint().state.t0 = view.waveVortex.t0;
+    impl_->outputDriver.reset();
+    impl_->outputDriverPlan = nullptr;
+    impl_->outputDriverSink = nullptr;
   }
   return status;
 #else

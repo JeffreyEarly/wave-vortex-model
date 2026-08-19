@@ -28,6 +28,14 @@ bool legacyObservationAttributeMatches(std::string_view name,
                                        std::string_view expected,
                                        std::string_view observed) noexcept;
 
+// Validate availability and cross-group equality of dynamic restart state
+// with bounded scratch storage. Only fixed configuration coordinates already
+// retained by the observer record are materialized.
+WVCheckpointStatus inspectPersistedObserverRestartState(
+    const std::vector<WVOutputFileRecord> &files,
+    std::vector<WVObserverRecord> &observers, double selectedTime,
+    const WVExtensionCatalog &catalog);
+
 WVCheckpointStatus resolvePersistedObserverRestartState(
     const std::vector<WVOutputFileRecord> &files,
     std::vector<WVObserverRecord> &observers, double selectedTime,

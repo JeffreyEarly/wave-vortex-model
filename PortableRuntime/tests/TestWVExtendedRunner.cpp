@@ -8,7 +8,7 @@
 
 using namespace wavevortex::runtime;
 
-int main() {
+int main(int argc, char **argv) {
   WVExtensionCatalogBuilder builder;
   auto status = addBuiltInExtensions(builder);
   if (status)
@@ -23,12 +23,13 @@ int main() {
     return EXIT_FAILURE;
   }
 
+  if (argc > 1)
+    return runWaveVortex(argc, argv, std::move(catalog));
+
   // Exercise the exact public entry point through its deterministic usage
   // path. The standalone executable remains a thin built-in-only caller.
-  char program[] = "wave-vortex-extended-runner-test";
-  char *arguments[] = {program};
   constexpr int usageExitCode = 2;
-  if (runWaveVortex(1, arguments, std::move(catalog)) != usageExitCode) {
+  if (runWaveVortex(argc, argv, std::move(catalog)) != usageExitCode) {
     std::cerr << "The extended runner entry did not return its usage code.\n";
     return EXIT_FAILURE;
   }

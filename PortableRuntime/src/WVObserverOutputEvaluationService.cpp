@@ -136,7 +136,7 @@ public:
 
   WVTransformConstantStratificationConfiguration configuration;
   bool isDynamicsLinear = false;
-  WVPortableObserverRecord descriptor;
+  WVPortableObserverDescriptor descriptor;
   std::unique_ptr<WVFieldEvaluationService> ownedFields;
   WVFieldEvaluationService *fields = nullptr;
   WVFieldEvaluationPlan initialFieldPlan;
@@ -331,7 +331,8 @@ WVKernelStatus WVObserverOutputEvaluationService::create(
     auto &impl = *candidate->impl_;
     impl.configuration = configuration;
     impl.isDynamicsLinear = isDynamicsLinear;
-    impl.descriptor = descriptor.record();
+    impl.descriptor = descriptor;
+    const auto &descriptorRecord = impl.descriptor.record();
     WVKernelStatus status;
     if (borrowedFieldEvaluationService == nullptr) {
       status = WVFieldEvaluationService::create(configuration, std::move(engine),
@@ -345,8 +346,8 @@ WVKernelStatus WVObserverOutputEvaluationService::create(
 
     WVObserverOutputPlanningContext planningContext;
     planningContext.configuration = &configuration;
-    planningContext.stateBlocks = impl.descriptor.stateBlocks.data();
-    planningContext.stateBlockCount = impl.descriptor.stateBlocks.size();
+    planningContext.stateBlocks = descriptorRecord.stateBlocks.data();
+    planningContext.stateBlockCount = descriptorRecord.stateBlocks.size();
     planningContext.isDynamicsLinear = isDynamicsLinear;
     std::vector<WVFieldRequest> initialRequests;
     std::vector<WVFieldRequest> timeSeriesRequests;
@@ -354,8 +355,8 @@ WVKernelStatus WVObserverOutputEvaluationService::create(
     std::map<std::string, std::size_t> timeSeriesRequestIndex;
     std::vector<WVMovingFieldRequest> movingRequests;
 
-    for (const auto &observer : impl.descriptor.observers) {
-      const auto *resolved = descriptor.resolvedObserver(observer);
+    for (const auto &observer : descriptorRecord.observers) {
+      const auto *resolved = impl.descriptor.resolvedObserver(observer);
       if (resolved == nullptr)
         return {WVKernelStatusCode::unsupportedOperation,
                 "Observer output evaluation received an unresolved observer."};

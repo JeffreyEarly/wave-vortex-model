@@ -649,9 +649,9 @@ int wavevortex::runtime::runWaveVortex(
             inspection.configuration =
                 modelInspection.latestRestart.configuration;
             inspection.coefficientShape =
-                modelInspection.latestRestart.state.coefficients.shape;
-            inspection.t = modelInspection.latestRestart.state.t;
-            inspection.t0 = modelInspection.latestRestart.state.t0;
+                modelInspection.latestRestart.coefficientShape;
+            inspection.t = modelInspection.latestRestart.t;
+            inspection.t0 = modelInspection.latestRestart.t0;
             inspection.metadata = modelInspection.latestRestart.metadata;
             inspection.forcingSchedule =
                 modelInspection.latestRestart.forcingSchedule;

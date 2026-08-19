@@ -1,4 +1,5 @@
 #include "WaveVortexRuntime/WVExtensionCatalog.hpp"
+#include "WaveVortexRuntime/WVObserverOutputProvider.hpp"
 #include "WVObserverAdapter.hpp"
 
 #include <algorithm>
@@ -154,6 +155,38 @@ WVKernelStatus WVObserverCatalog::create(
   return WVKernelStatus::ok();
 }
 
+WVKernelStatus WVObserverCatalog::resolveOutputPlan(
+    const WVObserverRecord &record,
+    const WVObserverOutputPlanningContext &context,
+    WVObserverOutputPlan &plan) const {
+  const auto *value = registration(record.typeIdentifier,
+                                   record.contractVersion);
+  if (value == nullptr)
+    return {WVKernelStatusCode::unsupportedOperation,
+            "Unsupported observing-system identity or contract version."};
+  if (!value->outputPlanResolver)
+    return {WVKernelStatusCode::unsupportedOperation,
+            "The observing-system registration does not declare a data-only "
+            "output-plan resolver."};
+  try {
+    WVObserverOutputPlan candidate;
+    auto status = value->outputPlanResolver(record, context, candidate);
+    if (!status)
+      return status;
+    plan = std::move(candidate);
+    return WVKernelStatus::ok();
+  } catch (const std::bad_alloc &) {
+    return {WVKernelStatusCode::allocationFailure,
+            "Unable to resolve an observer output plan."};
+  } catch (const std::exception &error) {
+    return invalid("Observer output-plan resolver failed: " +
+                   std::string(error.what()));
+  } catch (...) {
+    return invalid(
+        "Observer output-plan resolver failed with an unknown exception.");
+  }
+}
+
 std::size_t WVObserverCatalog::persistentBytes() const noexcept {
   std::size_t bytes = sizeof(*this) +
                       registrations_.capacity() *
@@ -181,6 +214,14 @@ WVOutputScheduleCatalog::registration(
                value.contractVersion == contractVersion;
       });
   return found == registrations_.end() ? nullptr : &*found;
+}
+
+const WVOutputScheduleFactoryRegistration *
+WVOutputScheduleCatalog::registration(
+    const WVOutputScheduleRecord &record) const noexcept {
+  return record.typeIdentifier.empty()
+             ? registration(WVEvenlySpacedOutputScheduleType, 1)
+             : registration(record.typeIdentifier, record.contractVersion);
 }
 
 WVKernelStatus WVOutputScheduleCatalog::resolve(

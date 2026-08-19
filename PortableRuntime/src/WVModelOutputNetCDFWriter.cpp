@@ -185,6 +185,53 @@ bool hexDecode(const std::string &text, std::vector<std::uint8_t> &bytes) {
   return true;
 }
 
+bool sameTypedRecord(const WVPortableTypedRecord &left,
+                     const WVPortableTypedRecord &right) noexcept {
+  if (left.schemaIdentifier != right.schemaIdentifier ||
+      left.schemaVersion != right.schemaVersion ||
+      left.values.size() != right.values.size())
+    return false;
+  for (std::size_t index = 0; index < left.values.size(); ++index) {
+    const auto &a = left.values[index];
+    const auto &b = right.values[index];
+    if (a.name != b.name || a.dimensions != b.dimensions ||
+        a.storage != b.storage)
+      return false;
+  }
+  return true;
+}
+
+bool sameDestinationProgress(
+    const std::vector<WVOutputDestinationProgress> &left,
+    const std::vector<WVOutputDestinationProgress> &right) noexcept {
+  if (left.size() != right.size())
+    return false;
+  for (std::size_t index = 0; index < left.size(); ++index) {
+    const auto &a = left[index];
+    const auto &b = right[index];
+    if (a.fileIdentifier != b.fileIdentifier ||
+        a.groupIdentifier != b.groupIdentifier ||
+        a.recordCount != b.recordCount ||
+        a.hasCommittedTime != b.hasCommittedTime ||
+        (a.hasCommittedTime && a.lastCommittedTime != b.lastCommittedTime) ||
+        a.committedScheduleCursor.committedOrdinal !=
+            b.committedScheduleCursor.committedOrdinal ||
+        !sameTypedRecord(a.committedScheduleCursor.values,
+                         b.committedScheduleCursor.values) ||
+        a.unlimitedAxes.size() != b.unlimitedAxes.size())
+      return false;
+    for (std::size_t axis = 0; axis < a.unlimitedAxes.size(); ++axis)
+      if (a.unlimitedAxes[axis].axisIdentifier !=
+              b.unlimitedAxes[axis].axisIdentifier ||
+          a.unlimitedAxes[axis].committedCount !=
+              b.unlimitedAxes[axis].committedCount ||
+          a.unlimitedAxes[axis].physicalCount !=
+              b.unlimitedAxes[axis].physicalCount)
+        return false;
+  }
+  return true;
+}
+
 } // namespace
 
 class WVModelOutputNetCDFSink::Impl {
@@ -207,12 +254,16 @@ public:
   struct UnlimitedAxis {
     std::string name;
     std::size_t committedCount = 0;
+    std::size_t physicalCount = 0;
     int dimensionId = -1;
     int progressVariableId = -1;
   };
 
   struct Group {
-    WVOutputGroupRecord record;
+    explicit Group(const WVOutputGroupRecord &canonicalRecord)
+        : record(canonicalRecord) {}
+
+    const WVOutputGroupRecord &record;
     int id = -1;
     int timeId = -1;
     int scheduleOrdinalId = -1;
@@ -223,12 +274,17 @@ public:
     std::vector<ObserverSchema> observerSchemas;
     std::vector<UnlimitedAxis> unlimitedAxes;
     std::size_t recordCount = 0;
+    bool hasCommittedTime = false;
+    double lastCommittedTime = 0.0;
     WVOutputScheduleOrdinal committedOrdinal = WVNoCommittedOutputOrdinal;
     WVPortableTypedRecord scheduleCursor;
   };
 
   struct File {
-    WVOutputFileRecord record;
+    explicit File(const WVOutputFileRecord &canonicalRecord)
+        : record(canonicalRecord) {}
+
+    const WVOutputFileRecord &record;
     std::filesystem::path destination;
     std::filesystem::path staging;
     int id = -1;
@@ -241,11 +297,11 @@ public:
   };
 
   WVModelOutputNetCDFConfiguration configuration;
-  WVPortableObserverRecord descriptorRecord;
+  WVPortableObserverDescriptor descriptor;
   WVIntegrationStateLayout stateLayout;
   WVObserverSampleSource *sampleSource = nullptr;
   std::vector<File> files;
-  std::vector<WVOutputGroupProgress> progress;
+  std::vector<WVOutputDestinationProgress> destinationProgress;
   WVModelOutputNetCDFMetrics metrics;
   std::size_t preparedEventOrdinal = std::numeric_limits<std::size_t>::max();
   std::size_t preparedEventRouteCount = 0;
@@ -410,12 +466,13 @@ public:
   ~Impl() { close(); }
 
   const WVObserverRecord *observer(const std::string &identifier) const {
-    const auto found = std::find_if(descriptorRecord.observers.begin(),
-                                    descriptorRecord.observers.end(),
+    const auto &record = descriptor.record();
+    const auto found = std::find_if(record.observers.begin(),
+                                    record.observers.end(),
                                     [&](const auto &candidate) {
                                       return candidate.identifier == identifier;
                                     });
-    return found == descriptorRecord.observers.end() ? nullptr : &*found;
+    return found == record.observers.end() ? nullptr : &*found;
   }
 
   const WVStateBlockRecord *
@@ -432,7 +489,7 @@ public:
     if (sampleSource == nullptr)
       return WVCheckpointStatus::ok();
     std::map<std::string, WVObservationSchema> schemas;
-    for (const auto &record : descriptorRecord.observers) {
+    for (const auto &record : descriptor.record().observers) {
       WVObservationSchema schema;
       const auto sourceStatus = sampleSource->observationSchema(record, schema);
       if (!sourceStatus)
@@ -452,7 +509,7 @@ public:
       WVObservationCoordinateRole role =
           WVObservationCoordinateRole::none;
     };
-    for (const auto &file : descriptorRecord.outputFiles)
+    for (const auto &file : descriptor.record().outputFiles)
       for (const auto &group : file.groups) {
         std::map<std::string, AxisContract> axesByPersistedName;
         std::map<std::string, std::string> variableOwners;
@@ -562,7 +619,7 @@ public:
       return failure(WVCheckpointStatusCode::schemaMismatch,
                      "Ap, Am, and A0 must use one common absTolerance.",
                      "/observingSystems/WVCoefficients/absTolerance");
-    for (const auto &record : descriptorRecord.observers) {
+    for (const auto &record : descriptor.record().observers) {
       const bool canonicalCoefficientObserver =
           record.stateBlockIdentifiers ==
               std::vector<std::string>{"Ap", "Am", "A0"} &&
@@ -574,7 +631,7 @@ public:
                            " requires an observation sample source.",
                        "/observingSystems");
     }
-    for (const auto &file : descriptorRecord.outputFiles) {
+    for (const auto &file : descriptor.record().outputFiles) {
       const auto restart = std::find_if(
           file.groups.begin(), file.groups.end(), [](const auto &group) {
             return group.containsCompleteCoefficientRestart;
@@ -607,7 +664,7 @@ public:
 
   WVCheckpointStatus validateDestinations(bool requireExisting) const {
     std::set<std::filesystem::path> observed;
-    for (const auto &record : descriptorRecord.outputFiles) {
+    for (const auto &record : descriptor.record().outputFiles) {
       const auto destination =
           std::filesystem::absolute(record.destination).lexically_normal();
       if (!observed.insert(destination).second)
@@ -1507,10 +1564,9 @@ public:
                        status.message, "/observingSystems");
     }
     files.clear();
-    files.reserve(descriptorRecord.outputFiles.size());
-    for (const auto &record : descriptorRecord.outputFiles) {
-      File file;
-      file.record = record;
+    files.reserve(descriptor.record().outputFiles.size());
+    for (const auto &record : descriptor.record().outputFiles) {
+      File file(record);
       file.destination =
           std::filesystem::absolute(record.destination).lexically_normal();
       file.staging = temporaryPath(file.destination);
@@ -1540,8 +1596,7 @@ public:
         return result;
       staged.groups.reserve(record.groups.size());
       for (const auto &groupRecord : record.groups) {
-        Group group;
-        group.record = groupRecord;
+        Group group(groupRecord);
         result = defineGroup(staged, group, rootDimensions);
         if (!result)
           return result;
@@ -2241,6 +2296,7 @@ public:
                                axisDefinition.name);
           axisDefinition.committedCount =
               static_cast<std::size_t>(committedCount);
+          axisDefinition.physicalCount = physicalAxisLength;
         }
         if (group.record.schedule.typeIdentifier.empty()) {
           for (std::size_t timeIndex = 0; timeIndex < times.size();
@@ -2311,6 +2367,9 @@ public:
                 static_cast<WVOutputScheduleOrdinal>(ordinals[timeIndex]);
           }
         }
+
+        group.hasCommittedTime = true;
+        group.lastCommittedTime = times.back();
 
         int variableCount = 0;
         result = detail::checkedNetCDF(
@@ -2389,33 +2448,56 @@ public:
         }
       } else {
         group.recordCount = 0;
+        for (auto &axisDefinition : group.unlimitedAxes) {
+          std::size_t physicalAxisLength = 0;
+          result = detail::checkedNetCDF(
+              nc_inq_dimlen(group.id, axisDefinition.dimensionId,
+                            &physicalAxisLength),
+              "Observation-axis length inspection",
+              "/" + group.record.name + "/" + axisDefinition.name);
+          if (!result)
+            return result;
+          axisDefinition.physicalCount = physicalAxisLength;
+          if (physicalAxisLength != 0)
+            return failure(WVCheckpointStatusCode::incompleteRecord,
+                           "An empty output group has committed ragged storage.",
+                           "/" + group.record.name + "/" +
+                               axisDefinition.name);
+        }
       }
     }
     return WVCheckpointStatus::ok();
   }
 
   void rebuildProgress() {
-    progress.clear();
+    destinationProgress.clear();
     for (const auto &file : files)
       for (const auto &group : file.groups) {
-        progress.push_back({file.record.identifier, group.record.identifier,
-                            group.committedOrdinal});
-        progress.back().scheduleCursor = group.scheduleCursor;
+        WVOutputDestinationProgress progress;
+        progress.fileIdentifier = file.record.identifier;
+        progress.groupIdentifier = group.record.identifier;
+        progress.recordCount = group.recordCount;
+        progress.hasCommittedTime = group.hasCommittedTime;
+        progress.lastCommittedTime = group.lastCommittedTime;
+        progress.committedScheduleCursor = {group.committedOrdinal,
+                                            group.scheduleCursor};
+        progress.unlimitedAxes.reserve(group.unlimitedAxes.size());
+        for (const auto &axis : group.unlimitedAxes)
+          progress.unlimitedAxes.push_back(
+              {axis.name, axis.committedCount, axis.physicalCount});
+        destinationProgress.push_back(std::move(progress));
       }
   }
 
   void updateRetainedStorageMetric() {
     std::size_t bytes = sizeof(*this) + stateLayout.persistentBytes() +
                         files.capacity() * sizeof(File) +
-                        progress.capacity() * sizeof(WVOutputGroupProgress);
+                        destinationProgress.capacity() *
+                            sizeof(WVOutputDestinationProgress);
     for (const auto &file : files) {
-      bytes += file.record.identifier.capacity() +
-               file.record.destination.capacity() +
-               file.groups.capacity() * sizeof(Group);
+      bytes += file.groups.capacity() * sizeof(Group);
       for (const auto &group : file.groups) {
-        bytes += group.record.identifier.capacity() +
-                 group.record.name.capacity() +
-                 group.scheduleCursor.persistentBytes() -
+        bytes += group.scheduleCursor.persistentBytes() -
                  sizeof(WVPortableTypedRecord) +
                  group.derivedVariables.capacity() * sizeof(Variable) +
                  group.observerSchemas.capacity() * sizeof(ObserverSchema) +
@@ -2448,10 +2530,16 @@ public:
                    observationSchemaRetainedBytes(observerSchema.schema);
       }
     }
-    for (const auto &item : progress)
+    for (const auto &item : destinationProgress) {
       bytes +=
           item.fileIdentifier.capacity() + item.groupIdentifier.capacity() +
-          item.scheduleCursor.persistentBytes() - sizeof(WVPortableTypedRecord);
+          item.committedScheduleCursor.values.persistentBytes() -
+              sizeof(WVPortableTypedRecord) +
+          item.unlimitedAxes.capacity() *
+              sizeof(WVOutputDestinationAxisProgress);
+      for (const auto &axis : item.unlimitedAxes)
+        bytes += axis.axisIdentifier.capacity();
+    }
     bytes += preparedObservationBatches.capacity() *
              sizeof(PreparedObservationBatch);
     for (const auto &prepared : preparedObservationBatches)
@@ -2460,10 +2548,11 @@ public:
     metrics.retainedStorageBytes = bytes;
   }
 
-  WVCheckpointStatus openExistingFiles() {
+  WVCheckpointStatus openExistingFiles(
+      const std::vector<WVOutputDestinationProgress> &expectedProgress) {
     files.clear();
-    files.reserve(descriptorRecord.outputFiles.size());
-    for (const auto &record : descriptorRecord.outputFiles) {
+    files.reserve(descriptor.record().outputFiles.size());
+    for (const auto &record : descriptor.record().outputFiles) {
       WVCheckpointInspection inspection;
       auto result = WVCheckpointReader::inspect(record.destination,
                                                 *configuration.catalog,
@@ -2476,39 +2565,42 @@ public:
         return failure(WVCheckpointStatusCode::schemaMismatch,
                        "Append model configuration does not match the file.",
                        record.destination);
-      File file;
-      file.record = record;
+      File file(record);
       file.destination =
           std::filesystem::absolute(record.destination).lexically_normal();
       int id = -1;
       result = detail::checkedNetCDF(
-          nc_open(file.destination.c_str(), NC_WRITE, &id),
-          "Append output-file open", file.destination.string());
+          nc_open(file.destination.c_str(), NC_NOWRITE, &id),
+          "Append output-file read-only preflight open",
+          file.destination.string());
       if (!result)
         return result;
       file.id = id;
-      file.groups.reserve(record.groups.size());
+      files.push_back(std::move(file));
+      auto &openFile = files.back();
+      openFile.groups.reserve(record.groups.size());
       for (const auto &groupRecord : record.groups) {
-        Group group;
-        group.record = groupRecord;
+        Group group(groupRecord);
         // Rebuild variable contracts without mutating the existing file.
         for (const auto &identifier : groupRecord.observerIdentifiers) {
           const auto *recordPointer = observer(identifier);
           if (recordPointer == nullptr)
             return failure(WVCheckpointStatusCode::schemaMismatch,
                            "Append group references an unknown observer.",
-                           file.destination.string());
+                           openFile.destination.string());
           if (sampleSource != nullptr) {
             WVObservationSchema schema;
             const auto sourceStatus = sampleSource->observationSchema(
                 *recordPointer, schema);
             if (!sourceStatus)
               return failure(WVCheckpointStatusCode::unsupportedObserver,
-                             sourceStatus.message, file.destination.string());
+                             sourceStatus.message,
+                             openFile.destination.string());
             const auto schemaStatus = validateObservationSchema(schema);
             if (!schemaStatus)
               return failure(WVCheckpointStatusCode::schemaMismatch,
-                             schemaStatus.message, file.destination.string());
+                             schemaStatus.message,
+                             openFile.destination.string());
             for (const auto &specification : schema.variables) {
               const bool canonicalCoefficient =
                   groupRecord.containsCompleteCoefficientRestart &&
@@ -2532,7 +2624,7 @@ public:
                       return failure(
                           WVCheckpointStatusCode::schemaMismatch,
                           "Observation variable references an unknown axis.",
-                          file.destination.string());
+                          openFile.destination.string());
                     variable.axes.push_back(*axisDefinition);
                     if (axisDefinition->kind ==
                             WVObservationAxisKind::unlimited &&
@@ -2552,19 +2644,47 @@ public:
                       WVCheckpointStatusCode::appendConflict,
                       "Observers declare duplicate persisted variable names "
                       "without an alias contract.",
-                      file.destination.string());
+                      openFile.destination.string());
               }
             }
             group.observerSchemas.push_back(
                 {identifier, std::move(schema)});
           }
         }
-        file.groups.push_back(std::move(group));
+        openFile.groups.push_back(std::move(group));
       }
+      result = resolveFile(openFile);
+      if (!result)
+        return result;
+    }
+
+    rebuildProgress();
+    if (!sameDestinationProgress(destinationProgress, expectedProgress))
+      return failure(WVCheckpointStatusCode::appendConflict,
+                     "Append destination progress changed after compilation.",
+                     "/");
+
+    // Only after the entire destination set has passed read-only graph,
+    // schema, cursor, record, time-last, payload, and ragged-offset validation
+    // do any files reopen with mutation capability.
+    for (auto &file : files) {
+      const int id = std::exchange(file.id, -1);
+      const int code = nc_close(id);
+      if (code != NC_NOERR)
+        return detail::netcdfFailure(code, "Append preflight close",
+                                     file.destination.string());
+    }
+    for (auto &file : files) {
+      int id = -1;
+      auto result = detail::checkedNetCDF(
+          nc_open(file.destination.c_str(), NC_WRITE, &id),
+          "Append output-file mutation open", file.destination.string());
+      if (!result)
+        return result;
+      file.id = id;
       result = resolveFile(file);
       if (!result)
         return result;
-      files.push_back(std::move(file));
     }
     return WVCheckpointStatus::ok();
   }
@@ -2812,10 +2932,14 @@ public:
                                       synchronizationStarted)
             .count();
     ++group.recordCount;
+    group.hasCommittedTime = true;
+    group.lastCommittedTime = event.scheduledTime;
     for (auto &axisDefinition : group.unlimitedAxes) {
       const auto increment = unlimitedAxisIncrements.find(axisDefinition.name);
-      if (increment != unlimitedAxisIncrements.end())
+      if (increment != unlimitedAxisIncrements.end()) {
         axisDefinition.committedCount += increment->second;
+        axisDefinition.physicalCount = axisDefinition.committedCount;
+      }
     }
     group.committedOrdinal = route.scheduleOrdinal;
     if (route.proposedScheduleCursor != nullptr)
@@ -2867,7 +2991,7 @@ WVCheckpointStatus WVModelOutputNetCDFSink::createNew(
   try {
     auto candidate = std::make_unique<Impl>();
     candidate->configuration = configuration;
-    candidate->descriptorRecord = descriptor.record();
+    candidate->descriptor = descriptor;
     candidate->stateLayout = stateLayout;
     candidate->sampleSource = sampleSource;
     auto result = candidate->validateConfiguration();
@@ -2912,7 +3036,7 @@ WVCheckpointStatus WVModelOutputNetCDFSink::replaceExisting(
   try {
     auto candidate = std::make_unique<Impl>();
     candidate->configuration = configuration;
-    candidate->descriptorRecord = descriptor.record();
+    candidate->descriptor = descriptor;
     candidate->stateLayout = stateLayout;
     candidate->sampleSource = sampleSource;
     auto result = candidate->validateConfiguration();
@@ -2949,14 +3073,17 @@ WVCheckpointStatus WVModelOutputNetCDFSink::openAppend(
     const WVModelOutputNetCDFConfiguration &configuration,
     const WVPortableObserverDescriptor &descriptor,
     const WVIntegrationStateLayout &stateLayout,
-    WVObserverSampleSource *sampleSource, WVModelOutputNetCDFSink &sink) {
+    WVObserverSampleSource *sampleSource,
+    const std::vector<WVOutputDestinationProgress>
+        &expectedDestinationProgress,
+    WVModelOutputNetCDFSink &sink) {
   auto catalogStatus = validateCatalogIdentity(configuration, descriptor);
   if (!catalogStatus)
     return catalogStatus;
   try {
     auto candidate = std::make_unique<Impl>();
     candidate->configuration = configuration;
-    candidate->descriptorRecord = descriptor.record();
+    candidate->descriptor = descriptor;
     candidate->stateLayout = stateLayout;
     candidate->sampleSource = sampleSource;
     candidate->appendMode = true;
@@ -2966,10 +3093,9 @@ WVCheckpointStatus WVModelOutputNetCDFSink::openAppend(
     result = candidate->validateDestinations(true);
     if (!result)
       return result;
-    result = candidate->openExistingFiles();
+    result = candidate->openExistingFiles(expectedDestinationProgress);
     if (!result)
       return result;
-    candidate->rebuildProgress();
     candidate->metrics.fileCount = candidate->files.size();
     for (const auto &file : candidate->files)
       candidate->metrics.groupCount += file.groups.size();
@@ -3019,12 +3145,6 @@ WVKernelStatus WVModelOutputNetCDFSink::preflight(const WVOutputPlan &plan) {
         return {WVKernelStatusCode::invalidConfiguration,
                 "Output plan and NetCDF observer route differ."};
     }
-    const auto &progress = plan.initialProgress()[groupIndex];
-    if (progress.fileIdentifier != file.record.identifier ||
-        progress.groupIdentifier != group.record.identifier ||
-        progress.committedOrdinal != group.committedOrdinal)
-      return {WVKernelStatusCode::invalidConfiguration,
-              "Output plan is incompatible with committed NetCDF progress."};
   }
   impl_->preflightComplete = true;
   return WVKernelStatus::ok();
@@ -3051,10 +3171,10 @@ WVModelOutputNetCDFSink::deliver(const WVOutputEvent &event,
   return WVKernelStatus::ok();
 }
 
-const std::vector<WVOutputGroupProgress> &
-WVModelOutputNetCDFSink::progress() const noexcept {
-  static const std::vector<WVOutputGroupProgress> empty;
-  return impl_ ? impl_->progress : empty;
+const std::vector<WVOutputDestinationProgress> &
+WVModelOutputNetCDFSink::destinationProgress() const noexcept {
+  static const std::vector<WVOutputDestinationProgress> empty;
+  return impl_ ? impl_->destinationProgress : empty;
 }
 
 const WVModelOutputNetCDFMetrics &

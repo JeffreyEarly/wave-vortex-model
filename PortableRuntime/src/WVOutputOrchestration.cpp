@@ -214,7 +214,7 @@ public:
   double initialTime = 0.0;
   double finalTime = 0.0;
   std::vector<Group> groups;
-  std::vector<WVOutputGroupProgress> progress;
+  std::vector<WVOutputScheduleContinuation> continuations;
   mutable std::vector<WVOutputRouteView> diagnosticRoutes;
   mutable std::vector<WVOutputScheduleCursor> diagnosticCursors;
   WVOutputPlanMetrics metrics;
@@ -229,13 +229,13 @@ public:
         groups.capacity() * sizeof(Group) +
         diagnosticRoutes.capacity() * sizeof(WVOutputRouteView) +
         diagnosticCursors.capacity() * sizeof(WVOutputScheduleCursor) +
-        progress.capacity() * sizeof(WVOutputGroupProgress);
+        continuations.capacity() * sizeof(WVOutputScheduleContinuation);
     for (const auto &group : groups)
       bytes += group.observers.capacity() * sizeof(WVOutputObserverView);
-    for (const auto &item : progress) {
+    for (const auto &item : continuations) {
       bytes +=
           stringBytes(item.fileIdentifier) + stringBytes(item.groupIdentifier) +
-          item.scheduleCursor.persistentBytes() - sizeof(WVPortableTypedRecord);
+          item.cursor.values.persistentBytes() - sizeof(WVPortableTypedRecord);
     }
     for (const auto &group : groups)
       if (group.schedule)
@@ -252,9 +252,9 @@ bool WVOutputPlan::Impl::generateDiagnosticEvent(
     std::vector<WVOutputScheduleCursor> cursors;
     std::vector<WVOutputScheduleOccurrence> occurrences(groups.size());
     std::vector<std::uint8_t> available(groups.size(), 0);
-    cursors.reserve(progress.size());
-    for (const auto &item : progress)
-      cursors.push_back({item.committedOrdinal, item.scheduleCursor});
+    cursors.reserve(continuations.size());
+    for (const auto &item : continuations)
+      cursors.push_back(item.cursor);
     std::size_t eventIndex = 0;
     for (;;) {
       double earliest = std::numeric_limits<double>::infinity();
@@ -314,7 +314,8 @@ WVKernelStatus
 WVOutputPlan::create(const WVPortableObserverDescriptor &descriptor,
                      std::shared_ptr<const WVExtensionCatalog> catalog,
                      double initialTime, double finalTime,
-                     const std::vector<WVOutputGroupProgress> &suppliedProgress,
+                     const std::vector<WVOutputScheduleContinuation>
+                         &suppliedContinuations,
                      WVOutputPlan &plan) {
   if (!catalog)
     return invalid("Output planning requires an extension catalog.");
@@ -359,10 +360,11 @@ WVOutputPlan::create(const WVPortableObserverDescriptor &descriptor,
     }
     candidate->metrics.groupCount = groupCount;
     candidate->groups.reserve(groupCount);
-    candidate->progress.reserve(groupCount);
+    candidate->continuations.reserve(groupCount);
 
-    if (!suppliedProgress.empty() && suppliedProgress.size() != groupCount)
-      return invalid("Committed output progress must be empty for a new run or "
+    if (!suppliedContinuations.empty() &&
+        suppliedContinuations.size() != groupCount)
+      return invalid("Output schedule continuation must be empty for a new run or "
                      "contain exactly one entry per configured group.");
 
     std::map<std::string, std::size_t> observerOrdinals;
@@ -371,51 +373,51 @@ WVOutputPlan::create(const WVPortableObserverDescriptor &descriptor,
       observerOrdinals.emplace(record.observers[index].identifier,
                                index);
 
-    std::size_t progressIndex = 0;
+    std::size_t continuationIndex = 0;
     for (std::size_t fileIndex = 0;
          fileIndex < record.outputFiles.size(); ++fileIndex) {
       const auto &file = record.outputFiles[fileIndex];
       for (std::size_t groupIndex = 0; groupIndex < file.groups.size();
-           ++groupIndex, ++progressIndex) {
+           ++groupIndex, ++continuationIndex) {
         const auto &group = file.groups[groupIndex];
-        WVOutputGroupProgress cursor;
-        cursor.fileIdentifier = file.identifier;
-        cursor.groupIdentifier = group.identifier;
-        if (!suppliedProgress.empty()) {
-          cursor = suppliedProgress[progressIndex];
-          if (cursor.fileIdentifier != file.identifier ||
-              cursor.groupIdentifier != group.identifier ||
-              cursor.committedOrdinal < WVNoCommittedOutputOrdinal)
-            return invalid("Committed output progress does not match the "
+        WVOutputScheduleContinuation continuation;
+        continuation.fileIdentifier = file.identifier;
+        continuation.groupIdentifier = group.identifier;
+        if (!suppliedContinuations.empty()) {
+          continuation = suppliedContinuations[continuationIndex];
+          if (continuation.fileIdentifier != file.identifier ||
+              continuation.groupIdentifier != group.identifier ||
+              continuation.cursor.committedOrdinal <
+                  WVNoCommittedOutputOrdinal)
+            return invalid("Output schedule continuation does not match the "
                            "deterministic file/group order or ordinal range.");
         }
         Impl::Group resolved;
         resolved.fileOrdinal = fileIndex;
         resolved.groupOrdinal = groupIndex;
-        resolved.progressIndex = progressIndex;
+        resolved.progressIndex = continuationIndex;
         resolved.file = &file;
         resolved.group = &group;
         auto scheduleStatus = catalog->outputSchedules().resolve(
             group.schedule, resolved.schedule);
         if (!scheduleStatus)
           return scheduleStatus;
-        WVOutputScheduleCursor scheduleCursor{cursor.committedOrdinal,
-                                              cursor.scheduleCursor};
-        scheduleStatus = resolved.schedule->validateCursor(scheduleCursor);
+        scheduleStatus =
+            resolved.schedule->validateCursor(continuation.cursor);
         if (!scheduleStatus)
           return scheduleStatus;
         double committedTime = 0.0;
         bool hasCommittedTime = false;
         scheduleStatus = resolved.schedule->committedTime(
-            scheduleCursor, committedTime, hasCommittedTime);
+            continuation.cursor, committedTime, hasCommittedTime);
         if (!scheduleStatus)
           return scheduleStatus;
         if (hasCommittedTime &&
             committedTime >
                 initialTime + timeTolerance(committedTime, initialTime))
-          return invalid("Committed output progress lies beyond the segment "
+          return invalid("Output schedule continuation lies beyond the segment "
                          "start.");
-        candidate->progress.push_back(cursor);
+        candidate->continuations.push_back(std::move(continuation));
         resolved.observers.reserve(group.observerIdentifiers.size());
         for (const auto &identifier : group.observerIdentifiers) {
           const auto found = observerOrdinals.find(identifier);
@@ -541,9 +543,9 @@ WVOutputPlannedEventView WVOutputPlan::event(std::size_t index) const noexcept {
   return {index, time, impl_->diagnosticRoutes.data(),
           impl_->diagnosticRoutes.size()};
 }
-const std::vector<WVOutputGroupProgress> &
-WVOutputPlan::initialProgress() const noexcept {
-  return impl_->progress;
+const std::vector<WVOutputScheduleContinuation> &
+WVOutputPlan::initialContinuations() const noexcept {
+  return impl_->continuations;
 }
 const WVOutputPlanMetrics &WVOutputPlan::metrics() const noexcept {
   return impl_->metrics;
@@ -567,7 +569,7 @@ public:
   WVMutableIntegrationState interpolationState;
   std::vector<WVAdditionalStateBlockConstView> interpolationConstViews;
   std::vector<WVAdditionalStateBlockConstView> sourceConstViews;
-  std::vector<WVOutputGroupProgress> progress;
+  std::vector<WVOutputScheduleContinuation> continuations;
   std::vector<WVOutputScheduleOccurrence> nextOccurrences;
   std::vector<std::uint8_t> occurrenceAvailable;
   std::vector<std::uint8_t> occurrenceNeedsRefresh;
@@ -596,7 +598,7 @@ public:
         interpolationConstViews.capacity() *
             sizeof(WVAdditionalStateBlockConstView) +
         sourceConstViews.capacity() * sizeof(WVAdditionalStateBlockConstView) +
-        progress.capacity() * sizeof(WVOutputGroupProgress) +
+        continuations.capacity() * sizeof(WVOutputScheduleContinuation) +
         nextOccurrences.capacity() * sizeof(WVOutputScheduleOccurrence) +
         occurrenceAvailable.capacity() * sizeof(std::uint8_t) +
         occurrenceNeedsRefresh.capacity() * sizeof(std::uint8_t) +
@@ -605,10 +607,10 @@ public:
         stagedProposedCursors.capacity() * sizeof(WVOutputScheduleCursor) +
         records.capacity() * sizeof(WVOutputDeliveryRecord) +
         metrics.files.capacity() * sizeof(WVOutputFileMetrics);
-    for (const auto &item : progress)
+    for (const auto &item : continuations)
       bytes +=
           stringBytes(item.fileIdentifier) + stringBytes(item.groupIdentifier) +
-          item.scheduleCursor.persistentBytes() - sizeof(WVPortableTypedRecord);
+          item.cursor.values.persistentBytes() - sizeof(WVPortableTypedRecord);
     for (const auto &item : nextOccurrences)
       bytes += item.proposedCursor.values.persistentBytes() -
                sizeof(WVPortableTypedRecord);
@@ -631,7 +633,7 @@ public:
 
   WVKernelStatus prepareTracking() {
     try {
-      progress = plan.impl_->progress;
+      continuations = plan.impl_->continuations;
       metrics = {};
       const auto &record = plan.impl_->descriptor.record();
       metrics.files.reserve(record.outputFiles.size());
@@ -705,9 +707,8 @@ public:
     for (std::size_t index = 0; index < plan.impl_->groups.size(); ++index) {
       if (occurrenceNeedsRefresh[index]) {
         const auto &group = plan.impl_->groups[index];
-        const auto &item = progress[group.progressIndex];
-        WVOutputScheduleCursor cursor{item.committedOrdinal,
-                                      item.scheduleCursor};
+        const auto &item = continuations[group.progressIndex];
+        const auto &cursor = item.cursor;
         bool available = false;
         auto status = group.schedule->peek(cursor, lowerBound, plan.finalTime(),
                                            nextOccurrences[index], available);
@@ -727,7 +728,7 @@ public:
               next.scheduledTime >
                   plan.finalTime() +
                       timeTolerance(next.scheduledTime, plan.finalTime()) ||
-              next.ordinal <= item.committedOrdinal ||
+              next.ordinal <= item.cursor.committedOrdinal ||
               next.proposedCursor.committedOrdinal != next.ordinal ||
               (hasCommittedTime && !(next.scheduledTime > committedTime)))
             return invalid("An output schedule returned a non-monotone or "
@@ -878,10 +879,8 @@ public:
       group.writeCount += result.writeCount;
       group.writtenBytes += result.writtenBytes;
       const auto progressIndex = stagedProgressIndices[nextRouteIndex];
-      progress[progressIndex].committedOrdinal =
-          stagedProposedCursors[nextRouteIndex].committedOrdinal;
-      progress[progressIndex].scheduleCursor =
-          stagedProposedCursors[nextRouteIndex].values;
+      continuations[progressIndex].cursor =
+          stagedProposedCursors[nextRouteIndex];
       occurrenceNeedsRefresh[progressIndex] = 1;
       terminate = terminate ||
                   result.action == WVOutputDeliveryResult::Action::terminate;
@@ -1081,9 +1080,9 @@ WVKernelStatus WVOutputDriver::advanceToTime(WVMutableIntegrationState &state,
   return WVKernelStatus::ok();
 }
 
-const std::vector<WVOutputGroupProgress> &
-WVOutputDriver::committedProgress() const noexcept {
-  return impl_->progress;
+const std::vector<WVOutputScheduleContinuation> &
+WVOutputDriver::committedContinuations() const noexcept {
+  return impl_->continuations;
 }
 const std::vector<WVOutputDeliveryRecord> &
 WVOutputDriver::records() const noexcept {

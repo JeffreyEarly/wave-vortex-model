@@ -540,6 +540,143 @@ WVKernelStatus encodeObservationSchemaManifest(
   manifest.values.push_back(
       {"schemaVersion", {},
        std::vector<std::int64_t>{static_cast<std::int64_t>(schema.version)}});
+  manifest.values.push_back(
+      {"preservesLegacyEncoding", {},
+       std::vector<std::uint8_t>{
+           static_cast<std::uint8_t>(schema.preservesLegacyEncoding)}});
+
+  std::vector<std::string> metadataAttributeNames;
+  std::vector<std::string> metadataAttributeValues;
+  for (const auto &attribute : schema.metadata.attributes) {
+    metadataAttributeNames.push_back(attribute.name);
+    metadataAttributeValues.push_back(attribute.value);
+  }
+  addText("metadataAttributeNames", std::move(metadataAttributeNames));
+  addText("metadataAttributeValues", std::move(metadataAttributeValues));
+
+  std::vector<std::string> metadataStringListNames;
+  std::vector<std::int64_t> metadataStringListCounts;
+  std::vector<std::string> metadataStringListValues;
+  for (const auto &attribute : schema.metadata.stringListAttributes) {
+    metadataStringListNames.push_back(attribute.name);
+    metadataStringListCounts.push_back(
+        static_cast<std::int64_t>(attribute.values.size()));
+    metadataStringListValues.insert(metadataStringListValues.end(),
+                                    attribute.values.begin(),
+                                    attribute.values.end());
+  }
+  addText("metadataStringListNames", std::move(metadataStringListNames));
+  addInteger("metadataStringListCounts",
+             std::move(metadataStringListCounts));
+  addText("metadataStringListValues", std::move(metadataStringListValues));
+
+  std::vector<std::string> metadataVariableNames;
+  std::vector<std::string> metadataVariableIdentifiers;
+  std::vector<std::int64_t> metadataVariableTypes;
+  std::vector<std::uint8_t> metadataVariableLogical;
+  std::vector<std::int64_t> metadataVariableDimensionCounts;
+  std::vector<std::int64_t> metadataVariableExtents;
+  for (std::size_t index = 0; index < schema.metadata.variables.size();
+       ++index) {
+    const auto &variable = schema.metadata.variables[index];
+    const auto &value = variable.value;
+    const auto elementCount = value.elementCount();
+    if (elementCount == std::numeric_limits<std::size_t>::max())
+      return {WVKernelStatusCode::sizeOverflow,
+              "Observation metadata-variable extent overflows size_t."};
+    metadataVariableNames.push_back(variable.name);
+    metadataVariableIdentifiers.push_back(value.variableIdentifier);
+    metadataVariableTypes.push_back(
+        static_cast<std::int64_t>(value.scalarType));
+    metadataVariableLogical.push_back(
+        static_cast<std::uint8_t>(variable.isLogicalType));
+    metadataVariableDimensionCounts.push_back(
+        static_cast<std::int64_t>(value.extents.size()));
+    for (const auto extent : value.extents) {
+      if (extent >
+          static_cast<std::size_t>(std::numeric_limits<std::int64_t>::max()))
+        return {WVKernelStatusCode::sizeOverflow,
+                "Observation metadata-variable extent exceeds int64."};
+      metadataVariableExtents.push_back(static_cast<std::int64_t>(extent));
+    }
+    const auto storageName =
+        "metadataVariable." + std::to_string(index);
+    switch (value.scalarType) {
+    case WVObservationScalarType::real64: {
+      const auto *data = value.real64Data();
+      if (elementCount > 0 && data == nullptr)
+        return invalid("Observation metadata variable has no real storage.");
+      std::vector<double> values;
+      if (elementCount > 0)
+        values.assign(data, data + elementCount);
+      manifest.values.push_back(
+          {storageName, value.extents, std::move(values)});
+      break;
+    }
+    case WVObservationScalarType::complex64: {
+      const auto *data = value.complex64Data();
+      if (elementCount > 0 && data == nullptr)
+        return invalid(
+            "Observation metadata variable has no complex storage.");
+      std::vector<double> real(elementCount);
+      std::vector<double> imaginary(elementCount);
+      for (std::size_t element = 0; element < elementCount; ++element) {
+        real[element] = data[element].real;
+        imaginary[element] = data[element].imag;
+      }
+      manifest.values.push_back(
+          {storageName + ".real", value.extents, std::move(real)});
+      manifest.values.push_back(
+          {storageName + ".imag", value.extents, std::move(imaginary)});
+      break;
+    }
+    case WVObservationScalarType::integer64: {
+      const auto *data = value.integer64Data();
+      if (elementCount > 0 && data == nullptr)
+        return invalid(
+            "Observation metadata variable has no integer storage.");
+      std::vector<std::int64_t> values;
+      if (elementCount > 0)
+        values.assign(data, data + elementCount);
+      manifest.values.push_back(
+          {storageName, value.extents, std::move(values)});
+      break;
+    }
+    case WVObservationScalarType::boolean8: {
+      const auto *data = value.boolean8Data();
+      if (elementCount > 0 && data == nullptr)
+        return invalid(
+            "Observation metadata variable has no Boolean storage.");
+      std::vector<std::uint8_t> values;
+      if (elementCount > 0)
+        values.assign(data, data + elementCount);
+      manifest.values.push_back(
+          {storageName, value.extents, std::move(values)});
+      break;
+    }
+    case WVObservationScalarType::text: {
+      const auto *data = value.textData();
+      if (elementCount > 0 && data == nullptr)
+        return invalid("Observation metadata variable has no text storage.");
+      std::vector<std::string> values;
+      if (elementCount > 0)
+        values.assign(data, data + elementCount);
+      manifest.values.push_back(
+          {storageName, value.extents, std::move(values)});
+      break;
+    }
+    }
+  }
+  addText("metadataVariableNames", std::move(metadataVariableNames));
+  addText("metadataVariableIdentifiers",
+          std::move(metadataVariableIdentifiers));
+  addInteger("metadataVariableTypes", std::move(metadataVariableTypes));
+  manifest.values.push_back(
+      {"metadataVariableLogical", {metadataVariableLogical.size()},
+       std::move(metadataVariableLogical)});
+  addInteger("metadataVariableDimensionCounts",
+             std::move(metadataVariableDimensionCounts));
+  addInteger("metadataVariableExtents", std::move(metadataVariableExtents));
 
   std::vector<std::string> axisIdentifiers;
   std::vector<std::string> axisNames;
@@ -646,8 +783,35 @@ WVKernelStatus decodeObservationSchemaManifest(
                ? &std::get<std::vector<std::int64_t>>(value->storage)
                : nullptr;
   };
+  const auto booleans = [&](const char *name)
+      -> const std::vector<std::uint8_t> * {
+    const auto *value = manifest.value(name);
+    return value != nullptr &&
+                   std::holds_alternative<std::vector<std::uint8_t>>(
+                       value->storage)
+               ? &std::get<std::vector<std::uint8_t>>(value->storage)
+               : nullptr;
+  };
   const auto *schemaIdentifiers = texts("schemaIdentifier");
   const auto *schemaVersions = integers("schemaVersion");
+  const auto *preservesLegacyEncoding =
+      booleans("preservesLegacyEncoding");
+  const auto *metadataAttributeNames = texts("metadataAttributeNames");
+  const auto *metadataAttributeValues = texts("metadataAttributeValues");
+  const auto *metadataStringListNames = texts("metadataStringListNames");
+  const auto *metadataStringListCounts =
+      integers("metadataStringListCounts");
+  const auto *metadataStringListValues = texts("metadataStringListValues");
+  const auto *metadataVariableNames = texts("metadataVariableNames");
+  const auto *metadataVariableIdentifiers =
+      texts("metadataVariableIdentifiers");
+  const auto *metadataVariableTypes = integers("metadataVariableTypes");
+  const auto *metadataVariableLogical =
+      booleans("metadataVariableLogical");
+  const auto *metadataVariableDimensionCounts =
+      integers("metadataVariableDimensionCounts");
+  const auto *metadataVariableExtents =
+      integers("metadataVariableExtents");
   const auto *axisIdentifiers = texts("axisIdentifiers");
   const auto *axisNames = texts("axisNames");
   const auto *axisKinds = integers("axisKinds");
@@ -669,6 +833,19 @@ WVKernelStatus decodeObservationSchemaManifest(
   const auto *attributeValues = texts("attributeValues");
   if (schemaIdentifiers == nullptr || schemaIdentifiers->size() != 1 ||
       schemaVersions == nullptr || schemaVersions->size() != 1 ||
+      preservesLegacyEncoding == nullptr ||
+      preservesLegacyEncoding->size() != 1 ||
+      metadataAttributeNames == nullptr ||
+      metadataAttributeValues == nullptr ||
+      metadataStringListNames == nullptr ||
+      metadataStringListCounts == nullptr ||
+      metadataStringListValues == nullptr ||
+      metadataVariableNames == nullptr ||
+      metadataVariableIdentifiers == nullptr ||
+      metadataVariableTypes == nullptr ||
+      metadataVariableLogical == nullptr ||
+      metadataVariableDimensionCounts == nullptr ||
+      metadataVariableExtents == nullptr ||
       axisIdentifiers == nullptr || axisNames == nullptr ||
       axisKinds == nullptr || axisExtents == nullptr || axisRoles == nullptr ||
       variableIdentifiers == nullptr || variableNames == nullptr ||
@@ -696,6 +873,45 @@ WVKernelStatus decodeObservationSchemaManifest(
       attributeCounts->size() != variableCount ||
       attributeNames->size() != attributeValues->size())
     return invalid("Observation-schema manifest variables are inconsistent.");
+  if (metadataAttributeNames->size() != metadataAttributeValues->size() ||
+      metadataStringListNames->size() != metadataStringListCounts->size())
+    return invalid(
+        "Observation-schema manifest metadata attributes are inconsistent.");
+  std::size_t metadataStringValueCount = 0;
+  for (const auto count : *metadataStringListCounts) {
+    if (count < 0 ||
+        static_cast<std::uint64_t>(count) >
+            std::numeric_limits<std::size_t>::max() -
+                metadataStringValueCount)
+      return invalid(
+          "Observation-schema manifest metadata string-list size is invalid.");
+    metadataStringValueCount += static_cast<std::size_t>(count);
+  }
+  if (metadataStringValueCount != metadataStringListValues->size())
+    return invalid(
+        "Observation-schema manifest metadata string lists are inconsistent.");
+  const auto metadataVariableCount = metadataVariableNames->size();
+  if (metadataVariableIdentifiers->size() != metadataVariableCount ||
+      metadataVariableTypes->size() != metadataVariableCount ||
+      metadataVariableLogical->size() != metadataVariableCount ||
+      metadataVariableDimensionCounts->size() != metadataVariableCount)
+    return invalid(
+        "Observation-schema manifest metadata variables are inconsistent.");
+  std::size_t metadataExtentCount = 0;
+  for (std::size_t index = 0; index < metadataVariableCount; ++index) {
+    const auto type = (*metadataVariableTypes)[index];
+    const auto dimensionCount = (*metadataVariableDimensionCounts)[index];
+    if (type < 0 || type > 4 || (*metadataVariableLogical)[index] > 1 ||
+        dimensionCount < 0 ||
+        static_cast<std::uint64_t>(dimensionCount) >
+            std::numeric_limits<std::size_t>::max() - metadataExtentCount)
+      return invalid(
+          "Observation-schema manifest metadata-variable value is invalid.");
+    metadataExtentCount += static_cast<std::size_t>(dimensionCount);
+  }
+  if (metadataExtentCount != metadataVariableExtents->size())
+    return invalid(
+        "Observation-schema manifest metadata-variable extents are inconsistent.");
   if ((*schemaVersions)[0] <= 0 ||
       static_cast<std::uint64_t>((*schemaVersions)[0]) >
           std::numeric_limits<std::uint32_t>::max())
@@ -704,6 +920,120 @@ WVKernelStatus decodeObservationSchemaManifest(
   WVObservationSchema candidate;
   candidate.identifier = (*schemaIdentifiers)[0];
   candidate.version = static_cast<std::uint32_t>((*schemaVersions)[0]);
+  candidate.preservesLegacyEncoding = (*preservesLegacyEncoding)[0] != 0;
+  for (std::size_t index = 0; index < metadataAttributeNames->size(); ++index)
+    candidate.metadata.attributes.push_back(
+        {(*metadataAttributeNames)[index],
+         (*metadataAttributeValues)[index]});
+  std::size_t metadataStringOffset = 0;
+  for (std::size_t index = 0; index < metadataStringListNames->size();
+       ++index) {
+    const auto count =
+        static_cast<std::size_t>((*metadataStringListCounts)[index]);
+    WVObservationStringListAttribute attribute;
+    attribute.name = (*metadataStringListNames)[index];
+    attribute.values.insert(
+        attribute.values.end(),
+        metadataStringListValues->begin() +
+            static_cast<std::ptrdiff_t>(metadataStringOffset),
+        metadataStringListValues->begin() + static_cast<std::ptrdiff_t>(
+                                                metadataStringOffset + count));
+    metadataStringOffset += count;
+    candidate.metadata.stringListAttributes.push_back(std::move(attribute));
+  }
+  std::size_t metadataExtentOffset = 0;
+  for (std::size_t index = 0; index < metadataVariableCount; ++index) {
+    const auto dimensionCount = static_cast<std::size_t>(
+        (*metadataVariableDimensionCounts)[index]);
+    std::vector<std::size_t> extents;
+    extents.reserve(dimensionCount);
+    for (std::size_t dimension = 0; dimension < dimensionCount; ++dimension) {
+      const auto extent =
+          (*metadataVariableExtents)[metadataExtentOffset + dimension];
+      if (extent < 0 ||
+          static_cast<std::uint64_t>(extent) >
+              std::numeric_limits<std::size_t>::max())
+        return invalid(
+            "Observation-schema manifest metadata-variable extent is invalid.");
+      extents.push_back(static_cast<std::size_t>(extent));
+    }
+    metadataExtentOffset += dimensionCount;
+    const auto storageName =
+        "metadataVariable." + std::to_string(index);
+    const auto type = static_cast<WVObservationScalarType>(
+        (*metadataVariableTypes)[index]);
+    WVObservationValue value;
+    if (type == WVObservationScalarType::complex64) {
+      const auto *real = manifest.value(storageName + ".real");
+      const auto *imaginary = manifest.value(storageName + ".imag");
+      if (real == nullptr || imaginary == nullptr ||
+          real->dimensions != extents || imaginary->dimensions != extents ||
+          !std::holds_alternative<std::vector<double>>(real->storage) ||
+          !std::holds_alternative<std::vector<double>>(imaginary->storage))
+        return invalid(
+            "Observation-schema manifest complex metadata storage is invalid.");
+      const auto &realValues = std::get<std::vector<double>>(real->storage);
+      const auto &imaginaryValues =
+          std::get<std::vector<double>>(imaginary->storage);
+      if (realValues.size() != imaginaryValues.size())
+        return invalid(
+            "Observation-schema manifest complex metadata storage differs.");
+      std::vector<WVComplex64> values(realValues.size());
+      for (std::size_t element = 0; element < values.size(); ++element)
+        values[element] = {realValues[element], imaginaryValues[element]};
+      value = WVObservationValue::ownComplex(
+          (*metadataVariableIdentifiers)[index], std::move(extents),
+          std::move(values));
+    } else {
+      const auto *storage = manifest.value(storageName);
+      if (storage == nullptr || storage->dimensions != extents)
+        return invalid(
+            "Observation-schema manifest metadata storage is invalid.");
+      switch (type) {
+      case WVObservationScalarType::real64:
+        if (!std::holds_alternative<std::vector<double>>(storage->storage))
+          return invalid(
+              "Observation-schema manifest real metadata storage is invalid.");
+        value = WVObservationValue::ownReal(
+            (*metadataVariableIdentifiers)[index], std::move(extents),
+            std::get<std::vector<double>>(storage->storage));
+        break;
+      case WVObservationScalarType::integer64:
+        if (!std::holds_alternative<std::vector<std::int64_t>>(
+                storage->storage))
+          return invalid(
+              "Observation-schema manifest integer metadata storage is invalid.");
+        value = WVObservationValue::ownInteger(
+            (*metadataVariableIdentifiers)[index], std::move(extents),
+            std::get<std::vector<std::int64_t>>(storage->storage));
+        break;
+      case WVObservationScalarType::boolean8:
+        if (!std::holds_alternative<std::vector<std::uint8_t>>(
+                storage->storage))
+          return invalid(
+              "Observation-schema manifest Boolean metadata storage is invalid.");
+        value = WVObservationValue::ownBoolean(
+            (*metadataVariableIdentifiers)[index], std::move(extents),
+            std::get<std::vector<std::uint8_t>>(storage->storage));
+        break;
+      case WVObservationScalarType::text:
+        if (!std::holds_alternative<std::vector<std::string>>(
+                storage->storage))
+          return invalid(
+              "Observation-schema manifest text metadata storage is invalid.");
+        value = WVObservationValue::ownText(
+            (*metadataVariableIdentifiers)[index], std::move(extents),
+            std::get<std::vector<std::string>>(storage->storage));
+        break;
+      case WVObservationScalarType::complex64:
+        return invalid(
+            "Observation-schema manifest complex metadata storage is invalid.");
+      }
+    }
+    candidate.metadata.variables.push_back(
+        {(*metadataVariableNames)[index], std::move(value),
+         (*metadataVariableLogical)[index] != 0});
+  }
   for (std::size_t index = 0; index < axisCount; ++index) {
     if ((*axisKinds)[index] < 0 || (*axisKinds)[index] > 1 ||
         (*axisExtents)[index] < 0 || (*axisRoles)[index] < 0 ||

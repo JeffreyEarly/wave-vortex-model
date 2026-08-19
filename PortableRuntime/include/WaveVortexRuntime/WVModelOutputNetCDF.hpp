@@ -113,20 +113,18 @@ struct WVInspectedObservationSchema {
 };
 
 struct WVModelOutputNetCDFInspection {
-  // Latest complete coefficient restart among paths. Required additional
-  // particle and tracer state is owned separately below.
-  WVCheckpoint latestRestart;
+  // Allocation-light latest complete coefficient restart among paths. Raw
+  // inspection never loads coefficient arrays or constructs implementations.
+  WVCheckpointInspection latestRestart;
+  std::string latestRestartPath;
   bool isDynamicsLinear = false;
-  // Reconstructed shared observer graph and its resolved integration layout.
+  // Reconstructed canonical observer/output records and declared schemas.
   WVPortableObserverRecord observerRecord;
-  // Provisional nonlegacy schemas reconstructed from persisted variable and
-  // axis declarations. Legacy MATLAB observers remain represented by the
-  // exact observer graph above.
   std::vector<WVInspectedObservationSchema> observationSchemas;
-  WVIntegrationStateLayout stateLayout;
-  WVAdditionalStateStorage additionalState;
-  // Last committed original-lattice ordinal for every file/group pair.
-  std::vector<WVOutputGroupProgress> progress;
+  // Schedule state at the selected restart is independent of the tail and
+  // offsets committed in each destination.
+  std::vector<WVOutputScheduleContinuation> scheduleContinuations;
+  std::vector<WVOutputDestinationProgress> destinationProgress;
   std::vector<std::string> paths;
 };
 
@@ -134,10 +132,11 @@ struct WVModelOutputNetCDFInspection {
 //
 // createNew() fully defines, writes, synchronizes, and closes every sibling
 // staging file before the destination set becomes visible. openAppend()
-// validates the supplied descriptor, schedules, shapes, prior time lattice,
-// and every committed payload before returning. inspect() reconstructs the
-// observer graph and latest required restart state without requiring callers
-// to supply the original descriptor.
+// validates the complete supplied graph, schedules, shapes, record counts,
+// time-last markers, cursor state, ragged offsets, and committed payloads
+// read-only before reopening the accepted set for mutation. inspect()
+// reconstructs the observer graph and allocation-light restart metadata;
+// restoreState() later loads the selected coefficient and observer state.
 //
 // deliver() writes all payloads at the group's next record index, writes time
 // last as the commit marker, then synchronizes the file. A failed call leaves
@@ -172,18 +171,29 @@ public:
              const WVPortableObserverDescriptor &descriptor,
              const WVIntegrationStateLayout &stateLayout,
              WVObserverSampleSource *sampleSource,
+             const std::vector<WVOutputDestinationProgress>
+                 &expectedDestinationProgress,
              WVModelOutputNetCDFSink &sink);
 
   static WVCheckpointStatus inspect(const std::vector<std::string> &paths,
                                     const WVExtensionCatalog &catalog,
                                     WVModelOutputNetCDFInspection &inspection);
 
+  // Load the selected coefficient and observer-owned restart state only after
+  // the canonical output graph has completed capability preflight.
+  static WVCheckpointStatus restoreState(
+      const WVModelOutputNetCDFInspection &inspection,
+      const WVExtensionCatalog &catalog,
+      const WVIntegrationStateLayout &stateLayout, WVCheckpoint &checkpoint,
+      WVAdditionalStateStorage &additionalState);
+
   WVKernelStatus preflight(const WVOutputPlan &plan) override;
   WVKernelStatus deliver(const WVOutputEvent &event,
                          const WVOutputRouteView &route,
                          WVOutputDeliveryResult &result) override;
 
-  const std::vector<WVOutputGroupProgress> &progress() const noexcept;
+  const std::vector<WVOutputDestinationProgress> &
+  destinationProgress() const noexcept;
   const WVModelOutputNetCDFMetrics &metrics() const noexcept;
   WVCheckpointStatus close() noexcept;
 

@@ -17,6 +17,9 @@ using WVObserverFactory = std::function<WVKernelStatus(
     std::shared_ptr<const WVObservingSystem> &)>;
 using WVObserverConfigurationResolver = std::function<WVKernelStatus(
     const WVObserverRecord &, WVPortableTypedRecord &)>;
+using WVObserverOutputPlanResolver = std::function<WVKernelStatus(
+    const WVObserverRecord &, const WVObserverOutputPlanningContext &,
+    WVObserverOutputPlan &)>;
 
 // Data-only compatibility actions for the five historical MATLAB observer
 // encodings. The catalog registration selects one coarse callback; generic
@@ -43,11 +46,13 @@ struct WVObserverFactoryRegistration {
       std::string identity, std::uint32_t version, WVObserverFactory make,
       WVObserverConfigurationResolver resolve = {},
       WVLegacyObserverOperationResolver resolveLegacy = {},
-      WVLegacyObserverPersistenceMetadata persistence = {})
+      WVLegacyObserverPersistenceMetadata persistence = {},
+      WVObserverOutputPlanResolver resolveOutputPlan = {})
       : typeIdentifier(std::move(identity)), contractVersion(version),
         factory(std::move(make)), configurationResolver(std::move(resolve)),
         legacyOperationResolver(std::move(resolveLegacy)),
-        legacyPersistence(std::move(persistence)) {}
+        legacyPersistence(std::move(persistence)),
+        outputPlanResolver(std::move(resolveOutputPlan)) {}
   std::string typeIdentifier;
   std::uint32_t contractVersion = WVPortablePairContractVersion;
   WVObserverFactory factory;
@@ -57,6 +62,9 @@ struct WVObserverFactoryRegistration {
   WVObserverConfigurationResolver configurationResolver;
   WVLegacyObserverOperationResolver legacyOperationResolver;
   WVLegacyObserverPersistenceMetadata legacyPersistence;
+  // Data-only semantic preflight. This must derive the exact output plan
+  // without constructing an observing-system implementation.
+  WVObserverOutputPlanResolver outputPlanResolver;
 };
 
 struct WVOutputScheduleFactoryRegistration {
@@ -80,6 +88,10 @@ public:
   WVKernelStatus resolveConfiguration(
       const WVObserverRecord &record,
       WVPortableTypedRecord &configuration) const;
+  WVKernelStatus resolveOutputPlan(
+      const WVObserverRecord &record,
+      const WVObserverOutputPlanningContext &context,
+      WVObserverOutputPlan &plan) const;
   WVKernelStatus create(const WVObserverRecord &record,
                         const WVPortableTypedRecord &configuration,
                         std::shared_ptr<const WVObservingSystem> &result) const;
@@ -99,6 +111,8 @@ public:
   const WVOutputScheduleFactoryRegistration *
   registration(const std::string &typeIdentifier,
                std::uint32_t contractVersion) const noexcept;
+  const WVOutputScheduleFactoryRegistration *
+  registration(const WVOutputScheduleRecord &record) const noexcept;
   WVKernelStatus resolve(const WVOutputScheduleRecord &record,
                          std::shared_ptr<const WVOutputSchedule> &result) const;
   std::size_t persistentBytes() const noexcept;
