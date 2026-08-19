@@ -75,9 +75,21 @@ public:
   const WVObservingSystem &implementation() const noexcept {
     return *implementation_;
   }
+  std::shared_ptr<const WVObservingSystem>
+  implementationHandle() const noexcept {
+    return implementation_;
+  }
   const WVObserverExecutionPlan &executionPlan() const noexcept {
     return executionPlan_;
   }
+  WVKernelStatus outputPlan(
+      const WVObserverRecord &observer,
+      const WVObserverOutputPlanningContext &context,
+      WVObserverOutputPlan &plan) const;
+  WVKernelStatus observationBatch(
+      const WVObserverRecord &observer, const WVObserverOutputPlan &plan,
+      const WVObserverOutputEvaluationContext &context,
+      WVObservationBatchKind kind, WVObservationBatch &batch) const;
   std::size_t persistentBytes() const noexcept;
 
 private:

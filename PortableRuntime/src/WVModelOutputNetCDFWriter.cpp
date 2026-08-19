@@ -333,9 +333,23 @@ public:
           observerIdentifiers.insert(record->identifier);
       }
 
-    std::size_t retainedBytes = 0;
-    std::size_t liveBytes = 0;
     preparedObservationBatches.reserve(observerIdentifiers.size());
+    const auto updateBatchMetrics = [&]() {
+      std::size_t retainedBytes =
+          preparedObservationBatches.capacity() *
+          sizeof(PreparedObservationBatch);
+      std::size_t liveBytes = 0;
+      for (const auto &prepared : preparedObservationBatches) {
+        const auto batchMetrics = prepared.batch.metrics();
+        retainedBytes += prepared.observerIdentifier.capacity() +
+                         batchMetrics.retainedStorageBytes;
+        liveBytes += batchMetrics.liveBytes;
+      }
+      metrics.batchRetainedStorageBytes =
+          std::max(metrics.batchRetainedStorageBytes, retainedBytes);
+      metrics.batchMaximumLiveBytes =
+          std::max(metrics.batchMaximumLiveBytes, liveBytes);
+    };
     for (const auto &identifier : observerIdentifiers) {
       const auto *record = observer(identifier);
       const auto *schema = observerSchema(identifier, event);
@@ -345,6 +359,7 @@ public:
       const auto batchSourceStatus =
           sampleSource->observationBatch(*record, batch);
       if (!batchSourceStatus) {
+        updateBatchMetrics();
         preparedObservationStatus = failure(
             WVCheckpointStatusCode::unsupportedObserver,
             batchSourceStatus.message, "/");
@@ -355,20 +370,15 @@ public:
       if (!batchStatus) {
         preparedObservationBatches.push_back(
             {identifier, std::move(batch)});
+        updateBatchMetrics();
         preparedObservationStatus = failure(
             WVCheckpointStatusCode::shapeMismatch, batchStatus.message, "/");
         return preparedObservationStatus;
       }
-      const auto batchMetrics = batch.metrics();
-      retainedBytes += batchMetrics.retainedStorageBytes;
-      liveBytes += batchMetrics.liveBytes;
       preparedObservationBatches.push_back(
           {identifier, std::move(batch)});
     }
-    metrics.batchRetainedStorageBytes =
-        std::max(metrics.batchRetainedStorageBytes, retainedBytes);
-    metrics.batchMaximumLiveBytes =
-        std::max(metrics.batchMaximumLiveBytes, liveBytes);
+    updateBatchMetrics();
     return preparedObservationStatus;
   }
 
@@ -402,6 +412,94 @@ public:
           return candidate.identifier == identifier;
         });
     return found == blocks.end() ? nullptr : &*found;
+  }
+
+  WVCheckpointStatus validateObservationGraph() const {
+    if (sampleSource == nullptr)
+      return WVCheckpointStatus::ok();
+    std::map<std::string, WVObservationSchema> schemas;
+    for (const auto &record : descriptorRecord.observers) {
+      WVObservationSchema schema;
+      const auto sourceStatus = sampleSource->observationSchema(record, schema);
+      if (!sourceStatus)
+        return failure(WVCheckpointStatusCode::unsupportedObserver,
+                       sourceStatus.message,
+                       "/observingSystems/" + record.identifier);
+      const auto schemaStatus = validateObservationSchema(schema);
+      if (!schemaStatus)
+        return failure(WVCheckpointStatusCode::schemaMismatch,
+                       schemaStatus.message,
+                       "/observingSystems/" + record.identifier);
+      schemas.emplace(record.identifier, std::move(schema));
+    }
+    struct AxisContract {
+      WVObservationAxisKind kind = WVObservationAxisKind::fixed;
+      std::size_t extent = 0;
+      WVObservationCoordinateRole role =
+          WVObservationCoordinateRole::none;
+    };
+    for (const auto &file : descriptorRecord.outputFiles)
+      for (const auto &group : file.groups) {
+        std::map<std::string, AxisContract> axesByPersistedName;
+        std::map<std::string, std::string> variableOwners;
+        variableOwners.emplace("t", "runtime");
+        for (const auto &observerIdentifier : group.observerIdentifiers) {
+          const auto schema = schemas.find(observerIdentifier);
+          if (schema == schemas.end())
+            return failure(WVCheckpointStatusCode::schemaMismatch,
+                           "Output group references an unknown observer schema.",
+                           file.destination + "/" + group.name);
+          for (const auto &axisDefinition : schema->second.axes) {
+            const AxisContract contract{axisDefinition.kind,
+                                        axisDefinition.extent,
+                                        axisDefinition.coordinateRole};
+            const auto inserted = axesByPersistedName.emplace(
+                axisDefinition.name, contract);
+            if (!inserted.second &&
+                (inserted.first->second.kind != contract.kind ||
+                 inserted.first->second.extent != contract.extent))
+              return failure(
+                  WVCheckpointStatusCode::schemaMismatch,
+                  "Observers declare incompatible axes with the same "
+                  "persisted name.",
+                  file.destination + "/" + group.name + "/" +
+                      axisDefinition.name);
+          }
+          for (const auto &variable : schema->second.variables) {
+            const bool canonicalCoefficient =
+                group.containsCompleteCoefficientRestart &&
+                coefficientMetadata(variable.name) != nullptr;
+            if (canonicalCoefficient)
+              continue;
+            const auto claim = [&](const std::string &persistedName) {
+              const auto inserted = variableOwners.emplace(
+                  persistedName, observerIdentifier);
+              if (inserted.second)
+                return WVCheckpointStatus::ok();
+              return failure(
+                  WVCheckpointStatusCode::schemaMismatch,
+                  "Observers declare duplicate persisted variable names "
+                  "without an alias contract.",
+                  file.destination + "/" + group.name + "/" +
+                      persistedName);
+            };
+            if (variable.scalarType ==
+                WVObservationScalarType::complex64) {
+              auto result = claim(variable.name + "_real");
+              if (!result)
+                return result;
+              result = claim(variable.name + "_imag");
+              if (!result)
+                return result;
+            } else {
+              const auto result = claim(variable.name);
+              if (!result)
+                return result;
+            }
+          }
+        }
+      }
+    return WVCheckpointStatus::ok();
   }
 
   WVCheckpointStatus validateConfiguration() const {
@@ -487,7 +585,7 @@ public:
                          file.destination);
       }
     }
-    return WVCheckpointStatus::ok();
+    return validateObservationGraph();
   }
 
   WVCheckpointStatus validateDestinations(bool requireExisting) const {
@@ -850,16 +948,11 @@ public:
           continue;
         const auto existing = definedDerivedVariables.find(specification.name);
         if (existing != definedDerivedVariables.end()) {
-          const auto &prior = existing->second;
-          if (prior.scalarType != specification.scalarType ||
-              prior.layout != specification.layout ||
-              prior.dimensionIdentifiers !=
-                  specification.dimensionIdentifiers)
-            return failure(WVCheckpointStatusCode::schemaMismatch,
-                           "Observers declare incompatible variables with the "
-                           "same name.",
-                           path + "/" + specification.name);
-          continue;
+          return failure(
+              WVCheckpointStatusCode::schemaMismatch,
+              "Observers declare duplicate persisted variable names without "
+              "an alias contract.",
+              path + "/" + specification.name);
         }
         definedDerivedVariables.emplace(specification.name, specification);
         std::vector<int> dimensions;
@@ -983,6 +1076,11 @@ public:
           }
           if (attributeResult && !observationSchema->preservesLegacyEncoding)
             attributeResult = detail::putTextAttribute(
+                group.id, variableId,
+                "portableObservationObserverIdentifier", record->identifier,
+                variablePath);
+          if (attributeResult && !observationSchema->preservesLegacyEncoding)
+            attributeResult = detail::putTextAttribute(
                 group.id, variableId, "portableObservationSchemaIdentifier",
                 observationSchema->identifier, variablePath);
           if (attributeResult && !observationSchema->preservesLegacyEncoding)
@@ -1008,6 +1106,23 @@ public:
                     "portableObservationDimensionIdentifiers",
                     rawDimensions.size(), rawDimensions.data()),
                 "Observation dimension-identifier definition", variablePath);
+            if (attributeResult) {
+              std::vector<const char *> rawRoles;
+              std::vector<std::string> roles;
+              roles.reserve(variable.axes.size());
+              rawRoles.reserve(variable.axes.size());
+              for (const auto &axisDefinition : variable.axes)
+                roles.emplace_back(
+                    coordinateRoleName(axisDefinition.coordinateRole));
+              for (const auto &role : roles)
+                rawRoles.push_back(role.c_str());
+              attributeResult = detail::checkedNetCDF(
+                  nc_put_att_string(
+                      group.id, variableId,
+                      "portableObservationAxisCoordinateRoles",
+                      rawRoles.size(), rawRoles.data()),
+                  "Observation axis-role definition", variablePath);
+            }
           }
           if (attributeResult && !observationSchema->preservesLegacyEncoding &&
               specification.coordinateRole !=
@@ -2318,6 +2433,11 @@ public:
       bytes +=
           item.fileIdentifier.capacity() + item.groupIdentifier.capacity() +
           item.scheduleCursor.persistentBytes() - sizeof(WVPortableTypedRecord);
+    bytes += preparedObservationBatches.capacity() *
+             sizeof(PreparedObservationBatch);
+    for (const auto &prepared : preparedObservationBatches)
+      bytes += prepared.observerIdentifier.capacity() +
+               prepared.batch.metrics().retainedStorageBytes;
     metrics.retainedStorageBytes = bytes;
   }
 
@@ -2406,16 +2526,11 @@ public:
                     }
                   }
                   group.derivedVariables.push_back(std::move(variable));
-                } else if (existing->specification.scalarType !=
-                               specification.scalarType ||
-                           existing->specification.layout !=
-                               specification.layout ||
-                           existing->specification.dimensionIdentifiers !=
-                               specification.dimensionIdentifiers)
+                } else
                   return failure(
                       WVCheckpointStatusCode::appendConflict,
-                      "Observers declare incompatible variables with the same "
-                      "name.",
+                      "Observers declare duplicate persisted variable names "
+                      "without an alias contract.",
                       file.destination.string());
               }
             }

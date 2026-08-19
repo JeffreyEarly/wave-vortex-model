@@ -51,6 +51,18 @@ foreach(relative_path IN LISTS generic_observation_consumers)
     endforeach()
 endforeach()
 
+file(READ
+    "${WV_REPOSITORY_ROOT}/PortableRuntime/src/WVObserverOutputEvaluationService.cpp"
+    evaluator_contents)
+foreach(token IN ITEMS WVObserverSamplingTopology "executionPlan(")
+    string(FIND "${evaluator_contents}" "${token}" occurrence)
+    if(NOT occurrence EQUAL -1)
+        message(FATAL_ERROR
+            "WVObserverOutputEvaluationService.cpp retains observer-topology dispatch via ${token}; "
+            "resolved observer providers must declare plans and produce batches.")
+    endif()
+endforeach()
+
 set(retired_dispatch_symbols
     WVObserverKind
     WVObserverStateContract

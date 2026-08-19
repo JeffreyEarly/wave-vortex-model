@@ -182,36 +182,72 @@ WVCheckpointStatus variableStringListAttribute(
   return WVCheckpointStatus::ok();
 }
 
-WVObservationCoordinateRole coordinateRole(const std::string &value) noexcept {
+bool coordinateRole(const std::string &value,
+                    WVObservationCoordinateRole &role) noexcept {
+  if (value == "none") {
+    role = WVObservationCoordinateRole::none;
+    return true;
+  }
   if (value == "record-time")
-    return WVObservationCoordinateRole::recordTime;
-  if (value == "sample-time")
-    return WVObservationCoordinateRole::sampleTime;
-  if (value == "x")
-    return WVObservationCoordinateRole::x;
-  if (value == "y")
-    return WVObservationCoordinateRole::y;
-  if (value == "z")
-    return WVObservationCoordinateRole::z;
-  if (value == "identifier")
-    return WVObservationCoordinateRole::identifier;
-  if (value == "depth")
-    return WVObservationCoordinateRole::depth;
-  if (value == "pass")
-    return WVObservationCoordinateRole::pass;
-  if (value == "profile")
-    return WVObservationCoordinateRole::profile;
-  return WVObservationCoordinateRole::none;
+    role = WVObservationCoordinateRole::recordTime;
+  else if (value == "sample-time")
+    role = WVObservationCoordinateRole::sampleTime;
+  else if (value == "x")
+    role = WVObservationCoordinateRole::x;
+  else if (value == "y")
+    role = WVObservationCoordinateRole::y;
+  else if (value == "z")
+    role = WVObservationCoordinateRole::z;
+  else if (value == "identifier")
+    role = WVObservationCoordinateRole::identifier;
+  else if (value == "depth")
+    role = WVObservationCoordinateRole::depth;
+  else if (value == "pass")
+    role = WVObservationCoordinateRole::pass;
+  else if (value == "profile")
+    role = WVObservationCoordinateRole::profile;
+  else
+    return false;
+  return true;
 }
 
-WVObservationValueLayout valueLayout(const std::string &value) noexcept {
+bool valueLayout(const std::string &value,
+                 WVObservationValueLayout &layout) noexcept {
   if (value == "static")
-    return WVObservationValueLayout::staticValue;
-  if (value == "initial")
-    return WVObservationValueLayout::initialValue;
-  if (value == "flat")
-    return WVObservationValueLayout::flat;
-  return WVObservationValueLayout::record;
+    layout = WVObservationValueLayout::staticValue;
+  else if (value == "initial")
+    layout = WVObservationValueLayout::initialValue;
+  else if (value == "record")
+    layout = WVObservationValueLayout::record;
+  else if (value == "flat")
+    layout = WVObservationValueLayout::flat;
+  else
+    return false;
+  return true;
+}
+
+bool raggedRole(const std::string &value,
+                WVObservationRaggedRole &role) noexcept {
+  if (value == "none")
+    role = WVObservationRaggedRole::none;
+  else if (value == "row-count")
+    role = WVObservationRaggedRole::rowCount;
+  else if (value == "row-offset")
+    role = WVObservationRaggedRole::rowOffset;
+  else
+    return false;
+  return true;
+}
+
+bool sameAttributes(const std::vector<WVObservationAttribute> &left,
+                    const std::vector<WVObservationAttribute> &right) {
+  if (left.size() != right.size())
+    return false;
+  for (std::size_t index = 0; index < left.size(); ++index)
+    if (left[index].name != right[index].name ||
+        left[index].value != right[index].value)
+      return false;
+  return true;
 }
 
 bool sameObservationSchemaContract(const WVObservationSchema &left,
@@ -224,7 +260,7 @@ bool sameObservationSchemaContract(const WVObservationSchema &left,
     const auto &a = left.axes[index];
     const auto &b = right.axes[index];
     if (a.identifier != b.identifier || a.name != b.name || a.kind != b.kind ||
-        a.extent != b.extent)
+        a.extent != b.extent || a.coordinateRole != b.coordinateRole)
       return false;
   }
   for (std::size_t index = 0; index < left.variables.size(); ++index) {
@@ -235,6 +271,7 @@ bool sameObservationSchemaContract(const WVObservationSchema &left,
         a.dimensionIdentifiers != b.dimensionIdentifiers ||
         a.layout != b.layout || a.units != b.units ||
         a.description != b.description ||
+        !sameAttributes(a.attributes, b.attributes) ||
         a.coordinateRole != b.coordinateRole ||
         a.raggedRole != b.raggedRole ||
         a.raggedChildAxisIdentifier != b.raggedChildAxisIdentifier)
@@ -329,6 +366,18 @@ WVCheckpointStatus readProvisionalObservationSchema(
       return result;
     if (!present || observedSchema != schema.identifier)
       continue;
+    std::string observedOwner;
+    result = optionalVariableTextAttribute(
+        outputGroup, variable, "portableObservationObserverIdentifier",
+        observedOwner, present, variablePath);
+    if (!result)
+      return result;
+    if (!present)
+      return failure(WVCheckpointStatusCode::missingAttribute,
+                     "Portable observation variable lacks an owning observer.",
+                     variablePath);
+    if (observedOwner != observerIdentifier)
+      continue;
     std::string identifier;
     result = optionalVariableTextAttribute(
         outputGroup, variable, "portableObservationVariableIdentifier",
@@ -383,7 +432,10 @@ WVCheckpointStatus readProvisionalObservationSchema(
                               "Portable observation variable lacks a layout.",
                               variablePath)
                     : result;
-    specification.layout = valueLayout(layout);
+    if (!valueLayout(layout, specification.layout))
+      return failure(WVCheckpointStatusCode::invalidValue,
+                     "Portable observation variable has an unknown layout.",
+                     variablePath);
     result = variableStringListAttribute(
         outputGroup, variable, "portableObservationDimensionIdentifiers",
         specification.dimensionIdentifiers, present, variablePath);
@@ -391,6 +443,26 @@ WVCheckpointStatus readProvisionalObservationSchema(
       return result;
     if (!present)
       specification.dimensionIdentifiers.clear();
+    std::vector<std::string> axisRoleNames;
+    result = variableStringListAttribute(
+        outputGroup, variable, "portableObservationAxisCoordinateRoles",
+        axisRoleNames, present, variablePath);
+    if (!result)
+      return result;
+    if (!specification.dimensionIdentifiers.empty() &&
+        (!present || axisRoleNames.size() !=
+                         specification.dimensionIdentifiers.size()))
+      return failure(
+          WVCheckpointStatusCode::missingAttribute,
+          "Portable observation variable lacks complete axis roles.",
+          variablePath);
+    std::vector<WVObservationCoordinateRole> axisRoles(axisRoleNames.size());
+    for (std::size_t index = 0; index < axisRoleNames.size(); ++index)
+      if (!coordinateRole(axisRoleNames[index], axisRoles[index]))
+        return failure(
+            WVCheckpointStatusCode::invalidValue,
+            "Portable observation axis has an unknown coordinate role.",
+            variablePath);
     int rank = 0;
     result = detail::checkedNetCDF(
         nc_inq_varndims(outputGroup, variable, &rank),
@@ -429,22 +501,52 @@ WVCheckpointStatus readProvisionalObservationSchema(
         variablePath);
     if (!result)
       return result;
-    if (present)
-      specification.coordinateRole = coordinateRole(attribute);
+    if (present && !coordinateRole(attribute, specification.coordinateRole))
+      return failure(
+          WVCheckpointStatusCode::invalidValue,
+          "Portable observation variable has an unknown coordinate role.",
+          variablePath);
     result = optionalVariableTextAttribute(
         outputGroup, variable, "portableRaggedRole", attribute, present,
         variablePath);
     if (!result)
       return result;
-    if (present)
-      specification.raggedRole =
-          attribute == "row-count" ? WVObservationRaggedRole::rowCount
-                                    : WVObservationRaggedRole::rowOffset;
+    if (present && !raggedRole(attribute, specification.raggedRole))
+      return failure(WVCheckpointStatusCode::invalidValue,
+                     "Portable observation variable has an unknown ragged role.",
+                     variablePath);
     result = optionalVariableTextAttribute(
         outputGroup, variable, "portableRaggedChildAxis",
         specification.raggedChildAxisIdentifier, present, variablePath);
     if (!result)
       return result;
+
+    if (hasManifest) {
+      const auto declared = std::find_if(
+          declaredSchema.variables.begin(), declaredSchema.variables.end(),
+          [&](const auto &candidate) {
+            return candidate.identifier == specification.identifier;
+          });
+      if (declared == declaredSchema.variables.end())
+        return failure(WVCheckpointStatusCode::schemaMismatch,
+                       "Portable observation variable is absent from its manifest.",
+                       variablePath);
+      specification.attributes = declared->attributes;
+      for (const auto &custom : specification.attributes) {
+        std::string observed;
+        bool hasCustom = false;
+        result = optionalVariableTextAttribute(
+            outputGroup, variable, custom.name.c_str(), observed, hasCustom,
+            variablePath);
+        if (!result)
+          return result;
+        if (!hasCustom || observed != custom.value)
+          return failure(
+              WVCheckpointStatusCode::schemaMismatch,
+              "Portable observation custom attributes differ from their manifest.",
+              variablePath);
+      }
+    }
 
     for (std::size_t logical = 0;
          logical < specification.dimensionIdentifiers.size(); ++logical) {
@@ -464,9 +566,7 @@ WVCheckpointStatus readProvisionalObservationSchema(
           schema.axes.begin(), schema.axes.end(), [&](const auto &candidate) {
             return candidate.identifier == axisIdentifier;
           });
-      const auto role = specification.dimensionIdentifiers.size() == 1
-                            ? specification.coordinateRole
-                            : WVObservationCoordinateRole::none;
+      const auto role = axisRoles[logical];
       WVObservationAxis observed{
           axisIdentifier, axisName,
           isUnlimited ? WVObservationAxisKind::unlimited
@@ -482,6 +582,10 @@ WVCheckpointStatus readProvisionalObservationSchema(
       else if (existing->coordinateRole == WVObservationCoordinateRole::none &&
                role != WVObservationCoordinateRole::none)
         existing->coordinateRole = role;
+      else if (existing->coordinateRole != role)
+        return failure(WVCheckpointStatusCode::schemaMismatch,
+                       "Portable observation axis roles conflict.",
+                       variablePath);
     }
     schema.variables.push_back(std::move(specification));
   }

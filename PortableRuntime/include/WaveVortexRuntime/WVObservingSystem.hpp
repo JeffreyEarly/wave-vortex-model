@@ -12,6 +12,11 @@ namespace wavevortex::runtime {
 
 struct WVObserverRecord;
 struct WVStateBlockRecord;
+struct WVObserverOutputPlanningContext;
+struct WVObserverOutputPlan;
+class WVObserverOutputEvaluationContext;
+struct WVObservationBatch;
+enum class WVObservationBatchKind : std::uint8_t;
 
 // Declarative, per-record operations resolved once before integration. These
 // describe generic sampling and integrated-state mechanics; runtime consumers
@@ -63,6 +68,14 @@ public:
   virtual WVKernelStatus executionPlan(
       const WVObserverRecord &observer,
       WVObserverExecutionPlan &plan) const = 0;
+  virtual WVKernelStatus outputPlan(
+      const WVObserverRecord &observer,
+      const WVObserverOutputPlanningContext &context,
+      WVObserverOutputPlan &plan) const;
+  virtual WVKernelStatus observationBatch(
+      const WVObserverRecord &observer, const WVObserverOutputPlan &plan,
+      const WVObserverOutputEvaluationContext &context,
+      WVObservationBatchKind kind, WVObservationBatch &batch) const;
   virtual std::size_t persistentBytes() const noexcept = 0;
 };
 
