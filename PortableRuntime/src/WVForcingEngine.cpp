@@ -650,6 +650,8 @@ WVKernelStatus WVConstantStratificationForcingEngine::ensurePhysicalFields(
             if (!status) return status;
             externalFieldsPrepared = true;
             ++metrics_.physicalFieldReconstructionCount;
+        } else {
+            ++metrics_.physicalFieldReuseCount;
         }
         fields = {externalFields->data,externalFields->shape};
         return WVKernelStatus::ok();
@@ -661,6 +663,8 @@ WVKernelStatus WVConstantStratificationForcingEngine::ensurePhysicalFields(
         if (!status) return status;
         physicalFieldsValid_ = true;
         ++metrics_.physicalFieldReconstructionCount;
+    } else {
+        ++metrics_.physicalFieldReuseCount;
     }
     fields = {physicalFields_.data(),shape};
     return WVKernelStatus::ok();
@@ -772,6 +776,7 @@ WVKernelStatus WVConstantStratificationForcingEngine::addNonlinearFlux(
         if (status) {
             externalFieldsPrepared = true;
             if (reconstructsFields) ++metrics_.physicalFieldReconstructionCount;
+            else ++metrics_.physicalFieldReuseCount;
         }
         return status;
     };

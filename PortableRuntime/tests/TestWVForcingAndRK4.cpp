@@ -377,6 +377,7 @@ void testLinearBottomFrictionFormula(bool hydrostatic, std::size_t Nz, double ra
     }
     const double expectedWeight = value.Lz/(2.0*static_cast<double>(Nz-1));
     require(engine->kernel().descriptor().bottomQuadratureWeight() == expectedWeight,"descriptor bottom quadrature weight changed");
+    require(engine->kernel().descriptor().verticalModes().bottomQuadratureWeight == expectedWeight,"descriptor did not retain its bottom quadrature weight");
     require(engine->metrics().workspaceCapacityBytes == (4+q)*R*sizeof(double),"linear friction added storage beyond the shared physical and tendency fields");
     require(engine->metrics().physicalFieldReconstructionCount == 1 && engine->metrics().spatialTendencyProjectionCount == 1,"linear friction did not use one reconstruction and one generic projection");
 }
@@ -402,6 +403,7 @@ void testSharedBottomFrictionOperations(bool hydrostatic) {
     requireFinite(values,"shared bottom-friction evaluation produced non-finite output");
     require(engine->scheduleIdentifier() == "wave-vortex-forcing-v1:WVNonlinearAdvection,WVBottomFrictionQuadratic,WVBottomFrictionLinear","stage/priority ordering did not select the exact active pairs");
     require(engine->metrics().physicalFieldReconstructionCount == 1,"nonlinear and bottom-friction forcings redundantly reconstructed physical fields");
+    require(engine->metrics().physicalFieldReuseCount >= 2,"bottom-friction forcings did not reuse nonlinear-advection physical fields");
     require(engine->metrics().spatialTendencyProjectionCount == 2,"bottom-friction forcings did not share generic projection");
     const auto q = hydrostatic ? 3U : 4U;
     require(engine->metrics().spatialTendencyClearElementWrites == 2*q*R,"bottom-friction forcings did not clear the shared tendency exactly once each");

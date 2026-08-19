@@ -35,6 +35,7 @@ struct WVForcingEngineMetrics {
     std::size_t resolvedSpectralCount = 0;
     std::size_t resolvedAmplitudeCount = 0;
     std::size_t physicalFieldReconstructionCount = 0;
+    std::size_t physicalFieldReuseCount = 0;
     std::size_t spatialTendencyProjectionCount = 0;
     std::size_t accumulatorClearElementWrites = 0;
     std::size_t spatialTendencyClearElementWrites = 0;

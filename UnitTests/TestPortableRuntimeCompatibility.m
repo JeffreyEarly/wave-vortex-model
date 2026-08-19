@@ -72,6 +72,7 @@ classdef TestPortableRuntimeCompatibility < matlab.unittest.TestCase
             testCase.verifyTrue(report.execution.noFallback)
             testCase.verifyGreaterThan(report.forcingOperations.physicalFieldReconstructionCount,0)
             testCase.verifyEqual(report.forcingOperations.physicalFieldReconstructionCount,report.forcingOperations.evaluationCount)
+            testCase.verifyGreaterThanOrEqual(report.forcingOperations.physicalFieldReuseCount,2*report.forcingOperations.evaluationCount)
             testCase.verifyEqual(report.forcingOperations.spatialTendencyProjectionCount,2*report.forcingOperations.physicalFieldReconstructionCount)
             testCase.verifyGreaterThan(report.forcingOperations.spatialTendencyClearElementWrites,0)
 

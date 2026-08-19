@@ -179,6 +179,9 @@ struct WVHalfSpectrumMappings {
 
 struct WVConstantStratificationModes {
     double coriolisFrequency = 0.0;
+    // Trapezoidal quadrature weight at z=-Lz. Bottom forcings divide by
+    // this descriptor-owned weight before projecting their spatial tendency.
+    double bottomQuadratureWeight = 0.0;
     std::vector<double> z;
     std::vector<double> j;
     std::vector<double> h0;
@@ -219,7 +222,7 @@ public:
     std::size_t Nkl() const noexcept { return fourierModes_.size(); }
     WVShape2D spectralShape() const noexcept { return {configuration_.Nj, Nkl()}; }
     WVShape3D spatialShape() const noexcept { return {configuration_.Nx, configuration_.Ny, configuration_.Nz}; }
-    double bottomQuadratureWeight() const noexcept { return configuration_.Lz/(2.0*static_cast<double>(configuration_.Nz-1)); }
+    double bottomQuadratureWeight() const noexcept { return verticalModes_.bottomQuadratureWeight; }
     std::size_t persistentBytes() const noexcept;
 
 private:
