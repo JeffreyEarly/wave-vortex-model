@@ -1,8 +1,8 @@
 #include "WaveVortexRuntime/WVModelOutputNetCDF.hpp"
 
 #include "WVModelOutputNetCDFSchema.hpp"
-#include "WVObserverAdapter.hpp"
 #include "WVNetCDF.hpp"
+#include "WVObserverAdapter.hpp"
 
 #include <algorithm>
 #include <array>
@@ -19,6 +19,29 @@
 
 namespace wavevortex::runtime {
 namespace {
+
+bool hexDecode(const std::string &text, std::vector<std::uint8_t> &bytes) {
+  if (text.size() % 2 != 0)
+    return false;
+  auto digit = [](char value) -> int {
+    if (value >= '0' && value <= '9')
+      return value - '0';
+    if (value >= 'a' && value <= 'f')
+      return value - 'a' + 10;
+    if (value >= 'A' && value <= 'F')
+      return value - 'A' + 10;
+    return -1;
+  };
+  bytes.resize(text.size() / 2);
+  for (std::size_t index = 0; index < bytes.size(); ++index) {
+    const auto high = digit(text[2 * index]);
+    const auto low = digit(text[2 * index + 1]);
+    if (high < 0 || low < 0)
+      return false;
+    bytes[index] = static_cast<std::uint8_t>((high << 4) | low);
+  }
+  return true;
+}
 
 WVCheckpointStatus failure(WVCheckpointStatusCode code, std::string message,
                            std::string location) {
@@ -154,8 +177,8 @@ bool sameRestartValues(const std::vector<double> &left,
   if (left.size() != right.size())
     return false;
   for (std::size_t index = 0; index < left.size(); ++index) {
-    const double scale = std::max({1.0, std::abs(left[index]),
-                                   std::abs(right[index])});
+    const double scale =
+        std::max({1.0, std::abs(left[index]), std::abs(right[index])});
     if (!std::isfinite(left[index]) || !std::isfinite(right[index]) ||
         std::abs(left[index] - right[index]) >
             32 * std::numeric_limits<double>::epsilon() * scale)
@@ -247,14 +270,15 @@ WVCheckpointStatus recordAtTime(int group, double selectedTime,
   if (!result)
     return result;
   std::vector<double> times(count);
-  result = detail::checkedNetCDF(nc_get_var_double(group, variable, times.data()),
-                                 "Output-time read", path + "/t");
+  result =
+      detail::checkedNetCDF(nc_get_var_double(group, variable, times.data()),
+                            "Output-time read", path + "/t");
   if (!result)
     return result;
   found = false;
   for (std::size_t index = 0; index < times.size(); ++index) {
-    const double scale = std::max({1.0, std::abs(times[index]),
-                                   std::abs(selectedTime)});
+    const double scale =
+        std::max({1.0, std::abs(times[index]), std::abs(selectedTime)});
     if (std::abs(times[index] - selectedTime) <=
         8 * std::numeric_limits<double>::epsilon() * scale) {
       if (found)
@@ -269,10 +293,11 @@ WVCheckpointStatus recordAtTime(int group, double selectedTime,
   return WVCheckpointStatus::ok();
 }
 
-WVCheckpointStatus readObserverStateAtTime(
-    const std::string &filePath, const WVOutputGroupRecord &groupRecord,
-    const WVObserverRecord &observer, double selectedTime,
-    std::vector<std::vector<double>> &values, bool &found) {
+WVCheckpointStatus
+readObserverStateAtTime(const std::string &filePath,
+                        const WVOutputGroupRecord &groupRecord,
+                        const WVObserverRecord &observer, double selectedTime,
+                        std::vector<std::vector<double>> &values, bool &found) {
   detail::WVNetCDFFile file;
   auto result = detail::WVNetCDFFile::openReadOnly(filePath, file);
   if (!result)
@@ -301,8 +326,8 @@ WVCheckpointStatus readObserverStateAtTime(
     values.resize(channels.size());
     for (std::size_t index = 0; index < channels.size(); ++index) {
       result = readLatestRealSlab(
-          group, observer.name + "_" +
-                     detail::movingFieldChannelName(channels[index]),
+          group,
+          observer.name + "_" + detail::movingFieldChannelName(channels[index]),
           recordIndex, values[index], groupPath);
       if (!result)
         return result;
@@ -399,8 +424,8 @@ WVCheckpointStatus parseObserver(int outputGroup, int metadataGroup,
                                           className, outputPath);
   if (!result)
     return result;
-  const auto implementation = detail::observerImplementation(
-      className, WVPortablePairContractVersion);
+  const auto implementation =
+      detail::observerImplementation(className, WVPortablePairContractVersion);
   if (!implementation)
     return failure(WVCheckpointStatusCode::unsupportedObserver,
                    "Unsupported MATLAB observing-system class '" + className +
@@ -434,19 +459,19 @@ WVCheckpointStatus parseObserver(int outputGroup, int metadataGroup,
   identifier = observer.identifier;
 
   if (!implementation->fieldListAttribute().empty()) {
-    result = stringListAttribute(metadataGroup, implementation->fieldListAttribute().c_str(),
+    result = stringListAttribute(metadataGroup,
+                                 implementation->fieldListAttribute().c_str(),
                                  observer.fieldNames, present, outputPath);
     if (!result)
       return result;
     if (!present)
       observer.fieldNames.clear();
     else
-      observer.fieldNames.erase(
-          std::remove(observer.fieldNames.begin(), observer.fieldNames.end(),
-                      std::string{}),
-          observer.fieldNames.end());
-    if (!hadPortableIdentifier &&
-        behavior.recordsEulerianFields()) {
+      observer.fieldNames.erase(std::remove(observer.fieldNames.begin(),
+                                            observer.fieldNames.end(),
+                                            std::string{}),
+                                observer.fieldNames.end());
+    if (!hadPortableIdentifier && behavior.recordsEulerianFields()) {
       for (const auto &field : observer.fieldNames)
         observer.identifier += "-" + portableIdentifier(field);
       identifier = observer.identifier;
@@ -508,8 +533,8 @@ WVCheckpointStatus parseObserver(int outputGroup, int metadataGroup,
                        "Eulerian coefficients must use [kl,j] or [t,kl,j] "
                        "NetCDF order.",
                        outputPath + (paired ? "/Ap_real" : "/Ap"));
-      const std::vector<std::size_t> logical{
-          dimensions.back(), dimensions[dimensions.size() - 2]};
+      const std::vector<std::size_t> logical{dimensions.back(),
+                                             dimensions[dimensions.size() - 2]};
       for (const char *name : {"Ap", "Am", "A0"}) {
         const auto existing = std::find_if(
             portable.stateBlocks.begin(), portable.stateBlocks.end(),
@@ -517,12 +542,11 @@ WVCheckpointStatus parseObserver(int outputGroup, int metadataGroup,
         const double tolerance = existing == portable.stateBlocks.end()
                                      ? 1e-6
                                      : existing->absoluteTolerance;
-        result = mergeStateBlock(
-            portable,
-            {name, WVStateScalarType::complex64, logical,
-             WVToleranceKind::coefficientEnergyScaled, tolerance,
-             WVStateOwnership::integratorOwned,
-             WVRestartRequirement::requiredDynamicState});
+        result = mergeStateBlock(portable,
+                                 {name, WVStateScalarType::complex64, logical,
+                                  WVToleranceKind::coefficientEnergyScaled,
+                                  tolerance, WVStateOwnership::integratorOwned,
+                                  WVRestartRequirement::requiredDynamicState});
         if (!result)
           return result;
       }
@@ -571,9 +595,8 @@ WVCheckpointStatus parseObserver(int outputGroup, int metadataGroup,
       observer.z.assign(count, 0.0);
     const auto channels = detail::movingFieldChannels(observer);
     for (std::size_t index = 0; index < channels.size(); ++index) {
-      const std::string block =
-          observer.identifier + "-" +
-          detail::movingFieldChannelName(channels[index]);
+      const std::string block = observer.identifier + "-" +
+                                detail::movingFieldChannelName(channels[index]);
       observer.stateBlockIdentifiers.push_back(block);
       result = mergeStateBlock(portable,
                                {block,
@@ -672,12 +695,14 @@ WVCheckpointStatus parseObserver(int outputGroup, int metadataGroup,
 WVCheckpointStatus
 validateReadableHistory(int group, const WVOutputScheduleRecord &schedule,
                         const std::string &path,
-                        WVOutputScheduleOrdinal &committedOrdinal) {
+                        WVOutputScheduleOrdinal &committedOrdinal,
+                        WVPortableTypedRecord &scheduleCursor) {
   std::size_t timeCount = 0;
   auto result = detail::dimensionLength(group, "t", timeCount, path);
   if (!result)
     return result;
   committedOrdinal = WVNoCommittedOutputOrdinal;
+  scheduleCursor = {};
   if (timeCount == 0)
     return WVCheckpointStatus::ok();
   int timeVariable = -1;
@@ -691,25 +716,78 @@ validateReadableHistory(int group, const WVOutputScheduleRecord &schedule,
       path + "/t");
   if (!result)
     return result;
-  for (std::size_t index = 0; index < times.size(); ++index) {
-    const double raw =
-        (times[index] - schedule.initialTime) / schedule.outputInterval;
-    const auto ordinal =
-        static_cast<WVOutputScheduleOrdinal>(std::llround(raw));
-    const double expected =
-        schedule.initialTime +
-        static_cast<double>(ordinal) * schedule.outputInterval;
-    const double tolerance =
-        8 * std::numeric_limits<double>::epsilon() *
-        std::max({1.0, std::abs(times[index]), std::abs(expected)});
-    if (!std::isfinite(times[index]) || ordinal < 0 ||
-        std::abs(times[index] - expected) > tolerance ||
-        (index > 0 && !(times[index] > times[index - 1])))
-      return failure(WVCheckpointStatusCode::appendConflict,
-                     "Output history is not a strictly increasing subset of "
-                     "its configured schedule lattice.",
-                     path + "/t");
-    committedOrdinal = ordinal;
+  if (schedule.typeIdentifier.empty()) {
+    for (std::size_t index = 0; index < times.size(); ++index) {
+      const double raw =
+          (times[index] - schedule.initialTime) / schedule.outputInterval;
+      const auto ordinal =
+          static_cast<WVOutputScheduleOrdinal>(std::llround(raw));
+      const double expected =
+          schedule.initialTime +
+          static_cast<double>(ordinal) * schedule.outputInterval;
+      const double tolerance =
+          8 * std::numeric_limits<double>::epsilon() *
+          std::max({1.0, std::abs(times[index]), std::abs(expected)});
+      if (!std::isfinite(times[index]) || ordinal < 0 ||
+          std::abs(times[index] - expected) > tolerance ||
+          (index > 0 && !(times[index] > times[index - 1])))
+        return failure(WVCheckpointStatusCode::appendConflict,
+                       "Output history is not a strictly increasing subset of "
+                       "its configured schedule lattice.",
+                       path + "/t");
+      committedOrdinal = ordinal;
+    }
+  } else {
+    int ordinalVariable = -1, cursorVariable = -1;
+    result = detail::checkedNetCDF(
+        nc_inq_varid(group, "portableScheduleOrdinal", &ordinalVariable),
+        "Schedule-ordinal lookup", path);
+    if (!result)
+      return result;
+    result = detail::checkedNetCDF(
+        nc_inq_varid(group, "portableScheduleCursor", &cursorVariable),
+        "Schedule-cursor lookup", path);
+    if (!result)
+      return result;
+    std::vector<long long> ordinals(timeCount);
+    result = detail::checkedNetCDF(
+        nc_get_var_longlong(group, ordinalVariable, ordinals.data()),
+        "Schedule-ordinal read", path);
+    if (!result)
+      return result;
+    for (std::size_t index = 0; index < timeCount; ++index) {
+      if (!std::isfinite(times[index]) || ordinals[index] < 0 ||
+          (index > 0 && (!(times[index] > times[index - 1]) ||
+                         ordinals[index] <= ordinals[index - 1])))
+        return failure(WVCheckpointStatusCode::appendConflict,
+                       "Algorithmic output history is not strictly monotone.",
+                       path + "/t");
+      const std::size_t position[] = {index};
+      char *encodedCursor = nullptr;
+      result = detail::checkedNetCDF(
+          nc_get_var1_string(group, cursorVariable, position, &encodedCursor),
+          "Schedule-cursor read", path);
+      if (!result)
+        return result;
+      const std::string encoded = encodedCursor == nullptr ? "" : encodedCursor;
+      if (encodedCursor != nullptr)
+        nc_free_string(1, &encodedCursor);
+      std::vector<std::uint8_t> cursorBytes;
+      if (!hexDecode(encoded, cursorBytes) ||
+          cursorBytes.size() > WVMaximumOutputScheduleCursorBytes)
+        return failure(WVCheckpointStatusCode::appendConflict,
+                       "Algorithmic output cursor is malformed or oversized.",
+                       path);
+      WVPortableTypedRecord cursor;
+      const auto decoded = decodePortableTypedRecord(
+          cursorBytes, cursor,
+          {WVMaximumOutputScheduleCursorBytes, true, false});
+      if (!decoded)
+        return failure(WVCheckpointStatusCode::appendConflict, decoded.message,
+                       path);
+      scheduleCursor = std::move(cursor);
+      committedOrdinal = static_cast<WVOutputScheduleOrdinal>(ordinals[index]);
+    }
   }
   int variableCount = 0;
   result = detail::checkedNetCDF(nc_inq_varids(group, &variableCount, nullptr),
@@ -830,6 +908,40 @@ WVCheckpointStatus parseOutputFile(const std::string &path,
       return result;
     if (!present)
       group.identifier = portableIdentifier(groupName);
+    result = optionalTextAttribute(groupId, "portableScheduleTypeIdentifier",
+                                   group.schedule.typeIdentifier, present,
+                                   groupPath);
+    if (!result)
+      return result;
+    if (present) {
+      unsigned int version = 0;
+      result = detail::checkedNetCDF(
+          nc_get_att_uint(groupId, NC_GLOBAL, "portableScheduleContractVersion",
+                          &version),
+          "Schedule-version attribute read", groupPath);
+      if (!result)
+        return result;
+      group.schedule.contractVersion = version;
+      std::string encodedConfiguration;
+      bool hasConfiguration = false;
+      result = optionalTextAttribute(groupId, "portableScheduleConfiguration",
+                                     encodedConfiguration, hasConfiguration,
+                                     groupPath);
+      if (!result)
+        return result;
+      std::vector<std::uint8_t> configurationBytes;
+      if (!hasConfiguration ||
+          !hexDecode(encodedConfiguration, configurationBytes))
+        return failure(WVCheckpointStatusCode::invalidValue,
+                       "Algorithmic output schedule configuration is missing "
+                       "or malformed.",
+                       groupPath);
+      const auto decoded = decodePortableTypedRecord(
+          configurationBytes, group.schedule.configuration);
+      if (!decoded)
+        return failure(WVCheckpointStatusCode::invalidValue, decoded.message,
+                       groupPath);
+    }
     result = detail::readDoubleScalar(groupId, "outputInterval",
                                       group.schedule.outputInterval, groupPath);
     if (!result)
@@ -875,16 +987,16 @@ WVCheckpointStatus parseOutputFile(const std::string &path,
     if (!result)
       return result;
     std::string rootObserverClass;
-    result = optionalTextAttribute(metadataRoot, "AnnotatedClass",
-                                   rootObserverClass, present,
-                                   groupPath + "/observingSystems");
+    result =
+        optionalTextAttribute(metadataRoot, "AnnotatedClass", rootObserverClass,
+                              present, groupPath + "/observingSystems");
     if (!result)
       return result;
     if (present) {
       std::string observerIdentifier;
-      result = parseObserver(groupId, metadataRoot,
-                             groupPath + "/observingSystems", portable,
-                             observerIdentifier);
+      result =
+          parseObserver(groupId, metadataRoot, groupPath + "/observingSystems",
+                        portable, observerIdentifier);
       if (!result)
         return result;
       group.observerIdentifiers.push_back(std::move(observerIdentifier));
@@ -892,9 +1004,9 @@ WVCheckpointStatus parseOutputFile(const std::string &path,
     std::map<int, std::string> parsedIdentifiers;
     const auto parseOne = [&](int observerGroup) {
       std::string observerIdentifier;
-      auto observerResult = parseObserver(
-          groupId, observerGroup, groupPath + "/observingSystems", portable,
-          observerIdentifier);
+      auto observerResult =
+          parseObserver(groupId, observerGroup, groupPath + "/observingSystems",
+                        portable, observerIdentifier);
       if (observerResult)
         parsedIdentifiers.emplace(observerGroup, std::move(observerIdentifier));
       return observerResult;
@@ -902,15 +1014,14 @@ WVCheckpointStatus parseOutputFile(const std::string &path,
     std::set<int> parsedObservers;
     for (const int observerGroup : observers) {
       std::string observerClass;
-      result = optionalTextAttribute(observerGroup, "AnnotatedClass",
-                                     observerClass, present,
-                                     groupPath + "/observingSystems");
+      result =
+          optionalTextAttribute(observerGroup, "AnnotatedClass", observerClass,
+                                present, groupPath + "/observingSystems");
       if (!result)
         return result;
       const auto implementation = detail::observerImplementation(
           observerClass, WVPortablePairContractVersion);
-      if (present && implementation &&
-          implementation->recordsCoefficients()) {
+      if (present && implementation && implementation->recordsCoefficients()) {
         result = parseOne(observerGroup);
         if (!result)
           return result;
@@ -928,11 +1039,13 @@ WVCheckpointStatus parseOutputFile(const std::string &path,
       group.observerIdentifiers.push_back(parsedIdentifiers.at(observerGroup));
 
     WVOutputScheduleOrdinal ordinal = WVNoCommittedOutputOrdinal;
-    result =
-        validateReadableHistory(groupId, group.schedule, groupPath, ordinal);
+    WVPortableTypedRecord scheduleCursor;
+    result = validateReadableHistory(groupId, group.schedule, groupPath,
+                                     ordinal, scheduleCursor);
     if (!result)
       return result;
     progress.push_back({fileRecord.identifier, group.identifier, ordinal});
+    progress.back().scheduleCursor = std::move(scheduleCursor);
     fileRecord.groups.push_back(std::move(group));
   }
   if (fileRecord.groups.empty())
@@ -963,9 +1076,9 @@ WVModelOutputNetCDFSink::inspect(const std::vector<std::string> &paths,
     for (const auto &path : paths) {
       WVOutputFileRecord fileRecord;
       bool isDynamicsLinear = false;
-      auto result = parseOutputFile(path, candidate.observerRecord,
-                                    candidate.progress, fileRecord,
-                                    isDynamicsLinear);
+      auto result =
+          parseOutputFile(path, candidate.observerRecord, candidate.progress,
+                          fileRecord, isDynamicsLinear);
       if (!result)
         return result;
       if (firstFile) {
@@ -1037,9 +1150,9 @@ WVModelOutputNetCDFSink::inspect(const std::vector<std::string> &paths,
             continue;
           std::vector<std::vector<double>> values;
           bool found = false;
-          auto result = readObserverStateAtTime(
-              file.destination, group, observer, selectedCheckpoint.t, values,
-              found);
+          auto result =
+              readObserverStateAtTime(file.destination, group, observer,
+                                      selectedCheckpoint.t, values, found);
           if (!result)
             return result;
           if (!found)
@@ -1051,13 +1164,12 @@ WVModelOutputNetCDFSink::inspect(const std::vector<std::string> &paths,
             hasSelectedValues = true;
             continue;
           }
-          const bool compatible = values.size() == selectedValues.size() &&
-                                  std::equal(
-                                      values.begin(), values.end(),
-                                      selectedValues.begin(),
-                                      [](const auto &left, const auto &right) {
-                                        return sameRestartValues(left, right);
-                                      });
+          const bool compatible =
+              values.size() == selectedValues.size() &&
+              std::equal(values.begin(), values.end(), selectedValues.begin(),
+                         [](const auto &left, const auto &right) {
+                           return sameRestartValues(left, right);
+                         });
           if (!compatible)
             return failure(
                 WVCheckpointStatusCode::ambiguousState,
@@ -1070,11 +1182,10 @@ WVModelOutputNetCDFSink::inspect(const std::vector<std::string> &paths,
                        "No output group contains required dynamic observer "
                        "state at the selected restart time.",
                        "/observingSystems/" + observer.identifier);
-      const bool hasFixedParticleZ =
-          implementation->recordsMovingParticles() &&
-          observer.isXYOnly && !observer.z.empty();
-      if (selectedValues.size() != observer.stateBlockIdentifiers.size() +
-                                       (hasFixedParticleZ ? 1 : 0))
+      const bool hasFixedParticleZ = implementation->recordsMovingParticles() &&
+                                     observer.isXYOnly && !observer.z.empty();
+      if (selectedValues.size() !=
+          observer.stateBlockIdentifiers.size() + (hasFixedParticleZ ? 1 : 0))
         return failure(WVCheckpointStatusCode::shapeMismatch,
                        "Dynamic observer state has an incompatible block "
                        "count.",
@@ -1099,14 +1210,13 @@ WVModelOutputNetCDFSink::inspect(const std::vector<std::string> &paths,
       return failure(WVCheckpointStatusCode::descriptorFailure,
                      descriptorStatus.message, "/observingSystems");
     const auto layoutStatus = WVIntegrationStateLayout::create(
-        selectedCheckpoint.coefficientShape, descriptor,
-        candidate.stateLayout);
+        selectedCheckpoint.coefficientShape, descriptor, candidate.stateLayout);
     if (!layoutStatus)
       return failure(WVCheckpointStatusCode::descriptorFailure,
                      layoutStatus.message, "/observingSystems");
 
-    auto result = WVCheckpointReader::read(selectedPath,
-                                           candidate.latestRestart);
+    auto result =
+        WVCheckpointReader::read(selectedPath, candidate.latestRestart);
     if (!result)
       return result;
 
@@ -1123,14 +1233,14 @@ WVModelOutputNetCDFSink::inspect(const std::vector<std::string> &paths,
         continue;
       for (std::size_t valueIndex = 0;
            valueIndex < observer.stateBlockIdentifiers.size(); ++valueIndex) {
-        const auto block = std::find_if(
-            candidate.additionalState.mutableBlocks(),
-            candidate.additionalState.mutableBlocks() +
-                candidate.additionalState.blockCount(),
-            [&](const auto &view) {
-              return view.layout->identifier ==
-                     observer.stateBlockIdentifiers[valueIndex];
-            });
+        const auto block =
+            std::find_if(candidate.additionalState.mutableBlocks(),
+                         candidate.additionalState.mutableBlocks() +
+                             candidate.additionalState.blockCount(),
+                         [&](const auto &view) {
+                           return view.layout->identifier ==
+                                  observer.stateBlockIdentifiers[valueIndex];
+                         });
         if (block == candidate.additionalState.mutableBlocks() +
                          candidate.additionalState.blockCount())
           return failure(WVCheckpointStatusCode::descriptorFailure,
@@ -1153,7 +1263,5 @@ WVModelOutputNetCDFSink::inspect(const std::vector<std::string> &paths,
                    "Output inspection allocation failed.", "/");
   }
 }
-
-
 
 } // namespace wavevortex::runtime

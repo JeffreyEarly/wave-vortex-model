@@ -1,6 +1,7 @@
 #pragma once
 
 #include "WaveVortexRuntime/WVCheckpointWriter.hpp"
+#include "WaveVortexRuntime/WVOutputSchedule.hpp"
 #include "WaveVortexRuntime/WVRungeKutta.hpp"
 
 #include <cstddef>
@@ -8,20 +9,24 @@
 #include <memory>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 namespace wavevortex::runtime {
-
-using WVOutputScheduleOrdinal = std::int64_t;
-inline constexpr WVOutputScheduleOrdinal WVNoCommittedOutputOrdinal = -1;
 
 // Caller-owned continuation cursor for one named output group. Ordinals are
 // anchored to the group's original initialTime + ordinal*outputInterval
 // lattice, not to the start of a segmented integration.
 struct WVOutputGroupProgress {
+  WVOutputGroupProgress() = default;
+  WVOutputGroupProgress(std::string file, std::string group,
+                        WVOutputScheduleOrdinal ordinal)
+      : fileIdentifier(std::move(file)), groupIdentifier(std::move(group)),
+        committedOrdinal(ordinal) {}
   std::string fileIdentifier;
   std::string groupIdentifier;
   WVOutputScheduleOrdinal committedOrdinal = WVNoCommittedOutputOrdinal;
+  WVPortableTypedRecord scheduleCursor;
 };
 
 // A shared observer identity resolved once by the output plan. The same
@@ -46,6 +51,7 @@ struct WVOutputRouteView {
   std::string_view groupName;
   const WVOutputObserverView *observers = nullptr;
   std::size_t observerCount = 0;
+  const WVPortableTypedRecord *proposedScheduleCursor = nullptr;
 };
 
 struct WVOutputPlannedEventView {
@@ -59,8 +65,8 @@ struct WVOutputPlanMetrics {
   std::size_t fileCount = 0;
   std::size_t groupCount = 0;
   std::size_t distinctObserverCount = 0;
-  std::size_t scheduledEventCount = 0;
-  std::size_t scheduledRouteCount = 0;
+  // Generated counts are driver metrics. The immutable plan retains no
+  // complete-window occurrence list.
   std::size_t maximumCoincidentRouteCount = 0;
   std::size_t retainedStorageBytes = 0;
 };
@@ -74,8 +80,8 @@ struct WVExplicitOutputTarget {
 };
 
 // Fully resolved, immutable multi-file/multi-group schedule. create()
-// validates every route and enumerates the complete bounded integration
-// window before an integrator or output sink can mutate state.
+// validates every route and resolves each schedule before an integrator or
+// output sink can mutate state. Future occurrences are generated lazily.
 class WVOutputPlan final {
 public:
   WVOutputPlan();
@@ -97,6 +103,10 @@ public:
 
   double initialTime() const noexcept;
   double finalTime() const noexcept;
+  std::size_t groupCount() const noexcept;
+  WVOutputRouteView groupRoute(std::size_t index) const noexcept;
+  // Authoring/test compatibility views generated on demand. Production
+  // orchestration never calls these methods or retains the full window.
   std::size_t eventCount() const noexcept;
   WVOutputPlannedEventView event(std::size_t index) const noexcept;
   const std::vector<WVOutputGroupProgress> &initialProgress() const noexcept;
@@ -119,8 +129,7 @@ enum class WVOutputEventKind : std::uint8_t {
 struct WVOutputEvent {
   std::size_t eventOrdinal = 0;
   double scheduledTime = 0.0;
-  WVOutputEventKind kind =
-      WVOutputEventKind::acceptedEndpoint;
+  WVOutputEventKind kind = WVOutputEventKind::acceptedEndpoint;
   WVIntegrationState state;
   const WVOutputRouteView *routes = nullptr;
   std::size_t routeCount = 0;
@@ -143,10 +152,9 @@ class WVOutputSink {
 public:
   virtual ~WVOutputSink() = default;
   virtual WVKernelStatus preflight(const WVOutputPlan &plan) = 0;
-  virtual WVKernelStatus
-  deliver(const WVOutputEvent &event,
-          const WVOutputRouteView &route,
-          WVOutputDeliveryResult &result) = 0;
+  virtual WVKernelStatus deliver(const WVOutputEvent &event,
+                                 const WVOutputRouteView &route,
+                                 WVOutputDeliveryResult &result) = 0;
 };
 
 struct WVOutputDeliveryRecord {
@@ -156,8 +164,7 @@ struct WVOutputDeliveryRecord {
   std::size_t groupOrdinal = 0;
   WVOutputScheduleOrdinal scheduleOrdinal = WVNoCommittedOutputOrdinal;
   double scheduledTime = 0.0;
-  WVOutputEventKind eventKind =
-      WVOutputEventKind::acceptedEndpoint;
+  WVOutputEventKind eventKind = WVOutputEventKind::acceptedEndpoint;
   std::string fileIdentifier;
   std::string destination;
   std::string groupIdentifier;
@@ -196,6 +203,9 @@ struct WVOutputFileMetrics {
 };
 
 struct WVOutputDriverMetrics {
+  std::size_t generatedEventCount = 0;
+  std::size_t generatedRouteCount = 0;
+  std::size_t maximumCoincidentRouteCount = 0;
   std::size_t acceptedStepCount = 0;
   std::size_t outputStateEvaluationCount = 0;
   std::size_t initialStateEventCount = 0;
@@ -223,8 +233,7 @@ struct WVOutputDriverMetrics {
 // continues from the later accepted state.
 class WVOutputDriver final {
 public:
-  WVOutputDriver(WVTimeIntegrator &integrator,
-                          const WVOutputPlan &plan);
+  WVOutputDriver(WVTimeIntegrator &integrator, const WVOutputPlan &plan);
   ~WVOutputDriver();
   WVOutputDriver(const WVOutputDriver &) = delete;
   WVOutputDriver &operator=(const WVOutputDriver &) = delete;

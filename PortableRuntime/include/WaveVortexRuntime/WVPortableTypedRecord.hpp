@@ -11,12 +11,7 @@
 
 namespace wavevortex::runtime {
 
-enum class WVPortableValueType : std::uint8_t {
-  boolean,
-  integer,
-  real,
-  text
-};
+enum class WVPortableValueType : std::uint8_t { boolean, integer, real, text };
 
 using WVPortableValueStorage =
     std::variant<std::vector<std::uint8_t>, std::vector<std::int64_t>,
@@ -52,8 +47,15 @@ struct WVPortableTypedRecordValidation {
   bool allowText = true;
 };
 
-WVKernelStatus validatePortableTypedRecord(
-    const WVPortableTypedRecord &record,
-    WVPortableTypedRecordValidation validation = {});
+WVKernelStatus
+validatePortableTypedRecord(const WVPortableTypedRecord &record,
+                            WVPortableTypedRecordValidation validation = {});
+
+WVKernelStatus encodePortableTypedRecord(const WVPortableTypedRecord &record,
+                                         std::vector<std::uint8_t> &bytes);
+WVKernelStatus
+decodePortableTypedRecord(const std::vector<std::uint8_t> &bytes,
+                          WVPortableTypedRecord &record,
+                          WVPortableTypedRecordValidation validation = {});
 
 } // namespace wavevortex::runtime
