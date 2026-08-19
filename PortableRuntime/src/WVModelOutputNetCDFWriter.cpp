@@ -457,7 +457,8 @@ public:
                 axisDefinition.name, contract);
             if (!inserted.second &&
                 (inserted.first->second.kind != contract.kind ||
-                 inserted.first->second.extent != contract.extent))
+                 inserted.first->second.extent != contract.extent ||
+                 inserted.first->second.role != contract.role))
               return failure(
                   WVCheckpointStatusCode::schemaMismatch,
                   "Observers declare incompatible axes with the same "

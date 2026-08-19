@@ -811,8 +811,10 @@ private:
 
 class ConflictingSchemaSource final : public WVObserverSampleSource {
 public:
-  explicit ConflictingSchemaSource(bool conflictingAxis)
-      : conflictingAxis_(conflictingAxis) {}
+  explicit ConflictingSchemaSource(bool conflictingAxis,
+                                   bool conflictingRole = false)
+      : conflictingAxis_(conflictingAxis),
+        conflictingRole_(conflictingRole) {}
   WVKernelStatus observationSchema(const WVObserverRecord &observer,
                                    WVObservationSchema &output) override {
     WVObservationSchema schema;
@@ -824,9 +826,16 @@ public:
     }
     schema.identifier = "conflict-" + observer.identifier;
     const std::size_t extent =
-        conflictingAxis_ && observer.identifier == "conflict-b" ? 3 : 2;
+        conflictingAxis_ && !conflictingRole_ &&
+                observer.identifier == "conflict-b"
+            ? 3
+            : 2;
+    const auto role =
+        conflictingRole_ && observer.identifier == "conflict-b"
+            ? WVObservationCoordinateRole::depth
+            : WVObservationCoordinateRole::identifier;
     schema.axes = {{"shared", "shared_axis", WVObservationAxisKind::fixed,
-                    extent, WVObservationCoordinateRole::identifier}};
+                    extent, role}};
     schema.variables = {
         {"value",
          conflictingAxis_ ? observer.identifier + "_value" : "shared_value",
@@ -872,6 +881,7 @@ public:
 
 private:
   bool conflictingAxis_ = false;
+  bool conflictingRole_ = false;
 };
 
 std::filesystem::path fixture(const std::string &name) {
@@ -2470,7 +2480,7 @@ void testRegisteredTopologyProviders() {
 void testObservationGraphCollisionPreflight() {
   TemporaryDirectory directory;
   auto checkpoint = checkpointTemplate();
-  const auto requireRejected = [&](bool conflictingAxis,
+  const auto requireRejected = [&](bool conflictingAxis, bool conflictingRole,
                                    const std::string &filename) {
     const auto path = directory.path / filename;
     auto record = recordFor(checkpoint, path);
@@ -2487,7 +2497,7 @@ void testObservationGraphCollisionPreflight() {
     auto status = WVIntegrationStateLayout::create(
         checkpoint.state.coefficients.shape, descriptor, layout);
     require(static_cast<bool>(status), status.message);
-    ConflictingSchemaSource source(conflictingAxis);
+    ConflictingSchemaSource source(conflictingAxis, conflictingRole);
     WVModelOutputNetCDFSink sink;
     const auto persistence = WVModelOutputNetCDFSink::createNew(
         {checkpoint, false}, descriptor, layout, &source, sink);
@@ -2496,8 +2506,9 @@ void testObservationGraphCollisionPreflight() {
                 ? "incompatible shared axes survived complete-graph preflight"
                 : "duplicate persisted variable names survived complete-graph preflight");
   };
-  requireRejected(false, "variable-collision.nc");
-  requireRejected(true, "axis-collision.nc");
+  requireRejected(false, false, "variable-collision.nc");
+  requireRejected(true, false, "axis-collision.nc");
+  requireRejected(true, true, "axis-role-collision.nc");
 }
 
 void testCoincidentRoutesShareExactEventBatches() {
