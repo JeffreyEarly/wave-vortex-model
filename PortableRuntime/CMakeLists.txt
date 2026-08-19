@@ -35,6 +35,7 @@ add_library(WaveVortexPortableRuntime STATIC
     src/WVOutputOrchestration.cpp
     src/WVObserverAdapter.cpp
     src/WVObserverContracts.cpp
+    src/WVObserverSampleSource.cpp
     src/WVFieldEvaluationService.cpp
     src/WVConstantStratificationIntegrationSystem.cpp
     src/WVObserverOutputEvaluationService.cpp

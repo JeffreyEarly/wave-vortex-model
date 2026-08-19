@@ -90,6 +90,200 @@ public:
   }
 };
 
+class WVTestObservationBatchesImplementation final : public WVObservingSystem {
+public:
+  const std::string &typeIdentifier() const noexcept override {
+    static const std::string value = "WVTestObservationBatches";
+    return value;
+  }
+  std::uint32_t contractVersion() const noexcept override { return 1; }
+  const std::string &fieldListAttribute() const noexcept override {
+    static const std::string value;
+    return value;
+  }
+  WVKernelStatus
+  validate(const WVObserverRecord &record,
+           const std::map<std::string, const WVStateBlockRecord *> &,
+           std::map<std::string, std::size_t> &) const override {
+    return record.stateBlockIdentifiers.empty()
+               ? WVKernelStatus::ok()
+               : WVKernelStatus{WVKernelStatusCode::invalidConfiguration,
+                                "Synthetic batches cannot own state blocks."};
+  }
+  std::size_t persistentBytes() const noexcept override {
+    return sizeof(*this);
+  }
+};
+
+class VariableBatchSource final : public WVObserverSampleSource {
+public:
+  explicit VariableBatchSource(std::uint32_t version = 1,
+                               bool failFirstBatch = false)
+      : version_(version), failFirstBatch_(failFirstBatch) {}
+
+  WVKernelStatus observationSchema(const WVObserverRecord &observer,
+                                   WVObservationSchema &output) override {
+    WVObservationSchema schema;
+    if (observer.typeIdentifier != "WVTestObservationBatches") {
+      schema.identifier = "legacy-coefficient-observation-v1";
+      schema.preservesLegacyEncoding = true;
+      output = std::move(schema);
+      return WVKernelStatus::ok();
+    }
+    schema.identifier = "synthetic-variable-observation";
+    schema.version = version_;
+    schema.axes = {
+        {"depth", "synthetic_depth", WVObservationAxisKind::fixed, 2,
+         WVObservationCoordinateRole::depth},
+        {"profile", "synthetic_profile", WVObservationAxisKind::unlimited, 0,
+         WVObservationCoordinateRole::profile},
+        {"sample", "synthetic_sample", WVObservationAxisKind::unlimited, 0,
+         WVObservationCoordinateRole::identifier}};
+    schema.variables = {
+        {"depth", "synthetic_depth", WVObservationScalarType::real64,
+         {"depth"}, WVObservationValueLayout::staticValue, "m",
+         "fixed depth-bin axis", {}, WVObservationCoordinateRole::depth,
+         WVObservationRaggedRole::none, {}},
+        {"profile-id", "synthetic_profile_id",
+         WVObservationScalarType::integer64, {"profile"},
+         WVObservationValueLayout::flat, "1", "profile identifier", {},
+         WVObservationCoordinateRole::profile,
+         WVObservationRaggedRole::none, {}},
+        {"row-count", "synthetic_row_count",
+         WVObservationScalarType::integer64, {"profile"},
+         WVObservationValueLayout::flat, "1", "samples in each profile", {},
+         WVObservationCoordinateRole::none,
+         WVObservationRaggedRole::rowCount, "sample"},
+        {"time", "synthetic_time", WVObservationScalarType::real64,
+         {"sample"}, WVObservationValueLayout::flat, "s", "sample time", {},
+         WVObservationCoordinateRole::sampleTime,
+         WVObservationRaggedRole::none, {}},
+        {"x", "synthetic_x", WVObservationScalarType::real64, {"sample"},
+         WVObservationValueLayout::flat, "m", "moving x coordinate", {},
+         WVObservationCoordinateRole::x, WVObservationRaggedRole::none, {}},
+        {"y", "synthetic_y", WVObservationScalarType::real64, {"sample"},
+         WVObservationValueLayout::flat, "m", "moving y coordinate", {},
+         WVObservationCoordinateRole::y, WVObservationRaggedRole::none, {}},
+        {"z", "synthetic_z", WVObservationScalarType::real64, {"sample"},
+         WVObservationValueLayout::flat, "m", "moving z coordinate", {},
+         WVObservationCoordinateRole::z, WVObservationRaggedRole::none, {}},
+        {"bins", "synthetic_bins", WVObservationScalarType::complex64,
+         {"depth", "sample"}, WVObservationValueLayout::flat, "m s-1",
+         "fixed-depth-bin samples", {}, WVObservationCoordinateRole::none,
+         WVObservationRaggedRole::none, {}},
+        {"valid", "synthetic_valid", WVObservationScalarType::boolean8,
+         {"sample"}, WVObservationValueLayout::flat, "1", "sample validity",
+         {}, WVObservationCoordinateRole::none,
+         WVObservationRaggedRole::none, {}},
+        {"label", "synthetic_label", WVObservationScalarType::text,
+         {"profile"}, WVObservationValueLayout::flat, "", "profile label",
+         {}, WVObservationCoordinateRole::none,
+         WVObservationRaggedRole::none, {}},
+        {"pass", "synthetic_pass", WVObservationScalarType::integer64, {},
+         WVObservationValueLayout::record, "1", "pass identifier", {},
+         WVObservationCoordinateRole::pass,
+         WVObservationRaggedRole::none, {}}};
+    output = std::move(schema);
+    return WVKernelStatus::ok();
+  }
+
+  WVKernelStatus initialObservationBatch(
+      const WVObserverRecord &observer, WVObservationBatch &output) override {
+    WVObservationSchema schema;
+    auto status = observationSchema(observer, schema);
+    if (!status)
+      return status;
+    WVObservationBatch batch;
+    batch.schemaIdentifier = schema.identifier;
+    batch.schemaVersion = schema.version;
+    batch.kind = WVObservationBatchKind::initial;
+    if (observer.typeIdentifier == "WVTestObservationBatches")
+      batch.values.push_back(WVObservationValue::ownReal(
+          "depth", {2}, std::vector<double>{-10.0, -20.0}));
+    output = std::move(batch);
+    return WVKernelStatus::ok();
+  }
+
+  WVKernelStatus prepare(const WVOutputEvent &event) override {
+    eventOrdinal_ = event.eventOrdinal;
+    scheduledTime_ = event.scheduledTime;
+    return WVKernelStatus::ok();
+  }
+
+  WVKernelStatus observationBatch(const WVObserverRecord &observer,
+                                  WVObservationBatch &output) override {
+    WVObservationSchema schema;
+    auto status = observationSchema(observer, schema);
+    if (!status)
+      return status;
+    WVObservationBatch batch;
+    batch.schemaIdentifier = schema.identifier;
+    batch.schemaVersion = schema.version;
+    if (observer.typeIdentifier != "WVTestObservationBatches") {
+      output = std::move(batch);
+      return WVKernelStatus::ok();
+    }
+    const bool empty = eventOrdinal_ % 2 == 1;
+    const std::size_t profileCount = empty ? 0 : 2;
+    const std::size_t sampleCount = empty ? 0 : 3;
+    batch.values.push_back(WVObservationValue::ownInteger(
+        "profile-id", {profileCount},
+        empty ? std::vector<std::int64_t>{}
+              : std::vector<std::int64_t>{10, 11}));
+    batch.values.push_back(WVObservationValue::ownInteger(
+        "row-count", {profileCount},
+        empty ? std::vector<std::int64_t>{}
+              : failFirstBatch_ && !failedOnce_
+                    ? std::vector<std::int64_t>{2, 2}
+                    : std::vector<std::int64_t>{1, 2}));
+    batch.values.push_back(WVObservationValue::ownReal(
+        "time", {sampleCount},
+        empty ? std::vector<double>{}
+              : std::vector<double>{scheduledTime_, scheduledTime_ + 0.1,
+                                    scheduledTime_ + 0.2}));
+    batch.values.push_back(WVObservationValue::ownReal(
+        "x", {sampleCount},
+        empty ? std::vector<double>{}
+              : std::vector<double>{1.0, 2.0, 3.0}));
+    batch.values.push_back(WVObservationValue::ownReal(
+        "y", {sampleCount},
+        empty ? std::vector<double>{}
+              : std::vector<double>{4.0, 5.0, 6.0}));
+    batch.values.push_back(WVObservationValue::ownReal(
+        "z", {sampleCount},
+        empty ? std::vector<double>{}
+              : std::vector<double>{-1.0, -2.0, -3.0}));
+    batch.values.push_back(WVObservationValue::ownComplex(
+        "bins", {2, sampleCount},
+        empty ? std::vector<WVComplex64>{}
+              : std::vector<WVComplex64>{{1.0, -1.0}, {2.0, -2.0},
+                                         {3.0, -3.0}, {4.0, -4.0},
+                                         {5.0, -5.0}, {6.0, -6.0}}));
+    batch.values.push_back(WVObservationValue::ownBoolean(
+        "valid", {sampleCount},
+        empty ? std::vector<std::uint8_t>{}
+              : std::vector<std::uint8_t>{1, 0, 1}));
+    batch.values.push_back(WVObservationValue::ownText(
+        "label", {profileCount},
+        empty ? std::vector<std::string>{}
+              : std::vector<std::string>{"pass-a", "pass-b"}));
+    batch.values.push_back(WVObservationValue::ownInteger(
+        "pass", {},
+        std::vector<std::int64_t>{static_cast<std::int64_t>(eventOrdinal_)}));
+    if (failFirstBatch_ && !failedOnce_)
+      failedOnce_ = true;
+    output = std::move(batch);
+    return WVKernelStatus::ok();
+  }
+
+private:
+  std::uint32_t version_ = 1;
+  bool failFirstBatch_ = false;
+  bool failedOnce_ = false;
+  std::size_t eventOrdinal_ = 0;
+  double scheduledTime_ = 0.0;
+};
+
 std::filesystem::path fixture(const std::string &name) {
   return std::filesystem::path(WV_CHECKPOINT_FIXTURE_DIR) / name;
 }
@@ -1191,6 +1385,162 @@ void testAlgorithmicSchedulePersistence() {
   require(static_cast<bool>(persistence), persistence.message);
 }
 
+void testVariableObservationBatches() {
+  TemporaryDirectory directory;
+  auto checkpoint = checkpointTemplate();
+  const auto initialTime = checkpoint.state.t;
+  const auto path = directory.path / "variable-observations.nc";
+  auto record = recordFor(checkpoint, path);
+  WVObserverRecord synthetic;
+  synthetic.identifier = "synthetic-observations";
+  synthetic.name = "synthetic";
+  synthetic.typeIdentifier = "WVTestObservationBatches";
+  record.observers.push_back(synthetic);
+  record.outputFiles[0].groups[0].observerIdentifiers.push_back(
+      synthetic.identifier);
+  auto descriptor = descriptorFor(record);
+  WVIntegrationStateLayout layout;
+  auto status = WVIntegrationStateLayout::create(
+      checkpoint.state.coefficients.shape, descriptor, layout);
+  require(static_cast<bool>(status), status.message);
+  WVModelOutputNetCDFConfiguration configuration{checkpoint, false};
+  VariableBatchSource source(1, true);
+  WVModelOutputNetCDFSink sink;
+  auto persistence = WVModelOutputNetCDFSink::createNew(
+      configuration, descriptor, layout, &source, sink);
+  require(static_cast<bool>(persistence), persistence.message);
+  WVOutputPlan plan;
+  status = WVOutputPlan::create(descriptor, initialTime, initialTime + 1.0, {},
+                                plan);
+  require(static_cast<bool>(status) && plan.eventCount() == 2,
+          "variable-batch output plan");
+  status = sink.preflight(plan);
+  require(static_cast<bool>(status), status.message);
+
+  WVOutputEvent event;
+  event.eventOrdinal = plan.event(0).eventOrdinal;
+  event.scheduledTime = plan.event(0).scheduledTime;
+  event.state = eventState(checkpoint);
+  event.routes = plan.event(0).routes;
+  event.routeCount = plan.event(0).routeCount;
+  WVOutputDeliveryResult delivery;
+  status = sink.deliver(event, event.routes[0], delivery);
+  require(!status, "malformed ragged batch was written");
+  int file = -1, group = -1, timeDimension = -1;
+  std::size_t timeCount = 99;
+  require(nc_open(path.c_str(), NC_NOWRITE, &file) == NC_NOERR &&
+              nc_inq_ncid(file, "wave-vortex", &group) == NC_NOERR &&
+              nc_inq_dimid(group, "t", &timeDimension) == NC_NOERR &&
+              nc_inq_dimlen(group, timeDimension, &timeCount) == NC_NOERR &&
+              timeCount == 0 && nc_close(file) == NC_NOERR,
+          "failed batch mutated the output before validation");
+
+  delivery = {};
+  status = sink.deliver(event, event.routes[0], delivery);
+  require(static_cast<bool>(status), status.message);
+  event.eventOrdinal = plan.event(1).eventOrdinal;
+  event.scheduledTime = plan.event(1).scheduledTime;
+  event.routes = plan.event(1).routes;
+  event.routeCount = plan.event(1).routeCount;
+  delivery = {};
+  status = sink.deliver(event, event.routes[0], delivery);
+  require(static_cast<bool>(status), status.message);
+  require(sink.metrics().batchMaximumLiveBytes > 0 &&
+              sink.metrics().batchRetainedStorageBytes > 0 &&
+              sink.metrics().failureCount == 1,
+          "variable-batch storage/failure metrics are incomplete");
+  persistence = sink.close();
+  require(static_cast<bool>(persistence), persistence.message);
+
+  file = -1;
+  group = -1;
+  require(nc_open(path.c_str(), NC_NOWRITE, &file) == NC_NOERR &&
+              nc_inq_ncid(file, "wave-vortex", &group) == NC_NOERR,
+          "open variable observation output");
+  int sampleDimension = -1, profileDimension = -1;
+  std::size_t sampleCount = 0, profileCount = 0;
+  require(nc_inq_dimid(group, "synthetic_sample", &sampleDimension) ==
+                  NC_NOERR &&
+              nc_inq_dimlen(group, sampleDimension, &sampleCount) == NC_NOERR &&
+              sampleCount == 3 &&
+              nc_inq_dimid(group, "synthetic_profile", &profileDimension) ==
+                  NC_NOERR &&
+              nc_inq_dimlen(group, profileDimension, &profileCount) ==
+                  NC_NOERR &&
+              profileCount == 2,
+          "flat variable observation axes have the wrong committed extent");
+  int progressVariable = -1;
+  std::array<long long, 2> sampleProgress{};
+  require(nc_inq_varid(group, "portableCommitted_synthetic_sample",
+                       &progressVariable) == NC_NOERR &&
+              nc_get_var_longlong(group, progressVariable,
+                                  sampleProgress.data()) == NC_NOERR &&
+              sampleProgress == std::array<long long, 2>{3, 3},
+          "zero-length batch changed committed sample progress");
+  int integerVariable = -1, booleanVariable = -1, textVariable = -1;
+  nc_type integerType = NC_NAT, booleanType = NC_NAT, textType = NC_NAT;
+  require(nc_inq_varid(group, "synthetic_pass", &integerVariable) == NC_NOERR &&
+              nc_inq_vartype(group, integerVariable, &integerType) == NC_NOERR &&
+              integerType == NC_INT64 &&
+              nc_inq_varid(group, "synthetic_valid", &booleanVariable) ==
+                  NC_NOERR &&
+              nc_inq_vartype(group, booleanVariable, &booleanType) == NC_NOERR &&
+              booleanType == NC_UBYTE &&
+              nc_inq_varid(group, "synthetic_label", &textVariable) ==
+                  NC_NOERR &&
+              nc_inq_vartype(group, textVariable, &textType) == NC_NOERR &&
+              textType == NC_STRING,
+          "integer/Boolean/text observation types were not preserved");
+  int metadataRoot = -1, metadata = -1;
+  std::size_t schemaLength = 0;
+  require(nc_inq_ncid(group, "observingSystems", &metadataRoot) == NC_NOERR &&
+              nc_inq_ncid(metadataRoot, "observingSystems-2", &metadata) ==
+                  NC_NOERR &&
+              nc_inq_attlen(metadata, NC_GLOBAL,
+                            "portableObservationSchemaIdentifier",
+                            &schemaLength) == NC_NOERR &&
+              schemaLength == std::string("synthetic-variable-observation").size() &&
+              nc_close(file) == NC_NOERR,
+          "observation schema identity was not persisted");
+
+  WVModelOutputNetCDFInspection inspection;
+  persistence = WVModelOutputNetCDFSink::inspect({path.string()}, inspection);
+  require(static_cast<bool>(persistence) &&
+              inspection.observerRecord.observers.size() == 2,
+          "generic graph reader dropped the variable-batch observer");
+
+  VariableBatchSource driftedSource(2);
+  WVModelOutputNetCDFSink drifted;
+  persistence = WVModelOutputNetCDFSink::openAppend(
+      configuration, descriptor, layout, &driftedSource, drifted);
+  require(!persistence &&
+              persistence.code == WVCheckpointStatusCode::appendConflict,
+          "append accepted observation schema drift");
+
+  VariableBatchSource appendSource;
+  WVModelOutputNetCDFSink append;
+  persistence = WVModelOutputNetCDFSink::openAppend(
+      configuration, descriptor, layout, &appendSource, append);
+  require(static_cast<bool>(persistence), persistence.message);
+  WVOutputPlan appendPlan;
+  status = WVOutputPlan::create(descriptor, initialTime + 1.0,
+                                initialTime + 2.0, append.progress(),
+                                appendPlan);
+  require(static_cast<bool>(status) && appendPlan.eventCount() == 1,
+          "variable-batch append plan");
+  status = append.preflight(appendPlan);
+  require(static_cast<bool>(status), status.message);
+  event.eventOrdinal = appendPlan.event(0).eventOrdinal;
+  event.scheduledTime = appendPlan.event(0).scheduledTime;
+  event.routes = appendPlan.event(0).routes;
+  event.routeCount = appendPlan.event(0).routeCount;
+  delivery = {};
+  status = append.deliver(event, event.routes[0], delivery);
+  require(static_cast<bool>(status), status.message);
+  persistence = append.close();
+  require(static_cast<bool>(persistence), persistence.message);
+}
+
 } // namespace
 
 int main() {
@@ -1200,6 +1550,9 @@ int main() {
     require(static_cast<bool>(registration), registration.message);
     registration = WVObserverFactoryRegistry::registerImplementation(
         std::make_shared<WVTestPortablePointDiagnosticImplementation>());
+    require(static_cast<bool>(registration), registration.message);
+    registration = WVObserverFactoryRegistry::registerImplementation(
+        std::make_shared<WVTestObservationBatchesImplementation>());
     require(static_cast<bool>(registration), registration.message);
     require(static_cast<bool>(registerQuadraticSchedule()),
             "quadratic schedule registration");
@@ -1211,6 +1564,7 @@ int main() {
     testOptionalMatlabLinearFixture();
     testOptionalMatlabPassiveFixture();
     testAlgorithmicSchedulePersistence();
+    testVariableObservationBatches();
     std::cout << "PASS: MATLAB-compatible model-output persistence\n";
     return 0;
   } catch (const std::exception &exception) {
