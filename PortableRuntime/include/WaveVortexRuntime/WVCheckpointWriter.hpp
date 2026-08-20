@@ -1,6 +1,7 @@
 #pragma once
 
 #include "WaveVortexRuntime/WVCheckpointReader.hpp"
+#include "WaveVortexRuntime/WVExtensionCatalog.hpp"
 
 #include <string>
 
@@ -22,6 +23,7 @@ class WVCheckpointWriter final {
 public:
     static WVCheckpointStatus write(
         const std::string& path,
+        const WVExtensionCatalog& catalog,
         const WVCheckpoint& checkpoint,
         WVCheckpointCommitPolicy commitPolicy = WVCheckpointCommitPolicy::replaceExisting);
 };

@@ -1,6 +1,7 @@
 #include "WVModelOutputNetCDFSchema.hpp"
 
 #include "WVNetCDF.hpp"
+#include "WaveVortexRuntime/WVForcingContracts.hpp"
 
 #include <netcdf.h>
 
@@ -32,105 +33,106 @@ WVCheckpointStatus defineLogical(int group, const std::string &name,
                           path + "/" + name);
 }
 
-WVCheckpointStatus defineFixedFamily(int group, const char *prefix,
-                                     std::size_t length,
-                                     const std::string &path) {
-  if (length == 0)
-    return WVCheckpointStatus::ok();
-  const std::string indexName = std::string(prefix) + "_indices";
-  int dimension = -1;
-  auto result =
-      checkedNetCDF(nc_def_dim(group, indexName.c_str(), length, &dimension),
-                    "Forcing dimension definition", path + "/" + indexName);
-  if (!result)
-    return result;
-  int variable = -1;
-  result = checkedNetCDF(
-      nc_def_var(group, indexName.c_str(), NC_UINT64, 1, &dimension, &variable),
-      "Forcing variable definition", path + "/" + indexName);
-  if (!result)
-    return result;
-  return defineComplexVariable(group, std::string(prefix) + "bar", {dimension},
-                               path);
-}
-
 WVCheckpointStatus defineForcingEntry(int group,
                                       const WVFrozenForcingEntry &entry,
+                                      const WVForcingCatalog &catalog,
                                       const std::array<int, 5> &rootDimensions,
                                       const std::string &path) {
   auto result = putTextAttribute(group, NC_GLOBAL, "AnnotatedClass",
                                  entry.typeIdentifier, path);
   if (!result)
     return result;
-  switch (entry.kind) {
-  case WVForcingKind::nonlinearAdvection:
-  case WVForcingKind::adaptiveDamping:
-  case WVForcingKind::betaPlanePVAdvection:
-    return WVCheckpointStatus::ok();
-  case WVForcingKind::bottomFrictionQuadratic: {
-    int variable = -1;
-    return defineDoubleVariable(group, "Cd", {}, variable, path);
-  }
-  case WVForcingKind::fixedAmplitude: {
+  const auto *registration =
+      catalog.registration(entry.typeIdentifier, entry.contractVersion);
+  if (registration == nullptr || !registration->isSupported)
+    return failed(WVCheckpointStatusCode::unsupportedForcing,
+                  "Unsupported forcing reached output definition.", path);
+  if (registration->persistence.writesNameAttribute) {
     result = putTextAttribute(group, NC_GLOBAL, "name", entry.name, path);
     if (!result)
       return result;
-    const auto &record = std::get<WVFixedAmplitudeForcingRecord>(entry.payload);
-    result = defineFixedFamily(group, "Ap", record.ApIndices.size(), path);
-    if (!result)
-      return result;
-    result = defineFixedFamily(group, "Am", record.AmIndices.size(), path);
-    if (!result)
-      return result;
-    return defineFixedFamily(group, "A0", record.A0Indices.size(), path);
   }
-  case WVForcingKind::pseudoTopographicWaveGeneration: {
-    const auto &record =
-        std::get<WVPseudoTopographicWaveGenerationRecord>(entry.payload);
-    result = putTextAttribute(group, NC_GLOBAL, "name", entry.name, path);
-    if (!result)
-      return result;
-    if (!record.darwinSymbol.empty()) {
-      result = putTextAttribute(group, NC_GLOBAL, "darwinSymbol",
-                                record.darwinSymbol, path);
+  for (const auto &field : registration->persistence.fields) {
+    const auto *value = entry.configuration.value(field.recordName);
+    if (value == nullptr && field.optional)
+      continue;
+    if (value == nullptr)
+      return failed(WVCheckpointStatusCode::malformedForcing,
+                    "Required forcing configuration value is missing.", path);
+    if (field.encoding == WVForcingPersistenceEncoding::textAttribute) {
+      const auto *values =
+          std::get_if<std::vector<std::string>>(&value->storage);
+      if (values == nullptr || values->size() != 1)
+        return failed(WVCheckpointStatusCode::malformedForcing,
+                      "Forcing text attribute is malformed.", path);
+      if (!values->front().empty()) {
+        result = putTextAttribute(group, NC_GLOBAL, field.netcdfName.c_str(),
+                                  values->front(), path);
+        if (!result)
+          return result;
+      }
+      continue;
+    }
+    std::vector<int> dimensions;
+    if (field.dimensions == WVForcingDimensionRule::ownLength) {
+      if (value->valueCount() == 0)
+        continue;
+      int dimension = -1;
+      result = checkedNetCDF(
+          nc_def_dim(group, field.netcdfName.c_str(), value->valueCount(),
+                     &dimension),
+          "Forcing dimension definition", path + "/" + field.netcdfName);
       if (!result)
         return result;
+      dimensions = {dimension};
+    } else if (field.dimensions ==
+               WVForcingDimensionRule::referencedLength) {
+      int dimension = -1;
+      const int inquiry =
+          nc_inq_dimid(group, field.dimensionReference.c_str(), &dimension);
+      if (inquiry == NC_EBADDIM && field.optional)
+        continue;
+      result = checkedNetCDF(inquiry, "Forcing dimension lookup",
+                             path + "/" + field.dimensionReference);
+      if (!result)
+        return result;
+      dimensions = {dimension};
+    } else if (field.dimensions == WVForcingDimensionRule::horizontalYX) {
+      dimensions = {rootDimensions[3], rootDimensions[2]};
+    } else if (field.dimensions == WVForcingDimensionRule::componentPair) {
+      int dimension = -1;
+      result = checkedNetCDF(
+          nc_def_dim(group, "barotropicVelocityComponent", 2, &dimension),
+          "Forcing dimension definition",
+          path + "/barotropicVelocityComponent");
+      if (!result)
+        return result;
+      int coordinate = -1;
+      result = defineDoubleVariable(group, "barotropicVelocityComponent",
+                                    {dimension}, coordinate, path);
+      if (!result)
+        return result;
+      dimensions = {dimension};
     }
-    int componentDimension = -1;
-    result = checkedNetCDF(nc_def_dim(group, "barotropicVelocityComponent", 2,
-                                      &componentDimension),
-                           "Forcing dimension definition",
-                           path + "/barotropicVelocityComponent");
-    if (!result)
-      return result;
     int variable = -1;
-    result = defineDoubleVariable(group, "barotropicVelocityComponent",
-                                  {componentDimension}, variable, path);
+    if (field.encoding == WVForcingPersistenceEncoding::realVariable)
+      result = defineDoubleVariable(group, field.netcdfName, dimensions,
+                                    variable, path);
+    else if (field.encoding == WVForcingPersistenceEncoding::logicalVariable)
+      result = defineLogical(group, field.netcdfName, variable, path);
+    else if (field.encoding ==
+             WVForcingPersistenceEncoding::zeroBasedIndexVariable)
+      result = checkedNetCDF(
+          nc_def_var(group, field.netcdfName.c_str(), NC_UINT64,
+                     static_cast<int>(dimensions.size()), dimensions.data(),
+                     &variable),
+          "Forcing variable definition", path + "/" + field.netcdfName);
+    else if (field.encoding == WVForcingPersistenceEncoding::complexVariable)
+      result = defineComplexVariable(group, field.netcdfName, dimensions, path);
     if (!result)
       return result;
-    result = defineComplexVariable(group, "barotropicVelocityAmplitude",
-                                   {componentDimension}, path);
-    if (!result)
-      return result;
-    for (const char *name :
-         {"frequency", "rampDuration", "startTime",
-          "maximumForcedHorizontalWavenumber", "maximumForcedVerticalMode"}) {
-      result = defineDoubleVariable(group, name, {}, variable, path);
-      if (!result)
-        return result;
-    }
-    result = defineLogical(group, "shouldAvoidAdaptiveDamping", variable, path);
-    if (!result)
-      return result;
-    return defineDoubleVariable(group, "topographicHeight",
-                                {rootDimensions[3], rootDimensions[2]},
-                                variable, path);
   }
-  default:
-    break;
-  }
-  return failed(WVCheckpointStatusCode::unsupportedForcing,
-                "Unsupported forcing reached output definition.", path);
+  return WVCheckpointStatus::ok();
 }
 
 WVCheckpointStatus variableId(int group, const std::string &name, int &variable,
@@ -171,105 +173,82 @@ WVCheckpointStatus writeDoubles(int group, const std::string &name,
                        "Variable write", path + "/" + name);
 }
 
-WVCheckpointStatus writeComplex(int group, const std::string &name,
-                                const std::vector<WVComplex64> &values,
-                                const std::string &path) {
-  std::vector<double> real(values.size());
-  std::vector<double> imag(values.size());
-  for (std::size_t index = 0; index < values.size(); ++index) {
-    real[index] = values[index].real;
-    imag[index] = values[index].imag;
-  }
-  auto result = writeDoubles(group, name + "_real", real, path);
-  if (!result)
-    return result;
-  return writeDoubles(group, name + "_imag", imag, path);
-}
-
-WVCheckpointStatus writeFixedFamily(int group, const char *prefix,
-                                    const std::vector<std::size_t> &indices,
-                                    const std::vector<WVComplex64> &values,
-                                    const std::string &path) {
-  if (indices.empty())
-    return WVCheckpointStatus::ok();
-  std::vector<unsigned long long> oneBased(indices.size());
-  for (std::size_t index = 0; index < indices.size(); ++index)
-    oneBased[index] = static_cast<unsigned long long>(indices[index] + 1);
-  int variable = -1;
-  const std::string name = std::string(prefix) + "_indices";
-  auto result = variableId(group, name, variable, path);
-  if (!result)
-    return result;
-  result = checkedNetCDF(nc_put_var_ulonglong(group, variable, oneBased.data()),
-                         "Forcing index write", path + "/" + name);
-  if (!result)
-    return result;
-  return writeComplex(group, std::string(prefix) + "bar", values, path);
-}
-
 WVCheckpointStatus writeForcingEntry(int group,
                                      const WVFrozenForcingEntry &entry,
+                                     const WVForcingCatalog &catalog,
                                      const std::string &path) {
-  switch (entry.kind) {
-  case WVForcingKind::nonlinearAdvection:
-  case WVForcingKind::adaptiveDamping:
-  case WVForcingKind::betaPlanePVAdvection:
-    return WVCheckpointStatus::ok();
-  case WVForcingKind::bottomFrictionQuadratic:
-    return writeDouble(
-        group, "Cd",
-        std::get<WVBottomFrictionQuadraticRecord>(entry.payload).Cd, path);
-  case WVForcingKind::fixedAmplitude: {
-    const auto &record = std::get<WVFixedAmplitudeForcingRecord>(entry.payload);
-    auto result =
-        writeFixedFamily(group, "Ap", record.ApIndices, record.ApValues, path);
-    if (!result)
-      return result;
-    result =
-        writeFixedFamily(group, "Am", record.AmIndices, record.AmValues, path);
-    if (!result)
-      return result;
-    return writeFixedFamily(group, "A0", record.A0Indices, record.A0Values,
-                            path);
-  }
-  case WVForcingKind::pseudoTopographicWaveGeneration: {
-    const auto &record =
-        std::get<WVPseudoTopographicWaveGenerationRecord>(entry.payload);
-    auto result = writeDoubles(group, "topographicHeight",
-                               record.topographicHeight, path);
-    if (!result)
-      return result;
-    result =
-        writeDoubles(group, "barotropicVelocityComponent", {1.0, 2.0}, path);
-    if (!result)
-      return result;
-    const std::vector<WVComplex64> amplitudes(
-        record.barotropicVelocityAmplitude.begin(),
-        record.barotropicVelocityAmplitude.end());
-    result =
-        writeComplex(group, "barotropicVelocityAmplitude", amplitudes, path);
-    if (!result)
-      return result;
-    for (const auto &scalar : std::array<std::pair<const char *, double>, 5>{
-             {{"frequency", record.frequency},
-              {"rampDuration", record.rampDuration},
-              {"startTime", record.startTime},
-              {"maximumForcedHorizontalWavenumber",
-               record.maximumForcedHorizontalWavenumber},
-              {"maximumForcedVerticalMode",
-               record.maximumForcedVerticalMode}}}) {
-      result = writeDouble(group, scalar.first, scalar.second, path);
-      if (!result)
-        return result;
+  const auto *registration =
+      catalog.registration(entry.typeIdentifier, entry.contractVersion);
+  if (registration == nullptr || !registration->isSupported)
+    return failed(WVCheckpointStatusCode::unsupportedForcing,
+                  "Unsupported forcing reached output writing.", path);
+  for (const auto &field : registration->persistence.fields) {
+    const auto *value = entry.configuration.value(field.recordName);
+    if (value == nullptr && field.optional)
+      continue;
+    if (value == nullptr)
+      return failed(WVCheckpointStatusCode::malformedForcing,
+                    "Required forcing value is missing.", path);
+    WVCheckpointStatus result = WVCheckpointStatus::ok();
+    if (field.encoding == WVForcingPersistenceEncoding::realVariable) {
+      const auto *values = std::get_if<std::vector<double>>(&value->storage);
+      if (values == nullptr)
+        return failed(WVCheckpointStatusCode::malformedForcing,
+                      "Forcing real value has the wrong type.", path);
+      result = writeDoubles(group, field.netcdfName, *values, path);
+    } else if (field.encoding == WVForcingPersistenceEncoding::logicalVariable) {
+      const auto *values =
+          std::get_if<std::vector<std::uint8_t>>(&value->storage);
+      if (values == nullptr || values->size() != 1)
+        return failed(WVCheckpointStatusCode::malformedForcing,
+                      "Forcing logical value is malformed.", path);
+      result = writeLogical(group, field.netcdfName, values->front() != 0, path);
+    } else if (field.encoding ==
+               WVForcingPersistenceEncoding::zeroBasedIndexVariable) {
+      const auto *values =
+          std::get_if<std::vector<std::int64_t>>(&value->storage);
+      if (values == nullptr)
+        return failed(WVCheckpointStatusCode::malformedForcing,
+                      "Forcing index value has the wrong type.", path);
+      if (values->empty())
+        continue;
+      std::vector<unsigned long long> oneBased(values->size());
+      for (std::size_t index = 0; index < values->size(); ++index)
+        oneBased[index] = static_cast<unsigned long long>((*values)[index] + 1);
+      int variable = -1;
+      result = variableId(group, field.netcdfName, variable, path);
+      if (result)
+        result = checkedNetCDF(
+            nc_put_var_ulonglong(group, variable, oneBased.data()),
+            "Forcing index write", path + "/" + field.netcdfName);
+    } else if (field.encoding == WVForcingPersistenceEncoding::complexVariable) {
+      const auto *real = std::get_if<std::vector<double>>(&value->storage);
+      const auto *imaginaryValue =
+          entry.configuration.value(field.imaginaryRecordName);
+      const auto *imag = imaginaryValue == nullptr
+                             ? nullptr
+                             : std::get_if<std::vector<double>>(
+                                   &imaginaryValue->storage);
+      if (real == nullptr || imag == nullptr || real->size() != imag->size())
+        return failed(WVCheckpointStatusCode::malformedForcing,
+                      "Forcing complex value is malformed.", path);
+      if (field.dimensions == WVForcingDimensionRule::referencedLength &&
+          real->empty())
+        continue;
+      if (field.dimensions == WVForcingDimensionRule::componentPair) {
+        result = writeDoubles(group, "barotropicVelocityComponent", {1.0, 2.0},
+                              path);
+        if (!result)
+          return result;
+      }
+      result = writeDoubles(group, field.netcdfName + "_real", *real, path);
+      if (result)
+        result = writeDoubles(group, field.netcdfName + "_imag", *imag, path);
     }
-    return writeLogical(group, "shouldAvoidAdaptiveDamping",
-                        record.shouldAvoidAdaptiveDamping, path);
+    if (!result)
+      return result;
   }
-  default:
-    break;
-  }
-  return failed(WVCheckpointStatusCode::unsupportedForcing,
-                "Unsupported forcing reached output writing.", path);
+  return WVCheckpointStatus::ok();
 }
 
 } // namespace
@@ -339,7 +318,8 @@ WVCheckpointStatus defineComplexVariable(int group, const std::string &name,
 }
 
 WVCheckpointStatus defineModelOutputRoot(
-    int root, const WVCheckpoint &checkpoint, bool isDynamicsLinear,
+    int root, const WVCheckpoint &checkpoint, const WVForcingCatalog &catalog,
+    bool isDynamicsLinear,
     std::array<int, 5> &dimensions, std::vector<int> &forcingGroups,
     std::vector<const WVFrozenForcingEntry *> &forcingEntries) {
   const auto &configuration = checkpoint.configuration;
@@ -433,7 +413,7 @@ WVCheckpointStatus defineModelOutputRoot(
   forcingGroups.reserve(forcingEntries.size());
   if (forcingEntries.size() == 1) {
     forcingGroups.push_back(forcingRoot);
-    return defineForcingEntry(forcingRoot, *forcingEntries.front(), dimensions,
+    return defineForcingEntry(forcingRoot, *forcingEntries.front(), catalog, dimensions,
                               "/forcing");
   }
   for (std::size_t index = 0; index < forcingEntries.size(); ++index) {
@@ -444,7 +424,7 @@ WVCheckpointStatus defineModelOutputRoot(
     if (!result)
       return result;
     forcingGroups.push_back(group);
-    result = defineForcingEntry(group, *forcingEntries[index], dimensions,
+    result = defineForcingEntry(group, *forcingEntries[index], catalog, dimensions,
                                 "/forcing/" + name);
     if (!result)
       return result;
@@ -454,6 +434,7 @@ WVCheckpointStatus defineModelOutputRoot(
 
 WVCheckpointStatus writeModelOutputRoot(
     int root, const WVCheckpoint &checkpoint,
+    const WVForcingCatalog &catalog,
     const std::vector<int> &forcingGroups,
     const std::vector<const WVFrozenForcingEntry *> &forcingEntries) {
   const auto &configuration = checkpoint.configuration;
@@ -511,7 +492,7 @@ WVCheckpointStatus writeModelOutputRoot(
             ? "/forcing"
             : "/forcing/forcing-" + std::to_string(index + 1);
     result =
-        writeForcingEntry(forcingGroups[index], *forcingEntries[index], path);
+        writeForcingEntry(forcingGroups[index], *forcingEntries[index], catalog, path);
     if (!result)
       return result;
   }

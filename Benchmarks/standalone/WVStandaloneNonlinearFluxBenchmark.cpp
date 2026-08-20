@@ -1,4 +1,5 @@
 #include "WaveVortexRuntime/WVCheckpointReader.hpp"
+#include "WaveVortexRuntime/WVExtensionCatalog.hpp"
 #include "WaveVortexRuntime/WVForcingEngine.hpp"
 #include "WVNativeFFTWEngine.hpp"
 
@@ -109,22 +110,29 @@ int main(int argc, char **argv) {
   }
 
   WVCheckpoint checkpoint;
+  std::shared_ptr<const WVExtensionCatalog> catalog;
+  auto status = makeBuiltInExtensionCatalog(catalog);
+  if (!status) {
+    emitFailure("catalog", status.message);
+    return 3;
+  }
   phase(phasePath, "read");
-  auto checkpointStatus = WVCheckpointReader::read(argv[1], checkpoint);
+  auto checkpointStatus =
+      WVCheckpointReader::read(argv[1], *catalog, checkpoint);
   if (!checkpointStatus) {
     emitFailure("read", checkpointStatus.message);
     return 3;
   }
   if (checkpoint.forcingSchedule.entries.size() != 1 ||
-      checkpoint.forcingSchedule.entries.front().kind !=
-          WVForcingKind::nonlinearAdvection) {
+      checkpoint.forcingSchedule.entries.front().typeIdentifier !=
+          "WVNonlinearAdvection") {
     emitFailure("forcing", "The matched kernel case requires only nonlinear advection.");
     return 3;
   }
 
   std::unique_ptr<WVFFTEngine> fft;
   phase(phasePath, "construct");
-  auto status = WVFFTWEngine::create(threads, fft);
+  status = WVFFTWEngine::create(threads, fft);
   if (!status) {
     emitFailure("provider", status.message);
     return 4;
@@ -147,7 +155,8 @@ int main(int argc, char **argv) {
 
   std::unique_ptr<WVConstantStratificationForcingEngine> forcing;
   status = WVConstantStratificationForcingEngine::create(
-      checkpoint.configuration, checkpoint.forcingSchedule, std::move(fft), forcing);
+      checkpoint.configuration, checkpoint.forcingSchedule, catalog,
+      std::move(fft), forcing);
   if (!status) {
     emitFailure("construct", status.message);
     return 4;

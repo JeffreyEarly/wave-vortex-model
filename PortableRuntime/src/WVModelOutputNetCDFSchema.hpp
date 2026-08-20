@@ -1,6 +1,7 @@
 #pragma once
 
 #include "WaveVortexRuntime/WVCheckpointReader.hpp"
+#include "WaveVortexRuntime/WVExtensionCatalog.hpp"
 
 #include <array>
 #include <string>
@@ -9,12 +10,14 @@
 namespace wavevortex::runtime::detail {
 
 WVCheckpointStatus defineModelOutputRoot(
-    int root, const WVCheckpoint &checkpoint, bool isDynamicsLinear,
+    int root, const WVCheckpoint &checkpoint, const WVForcingCatalog &catalog,
+    bool isDynamicsLinear,
     std::array<int, 5> &dimensions, std::vector<int> &forcingGroups,
     std::vector<const WVFrozenForcingEntry *> &forcingEntries);
 
 WVCheckpointStatus writeModelOutputRoot(
     int root, const WVCheckpoint &checkpoint,
+    const WVForcingCatalog &catalog,
     const std::vector<int> &forcingGroups,
     const std::vector<const WVFrozenForcingEntry *> &forcingEntries);
 

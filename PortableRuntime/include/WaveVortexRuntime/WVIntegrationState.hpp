@@ -32,6 +32,9 @@ public:
   static WVKernelStatus create(WVShape2D coefficientShape,
                                const WVPortableObserverDescriptor &descriptor,
                                WVIntegrationStateLayout &layout);
+  static WVKernelStatus create(WVShape2D coefficientShape,
+                               const WVPortableObserverRecord &record,
+                               WVIntegrationStateLayout &layout);
   WVShape2D coefficientShape() const noexcept { return coefficientShape_; }
   const std::vector<WVAdditionalStateBlockLayout> &
   additionalBlocks() const noexcept {

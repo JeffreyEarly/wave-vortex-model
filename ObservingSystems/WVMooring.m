@@ -93,6 +93,17 @@ classdef WVMooring < WVObservingSystem
             names = string(self.trackedFieldNamesCell);
         end
 
+        function contract = portableImplementationContract(self)
+            % Return the paired portable implementation contract.
+            %
+            % - Topic: Internal
+            % - Declaration: contract = portableImplementationContract(self)
+            % - Returns contract: versioned data-only observer contract
+            % - Developer: true
+            payload = struct("name",string(self.name),"x",double(self.x),"y",double(self.y),"trackedFieldNames",string(self.trackedFieldNames));
+            contract = self.supportedPortableImplementationContract("WVMooring",payload);
+        end
+
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         %
         % Read and write to file

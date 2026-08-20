@@ -1,4 +1,5 @@
 #include "WaveVortexRuntime/WVRungeKutta.hpp"
+#include "WVTestExtensionCatalog.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -67,13 +68,13 @@ WVPortableObserverRecord record() {
   WVObserverRecord coefficients;
   coefficients.identifier = "coefficients";
   coefficients.name = "Wave-vortex coefficients";
-  coefficients.kind = WVObserverKind::coefficients;
+  coefficients.typeIdentifier = "WVCoefficients";
   coefficients.stateBlockIdentifiers = {"Ap", "Am", "A0"};
   result.observers.push_back(coefficients);
   WVObserverRecord particles;
   particles.identifier = "particles";
   particles.name = "Particles";
-  particles.kind = WVObserverKind::lagrangianParticles;
+  particles.typeIdentifier = "WVLagrangianParticles";
   particles.stateBlockIdentifiers = {"particleX", "particleY"};
   particles.x = {0, 1, 2};
   particles.y = {3, 4, 5};
@@ -83,7 +84,7 @@ WVPortableObserverRecord record() {
   WVObserverRecord tracer;
   tracer.identifier = "tracer";
   tracer.name = "Tracer";
-  tracer.kind = WVObserverKind::tracer;
+  tracer.typeIdentifier = "WVTracer";
   tracer.stateBlockIdentifiers = {"tracerAmplitude"};
   result.observers.push_back(tracer);
   result.outputFiles.push_back({"history",
@@ -237,7 +238,7 @@ void testContracts(WVPortableObserverDescriptor &descriptor,
                    WVIntegrationStateLayout &layout) {
   auto source = record();
   require(static_cast<bool>(
-              WVPortableObserverDescriptor::create(source, descriptor)),
+              WVPortableObserverDescriptor::create(source, test::extensionCatalog(), descriptor)),
           "valid observer descriptor");
   const auto roundTrip = descriptor.record();
   require(roundTrip.schemaIdentifier == source.schemaIdentifier &&
@@ -245,41 +246,42 @@ void testContracts(WVPortableObserverDescriptor &descriptor,
               roundTrip.outputFiles[0].groups[0].observerIdentifiers ==
                   source.outputFiles[0].groups[0].observerIdentifiers,
           "deterministic descriptor record");
-  require(std::string(WVObserverFactoryRegistry::portableTag(
-              WVObserverKind::lagrangianParticles)) == "WVLagrangianParticles",
-          "factory tag");
-  require(!WVObserverFactoryRegistry::supports(static_cast<WVObserverKind>(99)),
-          "unknown tag rejected");
+  require(test::extensionCatalog()->observers().registration(
+              "WVLagrangianParticles", WVPortablePairContractVersion) != nullptr,
+          "factory identity");
+  require(test::extensionCatalog()->observers().registration(
+              "WVUnknownObserver", WVPortablePairContractVersion) == nullptr,
+          "unknown identity rejected");
   auto duplicate = source;
   duplicate.stateBlocks.push_back(duplicate.stateBlocks.front());
   WVPortableObserverDescriptor ignored;
-  require(!WVPortableObserverDescriptor::create(duplicate, ignored),
+  require(!WVPortableObserverDescriptor::create(duplicate, test::extensionCatalog(), ignored),
           "duplicate block rejected");
   auto badReference = source;
   badReference.observers.back().stateBlockIdentifiers = {"missing"};
-  require(!WVPortableObserverDescriptor::create(badReference, ignored),
+  require(!WVPortableObserverDescriptor::create(badReference, test::extensionCatalog(), ignored),
           "unknown state reference rejected");
   auto orphan = source;
   orphan.observers.erase(orphan.observers.begin() + 2);
-  require(!WVPortableObserverDescriptor::create(orphan, ignored),
+  require(!WVPortableObserverDescriptor::create(orphan, test::extensionCatalog(), ignored),
           "orphan integrator-owned block rejected");
   auto sharedTracer = source;
   auto secondTracer = sharedTracer.observers[2];
   secondTracer.identifier = "secondTracer";
   secondTracer.name = "Second tracer";
   sharedTracer.observers.push_back(secondTracer);
-  require(!WVPortableObserverDescriptor::create(sharedTracer, ignored),
+  require(!WVPortableObserverDescriptor::create(sharedTracer, test::extensionCatalog(), ignored),
           "state block shared by two tracers rejected");
   auto sharedParticles = source;
   auto secondParticles = sharedParticles.observers[1];
   secondParticles.identifier = "secondParticles";
   secondParticles.name = "Second particles";
   sharedParticles.observers.push_back(secondParticles);
-  require(!WVPortableObserverDescriptor::create(sharedParticles, ignored),
+  require(!WVPortableObserverDescriptor::create(sharedParticles, test::extensionCatalog(), ignored),
           "state blocks shared by two particle systems rejected");
   auto mixedOwners = source;
   mixedOwners.observers[2].stateBlockIdentifiers = {"particleX"};
-  require(!WVPortableObserverDescriptor::create(mixedOwners, ignored),
+  require(!WVPortableObserverDescriptor::create(mixedOwners, test::extensionCatalog(), ignored),
           "state block shared by particle and tracer observers rejected");
   require(static_cast<bool>(
               WVIntegrationStateLayout::create({2, 3}, descriptor, layout)),
@@ -291,6 +293,35 @@ void testContracts(WVPortableObserverDescriptor &descriptor,
           "derived block excluded and order frozen");
   require(layout.realElementCount() == 10 && layout.complexElementCount() == 0,
           "integration-state counts");
+  std::size_t expectedLayoutStorage =
+      layout.additionalBlocks().capacity() *
+          sizeof(WVAdditionalStateBlockLayout) +
+      layout.stateBlockRecords().capacity() * sizeof(WVStateBlockRecord) +
+      layout.observerRecords().capacity() * sizeof(WVObserverRecord);
+  for (const auto &block : layout.additionalBlocks())
+    expectedLayoutStorage += block.identifier.capacity() +
+                             block.dimensions.capacity() * sizeof(std::size_t);
+  for (const auto &block : layout.stateBlockRecords())
+    expectedLayoutStorage += block.identifier.capacity() +
+                             block.dimensions.capacity() * sizeof(std::size_t);
+  for (const auto &observer : layout.observerRecords()) {
+    expectedLayoutStorage +=
+        observer.identifier.capacity() + observer.name.capacity() +
+        observer.typeIdentifier.capacity() +
+        observer.configuration.persistentBytes() -
+            sizeof(WVPortableTypedRecord) +
+        observer.stateBlockIdentifiers.capacity() * sizeof(std::string) +
+        observer.fieldNames.capacity() * sizeof(std::string) +
+        (observer.x.capacity() + observer.y.capacity() +
+         observer.z.capacity()) *
+            sizeof(double);
+    for (const auto &identifier : observer.stateBlockIdentifiers)
+      expectedLayoutStorage += identifier.capacity();
+    for (const auto &field : observer.fieldNames)
+      expectedLayoutStorage += field.capacity();
+  }
+  require(layout.persistentBytes() == expectedLayoutStorage,
+          "integration layout exact retained-storage ledger");
   WVIntegrationStateLayout badLayout;
   require(!WVIntegrationStateLayout::create({3, 2}, descriptor, badLayout),
           "coefficient shape mismatch rejected");
@@ -324,6 +355,9 @@ void testRK4(LinearIntegrationSystem &system) {
               rk4.metrics().workspaceMaximumLiveBytes ==
                   rk4.metrics().workspaceCapacityBytes,
           "RK4 storage accounting");
+  require(rk4.persistentBytes() >
+              sizeof(rk4) + rk4.metrics().workspaceCapacityBytes,
+          "RK4 retained ledger omitted its workspace object or accepted views");
   require(leanRK4.metrics().workspaceCapacityBytes <
               rk4.metrics().workspaceCapacityBytes,
           "RK4 dense history allocated only when requested");
@@ -354,6 +388,14 @@ void testRK23(LinearIntegrationSystem &system) {
               1e-6,
           "RK23 dense coefficient result");
   require(rk23.metrics().workspaceCapacityBytes > 0, "RK23 storage accounting");
+  const auto adaptiveArrayAndPolicyBytes =
+      sizeof(rk23) + rk23.metrics().workspaceCapacityBytes +
+      rk23.metrics().errorPolicyBytes +
+      rk23.stepDiagnostics().capacity() *
+          sizeof(WVAdaptiveRK23StepDiagnostic) +
+      rk23.toleranceComponentHashes().capacity() * sizeof(std::uint64_t);
+  require(rk23.persistentBytes() > adaptiveArrayAndPolicyBytes,
+          "RK23 retained ledger omitted its workspace object or accepted views");
 }
 
 void testRK23MatlabControllerWork() {

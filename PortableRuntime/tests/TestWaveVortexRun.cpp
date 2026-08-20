@@ -1,4 +1,5 @@
 #include "WaveVortexRuntime/WVCheckpointReader.hpp"
+#include "WVTestExtensionCatalog.hpp"
 
 #include <algorithm>
 #include <cstdlib>
@@ -126,11 +127,60 @@ int main() {
         const auto report = directory/"report.json";
         require(run(quote(input)+" "+quote(output)+" --delta-t 0.037 --steps 2 --fft-provider reference --report "+quote(report)) == 0,"runner step execution failed");
         WVCheckpoint checkpoint;
-        auto status = WVCheckpointReader::read(output.string(),checkpoint);
+        auto status = WVCheckpointReader::read(output.string(), *test::extensionCatalog(),checkpoint);
         require(static_cast<bool>(status),status.message);
         require(checkpoint.state.t > 8.949 && checkpoint.state.t < 9.025,"runner did not advance the selected state");
         require(std::filesystem::file_size(report) > 0,"runner did not write its report");
         const auto reportText = text(report);
+        const auto checkpointStateBytes = jsonNumber(reportText,"checkpointState");
+        const auto modelStateBytes = jsonNumber(reportText,"modelState");
+        const auto extensionCatalogBytes = jsonNumber(reportText,"extensionCatalog");
+        const auto integrationSystemBytes = jsonNumber(reportText,"integrationSystem");
+        const auto integratorBytes = jsonNumber(reportText,"integratorPersistent");
+        const auto knownPersistentBytes = jsonNumber(reportText,"knownPersistent");
+        const auto fullModelPersistentBytes = jsonNumber(reportText,"fullModelPersistent");
+        require(reportText.find(
+                    "\"scope\":\"application-and-provider-reported-cpp-storage\"") !=
+                    std::string::npos &&
+                    reportText.find("opaque-fftw-plan-internals") !=
+                        std::string::npos &&
+                    reportText.find("opaque-netcdf-library-internals") !=
+                        std::string::npos,
+                "runner omitted the exact storage-accounting scope");
+        require(extensionCatalogBytes > 0.0,
+                "runner omitted the retained extension catalog");
+        require(knownPersistentBytes ==
+                    jsonNumber(reportText,"modelFacade")+
+                        extensionCatalogBytes+checkpointStateBytes+
+                        integrationSystemBytes+integratorBytes+
+                        jsonNumber(reportText,"modelOutputConfiguration")+
+                        jsonNumber(reportText,"scheduledOutput"),
+                "runner known-persistent ownership formula is not exact");
+        require(fullModelPersistentBytes ==
+                    knownPersistentBytes+
+                        std::max(0.0,modelStateBytes-checkpointStateBytes)+
+                        jsonNumber(reportText,"modelOutputEvaluation")+
+                        jsonNumber(reportText,"modelOutputSink"),
+                "runner full persistent accounting is not exact");
+        const auto occurrenceRetained =
+            jsonNumber(reportText,"occurrenceWorkspaceRetained");
+        const auto occurrenceMaximumLive =
+            jsonNumber(reportText,"occurrenceWorkspaceMaximumLive");
+        const auto orchestrationMaximumLive =
+            jsonNumber(reportText,"outputOrchestrationMaximumLive");
+        require(jsonNumber(reportText,"outputDriverRetained") == 0.0 &&
+                    jsonNumber(reportText,"knownRetained") ==
+                        knownPersistentBytes &&
+                    jsonNumber(reportText,"knownMaximumLive") ==
+                        knownPersistentBytes + orchestrationMaximumLive &&
+                    jsonNumber(reportText,"fullModelRetained") ==
+                        fullModelPersistentBytes &&
+                    jsonNumber(reportText,"fullModelMaximumLive") ==
+                        fullModelPersistentBytes - occurrenceRetained +
+                            std::max(occurrenceRetained,
+                                     occurrenceMaximumLive) +
+                            orchestrationMaximumLive,
+                "runner full retained/liveness accounting is inconsistent");
         require(reportText.find("\"arrayTraffic\"") != std::string::npos && reportText.find("\"stageStateConstructionReads\":1296") != std::string::npos,"runner omitted exact RK4 traffic diagnostics");
         require(reportText.find("\"stageFluxClearWrites\":0") != std::string::npos && reportText.find("\"weightedFluxInitializationReads\":216") != std::string::npos,"runner omitted eliminated-clear and first-stage initialization diagnostics");
         require(reportText.find("\"contractAbstractionAdditionalArrayStorage\":0") != std::string::npos,"runner reported array-sized contract workspace");
@@ -149,7 +199,8 @@ int main() {
                 "explicit replacement did not succeed");
         WVCheckpoint replacedCheckpoint;
         require(static_cast<bool>(WVCheckpointReader::read(
-                    protectedOutput.string(),replacedCheckpoint)),
+                    protectedOutput.string(), *test::extensionCatalog(),
+                    replacedCheckpoint)),
                 "explicit replacement did not produce a checkpoint");
         const auto inputBytes = bytes(input);
         require(run(quote(input)+" "+quote(input)+" --restart-mode coefficients --output-policy replace --delta-t 1e-7 --steps 1 --fft-provider reference >/dev/null 2>&1") != 0,
@@ -157,7 +208,7 @@ int main() {
         require(bytes(input) == inputBytes,
                 "input/output alias failure changed the source");
         WVCheckpoint initialCheckpoint;
-        require(static_cast<bool>(WVCheckpointReader::read(input.string(),initialCheckpoint)),"scheduled-output input is unreadable");
+        require(static_cast<bool>(WVCheckpointReader::read(input.string(), *test::extensionCatalog(),initialCheckpoint)),"scheduled-output input is unreadable");
         const double scheduledMidpoint = initialCheckpoint.state.t+5e-6;
         const double scheduledEndpoint = initialCheckpoint.state.t+1e-5;
         const double scheduledFinalTime = initialCheckpoint.state.t+2e-5;
@@ -170,13 +221,30 @@ int main() {
             scheduledDirectory/"checkpoint-000003.nc",scheduledDirectory/"checkpoint-000004.nc"};
         for (std::size_t index = 0; index < scheduledPaths.size(); ++index) {
             WVCheckpoint scheduledCheckpoint;
-            require(static_cast<bool>(WVCheckpointReader::read(scheduledPaths[index].string(),scheduledCheckpoint)),"fixed scheduled checkpoint is not readable");
+            require(static_cast<bool>(WVCheckpointReader::read(scheduledPaths[index].string(), *test::extensionCatalog(),scheduledCheckpoint)),"fixed scheduled checkpoint is not readable");
             const double expectedTimes[] = {initialCheckpoint.state.t,scheduledMidpoint,scheduledEndpoint,scheduledFinalTime};
             require(std::abs(scheduledCheckpoint.state.t-expectedTimes[index]) <= 1e-14,"fixed scheduled checkpoint has the wrong time");
         }
         const auto scheduledReportText = text(scheduledReport);
         require(scheduledReportText.find("\"requestedCount\":4") != std::string::npos && scheduledReportText.find("\"committedCount\":4") != std::string::npos,"fixed scheduled-output report omitted counts");
         require(scheduledReportText.find("\"eventKind\":\"initial\"") != std::string::npos && scheduledReportText.find("\"eventKind\":\"interpolated\"") != std::string::npos && scheduledReportText.find("\"eventKind\":\"accepted-endpoint\"") != std::string::npos,"fixed scheduled-output report omitted event kinds");
+        const auto scheduledDriverMaximumLive =
+            jsonNumber(scheduledReportText,"outputDriverMaximumLive");
+        const auto scheduledPlanMaximumLive =
+            jsonNumber(scheduledReportText,"outputPlanMaximumLive");
+        const auto scheduledOrchestrationMaximumLive =
+            jsonNumber(scheduledReportText,
+                       "outputOrchestrationMaximumLive");
+        require(jsonNumber(scheduledReportText,"outputDriverRetained") == 0.0 &&
+                    scheduledDriverMaximumLive > 0.0 &&
+                    scheduledPlanMaximumLive > 0.0 &&
+                    scheduledOrchestrationMaximumLive ==
+                        scheduledDriverMaximumLive +
+                            scheduledPlanMaximumLive &&
+                    jsonNumber(scheduledReportText,"knownMaximumLive") ==
+                        jsonNumber(scheduledReportText,"knownRetained") +
+                            scheduledOrchestrationMaximumLive,
+                "scheduled-output driver/plan liveness is not exact");
         const auto scheduledSentinel = bytes(scheduledPaths.front());
         require(run(quote(input)+fixedScheduledArguments+" >/dev/null 2>&1") != 0,"scheduled output replaced existing checkpoints");
         require(bytes(scheduledPaths.front()) == scheduledSentinel,"scheduled output collision changed an existing checkpoint");
@@ -196,7 +264,7 @@ int main() {
         lateFailureWorker.join();
         require(lateFailureStatus != 0,"later scheduled-output collision unexpectedly succeeded");
         WVCheckpoint earlierCommitted;
-        require(static_cast<bool>(WVCheckpointReader::read((lateFailureDirectory/"checkpoint-000001.nc").string(),earlierCommitted)),"later scheduled-output failure corrupted the earlier checkpoint");
+        require(static_cast<bool>(WVCheckpointReader::read((lateFailureDirectory/"checkpoint-000001.nc").string(), *test::extensionCatalog(),earlierCommitted)),"later scheduled-output failure corrupted the earlier checkpoint");
         require(text(racedDestination) == "protected","later scheduled-output failure replaced the raced destination");
         const auto lateFailureReportText = text(lateFailureReport);
         require(lateFailureReportText.find("\"committedCount\":1") != std::string::npos && lateFailureReportText.find("\"status\":\"failed\"") != std::string::npos,"later scheduled-output failure report omitted partial results");
@@ -217,7 +285,7 @@ int main() {
         interruptedWorker.join();
         require(interruptedStatus != 0,"interrupted scheduled-output runner reported success");
         WVCheckpoint interruptedCheckpoint;
-        require(static_cast<bool>(WVCheckpointReader::read((interruptedDirectory/"checkpoint-000001.nc").string(),interruptedCheckpoint)),"interruption corrupted the committed checkpoint");
+        require(static_cast<bool>(WVCheckpointReader::read((interruptedDirectory/"checkpoint-000001.nc").string(), *test::extensionCatalog(),interruptedCheckpoint)),"interruption corrupted the committed checkpoint");
         require(!std::filesystem::exists(interruptedDirectory/"checkpoint-000002.nc"),"interruption created a later checkpoint");
 #endif
 
@@ -225,18 +293,18 @@ int main() {
         require(run(quote(input)+" "+quote(fixedControl)+" --delta-t 1e-5 --final-time "+number(scheduledFinalTime)+" --fft-provider reference >/dev/null 2>&1") == 0,"fixed scheduled-output control failed");
         WVCheckpoint fixedControlCheckpoint;
         WVCheckpoint fixedScheduledFinal;
-        require(static_cast<bool>(WVCheckpointReader::read(fixedControl.string(),fixedControlCheckpoint)) && static_cast<bool>(WVCheckpointReader::read(scheduledPaths.back().string(),fixedScheduledFinal)),"fixed scheduled-output comparison is unreadable");
+        require(static_cast<bool>(WVCheckpointReader::read(fixedControl.string(), *test::extensionCatalog(),fixedControlCheckpoint)) && static_cast<bool>(WVCheckpointReader::read(scheduledPaths.back().string(), *test::extensionCatalog(),fixedScheduledFinal)),"fixed scheduled-output comparison is unreadable");
         require(relativeDifference(fixedControlCheckpoint,fixedScheduledFinal) == 0.0,"fixed scheduled output changed the accepted trajectory");
         const auto fixedInterpolatedRestart = directory/"fixed-interpolated-restart.nc";
         require(run(quote(scheduledPaths[1])+" "+quote(fixedInterpolatedRestart)+" --delta-t 1e-5 --final-time "+number(scheduledFinalTime)+" --fft-provider reference >/dev/null 2>&1") == 0,"fixed interpolated checkpoint did not restart");
         WVCheckpoint fixedInterpolatedRestartCheckpoint;
-        require(static_cast<bool>(WVCheckpointReader::read(fixedInterpolatedRestart.string(),fixedInterpolatedRestartCheckpoint)),"fixed interpolated restart is unreadable");
+        require(static_cast<bool>(WVCheckpointReader::read(fixedInterpolatedRestart.string(), *test::extensionCatalog(),fixedInterpolatedRestartCheckpoint)),"fixed interpolated restart is unreadable");
         require(std::abs(fixedInterpolatedRestartCheckpoint.state.t-scheduledFinalTime) <= 1e-12 && hasFiniteState(fixedInterpolatedRestartCheckpoint),"fixed interpolated checkpoint did not produce a finite restart at the requested final time");
         const auto adaptiveOutput = directory/"adaptive-output.nc";
         const auto adaptiveReport = directory/"adaptive-report.json";
         require(run(quote(input)+" "+quote(adaptiveOutput)+" --delta-t 0.037 --initial-step 0.02 --maximum-step 0.01 --steps 2 --integrator adaptive-rk23 --relative-tolerance 1e-3 --absolute-tolerance 1e-6 --fft-provider reference --report "+quote(adaptiveReport)) == 0,"adaptive runner execution failed");
         WVCheckpoint adaptiveCheckpoint;
-        status = WVCheckpointReader::read(adaptiveOutput.string(),adaptiveCheckpoint);
+        status = WVCheckpointReader::read(adaptiveOutput.string(), *test::extensionCatalog(),adaptiveCheckpoint);
         require(static_cast<bool>(status) && adaptiveCheckpoint.state.t > checkpoint.state.t-0.074,"adaptive runner output is not readable or did not advance");
         const auto adaptiveReportText = text(adaptiveReport);
         require(adaptiveReportText.find("\"id\":\"adaptive-rk23\"") != std::string::npos && adaptiveReportText.find("\"controller\":\"matlab-ode23-v1\"") != std::string::npos && adaptiveReportText.find("\"requestedInitialStep\":0.020000") != std::string::npos && adaptiveReportText.find("\"effectiveInitialStep\":0.01") != std::string::npos && adaptiveReportText.find("\"effectiveMaximumStep\":0.01") != std::string::npos && adaptiveReportText.find("\"toleranceHash\":") != std::string::npos && adaptiveReportText.find("\"toleranceHashClearedMantissaBits\":20") != std::string::npos && adaptiveReportText.find("\"acceptedSteps\":[") != std::string::npos && adaptiveReportText.find("\"rejectedStepCount\":") != std::string::npos && adaptiveReportText.find("\"nextStepSize\":") != std::string::npos && adaptiveReportText.find("\"denseOutputEvaluationCount\":") != std::string::npos && adaptiveReportText.find("\"denseOutputSeconds\":") != std::string::npos,"adaptive runner report omitted method diagnostics");
@@ -252,21 +320,21 @@ int main() {
         require(adaptiveSeriesPaths.size() == 2,"adaptive scheduled output wrote the wrong number of checkpoints");
         for (const auto& path : adaptiveSeriesPaths) {
             WVCheckpoint emitted;
-            require(static_cast<bool>(WVCheckpointReader::read(path.string(),emitted)),"adaptive scheduled checkpoint is not readable");
+            require(static_cast<bool>(WVCheckpointReader::read(path.string(), *test::extensionCatalog(),emitted)),"adaptive scheduled checkpoint is not readable");
         }
         const auto adaptiveSeriesControl = directory/"scheduled-adaptive-control.nc";
         const auto adaptiveSeriesControlReport = directory/"scheduled-adaptive-control.json";
         require(run(quote(input)+" "+quote(adaptiveSeriesControl)+" --delta-t 1e-5 --final-time "+number(scheduledFinalTime)+" --integrator adaptive-rk23 --relative-tolerance 1e-6 --absolute-tolerance 1e-8 --fft-provider reference --report "+quote(adaptiveSeriesControlReport)) == 0,"adaptive scheduled-output control failed");
         WVCheckpoint adaptiveSeriesFinal;
         WVCheckpoint adaptiveSeriesControlCheckpoint;
-        require(static_cast<bool>(WVCheckpointReader::read(adaptiveSeriesPaths.back().string(),adaptiveSeriesFinal)) && static_cast<bool>(WVCheckpointReader::read(adaptiveSeriesControl.string(),adaptiveSeriesControlCheckpoint)),"adaptive scheduled-output comparison is unreadable");
+        require(static_cast<bool>(WVCheckpointReader::read(adaptiveSeriesPaths.back().string(), *test::extensionCatalog(),adaptiveSeriesFinal)) && static_cast<bool>(WVCheckpointReader::read(adaptiveSeriesControl.string(), *test::extensionCatalog(),adaptiveSeriesControlCheckpoint)),"adaptive scheduled-output comparison is unreadable");
         require(relativeDifference(adaptiveSeriesFinal,adaptiveSeriesControlCheckpoint) == 0.0,"adaptive scheduled output changed the accepted trajectory");
         const auto adaptiveSeriesControlText = text(adaptiveSeriesControlReport);
         for (const auto& field : {"stepCount","rejectedStepCount","rhsEvaluationCount"}) require(jsonNumber(adaptiveSeriesText,field) == jsonNumber(adaptiveSeriesControlText,field),"adaptive scheduled output changed "+std::string(field));
         const auto adaptiveInterpolatedRestart = directory/"adaptive-interpolated-restart.nc";
         require(run(quote(adaptiveSeriesPaths.front())+" "+quote(adaptiveInterpolatedRestart)+" --delta-t 1e-5 --final-time "+number(scheduledFinalTime)+" --integrator adaptive-rk23 --relative-tolerance 1e-6 --absolute-tolerance 1e-8 --fft-provider reference >/dev/null 2>&1") == 0,"adaptive interpolated checkpoint did not restart");
         WVCheckpoint adaptiveInterpolatedRestartCheckpoint;
-        require(static_cast<bool>(WVCheckpointReader::read(adaptiveInterpolatedRestart.string(),adaptiveInterpolatedRestartCheckpoint)),"adaptive interpolated restart is unreadable");
+        require(static_cast<bool>(WVCheckpointReader::read(adaptiveInterpolatedRestart.string(), *test::extensionCatalog(),adaptiveInterpolatedRestartCheckpoint)),"adaptive interpolated restart is unreadable");
         require(relativeDifference(adaptiveSeriesControlCheckpoint,adaptiveInterpolatedRestartCheckpoint) <= 1e-6,"adaptive interpolated restart exceeded tolerance-equivalent continuation");
         const auto adaptiveDenseOutput = directory/"adaptive-dense-output.nc";
         const auto adaptiveDenseReport = directory/"adaptive-dense-report.json";
@@ -286,7 +354,7 @@ int main() {
             const auto fixtureOutput = directory/("adaptive-"+fixture);
             require(run(quote(fixtureInput)+" "+quote(fixtureOutput)+" --delta-t 1e-5 --steps 1 --integrator adaptive-rk23 --fft-provider reference >/dev/null 2>&1") == 0,"adaptive runner failed forcing fixture "+fixture);
         }
-        require(static_cast<bool>(WVCheckpointReader::read(input.string(),initialCheckpoint)),"adaptive restart input is unreadable");
+        require(static_cast<bool>(WVCheckpointReader::read(input.string(), *test::extensionCatalog(),initialCheckpoint)),"adaptive restart input is unreadable");
         const auto continuous = directory/"adaptive-continuous.nc";
         const auto midpoint = directory/"adaptive-midpoint.nc";
         const auto restarted = directory/"adaptive-restarted.nc";
@@ -298,7 +366,7 @@ int main() {
         require(run(quote(midpoint)+" "+quote(restarted)+adaptiveArguments+" --final-time "+number(finalTime)+" >/dev/null 2>&1") == 0,"adaptive restart continuation failed");
         WVCheckpoint continuousCheckpoint;
         WVCheckpoint restartedCheckpoint;
-        require(static_cast<bool>(WVCheckpointReader::read(continuous.string(),continuousCheckpoint)) && static_cast<bool>(WVCheckpointReader::read(restarted.string(),restartedCheckpoint)),"adaptive restart outputs are unreadable");
+        require(static_cast<bool>(WVCheckpointReader::read(continuous.string(), *test::extensionCatalog(),continuousCheckpoint)) && static_cast<bool>(WVCheckpointReader::read(restarted.string(), *test::extensionCatalog(),restartedCheckpoint)),"adaptive restart outputs are unreadable");
         require(relativeDifference(continuousCheckpoint,restartedCheckpoint) <= 1e-6,"adaptive restart exceeded tolerance-based trajectory equivalence");
         require(run(quote(input)+" "+quote(output)+" --delta-t 0.037 --steps 1 --final-time 9 --fft-provider reference >/dev/null 2>&1") != 0,"runner accepted both endpoint modes");
         require(run(quote(input)+" "+quote(output)+" --delta-t 0.037 --steps 1 --fft-provider native-fftw >/dev/null 2>&1") != 0,"reference-only build silently substituted a provider");

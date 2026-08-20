@@ -84,9 +84,7 @@ public:
     return hasAcceptedStep_ ? &acceptedStep_ : nullptr;
   }
   double nextStepSize() const noexcept override { return nextStepSize_; }
-  std::size_t persistentBytes() const noexcept override {
-    return metrics_.workspaceCapacityBytes;
-  }
+  std::size_t persistentBytes() const noexcept override;
   const WVIntegratorMetrics &metrics() const noexcept {
     return metrics_;
   }
@@ -178,11 +176,7 @@ public:
     return "matlab-ode23-v1";
   }
   double nextStepSize() const noexcept override { return nextStepSize_; }
-  std::size_t persistentBytes() const noexcept override {
-    return metrics_.workspaceCapacityBytes +
-           stepDiagnostics_.capacity() * sizeof(WVAdaptiveRK23StepDiagnostic) +
-           toleranceComponentHashes_.capacity() * sizeof(std::uint64_t);
-  }
+  std::size_t persistentBytes() const noexcept override;
 
 private:
   class Workspace;

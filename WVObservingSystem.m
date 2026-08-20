@@ -75,6 +75,22 @@ classdef WVObservingSystem < handle & matlab.mixin.Heterogeneous & CAAnnotatedCl
             aString = "An instance of " + class(self) + " named " + self.name;
         end
 
+        function contract = portableImplementationContract(self)
+            % Describe availability of the paired portable C++ implementation.
+            %
+            % The base class is intentionally unavailable. A supported
+            % concrete observing system overrides this method with a
+            % versioned, data-only contract. The portable runtime still
+            % requires an exact source-level C++ registration.
+            %
+            % - Topic: Internal
+            % - Declaration: contract = portableImplementationContract(self)
+            % - Parameter self: observing system to inspect
+            % - Returns contract: scalar portable implementation contract
+            % - Developer: true
+            contract = WVInternal.portableImplementationContract(string(class(self)),string(class(self)),"unavailable","No matching portable C++ observing-system implementation is declared.",struct());
+        end
+
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         %
         % Integrated variables
@@ -146,6 +162,12 @@ classdef WVObservingSystem < handle & matlab.mixin.Heterogeneous & CAAnnotatedCl
             % and write to the NetCDFGroup at the particular outputIndex.
             %
             % - Topic: Required subclass overrides
+        end
+    end
+
+    methods (Access=protected)
+        function contract = supportedPortableImplementationContract(self,typeIdentifier,payload)
+            contract = WVInternal.portableImplementationContract(string(class(self)),string(typeIdentifier),"supported","",payload);
         end
     end
 

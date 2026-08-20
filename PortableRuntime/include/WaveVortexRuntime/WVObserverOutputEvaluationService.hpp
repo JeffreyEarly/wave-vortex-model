@@ -17,6 +17,14 @@ struct WVObserverOutputEvaluationMetrics {
   std::size_t retainedStorageBytes = 0;
   std::size_t routeAwareParticleEvaluationCount = 0;
   std::size_t skippedParticleEvaluationCount = 0;
+  std::size_t batchRetainedStorageBytes = 0;
+  std::size_t batchMaximumLiveBytes = 0;
+  std::size_t occurrencePreparationCount = 0;
+  std::size_t occurrenceReuseCount = 0;
+  std::size_t occurrenceBatchBuildCount = 0;
+  std::size_t occurrenceWorkspaceRetainedBytes = 0;
+  std::size_t occurrenceWorkspaceLiveBytes = 0;
+  std::size_t occurrenceWorkspaceMaximumLiveBytes = 0;
   double evaluationSeconds = 0.0;
 };
 
@@ -31,20 +39,30 @@ public:
          bool isDynamicsLinear,
          const WVPortableObserverDescriptor &descriptor,
          std::unique_ptr<WVFFTEngine> engine,
-         std::unique_ptr<WVObserverOutputEvaluationService> &service);
+         std::unique_ptr<WVObserverOutputEvaluationService> &service,
+         WVFieldEvaluationService *borrowedFieldEvaluationService = nullptr);
 
-  WVKernelStatus specifications(
+  WVKernelStatus observationSchema(
       const WVObserverRecord &observer,
-      std::vector<WVObserverOutputVariableSpecification> &output) override;
+      WVObservationSchema &output) override;
+  WVKernelStatus initialObservationBatch(
+      const WVObserverRecord &observer,
+      WVObservationBatch &output) override;
+  WVKernelStatus preparedOccurrenceIdentity(
+      const WVOutputRouteView &route, const WVOutputObserverView &observer,
+      WVObservationOccurrenceIdentity &output) const override;
+  WVKernelStatus observationBatch(
+      const WVObservationOccurrenceIdentity &identity,
+      const WVObserverRecord &observer,
+      WVObservationBatch &output) override;
   WVKernelStatus preflight(const WVOutputPlan &plan) override;
   WVKernelStatus useFieldEvaluationService(
       WVFieldEvaluationService &fieldEvaluationService);
   WVKernelStatus prepareInitial(const WVState &state) override;
   WVKernelStatus prepare(const WVOutputEvent &event) override;
-  WVKernelStatus value(
-      const WVObserverRecord &observer,
-      const WVObserverOutputVariableSpecification &variable,
-      WVObserverOutputValueView &output) override;
+  void complete(const WVOutputEvent &event) noexcept override;
+  std::size_t occurrenceWorkspaceRetainedBytes() const noexcept override;
+  std::size_t occurrenceWorkspaceLiveBytes() const noexcept override;
 
   const WVObserverOutputEvaluationMetrics &metrics() const noexcept {
     return metrics_;
@@ -53,6 +71,10 @@ public:
 
 private:
   WVObserverOutputEvaluationService() = default;
+  WVKernelStatus observationBatchForKind(
+      const WVObservationOccurrenceIdentity *identity,
+      const WVObserverRecord &observer, WVObservationBatchKind kind,
+      WVObservationBatch &output);
   class Impl;
   std::unique_ptr<Impl> impl_;
   WVObserverOutputEvaluationMetrics metrics_;

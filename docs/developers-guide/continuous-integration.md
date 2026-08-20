@@ -9,23 +9,54 @@ nav_order: 3
 
 WaveVortexModel uses non-mutating continuous integration to check changes without modifying the package, publishing a release, or exporting an OceanKit snapshot. The workflows run on Ubuntu with MATLAB R2025b and resolve runtime dependencies from OceanKit commit `96f0b801c565406dd5a4ba2480334a3a481c3e2c`. This fixed dependency snapshot makes a workflow rerun use the same OceanKit packages as the original run.
 
-## Required checks
+## Gate selection
 
-The required workflow runs for every pull request, every update to `main`, and manual dispatches. It reports three independent jobs:
+Pull requests targeting an unreleased integration branch use the focused gate by default. Pull requests targeting `main`, pull requests carrying the `final-integration` label, pushes to `main`, scheduled extended verification, and manual workflow dispatches use the full gate. Adding or removing the `final-integration` label starts a replacement run so the selected evidence always agrees with the current milestone status.
+
+The `final-integration` label is the explicit opt-in for the last cumulative integration PR before it targets `main`. Manual dispatch remains available from any branch and always runs every job in the selected workflow; it never selects the focused gate.
+
+## Required check
+
+The required workflow always reports `Required / WaveVortexModel`. This aggregate check succeeds only after the portable C++ job and the MATLAB jobs selected for the current gate succeed. Branch protection for an integration branch should require this aggregate check so conditional jobs cannot leave auto-merge pending indefinitely or allow it to merge before the focused evidence completes.
+
+The full-gate job names remain stable for `main` and final integration branch protection:
 
 | GitHub check | Local equivalent |
 | --- | --- |
+| Portable C++ kernel contract | `buildtool kernel:contract` plus the portable runtime CMake/CTest suite and source policy |
 | Smoke / MATLAB R2025b | `buildtool test:smoke` |
-| Documentation / MATLAB R2025b | `buildtool docs:check` |
+| Documentation / MATLAB R2025b | `buildtool docs:check` plus rendered-site verification |
 | Code Analyzer / MATLAB R2025b | `buildtool analyze` |
+
+## Focused integration-branch gate
+
+An ordinary integration-branch PR runs the portable C++ kernel contract and one `Focused MATLAB / R2025b` job. The MATLAB job checks out the pinned OceanKit snapshot, sets up MATLAB once, and invokes MATLAB once for the selected tasks. Smoke and compatibility tests always run. Code Analyzer runs when the PR changes MATLAB files, and the documentation source check runs when the PR changes canonical or generated documentation, documentation tooling, or the required workflow.
+
+Focused documentation verification checks committed sources against a clean generation in the shared MATLAB invocation. Rendered-site verification remains in the full documentation job because it requires a Jekyll build between two MATLAB operations.
+
+The focused job records provisioning and MATLAB execution durations separately in the workflow summary. MATLAB caching is enabled. `setup-matlab@v3` exposes only its MATLAB root as an action output, so cache restore or population details remain in the setup step log. The setup step has a ten-minute timeout; failure to reach MATLAB test execution within that budget is reported as a provisioning incident instead of waiting for the complete job timeout. Under normal GitHub service conditions, an ordinary focused PR should complete in approximately ten minutes or less.
+
+## Final integration and main gates
+
+The full gate preserves every release and compatibility protection:
+
+- The required workflow runs the portable C++ contract, smoke tests, generated and rendered documentation verification, and Code Analyzer.
+- The package-verification workflow runs clean-install and exported-package verification.
+- The extended workflow runs the Full, Exhaustive, and Optional MATLAB categories.
+
+The package and extended workflows are triggered for every pull request so their conditional job names are present, but their MATLAB jobs run only for PRs targeting `main` or carrying the `final-integration` label. Starting any of the three workflows manually runs that workflow's complete matrix from the selected branch.
 
 The documentation job installs the authoring-only package `ClassDocumentation@1.3.2` explicitly before checking the committed Markdown. It then builds that exact tree with GitHub Pages' Jekyll action and validates the rendered HTML. This second stage catches malformed front matter, mathematical Markdown, expressions split across rendered table cells, or other source syntax that can pass a link check but disappear or remain raw in the deployed site. Valid math delimiters remain in the Jekyll output for browser-side MathJax. Failed rendered output is uploaded as a temporary diagnostic artifact and is never committed.
 
-Smoke tests, source-and-rendered documentation verification, and Code Analyzer are required to merge into `main`. Branch protection requires the pull request branch to be current with `main` before those checks can satisfy the merge gate.
+## Workflow lifecycle
+
+Same-PR concurrency retains `cancel-in-progress: true`, so a superseding commit or gate-label change cancels the earlier run. Closing or merging a focused integration PR starts a no-job lifecycle run in the same concurrency group, which cancels obsolete focused work. A closed full-gate PR uses a distinct lifecycle concurrency group so its final evidence is not canceled after close.
+
+Branch protection remains authoritative for merge readiness. Require `Required / WaveVortexModel` on the integration branch before enabling auto-merge. Continue requiring the complete smoke, documentation, analyzer, clean-install, exported-package, and comprehensive MATLAB check set for `main` and the final milestone integration path.
 
 ## Extended checks
 
-The extended workflow runs every Monday at 09:00 UTC and may be started manually. Its Full, Exhaustive, and Optional jobs remain separate so a failure identifies the affected test category. Run the same checks locally with:
+The extended workflow runs every Monday at 09:00 UTC, on full-gate pull requests, and by manual dispatch. Its Full, Exhaustive, and Optional jobs remain separate so a failure identifies the affected test category. Run the same checks locally with:
 
 ```matlab
 buildtool test:full
@@ -33,7 +64,7 @@ buildtool test:exhaustive
 buildtool test:optional
 ```
 
-The Optional job requests Optimization Toolbox. When MATLAB is available but the toolbox cannot be used, the job records an explicit skip in the workflow notice and summary. Setup, installation, licensing, or other infrastructure failures still fail the job. The extended checks provide deeper scheduled coverage but do not block ordinary pull-request merges.
+The Optional job requests Optimization Toolbox. When MATLAB is available but the toolbox cannot be used, the job records an explicit skip in the workflow notice and summary. Setup, installation, licensing, or other infrastructure failures still fail the job.
 
 The public GitHub MATLAB license permits one MATLAB process at a time. The full suite therefore verifies the explicit license-unavailable result from the benchmark's nested fresh-process memory check on GitHub Actions. On hosts that can start a second MATLAB process, the same test requires a complete resident-memory measurement. Any other benchmark-worker failure remains a test failure.
 
@@ -47,7 +78,7 @@ The OceanKit commit is deliberately recorded in both routine workflow files, the
 
 ## Native-package release gates
 
-The package-verification workflow may be started manually and runs on pull requests that change production source, package metadata, documentation, release workflows, or verification tools. Test-only, benchmark-only, and developer-experiment changes do not start it automatically. It reports two independent MATLAB R2025b jobs:
+The package-verification workflow may be started manually and runs its two MATLAB R2025b jobs for every full-gate pull request:
 
 | GitHub check | Purpose |
 | --- | --- |

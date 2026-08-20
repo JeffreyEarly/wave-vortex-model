@@ -1,6 +1,6 @@
 #pragma once
 
-#include "WaveVortexKernel/WVForcingSchedule.hpp"
+#include "WaveVortexRuntime/WVForcingSchedule.hpp"
 #include "WaveVortexKernel/WVKernelTypes.hpp"
 
 #include <cstddef>
@@ -9,6 +9,8 @@
 #include <vector>
 
 namespace wavevortex::runtime {
+
+class WVExtensionCatalog;
 
 // Version of the reader contract. This identifier is not written into 4.x files.
 inline constexpr std::uint32_t WVCheckpointProfileVersion = 1;
@@ -112,6 +114,35 @@ struct WVCheckpoint {
     WVFrozenForcingSchedule forcingSchedule;
 };
 
+// Capacity-based retained storage owned by one complete checkpoint, including
+// its object, coefficient arrays, metadata, and frozen forcing records.
+inline std::size_t
+checkpointRetainedBytes(const WVCheckpoint& checkpoint) noexcept {
+    std::size_t bytes = sizeof(checkpoint) +
+        (checkpoint.state.coefficients.Ap.capacity() +
+         checkpoint.state.coefficients.Am.capacity() +
+         checkpoint.state.coefficients.A0.capacity()) * sizeof(WVComplex64) +
+        checkpoint.metadata.profileIdentifier.capacity() +
+        checkpoint.metadata.modelVersion.capacity() +
+        checkpoint.metadata.transformClass.capacity() +
+        checkpoint.metadata.stateGroupPath.capacity() +
+        checkpoint.metadata.forcingHeaders.capacity() *
+            sizeof(WVCheckpointForcingHeader) +
+        checkpoint.forcingSchedule.profileIdentifier.capacity() +
+        checkpoint.forcingSchedule.entries.capacity() *
+            sizeof(WVFrozenForcingEntry);
+    for (const auto& header : checkpoint.metadata.forcingHeaders) {
+        bytes += header.groupPath.capacity() + header.annotatedClass.capacity();
+    }
+    for (const auto& entry : checkpoint.forcingSchedule.entries) {
+        bytes += entry.typeIdentifier.capacity() + entry.name.capacity() +
+            entry.sourceGroupPath.capacity() +
+            entry.configuration.persistentBytes() -
+                sizeof(WVPortableTypedRecord);
+    }
+    return bytes;
+}
+
 // Allocation-light checkpoint information used to reject incompatible input
 // before loading the three state-sized coefficient arrays.
 struct WVCheckpointInspection {
@@ -130,12 +161,14 @@ public:
     // without allocating or reading Ap, Am, or A0.
     static WVCheckpointStatus inspect(
         const std::string& path,
+        const WVExtensionCatalog& catalog,
         WVCheckpointInspection& inspection,
         WVCheckpointStateSelection selection = WVCheckpointStateSelection::latest());
 
     // On failure, checkpoint is unchanged and all NetCDF handles are closed.
     static WVCheckpointStatus read(
         const std::string& path,
+        const WVExtensionCatalog& catalog,
         WVCheckpoint& checkpoint,
         WVCheckpointStateSelection selection = WVCheckpointStateSelection::latest());
 };

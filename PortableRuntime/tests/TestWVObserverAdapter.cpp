@@ -1,4 +1,5 @@
 #include "WVObserverAdapter.hpp"
+#include "WVTestExtensionCatalog.hpp"
 
 #include <cstdlib>
 #include <iostream>
@@ -6,6 +7,8 @@
 #include <string>
 
 using namespace wavevortex::runtime;
+using wavevortex::WVKernelStatus;
+using wavevortex::WVKernelStatusCode;
 
 namespace {
 
@@ -16,104 +19,194 @@ void require(bool condition, const char *message) {
   }
 }
 
+class WVTestPortablePointDiagnostic final : public WVObservingSystem {
+public:
+  explicit WVTestPortablePointDiagnostic(WVPortableTypedRecord configuration)
+      : configuration_(std::move(configuration)) {}
+  const std::string &typeIdentifier() const noexcept override {
+    static const std::string value = "WVTestPortablePointDiagnostic";
+    return value;
+  }
+  std::uint32_t contractVersion() const noexcept override { return 1; }
+  WVKernelStatus executionPlan(const WVObserverRecord &record,
+                               WVObserverExecutionPlan &plan) const override {
+    plan = {};
+    plan.fieldListAttribute = "fieldNames";
+    plan.persistedName = record.name;
+    const auto *field = record.configuration.value("field");
+    plan.outputFields =
+        field == nullptr ? record.fieldNames
+                         : std::get<std::vector<std::string>>(field->storage);
+    return WVKernelStatus::ok();
+  }
+  WVKernelStatus validate(
+      const WVObserverRecord &record,
+      const std::map<std::string, const WVStateBlockRecord *> &,
+      std::map<std::string, std::size_t> &) const override {
+    if (!record.stateBlockIdentifiers.empty() || record.fieldNames.size() != 1 ||
+        record.x.empty() || record.x.size() != record.y.size() ||
+        record.x.size() != record.z.size())
+      return {WVKernelStatusCode::invalidConfiguration,
+              "Point diagnostic requires one field and equal fixed x/y/z points."};
+    return WVKernelStatus::ok();
+  }
+  std::size_t persistentBytes() const noexcept override {
+    return sizeof(*this) + configuration_.persistentBytes() -
+           sizeof(configuration_);
+  }
+
+private:
+  WVPortableTypedRecord configuration_;
+};
+
+class WVTestPortablePointDiagnosticV2 final : public WVObservingSystem {
+public:
+  const std::string &typeIdentifier() const noexcept override {
+    static const std::string value = "WVTestPortablePointDiagnostic";
+    return value;
+  }
+  std::uint32_t contractVersion() const noexcept override { return 2; }
+  WVKernelStatus executionPlan(const WVObserverRecord &record,
+                               WVObserverExecutionPlan &plan) const override {
+    plan = {};
+    plan.fieldListAttribute = "fieldNames";
+    plan.persistedName = record.name;
+    plan.outputFields = record.fieldNames;
+    return WVKernelStatus::ok();
+  }
+  WVKernelStatus validate(
+      const WVObserverRecord &,
+      const std::map<std::string, const WVStateBlockRecord *> &,
+      std::map<std::string, std::size_t> &) const override {
+    return WVKernelStatus::ok();
+  }
+  std::size_t persistentBytes() const noexcept override {
+    return sizeof(*this);
+  }
+};
+
 } // namespace
 
 int main() {
-  const auto &definitions = detail::observerDefinitions();
-  require(definitions.size() == 5, "registry must contain five v1 built-ins");
-  std::set<WVObserverKind> kinds;
-  std::set<std::string> tags;
-  std::set<std::string> classes;
-  for (const auto &definition : definitions) {
-    require(kinds.insert(definition.kind).second, "observer kind is duplicated");
-    require(!definition.portableTag.empty(),
-            "portable tag is absent");
-    require(!definition.matlabClassName.empty(),
-            "MATLAB class name is absent");
-    require(tags.insert(definition.portableTag).second,
-            "portable tag is duplicated");
-    require(classes.insert(definition.matlabClassName).second,
-            "MATLAB class name is duplicated");
-    require(detail::observerDefinition(definition.kind) == &definition,
-            "kind lookup did not preserve definition identity");
-    require(detail::observerDefinitionForMatlabClass(
-                definition.matlabClassName) == &definition,
-            "MATLAB-class lookup did not preserve definition identity");
-    require(WVObserverFactoryRegistry::supports(definition.kind),
-            "public registry rejected a built-in definition");
-    require(std::string(WVObserverFactoryRegistry::portableTag(
-                definition.kind)) == definition.portableTag,
-            "public registry tag differs from the adapter definition");
-  }
+  WVExtensionCatalogBuilder builder;
+  require(static_cast<bool>(addBuiltInExtensions(builder)),
+          "built-in extension registration failed");
+  const auto pointFactory =
+      [](const WVObserverRecord &, const WVPortableTypedRecord &configuration,
+         std::shared_ptr<const WVObservingSystem> &result) {
+        result =
+            std::make_shared<WVTestPortablePointDiagnostic>(configuration);
+        return WVKernelStatus::ok();
+      };
+  require(static_cast<bool>(builder.addObserverFactory(
+              {"WVTestPortablePointDiagnostic", 1, pointFactory})),
+          "test observer factory registration failed");
+  require(!builder.addObserverFactory(
+              {"WVTestPortablePointDiagnostic", 1, pointFactory}),
+          "duplicate observer factory registration succeeded");
 
-  constexpr auto testKind = static_cast<WVObserverKind>(200);
-  auto registration = WVObserverFactoryRegistry::Registration{
-      testKind, "WVTestFields", "WVTestFields",
-      WVObserverStateContract::sampleOnly,
-      WVObserverOutputRule::eulerianFields, "fieldNames"};
-  require(static_cast<bool>(
-              WVObserverFactoryRegistry::registerAdapter(registration)),
-          "test observer adapter registration failed");
-  require(WVObserverFactoryRegistry::supports(testKind),
-          "registered test observer is unsupported");
-  require(std::string(WVObserverFactoryRegistry::portableTag(testKind)) ==
-              "WVTestFields" &&
-              std::string(WVObserverFactoryRegistry::matlabClassName(testKind)) ==
-                  "WVTestFields",
-          "registered test observer identity was not preserved");
-  require(!WVObserverFactoryRegistry::registerAdapter(registration),
-          "duplicate observer adapter registration succeeded");
+  WVExtensionCatalogBuilder catalogBuilder;
+  require(static_cast<bool>(addBuiltInExtensions(catalogBuilder)),
+          "built-in extension registration failed");
+  require(static_cast<bool>(catalogBuilder.addObserverFactory(
+              {"WVTestPortablePointDiagnostic", 1, pointFactory})),
+          "test observer factory registration failed");
+  require(static_cast<bool>(catalogBuilder.addObserverFactory(
+              {"WVTestPortablePointDiagnostic", 2,
+               [](const WVObserverRecord &, const WVPortableTypedRecord &,
+                  std::shared_ptr<const WVObservingSystem> &result) {
+                 result =
+                     std::make_shared<WVTestPortablePointDiagnosticV2>();
+                 return WVKernelStatus::ok();
+               }})),
+          "a second observer contract version could not be registered");
+  std::shared_ptr<const WVExtensionCatalog> catalog;
+  require(static_cast<bool>(catalogBuilder.freeze(catalog)),
+          "extension catalog freeze failed");
+  require(catalog->observers().capability(
+              "WVTestPortablePointDiagnostic", 1)
+              .isSupported(),
+          "registered observer pair is unavailable");
+  require(catalog->observers().capability(
+              "WVTestPortablePointDiagnostic", 2)
+              .isSupported(),
+          "the second observer contract version is unavailable");
+  require(catalog->observers().capability(
+              "WVTestPortablePointDiagnostic", 3)
+              .status == WVPortableCapabilityStatus::versionMismatch,
+          "an unavailable observer contract version was accepted");
+  require(catalog->observers().capability("WVCustomObserver", 1).status ==
+              WVPortableCapabilityStatus::unavailable,
+          "missing observer pair did not report unavailability");
 
-  WVPortableObserverRecord testRecord;
-  WVObserverRecord testObserver;
-  testObserver.identifier = "test-fields";
-  testObserver.name = "test fields";
-  testObserver.kind = testKind;
-  testObserver.fieldNames = {"u"};
-  testRecord.observers.push_back(testObserver);
-  WVPortableObserverDescriptor testDescriptor;
-  require(static_cast<bool>(
-              WVPortableObserverDescriptor::create(testRecord, testDescriptor)),
-          "registered test observer descriptor validation failed");
-  require(detail::observerDefinition(static_cast<WVObserverKind>(255)) ==
-              nullptr,
-          "unknown observer kind was accepted");
-  require(detail::observerDefinitionForMatlabClass("WVCustomObserver") ==
-              nullptr,
-          "custom observer class was accepted");
+  WVPortableObserverRecord record;
+  WVObserverRecord observer;
+  observer.identifier = "test-point-diagnostic";
+  observer.name = "test point diagnostic";
+  observer.typeIdentifier = "WVTestPortablePointDiagnostic";
+  observer.fieldNames = {"u"};
+  observer.x = {0.1, 0.2};
+  observer.y = {0.3, 0.4};
+  observer.z = {-0.5, -0.6};
+  observer.configuration.schemaIdentifier = "test-point-configuration-v1";
+  observer.configuration.schemaVersion = 1;
+  observer.configuration.values = {
+      {"field", {}, std::vector<std::string>{"u"}},
+      {"x", {2}, std::vector<double>{0.1, 0.2}},
+      {"y", {2}, std::vector<double>{0.3, 0.4}},
+      {"z", {2}, std::vector<double>{-0.5, -0.6}}};
+  record.observers.push_back(observer);
+  observer.identifier = "test-point-diagnostic-2";
+  observer.name = "second test point diagnostic";
+  record.observers.push_back(observer);
+  WVPortableObserverDescriptor descriptor;
+  const auto descriptorStatus =
+      WVPortableObserverDescriptor::create(record, catalog, descriptor);
+  require(static_cast<bool>(descriptorStatus),
+          descriptorStatus.message.c_str());
+  require(descriptor.implementation(descriptor.observers().front()) != nullptr,
+          "descriptor did not retain a resolved implementation");
+  const auto *firstResolved =
+      descriptor.resolvedObserver(descriptor.observers()[0]);
+  const auto *secondResolved =
+      descriptor.resolvedObserver(descriptor.observers()[1]);
+  require(firstResolved != nullptr && secondResolved != nullptr &&
+              firstResolved != secondResolved &&
+              &firstResolved->implementation() !=
+                  &secondResolved->implementation() &&
+              firstResolved->configuration().schemaIdentifier ==
+                  "test-point-configuration-v1" &&
+              firstResolved->configuration().value("x") != nullptr &&
+              firstResolved->executionPlan().outputFields ==
+                  std::vector<std::string>{"u"},
+          "descriptor did not create immutable per-record resolved observers");
+  require(!catalogBuilder.addObserverFactory(
+              {"WVLateObserver", 1, pointFactory}),
+          "late observer factory registration succeeded");
 
   WVObserverRecord particles;
   particles.name = "floats";
-  particles.kind = WVObserverKind::lagrangianParticles;
+  particles.typeIdentifier = "WVLagrangianParticles";
   particles.isXYOnly = false;
-  auto channels = detail::movingFieldChannels(particles);
+  auto channels = detail::particlePositionChannels(particles.isXYOnly);
   require(channels ==
               std::vector<detail::WVMovingFieldChannel>{
                   detail::WVMovingFieldChannel::x,
                   detail::WVMovingFieldChannel::y,
                   detail::WVMovingFieldChannel::z},
           "three-dimensional particle channels are not x/y/z");
-  require(detail::movingFieldVariableName(particles, channels[0]) ==
-              "floats_x" &&
-              detail::movingFieldVariableName(particles, channels[1]) ==
-                  "floats_y" &&
-              detail::movingFieldVariableName(particles, channels[2]) ==
-                  "floats_z",
-          "particle variable names changed");
   particles.isXYOnly = true;
-  channels = detail::movingFieldChannels(particles);
-  require(channels.size() == 2,
+  require(detail::particlePositionChannels(particles.isXYOnly).size() == 2,
           "two-dimensional particles must expose x/y channels only");
 
   WVObserverRecord tracer;
   tracer.name = "dye";
-  tracer.kind = WVObserverKind::tracer;
-  channels = detail::movingFieldChannels(tracer);
+  tracer.typeIdentifier = "WVTracer";
+  channels = {detail::WVMovingFieldChannel::tracerValue};
   require(channels == std::vector<detail::WVMovingFieldChannel>{
                           detail::WVMovingFieldChannel::tracerValue},
           "tracer must expose one named value channel");
   require(detail::movingFieldVariableName(tracer, channels.front()) == "dye",
           "tracer variable name changed");
-
   return 0;
 }

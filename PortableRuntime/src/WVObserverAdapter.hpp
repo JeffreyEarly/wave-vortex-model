@@ -2,12 +2,16 @@
 
 #include "WaveVortexRuntime/WVObserverContracts.hpp"
 
-#include <deque>
 #include <map>
+#include <memory>
 #include <string>
 #include <vector>
 
-namespace wavevortex::runtime::detail {
+namespace wavevortex::runtime {
+
+class WVExtensionCatalogBuilder;
+
+namespace detail {
 
 enum class WVMovingFieldChannel : std::uint8_t {
   x,
@@ -16,31 +20,17 @@ enum class WVMovingFieldChannel : std::uint8_t {
   tracerValue
 };
 
-struct WVObserverDefinition {
-  WVObserverKind kind;
-  std::string portableTag;
-  std::string matlabClassName;
-  WVObserverStateContract stateContract;
-  WVObserverOutputRule outputRule;
-  std::string fieldListAttribute;
-};
-
-const std::deque<WVObserverDefinition> &observerDefinitions() noexcept;
-const WVObserverDefinition *observerDefinition(WVObserverKind kind) noexcept;
-const WVObserverDefinition *
-observerDefinitionForMatlabClass(const std::string &className) noexcept;
-WVKernelStatus registerObserverDefinition(
-    WVObserverFactoryRegistry::Registration registration);
+WVKernelStatus addBuiltInObserverFactories(
+    wavevortex::runtime::WVExtensionCatalogBuilder &builder);
+WVKernelStatus canonicalCoefficientObserver(
+    std::string identifier, const WVExtensionCatalog &catalog,
+    WVObserverRecord &observer);
 
 const char *movingFieldChannelName(WVMovingFieldChannel channel) noexcept;
 std::vector<WVMovingFieldChannel>
-movingFieldChannels(const WVObserverRecord &observer);
+particlePositionChannels(bool isXYOnly);
 std::string movingFieldVariableName(const WVObserverRecord &observer,
                                     WVMovingFieldChannel channel);
 
-WVKernelStatus validateObserver(
-    const WVObserverRecord &observer,
-    const std::map<std::string, const WVStateBlockRecord *> &blocksByIdentifier,
-    std::map<std::string, std::size_t> &integratedBlockOwnerCounts);
-
-} // namespace wavevortex::runtime::detail
+} // namespace detail
+} // namespace wavevortex::runtime

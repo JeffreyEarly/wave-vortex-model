@@ -8,7 +8,7 @@ mathjax: true
 
 # Compiled kernel contract
 
-WaveVortexModel is developing a portable C++ numerical core for the constant-stratification nonlinear calculation. The initial contract deliberately contains no MATLAB, MEX, FFTW, or NetCDF types. MATLAB and a future standalone runtime will call the same numerical interface through separate adapters.
+WaveVortexModel provides a portable C++ numerical core for the constant-stratification nonlinear calculation. The contract deliberately contains no MATLAB, MEX, FFTW, or NetCDF types. The MATLAB MEX path and standalone portable runtime call the same numerical interface through separate adapters.
 
 The optimized MATLAB implementation remains the default and the performance baseline. Constant-stratification transforms may explicitly select the compiled preview after locally building its native provider.
 
@@ -41,7 +41,7 @@ This keeps the vertical dimension adjacent, matching the MATLAB representation a
 
 Inputs are immutable. The caller allocates `Fp`, `Fm`, and `F0`, and these outputs may not overlap each other or the state. A steady-state kernel call will allocate no array-sized storage after the context has been prepared.
 
-`WVComplex64` is a standard-layout pair of doubles. A future MEX adapter must verify that MATLAB's interleaved complex representation has the same size and alignment before creating zero-copy views.
+`WVComplex64` is a standard-layout pair of doubles. The MEX adapter verifies that MATLAB's interleaved complex representation has the same size and alignment before creating zero-copy views.
 
 ## Immutable configuration and derived data
 
@@ -54,7 +54,7 @@ Inputs are immutable. The caller allocates `Fp`, `Fm`, and `F0`, and these outpu
 
 Dense MATLAB DCT/DST or projection matrices are not imported. Constant-stratification modes are analytic and will be built inside C++. A future variable-stratification extension may accept eigenvalues and vertical structures from an external mode solver, but that is not part of this contract.
 
-Contract version 4 stores each immutable quantity at its natural dimensionality. Vertical-only quantities use `[Nj]`, horizontal-only quantities live with the `Nkl` Fourier-mode records, and only coefficients that genuinely couple vertical and horizontal modes use `[Nj,Nkl]`. Field-assembly and coefficient-projection factors are pre-scaled at construction, so the runtime loops do not repeat divisions or normalization products. Construction-only reciprocals and scale arrays are not retained.
+Compiled-kernel contract version 4 stores each immutable quantity at its natural dimensionality. Vertical-only quantities use `[Nj]`, horizontal-only quantities live with the `Nkl` Fourier-mode records, and only coefficients that genuinely couple vertical and horizontal modes use `[Nj,Nkl]`. Field-assembly and coefficient-projection factors are pre-scaled at construction, so the runtime loops do not repeat divisions or normalization products. Construction-only reciprocals and scale arrays are not retained. This data contract is independent of the `wave-vortex-portable-source-api-v1` C++ compilation contract and of every observer, forcing, schedule, observation-schema, and run-request version; none of those versions is inferred from kernel version 4.
 
 ## FFT-engine boundary
 
@@ -131,6 +131,6 @@ Backend selection is runtime-only. Ordinary NetCDF restoration selects MATLAB, w
 
 ## Shared-runtime boundary
 
-The shared C++ core is intentionally usable by both a MATLAB/MEX preview and a future standalone runtime. It contains no MATLAB, MEX, NetCDF, FFTW, or Apple APIs. `WVFFTEngine` is the only transform boundary, and the native provider is one embedding-specific implementation. A future runtime can supply the same interface without carrying MATLAB ownership or capability machinery.
+The shared C++ core is used by both the MATLAB/MEX preview and the standalone portable runtime. It contains no MATLAB, MEX, NetCDF, FFTW, or Apple APIs. `WVFFTEngine` is the only transform boundary, and each embedding supplies its provider without carrying another embedding's ownership or capability machinery.
 
 The preview does not change package version or dependencies. Historical benchmark harnesses, provider sweeps, rejected schedules, and canonical engineering artifacts remain outside the production tree.

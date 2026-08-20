@@ -66,15 +66,22 @@ WVKernelStatus
 WVIntegrationStateLayout::create(WVShape2D coefficientShape,
                                const WVPortableObserverDescriptor &descriptor,
                                WVIntegrationStateLayout &layout) {
+  return create(coefficientShape, descriptor.record(), layout);
+}
+
+WVKernelStatus
+WVIntegrationStateLayout::create(WVShape2D coefficientShape,
+                               const WVPortableObserverRecord &source,
+                               WVIntegrationStateLayout &layout) {
   if (coefficientShape.rows == 0 || coefficientShape.columns == 0)
     return invalid("Integration coefficient shape must be nonzero.");
   try {
     WVIntegrationStateLayout candidate;
     candidate.coefficientShape_ = coefficientShape;
-    candidate.stateBlockRecords_ = descriptor.stateBlocks();
-    candidate.observerRecords_ = descriptor.observers();
+    candidate.stateBlockRecords_ = source.stateBlocks;
+    candidate.observerRecords_ = source.observers;
     std::set<std::string> canonicalBlocks;
-    for (const auto &record : descriptor.stateBlocks()) {
+    for (const auto &record : source.stateBlocks) {
       bool badCount = false;
       const auto count = checkedCount(record.dimensions, badCount);
       if (badCount)
@@ -137,6 +144,9 @@ std::size_t WVIntegrationStateLayout::persistentBytes() const noexcept {
              block.dimensions.capacity() * sizeof(std::size_t);
   for (const auto &observer : observerRecords_) {
     bytes += observer.identifier.capacity() + observer.name.capacity() +
+             observer.typeIdentifier.capacity() +
+             observer.configuration.persistentBytes() -
+                 sizeof(WVPortableTypedRecord) +
              observer.stateBlockIdentifiers.capacity() * sizeof(std::string) +
              observer.fieldNames.capacity() * sizeof(std::string) +
              (observer.x.capacity() + observer.y.capacity() +
@@ -288,7 +298,9 @@ bool sameIntegrationStateLayout(const WVIntegrationStateLayout &first,
   for (std::size_t i = 0; i < aObservers.size(); ++i) {
     const auto &a = aObservers[i];
     const auto &b = bObservers[i];
-    if (a.identifier != b.identifier || a.name != b.name || a.kind != b.kind ||
+    if (a.identifier != b.identifier || a.name != b.name ||
+        a.typeIdentifier != b.typeIdentifier ||
+        a.contractVersion != b.contractVersion ||
         a.stateBlockIdentifiers != b.stateBlockIdentifiers ||
         a.fieldNames != b.fieldNames || a.x != b.x || a.y != b.y ||
         a.z != b.z || a.isXYOnly != b.isXYOnly ||
@@ -296,7 +308,8 @@ bool sameIntegrationStateLayout(const WVIntegrationStateLayout &first,
         a.advectionInterpolation != b.advectionInterpolation ||
         a.trackedFieldInterpolation != b.trackedFieldInterpolation ||
         a.horizontalAbsoluteTolerance != b.horizontalAbsoluteTolerance ||
-        a.verticalAbsoluteTolerance != b.verticalAbsoluteTolerance)
+        a.verticalAbsoluteTolerance != b.verticalAbsoluteTolerance ||
+        a.outputScale != b.outputScale || a.outputOffset != b.outputOffset)
       return false;
   }
   return true;

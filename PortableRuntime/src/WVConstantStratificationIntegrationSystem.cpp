@@ -13,6 +13,25 @@ WVKernelStatus invalid(std::string message) {
   return {WVKernelStatusCode::invalidConfiguration, std::move(message)};
 }
 
+std::size_t observerRecordDynamicBytes(
+    const WVObserverRecord &record) noexcept {
+  std::size_t bytes = record.identifier.capacity() + record.name.capacity() +
+                      record.typeIdentifier.capacity() +
+                      record.configuration.persistentBytes() -
+                          sizeof(WVPortableTypedRecord) +
+                      record.stateBlockIdentifiers.capacity() *
+                          sizeof(std::string) +
+                      record.fieldNames.capacity() * sizeof(std::string) +
+                      (record.x.capacity() + record.y.capacity() +
+                       record.z.capacity()) *
+                          sizeof(double);
+  for (const auto &identifier : record.stateBlockIdentifiers)
+    bytes += identifier.capacity();
+  for (const auto &field : record.fieldNames)
+    bytes += field.capacity();
+  return bytes;
+}
+
 std::size_t blockIndex(const WVIntegrationStateLayout &layout,
                        const std::string &identifier) {
   const auto &blocks = layout.additionalBlocks();
@@ -71,34 +90,46 @@ private:
 WVKernelStatus WVConstantStratificationIntegrationSystem::create(
     const WVTransformConstantStratificationConfiguration &configuration,
     const WVFrozenForcingSchedule &schedule,
+    std::shared_ptr<const WVExtensionCatalog> catalog,
     std::unique_ptr<WVFFTEngine> engine,
     std::unique_ptr<WVConstantStratificationIntegrationSystem> &system) {
-  return createImpl(configuration, schedule, nullptr, std::move(engine), system);
+  return createImpl(configuration, schedule, nullptr, std::move(catalog),
+                    std::move(engine), system);
 }
 
 WVKernelStatus WVConstantStratificationIntegrationSystem::create(
     const WVTransformConstantStratificationConfiguration &configuration,
     const WVFrozenForcingSchedule &schedule,
     const WVPortableObserverDescriptor &descriptor,
+    std::shared_ptr<const WVExtensionCatalog> catalog,
     std::unique_ptr<WVFFTEngine> engine,
     std::unique_ptr<WVConstantStratificationIntegrationSystem> &system) {
-  return createImpl(configuration, schedule, &descriptor, std::move(engine),
-                    system);
+  return createImpl(configuration, schedule, &descriptor, std::move(catalog),
+                    std::move(engine), system);
 }
 
 WVKernelStatus WVConstantStratificationIntegrationSystem::createImpl(
     const WVTransformConstantStratificationConfiguration &configuration,
     const WVFrozenForcingSchedule &schedule,
     const WVPortableObserverDescriptor *descriptor,
+    std::shared_ptr<const WVExtensionCatalog> catalog,
     std::unique_ptr<WVFFTEngine> engine,
     std::unique_ptr<WVConstantStratificationIntegrationSystem> &system) {
   system.reset();
+  if (!catalog)
+    return {WVKernelStatusCode::invalidConfiguration,
+            "An integration system requires an extension catalog."};
+  if (descriptor != nullptr && descriptor->catalog() != catalog)
+    return {WVKernelStatusCode::invalidConfiguration,
+            "The observer descriptor and integration system require the same "
+            "extension catalog."};
   try {
     auto candidate =
         std::unique_ptr<WVConstantStratificationIntegrationSystem>(
             new WVConstantStratificationIntegrationSystem());
     auto status = WVConstantStratificationForcingEngine::create(
-        configuration, schedule, std::move(engine), candidate->forcing_);
+        configuration, schedule, std::move(catalog), std::move(engine),
+        candidate->forcing_);
     if (!status)
       return status;
     const auto coefficientShape =
@@ -118,43 +149,38 @@ WVKernelStatus WVConstantStratificationIntegrationSystem::createImpl(
     static const std::vector<WVObserverRecord> noObservers;
     const auto &observers =
         descriptor == nullptr ? noObservers : descriptor->observers();
-    for (const auto &observer : observers) {
-      const auto *definition = detail::observerDefinition(observer.kind);
-      if (definition == nullptr)
-        return {WVKernelStatusCode::unsupportedOperation,
-                "Integration system received an unsupported observer."};
-      if (definition->stateContract ==
-          WVObserverStateContract::tracerField) {
-        const auto block = blockIndex(
-            candidate->layout_, observer.stateBlockIdentifiers.front());
-        if (block == std::numeric_limits<std::size_t>::max())
-          return invalid(
-              "Tracer state block is absent from the integration layout.");
-        const auto &dimensions =
-            candidate->layout_.additionalBlocks()[block].dimensions;
-        if (observer.isXYOnly) {
-          if (dimensions != std::vector<std::size_t>(
-                                {configuration.Nx, configuration.Ny}))
-            return {WVKernelStatusCode::invalidShape,
-                    "A two-dimensional tracer must have shape [Nx,Ny]."};
-          return {WVKernelStatusCode::unsupportedOperation,
-                  "Two-dimensional tracer integration requires a future barotropic runtime; the constant-stratification runtime supports three-dimensional tracers only."};
-        }
+    WVObserverIntegrationBinder integrationBinder;
+    integrationBinder.advectedScalar =
+        [&](const WVObserverRecord &observer) -> WVKernelStatus {
+      const auto block = blockIndex(
+          candidate->layout_, observer.stateBlockIdentifiers.front());
+      if (block == std::numeric_limits<std::size_t>::max())
+        return invalid(
+            "Tracer state block is absent from the integration layout.");
+      const auto &dimensions =
+          candidate->layout_.additionalBlocks()[block].dimensions;
+      if (observer.isXYOnly) {
         if (dimensions != std::vector<std::size_t>(
-                              {configuration.Nx, configuration.Ny,
-                               configuration.Nz}))
+                              {configuration.Nx, configuration.Ny}))
           return {WVKernelStatusCode::invalidShape,
-                  "A constant-stratification tracer must have shape [Nx,Ny,Nz]."};
-        ++ownerCounts[block];
-        WVTracer tracer;
-        tracer.record_ = observer;
-        tracer.stateBlock_ = block;
-        candidate->tracers_.push_back(std::move(tracer));
-        continue;
+                  "A two-dimensional tracer must have shape [Nx,Ny]."};
+        return {WVKernelStatusCode::unsupportedOperation,
+                "Two-dimensional tracer integration requires a future barotropic runtime; the constant-stratification runtime supports three-dimensional tracers only."};
       }
-      if (definition->stateContract !=
-          WVObserverStateContract::particlePosition)
-        continue;
+      if (dimensions != std::vector<std::size_t>(
+                            {configuration.Nx, configuration.Ny,
+                             configuration.Nz}))
+        return {WVKernelStatusCode::invalidShape,
+                "A constant-stratification tracer must have shape [Nx,Ny,Nz]."};
+      ++ownerCounts[block];
+      WVTracer tracer;
+      tracer.record_ = observer;
+      tracer.stateBlock_ = block;
+      candidate->tracers_.push_back(std::move(tracer));
+      return WVKernelStatus::ok();
+    };
+    integrationBinder.advectedPositions =
+        [&](const WVObserverRecord &observer) -> WVKernelStatus {
       if (observer.isXYOnly && observer.z.size() != observer.x.size())
         return invalid("Constant-stratification XY particles require one fixed "
                        "z coordinate per particle.");
@@ -194,6 +220,17 @@ WVKernelStatus WVConstantStratificationIntegrationSystem::createImpl(
                                : addVelocity("w");
       positionOffset += particles.particleCount_;
       candidate->particles_.push_back(std::move(particles));
+      return WVKernelStatus::ok();
+    };
+    for (const auto &observer : observers) {
+      const auto *resolved = descriptor->resolvedObserver(observer);
+      if (resolved == nullptr)
+        return {WVKernelStatusCode::unsupportedOperation,
+                "Integration system received an unresolved observer."};
+      status = resolved->implementation().bindIntegration(
+          observer, integrationBinder);
+      if (!status)
+        return status;
     }
     for (std::size_t block = 0; block < ownerCounts.size(); ++block) {
       if (ownerCounts[block] != 1)
@@ -418,18 +455,18 @@ WVConstantStratificationIntegrationSystem::persistentBytes() const noexcept {
   std::size_t bytes = sizeof(*this) + layout_.persistentBytes() +
                       forcing_->persistentBytes() +
                       (fields_ ? fields_->persistentBytes() : 0) +
-                      velocityPlan_.persistentBytes() +
+                      velocityPlan_.persistentBytes() - sizeof(velocityPlan_) +
                       particles_.capacity() * sizeof(WVLagrangianParticles) +
                       tracers_.capacity() * sizeof(WVTracer) +
+                      velocityStorage_.capacity() *
+                          sizeof(std::vector<double>) +
                       metrics_.positionCapacityBytes +
                       metrics_.velocityCapacityBytes +
                       velocityViews_.capacity() * sizeof(WVFieldOutputView);
   for (const auto &particles : particles_)
-    bytes += particles.record_.identifier.capacity() +
-             particles.record_.name.capacity();
+    bytes += observerRecordDynamicBytes(particles.record_);
   for (const auto &tracer : tracers_)
-    bytes += tracer.record_.identifier.capacity() +
-             tracer.record_.name.capacity();
+    bytes += observerRecordDynamicBytes(tracer.record_);
   return bytes;
 }
 

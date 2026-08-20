@@ -1,10 +1,12 @@
 #include "WaveVortexRuntime/WVConstantStratificationIntegrationSystem.hpp"
+#include "WVTestExtensionCatalog.hpp"
 
 #include "WVReferenceFFTEngine.hpp"
 
 #include <algorithm>
 #include <cmath>
 #include <iostream>
+#include <map>
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -18,6 +20,70 @@ namespace {
 void require(bool condition, const std::string &message) {
   if (!condition)
     throw std::runtime_error(message);
+}
+
+class WVTestPortableTracerImplementation final : public WVObservingSystem {
+public:
+  const std::string &typeIdentifier() const noexcept override {
+    static const std::string value = "WVTestPortableTracer";
+    return value;
+  }
+  std::uint32_t contractVersion() const noexcept override { return 1; }
+  WVKernelStatus executionPlan(const WVObserverRecord &observer,
+                               WVObserverExecutionPlan &plan) const override {
+    plan = {};
+    plan.persistedName = observer.name;
+    return WVKernelStatus::ok();
+  }
+  WVKernelStatus bindIntegration(
+      const WVObserverRecord &observer,
+      const WVObserverIntegrationBinder &binder) const override {
+    return binder.advectedScalar
+               ? binder.advectedScalar(observer)
+               : WVKernelStatus{WVKernelStatusCode::unsupportedOperation,
+                                "Test tracer binding is unavailable."};
+  }
+  WVKernelStatus validate(
+      const WVObserverRecord &observer,
+      const std::map<std::string, const WVStateBlockRecord *> &blocks,
+      std::map<std::string, std::size_t> &owners) const override {
+    if (observer.stateBlockIdentifiers.size() != 1)
+      return {WVKernelStatusCode::invalidConfiguration,
+              "Test tracer requires one state block."};
+    const auto found = blocks.find(observer.stateBlockIdentifiers.front());
+    if (found == blocks.end() ||
+        found->second->scalarType != WVStateScalarType::real64 ||
+        found->second->ownership != WVStateOwnership::integratorOwned)
+      return {WVKernelStatusCode::invalidConfiguration,
+              "Test tracer state block is incompatible."};
+    ++owners.at(observer.stateBlockIdentifiers.front());
+    return WVKernelStatus::ok();
+  }
+  std::size_t persistentBytes() const noexcept override {
+    return sizeof(*this);
+  }
+};
+
+const std::shared_ptr<const WVExtensionCatalog> &extensionCatalog() {
+  static const auto catalog = [] {
+    WVExtensionCatalogBuilder builder;
+    auto status = addBuiltInExtensions(builder);
+    if (status)
+      status = builder.addObserverFactory(
+          {"WVTestPortableTracer", 1,
+           [](const WVObserverRecord &, const WVPortableTypedRecord &,
+              std::shared_ptr<const WVObservingSystem> &result) {
+             result = std::make_shared<WVTestPortableTracerImplementation>();
+             return WVKernelStatus::ok();
+           }});
+    std::shared_ptr<const WVExtensionCatalog> result;
+    if (status)
+      status = builder.freeze(result);
+    if (!status)
+      throw std::runtime_error(status.message);
+    return result;
+  }();
+  return catalog;
 }
 
 WVTransformConstantStratificationConfiguration configuration(bool hydrostatic) {
@@ -70,13 +136,13 @@ WVPortableObserverDescriptor descriptorFor(
   WVObserverRecord coefficients;
   coefficients.identifier = "coefficients";
   coefficients.name = "Wave-vortex coefficients";
-  coefficients.kind = WVObserverKind::coefficients;
+  coefficients.typeIdentifier = "WVCoefficients";
   coefficients.stateBlockIdentifiers = {"Ap", "Am", "A0"};
   record.observers.push_back(coefficients);
   WVObserverRecord surface;
   surface.identifier = "surface";
   surface.name = "surfaceParticles";
-  surface.kind = WVObserverKind::lagrangianParticles;
+  surface.typeIdentifier = "WVLagrangianParticles";
   surface.stateBlockIdentifiers = {"surface-x", "surface-y"};
   surface.x = {-10.0, 1000.0, configuration.Lx + 3.0};
   surface.y = {20.0, -100.0, 2000.0};
@@ -90,7 +156,7 @@ WVPortableObserverDescriptor descriptorFor(
   WVObserverRecord volume;
   volume.identifier = "volume";
   volume.name = "volumeParticles";
-  volume.kind = WVObserverKind::lagrangianParticles;
+  volume.typeIdentifier = "WVLagrangianParticles";
   volume.stateBlockIdentifiers = {"volume-x", "volume-y", "volume-z"};
   volume.x = {200.0, 3000.0};
   volume.y = {400.0, 5000.0};
@@ -103,7 +169,7 @@ WVPortableObserverDescriptor descriptorFor(
   volume.verticalAbsoluteTolerance = 1e-6;
   record.observers.push_back(volume);
   WVPortableObserverDescriptor descriptor;
-  const auto status = WVPortableObserverDescriptor::create(record, descriptor);
+  const auto status = WVPortableObserverDescriptor::create(record, extensionCatalog(), descriptor);
   require(static_cast<bool>(status), status.message);
   return descriptor;
 }
@@ -122,13 +188,15 @@ WVPortableObserverDescriptor descriptorWithTracers(
     WVObserverRecord tracer;
     tracer.identifier = identifier;
     tracer.name = identifier;
-    tracer.kind = WVObserverKind::tracer;
+    tracer.typeIdentifier = std::string(identifier) == "temperature"
+                                ? "WVTestPortableTracer"
+                                : "WVTracer";
     tracer.stateBlockIdentifiers = {identifier};
     tracer.shouldAntialias = std::string(identifier) == "dye";
     record.observers.push_back(std::move(tracer));
   }
   WVPortableObserverDescriptor descriptor;
-  const auto status = WVPortableObserverDescriptor::create(record, descriptor);
+  const auto status = WVPortableObserverDescriptor::create(record, extensionCatalog(), descriptor);
   require(static_cast<bool>(status), status.message);
   return descriptor;
 }
@@ -179,7 +247,7 @@ struct Fixture {
 void initializeParticles(Fixture &fixture,
                          const WVPortableObserverDescriptor &descriptor) {
   for (const auto &observer : descriptor.observers()) {
-    if (observer.kind != WVObserverKind::lagrangianParticles)
+    if (observer.typeIdentifier != "WVLagrangianParticles")
       continue;
     const std::array<const std::vector<double> *, 3> values{
         {&observer.x, &observer.y, &observer.z}};
@@ -226,7 +294,8 @@ void testTracers(bool hydrostatic) {
   const auto descriptor = descriptorWithTracers(config);
   std::unique_ptr<WVConstantStratificationIntegrationSystem> system;
   auto status = WVConstantStratificationIntegrationSystem::create(
-      config, {}, descriptor, std::make_unique<WVReferenceFFTEngine>(),
+      config, {}, descriptor, extensionCatalog(),
+      std::make_unique<WVReferenceFFTEngine>(),
       system);
   require(static_cast<bool>(status), status.message);
   require(system->tracers().size() == 2, "tracers were not resolved");
@@ -355,7 +424,7 @@ void testIntegratedObservers(bool hydrostatic) {
   WVFrozenForcingSchedule emptySchedule;
   std::unique_ptr<WVConstantStratificationIntegrationSystem> system;
   auto status = WVConstantStratificationIntegrationSystem::create(
-      config, emptySchedule, descriptor,
+      config, emptySchedule, descriptor, extensionCatalog(),
       std::make_unique<WVReferenceFFTEngine>(), system);
   require(static_cast<bool>(status), status.message);
   require(system->particles().size() == 2, "particle systems not resolved");
@@ -453,7 +522,8 @@ void testValidation() {
   auto descriptor = descriptorFor(config);
   std::unique_ptr<WVConstantStratificationIntegrationSystem> system;
   auto status = WVConstantStratificationIntegrationSystem::create(
-      config, {}, descriptor, std::make_unique<WVReferenceFFTEngine>(),
+      config, {}, descriptor, extensionCatalog(),
+      std::make_unique<WVReferenceFFTEngine>(),
       system);
   require(static_cast<bool>(status) && system,
           "valid integration system construction failed");
@@ -471,10 +541,11 @@ void testValidation() {
   particle->z.clear();
   WVPortableObserverDescriptor genericDescriptor;
   require(static_cast<bool>(WVPortableObserverDescriptor::create(
-              record, genericDescriptor)),
+              record, extensionCatalog(), genericDescriptor)),
           "generic descriptor should retain future 2-D XY allowance");
   status = WVConstantStratificationIntegrationSystem::create(
-      config, {}, genericDescriptor, std::make_unique<WVReferenceFFTEngine>(),
+      config, {}, genericDescriptor, extensionCatalog(),
+      std::make_unique<WVReferenceFFTEngine>(),
       system);
   require(status.code == WVKernelStatusCode::invalidConfiguration && !system,
           "constant-stratification XY particles accepted missing fixed z");
@@ -488,16 +559,17 @@ void testValidation() {
   WVObserverRecord tracer;
   tracer.identifier = "tracer";
   tracer.name = "tracer";
-  tracer.kind = WVObserverKind::tracer;
+  tracer.typeIdentifier = "WVTracer";
   tracer.stateBlockIdentifiers = {"tracer"};
   tracer.isXYOnly = true;
   tracerRecord.observers.push_back(tracer);
   WVPortableObserverDescriptor tracerDescriptor;
   require(static_cast<bool>(WVPortableObserverDescriptor::create(
-              tracerRecord, tracerDescriptor)),
+              tracerRecord, extensionCatalog(), tracerDescriptor)),
           "generic tracer descriptor");
   const auto tracerStatus = WVConstantStratificationIntegrationSystem::create(
-      config, {}, tracerDescriptor, std::make_unique<WVReferenceFFTEngine>(),
+      config, {}, tracerDescriptor, extensionCatalog(),
+      std::make_unique<WVReferenceFFTEngine>(),
       system);
   require(tracerStatus.code == WVKernelStatusCode::unsupportedOperation,
           "constant-stratification system did not defer two-dimensional tracers");

@@ -2,6 +2,7 @@ name: WaveVortexModel CI
 
 on:
   pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled, closed]
   push:
     branches:
       - main
@@ -11,7 +12,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}-${{ github.event_name == 'pull_request' && github.event.action == 'closed' && (github.base_ref == 'main' || contains(github.event.pull_request.labels.*.name, 'final-integration')) && 'retain-final' || 'active' }}
   cancel-in-progress: true
 
 env:
@@ -19,6 +20,7 @@ env:
 
 jobs:
   kernel-contract:
+    if: ${{ github.event.action != 'closed' }}
     name: Portable C++ kernel contract
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -30,7 +32,14 @@ jobs:
           persist-credentials: false
 
       - name: Install NetCDF C development library
-        run: sudo apt-get update && sudo apt-get install --yes libnetcdf-dev pkg-config
+        run: |
+          for source_file in /etc/apt/sources.list.d/ubuntu.sources /etc/apt/apt-mirrors.txt; do
+            if [ -f "$source_file" ]; then
+              sudo sed -i 's|http://azure.archive.ubuntu.com/ubuntu|https://archive.ubuntu.com/ubuntu|g' "$source_file"
+            fi
+          done
+          sudo apt-get -o Acquire::Retries=3 -o Acquire::https::Timeout=20 update
+          sudo apt-get -o Acquire::Retries=3 -o Acquire::https::Timeout=20 install --yes libnetcdf-dev pkg-config
 
       - name: Build and test without MATLAB headers
         working-directory: source
@@ -55,7 +64,177 @@ jobs:
             exit 1
           fi
 
+  portable-runtime-sanitizers:
+    if: ${{ github.event.action != 'closed' }}
+    name: Portable C++ ASan and UBSan
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out WaveVortexModel
+        uses: actions/checkout@v6
+        with:
+          path: source
+          persist-credentials: false
+
+      - name: Install NetCDF C development library
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes libnetcdf-dev pkg-config
+
+      - name: Build the portable runtime with Clang sanitizers
+        working-directory: source
+        env:
+          CC: clang
+          CXX: clang++
+        run: |
+          cmake -S PortableRuntime -B "$RUNNER_TEMP/wave-vortex-portable-runtime-sanitized" \
+            -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+            -DBUILD_TESTING=ON \
+            -DCMAKE_CXX_FLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer" \
+            -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address,undefined"
+          cmake --build "$RUNNER_TEMP/wave-vortex-portable-runtime-sanitized" --parallel
+
+      - name: Run the sanitized portable-runtime contracts
+        env:
+          ASAN_OPTIONS: detect_leaks=1:halt_on_error=1
+          UBSAN_OPTIONS: print_stacktrace=1:halt_on_error=1
+        run: ctest --test-dir "$RUNNER_TEMP/wave-vortex-portable-runtime-sanitized" --output-on-failure
+
+  focused-matlab:
+    if: ${{ github.event_name == 'pull_request' && github.event.action != 'closed' && github.base_ref != 'main' && !contains(github.event.pull_request.labels.*.name, 'final-integration') }}
+    name: Focused MATLAB / R2025b
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out WaveVortexModel
+        uses: actions/checkout@v6
+        with:
+          path: source
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Check out pinned OceanKit packages
+        uses: actions/checkout@v6
+        with:
+          repository: JeffreyEarly/OceanKit
+          ref: ${{ env.OCEANKIT_COMMIT }}
+          path: OceanKit
+          persist-credentials: false
+
+      - name: Select focused MATLAB checks
+        id: focused-checks
+        shell: bash
+        working-directory: source
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          changed_files=$(git diff --name-only "$PR_BASE_SHA" "$PR_HEAD_SHA")
+          printf '%s\n' "$changed_files"
+
+          run_analyzer=false
+          if grep -Eq '(^|/)[^/]+\.m$' <<< "$changed_files"; then
+            run_analyzer=true
+          fi
+
+          run_documentation=false
+          if grep -Eq '^(Documentation/|docs/|\.github/workflows/ci\.yml$|tools/(build_website_documentation|check_website_documentation|compareDocumentationTrees|documentationRepositoryRoot|generateWebsiteDocumentation|replaceDocumentationTree|validateRenderedWebsite|validateWebsiteDocumentation)\.m$)' <<< "$changed_files"; then
+            run_documentation=true
+          fi
+
+          echo "run_analyzer=$run_analyzer" >> "$GITHUB_OUTPUT"
+          echo "run_documentation=$run_documentation" >> "$GITHUB_OUTPUT"
+          {
+            echo "### Focused MATLAB selection"
+            echo
+            echo "- Smoke and compatibility: required"
+            echo "- Code Analyzer: $run_analyzer"
+            echo "- Documentation source check: $run_documentation"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Start MATLAB setup timer
+        shell: bash
+        run: echo "WVM_SETUP_STARTED_AT=$(date +%s)" >> "$GITHUB_ENV"
+
+      - name: Set up MATLAB R2025b
+        id: setup-matlab
+        timeout-minutes: 10
+        uses: matlab-actions/setup-matlab@v3
+        with:
+          release: R2025b
+          cache: true
+
+      - name: Report MATLAB setup timing
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          elapsed_seconds=$(( $(date +%s) - WVM_SETUP_STARTED_AT ))
+          {
+            echo "### MATLAB provisioning"
+            echo
+            echo "- Duration: ${elapsed_seconds} seconds"
+            echo "- Outcome: ${{ steps.setup-matlab.outcome }}"
+            echo "- Cache: enabled; setup-matlab exposes cache restore/populate details only in its step log"
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [[ "${{ steps.setup-matlab.outcome }}" != "success" ]]; then
+            echo "::error title=MATLAB provisioning incident::Focused CI did not reach test execution within the ten-minute setup budget."
+          fi
+
+      - name: Start MATLAB execution timer
+        if: ${{ steps.setup-matlab.outcome == 'success' }}
+        shell: bash
+        run: echo "WVM_MATLAB_STARTED_AT=$(date +%s)" >> "$GITHUB_ENV"
+
+      - name: Run focused MATLAB gate
+        if: ${{ steps.setup-matlab.outcome == 'success' }}
+        id: matlab-gate
+        uses: matlab-actions/run-command@v3
+        env:
+          WVM_RUN_ANALYZER: ${{ steps.focused-checks.outputs.run_analyzer }}
+          WVM_RUN_DOCUMENTATION: ${{ steps.focused-checks.outputs.run_documentation }}
+          WVM_DOCUMENTATION_DIAGNOSTIC_FOLDER: ${{ runner.temp }}/wave-vortex-model-generated-docs
+        with:
+          command: >-
+            sourceRoot = fullfile(pwd,"source");
+            oceanKitRoot = fullfile(pwd,"OceanKit");
+            mpmAddRepository("OceanKit",oceanKitRoot);
+            addpath(fullfile(sourceRoot,"tools"));
+            if string(getenv("WVM_RUN_DOCUMENTATION")) == "true", configureCIEnvironment(sourceRoot,oceanKitRoot,documentationPackageSpecifier="ClassDocumentation@1.3.2"); else, configureCIEnvironment(sourceRoot,oceanKitRoot); end;
+            cd(sourceRoot);
+            tasks = "test:smoke";
+            if string(getenv("WVM_RUN_ANALYZER")) == "true", tasks(end+1) = "analyze"; end;
+            if string(getenv("WVM_RUN_DOCUMENTATION")) == "true", tasks(end+1) = "docs:check"; end;
+            fprintf("Focused MATLAB tasks: %s\n",strjoin(tasks,", "));
+            taskArguments = cellstr(tasks);
+            buildtool(taskArguments{:})
+
+      - name: Report MATLAB execution timing
+        if: ${{ always() && env.WVM_MATLAB_STARTED_AT != '' }}
+        shell: bash
+        run: |
+          elapsed_seconds=$(( $(date +%s) - WVM_MATLAB_STARTED_AT ))
+          {
+            echo "### MATLAB execution"
+            echo
+            echo "- Duration: ${elapsed_seconds} seconds"
+            echo "- Outcome: ${{ steps.matlab-gate.outcome }}"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload generated documentation diagnostics
+        if: ${{ failure() && steps.focused-checks.outputs.run_documentation == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: focused-generated-documentation
+          path: ${{ runner.temp }}/wave-vortex-model-generated-docs
+          if-no-files-found: ignore
+
+      - name: Verify clean source checkout
+        if: ${{ always() }}
+        working-directory: source
+        run: bash tools/checkCIWorkspaceCleanliness.sh
+
   smoke:
+    if: ${{ github.event.action != 'closed' && (github.event_name != 'pull_request' || github.base_ref == 'main' || contains(github.event.pull_request.labels.*.name, 'final-integration')) }}
     name: Smoke / MATLAB R2025b
     runs-on: ubuntu-latest
     timeout-minutes: 45
@@ -93,11 +272,12 @@ jobs:
             buildtool test:smoke
 
       - name: Verify clean source checkout
-        if: always()
+        if: ${{ always() }}
         working-directory: source
         run: bash tools/checkCIWorkspaceCleanliness.sh
 
   documentation:
+    if: ${{ github.event.action != 'closed' && (github.event_name != 'pull_request' || github.base_ref == 'main' || contains(github.event.pull_request.labels.*.name, 'final-integration')) }}
     name: Documentation / MATLAB R2025b
     runs-on: ubuntu-latest
     timeout-minutes: 45
@@ -150,7 +330,7 @@ jobs:
             validateRenderedWebsite(fullfile(pwd,"rendered-site"))
 
       - name: Upload generated documentation diagnostics
-        if: failure()
+        if: ${{ failure() }}
         uses: actions/upload-artifact@v4
         with:
           name: r2025b-generated-documentation
@@ -158,7 +338,7 @@ jobs:
           if-no-files-found: ignore
 
       - name: Upload rendered website diagnostics
-        if: failure()
+        if: ${{ failure() }}
         uses: actions/upload-artifact@v4
         with:
           name: r2025b-rendered-website
@@ -166,11 +346,12 @@ jobs:
           if-no-files-found: ignore
 
       - name: Verify clean source checkout
-        if: always()
+        if: ${{ always() }}
         working-directory: source
         run: bash tools/checkCIWorkspaceCleanliness.sh
 
   analyzer:
+    if: ${{ github.event.action != 'closed' && (github.event_name != 'pull_request' || github.base_ref == 'main' || contains(github.event.pull_request.labels.*.name, 'final-integration')) }}
     name: Code Analyzer / MATLAB R2025b
     runs-on: ubuntu-latest
     timeout-minutes: 45
@@ -208,6 +389,39 @@ jobs:
             buildtool analyze
 
       - name: Verify clean source checkout
-        if: always()
+        if: ${{ always() }}
         working-directory: source
         run: bash tools/checkCIWorkspaceCleanliness.sh
+
+  required-gate:
+    if: ${{ always() && github.event.action != 'closed' }}
+    name: Required / WaveVortexModel
+    needs: [kernel-contract, portable-runtime-sanitizers, focused-matlab, smoke, documentation, analyzer]
+    runs-on: ubuntu-latest
+    env:
+      WVM_GATE_MODE: ${{ github.event_name == 'pull_request' && github.base_ref != 'main' && !contains(github.event.pull_request.labels.*.name, 'final-integration') && 'focused' || 'full' }}
+      KERNEL_RESULT: ${{ needs.kernel-contract.result }}
+      SANITIZER_RESULT: ${{ needs.portable-runtime-sanitizers.result }}
+      FOCUSED_RESULT: ${{ needs.focused-matlab.result }}
+      SMOKE_RESULT: ${{ needs.smoke.result }}
+      DOCUMENTATION_RESULT: ${{ needs.documentation.result }}
+      ANALYZER_RESULT: ${{ needs.analyzer.result }}
+    steps:
+      - name: Enforce the selected required gate
+        shell: bash
+        run: |
+          echo "Gate mode: $WVM_GATE_MODE"
+          echo "kernel=$KERNEL_RESULT sanitizers=$SANITIZER_RESULT focused=$FOCUSED_RESULT smoke=$SMOKE_RESULT documentation=$DOCUMENTATION_RESULT analyzer=$ANALYZER_RESULT"
+          test "$KERNEL_RESULT" = success
+          test "$SANITIZER_RESULT" = success
+          if [[ "$WVM_GATE_MODE" = focused ]]; then
+            test "$FOCUSED_RESULT" = success
+            test "$SMOKE_RESULT" = skipped
+            test "$DOCUMENTATION_RESULT" = skipped
+            test "$ANALYZER_RESULT" = skipped
+          else
+            test "$FOCUSED_RESULT" = skipped
+            test "$SMOKE_RESULT" = success
+            test "$DOCUMENTATION_RESULT" = success
+            test "$ANALYZER_RESULT" = success
+          fi

@@ -1,9 +1,13 @@
 #include "WaveVortexRuntime/WVCheckpointReader.hpp"
+#include "WVTestExtensionCatalog.hpp"
 #include "WaveVortexRuntime/WVCheckpointWriter.hpp"
 #include "WaveVortexRuntime/WVConstantStratificationIntegrationSystem.hpp"
 #include "WaveVortexRuntime/WVRungeKutta.hpp"
 #include "WaveVortexRuntime/WVForcingEngine.hpp"
+#include "WaveVortexRuntime/WVForcingContracts.hpp"
 #include "WVCheckpointWriterTestHooks.hpp"
+#include "WVForcingImplementations.hpp"
+#include "WVTestLinearCoefficientForcing.hpp"
 #include "WVReferenceFFTEngine.hpp"
 
 #include <algorithm>
@@ -58,6 +62,16 @@ bool sameComplex(const std::vector<WVComplex64>& left, const std::vector<WVCompl
     return true;
 }
 
+bool sameTypedRecord(const WVPortableTypedRecord& left, const WVPortableTypedRecord& right) {
+    if (left.schemaIdentifier != right.schemaIdentifier || left.schemaVersion != right.schemaVersion || left.values.size() != right.values.size()) return false;
+    for (std::size_t index = 0; index < left.values.size(); ++index) {
+        const auto& a = left.values[index];
+        const auto& b = right.values[index];
+        if (a.name != b.name || a.dimensions != b.dimensions || a.storage != b.storage) return false;
+    }
+    return true;
+}
+
 void requireSameCheckpoint(const WVCheckpoint& expected, const WVCheckpoint& actual) {
     const auto& a = expected.configuration;
     const auto& b = actual.configuration;
@@ -69,24 +83,13 @@ void requireSameCheckpoint(const WVCheckpoint& expected, const WVCheckpoint& act
     for (std::size_t index = 0; index < expected.forcingSchedule.entries.size(); ++index) {
         const auto& left = expected.forcingSchedule.entries[index];
         const auto& right = actual.forcingSchedule.entries[index];
-        require(left.kind == right.kind && left.typeIdentifier == right.typeIdentifier && left.name == right.name && left.stage == right.stage && left.priority == right.priority && left.ordinal == right.ordinal && left.payload.index() == right.payload.index(), "forcing metadata changed during writing");
-        if (left.kind == WVForcingKind::bottomFrictionQuadratic) require(std::get<WVBottomFrictionQuadraticRecord>(left.payload).Cd == std::get<WVBottomFrictionQuadraticRecord>(right.payload).Cd, "quadratic drag changed during writing");
-        if (left.kind == WVForcingKind::fixedAmplitude) {
-            const auto& first = std::get<WVFixedAmplitudeForcingRecord>(left.payload);
-            const auto& second = std::get<WVFixedAmplitudeForcingRecord>(right.payload);
-            require(first.ApIndices == second.ApIndices && first.AmIndices == second.AmIndices && first.A0Indices == second.A0Indices && sameComplex(first.ApValues, second.ApValues) && sameComplex(first.AmValues, second.AmValues) && sameComplex(first.A0Values, second.A0Values), "fixed-amplitude forcing changed during writing");
-        }
-        if (left.kind == WVForcingKind::pseudoTopographicWaveGeneration) {
-            const auto& first = std::get<WVPseudoTopographicWaveGenerationRecord>(left.payload);
-            const auto& second = std::get<WVPseudoTopographicWaveGenerationRecord>(right.payload);
-            require(first.topographicShape.rows == second.topographicShape.rows && first.topographicShape.columns == second.topographicShape.columns && first.topographicHeight == second.topographicHeight && first.barotropicVelocityAmplitude[0].real == second.barotropicVelocityAmplitude[0].real && first.barotropicVelocityAmplitude[0].imag == second.barotropicVelocityAmplitude[0].imag && first.barotropicVelocityAmplitude[1].real == second.barotropicVelocityAmplitude[1].real && first.barotropicVelocityAmplitude[1].imag == second.barotropicVelocityAmplitude[1].imag && first.frequency == second.frequency && first.darwinSymbol == second.darwinSymbol && first.rampDuration == second.rampDuration && first.startTime == second.startTime && first.shouldAvoidAdaptiveDamping == second.shouldAvoidAdaptiveDamping && first.maximumForcedHorizontalWavenumber == second.maximumForcedHorizontalWavenumber && first.maximumForcedVerticalMode == second.maximumForcedVerticalMode, "pseudo-topographic forcing changed during writing");
-        }
+        require(left.typeIdentifier == right.typeIdentifier && left.contractVersion == right.contractVersion && left.name == right.name && left.stage == right.stage && left.priority == right.priority && left.ordinal == right.ordinal && sameTypedRecord(left.configuration,right.configuration), "forcing metadata changed during writing");
     }
 }
 
 WVCheckpoint read(const std::filesystem::path& path) {
     WVCheckpoint checkpoint;
-    const auto result = WVCheckpointReader::read(path.string(), checkpoint);
+    const auto result = WVCheckpointReader::read(path.string(), *test::extensionCatalog(), checkpoint);
     require(static_cast<bool>(result), result.message);
     return checkpoint;
 }
@@ -101,7 +104,7 @@ void testRoundTrips() {
     for (const char* name : names) {
         const auto expected = read(fixture(name));
         const auto output = directory / name;
-        const auto result = WVCheckpointWriter::write(output.string(), expected);
+        const auto result = WVCheckpointWriter::write(output.string(), *test::extensionCatalog(), expected);
         require(static_cast<bool>(result), result.message);
         const auto actual = read(output);
         requireSameCheckpoint(expected, actual);
@@ -111,7 +114,7 @@ void testRoundTrips() {
 
 std::unique_ptr<WVConstantStratificationIntegrationSystem> system(const WVCheckpoint& checkpoint) {
     std::unique_ptr<WVConstantStratificationIntegrationSystem> result;
-    const auto creation = WVConstantStratificationIntegrationSystem::create(checkpoint.configuration, checkpoint.forcingSchedule, std::make_unique<WVReferenceFFTEngine>(), result);
+    const auto creation = WVConstantStratificationIntegrationSystem::create(checkpoint.configuration, checkpoint.forcingSchedule, test::extensionCatalog(), std::make_unique<WVReferenceFFTEngine>(), result);
     require(static_cast<bool>(creation), creation.message);
     return result;
 }
@@ -149,7 +152,7 @@ void testRestartContinuation() {
         const auto directory = temporaryDirectory();
         DirectoryCleanup cleanup{directory};
         const auto path = directory / "restart.nc";
-        const auto writeResult = WVCheckpointWriter::write(path.string(), prefix);
+        const auto writeResult = WVCheckpointWriter::write(path.string(), *test::extensionCatalog(), prefix);
         require(static_cast<bool>(writeResult), writeResult.message);
         auto restarted = read(path);
         auto restartedSystem = system(restarted);
@@ -179,7 +182,7 @@ void testTransactionalFailures() {
     }
     for (const auto point : {detail::WVCheckpointWriterFailurePoint::afterDefinition, detail::WVCheckpointWriterFailurePoint::afterWrite, detail::WVCheckpointWriterFailurePoint::beforeCommit}) {
         detail::setCheckpointWriterFailurePoint(point);
-        const auto result = WVCheckpointWriter::write(destination.string(), checkpoint);
+        const auto result = WVCheckpointWriter::write(destination.string(), *test::extensionCatalog(), checkpoint);
         detail::setCheckpointWriterFailurePoint(detail::WVCheckpointWriterFailurePoint::none);
         require(!result, "injected checkpoint writer failure succeeded");
         require(bytes(destination) == sentinel, "injected checkpoint failure changed the prior destination");
@@ -187,12 +190,12 @@ void testTransactionalFailures() {
     }
     auto malformed = checkpoint;
     malformed.state.coefficients.Ap.pop_back();
-    const auto invalid = WVCheckpointWriter::write(destination.string(), malformed);
+    const auto invalid = WVCheckpointWriter::write(destination.string(), *test::extensionCatalog(), malformed);
     require(invalid.code == WVCheckpointStatusCode::shapeMismatch, "invalid coefficient shape was not rejected before writing");
     require(bytes(destination) == sentinel, "validation failure changed the prior destination");
     requireNoTemporaryFiles(directory);
 
-    const auto success = WVCheckpointWriter::write(destination.string(), checkpoint);
+    const auto success = WVCheckpointWriter::write(destination.string(), *test::extensionCatalog(), checkpoint);
     require(static_cast<bool>(success), success.message);
     requireSameCheckpoint(checkpoint, read(destination));
 }
@@ -202,21 +205,35 @@ void testCreateNewCommitPolicy() {
     const auto directory = temporaryDirectory();
     DirectoryCleanup cleanup{directory};
     const auto destination = directory / "scheduled.nc";
-    auto result = WVCheckpointWriter::write(destination.string(),checkpoint,WVCheckpointCommitPolicy::createNew);
+    auto result = WVCheckpointWriter::write(destination.string(), *test::extensionCatalog(),checkpoint,WVCheckpointCommitPolicy::createNew);
     require(static_cast<bool>(result),result.message);
     requireSameCheckpoint(checkpoint,read(destination));
     const auto original = bytes(destination);
-    result = WVCheckpointWriter::write(destination.string(),checkpoint,WVCheckpointCommitPolicy::createNew);
+    result = WVCheckpointWriter::write(destination.string(), *test::extensionCatalog(),checkpoint,WVCheckpointCommitPolicy::createNew);
     require(result.code == WVCheckpointStatusCode::commitFailure,"create-new policy replaced an existing checkpoint");
     require(bytes(destination) == original,"create-new collision changed the existing checkpoint");
     requireNoTemporaryFiles(directory);
 
     const auto failedDestination = directory / "failed.nc";
     detail::setCheckpointWriterFailurePoint(detail::WVCheckpointWriterFailurePoint::beforeCommit);
-    result = WVCheckpointWriter::write(failedDestination.string(),checkpoint,WVCheckpointCommitPolicy::createNew);
+    result = WVCheckpointWriter::write(failedDestination.string(), *test::extensionCatalog(),checkpoint,WVCheckpointCommitPolicy::createNew);
     detail::setCheckpointWriterFailurePoint(detail::WVCheckpointWriterFailurePoint::none);
     require(!result && !std::filesystem::exists(failedDestination),"failed create-new commit left a destination");
     requireNoTemporaryFiles(directory);
+}
+
+void testRegisteredPairRoundTrip() {
+    auto checkpoint = read(fixture("forcing-fixed-amplitude.nc"));
+    checkpoint.forcingSchedule.entries.front().typeIdentifier =
+        "WVTestPortableFixedAmplitudeForcing";
+    checkpoint.metadata.forcingHeaders.front().annotatedClass =
+        "WVTestPortableFixedAmplitudeForcing";
+    const auto directory = temporaryDirectory();
+    DirectoryCleanup cleanup{directory};
+    const auto destination = directory / "paired-fixed-amplitude.nc";
+    const auto result = WVCheckpointWriter::write(destination.string(), *test::extensionCatalog(), checkpoint);
+    require(static_cast<bool>(result), result.message);
+    requireSameCheckpoint(checkpoint, read(destination));
 }
 
 void testValidation() {
@@ -225,14 +242,34 @@ void testValidation() {
     DirectoryCleanup cleanup{directory};
     auto malformed = checkpoint;
     malformed.metadata.modelVersion = "5.0.0";
-    require(WVCheckpointWriter::write((directory / "version.nc").string(), malformed).code == WVCheckpointStatusCode::unsupportedModelVersion, "unsupported model version was accepted");
+    require(WVCheckpointWriter::write((directory / "version.nc").string(), *test::extensionCatalog(), malformed).code == WVCheckpointStatusCode::unsupportedModelVersion, "unsupported model version was accepted");
     malformed = checkpoint;
     malformed.forcingSchedule.entries.front().ordinal = 9;
-    require(WVCheckpointWriter::write((directory / "ordinal.nc").string(), malformed).code == WVCheckpointStatusCode::invalidValue, "noncanonical forcing ordinal was accepted");
+    require(WVCheckpointWriter::write((directory / "ordinal.nc").string(), *test::extensionCatalog(), malformed).code == WVCheckpointStatusCode::invalidValue, "noncanonical forcing ordinal was accepted");
     malformed = checkpoint;
     malformed.forcingSchedule.entries.front().stage = WVForcingStage::spectral;
-    require(WVCheckpointWriter::write((directory / "stage.nc").string(), malformed).code == WVCheckpointStatusCode::malformedForcing, "noncanonical forcing stage was accepted");
-    require(WVCheckpointWriter::write("", checkpoint).code == WVCheckpointStatusCode::writeFailure, "empty destination was accepted");
+    require(WVCheckpointWriter::write((directory / "stage.nc").string(), *test::extensionCatalog(), malformed).code == WVCheckpointStatusCode::malformedForcing, "noncanonical forcing stage was accepted");
+    require(WVCheckpointWriter::write("", *test::extensionCatalog(), checkpoint).code == WVCheckpointStatusCode::writeFailure, "empty destination was accepted");
+}
+
+void testRegisteredLinearCoefficientRoundTrip() {
+    auto checkpoint = read(fixture("forcing-nonlinear.nc"));
+    auto& forcing = checkpoint.forcingSchedule.entries.front();
+    forcing.typeIdentifier = test::LinearCoefficientForcingIdentifier;
+    forcing.name = "linear coefficient fixture";
+    forcing.stage = WVForcingStage::spectral;
+    forcing.priority = 90;
+    forcing.configuration = {"wave-vortex-forcing-configuration-v1",1,
+                             {{"rate",{},std::vector<double>{0.375}}}};
+    const auto directory = temporaryDirectory();
+    DirectoryCleanup cleanup{directory};
+    const auto destination = directory / "linear-coefficient.nc";
+    const auto result = WVCheckpointWriter::write(destination.string(), *test::extensionCatalog(),checkpoint);
+    require(static_cast<bool>(result),result.message);
+    const auto restored = read(destination);
+    requireSameCheckpoint(checkpoint,restored);
+    const auto* rate = restored.forcingSchedule.entries.front().configuration.value("rate");
+    require(rate != nullptr && std::get<std::vector<double>>(rate->storage) == std::vector<double>{0.375},"registered linear coefficient forcing did not round-trip generically");
 }
 
 } // namespace
@@ -243,6 +280,8 @@ int main() {
         testRestartContinuation();
         testTransactionalFailures();
         testCreateNewCommitPolicy();
+        testRegisteredPairRoundTrip();
+        testRegisteredLinearCoefficientRoundTrip();
         testValidation();
         std::cout << "Portable checkpoint writer tests passed.\n";
         return 0;

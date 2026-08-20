@@ -80,6 +80,7 @@ These items document internal implementation details and are not part of the pri
   + [`forcingFromGroup`](/classes/forcing/wvforcing/forcingfromgroup.html) Restore a concrete forcing from a NetCDF group.
 + Forcing internals
   + [`didGetRemovedFromTransform`](/classes/forcing/wvforcing/didgetremovedfromtransform.html) Release resources when a forcing is removed from its transform.
+  + [`portableImplementationContract`](/classes/forcing/wvforcing/portableimplementationcontract.html) Describe availability of the paired portable C++ implementation.
 
 
 ---

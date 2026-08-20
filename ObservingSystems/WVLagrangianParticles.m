@@ -100,6 +100,17 @@ classdef WVLagrangianParticles < WVObservingSystem
             names = string(self.trackedFieldNamesCell);
         end
 
+        function contract = portableImplementationContract(self)
+            % Return the paired portable implementation contract.
+            %
+            % - Topic: Internal
+            % - Declaration: contract = portableImplementationContract(self)
+            % - Returns contract: versioned data-only observer contract
+            % - Developer: true
+            payload = struct("name",string(self.name),"isXYOnly",logical(self.isXYOnly),"particleCount",uint64(self.nParticles),"trackedFieldNames",string(self.trackedFieldNames),"advectionInterpolation",string(self.advectionInterpolation),"trackedFieldInterpolation",string(self.trackedVarInterpolation),"horizontalAbsoluteTolerance",double(self.absToleranceXY),"verticalAbsoluteTolerance",double(self.absToleranceZ));
+            contract = self.supportedPortableImplementationContract("WVLagrangianParticles",payload);
+        end
+
         function nParticles = get.nParticles(self)
             nParticles = length(self.x);
         end

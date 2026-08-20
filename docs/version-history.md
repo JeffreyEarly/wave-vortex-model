@@ -8,8 +8,11 @@ nav_order: 100
 
 ## [Unreleased]
 
+- Stabilized portable runtime source API v1 for C++17 source-linked extensions, including explicit application-owned catalog composition with external AlongTrack and built-in linear bottom friction, removed public legacy-observer adapters and direct `WVModel` internal-service access, fixed zero-length numeric typed-record encoding and decoding under ASan/UBSan, added direct Linux sanitizer CI, and documented the source-only compatibility, no-ABI, and supported-platform boundaries.
+- Added a generic two-phase portable observation-occurrence protocol with compact resolved schedule payloads, event-variable geometry, central sampling of every position-supported field, nested ragged layouts, and retry-stable multi-destination batches.
+- Added the paired portable `WVBottomFrictionLinear` implementation with exact persisted-rate reconstruction, shared physical-field reuse, and MATLAB-aligned bottom-quadrature scaling.
 - Added an explicit, source-only compiled preview for ordinary constant-stratification nonlinear flux; MATLAB remains the default, native support must be built explicitly, and the preview rejects unsupported forcing without fallback.
-- Added an optional source-only constant-stratification runtime with fixed RK4 and adaptive RK3(2), MATLAB-compatible restart, and a lightweight checkpoint-to-checkpoint command-line interface.
+- Added an optional source-only constant-stratification runtime with fixed RK4 and adaptive RK3(2), MATLAB-compatible restart, and a lightweight command-line interface for executing complete MATLAB-authored NetCDF bundles through versioned JSON run requests.
 - Matched the portable adaptive RK3(2) controller, componentwise tolerances, maximum-step default, and work diagnostics to MATLAB `ode23` semantics.
 - Added a unified C++ integration contract for canonical coefficients and observer-owned state, continuous output, failure-safe scheduled output, and the five built-in observing-system records.
 - Added the frozen portable forcing subset, shared field evaluation for particles and tracers, and transactional NetCDF output while keeping MATLAB as the primary WaveVortexModel interface.

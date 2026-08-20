@@ -1,6 +1,8 @@
 #include "WVForcingScheduleDecoder.hpp"
+#include "WaveVortexRuntime/WVExtensionCatalog.hpp"
 
 #include "WVNetCDF.hpp"
+#include "WaveVortexRuntime/WVForcingContracts.hpp"
 
 #include <netcdf.h>
 
@@ -245,100 +247,103 @@ WVCheckpointStatus readBoundScalar(int groupId, const std::string& name, double&
     return WVCheckpointStatus::ok();
 }
 
-WVCheckpointStatus commonRecord(WVForcingKind kind, const WVForcingGroupSource& source, std::string name, WVForcingStage stage, std::uint8_t priority, WVForcingPayload payload, WVFrozenForcingEntry& entry) {
-    if (name.empty()) return status(WVCheckpointStatusCode::malformedForcing, "Forcing name must not be empty.", source.groupPath + "/@name");
-    entry.kind = kind;
+WVCheckpointStatus decodeSupported(const WVForcingGroupSource& source, const WVTransformConstantStratificationConfiguration& configuration, std::size_t coefficientCount, const WVExtensionCatalog& catalog, WVFrozenForcingEntry& entry) {
+    const auto* registration = catalog.forcings().registration(source.annotatedClass, WVPortablePairContractVersion);
+    if (registration == nullptr) return status(WVCheckpointStatusCode::unsupportedForcing, "Unknown forcing class '" + source.annotatedClass + "'.", source.groupPath + "/@AnnotatedClass");
+    if (!registration->isSupported) return status(WVCheckpointStatusCode::unsupportedForcing, registration->unavailabilityReason, source.groupPath + "/@AnnotatedClass");
+    std::set<std::string> allowedVariables;
+    for (const auto& field : registration->persistence.fields) {
+        if (field.encoding == WVForcingPersistenceEncoding::textAttribute) continue;
+        if (field.encoding == WVForcingPersistenceEncoding::complexVariable) {
+            allowedVariables.insert(field.netcdfName + "_real");
+            allowedVariables.insert(field.netcdfName + "_imag");
+            if (field.dimensions == WVForcingDimensionRule::componentPair)
+                allowedVariables.insert("barotropicVelocityComponent");
+        } else {
+            allowedVariables.insert(field.netcdfName);
+        }
+    }
+    auto result = validateVariables(source.groupId, allowedVariables, source.groupPath);
+    if (!result) return result;
+
     entry.typeIdentifier = source.annotatedClass;
-    entry.name = std::move(name);
-    entry.stage = stage;
-    entry.priority = priority;
+    entry.contractVersion = registration->contractVersion;
+    entry.name = registration->defaultName;
+    if (registration->persistence.writesNameAttribute) {
+        result = requiredTextAttribute(source.groupId, "name", entry.name, source.groupPath);
+        if (!result) return result;
+    }
+    if (entry.name.empty()) return status(WVCheckpointStatusCode::malformedForcing, "Forcing name must not be empty.", source.groupPath + "/@name");
+    entry.stage = registration->stage;
+    entry.priority = registration->priority;
     entry.ordinal = source.ordinal;
     entry.sourceGroupPath = source.groupPath;
-    entry.payload = std::move(payload);
-    return WVCheckpointStatus::ok();
-}
+    entry.configuration.schemaIdentifier = "wave-vortex-forcing-configuration-v1";
+    entry.configuration.schemaVersion = 1;
 
-WVCheckpointStatus decodeSupported(const WVForcingGroupSource& source, const WVTransformConstantStratificationConfiguration& configuration, std::size_t coefficientCount, WVFrozenForcingEntry& entry) {
-    const auto* capability = forcingCapability(source.annotatedClass);
-    if (capability == nullptr) return status(WVCheckpointStatusCode::unsupportedForcing, "Unknown forcing class '" + source.annotatedClass + "'.", source.groupPath + "/@AnnotatedClass");
-    if (!capability->isSupported) return status(WVCheckpointStatusCode::unsupportedForcing, capability->unavailabilityReason, source.groupPath + "/@AnnotatedClass");
-
-    switch (capability->kind) {
-        case WVForcingKind::nonlinearAdvection: {
-            auto result = validateVariables(source.groupId, {}, source.groupPath);
+    std::set<std::string> consumedComplex;
+    for (const auto& field : registration->persistence.fields) {
+        if (consumedComplex.count(field.recordName) != 0) continue;
+        if (field.encoding == WVForcingPersistenceEncoding::zeroBasedIndexVariable) {
+            const auto complex = std::find_if(registration->persistence.fields.begin(), registration->persistence.fields.end(), [&](const auto& candidate) {
+                return candidate.encoding == WVForcingPersistenceEncoding::complexVariable && candidate.dimensionReference == field.netcdfName;
+            });
+            if (complex == registration->persistence.fields.end()) return status(WVCheckpointStatusCode::malformedForcing, "Index persistence field has no complex value partner.", source.groupPath);
+            std::vector<std::size_t> indices;
+            std::vector<WVComplex64> values;
+            const auto prefix = field.netcdfName.substr(0, field.netcdfName.find('_'));
+            result = readSelectedCoefficients(source.groupId, prefix, coefficientCount, indices, values, source.groupPath);
             if (!result) return result;
-            return commonRecord(capability->kind, source, "nonlinear advection", WVForcingStage::spatial, 127, WVNonlinearAdvectionRecord{}, entry);
+            if (!indices.empty()) {
+                std::vector<std::int64_t> integerIndices(indices.begin(), indices.end());
+                std::vector<double> real(values.size()), imag(values.size());
+                for (std::size_t index = 0; index < values.size(); ++index) { real[index] = values[index].real; imag[index] = values[index].imag; }
+                entry.configuration.values.push_back({field.recordName,{indices.size()},std::move(integerIndices)});
+                entry.configuration.values.push_back({complex->recordName,{values.size()},std::move(real)});
+                entry.configuration.values.push_back({complex->imaginaryRecordName,{values.size()},std::move(imag)});
+            }
+            consumedComplex.insert(complex->recordName);
+        } else if (field.encoding == WVForcingPersistenceEncoding::realVariable) {
+            std::vector<double> values;
+            std::vector<std::size_t> dimensions;
+            if (field.dimensions == WVForcingDimensionRule::horizontalYX) {
+                WVShape2D shape;
+                result = readRealMatrix(source.groupId, field.netcdfName, configuration, shape, values, source.groupPath);
+                dimensions = {configuration.Ny,configuration.Nx};
+            } else {
+                double value = 0.0;
+                result = (field.recordName == "maximumForcedHorizontalWavenumber" || field.recordName == "maximumForcedVerticalMode") ? readBoundScalar(source.groupId,field.netcdfName,value,source.groupPath) : readFiniteScalar(source.groupId,field.netcdfName,value,source.groupPath);
+                values = {value};
+            }
+            if (!result) return result;
+            if (field.nonnegative && values.front() < 0.0)
+                return status(WVCheckpointStatusCode::malformedForcing,
+                              "Forcing scalar '" + field.netcdfName +
+                                  "' must be nonnegative.",
+                              source.groupPath + "/" + field.netcdfName);
+            entry.configuration.values.push_back({field.recordName,std::move(dimensions),std::move(values)});
+        } else if (field.encoding == WVForcingPersistenceEncoding::logicalVariable) {
+            bool value = false;
+            result = readLogicalScalar(source.groupId,field.netcdfName,value,source.groupPath);
+            if (!result) return result;
+            entry.configuration.values.push_back({field.recordName,{},std::vector<std::uint8_t>{static_cast<std::uint8_t>(value)}});
+        } else if (field.encoding == WVForcingPersistenceEncoding::textAttribute) {
+            std::string value;
+            result = field.optional ? optionalTextAttribute(source.groupId,field.netcdfName,value,source.groupPath) : requiredTextAttribute(source.groupId,field.netcdfName,value,source.groupPath);
+            if (!result) return result;
+            entry.configuration.values.push_back({field.recordName,{},std::vector<std::string>{std::move(value)}});
+        } else if (field.encoding == WVForcingPersistenceEncoding::complexVariable && field.dimensions == WVForcingDimensionRule::componentPair) {
+            std::array<WVComplex64,2> values;
+            result = readVelocityAmplitude(source.groupId,values,source.groupPath);
+            if (!result) return result;
+            entry.configuration.values.push_back({field.recordName,{2},std::vector<double>{values[0].real,values[1].real}});
+            entry.configuration.values.push_back({field.imaginaryRecordName,{2},std::vector<double>{values[0].imag,values[1].imag}});
         }
-        case WVForcingKind::adaptiveDamping: {
-            auto result = validateVariables(source.groupId, {}, source.groupPath);
-            if (!result) return result;
-            return commonRecord(capability->kind, source, "adaptive damping", WVForcingStage::spectral, 255, WVAdaptiveDampingRecord{}, entry);
-        }
-        case WVForcingKind::betaPlanePVAdvection: {
-            auto result = validateVariables(source.groupId, {}, source.groupPath);
-            if (!result) return result;
-            return commonRecord(capability->kind, source, "beta-plane advection of qgpv", WVForcingStage::spectral, 255, WVBetaPlanePVAdvectionRecord{}, entry);
-        }
-        case WVForcingKind::bottomFrictionQuadratic: {
-            auto result = validateVariables(source.groupId, {"Cd"}, source.groupPath);
-            if (!result) return result;
-            WVBottomFrictionQuadraticRecord record;
-            result = readFiniteScalar(source.groupId, "Cd", record.Cd, source.groupPath);
-            if (!result) return result;
-            if (record.Cd < 0.0) return status(WVCheckpointStatusCode::malformedForcing, "Quadratic drag coefficient Cd must be nonnegative.", source.groupPath + "/Cd");
-            return commonRecord(capability->kind, source, "quadratic bottom friction", WVForcingStage::spatial, 255, std::move(record), entry);
-        }
-        case WVForcingKind::fixedAmplitude: {
-            const std::set<std::string> variables = {"Ap_indices", "Apbar_real", "Apbar_imag", "Am_indices", "Ambar_real", "Ambar_imag", "A0_indices", "A0bar_real", "A0bar_imag"};
-            auto result = validateVariables(source.groupId, variables, source.groupPath);
-            if (!result) return result;
-            std::string name;
-            result = requiredTextAttribute(source.groupId, "name", name, source.groupPath);
-            if (!result) return result;
-            WVFixedAmplitudeForcingRecord record;
-            result = readSelectedCoefficients(source.groupId, "Ap", coefficientCount, record.ApIndices, record.ApValues, source.groupPath);
-            if (!result) return result;
-            result = readSelectedCoefficients(source.groupId, "Am", coefficientCount, record.AmIndices, record.AmValues, source.groupPath);
-            if (!result) return result;
-            result = readSelectedCoefficients(source.groupId, "A0", coefficientCount, record.A0Indices, record.A0Values, source.groupPath);
-            if (!result) return result;
-            return commonRecord(capability->kind, source, std::move(name), WVForcingStage::spectralAmplitude, 255, std::move(record), entry);
-        }
-        case WVForcingKind::pseudoTopographicWaveGeneration: {
-            const std::set<std::string> variables = {"topographicHeight", "barotropicVelocityComponent", "barotropicVelocityAmplitude_real", "barotropicVelocityAmplitude_imag", "frequency", "rampDuration", "startTime", "shouldAvoidAdaptiveDamping", "maximumForcedHorizontalWavenumber", "maximumForcedVerticalMode"};
-            auto result = validateVariables(source.groupId, variables, source.groupPath);
-            if (!result) return result;
-            std::string name;
-            result = requiredTextAttribute(source.groupId, "name", name, source.groupPath);
-            if (!result) return result;
-            WVPseudoTopographicWaveGenerationRecord record;
-            result = readRealMatrix(source.groupId, "topographicHeight", configuration, record.topographicShape, record.topographicHeight, source.groupPath);
-            if (!result) return result;
-            result = readVelocityAmplitude(source.groupId, record.barotropicVelocityAmplitude, source.groupPath);
-            if (!result) return result;
-            result = readFiniteScalar(source.groupId, "frequency", record.frequency, source.groupPath);
-            if (!result) return result;
-            if (record.frequency <= 0.0) return status(WVCheckpointStatusCode::malformedForcing, "Pseudo-topographic frequency must be positive.", source.groupPath + "/frequency");
-            result = optionalTextAttribute(source.groupId, "darwinSymbol", record.darwinSymbol, source.groupPath);
-            if (!result) return result;
-            static const std::set<std::string> darwinSymbols = {"", "M2", "S2", "N2", "K1", "O1"};
-            if (darwinSymbols.find(record.darwinSymbol) == darwinSymbols.end()) return status(WVCheckpointStatusCode::malformedForcing, "Pseudo-topographic Darwin symbol is not recognized.", source.groupPath + "/@darwinSymbol");
-            result = readFiniteScalar(source.groupId, "rampDuration", record.rampDuration, source.groupPath);
-            if (!result) return result;
-            if (record.rampDuration < 0.0) return status(WVCheckpointStatusCode::malformedForcing, "Pseudo-topographic rampDuration must be nonnegative.", source.groupPath + "/rampDuration");
-            result = readFiniteScalar(source.groupId, "startTime", record.startTime, source.groupPath);
-            if (!result) return result;
-            result = readLogicalScalar(source.groupId, "shouldAvoidAdaptiveDamping", record.shouldAvoidAdaptiveDamping, source.groupPath);
-            if (!result) return result;
-            result = readBoundScalar(source.groupId, "maximumForcedHorizontalWavenumber", record.maximumForcedHorizontalWavenumber, source.groupPath);
-            if (!result) return result;
-            result = readBoundScalar(source.groupId, "maximumForcedVerticalMode", record.maximumForcedVerticalMode, source.groupPath);
-            if (!result) return result;
-            return commonRecord(capability->kind, source, std::move(name), WVForcingStage::spectral, 255, std::move(record), entry);
-        }
-        default:
-            return status(WVCheckpointStatusCode::unsupportedForcing, "Forcing class is not supported by portable runtime v1.", source.groupPath + "/@AnnotatedClass");
     }
+    const auto validation = catalog.forcings().validateConfiguration(entry);
+    return validation ? WVCheckpointStatus::ok()
+                      : status(WVCheckpointStatusCode::malformedForcing,
+                               validation.message, source.groupPath);
 }
 
 std::uint8_t stageRank(WVForcingStage stage) noexcept {
@@ -351,13 +356,14 @@ WVCheckpointStatus decodeForcingSchedule(
     const std::vector<WVForcingGroupSource>& sources,
     const WVTransformConstantStratificationConfiguration& configuration,
     std::size_t coefficientCount,
+    const WVExtensionCatalog& catalog,
     WVFrozenForcingSchedule& schedule) {
     WVFrozenForcingSchedule candidate;
     candidate.entries.reserve(sources.size());
     std::unordered_set<std::string> names;
     for (const auto& source : sources) {
         WVFrozenForcingEntry entry;
-        auto result = decodeSupported(source, configuration, coefficientCount, entry);
+        auto result = decodeSupported(source, configuration, coefficientCount, catalog, entry);
         if (!result) return result;
         if (!names.insert(entry.name).second) return status(WVCheckpointStatusCode::duplicateForcing, "Forcing names must be unique; duplicate name '" + entry.name + "'.", source.groupPath + "/@name");
         candidate.entries.push_back(std::move(entry));

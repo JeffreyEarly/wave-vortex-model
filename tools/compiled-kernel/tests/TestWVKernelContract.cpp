@@ -137,6 +137,11 @@ public:
 class FakeEngine final : public WVFFTEngine {
 public:
     std::string identifier() const override { return "fake"; }
+    std::size_t persistentBytes() const noexcept override {
+        return sizeof(*this) +
+               last.transformDimensions.capacity() * sizeof(WVFFTDimension) +
+               last.batchDimensions.capacity() * sizeof(WVFFTDimension);
+    }
     WVKernelStatus createPlan(const WVFFTPlanSpecification& specification, std::unique_ptr<WVFFTPlan>& plan) override {
         last = specification;
         plan = std::make_unique<FakePlan>();
@@ -159,6 +164,9 @@ class FailingEngine final : public WVFFTEngine {
 public:
     explicit FailingEngine(WVKernelStatusCode code) : code_(code), activePlans(std::make_shared<std::size_t>(0)) {}
     std::string identifier() const override { return "failing"; }
+    std::size_t persistentBytes() const noexcept override {
+        return sizeof(*this) + sizeof(std::size_t);
+    }
     WVKernelStatus createPlan(const WVFFTPlanSpecification&, std::unique_ptr<WVFFTPlan>& plan) override {
         if (code_ == WVKernelStatusCode::fftPlanFailure || code_ == WVKernelStatusCode::allocationFailure) return {code_,"injected planning failure"};
         plan = std::make_unique<FailingPlan>(activePlans);
@@ -409,6 +417,15 @@ void testNonlinearFlux(bool hydrostatic) {
     const auto realFieldBytes = config.Nx * config.Ny * config.Nz * sizeof(double);
     require(kernel->metrics().halfSpectrumScratchCapacityBytes == 4 * halfFieldBytes,"streamed target half-spectrum scratch is not 4H");
     require(kernel->metrics().realScratchCapacityBytes == 6 * realFieldBytes,"streamed target real scratch is not 6R");
+    require(kernel->metrics().engineBytes >= sizeof(wavevortex::test::WVReferenceFFTEngine) &&
+                kernel->metrics().kernelManagementBytes > 0 &&
+                kernel->persistentBytes() ==
+                    kernel->metrics().kernelManagementBytes +
+                        kernel->metrics().engineBytes +
+                        kernel->metrics().descriptorBytes +
+                        kernel->metrics().planBytes +
+                        kernel->metrics().scratchCapacityBytes,
+            "compiled-kernel retained-storage ownership formula is not exact");
     require(kernel->phaseReservationBytes() == halfFieldBytes,"streamed target phase reservation is not one H region");
     require(kernel->descriptor().spectralShape().elementCount() * sizeof(WVComplex64) <= kernel->phaseReservationBytes(),"streamed phase values do not fit inside their H-sized reservation");
     require(kernel->metrics().planCount == 17,"unexpected streamed target plan count");

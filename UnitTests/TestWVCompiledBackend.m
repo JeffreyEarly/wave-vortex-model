@@ -105,7 +105,8 @@ classdef TestWVCompiledBackend < matlab.unittest.TestCase
             exportRoot = fullfile(fixture.Folder,"export"); mkdir(exportRoot);
             tracked = splitlines(strtrim(string(runGit(testCase.repositoryRoot,"ls-files"))));
             classFiles = tracked(startsWith(tracked,"@WVCompiledBackend/"));
-            required = [classFiles;"CompiledKernel/native-fftw-provider.env";"CompiledKernel/adapters/native-fftw/WVNativeFFTWEngine.cpp";"CompiledKernel/adapters/native-fftw/WVNativeFFTWEngine.hpp";"CompiledKernel/adapters/native-fftw/wv_compiled_backend_mex.cpp";"CompiledKernel/src/WVKernelTypes.cpp";"CompiledKernel/src/WVTransformConstantStratificationKernel.cpp"];
+            runtimeSources = ["PortableRuntime/include/WaveVortexRuntime/WVCheckpointReader.hpp";"PortableRuntime/include/WaveVortexRuntime/WVExtensionCatalog.hpp";"PortableRuntime/include/WaveVortexRuntime/WVFieldEvaluationService.hpp";"PortableRuntime/include/WaveVortexRuntime/WVForcing.hpp";"PortableRuntime/include/WaveVortexRuntime/WVForcingContracts.hpp";"PortableRuntime/include/WaveVortexRuntime/WVModel.hpp";"PortableRuntime/include/WaveVortexRuntime/WVModelOutputConfiguration.hpp";"PortableRuntime/include/WaveVortexRuntime/WVObservation.hpp";"PortableRuntime/include/WaveVortexRuntime/WVObserverContracts.hpp";"PortableRuntime/include/WaveVortexRuntime/WVObserverOutputProvider.hpp";"PortableRuntime/include/WaveVortexRuntime/WVObservingSystem.hpp";"PortableRuntime/include/WaveVortexRuntime/WVOutputSchedule.hpp";"PortableRuntime/include/WaveVortexRuntime/WVPortableImplementationContract.hpp";"PortableRuntime/include/WaveVortexRuntime/WVPortableTypedRecord.hpp";"PortableRuntime/src/WVExtensionCatalog.cpp";"PortableRuntime/src/WVLegacyObserverCompatibility.hpp";"PortableRuntime/src/WVModel.cpp";"PortableRuntime/src/WVModelInternalAccess.hpp";"PortableRuntime/src/WVPortableImplementationContract.cpp";"PortableRuntime/src/WVForcingContracts.cpp";"PortableRuntime/src/WVForcingEngine.cpp";"PortableRuntime/src/WVIntegrationState.cpp";"PortableRuntime/src/WVRungeKutta.cpp";"PortableRuntime/src/WVObserverAdapter.cpp";"PortableRuntime/src/WVObserverContracts.cpp";"PortableRuntime/src/WVObservation.cpp";"PortableRuntime/src/WVPortableTypedRecord.cpp";"PortableRuntime/src/WVOutputSchedule.cpp";"PortableRuntime/src/WVFieldEvaluationService.cpp";"PortableRuntime/src/WVConstantStratificationIntegrationSystem.cpp"];
+            required = [classFiles;"CompiledKernel/native-fftw-provider.env";"CompiledKernel/adapters/native-fftw/WVNativeFFTWEngine.cpp";"CompiledKernel/adapters/native-fftw/WVNativeFFTWEngine.hpp";"CompiledKernel/adapters/native-fftw/wv_compiled_backend_mex.cpp";"CompiledKernel/src/WVKernelTypes.cpp";"CompiledKernel/src/WVTransformConstantStratificationKernel.cpp";runtimeSources];
             testCase.verifyTrue(all(ismember(required,tracked)));
             for relative = required'
                 destination = fullfile(exportRoot,relative);
@@ -210,6 +211,7 @@ classdef TestWVCompiledBackend < matlab.unittest.TestCase
                 testCase.verifyEqual(metadata.contract.version,4);
                 testCase.verifyEqual(metadata.runtimeMetrics.planCount,17);
                 testCase.verifyEqual(metadata.runtimeMetrics.persistentFullHermitianBytes,0);
+                testCase.verifyEqual(string(metadata.runtimeMetrics.activeForcingSchedule),"wave-vortex-forcing-v1:WVNonlinearAdvection");
 
                 if definition.isHydrostatic
                     resized = compiledWVT.waveVortexTransformWithResolution([18 14 11]);
