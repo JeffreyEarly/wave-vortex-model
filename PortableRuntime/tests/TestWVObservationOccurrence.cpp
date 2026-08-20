@@ -2497,7 +2497,7 @@ void testOccurrenceStateTimeAndCoordinateBinding() {
 
 void testOccurrenceFieldAffineRejectedAtConstruction() {
   const auto catalog = extensionCatalog();
-  for (const auto [scale, offset] :
+  for (const auto &[scale, offset] :
        std::array<std::pair<double, double>, 2>{{{2.0, 0.0},
                                                  {1.0, -1.0}}}) {
     WVPortableObserverRecord source;
