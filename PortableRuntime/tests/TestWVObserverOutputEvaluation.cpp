@@ -289,11 +289,12 @@ WVPortableObserverDescriptor descriptor() {
 }
 
 const WVObservationVariable &findVariable(const WVObservationSchema &schema,
-                                          const std::string &name) {
+                                          const char *name) {
   const auto found = std::find_if(
       schema.variables.begin(), schema.variables.end(),
       [&](const auto &variable) { return variable.name == name; });
-  require(found != schema.variables.end(), "missing schema variable " + name);
+  require(found != schema.variables.end(),
+          "missing schema variable " + std::string(name));
   return *found;
 }
 
