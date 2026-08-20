@@ -578,14 +578,14 @@ WVPortableObserverDescriptor primitiveReuseDescriptor(
 }
 
 const WVObservationValue &value(const WVObservationBatch &batch,
-                                const std::string &identifier) {
+                                const char *identifier) {
   const auto found =
       std::find_if(batch.values.begin(), batch.values.end(),
                    [&](const auto &candidate) {
                      return candidate.variableIdentifier == identifier;
                    });
   require(found != batch.values.end(),
-          "missing occurrence value " + identifier);
+          std::string("missing occurrence value ") + identifier);
   return *found;
 }
 
@@ -687,7 +687,7 @@ void compareField(const WVObservationBatch &batch,
                   const std::string &fieldName,
                   WVPositionInterpolation interpolation =
                       WVPositionInterpolation::linear) {
-  const auto &observed = value(batch, variableIdentifier);
+  const auto &observed = value(batch, variableIdentifier.c_str());
   const auto &x = value(batch, "x");
   const auto &y = value(batch, "y");
   const auto &z = value(batch, "z");
