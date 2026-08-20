@@ -72,9 +72,11 @@ private:
   friend class WVConstantStratificationForcingEngine;
 };
 
-// Provisional source-linked implementation boundary for one MATLAB forcing.
-// Calls occur once per forcing stage or constraint pass; implementations run
-// their complete contiguous coefficient/grid loops below that boundary.
+// Stable source API v1 boundary for one exact MATLAB identity/version forcing.
+// A factory-created implementation owns immutable typed configuration and
+// derived operators and is retained by its resolved model. Calls occur once
+// per forcing stage or constraint pass; implementations run their complete
+// contiguous coefficient/grid loops below that boundary.
 class WVForcing {
 public:
   virtual ~WVForcing() = default;

@@ -1,5 +1,6 @@
 #include "WaveVortexRuntime/WVExtensionCatalog.hpp"
 #include "WaveVortexRuntime/WVObserverOutputProvider.hpp"
+#include "WVLegacyObserverCompatibility.hpp"
 #include "WVObserverAdapter.hpp"
 
 #include <algorithm>
@@ -193,13 +194,8 @@ std::size_t WVObserverCatalog::persistentBytes() const noexcept {
                           sizeof(WVObserverFactoryRegistration);
   for (const auto &value : registrations_) {
     bytes += value.typeIdentifier.capacity() +
-             value.legacyPersistence.fieldListAttribute.capacity() +
-             value.legacyPersistence.defaultIdentifier.capacity() +
-             value.legacyPersistence.coefficientRestartFamilies.capacity() *
-                 sizeof(std::string);
-    for (const auto &family :
-         value.legacyPersistence.coefficientRestartFamilies)
-      bytes += family.capacity();
+             detail::WVObserverFactoryRegistrationAccess::persistentBytes(
+                 value);
   }
   return bytes;
 }

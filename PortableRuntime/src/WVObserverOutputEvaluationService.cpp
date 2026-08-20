@@ -200,43 +200,12 @@ WVKernelStatus validateOccurrenceWorkspace(
   return WVKernelStatus::ok();
 }
 
-WVObserverOutputVariableSpecification legacySpecification(
-    const WVObservationVariable &variable,
-    const WVObserverOutputChannel &channel,
-    const std::vector<std::size_t> &extents) {
-  WVObserverOutputVariableSpecification specification;
-  specification.identifier =
-      channel.source == WVObserverOutputChannelSource::coefficient ||
-              channel.source == WVObserverOutputChannelSource::sampledField ||
-              channel.source == WVObserverOutputChannelSource::movingField
-          ? channel.sourceIdentifier
-          : variable.identifier;
-  specification.name = variable.name;
-  specification.valueType =
-      variable.scalarType == WVObservationScalarType::complex64
-          ? WVOutputValueType::complex64
-          : WVOutputValueType::real64;
-  specification.dimensionNames = variable.dimensionIdentifiers;
-  specification.dimensions = extents;
-  specification.units = variable.units;
-  specification.longName = variable.description;
-  specification.cadence =
-      variable.layout == WVObservationValueLayout::staticValue ||
-              variable.layout == WVObservationValueLayout::initialValue
-          ? WVObserverOutputCadence::initialOnly
-          : WVObserverOutputCadence::timeSeries;
-  for (const auto &attribute : variable.attributes)
-    specification.attributes.push_back({attribute.name, attribute.value});
-  return specification;
-}
-
 } // namespace
 
 class WVObserverOutputEvaluationService::Impl {
 public:
   struct Output {
-    std::string variableIdentifier;
-    WVObserverOutputVariableSpecification specification;
+    std::vector<std::size_t> extents;
     WVObservationScalarType scalarType = WVObservationScalarType::real64;
     WVObserverOutputChannelSource source =
         WVObserverOutputChannelSource::sampledField;
@@ -245,7 +214,6 @@ public:
     std::size_t additionalStateBlockIndex =
         std::numeric_limits<std::size_t>::max();
     bool initialField = false;
-    bool exposeLegacySpecification = true;
     std::vector<double> affineStorage;
     double scale = 1.0;
     double offset = 0.0;
@@ -360,23 +328,6 @@ public:
                   candidate.record->identifier == observer.identifier);
         });
     return found == observerBindings.end() ? nullptr : &*found;
-  }
-
-  Output *output(const std::string &observerIdentifier,
-                 const std::string &identifier) noexcept {
-    for (auto &binding : observerBindings) {
-      if (binding.record == nullptr || binding.outputs == nullptr ||
-          binding.record->identifier != observerIdentifier)
-        continue;
-      const auto found = std::find_if(
-          binding.outputs->begin(), binding.outputs->end(),
-          [&](const auto &candidate) {
-            return candidate.variableIdentifier == identifier ||
-                   candidate.specification.identifier == identifier;
-          });
-      return found == binding.outputs->end() ? nullptr : &*found;
-    }
-    return nullptr;
   }
 
   const PreparedOccurrence *occurrence(
@@ -509,69 +460,6 @@ public:
   }
 
   WVKernelStatus borrowedValue(
-      const std::string &observerIdentifier,
-      const std::string &variableIdentifier,
-      WVObserverBorrowedValueView &value,
-      WVObserverOutputEvaluationMetrics &metrics) {
-    if (!prepared)
-      return invalid("Observer values were requested before prepare().");
-    auto *entry = output(observerIdentifier, variableIdentifier);
-    if (entry == nullptr)
-      return invalid("Observer output variable is not part of this service.");
-    value = {};
-    value.scalarType = entry->specification.valueType ==
-                               WVOutputValueType::complex64
-                           ? WVObservationScalarType::complex64
-                           : WVObservationScalarType::real64;
-    value.extents = entry->specification.dimensions.data();
-    value.extentCount = entry->specification.dimensions.size();
-    value.elementCount = elementCount(entry->specification.dimensions);
-    if (entry->source == WVObserverOutputChannelSource::coefficient) {
-      const auto &coefficients = preparedState.coefficients;
-      value.complex64 = entry->coefficientFamily == 0
-                            ? coefficients.Ap.data
-                            : entry->coefficientFamily == 1
-                                  ? coefficients.Am.data
-                                  : coefficients.A0.data;
-      ++metrics.borrowedCoefficientViewCount;
-      return WVKernelStatus::ok();
-    }
-    if (entry->source == WVObserverOutputChannelSource::additionalState) {
-      if (entry->additionalStateBlockIndex >=
-          preparedIntegrationState.additionalBlockCount)
-        return invalid("Observer state output is unavailable.");
-      const auto &block = preparedIntegrationState.additionalBlocks
-          [entry->additionalStateBlockIndex];
-      if (block.realData == nullptr)
-        return invalid("Observer state output is not real-valued.");
-      value.real64 = block.realData;
-      return WVKernelStatus::ok();
-    }
-    const auto &storage =
-        entry->source == WVObserverOutputChannelSource::movingField
-            ? movingFieldStorage
-            : entry->initialField ? initialFieldStorage
-                                  : timeSeriesFieldStorage;
-    if (entry->fieldOutput >= storage.size())
-      return invalid("Observer field output binding is invalid.");
-    if (entry->scale != 1.0 || entry->offset != 0.0) {
-      auto &transformed = entry->affineStorage;
-      transformed.resize(storage[entry->fieldOutput].size());
-      std::transform(storage[entry->fieldOutput].begin(),
-                     storage[entry->fieldOutput].end(), transformed.begin(),
-                     [&](double input) {
-                       return entry->scale * input + entry->offset;
-                     });
-      value.real64 = transformed.data();
-      value.elementCount = transformed.size();
-    } else {
-      value.real64 = storage[entry->fieldOutput].data();
-      value.elementCount = storage[entry->fieldOutput].size();
-    }
-    return WVKernelStatus::ok();
-  }
-
-  WVKernelStatus borrowedValue(
       std::vector<Output> &outputs, std::size_t resolvedValueSlot,
       const PreparedOccurrence *preparedOccurrence,
       WVObserverBorrowedValueView &value,
@@ -618,9 +506,9 @@ public:
       return invalid("Observer values were requested before prepare().");
     value = {};
     value.scalarType = entry.scalarType;
-    value.extents = entry.specification.dimensions.data();
-    value.extentCount = entry.specification.dimensions.size();
-    value.elementCount = elementCount(entry.specification.dimensions);
+    value.extents = entry.extents.data();
+    value.extentCount = entry.extents.size();
+    value.elementCount = elementCount(entry.extents);
     if (entry.source == WVObserverOutputChannelSource::coefficient) {
       const auto &coefficients = preparedState.coefficients;
       value.complex64 = entry.coefficientFamily == 0
@@ -901,21 +789,9 @@ WVKernelStatus WVObserverOutputEvaluationService::create(
             variable - storedPlan.schema.variables.data());
         channel.resolvedValueSlot = outputs.size();
         Impl::Output output;
-        output.variableIdentifier = channel.variableIdentifier;
         output.scalarType = variable->scalarType;
         if (!occurrenceChannel)
-          output.specification = legacySpecification(*variable, channel, extents);
-        else {
-          output.specification.identifier = channel.variableIdentifier;
-          output.specification.name = variable->name;
-          output.specification.valueType =
-              variable->scalarType == WVObservationScalarType::complex64
-                  ? WVOutputValueType::complex64
-                  : WVOutputValueType::real64;
-          output.specification.units = variable->units;
-          output.specification.longName = variable->description;
-          output.specification.cadence = WVObserverOutputCadence::timeSeries;
-        }
+          output.extents = std::move(extents);
         output.source = channel.source;
         output.coefficientFamily = channel.coefficientFamily;
         if (channel.source ==
@@ -925,9 +801,6 @@ WVKernelStatus WVObserverOutputEvaluationService::create(
           return invalid("Observer state output has no resolved block slot.");
         output.scale = channel.scale;
         output.offset = channel.offset;
-        output.exposeLegacySpecification =
-            channel.source != WVObserverOutputChannelSource::additionalState &&
-            !occurrenceChannel;
         if (channel.source == WVObserverOutputChannelSource::sampledField) {
           const bool initial =
               variable->layout == WVObservationValueLayout::initialValue ||
@@ -951,7 +824,7 @@ WVKernelStatus WVObserverOutputEvaluationService::create(
         } else if (channel.source ==
                    WVObserverOutputChannelSource::movingField) {
           output.fieldOutput = impl.movingFieldStorage.size();
-          impl.movingFieldStorage.emplace_back(elementCount(extents));
+          impl.movingFieldStorage.emplace_back(elementCount(output.extents));
           impl.movingFieldViews.push_back(
               {impl.movingFieldStorage.back().data(),
                impl.movingFieldStorage.back().size()});
@@ -1052,19 +925,6 @@ WVKernelStatus WVObserverOutputEvaluationService::create(
     return {WVKernelStatusCode::allocationFailure,
             "Unable to allocate observer-output evaluation storage."};
   }
-}
-
-WVKernelStatus WVObserverOutputEvaluationService::specifications(
-    const WVObserverRecord &observer,
-    std::vector<WVObserverOutputVariableSpecification> &output) {
-  const auto *binding = impl_->binding(observer);
-  if (binding == nullptr || binding->outputs == nullptr)
-    return invalid("Observer is not part of this evaluation service.");
-  output.clear();
-  for (const auto &entry : *binding->outputs)
-    if (entry.exposeLegacySpecification)
-      output.push_back(entry.specification);
-  return WVKernelStatus::ok();
 }
 
 WVKernelStatus WVObserverOutputEvaluationService::observationSchema(
@@ -1488,29 +1348,6 @@ void WVObserverOutputEvaluationService::complete(
   metrics_.retainedStorageBytes = persistentBytes();
 }
 
-WVKernelStatus WVObserverOutputEvaluationService::value(
-    const WVObserverRecord &observer,
-    const WVObserverOutputVariableSpecification &variable,
-    WVObserverOutputValueView &output) {
-  WVObserverBorrowedValueView value;
-  const auto status = impl_->borrowedValue(observer.identifier,
-                                           variable.identifier, value,
-                                           metrics_);
-  if (!status)
-    return status;
-  if (value.scalarType != WVObservationScalarType::real64 &&
-      value.scalarType != WVObservationScalarType::complex64)
-    return invalid("Legacy observer value view supports real or complex data.");
-  output = {};
-  output.valueType = value.scalarType == WVObservationScalarType::complex64
-                         ? WVOutputValueType::complex64
-                         : WVOutputValueType::real64;
-  output.realData = value.real64;
-  output.complexData = value.complex64;
-  output.elementCount = value.elementCount;
-  return WVKernelStatus::ok();
-}
-
 std::size_t WVObserverOutputEvaluationService::occurrenceWorkspaceRetainedBytes()
     const noexcept {
   return metrics_.occurrenceWorkspaceRetainedBytes;
@@ -1524,24 +1361,6 @@ std::size_t WVObserverOutputEvaluationService::occurrenceWorkspaceLiveBytes()
 std::size_t WVObserverOutputEvaluationService::persistentBytes() const noexcept {
   if (!impl_)
     return sizeof(*this);
-  const auto outputSpecificationBytes =
-      [](const WVObserverOutputVariableSpecification &specification) {
-        std::size_t bytes = specification.identifier.capacity() +
-                            specification.name.capacity() +
-                            specification.units.capacity() +
-                            specification.longName.capacity() +
-                            specification.dimensionNames.capacity() *
-                                sizeof(std::string) +
-                            specification.dimensions.capacity() *
-                                sizeof(std::size_t) +
-                            specification.attributes.capacity() *
-                                sizeof(WVObserverOutputAttribute);
-        for (const auto &name : specification.dimensionNames)
-          bytes += name.capacity();
-        for (const auto &attribute : specification.attributes)
-          bytes += attribute.name.capacity() + attribute.value.capacity();
-        return bytes;
-      };
   std::size_t bytes =
       sizeof(*this) + sizeof(Impl) +
       (impl_->ownedFields ? impl_->ownedFields->persistentBytes() : 0) +
@@ -1588,8 +1407,7 @@ std::size_t WVObserverOutputEvaluationService::persistentBytes() const noexcept 
   for (const auto &outputs : impl_->observerOutputs) {
     bytes += outputs.capacity() * sizeof(Impl::Output);
     for (const auto &output : outputs)
-      bytes += output.variableIdentifier.capacity() +
-               outputSpecificationBytes(output.specification) +
+      bytes += output.extents.capacity() * sizeof(std::size_t) +
                output.affineStorage.capacity() * sizeof(double);
   }
   for (const auto &occurrence : impl_->preparedOccurrences)

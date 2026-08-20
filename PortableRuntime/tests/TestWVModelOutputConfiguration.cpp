@@ -52,9 +52,8 @@ std::vector<char> fileBytes(const std::filesystem::path &path) {
 
 class FailingSampleSource final : public WVObserverSampleSource {
 public:
-  WVKernelStatus specifications(
-      const WVObserverRecord &,
-      std::vector<WVObserverOutputVariableSpecification> &) override {
+  WVKernelStatus observationSchema(
+      const WVObserverRecord &, WVObservationSchema &) override {
     return {WVKernelStatusCode::allocationFailure,
             "injected output-schema failure"};
   }
@@ -83,12 +82,6 @@ public:
     return {WVKernelStatusCode::allocationFailure,
             "injected observation-batch failure"};
   }
-  WVKernelStatus value(const WVObserverRecord &,
-                       const WVObserverOutputVariableSpecification &,
-                       WVObserverOutputValueView &) override {
-    return WVKernelStatus::ok();
-  }
-
 private:
   double scheduledTime_ = 0.0;
 };

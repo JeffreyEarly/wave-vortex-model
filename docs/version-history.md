@@ -8,6 +8,7 @@ nav_order: 100
 
 ## [Unreleased]
 
+- Stabilized portable runtime source API v1 for C++17 source-linked extensions, including explicit application-owned catalog composition with external AlongTrack and built-in linear bottom friction, removed public legacy-observer adapters and direct `WVModel` internal-service access, fixed zero-length numeric typed-record encoding and decoding under ASan/UBSan, added direct Linux sanitizer CI, and documented the source-only compatibility, no-ABI, and supported-platform boundaries.
 - Added a generic two-phase portable observation-occurrence protocol with compact resolved schedule payloads, event-variable geometry, central sampling of every position-supported field, nested ragged layouts, and retry-stable multi-destination batches.
 - Added the paired portable `WVBottomFrictionLinear` implementation with exact persisted-rate reconstruction, shared physical-field reuse, and MATLAB-aligned bottom-quadrature scaling.
 - Added an explicit, source-only compiled preview for ordinary constant-stratification nonlinear flux; MATLAB remains the default, native support must be built explicitly, and the preview rejects unsupported forcing without fallback.

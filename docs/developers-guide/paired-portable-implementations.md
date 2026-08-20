@@ -17,17 +17,37 @@ MATLAB forcings use the same hook and exact-class rule. `WVForcing` defaults to 
 
 Shared scientific variables follow the [portable variable metadata contract](portable-variable-metadata.md). MATLAB annotations remain authoritative, while the C++ runtime resolves field names to generated ordinals during construction.
 
+The C++ compilation boundary is independently identified as `wave-vortex-portable-source-api-v1`, version 1.0. It stabilizes the documented source surface, not a binary layout. A consumer must select one WaveVortexModel checkout, compile the runtime and every statically linked extension together, and recompile the complete application after changing that selection. An incompatible documented source change requires a new source-API major version. Pair, observer-graph, schedule, payload, observation-schema, run-request, and compiled-kernel versions remain independent exact data contracts; a match at one boundary never substitutes for a match at another.
+
 ## Runtime boundary
 
 The runtime resolves type identifiers, versions, dependencies, layouts, and dispatch targets during descriptor construction and preflight. Unsupported or version-mismatched features fail before coefficient-sized allocation, state advancement, or output mutation.
 
-`WVExtensionCatalogBuilder` is the only mutable extension-registration boundary. Its strongly typed observer, output-schedule, and forcing operations reject duplicate or incomplete registrations; a rejected registration invalidates the builder, mutation after freezing fails, and a builder can freeze only once. `addBuiltInExtensions()` installs every built-in through that same source-linked path. Freezing produces one immutable `std::shared_ptr<const WVExtensionCatalog>` with distinct `WVObserverCatalog`, `WVOutputScheduleCatalog`, and `WVForcingCatalog` subcatalogs. There is no process-global mutable registry, implicit sealing event, binary plug-in ABI, or distributed compiled extension.
+`WVExtensionCatalogBuilder` is the only mutable extension-registration boundary. Its strongly typed observer, output-schedule, and forcing operations reject duplicate or incomplete registrations; a rejected registration invalidates the builder, mutation after freezing fails, and a builder can freeze only once. The public v1 observer registration has exactly five inputs: type identity, contract version, factory, optional data-only configuration resolver, and optional data-only output-plan resolver. Historical MATLAB-encoding callbacks and persistence metadata are private runtime compatibility machinery, not extension registration inputs. `addBuiltInExtensions()` installs every built-in through that same source-linked path. Freezing produces one immutable `std::shared_ptr<const WVExtensionCatalog>` with distinct `WVObserverCatalog`, `WVOutputScheduleCatalog`, and `WVForcingCatalog` subcatalogs. There is no process-global mutable registry, implicit sealing event, dynamic discovery, binary plug-in ABI, separately loadable extension, or distributed compiled extension.
 
-The caller owns the frozen catalog for the complete inspection, resolution, compilation, model, MEX-handle, or runner lifetime. APIs retain the shared catalog when resolved implementations or compiled graphs depend on it, so destroying the builder or the caller's original pointer cannot invalidate a live model. Independent catalogs may coexist in one process and may bind the same source identity to different implementations without interference.
+The application creates the frozen catalog and supplies it explicitly to inspection, resolution, compilation, model, MEX-handle, and runner entry points. APIs retain shared ownership whenever resolved implementations or compiled graphs depend on it, so destroying the builder or the application's original pointer cannot invalidate a live model. Independent catalogs may coexist in one process and may bind the same source identity to different implementations without interference.
 
 NetCDF inspection first reconstructs owning data-only records. Raw inspection does not invoke an observer, output-schedule, or forcing factory and does not construct a runtime implementation. Semantic preflight then uses the explicitly supplied catalog to resolve exact identities and versions. Observer descriptor construction creates one immutable resolved `WVObservingSystem` for every observer record, even when records share a stateless factory, and freezes its typed configuration and declarative execution plan. Forcing resolution similarly fixes stage, priority, derived operators, tendency behavior, and post-step constraints before integration. Runtime routes use resolved pointers and variable ordinals rather than class-name lookup or observer-kind discriminators.
 
 Configuration descriptors are immutable after construction. Evolving particle, tracer, forcing, and coefficient values live in explicit integration-state blocks. Observer output is produced through the existing output plan, driver, and sinks; observers do not define or write NetCDF storage themselves.
+
+## External source-linked proof
+
+The real external-consumer baseline is [AlongTrackSimulator main at the completed ATS #4 integration](https://github.com/satmapkit/AlongTrackSimulator/commit/ba57981f336ad5bbbc0907dcd74fcd4fcd137708). Its application-owned runner adds WaveVortexModel's built-ins, adds the source-linked `WVAlongTrackSchedule` and `WVAlongTrackObservingSystem` pair, freezes one catalog, and passes that catalog to `runWaveVortex()`. Source API v1 qualification recompiles that consumer against the selected WaveVortexModel checkout and requires its observer registration to supply the exact five v1 inputs described above. WaveVortexModel contains no AlongTrack identity, orbit algorithm, schema branch, or registration discovery.
+
+Select the WaveVortexModel checkout explicitly and compile both source trees together:
+
+```sh
+cmake -S /path/to/AlongTrackSimulator -B build/alongtrack-wvm \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DBUILD_TESTING=ON \
+  -DALONGTRACK_BUILD_WAVEVORTEX_EXTENSION=ON \
+  -DALONGTRACK_WAVEVORTEX_SOURCE_DIR=/path/to/wave-vortex-model
+cmake --build build/alongtrack-wvm --parallel
+ctest --test-dir build/alongtrack-wvm --output-on-failure
+```
+
+This proof uses a MATLAB-authored run bundle containing the AlongTrack schedule/observer pair and the built-in `WVBottomFrictionLinear` forcing. The built-in-only runner rejects the unavailable external pair during allocation-light preflight; the extended runner resolves its exact identities, versions, schema, dependencies, event geometry, state, schedule cursor, and execution targets before advancing. Repeating and nonrepeating/geodetic passes, fixed and adaptive integration, exact and dense output, persistence, restart, continuation, route retry, source immutability, MATLAB parity, catalog lifetime, and independent catalogs use the same generic runtime paths. The external runner is qualified on Ubuntu with GCC and Clang and on macOS with AppleClang. WaveVortexModel does not currently compile under MSVC, so the source-linked runner is unsupported on Windows.
 
 ## Resolved observing systems
 
@@ -41,13 +61,13 @@ The C++ `WVObservingSystem` name intentionally matches the MATLAB abstraction, b
 
 The five supported MATLAB observers—`WVCoefficients`, `WVEulerianFields`, `WVMooring`, `WVLagrangianParticles`, and `WVTracer`—are registered through this boundary. Their numerical kernels, variable names, coefficient ordering, dense interpolation, and NetCDF schemas are unchanged. Particle and tracer element loops remain specialized and are selected during construction; a virtual call is permitted at observer, stage, or output-event granularity, never for each grid point, particle, or tracer value.
 
-Persistence remains deliberately inverted relative to an object-oriented NetCDF design. An observing-system implementation supplies a data-only `WVObservationSchema` and initial or event-scoped `WVObservationBatch` values. A schema declares fixed and unlimited axes; real, complex, integer, Boolean, or text variables; coordinate roles; and contiguous-ragged row-count or row-offset relationships. A batch explicitly borrows immutable event state or owns bounded temporary storage. `WVModelOutputNetCDFSink` validates the complete batch set before mutation, evaluates coincident routes once, writes variable-size values to flat unlimited axes with per-record committed counts, and commits time last. The generic reader reconstructs nonlegacy provisional schemas from the persisted declarations, while a compatibility adapter preserves the existing five MATLAB encodings and restart rules. Observing-system implementations never call NetCDF.
+Persistence remains deliberately inverted relative to an object-oriented NetCDF design. An observing-system implementation supplies a data-only `WVObservationSchema` and initial or event-scoped `WVObservationBatch` values. A schema declares fixed and unlimited axes; real, complex, integer, Boolean, or text variables; coordinate roles; and contiguous-ragged row-count or row-offset relationships. A batch explicitly borrows immutable event state or owns bounded temporary storage. `WVModelOutputNetCDFSink` validates the complete batch set before mutation, evaluates coincident routes once, writes variable-size values to flat unlimited axes with per-record committed counts, and commits time last. The generic reader reconstructs nonlegacy schemas from the persisted declarations, while a private compatibility adapter preserves the existing five MATLAB encodings and restart rules. Observing-system implementations never call NetCDF.
 
-The test-only paired `WVTestPortablePointDiagnostic` demonstrates the fixed-position extension seam with immutable field and point coordinates plus affine scale and offset. A separate test-only observation provider exercises fixed bins, moving coordinates, variable profiles and passes, zero-length events, mixed scalar types, and contiguous ragged values through the same schema/batch path. Adding either provider requires no observer-specific change to the integrator, output driver, graph reader, field evaluator, or sink. Along-track observation science is intentionally not part of this persistence contract.
+The test-only paired `WVTestPortablePointDiagnostic` demonstrates the fixed-position extension seam with immutable field and point coordinates plus affine scale and offset. A separate test-only observation provider exercises fixed bins, moving coordinates, variable profiles and passes, zero-length events, mixed scalar types, and contiguous ragged values through the same schema/batch path. Adding either provider requires no observer-specific change to the integrator, output driver, graph reader, field evaluator, or sink. AlongTrackSimulator supplies the real along-track science externally; only the generic schema, batch, geometry, field-evaluation, and persistence contracts live in WaveVortexModel.
 
 ## Output configuration
 
-The provisional C++ `WVModelOutputFile` and `WVModelOutputGroup` builders mirror the names and configuration flow of their MATLAB counterparts. They are mutable only before `WVModelOutputConfiguration::build()`. The build operation consumes the builders, resolves observer identifiers through the supplied frozen catalog, validates the complete multi-file graph, and produces the existing immutable `WVPortableObserverDescriptor` and `WVOutputPlan`. It does not create or mutate output.
+The stable source-level `WVModelOutputFile` and `WVModelOutputGroup` builders mirror the names and configuration flow of their MATLAB counterparts. They are mutable only before `WVModelOutputConfiguration::build()`. The build operation consumes the builders, resolves observer identifiers through the supplied frozen catalog, validates the complete multi-file graph, and produces the existing immutable `WVPortableObserverDescriptor` and `WVOutputPlan`. It does not create or mutate output.
 
 Output schedules use the strongly typed output-schedule subcatalog rather than an observer or forcing factory abstraction. A provider receives a typed construction record and returns an immutable implementation with transactional `peek` semantics. The caller owns the cursor and commits the proposed next cursor only after output delivery succeeds. Runtime selection uses resolved implementations and ordinals; it performs no provider-name lookup while integrating.
 
@@ -69,14 +89,14 @@ std::vector<WVModelOutputFile> files;
 files.push_back(std::move(file));
 WVModelOutputConfiguration::build(
     observerRecord, std::move(files), WVModelOutputPolicy::create,
-    initialTime, finalTime, output);
+    catalog, initialTime, finalTime, output);
 ```
 
 Every status must be checked in production code. The abbreviated example emphasizes the MATLAB-shaped construction sequence; integration consumes `output.plan()`, while `output.openNetCDFSink(...)` creates the existing persistence sink.
 
 ## Runtime façade
 
-The provisional move-only `WVModel` façade is the common owner used by the standalone program and the production MEX right-hand-side path. It retains the frozen extension catalog together with immutable resolved services: forcing, observer behavior, numerical system, integrator, output evaluation, driver, sink, and metrics. `WVModelState` separately owns canonical `[Nj,Nkl]` coefficients and explicit particle or tracer state blocks. This separation follows MATLAB's distinction between model configuration and evolving state without copying state into a façade layer.
+The stable source-level, move-only `WVModel` façade is the common owner used by the standalone program and the production MEX right-hand-side path. It retains the frozen extension catalog together with immutable resolved services: forcing, observer behavior, numerical system, integrator, output evaluation, driver, sink, and metrics. `WVModelState` separately owns canonical `[Nj,Nkl]` coefficients and explicit particle or tracer state blocks. This separation follows MATLAB's distinction between model configuration and evolving state without copying state into a façade layer.
 
 `WVModel::createFromModelOutputFiles()` inspects a complete sibling NetCDF set together, selects the latest complete compatible state, and rebuilds derived services. A destination map may replace file paths by stable file identifier, but cannot change observer membership, group schedules, or progress. The transient inspection and builder records are consumed; runtime routes retain resolved ordinals and pointers.
 
@@ -100,4 +120,4 @@ The common contract defines shared identity and capability behavior without impo
 
 Commit `5940f4e4e206fbfb9a6cb4760af2ba2347e3571f` is the pre-façade baseline. Complete integration runtime and retained memory may regress by no more than 3%, and a façade may introduce no state-sized copy or persistent state-sized storage. When valid implementations are within 3% in speed and memory, choose the simpler implementation.
 
-The C++ API remains provisional until the milestone's final extension and performance proof. The final proof stabilizes source compatibility, not binary compatibility.
+The accepted external extension, compatibility, numerical, performance, and ownership proof stabilizes `wave-vortex-portable-source-api-v1`. WaveVortexModel and its source-linked consumers distribute and select source, then rebuild together; they do not promise binary compatibility or distribute compiled extension products.

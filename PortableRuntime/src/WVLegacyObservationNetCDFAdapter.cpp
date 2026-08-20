@@ -1,5 +1,6 @@
 #include "WVLegacyObservationNetCDFAdapter.hpp"
 #include "WaveVortexRuntime/WVExtensionCatalog.hpp"
+#include "WVLegacyObserverCompatibility.hpp"
 #include "WVModelOutputNetCDFSchema.hpp"
 #include "WVNetCDF.hpp"
 #include "WVObserverAdapter.hpp"
@@ -296,12 +297,15 @@ readObserverStateAtTime(const std::string &filePath,
   if (!result || !found)
     return result;
 
-  if (!registration.legacyOperationResolver)
+  const auto *compatibility =
+      detail::WVObserverFactoryRegistrationAccess::legacyCompatibility(
+          registration);
+  if (compatibility == nullptr || !compatibility->operationResolver)
     return failure(WVCheckpointStatusCode::unsupportedObserver,
                    "Dynamic observer state uses an unsupported observer.",
                    groupPath);
   values.clear();
-  WVLegacyObserverOperationBinder operations;
+  detail::WVLegacyObserverOperationBinder operations;
   operations.movingPositions = [&]() -> WVKernelStatus {
     const auto channels = detail::particlePositionChannels(observer.isXYOnly);
     values.resize(channels.size());
@@ -338,7 +342,7 @@ readObserverStateAtTime(const std::string &filePath,
   operations.fixedVerticalProfiles = noDynamicState;
   operations.fixedPositions = noDynamicState;
   const auto operationStatus =
-      registration.legacyOperationResolver(observer, operations);
+      compatibility->operationResolver(observer, operations);
   if (!operationStatus && result)
     return failure(WVCheckpointStatusCode::unsupportedObserver,
                    operationStatus.message, groupPath);
@@ -677,16 +681,21 @@ WVCheckpointStatus parseObserver(int outputGroup, int metadataGroup,
   observer.contractVersion = WVPortablePairContractVersion;
   const auto *registration = catalog.observers().registration(
       observer.typeIdentifier, observer.contractVersion);
-  if (registration == nullptr || !registration->legacyOperationResolver)
+  const auto *compatibility =
+      registration == nullptr
+          ? nullptr
+          : detail::WVObserverFactoryRegistrationAccess::legacyCompatibility(
+                *registration);
+  if (compatibility == nullptr || !compatibility->operationResolver)
     return failure(WVCheckpointStatusCode::unsupportedObserver,
                    "Unsupported MATLAB observing-system class '" + className +
                        "'.",
                    outputPath + "/@AnnotatedClass");
   WVObserverExecutionPlan execution;
   execution.fieldListAttribute =
-      registration->legacyPersistence.fieldListAttribute;
+      compatibility->persistence.fieldListAttribute;
   execution.coefficientRestartFamilies =
-      registration->legacyPersistence.coefficientRestartFamilies;
+      compatibility->persistence.coefficientRestartFamilies;
   result = optionalTextAttribute(metadataGroup, "name", observer.name, present,
                                  outputPath);
   if (!result)
@@ -699,9 +708,8 @@ WVCheckpointStatus parseObserver(int outputGroup, int metadataGroup,
     return result;
   const bool hadPortableIdentifier = present;
   if (!hadPortableIdentifier) {
-    if (!registration->legacyPersistence.defaultIdentifier.empty())
-      observer.identifier =
-          registration->legacyPersistence.defaultIdentifier;
+    if (!compatibility->persistence.defaultIdentifier.empty())
+      observer.identifier = compatibility->persistence.defaultIdentifier;
     else
       observer.identifier = portableIdentifier(className + "-" + observer.name);
   }
@@ -721,7 +729,7 @@ WVCheckpointStatus parseObserver(int outputGroup, int metadataGroup,
                                             std::string{}),
                                 observer.fieldNames.end());
     if (!hadPortableIdentifier &&
-        registration->legacyPersistence.appendFieldsToDefaultIdentifier) {
+        compatibility->persistence.appendFieldsToDefaultIdentifier) {
       for (const auto &field : observer.fieldNames)
         observer.identifier += "-" + portableIdentifier(field);
       identifier = observer.identifier;
@@ -740,7 +748,7 @@ WVCheckpointStatus parseObserver(int outputGroup, int metadataGroup,
                : WVKernelStatus{WVKernelStatusCode::invalidConfiguration,
                                 operationResult.message};
   };
-  WVLegacyObserverOperationBinder operations;
+  detail::WVLegacyObserverOperationBinder operations;
   operations.fullField = [&]() {
     return adaptOperation([&]() -> WVCheckpointStatus {
     if (canonicalCoefficientProvider) {
@@ -974,7 +982,7 @@ WVCheckpointStatus parseObserver(int outputGroup, int metadataGroup,
     });
   };
   const auto operationStatus =
-      registration->legacyOperationResolver(observer, operations);
+      compatibility->operationResolver(observer, operations);
   if (!operationStatus && operationResult)
     return failure(WVCheckpointStatusCode::unsupportedObserver,
                    operationStatus.message, outputPath);
@@ -1007,10 +1015,15 @@ bool persistedObserverCarriesCoefficientState(
   observer.typeIdentifier = className;
   const auto *registration = catalog.observers().registration(
       observer.typeIdentifier, observer.contractVersion);
-  return registration != nullptr &&
-         registration->legacyPersistence.coefficientRestartFamilies ==
+  const auto *compatibility =
+      registration == nullptr
+          ? nullptr
+          : WVObserverFactoryRegistrationAccess::legacyCompatibility(
+                *registration);
+  return compatibility != nullptr &&
+         compatibility->persistence.coefficientRestartFamilies ==
              std::vector<std::string>({"Ap", "Am", "A0"}) &&
-         registration->legacyPersistence.fieldListAttribute.empty();
+         compatibility->persistence.fieldListAttribute.empty();
 }
 
 bool legacyObservationAttributeMatches(std::string_view name,
@@ -1042,7 +1055,12 @@ WVCheckpointStatus inspectPersistedObserverRestartState(
   for (auto &observer : observers) {
     const auto *registration = catalog.observers().registration(
         observer.typeIdentifier, observer.contractVersion);
-    if (registration == nullptr || !registration->legacyOperationResolver ||
+    const auto *compatibility =
+        registration == nullptr
+            ? nullptr
+            : WVObserverFactoryRegistrationAccess::legacyCompatibility(
+                  *registration);
+    if (compatibility == nullptr || !compatibility->operationResolver ||
         observer.stateBlockIdentifiers.empty())
       continue;
     std::vector<std::string> stateVariables;
@@ -1067,7 +1085,7 @@ WVCheckpointStatus inspectPersistedObserverRestartState(
       return WVKernelStatus::ok();
     };
     const auto operationStatus =
-        registration->legacyOperationResolver(observer, operations);
+        compatibility->operationResolver(observer, operations);
     if (!operationStatus)
       return failure(WVCheckpointStatusCode::unsupportedObserver,
                      operationStatus.message,
@@ -1150,7 +1168,12 @@ WVCheckpointStatus resolvePersistedObserverRestartState(
   for (auto &observer : observers) {
     const auto *registration = catalog.observers().registration(
         observer.typeIdentifier, observer.contractVersion);
-    if (registration == nullptr || !registration->legacyOperationResolver ||
+    const auto *compatibility =
+        registration == nullptr
+            ? nullptr
+            : WVObserverFactoryRegistrationAccess::legacyCompatibility(
+                  *registration);
+    if (compatibility == nullptr || !compatibility->operationResolver ||
         observer.stateBlockIdentifiers.empty())
       continue;
     bool hasDynamicState = false;
@@ -1170,7 +1193,7 @@ WVCheckpointStatus resolvePersistedObserverRestartState(
       return WVKernelStatus::ok();
     };
     const auto operationStatus =
-        registration->legacyOperationResolver(observer, operations);
+        compatibility->operationResolver(observer, operations);
     if (!operationStatus)
       return failure(WVCheckpointStatusCode::unsupportedObserver,
                      operationStatus.message,

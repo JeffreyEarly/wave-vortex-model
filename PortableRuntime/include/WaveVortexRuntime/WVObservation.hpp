@@ -175,6 +175,9 @@ struct WVObservationMetadata {
   std::vector<WVObservationMetadataVariable> variables;
 };
 
+// Data-only persistence contract with its own exact identifier and version.
+// Its version is independent of the C++ source API and paired implementation
+// versions. Implementations declare schemas but never own a NetCDF writer.
 struct WVObservationSchema {
   std::string identifier;
   std::uint32_t version = WVObservationSchemaContractVersion;
@@ -191,6 +194,9 @@ struct WVObservationBatchMetrics {
   std::size_t retainedStorageBytes = 0;
 };
 
+// One initial or event value set for an exact schema identifier/version.
+// Borrowed buffers must outlive batch consumption; owned buffers move with the
+// batch. Persistence validates the complete batch before output mutation.
 struct WVObservationBatch {
   WVObservationBatch() = default;
   WVObservationBatch(WVObservationBatch &&) noexcept = default;

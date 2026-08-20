@@ -3,6 +3,7 @@
 #include "WVTestExtensionCatalog.hpp"
 #include "WaveVortexRuntime/WVObserverOutputEvaluationService.hpp"
 #include "WaveVortexRuntime/WVObserverOutputProvider.hpp"
+#include "WVLegacyObserverCompatibility.hpp"
 
 #include "WVReferenceFFTEngine.hpp"
 #include "WVTestQuadraticSchedule.hpp"
@@ -27,6 +28,7 @@
 
 using namespace wavevortex;
 using namespace wavevortex::runtime;
+using namespace wavevortex::runtime::detail;
 using namespace wavevortex::runtime::test;
 
 namespace {
@@ -701,11 +703,17 @@ const std::shared_ptr<const WVExtensionCatalog> &modelOutputCatalog() {
                          WVLegacyObserverOperationResolver legacy = {},
                          WVLegacyObserverPersistenceMetadata persistence = {},
                          WVObserverOutputPlanResolver outputPlan = {}) {
+      if (!status)
+        return;
+      WVObserverFactoryRegistration registration(
+          std::move(identifier), 1, std::move(factory), {},
+          std::move(outputPlan));
+      if (legacy)
+        status =
+            WVObserverFactoryRegistrationAccess::attachLegacyCompatibility(
+                registration, std::move(legacy), std::move(persistence));
       if (status)
-        status = builder.addObserverFactory(
-            {std::move(identifier), 1, std::move(factory), {},
-             std::move(legacy), std::move(persistence),
-             std::move(outputPlan)});
+        status = builder.addObserverFactory(std::move(registration));
     };
     add("WVTestFields",
         [](const WVObserverRecord &, const WVPortableTypedRecord &,
@@ -1353,48 +1361,70 @@ public:
       WVTransformConstantStratificationConfiguration configuration)
       : configuration_(configuration) {}
 
-  WVKernelStatus specifications(
-      const WVObserverRecord &observer,
-      std::vector<WVObserverOutputVariableSpecification> &output) override {
-    output.clear();
+  WVKernelStatus observationSchema(
+      const WVObserverRecord &observer, WVObservationSchema &output) override {
+    WVObservationSchema schema;
+    schema.identifier = "legacy-" + observer.identifier + "-observation-v1";
+    schema.preservesLegacyEncoding = true;
+    WVObservationVariable variable;
+    std::vector<std::size_t> extents;
     if (observer.typeIdentifier == "WVEulerianFields" &&
         std::find(observer.fieldNames.begin(), observer.fieldNames.end(),
-                  "u") != observer.fieldNames.end())
-      output.push_back(
-          {observer.identifier + "-u",
-           "u",
-           WVOutputValueType::real64,
-           {"x", "y", "z"},
-           {configuration_.Nx, configuration_.Ny, configuration_.Nz},
-           "m s-1",
-           "x-component of the fluid velocity"});
-    if (observer.typeIdentifier == "WVLagrangianParticles" &&
-        !observer.fieldNames.empty())
-      output.push_back({observer.identifier + "-u",
-                        observer.name + "_u",
-                        WVOutputValueType::real64,
-                        {observer.name + "_id"},
-                        {observer.x.size()},
-                        "m s-1",
-                        "x-component of the fluid velocity, recorded along "
-                        "the particle trajectory"});
-    if (observer.typeIdentifier == "WVMooring" && !observer.fieldNames.empty())
-      output.push_back({observer.identifier + "-u",
-                        observer.name + "_u",
-                        WVOutputValueType::real64,
-                        {observer.name + "_z", observer.name + "_id"},
-                        {observer.z.size(), observer.x.size()},
-                        "m s-1",
-                        "x-component of the fluid velocity, recorded at the "
-                        "mooring"});
-    if (observer.typeIdentifier == "WVTestPortablePointDiagnostic")
-      output.push_back({observer.identifier + "-value",
-                        observer.name + "_value",
-                        WVOutputValueType::real64,
-                        {observer.name + "_id"},
-                        {observer.x.size()},
-                        "m s-1",
-                        "affinely transformed point diagnostic"});
+                  "u") != observer.fieldNames.end()) {
+      variable.identifier = observer.identifier + "-u";
+      variable.name = "u";
+      variable.dimensionIdentifiers = {"x", "y", "z"};
+      extents = {configuration_.Nx, configuration_.Ny, configuration_.Nz};
+      variable.units = "m s-1";
+      variable.description = "x-component of the fluid velocity";
+    } else if (observer.typeIdentifier == "WVLagrangianParticles" &&
+               !observer.fieldNames.empty()) {
+      variable.identifier = observer.identifier + "-u";
+      variable.name = observer.name + "_u";
+      variable.dimensionIdentifiers = {observer.name + "_id"};
+      extents = {observer.x.size()};
+      variable.units = "m s-1";
+      variable.description =
+          "x-component of the fluid velocity, recorded along the particle "
+          "trajectory";
+    } else if (observer.typeIdentifier == "WVMooring" &&
+               !observer.fieldNames.empty()) {
+      variable.identifier = observer.identifier + "-u";
+      variable.name = observer.name + "_u";
+      variable.dimensionIdentifiers = {observer.name + "_z",
+                                       observer.name + "_id"};
+      extents = {observer.z.size(), observer.x.size()};
+      variable.units = "m s-1";
+      variable.description =
+          "x-component of the fluid velocity, recorded at the mooring";
+    } else if (observer.typeIdentifier ==
+               "WVTestPortablePointDiagnostic") {
+      variable.identifier = observer.identifier + "-value";
+      variable.name = observer.name + "_value";
+      variable.dimensionIdentifiers = {observer.name + "_id"};
+      extents = {observer.x.size()};
+      variable.units = "m s-1";
+      variable.description = "affinely transformed point diagnostic";
+    }
+    if (!variable.identifier.empty()) {
+      variable.scalarType = WVObservationScalarType::real64;
+      variable.layout = WVObservationValueLayout::record;
+      for (std::size_t index = 0;
+           index < variable.dimensionIdentifiers.size(); ++index)
+        schema.axes.push_back({variable.dimensionIdentifiers[index],
+                               variable.dimensionIdentifiers[index],
+                               WVObservationAxisKind::fixed, extents[index],
+                               WVObservationCoordinateRole::none});
+      std::sort(schema.axes.begin(), schema.axes.end(),
+                [](const auto &left, const auto &right) {
+                  return left.identifier < right.identifier;
+                });
+      schema.variables.push_back(std::move(variable));
+    }
+    const auto status = validateObservationSchema(schema);
+    if (!status)
+      return status;
+    output = std::move(schema);
     return WVKernelStatus::ok();
   }
 
@@ -1420,48 +1450,38 @@ public:
     auto status = observationSchema(observer, schema);
     if (!status)
       return status;
-    std::vector<WVObserverOutputVariableSpecification> variables;
-    status = specifications(observer, variables);
-    if (!status)
-      return status;
     WVObservationBatch batch;
     batch.schemaIdentifier = schema.identifier;
     batch.schemaVersion = schema.version;
     batch.kind = WVObservationBatchKind::event;
-    std::size_t resolvedVariableIndex = 0;
-    for (const auto &variable : variables) {
-      if (variable.cadence == WVObserverOutputCadence::initialOnly)
-        {
-          ++resolvedVariableIndex;
-          continue;
-        }
-      WVObserverOutputValueView view;
-      status = value(observer, variable, view);
-      if (!status)
-        return status;
-      if (view.valueType == WVOutputValueType::complex64)
-        batch.values.push_back(WVObservationValue::borrowComplex(
-            variable.identifier, variable.dimensions, view.complexData));
-      else
-        batch.values.push_back(WVObservationValue::borrowReal(
-            variable.identifier, variable.dimensions, view.realData));
-      batch.values.back().resolvedVariableIndex = resolvedVariableIndex;
-      ++resolvedVariableIndex;
+    for (std::size_t variableIndex = 0;
+         variableIndex < schema.variables.size(); ++variableIndex) {
+      const auto &variable = schema.variables[variableIndex];
+      std::vector<std::size_t> variableExtents;
+      variableExtents.reserve(variable.dimensionIdentifiers.size());
+      for (const auto &dimensionIdentifier : variable.dimensionIdentifiers) {
+        const auto axis = std::find_if(
+            schema.axes.begin(), schema.axes.end(), [&](const auto &candidate) {
+              return candidate.identifier == dimensionIdentifier;
+            });
+        if (axis == schema.axes.end())
+          return {WVKernelStatusCode::invalidConfiguration,
+                  "Zero sample source has an unresolved observation axis."};
+        variableExtents.push_back(axis->extent);
+      }
+      std::size_t count = 1;
+      for (const auto extent : variableExtents)
+        count *= extent;
+      auto &storage = values_[variable.identifier];
+      storage.assign(count, 0.0);
+      batch.values.push_back(WVObservationValue::borrowReal(
+          variable.identifier, std::move(variableExtents), storage.data()));
+      batch.values.back().resolvedVariableIndex = variableIndex;
     }
+    status = validateObservationBatch(schema, batch);
+    if (!status)
+      return status;
     output = std::move(batch);
-    return WVKernelStatus::ok();
-  }
-
-  WVKernelStatus value(const WVObserverRecord &,
-                       const WVObserverOutputVariableSpecification &variable,
-                       WVObserverOutputValueView &output) override {
-    std::size_t count = 1;
-    for (const auto dimension : variable.dimensions)
-      count *= dimension;
-    auto &storage = values_[variable.identifier];
-    storage.assign(count, 0.0);
-    output = {WVOutputValueType::real64, storage.data(), nullptr,
-              storage.size()};
     return WVKernelStatus::ok();
   }
 
@@ -3152,7 +3172,7 @@ void testVariableObservationBatches() {
                   "synthetic-variable-observation" &&
               inspection.observationSchemas[0].schema.axes.size() == 3 &&
               inspection.observationSchemas[0].schema.variables.size() == 11,
-          "generic graph reader did not reconstruct the provisional schema");
+          "generic graph reader did not reconstruct the portable schema");
   std::size_t prematureObserverConstructions = 0;
   WVExtensionCatalogBuilder driftBuilder;
   for (auto registration : modelOutputCatalog()->observers().registrations()) {

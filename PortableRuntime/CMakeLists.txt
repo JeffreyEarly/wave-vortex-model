@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(WaveVortexPortableRuntime VERSION 0.1.0 LANGUAGES CXX)
+project(WaveVortexPortableRuntime VERSION 1.0.0 LANGUAGES CXX)
 
 include(CTest)
 option(WV_RUNTIME_ENABLE_NATIVE_FFTW "Build wave-vortex-run with the pinned native FFTW adapter" OFF)
@@ -36,6 +36,7 @@ add_library(WaveVortexPortableRuntime STATIC
     src/WVRungeKutta.cpp
     src/WVOutputOrchestration.cpp
     src/WVObserverAdapter.cpp
+    src/WVLegacyObserverCompatibility.hpp
     src/WVObserverContracts.cpp
     src/WVObserverSampleSource.cpp
     src/WVFieldEvaluationService.cpp
@@ -46,6 +47,7 @@ add_library(WaveVortexPortableRuntime STATIC
     src/WVLegacyObservationNetCDFAdapter.cpp
     src/WVModelOutputNetCDFWriter.cpp
     src/WVModelOutputConfiguration.cpp
+    src/WVModelInternalAccess.hpp
     src/WVModel.cpp
 )
 add_library(WaveVortex::PortableRuntime ALIAS WaveVortexPortableRuntime)
@@ -70,6 +72,7 @@ add_library(WaveVortex::Runner ALIAS WaveVortexRunner)
 target_compile_features(WaveVortexRunner PUBLIC cxx_std_17)
 target_include_directories(WaveVortexRunner PRIVATE
     app
+    src
     third_party
 )
 target_link_libraries(WaveVortexRunner PUBLIC WaveVortex::PortableRuntime PRIVATE WaveVortex::ReferenceFFT)

@@ -86,6 +86,44 @@ if(NOT local_output_driver EQUAL -1)
         "WVModel destroys retry state by constructing a call-local output driver.")
 endif()
 
+file(READ "${WV_REPOSITORY_ROOT}/PortableRuntime/include/WaveVortexRuntime/WVModel.hpp" model_header)
+foreach(token "internalIntegrationSystem" "internalIntegrator")
+    string(FIND "${model_header}" "${token}" public_internal_service)
+    if(NOT public_internal_service EQUAL -1)
+        message(FATAL_ERROR
+            "WVModel exposes obsolete provisional internal service '${token}'.")
+    endif()
+endforeach()
+
+file(READ "${WV_REPOSITORY_ROOT}/PortableRuntime/include/WaveVortexRuntime/WVModelOutputNetCDF.hpp" output_source_header)
+foreach(token
+        "WVOutputValueType"
+        "WVObserverOutputCadence"
+        "WVObserverOutputAttribute"
+        "WVObserverOutputVariableSpecification"
+        "WVObserverOutputValueView"
+        "specifications(")
+    string(FIND "${output_source_header}" "${token}" obsolete_source_adapter)
+    if(NOT obsolete_source_adapter EQUAL -1)
+        message(FATAL_ERROR
+            "WVObserverSampleSource exposes obsolete fixed-shape adapter '${token}'.")
+    endif()
+endforeach()
+
+file(READ "${WV_REPOSITORY_ROOT}/PortableRuntime/include/WaveVortexRuntime/WVExtensionCatalog.hpp" extension_catalog_header)
+foreach(token
+        "WVLegacyObserverOperationBinder"
+        "WVLegacyObserverOperationResolver"
+        "WVLegacyObserverPersistenceMetadata"
+        "legacyOperationResolver"
+        "legacyPersistence")
+    string(FIND "${extension_catalog_header}" "${token}" public_legacy_seam)
+    if(NOT public_legacy_seam EQUAL -1)
+        message(FATAL_ERROR
+            "The extension catalog exposes obsolete provisional legacy seam '${token}'.")
+    endif()
+endforeach()
+
 file(READ "${WV_REPOSITORY_ROOT}/PortableRuntime/src/WVModelOutputConfiguration.cpp" output_compiler)
 string(FIND "${output_compiler}" "resolveOutputPlan" schema_preflight)
 string(FIND "${output_compiler}" "WVPortableObserverDescriptor::create" observer_construction)

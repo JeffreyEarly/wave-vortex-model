@@ -96,9 +96,12 @@ void verifyCodec() {
   require(static_cast<bool>(encodePortableTypedRecord(decoded, roundTrip)) &&
               roundTrip == bytes,
           "typed-record codec is not deterministic");
+  const auto preserved = decoded;
   bytes.pop_back();
   require(!decodePortableTypedRecord(bytes, decoded),
           "truncated typed-record encoding was accepted");
+  require(samePortableTypedRecordValue(preserved, decoded),
+          "failed typed-record decoding changed the output value");
 }
 
 void verifyEmptyNumericCodec() {

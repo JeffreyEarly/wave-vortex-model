@@ -1,5 +1,6 @@
 #include "WaveVortexRuntime/WVModel.hpp"
 #include "WaveVortexRuntime/WVForcingContracts.hpp"
+#include "WVModelInternalAccess.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -669,12 +670,13 @@ WVModelMetrics WVModel::metrics(const WVModelState *state) const noexcept {
 }
 
 WVConstantStratificationIntegrationSystem &
-WVModel::internalIntegrationSystem() noexcept {
-  return *impl_->system;
+detail::WVModelInternalAccess::integrationSystem(WVModel &model) noexcept {
+  return *model.impl_->system;
 }
 
-WVTimeIntegrator &WVModel::internalIntegrator() noexcept {
-  return *impl_->integrator;
+WVTimeIntegrator &
+detail::WVModelInternalAccess::integrator(WVModel &model) noexcept {
+  return *model.impl_->integrator;
 }
 
 } // namespace wavevortex::runtime

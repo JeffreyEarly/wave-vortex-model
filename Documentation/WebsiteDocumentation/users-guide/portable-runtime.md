@@ -27,6 +27,8 @@ Its qualified built-in observer records are `WVCoefficients`, `WVEulerianFields`
 
 The tested interoperability boundary includes linear and nonlinear dynamics, the frozen forcing types listed above in their persisted execution order, fixed RK4 and adaptive RK3(2), evenly spaced output groups, shared observer identities, particle and tracer state, and in-place append progress. Other transform families, custom forcing or observer subclasses, two-dimensional tracers, and newly configured multi-file graphs are rejected before execution. There is no silent fallback to a reduced checkpoint or MATLAB implementation.
 
+The stabilized C++ boundary is `wave-vortex-portable-source-api-v1`, version 1.0. It supports statically linked extensions and reusable-runner applications built from one explicitly selected WaveVortexModel checkout. Change the checkout only as a deliberate dependency update, then recompile the runtime, every extension, and the runner together. This is source compatibility, not a binary plug-in ABI: there is no dynamic discovery, separately loadable extension, cross-build binary compatibility, or distributed runtime binary. Scientific and persisted pair, schedule, observation-schema, run-request, and kernel versions are independent and must each match exactly.
+
 ## Build from source
 
 On Apple silicon, run:
@@ -45,6 +47,8 @@ cmake --build build/portable --parallel
 ctest --test-dir build/portable --output-on-failure
 ```
 
+The reference runtime and source-linked applications are qualified on Ubuntu with GCC or Clang and on macOS with AppleClang. The optimized FFTW runner above is limited to Apple silicon. WaveVortexModel does not currently compile under MSVC, so Windows source-linked runtime applications are unsupported.
+
 ## Run a MATLAB-authored model bundle
 
 The portable boundary intentionally separates scientific state from execution choices:
@@ -60,7 +64,13 @@ wave-vortex-run --request portable-run-request-v1.json
 
 Relative paths are interpreted relative to the JSON file. `create` and `replace` require a complete destination map and cannot alias a source file. `append` may use the existing destinations with an empty map, or it may provide a complete map to an existing compatible set. The runner rejects unknown JSON fields, incomplete sibling sets, unsupported paired implementations, incompatible graphs, and invalid destinations before constructing the FFT provider, allocating model state, advancing integration, or mutating output.
 
-The request describes execution, not another model. It cannot change forcing, observers, groups, schedules, or state. A future MATLAB API will generate this request automatically; the v1 schema is committed at `PortableRuntime/contracts/wave-vortex-run-request-v1.schema.json`.
+The request describes execution, not another model. It cannot change forcing, observers, groups, schedules, or state. Copy the committed example or use a package-specific MATLAB authoring helper; AlongTrackSimulator's `authorAlongTrackPortableRunBundle` is one external example. The exact v1 schema is committed at `PortableRuntime/contracts/wave-vortex-run-request-v1.schema.json`.
+
+## Source-linked extensions
+
+An application owns its extension catalog. It adds WaveVortexModel's built-ins, adds every source-linked observer, schedule, and forcing before freezing, freezes once, and passes the immutable shared catalog to `runWaveVortex()`. Runtime owners retain that catalog for as long as resolved implementations depend on it, so the mutable builder and the caller's original shared pointer can be destroyed. Independent catalogs can coexist and can bind the same source identity differently without process-global state.
+
+The completed [AlongTrackSimulator ATS #4 integration](https://github.com/satmapkit/AlongTrackSimulator/commit/ba57981f336ad5bbbc0907dcd74fcd4fcd137708) is the real external-consumer baseline. Final source API qualification rebuilds its extended runner against the explicitly selected WaveVortexModel checkout and runs a MATLAB-authored bundle that combines `WVAlongTrackSchedule` and `WVAlongTrackObservingSystem` with built-in `WVBottomFrictionLinear`. The base runner rejects the external pair during preflight, while the extended runner accepts the same bundle. Qualification covers repeating and nonrepeating/geodetic passes, fixed and adaptive integration, exact and dense output, create/replace/append, restart and continuation, retry, source immutability, and MATLAB parity without adding AlongTrack-specific runtime dispatch.
 
 ## Legacy run and restart
 
@@ -107,3 +117,5 @@ model = WVModel.modelFromFile("saved-model.nc");
 The mandatory compatibility test performs this MATLAB-to-standalone-to-MATLAB round trip and compares the graph, state, schedules, output ordinals, particles, and tracer. Future `WVModel` features enter the standalone runtime by extending these shared graph contracts rather than bypassing them.
 
 The command-line program is intentionally small. Use MATLAB's `WVModel` to author initial conditions, forcing, observing systems, and output graphs; use the request only to execute a supported portable bundle.
+
+Arbitrary MATLAB subclass execution, real state-triggered schedules, multiple model-state samples within one occurrence, dynamic or binary plug-ins, distributed compiled products, and Windows/MSVC source-linked execution are outside the supported contract. Unsupported identities, versions, graphs, and platforms fail explicitly rather than falling back to MATLAB.

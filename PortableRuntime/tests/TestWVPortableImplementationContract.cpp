@@ -21,6 +21,10 @@ WVPortableImplementationIdentity identity(std::string type,
 }
 
 void verifyContractIdentity() {
+  static_assert(WVPortableRuntimeSourceAPIMajorVersion == 1);
+  static_assert(WVPortableRuntimeSourceAPIMinorVersion == 0);
+  static_assert(WVPortableRuntimeSourceAPIIdentifier ==
+                "wave-vortex-portable-source-api-v1");
   static_assert(WVPortablePairContractVersion == 1);
   static_assert(WVPortablePairContractIdentifier ==
                 "wave-vortex-portable-pair-v1");

@@ -5,6 +5,7 @@
 #include "WaveVortexRuntime/WVModelOutputNetCDF.hpp"
 #include "WaveVortexRuntime/WVObserverOutputEvaluationService.hpp"
 #include "WaveVortexRuntime/WVRunner.hpp"
+#include "WVModelInternalAccess.hpp"
 #include "WVRunRequest.hpp"
 #ifndef WV_RUNTIME_HAS_DENSE_OUTPUT
 #define WV_RUNTIME_HAS_DENSE_OUTPUT 1
@@ -810,8 +811,9 @@ int wavevortex::runtime::runWaveVortex(
         return static_cast<int>(ExitCode::provider);
     }
     auto &checkpoint = modelState.checkpoint();
-    auto &integrationSystem = model.internalIntegrationSystem();
-    auto &integrator = model.internalIntegrator();
+    auto &integrationSystem =
+        detail::WVModelInternalAccess::integrationSystem(model);
+    auto &integrator = detail::WVModelInternalAccess::integrator(model);
 #if !WV_RUNTIME_HAS_DENSE_OUTPUT
     if (options.benchmarkDenseOutputsPerStep != 0) {
         emit(failureJSON(ExitCode::usage,"arguments","This archived baseline does not implement dense output."),options.report,std::cerr);

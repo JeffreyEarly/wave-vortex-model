@@ -1,6 +1,7 @@
 #include "mex.h"
 
 #include "WVNativeFFTWEngine.hpp"
+#include "WVModelInternalAccess.hpp"
 #include "WaveVortexRuntime/WVExtensionCatalog.hpp"
 #include "WaveVortexRuntime/WVModel.hpp"
 #include "WaveVortexKernel/WVTransformConstantStratificationKernel.hpp"
@@ -47,7 +48,7 @@ WVTransformConstantStratificationKernel& kernel(const mxArray* value) {
     const auto handle = scalarHandle(value);
     const auto iterator = models.find(handle);
     if (iterator == models.end()) fail("WaveVortexModel:CompiledKernelHandle","Kernel handle is invalid or deleted.");
-    return iterator->second->internalIntegrationSystem().kernel();
+    return detail::WVModelInternalAccess::integrationSystem(*iterator->second).kernel();
 }
 
 WVModel& model(const mxArray* value) {

@@ -42,9 +42,6 @@ public:
          std::unique_ptr<WVObserverOutputEvaluationService> &service,
          WVFieldEvaluationService *borrowedFieldEvaluationService = nullptr);
 
-  WVKernelStatus specifications(
-      const WVObserverRecord &observer,
-      std::vector<WVObserverOutputVariableSpecification> &output) override;
   WVKernelStatus observationSchema(
       const WVObserverRecord &observer,
       WVObservationSchema &output) override;
@@ -66,10 +63,6 @@ public:
   void complete(const WVOutputEvent &event) noexcept override;
   std::size_t occurrenceWorkspaceRetainedBytes() const noexcept override;
   std::size_t occurrenceWorkspaceLiveBytes() const noexcept override;
-  WVKernelStatus value(
-      const WVObserverRecord &observer,
-      const WVObserverOutputVariableSpecification &variable,
-      WVObserverOutputValueView &output) override;
 
   const WVObserverOutputEvaluationMetrics &metrics() const noexcept {
     return metrics_;

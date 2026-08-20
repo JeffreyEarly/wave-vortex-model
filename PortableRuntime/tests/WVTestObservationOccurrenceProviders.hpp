@@ -831,7 +831,7 @@ WVKernelStatus addProvider(WVExtensionCatalogBuilder &builder) {
            return allocationFailure();
          }
        },
-       {}, {}, {},
+       {},
        [](const WVObserverRecord &observer,
           const WVObserverOutputPlanningContext &context,
           WVObserverOutputPlan &plan) {

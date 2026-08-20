@@ -8,51 +8,9 @@
 #include <cstdint>
 #include <memory>
 #include <string>
-#include <utility>
 #include <vector>
 
 namespace wavevortex::runtime {
-
-enum class WVOutputValueType : std::uint8_t { real64, complex64 };
-enum class WVObserverOutputCadence : std::uint8_t { initialOnly, timeSeries };
-
-struct WVObserverOutputAttribute {
-  std::string name;
-  std::string value;
-};
-
-// One derived observation variable declared before any file is created.
-// Dimensions use MATLAB's logical order; the NetCDF adapter reverses them.
-struct WVObserverOutputVariableSpecification {
-  WVObserverOutputVariableSpecification() = default;
-  WVObserverOutputVariableSpecification(
-      std::string identifierValue, std::string nameValue,
-      WVOutputValueType valueTypeValue,
-      std::vector<std::string> dimensionNamesValue,
-      std::vector<std::size_t> dimensionsValue, std::string unitsValue,
-      std::string longNameValue)
-      : identifier(std::move(identifierValue)), name(std::move(nameValue)),
-        valueType(valueTypeValue),
-        dimensionNames(std::move(dimensionNamesValue)),
-        dimensions(std::move(dimensionsValue)), units(std::move(unitsValue)),
-        longName(std::move(longNameValue)) {}
-  std::string identifier;
-  std::string name;
-  WVOutputValueType valueType = WVOutputValueType::real64;
-  std::vector<std::string> dimensionNames;
-  std::vector<std::size_t> dimensions;
-  std::string units;
-  std::string longName;
-  WVObserverOutputCadence cadence = WVObserverOutputCadence::timeSeries;
-  std::vector<WVObserverOutputAttribute> attributes;
-};
-
-struct WVObserverOutputValueView {
-  WVOutputValueType valueType = WVOutputValueType::real64;
-  const double *realData = nullptr;
-  const WVComplex64 *complexData = nullptr;
-  std::size_t elementCount = 0;
-};
 
 // Destination-independent identity of one prepared observer occurrence.
 // Global event ordinals, preparation/discovery order, and file/group route
@@ -97,16 +55,14 @@ bool samePreparedObservationOccurrenceIdentity(
     const WVObservationOccurrenceIdentity &left,
     const WVObservationOccurrenceIdentity &right) noexcept;
 
-// Observer evaluation remains independent of NetCDF. Implementations added by
-// later observer issues may evaluate all coincident routes once in prepare().
+// Stable source-linked schema/batch boundary. Observer evaluation remains
+// independent of NetCDF and may evaluate all coincident routes once in
+// prepare().
 class WVObserverSampleSource {
 public:
   virtual ~WVObserverSampleSource() = default;
-  // Complete provisional schema/batch boundary. The default implementation
-  // adapts the fixed real/complex specification/value API below so existing
-  // source-linked providers retain their exact schema.
   virtual WVKernelStatus observationSchema(
-      const WVObserverRecord &observer, WVObservationSchema &output);
+      const WVObserverRecord &observer, WVObservationSchema &output) = 0;
   virtual WVKernelStatus initialObservationBatch(
       const WVObserverRecord &observer, WVObservationBatch &output);
   virtual WVKernelStatus preparedOccurrenceIdentity(
@@ -116,10 +72,6 @@ public:
       const WVObservationOccurrenceIdentity &identity,
       const WVObserverRecord &observer, WVObservationBatch &output) = 0;
 
-  // Legacy fixed-shape adapter retained during the provisional source API.
-  virtual WVKernelStatus specifications(
-      const WVObserverRecord &observer,
-      std::vector<WVObserverOutputVariableSpecification> &output);
   virtual WVKernelStatus preflight(const WVOutputPlan &) {
     return WVKernelStatus::ok();
   }
@@ -137,10 +89,6 @@ public:
   virtual std::size_t occurrenceWorkspaceLiveBytes() const noexcept {
     return 0;
   }
-  virtual WVKernelStatus
-  value(const WVObserverRecord &observer,
-        const WVObserverOutputVariableSpecification &variable,
-        WVObserverOutputValueView &output);
 };
 
 struct WVModelOutputNetCDFConfiguration {

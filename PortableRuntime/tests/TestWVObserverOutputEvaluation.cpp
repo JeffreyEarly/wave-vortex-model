@@ -288,14 +288,43 @@ WVPortableObserverDescriptor descriptor() {
   return result;
 }
 
-const WVObserverOutputVariableSpecification &
-find(const std::vector<WVObserverOutputVariableSpecification> &values,
-     const std::string &identifier) {
+const WVObservationVariable &findVariable(const WVObservationSchema &schema,
+                                          const std::string &name) {
+  const auto found = std::find_if(
+      schema.variables.begin(), schema.variables.end(),
+      [&](const auto &variable) { return variable.name == name; });
+  require(found != schema.variables.end(), "missing schema variable " + name);
+  return *found;
+}
+
+std::vector<std::size_t>
+variableExtents(const WVObservationSchema &schema,
+                const WVObservationVariable &variable) {
+  std::vector<std::size_t> extents;
+  extents.reserve(variable.dimensionIdentifiers.size());
+  for (const auto &identifier : variable.dimensionIdentifiers) {
+    const auto axis = std::find_if(
+        schema.axes.begin(), schema.axes.end(), [&](const auto &candidate) {
+          return candidate.identifier == identifier;
+        });
+    require(axis != schema.axes.end(), "missing schema axis " + identifier);
+    extents.push_back(axis->extent);
+  }
+  return extents;
+}
+
+const WVObservationValue &findValue(const WVObservationSchema &schema,
+                                    const WVObservationBatch &batch,
+                                    const WVObservationVariable &variable) {
+  const auto variableIndex =
+      static_cast<std::size_t>(&variable - schema.variables.data());
   const auto found =
-      std::find_if(values.begin(), values.end(), [&](const auto &value) {
-        return value.identifier == identifier;
-      });
-  require(found != values.end(), "missing specification " + identifier);
+      std::find_if(batch.values.begin(), batch.values.end(),
+                   [&](const auto &value) {
+                     return value.resolvedVariableIndex == variableIndex;
+                   });
+  require(found != batch.values.end(),
+          "missing batch value " + variable.identifier);
   return *found;
 }
 
@@ -343,32 +372,73 @@ void testService(bool linear) {
   require(service->metrics().sharedFieldReuseCount == 1,
           "shared full-grid field was not recorded");
 
-  std::vector<WVObserverOutputVariableSpecification> specifications;
-  status = service->specifications(observers.observers()[1], specifications);
-  require(static_cast<bool>(status), "specification query failed");
-  require(find(specifications, "Ap").valueType == WVOutputValueType::complex64,
+  WVObservationSchema fieldSchema;
+  status =
+      service->observationSchema(observers.observers()[1], fieldSchema);
+  require(static_cast<bool>(status), "field schema query failed");
+  const auto &coefficientVariable = findVariable(fieldSchema, "Ap");
+  const auto &psiVariable = findVariable(fieldSchema, "psi");
+  const auto &fieldVariable = findVariable(fieldSchema, "u");
+  require(coefficientVariable.scalarType ==
+              WVObservationScalarType::complex64,
           "coefficient type mismatch");
-  require(find(specifications, "Ap").cadence ==
-              (linear ? WVObserverOutputCadence::initialOnly
-                      : WVObserverOutputCadence::timeSeries),
-          "coefficient cadence mismatch");
-  require(find(specifications, "psi").cadence ==
-              (linear ? WVObserverOutputCadence::initialOnly
-                      : WVObserverOutputCadence::timeSeries),
-          "psi cadence mismatch");
-  require(find(specifications, "u").cadence ==
-              WVObserverOutputCadence::timeSeries,
-          "u must remain a time series");
+  require(coefficientVariable.layout ==
+              (linear ? WVObservationValueLayout::initialValue
+                      : WVObservationValueLayout::record),
+          "coefficient layout mismatch");
+  require(psiVariable.layout ==
+              (linear ? WVObservationValueLayout::initialValue
+                      : WVObservationValueLayout::record),
+          "psi layout mismatch");
+  require(fieldVariable.layout == WVObservationValueLayout::record,
+          "u must remain a record value");
+
+  WVObservationSchema mooringSchema;
+  status =
+      service->observationSchema(observers.observers()[3], mooringSchema);
+  require(static_cast<bool>(status), "mooring schema query failed");
+  const auto &mooringVariable = findVariable(mooringSchema, "central_u");
+  require(variableExtents(mooringSchema, mooringVariable) ==
+              std::vector<std::size_t>({config.Nz, 2}),
+          "mooring schema mismatch");
+
+  WVObservationSchema particleSchema;
+  status =
+      service->observationSchema(observers.observers()[4], particleSchema);
+  require(static_cast<bool>(status), "particle schema query failed");
+  const auto &particleVariable = findVariable(particleSchema, "drifters_u");
+  require(variableExtents(particleSchema, particleVariable) ==
+              std::vector<std::size_t>({2}) &&
+              particleVariable.attributes.size() == 3,
+          "particle tracked-field schema mismatch");
+
+  WVObservationSchema diagnosticSchema;
+  status =
+      service->observationSchema(observers.observers()[5], diagnosticSchema);
+  require(static_cast<bool>(status),
+          "point-diagnostic schema query failed");
+  const auto &diagnosticVariable =
+      findVariable(diagnosticSchema, "diagnostic_value");
+  require(variableExtents(diagnosticSchema, diagnosticVariable) ==
+              std::vector<std::size_t>({2}),
+          "point-diagnostic schema mismatch");
 
   auto owned = state(config);
   if (linear) {
     status = service->prepareInitial(owned.view());
     require(static_cast<bool>(status), "initial observer preparation failed");
-    WVObserverOutputValueView initialValue;
-    status = service->value(observers.observers()[1],
-                            find(specifications, "psi"), initialValue);
-    require(static_cast<bool>(status) && initialValue.realData != nullptr,
+    WVObservationBatch initialBatch;
+    status = service->initialObservationBatch(observers.observers()[1],
+                                              initialBatch);
+    require(static_cast<bool>(status), "initial observation batch failed");
+    const auto &initialPsi =
+        findValue(fieldSchema, initialBatch, psiVariable);
+    require(initialPsi.real64Data() != nullptr,
             "initial-only field value failed");
+    const auto &initialCoefficient =
+        findValue(fieldSchema, initialBatch, coefficientVariable);
+    require(initialCoefficient.complex64Data() == owned.Ap.data(),
+            "initial coefficient must remain a borrowed view");
   }
   WVOutputEvent event;
   event.eventOrdinal = 2;
@@ -387,57 +457,89 @@ void testService(bool linear) {
       {&yLayout, particleY.data(), nullptr}}};
   event.state.additionalBlocks = particleBlocks.data();
   event.state.additionalBlockCount = particleBlocks.size();
+  WVOutputSchedulePayload occurrencePayload;
+  status = occurrencePayload.reset(emptyOutputSchedulePayloadSchema());
+  require(static_cast<bool>(status), "empty occurrence payload setup failed");
+  WVPortableTypedRecord occurrenceCursor;
+  WVOutputGroupRecord activeScheduleRecord;
+  activeScheduleRecord.identifier = "active-observer-output";
+  activeScheduleRecord.observerIdentifiers = {
+      observers.observers()[1].identifier, observers.observers()[3].identifier,
+      observers.observers()[4].identifier, observers.observers()[5].identifier};
+  const std::array<WVOutputObserverView, 4> activeObservers{{
+      {1, &observers.observers()[1],
+       observers.resolvedObserver(observers.observers()[1])},
+      {3, &observers.observers()[3],
+       observers.resolvedObserver(observers.observers()[3])},
+      {4, &observers.observers()[4],
+       observers.resolvedObserver(observers.observers()[4])},
+      {5, &observers.observers()[5],
+       observers.resolvedObserver(observers.observers()[5])}}};
+  WVOutputRouteView activeRoute;
+  activeRoute.observers = activeObservers.data();
+  activeRoute.observerCount = activeObservers.size();
+  activeRoute.scheduleOrdinal = 2;
+  activeRoute.semanticScheduleOrdinal = 0;
+  activeRoute.proposedScheduleCursor = &occurrenceCursor;
+  activeRoute.schedulePayloadSchema = &emptyOutputSchedulePayloadSchema();
+  activeRoute.schedulePayload = &occurrencePayload;
+  activeRoute.scheduleCursorIdentity = 3;
+  activeRoute.semanticScheduleRecord = &activeScheduleRecord;
+  event.routes = &activeRoute;
+  event.routeCount = 1;
   status = service->prepare(event);
   require(static_cast<bool>(status), "observer preparation failed");
   require(service->metrics().fieldEvaluationCount == (linear ? 3U : 2U),
           "initial and time-series plans were not evaluated independently");
 
-  WVObserverOutputValueView value;
-  status = service->value(observers.observers()[1], find(specifications, "Ap"),
-                          value);
-  require(static_cast<bool>(status), "coefficient value failed");
-  require(value.complexData == owned.Ap.data(),
-          "coefficient output must remain a borrowed view");
-  status = service->value(observers.observers()[1], find(specifications, "u"),
-                          value);
-  require(static_cast<bool>(status), "field value failed");
-  require(value.realData != nullptr &&
-              value.elementCount == config.Nx * config.Ny * config.Nz,
+  const auto eventBatch = [&](std::size_t routedObserverIndex,
+                              WVObservationBatch &batch) {
+    WVObservationOccurrenceIdentity identity;
+    auto batchStatus = service->preparedOccurrenceIdentity(
+        activeRoute, activeObservers[routedObserverIndex], identity);
+    require(static_cast<bool>(batchStatus),
+            "prepared occurrence identity query failed");
+    batchStatus = service->observationBatch(
+        identity, *activeObservers[routedObserverIndex].record, batch);
+    require(static_cast<bool>(batchStatus), "event observation batch failed");
+  };
+
+  WVObservationBatch fieldsBatch;
+  eventBatch(0, fieldsBatch);
+  if (!linear) {
+    const auto &coefficientValue =
+        findValue(fieldSchema, fieldsBatch, coefficientVariable);
+    require(coefficientValue.complex64Data() == owned.Ap.data(),
+            "coefficient output must remain a borrowed view");
+  }
+  const auto &fieldValue = findValue(fieldSchema, fieldsBatch, fieldVariable);
+  require(fieldValue.real64Data() != nullptr &&
+              fieldValue.elementCount() == config.Nx * config.Ny * config.Nz,
           "Eulerian field shape mismatch");
 
-  status = service->specifications(observers.observers()[3], specifications);
-  require(static_cast<bool>(status), "mooring specification query failed");
-  require(find(specifications, "u").name == "central_u" &&
-              find(specifications, "u").dimensions ==
-                  std::vector<std::size_t>({config.Nz, 2}),
-          "mooring schema mismatch");
-  status = service->value(observers.observers()[3], find(specifications, "u"),
-                          value);
-  require(static_cast<bool>(status) && value.elementCount == config.Nz * 2,
+  WVObservationBatch mooringBatch;
+  eventBatch(1, mooringBatch);
+  const auto &mooringValue =
+      findValue(mooringSchema, mooringBatch, mooringVariable);
+  require(mooringValue.elementCount() == config.Nz * 2,
           "mooring value mismatch");
 
-  status = service->specifications(observers.observers()[4], specifications);
-  require(static_cast<bool>(status), "particle specification query failed");
-  const auto particleU = find(specifications, "u");
-  require(particleU.name == "drifters_u" &&
-              particleU.dimensions == std::vector<std::size_t>({2}) &&
-              particleU.attributes.size() == 3,
-          "particle tracked-field schema mismatch");
-  status = service->value(observers.observers()[4], particleU, value);
-  require(static_cast<bool>(status) && value.elementCount == 2 &&
-              std::isfinite(value.realData[0]) &&
-              std::isfinite(value.realData[1]),
+  WVObservationBatch particleBatch;
+  eventBatch(2, particleBatch);
+  const auto &particleValue =
+      findValue(particleSchema, particleBatch, particleVariable);
+  const auto *particleData = particleValue.real64Data();
+  require(particleValue.elementCount() == 2 && particleData != nullptr &&
+              std::isfinite(particleData[0]) &&
+              std::isfinite(particleData[1]),
           "particle tracked-field value mismatch");
 
-  status = service->specifications(observers.observers()[5], specifications);
-  require(static_cast<bool>(status),
-          "point-diagnostic specification query failed");
-  const auto diagnosticU = find(specifications, "u");
-  require(diagnosticU.name == "diagnostic_value" &&
-              diagnosticU.dimensions == std::vector<std::size_t>({2}),
-          "point-diagnostic schema mismatch");
-  status = service->value(observers.observers()[5], diagnosticU, value);
-  require(static_cast<bool>(status) && value.elementCount == 2,
+  WVObservationBatch diagnosticBatch;
+  eventBatch(3, diagnosticBatch);
+  const auto &diagnosticValue =
+      findValue(diagnosticSchema, diagnosticBatch, diagnosticVariable);
+  const auto *diagnosticData = diagnosticValue.real64Data();
+  require(diagnosticValue.elementCount() == 2 && diagnosticData != nullptr,
           "point-diagnostic value failed");
   WVFieldSamplingRequest sampling;
   sampling.kind = WVFieldSamplingKind::positions;
@@ -455,7 +557,8 @@ void testService(bool linear) {
   require(static_cast<bool>(status),
           "point-diagnostic reference evaluation failed");
   for (std::size_t index = 0; index < raw.size(); ++index)
-    require(std::abs(value.realData[index] - (2.5 * raw[index] - 1.25)) < 1e-12,
+    require(std::abs(diagnosticData[index] - (2.5 * raw[index] - 1.25)) <
+                1e-12,
             "point-diagnostic affine output changed");
   WVOutputObserverView routedObserver{
       1, &observers.observers()[1],

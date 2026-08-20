@@ -14,10 +14,10 @@ namespace wavevortex::runtime {
 // One policy applies transactionally to the complete multi-file graph.
 enum class WVModelOutputPolicy : std::uint8_t { create, replace, append };
 
-// Provisional, developer-facing configuration for one MATLAB-shaped evenly
-// spaced output group. This builder owns one canonical record only until
-// WVModelOutputConfiguration::build() resolves and consumes the graph.
-// Runtime scheduling remains owned by WVOutputPlan.
+// Stable source API v1 configuration for one MATLAB-shaped evenly spaced
+// output group. This builder owns one canonical record only until
+// WVModelOutputConfiguration::build() resolves and consumes the graph. Runtime
+// scheduling remains owned by WVOutputPlan.
 class WVModelOutputGroup final {
 public:
   WVModelOutputGroup() = default;
@@ -67,8 +67,8 @@ private:
   friend class WVModelOutputConfiguration;
 };
 
-// Provisional, developer-facing configuration for one MATLAB-shaped output
-// file. Group addresses remain stable while this builder is mutable.
+// Stable source API v1 configuration for one MATLAB-shaped output file. Group
+// addresses remain stable while this builder is mutable.
 class WVModelOutputFile final {
 public:
   WVModelOutputFile() = default;
@@ -117,9 +117,10 @@ private:
   friend class WVModelOutputConfiguration;
 };
 
-// Move-only compiled output configuration. The transient builders are not
-// retained. This object owns the authoritative shared descriptor, its plan,
-// graph-wide policy, source continuations, and destination progress.
+// Stable source API v1 move-only compiled output configuration. The transient
+// builders are not retained. This object owns the authoritative shared
+// descriptor, its frozen catalog, plan, graph-wide policy, source
+// continuations, and destination progress.
 class WVModelOutputConfiguration final {
 public:
   WVModelOutputConfiguration();

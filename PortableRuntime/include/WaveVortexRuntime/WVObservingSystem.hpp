@@ -41,9 +41,10 @@ struct WVObserverIntegrationBinder {
   std::function<WVKernelStatus(const WVObserverRecord &)> advectedScalar;
 };
 
-// Provisional source-linked implementation boundary for one MATLAB observing
-// system. Implementations are resolved once by exact MATLAB identity and
-// contract version. Calls occur once per observer, RHS stage, or output event;
+// Stable source API v1 boundary for one exact MATLAB identity/version observing
+// system. A factory returns an immutable shared implementation for one observer
+// record; the resolved descriptor and its runtime owners retain that shared
+// lifetime. Calls occur once per observer, RHS stage, or output event;
 // implementations must not introduce virtual dispatch inside element loops.
 class WVObservingSystem {
 public:

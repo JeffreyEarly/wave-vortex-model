@@ -147,9 +147,13 @@ struct WVOutputScheduleOccurrence {
   std::uint64_t cursorIdentity = 0;
 };
 
-// Provisional source-linked schedule boundary. Implementations are immutable
-// after construction. peek() is transactional: the caller owns and commits the
+// Stable source API v1 boundary for one exact identity/version schedule.
+// Implementations are immutable and retained by shared ownership after
+// construction. peek() is transactional: the caller owns and commits the
 // proposed cursor only after the corresponding output route is delivered.
+// Schedule identity/version, configuration, payload-schema identity/version,
+// and typed cursor are independent exact data contracts rather than
+// consequences of the C++ source API version.
 class WVOutputSchedule {
 public:
   virtual ~WVOutputSchedule() = default;

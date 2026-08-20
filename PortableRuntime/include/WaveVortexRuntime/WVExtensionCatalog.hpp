@@ -12,6 +12,10 @@
 
 namespace wavevortex::runtime {
 
+namespace detail {
+class WVObserverFactoryRegistrationAccess;
+}
+
 using WVObserverFactory = std::function<WVKernelStatus(
     const WVObserverRecord &, const WVPortableTypedRecord &,
     std::shared_ptr<const WVObservingSystem> &)>;
@@ -21,37 +25,17 @@ using WVObserverOutputPlanResolver = std::function<WVKernelStatus(
     const WVObserverRecord &, const WVObserverOutputPlanningContext &,
     WVObserverOutputPlan &)>;
 
-// Data-only compatibility actions for the five historical MATLAB observer
-// encodings. The catalog registration selects one coarse callback; generic
-// persistence code supplies the callbacks and never switches on class names.
-struct WVLegacyObserverOperationBinder {
-  std::function<WVKernelStatus()> fullField;
-  std::function<WVKernelStatus()> fixedVerticalProfiles;
-  std::function<WVKernelStatus()> fixedPositions;
-  std::function<WVKernelStatus()> movingPositions;
-  std::function<WVKernelStatus()> integratedState;
-};
-using WVLegacyObserverOperationResolver = std::function<WVKernelStatus(
-    const WVObserverRecord &, const WVLegacyObserverOperationBinder &)>;
-
-struct WVLegacyObserverPersistenceMetadata {
-  std::string fieldListAttribute;
-  std::vector<std::string> coefficientRestartFamilies;
-  std::string defaultIdentifier;
-  bool appendFieldsToDefaultIdentifier = false;
-};
-
 struct WVObserverFactoryRegistration {
+  // Stable source API v1 has exactly these five public constructor inputs:
+  // identity, version, factory, optional data-only configuration resolver, and
+  // optional data-only output-plan resolver. Legacy compatibility callbacks
+  // and persistence metadata are intentionally not extension inputs.
   WVObserverFactoryRegistration(
       std::string identity, std::uint32_t version, WVObserverFactory make,
       WVObserverConfigurationResolver resolve = {},
-      WVLegacyObserverOperationResolver resolveLegacy = {},
-      WVLegacyObserverPersistenceMetadata persistence = {},
       WVObserverOutputPlanResolver resolveOutputPlan = {})
       : typeIdentifier(std::move(identity)), contractVersion(version),
         factory(std::move(make)), configurationResolver(std::move(resolve)),
-        legacyOperationResolver(std::move(resolveLegacy)),
-        legacyPersistence(std::move(persistence)),
         outputPlanResolver(std::move(resolveOutputPlan)) {}
   std::string typeIdentifier;
   std::uint32_t contractVersion = WVPortablePairContractVersion;
@@ -60,11 +44,15 @@ struct WVObserverFactoryRegistration {
   // typed configuration from legacy record fields, but must not instantiate
   // runtime observer behavior.
   WVObserverConfigurationResolver configurationResolver;
-  WVLegacyObserverOperationResolver legacyOperationResolver;
-  WVLegacyObserverPersistenceMetadata legacyPersistence;
   // Data-only semantic preflight. This must derive the exact output plan
   // without constructing an observing-system implementation.
   WVObserverOutputPlanResolver outputPlanResolver;
+
+private:
+  friend class detail::WVObserverFactoryRegistrationAccess;
+  // Private ownership for built-in legacy-encoding compatibility. Extensions
+  // cannot set or depend on this implementation detail.
+  std::shared_ptr<const void> internalCompatibility_;
 };
 
 struct WVOutputScheduleFactoryRegistration {
@@ -164,6 +152,11 @@ private:
   WVForcingCatalog forcings_;
 };
 
+// The only mutable source API v1 registration boundary. Add all registrations
+// before freeze(); any rejected registration invalidates the builder. A
+// builder freezes exactly once into an immutable shared catalog. Runtime
+// owners retain that shared catalog, so the builder and caller's original
+// handle need not outlive a resolved model, output configuration, or runner.
 class WVExtensionCatalogBuilder final {
 public:
   WVKernelStatus

@@ -7,6 +7,11 @@
 
 namespace wavevortex::runtime {
 
+inline constexpr std::uint32_t WVPortableRuntimeSourceAPIMajorVersion = 1;
+inline constexpr std::uint32_t WVPortableRuntimeSourceAPIMinorVersion = 0;
+inline constexpr std::string_view WVPortableRuntimeSourceAPIIdentifier =
+    "wave-vortex-portable-source-api-v1";
+
 inline constexpr std::uint32_t WVPortablePairContractVersion = 1;
 inline constexpr std::string_view WVPortablePairContractIdentifier =
     "wave-vortex-portable-pair-v1";

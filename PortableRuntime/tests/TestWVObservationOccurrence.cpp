@@ -264,7 +264,7 @@ std::shared_ptr<const WVExtensionCatalog> extensionCatalog() {
            result = std::make_shared<MismatchedCoordinateObservation>();
            return WVKernelStatus::ok();
          },
-         {}, {}, {},
+         {},
          [](const WVObserverRecord &observer,
             const WVObserverOutputPlanningContext &context,
             WVObserverOutputPlan &plan) {
@@ -281,7 +281,7 @@ std::shared_ptr<const WVExtensionCatalog> extensionCatalog() {
            result = std::make_shared<AffineOccurrenceFieldObservation>();
            return WVKernelStatus::ok();
          },
-         {}, {}, {}, affineOccurrenceFieldOutputPlan});
+         {}, affineOccurrenceFieldOutputPlan});
   std::shared_ptr<const WVExtensionCatalog> result;
   if (status)
     status = builder.freeze(result);

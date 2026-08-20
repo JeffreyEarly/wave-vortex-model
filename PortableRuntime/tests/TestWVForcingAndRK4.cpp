@@ -11,6 +11,7 @@
 #include <iostream>
 #include <limits>
 #include <memory>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -281,8 +282,10 @@ void testRK4DeterminismRestartAndFailure() {
     auto secondState = second.integrationView();
     WVFixedStepRK4 firstIntegrator(*firstSystem);
     WVFixedStepRK4 secondIntegrator(*secondSystem);
-    auto status = firstIntegrator.advanceToTime(firstState,0.7,0.1);
-    require(static_cast<bool>(status),"first deterministic integration failed");
+    auto status = firstIntegrator.advanceToTime(firstState,0.6,0.1);
+    require(static_cast<bool>(status),"first deterministic prefix integration failed");
+    status = firstIntegrator.advanceToTime(firstState,0.7,0.1);
+    require(static_cast<bool>(status),"first deterministic continuation failed");
     status = secondIntegrator.advanceToTime(secondState,0.6,0.1);
     require(static_cast<bool>(status),"restart prefix integration failed");
     WVFixedStepRK4 restartedIntegrator(*secondSystem);
@@ -290,7 +293,18 @@ void testRK4DeterminismRestartAndFailure() {
     require(static_cast<bool>(status),"restart preparation failed");
     status = restartedIntegrator.advanceToTime(secondState,0.7,0.1);
     require(static_cast<bool>(status),"restart continuation failed");
-    require(firstState.waveVortex.t == secondState.waveVortex.t && exactlyEqual(first.values,second.values),"restart continuation is not bitwise equivalent to uninterrupted fixed-step RK4");
+    if (firstState.waveVortex.t != secondState.waveVortex.t ||
+        !exactlyEqual(first.values, second.values)) {
+        std::ostringstream message;
+        message.precision(17);
+        message << "restart continuation is not bitwise equivalent to "
+                   "uninterrupted fixed-step RK4; first time="
+                << firstState.waveVortex.t
+                << ", restarted time=" << secondState.waveVortex.t
+                << ", maximum coefficient difference="
+                << maximumDifference(first.values, second.values);
+        throw std::runtime_error(message.str());
+    }
 
     auto counter = std::make_shared<FailureCounter>();
     counter->failAt = 1;

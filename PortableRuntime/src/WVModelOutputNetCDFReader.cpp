@@ -618,7 +618,7 @@ WVCheckpointStatus readProvisionalObservationSchema(
     schemas.push_back({observerIdentifier, std::move(schema)});
   else if (!sameCompleteObservationSchema(existing->schema, schema))
     return failure(WVCheckpointStatusCode::schemaMismatch,
-                   "Shared provisional observation schemas conflict.", path);
+                   "Shared portable observation schemas conflict.", path);
   return WVCheckpointStatus::ok();
 }
 

@@ -13,6 +13,10 @@
 
 namespace wavevortex::runtime {
 
+namespace detail {
+class WVModelInternalAccess;
+}
+
 enum class WVModelIntegratorKind : std::uint8_t { fixedRK4, adaptiveRK23 };
 
 struct WVModelIntegratorConfiguration {
@@ -78,8 +82,8 @@ private:
   std::vector<WVAdditionalStateBlockConstView> constViews_;
 };
 
-// Thin provisional runtime façade over the existing numerical, forcing,
-// integration, observer, output, and persistence services.
+// Stable source-level façade over the numerical, forcing, integration,
+// observer, output, and persistence services.
 class WVModel final {
 public:
   WVModel();
@@ -165,14 +169,8 @@ public:
   const std::string &forcingScheduleIdentifier() const noexcept;
   WVModelMetrics metrics(const WVModelState *state = nullptr) const noexcept;
 
-  // Internal services are exposed only to existing adapters while they are
-  // migrated onto the façade. Scientific users should use the operations
-  // above rather than depending on kernel or plan details.
-  WVConstantStratificationIntegrationSystem &internalIntegrationSystem()
-      noexcept;
-  WVTimeIntegrator &internalIntegrator() noexcept;
-
 private:
+  friend class detail::WVModelInternalAccess;
   class Impl;
   std::unique_ptr<Impl> impl_;
 };

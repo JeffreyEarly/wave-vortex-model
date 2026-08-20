@@ -235,7 +235,7 @@ WVKernelStatus encodePortableTypedRecord(const WVPortableTypedRecord &record,
             if constexpr (std::is_same_v<Element, std::string>) {
               for (const auto &item : values)
                 appendString(candidate, item);
-            } else {
+            } else if (!values.empty()) {
               const auto *source =
                   reinterpret_cast<const std::uint8_t *>(values.data());
               candidate.insert(candidate.end(), source,
@@ -312,15 +312,18 @@ decodePortableTypedRecord(const std::vector<std::uint8_t> &bytes,
                   "Portable typed-record numeric value is truncated."};
         if (type == 0) {
           std::vector<std::uint8_t> values(count);
-          std::memcpy(values.data(), bytes.data() + offset, count * width);
+          if (count != 0)
+            std::memcpy(values.data(), bytes.data() + offset, count * width);
           value.storage = std::move(values);
         } else if (type == 1) {
           std::vector<std::int64_t> values(count);
-          std::memcpy(values.data(), bytes.data() + offset, count * width);
+          if (count != 0)
+            std::memcpy(values.data(), bytes.data() + offset, count * width);
           value.storage = std::move(values);
         } else {
           std::vector<double> values(count);
-          std::memcpy(values.data(), bytes.data() + offset, count * width);
+          if (count != 0)
+            std::memcpy(values.data(), bytes.data() + offset, count * width);
           value.storage = std::move(values);
         }
         offset += static_cast<std::size_t>(count) * width;

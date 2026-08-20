@@ -1,6 +1,7 @@
 #include "WVObserverAdapter.hpp"
 #include "WaveVortexRuntime/WVExtensionCatalog.hpp"
 #include "WaveVortexRuntime/WVObserverOutputProvider.hpp"
+#include "WVLegacyObserverCompatibility.hpp"
 
 #include <algorithm>
 #include <array>
@@ -873,26 +874,32 @@ WVKernelStatus addBuiltInObserverFactories(
           return buildLegacyOutputPlan(identity, observer, execution,
                                        resolveOperation, context, plan);
         };
-    return builder.addObserverFactory(
-        {std::move(identity), WVPortablePairContractVersion,
-         [constructor](const WVObserverRecord &,
-                       const WVPortableTypedRecord &configuration,
-                       std::shared_ptr<const WVObservingSystem> &result) {
-           try {
-             result = constructor(configuration);
-             return WVKernelStatus::ok();
-           } catch (const std::bad_alloc &) {
-             return WVKernelStatus{WVKernelStatusCode::allocationFailure,
-                                   "Unable to construct an observer implementation."};
-           }
-         },
-         [populate](const WVObserverRecord &observer,
-                    WVPortableTypedRecord &configuration) {
-           return resolveLegacyConfiguration(observer, populate,
-                                             configuration);
-         },
-         std::move(resolveOperation), std::move(persistence),
-         std::move(resolveOutputPlan)});
+    WVObserverFactoryRegistration registration(
+        std::move(identity), WVPortablePairContractVersion,
+        [constructor](const WVObserverRecord &,
+                      const WVPortableTypedRecord &configuration,
+                      std::shared_ptr<const WVObservingSystem> &result) {
+          try {
+            result = constructor(configuration);
+            return WVKernelStatus::ok();
+          } catch (const std::bad_alloc &) {
+            return WVKernelStatus{WVKernelStatusCode::allocationFailure,
+                                  "Unable to construct an observer implementation."};
+          }
+        },
+        [populate](const WVObserverRecord &observer,
+                   WVPortableTypedRecord &configuration) {
+          return resolveLegacyConfiguration(observer, populate,
+                                            configuration);
+        },
+        std::move(resolveOutputPlan));
+    auto status =
+        WVObserverFactoryRegistrationAccess::attachLegacyCompatibility(
+            registration, std::move(resolveOperation),
+            std::move(persistence));
+    if (!status)
+      return status;
+    return builder.addObserverFactory(std::move(registration));
   };
   auto status = add("WVCoefficients", [](const auto &configuration) {
     return std::make_shared<WVCoefficientsImplementation>(configuration);

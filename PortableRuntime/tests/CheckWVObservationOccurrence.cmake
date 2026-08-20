@@ -157,7 +157,7 @@ string(FIND "${evaluator_source}"
     "WVKernelStatus WVObserverOutputEvaluationService::prepare("
     evaluator_prepare_begin)
 string(FIND "${evaluator_source}"
-    "WVKernelStatus WVObserverOutputEvaluationService::value("
+    "void WVObserverOutputEvaluationService::complete("
     evaluator_prepare_end)
 if(evaluator_prepare_begin EQUAL -1 OR evaluator_prepare_end EQUAL -1 OR
    evaluator_prepare_end LESS evaluator_prepare_begin)
