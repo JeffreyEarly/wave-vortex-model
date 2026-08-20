@@ -92,6 +92,10 @@ public:
       const WVObserverRecord &observer, const WVObserverOutputPlan &plan,
       const WVObserverOutputEvaluationContext &context,
       WVObservationBatchKind kind, WVObservationBatch &batch) const;
+  WVKernelStatus prepareOccurrence(
+      const WVObserverRecord &observer, const WVObserverOutputPlan &plan,
+      const WVObserverOccurrencePreparationContext &context,
+      WVObserverOccurrenceWorkspace &workspace) const;
   std::size_t persistentBytes() const noexcept;
 
 private:

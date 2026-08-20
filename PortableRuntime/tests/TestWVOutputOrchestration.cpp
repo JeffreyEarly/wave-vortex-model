@@ -113,6 +113,9 @@ public:
     return emptyCursorScheduleType;
   }
   std::uint32_t contractVersion() const noexcept override { return 1; }
+  const WVOutputSchedulePayloadSchema &payloadSchema() const noexcept override {
+    return emptyOutputSchedulePayloadSchema();
+  }
   WVKernelStatus
   validateCursor(const WVOutputScheduleCursor &cursor) const override {
     if (cursor.committedOrdinal == WVNoCommittedOutputOrdinal)
@@ -132,7 +135,14 @@ public:
       available = false;
       return WVKernelStatus::ok();
     }
-    occurrence = {lowerBound, 0, {0, {}}};
+    occurrence = {};
+    occurrence.scheduledTime = lowerBound;
+    occurrence.ordinal = 0;
+    occurrence.proposedCursor = {0, {}};
+    const auto status = occurrence.payload.reset(payloadSchema());
+    if (!status)
+      return status;
+    occurrence.cursorIdentity = 1;
     available = true;
     return WVKernelStatus::ok();
   }
@@ -315,6 +325,36 @@ public:
   std::size_t preflightAttempts = 0;
   std::size_t attempts = 0;
   std::vector<DeliveredRoute> delivered;
+};
+
+// Bounded test sink used to prove that driver storage is independent of the
+// number of delivered occurrences. It retains scalar diagnostics only.
+class CountingSink final : public WVOutputSink {
+public:
+  WVKernelStatus preflight(const WVOutputPlan &) override {
+    ++preflightAttempts;
+    return WVKernelStatus::ok();
+  }
+  WVKernelStatus deliver(const WVOutputEvent &event,
+                         const WVOutputRouteView &route,
+                         WVOutputDeliveryResult &result) override {
+    ++attempts;
+    lastEventOrdinal = event.eventOrdinal;
+    lastScheduleOrdinal = route.scheduleOrdinal;
+    if (driver != nullptr)
+      maximumDriverRetainedBytes =
+          std::max(maximumDriverRetainedBytes, driver->persistentBytes());
+    result.writeCount = route.observerCount;
+    result.writtenBytes = route.observerCount * sizeof(double);
+    return WVKernelStatus::ok();
+  }
+
+  WVOutputDriver *driver = nullptr;
+  std::size_t preflightAttempts = 0;
+  std::size_t attempts = 0;
+  std::size_t lastEventOrdinal = 0;
+  WVOutputScheduleOrdinal lastScheduleOrdinal = WVNoCommittedOutputOrdinal;
+  std::size_t maximumDriverRetainedBytes = 0;
 };
 
 class ReentrantPreflightSink final : public WVOutputSink {
@@ -517,6 +557,8 @@ void testFixedDeliveryAndExactMetrics(Context &context) {
           "fixed plan");
   RecordingSink sink;
   WVOutputDriver driver(rk4, plan);
+  require(driver.metrics().retainedStorageBytes == driver.persistentBytes(),
+          "new output-driver retained storage is exact");
   const auto status = driver.advanceToTime(fixture.state, 1.0, 0.2, sink);
   require(static_cast<bool>(status), "fixed scheduled delivery");
   const auto &metrics = driver.metrics();
@@ -536,13 +578,16 @@ void testFixedDeliveryAndExactMetrics(Context &context) {
               metrics.files[0].groups[1].committedDeliveryCount == 3 &&
               metrics.files[1].groups[0].committedDeliveryCount == 2,
           "per-file/group delivery metrics");
-  require(driver.records().size() == 10 &&
+  require(driver.records().size() == 2 &&
               std::all_of(driver.records().begin(), driver.records().end(),
                           [](const auto &record) {
                             return record.attempted && record.committed &&
                                    record.failure.empty();
-                          }),
-          "structured successful route records");
+                          }) &&
+              driver.records()[0].eventOrdinal == 6 &&
+              driver.records()[0].routeOrdinal == 8 &&
+              driver.records()[1].routeOrdinal == 9,
+          "bounded latest-event route records");
   require(metrics.interpolationBufferCapacityBytes > 0 &&
               metrics.interpolationBufferMaximumLiveBytes ==
                   metrics.interpolationBufferCapacityBytes &&
@@ -785,6 +830,20 @@ void testTerminationInterruptionAndLaterRouteFailure(Context &context) {
               !laterDriver.records()[1].committed &&
               laterDriver.records()[1].failure == "later route failed",
           "later coincident route failure records partial delivery");
+  const auto failedRouteOrdinal = laterDriver.records()[1].routeOrdinal;
+  laterSink.failAtAttempt = std::numeric_limits<std::size_t>::max();
+  laterSink.terminateAtAttempt = 3;
+  status =
+      laterDriver.advanceToTime(laterFailure.state, 1.0, 0.2, laterSink);
+  require(static_cast<bool>(status) &&
+              laterDriver.records().size() == 2 &&
+              laterDriver.records()[0].attemptCount == 1 &&
+              laterDriver.records()[1].routeOrdinal == failedRouteOrdinal &&
+              laterDriver.records()[1].committed &&
+              laterDriver.records()[1].attemptCount == 2 &&
+              laterDriver.records()[1].failureCount == 1 &&
+              laterDriver.records()[1].failure == "later route failed",
+          "bounded latest-event records preserve exact retry diagnostics");
 
   StateFixture interrupted(context.system.stateLayout());
   WVFixedStepRK4 interruptedIntegrator(context.system, {true});
@@ -816,21 +875,21 @@ void testTerminationInterruptionAndLaterRouteFailure(Context &context) {
   status = resumedDriver.advanceToTime(resumed.state, 1.0, 0.4, resumedSink);
   require(!status && resumed.state.waveVortex.t == 0.8 &&
               resumedDriver.hasPendingDelivery() &&
-              resumedDriver.records()[4].committed &&
-              resumedDriver.records()[4].attemptCount == 1 &&
-              !resumedDriver.records()[5].committed &&
-              resumedDriver.records()[5].attemptCount == 1 &&
-              resumedDriver.records()[5].failureCount == 1,
+              resumedDriver.records().size() == 2 &&
+              resumedDriver.records()[0].committed &&
+              resumedDriver.records()[0].attemptCount == 1 &&
+              !resumedDriver.records()[1].committed &&
+              resumedDriver.records()[1].attemptCount == 1 &&
+              resumedDriver.records()[1].failureCount == 1,
           "interior coincident failure retains event state and route cursor");
   resumedSink.failAtAttempt = std::numeric_limits<std::size_t>::max();
   status = resumedDriver.advanceToTime(resumed.state, 1.0, 0.4, resumedSink);
   require(
       static_cast<bool>(status) && !resumedDriver.hasPendingDelivery() &&
           resumed.state.waveVortex.t == 1.0 &&
-          resumedDriver.records()[4].attemptCount == 1 &&
-          resumedDriver.records()[5].committed &&
-          resumedDriver.records()[5].attemptCount == 2 &&
-          resumedDriver.records()[5].failureCount == 1 &&
+          resumedDriver.records().size() == 2 &&
+          resumedDriver.records()[0].committed &&
+          resumedDriver.records()[1].committed &&
           resumedDriver.metrics().deliveryAttemptCount == 11 &&
           resumedDriver.metrics().committedDeliveryCount == 10 &&
           resumedDriver.metrics().failureCount == 1 &&
@@ -974,6 +1033,82 @@ void testIntegratorExtensionBoundary(Context &context) {
           "test-only integrator preserves all coefficient and observer state");
 }
 
+struct DriverStorageRun {
+  std::size_t generatedEventCount = 0;
+  std::size_t generatedRouteCount = 0;
+  std::size_t retainedBytes = 0;
+  std::size_t maximumObservedRetainedBytes = 0;
+  std::size_t interpolationCapacityBytes = 0;
+  std::size_t interpolationMaximumLiveBytes = 0;
+  std::size_t routeStagingCapacityBytes = 0;
+  std::size_t routeStagingMaximumLiveBytes = 0;
+};
+
+DriverStorageRun runBoundedDriverWindow(double finalTime) {
+  const auto descriptor =
+      descriptorFrom(singleScheduleRecord(0.25, 0.0, finalTime));
+  WVIntegrationStateLayout layout;
+  require(static_cast<bool>(WVIntegrationStateLayout::create(
+              {1, 1}, descriptor, layout)),
+          "bounded-window state layout");
+  StateFixture fixture(layout);
+  EndpointOnlyIntegrator integrator(layout);
+  require(static_cast<bool>(integrator.prepareStateAfterRestart(fixture.state)),
+          "bounded-window integrator preparation");
+  WVOutputPlan plan;
+  require(static_cast<bool>(WVOutputPlan::create(
+              descriptor, test::extensionCatalog(), 0.0, finalTime, {}, plan)),
+          "bounded-window output plan");
+  CountingSink sink;
+  WVOutputDriver driver(integrator, plan);
+  sink.driver = &driver;
+  require(static_cast<bool>(driver.advanceToTime(
+              fixture.state, finalTime, 0.25, sink)),
+          "bounded-window driver execution");
+  const auto &metrics = driver.metrics();
+  require(sink.preflightAttempts == 1 &&
+              sink.attempts == metrics.generatedRouteCount &&
+              driver.records().size() == 1 &&
+              driver.records()[0].attempted &&
+              driver.records()[0].committed &&
+              driver.records()[0].eventOrdinal == sink.lastEventOrdinal &&
+              driver.records()[0].scheduleOrdinal ==
+                  sink.lastScheduleOrdinal &&
+              metrics.retainedStorageBytes == driver.persistentBytes(),
+          "bounded-window latest record and exact retained bytes");
+  return {metrics.generatedEventCount,
+          metrics.generatedRouteCount,
+          metrics.retainedStorageBytes,
+          sink.maximumDriverRetainedBytes,
+          metrics.interpolationBufferCapacityBytes,
+          metrics.interpolationBufferMaximumLiveBytes,
+          metrics.routeStagingCapacityBytes,
+          metrics.routeStagingMaximumLiveBytes};
+}
+
+void testDriverStorageBoundedByConfiguration() {
+  const auto shortWindow = runBoundedDriverWindow(1.0);
+  const auto longWindow = runBoundedDriverWindow(100.0);
+  require(shortWindow.generatedEventCount == 5 &&
+              longWindow.generatedEventCount == 401 &&
+              shortWindow.generatedRouteCount == 5 &&
+              longWindow.generatedRouteCount == 401,
+          "short and long windows delivered their complete schedules");
+  require(shortWindow.retainedBytes == longWindow.retainedBytes &&
+              shortWindow.maximumObservedRetainedBytes ==
+                  longWindow.maximumObservedRetainedBytes &&
+              shortWindow.interpolationCapacityBytes ==
+                  longWindow.interpolationCapacityBytes &&
+              shortWindow.interpolationMaximumLiveBytes ==
+                  longWindow.interpolationMaximumLiveBytes &&
+              shortWindow.routeStagingCapacityBytes ==
+                  longWindow.routeStagingCapacityBytes &&
+              shortWindow.routeStagingMaximumLiveBytes ==
+                  longWindow.routeStagingMaximumLiveBytes,
+          "driver retained and maximum-live storage is independent of "
+          "delivered event count");
+}
+
 void testLazyQuadraticSchedule() {
   auto record = outputRecord();
   record.outputFiles.resize(1);
@@ -991,7 +1126,10 @@ void testLazyQuadraticSchedule() {
   descriptor = descriptorFrom(record);
   WVOutputPlan longer;
   status = WVOutputPlan::create(descriptor, test::extensionCatalog(), 0.0, 9.0, {}, longer);
-  require(static_cast<bool>(status) && longer.persistentBytes() == retained,
+  require(static_cast<bool>(status) && longer.eventCount() == 4 &&
+              longer.event(0).scheduledTime == 0.0 &&
+              longer.event(3).scheduledTime == 9.0 &&
+              longer.persistentBytes() == retained,
           "lazy schedule storage is independent of future event count");
 
   WVIntegrationStateLayout retryLayout;
@@ -1136,6 +1274,7 @@ int main() {
   testTerminationInterruptionAndLaterRouteFailure(context);
   testSolverInvariance(context);
   testIntegratorExtensionBoundary(context);
+  testDriverStorageBoundedByConfiguration();
   testLazyQuadraticSchedule();
   testScheduleOwnsProposedCursorContract();
   std::cout << "PASS: unified multi-file/multi-group output orchestration\n";

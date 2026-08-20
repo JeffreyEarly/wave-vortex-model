@@ -15,6 +15,8 @@ struct WVObserverRecord;
 struct WVStateBlockRecord;
 struct WVObserverOutputPlanningContext;
 struct WVObserverOutputPlan;
+struct WVObserverOccurrencePreparationContext;
+struct WVObserverOccurrenceWorkspace;
 class WVObserverOutputEvaluationContext;
 struct WVObservationBatch;
 enum class WVObservationBatchKind : std::uint8_t;
@@ -63,6 +65,10 @@ public:
       const WVObserverRecord &observer,
       const WVObserverOutputPlanningContext &context,
       WVObserverOutputPlan &plan) const;
+  virtual WVKernelStatus prepareOccurrence(
+      const WVObserverRecord &observer, const WVObserverOutputPlan &plan,
+      const WVObserverOccurrencePreparationContext &context,
+      WVObserverOccurrenceWorkspace &workspace) const;
   virtual WVKernelStatus observationBatch(
       const WVObserverRecord &observer, const WVObserverOutputPlan &plan,
       const WVObserverOutputEvaluationContext &context,

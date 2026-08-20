@@ -43,6 +43,9 @@ public:
     virtual ~WVFFTEngine() = default;
     virtual std::string identifier() const = 0;
     virtual std::string libraryIdentity() const { return {}; }
+    // Provider-owned C++ storage retained by the engine itself. Individual
+    // plans report their storage separately through WVFFTPlan.
+    virtual std::size_t persistentBytes() const noexcept = 0;
     virtual WVKernelStatus createPlan(const WVFFTPlanSpecification& specification, std::unique_ptr<WVFFTPlan>& plan) = 0;
 };
 

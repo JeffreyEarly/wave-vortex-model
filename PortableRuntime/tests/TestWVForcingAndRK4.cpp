@@ -43,6 +43,10 @@ class FailingEngine final : public WVFFTEngine {
 public:
     explicit FailingEngine(std::shared_ptr<FailureCounter> counter) : counter_(std::move(counter)) {}
     std::string identifier() const override { return "reference-direct-injected-failure"; }
+    std::size_t persistentBytes() const noexcept override {
+        return sizeof(*this) + reference_.persistentBytes() - sizeof(reference_) +
+               sizeof(FailureCounter);
+    }
     WVKernelStatus createPlan(const WVFFTPlanSpecification& specification, std::unique_ptr<WVFFTPlan>& plan) override {
         std::unique_ptr<WVFFTPlan> inner;
         auto status = reference_.createPlan(specification,inner);
@@ -318,6 +322,22 @@ void testSpectralForcing() {
     require(engine->metrics().workspaceCapacityBytes == expectedWorkspace,"spectral forcing did not allocate only its required physical-field workspace");
 }
 
+void testCoefficientErrorPolicyStorage() {
+    auto engine = createEngine(true,{});
+    std::unique_ptr<WVIntegrationErrorPolicy> policy;
+    const auto status = engine->createErrorPolicy(1e-12,policy);
+    require(static_cast<bool>(status) && policy,
+            "coefficient error-policy construction failed");
+    const auto coefficientCount =
+        engine->kernel().descriptor().spectralShape().elementCount();
+    const auto minimumPhysicalBytes =
+        2*coefficientCount*sizeof(double) +
+        sizeof(WVIntegrationErrorPolicy) + sizeof(WVShape2D) +
+        2*sizeof(std::vector<double>);
+    require(policy->persistentBytes() >= minimumPhysicalBytes,
+            "coefficient error-policy ledger omitted its allocated object");
+}
+
 void testSourceLinkedLinearCoefficientExtension() {
     WVFrozenForcingSchedule schedule;
     auto values = forcingConfiguration();
@@ -560,6 +580,7 @@ int main() {
         testForcingTrafficAccounting();
         testRK4DeterminismRestartAndFailure();
         testSpectralForcing();
+        testCoefficientErrorPolicyStorage();
         testSourceLinkedLinearCoefficientExtension();
         testLinearBottomFrictionFormula(true,5,0.0);
         testLinearBottomFrictionFormula(false,5,2.5e-7);

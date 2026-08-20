@@ -29,6 +29,9 @@ public:
     return quadraticScheduleType;
   }
   std::uint32_t contractVersion() const noexcept override { return 1; }
+  const WVOutputSchedulePayloadSchema &payloadSchema() const noexcept override {
+    return emptyOutputSchedulePayloadSchema();
+  }
   WVKernelStatus
   validateCursor(const WVOutputScheduleCursor &cursor) const override {
     if (cursor.committedOrdinal < -1)
@@ -88,7 +91,14 @@ public:
     proposed.schemaVersion = 1;
     proposed.values.push_back(
         {"nextOrdinal", {}, std::vector<std::int64_t>{next + 1}});
-    occurrence = {time, next, {next, std::move(proposed)}};
+    occurrence = {};
+    occurrence.scheduledTime = time;
+    occurrence.ordinal = next;
+    occurrence.proposedCursor = {next, std::move(proposed)};
+    const auto payloadStatus = occurrence.payload.reset(payloadSchema());
+    if (!payloadStatus)
+      return payloadStatus;
+    occurrence.cursorIdentity = static_cast<std::uint64_t>(next) + 1ULL;
     available = true;
     return WVKernelStatus::ok();
   }

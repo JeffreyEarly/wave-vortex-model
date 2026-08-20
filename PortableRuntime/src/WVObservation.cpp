@@ -343,6 +343,7 @@ WVKernelStatus validateObservationSchema(const WVObservationSchema &schema) {
   }
   std::set<std::string> variableIdentifiers;
   std::set<std::string> variableNames;
+  std::map<std::string, std::string> raggedParentByChild;
   for (const auto &variable : schema.variables) {
     if (!validIdentifier(variable.identifier) || variable.name.empty() ||
         !variableIdentifiers.insert(variable.identifier).second ||
@@ -372,6 +373,19 @@ WVKernelStatus validateObservationSchema(const WVObservationSchema &schema) {
           child->second->kind != WVObservationAxisKind::unlimited)
         return invalid(
             "Ragged relationships require integer values and a declared child unlimited axis.");
+      if (variable.dimensionIdentifiers.size() != 1)
+        return invalid(
+            "Ragged relationship variables require exactly one parent axis.");
+      const auto parent = axes.find(variable.dimensionIdentifiers.front());
+      if (parent == axes.end() ||
+          parent->second->kind != WVObservationAxisKind::unlimited)
+        return invalid(
+            "Ragged relationship parent axes must be declared and unlimited.");
+      if (parent->first == child->first)
+        return invalid("Ragged relationships cannot contain self edges.");
+      if (!raggedParentByChild.emplace(child->first, parent->first).second)
+        return invalid(
+            "A ragged child axis cannot have multiple relationship parents.");
     } else if (!variable.raggedChildAxisIdentifier.empty()) {
       return invalid("Non-ragged variables cannot name a ragged child axis.");
     }
@@ -380,6 +394,18 @@ WVKernelStatus validateObservationSchema(const WVObservationSchema &schema) {
       if (attribute.name.empty() ||
           !attributeNames.insert(attribute.name).second)
         return invalid("Observation variable attributes must be unique.");
+  }
+  for (const auto &relationship : raggedParentByChild) {
+    std::set<std::string> visited;
+    auto axisIdentifier = relationship.first;
+    while (true) {
+      if (!visited.insert(axisIdentifier).second)
+        return invalid("Ragged relationships must form an acyclic graph.");
+      const auto parent = raggedParentByChild.find(axisIdentifier);
+      if (parent == raggedParentByChild.end())
+        break;
+      axisIdentifier = parent->second;
+    }
   }
   return WVKernelStatus::ok();
 }
@@ -412,6 +438,11 @@ WVKernelStatus validateObservationBatch(const WVObservationSchema &schema,
     if (found == variables.end())
       return invalid("Observation batch contains an undeclared variable.");
     const auto &variable = *found->second;
+    const auto variableIndex = static_cast<std::size_t>(
+        found->second - schema.variables.data());
+    if (value.resolvedVariableIndex != WVNoResolvedObservationVariable &&
+        value.resolvedVariableIndex != variableIndex)
+      return invalid("Observation batch resolved-variable slot drifted.");
     if (!applicable(variable, batch.kind) ||
         !observedVariables.insert(value.variableIdentifier).second)
       return invalid("Observation batch variable is duplicated or belongs to another phase.");
@@ -502,7 +533,13 @@ WVKernelStatus validateObservationBatch(const WVObservationSchema &schema,
       }
       if (total != childExtent->second)
         return invalid("Ragged row counts do not span the child axis.");
-    } else if (count > 0) {
+    } else {
+      if (count == 0) {
+        if (childExtent->second != 0)
+          return invalid(
+              "An empty ragged parent cannot reference a nonempty child axis.");
+        continue;
+      }
       if (integers[0] != 0)
         return invalid("Ragged row offsets must begin at zero in each batch.");
       for (std::size_t index = 0; index < count; ++index)

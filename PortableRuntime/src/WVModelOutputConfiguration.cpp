@@ -772,22 +772,23 @@ WVKernelStatus WVModelOutputConfiguration::compile(
 WVCheckpointStatus WVModelOutputConfiguration::openNetCDFSink(
     const WVModelOutputNetCDFConfiguration &configuration,
     const WVIntegrationStateLayout &stateLayout,
-    WVObserverSampleSource *sampleSource,
-    WVModelOutputNetCDFSink &sink) const {
+    WVObserverSampleSource *sampleSource, WVModelOutputNetCDFSink &sink) const {
   switch (impl_->policy) {
   case WVModelOutputPolicy::create:
-    return WVModelOutputNetCDFSink::createNew(
-        configuration, impl_->descriptor, stateLayout, sampleSource, sink);
+    return WVModelOutputNetCDFSink::createNew(configuration, impl_->descriptor,
+                                              impl_->plan, stateLayout,
+                                              sampleSource, sink);
   case WVModelOutputPolicy::replace:
     return WVModelOutputNetCDFSink::replaceExisting(
-        configuration, impl_->descriptor, stateLayout, sampleSource, sink);
+        configuration, impl_->descriptor, impl_->plan, stateLayout,
+        sampleSource, sink);
   case WVModelOutputPolicy::append:
     return WVModelOutputNetCDFSink::openAppend(
-        configuration, impl_->descriptor, stateLayout, sampleSource,
-        impl_->destinationProgress, sink);
+        configuration, impl_->descriptor, impl_->plan, stateLayout,
+        sampleSource, impl_->destinationProgress, sink);
   }
-  return {WVCheckpointStatusCode::invalidValue,
-          "Unsupported output policy.", {}};
+  return {
+      WVCheckpointStatusCode::invalidValue, "Unsupported output policy.", {}};
 }
 
 const WVPortableObserverDescriptor &
@@ -824,9 +825,10 @@ WVModelOutputPolicy WVModelOutputConfiguration::policy() const noexcept {
 }
 
 std::size_t WVModelOutputConfiguration::persistentBytes() const noexcept {
+  // The plan shares and accounts the same immutable descriptor graph; the
+  // configuration's descriptor wrapper itself is already part of sizeof(Impl).
   std::size_t bytes = sizeof(*this) + sizeof(Impl) +
-                      impl_->descriptor.persistentBytes() +
-                      impl_->plan.persistentBytes() +
+                      impl_->plan.persistentBytes() - sizeof(impl_->plan) +
                       impl_->scheduleContinuations.capacity() *
                           sizeof(WVOutputScheduleContinuation) +
                       impl_->destinationProgress.capacity() *

@@ -144,6 +144,9 @@ std::size_t WVIntegrationStateLayout::persistentBytes() const noexcept {
              block.dimensions.capacity() * sizeof(std::size_t);
   for (const auto &observer : observerRecords_) {
     bytes += observer.identifier.capacity() + observer.name.capacity() +
+             observer.typeIdentifier.capacity() +
+             observer.configuration.persistentBytes() -
+                 sizeof(WVPortableTypedRecord) +
              observer.stateBlockIdentifiers.capacity() * sizeof(std::string) +
              observer.fieldNames.capacity() * sizeof(std::string) +
              (observer.x.capacity() + observer.y.capacity() +

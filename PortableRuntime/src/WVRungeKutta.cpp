@@ -269,6 +269,15 @@ WVFixedStepRK4::WVFixedStepRK4(
     : system_(system), options_(options) {}
 WVFixedStepRK4::~WVFixedStepRK4() { delete workspace_; }
 
+std::size_t WVFixedStepRK4::persistentBytes() const noexcept {
+  return sizeof(*this) +
+         (workspace_ == nullptr
+              ? 0
+              : sizeof(Workspace) + workspace_->capacityBytes() +
+                    workspace_->acceptedViews.capacity() *
+                        sizeof(WVAdditionalStateBlockConstView));
+}
+
 WVKernelStatus
 WVFixedStepRK4::ensureWorkspace(const WVMutableIntegrationState &state) {
   auto status = validateMutableIntegrationState(system_.stateLayout(), state);
@@ -547,6 +556,18 @@ WVAdaptiveRK23::WVAdaptiveRK23(
     WVAdaptiveRK23Options options)
     : system_(system), options_(options) {}
 WVAdaptiveRK23::~WVAdaptiveRK23() { delete workspace_; }
+
+std::size_t WVAdaptiveRK23::persistentBytes() const noexcept {
+  return sizeof(*this) +
+         (workspace_ == nullptr
+              ? 0
+              : sizeof(Workspace) + workspace_->capacityBytes() +
+                    workspace_->acceptedViews.capacity() *
+                        sizeof(WVAdditionalStateBlockConstView)) +
+         (errorPolicy_ == nullptr ? 0 : errorPolicy_->persistentBytes()) +
+         stepDiagnostics_.capacity() * sizeof(WVAdaptiveRK23StepDiagnostic) +
+         toleranceComponentHashes_.capacity() * sizeof(std::uint64_t);
+}
 
 WVKernelStatus
 WVAdaptiveRK23::ensureWorkspace(const WVMutableIntegrationState &state) {

@@ -36,6 +36,27 @@ void require(bool condition, const std::string &message) {
     throw std::runtime_error(message);
 }
 
+WVKernelStatus makeTestOccurrenceIdentity(
+    const void *preparationOwner, std::uint64_t preparationGeneration,
+    double scheduledTime,
+    const WVOutputRouteView &route, const WVOutputObserverView &observer,
+    WVObservationOccurrenceIdentity &output) {
+  if (route.schedulePayload == nullptr)
+    return {WVKernelStatusCode::invalidConfiguration,
+            "A test observation route has no schedule payload."};
+  output = {};
+  output.preparationOwner = preparationOwner;
+  output.preparationGeneration = preparationGeneration;
+  output.preparedOccurrenceSlot = route.semanticScheduleOrdinal;
+  output.observerOrdinal = observer.observerOrdinal;
+  output.semanticScheduleOrdinal = route.semanticScheduleOrdinal;
+  output.scheduleOrdinal = route.scheduleOrdinal;
+  output.scheduledTime = scheduledTime;
+  output.scheduleCursorIdentity = route.scheduleCursorIdentity;
+  output.payloadFingerprint = route.schedulePayload->valueFingerprint();
+  return WVKernelStatus::ok();
+}
+
 const std::shared_ptr<const WVExtensionCatalog> &modelOutputCatalog();
 
 class WVTestFieldsImplementation final : public WVObservingSystem {
@@ -360,7 +381,7 @@ public:
       return WVObservingSystem::observationBatch(record, plan, context, kind,
                                                   output);
     ++batchCounts_[record.identifier];
-    const bool empty = context.eventOrdinal() % 2 == 1;
+    const bool empty = context.scheduleOrdinal() % 2 == 1;
     const std::size_t profileCount = empty ? 0 : 2;
     const std::size_t sampleCount = empty ? 0 : 3;
     WVObservationBatch batch;
@@ -407,7 +428,9 @@ public:
         empty ? std::vector<std::string>{}
               : std::vector<std::string>{"", "pass-b"}));
     batch.values.push_back(WVObservationValue::ownInteger(
-        "pass", {}, {static_cast<std::int64_t>(context.eventOrdinal())}));
+        "pass", {}, {context.scheduleOrdinal()}));
+    for (std::size_t index = 0; index < batch.values.size(); ++index)
+      batch.values[index].resolvedVariableIndex = index + 1;
     output = std::move(batch);
     return WVKernelStatus::ok();
   }
@@ -435,7 +458,13 @@ private:
 
 std::shared_ptr<WVTestObservationBatchesImplementation> registeredBatches;
 
-enum class TestTopology { fixedBin, movingTrack, variablePass, raggedProfile };
+enum class TestTopology {
+  fixedBin,
+  movingTrack,
+  variablePass,
+  raggedProfile,
+  nestedRagged
+};
 
 class WVTestTopologyImplementation final : public WVObservingSystem {
 public:
@@ -516,7 +545,7 @@ public:
            {"pass"}, WVObservationValueLayout::flat, "", "pass label", {},
            WVObservationCoordinateRole::none,
            WVObservationRaggedRole::none, {}}};
-    } else {
+    } else if (topology_ == TestTopology::raggedProfile) {
       plan.schema.axes = {
           {"profile", "ragged_profile", WVObservationAxisKind::unlimited, 0,
            WVObservationCoordinateRole::profile},
@@ -537,6 +566,34 @@ public:
            {"sample"}, WVObservationValueLayout::flat, "1", "sample value",
            {}, WVObservationCoordinateRole::none,
            WVObservationRaggedRole::none, {}}};
+    } else {
+      plan.schema.axes = {
+          {"pass", "nested_pass", WVObservationAxisKind::unlimited, 0,
+           WVObservationCoordinateRole::pass},
+          {"profile", "nested_profile", WVObservationAxisKind::unlimited, 0,
+           WVObservationCoordinateRole::profile},
+          {"depth", "nested_depth", WVObservationAxisKind::fixed, 2,
+           WVObservationCoordinateRole::depth},
+          {"sample", "nested_sample", WVObservationAxisKind::unlimited, 0,
+           WVObservationCoordinateRole::identifier}};
+      plan.schema.variables = {
+          {"pass-profile-count", "nested_pass_profile_count",
+           WVObservationScalarType::integer64, {"pass"},
+           WVObservationValueLayout::flat, "1", "profiles in each pass", {},
+           WVObservationCoordinateRole::none,
+           WVObservationRaggedRole::rowCount, "profile"},
+          {"profile-sample-offset", "nested_profile_sample_offset",
+           WVObservationScalarType::integer64, {"profile"},
+           WVObservationValueLayout::flat, "1",
+           "first sample in each profile", {},
+           WVObservationCoordinateRole::none,
+           WVObservationRaggedRole::rowOffset, "sample"},
+          {"sample-value", "nested_sample_value",
+           WVObservationScalarType::real64, {"depth", "sample"},
+           WVObservationValueLayout::flat, "1",
+           "sample value by fixed depth", {},
+           WVObservationCoordinateRole::none,
+           WVObservationRaggedRole::none, {}}};
     }
     output = std::move(plan);
     return WVKernelStatus::ok();
@@ -556,7 +613,7 @@ public:
       batch.values.push_back(WVObservationValue::ownComplex(
           "value", {3}, {{1.0, -1.0}, {2.0, -2.0}, {3.0, -3.0}}));
     } else if (topology_ == TestTopology::movingTrack) {
-      const std::size_t count = context.eventOrdinal() % 2 == 0 ? 2 : 1;
+      const std::size_t count = context.scheduleOrdinal() % 2 == 0 ? 2 : 1;
       batch.values.push_back(WVObservationValue::ownReal(
           "time", {count},
           count == 2 ? std::vector<double>{context.scheduledTime(),
@@ -572,7 +629,7 @@ public:
           "z", {count}, count == 2 ? std::vector<double>{-1.0, -2.0}
                                      : std::vector<double>{-3.0}));
     } else if (topology_ == TestTopology::variablePass) {
-      const std::size_t count = context.eventOrdinal() % 2 == 0 ? 2 : 1;
+      const std::size_t count = context.scheduleOrdinal() % 2 == 0 ? 2 : 1;
       batch.values.push_back(WVObservationValue::ownInteger(
           "pass", {count}, count == 2 ? std::vector<std::int64_t>{7, 8}
                                        : std::vector<std::int64_t>{9}));
@@ -580,7 +637,7 @@ public:
           "label", {count}, count == 2
                                 ? std::vector<std::string>{"out", "back"}
                                 : std::vector<std::string>{"final"}));
-    } else {
+    } else if (topology_ == TestTopology::raggedProfile) {
       const bool malformed = record.name == "malformed";
       batch.values.push_back(WVObservationValue::ownInteger(
           "profile", {2}, {1, 2}));
@@ -589,7 +646,18 @@ public:
                                         : std::vector<std::int64_t>{1, 2}));
       batch.values.push_back(WVObservationValue::ownReal(
           "value", {3}, {10.0, 20.0, 30.0}));
+    } else {
+      batch.values.push_back(WVObservationValue::ownInteger(
+          "pass-profile-count", {2}, {2, 1}));
+      batch.values.push_back(WVObservationValue::ownInteger(
+          "profile-sample-offset", {3}, {0, 2, 2}));
+      batch.values.push_back(WVObservationValue::ownReal(
+          "sample-value", {2, 4},
+          {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0}));
     }
+    for (std::size_t index = 0; index < batch.values.size(); ++index)
+      batch.values[index].resolvedVariableIndex =
+          index + (topology_ == TestTopology::fixedBin ? 1 : 0);
     output = std::move(batch);
     return WVKernelStatus::ok();
   }
@@ -610,7 +678,9 @@ private:
       return "test-moving-track-v1";
     if (topology_ == TestTopology::variablePass)
       return "test-variable-pass-v1";
-    return "test-ragged-profile-v1";
+    if (topology_ == TestTopology::raggedProfile)
+      return "test-ragged-profile-v1";
+    return "test-nested-ragged-v1";
   }
   std::string identifier_;
   TestTopology topology_;
@@ -621,6 +691,7 @@ std::shared_ptr<WVTestTopologyImplementation> fixedBinProvider;
 std::shared_ptr<WVTestTopologyImplementation> movingTrackProvider;
 std::shared_ptr<WVTestTopologyImplementation> variablePassProvider;
 std::shared_ptr<WVTestTopologyImplementation> raggedProfileProvider;
+std::shared_ptr<WVTestTopologyImplementation> nestedRaggedProvider;
 
 const std::shared_ptr<const WVExtensionCatalog> &modelOutputCatalog() {
   static const auto catalog = [] {
@@ -713,6 +784,8 @@ const std::shared_ptr<const WVExtensionCatalog> &modelOutputCatalog() {
                 &variablePassProvider);
     addTopology("WVTestRaggedProfile", TestTopology::raggedProfile,
                 &raggedProfileProvider);
+    addTopology("WVTestNestedRagged", TestTopology::nestedRagged,
+                &nestedRaggedProvider);
     if (status)
       status = registerQuadraticSchedule(builder);
     std::shared_ptr<const WVExtensionCatalog> result;
@@ -888,13 +961,23 @@ public:
 
   WVKernelStatus prepare(const WVOutputEvent &event) override {
     ++prepareCount_;
-    eventOrdinal_ = event.eventOrdinal;
+    ++preparationGeneration_;
+    if (preparationGeneration_ == 0)
+      ++preparationGeneration_;
     scheduledTime_ = event.scheduledTime;
     return WVKernelStatus::ok();
   }
 
-  WVKernelStatus observationBatch(const WVObserverRecord &observer,
-                                  WVObservationBatch &output) override {
+  WVKernelStatus preparedOccurrenceIdentity(
+      const WVOutputRouteView &route, const WVOutputObserverView &observer,
+      WVObservationOccurrenceIdentity &output) const override {
+    return makeTestOccurrenceIdentity(this, preparationGeneration_,
+                                      scheduledTime_, route, observer, output);
+  }
+
+  WVKernelStatus observationBatch(
+      const WVObservationOccurrenceIdentity &identity,
+      const WVObserverRecord &observer, WVObservationBatch &output) override {
     ++batchCounts_[observer.identifier];
     WVObservationSchema schema;
     auto status = observationSchema(observer, schema);
@@ -907,7 +990,7 @@ public:
       output = std::move(batch);
       return WVKernelStatus::ok();
     }
-    const bool empty = eventOrdinal_ % 2 == 1;
+    const bool empty = identity.scheduleOrdinal % 2 == 1;
     const std::size_t profileCount = empty ? 0 : 2;
     const std::size_t sampleCount = empty ? 0 : 3;
     batch.values.push_back(WVObservationValue::ownInteger(
@@ -923,8 +1006,9 @@ public:
     batch.values.push_back(WVObservationValue::ownReal(
         "time", {sampleCount},
         empty ? std::vector<double>{}
-              : std::vector<double>{scheduledTime_, scheduledTime_ + 0.1,
-                                    scheduledTime_ + 0.2}));
+              : std::vector<double>{identity.scheduledTime,
+                                    identity.scheduledTime + 0.1,
+                                    identity.scheduledTime + 0.2}));
     batch.values.push_back(WVObservationValue::ownReal(
         "x", {sampleCount},
         empty ? std::vector<double>{}
@@ -953,7 +1037,10 @@ public:
               : std::vector<std::string>{"", "pass-b"}));
     batch.values.push_back(WVObservationValue::ownInteger(
         "pass", {},
-        std::vector<std::int64_t>{static_cast<std::int64_t>(eventOrdinal_)}));
+        std::vector<std::int64_t>{static_cast<std::int64_t>(
+            identity.scheduleOrdinal)}));
+    for (std::size_t index = 0; index < batch.values.size(); ++index)
+      batch.values[index].resolvedVariableIndex = index + 1;
     if (failFirstBatch_ && !failedOnce_)
       failedOnce_ = true;
     output = std::move(batch);
@@ -971,9 +1058,9 @@ private:
   std::uint32_t version_ = 1;
   bool failFirstBatch_ = false;
   bool failedOnce_ = false;
-  std::size_t eventOrdinal_ = 0;
   double scheduledTime_ = 0.0;
   std::size_t prepareCount_ = 0;
+  std::uint64_t preparationGeneration_ = 0;
   std::map<std::string, std::size_t> batchCounts_;
 };
 
@@ -1018,11 +1105,22 @@ public:
     output = std::move(batch);
     return WVKernelStatus::ok();
   }
-  WVKernelStatus prepare(const WVOutputEvent &) override {
+  WVKernelStatus prepare(const WVOutputEvent &event) override {
+    ++preparationGeneration_;
+    if (preparationGeneration_ == 0)
+      ++preparationGeneration_;
+    scheduledTime_ = event.scheduledTime;
     return WVKernelStatus::ok();
   }
-  WVKernelStatus observationBatch(const WVObserverRecord &observer,
-                                  WVObservationBatch &output) override {
+  WVKernelStatus preparedOccurrenceIdentity(
+      const WVOutputRouteView &route, const WVOutputObserverView &observer,
+      WVObservationOccurrenceIdentity &output) const override {
+    return makeTestOccurrenceIdentity(this, preparationGeneration_,
+                                      scheduledTime_, route, observer, output);
+  }
+  WVKernelStatus observationBatch(
+      const WVObservationOccurrenceIdentity &,
+      const WVObserverRecord &observer, WVObservationBatch &output) override {
     WVObservationSchema schema;
     auto status = observationSchema(observer, schema);
     if (!status)
@@ -1034,12 +1132,16 @@ public:
     if (!schema.variables.empty())
       batch.values.push_back(WVObservationValue::ownReal(
           "value", {extent}, std::vector<double>(extent, 0.0)));
+    if (!batch.values.empty())
+      batch.values.front().resolvedVariableIndex = 0;
     output = std::move(batch);
     return WVKernelStatus::ok();
   }
 
 private:
   bool conflictingAxis_ = false;
+  double scheduledTime_ = 0.0;
+  std::uint64_t preparationGeneration_ = 0;
 };
 
 std::filesystem::path fixture(const std::string &name) {
@@ -1058,6 +1160,51 @@ std::vector<char> fileBytes(const std::filesystem::path &path) {
   return {std::istreambuf_iterator<char>(input),
           std::istreambuf_iterator<char>()};
 }
+
+class FactoryPreflightRejectingSampleSource final
+    : public WVObserverSampleSource {
+public:
+  WVKernelStatus preflight(const WVOutputPlan &) override {
+    ++preflightCount_;
+    return {WVKernelStatusCode::invalidConfiguration,
+            "injected direct-factory source preflight rejection"};
+  }
+  WVKernelStatus observationSchema(const WVObserverRecord &,
+                                   WVObservationSchema &) override {
+    ++unexpectedCallCount_;
+    return {WVKernelStatusCode::invalidConfiguration,
+            "schema discovery followed rejected source preflight"};
+  }
+  WVKernelStatus prepare(const WVOutputEvent &) override {
+    ++unexpectedCallCount_;
+    return {WVKernelStatusCode::invalidConfiguration,
+            "event preparation followed rejected source preflight"};
+  }
+  WVKernelStatus
+  preparedOccurrenceIdentity(const WVOutputRouteView &,
+                             const WVOutputObserverView &,
+                             WVObservationOccurrenceIdentity &) const override {
+    ++unexpectedCallCount_;
+    return {WVKernelStatusCode::invalidConfiguration,
+            "occurrence lookup followed rejected source preflight"};
+  }
+  WVKernelStatus observationBatch(const WVObservationOccurrenceIdentity &,
+                                  const WVObserverRecord &,
+                                  WVObservationBatch &) override {
+    ++unexpectedCallCount_;
+    return {WVKernelStatusCode::invalidConfiguration,
+            "batch construction followed rejected source preflight"};
+  }
+
+  std::size_t preflightCount() const noexcept { return preflightCount_; }
+  std::size_t unexpectedCallCount() const noexcept {
+    return unexpectedCallCount_;
+  }
+
+private:
+  std::size_t preflightCount_ = 0;
+  mutable std::size_t unexpectedCallCount_ = 0;
+};
 
 class FailOnceNetCDFSink final : public WVOutputSink {
 public:
@@ -1161,8 +1308,13 @@ descriptorFor(const WVPortableObserverRecord &record) {
   return descriptor;
 }
 
-WVIntegrationState eventState(const WVCheckpoint &checkpoint) {
-  return {checkpoint.state.view(), nullptr, 0};
+WVIntegrationState eventState(
+    const WVCheckpoint &checkpoint, double scheduledTime,
+    const WVAdditionalStateBlockConstView *additionalBlocks = nullptr,
+    std::size_t additionalBlockCount = 0) {
+  auto waveVortex = checkpoint.state.view();
+  waveVortex.t = scheduledTime;
+  return {waveVortex, additionalBlocks, additionalBlockCount};
 }
 
 std::vector<WVOutputScheduleContinuation> continuationsFrom(
@@ -1246,7 +1398,57 @@ public:
     return WVKernelStatus::ok();
   }
 
-  WVKernelStatus prepare(const WVOutputEvent &) override {
+  WVKernelStatus prepare(const WVOutputEvent &event) override {
+    ++preparationGeneration_;
+    if (preparationGeneration_ == 0)
+      ++preparationGeneration_;
+    scheduledTime_ = event.scheduledTime;
+    return WVKernelStatus::ok();
+  }
+
+  WVKernelStatus preparedOccurrenceIdentity(
+      const WVOutputRouteView &route, const WVOutputObserverView &observer,
+      WVObservationOccurrenceIdentity &output) const override {
+    return makeTestOccurrenceIdentity(this, preparationGeneration_,
+                                      scheduledTime_, route, observer, output);
+  }
+
+  WVKernelStatus observationBatch(
+      const WVObservationOccurrenceIdentity &,
+      const WVObserverRecord &observer, WVObservationBatch &output) override {
+    WVObservationSchema schema;
+    auto status = observationSchema(observer, schema);
+    if (!status)
+      return status;
+    std::vector<WVObserverOutputVariableSpecification> variables;
+    status = specifications(observer, variables);
+    if (!status)
+      return status;
+    WVObservationBatch batch;
+    batch.schemaIdentifier = schema.identifier;
+    batch.schemaVersion = schema.version;
+    batch.kind = WVObservationBatchKind::event;
+    std::size_t resolvedVariableIndex = 0;
+    for (const auto &variable : variables) {
+      if (variable.cadence == WVObserverOutputCadence::initialOnly)
+        {
+          ++resolvedVariableIndex;
+          continue;
+        }
+      WVObserverOutputValueView view;
+      status = value(observer, variable, view);
+      if (!status)
+        return status;
+      if (view.valueType == WVOutputValueType::complex64)
+        batch.values.push_back(WVObservationValue::borrowComplex(
+            variable.identifier, variable.dimensions, view.complexData));
+      else
+        batch.values.push_back(WVObservationValue::borrowReal(
+            variable.identifier, variable.dimensions, view.realData));
+      batch.values.back().resolvedVariableIndex = resolvedVariableIndex;
+      ++resolvedVariableIndex;
+    }
+    output = std::move(batch);
     return WVKernelStatus::ok();
   }
 
@@ -1265,6 +1467,8 @@ public:
 
 private:
   WVTransformConstantStratificationConfiguration configuration_;
+  double scheduledTime_ = 0.0;
+  std::uint64_t preparationGeneration_ = 0;
   std::map<std::string, std::vector<double>> values_;
 };
 
@@ -1276,7 +1480,7 @@ void deliverPlannedEvent(WVModelOutputNetCDFSink &sink,
   WVOutputEvent event;
   event.eventOrdinal = planned.eventOrdinal;
   event.scheduledTime = planned.scheduledTime;
-  event.state = eventState(checkpoint);
+  event.state = eventState(checkpoint, planned.scheduledTime);
   event.routes = planned.routes;
   event.routeCount = planned.routeCount;
   WVOutputDeliveryResult delivery;
@@ -1332,20 +1536,27 @@ void testCreateReadAndAppend() {
   auto status = WVIntegrationStateLayout::create(
       checkpoint.state.coefficients.shape, descriptor, layout);
   require(static_cast<bool>(status), status.message);
+  WVOutputPlan firstPlan;
+  status = WVOutputPlan::create(descriptor, modelOutputCatalog(),
+                                checkpoint.state.t,
+                                checkpoint.state.t + 1.0, {}, firstPlan);
+  require(static_cast<bool>(status), status.message);
   WVModelOutputNetCDFConfiguration mismatchedConfiguration{
       test::extensionCatalog(), checkpoint, false};
   WVModelOutputNetCDFSink mismatchedSink;
   auto mismatchedStatus = WVModelOutputNetCDFSink::createNew(
-      mismatchedConfiguration, descriptor, layout, nullptr, mismatchedSink);
+      mismatchedConfiguration, descriptor, firstPlan, layout, nullptr,
+      mismatchedSink);
   require(mismatchedStatus.code == WVCheckpointStatusCode::schemaMismatch,
           "new output sink accepted a descriptor from another catalog");
   mismatchedStatus = WVModelOutputNetCDFSink::replaceExisting(
-      mismatchedConfiguration, descriptor, layout, nullptr, mismatchedSink);
+      mismatchedConfiguration, descriptor, firstPlan, layout, nullptr,
+      mismatchedSink);
   require(mismatchedStatus.code == WVCheckpointStatusCode::schemaMismatch,
           "replacement output sink accepted a descriptor from another "
           "catalog");
   mismatchedStatus = WVModelOutputNetCDFSink::openAppend(
-      mismatchedConfiguration, descriptor, layout, nullptr, {},
+      mismatchedConfiguration, descriptor, firstPlan, layout, nullptr, {},
       mismatchedSink);
   require(mismatchedStatus.code == WVCheckpointStatusCode::schemaMismatch &&
               !std::filesystem::exists(path),
@@ -1353,14 +1564,8 @@ void testCreateReadAndAppend() {
   WVModelOutputNetCDFConfiguration configuration{modelOutputCatalog(), checkpoint, false};
   WVModelOutputNetCDFSink sink;
   auto persistence = WVModelOutputNetCDFSink::createNew(
-      configuration, descriptor, layout, nullptr, sink);
-  require(static_cast<bool>(persistence),
-          persistence.message + " at " + persistence.location);
-
-  WVOutputPlan firstPlan;
-  status = WVOutputPlan::create(descriptor, modelOutputCatalog(), checkpoint.state.t,
-                                checkpoint.state.t + 1.0, {}, firstPlan);
-  require(static_cast<bool>(status), status.message);
+      configuration, descriptor, firstPlan, layout, nullptr, sink);
+  require(static_cast<bool>(persistence), persistence.message);
   auto incompatibleRecord = record;
   incompatibleRecord.outputFiles.front().groups.front().identifier =
       "different-group";
@@ -1394,19 +1599,18 @@ void testCreateReadAndAppend() {
   require(restored.state.t == checkpoint.state.t,
           "latest output state was not restartable");
 
-  WVModelOutputNetCDFSink append;
-  persistence = WVModelOutputNetCDFSink::openAppend(configuration, descriptor,
-                                                    layout, nullptr,
-                                                    sink.destinationProgress(),
-                                                    append);
-  require(static_cast<bool>(persistence), persistence.message);
   WVOutputPlan appendPlan;
   status = WVOutputPlan::create(descriptor, modelOutputCatalog(), checkpoint.state.t,
                                 checkpoint.state.t + 1.0,
                                 continuationsFrom(
-                                    append.destinationProgress()),
+                                    sink.destinationProgress()),
                                 appendPlan);
   require(static_cast<bool>(status), status.message);
+  WVModelOutputNetCDFSink append;
+  persistence = WVModelOutputNetCDFSink::openAppend(
+      configuration, descriptor, appendPlan, layout, nullptr,
+      sink.destinationProgress(), append);
+  require(static_cast<bool>(persistence), persistence.message);
   require(appendPlan.eventCount() == 1,
           "append plan repeated a committed output time");
   status = append.preflight(appendPlan);
@@ -1454,10 +1658,9 @@ void testCreateReadAndAppend() {
           "inject interrupted output value");
   require(nc_close(file) == NC_NOERR, "close interrupted-record injection");
   WVModelOutputNetCDFSink rejected;
-  persistence = WVModelOutputNetCDFSink::openAppend(configuration, descriptor,
-                                                    layout, nullptr,
-                                                    inspection.destinationProgress,
-                                                    rejected);
+  persistence = WVModelOutputNetCDFSink::openAppend(
+      configuration, descriptor, appendPlan, layout, nullptr,
+      inspection.destinationProgress, rejected);
   require(!persistence &&
               persistence.code == WVCheckpointStatusCode::incompleteRecord,
           "append accepted an incomplete committed output record");
@@ -1516,22 +1719,22 @@ void testLinearInitialCoefficientsAndPassiveFields() {
       std::make_unique<WVReferenceFFTEngine>(), source);
   require(static_cast<bool>(status), status.message);
   WVModelOutputNetCDFConfiguration configuration{modelOutputCatalog(), checkpoint, true};
+  WVOutputPlan plan;
+  status = WVOutputPlan::create(descriptor, modelOutputCatalog(),
+                                checkpoint.state.t, checkpoint.state.t, {},
+                                plan);
+  require(static_cast<bool>(status), status.message);
   WVModelOutputNetCDFSink sink;
   auto persistence = WVModelOutputNetCDFSink::createNew(
-      configuration, descriptor, layout, source.get(), sink);
+      configuration, descriptor, plan, layout, source.get(), sink);
   require(static_cast<bool>(persistence), persistence.message);
-
-  WVOutputPlan plan;
-  status = WVOutputPlan::create(descriptor, modelOutputCatalog(), checkpoint.state.t,
-                                checkpoint.state.t, {}, plan);
-  require(static_cast<bool>(status), status.message);
   status = sink.preflight(plan);
   require(static_cast<bool>(status), status.message);
   const auto planned = plan.event(0);
   WVOutputEvent event;
   event.eventOrdinal = planned.eventOrdinal;
   event.scheduledTime = planned.scheduledTime;
-  event.state = eventState(checkpoint);
+  event.state = eventState(checkpoint, planned.scheduledTime);
   event.routes = planned.routes;
   event.routeCount = planned.routeCount;
   WVOutputDeliveryResult delivery;
@@ -1576,7 +1779,8 @@ void testLinearInitialCoefficientsAndPassiveFields() {
 
   WVModelOutputNetCDFInspection inspection;
   persistence = WVModelOutputNetCDFSink::inspect({path.string()}, *modelOutputCatalog(), inspection);
-  require(static_cast<bool>(persistence), persistence.message);
+  require(static_cast<bool>(persistence),
+          persistence.message + " at " + persistence.location);
   require(inspection.observerRecord.observers.size() == 3 &&
               inspection.observerRecord.observers.front().typeIdentifier ==
                   "WVTestFields" &&
@@ -1628,11 +1832,6 @@ void testLinearInitialCoefficientsAndPassiveFields() {
   require(static_cast<bool>(status), status.message);
   WVModelOutputNetCDFConfiguration appendConfiguration{
       modelOutputCatalog(), restoredInspection.checkpoint, true};
-  WVModelOutputNetCDFSink append;
-  persistence = WVModelOutputNetCDFSink::openAppend(
-      appendConfiguration, appendDescriptor, restoredInspection.layout,
-      appendSource.get(), inspection.destinationProgress, append);
-  require(static_cast<bool>(persistence), persistence.message);
   WVOutputPlan appendPlan;
   status = WVOutputPlan::create(
       appendDescriptor, modelOutputCatalog(), inspection.latestRestart.t,
@@ -1640,12 +1839,18 @@ void testLinearInitialCoefficientsAndPassiveFields() {
       appendPlan);
   require(static_cast<bool>(status) && appendPlan.eventCount() == 1,
           "linear append plan mismatch");
+  WVModelOutputNetCDFSink append;
+  persistence = WVModelOutputNetCDFSink::openAppend(
+      appendConfiguration, appendDescriptor, appendPlan,
+      restoredInspection.layout, appendSource.get(),
+      inspection.destinationProgress, append);
+  require(static_cast<bool>(persistence), persistence.message);
   status = append.preflight(appendPlan);
   require(static_cast<bool>(status), status.message);
   const auto next = appendPlan.event(0);
   event.eventOrdinal = next.eventOrdinal;
   event.scheduledTime = next.scheduledTime;
-  event.state = eventState(restoredInspection.checkpoint);
+  event.state = eventState(restoredInspection.checkpoint, next.scheduledTime);
   event.routes = next.routes;
   event.routeCount = next.routeCount;
   delivery = {};
@@ -1677,11 +1882,148 @@ void testTransactionalRefusal() {
   auto status = WVIntegrationStateLayout::create(
       checkpoint.state.coefficients.shape, descriptor, layout);
   require(static_cast<bool>(status), status.message);
+  WVOutputPlan plan;
+  status = WVOutputPlan::create(descriptor, modelOutputCatalog(),
+                                checkpoint.state.t,
+                                checkpoint.state.t + 2.0, {}, plan);
+  require(static_cast<bool>(status), status.message);
   WVModelOutputNetCDFSink sink;
   const auto result = WVModelOutputNetCDFSink::createNew(
-      {modelOutputCatalog(), checkpoint, false}, descriptor, layout, nullptr, sink);
+      {modelOutputCatalog(), checkpoint, false}, descriptor, plan, layout,
+      nullptr, sink);
   require(!result && result.code == WVCheckpointStatusCode::commitFailure,
           "create-new output replaced an existing destination");
+}
+
+void testDirectFactoryPreflightBeforeDestinationAccess() {
+  TemporaryDirectory directory;
+  auto checkpoint = checkpointTemplate();
+  const WVModelOutputNetCDFConfiguration configuration{modelOutputCatalog(),
+                                                       checkpoint, false};
+
+  const auto createPath = directory.path / "rejected-create.nc";
+  auto createRecord = recordFor(checkpoint, createPath);
+  auto createDescriptor = descriptorFor(createRecord);
+  WVIntegrationStateLayout createLayout;
+  auto status = WVIntegrationStateLayout::create(
+      checkpoint.state.coefficients.shape, createDescriptor, createLayout);
+  require(static_cast<bool>(status), status.message);
+  WVOutputPlan createPlan;
+  status = WVOutputPlan::create(createDescriptor, modelOutputCatalog(),
+                                checkpoint.state.t, checkpoint.state.t + 2.0,
+                                {}, createPlan);
+  require(static_cast<bool>(status), status.message);
+  auto mismatchedCreateRecord = createRecord;
+  mismatchedCreateRecord.outputFiles.front().groups.front().identifier =
+      "mismatched-create-group";
+  auto mismatchedCreateDescriptor = descriptorFor(mismatchedCreateRecord);
+  WVOutputPlan mismatchedCreatePlan;
+  status = WVOutputPlan::create(
+      mismatchedCreateDescriptor, modelOutputCatalog(), checkpoint.state.t,
+      checkpoint.state.t + 2.0, {}, mismatchedCreatePlan);
+  require(static_cast<bool>(status), status.message);
+  WVModelOutputNetCDFSink mismatchedCreate;
+  auto persistence = WVModelOutputNetCDFSink::createNew(
+      configuration, createDescriptor, mismatchedCreatePlan, createLayout,
+      nullptr, mismatchedCreate);
+  require(!persistence &&
+              persistence.code == WVCheckpointStatusCode::schemaMismatch &&
+              !std::filesystem::exists(createPath),
+          "direct create factory touched its destination for a mismatched "
+          "compiled plan");
+  FactoryPreflightRejectingSampleSource createSource;
+  WVModelOutputNetCDFSink rejectedCreate;
+  persistence = WVModelOutputNetCDFSink::createNew(
+      configuration, createDescriptor, createPlan, createLayout, &createSource,
+      rejectedCreate);
+  require(!persistence &&
+              persistence.code == WVCheckpointStatusCode::unsupportedObserver &&
+              createSource.preflightCount() == 1 &&
+              createSource.unexpectedCallCount() == 0 &&
+              !std::filesystem::exists(createPath),
+          "direct create factory touched its destination after rejected "
+          "source preflight");
+
+  const auto existingPath = directory.path / "rejected-existing.nc";
+  auto existingRecord = recordFor(checkpoint, existingPath);
+  auto existingDescriptor = descriptorFor(existingRecord);
+  WVIntegrationStateLayout existingLayout;
+  status = WVIntegrationStateLayout::create(checkpoint.state.coefficients.shape,
+                                            existingDescriptor, existingLayout);
+  require(static_cast<bool>(status), status.message);
+  WVOutputPlan existingPlan;
+  status = WVOutputPlan::create(existingDescriptor, modelOutputCatalog(),
+                                checkpoint.state.t, checkpoint.state.t + 2.0,
+                                {}, existingPlan);
+  require(static_cast<bool>(status), status.message);
+  auto mismatchedExistingRecord = existingRecord;
+  mismatchedExistingRecord.outputFiles.front().groups.front().identifier =
+      "mismatched-existing-group";
+  auto mismatchedExistingDescriptor = descriptorFor(mismatchedExistingRecord);
+  WVOutputPlan mismatchedExistingPlan;
+  status = WVOutputPlan::create(
+      mismatchedExistingDescriptor, modelOutputCatalog(), checkpoint.state.t,
+      checkpoint.state.t + 2.0, {}, mismatchedExistingPlan);
+  require(static_cast<bool>(status), status.message);
+  WVModelOutputNetCDFSink seed;
+  persistence = WVModelOutputNetCDFSink::createNew(
+      configuration, existingDescriptor, existingPlan, existingLayout, nullptr,
+      seed);
+  require(static_cast<bool>(persistence), persistence.message);
+  const auto destinationProgress = seed.destinationProgress();
+  persistence = seed.close();
+  require(static_cast<bool>(persistence), persistence.message);
+  const auto originalBytes = fileBytes(existingPath);
+
+  WVModelOutputNetCDFSink mismatchedReplacement;
+  persistence = WVModelOutputNetCDFSink::replaceExisting(
+      configuration, existingDescriptor, mismatchedExistingPlan, existingLayout,
+      nullptr, mismatchedReplacement);
+  require(!persistence &&
+              persistence.code == WVCheckpointStatusCode::schemaMismatch &&
+              fileBytes(existingPath) == originalBytes,
+          "direct replace factory changed its destination for a mismatched "
+          "compiled plan");
+  FactoryPreflightRejectingSampleSource replaceSource;
+  WVModelOutputNetCDFSink rejectedReplacement;
+  persistence = WVModelOutputNetCDFSink::replaceExisting(
+      configuration, existingDescriptor, existingPlan, existingLayout,
+      &replaceSource, rejectedReplacement);
+  require(!persistence &&
+              persistence.code == WVCheckpointStatusCode::unsupportedObserver &&
+              replaceSource.preflightCount() == 1 &&
+              replaceSource.unexpectedCallCount() == 0 &&
+              fileBytes(existingPath) == originalBytes,
+          "direct replace factory changed its destination after rejected "
+          "source preflight");
+
+  WVOutputPlan appendPlan;
+  status =
+      WVOutputPlan::create(existingDescriptor, modelOutputCatalog(),
+                           checkpoint.state.t, checkpoint.state.t + 2.0,
+                           continuationsFrom(destinationProgress), appendPlan);
+  require(static_cast<bool>(status), status.message);
+  WVModelOutputNetCDFSink mismatchedAppend;
+  persistence = WVModelOutputNetCDFSink::openAppend(
+      configuration, existingDescriptor, mismatchedExistingPlan, existingLayout,
+      nullptr, destinationProgress, mismatchedAppend);
+  require(!persistence &&
+              persistence.code == WVCheckpointStatusCode::schemaMismatch &&
+              fileBytes(existingPath) == originalBytes,
+          "direct append factory changed its destination for a mismatched "
+          "compiled plan");
+  FactoryPreflightRejectingSampleSource appendSource;
+  WVModelOutputNetCDFSink rejectedAppend;
+  persistence = WVModelOutputNetCDFSink::openAppend(
+      configuration, existingDescriptor, appendPlan, existingLayout,
+      &appendSource, destinationProgress, rejectedAppend);
+  require(!persistence &&
+              persistence.code == WVCheckpointStatusCode::unsupportedObserver &&
+              appendSource.preflightCount() == 1 &&
+              appendSource.unexpectedCallCount() == 0 &&
+              fileBytes(existingPath) == originalBytes,
+          "direct append factory changed its destination after rejected "
+          "source preflight");
 }
 
 void testMultipleFilesGroupsAndSharedState() {
@@ -1795,21 +2137,23 @@ void testMultipleFilesGroupsAndSharedState() {
       checkpoint.configuration, false, descriptor,
       std::make_unique<WVReferenceFFTEngine>(), source);
   require(static_cast<bool>(status), status.message);
+  WVOutputPlan plan;
+  status = WVOutputPlan::create(descriptor, modelOutputCatalog(),
+                                checkpoint.state.t, end, {}, plan);
+  require(static_cast<bool>(status), status.message);
   WVModelOutputNetCDFSink sink;
   auto persistence = WVModelOutputNetCDFSink::createNew(
-      {modelOutputCatalog(), checkpoint, false}, descriptor, layout, source.get(), sink);
+      {modelOutputCatalog(), checkpoint, false}, descriptor, plan, layout,
+      source.get(), sink);
   require(static_cast<bool>(persistence), persistence.message);
-  WVOutputPlan plan;
-  status = WVOutputPlan::create(descriptor, modelOutputCatalog(), checkpoint.state.t, end, {}, plan);
-  require(static_cast<bool>(status), status.message);
   status = sink.preflight(plan);
   require(static_cast<bool>(status), status.message);
   WVOutputEvent event;
   const auto planned = plan.event(0);
   event.eventOrdinal = planned.eventOrdinal;
   event.scheduledTime = planned.scheduledTime;
-  event.state = {checkpoint.state.view(), additional.constBlocks(),
-                 additional.blockCount()};
+  event.state = eventState(checkpoint, planned.scheduledTime,
+                           additional.constBlocks(), additional.blockCount());
   event.routes = planned.routes;
   event.routeCount = planned.routeCount;
   require(planned.routeCount == 3,
@@ -2091,12 +2435,6 @@ void testOptionalMatlabFixture() {
   require(restoredInspection.additionalState.blockCount() == 4,
           "MATLAB dynamic particle/tracer state was not reconstructed");
   ZeroSampleSource samples(appendInspection.latestRestart.configuration);
-  WVModelOutputNetCDFSink sink;
-  persistence = WVModelOutputNetCDFSink::openAppend(
-      {modelOutputCatalog(), restoredInspection.checkpoint, false}, descriptor,
-      layout, &samples, appendInspection.destinationProgress, sink);
-  require(static_cast<bool>(persistence),
-          persistence.message + " at " + persistence.location);
   WVOutputPlan plan;
   status = WVOutputPlan::create(
       descriptor, modelOutputCatalog(), appendInspection.latestRestart.t,
@@ -2105,6 +2443,12 @@ void testOptionalMatlabFixture() {
   require(static_cast<bool>(status), status.message);
   require(plan.eventCount() >= 1,
           "MATLAB append plan did not select a future schedule point");
+  WVModelOutputNetCDFSink sink;
+  persistence = WVModelOutputNetCDFSink::openAppend(
+      {modelOutputCatalog(), restoredInspection.checkpoint, false}, descriptor,
+      plan, layout, &samples, appendInspection.destinationProgress, sink);
+  require(static_cast<bool>(persistence),
+          persistence.message + " at " + persistence.location);
   status = sink.preflight(plan);
   require(static_cast<bool>(status), status.message);
   std::vector<WVAdditionalStateBlockConstView> blocks;
@@ -2116,8 +2460,8 @@ void testOptionalMatlabFixture() {
   const auto planned = plan.event(0);
   event.eventOrdinal = planned.eventOrdinal;
   event.scheduledTime = planned.scheduledTime;
-  event.state = {restoredInspection.checkpoint.state.view(), blocks.data(),
-                 blocks.size()};
+  event.state = eventState(restoredInspection.checkpoint,
+                           planned.scheduledTime, blocks.data(), blocks.size());
   event.routes = planned.routes;
   event.routeCount = planned.routeCount;
   for (std::size_t route = 0; route < planned.routeCount; ++route) {
@@ -2161,12 +2505,6 @@ void testOptionalMatlabLinearFixture() {
       inspection.latestRestart.configuration, true, descriptor,
       std::make_unique<WVReferenceFFTEngine>(), source);
   require(static_cast<bool>(status), status.message);
-  WVModelOutputNetCDFSink sink;
-  persistence = WVModelOutputNetCDFSink::openAppend(
-      {modelOutputCatalog(), restoredInspection.checkpoint, true}, descriptor,
-      restoredInspection.layout, source.get(), inspection.destinationProgress,
-      sink);
-  require(static_cast<bool>(persistence), persistence.message);
   WVOutputPlan plan;
   status = WVOutputPlan::create(
       descriptor, modelOutputCatalog(), inspection.latestRestart.t,
@@ -2174,13 +2512,20 @@ void testOptionalMatlabLinearFixture() {
       plan);
   require(static_cast<bool>(status) && plan.eventCount() == 1,
           "MATLAB linear append plan mismatch");
+  WVModelOutputNetCDFSink sink;
+  persistence = WVModelOutputNetCDFSink::openAppend(
+      {modelOutputCatalog(), restoredInspection.checkpoint, true}, descriptor,
+      plan, restoredInspection.layout, source.get(),
+      inspection.destinationProgress, sink);
+  require(static_cast<bool>(persistence), persistence.message);
   status = sink.preflight(plan);
   require(static_cast<bool>(status), status.message);
   const auto planned = plan.event(0);
   WVOutputEvent event;
   event.eventOrdinal = planned.eventOrdinal;
   event.scheduledTime = planned.scheduledTime;
-  event.state = eventState(restoredInspection.checkpoint);
+  event.state =
+      eventState(restoredInspection.checkpoint, planned.scheduledTime);
   event.routes = planned.routes;
   event.routeCount = planned.routeCount;
   WVOutputDeliveryResult delivery;
@@ -2233,15 +2578,15 @@ void testAlgorithmicSchedulePersistence() {
       checkpoint.state.coefficients.shape, descriptor, layout);
   require(static_cast<bool>(status), status.message);
   WVModelOutputNetCDFConfiguration configuration{modelOutputCatalog(), checkpoint, false};
-  WVModelOutputNetCDFSink sink;
-  auto persistence = WVModelOutputNetCDFSink::createNew(
-      configuration, descriptor, layout, nullptr, sink);
-  require(static_cast<bool>(persistence), persistence.message);
   WVOutputPlan plan;
   status = WVOutputPlan::create(descriptor, modelOutputCatalog(), initialTime, initialTime + 1.0, {},
                                 plan);
   require(static_cast<bool>(status) && plan.eventCount() == 2,
           "algorithmic schedule create plan");
+  WVModelOutputNetCDFSink sink;
+  auto persistence = WVModelOutputNetCDFSink::createNew(
+      configuration, descriptor, plan, layout, nullptr, sink);
+  require(static_cast<bool>(persistence), persistence.message);
   status = sink.preflight(plan);
   require(static_cast<bool>(status), status.message);
   for (std::size_t index = 0; index < plan.eventCount(); ++index) {
@@ -2267,6 +2612,14 @@ void testAlgorithmicSchedulePersistence() {
               std::get<std::vector<std::int64_t>>(next->storage)[0] == 2,
           "algorithmic schedule configuration and cursor round trip");
 
+  WVOutputPlan resumed;
+  status = WVOutputPlan::create(
+      descriptor, modelOutputCatalog(), initialTime + 1.0, initialTime + 4.0,
+      inspection.scheduleContinuations, resumed);
+  require(static_cast<bool>(status) && resumed.eventCount() == 1 &&
+              resumed.event(0).scheduledTime == initialTime + 4.0,
+          "algorithmic schedule append cursor");
+
   const auto beforeRejectedAppend = fileBytes(path);
   auto mismatchedProgress = inspection.destinationProgress;
   auto &mismatchedCursorValues =
@@ -2279,7 +2632,7 @@ void testAlgorithmicSchedulePersistence() {
   ++std::get<std::vector<std::int64_t>>(mismatchedNext->storage)[0];
   WVModelOutputNetCDFSink rejectedAppend;
   persistence = WVModelOutputNetCDFSink::openAppend(
-      configuration, descriptor, layout, nullptr, mismatchedProgress,
+      configuration, descriptor, resumed, layout, nullptr, mismatchedProgress,
       rejectedAppend);
   require(!persistence &&
               persistence.code == WVCheckpointStatusCode::appendConflict &&
@@ -2289,8 +2642,8 @@ void testAlgorithmicSchedulePersistence() {
                                   const std::string &description) {
     WVModelOutputNetCDFSink rejected;
     const auto rejectedStatus = WVModelOutputNetCDFSink::openAppend(
-        configuration, descriptor, layout, nullptr, {std::move(progress)},
-        rejected);
+        configuration, descriptor, resumed, layout, nullptr,
+        {std::move(progress)}, rejected);
     require(!rejectedStatus &&
                 rejectedStatus.code == WVCheckpointStatusCode::appendConflict &&
                 fileBytes(path) == beforeRejectedAppend,
@@ -2310,18 +2663,10 @@ void testAlgorithmicSchedulePersistence() {
                  "destination time-last drift");
 
   WVModelOutputNetCDFSink append;
-  persistence = WVModelOutputNetCDFSink::openAppend(configuration, descriptor,
-                                                    layout, nullptr,
-                                                    inspection.destinationProgress,
-                                                    append);
+  persistence = WVModelOutputNetCDFSink::openAppend(
+      configuration, descriptor, resumed, layout, nullptr,
+      inspection.destinationProgress, append);
   require(static_cast<bool>(persistence), persistence.message);
-  WVOutputPlan resumed;
-  status = WVOutputPlan::create(descriptor, modelOutputCatalog(), initialTime + 1.0,
-                                initialTime + 4.0,
-                                inspection.scheduleContinuations, resumed);
-  require(static_cast<bool>(status) && resumed.eventCount() == 1 &&
-              resumed.event(0).scheduledTime == initialTime + 4.0,
-          "algorithmic schedule append cursor");
   status = append.preflight(resumed);
   require(static_cast<bool>(status), status.message);
   checkpoint.state.t = resumed.event(0).scheduledTime;
@@ -2351,16 +2696,16 @@ void testAlgorithmicScheduleThroughModelAndRequestRunner() {
   auto status = WVIntegrationStateLayout::create(
       checkpoint.state.coefficients.shape, descriptor, layout);
   require(static_cast<bool>(status), status.message);
-  WVModelOutputNetCDFSink seed;
-  auto persistence = WVModelOutputNetCDFSink::createNew(
-      {modelOutputCatalog(), checkpoint, false}, descriptor, layout, nullptr,
-      seed);
-  require(static_cast<bool>(persistence), persistence.message);
   WVOutputPlan seedPlan;
   status = WVOutputPlan::create(descriptor, modelOutputCatalog(), initialTime,
                                 scheduledTime(1), {}, seedPlan);
   require(static_cast<bool>(status) && seedPlan.eventCount() == 2,
           "algorithmic WVModel seed plan mismatch");
+  WVModelOutputNetCDFSink seed;
+  auto persistence = WVModelOutputNetCDFSink::createNew(
+      {modelOutputCatalog(), checkpoint, false}, descriptor, seedPlan, layout,
+      nullptr, seed);
+  require(static_cast<bool>(persistence), persistence.message);
   status = seed.preflight(seedPlan);
   require(static_cast<bool>(status), status.message);
   for (std::size_t eventIndex = 0; eventIndex < seedPlan.eventCount();
@@ -2370,7 +2715,7 @@ void testAlgorithmicScheduleThroughModelAndRequestRunner() {
     WVOutputEvent event;
     event.eventOrdinal = planned.eventOrdinal;
     event.scheduledTime = planned.scheduledTime;
-    event.state = eventState(checkpoint);
+    event.state = eventState(checkpoint, planned.scheduledTime);
     event.routes = planned.routes;
     event.routeCount = planned.routeCount;
     for (std::size_t routeIndex = 0; routeIndex < planned.routeCount;
@@ -2640,23 +2985,23 @@ void testVariableObservationBatches() {
   require(static_cast<bool>(status), status.message);
   WVModelOutputNetCDFConfiguration configuration{modelOutputCatalog(), checkpoint, false};
   VariableBatchSource malformedSource(1, true);
-  WVModelOutputNetCDFSink malformedSink;
-  auto persistence = WVModelOutputNetCDFSink::createNew(
-      configuration, invalidDescriptor, invalidLayout, &malformedSource,
-      malformedSink);
-  require(static_cast<bool>(persistence), persistence.message);
   WVOutputPlan invalidPlan;
   status = WVOutputPlan::create(invalidDescriptor, modelOutputCatalog(), initialTime,
                                 initialTime + 1.0, {}, invalidPlan);
   require(static_cast<bool>(status) && invalidPlan.eventCount() == 2,
           "malformed variable-batch output plan");
+  WVModelOutputNetCDFSink malformedSink;
+  auto persistence = WVModelOutputNetCDFSink::createNew(
+      configuration, invalidDescriptor, invalidPlan, invalidLayout,
+      &malformedSource, malformedSink);
+  require(static_cast<bool>(persistence), persistence.message);
   status = malformedSink.preflight(invalidPlan);
   require(static_cast<bool>(status), status.message);
 
   WVOutputEvent invalidEvent;
   invalidEvent.eventOrdinal = invalidPlan.event(0).eventOrdinal;
   invalidEvent.scheduledTime = invalidPlan.event(0).scheduledTime;
-  invalidEvent.state = eventState(checkpoint);
+  invalidEvent.state = eventState(checkpoint, invalidEvent.scheduledTime);
   invalidEvent.routes = invalidPlan.event(0).routes;
   invalidEvent.routeCount = invalidPlan.event(0).routeCount;
   WVOutputDeliveryResult delivery;
@@ -2695,22 +3040,22 @@ void testVariableObservationBatches() {
       checkpoint.configuration, false, descriptor,
       std::make_unique<WVReferenceFFTEngine>(), source);
   require(static_cast<bool>(status), status.message);
-  WVModelOutputNetCDFSink sink;
-  persistence = WVModelOutputNetCDFSink::createNew(
-      configuration, descriptor, layout, source.get(), sink);
-  require(static_cast<bool>(persistence), persistence.message);
   WVOutputPlan plan;
   status = WVOutputPlan::create(descriptor, modelOutputCatalog(), initialTime, initialTime + 1.0, {},
                                 plan);
   require(static_cast<bool>(status) && plan.eventCount() == 2,
           "variable-batch output plan");
+  WVModelOutputNetCDFSink sink;
+  persistence = WVModelOutputNetCDFSink::createNew(
+      configuration, descriptor, plan, layout, source.get(), sink);
+  require(static_cast<bool>(persistence), persistence.message);
   status = sink.preflight(plan);
   require(static_cast<bool>(status), status.message);
 
   WVOutputEvent event;
   event.eventOrdinal = plan.event(0).eventOrdinal;
   event.scheduledTime = plan.event(0).scheduledTime;
-  event.state = eventState(checkpoint);
+  event.state = eventState(checkpoint, event.scheduledTime);
   event.routes = plan.event(0).routes;
   event.routeCount = plan.event(0).routeCount;
   delivery = {};
@@ -2718,6 +3063,7 @@ void testVariableObservationBatches() {
   require(static_cast<bool>(status), status.message);
   event.eventOrdinal = plan.event(1).eventOrdinal;
   event.scheduledTime = plan.event(1).scheduledTime;
+  event.state = eventState(checkpoint, event.scheduledTime);
   event.routes = plan.event(1).routes;
   event.routeCount = plan.event(1).routeCount;
   delivery = {};
@@ -3038,10 +3384,17 @@ void testVariableObservationBatches() {
       {axisRolePath.string()}, *modelOutputCatalog(), malformedAxisInspection);
   require(!persistence, "reader accepted an unknown axis coordinate role");
 
+  WVOutputPlan appendPlan;
+  status = WVOutputPlan::create(descriptor, modelOutputCatalog(), initialTime + 1.0,
+                                initialTime + 2.0,
+                                inspection.scheduleContinuations,
+                                appendPlan);
+  require(static_cast<bool>(status) && appendPlan.eventCount() == 1,
+          "variable-batch append plan");
   VariableBatchSource driftedSource(2);
   WVModelOutputNetCDFSink drifted;
   persistence = WVModelOutputNetCDFSink::openAppend(
-      configuration, descriptor, layout, &driftedSource,
+      configuration, descriptor, appendPlan, layout, &driftedSource,
       inspection.destinationProgress, drifted);
   require(!persistence &&
               persistence.code == WVCheckpointStatusCode::appendConflict,
@@ -3054,20 +3407,14 @@ void testVariableObservationBatches() {
   require(static_cast<bool>(status), status.message);
   WVModelOutputNetCDFSink append;
   persistence = WVModelOutputNetCDFSink::openAppend(
-      configuration, descriptor, layout, appendSource.get(),
+      configuration, descriptor, appendPlan, layout, appendSource.get(),
       inspection.destinationProgress, append);
   require(static_cast<bool>(persistence), persistence.message);
-  WVOutputPlan appendPlan;
-  status = WVOutputPlan::create(descriptor, modelOutputCatalog(), initialTime + 1.0,
-                                initialTime + 2.0,
-                                inspection.scheduleContinuations,
-                                appendPlan);
-  require(static_cast<bool>(status) && appendPlan.eventCount() == 1,
-          "variable-batch append plan");
   status = append.preflight(appendPlan);
   require(static_cast<bool>(status), status.message);
   event.eventOrdinal = appendPlan.event(0).eventOrdinal;
   event.scheduledTime = appendPlan.event(0).scheduledTime;
+  event.state = eventState(checkpoint, event.scheduledTime);
   event.routes = appendPlan.event(0).routes;
   event.routeCount = appendPlan.event(0).routeCount;
   delivery = {};
@@ -3096,16 +3443,71 @@ void testRegisteredTopologyProviders() {
   addObserver("variable-pass", "variable-pass", "WVTestVariablePass");
   addObserver("ragged-a", "ragged-a", "WVTestRaggedProfile");
   addObserver("ragged-b", "ragged-b", "WVTestRaggedProfile");
+  addObserver("nested-ragged", "nested-ragged", "WVTestNestedRagged");
   auto &primary = record.outputFiles[0].groups[0];
   primary.observerIdentifiers.insert(primary.observerIdentifiers.end(),
                                      {"fixed-bin", "moving-track",
-                                      "variable-pass", "ragged-a"});
+                                      "variable-pass", "ragged-a",
+                                      "nested-ragged"});
   auto secondary = primary;
   secondary.identifier = "ragged-secondary";
   secondary.name = "ragged-secondary";
   secondary.containsCompleteCoefficientRestart = false;
   secondary.observerIdentifiers = {"ragged-b"};
   record.outputFiles[0].groups.push_back(std::move(secondary));
+
+  const auto requireNestedPersistence =
+      [&](std::size_t occurrenceCount) {
+        int file = -1;
+        int group = -1;
+        int passDimension = -1;
+        int profileDimension = -1;
+        int sampleDimension = -1;
+        std::size_t passCount = 0;
+        std::size_t profileCount = 0;
+        std::size_t sampleCount = 0;
+        int profileCountVariable = -1;
+        int sampleOffsetVariable = -1;
+        std::vector<long long> profileCounts(2 * occurrenceCount);
+        std::vector<long long> sampleOffsets(3 * occurrenceCount);
+        require(
+            nc_open(path.c_str(), NC_NOWRITE, &file) == NC_NOERR &&
+                nc_inq_ncid(file, "wave-vortex", &group) == NC_NOERR &&
+                nc_inq_dimid(group, "nested_pass", &passDimension) ==
+                    NC_NOERR &&
+                nc_inq_dimlen(group, passDimension, &passCount) == NC_NOERR &&
+                nc_inq_dimid(group, "nested_profile", &profileDimension) ==
+                    NC_NOERR &&
+                nc_inq_dimlen(group, profileDimension, &profileCount) ==
+                    NC_NOERR &&
+                nc_inq_dimid(group, "nested_sample", &sampleDimension) ==
+                    NC_NOERR &&
+                nc_inq_dimlen(group, sampleDimension, &sampleCount) ==
+                    NC_NOERR &&
+                passCount == 2 * occurrenceCount &&
+                profileCount == 3 * occurrenceCount &&
+                sampleCount == 4 * occurrenceCount &&
+                nc_inq_varid(group, "nested_pass_profile_count",
+                             &profileCountVariable) == NC_NOERR &&
+                nc_get_var_longlong(group, profileCountVariable,
+                                    profileCounts.data()) == NC_NOERR &&
+                nc_inq_varid(group, "nested_profile_sample_offset",
+                             &sampleOffsetVariable) == NC_NOERR &&
+                nc_get_var_longlong(group, sampleOffsetVariable,
+                                    sampleOffsets.data()) == NC_NOERR &&
+                nc_close(file) == NC_NOERR,
+            "nested pass/profile/sample persistence is incomplete");
+        for (std::size_t occurrence = 0; occurrence < occurrenceCount;
+             ++occurrence) {
+          require(profileCounts[2 * occurrence] == 2 &&
+                      profileCounts[2 * occurrence + 1] == 1 &&
+                      sampleOffsets[3 * occurrence] == 0 &&
+                      sampleOffsets[3 * occurrence + 1] == 2 &&
+                      sampleOffsets[3 * occurrence + 2] == 2,
+                  "nested ragged counts or occurrence-local offsets changed "
+                  "during persistence");
+        }
+      };
 
   auto descriptor = descriptorFor(record);
   WVIntegrationStateLayout layout;
@@ -3117,15 +3519,16 @@ void testRegisteredTopologyProviders() {
       checkpoint.configuration, false, descriptor,
       std::make_unique<WVReferenceFFTEngine>(), source);
   require(static_cast<bool>(status), status.message);
-  WVModelOutputNetCDFSink sink;
-  auto persistence = WVModelOutputNetCDFSink::createNew(
-      {modelOutputCatalog(), checkpoint, false}, descriptor, layout, source.get(), sink);
-  require(static_cast<bool>(persistence), persistence.message);
   WVOutputPlan plan;
   status = WVOutputPlan::create(descriptor, modelOutputCatalog(), initialTime, initialTime + 1.0, {},
                                 plan);
   require(static_cast<bool>(status) && plan.groupCount() == 2,
           "registered topology plan did not retain both groups");
+  WVModelOutputNetCDFSink sink;
+  auto persistence = WVModelOutputNetCDFSink::createNew(
+      {modelOutputCatalog(), checkpoint, false}, descriptor, plan, layout,
+      source.get(), sink);
+  require(static_cast<bool>(persistence), persistence.message);
   status = sink.preflight(plan);
   require(static_cast<bool>(status), status.message);
   for (std::size_t eventIndex = 0; eventIndex < plan.eventCount(); ++eventIndex) {
@@ -3133,7 +3536,7 @@ void testRegisteredTopologyProviders() {
     WVOutputEvent event;
     event.eventOrdinal = planned.eventOrdinal;
     event.scheduledTime = planned.scheduledTime;
-    event.state = eventState(checkpoint);
+    event.state = eventState(checkpoint, planned.scheduledTime);
     event.routes = planned.routes;
     event.routeCount = planned.routeCount;
     for (std::size_t route = 0; route < planned.routeCount; ++route) {
@@ -3144,10 +3547,13 @@ void testRegisteredTopologyProviders() {
   }
   persistence = sink.close();
   require(static_cast<bool>(persistence), persistence.message);
+  requireNestedPersistence(2);
 
   WVModelOutputNetCDFInspection inspection;
-  persistence = WVModelOutputNetCDFSink::inspect({path.string()}, *modelOutputCatalog(), inspection);
-  require(static_cast<bool>(persistence), persistence.message);
+  persistence = WVModelOutputNetCDFSink::inspect(
+      {path.string()}, *modelOutputCatalog(), inspection);
+  require(static_cast<bool>(persistence),
+          persistence.message + " at " + persistence.location);
   const auto raggedSchemas = std::count_if(
       inspection.observationSchemas.begin(),
       inspection.observationSchemas.end(), [](const auto &candidate) {
@@ -3160,9 +3566,21 @@ void testRegisteredTopologyProviders() {
       inspection.observationSchemas.end(), [](const auto &candidate) {
         return candidate.observerIdentifier == "fixed-bin";
       });
+  const auto nestedSchema = std::find_if(
+      inspection.observationSchemas.begin(),
+      inspection.observationSchemas.end(), [](const auto &candidate) {
+        return candidate.observerIdentifier == "nested-ragged" &&
+               candidate.schema.identifier == "test-nested-ragged-v1";
+      });
   require(raggedSchemas == 2 &&
-              inspection.observationSchemas.size() == 5 &&
-              fixedSchema != inspection.observationSchemas.end(),
+              inspection.observationSchemas.size() == 6 &&
+              fixedSchema != inspection.observationSchemas.end() &&
+              nestedSchema != inspection.observationSchemas.end() &&
+              nestedSchema->schema.variables.size() == 3 &&
+              nestedSchema->schema.variables[0]
+                      .raggedChildAxisIdentifier == "profile" &&
+              nestedSchema->schema.variables[1]
+                      .raggedChildAxisIdentifier == "sample",
           "registered providers or same-provider ownership did not round trip");
   const auto fixedValue = std::find_if(
       fixedSchema->schema.variables.begin(), fixedSchema->schema.variables.end(),
@@ -3178,11 +3596,6 @@ void testRegisteredTopologyProviders() {
       checkpoint.configuration, false, descriptor,
       std::make_unique<WVReferenceFFTEngine>(), appendSource);
   require(static_cast<bool>(status), status.message);
-  WVModelOutputNetCDFSink append;
-  persistence = WVModelOutputNetCDFSink::openAppend(
-      {modelOutputCatalog(), checkpoint, false}, descriptor, layout,
-      appendSource.get(), inspection.destinationProgress, append);
-  require(static_cast<bool>(persistence), persistence.message);
   WVOutputPlan appendPlan;
   status = WVOutputPlan::create(descriptor, modelOutputCatalog(), initialTime + 1.0,
                                 initialTime + 2.0,
@@ -3190,13 +3603,18 @@ void testRegisteredTopologyProviders() {
                                 appendPlan);
   require(static_cast<bool>(status) && appendPlan.eventCount() == 1,
           "same-provider append plan is incorrect");
+  WVModelOutputNetCDFSink append;
+  persistence = WVModelOutputNetCDFSink::openAppend(
+      {modelOutputCatalog(), checkpoint, false}, descriptor, appendPlan, layout,
+      appendSource.get(), inspection.destinationProgress, append);
+  require(static_cast<bool>(persistence), persistence.message);
   status = append.preflight(appendPlan);
   require(static_cast<bool>(status), status.message);
   const auto planned = appendPlan.event(0);
   WVOutputEvent appendEvent;
   appendEvent.eventOrdinal = planned.eventOrdinal;
   appendEvent.scheduledTime = planned.scheduledTime;
-  appendEvent.state = eventState(checkpoint);
+  appendEvent.state = eventState(checkpoint, planned.scheduledTime);
   appendEvent.routes = planned.routes;
   appendEvent.routeCount = planned.routeCount;
   for (std::size_t route = 0; route < planned.routeCount; ++route) {
@@ -3206,6 +3624,7 @@ void testRegisteredTopologyProviders() {
   }
   persistence = append.close();
   require(static_cast<bool>(persistence), persistence.message);
+  requireNestedPersistence(3);
 
   const auto invalidPath = directory.path / "registered-ragged-retry.nc";
   auto invalidRecord = recordFor(checkpoint, invalidPath);
@@ -3227,22 +3646,22 @@ void testRegisteredTopologyProviders() {
       checkpoint.configuration, false, invalidDescriptor,
       std::make_unique<WVReferenceFFTEngine>(), invalidSource);
   require(static_cast<bool>(status), status.message);
-  WVModelOutputNetCDFSink invalidSink;
-  persistence = WVModelOutputNetCDFSink::createNew(
-      {modelOutputCatalog(), checkpoint, false}, invalidDescriptor, invalidLayout,
-      invalidSource.get(), invalidSink);
-  require(static_cast<bool>(persistence), persistence.message);
   WVOutputPlan invalidPlan;
   status = WVOutputPlan::create(invalidDescriptor, modelOutputCatalog(), initialTime, initialTime, {},
                                 invalidPlan);
   require(static_cast<bool>(status), status.message);
+  WVModelOutputNetCDFSink invalidSink;
+  persistence = WVModelOutputNetCDFSink::createNew(
+      {modelOutputCatalog(), checkpoint, false}, invalidDescriptor,
+      invalidPlan, invalidLayout, invalidSource.get(), invalidSink);
+  require(static_cast<bool>(persistence), persistence.message);
   status = invalidSink.preflight(invalidPlan);
   require(static_cast<bool>(status), status.message);
   const auto invalidPlanned = invalidPlan.event(0);
   WVOutputEvent invalidEvent;
   invalidEvent.eventOrdinal = invalidPlanned.eventOrdinal;
   invalidEvent.scheduledTime = invalidPlanned.scheduledTime;
-  invalidEvent.state = eventState(checkpoint);
+  invalidEvent.state = eventState(checkpoint, invalidPlanned.scheduledTime);
   invalidEvent.routes = invalidPlanned.routes;
   invalidEvent.routeCount = invalidPlanned.routeCount;
   WVOutputDeliveryResult delivery;
@@ -3277,10 +3696,16 @@ void testObservationGraphCollisionPreflight() {
     auto status = WVIntegrationStateLayout::create(
         checkpoint.state.coefficients.shape, descriptor, layout);
     require(static_cast<bool>(status), status.message);
+    WVOutputPlan plan;
+    status = WVOutputPlan::create(
+        descriptor, modelOutputCatalog(), checkpoint.state.t,
+        checkpoint.state.t + 2.0, {}, plan);
+    require(static_cast<bool>(status), status.message);
     ConflictingSchemaSource source(conflictingAxis);
     WVModelOutputNetCDFSink sink;
     const auto persistence = WVModelOutputNetCDFSink::createNew(
-        {modelOutputCatalog(), checkpoint, false}, descriptor, layout, &source, sink);
+        {modelOutputCatalog(), checkpoint, false}, descriptor, plan, layout,
+        &source, sink);
     require(!persistence && !std::filesystem::exists(path),
             conflictingAxis
                 ? "incompatible shared axes survived complete-graph preflight"
@@ -3290,7 +3715,7 @@ void testObservationGraphCollisionPreflight() {
   requireRejected(true, "axis-collision.nc");
 }
 
-void testCoincidentRoutesShareExactEventBatches() {
+void testCoincidentRoutesKeepDistinctLogicalBatches() {
   TemporaryDirectory directory;
   auto checkpoint = checkpointTemplate();
   const auto initialTime = checkpoint.state.t;
@@ -3322,35 +3747,36 @@ void testCoincidentRoutesShareExactEventBatches() {
       checkpoint.configuration, false, descriptor,
       std::make_unique<WVReferenceFFTEngine>(), source);
   require(static_cast<bool>(status), status.message);
-  WVModelOutputNetCDFSink sink;
-  auto persistence = WVModelOutputNetCDFSink::createNew(
-      {modelOutputCatalog(), checkpoint, false}, descriptor, layout, source.get(), sink);
-  require(static_cast<bool>(persistence), persistence.message);
   WVOutputPlan plan;
   status = WVOutputPlan::create(descriptor, modelOutputCatalog(), initialTime, initialTime, {}, plan);
   require(static_cast<bool>(status) && plan.eventCount() == 1 &&
               plan.event(0).routeCount == 2,
           "coincident-route output plan did not preserve two routes");
+  WVModelOutputNetCDFSink sink;
+  auto persistence = WVModelOutputNetCDFSink::createNew(
+      {modelOutputCatalog(), checkpoint, false}, descriptor, plan, layout,
+      source.get(), sink);
+  require(static_cast<bool>(persistence), persistence.message);
   status = sink.preflight(plan);
   require(static_cast<bool>(status), status.message);
 
   WVOutputEvent event;
   event.eventOrdinal = plan.event(0).eventOrdinal;
   event.scheduledTime = plan.event(0).scheduledTime;
-  event.state = eventState(checkpoint);
+  event.state = eventState(checkpoint, event.scheduledTime);
   event.routes = plan.event(0).routes;
   event.routeCount = plan.event(0).routeCount;
   WVOutputDeliveryResult delivery;
   status = sink.deliver(event, event.routes[0], delivery);
   require(static_cast<bool>(status) &&
               source->metrics().preparedEventCount == 2 &&
-              registeredBatches->batchCount(synthetic.identifier) == 1,
-          "first coincident route did not evaluate its exact event once");
+              registeredBatches->batchCount(synthetic.identifier) == 2,
+          "coincident distinct logical groups shared an observation batch");
   delivery = {};
   status = sink.deliver(event, event.routes[1], delivery);
   require(static_cast<bool>(status) &&
               source->metrics().preparedEventCount == 2 &&
-              registeredBatches->batchCount(synthetic.identifier) == 1,
+              registeredBatches->batchCount(synthetic.identifier) == 2,
           "second coincident route regenerated an exact-event batch");
   persistence = sink.close();
   require(static_cast<bool>(persistence), persistence.message);
@@ -3468,16 +3894,16 @@ void testWVModelRetainsFailedNetCDFRouteForRetry() {
   auto status = WVIntegrationStateLayout::create(
       checkpoint.state.coefficients.shape, sourceDescriptor, sourceLayout);
   require(static_cast<bool>(status), status.message);
-  WVModelOutputNetCDFSink sourceSink;
-  auto persistence = WVModelOutputNetCDFSink::createNew(
-      {modelOutputCatalog(), checkpoint, false}, sourceDescriptor,
-      sourceLayout, nullptr, sourceSink);
-  require(static_cast<bool>(persistence), persistence.message);
   WVOutputPlan sourcePlan;
   status = WVOutputPlan::create(sourceDescriptor, modelOutputCatalog(),
                                 initialTime, initialTime + 1.0, {}, sourcePlan);
   require(static_cast<bool>(status) && sourcePlan.eventCount() == 2,
           "algorithmic retry source plan is incomplete");
+  WVModelOutputNetCDFSink sourceSink;
+  auto persistence = WVModelOutputNetCDFSink::createNew(
+      {modelOutputCatalog(), checkpoint, false}, sourceDescriptor, sourcePlan,
+      sourceLayout, nullptr, sourceSink);
+  require(static_cast<bool>(persistence), persistence.message);
   status = sourceSink.preflight(sourcePlan);
   require(static_cast<bool>(status), status.message);
   for (std::size_t eventIndex = 0; eventIndex < sourcePlan.eventCount();
@@ -3523,13 +3949,6 @@ void testWVModelRetainsFailedNetCDFRouteForRetry() {
       sourceInspection, *modelOutputCatalog(), model.stateLayout(),
       restoredCheckpoint, restoredAdditionalState);
   require(static_cast<bool>(persistence), persistence.message);
-  WVModelOutputNetCDFSink netCDFSink;
-  persistence = WVModelOutputNetCDFSink::createNew(
-      {modelOutputCatalog(), restoredCheckpoint,
-       sourceInspection.isDynamicsLinear},
-      descriptor, layout, nullptr, netCDFSink);
-  require(static_cast<bool>(persistence), persistence.message);
-  FailOnceNetCDFSink sink(netCDFSink, 2);
   auto continuations = sourceInspection.scheduleContinuations;
   auto secondaryContinuation = continuations[0];
   secondaryContinuation.fileIdentifier = "secondary";
@@ -3543,6 +3962,13 @@ void testWVModelRetainsFailedNetCDFRouteForRetry() {
               plan.event(0).routeCount == 2,
           "WVModel retry plan did not preserve the algorithmic continuation "
           "and two coincident routes");
+  WVModelOutputNetCDFSink netCDFSink;
+  persistence = WVModelOutputNetCDFSink::createNew(
+      {modelOutputCatalog(), restoredCheckpoint,
+       sourceInspection.isDynamicsLinear},
+      descriptor, plan, layout, nullptr, netCDFSink);
+  require(static_cast<bool>(persistence), persistence.message);
+  FailOnceNetCDFSink sink(netCDFSink, 2);
   status = netCDFSink.preflight(plan);
   require(static_cast<bool>(status), status.message);
   WVModelState state;
@@ -3624,6 +4050,7 @@ int main() {
     testCreateReadAndAppend();
     testLinearInitialCoefficientsAndPassiveFields();
     testTransactionalRefusal();
+    testDirectFactoryPreflightBeforeDestinationAccess();
     testMultipleFilesGroupsAndSharedState();
     testOptionalMatlabFixture();
     testOptionalMatlabLinearFixture();
@@ -3633,7 +4060,7 @@ int main() {
     testVariableObservationBatches();
     testRegisteredTopologyProviders();
     testObservationGraphCollisionPreflight();
-    testCoincidentRoutesShareExactEventBatches();
+    testCoincidentRoutesKeepDistinctLogicalBatches();
     testWVModelRetainsFailedNetCDFRouteForRetry();
     std::cout << "PASS: MATLAB-compatible model-output persistence\n";
     return 0;

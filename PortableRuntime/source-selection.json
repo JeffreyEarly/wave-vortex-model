@@ -10,7 +10,8 @@
   },
   "postSelectionExtensions": {
     "explicitExtensionCatalog": "issue-271",
-    "description": "Source-linked observer, output-schedule, and forcing implementations are resolved through an explicitly owned immutable typed catalog; the reusable runner accepts that frozen catalog."
+    "eventDependentObservationGeometry": "issue-272",
+    "description": "Source-linked observer, output-schedule, and forcing implementations are resolved through an explicitly owned immutable typed catalog. Observation occurrences use construction-resolved schedule payloads, evaluator-owned event geometry, central resolved-field evaluation, and destination-independent retry identity."
   },
   "excluded": [
     "benchmark harnesses and payloads",

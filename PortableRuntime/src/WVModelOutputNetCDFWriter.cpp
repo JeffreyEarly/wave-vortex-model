@@ -242,13 +242,31 @@ public:
     std::uint32_t schemaVersion = WVObservationSchemaContractVersion;
     WVObservationVariable specification;
     std::vector<WVObservationAxis> axes;
+    // Resolved once before delivery. Entries align with axes; fixed axes use
+    // WVNoResolvedObservationVariable. The write vectors use NetCDF order and
+    // retain their bounded capacity between occurrences.
+    std::vector<std::size_t> unlimitedAxisIndices;
+    std::vector<std::size_t> writeStart;
+    std::vector<std::size_t> writeCount;
     int realId = -1;
     int imagId = -1;
   };
 
   struct ObserverSchema {
+    ObserverSchema(std::string identifier, WVObservationSchema value)
+        : observerIdentifier(std::move(identifier)), schema(std::move(value)) {}
     std::string observerIdentifier;
     WVObservationSchema schema;
+    std::size_t observerOrdinal = 0;
+    std::vector<std::vector<std::size_t>> variableAxisIndices;
+    std::vector<std::size_t> persistenceVariableIndices;
+    std::vector<std::size_t> unlimitedAxisIndices;
+    std::vector<std::size_t> raggedChildAxisIndices;
+    // Reused validation workspace. These vectors are configuration-sized and
+    // never grow with the number of output occurrences.
+    std::vector<std::size_t> preparedValueIndices;
+    std::vector<std::size_t> preparedUnlimitedExtents;
+    std::vector<std::uint8_t> preparedObservedVariables;
   };
 
   struct UnlimitedAxis {
@@ -278,6 +296,14 @@ public:
     double lastCommittedTime = 0.0;
     WVOutputScheduleOrdinal committedOrdinal = WVNoCommittedOutputOrdinal;
     WVPortableTypedRecord scheduleCursor;
+    // Event-only numeric bindings compiled while all occurrence batches are
+    // prepared, before this group can mutate its destination.
+    std::vector<std::size_t> preparedBatchIndices;
+    std::vector<std::size_t> preparedUnlimitedAxisIncrements;
+    std::vector<double> realWriteScratch;
+    std::vector<double> imaginaryWriteScratch;
+    std::vector<long long> integerWriteScratch;
+    std::vector<const char *> textWriteScratch;
   };
 
   struct File {
@@ -292,11 +318,14 @@ public:
   };
 
   struct PreparedObservationBatch {
-    std::string observerIdentifier;
+    WVObservationOccurrenceIdentity identity;
     WVObservationBatch batch;
   };
 
-  WVModelOutputNetCDFConfiguration configuration;
+  std::shared_ptr<const WVExtensionCatalog> catalog;
+  WVTransformConstantStratificationConfiguration transformConfiguration;
+  const WVCheckpoint *constructionCheckpoint = nullptr;
+  bool isDynamicsLinear = false;
   WVPortableObserverDescriptor descriptor;
   WVIntegrationStateLayout stateLayout;
   WVObserverSampleSource *sampleSource = nullptr;
@@ -304,14 +333,62 @@ public:
   std::vector<WVOutputDestinationProgress> destinationProgress;
   WVModelOutputNetCDFMetrics metrics;
   std::size_t preparedEventOrdinal = std::numeric_limits<std::size_t>::max();
+  double preparedScheduledTime =
+      std::numeric_limits<double>::quiet_NaN();
   std::size_t preparedEventRouteCount = 0;
-  std::set<std::pair<std::size_t, std::size_t>> committedPreparedRoutes;
+  std::vector<std::pair<std::size_t, std::size_t>> committedPreparedRoutes;
   std::vector<PreparedObservationBatch> preparedObservationBatches;
   WVCheckpointStatus preparedObservationStatus = WVCheckpointStatus::ok();
   bool preparedEventComplete = false;
   bool appendMode = false;
   bool closed = false;
   bool preflightComplete = false;
+
+  std::size_t sinkOccurrenceWorkspaceRetainedBytes() const noexcept {
+    std::size_t bytes =
+        preparedObservationBatches.capacity() *
+        sizeof(PreparedObservationBatch);
+    for (const auto &prepared : preparedObservationBatches)
+      bytes += prepared.batch.metrics().retainedStorageBytes;
+    for (const auto &file : files)
+      for (const auto &group : file.groups)
+        bytes += group.realWriteScratch.capacity() * sizeof(double) +
+                 group.imaginaryWriteScratch.capacity() * sizeof(double) +
+                 group.integerWriteScratch.capacity() * sizeof(long long) +
+                 group.textWriteScratch.capacity() * sizeof(const char *);
+    return bytes;
+  }
+
+  void updatePreparedObservationMetrics() {
+    std::size_t retainedBytes = preparedObservationBatches.capacity() *
+                                sizeof(PreparedObservationBatch);
+    std::size_t liveBytes = 0;
+    for (const auto &prepared : preparedObservationBatches) {
+      const auto batchMetrics = prepared.batch.metrics();
+      retainedBytes += batchMetrics.retainedStorageBytes;
+      liveBytes += batchMetrics.liveBytes;
+    }
+    metrics.batchRetainedStorageBytes =
+        std::max(metrics.batchRetainedStorageBytes, retainedBytes);
+    metrics.batchMaximumLiveBytes =
+        std::max(metrics.batchMaximumLiveBytes, liveBytes);
+    const auto evaluatorRetained =
+        sampleSource == nullptr
+            ? 0
+            : sampleSource->occurrenceWorkspaceRetainedBytes();
+    const auto evaluatorLive =
+        sampleSource == nullptr ? 0
+                                : sampleSource->occurrenceWorkspaceLiveBytes();
+    const auto sinkWorkspaceRetained =
+        sinkOccurrenceWorkspaceRetainedBytes();
+    metrics.occurrenceWorkspaceRetainedBytes =
+        evaluatorRetained + sinkWorkspaceRetained;
+    metrics.occurrenceWorkspaceMaximumLiveBytes = std::max(
+        metrics.occurrenceWorkspaceMaximumLiveBytes,
+        std::max(evaluatorRetained, evaluatorLive) +
+            sinkWorkspaceRetained);
+    updateRetainedStorageMetric();
+  }
 
   static const WVObservationAxis *
   axis(const WVObservationSchema &schema,
@@ -324,52 +401,452 @@ public:
     return found == schema.axes.end() ? nullptr : &*found;
   }
 
-  static const WVObservationValue *
-  value(const WVObservationBatch &batch,
-        const std::string &identifier) noexcept {
-    const auto found =
-        std::find_if(batch.values.begin(), batch.values.end(),
-                     [&](const auto &candidate) {
-                       return candidate.variableIdentifier == identifier;
-                     });
-    return found == batch.values.end() ? nullptr : &*found;
+  static bool applicable(const WVObservationVariable &variable,
+                         WVObservationBatchKind kind) noexcept {
+    const bool initial =
+        variable.layout == WVObservationValueLayout::staticValue ||
+        variable.layout == WVObservationValueLayout::initialValue;
+    return kind == WVObservationBatchKind::initial ? initial : !initial;
   }
 
-  const WVObservationBatch *
-  preparedObservationBatch(const std::string &observerIdentifier) const {
-    const auto found = std::find_if(
-        preparedObservationBatches.begin(), preparedObservationBatches.end(),
-        [&](const auto &candidate) {
-          return candidate.observerIdentifier == observerIdentifier;
-        });
-    return found == preparedObservationBatches.end() ? nullptr
-                                                      : &found->batch;
-  }
-
-  const ObserverSchema *observerSchema(const std::string &observerIdentifier,
-                                       const WVOutputEvent &event) const {
-    for (std::size_t routeIndex = 0; routeIndex < event.routeCount;
-         ++routeIndex) {
-      const auto &route = event.routes[routeIndex];
-      if (route.fileOrdinal >= files.size() ||
-          route.groupOrdinal >= files[route.fileOrdinal].groups.size())
-        continue;
-      const auto &schemas =
-          files[route.fileOrdinal].groups[route.groupOrdinal].observerSchemas;
-      const auto found = std::find_if(
-          schemas.begin(), schemas.end(), [&](const auto &candidate) {
-            return candidate.observerIdentifier == observerIdentifier;
-          });
-      if (found != schemas.end())
-        return &*found;
+  WVKernelStatus compileVariableWriteBindings(Group &group) {
+    constexpr auto unresolved = WVNoResolvedObservationVariable;
+    for (auto &variable : group.derivedVariables) {
+      variable.unlimitedAxisIndices.assign(variable.axes.size(), unresolved);
+      for (std::size_t axisIndex = 0; axisIndex < variable.axes.size();
+           ++axisIndex) {
+        const auto &axisDefinition = variable.axes[axisIndex];
+        if (axisDefinition.kind != WVObservationAxisKind::unlimited)
+          continue;
+        const auto found = std::find_if(
+            group.unlimitedAxes.begin(), group.unlimitedAxes.end(),
+            [&](const auto &candidate) {
+              return candidate.name == axisDefinition.name;
+            });
+        if (found == group.unlimitedAxes.end())
+          return {WVKernelStatusCode::invalidConfiguration,
+                  "An observation variable has no resolved unlimited axis."};
+        variable.unlimitedAxisIndices[axisIndex] =
+            static_cast<std::size_t>(found - group.unlimitedAxes.begin());
+      }
+      const auto persistedRank =
+          variable.axes.size() +
+          (variable.specification.layout == WVObservationValueLayout::record
+               ? 1
+               : 0);
+      variable.writeStart.assign(persistedRank, 0);
+      variable.writeCount.assign(persistedRank, 1);
     }
-    return nullptr;
+    return WVKernelStatus::ok();
+  }
+
+  WVKernelStatus compileEventBindings(Group &group,
+                                      const WVOutputRouteView &route) {
+    constexpr auto unresolved = WVNoResolvedObservationVariable;
+    if (route.observerCount != group.observerSchemas.size())
+      return {WVKernelStatusCode::invalidConfiguration,
+              "Output route and observation schemas differ."};
+    const auto writeBindingStatus = compileVariableWriteBindings(group);
+    if (!writeBindingStatus)
+      return writeBindingStatus;
+
+    for (std::size_t observerIndex = 0; observerIndex < route.observerCount;
+         ++observerIndex) {
+      const auto &observerView = route.observers[observerIndex];
+      if (observerView.record == nullptr)
+        return {WVKernelStatusCode::invalidConfiguration,
+                "Output route has no resolved observer."};
+      auto &binding = group.observerSchemas[observerIndex];
+      binding.observerOrdinal = observerView.observerOrdinal;
+      binding.unlimitedAxisIndices.assign(binding.schema.axes.size(),
+                                           unresolved);
+      for (std::size_t axisIndex = 0; axisIndex < binding.schema.axes.size();
+           ++axisIndex) {
+        const auto &axisDefinition = binding.schema.axes[axisIndex];
+        if (axisDefinition.kind != WVObservationAxisKind::unlimited)
+          continue;
+        const auto found = std::find_if(
+            group.unlimitedAxes.begin(), group.unlimitedAxes.end(),
+            [&](const auto &candidate) {
+              return candidate.name == axisDefinition.name;
+            });
+        if (found == group.unlimitedAxes.end())
+          return {WVKernelStatusCode::invalidConfiguration,
+                  "Observer schema has no resolved unlimited axis."};
+        binding.unlimitedAxisIndices[axisIndex] =
+            static_cast<std::size_t>(found - group.unlimitedAxes.begin());
+      }
+
+      binding.variableAxisIndices.assign(binding.schema.variables.size(), {});
+      binding.persistenceVariableIndices.assign(binding.schema.variables.size(),
+                                                unresolved);
+      binding.raggedChildAxisIndices.assign(binding.schema.variables.size(),
+                                            unresolved);
+      for (std::size_t variableIndex = 0;
+           variableIndex < binding.schema.variables.size(); ++variableIndex) {
+        const auto &specification = binding.schema.variables[variableIndex];
+        auto &axisIndices = binding.variableAxisIndices[variableIndex];
+        axisIndices.reserve(specification.dimensionIdentifiers.size());
+        for (const auto &identifier : specification.dimensionIdentifiers) {
+          const auto found = std::find_if(
+              binding.schema.axes.begin(), binding.schema.axes.end(),
+              [&](const auto &candidate) {
+                return candidate.identifier == identifier;
+              });
+          if (found == binding.schema.axes.end())
+            return {WVKernelStatusCode::invalidConfiguration,
+                    "Observer variable has an unresolved axis."};
+          axisIndices.push_back(
+              static_cast<std::size_t>(found - binding.schema.axes.begin()));
+        }
+        if (specification.raggedRole != WVObservationRaggedRole::none) {
+          const auto found = std::find_if(
+              binding.schema.axes.begin(), binding.schema.axes.end(),
+              [&](const auto &candidate) {
+                return candidate.identifier ==
+                       specification.raggedChildAxisIdentifier;
+              });
+          if (found == binding.schema.axes.end())
+            return {WVKernelStatusCode::invalidConfiguration,
+                    "Ragged observation variable has an unresolved child axis."};
+          binding.raggedChildAxisIndices[variableIndex] =
+              static_cast<std::size_t>(found - binding.schema.axes.begin());
+        }
+        const auto persisted = std::find_if(
+            group.derivedVariables.begin(), group.derivedVariables.end(),
+            [&](const auto &candidate) {
+              return candidate.observerIdentifier ==
+                         binding.observerIdentifier &&
+                     candidate.specification.identifier ==
+                         specification.identifier;
+            });
+        if (persisted != group.derivedVariables.end())
+          binding.persistenceVariableIndices[variableIndex] =
+              static_cast<std::size_t>(persisted -
+                                       group.derivedVariables.begin());
+        else if (!(group.record.containsCompleteCoefficientRestart &&
+                   coefficientMetadata(specification.name) != nullptr))
+          return {WVKernelStatusCode::invalidConfiguration,
+                  "Observer variable has no resolved persistence binding."};
+      }
+      binding.preparedValueIndices.assign(binding.schema.variables.size(),
+                                          unresolved);
+      binding.preparedUnlimitedExtents.assign(binding.schema.axes.size(),
+                                              unresolved);
+      binding.preparedObservedVariables.assign(binding.schema.variables.size(),
+                                               0);
+    }
+    group.preparedUnlimitedAxisIncrements.assign(group.unlimitedAxes.size(),
+                                                 unresolved);
+    return WVKernelStatus::ok();
+  }
+
+  WVKernelStatus prepareEventBindingContracts(Group &group) {
+    if (sampleSource == nullptr)
+      return WVKernelStatus::ok();
+    for (const auto &identifier : group.record.observerIdentifiers) {
+      const auto *record = observer(identifier);
+      if (record == nullptr)
+        return {WVKernelStatusCode::invalidConfiguration,
+                "An output group references an unknown observer."};
+      WVObservationSchema schema;
+      auto status = sampleSource->observationSchema(*record, schema);
+      if (!status)
+        return status;
+      status = validateObservationSchema(schema);
+      if (!status)
+        return status;
+
+      for (const auto &axisDefinition : schema.axes) {
+        if (axisDefinition.kind != WVObservationAxisKind::unlimited)
+          continue;
+        const auto found =
+            std::find_if(group.unlimitedAxes.begin(), group.unlimitedAxes.end(),
+                         [&](const auto &candidate) {
+                           return candidate.name == axisDefinition.name;
+                         });
+        if (found == group.unlimitedAxes.end())
+          group.unlimitedAxes.push_back({axisDefinition.name});
+      }
+      for (const auto &specification : schema.variables) {
+        if (group.record.containsCompleteCoefficientRestart &&
+            coefficientMetadata(specification.name) != nullptr)
+          continue;
+        Variable variable;
+        variable.observerIdentifier = identifier;
+        variable.schemaIdentifier = schema.identifier;
+        variable.schemaVersion = schema.version;
+        variable.specification = specification;
+        variable.axes.reserve(specification.dimensionIdentifiers.size());
+        for (const auto &axisIdentifier : specification.dimensionIdentifiers) {
+          const auto *axisDefinition = axis(schema, axisIdentifier);
+          if (axisDefinition == nullptr)
+            return {WVKernelStatusCode::invalidConfiguration,
+                    "An observation variable has an unresolved axis."};
+          variable.axes.push_back(*axisDefinition);
+        }
+        group.derivedVariables.push_back(std::move(variable));
+      }
+      group.observerSchemas.emplace_back(identifier, std::move(schema));
+    }
+    return WVKernelStatus::ok();
+  }
+
+  WVKernelStatus validateAndCompilePlan(const WVOutputPlan &plan) {
+    const auto &outputFiles = descriptor.record().outputFiles;
+    if (plan.metrics().fileCount != outputFiles.size())
+      return {WVKernelStatusCode::invalidConfiguration,
+              "Output plan and NetCDF file graph differ."};
+    std::size_t expectedGroupCount = 0;
+    for (const auto &file : outputFiles)
+      expectedGroupCount += file.groups.size();
+    if (plan.groupCount() != expectedGroupCount)
+      return {WVKernelStatusCode::invalidConfiguration,
+              "Output plan and NetCDF group graph differ."};
+    if (!files.empty()) {
+      if (files.size() != outputFiles.size())
+        return {WVKernelStatusCode::invalidConfiguration,
+                "Output plan and prepared NetCDF file graph differ."};
+      for (std::size_t fileIndex = 0; fileIndex < files.size(); ++fileIndex)
+        if (files[fileIndex].groups.size() !=
+            outputFiles[fileIndex].groups.size())
+          return {WVKernelStatusCode::invalidConfiguration,
+                  "Output plan and prepared NetCDF group graph differ."};
+    }
+
+    std::vector<std::vector<std::uint8_t>> visited;
+    visited.reserve(outputFiles.size());
+    for (const auto &file : outputFiles)
+      visited.emplace_back(file.groups.size(), 0);
+    for (std::size_t groupIndex = 0; groupIndex < plan.groupCount();
+         ++groupIndex) {
+      const auto route = plan.groupRoute(groupIndex);
+      if (route.fileOrdinal >= outputFiles.size() ||
+          route.groupOrdinal >= outputFiles[route.fileOrdinal].groups.size())
+        return {WVKernelStatusCode::invalidConfiguration,
+                "Output plan contains an out-of-range NetCDF route."};
+      if (visited[route.fileOrdinal][route.groupOrdinal] != 0)
+        return {WVKernelStatusCode::invalidConfiguration,
+                "Output plan contains a duplicate NetCDF route."};
+      visited[route.fileOrdinal][route.groupOrdinal] = 1;
+      const auto &fileRecord = outputFiles[route.fileOrdinal];
+      const auto &groupRecord = fileRecord.groups[route.groupOrdinal];
+      if (route.fileIdentifier != fileRecord.identifier ||
+          route.destination != fileRecord.destination ||
+          route.groupIdentifier != groupRecord.identifier ||
+          route.groupName != groupRecord.name ||
+          route.observerCount != groupRecord.observerIdentifiers.size())
+        return {WVKernelStatusCode::invalidConfiguration,
+                "Output plan and NetCDF route identity differ."};
+      for (std::size_t observerIndex = 0; observerIndex < route.observerCount;
+           ++observerIndex) {
+        if (route.observers[observerIndex].record == nullptr ||
+            route.observers[observerIndex].record->identifier !=
+                groupRecord.observerIdentifiers[observerIndex])
+          return {WVKernelStatusCode::invalidConfiguration,
+                  "Output plan and NetCDF observer route differ."};
+      }
+      if (sampleSource == nullptr)
+        continue;
+      if (files.empty()) {
+        Group transient(groupRecord);
+        const auto preparation = prepareEventBindingContracts(transient);
+        if (!preparation)
+          return preparation;
+        const auto compilation = compileEventBindings(transient, route);
+        if (!compilation)
+          return compilation;
+      } else {
+        const auto compilation = compileEventBindings(
+            files[route.fileOrdinal].groups[route.groupOrdinal], route);
+        if (!compilation)
+          return compilation;
+      }
+    }
+    return WVKernelStatus::ok();
+  }
+
+  WVCheckpointStatus
+  validateResolvedObservationBatch(ObserverSchema &binding,
+                                   const WVObservationBatch &batch) {
+    constexpr auto unresolved = WVNoResolvedObservationVariable;
+    // The observer/schema association and every variable slot were compiled
+    // before destination mutation. Event batches intentionally carry no
+    // required names; numeric slots are the authoritative hot-path identity.
+    if (batch.kind != WVObservationBatchKind::event ||
+        batch.schemaVersion != binding.schema.version)
+      return failure(WVCheckpointStatusCode::schemaMismatch,
+                     "Observation batch phase or schema version drifted.",
+                     "/");
+    std::size_t expectedValueCount = 0;
+    for (const auto &variable : binding.schema.variables)
+      expectedValueCount += applicable(variable, batch.kind) ? 1 : 0;
+    if (batch.values.size() != expectedValueCount)
+      return failure(
+          WVCheckpointStatusCode::shapeMismatch,
+          "Observation batch does not contain every applicable variable.",
+          "/");
+    std::fill(binding.preparedValueIndices.begin(),
+              binding.preparedValueIndices.end(), unresolved);
+    std::fill(binding.preparedUnlimitedExtents.begin(),
+              binding.preparedUnlimitedExtents.end(), unresolved);
+    std::fill(binding.preparedObservedVariables.begin(),
+              binding.preparedObservedVariables.end(), 0);
+
+    for (std::size_t valueIndex = 0; valueIndex < batch.values.size();
+         ++valueIndex) {
+      const auto &value = batch.values[valueIndex];
+      const auto variableIndex = value.resolvedVariableIndex;
+      if (variableIndex >= binding.schema.variables.size())
+        return failure(WVCheckpointStatusCode::schemaMismatch,
+                       "Observation value has no resolved variable slot.",
+                       "/");
+      const auto &variable = binding.schema.variables[variableIndex];
+      if (binding.preparedObservedVariables[variableIndex] != 0 ||
+          !applicable(variable, batch.kind))
+        return failure(
+            WVCheckpointStatusCode::schemaMismatch,
+            "Observation value is duplicated or belongs to another phase.",
+            "/");
+      if (value.scalarType != variable.scalarType ||
+          value.extents.size() !=
+              binding.variableAxisIndices[variableIndex].size())
+        return failure(WVCheckpointStatusCode::shapeMismatch,
+                       "Observation value type or rank differs from its schema.",
+                       "/");
+      std::size_t expectedElements = 1;
+      for (std::size_t dimension = 0; dimension < value.extents.size();
+           ++dimension) {
+        const auto axisIndex =
+            binding.variableAxisIndices[variableIndex][dimension];
+        const auto &axisDefinition = binding.schema.axes[axisIndex];
+        const auto extent = value.extents[dimension];
+        if (axisDefinition.kind == WVObservationAxisKind::fixed) {
+          if (extent != axisDefinition.extent)
+            return failure(WVCheckpointStatusCode::shapeMismatch,
+                           "Observation fixed-axis extent changed.", "/");
+        } else if (binding.preparedUnlimitedExtents[axisIndex] == unresolved) {
+          binding.preparedUnlimitedExtents[axisIndex] = extent;
+        } else if (binding.preparedUnlimitedExtents[axisIndex] != extent) {
+          return failure(WVCheckpointStatusCode::shapeMismatch,
+                         "Observation unlimited-axis extents disagree.", "/");
+        }
+        if (extent != 0 &&
+            expectedElements >
+                std::numeric_limits<std::size_t>::max() / extent)
+          return failure(WVCheckpointStatusCode::invalidValue,
+                         "Observation element count overflows size_t.", "/");
+        expectedElements *= extent;
+      }
+      if (value.elementCount() != expectedElements)
+        return failure(WVCheckpointStatusCode::invalidValue,
+                       "Observation element count overflowed.", "/");
+      const bool hasData =
+          expectedElements == 0 ||
+          (value.scalarType == WVObservationScalarType::real64 &&
+           value.real64Data() != nullptr) ||
+          (value.scalarType == WVObservationScalarType::complex64 &&
+           value.complex64Data() != nullptr) ||
+          (value.scalarType == WVObservationScalarType::integer64 &&
+           value.integer64Data() != nullptr) ||
+          (value.scalarType == WVObservationScalarType::boolean8 &&
+           value.boolean8Data() != nullptr) ||
+          (value.scalarType == WVObservationScalarType::text &&
+           value.textData() != nullptr);
+      if (!hasData)
+        return failure(WVCheckpointStatusCode::invalidValue,
+                       "Observation value has no compatible buffer.", "/");
+      if (value.ownership == WVObservationBufferOwnership::owned) {
+        const std::size_t ownedCount =
+            value.scalarType == WVObservationScalarType::real64
+                ? value.ownedReal64.size()
+                : value.scalarType == WVObservationScalarType::complex64
+                      ? value.ownedComplex64.size()
+                      : value.scalarType == WVObservationScalarType::integer64
+                            ? value.ownedInteger64.size()
+                            : value.scalarType ==
+                                      WVObservationScalarType::boolean8
+                                  ? value.ownedBoolean8.size()
+                                  : value.ownedText.size();
+        if (ownedCount != expectedElements)
+          return failure(WVCheckpointStatusCode::shapeMismatch,
+                         "Owned observation buffer size differs from its extents.",
+                         "/");
+      }
+      if (value.scalarType == WVObservationScalarType::boolean8) {
+        const auto *booleans = value.boolean8Data();
+        for (std::size_t index = 0; index < expectedElements; ++index)
+          if (booleans[index] > 1)
+            return failure(WVCheckpointStatusCode::invalidValue,
+                           "Boolean observations must be zero or one.", "/");
+      }
+      binding.preparedObservedVariables[variableIndex] = 1;
+      binding.preparedValueIndices[variableIndex] = valueIndex;
+    }
+
+    for (std::size_t variableIndex = 0;
+         variableIndex < binding.schema.variables.size(); ++variableIndex) {
+      const auto &variable = binding.schema.variables[variableIndex];
+      if (!applicable(variable, batch.kind) ||
+          variable.raggedRole == WVObservationRaggedRole::none)
+        continue;
+      const auto valueIndex = binding.preparedValueIndices[variableIndex];
+      const auto childAxisIndex =
+          binding.raggedChildAxisIndices[variableIndex];
+      if (valueIndex >= batch.values.size() ||
+          childAxisIndex >= binding.preparedUnlimitedExtents.size() ||
+          binding.preparedUnlimitedExtents[childAxisIndex] == unresolved)
+        return failure(WVCheckpointStatusCode::shapeMismatch,
+                       "Ragged observation child axis is absent.", "/");
+      const auto &value = batch.values[valueIndex];
+      const auto *integers = value.integer64Data();
+      const auto count = value.elementCount();
+      const auto childExtent =
+          binding.preparedUnlimitedExtents[childAxisIndex];
+      if (variable.raggedRole == WVObservationRaggedRole::rowCount) {
+        std::size_t total = 0;
+        for (std::size_t index = 0; index < count; ++index) {
+          if (integers[index] < 0 ||
+              static_cast<std::uint64_t>(integers[index]) >
+                  std::numeric_limits<std::size_t>::max())
+            return failure(WVCheckpointStatusCode::invalidValue,
+                           "Ragged row counts must be nonnegative and bounded.",
+                           "/");
+          const auto row = static_cast<std::size_t>(integers[index]);
+          if (total > std::numeric_limits<std::size_t>::max() - row)
+            return failure(WVCheckpointStatusCode::invalidValue,
+                           "Ragged row-count sum overflows size_t.", "/");
+          total += row;
+        }
+        if (total != childExtent)
+          return failure(WVCheckpointStatusCode::shapeMismatch,
+                         "Ragged row counts do not span their child axis.",
+                         "/");
+      } else {
+        if (count == 0 && childExtent != 0)
+          return failure(WVCheckpointStatusCode::shapeMismatch,
+                         "An empty ragged parent has a nonempty child axis.",
+                         "/");
+        if (count != 0 && integers[0] != 0)
+          return failure(WVCheckpointStatusCode::invalidValue,
+                         "Ragged row offsets must begin at zero.", "/");
+        for (std::size_t index = 0; index < count; ++index)
+          if (integers[index] < 0 ||
+              static_cast<std::uint64_t>(integers[index]) > childExtent ||
+              (index > 0 && integers[index] < integers[index - 1]))
+            return failure(WVCheckpointStatusCode::invalidValue,
+                           "Ragged row offsets are malformed.", "/");
+      }
+    }
+    return WVCheckpointStatus::ok();
   }
 
   WVCheckpointStatus prepareObservationBatches(const WVOutputEvent &event) {
     if (sampleSource == nullptr)
       return WVCheckpointStatus::ok();
-    if (preparedEventOrdinal == event.eventOrdinal) {
+    if (preparedEventOrdinal == event.eventOrdinal &&
+        preparedScheduledTime == event.scheduledTime &&
+        preparedEventRouteCount == event.routeCount) {
       if (preparedEventComplete)
         return failure(WVCheckpointStatusCode::appendConflict,
                        "A completed output event cannot be delivered twice.",
@@ -378,89 +855,128 @@ public:
     }
 
     preparedEventOrdinal = event.eventOrdinal;
+    preparedScheduledTime = event.scheduledTime;
     preparedEventRouteCount = event.routeCount;
     preparedEventComplete = false;
     committedPreparedRoutes.clear();
+    committedPreparedRoutes.reserve(event.routeCount);
     preparedObservationBatches.clear();
     preparedObservationStatus = WVCheckpointStatus::ok();
     const auto sourceStatus = sampleSource->prepare(event);
     if (!sourceStatus) {
+      updatePreparedObservationMetrics();
       preparedObservationStatus = failure(
           WVCheckpointStatusCode::unsupportedObserver, sourceStatus.message,
           "/");
       return preparedObservationStatus;
     }
 
-    std::set<std::string> observerIdentifiers;
+    std::size_t requestedBatchCount = 0;
     for (std::size_t routeIndex = 0; routeIndex < event.routeCount;
          ++routeIndex)
+      requestedBatchCount += event.routes[routeIndex].observerCount;
+    preparedObservationBatches.reserve(requestedBatchCount);
+    for (std::size_t routeIndex = 0; routeIndex < event.routeCount;
+         ++routeIndex) {
+      const auto &route = event.routes[routeIndex];
+      if (route.fileOrdinal >= files.size() ||
+          route.groupOrdinal >= files[route.fileOrdinal].groups.size()) {
+        preparedObservationStatus = failure(
+            WVCheckpointStatusCode::schemaMismatch,
+            "An event route is outside the configured output graph.", "/");
+        return preparedObservationStatus;
+      }
+      auto &group = files[route.fileOrdinal].groups[route.groupOrdinal];
+      if (route.observerCount != group.observerSchemas.size()) {
+        preparedObservationStatus = failure(
+            WVCheckpointStatusCode::schemaMismatch,
+            "An event route has an incompatible observer schema count.", "/");
+        return preparedObservationStatus;
+      }
+      group.preparedBatchIndices.assign(route.observerCount,
+                                        std::numeric_limits<std::size_t>::max());
       for (std::size_t observerIndex = 0;
-           observerIndex < event.routes[routeIndex].observerCount;
-           ++observerIndex) {
-        const auto *record =
-            event.routes[routeIndex].observers[observerIndex].record;
-        if (record != nullptr)
-          observerIdentifiers.insert(record->identifier);
+           observerIndex < route.observerCount; ++observerIndex) {
+        const auto &observerView = route.observers[observerIndex];
+        if (observerView.record == nullptr) {
+          preparedObservationStatus = failure(
+              WVCheckpointStatusCode::schemaMismatch,
+              "An event route has no resolved observer record.", "/");
+          return preparedObservationStatus;
+        }
+        WVObservationOccurrenceIdentity identity;
+        const auto identityStatus = sampleSource->preparedOccurrenceIdentity(
+            route, observerView, identity);
+        if (!identityStatus) {
+          updatePreparedObservationMetrics();
+          preparedObservationStatus = failure(
+              WVCheckpointStatusCode::unsupportedObserver,
+              identityStatus.message, "/");
+          return preparedObservationStatus;
+        }
+        if (identity.preparationOwner == nullptr ||
+            identity.preparationGeneration == 0) {
+          updatePreparedObservationMetrics();
+          preparedObservationStatus = failure(
+              WVCheckpointStatusCode::unsupportedObserver,
+              "An observation source returned no exact prepared-occurrence "
+              "cache token.", "/");
+          return preparedObservationStatus;
+        }
+        std::size_t batchIndex = preparedObservationBatches.size();
+        for (std::size_t candidate = 0;
+             candidate < preparedObservationBatches.size(); ++candidate)
+          if (samePreparedObservationOccurrenceIdentity(
+                  preparedObservationBatches[candidate].identity, identity)) {
+            batchIndex = candidate;
+            break;
+          }
+        if (batchIndex == preparedObservationBatches.size()) {
+          WVObservationBatch batch;
+          const auto batchSourceStatus = sampleSource->observationBatch(
+              identity, *observerView.record, batch);
+          if (!batchSourceStatus) {
+            updatePreparedObservationMetrics();
+            preparedObservationStatus = failure(
+                WVCheckpointStatusCode::unsupportedObserver,
+                batchSourceStatus.message, "/");
+            return preparedObservationStatus;
+          }
+          preparedObservationBatches.push_back(
+              {identity, std::move(batch)});
+        }
+        const auto batchStatus = validateResolvedObservationBatch(
+            group.observerSchemas[observerIndex],
+            preparedObservationBatches[batchIndex].batch);
+        if (!batchStatus) {
+          updatePreparedObservationMetrics();
+          preparedObservationStatus = batchStatus;
+          return preparedObservationStatus;
+        }
+        group.preparedBatchIndices[observerIndex] = batchIndex;
       }
-
-    preparedObservationBatches.reserve(observerIdentifiers.size());
-    const auto updateBatchMetrics = [&]() {
-      std::size_t retainedBytes =
-          preparedObservationBatches.capacity() *
-          sizeof(PreparedObservationBatch);
-      std::size_t liveBytes = 0;
-      for (const auto &prepared : preparedObservationBatches) {
-        const auto batchMetrics = prepared.batch.metrics();
-        retainedBytes += prepared.observerIdentifier.capacity() +
-                         batchMetrics.retainedStorageBytes;
-        liveBytes += batchMetrics.liveBytes;
-      }
-      metrics.batchRetainedStorageBytes =
-          std::max(metrics.batchRetainedStorageBytes, retainedBytes);
-      metrics.batchMaximumLiveBytes =
-          std::max(metrics.batchMaximumLiveBytes, liveBytes);
-    };
-    for (const auto &identifier : observerIdentifiers) {
-      const auto *record = observer(identifier);
-      const auto *schema = observerSchema(identifier, event);
-      if (record == nullptr || schema == nullptr)
-        continue;
-      WVObservationBatch batch;
-      const auto batchSourceStatus =
-          sampleSource->observationBatch(*record, batch);
-      if (!batchSourceStatus) {
-        updateBatchMetrics();
-        preparedObservationStatus = failure(
-            WVCheckpointStatusCode::unsupportedObserver,
-            batchSourceStatus.message, "/");
-        return preparedObservationStatus;
-      }
-      const auto batchStatus =
-          validateObservationBatch(schema->schema, batch);
-      if (!batchStatus) {
-        preparedObservationBatches.push_back(
-            {identifier, std::move(batch)});
-        updateBatchMetrics();
-        preparedObservationStatus = failure(
-            WVCheckpointStatusCode::shapeMismatch, batchStatus.message, "/");
-        return preparedObservationStatus;
-      }
-      preparedObservationBatches.push_back(
-          {identifier, std::move(batch)});
     }
-    updateBatchMetrics();
+    updatePreparedObservationMetrics();
     return preparedObservationStatus;
   }
 
-  void completePreparedRoute(const WVOutputRouteView &route) {
+  void completePreparedRoute(const WVOutputEvent &event,
+                             const WVOutputRouteView &route) {
     if (sampleSource == nullptr)
       return;
-    committedPreparedRoutes.emplace(route.fileOrdinal, route.groupOrdinal);
+    const auto routeKey =
+        std::make_pair(route.fileOrdinal, route.groupOrdinal);
+    if (std::find(committedPreparedRoutes.begin(),
+                  committedPreparedRoutes.end(), routeKey) ==
+        committedPreparedRoutes.end())
+      committedPreparedRoutes.push_back(routeKey);
     if (committedPreparedRoutes.size() != preparedEventRouteCount)
       return;
     preparedObservationBatches.clear();
     committedPreparedRoutes.clear();
     preparedEventComplete = true;
+    sampleSource->complete(event);
+    updatePreparedObservationMetrics();
   }
 
   ~Impl() { close(); }
@@ -510,7 +1026,7 @@ public:
           WVObservationCoordinateRole::none;
     };
     for (const auto &file : descriptor.record().outputFiles)
-      for (const auto &group : file.groups) {
+        for (const auto &group : file.groups) {
         std::map<std::string, AxisContract> axesByPersistedName;
         std::map<std::string, std::string> variableOwners;
         variableOwners.emplace("t", "runtime");
@@ -574,23 +1090,26 @@ public:
   }
 
   WVCheckpointStatus validateConfiguration() const {
-    if (!configuration.catalog)
+    if (!catalog)
       return failure(WVCheckpointStatusCode::schemaMismatch,
                      "Output configuration has no extension catalog.", "/");
-    if (configuration.checkpointTemplate.metadata.profileIdentifier !=
+    if (constructionCheckpoint == nullptr)
+      return failure(WVCheckpointStatusCode::schemaMismatch,
+                     "Output construction has no checkpoint template.", "/");
+    if (constructionCheckpoint->metadata.profileIdentifier !=
             WVCheckpointProfileIdentifier ||
-        configuration.checkpointTemplate.metadata.profileVersion !=
+        constructionCheckpoint->metadata.profileVersion !=
             WVCheckpointProfileVersion)
       return failure(WVCheckpointStatusCode::schemaMismatch,
                      "Unsupported checkpoint template profile.", "/");
     WVTransformConstantStratificationDescriptor transform;
     const auto status = WVTransformConstantStratificationDescriptor::create(
-        configuration.checkpointTemplate.configuration, transform);
+        transformConfiguration, transform);
     if (!status)
       return failure(WVCheckpointStatusCode::descriptorFailure, status.message,
                      "/");
     const auto shape = stateLayout.coefficientShape();
-    if (shape.rows != configuration.checkpointTemplate.configuration.Nj ||
+    if (shape.rows != transformConfiguration.Nj ||
         shape.columns != transform.Nkl())
       return failure(WVCheckpointStatusCode::shapeMismatch,
                      "Output state layout and transform configuration differ.",
@@ -612,7 +1131,7 @@ public:
         coefficientTolerances[coefficientIndex++] = block.absoluteTolerance;
       }
     }
-    if (!configuration.isDynamicsLinear &&
+    if (!isDynamicsLinear &&
         (coefficientIndex != coefficientTolerances.size() ||
          coefficientTolerances[0] != coefficientTolerances[1] ||
          coefficientTolerances[0] != coefficientTolerances[2]))
@@ -938,7 +1457,7 @@ public:
         const std::string name =
             std::array<const char *, 3>{{"Ap", "Am", "A0"}}[family];
         const std::vector<int> coefficientDimensions =
-            configuration.isDynamicsLinear
+            isDynamicsLinear
                 ? std::vector<int>{rootDimensions[1], rootDimensions[0]}
                 : std::vector<int>{timeDimension, rootDimensions[1],
                                    rootDimensions[0]};
@@ -1247,6 +1766,10 @@ public:
       group.observerSchemas.push_back(
           {record->identifier, std::move(observationSchemaValue)});
     }
+    const auto bindingStatus = compileVariableWriteBindings(group);
+    if (!bindingStatus)
+      return failure(WVCheckpointStatusCode::schemaMismatch,
+                     bindingStatus.message, path);
     return WVCheckpointStatus::ok();
   }
 
@@ -1372,33 +1895,42 @@ public:
   }
 
   WVCheckpointStatus writeObservationValue(
-      Group &group, const Variable &variable,
+      Group &group, Variable &variable,
       const WVObservationValue &value, std::size_t recordIndex,
       const std::string &path) {
-    std::vector<std::size_t> start;
-    std::vector<std::size_t> count;
+    auto &start = variable.writeStart;
+    auto &count = variable.writeCount;
+    const auto expectedRank =
+        variable.axes.size() +
+        (variable.specification.layout == WVObservationValueLayout::record
+             ? 1
+             : 0);
+    if (start.size() != expectedRank || count.size() != expectedRank ||
+        variable.unlimitedAxisIndices.size() != variable.axes.size())
+      return failure(WVCheckpointStatusCode::schemaMismatch,
+                     "Observation write bindings were not compiled.", path);
+    std::fill(start.begin(), start.end(), 0);
+    std::fill(count.begin(), count.end(), 1);
+    std::size_t persistedDimension = 0;
     if (variable.specification.layout == WVObservationValueLayout::record) {
-      start.push_back(recordIndex);
-      count.push_back(1);
+      start[persistedDimension] = recordIndex;
+      ++persistedDimension;
     }
     for (std::size_t reverse = variable.axes.size(); reverse > 0; --reverse) {
       const auto logicalIndex = reverse - 1;
       const auto &axisDefinition = variable.axes[logicalIndex];
       std::size_t axisStart = 0;
       if (axisDefinition.kind == WVObservationAxisKind::unlimited) {
-        const auto found = std::find_if(
-            group.unlimitedAxes.begin(), group.unlimitedAxes.end(),
-            [&](const auto &candidate) {
-              return candidate.name == axisDefinition.name;
-            });
-        if (found == group.unlimitedAxes.end())
+        const auto axisIndex = variable.unlimitedAxisIndices[logicalIndex];
+        if (axisIndex >= group.unlimitedAxes.size())
           return failure(WVCheckpointStatusCode::schemaMismatch,
                          "Observation batch references an unresolved unlimited axis.",
                          path);
-        axisStart = found->committedCount;
+        axisStart = group.unlimitedAxes[axisIndex].committedCount;
       }
-      start.push_back(axisStart);
-      count.push_back(value.extents[logicalIndex]);
+      start[persistedDimension] = axisStart;
+      count[persistedDimension] = value.extents[logicalIndex];
+      ++persistedDimension;
     }
     const auto elementCount = value.elementCount();
     if (elementCount == 0)
@@ -1415,30 +1947,35 @@ public:
     if (value.scalarType == WVObservationScalarType::real64)
       return putReal(variable.realId, value.real64Data(), path);
     if (value.scalarType == WVObservationScalarType::complex64) {
-      std::vector<double> real(elementCount);
-      std::vector<double> imaginary(elementCount);
+      group.realWriteScratch.resize(elementCount);
+      group.imaginaryWriteScratch.resize(elementCount);
       for (std::size_t index = 0; index < elementCount; ++index) {
-        real[index] = value.complex64Data()[index].real;
-        imaginary[index] = value.complex64Data()[index].imag;
+        group.realWriteScratch[index] = value.complex64Data()[index].real;
+        group.imaginaryWriteScratch[index] =
+            value.complex64Data()[index].imag;
       }
-      auto result = putReal(variable.realId, real.data(), path + "_real");
+      auto result = putReal(variable.realId, group.realWriteScratch.data(),
+                            path + "_real");
       if (!result)
         return result;
-      return putReal(variable.imagId, imaginary.data(), path + "_imag");
+      return putReal(variable.imagId, group.imaginaryWriteScratch.data(),
+                     path + "_imag");
     }
     if (value.scalarType == WVObservationScalarType::integer64) {
-      std::vector<long long> integers(elementCount);
+      group.integerWriteScratch.resize(elementCount);
       std::transform(value.integer64Data(),
-                     value.integer64Data() + elementCount, integers.begin(),
+                     value.integer64Data() + elementCount,
+                     group.integerWriteScratch.begin(),
                      [](std::int64_t entry) {
                        return static_cast<long long>(entry);
                      });
       return detail::checkedNetCDF(
           start.empty()
               ? nc_put_var_longlong(group.id, variable.realId,
-                                    integers.data())
+                                    group.integerWriteScratch.data())
               : nc_put_vara_longlong(group.id, variable.realId, start.data(),
-                                     count.data(), integers.data()),
+                                     count.data(),
+                                     group.integerWriteScratch.data()),
           "Integer observation value write", path);
     }
     if (value.scalarType == WVObservationScalarType::boolean8)
@@ -1449,28 +1986,32 @@ public:
               : nc_put_vara_uchar(group.id, variable.realId, start.data(),
                                   count.data(), value.boolean8Data()),
           "Boolean observation value write", path);
-    std::vector<const char *> textValues(elementCount);
+    group.textWriteScratch.resize(elementCount);
     for (std::size_t index = 0; index < elementCount; ++index)
-      textValues[index] = value.textData()[index].c_str();
+      group.textWriteScratch[index] = value.textData()[index].c_str();
     return detail::checkedNetCDF(
         start.empty()
-            ? nc_put_var_string(group.id, variable.realId, textValues.data())
+            ? nc_put_var_string(group.id, variable.realId,
+                                group.textWriteScratch.data())
             : nc_put_vara_string(group.id, variable.realId, start.data(),
-                                 count.data(), textValues.data()),
+                                 count.data(), group.textWriteScratch.data()),
         "Text observation value write", path);
   }
 
   WVCheckpointStatus writeInitialAndStaticValues(File &file) {
-    const auto coefficientCount = configuration.checkpointTemplate.state
+    if (constructionCheckpoint == nullptr)
+      return failure(WVCheckpointStatusCode::schemaMismatch,
+                     "Initial output has no checkpoint template.", "/");
+    const auto coefficientCount = constructionCheckpoint->state
                                       .coefficients.shape.elementCount();
     for (auto &group : file.groups) {
       const std::string path = "/" + group.record.name;
       if (group.record.containsCompleteCoefficientRestart &&
-          configuration.isDynamicsLinear) {
+          isDynamicsLinear) {
         const std::array<const WVComplex64 *, 3> values{
-            configuration.checkpointTemplate.state.coefficients.Ap.data(),
-            configuration.checkpointTemplate.state.coefficients.Am.data(),
-            configuration.checkpointTemplate.state.coefficients.A0.data()};
+            constructionCheckpoint->state.coefficients.Ap.data(),
+            constructionCheckpoint->state.coefficients.Am.data(),
+            constructionCheckpoint->state.coefficients.A0.data()};
         for (std::size_t family = 0; family < 3; ++family) {
           const std::string name =
               std::array<const char *, 3>{{"Ap", "Am", "A0"}}[family];
@@ -1558,7 +2099,7 @@ public:
   WVCheckpointStatus stageFiles() {
     if (sampleSource != nullptr) {
       const auto status = sampleSource->prepareInitial(
-          configuration.checkpointTemplate.state.view());
+          constructionCheckpoint->state.view());
       if (!status)
         return failure(WVCheckpointStatusCode::unsupportedObserver,
                        status.message, "/observingSystems");
@@ -1583,9 +2124,8 @@ public:
       std::vector<int> forcingGroups;
       std::vector<const WVFrozenForcingEntry *> forcingEntries;
       result = detail::defineModelOutputRoot(
-          staged.id, configuration.checkpointTemplate,
-          configuration.catalog->forcings(),
-          configuration.isDynamicsLinear, rootDimensions, forcingGroups,
+          staged.id, *constructionCheckpoint, catalog->forcings(),
+          isDynamicsLinear, rootDimensions, forcingGroups,
           forcingEntries);
       if (!result)
         return result;
@@ -1608,8 +2148,8 @@ public:
       if (!result)
         return result;
       result = detail::writeModelOutputRoot(staged.id,
-                                            configuration.checkpointTemplate,
-                                            configuration.catalog->forcings(),
+                                            *constructionCheckpoint,
+                                            catalog->forcings(),
                                             forcingGroups, forcingEntries);
       if (!result)
         return result;
@@ -1978,7 +2518,7 @@ public:
                            &group.coefficientReal[family]),
               "Coefficient-variable lookup",
               "/" + group.record.name + "/" + name + "_real");
-          if (!result && configuration.isDynamicsLinear) {
+          if (!result && isDynamicsLinear) {
             result = detail::checkedNetCDF(
                 nc_inq_varid(group.id, name.c_str(),
                              &group.coefficientReal[family]),
@@ -2357,12 +2897,15 @@ public:
               return failure(WVCheckpointStatusCode::appendConflict,
                              "Existing algorithmic output cursor is malformed.",
                              "/" + group.record.name);
-            const auto decoded = decodePortableTypedRecord(
-                cursorBytes, group.scheduleCursor,
-                {WVMaximumOutputScheduleCursorBytes, true, false});
-            if (!decoded)
-              return failure(WVCheckpointStatusCode::appendConflict,
-                             decoded.message, "/" + group.record.name);
+            group.scheduleCursor = {};
+            if (!cursorBytes.empty()) {
+              const auto decoded = decodePortableTypedRecord(
+                  cursorBytes, group.scheduleCursor,
+                  {WVMaximumOutputScheduleCursorBytes, true, false});
+              if (!decoded)
+                return failure(WVCheckpointStatusCode::appendConflict,
+                               decoded.message, "/" + group.record.name);
+            }
             group.committedOrdinal =
                 static_cast<WVOutputScheduleOrdinal>(ordinals[timeIndex]);
           }
@@ -2493,15 +3036,30 @@ public:
     std::size_t bytes = sizeof(*this) + stateLayout.persistentBytes() +
                         files.capacity() * sizeof(File) +
                         destinationProgress.capacity() *
-                            sizeof(WVOutputDestinationProgress);
+                            sizeof(WVOutputDestinationProgress) +
+                        committedPreparedRoutes.capacity() *
+                            sizeof(std::pair<std::size_t, std::size_t>) +
+                        preparedObservationStatus.message.capacity() +
+                        preparedObservationStatus.location.capacity();
     for (const auto &file : files) {
-      bytes += file.groups.capacity() * sizeof(Group);
+      bytes += file.destination.native().capacity() *
+                   sizeof(std::filesystem::path::value_type) +
+               file.staging.native().capacity() *
+                   sizeof(std::filesystem::path::value_type) +
+               file.groups.capacity() * sizeof(Group);
       for (const auto &group : file.groups) {
         bytes += group.scheduleCursor.persistentBytes() -
                  sizeof(WVPortableTypedRecord) +
                  group.derivedVariables.capacity() * sizeof(Variable) +
                  group.observerSchemas.capacity() * sizeof(ObserverSchema) +
-                 group.unlimitedAxes.capacity() * sizeof(UnlimitedAxis);
+                 group.unlimitedAxes.capacity() * sizeof(UnlimitedAxis) +
+                 group.preparedBatchIndices.capacity() * sizeof(std::size_t) +
+                 group.preparedUnlimitedAxisIncrements.capacity() *
+                     sizeof(std::size_t) +
+                 group.realWriteScratch.capacity() * sizeof(double) +
+                 group.imaginaryWriteScratch.capacity() * sizeof(double) +
+                 group.integerWriteScratch.capacity() * sizeof(long long) +
+                 group.textWriteScratch.capacity() * sizeof(const char *);
         for (const auto &variable : group.derivedVariables)
           bytes += variable.observerIdentifier.capacity() +
                    variable.schemaIdentifier.capacity() +
@@ -2509,9 +3067,14 @@ public:
                    variable.specification.name.capacity() +
                    variable.specification.units.capacity() +
                    variable.specification.description.capacity() +
+                   variable.specification.raggedChildAxisIdentifier.capacity() +
                    variable.specification.dimensionIdentifiers.capacity() *
                        sizeof(std::string) +
                    variable.axes.capacity() * sizeof(WVObservationAxis) +
+                   variable.unlimitedAxisIndices.capacity() *
+                       sizeof(std::size_t) +
+                   variable.writeStart.capacity() * sizeof(std::size_t) +
+                   variable.writeCount.capacity() * sizeof(std::size_t) +
                    variable.specification.attributes.capacity() *
                        sizeof(WVObservationAttribute);
         for (const auto &variable : group.derivedVariables) {
@@ -2525,9 +3088,27 @@ public:
         }
         for (const auto &axisDefinition : group.unlimitedAxes)
           bytes += axisDefinition.name.capacity();
-        for (const auto &observerSchema : group.observerSchemas)
+        for (const auto &observerSchema : group.observerSchemas) {
           bytes += observerSchema.observerIdentifier.capacity() +
-                   observationSchemaRetainedBytes(observerSchema.schema);
+                   observationSchemaRetainedBytes(observerSchema.schema) +
+                   observerSchema.variableAxisIndices.capacity() *
+                       sizeof(std::vector<std::size_t>) +
+                   observerSchema.persistenceVariableIndices.capacity() *
+                       sizeof(std::size_t) +
+                   observerSchema.unlimitedAxisIndices.capacity() *
+                       sizeof(std::size_t) +
+                   observerSchema.raggedChildAxisIndices.capacity() *
+                       sizeof(std::size_t) +
+                   observerSchema.preparedValueIndices.capacity() *
+                       sizeof(std::size_t) +
+                   observerSchema.preparedUnlimitedExtents.capacity() *
+                       sizeof(std::size_t) +
+                   observerSchema.preparedObservedVariables.capacity() *
+                       sizeof(std::uint8_t);
+          for (const auto &axisIndices :
+               observerSchema.variableAxisIndices)
+            bytes += axisIndices.capacity() * sizeof(std::size_t);
+        }
       }
     }
     for (const auto &item : destinationProgress) {
@@ -2543,8 +3124,7 @@ public:
     bytes += preparedObservationBatches.capacity() *
              sizeof(PreparedObservationBatch);
     for (const auto &prepared : preparedObservationBatches)
-      bytes += prepared.observerIdentifier.capacity() +
-               prepared.batch.metrics().retainedStorageBytes;
+      bytes += prepared.batch.metrics().retainedStorageBytes;
     metrics.retainedStorageBytes = bytes;
   }
 
@@ -2555,12 +3135,12 @@ public:
     for (const auto &record : descriptor.record().outputFiles) {
       WVCheckpointInspection inspection;
       auto result = WVCheckpointReader::inspect(record.destination,
-                                                *configuration.catalog,
+                                                *catalog,
                                                 inspection);
       if (!result)
         return result;
       if (!sameTransformConfiguration(
-              configuration.checkpointTemplate.configuration,
+              transformConfiguration,
               inspection.configuration))
         return failure(WVCheckpointStatusCode::schemaMismatch,
                        "Append model configuration does not match the file.",
@@ -2756,49 +3336,64 @@ public:
     auto &file = files[route.fileOrdinal];
     auto &group = file.groups[route.groupOrdinal];
     const std::size_t index = group.recordCount;
-    std::vector<const WVObservationBatch *> observationBatches;
-    observationBatches.reserve(group.observerSchemas.size());
-    std::map<std::string, std::size_t> unlimitedAxisIncrements;
-    for (const auto &observerSchema : group.observerSchemas) {
-      const auto *batch =
-          preparedObservationBatch(observerSchema.observerIdentifier);
+    constexpr auto unresolved = WVNoResolvedObservationVariable;
+    std::fill(group.preparedUnlimitedAxisIncrements.begin(),
+              group.preparedUnlimitedAxisIncrements.end(), unresolved);
+    if (group.preparedBatchIndices.size() != group.observerSchemas.size())
+      return failure(WVCheckpointStatusCode::unsupportedObserver,
+                     "The route has no compiled occurrence-batch bindings.",
+                     "/" + group.record.name);
+    for (std::size_t observerIndex = 0;
+         observerIndex < group.observerSchemas.size(); ++observerIndex) {
+      const auto &observerSchema = group.observerSchemas[observerIndex];
+      const auto batchIndex = group.preparedBatchIndices[observerIndex];
+      const auto *batch = batchIndex < preparedObservationBatches.size()
+                              ? &preparedObservationBatches[batchIndex].batch
+                              : nullptr;
       if (batch == nullptr)
         return failure(WVCheckpointStatusCode::unsupportedObserver,
                        "The exact event has no staged observation batch.",
                        "/" + group.record.name);
       for (const auto &value : batch->values) {
-        const auto declared = std::find_if(
-            observerSchema.schema.variables.begin(),
-            observerSchema.schema.variables.end(), [&](const auto &candidate) {
-              return candidate.identifier == value.variableIdentifier;
-            });
-        if (declared == observerSchema.schema.variables.end())
+        const auto variableIndex = value.resolvedVariableIndex;
+        if (variableIndex >= observerSchema.schema.variables.size())
           return failure(WVCheckpointStatusCode::schemaMismatch,
-                         "Observation batch contains an undeclared value.",
+                         "Observation batch has no resolved value slot.",
                          "/" + group.record.name);
         for (std::size_t dimension = 0;
-             dimension < declared->dimensionIdentifiers.size(); ++dimension) {
-          const auto *axisDefinition = axis(
-              observerSchema.schema,
-              declared->dimensionIdentifiers[dimension]);
-          if (axisDefinition->kind != WVObservationAxisKind::unlimited)
+             dimension <
+             observerSchema.variableAxisIndices[variableIndex].size();
+             ++dimension) {
+          const auto schemaAxisIndex =
+              observerSchema.variableAxisIndices[variableIndex][dimension];
+          const auto &axisDefinition =
+              observerSchema.schema.axes[schemaAxisIndex];
+          if (axisDefinition.kind != WVObservationAxisKind::unlimited)
             continue;
-          const auto inserted = unlimitedAxisIncrements.emplace(
-              axisDefinition->name, value.extents[dimension]);
-          if (!inserted.second &&
-              inserted.first->second != value.extents[dimension])
+          const auto groupAxisIndex =
+              observerSchema.unlimitedAxisIndices[schemaAxisIndex];
+          if (groupAxisIndex >=
+              group.preparedUnlimitedAxisIncrements.size())
+            return failure(
+                WVCheckpointStatusCode::schemaMismatch,
+                "Observation batch has an unresolved unlimited axis.",
+                "/" + group.record.name);
+          auto &increment =
+              group.preparedUnlimitedAxisIncrements[groupAxisIndex];
+          if (increment == unresolved)
+            increment = value.extents[dimension];
+          else if (increment != value.extents[dimension])
             return failure(
                 WVCheckpointStatusCode::shapeMismatch,
                 "Observation batches disagree on a shared unlimited axis.",
-                "/" + group.record.name + "/" + axisDefinition->name);
+                "/" + group.record.name + "/" + axisDefinition.name);
         }
       }
-      observationBatches.push_back(batch);
     }
     const std::size_t coefficientCount =
         stateLayout.coefficientShape().elementCount();
     if (group.record.containsCompleteCoefficientRestart &&
-        !configuration.isDynamicsLinear) {
+        !isDynamicsLinear) {
       const std::array<const WVComplex64 *, 3> values = {
           event.state.waveVortex.coefficients.Ap.data,
           event.state.waveVortex.coefficients.Am.data,
@@ -2819,33 +3414,30 @@ public:
     for (std::size_t schemaIndex = 0;
          schemaIndex < group.observerSchemas.size(); ++schemaIndex) {
       const auto &observerSchema = group.observerSchemas[schemaIndex];
-      const auto &batch = *observationBatches[schemaIndex];
+      const auto batchIndex = group.preparedBatchIndices[schemaIndex];
+      if (batchIndex >= preparedObservationBatches.size())
+        return failure(WVCheckpointStatusCode::unsupportedObserver,
+                       "The occurrence-batch binding is invalid.",
+                       "/" + group.record.name);
+      const auto &batch = preparedObservationBatches[batchIndex].batch;
       for (const auto &value : batch.values) {
-        const auto variable = std::find_if(
-            group.derivedVariables.begin(), group.derivedVariables.end(),
-            [&](const auto &candidate) {
-              return candidate.observerIdentifier ==
-                         observerSchema.observerIdentifier &&
-                     candidate.specification.identifier ==
-                         value.variableIdentifier;
-            });
-        if (variable == group.derivedVariables.end()) {
-          const auto declared = std::find_if(
-              observerSchema.schema.variables.begin(),
-              observerSchema.schema.variables.end(), [&](const auto &item) {
-                return item.identifier == value.variableIdentifier;
-              });
-          if (declared != observerSchema.schema.variables.end() &&
-              group.record.containsCompleteCoefficientRestart &&
-              coefficientMetadata(declared->name) != nullptr)
-            continue;
+        const auto variableIndex = value.resolvedVariableIndex;
+        if (variableIndex >= observerSchema.persistenceVariableIndices.size())
           return failure(WVCheckpointStatusCode::schemaMismatch,
-                         "Observation value has no persistence variable.",
+                         "Observation value has no resolved persistence slot.",
                          "/" + group.record.name);
-        }
+        const auto persistenceIndex =
+            observerSchema.persistenceVariableIndices[variableIndex];
+        if (persistenceIndex == unresolved)
+          continue;
+        if (persistenceIndex >= group.derivedVariables.size())
+          return failure(WVCheckpointStatusCode::schemaMismatch,
+                         "Observation persistence binding is invalid.",
+                         "/" + group.record.name);
+        auto &variable = group.derivedVariables[persistenceIndex];
         auto result = writeObservationValue(
-            group, *variable, value, index,
-            "/" + group.record.name + "/" + variable->specification.name);
+            group, variable, value, index,
+            "/" + group.record.name + "/" + variable.specification.name);
         if (!result)
           return result;
         if (value.elementCount() > 0)
@@ -2856,11 +3448,13 @@ public:
     }
     const std::size_t start[] = {index};
     const std::size_t count[] = {1};
-    for (const auto &axisDefinition : group.unlimitedAxes) {
-      const auto increment = unlimitedAxisIncrements.find(axisDefinition.name);
+    for (std::size_t axisIndex = 0; axisIndex < group.unlimitedAxes.size();
+         ++axisIndex) {
+      const auto &axisDefinition = group.unlimitedAxes[axisIndex];
+      const auto increment = group.preparedUnlimitedAxisIncrements[axisIndex];
       const std::size_t value =
           axisDefinition.committedCount +
-          (increment == unlimitedAxisIncrements.end() ? 0 : increment->second);
+          (increment == unresolved ? 0 : increment);
       if (value > static_cast<std::size_t>(
                       std::numeric_limits<long long>::max()) ||
           value < axisDefinition.committedCount)
@@ -2885,11 +3479,14 @@ public:
                        "Algorithmic output route has no proposed cursor.",
                        "/" + group.record.name);
       std::vector<std::uint8_t> cursorBytes;
-      auto cursorStatus =
-          encodePortableTypedRecord(*route.proposedScheduleCursor, cursorBytes);
-      if (!cursorStatus)
-        return failure(WVCheckpointStatusCode::invalidValue,
-                       cursorStatus.message, "/" + group.record.name);
+      if (!isCanonicalEmptyPortableTypedRecord(
+              *route.proposedScheduleCursor)) {
+        auto cursorStatus = encodePortableTypedRecord(
+            *route.proposedScheduleCursor, cursorBytes);
+        if (!cursorStatus)
+          return failure(WVCheckpointStatusCode::invalidValue,
+                         cursorStatus.message, "/" + group.record.name);
+      }
       if (cursorBytes.size() > WVMaximumOutputScheduleCursorBytes)
         return failure(WVCheckpointStatusCode::invalidValue,
                        "Algorithmic output cursor exceeds 4 KiB.",
@@ -2934,10 +3531,12 @@ public:
     ++group.recordCount;
     group.hasCommittedTime = true;
     group.lastCommittedTime = event.scheduledTime;
-    for (auto &axisDefinition : group.unlimitedAxes) {
-      const auto increment = unlimitedAxisIncrements.find(axisDefinition.name);
-      if (increment != unlimitedAxisIncrements.end()) {
-        axisDefinition.committedCount += increment->second;
+    for (std::size_t axisIndex = 0; axisIndex < group.unlimitedAxes.size();
+         ++axisIndex) {
+      auto &axisDefinition = group.unlimitedAxes[axisIndex];
+      const auto increment = group.preparedUnlimitedAxisIncrements[axisIndex];
+      if (increment != unresolved) {
+        axisDefinition.committedCount += increment;
         axisDefinition.physicalCount = axisDefinition.committedCount;
       }
     }
@@ -2982,21 +3581,35 @@ WVModelOutputNetCDFSink &WVModelOutputNetCDFSink::operator=(
 
 WVCheckpointStatus WVModelOutputNetCDFSink::createNew(
     const WVModelOutputNetCDFConfiguration &configuration,
-    const WVPortableObserverDescriptor &descriptor,
+    const WVPortableObserverDescriptor &descriptor, const WVOutputPlan &plan,
     const WVIntegrationStateLayout &stateLayout,
     WVObserverSampleSource *sampleSource, WVModelOutputNetCDFSink &sink) {
+  if (sampleSource != nullptr) {
+    const auto status = sampleSource->preflight(plan);
+    if (!status)
+      return failure(WVCheckpointStatusCode::unsupportedObserver,
+                     status.message, "/observingSystems");
+  }
   auto catalogStatus = validateCatalogIdentity(configuration, descriptor);
   if (!catalogStatus)
     return catalogStatus;
   try {
     auto candidate = std::make_unique<Impl>();
-    candidate->configuration = configuration;
+    candidate->catalog = configuration.catalog;
+    candidate->transformConfiguration =
+        configuration.checkpointTemplate.configuration;
+    candidate->constructionCheckpoint = &configuration.checkpointTemplate;
+    candidate->isDynamicsLinear = configuration.isDynamicsLinear;
     candidate->descriptor = descriptor;
     candidate->stateLayout = stateLayout;
     candidate->sampleSource = sampleSource;
     auto result = candidate->validateConfiguration();
     if (!result)
       return result;
+    const auto planStatus = candidate->validateAndCompilePlan(plan);
+    if (!planStatus)
+      return failure(WVCheckpointStatusCode::schemaMismatch, planStatus.message,
+                     "/outputPlan");
     result = candidate->validateDestinations(false);
     if (!result)
       return result;
@@ -3011,6 +3624,7 @@ WVCheckpointStatus WVModelOutputNetCDFSink::createNew(
     for (const auto &file : candidate->files)
       candidate->metrics.groupCount += file.groups.size();
     candidate->metrics.initializedFileCount = candidate->files.size();
+    candidate->constructionCheckpoint = nullptr;
     candidate->updateRetainedStorageMetric();
     sink.impl_ = std::move(candidate);
     return WVCheckpointStatus::ok();
@@ -3027,21 +3641,35 @@ WVCheckpointStatus WVModelOutputNetCDFSink::createNew(
 
 WVCheckpointStatus WVModelOutputNetCDFSink::replaceExisting(
     const WVModelOutputNetCDFConfiguration &configuration,
-    const WVPortableObserverDescriptor &descriptor,
+    const WVPortableObserverDescriptor &descriptor, const WVOutputPlan &plan,
     const WVIntegrationStateLayout &stateLayout,
     WVObserverSampleSource *sampleSource, WVModelOutputNetCDFSink &sink) {
+  if (sampleSource != nullptr) {
+    const auto status = sampleSource->preflight(plan);
+    if (!status)
+      return failure(WVCheckpointStatusCode::unsupportedObserver,
+                     status.message, "/observingSystems");
+  }
   auto catalogStatus = validateCatalogIdentity(configuration, descriptor);
   if (!catalogStatus)
     return catalogStatus;
   try {
     auto candidate = std::make_unique<Impl>();
-    candidate->configuration = configuration;
+    candidate->catalog = configuration.catalog;
+    candidate->transformConfiguration =
+        configuration.checkpointTemplate.configuration;
+    candidate->constructionCheckpoint = &configuration.checkpointTemplate;
+    candidate->isDynamicsLinear = configuration.isDynamicsLinear;
     candidate->descriptor = descriptor;
     candidate->stateLayout = stateLayout;
     candidate->sampleSource = sampleSource;
     auto result = candidate->validateConfiguration();
     if (!result)
       return result;
+    const auto planStatus = candidate->validateAndCompilePlan(plan);
+    if (!planStatus)
+      return failure(WVCheckpointStatusCode::schemaMismatch, planStatus.message,
+                     "/outputPlan");
     result = candidate->validateDestinations(true);
     if (!result)
       return result;
@@ -3056,6 +3684,7 @@ WVCheckpointStatus WVModelOutputNetCDFSink::replaceExisting(
     for (const auto &file : candidate->files)
       candidate->metrics.groupCount += file.groups.size();
     candidate->metrics.initializedFileCount = candidate->files.size();
+    candidate->constructionCheckpoint = nullptr;
     candidate->updateRetainedStorageMetric();
     sink.impl_ = std::move(candidate);
     return WVCheckpointStatus::ok();
@@ -3071,18 +3700,27 @@ WVCheckpointStatus WVModelOutputNetCDFSink::replaceExisting(
 
 WVCheckpointStatus WVModelOutputNetCDFSink::openAppend(
     const WVModelOutputNetCDFConfiguration &configuration,
-    const WVPortableObserverDescriptor &descriptor,
+    const WVPortableObserverDescriptor &descriptor, const WVOutputPlan &plan,
     const WVIntegrationStateLayout &stateLayout,
     WVObserverSampleSource *sampleSource,
-    const std::vector<WVOutputDestinationProgress>
-        &expectedDestinationProgress,
+    const std::vector<WVOutputDestinationProgress> &expectedDestinationProgress,
     WVModelOutputNetCDFSink &sink) {
+  if (sampleSource != nullptr) {
+    const auto status = sampleSource->preflight(plan);
+    if (!status)
+      return failure(WVCheckpointStatusCode::unsupportedObserver,
+                     status.message, "/observingSystems");
+  }
   auto catalogStatus = validateCatalogIdentity(configuration, descriptor);
   if (!catalogStatus)
     return catalogStatus;
   try {
     auto candidate = std::make_unique<Impl>();
-    candidate->configuration = configuration;
+    candidate->catalog = configuration.catalog;
+    candidate->transformConfiguration =
+        configuration.checkpointTemplate.configuration;
+    candidate->constructionCheckpoint = &configuration.checkpointTemplate;
+    candidate->isDynamicsLinear = configuration.isDynamicsLinear;
     candidate->descriptor = descriptor;
     candidate->stateLayout = stateLayout;
     candidate->sampleSource = sampleSource;
@@ -3090,6 +3728,10 @@ WVCheckpointStatus WVModelOutputNetCDFSink::openAppend(
     auto result = candidate->validateConfiguration();
     if (!result)
       return result;
+    const auto planStatus = candidate->validateAndCompilePlan(plan);
+    if (!planStatus)
+      return failure(WVCheckpointStatusCode::schemaMismatch, planStatus.message,
+                     "/outputPlan");
     result = candidate->validateDestinations(true);
     if (!result)
       return result;
@@ -3099,6 +3741,7 @@ WVCheckpointStatus WVModelOutputNetCDFSink::openAppend(
     candidate->metrics.fileCount = candidate->files.size();
     for (const auto &file : candidate->files)
       candidate->metrics.groupCount += file.groups.size();
+    candidate->constructionCheckpoint = nullptr;
     candidate->updateRetainedStorageMetric();
     sink.impl_ = std::move(candidate);
     return WVCheckpointStatus::ok();
@@ -3113,39 +3756,15 @@ WVKernelStatus WVModelOutputNetCDFSink::preflight(const WVOutputPlan &plan) {
   if (!impl_ || impl_->closed)
     return {WVKernelStatusCode::invalidConfiguration,
             "NetCDF output sink is closed."};
-  if (plan.metrics().fileCount != impl_->files.size())
-    return {WVKernelStatusCode::invalidConfiguration,
-            "Output plan and NetCDF file graph differ."};
   if (impl_->sampleSource != nullptr) {
     const auto sourceStatus = impl_->sampleSource->preflight(plan);
     if (!sourceStatus)
       return sourceStatus;
   }
-  for (std::size_t groupIndex = 0; groupIndex < plan.groupCount();
-       ++groupIndex) {
-    const auto route = plan.groupRoute(groupIndex);
-    if (route.fileOrdinal >= impl_->files.size() ||
-        route.groupOrdinal >= impl_->files[route.fileOrdinal].groups.size())
-      return {WVKernelStatusCode::invalidConfiguration,
-              "Output plan contains an out-of-range NetCDF route."};
-    const auto &file = impl_->files[route.fileOrdinal];
-    const auto &group = file.groups[route.groupOrdinal];
-    if (route.fileIdentifier != file.record.identifier ||
-        route.destination != file.record.destination ||
-        route.groupIdentifier != group.record.identifier ||
-        route.groupName != group.record.name ||
-        route.observerCount != group.record.observerIdentifiers.size())
-      return {WVKernelStatusCode::invalidConfiguration,
-              "Output plan and NetCDF route identity differ."};
-    for (std::size_t observerIndex = 0; observerIndex < route.observerCount;
-         ++observerIndex) {
-      if (route.observers[observerIndex].record == nullptr ||
-          route.observers[observerIndex].record->identifier !=
-              group.record.observerIdentifiers[observerIndex])
-        return {WVKernelStatusCode::invalidConfiguration,
-                "Output plan and NetCDF observer route differ."};
-    }
-  }
+  const auto planStatus = impl_->validateAndCompilePlan(plan);
+  if (!planStatus)
+    return planStatus;
+  impl_->updateRetainedStorageMetric();
   impl_->preflightComplete = true;
   return WVKernelStatus::ok();
 }
@@ -3164,10 +3783,14 @@ WVModelOutputNetCDFSink::deliver(const WVOutputEvent &event,
   }
   const auto status = impl_->writeRoute(event, route, result);
   if (!status) {
+    // A failed NetCDF call can occur after a conversion scratch buffer grows.
+    // Publish that still-retained capacity before returning so retry and
+    // maximum-live ledgers do not silently omit it.
+    impl_->updatePreparedObservationMetrics();
     ++impl_->metrics.failureCount;
     return kernelFailure(status);
   }
-  impl_->completePreparedRoute(route);
+  impl_->completePreparedRoute(event, route);
   return WVKernelStatus::ok();
 }
 

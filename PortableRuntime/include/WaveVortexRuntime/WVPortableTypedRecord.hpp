@@ -58,4 +58,12 @@ decodePortableTypedRecord(const std::vector<std::uint8_t> &bytes,
                           WVPortableTypedRecord &record,
                           WVPortableTypedRecordValidation validation = {});
 
+// Exact, allocation-free value comparison for already validated construction
+// or cursor-boundary records. Named event code may carry these records but must
+// not look values up by string.
+bool samePortableTypedRecordValue(const WVPortableTypedRecord &left,
+                                  const WVPortableTypedRecord &right) noexcept;
+bool isCanonicalEmptyPortableTypedRecord(
+    const WVPortableTypedRecord &record) noexcept;
+
 } // namespace wavevortex::runtime

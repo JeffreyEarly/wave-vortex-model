@@ -15,6 +15,20 @@ WVKernelStatus invalid(std::string message) {
   return {WVKernelStatusCode::invalidConfiguration, std::move(message)};
 }
 
+std::size_t outputDriverMetricsDynamicBytes(
+    const WVOutputDriverMetrics &metrics) noexcept {
+  std::size_t bytes =
+      metrics.files.capacity() * sizeof(WVOutputFileMetrics);
+  for (const auto &file : metrics.files) {
+    bytes += file.fileIdentifier.capacity() + file.destination.capacity() +
+             file.groups.capacity() * sizeof(WVOutputGroupMetrics);
+    for (const auto &group : file.groups)
+      bytes += group.fileIdentifier.capacity() +
+               group.groupIdentifier.capacity();
+  }
+  return bytes;
+}
+
 #if !defined(WV_MODEL_ENABLE_OUTPUT) || WV_MODEL_ENABLE_OUTPUT
 WVKernelStatus fromCheckpoint(const WVCheckpointStatus &status) {
   if (status)
@@ -202,11 +216,8 @@ WVIntegrationState WVModelState::constView() {
 }
 
 std::size_t WVModelState::persistentBytes() const noexcept {
-  return sizeof(*this) +
-         (checkpoint_.state.coefficients.Ap.capacity() +
-          checkpoint_.state.coefficients.Am.capacity() +
-          checkpoint_.state.coefficients.A0.capacity()) *
-             sizeof(WVComplex64) +
+  return sizeof(*this) + checkpointRetainedBytes(checkpoint_) -
+         sizeof(checkpoint_) +
          additionalState_.capacityBytes() +
          constViews_.capacity() * sizeof(WVAdditionalStateBlockConstView);
 }
@@ -426,7 +437,6 @@ WVKernelStatus WVModel::createFromModelOutputInspection(
       return invalid("The resolved observer schema differs from the canonical "
                      "schema restored from NetCDF.");
   }
-
   WVModelOutputNetCDFConfiguration sinkConfiguration{
       catalog, candidateState.checkpoint(), inspection.isDynamicsLinear};
   checkpointStatus = outputConfiguration.openNetCDFSink(
@@ -618,7 +628,9 @@ const std::string &WVModel::forcingScheduleIdentifier() const noexcept {
 
 WVModelMetrics WVModel::metrics(const WVModelState *state) const noexcept {
   WVModelMetrics result;
-  result.modelPersistentBytes = sizeof(*this) + sizeof(Impl);
+  result.modelPersistentBytes =
+      sizeof(*this) + sizeof(Impl) +
+      outputDriverMetricsDynamicBytes(impl_->outputDriverMetrics);
   result.catalogPersistentBytes =
       impl_->catalog == nullptr ? 0 : impl_->catalog->persistentBytes();
   result.statePersistentBytes = state == nullptr ? 0 : state->persistentBytes();

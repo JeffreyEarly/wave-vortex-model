@@ -10,6 +10,8 @@
 namespace wavevortex::runtime {
 
 inline constexpr std::uint32_t WVObservationSchemaContractVersion = 1;
+inline constexpr std::size_t WVNoResolvedObservationVariable =
+    static_cast<std::size_t>(-1);
 
 enum class WVObservationScalarType : std::uint8_t {
   real64,
@@ -85,8 +87,10 @@ struct WVObservationVariable {
   WVObservationCoordinateRole coordinateRole =
       WVObservationCoordinateRole::none;
   WVObservationRaggedRole raggedRole = WVObservationRaggedRole::none;
-  // A row-count or row-offset variable relates its parent rows to this child
-  // unlimited axis.
+  // A row-count or row-offset variable is a rank-one integer over one
+  // unlimited parent axis. It relates those parent rows to this child
+  // unlimited axis. Each child has one relationship parent and the complete
+  // relationship graph is acyclic.
   std::string raggedChildAxisIdentifier;
 };
 
@@ -99,6 +103,9 @@ struct WVObservationValue {
   WVObservationBufferOwnership ownership =
       WVObservationBufferOwnership::borrowed;
   std::vector<std::size_t> extents;
+  // Construction-resolved schema ordinal used by the event persistence path.
+  // Identifiers remain serialization metadata and are not searched at runtime.
+  std::size_t resolvedVariableIndex = WVNoResolvedObservationVariable;
 
   const double *borrowedReal64 = nullptr;
   const WVComplex64 *borrowedComplex64 = nullptr;

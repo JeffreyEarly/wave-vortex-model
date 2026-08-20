@@ -54,6 +54,49 @@ struct WVObserverOutputValueView {
   std::size_t elementCount = 0;
 };
 
+// Destination-independent identity of one prepared observer occurrence.
+// Global event ordinals, preparation/discovery order, and file/group route
+// ordinals deliberately do not participate.
+struct WVObservationOccurrenceIdentity {
+  // Event-scoped, collision-free cache token minted by the sample source
+  // after it has compared the complete semantic occurrence, prepared geometry,
+  // and resolved field plan. The owner/generation/slot triple is authoritative
+  // for in-flight reuse; the fields below remain the destination-independent
+  // semantic identity used by diagnostics and segmented-run comparisons.
+  const void *preparationOwner = nullptr;
+  std::uint64_t preparationGeneration = 0;
+  std::size_t preparedOccurrenceSlot = 0;
+  // Exact semantic views borrowed from the immutable compiled plan and the
+  // currently prepared event. They remain valid only while that prepared
+  // event is in flight. Callers that need longer-lived diagnostics may retain
+  // the scalar fingerprints below, but must not use fingerprints as exact
+  // cache keys.
+  const WVObserverRecord *resolvedObserverRecord = nullptr;
+  const WVOutputGroupRecord *logicalScheduleRecord = nullptr;
+  const WVOutputSchedulePayloadSchema *schedulePayloadSchema = nullptr;
+  const WVPortableTypedRecord *proposedScheduleCursor = nullptr;
+  const WVOutputSchedulePayload *resolvedSchedulePayload = nullptr;
+  // Plan-local ordinals and fingerprints are retained diagnostics only. The
+  // semantic comparator uses the exact borrowed views above together with the
+  // schedule occurrence ordinal and time below.
+  std::size_t observerOrdinal = 0;
+  std::size_t semanticScheduleOrdinal = 0;
+  WVOutputScheduleOrdinal scheduleOrdinal = WVNoCommittedOutputOrdinal;
+  double scheduledTime = 0.0;
+  std::uint64_t scheduleCursorIdentity = 0;
+  std::uint64_t payloadFingerprint = 0;
+  std::uint64_t geometryFingerprint = 0;
+  std::uint64_t fieldPlanFingerprint = 0;
+};
+
+bool sameObservationOccurrenceIdentity(
+    const WVObservationOccurrenceIdentity &left,
+    const WVObservationOccurrenceIdentity &right) noexcept;
+
+bool samePreparedObservationOccurrenceIdentity(
+    const WVObservationOccurrenceIdentity &left,
+    const WVObservationOccurrenceIdentity &right) noexcept;
+
 // Observer evaluation remains independent of NetCDF. Implementations added by
 // later observer issues may evaluate all coincident routes once in prepare().
 class WVObserverSampleSource {
@@ -66,8 +109,12 @@ public:
       const WVObserverRecord &observer, WVObservationSchema &output);
   virtual WVKernelStatus initialObservationBatch(
       const WVObserverRecord &observer, WVObservationBatch &output);
-  virtual WVKernelStatus observationBatch(const WVObserverRecord &observer,
-                                           WVObservationBatch &output);
+  virtual WVKernelStatus preparedOccurrenceIdentity(
+      const WVOutputRouteView &route, const WVOutputObserverView &observer,
+      WVObservationOccurrenceIdentity &output) const = 0;
+  virtual WVKernelStatus observationBatch(
+      const WVObservationOccurrenceIdentity &identity,
+      const WVObserverRecord &observer, WVObservationBatch &output) = 0;
 
   // Legacy fixed-shape adapter retained during the provisional source API.
   virtual WVKernelStatus specifications(
@@ -80,6 +127,16 @@ public:
     return WVKernelStatus::ok();
   }
   virtual WVKernelStatus prepare(const WVOutputEvent &event) = 0;
+  // Called exactly once after every destination route for the prepared event
+  // has committed. Sources release event-scoped geometry and evaluated data
+  // here; failed events deliberately retain them for exact retry.
+  virtual void complete(const WVOutputEvent &) noexcept {}
+  virtual std::size_t occurrenceWorkspaceRetainedBytes() const noexcept {
+    return 0;
+  }
+  virtual std::size_t occurrenceWorkspaceLiveBytes() const noexcept {
+    return 0;
+  }
   virtual WVKernelStatus
   value(const WVObserverRecord &observer,
         const WVObserverOutputVariableSpecification &variable,
@@ -105,6 +162,8 @@ struct WVModelOutputNetCDFMetrics {
   std::size_t retainedStorageBytes = 0;
   std::size_t batchRetainedStorageBytes = 0;
   std::size_t batchMaximumLiveBytes = 0;
+  std::size_t occurrenceWorkspaceRetainedBytes = 0;
+  std::size_t occurrenceWorkspaceMaximumLiveBytes = 0;
 };
 
 struct WVInspectedObservationSchema {
@@ -150,25 +209,27 @@ public:
   WVModelOutputNetCDFSink(const WVModelOutputNetCDFSink &) = delete;
   WVModelOutputNetCDFSink &operator=(const WVModelOutputNetCDFSink &) = delete;
 
-  static WVCheckpointStatus
-  createNew(const WVModelOutputNetCDFConfiguration &configuration,
-            const WVPortableObserverDescriptor &descriptor,
-            const WVIntegrationStateLayout &stateLayout,
-            WVObserverSampleSource *sampleSource,
-            WVModelOutputNetCDFSink &sink);
+  // Every public factory capability-preflights sampleSource against the
+  // supplied compiled plan before discovering observer schemas or touching a
+  // destination.
+  static WVCheckpointStatus createNew(
+      const WVModelOutputNetCDFConfiguration &configuration,
+      const WVPortableObserverDescriptor &descriptor, const WVOutputPlan &plan,
+      const WVIntegrationStateLayout &stateLayout,
+      WVObserverSampleSource *sampleSource, WVModelOutputNetCDFSink &sink);
 
   // Stages the complete file set before replacing any destination. Failure
   // restores every original destination byte-for-byte.
-  static WVCheckpointStatus
-  replaceExisting(const WVModelOutputNetCDFConfiguration &configuration,
-                  const WVPortableObserverDescriptor &descriptor,
-                  const WVIntegrationStateLayout &stateLayout,
-                  WVObserverSampleSource *sampleSource,
-                  WVModelOutputNetCDFSink &sink);
+  static WVCheckpointStatus replaceExisting(
+      const WVModelOutputNetCDFConfiguration &configuration,
+      const WVPortableObserverDescriptor &descriptor, const WVOutputPlan &plan,
+      const WVIntegrationStateLayout &stateLayout,
+      WVObserverSampleSource *sampleSource, WVModelOutputNetCDFSink &sink);
 
   static WVCheckpointStatus
   openAppend(const WVModelOutputNetCDFConfiguration &configuration,
              const WVPortableObserverDescriptor &descriptor,
+             const WVOutputPlan &plan,
              const WVIntegrationStateLayout &stateLayout,
              WVObserverSampleSource *sampleSource,
              const std::vector<WVOutputDestinationProgress>

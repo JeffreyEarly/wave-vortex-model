@@ -459,9 +459,9 @@ WVKernelStatus WVTransformConstantStratificationKernel::create(
         const auto realElements = checkedProduct(candidate->descriptor_.spatialShape().elementCount(),realChannels);
         candidate->halfSpectrumScratch_.resize(2 * halfElements);
         candidate->realScratch_.resize(realElements);
-        candidate->metrics_.halfSpectrumScratchCapacityBytes = candidate->halfSpectrumScratch_.size() * sizeof(double);
-        candidate->metrics_.realScratchCapacityBytes = candidate->realScratch_.size() * sizeof(double);
-        candidate->metrics_.scratchCapacityBytes = candidate->scratchBytes();
+        candidate->metrics_.halfSpectrumScratchCapacityBytes = candidate->halfSpectrumScratch_.capacity() * sizeof(double);
+        candidate->metrics_.realScratchCapacityBytes = candidate->realScratch_.capacity() * sizeof(double);
+        candidate->metrics_.scratchCapacityBytes = candidate->metrics_.halfSpectrumScratchCapacityBytes + candidate->metrics_.realScratchCapacityBytes;
         candidate->metrics_.scratchHighWaterBytes = candidate->scratchBytes();
         const auto halfRows = candidate->descriptor_.halfSpectrumMappings().NxHalf * configuration.Ny;
         candidate->scalarAntialiasRows_.assign(halfRows,0);
@@ -474,6 +474,13 @@ WVKernelStatus WVTransformConstantStratificationKernel::create(
             candidate->scalarAntialiasRows_.capacity() * sizeof(std::uint8_t);
         status = candidate->preparePlans();
         if (!status) return status;
+        candidate->metrics_.engineBytes = candidate->engine_->persistentBytes();
+        candidate->metrics_.kernelManagementBytes =
+            sizeof(*candidate) - sizeof(candidate->descriptor_) +
+            candidate->engineIdentifier_.capacity() +
+            candidate->engineLibraryIdentity_.capacity() +
+            candidate->plans_.capacity() *
+                sizeof(std::unique_ptr<WVFFTPlan>);
         kernel = std::move(candidate);
         return WVKernelStatus::ok();
     } catch (const std::bad_alloc&) {
@@ -505,7 +512,28 @@ WVKernelStatus WVTransformConstantStratificationKernel::preparePlans() {
 }
 
 std::size_t WVTransformConstantStratificationKernel::persistentBytes() const noexcept {
-    return descriptor_.persistentBytes() + metrics_.planBytes + scratchBytes() + scalarAntialiasRows_.capacity() * sizeof(std::uint8_t);
+    const auto& current = metrics();
+    return current.kernelManagementBytes + current.engineBytes +
+           current.descriptorBytes + current.planBytes +
+           current.scratchCapacityBytes;
+}
+
+const WVKernelMetrics&
+WVTransformConstantStratificationKernel::metrics() const noexcept {
+    metrics_.engineBytes = engine_ == nullptr ? 0 : engine_->persistentBytes();
+    metrics_.planBytes = 0;
+    metrics_.planCount = 0;
+    for (const auto& plan : plans_) {
+        if (plan != nullptr) {
+            metrics_.planBytes += plan->persistentBytes();
+            ++metrics_.planCount;
+        }
+    }
+    if (scalarInversePlan_ != nullptr) {
+        metrics_.planBytes += scalarInversePlan_->persistentBytes();
+        ++metrics_.planCount;
+    }
+    return metrics_;
 }
 
 const char* WVTransformConstantStratificationKernel::nonlinearFluxScheduleIdentifier() const noexcept {

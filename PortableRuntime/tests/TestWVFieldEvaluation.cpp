@@ -7,6 +7,7 @@
 #include <cmath>
 #include <cstddef>
 #include <iostream>
+#include <limits>
 #include <memory>
 #include <numeric>
 #include <stdexcept>
@@ -27,6 +28,12 @@ void require(bool condition, const std::string &message) {
 void requireClose(double actual, double expected, const std::string &message) {
   const double scale = std::max({1.0, std::abs(actual), std::abs(expected)});
   require(std::abs(actual - expected) <= 2.0e-12 * scale, message);
+}
+
+void requireWithinOneE12(double actual, double expected,
+                         const std::string &message) {
+  const double scale = std::max({1.0, std::abs(actual), std::abs(expected)});
+  require(std::abs(actual - expected) <= 1.0e-12 * scale, message);
 }
 
 WVTransformConstantStratificationConfiguration
@@ -128,6 +135,10 @@ public:
   explicit CountingEngine(std::shared_ptr<std::size_t> active)
       : active_(std::move(active)) {}
   std::string identifier() const override { return "counting-reference"; }
+  std::size_t persistentBytes() const noexcept override {
+    return sizeof(*this) + reference_.persistentBytes() - sizeof(reference_) +
+           sizeof(std::size_t);
+  }
   WVKernelStatus createPlan(const WVFFTPlanSpecification &specification,
                             std::unique_ptr<WVFFTPlan> &plan) override {
     std::unique_ptr<WVFFTPlan> referencePlan;
@@ -159,6 +170,9 @@ public:
   explicit FailureEngine(WVKernelStatusCode creationCode)
       : creationCode_(creationCode) {}
   std::string identifier() const override { return "failure-injection"; }
+  std::size_t persistentBytes() const noexcept override {
+    return sizeof(*this);
+  }
   WVKernelStatus createPlan(const WVFFTPlanSpecification &,
                             std::unique_ptr<WVFFTPlan> &plan) override {
     if (creationCode_ != WVKernelStatusCode::success)
@@ -497,6 +511,13 @@ void verifyEvaluation(std::size_t nx, std::size_t ny, bool hydrostatic,
   }
   const auto movingWorkspaceBytes =
       service->metrics().movingInterpolationWorkspaceBytes;
+  const auto splineFactorBytes =
+      (config.Nx * config.Nx + config.Ny * config.Ny +
+       config.Nz * config.Nz) *
+          sizeof(double) +
+      (config.Nx + config.Ny + config.Nz) * sizeof(std::size_t);
+  require(movingWorkspaceBytes >= splineFactorBytes,
+          "moving workspace ledger omitted spline factor storage");
   status = service->evaluateMoving(
       movingPlan, state.view(),
       {linear.x.data(), linear.y.data(), linear.z.data(), linear.x.size()},
@@ -518,6 +539,370 @@ void verifyEvaluation(std::size_t nx, std::size_t ny, bool hydrostatic,
           "overlapping outputs were accepted");
 }
 
+void verifyEventFieldEvaluation() {
+  const auto config = configuration(6, 5, true, true);
+  std::unique_ptr<WVFieldEvaluationService> service;
+  auto status = WVFieldEvaluationService::create(
+      config, std::make_unique<WVReferenceFFTEngine>(), service);
+  require(static_cast<bool>(status), "event field service creation failed");
+  const auto state = stateFor(config);
+  const double dx = config.Lx / static_cast<double>(config.Nx);
+  const double dy = config.Ly / static_cast<double>(config.Ny);
+  const double dz = config.Lz / static_cast<double>(config.Nz - 1);
+  const std::vector<double> x{0.35 * dx, config.Lx + 0.35 * dx,
+                              2.0 * dx, 3.4 * dx};
+  const std::vector<double> y{0.6 * dy, -config.Ly + 0.6 * dy,
+                              3.0 * dy, 1.25 * dy};
+  const std::vector<double> z{-config.Lz + 1.4 * dz,
+                              -config.Lz + 1.4 * dz,
+                              -config.Lz + 2.0 * dz, 25.0};
+  const std::vector<std::size_t> extents{2, 2};
+
+  std::vector<const WVPortableVariableMetadata *> positionFields;
+  for (const auto &metadata : WVPortableVariableCatalog)
+    if (metadata.kind == WVPortableVariableKind::field &&
+        (metadata.samplingMask & portablePositionSampling) != 0)
+      positionFields.push_back(&metadata);
+  require(positionFields.size() == 16,
+          "position-sampleable catalog coverage changed");
+
+  auto compareWithFixed = [&](WVPositionInterpolation interpolation) {
+    std::vector<WVEventFieldRequest> eventRequests;
+    std::vector<WVFieldRequest> fixedRequests;
+    eventRequests.reserve(positionFields.size());
+    fixedRequests.reserve(positionFields.size());
+    for (const auto *metadata : positionFields) {
+      const std::string name = metadata->name;
+      eventRequests.push_back(
+          {"event-" + name, name, 0, interpolation});
+      WVFieldSamplingRequest sampling;
+      sampling.kind = WVFieldSamplingKind::positions;
+      sampling.x = x;
+      sampling.y = y;
+      sampling.z = z;
+      sampling.interpolation = interpolation;
+      fixedRequests.push_back({"fixed-" + name, name, std::move(sampling)});
+    }
+
+    WVEventFieldEvaluationPlan eventPlan;
+    const auto resolutionBefore =
+        service->metrics().eventPlanFieldResolutionCount;
+    status = service->createEventPlan(eventRequests, eventPlan);
+    require(static_cast<bool>(status),
+            "event field plan creation failed: " + status.message);
+    require(eventPlan.outputCount() == positionFields.size() &&
+                eventPlan.positionSetCount() == 1 &&
+                eventPlan.requestedFieldMask() != 0 &&
+                eventPlan.dependencyMask() != 0 &&
+                eventPlan.fieldPlanFingerprint() != 0 &&
+                eventPlan.persistentBytes() > sizeof(eventPlan),
+            "event field plan omitted resolved construction metadata");
+    require(service->metrics().eventPlanFieldResolutionCount ==
+                resolutionBefore + positionFields.size(),
+            "event fields were not resolved exactly once at construction");
+    for (std::size_t index = 0; index < positionFields.size(); ++index) {
+      const auto &output = eventPlan.outputs()[index];
+      require(output.fieldIdentifier == positionFields[index]->identifier &&
+                  output.naturalRank == positionFields[index]->naturalRank &&
+                  output.dependencyMask ==
+                      positionFields[index]->primitiveDependencyMask &&
+                  output.positionSetSlot == 0 &&
+                  output.interpolation == interpolation,
+              "event plan changed a resolved field operation");
+    }
+
+    WVEventFieldEvaluationPlan equivalentPlan;
+    status = service->createEventPlan(eventRequests, equivalentPlan);
+    require(static_cast<bool>(status) &&
+                equivalentPlan.fieldPlanFingerprint() ==
+                    eventPlan.fieldPlanFingerprint(),
+            "equivalent event field plans have different identities");
+    auto changedRequests = eventRequests;
+    changedRequests.front().interpolation =
+        interpolation == WVPositionInterpolation::linear
+            ? WVPositionInterpolation::spline
+            : WVPositionInterpolation::linear;
+    WVEventFieldEvaluationPlan changedPlan;
+    status = service->createEventPlan(changedRequests, changedPlan);
+    require(static_cast<bool>(status) &&
+                changedPlan.fieldPlanFingerprint() !=
+                    eventPlan.fieldPlanFingerprint(),
+            "field-plan identity omitted its interpolation operation");
+
+    WVEventPositionSetView set{x.data(), y.data(), z.data(), x.size(),
+                               extents.data(), extents.size()};
+    const auto xBefore = x;
+    const auto yBefore = y;
+    const auto zBefore = z;
+    WVPreparedFieldGeometry prepared;
+    status = service->prepareEventGeometry(eventPlan, &set, 1, prepared);
+    require(static_cast<bool>(status),
+            "event geometry preparation failed: " + status.message);
+    require(prepared.fieldPlanFingerprint() ==
+                    eventPlan.fieldPlanFingerprint() &&
+                prepared.geometryFingerprint() != 0 &&
+                prepared.positionSetCount() == 1 &&
+                prepared.positionCount() == x.size() &&
+                prepared.outputCount() == eventPlan.outputCount(),
+            "prepared event geometry lost its resolved identity");
+    require(prepared.positionSet(0).positionCount == x.size() &&
+                prepared.positionSet(0).extentCount == extents.size(),
+            "prepared geometry lost its event position set");
+    for (const auto &output : prepared.outputs())
+      require(output.dimensions == extents &&
+                  output.elementCount == x.size(),
+              "event output did not preserve its supplied logical extents");
+    const auto preparedMetrics = prepared.metrics();
+    require(preparedMetrics.positionSetCount == 1 &&
+                preparedMetrics.positionCount == x.size() &&
+                preparedMetrics.retainedBytes == prepared.retainedBytes() &&
+                preparedMetrics.liveBytes == prepared.liveBytes() &&
+                prepared.liveBytes() >= prepared.retainedBytes(),
+            "prepared geometry storage metrics are incomplete");
+    require(x == xBefore && y == yBefore && z == zBefore,
+            "event geometry preparation mutated source coordinates");
+
+    WVPreparedFieldGeometry samePrepared;
+    status = service->prepareEventGeometry(eventPlan, &set, 1,
+                                           samePrepared);
+    require(static_cast<bool>(status) &&
+                prepared.sameGeometry(samePrepared),
+            "identical event geometry did not preserve cache identity");
+    auto differentX = x;
+    differentX[0] += 0.125 * dx;
+    WVEventPositionSetView differentSet{
+        differentX.data(), y.data(), z.data(), differentX.size(),
+        extents.data(), extents.size()};
+    WVPreparedFieldGeometry differentPrepared;
+    status = service->prepareEventGeometry(eventPlan, &differentSet, 1,
+                                           differentPrepared);
+    require(static_cast<bool>(status) &&
+                !prepared.sameGeometry(differentPrepared),
+            "different event coordinates shared a geometry identity");
+
+    WVFieldEvaluationPlan fixedPlan;
+    status = service->createPlan(fixedRequests, fixedPlan);
+    require(static_cast<bool>(status),
+            "fixed comparison plan creation failed: " + status.message);
+    std::vector<std::vector<double>> fixedStorage;
+    std::vector<std::vector<double>> eventStorage;
+    std::vector<WVFieldOutputView> fixedViews;
+    std::vector<WVFieldOutputView> eventViews;
+    fixedStorage.reserve(fixedPlan.outputCount());
+    eventStorage.reserve(eventPlan.outputCount());
+    fixedViews.reserve(fixedPlan.outputCount());
+    eventViews.reserve(eventPlan.outputCount());
+    for (std::size_t index = 0; index < fixedPlan.outputCount(); ++index) {
+      fixedStorage.emplace_back(x.size(), -19.0);
+      eventStorage.emplace_back(x.size(), -23.0);
+    }
+    for (auto &values : fixedStorage)
+      fixedViews.push_back({values.data(), values.size()});
+    for (auto &values : eventStorage)
+      eventViews.push_back({values.data(), values.size()});
+    status = service->evaluate(fixedPlan, state.view(), fixedViews.data(),
+                               fixedViews.size());
+    require(static_cast<bool>(status),
+            "fixed comparison evaluation failed: " + status.message);
+    const auto resolutionsAfterPreparation =
+        service->metrics().eventPlanFieldResolutionCount;
+    status = service->evaluateEvent(eventPlan, prepared, state.view(),
+                                    eventViews.data(), eventViews.size());
+    require(static_cast<bool>(status),
+            "event field evaluation failed: " + status.message);
+    require(service->metrics().eventPlanFieldResolutionCount ==
+                resolutionsAfterPreparation,
+            "event evaluation repeated construction-time field resolution");
+    for (std::size_t field = 0; field < positionFields.size(); ++field)
+      for (std::size_t position = 0; position < x.size(); ++position)
+        requireWithinOneE12(
+            eventStorage[field][position], fixedStorage[field][position],
+            std::string("event/fixed mismatch for ") +
+                positionFields[field]->name);
+
+    std::vector<std::vector<double>> untouched(
+        eventPlan.outputCount(), std::vector<double>(x.size(), 713.0));
+    std::vector<WVFieldOutputView> badViews;
+    badViews.reserve(untouched.size());
+    for (auto &values : untouched)
+      badViews.push_back({values.data(), values.size()});
+    --badViews.back().elementCount;
+    status = service->evaluateEvent(eventPlan, prepared, state.view(),
+                                    badViews.data(), badViews.size());
+    require(status.code == WVKernelStatusCode::invalidShape &&
+                std::all_of(untouched.begin(), untouched.end(),
+                            [](const auto &values) {
+                              return std::all_of(
+                                  values.begin(), values.end(),
+                                  [](double value) { return value == 713.0; });
+                            }),
+            "invalid event outputs mutated caller storage");
+  };
+
+  compareWithFixed(WVPositionInterpolation::linear);
+  compareWithFixed(WVPositionInterpolation::spline);
+
+  WVEventFieldEvaluationPlan volumePlan;
+  status = service->createEventPlan(
+      {{"volume", "u", 0, WVPositionInterpolation::linear}}, volumePlan);
+  require(static_cast<bool>(status), "volume event plan creation failed");
+  WVEventPositionSetView missingZ{x.data(), y.data(), nullptr, x.size(),
+                                  extents.data(), extents.size()};
+  WVPreparedFieldGeometry validationGeometry;
+  status = service->prepareEventGeometry(volumePlan, &missingZ, 1,
+                                         validationGeometry);
+  require(status.code == WVKernelStatusCode::invalidPointer,
+          "volume event geometry accepted missing z coordinates");
+  const std::vector<std::size_t> wrongExtents{3, 2};
+  WVEventPositionSetView badExtent{x.data(), y.data(), z.data(), x.size(),
+                                   wrongExtents.data(), wrongExtents.size()};
+  status = service->prepareEventGeometry(volumePlan, &badExtent, 1,
+                                         validationGeometry);
+  require(status.code == WVKernelStatusCode::invalidShape,
+          "event geometry accepted incompatible logical extents");
+  auto nonfiniteX = x;
+  nonfiniteX[1] = std::numeric_limits<double>::quiet_NaN();
+  WVEventPositionSetView nonfiniteSet{
+      nonfiniteX.data(), y.data(), z.data(), nonfiniteX.size(),
+      extents.data(), extents.size()};
+  status = service->prepareEventGeometry(volumePlan, &nonfiniteSet, 1,
+                                         validationGeometry);
+  require(status.code == WVKernelStatusCode::invalidConfiguration,
+          "event geometry accepted a nonfinite coordinate");
+
+  WVEventFieldEvaluationPlan horizontalPlan;
+  status = service->createEventPlan(
+      {{"surface-u", "ssu", 0, WVPositionInterpolation::linear},
+       {"surface-v", "ssv", 0, WVPositionInterpolation::linear},
+       {"surface-height", "ssh", 0, WVPositionInterpolation::linear}},
+      horizontalPlan);
+  require(static_cast<bool>(status),
+          "derived horizontal event plan creation failed");
+  WVPreparedFieldGeometry horizontalGeometry;
+  status = service->prepareEventGeometry(horizontalPlan, &missingZ, 1,
+                                         horizontalGeometry);
+  require(static_cast<bool>(status),
+          "horizontal fields required irrelevant z coordinates");
+  std::vector<std::vector<double>> horizontalStorage(
+      horizontalPlan.outputCount(), std::vector<double>(x.size()));
+  std::vector<WVFieldOutputView> horizontalViews;
+  for (auto &values : horizontalStorage)
+    horizontalViews.push_back({values.data(), values.size()});
+  status = service->evaluateEvent(horizontalPlan, horizontalGeometry,
+                                  state.view(), horizontalViews.data(),
+                                  horizontalViews.size());
+  require(static_cast<bool>(status),
+          "derived horizontal event evaluation failed");
+
+  WVEventFieldEvaluationPlan unsupportedPlan;
+  status = service->createEventPlan(
+      {{"scalar", "energy", 0, WVPositionInterpolation::linear}},
+      unsupportedPlan);
+  require(status.code == WVKernelStatusCode::unsupportedOperation,
+          "event plan accepted a non-position-sampleable field");
+
+  const std::vector<std::size_t> zeroExtents{0};
+  WVEventPositionSetView emptySet{nullptr, nullptr, nullptr, 0,
+                                  zeroExtents.data(), zeroExtents.size()};
+  WVPreparedFieldGeometry emptyGeometry;
+  status = service->prepareEventGeometry(volumePlan, &emptySet, 1,
+                                         emptyGeometry);
+  require(static_cast<bool>(status) && emptyGeometry.positionCount() == 0 &&
+              emptyGeometry.outputs()[0].dimensions == zeroExtents &&
+              emptyGeometry.outputs()[0].elementCount == 0,
+          "zero-length event geometry was not preserved");
+  WVFieldOutputView emptyOutput{nullptr, 0};
+  const auto transformsBeforeEmpty = service->metrics().transformCount;
+  status = service->evaluateEvent(volumePlan, emptyGeometry, state.view(),
+                                  &emptyOutput, 1);
+  require(static_cast<bool>(status) &&
+              service->metrics().transformCount == transformsBeforeEmpty,
+          "zero-length event performed unnecessary field reconstruction");
+
+  const std::vector<double> longerX{0.0, dx, 2.0 * dx, 3.0 * dx,
+                                     4.0 * dx, 5.0 * dx};
+  const std::vector<double> longerY{0.0,      dy,       2.0 * dy,
+                                    3.0 * dy, 4.0 * dy, 0.5 * dy};
+  const std::vector<double> longerZ(longerX.size(), -0.5 * config.Lz);
+  const std::vector<std::size_t> longerExtents{3, 2};
+  WVEventPositionSetView longerSet{longerX.data(),       longerY.data(),
+                                   longerZ.data(),       longerX.size(),
+                                   longerExtents.data(), longerExtents.size()};
+  WVPreparedFieldGeometry longerGeometry;
+  status =
+      service->prepareEventGeometry(volumePlan, &longerSet, 1, longerGeometry);
+  require(static_cast<bool>(status) && longerGeometry.positionCount() == 6 &&
+              longerGeometry.outputs()[0].dimensions == longerExtents &&
+              service->metrics().maximumPreparedGeometryRetainedBytes >=
+                  longerGeometry.retainedBytes() &&
+              service->metrics().maximumPreparedGeometryLiveBytes >=
+                  longerGeometry.liveBytes(),
+          "variable event geometry or high-water storage metrics are wrong");
+
+  WVEventFieldEvaluationPlan batchPlan;
+  status = service->createEventPlan(
+      {{"batch-u", "u", 0, WVPositionInterpolation::spline},
+       {"batch-eta", "eta", 0, WVPositionInterpolation::spline}},
+      batchPlan);
+  require(static_cast<bool>(status), "event batch plan creation failed");
+  WVPreparedFieldGeometry firstBatchGeometry;
+  WVPreparedFieldGeometry secondBatchGeometry;
+  WVEventPositionSetView firstBatchSet{
+      x.data(), y.data(), z.data(), x.size(), extents.data(), extents.size()};
+  status = service->prepareEventGeometry(batchPlan, &firstBatchSet, 1,
+                                         firstBatchGeometry);
+  require(static_cast<bool>(status), "first event batch geometry failed");
+  status = service->prepareEventGeometry(batchPlan, &longerSet, 1,
+                                         secondBatchGeometry);
+  require(static_cast<bool>(status), "second event batch geometry failed");
+  std::array<std::vector<double>, 2> firstBatchStorage{
+      std::vector<double>(x.size()), std::vector<double>(x.size())};
+  std::array<std::vector<double>, 2> secondBatchStorage{
+      std::vector<double>(longerX.size()), std::vector<double>(longerX.size())};
+  std::array<WVFieldOutputView, 2> firstBatchViews{
+      {{firstBatchStorage[0].data(), firstBatchStorage[0].size()},
+       {firstBatchStorage[1].data(), firstBatchStorage[1].size()}}};
+  std::array<WVFieldOutputView, 2> secondBatchViews{
+      {{secondBatchStorage[0].data(), secondBatchStorage[0].size()},
+       {secondBatchStorage[1].data(), secondBatchStorage[1].size()}}};
+  const std::array<WVEventFieldEvaluationBatchEntry, 2> batchEntries{
+      {{&batchPlan, &firstBatchGeometry, firstBatchViews.data(),
+        firstBatchViews.size()},
+       {&batchPlan, &secondBatchGeometry, secondBatchViews.data(),
+        secondBatchViews.size()}}};
+  const auto metricsBeforeBatch = service->metrics();
+  status = service->evaluateEventBatch(state.view(), batchEntries.data(),
+                                       batchEntries.size());
+  require(static_cast<bool>(status),
+          "coincident event field batch evaluation failed");
+  const auto &metricsAfterBatch = service->metrics();
+  require(metricsAfterBatch.transformCount ==
+              metricsBeforeBatch.transformCount + 1,
+          "event batch repeated primitive reconstruction");
+  require(metricsAfterBatch.primitiveFieldEvaluationCount ==
+              metricsBeforeBatch.primitiveFieldEvaluationCount + 2,
+          "event batch reported the wrong primitive field count");
+  require(metricsAfterBatch.splineInterpolationCount ==
+              metricsBeforeBatch.splineInterpolationCount +
+                  2 * (x.size() + longerX.size()),
+          "event batch skipped an occurrence interpolation");
+  require(metricsAfterBatch.eventEvaluationCount ==
+                  metricsBeforeBatch.eventEvaluationCount + 2 &&
+              metricsAfterBatch.eventBatchEvaluationCount ==
+                  metricsBeforeBatch.eventBatchEvaluationCount + 1 &&
+              metricsAfterBatch.eventBatchOccurrenceCount ==
+                  metricsBeforeBatch.eventBatchOccurrenceCount + 2 &&
+              metricsAfterBatch.eventBatchOutputCount ==
+                  metricsBeforeBatch.eventBatchOutputCount + 4,
+          "event batch evaluation counters are not occurrence-exact");
+  require(metricsAfterBatch.eventBatchInvocationWorkspaceBytes >=
+                  batchEntries.size() *
+                      (2 * sizeof(void *) + sizeof(std::size_t)) &&
+              metricsAfterBatch.servicePersistentBytes ==
+                  service->persistentBytes(),
+          "event batch omitted physical invocation workspace storage");
+}
+
 } // namespace
 
 int main() {
@@ -527,10 +912,12 @@ int main() {
     verifyFailureAndLifecycleContracts();
     verifyEvaluation(6, 5, true, true);
     verifyEvaluation(7, 6, false, false);
+    verifyEventFieldEvaluation();
     std::cout << "WVFieldEvaluationService portable contracts passed: "
                  "hydrostatic/nonhydrostatic, odd/even, antialiasing, "
                  "zero/Nyquist, wrapping, profiles, linear/spline, reuse, "
-                 "storage, lifecycle, and failures.\n";
+                 "event-variable geometry, every position field, storage, "
+                 "lifecycle, and failures.\n";
     return 0;
   } catch (const std::exception &error) {
     std::cerr << error.what() << '\n';
