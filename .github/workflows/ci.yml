@@ -64,6 +64,42 @@ jobs:
             exit 1
           fi
 
+  portable-runtime-sanitizers:
+    if: ${{ github.event.action != 'closed' }}
+    name: Portable C++ ASan and UBSan
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out WaveVortexModel
+        uses: actions/checkout@v6
+        with:
+          path: source
+          persist-credentials: false
+
+      - name: Install NetCDF C development library
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes libnetcdf-dev pkg-config
+
+      - name: Build the portable runtime with Clang sanitizers
+        working-directory: source
+        env:
+          CC: clang
+          CXX: clang++
+        run: |
+          cmake -S PortableRuntime -B "$RUNNER_TEMP/wave-vortex-portable-runtime-sanitized" \
+            -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+            -DBUILD_TESTING=ON \
+            -DCMAKE_CXX_FLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer" \
+            -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address,undefined"
+          cmake --build "$RUNNER_TEMP/wave-vortex-portable-runtime-sanitized" --parallel
+
+      - name: Run the sanitized portable-runtime contracts
+        env:
+          ASAN_OPTIONS: detect_leaks=1:halt_on_error=1
+          UBSAN_OPTIONS: print_stacktrace=1:halt_on_error=1
+        run: ctest --test-dir "$RUNNER_TEMP/wave-vortex-portable-runtime-sanitized" --output-on-failure
+
   focused-matlab:
     if: ${{ github.event_name == 'pull_request' && github.event.action != 'closed' && github.base_ref != 'main' && !contains(github.event.pull_request.labels.*.name, 'final-integration') }}
     name: Focused MATLAB / R2025b
@@ -360,11 +396,12 @@ jobs:
   required-gate:
     if: ${{ always() && github.event.action != 'closed' }}
     name: Required / WaveVortexModel
-    needs: [kernel-contract, focused-matlab, smoke, documentation, analyzer]
+    needs: [kernel-contract, portable-runtime-sanitizers, focused-matlab, smoke, documentation, analyzer]
     runs-on: ubuntu-latest
     env:
       WVM_GATE_MODE: ${{ github.event_name == 'pull_request' && github.base_ref != 'main' && !contains(github.event.pull_request.labels.*.name, 'final-integration') && 'focused' || 'full' }}
       KERNEL_RESULT: ${{ needs.kernel-contract.result }}
+      SANITIZER_RESULT: ${{ needs.portable-runtime-sanitizers.result }}
       FOCUSED_RESULT: ${{ needs.focused-matlab.result }}
       SMOKE_RESULT: ${{ needs.smoke.result }}
       DOCUMENTATION_RESULT: ${{ needs.documentation.result }}
@@ -374,8 +411,9 @@ jobs:
         shell: bash
         run: |
           echo "Gate mode: $WVM_GATE_MODE"
-          echo "kernel=$KERNEL_RESULT focused=$FOCUSED_RESULT smoke=$SMOKE_RESULT documentation=$DOCUMENTATION_RESULT analyzer=$ANALYZER_RESULT"
+          echo "kernel=$KERNEL_RESULT sanitizers=$SANITIZER_RESULT focused=$FOCUSED_RESULT smoke=$SMOKE_RESULT documentation=$DOCUMENTATION_RESULT analyzer=$ANALYZER_RESULT"
           test "$KERNEL_RESULT" = success
+          test "$SANITIZER_RESULT" = success
           if [[ "$WVM_GATE_MODE" = focused ]]; then
             test "$FOCUSED_RESULT" = success
             test "$SMOKE_RESULT" = skipped

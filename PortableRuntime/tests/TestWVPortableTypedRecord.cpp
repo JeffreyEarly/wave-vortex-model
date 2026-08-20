@@ -101,6 +101,30 @@ void verifyCodec() {
           "truncated typed-record encoding was accepted");
 }
 
+void verifyEmptyNumericCodec() {
+  WVPortableTypedRecord value;
+  value.schemaIdentifier = "empty-numeric-record-v1";
+  value.schemaVersion = 1;
+  value.values.push_back(
+      {"booleans", {0}, std::vector<std::uint8_t>{}});
+  value.values.push_back(
+      {"integers", {0}, std::vector<std::int64_t>{}});
+  value.values.push_back({"reals", {0}, std::vector<double>{}});
+
+  std::vector<std::uint8_t> bytes;
+  require(static_cast<bool>(encodePortableTypedRecord(value, bytes)) &&
+              !bytes.empty(),
+          "empty numeric typed record did not encode");
+  WVPortableTypedRecord decoded;
+  require(static_cast<bool>(decodePortableTypedRecord(bytes, decoded)) &&
+              samePortableTypedRecordValue(value, decoded),
+          "empty numeric typed record did not round trip");
+  std::vector<std::uint8_t> roundTrip;
+  require(static_cast<bool>(encodePortableTypedRecord(decoded, roundTrip)) &&
+              roundTrip == bytes,
+          "empty numeric typed-record codec is not deterministic");
+}
+
 } // namespace
 
 int main() {
@@ -109,6 +133,7 @@ int main() {
     verifyMalformedRecords();
     verifyContextRules();
     verifyCodec();
+    verifyEmptyNumericCodec();
     std::cout << "Portable typed-record tests passed.\n";
     return 0;
   } catch (const std::exception &error) {
