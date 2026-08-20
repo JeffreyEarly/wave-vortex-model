@@ -135,20 +135,51 @@ int main() {
         const auto checkpointStateBytes = jsonNumber(reportText,"checkpointState");
         const auto modelStateBytes = jsonNumber(reportText,"modelState");
         const auto extensionCatalogBytes = jsonNumber(reportText,"extensionCatalog");
+        const auto integrationSystemBytes = jsonNumber(reportText,"integrationSystem");
+        const auto integratorBytes = jsonNumber(reportText,"integratorPersistent");
         const auto knownPersistentBytes = jsonNumber(reportText,"knownPersistent");
         const auto fullModelPersistentBytes = jsonNumber(reportText,"fullModelPersistent");
+        require(reportText.find(
+                    "\"scope\":\"application-and-provider-reported-cpp-storage\"") !=
+                    std::string::npos &&
+                    reportText.find("opaque-fftw-plan-internals") !=
+                        std::string::npos &&
+                    reportText.find("opaque-netcdf-library-internals") !=
+                        std::string::npos,
+                "runner omitted the exact storage-accounting scope");
         require(extensionCatalogBytes > 0.0,
                 "runner omitted the retained extension catalog");
+        require(knownPersistentBytes ==
+                    jsonNumber(reportText,"modelFacade")+
+                        extensionCatalogBytes+checkpointStateBytes+
+                        integrationSystemBytes+integratorBytes+
+                        jsonNumber(reportText,"modelOutputConfiguration")+
+                        jsonNumber(reportText,"scheduledOutput"),
+                "runner known-persistent ownership formula is not exact");
         require(fullModelPersistentBytes ==
                     knownPersistentBytes+
                         std::max(0.0,modelStateBytes-checkpointStateBytes)+
                         jsonNumber(reportText,"modelOutputEvaluation")+
                         jsonNumber(reportText,"modelOutputSink"),
                 "runner full persistent accounting is not exact");
-        require(jsonNumber(reportText,"fullModelRetained") ==
-                    fullModelPersistentBytes &&
-                    jsonNumber(reportText,"fullModelMaximumLive") >=
-                        jsonNumber(reportText,"fullModelRetained"),
+        const auto occurrenceRetained =
+            jsonNumber(reportText,"occurrenceWorkspaceRetained");
+        const auto occurrenceMaximumLive =
+            jsonNumber(reportText,"occurrenceWorkspaceMaximumLive");
+        const auto orchestrationMaximumLive =
+            jsonNumber(reportText,"outputOrchestrationMaximumLive");
+        require(jsonNumber(reportText,"outputDriverRetained") == 0.0 &&
+                    jsonNumber(reportText,"knownRetained") ==
+                        knownPersistentBytes &&
+                    jsonNumber(reportText,"knownMaximumLive") ==
+                        knownPersistentBytes + orchestrationMaximumLive &&
+                    jsonNumber(reportText,"fullModelRetained") ==
+                        fullModelPersistentBytes &&
+                    jsonNumber(reportText,"fullModelMaximumLive") ==
+                        fullModelPersistentBytes - occurrenceRetained +
+                            std::max(occurrenceRetained,
+                                     occurrenceMaximumLive) +
+                            orchestrationMaximumLive,
                 "runner full retained/liveness accounting is inconsistent");
         require(reportText.find("\"arrayTraffic\"") != std::string::npos && reportText.find("\"stageStateConstructionReads\":1296") != std::string::npos,"runner omitted exact RK4 traffic diagnostics");
         require(reportText.find("\"stageFluxClearWrites\":0") != std::string::npos && reportText.find("\"weightedFluxInitializationReads\":216") != std::string::npos,"runner omitted eliminated-clear and first-stage initialization diagnostics");
@@ -197,6 +228,23 @@ int main() {
         const auto scheduledReportText = text(scheduledReport);
         require(scheduledReportText.find("\"requestedCount\":4") != std::string::npos && scheduledReportText.find("\"committedCount\":4") != std::string::npos,"fixed scheduled-output report omitted counts");
         require(scheduledReportText.find("\"eventKind\":\"initial\"") != std::string::npos && scheduledReportText.find("\"eventKind\":\"interpolated\"") != std::string::npos && scheduledReportText.find("\"eventKind\":\"accepted-endpoint\"") != std::string::npos,"fixed scheduled-output report omitted event kinds");
+        const auto scheduledDriverMaximumLive =
+            jsonNumber(scheduledReportText,"outputDriverMaximumLive");
+        const auto scheduledPlanMaximumLive =
+            jsonNumber(scheduledReportText,"outputPlanMaximumLive");
+        const auto scheduledOrchestrationMaximumLive =
+            jsonNumber(scheduledReportText,
+                       "outputOrchestrationMaximumLive");
+        require(jsonNumber(scheduledReportText,"outputDriverRetained") == 0.0 &&
+                    scheduledDriverMaximumLive > 0.0 &&
+                    scheduledPlanMaximumLive > 0.0 &&
+                    scheduledOrchestrationMaximumLive ==
+                        scheduledDriverMaximumLive +
+                            scheduledPlanMaximumLive &&
+                    jsonNumber(scheduledReportText,"knownMaximumLive") ==
+                        jsonNumber(scheduledReportText,"knownRetained") +
+                            scheduledOrchestrationMaximumLive,
+                "scheduled-output driver/plan liveness is not exact");
         const auto scheduledSentinel = bytes(scheduledPaths.front());
         require(run(quote(input)+fixedScheduledArguments+" >/dev/null 2>&1") != 0,"scheduled output replaced existing checkpoints");
         require(bytes(scheduledPaths.front()) == scheduledSentinel,"scheduled output collision changed an existing checkpoint");

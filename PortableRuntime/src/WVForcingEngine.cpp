@@ -174,7 +174,8 @@ public:
         return component < 2 ? waveTolerance_[index] : vortexTolerance_[index];
     }
     std::size_t persistentBytes() const noexcept override {
-        return vectorBytes(waveTolerance_)+vectorBytes(vortexTolerance_);
+        return sizeof(*this) + vectorBytes(waveTolerance_) +
+               vectorBytes(vortexTolerance_);
     }
 
 private:
@@ -930,7 +931,7 @@ void WVConstantStratificationForcingEngine::clearEvaluationWorkspace() noexcept 
 }
 
 std::size_t WVConstantStratificationForcingEngine::persistentBytes() const noexcept {
-    return kernel_->persistentBytes()+metrics_.scheduleBytes+metrics_.derivedOperatorBytes+metrics_.workspaceCapacityBytes;
+    return sizeof(*this)+kernel_->persistentBytes()+metrics_.scheduleBytes+metrics_.derivedOperatorBytes+metrics_.workspaceCapacityBytes;
 }
 
 } // namespace wavevortex::runtime

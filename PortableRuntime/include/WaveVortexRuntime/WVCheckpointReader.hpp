@@ -114,6 +114,35 @@ struct WVCheckpoint {
     WVFrozenForcingSchedule forcingSchedule;
 };
 
+// Capacity-based retained storage owned by one complete checkpoint, including
+// its object, coefficient arrays, metadata, and frozen forcing records.
+inline std::size_t
+checkpointRetainedBytes(const WVCheckpoint& checkpoint) noexcept {
+    std::size_t bytes = sizeof(checkpoint) +
+        (checkpoint.state.coefficients.Ap.capacity() +
+         checkpoint.state.coefficients.Am.capacity() +
+         checkpoint.state.coefficients.A0.capacity()) * sizeof(WVComplex64) +
+        checkpoint.metadata.profileIdentifier.capacity() +
+        checkpoint.metadata.modelVersion.capacity() +
+        checkpoint.metadata.transformClass.capacity() +
+        checkpoint.metadata.stateGroupPath.capacity() +
+        checkpoint.metadata.forcingHeaders.capacity() *
+            sizeof(WVCheckpointForcingHeader) +
+        checkpoint.forcingSchedule.profileIdentifier.capacity() +
+        checkpoint.forcingSchedule.entries.capacity() *
+            sizeof(WVFrozenForcingEntry);
+    for (const auto& header : checkpoint.metadata.forcingHeaders) {
+        bytes += header.groupPath.capacity() + header.annotatedClass.capacity();
+    }
+    for (const auto& entry : checkpoint.forcingSchedule.entries) {
+        bytes += entry.typeIdentifier.capacity() + entry.name.capacity() +
+            entry.sourceGroupPath.capacity() +
+            entry.configuration.persistentBytes() -
+                sizeof(WVPortableTypedRecord);
+    }
+    return bytes;
+}
+
 // Allocation-light checkpoint information used to reject incompatible input
 // before loading the three state-sized coefficient arrays.
 struct WVCheckpointInspection {

@@ -58,14 +58,82 @@ public:
     return {WVKernelStatusCode::allocationFailure,
             "injected output-schema failure"};
   }
-  WVKernelStatus prepare(const WVOutputEvent &) override {
+  WVKernelStatus prepare(const WVOutputEvent &event) override {
+    scheduledTime_ = event.scheduledTime;
     return WVKernelStatus::ok();
+  }
+  WVKernelStatus preparedOccurrenceIdentity(
+      const WVOutputRouteView &route, const WVOutputObserverView &observer,
+      WVObservationOccurrenceIdentity &output) const override {
+    if (route.schedulePayload == nullptr)
+      return {WVKernelStatusCode::invalidConfiguration,
+              "A test observation route has no schedule payload."};
+    output = {};
+    output.observerOrdinal = observer.observerOrdinal;
+    output.semanticScheduleOrdinal = route.semanticScheduleOrdinal;
+    output.scheduleOrdinal = route.scheduleOrdinal;
+    output.scheduledTime = scheduledTime_;
+    output.scheduleCursorIdentity = route.scheduleCursorIdentity;
+    output.payloadFingerprint = route.schedulePayload->valueFingerprint();
+    return WVKernelStatus::ok();
+  }
+  WVKernelStatus observationBatch(
+      const WVObservationOccurrenceIdentity &, const WVObserverRecord &,
+      WVObservationBatch &) override {
+    return {WVKernelStatusCode::allocationFailure,
+            "injected observation-batch failure"};
   }
   WVKernelStatus value(const WVObserverRecord &,
                        const WVObserverOutputVariableSpecification &,
                        WVObserverOutputValueView &) override {
     return WVKernelStatus::ok();
   }
+
+private:
+  double scheduledTime_ = 0.0;
+};
+
+class PreflightRejectingSampleSource final : public WVObserverSampleSource {
+public:
+  WVKernelStatus preflight(const WVOutputPlan &) override {
+    ++preflightCount_;
+    return {WVKernelStatusCode::invalidConfiguration,
+            "incompatible schedule/observer occurrence payload schemas"};
+  }
+  WVKernelStatus observationSchema(
+      const WVObserverRecord &, WVObservationSchema &) override {
+    ++unexpectedCallCount_;
+    return {WVKernelStatusCode::invalidConfiguration,
+            "schema discovery ran after rejected source preflight"};
+  }
+  WVKernelStatus prepare(const WVOutputEvent &) override {
+    ++unexpectedCallCount_;
+    return {WVKernelStatusCode::invalidConfiguration,
+            "event preparation ran after rejected source preflight"};
+  }
+  WVKernelStatus preparedOccurrenceIdentity(
+      const WVOutputRouteView &, const WVOutputObserverView &,
+      WVObservationOccurrenceIdentity &) const override {
+    ++unexpectedCallCount_;
+    return {WVKernelStatusCode::invalidConfiguration,
+            "occurrence lookup ran after rejected source preflight"};
+  }
+  WVKernelStatus observationBatch(
+      const WVObservationOccurrenceIdentity &, const WVObserverRecord &,
+      WVObservationBatch &) override {
+    ++unexpectedCallCount_;
+    return {WVKernelStatusCode::invalidConfiguration,
+            "batch construction ran after rejected source preflight"};
+  }
+
+  std::size_t preflightCount() const noexcept { return preflightCount_; }
+  std::size_t unexpectedCallCount() const noexcept {
+    return unexpectedCallCount_;
+  }
+
+private:
+  std::size_t preflightCount_ = 0;
+  mutable std::size_t unexpectedCallCount_ = 0;
 };
 
 WVPortableObserverRecord allObserverRecord(const WVCheckpoint &checkpoint) {
@@ -360,13 +428,41 @@ void testValidationAndDeterministicIdentifiers() {
 void testCreateReplaceAndAppendPolicies() {
   TemporaryDirectory directory;
   auto checkpoint = checkpointTemplate();
-  const auto path = directory.path / "policy.nc";
+  const auto rejectedCreatePath = directory.path / "preflight-create.nc";
   auto record = coefficientRecord(checkpoint);
   std::vector<WVModelOutputFile> files;
+  files.push_back(fileBuilder(rejectedCreatePath, "preflight-create",
+                              checkpoint.state.t,
+                              checkpoint.state.t + 2.0, false));
+  WVModelOutputConfiguration rejectedCreate;
+  auto status = WVModelOutputConfiguration::build(
+      record, std::move(files), WVModelOutputPolicy::create,
+      test::extensionCatalog(), checkpoint.state.t,
+      checkpoint.state.t + 2.0, rejectedCreate);
+  require(static_cast<bool>(status), status.message);
+  WVIntegrationStateLayout rejectedCreateLayout;
+  status = WVIntegrationStateLayout::create(
+      checkpoint.state.coefficients.shape, rejectedCreate.descriptor(),
+      rejectedCreateLayout);
+  require(static_cast<bool>(status), status.message);
+  PreflightRejectingSampleSource rejectedCreateSource;
+  WVModelOutputNetCDFSink sink;
+  auto persistence = rejectedCreate.openNetCDFSink(
+      {test::extensionCatalog(), checkpoint, false}, rejectedCreateLayout,
+      &rejectedCreateSource, sink);
+  require(!persistence &&
+              persistence.code == WVCheckpointStatusCode::unsupportedObserver &&
+              rejectedCreateSource.preflightCount() == 1 &&
+              rejectedCreateSource.unexpectedCallCount() == 0 &&
+              !std::filesystem::exists(rejectedCreatePath),
+          "payload-schema preflight rejection created an output destination");
+
+  const auto path = directory.path / "policy.nc";
+  files.clear();
   files.push_back(fileBuilder(path, "policy", checkpoint.state.t,
                               checkpoint.state.t + 2.0, false));
   WVModelOutputConfiguration create;
-  auto status = WVModelOutputConfiguration::build(
+  status = WVModelOutputConfiguration::build(
       record, std::move(files), WVModelOutputPolicy::create,
       test::extensionCatalog(), checkpoint.state.t, checkpoint.state.t + 2.0, create);
   require(static_cast<bool>(status), status.message);
@@ -374,9 +470,8 @@ void testCreateReplaceAndAppendPolicies() {
   status = WVIntegrationStateLayout::create(
       checkpoint.state.coefficients.shape, create.descriptor(), layout);
   require(static_cast<bool>(status), status.message);
-  WVModelOutputNetCDFSink sink;
-  auto persistence = create.openNetCDFSink({test::extensionCatalog(), checkpoint, false}, layout,
-                                           nullptr, sink);
+  persistence = create.openNetCDFSink({test::extensionCatalog(), checkpoint, false}, layout,
+                                      nullptr, sink);
   require(static_cast<bool>(persistence), persistence.message);
   deliverFirstEvent(sink, create.plan(), checkpoint);
   persistence = sink.close();
@@ -419,6 +514,14 @@ void testCreateReplaceAndAppendPolicies() {
       checkpoint.state.coefficients.shape, failedReplacement.descriptor(),
       allLayout);
   require(static_cast<bool>(status), status.message);
+  PreflightRejectingSampleSource rejectedReplacementSource;
+  persistence = failedReplacement.openNetCDFSink(
+      {test::extensionCatalog(), checkpoint, false}, allLayout,
+      &rejectedReplacementSource, sink);
+  require(!persistence && rejectedReplacementSource.preflightCount() == 1 &&
+              rejectedReplacementSource.unexpectedCallCount() == 0 &&
+              fileBytes(path) == original,
+          "payload-schema preflight rejection changed a replacement destination");
   FailingSampleSource failure;
   persistence = failedReplacement.openNetCDFSink(
       {test::extensionCatalog(), checkpoint, false}, allLayout, &failure, sink);
@@ -457,6 +560,15 @@ void testCreateReplaceAndAppendPolicies() {
                       .front()
                       .committedScheduleCursor.committedOrdinal == 0,
           "append progress was not recovered");
+  const auto beforeRejectedAppend = fileBytes(path);
+  PreflightRejectingSampleSource rejectedAppendSource;
+  persistence = append.openNetCDFSink(
+      {test::extensionCatalog(), checkpoint, false}, layout,
+      &rejectedAppendSource, sink);
+  require(!persistence && rejectedAppendSource.preflightCount() == 1 &&
+              rejectedAppendSource.unexpectedCallCount() == 0 &&
+              fileBytes(path) == beforeRejectedAppend,
+          "payload-schema preflight rejection changed an append destination");
   persistence = append.openNetCDFSink({test::extensionCatalog(), checkpoint, false}, layout, nullptr,
                                       sink);
   require(static_cast<bool>(persistence), persistence.message);

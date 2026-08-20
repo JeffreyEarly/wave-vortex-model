@@ -293,6 +293,35 @@ void testContracts(WVPortableObserverDescriptor &descriptor,
           "derived block excluded and order frozen");
   require(layout.realElementCount() == 10 && layout.complexElementCount() == 0,
           "integration-state counts");
+  std::size_t expectedLayoutStorage =
+      layout.additionalBlocks().capacity() *
+          sizeof(WVAdditionalStateBlockLayout) +
+      layout.stateBlockRecords().capacity() * sizeof(WVStateBlockRecord) +
+      layout.observerRecords().capacity() * sizeof(WVObserverRecord);
+  for (const auto &block : layout.additionalBlocks())
+    expectedLayoutStorage += block.identifier.capacity() +
+                             block.dimensions.capacity() * sizeof(std::size_t);
+  for (const auto &block : layout.stateBlockRecords())
+    expectedLayoutStorage += block.identifier.capacity() +
+                             block.dimensions.capacity() * sizeof(std::size_t);
+  for (const auto &observer : layout.observerRecords()) {
+    expectedLayoutStorage +=
+        observer.identifier.capacity() + observer.name.capacity() +
+        observer.typeIdentifier.capacity() +
+        observer.configuration.persistentBytes() -
+            sizeof(WVPortableTypedRecord) +
+        observer.stateBlockIdentifiers.capacity() * sizeof(std::string) +
+        observer.fieldNames.capacity() * sizeof(std::string) +
+        (observer.x.capacity() + observer.y.capacity() +
+         observer.z.capacity()) *
+            sizeof(double);
+    for (const auto &identifier : observer.stateBlockIdentifiers)
+      expectedLayoutStorage += identifier.capacity();
+    for (const auto &field : observer.fieldNames)
+      expectedLayoutStorage += field.capacity();
+  }
+  require(layout.persistentBytes() == expectedLayoutStorage,
+          "integration layout exact retained-storage ledger");
   WVIntegrationStateLayout badLayout;
   require(!WVIntegrationStateLayout::create({3, 2}, descriptor, badLayout),
           "coefficient shape mismatch rejected");
@@ -326,6 +355,9 @@ void testRK4(LinearIntegrationSystem &system) {
               rk4.metrics().workspaceMaximumLiveBytes ==
                   rk4.metrics().workspaceCapacityBytes,
           "RK4 storage accounting");
+  require(rk4.persistentBytes() >
+              sizeof(rk4) + rk4.metrics().workspaceCapacityBytes,
+          "RK4 retained ledger omitted its workspace object or accepted views");
   require(leanRK4.metrics().workspaceCapacityBytes <
               rk4.metrics().workspaceCapacityBytes,
           "RK4 dense history allocated only when requested");
@@ -356,6 +388,14 @@ void testRK23(LinearIntegrationSystem &system) {
               1e-6,
           "RK23 dense coefficient result");
   require(rk23.metrics().workspaceCapacityBytes > 0, "RK23 storage accounting");
+  const auto adaptiveArrayAndPolicyBytes =
+      sizeof(rk23) + rk23.metrics().workspaceCapacityBytes +
+      rk23.metrics().errorPolicyBytes +
+      rk23.stepDiagnostics().capacity() *
+          sizeof(WVAdaptiveRK23StepDiagnostic) +
+      rk23.toleranceComponentHashes().capacity() * sizeof(std::uint64_t);
+  require(rk23.persistentBytes() > adaptiveArrayAndPolicyBytes,
+          "RK23 retained ledger omitted its workspace object or accepted views");
 }
 
 void testRK23MatlabControllerWork() {

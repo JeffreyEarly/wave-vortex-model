@@ -179,11 +179,13 @@ if(BUILD_TESTING)
     wv_add_runtime_test(TestWVForcingAndRK4 TestWVForcingAndRK4.cpp forcing-and-rk4)
     wv_add_runtime_test(TestWVUnifiedIntegration TestWVUnifiedIntegration.cpp unified-integration)
     wv_add_runtime_test(TestWVOutputOrchestration TestWVOutputOrchestration.cpp output-orchestration)
+    wv_add_runtime_test(TestWVOutputOccurrence TestWVOutputOccurrence.cpp output-occurrence)
     wv_add_runtime_test(TestWVModelOutputNetCDF TestWVModelOutputNetCDF.cpp model-output-netcdf)
     wv_add_runtime_test(TestWVModelOutputConfiguration TestWVModelOutputConfiguration.cpp model-output-configuration)
     wv_add_runtime_test(TestWVModel TestWVModel.cpp model-facade)
     wv_add_runtime_test(TestWVFieldEvaluation TestWVFieldEvaluation.cpp field-evaluation)
     wv_add_runtime_test(TestWVObserverOutputEvaluation TestWVObserverOutputEvaluation.cpp observer-output-evaluation)
+    wv_add_runtime_test(TestWVObservationOccurrence TestWVObservationOccurrence.cpp observation-occurrence)
     wv_add_runtime_test(TestWVLagrangianParticles TestWVLagrangianParticles.cpp lagrangian-particles)
     wv_add_runtime_test(TestWaveVortexRun TestWaveVortexRun.cpp standalone-runner)
 
@@ -232,5 +234,10 @@ if(BUILD_TESTING)
         COMMAND ${CMAKE_COMMAND}
             -DWV_REPOSITORY_ROOT=${CMAKE_CURRENT_LIST_DIR}/..
             -P ${CMAKE_CURRENT_LIST_DIR}/tests/CheckWVOutputScheduleDispatch.cmake
+    )
+    add_test(NAME observation-occurrence-source-policy
+        COMMAND ${CMAKE_COMMAND}
+            -DWV_REPOSITORY_ROOT=${CMAKE_CURRENT_LIST_DIR}/..
+            -P ${CMAKE_CURRENT_LIST_DIR}/tests/CheckWVObservationOccurrence.cmake
     )
 endif()

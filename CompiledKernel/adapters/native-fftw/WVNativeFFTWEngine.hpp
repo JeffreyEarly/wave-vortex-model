@@ -33,6 +33,9 @@ public:
 
     std::string identifier() const override;
     std::string libraryIdentity() const override { return loadedLibraryPath_; }
+    std::size_t persistentBytes() const noexcept override {
+        return sizeof(*this) + loadedLibraryPath_.capacity();
+    }
     WVKernelStatus createPlan(const WVFFTPlanSpecification& specification, std::unique_ptr<WVFFTPlan>& plan) override;
     std::size_t threadCount() const noexcept { return threadCount_; }
     const std::string& loadedLibraryPath() const noexcept { return loadedLibraryPath_; }

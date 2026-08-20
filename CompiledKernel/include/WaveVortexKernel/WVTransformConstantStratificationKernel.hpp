@@ -12,6 +12,8 @@ enum class WVDynamicalField : std::uint8_t { u, v, w, eta };
 struct WVKernelMetrics {
     std::size_t descriptorBytes = 0;
     std::size_t planBytes = 0;
+    std::size_t engineBytes = 0;
+    std::size_t kernelManagementBytes = 0;
     std::size_t scratchCapacityBytes = 0;
     std::size_t scratchHighWaterBytes = 0;
     std::size_t halfSpectrumScratchCapacityBytes = 0;
@@ -53,7 +55,7 @@ public:
     WVTransformConstantStratificationKernel& operator=(WVTransformConstantStratificationKernel&&) = delete;
 
     const WVTransformConstantStratificationDescriptor& descriptor() const noexcept { return descriptor_; }
-    const WVKernelMetrics& metrics() const noexcept { return metrics_; }
+    const WVKernelMetrics& metrics() const noexcept;
     const std::string& engineIdentifier() const noexcept { return engineIdentifier_; }
     const std::string& engineLibraryIdentity() const noexcept { return engineLibraryIdentity_; }
     const char* nonlinearFluxScheduleIdentifier() const noexcept;
@@ -102,7 +104,7 @@ private:
     std::vector<std::uint8_t> scalarAntialiasRows_;
     std::vector<double> halfSpectrumScratch_;
     std::vector<double> realScratch_;
-    WVKernelMetrics metrics_;
+    mutable WVKernelMetrics metrics_;
     bool executing_ = false;
     bool stageInstrumentationEnabled_ = false;
 };

@@ -15,7 +15,7 @@ Pull requests targeting an unreleased integration branch use the focused gate by
 
 The `final-integration` label is the explicit opt-in for the last cumulative integration PR before it targets `main`. Manual dispatch remains available from any branch and always runs every job in the selected workflow; it never selects the focused gate.
 
-## Stable required check
+## Required check
 
 The required workflow always reports `Required / WaveVortexModel`. This aggregate check succeeds only after the portable C++ job and the MATLAB jobs selected for the current gate succeed. Branch protection for an integration branch should require this aggregate check so conditional jobs cannot leave auto-merge pending indefinitely or allow it to merge before the focused evidence completes.
 

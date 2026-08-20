@@ -143,9 +143,17 @@ classdef TestReleaseVerification < matlab.unittest.TestCase
             for required = [
                     "CompiledKernel/native-fftw-provider.env"
                     "PortableRuntime/buildWaveVortexRun.sh"
+                    "PortableRuntime/include/WaveVortexRuntime/WVCheckpointReader.hpp"
                     "PortableRuntime/include/WaveVortexRuntime/WVExtensionCatalog.hpp"
+                    "PortableRuntime/include/WaveVortexRuntime/WVFieldEvaluationService.hpp"
+                    "PortableRuntime/include/WaveVortexRuntime/WVObserverOutputProvider.hpp"
+                    "PortableRuntime/include/WaveVortexRuntime/WVOutputSchedule.hpp"
                     "PortableRuntime/include/WaveVortexRuntime/WVRunner.hpp"
+                    "PortableRuntime/src/WVCheckpointReader.cpp"
                     "PortableRuntime/src/WVExtensionCatalog.cpp"
+                    "PortableRuntime/src/WVFieldEvaluationService.cpp"
+                    "PortableRuntime/src/WVObserverOutputEvaluationService.cpp"
+                    "PortableRuntime/src/WVOutputSchedule.cpp"
                     "PortableRuntime/app/WaveVortexRun.cpp"
                     "PortableRuntime/app/WaveVortexRunMain.cpp"
                     ]'

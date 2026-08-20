@@ -341,4 +341,26 @@ decodePortableTypedRecord(const std::vector<std::uint8_t> &bytes,
   }
 }
 
+bool samePortableTypedRecordValue(const WVPortableTypedRecord &left,
+                                  const WVPortableTypedRecord &right) noexcept {
+  if (left.schemaIdentifier != right.schemaIdentifier ||
+      left.schemaVersion != right.schemaVersion ||
+      left.values.size() != right.values.size())
+    return false;
+  for (std::size_t index = 0; index < left.values.size(); ++index) {
+    const auto &first = left.values[index];
+    const auto &second = right.values[index];
+    if (first.name != second.name || first.dimensions != second.dimensions ||
+        first.storage != second.storage)
+      return false;
+  }
+  return true;
+}
+
+bool isCanonicalEmptyPortableTypedRecord(
+    const WVPortableTypedRecord &record) noexcept {
+  return record.schemaIdentifier.empty() && record.schemaVersion == 0 &&
+         record.values.empty();
+}
+
 } // namespace wavevortex::runtime

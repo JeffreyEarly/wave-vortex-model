@@ -5,6 +5,7 @@
 #include "WVObserverAdapter.hpp"
 
 #include <algorithm>
+#include <cstring>
 #include <cmath>
 #include <limits>
 #include <map>
@@ -66,17 +67,6 @@ std::size_t stringBytes(const std::string &value) noexcept {
   return value.capacity();
 }
 
-const WVObservationVariable *
-observationVariable(const WVObservationSchema &schema,
-                    const std::string &identifier) noexcept {
-  const auto found =
-      std::find_if(schema.variables.begin(), schema.variables.end(),
-                   [&](const auto &value) {
-                     return value.identifier == identifier;
-                   });
-  return found == schema.variables.end() ? nullptr : &*found;
-}
-
 bool belongsToBatch(const WVObservationVariable &variable,
                     WVObservationBatchKind kind) noexcept {
   const bool initial =
@@ -115,25 +105,35 @@ WVKernelStatus borrowValue(const WVObservationValue &value,
 WVKernelStatus borrowValue(const std::string &identifier,
                            const WVObserverBorrowedValueView &value,
                            WVObservationValue &output) {
+  if (value.extentCount != 0 && value.extents == nullptr)
+    return invalid("Observer output context returned missing extents.");
+  std::vector<std::size_t> extents;
+  try {
+    if (value.extentCount != 0)
+      extents.assign(value.extents, value.extents + value.extentCount);
+  } catch (const std::bad_alloc &) {
+    return {WVKernelStatusCode::allocationFailure,
+            "Unable to retain observer output extents."};
+  }
   switch (value.scalarType) {
   case WVObservationScalarType::real64:
-    output = WVObservationValue::borrowReal(identifier, value.extents,
+    output = WVObservationValue::borrowReal(identifier, std::move(extents),
                                              value.real64);
     break;
   case WVObservationScalarType::complex64:
-    output = WVObservationValue::borrowComplex(identifier, value.extents,
+    output = WVObservationValue::borrowComplex(identifier, std::move(extents),
                                                 value.complex64);
     break;
   case WVObservationScalarType::integer64:
-    output = WVObservationValue::borrowInteger(identifier, value.extents,
+    output = WVObservationValue::borrowInteger(identifier, std::move(extents),
                                                 value.integer64);
     break;
   case WVObservationScalarType::boolean8:
-    output = WVObservationValue::borrowBoolean(identifier, value.extents,
+    output = WVObservationValue::borrowBoolean(identifier, std::move(extents),
                                                 value.boolean8);
     break;
   case WVObservationScalarType::text:
-    output = WVObservationValue::borrowText(identifier, value.extents,
+    output = WVObservationValue::borrowText(identifier, std::move(extents),
                                              value.text);
     break;
   }
@@ -166,6 +166,14 @@ WVKernelStatus WVObservingSystem::outputPlan(
           "Observer implementation does not declare an output plan."};
 }
 
+WVKernelStatus WVObservingSystem::prepareOccurrence(
+    const WVObserverRecord &, const WVObserverOutputPlan &plan,
+    const WVObserverOccurrencePreparationContext &,
+    WVObserverOccurrenceWorkspace &workspace) const {
+  workspace.prepareFor(plan);
+  return WVKernelStatus::ok();
+}
+
 WVKernelStatus WVObservingSystem::bindIntegration(
     const WVObserverRecord &,
     const WVObserverIntegrationBinder &) const {
@@ -180,27 +188,31 @@ WVKernelStatus WVObservingSystem::observationBatch(
   candidate.schemaIdentifier = plan.schema.identifier;
   candidate.schemaVersion = plan.schema.version;
   candidate.kind = kind;
+  candidate.values.reserve(plan.constantValues.size() + plan.channels.size());
   for (const auto &constant : plan.constantValues) {
-    const auto *variable =
-        observationVariable(plan.schema, constant.variableIdentifier);
-    if (variable == nullptr || !belongsToBatch(*variable, kind))
+    if (constant.resolvedVariableIndex >= plan.schema.variables.size())
+      return invalid("Observer constant value has no resolved schema slot.");
+    const auto &variable =
+        plan.schema.variables[constant.resolvedVariableIndex];
+    if (!belongsToBatch(variable, kind))
       continue;
     WVObservationValue borrowed;
     auto status = borrowValue(constant, borrowed);
     if (!status)
       return status;
+    borrowed.resolvedVariableIndex = constant.resolvedVariableIndex;
     candidate.values.push_back(std::move(borrowed));
   }
   for (const auto &channel : plan.channels) {
-    const auto *variable =
-        observationVariable(plan.schema, channel.variableIdentifier);
-    if (variable == nullptr)
+    if (channel.resolvedVariableIndex >= plan.schema.variables.size())
       return invalid("Observer output channel references an unknown schema "
                      "variable.");
+    const auto *variable =
+        &plan.schema.variables[channel.resolvedVariableIndex];
     if (!belongsToBatch(*variable, kind))
       continue;
     WVObserverBorrowedValueView value;
-    auto status = context.value(channel.variableIdentifier, value);
+    auto status = context.value(channel.resolvedValueSlot, value);
     if (!status)
       return status;
     if (value.scalarType != variable->scalarType)
@@ -209,11 +221,17 @@ WVKernelStatus WVObservingSystem::observationBatch(
     status = borrowValue(channel.variableIdentifier, value, borrowed);
     if (!status)
       return status;
+    borrowed.resolvedVariableIndex = channel.resolvedVariableIndex;
     candidate.values.push_back(std::move(borrowed));
   }
-  const auto status = validateObservationBatch(plan.schema, candidate);
-  if (!status)
-    return status;
+  // The event sink validates construction-resolved variable and axis slots
+  // before mutation. Preserve the legacy named validator only for the
+  // initial/static path, where it is outside the occurrence hot loop.
+  if (kind == WVObservationBatchKind::initial) {
+    const auto status = validateObservationBatch(plan.schema, candidate);
+    if (!status)
+      return status;
+  }
   output = std::move(candidate);
   return WVKernelStatus::ok();
 }
@@ -231,6 +249,14 @@ WVKernelStatus WVResolvedObserver::observationBatch(
     WVObservationBatchKind kind, WVObservationBatch &batch) const {
   return implementation_->observationBatch(observer, plan, context, kind,
                                              batch);
+}
+
+WVKernelStatus WVResolvedObserver::prepareOccurrence(
+    const WVObserverRecord &observer, const WVObserverOutputPlan &plan,
+    const WVObserverOccurrencePreparationContext &context,
+    WVObserverOccurrenceWorkspace &workspace) const {
+  return implementation_->prepareOccurrence(observer, plan, context,
+                                             workspace);
 }
 
 std::size_t observerOutputPlanRetainedBytes(
@@ -251,12 +277,283 @@ std::size_t observerOutputPlanRetainedBytes(
               channel.sampling.z.capacity()) *
                  sizeof(double);
   }
+  bytes += plan.occurrencePayloadSchema.persistentBytes() -
+           sizeof(WVOutputSchedulePayloadSchema);
+  bytes += plan.occurrenceStateBlocks.capacity() *
+           sizeof(WVObserverOccurrenceStateBlockPlan);
+  for (const auto &stateBlock : plan.occurrenceStateBlocks)
+    bytes += stateBlock.identifier.capacity();
+  bytes += plan.occurrencePositionSets.capacity() *
+           sizeof(WVObserverOccurrencePositionSetPlan);
+  for (const auto &positionSet : plan.occurrencePositionSets)
+    bytes += positionSet.identifier.capacity() +
+             positionSet.sampleTimeVariableIdentifier.capacity() +
+             positionSet.xVariableIdentifier.capacity() +
+             positionSet.yVariableIdentifier.capacity() +
+             positionSet.zVariableIdentifier.capacity();
+  bytes += plan.occurrenceValues.capacity() *
+           sizeof(WVObserverOccurrenceValuePlan);
+  for (const auto &value : plan.occurrenceValues)
+    bytes += value.variableIdentifier.capacity();
   bytes += plan.movingPositions.stateBlockIdentifiers.capacity() *
                sizeof(std::string) +
            plan.movingPositions.fixedZ.capacity() * sizeof(double);
   for (const auto &identifier :
        plan.movingPositions.stateBlockIdentifiers)
     bytes += identifier.capacity();
+  return bytes;
+}
+
+namespace {
+
+std::size_t occurrenceElementCount(
+    const std::vector<std::size_t> &extents) noexcept {
+  std::size_t count = 1;
+  for (const auto extent : extents) {
+    if (extent == 0)
+      return 0;
+    if (count > std::numeric_limits<std::size_t>::max() / extent)
+      return std::numeric_limits<std::size_t>::max();
+    count *= extent;
+  }
+  return count;
+}
+
+constexpr std::uint64_t occurrenceHashOffset = 1469598103934665603ULL;
+constexpr std::uint64_t occurrenceHashPrime = 1099511628211ULL;
+
+void occurrenceHash(std::uint64_t &hash, const void *data,
+                    std::size_t count) noexcept {
+  const auto *bytes = static_cast<const std::uint8_t *>(data);
+  for (std::size_t index = 0; index < count; ++index) {
+    hash ^= bytes[index];
+    hash *= occurrenceHashPrime;
+  }
+}
+
+template <class Value>
+void hashVector(std::uint64_t &hash, const std::vector<Value> &values) noexcept {
+  occurrenceHash(hash, values.data(), values.size() * sizeof(Value));
+}
+
+template <typename Value>
+bool sameVectorBytes(const std::vector<Value> &left,
+                     const std::vector<Value> &right) noexcept {
+  return left.size() == right.size() &&
+         (left.empty() ||
+          std::memcmp(left.data(), right.data(),
+                      left.size() * sizeof(Value)) == 0);
+}
+
+template <class Value>
+WVKernelStatus resizeOccurrenceValue(
+    std::vector<WVObserverOccurrenceValueStorage> &values, std::size_t slot,
+    WVObservationScalarType type, std::vector<std::size_t> extents,
+    std::vector<Value> WVObserverOccurrenceValueStorage::*member,
+    Value *&data) {
+  if (slot >= values.size())
+    return invalid("An occurrence-value slot is out of range.");
+  const auto count = occurrenceElementCount(extents);
+  if (count == std::numeric_limits<std::size_t>::max())
+    return {WVKernelStatusCode::sizeOverflow,
+            "An occurrence-value extent product overflows size_t."};
+  auto &storage = values[slot];
+  storage.clearForReuse();
+  storage.scalarType = type;
+  storage.extents = std::move(extents);
+  auto &typed = storage.*member;
+  try {
+    typed.resize(count);
+  } catch (const std::bad_alloc &) {
+    return {WVKernelStatusCode::allocationFailure,
+            "Unable to allocate occurrence-value storage."};
+  }
+  data = typed.data();
+  return WVKernelStatus::ok();
+}
+
+} // namespace
+
+void WVObserverOccurrencePositionSet::clearForReuse() noexcept {
+  extents.clear();
+  sampleTimes.clear();
+  x.clear();
+  y.clear();
+  z.clear();
+}
+
+std::size_t WVObserverOccurrencePositionSet::elementCount() const noexcept {
+  return occurrenceElementCount(extents);
+}
+
+std::size_t WVObserverOccurrencePositionSet::retainedBytes() const noexcept {
+  return sizeof(*this) + extents.capacity() * sizeof(std::size_t) +
+         (sampleTimes.capacity() + x.capacity() + y.capacity() + z.capacity()) *
+             sizeof(double);
+}
+
+std::size_t WVObserverOccurrencePositionSet::liveBytes() const noexcept {
+  return sizeof(*this) + extents.size() * sizeof(std::size_t) +
+         (sampleTimes.size() + x.size() + y.size() + z.size()) *
+             sizeof(double);
+}
+
+void WVObserverOccurrenceValueStorage::clearForReuse() noexcept {
+  extents.clear();
+  real64.clear();
+  complex64.clear();
+  integer64.clear();
+  boolean8.clear();
+  text.clear();
+}
+
+std::size_t WVObserverOccurrenceValueStorage::elementCount() const noexcept {
+  return occurrenceElementCount(extents);
+}
+
+std::size_t WVObserverOccurrenceValueStorage::retainedBytes() const noexcept {
+  std::size_t bytes = sizeof(*this) +
+                      extents.capacity() * sizeof(std::size_t) +
+                      real64.capacity() * sizeof(double) +
+                      complex64.capacity() * sizeof(WVComplex64) +
+                      integer64.capacity() * sizeof(std::int64_t) +
+                      boolean8.capacity() * sizeof(std::uint8_t) +
+                      text.capacity() * sizeof(std::string);
+  for (const auto &value : text)
+    bytes += value.capacity();
+  return bytes;
+}
+
+std::size_t WVObserverOccurrenceValueStorage::liveBytes() const noexcept {
+  std::size_t bytes = sizeof(*this) + extents.size() * sizeof(std::size_t) +
+                      real64.size() * sizeof(double) +
+                      complex64.size() * sizeof(WVComplex64) +
+                      integer64.size() * sizeof(std::int64_t) +
+                      boolean8.size() * sizeof(std::uint8_t) +
+                      text.size() * sizeof(std::string);
+  for (const auto &value : text)
+    bytes += value.size();
+  return bytes;
+}
+
+void WVObserverOccurrenceWorkspace::prepareFor(
+    const WVObserverOutputPlan &plan) {
+  positionSets.resize(plan.occurrencePositionSets.size());
+  values.resize(plan.occurrenceValues.size());
+  for (auto &positionSet : positionSets)
+    positionSet.clearForReuse();
+  for (auto &value : values)
+    value.clearForReuse();
+}
+
+WVKernelStatus WVObserverOccurrenceWorkspace::resizeReal(
+    std::size_t slot, std::vector<std::size_t> extents, double *&data) {
+  return resizeOccurrenceValue(values, slot, WVObservationScalarType::real64,
+                               std::move(extents),
+                               &WVObserverOccurrenceValueStorage::real64,
+                               data);
+}
+
+WVKernelStatus WVObserverOccurrenceWorkspace::resizeComplex(
+    std::size_t slot, std::vector<std::size_t> extents, WVComplex64 *&data) {
+  return resizeOccurrenceValue(values, slot,
+                               WVObservationScalarType::complex64,
+                               std::move(extents),
+                               &WVObserverOccurrenceValueStorage::complex64,
+                               data);
+}
+
+WVKernelStatus WVObserverOccurrenceWorkspace::resizeInteger(
+    std::size_t slot, std::vector<std::size_t> extents, std::int64_t *&data) {
+  return resizeOccurrenceValue(values, slot,
+                               WVObservationScalarType::integer64,
+                               std::move(extents),
+                               &WVObserverOccurrenceValueStorage::integer64,
+                               data);
+}
+
+WVKernelStatus WVObserverOccurrenceWorkspace::resizeBoolean(
+    std::size_t slot, std::vector<std::size_t> extents, std::uint8_t *&data) {
+  return resizeOccurrenceValue(values, slot,
+                               WVObservationScalarType::boolean8,
+                               std::move(extents),
+                               &WVObserverOccurrenceValueStorage::boolean8,
+                               data);
+}
+
+std::uint64_t
+WVObserverOccurrenceWorkspace::geometryFingerprint() const noexcept {
+  std::uint64_t hash = occurrenceHashOffset;
+  for (const auto &positionSet : positionSets) {
+    hashVector(hash, positionSet.extents);
+    hashVector(hash, positionSet.sampleTimes);
+    hashVector(hash, positionSet.x);
+    hashVector(hash, positionSet.y);
+    hashVector(hash, positionSet.z);
+  }
+  for (const auto &value : values) {
+    occurrenceHash(hash, &value.scalarType, sizeof(value.scalarType));
+    hashVector(hash, value.extents);
+    hashVector(hash, value.real64);
+    hashVector(hash, value.complex64);
+    hashVector(hash, value.integer64);
+    hashVector(hash, value.boolean8);
+    for (const auto &text : value.text)
+      occurrenceHash(hash, text.data(), text.size());
+  }
+  return hash;
+}
+
+bool WVObserverOccurrenceWorkspace::sameGeometry(
+    const WVObserverOccurrenceWorkspace &other) const noexcept {
+  if (positionSets.size() != other.positionSets.size() ||
+      values.size() != other.values.size())
+    return false;
+  for (std::size_t index = 0; index < positionSets.size(); ++index) {
+    const auto &left = positionSets[index];
+    const auto &right = other.positionSets[index];
+    if (left.extents != right.extents ||
+        left.sampleTimes != right.sampleTimes || left.x != right.x ||
+        left.y != right.y || left.z != right.z)
+      return false;
+  }
+  for (std::size_t index = 0; index < values.size(); ++index) {
+    const auto &left = values[index];
+    const auto &right = other.values[index];
+    if (left.scalarType != right.scalarType || left.extents != right.extents ||
+        !sameVectorBytes(left.real64, right.real64) ||
+        !sameVectorBytes(left.complex64, right.complex64) ||
+        !sameVectorBytes(left.integer64, right.integer64) ||
+        !sameVectorBytes(left.boolean8, right.boolean8) ||
+        left.text != right.text)
+      return false;
+  }
+  return true;
+}
+
+std::size_t WVObserverOccurrenceWorkspace::retainedBytes() const noexcept {
+  std::size_t bytes = sizeof(*this) +
+                      positionSets.capacity() *
+                          sizeof(WVObserverOccurrencePositionSet) +
+                      values.capacity() *
+                          sizeof(WVObserverOccurrenceValueStorage);
+  for (const auto &positionSet : positionSets)
+    bytes += positionSet.retainedBytes() - sizeof(positionSet);
+  for (const auto &value : values)
+    bytes += value.retainedBytes() - sizeof(value);
+  return bytes;
+}
+
+std::size_t WVObserverOccurrenceWorkspace::liveBytes() const noexcept {
+  std::size_t bytes = sizeof(*this) +
+                      positionSets.size() *
+                          sizeof(WVObserverOccurrencePositionSet) +
+                      values.size() *
+                          sizeof(WVObserverOccurrenceValueStorage);
+  for (const auto &positionSet : positionSets)
+    bytes += positionSet.liveBytes() - sizeof(positionSet);
+  for (const auto &value : values)
+    bytes += value.liveBytes() - sizeof(value);
   return bytes;
 }
 

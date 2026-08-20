@@ -461,8 +461,18 @@ void testService(bool linear) {
       1, &observers.observers()[1],
       observers.resolvedObserver(observers.observers()[1])};
   WVOutputRouteView passiveRoute;
+  WVOutputSchedulePayload emptyPayload;
+  WVPortableTypedRecord emptyCursor;
+  status = emptyPayload.reset(emptyOutputSchedulePayloadSchema());
+  require(static_cast<bool>(status), "empty occurrence payload setup failed");
   passiveRoute.observers = &routedObserver;
   passiveRoute.observerCount = 1;
+  passiveRoute.scheduleOrdinal = 3;
+  passiveRoute.semanticScheduleOrdinal = 0;
+  passiveRoute.proposedScheduleCursor = &emptyCursor;
+  passiveRoute.schedulePayloadSchema = &emptyOutputSchedulePayloadSchema();
+  passiveRoute.schedulePayload = &emptyPayload;
+  passiveRoute.scheduleCursorIdentity = 4;
   event.eventOrdinal = 3;
   event.routes = &passiveRoute;
   event.routeCount = 1;

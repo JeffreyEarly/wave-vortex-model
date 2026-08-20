@@ -61,7 +61,9 @@ WVKernelStatus legacyBatch(WVObserverSampleSource &source,
   candidate.schemaIdentifier = schema.identifier;
   candidate.schemaVersion = schema.version;
   candidate.kind = kind;
-  for (const auto &variable : schema.variables) {
+  for (std::size_t variableIndex = 0;
+       variableIndex < schema.variables.size(); ++variableIndex) {
+    const auto &variable = schema.variables[variableIndex];
     const bool isInitial =
         variable.layout == WVObservationValueLayout::staticValue ||
         variable.layout == WVObservationValueLayout::initialValue;
@@ -90,6 +92,7 @@ WVKernelStatus legacyBatch(WVObserverSampleSource &source,
     else
       candidate.values.push_back(WVObservationValue::borrowReal(
           variable.identifier, specification.dimensions, value.realData));
+    candidate.values.back().resolvedVariableIndex = variableIndex;
   }
   status = validateObservationBatch(schema, candidate);
   if (!status)
@@ -99,6 +102,48 @@ WVKernelStatus legacyBatch(WVObserverSampleSource &source,
 }
 
 } // namespace
+
+bool sameObservationOccurrenceIdentity(
+    const WVObservationOccurrenceIdentity &left,
+    const WVObservationOccurrenceIdentity &right) noexcept {
+  if (left.resolvedObserverRecord == nullptr ||
+      right.resolvedObserverRecord == nullptr ||
+      left.logicalScheduleRecord == nullptr ||
+      right.logicalScheduleRecord == nullptr ||
+      left.schedulePayloadSchema == nullptr ||
+      right.schedulePayloadSchema == nullptr ||
+      left.proposedScheduleCursor == nullptr ||
+      right.proposedScheduleCursor == nullptr ||
+      left.resolvedSchedulePayload == nullptr ||
+      right.resolvedSchedulePayload == nullptr)
+    return false;
+  return sameOutputObserverSemanticIdentity(*left.resolvedObserverRecord,
+                                            *right.resolvedObserverRecord) &&
+         sameLogicalOutputScheduleIdentity(*left.logicalScheduleRecord,
+                                           *right.logicalScheduleRecord) &&
+         sameOutputSchedulePayloadSchema(*left.schedulePayloadSchema,
+                                         *right.schedulePayloadSchema) &&
+         samePortableTypedRecordValue(*left.proposedScheduleCursor,
+                                      *right.proposedScheduleCursor) &&
+         left.resolvedSchedulePayload->sameValue(
+             *right.resolvedSchedulePayload) &&
+         left.scheduleOrdinal == right.scheduleOrdinal &&
+         left.scheduledTime == right.scheduledTime;
+}
+
+bool samePreparedObservationOccurrenceIdentity(
+    const WVObservationOccurrenceIdentity &left,
+    const WVObservationOccurrenceIdentity &right) noexcept {
+  return left.preparationOwner != nullptr &&
+         left.preparationOwner == right.preparationOwner &&
+         left.preparationGeneration != 0 &&
+         left.preparationGeneration == right.preparationGeneration &&
+         left.preparedOccurrenceSlot == right.preparedOccurrenceSlot &&
+         left.observerOrdinal == right.observerOrdinal &&
+         left.semanticScheduleOrdinal == right.semanticScheduleOrdinal &&
+         left.scheduleOrdinal == right.scheduleOrdinal &&
+         left.scheduledTime == right.scheduledTime;
+}
 
 WVKernelStatus WVObserverSampleSource::observationSchema(
     const WVObserverRecord &observer, WVObservationSchema &output) {
@@ -149,11 +194,6 @@ WVKernelStatus WVObserverSampleSource::observationSchema(
 WVKernelStatus WVObserverSampleSource::initialObservationBatch(
     const WVObserverRecord &observer, WVObservationBatch &output) {
   return legacyBatch(*this, observer, WVObservationBatchKind::initial, output);
-}
-
-WVKernelStatus WVObserverSampleSource::observationBatch(
-    const WVObserverRecord &observer, WVObservationBatch &output) {
-  return legacyBatch(*this, observer, WVObservationBatchKind::event, output);
 }
 
 WVKernelStatus WVObserverSampleSource::specifications(

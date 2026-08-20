@@ -26,6 +26,7 @@ classdef TestCompiledKernelIntegration < matlab.unittest.TestCase
             testCase.verifyEqual(string(testCase.selection.postSelectionExtensions.resolvedForcings),"issue-261");
             testCase.verifyEqual(string(testCase.selection.postSelectionExtensions.linearBottomFriction),"issue-262");
             testCase.verifyEqual(string(testCase.selection.postSelectionExtensions.explicitExtensionCatalog),"issue-271");
+            testCase.verifyEqual(string(testCase.selection.postSelectionExtensions.eventDependentObservationGeometry),"issue-272");
             testCase.verifyEqual(testCase.selection.contract.version,4);
             testCase.verifyEqual(string(testCase.selection.contract.coefficientShape),"[Nj,Nkl]");
             testCase.verifyEqual(testCase.selection.contract.planCount,17);

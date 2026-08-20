@@ -13,6 +13,25 @@ WVKernelStatus invalid(std::string message) {
   return {WVKernelStatusCode::invalidConfiguration, std::move(message)};
 }
 
+std::size_t observerRecordDynamicBytes(
+    const WVObserverRecord &record) noexcept {
+  std::size_t bytes = record.identifier.capacity() + record.name.capacity() +
+                      record.typeIdentifier.capacity() +
+                      record.configuration.persistentBytes() -
+                          sizeof(WVPortableTypedRecord) +
+                      record.stateBlockIdentifiers.capacity() *
+                          sizeof(std::string) +
+                      record.fieldNames.capacity() * sizeof(std::string) +
+                      (record.x.capacity() + record.y.capacity() +
+                       record.z.capacity()) *
+                          sizeof(double);
+  for (const auto &identifier : record.stateBlockIdentifiers)
+    bytes += identifier.capacity();
+  for (const auto &field : record.fieldNames)
+    bytes += field.capacity();
+  return bytes;
+}
+
 std::size_t blockIndex(const WVIntegrationStateLayout &layout,
                        const std::string &identifier) {
   const auto &blocks = layout.additionalBlocks();
@@ -436,18 +455,18 @@ WVConstantStratificationIntegrationSystem::persistentBytes() const noexcept {
   std::size_t bytes = sizeof(*this) + layout_.persistentBytes() +
                       forcing_->persistentBytes() +
                       (fields_ ? fields_->persistentBytes() : 0) +
-                      velocityPlan_.persistentBytes() +
+                      velocityPlan_.persistentBytes() - sizeof(velocityPlan_) +
                       particles_.capacity() * sizeof(WVLagrangianParticles) +
                       tracers_.capacity() * sizeof(WVTracer) +
+                      velocityStorage_.capacity() *
+                          sizeof(std::vector<double>) +
                       metrics_.positionCapacityBytes +
                       metrics_.velocityCapacityBytes +
                       velocityViews_.capacity() * sizeof(WVFieldOutputView);
   for (const auto &particles : particles_)
-    bytes += particles.record_.identifier.capacity() +
-             particles.record_.name.capacity();
+    bytes += observerRecordDynamicBytes(particles.record_);
   for (const auto &tracer : tracers_)
-    bytes += tracer.record_.identifier.capacity() +
-             tracer.record_.name.capacity();
+    bytes += observerRecordDynamicBytes(tracer.record_);
   return bytes;
 }
 

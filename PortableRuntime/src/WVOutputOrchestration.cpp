@@ -46,16 +46,12 @@ bool sameStateBlockRecord(const WVStateBlockRecord &first,
 }
 
 bool sameObserverRecord(const WVObserverRecord &first,
-                        const WVObserverRecord &second) {
-  std::vector<std::uint8_t> firstConfiguration;
-  std::vector<std::uint8_t> secondConfiguration;
-  if (!encodePortableTypedRecord(first.configuration, firstConfiguration) ||
-      !encodePortableTypedRecord(second.configuration, secondConfiguration))
-    return false;
+                        const WVObserverRecord &second) noexcept {
   return first.identifier == second.identifier && first.name == second.name &&
          first.typeIdentifier == second.typeIdentifier &&
          first.contractVersion == second.contractVersion &&
-         firstConfiguration == secondConfiguration &&
+         samePortableTypedRecordValue(first.configuration,
+                                      second.configuration) &&
          first.stateBlockIdentifiers == second.stateBlockIdentifiers &&
          first.fieldNames == second.fieldNames && first.x == second.x &&
          first.y == second.y && first.z == second.z &&
@@ -68,6 +64,26 @@ bool sameObserverRecord(const WVObserverRecord &first,
          first.verticalAbsoluteTolerance == second.verticalAbsoluteTolerance &&
          first.outputScale == second.outputScale &&
          first.outputOffset == second.outputOffset;
+}
+
+bool sameTypedRecord(const WVPortableTypedRecord &first,
+                     const WVPortableTypedRecord &second) noexcept {
+  return samePortableTypedRecordValue(first, second);
+}
+
+bool sameScheduleRecord(const WVOutputGroupRecord &first,
+                        const WVOutputGroupRecord &second) noexcept {
+  return first.identifier == second.identifier && first.name == second.name &&
+         first.observerIdentifiers == second.observerIdentifiers &&
+         first.containsCompleteCoefficientRestart ==
+             second.containsCompleteCoefficientRestart &&
+         first.schedule.outputInterval == second.schedule.outputInterval &&
+         first.schedule.initialTime == second.schedule.initialTime &&
+         first.schedule.finalTime == second.schedule.finalTime &&
+         first.schedule.typeIdentifier == second.schedule.typeIdentifier &&
+         first.schedule.contractVersion == second.schedule.contractVersion &&
+         sameTypedRecord(first.schedule.configuration,
+                         second.schedule.configuration);
 }
 
 WVKernelStatus
@@ -186,15 +202,18 @@ WVKernelStatus stageCheckpointState(WVCheckpoint &checkpoint,
   return WVKernelStatus::ok();
 }
 
-std::size_t
-checkpointCoefficientCapacityBytes(const WVCheckpoint &checkpoint) noexcept {
-  return (checkpoint.state.coefficients.Ap.capacity() +
-          checkpoint.state.coefficients.Am.capacity() +
-          checkpoint.state.coefficients.A0.capacity()) *
-         sizeof(WVComplex64);
+} // namespace
+
+bool sameOutputObserverSemanticIdentity(const WVObserverRecord &left,
+                                        const WVObserverRecord &right) noexcept {
+  return sameObserverRecord(left, right);
 }
 
-} // namespace
+bool sameLogicalOutputScheduleIdentity(
+    const WVOutputGroupRecord &left,
+    const WVOutputGroupRecord &right) noexcept {
+  return sameScheduleRecord(left, right);
+}
 
 class WVOutputPlan::Impl {
 public:
@@ -206,6 +225,7 @@ public:
     const WVOutputGroupRecord *group = nullptr;
     std::vector<WVOutputObserverView> observers;
     std::shared_ptr<const WVOutputSchedule> schedule;
+    std::size_t semanticScheduleOrdinal = 0;
     WVOutputRouteView route;
   };
 
@@ -217,7 +237,8 @@ public:
   std::vector<WVOutputScheduleContinuation> continuations;
   mutable std::vector<WVOutputRouteView> diagnosticRoutes;
   mutable std::vector<WVOutputScheduleCursor> diagnosticCursors;
-  WVOutputPlanMetrics metrics;
+  mutable std::vector<WVOutputSchedulePayload> diagnosticPayloads;
+  mutable WVOutputPlanMetrics metrics;
 
   bool
   generateDiagnosticEvent(std::size_t requestedIndex, double &scheduledTime,
@@ -226,9 +247,12 @@ public:
 
   std::size_t persistentBytes() const noexcept {
     std::size_t bytes =
+        descriptor.persistentBytes() - sizeof(descriptor) +
+        stateLayout.persistentBytes() +
         groups.capacity() * sizeof(Group) +
         diagnosticRoutes.capacity() * sizeof(WVOutputRouteView) +
         diagnosticCursors.capacity() * sizeof(WVOutputScheduleCursor) +
+        diagnosticPayloads.capacity() * sizeof(WVOutputSchedulePayload) +
         continuations.capacity() * sizeof(WVOutputScheduleContinuation);
     for (const auto &group : groups)
       bytes += group.observers.capacity() * sizeof(WVOutputObserverView);
@@ -237,6 +261,9 @@ public:
           stringBytes(item.fileIdentifier) + stringBytes(item.groupIdentifier) +
           item.cursor.values.persistentBytes() - sizeof(WVPortableTypedRecord);
     }
+    for (const auto &cursor : diagnosticCursors)
+      bytes += cursor.values.persistentBytes() -
+               sizeof(WVPortableTypedRecord);
     for (const auto &group : groups)
       if (group.schedule)
         bytes += group.schedule->persistentBytes();
@@ -278,6 +305,7 @@ bool WVOutputPlan::Impl::generateDiagnosticEvent(
       if (eventIndex == requestedIndex) {
         routes.clear();
         diagnosticCursors.clear();
+        diagnosticPayloads.clear();
         scheduledTime = earliest;
         for (std::size_t groupIndex = 0; groupIndex < groups.size();
              ++groupIndex) {
@@ -287,7 +315,11 @@ bool WVOutputPlan::Impl::generateDiagnosticEvent(
           auto route = groups[groupIndex].route;
           route.scheduleOrdinal = occurrences[groupIndex].ordinal;
           diagnosticCursors.push_back(occurrences[groupIndex].proposedCursor);
+          diagnosticPayloads.push_back(occurrences[groupIndex].payload);
           route.proposedScheduleCursor = &diagnosticCursors.back().values;
+          route.schedulePayload = &diagnosticPayloads.back();
+          route.scheduleCursorIdentity =
+              occurrences[groupIndex].cursorIdentity;
           routes.push_back(route);
         }
         return true;
@@ -429,6 +461,24 @@ WVOutputPlan::create(const WVPortableObserverDescriptor &descriptor,
                descriptor.resolvedObserver(
                    descriptor.observers()[found->second])});
         }
+        resolved.semanticScheduleOrdinal = candidate->groups.size();
+        for (const auto &existing : candidate->groups) {
+          const auto &existingCursor =
+              candidate->continuations[existing.progressIndex].cursor;
+          const auto &resolvedCursor = candidate->continuations.back().cursor;
+          if (sameScheduleRecord(*existing.group, group) &&
+              existingCursor.committedOrdinal ==
+                  resolvedCursor.committedOrdinal &&
+              sameTypedRecord(existingCursor.values,
+                              resolvedCursor.values) &&
+              sameOutputSchedulePayloadSchema(
+                  existing.schedule->payloadSchema(),
+                  resolved.schedule->payloadSchema())) {
+            resolved.semanticScheduleOrdinal =
+                existing.semanticScheduleOrdinal;
+            break;
+          }
+        }
         resolved.route = {fileIndex,
                           groupIndex,
                           WVNoCommittedOutputOrdinal,
@@ -438,13 +488,20 @@ WVOutputPlan::create(const WVPortableObserverDescriptor &descriptor,
                           group.name,
                           resolved.observers.data(),
                           resolved.observers.size()};
+        resolved.route.semanticScheduleOrdinal =
+            resolved.semanticScheduleOrdinal;
+        resolved.route.schedulePayloadSchema =
+            &resolved.schedule->payloadSchema();
+        resolved.route.semanticScheduleRecord = resolved.group;
         candidate->groups.push_back(std::move(resolved));
       }
     }
     candidate->metrics.maximumCoincidentRouteCount = candidate->groups.size();
     candidate->diagnosticRoutes.reserve(candidate->groups.size());
     candidate->diagnosticCursors.reserve(candidate->groups.size());
-    candidate->metrics.retainedStorageBytes = candidate->persistentBytes();
+    candidate->diagnosticPayloads.reserve(candidate->groups.size());
+    candidate->metrics.retainedStorageBytes =
+        sizeof(WVOutputPlan) + sizeof(Impl) + candidate->persistentBytes();
     plan.impl_ = std::move(candidate);
     return WVKernelStatus::ok();
   } catch (const std::bad_alloc &) {
@@ -548,13 +605,17 @@ WVOutputPlan::initialContinuations() const noexcept {
   return impl_->continuations;
 }
 const WVOutputPlanMetrics &WVOutputPlan::metrics() const noexcept {
+  // Diagnostic event inspection reuses mutable cursor/payload buffers and may
+  // grow their retained capacities after construction. Keep the published
+  // ledger synchronized with the storage that is physically retained now.
+  impl_->metrics.retainedStorageBytes = persistentBytes();
   return impl_->metrics;
 }
 const WVIntegrationStateLayout &WVOutputPlan::stateLayout() const noexcept {
   return impl_->stateLayout;
 }
 std::size_t WVOutputPlan::persistentBytes() const noexcept {
-  return impl_->persistentBytes();
+  return sizeof(*this) + sizeof(Impl) + impl_->persistentBytes();
 }
 
 class WVOutputDriver::Impl {
@@ -576,8 +637,9 @@ public:
   std::vector<WVOutputRouteView> stagedRoutes;
   std::vector<std::size_t> stagedProgressIndices;
   std::vector<WVOutputScheduleCursor> stagedProposedCursors;
+  std::vector<WVOutputSchedulePayload> stagedOccurrencePayloads;
   std::vector<WVOutputDeliveryRecord> records;
-  WVOutputDriverMetrics metrics;
+  mutable WVOutputDriverMetrics metrics;
   std::size_t nextRouteIndex = 0;
   std::size_t nextRouteOrdinal = 0;
   std::size_t stagedEventOrdinal = 0;
@@ -591,8 +653,34 @@ public:
   bool hasPendingEvent = false;
   bool hasStagedEvent = false;
 
+  std::size_t routeStagingBytes() const noexcept {
+    std::size_t bytes =
+        stagedRoutes.capacity() * sizeof(WVOutputRouteView) +
+        stagedProgressIndices.capacity() * sizeof(std::size_t) +
+        stagedProposedCursors.capacity() * sizeof(WVOutputScheduleCursor) +
+        stagedOccurrencePayloads.capacity() *
+            sizeof(WVOutputSchedulePayload) +
+        records.capacity() * sizeof(WVOutputDeliveryRecord);
+    for (const auto &cursor : stagedProposedCursors)
+      bytes += cursor.values.persistentBytes() -
+               sizeof(WVPortableTypedRecord);
+    for (const auto &record : records)
+      bytes +=
+          stringBytes(record.fileIdentifier) + stringBytes(record.destination) +
+          stringBytes(record.groupIdentifier) + stringBytes(record.failure);
+    return bytes;
+  }
+
+  void updateRouteStagingMetrics() noexcept {
+    metrics.routeStagingCapacityBytes = routeStagingBytes();
+    metrics.routeStagingMaximumLiveBytes = std::max(
+        metrics.routeStagingMaximumLiveBytes,
+        metrics.routeStagingCapacityBytes);
+  }
+
   std::size_t persistentBytes() const noexcept {
     std::size_t bytes =
+        sizeof(*this) +
         interpolationCoefficients.capacity() * sizeof(WVComplex64) +
         interpolationAdditional.capacityBytes() +
         interpolationConstViews.capacity() *
@@ -605,6 +693,8 @@ public:
         stagedRoutes.capacity() * sizeof(WVOutputRouteView) +
         stagedProgressIndices.capacity() * sizeof(std::size_t) +
         stagedProposedCursors.capacity() * sizeof(WVOutputScheduleCursor) +
+        stagedOccurrencePayloads.capacity() *
+            sizeof(WVOutputSchedulePayload) +
         records.capacity() * sizeof(WVOutputDeliveryRecord) +
         metrics.files.capacity() * sizeof(WVOutputFileMetrics);
     for (const auto &item : continuations)
@@ -648,12 +738,14 @@ public:
         metrics.files.push_back(std::move(fileMetrics));
       }
       records.clear();
+      records.reserve(plan.impl_->groups.size());
       nextOccurrences.resize(plan.impl_->groups.size());
       occurrenceAvailable.assign(plan.impl_->groups.size(), 0);
       occurrenceNeedsRefresh.assign(plan.impl_->groups.size(), 1);
       stagedRoutes.reserve(plan.impl_->groups.size());
       stagedProgressIndices.reserve(plan.impl_->groups.size());
       stagedProposedCursors.reserve(plan.impl_->groups.size());
+      stagedOccurrencePayloads.reserve(plan.impl_->groups.size());
       return WVKernelStatus::ok();
     } catch (const std::bad_alloc &) {
       return {WVKernelStatusCode::allocationFailure,
@@ -690,6 +782,8 @@ public:
           interpolationCoefficients.capacity() * sizeof(WVComplex64) +
           interpolationAdditional.capacityBytes() +
           interpolationConstViews.capacity() *
+              sizeof(WVAdditionalStateBlockConstView) +
+          sourceConstViews.capacity() *
               sizeof(WVAdditionalStateBlockConstView);
       metrics.interpolationBufferMaximumLiveBytes =
           metrics.interpolationBufferCapacityBytes;
@@ -747,6 +841,12 @@ public:
               group.schedule->validateCursor(next.proposedCursor);
           if (!cursorStatus)
             return cursorStatus;
+          if (next.payload.schemaFingerprint() !=
+                  group.schedule->payloadSchema().fingerprint() ||
+              next.payload.byteCount() !=
+                  group.schedule->payloadSchema().payloadBytes())
+            return invalid("An output schedule returned an occurrence payload "
+                           "that does not match its construction-resolved schema.");
         }
         occurrenceAvailable[index] = available ? 1 : 0;
         occurrenceNeedsRefresh[index] = 0;
@@ -757,9 +857,14 @@ public:
     if (!std::isfinite(earliest))
       return WVKernelStatus::ok();
 
+    // records() is a bounded diagnostic view of the latest event, not an
+    // ever-growing execution log. A failed event is never selected again, so
+    // its records remain intact until every pending route has been retried.
+    records.clear();
     stagedRoutes.clear();
     stagedProgressIndices.clear();
     stagedProposedCursors.clear();
+    stagedOccurrencePayloads.clear();
     stagedEventTime = earliest;
     stagedEventOrdinal = metrics.generatedEventCount++;
     for (std::size_t index = 0; index < plan.impl_->groups.size(); ++index) {
@@ -771,7 +876,10 @@ public:
       stagedRoutes.push_back(route);
       stagedProgressIndices.push_back(plan.impl_->groups[index].progressIndex);
       stagedProposedCursors.push_back(nextOccurrences[index].proposedCursor);
+      stagedOccurrencePayloads.push_back(nextOccurrences[index].payload);
       route.proposedScheduleCursor = &stagedProposedCursors.back().values;
+      route.schedulePayload = &stagedOccurrencePayloads.back();
+      route.scheduleCursorIdentity = nextOccurrences[index].cursorIdentity;
       stagedRoutes.back() = route;
       ++metrics.generatedRouteCount;
       auto &file = metrics.files[route.fileOrdinal];
@@ -793,15 +901,43 @@ public:
     }
     metrics.maximumCoincidentRouteCount =
         std::max(metrics.maximumCoincidentRouteCount, stagedRoutes.size());
-    metrics.routeStagingCapacityBytes =
-        stagedRoutes.capacity() * sizeof(WVOutputRouteView) +
-        stagedProgressIndices.capacity() * sizeof(std::size_t) +
-        stagedProposedCursors.capacity() * sizeof(WVOutputScheduleCursor);
-    metrics.routeStagingMaximumLiveBytes = std::max(
-        metrics.routeStagingMaximumLiveBytes,
-        stagedRoutes.size() * sizeof(WVOutputRouteView) +
-            stagedProgressIndices.size() * sizeof(std::size_t) +
-            stagedProposedCursors.size() * sizeof(WVOutputScheduleCursor));
+    for (std::size_t routeIndex = 0; routeIndex < stagedRoutes.size();
+         ++routeIndex) {
+      const auto &route = stagedRoutes[routeIndex];
+      for (std::size_t observerIndex = 0; observerIndex < route.observerCount;
+           ++observerIndex) {
+        bool seen = false;
+        for (std::size_t previousRoute = 0;
+             previousRoute <= routeIndex && !seen; ++previousRoute) {
+          const auto &previous = stagedRoutes[previousRoute];
+          const auto observerLimit = previousRoute == routeIndex
+                                         ? observerIndex
+                                         : previous.observerCount;
+          for (std::size_t previousObserver = 0;
+               previousObserver < observerLimit; ++previousObserver) {
+            seen = previous.observers[previousObserver].observerOrdinal ==
+                       route.observers[observerIndex].observerOrdinal &&
+                   previous.semanticScheduleOrdinal ==
+                       route.semanticScheduleOrdinal &&
+                   previous.scheduleOrdinal == route.scheduleOrdinal &&
+                   previous.proposedScheduleCursor != nullptr &&
+                   route.proposedScheduleCursor != nullptr &&
+                   samePortableTypedRecordValue(
+                       *previous.proposedScheduleCursor,
+                       *route.proposedScheduleCursor) &&
+                   previous.schedulePayload != nullptr &&
+                   route.schedulePayload != nullptr &&
+                   previous.schedulePayload->sameValue(
+                       *route.schedulePayload);
+            if (seen)
+              break;
+          }
+        }
+        if (!seen)
+          ++metrics.generatedSemanticOccurrenceCount;
+      }
+    }
+    updateRouteStagingMetrics();
     hasPendingEvent = true;
     nextRouteIndex = 0;
     return WVKernelStatus::ok();
@@ -864,6 +1000,7 @@ public:
         ++record.failureCount;
         record.failureCode = status.code;
         record.failure = std::move(status.message);
+        updateRouteStagingMetrics();
         return {record.failureCode, record.failure};
       }
       record.committed = true;
@@ -933,14 +1070,16 @@ WVKernelStatus WVOutputDriver::advanceToTime(WVMutableIntegrationState &state,
     if (!status)
       return status;
   }
-  impl_->metrics.retainedStorageBytes = impl_->persistentBytes();
+  impl_->metrics.retainedStorageBytes =
+      sizeof(*this) + impl_->persistentBytes();
 
   impl_->running = true;
   struct Guard {
     Impl &impl;
     ~Guard() {
       impl.running = false;
-      impl.metrics.retainedStorageBytes = impl.persistentBytes();
+      impl.metrics.retainedStorageBytes =
+          sizeof(WVOutputDriver) + impl.persistentBytes();
     }
   } guard{*impl_};
   status = sink.preflight(impl_->plan);
@@ -1089,13 +1228,14 @@ WVOutputDriver::records() const noexcept {
   return impl_->records;
 }
 const WVOutputDriverMetrics &WVOutputDriver::metrics() const noexcept {
+  impl_->metrics.retainedStorageBytes = persistentBytes();
   return impl_->metrics;
 }
 bool WVOutputDriver::hasPendingDelivery() const noexcept {
   return impl_->hasStagedEvent;
 }
 std::size_t WVOutputDriver::persistentBytes() const noexcept {
-  return impl_->persistentBytes();
+  return sizeof(*this) + impl_->persistentBytes();
 }
 
 WVCheckpointOutputSink::WVCheckpointOutputSink(
@@ -1164,7 +1304,8 @@ WVKernelStatus WVCheckpointOutputSink::deliver(const WVOutputEvent &event,
 }
 
 std::size_t WVCheckpointOutputSink::persistentBytes() const noexcept {
-  std::size_t bytes = checkpointCoefficientCapacityBytes(checkpoint_) +
+  std::size_t bytes = sizeof(*this) + checkpointRetainedBytes(checkpoint_) -
+                      sizeof(checkpoint_) +
                       records_.capacity() * sizeof(WVCheckpointOutputRecord);
   for (const auto &record : records_)
     bytes += record.destination.capacity() + record.failure.capacity();

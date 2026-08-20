@@ -718,12 +718,14 @@ validateReadableHistory(int group, const WVOutputScheduleRecord &schedule,
                        "Algorithmic output cursor is malformed or oversized.",
                        path);
       WVPortableTypedRecord cursor;
-      const auto decoded = decodePortableTypedRecord(
-          cursorBytes, cursor,
-          {WVMaximumOutputScheduleCursorBytes, true, false});
-      if (!decoded)
-        return failure(WVCheckpointStatusCode::appendConflict, decoded.message,
-                       path);
+      if (!cursorBytes.empty()) {
+        const auto decoded = decodePortableTypedRecord(
+            cursorBytes, cursor,
+            {WVMaximumOutputScheduleCursorBytes, true, false});
+        if (!decoded)
+          return failure(WVCheckpointStatusCode::appendConflict,
+                         decoded.message, path);
+      }
       WVOutputScheduleCursor current{
           static_cast<WVOutputScheduleOrdinal>(ordinals[index]),
           std::move(cursor)};

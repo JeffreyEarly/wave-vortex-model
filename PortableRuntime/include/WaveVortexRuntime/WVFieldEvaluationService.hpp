@@ -66,6 +66,75 @@ struct WVMovingPositionView {
   std::size_t positionCount = 0;
 };
 
+// Construction-time request for a field whose positions and output extents
+// are supplied by each observation occurrence. The position-set slot is an
+// already-resolved ordinal; event evaluation performs no name lookup.
+struct WVEventFieldRequest {
+  std::string identifier;
+  std::string fieldName;
+  std::size_t positionSetSlot = 0;
+  WVPositionInterpolation interpolation = WVPositionInterpolation::linear;
+};
+
+struct WVEventFieldOutputSpecification {
+  std::string identifier;
+  std::string fieldName;
+  WVPortableVariable fieldIdentifier = WVPortableVariable::invalid;
+  WVPortableNaturalRank naturalRank = WVPortableNaturalRank::volume;
+  std::uint64_t dependencyMask = 0;
+  std::size_t positionSetSlot = 0;
+  WVPositionInterpolation interpolation = WVPositionInterpolation::linear;
+};
+
+// Borrowed event-workspace coordinates. Extents use logical MATLAB order and
+// must have a product equal to positionCount. An omitted extent view implies a
+// one-dimensional {positionCount} result. Horizontal fields may omit z;
+// volume fields require it when positionCount is nonzero.
+struct WVEventPositionSetView {
+  const double *x = nullptr;
+  const double *y = nullptr;
+  const double *z = nullptr;
+  std::size_t positionCount = 0;
+  const std::size_t *extents = nullptr;
+  std::size_t extentCount = 0;
+};
+
+class WVEventFieldEvaluationPlan final {
+public:
+  const std::vector<WVEventFieldOutputSpecification> &outputs() const noexcept {
+    return outputs_;
+  }
+  std::size_t outputCount() const noexcept { return outputs_.size(); }
+  std::size_t positionSetCount() const noexcept { return positionSetCount_; }
+  std::uint64_t requestedFieldMask() const noexcept {
+    return requestedFieldMask_;
+  }
+  std::uint64_t dependencyMask() const noexcept { return dependencyMask_; }
+  std::uint64_t fieldPlanFingerprint() const noexcept { return fingerprint_; }
+  std::size_t persistentBytes() const noexcept;
+
+private:
+  struct ResolvedRequest {
+    WVPortableVariable field = WVPortableVariable::invalid;
+    WVPortableNaturalRank nativeRank = WVPortableNaturalRank::volume;
+    std::uint64_t dependencyMask = 0;
+    std::size_t positionSetSlot = 0;
+    WVPositionInterpolation interpolation = WVPositionInterpolation::linear;
+    std::size_t outputIndex = 0;
+  };
+
+  WVTransformConstantStratificationConfiguration configuration_;
+  std::vector<ResolvedRequest> requests_;
+  std::vector<WVEventFieldOutputSpecification> outputs_;
+  std::vector<std::uint8_t> requiresZByPositionSet_;
+  std::size_t positionSetCount_ = 0;
+  std::uint64_t requestedFieldMask_ = 0;
+  std::uint64_t dependencyMask_ = 0;
+  std::uint64_t fingerprint_ = 0;
+
+  friend class WVFieldEvaluationService;
+};
+
 class WVMovingFieldEvaluationPlan final {
 public:
   const std::vector<WVFieldOutputSpecification> &outputs() const noexcept {
@@ -137,6 +206,78 @@ private:
   friend class WVFieldEvaluationService;
 };
 
+struct WVPreparedFieldOutputSpecification {
+  std::size_t planOutputIndex = 0;
+  std::size_t positionSetSlot = 0;
+  std::vector<std::size_t> dimensions;
+  std::size_t elementCount = 0;
+};
+
+struct WVPreparedFieldGeometryMetrics {
+  std::size_t positionSetCount = 0;
+  std::size_t positionCount = 0;
+  std::size_t retainedBytes = 0;
+  std::size_t liveBytes = 0;
+};
+
+// Event-scoped, retry-stable interpolation geometry. Coordinate storage is
+// borrowed from the occurrence workspace; resolved interpolation weights and
+// output extents are owned here until every route for that occurrence commits.
+class WVPreparedFieldGeometry final {
+public:
+  const std::vector<WVPreparedFieldOutputSpecification> &
+  outputs() const noexcept {
+    return outputs_;
+  }
+  std::size_t outputCount() const noexcept { return outputs_.size(); }
+  std::size_t positionSetCount() const noexcept { return positionSets_.size(); }
+  std::size_t positionCount() const noexcept { return positionCount_; }
+  WVEventPositionSetView positionSet(std::size_t slot) const noexcept;
+  std::uint64_t fieldPlanFingerprint() const noexcept {
+    return fieldPlanFingerprint_;
+  }
+  std::uint64_t geometryFingerprint() const noexcept {
+    return geometryFingerprint_;
+  }
+  bool sameGeometry(const WVPreparedFieldGeometry &other) const noexcept;
+  std::size_t retainedBytes() const noexcept;
+  std::size_t liveBytes() const noexcept;
+  std::size_t borrowedCoordinateBytes() const noexcept {
+    return borrowedCoordinateBytes_;
+  }
+  WVPreparedFieldGeometryMetrics metrics() const noexcept;
+
+private:
+  struct PositionSet {
+    const double *x = nullptr;
+    const double *y = nullptr;
+    const double *z = nullptr;
+    std::size_t positionCount = 0;
+    std::vector<std::size_t> extents;
+  };
+
+  WVFieldEvaluationPlan evaluationPlan_;
+  std::vector<PositionSet> positionSets_;
+  std::vector<WVPreparedFieldOutputSpecification> outputs_;
+  std::size_t positionCount_ = 0;
+  std::size_t borrowedCoordinateBytes_ = 0;
+  std::uint64_t fieldPlanFingerprint_ = 0;
+  std::uint64_t geometryFingerprint_ = 0;
+
+  friend class WVFieldEvaluationService;
+};
+
+// One independently keyed occurrence in a coarse same-state evaluation.
+// Plans and prepared geometries remain separately owned by their occurrence;
+// the service unions their reconstruction dependencies without copying their
+// coordinate weights.
+struct WVEventFieldEvaluationBatchEntry {
+  const WVEventFieldEvaluationPlan *plan = nullptr;
+  const WVPreparedFieldGeometry *geometry = nullptr;
+  WVFieldOutputView *outputs = nullptr;
+  std::size_t outputCount = 0;
+};
+
 struct WVFieldEvaluationMetrics {
   std::size_t evaluationCount = 0;
   std::size_t coincidentBatchCount = 0;
@@ -159,6 +300,22 @@ struct WVFieldEvaluationMetrics {
   std::size_t movingEvaluationCount = 0;
   std::size_t movingPositionCount = 0;
   std::size_t movingPrimitiveTransformCount = 0;
+  std::size_t eventPlanCreationCount = 0;
+  std::size_t eventPlanFieldResolutionCount = 0;
+  std::size_t eventGeometryPreparationCount = 0;
+  std::size_t eventEvaluationCount = 0;
+  std::size_t eventBatchEvaluationCount = 0;
+  std::size_t eventBatchOccurrenceCount = 0;
+  std::size_t eventBatchOutputCount = 0;
+  std::size_t eventBatchInvocationWorkspaceBytes = 0;
+  std::size_t eventPositionSetCount = 0;
+  std::size_t eventPositionCount = 0;
+  std::size_t lastEventPlanBytes = 0;
+  std::size_t maximumEventPlanBytes = 0;
+  std::size_t lastPreparedGeometryRetainedBytes = 0;
+  std::size_t maximumPreparedGeometryRetainedBytes = 0;
+  std::size_t lastPreparedGeometryLiveBytes = 0;
+  std::size_t maximumPreparedGeometryLiveBytes = 0;
   std::size_t catalogBytes = portableVariableCatalogBytes();
 };
 
@@ -168,12 +325,13 @@ public:
   create(const WVTransformConstantStratificationConfiguration &configuration,
          std::unique_ptr<WVFFTEngine> engine,
          std::unique_ptr<WVFieldEvaluationService> &service);
-  static WVKernelStatus createBorrowing(
-      WVTransformConstantStratificationKernel &transform,
-      std::unique_ptr<WVFieldEvaluationService> &service);
+  static WVKernelStatus
+  createBorrowing(WVTransformConstantStratificationKernel &transform,
+                  std::unique_ptr<WVFieldEvaluationService> &service);
 
   WVFieldEvaluationService(const WVFieldEvaluationService &) = delete;
-  WVFieldEvaluationService &operator=(const WVFieldEvaluationService &) = delete;
+  WVFieldEvaluationService &
+  operator=(const WVFieldEvaluationService &) = delete;
   WVFieldEvaluationService(WVFieldEvaluationService &&) = delete;
   WVFieldEvaluationService &operator=(WVFieldEvaluationService &&) = delete;
   ~WVFieldEvaluationService();
@@ -197,6 +355,22 @@ public:
       const WVRealFieldBundleConstView &advectionFields,
       WVMovingPositionView positions, WVFieldOutputView *outputs,
       std::size_t outputCount);
+  WVKernelStatus
+  createEventPlan(const std::vector<WVEventFieldRequest> &requests,
+                  WVEventFieldEvaluationPlan &plan);
+  WVKernelStatus
+  prepareEventGeometry(const WVEventFieldEvaluationPlan &plan,
+                       const WVEventPositionSetView *positionSets,
+                       std::size_t positionSetCount,
+                       WVPreparedFieldGeometry &geometry);
+  WVKernelStatus evaluateEvent(const WVEventFieldEvaluationPlan &plan,
+                               const WVPreparedFieldGeometry &geometry,
+                               const WVState &state, WVFieldOutputView *outputs,
+                               std::size_t outputCount);
+  WVKernelStatus
+  evaluateEventBatch(const WVState &state,
+                     const WVEventFieldEvaluationBatchEntry *entries,
+                     std::size_t entryCount);
   WVRealFieldBundleView advectionFieldStorage() noexcept;
 
   const WVTransformConstantStratificationConfiguration &
@@ -205,8 +379,16 @@ public:
   std::size_t persistentBytes() const noexcept;
 
 private:
+  struct PlanInvocation {
+    const WVFieldEvaluationPlan *plan = nullptr;
+    WVFieldOutputView *outputs = nullptr;
+    std::size_t outputCount = 0;
+  };
   WVFieldEvaluationService() = default;
   WVKernelStatus initializeScratch();
+  WVKernelStatus evaluatePlanBatch(const PlanInvocation *invocations,
+                                   std::size_t invocationCount,
+                                   const WVState &state);
   WVKernelStatus evaluateMovingImpl(
       const WVMovingFieldEvaluationPlan &plan, const WVState &state,
       const WVRealFieldBundleConstView *advectionFields,
@@ -218,6 +400,7 @@ private:
   std::unique_ptr<MovingWorkspace> movingWorkspace_;
   std::vector<double> realScratch_;
   std::vector<WVComplex64> complexScratch_;
+  std::vector<PlanInvocation> eventBatchInvocations_;
   WVFieldEvaluationMetrics metrics_;
   bool executing_ = false;
 };

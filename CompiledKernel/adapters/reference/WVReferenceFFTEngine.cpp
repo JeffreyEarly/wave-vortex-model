@@ -35,7 +35,13 @@ public:
         return {WVKernelStatusCode::unsupportedOperation, "Unknown reference FFT plan."};
     }
 
-    std::size_t persistentBytes() const noexcept override { return sizeof(*this); }
+    std::size_t persistentBytes() const noexcept override {
+        return sizeof(*this) +
+               specification_.transformDimensions.capacity() *
+                   sizeof(WVFFTDimension) +
+               specification_.batchDimensions.capacity() *
+                   sizeof(WVFFTDimension);
+    }
 
 private:
     WVKernelStatus r2c(const double* input, WVComplex64* output) {

@@ -155,7 +155,9 @@ public:
       bool isDynamicsLinear = false);
 
   // Construct the existing NetCDF sink according to the compiled graph-wide
-  // policy. sampleSource is non-owning and must outlive the sink.
+  // policy. The sample source is preflighted against the compiled plan before
+  // any destination is created, replaced, or opened for append. sampleSource
+  // is non-owning and must outlive the sink.
   WVCheckpointStatus openNetCDFSink(
       const WVModelOutputNetCDFConfiguration &configuration,
       const WVIntegrationStateLayout &stateLayout,

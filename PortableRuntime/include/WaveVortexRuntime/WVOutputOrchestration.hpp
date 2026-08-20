@@ -73,7 +73,27 @@ struct WVOutputRouteView {
   const WVOutputObserverView *observers = nullptr;
   std::size_t observerCount = 0;
   const WVPortableTypedRecord *proposedScheduleCursor = nullptr;
+  // Construction-canonical logical group/schedule identity. Compatible
+  // groups in different destinations share this ordinal; destination route
+  // identity remains fileOrdinal/groupOrdinal.
+  std::size_t semanticScheduleOrdinal = 0;
+  const WVOutputSchedulePayloadSchema *schedulePayloadSchema = nullptr;
+  const WVOutputSchedulePayload *schedulePayload = nullptr;
+  std::uint64_t scheduleCursorIdentity = 0;
+  // Borrowed immutable construction record for the logical group/schedule.
+  // Equivalent groups in different destinations compare by value, never by
+  // this pointer or by the plan-local semanticScheduleOrdinal alone.
+  const WVOutputGroupRecord *semanticScheduleRecord = nullptr;
 };
+
+// Exact, allocation-free semantic comparisons for construction-resolved
+// observer and logical group/schedule records. These compare typed records by
+// value and perform no named lookup.
+bool sameOutputObserverSemanticIdentity(const WVObserverRecord &left,
+                                        const WVObserverRecord &right) noexcept;
+bool sameLogicalOutputScheduleIdentity(
+    const WVOutputGroupRecord &left,
+    const WVOutputGroupRecord &right) noexcept;
 
 struct WVOutputPlannedEventView {
   std::size_t eventOrdinal = 0;
@@ -231,6 +251,7 @@ struct WVOutputFileMetrics {
 struct WVOutputDriverMetrics {
   std::size_t generatedEventCount = 0;
   std::size_t generatedRouteCount = 0;
+  std::size_t generatedSemanticOccurrenceCount = 0;
   std::size_t maximumCoincidentRouteCount = 0;
   std::size_t acceptedStepCount = 0;
   std::size_t outputStateEvaluationCount = 0;
@@ -256,7 +277,9 @@ struct WVOutputDriverMetrics {
 // event, and coincident routes share that single state evaluation. If a route
 // fails, the driver retains that immutable state and route cursor; calling
 // advanceToTime() again replays only the failed route before integration
-// continues from the later accepted state.
+// continues from the later accepted state. Delivery records describe only the
+// latest selected event (including all attempts of a pending retry); cumulative
+// delivery history is reported by metrics instead of retained per occurrence.
 class WVOutputDriver final {
 public:
   WVOutputDriver(WVTimeIntegrator &integrator, const WVOutputPlan &plan);
@@ -270,6 +293,8 @@ public:
 
   const std::vector<WVOutputScheduleContinuation> &
   committedContinuations() const noexcept;
+  // Bounded by the immutable group count. The returned records belong to the
+  // latest selected event and remain stable while that event is pending.
   const std::vector<WVOutputDeliveryRecord> &records() const noexcept;
   const WVOutputDriverMetrics &metrics() const noexcept;
   bool hasPendingDelivery() const noexcept;
