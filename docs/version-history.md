@@ -8,24 +8,27 @@ nav_order: 100
 
 ## [Unreleased]
 
-- Stabilized portable runtime source API v1 for C++17 source-linked extensions, including explicit application-owned catalog composition with external AlongTrack and built-in linear bottom friction, removed public legacy-observer adapters and direct `WVModel` internal-service access, fixed zero-length numeric typed-record encoding and decoding under ASan/UBSan, added direct Linux sanitizer CI, and documented the source-only compatibility, no-ABI, and supported-platform boundaries.
-- Added a generic two-phase portable observation-occurrence protocol with compact resolved schedule payloads, event-variable geometry, central sampling of every position-supported field, nested ragged layouts, and retry-stable multi-destination batches.
-- Added the paired portable `WVBottomFrictionLinear` implementation with exact persisted-rate reconstruction, shared physical-field reuse, and MATLAB-aligned bottom-quadrature scaling.
-- Added an explicit, source-only compiled preview for ordinary constant-stratification nonlinear flux; MATLAB remains the default, native support must be built explicitly, and the preview rejects unsupported forcing without fallback.
-- Added an optional source-only constant-stratification runtime with fixed RK4 and adaptive RK3(2), MATLAB-compatible restart, and a lightweight command-line interface for executing complete MATLAB-authored NetCDF bundles through versioned JSON run requests.
-- Matched the portable adaptive RK3(2) controller, componentwise tolerances, maximum-step default, and work diagnostics to MATLAB `ode23` semantics.
-- Added a unified C++ integration contract for canonical coefficients and observer-owned state, continuous output, failure-safe scheduled output, and the five built-in observing-system records.
-- Added the frozen portable forcing subset, shared field evaluation for particles and tracers, and transactional NetCDF output while keeping MATLAB as the primary WaveVortexModel interface.
-- Added persistent, resolution-convertible `WVNarrowBandGeostrophicForcing` and retained the former fixed-amplitude helper as a silent deprecated 4.x delegate.
-- Retired the experimental FFTW backend; WaveVortexModel now uses MATLAB's builtin transforms and has no FFTWTransforms dependency.
-- Removed the obsolete expanded mappings `dftPrimaryIndex`, `dftConjugateIndex`, `wvConjugateIndex`, `indicesFromWVGridToFFTWGrid`, and `expandedLegacyMappings`; `indicesFromWVGridToDFTGrid` remains available explicitly.
-- Updated Fourier-at-position reconstruction to use compact `WVFourierStorageLayout` mappings.
-- Removed obsolete pseudo-radial and frequency-binning APIs whose maintained equivalents live in `WVDiagnostics`.
-- Added backend-neutral transform-storage accounting and fresh-process RSS benchmarks.
-- Completed and reorganized transform and forcing documentation, clarified spectral grids, energy, forcing, flow components, geometry indexing, density profiles, and projection/reconstruction summaries, corrected API metadata, and improved nonlinear-integration examples.
+### Compiled execution and portable runtime
+
+- Added an explicit, source-only compiled preview for ordinary constant-stratification nonlinear flux. MATLAB remains the default; native support must be built explicitly, and unsupported transforms or forcing are rejected without fallback.
+- Added an optional standalone constant-stratification runtime using the same MATLAB-independent numerical core, with fixed RK4, MATLAB `ode23`-compatible adaptive RK3(2), MATLAB-compatible NetCDF restart, and a command-line runner for versioned MATLAB-authored run requests.
+- Added MATLAB-compatible portable observing and output support for coefficients, Eulerian fields, moorings, Lagrangian particles, and tracers, including shared field evaluation, continuous and lazy scheduled output, multi-file and multi-group transactional NetCDF persistence, restart, continuation, and append.
+- Stabilized the C++17 source-linked extension API around an application-owned catalog, immutable resolved observer and forcing implementations, event-dependent observation geometry, and fixed, variable-length, and ragged output batches. The AlongTrack and linear-bottom-friction extensions prove the workflow; legacy observer adapters and direct `WVModel` internal-service access are no longer public, and no binary-plugin ABI is provided.
+
+### MATLAB model and forcing
+
+- Added persistent, resolution-convertible `WVNarrowBandGeostrophicForcing` and `WVBottomFrictionLinear`, with matching portable implementations. The former fixed-amplitude narrow-band helper remains as a silent deprecated 4.x delegate.
 - Verified and documented the mathematical contracts for pseudo-topographic wave generation, beta-plane QGPV advection, and vertical diffusivity, and restored the variable-stratification mean-density-anomaly source disabled by an obsolete class-name check.
-- Normalized physical-unit annotations and newly written NetCDF metadata, corrected squared-wavenumber and coefficient-tendency dimensions, and adopted ClassDocumentation 1.3.2 through the immutable OceanKit release workflow v0.1.2.
-- Added a catalog-driven Benchmarks page with deterministic runtime and process-memory scaling charts, accessible tables, platform and MATLAB-toolchain comparisons, downloadable results, and initial v4.2.1 measurements from three physical machines.
+
+### Spectral internals and performance
+
+- Retired the experimental fine-grained WaveVortex FFTW backend and removed the FFTWTransforms dependency; MATLAB's builtin transforms remain the supported default. This is separate from the explicit source-only compiled preview.
+- Consolidated Fourier storage around compact `WVFourierStorageLayout` mappings, updated Fourier-at-position reconstruction, removed obsolete expanded-mapping and pseudo-radial/frequency-binning APIs, and added backend-neutral retained-storage and fresh-process RSS measurement.
+
+### Documentation, validation, and benchmarks
+
+- Reorganized transform and forcing documentation, clarified spectral grids, energy, flow components, geometry, density profiles, and projection and reconstruction, improved nonlinear-integration examples, normalized physical-unit metadata, corrected squared-wavenumber and coefficient-tendency dimensions, and adopted ClassDocumentation 1.3.2 through the immutable OceanKit release workflow v0.1.2.
+- Added a catalog-driven Benchmarks page with deterministic runtime and process-memory charts, accessible tables, platform and MATLAB-toolchain comparisons, downloadable results, and measurements from three physical machines. Empty portable typed-record encoding and decoding were hardened and are covered directly by Linux ASan/UBSan CI.
 
 ## [4.2.1] - 2026-08-09
 
