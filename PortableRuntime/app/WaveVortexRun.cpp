@@ -63,7 +63,14 @@ struct Options {
     std::string phaseFile;
     std::string outputDirectory;
     std::string outputPattern = "checkpoint-{index}.nc";
-    std::string integrator = "fixed-rk4";
+    cli::WVRunRequestIntegrationMethod integrator =
+        cli::WVRunRequestIntegrationMethod::fixedRK4;
+    cli::WVRunRequestStepPolicy stepPolicy =
+        cli::WVRunRequestStepPolicy::explicitStep;
+    cli::WVRunRequestTimeStepConstraint timeStepConstraint =
+        cli::WVRunRequestTimeStepConstraint::notApplicable;
+    std::string requestSchemaIdentifier;
+    int requestSchemaVersion = 0;
     std::string restartMode = "model";
     std::string outputPolicy;
     double deltaT = 0.0;
@@ -71,6 +78,7 @@ struct Options {
     double maximumStep = 0.0;
     double relativeTolerance = 1e-3;
     double absoluteTolerance = 1e-6;
+    double cfl = 0.0;
     double finalTime = 0.0;
     std::size_t steps = 0;
     std::size_t threads = 0;
@@ -128,6 +136,10 @@ std::string jsonEscape(const std::string& value) {
 
 std::string quoted(const std::string& value) { return "\""+jsonEscape(value)+"\""; }
 
+std::string quoted(cli::WVRunRequestIntegrationMethod method) {
+    return quoted(cli::serializedIdentifier(method));
+}
+
 bool parseDouble(const std::string& text, double& value) {
     char* end = nullptr;
     value = std::strtod(text.c_str(),&end);
@@ -140,6 +152,22 @@ bool parseSize(const std::string& text, std::size_t& value) {
     const auto raw = std::strtoull(text.c_str(),&end,10);
     if (end == text.c_str() || *end != '\0' || raw > std::numeric_limits<std::size_t>::max()) return false;
     value = static_cast<std::size_t>(raw);
+    return true;
+}
+
+bool parseIntegrationMethod(
+    const std::string &text,
+    cli::WVRunRequestIntegrationMethod &method) noexcept {
+    if (text == "fixed-rk4")
+        method = cli::WVRunRequestIntegrationMethod::fixedRK4;
+    else if (text == "adaptive-rk23")
+        method = cli::WVRunRequestIntegrationMethod::adaptiveRK23;
+    else if (text == "adaptive-rk45")
+        method = cli::WVRunRequestIntegrationMethod::adaptiveRK45;
+    else if (text == "adaptive-rk78")
+        method = cli::WVRunRequestIntegrationMethod::adaptiveRK78;
+    else
+        return false;
     return true;
 }
 
@@ -169,7 +197,7 @@ bool parseLegacyOptions(int argc, char** argv, Options& options, std::string& er
         } else if (name == "--fft-provider") {
             options.provider = value;
         } else if (name == "--integrator") {
-            options.integrator = value;
+            if (!parseIntegrationMethod(value,options.integrator)) { error = "--integrator must be fixed-rk4, adaptive-rk23, adaptive-rk45, or adaptive-rk78."; return false; }
         } else if (name == "--restart-mode") {
             options.restartMode = value;
         } else if (name == "--output-policy") {
@@ -225,12 +253,11 @@ bool parseLegacyOptions(int argc, char** argv, Options& options, std::string& er
         return false;
     }
     if (options.provider != "native-fftw" && options.provider != "reference") { error = "--fft-provider must be native-fftw or reference."; return false; }
-    if (options.integrator != "fixed-rk4" && options.integrator != "adaptive-rk23" && options.integrator != "adaptive-rk45" && options.integrator != "adaptive-rk78") { error = "--integrator must be fixed-rk4, adaptive-rk23, adaptive-rk45, or adaptive-rk78."; return false; }
-    if (options.integrator == "fixed-rk4" && (options.hasRelativeTolerance || options.hasAbsoluteTolerance || options.hasInitialStep || options.hasMaximumStep)) { error = "Adaptive tolerance and step-control options require an adaptive integrator."; return false; }
+    if (options.integrator == cli::WVRunRequestIntegrationMethod::fixedRK4 && (options.hasRelativeTolerance || options.hasAbsoluteTolerance || options.hasInitialStep || options.hasMaximumStep)) { error = "Adaptive tolerance and step-control options require an adaptive integrator."; return false; }
     if (options.provider == "reference" && options.threads > 1) { error = "The reference provider supports only one thread."; return false; }
     if (options.threads == 0) options.threads = options.provider == "reference" ? 1 : std::min<std::size_t>(18,std::max(1U,std::thread::hardware_concurrency()));
     if ((options.benchmarkDenseOutputsPerStep != 0 || options.benchmarkWarmupSteps != 0) && !options.hasSteps) { error = "Author-only benchmark controls require --steps."; return false; }
-    if (options.benchmarkOutputCount != 0 && (!options.hasFinalTime || options.integrator == "fixed-rk4")) { error = "--benchmark-output-count requires an adaptive integrator with --final-time."; return false; }
+    if (options.benchmarkOutputCount != 0 && (!options.hasFinalTime || options.integrator == cli::WVRunRequestIntegrationMethod::fixedRK4)) { error = "--benchmark-output-count requires an adaptive integrator with --final-time."; return false; }
     if (options.scheduledOutput() && (options.benchmarkDenseOutputsPerStep != 0 || options.benchmarkOutputCount != 0 || options.benchmarkWarmupSteps != 0)) { error = "Scheduled output cannot be combined with author-only output benchmark controls."; return false; }
     options.modelFiles = {options.input};
     return true;
@@ -255,15 +282,20 @@ bool parseOptions(int argc, char** argv, Options& options, std::string& error) {
     options.requestPath = request.requestPath;
     options.modelFiles = std::move(request.modelFiles);
     options.input = options.modelFiles.front();
-    options.integrator = request.integrator;
+    options.integrator = request.integration.method;
+    options.stepPolicy = request.integration.stepPolicy;
+    options.timeStepConstraint = request.integration.timeStepConstraint;
+    options.requestSchemaIdentifier = request.schemaIdentifier;
+    options.requestSchemaVersion = request.schemaVersion;
     options.restartMode = "model";
     options.outputPolicy = request.outputPolicy;
-    options.deltaT = request.initialStep;
-    options.initialStep = request.initialStep;
-    options.maximumStep = request.maximumStep;
-    options.relativeTolerance = request.relativeTolerance;
-    options.absoluteTolerance = request.absoluteToleranceScale;
-    options.finalTime = request.finalTime;
+    options.deltaT = request.integration.initialStep;
+    options.initialStep = request.integration.initialStep;
+    options.cfl = request.integration.cfl;
+    options.maximumStep = request.integration.maximumStep;
+    options.relativeTolerance = request.integration.relativeTolerance;
+    options.absoluteTolerance = request.integration.absoluteToleranceScale;
+    options.finalTime = request.integration.finalTime;
     options.threads = request.threads;
     options.provider = request.fftProvider;
     options.report = request.report;
@@ -272,7 +304,7 @@ bool parseOptions(int argc, char** argv, Options& options, std::string& error) {
         options.outputDestinations.push_back(
             {std::move(destination.fileIdentifier),std::move(destination.path)});
     options.hasFinalTime = true;
-    if (options.integrator == "adaptive-rk23") {
+    if (options.stepPolicy == cli::WVRunRequestStepPolicy::adaptive) {
         options.hasInitialStep = true;
         options.hasMaximumStep = true;
         options.hasRelativeTolerance = true;
@@ -796,19 +828,19 @@ int wavevortex::runtime::runWaveVortex(
     const auto retainDenseOutput =
         options.benchmarkDenseOutputsPerStep != 0 || options.scheduledOutput() ||
         options.benchmarkOutputCount != 0 || options.restartMode == "model";
-    if (options.integrator == "adaptive-rk23") {
+    if (options.integrator == cli::WVRunRequestIntegrationMethod::adaptiveRK23) {
         integratorConfiguration.kind = WVModelIntegratorKind::adaptiveRK23;
         integratorConfiguration.adaptive.relativeTolerance = options.relativeTolerance;
         integratorConfiguration.adaptive.absoluteToleranceScale = options.absoluteTolerance;
         integratorConfiguration.adaptive.maximumStepSize = effectiveMaximumStep;
         integratorConfiguration.adaptive.retainDenseOutput = retainDenseOutput;
-    } else if (options.integrator == "adaptive-rk45") {
+    } else if (options.integrator == cli::WVRunRequestIntegrationMethod::adaptiveRK45) {
         integratorConfiguration.kind = WVModelIntegratorKind::adaptiveRK45;
         integratorConfiguration.adaptiveRK45.relativeTolerance = options.relativeTolerance;
         integratorConfiguration.adaptiveRK45.absoluteToleranceScale = options.absoluteTolerance;
         integratorConfiguration.adaptiveRK45.maximumStepSize = effectiveMaximumStep;
         integratorConfiguration.adaptiveRK45.retainDenseOutput = retainDenseOutput;
-    } else if (options.integrator == "adaptive-rk78") {
+    } else if (options.integrator == cli::WVRunRequestIntegrationMethod::adaptiveRK78) {
         integratorConfiguration.kind = WVModelIntegratorKind::adaptiveRK78;
         integratorConfiguration.adaptiveRK78.relativeTolerance = options.relativeTolerance;
         integratorConfiguration.adaptiveRK78.absoluteToleranceScale = options.absoluteTolerance;
@@ -851,11 +883,11 @@ int wavevortex::runtime::runWaveVortex(
     WVAdaptiveRK23* adaptiveRK23Integrator = nullptr;
     WVAdaptiveRK45* adaptiveRK45Integrator = nullptr;
     WVAdaptiveRK78* adaptiveRK78Integrator = nullptr;
-    if (options.integrator == "adaptive-rk23") {
+    if (options.integrator == cli::WVRunRequestIntegrationMethod::adaptiveRK23) {
         adaptiveRK23Integrator = &static_cast<WVAdaptiveRK23&>(integrator);
-    } else if (options.integrator == "adaptive-rk45") {
+    } else if (options.integrator == cli::WVRunRequestIntegrationMethod::adaptiveRK45) {
         adaptiveRK45Integrator = &static_cast<WVAdaptiveRK45&>(integrator);
-    } else if (options.integrator == "adaptive-rk78") {
+    } else if (options.integrator == cli::WVRunRequestIntegrationMethod::adaptiveRK78) {
         adaptiveRK78Integrator = &static_cast<WVAdaptiveRK78&>(integrator);
     } else {
         fixedIntegrator = &static_cast<WVFixedStepRK4&>(integrator);
@@ -1136,7 +1168,7 @@ int wavevortex::runtime::runWaveVortex(
     report << std::setprecision(17)
            << "{\"schemaVersion\":\"wave-vortex-run-v1\",\"status\":\"complete\",\"source\":{\"commit\":" << quoted(WV_RUNTIME_SOURCE_COMMIT) << "},"
            << "\"input\":" << quoted(options.input) << ",\"output\":" << quoted(options.output) << ",\"restartMode\":" << quoted(options.restartMode) << ",\"outputPolicy\":" << quoted(options.outputPolicy) << ",\"provider\":{\"id\":" << quoted(options.provider) << ",\"version\":" << quoted(providerVersion) << ",\"threads\":" << options.threads << ",\"baseLibrary\":" << quoted(baseLibrary) << ",\"threadLibrary\":" << quoted(threadLibrary) << "},"
-           << "\"request\":{\"active\":" << (options.requestMode ? "true" : "false") << ",\"path\":" << quoted(options.requestPath) << ",\"schemaIdentifier\":" << quoted(options.requestMode ? cli::WVRunRequest::schemaIdentifier : "") << ",\"schemaVersion\":" << (options.requestMode ? cli::WVRunRequest::schemaVersion : 0) << ",\"modelFiles\":" << stringArrayJSON(options.modelFiles) << ",\"destinations\":" << destinationMapJSON(options.outputDestinations) << "},"
+           << "\"request\":{\"active\":" << (options.requestMode ? "true" : "false") << ",\"path\":" << quoted(options.requestPath) << ",\"schemaIdentifier\":" << quoted(options.requestSchemaIdentifier) << ",\"schemaVersion\":" << options.requestSchemaVersion << ",\"modelFiles\":" << stringArrayJSON(options.modelFiles) << ",\"destinations\":" << destinationMapJSON(options.outputDestinations) << "},"
            << "\"state\":{\"initialTime\":" << inspection.t << ",\"finalTime\":" << state.waveVortex.t << ",\"deltaT\":" << options.deltaT << ",\"stepCount\":" << stepCount << ",\"rejectedStepCount\":" << rejectedStepCount << ",\"rhsEvaluationCount\":" << rightHandSideEvaluationCount << ",\"shape\":[" << shape.rows << ',' << shape.columns << "]},"
            << "\"integrator\":{\"id\":" << quoted(options.integrator) << ",\"controller\":" << quoted(adaptiveController) << ",\"relativeTolerance\":" << options.relativeTolerance << ",\"absoluteTolerance\":" << options.absoluteTolerance << ",\"requestedInitialStep\":" << (options.hasInitialStep ? std::to_string(options.initialStep) : "null") << ",\"effectiveInitialStep\":" << integrationInitialStep << ",\"requestedMaximumStep\":" << (options.hasMaximumStep ? std::to_string(options.maximumStep) : "null") << ",\"effectiveMaximumStep\":" << (hasAdaptiveIntegrator ? effectiveMaximumStep : options.deltaT) << ",\"toleranceHash\":" << quoted(hasAdaptiveIntegrator ? std::to_string(adaptiveToleranceHash) : "") << ",\"toleranceHashClearedMantissaBits\":20,\"toleranceComponentHashes\":" << (hasAdaptiveIntegrator ? unsignedIntegerArrayJSON(*adaptiveToleranceComponentHashes) : "[]") << ",\"lastNormalizedError\":" << adaptiveMetrics.normalizedError << ",\"lastProposedStepSize\":" << adaptiveMetrics.lastProposedStepSize << ",\"lastAcceptedStepSize\":" << adaptiveMetrics.lastAcceptedStepSize << ",\"nextStepSize\":" << integrator.nextStepSize() << ",\"fsalReuseCount\":" << adaptiveMetrics.fsalReuseCount << ",\"fsalInvalidationCount\":" << adaptiveMetrics.fsalInvalidationCount << ",\"rejectedInitialDerivativeReuseCount\":" << adaptiveMetrics.rejectedInitialDerivativeReuseCount << ",\"constraintModifiedCoefficientCount\":" << adaptiveMetrics.constraintModifiedCoefficientCount << ",\"baseRightHandSideEvaluationCount\":" << adaptiveMetrics.baseRightHandSideEvaluationCount << ",\"continuousExtensionRightHandSideEvaluationCount\":" << adaptiveMetrics.continuousExtensionRightHandSideEvaluationCount << ",\"denseOutputEvaluationCount\":" << (fixedIntegrator != nullptr ? fixedMetrics.denseOutputEvaluationCount : adaptiveMetrics.denseOutputEvaluationCount) << ",\"denseOutputCacheBuildCount\":" << adaptiveMetrics.denseOutputCacheBuildCount << ",\"denseOutputCacheReuseCount\":" << adaptiveMetrics.denseOutputCacheReuseCount << ",\"denseOutputElementReads\":" << (fixedIntegrator != nullptr ? fixedMetrics.denseOutputElementReads : adaptiveMetrics.denseOutputElementReads) << ",\"denseOutputElementWrites\":" << (fixedIntegrator != nullptr ? fixedMetrics.denseOutputElementWrites : adaptiveMetrics.denseOutputElementWrites) << ",\"denseOutputSeconds\":" << (fixedIntegrator != nullptr ? fixedMetrics.denseOutputSeconds : adaptiveMetrics.denseOutputSeconds) << ",\"continuousExtensionSeconds\":" << adaptiveMetrics.continuousExtensionSeconds << ",\"stateCapacityBytes\":" << adaptiveMetrics.stateCapacityBytes << ",\"workspaceStateEquivalentCount\":" << adaptiveMetrics.workspaceStateEquivalentCount << ",\"workspaceMaximumLiveStateEquivalentCount\":" << adaptiveMetrics.workspaceMaximumLiveStateEquivalentCount << ",\"denseHistoryStateEquivalentCount\":" << adaptiveMetrics.denseHistoryStateEquivalentCount << ",\"retainedBaseStageCapacityBytes\":" << adaptiveMetrics.retainedBaseStageCapacityBytes << ",\"retainedBaseStageStateEquivalentCount\":" << adaptiveMetrics.retainedBaseStageStateEquivalentCount << ",\"continuousExtensionWorkspaceCapacityBytes\":" << adaptiveMetrics.continuousExtensionWorkspaceCapacityBytes << ",\"continuousExtensionWorkspaceMaximumLiveBytes\":" << adaptiveMetrics.continuousExtensionWorkspaceMaximumLiveBytes << ",\"continuousExtensionWorkspaceStateEquivalentCount\":" << adaptiveMetrics.continuousExtensionWorkspaceStateEquivalentCount << ",\"continuousExtensionWorkspaceMaximumLiveStateEquivalentCount\":" << adaptiveMetrics.continuousExtensionWorkspaceMaximumLiveStateEquivalentCount << ",\"errorPolicyBytes\":" << adaptiveMetrics.errorPolicyBytes << ",\"diagnosticBytes\":" << adaptiveMetrics.diagnosticCapacityBytes << ",\"stageBufferLastUse\":" << (hasAdaptiveIntegrator ? adaptiveStageBufferLastUseJSON(adaptiveStageBufferLastUse,adaptiveStageBufferLastUseCount) : "[]") << ",\"acceptedStepDiagnosticsComplete\":" << (adaptiveDiagnosticsComplete ? "true" : "false") << ",\"acceptedSteps\":" << (hasAdaptiveIntegrator ? adaptiveStepDiagnosticsJSON(*adaptiveDiagnostics) : "[]") << "},"
            << "\"authorBenchmark\":{\"warmupStepCount\":" << options.benchmarkWarmupSteps << ",\"sampleStepCount\":" << (options.hasSteps ? options.steps : 0) << ",\"denseOutputsPerStep\":" << options.benchmarkDenseOutputsPerStep << ",\"requestedOutputCount\":" << options.benchmarkOutputCount << ",\"interpolatedOutputCount\":" << interpolatedOutputCount << ",\"interpolationSeconds\":" << driverInterpolationSeconds << "},"
