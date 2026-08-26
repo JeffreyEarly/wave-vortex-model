@@ -4,7 +4,7 @@ This directory contains the optional, MATLAB-independent constant-stratification
 
 The runtime supports:
 
-- fixed-step RK4 and adaptive Bogacki--Shampine RK3(2), including continuous output derived from each method's Runge--Kutta stages;
+- fixed-step RK4, MATLAB `ode23`-compatible Bogacki--Shampine integration with a third-order accepted solution and second-order embedded estimate, and MATLAB `ode45`-compatible Dormand--Prince integration with a fifth-order accepted solution and fourth-order embedded estimate, including method-owned continuous output;
 - the frozen v1 forcing subset (`WVNonlinearAdvection`, `WVAdaptiveDamping`, `WVFixedAmplitudeForcing`, `WVBottomFrictionLinear`, `WVBottomFrictionQuadratic`, `WVPseudoTopographicWaveGeneration`, and `WVBetaPlanePVAdvection`);
 - the five qualified built-in observer records (`WVCoefficients`, `WVEulerianFields`, `WVMooring`, `WVLagrangianParticles`, and `WVTracer`);
 - MATLAB-compatible checkpoint and time-series NetCDF data for the documented constant-stratification subset.
@@ -82,9 +82,17 @@ wave-vortex-run saved-model.nc \
     --delta-t 1 --initial-step 1 --maximum-step 10 --final-time 100 \
     --relative-tolerance 1e-3 --absolute-tolerance 1e-6 \
     --fft-provider native-fftw
+
+wave-vortex-run saved-model.nc \
+    --restart-mode model \
+    --output-policy append \
+    --integrator adaptive-rk45 \
+    --delta-t 1 --initial-step 1 --maximum-step 10 --final-time 100 \
+    --relative-tolerance 1e-3 --absolute-tolerance 1e-6 \
+    --fft-provider native-fftw
 ```
 
-For adaptive integration, `--delta-t` remains the backward-compatible initial-step default. `--initial-step` overrides it explicitly. `--maximum-step` defaults to one tenth of the requested continuation interval, matching MATLAB `ode23`; name it explicitly when comparing runs or continuing the same controller policy across segments. The run report records the controller, effective limits, tolerance hash, accepted and rejected work, and bounded accepted-step diagnostics.
+For adaptive integration, `--delta-t` remains the backward-compatible initial-step default. `--initial-step` overrides it explicitly. `--maximum-step` defaults to one tenth of the requested continuation interval, matching MATLAB's default bound; name it explicitly when comparing runs or continuing the same controller policy across segments. Use `adaptive-rk23` for MATLAB `ode23` semantics and `adaptive-rk45` for MATLAB `ode45` semantics. The run report records the controller, effective limits, tolerance hash, accepted and rejected work, bounded accepted-step diagnostics, exact workspace and dense-history bytes, state-equivalent counts, and the method's stage-buffer last-use schedule. The strict `wave-vortex-run-request-v1` schema remains unchanged and accepts only fixed RK4 or `adaptive-rk23`; select `adaptive-rk45` through the legacy CLI or source-level `WVModelIntegratorConfiguration` until a later request schema adds it explicitly.
 
 Use `--restart-mode coefficients --output-policy create` with positional input and output paths for an explicit reduced checkpoint-only workflow. `create` refuses existing files; `replace` must be named to authorize atomic replacement. The legacy complete-model form accepts only `append` and validates compatibility before mutation. It remains available for scripts that operate on a single output file; `--request` is the preferred complete multi-file boundary and cannot be mixed with legacy semantic flags.
 

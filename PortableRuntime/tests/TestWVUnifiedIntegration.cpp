@@ -118,8 +118,10 @@ public:
     const WVIntegrationStateLayout &layout_;
   };
   explicit LinearIntegrationSystem(WVIntegrationStateLayout layout,
-                                   bool zeroDerivative = false)
-      : layout_(std::move(layout)), zeroDerivative_(zeroDerivative) {}
+                                   bool zeroDerivative = false,
+                                   bool constraintsFSALCompatible = true)
+      : layout_(std::move(layout)), zeroDerivative_(zeroDerivative),
+        constraintsFSALCompatible_(constraintsFSALCompatible) {}
   const WVIntegrationStateLayout &stateLayout() const noexcept override {
     return layout_;
   }
@@ -180,7 +182,8 @@ public:
             state.additionalBlocks[block].realData[i] = 0;
             ++modified;
           }
-    return {WVKernelStatus::ok(), modified, modified == 0};
+    return {WVKernelStatus::ok(), modified,
+            modified == 0 && constraintsFSALCompatible_};
   }
   WVKernelStatus createErrorPolicy(
       double, std::unique_ptr<WVIntegrationErrorPolicy> &policy) const override {
@@ -192,6 +195,7 @@ public:
 private:
   WVIntegrationStateLayout layout_;
   bool zeroDerivative_ = false;
+  bool constraintsFSALCompatible_ = true;
 };
 
 struct StateFixture {
@@ -479,6 +483,225 @@ void testRK23MatlabOde23ParityFixture() {
           "MATLAB ode23 parity endpoint");
 }
 
+void testRK45(LinearIntegrationSystem &system) {
+  StateFixture fixture(system.stateLayout());
+  WVAdaptiveRK45Options options;
+  options.relativeTolerance = 1e-8;
+  options.absoluteToleranceScale = 1.0;
+  options.maximumStepFactor = 2.0;
+  WVAdaptiveRK45 rk45(system, options);
+  require(static_cast<bool>(rk45.prepareStateAfterRestart(fixture.state)),
+          "RK45 restart preparation");
+  require(static_cast<bool>(rk45.step(fixture.state, 0.5)),
+          "RK45 adaptive step");
+  require(rk45.metrics().rejectedStepCount > 0, "RK45 rejection");
+  const auto accepted = rk45.lastAcceptedStep();
+  require(accepted && accepted->finalTime > 0.0, "RK45 accepted step");
+  require(accepted->methodStatistics.rejectedStepCount > 0 &&
+              std::abs(accepted->methodStatistics.nextStepSize -
+                       accepted->methodStatistics.stepSize) < 1e-15,
+          "RK45 MATLAB controller does not grow immediately after rejection");
+  const auto midpoint = 0.5 * (accepted->initialTime + accepted->finalTime);
+  require(static_cast<bool>(rk45.evaluateDenseOutput(midpoint, fixture.output)),
+          "RK45 integration-state dense output");
+  require(std::abs(fixture.outputCoefficients[0].real - std::exp(-midpoint)) <
+              1e-9,
+          "RK45 dense coefficient result");
+  require(rk45.metrics().workspaceStateEquivalentCount == 7 &&
+              rk45.metrics().denseHistoryStateEquivalentCount == 6 &&
+              rk45.metrics().stateCapacityBytes > 0 &&
+              rk45.metrics().workspaceMaximumLiveBytes ==
+                  rk45.metrics().workspaceCapacityBytes,
+          "RK45 exact workspace and dense-history ledger");
+  require(rk45.metrics().diagnosticCapacityBytes ==
+              rk45.stepDiagnostics().capacity() *
+                  sizeof(WVAdaptiveRK45StepDiagnostic),
+          "RK45 exact diagnostic ledger");
+  require(WVAdaptiveRK45::stageBufferLastUseRecordCount() == 7 &&
+              std::string(WVAdaptiveRK45::stageBufferLastUseRecords()[2]
+                              .bufferIdentifier) == "k2/k7",
+          "RK45 explicit stage-buffer liveness schedule");
+  require(rk45.persistentBytes() >
+              sizeof(rk45) + rk45.metrics().workspaceCapacityBytes +
+                  rk45.metrics().errorPolicyBytes +
+                  rk45.metrics().diagnosticCapacityBytes,
+          "RK45 retained ledger omitted internal records");
+}
+
+void testRK45MatlabOde45ParityFixture() {
+  WVIntegrationStateLayout layout;
+  require(static_cast<bool>(WVIntegrationStateLayout::createCoefficientOnly(
+              {1, 1}, layout)),
+          "MATLAB ode45 parity layout");
+  LinearIntegrationSystem system(std::move(layout));
+  std::vector<WVComplex64> coefficients(3, {1.0, 0.5});
+  std::vector<WVComplex64> denseCoefficients(3);
+  WVMutableIntegrationState state{
+      {0.0,
+       0.0,
+       {{coefficients.data(), {1, 1}},
+        {coefficients.data() + 1, {1, 1}},
+        {coefficients.data() + 2, {1, 1}}}},
+      nullptr,
+      0};
+  WVMutableIntegrationState denseState{
+      {0.0,
+       0.0,
+       {{denseCoefficients.data(), {1, 1}},
+        {denseCoefficients.data() + 1, {1, 1}},
+        {denseCoefficients.data() + 2, {1, 1}}}},
+      nullptr,
+      0};
+  WVAdaptiveRK45Options options;
+  options.relativeTolerance = 1e-8;
+  options.absoluteToleranceScale = 1e-10;
+  options.maximumStepSize = 0.5;
+  WVAdaptiveRK45 rk45(system, options);
+  require(static_cast<bool>(rk45.prepareStateAfterRestart(state)),
+          "MATLAB ode45 parity restart preparation");
+  double stepSize = 0.5;
+  bool evaluatedDenseOutput = false;
+  while (state.waveVortex.t < 1.0) {
+    const auto remaining = 1.0 - state.waveVortex.t;
+    const auto use = 1.1 * stepSize >= remaining
+                         ? remaining
+                         : std::min(stepSize, remaining);
+    require(static_cast<bool>(rk45.step(state, use)),
+            "MATLAB ode45 parity accepted step");
+    const auto accepted = rk45.lastAcceptedStep();
+    if (!evaluatedDenseOutput && accepted->initialTime <= 0.5 &&
+        accepted->finalTime >= 0.5) {
+      require(static_cast<bool>(rk45.evaluateDenseOutput(0.5, denseState)),
+              "MATLAB ode45 parity dense output");
+      evaluatedDenseOutput = true;
+    }
+    stepSize = rk45.nextStepSize();
+  }
+  require(rk45.metrics().acceptedStepCount == 13 &&
+              rk45.metrics().rejectedStepCount == 1 &&
+              rk45.metrics().rightHandSideEvaluationCount == 85,
+          "MATLAB ode45 parity work counts");
+  require(rk45.stepDiagnosticsComplete() &&
+              rk45.stepDiagnostics().size() == 13,
+          "MATLAB ode45 parity diagnostics");
+  require(std::abs(rk45.stepDiagnostics().front().acceptedStepSize -
+                   0.080303422113484) < 2e-14,
+          "MATLAB ode45 parity first accepted step");
+  constexpr double matlabReal = 0.367879441616479;
+  constexpr double matlabImaginary = 0.183939720808240;
+  require(std::abs(coefficients[0].real - matlabReal) < 2e-14 &&
+              std::abs(coefficients[0].imag - matlabImaginary) < 2e-14,
+          "MATLAB ode45 parity endpoint");
+  constexpr double matlabDenseReal = 0.606530659859205;
+  constexpr double matlabDenseImaginary = 0.303265329929602;
+  require(evaluatedDenseOutput &&
+              std::abs(denseCoefficients[0].real - matlabDenseReal) < 2e-13 &&
+              std::abs(denseCoefficients[0].imag - matlabDenseImaginary) <
+                  2e-13,
+          "MATLAB ode45 parity continuous extension");
+  require(std::string(WVAdaptiveRK45::controllerIdentifier()) ==
+              "matlab-ode45-v1",
+          "RK45 MATLAB controller identity");
+}
+
+double rk45SingleStepError(double stepSize) {
+  WVIntegrationStateLayout layout;
+  require(static_cast<bool>(WVIntegrationStateLayout::createCoefficientOnly(
+              {1, 1}, layout)),
+          "RK45 order-test layout");
+  LinearIntegrationSystem system(std::move(layout));
+  std::vector<WVComplex64> coefficients(3, {1.0, 0.0});
+  WVMutableIntegrationState state{
+      {0.0,
+       0.0,
+       {{coefficients.data(), {1, 1}},
+        {coefficients.data() + 1, {1, 1}},
+        {coefficients.data() + 2, {1, 1}}}},
+      nullptr,
+      0};
+  WVAdaptiveRK45Options options;
+  options.relativeTolerance = 1.0;
+  options.maximumStepSize = stepSize;
+  WVAdaptiveRK45 rk45(system, options);
+  require(static_cast<bool>(rk45.prepareStateAfterRestart(state)) &&
+              static_cast<bool>(rk45.step(state, stepSize)) &&
+              rk45.metrics().rejectedStepCount == 0,
+          "RK45 order-test step");
+  return std::abs(coefficients[0].real - std::exp(-stepSize));
+}
+
+void testRK45OrderConstraintsAndSegmentation() {
+  const auto coarseError = rk45SingleStepError(0.2);
+  const auto fineError = rk45SingleStepError(0.1);
+  require(coarseError / fineError > 25.0,
+          "RK45 fifth-order accepted solution convergence");
+
+  WVIntegrationStateLayout constrainedLayout;
+  require(static_cast<bool>(WVIntegrationStateLayout::createCoefficientOnly(
+              {1, 1}, constrainedLayout)),
+          "RK45 constraint layout");
+  LinearIntegrationSystem constrainedSystem(std::move(constrainedLayout),
+                                            false, false);
+  std::vector<WVComplex64> constrainedCoefficients(3, {1.0, 0.0});
+  WVMutableIntegrationState constrainedState{
+      {0.0,
+       0.0,
+       {{constrainedCoefficients.data(), {1, 1}},
+        {constrainedCoefficients.data() + 1, {1, 1}},
+        {constrainedCoefficients.data() + 2, {1, 1}}}},
+      nullptr,
+      0};
+  WVAdaptiveRK45Options constrainedOptions;
+  constrainedOptions.relativeTolerance = 1.0;
+  WVAdaptiveRK45 constrainedRK45(constrainedSystem, constrainedOptions);
+  require(static_cast<bool>(
+              constrainedRK45.prepareStateAfterRestart(constrainedState)) &&
+              static_cast<bool>(constrainedRK45.step(constrainedState, 0.01)) &&
+              static_cast<bool>(constrainedRK45.step(constrainedState, 0.01)),
+          "RK45 constrained steps");
+  require(constrainedRK45.metrics().fsalReuseCount == 0 &&
+              constrainedRK45.metrics().fsalInvalidationCount == 2 &&
+              constrainedRK45.metrics().rightHandSideEvaluationCount == 14,
+          "RK45 constraint invalidation disables FSAL reuse");
+
+  const auto integrate = [](bool segmented) {
+    WVIntegrationStateLayout layout;
+    require(static_cast<bool>(WVIntegrationStateLayout::createCoefficientOnly(
+                {1, 1}, layout)),
+            "RK45 segmentation layout");
+    LinearIntegrationSystem system(std::move(layout));
+    std::vector<WVComplex64> coefficients(3, {1.0, 0.5});
+    WVMutableIntegrationState state{
+        {0.0,
+         0.0,
+         {{coefficients.data(), {1, 1}},
+          {coefficients.data() + 1, {1, 1}},
+          {coefficients.data() + 2, {1, 1}}}},
+        nullptr,
+        0};
+    WVAdaptiveRK45Options options;
+    options.relativeTolerance = 1e-6;
+    options.absoluteToleranceScale = 1e-8;
+    options.maximumStepSize = 0.1;
+    WVAdaptiveRK45 rk45(system, options);
+    require(static_cast<bool>(rk45.prepareStateAfterRestart(state)),
+            "RK45 segmentation restart preparation");
+    if (segmented)
+      require(static_cast<bool>(rk45.advanceToTime(state, 0.5, 0.1)) &&
+                  static_cast<bool>(rk45.advanceToTime(state, 1.0, 0.1)),
+              "RK45 segmented integration");
+    else
+      require(static_cast<bool>(rk45.advanceToTime(state, 1.0, 0.1)),
+              "RK45 continuous integration");
+    return coefficients[0];
+  };
+  const auto continuous = integrate(false);
+  const auto segmented = integrate(true);
+  require(continuous.real == segmented.real &&
+              continuous.imag == segmented.imag,
+          "RK45 segmentation preserves the accepted trajectory");
+}
+
 } // namespace
 
 int main() {
@@ -488,9 +711,12 @@ int main() {
   LinearIntegrationSystem system(std::move(layout));
   testRK4(system);
   testRK23(system);
+  testRK45(system);
   testRK23MatlabControllerWork();
   testRK23MatlabOde23ParityFixture();
-  std::cout << "PASS: portable observer contracts and unified RK4/RK23 "
+  testRK45MatlabOde45ParityFixture();
+  testRK45OrderConstraintsAndSegmentation();
+  std::cout << "PASS: portable observer contracts and unified RK4/RK23/RK45 "
                "integration\n";
   return 0;
 }

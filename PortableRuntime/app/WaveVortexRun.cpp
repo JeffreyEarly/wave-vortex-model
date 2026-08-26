@@ -225,12 +225,12 @@ bool parseLegacyOptions(int argc, char** argv, Options& options, std::string& er
         return false;
     }
     if (options.provider != "native-fftw" && options.provider != "reference") { error = "--fft-provider must be native-fftw or reference."; return false; }
-    if (options.integrator != "fixed-rk4" && options.integrator != "adaptive-rk23") { error = "--integrator must be fixed-rk4 or adaptive-rk23."; return false; }
-    if (options.integrator == "fixed-rk4" && (options.hasRelativeTolerance || options.hasAbsoluteTolerance || options.hasInitialStep || options.hasMaximumStep)) { error = "Adaptive tolerance and step-control options require --integrator adaptive-rk23."; return false; }
+    if (options.integrator != "fixed-rk4" && options.integrator != "adaptive-rk23" && options.integrator != "adaptive-rk45") { error = "--integrator must be fixed-rk4, adaptive-rk23, or adaptive-rk45."; return false; }
+    if (options.integrator == "fixed-rk4" && (options.hasRelativeTolerance || options.hasAbsoluteTolerance || options.hasInitialStep || options.hasMaximumStep)) { error = "Adaptive tolerance and step-control options require an adaptive integrator."; return false; }
     if (options.provider == "reference" && options.threads > 1) { error = "The reference provider supports only one thread."; return false; }
     if (options.threads == 0) options.threads = options.provider == "reference" ? 1 : std::min<std::size_t>(18,std::max(1U,std::thread::hardware_concurrency()));
     if ((options.benchmarkDenseOutputsPerStep != 0 || options.benchmarkWarmupSteps != 0) && !options.hasSteps) { error = "Author-only benchmark controls require --steps."; return false; }
-    if (options.benchmarkOutputCount != 0 && (!options.hasFinalTime || options.integrator != "adaptive-rk23")) { error = "--benchmark-output-count requires adaptive-rk23 with --final-time."; return false; }
+    if (options.benchmarkOutputCount != 0 && (!options.hasFinalTime || options.integrator == "fixed-rk4")) { error = "--benchmark-output-count requires an adaptive integrator with --final-time."; return false; }
     if (options.scheduledOutput() && (options.benchmarkDenseOutputsPerStep != 0 || options.benchmarkOutputCount != 0 || options.benchmarkWarmupSteps != 0)) { error = "Scheduled output cannot be combined with author-only output benchmark controls."; return false; }
     options.modelFiles = {options.input};
     return true;
@@ -512,6 +512,20 @@ std::string adaptiveStepDiagnosticsJSON(
     return output.str();
 }
 
+std::string adaptiveStageBufferLastUseJSON(
+    const WVAdaptiveRKStageBufferLastUse* records, std::size_t count) {
+    std::ostringstream output;
+    output << '[';
+    for (std::size_t index = 0; index < count; ++index) {
+        if (index != 0) output << ',';
+        output << "{\"buffer\":" << quoted(records[index].bufferIdentifier)
+               << ",\"stage\":" << records[index].stage
+               << ",\"lastUse\":" << quoted(records[index].lastUse) << '}';
+    }
+    output << ']';
+    return output.str();
+}
+
 std::string unsignedIntegerArrayJSON(const std::vector<std::uint64_t>& values) {
     std::ostringstream output;
     output << '[';
@@ -779,17 +793,24 @@ int wavevortex::runtime::runWaveVortex(
     phase(options,"construct");
     start = Clock::now();
     WVModelIntegratorConfiguration integratorConfiguration;
+    const auto retainDenseOutput =
+        options.benchmarkDenseOutputsPerStep != 0 || options.scheduledOutput() ||
+        options.benchmarkOutputCount != 0 || options.restartMode == "model";
     if (options.integrator == "adaptive-rk23") {
         integratorConfiguration.kind = WVModelIntegratorKind::adaptiveRK23;
         integratorConfiguration.adaptive.relativeTolerance = options.relativeTolerance;
         integratorConfiguration.adaptive.absoluteToleranceScale = options.absoluteTolerance;
         integratorConfiguration.adaptive.maximumStepSize = effectiveMaximumStep;
+        integratorConfiguration.adaptive.retainDenseOutput = retainDenseOutput;
+    } else if (options.integrator == "adaptive-rk45") {
+        integratorConfiguration.kind = WVModelIntegratorKind::adaptiveRK45;
+        integratorConfiguration.adaptiveRK45.relativeTolerance = options.relativeTolerance;
+        integratorConfiguration.adaptiveRK45.absoluteToleranceScale = options.absoluteTolerance;
+        integratorConfiguration.adaptiveRK45.maximumStepSize = effectiveMaximumStep;
+        integratorConfiguration.adaptiveRK45.retainDenseOutput = retainDenseOutput;
     } else {
         integratorConfiguration.kind = WVModelIntegratorKind::fixedRK4;
-        integratorConfiguration.fixed.retainDenseOutput =
-            options.benchmarkDenseOutputsPerStep != 0 ||
-            options.scheduledOutput() || options.benchmarkOutputCount != 0 ||
-            options.restartMode == "model";
+        integratorConfiguration.fixed.retainDenseOutput = retainDenseOutput;
     }
     WVModel model;
     WVModelState modelState;
@@ -821,13 +842,16 @@ int wavevortex::runtime::runWaveVortex(
     }
 #endif
     WVFixedStepRK4* fixedIntegrator = nullptr;
-    WVAdaptiveRK23* adaptiveIntegrator = nullptr;
+    WVAdaptiveRK23* adaptiveRK23Integrator = nullptr;
+    WVAdaptiveRK45* adaptiveRK45Integrator = nullptr;
     if (options.integrator == "adaptive-rk23") {
-        adaptiveIntegrator = &static_cast<WVAdaptiveRK23&>(integrator);
+        adaptiveRK23Integrator = &static_cast<WVAdaptiveRK23&>(integrator);
+    } else if (options.integrator == "adaptive-rk45") {
+        adaptiveRK45Integrator = &static_cast<WVAdaptiveRK45&>(integrator);
     } else {
         fixedIntegrator = &static_cast<WVFixedStepRK4&>(integrator);
     }
-    const auto integrationInitialStep = adaptiveIntegrator != nullptr
+    const auto integrationInitialStep = fixedIntegrator == nullptr
         ? effectiveInitialStep : options.deltaT;
     const auto shape = integrationSystem.kernel().descriptor().spectralShape();
     auto state = modelState.mutableView();
@@ -995,22 +1019,46 @@ int wavevortex::runtime::runWaveVortex(
     WVFixedStepRK4Metrics fixedMetrics;
     WVAdaptiveRK23Metrics adaptiveMetrics;
     if (fixedIntegrator != nullptr) fixedMetrics = fixedIntegrator->metrics();
-    if (adaptiveIntegrator != nullptr) adaptiveMetrics = adaptiveIntegrator->metrics();
+    const std::vector<WVAdaptiveRKStepDiagnostic>* adaptiveDiagnostics = nullptr;
+    const std::vector<std::uint64_t>* adaptiveToleranceComponentHashes = nullptr;
+    const WVAdaptiveRKStageBufferLastUse* adaptiveStageBufferLastUse = nullptr;
+    std::size_t adaptiveStageBufferLastUseCount = 0;
+    std::uint64_t adaptiveToleranceHash = 0;
+    const char* adaptiveController = "fixed-rk4";
+    bool adaptiveDiagnosticsComplete = true;
+    if (adaptiveRK23Integrator != nullptr) {
+        adaptiveMetrics = adaptiveRK23Integrator->metrics();
+        adaptiveDiagnostics = &adaptiveRK23Integrator->stepDiagnostics();
+        adaptiveToleranceHash = adaptiveRK23Integrator->toleranceHash();
+        adaptiveToleranceComponentHashes = &adaptiveRK23Integrator->toleranceComponentHashes();
+        adaptiveController = WVAdaptiveRK23::controllerIdentifier();
+        adaptiveDiagnosticsComplete = adaptiveRK23Integrator->stepDiagnosticsComplete();
+        adaptiveStageBufferLastUse = WVAdaptiveRK23::stageBufferLastUseRecords();
+        adaptiveStageBufferLastUseCount = WVAdaptiveRK23::stageBufferLastUseRecordCount();
+    } else if (adaptiveRK45Integrator != nullptr) {
+        adaptiveMetrics = adaptiveRK45Integrator->metrics();
+        adaptiveDiagnostics = &adaptiveRK45Integrator->stepDiagnostics();
+        adaptiveToleranceHash = adaptiveRK45Integrator->toleranceHash();
+        adaptiveToleranceComponentHashes = &adaptiveRK45Integrator->toleranceComponentHashes();
+        adaptiveController = WVAdaptiveRK45::controllerIdentifier();
+        adaptiveDiagnosticsComplete = adaptiveRK45Integrator->stepDiagnosticsComplete();
+        adaptiveStageBufferLastUse = WVAdaptiveRK45::stageBufferLastUseRecords();
+        adaptiveStageBufferLastUseCount = WVAdaptiveRK45::stageBufferLastUseRecordCount();
+    }
+    const auto hasAdaptiveIntegrator = adaptiveDiagnostics != nullptr;
     const auto& integratedObserverMetrics = integrationSystem.metrics();
     const auto modelMetrics = model.metrics(&modelState);
     const auto outputEvaluationMetrics = modelMetrics.outputEvaluation;
     const auto modelOutputMetrics = modelMetrics.output;
     const auto stepCount = fixedIntegrator != nullptr ? fixedMetrics.stepCount : adaptiveMetrics.acceptedStepCount;
-    const auto rejectedStepCount = adaptiveIntegrator != nullptr ? adaptiveMetrics.rejectedStepCount : 0;
+    const auto rejectedStepCount = hasAdaptiveIntegrator ? adaptiveMetrics.rejectedStepCount : 0;
     const auto rightHandSideEvaluationCount = fixedIntegrator != nullptr ? fixedMetrics.rightHandSideEvaluationCount : adaptiveMetrics.rightHandSideEvaluationCount;
     const auto integratorWorkspaceCapacityBytes = fixedIntegrator != nullptr ? fixedMetrics.workspaceCapacityBytes : adaptiveMetrics.workspaceCapacityBytes;
     const auto integratorWorkspaceLiveBytes = fixedIntegrator != nullptr ? fixedMetrics.workspaceLiveBytes : adaptiveMetrics.workspaceLiveBytes;
     const auto integratorWorkspaceMaximumLiveBytes = fixedIntegrator != nullptr ? fixedMetrics.workspaceMaximumLiveBytes : adaptiveMetrics.workspaceMaximumLiveBytes;
-    const auto integratorDiagnosticBytes = adaptiveIntegrator != nullptr
-        ? adaptiveIntegrator->stepDiagnostics().capacity() * sizeof(WVAdaptiveRK23StepDiagnostic)
-        : 0;
+    const auto integratorDiagnosticBytes = adaptiveMetrics.diagnosticCapacityBytes;
 #if WV_RUNTIME_HAS_DENSE_OUTPUT
-    const auto denseHistoryBytes = fixedIntegrator != nullptr ? fixedMetrics.denseHistoryCapacityBytes : 0;
+    const auto denseHistoryBytes = fixedIntegrator != nullptr ? fixedMetrics.denseHistoryCapacityBytes : adaptiveMetrics.denseHistoryCapacityBytes;
     const auto driverInterpolationMaximumLiveBytes = outputDriverMetrics.interpolationBufferMaximumLiveBytes;
     const auto outputDriverMaximumLiveBytes = outputDriverMetrics.retainedStorageBytes;
     const auto driverInterpolationSeconds = outputDriverMetrics.interpolationSeconds;
@@ -1072,7 +1120,7 @@ int wavevortex::runtime::runWaveVortex(
            << "\"input\":" << quoted(options.input) << ",\"output\":" << quoted(options.output) << ",\"restartMode\":" << quoted(options.restartMode) << ",\"outputPolicy\":" << quoted(options.outputPolicy) << ",\"provider\":{\"id\":" << quoted(options.provider) << ",\"version\":" << quoted(providerVersion) << ",\"threads\":" << options.threads << ",\"baseLibrary\":" << quoted(baseLibrary) << ",\"threadLibrary\":" << quoted(threadLibrary) << "},"
            << "\"request\":{\"active\":" << (options.requestMode ? "true" : "false") << ",\"path\":" << quoted(options.requestPath) << ",\"schemaIdentifier\":" << quoted(options.requestMode ? cli::WVRunRequest::schemaIdentifier : "") << ",\"schemaVersion\":" << (options.requestMode ? cli::WVRunRequest::schemaVersion : 0) << ",\"modelFiles\":" << stringArrayJSON(options.modelFiles) << ",\"destinations\":" << destinationMapJSON(options.outputDestinations) << "},"
            << "\"state\":{\"initialTime\":" << inspection.t << ",\"finalTime\":" << state.waveVortex.t << ",\"deltaT\":" << options.deltaT << ",\"stepCount\":" << stepCount << ",\"rejectedStepCount\":" << rejectedStepCount << ",\"rhsEvaluationCount\":" << rightHandSideEvaluationCount << ",\"shape\":[" << shape.rows << ',' << shape.columns << "]},"
-           << "\"integrator\":{\"id\":" << quoted(options.integrator) << ",\"controller\":" << quoted(adaptiveIntegrator != nullptr ? WVAdaptiveRK23::controllerIdentifier() : "fixed-rk4") << ",\"relativeTolerance\":" << options.relativeTolerance << ",\"absoluteTolerance\":" << options.absoluteTolerance << ",\"requestedInitialStep\":" << (options.hasInitialStep ? std::to_string(options.initialStep) : "null") << ",\"effectiveInitialStep\":" << integrationInitialStep << ",\"requestedMaximumStep\":" << (options.hasMaximumStep ? std::to_string(options.maximumStep) : "null") << ",\"effectiveMaximumStep\":" << (adaptiveIntegrator != nullptr ? effectiveMaximumStep : options.deltaT) << ",\"toleranceHash\":" << quoted(adaptiveIntegrator != nullptr ? std::to_string(adaptiveIntegrator->toleranceHash()) : "") << ",\"toleranceHashClearedMantissaBits\":20,\"toleranceComponentHashes\":" << (adaptiveIntegrator != nullptr ? unsignedIntegerArrayJSON(adaptiveIntegrator->toleranceComponentHashes()) : "[]") << ",\"lastNormalizedError\":" << adaptiveMetrics.normalizedError << ",\"lastProposedStepSize\":" << adaptiveMetrics.lastProposedStepSize << ",\"lastAcceptedStepSize\":" << adaptiveMetrics.lastAcceptedStepSize << ",\"nextStepSize\":" << integrator.nextStepSize() << ",\"fsalReuseCount\":" << adaptiveMetrics.fsalReuseCount << ",\"fsalInvalidationCount\":" << adaptiveMetrics.fsalInvalidationCount << ",\"rejectedInitialDerivativeReuseCount\":" << adaptiveMetrics.rejectedInitialDerivativeReuseCount << ",\"constraintModifiedCoefficientCount\":" << adaptiveMetrics.constraintModifiedCoefficientCount << ",\"denseOutputEvaluationCount\":" << (fixedIntegrator != nullptr ? fixedMetrics.denseOutputEvaluationCount : adaptiveMetrics.denseOutputEvaluationCount) << ",\"denseOutputElementReads\":" << (fixedIntegrator != nullptr ? fixedMetrics.denseOutputElementReads : adaptiveMetrics.denseOutputElementReads) << ",\"denseOutputElementWrites\":" << (fixedIntegrator != nullptr ? fixedMetrics.denseOutputElementWrites : adaptiveMetrics.denseOutputElementWrites) << ",\"denseOutputSeconds\":" << (fixedIntegrator != nullptr ? fixedMetrics.denseOutputSeconds : adaptiveMetrics.denseOutputSeconds) << ",\"errorPolicyBytes\":" << adaptiveMetrics.errorPolicyBytes << ",\"acceptedStepDiagnosticsComplete\":" << (adaptiveIntegrator == nullptr || adaptiveIntegrator->stepDiagnosticsComplete() ? "true" : "false") << ",\"acceptedSteps\":" << (adaptiveIntegrator != nullptr ? adaptiveStepDiagnosticsJSON(adaptiveIntegrator->stepDiagnostics()) : "[]") << "},"
+           << "\"integrator\":{\"id\":" << quoted(options.integrator) << ",\"controller\":" << quoted(adaptiveController) << ",\"relativeTolerance\":" << options.relativeTolerance << ",\"absoluteTolerance\":" << options.absoluteTolerance << ",\"requestedInitialStep\":" << (options.hasInitialStep ? std::to_string(options.initialStep) : "null") << ",\"effectiveInitialStep\":" << integrationInitialStep << ",\"requestedMaximumStep\":" << (options.hasMaximumStep ? std::to_string(options.maximumStep) : "null") << ",\"effectiveMaximumStep\":" << (hasAdaptiveIntegrator ? effectiveMaximumStep : options.deltaT) << ",\"toleranceHash\":" << quoted(hasAdaptiveIntegrator ? std::to_string(adaptiveToleranceHash) : "") << ",\"toleranceHashClearedMantissaBits\":20,\"toleranceComponentHashes\":" << (hasAdaptiveIntegrator ? unsignedIntegerArrayJSON(*adaptiveToleranceComponentHashes) : "[]") << ",\"lastNormalizedError\":" << adaptiveMetrics.normalizedError << ",\"lastProposedStepSize\":" << adaptiveMetrics.lastProposedStepSize << ",\"lastAcceptedStepSize\":" << adaptiveMetrics.lastAcceptedStepSize << ",\"nextStepSize\":" << integrator.nextStepSize() << ",\"fsalReuseCount\":" << adaptiveMetrics.fsalReuseCount << ",\"fsalInvalidationCount\":" << adaptiveMetrics.fsalInvalidationCount << ",\"rejectedInitialDerivativeReuseCount\":" << adaptiveMetrics.rejectedInitialDerivativeReuseCount << ",\"constraintModifiedCoefficientCount\":" << adaptiveMetrics.constraintModifiedCoefficientCount << ",\"denseOutputEvaluationCount\":" << (fixedIntegrator != nullptr ? fixedMetrics.denseOutputEvaluationCount : adaptiveMetrics.denseOutputEvaluationCount) << ",\"denseOutputElementReads\":" << (fixedIntegrator != nullptr ? fixedMetrics.denseOutputElementReads : adaptiveMetrics.denseOutputElementReads) << ",\"denseOutputElementWrites\":" << (fixedIntegrator != nullptr ? fixedMetrics.denseOutputElementWrites : adaptiveMetrics.denseOutputElementWrites) << ",\"denseOutputSeconds\":" << (fixedIntegrator != nullptr ? fixedMetrics.denseOutputSeconds : adaptiveMetrics.denseOutputSeconds) << ",\"stateCapacityBytes\":" << adaptiveMetrics.stateCapacityBytes << ",\"workspaceStateEquivalentCount\":" << adaptiveMetrics.workspaceStateEquivalentCount << ",\"denseHistoryStateEquivalentCount\":" << adaptiveMetrics.denseHistoryStateEquivalentCount << ",\"errorPolicyBytes\":" << adaptiveMetrics.errorPolicyBytes << ",\"diagnosticBytes\":" << adaptiveMetrics.diagnosticCapacityBytes << ",\"stageBufferLastUse\":" << (hasAdaptiveIntegrator ? adaptiveStageBufferLastUseJSON(adaptiveStageBufferLastUse,adaptiveStageBufferLastUseCount) : "[]") << ",\"acceptedStepDiagnosticsComplete\":" << (adaptiveDiagnosticsComplete ? "true" : "false") << ",\"acceptedSteps\":" << (hasAdaptiveIntegrator ? adaptiveStepDiagnosticsJSON(*adaptiveDiagnostics) : "[]") << "},"
            << "\"authorBenchmark\":{\"warmupStepCount\":" << options.benchmarkWarmupSteps << ",\"sampleStepCount\":" << (options.hasSteps ? options.steps : 0) << ",\"denseOutputsPerStep\":" << options.benchmarkDenseOutputsPerStep << ",\"requestedOutputCount\":" << options.benchmarkOutputCount << ",\"interpolatedOutputCount\":" << interpolatedOutputCount << ",\"interpolationSeconds\":" << driverInterpolationSeconds << "},"
            << "\"forcing\":" << forcingJSON(activeForcingSchedule) << ','
            << "\"timingSeconds\":{\"inspect\":" << timings.inspect << ",\"read\":" << timings.read << ",\"construct\":" << timings.construct << ",\"prepare\":" << timings.prepare << ",\"integrate\":" << timings.integrate << ",\"write\":" << timings.write << ",\"total\":" << timings.total << "},"
@@ -1080,7 +1128,7 @@ int wavevortex::runtime::runWaveVortex(
            << "\"storageBytes\":{\"checkpointState\":" << checkpointStateBytes << ",\"modelFacade\":" << modelMetrics.modelPersistentBytes << ",\"modelState\":" << modelMetrics.statePersistentBytes << ",\"extensionCatalog\":" << modelMetrics.catalogPersistentBytes << ",\"integrationSystem\":" << modelMetrics.integrationSystemPersistentBytes << ",\"integratorPersistent\":" << modelMetrics.integratorPersistentBytes << ",\"modelOutputConfiguration\":" << modelMetrics.outputConfigurationPersistentBytes << ",\"modelOutputEvaluation\":" << modelMetrics.outputEvaluationPersistentBytes << ",\"modelOutputSink\":" << modelMetrics.outputSinkPersistentBytes << ",\"modelOutput\":" << modelMetrics.outputPersistentBytes << ",\"descriptor\":" << kernelMetrics.descriptorBytes << ",\"planWrapper\":" << kernelMetrics.planBytes << ",\"kernelEngine\":" << kernelMetrics.engineBytes << ",\"kernelManagement\":" << kernelMetrics.kernelManagementBytes << ",\"kernelScratch\":" << kernelMetrics.scratchCapacityBytes << ",\"forcingSchedule\":" << forcingMetrics.scheduleBytes << ",\"forcingDerivedOperators\":" << forcingMetrics.derivedOperatorBytes << ",\"forcingWorkspace\":" << forcingMetrics.workspaceCapacityBytes << ",\"integratorWorkspace\":" << integratorWorkspaceCapacityBytes << ",\"integratorDiagnostics\":" << integratorDiagnosticBytes << ",\"denseHistory\":" << denseHistoryBytes << ",\"driverInterpolationMaximumLive\":" << driverInterpolationMaximumLiveBytes << ",\"occurrenceWorkspace\":" << occurrenceWorkspaceRetainedBytes << ",\"scheduledOutput\":" << scheduledOutputBytes << ",\"knownPersistent\":" << knownPersistentBytes << ",\"fullModelPersistent\":" << fullModelRetainedBytes << ",\"persistentFullHermitian\":0},"
            << "\"arrayTraffic\":{\"scope\":\"exact fixed-RK4 integration-boundary arrays; adaptive traffic is reported through method metrics\",\"elementBytes\":" << sizeof(WVComplex64) << ",\"integrator\":{\"stageStateConstructionReads\":" << fixedMetrics.stageStateConstructionElementReads << ",\"stageStateConstructionWrites\":" << fixedMetrics.stageStateConstructionElementWrites << ",\"stageFluxClearWrites\":" << fixedMetrics.stageFluxClearElementWrites << ",\"weightedFluxClearWrites\":" << fixedMetrics.weightedFluxClearElementWrites << ",\"weightedFluxInitializationReads\":" << fixedMetrics.weightedFluxInitializationElementReads << ",\"weightedFluxInitializationWrites\":" << fixedMetrics.weightedFluxInitializationElementWrites << ",\"weightedAccumulationReads\":" << fixedMetrics.weightedAccumulationElementReads << ",\"weightedAccumulationWrites\":" << fixedMetrics.weightedAccumulationElementWrites << ",\"finalStateUpdateReads\":" << fixedMetrics.finalStateUpdateElementReads << ",\"finalStateUpdateWrites\":" << fixedMetrics.finalStateUpdateElementWrites << ",\"acceptedStateCommitReads\":" << fixedMetrics.acceptedStateCommitElementReads << ",\"acceptedStateCommitWrites\":" << fixedMetrics.acceptedStateCommitElementWrites << "},\"forcing\":{\"accumulatorClearWrites\":" << forcingMetrics.accumulatorClearElementWrites << ",\"temporaryFluxClearWrites\":" << forcingMetrics.temporaryFluxClearElementWrites << ",\"kernelOutputInitializationWrites\":" << forcingMetrics.kernelOutputInitializationElementWrites << ",\"temporaryAccumulationReads\":" << forcingMetrics.temporaryAccumulationElementReads << ",\"temporaryAccumulationWrites\":" << forcingMetrics.temporaryAccumulationElementWrites << ",\"outputCopyReads\":" << forcingMetrics.outputCopyElementReads << ",\"outputCopyWrites\":" << forcingMetrics.outputCopyElementWrites << ",\"stateConstraintWrites\":" << forcingMetrics.stateConstraintElementWrites << "},\"totals\":{\"elementReads\":" << trafficElementReads << ",\"elementWrites\":" << trafficElementWrites << ",\"bytesRead\":" << trafficElementReads*sizeof(WVComplex64) << ",\"bytesWritten\":" << trafficElementWrites*sizeof(WVComplex64) << "}},"
            << "\"forcingOperations\":{\"evaluationCount\":" << forcingMetrics.evaluationCount << ",\"physicalFieldReconstructionCount\":" << forcingMetrics.physicalFieldReconstructionCount << ",\"physicalFieldReuseCount\":" << forcingMetrics.physicalFieldReuseCount << ",\"spatialTendencyProjectionCount\":" << forcingMetrics.spatialTendencyProjectionCount << ",\"spatialTendencyClearElementWrites\":" << forcingMetrics.spatialTendencyClearElementWrites << "},"
-           << "\"livenessBytes\":{\"integratorWorkspaceLive\":" << integratorWorkspaceLiveBytes << ",\"integratorWorkspaceMaximumLive\":" << integratorWorkspaceMaximumLiveBytes << ",\"forcingWorkspaceLive\":" << forcingMetrics.workspaceLiveBytes << ",\"forcingWorkspaceMaximumLive\":" << forcingMetrics.workspaceMaximumLiveBytes << ",\"acceptedStepAdditionalArrayStorage\":" << denseHistoryBytes << ",\"contractAbstractionAdditionalArrayStorage\":0,\"contractAbstractionMaximumLiveArrayStorage\":" << driverInterpolationMaximumLiveBytes << ",\"outputDriverRetained\":0,\"outputDriverMaximumLive\":" << outputDriverMaximumLiveBytes << ",\"outputPlanMaximumLive\":" << outputPlanMaximumLiveBytes << ",\"outputOrchestrationMaximumLive\":" << outputOrchestrationMaximumLiveBytes << ",\"occurrenceWorkspaceRetained\":" << occurrenceWorkspaceRetainedBytes << ",\"occurrenceWorkspaceMaximumLive\":" << occurrenceWorkspaceMaximumLiveBytes << ",\"knownRetained\":" << knownPersistentBytes << ",\"knownMaximumLive\":" << knownPersistentBytes+outputOrchestrationMaximumLiveBytes << ",\"fullModelRetained\":" << fullModelRetainedBytes << ",\"fullModelMaximumLive\":" << fullModelMaximumLiveBytes << "},"
+           << "\"livenessBytes\":{\"integratorWorkspaceLive\":" << integratorWorkspaceLiveBytes << ",\"integratorWorkspaceMaximumLive\":" << integratorWorkspaceMaximumLiveBytes << ",\"forcingWorkspaceLive\":" << forcingMetrics.workspaceLiveBytes << ",\"forcingWorkspaceMaximumLive\":" << forcingMetrics.workspaceMaximumLiveBytes << ",\"denseHistoryRetainedWithinWorkspace\":" << denseHistoryBytes << ",\"acceptedStepAdditionalArrayStorage\":0,\"contractAbstractionAdditionalArrayStorage\":0,\"contractAbstractionMaximumLiveArrayStorage\":" << driverInterpolationMaximumLiveBytes << ",\"outputDriverRetained\":0,\"outputDriverMaximumLive\":" << outputDriverMaximumLiveBytes << ",\"outputPlanMaximumLive\":" << outputPlanMaximumLiveBytes << ",\"outputOrchestrationMaximumLive\":" << outputOrchestrationMaximumLiveBytes << ",\"occurrenceWorkspaceRetained\":" << occurrenceWorkspaceRetainedBytes << ",\"occurrenceWorkspaceMaximumLive\":" << occurrenceWorkspaceMaximumLiveBytes << ",\"knownRetained\":" << knownPersistentBytes << ",\"knownMaximumLive\":" << knownPersistentBytes+outputOrchestrationMaximumLiveBytes << ",\"fullModelRetained\":" << fullModelRetainedBytes << ",\"fullModelMaximumLive\":" << fullModelMaximumLiveBytes << "},"
            << "\"rssBytes\":{\"integrationBaseline\":" << integrationBaselineRSS << ",\"processPeak\":" << integrationPeakRSS << ",\"peakIncrementLowerBound\":" << (integrationPeakRSS > integrationBaselineRSS ? integrationPeakRSS-integrationBaselineRSS : 0) << "},"
            << "\"integrationBreakdownSeconds\":{\"rightHandSide\":" << integratedObserverMetrics.rightHandSideSeconds << ",\"waveVortexFlux\":" << integratedObserverMetrics.waveVortexFluxSeconds << ",\"additionalStateClear\":" << integratedObserverMetrics.additionalStateClearSeconds << ",\"tracerAdvection\":" << integratedObserverMetrics.tracerAdvectionSeconds << ",\"tracerForward\":" << kernelMetrics.scalarForwardSeconds << ",\"tracerDerivativeAssembly\":" << kernelMetrics.scalarDerivativeAssemblySeconds << ",\"tracerVerticalDerivative\":" << kernelMetrics.scalarVerticalDerivativeSeconds << ",\"tracerInverse\":" << kernelMetrics.scalarInverseSeconds << ",\"tracerProduct\":" << kernelMetrics.scalarProductSeconds << ",\"tracerAntialias\":" << kernelMetrics.scalarAntialiasSeconds << ",\"particleAdvection\":" << integratedObserverMetrics.particleAdvectionSeconds << ",\"denseInterpolation\":" << driverInterpolationSeconds << ",\"observerEvaluation\":" << outputEvaluationMetrics.evaluationSeconds << ",\"outputPayloadWrite\":" << modelOutputMetrics.payloadWriteSeconds << ",\"outputSynchronization\":" << modelOutputMetrics.synchronizationSeconds << "},"
            << "\"execution\":{\"engine\":" << quoted(kernel.engineIdentifier()) << ",\"library\":" << quoted(kernel.engineLibraryIdentity()) << ",\"schedule\":" << quoted(integrationSystem.scheduleIdentifier()) << ",\"planCount\":" << kernelMetrics.planCount << ",\"noFallback\":true}";

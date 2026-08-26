@@ -18,7 +18,11 @@ struct WVIntegratorMetrics {
   std::size_t rejectedStepCount = 0;
   std::size_t denseOutputEvaluationCount = 0;
   std::size_t errorPolicyBytes = 0;
+  std::size_t diagnosticCapacityBytes = 0;
   std::size_t denseHistoryCapacityBytes = 0;
+  std::size_t stateCapacityBytes = 0;
+  std::size_t workspaceStateEquivalentCount = 0;
+  std::size_t denseHistoryStateEquivalentCount = 0;
   double lastStepSize = 0.0;
   double lastProposedStepSize = 0.0;
   double lastAcceptedStepSize = 0.0;
@@ -49,6 +53,7 @@ struct WVIntegratorMetrics {
 
 using WVFixedStepRK4Metrics = WVIntegratorMetrics;
 using WVAdaptiveRK23Metrics = WVIntegratorMetrics;
+using WVAdaptiveRK45Metrics = WVIntegratorMetrics;
 
 struct WVFixedStepRK4Options {
   bool retainDenseOutput = false;
@@ -117,9 +122,10 @@ struct WVAdaptiveRK23Options {
   double maximumStepFactor = 5.0;
   double maximumStepSize = std::numeric_limits<double>::infinity();
   std::size_t maximumRecordedStepDiagnostics = 512;
+  bool retainDenseOutput = true;
 };
 
-struct WVAdaptiveRK23StepDiagnostic {
+struct WVAdaptiveRKStepDiagnostic {
   double initialTime = 0.0;
   double acceptedStepSize = 0.0;
   double normalizedError = 0.0;
@@ -129,8 +135,16 @@ struct WVAdaptiveRK23StepDiagnostic {
   bool reusedFSALDerivative = false;
 };
 
+using WVAdaptiveRK23StepDiagnostic = WVAdaptiveRKStepDiagnostic;
+
+struct WVAdaptiveRKStageBufferLastUse {
+  const char *bufferIdentifier = nullptr;
+  const char *lastUse = nullptr;
+  std::size_t stage = 0;
+};
+
 class WVAdaptiveRK23 final : public WVTimeIntegrator,
-                                      public WVDenseOutput {
+                             public WVDenseOutput {
 public:
   explicit WVAdaptiveRK23(WVIntegrationSystem &system,
                           WVAdaptiveRK23Options options = {});
@@ -158,9 +172,7 @@ public:
   const WVAcceptedStep *lastAcceptedStep() const noexcept override {
     return hasAcceptedStep_ ? &acceptedStep_ : nullptr;
   }
-  const WVIntegratorMetrics &metrics() const noexcept {
-    return metrics_;
-  }
+  const WVIntegratorMetrics &metrics() const noexcept { return metrics_; }
   const std::vector<WVAdaptiveRK23StepDiagnostic> &stepDiagnostics() const
       noexcept {
     return stepDiagnostics_;
@@ -175,6 +187,12 @@ public:
   static constexpr const char *controllerIdentifier() noexcept {
     return "matlab-ode23-v1";
   }
+  static constexpr const char *methodIdentifier() noexcept {
+    return "adaptive-rk23";
+  }
+  static const WVAdaptiveRKStageBufferLastUse *stageBufferLastUseRecords()
+      noexcept;
+  static std::size_t stageBufferLastUseRecordCount() noexcept;
   double nextStepSize() const noexcept override { return nextStepSize_; }
   std::size_t persistentBytes() const noexcept override;
 
@@ -200,6 +218,89 @@ public:
   ~WVAdaptiveRK23();
   WVAdaptiveRK23(const WVAdaptiveRK23 &) = delete;
   WVAdaptiveRK23 &operator=(const WVAdaptiveRK23 &) = delete;
+};
+
+struct WVAdaptiveRK45Options {
+  double relativeTolerance = 1e-3;
+  double absoluteToleranceScale = 1e-6;
+  double safetyFactor = 0.8;
+  double rejectionFloorFactor = 0.1;
+  double repeatedRejectionFactor = 0.5;
+  double maximumStepFactor = 5.0;
+  double maximumStepSize = std::numeric_limits<double>::infinity();
+  std::size_t maximumRecordedStepDiagnostics = 512;
+  bool retainDenseOutput = true;
+};
+
+using WVAdaptiveRK45StepDiagnostic = WVAdaptiveRKStepDiagnostic;
+
+class WVAdaptiveRK45 final : public WVTimeIntegrator,
+                             public WVDenseOutput {
+public:
+  explicit WVAdaptiveRK45(WVIntegrationSystem &system,
+                          WVAdaptiveRK45Options options = {});
+  const WVIntegrationStateLayout &stateLayout() const noexcept override {
+    return system_.stateLayout();
+  }
+  WVKernelStatus
+  prepareStateAfterRestart(WVMutableIntegrationState &state) override;
+  WVKernelStatus step(WVMutableIntegrationState &state,
+                      double proposedStepSize) override;
+  WVKernelStatus advanceToTime(WVMutableIntegrationState &state,
+                               double finalTime,
+                               double initialStepSize) override;
+  WVKernelStatus evaluateDenseOutput(double time,
+                                     WVMutableIntegrationState &output) const;
+  WVKernelStatus
+  evaluateState(double time, WVMutableIntegrationState &output) const override {
+    return evaluateDenseOutput(time, output);
+  }
+  double initialTime() const noexcept override;
+  double finalTime() const noexcept override;
+  const WVAcceptedStep *lastAcceptedStep() const noexcept override;
+  const WVIntegratorMetrics &metrics() const noexcept;
+  const std::vector<WVAdaptiveRK45StepDiagnostic> &stepDiagnostics() const
+      noexcept;
+  std::uint64_t toleranceHash() const noexcept;
+  const std::vector<std::uint64_t> &toleranceComponentHashes() const noexcept;
+  bool stepDiagnosticsComplete() const noexcept;
+  static constexpr const char *controllerIdentifier() noexcept {
+    return "matlab-ode45-v1";
+  }
+  static constexpr const char *methodIdentifier() noexcept {
+    return "adaptive-rk45";
+  }
+  static const WVAdaptiveRKStageBufferLastUse *stageBufferLastUseRecords()
+      noexcept;
+  static std::size_t stageBufferLastUseRecordCount() noexcept;
+  double nextStepSize() const noexcept override;
+  std::size_t persistentBytes() const noexcept override;
+
+private:
+  class Workspace;
+  WVKernelStatus ensureWorkspace(const WVMutableIntegrationState &state);
+  WVKernelStatus stepImplementation(WVMutableIntegrationState &state,
+                                    double proposedStepSize,
+                                    bool allowFinalStepStretch);
+  WVIntegrationSystem &system_;
+  WVAdaptiveRK45Options options_;
+  std::unique_ptr<WVIntegrationErrorPolicy> errorPolicy_;
+  Workspace *workspace_ = nullptr;
+  WVAcceptedStep acceptedStep_;
+  mutable WVIntegratorMetrics metrics_;
+  std::vector<WVAdaptiveRK45StepDiagnostic> stepDiagnostics_;
+  std::vector<std::uint64_t> toleranceComponentHashes_;
+  std::uint64_t toleranceHash_ = 0;
+  double nextStepSize_ = 0.0;
+  bool hasAcceptedStep_ = false;
+  bool fsalAvailable_ = false;
+  bool stepping_ = false;
+  mutable bool evaluatingDenseOutput_ = false;
+
+public:
+  ~WVAdaptiveRK45();
+  WVAdaptiveRK45(const WVAdaptiveRK45 &) = delete;
+  WVAdaptiveRK45 &operator=(const WVAdaptiveRK45 &) = delete;
 };
 
 } // namespace wavevortex::runtime
