@@ -1,6 +1,6 @@
 # WaveVortex portable runtime
 
-This directory contains the optional, MATLAB-independent constant-stratification runtime. MATLAB remains WaveVortexModel's primary interface. The portable runtime is a source-only checkpoint-to-checkpoint tool for advanced users and the stable v1 source-level surface for statically linked C++ observing-system, output-schedule, and forcing implementations.
+This directory contains the optional MATLAB-independent portable runtime. MATLAB remains WaveVortexModel's primary interface. The currently qualified production kernel, field service, and NetCDF adapter are constant-stratification implementations; the integration and state contracts select those implementations behind a transform-neutral boundary. The runtime is a source-only checkpoint-to-checkpoint tool for advanced users and the stable v1 source-level surface for statically linked C++ observing-system, output-schedule, and forcing implementations.
 
 The runtime supports:
 
@@ -92,7 +92,11 @@ Plans, caches, integrator history, derived forcing operators, and scratch are re
 
 ## Architecture
 
-`WVIntegrationStateLayout` describes canonical `Ap`, `Am`, and `A0` plus any observer-owned state blocks. `WVIntegrationSystem` supplies the right-hand side and constraints, `WVTimeIntegrator` advances accepted state, and `WVDenseOutput` evaluates within an accepted step. Output orchestration depends only on those contracts, so another integrator or state block does not require changes to the driver.
+`WVIntegrationStateLayout` freezes the transform identity, spatial dimensions, ordered coefficient-family identifiers, each family's natural spectral rank, and any observer-owned state blocks before state allocation. The constant-stratification adapter declares rank-2 `Ap`, `Am`, and `A0` families and retains its stabilized `WVState` views. Transform-neutral integration uses ordered `WVCoefficientFamilyView` values, so a one-family transform owns and advances only that family; it does not allocate dummy `Ap` or `Am` arrays or a state-sized compatibility copy.
+
+`WVIntegrationSystem` supplies the selected right-hand side, constraints, error scaling, and optional field-evaluation service. `WVTimeIntegrator` advances accepted state, and `WVDenseOutput` evaluates within an accepted step. RK4, adaptive RK3(2), and output interpolation traverse the frozen family descriptions rather than assuming three equal rank-2 arrays. Output orchestration depends only on those contracts, so another integrator, coefficient-family layout, or state block does not require a method branch in the driver.
+
+Checkpoint inspection resolves the persisted transform identity before reading transform configuration or inspecting coefficient variables. The selected persistence adapter then publishes its allocation-light spatial and coefficient-rank description; only a successful complete preflight may allocate and load state-sized arrays. Existing WaveVortexModel 4.x constant-stratification NetCDF, run-request v1, observer, forcing, output, restart, and export encodings are unchanged. A transform-neutral owning checkpoint record is available to transform-specific adapters, while each adapter remains responsible for its own encoding. There is no dynamic transform plug-in or native C++ transform-authoring API.
 
 `WVModel` composes these services but does not replace them. High-level restart, RHS, step, integration, output progress, and metrics operations delegate to the same contracts used before the façade. Model-output construction inspects all sibling files together, restores the latest complete compatible state, and compiles the recovered graph directly into the existing plan and sink. It retains shared ownership of the frozen catalog for as long as resolved implementations depend on it.
 

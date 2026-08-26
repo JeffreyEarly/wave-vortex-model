@@ -48,10 +48,13 @@ class UnifiedErrorPolicy final : public WVIntegrationErrorPolicy {
 public:
   UnifiedErrorPolicy(std::unique_ptr<WVIntegrationErrorPolicy> coefficients,
                      const WVIntegrationStateLayout &layout)
-      : coefficients_(std::move(coefficients)) {
-    counts_.reserve(3 + layout.additionalBlocks().size());
-    tolerances_.reserve(3 + layout.additionalBlocks().size());
-    for (std::size_t component = 0; component < 3; ++component) {
+      : coefficients_(std::move(coefficients)),
+        coefficientFamilyCount_(layout.coefficientFamilyCount()) {
+    counts_.reserve(coefficientFamilyCount_ + layout.additionalBlocks().size());
+    tolerances_.reserve(coefficientFamilyCount_ +
+                        layout.additionalBlocks().size());
+    for (std::size_t component = 0; component < coefficientFamilyCount_;
+         ++component) {
       counts_.push_back(coefficients_->elementCount(component));
       tolerances_.push_back(0.0);
     }
@@ -69,7 +72,7 @@ public:
   }
   double absoluteTolerance(std::size_t component,
                            std::size_t index) const noexcept override {
-    if (component < 3)
+    if (component < coefficientFamilyCount_)
       return coefficients_->absoluteTolerance(component, index);
     return component < tolerances_.size() ? tolerances_[component] : 0.0;
   }
@@ -81,6 +84,7 @@ public:
 
 private:
   std::unique_ptr<WVIntegrationErrorPolicy> coefficients_;
+  std::size_t coefficientFamilyCount_ = 0;
   std::vector<std::size_t> counts_;
   std::vector<double> tolerances_;
 };
@@ -134,11 +138,21 @@ WVKernelStatus WVConstantStratificationIntegrationSystem::createImpl(
       return status;
     const auto coefficientShape =
         candidate->forcing_->kernel().descriptor().spectralShape();
+    WVTransformStateDescription stateDescription{
+        "WVTransformConstantStratification",
+        {configuration.Nx, configuration.Ny, configuration.Nz},
+        {{"Ap", {coefficientShape.rows, coefficientShape.columns},
+          WVToleranceKind::coefficientEnergyScaled},
+         {"Am", {coefficientShape.rows, coefficientShape.columns},
+          WVToleranceKind::coefficientEnergyScaled},
+         {"A0", {coefficientShape.rows, coefficientShape.columns},
+          WVToleranceKind::coefficientEnergyScaled}}};
     status = descriptor == nullptr
                  ? WVIntegrationStateLayout::createCoefficientOnly(
-                       coefficientShape, candidate->layout_)
+                       std::move(stateDescription), candidate->layout_)
                  : WVIntegrationStateLayout::create(
-                       coefficientShape, *descriptor, candidate->layout_);
+                       std::move(stateDescription), *descriptor,
+                       candidate->layout_);
     if (!status)
       return status;
 

@@ -8,6 +8,7 @@
 #include <limits>
 #include <map>
 #include <new>
+#include <set>
 #include <utility>
 
 namespace wavevortex::runtime {
@@ -28,10 +29,6 @@ WVKernelStatus invalid(std::string message) {
 
 std::size_t stringBytes(const std::string &value) noexcept {
   return value.capacity();
-}
-
-bool canonicalBlock(const std::string &identifier) noexcept {
-  return identifier == "Ap" || identifier == "Am" || identifier == "A0";
 }
 
 bool sameStateBlockRecord(const WVStateBlockRecord &first,
@@ -99,15 +96,20 @@ validateDescriptorLayout(const WVPortableObserverRecord &record,
                   layout.observerRecords().begin(), sameObserverRecord))
     return invalid("Output plan observer descriptor does not match the "
                    "integrator layout descriptor.");
-  const auto coefficientShape = layout.coefficientShape();
-  const std::vector<std::size_t> coefficientDimensions{
-      coefficientShape.rows, coefficientShape.columns};
+  std::set<std::string> observedCoefficientFamilies;
   std::size_t additionalIndex = 0;
   for (const auto &block : record.stateBlocks) {
-    if (canonicalBlock(block.identifier)) {
+    const auto family = std::find_if(
+        layout.coefficientFamilies().begin(),
+        layout.coefficientFamilies().end(), [&](const auto &candidate) {
+          return candidate.identifier == block.identifier;
+        });
+    if (family != layout.coefficientFamilies().end()) {
       if (block.scalarType != WVStateScalarType::complex64 ||
-          block.dimensions != coefficientDimensions ||
-          block.ownership != WVStateOwnership::integratorOwned)
+          block.dimensions != family->spectralDimensions ||
+          block.toleranceKind != family->toleranceKind ||
+          block.ownership != WVStateOwnership::integratorOwned ||
+          !observedCoefficientFamilies.insert(block.identifier).second)
         return invalid("Output descriptor canonical coefficient blocks do not "
                        "match the integrator state layout.");
       continue;
@@ -132,6 +134,9 @@ validateDescriptorLayout(const WVPortableObserverRecord &record,
   if (additionalIndex != layout.additionalBlocks().size())
     return invalid("Integrator layout contains integrated state blocks that "
                    "are absent from the output descriptor.");
+  if (observedCoefficientFamilies.size() != layout.coefficientFamilyCount())
+    return invalid("Output descriptor is missing a transform coefficient "
+                   "family required by the integrator layout.");
   return WVKernelStatus::ok();
 }
 
@@ -144,17 +149,16 @@ WVKernelStatus copyIntegrationState(const WVIntegrationStateLayout &layout,
   status = validateMutableIntegrationState(layout, destination);
   if (!status)
     return status;
-  const auto count = layout.coefficientShape().elementCount();
-  const WVComplexConstView sourceCoefficients[] = {
-      source.waveVortex.coefficients.Ap, source.waveVortex.coefficients.Am,
-      source.waveVortex.coefficients.A0};
-  WVComplexView destinationCoefficients[] = {
-      destination.waveVortex.coefficients.Ap,
-      destination.waveVortex.coefficients.Am,
-      destination.waveVortex.coefficients.A0};
-  for (std::size_t component = 0; component < 3; ++component)
-    std::copy_n(sourceCoefficients[component].data, count,
-                destinationCoefficients[component].data);
+  for (std::size_t family = 0; family < layout.coefficientFamilyCount();
+       ++family) {
+    const auto sourceCoefficients =
+        coefficientFamilyView(layout, source, family);
+    const auto destinationCoefficients =
+        coefficientFamilyView(layout, destination, family);
+    std::copy_n(sourceCoefficients.data,
+                layout.coefficientFamilies()[family].elementCount,
+                destinationCoefficients.data);
+  }
   for (std::size_t block = 0; block < source.additionalBlockCount; ++block) {
     const auto &metadata = *source.additionalBlocks[block].layout;
     if (metadata.scalarType == WVStateScalarType::real64)
@@ -356,23 +360,50 @@ WVOutputPlan::create(const WVPortableObserverDescriptor &descriptor,
     return invalid("Output planning requires a finite, nondecreasing "
                    "integration interval.");
   try {
-    auto candidate = std::make_unique<Impl>();
     if (descriptor.catalog() != catalog)
       return invalid("Output plan and observer descriptor require the same catalog.");
-    candidate->descriptor = descriptor;
-    const auto &record = candidate->descriptor.record();
+    const auto &record = descriptor.record();
     const auto canonical = std::find_if(
         record.stateBlocks.begin(), record.stateBlocks.end(),
         [](const auto &block) { return block.identifier == "Ap"; });
     if (canonical == record.stateBlocks.end() ||
         canonical->dimensions.size() != 2)
       return invalid("Output planning requires a canonical [Nj,Nkl] Ap block.");
+    WVIntegrationStateLayout layout;
     auto layoutStatus = WVIntegrationStateLayout::create(
         {canonical->dimensions[0], canonical->dimensions[1]}, descriptor,
-        candidate->stateLayout);
+        layout);
     if (!layoutStatus)
       return layoutStatus;
-    layoutStatus =
+    return create(layout, descriptor, std::move(catalog), initialTime,
+                  finalTime, suppliedContinuations, plan);
+  } catch (const std::bad_alloc &) {
+    return {WVKernelStatusCode::allocationFailure,
+            "Output planning allocation failed."};
+  }
+}
+
+WVKernelStatus WVOutputPlan::create(
+    const WVIntegrationStateLayout &layout,
+    const WVPortableObserverDescriptor &descriptor,
+    std::shared_ptr<const WVExtensionCatalog> catalog, double initialTime,
+    double finalTime,
+    const std::vector<WVOutputScheduleContinuation> &suppliedContinuations,
+    WVOutputPlan &plan) {
+  if (!catalog)
+    return invalid("Output planning requires an extension catalog.");
+  if (!std::isfinite(initialTime) || !std::isfinite(finalTime) ||
+      finalTime < initialTime)
+    return invalid("Output planning requires a finite, nondecreasing "
+                   "integration interval.");
+  try {
+    auto candidate = std::make_unique<Impl>();
+    if (descriptor.catalog() != catalog)
+      return invalid("Output plan and observer descriptor require the same catalog.");
+    candidate->descriptor = descriptor;
+    const auto &record = candidate->descriptor.record();
+    candidate->stateLayout = layout;
+    auto layoutStatus =
         validateDescriptorLayout(record, candidate->stateLayout);
     if (!layoutStatus)
       return layoutStatus;
@@ -625,10 +656,13 @@ public:
 
   WVTimeIntegrator &integrator;
   const WVOutputPlan &plan;
-  std::vector<WVComplex64> interpolationCoefficients;
+  WVCoefficientStateStorage interpolationCoefficients;
   WVAdditionalStateStorage interpolationAdditional;
   WVMutableIntegrationState interpolationState;
+  std::vector<WVCoefficientFamilyConstView>
+      interpolationCoefficientConstViews;
   std::vector<WVAdditionalStateBlockConstView> interpolationConstViews;
+  std::vector<WVCoefficientFamilyConstView> sourceCoefficientConstViews;
   std::vector<WVAdditionalStateBlockConstView> sourceConstViews;
   std::vector<WVOutputScheduleContinuation> continuations;
   std::vector<WVOutputScheduleOccurrence> nextOccurrences;
@@ -681,10 +715,14 @@ public:
   std::size_t persistentBytes() const noexcept {
     std::size_t bytes =
         sizeof(*this) +
-        interpolationCoefficients.capacity() * sizeof(WVComplex64) +
+        interpolationCoefficients.capacityBytes() +
         interpolationAdditional.capacityBytes() +
+        interpolationCoefficientConstViews.capacity() *
+            sizeof(WVCoefficientFamilyConstView) +
         interpolationConstViews.capacity() *
             sizeof(WVAdditionalStateBlockConstView) +
+        sourceCoefficientConstViews.capacity() *
+            sizeof(WVCoefficientFamilyConstView) +
         sourceConstViews.capacity() * sizeof(WVAdditionalStateBlockConstView) +
         continuations.capacity() * sizeof(WVOutputScheduleContinuation) +
         nextOccurrences.capacity() * sizeof(WVOutputScheduleOccurrence) +
@@ -758,31 +796,43 @@ public:
       return WVKernelStatus::ok();
     try {
       const auto &layout = integrator.stateLayout();
-      const auto count = layout.coefficientShape().elementCount();
-      if (count > std::numeric_limits<std::size_t>::max() / 3)
-        return {
-            WVKernelStatusCode::sizeOverflow,
-            "Integration interpolation coefficient count overflows size_t."};
-      interpolationCoefficients.assign(3 * count, WVComplex64{});
-      auto status = interpolationAdditional.initialize(layout);
+      auto status = interpolationCoefficients.initialize(layout);
       if (!status)
         return status;
-      const auto shape = layout.coefficientShape();
-      interpolationState = {
-          {0.0,
-           0.0,
-           {{interpolationCoefficients.data(), shape},
-            {interpolationCoefficients.data() + count, shape},
-            {interpolationCoefficients.data() + 2 * count, shape}}},
-          interpolationAdditional.mutableBlocks(),
-          interpolationAdditional.blockCount()};
+      status = interpolationAdditional.initialize(layout);
+      if (!status)
+        return status;
+      interpolationState.waveVortex.t = 0.0;
+      interpolationState.waveVortex.t0 = 0.0;
+      interpolationState.additionalBlocks =
+          interpolationAdditional.mutableBlocks();
+      interpolationState.additionalBlockCount =
+          interpolationAdditional.blockCount();
+      interpolationState.coefficientFamilies =
+          interpolationCoefficients.mutableFamilies();
+      interpolationState.coefficientFamilyCount =
+          interpolationCoefficients.familyCount();
+      if (layout.hasLegacyCoefficientTriple()) {
+        const auto shape = layout.coefficientShape();
+        auto *families = interpolationCoefficients.mutableFamilies();
+        interpolationState.waveVortex.coefficients =
+            {{families[0].data, shape}, {families[1].data, shape},
+             {families[2].data, shape}};
+      }
+      interpolationCoefficientConstViews.reserve(
+          layout.coefficientFamilyCount());
       interpolationConstViews.reserve(layout.additionalBlocks().size());
+      sourceCoefficientConstViews.reserve(layout.coefficientFamilyCount());
       sourceConstViews.reserve(layout.additionalBlocks().size());
       metrics.interpolationBufferCapacityBytes =
-          interpolationCoefficients.capacity() * sizeof(WVComplex64) +
+          interpolationCoefficients.capacityBytes() +
           interpolationAdditional.capacityBytes() +
+          interpolationCoefficientConstViews.capacity() *
+              sizeof(WVCoefficientFamilyConstView) +
           interpolationConstViews.capacity() *
               sizeof(WVAdditionalStateBlockConstView) +
+          sourceCoefficientConstViews.capacity() *
+              sizeof(WVCoefficientFamilyConstView) +
           sourceConstViews.capacity() *
               sizeof(WVAdditionalStateBlockConstView);
       metrics.interpolationBufferMaximumLiveBytes =
@@ -974,8 +1024,9 @@ public:
     if (!hasStagedEvent || !hasPendingEvent)
       return {WVKernelStatusCode::numericalFailure,
               "Output resume cursor has no staged event."};
-    const auto state =
-        integrationConstView(interpolationState, interpolationConstViews);
+    const auto state = integrationConstView(
+        interpolationState, interpolationCoefficientConstViews,
+        interpolationConstViews);
     WVOutputEvent event{stagedEventOrdinal,  stagedEventTime,
                         stagedEventKind,     state,
                         stagedRoutes.data(), stagedRoutes.size()};
@@ -1109,7 +1160,8 @@ WVKernelStatus WVOutputDriver::advanceToTime(WVMutableIntegrationState &state,
   while (impl_->hasPendingEvent &&
          impl_->stagedEventTime == impl_->plan.initialTime() &&
          state.waveVortex.t == impl_->plan.initialTime()) {
-    const auto initial = integrationConstView(state, impl_->sourceConstViews);
+    const auto initial = integrationConstView(
+        state, impl_->sourceCoefficientConstViews, impl_->sourceConstViews);
     status = impl_->stageEventState(WVOutputEventKind::initial, initial);
     if (!status)
       return status;

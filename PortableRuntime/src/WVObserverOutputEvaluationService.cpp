@@ -287,6 +287,7 @@ public:
   };
 
   WVTransformConstantStratificationConfiguration configuration;
+  WVIntegrationStateLayout stateLayout;
   bool isDynamicsLinear = false;
   WVPortableObserverDescriptor descriptor;
   std::unique_ptr<WVFieldEvaluationService> ownedFields;
@@ -307,7 +308,6 @@ public:
   std::vector<WVObserverOutputPlan> observerPlans;
   std::vector<WVEventFieldEvaluationPlan> eventFieldPlans;
   std::vector<std::vector<Output>> observerOutputs;
-  WVState preparedState;
   WVIntegrationState preparedIntegrationState;
   std::size_t preparedEventOrdinal = 0;
   double preparedScheduledTime = 0.0;
@@ -449,7 +449,6 @@ public:
     } else if (!initial && !movingFieldViews.empty()) {
       ++metrics.skippedParticleEvaluationCount;
     }
-    preparedState = state;
     preparedIntegrationState = integrationState == nullptr
                                    ? WVIntegrationState{state, nullptr, 0}
                                    : *integrationState;
@@ -510,12 +509,13 @@ public:
     value.extentCount = entry.extents.size();
     value.elementCount = elementCount(entry.extents);
     if (entry.source == WVObserverOutputChannelSource::coefficient) {
-      const auto &coefficients = preparedState.coefficients;
-      value.complex64 = entry.coefficientFamily == 0
-                            ? coefficients.Ap.data
-                            : entry.coefficientFamily == 1
-                                  ? coefficients.Am.data
-                                  : coefficients.A0.data;
+      const auto family = coefficientFamilyView(
+          stateLayout, preparedIntegrationState, entry.coefficientFamily);
+      if (family.layout == nullptr || family.data == nullptr ||
+          family.layout->elementCount != value.elementCount)
+        return invalid("Observer coefficient output does not match the "
+                       "resolved transform-family layout.");
+      value.complex64 = family.data;
       ++metrics.borrowedCoefficientViewCount;
       return WVKernelStatus::ok();
     }
@@ -573,6 +573,27 @@ WVKernelStatus WVObserverOutputEvaluationService::create(
     impl.descriptor = descriptor;
     const auto &descriptorRecord = impl.descriptor.record();
     WVKernelStatus status;
+    WVTransformConstantStratificationDescriptor transformDescriptor;
+    status = WVTransformConstantStratificationDescriptor::create(
+        configuration, transformDescriptor);
+    if (!status)
+      return status;
+    const auto coefficientShape = transformDescriptor.spectralShape();
+    const std::vector<std::size_t> coefficientDimensions{
+        coefficientShape.rows, coefficientShape.columns};
+    const WVTransformStateDescription stateDescription{
+        "WVTransformConstantStratification",
+        {configuration.Nx, configuration.Ny, configuration.Nz},
+        {{"Ap", coefficientDimensions,
+          WVToleranceKind::coefficientEnergyScaled},
+         {"Am", coefficientDimensions,
+          WVToleranceKind::coefficientEnergyScaled},
+         {"A0", coefficientDimensions,
+          WVToleranceKind::coefficientEnergyScaled}}};
+    status = WVIntegrationStateLayout::createCoefficientOnly(
+        stateDescription, impl.stateLayout);
+    if (!status)
+      return status;
     if (borrowedFieldEvaluationService == nullptr) {
       status = WVFieldEvaluationService::create(configuration, std::move(engine),
                                                 impl.ownedFields);
@@ -588,6 +609,7 @@ WVKernelStatus WVObserverOutputEvaluationService::create(
     planningContext.stateBlocks = descriptorRecord.stateBlocks.data();
     planningContext.stateBlockCount = descriptorRecord.stateBlocks.size();
     planningContext.isDynamicsLinear = isDynamicsLinear;
+    planningContext.stateLayout = &impl.stateLayout;
     std::vector<WVFieldRequest> initialRequests;
     std::vector<WVFieldRequest> timeSeriesRequests;
     std::map<std::string, std::size_t> initialRequestIndex;
@@ -601,10 +623,13 @@ WVKernelStatus WVObserverOutputEvaluationService::create(
         [&](const std::string &identifier, std::size_t &resolvedIndex) {
           resolvedIndex = 0;
           for (const auto &block : descriptorRecord.stateBlocks) {
-            const bool canonical = block.identifier == "Ap" ||
-                                   block.identifier == "Am" ||
-                                   block.identifier == "A0";
-            if (canonical ||
+            const bool coefficientFamily = std::any_of(
+                impl.stateLayout.coefficientFamilies().begin(),
+                impl.stateLayout.coefficientFamilies().end(),
+                [&](const auto &family) {
+                  return family.identifier == block.identifier;
+                });
+            if (coefficientFamily ||
                 block.ownership != WVStateOwnership::integratorOwned)
               continue;
             if (block.identifier == identifier)
@@ -1363,6 +1388,7 @@ std::size_t WVObserverOutputEvaluationService::persistentBytes() const noexcept 
     return sizeof(*this);
   std::size_t bytes =
       sizeof(*this) + sizeof(Impl) +
+      impl_->stateLayout.persistentBytes() +
       (impl_->ownedFields ? impl_->ownedFields->persistentBytes() : 0) +
       impl_->initialFieldPlan.persistentBytes() -
           sizeof(impl_->initialFieldPlan) +

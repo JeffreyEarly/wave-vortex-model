@@ -7,9 +7,11 @@
 
 namespace wavevortex::runtime {
 
+class WVFieldEvaluationService;
+
 // Method-neutral absolute-error policy. Components are addressed by the
-// integration layout's stable order: Ap, Am, A0, then each additional state
-// block. Numerical methods never inspect observer identity.
+// integration layout's stable coefficient-family order, then each additional
+// state block. Numerical methods never inspect transform or observer identity.
 class WVIntegrationErrorPolicy {
 public:
   virtual ~WVIntegrationErrorPolicy() = default;
@@ -42,6 +44,12 @@ public:
   virtual WVKernelStatus
   createErrorPolicy(double absoluteToleranceScale,
                     std::unique_ptr<WVIntegrationErrorPolicy> &policy) const = 0;
+  // Optional transform-selected service consumed through the neutral model
+  // boundary. Integrators do not depend on field evaluation.
+  virtual WVFieldEvaluationService *fieldEvaluationService() noexcept {
+    return nullptr;
+  }
+  virtual std::size_t persistentBytes() const noexcept { return 0; }
 };
 
 // Method-owned continuous extension over the most recent accepted interval.

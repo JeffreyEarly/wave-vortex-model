@@ -459,6 +459,13 @@ WVCheckpointStatus inspectOpenFile(
     if (Nj == 0 || Nkl == 0) return status(WVCheckpointStatusCode::invalidValue, "Checkpoint spectral dimensions must be nonempty.", stateGroup.path);
     candidate.configuration.Nj = Nj;
     candidate.coefficientShape = {Nj, Nkl};
+    candidate.stateDescription = {
+        candidate.metadata.transformClass,
+        {candidate.configuration.Nx, candidate.configuration.Ny,
+         candidate.configuration.Nz},
+        {{"Ap", {Nj, Nkl}, WVToleranceKind::coefficientEnergyScaled},
+         {"Am", {Nj, Nkl}, WVToleranceKind::coefficientEnergyScaled},
+         {"A0", {Nj, Nkl}, WVToleranceKind::coefficientEnergyScaled}}};
     for (const char* family : {"Ap", "Am", "A0"}) {
         result = readComplexCoefficient(stateGroup.id, stateGroup.path, family, candidate.metadata.selectedStateIndex, candidate.metadata.stateCount, Nj, Nkl, nullptr);
         if (!result) return result;
