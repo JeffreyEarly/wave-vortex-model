@@ -1372,18 +1372,6 @@ WVKernelStatus WVAdaptiveRK23::evaluateDenseOutput(
   auto status = validateMutableIntegrationState(system_.stateLayout(), output);
   if (!status)
     return status;
-  const WVComplexView outputLegacy[] = {output.waveVortex.coefficients.Ap,
-                                        output.waveVortex.coefficients.Am,
-                                        output.waveVortex.coefficients.A0};
-  const WVComplexConstView acceptedLegacy[] = {
-      acceptedStep_.endpoint.waveVortex.coefficients.Ap,
-      acceptedStep_.endpoint.waveVortex.coefficients.Am,
-      acceptedStep_.endpoint.waveVortex.coefficients.A0};
-  for (std::size_t component = 0; component < 3; ++component)
-    if (outputLegacy[component].data != nullptr &&
-        outputLegacy[component].data == acceptedLegacy[component].data)
-      return {WVKernelStatusCode::invalidConfiguration,
-              "RK78 dense output must not alias accepted integration state."};
   const double h = acceptedStep_.finalTime - acceptedStep_.initialTime;
   const auto tol =
       timeTolerance(acceptedStep_.initialTime, acceptedStep_.finalTime);
