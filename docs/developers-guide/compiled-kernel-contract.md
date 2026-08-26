@@ -8,9 +8,9 @@ mathjax: true
 
 # Compiled kernel contract
 
-WaveVortexModel provides a portable C++ numerical core for the constant-stratification nonlinear calculation. The contract deliberately contains no MATLAB, MEX, FFTW, or NetCDF types. The MATLAB MEX path and standalone portable runtime call the same numerical interface through separate adapters.
+WaveVortexModel provides portable C++ numerical cores for the constant-stratification and equivalent-barotropic quasigeostrophic calculations. The contract deliberately contains no MATLAB, MEX, FFTW, or NetCDF types. Embeddings supply transform providers and ownership through separate adapters.
 
-The optimized MATLAB implementation remains the default and the performance baseline. Constant-stratification transforms may explicitly select the compiled preview after locally building its native provider.
+The optimized MATLAB implementation remains the default and the public performance baseline. Constant-stratification transforms may explicitly select the compiled preview after locally building its native provider. The Barotropic QG implementation is a focused source-level numerical kernel and integration system; it is not a new MATLAB backend selector or a complete standalone `WVModel` persistence path.
 
 ## Correspondence with MATLAB
 
@@ -29,6 +29,18 @@ Names are retained where the mathematical object is the same in both languages.
 | `transformToSpatialDomainWithFAllDerivatives` | Method with the same name | Caller-owned WV-grid inputs and `[Nx,Ny,Nz,4]` output |
 | `transformToSpatialDomainWithGAllDerivatives` | Method with the same name | Caller-owned WV-grid inputs and `[Nx,Ny,Nz,4]` output |
 
+The Barotropic QG correspondence is deliberately compact:
+
+| MATLAB concept | C++ contract | Ownership |
+|---|---|---|
+| `WVTransformBarotropicQG` geometry and physical parameters | `WVTransformBarotropicQGConfiguration` | Copied into the transform descriptor |
+| compact `A0` in MATLAB `kl` order | `WVComplexConstView` with shape `[1,Nkl]` | Read-only caller view |
+| `qgpv` normalization and projection | `transformA0ToQGPV` and `transformQGPVToA0` | Caller-owned spatial or compact output |
+| `u`, `v`, `eta`, `pi`, `psi`, `qgpv`, `zeta_z`, and `ssh` | `transformA0ToField` | Caller-owned `[Nx,Ny]` output |
+| field, x derivative, and y derivative | `transformA0ToFieldWithDerivatives` | Caller-owned `[Nx,Ny,1,3]` output |
+| ordinary PV advection | `WVTransformBarotropicQGKernel::nonlinearFlux` | Caller-owned compact `F0` |
+| spectral and spatial energy and enstrophy | Matching total-invariant operations | Scalar caller outputs |
+
 The C++ name is allowed to differ when C++ ownership or lifecycle semantics need to be explicit. The kernel context is non-copyable, owns plans and bounded scratch, and does not own authoritative model state.
 
 ## Canonical coefficient layout
@@ -38,6 +50,8 @@ State and fluxes use the canonical WV grid with shape `[Nj,Nkl]`; physical field
 $$operatorname{offset}(j,i_{kl})=j+N_j i_{kl}.$$
 
 This keeps the vertical dimension adjacent, matching the MATLAB representation and its efficient vertical matrix products. The compiled implementation may use other transient layouts internally, including Hermitian half spectra, but they never alter the public coefficient ordering.
+
+Barotropic QG uses the MATLAB `kl` ordering directly with shape `[1,Nkl]`. Its one `A0` family is normalized as QGPV, excludes the zero-horizontal-wavenumber geostrophic mode, and contains no `Ap` or `Am` storage. The omitted conjugates are reconstructed only in bounded half-spectrum scratch; no full Hermitian spectrum is retained.
 
 Inputs are immutable. The caller allocates `Fp`, `Fm`, and `F0`, and these outputs may not overlap each other or the state. A steady-state kernel call will allocate no array-sized storage after the context has been prepared.
 
@@ -53,6 +67,8 @@ Inputs are immutable. The caller allocates `Fp`, `Fm`, and `F0`, and these outpu
 - all projection, reconstruction, phase, and normalization coefficients used by the fused transforms.
 
 Dense MATLAB DCT/DST or projection matrices are not imported. Constant-stratification modes are analytic and will be built inside C++. A future variable-stratification extension may accept eigenvalues and vertical structures from an external mode solver, but that is not part of this contract.
+
+`WVTransformBarotropicQGConfiguration` contains `Nx`, `Ny`, `Lx`, `Ly`, equivalent depth `h`, mode `j`, gravity, planetary radius, rotation rate, latitude, and the transform-level antialias flag. Its descriptor reproduces MATLAB's radial-`Kh`, then `K`, then `L` `kl` ordering; odd/even and nonsquare Nyquist rules; optional radial two-thirds mask; compact half-spectrum mappings; Coriolis and deformation scales; and all `A0` reconstruction, projection, energy, and enstrophy factors. Both `j=0` and `j=1` use the same compact contract.
 
 Compiled-kernel contract version 4 stores each immutable quantity at its natural dimensionality. Vertical-only quantities use `[Nj]`, horizontal-only quantities live with the `Nkl` Fourier-mode records, and only coefficients that genuinely couple vertical and horizontal modes use `[Nj,Nkl]`. Field-assembly and coefficient-projection factors are pre-scaled at construction, so the runtime loops do not repeat divisions or normalization products. Construction-only reciprocals and scale arrays are not retained. This data contract is independent of the `wave-vortex-portable-source-api-v1` C++ compilation contract and of every observer, forcing, schedule, observation-schema, and run-request version; none of those versions is inferred from kernel version 4.
 
@@ -85,6 +101,12 @@ The scientific stages retain their MATLAB names even where their execution is fu
 | G-family value and derivatives | `transformToSpatialDomainWithGAllDerivatives` | Method with the same name |
 | Nonlinear products | ordinary `nonlinearFlux` product loop | internal rolling real-space loop |
 | Fields to WV coefficients | `transformUVEtaToWaveVortex` or `transformUVWEtaToWaveVortex` | Methods with the same names |
+
+## Barotropic QG dataflow
+
+The Barotropic QG context owns three plans: one scalar horizontal forward plan, one scalar inverse plan, and one four-channel inverse plan. Its exact bounded scratch is `4H+5R`, where `H=(floor(Nx/2)+1)Ny` complex values and `R=NxNy` real values. The four-channel inverse reconstructs `u`, `v`, `qgpv_x`, and `qgpv_y`; the pointwise stage computes `-(u*qgpv_x+v*qgpv_y)`; and the scalar forward plan returns compact `F0`. The same masked compact mappings implement the transform-level antialias path. The reference direct-DFT engine provides portable correctness and non-Apple development, while the pinned native FFTW adapter supplies the optimized Apple-silicon path.
+
+Construction and failure tests account for descriptor, engine, plan, management, compact state, and scratch bytes separately. Partial plan creation destroys every completed plan. Native lifecycle tests require three live plans only while the kernel exists, balanced create/destroy totals afterward, and zero outstanding planning-surrogate bytes. Deterministic MATLAB/C++ fixtures cover odd, even, and nonsquare grids, both `j` values, both antialias settings, coefficient and half-spectrum mappings, fields, derivatives, projections, invariants, linear evolution, and nonlinear PV tendencies with relative tolerance `1e-12`.
 
 ## Thin MEX boundary
 

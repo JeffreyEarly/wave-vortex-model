@@ -13,7 +13,7 @@ There are two distinct compiled paths. Within MATLAB, select the [compiled nonli
 
 ## Supported scope
 
-The runtime supports hydrostatic and nonhydrostatic constant stratification, fixed-step RK4, MATLAB `ode23`-compatible Bogacki--Shampine integration, MATLAB `ode45`-compatible Dormand--Prince integration, and continuous output derived from each method's Runge--Kutta stages. The accepted solutions are third order for `adaptive-rk23` and fifth order for `adaptive-rk45`; their embedded error estimates are second and fourth order, respectively. Its frozen forcing subset is:
+The end-to-end runtime supports hydrostatic and nonhydrostatic constant stratification, fixed-step RK4, MATLAB `ode23`-compatible Bogacki--Shampine integration, MATLAB `ode45`-compatible Dormand--Prince integration, and continuous output derived from each method's Runge--Kutta stages. The source tree also contains a MATLAB-matched Barotropic QG numerical kernel and compact `A0` integration system, but it is not yet connected to `WVModel`, observers, output, or restart and therefore is not selectable through the command-line workflows on this page. The accepted solutions are third order for `adaptive-rk23` and fifth order for `adaptive-rk45`; their embedded error estimates are second and fourth order, respectively. The end-to-end runtime's frozen forcing subset is:
 
 - `WVNonlinearAdvection`
 - `WVAdaptiveDamping`
