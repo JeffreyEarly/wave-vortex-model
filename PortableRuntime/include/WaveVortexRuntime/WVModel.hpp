@@ -20,7 +20,8 @@ class WVModelInternalAccess;
 enum class WVModelIntegratorKind : std::uint8_t {
   fixedRK4,
   adaptiveRK23,
-  adaptiveRK45
+  adaptiveRK45,
+  adaptiveRK78
 };
 
 struct WVModelIntegratorConfiguration {
@@ -28,6 +29,7 @@ struct WVModelIntegratorConfiguration {
   WVFixedStepRK4Options fixed;
   WVAdaptiveRK23Options adaptive;
   WVAdaptiveRK45Options adaptiveRK45;
+  WVAdaptiveRK78Options adaptiveRK78;
 };
 
 struct WVModelMetrics {

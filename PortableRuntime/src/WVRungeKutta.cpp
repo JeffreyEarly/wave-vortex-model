@@ -163,6 +163,14 @@ public:
     complex_ = source.complex_;
     real_ = source.real_;
   }
+  void setScaled(const IntegrationBuffer &source, double scale) noexcept {
+    for (std::size_t i = 0; i < complex_.size(); ++i) {
+      complex_[i].real = scale * source.complex_[i].real;
+      complex_[i].imag = scale * source.complex_[i].imag;
+    }
+    for (std::size_t i = 0; i < real_.size(); ++i)
+      real_[i] = scale * source.real_[i];
+  }
   void setAffine(const WVIntegrationState &base, const IntegrationBuffer &increment,
                  double scale) noexcept {
     for (std::size_t family = 0; family < layout_->coefficientFamilyCount();
@@ -294,6 +302,120 @@ struct RK45ControllerPolicy {
   }
 };
 
+struct RK78MethodPolicy {
+  static constexpr const char *controllerIdentifier = "matlab-ode78-v1";
+  static constexpr const char *methodIdentifier = "adaptive-rk78";
+
+  static constexpr double c2 = 0.05;
+  static constexpr double c3 = 0.1065625;
+  static constexpr double c4 = 0.15984375;
+  static constexpr double c5 = 0.39;
+  static constexpr double c6 = 0.465;
+  static constexpr double c7 = 0.155;
+  static constexpr double c8 = 0.943;
+  static constexpr double c9 = 0.901802041735857;
+  static constexpr double c10 = 0.909;
+  static constexpr double c11 = 0.94;
+
+  static constexpr double a21 = 0.05;
+  static constexpr double a31 = -0.0069931640625;
+  static constexpr double a32 = 0.1135556640625;
+  static constexpr double a41 = 0.0399609375;
+  static constexpr double a43 = 0.1198828125;
+  static constexpr double a51 = 0.36139756280045754;
+  static constexpr double a53 = -1.3415240667004928;
+  static constexpr double a54 = 1.3701265039000352;
+  static constexpr double a61 = 0.049047202797202795;
+  static constexpr double a64 = 0.23509720422144048;
+  static constexpr double a65 = 0.18085559298135673;
+  static constexpr double a71 = 0.06169289044289044;
+  static constexpr double a74 = 0.11236568314640277;
+  static constexpr double a75 = -0.03885046071451367;
+  static constexpr double a76 = 0.01979188712522046;
+  static constexpr double a81 = -1.767630240222327;
+  static constexpr double a84 = -62.5;
+  static constexpr double a85 = -6.061889377376669;
+  static constexpr double a86 = 5.6508231982227635;
+  static constexpr double a87 = 65.62169641937624;
+  static constexpr double a91 = -1.1809450665549708;
+  static constexpr double a94 = -41.50473441114321;
+  static constexpr double a95 = -4.434438319103725;
+  static constexpr double a96 = 4.260408188586133;
+  static constexpr double a97 = 43.75364022446172;
+  static constexpr double a98 = 0.00787142548991231;
+  static constexpr double a101 = -1.2814059994414884;
+  static constexpr double a104 = -45.047139960139866;
+  static constexpr double a105 = -4.731362069449577;
+  static constexpr double a106 = 4.514967016593808;
+  static constexpr double a107 = 47.44909557172985;
+  static constexpr double a108 = 0.010592282971116612;
+  static constexpr double a109 = -0.0057468422638446166;
+  static constexpr double a111 = -1.7244701342624853;
+  static constexpr double a114 = -60.92349008483054;
+  static constexpr double a115 = -5.951518376222393;
+  static constexpr double a116 = 5.556523730698456;
+  static constexpr double a117 = 63.98301198033305;
+  static constexpr double a118 = 0.014642028250414961;
+  static constexpr double a119 = 0.06460408772358203;
+  static constexpr double a1110 = -0.0793032316900888;
+  static constexpr double a121 = -3.301622667747079;
+  static constexpr double a124 = -118.01127235975251;
+  static constexpr double a125 = -10.141422388456112;
+  static constexpr double a126 = 9.139311332232058;
+  static constexpr double a127 = 123.37594282840426;
+  static constexpr double a128 = 4.62324437887458;
+  static constexpr double a129 = -3.3832777380682018;
+  static constexpr double a1210 = 4.527592100324618;
+  static constexpr double a1211 = -5.828495485811623;
+  static constexpr double a131 = -3.039515033766309;
+  static constexpr double a134 = -109.26086808941763;
+  static constexpr double a135 = -9.290642497400293;
+  static constexpr double a136 = 8.43050498176491;
+  static constexpr double a137 = 114.20100103783314;
+  static constexpr double a138 = -0.9637271342145479;
+  static constexpr double a139 = -5.0348840888021895;
+  static constexpr double a1310 = 5.958130824002923;
+
+  static constexpr double b1 = 0.04427989419007951;
+  static constexpr double b6 = 0.3541049391724449;
+  static constexpr double b7 = 0.2479692154956438;
+  static constexpr double b8 = -15.694202038838084;
+  static constexpr double b9 = 25.084064965558564;
+  static constexpr double b10 = -31.738367786260277;
+  static constexpr double b11 = 22.938283273988784;
+  static constexpr double b12 = -0.2361324633071542;
+
+  static constexpr double e1 = 3.272103901028776e-05;
+  static constexpr double e6 = 0.0005046250618777735;
+  static constexpr double e7 = -0.00012117235897844563;
+  static constexpr double e8 = 20.142336771313868;
+  static constexpr double e9 = -5.237178599439828;
+  static constexpr double e10 = 8.156744408794658;
+  static constexpr double e11 = -22.938283273988784;
+  static constexpr double e12 = 0.2361324633071542;
+  static constexpr double e13 = -0.36016794372897754;
+
+  static double acceptedErrorPower(double error) noexcept {
+    return std::pow(error, 1.0 / 8.0);
+  }
+  static double rejectedErrorPower(double error) noexcept {
+    return std::pow(error, -1.0 / 8.0);
+  }
+
+  inline static constexpr WVAdaptiveRKStageBufferLastUse stageBufferLastUse[] = {
+      {"stage", "accepted-state commit", 13},
+      {"k1", "accepted solution, error estimate, or future continuous extension", 13},
+      {"k2/k3/k5", "stage-13 construction", 13},
+      {"k4/k13", "embedded error estimate", 13},
+      {"k6", "accepted solution, error estimate, or future continuous extension", 13},
+      {"k7", "accepted solution, error estimate, or future continuous extension", 13},
+      {"k8", "accepted solution, error estimate, or future continuous extension", 13},
+      {"k9", "accepted solution, error estimate, or future continuous extension", 13},
+      {"k10", "accepted solution, error estimate, or future continuous extension", 13},
+      {"k11", "accepted solution, error estimate, or future continuous extension", 13},
+      {"k12", "accepted solution, error estimate, or future continuous extension", 13}};
+};
+
 // Shared adaptive machinery is intentionally compile-time composed with each
 // concrete method. Method workspaces supply explicit stage formulas and error
 // increments; this driver supplies the method-neutral tolerance, controller,
@@ -366,17 +488,22 @@ public:
       const WVIntegrationStateLayout &layout,
       const IntegrationBuffer &candidate, const WVIntegrationState &initial,
       double relativeTolerance, ComplexError complexError,
-      RealError realError) noexcept {
+      RealError realError, bool includeCandidateInScale = true) noexcept {
     double error = 0.0;
     const auto &complexCandidate = candidate.complex();
     const auto accumulateComplex = [&](std::size_t flatIndex, double absTol,
                                        WVComplex64 initialValue) {
       const auto increment = complexError(flatIndex);
-      const auto valueScale = std::max(
-          absTol, relativeTolerance *
-                      std::max(std::hypot(initialValue.real, initialValue.imag),
-                               std::hypot(complexCandidate[flatIndex].real,
-                                          complexCandidate[flatIndex].imag)));
+      const auto initialMagnitude =
+          std::hypot(initialValue.real, initialValue.imag);
+      const auto candidateMagnitude = includeCandidateInScale
+                                          ? std::hypot(
+                                                complexCandidate[flatIndex].real,
+                                                complexCandidate[flatIndex].imag)
+                                          : initialMagnitude;
+      const auto valueScale =
+          std::max(absTol, relativeTolerance *
+                               std::max(initialMagnitude, candidateMagnitude));
       const auto ratio =
           std::hypot(increment.real, increment.imag) / valueScale;
       if (!std::isfinite(ratio))
@@ -429,15 +556,17 @@ public:
         continue;
       for (std::size_t index = 0; index < span.elementCount; ++index) {
         const auto flatIndex = span.scalarOffset + index;
+        const auto initialMagnitude = std::abs(
+            initial.additionalBlocks[blockIndex].realData[index]);
+        const auto candidateMagnitude = includeCandidateInScale
+                                            ? std::abs(realCandidate[flatIndex])
+                                            : initialMagnitude;
         const auto scale = std::max(
             errorPolicy.absoluteTolerance(layout.coefficientFamilyCount() +
                                               blockIndex,
                                           index),
             relativeTolerance *
-                std::max(
-                    std::abs(initial.additionalBlocks[blockIndex]
-                                 .realData[index]),
-                    std::abs(realCandidate[flatIndex])));
+                std::max(initialMagnitude, candidateMagnitude));
         const auto ratio = std::abs(realError(flatIndex)) / scale;
         if (!std::isfinite(ratio))
           return std::numeric_limits<double>::infinity();
@@ -496,6 +625,14 @@ public:
     ++metrics.rejectedStepCount;
     ++metrics.rejectedInitialDerivativeReuseCount;
     stepSize = nextStepSize;
+  }
+
+  static double minimumStepSize(double time) noexcept {
+    const auto magnitude = std::abs(time);
+    const auto spacing =
+        std::nextafter(magnitude, std::numeric_limits<double>::infinity()) -
+        magnitude;
+    return 16.0 * spacing;
   }
 
   template <typename Step, typename NextStepSize>
@@ -1736,5 +1873,560 @@ std::size_t WVAdaptiveRK45::stageBufferLastUseRecordCount() noexcept {
 }
 
 double WVAdaptiveRK45::nextStepSize() const noexcept { return nextStepSize_; }
+
+class WVAdaptiveRK78::Workspace {
+public:
+  IntegrationBuffer stage, k1, k2OrK3OrK5, k4OrK13, k6, k7, k8, k9, k10,
+      k11, k12;
+  std::vector<WVCoefficientFamilyConstView> baseCoefficientViews;
+  std::vector<WVAdditionalStateBlockConstView> baseBlockViews;
+  std::vector<WVCoefficientFamilyConstView> acceptedCoefficientViews;
+  std::vector<WVAdditionalStateBlockConstView> acceptedBlockViews;
+
+  std::size_t capacityBytes() const noexcept {
+    return stage.capacityBytes() + k1.capacityBytes() +
+           k2OrK3OrK5.capacityBytes() + k4OrK13.capacityBytes() +
+           k6.capacityBytes() + k7.capacityBytes() + k8.capacityBytes() +
+           k9.capacityBytes() + k10.capacityBytes() + k11.capacityBytes() +
+           k12.capacityBytes();
+  }
+  std::size_t coefficientViewBytes() const noexcept {
+    return stage.coefficientViewBytes() + k1.coefficientViewBytes() +
+           k2OrK3OrK5.coefficientViewBytes() +
+           k4OrK13.coefficientViewBytes() + k6.coefficientViewBytes() +
+           k7.coefficientViewBytes() + k8.coefficientViewBytes() +
+           k9.coefficientViewBytes() + k10.coefficientViewBytes() +
+           k11.coefficientViewBytes() + k12.coefficientViewBytes();
+  }
+  std::size_t externalViewBytes() const noexcept {
+    return (baseCoefficientViews.capacity() +
+            acceptedCoefficientViews.capacity()) *
+               sizeof(WVCoefficientFamilyConstView) +
+           (baseBlockViews.capacity() + acceptedBlockViews.capacity()) *
+               sizeof(WVAdditionalStateBlockConstView);
+  }
+};
+
+WVAdaptiveRK78::WVAdaptiveRK78(WVIntegrationSystem &system,
+                               WVAdaptiveRK78Options options)
+    : system_(system), options_(options) {}
+
+WVAdaptiveRK78::~WVAdaptiveRK78() { delete workspace_; }
+
+std::size_t WVAdaptiveRK78::persistentBytes() const noexcept {
+  return sizeof(*this) +
+         (workspace_ == nullptr
+              ? 0
+              : sizeof(Workspace) + workspace_->capacityBytes() +
+                    workspace_->coefficientViewBytes() +
+                    workspace_->externalViewBytes()) +
+         (errorPolicy_ == nullptr ? 0 : errorPolicy_->persistentBytes()) +
+         stepDiagnostics_.capacity() * sizeof(WVAdaptiveRK78StepDiagnostic) +
+         toleranceComponentHashes_.capacity() * sizeof(std::uint64_t);
+}
+
+WVKernelStatus
+WVAdaptiveRK78::ensureWorkspace(const WVMutableIntegrationState &state) {
+  auto status = validateMutableIntegrationState(system_.stateLayout(), state);
+  if (!status)
+    return status;
+  status = AdaptiveRungeKuttaDriver::validateOptions(options_, "RK78");
+  if (!status)
+    return status;
+  if (!(options_.repeatedRejectionFactor > 0.0 &&
+        options_.repeatedRejectionFactor < 1.0))
+    return {WVKernelStatusCode::invalidConfiguration,
+            "RK78 repeated-rejection factor must be between zero and one."};
+  if (workspace_ != nullptr)
+    return WVKernelStatus::ok();
+  status = AdaptiveRungeKuttaDriver::initializeErrorPolicy(
+      system_, options_, errorPolicy_, toleranceHash_,
+      toleranceComponentHashes_);
+  if (!status)
+    return status;
+  try {
+    workspace_ = new Workspace;
+  } catch (const std::bad_alloc &) {
+    return {WVKernelStatusCode::allocationFailure,
+            "RK78 workspace allocation failed."};
+  }
+  IntegrationBuffer *buffers[] = {
+      &workspace_->stage,       &workspace_->k1,
+      &workspace_->k2OrK3OrK5, &workspace_->k4OrK13,
+      &workspace_->k6,          &workspace_->k7,
+      &workspace_->k8,          &workspace_->k9,
+      &workspace_->k10,         &workspace_->k11,
+      &workspace_->k12};
+  for (auto *buffer : buffers) {
+    status = buffer->initialize(system_.stateLayout());
+    if (!status) {
+      delete workspace_;
+      workspace_ = nullptr;
+      return status;
+    }
+  }
+  try {
+    workspace_->baseCoefficientViews.reserve(
+        system_.stateLayout().coefficientFamilyCount());
+    workspace_->baseBlockViews.reserve(
+        system_.stateLayout().additionalBlocks().size());
+    workspace_->acceptedCoefficientViews.reserve(
+        system_.stateLayout().coefficientFamilyCount());
+    workspace_->acceptedBlockViews.reserve(
+        system_.stateLayout().additionalBlocks().size());
+  } catch (const std::bad_alloc &) {
+    delete workspace_;
+    workspace_ = nullptr;
+    return {WVKernelStatusCode::allocationFailure,
+            "RK78 state-view workspace allocation failed."};
+  }
+  metrics_.workspaceCapacityBytes =
+      workspace_->capacityBytes() + workspace_->coefficientViewBytes() +
+      workspace_->externalViewBytes();
+  metrics_.workspaceMaximumLiveBytes = metrics_.workspaceCapacityBytes;
+  metrics_.workspaceLiveBytes = metrics_.workspaceCapacityBytes;
+  metrics_.stateCapacityBytes = workspace_->stage.valueCapacityBytes();
+  metrics_.workspaceStateEquivalentCount = 11;
+  metrics_.denseHistoryCapacityBytes = 0;
+  metrics_.denseHistoryStateEquivalentCount = 0;
+  metrics_.errorPolicyBytes = errorPolicy_->persistentBytes();
+  return WVKernelStatus::ok();
+}
+
+WVKernelStatus WVAdaptiveRK78::prepareStateAfterRestart(
+    WVMutableIntegrationState &state) {
+  return AdaptiveRungeKuttaDriver::prepareStateAfterRestart(
+      system_, state, hasAcceptedStep_, derivativeReuseAvailable_,
+      nextStepSize_, stepDiagnostics_, metrics_,
+      [&]() { return ensureWorkspace(state); });
+}
+
+WVKernelStatus WVAdaptiveRK78::step(WVMutableIntegrationState &state,
+                                    double proposedStepSize) {
+  return stepImplementation(state, proposedStepSize, false);
+}
+
+WVKernelStatus WVAdaptiveRK78::stepImplementation(
+    WVMutableIntegrationState &state, double proposedStepSize,
+    bool allowFinalStepStretch) {
+  if (stepping_)
+    return {WVKernelStatusCode::reentrantExecution,
+            "RK78 stepping is not reentrant."};
+  if (!(proposedStepSize > 0.0) || !std::isfinite(proposedStepSize))
+    return {WVKernelStatusCode::invalidConfiguration,
+            "RK78 step size must be finite and positive."};
+  auto status = ensureWorkspace(state);
+  if (!status)
+    return status;
+  stepping_ = true;
+  struct Guard {
+    bool &value;
+    ~Guard() { value = false; }
+  } guard{stepping_};
+  hasAcceptedStep_ = false;
+  derivativeReuseAvailable_ = false;
+  const auto baseView = integrationConstView(
+      state, workspace_->baseCoefficientViews, workspace_->baseBlockViews);
+  const auto t = state.waveVortex.t;
+  const auto t0 = state.waveVortex.t0;
+  double h = allowFinalStepStretch
+                 ? proposedStepSize
+                 : std::min(proposedStepSize, options_.maximumStepSize);
+  bool initialDerivativeAvailable = false;
+  std::size_t rejectedThisStep = 0;
+  std::size_t evaluationsThisStep = 0;
+
+  const auto evaluateStage = [&](IntegrationBuffer &derivative,
+                                 double stageTime) {
+    const auto before = metrics_.rightHandSideEvaluationCount;
+    const auto result = evaluate(system_, workspace_->stage, stageTime, t0,
+                                 derivative, metrics_);
+    evaluationsThisStep += metrics_.rightHandSideEvaluationCount - before;
+    return result;
+  };
+
+  for (;;) {
+    if (!std::isfinite(h) || !(t + h > t))
+      return {WVKernelStatusCode::numericalFailure,
+              "RK78 cannot advance time with the proposed step."};
+    if (!initialDerivativeAvailable) {
+      const auto before = metrics_.rightHandSideEvaluationCount;
+      auto derivative = workspace_->k1.flux();
+      status = system_.evaluateRightHandSide(baseView, derivative);
+      if (status)
+        ++metrics_.rightHandSideEvaluationCount;
+      evaluationsThisStep += metrics_.rightHandSideEvaluationCount - before;
+      if (!status)
+        return status;
+      initialDerivativeAvailable = true;
+    }
+
+    workspace_->stage.setAffine(baseView, workspace_->k1,
+                                h * RK78MethodPolicy::a21);
+    status = constrain(system_, workspace_->stage,
+                       t + h * RK78MethodPolicy::c2, t0);
+    if (!status)
+      return status;
+    status = evaluateStage(workspace_->k2OrK3OrK5,
+                           t + h * RK78MethodPolicy::c2);
+    if (!status)
+      return status;
+
+    workspace_->stage.setScaled(workspace_->k1, RK78MethodPolicy::a31);
+    workspace_->stage.addScaled(workspace_->k2OrK3OrK5,
+                                RK78MethodPolicy::a32);
+    workspace_->stage.setAffine(baseView, workspace_->stage, h);
+    status = constrain(system_, workspace_->stage,
+                       t + h * RK78MethodPolicy::c3, t0);
+    if (!status)
+      return status;
+    status = evaluateStage(workspace_->k2OrK3OrK5,
+                           t + h * RK78MethodPolicy::c3);
+    if (!status)
+      return status;
+
+    workspace_->stage.setScaled(workspace_->k1, RK78MethodPolicy::a41);
+    workspace_->stage.addScaled(workspace_->k2OrK3OrK5,
+                                RK78MethodPolicy::a43);
+    workspace_->stage.setAffine(baseView, workspace_->stage, h);
+    status = constrain(system_, workspace_->stage,
+                       t + h * RK78MethodPolicy::c4, t0);
+    if (!status)
+      return status;
+    status = evaluateStage(workspace_->k4OrK13,
+                           t + h * RK78MethodPolicy::c4);
+    if (!status)
+      return status;
+
+    workspace_->stage.setScaled(workspace_->k1, RK78MethodPolicy::a51);
+    workspace_->stage.addScaled(workspace_->k2OrK3OrK5,
+                                RK78MethodPolicy::a53);
+    workspace_->stage.addScaled(workspace_->k4OrK13,
+                                RK78MethodPolicy::a54);
+    workspace_->stage.setAffine(baseView, workspace_->stage, h);
+    status = constrain(system_, workspace_->stage,
+                       t + h * RK78MethodPolicy::c5, t0);
+    if (!status)
+      return status;
+    status = evaluateStage(workspace_->k2OrK3OrK5,
+                           t + h * RK78MethodPolicy::c5);
+    if (!status)
+      return status;
+
+    workspace_->stage.setScaled(workspace_->k1, RK78MethodPolicy::a61);
+    workspace_->stage.addScaled(workspace_->k4OrK13,
+                                RK78MethodPolicy::a64);
+    workspace_->stage.addScaled(workspace_->k2OrK3OrK5,
+                                RK78MethodPolicy::a65);
+    workspace_->stage.setAffine(baseView, workspace_->stage, h);
+    status = constrain(system_, workspace_->stage,
+                       t + h * RK78MethodPolicy::c6, t0);
+    if (!status)
+      return status;
+    status =
+        evaluateStage(workspace_->k6, t + h * RK78MethodPolicy::c6);
+    if (!status)
+      return status;
+
+    workspace_->stage.setScaled(workspace_->k1, RK78MethodPolicy::a71);
+    workspace_->stage.addScaled(workspace_->k4OrK13,
+                                RK78MethodPolicy::a74);
+    workspace_->stage.addScaled(workspace_->k2OrK3OrK5,
+                                RK78MethodPolicy::a75);
+    workspace_->stage.addScaled(workspace_->k6, RK78MethodPolicy::a76);
+    workspace_->stage.setAffine(baseView, workspace_->stage, h);
+    status = constrain(system_, workspace_->stage,
+                       t + h * RK78MethodPolicy::c7, t0);
+    if (!status)
+      return status;
+    status =
+        evaluateStage(workspace_->k7, t + h * RK78MethodPolicy::c7);
+    if (!status)
+      return status;
+
+    workspace_->stage.setScaled(workspace_->k1, RK78MethodPolicy::a81);
+    workspace_->stage.addScaled(workspace_->k4OrK13,
+                                RK78MethodPolicy::a84);
+    workspace_->stage.addScaled(workspace_->k2OrK3OrK5,
+                                RK78MethodPolicy::a85);
+    workspace_->stage.addScaled(workspace_->k6, RK78MethodPolicy::a86);
+    workspace_->stage.addScaled(workspace_->k7, RK78MethodPolicy::a87);
+    workspace_->stage.setAffine(baseView, workspace_->stage, h);
+    status = constrain(system_, workspace_->stage,
+                       t + h * RK78MethodPolicy::c8, t0);
+    if (!status)
+      return status;
+    status =
+        evaluateStage(workspace_->k8, t + h * RK78MethodPolicy::c8);
+    if (!status)
+      return status;
+
+    workspace_->stage.setScaled(workspace_->k1, RK78MethodPolicy::a91);
+    workspace_->stage.addScaled(workspace_->k4OrK13,
+                                RK78MethodPolicy::a94);
+    workspace_->stage.addScaled(workspace_->k2OrK3OrK5,
+                                RK78MethodPolicy::a95);
+    workspace_->stage.addScaled(workspace_->k6, RK78MethodPolicy::a96);
+    workspace_->stage.addScaled(workspace_->k7, RK78MethodPolicy::a97);
+    workspace_->stage.addScaled(workspace_->k8, RK78MethodPolicy::a98);
+    workspace_->stage.setAffine(baseView, workspace_->stage, h);
+    status = constrain(system_, workspace_->stage,
+                       t + h * RK78MethodPolicy::c9, t0);
+    if (!status)
+      return status;
+    status =
+        evaluateStage(workspace_->k9, t + h * RK78MethodPolicy::c9);
+    if (!status)
+      return status;
+
+    workspace_->stage.setScaled(workspace_->k1, RK78MethodPolicy::a101);
+    workspace_->stage.addScaled(workspace_->k4OrK13,
+                                RK78MethodPolicy::a104);
+    workspace_->stage.addScaled(workspace_->k2OrK3OrK5,
+                                RK78MethodPolicy::a105);
+    workspace_->stage.addScaled(workspace_->k6, RK78MethodPolicy::a106);
+    workspace_->stage.addScaled(workspace_->k7, RK78MethodPolicy::a107);
+    workspace_->stage.addScaled(workspace_->k8, RK78MethodPolicy::a108);
+    workspace_->stage.addScaled(workspace_->k9, RK78MethodPolicy::a109);
+    workspace_->stage.setAffine(baseView, workspace_->stage, h);
+    status = constrain(system_, workspace_->stage,
+                       t + h * RK78MethodPolicy::c10, t0);
+    if (!status)
+      return status;
+    status =
+        evaluateStage(workspace_->k10, t + h * RK78MethodPolicy::c10);
+    if (!status)
+      return status;
+
+    workspace_->stage.setScaled(workspace_->k1, RK78MethodPolicy::a111);
+    workspace_->stage.addScaled(workspace_->k4OrK13,
+                                RK78MethodPolicy::a114);
+    workspace_->stage.addScaled(workspace_->k2OrK3OrK5,
+                                RK78MethodPolicy::a115);
+    workspace_->stage.addScaled(workspace_->k6, RK78MethodPolicy::a116);
+    workspace_->stage.addScaled(workspace_->k7, RK78MethodPolicy::a117);
+    workspace_->stage.addScaled(workspace_->k8, RK78MethodPolicy::a118);
+    workspace_->stage.addScaled(workspace_->k9, RK78MethodPolicy::a119);
+    workspace_->stage.addScaled(workspace_->k10,
+                                RK78MethodPolicy::a1110);
+    workspace_->stage.setAffine(baseView, workspace_->stage, h);
+    status = constrain(system_, workspace_->stage,
+                       t + h * RK78MethodPolicy::c11, t0);
+    if (!status)
+      return status;
+    status =
+        evaluateStage(workspace_->k11, t + h * RK78MethodPolicy::c11);
+    if (!status)
+      return status;
+
+    workspace_->stage.setScaled(workspace_->k1, RK78MethodPolicy::a121);
+    workspace_->stage.addScaled(workspace_->k4OrK13,
+                                RK78MethodPolicy::a124);
+    workspace_->stage.addScaled(workspace_->k2OrK3OrK5,
+                                RK78MethodPolicy::a125);
+    workspace_->stage.addScaled(workspace_->k6, RK78MethodPolicy::a126);
+    workspace_->stage.addScaled(workspace_->k7, RK78MethodPolicy::a127);
+    workspace_->stage.addScaled(workspace_->k8, RK78MethodPolicy::a128);
+    workspace_->stage.addScaled(workspace_->k9, RK78MethodPolicy::a129);
+    workspace_->stage.addScaled(workspace_->k10,
+                                RK78MethodPolicy::a1210);
+    workspace_->stage.addScaled(workspace_->k11,
+                                RK78MethodPolicy::a1211);
+    workspace_->stage.setAffine(baseView, workspace_->stage, h);
+    status = constrain(system_, workspace_->stage, t + h, t0);
+    if (!status)
+      return status;
+    status = evaluateStage(workspace_->k12, t + h);
+    if (!status)
+      return status;
+
+    workspace_->stage.setScaled(workspace_->k1, RK78MethodPolicy::a131);
+    workspace_->stage.addScaled(workspace_->k4OrK13,
+                                RK78MethodPolicy::a134);
+    workspace_->stage.addScaled(workspace_->k2OrK3OrK5,
+                                RK78MethodPolicy::a135);
+    workspace_->stage.addScaled(workspace_->k6, RK78MethodPolicy::a136);
+    workspace_->stage.addScaled(workspace_->k7, RK78MethodPolicy::a137);
+    workspace_->stage.addScaled(workspace_->k8, RK78MethodPolicy::a138);
+    workspace_->stage.addScaled(workspace_->k9, RK78MethodPolicy::a139);
+    workspace_->stage.addScaled(workspace_->k10,
+                                RK78MethodPolicy::a1310);
+    workspace_->stage.setAffine(baseView, workspace_->stage, h);
+    status = constrain(system_, workspace_->stage, t + h, t0);
+    if (!status)
+      return status;
+    status = evaluateStage(workspace_->k4OrK13, t + h);
+    if (!status)
+      return status;
+
+    workspace_->stage.setScaled(workspace_->k1, RK78MethodPolicy::b1);
+    workspace_->stage.addScaled(workspace_->k6, RK78MethodPolicy::b6);
+    workspace_->stage.addScaled(workspace_->k7, RK78MethodPolicy::b7);
+    workspace_->stage.addScaled(workspace_->k8, RK78MethodPolicy::b8);
+    workspace_->stage.addScaled(workspace_->k9, RK78MethodPolicy::b9);
+    workspace_->stage.addScaled(workspace_->k10, RK78MethodPolicy::b10);
+    workspace_->stage.addScaled(workspace_->k11, RK78MethodPolicy::b11);
+    workspace_->stage.addScaled(workspace_->k12, RK78MethodPolicy::b12);
+    workspace_->stage.setAffine(baseView, workspace_->stage, h);
+    auto candidateState = workspace_->stage.mutableState(t + h, t0);
+    const auto endpointConstraint =
+        system_.enforceStateConstraints(candidateState);
+    metrics_.constraintModifiedCoefficientCount +=
+        endpointConstraint.modifiedCoefficientCount;
+    if (!endpointConstraint)
+      return endpointConstraint.status;
+
+    const auto weightedComplexError = [&](std::size_t index,
+                                          bool imaginary) noexcept {
+      const auto component = [&](const IntegrationBuffer &buffer) {
+        return imaginary ? buffer.complex()[index].imag
+                         : buffer.complex()[index].real;
+      };
+      return h * (RK78MethodPolicy::e1 * component(workspace_->k1) +
+                  RK78MethodPolicy::e6 * component(workspace_->k6) +
+                  RK78MethodPolicy::e7 * component(workspace_->k7) +
+                  RK78MethodPolicy::e8 * component(workspace_->k8) +
+                  RK78MethodPolicy::e9 * component(workspace_->k9) +
+                  RK78MethodPolicy::e10 * component(workspace_->k10) +
+                  RK78MethodPolicy::e11 * component(workspace_->k11) +
+                  RK78MethodPolicy::e12 * component(workspace_->k12) +
+                  RK78MethodPolicy::e13 * component(workspace_->k4OrK13));
+    };
+    const auto complexError = [&](std::size_t index) noexcept {
+      return WVComplex64{weightedComplexError(index, false),
+                         weightedComplexError(index, true)};
+    };
+    const auto realError = [&](std::size_t index) noexcept {
+      return h * (RK78MethodPolicy::e1 * workspace_->k1.real()[index] +
+                  RK78MethodPolicy::e6 * workspace_->k6.real()[index] +
+                  RK78MethodPolicy::e7 * workspace_->k7.real()[index] +
+                  RK78MethodPolicy::e8 * workspace_->k8.real()[index] +
+                  RK78MethodPolicy::e9 * workspace_->k9.real()[index] +
+                  RK78MethodPolicy::e10 * workspace_->k10.real()[index] +
+                  RK78MethodPolicy::e11 * workspace_->k11.real()[index] +
+                  RK78MethodPolicy::e12 * workspace_->k12.real()[index] +
+                  RK78MethodPolicy::e13 * workspace_->k4OrK13.real()[index]);
+    };
+    const auto error = AdaptiveRungeKuttaDriver::normalizedError(
+        *errorPolicy_, system_.stateLayout(), workspace_->stage, baseView,
+        options_.relativeTolerance, complexError, realError,
+        rejectedThisStep == 0);
+    const auto accepted = std::isfinite(error) && error <= 1.0;
+    const auto factor =
+        AdaptiveRungeKuttaDriver::controllerFactor<RK78MethodPolicy>(
+            error, rejectedThisStep, options_.safetyFactor,
+            options_.rejectionFloorFactor, options_.repeatedRejectionFactor,
+            options_.maximumStepFactor);
+    nextStepSize_ = std::min(options_.maximumStepSize, h * factor);
+    metrics_.lastProposedStepSize = proposedStepSize;
+    metrics_.normalizedError = error;
+    metrics_.nextStepSize = nextStepSize_;
+    if (accepted) {
+      workspace_->stage.copyTo(state);
+      state.waveVortex.t = t + h;
+      makeExternalViews(state, workspace_->acceptedCoefficientViews,
+                        workspace_->acceptedBlockViews);
+      acceptedStep_ = {
+          t,
+          state.waveVortex.t,
+          {state.waveVortex.view(), workspace_->acceptedBlockViews.data(),
+           workspace_->acceptedBlockViews.size(),
+           workspace_->acceptedCoefficientViews.data(),
+           workspace_->acceptedCoefficientViews.size()},
+          {metrics_.acceptedStepCount + 1, rejectedThisStep,
+           evaluationsThisStep, h, proposedStepSize, nextStepSize_, error},
+          nullptr};
+      ++metrics_.acceptedStepCount;
+      ++metrics_.stepCount;
+      metrics_.lastStepSize = h;
+      metrics_.lastAcceptedStepSize = h;
+      derivativeReuseAvailable_ = false;
+      hasAcceptedStep_ = true;
+      if (stepDiagnostics_.size() < options_.maximumRecordedStepDiagnostics)
+        stepDiagnostics_.push_back({t, h, error, nextStepSize_,
+                                    rejectedThisStep, evaluationsThisStep,
+                                    false});
+      metrics_.diagnosticCapacityBytes =
+          stepDiagnostics_.capacity() * sizeof(WVAdaptiveRK78StepDiagnostic);
+      return WVKernelStatus::ok();
+    }
+    const auto attemptedStepSize = h;
+    AdaptiveRungeKuttaDriver::recordRejectedAttempt(
+        metrics_, rejectedThisStep, nextStepSize_, h);
+    if (attemptedStepSize <= AdaptiveRungeKuttaDriver::minimumStepSize(t))
+      return {WVKernelStatusCode::numericalFailure,
+              "RK78 cannot meet integration tolerances at the minimum step size."};
+    if (!(h > 0.0) || t + h == t)
+      return {WVKernelStatusCode::numericalFailure,
+              "RK78 step size underflowed after rejection."};
+  }
+}
+
+WVKernelStatus WVAdaptiveRK78::advanceToTime(
+    WVMutableIntegrationState &state, double finalTime, double h) {
+  return AdaptiveRungeKuttaDriver::advanceToTime(
+      state, finalTime, h, true, "RK78",
+      [&](double use) {
+        return stepImplementation(
+            state, use,
+            use > options_.maximumStepSize &&
+                use <= 1.1 * options_.maximumStepSize);
+      },
+      [&]() { return nextStepSize_; });
+}
+
+double WVAdaptiveRK78::initialTime() const noexcept {
+  return hasAcceptedStep_ ? acceptedStep_.initialTime : 0.0;
+}
+
+double WVAdaptiveRK78::finalTime() const noexcept {
+  return hasAcceptedStep_ ? acceptedStep_.finalTime : 0.0;
+}
+
+const WVAcceptedStep *WVAdaptiveRK78::lastAcceptedStep() const noexcept {
+  return hasAcceptedStep_ ? &acceptedStep_ : nullptr;
+}
+
+const WVIntegratorMetrics &WVAdaptiveRK78::metrics() const noexcept {
+  return metrics_;
+}
+
+const std::vector<WVAdaptiveRK78StepDiagnostic> &
+WVAdaptiveRK78::stepDiagnostics() const noexcept {
+  return stepDiagnostics_;
+}
+
+std::uint64_t WVAdaptiveRK78::toleranceHash() const noexcept {
+  return toleranceHash_;
+}
+
+const std::vector<std::uint64_t> &
+WVAdaptiveRK78::toleranceComponentHashes() const noexcept {
+  return toleranceComponentHashes_;
+}
+
+bool WVAdaptiveRK78::stepDiagnosticsComplete() const noexcept {
+  return stepDiagnostics_.size() == metrics_.acceptedStepCount;
+}
+
+const char *WVAdaptiveRK78::controllerIdentifier() noexcept {
+  return RK78MethodPolicy::controllerIdentifier;
+}
+
+const char *WVAdaptiveRK78::methodIdentifier() noexcept {
+  return RK78MethodPolicy::methodIdentifier;
+}
+
+const WVAdaptiveRKStageBufferLastUse *
+WVAdaptiveRK78::stageBufferLastUseRecords() noexcept {
+  return RK78MethodPolicy::stageBufferLastUse;
+}
+
+std::size_t WVAdaptiveRK78::stageBufferLastUseRecordCount() noexcept {
+  return sizeof(RK78MethodPolicy::stageBufferLastUse) /
+         sizeof(RK78MethodPolicy::stageBufferLastUse[0]);
+}
+
+double WVAdaptiveRK78::nextStepSize() const noexcept { return nextStepSize_; }
 
 } // namespace wavevortex::runtime
