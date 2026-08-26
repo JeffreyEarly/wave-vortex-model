@@ -992,19 +992,27 @@ void testRK78(LinearIntegrationSystem &system) {
   require(rk78.metrics().workspaceStateEquivalentCount == 11 &&
               rk78.metrics().denseHistoryStateEquivalentCount == 0 &&
               rk78.metrics().denseHistoryCapacityBytes == 0 &&
+              rk78.metrics().retainedBaseStageStateEquivalentCount == 0 &&
+              rk78.metrics()
+                      .continuousExtensionRightHandSideEvaluationCount == 0 &&
+              rk78.metrics()
+                      .continuousExtensionWorkspaceStateEquivalentCount == 0 &&
               rk78.metrics().workspaceMaximumLiveBytes ==
                   rk78.metrics().workspaceCapacityBytes &&
+              rk78.metrics().workspaceMaximumLiveStateEquivalentCount == 11 &&
               rk78.metrics().errorPolicyBytes == 0,
           "RK78 exact endpoint-only workspace ledger");
   require(rk78.metrics().diagnosticCapacityBytes ==
               rk78.stepDiagnostics().capacity() *
                   sizeof(WVAdaptiveRK78StepDiagnostic),
           "RK78 exact diagnostic ledger");
-  require(WVAdaptiveRK78::stageBufferLastUseRecordCount() == 11 &&
+  require(WVAdaptiveRK78::stageBufferLastUseRecordCount() == 15 &&
               std::string(WVAdaptiveRK78::stageBufferLastUseRecords()[2]
                               .bufferIdentifier) == "k2/k3/k5" &&
               std::string(WVAdaptiveRK78::stageBufferLastUseRecords()[3]
-                              .bufferIdentifier) == "k4/k13",
+                              .bufferIdentifier) == "k4/k13" &&
+              std::string(WVAdaptiveRK78::stageBufferLastUseRecords()[14]
+                              .bufferIdentifier) == "k17",
           "RK78 explicit stage-buffer liveness schedule");
   require(std::string(WVAdaptiveRK78::controllerIdentifier()) ==
                   "matlab-ode78-v1" &&
@@ -1016,6 +1024,138 @@ void testRK78(LinearIntegrationSystem &system) {
                   rk78.metrics().errorPolicyBytes +
                   rk78.metrics().diagnosticCapacityBytes,
           "RK78 retained ledger omitted internal records");
+}
+
+double rk78DenseSingleStepError(double stepSize, double theta) {
+  WVIntegrationStateLayout layout;
+  require(static_cast<bool>(WVIntegrationStateLayout::createCoefficientOnly(
+              {1, 1}, layout)),
+          "RK78 dense order-test layout");
+  LinearIntegrationSystem system(std::move(layout));
+  std::vector<WVComplex64> coefficients(3, {1.0, 0.5});
+  std::vector<WVComplex64> outputCoefficients(3);
+  WVMutableIntegrationState state{
+      {0.0,
+       0.0,
+       {{coefficients.data(), {1, 1}},
+        {coefficients.data() + 1, {1, 1}},
+        {coefficients.data() + 2, {1, 1}}}},
+      nullptr,
+      0};
+  WVMutableIntegrationState output{
+      {0.0,
+       0.0,
+       {{outputCoefficients.data(), {1, 1}},
+        {outputCoefficients.data() + 1, {1, 1}},
+        {outputCoefficients.data() + 2, {1, 1}}}},
+      nullptr,
+      0};
+  WVAdaptiveRK78Options options;
+  options.relativeTolerance = 1.0;
+  options.absoluteToleranceScale = 1.0;
+  options.maximumStepSize = stepSize;
+  options.retainDenseOutput = true;
+  WVAdaptiveRK78 rk78(system, options);
+  require(static_cast<bool>(rk78.prepareStateAfterRestart(state)) &&
+              static_cast<bool>(rk78.step(state, stepSize)) &&
+              static_cast<bool>(
+                  rk78.evaluateDenseOutput(theta * stepSize, output)),
+          "RK78 dense order-test step");
+  return std::abs(outputCoefficients[0].real -
+                  std::exp(-theta * stepSize));
+}
+
+void testRK78ContinuousExtension(LinearIntegrationSystem &system) {
+  StateFixture fixture(system.stateLayout());
+  WVAdaptiveRK78Options options;
+  options.relativeTolerance = 1.0;
+  options.absoluteToleranceScale = 1.0;
+  options.maximumStepSize = 0.1;
+  options.retainDenseOutput = true;
+  WVAdaptiveRK78 rk78(system, options);
+  require(static_cast<bool>(rk78.prepareStateAfterRestart(fixture.state)) &&
+              static_cast<bool>(rk78.step(fixture.state, 0.1)),
+          "RK78 dense accepted step");
+  const auto *accepted = rk78.lastAcceptedStep();
+  require(accepted != nullptr && accepted->denseOutput == &rk78 &&
+              rk78.metrics().retainedBaseStageStateEquivalentCount == 8 &&
+              rk78.metrics().denseHistoryStateEquivalentCount == 8 &&
+              rk78.metrics()
+                      .continuousExtensionRightHandSideEvaluationCount == 0 &&
+              rk78.metrics()
+                      .continuousExtensionWorkspaceStateEquivalentCount == 0,
+          "RK78 dense base-stage retention remains extension-lazy");
+  require(static_cast<bool>(rk78.evaluateDenseOutput(0.0, fixture.output)) &&
+              fixture.outputCoefficients[0].real == 1.0 &&
+              fixture.outputCoefficients[0].imag == 0.5 &&
+              rk78.metrics()
+                      .continuousExtensionRightHandSideEvaluationCount == 0,
+          "RK78 exact initial endpoint recovery is extension-free");
+  require(static_cast<bool>(rk78.evaluateDenseOutput(
+              accepted->finalTime, fixture.output)) &&
+              fixture.outputCoefficients[0].real ==
+                  fixture.coefficients[0].real &&
+              fixture.outputCoefficients[0].imag ==
+                  fixture.coefficients[0].imag &&
+              rk78.metrics()
+                      .continuousExtensionRightHandSideEvaluationCount == 0,
+          "RK78 exact final endpoint recovery is extension-free");
+  const auto acceptedCoefficient = fixture.coefficients[0];
+  const auto aliasStatus =
+      rk78.evaluateDenseOutput(0.5 * accepted->finalTime, fixture.state);
+  require(!aliasStatus &&
+              aliasStatus.code == WVKernelStatusCode::invalidConfiguration &&
+              fixture.coefficients[0].real == acceptedCoefficient.real &&
+              fixture.coefficients[0].imag == acceptedCoefficient.imag &&
+              rk78.metrics()
+                      .continuousExtensionRightHandSideEvaluationCount == 0,
+          "RK78 interpolated output cannot alias accepted integration state");
+  const auto firstInterior = 0.31 * accepted->finalTime;
+  require(static_cast<bool>(
+              rk78.evaluateDenseOutput(firstInterior, fixture.output)) &&
+              std::abs(fixture.outputCoefficients[0].real -
+                       std::exp(-firstInterior)) < 1e-12 &&
+              std::abs(fixture.outputCoefficients[0].imag -
+                       0.5 * std::exp(-firstInterior)) < 1e-12 &&
+              std::abs(fixture.output.additionalBlocks[0].realData[0] -
+                       std::exp(-2.0 * firstInterior)) < 1e-12,
+          "RK78 real, complex, and composite interior state: coefficient=" +
+              std::to_string(fixture.outputCoefficients[0].real) + "+" +
+              std::to_string(fixture.outputCoefficients[0].imag) +
+              "i realBlock=" +
+              std::to_string(
+                  fixture.output.additionalBlocks[0].realData[0]));
+  const auto metricsAfterBuild = rk78.metrics();
+  require(metricsAfterBuild.continuousExtensionRightHandSideEvaluationCount ==
+                  4 &&
+              metricsAfterBuild.denseOutputCacheBuildCount == 1 &&
+              metricsAfterBuild.denseOutputCacheReuseCount == 0 &&
+              metricsAfterBuild.continuousExtensionWorkspaceStateEquivalentCount ==
+                  4 &&
+              metricsAfterBuild.workspaceMaximumLiveStateEquivalentCount == 15 &&
+              metricsAfterBuild.workspaceMaximumLiveBytes >
+                  metricsAfterBuild.workspaceCapacityBytes,
+          "RK78 lazy extension build and maximum-live ledger");
+  const auto secondInterior = 0.73 * accepted->finalTime;
+  require(static_cast<bool>(
+              rk78.evaluateDenseOutput(secondInterior, fixture.output)) &&
+              rk78.metrics().continuousExtensionRightHandSideEvaluationCount ==
+                  4 &&
+              rk78.metrics().denseOutputCacheBuildCount == 1 &&
+              rk78.metrics().denseOutputCacheReuseCount == 1,
+          "RK78 multiple interior samples reuse one extension cache");
+  require(static_cast<bool>(rk78.step(fixture.state, 0.1)) &&
+              rk78.metrics()
+                      .continuousExtensionWorkspaceStateEquivalentCount == 0 &&
+              rk78.metrics().workspaceLiveBytes ==
+                  rk78.metrics().workspaceCapacityBytes,
+          "RK78 releases extension-only state before advancing");
+
+  const auto coarse = rk78DenseSingleStepError(0.8, 0.37);
+  const auto fine = rk78DenseSingleStepError(0.4, 0.37);
+  require(coarse / fine > 150.0,
+          "RK78 seventh-order continuous-extension convergence: " +
+              std::to_string(coarse / fine));
 }
 
 void testRK78MatlabOde78ParityFixture() {
@@ -1063,6 +1203,144 @@ void testRK78MatlabOde78ParityFixture() {
               !rk78.stepDiagnostics().back().reusedFSALDerivative &&
               rk78.metrics().fsalReuseCount == 0,
           "RK78 correctly avoids unsafe endpoint derivative reuse");
+}
+
+struct RK78RequestedTimeEvidence {
+  WVComplex64 endpoint;
+  std::vector<WVComplex64> requestedValues;
+  std::vector<WVAdaptiveRK78StepDiagnostic> diagnostics;
+  WVIntegratorMetrics metrics;
+};
+
+RK78RequestedTimeEvidence
+runRK78RequestedTimes(const std::vector<double> &requestedTimes) {
+  WVIntegrationStateLayout layout;
+  require(static_cast<bool>(WVIntegrationStateLayout::createCoefficientOnly(
+              {1, 1}, layout)),
+          "RK78 requested-time layout");
+  LinearIntegrationSystem system(std::move(layout));
+  std::vector<WVComplex64> coefficients(3, {1.0, 0.0});
+  std::vector<WVComplex64> outputCoefficients(3);
+  WVMutableIntegrationState state{
+      {0.0,
+       0.0,
+       {{coefficients.data(), {1, 1}},
+        {coefficients.data() + 1, {1, 1}},
+        {coefficients.data() + 2, {1, 1}}}},
+      nullptr,
+      0};
+  WVMutableIntegrationState output{
+      {0.0,
+       0.0,
+       {{outputCoefficients.data(), {1, 1}},
+        {outputCoefficients.data() + 1, {1, 1}},
+        {outputCoefficients.data() + 2, {1, 1}}}},
+      nullptr,
+      0};
+  WVAdaptiveRK78Options options;
+  options.relativeTolerance = 1e-12;
+  options.absoluteToleranceScale = 1e-10;
+  options.maximumStepSize = 0.5;
+  options.retainDenseOutput = !requestedTimes.empty();
+  WVAdaptiveRK78 rk78(system, options);
+  require(static_cast<bool>(rk78.prepareStateAfterRestart(state)),
+          "RK78 requested-time preparation");
+  std::vector<WVComplex64> values;
+  std::size_t nextOutput = 0;
+  if (!requestedTimes.empty() && requestedTimes.front() == 0.0) {
+    values.push_back(coefficients[0]);
+    ++nextOutput;
+  }
+  double stepSize = 0.5;
+  while (state.waveVortex.t < 1.0) {
+    const auto remaining = 1.0 - state.waveVortex.t;
+    const auto use = 1.1 * stepSize >= remaining
+                         ? remaining
+                         : std::min(stepSize, remaining);
+    require(static_cast<bool>(rk78.step(state, use)),
+            "RK78 requested-time accepted step");
+    const auto *accepted = rk78.lastAcceptedStep();
+    require(accepted != nullptr, "RK78 requested-time accepted history");
+    while (nextOutput < requestedTimes.size() &&
+           requestedTimes[nextOutput] <=
+               accepted->finalTime +
+                   8.0 * std::numeric_limits<double>::epsilon()) {
+      const auto requested = requestedTimes[nextOutput];
+      if (std::abs(requested - accepted->finalTime) <=
+          8.0 * std::numeric_limits<double>::epsilon())
+        values.push_back(coefficients[0]);
+      else {
+        require(static_cast<bool>(
+                    rk78.evaluateDenseOutput(requested, output)),
+                "RK78 requested-time interpolation");
+        values.push_back(outputCoefficients[0]);
+      }
+      ++nextOutput;
+    }
+    stepSize = rk78.nextStepSize();
+  }
+  require(nextOutput == requestedTimes.size(),
+          "RK78 requested-time fixture emitted every request");
+  return {coefficients[0], values, rk78.stepDiagnostics(), rk78.metrics()};
+}
+
+void testRK78MatlabContinuousParityAndTrajectoryIndependence() {
+  const std::vector<double> matlabTimes{0.0, 0.1, 0.2, 0.4, 0.7, 1.0};
+  const double matlabValues[] = {1.0,
+                                 0.904837418056636,
+                                 0.818730753079412,
+                                 0.670320046055729,
+                                 0.496585303810493,
+                                 0.367879441171218};
+  const auto matlabFixture = runRK78RequestedTimes(matlabTimes);
+  require(matlabFixture.requestedValues.size() == matlabTimes.size(),
+          "RK78 MATLAB requested-time fixture size");
+  for (std::size_t index = 0; index < matlabTimes.size(); ++index)
+    require(std::abs(matlabFixture.requestedValues[index].real -
+                     matlabValues[index]) <= 1e-12,
+            "RK78 MATLAB ode78 requested-time parity at index " +
+                std::to_string(index));
+  require(matlabFixture.metrics.acceptedStepCount == 4 &&
+              matlabFixture.metrics.rejectedStepCount == 1 &&
+              matlabFixture.metrics.baseRightHandSideEvaluationCount == 64 &&
+              matlabFixture.metrics
+                      .continuousExtensionRightHandSideEvaluationCount == 12 &&
+              matlabFixture.metrics.rightHandSideEvaluationCount == 76 &&
+              matlabFixture.metrics.denseOutputCacheBuildCount == 3 &&
+              matlabFixture.metrics.denseOutputCacheReuseCount == 1,
+          "RK78 MATLAB ode78 controller, RHS, and cache parity");
+
+  const auto endpointOnly = runRK78RequestedTimes({});
+  const auto regrouped = runRK78RequestedTimes(
+      {0.05, 0.1, 0.2, 0.21, 0.4, 0.7, 0.9, 1.0});
+  const auto sameTrajectory = [](const RK78RequestedTimeEvidence &first,
+                                 const RK78RequestedTimeEvidence &second) {
+    if (first.endpoint.real != second.endpoint.real ||
+        first.endpoint.imag != second.endpoint.imag ||
+        first.diagnostics.size() != second.diagnostics.size())
+      return false;
+    for (std::size_t index = 0; index < first.diagnostics.size(); ++index) {
+      const auto &a = first.diagnostics[index];
+      const auto &b = second.diagnostics[index];
+      if (a.initialTime != b.initialTime ||
+          a.acceptedStepSize != b.acceptedStepSize ||
+          a.normalizedError != b.normalizedError ||
+          a.nextStepSize != b.nextStepSize ||
+          a.rejectedAttemptCount != b.rejectedAttemptCount ||
+          a.rightHandSideEvaluationCount !=
+              b.rightHandSideEvaluationCount)
+        return false;
+    }
+    return true;
+  };
+  require(sameTrajectory(endpointOnly, matlabFixture) &&
+              sameTrajectory(matlabFixture, regrouped) &&
+              endpointOnly.metrics
+                      .continuousExtensionRightHandSideEvaluationCount == 0 &&
+              endpointOnly.metrics
+                      .continuousExtensionWorkspaceMaximumLiveBytes == 0,
+          "RK78 adding, removing, or regrouping output times preserves the "
+          "accepted trajectory");
 }
 
 struct RK78ConvergenceEvidence {
@@ -1207,7 +1485,9 @@ int main() {
   testRK45MatlabOde45ParityFixture();
   testRK45OrderConstraintsAndSegmentation();
   testRK78(system);
+  testRK78ContinuousExtension(system);
   testRK78MatlabOde78ParityFixture();
+  testRK78MatlabContinuousParityAndTrajectoryIndependence();
   testRK78OrdersFailuresSegmentationAndRestart();
   testA0OnlyTransformContract();
   std::cout <<
