@@ -260,6 +260,117 @@ classdef TestPortableRuntimeCompatibility < matlab.unittest.TestCase
             end
             clear controlCleanup
         end
+
+        function matlabCFLReferenceFixturesMatchPortableConstants(testCase)
+            cfl = 0.4;
+            fixtures = {
+                false, 0.1020286099012897, 23522.813868795667, 3.2273103327544224e8, 0.0013924156036910925, 1804.9741156372481; ...
+                true, 0.10202859972462885, 23522.816215036815, 3.117452951358881e8, 0.0014450221120718154, 1739.2634354005847};
+            for iFixture = 1:size(fixtures,1)
+                isHydrostatic = fixtures{iFixture,1};
+                wvt = WVTransformConstantStratification([15000 12000 1300],[6 5 7], ...
+                    N0=5.2e-3,rho0=1027,g=9.80665,planetaryRadius=6.3712e6, ...
+                    rotationRate=7.292115e-5,latitude=33, ...
+                    isHydrostatic=isHydrostatic,shouldAntialias=true);
+                testCase.setConstantCFLFixtureState(wvt)
+                candidates = testCase.matlabCFLCandidates(wvt,cfl);
+                testCase.verifyEqual(candidates.effectiveHorizontalGridResolution,6000.0000000000009,RelTol=1e-13)
+                testCase.verifyEqual(candidates.maximumHorizontalSpeed,fixtures{iFixture,2},RelTol=1e-12)
+                testCase.verifyEqual(candidates.horizontalAdvective,fixtures{iFixture,3},RelTol=1e-12)
+                testCase.verifyEqual(candidates.verticalAdvective,fixtures{iFixture,4},RelTol=1e-12)
+                testCase.verifyEqual(candidates.highestActiveWaveFrequency,fixtures{iFixture,5},RelTol=1e-12)
+                testCase.verifyEqual(candidates.oscillatory,fixtures{iFixture,6},RelTol=1e-12)
+            end
+
+            qg = WVTransformBarotropicQG([15000 12000],[6 5],h=0.8,j=1, ...
+                g=9.80665,planetaryRadius=6.3712e6,rotationRate=7.292115e-5, ...
+                latitude=33,shouldAntialias=true);
+            p = reshape(1:numel(qg.A0),[],1);
+            qg.A0(:) = complex(1e-5*sin(0.19*(p+4)),1e-5*cos(0.05*(p+5)));
+            testCase.verifyEqual(qg.effectiveHorizontalGridResolution,6000.0000000000009,RelTol=1e-13)
+            testCase.verifyEqual(qg.uvMax,0.11956917129957827,RelTol=1e-12)
+            testCase.verifyEqual(cfl*qg.effectiveHorizontalGridResolution/qg.uvMax,20072.063508635067,RelTol=1e-12)
+            testCase.verifyFalse(qg.hasWaveComponent)
+        end
+
+        function runRequestV2MatchesCFLAndExactMatlabSolvers(testCase)
+            sourcePath = fullfile(testCase.TemporaryFolder,"request-v2-source.nc");
+            model = testCase.createLinearBottomFrictionModel(sourcePath,false,7,2.5e-7,"fixed");
+            model.integrateToTime(1e-4,shouldShowIntegrationDiagnostics=false,callback=@(~)[]);
+            sourceTime = model.wvt.t;
+            fixedFinalTime = sourceTime+1e-4;
+            adaptiveFinalTime = sourceTime+2e-4;
+            candidates = testCase.matlabCFLCandidates(model.wvt,0.25);
+            selectedStep = min(candidates.advective,candidates.oscillatory);
+            model.closeNetCDFFile();
+
+            explicitPath = fullfile(testCase.TemporaryFolder,"request-v2-explicit.nc");
+            cflPath = fullfile(testCase.TemporaryFolder,"request-v2-cfl.nc");
+            copyfile(sourcePath,explicitPath)
+            copyfile(sourcePath,cflPath)
+            explicit = struct(method="fixed-rk4",finalTime=fixedFinalTime,initialStep=selectedStep);
+            explicitReport = testCase.runV2Request(explicitPath,explicit,"request-v2-explicit-report.json");
+            cflIntegration = struct(method="fixed-rk4",finalTime=fixedFinalTime,cfl=0.25,timeStepConstraint="min");
+            cflReport = testCase.runV2Request(cflPath,cflIntegration,"request-v2-cfl-report.json");
+            testCase.verifyEqual(string(cflReport.integrationRequest.requestedMethod),"fixed-rk4")
+            testCase.verifyEqual(string(cflReport.integrationRequest.activeMethod),"fixed-rk4")
+            testCase.verifyEqual(string(cflReport.integrationRequest.stepPolicy),"cfl")
+            testCase.verifyTrue(cflReport.integrationRequest.noFallback)
+            testCase.verifyEqual(cflReport.integrationRequest.candidates.horizontalAdvective,candidates.horizontalAdvective,RelTol=1e-12)
+            if isinf(candidates.verticalAdvective)
+                testCase.verifyEqual(string(cflReport.integrationRequest.candidates.verticalAdvective),"infinity")
+            else
+                testCase.verifyEqual(cflReport.integrationRequest.candidates.verticalAdvective,candidates.verticalAdvective,RelTol=1e-12)
+            end
+            testCase.verifyEqual(cflReport.integrationRequest.candidates.advective,candidates.advective,RelTol=1e-12)
+            testCase.verifyEqual(cflReport.integrationRequest.candidates.oscillatory,candidates.oscillatory,RelTol=1e-12)
+            testCase.verifyEqual(cflReport.integrationRequest.selectedStep,selectedStep,RelTol=1e-12)
+            testCase.verifyGreaterThan(cflReport.integrationRequest.transientWorkspaceMaximumLiveBytes,0)
+            testCase.verifyTrue(all(isfield(cflReport.timingSeconds,["parse" "preflight" "provider" "startup"])))
+            explicitModel = WVModel.modelFromFile(char(explicitPath));
+            explicitCleanup = onCleanup(@()explicitModel.closeNetCDFFile());
+            cflModel = WVModel.modelFromFile(char(cflPath));
+            cflCleanup = onCleanup(@()cflModel.closeNetCDFFile());
+            testCase.verifyLessThanOrEqual(testCase.normalizedCoefficientError(explicitModel.wvt,cflModel.wvt),1e-12)
+            testCase.verifyEqual(string(explicitReport.integrationRequest.stepPolicy),"explicit")
+            testCase.verifyEqual(explicitReport.integrationRequest.selectedStep,selectedStep,RelTol=1e-12)
+            testCase.verifyEqual(explicitReport.integrator.requestedInitialStep,selectedStep,RelTol=1e-12)
+            clear explicitCleanup cflCleanup
+
+            methods = ["ode23" "ode45" "ode78"];
+            identifiers = ["adaptive-rk23" "adaptive-rk45" "adaptive-rk78"];
+            controllers = ["matlab-ode23-v1" "matlab-ode45-v1" "matlab-ode78-v1"];
+            for iMethod = 1:numel(methods)
+                runtimePath = fullfile(testCase.TemporaryFolder,"request-v2-"+methods(iMethod)+"-runtime.nc");
+                controlPath = fullfile(testCase.TemporaryFolder,"request-v2-"+methods(iMethod)+"-control.nc");
+                copyfile(sourcePath,runtimePath)
+                copyfile(sourcePath,controlPath)
+                integration = struct(method=identifiers(iMethod),finalTime=adaptiveFinalTime, ...
+                    initialStep=2e-4,maximumStep=2e-4, ...
+                    relativeTolerance=1e-8,absoluteToleranceScale=1e-10);
+                report = testCase.runV2Request(runtimePath,integration,"request-v2-"+methods(iMethod)+"-report.json");
+                testCase.verifyEqual(string(report.integrationRequest.requestedMethod),identifiers(iMethod))
+                testCase.verifyEqual(string(report.integrationRequest.activeMethod),identifiers(iMethod))
+                testCase.verifyEqual(string(report.integrationRequest.controller),controllers(iMethod))
+                testCase.verifyTrue(report.integrationRequest.noFallback)
+                testCase.verifyEqual(report.integrator.requestedInitialStep,integration.initialStep,RelTol=1e-12)
+                testCase.verifyEqual(report.integrator.requestedMaximumStep,integration.maximumStep,RelTol=1e-12)
+                testCase.verifyEqual(report.integrator.relativeTolerance,integration.relativeTolerance)
+                testCase.verifyEqual(report.integrator.absoluteTolerance,integration.absoluteToleranceScale)
+                if methods(iMethod) == "ode78"
+                    testCase.verifyEqual(report.integrator.continuousExtensionRightHandSideEvaluationCount,4)
+                    testCase.verifyEqual(report.integrator.denseOutputCacheBuildCount,1)
+                end
+                runtimeModel = WVModel.modelFromFile(char(runtimePath));
+                runtimeCleanup = onCleanup(@()runtimeModel.closeNetCDFFile());
+                controlModel = WVModel.modelFromFile(char(controlPath));
+                controlCleanup = onCleanup(@()controlModel.closeNetCDFFile());
+                testCase.configureLinearIntegrator(controlModel,methods(iMethod));
+                controlModel.integrateToTime(adaptiveFinalTime,shouldShowIntegrationDiagnostics=false,callback=@(~)[]);
+                testCase.verifyLessThanOrEqual(testCase.normalizedCoefficientError(runtimeModel.wvt,controlModel.wvt),1e-12,methods(iMethod))
+                clear runtimeCleanup controlCleanup
+            end
+        end
     end
 
     methods (Access = private)
@@ -328,6 +439,61 @@ classdef TestPortableRuntimeCompatibility < matlab.unittest.TestCase
             else
                 model.setupIntegrator(integratorType="fixed",deltaT=1e-5);
             end
+        end
+
+        function setConstantCFLFixtureState(~,wvt)
+            p = reshape(1:numel(wvt.Ap),[],1);
+            wvt.Ap(:) = complex(1e-5*sin(0.17*p),1e-5*cos(0.13*(p+1)));
+            wvt.Am(:) = complex(1e-5*cos(0.11*(p+2)),1e-5*sin(0.07*(p+3)));
+            wvt.A0(:) = complex(1e-5*sin(0.19*(p+4)),1e-5*cos(0.05*(p+5)));
+            wvt.t0 = -0.25;
+            wvt.t = 0.5;
+        end
+
+        function candidates = matlabCFLCandidates(~,wvt,cfl)
+            candidates = struct;
+            candidates.effectiveHorizontalGridResolution = wvt.effectiveHorizontalGridResolution;
+            candidates.maximumHorizontalSpeed = wvt.uvMax;
+            candidates.horizontalAdvective = cfl*candidates.effectiveHorizontalGridResolution/candidates.maximumHorizontalSpeed;
+            candidates.verticalAdvective = Inf;
+            if wvt.hasVariableWithName("w")
+                W = wvt.w;
+                W = W(:,:,2:end);
+                ratio = abs(W./((3/2)*shiftdim(diff(wvt.z),-2)));
+                candidates.verticalAdvective = cfl/max(ratio(:));
+            end
+            candidates.advective = min(candidates.horizontalAdvective,candidates.verticalAdvective);
+            candidates.highestActiveWaveFrequency = 0;
+            candidates.oscillatory = Inf;
+            if wvt.hasWaveComponent
+                omega = wvt.Omega;
+                omega(1,:) = [];
+                candidates.highestActiveWaveFrequency = max(abs(omega(:)));
+                candidates.oscillatory = cfl*2*pi/candidates.highestActiveWaveFrequency;
+            end
+        end
+
+        function report = runV2Request(testCase,modelPath,integration,reportName)
+            reportPath = fullfile(testCase.TemporaryFolder,reportName);
+            requestPath = reportPath+".request.json";
+            request = struct;
+            request.schemaIdentifier = "wave-vortex-run-request-v2";
+            request.schemaVersion = 2;
+            request.modelFiles = {char(modelPath)};
+            request.integration = integration;
+            request.output = struct(policy="append",destinations=struct);
+            request.execution = struct(fftProvider="reference",threads=1);
+            request.report = reportPath;
+            writelines(jsonencode(request),requestPath)
+            immutableRequest = fileread(requestPath);
+            command = shellQuote(testCase.Runner)+" --request "+shellQuote(requestPath);
+            [status,output] = systemWithoutMatlabRuntime(command);
+            testCase.assertEqual(status,0,output)
+            testCase.verifyEqual(fileread(requestPath),immutableRequest)
+            report = jsondecode(fileread(reportPath));
+            testCase.verifyEqual(string(report.request.schemaIdentifier),"wave-vortex-run-request-v2")
+            testCase.verifyEqual(report.request.schemaVersion,2)
+            testCase.verifyTrue(report.execution.noFallback)
         end
 
         function errorValue = normalizedCoefficientError(~,actual,reference)
