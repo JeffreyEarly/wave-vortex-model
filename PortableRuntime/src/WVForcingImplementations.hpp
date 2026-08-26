@@ -33,4 +33,35 @@ WVKernelStatus createBetaPlaneForcing(
     const WVTransformConstantStratificationDescriptor &, bool,
     std::unique_ptr<WVForcing> &);
 
+WVKernelStatus preflightBarotropicQGEmptyForcing(
+    const WVFrozenForcingEntry &, std::size_t);
+WVKernelStatus preflightBarotropicQGFixedAmplitude(
+    const WVFrozenForcingEntry &, std::size_t);
+WVKernelStatus preflightBarotropicQGScalarForcing(
+    const WVFrozenForcingEntry &, std::size_t);
+WVKernelStatus createBarotropicQGNonlinearAdvection(
+    const WVFrozenForcingEntry &,
+    const WVTransformBarotropicQGDescriptor &, bool,
+    std::unique_ptr<WVBarotropicQGForcing> &);
+WVKernelStatus createBarotropicQGAdaptiveDamping(
+    const WVFrozenForcingEntry &,
+    const WVTransformBarotropicQGDescriptor &, bool,
+    std::unique_ptr<WVBarotropicQGForcing> &);
+WVKernelStatus createBarotropicQGFixedAmplitude(
+    const WVFrozenForcingEntry &,
+    const WVTransformBarotropicQGDescriptor &, bool,
+    std::unique_ptr<WVBarotropicQGForcing> &);
+WVKernelStatus createBarotropicQGQuadraticBottomFriction(
+    const WVFrozenForcingEntry &,
+    const WVTransformBarotropicQGDescriptor &, bool,
+    std::unique_ptr<WVBarotropicQGForcing> &);
+WVKernelStatus createBarotropicQGLinearBottomFriction(
+    const WVFrozenForcingEntry &,
+    const WVTransformBarotropicQGDescriptor &, bool,
+    std::unique_ptr<WVBarotropicQGForcing> &);
+WVKernelStatus createBarotropicQGBetaPlanePVAdvection(
+    const WVFrozenForcingEntry &,
+    const WVTransformBarotropicQGDescriptor &, bool,
+    std::unique_ptr<WVBarotropicQGForcing> &);
+
 } // namespace wavevortex::runtime::detail

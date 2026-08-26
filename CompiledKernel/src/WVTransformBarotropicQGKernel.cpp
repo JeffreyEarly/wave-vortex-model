@@ -592,7 +592,7 @@ WVKernelStatus WVTransformBarotropicQGKernel::fillHalfSpectrum(
 }
 
 WVKernelStatus WVTransformBarotropicQGKernel::forward(
-    const WVRealConstView& input, WVComplexView& output) {
+    const WVRealConstView& input, WVComplexView& output, bool accumulate) {
     std::fill(halfSpectrumScratch_.begin(), halfSpectrumScratch_.end(),
               WVComplex64{});
     auto status = plans_[forwardPlan]->execute(
@@ -601,14 +601,26 @@ WVKernelStatus WVTransformBarotropicQGKernel::forward(
     const auto& mappings = descriptor_.halfSpectrumMappings();
     const double normalization = 1.0 /
         static_cast<double>(descriptor_.spatialShape().elementCount());
-    for (std::size_t index = 0; index < mappings.directRows.size(); ++index)
-        output.data[mappings.directWVIndices[index]] = multiply(
+    for (std::size_t index = 0; index < mappings.directRows.size(); ++index) {
+        const auto iWV = mappings.directWVIndices[index];
+        const auto value = multiply(
             halfSpectrumScratch_[mappings.directRows[index]], normalization);
+        output.data[iWV] = accumulate
+            ? WVComplex64{output.data[iWV].real + value.real,
+                          output.data[iWV].imag + value.imag}
+            : value;
+    }
     for (std::size_t index = 0; index < mappings.conjugatedRows.size();
-         ++index)
-        output.data[mappings.conjugatedWVIndices[index]] = multiply(
+         ++index) {
+        const auto iWV = mappings.conjugatedWVIndices[index];
+        const auto value = multiply(
             conjugate(halfSpectrumScratch_[mappings.conjugatedRows[index]]),
             normalization);
+        output.data[iWV] = accumulate
+            ? WVComplex64{output.data[iWV].real + value.real,
+                          output.data[iWV].imag + value.imag}
+            : value;
+    }
     ++metrics_.executionCount;
     ++metrics_.forwardExecutionCount;
     return WVKernelStatus::ok();
@@ -832,22 +844,132 @@ WVKernelStatus WVTransformBarotropicQGKernel::inverseNonlinearFields(
     return WVKernelStatus::ok();
 }
 
-WVKernelStatus WVTransformBarotropicQGKernel::nonlinearFlux(
-    const WVComplexConstView& A0, WVComplexView& F0) {
-    if (executing_)
-        return {WVKernelStatusCode::reentrantExecution,
-                "The Barotropic QG kernel is not reentrant."};
+WVKernelStatus WVTransformBarotropicQGKernel::validateForcingOperation(
+    const WVComplexConstView& A0, const WVComplexView& F0) const {
     auto status = validateSpectral(A0, descriptor_.spectralShape(), "A0");
     if (!status) return status;
     status = validateSpectral(F0, descriptor_.spectralShape(), "F0");
     if (!status) return status;
-    const auto coefficientBytes = descriptor_.spectralShape().elementCount() *
-                                  sizeof(WVComplex64);
-    if (overlaps(A0.data, coefficientBytes, F0.data, coefficientBytes))
+    const auto bytes = descriptor_.spectralShape().elementCount() *
+                       sizeof(WVComplex64);
+    if (overlaps(A0.data, bytes, F0.data, bytes))
         return {WVKernelStatusCode::overlappingArrays,
                 "A0 state and F0 tendency must not overlap."};
+    return WVKernelStatus::ok();
+}
+
+WVKernelStatus WVTransformBarotropicQGKernel::inverseQGPVDerivative(
+    const WVComplexConstView& A0, bool xDerivative, WVRealView& output) {
+    const auto halfRows = descriptor_.halfSpectrumMappings().NxHalf *
+                          descriptor_.configuration().Ny;
+    std::fill_n(halfSpectrumScratch_.data(), halfRows, WVComplex64{});
+    const auto& mappings = descriptor_.halfSpectrumMappings();
+    const auto& horizontal = descriptor_.fourierModes();
+    const auto& qgpv = descriptor_.modes().qgpvFactor;
+    const auto valueAt = [&](std::size_t iWV) {
+        return multiply(A0.data[iWV],
+                        {0.0, qgpv[iWV] *
+                                  (xDerivative ? horizontal[iWV].k
+                                               : horizontal[iWV].l)});
+    };
+    for (std::size_t index = 0; index < mappings.directRows.size(); ++index) {
+        const auto iWV = mappings.directWVIndices[index];
+        halfSpectrumScratch_[mappings.directRows[index]] = valueAt(iWV);
+    }
+    for (std::size_t index = 0; index < mappings.conjugatedRows.size();
+         ++index) {
+        const auto iWV = mappings.conjugatedWVIndices[index];
+        halfSpectrumScratch_[mappings.conjugatedRows[index]] =
+            conjugate(valueAt(iWV));
+    }
+    completeHermitianBoundaries(halfSpectrumScratch_.data(), mappings, 1);
+    const auto status = plans_[inversePlan]->execute(
+        halfSpectrumScratch_.data(), output.data);
+    if (!status) return status;
+    ++metrics_.executionCount;
+    ++metrics_.inverseExecutionCount;
+    return WVKernelStatus::ok();
+}
+
+WVKernelStatus WVTransformBarotropicQGKernel::ensureForcingFields(
+    const WVComplexConstView& A0, bool requireQGPVDerivatives,
+    WVBarotropicQGOperationWorkspace& workspace) {
+    if (!workspace.physicalFieldsPrepared) {
+        auto status = inverseNonlinearFields(A0);
+        if (!status) return status;
+        workspace.physicalFieldsPrepared = true;
+        workspace.qgpvDerivativesPrepared = true;
+        ++workspace.physicalFieldReconstructionCount;
+        ++metrics_.forcingFieldReconstructionCount;
+    } else {
+        ++workspace.physicalFieldReuseCount;
+        ++metrics_.forcingFieldReuseCount;
+    }
+    if (requireQGPVDerivatives && !workspace.qgpvDerivativesPrepared) {
+        const auto spatial = descriptor_.spatialShape();
+        const auto R = spatial.elementCount();
+        WVRealView qx{realScratch_.data() + 2 * R, spatial};
+        WVRealView qy{realScratch_.data() + 3 * R, spatial};
+        auto status = inverseQGPVDerivative(A0, true, qx);
+        if (!status) return status;
+        status = inverseQGPVDerivative(A0, false, qy);
+        if (!status) return status;
+        workspace.qgpvDerivativesPrepared = true;
+    }
+    return WVKernelStatus::ok();
+}
+
+WVKernelStatus WVTransformBarotropicQGKernel::spatialDerivative(
+    const WVRealConstView& input, bool xDerivative, WVRealView& output) {
+    const auto& configuration = descriptor_.configuration();
+    const auto& mappings = descriptor_.halfSpectrumMappings();
+    const auto halfRows = mappings.NxHalf * configuration.Ny;
+    std::fill_n(halfSpectrumScratch_.data(), halfRows, WVComplex64{});
+    auto status = plans_[forwardPlan]->execute(
+        input.data, halfSpectrumScratch_.data());
+    if (!status) return status;
+    const double normalization = 1.0 /
+        static_cast<double>(descriptor_.spatialShape().elementCount());
+    for (std::size_t row = 0; row < halfRows; ++row) {
+        const auto iK = row % mappings.NxHalf;
+        const auto iL = row / mappings.NxHalf;
+        const auto kMode = configuration.Nx % 2 == 0 &&
+                                   iK == configuration.Nx / 2
+                               ? -static_cast<std::int64_t>(
+                                     configuration.Nx / 2)
+                               : static_cast<std::int64_t>(iK);
+        const auto lMode = iL < (configuration.Ny + 1) / 2
+                               ? static_cast<std::int64_t>(iL)
+                               : static_cast<std::int64_t>(iL) -
+                                     static_cast<std::int64_t>(
+                                         configuration.Ny);
+        const double wavenumber = 2.0 * pi *
+            static_cast<double>(xDerivative ? kMode : lMode) /
+            (xDerivative ? configuration.Lx : configuration.Ly);
+        halfSpectrumScratch_[row] = multiply(
+            halfSpectrumScratch_[row], {0.0, normalization * wavenumber});
+    }
+    completeHermitianBoundaries(halfSpectrumScratch_.data(), mappings, 1);
+    status = plans_[inversePlan]->execute(halfSpectrumScratch_.data(),
+                                          output.data);
+    if (!status) return status;
+    ++metrics_.executionCount;
+    ++metrics_.forwardExecutionCount;
+    ++metrics_.executionCount;
+    ++metrics_.inverseExecutionCount;
+    return WVKernelStatus::ok();
+}
+
+WVKernelStatus WVTransformBarotropicQGKernel::addPotentialVorticityAdvection(
+    const WVComplexConstView& A0, WVComplexView& F0, bool accumulate,
+    WVBarotropicQGOperationWorkspace& workspace) {
+    if (executing_)
+        return {WVKernelStatusCode::reentrantExecution,
+                "The Barotropic QG kernel is not reentrant."};
+    auto status = validateForcingOperation(A0, F0);
+    if (!status) return status;
     ExecutionGuard guard(executing_);
-    status = inverseNonlinearFields(A0);
+    status = ensureForcingFields(A0, true, workspace);
     if (!status) return status;
     const auto R = descriptor_.spatialShape().elementCount();
     const double* u = realScratch_.data();
@@ -858,12 +980,154 @@ WVKernelStatus WVTransformBarotropicQGKernel::nonlinearFlux(
     for (std::size_t index = 0; index < R; ++index)
         tendency[index] = -(u[index] * qx[index] +
                             v[index] * qy[index]);
-    status = forward({tendency, descriptor_.spatialShape()}, F0);
+    status = forward({tendency, descriptor_.spatialShape()}, F0, accumulate);
     if (!status) return status;
+    ++workspace.spatialTendencyProjectionCount;
+    ++metrics_.forcingSpatialProjectionCount;
     ++metrics_.nonlinearFluxCallCount;
     if (descriptor_.configuration().shouldAntialias)
         ++metrics_.antialiasedNonlinearFluxCallCount;
     return WVKernelStatus::ok();
+}
+
+WVKernelStatus WVTransformBarotropicQGKernel::addAdaptiveDamping(
+    const WVComplexConstView& A0,
+    const std::vector<double>& dampingOperator, WVComplexView& F0,
+    bool accumulate, WVBarotropicQGOperationWorkspace& workspace) {
+    if (executing_)
+        return {WVKernelStatusCode::reentrantExecution,
+                "The Barotropic QG kernel is not reentrant."};
+    auto status = validateForcingOperation(A0, F0);
+    if (!status) return status;
+    if (dampingOperator.size() != descriptor_.Nkl())
+        return {WVKernelStatusCode::invalidShape,
+                "The Barotropic QG damping operator has the wrong length."};
+    ExecutionGuard guard(executing_);
+    status = ensureForcingFields(A0, false, workspace);
+    if (!status) return status;
+    const auto R = descriptor_.spatialShape().elementCount();
+    const double* u = realScratch_.data();
+    const double* v = u + R;
+    double maximumSpeed = 0.0;
+    for (std::size_t index = 0; index < R; ++index)
+        maximumSpeed = std::max(
+            maximumSpeed,
+            std::sqrt(u[index] * u[index] + v[index] * v[index]));
+    for (std::size_t index = 0; index < descriptor_.Nkl(); ++index) {
+        const auto value = multiply(
+            A0.data[index], maximumSpeed * dampingOperator[index]);
+        F0.data[index] = accumulate
+            ? WVComplex64{F0.data[index].real + value.real,
+                          F0.data[index].imag + value.imag}
+            : value;
+    }
+    return WVKernelStatus::ok();
+}
+
+WVKernelStatus WVTransformBarotropicQGKernel::addLinearBottomFriction(
+    const WVComplexConstView& A0, double rate, WVComplexView& F0,
+    bool accumulate, WVBarotropicQGOperationWorkspace& workspace) {
+    if (executing_)
+        return {WVKernelStatusCode::reentrantExecution,
+                "The Barotropic QG kernel is not reentrant."};
+    auto status = validateForcingOperation(A0, F0);
+    if (!status) return status;
+    if (!std::isfinite(rate) || rate < 0.0)
+        return {WVKernelStatusCode::invalidConfiguration,
+                "Barotropic linear bottom friction must be finite and nonnegative."};
+    ExecutionGuard guard(executing_);
+    status = ensureForcingFields(A0, false, workspace);
+    if (!status) return status;
+    const auto spatial = descriptor_.spatialShape();
+    const auto R = spatial.elementCount();
+    WVRealView zeta{realScratch_.data() + 2 * R, spatial};
+    status = inverse(A0, descriptor_.modes().zetaZFactor.data(), zeta);
+    if (!status) return status;
+    workspace.qgpvDerivativesPrepared = false;
+    double* tendency = realScratch_.data() + 4 * R;
+    for (std::size_t index = 0; index < R; ++index)
+        tendency[index] = -rate * zeta.data[index];
+    status = forward({tendency, spatial}, F0, accumulate);
+    if (!status) return status;
+    ++workspace.spatialTendencyProjectionCount;
+    ++metrics_.forcingSpatialProjectionCount;
+    return WVKernelStatus::ok();
+}
+
+WVKernelStatus WVTransformBarotropicQGKernel::addQuadraticBottomFriction(
+    const WVComplexConstView& A0, double drag, WVComplexView& F0,
+    bool accumulate, WVBarotropicQGOperationWorkspace& workspace) {
+    if (executing_)
+        return {WVKernelStatusCode::reentrantExecution,
+                "The Barotropic QG kernel is not reentrant."};
+    auto status = validateForcingOperation(A0, F0);
+    if (!status) return status;
+    if (!std::isfinite(drag) || drag < 0.0)
+        return {WVKernelStatusCode::invalidConfiguration,
+                "Barotropic quadratic bottom friction must be finite and nonnegative."};
+    ExecutionGuard guard(executing_);
+    status = ensureForcingFields(A0, false, workspace);
+    if (!status) return status;
+    const auto spatial = descriptor_.spatialShape();
+    const auto R = spatial.elementCount();
+    const double* u = realScratch_.data();
+    const double* v = u + R;
+    double* speedV = realScratch_.data() + 2 * R;
+    double* speedU = realScratch_.data() + 3 * R;
+    for (std::size_t index = 0; index < R; ++index) {
+        const double speed =
+            std::sqrt(u[index] * u[index] + v[index] * v[index]);
+        speedV[index] = speed * v[index];
+        speedU[index] = speed * u[index];
+    }
+    WVRealView dxSpeedV{speedV, spatial};
+    WVRealView dySpeedU{speedU, spatial};
+    status = spatialDerivative({speedV, spatial}, true, dxSpeedV);
+    if (!status) return status;
+    status = spatialDerivative({speedU, spatial}, false, dySpeedU);
+    if (!status) return status;
+    workspace.qgpvDerivativesPrepared = false;
+    double* tendency = realScratch_.data() + 4 * R;
+    for (std::size_t index = 0; index < R; ++index)
+        tendency[index] = -drag * (speedV[index] - speedU[index]);
+    status = forward({tendency, spatial}, F0, accumulate);
+    if (!status) return status;
+    ++workspace.spatialTendencyProjectionCount;
+    ++metrics_.forcingSpatialProjectionCount;
+    return WVKernelStatus::ok();
+}
+
+WVKernelStatus WVTransformBarotropicQGKernel::addBetaPlanePVAdvection(
+    const WVComplexConstView& A0, double beta, WVComplexView& F0,
+    bool accumulate, WVBarotropicQGOperationWorkspace& workspace) {
+    if (executing_)
+        return {WVKernelStatusCode::reentrantExecution,
+                "The Barotropic QG kernel is not reentrant."};
+    auto status = validateForcingOperation(A0, F0);
+    if (!status) return status;
+    if (!std::isfinite(beta))
+        return {WVKernelStatusCode::invalidConfiguration,
+                "The beta-plane gradient must be finite."};
+    ExecutionGuard guard(executing_);
+    status = ensureForcingFields(A0, false, workspace);
+    if (!status) return status;
+    const auto spatial = descriptor_.spatialShape();
+    const auto R = spatial.elementCount();
+    const double* v = realScratch_.data() + R;
+    double* tendency = realScratch_.data() + 4 * R;
+    for (std::size_t index = 0; index < R; ++index)
+        tendency[index] = -beta * v[index];
+    status = forward({tendency, spatial}, F0, accumulate);
+    if (!status) return status;
+    ++workspace.spatialTendencyProjectionCount;
+    ++metrics_.forcingSpatialProjectionCount;
+    return WVKernelStatus::ok();
+}
+
+WVKernelStatus WVTransformBarotropicQGKernel::nonlinearFlux(
+    const WVComplexConstView& A0, WVComplexView& F0) {
+    WVBarotropicQGOperationWorkspace workspace;
+    return addPotentialVorticityAdvection(A0, F0, false, workspace);
 }
 
 WVKernelStatus WVTransformBarotropicQGKernel::totalEnergy(

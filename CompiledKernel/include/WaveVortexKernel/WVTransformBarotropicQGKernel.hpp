@@ -102,7 +102,21 @@ struct WVBarotropicQGKernelMetrics {
     std::size_t derivativeEvaluationCount = 0;
     std::size_t nonlinearFluxCallCount = 0;
     std::size_t antialiasedNonlinearFluxCallCount = 0;
+    std::size_t forcingFieldReconstructionCount = 0;
+    std::size_t forcingFieldReuseCount = 0;
+    std::size_t forcingSpatialProjectionCount = 0;
     std::size_t bytesCopied = 0;
+};
+
+// RHS-scoped transform workspace state. The numerical storage remains owned
+// by the kernel's bounded 4H+5R scratch; this record only tracks which
+// reconstructed fields are valid between coarse forcing operations.
+struct WVBarotropicQGOperationWorkspace {
+    bool physicalFieldsPrepared = false;
+    bool qgpvDerivativesPrepared = false;
+    std::size_t physicalFieldReconstructionCount = 0;
+    std::size_t physicalFieldReuseCount = 0;
+    std::size_t spatialTendencyProjectionCount = 0;
 };
 
 class WVTransformBarotropicQGKernel final {
@@ -155,6 +169,22 @@ public:
                             WVComplexView& evolvedA0) const;
     WVKernelStatus nonlinearFlux(const WVComplexConstView& A0,
                                  WVComplexView& F0);
+    WVKernelStatus addPotentialVorticityAdvection(
+        const WVComplexConstView& A0, WVComplexView& F0, bool accumulate,
+        WVBarotropicQGOperationWorkspace& workspace);
+    WVKernelStatus addAdaptiveDamping(
+        const WVComplexConstView& A0,
+        const std::vector<double>& dampingOperator, WVComplexView& F0,
+        bool accumulate, WVBarotropicQGOperationWorkspace& workspace);
+    WVKernelStatus addLinearBottomFriction(
+        const WVComplexConstView& A0, double rate, WVComplexView& F0,
+        bool accumulate, WVBarotropicQGOperationWorkspace& workspace);
+    WVKernelStatus addQuadraticBottomFriction(
+        const WVComplexConstView& A0, double drag, WVComplexView& F0,
+        bool accumulate, WVBarotropicQGOperationWorkspace& workspace);
+    WVKernelStatus addBetaPlanePVAdvection(
+        const WVComplexConstView& A0, double beta, WVComplexView& F0,
+        bool accumulate, WVBarotropicQGOperationWorkspace& workspace);
     WVKernelStatus totalEnergy(const WVComplexConstView& A0,
                                double& energy) const;
     WVKernelStatus totalEnstrophy(const WVComplexConstView& A0,
@@ -170,12 +200,24 @@ public:
 private:
     WVTransformBarotropicQGKernel() = default;
     WVKernelStatus preparePlans();
-    WVKernelStatus forward(const WVRealConstView& input, WVComplexView& output);
+    WVKernelStatus forward(const WVRealConstView& input, WVComplexView& output,
+                           bool accumulate = false);
     WVKernelStatus inverse(const WVComplexConstView& input,
                            const WVComplex64* factors, WVRealView& output);
     WVKernelStatus inverse(const WVComplexConstView& input,
                            const double* factors, WVRealView& output);
     WVKernelStatus inverseNonlinearFields(const WVComplexConstView& A0);
+    WVKernelStatus ensureForcingFields(
+        const WVComplexConstView& A0, bool requireQGPVDerivatives,
+        WVBarotropicQGOperationWorkspace& workspace);
+    WVKernelStatus inverseQGPVDerivative(const WVComplexConstView& A0,
+                                         bool xDerivative,
+                                         WVRealView& output);
+    WVKernelStatus spatialDerivative(const WVRealConstView& input,
+                                     bool xDerivative,
+                                     WVRealView& output);
+    WVKernelStatus validateForcingOperation(
+        const WVComplexConstView& A0, const WVComplexView& F0) const;
     WVKernelStatus fillHalfSpectrum(const WVComplexConstView& input,
                                     const WVComplex64* factors,
                                     std::size_t field, std::size_t fields);

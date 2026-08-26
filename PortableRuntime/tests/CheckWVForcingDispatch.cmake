@@ -11,6 +11,7 @@ set(forcing_class_literals
     WVBottomFrictionLinear
     WVPseudoTopographicWaveGeneration
     WVBetaPlanePVAdvection)
+list(APPEND forcing_class_literals WVNarrowBandGeostrophicForcing)
 
 foreach(source IN LISTS forcing_sources)
     if(source MATCHES "/WVForcingContracts\.cpp$")
@@ -44,5 +45,16 @@ foreach(token "typeIdentifier ==" "typeIdentifier !=" "matlabClassName")
     if(NOT occurrence EQUAL -1)
         message(FATAL_ERROR
             "WVForcingEngine performs name-based forcing dispatch: ${token}")
+    endif()
+endforeach()
+
+file(READ
+    "${WV_REPOSITORY_ROOT}/PortableRuntime/src/WVBarotropicQGForcingEngine.cpp"
+    qg_engine)
+foreach(token "typeIdentifier ==" "typeIdentifier !=" "matlabClassName")
+    string(FIND "${qg_engine}" "${token}" occurrence)
+    if(NOT occurrence EQUAL -1)
+        message(FATAL_ERROR
+            "WVBarotropicQGForcingEngine performs name-based forcing dispatch: ${token}")
     endif()
 endforeach()
