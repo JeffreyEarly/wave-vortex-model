@@ -13,16 +13,27 @@ namespace wavevortex::runtime {
 struct WVIntegratorMetrics {
   std::size_t workspaceCapacityBytes = 0;
   std::size_t workspaceMaximumLiveBytes = 0;
+  std::size_t workspaceMaximumLiveStateEquivalentCount = 0;
   std::size_t rightHandSideEvaluationCount = 0;
+  std::size_t baseRightHandSideEvaluationCount = 0;
+  std::size_t continuousExtensionRightHandSideEvaluationCount = 0;
   std::size_t acceptedStepCount = 0;
   std::size_t rejectedStepCount = 0;
   std::size_t denseOutputEvaluationCount = 0;
+  std::size_t denseOutputCacheBuildCount = 0;
+  std::size_t denseOutputCacheReuseCount = 0;
   std::size_t errorPolicyBytes = 0;
   std::size_t diagnosticCapacityBytes = 0;
   std::size_t denseHistoryCapacityBytes = 0;
   std::size_t stateCapacityBytes = 0;
   std::size_t workspaceStateEquivalentCount = 0;
   std::size_t denseHistoryStateEquivalentCount = 0;
+  std::size_t retainedBaseStageCapacityBytes = 0;
+  std::size_t retainedBaseStageStateEquivalentCount = 0;
+  std::size_t continuousExtensionWorkspaceCapacityBytes = 0;
+  std::size_t continuousExtensionWorkspaceMaximumLiveBytes = 0;
+  std::size_t continuousExtensionWorkspaceStateEquivalentCount = 0;
+  std::size_t continuousExtensionWorkspaceMaximumLiveStateEquivalentCount = 0;
   double lastStepSize = 0.0;
   double lastProposedStepSize = 0.0;
   double lastAcceptedStepSize = 0.0;
@@ -49,6 +60,7 @@ struct WVIntegratorMetrics {
   std::size_t denseOutputElementReads = 0;
   std::size_t denseOutputElementWrites = 0;
   double denseOutputSeconds = 0.0;
+  double continuousExtensionSeconds = 0.0;
 };
 
 using WVFixedStepRK4Metrics = WVIntegratorMetrics;
@@ -313,15 +325,16 @@ struct WVAdaptiveRK78Options {
   double maximumStepFactor = 5.0;
   double maximumStepSize = std::numeric_limits<double>::infinity();
   std::size_t maximumRecordedStepDiagnostics = 512;
+  bool retainDenseOutput = false;
 };
 
 using WVAdaptiveRK78StepDiagnostic = WVAdaptiveRKStepDiagnostic;
 
 // Verner's most-efficient Runge--Kutta 8(7) pair used by MATLAB ode78.
-// Endpoint-only execution retains the eight stages needed by the future
-// order-seven continuous extension, but does not allocate or evaluate its
-// four additional stages.
-class WVAdaptiveRK78 final : public WVTimeIntegrator {
+// Endpoint-only execution shares the base-step workspace but does not retain
+// an initial-state view or allocate/evaluate the four extension-only stages.
+class WVAdaptiveRK78 final : public WVTimeIntegrator,
+                             public WVDenseOutput {
 public:
   explicit WVAdaptiveRK78(WVIntegrationSystem &system,
                           WVAdaptiveRK78Options options = {});
@@ -335,8 +348,14 @@ public:
   WVKernelStatus advanceToTime(WVMutableIntegrationState &state,
                                double finalTime,
                                double initialStepSize) override;
-  double initialTime() const noexcept;
-  double finalTime() const noexcept;
+  WVKernelStatus evaluateDenseOutput(
+      double time, WVMutableIntegrationState &output) const;
+  WVKernelStatus evaluateState(
+      double time, WVMutableIntegrationState &output) const override {
+    return evaluateDenseOutput(time, output);
+  }
+  double initialTime() const noexcept override;
+  double finalTime() const noexcept override;
   const WVAcceptedStep *lastAcceptedStep() const noexcept override;
   const WVIntegratorMetrics &metrics() const noexcept;
   const std::vector<WVAdaptiveRK78StepDiagnostic> &stepDiagnostics() const
@@ -354,7 +373,10 @@ public:
 
 private:
   class Workspace;
+  class ContinuousExtensionWorkspace;
   WVKernelStatus ensureWorkspace(const WVMutableIntegrationState &state);
+  WVKernelStatus ensureContinuousExtension() const;
+  void releaseContinuousExtension() const noexcept;
   WVKernelStatus stepImplementation(WVMutableIntegrationState &state,
                                     double proposedStepSize,
                                     bool allowFinalStepStretch);
@@ -362,6 +384,7 @@ private:
   WVAdaptiveRK78Options options_;
   std::unique_ptr<WVIntegrationErrorPolicy> errorPolicy_;
   Workspace *workspace_ = nullptr;
+  mutable ContinuousExtensionWorkspace *continuousExtension_ = nullptr;
   WVAcceptedStep acceptedStep_;
   mutable WVIntegratorMetrics metrics_;
   std::vector<WVAdaptiveRK78StepDiagnostic> stepDiagnostics_;
@@ -371,6 +394,8 @@ private:
   bool hasAcceptedStep_ = false;
   bool derivativeReuseAvailable_ = false;
   bool stepping_ = false;
+  mutable bool evaluatingDenseOutput_ = false;
+  mutable bool continuousExtensionReady_ = false;
 
 public:
   ~WVAdaptiveRK78();
