@@ -54,6 +54,7 @@ struct WVIntegratorMetrics {
 using WVFixedStepRK4Metrics = WVIntegratorMetrics;
 using WVAdaptiveRK23Metrics = WVIntegratorMetrics;
 using WVAdaptiveRK45Metrics = WVIntegratorMetrics;
+using WVAdaptiveRK78Metrics = WVIntegratorMetrics;
 
 struct WVFixedStepRK4Options {
   bool retainDenseOutput = false;
@@ -301,6 +302,80 @@ public:
   ~WVAdaptiveRK45();
   WVAdaptiveRK45(const WVAdaptiveRK45 &) = delete;
   WVAdaptiveRK45 &operator=(const WVAdaptiveRK45 &) = delete;
+};
+
+struct WVAdaptiveRK78Options {
+  double relativeTolerance = 1e-3;
+  double absoluteToleranceScale = 1e-6;
+  double safetyFactor = 0.8;
+  double rejectionFloorFactor = 0.1;
+  double repeatedRejectionFactor = 0.5;
+  double maximumStepFactor = 5.0;
+  double maximumStepSize = std::numeric_limits<double>::infinity();
+  std::size_t maximumRecordedStepDiagnostics = 512;
+};
+
+using WVAdaptiveRK78StepDiagnostic = WVAdaptiveRKStepDiagnostic;
+
+// Verner's most-efficient Runge--Kutta 8(7) pair used by MATLAB ode78.
+// Endpoint-only execution retains the eight stages needed by the future
+// order-seven continuous extension, but does not allocate or evaluate its
+// four additional stages.
+class WVAdaptiveRK78 final : public WVTimeIntegrator {
+public:
+  explicit WVAdaptiveRK78(WVIntegrationSystem &system,
+                          WVAdaptiveRK78Options options = {});
+  const WVIntegrationStateLayout &stateLayout() const noexcept override {
+    return system_.stateLayout();
+  }
+  WVKernelStatus
+  prepareStateAfterRestart(WVMutableIntegrationState &state) override;
+  WVKernelStatus step(WVMutableIntegrationState &state,
+                      double proposedStepSize) override;
+  WVKernelStatus advanceToTime(WVMutableIntegrationState &state,
+                               double finalTime,
+                               double initialStepSize) override;
+  double initialTime() const noexcept;
+  double finalTime() const noexcept;
+  const WVAcceptedStep *lastAcceptedStep() const noexcept override;
+  const WVIntegratorMetrics &metrics() const noexcept;
+  const std::vector<WVAdaptiveRK78StepDiagnostic> &stepDiagnostics() const
+      noexcept;
+  std::uint64_t toleranceHash() const noexcept;
+  const std::vector<std::uint64_t> &toleranceComponentHashes() const noexcept;
+  bool stepDiagnosticsComplete() const noexcept;
+  static const char *controllerIdentifier() noexcept;
+  static const char *methodIdentifier() noexcept;
+  static const WVAdaptiveRKStageBufferLastUse *stageBufferLastUseRecords()
+      noexcept;
+  static std::size_t stageBufferLastUseRecordCount() noexcept;
+  double nextStepSize() const noexcept override;
+  std::size_t persistentBytes() const noexcept override;
+
+private:
+  class Workspace;
+  WVKernelStatus ensureWorkspace(const WVMutableIntegrationState &state);
+  WVKernelStatus stepImplementation(WVMutableIntegrationState &state,
+                                    double proposedStepSize,
+                                    bool allowFinalStepStretch);
+  WVIntegrationSystem &system_;
+  WVAdaptiveRK78Options options_;
+  std::unique_ptr<WVIntegrationErrorPolicy> errorPolicy_;
+  Workspace *workspace_ = nullptr;
+  WVAcceptedStep acceptedStep_;
+  mutable WVIntegratorMetrics metrics_;
+  std::vector<WVAdaptiveRK78StepDiagnostic> stepDiagnostics_;
+  std::vector<std::uint64_t> toleranceComponentHashes_;
+  std::uint64_t toleranceHash_ = 0;
+  double nextStepSize_ = 0.0;
+  bool hasAcceptedStep_ = false;
+  bool derivativeReuseAvailable_ = false;
+  bool stepping_ = false;
+
+public:
+  ~WVAdaptiveRK78();
+  WVAdaptiveRK78(const WVAdaptiveRK78 &) = delete;
+  WVAdaptiveRK78 &operator=(const WVAdaptiveRK78 &) = delete;
 };
 
 } // namespace wavevortex::runtime
