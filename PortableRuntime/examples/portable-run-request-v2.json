@@ -1,0 +1,22 @@
+{
+  "schemaIdentifier": "wave-vortex-run-request-v2",
+  "schemaVersion": 2,
+  "modelFiles": ["model-output.nc"],
+  "integration": {
+    "method": "adaptive-rk45",
+    "finalTime": 86400,
+    "initialStep": 1,
+    "maximumStep": 600,
+    "relativeTolerance": 1e-6,
+    "absoluteToleranceScale": 1e-9
+  },
+  "output": {
+    "policy": "append",
+    "destinations": {}
+  },
+  "execution": {
+    "fftProvider": "native-fftw",
+    "threads": 1
+  },
+  "report": "wave-vortex-run-report.json"
+}

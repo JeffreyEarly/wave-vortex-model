@@ -531,6 +531,17 @@ WVKernelStatus WVModel::evaluateRightHandSide(
   return impl_->system->evaluateRightHandSide(state, rightHandSide);
 }
 
+bool WVModel::supportsFixedTimeStepSelection() const noexcept {
+  return impl_->system->supportsFixedTimeStepSelection();
+}
+
+WVKernelStatus WVModel::evaluateFixedTimeStepCandidates(
+    WVModelState &state, double cfl,
+    WVFixedTimeStepCandidates &candidates) {
+  return impl_->system->evaluateFixedTimeStepCandidates(state.constView(), cfl,
+                                                        candidates);
+}
+
 WVKernelStatus WVModel::step(WVModelState &state, double proposedStepSize) {
   auto view = state.mutableView();
   const auto status = impl_->integrator->step(view, proposedStepSize);

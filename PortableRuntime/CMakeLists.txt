@@ -285,6 +285,9 @@ if(BUILD_TESTING)
     )
     target_compile_features(TestWVRunRequest PRIVATE cxx_std_17)
     target_include_directories(TestWVRunRequest PRIVATE app third_party)
+    target_compile_definitions(TestWVRunRequest PRIVATE
+        WV_RUNTIME_FIXTURE_DIR="${CMAKE_CURRENT_LIST_DIR}/tests/fixtures"
+    )
     if(CMAKE_CXX_COMPILER_ID MATCHES "AppleClang|Clang|GNU")
         target_compile_options(TestWVRunRequest PRIVATE
             -Wall -Wextra -Wpedantic -Werror)

@@ -3,6 +3,7 @@
 #include "WaveVortexRuntime/WVIntegrationState.hpp"
 
 #include <cstddef>
+#include <limits>
 #include <memory>
 
 namespace wavevortex::runtime {
@@ -30,6 +31,21 @@ struct WVStateConstraintResult {
   explicit operator bool() const noexcept { return static_cast<bool>(status); }
 };
 
+// MATLAB WVModel.timeStepForCFL candidates produced by a resolved numerical
+// system. Selection policy remains caller-owned and transform-neutral.
+struct WVFixedTimeStepCandidates {
+  double effectiveHorizontalGridResolution =
+      std::numeric_limits<double>::infinity();
+  double maximumHorizontalSpeed = 0.0;
+  double horizontalAdvective = std::numeric_limits<double>::infinity();
+  double verticalAdvective = std::numeric_limits<double>::infinity();
+  double advective = std::numeric_limits<double>::infinity();
+  double highestActiveWaveFrequency = 0.0;
+  double oscillatory = std::numeric_limits<double>::infinity();
+  std::size_t transientWorkspaceMaximumLiveBytes = 0;
+  double evaluationSeconds = 0.0;
+};
+
 // Model boundary used by every numerical method. A successful RHS evaluation
 // completely overwrites every coefficient and additional-state tendency.
 class WVIntegrationSystem {
@@ -44,6 +60,16 @@ public:
   virtual WVKernelStatus
   createErrorPolicy(double absoluteToleranceScale,
                     std::unique_ptr<WVIntegrationErrorPolicy> &policy) const = 0;
+  virtual bool supportsFixedTimeStepSelection() const noexcept {
+    return false;
+  }
+  virtual WVKernelStatus evaluateFixedTimeStepCandidates(
+      const WVIntegrationState &, double,
+      WVFixedTimeStepCandidates &) {
+    return {WVKernelStatusCode::unsupportedOperation,
+            "The numerical system does not provide fixed-step CFL "
+            "candidates."};
+  }
   // Optional transform-selected service consumed through the neutral model
   // boundary. Integrators do not depend on field evaluation.
   virtual WVFieldEvaluationService *fieldEvaluationService() noexcept {

@@ -2,6 +2,7 @@
 #include "WaveVortexRuntime/WVRungeKutta.hpp"
 #include "WVReferenceFFTEngine.hpp"
 
+#include <algorithm>
 #include <cmath>
 #include <cstdlib>
 #include <iostream>
@@ -19,6 +20,12 @@ void require(bool condition, const std::string &message) {
     std::cerr << "FAIL: " << message << '\n';
     std::exit(1);
   }
+}
+
+void requireRelative(double actual, double expected, double tolerance,
+                     const std::string &message) {
+  const auto scale = std::max(std::abs(expected), 1.0);
+  require(std::abs(actual - expected) <= tolerance * scale, message);
 }
 
 WVBarotropicQGPersistedNumericalRecord persistedRecord() {
@@ -289,11 +296,70 @@ void testSystemAndIntegrators() {
           "system retained-storage and compact-spectrum evidence");
 }
 
+void testMatlabCFLFixture() {
+  WVTransformBarotropicQGConfiguration configuration;
+  configuration.Nx = 6;
+  configuration.Ny = 5;
+  configuration.Lx = 15000.0;
+  configuration.Ly = 12000.0;
+  configuration.h = 0.8;
+  configuration.j = 1;
+  configuration.g = 9.80665;
+  configuration.planetaryRadius = 6.3712e6;
+  configuration.rotationRate = 7.292115e-5;
+  configuration.latitude = 33.0;
+  configuration.shouldAntialias = true;
+  std::unique_ptr<WVBarotropicQGIntegrationSystem> system;
+  auto status = WVBarotropicQGIntegrationSystem::create(
+      configuration, std::make_unique<WVReferenceFFTEngine>(), system);
+  require(static_cast<bool>(status), "QG CFL system creation");
+  StateStorage state(system->stateLayout());
+  auto &family = state.coefficients.mutableFamilies()[0];
+  for (std::size_t index = 0; index < family.layout->elementCount; ++index) {
+    const double p = static_cast<double>(index + 1);
+    family.data[index] = {1e-5 * std::sin(0.19 * (p + 4.0)),
+                          1e-5 * std::cos(0.05 * (p + 5.0))};
+  }
+  const auto persistentBefore = system->persistentBytes();
+  WVFixedTimeStepCandidates candidates;
+  status = system->evaluateFixedTimeStepCandidates(state.constView(), 0.4,
+                                                    candidates);
+  require(static_cast<bool>(status) &&
+              system->supportsFixedTimeStepSelection(),
+          "QG CFL evaluation");
+  requireRelative(candidates.effectiveHorizontalGridResolution,
+                  6000.0000000000009, 1e-13,
+                  "QG MATLAB effective horizontal resolution fixture");
+  requireRelative(candidates.maximumHorizontalSpeed,
+                  0.11956917129957827, 1e-12,
+                  "QG MATLAB uvMax fixture");
+  requireRelative(candidates.horizontalAdvective,
+                  20072.063508635067, 1e-12,
+                  "QG MATLAB advective CFL fixture");
+  require(candidates.advective == candidates.horizontalAdvective &&
+              std::isinf(candidates.verticalAdvective) &&
+              std::isinf(candidates.oscillatory) &&
+              candidates.highestActiveWaveFrequency == 0.0 &&
+              candidates.transientWorkspaceMaximumLiveBytes == 0 &&
+              system->persistentBytes() == persistentBefore,
+          "QG has no vertical or wave limit and retains no CFL workspace");
+
+  std::fill_n(family.data, family.layout->elementCount, WVComplex64{});
+  status = system->evaluateFixedTimeStepCandidates(state.constView(), 0.4,
+                                                    candidates);
+  require(static_cast<bool>(status) &&
+              candidates.maximumHorizontalSpeed == 0.0 &&
+              std::isinf(candidates.advective) &&
+              std::isinf(candidates.oscillatory),
+          "zero-velocity QG candidates are infinite");
+}
+
 } // namespace
 
 int main() {
   testConfigurationDecode();
   testSystemAndIntegrators();
+  testMatlabCFLFixture();
   std::cout << "Barotropic QG integration tests passed\n";
   return 0;
 }

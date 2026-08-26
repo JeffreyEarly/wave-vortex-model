@@ -45,6 +45,7 @@ struct WVTransformStateDescription {
   std::string transformIdentifier;
   std::vector<std::size_t> spatialDimensions;
   std::vector<WVCoefficientFamilyDescription> coefficientFamilies;
+  bool supportsFixedTimeStepSelection = false;
 };
 
 // Resolves identifiers and offsets once so numerical stages use ordered views
