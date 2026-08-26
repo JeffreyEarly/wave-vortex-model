@@ -235,7 +235,7 @@ WVFrozenForcingEntry beta(std::size_t ordinal = 0) {
 void testNumericalForcingMatrix() {
   const std::vector<std::pair<std::size_t, std::size_t>> grids = {
       {8, 6}, {9, 7}, {8, 7}, {9, 6}};
-  for (const auto grid : grids) {
+  for (const auto &grid : grids) {
     for (std::uint32_t j = 0; j <= 1; ++j) {
       for (const bool shouldAntialias : {false, true}) {
         const auto value =
