@@ -109,6 +109,23 @@ classdef WVNarrowBandGeostrophicForcing < WVFixedAmplitudeForcing
     end
 
     methods
+        function contract = portableImplementationContract(self)
+            % Return the inherited fixed-amplitude portable contract.
+            %
+            % The portable runtime needs only the canonical selected `A0`
+            % state. Narrow-band construction parameters remain MATLAB-side
+            % provenance and do not introduce a separate numerical forcing.
+            %
+            % - Topic: Forcing internals
+            % - Declaration: contract = portableImplementationContract(self)
+            % - Returns contract: versioned data-only fixed-amplitude contract
+            % - Developer: true
+            payload = struct("name",string(self.name),"forcingTypes",string(self.forcingType),"priority",self.priority,"ApIndices",self.Ap_indices,"ApValues",self.Apbar,"AmIndices",self.Am_indices,"AmValues",self.Ambar,"A0Indices",self.A0_indices,"A0Values",self.A0bar);
+            contract = WVInternal.portableImplementationContract( ...
+                string(class(self)),"WVNarrowBandGeostrophicForcing", ...
+                "supported","",payload);
+        end
+
         function self = WVNarrowBandGeostrophicForcing(wvt,options)
             % Create narrow-band geostrophic fixed-amplitude forcing.
             %

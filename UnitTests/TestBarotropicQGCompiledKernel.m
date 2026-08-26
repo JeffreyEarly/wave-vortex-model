@@ -1,6 +1,7 @@
 classdef TestBarotropicQGCompiledKernel < matlab.unittest.TestCase
     properties (SetAccess = private)
         ToleranceDump (1,1) string
+        ForcingDump (1,1) string
     end
 
     methods (TestClassSetup)
@@ -17,10 +18,12 @@ classdef TestBarotropicQGCompiledKernel < matlab.unittest.TestCase
             [status,output] = systemWithoutMatlabRuntime(configure);
             testCase.assertEqual(status,0,output)
             [status,output] = systemWithoutMatlabRuntime("cmake --build " + ...
-                shellQuote(buildDirectory) + " --parallel --target WVBarotropicQGToleranceDump");
+                shellQuote(buildDirectory) + " --parallel --target WVBarotropicQGToleranceDump WVBarotropicQGForcingDump");
             testCase.assertEqual(status,0,output)
             testCase.ToleranceDump = fullfile(buildDirectory,"WVBarotropicQGToleranceDump");
             testCase.assertTrue(isfile(testCase.ToleranceDump))
+            testCase.ForcingDump = fullfile(buildDirectory,"WVBarotropicQGForcingDump");
+            testCase.assertTrue(isfile(testCase.ForcingDump))
         end
     end
 
@@ -29,6 +32,8 @@ classdef TestBarotropicQGCompiledKernel < matlab.unittest.TestCase
             grids = [8 6; 9 7; 8 7; 9 6];
             maximumRelativeError = 0;
             maximumToleranceRelativeError = 0;
+            maximumForcingRelativeError = 0;
+            maximumIntegrationRelativeError = 0;
             for iGrid = 1:size(grids,1)
                 for j = [0 1]
                     for shouldAntialias = [false true]
@@ -130,6 +135,47 @@ classdef TestBarotropicQGCompiledKernel < matlab.unittest.TestCase
                         nonlinearF0 = wvt.nonlinearFlux();
                         maximumRelativeError = max(maximumRelativeError,verifyRelative(testCase,actual.nonlinearF0Real(:)+1i*actual.nonlinearF0Imag(:),nonlinearF0(:),1e-12,"nonlinear PV tendency: " + diagnostic));
 
+                        forcing = barotropicForcingDump(testCase.ForcingDump,definition);
+                        testCase.verifyEqual(forcing.Nkl,wvt.Nkl,diagnostic)
+                        forcingPairs = { ...
+                            "nonlinear",forcingFlux(wvt,WVNonlinearAdvection(wvt)); ...
+                            "damping",forcingFlux(wvt,WVAdaptiveDamping(wvt)); ...
+                            "linear",forcingFlux(wvt,WVBottomFrictionLinear(wvt,r=2.5e-7)); ...
+                            "quadratic",forcingFlux(wvt,WVBottomFrictionQuadratic(wvt,Cd=1.5e-3)); ...
+                            "beta",forcingFlux(wvt,WVBetaPlanePVAdvection(wvt)); ...
+                            "nonlinearDamping",forcingFlux(wvt,[WVNonlinearAdvection(wvt) WVAdaptiveDamping(wvt)]); ...
+                            "nonlinearLinear",forcingFlux(wvt,[WVNonlinearAdvection(wvt) WVBottomFrictionLinear(wvt,r=2.5e-7)]); ...
+                            "nonlinearQuadratic",forcingFlux(wvt,[WVNonlinearAdvection(wvt) WVBottomFrictionQuadratic(wvt,Cd=1.5e-3)]); ...
+                            "betaDamping",forcingFlux(wvt,[WVBetaPlanePVAdvection(wvt) WVAdaptiveDamping(wvt)]); ...
+                            "all",forcingFlux(wvt,[WVNonlinearAdvection(wvt) WVBottomFrictionQuadratic(wvt,Cd=1.5e-3) WVBottomFrictionLinear(wvt,r=2.5e-7) WVBetaPlanePVAdvection(wvt) WVAdaptiveDamping(wvt)])};
+                        for iForcing = 1:size(forcingPairs,1)
+                            name = forcingPairs{iForcing,1};
+                            compiled = forcing.(name + "Real") + 1i*forcing.(name + "Imag");
+                            maximumForcingRelativeError = max(maximumForcingRelativeError,verifyRelative(testCase,compiled(:),forcingPairs{iForcing,2}(:),1e-12,name + ": " + diagnostic));
+                        end
+                        fixedFlux = forcingFlux(wvt,[WVNonlinearAdvection(wvt) WVFixedAmplitudeForcing(wvt,name="fixed",A0_indices=uint64([2;4]),A0bar=[3e-6-2e-6i;-4e-6])]);
+                        maximumForcingRelativeError = max(maximumForcingRelativeError,verifyRelative(testCase,forcing.fixedReal(:)+1i*forcing.fixedImag(:),fixedFlux(:),1e-12,"fixed amplitude: " + diagnostic));
+                        testCase.verifyEqual(forcing.narrowReal,forcing.fixedReal,diagnostic)
+                        testCase.verifyEqual(forcing.narrowImag,forcing.fixedImag,diagnostic)
+                        testCase.verifyEqual(forcing.fieldReconstructionCount,1,diagnostic)
+                        testCase.verifyEqual(forcing.fieldReuseCount,4,diagnostic)
+                        testCase.verifyEqual(forcing.projectionCount,4,diagnostic)
+                        testCase.verifyEqual(forcing.forcingCallCount,5,diagnostic)
+                        testCase.verifyEqual(forcing.workspaceCapacityBytes,0,diagnostic)
+                        if isequal(definition.Nxy,[9 6]) && j == 1 && shouldAntialias
+                            endpointPairs = { ...
+                                "rk4Endpoint","fixed"; ...
+                                "rk23Endpoint","ode23"; ...
+                                "rk45Endpoint","ode45"; ...
+                                "rk78Endpoint","ode78"};
+                            for iEndpoint = 1:size(endpointPairs,1)
+                                name = endpointPairs{iEndpoint,1};
+                                expectedEndpoint = forcingEndpoint(definition,A0,endpointPairs{iEndpoint,2});
+                                compiledEndpoint = forcing.(name + "Real") + 1i*forcing.(name + "Imag");
+                                maximumIntegrationRelativeError = max(maximumIntegrationRelativeError,verifyRelative(testCase,compiledEndpoint(:),expectedEndpoint(:),1e-12,name + ": " + diagnostic));
+                            end
+                        end
+
                         maximumRelativeError = max(maximumRelativeError,verifyRelative(testCase,actual.totalEnergy,wvt.totalEnergy,1e-12,"spectral energy: " + diagnostic));
                         maximumRelativeError = max(maximumRelativeError,verifyRelative(testCase,actual.totalEnergySpatiallyIntegrated,wvt.totalEnergySpatiallyIntegrated,1e-12,"spatial energy: " + diagnostic));
                         maximumRelativeError = max(maximumRelativeError,verifyRelative(testCase,actual.totalEnstrophy,wvt.totalEnstrophy(),1e-12,"spectral enstrophy: " + diagnostic));
@@ -150,6 +196,8 @@ classdef TestBarotropicQGCompiledKernel < matlab.unittest.TestCase
             end
             fprintf("Barotropic QG MATLAB/C++ maximum relative error: %.3e\n",maximumRelativeError)
             fprintf("Barotropic QG MATLAB/C++ tolerance-vector maximum relative error: %.3e\n",maximumToleranceRelativeError)
+            fprintf("Barotropic QG forcing MATLAB/C++ maximum relative error: %.3e\n",maximumForcingRelativeError)
+            fprintf("Barotropic QG forcing integration MATLAB/C++ maximum relative error: %.3e\n",maximumIntegrationRelativeError)
         end
     end
 end
@@ -204,6 +252,50 @@ if status ~= 0
     error("WaveVortexModel:BarotropicQGToleranceDumpFailed","%s",output);
 end
 actual = jsondecode(output);
+end
+
+function actual = barotropicForcingDump(executable,definition)
+commandArguments = [definition.Nxy definition.Lxy definition.h definition.j definition.g definition.rotationRate definition.latitude definition.shouldAntialias definition.planetaryRadius];
+command = shellQuote(executable) + " " + strjoin(compose("%.17g",commandArguments)," ");
+[status,output] = systemWithoutMatlabRuntime(command);
+if status ~= 0
+    error("WaveVortexModel:BarotropicQGForcingDumpFailed","%s",output);
+end
+actual = jsondecode(output);
+end
+
+function F0 = forcingFlux(wvt,forcing)
+wvt.removeAllForcing();
+wvt.addForcing(forcing);
+F0 = wvt.nonlinearFlux();
+end
+
+function A0 = forcingEndpoint(definition,initialA0,integrator)
+wvt = WVTransformBarotropicQG( ...
+    definition.Lxy,definition.Nxy, ...
+    h=definition.h,j=definition.j,g=definition.g, ...
+    rotationRate=definition.rotationRate, ...
+    latitude=definition.latitude, ...
+    shouldAntialias=definition.shouldAntialias, ...
+    planetaryRadius=definition.planetaryRadius);
+wvt.A0 = initialA0;
+wvt.A0([2 4]) = [3e-6-2e-6i;-4e-6];
+wvt.removeAllForcing();
+wvt.addForcing([ ...
+    WVNonlinearAdvection(wvt) ...
+    WVBottomFrictionQuadratic(wvt,Cd=1.5e-3) ...
+    WVBottomFrictionLinear(wvt,r=2.5e-7) ...
+    WVBetaPlanePVAdvection(wvt) ...
+    WVAdaptiveDamping(wvt) ...
+    WVFixedAmplitudeForcing(wvt,name="fixed",A0_indices=uint64([2;4]),A0bar=[3e-6-2e-6i;-4e-6])]);
+model = WVModel(wvt);
+if integrator == "fixed"
+    model.setupIntegrator(integratorType="fixed",deltaT=0.005);
+else
+    model.setupIntegrator(integratorType="adaptive",integrator=str2func(integrator),absTolerance=1e-10,relTolerance=1e-8);
+end
+model.integrateToTime(0.01,shouldShowIntegrationDiagnostics=false,callback=@(~)[]);
+A0 = wvt.A0;
 end
 
 function value = shellQuote(value)

@@ -1,4 +1,5 @@
 #include "WaveVortexRuntime/WVExtensionCatalog.hpp"
+#include "WaveVortexRuntime/WVBarotropicQGForcingEngine.hpp"
 #include "WaveVortexRuntime/WVObserverOutputProvider.hpp"
 #include "WVLegacyObserverCompatibility.hpp"
 #include "WVObserverAdapter.hpp"
@@ -333,6 +334,44 @@ WVKernelStatus WVForcingCatalog::create(
   }
 }
 
+WVKernelStatus WVForcingCatalog::createBarotropicQG(
+    const WVFrozenForcingEntry &entry,
+    const WVTransformBarotropicQGDescriptor &descriptor,
+    bool hasAdaptiveDamping,
+    std::unique_ptr<WVBarotropicQGForcing> &forcing) const {
+  forcing.reset();
+  const auto *value = registration(entry.typeIdentifier,
+                                   entry.contractVersion);
+  if (value == nullptr || !value->isSupported ||
+      !value->barotropicQGFactory)
+    return {WVKernelStatusCode::unsupportedOperation,
+            "Unsupported Barotropic QG forcing identity."};
+  try {
+    std::unique_ptr<WVBarotropicQGForcing> candidate;
+    const auto status = value->barotropicQGFactory(
+        entry, descriptor, hasAdaptiveDamping, candidate);
+    if (!status)
+      return status;
+    if (!candidate)
+      return invalid("A Barotropic QG forcing factory returned no implementation.");
+    if (candidate->typeIdentifier() != entry.typeIdentifier ||
+        candidate->contractVersion() != entry.contractVersion)
+      return invalid(
+          "A Barotropic QG forcing factory returned an incompatible identity.");
+    forcing = std::move(candidate);
+    return WVKernelStatus::ok();
+  } catch (const std::bad_alloc &) {
+    return {WVKernelStatusCode::allocationFailure,
+            "Unable to construct a Barotropic QG forcing implementation."};
+  } catch (const std::exception &error) {
+    return invalid("Barotropic QG forcing factory failed: " +
+                   std::string(error.what()));
+  } catch (...) {
+    return invalid(
+        "Barotropic QG forcing factory failed with an unknown exception.");
+  }
+}
+
 WVKernelStatus WVForcingCatalog::validateConfiguration(
     const WVFrozenForcingEntry &entry) const {
   const auto *value = registration(entry.typeIdentifier,
@@ -482,10 +521,13 @@ WVKernelStatus WVExtensionCatalogBuilder::addForcingFactory(
   if (registrationValue.matlabClassName.empty() ||
       registrationValue.contractVersion == 0)
     return reject("A forcing registration requires an identity and positive version.");
-  if ((registrationValue.isSupported && !registrationValue.factory) ||
+  if ((registrationValue.isSupported && !registrationValue.factory &&
+       !registrationValue.barotropicQGFactory) ||
       (registrationValue.isSupported &&
        !registrationValue.unavailabilityReason.empty()) ||
-      (!registrationValue.isSupported && registrationValue.factory) ||
+      (!registrationValue.isSupported &&
+       (registrationValue.factory ||
+        registrationValue.barotropicQGFactory)) ||
       (!registrationValue.isSupported &&
        registrationValue.unavailabilityReason.empty()))
     return reject("A forcing registration is incomplete or conflicting.");

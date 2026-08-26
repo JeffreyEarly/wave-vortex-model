@@ -27,11 +27,19 @@ endforeach()
 file(READ
     "${WV_REPOSITORY_ROOT}/PortableRuntime/src/WVBarotropicQGIntegrationSystem.cpp"
     system_source)
-foreach(required "coefficientFamilyView" "kernel_->nonlinearFlux")
+foreach(required "coefficientFamilyView" "forcingEngine_->evaluateRightHandSide")
     string(FIND "${system_source}" "${required}" position)
     if(position EQUAL -1)
         message(FATAL_ERROR
             "Barotropic QG system does not remain behind the resolved coefficient-family boundary: ${required}")
+    endif()
+endforeach()
+
+foreach(forbidden "coefficients.Ap" "coefficients.Am" "WVForcingKind")
+    string(FIND "${system_source}" "${forbidden}" position)
+    if(NOT position EQUAL -1)
+        message(FATAL_ERROR
+            "Barotropic QG system leaked a legacy family or closed forcing dispatch: ${forbidden}")
     endif()
 endforeach()
 
