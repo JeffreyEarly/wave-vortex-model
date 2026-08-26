@@ -209,6 +209,57 @@ classdef TestPortableRuntimeCompatibility < matlab.unittest.TestCase
             testCase.verifyLessThanOrEqual(testCase.normalizedCoefficientError(runtimeTransform,controlModel.wvt),1e-12)
             clear runtimeCleanup controlCleanup
         end
+
+        function linearOde78ContinuousOutputMatchesMatlab(testCase)
+            sourcePath = fullfile(testCase.TemporaryFolder,"linear-ode78-dense-source.nc");
+            controlPath = fullfile(testCase.TemporaryFolder,"linear-ode78-dense-control.nc");
+            outputDirectory = fullfile(testCase.TemporaryFolder,"linear-ode78-dense-output");
+            model = testCase.createLinearBottomFrictionModel(sourcePath,false,7,2.5e-7,"ode78");
+            model.integrateToTime(1e-4,shouldShowIntegrationDiagnostics=false,callback=@(~)[]);
+            model.closeNetCDFFile();
+            copyfile(sourcePath,controlPath)
+
+            requestedTimes = [1.25e-4 1.5e-4 1.75e-4 2e-4];
+            command = shellQuote(testCase.Runner) + " " + shellQuote(sourcePath) + ...
+                " --restart-mode coefficients --output-policy create" + ...
+                " --integrator adaptive-rk78 --relative-tolerance 1e-8" + ...
+                " --absolute-tolerance 1e-10 --delta-t 1e-4" + ...
+                " --initial-step 1e-4 --maximum-step 1e-4" + ...
+                " --final-time 2e-4 --fft-provider reference";
+            for requestedTime = requestedTimes
+                command = command + " --output-time " + string(requestedTime);
+            end
+            command = command + " --output-directory " + shellQuote(outputDirectory);
+            [status,output] = systemWithoutMatlabRuntime(command);
+            testCase.assertEqual(status,0,output)
+            report = jsondecode(output);
+            testCase.verifyEqual(report.integrator.baseRightHandSideEvaluationCount,13)
+            testCase.verifyEqual(report.integrator.continuousExtensionRightHandSideEvaluationCount,4)
+            testCase.verifyEqual(report.integrator.denseOutputCacheBuildCount,1)
+            testCase.verifyEqual(report.integrator.denseOutputCacheReuseCount,2)
+            testCase.verifyEqual(report.integrator.retainedBaseStageStateEquivalentCount,8)
+            testCase.verifyEqual(report.integrator.continuousExtensionWorkspaceStateEquivalentCount,4)
+            testCase.verifyEqual(report.integrator.workspaceMaximumLiveStateEquivalentCount,15)
+
+            runtimeFiles = dir(fullfile(outputDirectory,"*.nc"));
+            testCase.assertNumElements(runtimeFiles,numel(requestedTimes))
+            controlModel = WVModel.modelFromFile(char(controlPath));
+            controlCleanup = onCleanup(@()controlModel.closeNetCDFFile());
+            testCase.configureLinearIntegrator(controlModel,"ode78");
+            for iTime = 1:numel(requestedTimes)
+                controlModel.integrateToTime(requestedTimes(iTime), ...
+                    shouldShowIntegrationDiagnostics=false,callback=@(~)[]);
+                runtimePath = fullfile(runtimeFiles(iTime).folder,runtimeFiles(iTime).name);
+                [runtimeTransform,runtimeFile] = WVTransform.waveVortexTransformFromFile( ...
+                    runtimePath,shouldReadOnly=true);
+                runtimeCleanup = onCleanup(@()runtimeFile.close());
+                testCase.verifyEqual(runtimeTransform.t,requestedTimes(iTime),AbsTol=4*eps(requestedTimes(iTime)))
+                testCase.verifyLessThanOrEqual( ...
+                    testCase.normalizedCoefficientError(runtimeTransform,controlModel.wvt),1e-12)
+                clear runtimeCleanup
+            end
+            clear controlCleanup
+        end
     end
 
     methods (Access = private)

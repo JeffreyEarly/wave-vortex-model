@@ -395,6 +395,104 @@ struct RK78MethodPolicy {
   static constexpr double e12 = 0.2361324633071542;
   static constexpr double e13 = -0.36016794372897754;
 
+  static constexpr double c15 = 0.3110177634953864;
+  static constexpr double c16 = 0.1725;
+  static constexpr double c17 = 0.7846;
+
+  inline static constexpr double a15[] = {
+      0.04620700646754963,     0.045039041608424805,
+      0.23368166977134244,     37.83901368421068,
+      -15.949113289454246,     23.028368351816102,
+      -44.85578507769412,      -0.06379858768647444,
+      -0.012595035543861663};
+  inline static constexpr double a16[] = {
+      0.05037946855482041,     0.041098361310460796,
+      0.17180541533481958,     4.614105319981519,
+      -1.7916678830853965,     2.531658930485041,
+      -5.324977860205731,      -0.03065532595385635,
+      -0.005254479979429613,   -0.08399194644224793};
+  inline static constexpr double a17[] = {
+      0.0408289713299708,      0.4244479514247632,
+      0.23260915312752345,     2.677982520711806,
+      0.7420826657338945,      0.1460377847941461,
+      -3.579344509890565,      0.11388443896001738,
+      0.012677906510331901,    -0.07443436349946675,
+      0.047827480797578516};
+
+  inline static constexpr double continuousWeights[6][12] = {
+      {-7.238550783576432811855355839508646327161,
+       11.15330887588935170976376962782446833855,
+       2.34875229807309355640904629061136935335,
+       -1027.321675339240679090464776362465090654,
+       1568.546608927281956416687915664731868885,
+       -2000.882061921041961546811133479107090218,
+       1496.620400693446268810344884971434468267,
+       -16.41320775560933621675902845723196069900,
+       -4.29672443178246482824254064733546854251,
+       -20.41628069294821485579834313809132051248,
+       16.53007184264271512356106095760699278945,
+       -18.63064171313429626683549958846959067803},
+      {26.00913483254676138219215542805486438340,
+       -91.7609656398961659890179437322816238711,
+       -11.6724894172018429369093778842231443146,
+       9198.71432360760879019681406218311101879,
+       -13995.38852541600542155322174511897930298,
+       17864.36380347691630038038755096765127729,
+       -13397.55405171476021512904990709508924800,
+       147.6097045407002371315249807692915435608,
+       38.6444746111678092366406218271498656093,
+       153.5213232524836445391962375168798263930,
+       -96.6861433615782065041742809436987893361,
+       164.1994112280183092456176460821337125030},
+      {-50.23684777762566731759165474184543812128,
+       291.7074241722059450113911477530513089255,
+       -3.339139076505928386509206543237093540,
+       -33189.78048157363822223641020734287802492,
+       50256.2124698102445419491620666726469821,
+       -64205.1907515562863000297926577113695108,
+       48323.5602199437493999696912750109765015,
+       -535.719963714732106447158760197417632645,
+       -140.3503471762808981414524290552248895548,
+       -436.5502610211220460266289847121377276100,
+       268.959934219531723149495873437076657635,
+       -579.272256249540441494196462569641132906},
+      {52.12072084601022449485077581012685809554,
+       -430.4096692910862817449451677633631387823,
+       94.885262249720610030798242337479596095,
+       57750.0831348887181073584126028277545727,
+       -86974.5128036219909523950692144595063700,
+       111224.8489930378077126420609392735999202,
+       -84051.4283423393032636942266780744607468,
+       938.286247077820650371318861625025573381,
+       246.3954669697502467443139611011701827640,
+       598.214644262650861959065070073603792110,
+       -428.681909788964647271837835032326719249,
+       980.198255708866731505258442280896479501},
+      {-27.06472451211777193118825764262673140465,
+       299.4531188198997479843407054776900024282,
+       -143.071126583012024456409244370652716962,
+       -47698.93315706261990169947144294597707756,
+       71494.7977095997701213661747332399327008,
+       -91509.3392102130338542605593697286718077,
+       69399.8582111570893316100585838633124312,
+       -779.438309639349328345148153897689081893,
+       -205.8341686964167118696204191085878165880,
+       -398.7823950071290897160364203878571043995,
+       354.578231152433375494079868740183658991,
+       -786.224179015513894176220583239056456901},
+      {5.454547288952965694339504452480078562780,
+       -79.78911199784015209705095616004766020335,
+       61.0967097444217359754873031115590556707,
+       14951.54365344033382142012769129774268946,
+       -22324.57139433374168317029445568645401598,
+       28594.46085938937782634638310955782423389,
+       -21748.11815446623273761450332307272543593,
+       245.4393970278627292916961100938952065362,
+       65.44129872356201885836080588282812631205,
+       104.0129692060648441002024406476025340187,
+       -114.7001840640649599911246871588418008302,
+       239.7294100413035911863764570341369884827}};
+
   static double acceptedErrorPower(double error) noexcept {
     return std::pow(error, 1.0 / 8.0);
   }
@@ -403,17 +501,21 @@ struct RK78MethodPolicy {
   }
 
   inline static constexpr WVAdaptiveRKStageBufferLastUse stageBufferLastUse[] = {
-      {"stage", "accepted-state commit", 13},
-      {"k1", "accepted solution, error estimate, or future continuous extension", 13},
-      {"k2/k3/k5", "stage-13 construction", 13},
+      {"stage", "accepted-state commit or continuous-extension scratch", 17},
+      {"k1", "accepted solution, error estimate, or continuous extension", 17},
+      {"k2/k3/k5", "stage-13 construction or accepted initial state", 17},
       {"k4/k13", "embedded error estimate", 13},
-      {"k6", "accepted solution, error estimate, or future continuous extension", 13},
-      {"k7", "accepted solution, error estimate, or future continuous extension", 13},
-      {"k8", "accepted solution, error estimate, or future continuous extension", 13},
-      {"k9", "accepted solution, error estimate, or future continuous extension", 13},
-      {"k10", "accepted solution, error estimate, or future continuous extension", 13},
-      {"k11", "accepted solution, error estimate, or future continuous extension", 13},
-      {"k12", "accepted solution, error estimate, or future continuous extension", 13}};
+      {"k6", "accepted solution, error estimate, or continuous extension", 17},
+      {"k7", "accepted solution, error estimate, or continuous extension", 17},
+      {"k8", "accepted solution, error estimate, or continuous extension", 17},
+      {"k9", "accepted solution, error estimate, or continuous extension", 17},
+      {"k10", "accepted solution, error estimate, or continuous extension", 17},
+      {"k11", "accepted solution, error estimate, or continuous extension", 17},
+      {"k12", "accepted solution, error estimate, or continuous extension", 17},
+      {"k14", "continuous-extension polynomial", 17},
+      {"k15", "continuous-extension polynomial", 17},
+      {"k16", "continuous-extension polynomial", 17},
+      {"k17", "continuous-extension polynomial", 17}};
 };
 
 // Shared adaptive machinery is intentionally compile-time composed with each
@@ -1907,11 +2009,28 @@ public:
   }
 };
 
+class WVAdaptiveRK78::ContinuousExtensionWorkspace {
+public:
+  IntegrationBuffer k14, k15, k16, k17;
+
+  std::size_t capacityBytes() const noexcept {
+    return k14.capacityBytes() + k15.capacityBytes() + k16.capacityBytes() +
+           k17.capacityBytes();
+  }
+  std::size_t coefficientViewBytes() const noexcept {
+    return k14.coefficientViewBytes() + k15.coefficientViewBytes() +
+           k16.coefficientViewBytes() + k17.coefficientViewBytes();
+  }
+};
+
 WVAdaptiveRK78::WVAdaptiveRK78(WVIntegrationSystem &system,
                                WVAdaptiveRK78Options options)
     : system_(system), options_(options) {}
 
-WVAdaptiveRK78::~WVAdaptiveRK78() { delete workspace_; }
+WVAdaptiveRK78::~WVAdaptiveRK78() {
+  delete continuousExtension_;
+  delete workspace_;
+}
 
 std::size_t WVAdaptiveRK78::persistentBytes() const noexcept {
   return sizeof(*this) +
@@ -1920,6 +2039,11 @@ std::size_t WVAdaptiveRK78::persistentBytes() const noexcept {
               : sizeof(Workspace) + workspace_->capacityBytes() +
                     workspace_->coefficientViewBytes() +
                     workspace_->externalViewBytes()) +
+         (continuousExtension_ == nullptr
+              ? 0
+              : sizeof(ContinuousExtensionWorkspace) +
+                    continuousExtension_->capacityBytes() +
+                    continuousExtension_->coefficientViewBytes()) +
          (errorPolicy_ == nullptr ? 0 : errorPolicy_->persistentBytes()) +
          stepDiagnostics_.capacity() * sizeof(WVAdaptiveRK78StepDiagnostic) +
          toleranceComponentHashes_.capacity() * sizeof(std::uint64_t);
@@ -1987,14 +2111,74 @@ WVAdaptiveRK78::ensureWorkspace(const WVMutableIntegrationState &state) {
   metrics_.workspaceLiveBytes = metrics_.workspaceCapacityBytes;
   metrics_.stateCapacityBytes = workspace_->stage.valueCapacityBytes();
   metrics_.workspaceStateEquivalentCount = 11;
-  metrics_.denseHistoryCapacityBytes = 0;
-  metrics_.denseHistoryStateEquivalentCount = 0;
+  metrics_.workspaceMaximumLiveStateEquivalentCount = 11;
+  metrics_.retainedBaseStageCapacityBytes =
+      options_.retainDenseOutput
+          ? workspace_->k1.valueCapacityBytes() +
+                workspace_->k6.valueCapacityBytes() +
+                workspace_->k7.valueCapacityBytes() +
+                workspace_->k8.valueCapacityBytes() +
+                workspace_->k9.valueCapacityBytes() +
+                workspace_->k10.valueCapacityBytes() +
+                workspace_->k11.valueCapacityBytes() +
+                workspace_->k12.valueCapacityBytes()
+          : 0;
+  metrics_.retainedBaseStageStateEquivalentCount =
+      options_.retainDenseOutput ? 8 : 0;
+  metrics_.denseHistoryCapacityBytes =
+      metrics_.retainedBaseStageCapacityBytes;
+  metrics_.denseHistoryStateEquivalentCount =
+      metrics_.retainedBaseStageStateEquivalentCount;
   metrics_.errorPolicyBytes = errorPolicy_->persistentBytes();
+  return WVKernelStatus::ok();
+}
+
+void WVAdaptiveRK78::releaseContinuousExtension() const noexcept {
+  delete continuousExtension_;
+  continuousExtension_ = nullptr;
+  continuousExtensionReady_ = false;
+  metrics_.continuousExtensionWorkspaceCapacityBytes = 0;
+  metrics_.continuousExtensionWorkspaceStateEquivalentCount = 0;
+  metrics_.workspaceLiveBytes = metrics_.workspaceCapacityBytes;
+}
+
+WVKernelStatus WVAdaptiveRK78::ensureContinuousExtension() const {
+  if (continuousExtension_ != nullptr)
+    return WVKernelStatus::ok();
+  auto *extension = new (std::nothrow) ContinuousExtensionWorkspace;
+  if (extension == nullptr)
+    return {WVKernelStatusCode::allocationFailure,
+            "RK78 continuous-extension workspace allocation failed."};
+  IntegrationBuffer *buffers[] = {&extension->k14, &extension->k15,
+                                  &extension->k16, &extension->k17};
+  for (auto *buffer : buffers) {
+    const auto status = buffer->initialize(system_.stateLayout());
+    if (!status) {
+      delete extension;
+      return status;
+    }
+  }
+  continuousExtension_ = extension;
+  const auto bytes = extension->capacityBytes() +
+                     extension->coefficientViewBytes();
+  metrics_.continuousExtensionWorkspaceCapacityBytes = bytes;
+  metrics_.continuousExtensionWorkspaceStateEquivalentCount = 4;
+  metrics_.continuousExtensionWorkspaceMaximumLiveBytes =
+      std::max(metrics_.continuousExtensionWorkspaceMaximumLiveBytes, bytes);
+  metrics_.continuousExtensionWorkspaceMaximumLiveStateEquivalentCount = 4;
+  metrics_.workspaceLiveBytes = metrics_.workspaceCapacityBytes + bytes;
+  metrics_.workspaceMaximumLiveBytes =
+      std::max(metrics_.workspaceMaximumLiveBytes,
+               metrics_.workspaceLiveBytes);
+  metrics_.workspaceMaximumLiveStateEquivalentCount =
+      std::max<std::size_t>(metrics_.workspaceMaximumLiveStateEquivalentCount,
+                            15);
   return WVKernelStatus::ok();
 }
 
 WVKernelStatus WVAdaptiveRK78::prepareStateAfterRestart(
     WVMutableIntegrationState &state) {
+  releaseContinuousExtension();
   return AdaptiveRungeKuttaDriver::prepareStateAfterRestart(
       system_, state, hasAcceptedStep_, derivativeReuseAvailable_,
       nextStepSize_, stepDiagnostics_, metrics_,
@@ -2018,6 +2202,7 @@ WVKernelStatus WVAdaptiveRK78::stepImplementation(
   auto status = ensureWorkspace(state);
   if (!status)
     return status;
+  releaseContinuousExtension();
   stepping_ = true;
   struct Guard {
     bool &value;
@@ -2042,6 +2227,8 @@ WVKernelStatus WVAdaptiveRK78::stepImplementation(
     const auto result = evaluate(system_, workspace_->stage, stageTime, t0,
                                  derivative, metrics_);
     evaluationsThisStep += metrics_.rightHandSideEvaluationCount - before;
+    metrics_.baseRightHandSideEvaluationCount +=
+        metrics_.rightHandSideEvaluationCount - before;
     return result;
   };
 
@@ -2056,6 +2243,8 @@ WVKernelStatus WVAdaptiveRK78::stepImplementation(
       if (status)
         ++metrics_.rightHandSideEvaluationCount;
       evaluationsThisStep += metrics_.rightHandSideEvaluationCount - before;
+      metrics_.baseRightHandSideEvaluationCount +=
+          metrics_.rightHandSideEvaluationCount - before;
       if (!status)
         return status;
       initialDerivativeAvailable = true;
@@ -2322,6 +2511,8 @@ WVKernelStatus WVAdaptiveRK78::stepImplementation(
     metrics_.normalizedError = error;
     metrics_.nextStepSize = nextStepSize_;
     if (accepted) {
+      if (options_.retainDenseOutput)
+        workspace_->k2OrK3OrK5.copyFrom(baseView);
       workspace_->stage.copyTo(state);
       state.waveVortex.t = t + h;
       makeExternalViews(state, workspace_->acceptedCoefficientViews,
@@ -2335,7 +2526,7 @@ WVKernelStatus WVAdaptiveRK78::stepImplementation(
            workspace_->acceptedCoefficientViews.size()},
           {metrics_.acceptedStepCount + 1, rejectedThisStep,
            evaluationsThisStep, h, proposedStepSize, nextStepSize_, error},
-          nullptr};
+          options_.retainDenseOutput ? this : nullptr};
       ++metrics_.acceptedStepCount;
       ++metrics_.stepCount;
       metrics_.lastStepSize = h;
@@ -2373,6 +2564,198 @@ WVKernelStatus WVAdaptiveRK78::advanceToTime(
                 use <= 1.1 * options_.maximumStepSize);
       },
       [&]() { return nextStepSize_; });
+}
+
+WVKernelStatus WVAdaptiveRK78::evaluateDenseOutput(
+    double time, WVMutableIntegrationState &output) const {
+  if (!options_.retainDenseOutput || !hasAcceptedStep_)
+    return {WVKernelStatusCode::unsupportedOperation,
+            "RK78 dense output is unavailable."};
+  if (evaluatingDenseOutput_)
+    return {WVKernelStatusCode::reentrantExecution,
+            "RK78 dense-output evaluation is not reentrant."};
+  auto status = validateMutableIntegrationState(system_.stateLayout(), output);
+  if (!status)
+    return status;
+  for (std::size_t family = 0; family < output.coefficientFamilyCount;
+       ++family)
+    if (output.coefficientFamilies[family].data ==
+        acceptedStep_.endpoint.coefficientFamilies[family].data)
+      return {WVKernelStatusCode::invalidConfiguration,
+              "RK78 dense output must not alias accepted integration state."};
+  for (std::size_t block = 0; block < output.additionalBlockCount; ++block)
+    if ((output.additionalBlocks[block].realData != nullptr &&
+         output.additionalBlocks[block].realData ==
+             acceptedStep_.endpoint.additionalBlocks[block].realData) ||
+        (output.additionalBlocks[block].complexData != nullptr &&
+         output.additionalBlocks[block].complexData ==
+             acceptedStep_.endpoint.additionalBlocks[block].complexData))
+      return {WVKernelStatusCode::invalidConfiguration,
+              "RK78 dense output must not alias accepted integration state."};
+  const auto tolerance =
+      timeTolerance(acceptedStep_.initialTime, acceptedStep_.finalTime);
+  if (time < acceptedStep_.initialTime - tolerance ||
+      time > acceptedStep_.finalTime + tolerance)
+    return {WVKernelStatusCode::invalidConfiguration,
+            "Dense-output time is outside the accepted interval."};
+  evaluatingDenseOutput_ = true;
+  struct Guard {
+    bool &value;
+    ~Guard() { value = false; }
+  } guard{evaluatingDenseOutput_};
+  const auto started = std::chrono::steady_clock::now();
+  const double h = acceptedStep_.finalTime - acceptedStep_.initialTime;
+  double theta = h == 0.0 ? 0.0 : (time - acceptedStep_.initialTime) / h;
+  if (std::abs(time - acceptedStep_.initialTime) <= tolerance)
+    theta = 0.0;
+  if (std::abs(time - acceptedStep_.finalTime) <= tolerance)
+    theta = 1.0;
+  theta = std::max(0.0, std::min(1.0, theta));
+  std::size_t denseReadMultiplier = 1;
+
+  if (theta == 0.0) {
+    workspace_->k2OrK3OrK5.copyTo(output);
+  } else if (theta == 1.0) {
+    workspace_->stage.copyFrom(acceptedStep_.endpoint);
+    workspace_->stage.copyTo(output);
+  } else {
+    denseReadMultiplier = 13;
+    const bool reusedCache = continuousExtensionReady_;
+    if (!continuousExtensionReady_) {
+      status = ensureContinuousExtension();
+      if (!status)
+        return status;
+      const auto extensionStarted = std::chrono::steady_clock::now();
+      const IntegrationBuffer *baseStages[] = {
+          &workspace_->k1,  &workspace_->k6,  &workspace_->k7,
+          &workspace_->k8,  &workspace_->k9,  &workspace_->k10,
+          &workspace_->k11, &workspace_->k12};
+      const auto setBaseStage = [&](const double *weights) {
+        workspace_->stage.copyFrom(workspace_->k2OrK3OrK5.state(
+            acceptedStep_.initialTime, acceptedStep_.endpoint.waveVortex.t0));
+        for (std::size_t index = 0; index < 8; ++index)
+          workspace_->stage.addScaled(*baseStages[index],
+                                      h * weights[index]);
+      };
+      const auto evaluateExtensionStage = [&](IntegrationBuffer &derivative,
+                                              double stageTime) {
+        const auto before = metrics_.rightHandSideEvaluationCount;
+        const auto result = evaluate(system_, workspace_->stage, stageTime,
+                                     acceptedStep_.endpoint.waveVortex.t0,
+                                     derivative, metrics_);
+        metrics_.continuousExtensionRightHandSideEvaluationCount +=
+            metrics_.rightHandSideEvaluationCount - before;
+        return result;
+      };
+      const double baseWeights[] = {
+          RK78MethodPolicy::b1,  RK78MethodPolicy::b6,
+          RK78MethodPolicy::b7,  RK78MethodPolicy::b8,
+          RK78MethodPolicy::b9,  RK78MethodPolicy::b10,
+          RK78MethodPolicy::b11, RK78MethodPolicy::b12};
+      setBaseStage(baseWeights);
+      status = constrain(system_, workspace_->stage,
+                         acceptedStep_.finalTime,
+                         acceptedStep_.endpoint.waveVortex.t0);
+      if (status)
+        status = evaluateExtensionStage(continuousExtension_->k14,
+                                        acceptedStep_.finalTime);
+      if (status) {
+        setBaseStage(RK78MethodPolicy::a15);
+        workspace_->stage.addScaled(continuousExtension_->k14,
+                                    h * RK78MethodPolicy::a15[8]);
+        status = constrain(
+            system_, workspace_->stage,
+            acceptedStep_.initialTime + h * RK78MethodPolicy::c15,
+            acceptedStep_.endpoint.waveVortex.t0);
+      }
+      if (status)
+        status = evaluateExtensionStage(
+            continuousExtension_->k15,
+            acceptedStep_.initialTime + h * RK78MethodPolicy::c15);
+      if (status) {
+        setBaseStage(RK78MethodPolicy::a16);
+        workspace_->stage.addScaled(continuousExtension_->k14,
+                                    h * RK78MethodPolicy::a16[8]);
+        workspace_->stage.addScaled(continuousExtension_->k15,
+                                    h * RK78MethodPolicy::a16[9]);
+        status = constrain(
+            system_, workspace_->stage,
+            acceptedStep_.initialTime + h * RK78MethodPolicy::c16,
+            acceptedStep_.endpoint.waveVortex.t0);
+      }
+      if (status)
+        status = evaluateExtensionStage(
+            continuousExtension_->k16,
+            acceptedStep_.initialTime + h * RK78MethodPolicy::c16);
+      if (status) {
+        setBaseStage(RK78MethodPolicy::a17);
+        workspace_->stage.addScaled(continuousExtension_->k14,
+                                    h * RK78MethodPolicy::a17[8]);
+        workspace_->stage.addScaled(continuousExtension_->k15,
+                                    h * RK78MethodPolicy::a17[9]);
+        workspace_->stage.addScaled(continuousExtension_->k16,
+                                    h * RK78MethodPolicy::a17[10]);
+        status = constrain(
+            system_, workspace_->stage,
+            acceptedStep_.initialTime + h * RK78MethodPolicy::c17,
+            acceptedStep_.endpoint.waveVortex.t0);
+      }
+      if (status)
+        status = evaluateExtensionStage(
+            continuousExtension_->k17,
+            acceptedStep_.initialTime + h * RK78MethodPolicy::c17);
+      metrics_.continuousExtensionSeconds +=
+          std::chrono::duration<double>(std::chrono::steady_clock::now() -
+                                        extensionStarted)
+              .count();
+      if (!status) {
+        releaseContinuousExtension();
+        return status;
+      }
+      continuousExtensionReady_ = true;
+      ++metrics_.denseOutputCacheBuildCount;
+    }
+    if (reusedCache)
+      ++metrics_.denseOutputCacheReuseCount;
+
+    double weights[12];
+    for (std::size_t index = 0; index < 12; ++index) {
+      double value = RK78MethodPolicy::continuousWeights[5][index];
+      for (std::size_t power = 5; power-- > 0;)
+        value = value * theta +
+                RK78MethodPolicy::continuousWeights[power][index];
+      weights[index] = value * theta * theta;
+    }
+    weights[0] += theta;
+    workspace_->stage.copyFrom(workspace_->k2OrK3OrK5.state(
+        acceptedStep_.initialTime, acceptedStep_.endpoint.waveVortex.t0));
+    const IntegrationBuffer *stages[] = {
+        &workspace_->k1,             &workspace_->k6,
+        &workspace_->k7,             &workspace_->k8,
+        &workspace_->k9,             &workspace_->k10,
+        &workspace_->k11,            &workspace_->k12,
+        &continuousExtension_->k14,  &continuousExtension_->k15,
+        &continuousExtension_->k16,  &continuousExtension_->k17};
+    for (std::size_t index = 0; index < 12; ++index)
+      workspace_->stage.addScaled(*stages[index], h * weights[index]);
+    auto interpolated = workspace_->stage.mutableState(
+        time, acceptedStep_.endpoint.waveVortex.t0);
+    status = system_.enforceStateConstraints(interpolated).status;
+    if (!status)
+      return status;
+    workspace_->stage.copyTo(output);
+  }
+  output.waveVortex.t = time;
+  output.waveVortex.t0 = acceptedStep_.endpoint.waveVortex.t0;
+  ++metrics_.denseOutputEvaluationCount;
+  const auto elementCount = workspace_->stage.complex().size() +
+                            workspace_->stage.real().size();
+  metrics_.denseOutputElementReads += denseReadMultiplier * elementCount;
+  metrics_.denseOutputElementWrites += elementCount;
+  metrics_.denseOutputSeconds +=
+      std::chrono::duration<double>(std::chrono::steady_clock::now() - started)
+          .count();
+  return WVKernelStatus::ok();
 }
 
 double WVAdaptiveRK78::initialTime() const noexcept {
