@@ -150,7 +150,7 @@ void testAllocationLightInspection() {
 void testForcingCapabilities() {
     const auto& forcings = test::extensionCatalog()->forcings();
     const auto& capabilities = forcings.registrations();
-    require(capabilities.size() == 14, "forcing capability matrix does not cover supplied and test classes");
+    require(capabilities.size() == 15, "forcing capability matrix does not cover supplied and test classes");
     std::size_t supported = 0;
     std::set<std::string> identifiers;
     for (const auto& capability : capabilities) {
@@ -163,7 +163,7 @@ void testForcingCapabilities() {
             require(!capability.unavailabilityReason.empty(), "unsupported forcing omitted its reason");
         }
     }
-    require(supported == 9, "forcing capability matrix must expose seven production pairs and two test pairs");
+    require(supported == 10, "forcing capability matrix must expose eight production pairs and two test pairs");
     require(forcings.capability("WVTestPortableFixedAmplitudeForcing").isSupported(), "registered test forcing pair is unavailable");
     require(forcings.capability("WVTestPortableFixedAmplitudeForcing", 2).status == WVPortableCapabilityStatus::versionMismatch, "forcing pair version mismatch was accepted");
     require(forcings.capability(test::LinearCoefficientForcingIdentifier).isSupported(), "registered linear coefficient forcing pair is unavailable");

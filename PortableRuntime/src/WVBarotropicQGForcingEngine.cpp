@@ -384,7 +384,17 @@ WVKernelStatus preflightBarotropicQGFixedAmplitude(
 }
 
 WVKernelStatus preflightBarotropicQGScalarForcing(
-    const WVFrozenForcingEntry &, std::size_t) {
+    const WVFrozenForcingEntry &entry, std::size_t) {
+  if (entry.configuration.values.size() != 1 ||
+      !entry.configuration.values.front().dimensions.empty())
+    return {WVKernelStatusCode::invalidConfiguration,
+            "Barotropic QG scalar forcing requires exactly one scalar value."};
+  const auto *values = std::get_if<std::vector<double>>(
+      &entry.configuration.values.front().storage);
+  if (values == nullptr || values->size() != 1 ||
+      !std::isfinite(values->front()))
+    return {WVKernelStatusCode::invalidConfiguration,
+            "Barotropic QG scalar forcing requires one finite real value."};
   return WVKernelStatus::ok();
 }
 

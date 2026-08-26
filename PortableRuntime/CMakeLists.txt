@@ -182,6 +182,19 @@ if(BUILD_TESTING)
             -Wall -Wextra -Wpedantic -Werror)
     endif()
 
+    add_executable(WVBarotropicQGForcingDump
+        tests/WVBarotropicQGForcingDump.cpp)
+    target_compile_features(WVBarotropicQGForcingDump PRIVATE cxx_std_17)
+    target_include_directories(WVBarotropicQGForcingDump PRIVATE
+        ../CompiledKernel/adapters/reference)
+    target_link_libraries(WVBarotropicQGForcingDump PRIVATE
+        WaveVortex::PortableRuntime
+        WaveVortex::ReferenceFFT)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "AppleClang|Clang|GNU")
+        target_compile_options(WVBarotropicQGForcingDump PRIVATE
+            -Wall -Wextra -Wpedantic -Werror)
+    endif()
+
     function(wv_add_runtime_test target source test_name)
         add_executable(${target} tests/${source})
         target_compile_features(${target} PRIVATE cxx_std_17)
@@ -217,6 +230,7 @@ if(BUILD_TESTING)
     wv_add_runtime_test(TestWVForcingAndRK4 TestWVForcingAndRK4.cpp forcing-and-rk4)
     wv_add_runtime_test(TestWVUnifiedIntegration TestWVUnifiedIntegration.cpp unified-integration)
     wv_add_runtime_test(TestWVBarotropicQGIntegration TestWVBarotropicQGIntegration.cpp barotropic-qg-integration)
+    wv_add_runtime_test(TestWVBarotropicQGForcing TestWVBarotropicQGForcing.cpp barotropic-qg-forcing)
     wv_add_runtime_test(TestWVOutputOrchestration TestWVOutputOrchestration.cpp output-orchestration)
     wv_add_runtime_test(TestWVOutputOccurrence TestWVOutputOccurrence.cpp output-occurrence)
     wv_add_runtime_test(TestWVModelOutputNetCDF TestWVModelOutputNetCDF.cpp model-output-netcdf)
