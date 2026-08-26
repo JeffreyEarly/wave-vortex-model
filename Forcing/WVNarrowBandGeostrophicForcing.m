@@ -121,7 +121,9 @@ classdef WVNarrowBandGeostrophicForcing < WVFixedAmplitudeForcing
             % - Returns contract: versioned data-only fixed-amplitude contract
             % - Developer: true
             payload = struct("name",string(self.name),"forcingTypes",string(self.forcingType),"priority",self.priority,"ApIndices",self.Ap_indices,"ApValues",self.Apbar,"AmIndices",self.Am_indices,"AmValues",self.Ambar,"A0Indices",self.A0_indices,"A0Values",self.A0bar);
-            contract = self.supportedPortableImplementationContract("WVNarrowBandGeostrophicForcing",payload);
+            contract = WVInternal.portableImplementationContract( ...
+                string(class(self)),"WVNarrowBandGeostrophicForcing", ...
+                "supported","",payload);
         end
 
         function self = WVNarrowBandGeostrophicForcing(wvt,options)
