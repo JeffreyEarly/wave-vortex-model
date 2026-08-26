@@ -122,6 +122,10 @@ int main() {
         R"({"schemaIdentifier":"wave-vortex-run-request-v1","schemaVersion":1,"modelFiles":["model.nc"],"integration":{"method":"adaptive-rk45","finalTime":12,"initialStep":0.25,"maximumStep":1,"relativeTolerance":0.001,"absoluteToleranceScale":0.000001},"output":{"policy":"append","destinations":{}},"execution":{"fftProvider":"reference","threads":1},"report":"report.json"})",
         "run-request v1 accepted unreleased adaptive-rk45 identity");
     expectFailure(
+        "rk78-v1.json",
+        R"({"schemaIdentifier":"wave-vortex-run-request-v1","schemaVersion":1,"modelFiles":["model.nc"],"integration":{"method":"adaptive-rk78","finalTime":12,"initialStep":0.25,"maximumStep":1,"relativeTolerance":0.001,"absoluteToleranceScale":0.000001},"output":{"policy":"append","destinations":{}},"execution":{"fftProvider":"reference","threads":1},"report":"report.json"})",
+        "run-request v1 accepted adaptive-rk78 identity");
+    expectFailure(
         "report-alias.json",
         R"({"schemaIdentifier":"wave-vortex-run-request-v1","schemaVersion":1,"modelFiles":["model.nc"],"integration":{"method":"fixed-rk4","finalTime":12,"initialStep":1},"output":{"policy":"create","destinations":{"primary":"output.nc"}},"execution":{"fftProvider":"reference","threads":1},"report":"output.nc"})",
         "report/output alias was accepted");

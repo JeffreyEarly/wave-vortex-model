@@ -4,7 +4,7 @@ This directory contains the optional MATLAB-independent portable runtime. MATLAB
 
 The runtime supports:
 
-- fixed-step RK4, MATLAB `ode23`-compatible Bogacki--Shampine integration with a third-order accepted solution and second-order embedded estimate, and MATLAB `ode45`-compatible Dormand--Prince integration with a fifth-order accepted solution and fourth-order embedded estimate, including method-owned continuous output;
+- fixed-step RK4, MATLAB `ode23`-compatible Bogacki--Shampine integration with a third-order accepted solution and second-order embedded estimate, MATLAB `ode45`-compatible Dormand--Prince integration with a fifth-order accepted solution and fourth-order embedded estimate, and endpoint-only MATLAB `ode78`-compatible Verner integration with an eighth-order accepted solution and seventh-order embedded estimate; RK23 and RK45 include method-owned continuous output, while issue #284 owns RK78 continuous output;
 - the frozen v1 forcing subset (`WVNonlinearAdvection`, `WVAdaptiveDamping`, `WVFixedAmplitudeForcing`, `WVBottomFrictionLinear`, `WVBottomFrictionQuadratic`, `WVPseudoTopographicWaveGeneration`, and `WVBetaPlanePVAdvection`);
 - the five qualified built-in observer records (`WVCoefficients`, `WVEulerianFields`, `WVMooring`, `WVLagrangianParticles`, and `WVTracer`);
 - MATLAB-compatible checkpoint and time-series NetCDF data for the documented constant-stratification subset.
@@ -90,9 +90,17 @@ wave-vortex-run saved-model.nc \
     --delta-t 1 --initial-step 1 --maximum-step 10 --final-time 100 \
     --relative-tolerance 1e-3 --absolute-tolerance 1e-6 \
     --fft-provider native-fftw
+
+wave-vortex-run saved-checkpoint.nc continued-checkpoint.nc \
+    --restart-mode coefficients \
+    --output-policy create \
+    --integrator adaptive-rk78 \
+    --delta-t 1 --initial-step 1 --maximum-step 10 --final-time 100 \
+    --relative-tolerance 1e-3 --absolute-tolerance 1e-6 \
+    --fft-provider native-fftw
 ```
 
-For adaptive integration, `--delta-t` remains the backward-compatible initial-step default. `--initial-step` overrides it explicitly. `--maximum-step` defaults to one tenth of the requested continuation interval, matching MATLAB's default bound; name it explicitly when comparing runs or continuing the same controller policy across segments. Use `adaptive-rk23` for MATLAB `ode23` semantics and `adaptive-rk45` for MATLAB `ode45` semantics. The run report records the controller, effective limits, tolerance hash, accepted and rejected work, bounded accepted-step diagnostics, exact workspace and dense-history bytes, state-equivalent counts, and the method's stage-buffer last-use schedule. The strict `wave-vortex-run-request-v1` schema remains unchanged and accepts only fixed RK4 or `adaptive-rk23`; select `adaptive-rk45` through the legacy CLI or source-level `WVModelIntegratorConfiguration` until a later request schema adds it explicitly.
+For adaptive integration, `--delta-t` remains the backward-compatible initial-step default. `--initial-step` overrides it explicitly. `--maximum-step` defaults to one tenth of the requested continuation interval, matching MATLAB's default bound; name it explicitly when comparing runs or continuing the same controller policy across segments. Use `adaptive-rk23`, `adaptive-rk45`, or `adaptive-rk78` for the corresponding MATLAB controller semantics. RK78 is endpoint-only in this change: its 11 state-equivalent workspace retains `f1` and `f6` through `f12` for the accepted result, embedded estimate, and future continuous extension, but allocates and evaluates none of #284's `f14` through `f17` stages. Therefore the legacy CLI accepts RK78 only for coefficient-only checkpoint output without scheduled, benchmark, or restored model-graph output. The run report records the controller, effective limits, tolerance hash, accepted and rejected work, bounded accepted-step diagnostics, exact workspace and dense-history bytes, state-equivalent counts, and the method's stage-buffer last-use schedule. The strict `wave-vortex-run-request-v1` schema remains unchanged and accepts only fixed RK4 or `adaptive-rk23`; select `adaptive-rk45` or endpoint-only `adaptive-rk78` through the legacy CLI or source-level `WVModelIntegratorConfiguration` until a later request schema adds them explicitly.
 
 Use `--restart-mode coefficients --output-policy create` with positional input and output paths for an explicit reduced checkpoint-only workflow. `create` refuses existing files; `replace` must be named to authorize atomic replacement. The legacy complete-model form accepts only `append` and validates compatibility before mutation. It remains available for scripts that operate on a single output file; `--request` is the preferred complete multi-file boundary and cannot be mixed with legacy semantic flags.
 

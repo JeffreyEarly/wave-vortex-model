@@ -265,6 +265,9 @@ WVKernelStatus WVModel::Impl::configureIntegrator(
     else if (configuration.kind == WVModelIntegratorKind::adaptiveRK45)
       integrator = std::make_unique<WVAdaptiveRK45>(
           *system, configuration.adaptiveRK45);
+    else if (configuration.kind == WVModelIntegratorKind::adaptiveRK78)
+      integrator = std::make_unique<WVAdaptiveRK78>(
+          *system, configuration.adaptiveRK78);
     else
       integrator =
           std::make_unique<WVFixedStepRK4>(*system, configuration.fixed);
@@ -664,6 +667,9 @@ WVModelMetrics WVModel::metrics(const WVModelState *state) const noexcept {
   else if (impl_->integratorKind == WVModelIntegratorKind::adaptiveRK45)
     result.integrator =
         static_cast<const WVAdaptiveRK45 &>(*impl_->integrator).metrics();
+  else if (impl_->integratorKind == WVModelIntegratorKind::adaptiveRK78)
+    result.integrator =
+        static_cast<const WVAdaptiveRK78 &>(*impl_->integrator).metrics();
   else
     result.integrator =
         static_cast<const WVFixedStepRK4 &>(*impl_->integrator).metrics();

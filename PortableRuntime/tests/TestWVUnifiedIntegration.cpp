@@ -119,9 +119,11 @@ public:
   };
   explicit LinearIntegrationSystem(WVIntegrationStateLayout layout,
                                    bool zeroDerivative = false,
-                                   bool constraintsFSALCompatible = true)
+                                   bool constraintsFSALCompatible = true,
+                                   bool nonfiniteDerivative = false)
       : layout_(std::move(layout)), zeroDerivative_(zeroDerivative),
-        constraintsFSALCompatible_(constraintsFSALCompatible) {}
+        constraintsFSALCompatible_(constraintsFSALCompatible),
+        nonfiniteDerivative_(nonfiniteDerivative) {}
   const WVIntegrationStateLayout &stateLayout() const noexcept override {
     return layout_;
   }
@@ -134,6 +136,23 @@ public:
                                          state.waveVortex.coefficients.A0};
     WVComplexView destination[] = {rhs.waveVortex.Fp, rhs.waveVortex.Fm,
                                    rhs.waveVortex.F0};
+    if (nonfiniteDerivative_) {
+      const auto value = std::numeric_limits<double>::quiet_NaN();
+      for (auto &component : destination)
+        std::fill_n(component.data, component.shape.elementCount(),
+                    WVComplex64{value, value});
+      for (std::size_t block = 0; block < state.additionalBlockCount; ++block) {
+        const auto &metadata = *state.additionalBlocks[block].layout;
+        if (metadata.scalarType == WVStateScalarType::real64)
+          std::fill_n(rhs.additionalBlocks[block].realData,
+                      metadata.elementCount, value);
+        else
+          std::fill_n(rhs.additionalBlocks[block].complexData,
+                      metadata.elementCount, WVComplex64{value, value});
+      }
+      ++evaluations;
+      return WVKernelStatus::ok();
+    }
     if (zeroDerivative_) {
       for (auto &component : destination)
         std::fill_n(component.data, component.shape.elementCount(),
@@ -196,6 +215,7 @@ private:
   WVIntegrationStateLayout layout_;
   bool zeroDerivative_ = false;
   bool constraintsFSALCompatible_ = true;
+  bool nonfiniteDerivative_ = false;
 };
 
 class A0OnlyIntegrationSystem final : public WVIntegrationSystem {
@@ -521,6 +541,26 @@ void testA0OnlyTransformContract() {
               state.waveVortex.coefficients.Am.data == nullptr &&
               state.waveVortex.coefficients.A0.data == nullptr,
           "A0-only RK45 preserved adaptive work and transform-neutral state");
+
+  WVAdaptiveRK78Options rk78Options;
+  rk78Options.relativeTolerance = 1e-6;
+  rk78Options.maximumStepSize = 0.01;
+  WVAdaptiveRK78 rk78(system, rk78Options);
+  status = rk78.prepareStateAfterRestart(state);
+  require(static_cast<bool>(status),
+          "A0-only RK78 restart preparation: " + status.message);
+  status = rk78.step(state, 0.01);
+  require(static_cast<bool>(status),
+          "A0-only RK78 execution: " + status.message);
+  require(rk78.metrics().workspaceStateEquivalentCount == 11 &&
+              rk78.metrics().acceptedStepCount == 1 &&
+              rk78.metrics().rejectedStepCount == 0 &&
+              rk78.metrics().rightHandSideEvaluationCount == 13 &&
+              state.coefficientFamilyCount == 1 &&
+              state.waveVortex.coefficients.Ap.data == nullptr &&
+              state.waveVortex.coefficients.Am.data == nullptr &&
+              state.waveVortex.coefficients.A0.data == nullptr,
+          "A0-only RK78 preserved adaptive work and transform-neutral state");
 
   coefficientViews.clear();
   blockViews.clear();
@@ -928,6 +968,230 @@ void testRK45OrderConstraintsAndSegmentation() {
           "RK45 segmentation preserves the accepted trajectory");
 }
 
+void testRK78(LinearIntegrationSystem &system) {
+  StateFixture fixture(system.stateLayout());
+  WVAdaptiveRK78Options options;
+  options.relativeTolerance = 1e-10;
+  options.absoluteToleranceScale = 1e-10;
+  options.maximumStepFactor = 2.0;
+  WVAdaptiveRK78 rk78(system, options);
+  require(static_cast<bool>(rk78.prepareStateAfterRestart(fixture.state)),
+          "RK78 restart preparation");
+  require(static_cast<bool>(rk78.step(fixture.state, 0.5)),
+          "RK78 adaptive step");
+  const auto accepted = rk78.lastAcceptedStep();
+  require(accepted != nullptr && accepted->finalTime > 0.0 &&
+              accepted->denseOutput == nullptr,
+          "RK78 endpoint-only accepted step");
+  require(std::abs(fixture.coefficients[0].real -
+                   std::exp(-accepted->finalTime)) < 1e-12,
+          "RK78 composite-state coefficient result");
+  require(std::abs(fixture.state.additionalBlocks[0].realData[0] -
+                   std::exp(-2.0 * accepted->finalTime)) < 1e-12,
+          "RK78 composite-state real result");
+  require(rk78.metrics().workspaceStateEquivalentCount == 11 &&
+              rk78.metrics().denseHistoryStateEquivalentCount == 0 &&
+              rk78.metrics().denseHistoryCapacityBytes == 0 &&
+              rk78.metrics().workspaceMaximumLiveBytes ==
+                  rk78.metrics().workspaceCapacityBytes &&
+              rk78.metrics().errorPolicyBytes == 0,
+          "RK78 exact endpoint-only workspace ledger");
+  require(rk78.metrics().diagnosticCapacityBytes ==
+              rk78.stepDiagnostics().capacity() *
+                  sizeof(WVAdaptiveRK78StepDiagnostic),
+          "RK78 exact diagnostic ledger");
+  require(WVAdaptiveRK78::stageBufferLastUseRecordCount() == 11 &&
+              std::string(WVAdaptiveRK78::stageBufferLastUseRecords()[2]
+                              .bufferIdentifier) == "k2/k3/k5" &&
+              std::string(WVAdaptiveRK78::stageBufferLastUseRecords()[3]
+                              .bufferIdentifier) == "k4/k13",
+          "RK78 explicit stage-buffer liveness schedule");
+  require(std::string(WVAdaptiveRK78::controllerIdentifier()) ==
+                  "matlab-ode78-v1" &&
+              std::string(WVAdaptiveRK78::methodIdentifier()) ==
+                  "adaptive-rk78",
+          "RK78 stable method and controller identities");
+  require(rk78.persistentBytes() >
+              sizeof(rk78) + rk78.metrics().workspaceCapacityBytes +
+                  rk78.metrics().errorPolicyBytes +
+                  rk78.metrics().diagnosticCapacityBytes,
+          "RK78 retained ledger omitted internal records");
+}
+
+void testRK78MatlabOde78ParityFixture() {
+  WVIntegrationStateLayout layout;
+  require(static_cast<bool>(WVIntegrationStateLayout::createCoefficientOnly(
+              {1, 1}, layout)),
+          "MATLAB ode78 parity layout");
+  LinearIntegrationSystem system(std::move(layout));
+  std::vector<WVComplex64> coefficients(3, {1.0, 0.5});
+  WVMutableIntegrationState state{
+      {0.0,
+       0.0,
+       {{coefficients.data(), {1, 1}},
+        {coefficients.data() + 1, {1, 1}},
+        {coefficients.data() + 2, {1, 1}}}},
+      nullptr,
+      0};
+  WVAdaptiveRK78Options options;
+  options.relativeTolerance = 1e-12;
+  options.absoluteToleranceScale = 1e-10;
+  options.maximumStepSize = 0.5;
+  WVAdaptiveRK78 rk78(system, options);
+  require(static_cast<bool>(rk78.prepareStateAfterRestart(state)),
+          "MATLAB ode78 parity restart preparation");
+  require(static_cast<bool>(rk78.advanceToTime(state, 1.0, 0.5)),
+          "MATLAB ode78 parity interval");
+  require(rk78.metrics().acceptedStepCount == 4 &&
+              rk78.metrics().rejectedStepCount == 1 &&
+              rk78.metrics().rightHandSideEvaluationCount == 64,
+          "MATLAB ode78 parity work counts");
+  require(rk78.stepDiagnosticsComplete() &&
+              rk78.stepDiagnostics().size() == 4,
+          "MATLAB ode78 parity diagnostics");
+  require(std::abs(rk78.stepDiagnostics().front().acceptedStepSize -
+                   0.292534500487804) < 1e-5,
+          "MATLAB ode78 parity first accepted step: " +
+              std::to_string(
+                  rk78.stepDiagnostics().front().acceptedStepSize));
+  constexpr double matlabReal = 0.367879441171209;
+  constexpr double matlabImaginary = 0.183939720585604;
+  require(std::abs(coefficients[0].real - matlabReal) < 1e-12 &&
+              std::abs(coefficients[0].imag - matlabImaginary) < 1e-12,
+          "MATLAB ode78 parity endpoint");
+  require(!rk78.stepDiagnostics().front().reusedFSALDerivative &&
+              !rk78.stepDiagnostics().back().reusedFSALDerivative &&
+              rk78.metrics().fsalReuseCount == 0,
+          "RK78 correctly avoids unsafe endpoint derivative reuse");
+}
+
+struct RK78ConvergenceEvidence {
+  double acceptedError = 0.0;
+  double embeddedErrorEstimate = 0.0;
+};
+
+RK78ConvergenceEvidence rk78SingleStepEvidence(double stepSize) {
+  WVIntegrationStateLayout layout;
+  require(static_cast<bool>(WVIntegrationStateLayout::createCoefficientOnly(
+              {1, 1}, layout)),
+          "RK78 order-test layout");
+  LinearIntegrationSystem system(std::move(layout));
+  std::vector<WVComplex64> coefficients(3, {1.0, 0.0});
+  WVMutableIntegrationState state{
+      {0.0,
+       0.0,
+       {{coefficients.data(), {1, 1}},
+        {coefficients.data() + 1, {1, 1}},
+        {coefficients.data() + 2, {1, 1}}}},
+      nullptr,
+      0};
+  WVAdaptiveRK78Options options;
+  options.relativeTolerance = 1.0;
+  options.absoluteToleranceScale = 1.0;
+  options.maximumStepSize = stepSize;
+  WVAdaptiveRK78 rk78(system, options);
+  require(static_cast<bool>(rk78.prepareStateAfterRestart(state)) &&
+              static_cast<bool>(rk78.step(state, stepSize)) &&
+              rk78.metrics().rejectedStepCount == 0,
+          "RK78 order-test step");
+  return {std::abs(coefficients[0].real - std::exp(-stepSize)),
+          rk78.metrics().normalizedError};
+}
+
+void testRK78OrdersFailuresSegmentationAndRestart() {
+  const auto coarse = rk78SingleStepEvidence(0.8);
+  const auto fine = rk78SingleStepEvidence(0.4);
+  require(coarse.acceptedError / fine.acceptedError > 350.0,
+          "RK78 eighth-order accepted-solution convergence");
+  require(coarse.embeddedErrorEstimate / fine.embeddedErrorEstimate > 180.0,
+          "RK78 seventh-order embedded-estimate convergence");
+
+  WVIntegrationStateLayout failureLayout;
+  require(static_cast<bool>(WVIntegrationStateLayout::createCoefficientOnly(
+              {1, 1}, failureLayout)),
+          "RK78 failure layout");
+  LinearIntegrationSystem failureSystem(std::move(failureLayout), false, true,
+                                        true);
+  std::vector<WVComplex64> failureCoefficients(3, {1.0, 0.0});
+  WVMutableIntegrationState failureState{
+      {1.0,
+       0.0,
+       {{failureCoefficients.data(), {1, 1}},
+        {failureCoefficients.data() + 1, {1, 1}},
+        {failureCoefficients.data() + 2, {1, 1}}}},
+      nullptr,
+      0};
+  WVAdaptiveRK78 failureRK78(failureSystem);
+  require(static_cast<bool>(failureRK78.prepareStateAfterRestart(failureState)),
+          "RK78 failure restart preparation");
+  const auto minimumStep =
+      16.0 * (std::nextafter(1.0, std::numeric_limits<double>::infinity()) -
+              1.0);
+  const auto failureStatus = failureRK78.step(failureState, minimumStep);
+  require(!failureStatus &&
+              failureStatus.code == WVKernelStatusCode::numericalFailure &&
+              failureRK78.metrics().normalizedError ==
+                  std::numeric_limits<double>::infinity() &&
+              failureRK78.metrics().rejectedStepCount == 1 &&
+              failureRK78.metrics().rightHandSideEvaluationCount == 13 &&
+              failureState.waveVortex.t == 1.0,
+          "RK78 minimum-step and nonfinite-error failure contract");
+
+  const auto integrate = [](bool segmented, bool restartAtMidpoint) {
+    WVIntegrationStateLayout layout;
+    require(static_cast<bool>(WVIntegrationStateLayout::createCoefficientOnly(
+                {1, 1}, layout)),
+            "RK78 segmentation layout");
+    LinearIntegrationSystem system(std::move(layout));
+    std::vector<WVComplex64> coefficients(3, {1.0, 0.5});
+    WVMutableIntegrationState state{
+        {0.0,
+         0.0,
+         {{coefficients.data(), {1, 1}},
+          {coefficients.data() + 1, {1, 1}},
+          {coefficients.data() + 2, {1, 1}}}},
+        nullptr,
+        0};
+    WVAdaptiveRK78Options options;
+    options.relativeTolerance = 1e-8;
+    options.absoluteToleranceScale = 1e-10;
+    options.maximumStepSize = 0.1;
+    WVAdaptiveRK78 first(system, options);
+    require(static_cast<bool>(first.prepareStateAfterRestart(state)),
+            "RK78 segmentation restart preparation");
+    if (!segmented) {
+      require(static_cast<bool>(first.advanceToTime(state, 1.0, 0.1)),
+              "RK78 continuous integration");
+    } else {
+      require(static_cast<bool>(first.advanceToTime(state, 0.5, 0.1)),
+              "RK78 first segment");
+      if (restartAtMidpoint) {
+        WVAdaptiveRK78 reconstructed(system, options);
+        require(static_cast<bool>(reconstructed.prepareStateAfterRestart(state)) &&
+                    reconstructed.lastAcceptedStep() == nullptr &&
+                    reconstructed.stepDiagnostics().empty() &&
+                    static_cast<bool>(
+                        reconstructed.advanceToTime(state, 1.0, 0.1)),
+                "RK78 restart reconstruction");
+      } else {
+        require(static_cast<bool>(first.advanceToTime(state, 1.0, 0.1)),
+                "RK78 second segment");
+      }
+    }
+    return coefficients[0];
+  };
+  const auto continuous = integrate(false, false);
+  const auto segmented = integrate(true, false);
+  const auto restarted = integrate(true, true);
+  const auto tolerance =
+      128.0 * std::numeric_limits<double>::epsilon();
+  require(std::abs(continuous.real - segmented.real) <= tolerance &&
+              std::abs(continuous.imag - segmented.imag) <= tolerance &&
+              std::abs(segmented.real - restarted.real) <= tolerance &&
+              std::abs(segmented.imag - restarted.imag) <= tolerance,
+          "RK78 segmentation and restart reconstruction preserve trajectory");
+}
+
 } // namespace
 
 int main() {
@@ -942,8 +1206,12 @@ int main() {
   testRK23MatlabOde23ParityFixture();
   testRK45MatlabOde45ParityFixture();
   testRK45OrderConstraintsAndSegmentation();
+  testRK78(system);
+  testRK78MatlabOde78ParityFixture();
+  testRK78OrdersFailuresSegmentationAndRestart();
   testA0OnlyTransformContract();
-  std::cout << "PASS: portable observer contracts and unified RK4/RK23/RK45 "
-               "integration\n";
+  std::cout <<
+      "PASS: portable observer contracts and unified RK4/RK23/RK45/RK78 "
+      "integration\n";
   return 0;
 }

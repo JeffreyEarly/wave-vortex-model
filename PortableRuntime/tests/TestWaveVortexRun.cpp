@@ -316,6 +316,14 @@ int main() {
         require(static_cast<bool>(status) && rk45Checkpoint.state.t > checkpoint.state.t-0.074,"adaptive RK45 runner output is not readable or did not advance");
         const auto rk45ReportText = text(rk45Report);
         require(rk45ReportText.find("\"id\":\"adaptive-rk45\"") != std::string::npos && rk45ReportText.find("\"controller\":\"matlab-ode45-v1\"") != std::string::npos && rk45ReportText.find("\"workspaceStateEquivalentCount\":7") != std::string::npos && rk45ReportText.find("\"denseHistoryStateEquivalentCount\":0") != std::string::npos && rk45ReportText.find("\"buffer\":\"k2/k7\"") != std::string::npos && rk45ReportText.find("\"diagnosticBytes\":") != std::string::npos,"adaptive RK45 runner report omitted method or memory diagnostics");
+        const auto rk78Output = directory/"adaptive-rk78-output.nc";
+        const auto rk78Report = directory/"adaptive-rk78-report.json";
+        require(run(quote(input)+" "+quote(rk78Output)+" --delta-t 0.037 --initial-step 0.02 --maximum-step 0.01 --steps 2 --integrator adaptive-rk78 --relative-tolerance 1e-3 --absolute-tolerance 1e-6 --fft-provider reference --report "+quote(rk78Report)) == 0,"adaptive RK78 runner execution failed");
+        WVCheckpoint rk78Checkpoint;
+        status = WVCheckpointReader::read(rk78Output.string(), *test::extensionCatalog(),rk78Checkpoint);
+        require(static_cast<bool>(status) && rk78Checkpoint.state.t > checkpoint.state.t-0.074,"adaptive RK78 runner output is not readable or did not advance");
+        const auto rk78ReportText = text(rk78Report);
+        require(rk78ReportText.find("\"id\":\"adaptive-rk78\"") != std::string::npos && rk78ReportText.find("\"controller\":\"matlab-ode78-v1\"") != std::string::npos && rk78ReportText.find("\"workspaceStateEquivalentCount\":11") != std::string::npos && rk78ReportText.find("\"denseHistoryStateEquivalentCount\":0") != std::string::npos && rk78ReportText.find("\"buffer\":\"k2/k3/k5\"") != std::string::npos && rk78ReportText.find("\"errorPolicyBytes\":") != std::string::npos,"adaptive RK78 runner report omitted method or exact-memory diagnostics");
         const auto adaptiveSeriesDirectory = directory/"scheduled-adaptive";
         const auto adaptiveSeriesReport = directory/"scheduled-adaptive-report.json";
         const auto adaptiveSeriesArguments = std::string(" --delta-t 1e-5 --final-time ")+number(scheduledFinalTime)+" --integrator adaptive-rk23 --relative-tolerance 1e-6 --absolute-tolerance 1e-8 --fft-provider reference --output-time "+number(scheduledMidpoint)+" --output-time "+number(scheduledFinalTime)+" --output-directory "+quote(adaptiveSeriesDirectory)+" --output-pattern 'state-{index}-{time}.nc' --report "+quote(adaptiveSeriesReport);
@@ -354,6 +362,7 @@ int main() {
         require(run(quote(input)+" "+quote(rk45DenseOutput)+" --delta-t 1e-7 --steps 2 --integrator adaptive-rk45 --fft-provider reference --benchmark-dense-outputs-per-step 1 --report "+quote(rk45DenseReport)) == 0,"adaptive RK45 runner dense-output execution failed");
         const auto rk45DenseReportText = text(rk45DenseReport);
         require(rk45DenseReportText.find("\"denseOutputEvaluationCount\":2") != std::string::npos && rk45DenseReportText.find("\"interpolatedOutputCount\":2") != std::string::npos && rk45DenseReportText.find("\"denseHistoryStateEquivalentCount\":6") != std::string::npos && rk45DenseReportText.find("\"denseHistoryRetainedWithinWorkspace\":") != std::string::npos && rk45DenseReportText.find("\"acceptedStepAdditionalArrayStorage\":0") != std::string::npos,"adaptive RK45 runner did not report its dense-output work or history");
+        require(run(quote(input)+" "+quote(directory/"adaptive-rk78-dense-output.nc")+" --delta-t 1e-7 --steps 2 --integrator adaptive-rk78 --fft-provider reference --benchmark-dense-outputs-per-step 1 >/dev/null 2>&1") != 0,"adaptive RK78 runner enabled issue #284 dense output");
         const auto adaptiveScheduledOutput = directory/"adaptive-scheduled-output.nc";
         const auto adaptiveScheduledReport = directory/"adaptive-scheduled-report.json";
         require(run(quote(input)+" "+quote(adaptiveScheduledOutput)+" --delta-t 1e-7 --final-time 8.9510002 --integrator adaptive-rk23 --fft-provider reference --benchmark-output-count 4 --report "+quote(adaptiveScheduledReport)) == 0,"adaptive runner scheduled-output execution failed");
@@ -367,6 +376,8 @@ int main() {
             const auto fixtureOutput = directory/("adaptive-"+fixture);
             require(run(quote(fixtureInput)+" "+quote(fixtureOutput)+" --delta-t 1e-5 --steps 1 --integrator adaptive-rk23 --fft-provider reference >/dev/null 2>&1") == 0,"adaptive runner failed forcing fixture "+fixture);
         }
+        const auto rk78FixedAmplitudeOutput = directory/"adaptive-rk78-forcing-fixed-amplitude.nc";
+        require(run(quote(std::filesystem::path(WV_RUNTIME_FIXTURE_DIR)/"forcing-fixed-amplitude.nc")+" "+quote(rk78FixedAmplitudeOutput)+" --delta-t 1e-5 --steps 1 --integrator adaptive-rk78 --fft-provider reference >/dev/null 2>&1") == 0,"adaptive RK78 runner failed the fixed-amplitude constraint fixture");
         require(static_cast<bool>(WVCheckpointReader::read(input.string(), *test::extensionCatalog(),initialCheckpoint)),"adaptive restart input is unreadable");
         const auto continuous = directory/"adaptive-continuous.nc";
         const auto midpoint = directory/"adaptive-midpoint.nc";
@@ -392,6 +403,18 @@ int main() {
         WVCheckpoint rk45RestartedCheckpoint;
         require(static_cast<bool>(WVCheckpointReader::read(rk45Continuous.string(), *test::extensionCatalog(),rk45ContinuousCheckpoint)) && static_cast<bool>(WVCheckpointReader::read(rk45Restarted.string(), *test::extensionCatalog(),rk45RestartedCheckpoint)),"adaptive RK45 restart outputs are unreadable");
         require(relativeDifference(rk45ContinuousCheckpoint,rk45RestartedCheckpoint) <= 1e-6,"adaptive RK45 restart exceeded tolerance-based trajectory equivalence");
+        const auto rk78Continuous = directory/"adaptive-rk78-continuous.nc";
+        const auto rk78Midpoint = directory/"adaptive-rk78-midpoint.nc";
+        const auto rk78Restarted = directory/"adaptive-rk78-restarted.nc";
+        const auto rk78Arguments = std::string(" --delta-t 1e-5 --initial-step 1e-5 --maximum-step 1e-5 --integrator adaptive-rk78 --relative-tolerance 1e-6 --absolute-tolerance 1e-8 --fft-provider reference");
+        require(run(quote(input)+" "+quote(rk78Continuous)+rk78Arguments+" --final-time "+number(finalTime)+" >/dev/null 2>&1") == 0,"continuous adaptive RK78 restart control failed");
+        require(run(quote(input)+" "+quote(rk78Midpoint)+rk78Arguments+" --final-time "+number(midpointTime)+" >/dev/null 2>&1") == 0,"adaptive RK78 midpoint checkpoint failed");
+        require(run(quote(rk78Midpoint)+" "+quote(rk78Restarted)+rk78Arguments+" --final-time "+number(finalTime)+" >/dev/null 2>&1") == 0,"adaptive RK78 restart continuation failed");
+        WVCheckpoint rk78ContinuousCheckpoint;
+        WVCheckpoint rk78RestartedCheckpoint;
+        require(static_cast<bool>(WVCheckpointReader::read(rk78Continuous.string(), *test::extensionCatalog(),rk78ContinuousCheckpoint)) && static_cast<bool>(WVCheckpointReader::read(rk78Restarted.string(), *test::extensionCatalog(),rk78RestartedCheckpoint)),"adaptive RK78 restart outputs are unreadable");
+        const auto rk78RestartDifference = relativeDifference(rk78ContinuousCheckpoint,rk78RestartedCheckpoint);
+        require(rk78RestartDifference <= 1e-10,"adaptive RK78 checkpoint reconstruction exceeded its tolerance-equivalent trajectory: "+number(rk78RestartDifference));
         require(run(quote(input)+" "+quote(output)+" --delta-t 0.037 --steps 1 --final-time 9 --fft-provider reference >/dev/null 2>&1") != 0,"runner accepted both endpoint modes");
         require(run(quote(input)+" "+quote(output)+" --delta-t 0.037 --steps 1 --fft-provider native-fftw >/dev/null 2>&1") != 0,"reference-only build silently substituted a provider");
         const auto sentinel = bytes(output);

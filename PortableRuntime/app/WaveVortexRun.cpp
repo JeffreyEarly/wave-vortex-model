@@ -225,13 +225,20 @@ bool parseLegacyOptions(int argc, char** argv, Options& options, std::string& er
         return false;
     }
     if (options.provider != "native-fftw" && options.provider != "reference") { error = "--fft-provider must be native-fftw or reference."; return false; }
-    if (options.integrator != "fixed-rk4" && options.integrator != "adaptive-rk23" && options.integrator != "adaptive-rk45") { error = "--integrator must be fixed-rk4, adaptive-rk23, or adaptive-rk45."; return false; }
+    if (options.integrator != "fixed-rk4" && options.integrator != "adaptive-rk23" && options.integrator != "adaptive-rk45" && options.integrator != "adaptive-rk78") { error = "--integrator must be fixed-rk4, adaptive-rk23, adaptive-rk45, or adaptive-rk78."; return false; }
     if (options.integrator == "fixed-rk4" && (options.hasRelativeTolerance || options.hasAbsoluteTolerance || options.hasInitialStep || options.hasMaximumStep)) { error = "Adaptive tolerance and step-control options require an adaptive integrator."; return false; }
     if (options.provider == "reference" && options.threads > 1) { error = "The reference provider supports only one thread."; return false; }
     if (options.threads == 0) options.threads = options.provider == "reference" ? 1 : std::min<std::size_t>(18,std::max(1U,std::thread::hardware_concurrency()));
     if ((options.benchmarkDenseOutputsPerStep != 0 || options.benchmarkWarmupSteps != 0) && !options.hasSteps) { error = "Author-only benchmark controls require --steps."; return false; }
     if (options.benchmarkOutputCount != 0 && (!options.hasFinalTime || options.integrator == "fixed-rk4")) { error = "--benchmark-output-count requires an adaptive integrator with --final-time."; return false; }
     if (options.scheduledOutput() && (options.benchmarkDenseOutputsPerStep != 0 || options.benchmarkOutputCount != 0 || options.benchmarkWarmupSteps != 0)) { error = "Scheduled output cannot be combined with author-only output benchmark controls."; return false; }
+    if (options.integrator == "adaptive-rk78" &&
+        (options.restartMode == "model" || options.scheduledOutput() ||
+         options.benchmarkDenseOutputsPerStep != 0 ||
+         options.benchmarkOutputCount != 0)) {
+        error = "adaptive-rk78 supports endpoint-only execution; issue #284 owns its continuous output.";
+        return false;
+    }
     options.modelFiles = {options.input};
     return true;
 }
@@ -808,6 +815,11 @@ int wavevortex::runtime::runWaveVortex(
         integratorConfiguration.adaptiveRK45.absoluteToleranceScale = options.absoluteTolerance;
         integratorConfiguration.adaptiveRK45.maximumStepSize = effectiveMaximumStep;
         integratorConfiguration.adaptiveRK45.retainDenseOutput = retainDenseOutput;
+    } else if (options.integrator == "adaptive-rk78") {
+        integratorConfiguration.kind = WVModelIntegratorKind::adaptiveRK78;
+        integratorConfiguration.adaptiveRK78.relativeTolerance = options.relativeTolerance;
+        integratorConfiguration.adaptiveRK78.absoluteToleranceScale = options.absoluteTolerance;
+        integratorConfiguration.adaptiveRK78.maximumStepSize = effectiveMaximumStep;
     } else {
         integratorConfiguration.kind = WVModelIntegratorKind::fixedRK4;
         integratorConfiguration.fixed.retainDenseOutput = retainDenseOutput;
@@ -844,10 +856,13 @@ int wavevortex::runtime::runWaveVortex(
     WVFixedStepRK4* fixedIntegrator = nullptr;
     WVAdaptiveRK23* adaptiveRK23Integrator = nullptr;
     WVAdaptiveRK45* adaptiveRK45Integrator = nullptr;
+    WVAdaptiveRK78* adaptiveRK78Integrator = nullptr;
     if (options.integrator == "adaptive-rk23") {
         adaptiveRK23Integrator = &static_cast<WVAdaptiveRK23&>(integrator);
     } else if (options.integrator == "adaptive-rk45") {
         adaptiveRK45Integrator = &static_cast<WVAdaptiveRK45&>(integrator);
+    } else if (options.integrator == "adaptive-rk78") {
+        adaptiveRK78Integrator = &static_cast<WVAdaptiveRK78&>(integrator);
     } else {
         fixedIntegrator = &static_cast<WVFixedStepRK4&>(integrator);
     }
@@ -1044,6 +1059,15 @@ int wavevortex::runtime::runWaveVortex(
         adaptiveDiagnosticsComplete = adaptiveRK45Integrator->stepDiagnosticsComplete();
         adaptiveStageBufferLastUse = WVAdaptiveRK45::stageBufferLastUseRecords();
         adaptiveStageBufferLastUseCount = WVAdaptiveRK45::stageBufferLastUseRecordCount();
+    } else if (adaptiveRK78Integrator != nullptr) {
+        adaptiveMetrics = adaptiveRK78Integrator->metrics();
+        adaptiveDiagnostics = &adaptiveRK78Integrator->stepDiagnostics();
+        adaptiveToleranceHash = adaptiveRK78Integrator->toleranceHash();
+        adaptiveToleranceComponentHashes = &adaptiveRK78Integrator->toleranceComponentHashes();
+        adaptiveController = WVAdaptiveRK78::controllerIdentifier();
+        adaptiveDiagnosticsComplete = adaptiveRK78Integrator->stepDiagnosticsComplete();
+        adaptiveStageBufferLastUse = WVAdaptiveRK78::stageBufferLastUseRecords();
+        adaptiveStageBufferLastUseCount = WVAdaptiveRK78::stageBufferLastUseRecordCount();
     }
     const auto hasAdaptiveIntegrator = adaptiveDiagnostics != nullptr;
     const auto& integratedObserverMetrics = integrationSystem.metrics();
