@@ -17,7 +17,7 @@ classdef TestPortableRuntimeCompatibility < matlab.unittest.TestCase
             [status,output] = systemWithoutMatlabRuntime(configure);
             testCase.assertEqual(status,0,output)
             [status,output] = systemWithoutMatlabRuntime("cmake --build " + shellQuote(buildDirectory) + ...
-                " --parallel 16 --target wave-vortex-run");
+                " --parallel --target wave-vortex-run");
             testCase.assertEqual(status,0,output)
             testCase.Runner = fullfile(buildDirectory,"wave-vortex-run");
             testCase.assertTrue(isfile(testCase.Runner))
