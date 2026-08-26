@@ -1,6 +1,7 @@
 #pragma once
 
 #include "WaveVortexRuntime/WVForcingSchedule.hpp"
+#include "WaveVortexRuntime/WVIntegrationState.hpp"
 #include "WaveVortexKernel/WVKernelTypes.hpp"
 
 #include <cstddef>
@@ -147,6 +148,9 @@ checkpointRetainedBytes(const WVCheckpoint& checkpoint) noexcept {
 // before loading the three state-sized coefficient arrays.
 struct WVCheckpointInspection {
     WVTransformConstantStratificationConfiguration configuration;
+    // Resolved before read() allocates or loads any coefficient array. The
+    // persistence adapter remains responsible for its transform's encoding.
+    WVTransformStateDescription stateDescription;
     WVShape2D coefficientShape;
     double t = 0.0;
     double t0 = 0.0;

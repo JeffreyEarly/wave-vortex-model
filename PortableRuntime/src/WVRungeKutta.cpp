@@ -42,10 +42,19 @@ public:
   WVKernelStatus initialize(const WVIntegrationStateLayout &layout) {
     try {
       layout_ = &layout;
-      coefficientCount_ = layout.coefficientShape().elementCount();
-      complex_.assign(3 * coefficientCount_ + layout.complexElementCount(),
+      coefficientCount_ = layout.coefficientElementCount();
+      complex_.assign(coefficientCount_ + layout.complexElementCount(),
                       WVComplex64{});
       real_.assign(layout.realElementCount(), 0.0);
+      mutableCoefficientFamilies_.clear();
+      constCoefficientFamilies_.clear();
+      mutableCoefficientFamilies_.reserve(layout.coefficientFamilyCount());
+      constCoefficientFamilies_.reserve(layout.coefficientFamilyCount());
+      for (const auto &family : layout.coefficientFamilies()) {
+        auto *data = complex_.data() + family.scalarOffset;
+        mutableCoefficientFamilies_.push_back({&family, data});
+        constCoefficientFamilies_.push_back({&family, data});
+      }
       mutableBlocks_.clear();
       constBlocks_.clear();
       mutableBlocks_.reserve(layout.additionalBlocks().size());
@@ -56,7 +65,7 @@ public:
                          : nullptr;
         auto *complex =
             block.scalarType == WVStateScalarType::complex64
-                ? complex_.data() + 3 * coefficientCount_ + block.scalarOffset
+                ? complex_.data() + coefficientCount_ + block.scalarOffset
                 : nullptr;
         mutableBlocks_.push_back({&block, real, complex});
         constBlocks_.push_back({&block, real, complex});
@@ -69,40 +78,55 @@ public:
   }
 
   WVMutableIntegrationState mutableState(double t, double t0) noexcept {
-    const auto shape = layout_->coefficientShape();
-    return {{t,
-             t0,
-             {{complex_.data(), shape},
-              {complex_.data() + coefficientCount_, shape},
-              {complex_.data() + 2 * coefficientCount_, shape}}},
-            mutableBlocks_.data(),
-            mutableBlocks_.size()};
+    WVMutableState legacy;
+    legacy.t = t;
+    legacy.t0 = t0;
+    if (layout_->hasLegacyCoefficientTriple()) {
+      const auto shape = layout_->coefficientShape();
+      legacy.coefficients =
+          {{mutableCoefficientFamilies_[0].data, shape},
+           {mutableCoefficientFamilies_[1].data, shape},
+           {mutableCoefficientFamilies_[2].data, shape}};
+    }
+    return {legacy, mutableBlocks_.data(), mutableBlocks_.size(),
+            mutableCoefficientFamilies_.data(),
+            mutableCoefficientFamilies_.size()};
   }
   WVIntegrationState state(double t, double t0) const noexcept {
-    const auto shape = layout_->coefficientShape();
-    return {{t,
-             t0,
-             {{complex_.data(), shape},
-              {complex_.data() + coefficientCount_, shape},
-              {complex_.data() + 2 * coefficientCount_, shape}}},
-            constBlocks_.data(),
-            constBlocks_.size()};
+    WVState legacy;
+    legacy.t = t;
+    legacy.t0 = t0;
+    if (layout_->hasLegacyCoefficientTriple()) {
+      const auto shape = layout_->coefficientShape();
+      legacy.coefficients =
+          {{constCoefficientFamilies_[0].data, shape},
+           {constCoefficientFamilies_[1].data, shape},
+           {constCoefficientFamilies_[2].data, shape}};
+    }
+    return {legacy, constBlocks_.data(), constBlocks_.size(),
+            constCoefficientFamilies_.data(),
+            constCoefficientFamilies_.size()};
   }
   WVIntegrationFlux flux() noexcept {
-    const auto shape = layout_->coefficientShape();
-    return {{{complex_.data(), shape},
-             {complex_.data() + coefficientCount_, shape},
-             {complex_.data() + 2 * coefficientCount_, shape}},
-            mutableBlocks_.data(),
-            mutableBlocks_.size()};
+    WVFlux legacy;
+    if (layout_->hasLegacyCoefficientTriple()) {
+      const auto shape = layout_->coefficientShape();
+      legacy = {{mutableCoefficientFamilies_[0].data, shape},
+                {mutableCoefficientFamilies_[1].data, shape},
+                {mutableCoefficientFamilies_[2].data, shape}};
+    }
+    return {legacy, mutableBlocks_.data(), mutableBlocks_.size(),
+            mutableCoefficientFamilies_.data(),
+            mutableCoefficientFamilies_.size()};
   }
   void copyFrom(const WVIntegrationState &source) noexcept {
-    const WVComplexConstView coefficients[] = {
-        source.waveVortex.coefficients.Ap, source.waveVortex.coefficients.Am,
-        source.waveVortex.coefficients.A0};
-    for (std::size_t component = 0; component < 3; ++component)
-      std::copy_n(coefficients[component].data, coefficientCount_,
-                  complex_.data() + component * coefficientCount_);
+    for (std::size_t family = 0; family < layout_->coefficientFamilyCount();
+         ++family) {
+      const auto view = coefficientFamilyView(*layout_, source, family);
+      const auto &metadata = layout_->coefficientFamilies()[family];
+      std::copy_n(view.data, metadata.elementCount,
+                  complex_.data() + metadata.scalarOffset);
+    }
     for (std::size_t block = 0; block < source.additionalBlockCount; ++block) {
       const auto &layout = *source.additionalBlocks[block].layout;
       if (layout.scalarType == WVStateScalarType::real64)
@@ -111,16 +135,17 @@ public:
       else
         std::copy_n(
             source.additionalBlocks[block].complexData, layout.elementCount,
-            complex_.data() + 3 * coefficientCount_ + layout.scalarOffset);
+            complex_.data() + coefficientCount_ + layout.scalarOffset);
     }
   }
   void copyTo(WVMutableIntegrationState &destination) const noexcept {
-    WVComplexView coefficients[] = {destination.waveVortex.coefficients.Ap,
-                                    destination.waveVortex.coefficients.Am,
-                                    destination.waveVortex.coefficients.A0};
-    for (std::size_t component = 0; component < 3; ++component)
-      std::copy_n(complex_.data() + component * coefficientCount_,
-                  coefficientCount_, coefficients[component].data);
+    for (std::size_t family = 0; family < layout_->coefficientFamilyCount();
+         ++family) {
+      const auto view = coefficientFamilyView(*layout_, destination, family);
+      const auto &metadata = layout_->coefficientFamilies()[family];
+      std::copy_n(complex_.data() + metadata.scalarOffset,
+                  metadata.elementCount, view.data);
+    }
     for (std::size_t block = 0; block < destination.additionalBlockCount;
          ++block) {
       const auto &layout = *destination.additionalBlocks[block].layout;
@@ -128,7 +153,7 @@ public:
         std::copy_n(real_.data() + layout.scalarOffset, layout.elementCount,
                     destination.additionalBlocks[block].realData);
       else
-        std::copy_n(complex_.data() + 3 * coefficientCount_ +
+        std::copy_n(complex_.data() + coefficientCount_ +
                         layout.scalarOffset,
                     layout.elementCount,
                     destination.additionalBlocks[block].complexData);
@@ -140,16 +165,16 @@ public:
   }
   void setAffine(const WVIntegrationState &base, const IntegrationBuffer &increment,
                  double scale) noexcept {
-    const WVComplexConstView coefficients[] = {
-        base.waveVortex.coefficients.Ap, base.waveVortex.coefficients.Am,
-        base.waveVortex.coefficients.A0};
-    for (std::size_t component = 0; component < 3; ++component)
-      for (std::size_t index = 0; index < coefficientCount_; ++index) {
-        const auto flatIndex = component * coefficientCount_ + index;
-        complex_[flatIndex] =
-            scaledSum(coefficients[component].data[index],
-                      increment.complex_[flatIndex], scale);
+    for (std::size_t family = 0; family < layout_->coefficientFamilyCount();
+         ++family) {
+      const auto coefficients = coefficientFamilyView(*layout_, base, family);
+      const auto &metadata = layout_->coefficientFamilies()[family];
+      for (std::size_t index = 0; index < metadata.elementCount; ++index) {
+        const auto flatIndex = metadata.scalarOffset + index;
+        complex_[flatIndex] = scaledSum(coefficients.data[index],
+                                        increment.complex_[flatIndex], scale);
       }
+    }
     for (std::size_t block = 0; block < base.additionalBlockCount; ++block) {
       const auto &layout = *base.additionalBlocks[block].layout;
       if (layout.scalarType == WVStateScalarType::real64) {
@@ -161,7 +186,7 @@ public:
       } else {
         for (std::size_t index = 0; index < layout.elementCount; ++index) {
           const auto flatIndex =
-              3 * coefficientCount_ + layout.scalarOffset + index;
+              coefficientCount_ + layout.scalarOffset + index;
           complex_[flatIndex] =
               scaledSum(base.additionalBlocks[block].complexData[index],
                         increment.complex_[flatIndex], scale);
@@ -194,6 +219,12 @@ public:
     return complex_.capacity() * sizeof(WVComplex64) +
            real_.capacity() * sizeof(double);
   }
+  std::size_t coefficientViewBytes() const noexcept {
+    return mutableCoefficientFamilies_.capacity() *
+               sizeof(WVCoefficientFamilyView) +
+           constCoefficientFamilies_.capacity() *
+               sizeof(WVCoefficientFamilyConstView);
+  }
   const std::vector<WVComplex64> &complex() const noexcept { return complex_; }
   const std::vector<double> &real() const noexcept { return real_; }
   std::vector<WVComplex64> &complex() noexcept { return complex_; }
@@ -205,6 +236,8 @@ private:
   std::size_t coefficientCount_ = 0;
   std::vector<WVComplex64> complex_;
   std::vector<double> real_;
+  std::vector<WVCoefficientFamilyView> mutableCoefficientFamilies_;
+  std::vector<WVCoefficientFamilyConstView> constCoefficientFamilies_;
   std::vector<WVAdditionalStateBlockView> mutableBlocks_;
   std::vector<WVAdditionalStateBlockConstView> constBlocks_;
 };
@@ -226,36 +259,40 @@ WVKernelStatus evaluate(WVIntegrationSystem &system,
   return status;
 }
 
-void makeExternalViews(const WVMutableIntegrationState &state,
-                       std::vector<WVAdditionalStateBlockConstView> &views) {
-  views.clear();
-  views.reserve(state.additionalBlockCount);
+void makeExternalViews(
+    const WVMutableIntegrationState &state,
+    std::vector<WVCoefficientFamilyConstView> &coefficientViews,
+    std::vector<WVAdditionalStateBlockConstView> &blockViews) {
+  coefficientViews.clear();
+  coefficientViews.reserve(state.coefficientFamilyCount);
+  for (std::size_t index = 0; index < state.coefficientFamilyCount; ++index)
+    coefficientViews.push_back({state.coefficientFamilies[index].layout,
+                                state.coefficientFamilies[index].data});
+  blockViews.clear();
+  blockViews.reserve(state.additionalBlockCount);
   for (std::size_t index = 0; index < state.additionalBlockCount; ++index)
-    views.push_back({state.additionalBlocks[index].layout,
-                     state.additionalBlocks[index].realData,
-                     state.additionalBlocks[index].complexData});
+    blockViews.push_back({state.additionalBlocks[index].layout,
+                          state.additionalBlocks[index].realData,
+                          state.additionalBlocks[index].complexData});
 }
 
-double complexAbsoluteTolerance(const WVIntegrationErrorPolicy &policy,
-                                const WVIntegrationStateLayout &layout,
-                                const IntegrationBuffer &buffer,
-                                std::size_t flatIndex) noexcept {
-  const auto coefficientValues = 3 * buffer.coefficientCount();
-  if (flatIndex < coefficientValues)
-    return policy.absoluteTolerance(flatIndex / buffer.coefficientCount(),
-                                    flatIndex % buffer.coefficientCount());
-  const auto additionalIndex = flatIndex - coefficientValues;
-  std::size_t blockIndex = 0;
-  for (const auto &block : layout.additionalBlocks()) {
-    if (block.scalarType == WVStateScalarType::complex64 &&
-        additionalIndex >= block.scalarOffset &&
-        additionalIndex < block.scalarOffset + block.elementCount)
-      return policy.absoluteTolerance(3 + blockIndex,
-                                      additionalIndex - block.scalarOffset);
-    ++blockIndex;
+struct RK23ControllerPolicy {
+  static double acceptedErrorPower(double error) noexcept {
+    return std::cbrt(error);
   }
-  return 1.0;
-}
+  static double rejectedErrorPower(double error) noexcept {
+    return std::pow(error, -1.0 / 3.0);
+  }
+};
+
+struct RK45ControllerPolicy {
+  static double acceptedErrorPower(double error) noexcept {
+    return std::pow(error, 1.0 / 5.0);
+  }
+  static double rejectedErrorPower(double error) noexcept {
+    return std::pow(error, -1.0 / 5.0);
+  }
+};
 
 // Shared adaptive machinery is intentionally compile-time composed with each
 // concrete method. Method workspaces supply explicit stage formulas and error
@@ -290,18 +327,21 @@ public:
     if (!status)
       return status;
     const auto &layout = system.stateLayout();
+    const auto coefficientFamilyCount = layout.coefficientFamilyCount();
     if (!errorPolicy ||
-        errorPolicy->componentCount() != 3 + layout.additionalBlocks().size())
+        errorPolicy->componentCount() !=
+            coefficientFamilyCount + layout.additionalBlocks().size())
       return {WVKernelStatusCode::invalidConfiguration,
               "Adaptive error policy does not match the integration layout."};
-    const auto coefficientCount = layout.coefficientShape().elementCount();
-    for (std::size_t component = 0; component < 3; ++component)
-      if (errorPolicy->elementCount(component) != coefficientCount)
+    for (std::size_t component = 0; component < coefficientFamilyCount;
+         ++component)
+      if (errorPolicy->elementCount(component) !=
+          layout.coefficientFamilies()[component].elementCount)
         return {WVKernelStatusCode::invalidShape,
                 "Adaptive coefficient tolerance shape does not match the integration layout."};
     for (std::size_t block = 0; block < layout.additionalBlocks().size();
          ++block)
-      if (errorPolicy->elementCount(3 + block) !=
+      if (errorPolicy->elementCount(coefficientFamilyCount + block) !=
           layout.additionalBlocks()[block].elementCount)
         return {WVKernelStatusCode::invalidShape,
                 "Adaptive state-block tolerance shape does not match the integration layout."};
@@ -328,87 +368,103 @@ public:
       double relativeTolerance, ComplexError complexError,
       RealError realError) noexcept {
     double error = 0.0;
-    const auto coefficientValues = 3 * candidate.coefficientCount();
     const auto &complexCandidate = candidate.complex();
-    for (std::size_t i = 0; i < complexCandidate.size(); ++i) {
-      const auto increment = complexError(i);
-      const auto absTol =
-          complexAbsoluteTolerance(errorPolicy, layout, candidate, i);
-      WVComplex64 initialValue{};
-      if (i < coefficientValues) {
-        const WVComplexConstView coefficients[] = {
-            initial.waveVortex.coefficients.Ap,
-            initial.waveVortex.coefficients.Am,
-            initial.waveVortex.coefficients.A0};
-        initialValue = coefficients[i / candidate.coefficientCount()]
-                           .data[i % candidate.coefficientCount()];
-      } else {
-        const auto additionalIndex = i - coefficientValues;
-        for (std::size_t block = 0; block < layout.additionalBlocks().size();
-             ++block) {
-          const auto &metadata = layout.additionalBlocks()[block];
-          if (metadata.scalarType == WVStateScalarType::complex64 &&
-              additionalIndex >= metadata.scalarOffset &&
-              additionalIndex <
-                  metadata.scalarOffset + metadata.elementCount) {
-            initialValue = initial.additionalBlocks[block].complexData
-                [additionalIndex - metadata.scalarOffset];
-            break;
-          }
-        }
-      }
+    const auto accumulateComplex = [&](std::size_t flatIndex, double absTol,
+                                       WVComplex64 initialValue) {
+      const auto increment = complexError(flatIndex);
       const auto valueScale = std::max(
           absTol, relativeTolerance *
                       std::max(std::hypot(initialValue.real, initialValue.imag),
-                               std::hypot(complexCandidate[i].real,
-                                          complexCandidate[i].imag)));
+                               std::hypot(complexCandidate[flatIndex].real,
+                                          complexCandidate[flatIndex].imag)));
       const auto ratio =
           std::hypot(increment.real, increment.imag) / valueScale;
       if (!std::isfinite(ratio))
-        return std::numeric_limits<double>::infinity();
+        return false;
       error = std::max(error, ratio);
-    }
-    const auto &realCandidate = candidate.real();
-    std::size_t realOffset = 0;
-    std::size_t blockIndex = 0;
-    for (const auto &block : layout.additionalBlocks()) {
-      if (block.scalarType != WVStateScalarType::real64) {
-        ++blockIndex;
-        continue;
+      return true;
+    };
+    bool complexErrorFinite = true;
+    for (std::size_t family = 0;
+         family < layout.coefficientFamilyCount() && complexErrorFinite;
+         ++family) {
+      const auto &span = layout.coefficientFamilies()[family];
+      const auto initialFamily = coefficientFamilyView(layout, initial, family);
+      for (std::size_t index = 0; index < span.elementCount; ++index) {
+        const auto flatIndex = span.scalarOffset + index;
+        complexErrorFinite = accumulateComplex(
+            flatIndex, errorPolicy.absoluteTolerance(family, index),
+            initialFamily.data[index]);
+        if (!complexErrorFinite)
+          break;
       }
-      for (std::size_t j = 0; j < block.elementCount; ++j) {
-        const auto i = realOffset + j;
+    }
+    const auto coefficientValues = candidate.coefficientCount();
+    for (std::size_t blockIndex = 0;
+         blockIndex < layout.additionalBlocks().size() && complexErrorFinite;
+         ++blockIndex) {
+      const auto &span = layout.additionalBlocks()[blockIndex];
+      if (span.scalarType != WVStateScalarType::complex64)
+        continue;
+      for (std::size_t index = 0; index < span.elementCount; ++index) {
+        const auto flatIndex =
+            coefficientValues + span.scalarOffset + index;
+        complexErrorFinite = accumulateComplex(
+            flatIndex,
+            errorPolicy.absoluteTolerance(layout.coefficientFamilyCount() +
+                                              blockIndex,
+                                          index),
+            initial.additionalBlocks[blockIndex].complexData[index]);
+        if (!complexErrorFinite)
+          break;
+      }
+    }
+    if (!complexErrorFinite)
+      return std::numeric_limits<double>::infinity();
+    const auto &realCandidate = candidate.real();
+    for (std::size_t blockIndex = 0;
+         blockIndex < layout.additionalBlocks().size(); ++blockIndex) {
+      const auto &span = layout.additionalBlocks()[blockIndex];
+      if (span.scalarType != WVStateScalarType::real64)
+        continue;
+      for (std::size_t index = 0; index < span.elementCount; ++index) {
+        const auto flatIndex = span.scalarOffset + index;
         const auto scale = std::max(
-            errorPolicy.absoluteTolerance(3 + blockIndex, j),
+            errorPolicy.absoluteTolerance(layout.coefficientFamilyCount() +
+                                              blockIndex,
+                                          index),
             relativeTolerance *
-                std::max(std::abs(initial.additionalBlocks[blockIndex]
-                                      .realData[j]),
-                         std::abs(realCandidate[i])));
-        const auto ratio = std::abs(realError(i)) / scale;
+                std::max(
+                    std::abs(initial.additionalBlocks[blockIndex]
+                                 .realData[index]),
+                    std::abs(realCandidate[flatIndex])));
+        const auto ratio = std::abs(realError(flatIndex)) / scale;
         if (!std::isfinite(ratio))
           return std::numeric_limits<double>::infinity();
         error = std::max(error, ratio);
       }
-      realOffset += block.elementCount;
-      ++blockIndex;
     }
     return error;
   }
 
-  static double controllerFactor(double error, std::size_t rejectedAttemptCount,
-                                 double errorExponent, double safetyFactor,
+  template <typename ControllerPolicy>
+  static double controllerFactor(double error,
+                                 std::size_t rejectedAttemptCount,
+                                 double safetyFactor,
                                  double rejectionFloorFactor,
                                  double repeatedRejectionFactor,
                                  double maximumStepFactor) noexcept {
     if (std::isfinite(error) && error <= 1.0) {
       if (rejectedAttemptCount != 0)
         return 1.0;
-      const auto temp = 1.25 * std::pow(error, errorExponent);
+      const auto temp =
+          1.25 * ControllerPolicy::acceptedErrorPower(error);
       return temp > 0.2 ? 1.0 / temp : maximumStepFactor;
     }
     if (rejectedAttemptCount == 0)
       return std::max(rejectionFloorFactor,
-                      safetyFactor * std::pow(error, -errorExponent));
+                      safetyFactor *
+                          ControllerPolicy::rejectedErrorPower(error));
     return repeatedRejectionFactor;
   }
 
@@ -476,10 +532,16 @@ public:
 class WVFixedStepRK4::Workspace {
 public:
   IntegrationBuffer stage, derivative, weighted, initialDerivative;
-  std::vector<WVAdditionalStateBlockConstView> acceptedViews;
+  std::vector<WVCoefficientFamilyConstView> acceptedCoefficientViews;
+  std::vector<WVAdditionalStateBlockConstView> acceptedBlockViews;
   std::size_t capacityBytes() const noexcept {
     return stage.capacityBytes() + derivative.capacityBytes() +
            weighted.capacityBytes() + initialDerivative.capacityBytes();
+  }
+  std::size_t coefficientViewBytes() const noexcept {
+    return stage.coefficientViewBytes() + derivative.coefficientViewBytes() +
+           weighted.coefficientViewBytes() +
+           initialDerivative.coefficientViewBytes();
   }
 };
 
@@ -493,7 +555,10 @@ std::size_t WVFixedStepRK4::persistentBytes() const noexcept {
          (workspace_ == nullptr
               ? 0
               : sizeof(Workspace) + workspace_->capacityBytes() +
-                    workspace_->acceptedViews.capacity() *
+                    workspace_->coefficientViewBytes() +
+                    workspace_->acceptedCoefficientViews.capacity() *
+                        sizeof(WVCoefficientFamilyConstView) +
+                    workspace_->acceptedBlockViews.capacity() *
                         sizeof(WVAdditionalStateBlockConstView));
 }
 
@@ -568,8 +633,10 @@ WVKernelStatus WVFixedStepRK4::step(WVMutableIntegrationState &state,
     ~Guard() { value = false; }
   } guard{stepping_};
   hasAcceptedStep_ = false;
+  std::vector<WVCoefficientFamilyConstView> coefficientViews;
   std::vector<WVAdditionalStateBlockConstView> stateViews;
-  const auto baseView = integrationConstView(state, stateViews);
+  const auto baseView =
+      integrationConstView(state, coefficientViews, stateViews);
   const double initialTime = state.waveVortex.t;
   if (acceptedStateConstrained_) {
     auto derivative = workspace_->derivative.flux();
@@ -662,12 +729,15 @@ WVKernelStatus WVFixedStepRK4::step(WVMutableIntegrationState &state,
   metrics_.acceptedStateCommitElementWrites += workspace_->stage.complex().size();
   state.waveVortex.t = initialTime + h;
   acceptedStateConstrained_ = true;
-  makeExternalViews(state, workspace_->acceptedViews);
+  makeExternalViews(state, workspace_->acceptedCoefficientViews,
+                    workspace_->acceptedBlockViews);
   acceptedStep_ = {
       initialTime,
       state.waveVortex.t,
-      {state.waveVortex.view(), workspace_->acceptedViews.data(),
-       workspace_->acceptedViews.size()},
+      {state.waveVortex.view(), workspace_->acceptedBlockViews.data(),
+       workspace_->acceptedBlockViews.size(),
+       workspace_->acceptedCoefficientViews.data(),
+       workspace_->acceptedCoefficientViews.size()},
       {metrics_.acceptedStepCount + 1, 0, 4U,
        h, h, h, 0.0},
       options_.retainDenseOutput ? this : nullptr};
@@ -763,15 +833,25 @@ WVKernelStatus WVFixedStepRK4::evaluateDenseOutput(
 class WVAdaptiveRK23::Workspace {
 public:
   IntegrationBuffer stage, k1, k2, k3, k4;
-  std::vector<WVAdditionalStateBlockConstView> baseViews;
-  std::vector<WVAdditionalStateBlockConstView> acceptedViews;
+  std::vector<WVCoefficientFamilyConstView> baseCoefficientViews;
+  std::vector<WVAdditionalStateBlockConstView> baseBlockViews;
+  std::vector<WVCoefficientFamilyConstView> acceptedCoefficientViews;
+  std::vector<WVAdditionalStateBlockConstView> acceptedBlockViews;
   std::size_t capacityBytes() const noexcept {
     return stage.capacityBytes() + k1.capacityBytes() + k2.capacityBytes() +
            k3.capacityBytes() + k4.capacityBytes();
   }
-  std::size_t viewCapacityBytes() const noexcept {
-    return (baseViews.capacity() + acceptedViews.capacity()) *
-           sizeof(WVAdditionalStateBlockConstView);
+  std::size_t coefficientViewBytes() const noexcept {
+    return stage.coefficientViewBytes() + k1.coefficientViewBytes() +
+           k2.coefficientViewBytes() + k3.coefficientViewBytes() +
+           k4.coefficientViewBytes();
+  }
+  std::size_t externalViewBytes() const noexcept {
+    return (baseCoefficientViews.capacity() +
+            acceptedCoefficientViews.capacity()) *
+               sizeof(WVCoefficientFamilyConstView) +
+           (baseBlockViews.capacity() + acceptedBlockViews.capacity()) *
+               sizeof(WVAdditionalStateBlockConstView);
   }
 };
 
@@ -786,7 +866,8 @@ std::size_t WVAdaptiveRK23::persistentBytes() const noexcept {
          (workspace_ == nullptr
               ? 0
               : sizeof(Workspace) + workspace_->capacityBytes() +
-                    workspace_->viewCapacityBytes()) +
+                    workspace_->coefficientViewBytes() +
+                    workspace_->externalViewBytes()) +
          (errorPolicy_ == nullptr ? 0 : errorPolicy_->persistentBytes()) +
          stepDiagnostics_.capacity() * sizeof(WVAdaptiveRK23StepDiagnostic) +
          toleranceComponentHashes_.capacity() * sizeof(std::uint64_t);
@@ -825,10 +906,13 @@ WVAdaptiveRK23::ensureWorkspace(const WVMutableIntegrationState &state) {
     }
   }
   try {
-    workspace_->baseViews.reserve(
-        system_.stateLayout().additionalBlocks().size());
-    workspace_->acceptedViews.reserve(
-        system_.stateLayout().additionalBlocks().size());
+    const auto coefficientFamilyCount =
+        system_.stateLayout().coefficientFamilyCount();
+    const auto blockCount = system_.stateLayout().additionalBlocks().size();
+    workspace_->baseCoefficientViews.reserve(coefficientFamilyCount);
+    workspace_->baseBlockViews.reserve(blockCount);
+    workspace_->acceptedCoefficientViews.reserve(coefficientFamilyCount);
+    workspace_->acceptedBlockViews.reserve(blockCount);
   } catch (const std::bad_alloc &) {
     delete workspace_;
     workspace_ = nullptr;
@@ -836,7 +920,8 @@ WVAdaptiveRK23::ensureWorkspace(const WVMutableIntegrationState &state) {
             "RK23 state-view workspace allocation failed."};
   }
   metrics_.workspaceCapacityBytes =
-      workspace_->capacityBytes() + workspace_->viewCapacityBytes();
+      workspace_->capacityBytes() + workspace_->coefficientViewBytes() +
+      workspace_->externalViewBytes();
   metrics_.workspaceMaximumLiveBytes = metrics_.workspaceCapacityBytes;
   metrics_.workspaceLiveBytes = metrics_.workspaceCapacityBytes;
   metrics_.stateCapacityBytes = workspace_->stage.valueCapacityBytes();
@@ -878,7 +963,8 @@ WVKernelStatus WVAdaptiveRK23::step(WVMutableIntegrationState &state,
     ~Guard() { v = false; }
   } guard{stepping_};
   hasAcceptedStep_ = false;
-  const auto baseView = integrationConstView(state, workspace_->baseViews);
+  const auto baseView = integrationConstView(
+      state, workspace_->baseCoefficientViews, workspace_->baseBlockViews);
   const auto t = state.waveVortex.t, t0 = state.waveVortex.t0;
   double h = std::min(proposedStepSize, options_.maximumStepSize);
   bool initialDerivativeAvailable = false;
@@ -979,10 +1065,11 @@ WVKernelStatus WVAdaptiveRK23::step(WVMutableIntegrationState &state,
         *errorPolicy_, system_.stateLayout(), workspace_->stage, baseView,
         options_.relativeTolerance, complexError, realError);
     const bool accepted = std::isfinite(error) && error <= 1.0;
-    const auto factor = AdaptiveRungeKuttaDriver::controllerFactor(
-        error, rejectedThisStep, 1.0 / 3.0, options_.safetyFactor,
-        options_.rejectionFloorFactor, options_.rejectionFloorFactor,
-        options_.maximumStepFactor);
+    const auto factor =
+        AdaptiveRungeKuttaDriver::controllerFactor<RK23ControllerPolicy>(
+            error, rejectedThisStep, options_.safetyFactor,
+            options_.rejectionFloorFactor, options_.rejectionFloorFactor,
+            options_.maximumStepFactor);
     nextStepSize_ =
         std::min(options_.maximumStepSize, h * factor);
     metrics_.lastProposedStepSize = proposedStepSize;
@@ -991,12 +1078,15 @@ WVKernelStatus WVAdaptiveRK23::step(WVMutableIntegrationState &state,
     if (accepted) {
       workspace_->stage.copyTo(state);
       state.waveVortex.t = t + h;
-      makeExternalViews(state, workspace_->acceptedViews);
+      makeExternalViews(state, workspace_->acceptedCoefficientViews,
+                        workspace_->acceptedBlockViews);
       acceptedStep_ = {
           t,
           state.waveVortex.t,
-          {state.waveVortex.view(), workspace_->acceptedViews.data(),
-           workspace_->acceptedViews.size()},
+          {state.waveVortex.view(), workspace_->acceptedBlockViews.data(),
+           workspace_->acceptedBlockViews.size(),
+           workspace_->acceptedCoefficientViews.data(),
+           workspace_->acceptedCoefficientViews.size()},
           {metrics_.acceptedStepCount + 1, rejectedThisStep,
            evaluationsThisStep, h, proposedStepSize, nextStepSize_, error},
           options_.retainDenseOutput ? this : nullptr};
@@ -1134,15 +1224,26 @@ std::size_t WVAdaptiveRK23::stageBufferLastUseRecordCount() noexcept {
 class WVAdaptiveRK45::Workspace {
 public:
   IntegrationBuffer stage, k1, k2OrK7, k3, k4, k5, k6;
-  std::vector<WVAdditionalStateBlockConstView> baseViews;
-  std::vector<WVAdditionalStateBlockConstView> acceptedViews;
+  std::vector<WVCoefficientFamilyConstView> baseCoefficientViews;
+  std::vector<WVAdditionalStateBlockConstView> baseBlockViews;
+  std::vector<WVCoefficientFamilyConstView> acceptedCoefficientViews;
+  std::vector<WVAdditionalStateBlockConstView> acceptedBlockViews;
   std::size_t capacityBytes() const noexcept {
     return stage.capacityBytes() + k1.capacityBytes() +
            k2OrK7.capacityBytes() + k3.capacityBytes() + k4.capacityBytes() +
            k5.capacityBytes() + k6.capacityBytes();
   }
-  std::size_t viewCapacityBytes() const noexcept {
-    return (baseViews.capacity() + acceptedViews.capacity()) *
+  std::size_t coefficientViewBytes() const noexcept {
+    return stage.coefficientViewBytes() + k1.coefficientViewBytes() +
+           k2OrK7.coefficientViewBytes() + k3.coefficientViewBytes() +
+           k4.coefficientViewBytes() + k5.coefficientViewBytes() +
+           k6.coefficientViewBytes();
+  }
+  std::size_t externalViewBytes() const noexcept {
+    return (baseCoefficientViews.capacity() +
+            acceptedCoefficientViews.capacity()) *
+               sizeof(WVCoefficientFamilyConstView) +
+           (baseBlockViews.capacity() + acceptedBlockViews.capacity()) *
            sizeof(WVAdditionalStateBlockConstView);
   }
 };
@@ -1158,7 +1259,8 @@ std::size_t WVAdaptiveRK45::persistentBytes() const noexcept {
          (workspace_ == nullptr
               ? 0
               : sizeof(Workspace) + workspace_->capacityBytes() +
-                    workspace_->viewCapacityBytes()) +
+                    workspace_->coefficientViewBytes() +
+                    workspace_->externalViewBytes()) +
          (errorPolicy_ == nullptr ? 0 : errorPolicy_->persistentBytes()) +
          stepDiagnostics_.capacity() * sizeof(WVAdaptiveRK45StepDiagnostic) +
          toleranceComponentHashes_.capacity() * sizeof(std::uint64_t);
@@ -1202,9 +1304,13 @@ WVAdaptiveRK45::ensureWorkspace(const WVMutableIntegrationState &state) {
     }
   }
   try {
-    workspace_->baseViews.reserve(
+    workspace_->baseCoefficientViews.reserve(
+        system_.stateLayout().coefficientFamilyCount());
+    workspace_->baseBlockViews.reserve(
         system_.stateLayout().additionalBlocks().size());
-    workspace_->acceptedViews.reserve(
+    workspace_->acceptedCoefficientViews.reserve(
+        system_.stateLayout().coefficientFamilyCount());
+    workspace_->acceptedBlockViews.reserve(
         system_.stateLayout().additionalBlocks().size());
   } catch (const std::bad_alloc &) {
     delete workspace_;
@@ -1213,7 +1319,8 @@ WVAdaptiveRK45::ensureWorkspace(const WVMutableIntegrationState &state) {
             "RK45 state-view workspace allocation failed."};
   }
   metrics_.workspaceCapacityBytes =
-      workspace_->capacityBytes() + workspace_->viewCapacityBytes();
+      workspace_->capacityBytes() + workspace_->coefficientViewBytes() +
+      workspace_->externalViewBytes();
   metrics_.workspaceMaximumLiveBytes = metrics_.workspaceCapacityBytes;
   metrics_.workspaceLiveBytes = metrics_.workspaceCapacityBytes;
   metrics_.stateCapacityBytes = workspace_->stage.valueCapacityBytes();
@@ -1263,7 +1370,8 @@ WVKernelStatus WVAdaptiveRK45::stepImplementation(
     ~Guard() { value = false; }
   } guard{stepping_};
   hasAcceptedStep_ = false;
-  const auto baseView = integrationConstView(state, workspace_->baseViews);
+  const auto baseView = integrationConstView(
+      state, workspace_->baseCoefficientViews, workspace_->baseBlockViews);
   const auto t = state.waveVortex.t;
   const auto t0 = state.waveVortex.t0;
   double h = allowFinalStepStretch
@@ -1441,10 +1549,11 @@ WVKernelStatus WVAdaptiveRK45::stepImplementation(
         *errorPolicy_, system_.stateLayout(), workspace_->stage, baseView,
         options_.relativeTolerance, complexError, realError);
     const auto accepted = std::isfinite(error) && error <= 1.0;
-    const auto factor = AdaptiveRungeKuttaDriver::controllerFactor(
-        error, rejectedThisStep, 1.0 / 5.0, options_.safetyFactor,
-        options_.rejectionFloorFactor, options_.repeatedRejectionFactor,
-        options_.maximumStepFactor);
+    const auto factor =
+        AdaptiveRungeKuttaDriver::controllerFactor<RK45ControllerPolicy>(
+            error, rejectedThisStep, options_.safetyFactor,
+            options_.rejectionFloorFactor, options_.repeatedRejectionFactor,
+            options_.maximumStepFactor);
     nextStepSize_ = std::min(options_.maximumStepSize, h * factor);
     metrics_.lastProposedStepSize = proposedStepSize;
     metrics_.normalizedError = error;
@@ -1452,12 +1561,15 @@ WVKernelStatus WVAdaptiveRK45::stepImplementation(
     if (accepted) {
       workspace_->stage.copyTo(state);
       state.waveVortex.t = t + h;
-      makeExternalViews(state, workspace_->acceptedViews);
+      makeExternalViews(state, workspace_->acceptedCoefficientViews,
+                        workspace_->acceptedBlockViews);
       acceptedStep_ = {
           t,
           state.waveVortex.t,
-          {state.waveVortex.view(), workspace_->acceptedViews.data(),
-           workspace_->acceptedViews.size()},
+          {state.waveVortex.view(), workspace_->acceptedBlockViews.data(),
+           workspace_->acceptedBlockViews.size(),
+           workspace_->acceptedCoefficientViews.data(),
+           workspace_->acceptedCoefficientViews.size()},
           {metrics_.acceptedStepCount + 1, rejectedThisStep,
            evaluationsThisStep, h, proposedStepSize, nextStepSize_, error},
           options_.retainDenseOutput ? this : nullptr};

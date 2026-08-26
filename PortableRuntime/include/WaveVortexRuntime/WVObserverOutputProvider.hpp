@@ -21,6 +21,10 @@ struct WVObserverOutputPlanningContext {
   const WVStateBlockRecord *stateBlocks = nullptr;
   std::size_t stateBlockCount = 0;
   bool isDynamicsLinear = false;
+  // Transform-neutral coefficient and rank contract. The stabilized
+  // constant-stratification configuration remains available above for v1
+  // observer implementations that require its physical parameters.
+  const WVIntegrationStateLayout *stateLayout = nullptr;
 
   const WVStateBlockRecord *
   stateBlock(const std::string &identifier) const noexcept;

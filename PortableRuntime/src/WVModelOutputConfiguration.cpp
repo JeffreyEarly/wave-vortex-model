@@ -466,7 +466,8 @@ WVKernelStatus WVModelOutputConfiguration::compile(
     double finalTime, WVModelOutputConfiguration &configuration,
     const WVTransformConstantStratificationConfiguration
         *planningConfiguration,
-    bool isDynamicsLinear) {
+    bool isDynamicsLinear,
+    const WVTransformStateDescription *planningStateDescription) {
   if (!catalog)
     return invalid("Output configuration requires an extension catalog.");
   if (!std::isfinite(initialTime) || !std::isfinite(finalTime) ||
@@ -491,13 +492,19 @@ WVKernelStatus WVModelOutputConfiguration::compile(
       if (block.identifier == "Ap")
         canonicalAp = &block;
     }
-    if (canonicalAp == nullptr || canonicalAp->dimensions.size() != 2)
-      return invalid("Output compilation requires a canonical [Nj,Nkl] Ap "
-                     "state block.");
     WVIntegrationStateLayout rawLayout;
-    auto status = WVIntegrationStateLayout::create(
-        {canonicalAp->dimensions[0], canonicalAp->dimensions[1]},
-        observerRecord, rawLayout);
+    WVKernelStatus status;
+    if (planningStateDescription == nullptr) {
+      if (canonicalAp == nullptr || canonicalAp->dimensions.size() != 2)
+        return invalid("Output compilation requires a canonical [Nj,Nkl] Ap "
+                       "state block.");
+      status = WVIntegrationStateLayout::create(
+          {canonicalAp->dimensions[0], canonicalAp->dimensions[1]},
+          observerRecord, rawLayout);
+    } else {
+      status = WVIntegrationStateLayout::create(
+          *planningStateDescription, observerRecord, rawLayout);
+    }
     if (!status)
       return status;
 
@@ -546,6 +553,7 @@ WVKernelStatus WVModelOutputConfiguration::compile(
       planningContext.stateBlocks = observerRecord.stateBlocks.data();
       planningContext.stateBlockCount = observerRecord.stateBlocks.size();
       planningContext.isDynamicsLinear = isDynamicsLinear;
+      planningContext.stateLayout = &rawLayout;
       for (const auto &observer : observerRecord.observers) {
         const auto declared = std::find_if(
             observationSchemas.begin(), observationSchemas.end(),
@@ -749,9 +757,20 @@ WVKernelStatus WVModelOutputConfiguration::compile(
         observerRecord, candidate->catalog, candidate->descriptor);
     if (!status)
       return status;
-    status = WVOutputPlan::create(candidate->descriptor, candidate->catalog,
-                                  initialTime, finalTime,
-                                  scheduleContinuations, candidate->plan);
+    WVIntegrationStateLayout resolvedLayout;
+    if (planningStateDescription == nullptr) {
+      status = WVIntegrationStateLayout::create(
+          rawLayout.coefficientShape(), candidate->descriptor,
+          resolvedLayout);
+    } else {
+      status = WVIntegrationStateLayout::create(
+          *planningStateDescription, candidate->descriptor, resolvedLayout);
+    }
+    if (!status)
+      return status;
+    status = WVOutputPlan::create(
+        resolvedLayout, candidate->descriptor, candidate->catalog,
+        initialTime, finalTime, scheduleContinuations, candidate->plan);
     if (!status)
       return status;
     candidate->scheduleContinuations =
