@@ -131,7 +131,8 @@ WVKernelStatus compileOutputConfiguration(
       std::move(observerRecord), inspection.observationSchemas,
       inspection.scheduleContinuations, request.policy, std::move(catalog),
       inspection.latestRestart.t, request.finalTime, configuration,
-      &inspection.latestRestart.configuration, inspection.isDynamicsLinear);
+      &inspection.latestRestart.configuration, inspection.isDynamicsLinear,
+      &inspection.latestRestart.stateDescription);
 }
 #endif
 
@@ -228,7 +229,10 @@ public:
   WVKernelStatus configureIntegrator(
       const WVModelIntegratorConfiguration &configuration);
 
-  std::unique_ptr<WVConstantStratificationIntegrationSystem> system;
+  std::unique_ptr<WVIntegrationSystem> system;
+  // Stable constant-stratification metrics and field-service adapter. The
+  // façade owns and drives the transform-neutral integration-system view.
+  WVConstantStratificationIntegrationSystem *constantSystem = nullptr;
   std::shared_ptr<const WVExtensionCatalog> catalog;
   std::unique_ptr<WVTimeIntegrator> integrator;
   WVModelIntegratorKind integratorKind = WVModelIntegratorKind::fixedRK4;
@@ -280,11 +284,14 @@ WVKernelStatus WVModel::create(
     return invalid("WVModel requires an extension catalog.");
   try {
     auto candidate = std::make_unique<Impl>();
+    std::unique_ptr<WVConstantStratificationIntegrationSystem> system;
     auto status = WVConstantStratificationIntegrationSystem::create(
         configuration, forcingSchedule, catalog, std::move(engine),
-        candidate->system);
+        system);
     if (!status)
       return status;
+    candidate->constantSystem = system.get();
+    candidate->system = std::move(system);
     status = candidate->configureIntegrator(integratorConfiguration);
     if (!status)
       return status;
@@ -415,10 +422,15 @@ WVKernelStatus WVModel::createFromModelOutputInspection(
     return status;
 
   std::unique_ptr<WVObserverOutputEvaluationService> outputEvaluation;
+  auto *fieldEvaluationService = candidate.impl_->system->fieldEvaluationService();
+  if (fieldEvaluationService == nullptr)
+    return {WVKernelStatusCode::unsupportedOperation,
+            "The selected transform does not provide field evaluation for "
+            "model output."};
   status = WVObserverOutputEvaluationService::create(
       candidateState.checkpoint().configuration, inspection.isDynamicsLinear,
       descriptor, nullptr, outputEvaluation,
-      candidate.impl_->system->fieldEvaluationService());
+      fieldEvaluationService);
   if (!status)
     return status;
   for (const auto &declared : outputConfiguration.observationSchemas()) {
@@ -482,12 +494,15 @@ WVKernelStatus WVModel::create(
                    "extension catalog.");
   try {
     auto candidate = std::make_unique<Impl>();
+    std::unique_ptr<WVConstantStratificationIntegrationSystem> system;
     auto status = WVConstantStratificationIntegrationSystem::create(
         configuration, forcingSchedule, observerDescriptor, catalog,
         std::move(engine),
-        candidate->system);
+        system);
     if (!status)
       return status;
+    candidate->constantSystem = system.get();
+    candidate->system = std::move(system);
     status = candidate->configureIntegrator(integratorConfiguration);
     if (!status)
       return status;
@@ -624,7 +639,7 @@ WVModelIntegratorKind WVModel::integratorKind() const noexcept {
 }
 
 const std::string &WVModel::forcingScheduleIdentifier() const noexcept {
-  return impl_->system->scheduleIdentifier();
+  return impl_->constantSystem->scheduleIdentifier();
 }
 
 WVModelMetrics WVModel::metrics(const WVModelState *state) const noexcept {
@@ -637,9 +652,9 @@ WVModelMetrics WVModel::metrics(const WVModelState *state) const noexcept {
   result.statePersistentBytes = state == nullptr ? 0 : state->persistentBytes();
   result.integrationSystemPersistentBytes = impl_->system->persistentBytes();
   result.integratorPersistentBytes = impl_->integrator->persistentBytes();
-  result.kernel = impl_->system->kernelMetrics();
-  result.forcing = impl_->system->forcingMetrics();
-  result.integratedObservers = impl_->system->metrics();
+  result.kernel = impl_->constantSystem->kernelMetrics();
+  result.forcing = impl_->constantSystem->forcingMetrics();
+  result.integratedObservers = impl_->constantSystem->metrics();
   if (impl_->integratorKind == WVModelIntegratorKind::adaptiveRK23)
     result.integrator =
         static_cast<const WVAdaptiveRK23 &>(*impl_->integrator).metrics();
@@ -671,7 +686,7 @@ WVModelMetrics WVModel::metrics(const WVModelState *state) const noexcept {
 
 WVConstantStratificationIntegrationSystem &
 detail::WVModelInternalAccess::integrationSystem(WVModel &model) noexcept {
-  return *model.impl_->system;
+  return *model.impl_->constantSystem;
 }
 
 WVTimeIntegrator &

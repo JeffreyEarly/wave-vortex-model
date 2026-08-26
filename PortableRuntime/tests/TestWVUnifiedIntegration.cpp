@@ -194,6 +194,75 @@ private:
   bool zeroDerivative_ = false;
 };
 
+class A0OnlyIntegrationSystem final : public WVIntegrationSystem {
+public:
+  class ErrorPolicy final : public WVIntegrationErrorPolicy {
+  public:
+    explicit ErrorPolicy(std::size_t count) : count_(count) {}
+    std::size_t componentCount() const noexcept override { return 1; }
+    std::size_t elementCount(std::size_t component) const noexcept override {
+      return component == 0 ? count_ : 0;
+    }
+    double absoluteTolerance(std::size_t,
+                             std::size_t) const noexcept override {
+      return 1e-10;
+    }
+    std::size_t persistentBytes() const noexcept override {
+      return sizeof(*this);
+    }
+
+  private:
+    std::size_t count_ = 0;
+  };
+
+  A0OnlyIntegrationSystem() {
+    WVTransformStateDescription description{
+        "WVTransformBarotropicQG", {8, 6},
+        {{"A0", {24}, WVToleranceKind::coefficientEnergyScaled}}};
+    const auto status = WVIntegrationStateLayout::createCoefficientOnly(
+        std::move(description), layout_);
+    require(static_cast<bool>(status), "A0-only transform preflight");
+  }
+
+  const WVIntegrationStateLayout &stateLayout() const noexcept override {
+    return layout_;
+  }
+  WVKernelStatus evaluateRightHandSide(const WVIntegrationState &state,
+                                       WVIntegrationFlux &rhs) override {
+    auto status = validateIntegrationState(layout_, state);
+    if (!status)
+      return status;
+    if (rhs.coefficientFamilyCount != 1 ||
+        rhs.coefficientFamilies == nullptr ||
+        rhs.coefficientFamilies[0].layout !=
+            &layout_.coefficientFamilies()[0])
+      return {WVKernelStatusCode::invalidShape,
+              "A0-only RHS family layout mismatch."};
+    const auto source = coefficientFamilyView(layout_, state, 0);
+    auto destination = coefficientFamilyView(layout_, rhs, 0);
+    for (std::size_t index = 0;
+         index < layout_.coefficientFamilies()[0].elementCount; ++index)
+      destination.data[index] = {-source.data[index].real,
+                                 -source.data[index].imag};
+    ++rightHandSideCount;
+    return WVKernelStatus::ok();
+  }
+  WVStateConstraintResult
+  enforceStateConstraints(WVMutableIntegrationState &) override {
+    return {WVKernelStatus::ok(), 0, true};
+  }
+  WVKernelStatus createErrorPolicy(
+      double, std::unique_ptr<WVIntegrationErrorPolicy> &policy) const override {
+    policy = std::make_unique<ErrorPolicy>(layout_.coefficientElementCount());
+    return WVKernelStatus::ok();
+  }
+
+  std::size_t rightHandSideCount = 0;
+
+private:
+  WVIntegrationStateLayout layout_;
+};
+
 struct StateFixture {
   WVShape2D shape{2, 3};
   std::vector<WVComplex64> coefficients =
@@ -294,10 +363,18 @@ void testContracts(WVPortableObserverDescriptor &descriptor,
   require(layout.realElementCount() == 10 && layout.complexElementCount() == 0,
           "integration-state counts");
   std::size_t expectedLayoutStorage =
+      layout.transformIdentifier().capacity() +
+      layout.spatialDimensions().capacity() * sizeof(std::size_t) +
+      layout.coefficientFamilies().capacity() *
+          sizeof(WVCoefficientFamilyLayout) +
       layout.additionalBlocks().capacity() *
           sizeof(WVAdditionalStateBlockLayout) +
       layout.stateBlockRecords().capacity() * sizeof(WVStateBlockRecord) +
       layout.observerRecords().capacity() * sizeof(WVObserverRecord);
+  for (const auto &family : layout.coefficientFamilies())
+    expectedLayoutStorage += family.identifier.capacity() +
+                             family.spectralDimensions.capacity() *
+                                 sizeof(std::size_t);
   for (const auto &block : layout.additionalBlocks())
     expectedLayoutStorage += block.identifier.capacity() +
                              block.dimensions.capacity() * sizeof(std::size_t);
@@ -325,6 +402,108 @@ void testContracts(WVPortableObserverDescriptor &descriptor,
   WVIntegrationStateLayout badLayout;
   require(!WVIntegrationStateLayout::create({3, 2}, descriptor, badLayout),
           "coefficient shape mismatch rejected");
+}
+
+void testA0OnlyTransformContract() {
+  A0OnlyIntegrationSystem system;
+  const auto &layout = system.stateLayout();
+  require(layout.transformIdentifier() == "WVTransformBarotropicQG" &&
+              layout.spatialDimensions() ==
+                  std::vector<std::size_t>({8, 6}) &&
+              layout.coefficientFamilyCount() == 1 &&
+              layout.coefficientFamilies()[0].identifier == "A0" &&
+              layout.coefficientFamilies()[0].spectralDimensions ==
+                  std::vector<std::size_t>({24}) &&
+              !layout.hasLegacyCoefficientTriple(),
+          "A0-only transform identity and spatial/spectral ranks");
+
+  WVCoefficientStateStorage storage;
+  require(static_cast<bool>(storage.initialize(layout)),
+          "A0-only state allocation");
+  require(storage.familyCount() == 1 &&
+              layout.coefficientElementCount() == 24 &&
+              layout.integratedScalarCount() == 48 &&
+              storage.capacityBytes() ==
+                  24 * sizeof(WVComplex64) +
+                      sizeof(WVCoefficientFamilyView) +
+                      sizeof(WVCoefficientFamilyConstView),
+          "A0-only allocation has no dummy wave families");
+  for (std::size_t index = 0; index < 24; ++index)
+    storage.mutableFamilies()[0].data[index] =
+        {1.0 + static_cast<double>(index), -0.5};
+  WVMutableIntegrationState state;
+  state.waveVortex.t = 0.0;
+  state.waveVortex.t0 = -2.0;
+  state.coefficientFamilies = storage.mutableFamilies();
+  state.coefficientFamilyCount = storage.familyCount();
+  require(state.waveVortex.coefficients.Ap.data == nullptr &&
+              state.waveVortex.coefficients.Am.data == nullptr &&
+              state.waveVortex.coefficients.A0.data == nullptr,
+          "A0-only state retained no legacy state-sized compatibility views");
+
+  WVCoefficientStateStorage fluxStorage;
+  require(static_cast<bool>(fluxStorage.initialize(layout)),
+          "A0-only RHS allocation");
+  WVIntegrationFlux flux;
+  flux.coefficientFamilies = fluxStorage.mutableFamilies();
+  flux.coefficientFamilyCount = fluxStorage.familyCount();
+  std::vector<WVCoefficientFamilyConstView> coefficientViews;
+  std::vector<WVAdditionalStateBlockConstView> blockViews;
+  const auto constState =
+      integrationConstView(state, coefficientViews, blockViews);
+  require(static_cast<bool>(system.evaluateRightHandSide(constState, flux)) &&
+              fluxStorage.mutableFamilies()[0].data[0].real == -1.0 &&
+              fluxStorage.mutableFamilies()[0].data[0].imag == 0.5,
+          "A0-only transform RHS execution");
+
+  WVFixedStepRK4 integrator(system, {true});
+  auto status = integrator.prepareStateAfterRestart(state);
+  require(static_cast<bool>(status),
+          "A0-only RK4 restart preparation: " + status.message);
+  status = integrator.step(state, 0.1);
+  require(static_cast<bool>(status),
+          "A0-only RK4 execution: " + status.message);
+  require(integrator.metrics().workspaceCapacityBytes ==
+              4 * layout.coefficientElementCount() * sizeof(WVComplex64),
+          "A0-only RK4 allocated exactly one family per retained workspace");
+
+  WVCoefficientStateStorage denseStorage;
+  require(static_cast<bool>(denseStorage.initialize(layout)),
+          "A0-only dense-output allocation");
+  WVMutableIntegrationState dense;
+  dense.coefficientFamilies = denseStorage.mutableFamilies();
+  dense.coefficientFamilyCount = denseStorage.familyCount();
+  status = integrator.evaluateDenseOutput(0.05, dense);
+  require(static_cast<bool>(status),
+          "A0-only dense-output execution: " + status.message);
+  require(std::abs(denseStorage.mutableFamilies()[0].data[0].real -
+                   std::exp(-0.05)) < 3e-6,
+          "A0-only dense-output value: " +
+              std::to_string(
+                  denseStorage.mutableFamilies()[0].data[0].real));
+
+  coefficientViews.clear();
+  blockViews.clear();
+  const auto checkpointSource =
+      integrationConstView(state, coefficientViews, blockViews);
+  WVTransformStateCheckpoint checkpoint;
+  require(static_cast<bool>(captureTransformStateCheckpoint(
+              layout, checkpointSource, checkpoint)) &&
+              checkpoint.coefficientFamilies.size() == 1 &&
+              checkpoint.coefficientFamilies[0].identifier == "A0" &&
+              checkpoint.coefficientFamilies[0].values.size() == 24,
+          "A0-only checkpoint capture");
+  WVCoefficientStateStorage restoredStorage;
+  WVMutableIntegrationState restored;
+  require(static_cast<bool>(restoreTransformStateCheckpoint(
+              checkpoint, layout, restoredStorage, restored)) &&
+              restored.coefficientFamilyCount == 1 &&
+              restored.waveVortex.coefficients.Ap.data == nullptr &&
+              restored.waveVortex.coefficients.Am.data == nullptr &&
+              restoredStorage.mutableFamilies()[0].data[0].real ==
+                  storage.mutableFamilies()[0].data[0].real,
+          "A0-only checkpoint round trip without dummy storage");
+
 }
 
 void testRK4(LinearIntegrationSystem &system) {
@@ -490,6 +669,7 @@ int main() {
   testRK23(system);
   testRK23MatlabControllerWork();
   testRK23MatlabOde23ParityFixture();
+  testA0OnlyTransformContract();
   std::cout << "PASS: portable observer contracts and unified RK4/RK23 "
                "integration\n";
   return 0;

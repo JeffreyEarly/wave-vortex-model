@@ -131,6 +131,17 @@ void testAllocationLightInspection() {
     const auto result = WVCheckpointReader::inspect(fixture("forcing-mixed-nonhydrostatic.nc").string(), *test::extensionCatalog(), inspection);
     require(static_cast<bool>(result), result.message);
     require(inspection.coefficientShape.rows == 4 && inspection.coefficientShape.columns == 9, "inspection coefficient shape mismatch");
+    require(inspection.stateDescription.transformIdentifier ==
+                    "WVTransformConstantStratification" &&
+                inspection.stateDescription.spatialDimensions ==
+                    std::vector<std::size_t>({8, 6, 7}) &&
+                inspection.stateDescription.coefficientFamilies.size() == 3 &&
+                inspection.stateDescription.coefficientFamilies[0].identifier ==
+                    "Ap" &&
+                inspection.stateDescription.coefficientFamilies[0]
+                        .spectralDimensions ==
+                    std::vector<std::size_t>({4, 9}),
+            "inspection transform-state description mismatch");
     require(inspection.configuration.Nj == 4 && !inspection.configuration.isHydrostatic, "inspection configuration mismatch");
     require(inspection.forcingSchedule.entries.size() == 6, "inspection did not decode the frozen forcing schedule");
     require(inspection.t > inspection.t0, "inspection time metadata mismatch");

@@ -6,6 +6,7 @@
 
 - Added an explicit, source-only compiled preview for ordinary constant-stratification nonlinear flux. MATLAB remains the default; native support must be built explicitly, and unsupported transforms or forcing are rejected without fallback.
 - Added an optional standalone constant-stratification runtime using the same MATLAB-independent numerical core, with fixed RK4, MATLAB `ode23`-compatible adaptive RK3(2), MATLAB-compatible NetCDF restart, and a command-line runner for versioned MATLAB-authored run requests.
+- Generalized the portable integration state boundary to transform-selected spatial and coefficient-family ranks, preserving the constant-stratification `Ap`/`Am`/`A0` source and NetCDF contracts while allowing one-family systems to integrate and checkpoint without dummy state-sized arrays.
 - Added MATLAB-compatible portable observing and output support for coefficients, Eulerian fields, moorings, Lagrangian particles, and tracers, including shared field evaluation, continuous and lazy scheduled output, multi-file and multi-group transactional NetCDF persistence, restart, continuation, and append.
 - Stabilized the C++17 source-linked extension API around an application-owned catalog, immutable resolved observer and forcing implementations, event-dependent observation geometry, and fixed, variable-length, and ragged output batches. The AlongTrack and linear-bottom-friction extensions prove the workflow; legacy observer adapters and direct `WVModel` internal-service access are no longer public, and no binary-plugin ABI is provided.
 

@@ -74,7 +74,7 @@ public:
     return particles_;
   }
   const std::vector<WVTracer> &tracers() const noexcept { return tracers_; }
-  WVFieldEvaluationService *fieldEvaluationService() noexcept {
+  WVFieldEvaluationService *fieldEvaluationService() noexcept override {
     return fields_.get();
   }
   const WVIntegratedObserverMetrics &metrics() const noexcept {
@@ -95,7 +95,7 @@ public:
   const std::string &scheduleIdentifier() const noexcept {
     return forcing_->scheduleIdentifier();
   }
-  std::size_t persistentBytes() const noexcept;
+  std::size_t persistentBytes() const noexcept override;
 
 private:
   static WVKernelStatus createImpl(
