@@ -52,7 +52,7 @@ public:
       auto policy = std::unique_ptr<BarotropicQGErrorPolicy>(
           new BarotropicQGErrorPolicy());
       const auto &horizontal = descriptor.fourierModes();
-      policy->tolerances_.assign(horizontal.size(), absoluteToleranceScale);
+      policy->tolerances_.assign(horizontal.size(), 1.0);
       std::vector<double> uniqueKh;
       uniqueKh.reserve(horizontal.size());
       for (const auto &mode : horizontal)

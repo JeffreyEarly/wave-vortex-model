@@ -166,6 +166,20 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "AppleClang|Clang|GNU")
 endif()
 
 if(BUILD_TESTING)
+    add_executable(WVBarotropicQGToleranceDump
+        tests/WVBarotropicQGToleranceDump.cpp)
+    target_compile_features(WVBarotropicQGToleranceDump PRIVATE cxx_std_17)
+    target_include_directories(WVBarotropicQGToleranceDump PRIVATE
+        ../CompiledKernel/adapters/reference)
+    target_link_libraries(WVBarotropicQGToleranceDump PRIVATE
+        WaveVortex::PortableRuntime
+        WaveVortex::ReferenceFFT
+        ${WAVEVORTEX_NETCDF_TARGET})
+    if(CMAKE_CXX_COMPILER_ID MATCHES "AppleClang|Clang|GNU")
+        target_compile_options(WVBarotropicQGToleranceDump PRIVATE
+            -Wall -Wextra -Wpedantic -Werror)
+    endif()
+
     function(wv_add_runtime_test target source test_name)
         add_executable(${target} tests/${source})
         target_compile_features(${target} PRIVATE cxx_std_17)

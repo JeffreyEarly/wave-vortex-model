@@ -1,10 +1,26 @@
 classdef TestBarotropicQGCompiledKernel < matlab.unittest.TestCase
+    properties (SetAccess = private)
+        ToleranceDump (1,1) string
+    end
+
     methods (TestClassSetup)
         function buildStandaloneKernel(testCase)
             repositoryRoot = fileparts(fileparts(mfilename("fullpath")));
             scriptPath = fullfile(repositoryRoot,"tools","compiled-kernel","run_contract_tests.sh");
             [status,output] = systemWithoutMatlabRuntime(sprintf('"%s"',scriptPath));
             testCase.assertEqual(status,0,output);
+
+            buildDirectory = fullfile(repositoryRoot,"tools","compiled-kernel","build","portable-runtime");
+            configure = "cmake -S " + shellQuote(fullfile(repositoryRoot,"PortableRuntime")) + ...
+                " -B " + shellQuote(buildDirectory) + ...
+                " -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON";
+            [status,output] = systemWithoutMatlabRuntime(configure);
+            testCase.assertEqual(status,0,output)
+            [status,output] = systemWithoutMatlabRuntime("cmake --build " + ...
+                shellQuote(buildDirectory) + " --parallel --target WVBarotropicQGToleranceDump");
+            testCase.assertEqual(status,0,output)
+            testCase.ToleranceDump = fullfile(buildDirectory,"WVBarotropicQGToleranceDump");
+            testCase.assertTrue(isfile(testCase.ToleranceDump))
         end
     end
 
@@ -12,6 +28,7 @@ classdef TestBarotropicQGCompiledKernel < matlab.unittest.TestCase
         function matlabAuthoritativeParity(testCase)
             grids = [8 6; 9 7; 8 7; 9 6];
             maximumRelativeError = 0;
+            maximumToleranceRelativeError = 0;
             for iGrid = 1:size(grids,1)
                 for j = [0 1]
                     for shouldAntialias = [false true]
@@ -34,6 +51,15 @@ classdef TestBarotropicQGCompiledKernel < matlab.unittest.TestCase
                             shouldAntialias=definition.shouldAntialias, ...
                             planetaryRadius=definition.planetaryRadius);
                         diagnostic = sprintf("%dx%d, j=%d, antialias=%d",definition.Nxy,j,shouldAntialias);
+
+                        tolerance = barotropicToleranceDump(testCase.ToleranceDump,definition,2e-7);
+                        model = WVModel(wvt,shouldUseLinearDynamics=true);
+                        coefficients = WVCoefficients(model,absTolerance=tolerance.absoluteToleranceScale);
+                        matlabTolerance = coefficients.absErrorTolerance();
+                        matlabTolerance = matlabTolerance{1};
+                        testCase.verifyEqual(tolerance.absoluteTolerance(1),1.0,"C++ constrained zero mode: " + diagnostic)
+                        testCase.verifyEqual(matlabTolerance(1),1.0,"MATLAB constrained zero mode: " + diagnostic)
+                        maximumToleranceRelativeError = max(maximumToleranceRelativeError,verifyElementwiseRelative(testCase,tolerance.absoluteTolerance(:),matlabTolerance(:),1e-12,"adaptive tolerance vector: " + diagnostic));
 
                         testCase.verifyEqual(actual.contractVersion,4,diagnostic)
                         testCase.verifyEqual(actual.Nkl,wvt.Nkl,diagnostic)
@@ -123,6 +149,7 @@ classdef TestBarotropicQGCompiledKernel < matlab.unittest.TestCase
                 end
             end
             fprintf("Barotropic QG MATLAB/C++ maximum relative error: %.3e\n",maximumRelativeError)
+            fprintf("Barotropic QG MATLAB/C++ tolerance-vector maximum relative error: %.3e\n",maximumToleranceRelativeError)
         end
     end
 end
@@ -136,6 +163,13 @@ testCase.verifyEqual(uint64(actual.halfConjugatedWVIndices(:))+1,layout.conjugat
 testCase.verifyEqual(uint64(actual.halfCompletionRows(:))+1,layout.hermitianCompletionRows(:),diagnostic)
 testCase.verifyEqual(uint64(actual.halfCompletionSourceRows(:))+1,layout.hermitianSourceRows(:),diagnostic)
 testCase.verifyEqual(uint64(actual.halfSelfConjugateRows(:))+1,layout.selfConjugateFourierRows(:),diagnostic)
+end
+
+function relativeError = verifyElementwiseRelative(testCase,actual,expected,tolerance,diagnostic)
+testCase.verifyEqual(size(actual),size(expected),diagnostic)
+scale = max(abs(expected),realmin("double"));
+relativeError = max(abs(actual-expected)./scale,[],"all");
+testCase.verifyLessThanOrEqual(relativeError,tolerance,diagnostic)
 end
 
 function relativeError = verifyRelative(testCase,actual,expected,tolerance,diagnostic)
@@ -160,6 +194,20 @@ if status ~= 0
     error("WaveVortexModel:BarotropicQGFixtureDumpFailed","%s",output);
 end
 actual = jsondecode(output);
+end
+
+function actual = barotropicToleranceDump(executable,definition,absoluteToleranceScale)
+commandArguments = [definition.Nxy definition.Lxy definition.h definition.j definition.g definition.rotationRate definition.latitude definition.shouldAntialias definition.planetaryRadius absoluteToleranceScale];
+command = shellQuote(executable) + " " + strjoin(compose("%.17g",commandArguments)," ");
+[status,output] = systemWithoutMatlabRuntime(command);
+if status ~= 0
+    error("WaveVortexModel:BarotropicQGToleranceDumpFailed","%s",output);
+end
+actual = jsondecode(output);
+end
+
+function value = shellQuote(value)
+value = "'" + replace(string(value),"'","'""'""'") + "'";
 end
 
 function [status,output] = systemWithoutMatlabRuntime(command)

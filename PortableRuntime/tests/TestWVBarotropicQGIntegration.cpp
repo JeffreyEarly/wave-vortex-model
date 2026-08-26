@@ -197,8 +197,9 @@ void testSystemAndIntegrators() {
   require(static_cast<bool>(status) && policy &&
               policy->componentCount() == 1 &&
               policy->elementCount(0) == layout.coefficientElementCount() &&
+              policy->absoluteTolerance(0, 0) == 1.0 &&
               std::isfinite(policy->absoluteTolerance(0, 1)),
-          "one-family adaptive error policy");
+          "MATLAB-compatible one-family adaptive error policy");
 
   state.coefficients.mutableFamilies()[0].data[0].imag = 1.0;
   const auto constrained = system->enforceStateConstraints(state.state);
@@ -259,6 +260,30 @@ void testSystemAndIntegrators() {
   require(static_cast<bool>(status) &&
               dense.state.coefficientFamilyCount == 1,
           "generic RK45 dense output preserves A0-only state");
+
+  WVAdaptiveRK78Options rk78Options;
+  rk78Options.relativeTolerance = 1e-6;
+  rk78Options.maximumStepSize = 0.001;
+  WVAdaptiveRK78 rk78(*system, rk78Options);
+  status = rk78.prepareStateAfterRestart(state.state);
+  require(static_cast<bool>(status), "real-system RK78 restart preparation");
+  status = rk78.step(state.state, 0.001);
+  const auto *accepted = rk78.lastAcceptedStep();
+  require(static_cast<bool>(status) && accepted != nullptr &&
+              accepted->denseOutput == nullptr &&
+              rk78.metrics().workspaceStateEquivalentCount == 11 &&
+              rk78.metrics().denseHistoryStateEquivalentCount == 0 &&
+              rk78.metrics().denseHistoryCapacityBytes == 0 &&
+              rk78.metrics().acceptedStepCount == 1 &&
+              state.state.coefficientFamilyCount == 1 &&
+              state.state.waveVortex.coefficients.Ap.data == nullptr &&
+              state.state.waveVortex.coefficients.Am.data == nullptr &&
+              state.state.waveVortex.coefficients.A0.data == nullptr &&
+              std::string(WVAdaptiveRK78::methodIdentifier()) ==
+                  "adaptive-rk78" &&
+              std::string(WVAdaptiveRK78::controllerIdentifier()) ==
+                  "matlab-ode78-v1",
+          "endpoint-only RK78 advances the real compact QG system");
   require(system->persistentBytes() >= system->kernel().persistentBytes() &&
               system->kernel().metrics().persistentFullHermitianBytes == 0,
           "system retained-storage and compact-spectrum evidence");
