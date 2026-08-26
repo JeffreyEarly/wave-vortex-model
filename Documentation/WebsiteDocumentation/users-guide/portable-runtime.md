@@ -13,7 +13,7 @@ There are two distinct compiled paths. Within MATLAB, select the [compiled nonli
 
 ## Supported scope
 
-The runtime supports hydrostatic and nonhydrostatic constant stratification, fixed-step RK4, adaptive Bogacki--Shampine RK3(2), and continuous output derived from each method's Runge--Kutta stages. Its frozen forcing subset is:
+The runtime supports hydrostatic and nonhydrostatic constant stratification, fixed-step RK4, MATLAB `ode23`-compatible Bogacki--Shampine integration, MATLAB `ode45`-compatible Dormand--Prince integration, and continuous output derived from each method's Runge--Kutta stages. The accepted solutions are third order for `adaptive-rk23` and fifth order for `adaptive-rk45`; their embedded error estimates are second and fourth order, respectively. Its frozen forcing subset is:
 
 - `WVNonlinearAdvection`
 - `WVAdaptiveDamping`
@@ -25,7 +25,7 @@ The runtime supports hydrostatic and nonhydrostatic constant stratification, fix
 
 Its qualified built-in observer records are `WVCoefficients`, `WVEulerianFields`, `WVMooring`, `WVLagrangianParticles`, and `WVTracer`. Arbitrary MATLAB subclasses are rejected before execution. MATLAB authors multi-file, named-group output; the C++ command line executes that recovered graph without independently configuring it.
 
-The tested interoperability boundary includes linear and nonlinear dynamics, the frozen forcing types listed above in their persisted execution order, fixed RK4 and adaptive RK3(2), evenly spaced output groups, shared observer identities, particle and tracer state, and in-place append progress. Other transform families, custom forcing or observer subclasses, two-dimensional tracers, and newly configured multi-file graphs are rejected before execution. There is no silent fallback to a reduced checkpoint or MATLAB implementation.
+The tested interoperability boundary includes linear and nonlinear dynamics, the frozen forcing types listed above in their persisted execution order, fixed RK4, `adaptive-rk23`, `adaptive-rk45`, evenly spaced output groups, shared observer identities, particle and tracer state, and in-place append progress. Other transform families, custom forcing or observer subclasses, two-dimensional tracers, and newly configured multi-file graphs are rejected before execution. There is no silent fallback to a reduced checkpoint or MATLAB implementation.
 
 The stabilized C++ boundary is `wave-vortex-portable-source-api-v1`, version 1.0. It supports statically linked extensions and reusable-runner applications built from one explicitly selected WaveVortexModel checkout. Change the checkout only as a deliberate dependency update, then recompile the runtime, every extension, and the runner together. This is source compatibility, not a binary plug-in ABI: there is no dynamic discovery, separately loadable extension, cross-build binary compatibility, or distributed runtime binary. Scientific and persisted pair, schedule, observation-schema, run-request, and kernel versions are independent and must each match exactly.
 
@@ -74,7 +74,7 @@ The completed [AlongTrackSimulator ATS #4 integration](https://github.com/satmap
 
 ## Legacy run and restart
 
-The original single-file command remains supported. Complete-model continuation restores the selected file's dynamics mode, forcing order, output groups and schedules, shared observer identities, particles, tracers, committed progress, and latest complete state. Runtime integrator objects are not persisted, matching `WVModel.modelFromFile`; select fixed RK4 or adaptive RK3(2) for the continuation. A final time bounds the restored schedules:
+The original single-file command remains supported. Complete-model continuation restores the selected file's dynamics mode, forcing order, output groups and schedules, shared observer identities, particles, tracers, committed progress, and latest complete state. Runtime integrator objects are not persisted, matching `WVModel.modelFromFile`; select fixed RK4, `adaptive-rk23`, or `adaptive-rk45` for the continuation. A final time bounds the restored schedules:
 
 ```sh
 wave-vortex-run saved-model.nc \
@@ -90,9 +90,17 @@ wave-vortex-run saved-model.nc \
     --delta-t 1 --initial-step 1 --maximum-step 10 --final-time 100 \
     --relative-tolerance 1e-3 --absolute-tolerance 1e-6 \
     --fft-provider native-fftw
+
+wave-vortex-run saved-model.nc \
+    --restart-mode model \
+    --output-policy append \
+    --integrator adaptive-rk45 \
+    --delta-t 1 --initial-step 1 --maximum-step 10 --final-time 100 \
+    --relative-tolerance 1e-3 --absolute-tolerance 1e-6 \
+    --fft-provider native-fftw
 ```
 
-For adaptive RK3(2), `--delta-t` is the backward-compatible default initial step and `--initial-step` makes that request explicit. Unless `--maximum-step` is supplied, the runtime limits accepted steps to one tenth of the requested continuation interval, matching MATLAB `ode23`. Specify both controls for reproducible segmented runs and benchmark comparisons. The runtime uses MATLAB-compatible componentwise relative/absolute error scaling and preserves each observing-system state's own absolute tolerance.
+For either adaptive method, `--delta-t` is the backward-compatible default initial step and `--initial-step` makes that request explicit. Unless `--maximum-step` is supplied, the runtime limits accepted steps to one tenth of the requested continuation interval, matching MATLAB's default bound. Specify both controls for reproducible segmented runs and benchmark comparisons. The runtime uses MATLAB-compatible componentwise relative/absolute error scaling and preserves each observing-system state's own absolute tolerance. `adaptive-rk23` preserves the existing MATLAB `ode23` controller, continuous extension, restart, and diagnostic contract exactly. `adaptive-rk45` advances with the Dormand--Prince fifth-order solution, controls error with the embedded fourth-order estimate, and uses MATLAB `ode45` FSAL, rejection, final-step, and continuous-output semantics. The strict run-request-v1 JSON contract remains fixed to RK4 and `adaptive-rk23`; use the legacy command form shown above or the C++ source API for `adaptive-rk45` until a later versioned request contract adds it.
 
 For a deliberately coefficient-only workflow, name that reduced boundary explicitly and supply a new checkpoint destination:
 

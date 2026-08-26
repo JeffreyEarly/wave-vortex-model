@@ -17,12 +17,17 @@ namespace detail {
 class WVModelInternalAccess;
 }
 
-enum class WVModelIntegratorKind : std::uint8_t { fixedRK4, adaptiveRK23 };
+enum class WVModelIntegratorKind : std::uint8_t {
+  fixedRK4,
+  adaptiveRK23,
+  adaptiveRK45
+};
 
 struct WVModelIntegratorConfiguration {
   WVModelIntegratorKind kind = WVModelIntegratorKind::fixedRK4;
   WVFixedStepRK4Options fixed;
   WVAdaptiveRK23Options adaptive;
+  WVAdaptiveRK45Options adaptiveRK45;
 };
 
 struct WVModelMetrics {
