@@ -1,7 +1,7 @@
 #pragma once
 
+#include "WaveVortexRuntime/WVBarotropicQGForcingEngine.hpp"
 #include "WaveVortexRuntime/WVIntegrationContracts.hpp"
-#include "WaveVortexKernel/WVTransformBarotropicQGKernel.hpp"
 
 #include <memory>
 
@@ -46,6 +46,12 @@ public:
       const WVTransformBarotropicQGConfiguration &configuration,
       std::unique_ptr<WVFFTEngine> engine,
       std::unique_ptr<WVBarotropicQGIntegrationSystem> &system);
+  static WVKernelStatus create(
+      const WVTransformBarotropicQGConfiguration &configuration,
+      const WVFrozenForcingSchedule &schedule,
+      std::shared_ptr<const WVExtensionCatalog> catalog,
+      std::unique_ptr<WVFFTEngine> engine,
+      std::unique_ptr<WVBarotropicQGIntegrationSystem> &system);
 
   ~WVBarotropicQGIntegrationSystem() override = default;
   WVBarotropicQGIntegrationSystem(const WVBarotropicQGIntegrationSystem &) =
@@ -67,14 +73,22 @@ public:
   std::size_t persistentBytes() const noexcept override;
 
   const WVTransformBarotropicQGKernel &kernel() const noexcept {
-    return *kernel_;
+    return forcingEngine_->kernel();
   }
-  WVTransformBarotropicQGKernel &kernel() noexcept { return *kernel_; }
+  WVTransformBarotropicQGKernel &kernel() noexcept {
+    return forcingEngine_->kernel();
+  }
+  const WVBarotropicQGForcingEngineMetrics &forcingMetrics() const noexcept {
+    return forcingEngine_->metrics();
+  }
+  const std::string &forcingScheduleIdentifier() const noexcept {
+    return forcingEngine_->scheduleIdentifier();
+  }
 
 private:
   WVBarotropicQGIntegrationSystem() = default;
   WVIntegrationStateLayout layout_;
-  std::unique_ptr<WVTransformBarotropicQGKernel> kernel_;
+  std::unique_ptr<WVBarotropicQGForcingEngine> forcingEngine_;
   bool executing_ = false;
 };
 

@@ -1,4 +1,5 @@
 #include "WaveVortexRuntime/WVBarotropicQGIntegrationSystem.hpp"
+#include "WaveVortexRuntime/WVExtensionCatalog.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -189,17 +190,32 @@ WVKernelStatus WVBarotropicQGIntegrationSystem::create(
     const WVTransformBarotropicQGConfiguration &configuration,
     std::unique_ptr<WVFFTEngine> engine,
     std::unique_ptr<WVBarotropicQGIntegrationSystem> &system) {
+  std::shared_ptr<const WVExtensionCatalog> catalog;
+  auto status = makeBuiltInExtensionCatalog(catalog);
+  if (!status)
+    return status;
+  return create(configuration, defaultNonlinearAdvectionSchedule(),
+                std::move(catalog), std::move(engine), system);
+}
+
+WVKernelStatus WVBarotropicQGIntegrationSystem::create(
+    const WVTransformBarotropicQGConfiguration &configuration,
+    const WVFrozenForcingSchedule &schedule,
+    std::shared_ptr<const WVExtensionCatalog> catalog,
+    std::unique_ptr<WVFFTEngine> engine,
+    std::unique_ptr<WVBarotropicQGIntegrationSystem> &system) {
   system.reset();
   try {
     auto candidate = std::unique_ptr<WVBarotropicQGIntegrationSystem>(
         new WVBarotropicQGIntegrationSystem());
-    auto status = WVTransformBarotropicQGKernel::create(
-        configuration, std::move(engine), candidate->kernel_);
+    auto status = WVBarotropicQGForcingEngine::create(
+        configuration, schedule, std::move(catalog), std::move(engine),
+        candidate->forcingEngine_);
     if (!status)
       return status;
     WVTransformStateDescription stateDescription{
         "WVTransformBarotropicQG", {configuration.Nx, configuration.Ny},
-        {{"A0", {candidate->kernel_->descriptor().Nkl()},
+        {{"A0", {candidate->kernel().descriptor().Nkl()},
           WVToleranceKind::coefficientEnergyScaled}}};
     status = WVIntegrationStateLayout::createCoefficientOnly(
         std::move(stateDescription), candidate->layout_);
@@ -239,7 +255,7 @@ WVKernelStatus WVBarotropicQGIntegrationSystem::evaluateRightHandSide(
   const WVComplexConstView A0View{
       A0.data, {1, A0.layout->elementCount}};
   WVComplexView F0View{F0.data, {1, F0.layout->elementCount}};
-  return kernel_->nonlinearFlux(A0View, F0View);
+  return forcingEngine_->evaluateRightHandSide(A0View, F0View);
 }
 
 WVStateConstraintResult
@@ -250,21 +266,26 @@ WVBarotropicQGIntegrationSystem::enforceStateConstraints(
     return {status, 0, false};
   auto A0 = coefficientFamilyView(layout_, state, 0);
   WVComplexView A0View{A0.data, {1, A0.layout->elementCount}};
-  const auto modified = kernel_->enforceReality(A0View);
-  return {WVKernelStatus::ok(), modified, modified == 0};
+  auto result = forcingEngine_->restoreForcingAmplitudes(A0View);
+  if (!result)
+    return result;
+  const auto realityModified = kernel().enforceReality(A0View);
+  result.modifiedCoefficientCount += realityModified;
+  result.fsalCompatible = result.fsalCompatible && realityModified == 0;
+  return result;
 }
 
 WVKernelStatus WVBarotropicQGIntegrationSystem::createErrorPolicy(
     double absoluteToleranceScale,
     std::unique_ptr<WVIntegrationErrorPolicy> &policy) const {
-  return BarotropicQGErrorPolicy::create(kernel_->descriptor(),
+  return BarotropicQGErrorPolicy::create(kernel().descriptor(),
                                          absoluteToleranceScale, policy);
 }
 
 std::size_t
 WVBarotropicQGIntegrationSystem::persistentBytes() const noexcept {
   return sizeof(*this) + layout_.persistentBytes() +
-         (kernel_ == nullptr ? 0 : kernel_->persistentBytes());
+         (forcingEngine_ == nullptr ? 0 : forcingEngine_->persistentBytes());
 }
 
 } // namespace wavevortex::runtime

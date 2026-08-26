@@ -34,6 +34,8 @@ add_library(WaveVortexPortableRuntime STATIC
     src/WVForcingEngine.cpp
     src/WVIntegrationState.cpp
     src/WVRungeKutta.cpp
+    include/WaveVortexRuntime/WVBarotropicQGForcingEngine.hpp
+    src/WVBarotropicQGForcingEngine.cpp
     src/WVBarotropicQGIntegrationSystem.cpp
     src/WVOutputOrchestration.cpp
     src/WVObserverAdapter.cpp
