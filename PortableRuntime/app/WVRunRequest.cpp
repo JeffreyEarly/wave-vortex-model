@@ -86,8 +86,24 @@ std::filesystem::path resolvedPath(const std::filesystem::path &base,
   return error ? std::filesystem::path{} : resolved;
 }
 
-WVRunRequestStatus parseIntegration(const json &value,
-                                    WVRunRequest &request) {
+WVRunRequestStatus integrationMethod(const std::string &identifier,
+                                     WVRunRequestIntegrationMethod &method) {
+  if (identifier == "fixed-rk4")
+    method = WVRunRequestIntegrationMethod::fixedRK4;
+  else if (identifier == "adaptive-rk23")
+    method = WVRunRequestIntegrationMethod::adaptiveRK23;
+  else if (identifier == "adaptive-rk45")
+    method = WVRunRequestIntegrationMethod::adaptiveRK45;
+  else if (identifier == "adaptive-rk78")
+    method = WVRunRequestIntegrationMethod::adaptiveRK78;
+  else
+    return invalid("integration.method names an unsupported integration "
+                   "method.");
+  return WVRunRequestStatus::ok();
+}
+
+WVRunRequestStatus parseV1Integration(const json &value,
+                                      WVRunRequestIntegration &integration) {
   auto status = requireObject(
       value, {"method", "finalTime", "initialStep"},
       {"method", "finalTime", "initialStep", "maximumStep",
@@ -95,42 +111,150 @@ WVRunRequestStatus parseIntegration(const json &value,
       "integration");
   if (!status)
     return status;
-  status = stringValue(value, "method", "integration", request.integrator);
+  std::string method;
+  status = stringValue(value, "method", "integration", method);
   if (!status)
     return status;
-  status = finiteValue(value, "finalTime", "integration", request.finalTime);
+  if (method != "fixed-rk4" && method != "adaptive-rk23")
+    return invalid("integration.method must be fixed-rk4 or adaptive-rk23.");
+  status = integrationMethod(method, integration.method);
+  if (!status)
+    return status;
+  status = finiteValue(value, "finalTime", "integration",
+                       integration.finalTime);
   if (!status)
     return status;
   status = positiveFiniteValue(value, "initialStep", "integration",
-                               request.initialStep);
+                               integration.initialStep);
   if (!status)
     return status;
-  if (request.integrator == "fixed-rk4") {
+  if (integration.method == WVRunRequestIntegrationMethod::fixedRK4) {
     for (const char *adaptive : {"maximumStep", "relativeTolerance",
                                  "absoluteToleranceScale"})
       if (value.contains(adaptive))
         return invalid(std::string("integration.") + adaptive +
                        " is valid only for adaptive-rk23.");
-    request.maximumStep = request.initialStep;
+    integration.maximumStep = integration.initialStep;
+    integration.stepPolicy = WVRunRequestStepPolicy::explicitStep;
     return WVRunRequestStatus::ok();
   }
-  if (request.integrator != "adaptive-rk23")
-    return invalid("integration.method must be fixed-rk4 or adaptive-rk23.");
   for (const char *required : {"maximumStep", "relativeTolerance",
                                "absoluteToleranceScale"})
     if (!value.contains(required))
       return invalid(std::string("integration is missing required field '") +
                      required + "'.");
   status = positiveFiniteValue(value, "maximumStep", "integration",
-                               request.maximumStep);
+                               integration.maximumStep);
   if (!status)
     return status;
   status = positiveFiniteValue(value, "relativeTolerance", "integration",
-                               request.relativeTolerance);
+                               integration.relativeTolerance);
   if (!status)
     return status;
-  return positiveFiniteValue(value, "absoluteToleranceScale", "integration",
-                             request.absoluteToleranceScale);
+  status = positiveFiniteValue(value, "absoluteToleranceScale", "integration",
+                               integration.absoluteToleranceScale);
+  if (status)
+    integration.stepPolicy = WVRunRequestStepPolicy::adaptive;
+  return status;
+}
+
+WVRunRequestStatus parseV2Integration(const json &value,
+                                      WVRunRequestIntegration &integration) {
+  auto status = requireObject(
+      value, {"method", "finalTime"},
+      {"method", "finalTime", "initialStep", "cfl", "timeStepConstraint",
+       "maximumStep", "relativeTolerance", "absoluteToleranceScale"},
+      "integration");
+  if (!status)
+    return status;
+  std::string method;
+  status = stringValue(value, "method", "integration", method);
+  if (!status)
+    return status;
+  status = integrationMethod(method, integration.method);
+  if (!status)
+    return status;
+  status = finiteValue(value, "finalTime", "integration",
+                       integration.finalTime);
+  if (!status)
+    return status;
+
+  const bool hasInitialStep = value.contains("initialStep");
+  const bool hasCFL = value.contains("cfl");
+  const bool hasConstraint = value.contains("timeStepConstraint");
+  const bool hasMaximumStep = value.contains("maximumStep");
+  const bool hasRelativeTolerance = value.contains("relativeTolerance");
+  const bool hasAbsoluteTolerance = value.contains("absoluteToleranceScale");
+
+  if (integration.method == WVRunRequestIntegrationMethod::fixedRK4) {
+    if (hasMaximumStep || hasRelativeTolerance || hasAbsoluteTolerance)
+      return invalid("Adaptive integration controls are not valid for "
+                     "fixed-rk4.");
+    if (hasInitialStep == hasCFL)
+      return invalid("fixed-rk4 requires exactly one of initialStep or cfl.");
+    if (hasInitialStep) {
+      if (hasConstraint)
+        return invalid("integration.timeStepConstraint requires cfl.");
+      status = positiveFiniteValue(value, "initialStep", "integration",
+                                   integration.initialStep);
+      if (!status)
+        return status;
+      integration.maximumStep = integration.initialStep;
+      integration.stepPolicy = WVRunRequestStepPolicy::explicitStep;
+      return WVRunRequestStatus::ok();
+    }
+    if (!hasConstraint)
+      return invalid("CFL-selected fixed-rk4 requires "
+                     "integration.timeStepConstraint.");
+    status = positiveFiniteValue(value, "cfl", "integration",
+                                 integration.cfl);
+    if (!status)
+      return status;
+    std::string constraint;
+    status = stringValue(value, "timeStepConstraint", "integration",
+                         constraint);
+    if (!status)
+      return status;
+    if (constraint == "advective")
+      integration.timeStepConstraint =
+          WVRunRequestTimeStepConstraint::advective;
+    else if (constraint == "oscillatory")
+      integration.timeStepConstraint =
+          WVRunRequestTimeStepConstraint::oscillatory;
+    else if (constraint == "min")
+      integration.timeStepConstraint = WVRunRequestTimeStepConstraint::minimum;
+    else
+      return invalid("integration.timeStepConstraint must be advective, "
+                     "oscillatory, or min.");
+    integration.stepPolicy = WVRunRequestStepPolicy::cflSelected;
+    return WVRunRequestStatus::ok();
+  }
+
+  if (hasCFL || hasConstraint)
+    return invalid("CFL integration controls are valid only for fixed-rk4.");
+  for (const char *required : {"initialStep", "maximumStep",
+                               "relativeTolerance",
+                               "absoluteToleranceScale"})
+    if (!value.contains(required))
+      return invalid(std::string("integration is missing required field '") +
+                     required + "'.");
+  status = positiveFiniteValue(value, "initialStep", "integration",
+                               integration.initialStep);
+  if (!status)
+    return status;
+  status = positiveFiniteValue(value, "maximumStep", "integration",
+                               integration.maximumStep);
+  if (!status)
+    return status;
+  status = positiveFiniteValue(value, "relativeTolerance", "integration",
+                               integration.relativeTolerance);
+  if (!status)
+    return status;
+  status = positiveFiniteValue(value, "absoluteToleranceScale", "integration",
+                               integration.absoluteToleranceScale);
+  if (status)
+    integration.stepPolicy = WVRunRequestStepPolicy::adaptive;
+  return status;
 }
 
 WVRunRequestStatus parseOutput(const json &value,
@@ -204,6 +328,47 @@ WVRunRequestStatus parseExecution(const json &value,
 
 } // namespace
 
+const char *serializedIdentifier(WVRunRequestIntegrationMethod method) noexcept {
+  switch (method) {
+  case WVRunRequestIntegrationMethod::fixedRK4:
+    return "fixed-rk4";
+  case WVRunRequestIntegrationMethod::adaptiveRK23:
+    return "adaptive-rk23";
+  case WVRunRequestIntegrationMethod::adaptiveRK45:
+    return "adaptive-rk45";
+  case WVRunRequestIntegrationMethod::adaptiveRK78:
+    return "adaptive-rk78";
+  }
+  return "unknown";
+}
+
+const char *serializedIdentifier(WVRunRequestStepPolicy policy) noexcept {
+  switch (policy) {
+  case WVRunRequestStepPolicy::explicitStep:
+    return "explicit";
+  case WVRunRequestStepPolicy::cflSelected:
+    return "cfl";
+  case WVRunRequestStepPolicy::adaptive:
+    return "adaptive";
+  }
+  return "unknown";
+}
+
+const char *serializedIdentifier(
+    WVRunRequestTimeStepConstraint constraint) noexcept {
+  switch (constraint) {
+  case WVRunRequestTimeStepConstraint::notApplicable:
+    return "not-applicable";
+  case WVRunRequestTimeStepConstraint::advective:
+    return "advective";
+  case WVRunRequestTimeStepConstraint::oscillatory:
+    return "oscillatory";
+  case WVRunRequestTimeStepConstraint::minimum:
+    return "min";
+  }
+  return "unknown";
+}
+
 WVRunRequestStatus decodeRunRequest(const std::string &path,
                                     WVRunRequest &request) {
   try {
@@ -221,7 +386,33 @@ WVRunRequestStatus decodeRunRequest(const std::string &path,
     if (!input)
       return invalid("The run-request JSON file cannot be opened.");
     const auto document = json::parse(input, nullptr, true, true);
-    auto status = requireObject(
+    if (!document.is_object())
+      return invalid("run request must be a JSON object.");
+    if (!document.contains("schemaIdentifier"))
+      return invalid("run request is missing required field "
+                     "'schemaIdentifier'.");
+    if (!document.contains("schemaVersion"))
+      return invalid("run request is missing required field 'schemaVersion'.");
+    std::string identifier;
+    auto status = stringValue(document, "schemaIdentifier", "run request",
+                              identifier);
+    if (!status)
+      return status;
+    if (identifier != WVRunRequest::schemaV1Identifier &&
+        identifier != WVRunRequest::schemaV2Identifier)
+      return invalid("Unsupported run-request schema identifier '" +
+                     identifier + "'.");
+    const auto &version = document.at("schemaVersion");
+    if (!version.is_number_unsigned() && !version.is_number_integer())
+      return invalid("Unsupported run-request schema version.");
+    const auto schemaVersion = version.get<std::int64_t>();
+    const bool isV1 = identifier == WVRunRequest::schemaV1Identifier &&
+                      schemaVersion == WVRunRequest::schemaV1Version;
+    const bool isV2 = identifier == WVRunRequest::schemaV2Identifier &&
+                      schemaVersion == WVRunRequest::schemaV2Version;
+    if (!isV1 && !isV2)
+      return invalid("Unsupported run-request schema version.");
+    status = requireObject(
         document,
         {"schemaIdentifier", "schemaVersion", "modelFiles", "integration",
          "output", "execution", "report"},
@@ -230,21 +421,11 @@ WVRunRequestStatus decodeRunRequest(const std::string &path,
         "run request");
     if (!status)
       return status;
-    std::string identifier;
-    status = stringValue(document, "schemaIdentifier", "run request",
-                         identifier);
-    if (!status)
-      return status;
-    if (identifier != WVRunRequest::schemaIdentifier)
-      return invalid("Unsupported run-request schema identifier '" +
-                     identifier + "'.");
-    const auto &version = document.at("schemaVersion");
-    if ((!version.is_number_unsigned() && !version.is_number_integer()) ||
-        version.get<std::int64_t>() != WVRunRequest::schemaVersion)
-      return invalid("Unsupported run-request schema version.");
 
     WVRunRequest candidate;
     candidate.requestPath = requestPath.string();
+    candidate.schemaIdentifier = identifier;
+    candidate.schemaVersion = static_cast<int>(schemaVersion);
     const auto base = requestPath.parent_path();
     const auto &files = document.at("modelFiles");
     if (!files.is_array() || files.empty())
@@ -265,7 +446,11 @@ WVRunRequestStatus decodeRunRequest(const std::string &path,
       candidate.modelFiles.push_back(resolved.string());
     }
 
-    status = parseIntegration(document.at("integration"), candidate);
+    status = isV1
+                 ? parseV1Integration(document.at("integration"),
+                                      candidate.integration)
+                 : parseV2Integration(document.at("integration"),
+                                      candidate.integration);
     if (!status)
       return status;
     status = parseOutput(document.at("output"), base, candidate);

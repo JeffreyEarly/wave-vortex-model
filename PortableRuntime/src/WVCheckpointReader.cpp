@@ -465,7 +465,8 @@ WVCheckpointStatus inspectOpenFile(
          candidate.configuration.Nz},
         {{"Ap", {Nj, Nkl}, WVToleranceKind::coefficientEnergyScaled},
          {"Am", {Nj, Nkl}, WVToleranceKind::coefficientEnergyScaled},
-         {"A0", {Nj, Nkl}, WVToleranceKind::coefficientEnergyScaled}}};
+         {"A0", {Nj, Nkl}, WVToleranceKind::coefficientEnergyScaled}},
+        true};
     for (const char* family : {"Ap", "Am", "A0"}) {
         result = readComplexCoefficient(stateGroup.id, stateGroup.path, family, candidate.metadata.selectedStateIndex, candidate.metadata.stateCount, Nj, Nkl, nullptr);
         if (!result) return result;

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
 #include <string>
 #include <utility>
 #include <vector>
@@ -12,22 +13,61 @@ struct WVRunRequestDestination {
   std::string path;
 };
 
+enum class WVRunRequestIntegrationMethod : std::uint8_t {
+  fixedRK4,
+  adaptiveRK23,
+  adaptiveRK45,
+  adaptiveRK78
+};
+
+enum class WVRunRequestStepPolicy : std::uint8_t {
+  explicitStep,
+  cflSelected,
+  adaptive
+};
+
+enum class WVRunRequestTimeStepConstraint : std::uint8_t {
+  notApplicable,
+  advective,
+  oscillatory,
+  minimum
+};
+
+const char *serializedIdentifier(WVRunRequestIntegrationMethod method) noexcept;
+const char *serializedIdentifier(WVRunRequestStepPolicy policy) noexcept;
+const char *serializedIdentifier(
+    WVRunRequestTimeStepConstraint constraint) noexcept;
+
+struct WVRunRequestIntegration {
+  WVRunRequestIntegrationMethod method =
+      WVRunRequestIntegrationMethod::fixedRK4;
+  WVRunRequestStepPolicy stepPolicy = WVRunRequestStepPolicy::explicitStep;
+  WVRunRequestTimeStepConstraint timeStepConstraint =
+      WVRunRequestTimeStepConstraint::notApplicable;
+  double finalTime = 0.0;
+  double initialStep = 0.0;
+  double cfl = 0.0;
+  double maximumStep = 0.0;
+  double relativeTolerance = 0.0;
+  double absoluteToleranceScale = 0.0;
+};
+
 // A compact execution request. Scientific configuration, state, forcing,
 // observers, schedules, and restart progress remain authoritative in the
 // referenced NetCDF model bundle.
 struct WVRunRequest {
-  static constexpr const char *schemaIdentifier =
+  static constexpr const char *schemaV1Identifier =
       "wave-vortex-run-request-v1";
-  static constexpr int schemaVersion = 1;
+  static constexpr int schemaV1Version = 1;
+  static constexpr const char *schemaV2Identifier =
+      "wave-vortex-run-request-v2";
+  static constexpr int schemaV2Version = 2;
 
   std::string requestPath;
+  std::string schemaIdentifier;
+  int schemaVersion = 0;
   std::vector<std::string> modelFiles;
-  std::string integrator;
-  double finalTime = 0.0;
-  double initialStep = 0.0;
-  double maximumStep = 0.0;
-  double relativeTolerance = 0.0;
-  double absoluteToleranceScale = 0.0;
+  WVRunRequestIntegration integration;
   std::string outputPolicy;
   std::vector<WVRunRequestDestination> destinations;
   std::string fftProvider;
