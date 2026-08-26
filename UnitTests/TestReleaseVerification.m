@@ -142,10 +142,13 @@ classdef TestReleaseVerification < matlab.unittest.TestCase
             cmake = testCase.readFile(fullfile("PortableRuntime","CMakeLists.txt"));
             for required = [
                     "CompiledKernel/native-fftw-provider.env"
+                    "CompiledKernel/include/WaveVortexKernel/WVTransformBarotropicQGKernel.hpp"
+                    "CompiledKernel/src/WVTransformBarotropicQGKernel.cpp"
                     "PortableRuntime/README.md"
                     "PortableRuntime/buildWaveVortexRun.sh"
                     "PortableRuntime/source-selection.json"
                     "PortableRuntime/include/WaveVortexRuntime/WVCheckpointReader.hpp"
+                    "PortableRuntime/include/WaveVortexRuntime/WVBarotropicQGIntegrationSystem.hpp"
                     "PortableRuntime/include/WaveVortexRuntime/WVExtensionCatalog.hpp"
                     "PortableRuntime/include/WaveVortexRuntime/WVFieldEvaluationService.hpp"
                     "PortableRuntime/include/WaveVortexRuntime/WVForcing.hpp"
@@ -160,6 +163,7 @@ classdef TestReleaseVerification < matlab.unittest.TestCase
                     "PortableRuntime/include/WaveVortexRuntime/WVPortableTypedRecord.hpp"
                     "PortableRuntime/include/WaveVortexRuntime/WVRunner.hpp"
                     "PortableRuntime/src/WVCheckpointReader.cpp"
+                    "PortableRuntime/src/WVBarotropicQGIntegrationSystem.cpp"
                     "PortableRuntime/src/WVExtensionCatalog.cpp"
                     "PortableRuntime/src/WVFieldEvaluationService.cpp"
                     "PortableRuntime/src/WVLegacyObserverCompatibility.hpp"

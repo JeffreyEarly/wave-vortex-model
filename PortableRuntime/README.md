@@ -1,6 +1,6 @@
 # WaveVortex portable runtime
 
-This directory contains the optional MATLAB-independent portable runtime. MATLAB remains WaveVortexModel's primary interface. The currently qualified production kernel, field service, and NetCDF adapter are constant-stratification implementations; the integration and state contracts select those implementations behind a transform-neutral boundary. The runtime is a source-only checkpoint-to-checkpoint tool for advanced users and the stable v1 source-level surface for statically linked C++ observing-system, output-schedule, and forcing implementations.
+This directory contains the optional MATLAB-independent portable runtime. MATLAB remains WaveVortexModel's primary interface. The currently qualified production field service, `WVModel` composition, and NetCDF adapter are constant-stratification implementations; the integration and state contracts select those implementations behind a transform-neutral boundary. A focused `WVTransformBarotropicQG` numerical system implements the same MATLAB science over a compact `A0`-only layout, but it is not yet registered with the production `WVModel`, observing-system, output, or restart composition. The runtime is a source-only checkpoint-to-checkpoint tool for advanced users and the stable v1 source-level surface for statically linked C++ observing-system, output-schedule, and forcing implementations.
 
 The runtime supports:
 
@@ -109,6 +109,8 @@ Plans, caches, integrator history, derived forcing operators, and scratch are re
 ## Architecture
 
 `WVIntegrationStateLayout` freezes the transform identity, spatial dimensions, ordered coefficient-family identifiers, each family's natural spectral rank, and any observer-owned state blocks before state allocation. The constant-stratification adapter declares rank-2 `Ap`, `Am`, and `A0` families and retains its stabilized `WVState` views. Transform-neutral integration uses ordered `WVCoefficientFamilyView` values, so a one-family transform owns and advances only that family; it does not allocate dummy `Ap` or `Am` arrays or a state-sized compatibility copy.
+
+`WVBarotropicQGIntegrationSystem` is the concrete one-family proof. Its transform-specific decoder validates persisted doubly periodic axes and the equivalent depth, mode index, gravity, planetary radius, rotation rate, latitude, antialias flag, and times before publishing spatial shape `[Nx,Ny]` and one rank-1 family `A0[Nkl]`. The system reconstructs ordinary QGPV advection through `WVTransformBarotropicQGKernel` and passes only ordered family views to the generic integrators. End-to-end `WVModel`, observer, NetCDF output, and restart selection for this transform are deliberately outside this focused numerical layer.
 
 `WVIntegrationSystem` supplies the selected right-hand side, constraints, error scaling, and optional field-evaluation service. `WVTimeIntegrator` advances accepted state, and `WVDenseOutput` evaluates within an accepted step. RK4, adaptive RK3(2), and output interpolation traverse the frozen family descriptions rather than assuming three equal rank-2 arrays. Output orchestration depends only on those contracts, so another integrator, coefficient-family layout, or state block does not require a method branch in the driver.
 

@@ -85,6 +85,7 @@ struct WVVolumeView {
 };
 
 using WVRealConstView = WVMatrixView<const double>;
+using WVRealView = WVMatrixView<double>;
 using WVRealVolumeConstView = WVVolumeView<const double>;
 using WVRealVolumeView = WVVolumeView<double>;
 using WVComplexConstView = WVMatrixView<const WVComplex64>;
