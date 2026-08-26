@@ -22,6 +22,7 @@ compiler=${CXX:-c++}
 "$compiler" -std=c++17 -Wall -Wextra -Wpedantic -Werror -pthread \
     -I "$repository_root/CompiledKernel/include" \
     -I "$repository_root/CompiledKernel/src" \
+    -I "$script_directory/tests" \
     "$repository_root/CompiledKernel/src/WVKernelTypes.cpp" \
     "$repository_root/CompiledKernel/src/WVTransformConstantStratificationKernel.cpp" \
     "$script_directory/tests/WVReferenceFFTEngine.cpp" \
@@ -31,7 +32,28 @@ compiler=${CXX:-c++}
 
 "$compiler" -std=c++17 -Wall -Wextra -Wpedantic -Werror -pthread \
     -I "$repository_root/CompiledKernel/include" \
+    -I "$repository_root/CompiledKernel/src" \
+    -I "$script_directory/tests" \
+    "$repository_root/CompiledKernel/src/WVKernelTypes.cpp" \
+    "$repository_root/CompiledKernel/src/WVTransformBarotropicQGKernel.cpp" \
+    "$script_directory/tests/WVReferenceFFTEngine.cpp" \
+    "$script_directory/tests/TestWVBarotropicQGKernel.cpp" \
+    -o "$build_directory/TestWVBarotropicQGKernel"
+"$build_directory/TestWVBarotropicQGKernel"
+
+"$compiler" -std=c++17 -Wall -Wextra -Wpedantic -Werror -pthread \
+    -I "$repository_root/CompiledKernel/include" \
     "$repository_root/CompiledKernel/src/WVKernelTypes.cpp" \
     "$repository_root/CompiledKernel/src/WVTransformConstantStratificationKernel.cpp" \
     "$script_directory/WVKernelDescriptorDump.cpp" \
     -o "$build_directory/WVKernelDescriptorDump"
+
+"$compiler" -std=c++17 -Wall -Wextra -Wpedantic -Werror -pthread \
+    -I "$repository_root/CompiledKernel/include" \
+    -I "$repository_root/CompiledKernel/src" \
+    -I "$script_directory/tests" \
+    "$repository_root/CompiledKernel/src/WVKernelTypes.cpp" \
+    "$repository_root/CompiledKernel/src/WVTransformBarotropicQGKernel.cpp" \
+    "$script_directory/tests/WVReferenceFFTEngine.cpp" \
+    "$script_directory/WVBarotropicQGFixtureDump.cpp" \
+    -o "$build_directory/WVBarotropicQGFixtureDump"
