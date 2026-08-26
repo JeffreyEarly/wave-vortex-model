@@ -17,7 +17,7 @@ classdef TestPortableRuntimeCompatibility < matlab.unittest.TestCase
             [status,output] = systemWithoutMatlabRuntime(configure);
             testCase.assertEqual(status,0,output)
             [status,output] = systemWithoutMatlabRuntime("cmake --build " + shellQuote(buildDirectory) + ...
-                " --parallel --target wave-vortex-run");
+                " --parallel 16 --target wave-vortex-run");
             testCase.assertEqual(status,0,output)
             testCase.Runner = fullfile(buildDirectory,"wave-vortex-run");
             testCase.assertTrue(isfile(testCase.Runner))
@@ -175,6 +175,40 @@ classdef TestPortableRuntimeCompatibility < matlab.unittest.TestCase
                 clear runtimeCleanup controlCleanup
             end
         end
+
+        function linearOde78EndpointMatchesMatlab(testCase)
+            sourcePath = fullfile(testCase.TemporaryFolder,"linear-ode78-source.nc");
+            controlPath = fullfile(testCase.TemporaryFolder,"linear-ode78-control.nc");
+            runtimePath = fullfile(testCase.TemporaryFolder,"linear-ode78-runtime.nc");
+            model = testCase.createLinearBottomFrictionModel(sourcePath,false,7,2.5e-7,"ode78");
+            model.integrateToTime(1e-4,shouldShowIntegrationDiagnostics=false,callback=@(~)[]);
+            model.closeNetCDFFile();
+            copyfile(sourcePath,controlPath)
+
+            command = shellQuote(testCase.Runner) + " " + shellQuote(sourcePath) + ...
+                " " + shellQuote(runtimePath) + ...
+                " --restart-mode coefficients --output-policy create" + ...
+                " --integrator adaptive-rk78 --relative-tolerance 1e-8" + ...
+                " --absolute-tolerance 1e-10 --delta-t 1e-5" + ...
+                " --initial-step 1e-5 --maximum-step 1e-5" + ...
+                " --final-time 2e-4 --fft-provider reference";
+            [status,output] = systemWithoutMatlabRuntime(command);
+            testCase.assertEqual(status,0,output)
+            report = jsondecode(output);
+            testCase.verifyEqual(string(report.integrator.id),"adaptive-rk78")
+            testCase.verifyEqual(string(report.integrator.controller),"matlab-ode78-v1")
+            testCase.verifyEqual(report.integrator.workspaceStateEquivalentCount,11)
+            testCase.verifyEqual(report.integrator.denseHistoryStateEquivalentCount,0)
+
+            [runtimeTransform,runtimeFile] = WVTransform.waveVortexTransformFromFile(runtimePath,shouldReadOnly=true);
+            runtimeCleanup = onCleanup(@()runtimeFile.close());
+            controlModel = WVModel.modelFromFile(char(controlPath));
+            controlCleanup = onCleanup(@()controlModel.closeNetCDFFile());
+            testCase.configureLinearIntegrator(controlModel,"ode78");
+            controlModel.integrateToTime(2e-4,shouldShowIntegrationDiagnostics=false,callback=@(~)[]);
+            testCase.verifyLessThanOrEqual(testCase.normalizedCoefficientError(runtimeTransform,controlModel.wvt),1e-12)
+            clear runtimeCleanup controlCleanup
+        end
     end
 
     methods (Access = private)
@@ -238,6 +272,8 @@ classdef TestPortableRuntimeCompatibility < matlab.unittest.TestCase
                 model.setupIntegrator(integratorType="adaptive",integrator=@ode23,absTolerance=1e-10,relTolerance=1e-8);
             elseif integratorType == "ode45"
                 model.setupIntegrator(integratorType="adaptive",integrator=@ode45,absTolerance=1e-10,relTolerance=1e-8);
+            elseif integratorType == "ode78"
+                model.setupIntegrator(integratorType="adaptive",integrator=@ode78,absTolerance=1e-10,relTolerance=1e-8);
             else
                 model.setupIntegrator(integratorType="fixed",deltaT=1e-5);
             end

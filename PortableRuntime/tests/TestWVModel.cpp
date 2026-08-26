@@ -121,12 +121,41 @@ void adaptiveFacadeAdvances() {
           "WVModel lost the active integrator identity");
 }
 
+void adaptiveRK78FacadeAdvances() {
+  auto checkpoint = readFixture();
+  WVModelIntegratorConfiguration options;
+  options.kind = WVModelIntegratorKind::adaptiveRK78;
+  options.adaptiveRK78.maximumStepSize = 1e-5;
+  WVModel model;
+  auto status = WVModel::create(
+      test::extensionCatalog(), checkpoint.configuration,
+      checkpoint.forcingSchedule,
+      std::make_unique<WVReferenceFFTEngine>(), options, model);
+  require(static_cast<bool>(status), status.message);
+  WVModelState state;
+  status = WVModelState::create(std::move(checkpoint), model.stateLayout(),
+                                state);
+  require(static_cast<bool>(status), status.message);
+  status = model.prepareStateAfterRestart(state);
+  require(static_cast<bool>(status), status.message);
+  const auto target = state.checkpoint().state.t + 2e-5;
+  status = model.advanceToTime(state, target, 1e-5);
+  require(static_cast<bool>(status), status.message);
+  const auto metrics = model.metrics(&state);
+  require(std::abs(state.checkpoint().state.t - target) <= 1e-14 &&
+              model.integratorKind() == WVModelIntegratorKind::adaptiveRK78 &&
+              metrics.integrator.workspaceStateEquivalentCount == 11 &&
+              metrics.integrator.denseHistoryCapacityBytes == 0,
+          "WVModel lost the endpoint-only adaptive-rk78 contract");
+}
+
 } // namespace
 
 int main() {
   try {
     fixedFacadeMatchesDirectIntegrator();
     adaptiveFacadeAdvances();
+    adaptiveRK78FacadeAdvances();
     std::cout << "WVModel façade tests passed\n";
     return 0;
   } catch (const std::exception &error) {
