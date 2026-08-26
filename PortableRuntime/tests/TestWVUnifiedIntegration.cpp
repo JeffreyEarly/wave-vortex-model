@@ -911,8 +911,20 @@ void testRK45OrderConstraintsAndSegmentation() {
   };
   const auto continuous = integrate(false);
   const auto segmented = integrate(true);
-  require(continuous.real == segmented.real &&
-              continuous.imag == segmented.imag,
+  // The segmented run closes its first interval with 0.5 - t, whereas the
+  // continuous run can use the stored 0.1 maximum step directly.  Those
+  // mathematically equivalent step sizes can differ by one representable
+  // value after accumulated-time rounding, so require roundoff-level rather
+  // than bitwise agreement across compilers.
+  const auto segmentationScale =
+      std::max({1.0, std::abs(continuous.real), std::abs(continuous.imag),
+                std::abs(segmented.real), std::abs(segmented.imag)});
+  const auto segmentationTolerance =
+      64.0 * std::numeric_limits<double>::epsilon() * segmentationScale;
+  require(std::abs(continuous.real - segmented.real) <=
+                  segmentationTolerance &&
+              std::abs(continuous.imag - segmented.imag) <=
+                  segmentationTolerance,
           "RK45 segmentation preserves the accepted trajectory");
 }
 
