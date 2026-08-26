@@ -1,6 +1,7 @@
 #include "WaveVortexRuntime/WVBarotropicQGIntegrationSystem.hpp"
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <limits>
 #include <new>
@@ -176,7 +177,8 @@ WVKernelStatus decodeBarotropicQGNumericalConfiguration(
     candidate.stateDescription = {
         "WVTransformBarotropicQG", {transform.Nx, transform.Ny},
         {{"A0", {descriptor.Nkl()},
-          WVToleranceKind::coefficientEnergyScaled}}};
+          WVToleranceKind::coefficientEnergyScaled}},
+        true};
     configuration = std::move(candidate);
     return WVKernelStatus::ok();
   } catch (const std::bad_alloc &) {
@@ -200,7 +202,8 @@ WVKernelStatus WVBarotropicQGIntegrationSystem::create(
     WVTransformStateDescription stateDescription{
         "WVTransformBarotropicQG", {configuration.Nx, configuration.Ny},
         {{"A0", {candidate->kernel_->descriptor().Nkl()},
-          WVToleranceKind::coefficientEnergyScaled}}};
+          WVToleranceKind::coefficientEnergyScaled}},
+        true};
     status = WVIntegrationStateLayout::createCoefficientOnly(
         std::move(stateDescription), candidate->layout_);
     if (!status)
@@ -259,6 +262,46 @@ WVKernelStatus WVBarotropicQGIntegrationSystem::createErrorPolicy(
     std::unique_ptr<WVIntegrationErrorPolicy> &policy) const {
   return BarotropicQGErrorPolicy::create(kernel_->descriptor(),
                                          absoluteToleranceScale, policy);
+}
+
+WVKernelStatus
+WVBarotropicQGIntegrationSystem::evaluateFixedTimeStepCandidates(
+    const WVIntegrationState &state, double cfl,
+    WVFixedTimeStepCandidates &candidates) {
+  if (!std::isfinite(cfl) || cfl <= 0.0)
+    return invalid("CFL must be finite and positive.");
+  auto status = validateIntegrationState(layout_, state);
+  if (!status)
+    return status;
+  const auto started = std::chrono::steady_clock::now();
+  const auto A0 = coefficientFamilyView(layout_, state, 0);
+  WVComplexConstView A0View{A0.data, {1, A0.layout->elementCount}};
+  WVFixedTimeStepCandidates result;
+  status = kernel_->uvMax(A0View, result.maximumHorizontalSpeed);
+  if (!status)
+    return status;
+  if (!std::isfinite(result.maximumHorizontalSpeed) ||
+      result.maximumHorizontalSpeed < 0.0)
+    return invalid("Barotropic QG CFL velocity is nonfinite or negative.");
+  double maximumHorizontalWavenumber = 0.0;
+  for (const auto &mode : kernel_->descriptor().fourierModes())
+    maximumHorizontalWavenumber =
+        std::max({maximumHorizontalWavenumber, std::abs(mode.k),
+                  std::abs(mode.l)});
+  if (!(maximumHorizontalWavenumber > 0.0) ||
+      !std::isfinite(maximumHorizontalWavenumber))
+    return invalid("The effective horizontal resolution is unavailable.");
+  result.effectiveHorizontalGridResolution =
+      std::acos(-1.0) / maximumHorizontalWavenumber;
+  if (result.maximumHorizontalSpeed > 0.0)
+    result.horizontalAdvective =
+        cfl * result.effectiveHorizontalGridResolution /
+        result.maximumHorizontalSpeed;
+  result.advective = result.horizontalAdvective;
+  result.evaluationSeconds = std::chrono::duration<double>(
+      std::chrono::steady_clock::now() - started).count();
+  candidates = result;
+  return WVKernelStatus::ok();
 }
 
 std::size_t

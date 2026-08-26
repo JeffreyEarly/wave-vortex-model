@@ -161,6 +161,10 @@ public:
   WVKernelStatus prepareStateAfterRestart(WVModelState &state);
   WVKernelStatus evaluateRightHandSide(const WVIntegrationState &state,
                                        WVIntegrationFlux &rightHandSide);
+  bool supportsFixedTimeStepSelection() const noexcept;
+  WVKernelStatus evaluateFixedTimeStepCandidates(
+      WVModelState &state, double cfl,
+      WVFixedTimeStepCandidates &candidates);
   WVKernelStatus step(WVModelState &state, double proposedStepSize);
   WVKernelStatus advanceToTime(WVModelState &state, double finalTime,
                                double initialStepSize);

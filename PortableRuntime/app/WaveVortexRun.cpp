@@ -106,10 +106,15 @@ struct ScheduledOutputPlan {
 };
 
 struct Timings {
+    double parse = 0.0;
+    double preflight = 0.0;
+    double provider = 0.0;
     double inspect = 0.0;
     double read = 0.0;
     double construct = 0.0;
     double prepare = 0.0;
+    double cfl = 0.0;
+    double startup = 0.0;
     double integrate = 0.0;
     double write = 0.0;
     double total = 0.0;
@@ -138,6 +143,97 @@ std::string quoted(const std::string& value) { return "\""+jsonEscape(value)+"\"
 
 std::string quoted(cli::WVRunRequestIntegrationMethod method) {
     return quoted(cli::serializedIdentifier(method));
+}
+
+std::string jsonNumberOrInfinity(double value) {
+    if (std::isinf(value)) return quoted(value > 0.0 ? "infinity" : "-infinity");
+    if (!std::isfinite(value)) return "null";
+    std::ostringstream output;
+    output << std::setprecision(17) << value;
+    return output.str();
+}
+
+std::string timingJSON(const Options &options, const Timings &timings) {
+    std::ostringstream output;
+    output << std::setprecision(17) << '{';
+    if (options.requestSchemaVersion == cli::WVRunRequest::schemaV2Version)
+        output << "\"parse\":" << timings.parse
+               << ",\"preflight\":" << timings.preflight
+               << ",\"provider\":" << timings.provider
+               << ",\"startup\":" << timings.startup
+               << ",\"cfl\":" << timings.cfl << ',';
+    output << "\"inspect\":" << timings.inspect
+           << ",\"read\":" << timings.read
+           << ",\"construct\":" << timings.construct
+           << ",\"prepare\":" << timings.prepare
+           << ",\"integrate\":" << timings.integrate
+           << ",\"write\":" << timings.write
+           << ",\"total\":" << timings.total << '}';
+    return output.str();
+}
+
+std::string integrationRequestV2JSON(
+    const Options &options, const WVFixedTimeStepCandidates &candidates,
+    bool evaluatedCandidates, const char *controller,
+    double selectedFixedStep, double effectiveIntegrationStep) {
+    std::ostringstream output;
+    output << std::setprecision(17)
+           << "{\"requestedMethod\":" << quoted(options.integrator)
+           << ",\"activeMethod\":" << quoted(options.integrator)
+           << ",\"controller\":" << quoted(controller)
+           << ",\"stepPolicy\":"
+           << quoted(cli::serializedIdentifier(options.stepPolicy))
+           << ",\"timeStepConstraint\":"
+           << quoted(cli::serializedIdentifier(options.timeStepConstraint))
+           << ",\"cfl\":"
+           << (options.stepPolicy == cli::WVRunRequestStepPolicy::cflSelected
+                   ? jsonNumberOrInfinity(options.cfl)
+                   : "null")
+           << ",\"candidates\":{\"horizontalAdvective\":"
+           << (evaluatedCandidates
+                   ? jsonNumberOrInfinity(candidates.horizontalAdvective)
+                   : "null")
+           << ",\"verticalAdvective\":"
+           << (evaluatedCandidates
+                   ? jsonNumberOrInfinity(candidates.verticalAdvective)
+                   : "null")
+           << ",\"advective\":"
+           << (evaluatedCandidates ? jsonNumberOrInfinity(candidates.advective)
+                                   : "null")
+           << ",\"oscillatory\":"
+           << (evaluatedCandidates
+                   ? jsonNumberOrInfinity(candidates.oscillatory)
+                   : "null")
+           << ",\"effectiveHorizontalGridResolution\":"
+           << (evaluatedCandidates
+                   ? jsonNumberOrInfinity(
+                         candidates.effectiveHorizontalGridResolution)
+                   : "null")
+           << ",\"maximumHorizontalSpeed\":"
+           << (evaluatedCandidates
+                   ? jsonNumberOrInfinity(candidates.maximumHorizontalSpeed)
+                   : "null")
+           << ",\"highestActiveWaveFrequency\":"
+           << (evaluatedCandidates
+                   ? jsonNumberOrInfinity(
+                         candidates.highestActiveWaveFrequency)
+                   : "null")
+           << "},\"selectedStep\":"
+           << (options.stepPolicy == cli::WVRunRequestStepPolicy::cflSelected ||
+                       options.stepPolicy ==
+                           cli::WVRunRequestStepPolicy::explicitStep
+                   ? jsonNumberOrInfinity(selectedFixedStep)
+                   : "null")
+           << ",\"effectiveIntegrationStep\":"
+           << jsonNumberOrInfinity(effectiveIntegrationStep)
+           << ",\"transientWorkspaceMaximumLiveBytes\":"
+           << (evaluatedCandidates
+                   ? candidates.transientWorkspaceMaximumLiveBytes
+                   : 0)
+           << ",\"candidateEvaluationSeconds\":"
+           << (evaluatedCandidates ? candidates.evaluationSeconds : 0.0)
+           << ",\"noFallback\":true}";
+    return output.str();
 }
 
 bool parseDouble(const std::string& text, double& value) {
@@ -309,6 +405,11 @@ bool parseOptions(int argc, char** argv, Options& options, std::string& error) {
         options.hasMaximumStep = true;
         options.hasRelativeTolerance = true;
         options.hasAbsoluteTolerance = true;
+    } else if (options.requestSchemaVersion ==
+                   cli::WVRunRequest::schemaV2Version &&
+               options.stepPolicy ==
+                   cli::WVRunRequestStepPolicy::explicitStep) {
+        options.hasInitialStep = true;
     }
     return true;
 }
@@ -684,6 +785,8 @@ int wavevortex::runtime::runWaveVortex(
     }
 
     Timings timings;
+    timings.parse = seconds(totalStart);
+    const auto preflightStart = Clock::now();
     phase(options,"inspect");
     WVCheckpointInspection inspection;
     WVModelOutputNetCDFInspection modelInspection;
@@ -695,6 +798,8 @@ int wavevortex::runtime::runWaveVortex(
         if (checkpointStatus) {
             inspection.configuration =
                 modelInspection.latestRestart.configuration;
+            inspection.stateDescription =
+                modelInspection.latestRestart.stateDescription;
             inspection.coefficientShape =
                 modelInspection.latestRestart.coefficientShape;
             inspection.t = modelInspection.latestRestart.t;
@@ -757,6 +862,14 @@ int wavevortex::runtime::runWaveVortex(
         emit(failureJSON(ExitCode::usage,"arguments","--final-time precedes the selected checkpoint state."),options.report,std::cerr);
         return static_cast<int>(ExitCode::usage);
     }
+    if (options.stepPolicy == cli::WVRunRequestStepPolicy::cflSelected &&
+        !inspection.stateDescription.supportsFixedTimeStepSelection) {
+        emit(failureJSON(ExitCode::usage,"integration-preflight",
+                         "The selected numerical system does not provide "
+                         "fixed-step CFL candidates."),
+             options.report,std::cerr);
+        return static_cast<int>(ExitCode::usage);
+    }
     const auto requestedInitialStep =
         options.hasInitialStep ? options.initialStep : options.deltaT;
     const auto requestedInterval = options.hasFinalTime
@@ -799,11 +912,14 @@ int wavevortex::runtime::runWaveVortex(
             return static_cast<int>(ExitCode::output);
         }
     }
+    timings.preflight = seconds(preflightStart);
 
     std::string providerVersion;
     std::string baseLibrary;
     std::string threadLibrary;
+    start = Clock::now();
     auto fftEngine = provider(options,providerVersion,baseLibrary,threadLibrary,error);
+    timings.provider = seconds(start);
     if (!fftEngine) {
         emit(failureJSON(ExitCode::provider,"provider",error,{},options.scheduledOutput() ? scheduledOutputJSON(options,scheduledPlan,nullptr) : std::string{}),options.report,std::cerr);
         return static_cast<int>(ExitCode::provider);
@@ -892,8 +1008,11 @@ int wavevortex::runtime::runWaveVortex(
     } else {
         fixedIntegrator = &static_cast<WVFixedStepRK4&>(integrator);
     }
-    const auto integrationInitialStep = fixedIntegrator == nullptr
+    double integrationInitialStep = fixedIntegrator == nullptr
         ? effectiveInitialStep : options.deltaT;
+    double selectedFixedStep = integrationInitialStep;
+    WVFixedTimeStepCandidates fixedTimeStepCandidates;
+    bool evaluatedFixedTimeStepCandidates = false;
     const auto shape = integrationSystem.kernel().descriptor().spectralShape();
     auto state = modelState.mutableView();
     timings.construct = seconds(start);
@@ -906,6 +1025,46 @@ int wavevortex::runtime::runWaveVortex(
         emit(failureJSON(ExitCode::integration,"prepare",kernelStatus.message,{},options.scheduledOutput() ? scheduledOutputJSON(options,scheduledPlan,nullptr) : std::string{}),options.report,std::cerr);
         return static_cast<int>(ExitCode::integration);
     }
+    if (options.stepPolicy == cli::WVRunRequestStepPolicy::cflSelected) {
+        start = Clock::now();
+        if (!model.supportsFixedTimeStepSelection()) {
+            kernelStatus = {WVKernelStatusCode::unsupportedOperation,
+                            "The resolved numerical system does not provide "
+                            "fixed-step CFL candidates."};
+        } else {
+            kernelStatus = model.evaluateFixedTimeStepCandidates(
+                modelState,options.cfl,fixedTimeStepCandidates);
+        }
+        timings.cfl = seconds(start);
+        if (!kernelStatus) {
+            emit(failureJSON(ExitCode::integration,"cfl-selection",
+                             kernelStatus.message),options.report,std::cerr);
+            return static_cast<int>(ExitCode::integration);
+        }
+        evaluatedFixedTimeStepCandidates = true;
+        if (options.timeStepConstraint ==
+            cli::WVRunRequestTimeStepConstraint::advective)
+            selectedFixedStep = fixedTimeStepCandidates.advective;
+        else if (options.timeStepConstraint ==
+                 cli::WVRunRequestTimeStepConstraint::oscillatory)
+            selectedFixedStep = fixedTimeStepCandidates.oscillatory;
+        else
+            selectedFixedStep =
+                std::min(fixedTimeStepCandidates.advective,
+                         fixedTimeStepCandidates.oscillatory);
+        if (!(selectedFixedStep > 0.0) || std::isnan(selectedFixedStep)) {
+            emit(failureJSON(ExitCode::integration,"cfl-selection",
+                             "The selected CFL step is not positive."),
+                 options.report,std::cerr);
+            return static_cast<int>(ExitCode::integration);
+        }
+        integrationInitialStep = std::isfinite(selectedFixedStep)
+            ? selectedFixedStep
+            : requestedInterval > 0.0 ? requestedInterval : 1.0;
+        options.deltaT = integrationInitialStep;
+    }
+    timings.startup = timings.read + timings.construct + timings.prepare +
+                      timings.cfl;
 
     phasePlateau(options,"steady-retained");
     const auto integrationBaselineRSS = currentRSSBytes();
@@ -1164,16 +1323,29 @@ int wavevortex::runtime::runWaveVortex(
     const auto forcingElementWrites = forcingMetrics.accumulatorClearElementWrites+forcingMetrics.temporaryFluxClearElementWrites+forcingMetrics.kernelOutputInitializationElementWrites+forcingMetrics.temporaryAccumulationElementWrites+forcingMetrics.outputCopyElementWrites+forcingMetrics.stateConstraintElementWrites;
     const auto trafficElementReads = integratorElementReads+forcingElementReads;
     const auto trafficElementWrites = integratorElementWrites+forcingElementWrites;
+    const auto requestedStepJSON = [&](bool present, double value) {
+        if (!present) return std::string{"null"};
+        return options.requestSchemaVersion == cli::WVRunRequest::schemaV2Version
+            ? jsonNumberOrInfinity(value) : std::to_string(value);
+    };
     std::ostringstream report;
     report << std::setprecision(17)
            << "{\"schemaVersion\":\"wave-vortex-run-v1\",\"status\":\"complete\",\"source\":{\"commit\":" << quoted(WV_RUNTIME_SOURCE_COMMIT) << "},"
            << "\"input\":" << quoted(options.input) << ",\"output\":" << quoted(options.output) << ",\"restartMode\":" << quoted(options.restartMode) << ",\"outputPolicy\":" << quoted(options.outputPolicy) << ",\"provider\":{\"id\":" << quoted(options.provider) << ",\"version\":" << quoted(providerVersion) << ",\"threads\":" << options.threads << ",\"baseLibrary\":" << quoted(baseLibrary) << ",\"threadLibrary\":" << quoted(threadLibrary) << "},"
            << "\"request\":{\"active\":" << (options.requestMode ? "true" : "false") << ",\"path\":" << quoted(options.requestPath) << ",\"schemaIdentifier\":" << quoted(options.requestSchemaIdentifier) << ",\"schemaVersion\":" << options.requestSchemaVersion << ",\"modelFiles\":" << stringArrayJSON(options.modelFiles) << ",\"destinations\":" << destinationMapJSON(options.outputDestinations) << "},"
            << "\"state\":{\"initialTime\":" << inspection.t << ",\"finalTime\":" << state.waveVortex.t << ",\"deltaT\":" << options.deltaT << ",\"stepCount\":" << stepCount << ",\"rejectedStepCount\":" << rejectedStepCount << ",\"rhsEvaluationCount\":" << rightHandSideEvaluationCount << ",\"shape\":[" << shape.rows << ',' << shape.columns << "]},"
-           << "\"integrator\":{\"id\":" << quoted(options.integrator) << ",\"controller\":" << quoted(adaptiveController) << ",\"relativeTolerance\":" << options.relativeTolerance << ",\"absoluteTolerance\":" << options.absoluteTolerance << ",\"requestedInitialStep\":" << (options.hasInitialStep ? std::to_string(options.initialStep) : "null") << ",\"effectiveInitialStep\":" << integrationInitialStep << ",\"requestedMaximumStep\":" << (options.hasMaximumStep ? std::to_string(options.maximumStep) : "null") << ",\"effectiveMaximumStep\":" << (hasAdaptiveIntegrator ? effectiveMaximumStep : options.deltaT) << ",\"toleranceHash\":" << quoted(hasAdaptiveIntegrator ? std::to_string(adaptiveToleranceHash) : "") << ",\"toleranceHashClearedMantissaBits\":20,\"toleranceComponentHashes\":" << (hasAdaptiveIntegrator ? unsignedIntegerArrayJSON(*adaptiveToleranceComponentHashes) : "[]") << ",\"lastNormalizedError\":" << adaptiveMetrics.normalizedError << ",\"lastProposedStepSize\":" << adaptiveMetrics.lastProposedStepSize << ",\"lastAcceptedStepSize\":" << adaptiveMetrics.lastAcceptedStepSize << ",\"nextStepSize\":" << integrator.nextStepSize() << ",\"fsalReuseCount\":" << adaptiveMetrics.fsalReuseCount << ",\"fsalInvalidationCount\":" << adaptiveMetrics.fsalInvalidationCount << ",\"rejectedInitialDerivativeReuseCount\":" << adaptiveMetrics.rejectedInitialDerivativeReuseCount << ",\"constraintModifiedCoefficientCount\":" << adaptiveMetrics.constraintModifiedCoefficientCount << ",\"baseRightHandSideEvaluationCount\":" << adaptiveMetrics.baseRightHandSideEvaluationCount << ",\"continuousExtensionRightHandSideEvaluationCount\":" << adaptiveMetrics.continuousExtensionRightHandSideEvaluationCount << ",\"denseOutputEvaluationCount\":" << (fixedIntegrator != nullptr ? fixedMetrics.denseOutputEvaluationCount : adaptiveMetrics.denseOutputEvaluationCount) << ",\"denseOutputCacheBuildCount\":" << adaptiveMetrics.denseOutputCacheBuildCount << ",\"denseOutputCacheReuseCount\":" << adaptiveMetrics.denseOutputCacheReuseCount << ",\"denseOutputElementReads\":" << (fixedIntegrator != nullptr ? fixedMetrics.denseOutputElementReads : adaptiveMetrics.denseOutputElementReads) << ",\"denseOutputElementWrites\":" << (fixedIntegrator != nullptr ? fixedMetrics.denseOutputElementWrites : adaptiveMetrics.denseOutputElementWrites) << ",\"denseOutputSeconds\":" << (fixedIntegrator != nullptr ? fixedMetrics.denseOutputSeconds : adaptiveMetrics.denseOutputSeconds) << ",\"continuousExtensionSeconds\":" << adaptiveMetrics.continuousExtensionSeconds << ",\"stateCapacityBytes\":" << adaptiveMetrics.stateCapacityBytes << ",\"workspaceStateEquivalentCount\":" << adaptiveMetrics.workspaceStateEquivalentCount << ",\"workspaceMaximumLiveStateEquivalentCount\":" << adaptiveMetrics.workspaceMaximumLiveStateEquivalentCount << ",\"denseHistoryStateEquivalentCount\":" << adaptiveMetrics.denseHistoryStateEquivalentCount << ",\"retainedBaseStageCapacityBytes\":" << adaptiveMetrics.retainedBaseStageCapacityBytes << ",\"retainedBaseStageStateEquivalentCount\":" << adaptiveMetrics.retainedBaseStageStateEquivalentCount << ",\"continuousExtensionWorkspaceCapacityBytes\":" << adaptiveMetrics.continuousExtensionWorkspaceCapacityBytes << ",\"continuousExtensionWorkspaceMaximumLiveBytes\":" << adaptiveMetrics.continuousExtensionWorkspaceMaximumLiveBytes << ",\"continuousExtensionWorkspaceStateEquivalentCount\":" << adaptiveMetrics.continuousExtensionWorkspaceStateEquivalentCount << ",\"continuousExtensionWorkspaceMaximumLiveStateEquivalentCount\":" << adaptiveMetrics.continuousExtensionWorkspaceMaximumLiveStateEquivalentCount << ",\"errorPolicyBytes\":" << adaptiveMetrics.errorPolicyBytes << ",\"diagnosticBytes\":" << adaptiveMetrics.diagnosticCapacityBytes << ",\"stageBufferLastUse\":" << (hasAdaptiveIntegrator ? adaptiveStageBufferLastUseJSON(adaptiveStageBufferLastUse,adaptiveStageBufferLastUseCount) : "[]") << ",\"acceptedStepDiagnosticsComplete\":" << (adaptiveDiagnosticsComplete ? "true" : "false") << ",\"acceptedSteps\":" << (hasAdaptiveIntegrator ? adaptiveStepDiagnosticsJSON(*adaptiveDiagnostics) : "[]") << "},"
-           << "\"authorBenchmark\":{\"warmupStepCount\":" << options.benchmarkWarmupSteps << ",\"sampleStepCount\":" << (options.hasSteps ? options.steps : 0) << ",\"denseOutputsPerStep\":" << options.benchmarkDenseOutputsPerStep << ",\"requestedOutputCount\":" << options.benchmarkOutputCount << ",\"interpolatedOutputCount\":" << interpolatedOutputCount << ",\"interpolationSeconds\":" << driverInterpolationSeconds << "},"
+           << "\"integrator\":{\"id\":" << quoted(options.integrator) << ",\"controller\":" << quoted(adaptiveController) << ",\"relativeTolerance\":" << options.relativeTolerance << ",\"absoluteTolerance\":" << options.absoluteTolerance << ",\"requestedInitialStep\":" << requestedStepJSON(options.hasInitialStep,options.initialStep) << ",\"effectiveInitialStep\":" << integrationInitialStep << ",\"requestedMaximumStep\":" << requestedStepJSON(options.hasMaximumStep,options.maximumStep) << ",\"effectiveMaximumStep\":" << (hasAdaptiveIntegrator ? effectiveMaximumStep : options.deltaT) << ",\"toleranceHash\":" << quoted(hasAdaptiveIntegrator ? std::to_string(adaptiveToleranceHash) : "") << ",\"toleranceHashClearedMantissaBits\":20,\"toleranceComponentHashes\":" << (hasAdaptiveIntegrator ? unsignedIntegerArrayJSON(*adaptiveToleranceComponentHashes) : "[]") << ",\"lastNormalizedError\":" << adaptiveMetrics.normalizedError << ",\"lastProposedStepSize\":" << adaptiveMetrics.lastProposedStepSize << ",\"lastAcceptedStepSize\":" << adaptiveMetrics.lastAcceptedStepSize << ",\"nextStepSize\":" << integrator.nextStepSize() << ",\"fsalReuseCount\":" << adaptiveMetrics.fsalReuseCount << ",\"fsalInvalidationCount\":" << adaptiveMetrics.fsalInvalidationCount << ",\"rejectedInitialDerivativeReuseCount\":" << adaptiveMetrics.rejectedInitialDerivativeReuseCount << ",\"constraintModifiedCoefficientCount\":" << adaptiveMetrics.constraintModifiedCoefficientCount << ",\"baseRightHandSideEvaluationCount\":" << adaptiveMetrics.baseRightHandSideEvaluationCount << ",\"continuousExtensionRightHandSideEvaluationCount\":" << adaptiveMetrics.continuousExtensionRightHandSideEvaluationCount << ",\"denseOutputEvaluationCount\":" << (fixedIntegrator != nullptr ? fixedMetrics.denseOutputEvaluationCount : adaptiveMetrics.denseOutputEvaluationCount) << ",\"denseOutputCacheBuildCount\":" << adaptiveMetrics.denseOutputCacheBuildCount << ",\"denseOutputCacheReuseCount\":" << adaptiveMetrics.denseOutputCacheReuseCount << ",\"denseOutputElementReads\":" << (fixedIntegrator != nullptr ? fixedMetrics.denseOutputElementReads : adaptiveMetrics.denseOutputElementReads) << ",\"denseOutputElementWrites\":" << (fixedIntegrator != nullptr ? fixedMetrics.denseOutputElementWrites : adaptiveMetrics.denseOutputElementWrites) << ",\"denseOutputSeconds\":" << (fixedIntegrator != nullptr ? fixedMetrics.denseOutputSeconds : adaptiveMetrics.denseOutputSeconds) << ",\"continuousExtensionSeconds\":" << adaptiveMetrics.continuousExtensionSeconds << ",\"stateCapacityBytes\":" << adaptiveMetrics.stateCapacityBytes << ",\"workspaceStateEquivalentCount\":" << adaptiveMetrics.workspaceStateEquivalentCount << ",\"workspaceMaximumLiveStateEquivalentCount\":" << adaptiveMetrics.workspaceMaximumLiveStateEquivalentCount << ",\"denseHistoryStateEquivalentCount\":" << adaptiveMetrics.denseHistoryStateEquivalentCount << ",\"retainedBaseStageCapacityBytes\":" << adaptiveMetrics.retainedBaseStageCapacityBytes << ",\"retainedBaseStageStateEquivalentCount\":" << adaptiveMetrics.retainedBaseStageStateEquivalentCount << ",\"continuousExtensionWorkspaceCapacityBytes\":" << adaptiveMetrics.continuousExtensionWorkspaceCapacityBytes << ",\"continuousExtensionWorkspaceMaximumLiveBytes\":" << adaptiveMetrics.continuousExtensionWorkspaceMaximumLiveBytes << ",\"continuousExtensionWorkspaceStateEquivalentCount\":" << adaptiveMetrics.continuousExtensionWorkspaceStateEquivalentCount << ",\"continuousExtensionWorkspaceMaximumLiveStateEquivalentCount\":" << adaptiveMetrics.continuousExtensionWorkspaceMaximumLiveStateEquivalentCount << ",\"errorPolicyBytes\":" << adaptiveMetrics.errorPolicyBytes << ",\"diagnosticBytes\":" << adaptiveMetrics.diagnosticCapacityBytes << ",\"stageBufferLastUse\":" << (hasAdaptiveIntegrator ? adaptiveStageBufferLastUseJSON(adaptiveStageBufferLastUse,adaptiveStageBufferLastUseCount) : "[]") << ",\"acceptedStepDiagnosticsComplete\":" << (adaptiveDiagnosticsComplete ? "true" : "false") << ",\"acceptedSteps\":" << (hasAdaptiveIntegrator ? adaptiveStepDiagnosticsJSON(*adaptiveDiagnostics) : "[]") << "},"
+           ;
+    if (options.requestSchemaVersion == cli::WVRunRequest::schemaV2Version)
+        report << "\"integrationRequest\":"
+               << integrationRequestV2JSON(
+                      options,fixedTimeStepCandidates,
+                      evaluatedFixedTimeStepCandidates,adaptiveController,
+                      selectedFixedStep,integrationInitialStep)
+               << ',';
+    report << "\"authorBenchmark\":{\"warmupStepCount\":" << options.benchmarkWarmupSteps << ",\"sampleStepCount\":" << (options.hasSteps ? options.steps : 0) << ",\"denseOutputsPerStep\":" << options.benchmarkDenseOutputsPerStep << ",\"requestedOutputCount\":" << options.benchmarkOutputCount << ",\"interpolatedOutputCount\":" << interpolatedOutputCount << ",\"interpolationSeconds\":" << driverInterpolationSeconds << "},"
            << "\"forcing\":" << forcingJSON(activeForcingSchedule) << ','
-           << "\"timingSeconds\":{\"inspect\":" << timings.inspect << ",\"read\":" << timings.read << ",\"construct\":" << timings.construct << ",\"prepare\":" << timings.prepare << ",\"integrate\":" << timings.integrate << ",\"write\":" << timings.write << ",\"total\":" << timings.total << "},"
+           << "\"timingSeconds\":" << timingJSON(options,timings) << ','
            << "\"storageAccounting\":{\"scope\":\"application-and-provider-reported-cpp-storage\",\"excludes\":[\"allocator-metadata\",\"opaque-fftw-plan-internals\",\"opaque-netcdf-library-internals\"]},"
            << "\"storageBytes\":{\"checkpointState\":" << checkpointStateBytes << ",\"modelFacade\":" << modelMetrics.modelPersistentBytes << ",\"modelState\":" << modelMetrics.statePersistentBytes << ",\"extensionCatalog\":" << modelMetrics.catalogPersistentBytes << ",\"integrationSystem\":" << modelMetrics.integrationSystemPersistentBytes << ",\"integratorPersistent\":" << modelMetrics.integratorPersistentBytes << ",\"modelOutputConfiguration\":" << modelMetrics.outputConfigurationPersistentBytes << ",\"modelOutputEvaluation\":" << modelMetrics.outputEvaluationPersistentBytes << ",\"modelOutputSink\":" << modelMetrics.outputSinkPersistentBytes << ",\"modelOutput\":" << modelMetrics.outputPersistentBytes << ",\"descriptor\":" << kernelMetrics.descriptorBytes << ",\"planWrapper\":" << kernelMetrics.planBytes << ",\"kernelEngine\":" << kernelMetrics.engineBytes << ",\"kernelManagement\":" << kernelMetrics.kernelManagementBytes << ",\"kernelScratch\":" << kernelMetrics.scratchCapacityBytes << ",\"forcingSchedule\":" << forcingMetrics.scheduleBytes << ",\"forcingDerivedOperators\":" << forcingMetrics.derivedOperatorBytes << ",\"forcingWorkspace\":" << forcingMetrics.workspaceCapacityBytes << ",\"integratorWorkspace\":" << integratorWorkspaceCapacityBytes << ",\"integratorDiagnostics\":" << integratorDiagnosticBytes << ",\"denseHistory\":" << denseHistoryBytes << ",\"driverInterpolationMaximumLive\":" << driverInterpolationMaximumLiveBytes << ",\"occurrenceWorkspace\":" << occurrenceWorkspaceRetainedBytes << ",\"scheduledOutput\":" << scheduledOutputBytes << ",\"knownPersistent\":" << knownPersistentBytes << ",\"fullModelPersistent\":" << fullModelRetainedBytes << ",\"persistentFullHermitian\":0},"
            << "\"arrayTraffic\":{\"scope\":\"exact fixed-RK4 integration-boundary arrays; adaptive traffic is reported through method metrics\",\"elementBytes\":" << sizeof(WVComplex64) << ",\"integrator\":{\"stageStateConstructionReads\":" << fixedMetrics.stageStateConstructionElementReads << ",\"stageStateConstructionWrites\":" << fixedMetrics.stageStateConstructionElementWrites << ",\"stageFluxClearWrites\":" << fixedMetrics.stageFluxClearElementWrites << ",\"weightedFluxClearWrites\":" << fixedMetrics.weightedFluxClearElementWrites << ",\"weightedFluxInitializationReads\":" << fixedMetrics.weightedFluxInitializationElementReads << ",\"weightedFluxInitializationWrites\":" << fixedMetrics.weightedFluxInitializationElementWrites << ",\"weightedAccumulationReads\":" << fixedMetrics.weightedAccumulationElementReads << ",\"weightedAccumulationWrites\":" << fixedMetrics.weightedAccumulationElementWrites << ",\"finalStateUpdateReads\":" << fixedMetrics.finalStateUpdateElementReads << ",\"finalStateUpdateWrites\":" << fixedMetrics.finalStateUpdateElementWrites << ",\"acceptedStateCommitReads\":" << fixedMetrics.acceptedStateCommitElementReads << ",\"acceptedStateCommitWrites\":" << fixedMetrics.acceptedStateCommitElementWrites << "},\"forcing\":{\"accumulatorClearWrites\":" << forcingMetrics.accumulatorClearElementWrites << ",\"temporaryFluxClearWrites\":" << forcingMetrics.temporaryFluxClearElementWrites << ",\"kernelOutputInitializationWrites\":" << forcingMetrics.kernelOutputInitializationElementWrites << ",\"temporaryAccumulationReads\":" << forcingMetrics.temporaryAccumulationElementReads << ",\"temporaryAccumulationWrites\":" << forcingMetrics.temporaryAccumulationElementWrites << ",\"outputCopyReads\":" << forcingMetrics.outputCopyElementReads << ",\"outputCopyWrites\":" << forcingMetrics.outputCopyElementWrites << ",\"stateConstraintWrites\":" << forcingMetrics.stateConstraintElementWrites << "},\"totals\":{\"elementReads\":" << trafficElementReads << ",\"elementWrites\":" << trafficElementWrites << ",\"bytesRead\":" << trafficElementReads*sizeof(WVComplex64) << ",\"bytesWritten\":" << trafficElementWrites*sizeof(WVComplex64) << "}},"

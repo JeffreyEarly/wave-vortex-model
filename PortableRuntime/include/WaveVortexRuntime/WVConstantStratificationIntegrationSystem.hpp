@@ -69,6 +69,10 @@ public:
   WVKernelStatus createErrorPolicy(
       double absoluteToleranceScale,
       std::unique_ptr<WVIntegrationErrorPolicy> &policy) const override;
+  bool supportsFixedTimeStepSelection() const noexcept override { return true; }
+  WVKernelStatus evaluateFixedTimeStepCandidates(
+      const WVIntegrationState &state, double cfl,
+      WVFixedTimeStepCandidates &candidates) override;
 
   const std::vector<WVLagrangianParticles> &particles() const noexcept {
     return particles_;
