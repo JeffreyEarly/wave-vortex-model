@@ -451,6 +451,65 @@ classdef TestPortableRuntimeCompatibility < matlab.unittest.TestCase
             fprintf("Barotropic QG model-output MATLAB/C++ particle error: %.3e\n",maximumParticleError)
             fprintf("Barotropic QG model-output MATLAB/C++ tracer error: %.3e\n",maximumTracerError)
         end
+
+        function matlabWriterRequestsDecodeAndRunEveryIntegrationForm(testCase)
+            sourceFixture = fullfile(testCase.TemporaryFolder,"writer-source.nc");
+            sourceModel = testCase.createLinearBottomFrictionModel(sourceFixture,true,5,0,"fixed");
+            sourceModel.integrateToTime(1e-4,shouldShowIntegrationDiagnostics=false,callback=@(~)[]);
+            sourceModel.closeNetCDFFile();
+            forms = {
+                1,"fixed-rk4","explicit";
+                1,"adaptive-rk23","adaptive";
+                2,"fixed-rk4","explicit";
+                2,"fixed-rk4","advective";
+                2,"fixed-rk4","oscillatory";
+                2,"fixed-rk4","min";
+                2,"adaptive-rk23","adaptive";
+                2,"adaptive-rk45","adaptive";
+                2,"adaptive-rk78","adaptive";
+                };
+            for iForm = 1:size(forms,1)
+                schemaVersion = forms{iForm,1};
+                method = forms{iForm,2};
+                policy = forms{iForm,3};
+                stem = "writer-v"+schemaVersion+"-"+method+"-"+policy;
+                modelPath = fullfile(testCase.TemporaryFolder,stem+".nc");
+                requestPath = fullfile(testCase.TemporaryFolder,stem+".json");
+                reportPath = stem+"-report.json";
+                copyfile(sourceFixture,modelPath)
+                ncwriteatt(modelPath,"/","portableFileIdentifier",stem);
+                times = ncread(modelPath,"/wave-vortex/t");
+                finalTime = times(end);
+                if policy == "explicit"
+                    WVModel.writePortableRunRequest(requestPath,modelPath, ...
+                        schemaVersion=schemaVersion,method=method,finalTime=finalTime,initialStep=.25, ...
+                        reportPath=reportPath);
+                elseif method == "fixed-rk4"
+                    WVModel.writePortableRunRequest(requestPath,modelPath, ...
+                        schemaVersion=schemaVersion,method=method,finalTime=finalTime,cfl=.25, ...
+                        timeStepConstraint=policy,reportPath=reportPath);
+                else
+                    WVModel.writePortableRunRequest(requestPath,modelPath, ...
+                        schemaVersion=schemaVersion,method=method,finalTime=finalTime, ...
+                        initialStep=.25,maximumStep=1,relativeTolerance=1e-3, ...
+                        absoluteToleranceScale=1e-6,reportPath=reportPath);
+                end
+                immutableRequest = fileread(requestPath);
+                command = shellQuote(testCase.Runner)+" --request "+shellQuote(requestPath);
+                [status,output] = systemWithoutMatlabRuntime(command);
+                testCase.assertEqual(status,0,output)
+                testCase.verifyEqual(fileread(requestPath),immutableRequest)
+                report = jsondecode(fileread(fullfile(testCase.TemporaryFolder,reportPath)));
+                testCase.verifyEqual(string(report.status),"complete")
+                testCase.verifyEqual(string(report.request.schemaIdentifier),"wave-vortex-run-request-v"+schemaVersion)
+                testCase.verifyEqual(report.request.schemaVersion,schemaVersion)
+                testCase.verifyEqual(string(report.integrator.id),method)
+                if schemaVersion == 2
+                    testCase.verifyEqual(string(report.integrationRequest.requestedMethod),method)
+                    testCase.verifyTrue(report.integrationRequest.noFallback)
+                end
+            end
+        end
     end
 
     methods (Access = private)

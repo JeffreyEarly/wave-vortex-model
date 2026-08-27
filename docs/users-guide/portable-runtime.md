@@ -56,10 +56,36 @@ The portable boundary intentionally separates scientific state from execution ch
 - The NetCDF file set is authoritative for model configuration, state, forcing, observers, output membership, schedules, and restart progress.
 - A versioned JSON request names those files and selects the integrator, final time, output destinations, FFT provider, threads, and report path.
 
-Starting from output files created by MATLAB, copy `PortableRuntime/examples/portable-run-request-v2.json`, list every sibling file needed to reconstruct the graph, and map each stable file identifier to a destination. Then run:
+The complete authoring workflow is:
+
+1. Construct the initial conditions, forcing, observers, output files, groups, and schedules in MATLAB.
+2. Integrate through the initial output time and close the model so every sibling NetCDF file contains an initial committed record.
+3. Call `WVModel.writePortableRunRequest` with the ordered complete file set and execution choices.
+4. Execute the resulting request with `wave-vortex-run --request`.
+5. Restore or continue the resulting NetCDF bundle from MATLAB when needed.
+
+For example, exact v1 MATLAB `ode23` selection with in-place append is:
+
+```matlab
+model.integrateToTime(model.t,shouldShowIntegrationDiagnostics=false);
+model.closeNetCDFFile();
+WVModel.writePortableRunRequest("run-v1.json","saved-model.nc",schemaVersion=1,method="adaptive-rk23",finalTime=86400,initialStep=10,maximumStep=3600,relativeTolerance=1e-3,absoluteToleranceScale=1e-6,outputPolicy="append",fftProvider="native-fftw",threads=8,reportPath="run-v1-report.json");
+```
+
+Version 2 adds explicit or CFL-selected RK4 and MATLAB `ode45` and `ode78`. A create request for an RK78 continuation can remap every output file by its stable identifier:
+
+```matlab
+destinations = configureDictionary("string","string");
+destinations("primary") = "continued model.nc";
+WVModel.writePortableRunRequest("run-v2.json","saved-model.nc",schemaVersion=2,method="adaptive-rk78",finalTime=172800,initialStep=10,maximumStep=3600,relativeTolerance=1e-6,absoluteToleranceScale=1e-9,outputPolicy="create",destinations=destinations,fftProvider="native-fftw",threads=8);
+```
+
+The writer obtains identifiers and compatibility facts through NetCDF metadata inspection; it does not reconstruct the model or read coefficient and observer-state arrays. Files authored by the portable runtime carry `portableFileIdentifier`. For legacy MATLAB files without that attribute, the runtime-compatible identifier is derived from the resolved source path, and an incomplete-map diagnostic lists the exact identifiers required. Destination entries are serialized in identifier order while the supplied `modelFiles` order is preserved exactly.
+
+Run the generated request with:
 
 ```sh
-wave-vortex-run --request portable-run-request-v2.json
+wave-vortex-run --request run-v2.json
 ```
 
 Relative paths are interpreted relative to the JSON file. `create` and `replace` require a complete destination map and cannot alias a source file. `append` may use the existing destinations with an empty map, or it may provide a complete map to an existing compatible set. The runner rejects unknown JSON fields, incomplete sibling sets, unsupported paired implementations, incompatible graphs, and invalid destinations before constructing the FFT provider, allocating model state, advancing integration, or mutating output.
@@ -68,7 +94,7 @@ Run-request v2 has five mutually exclusive integration forms. Fixed RK4 accepts 
 
 A CFL-selected RK4 request evaluates the transform-owned candidates once after restoring the segment's initial state. The advective candidate uses the effective horizontal resolution and maximum horizontal speed and, for three-dimensional transforms, the vertical `dz/w` restriction. The oscillatory candidate uses the highest active wave frequency; transforms without waves report infinity. The selected step is fixed for that segment, apart from the existing final partial step, and is not recomputed at RK stages or output events. Reports identify every candidate, the selected step, transient CFL workspace, requested and active method, controller, step policy, FFT provider, accepted/rejected steps, base and dense-output RHS work, exact integrator storage, parse/preflight/provider/startup timing, and the no-fallback result.
 
-The request describes execution, not another model. It cannot change forcing, observers, groups, schedules, or state. Copy the committed example or use a package-specific MATLAB authoring helper; AlongTrackSimulator's `authorAlongTrackPortableRunBundle` is one external example. The exact schemas are committed at `PortableRuntime/contracts/wave-vortex-run-request-v1.schema.json` and `PortableRuntime/contracts/wave-vortex-run-request-v2.schema.json`. Existing v1 documents retain their exact fixed-RK4 and MATLAB `ode23` decoding, execution, report, and error behavior; v2 fields and defaults are never applied to v1, and the positional legacy CLI is unchanged.
+JSON plus every referenced NetCDF sibling forms the complete execution request. JSON does not independently describe the scientific model and cannot change forcing, observers, groups, schedules, restart progress, or state. `WVModel.writePortableRunRequest` constructs v1 and v2 separately, rejects irrelevant controls and path aliases before writing, re-reads its UTF-8 document, and installs it by transactional sibling replacement. Existing v1 documents retain their exact fixed-RK4 and MATLAB `ode23` decoding, execution, report, and error behavior; v2 fields and defaults are never applied to v1, and the positional legacy CLI is unchanged. The exact schemas remain committed at `PortableRuntime/contracts/wave-vortex-run-request-v1.schema.json` and `PortableRuntime/contracts/wave-vortex-run-request-v2.schema.json`.
 
 ## Source-linked extensions
 
