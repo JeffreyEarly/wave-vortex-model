@@ -48,6 +48,10 @@ classdef TestThreeInterfaceBenchmark < matlab.unittest.TestCase
 
         function integratorStudyNormalizesPrimaryAndDiagnosticEvidence(testCase)
             raw = integratorStudyFixture;
+            matlabRuns = find(string({raw.runs.interface})~="standalone-compiled");
+            for iRun = matlabRuns
+                raw.runs(iRun).integrator = rmfield(raw.runs(iRun).integrator,"sharedAbstractionStateSizedCopyCount");
+            end
             rawPath = writeRaw(testCase,raw,"integrator-study.json");
             dataset = publishedThreeInterfaceBenchmarkFromArtifact(rawPath,archiveFileName="integrator-study.json.gz",archiveSHA256=repmat('d',1,64),archiveCompressedBytes=4096);
             testCase.verifyEqual(dataset.schemaVersion,"published-three-interface-v3")

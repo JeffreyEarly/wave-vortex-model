@@ -74,7 +74,11 @@ memory = struct("boundary",string(runs(1).memory.boundary),"steadyRetainedRSSByt
 stateSizedBuffers = struct([]);
 if isfield(integrators,"stateSizedBuffers"), stateSizedBuffers = integrators(1).stateSizedBuffers; end
 storage = integrators(1).storageAccounting;
-storage.sharedAbstractionStateSizedCopyCount = double(integrators(1).sharedAbstractionStateSizedCopyCount);
+if isfield(integrators,"sharedAbstractionStateSizedCopyCount")
+    storage.sharedAbstractionStateSizedCopyCount = double(integrators(1).sharedAbstractionStateSizedCopyCount);
+else
+    storage.sharedAbstractionStateSizedCopyCount = [];
+end
 for name = ["workspaceStateEquivalentCount" "workspaceMaximumLiveStateEquivalentCount" "denseHistoryStateEquivalentCount" "continuousExtensionWorkspaceStateEquivalentCount" "continuousExtensionWorkspaceMaximumLiveStateEquivalentCount"]
     if isfield(integrators,name), storage.(name) = integrators(1).(name); end
 end

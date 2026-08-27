@@ -961,7 +961,8 @@ int wavevortex::runtime::runWaveVortex(
     WVModelIntegratorConfiguration integratorConfiguration;
     const auto retainDenseOutput =
         options.benchmarkDenseOutputsPerStep != 0 || options.scheduledOutput() ||
-        options.benchmarkOutputCount != 0 || options.benchmarkModelDenseOutput;
+        options.benchmarkOutputCount != 0 || options.benchmarkModelDenseOutput ||
+        (options.requestMode && options.restartMode == "model");
     if (options.integrator == cli::WVRunRequestIntegrationMethod::adaptiveRK23) {
         integratorConfiguration.kind = WVModelIntegratorKind::adaptiveRK23;
         integratorConfiguration.adaptive.relativeTolerance = options.relativeTolerance;
