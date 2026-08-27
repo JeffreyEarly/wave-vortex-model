@@ -1,6 +1,7 @@
 #include "WaveVortexRuntime/WVModel.hpp"
 #include "WaveVortexRuntime/WVForcingContracts.hpp"
 #include "WVModelInternalAccess.hpp"
+#include "WVModelTransformAdapters.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -131,7 +132,9 @@ WVKernelStatus compileOutputConfiguration(
       std::move(observerRecord), inspection.observationSchemas,
       inspection.scheduleContinuations, request.policy, std::move(catalog),
       inspection.latestRestart.t, request.finalTime, configuration,
-      &inspection.latestRestart.configuration, inspection.isDynamicsLinear,
+      detail::legacyModelOutputPlanningConfiguration(
+          inspection.latestRestart),
+      inspection.isDynamicsLinear,
       &inspection.latestRestart.stateDescription);
 }
 #endif
@@ -172,16 +175,10 @@ WVKernelStatus WVModelState::create(
     WVCheckpoint checkpoint, const WVIntegrationStateLayout &layout,
     WVModelState &state,
     const WVAdditionalStateStorage *restoredAdditionalState) {
-  const auto expectedShape = layout.coefficientShape();
-  if (checkpoint.state.coefficients.shape.rows != expectedShape.rows ||
-      checkpoint.state.coefficients.shape.columns != expectedShape.columns)
-    return invalid("Checkpoint coefficients do not match the model state "
-                   "layout.");
-  const auto count = expectedShape.elementCount();
-  if (checkpoint.state.coefficients.Ap.size() != count ||
-      checkpoint.state.coefficients.Am.size() != count ||
-      checkpoint.state.coefficients.A0.size() != count)
-    return invalid("Checkpoint coefficient storage is incomplete.");
+  auto checkpointStatus =
+      detail::validateModelCheckpointState(checkpoint, layout);
+  if (!checkpointStatus)
+    return checkpointStatus;
   try {
     WVModelState candidate;
     auto status = candidate.additionalState_.initialize(layout);
@@ -194,6 +191,7 @@ WVKernelStatus WVModelState::create(
         return status;
     }
     candidate.checkpoint_ = std::move(checkpoint);
+    candidate.rebuildCoefficientViews(layout);
     state = std::move(candidate);
     return WVKernelStatus::ok();
   } catch (const std::bad_alloc &) {
@@ -202,25 +200,49 @@ WVKernelStatus WVModelState::create(
   }
 }
 
+void WVModelState::rebuildCoefficientViews(
+    const WVIntegrationStateLayout &layout) {
+  layout_ = &layout;
+  mutableCoefficientViews_.clear();
+  constCoefficientViews_.clear();
+  mutableCoefficientViews_.reserve(layout.coefficientFamilyCount());
+  constCoefficientViews_.reserve(layout.coefficientFamilyCount());
+  for (std::size_t family = 0; family < layout.coefficientFamilyCount();
+       ++family) {
+    auto *values = detail::modelCheckpointCoefficientData(
+        checkpoint_, layout, family);
+    mutableCoefficientViews_.push_back(
+        {&layout.coefficientFamilies()[family], values});
+    constCoefficientViews_.push_back(
+        {&layout.coefficientFamilies()[family], values});
+  }
+}
+
+void WVModelState::setTimes(double t, double t0) noexcept {
+  detail::setModelCheckpointTimes(checkpoint_, t, t0);
+}
+
 WVMutableIntegrationState WVModelState::mutableView() noexcept {
-  const auto shape = checkpoint_.state.coefficients.shape;
-  return {{checkpoint_.state.t,
-           checkpoint_.state.t0,
-           {{checkpoint_.state.coefficients.Ap.data(), shape},
-            {checkpoint_.state.coefficients.Am.data(), shape},
-            {checkpoint_.state.coefficients.A0.data(), shape}}},
-          additionalState_.mutableBlocks(), additionalState_.blockCount()};
+  auto legacy = detail::modelCheckpointLegacyView(checkpoint_);
+  return {legacy,
+          additionalState_.mutableBlocks(), additionalState_.blockCount(),
+          mutableCoefficientViews_.data(), mutableCoefficientViews_.size()};
 }
 
 WVIntegrationState WVModelState::constView() {
   auto mutableState = mutableView();
-  return integrationConstView(mutableState, constViews_);
+  return integrationConstView(mutableState, constCoefficientViews_,
+                              constViews_);
 }
 
 std::size_t WVModelState::persistentBytes() const noexcept {
   return sizeof(*this) + checkpointRetainedBytes(checkpoint_) -
          sizeof(checkpoint_) +
          additionalState_.capacityBytes() +
+         mutableCoefficientViews_.capacity() *
+             sizeof(WVCoefficientFamilyView) +
+         constCoefficientViews_.capacity() *
+             sizeof(WVCoefficientFamilyConstView) +
          constViews_.capacity() * sizeof(WVAdditionalStateBlockConstView);
 }
 
@@ -229,10 +251,7 @@ public:
   WVKernelStatus configureIntegrator(
       const WVModelIntegratorConfiguration &configuration);
 
-  std::unique_ptr<WVIntegrationSystem> system;
-  // Stable constant-stratification metrics and field-service adapter. The
-  // façade owns and drives the transform-neutral integration-system view.
-  WVConstantStratificationIntegrationSystem *constantSystem = nullptr;
+  std::unique_ptr<detail::WVResolvedModelSystem> resolvedSystem;
   std::shared_ptr<const WVExtensionCatalog> catalog;
   std::unique_ptr<WVTimeIntegrator> integrator;
   WVModelIntegratorKind integratorKind = WVModelIntegratorKind::fixedRK4;
@@ -260,17 +279,18 @@ WVKernelStatus WVModel::Impl::configureIntegrator(
   try {
     if (configuration.kind == WVModelIntegratorKind::adaptiveRK23)
       integrator =
-          std::make_unique<WVAdaptiveRK23>(*system,
+          std::make_unique<WVAdaptiveRK23>(resolvedSystem->integrationSystem(),
                                            configuration.adaptive);
     else if (configuration.kind == WVModelIntegratorKind::adaptiveRK45)
       integrator = std::make_unique<WVAdaptiveRK45>(
-          *system, configuration.adaptiveRK45);
+          resolvedSystem->integrationSystem(), configuration.adaptiveRK45);
     else if (configuration.kind == WVModelIntegratorKind::adaptiveRK78)
       integrator = std::make_unique<WVAdaptiveRK78>(
-          *system, configuration.adaptiveRK78);
+          resolvedSystem->integrationSystem(), configuration.adaptiveRK78);
     else
       integrator =
-          std::make_unique<WVFixedStepRK4>(*system, configuration.fixed);
+          std::make_unique<WVFixedStepRK4>(resolvedSystem->integrationSystem(),
+                                           configuration.fixed);
     integratorKind = configuration.kind;
     return WVKernelStatus::ok();
   } catch (const std::bad_alloc &) {
@@ -290,14 +310,83 @@ WVKernelStatus WVModel::create(
     return invalid("WVModel requires an extension catalog.");
   try {
     auto candidate = std::make_unique<Impl>();
-    std::unique_ptr<WVConstantStratificationIntegrationSystem> system;
-    auto status = WVConstantStratificationIntegrationSystem::create(
-        configuration, forcingSchedule, catalog, std::move(engine),
-        system);
+    auto status = detail::createConstantStratificationModelSystem(
+        configuration, forcingSchedule, nullptr, catalog, std::move(engine),
+        candidate->resolvedSystem);
     if (!status)
       return status;
-    candidate->constantSystem = system.get();
-    candidate->system = std::move(system);
+    status = candidate->configureIntegrator(integratorConfiguration);
+    if (!status)
+      return status;
+    candidate->catalog = std::move(catalog);
+    model.impl_ = std::move(candidate);
+    return WVKernelStatus::ok();
+  } catch (const std::bad_alloc &) {
+    return {WVKernelStatusCode::allocationFailure,
+            "WVModel allocation failed."};
+  }
+}
+
+WVKernelStatus WVModel::createFromCheckpoint(
+    std::shared_ptr<const WVExtensionCatalog> catalog,
+    WVCheckpoint checkpoint, std::unique_ptr<WVFFTEngine> engine,
+    const WVModelIntegratorConfiguration &integratorConfiguration,
+    WVModel &model, WVModelState &state) {
+  if (!catalog)
+    return invalid("WVModel requires an extension catalog.");
+  try {
+    auto candidate = std::make_unique<Impl>();
+    const auto inspection = detail::modelCheckpointInspection(checkpoint);
+    auto status = detail::createPersistedModelSystem(
+        inspection, checkpoint.forcingSchedule, nullptr, catalog,
+        std::move(engine), candidate->resolvedSystem);
+    if (!status)
+      return status;
+    status = candidate->configureIntegrator(integratorConfiguration);
+    if (!status)
+      return status;
+    WVModelState candidateState;
+    status = WVModelState::create(std::move(checkpoint),
+                                  candidate->resolvedSystem
+                                      ->integrationSystem()
+                                      .stateLayout(),
+                                  candidateState);
+    if (!status)
+      return status;
+    candidate->catalog = std::move(catalog);
+    model.impl_ = std::move(candidate);
+    state = std::move(candidateState);
+    return WVKernelStatus::ok();
+  } catch (const std::bad_alloc &) {
+    return {WVKernelStatusCode::allocationFailure,
+            "WVModel allocation failed."};
+  }
+}
+
+WVKernelStatus WVModel::validateCheckpointForcingSchedule(
+    const WVCheckpointInspection &inspection,
+    const WVFrozenForcingSchedule &schedule,
+    const WVExtensionCatalog &catalog) {
+  return detail::validatePersistedModelForcingSchedule(inspection, schedule,
+                                                        catalog);
+}
+
+WVKernelStatus WVModel::create(
+    std::shared_ptr<const WVExtensionCatalog> catalog,
+    const WVTransformBarotropicQGConfiguration &configuration,
+    const WVFrozenForcingSchedule &forcingSchedule,
+    std::unique_ptr<WVFFTEngine> engine,
+    const WVModelIntegratorConfiguration &integratorConfiguration,
+    WVModel &model) {
+  if (!catalog)
+    return invalid("WVModel requires an extension catalog.");
+  try {
+    auto candidate = std::make_unique<Impl>();
+    auto status = detail::createBarotropicQGModelSystem(
+        configuration, forcingSchedule, nullptr, catalog, std::move(engine),
+        candidate->resolvedSystem);
+    if (!status)
+      return status;
     status = candidate->configureIntegrator(integratorConfiguration);
     if (!status)
       return status;
@@ -406,9 +495,16 @@ WVKernelStatus WVModel::createFromModelOutputInspection(
   const auto &descriptor = outputConfiguration.descriptor();
 
   WVModel candidate;
-  auto status = WVModel::create(catalog, inspection.latestRestart.configuration,
-                           forcingSchedule, descriptor, std::move(engine),
-                           integratorConfiguration, candidate);
+  auto candidateImpl = std::make_unique<Impl>();
+  auto status = detail::createPersistedModelSystem(
+      inspection.latestRestart, forcingSchedule, &descriptor, catalog,
+      std::move(engine), candidateImpl->resolvedSystem);
+  if (status)
+    status = candidateImpl->configureIntegrator(integratorConfiguration);
+  if (status) {
+    candidateImpl->catalog = catalog;
+    candidate.impl_ = std::move(candidateImpl);
+  }
   if (!status)
     return status;
 
@@ -427,49 +523,10 @@ WVKernelStatus WVModel::createFromModelOutputInspection(
   if (!status)
     return status;
 
-  std::unique_ptr<WVObserverOutputEvaluationService> outputEvaluation;
-  auto *fieldEvaluationService = candidate.impl_->system->fieldEvaluationService();
-  if (fieldEvaluationService == nullptr)
-    return {WVKernelStatusCode::unsupportedOperation,
-            "The selected transform does not provide field evaluation for "
-            "model output."};
-  status = WVObserverOutputEvaluationService::create(
-      candidateState.checkpoint().configuration, inspection.isDynamicsLinear,
-      descriptor, nullptr, outputEvaluation,
-      fieldEvaluationService);
+  status = candidate.openOutput(candidateState, std::move(outputConfiguration),
+                                inspection.isDynamicsLinear);
   if (!status)
     return status;
-  for (const auto &declared : outputConfiguration.observationSchemas()) {
-    const auto observer = std::find_if(
-        descriptor.observers().begin(), descriptor.observers().end(),
-        [&](const auto &candidateObserver) {
-          return candidateObserver.identifier == declared.observerIdentifier;
-        });
-    if (observer == descriptor.observers().end())
-      return invalid("A declared observation schema references an unknown "
-                     "compiled observer.");
-    WVObservationSchema resolvedSchema;
-    status = outputEvaluation->observationSchema(*observer, resolvedSchema);
-    if (!status)
-      return status;
-    if (!sameObservationSchema(declared.schema, resolvedSchema))
-      return invalid("The resolved observer schema differs from the canonical "
-                     "schema restored from NetCDF.");
-  }
-  WVModelOutputNetCDFConfiguration sinkConfiguration{
-      catalog, candidateState.checkpoint(), inspection.isDynamicsLinear};
-  checkpointStatus = outputConfiguration.openNetCDFSink(
-      sinkConfiguration, candidate.stateLayout(), outputEvaluation.get(),
-      candidate.impl_->outputSink);
-  if (!checkpointStatus)
-    return fromCheckpoint(checkpointStatus);
-
-  candidate.impl_->outputFinalTime = outputConfiguration.plan().finalTime();
-  candidate.impl_->outputOpen = true;
-  candidate.impl_->outputEvaluation = std::move(outputEvaluation);
-  candidate.impl_->outputConfiguration =
-      std::make_unique<WVModelOutputConfiguration>(
-          std::move(outputConfiguration));
   state = std::move(candidateState);
   model = std::move(candidate);
   return WVKernelStatus::ok();
@@ -500,15 +557,43 @@ WVKernelStatus WVModel::create(
                    "extension catalog.");
   try {
     auto candidate = std::make_unique<Impl>();
-    std::unique_ptr<WVConstantStratificationIntegrationSystem> system;
-    auto status = WVConstantStratificationIntegrationSystem::create(
-        configuration, forcingSchedule, observerDescriptor, catalog,
-        std::move(engine),
-        system);
+    auto status = detail::createConstantStratificationModelSystem(
+        configuration, forcingSchedule, &observerDescriptor, catalog,
+        std::move(engine), candidate->resolvedSystem);
     if (!status)
       return status;
-    candidate->constantSystem = system.get();
-    candidate->system = std::move(system);
+    status = candidate->configureIntegrator(integratorConfiguration);
+    if (!status)
+      return status;
+    candidate->catalog = std::move(catalog);
+    model.impl_ = std::move(candidate);
+    return WVKernelStatus::ok();
+  } catch (const std::bad_alloc &) {
+    return {WVKernelStatusCode::allocationFailure,
+            "WVModel allocation failed."};
+  }
+}
+
+WVKernelStatus WVModel::create(
+    std::shared_ptr<const WVExtensionCatalog> catalog,
+    const WVTransformBarotropicQGConfiguration &configuration,
+    const WVFrozenForcingSchedule &forcingSchedule,
+    const WVPortableObserverDescriptor &observerDescriptor,
+    std::unique_ptr<WVFFTEngine> engine,
+    const WVModelIntegratorConfiguration &integratorConfiguration,
+    WVModel &model) {
+  if (!catalog)
+    return invalid("WVModel requires an extension catalog.");
+  if (observerDescriptor.catalog() != catalog)
+    return invalid("WVModel and its observer descriptor require the same "
+                   "extension catalog.");
+  try {
+    auto candidate = std::make_unique<Impl>();
+    auto status = detail::createBarotropicQGModelSystem(
+        configuration, forcingSchedule, &observerDescriptor, catalog,
+        std::move(engine), candidate->resolvedSystem);
+    if (!status)
+      return status;
     status = candidate->configureIntegrator(integratorConfiguration);
     if (!status)
       return status;
@@ -526,29 +611,99 @@ WVKernelStatus WVModel::prepareStateAfterRestart(WVModelState &state) {
   return impl_->integrator->prepareStateAfterRestart(view);
 }
 
+WVKernelStatus WVModel::initializeObserverState(WVModelState &state) {
+  auto view = state.mutableView();
+  return impl_->resolvedSystem->initializeObserverState(view);
+}
+
+WVKernelStatus WVModel::openOutput(
+    WVModelState &state, WVModelOutputConfiguration outputConfiguration,
+    bool isDynamicsLinear) {
+#if !defined(WV_MODEL_ENABLE_OUTPUT) || WV_MODEL_ENABLE_OUTPUT
+  if (impl_->outputOpen)
+    return invalid("WVModel already has an open output graph.");
+  if (outputConfiguration.catalog() != impl_->catalog)
+    return invalid("Prepared output and model must share one extension catalog.");
+  auto modelState = state.constView();
+  auto status = validateIntegrationState(stateLayout(), modelState);
+  if (!status)
+    return status;
+  auto *fieldEvaluationService =
+      impl_->resolvedSystem->integrationSystem().fieldEvaluationService();
+  if (fieldEvaluationService == nullptr)
+    return {WVKernelStatusCode::unsupportedOperation,
+            "The selected transform does not provide field evaluation for "
+            "model output."};
+  std::unique_ptr<WVObserverOutputEvaluationService> outputEvaluation;
+  status = WVObserverOutputEvaluationService::create(
+      isDynamicsLinear, outputConfiguration.descriptor(),
+      *fieldEvaluationService, outputEvaluation);
+  if (!status)
+    return status;
+  for (const auto &declared : outputConfiguration.observationSchemas()) {
+    const auto &observers = outputConfiguration.descriptor().observers();
+    const auto observer = std::find_if(
+        observers.begin(), observers.end(), [&](const auto &candidate) {
+          return candidate.identifier == declared.observerIdentifier;
+        });
+    if (observer == observers.end())
+      return invalid("A declared observation schema references an unknown "
+                     "compiled observer.");
+    WVObservationSchema resolvedSchema;
+    status = outputEvaluation->observationSchema(*observer, resolvedSchema);
+    if (!status)
+      return status;
+    if (!sameObservationSchema(declared.schema, resolvedSchema))
+      return invalid("The resolved observer schema differs from the canonical "
+                     "schema restored from NetCDF.");
+  }
+  WVModelOutputNetCDFSink outputSink;
+  WVModelOutputNetCDFConfiguration sinkConfiguration{
+      impl_->catalog, state.checkpoint(), isDynamicsLinear};
+  const auto checkpointStatus = outputConfiguration.openNetCDFSink(
+      sinkConfiguration, stateLayout(), outputEvaluation.get(), outputSink);
+  if (!checkpointStatus)
+    return fromCheckpoint(checkpointStatus);
+  impl_->outputFinalTime = outputConfiguration.plan().finalTime();
+  impl_->outputSink = std::move(outputSink);
+  impl_->outputEvaluation = std::move(outputEvaluation);
+  impl_->outputConfiguration =
+      std::make_unique<WVModelOutputConfiguration>(
+          std::move(outputConfiguration));
+  impl_->outputOpen = true;
+  return WVKernelStatus::ok();
+#else
+  (void)state;
+  (void)outputConfiguration;
+  (void)isDynamicsLinear;
+  return {WVKernelStatusCode::unsupportedOperation,
+          "This adapter does not include model-output persistence."};
+#endif
+}
+
 WVKernelStatus WVModel::evaluateRightHandSide(
     const WVIntegrationState &state, WVIntegrationFlux &rightHandSide) {
-  return impl_->system->evaluateRightHandSide(state, rightHandSide);
+  return impl_->resolvedSystem->integrationSystem().evaluateRightHandSide(
+      state, rightHandSide);
 }
 
 bool WVModel::supportsFixedTimeStepSelection() const noexcept {
-  return impl_->system->supportsFixedTimeStepSelection();
+  return impl_->resolvedSystem->integrationSystem()
+      .supportsFixedTimeStepSelection();
 }
 
 WVKernelStatus WVModel::evaluateFixedTimeStepCandidates(
     WVModelState &state, double cfl,
     WVFixedTimeStepCandidates &candidates) {
-  return impl_->system->evaluateFixedTimeStepCandidates(state.constView(), cfl,
-                                                        candidates);
+  return impl_->resolvedSystem->integrationSystem()
+      .evaluateFixedTimeStepCandidates(state.constView(), cfl, candidates);
 }
 
 WVKernelStatus WVModel::step(WVModelState &state, double proposedStepSize) {
   auto view = state.mutableView();
   const auto status = impl_->integrator->step(view, proposedStepSize);
-  if (status) {
-    state.checkpoint().state.t = view.waveVortex.t;
-    state.checkpoint().state.t0 = view.waveVortex.t0;
-  }
+  if (status)
+    state.setTimes(view.waveVortex.t, view.waveVortex.t0);
   return status;
 }
 
@@ -567,10 +722,8 @@ WVKernelStatus WVModel::advanceToTime(WVModelState &state, double finalTime,
   auto view = state.mutableView();
   const auto status =
       impl_->integrator->advanceToTime(view, finalTime, initialStepSize);
-  if (status) {
-    state.checkpoint().state.t = view.waveVortex.t;
-    state.checkpoint().state.t0 = view.waveVortex.t0;
-  }
+  if (status)
+    state.setTimes(view.waveVortex.t, view.waveVortex.t0);
   return status;
 }
 
@@ -624,8 +777,7 @@ WVKernelStatus WVModel::advanceToTime(WVModelState &state, double finalTime,
   const auto status = impl_->outputDriver->advanceToTime(
       view, finalTime, initialStepSize, sink);
   impl_->outputDriverMetrics = impl_->outputDriver->metrics();
-  state.checkpoint().state.t = view.waveVortex.t;
-  state.checkpoint().state.t0 = view.waveVortex.t0;
+  state.setTimes(view.waveVortex.t, view.waveVortex.t0);
   if (status) {
     impl_->outputDriver.reset();
     impl_->outputDriverPlan = nullptr;
@@ -644,7 +796,7 @@ WVKernelStatus WVModel::advanceToTime(WVModelState &state, double finalTime,
 }
 
 const WVIntegrationStateLayout &WVModel::stateLayout() const noexcept {
-  return impl_->system->stateLayout();
+  return impl_->resolvedSystem->integrationSystem().stateLayout();
 }
 
 double WVModel::nextStepSize() const noexcept {
@@ -656,7 +808,15 @@ WVModelIntegratorKind WVModel::integratorKind() const noexcept {
 }
 
 const std::string &WVModel::forcingScheduleIdentifier() const noexcept {
-  return impl_->constantSystem->scheduleIdentifier();
+  return impl_->resolvedSystem->forcingScheduleIdentifier();
+}
+
+const std::string &WVModel::kernelProviderIdentifier() const noexcept {
+  return impl_->resolvedSystem->kernelProviderIdentifier();
+}
+
+const std::string &WVModel::kernelProviderLibraryIdentity() const noexcept {
+  return impl_->resolvedSystem->kernelProviderLibraryIdentity();
 }
 
 WVModelMetrics WVModel::metrics(const WVModelState *state) const noexcept {
@@ -667,11 +827,10 @@ WVModelMetrics WVModel::metrics(const WVModelState *state) const noexcept {
   result.catalogPersistentBytes =
       impl_->catalog == nullptr ? 0 : impl_->catalog->persistentBytes();
   result.statePersistentBytes = state == nullptr ? 0 : state->persistentBytes();
-  result.integrationSystemPersistentBytes = impl_->system->persistentBytes();
+  result.integrationSystemPersistentBytes =
+      impl_->resolvedSystem->integrationSystem().persistentBytes();
   result.integratorPersistentBytes = impl_->integrator->persistentBytes();
-  result.kernel = impl_->constantSystem->kernelMetrics();
-  result.forcing = impl_->constantSystem->forcingMetrics();
-  result.integratedObservers = impl_->constantSystem->metrics();
+  impl_->resolvedSystem->populateMetrics(result);
   if (impl_->integratorKind == WVModelIntegratorKind::adaptiveRK23)
     result.integrator =
         static_cast<const WVAdaptiveRK23 &>(*impl_->integrator).metrics();
@@ -707,9 +866,15 @@ WVModelMetrics WVModel::metrics(const WVModelState *state) const noexcept {
   return result;
 }
 
-WVConstantStratificationIntegrationSystem &
+WVIntegrationSystem &
 detail::WVModelInternalAccess::integrationSystem(WVModel &model) noexcept {
-  return *model.impl_->constantSystem;
+  return model.impl_->resolvedSystem->integrationSystem();
+}
+
+WVTransformConstantStratificationKernel &
+detail::WVModelInternalAccess::constantStratificationKernel(
+    WVModel &model) noexcept {
+  return *model.impl_->resolvedSystem->constantStratificationKernel();
 }
 
 WVTimeIntegrator &
