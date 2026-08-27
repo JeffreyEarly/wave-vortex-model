@@ -108,7 +108,7 @@ classdef TestThreeInterfaceBenchmark < matlab.unittest.TestCase
             stdoutPath = fullfile(testCase.TemporaryFolder,"stdout.txt");
             stderrPath = fullfile(testCase.TemporaryFolder,"stderr.txt");
             workerPath = fullfile(testCase.TemporaryFolder,"worker.sh");
-            writelines(["#!/bin/sh"; "printf '%s\\n' integrate > \"$1\""; "while :; do"; "  if [ -f \"$WV_RSS_PHASE_ACK\" ] && [ \"$(sed -n '1p' \"$WV_RSS_PHASE_ACK\")\" = integrate ]; then exit 0; fi"; "  sleep 0.001"; "done"],workerPath);
+            writelines(["#!/bin/sh"; "printf '%s\\n' integrate > ""$1"""; "while :; do"; "  if [ -f ""$WV_RSS_PHASE_ACK"" ] && [ ""$(sed -n '1p' ""$WV_RSS_PHASE_ACK"")"" = integrate ]; then exit 0; fi"; "  sleep 0.001"; "done"],workerPath);
             sampler = fullfile(testCase.RepositoryRoot,"Benchmarks","runProcessWithRSS.sh");
             command = strjoin([shellQuote(sampler) shellQuote(samplePath) shellQuote(phasePath) "0.005" shellQuote(stdoutPath) shellQuote(stderrPath) "-- /bin/sh" shellQuote(workerPath) shellQuote(phasePath)]," ");
             [status,output] = system(command);
@@ -336,6 +336,17 @@ classdef TestThreeInterfaceBenchmark < matlab.unittest.TestCase
     end
 
     methods (Test,TestTags="optional")
+        function reducedDenseScheduleCrossesTenExactSteps(testCase)
+            if ~isCanonicalNativePlatform
+                return
+            end
+            result = runThreeInterfaceBenchmark(Nxyz=[8 6 5],processRunCount=1,integrators="fixed-rk4",workloads="composite-dense-output",physicalConfigurations="hydrostatic",integrationStepCount=10,samplingIntervalSeconds=0.005,plateauSeconds=0.02,shouldWriteArtifacts=false);
+            testCase.verifyEqual(result.status,"complete")
+            testCase.verifyEqual(result.cases.deltaT,1/1024)
+            testCase.verifyEqual(result.cases.denseOutputPointsPerStep,3)
+            testCase.verifyTrue(result.comparison.matchedContractPassed)
+        end
+
         function reducedMatchedBenchmarkRunsAllInterfaces(testCase)
             if ~isCanonicalNativePlatform
                 testCase.verifyError(@()runThreeInterfaceBenchmark(shouldWriteArtifacts=false),"WaveVortexBenchmark:ThreeInterfaceUnsupportedPlatform")

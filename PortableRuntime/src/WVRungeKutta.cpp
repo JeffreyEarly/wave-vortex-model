@@ -501,21 +501,21 @@ struct RK78MethodPolicy {
   }
 
   inline static constexpr WVAdaptiveRKStageBufferLastUse stageBufferLastUse[] = {
-      {"stage", "accepted-state commit or continuous-extension scratch", 17},
-      {"k1", "accepted solution, error estimate, or continuous extension", 17},
-      {"k2/k3/k5", "stage-13 construction or accepted initial state", 17},
-      {"k4/k13", "embedded error estimate", 13},
-      {"k6", "accepted solution, error estimate, or continuous extension", 17},
-      {"k7", "accepted solution, error estimate, or continuous extension", 17},
-      {"k8", "accepted solution, error estimate, or continuous extension", 17},
-      {"k9", "accepted solution, error estimate, or continuous extension", 17},
-      {"k10", "accepted solution, error estimate, or continuous extension", 17},
-      {"k11", "accepted solution, error estimate, or continuous extension", 17},
-      {"k12", "accepted solution, error estimate, or continuous extension", 17},
-      {"k14", "continuous-extension polynomial", 17},
-      {"k15", "continuous-extension polynomial", 17},
-      {"k16", "continuous-extension polynomial", 17},
-      {"k17", "continuous-extension polynomial", 17}};
+      {"stage", "stage-state construction", "accepted-state commit or continuous-extension scratch", 17},
+      {"k1", "initial right-hand side", "accepted solution, error estimate, or continuous extension", 17},
+      {"k2/k3/k5", "stage right-hand side with lifecycle reuse", "stage-13 construction or accepted initial state", 17},
+      {"k4/k13", "stage right-hand side with lifecycle reuse", "embedded error estimate", 13},
+      {"k6", "sixth-stage right-hand side", "accepted solution, error estimate, or continuous extension", 17},
+      {"k7", "seventh-stage right-hand side", "accepted solution, error estimate, or continuous extension", 17},
+      {"k8", "eighth-stage right-hand side", "accepted solution, error estimate, or continuous extension", 17},
+      {"k9", "ninth-stage right-hand side", "accepted solution, error estimate, or continuous extension", 17},
+      {"k10", "tenth-stage right-hand side", "accepted solution, error estimate, or continuous extension", 17},
+      {"k11", "eleventh-stage right-hand side", "accepted solution, error estimate, or continuous extension", 17},
+      {"k12", "twelfth-stage right-hand side", "accepted solution, error estimate, or continuous extension", 17},
+      {"k14", "lazy continuous-extension right-hand side", "continuous-extension polynomial", 17},
+      {"k15", "lazy continuous-extension right-hand side", "continuous-extension polynomial", 17},
+      {"k16", "lazy continuous-extension right-hand side", "continuous-extension polynomial", 17},
+      {"k17", "lazy continuous-extension right-hand side", "continuous-extension polynomial", 17}};
 };
 
 // Shared adaptive machinery is intentionally compile-time composed with each
@@ -834,9 +834,15 @@ WVFixedStepRK4::ensureWorkspace(const WVMutableIntegrationState &state) {
   }
   metrics_.workspaceCapacityBytes = workspace_->capacityBytes();
   metrics_.workspaceMaximumLiveBytes = metrics_.workspaceCapacityBytes;
+  metrics_.stateCapacityBytes = workspace_->stage.valueCapacityBytes();
+  metrics_.workspaceStateEquivalentCount = options_.retainDenseOutput ? 4 : 3;
+  metrics_.workspaceMaximumLiveStateEquivalentCount =
+      metrics_.workspaceStateEquivalentCount;
   metrics_.denseHistoryCapacityBytes = options_.retainDenseOutput
                                            ? workspace_->initialDerivative.capacityBytes()
                                            : 0;
+  metrics_.denseHistoryStateEquivalentCount =
+      options_.retainDenseOutput ? 1 : 0;
   metrics_.workspaceLiveBytes = metrics_.workspaceCapacityBytes;
   return WVKernelStatus::ok();
 }
@@ -1165,6 +1171,7 @@ WVAdaptiveRK23::ensureWorkspace(const WVMutableIntegrationState &state) {
   metrics_.workspaceLiveBytes = metrics_.workspaceCapacityBytes;
   metrics_.stateCapacityBytes = workspace_->stage.valueCapacityBytes();
   metrics_.workspaceStateEquivalentCount = 5;
+  metrics_.workspaceMaximumLiveStateEquivalentCount = 5;
   metrics_.denseHistoryCapacityBytes =
       options_.retainDenseOutput
           ? workspace_->k1.valueCapacityBytes() +
@@ -1433,23 +1440,38 @@ WVKernelStatus WVAdaptiveRK23::evaluateDenseOutput(
 
 namespace {
 
+constexpr WVAdaptiveRKStageBufferLastUse rk4StageBufferLastUse[] = {
+    {"stage", "stage-state construction", "accepted-state commit or dense-output scratch", 4},
+    {"derivative", "right-hand-side evaluation", "weighted accumulation", 4},
+    {"weighted", "weighted derivative initialization", "final-state update", 4},
+    {"initialDerivative", "accepted-step initial derivative", "dense-output interpolation", 4}};
+
 constexpr WVAdaptiveRKStageBufferLastUse rk23StageBufferLastUse[] = {
-    {"stage", "accepted-state commit or dense-output scratch", 4},
-    {"k1", "continuous extension or next-step FSAL swap", 4},
-    {"k2", "continuous extension", 4},
-    {"k3", "continuous extension", 4},
-    {"k4", "continuous extension or next-step FSAL swap", 4}};
+    {"stage", "stage-state construction", "accepted-state commit or dense-output scratch", 4},
+    {"k1", "initial derivative or FSAL reuse", "continuous extension or next-step FSAL swap", 4},
+    {"k2", "second-stage right-hand side", "continuous extension", 4},
+    {"k3", "third-stage right-hand side", "continuous extension", 4},
+    {"k4", "endpoint right-hand side", "continuous extension or next-step FSAL swap", 4}};
 
 constexpr WVAdaptiveRKStageBufferLastUse rk45StageBufferLastUse[] = {
-    {"stage", "accepted-state commit or dense-output scratch", 7},
-    {"k1", "continuous extension or next-step FSAL swap", 7},
-    {"k2/k7", "continuous extension or next-step FSAL swap", 7},
-    {"k3", "continuous extension", 7},
-    {"k4", "continuous extension", 7},
-    {"k5", "continuous extension", 7},
-    {"k6", "continuous extension", 7}};
+    {"stage", "stage-state construction", "accepted-state commit or dense-output scratch", 7},
+    {"k1", "initial derivative or FSAL reuse", "continuous extension or next-step FSAL swap", 7},
+    {"k2/k7", "second-stage then endpoint right-hand side", "continuous extension or next-step FSAL swap", 7},
+    {"k3", "third-stage right-hand side", "continuous extension", 7},
+    {"k4", "fourth-stage right-hand side", "continuous extension", 7},
+    {"k5", "fifth-stage right-hand side", "continuous extension", 7},
+    {"k6", "sixth-stage right-hand side", "continuous extension", 7}};
 
 } // namespace
+
+const WVAdaptiveRKStageBufferLastUse *
+WVFixedStepRK4::stageBufferLastUseRecords() noexcept {
+  return rk4StageBufferLastUse;
+}
+
+std::size_t WVFixedStepRK4::stageBufferLastUseRecordCount() noexcept {
+  return sizeof(rk4StageBufferLastUse) / sizeof(rk4StageBufferLastUse[0]);
+}
 
 const WVAdaptiveRKStageBufferLastUse *
 WVAdaptiveRK23::stageBufferLastUseRecords() noexcept {
@@ -1564,6 +1586,7 @@ WVAdaptiveRK45::ensureWorkspace(const WVMutableIntegrationState &state) {
   metrics_.workspaceLiveBytes = metrics_.workspaceCapacityBytes;
   metrics_.stateCapacityBytes = workspace_->stage.valueCapacityBytes();
   metrics_.workspaceStateEquivalentCount = 7;
+  metrics_.workspaceMaximumLiveStateEquivalentCount = 7;
   metrics_.denseHistoryCapacityBytes =
       options_.retainDenseOutput
           ? workspace_->k1.valueCapacityBytes() +

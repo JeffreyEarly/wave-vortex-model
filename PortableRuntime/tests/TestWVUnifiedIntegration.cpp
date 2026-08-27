@@ -611,8 +611,20 @@ void testRK4(LinearIntegrationSystem &system) {
           "RK4 dense coefficient result");
   require(rk4.metrics().workspaceCapacityBytes > 0 &&
               rk4.metrics().workspaceMaximumLiveBytes ==
-                  rk4.metrics().workspaceCapacityBytes,
+                  rk4.metrics().workspaceCapacityBytes &&
+              rk4.metrics().workspaceStateEquivalentCount == 4 &&
+              rk4.metrics().workspaceMaximumLiveStateEquivalentCount == 4 &&
+              rk4.metrics().denseHistoryStateEquivalentCount == 1 &&
+              leanRK4.metrics().workspaceStateEquivalentCount == 3 &&
+              leanRK4.metrics().workspaceMaximumLiveStateEquivalentCount == 3 &&
+              leanRK4.metrics().denseHistoryStateEquivalentCount == 0,
           "RK4 storage accounting");
+  require(WVFixedStepRK4::stageBufferLastUseRecordCount() == 4 &&
+              std::string(WVFixedStepRK4::stageBufferLastUseRecords()[0]
+                              .producer) == "stage-state construction" &&
+              std::string(WVFixedStepRK4::stageBufferLastUseRecords()[3]
+                              .lastUse) == "dense-output interpolation",
+          "RK4 explicit buffer producer and last-consumer schedule");
   require(rk4.persistentBytes() >
               sizeof(rk4) + rk4.metrics().workspaceCapacityBytes,
           "RK4 retained ledger omitted its workspace object or accepted views");
@@ -645,7 +657,13 @@ void testRK23(LinearIntegrationSystem &system) {
   require(std::abs(fixture.outputCoefficients[0].real - std::exp(-midpoint)) <
               1e-6,
           "RK23 dense coefficient result");
-  require(rk23.metrics().workspaceCapacityBytes > 0, "RK23 storage accounting");
+  require(rk23.metrics().workspaceCapacityBytes > 0 &&
+              rk23.metrics().workspaceStateEquivalentCount == 5 &&
+              rk23.metrics().workspaceMaximumLiveStateEquivalentCount == 5 &&
+              WVAdaptiveRK23::stageBufferLastUseRecordCount() == 5 &&
+              std::string(WVAdaptiveRK23::stageBufferLastUseRecords()[0]
+                              .producer) == "stage-state construction",
+          "RK23 exact workspace and buffer-liveness accounting");
   const auto adaptiveArrayAndPolicyBytes =
       sizeof(rk23) + rk23.metrics().workspaceCapacityBytes +
       rk23.metrics().errorPolicyBytes +
@@ -773,7 +791,10 @@ void testRK45(LinearIntegrationSystem &system) {
           "RK45 exact diagnostic ledger");
   require(WVAdaptiveRK45::stageBufferLastUseRecordCount() == 7 &&
               std::string(WVAdaptiveRK45::stageBufferLastUseRecords()[2]
-                              .bufferIdentifier) == "k2/k7",
+                              .bufferIdentifier) == "k2/k7" &&
+              std::string(WVAdaptiveRK45::stageBufferLastUseRecords()[2]
+                              .producer) ==
+                  "second-stage then endpoint right-hand side",
           "RK45 explicit stage-buffer liveness schedule");
   require(rk45.persistentBytes() >
               sizeof(rk45) + rk45.metrics().workspaceCapacityBytes +
@@ -1012,7 +1033,10 @@ void testRK78(LinearIntegrationSystem &system) {
               std::string(WVAdaptiveRK78::stageBufferLastUseRecords()[3]
                               .bufferIdentifier) == "k4/k13" &&
               std::string(WVAdaptiveRK78::stageBufferLastUseRecords()[14]
-                              .bufferIdentifier) == "k17",
+                              .bufferIdentifier) == "k17" &&
+              std::string(WVAdaptiveRK78::stageBufferLastUseRecords()[14]
+                              .producer) ==
+                  "lazy continuous-extension right-hand side",
           "RK78 explicit stage-buffer liveness schedule");
   require(std::string(WVAdaptiveRK78::controllerIdentifier()) ==
                   "matlab-ode78-v1" &&
