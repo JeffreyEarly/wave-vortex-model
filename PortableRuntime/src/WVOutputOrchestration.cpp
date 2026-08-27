@@ -1,6 +1,7 @@
 #include "WaveVortexRuntime/WVOutputOrchestration.hpp"
 #include "WaveVortexRuntime/WVExtensionCatalog.hpp"
 #include "WVObserverAdapter.hpp"
+#include "WVOutputTransformAdapters.hpp"
 
 #include <algorithm>
 #include <chrono>
@@ -175,37 +176,6 @@ WVKernelStatus copyIntegrationState(const WVIntegrationStateLayout &layout,
   return WVKernelStatus::ok();
 }
 
-WVKernelStatus stageCheckpointState(WVCheckpoint &checkpoint,
-                                    const WVIntegrationState &state) {
-  const auto shape = checkpoint.state.coefficients.shape;
-  const auto actual = state.waveVortex.coefficients.Ap.shape;
-  if (shape.rows != actual.rows || shape.columns != actual.columns ||
-      state.waveVortex.coefficients.Am.shape.rows != shape.rows ||
-      state.waveVortex.coefficients.Am.shape.columns != shape.columns ||
-      state.waveVortex.coefficients.A0.shape.rows != shape.rows ||
-      state.waveVortex.coefficients.A0.shape.columns != shape.columns)
-    return {WVKernelStatusCode::invalidShape,
-            "Checkpoint template and output state shapes differ."};
-  const auto count = shape.elementCount();
-  if (checkpoint.state.coefficients.Ap.size() != count ||
-      checkpoint.state.coefficients.Am.size() != count ||
-      checkpoint.state.coefficients.A0.size() != count)
-    return {WVKernelStatusCode::invalidShape,
-            "Checkpoint template coefficient storage is incomplete."};
-  const WVComplexConstView sources[] = {state.waveVortex.coefficients.Ap,
-                                        state.waveVortex.coefficients.Am,
-                                        state.waveVortex.coefficients.A0};
-  std::vector<WVComplex64> *destinations[] = {
-      &checkpoint.state.coefficients.Ap, &checkpoint.state.coefficients.Am,
-      &checkpoint.state.coefficients.A0};
-  for (std::size_t component = 0; component < 3; ++component)
-    std::copy_n(sources[component].data, count,
-                destinations[component]->data());
-  checkpoint.state.t = state.waveVortex.t;
-  checkpoint.state.t0 = state.waveVortex.t0;
-  return WVKernelStatus::ok();
-}
-
 } // namespace
 
 bool sameOutputObserverSemanticIdentity(const WVObserverRecord &left,
@@ -362,17 +332,9 @@ WVOutputPlan::create(const WVPortableObserverDescriptor &descriptor,
   try {
     if (descriptor.catalog() != catalog)
       return invalid("Output plan and observer descriptor require the same catalog.");
-    const auto &record = descriptor.record();
-    const auto canonical = std::find_if(
-        record.stateBlocks.begin(), record.stateBlocks.end(),
-        [](const auto &block) { return block.identifier == "Ap"; });
-    if (canonical == record.stateBlocks.end() ||
-        canonical->dimensions.size() != 2)
-      return invalid("Output planning requires a canonical [Nj,Nkl] Ap block.");
     WVIntegrationStateLayout layout;
-    auto layoutStatus = WVIntegrationStateLayout::create(
-        {canonical->dimensions[0], canonical->dimensions[1]}, descriptor,
-        layout);
+    auto layoutStatus =
+        detail::createLegacyOutputStateLayout(descriptor, layout);
     if (!layoutStatus)
       return layoutStatus;
     return create(layout, descriptor, std::move(catalog), initialTime,
@@ -553,16 +515,21 @@ WVOutputPlan::createExplicit(const WVIntegrationStateLayout &layout,
     WVPortableObserverRecord record;
     record.stateBlocks = layout.stateBlockRecords();
     record.observers = layout.observerRecords();
+    std::vector<std::string> coefficientFamilies;
+    coefficientFamilies.reserve(layout.coefficientFamilyCount());
+    for (const auto &family : layout.coefficientFamilies())
+      coefficientFamilies.push_back(family.identifier);
     auto coefficientObserver = std::find_if(
-        record.observers.begin(), record.observers.end(), [](const auto &item) {
-          return item.stateBlockIdentifiers ==
-                 std::vector<std::string>{"Ap", "Am", "A0"};
+        record.observers.begin(), record.observers.end(),
+        [&](const auto &item) {
+          return item.stateBlockIdentifiers == coefficientFamilies;
         });
     std::string coefficientIdentifier;
     if (coefficientObserver == record.observers.end()) {
       WVObserverRecord observer;
       const auto observerStatus = detail::canonicalCoefficientObserver(
-          "explicit-checkpoint-coefficients", *catalog, observer);
+          "explicit-checkpoint-coefficients", *catalog, observer,
+          coefficientFamilies);
       if (!observerStatus)
         return observerStatus;
       coefficientIdentifier = observer.identifier;
@@ -812,13 +779,8 @@ public:
           interpolationCoefficients.mutableFamilies();
       interpolationState.coefficientFamilyCount =
           interpolationCoefficients.familyCount();
-      if (layout.hasLegacyCoefficientTriple()) {
-        const auto shape = layout.coefficientShape();
-        auto *families = interpolationCoefficients.mutableFamilies();
-        interpolationState.waveVortex.coefficients =
-            {{families[0].data, shape}, {families[1].data, shape},
-             {families[2].data, shape}};
-      }
+      detail::bindLegacyOutputStateView(
+          layout, interpolationCoefficients, interpolationState);
       interpolationCoefficientConstViews.reserve(
           layout.coefficientFamilyCount());
       interpolationConstViews.reserve(layout.additionalBlocks().size());
@@ -1298,13 +1260,13 @@ WVCheckpointOutputSink::WVCheckpointOutputSink(
 WVKernelStatus WVCheckpointOutputSink::preflight(const WVOutputPlan &plan) {
   if (!catalog_)
     return invalid("Checkpoint output sink requires an extension catalog.");
-  const auto shape = plan.stateLayout().coefficientShape();
-  if (checkpoint_.state.coefficients.shape.rows != shape.rows ||
-      checkpoint_.state.coefficients.shape.columns != shape.columns)
-    return {WVKernelStatusCode::invalidShape,
-            "Checkpoint template and output plan coefficient shapes differ."};
+  const auto &layout = plan.stateLayout();
+  auto status = detail::validateOutputCheckpointTemplate(layout, checkpoint_);
+  if (!status)
+    return status;
   try {
     records_.reserve(plan.groupCount());
+    layout_ = &layout;
     preflighted_ = true;
     return WVKernelStatus::ok();
   } catch (const std::bad_alloc &) {
@@ -1325,7 +1287,8 @@ WVKernelStatus WVCheckpointOutputSink::deliver(const WVOutputEvent &event,
   record.emittedTime = event.state.waveVortex.t;
   record.eventKind = event.kind;
   record.destination = std::string(route.destination);
-  auto status = stageCheckpointState(checkpoint_, event.state);
+  auto status =
+      detail::stageOutputCheckpointState(*layout_, checkpoint_, event.state);
   if (!status) {
     record.failure = status.message;
     records_.push_back(std::move(record));
@@ -1346,11 +1309,11 @@ WVKernelStatus WVCheckpointOutputSink::deliver(const WVOutputEvent &event,
     return {WVKernelStatusCode::unsupportedOperation, records_.back().failure};
   }
   record.committed = true;
-  const auto count = checkpoint_.state.coefficients.shape.elementCount();
+  const auto count = layout_->coefficientElementCount();
   ++metrics_.checkpointWriteCount;
-  metrics_.copiedCoefficientBytes += 3 * count * sizeof(WVComplex64);
+  metrics_.copiedCoefficientBytes += count * sizeof(WVComplex64);
   result.writeCount = 1;
-  result.writtenBytes = 3 * count * sizeof(WVComplex64);
+  result.writtenBytes = count * sizeof(WVComplex64);
   records_.push_back(std::move(record));
   return WVKernelStatus::ok();
 }

@@ -1,4 +1,4 @@
-#include "WVModelOutputNetCDFSchema.hpp"
+#include "WVModelOutputTransformAdapters.hpp"
 
 #include "WVNetCDF.hpp"
 #include "WaveVortexRuntime/WVForcingContracts.hpp"
@@ -322,14 +322,26 @@ WVCheckpointStatus defineModelOutputRoot(
     bool isDynamicsLinear,
     std::array<int, 5> &dimensions, std::vector<int> &forcingGroups,
     std::vector<const WVFrozenForcingEntry *> &forcingEntries) {
-  const auto &configuration = checkpoint.configuration;
-  const std::array<std::pair<const char *, std::size_t>, 5> definitions = {
-      {{"j", configuration.Nj},
-       {"kl", checkpoint.state.coefficients.shape.columns},
-       {"x", configuration.Nx},
-       {"y", configuration.Ny},
-       {"z", configuration.Nz}}};
+  const bool isBarotropicQG =
+      checkpoint.transformKind == WVPersistedTransformKind::barotropicQG;
+  const auto &legacy = checkpoint.configuration;
+  const auto &qg = checkpoint.barotropicQGConfiguration;
+  const std::size_t Nkl = isBarotropicQG
+                              ? checkpoint.transformState.coefficientFamilies
+                                    .front().values.size()
+                              : checkpoint.state.coefficients.shape.columns;
+  const std::array<std::pair<const char *, std::size_t>, 5> definitions =
+      isBarotropicQG
+          ? std::array<std::pair<const char *, std::size_t>, 5>{
+                {{nullptr, 0}, {"kl", Nkl}, {"x", qg.Nx}, {"y", qg.Ny},
+                 {nullptr, 0}}}
+          : std::array<std::pair<const char *, std::size_t>, 5>{
+                {{"j", legacy.Nj}, {"kl", Nkl}, {"x", legacy.Nx},
+                 {"y", legacy.Ny}, {"z", legacy.Nz}}};
+  dimensions.fill(-1);
   for (std::size_t index = 0; index < definitions.size(); ++index) {
+    if (definitions[index].first == nullptr)
+      continue;
     auto result = checkedNetCDF(
         nc_def_dim(root, definitions[index].first, definitions[index].second,
                    &dimensions[index]),
@@ -342,25 +354,39 @@ WVCheckpointStatus defineModelOutputRoot(
     if (!result)
       return result;
   }
-  for (const char *name : {"Lx", "Ly", "Lz", "N0", "g", "latitude",
-                           "planetaryRadius", "rho0", "rotationRate", "t0"}) {
+  const std::vector<const char *> scalars =
+      isBarotropicQG
+          ? std::vector<const char *>{"Lx", "Ly", "g", "h", "j",
+                                      "latitude", "planetaryRadius",
+                                      "rotationRate", "t0"}
+          : std::vector<const char *>{"Lx", "Ly", "Lz", "N0", "g",
+                                      "latitude", "planetaryRadius", "rho0",
+                                      "rotationRate", "t0"};
+  for (const char *name : scalars) {
     int variable = -1;
     const auto result = defineDoubleVariable(root, name, {}, variable, "/");
     if (!result)
       return result;
   }
-  for (const char *name : {"isHydrostatic", "shouldAntialias"}) {
+  const std::vector<const char *> logicals =
+      isBarotropicQG ? std::vector<const char *>{"shouldAntialias"}
+                     : std::vector<const char *>{"isHydrostatic",
+                                                 "shouldAntialias"};
+  for (const char *name : logicals) {
     int variable = -1;
     const auto result = defineLogical(root, name, variable, "/");
     if (!result)
       return result;
   }
+  const std::string transformClass =
+      isBarotropicQG ? "WVTransformBarotropicQG"
+                     : "WVTransformConstantStratification";
   auto result = putTextAttribute(root, NC_GLOBAL, "AnnotatedClass",
-                                 "WVTransformConstantStratification", "/");
+                                 transformClass, "/");
   if (!result)
     return result;
-  result = putTextAttribute(root, NC_GLOBAL, "WVTransform",
-                            "WVTransformConstantStratification", "/");
+  result = putTextAttribute(root, NC_GLOBAL, "WVTransform", transformClass,
+                            "/");
   if (!result)
     return result;
   result = putTextAttribute(root, NC_GLOBAL, "model_version",
@@ -437,7 +463,62 @@ WVCheckpointStatus writeModelOutputRoot(
     const WVForcingCatalog &catalog,
     const std::vector<int> &forcingGroups,
     const std::vector<const WVFrozenForcingEntry *> &forcingEntries) {
+  const bool isBarotropicQG =
+      checkpoint.transformKind == WVPersistedTransformKind::barotropicQG;
   const auto &configuration = checkpoint.configuration;
+  const auto &qg = checkpoint.barotropicQGConfiguration;
+  if (isBarotropicQG) {
+    const std::size_t Nkl =
+        checkpoint.transformState.coefficientFamilies.front().values.size();
+    std::vector<double> kl(Nkl), x(qg.Nx), y(qg.Ny);
+    for (std::size_t index = 0; index < kl.size(); ++index)
+      kl[index] = static_cast<double>(index);
+    for (std::size_t index = 0; index < x.size(); ++index)
+      x[index] = static_cast<double>(index) * qg.Lx /
+                 static_cast<double>(qg.Nx);
+    for (std::size_t index = 0; index < y.size(); ++index)
+      y[index] = static_cast<double>(index) * qg.Ly /
+                 static_cast<double>(qg.Ny);
+    const std::array<std::pair<const char *, const std::vector<double> *>, 3>
+        coordinates{{{"kl", &kl}, {"x", &x}, {"y", &y}}};
+    for (const auto &coordinate : coordinates) {
+      const auto result =
+          writeDoubles(root, coordinate.first, *coordinate.second, "/");
+      if (!result)
+        return result;
+    }
+    const std::array<std::pair<const char *, double>, 9> scalars{{
+        {"Lx", qg.Lx},
+        {"Ly", qg.Ly},
+        {"g", qg.g},
+        {"h", qg.h},
+        {"j", static_cast<double>(qg.j)},
+        {"latitude", qg.latitude},
+        {"planetaryRadius", qg.planetaryRadius},
+        {"rotationRate", qg.rotationRate},
+        {"t0", checkpoint.state.t0},
+    }};
+    for (const auto &scalar : scalars) {
+      const auto result = writeDouble(root, scalar.first, scalar.second, "/");
+      if (!result)
+        return result;
+    }
+    auto result =
+        writeLogical(root, "shouldAntialias", qg.shouldAntialias, "/");
+    if (!result)
+      return result;
+    for (std::size_t index = 0; index < forcingEntries.size(); ++index) {
+      const std::string path =
+          forcingEntries.size() == 1
+              ? "/forcing"
+              : "/forcing/forcing-" + std::to_string(index + 1);
+      result = writeForcingEntry(forcingGroups[index], *forcingEntries[index],
+                                 catalog, path);
+      if (!result)
+        return result;
+    }
+    return WVCheckpointStatus::ok();
+  }
   std::vector<double> j(configuration.Nj),
       kl(checkpoint.state.coefficients.shape.columns), x(configuration.Nx),
       y(configuration.Ny), z(configuration.Nz);
@@ -497,6 +578,228 @@ WVCheckpointStatus writeModelOutputRoot(
       return result;
   }
   return WVCheckpointStatus::ok();
+}
+
+namespace {
+
+class ConstantStratificationOutputTransformAdapter final
+    : public WVModelOutputTransformAdapter {
+public:
+  explicit ConstantStratificationOutputTransformAdapter(
+      WVTransformConstantStratificationConfiguration configuration)
+      : configuration_(std::move(configuration)) {}
+
+  WVCheckpointStatus validate(
+      const WVCheckpoint &checkpoint,
+      const WVIntegrationStateLayout &layout) const override {
+    if (checkpoint.transformKind !=
+            WVPersistedTransformKind::constantStratification ||
+        (!checkpoint.stateDescription.transformIdentifier.empty() &&
+         checkpoint.stateDescription.transformIdentifier !=
+             layout.transformIdentifier()))
+      return failed(WVCheckpointStatusCode::shapeMismatch,
+                    "Output checkpoint and state-layout transforms differ.",
+                    "/");
+    WVTransformConstantStratificationDescriptor transform;
+    const auto status = WVTransformConstantStratificationDescriptor::create(
+        configuration_, transform);
+    if (!status)
+      return failed(WVCheckpointStatusCode::descriptorFailure,
+                    status.message, "/");
+    const auto shape = layout.coefficientShape();
+    if (!layout.hasLegacyCoefficientTriple() ||
+        shape.rows != configuration_.Nj ||
+        shape.columns != transform.Nkl())
+      return failed(WVCheckpointStatusCode::shapeMismatch,
+                    "Output state layout and transform configuration differ.",
+                    "/");
+    return WVCheckpointStatus::ok();
+  }
+
+  const WVComplex64 *coefficientData(
+      const WVCheckpoint &checkpoint, const WVIntegrationStateLayout &,
+      std::size_t family) const noexcept override {
+    const WVComplex64 *values[] = {
+        checkpoint.state.coefficients.Ap.data(),
+        checkpoint.state.coefficients.Am.data(),
+        checkpoint.state.coefficients.A0.data()};
+    return family < 3 ? values[family] : nullptr;
+  }
+
+  void bindConstructionState(
+      const WVCheckpoint &checkpoint,
+      WVIntegrationState &state) const noexcept override {
+    state.waveVortex = checkpoint.state.view();
+  }
+
+  WVCheckpointStatus defineRoot(
+      int root, const WVCheckpoint &checkpoint,
+      const WVForcingCatalog &catalog, bool isDynamicsLinear,
+      std::array<int, 5> &dimensions, std::vector<int> &forcingGroups,
+      std::vector<const WVFrozenForcingEntry *> &forcingEntries) const override {
+    return defineModelOutputRoot(root, checkpoint, catalog, isDynamicsLinear,
+                                 dimensions, forcingGroups, forcingEntries);
+  }
+
+  WVCheckpointStatus writeRoot(
+      int root, const WVCheckpoint &checkpoint,
+      const WVForcingCatalog &catalog,
+      const std::vector<int> &forcingGroups,
+      const std::vector<const WVFrozenForcingEntry *> &forcingEntries)
+      const override {
+    return writeModelOutputRoot(root, checkpoint, catalog, forcingGroups,
+                                forcingEntries);
+  }
+
+  bool sameConfiguration(
+      const WVCheckpointInspection &inspection) const noexcept override {
+    return inspection.transformKind ==
+               WVPersistedTransformKind::constantStratification &&
+           sameTransformConfiguration(configuration_, inspection.configuration);
+  }
+
+  std::size_t persistentBytes() const noexcept override {
+    return sizeof(*this);
+  }
+
+private:
+  WVTransformConstantStratificationConfiguration configuration_;
+};
+
+class BarotropicQGOutputTransformAdapter final
+    : public WVModelOutputTransformAdapter {
+public:
+  explicit BarotropicQGOutputTransformAdapter(
+      WVTransformBarotropicQGConfiguration configuration)
+      : configuration_(std::move(configuration)) {}
+
+  WVCheckpointStatus validate(
+      const WVCheckpoint &checkpoint,
+      const WVIntegrationStateLayout &layout) const override {
+    if (checkpoint.transformKind != WVPersistedTransformKind::barotropicQG ||
+        checkpoint.stateDescription.transformIdentifier !=
+            layout.transformIdentifier())
+      return failed(WVCheckpointStatusCode::shapeMismatch,
+                    "Output checkpoint and state-layout transforms differ.",
+                    "/");
+    WVTransformBarotropicQGDescriptor transform;
+    const auto status = WVTransformBarotropicQGDescriptor::create(
+        configuration_, transform);
+    if (!status)
+      return failed(WVCheckpointStatusCode::descriptorFailure,
+                    status.message, "/");
+    if (layout.coefficientFamilyCount() != 1 ||
+        layout.coefficientFamilies()[0].identifier != "A0" ||
+        layout.coefficientFamilies()[0].spectralDimensions !=
+            std::vector<std::size_t>{transform.Nkl()} ||
+        checkpoint.transformState.coefficientFamilies.size() != 1 ||
+        checkpoint.transformState.coefficientFamilies[0].values.size() !=
+            transform.Nkl())
+      return failed(WVCheckpointStatusCode::shapeMismatch,
+                    "Compact Barotropic QG output state does not match its "
+                    "transform.",
+                    "/");
+    return WVCheckpointStatus::ok();
+  }
+
+  const WVComplex64 *coefficientData(
+      const WVCheckpoint &checkpoint, const WVIntegrationStateLayout &layout,
+      std::size_t family) const noexcept override {
+    return family < layout.coefficientFamilyCount() &&
+                   family < checkpoint.transformState.coefficientFamilies.size()
+               ? checkpoint.transformState.coefficientFamilies[family]
+                     .values.data()
+               : nullptr;
+  }
+
+  void bindConstructionState(
+      const WVCheckpoint &checkpoint,
+      WVIntegrationState &state) const noexcept override {
+    state.waveVortex.t = checkpoint.transformState.t;
+    state.waveVortex.t0 = checkpoint.transformState.t0;
+  }
+
+  WVCheckpointStatus defineRoot(
+      int root, const WVCheckpoint &checkpoint,
+      const WVForcingCatalog &catalog, bool isDynamicsLinear,
+      std::array<int, 5> &dimensions, std::vector<int> &forcingGroups,
+      std::vector<const WVFrozenForcingEntry *> &forcingEntries) const override {
+    return defineModelOutputRoot(root, checkpoint, catalog, isDynamicsLinear,
+                                 dimensions, forcingGroups, forcingEntries);
+  }
+
+  WVCheckpointStatus writeRoot(
+      int root, const WVCheckpoint &checkpoint,
+      const WVForcingCatalog &catalog,
+      const std::vector<int> &forcingGroups,
+      const std::vector<const WVFrozenForcingEntry *> &forcingEntries)
+      const override {
+    return writeModelOutputRoot(root, checkpoint, catalog, forcingGroups,
+                                forcingEntries);
+  }
+
+  bool sameConfiguration(
+      const WVCheckpointInspection &inspection) const noexcept override {
+    return inspection.transformKind ==
+               WVPersistedTransformKind::barotropicQG &&
+           sameTransformConfiguration(
+               configuration_, inspection.barotropicQGConfiguration);
+  }
+
+  std::size_t persistentBytes() const noexcept override {
+    return sizeof(*this);
+  }
+
+private:
+  WVTransformBarotropicQGConfiguration configuration_;
+};
+
+} // namespace
+
+WVCheckpointStatus createModelOutputTransformAdapter(
+    const WVCheckpoint &checkpoint,
+    std::unique_ptr<WVModelOutputTransformAdapter> &adapter) {
+  adapter.reset();
+  try {
+    if (checkpoint.transformKind == WVPersistedTransformKind::barotropicQG)
+      adapter = std::make_unique<BarotropicQGOutputTransformAdapter>(
+          checkpoint.barotropicQGConfiguration);
+    else
+      adapter =
+          std::make_unique<ConstantStratificationOutputTransformAdapter>(
+              checkpoint.configuration);
+    return WVCheckpointStatus::ok();
+  } catch (const std::bad_alloc &) {
+    return failed(WVCheckpointStatusCode::writeFailure,
+                  "Unable to allocate the model-output transform adapter.",
+                  "/");
+  }
+}
+
+bool sameModelOutputTransformConfiguration(
+    const WVCheckpointInspection &left,
+    const WVCheckpointInspection &right) noexcept {
+  if (left.transformKind != right.transformKind)
+    return false;
+  return left.transformKind == WVPersistedTransformKind::barotropicQG
+             ? sameTransformConfiguration(left.barotropicQGConfiguration,
+                                          right.barotropicQGConfiguration)
+             : sameTransformConfiguration(left.configuration,
+                                          right.configuration);
+}
+
+bool modelOutputGroupCarriesCompleteCoefficientRestart(
+    const WVTransformStateDescription &description,
+    bool hasDeclaredCoefficientFamilies,
+    bool hasCoefficientObserver) noexcept {
+  if (!hasDeclaredCoefficientFamilies)
+    return false;
+  // In the compact QG contract A0 is also a valid Eulerian field name, so its
+  // variable alone cannot identify restart ownership. The legacy constant-
+  // stratification contract historically treats a complete Ap/Am/A0 field
+  // triple as restart state, including linear passive-field output.
+  return description.transformIdentifier != "WVTransformBarotropicQG" ||
+         hasCoefficientObserver;
 }
 
 } // namespace wavevortex::runtime::detail

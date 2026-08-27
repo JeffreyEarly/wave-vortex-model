@@ -371,6 +371,86 @@ classdef TestPortableRuntimeCompatibility < matlab.unittest.TestCase
                 clear runtimeCleanup controlCleanup
             end
         end
+
+        function barotropicQGModelOutputRoundTripsThroughStandalone(testCase)
+            cases = {
+                [5 4], 0, false; ...
+                [6 5], 1, true; ...
+                [5 6], 1, false; ...
+                [6 4], 0, true};
+            fieldNames = ["u" "v" "eta" "pi" "psi" "qgpv" "zeta_z" "ssh"];
+            maximumCoefficientError = 0;
+            maximumFieldError = 0;
+            maximumParticleError = 0;
+            maximumTracerError = 0;
+            for iCase = 1:size(cases,1)
+                Nxy = cases{iCase,1};
+                j = cases{iCase,2};
+                shouldAntialias = cases{iCase,3};
+                caseName = sprintf("qg-%dx%d-j%d-a%d",Nxy(1),Nxy(2),j,shouldAntialias);
+                runtimePath = fullfile(testCase.TemporaryFolder,caseName+"-runtime.nc");
+                controlPath = fullfile(testCase.TemporaryFolder,caseName+"-control.nc");
+                source = testCase.createBarotropicQGModel(runtimePath,Nxy,j,shouldAntialias);
+                source.integrateToTime(0.01,shouldShowIntegrationDiagnostics=false,callback=@(~)[]);
+                source.closeNetCDFFile();
+                copyfile(runtimePath,controlPath)
+
+                command = shellQuote(testCase.Runner) + " " + shellQuote(runtimePath) + ...
+                    " --restart-mode model --output-policy append" + ...
+                    " --integrator fixed-rk4 --delta-t 0.0025" + ...
+                    " --final-time 0.02 --fft-provider reference";
+                [status,output] = systemWithoutMatlabRuntime(command);
+                testCase.assertEqual(status,0,output)
+                report = jsondecode(output);
+                testCase.verifyEqual(string(report.status),"complete",caseName)
+                testCase.verifyEqual(string(report.execution.engine),"reference-direct",caseName)
+                testCase.verifyEqual(report.execution.planCount,3,caseName)
+                testCase.verifyEqual(report.storageBytes.persistentFullHermitian,0,caseName)
+                testCase.verifyGreaterThan(report.forcingOperations.physicalFieldReuseCount,0,caseName)
+                testCase.verifyGreaterThan(report.integrationBreakdownSeconds.tracerAdvection,0,caseName)
+                testCase.verifyGreaterThan(report.integrationBreakdownSeconds.particleAdvection,0,caseName)
+
+                runtimeModel = WVModel.modelFromFile(char(runtimePath));
+                runtimeCleanup = onCleanup(@()runtimeModel.closeNetCDFFile());
+                controlModel = WVModel.modelFromFile(char(controlPath));
+                controlCleanup = onCleanup(@()controlModel.closeNetCDFFile());
+                controlModel.setupIntegrator(integratorType="fixed",deltaT=0.0025);
+                controlModel.integrateToTime(0.02,shouldShowIntegrationDiagnostics=false,callback=@(~)[]);
+                [coefficientError,fieldError,particleError,tracerError] = ...
+                    testCase.verifyBarotropicQGModelsEqual(runtimeModel,controlModel,fieldNames,caseName);
+                maximumCoefficientError = max(maximumCoefficientError,coefficientError);
+                maximumFieldError = max(maximumFieldError,fieldError);
+                maximumParticleError = max(maximumParticleError,particleError);
+                maximumTracerError = max(maximumTracerError,tracerError);
+                testCase.verifyModelGraphsEqual(runtimeModel,controlModel)
+                runtimeForcingNames = runtimeModel.wvt.forcingNames;
+                controlForcingNames = controlModel.wvt.forcingNames;
+                testCase.verifyEqual(string(runtimeForcingNames(:)), ...
+                    string(controlForcingNames(:)),caseName)
+                testCase.verifyEqual(runtimeModel.outputFiles(1).outputGroups(1).incrementsWrittenToGroup,uint64(5),caseName)
+
+                for iGroup = 1:numel(runtimeModel.outputFiles(1).outputGroups)
+                    runtimeModel.outputFiles(1).outputGroups(iGroup).finalTime = runtimeModel.wvt.t;
+                    controlModel.outputFiles(1).outputGroups(iGroup).finalTime = controlModel.wvt.t;
+                end
+                runtimeModel.setupIntegrator(integratorType="fixed",deltaT=0.0025);
+                runtimeFinalTime = runtimeModel.wvt.t + 4*0.0025;
+                controlFinalTime = controlModel.wvt.t + 4*0.0025;
+                runtimeModel.integrateToTime(runtimeFinalTime,shouldShowIntegrationDiagnostics=false,callback=@(~)[]);
+                controlModel.integrateToTime(controlFinalTime,shouldShowIntegrationDiagnostics=false,callback=@(~)[]);
+                [coefficientError,fieldError,particleError,tracerError] = ...
+                    testCase.verifyBarotropicQGModelsEqual(runtimeModel,controlModel,fieldNames,caseName+" MATLAB continuation");
+                maximumCoefficientError = max(maximumCoefficientError,coefficientError);
+                maximumFieldError = max(maximumFieldError,fieldError);
+                maximumParticleError = max(maximumParticleError,particleError);
+                maximumTracerError = max(maximumTracerError,tracerError);
+                clear runtimeCleanup controlCleanup
+            end
+            fprintf("Barotropic QG model-output MATLAB/C++ coefficient error: %.3e\n",maximumCoefficientError)
+            fprintf("Barotropic QG model-output MATLAB/C++ field error: %.3e\n",maximumFieldError)
+            fprintf("Barotropic QG model-output MATLAB/C++ particle error: %.3e\n",maximumParticleError)
+            fprintf("Barotropic QG model-output MATLAB/C++ tracer error: %.3e\n",maximumTracerError)
+        end
     end
 
     methods (Access = private)
@@ -427,6 +507,31 @@ classdef TestPortableRuntimeCompatibility < matlab.unittest.TestCase
             model = WVModel(wvt);
             model.createNetCDFFileForModelOutput(path,outputInterval=1e-4,shouldOverwriteExisting=true);
             testCase.configureLinearIntegrator(model,integratorType);
+        end
+
+        function model = createBarotropicQGModel(~,path,Nxy,j,shouldAntialias)
+            wvt = WVTransformBarotropicQG([15000 9000],Nxy,h=0.8,j=j, ...
+                g=9.80665,planetaryRadius=6.3712e6,rotationRate=7.292115e-5, ...
+                latitude=33,shouldAntialias=shouldAntialias);
+            index = reshape(1:numel(wvt.A0),[],1);
+            wvt.A0(:) = complex(2e-5*sin(0.37*index),1e-5*cos(0.23*(index+2)));
+            wvt.A0(wvt.Kh == 0) = 0;
+            selfConjugate = wvt.dftPrimaryIndices2D == wvt.dftConjugateIndices2D;
+            wvt.A0(selfConjugate) = real(wvt.A0(selfConjugate));
+            wvt.addForcing([WVAdaptiveDamping(wvt) ...
+                WVBottomFrictionLinear(wvt,r=2.5e-7) ...
+                WVBetaPlanePVAdvection(wvt)]);
+            model = WVModel(wvt);
+            model.eulerianObservingSystem.addNetCDFOutputVariables( ...
+                'u','v','eta','pi','psi','qgpv','zeta_z','ssh');
+            model.setDrifterPositions([0.13 0.77]*wvt.Lx,[0.21 0.63]*wvt.Ly, ...
+                [],'u','qgpv',absToleranceXY=1e-5, ...
+                advectionInterpolation="linear",trackedVarInterpolation="spline");
+            tracer = 0.3 + 0.2*sin(2*pi*wvt.X/wvt.Lx).*cos(2*pi*wvt.Y/wvt.Ly);
+            model.addTracer(tracer,"dye");
+            model.createNetCDFFileForModelOutput(char(path), ...
+                outputInterval=0.005,shouldOverwriteExisting=true);
+            model.setupIntegrator(integratorType="fixed",deltaT=0.0025);
         end
 
         function configureLinearIntegrator(~,model,integratorType)
@@ -500,6 +605,35 @@ classdef TestPortableRuntimeCompatibility < matlab.unittest.TestCase
             absoluteError = max([max(abs(actual.Ap-reference.Ap),[],"all"),max(abs(actual.Am-reference.Am),[],"all"),max(abs(actual.A0-reference.A0),[],"all")]);
             referenceScale = max([max(abs(reference.Ap),[],"all"),max(abs(reference.Am),[],"all"),max(abs(reference.A0),[],"all"),eps]);
             errorValue = absoluteError/referenceScale;
+        end
+
+        function [coefficientError,fieldError,particleError,tracerError] = ...
+                verifyBarotropicQGModelsEqual(testCase,actual,expected,fieldNames,diagnostic)
+            coefficientScale = max(max(abs(expected.wvt.A0),[],'all'),eps);
+            coefficientError = max(abs(actual.wvt.A0-expected.wvt.A0),[],'all')/coefficientScale;
+            testCase.verifyLessThanOrEqual(coefficientError,1e-12,diagnostic+" A0")
+            fieldError = 0;
+            for fieldName = fieldNames
+                actualField = actual.wvt.(fieldName);
+                expectedField = expected.wvt.(fieldName);
+                scale = max(max(abs(expectedField),[],'all'),eps);
+                fieldError = max(fieldError,max(abs(actualField-expectedField),[],'all')/scale);
+            end
+            testCase.verifyLessThanOrEqual(fieldError,1e-12,diagnostic+" fields")
+            [actualX,actualY,actualZ,actualTracked] = actual.drifterPositions();
+            [expectedX,expectedY,expectedZ,expectedTracked] = expected.drifterPositions();
+            particleError = max([max(abs(actualX-expectedX),[],'all'), ...
+                max(abs(actualY-expectedY),[],'all'), ...
+                max(abs(actualTracked.u-expectedTracked.u),[],'all'), ...
+                max(abs(actualTracked.qgpv-expectedTracked.qgpv),[],'all')]);
+            testCase.verifyEqual(actualZ,expectedZ,diagnostic+" particle z")
+            testCase.verifyLessThanOrEqual(particleError,1e-8,diagnostic+" particles")
+            actualTracer = actual.tracer("dye");
+            expectedTracer = expected.tracer("dye");
+            tracerError = max(abs(actualTracer-expectedTracer),[],'all');
+            testCase.verifyLessThanOrEqual(tracerError,1e-8,diagnostic+" tracer")
+            testCase.verifyLessThanOrEqual(abs(actual.wvt.t-expected.wvt.t), ...
+                4*eps(expected.wvt.t),diagnostic)
         end
 
         function verifyModelGraphsEqual(testCase,actual,expected)
