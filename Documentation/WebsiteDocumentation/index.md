@@ -38,6 +38,7 @@ The transform stores the decomposed state in `Ap`, `Am`, and `A0`. Variables suc
 | Add forcing and closures | [Adding forcing](/users-guide/adding-forcing.html) |
 | Write output and restart a model | [Reading and writing files](/users-guide/reading-and-writing-to-file.html) |
 | Check a capability or limitation | [Capabilities and limitations](/users-guide/supported-features.html) |
+| Compare optional compiled workflows | [Compiled execution](/compiled-execution) |
 | Browse classes and methods | [API reference](/classes/) |
 
 ## Scientific basis
