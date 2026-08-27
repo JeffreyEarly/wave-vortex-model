@@ -142,6 +142,33 @@ classdef TestBenchmarkWebsiteDocumentation < matlab.unittest.TestCase
             testCase.verifyFalse(isfile(fullfile(buildFolder,"benchmarks","raw",first.datasetId+".json")));
         end
 
+        function integratorStudyRendersOneRuntimeAndRSSMatrix(testCase)
+            [root,buildFolder] = testCase.createFixture("integrator-study");
+            [firstEntry,first] = testCase.publishIntegratorStudyDataset(root,[256 256 129],"20260825T120000Z");
+            testCase.writeCatalog(root,struct([]),firstEntry);
+
+            generateBenchmarkWebsiteDocumentation(root,buildFolder);
+
+            page = string(fileread(fullfile(buildFolder,"benchmarks.md")));
+            comparison = extractBetween(page,"<!-- BENCHMARKS:INTERFACE_COMPARISON:START -->","<!-- BENCHMARKS:INTERFACE_COMPARISON:END -->");
+            testCase.verifyEqual(numel(strfind(comparison,"256×256×129")),8)
+            testCase.verifyFalse(contains(comparison,"512×512×257"))
+            testCase.verifyFalse(contains(comparison,">Hydrostatic<"))
+            testCase.verifySubstring(comparison,"Nonhydrostatic")
+            testCase.verifySubstring(comparison,"Fixed RK4")
+            testCase.verifySubstring(comparison,"ode23 / RK3(2)")
+            testCase.verifySubstring(comparison,"ode45 / RK5(4)")
+            testCase.verifySubstring(comparison,"ode78 / RK8(7)")
+            testCase.verifySubstring(comparison,"Coefficients · endpoint only")
+            testCase.verifySubstring(comparison,"Composite graph · interior dense output")
+            testCase.verifySubstring(comparison,"1 s / 1 GiB")
+            testCase.verifyFalse(contains(comparison,"×)"))
+            testCase.verifyFalse(contains(comparison,"incremental","IgnoreCase",true))
+            testCase.verifyFalse(contains(comparison,"process wall","IgnoreCase",true))
+            testCase.verifySubstring(comparison,"exact standalone workspace ledgers")
+            testCase.verifyTrue(isfile(fullfile(buildFolder,"benchmarks","data",first.datasetId+".json")))
+        end
+
         function incompleteOrIncompatibleInterfacePairFails(testCase)
             [root,buildFolder] = testCase.createFixture("incomplete-interfaces");
             [firstEntry,~] = testCase.publishInterfaceDataset(root,[256 256 129],"20260815T120000Z");
@@ -266,6 +293,40 @@ classdef TestBenchmarkWebsiteDocumentation < matlab.unittest.TestCase
             entry = struct("datasetId",datasetId,"artifact",artifact);
         end
 
+        function [entry,dataset] = publishIntegratorStudyDataset(testCase,root,resolution,timestamp)
+            interfaceIds = ["matlab-builtin" "matlab-compiled" "standalone-compiled"];
+            interfaces = cell(1,3);
+            for iInterface = 1:3
+                diagnostics = struct("controls",struct("requested","fixed-rk4","actual","fixed-rk4","matched",true),"methodWork",struct("acceptedStepCounts",10,"rejectedStepCounts",0,"rhsEvaluationCounts",40,"denseOutputEvaluationCounts",0),"integratorStorage",struct("exact",iInterface==3),"stateSizedBuffers",struct([]),"memory",struct("boundary","integration-phase-total-live-process-tree-rss"));
+                interfaces{iInterface} = struct("id",interfaceIds(iInterface),"providerId",conditional(iInterface==1,"matlab-builtin","native-neon-pthreads"),"integrationSeconds",1/iInterface,"totalPeakRSSBytes",iInterface*2^30,"integrationRatio",1/iInterface,"totalRSSRatio",iInterface,"integrationSamplesSeconds",[0.9 1 1.1]/iInterface,"totalPeakRSSSamplesBytes",iInterface*[0.9 1 1.1]*2^30,"diagnostics",diagnostics);
+            end
+            categories = arrayfun(@(name)struct("name",name,"variableCount",1,"maximumAbsoluteError",0,"maximumRelativeError",1e-14,"passed",true),["coefficients" "eulerianFields" "moorings" "particles" "tracers" "times"]);
+            graph = struct("passed",true,"variableCount",6,"recordCount",12,"maximumAbsoluteError",0,"maximumRelativeError",1e-14,"categories",categories);
+            cases = cell(1,8);
+            iCase = 0;
+            physicalConfiguration = "nonhydrostatic";
+            for integrator = ["fixed-rk4" "adaptive-rk23" "adaptive-rk45" "adaptive-rk78"]
+                for workload = ["coefficient-endpoint" "composite-dense-output"]
+                    iCase = iCase+1;
+                    identifier = physicalConfiguration+"--"+integrator+"--"+workload;
+                    contract = struct("Nxyz",resolution,"Lxyz",[150e3 150e3 1300],"physicalConfiguration",physicalConfiguration,"isHydrostatic",false,"workload",workload,"forcing","default WVNonlinearAdvection","shouldAntialias",true,"integrator",integrator,"deltaT",128,"integrationStepCount",56,"finalTime",7168,"relativeTolerance",1e-3,"absoluteToleranceScale",1e-6,"absoluteToleranceEvidence","component hashes","initialStep",295.7935799274,"maximumStep",716.8,"outputInterval",conditional(workload=="coefficient-endpoint",7168,128),"denseOutputPointsPerStep",4,"observerGraph",workload,"processRunCount",3,"warmupCount",0,"samplesPerProcess",1);
+                    correctness = struct("passed",true,"maximumRelativeError",1e-14,"outputAgreementPassed",true,"endpointTrajectoryAgreementPassed",true,"completeOutputGraph",graph);
+                    cases{iCase} = struct("id",identifier,"physicalConfiguration",physicalConfiguration,"workload",workload,"integrator",integrator,"contract",contract,"interfaces",{interfaces},"correctness",correctness);
+                end
+            end
+            datasetId = "three-interface--donut--"+timestamp;
+            source = struct("repository","https://github.com/JeffreyEarly/wave-vortex-model","commit",repmat('a',1,40),"tree",repmat('b',1,40),"sourceDirty",false,"version","unreleased-preview");
+            platform = struct("id","donut","displayName","Donut (Apple M5 Max)","processor","Apple M5 Max","physicalMemoryBytes",48*2^30,"os","macOS","architecture","maca64","matlabVersion","R2026a Update 4","threadCount",18);
+            provider = struct("id","native-neon-pthreads","version","3.3.11","threadBackend","pthreads","scope","compiled-interfaces-only","moduleSHA256",repmat('c',1,64),"identityValidated",true,"openMPDetected",false);
+            fixtures = [struct("physicalConfiguration","nonhydrostatic","workload","coefficient-endpoint","sha256",repmat('3',1,64)); struct("physicalConfiguration","nonhydrostatic","workload","composite-dense-output","sha256",repmat('4',1,64))];
+            archive = struct("fileName",datasetId+".json.gz","sha256",repmat('d',1,64),"compressedBytes",4096,"location","external sibling archive");
+            provenance = struct("rawSchemaVersion","three-interface-benchmark-v2","rawArtifactSHA256",repmat('e',1,64),"externalArchive",archive,"fixtures",fixtures);
+            dataset = struct("schemaVersion","published-three-interface-v3","datasetId",datasetId,"collectedAt","2026-08-25T12:00:00Z","studyId","integrator-runtime-memory-v1","source",source,"platform",platform,"provider",provider,"provenance",provenance,"cases",{cases});
+            artifact = "Benchmarks/results/published/"+datasetId+".json";
+            testCase.writeJson(fullfile(root,artifact),dataset);
+            entry = struct("datasetId",datasetId,"artifact",artifact);
+        end
+
         function writeCatalog(testCase,root,publishedDatasets,interfaceComparisons)
             if nargin < 4
                 interfaceComparisons = struct([]);
@@ -353,4 +414,12 @@ end
 
 function benchmarkCase = unavailableCase(complete,reason)
 benchmarkCase = struct("id",complete.id,"transformId",complete.transformId,"scoreFamily",complete.scoreFamily,"configuration",complete.configuration,"status","unavailable","unavailableReason",reason);
+end
+
+function value = conditional(condition,trueValue,falseValue)
+if condition
+    value = trueValue;
+else
+    value = falseValue;
+end
 end

@@ -12,24 +12,28 @@ These benchmarks help estimate the integration time and total peak memory requir
 
 ## Constant-stratification execution comparison
 
-The comparison uses identical initial state, forcing, integration settings, observer graph, output schedule, hardware, thread policy, and measured work for all three interfaces. MATLAB builtin remains the default. The compiled interfaces are source-built options for the supported constant-stratification configuration; see the [compiled constant-stratification preview](https://wavevortexmodel.org/users-guide/compiled-preview.html) for availability and build instructions.
+The comparison uses identical frozen initial models, forcing, integration interval, numerical controls, observer graph, output schedule, hardware, and thread policy for all three interfaces. MATLAB builtin remains the default. Different integrators are not assumed to perform identical work: accepted and rejected steps, RHS evaluations, FSAL diagnostics, and dense-extension evaluations accompany the downloadable evidence. The compiled interfaces are source-built options for the supported constant-stratification configuration; see the [compiled constant-stratification preview](https://wavevortexmodel.org/users-guide/compiled-preview.html) for availability and build instructions.
 
 <!-- BENCHMARKS:INTERFACE_COMPARISON:START -->
-Matched nonhydrostatic constant-stratification workloads on Lyra (Apple M4 Max) at 16 threads. MATLAB builtin uses MATLAB transforms; MATLAB + compiled core and standalone C++ share validated `native-neon-pthreads` 3.3.11. Each cell reports runtime followed by total peak process-tree RSS. Parentheses show speed relative to MATLAB builtin and memory change relative to MATLAB builtin. Values are medians of 3 fresh processes.
+Matched constant-stratification integration workloads on Apple M5 Max with 18 threads. MATLAB builtin uses production MATLAB transforms; MATLAB + compiled core and standalone C++ share validated `native-neon-pthreads` 3.3.11. Each interface cell is **integration-only runtime / total process-tree peak RSS during integration**, reported as the median of 3 fresh processes. Startup, model/provider construction, FFT planning, parsing, and cleanup are outside both primary boundaries.
 
 <table>
   <thead>
-    <tr><th scope="col">Resolution</th><th scope="col">Workload</th><th scope="col">MATLAB builtin</th><th scope="col">MATLAB + compiled core</th><th scope="col">Standalone C++</th></tr>
+    <tr><th scope="col">Resolution</th><th scope="col">Physical configuration</th><th scope="col">Integrator</th><th scope="col">Workload</th><th scope="col">MATLAB builtin</th><th scope="col">MATLAB + compiled core</th><th scope="col">Standalone C++</th></tr>
   </thead>
   <tbody>
-    <tr><td>256×256×129</td><td>Nonlinear flux</td><td>0.3351 s · 2.72 GiB</td><td>0.1549 s (2.163×) · 3.36 GiB (+23.2% memory)</td><td>0.1526 s (2.196×) · 1.91 GiB (−30.0% memory)</td></tr>
-    <tr><td>256×256×129</td><td>Fixed RK4</td><td>1.941 s · 3.78 GiB</td><td>1.872 s (1.037×) · 5 GiB (+32.1% memory)</td><td>0.9528 s (2.037×) · 4.17 GiB (+10.4% memory)</td></tr>
-    <tr><td>256×256×129</td><td>Adaptive RK3(2) + output</td><td>12.02 s · 5.71 GiB</td><td>11.09 s (1.084×) · 6.2 GiB (+8.6% memory)</td><td>6.921 s (1.737×) · 4.2 GiB (−26.4% memory)</td></tr>
-    <tr><td>512×512×257</td><td>Nonlinear flux</td><td>1.846 s · 16.2 GiB</td><td>1.445 s (1.278×) · 21 GiB (+29.6% memory)</td><td>1.134 s (1.628×) · 14 GiB (−13.7% memory)</td></tr>
-    <tr><td>512×512×257</td><td>Fixed RK4</td><td>12.79 s · 24 GiB</td><td>12.36 s (1.035×) · 33.3 GiB (+39.2% memory)</td><td>7.474 s (1.711×) · 29 GiB (+21.0% memory)</td></tr>
-    <tr><td>512×512×257</td><td>Adaptive RK3(2) + output</td><td>91.47 s · 38.6 GiB</td><td>81.3 s (1.125×) · 41.3 GiB (+7.2% memory)</td><td>52.12 s (1.755×) · 29.9 GiB (−22.3% memory)</td></tr>
+    <tr><td>256×256×129</td><td>Nonhydrostatic</td><td>Fixed RK4</td><td>Coefficients · endpoint only</td><td>55.43 s / 3.27 GiB</td><td>32.96 s / 3.84 GiB</td><td>33.63 s / 2.55 GiB</td></tr>
+    <tr><td>256×256×129</td><td>Nonhydrostatic</td><td>Fixed RK4</td><td>Composite graph · interior dense output</td><td>73.89 s / 4.19 GiB</td><td>62.8 s / 5.38 GiB</td><td>44.08 s / 3.08 GiB</td></tr>
+    <tr><td>256×256×129</td><td>Nonhydrostatic</td><td>ode23 / RK3(2)</td><td>Coefficients · endpoint only</td><td>191.4 s / 3.53 GiB</td><td>125.7 s / 4.14 GiB</td><td>124.5 s / 2.64 GiB</td></tr>
+    <tr><td>256×256×129</td><td>Nonhydrostatic</td><td>ode23 / RK3(2)</td><td>Composite graph · interior dense output</td><td>291.2 s / 6.33 GiB</td><td>268 s / 6.78 GiB</td><td>169.2 s / 3.19 GiB</td></tr>
+    <tr><td>256×256×129</td><td>Nonhydrostatic</td><td>ode45 / RK5(4)</td><td>Coefficients · endpoint only</td><td>57.1 s / 4.06 GiB</td><td>33.14 s / 4.46 GiB</td><td>34.07 s / 2.73 GiB</td></tr>
+    <tr><td>256×256×129</td><td>Nonhydrostatic</td><td>ode45 / RK5(4)</td><td>Composite graph · interior dense output</td><td>86.1 s / 9.12 GiB</td><td>72.13 s / 9.59 GiB</td><td>46.18 s / 3.41 GiB</td></tr>
+    <tr><td>256×256×129</td><td>Nonhydrostatic</td><td>ode78 / RK8(7)</td><td>Coefficients · endpoint only</td><td>47.13 s / 4.22 GiB</td><td>27.91 s / 4.59 GiB</td><td>27.79 s / 2.9 GiB</td></tr>
+    <tr><td>256×256×129</td><td>Nonhydrostatic</td><td>ode78 / RK8(7)</td><td>Composite graph · interior dense output</td><td>71.24 s / 10.5 GiB</td><td>62.11 s / 11 GiB</td><td>38.66 s / 4.26 GiB</td></tr>
   </tbody>
 </table>
+
+The coefficient workload delivers only the accepted endpoint. The composite workload includes fields, particles, a tracer, source-linked mooring state, and several scheduled interior points per accepted step. Requested/active method identity, matched tolerances and step bounds, accepted/rejected steps, RHS evaluations, FSAL diagnostics, dense-extension work, exact standalone workspace ledgers, supplementary memory diagnostics, output-graph agreement, and fixture/archive hashes remain in the compact downloadable records. MATLAB solver workspace, allocator/COW behavior, and opaque FFT/provider storage are identified as unattributed rather than presented as exact.
 <!-- BENCHMARKS:INTERFACE_COMPARISON:END -->
 
 ## MATLAB builtin scaling across transform families
@@ -516,7 +520,7 @@ results = runWaveVortexBenchmark(suites="scaling-standard-v1")
 
 The larger `scaling-large-v1` suite can require substantially more memory. The [benchmark authoring guide](https://github.com/JeffreyEarly/wave-vortex-model/tree/main/Benchmarks) explains suite selection, reference generation, raw artifacts, and normalization for publication.
 
-The matched interface comparison uses `[256 256 129]` and `[512 512 257]` and requires the validated native FFTW provider. The larger run requires substantial memory and temporary NetCDF output:
+The matched interface comparison uses one medium `[256 256 129]` nonhydrostatic case in a 150 km by 150 km by 1300 m domain and requires the validated native FFTW provider. Its deterministic physical state combines GM energy level 1 with a first-baroclinic red geostrophic spectrum that rolls on below mode 4, follows a `k^(-5/3)` range through mode 16, and transitions to `k^(-3)`. The geostrophic component is rescaled to a 0.15 m/s maximum horizontal speed; GM(1) remains at its requested energy level. Default anti-aliasing stays enabled. The runner validates a complete process repeat before releasing that repeat's raw NetCDF files, retaining compact per-repeat correctness evidence so temporary storage remains bounded without reducing numerical coverage:
 
 ```matlab
 results = runThreeInterfaceBenchmarkComparison
@@ -524,15 +528,15 @@ results = runThreeInterfaceBenchmarkComparison
 
 ## Methodology and interpretation
 
-The scaling suites advance the coefficient state and evaluate `nonlinearFlux` with ordinary production caches retained; those measurements are not complete model steps. The matched interface suite separately measures one nonlinear-flux call, a fixed-RK4 continuation, and an adaptive RK3(2) continuation with observer and file output. Published cases must pass their numerical correctness tolerance, execute the requested integrator and provider, and reproduce the complete saved output graph before their runtime and memory can be shown.
+The scaling suites advance the coefficient state and evaluate `nonlinearFlux` with ordinary production caches retained; those measurements are not complete model steps. The matched interface suite measures fixed RK4 and MATLAB-compatible RK3(2), RK5(4), and RK8(7) integration for the physical nonhydrostatic state. Fixed RK4 uses the largest power-of-two step no greater than the frozen-state CFL=0.25 estimate (128 s for the canonical state); adaptive methods start from the frozen-state CFL=0.5 estimate (approximately 295.794 s) with no user `MaxStep`. The 7168 s interval is 56 fixed steps. Each method runs both a coefficient-only endpoint workload and a composite output graph with one persisted restart record followed by four first-step records for fields, particles, a tracer, and source-linked mooring state; three of those times are interior to the fixed step. Published rows must execute the requested integrator and provider without fallback, match adaptive controls, preserve accepted endpoint trajectories when interior output is added, pass method-appropriate numerical tolerances, and reproduce the complete saved output graph.
 
-Scaling runtime is the median of the recorded post-warmup samples. Matched-interface runtime is the median numerical-operation or integration time from three independent fresh processes; process launch and model construction are excluded. **Peak process memory** is the largest observed process-tree resident-memory value over the complete run, including MATLAB where applicable.
+Scaling runtime is the median of the recorded post-warmup samples. Matched-interface runtime is the median integration-only time from three independent fresh processes, beginning immediately before integration and ending after required output delivery. **Peak process memory** is the largest externally sampled total process-tree RSS while the worker reports the integration or required output-delivery phase. Process launch, MATLAB startup, model and provider construction, FFT planning, NetCDF inspection, parsing, and cleanup are outside both primary boundaries. Retained, incremental, final, and process-lifetime RSS remain diagnostics.
 
 Only datasets approved in the benchmark catalog are published. Comparisons require the same suite contract, operation, case, domain, resolution, numerical options, random seed, warmup count, and sample count. MATLAB release and update are recorded as part of the toolchain: when two machines use different MATLAB releases, their measurements reflect both hardware and MATLAB implementation differences rather than isolating hardware alone. Missing implementation or suite coverage is reported as unavailable and never as zero runtime or memory.
 
 ## Downloadable results
 
-Scaling and compiled-preview datasets use the language-neutral `published-benchmark-v1` contract. Matched workflow datasets use `published-three-interface-v1`. Their compact records include the filename, SHA-256, and size of a compressed author archive retained outside the source tree; verbose samples are not distributed with the website or package.
+Scaling and compiled-preview datasets use the language-neutral `published-benchmark-v1` contract. The current matched integrator study uses `published-three-interface-v3`; earlier matched workflow records remain available under their versioned contracts. Compact study records retain the requested/active method, work counts, exact standalone integrator storage ledgers, explicit MATLAB storage-opacity notes, fixture and raw-artifact hashes, and the location, SHA-256, and size of a compressed author archive outside the source tree. Verbose RSS samples and worker records are not distributed with the website or package.
 
 <!-- BENCHMARKS:DOWNLOADS:START -->
 <table>
@@ -549,6 +553,7 @@ Scaling and compiled-preview datasets use the language-neutral `published-benchm
     <tr><td>scaling-standard-v1--matlab-builtin--matilda--20260811T205115Z</td><td>WaveVortexModel MATLAB 4.2.1</td><td>Matilda (Apple M1 Max)</td><td>scaling-standard-v1</td><td>2026-08-11T20:51:15Z</td><td>published-benchmark-v1</td><td><a href="/benchmarks/data/scaling-standard-v1--matlab-builtin--matilda--20260811T205115Z.json">Published JSON</a></td><td><a href="/benchmarks/raw/scaling-standard-v1--matlab-builtin--matilda--20260811T205115Z.json">Raw JSON</a></td></tr>
     <tr><td>three-interface--lyra--20260816T034908Z</td><td>MATLAB builtin / MATLAB compiled / standalone compiled</td><td>Lyra (Apple M4 Max)</td><td>three-interface</td><td>2026-08-16T03:49:08Z</td><td>published-three-interface-v2</td><td><a href="/benchmarks/data/three-interface--lyra--20260816T034908Z.json">Published JSON</a></td><td>External archives: e2f05927488d…, e8f480484b36…</td></tr>
     <tr><td>three-interface--lyra--20260816T044250Z</td><td>MATLAB builtin / MATLAB compiled / standalone compiled</td><td>Lyra (Apple M4 Max)</td><td>three-interface</td><td>2026-08-16T04:42:50Z</td><td>published-three-interface-v2</td><td><a href="/benchmarks/data/three-interface--lyra--20260816T044250Z.json">Published JSON</a></td><td>External archives: 3e83bcca157c…, c3be332c475b…</td></tr>
+    <tr><td>three-interface--m5-max--20260827T151230Z</td><td>MATLAB builtin / MATLAB compiled / standalone compiled</td><td>Apple M5 Max</td><td>three-interface</td><td>2026-08-27T15:12:30Z</td><td>published-three-interface-v3</td><td><a href="/benchmarks/data/three-interface--m5-max--20260827T151230Z.json">Published JSON</a></td><td>External archive: 68714c20e30a…</td></tr>
   </tbody>
 </table>
 <!-- BENCHMARKS:DOWNLOADS:END -->
