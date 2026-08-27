@@ -112,6 +112,54 @@ classdef TestThreeInterfaceBenchmark < matlab.unittest.TestCase
             testCase.verifyError(@()validateThreeInterfaceBenchmarkContract(raw),"WaveVortexBenchmark:AdaptiveToleranceMismatch")
         end
 
+        function integratorStudyUsesMatchedMethodOutputTolerances(testCase)
+            raw = integratorStudyFixture;
+            tracerIndex = find(string({raw.comparison(2).outputGraph.categories.name})=="tracers",1);
+            raw.comparison(2).maximumRelativeError = 1.25e-7;
+            raw.comparison(2).outputGraph.maximumAbsoluteError = 1.25e-7;
+            raw.comparison(2).outputGraph.maximumRelativeError = 1.25e-7;
+            raw.comparison(2).outputGraph.categories(tracerIndex).maximumAbsoluteError = 1.25e-7;
+            raw.comparison(2).outputGraph.categories(tracerIndex).maximumRelativeError = 1.25e-7;
+            testCase.verifyWarningFree(@()validateThreeInterfaceBenchmarkContract(raw))
+        end
+
+        function storedPayloadEvidenceCanBeConservativelyReclassified(testCase)
+            raw = integratorStudyFixture;
+            comparison = raw.comparison(2);
+            tracerIndex = find(string({comparison.outputGraph.categories.name})=="tracers",1);
+            comparison.maximumRelativeError = 1.25e-7;
+            comparison.outputAgreementPassed = false;
+            comparison.outputGraph.passed = false;
+            comparison.outputGraph.maximumAbsoluteError = 1.25e-7;
+            comparison.outputGraph.maximumRelativeError = 1.25e-7;
+            comparison.outputGraph.categories(tracerIndex).maximumAbsoluteError = 1.25e-7;
+            comparison.outputGraph.categories(tracerIndex).maximumRelativeError = 1.25e-7;
+            comparison.outputGraph.categories(tracerIndex).passed = false;
+            comparison.outputGraph.differences = char("/tracers/dye payload differs");
+            comparison.matchedContractPassed = false;
+            [comparison,recovery] = reclassifyThreeInterfaceOutputEvidence(comparison,1e-3,1e-6);
+            testCase.verifyTrue(comparison.outputGraph.passed)
+            testCase.verifyTrue(comparison.matchedContractPassed)
+            testCase.verifyEqual(recovery.reclassifiedCategories,"tracers")
+            testCase.verifyEmpty(comparison.outputGraph.differences)
+        end
+
+        function storedStructuralDifferenceCannotBeReclassified(testCase)
+            raw = integratorStudyFixture;
+            comparison = raw.comparison(2);
+            tracerIndex = find(string({comparison.outputGraph.categories.name})=="tracers",1);
+            comparison.outputAgreementPassed = false;
+            comparison.outputGraph.passed = false;
+            comparison.outputGraph.categories(tracerIndex).passed = false;
+            comparison.outputGraph.differences = "/tracers/dye shape differs";
+            comparison.matchedContractPassed = false;
+            [comparison,recovery] = reclassifyThreeInterfaceOutputEvidence(comparison,1e-3,1e-6);
+            testCase.verifyFalse(comparison.outputGraph.passed)
+            testCase.verifyFalse(comparison.matchedContractPassed)
+            testCase.verifyFalse(recovery.passed)
+            testCase.verifyEqual(comparison.outputGraph.differences,"/tracers/dye shape differs")
+        end
+
         function rssSamplerAcknowledgesShortIntegrationPhase(testCase)
             phasePath = fullfile(testCase.TemporaryFolder,"phase.txt");
             samplePath = fullfile(testCase.TemporaryFolder,"rss.tsv");
@@ -499,6 +547,8 @@ value.finalTime = 7168;
 value.initialStep = 295.7935799274;
 value.maximumStep = [];
 value.maximumStepPolicy = "matlab-default";
+value.outputRelativeTolerance = value.relativeTolerance;
+value.outputAbsoluteTolerance = value.absoluteTolerance;
 value.outputInterval = conditional(workload=="coefficient-endpoint",7168,32);
 value.denseOutputStartTime = conditional(workload=="coefficient-endpoint",[],0);
 value.denseOutputEndTime = conditional(workload=="coefficient-endpoint",[],128);

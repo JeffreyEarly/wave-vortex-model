@@ -46,7 +46,7 @@ if ~isIntegratorStudy
     valid = all(ismember(string({definitions.id}),["nonlinear-flux" "fixed-rk4-continuation" "adaptive-rk23-observer-output"]));
     return
 end
-required = ["physicalConfiguration" "isHydrostatic" "workload" "requestedIntegrator" "integrationStepCount" "denseOutputPointsPerStep"];
+required = ["physicalConfiguration" "isHydrostatic" "workload" "requestedIntegrator" "integrationStepCount" "denseOutputPointsPerStep" "outputRelativeTolerance" "outputAbsoluteTolerance"];
 valid = all(arrayfun(@(definition)all(isfield(definition,required)),definitions));
 if ~valid, return, end
 integrators = ["fixed-rk4" "adaptive-rk23" "adaptive-rk45" "adaptive-rk78"];
@@ -146,14 +146,22 @@ end
 end
 
 function validateNumerics(comparison,definition,tolerance)
-if ~isfinite(comparison.maximumRelativeError) || comparison.maximumRelativeError > tolerance
+usesMethodTolerance = isfield(definition,"outputRelativeTolerance");
+if ~isfinite(comparison.maximumRelativeError) || (~usesMethodTolerance && comparison.maximumRelativeError > tolerance)
     error("WaveVortexBenchmark:NumericalMismatch","Case %s exceeds the relative-error tolerance %.3e.",string(definition.id),tolerance);
 end
 if ~logical(comparison.outputAgreementPassed) || ~logical(comparison.outputGraph.passed)
     error("WaveVortexBenchmark:OutputGraphMismatch","Case %s does not agree across its complete output graph.",string(definition.id));
 end
 graph = comparison.outputGraph;
-if ~isfinite(graph.maximumRelativeError) || graph.maximumRelativeError > tolerance || any(~[graph.categories.passed]) || any(~isfinite([graph.categories.maximumRelativeError])) || any([graph.categories.maximumRelativeError] > tolerance)
+finiteGraphEvidence = isfinite(graph.maximumRelativeError) && isfinite(graph.maximumAbsoluteError) && all(isfinite([graph.categories.maximumRelativeError])) && all(isfinite([graph.categories.maximumAbsoluteError]));
+if usesMethodTolerance
+    validTolerances = isfinite(definition.outputRelativeTolerance) && definition.outputRelativeTolerance>0 && isfinite(definition.outputAbsoluteTolerance) && definition.outputAbsoluteTolerance>=0;
+    numericalAgreement = validTolerances && finiteGraphEvidence && all([graph.categories.passed]);
+else
+    numericalAgreement = finiteGraphEvidence && graph.maximumRelativeError<=tolerance && all([graph.categories.passed]) && all([graph.categories.maximumRelativeError]<=tolerance);
+end
+if ~numericalAgreement
     error("WaveVortexBenchmark:OutputGraphMismatch","Case %s contains an output payload outside the relative-error tolerance.",string(definition.id));
 end
 requiredCategories = "coefficients";
@@ -163,7 +171,8 @@ elseif string(definition.operation) == "model-continuation"
     requiredCategories = [requiredCategories "eulerianFields" "moorings" "particles" "tracers" "times"];
 end
 if ~all(ismember(requiredCategories,string({graph.categories.name})))
-    error("WaveVortexBenchmark:OutputGraphMismatch","Case %s is missing a required output category.",string(definition.id));
+    missingCategories = requiredCategories(~ismember(requiredCategories,string({graph.categories.name})));
+    error("WaveVortexBenchmark:OutputGraphMismatch","Case %s is missing required output categories: %s.",string(definition.id),strjoin(missingCategories,", "));
 end
 end
 
