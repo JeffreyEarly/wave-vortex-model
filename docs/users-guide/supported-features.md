@@ -38,7 +38,7 @@ For three-dimensional transforms, `diffZF` and `diffZG` accept derivative orders
 
 `WVModel` provides adaptive and fixed-step integration, tolerance and time-step configuration, segmented integration, model output, and restart. Call `setupIntegrator` to change time-stepping settings.
 
-The optional [portable constant-stratification runtime](/users-guide/portable-runtime.html) provides a narrower source-built checkpoint workflow with fixed RK4 or adaptive RK3(2). It supports only the documented forcing and observing-system records; MATLAB remains the general model interface. Its stable `wave-vortex-portable-source-api-v1` extension surface is qualified on Ubuntu with GCC or Clang and on macOS with AppleClang, and the optimized runner is limited to Apple silicon. Windows/MSVC source-linked execution is unsupported.
+The optional [portable runtime](/users-guide/portable-runtime.html) provides a narrower source-built checkpoint workflow for constant stratification and equivalent-barotropic QG with fixed RK4 or adaptive RK23/RK45/RK78. It supports only the documented transform-valid forcing and observing-system records; MATLAB remains the general model interface. Its stable `wave-vortex-portable-source-api-v1` extension surface is qualified on Ubuntu with GCC or Clang and on macOS with AppleClang, and the optimized runner is limited to Apple silicon. Windows/MSVC source-linked execution is unsupported.
 
 The `adaptive-cell` option is under development and does not have the validation coverage of fixed-step and adaptive integration. Low-level integrator mixins and `ode45_cell` are implementation machinery rather than model entry points.
 

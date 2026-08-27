@@ -102,6 +102,9 @@ classdef TestCompiledKernelIntegration < matlab.unittest.TestCase
             kernelExtensions = testCase.selection.postSelectionExtensions;
             testCase.verifyEqual(string(runtimeExtensions.losslessOutputGraphs),"issue-273");
             testCase.verifyEqual(string(runtimeExtensions.stableSourceAPI),"issue-249");
+            testCase.verifyEqual(string(runtimeExtensions.barotropicQGKernel),"issue-280");
+            testCase.verifyEqual(string(runtimeExtensions.barotropicQGForcing),"issue-281");
+            testCase.verifyEqual(string(runtimeExtensions.barotropicQGModelOutputRestart),"issue-282");
             for iField = 1:numel(provenanceFields)
                 field = provenanceFields(iField);
                 testCase.verifyEqual(string(runtimeExtensions.(field)),expectedProvenance(iField),field);
