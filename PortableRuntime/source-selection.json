@@ -47,6 +47,7 @@
     "stableSourceAPI": "issue-249",
     "barotropicQGKernel": "issue-280",
     "barotropicQGForcing": "issue-281",
+    "barotropicQGModelOutputRestart": "issue-282",
     "sourceAPIVersion": "1.0",
     "preFacadeBaseline": "5940f4e4e206fbfb9a6cb4760af2ba2347e3571f",
     "preGeneralizationBaseline": "900f98eb28629a56b7a2d26da38c597c7a709a96",

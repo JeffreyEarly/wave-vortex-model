@@ -41,6 +41,11 @@ public:
          std::unique_ptr<WVFFTEngine> engine,
          std::unique_ptr<WVObserverOutputEvaluationService> &service,
          WVFieldEvaluationService *borrowedFieldEvaluationService = nullptr);
+  static WVKernelStatus
+  create(bool isDynamicsLinear,
+         const WVPortableObserverDescriptor &descriptor,
+         WVFieldEvaluationService &fieldEvaluationService,
+         std::unique_ptr<WVObserverOutputEvaluationService> &service);
 
   WVKernelStatus observationSchema(
       const WVObserverRecord &observer,
@@ -59,6 +64,7 @@ public:
   WVKernelStatus useFieldEvaluationService(
       WVFieldEvaluationService &fieldEvaluationService);
   WVKernelStatus prepareInitial(const WVState &state) override;
+  WVKernelStatus prepareInitial(const WVIntegrationState &state) override;
   WVKernelStatus prepare(const WVOutputEvent &event) override;
   void complete(const WVOutputEvent &event) noexcept override;
   std::size_t occurrenceWorkspaceRetainedBytes() const noexcept override;

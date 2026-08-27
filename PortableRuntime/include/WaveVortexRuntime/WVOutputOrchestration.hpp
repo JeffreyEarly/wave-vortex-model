@@ -357,6 +357,7 @@ private:
   WVCheckpoint checkpoint_;
   std::vector<WVCheckpointOutputRecord> records_;
   WVCheckpointOutputSinkMetrics metrics_;
+  const WVIntegrationStateLayout *layout_ = nullptr;
   bool preflighted_ = false;
 };
 

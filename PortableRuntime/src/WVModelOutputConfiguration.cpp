@@ -545,9 +545,6 @@ WVKernelStatus WVModelOutputConfiguration::compile(
         return status;
     }
     if (!observationSchemas.empty()) {
-      if (planningConfiguration == nullptr)
-        return invalid("Declared observation schemas require a transform "
-                       "configuration for semantic preflight.");
       WVObserverOutputPlanningContext planningContext;
       planningContext.configuration = planningConfiguration;
       planningContext.stateBlocks = observerRecord.stateBlocks.data();

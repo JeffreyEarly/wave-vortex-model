@@ -9,8 +9,10 @@ namespace wavevortex::runtime::detail {
 // source-linked extensions through the public include tree.
 class WVModelInternalAccess final {
 public:
-  static WVConstantStratificationIntegrationSystem &
+  static WVIntegrationSystem &
   integrationSystem(WVModel &model) noexcept;
+  static WVTransformConstantStratificationKernel &
+  constantStratificationKernel(WVModel &model) noexcept;
   static WVTimeIntegrator &integrator(WVModel &model) noexcept;
 };
 

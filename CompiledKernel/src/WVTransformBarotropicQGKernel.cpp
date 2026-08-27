@@ -943,9 +943,16 @@ WVKernelStatus WVTransformBarotropicQGKernel::spatialDerivative(
                                : static_cast<std::int64_t>(iL) -
                                      static_cast<std::int64_t>(
                                          configuration.Ny);
-        const double wavenumber = 2.0 * pi *
-            static_cast<double>(xDerivative ? kMode : lMode) /
-            (xDerivative ? configuration.Lx : configuration.Ly);
+        const bool derivativeNyquist =
+            xDerivative
+                ? configuration.Nx % 2 == 0 && iK == configuration.Nx / 2
+                : configuration.Ny % 2 == 0 && iL == configuration.Ny / 2;
+        const double wavenumber =
+            derivativeNyquist
+                ? 0.0
+                : 2.0 * pi *
+                      static_cast<double>(xDerivative ? kMode : lMode) /
+                      (xDerivative ? configuration.Lx : configuration.Ly);
         halfSpectrumScratch_[row] = multiply(
             halfSpectrumScratch_[row], {0.0, normalization * wavenumber});
     }
@@ -956,6 +963,51 @@ WVKernelStatus WVTransformBarotropicQGKernel::spatialDerivative(
     ++metrics_.executionCount;
     ++metrics_.forwardExecutionCount;
     ++metrics_.executionCount;
+    ++metrics_.inverseExecutionCount;
+    return WVKernelStatus::ok();
+}
+
+WVKernelStatus WVTransformBarotropicQGKernel::antialiasScalarInPlace(
+    WVRealView& scalar) {
+    const auto& configuration = descriptor_.configuration();
+    const auto& mappings = descriptor_.halfSpectrumMappings();
+    const auto halfRows = mappings.NxHalf * configuration.Ny;
+    auto status = plans_[forwardPlan]->execute(
+        scalar.data, halfSpectrumScratch_.data());
+    if (!status) return status;
+    const double normalization = 1.0 /
+        static_cast<double>(descriptor_.spatialShape().elementCount());
+    const double maximumK = 2.0 * pi *
+        static_cast<double>(configuration.Nx / 2) / configuration.Lx;
+    const double cutoff = 2.0 * maximumK / 3.0;
+    for (std::size_t row = 0; row < halfRows; ++row) {
+        const auto iK = row % mappings.NxHalf;
+        const auto iL = row / mappings.NxHalf;
+        const auto lMode = iL < (configuration.Ny + 1) / 2
+            ? static_cast<std::int64_t>(iL)
+            : static_cast<std::int64_t>(iL) -
+                  static_cast<std::int64_t>(configuration.Ny);
+        const double k = 2.0 * pi * static_cast<double>(iK) /
+                         configuration.Lx;
+        const double l = 2.0 * pi * static_cast<double>(lMode) /
+                         configuration.Ly;
+        const bool excludedNyquist =
+            (configuration.Nx % 2 == 0 && iK == configuration.Nx / 2) ||
+            (configuration.Ny % 2 == 0 && iL == configuration.Ny / 2);
+        const double scale =
+            excludedNyquist ||
+                    (configuration.shouldAntialias &&
+                     std::hypot(k, l) > cutoff)
+                ? 0.0
+                : normalization;
+        halfSpectrumScratch_[row] = multiply(halfSpectrumScratch_[row], scale);
+    }
+    completeHermitianBoundaries(halfSpectrumScratch_.data(), mappings, 1);
+    status = plans_[inversePlan]->execute(halfSpectrumScratch_.data(),
+                                          scalar.data);
+    if (!status) return status;
+    metrics_.executionCount += 2;
+    ++metrics_.forwardExecutionCount;
     ++metrics_.inverseExecutionCount;
     return WVKernelStatus::ok();
 }
@@ -1234,6 +1286,111 @@ WVKernelStatus WVTransformBarotropicQGKernel::uvMax(
             maximumSpeed,
             std::sqrt(u.data[index] * u.data[index] +
                       v.data[index] * v.data[index]));
+    return WVKernelStatus::ok();
+}
+
+WVKernelStatus WVTransformBarotropicQGKernel::advectScalar(
+    const WVComplexConstView& A0, const WVRealConstView& scalar,
+    bool shouldAntialias, WVRealView& rightHandSide) {
+    if (executing_)
+        return {WVKernelStatusCode::reentrantExecution,
+                "The Barotropic QG kernel is not reentrant."};
+    auto status = validateSpectral(A0, descriptor_.spectralShape(), "A0");
+    if (!status) return status;
+    status = validateSpatial(scalar, descriptor_.spatialShape(), "scalar");
+    if (!status) return status;
+    status = validateSpatial(rightHandSide, descriptor_.spatialShape(),
+                             "scalar RHS");
+    if (!status) return status;
+    const auto R = descriptor_.spatialShape().elementCount();
+    if (overlaps(scalar.data, R * sizeof(double), rightHandSide.data,
+                 R * sizeof(double)))
+        return {WVKernelStatusCode::overlappingArrays,
+                "Barotropic QG tracer state and RHS must not overlap."};
+    ExecutionGuard guard(executing_);
+    WVRealView u{realScratch_.data(), descriptor_.spatialShape()};
+    WVRealView v{realScratch_.data() + R, descriptor_.spatialShape()};
+    WVRealView dx{realScratch_.data() + 2 * R,
+                  descriptor_.spatialShape()};
+    WVRealView dy{realScratch_.data() + 3 * R,
+                  descriptor_.spatialShape()};
+    status = inverse(A0, descriptor_.modes().uFactor.data(), u);
+    if (!status) return status;
+    status = inverse(A0, descriptor_.modes().vFactor.data(), v);
+    if (!status) return status;
+    status = spatialDerivative(scalar, true, dx);
+    if (!status) return status;
+    status = spatialDerivative(scalar, false, dy);
+    if (!status) return status;
+    for (std::size_t index = 0; index < R; ++index)
+        rightHandSide.data[index] =
+            -(u.data[index] * dx.data[index] +
+              v.data[index] * dy.data[index]);
+    if (shouldAntialias)
+        return antialiasScalarInPlace(rightHandSide);
+    return WVKernelStatus::ok();
+}
+
+WVKernelStatus WVTransformBarotropicQGKernel::prepareAdvectionFields(
+    const WVComplexConstView& A0,
+    WVBarotropicQGOperationWorkspace& workspace,
+    WVRealFieldBundleConstView& fields) {
+    fields = {};
+    if (executing_)
+        return {WVKernelStatusCode::reentrantExecution,
+                "The Barotropic QG kernel is not reentrant."};
+    auto status = validateSpectral(A0, descriptor_.spectralShape(), "A0");
+    if (!status) return status;
+    ExecutionGuard guard(executing_);
+    status = ensureForcingFields(A0, false, workspace);
+    if (!status) return status;
+    const auto& configuration = descriptor_.configuration();
+    fields = {realScratch_.data(),
+              {configuration.Nx, configuration.Ny, 1, 2}};
+    return WVKernelStatus::ok();
+}
+
+WVKernelStatus WVTransformBarotropicQGKernel::advectScalarWithAdvectionFields(
+    const WVRealConstView& scalar,
+    const WVRealFieldBundleConstView& advectionFields,
+    bool shouldAntialias, WVRealView& rightHandSide) {
+    if (executing_)
+        return {WVKernelStatusCode::reentrantExecution,
+                "The Barotropic QG kernel is not reentrant."};
+    auto status = validateSpatial(scalar, descriptor_.spatialShape(), "scalar");
+    if (!status) return status;
+    status = validateSpatial(rightHandSide, descriptor_.spatialShape(),
+                             "scalar RHS");
+    if (!status) return status;
+    const auto& configuration = descriptor_.configuration();
+    if (advectionFields.data == nullptr ||
+        advectionFields.shape.first != configuration.Nx ||
+        advectionFields.shape.second != configuration.Ny ||
+        advectionFields.shape.third != 1 ||
+        advectionFields.shape.fourth != 2)
+        return {WVKernelStatusCode::invalidShape,
+                "Barotropic QG advection fields must have shape [Nx,Ny,1,2]."};
+    const auto R = descriptor_.spatialShape().elementCount();
+    if (overlaps(scalar.data, R * sizeof(double), rightHandSide.data,
+                 R * sizeof(double)))
+        return {WVKernelStatusCode::overlappingArrays,
+                "Barotropic QG tracer state and RHS must not overlap."};
+    ExecutionGuard guard(executing_);
+    WVRealView dx{realScratch_.data() + 2 * R,
+                  descriptor_.spatialShape()};
+    WVRealView dy{realScratch_.data() + 3 * R,
+                  descriptor_.spatialShape()};
+    status = spatialDerivative(scalar, true, dx);
+    if (!status) return status;
+    status = spatialDerivative(scalar, false, dy);
+    if (!status) return status;
+    const double* u = advectionFields.data;
+    const double* v = u + R;
+    for (std::size_t index = 0; index < R; ++index)
+        rightHandSide.data[index] =
+            -(u[index] * dx.data[index] + v[index] * dy.data[index]);
+    if (shouldAntialias)
+        return antialiasScalarInPlace(rightHandSide);
     return WVKernelStatus::ok();
 }
 

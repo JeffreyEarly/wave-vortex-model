@@ -1,19 +1,19 @@
 ---
 layout: default
-title: Portable constant-stratification runtime
+title: Portable runtime
 parent: User guide
 nav_order: 5
 ---
 
-# Portable constant-stratification runtime
+# Portable runtime
 
-WaveVortexModel includes an optional MATLAB-independent runtime for advanced constant-stratification workflows. MATLAB remains the primary interface. The portable program can restore a supported saved `WVModel` graph, continue its observing systems and output schedules in place, and produce MATLAB-compatible restart data without distributing a binary.
+WaveVortexModel includes an optional MATLAB-independent runtime for advanced constant-stratification and equivalent-barotropic QG workflows. MATLAB remains the primary interface. The portable program can restore a supported saved `WVModel` graph, continue its observing systems and output schedules in place, and produce MATLAB-compatible restart data without distributing a binary.
 
 There are two distinct compiled paths. Within MATLAB, select the [compiled nonlinear-flux preview](/users-guide/compiled-preview.html) by constructing a compatible transform with `computationalBackend="compiled"`; the rest of `WVModel` remains MATLAB. The standalone path described here starts at a saved model-output file, runs integration and supported observers outside MATLAB, and writes the same file so MATLAB can resume with `WVModel.modelFromFile`.
 
 ## Supported scope
 
-The end-to-end runtime supports hydrostatic and nonhydrostatic constant stratification, fixed-step RK4, MATLAB `ode23`-compatible Bogacki--Shampine integration, MATLAB `ode45`-compatible Dormand--Prince integration, and MATLAB `ode78`-compatible Verner integration. The accepted solutions are third order for `adaptive-rk23`, fifth order for `adaptive-rk45`, and eighth order for `adaptive-rk78`; their embedded error estimates are second, fourth, and seventh order, respectively. All three adaptive methods provide method-owned continuous output; RK78 uses Verner's seventh-order continuous extension and computes its four additional stages only for accepted steps that contain an interior output request. The source tree also contains a MATLAB-matched Barotropic QG numerical kernel and compact `A0` integration system. That focused system executes nonlinear PV advection, adaptive damping, fixed and narrow-band amplitudes, linear and quadratic bottom friction, and beta-plane PV advection, but it is not yet connected to `WVModel`, observers, output, or restart and therefore is not selectable through the command-line workflows on this page. The end-to-end runtime's frozen forcing subset is:
+The end-to-end runtime supports hydrostatic and nonhydrostatic constant stratification and equivalent-barotropic QG with fixed-step RK4, MATLAB `ode23`-compatible Bogacki--Shampine integration, MATLAB `ode45`-compatible Dormand--Prince integration, and MATLAB `ode78`-compatible Verner integration. The accepted solutions are third order for `adaptive-rk23`, fifth order for `adaptive-rk45`, and eighth order for `adaptive-rk78`; their embedded error estimates are second, fourth, and seventh order, respectively. All three adaptive methods provide method-owned continuous output; RK78 uses Verner's seventh-order continuous extension and computes its four additional stages only for accepted steps that contain an interior output request. Barotropic QG uses MATLAB's compact `A0` `kl` ordering through `WVModel`, forcing, dense output, observers, multi-file NetCDF output, append, and restart. Its resolved forcing subset includes nonlinear PV advection, adaptive damping, fixed and narrow-band amplitudes, linear and quadratic bottom friction, and beta-plane PV advection. The end-to-end runtime's frozen forcing identities are:
 
 - `WVNonlinearAdvection`
 - `WVAdaptiveDamping`
@@ -23,9 +23,9 @@ The end-to-end runtime supports hydrostatic and nonhydrostatic constant stratifi
 - `WVPseudoTopographicWaveGeneration`
 - `WVBetaPlanePVAdvection`
 
-Its qualified built-in observer records are `WVCoefficients`, `WVEulerianFields`, `WVMooring`, `WVLagrangianParticles`, and `WVTracer`. Arbitrary MATLAB subclasses are rejected before execution. MATLAB authors multi-file, named-group output; the C++ command line executes that recovered graph without independently configuring it.
+Constant stratification supports the five qualified built-in observer records: `WVCoefficients`, `WVEulerianFields`, `WVMooring`, `WVLagrangianParticles`, and `WVTracer`. Barotropic QG supports compact `WVCoefficients`, every MATLAB-valid two-dimensional `WVEulerianFields` value, XY `WVLagrangianParticles` with linear or spline sampling, and rank-2 `WVTracer` state. It rejects moorings, vertical particles, rank-3 tracers, pseudo-topographic wave generation, arbitrary MATLAB subclasses, and later QG closures before execution. MATLAB authors multi-file, named-group output; the C++ command line executes that recovered graph without independently configuring it.
 
-The tested interoperability boundary includes linear and nonlinear dynamics, the frozen forcing types listed above in their persisted execution order, fixed RK4, `adaptive-rk23`, `adaptive-rk45`, `adaptive-rk78` with seventh-order continuous output, evenly spaced output groups, shared observer identities, particle and tracer state, and in-place append progress. Other transform families, custom forcing or observer subclasses, two-dimensional tracers, and newly configured multi-file graphs are rejected before execution. There is no silent fallback to a reduced checkpoint or MATLAB implementation.
+The tested interoperability boundary includes linear and nonlinear dynamics, transform-valid forcing in persisted execution order, fixed RK4, `adaptive-rk23`, `adaptive-rk45`, `adaptive-rk78` with seventh-order continuous output, evenly spaced output groups, shared observer identities, particle and tracer state, multi-file and multi-group schedules, latest-complete sibling selection, and in-place append progress. Other transform families, custom forcing or observer subclasses, unsupported three-dimensional QG state, and newly configured scientific graphs are rejected before execution. There is no silent fallback to a reduced checkpoint or MATLAB implementation.
 
 The stabilized C++ boundary is `wave-vortex-portable-source-api-v1`, version 1.0. It supports statically linked extensions and reusable-runner applications built from one explicitly selected WaveVortexModel checkout. Change the checkout only as a deliberate dependency update, then recompile the runtime, every extension, and the runner together. This is source compatibility, not a binary plug-in ABI: there is no dynamic discovery, separately loadable extension, cross-build binary compatibility, or distributed runtime binary. Scientific and persisted pair, schedule, observation-schema, run-request, and kernel versions are independent and must each match exactly.
 

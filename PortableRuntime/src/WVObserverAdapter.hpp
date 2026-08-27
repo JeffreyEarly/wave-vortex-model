@@ -24,7 +24,8 @@ WVKernelStatus addBuiltInObserverFactories(
     wavevortex::runtime::WVExtensionCatalogBuilder &builder);
 WVKernelStatus canonicalCoefficientObserver(
     std::string identifier, const WVExtensionCatalog &catalog,
-    WVObserverRecord &observer);
+    WVObserverRecord &observer,
+    std::vector<std::string> coefficientFamilies = {"Ap", "Am", "A0"});
 
 const char *movingFieldChannelName(WVMovingFieldChannel channel) noexcept;
 std::vector<WVMovingFieldChannel>

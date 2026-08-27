@@ -675,7 +675,10 @@ void WVBarotropicQGForcingEngine::initializeOutputWithZeros(
 }
 
 WVKernelStatus WVBarotropicQGForcingEngine::evaluateRightHandSide(
-    const WVComplexConstView &A0, WVComplexView &F0) {
+    const WVComplexConstView &A0, WVComplexView &F0,
+    WVRealFieldBundleConstView *advectionFields) {
+  if (advectionFields != nullptr)
+    *advectionFields = {};
   if (executing_)
     return {WVKernelStatusCode::reentrantExecution,
             "Barotropic QG forcing-engine execution is not reentrant."};
@@ -707,6 +710,12 @@ WVKernelStatus WVBarotropicQGForcingEngine::evaluateRightHandSide(
   }
   if (!context.outputInitialized_)
     initializeOutputWithZeros(F0);
+  if (advectionFields != nullptr) {
+    const auto status = kernel_->prepareAdvectionFields(
+        A0, context.workspace_, *advectionFields);
+    if (!status)
+      return status;
+  }
   metrics_.physicalFieldReconstructionCount +=
       context.workspace_.physicalFieldReconstructionCount;
   metrics_.physicalFieldReuseCount +=

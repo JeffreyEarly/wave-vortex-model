@@ -2,7 +2,7 @@
 #include "WaveVortexRuntime/WVExtensionCatalog.hpp"
 
 #include "WVLegacyObservationNetCDFAdapter.hpp"
-#include "WVModelOutputNetCDFSchema.hpp"
+#include "WVModelOutputTransformAdapters.hpp"
 #include "WVNetCDF.hpp"
 
 #include <algorithm>
@@ -988,6 +988,8 @@ validateReadableHistory(int group, const WVOutputScheduleRecord &schedule,
 WVCheckpointStatus parseOutputFile(const std::string &path,
                                    const WVExtensionCatalog &catalog,
                                    double continuationTime,
+                                   const WVTransformStateDescription
+                                       &stateDescription,
                                    WVPortableObserverRecord &portable,
                                    std::vector<WVInspectedObservationSchema>
                                        &observationSchemas,
@@ -1089,21 +1091,24 @@ WVCheckpointStatus parseOutputFile(const std::string &path,
                                       group.schedule.finalTime, groupPath);
     if (!result)
       return result;
-    int coefficientVariable = -1;
-    bool hasCoefficients = false;
-    result = detail::variableIdIfPresent(
-        groupId, "Ap_real", coefficientVariable, hasCoefficients, groupPath);
-    if (!result)
-      return result;
-    if (!hasCoefficients) {
-      result = detail::variableIdIfPresent(groupId, "Ap", coefficientVariable,
-                                           hasCoefficients, groupPath);
+    bool hasCoefficients = !stateDescription.coefficientFamilies.empty();
+    for (const auto &family : stateDescription.coefficientFamilies) {
+      int coefficientVariable = -1;
+      bool hasFamily = false;
+      result = detail::variableIdIfPresent(
+          groupId, family.identifier + "_real", coefficientVariable,
+          hasFamily, groupPath);
       if (!result)
         return result;
+      if (!hasFamily) {
+        result = detail::variableIdIfPresent(
+            groupId, family.identifier, coefficientVariable, hasFamily,
+            groupPath);
+        if (!result)
+          return result;
+      }
+      hasCoefficients = hasCoefficients && hasFamily;
     }
-    group.containsCompleteCoefficientRestart = hasCoefficients;
-    restartGroupCount += hasCoefficients ? 1 : 0;
-
     int metadataRoot = -1;
     const int metadataLookup =
         nc_inq_ncid(groupId, "observingSystems", &metadataRoot);
@@ -1158,6 +1163,9 @@ WVCheckpointStatus parseOutputFile(const std::string &path,
       return observerResult;
     };
     std::set<int> parsedObservers;
+    bool hasCoefficientObserver =
+        detail::persistedObserverCarriesCoefficientState(metadataRoot,
+                                                         catalog);
     for (const int observerGroup : observers) {
       std::string observerClass;
       result =
@@ -1168,6 +1176,7 @@ WVCheckpointStatus parseOutputFile(const std::string &path,
       if (present &&
           detail::persistedObserverCarriesCoefficientState(observerGroup,
                                                            catalog)) {
+        hasCoefficientObserver = true;
         result = parseOne(observerGroup);
         if (!result)
           return result;
@@ -1183,6 +1192,12 @@ WVCheckpointStatus parseOutputFile(const std::string &path,
     }
     for (const int observerGroup : observers)
       group.observerIdentifiers.push_back(parsedIdentifiers.at(observerGroup));
+
+    group.containsCompleteCoefficientRestart =
+        detail::modelOutputGroupCarriesCompleteCoefficientRestart(
+            stateDescription, hasCoefficients, hasCoefficientObserver);
+    restartGroupCount +=
+        group.containsCompleteCoefficientRestart ? 1 : 0;
 
     WVOutputScheduleCursor continuation;
     WVOutputDestinationProgress committed;
@@ -1234,8 +1249,8 @@ WVModelOutputNetCDFSink::inspect(const std::vector<std::string> &paths,
         selectedCheckpoint = std::move(checkpoint);
         selectedPath = path;
       } else {
-        if (!sameTransformConfiguration(selectedCheckpoint.configuration,
-                                        checkpoint.configuration))
+        if (!detail::sameModelOutputTransformConfiguration(
+                selectedCheckpoint, checkpoint))
           return failure(WVCheckpointStatusCode::schemaMismatch,
                          "Output files do not describe one model.", path);
         if (checkpoint.t > selectedCheckpoint.t) {
@@ -1250,7 +1265,8 @@ WVModelOutputNetCDFSink::inspect(const std::vector<std::string> &paths,
       WVOutputFileRecord fileRecord;
       bool isDynamicsLinear = false;
       auto result = parseOutputFile(
-          path, catalog, selectedCheckpoint.t, candidate.observerRecord,
+          path, catalog, selectedCheckpoint.t,
+          selectedCheckpoint.stateDescription, candidate.observerRecord,
           candidate.observationSchemas, candidate.scheduleContinuations,
           candidate.destinationProgress, fileRecord, isDynamicsLinear);
       if (!result)
@@ -1322,12 +1338,15 @@ WVCheckpointStatus WVModelOutputNetCDFSink::restoreState(
             inspection.latestRestart.metadata.selectedStateIndex));
     if (!result)
       return result;
-    if (restoredCheckpoint.state.t != inspection.latestRestart.t ||
+    if (restoredCheckpoint.transformKind !=
+            inspection.latestRestart.transformKind ||
+        restoredCheckpoint.state.t != inspection.latestRestart.t ||
         restoredCheckpoint.state.t0 != inspection.latestRestart.t0 ||
-        restoredCheckpoint.state.coefficients.shape.rows !=
-            inspection.latestRestart.coefficientShape.rows ||
-        restoredCheckpoint.state.coefficients.shape.columns !=
-            inspection.latestRestart.coefficientShape.columns)
+        restoredCheckpoint.stateDescription.transformIdentifier !=
+            inspection.latestRestart.stateDescription.transformIdentifier ||
+        restoredCheckpoint.stateDescription.coefficientFamilies.size() !=
+            inspection.latestRestart.stateDescription.coefficientFamilies
+                .size())
       return failure(WVCheckpointStatusCode::schemaMismatch,
                      "Selected restart changed after graph inspection.",
                      inspection.latestRestartPath);

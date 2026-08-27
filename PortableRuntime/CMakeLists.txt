@@ -29,7 +29,7 @@ add_library(WaveVortexPortableRuntime STATIC
     src/WVForcingContracts.cpp
     src/WVNetCDF.cpp
     src/WVForcingScheduleDecoder.cpp
-    src/WVCheckpointReader.cpp
+    src/WVCheckpointTransformAdapters.cpp
     src/WVCheckpointWriter.cpp
     src/WVForcingEngine.cpp
     src/WVIntegrationState.cpp
@@ -37,6 +37,8 @@ add_library(WaveVortexPortableRuntime STATIC
     include/WaveVortexRuntime/WVBarotropicQGForcingEngine.hpp
     src/WVBarotropicQGForcingEngine.cpp
     src/WVBarotropicQGIntegrationSystem.cpp
+    src/WVBarotropicQGFieldEvaluationAdapter.cpp
+    src/WVOutputTransformAdapters.cpp
     src/WVOutputOrchestration.cpp
     src/WVObserverAdapter.cpp
     src/WVLegacyObserverCompatibility.hpp
@@ -45,13 +47,14 @@ add_library(WaveVortexPortableRuntime STATIC
     src/WVFieldEvaluationService.cpp
     src/WVConstantStratificationIntegrationSystem.cpp
     src/WVObserverOutputEvaluationService.cpp
-    src/WVModelOutputNetCDFSchema.cpp
+    src/WVModelOutputTransformAdapters.cpp
     src/WVModelOutputNetCDFReader.cpp
     src/WVLegacyObservationNetCDFAdapter.cpp
     src/WVModelOutputNetCDFWriter.cpp
     src/WVModelOutputConfiguration.cpp
     src/WVModelInternalAccess.hpp
     src/WVModel.cpp
+    src/WVModelTransformAdapters.cpp
 )
 add_library(WaveVortex::PortableRuntime ALIAS WaveVortexPortableRuntime)
 
@@ -231,6 +234,7 @@ if(BUILD_TESTING)
     wv_add_runtime_test(TestWVUnifiedIntegration TestWVUnifiedIntegration.cpp unified-integration)
     wv_add_runtime_test(TestWVBarotropicQGIntegration TestWVBarotropicQGIntegration.cpp barotropic-qg-integration)
     wv_add_runtime_test(TestWVBarotropicQGForcing TestWVBarotropicQGForcing.cpp barotropic-qg-forcing)
+    wv_add_runtime_test(TestWVBarotropicQGModelOutput TestWVBarotropicQGModelOutput.cpp barotropic-qg-model-output)
     wv_add_runtime_test(TestWVOutputOrchestration TestWVOutputOrchestration.cpp output-orchestration)
     wv_add_runtime_test(TestWVOutputOccurrence TestWVOutputOccurrence.cpp output-occurrence)
     wv_add_runtime_test(TestWVModelOutputNetCDF TestWVModelOutputNetCDF.cpp model-output-netcdf)

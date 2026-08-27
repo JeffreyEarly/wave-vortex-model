@@ -377,4 +377,36 @@ WVCheckpointStatus decodeForcingSchedule(
     return WVCheckpointStatus::ok();
 }
 
+WVCheckpointStatus decodeForcingSchedule(
+    const std::vector<WVForcingGroupSource>& sources,
+    const WVTransformBarotropicQGConfiguration& configuration,
+    std::size_t coefficientCount,
+    const WVExtensionCatalog& catalog,
+    WVFrozenForcingSchedule& schedule) {
+    WVTransformConstantStratificationConfiguration horizontal;
+    horizontal.Nx = configuration.Nx;
+    horizontal.Ny = configuration.Ny;
+    horizontal.Lx = configuration.Lx;
+    horizontal.Ly = configuration.Ly;
+    auto result = decodeForcingSchedule(sources, horizontal, coefficientCount,
+                                        catalog, schedule);
+    if (!result)
+        return result;
+    // MATLAB persists forcing identity and construction order, but not the
+    // transform-specific execution stage. Resolve the QG stage from the
+    // frozen registration before the schedule reaches the QG engine.
+    for (auto& entry : schedule.entries) {
+        const auto* registration = catalog.forcings().registration(
+            entry.typeIdentifier, entry.contractVersion);
+        if (registration != nullptr)
+            entry.stage = registration->barotropicQGStage;
+    }
+    std::stable_sort(schedule.entries.begin(), schedule.entries.end(), [](const auto& left, const auto& right) {
+        if (stageRank(left.stage) != stageRank(right.stage)) return stageRank(left.stage) < stageRank(right.stage);
+        if (left.priority != right.priority) return left.priority < right.priority;
+        return left.ordinal < right.ordinal;
+    });
+    return WVCheckpointStatus::ok();
+}
+
 } // namespace wavevortex::runtime::detail

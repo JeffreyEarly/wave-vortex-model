@@ -1,6 +1,8 @@
 #pragma once
 
 #include "WaveVortexRuntime/WVBarotropicQGForcingEngine.hpp"
+#include "WaveVortexRuntime/WVConstantStratificationIntegrationSystem.hpp"
+#include "WaveVortexRuntime/WVFieldEvaluationService.hpp"
 #include "WaveVortexRuntime/WVIntegrationContracts.hpp"
 
 #include <memory>
@@ -49,6 +51,13 @@ public:
   static WVKernelStatus create(
       const WVTransformBarotropicQGConfiguration &configuration,
       const WVFrozenForcingSchedule &schedule,
+      const WVPortableObserverDescriptor &descriptor,
+      std::shared_ptr<const WVExtensionCatalog> catalog,
+      std::unique_ptr<WVFFTEngine> engine,
+      std::unique_ptr<WVBarotropicQGIntegrationSystem> &system);
+  static WVKernelStatus create(
+      const WVTransformBarotropicQGConfiguration &configuration,
+      const WVFrozenForcingSchedule &schedule,
       std::shared_ptr<const WVExtensionCatalog> catalog,
       std::unique_ptr<WVFFTEngine> engine,
       std::unique_ptr<WVBarotropicQGIntegrationSystem> &system);
@@ -75,6 +84,14 @@ public:
       const WVIntegrationState &state, double cfl,
       WVFixedTimeStepCandidates &candidates) override;
   std::size_t persistentBytes() const noexcept override;
+  WVKernelStatus initializeParticleState(
+      WVMutableIntegrationState &state) const;
+  WVFieldEvaluationService *fieldEvaluationService() noexcept override {
+    return fields_.get();
+  }
+  const WVIntegratedObserverMetrics &metrics() const noexcept {
+    return observerMetrics_;
+  }
 
   const WVTransformBarotropicQGKernel &kernel() const noexcept {
     return forcingEngine_->kernel();
@@ -90,9 +107,38 @@ public:
   }
 
 private:
+  static WVKernelStatus createImpl(
+      const WVTransformBarotropicQGConfiguration &configuration,
+      const WVFrozenForcingSchedule &schedule,
+      const WVPortableObserverDescriptor *descriptor,
+      std::shared_ptr<const WVExtensionCatalog> catalog,
+      std::unique_ptr<WVFFTEngine> engine,
+      std::unique_ptr<WVBarotropicQGIntegrationSystem> &system);
+  struct Particle {
+    WVObserverRecord record;
+    std::size_t xBlock = 0;
+    std::size_t yBlock = 0;
+    std::size_t positionOffset = 0;
+    std::size_t particleCount = 0;
+    std::size_t uOutput = 0;
+    std::size_t vOutput = 0;
+  };
+  struct Tracer {
+    WVObserverRecord record;
+    std::size_t stateBlock = 0;
+  };
   WVBarotropicQGIntegrationSystem() = default;
   WVIntegrationStateLayout layout_;
   std::unique_ptr<WVBarotropicQGForcingEngine> forcingEngine_;
+  std::unique_ptr<WVFieldEvaluationService> fields_;
+  WVMovingFieldEvaluationPlan velocityPlan_;
+  std::vector<Particle> particles_;
+  std::vector<Tracer> tracers_;
+  std::vector<double> x_;
+  std::vector<double> y_;
+  std::vector<std::vector<double>> velocityStorage_;
+  std::vector<WVFieldOutputView> velocityViews_;
+  WVIntegratedObserverMetrics observerMetrics_;
   bool executing_ = false;
 };
 

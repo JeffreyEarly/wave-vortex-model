@@ -24,6 +24,35 @@ foreach(relative_path IN LISTS generic_sources)
     endforeach()
 endforeach()
 
+# Transform-specific coefficient names, legacy shapes, and persisted-transform
+# dispatch belong only in explicitly named adapters. These generic model,
+# orchestration, reader, writer, and CLI sources consume resolved layouts and
+# services.
+set(generic_boundary_sources
+    "PortableRuntime/src/WVModel.cpp"
+    "PortableRuntime/src/WVOutputOrchestration.cpp"
+    "PortableRuntime/src/WVModelOutputNetCDFReader.cpp"
+    "PortableRuntime/src/WVModelOutputNetCDFWriter.cpp"
+    "PortableRuntime/app/WaveVortexRun.cpp")
+foreach(relative_path IN LISTS generic_boundary_sources)
+    file(READ "${WV_REPOSITORY_ROOT}/${relative_path}" source)
+    foreach(token
+            "\"Ap\""
+            "\"Am\""
+            "\"A0\""
+            "coefficients.Ap"
+            "coefficients.Am"
+            "coefficients.A0"
+            "hasLegacyCoefficientTriple()"
+            "coefficientShape()")
+        string(FIND "${source}" "${token}" position)
+        if(NOT position EQUAL -1)
+            message(FATAL_ERROR
+                "Generic runtime boundary contains transform-specific coefficient behavior '${token}': ${relative_path}")
+        endif()
+    endforeach()
+endforeach()
+
 file(READ
     "${WV_REPOSITORY_ROOT}/PortableRuntime/src/WVBarotropicQGIntegrationSystem.cpp"
     system_source)

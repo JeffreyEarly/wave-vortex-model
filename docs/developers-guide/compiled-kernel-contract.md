@@ -10,7 +10,7 @@ mathjax: true
 
 WaveVortexModel provides portable C++ numerical cores for the constant-stratification and equivalent-barotropic quasigeostrophic calculations. The contract deliberately contains no MATLAB, MEX, FFTW, or NetCDF types. Embeddings supply transform providers and ownership through separate adapters.
 
-The optimized MATLAB implementation remains the default and the public performance baseline. Constant-stratification transforms may explicitly select the compiled preview after locally building its native provider. The Barotropic QG implementation is a focused source-level numerical kernel and integration system; it is not a new MATLAB backend selector or a complete standalone `WVModel` persistence path.
+The optimized MATLAB implementation remains the default and the public performance baseline. Constant-stratification transforms may explicitly select the compiled preview after locally building its native provider. The Barotropic QG implementation is not a new MATLAB backend selector; its source-level kernel is also composed into the standalone `WVModel`, observer, output, and restart path.
 
 ## Correspondence with MATLAB
 
