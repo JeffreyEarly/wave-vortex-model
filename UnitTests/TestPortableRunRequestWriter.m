@@ -21,6 +21,40 @@ classdef TestPortableRunRequestWriter < matlab.unittest.TestCase
     end
 
     methods (Test, TestTags="full")
+        function writesMinimalV2RequestWithRuntimeDefaults(testCase)
+            request = fullfile(testCase.TemporaryFolder,"minimal request.json");
+            WVModel.writePortableRunRequest(request,testCase.ModelPath,finalTime=86400);
+
+            document = jsondecode(fileread(request));
+            testCase.verifyEqual(string(document.schemaIdentifier),"wave-vortex-run-request-v2")
+            testCase.verifyEqual(document.schemaVersion,2)
+            testCase.verifyEqual(string(fieldnames(document.integration)),"finalTime")
+            testCase.verifyEqual(document.integration.finalTime,86400)
+            testCase.verifyEmpty(fieldnames(document.execution))
+            testCase.verifyEqual(string(document.output.policy),"append")
+
+            firstBytes = testCase.fileBytes(request);
+            WVModel.writePortableRunRequest(request,testCase.ModelPath,finalTime=86400);
+            testCase.verifyEqual(testCase.fileBytes(request),firstBytes)
+        end
+
+        function writesOnlyExplicitV2Overrides(testCase)
+            request = fullfile(testCase.TemporaryFolder,"overrides.json");
+            WVModel.writePortableRunRequest(request,testCase.ModelPath,finalTime=86400, ...
+                method="adaptive-rk45",initialStep=20,maximumStep=300, ...
+                relativeTolerance=1e-7,absoluteToleranceScale=1e-9, ...
+                fftProvider="reference",threads=1);
+
+            document = jsondecode(fileread(request));
+            testCase.verifyEqual(string(document.integration.method),"adaptive-rk45")
+            testCase.verifyEqual(document.integration.initialStep,20)
+            testCase.verifyEqual(document.integration.maximumStep,300)
+            testCase.verifyEqual(document.integration.relativeTolerance,1e-7)
+            testCase.verifyEqual(document.integration.absoluteToleranceScale,1e-9)
+            testCase.verifyEqual(string(document.execution.fftProvider),"reference")
+            testCase.verifyEqual(document.execution.threads,1)
+        end
+
         function writesEveryAcceptedSchemaFormDeterministically(testCase)
             requestFolder = fullfile(testCase.TemporaryFolder,"requests with Ω");
             mkdir(requestFolder)

@@ -120,6 +120,7 @@ WVRunRequestStatus parseV1Integration(const json &value,
   status = integrationMethod(method, integration.method);
   if (!status)
     return status;
+  integration.hasMethod = true;
   status = finiteValue(value, "finalTime", "integration",
                        integration.finalTime);
   if (!status)
@@ -128,6 +129,7 @@ WVRunRequestStatus parseV1Integration(const json &value,
                                integration.initialStep);
   if (!status)
     return status;
+  integration.hasInitialStep = true;
   if (integration.method == WVRunRequestIntegrationMethod::fixedRK4) {
     for (const char *adaptive : {"maximumStep", "relativeTolerance",
                                  "absoluteToleranceScale"})
@@ -147,33 +149,40 @@ WVRunRequestStatus parseV1Integration(const json &value,
                                integration.maximumStep);
   if (!status)
     return status;
+  integration.hasMaximumStep = true;
   status = positiveFiniteValue(value, "relativeTolerance", "integration",
                                integration.relativeTolerance);
   if (!status)
     return status;
+  integration.hasRelativeTolerance = true;
   status = positiveFiniteValue(value, "absoluteToleranceScale", "integration",
                                integration.absoluteToleranceScale);
-  if (status)
+  if (status) {
+    integration.hasAbsoluteToleranceScale = true;
     integration.stepPolicy = WVRunRequestStepPolicy::adaptive;
+  }
   return status;
 }
 
 WVRunRequestStatus parseV2Integration(const json &value,
                                       WVRunRequestIntegration &integration) {
   auto status = requireObject(
-      value, {"method", "finalTime"},
+      value, {"finalTime"},
       {"method", "finalTime", "initialStep", "cfl", "timeStepConstraint",
        "maximumStep", "relativeTolerance", "absoluteToleranceScale"},
       "integration");
   if (!status)
     return status;
-  std::string method;
-  status = stringValue(value, "method", "integration", method);
-  if (!status)
-    return status;
-  status = integrationMethod(method, integration.method);
-  if (!status)
-    return status;
+  if (value.contains("method")) {
+    std::string method;
+    status = stringValue(value, "method", "integration", method);
+    if (!status)
+      return status;
+    status = integrationMethod(method, integration.method);
+    if (!status)
+      return status;
+    integration.hasMethod = true;
+  }
   status = finiteValue(value, "finalTime", "integration",
                        integration.finalTime);
   if (!status)
@@ -199,6 +208,7 @@ WVRunRequestStatus parseV2Integration(const json &value,
                                    integration.initialStep);
       if (!status)
         return status;
+      integration.hasInitialStep = true;
       integration.maximumStep = integration.initialStep;
       integration.stepPolicy = WVRunRequestStepPolicy::explicitStep;
       return WVRunRequestStatus::ok();
@@ -232,29 +242,39 @@ WVRunRequestStatus parseV2Integration(const json &value,
 
   if (hasCFL || hasConstraint)
     return invalid("CFL integration controls are valid only for fixed-rk4.");
-  for (const char *required : {"initialStep", "maximumStep",
-                               "relativeTolerance",
-                               "absoluteToleranceScale"})
-    if (!value.contains(required))
-      return invalid(std::string("integration is missing required field '") +
-                     required + "'.");
-  status = positiveFiniteValue(value, "initialStep", "integration",
-                               integration.initialStep);
-  if (!status)
-    return status;
-  status = positiveFiniteValue(value, "maximumStep", "integration",
-                               integration.maximumStep);
-  if (!status)
-    return status;
-  status = positiveFiniteValue(value, "relativeTolerance", "integration",
-                               integration.relativeTolerance);
-  if (!status)
-    return status;
-  status = positiveFiniteValue(value, "absoluteToleranceScale", "integration",
-                               integration.absoluteToleranceScale);
-  if (status)
-    integration.stepPolicy = WVRunRequestStepPolicy::adaptive;
-  return status;
+  integration.relativeTolerance = 1e-3;
+  integration.absoluteToleranceScale = 1e-6;
+  if (hasInitialStep) {
+    status = positiveFiniteValue(value, "initialStep", "integration",
+                                 integration.initialStep);
+    if (!status)
+      return status;
+    integration.hasInitialStep = true;
+  }
+  if (hasMaximumStep) {
+    status = positiveFiniteValue(value, "maximumStep", "integration",
+                                 integration.maximumStep);
+    if (!status)
+      return status;
+    integration.hasMaximumStep = true;
+  }
+  if (hasRelativeTolerance) {
+    status = positiveFiniteValue(value, "relativeTolerance", "integration",
+                                 integration.relativeTolerance);
+    if (!status)
+      return status;
+    integration.hasRelativeTolerance = true;
+  }
+  if (hasAbsoluteTolerance) {
+    status = positiveFiniteValue(value, "absoluteToleranceScale",
+                                 "integration",
+                                 integration.absoluteToleranceScale);
+    if (!status)
+      return status;
+    integration.hasAbsoluteToleranceScale = true;
+  }
+  integration.stepPolicy = WVRunRequestStepPolicy::adaptive;
+  return WVRunRequestStatus::ok();
 }
 
 WVRunRequestStatus parseOutput(const json &value,
@@ -300,27 +320,38 @@ WVRunRequestStatus parseOutput(const json &value,
   return WVRunRequestStatus::ok();
 }
 
-WVRunRequestStatus parseExecution(const json &value,
+WVRunRequestStatus parseExecution(const json &value, bool isV1,
                                   WVRunRequest &request) {
-  auto status = requireObject(value, {"fftProvider", "threads"},
+  auto status = requireObject(value,
+                              isV1 ? std::set<std::string>{"fftProvider", "threads"}
+                                   : std::set<std::string>{},
                               {"fftProvider", "threads"}, "execution");
   if (!status)
     return status;
-  status = stringValue(value, "fftProvider", "execution",
-                       request.fftProvider);
-  if (!status)
-    return status;
+  request.fftProvider = isV1 ? "reference" : "native-fftw";
+  if (value.contains("fftProvider")) {
+    status = stringValue(value, "fftProvider", "execution",
+                         request.fftProvider);
+    if (!status)
+      return status;
+    request.hasFFTProvider = true;
+  }
   if (request.fftProvider != "native-fftw" &&
       request.fftProvider != "reference")
     return invalid("execution.fftProvider must be native-fftw or reference.");
-  const auto &threads = value.at("threads");
-  if (!threads.is_number_unsigned() && !threads.is_number_integer())
-    return invalid("execution.threads must be a positive integer.");
-  const auto raw = threads.get<std::int64_t>();
-  if (raw <= 0 || static_cast<std::uint64_t>(raw) >
-                      std::numeric_limits<std::size_t>::max())
-    return invalid("execution.threads must be a positive integer.");
-  request.threads = static_cast<std::size_t>(raw);
+  if (value.contains("threads")) {
+    const auto &threads = value.at("threads");
+    if (!threads.is_number_unsigned() && !threads.is_number_integer())
+      return invalid("execution.threads must be a positive integer.");
+    const auto raw = threads.get<std::int64_t>();
+    if (raw <= 0 || static_cast<std::uint64_t>(raw) >
+                        std::numeric_limits<std::size_t>::max())
+      return invalid("execution.threads must be a positive integer.");
+    request.threads = static_cast<std::size_t>(raw);
+    request.hasThreads = true;
+  } else if (request.fftProvider == "reference") {
+    request.threads = 1;
+  }
   if (request.fftProvider == "reference" && request.threads != 1)
     return invalid("The reference FFT provider requires one thread.");
   return WVRunRequestStatus::ok();
@@ -456,7 +487,7 @@ WVRunRequestStatus decodeRunRequest(const std::string &path,
     status = parseOutput(document.at("output"), base, candidate);
     if (!status)
       return status;
-    status = parseExecution(document.at("execution"), candidate);
+    status = parseExecution(document.at("execution"), isV1, candidate);
     if (!status)
       return status;
     std::string rawReport;
