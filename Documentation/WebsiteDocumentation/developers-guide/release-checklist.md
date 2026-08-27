@@ -9,6 +9,17 @@ nav_order: 4
 
 Use this checklist for a maintenance release after every issue assigned to the release milestone is complete or explicitly deferred. Release preparation must not introduce scientific capabilities, unannounced API changes, or documentation changes that were not reviewed on the release branch.
 
+## v4.3 portable-runtime qualification
+
+- Confirm issue #287 is the only final open item in milestone 14 before qualification and that its focused branch targets `feature/v4.3-portable-runtime`, not `main`.
+- On Matilda with MATLAB R2026a Update 4, run portable C++ tests; focused MATLAB request, schema, runtime, restart, and interoperability tests; `buildtool test:full`; `buildtool test:optional`; `buildtool analyze`; and `buildtool docs:check`.
+- Verify omitted and explicit v2 defaults are equivalent for constant stratification and Barotropic QG, including post-restoration CFL `0.5`, the one-tenth continuation maximum step, requested-versus-active report fields, v1 round trips, explicit overrides, and no provider fallback.
+- Build the pinned native FFTW runner on Apple silicon and run only short functional provider and integration checks. Confirm the actual automatically bounded thread count and provider identity, and prove native unavailability leaves model output unchanged.
+- Verify fixed RK4 and MATLAB-compatible `ode23`, `ode45`, and `ode78`; supported forcing and observers; compact QG state; exact and dense output; multi-file policies; restart; MATLAB continuation; and tracked-files-only source/export policy.
+- Run the clean exported-package verification and inspect generated-documentation determinism and stable compiled-execution routes. Record any unavailable hosted Linux/R2025b structured-unavailability check explicitly.
+- Treat issue #312's accepted Donut `[256 256 129]` record as frozen release evidence. Do not rerun the canonical performance suite, generate replacement timing or RSS data, commit raw benchmark results, or present startup time as a primary metric.
+- Confirm larger matched-interface cases and unsupported transforms, forcing, observers, platforms, and plug-in models remain documented as deferred rather than inferred from the accepted evidence.
+
 ## Review the candidate
 
 - Confirm the package version, MATLAB compatibility floor, dependency ranges, and package folders in `resources/mpackage.json`.
