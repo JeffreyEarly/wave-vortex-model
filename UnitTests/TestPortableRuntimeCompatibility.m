@@ -510,6 +510,62 @@ classdef TestPortableRuntimeCompatibility < matlab.unittest.TestCase
                 end
             end
         end
+
+        function matlabWriterBarotropicQGRequestsDecodeAndRun(testCase)
+            sourceFixture = fullfile(testCase.TemporaryFolder,"writer-qg-source.nc");
+            sourceModel = testCase.createBarotropicQGModel(sourceFixture,[6 5],1,true);
+            sourceModel.integrateToTime(.005,shouldShowIntegrationDiagnostics=false,callback=@(~)[]);
+            sourceModel.closeNetCDFFile();
+            forms = {
+                "fixed-rk4", "explicit"; ...
+                "fixed-rk4", "cfl"; ...
+                "adaptive-rk23", "adaptive"; ...
+                "adaptive-rk45", "adaptive"; ...
+                "adaptive-rk78", "adaptive"};
+            for iForm = 1:size(forms,1)
+                method = forms{iForm,1};
+                stepPolicy = forms{iForm,2};
+                stem = "writer-qg-"+method+"-"+stepPolicy;
+                modelPath = fullfile(testCase.TemporaryFolder,stem+".nc");
+                requestPath = fullfile(testCase.TemporaryFolder,stem+".json");
+                reportName = stem+"-report.json";
+                copyfile(sourceFixture,modelPath)
+                ncwriteatt(modelPath,"/","portableFileIdentifier",stem);
+                if stepPolicy == "explicit"
+                    WVModel.writePortableRunRequest(requestPath,modelPath, ...
+                        schemaVersion=2,method=method,finalTime=.01,initialStep=.0025,reportPath=reportName);
+                elseif stepPolicy == "cfl"
+                    WVModel.writePortableRunRequest(requestPath,modelPath, ...
+                        schemaVersion=2,method=method,finalTime=.01,cfl=.25, ...
+                        timeStepConstraint="advective",reportPath=reportName);
+                else
+                    WVModel.writePortableRunRequest(requestPath,modelPath, ...
+                        schemaVersion=2,method=method,finalTime=.01,initialStep=.0025,maximumStep=.005, ...
+                        relativeTolerance=1e-6,absoluteToleranceScale=1e-9,reportPath=reportName);
+                end
+                immutableRequest = fileread(requestPath);
+                command = shellQuote(testCase.Runner)+" --request "+shellQuote(requestPath);
+                [status,output] = systemWithoutMatlabRuntime(command);
+                testCase.assertEqual(status,0,output)
+                testCase.verifyEqual(fileread(requestPath),immutableRequest)
+                report = jsondecode(fileread(fullfile(testCase.TemporaryFolder,reportName)));
+                testCase.verifyEqual(string(report.status),"complete")
+                testCase.verifyEqual(string(report.integrationRequest.requestedMethod),method)
+                testCase.verifyEqual(string(report.integrationRequest.activeMethod),method)
+                testCase.verifyEqual(string(report.integrationRequest.stepPolicy),stepPolicy)
+                testCase.verifyTrue(report.integrationRequest.noFallback)
+                testCase.verifyEqual(string(report.execution.engine),"reference-direct")
+                testCase.verifyTrue(report.execution.noFallback)
+                testCase.verifyEqual(report.storageBytes.persistentFullHermitian,0)
+                restored = WVModel.modelFromFile(char(modelPath));
+                cleanup = onCleanup(@()restored.closeNetCDFFile());
+                testCase.verifyClass(restored.wvt,"WVTransformBarotropicQG")
+                outputInformation = ncinfo(modelPath,"/wave-vortex");
+                variableNames = string({outputInformation.Variables.Name});
+                testCase.verifyFalse(any(startsWith(variableNames,["Ap" "Am"])))
+                clear cleanup
+            end
+        end
     end
 
     methods (Access = private)

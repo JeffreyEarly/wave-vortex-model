@@ -45,6 +45,12 @@ including transform configuration, state, forcing, observers, schedules,
 and restart progress. This method writes only execution choices and file
 routing for `wave-vortex-run --request`.
 
+The metadata-only writer accepts supported
+`WVTransformConstantStratification` bundles with complete `Ap`, `Am`, and
+`A0` restart state and `WVTransformBarotropicQG` bundles with one compact
+`A0` stream declared by `WVCoefficients`. An Eulerian field named `A0`
+does not by itself make a Barotropic QG file restart-capable.
+
 Relative model, output, and report paths are interpreted relative to the
 request document. Output destinations are keyed by the stable identifiers
 returned in validation errors or stored as `portableFileIdentifier` in a

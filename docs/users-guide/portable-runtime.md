@@ -82,6 +82,8 @@ WVModel.writePortableRunRequest("run-v2.json","saved-model.nc",schemaVersion=2,m
 
 The writer obtains identifiers and compatibility facts through NetCDF metadata inspection; it does not reconstruct the model or read coefficient and observer-state arrays. Files authored by the portable runtime carry `portableFileIdentifier`. For legacy MATLAB files without that attribute, the runtime-compatible identifier is derived from the resolved source path, and an incomplete-map diagnostic lists the exact identifiers required. Destination entries are serialized in identifier order while the supplied `modelFiles` order is preserved exactly.
 
+The writer has explicit metadata adapters for `WVTransformConstantStratification` and `WVTransformBarotropicQG`. Constant-stratification files retain their established complete `Ap`/`Am`/`A0` validation and deterministic JSON bytes. For Barotropic QG, the writer validates the root `x`/`y` geometry, physical scalars, `j`, antialias flag, model version, and compact `A0` shape without reading coefficient values. A compact QG restart exists only when the output group declares the persisted `WVCoefficients` observer; a fields-only `WVEulerianFields` variable named `A0` is scientific output, not checkpoint ownership. These facts stay in NetCDF and never add transform-specific fields to JSON.
+
 Run the generated request with:
 
 ```sh
