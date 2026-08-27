@@ -74,9 +74,10 @@ classdef TestWaveVortexBenchmark < matlab.unittest.TestCase
             referencePath = fullfile(referenceFolder,"smoke-v1");
             testCase.verifyTrue(isfile(fullfile(referencePath,"benchmark.json")));
             decoded = jsondecode(fileread(fullfile(runFolder,"benchmark.json")));
+            manifest = jsondecode(fileread(fullfile(testCase.repositoryRoot,"resources","mpackage.json")));
             testCase.verifyEqual(string(decoded.schemaVersion),"1.1.0");
             testCase.verifyEqual(string(decoded.environment.packageName),"WaveVortexModel");
-            testCase.verifyEqual(string(decoded.environment.packageVersion),"4.2.1");
+            testCase.verifyEqual(string(decoded.environment.packageVersion),string(manifest.version));
             testCase.verifyNotEmpty(string(decoded.environment.processorName));
             testCase.verifyEqual(decoded.suites.cases.backends.caseScore,100);
             summary = fileread(fullfile(runFolder,"summary.md"));
