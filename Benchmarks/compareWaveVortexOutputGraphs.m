@@ -91,24 +91,44 @@ shape = double(variable.Size);
 if isempty(shape), shape = 1; end
 elementBytes = 8;
 if contains(lower(string(variable.Datatype)),["char" "byte" "int" "short"]), elementBytes = 4; end
-count = shape;
-count(1) = max(1,min(shape(1),floor(options.maximumChunkBytes/(elementBytes*max(1,prod(shape(2:end)))))));
+count = boundedChunkShape(shape,elementBytes,options.maximumChunkBytes);
 maximumAbsolute = 0;
 maximumReference = 0;
 passed = true;
-for first = 1:count(1):shape(1)
-    chunk = count;
-    chunk(1) = min(count(1),shape(1)-first+1);
-    start = ones(size(shape));
-    start(1) = first;
+start = ones(size(shape));
+while true
+    chunk = min(count,shape-start+1);
     expected = ncread(referencePath,variablePath,start,chunk);
     actual = ncread(candidatePath,variablePath,start,chunk);
     [chunkAbsolute,~,chunkPassed,chunkReference] = compareValues(expected,actual,options);
     maximumAbsolute = max(maximumAbsolute,chunkAbsolute);
     maximumReference = max(maximumReference,chunkReference);
     passed = passed && chunkPassed;
+    [start,hasNext] = nextChunkStart(start,count,shape);
+    if ~hasNext, break, end
 end
 maximumRelative = maximumAbsolute/max(maximumReference,realmin("double"));
+end
+
+function count = boundedChunkShape(shape,elementBytes,maximumChunkBytes)
+remainingElements = max(1,floor(maximumChunkBytes/elementBytes));
+count = ones(size(shape));
+for iDimension = 1:numel(shape)
+    count(iDimension) = min(shape(iDimension),remainingElements);
+    remainingElements = max(1,floor(remainingElements/count(iDimension)));
+end
+end
+
+function [start,hasNext] = nextChunkStart(start,count,shape)
+for iDimension = 1:numel(shape)
+    start(iDimension) = start(iDimension)+count(iDimension);
+    if start(iDimension) <= shape(iDimension)
+        hasNext = true;
+        return
+    end
+    start(iDimension) = 1;
+end
+hasNext = false;
 end
 
 function [maximumAbsolute,maximumRelative,passed,maximumReference] = compareValues(expected,actual,options)

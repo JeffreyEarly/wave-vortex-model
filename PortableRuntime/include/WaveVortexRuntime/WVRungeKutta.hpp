@@ -72,6 +72,8 @@ struct WVFixedStepRK4Options {
   bool retainDenseOutput = false;
 };
 
+struct WVAdaptiveRKStageBufferLastUse;
+
 class WVFixedStepRK4 final : public WVTimeIntegrator,
                                       public WVDenseOutput {
 public:
@@ -106,6 +108,9 @@ public:
   const WVIntegratorMetrics &metrics() const noexcept {
     return metrics_;
   }
+  static const WVAdaptiveRKStageBufferLastUse *stageBufferLastUseRecords()
+      noexcept;
+  static std::size_t stageBufferLastUseRecordCount() noexcept;
 
 private:
   class Workspace;
@@ -152,6 +157,7 @@ using WVAdaptiveRK23StepDiagnostic = WVAdaptiveRKStepDiagnostic;
 
 struct WVAdaptiveRKStageBufferLastUse {
   const char *bufferIdentifier = nullptr;
+  const char *producer = nullptr;
   const char *lastUse = nullptr;
   std::size_t stage = 0;
 };
