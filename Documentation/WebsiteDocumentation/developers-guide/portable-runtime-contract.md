@@ -30,6 +30,14 @@ Source-API versioning is independent of persisted and scientific data contracts.
 
 Changing one of these data versions does not implicitly change or relax another and does not by itself change the C++ source-API version. Unsupported, missing, malformed, or version-mismatched records fail during construction or semantic preflight.
 
+## Barotropic QG qualification record
+
+`PortableRuntime/qualification/barotropic-qg-v1.json` is the compact, machine-readable coverage record for the MATLAB--C++--MATLAB QG boundary. It identifies the writer-authored request path, grid and integration matrix, supported forcing and observer identities, output policies, transactional rejection cases, numerical limits, provider requirements, and the exact MATLAB and C++ gates that enforce them. It deliberately records no raw timing or benchmark samples.
+
+Qualification requires compact `A0` ownership throughout the state, no dummy `Ap` or `Am` families, no retained full Hermitian spectrum, exact provider identity with no fallback, and balanced native FFTW plan and planning-buffer lifetimes. Reference and native providers use the same persisted model graph. The reference end-to-end matrix compares MATLAB and C++ coefficients and fields at $$10^{-12}$$ relative error or better, compares energy and enstrophy, exercises exact and dense output, restores the C++ result with `WVModel.modelFromFile`, and continues it in MATLAB. Native FFTW qualification adds the pinned 3.3.11 library identity and plan-cleanup proof.
+
+`WVNarrowBandGeostrophicForcing` is numerically resolved by the QG fixed-amplitude implementation, but its persistence schema is intentionally wider than that numerical subset. The frozen record preserves `r`, `k_r`, `k_f`, `j_f`, `u_rms`, and `initialPV` alongside the selected compact `A0` indices and values so MATLAB restoration retains the concrete forcing object and its provenance. Older source-linked records that contain only selected amplitudes remain decodable because the provenance fields are optional at the C++ source boundary; MATLAB-authored records always provide them.
+
 The portable reference runtime and source-linked consumers are qualified on Ubuntu with GCC or Clang and on macOS with AppleClang. The locally built optimized FFTW runner is limited to Apple silicon. The WaveVortexModel portable source set does not currently compile under MSVC, so Windows source-linked runners are outside source API v1.
 
 ## Integration boundaries

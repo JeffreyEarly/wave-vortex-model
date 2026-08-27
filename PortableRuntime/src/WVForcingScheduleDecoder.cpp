@@ -304,6 +304,16 @@ WVCheckpointStatus decodeSupported(const WVForcingGroupSource& source, const WVT
             }
             consumedComplex.insert(complex->recordName);
         } else if (field.encoding == WVForcingPersistenceEncoding::realVariable) {
+            if (field.optional) {
+                int variable = -1;
+                const int inquiry = nc_inq_varid(
+                    source.groupId, field.netcdfName.c_str(), &variable);
+                if (inquiry == NC_ENOTVAR) continue;
+                if (inquiry != NC_NOERR)
+                    return netcdfFailure(
+                        inquiry, "Optional forcing-variable inspection",
+                        source.groupPath + "/" + field.netcdfName);
+            }
             std::vector<double> values;
             std::vector<std::size_t> dimensions;
             if (field.dimensions == WVForcingDimensionRule::horizontalYX) {
