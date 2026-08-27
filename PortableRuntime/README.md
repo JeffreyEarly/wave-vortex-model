@@ -45,7 +45,7 @@ On Apple silicon, the optimized runner can be built with:
 PortableRuntime/buildWaveVortexRun.sh
 ```
 
-The script verifies the pinned FFTW 3.3.11 archive, builds it in the ignored `.compiled-backend-cache`, and links the runner locally. WaveVortexModel distributes no FFTW archive, library, MEX file, or executable. Redistributing a locally linked executable requires compliance with FFTW's GPL license.
+The script verifies the pinned FFTW 3.3.11 archive, builds it in the ignored `.compiled-backend-cache`, and writes the executable to `.compiled-backend-cache/runtime-build/wave-vortex-run`. WaveVortexModel distributes no FFTW archive, library, MEX file, or executable. Redistributing a locally linked executable requires compliance with FFTW's GPL license.
 
 ## MATLAB-authored run bundles
 
@@ -60,10 +60,10 @@ For a new in-place continuation, first close the restart-capable MATLAB model-ou
 WVModel.writePortableRunRequest("run.json","initial-condition.nc",finalTime=86400);
 ```
 
-The resulting request runs without editing:
+After building the native runner from the repository root as shown above, the resulting request runs without editing by invoking the executable at its generated path:
 
 ```sh
-wave-vortex-run --request run.json
+.compiled-backend-cache/runtime-build/wave-vortex-run --request run.json
 ```
 
 Omitted v2 controls select MATLAB `ode78` as `adaptive-rk78`, relative tolerance `1e-3`, absolute-tolerance scale `1e-6`, an initial step from the minimum advective/oscillatory CFL `0.5` candidate after state restoration, a maximum step equal to one tenth of the continuation interval, native FFTW, and an automatically hardware-bounded thread count. These reproduce standard `WVModel` defaults rather than custom MATLAB-session settings that were never persisted. Every explicit option overrides its corresponding default.

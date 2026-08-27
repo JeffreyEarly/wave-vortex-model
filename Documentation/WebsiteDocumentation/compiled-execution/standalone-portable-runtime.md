@@ -18,10 +18,16 @@ Once MATLAB has written and closed a restart-capable model-output file, the defa
 WVModel.writePortableRunRequest("run.json","initial-condition.nc",finalTime=86400);
 ```
 
-Run the generated request without editing it:
+From the WaveVortexModel repository root, build the native runner:
 
 ```sh
-wave-vortex-run --request run.json
+PortableRuntime/buildWaveVortexRun.sh
+```
+
+The build writes the executable into the ignored local cache. Run the generated request without editing it by invoking that exact path:
+
+```sh
+.compiled-backend-cache/runtime-build/wave-vortex-run --request run.json
 ```
 
 Run-request v2 supplies the standard WaveVortexModel defaults when they are omitted:
@@ -65,4 +71,4 @@ Restore an in-place continuation in MATLAB with:
 model = WVModel.modelFromFile("initial-condition.nc");
 ```
 
-For complete destination remapping, multi-file bundles, explicit integration controls, schema-v1 compatibility, reference builds, and source-linked extensions, see [PortableRuntime/README.md](https://github.com/JeffreyEarly/wave-vortex-model/blob/feature/v4.3-portable-runtime/PortableRuntime/README.md) and the [portable-runtime contract](/developers-guide/portable-runtime-contract.html).
+For complete destination remapping, multi-file bundles, explicit integration controls, schema-v1 compatibility, reference builds, and source-linked extensions, see [PortableRuntime/README.md](https://github.com/JeffreyEarly/wave-vortex-model/blob/main/PortableRuntime/README.md) and the [portable-runtime contract](/developers-guide/portable-runtime-contract.html).
