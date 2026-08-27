@@ -1,6 +1,7 @@
 #pragma once
 
 #include "WaveVortexKernel/WVTransformConstantStratificationKernel.hpp"
+#include "WaveVortexKernel/WVTransformBarotropicQGKernel.hpp"
 #include "WaveVortexRuntime/WVObserverContracts.hpp"
 #include "WaveVortexRuntime/generated/WVPortableVariableCatalog.hpp"
 
@@ -12,6 +13,13 @@
 #include <vector>
 
 namespace wavevortex::runtime {
+
+struct WVIntegrationState;
+class WVIntegrationStateLayout;
+
+namespace detail {
+class WVBarotropicQGFieldEvaluationAdapter;
+}
 
 enum class WVFieldSamplingKind : std::uint8_t {
   fullGrid,
@@ -131,8 +139,11 @@ private:
   std::uint64_t requestedFieldMask_ = 0;
   std::uint64_t dependencyMask_ = 0;
   std::uint64_t fingerprint_ = 0;
+  std::shared_ptr<const void> transformPlan_;
+  std::size_t transformPlanBytes_ = 0;
 
   friend class WVFieldEvaluationService;
+  friend class detail::WVBarotropicQGFieldEvaluationAdapter;
 };
 
 class WVMovingFieldEvaluationPlan final {
@@ -156,7 +167,10 @@ private:
   std::vector<ResolvedRequest> requests_;
   std::vector<WVFieldOutputSpecification> outputs_;
   std::size_t positionCount_ = 0;
+  std::shared_ptr<const void> transformPlan_;
+  std::size_t transformPlanBytes_ = 0;
   friend class WVFieldEvaluationService;
+  friend class detail::WVBarotropicQGFieldEvaluationAdapter;
 };
 
 class WVFieldEvaluationPlan final {
@@ -202,8 +216,11 @@ private:
   std::vector<WVFieldOutputSpecification> outputs_;
   std::uint64_t requestedFieldMask_ = 0;
   std::uint64_t dependencyMask_ = 0;
+  std::shared_ptr<const void> transformPlan_;
+  std::size_t transformPlanBytes_ = 0;
 
   friend class WVFieldEvaluationService;
+  friend class detail::WVBarotropicQGFieldEvaluationAdapter;
 };
 
 struct WVPreparedFieldOutputSpecification {
@@ -263,8 +280,11 @@ private:
   std::size_t borrowedCoordinateBytes_ = 0;
   std::uint64_t fieldPlanFingerprint_ = 0;
   std::uint64_t geometryFingerprint_ = 0;
+  std::shared_ptr<const void> transformGeometry_;
+  std::size_t transformGeometryBytes_ = 0;
 
   friend class WVFieldEvaluationService;
+  friend class detail::WVBarotropicQGFieldEvaluationAdapter;
 };
 
 // One independently keyed occurrence in a coarse same-state evaluation.
@@ -328,6 +348,13 @@ public:
   static WVKernelStatus
   createBorrowing(WVTransformConstantStratificationKernel &transform,
                   std::unique_ptr<WVFieldEvaluationService> &service);
+  static WVKernelStatus
+  create(const WVTransformBarotropicQGConfiguration &configuration,
+         std::unique_ptr<WVFFTEngine> engine,
+         std::unique_ptr<WVFieldEvaluationService> &service);
+  static WVKernelStatus
+  createBorrowing(WVTransformBarotropicQGKernel &transform,
+                  std::unique_ptr<WVFieldEvaluationService> &service);
 
   WVFieldEvaluationService(const WVFieldEvaluationService &) = delete;
   WVFieldEvaluationService &
@@ -342,6 +369,10 @@ public:
   WVKernelStatus evaluate(const WVFieldEvaluationPlan &plan,
                           const WVState &state, WVFieldOutputView *outputs,
                           std::size_t outputCount);
+  WVKernelStatus evaluate(const WVFieldEvaluationPlan &plan,
+                          const WVIntegrationState &state,
+                          WVFieldOutputView *outputs,
+                          std::size_t outputCount);
   WVKernelStatus
   createMovingPlan(const std::vector<WVMovingFieldRequest> &requests,
                    WVMovingFieldEvaluationPlan &plan) const;
@@ -350,8 +381,19 @@ public:
                                 WVMovingPositionView positions,
                                 WVFieldOutputView *outputs,
                                 std::size_t outputCount);
+  WVKernelStatus evaluateMoving(const WVMovingFieldEvaluationPlan &plan,
+                                const WVIntegrationState &state,
+                                WVMovingPositionView positions,
+                                WVFieldOutputView *outputs,
+                                std::size_t outputCount);
   WVKernelStatus evaluateMovingFromAdvectionFields(
       const WVMovingFieldEvaluationPlan &plan, const WVState &state,
+      const WVRealFieldBundleConstView &advectionFields,
+      WVMovingPositionView positions, WVFieldOutputView *outputs,
+      std::size_t outputCount);
+  WVKernelStatus evaluateMovingFromAdvectionFields(
+      const WVMovingFieldEvaluationPlan &plan,
+      const WVIntegrationState &state,
       const WVRealFieldBundleConstView &advectionFields,
       WVMovingPositionView positions, WVFieldOutputView *outputs,
       std::size_t outputCount);
@@ -367,15 +409,31 @@ public:
                                const WVPreparedFieldGeometry &geometry,
                                const WVState &state, WVFieldOutputView *outputs,
                                std::size_t outputCount);
+  WVKernelStatus evaluateEvent(const WVEventFieldEvaluationPlan &plan,
+                               const WVPreparedFieldGeometry &geometry,
+                               const WVIntegrationState &state,
+                               WVFieldOutputView *outputs,
+                               std::size_t outputCount);
   WVKernelStatus
   evaluateEventBatch(const WVState &state,
+                     const WVEventFieldEvaluationBatchEntry *entries,
+                     std::size_t entryCount);
+  WVKernelStatus
+  evaluateEventBatch(const WVIntegrationState &state,
                      const WVEventFieldEvaluationBatchEntry *entries,
                      std::size_t entryCount);
   WVRealFieldBundleView advectionFieldStorage() noexcept;
 
   const WVTransformConstantStratificationConfiguration &
   configuration() const noexcept;
-  const WVFieldEvaluationMetrics &metrics() const noexcept { return metrics_; }
+  bool hasLegacyConfiguration() const noexcept { return transform_ != nullptr; }
+  WVKernelStatus createStateLayout(
+      const WVPortableObserverDescriptor &descriptor,
+      WVIntegrationStateLayout &layout) const;
+  bool isCompatibleWith(const WVIntegrationStateLayout &layout) const noexcept;
+  bool isCompatibleWith(
+      const WVFieldEvaluationService &other) const noexcept;
+  const WVFieldEvaluationMetrics &metrics() const noexcept;
   std::size_t persistentBytes() const noexcept;
 
 private:
@@ -397,6 +455,8 @@ private:
   class MovingWorkspace;
   std::unique_ptr<WVTransformConstantStratificationKernel> ownedTransform_;
   WVTransformConstantStratificationKernel *transform_ = nullptr;
+  std::unique_ptr<detail::WVBarotropicQGFieldEvaluationAdapter>
+      barotropicQG_;
   std::unique_ptr<MovingWorkspace> movingWorkspace_;
   std::vector<double> realScratch_;
   std::vector<WVComplex64> complexScratch_;

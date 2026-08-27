@@ -97,7 +97,9 @@ public:
   operator=(const WVBarotropicQGForcingEngine &) = delete;
 
   WVKernelStatus evaluateRightHandSide(const WVComplexConstView &A0,
-                                       WVComplexView &F0);
+                                       WVComplexView &F0,
+                                       WVRealFieldBundleConstView *
+                                           advectionFields = nullptr);
   WVStateConstraintResult restoreForcingAmplitudes(WVComplexView &A0);
 
   const WVTransformBarotropicQGKernel &kernel() const noexcept {

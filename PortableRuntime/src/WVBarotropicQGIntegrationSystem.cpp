@@ -1,5 +1,6 @@
 #include "WaveVortexRuntime/WVBarotropicQGIntegrationSystem.hpp"
 #include "WaveVortexRuntime/WVExtensionCatalog.hpp"
+#include "WVObserverAdapter.hpp"
 
 #include <algorithm>
 #include <chrono>
@@ -38,6 +39,60 @@ bool validCoordinate(const std::vector<double> &coordinate,
   }
   return true;
 }
+
+std::size_t blockIndex(const WVIntegrationStateLayout &layout,
+                       const std::string &identifier) noexcept {
+  const auto &blocks = layout.additionalBlocks();
+  const auto found = std::find_if(
+      blocks.begin(), blocks.end(), [&](const auto &block) {
+        return block.identifier == identifier;
+      });
+  return found == blocks.end()
+             ? std::numeric_limits<std::size_t>::max()
+             : static_cast<std::size_t>(found - blocks.begin());
+}
+
+class QGUnifiedErrorPolicy final : public WVIntegrationErrorPolicy {
+public:
+  QGUnifiedErrorPolicy(std::unique_ptr<WVIntegrationErrorPolicy> coefficients,
+                       const WVIntegrationStateLayout &layout)
+      : coefficients_(std::move(coefficients)),
+        coefficientCount_(layout.coefficientFamilyCount()) {
+    counts_.reserve(coefficientCount_ + layout.additionalBlocks().size());
+    tolerances_.reserve(counts_.capacity());
+    for (std::size_t family = 0; family < coefficientCount_; ++family) {
+      counts_.push_back(coefficients_->elementCount(family));
+      tolerances_.push_back(0.0);
+    }
+    for (const auto &block : layout.additionalBlocks()) {
+      counts_.push_back(block.elementCount);
+      tolerances_.push_back(block.absoluteTolerance);
+    }
+  }
+  std::size_t componentCount() const noexcept override {
+    return counts_.size();
+  }
+  std::size_t elementCount(std::size_t component) const noexcept override {
+    return component < counts_.size() ? counts_[component] : 0;
+  }
+  double absoluteTolerance(std::size_t component,
+                           std::size_t index) const noexcept override {
+    return component < coefficientCount_
+               ? coefficients_->absoluteTolerance(component, index)
+               : component < tolerances_.size() ? tolerances_[component]
+                                                 : 0.0;
+  }
+  std::size_t persistentBytes() const noexcept override {
+    return sizeof(*this) + coefficients_->persistentBytes() +
+           vectorBytes(counts_) + vectorBytes(tolerances_);
+  }
+
+private:
+  std::unique_ptr<WVIntegrationErrorPolicy> coefficients_;
+  std::size_t coefficientCount_ = 0;
+  std::vector<std::size_t> counts_;
+  std::vector<double> tolerances_;
+};
 
 class BarotropicQGErrorPolicy final : public WVIntegrationErrorPolicy {
 public:
@@ -206,12 +261,40 @@ WVKernelStatus WVBarotropicQGIntegrationSystem::create(
     std::shared_ptr<const WVExtensionCatalog> catalog,
     std::unique_ptr<WVFFTEngine> engine,
     std::unique_ptr<WVBarotropicQGIntegrationSystem> &system) {
+  return createImpl(configuration, schedule, nullptr, std::move(catalog),
+                    std::move(engine), system);
+}
+
+WVKernelStatus WVBarotropicQGIntegrationSystem::create(
+    const WVTransformBarotropicQGConfiguration &configuration,
+    const WVFrozenForcingSchedule &schedule,
+    const WVPortableObserverDescriptor &descriptor,
+    std::shared_ptr<const WVExtensionCatalog> catalog,
+    std::unique_ptr<WVFFTEngine> engine,
+    std::unique_ptr<WVBarotropicQGIntegrationSystem> &system) {
+  return createImpl(configuration, schedule, &descriptor, std::move(catalog),
+                    std::move(engine), system);
+}
+
+WVKernelStatus WVBarotropicQGIntegrationSystem::createImpl(
+    const WVTransformBarotropicQGConfiguration &configuration,
+    const WVFrozenForcingSchedule &schedule,
+    const WVPortableObserverDescriptor *descriptor,
+    std::shared_ptr<const WVExtensionCatalog> catalog,
+    std::unique_ptr<WVFFTEngine> engine,
+    std::unique_ptr<WVBarotropicQGIntegrationSystem> &system) {
   system.reset();
+  if (!catalog)
+    return invalid("A Barotropic QG integration system requires an extension "
+                   "catalog.");
+  if (descriptor != nullptr && descriptor->catalog() != catalog)
+    return invalid("The Barotropic QG observer descriptor and numerical "
+                   "system require the same extension catalog.");
   try {
     auto candidate = std::unique_ptr<WVBarotropicQGIntegrationSystem>(
         new WVBarotropicQGIntegrationSystem());
     auto status = WVBarotropicQGForcingEngine::create(
-        configuration, schedule, std::move(catalog), std::move(engine),
+        configuration, schedule, catalog, std::move(engine),
         candidate->forcingEngine_);
     if (!status)
       return status;
@@ -220,10 +303,123 @@ WVKernelStatus WVBarotropicQGIntegrationSystem::create(
         {{"A0", {candidate->kernel().descriptor().Nkl()},
           WVToleranceKind::coefficientEnergyScaled}},
         true};
-    status = WVIntegrationStateLayout::createCoefficientOnly(
-        std::move(stateDescription), candidate->layout_);
+    status = descriptor == nullptr
+                 ? WVIntegrationStateLayout::createCoefficientOnly(
+                       std::move(stateDescription), candidate->layout_)
+                 : WVIntegrationStateLayout::create(
+                       std::move(stateDescription), *descriptor,
+                       candidate->layout_);
     if (!status)
       return status;
+
+    std::vector<std::size_t> ownerCounts(
+        candidate->layout_.additionalBlocks().size(), 0);
+    std::vector<WVMovingFieldRequest> velocityRequests;
+    std::size_t positionOffset = 0;
+    if (descriptor != nullptr) {
+      WVObserverIntegrationBinder binder;
+      binder.advectedPositions =
+          [&](const WVObserverRecord &observer) -> WVKernelStatus {
+        if (!observer.isXYOnly)
+          return {WVKernelStatusCode::unsupportedOperation,
+                  "WVTransformBarotropicQG supports XY particles only."};
+        if (!observer.z.empty())
+          return {WVKernelStatusCode::unsupportedOperation,
+                  "Barotropic QG XY particles do not persist a vertical "
+                  "coordinate."};
+        if (observer.stateBlockIdentifiers.size() != 2)
+          return invalid("Barotropic QG particles require x and y state "
+                         "blocks only.");
+        Particle particle;
+        particle.record = observer;
+        particle.particleCount = observer.x.size();
+        particle.positionOffset = positionOffset;
+        particle.xBlock = blockIndex(
+            candidate->layout_, observer.stateBlockIdentifiers[0]);
+        particle.yBlock = blockIndex(
+            candidate->layout_, observer.stateBlockIdentifiers[1]);
+        if (particle.xBlock == std::numeric_limits<std::size_t>::max() ||
+            particle.yBlock == std::numeric_limits<std::size_t>::max())
+          return invalid("Barotropic QG particle state blocks are absent from "
+                         "the integration layout.");
+        ++ownerCounts[particle.xBlock];
+        ++ownerCounts[particle.yBlock];
+        particle.uOutput = velocityRequests.size();
+        velocityRequests.push_back(
+            {observer.identifier + "-u", "u", positionOffset,
+             particle.particleCount, observer.advectionInterpolation});
+        particle.vOutput = velocityRequests.size();
+        velocityRequests.push_back(
+            {observer.identifier + "-v", "v", positionOffset,
+             particle.particleCount, observer.advectionInterpolation});
+        positionOffset += particle.particleCount;
+        candidate->particles_.push_back(std::move(particle));
+        return WVKernelStatus::ok();
+      };
+      binder.advectedScalar =
+          [&](const WVObserverRecord &observer) -> WVKernelStatus {
+        if (!observer.isXYOnly)
+          return {WVKernelStatusCode::unsupportedOperation,
+                  "WVTransformBarotropicQG supports rank-two tracers only."};
+        if (observer.stateBlockIdentifiers.size() != 1)
+          return invalid("Barotropic QG tracer state is not uniquely "
+                         "identified.");
+        const auto block = blockIndex(
+            candidate->layout_, observer.stateBlockIdentifiers.front());
+        if (block == std::numeric_limits<std::size_t>::max())
+          return invalid("Barotropic QG tracer state is absent from the "
+                         "integration layout.");
+        if (candidate->layout_.additionalBlocks()[block].dimensions !=
+            std::vector<std::size_t>{configuration.Nx, configuration.Ny})
+          return {WVKernelStatusCode::invalidShape,
+                  "A Barotropic QG tracer must have shape [Nx,Ny]."};
+        ++ownerCounts[block];
+        candidate->tracers_.push_back({observer, block});
+        return WVKernelStatus::ok();
+      };
+      for (const auto &observer : descriptor->observers()) {
+        const auto *resolved = descriptor->resolvedObserver(observer);
+        if (resolved == nullptr)
+          return {WVKernelStatusCode::unsupportedOperation,
+                  "Barotropic QG integration received an unresolved observer."};
+        status = resolved->implementation().bindIntegration(observer, binder);
+        if (!status)
+          return status;
+      }
+      for (std::size_t block = 0; block < ownerCounts.size(); ++block)
+        if (ownerCounts[block] != 1)
+          return invalid("Integrated Barotropic QG state block " +
+                         candidate->layout_.additionalBlocks()[block]
+                             .identifier +
+                         " must resolve exactly once.");
+      status = WVFieldEvaluationService::createBorrowing(
+          candidate->kernel(), candidate->fields_);
+      if (!status)
+        return status;
+      status = candidate->fields_->createMovingPlan(
+          velocityRequests, candidate->velocityPlan_);
+      if (!status)
+        return status;
+    }
+    candidate->x_.resize(positionOffset);
+    candidate->y_.resize(positionOffset);
+    candidate->velocityStorage_.resize(velocityRequests.size());
+    candidate->velocityViews_.resize(velocityRequests.size());
+    for (std::size_t index = 0; index < velocityRequests.size(); ++index) {
+      candidate->velocityStorage_[index].resize(
+          velocityRequests[index].positionCount);
+      candidate->velocityViews_[index] = {
+          candidate->velocityStorage_[index].data(),
+          candidate->velocityStorage_[index].size()};
+    }
+    candidate->observerMetrics_.positionCapacityBytes =
+        (candidate->x_.capacity() + candidate->y_.capacity()) *
+        sizeof(double);
+    for (const auto &values : candidate->velocityStorage_)
+      candidate->observerMetrics_.velocityCapacityBytes +=
+          values.capacity() * sizeof(double);
+    candidate->observerMetrics_.persistentBytes =
+        candidate->persistentBytes();
     system = std::move(candidate);
     return WVKernelStatus::ok();
   } catch (const std::bad_alloc &) {
@@ -245,9 +441,12 @@ WVKernelStatus WVBarotropicQGIntegrationSystem::evaluateRightHandSide(
       rightHandSide.coefficientFamilies == nullptr ||
       rightHandSide.coefficientFamilies[0].layout !=
           &layout_.coefficientFamilies()[0] ||
-      rightHandSide.additionalBlockCount != 0)
+      rightHandSide.additionalBlockCount != layout_.additionalBlocks().size() ||
+      (rightHandSide.additionalBlockCount != 0 &&
+       rightHandSide.additionalBlocks == nullptr))
     return {WVKernelStatusCode::invalidShape,
-            "Barotropic QG RHS storage must contain only compact F0."};
+            "Barotropic QG RHS storage does not match compact F0 and its "
+            "resolved observer blocks."};
   executing_ = true;
   struct Guard {
     bool &value;
@@ -258,7 +457,83 @@ WVKernelStatus WVBarotropicQGIntegrationSystem::evaluateRightHandSide(
   const WVComplexConstView A0View{
       A0.data, {1, A0.layout->elementCount}};
   WVComplexView F0View{F0.data, {1, F0.layout->elementCount}};
-  return forcingEngine_->evaluateRightHandSide(A0View, F0View);
+  const bool needsAdvectionFields = !tracers_.empty() || !particles_.empty();
+  WVRealFieldBundleConstView advectionFields;
+  const auto forcingStarted = std::chrono::steady_clock::now();
+  status = forcingEngine_->evaluateRightHandSide(
+      A0View, F0View,
+      needsAdvectionFields ? &advectionFields : nullptr);
+  if (!status)
+    return status;
+  observerMetrics_.waveVortexFluxSeconds += std::chrono::duration<double>(
+      std::chrono::steady_clock::now() - forcingStarted).count();
+  const auto clearStarted = std::chrono::steady_clock::now();
+  for (std::size_t block = 0; block < rightHandSide.additionalBlockCount;
+       ++block) {
+    const auto &metadata = *rightHandSide.additionalBlocks[block].layout;
+    if (metadata.scalarType == WVStateScalarType::real64)
+      std::fill_n(rightHandSide.additionalBlocks[block].realData,
+                  metadata.elementCount, 0.0);
+    else
+      std::fill_n(rightHandSide.additionalBlocks[block].complexData,
+                  metadata.elementCount, WVComplex64{});
+  }
+  observerMetrics_.additionalStateClearSeconds +=
+      std::chrono::duration<double>(std::chrono::steady_clock::now() -
+                                    clearStarted).count();
+
+  const auto tracerStarted = std::chrono::steady_clock::now();
+  const auto spatial = kernel().descriptor().spatialShape();
+  for (const auto &tracer : tracers_) {
+    const auto &input = state.additionalBlocks[tracer.stateBlock];
+    auto &output = rightHandSide.additionalBlocks[tracer.stateBlock];
+    const WVRealConstView scalar{input.realData, spatial};
+    WVRealView scalarFlux{output.realData, spatial};
+    status = kernel().advectScalarWithAdvectionFields(
+        scalar, advectionFields, tracer.record.shouldAntialias, scalarFlux);
+    if (!status)
+      return status;
+    ++observerMetrics_.tracerEvaluationCount;
+    observerMetrics_.tracerValueWriteCount += spatial.elementCount();
+    if (tracer.record.shouldAntialias)
+      ++observerMetrics_.antialiasedTracerEvaluationCount;
+  }
+  observerMetrics_.tracerAdvectionSeconds += std::chrono::duration<double>(
+      std::chrono::steady_clock::now() - tracerStarted).count();
+
+  const auto particleStarted = std::chrono::steady_clock::now();
+  for (const auto &particle : particles_) {
+    std::copy_n(state.additionalBlocks[particle.xBlock].realData,
+                particle.particleCount,
+                x_.data() + particle.positionOffset);
+    std::copy_n(state.additionalBlocks[particle.yBlock].realData,
+                particle.particleCount,
+                y_.data() + particle.positionOffset);
+  }
+  if (!particles_.empty()) {
+    status = fields_->evaluateMovingFromAdvectionFields(
+        velocityPlan_, state, advectionFields,
+        {x_.data(), y_.data(), nullptr, x_.size()}, velocityViews_.data(),
+        velocityViews_.size());
+    if (!status)
+      return status;
+    ++observerMetrics_.velocityFieldEvaluationCount;
+  }
+  for (const auto &particle : particles_) {
+    std::copy_n(velocityStorage_[particle.uOutput].data(),
+                particle.particleCount,
+                rightHandSide.additionalBlocks[particle.xBlock].realData);
+    std::copy_n(velocityStorage_[particle.vOutput].data(),
+                particle.particleCount,
+                rightHandSide.additionalBlocks[particle.yBlock].realData);
+    observerMetrics_.particleValueWriteCount += 2 * particle.particleCount;
+  }
+  observerMetrics_.particleAdvectionSeconds += std::chrono::duration<double>(
+      std::chrono::steady_clock::now() - particleStarted).count();
+  ++observerMetrics_.rightHandSideEvaluationCount;
+  if (needsAdvectionFields)
+    ++observerMetrics_.sharedRightHandSideContextCount;
+  return WVKernelStatus::ok();
 }
 
 WVStateConstraintResult
@@ -281,8 +556,37 @@ WVBarotropicQGIntegrationSystem::enforceStateConstraints(
 WVKernelStatus WVBarotropicQGIntegrationSystem::createErrorPolicy(
     double absoluteToleranceScale,
     std::unique_ptr<WVIntegrationErrorPolicy> &policy) const {
-  return BarotropicQGErrorPolicy::create(kernel().descriptor(),
-                                         absoluteToleranceScale, policy);
+  std::unique_ptr<WVIntegrationErrorPolicy> coefficients;
+  auto status = BarotropicQGErrorPolicy::create(
+      kernel().descriptor(), absoluteToleranceScale, coefficients);
+  if (!status)
+    return status;
+  if (layout_.additionalBlocks().empty()) {
+    policy = std::move(coefficients);
+    return WVKernelStatus::ok();
+  }
+  try {
+    policy = std::make_unique<QGUnifiedErrorPolicy>(
+        std::move(coefficients), layout_);
+    return WVKernelStatus::ok();
+  } catch (const std::bad_alloc &) {
+    return {WVKernelStatusCode::allocationFailure,
+            "Unable to allocate the Barotropic QG observer error policy."};
+  }
+}
+
+WVKernelStatus WVBarotropicQGIntegrationSystem::initializeParticleState(
+    WVMutableIntegrationState &state) const {
+  const auto status = validateMutableIntegrationState(layout_, state);
+  if (!status)
+    return status;
+  for (const auto &particle : particles_) {
+    std::copy(particle.record.x.begin(), particle.record.x.end(),
+              state.additionalBlocks[particle.xBlock].realData);
+    std::copy(particle.record.y.begin(), particle.record.y.end(),
+              state.additionalBlocks[particle.yBlock].realData);
+  }
+  return WVKernelStatus::ok();
 }
 
 WVKernelStatus
@@ -327,8 +631,21 @@ WVBarotropicQGIntegrationSystem::evaluateFixedTimeStepCandidates(
 
 std::size_t
 WVBarotropicQGIntegrationSystem::persistentBytes() const noexcept {
-  return sizeof(*this) + layout_.persistentBytes() +
-         (forcingEngine_ == nullptr ? 0 : forcingEngine_->persistentBytes());
+  std::size_t bytes = sizeof(*this) + layout_.persistentBytes() +
+                      (forcingEngine_ == nullptr
+                           ? 0
+                           : forcingEngine_->persistentBytes()) +
+                      (fields_ == nullptr ? 0 : fields_->persistentBytes()) +
+                      velocityPlan_.persistentBytes() - sizeof(velocityPlan_) +
+                      particles_.capacity() * sizeof(Particle) +
+                      tracers_.capacity() * sizeof(Tracer) +
+                      velocityStorage_.capacity() *
+                          sizeof(std::vector<double>) +
+                      velocityViews_.capacity() * sizeof(WVFieldOutputView) +
+                      (x_.capacity() + y_.capacity()) * sizeof(double);
+  for (const auto &values : velocityStorage_)
+    bytes += values.capacity() * sizeof(double);
+  return bytes;
 }
 
 } // namespace wavevortex::runtime

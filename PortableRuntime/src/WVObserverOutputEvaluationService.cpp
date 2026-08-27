@@ -286,7 +286,6 @@ public:
     bool isXYOnly = false;
   };
 
-  WVTransformConstantStratificationConfiguration configuration;
   WVIntegrationStateLayout stateLayout;
   bool isDynamicsLinear = false;
   WVPortableObserverDescriptor descriptor;
@@ -309,6 +308,7 @@ public:
   std::vector<WVEventFieldEvaluationPlan> eventFieldPlans;
   std::vector<std::vector<Output>> observerOutputs;
   WVIntegrationState preparedIntegrationState;
+  std::vector<WVCoefficientFamilyConstView> preparedLegacyCoefficientViews;
   std::size_t preparedEventOrdinal = 0;
   double preparedScheduledTime = 0.0;
   std::uint64_t preparationGeneration = 0;
@@ -382,8 +382,7 @@ public:
                  std::max(retained, live));
   }
 
-  WVKernelStatus evaluate(const WVState &state, bool initial,
-                          const WVIntegrationState *integrationState,
+  WVKernelStatus evaluate(const WVIntegrationState &state, bool initial,
                           bool evaluateMoving,
                           WVObserverOutputEvaluationMetrics &metrics) {
     if (running)
@@ -401,29 +400,25 @@ public:
       ++metrics.fieldEvaluationCount;
     }
     if (!initial && !movingFieldViews.empty() && evaluateMoving) {
-      if (integrationState == nullptr) {
-        finish();
-        return invalid("Moving observer output requires integration state.");
-      }
       for (const auto &coordinates : movingCoordinates) {
         if (coordinates.xBlockIndex >=
-                integrationState->additionalBlockCount ||
+                state.additionalBlockCount ||
             coordinates.yBlockIndex >=
-                integrationState->additionalBlockCount ||
+                state.additionalBlockCount ||
             (!coordinates.isXYOnly &&
              coordinates.zBlockIndex >=
-                 integrationState->additionalBlockCount)) {
+                 state.additionalBlockCount)) {
           finish();
           return invalid("Moving observer coordinate state is unavailable.");
         }
-        const auto *x = integrationState->additionalBlocks +
+        const auto *x = state.additionalBlocks +
                         coordinates.xBlockIndex;
-        const auto *y = integrationState->additionalBlocks +
+        const auto *y = state.additionalBlocks +
                         coordinates.yBlockIndex;
         const auto *z =
             coordinates.isXYOnly
                 ? nullptr
-                : integrationState->additionalBlocks +
+                : state.additionalBlocks +
                       coordinates.zBlockIndex;
         std::copy_n(x->realData, coordinates.count,
                     movingX.data() + coordinates.offset);
@@ -449,9 +444,17 @@ public:
     } else if (!initial && !movingFieldViews.empty()) {
       ++metrics.skippedParticleEvaluationCount;
     }
-    preparedIntegrationState = integrationState == nullptr
-                                   ? WVIntegrationState{state, nullptr, 0}
-                                   : *integrationState;
+    preparedIntegrationState = state;
+    preparedLegacyCoefficientViews.clear();
+    preparedLegacyCoefficientViews.reserve(stateLayout.coefficientFamilyCount());
+    for (std::size_t family = 0;
+         family < stateLayout.coefficientFamilyCount(); ++family)
+      preparedLegacyCoefficientViews.push_back(
+          coefficientFamilyView(stateLayout, state, family));
+    preparedIntegrationState.coefficientFamilies =
+        preparedLegacyCoefficientViews.data();
+    preparedIntegrationState.coefficientFamilyCount =
+        preparedLegacyCoefficientViews.size();
     prepared = true;
     ++metrics.preparedEventCount;
     finish();
@@ -558,6 +561,14 @@ WVObserverOutputEvaluationService::~WVObserverOutputEvaluationService() =
     default;
 
 WVKernelStatus WVObserverOutputEvaluationService::create(
+    bool isDynamicsLinear, const WVPortableObserverDescriptor &descriptor,
+    WVFieldEvaluationService &fieldEvaluationService,
+    std::unique_ptr<WVObserverOutputEvaluationService> &service) {
+  return create({}, isDynamicsLinear, descriptor, nullptr, service,
+                &fieldEvaluationService);
+}
+
+WVKernelStatus WVObserverOutputEvaluationService::create(
     const WVTransformConstantStratificationConfiguration &configuration,
     bool isDynamicsLinear, const WVPortableObserverDescriptor &descriptor,
     std::unique_ptr<WVFFTEngine> engine,
@@ -568,32 +579,10 @@ WVKernelStatus WVObserverOutputEvaluationService::create(
         new WVObserverOutputEvaluationService());
     candidate->impl_ = std::make_unique<Impl>();
     auto &impl = *candidate->impl_;
-    impl.configuration = configuration;
     impl.isDynamicsLinear = isDynamicsLinear;
     impl.descriptor = descriptor;
     const auto &descriptorRecord = impl.descriptor.record();
     WVKernelStatus status;
-    WVTransformConstantStratificationDescriptor transformDescriptor;
-    status = WVTransformConstantStratificationDescriptor::create(
-        configuration, transformDescriptor);
-    if (!status)
-      return status;
-    const auto coefficientShape = transformDescriptor.spectralShape();
-    const std::vector<std::size_t> coefficientDimensions{
-        coefficientShape.rows, coefficientShape.columns};
-    const WVTransformStateDescription stateDescription{
-        "WVTransformConstantStratification",
-        {configuration.Nx, configuration.Ny, configuration.Nz},
-        {{"Ap", coefficientDimensions,
-          WVToleranceKind::coefficientEnergyScaled},
-         {"Am", coefficientDimensions,
-          WVToleranceKind::coefficientEnergyScaled},
-         {"A0", coefficientDimensions,
-          WVToleranceKind::coefficientEnergyScaled}}};
-    status = WVIntegrationStateLayout::createCoefficientOnly(
-        stateDescription, impl.stateLayout);
-    if (!status)
-      return status;
     if (borrowedFieldEvaluationService == nullptr) {
       status = WVFieldEvaluationService::create(configuration, std::move(engine),
                                                 impl.ownedFields);
@@ -603,9 +592,14 @@ WVKernelStatus WVObserverOutputEvaluationService::create(
     } else {
       impl.fields = borrowedFieldEvaluationService;
     }
+    status = impl.fields->createStateLayout(descriptor, impl.stateLayout);
+    if (!status)
+      return status;
 
     WVObserverOutputPlanningContext planningContext;
-    planningContext.configuration = &configuration;
+    planningContext.configuration = impl.fields->hasLegacyConfiguration()
+                                        ? &impl.fields->configuration()
+                                        : nullptr;
     planningContext.stateBlocks = descriptorRecord.stateBlocks.data();
     planningContext.stateBlockCount = descriptorRecord.stateBlocks.size();
     planningContext.isDynamicsLinear = isDynamicsLinear;
@@ -770,7 +764,8 @@ WVKernelStatus WVObserverOutputEvaluationService::create(
             positions.stateBlockIdentifiers.size() < 2 ||
             (!positions.isXYOnly &&
              positions.stateBlockIdentifiers.size() < 3) ||
-            positions.fixedZ.size() != positions.positionCount)
+            (!positions.fixedZ.empty() &&
+             positions.fixedZ.size() != positions.positionCount))
           return invalid("Moving observer output plan has invalid coordinates.");
         movingOffset = impl.movingX.size();
         impl.movingX.resize(movingOffset + positions.positionCount);
@@ -1097,10 +1092,13 @@ WVKernelStatus WVObserverOutputEvaluationService::preflight(
 
 WVKernelStatus WVObserverOutputEvaluationService::useFieldEvaluationService(
     WVFieldEvaluationService &fieldEvaluationService) {
-  if (!sameTransformConfiguration(impl_->configuration,
-                                  fieldEvaluationService.configuration()))
+  const bool compatible =
+      impl_->fields != nullptr &&
+      impl_->fields->isCompatibleWith(fieldEvaluationService) &&
+      fieldEvaluationService.isCompatibleWith(impl_->stateLayout);
+  if (!compatible)
     return invalid("Borrowed field-evaluation service uses an incompatible "
-                   "constant-stratification configuration.");
+                   "resolved transform layout.");
   impl_->ownedFields.reset();
   impl_->fields = &fieldEvaluationService;
   metrics_.retainedStorageBytes = persistentBytes();
@@ -1109,6 +1107,11 @@ WVKernelStatus WVObserverOutputEvaluationService::useFieldEvaluationService(
 
 WVKernelStatus
 WVObserverOutputEvaluationService::prepareInitial(const WVState &state) {
+  return prepareInitial(WVIntegrationState{state, nullptr, 0, nullptr, 0});
+}
+
+WVKernelStatus WVObserverOutputEvaluationService::prepareInitial(
+    const WVIntegrationState &state) {
   const auto started = std::chrono::steady_clock::now();
   impl_->preparedOccurrences.clear();
   impl_->eventFieldBatchEntries.clear();
@@ -1118,8 +1121,8 @@ WVObserverOutputEvaluationService::prepareInitial(const WVState &state) {
     ++impl_->preparationGeneration;
   impl_->updateOccurrenceMetrics(metrics_);
   impl_->preparedEventOrdinal = 0;
-  impl_->preparedScheduledTime = state.t;
-  const auto status = impl_->evaluate(state, true, nullptr, false, metrics_);
+  impl_->preparedScheduledTime = state.waveVortex.t;
+  const auto status = impl_->evaluate(state, true, false, metrics_);
   metrics_.evaluationSeconds +=
       std::chrono::duration<double>(std::chrono::steady_clock::now() - started)
           .count();
@@ -1173,8 +1176,7 @@ WVKernelStatus WVObserverOutputEvaluationService::prepare(
     }
   impl_->preparedEventOrdinal = event.eventOrdinal;
   impl_->preparedScheduledTime = event.scheduledTime;
-  auto status = impl_->evaluate(event.state.waveVortex, false, &event.state,
-                                needsMoving, metrics_);
+  auto status = impl_->evaluate(event.state, false, needsMoving, metrics_);
   if (status) {
     std::size_t requestedOccurrenceCount = 0;
     for (std::size_t routeIndex = 0; routeIndex < event.routeCount;
@@ -1341,7 +1343,7 @@ WVKernelStatus WVObserverOutputEvaluationService::prepare(
     impl_->updateOccurrenceMetrics(metrics_);
     if (!impl_->eventFieldBatchEntries.empty()) {
       status = impl_->fields->evaluateEventBatch(
-          event.state.waveVortex, impl_->eventFieldBatchEntries.data(),
+          event.state, impl_->eventFieldBatchEntries.data(),
           impl_->eventFieldBatchEntries.size());
       if (status)
         ++metrics_.fieldEvaluationCount;

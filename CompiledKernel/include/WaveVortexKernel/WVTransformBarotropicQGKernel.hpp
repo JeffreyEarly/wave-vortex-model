@@ -195,6 +195,18 @@ public:
         const WVComplexConstView& A0, double& enstrophy);
     WVKernelStatus uvMax(const WVComplexConstView& A0,
                          double& maximumSpeed);
+    WVKernelStatus advectScalar(const WVComplexConstView& A0,
+                                const WVRealConstView& scalar,
+                                bool shouldAntialias,
+                                WVRealView& rightHandSide);
+    WVKernelStatus prepareAdvectionFields(
+        const WVComplexConstView& A0,
+        WVBarotropicQGOperationWorkspace& workspace,
+        WVRealFieldBundleConstView& fields);
+    WVKernelStatus advectScalarWithAdvectionFields(
+        const WVRealConstView& scalar,
+        const WVRealFieldBundleConstView& advectionFields,
+        bool shouldAntialias, WVRealView& rightHandSide);
     std::size_t enforceReality(WVComplexView& A0) const noexcept;
 
 private:
@@ -216,6 +228,7 @@ private:
     WVKernelStatus spatialDerivative(const WVRealConstView& input,
                                      bool xDerivative,
                                      WVRealView& output);
+    WVKernelStatus antialiasScalarInPlace(WVRealView& scalar);
     WVKernelStatus validateForcingOperation(
         const WVComplexConstView& A0, const WVComplexView& F0) const;
     WVKernelStatus fillHalfSpectrum(const WVComplexConstView& input,

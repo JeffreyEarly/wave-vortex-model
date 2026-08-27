@@ -648,6 +648,13 @@ WVPortableObserverDescriptor::create(const WVPortableObserverRecord &record,
                        " is owned by more than one integrated observer.");
     }
 
+    std::set<std::string> requiredCoefficientFamilies;
+    for (const auto &block : record.stateBlocks)
+      if (block.scalarType == WVStateScalarType::complex64 &&
+          block.toleranceKind == WVToleranceKind::coefficientEnergyScaled &&
+          block.ownership == WVStateOwnership::integratorOwned)
+        requiredCoefficientFamilies.insert(block.identifier);
+
     std::set<std::string> fileIdentifiers;
     std::set<std::string> destinations;
     for (const auto &file : record.outputFiles) {
@@ -690,11 +697,11 @@ WVPortableObserverDescriptor::create(const WVPortableObserverRecord &record,
                                        .coefficientRestartFamilies;
             restartFamilies.insert(families.begin(), families.end());
           }
-          if (restartFamilies.find("Ap") == restartFamilies.end() ||
-              restartFamilies.find("Am") == restartFamilies.end() ||
-              restartFamilies.find("A0") == restartFamilies.end())
+          if (!std::includes(restartFamilies.begin(), restartFamilies.end(),
+                             requiredCoefficientFamilies.begin(),
+                             requiredCoefficientFamilies.end()))
             return invalid("A complete coefficient-restart group must contain "
-                           "providers for Ap, Am, and A0.");
+                           "every family declared by the resolved transform.");
         }
       }
       if (!file.groups.empty() && restartGroupCount != 1)
