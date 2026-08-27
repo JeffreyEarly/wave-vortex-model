@@ -3,6 +3,7 @@ classdef TestPortableRunRequestWriter < matlab.unittest.TestCase
         RepositoryRoot (1,1) string
         TemporaryFolder (1,1) string
         ModelPath (1,1) string
+        BarotropicQGPath (1,1) string
     end
 
     methods (TestMethodSetup)
@@ -13,6 +14,9 @@ classdef TestPortableRunRequestWriter < matlab.unittest.TestCase
             testCase.ModelPath = fullfile(testCase.TemporaryFolder,"model bundle Ω.nc");
             copyfile(testCase.fixturePath(),testCase.ModelPath);
             ncwriteatt(testCase.ModelPath,"/","portableFileIdentifier","primary");
+            testCase.BarotropicQGPath = fullfile(testCase.TemporaryFolder,"qg model Ω.nc");
+            testCase.createBarotropicQGFixture(testCase.BarotropicQGPath,[6 5],1,true);
+            ncwriteatt(testCase.BarotropicQGPath,"/","portableFileIdentifier","qg-primary");
         end
     end
 
@@ -80,6 +84,145 @@ classdef TestPortableRunRequestWriter < matlab.unittest.TestCase
             destinationText = extractBetween(string(fileread(requestA)), ...
                 '"destinations": {','    }');
             testCase.verifyLessThan(strfind(destinationText,'"primary"'),strfind(destinationText,'"secondary"'))
+        end
+
+        function writesBarotropicQGGeometryAndIntegrationForms(testCase)
+            cases = {
+                [5 4], 0, false; ...
+                [6 5], 1, true; ...
+                [5 6], 1, false; ...
+                [6 4], 0, true};
+            forms = {
+                "fixed-rk4", "explicit"; ...
+                "fixed-rk4", "cfl"; ...
+                "adaptive-rk23", "adaptive"; ...
+                "adaptive-rk45", "adaptive"; ...
+                "adaptive-rk78", "adaptive"};
+            for iCase = 1:size(cases,1)
+                Nxy = cases{iCase,1};
+                j = cases{iCase,2};
+                shouldAntialias = cases{iCase,3};
+                caseName = sprintf("qg-%dx%d-j%d-a%d",Nxy(1),Nxy(2),j,shouldAntialias);
+                modelPath = fullfile(testCase.TemporaryFolder,caseName+".nc");
+                testCase.createBarotropicQGFixture(modelPath,Nxy,j,shouldAntialias);
+                ncwriteatt(modelPath,"/","portableFileIdentifier",caseName);
+                for iForm = 1:size(forms,1)
+                    method = forms{iForm,1};
+                    policy = forms{iForm,2};
+                    requestPath = fullfile(testCase.TemporaryFolder,caseName+"-"+method+"-"+policy+".json");
+                    if policy == "explicit"
+                        WVModel.writePortableRunRequest(requestPath,modelPath, ...
+                            schemaVersion=2,method=method,finalTime=.01,initialStep=.0025);
+                    elseif policy == "cfl"
+                        WVModel.writePortableRunRequest(requestPath,modelPath, ...
+                            schemaVersion=2,method=method,finalTime=.01,cfl=.25,timeStepConstraint="advective");
+                    else
+                        WVModel.writePortableRunRequest(requestPath,modelPath, ...
+                            schemaVersion=2,method=method,finalTime=.01,initialStep=.0025,maximumStep=.005, ...
+                            relativeTolerance=1e-6,absoluteToleranceScale=1e-9);
+                    end
+                    document = jsondecode(fileread(requestPath));
+                    testCase.verifyEqual(string(document.integration.method),method)
+                    testCase.verifyEqual(string(document.modelFiles),modelPath)
+                    requestText = lower(string(fileread(requestPath)));
+                    for forbidden = ["barotropic","transform","forcing","observer","restart","state"]
+                        testCase.verifyFalse(contains(requestText,'"'+forbidden+'"'))
+                    end
+                end
+            end
+        end
+
+        function barotropicQGSiblingsGroupsPoliciesAndMappings(testCase)
+            primary = fullfile(testCase.TemporaryFolder,"qg primary.nc");
+            secondary = fullfile(testCase.TemporaryFolder,"qg secondary.nc");
+            testCase.createBarotropicQGFixture(primary,[7 6],0,false,shouldAddSecondGroup=true);
+            copyfile(primary,secondary)
+            ncwriteatt(primary,"/","portableFileIdentifier","primary");
+            ncwriteatt(secondary,"/","portableFileIdentifier","secondary");
+
+            createMap = configureDictionary("string","string");
+            createMap(["secondary","primary"]) = ["created-secondary.nc","created-primary.nc"];
+            createRequest = fullfile(testCase.TemporaryFolder,"qg-create.json");
+            WVModel.writePortableRunRequest(createRequest,[secondary primary], ...
+                schemaVersion=2,method="fixed-rk4",finalTime=.01,initialStep=.0025, ...
+                outputPolicy="create",destinations=createMap);
+            document = jsondecode(fileread(createRequest));
+            testCase.verifyEqual(string(document.modelFiles),[secondary;primary])
+
+            for policy = ["replace","append"]
+                firstDestination = fullfile(testCase.TemporaryFolder,policy+"-primary.nc");
+                secondDestination = fullfile(testCase.TemporaryFolder,policy+"-secondary.nc");
+                copyfile(primary,firstDestination)
+                copyfile(secondary,secondDestination)
+                destinationMap = configureDictionary("string","string");
+                destinationMap(["primary","secondary"]) = [firstDestination,secondDestination];
+                requestPath = fullfile(testCase.TemporaryFolder,"qg-"+policy+".json");
+                WVModel.writePortableRunRequest(requestPath,[primary secondary], ...
+                    schemaVersion=2,method="adaptive-rk45",finalTime=.01, ...
+                    initialStep=.0025,maximumStep=.005,relativeTolerance=1e-6,absoluteToleranceScale=1e-9, ...
+                    outputPolicy=policy,destinations=destinationMap);
+                testCase.verifyEqual(string(jsondecode(fileread(requestPath)).output.policy),policy)
+            end
+        end
+
+        function rejectsInvalidBarotropicQGMetadataAndStateOwnership(testCase)
+            request = fullfile(testCase.TemporaryFolder,"qg-invalid.json");
+            missing = fullfile(testCase.TemporaryFolder,"qg-missing.nc");
+            fieldsOnly = fullfile(testCase.TemporaryFolder,"qg-fields-only.nc");
+            testCase.createBarotropicQGFixture(missing,[6 5],1,false,shouldUseLinearDynamics=true);
+            testCase.createBarotropicQGFixture(fieldsOnly,[6 5],1,false, ...
+                shouldUseLinearDynamics=true,shouldAddA0Field=true);
+            for path = [missing fieldsOnly]
+                testCase.verifyError(@()testCase.writeFixedQGRequest(request,path), ...
+                    "WaveVortexModel:PortableRunRequestContract")
+            end
+
+            ambiguous = fullfile(testCase.TemporaryFolder,"qg-ambiguous.nc");
+            copyfile(testCase.BarotropicQGPath,ambiguous)
+            compactLength = ncinfo(ambiguous,"kl").Size;
+            nccreate(ambiguous,"/wave-vortex/A0",Dimensions={"kl",compactLength},Datatype="double");
+            testCase.verifyError(@()testCase.writeFixedQGRequest(request,ambiguous), ...
+                "WaveVortexModel:PortableRunRequestContract")
+
+            dummy = fullfile(testCase.TemporaryFolder,"qg-dummy-ap.nc");
+            copyfile(testCase.BarotropicQGPath,dummy)
+            nccreate(dummy,"/wave-vortex/Ap",Dimensions={"kl",compactLength},Datatype="double");
+            testCase.verifyError(@()testCase.writeFixedQGRequest(request,dummy), ...
+                "WaveVortexModel:PortableRunRequestContract")
+
+            invalidGeometry = fullfile(testCase.TemporaryFolder,"qg-invalid-geometry.nc");
+            copyfile(testCase.BarotropicQGPath,invalidGeometry)
+            x = ncread(invalidGeometry,"x");
+            x(2) = x(1);
+            ncwrite(invalidGeometry,"x",x)
+            testCase.verifyError(@()testCase.writeFixedQGRequest(request,invalidGeometry), ...
+                "WaveVortexModel:PortableRunRequestContract")
+
+            invalidJ = fullfile(testCase.TemporaryFolder,"qg-invalid-j.nc");
+            copyfile(testCase.BarotropicQGPath,invalidJ)
+            ncwrite(invalidJ,"j",2)
+            testCase.verifyError(@()testCase.writeFixedQGRequest(request,invalidJ), ...
+                "WaveVortexModel:PortableRunRequestContract")
+
+            invalidAntialias = fullfile(testCase.TemporaryFolder,"qg-invalid-antialias.nc");
+            copyfile(testCase.BarotropicQGPath,invalidAntialias)
+            ncwrite(invalidAntialias,"shouldAntialias",uint8(2))
+            testCase.verifyError(@()testCase.writeFixedQGRequest(request,invalidAntialias), ...
+                "WaveVortexModel:PortableRunRequestContract")
+
+            invalidVersion = fullfile(testCase.TemporaryFolder,"qg-invalid-version.nc");
+            copyfile(testCase.BarotropicQGPath,invalidVersion)
+            ncwriteatt(invalidVersion,"/","model_version","5.0.0")
+            testCase.verifyError(@()testCase.writeFixedQGRequest(request,invalidVersion), ...
+                "WaveVortexModel:PortableRunRequestContract")
+
+            inconsistent = fullfile(testCase.TemporaryFolder,"qg-inconsistent.nc");
+            copyfile(testCase.BarotropicQGPath,inconsistent)
+            ncwriteatt(inconsistent,"/","portableFileIdentifier","qg-secondary");
+            ncwrite(inconsistent,"h",2*ncread(inconsistent,"h"))
+            testCase.verifyError(@()WVModel.writePortableRunRequest(request, ...
+                [testCase.BarotropicQGPath inconsistent],schemaVersion=2,method="fixed-rk4", ...
+                finalTime=.01,initialStep=.0025),"WaveVortexModel:PortableRunRequestInconsistentBundle")
         end
 
         function rejectsInvalidContractsOptionsAndAliases(testCase)
@@ -226,6 +369,39 @@ classdef TestPortableRunRequestWriter < matlab.unittest.TestCase
             cleanup = onCleanup(@()fclose(fileIdentifier));
             fwrite(fileIdentifier,bytes,"uint8");
             clear cleanup
+        end
+
+        function writeFixedQGRequest(~,requestPath,modelPath)
+            WVModel.writePortableRunRequest(requestPath,modelPath, ...
+                schemaVersion=2,method="fixed-rk4",finalTime=.01,initialStep=.0025);
+        end
+
+        function createBarotropicQGFixture(~,path,Nxy,j,shouldAntialias,options)
+            arguments
+                ~
+                path (1,1) string
+                Nxy (1,2) double
+                j (1,1) double
+                shouldAntialias (1,1) logical
+                options.shouldUseLinearDynamics (1,1) logical = false
+                options.shouldAddA0Field (1,1) logical = false
+                options.shouldAddSecondGroup (1,1) logical = false
+            end
+            wvt = WVTransformBarotropicQG([15000 9000],Nxy,h=.8,j=j, ...
+                g=9.80665,planetaryRadius=6.3712e6,rotationRate=7.292115e-5, ...
+                latitude=33,shouldAntialias=shouldAntialias);
+            model = WVModel(wvt,shouldUseLinearDynamics=options.shouldUseLinearDynamics);
+            if options.shouldAddA0Field
+                model.eulerianObservingSystem.addNetCDFOutputVariables('A0');
+            end
+            outputFile = model.createNetCDFFileForModelOutput(path,outputInterval=.005,shouldOverwriteExisting=true);
+            if options.shouldAddSecondGroup
+                group = outputFile.addNewEvenlySpacedOutputGroup("fields",outputInterval=.005);
+                group.addObservingSystem(WVEulerianFields(model,fieldNames={'u','qgpv'}));
+            end
+            model.setupIntegrator(integratorType="fixed",deltaT=.0025);
+            model.integrateToTime(.005,shouldShowIntegrationDiagnostics=false,callback=@(~)[]);
+            model.closeNetCDFFile();
         end
     end
 end

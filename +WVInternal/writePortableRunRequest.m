@@ -290,15 +290,34 @@ transformClass = annotatedClass;
 if strlength(transformClass) == 0
     transformClass = wvTransform;
 end
-if transformClass ~= "WVTransformConstantStratification"
-    error("WaveVortexModel:PortableRunRequestContract","The portable runtime supports only WVTransformConstantStratification bundles.");
-end
 modelVersion = textAttribute(information.Attributes,"model_version","");
 majorVersion = regexp(modelVersion,"^4(?:\.|$)","once");
 if isempty(majorVersion)
     error("WaveVortexModel:PortableRunRequestContract","The structural portable profile requires a WaveVortexModel 4.x file.");
 end
 
+dynamicsMode = numericAttribute(information.Attributes,"WVModelIsDynamicsLinear",0);
+switch transformClass
+    case "WVTransformConstantStratification"
+        bundleSignature = inspectConstantStratificationMetadata(path,information,transformClass,modelVersion,dynamicsMode);
+    case "WVTransformBarotropicQG"
+        bundleSignature = inspectBarotropicQGMetadata(path,information,transformClass,modelVersion,dynamicsMode);
+    otherwise
+        error("WaveVortexModel:PortableRunRequestContract", ...
+            "The portable runtime does not support transform %s.",transformClass);
+end
+
+fileIdentifier = textAttribute(information.Attributes,"portableFileIdentifier","");
+if strlength(fileIdentifier) == 0
+    fileIdentifier = regexprep(path,"[^A-Za-z0-9_.-]","-");
+end
+if strlength(fileIdentifier) == 0
+    fileIdentifier = "unnamed";
+end
+metadata = struct("fileIdentifier",fileIdentifier,"bundleSignature",bundleSignature);
+end
+
+function signature = inspectConstantStratificationMetadata(path,information,transformClass,modelVersion,dynamicsMode)
 supportedGroups = false(size(information.Groups));
 completeRestartGroups = 0;
 for iGroup = 1:numel(information.Groups)
@@ -325,14 +344,6 @@ if ~any(supportedGroups) || completeRestartGroups ~= 1
     error("WaveVortexModel:PortableRunRequestContract","Each source file must contain supported output and exactly one complete coefficient stream.");
 end
 
-fileIdentifier = textAttribute(information.Attributes,"portableFileIdentifier","");
-if strlength(fileIdentifier) == 0
-    fileIdentifier = regexprep(path,"[^A-Za-z0-9_.-]","-");
-end
-if strlength(fileIdentifier) == 0
-    fileIdentifier = "unnamed";
-end
-
 dimensionNames = ["x","y","z"];
 dimensionLengths = zeros(1,3);
 for iDimension = 1:3
@@ -354,10 +365,205 @@ for iScalar = 1:numel(scalarNames)
         error("WaveVortexModel:PortableRunRequestContract","Configuration variable %s must be finite.",scalarNames(iScalar));
     end
 end
-dynamicsMode = numericAttribute(information.Attributes,"WVModelIsDynamicsLinear",0);
-metadata = struct("fileIdentifier",fileIdentifier, ...
-    "bundleSignature",struct("transformClass",transformClass,"modelVersion",modelVersion, ...
-    "dimensionLengths",dimensionLengths,"scalarValues",scalarValues,"dynamicsMode",dynamicsMode));
+signature = struct("transformClass",transformClass,"modelVersion",modelVersion, ...
+    "dimensionLengths",dimensionLengths,"scalarValues",scalarValues,"dynamicsMode",dynamicsMode);
+end
+
+function signature = inspectBarotropicQGMetadata(path,information,transformClass,modelVersion,dynamicsMode)
+dimensionNames = ["x","y"];
+dimensionLengths = zeros(1,2);
+coordinateValues = cell(1,2);
+for iDimension = 1:2
+    dimensionName = dimensionNames(iDimension);
+    dimensionLengths(iDimension) = rootDimensionLength(information,dimensionName);
+    if dimensionLengths(iDimension) < 2
+        error("WaveVortexModel:PortableRunRequestContract", ...
+            "Barotropic QG dimension %s must contain at least two points.",dimensionName);
+    end
+    coordinate = rootVariable(information,dimensionName);
+    coordinateDimensions = arrayfun(@dimensionLeafName,coordinate.Dimensions);
+    if string(coordinate.Datatype) ~= "double" || ...
+            ~isequal(coordinateDimensions,dimensionName) || ...
+            prod(double(coordinate.Size)) ~= dimensionLengths(iDimension)
+        error("WaveVortexModel:PortableRunRequestContract", ...
+            "Barotropic QG coordinate %s must be a double vector on its matching root dimension.",dimensionName);
+    end
+    values = reshape(double(ncread(path,dimensionName)),1,[]);
+    if any(~isfinite(values)) || any(diff(values) <= 0)
+        error("WaveVortexModel:PortableRunRequestContract", ...
+            "Barotropic QG coordinate %s must be finite and strictly increasing.",dimensionName);
+    end
+    coordinateValues{iDimension} = values;
+end
+
+scalarNames = ["Lx","Ly","h","j","g","planetaryRadius","rotationRate","latitude","shouldAntialias"];
+scalarValues = zeros(size(scalarNames));
+for iScalar = 1:numel(scalarNames)
+    scalarValues(iScalar) = readRootScalar(path,information,scalarNames(iScalar));
+end
+positiveScalars = scalarValues([1 2 3 5 6 7]);
+latitude = scalarValues(8);
+if any(positiveScalars <= 0) || abs(latitude) < 5 || abs(latitude) > 85
+    error("WaveVortexModel:PortableRunRequestContract", ...
+        "Barotropic QG lengths and physical constants must be positive, and absolute latitude must lie in [5,85].");
+end
+if ~ismember(scalarValues(4),[0 1])
+    error("WaveVortexModel:PortableRunRequestContract","Barotropic QG mode j must be exactly 0 or 1.");
+end
+if ~ismember(scalarValues(9),[0 1])
+    error("WaveVortexModel:PortableRunRequestContract","Barotropic QG shouldAntialias must be logical scalar metadata.");
+end
+t0 = readRootScalar(path,information,"t0");
+
+compactLength = rootDimensionLength(information,"kl");
+if compactLength < 1
+    error("WaveVortexModel:PortableRunRequestContract","Barotropic QG compact kl storage must be nonempty.");
+end
+supportedGroups = false(size(information.Groups));
+completeRestartGroups = 0;
+for iGroup = 1:numel(information.Groups)
+    group = information.Groups(iGroup);
+    if textAttribute(group.Attributes,"AnnotatedClass","") ~= "WVModelOutputGroupEvenlySpaced"
+        continue
+    end
+    supportedGroups(iGroup) = true;
+    validatePortableGroupContracts(group);
+    completeRestartGroups = completeRestartGroups + validateBarotropicQGRestartGroup(group,compactLength);
+end
+if ~any(supportedGroups) || completeRestartGroups ~= 1
+    error("WaveVortexModel:PortableRunRequestContract", ...
+        "Each Barotropic QG source file must contain supported output and exactly one declared compact WVCoefficients A0 stream.");
+end
+
+signature = struct("transformClass",transformClass,"modelVersion",modelVersion, ...
+    "dimensionLengths",dimensionLengths,"coordinateValues",{coordinateValues}, ...
+    "scalarValues",scalarValues,"t0",t0,"compactLength",compactLength,"dynamicsMode",dynamicsMode);
+end
+
+function isComplete = validateBarotropicQGRestartGroup(group,compactLength)
+isComplete = false;
+variableNames = string({group.Variables.Name});
+hasPlain = any(variableNames == "A0");
+hasReal = any(variableNames == "A0_real");
+hasImaginary = any(variableNames == "A0_imag");
+if ~hasPlain && ~hasReal && ~hasImaginary
+    return
+end
+coefficientObservers = declaredObserverCount(group,"WVCoefficients");
+if coefficientObservers == 0
+    return
+elseif coefficientObservers ~= 1
+    error("WaveVortexModel:PortableRunRequestContract", ...
+        "A Barotropic QG output group declares an ambiguous WVCoefficients observer contract in %s.",group.Name);
+end
+if hasPlain && (hasReal || hasImaginary) || xor(hasReal,hasImaginary)
+    error("WaveVortexModel:PortableRunRequestContract", ...
+        "Barotropic QG A0 has ambiguous or incomplete compact storage in %s.",group.Name);
+end
+for forbidden = ["Ap","Ap_real","Ap_imag","Am","Am_real","Am_imag"]
+    if any(variableNames == forbidden)
+        error("WaveVortexModel:PortableRunRequestContract", ...
+            "Barotropic QG compact state must not contain dummy %s storage in %s.",forbidden,group.Name);
+    end
+end
+if hasPlain
+    validateCompactVariable(group,"A0",compactLength,false);
+else
+    validateCompactVariable(group,"A0_real",compactLength,true);
+    validateCompactVariable(group,"A0_imag",compactLength,true);
+    realVariable = group.Variables(find(variableNames == "A0_real",1));
+    imaginaryVariable = group.Variables(find(variableNames == "A0_imag",1));
+    if ~isequal(realVariable.Size,imaginaryVariable.Size) || ...
+            ~isequal(arrayfun(@dimensionLeafName,realVariable.Dimensions), ...
+            arrayfun(@dimensionLeafName,imaginaryVariable.Dimensions))
+        error("WaveVortexModel:PortableRunRequestContract", ...
+            "Barotropic QG compact A0 components must have identical dimensions in %s.",group.Name);
+    end
+    validateComplexMarker(realVariable,"isRealPart",1,group.Name);
+    validateComplexMarker(realVariable,"isImaginaryPart",0,group.Name);
+    validateComplexMarker(imaginaryVariable,"isRealPart",0,group.Name);
+    validateComplexMarker(imaginaryVariable,"isImaginaryPart",1,group.Name);
+end
+isComplete = true;
+end
+
+function validateCompactVariable(group,name,compactLength,allowTimeSeries)
+variableNames = string({group.Variables.Name});
+variable = group.Variables(find(variableNames == name,1));
+dimensionNames = arrayfun(@dimensionLeafName,variable.Dimensions);
+if allowTimeSeries
+    validDimensions = isequal(dimensionNames,"kl") || ...
+        (isequal(dimensionNames,["kl" "t"]) && variable.Size(2) > 0);
+else
+    validDimensions = isequal(dimensionNames,"kl");
+end
+if string(variable.Datatype) ~= "double" || ~validDimensions || ...
+        isempty(variable.Size) || variable.Size(1) ~= compactLength
+    error("WaveVortexModel:PortableRunRequestContract", ...
+        "Barotropic QG compact variable %s has an incompatible type or shape in %s.",name,group.Name);
+end
+if allowTimeSeries
+    validateComplexMarker(variable,"isComplex",1,group.Name);
+end
+end
+
+function validateComplexMarker(variable,name,expectedValue,groupName)
+value = numericAttribute(variable.Attributes,name,NaN);
+if ~isequal(value,double(expectedValue))
+    error("WaveVortexModel:PortableRunRequestContract", ...
+        "Barotropic QG compact variable %s has an invalid %s marker in %s.",variable.Name,name,groupName);
+end
+end
+
+function count = declaredObserverCount(group,className)
+count = 0;
+for iGroup = 1:numel(group.Groups)
+    child = group.Groups(iGroup);
+    if dimensionLeafName(child) == "observingSystems"
+        count = countAnnotatedClass(child,className);
+        return
+    end
+end
+end
+
+function count = countAnnotatedClass(group,className)
+count = double(textAttribute(group.Attributes,"AnnotatedClass","") == className);
+for iGroup = 1:numel(group.Groups)
+    count = count + countAnnotatedClass(group.Groups(iGroup),className);
+end
+end
+
+function lengthValue = rootDimensionLength(information,name)
+index = find(string({information.Dimensions.Name}) == name,1);
+if isempty(index)
+    error("WaveVortexModel:PortableRunRequestContract","The NetCDF root is missing dimension %s.",name);
+end
+lengthValue = double(information.Dimensions(index).Length);
+end
+
+function variable = rootVariable(information,name)
+index = find(string({information.Variables.Name}) == name,1);
+if isempty(index)
+    error("WaveVortexModel:PortableRunRequestContract","The NetCDF root is missing variable %s.",name);
+end
+variable = information.Variables(index);
+end
+
+function value = readRootScalar(path,information,name)
+variable = rootVariable(information,name);
+if prod(double(variable.Size)) ~= 1
+    error("WaveVortexModel:PortableRunRequestContract","The NetCDF root is missing scalar configuration variable %s.",name);
+end
+value = double(ncread(path,name));
+if ~isscalar(value) || ~isfinite(value)
+    error("WaveVortexModel:PortableRunRequestContract","Configuration variable %s must be a finite scalar.",name);
+end
+end
+
+function name = dimensionLeafName(metadata)
+name = string(metadata.Name);
+parts = split(name,"/");
+name = parts(end);
 end
 
 function validatePortableGroupContracts(group)
