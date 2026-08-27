@@ -45,7 +45,7 @@ try
         elseif startsWith(requestedIntegrator,"adaptive-")
             matlabIntegrator = matlabIntegratorFor(requestedIntegrator);
             model.setupIntegrator(integratorType="adaptive",integrator=matlabIntegrator,relTolerance=config.case.relativeTolerance,absTolerance=config.case.absoluteTolerance,shouldShowIntegrationStats=0);
-            model.odeOptions = odeset(model.odeOptions,'InitialStep',config.case.initialStep,'MaxStep',config.case.maximumStep,'Stats','on');
+            model.odeOptions = odeset(model.odeOptions,'InitialStep',config.case.initialStep,'Stats','on');
         else
             error("WaveVortexBenchmark:UnknownIntegrator","Unsupported requested integrator %s.",requestedIntegrator);
         end
@@ -142,7 +142,8 @@ value.absoluteToleranceComponentHashes = arrayfun(@(index)threeInterfaceToleranc
 value.requestedInitialStep = double(definition.initialStep);
 value.effectiveInitialStep = double(odeget(model.odeOptions,'InitialStep'));
 value.requestedMaximumStep = double(definition.maximumStep);
-value.effectiveMaximumStep = double(odeget(model.odeOptions,'MaxStep'));
+value.maximumStepPolicy = string(definition.maximumStepPolicy);
+value.effectiveMaximumStep = 0.1*(double(definition.finalTime)-double(model.t));
 value.initialTime = double(model.t);
 value.finalTime = double(definition.finalTime);
 end
@@ -168,7 +169,7 @@ value = str2double(token{1});
 end
 
 function value = outputRecordCounts(pathname)
-value = struct("waveVortex",recordCount(pathname,"/wave-vortex/t"),"particles",recordCount(pathname,"/particles/t"),"tracers",recordCount(pathname,"/tracers/t"));
+value = struct("waveVortex",recordCount(pathname,"/wave-vortex/t"),"dense",recordCount(pathname,"/dense/t"),"particles",recordCount(pathname,"/particles/t"),"tracers",recordCount(pathname,"/tracers/t"));
 end
 
 function identifier = activeIntegrator(model)
@@ -203,8 +204,11 @@ value = 0;
 if ~isfield(definition,"workload") || string(definition.workload) ~= "composite-dense-output"
     return
 end
-deliveredAfterInitial = max(0,double(integrator.outputRecordCounts.waveVortex)-1);
-value = max(0,deliveredAfterInitial-double(integrator.acceptedStepCount));
+if string(definition.requestedIntegrator) == "fixed-rk4"
+    value = double(definition.denseOutputPointsPerStep);
+else
+    value = double(definition.denseOutputIntegrationRecordCount);
+end
 end
 
 function value = matlabIntegratorStorageAccounting

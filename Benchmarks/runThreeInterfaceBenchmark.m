@@ -2,15 +2,17 @@ function results = runThreeInterfaceBenchmark(options)
 % Compare matched MATLAB builtin, MATLAB compiled, and standalone compiled work.
 arguments
     options.Nxyz (1,3) double {mustBeInteger,mustBePositive} = [256 256 129]
+    options.Lxyz (1,3) double {mustBePositive} = [150e3 150e3 1300]
     options.processRunCount (1,1) double {mustBeInteger,mustBePositive} = 3
-    options.deltaT (1,1) double {mustBePositive} = 1/1024
+    options.deltaT (1,1) double = NaN
+    options.adaptiveInitialStep (1,1) double = NaN
     options.relativeTolerance (1,1) double {mustBePositive} = 1e-3
     options.absoluteTolerance (1,1) double {mustBePositive} = 1e-6
     options.caseIds (1,:) string = strings(1,0)
     options.integrators (1,:) string {mustBeMember(options.integrators,["fixed-rk4" "adaptive-rk23" "adaptive-rk45" "adaptive-rk78"])} = ["fixed-rk4" "adaptive-rk23" "adaptive-rk45" "adaptive-rk78"]
     options.workloads (1,:) string {mustBeMember(options.workloads,["coefficient-endpoint" "composite-dense-output"])} = ["coefficient-endpoint" "composite-dense-output"]
-    options.physicalConfigurations (1,:) string {mustBeMember(options.physicalConfigurations,["hydrostatic" "nonhydrostatic"])} = ["hydrostatic" "nonhydrostatic"]
-    options.integrationStepCount (1,1) double {mustBeInteger,mustBePositive} = 10
+    options.physicalConfigurations (1,:) string {mustBeMember(options.physicalConfigurations,["hydrostatic" "nonhydrostatic"])} = "nonhydrostatic"
+    options.integrationStepCount (1,1) double {mustBeInteger,mustBePositive} = 56
     options.denseOutputPointsPerStep (1,1) double {mustBeInteger,mustBePositive} = 3
     options.adaptiveStepCount (1,1) double {mustBeInteger,mustBePositive} = 10
     options.adaptiveOutputCount (1,1) double {mustBeInteger,mustBePositive} = 2
@@ -39,6 +41,7 @@ originalPath = path;
 originalRng = rng;
 stateCleanup = onCleanup(@()restoreState(originalDirectory,originalPath,originalRng));
 addRepositoryPaths(repositoryRoot,benchmarkFolder);
+[options,physicalState,physicalEvidence,stepControlEvidence] = resolveBenchmarkContract(options);
 if options.outputDirectory == ""
     options.outputDirectory = fullfile(benchmarkFolder,"results","runs",options.runId+"-three-interface");
 end
@@ -51,7 +54,7 @@ end
 if options.shouldWriteArtifacts
     mkdir(options.outputDirectory);
 end
-results = initializeResult(options,repositoryRoot);
+results = initializeResult(options,repositoryRoot,physicalEvidence,stepControlEvidence);
 workFolder = string(tempname);
 mkdir(workFolder);
 workCleanup = onCleanup(@()removeFolder(workFolder));
@@ -68,7 +71,8 @@ try
     executables = buildStandaloneWorkers(repositoryRoot,capabilities);
     activeStage = "fixture";
     definitions = caseDefinitions(options);
-    [fixtures,fixtureRecords] = createMatchedFixtures(workFolder,options,definitions);
+    [fixtures,fixtureRecords] = createMatchedFixtures(workFolder,options,definitions,physicalState);
+    clear physicalState
     results.configuration.fixtures = fixtureRecords;
     if numel(fixtureRecords) == 1
         results.configuration.fixtureSHA256 = fixtureRecords.sha256;
@@ -88,8 +92,18 @@ try
                 fixturePath = fixtures(fixtureKey(definitions(iCase)));
                 results.runs(end+1,1) = runOne(interface,definitions(iCase),iRepeat,fixturePath,executables,capabilities,options,repositoryRoot,benchmarkFolder,workFolder);
                 checkpoint(results,options);
+                if string(results.runs(end).status) ~= "complete"
+                    error("WaveVortexBenchmark:ThreeInterfaceWorker","%s/%s failed: %s",interface,definitions(iCase).id,results.runs(end).failure.message);
+                end
             end
         end
+        activeStage = "correctness-repeat";
+        repeatMask = [results.runs.repeatIndex] == iRepeat;
+        repeatComparison = aggregate(results.runs(repeatMask),definitions,1e-12);
+        [results.runs(repeatMask),releasedBytes] = releaseValidatedOutputs(results.runs(repeatMask),workFolder);
+        results.repeatComparisonEvidence(end+1,1) = struct("repeatIndex",iRepeat,"comparison",repeatComparison,"releasedRunCount",nnz(repeatMask),"releasedBytes",releasedBytes); %#ok<AGROW>
+        checkpoint(results,options);
+        activeStage = "workers";
     end
     failures = results.runs(string({results.runs.status})~="complete");
     if ~isempty(failures)
@@ -97,7 +111,7 @@ try
         error("WaveVortexBenchmark:ThreeInterfaceWorkers","One or more workers failed:%s%s",newline,strjoin(messages,newline));
     end
     activeStage = "correctness";
-    results.comparison = aggregate(results.runs,definitions,1e-12);
+    results.comparison = aggregate(results.runs,definitions,1e-12,results.repeatComparisonEvidence);
     validateThreeInterfaceBenchmarkContract(results);
     results.status = "complete";
     results.completedAtUTC = utcTimestamp;
@@ -117,7 +131,56 @@ end
 clear workCleanup stateCleanup
 end
 
-function results = initializeResult(options,repositoryRoot)
+function [options,state,physicalEvidence,stepControlEvidence] = resolveBenchmarkContract(options)
+state = struct();
+physicalEvidence = struct();
+stepControlEvidence = struct();
+if ~isnan(options.deltaT) && options.deltaT <= 0
+    error("WaveVortexBenchmark:InvalidStepControl","deltaT must be positive when supplied.")
+end
+if ~isnan(options.adaptiveInitialStep) && options.adaptiveInitialStep <= 0
+    error("WaveVortexBenchmark:InvalidStepControl","adaptiveInitialStep must be positive when supplied.")
+end
+if ~isempty(options.caseIds)
+    if isnan(options.deltaT), options.deltaT = 1/1024; end
+    if isnan(options.adaptiveInitialStep), options.adaptiveInitialStep = options.deltaT; end
+    return
+end
+if ~isequal(options.physicalConfigurations,"nonhydrostatic")
+    error("WaveVortexBenchmark:PhysicalConfiguration","The canonical integrator study uses one nonhydrostatic physical configuration.")
+end
+wvt = WVTransformConstantStratification(options.Lxyz,options.Nxyz,N0=sqrt(2e-5),latitude=45,isHydrostatic=false,shouldAntialias=true);
+[state,physicalEvidence] = initializeThreeInterfaceIntegratorState(wvt,4001);
+model = WVModel(wvt);
+cleanup = onCleanup(@()closeModels(model));
+[fixedCFLCandidate,advectiveCFLCandidate,oscillatoryCFLCandidate] = model.timeStepForCFL(0.25);
+[adaptiveCFLCandidate,adaptiveAdvectiveCFLCandidate,adaptiveOscillatoryCFLCandidate] = model.timeStepForCFL(0.5);
+if isnan(options.deltaT)
+    options.deltaT = 2^floor(log2(fixedCFLCandidate));
+end
+if options.deltaT > fixedCFLCandidate
+    error("WaveVortexBenchmark:UnstableFixedStep","The requested RK4 step %.17g s exceeds the frozen-state CFL candidate %.17g s.",options.deltaT,fixedCFLCandidate)
+end
+if isnan(options.adaptiveInitialStep)
+    options.adaptiveInitialStep = adaptiveCFLCandidate;
+end
+stepControlEvidence = struct( ...
+    "fixedStepPolicy","largest power of two not exceeding the frozen-state CFL=0.25 candidate unless explicitly overridden", ...
+    "fixedStep",options.deltaT, ...
+    "fixedCFLCandidate",fixedCFLCandidate, ...
+    "fixedAdvectiveCFLCandidate",advectiveCFLCandidate, ...
+    "fixedOscillatoryCFLCandidate",oscillatoryCFLCandidate, ...
+    "adaptiveInitialStepPolicy","frozen-state CFL=0.5 candidate unless explicitly overridden", ...
+    "adaptiveInitialStep",options.adaptiveInitialStep, ...
+    "adaptiveCFLCandidate",adaptiveCFLCandidate, ...
+    "adaptiveAdvectiveCFLCandidate",adaptiveAdvectiveCFLCandidate, ...
+    "adaptiveOscillatoryCFLCandidate",adaptiveOscillatoryCFLCandidate, ...
+    "adaptiveMaximumStepPolicy","MATLAB default; no user maximum step", ...
+    "finalTime",options.integrationStepCount*options.deltaT);
+clear cleanup
+end
+
+function results = initializeResult(options,repositoryRoot,physicalEvidence,stepControlEvidence)
 [commit,tree,isDirty] = gitIdentity(repositoryRoot);
 isLegacy = ~isempty(options.caseIds);
 results = struct( ...
@@ -128,22 +191,26 @@ results = struct( ...
     "completedAtUTC","", ...
     "source",struct("repository","JeffreyEarly/wave-vortex-model","commit",commit,"tree",tree,"isDirty",isDirty), ...
     "environment",environmentRecord, ...
-    "configuration",struct("studyId",conditional(isLegacy,"legacy-three-interface-v1","integrator-runtime-memory-v1"),"Nxyz",options.Nxyz,"Lxyz",[15000 15000 1300],"processRunCount",options.processRunCount,"warmupCount",0,"samplesPerProcess",1,"deltaT",options.deltaT,"relativeTolerance",options.relativeTolerance,"absoluteTolerance",options.absoluteTolerance,"caseIds",options.caseIds,"integrators",options.integrators,"workloads",options.workloads,"physicalConfigurations",options.physicalConfigurations,"integrationStepCount",options.integrationStepCount,"denseOutputPointsPerStep",options.denseOutputPointsPerStep,"adaptiveStepCount",options.adaptiveStepCount,"adaptiveOutputCount",options.adaptiveOutputCount,"threadCount",min(18,maxNumCompThreads),"samplingIntervalSeconds",options.samplingIntervalSeconds,"fixtureSHA256","","fixtures",struct([]),"correctnessTolerance",1e-12,"timingBoundary","integration-only wall time begins immediately before integration and ends after required output delivery; startup, construction, provider creation, planning, and cleanup are excluded","rssBoundary","external process-tree RSS sampled only while the worker reports integrate or output-delivery phases; total live-process RSS peak is primary, steady-retained baseline, operation increment, process-lifetime peak, and final RSS are diagnostics"), ...
-    "provider",struct(),"cases",[],"runs",repmat(emptyRun,0,1),"comparison",[],"failure",emptyFailure);
+    "configuration",struct("studyId",conditional(isLegacy,"legacy-three-interface-v1","integrator-runtime-memory-v1"),"Nxyz",options.Nxyz,"Lxyz",options.Lxyz,"processRunCount",options.processRunCount,"warmupCount",0,"samplesPerProcess",1,"deltaT",options.deltaT,"adaptiveInitialStep",options.adaptiveInitialStep,"maximumStepPolicy",conditional(isLegacy,"explicit","matlab-default"),"relativeTolerance",options.relativeTolerance,"absoluteTolerance",options.absoluteTolerance,"caseIds",options.caseIds,"integrators",options.integrators,"workloads",options.workloads,"physicalConfigurations",options.physicalConfigurations,"integrationStepCount",options.integrationStepCount,"denseOutputPointsPerStep",options.denseOutputPointsPerStep,"adaptiveStepCount",options.adaptiveStepCount,"adaptiveOutputCount",options.adaptiveOutputCount,"threadCount",min(18,maxNumCompThreads),"samplingIntervalSeconds",options.samplingIntervalSeconds,"fixtureSHA256","","fixtures",struct([]),"initialCondition",physicalEvidence,"stepControls",stepControlEvidence,"correctnessTolerance",1e-12,"timingBoundary","integration-only wall time begins immediately before integration and ends after required output delivery; startup, construction, provider creation, planning, and cleanup are excluded","rssBoundary","external process-tree RSS sampled only while the worker reports integrate or output-delivery phases; total live-process RSS peak is primary, steady-retained baseline, operation increment, process-lifetime peak, and final RSS are diagnostics","outputRetentionPolicy","complete all cross-interface and endpoint/dense correctness gates for one repeat, retain repeat evidence, then release validated raw NetCDF outputs"), ...
+    "provider",struct(),"cases",[],"runs",repmat(emptyRun,0,1),"repeatComparisonEvidence",repmat(struct("repeatIndex",0,"comparison",[],"releasedRunCount",0,"releasedBytes",0),0,1),"comparison",[],"failure",emptyFailure);
 end
 
 function definitions = caseDefinitions(options)
 if isempty(options.caseIds)
-    common = struct("Nxyz",options.Nxyz,"deltaT",options.deltaT,"finalTime",(1+options.integrationStepCount)*options.deltaT,"relativeTolerance",options.relativeTolerance,"absoluteTolerance",options.absoluteTolerance,"initialStep",options.deltaT,"maximumStep",options.deltaT,"forcing","default WVNonlinearAdvection","shouldAntialias",true,"seed",4001,"operation","model-continuation","integrationStepCount",options.integrationStepCount,"denseOutputPointsPerStep",options.denseOutputPointsPerStep);
+    finalTime = options.integrationStepCount*options.deltaT;
+    denseOutputStartTime = 0;
+    denseOutputInterval = options.deltaT/(options.denseOutputPointsPerStep+1);
+    common = struct("Nxyz",options.Nxyz,"Lxyz",options.Lxyz,"deltaT",options.deltaT,"finalTime",finalTime,"relativeTolerance",options.relativeTolerance,"absoluteTolerance",options.absoluteTolerance,"initialStep",options.adaptiveInitialStep,"maximumStep",[],"maximumStepPolicy","matlab-default","forcing","default WVNonlinearAdvection","shouldAntialias",true,"seed",4001,"operation","model-continuation","integrationStepCount",options.integrationStepCount,"denseOutputPointsPerStep",options.denseOutputPointsPerStep,"denseOutputStartTime",[],"denseOutputEndTime",[],"denseOutputRecordCount",0,"denseOutputIntegrationRecordCount",0);
     definitions = repmat(mergeStruct(common,struct("id","","requestedIntegrator","","physicalConfiguration","","isHydrostatic",false,"workload","","outputInterval",NaN,"observerGraph","")),0,1);
     for physicalConfiguration = options.physicalConfigurations
         for integrator = options.integrators
             for workload = options.workloads
                 isDense = workload == "composite-dense-output";
-                outputInterval = conditional(isDense,options.deltaT/(options.denseOutputPointsPerStep+1),options.integrationStepCount*options.deltaT);
-                observerGraph = conditional(isDense,"fields, two 3-D particles with tracked u, one 3-D tracer, one source-linked mooring, scheduled interior dense output","coefficient-only state with endpoint-only output");
+                outputInterval = conditional(isDense,denseOutputInterval,finalTime);
+                observerGraph = conditional(isDense,"one persisted restart record plus four first-step records containing u, two 3-D particles with tracked u, one 3-D tracer, and one source-linked mooring; coefficients at endpoints","coefficient-only state with endpoint-only output");
                 identifier = physicalConfiguration+"--"+integrator+"--"+workload;
-                definitions(end+1,1) = mergeStruct(common,struct("id",identifier,"requestedIntegrator",integrator,"physicalConfiguration",physicalConfiguration,"isHydrostatic",physicalConfiguration=="hydrostatic","workload",workload,"outputInterval",outputInterval,"observerGraph",observerGraph)); %#ok<AGROW>
+                schedule = struct("denseOutputStartTime",conditional(isDense,denseOutputStartTime,[]),"denseOutputEndTime",conditional(isDense,options.deltaT,[]),"denseOutputRecordCount",conditional(isDense,options.denseOutputPointsPerStep+2,0),"denseOutputIntegrationRecordCount",conditional(isDense,options.denseOutputPointsPerStep+1,0));
+                definitions(end+1,1) = mergeStruct(common,mergeStruct(struct("id",identifier,"requestedIntegrator",integrator,"physicalConfiguration",physicalConfiguration,"isHydrostatic",physicalConfiguration=="hydrostatic","workload",workload,"outputInterval",outputInterval,"observerGraph",observerGraph),schedule)); %#ok<AGROW>
             end
         end
     end
@@ -207,7 +274,7 @@ else
             workerCommand = workerCommand+" --benchmark-model-dense-output 1";
         end
         if startsWith(definition.requestedIntegrator,"adaptive-")
-            workerCommand = workerCommand+" --relative-tolerance "+numberText(definition.relativeTolerance)+" --absolute-tolerance "+numberText(definition.absoluteTolerance)+" --initial-step "+numberText(definition.initialStep)+" --maximum-step "+numberText(definition.maximumStep);
+            workerCommand = workerCommand+" --relative-tolerance "+numberText(definition.relativeTolerance)+" --absolute-tolerance "+numberText(definition.absoluteTolerance)+" --initial-step "+numberText(definition.initialStep);
         end
     end
     command = sampledCommand(workerCommand,samplePath,phasePath,stdoutPath,stderrPath,options,benchmarkFolder);
@@ -254,7 +321,11 @@ run.provider = struct("id","native-neon-pthreads","version",string(capabilities.
 run.failure = emptyFailure;
 end
 
-function comparison = aggregate(runs,definitions,tolerance)
+function comparison = aggregate(runs,definitions,tolerance,repeatEvidence)
+if nargin < 4
+    repeatEvidence = struct([]);
+end
+usesRepeatEvidence = ~isempty(repeatEvidence);
 interfaces = ["matlab-builtin" "matlab-compiled" "standalone-compiled"];
 comparison = repmat(struct("id","","interfaces",[],"maximumRelativeError",NaN,"outputAgreementPassed",false,"outputGraph",emptyOutputGraph,"integratorAgreementPassed",false,"adaptiveWorkAgreementPassed",false,"absoluteToleranceFingerprintAgreementPassed",true,"memoryAgreementPassed",false,"endpointTrajectoryAgreementPassed",true,"matchedContractPassed",false),numel(definitions),1);
 for iCase = 1:numel(definitions)
@@ -263,12 +334,21 @@ for iCase = 1:numel(definitions)
     builtin = selected(string({selected.interface})=="matlab-builtin");
     memoryPassed = all(arrayfun(@(item)string(item.memory.status)=="complete" && isfinite(item.memory.totalPeakRSSBytes) && item.memory.totalPeakRSSBytes>0,selected));
     builtinProcess = median([builtin.processWallSeconds]); builtinIntegration = median([builtin.integrationSeconds]); builtinPeak = median(arrayfun(@(item)item.memory.totalPeakRSSBytes,builtin)); builtinIncrement = median(arrayfun(@(item)item.memory.peakIncrementBytes,builtin));
-    maximumError = 0; outputPassed = true; outputGraph = emptyOutputGraph;
+    maximumError = 0; outputPassed = true; outputGraph = emptyOutputGraph; endpointTrajectoryPassed = true;
+    if usesRepeatEvidence
+        caseEvidence = arrayfun(@(item)item.comparison(iCase),repeatEvidence);
+        maximumError = max([caseEvidence.maximumRelativeError]);
+        outputPassed = all([caseEvidence.outputAgreementPassed]);
+        endpointTrajectoryPassed = all([caseEvidence.endpointTrajectoryAgreementPassed]);
+        for evidence = reshape(caseEvidence,1,[])
+            outputGraph = mergeOutputGraph(outputGraph,evidence.outputGraph);
+        end
+    end
     for iInterface = 1:numel(interfaces)
         candidate = selected(string({selected.interface})==interfaces(iInterface));
         processValue = median([candidate.processWallSeconds]); integrationValue = median([candidate.integrationSeconds]); peakValue = median(arrayfun(@(item)item.memory.totalPeakRSSBytes,candidate)); incrementValue = median(arrayfun(@(item)item.memory.peakIncrementBytes,candidate)); finalValue = median(arrayfun(@(item)item.memory.finalRSSBytes,candidate));
         records(iInterface) = struct("id",interfaces(iInterface),"processWallSeconds",processValue,"interfaceTotalSeconds",median([candidate.interfaceTotalSeconds]),"integrationSeconds",integrationValue,"totalPeakRSSBytes",peakValue,"incrementalPeakRSSBytes",incrementValue,"finalRSSBytes",finalValue,"processWallRatio",processValue/builtinProcess,"integrationRatio",integrationValue/builtinIntegration,"totalRSSRatio",peakValue/builtinPeak,"incrementalRSSRatio",safeRatio(incrementValue,builtinIncrement));
-        if iInterface > 1
+        if iInterface > 1 && ~usesRepeatEvidence
             for iRepeat = 1:numel(candidate)
                 reference = builtin([builtin.repeatIndex]==candidate(iRepeat).repeatIndex);
                 [errorValue,agreement,details] = compareOutputs(reference,candidate(iRepeat),tolerance);
@@ -287,15 +367,34 @@ for iCase = 1:numel(definitions)
     end
     toleranceFingerprintPassed = ~isAdaptive || toleranceFingerprintMatches(selected);
     toleranceGatePassed = ~isfield(definitions(iCase),"workload") || toleranceFingerprintPassed;
-    comparison(iCase) = struct("id",definitions(iCase).id,"interfaces",records,"maximumRelativeError",maximumError,"outputAgreementPassed",outputPassed,"outputGraph",outputGraph,"integratorAgreementPassed",integratorsPassed,"adaptiveWorkAgreementPassed",adaptiveWorkPassed,"absoluteToleranceFingerprintAgreementPassed",toleranceFingerprintPassed,"memoryAgreementPassed",memoryPassed,"endpointTrajectoryAgreementPassed",true,"matchedContractPassed",providersPassed&&integratorsPassed&&adaptiveWorkPassed&&toleranceGatePassed&&memoryPassed&&maximumError<=tolerance&&outputPassed);
+    comparison(iCase) = struct("id",definitions(iCase).id,"interfaces",records,"maximumRelativeError",maximumError,"outputAgreementPassed",outputPassed,"outputGraph",outputGraph,"integratorAgreementPassed",integratorsPassed,"adaptiveWorkAgreementPassed",adaptiveWorkPassed,"absoluteToleranceFingerprintAgreementPassed",toleranceFingerprintPassed,"memoryAgreementPassed",memoryPassed,"endpointTrajectoryAgreementPassed",endpointTrajectoryPassed,"matchedContractPassed",providersPassed&&integratorsPassed&&adaptiveWorkPassed&&toleranceGatePassed&&memoryPassed&&endpointTrajectoryPassed&&maximumError<=tolerance&&outputPassed);
 end
-if all(arrayfun(@(definition)isfield(definition,"workload"),definitions))
+if ~usesRepeatEvidence && all(arrayfun(@(definition)isfield(definition,"workload"),definitions))
     comparison = validateEndpointTrajectoryIndependence(comparison,runs,definitions,tolerance);
 end
 end
 
+function [runs,releasedBytes] = releaseValidatedOutputs(runs,workFolder)
+releasedBytes = 0;
+for iRun = 1:numel(runs)
+    pathname = string(runs(iRun).output.path);
+    runs(iRun).output.retention = "released-after-repeat-correctness";
+    runs(iRun).output.releasedBytes = 0;
+    if pathname == "" || ~isfile(pathname)
+        continue
+    end
+    if ~startsWith(pathname,workFolder+filesep)
+        error("WaveVortexBenchmark:UnsafeOutputRelease","Refusing to release a validated output outside the benchmark temporary directory: %s",pathname);
+    end
+    information = dir(pathname);
+    runs(iRun).output.releasedBytes = information.bytes;
+    releasedBytes = releasedBytes+information.bytes;
+    delete(pathname);
+end
+end
+
 function passed = adaptiveControlsMatch(runs,definition)
-required = ["controller" "relativeTolerance" "requestedInitialStep" "effectiveInitialStep" "requestedMaximumStep" "effectiveMaximumStep" "initialTime" "finalTime" "acceptedStepCount" "rejectedStepCount" "rhsEvaluationCount" "denseOutputEvaluationCount" "fsalReuseCount" "fsalInvalidationCount" "outputRecordCounts"];
+required = ["controller" "relativeTolerance" "requestedInitialStep" "effectiveInitialStep" "requestedMaximumStep" "maximumStepPolicy" "effectiveMaximumStep" "initialTime" "finalTime" "acceptedStepCount" "rejectedStepCount" "rhsEvaluationCount" "denseOutputEvaluationCount" "fsalReuseCount" "fsalInvalidationCount" "outputRecordCounts"];
 passed = all(arrayfun(@(run)all(isfield(run.integrator,required)),runs));
 if ~passed, return, end
 expectedController = "matlab-ode"+extractAfter(string(definition.requestedIntegrator),"adaptive-rk")+"-v1";
@@ -304,13 +403,23 @@ for run = reshape(runs,1,[])
     passed = passed && string(current.controller)==expectedController;
     passed = passed && numericControlMatches(current.relativeTolerance,definition.relativeTolerance);
     passed = passed && numericControlMatches(current.requestedInitialStep,definition.initialStep) && numericControlMatches(current.effectiveInitialStep,definition.initialStep);
-    passed = passed && numericControlMatches(current.requestedMaximumStep,definition.maximumStep) && numericControlMatches(current.effectiveMaximumStep,definition.maximumStep);
+    passed = passed && string(current.maximumStepPolicy)==string(definition.maximumStepPolicy);
+    passed = passed && optionalNumericControlMatches(current.requestedMaximumStep,definition.maximumStep);
+    passed = passed && numericControlMatches(current.effectiveMaximumStep,0.1*(double(current.finalTime)-double(current.initialTime)));
     passed = passed && numericControlMatches(current.finalTime,definition.finalTime);
 end
 end
 
 function passed = numericControlMatches(actual,expected)
 passed = abs(double(actual)-double(expected))<=8*eps(max([1 abs(double(expected))]));
+end
+
+function passed = optionalNumericControlMatches(actual,expected)
+if isempty(actual) || isempty(expected)
+    passed = isempty(actual) && isempty(expected);
+else
+    passed = numericControlMatches(actual,expected);
+end
 end
 
 function comparison = validateEndpointTrajectoryIndependence(comparison,runs,definitions,tolerance)
@@ -409,6 +518,7 @@ value.workspaceStateEquivalentCount = double(report.integrator.workspaceStateEqu
 value.workspaceMaximumLiveStateEquivalentCount = double(report.integrator.workspaceMaximumLiveStateEquivalentCount);
 value.denseHistoryStateEquivalentCount = double(report.integrator.denseHistoryStateEquivalentCount);
 value.continuousExtensionWorkspaceStateEquivalentCount = double(report.integrator.continuousExtensionWorkspaceStateEquivalentCount);
+value.continuousExtensionWorkspaceMaximumLiveStateEquivalentCount = double(report.integrator.continuousExtensionWorkspaceMaximumLiveStateEquivalentCount);
 value.stateSizedBuffers = report.integratorStateSizedBuffers;
 value.storageAccounting = report.integratorStorageLedger;
 value.sharedAbstractionStateSizedCopyCount = double(report.livenessBytes.contractAbstractionAdditionalArrayStorage>0);
@@ -421,6 +531,7 @@ if startsWith(definition.requestedIntegrator,"adaptive-")
     value.requestedInitialStep = double(report.integrator.requestedInitialStep);
     value.effectiveInitialStep = double(report.integrator.effectiveInitialStep);
     value.requestedMaximumStep = double(report.integrator.requestedMaximumStep);
+    value.maximumStepPolicy = string(definition.maximumStepPolicy);
     value.effectiveMaximumStep = double(report.integrator.effectiveMaximumStep);
 end
 value.outputRecordCounts = outputRecordCounts(pathname);
@@ -489,14 +600,14 @@ for category = reshape(value.categories,1,[])
 end
 end
 
-function [fixtures,records] = createMatchedFixtures(workFolder,options,definitions)
+function [fixtures,records] = createMatchedFixtures(workFolder,options,definitions,physicalState)
 keys = unique(arrayfun(@fixtureKey,definitions),"stable");
 fixtures = dictionary(string.empty(0,1),string.empty(0,1));
 records = repmat(struct("key","","path","","sha256","","physicalConfiguration","","workload",""),numel(keys),1);
 for iKey = 1:numel(keys)
     definition = definitions(find(arrayfun(@fixtureKey,definitions)==keys(iKey),1));
     pathname = fullfile(workFolder,"matched-"+replace(keys(iKey),"--","-")+"-model.nc");
-    createMatchedFixture(pathname,options,definition);
+    createMatchedFixture(pathname,options,definition,physicalState);
     fixtures(keys(iKey)) = pathname;
     physicalConfiguration = "legacy-nonhydrostatic";
     workload = "legacy-composite";
@@ -514,24 +625,45 @@ else
 end
 end
 
-function createMatchedFixture(pathname,options,definition)
+function createMatchedFixture(pathname,options,definition,physicalState)
 isHydrostatic = false;
 isComposite = true;
 if isfield(definition,"isHydrostatic"), isHydrostatic = logical(definition.isHydrostatic); end
 if isfield(definition,"workload"), isComposite = string(definition.workload)=="composite-dense-output"; end
 outputInterval = definition.outputInterval;
-wvt = WVTransformConstantStratification([15000 15000 1300],options.Nxyz,N0=sqrt(2e-5),latitude=45,isHydrostatic=isHydrostatic,shouldAntialias=true);
-state = initializeWaveVortexBenchmarkState(wvt,4001); advanceWaveVortexBenchmarkState(wvt,state,0);
+isIntegratorStudy = isfield(definition,"workload");
+domain = conditional(isIntegratorStudy,definition.Lxyz,[15000 15000 1300]);
+wvt = WVTransformConstantStratification(domain,options.Nxyz,N0=sqrt(2e-5),latitude=45,isHydrostatic=isHydrostatic,shouldAntialias=true);
+if isIntegratorStudy
+    advanceWaveVortexBenchmarkState(wvt,physicalState,0);
+else
+    state = initializeWaveVortexBenchmarkState(wvt,4001);
+    advanceWaveVortexBenchmarkState(wvt,state,0);
+end
 model = WVModel(wvt); cleanup = onCleanup(@()closeModels(model));
 if isComposite
-    model.eulerianObservingSystem.addNetCDFOutputVariables('u');
-    model.setFloatPositions([1000 7000],[900 6500],[-250 -850],'u',absToleranceXY=1e-8,absToleranceZ=1e-8);
+    model.setFloatPositions([10e3 70e3],[9e3 65e3],[-250 -850],'u');
     model.addTracer(sin(2*pi*wvt.X/wvt.Lx).*cos(2*pi*wvt.Y/wvt.Ly),"dye");
 end
-model.setupIntegrator(integratorType="fixed",deltaT=options.deltaT);
-model.integrateToTime(options.deltaT,shouldShowIntegrationDiagnostics=false,callback=@(~)[]);
-outputFile = model.createNetCDFFileForModelOutput(pathname,outputInterval=outputInterval,shouldOverwriteExisting=true);
-if isComposite
+if ~isIntegratorStudy
+    model.setupIntegrator(integratorType="fixed",deltaT=options.deltaT);
+    model.integrateToTime(options.deltaT,shouldShowIntegrationDiagnostics=false,callback=@(~)[]);
+end
+endpointInterval = conditional(isIntegratorStudy,definition.finalTime,outputInterval);
+outputFile = model.createNetCDFFileForModelOutput(pathname,outputInterval=endpointInterval,shouldOverwriteExisting=true);
+if isComposite && isIntegratorStudy
+    group = outputFile.outputGroupWithName(model.defaultOutputGroupName());
+    particles = model.fluxedObservingSystemWithName("float");
+    tracer = model.fluxedObservingSystemWithName("dye");
+    group.removeObservingSystem([particles tracer]);
+    denseGroup = outputFile.addNewEvenlySpacedOutputGroup("dense",outputInterval=outputInterval,initialTime=definition.denseOutputStartTime,finalTime=definition.denseOutputEndTime);
+    denseGroup.addObservingSystem(WVEulerianFields(model,fieldNames={'u'}));
+    denseGroup.addObservingSystem(WVMooring(model,name="mooring",x=[0 50e3],y=[0 40e3],trackedFieldNames={'u'}));
+    particleGroup = outputFile.addNewEvenlySpacedOutputGroup("particles",outputInterval=outputInterval,initialTime=definition.denseOutputStartTime,finalTime=definition.denseOutputEndTime);
+    particleGroup.addObservingSystem(particles);
+    tracerGroup = outputFile.addNewEvenlySpacedOutputGroup("tracers",outputInterval=outputInterval,initialTime=definition.denseOutputStartTime,finalTime=definition.denseOutputEndTime);
+    tracerGroup.addObservingSystem(tracer);
+elseif isComposite
     group = outputFile.outputGroupWithName(model.defaultOutputGroupName());
     particles = model.fluxedObservingSystemWithName("float");
     tracer = model.fluxedObservingSystemWithName("dye");
@@ -672,7 +804,7 @@ function closeModels(varargin), for i=1:numel(varargin), value=varargin{i}; if ~
 function removeFolder(pathname), if isfolder(pathname), rmdir(pathname,"s"); end, end
 function verifyTemporaryCapacity(pathname,options)
 realGridBytes = prod(double(options.Nxyz))*8;
-requiredBytes = max(256*2^20,ceil(360*realGridBytes*options.processRunCount/3));
+requiredBytes = max(256*2^20,ceil(640*realGridBytes));
 [status,output] = system("/bin/df -Pk "+shellQuote(pathname));
 lines = splitlines(strtrim(string(output)));
 if status~=0 || numel(lines)<2
@@ -687,7 +819,7 @@ end
 end
 function restoreState(directory,originalPath,originalRng), cd(directory); path(originalPath); rng(originalRng); end
 function addRepositoryPaths(root,benchmark), metadata=jsondecode(fileread(fullfile(root,"resources","mpackage.json"))); for item=reshape(metadata.folders,1,[]), folder=fullfile(root,item.path); if isfolder(folder), addpath(folder); end, end, addpath(root); addpath(benchmark); end
-function writeText(pathname,contents), parent=fileparts(pathname); if ~isfolder(parent), mkdir(parent); end, fileId=fopen(pathname,"w"); if fileId<0, error("WaveVortexBenchmark:ArtifactWriteFailed","Unable to open %s",pathname); end, cleanup=onCleanup(@()fclose(fileId)); fprintf(fileId,"%s",contents); clear cleanup, end
+function writeText(pathname,contents), parent=fileparts(pathname); if ~isfolder(parent), mkdir(parent); end, temporaryPath=pathname+".tmp"; if isfile(temporaryPath), delete(temporaryPath); end, [fileId,message]=fopen(temporaryPath,"w"); if fileId<0, error("WaveVortexBenchmark:ArtifactWriteFailed","Unable to open %s: %s",temporaryPath,message); end, cleanup=onCleanup(@()fclose(fileId)); fprintf(fileId,"%s",contents); clear cleanup, [status,message]=movefile(temporaryPath,pathname,"f"); if ~status, error("WaveVortexBenchmark:ArtifactWriteFailed","Unable to publish %s: %s",pathname,message); end, end
 function value=sha256File(pathname), [status,output]=system(sprintf('/usr/bin/shasum -a 256 %s',shellQuote(pathname))); if status~=0, error("WaveVortexBenchmark:HashFailed","%s",output); end, value=string(extractBefore(strtrim(output),65)); end
 function [commit,tree,isDirty]=gitIdentity(root), commit=gitValue(root,"rev-parse HEAD"); tree=gitValue(root,"rev-parse HEAD^{tree}"); [status,~]=system("git -C "+shellQuote(root)+" diff --quiet && git -C "+shellQuote(root)+" diff --cached --quiet"); isDirty=status~=0; end
 function value=gitValue(root,args), [status,output]=system("git -C "+shellQuote(root)+" "+args); if status~=0,error("WaveVortexBenchmark:GitIdentity","%s",output);end,value=strtrim(string(output));end
@@ -697,5 +829,5 @@ function value=conditional(condition,a,b), if condition,value=a;else,value=b;end
 function value=emptyFailure, value=struct("stage","","identifier","","message","","report",""); end
 function value=emptyOutputGraph, value=struct("kind","","passed",true,"maximumRelativeError",0,"maximumAbsoluteError",0,"variableCount",0,"recordCount",0,"categories",repmat(struct("name","","variableCount",0,"maximumAbsoluteError",0,"maximumRelativeError",0,"passed",true),0,1),"differences",strings(0,1)); end
 function value=emptyRun, value=struct("schemaVersion","three-interface-worker-v1","status","failed","interface","","case",struct(),"repeatIndex",0,"sourceCommit","","processWallSeconds",NaN,"interfaceTotalSeconds",NaN,"integrationSeconds",NaN,"memory",struct(),"provider",struct(),"integrator",struct(),"finalState",struct(),"output",struct(),"diagnostics",struct(),"failure",struct("identifier","","message","","report","")); end
-function value=outputRecordCounts(pathname), value=struct("waveVortex",netCDFRecordCount(pathname,"/wave-vortex/t"),"particles",netCDFRecordCount(pathname,"/particles/t"),"tracers",netCDFRecordCount(pathname,"/tracers/t")); end
+function value=outputRecordCounts(pathname), value=struct("waveVortex",netCDFRecordCount(pathname,"/wave-vortex/t"),"dense",netCDFRecordCount(pathname,"/dense/t"),"particles",netCDFRecordCount(pathname,"/particles/t"),"tracers",netCDFRecordCount(pathname,"/tracers/t")); end
 function value=netCDFRecordCount(pathname,variable), try, value=numel(ncread(pathname,variable)); catch, value=0; end, end

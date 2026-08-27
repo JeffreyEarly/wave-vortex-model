@@ -1,16 +1,18 @@
 function results = runThreeInterfaceBenchmarkComparison(options)
-% Run the canonical matched interface comparison at both published resolutions.
+% Run the canonical matched interface comparison at the medium resolution.
 arguments
-    options.resolutions (:,3) double {mustBeInteger,mustBePositive} = [256 256 129; 512 512 257]
+    options.resolutions (:,3) double {mustBeInteger,mustBePositive} = [256 256 129]
+    options.Lxyz (1,3) double {mustBePositive} = [150e3 150e3 1300]
     options.processRunCount (1,1) double {mustBeInteger,mustBePositive} = 3
-    options.deltaT (1,1) double {mustBePositive} = 1/1024
+    options.deltaT (1,1) double = NaN
+    options.adaptiveInitialStep (1,1) double = NaN
     options.relativeTolerance (1,1) double {mustBePositive} = 1e-3
     options.absoluteTolerance (1,1) double {mustBePositive} = 1e-6
     options.caseIds (1,:) string = strings(1,0)
     options.integrators (1,:) string {mustBeMember(options.integrators,["fixed-rk4" "adaptive-rk23" "adaptive-rk45" "adaptive-rk78"])} = ["fixed-rk4" "adaptive-rk23" "adaptive-rk45" "adaptive-rk78"]
     options.workloads (1,:) string {mustBeMember(options.workloads,["coefficient-endpoint" "composite-dense-output"])} = ["coefficient-endpoint" "composite-dense-output"]
-    options.physicalConfigurations (1,:) string {mustBeMember(options.physicalConfigurations,["hydrostatic" "nonhydrostatic"])} = ["hydrostatic" "nonhydrostatic"]
-    options.integrationStepCount (1,1) double {mustBeInteger,mustBePositive} = 10
+    options.physicalConfigurations (1,:) string {mustBeMember(options.physicalConfigurations,["hydrostatic" "nonhydrostatic"])} = "nonhydrostatic"
+    options.integrationStepCount (1,1) double {mustBeInteger,mustBePositive} = 56
     options.denseOutputPointsPerStep (1,1) double {mustBeInteger,mustBePositive} = 3
     options.adaptiveStepCount (1,1) double {mustBeInteger,mustBePositive} = 10
     options.adaptiveOutputCount (1,1) double {mustBeInteger,mustBePositive} = 2
@@ -29,8 +31,10 @@ for iResolution = 1:size(options.resolutions,1)
     end
     collected{iResolution} = runThreeInterfaceBenchmark( ...
         Nxyz=options.resolutions(iResolution,:), ...
+        Lxyz=options.Lxyz, ...
         processRunCount=options.processRunCount, ...
         deltaT=options.deltaT, ...
+        adaptiveInitialStep=options.adaptiveInitialStep, ...
         relativeTolerance=options.relativeTolerance, ...
         absoluteTolerance=options.absoluteTolerance, ...
         caseIds=options.caseIds, ...

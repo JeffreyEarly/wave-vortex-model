@@ -75,16 +75,26 @@ classdef TestThreeInterfaceBenchmark < matlab.unittest.TestCase
 
         function integratorStudyRejectsEndpointDenseStorage(testCase)
             raw = integratorStudyFixture;
-            standalone = find(string({raw.runs.interface})=="standalone-compiled" & string(arrayfun(@(run)run.case.workload,raw.runs,"UniformOutput",false))=="coefficient-endpoint",1);
-            raw.runs(standalone).integrator.denseHistoryStateEquivalentCount = 1;
-            raw.runs(standalone).integrator.storageAccounting.denseHistoryBytes = 1024;
+            interfaces = reshape(string({raw.runs.interface}),[],1);
+            workloads = reshape(string(arrayfun(@(run)run.case.workload,raw.runs,"UniformOutput",false)),[],1);
+            standalone = find(interfaces=="standalone-compiled" & workloads=="coefficient-endpoint",1);
+            testCase.assertNotEmpty(standalone)
+            integrator = raw.runs(standalone).integrator;
+            integrator.denseHistoryStateEquivalentCount = 1;
+            integrator.storageAccounting.denseHistoryBytes = 1024;
+            raw.runs(standalone).integrator = integrator;
             testCase.verifyError(@()validateThreeInterfaceBenchmarkContract(raw),"WaveVortexBenchmark:UnexpectedDenseOutputWork")
         end
 
         function integratorStudyRejectsMissingRK78LazyExtension(testCase)
             raw = integratorStudyFixture;
-            standalone = find(string({raw.runs.interface})=="standalone-compiled" & string(arrayfun(@(run)run.case.workload,raw.runs,"UniformOutput",false))=="composite-dense-output",1);
-            raw.runs(standalone).integrator.continuousExtensionWorkspaceStateEquivalentCount = 0;
+            interfaces = reshape(string({raw.runs.interface}),[],1);
+            workloads = reshape(string(arrayfun(@(run)run.case.workload,raw.runs,"UniformOutput",false)),[],1);
+            standalone = find(interfaces=="standalone-compiled" & workloads=="composite-dense-output",1);
+            testCase.assertNotEmpty(standalone)
+            integrator = raw.runs(standalone).integrator;
+            integrator.continuousExtensionWorkspaceMaximumLiveStateEquivalentCount = 0;
+            raw.runs(standalone).integrator = integrator;
             testCase.verifyError(@()validateThreeInterfaceBenchmarkContract(raw),"WaveVortexBenchmark:MissingRK78LazyExtension")
         end
 
@@ -108,7 +118,7 @@ classdef TestThreeInterfaceBenchmark < matlab.unittest.TestCase
             stdoutPath = fullfile(testCase.TemporaryFolder,"stdout.txt");
             stderrPath = fullfile(testCase.TemporaryFolder,"stderr.txt");
             workerPath = fullfile(testCase.TemporaryFolder,"worker.sh");
-            writelines(["#!/bin/sh"; "printf '%s\\n' integrate > ""$1"""; "while :; do"; "  if [ -f ""$WV_RSS_PHASE_ACK"" ] && [ ""$(sed -n '1p' ""$WV_RSS_PHASE_ACK"")"" = integrate ]; then exit 0; fi"; "  sleep 0.001"; "done"],workerPath);
+            writelines(["#!/bin/sh"; "printf '%s\n' integrate > ""$1"""; "while :; do"; "  if [ -f ""$WV_RSS_PHASE_ACK"" ] && [ ""$(sed -n '1p' ""$WV_RSS_PHASE_ACK"")"" = integrate ]; then exit 0; fi"; "  sleep 0.001"; "done"],workerPath);
             sampler = fullfile(testCase.RepositoryRoot,"Benchmarks","runProcessWithRSS.sh");
             command = strjoin([shellQuote(sampler) shellQuote(samplePath) shellQuote(phasePath) "0.005" shellQuote(stdoutPath) shellQuote(stderrPath) "-- /bin/sh" shellQuote(workerPath) shellQuote(phasePath)]," ");
             [status,output] = system(command);
@@ -336,15 +346,23 @@ classdef TestThreeInterfaceBenchmark < matlab.unittest.TestCase
     end
 
     methods (Test,TestTags="optional")
-        function reducedDenseScheduleCrossesTenExactSteps(testCase)
+        function reducedDenseScheduleUsesAnchoredPhysicalContract(testCase)
             if ~isCanonicalNativePlatform
                 return
             end
-            result = runThreeInterfaceBenchmark(Nxyz=[8 6 5],processRunCount=1,integrators="fixed-rk4",workloads="composite-dense-output",physicalConfigurations="hydrostatic",integrationStepCount=10,samplingIntervalSeconds=0.005,plateauSeconds=0.02,shouldWriteArtifacts=false);
+            result = runThreeInterfaceBenchmark(Nxyz=[8 6 5],processRunCount=1,deltaT=1/1024,adaptiveInitialStep=1/1024,integrators="fixed-rk4",workloads="composite-dense-output",physicalConfigurations="nonhydrostatic",integrationStepCount=20,samplingIntervalSeconds=0.005,plateauSeconds=0.2,shouldWriteArtifacts=false);
             testCase.verifyEqual(result.status,"complete")
             testCase.verifyEqual(result.cases.deltaT,1/1024)
             testCase.verifyEqual(result.cases.denseOutputPointsPerStep,3)
+            testCase.verifyEqual(result.cases.denseOutputStartTime,0)
+            testCase.verifyEqual(result.cases.denseOutputEndTime,1/1024)
+            testCase.verifyEqual(result.cases.denseOutputRecordCount,5)
+            testCase.verifyEqual(result.cases.denseOutputIntegrationRecordCount,4)
             testCase.verifyTrue(result.comparison.matchedContractPassed)
+            testCase.verifyNumElements(result.repeatComparisonEvidence,1)
+            testCase.verifyEqual(result.repeatComparisonEvidence.releasedRunCount,3)
+            testCase.verifyGreaterThan(result.repeatComparisonEvidence.releasedBytes,0)
+            testCase.verifyTrue(all(arrayfun(@(run)string(run.output.retention)=="released-after-repeat-correctness",result.runs)))
         end
 
         function reducedMatchedBenchmarkRunsAllInterfaces(testCase)
@@ -443,7 +461,7 @@ end
 provider = struct("status","available","isAvailable",true,"provider",struct("id","native-neon-pthreads","version","3.3.11","threadBackend","pthreads"),"module",struct("sha256",repmat('b',1,64),"identityValidated",true),"libraries",struct("base",struct("path","/tmp/libfftw3.3.dylib"),"thread",struct("path","/tmp/libfftw3_threads.3.dylib"),"openmp",struct("detected",false)),"contract",struct("threadCount",18),"featureValidation",struct("maximumRelativeError",1e-14));
 environment = struct("processor","Apple M5 Max","physicalMemoryBytes",64*2^30,"os","macOS","architecture","maca64","matlabVersion","R2026a Update 4");
 source = struct("commit",repmat('a',1,40),"tree",repmat('c',1,40),"isDirty",false);
-configuration = struct("Lxyz",[15000 15000 1300],"processRunCount",1,"warmupCount",0,"samplesPerProcess",1,"threadCount",18,"correctnessTolerance",1e-12);
+configuration = struct("Lxyz",[150e3 150e3 1300],"processRunCount",1,"warmupCount",0,"samplesPerProcess",1,"threadCount",18,"correctnessTolerance",1e-12);
 raw = struct("schemaVersion","three-interface-benchmark-v1","status","complete","runId","20260815T120000000Z","source",source,"environment",environment,"configuration",configuration,"provider",provider,"cases",definitions,"runs",runs,"comparison",comparison);
 end
 
@@ -451,7 +469,9 @@ function raw = integratorStudyFixture
 raw = rawFixture;
 raw.schemaVersion = "three-interface-benchmark-v2";
 raw.configuration.studyId = "integrator-runtime-memory-v1";
-raw.configuration.fixtures = [struct("physicalConfiguration","hydrostatic","workload","coefficient-endpoint","sha256",repmat('1',1,64)); struct("physicalConfiguration","hydrostatic","workload","composite-dense-output","sha256",repmat('2',1,64))];
+raw.configuration.fixtures = [struct("physicalConfiguration","nonhydrostatic","workload","coefficient-endpoint","sha256",repmat('1',1,64)); struct("physicalConfiguration","nonhydrostatic","workload","composite-dense-output","sha256",repmat('2',1,64))];
+raw.configuration.initialCondition = struct("id","gm1-red-geostrophic-j1-v1","gmEnergyLevel",1,"geostrophicMaximumSpeedTarget",0.15);
+raw.configuration.stepControls = struct("fixedStep",128,"adaptiveInitialStep",295.7935799274,"adaptiveMaximumStepPolicy","MATLAB default; no user maximum step","finalTime",7168);
 raw.cases = [integratorStudyDefinition("coefficient-endpoint"); integratorStudyDefinition("composite-dense-output")];
 interfaces = [interfaceRecord("matlab-builtin",1,1,1,1); interfaceRecord("matlab-compiled",0.5,0.5,1,1); interfaceRecord("standalone-compiled",0.25,0.25,1,1)];
 raw.comparison = repmat(struct("id","","interfaces",interfaces,"maximumRelativeError",1e-14,"outputAgreementPassed",true,"outputGraph",modelOutputGraph,"integratorAgreementPassed",true,"adaptiveWorkAgreementPassed",true,"absoluteToleranceFingerprintAgreementPassed",true,"memoryAgreementPassed",true,"endpointTrajectoryAgreementPassed",true,"matchedContractPassed",true),2,1);
@@ -468,15 +488,23 @@ end
 end
 
 function value = integratorStudyDefinition(workload)
-value = caseDefinition("hydrostatic--adaptive-rk78--"+workload,"model-continuation","adaptive-rk78");
-value.physicalConfiguration = "hydrostatic";
-value.isHydrostatic = true;
+value = caseDefinition("nonhydrostatic--adaptive-rk78--"+workload,"model-continuation","adaptive-rk78");
+value.physicalConfiguration = "nonhydrostatic";
+value.isHydrostatic = false;
 value.workload = workload;
-value.integrationStepCount = 2;
-value.denseOutputPointsPerStep = 4;
-value.finalTime = 3e-3;
-value.outputInterval = conditional(workload=="coefficient-endpoint",2e-3,2e-4);
-value.observerGraph = conditional(workload=="coefficient-endpoint","coefficient-only state with endpoint-only output","fields, particles, tracers, source-linked mooring, and scheduled interior output");
+value.deltaT = 128;
+value.integrationStepCount = 56;
+value.denseOutputPointsPerStep = 3;
+value.finalTime = 7168;
+value.initialStep = 295.7935799274;
+value.maximumStep = [];
+value.maximumStepPolicy = "matlab-default";
+value.outputInterval = conditional(workload=="coefficient-endpoint",7168,32);
+value.denseOutputStartTime = conditional(workload=="coefficient-endpoint",[],0);
+value.denseOutputEndTime = conditional(workload=="coefficient-endpoint",[],128);
+value.denseOutputRecordCount = conditional(workload=="coefficient-endpoint",0,5);
+value.denseOutputIntegrationRecordCount = conditional(workload=="coefficient-endpoint",0,4);
+value.observerGraph = conditional(workload=="coefficient-endpoint","coefficient-only state with endpoint-only output","one persisted restart record plus four first-step field, particle, tracer, and mooring records");
 end
 
 function value = integratorStudyRun(identifier,definition)
@@ -490,7 +518,8 @@ value.memory.integrationSampleCount = 4;
 value.memory.baselineProcessBytes = 2^28;
 value.provider = runRecord(identifier,definition).provider;
 isDense = definition.workload == "composite-dense-output";
-integrator = struct("requested","adaptive-rk78","actual","adaptive-rk78","matched",true,"controller","matlab-ode78-v1","relativeTolerance",definition.relativeTolerance,"absoluteToleranceHash","12345","absoluteToleranceHashClearedMantissaBits",20,"absoluteToleranceComponentHashes",repmat("123",1,7),"requestedInitialStep",definition.initialStep,"effectiveInitialStep",definition.initialStep,"requestedMaximumStep",definition.maximumStep,"effectiveMaximumStep",definition.maximumStep,"initialTime",definition.deltaT,"finalTime",definition.finalTime,"acceptedStepCount",2,"rejectedStepCount",0,"rhsEvaluationCount",26,"denseOutputEvaluationCount",conditional(isDense,8,0),"fsalReuseCount",0,"fsalInvalidationCount",0,"outputRecordCounts",struct("waveVortex",conditional(isDense,9,2),"particles",conditional(isDense,9,0),"tracers",conditional(isDense,9,0)),"continuousExtensionRightHandSideEvaluationCount",conditional(isDense,4,0),"continuousExtensionWorkspaceStateEquivalentCount",conditional(isDense,4,0),"workspaceStateEquivalentCount",conditional(isDense,15,11),"workspaceMaximumLiveStateEquivalentCount",conditional(isDense,15,11),"denseHistoryStateEquivalentCount",conditional(isDense,8,0),"sharedAbstractionStateSizedCopyCount",0);
+integrator = struct("requested","adaptive-rk78","actual","adaptive-rk78","matched",true,"controller","matlab-ode78-v1","relativeTolerance",definition.relativeTolerance,"absoluteToleranceHash","12345","absoluteToleranceHashClearedMantissaBits",20,"absoluteToleranceComponentHashes",repmat("123",1,7),"requestedInitialStep",definition.initialStep,"effectiveInitialStep",definition.initialStep,"requestedMaximumStep",NaN,"maximumStepPolicy",definition.maximumStepPolicy,"effectiveMaximumStep",0.1*definition.finalTime,"initialTime",0,"finalTime",definition.finalTime,"acceptedStepCount",14,"rejectedStepCount",0,"rhsEvaluationCount",182,"denseOutputEvaluationCount",conditional(isDense,4,0),"fsalReuseCount",0,"fsalInvalidationCount",0,"outputRecordCounts",struct("waveVortex",2,"dense",conditional(isDense,5,0),"particles",conditional(isDense,5,0),"tracers",conditional(isDense,5,0)),"continuousExtensionRightHandSideEvaluationCount",conditional(isDense,4,0),"continuousExtensionWorkspaceStateEquivalentCount",0,"continuousExtensionWorkspaceMaximumLiveStateEquivalentCount",conditional(isDense,4,0),"workspaceStateEquivalentCount",conditional(isDense,15,11),"workspaceMaximumLiveStateEquivalentCount",conditional(isDense,15,11),"denseHistoryStateEquivalentCount",conditional(isDense,8,0),"sharedAbstractionStateSizedCopyCount",0);
+integrator.requestedMaximumStep = definition.maximumStep;
 if identifier == "standalone-compiled"
     count = integrator.workspaceStateEquivalentCount;
     integrator.stateSizedBuffers = arrayfun(@(index)struct("buffer","k"+index,"producer","stage "+index,"lastUse","accepted-step commit"),1:count);
@@ -552,6 +581,8 @@ if definition.requestedIntegrator == "adaptive-rk23"
     integrator.rhsEvaluationCount = 4;
     integrator.denseOutputEvaluationCount = 0;
     integrator.outputRecordCounts = struct("waveVortex",3,"particles",3,"tracers",3);
+    integrator.fsalReuseCount = "not-exposed-by-matlab";
+    integrator.fsalInvalidationCount = "not-exposed-by-matlab";
 end
 value = struct("schemaVersion","three-interface-worker-v1","status","complete","interface",identifier,"case",definition,"processWallSeconds",1,"integrationSeconds",1,"memory",memory,"provider",provider,"integrator",integrator);
 end

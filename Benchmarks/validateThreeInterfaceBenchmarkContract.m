@@ -174,7 +174,7 @@ end
 standalone = caseRuns(string({caseRuns.interface})=="standalone-compiled");
 for run = reshape(standalone,1,[])
     integrator = run.integrator;
-    required = ["acceptedStepCount" "rejectedStepCount" "rhsEvaluationCount" "denseOutputEvaluationCount" "fsalReuseCount" "fsalInvalidationCount" "workspaceStateEquivalentCount" "workspaceMaximumLiveStateEquivalentCount" "denseHistoryStateEquivalentCount" "continuousExtensionRightHandSideEvaluationCount" "continuousExtensionWorkspaceStateEquivalentCount" "stateSizedBuffers" "storageAccounting" "sharedAbstractionStateSizedCopyCount"];
+    required = ["acceptedStepCount" "rejectedStepCount" "rhsEvaluationCount" "denseOutputEvaluationCount" "fsalReuseCount" "fsalInvalidationCount" "workspaceStateEquivalentCount" "workspaceMaximumLiveStateEquivalentCount" "denseHistoryStateEquivalentCount" "continuousExtensionRightHandSideEvaluationCount" "continuousExtensionWorkspaceStateEquivalentCount" "continuousExtensionWorkspaceMaximumLiveStateEquivalentCount" "stateSizedBuffers" "storageAccounting" "sharedAbstractionStateSizedCopyCount"];
     if ~all(isfield(integrator,required))
         error("WaveVortexBenchmark:IncompleteIntegratorEvidence","The standalone integrator omitted required work or storage evidence.");
     end
@@ -194,7 +194,7 @@ for run = reshape(standalone,1,[])
     end
     isEndpoint = string(definition.workload)=="coefficient-endpoint";
     if isEndpoint
-        endpointIsLazy = double(integrator.denseOutputEvaluationCount)==0 && double(integrator.denseHistoryStateEquivalentCount)==0 && double(integrator.continuousExtensionRightHandSideEvaluationCount)==0 && double(integrator.continuousExtensionWorkspaceStateEquivalentCount)==0 && double(storage.denseHistoryBytes)==0;
+        endpointIsLazy = double(integrator.denseOutputEvaluationCount)==0 && double(integrator.denseHistoryStateEquivalentCount)==0 && double(integrator.continuousExtensionRightHandSideEvaluationCount)==0 && double(integrator.continuousExtensionWorkspaceStateEquivalentCount)==0 && double(integrator.continuousExtensionWorkspaceMaximumLiveStateEquivalentCount)==0 && double(storage.denseHistoryBytes)==0;
         if ~endpointIsLazy
             error("WaveVortexBenchmark:UnexpectedDenseOutputWork","Endpoint-only execution allocated or evaluated dense-output state.");
         end
@@ -202,7 +202,7 @@ for run = reshape(standalone,1,[])
         if double(integrator.denseOutputEvaluationCount)<=0 || double(integrator.denseHistoryStateEquivalentCount)<=0
             error("WaveVortexBenchmark:MissingDenseOutputWork","The composite workload did not exercise method-owned dense output.");
         end
-        if string(definition.requestedIntegrator)=="adaptive-rk78" && (double(integrator.continuousExtensionRightHandSideEvaluationCount)<=0 || double(integrator.continuousExtensionWorkspaceStateEquivalentCount)~=4)
+        if string(definition.requestedIntegrator)=="adaptive-rk78" && (double(integrator.continuousExtensionRightHandSideEvaluationCount)<=0 || double(integrator.continuousExtensionWorkspaceMaximumLiveStateEquivalentCount)~=4)
             error("WaveVortexBenchmark:MissingRK78LazyExtension","RK78 did not construct its four lazy continuous-extension buffers only when requested.");
         end
     end
