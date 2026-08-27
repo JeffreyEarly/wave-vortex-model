@@ -1,5 +1,5 @@
 function report = prepareWaveVortexModelReleaseCandidate(repositoryRoot,oceanKitRoot,outputRoot,options)
-%PREPAREWAVEVORTEXMODELRELEASECANDIDATE Build an unpublished patch export.
+%PREPAREWAVEVORTEXMODELRELEASECANDIDATE Validate an unpublished or current export.
 arguments
     repositoryRoot (1,1) string {mustBeFolder}
     oceanKitRoot (1,1) string {mustBeFolder}
@@ -15,7 +15,6 @@ manifestBefore = jsondecode(fileread(manifestPath));
 require(string(manifestBefore.name) == "WaveVortexModel", ...
     "The export dry run requires a WaveVortexModel authoring manifest.");
 currentVersion = string(manifestBefore.version);
-candidateVersion = nextPatchVersion(currentVersion);
 configureIsolatedMPMRepository(oceanKitRoot);
 packageBefore = matlab.mpm.Package(repositoryRoot);
 require(string(packageBefore.ReleaseCompatibility) == ">=R2025b", ...
@@ -35,42 +34,66 @@ addpath(sourceTools,"-begin");
 configureCIEnvironment(repositoryRoot,oceanKitRoot);
 
 oceankitrelease.runDocumentationCheck(repositoryRoot,"docs:check");
-expectedBody = oceankitrelease.unreleasedBody(fullfile(repositoryRoot,"CHANGELOG.md"));
-releaseBodyPath = fullfile(outputRoot,"release-body.md");
+changelogPath = fullfile(repositoryRoot,"CHANGELOG.md");
+try
+    expectedBody = oceankitrelease.unreleasedBody(changelogPath);
+    shouldPromoteUnreleased = true;
+catch exception
+    if exception.identifier ~= "OceanKitRelease:EmptyUnreleasedSection"
+        rethrow(exception);
+    end
+    expectedBody = "";
+    shouldPromoteUnreleased = false;
+end
+if shouldPromoteUnreleased
+    candidateVersion = nextPatchVersion(currentVersion);
+    bumpType = "patch";
+    releaseBodyPath = fullfile(outputRoot,"release-body.md");
+else
+    candidateVersion = currentVersion;
+    bumpType = "none";
+    releaseBodyPath = "";
+end
 releaseFunction( ...
     rootDir=repositoryRoot, ...
-    bumpType="patch", ...
+    bumpType=bumpType, ...
     shouldBuildWebsiteDocumentation=true, ...
     shouldPackageForDistribution=true, ...
-    shouldPromoteUnreleased=true, ...
+    shouldPromoteUnreleased=shouldPromoteUnreleased, ...
     shouldRequireDocumentationBuilder=true, ...
     releaseDate=options.releaseDate, ...
     releaseBodyPath=releaseBodyPath, ...
     outputRoot=outputRoot);
 
 changedPaths = oceankitrelease.changedAuthoringPaths(repositoryRoot,"pilot");
-expectedPaths = ["CHANGELOG.md";"docs/version-history.md";"resources/mpackage.json"];
+if shouldPromoteUnreleased
+    expectedPaths = ["CHANGELOG.md";"docs/version-history.md";"resources/mpackage.json"];
+else
+    expectedPaths = strings(0,1);
+end
 require(isequal(changedPaths,expectedPaths), ...
     "The export dry run changed files outside the permitted release-owned set.");
 manifestAfter = jsondecode(fileread(manifestPath));
 require(string(manifestAfter.version) == candidateVersion, ...
     "The export dry run did not create the expected " + candidateVersion + " candidate.");
-actualBody = string(fileread(releaseBodyPath));
-require(strtrim(actualBody) == strtrim(expectedBody), ...
-    "The release-body file does not match the promoted Unreleased body.");
+if shouldPromoteUnreleased
+    actualBody = string(fileread(releaseBodyPath));
+    require(strtrim(actualBody) == strtrim(expectedBody), ...
+        "The release-body file does not match the promoted Unreleased body.");
 
-changelog = string(fileread(fullfile(repositoryRoot,"CHANGELOG.md")));
-escapedVersion = regexptranslate("escape",candidateVersion);
-unreleasedMatch = regexp(changelog,'(?s)^.*?## \[Unreleased\]\s*## \[' + escapedVersion + '\] - [^\r\n]+','once','match');
-require(~isempty(unreleasedMatch), ...
-    "The promoted changelog does not begin with a fresh empty Unreleased section.");
-changelogBody = versionBody(fullfile(repositoryRoot,"CHANGELOG.md"),candidateVersion);
-require(contains(changelog,"## [" + candidateVersion + "] - " + options.releaseDate) && changelogBody == expectedBody, ...
-    "The promoted changelog does not contain the expected dated release body.");
-versionHistory = string(fileread(fullfile(repositoryRoot,"docs","version-history.md")));
-versionHistoryBody = versionBody(fullfile(repositoryRoot,"docs","version-history.md"),candidateVersion);
-require(contains(versionHistory,"## [" + candidateVersion + "] - " + options.releaseDate) && versionHistoryBody == expectedBody, ...
-    "The generated version history does not agree with the promoted changelog.");
+    changelog = string(fileread(changelogPath));
+    escapedVersion = regexptranslate("escape",candidateVersion);
+    unreleasedMatch = regexp(changelog,'(?s)^.*?## \[Unreleased\]\s*## \[' + escapedVersion + '\] - [^\r\n]+','once','match');
+    require(~isempty(unreleasedMatch), ...
+        "The promoted changelog does not begin with a fresh empty Unreleased section.");
+    changelogBody = versionBody(changelogPath,candidateVersion);
+    require(contains(changelog,"## [" + candidateVersion + "] - " + options.releaseDate) && changelogBody == expectedBody, ...
+        "The promoted changelog does not contain the expected dated release body.");
+    versionHistory = string(fileread(fullfile(repositoryRoot,"docs","version-history.md")));
+    versionHistoryBody = versionBody(fullfile(repositoryRoot,"docs","version-history.md"),candidateVersion);
+    require(contains(versionHistory,"## [" + candidateVersion + "] - " + options.releaseDate) && versionHistoryBody == expectedBody, ...
+        "The generated version history does not agree with the promoted changelog.");
+end
 
 exportPath = fullfile(outputRoot,"WaveVortexModel-" + candidateVersion);
 require(isfolder(exportPath),"The expected WaveVortexModel-" + candidateVersion + " export was not created.");
@@ -172,7 +195,7 @@ report = struct( ...
     "releaseBody",expectedBody, ...
     "authoringPaths",changedPaths, ...
     "documentationPackageRoot",dependency.Root);
-fprintf("Prepared unpublished WaveVortexModel %s candidate at %s.\n",candidateVersion,exportPath);
+fprintf("Prepared WaveVortexModel %s export at %s.\n",candidateVersion,exportPath);
 clear pathCleanup
 end
 
