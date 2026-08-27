@@ -48,7 +48,7 @@ WVTransformConstantStratificationKernel& kernel(const mxArray* value) {
     const auto handle = scalarHandle(value);
     const auto iterator = models.find(handle);
     if (iterator == models.end()) fail("WaveVortexModel:CompiledKernelHandle","Kernel handle is invalid or deleted.");
-    return detail::WVModelInternalAccess::integrationSystem(*iterator->second).kernel();
+    return detail::WVModelInternalAccess::constantStratificationKernel(*iterator->second);
 }
 
 WVModel& model(const mxArray* value) {

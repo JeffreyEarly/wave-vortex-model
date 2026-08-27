@@ -125,6 +125,7 @@ These items document internal implementation details and are not part of the pri
   + [`writeTimeStepToNetCDFFile`](/classes/wvmodel/writetimesteptonetcdffile.html)
 + Model internals
   + [`initialConditionsCellArray`](/classes/wvmodel/initialconditionscellarray.html)
+  + [`writePortableRunRequest`](/classes/wvmodel/writeportablerunrequest.html) Write a portable-runtime request for a MATLAB-authored NetCDF bundle.
 
 
 ---

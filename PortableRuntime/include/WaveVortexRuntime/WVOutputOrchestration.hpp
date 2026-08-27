@@ -139,6 +139,13 @@ public:
          const std::vector<WVOutputScheduleContinuation> &continuations,
          WVOutputPlan &plan);
   static WVKernelStatus
+  create(const WVIntegrationStateLayout &layout,
+         const WVPortableObserverDescriptor &descriptor,
+         std::shared_ptr<const WVExtensionCatalog> catalog, double initialTime,
+         double finalTime,
+         const std::vector<WVOutputScheduleContinuation> &continuations,
+         WVOutputPlan &plan);
+  static WVKernelStatus
   createExplicit(const WVIntegrationStateLayout &layout,
                  std::shared_ptr<const WVExtensionCatalog> catalog,
                  double initialTime,
@@ -350,6 +357,7 @@ private:
   WVCheckpoint checkpoint_;
   std::vector<WVCheckpointOutputRecord> records_;
   WVCheckpointOutputSinkMetrics metrics_;
+  const WVIntegrationStateLayout *layout_ = nullptr;
   bool preflighted_ = false;
 };
 

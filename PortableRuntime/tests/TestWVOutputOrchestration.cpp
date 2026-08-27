@@ -1000,6 +1000,70 @@ void testSolverInvariance(Context &context) {
             << " adaptive_rejected=" << adaptiveOutput.rejected << '\n';
 }
 
+void testRK78LazyDenseOutputAndTransactionalRetry(Context &context) {
+  StateFixture fixture(context.system.stateLayout());
+  WVAdaptiveRK78Options options;
+  options.relativeTolerance = 1.0;
+  options.absoluteToleranceScale = 1.0;
+  options.maximumStepSize = 0.3;
+  options.retainDenseOutput = true;
+  WVAdaptiveRK78 integrator(context.system, options);
+  require(static_cast<bool>(integrator.prepareStateAfterRestart(fixture.state)),
+          "RK78 output-driver preparation");
+  WVOutputPlan plan;
+  require(static_cast<bool>(WVOutputPlan::createExplicit(
+              context.system.stateLayout(), test::extensionCatalog(), 0.0,
+              0.3,
+              {{0.1, "rk78-first"}, {0.2, "rk78-second"},
+               {0.3, "rk78-endpoint"}},
+              plan)),
+          "RK78 explicit output plan");
+  RecordingSink sink;
+  sink.failAtAttempt = 1;
+  sink.failureMessage = "RK78 transactional interruption";
+  WVOutputDriver driver(integrator, plan);
+  auto status = driver.advanceToTime(fixture.state, 0.3, 0.3, sink);
+  require(!status && fixture.state.waveVortex.t == 0.3 &&
+              driver.hasPendingDelivery() &&
+              integrator.metrics()
+                      .continuousExtensionRightHandSideEvaluationCount == 4 &&
+              integrator.metrics().denseOutputCacheBuildCount == 1 &&
+              integrator.metrics().denseOutputCacheReuseCount == 0,
+          "RK78 failed delivery retains one computed interpolant transaction");
+  const auto failedValue = sink.delivered.back().firstCoefficientReal;
+  sink.failAtAttempt = std::numeric_limits<std::size_t>::max();
+  status = driver.advanceToTime(fixture.state, 0.3, 0.3, sink);
+  require(static_cast<bool>(status) && !driver.hasPendingDelivery() &&
+              sink.delivered.size() == 4 &&
+              sink.delivered[1].firstCoefficientReal == failedValue &&
+              integrator.metrics()
+                      .continuousExtensionRightHandSideEvaluationCount == 4 &&
+              integrator.metrics().denseOutputCacheBuildCount == 1 &&
+              integrator.metrics().denseOutputCacheReuseCount == 1 &&
+              integrator.metrics().denseOutputEvaluationCount == 2 &&
+              driver.metrics().interpolatedStateEvaluationCount == 2,
+          "RK78 retry reuses staged output and cached extension stages");
+
+  StateFixture control(context.system.stateLayout());
+  WVAdaptiveRK78Options endpointOptions = options;
+  endpointOptions.retainDenseOutput = false;
+  WVAdaptiveRK78 endpointIntegrator(context.system, endpointOptions);
+  require(static_cast<bool>(
+              endpointIntegrator.prepareStateAfterRestart(control.state)) &&
+              static_cast<bool>(
+                  endpointIntegrator.advanceToTime(control.state, 0.3, 0.3)) &&
+              control.values() == fixture.values() &&
+              endpointIntegrator.metrics().acceptedStepCount ==
+                  integrator.metrics().acceptedStepCount &&
+              endpointIntegrator.metrics().rejectedStepCount ==
+                  integrator.metrics().rejectedStepCount &&
+              endpointIntegrator.metrics()
+                      .continuousExtensionRightHandSideEvaluationCount == 0 &&
+              endpointIntegrator.metrics()
+                      .continuousExtensionWorkspaceMaximumLiveBytes == 0,
+          "RK78 requested output does not alter its accepted trajectory");
+}
+
 void testIntegratorExtensionBoundary(Context &context) {
   StateFixture fixture(context.system.stateLayout());
   const auto initialValues = fixture.values();
@@ -1273,6 +1337,7 @@ int main() {
   testPreflightAndMalformedProgress(context);
   testTerminationInterruptionAndLaterRouteFailure(context);
   testSolverInvariance(context);
+  testRK78LazyDenseOutputAndTransactionalRetry(context);
   testIntegratorExtensionBoundary(context);
   testDriverStorageBoundedByConfiguration();
   testLazyQuadraticSchedule();

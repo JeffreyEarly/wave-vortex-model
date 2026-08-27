@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <cmath>
 #include <limits>
 #include <new>
 
@@ -48,10 +49,13 @@ class UnifiedErrorPolicy final : public WVIntegrationErrorPolicy {
 public:
   UnifiedErrorPolicy(std::unique_ptr<WVIntegrationErrorPolicy> coefficients,
                      const WVIntegrationStateLayout &layout)
-      : coefficients_(std::move(coefficients)) {
-    counts_.reserve(3 + layout.additionalBlocks().size());
-    tolerances_.reserve(3 + layout.additionalBlocks().size());
-    for (std::size_t component = 0; component < 3; ++component) {
+      : coefficients_(std::move(coefficients)),
+        coefficientFamilyCount_(layout.coefficientFamilyCount()) {
+    counts_.reserve(coefficientFamilyCount_ + layout.additionalBlocks().size());
+    tolerances_.reserve(coefficientFamilyCount_ +
+                        layout.additionalBlocks().size());
+    for (std::size_t component = 0; component < coefficientFamilyCount_;
+         ++component) {
       counts_.push_back(coefficients_->elementCount(component));
       tolerances_.push_back(0.0);
     }
@@ -69,7 +73,7 @@ public:
   }
   double absoluteTolerance(std::size_t component,
                            std::size_t index) const noexcept override {
-    if (component < 3)
+    if (component < coefficientFamilyCount_)
       return coefficients_->absoluteTolerance(component, index);
     return component < tolerances_.size() ? tolerances_[component] : 0.0;
   }
@@ -81,6 +85,7 @@ public:
 
 private:
   std::unique_ptr<WVIntegrationErrorPolicy> coefficients_;
+  std::size_t coefficientFamilyCount_ = 0;
   std::vector<std::size_t> counts_;
   std::vector<double> tolerances_;
 };
@@ -134,11 +139,22 @@ WVKernelStatus WVConstantStratificationIntegrationSystem::createImpl(
       return status;
     const auto coefficientShape =
         candidate->forcing_->kernel().descriptor().spectralShape();
+    WVTransformStateDescription stateDescription{
+        "WVTransformConstantStratification",
+        {configuration.Nx, configuration.Ny, configuration.Nz},
+        {{"Ap", {coefficientShape.rows, coefficientShape.columns},
+          WVToleranceKind::coefficientEnergyScaled},
+         {"Am", {coefficientShape.rows, coefficientShape.columns},
+          WVToleranceKind::coefficientEnergyScaled},
+         {"A0", {coefficientShape.rows, coefficientShape.columns},
+          WVToleranceKind::coefficientEnergyScaled}},
+        true};
     status = descriptor == nullptr
                  ? WVIntegrationStateLayout::createCoefficientOnly(
-                       coefficientShape, candidate->layout_)
+                       std::move(stateDescription), candidate->layout_)
                  : WVIntegrationStateLayout::create(
-                       coefficientShape, *descriptor, candidate->layout_);
+                       std::move(stateDescription), *descriptor,
+                       candidate->layout_);
     if (!status)
       return status;
 
@@ -447,6 +463,102 @@ WVKernelStatus WVConstantStratificationIntegrationSystem::createErrorPolicy(
   } catch (const std::bad_alloc &) {
     return {WVKernelStatusCode::allocationFailure,
             "Integration error-policy allocation failed."};
+  }
+}
+
+WVKernelStatus
+WVConstantStratificationIntegrationSystem::evaluateFixedTimeStepCandidates(
+    const WVIntegrationState &state, double cfl,
+    WVFixedTimeStepCandidates &candidates) {
+  if (!std::isfinite(cfl) || cfl <= 0.0)
+    return invalid("CFL must be finite and positive.");
+  auto status = validateIntegrationState(layout_, state);
+  if (!status)
+    return status;
+  const auto started = std::chrono::steady_clock::now();
+  const auto &descriptor = forcing_->kernel().descriptor();
+  const auto &configuration = descriptor.configuration();
+  const auto spatial = descriptor.spatialShape();
+  const auto fieldElements = spatial.elementCount();
+  try {
+    const auto velocityElements = 3 * fieldElements;
+    std::unique_ptr<double[]> velocity(new double[velocityElements]);
+    WVRealFieldBundleView fields{
+        velocity.get(),
+        {configuration.Nx, configuration.Ny, configuration.Nz, 3}};
+    status = forcing_->kernel().transformWaveVortexToUVW(state.waveVortex,
+                                                         fields);
+    if (!status)
+      return status;
+
+    WVFixedTimeStepCandidates result;
+    result.transientWorkspaceMaximumLiveBytes =
+        velocityElements * sizeof(double);
+    double maximumHorizontalWavenumber = 0.0;
+    for (const auto &mode : descriptor.fourierModes())
+      maximumHorizontalWavenumber =
+          std::max({maximumHorizontalWavenumber, std::abs(mode.k),
+                    std::abs(mode.l)});
+    if (!(maximumHorizontalWavenumber > 0.0) ||
+        !std::isfinite(maximumHorizontalWavenumber))
+      return invalid("The effective horizontal resolution is unavailable.");
+    result.effectiveHorizontalGridResolution =
+        std::acos(-1.0) / maximumHorizontalWavenumber;
+
+    const double *u = velocity.get();
+    const double *v = u + fieldElements;
+    const double *w = v + fieldElements;
+    for (std::size_t index = 0; index < fieldElements; ++index) {
+      if (!std::isfinite(u[index]) || !std::isfinite(v[index]) ||
+          !std::isfinite(w[index]))
+        return invalid("CFL velocity reconstruction produced a nonfinite "
+                       "value.");
+      result.maximumHorizontalSpeed =
+          std::max(result.maximumHorizontalSpeed,
+                   std::sqrt(u[index] * u[index] + v[index] * v[index]));
+    }
+    if (result.maximumHorizontalSpeed > 0.0)
+      result.horizontalAdvective =
+          cfl * result.effectiveHorizontalGridResolution /
+          result.maximumHorizontalSpeed;
+
+    const auto horizontalElements = configuration.Nx * configuration.Ny;
+    const auto &z = descriptor.verticalModes().z;
+    double maximumVerticalRate = 0.0;
+    for (std::size_t iz = 1; iz < configuration.Nz; ++iz) {
+      const double denominator = 1.5 * (z[iz] - z[iz - 1]);
+      if (!(denominator > 0.0) || !std::isfinite(denominator))
+        return invalid("The vertical CFL spacing is invalid.");
+      for (std::size_t horizontal = 0;
+           horizontal < horizontalElements; ++horizontal) {
+        const auto index = horizontal + horizontalElements * iz;
+        maximumVerticalRate =
+            std::max(maximumVerticalRate,
+                     std::abs(w[index] / denominator));
+      }
+    }
+    if (maximumVerticalRate > 0.0)
+      result.verticalAdvective = cfl / maximumVerticalRate;
+    result.advective =
+        std::min(result.horizontalAdvective, result.verticalAdvective);
+
+    const auto &omega = descriptor.verticalModes().omega;
+    for (std::size_t mode = 0; mode < descriptor.Nkl(); ++mode)
+      for (std::size_t j = 1; j < configuration.Nj; ++j)
+        result.highestActiveWaveFrequency = std::max(
+            result.highestActiveWaveFrequency,
+            std::abs(omega[j + configuration.Nj * mode]));
+    if (result.highestActiveWaveFrequency > 0.0)
+      result.oscillatory =
+          cfl * 2.0 * std::acos(-1.0) /
+          result.highestActiveWaveFrequency;
+    result.evaluationSeconds = std::chrono::duration<double>(
+        std::chrono::steady_clock::now() - started).count();
+    candidates = result;
+    return WVKernelStatus::ok();
+  } catch (const std::bad_alloc &) {
+    return {WVKernelStatusCode::allocationFailure,
+            "Unable to allocate transient CFL velocity workspace."};
   }
 }
 

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "WaveVortexRuntime/WVBarotropicQGIntegrationSystem.hpp"
 #include "WaveVortexRuntime/WVConstantStratificationIntegrationSystem.hpp"
 #include "WaveVortexRuntime/WVModelOutputConfiguration.hpp"
 #include "WaveVortexRuntime/WVObserverOutputEvaluationService.hpp"
@@ -17,12 +18,19 @@ namespace detail {
 class WVModelInternalAccess;
 }
 
-enum class WVModelIntegratorKind : std::uint8_t { fixedRK4, adaptiveRK23 };
+enum class WVModelIntegratorKind : std::uint8_t {
+  fixedRK4,
+  adaptiveRK23,
+  adaptiveRK45,
+  adaptiveRK78
+};
 
 struct WVModelIntegratorConfiguration {
   WVModelIntegratorKind kind = WVModelIntegratorKind::fixedRK4;
   WVFixedStepRK4Options fixed;
   WVAdaptiveRK23Options adaptive;
+  WVAdaptiveRK45Options adaptiveRK45;
+  WVAdaptiveRK78Options adaptiveRK78;
 };
 
 struct WVModelMetrics {
@@ -37,6 +45,8 @@ struct WVModelMetrics {
   std::size_t outputSinkPersistentBytes = 0;
   WVKernelMetrics kernel;
   WVForcingEngineMetrics forcing;
+  WVBarotropicQGKernelMetrics barotropicQGKernel;
+  WVBarotropicQGForcingEngineMetrics barotropicQGForcing;
   WVIntegratedObserverMetrics integratedObservers;
   WVIntegratorMetrics integrator;
   WVOutputDriverMetrics outputDriver;
@@ -77,9 +87,16 @@ public:
   std::size_t persistentBytes() const noexcept;
 
 private:
+  void rebuildCoefficientViews(const WVIntegrationStateLayout &layout);
+  void setTimes(double t, double t0) noexcept;
   WVCheckpoint checkpoint_;
   WVAdditionalStateStorage additionalState_;
+  const WVIntegrationStateLayout *layout_ = nullptr;
+  std::vector<WVCoefficientFamilyView> mutableCoefficientViews_;
+  std::vector<WVCoefficientFamilyConstView> constCoefficientViews_;
   std::vector<WVAdditionalStateBlockConstView> constViews_;
+
+  friend class WVModel;
 };
 
 // Stable source-level façade over the numerical, forcing, integration,
@@ -100,6 +117,28 @@ public:
       std::unique_ptr<WVFFTEngine> engine,
       const WVModelIntegratorConfiguration &integratorConfiguration,
       WVModel &model);
+
+  static WVKernelStatus create(
+      std::shared_ptr<const WVExtensionCatalog> catalog,
+      const WVTransformBarotropicQGConfiguration &configuration,
+      const WVFrozenForcingSchedule &forcingSchedule,
+      std::unique_ptr<WVFFTEngine> engine,
+      const WVModelIntegratorConfiguration &integratorConfiguration,
+      WVModel &model);
+
+  // Construct from one already decoded transform checkpoint without exposing
+  // transform selection to the caller. This is the coefficient-restart path
+  // used by the standalone runner.
+  static WVKernelStatus createFromCheckpoint(
+      std::shared_ptr<const WVExtensionCatalog> catalog,
+      WVCheckpoint checkpoint,
+      std::unique_ptr<WVFFTEngine> engine,
+      const WVModelIntegratorConfiguration &integratorConfiguration,
+      WVModel &model, WVModelState &state);
+  static WVKernelStatus validateCheckpointForcingSchedule(
+      const WVCheckpointInspection &inspection,
+      const WVFrozenForcingSchedule &schedule,
+      const WVExtensionCatalog &catalog);
 
   // Inspect a complete sibling NetCDF file set, select its latest complete
   // state, reconstruct the authoritative forcing/observer/output graph, and
@@ -151,9 +190,31 @@ public:
       const WVModelIntegratorConfiguration &integratorConfiguration,
       WVModel &model);
 
+  static WVKernelStatus create(
+      std::shared_ptr<const WVExtensionCatalog> catalog,
+      const WVTransformBarotropicQGConfiguration &configuration,
+      const WVFrozenForcingSchedule &forcingSchedule,
+      const WVPortableObserverDescriptor &observerDescriptor,
+      std::unique_ptr<WVFFTEngine> engine,
+      const WVModelIntegratorConfiguration &integratorConfiguration,
+      WVModel &model);
+
   WVKernelStatus prepareStateAfterRestart(WVModelState &state);
+  WVKernelStatus initializeObserverState(WVModelState &state);
+  // Attach one already compiled transform-neutral output graph to this model.
+  // The graph's descriptor must match the model state layout and share the
+  // model's frozen extension catalog. No transform-specific output path is
+  // selected by callers.
+  WVKernelStatus openOutput(
+      WVModelState &state,
+      WVModelOutputConfiguration outputConfiguration,
+      bool isDynamicsLinear = false);
   WVKernelStatus evaluateRightHandSide(const WVIntegrationState &state,
                                        WVIntegrationFlux &rightHandSide);
+  bool supportsFixedTimeStepSelection() const noexcept;
+  WVKernelStatus evaluateFixedTimeStepCandidates(
+      WVModelState &state, double cfl,
+      WVFixedTimeStepCandidates &candidates);
   WVKernelStatus step(WVModelState &state, double proposedStepSize);
   WVKernelStatus advanceToTime(WVModelState &state, double finalTime,
                                double initialStepSize);
@@ -167,6 +228,8 @@ public:
   double nextStepSize() const noexcept;
   WVModelIntegratorKind integratorKind() const noexcept;
   const std::string &forcingScheduleIdentifier() const noexcept;
+  const std::string &kernelProviderIdentifier() const noexcept;
+  const std::string &kernelProviderLibraryIdentity() const noexcept;
   WVModelMetrics metrics(const WVModelState *state = nullptr) const noexcept;
 
 private:

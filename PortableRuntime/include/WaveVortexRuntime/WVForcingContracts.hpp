@@ -2,6 +2,7 @@
 
 #include "WaveVortexRuntime/WVForcing.hpp"
 #include "WaveVortexRuntime/WVPortableImplementationContract.hpp"
+#include "WaveVortexKernel/WVTransformBarotropicQGKernel.hpp"
 
 #include <cstdint>
 #include <functional>
@@ -10,6 +11,8 @@
 #include <vector>
 
 namespace wavevortex::runtime {
+
+class WVBarotropicQGForcing;
 
 enum class WVForcingPersistenceEncoding : std::uint8_t {
   realVariable,
@@ -51,6 +54,14 @@ using WVForcingFactory = std::function<WVKernelStatus(
     const WVTransformConstantStratificationDescriptor &,
     bool, std::unique_ptr<WVForcing> &)>;
 
+using WVBarotropicQGForcingPreflight = std::function<WVKernelStatus(
+    const WVFrozenForcingEntry &, std::size_t)>;
+
+using WVBarotropicQGForcingFactory = std::function<WVKernelStatus(
+    const WVFrozenForcingEntry &,
+    const WVTransformBarotropicQGDescriptor &, bool,
+    std::unique_ptr<WVBarotropicQGForcing> &)>;
+
 struct WVForcingFactoryRegistration {
   std::string matlabClassName;
   std::uint32_t contractVersion = WVPortablePairContractVersion;
@@ -63,6 +74,9 @@ struct WVForcingFactoryRegistration {
   bool isSupported = true;
   std::string unavailabilityReason;
   bool providesAdaptiveDamping = false;
+  WVForcingStage barotropicQGStage = WVForcingStage::spatial;
+  WVBarotropicQGForcingPreflight barotropicQGPreflight;
+  WVBarotropicQGForcingFactory barotropicQGFactory;
 };
 
 std::vector<WVForcingFactoryRegistration> builtInForcingFactories();

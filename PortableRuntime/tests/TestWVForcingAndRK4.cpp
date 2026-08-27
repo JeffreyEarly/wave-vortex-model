@@ -63,6 +63,14 @@ void require(bool condition, const std::string& message) {
     if (!condition) throw std::runtime_error(message);
 }
 
+void requireRelative(double actual, double expected, double tolerance,
+                     const std::string &message) {
+    const auto scale = std::max(std::abs(expected),1.0);
+    require(std::abs(actual-expected) <= tolerance*scale,
+            message+": actual="+std::to_string(actual)+
+                ", expected="+std::to_string(expected));
+}
+
 WVTransformConstantStratificationConfiguration configuration(bool hydrostatic) {
     WVTransformConstantStratificationConfiguration value;
     value.Nx = 6; value.Ny = 5; value.Nz = 7; value.Nj = 4;
@@ -248,6 +256,77 @@ void testForcingTrafficAccounting() {
     require(metrics.outputCopyElementReads == 0 && metrics.outputCopyElementWrites == 0,"nonlinear-only forcing still copies its completed output");
     require(metrics.workspaceCapacityBytes == 0,"nonlinear-only forcing retained array-sized workspace");
     require(metrics.workspaceLiveBytes == 0 && metrics.workspaceMaximumLiveBytes == 0,"nonlinear-only forcing-workspace liveness is not zero");
+}
+
+void testMatlabCFLFixtures() {
+    constexpr double cfl = 0.4;
+    struct Fixture {
+        bool hydrostatic;
+        double maximumHorizontalSpeed;
+        double horizontalAdvective;
+        double verticalAdvective;
+        double highestActiveWaveFrequency;
+        double oscillatory;
+    };
+    const Fixture fixtures[] = {
+        {false,0.1020286099012897,23522.813868795667,
+         3.2273103327544224e8,0.0013924156036910925,1804.9741156372481},
+        {true,0.10202859972462885,23522.816215036815,
+         3.117452951358881e8,0.0014450221120718154,1739.2634354005847}};
+    for (const auto &fixture : fixtures) {
+        auto system = createSystem(fixture.hydrostatic,nonlinearSchedule());
+        OwnedState owned(system->kernel().descriptor().spectralShape());
+        const auto state = owned.integrationView();
+        const auto persistentBefore = system->persistentBytes();
+        WVFixedTimeStepCandidates candidates;
+        const auto status = system->evaluateFixedTimeStepCandidates(
+            {state.waveVortex.view(),nullptr,0},cfl,candidates);
+        require(static_cast<bool>(status),
+                "constant-stratification CFL evaluation: "+status.message);
+        require(system->supportsFixedTimeStepSelection(),
+                "constant-stratification CFL capability");
+        requireRelative(candidates.effectiveHorizontalGridResolution,
+                        6000.0000000000009,1e-13,
+                        "MATLAB effective horizontal resolution");
+        requireRelative(candidates.maximumHorizontalSpeed,
+                        fixture.maximumHorizontalSpeed,1e-12,
+                        "MATLAB uvMax fixture");
+        requireRelative(candidates.horizontalAdvective,
+                        fixture.horizontalAdvective,1e-12,
+                        "MATLAB horizontal advective CFL fixture");
+        requireRelative(candidates.highestActiveWaveFrequency,
+                        fixture.highestActiveWaveFrequency,1e-12,
+                        "MATLAB highest wave frequency fixture");
+        requireRelative(candidates.oscillatory,fixture.oscillatory,1e-12,
+                        "MATLAB oscillatory CFL fixture");
+        requireRelative(candidates.verticalAdvective,
+                        fixture.verticalAdvective,1e-12,
+                        "MATLAB vertical CFL fixture");
+        require(candidates.advective == candidates.horizontalAdvective,
+                "advective minimum fixture");
+        const auto expectedWorkspace =
+            3*configuration(fixture.hydrostatic).Nx*
+            configuration(fixture.hydrostatic).Ny*
+            configuration(fixture.hydrostatic).Nz*sizeof(double);
+        require(candidates.transientWorkspaceMaximumLiveBytes ==
+                    expectedWorkspace &&
+                    system->persistentBytes() == persistentBefore,
+                "CFL workspace is transient and exactly accounted");
+    }
+
+    auto system = createSystem(false,nonlinearSchedule());
+    OwnedState zero(system->kernel().descriptor().spectralShape());
+    std::fill(zero.values.begin(),zero.values.end(),WVComplex64{});
+    const auto state = zero.integrationView();
+    WVFixedTimeStepCandidates candidates;
+    const auto status = system->evaluateFixedTimeStepCandidates(
+        {state.waveVortex.view(),nullptr,0},cfl,candidates);
+    require(static_cast<bool>(status) &&
+                candidates.maximumHorizontalSpeed == 0.0 &&
+                std::isinf(candidates.horizontalAdvective) &&
+                std::isinf(candidates.verticalAdvective) &&
+                std::isfinite(candidates.oscillatory),
+            "zero-velocity CFL limits");
 }
 
 void testFixedAmplitudeAndRK4() {
@@ -592,6 +671,7 @@ int main() {
         testNonlinearCompatibility(false);
         testFixedAmplitudeAndRK4();
         testForcingTrafficAccounting();
+        testMatlabCFLFixtures();
         testRK4DeterminismRestartAndFailure();
         testSpectralForcing();
         testCoefficientErrorPolicyStorage();

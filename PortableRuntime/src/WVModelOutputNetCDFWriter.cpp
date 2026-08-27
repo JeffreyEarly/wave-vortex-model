@@ -2,7 +2,7 @@
 #include "WaveVortexRuntime/generated/WVPortableVariableCatalog.hpp"
 
 #include "WVLegacyObservationNetCDFAdapter.hpp"
-#include "WVModelOutputNetCDFSchema.hpp"
+#include "WVModelOutputTransformAdapters.hpp"
 #include "WVNetCDF.hpp"
 
 #include <netcdf.h>
@@ -286,8 +286,8 @@ public:
     int timeId = -1;
     int scheduleOrdinalId = -1;
     int scheduleCursorId = -1;
-    std::array<int, 3> coefficientReal{{-1, -1, -1}};
-    std::array<int, 3> coefficientImag{{-1, -1, -1}};
+    std::vector<int> coefficientReal;
+    std::vector<int> coefficientImag;
     std::vector<Variable> derivedVariables;
     std::vector<ObserverSchema> observerSchemas;
     std::vector<UnlimitedAxis> unlimitedAxes;
@@ -323,7 +323,7 @@ public:
   };
 
   std::shared_ptr<const WVExtensionCatalog> catalog;
-  WVTransformConstantStratificationConfiguration transformConfiguration;
+  std::unique_ptr<detail::WVModelOutputTransformAdapter> transformAdapter;
   const WVCheckpoint *constructionCheckpoint = nullptr;
   bool isDynamicsLinear = false;
   WVPortableObserverDescriptor descriptor;
@@ -343,6 +343,24 @@ public:
   bool appendMode = false;
   bool closed = false;
   bool preflightComplete = false;
+
+  std::vector<std::string> coefficientFamilyIdentifiers() const {
+    std::vector<std::string> identifiers;
+    identifiers.reserve(stateLayout.coefficientFamilyCount());
+    for (const auto &family : stateLayout.coefficientFamilies())
+      identifiers.push_back(family.identifier);
+    return identifiers;
+  }
+
+  const WVComplex64 *constructionCoefficientData(
+      std::size_t family) const noexcept {
+    if (constructionCheckpoint == nullptr ||
+        transformAdapter == nullptr ||
+        family >= stateLayout.coefficientFamilyCount())
+      return nullptr;
+    return transformAdapter->coefficientData(
+        *constructionCheckpoint, stateLayout, family);
+  }
 
   std::size_t sinkOccurrenceWorkspaceRetainedBytes() const noexcept {
     std::size_t bytes =
@@ -1102,24 +1120,25 @@ public:
             WVCheckpointProfileVersion)
       return failure(WVCheckpointStatusCode::schemaMismatch,
                      "Unsupported checkpoint template profile.", "/");
-    WVTransformConstantStratificationDescriptor transform;
-    const auto status = WVTransformConstantStratificationDescriptor::create(
-        transformConfiguration, transform);
-    if (!status)
-      return failure(WVCheckpointStatusCode::descriptorFailure, status.message,
+    if (transformAdapter == nullptr)
+      return failure(WVCheckpointStatusCode::schemaMismatch,
+                     "Output construction has no resolved transform adapter.",
                      "/");
-    const auto shape = stateLayout.coefficientShape();
-    if (shape.rows != transformConfiguration.Nj ||
-        shape.columns != transform.Nkl())
-      return failure(WVCheckpointStatusCode::shapeMismatch,
-                     "Output state layout and transform configuration differ.",
-                     "/");
-    std::array<double, 3> coefficientTolerances{};
+    auto transformStatus =
+        transformAdapter->validate(*constructionCheckpoint, stateLayout);
+    if (!transformStatus)
+      return transformStatus;
+    std::vector<double> coefficientTolerances;
+    coefficientTolerances.reserve(stateLayout.coefficientFamilyCount());
     std::size_t coefficientIndex = 0;
     for (const auto &block : stateLayout.stateBlockRecords()) {
-      if (block.identifier == "Ap" || block.identifier == "Am" ||
-          block.identifier == "A0") {
-        if (coefficientIndex >= coefficientTolerances.size() ||
+      const auto family = std::find_if(
+          stateLayout.coefficientFamilies().begin(),
+          stateLayout.coefficientFamilies().end(), [&](const auto &candidate) {
+            return candidate.identifier == block.identifier;
+          });
+      if (family != stateLayout.coefficientFamilies().end()) {
+        if (coefficientIndex >= stateLayout.coefficientFamilyCount() ||
             block.toleranceKind != WVToleranceKind::coefficientEnergyScaled ||
             !std::isfinite(block.absoluteTolerance) ||
             block.absoluteTolerance <= 0.0)
@@ -1128,20 +1147,23 @@ public:
               "Coefficient state blocks must carry a finite positive "
               "energy-scaled absTolerance for MATLAB persistence.",
               "/observingSystems/WVCoefficients/absTolerance");
-        coefficientTolerances[coefficientIndex++] = block.absoluteTolerance;
+        coefficientTolerances.push_back(block.absoluteTolerance);
+        ++coefficientIndex;
       }
     }
     if (!isDynamicsLinear &&
-        (coefficientIndex != coefficientTolerances.size() ||
-         coefficientTolerances[0] != coefficientTolerances[1] ||
-         coefficientTolerances[0] != coefficientTolerances[2]))
+        (coefficientIndex != stateLayout.coefficientFamilyCount() ||
+         !std::all_of(coefficientTolerances.begin(),
+                      coefficientTolerances.end(), [&](double value) {
+                        return value == coefficientTolerances.front();
+                      })))
       return failure(WVCheckpointStatusCode::schemaMismatch,
-                     "Ap, Am, and A0 must use one common absTolerance.",
+                     "Coefficient families must use one common absTolerance.",
                      "/observingSystems/WVCoefficients/absTolerance");
+    const auto coefficientFamilies = coefficientFamilyIdentifiers();
     for (const auto &record : descriptor.record().observers) {
       const bool canonicalCoefficientObserver =
-          record.stateBlockIdentifiers ==
-              std::vector<std::string>{"Ap", "Am", "A0"} &&
+          record.stateBlockIdentifiers == coefficientFamilies &&
           record.fieldNames.empty() && record.x.empty() && record.y.empty() &&
           record.z.empty();
       if (!canonicalCoefficientObserver && sampleSource == nullptr)
@@ -1159,7 +1181,8 @@ public:
         return failure(WVCheckpointStatusCode::schemaMismatch,
                        "Each output file requires one complete restart group.",
                        file.destination);
-      std::set<std::string> restartBlocks{"Ap", "Am", "A0"};
+      std::set<std::string> restartBlocks(coefficientFamilies.begin(),
+                                          coefficientFamilies.end());
       for (const auto &group : file.groups) {
         for (const auto &observerIdentifier : group.observerIdentifiers) {
           const auto *record = observer(observerIdentifier);
@@ -1453,14 +1476,26 @@ public:
         return result;
     }
     if (group.record.containsCompleteCoefficientRestart) {
-      for (std::size_t family = 0; family < 3; ++family) {
-        const std::string name =
-            std::array<const char *, 3>{{"Ap", "Am", "A0"}}[family];
-        const std::vector<int> coefficientDimensions =
-            isDynamicsLinear
-                ? std::vector<int>{rootDimensions[1], rootDimensions[0]}
-                : std::vector<int>{timeDimension, rootDimensions[1],
-                                   rootDimensions[0]};
+      group.coefficientReal.assign(stateLayout.coefficientFamilyCount(), -1);
+      group.coefficientImag.assign(stateLayout.coefficientFamilyCount(), -1);
+      for (std::size_t family = 0;
+           family < stateLayout.coefficientFamilyCount(); ++family) {
+        const auto &familyLayout = stateLayout.coefficientFamilies()[family];
+        const std::string &name = familyLayout.identifier;
+        std::vector<int> coefficientDimensions;
+        if (!isDynamicsLinear)
+          coefficientDimensions.push_back(timeDimension);
+        if (familyLayout.spectralDimensions.size() == 2) {
+          coefficientDimensions.push_back(rootDimensions[1]);
+          coefficientDimensions.push_back(rootDimensions[0]);
+        } else if (familyLayout.spectralDimensions.size() == 1) {
+          coefficientDimensions.push_back(rootDimensions[1]);
+        } else {
+          return failure(WVCheckpointStatusCode::schemaMismatch,
+                         "The transform coefficient family rank is not "
+                         "supported by MATLAB NetCDF output.",
+                         path + "/" + name);
+        }
         result = detail::defineComplexVariable(group.id, name,
                                                coefficientDimensions, path);
         if (!result)
@@ -1491,6 +1526,8 @@ public:
         }
         if (!result)
           return result;
+        group.coefficientReal[family] = real;
+        group.coefficientImag[family] = imag;
       }
     }
 
@@ -1815,7 +1852,12 @@ public:
               return candidate.observerIdentifier == record->identifier;
             });
         if (observerSchema == group.observerSchemas.end()) {
-          const auto *block = stateBlockRecord("Ap");
+          const auto *block = stateLayout.coefficientFamilies().empty()
+                                  ? nullptr
+                                  : stateBlockRecord(
+                                        stateLayout.coefficientFamilies()
+                                            .front()
+                                            .identifier);
           result = writeScalar(
               metadata, "absTolerance",
               block == nullptr ? 1e-6 : block->absoluteTolerance, metadataPath);
@@ -2002,19 +2044,20 @@ public:
     if (constructionCheckpoint == nullptr)
       return failure(WVCheckpointStatusCode::schemaMismatch,
                      "Initial output has no checkpoint template.", "/");
-    const auto coefficientCount = constructionCheckpoint->state
-                                      .coefficients.shape.elementCount();
     for (auto &group : file.groups) {
       const std::string path = "/" + group.record.name;
       if (group.record.containsCompleteCoefficientRestart &&
           isDynamicsLinear) {
-        const std::array<const WVComplex64 *, 3> values{
-            constructionCheckpoint->state.coefficients.Ap.data(),
-            constructionCheckpoint->state.coefficients.Am.data(),
-            constructionCheckpoint->state.coefficients.A0.data()};
-        for (std::size_t family = 0; family < 3; ++family) {
-          const std::string name =
-              std::array<const char *, 3>{{"Ap", "Am", "A0"}}[family];
+        for (std::size_t family = 0;
+             family < stateLayout.coefficientFamilyCount(); ++family) {
+          const auto &familyLayout = stateLayout.coefficientFamilies()[family];
+          const std::string &name = familyLayout.identifier;
+          const auto coefficientCount = familyLayout.elementCount;
+          const auto *values = constructionCoefficientData(family);
+          if (values == nullptr)
+            return failure(WVCheckpointStatusCode::shapeMismatch,
+                           "Initial coefficient storage is incomplete.",
+                           path + "/" + name);
           int real = -1;
           int imag = -1;
           auto result = detail::checkedNetCDF(
@@ -2029,8 +2072,8 @@ public:
           std::vector<double> realValues(coefficientCount);
           std::vector<double> imaginaryValues(coefficientCount);
           for (std::size_t index = 0; index < coefficientCount; ++index) {
-            realValues[index] = values[family][index].real;
-            imaginaryValues[index] = values[family][index].imag;
+            realValues[index] = values[index].real;
+            imaginaryValues[index] = values[index].imag;
           }
           result = detail::checkedNetCDF(
               nc_put_var_double(group.id, real, realValues.data()),
@@ -2098,8 +2141,19 @@ public:
 
   WVCheckpointStatus stageFiles() {
     if (sampleSource != nullptr) {
-      const auto status = sampleSource->prepareInitial(
-          constructionCheckpoint->state.view());
+      std::vector<WVCoefficientFamilyConstView> coefficientViews;
+      coefficientViews.reserve(stateLayout.coefficientFamilyCount());
+      for (std::size_t family = 0;
+           family < stateLayout.coefficientFamilyCount(); ++family)
+        coefficientViews.push_back(
+            {&stateLayout.coefficientFamilies()[family],
+             constructionCoefficientData(family)});
+      WVIntegrationState initial;
+      transformAdapter->bindConstructionState(*constructionCheckpoint,
+                                              initial);
+      initial.coefficientFamilies = coefficientViews.data();
+      initial.coefficientFamilyCount = coefficientViews.size();
+      const auto status = sampleSource->prepareInitial(initial);
       if (!status)
         return failure(WVCheckpointStatusCode::unsupportedObserver,
                        status.message, "/observingSystems");
@@ -2123,7 +2177,7 @@ public:
       std::array<int, 5> rootDimensions{};
       std::vector<int> forcingGroups;
       std::vector<const WVFrozenForcingEntry *> forcingEntries;
-      result = detail::defineModelOutputRoot(
+      result = transformAdapter->defineRoot(
           staged.id, *constructionCheckpoint, catalog->forcings(),
           isDynamicsLinear, rootDimensions, forcingGroups,
           forcingEntries);
@@ -2147,10 +2201,9 @@ public:
                                      staged.staging.string());
       if (!result)
         return result;
-      result = detail::writeModelOutputRoot(staged.id,
-                                            *constructionCheckpoint,
-                                            catalog->forcings(),
-                                            forcingGroups, forcingEntries);
+      result = transformAdapter->writeRoot(
+          staged.id, *constructionCheckpoint, catalog->forcings(),
+          forcingGroups, forcingEntries);
       if (!result)
         return result;
       result = writeObserverMetadata(staged.id, staged);
@@ -2510,9 +2563,12 @@ public:
           return result;
       }
       if (group.record.containsCompleteCoefficientRestart) {
-        for (std::size_t family = 0; family < 3; ++family) {
-          const std::string name =
-              std::array<const char *, 3>{{"Ap", "Am", "A0"}}[family];
+        group.coefficientReal.assign(stateLayout.coefficientFamilyCount(), -1);
+        group.coefficientImag.assign(stateLayout.coefficientFamilyCount(), -1);
+        for (std::size_t family = 0;
+             family < stateLayout.coefficientFamilyCount(); ++family) {
+          const std::string &name =
+              stateLayout.coefficientFamilies()[family].identifier;
           result = detail::checkedNetCDF(
               nc_inq_varid(group.id, (name + "_real").c_str(),
                            &group.coefficientReal[family]),
@@ -3034,6 +3090,9 @@ public:
 
   void updateRetainedStorageMetric() {
     std::size_t bytes = sizeof(*this) + stateLayout.persistentBytes() +
+                        (transformAdapter == nullptr
+                             ? 0
+                             : transformAdapter->persistentBytes()) +
                         files.capacity() * sizeof(File) +
                         destinationProgress.capacity() *
                             sizeof(WVOutputDestinationProgress) +
@@ -3050,6 +3109,8 @@ public:
       for (const auto &group : file.groups) {
         bytes += group.scheduleCursor.persistentBytes() -
                  sizeof(WVPortableTypedRecord) +
+                 group.coefficientReal.capacity() * sizeof(int) +
+                 group.coefficientImag.capacity() * sizeof(int) +
                  group.derivedVariables.capacity() * sizeof(Variable) +
                  group.observerSchemas.capacity() * sizeof(ObserverSchema) +
                  group.unlimitedAxes.capacity() * sizeof(UnlimitedAxis) +
@@ -3139,9 +3200,8 @@ public:
                                                 inspection);
       if (!result)
         return result;
-      if (!sameTransformConfiguration(
-              transformConfiguration,
-              inspection.configuration))
+      if (transformAdapter == nullptr ||
+          !transformAdapter->sameConfiguration(inspection))
         return failure(WVCheckpointStatusCode::schemaMismatch,
                        "Append model configuration does not match the file.",
                        record.destination);
@@ -3390,26 +3450,29 @@ public:
         }
       }
     }
-    const std::size_t coefficientCount =
-        stateLayout.coefficientShape().elementCount();
     if (group.record.containsCompleteCoefficientRestart &&
         !isDynamicsLinear) {
-      const std::array<const WVComplex64 *, 3> values = {
-          event.state.waveVortex.coefficients.Ap.data,
-          event.state.waveVortex.coefficients.Am.data,
-          event.state.waveVortex.coefficients.A0.data};
-      for (std::size_t family = 0; family < 3; ++family) {
+      for (std::size_t family = 0;
+           family < stateLayout.coefficientFamilyCount(); ++family) {
+        const auto &familyLayout = stateLayout.coefficientFamilies()[family];
+        const auto values = coefficientFamilyView(stateLayout, event.state,
+                                                  family);
+        if (values.data == nullptr)
+          return failure(WVCheckpointStatusCode::shapeMismatch,
+                         "The event omits a transform coefficient family.",
+                         "/" + group.record.name + "/" +
+                             familyLayout.identifier);
         auto result = writeComplexSlab(
             group.id, group.coefficientReal[family],
-            group.coefficientImag[family], index, values[family],
-            coefficientCount,
-            "/" + group.record.name + "/" +
-                std::array<const char *, 3>{{"Ap", "Am", "A0"}}[family]);
+            group.coefficientImag[family], index, values.data,
+            familyLayout.elementCount,
+            "/" + group.record.name + "/" + familyLayout.identifier);
         if (!result)
           return result;
+        delivery.writeCount += 2;
+        delivery.writtenBytes +=
+            2 * familyLayout.elementCount * sizeof(double);
       }
-      delivery.writeCount += 6;
-      delivery.writtenBytes += 6 * coefficientCount * sizeof(double);
     }
     for (std::size_t schemaIndex = 0;
          schemaIndex < group.observerSchemas.size(); ++schemaIndex) {
@@ -3596,14 +3659,16 @@ WVCheckpointStatus WVModelOutputNetCDFSink::createNew(
   try {
     auto candidate = std::make_unique<Impl>();
     candidate->catalog = configuration.catalog;
-    candidate->transformConfiguration =
-        configuration.checkpointTemplate.configuration;
+    auto result = detail::createModelOutputTransformAdapter(
+        configuration.checkpointTemplate, candidate->transformAdapter);
+    if (!result)
+      return result;
     candidate->constructionCheckpoint = &configuration.checkpointTemplate;
     candidate->isDynamicsLinear = configuration.isDynamicsLinear;
     candidate->descriptor = descriptor;
     candidate->stateLayout = stateLayout;
     candidate->sampleSource = sampleSource;
-    auto result = candidate->validateConfiguration();
+    result = candidate->validateConfiguration();
     if (!result)
       return result;
     const auto planStatus = candidate->validateAndCompilePlan(plan);
@@ -3656,14 +3721,16 @@ WVCheckpointStatus WVModelOutputNetCDFSink::replaceExisting(
   try {
     auto candidate = std::make_unique<Impl>();
     candidate->catalog = configuration.catalog;
-    candidate->transformConfiguration =
-        configuration.checkpointTemplate.configuration;
+    auto result = detail::createModelOutputTransformAdapter(
+        configuration.checkpointTemplate, candidate->transformAdapter);
+    if (!result)
+      return result;
     candidate->constructionCheckpoint = &configuration.checkpointTemplate;
     candidate->isDynamicsLinear = configuration.isDynamicsLinear;
     candidate->descriptor = descriptor;
     candidate->stateLayout = stateLayout;
     candidate->sampleSource = sampleSource;
-    auto result = candidate->validateConfiguration();
+    result = candidate->validateConfiguration();
     if (!result)
       return result;
     const auto planStatus = candidate->validateAndCompilePlan(plan);
@@ -3717,15 +3784,17 @@ WVCheckpointStatus WVModelOutputNetCDFSink::openAppend(
   try {
     auto candidate = std::make_unique<Impl>();
     candidate->catalog = configuration.catalog;
-    candidate->transformConfiguration =
-        configuration.checkpointTemplate.configuration;
+    auto result = detail::createModelOutputTransformAdapter(
+        configuration.checkpointTemplate, candidate->transformAdapter);
+    if (!result)
+      return result;
     candidate->constructionCheckpoint = &configuration.checkpointTemplate;
     candidate->isDynamicsLinear = configuration.isDynamicsLinear;
     candidate->descriptor = descriptor;
     candidate->stateLayout = stateLayout;
     candidate->sampleSource = sampleSource;
     candidate->appendMode = true;
-    auto result = candidate->validateConfiguration();
+    result = candidate->validateConfiguration();
     if (!result)
       return result;
     const auto planStatus = candidate->validateAndCompilePlan(plan);

@@ -267,9 +267,12 @@ WVKernelStatus buildLegacyOutputPlan(
     const WVLegacyObserverOperationResolver &resolveOperation,
     const WVObserverOutputPlanningContext &context,
     WVObserverOutputPlan &output) {
-  if (context.configuration == nullptr)
-    return invalid("Observer output planning requires a transform configuration.");
-  const auto &configuration = *context.configuration;
+  if (context.stateLayout == nullptr)
+    return invalid("Observer output planning requires a resolved state layout.");
+  const auto *configuration = context.configuration;
+  const auto &spatialDimensions = context.stateLayout->spatialDimensions();
+  if (spatialDimensions.size() < 2)
+    return invalid("Observer output planning requires two horizontal dimensions.");
   WVObserverOutputPlan plan;
   plan.schema.identifier =
       "legacy-" + observer.identifier + "-observation-v1";
@@ -296,33 +299,49 @@ WVKernelStatus buildLegacyOutputPlan(
     if (metadata == nullptr)
       return invalid("Unsupported observer field: " + field + ".");
     std::vector<std::string> names;
-    for (std::size_t dimension = 0; dimension < metadata->dimensionCount;
-         ++dimension)
-      names.emplace_back(metadata->dimensions[dimension]);
     std::vector<std::size_t> dimensions;
     WVObserverOutputChannel channel;
     channel.sourceIdentifier = field;
     if (metadata->kind == WVPortableVariableKind::coefficient) {
-      WVTransformConstantStratificationDescriptor transform;
-      auto status = WVTransformConstantStratificationDescriptor::create(
-          configuration, transform);
-      if (!status)
-        return status;
-      dimensions = {configuration.Nj, transform.Nkl()};
       channel.source = WVObserverOutputChannelSource::coefficient;
-      channel.coefficientFamily =
-          metadata->identifier == WVPortableVariable::Ap
-              ? 0
-              : metadata->identifier == WVPortableVariable::Am ? 1 : 2;
+      const auto family = std::find_if(
+          context.stateLayout->coefficientFamilies().begin(),
+          context.stateLayout->coefficientFamilies().end(),
+          [&](const auto &candidate) { return candidate.identifier == field; });
+      if (family == context.stateLayout->coefficientFamilies().end())
+        return invalid("Coefficient field is absent from the resolved transform: " +
+                       field + ".");
+      channel.coefficientFamily = static_cast<std::size_t>(
+          family - context.stateLayout->coefficientFamilies().begin());
+      dimensions = family->spectralDimensions;
+      names.reserve(dimensions.size());
+      if (dimensions.size() == 1)
+        names.emplace_back("kl");
+      else if (dimensions.size() == 2) {
+        names.emplace_back("j");
+        names.emplace_back("kl");
+      } else
+        for (std::size_t dimension = 0; dimension < dimensions.size();
+             ++dimension)
+          names.emplace_back("coefficient_dimension_" +
+                             std::to_string(dimension + 1));
     } else if (metadata->kind == WVPortableVariableKind::field) {
-      if (metadata->naturalRank == WVPortableNaturalRank::vertical)
-        dimensions = {configuration.Nz};
-      else if (metadata->naturalRank == WVPortableNaturalRank::horizontal)
-        dimensions = {configuration.Nx, configuration.Ny};
-      else if (metadata->naturalRank == WVPortableNaturalRank::scalar)
+      if (metadata->naturalRank == WVPortableNaturalRank::scalar) {
         dimensions = {};
-      else
-        dimensions = {configuration.Nx, configuration.Ny, configuration.Nz};
+      } else if (spatialDimensions.size() == 2) {
+        dimensions = spatialDimensions;
+        names = {"x", "y"};
+      } else {
+        for (std::size_t dimension = 0; dimension < metadata->dimensionCount;
+             ++dimension)
+          names.emplace_back(metadata->dimensions[dimension]);
+        if (metadata->naturalRank == WVPortableNaturalRank::vertical)
+          dimensions = {spatialDimensions[2]};
+        else if (metadata->naturalRank == WVPortableNaturalRank::horizontal)
+          dimensions = {spatialDimensions[0], spatialDimensions[1]};
+        else
+          dimensions = spatialDimensions;
+      }
       channel.source = WVObserverOutputChannelSource::sampledField;
     } else {
       return invalid("Unsupported observer field: " + field + ".");
@@ -337,9 +356,18 @@ WVKernelStatus buildLegacyOutputPlan(
     return WVKernelStatus::ok();
   };
 
-  if (observer.stateBlockIdentifiers ==
-      std::vector<std::string>({"Ap", "Am", "A0"})) {
-    const auto *block = context.stateBlock("Ap");
+  const bool isCompleteCoefficientObserver =
+      !execution.coefficientRestartFamilies.empty() &&
+      execution.outputFields == observer.stateBlockIdentifiers &&
+      execution.coefficientRestartFamilies ==
+          observer.stateBlockIdentifiers &&
+      observer.fieldNames.empty() && observer.x.empty() && observer.y.empty() &&
+      observer.z.empty();
+  if (isCompleteCoefficientObserver) {
+    const auto *block = observer.stateBlockIdentifiers.empty()
+                            ? nullptr
+                            : context.stateBlock(
+                                  observer.stateBlockIdentifiers.front());
     plan.schema.metadata.variables.push_back(
         metadataReal("absTolerance",
                      block == nullptr ? 1e-6 : block->absoluteTolerance));
@@ -355,11 +383,15 @@ WVKernelStatus buildLegacyOutputPlan(
     return WVKernelStatus::ok();
   };
   operations.fixedVerticalProfiles = [&]() -> WVKernelStatus {
+    if (configuration == nullptr || spatialDimensions.size() != 3)
+      return {WVKernelStatusCode::unsupportedOperation,
+              "Fixed vertical profiles require a three-dimensional transform."};
+    const auto &legacyConfiguration = *configuration;
     const std::string idName = observer.name + "_id";
     const std::string zName = observer.name + "_z";
     addAxis(plan.schema, idName, observer.x.size(),
             WVObservationCoordinateRole::identifier);
-    addAxis(plan.schema, zName, configuration.Nz,
+    addAxis(plan.schema, zName, legacyConfiguration.Nz,
             WVObservationCoordinateRole::z);
     std::vector<double> identifiers(observer.x.size());
     for (std::size_t index = 0; index < identifiers.size(); ++index)
@@ -370,11 +402,13 @@ WVKernelStatus buildLegacyOutputPlan(
                     WVObservationCoordinateRole::identifier);
     std::vector<double> z = observer.z;
     if (z.empty()) {
-      z.resize(configuration.Nz);
+      z.resize(legacyConfiguration.Nz);
       const double dz =
-          configuration.Lz / static_cast<double>(configuration.Nz - 1);
+          legacyConfiguration.Lz /
+          static_cast<double>(legacyConfiguration.Nz - 1);
       for (std::size_t index = 0; index < z.size(); ++index)
-        z[index] = -configuration.Lz + static_cast<double>(index) * dz;
+        z[index] = -legacyConfiguration.Lz +
+                   static_cast<double>(index) * dz;
     }
     addConstantReal(plan, "static-" + zName, zName, {zName},
                     WVObservationValueLayout::staticValue, std::move(z), "m",
@@ -384,20 +418,22 @@ WVKernelStatus buildLegacyOutputPlan(
     std::vector<double> y = observer.y;
     WVFieldSamplingRequest sampling;
     sampling.kind = WVFieldSamplingKind::fixedVerticalProfiles;
-    const double dx = configuration.Lx / static_cast<double>(configuration.Nx);
-    const double dy = configuration.Ly / static_cast<double>(configuration.Ny);
+    const double dx = legacyConfiguration.Lx /
+                      static_cast<double>(legacyConfiguration.Nx);
+    const double dy = legacyConfiguration.Ly /
+                      static_cast<double>(legacyConfiguration.Ny);
     for (std::size_t index = 0; index < x.size(); ++index) {
-      x[index] = std::fmod(x[index], configuration.Lx);
-      y[index] = std::fmod(y[index], configuration.Ly);
+      x[index] = std::fmod(x[index], legacyConfiguration.Lx);
+      y[index] = std::fmod(y[index], legacyConfiguration.Ly);
       if (x[index] < 0.0)
-        x[index] += configuration.Lx;
+        x[index] += legacyConfiguration.Lx;
       if (y[index] < 0.0)
-        y[index] += configuration.Ly;
+        y[index] += legacyConfiguration.Ly;
       sampling.xIndices.push_back(std::min(
-          configuration.Nx,
+          legacyConfiguration.Nx,
           static_cast<std::size_t>(std::floor(x[index] / dx)) + 1));
       sampling.yIndices.push_back(std::min(
-          configuration.Ny,
+          legacyConfiguration.Ny,
           static_cast<std::size_t>(std::floor(y[index] / dy)) + 1));
     }
     addConstantReal(plan, "static-x", observer.name + "_x", {idName},
@@ -550,8 +586,7 @@ WVKernelStatus buildLegacyOutputPlan(
     for (const auto &field : execution.outputFields) {
       const auto *metadata = findPortableVariable(field);
       if (metadata == nullptr ||
-          metadata->kind != WVPortableVariableKind::field ||
-          metadata->movingPrimitiveChannel < 0)
+          metadata->kind != WVPortableVariableKind::field)
         return invalid("Unsupported particle tracked field: " + field + ".");
       auto variable = fieldVariable(
           *metadata, "derived-" + field, observer.name + '_' + field,
@@ -615,7 +650,7 @@ WVKernelStatus coefficientExecutionPlan(const WVObserverRecord &observer,
                                         WVObserverExecutionPlan &plan) {
   plan = {};
   plan.persistedName = observer.name;
-  plan.outputFields = {"Ap", "Am", "A0"};
+  plan.outputFields = observer.stateBlockIdentifiers;
   plan.coefficientRestartFamilies = plan.outputFields;
   return WVKernelStatus::ok();
 }
@@ -709,10 +744,9 @@ public:
       const WVObserverRecord &observer,
       const std::map<std::string, const WVStateBlockRecord *> &,
       std::map<std::string, std::size_t> &) const override {
-    if (observer.stateBlockIdentifiers !=
-        std::vector<std::string>({"Ap", "Am", "A0"}))
-      return invalid(
-          "WVCoefficients must reference Ap, Am, and A0 in canonical order.");
+    if (observer.stateBlockIdentifiers.empty())
+      return invalid("WVCoefficients must reference at least one coefficient "
+                     "family in transform order.");
     return WVKernelStatus::ok();
   }
 };
@@ -934,7 +968,8 @@ WVKernelStatus addBuiltInObserverFactories(
 
 WVKernelStatus canonicalCoefficientObserver(
     std::string identifier, const WVExtensionCatalog &catalog,
-    WVObserverRecord &observer) {
+    WVObserverRecord &observer,
+    std::vector<std::string> coefficientFamilies) {
   if (catalog.observers().registration(
           "WVCoefficients", WVPortablePairContractVersion) == nullptr)
     return {WVKernelStatusCode::unsupportedOperation,
@@ -944,7 +979,10 @@ WVKernelStatus canonicalCoefficientObserver(
   candidate.name = "WVCoefficients";
   candidate.typeIdentifier = "WVCoefficients";
   candidate.contractVersion = WVPortablePairContractVersion;
-  candidate.stateBlockIdentifiers = {"Ap", "Am", "A0"};
+  if (coefficientFamilies.empty())
+    return invalid("A canonical coefficient observer requires at least one "
+                   "resolved transform family.");
+  candidate.stateBlockIdentifiers = std::move(coefficientFamilies);
   const auto configurationStatus =
       catalog.observers().resolveConfiguration(candidate,
                                                candidate.configuration);

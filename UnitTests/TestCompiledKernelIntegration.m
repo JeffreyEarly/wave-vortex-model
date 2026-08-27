@@ -102,6 +102,9 @@ classdef TestCompiledKernelIntegration < matlab.unittest.TestCase
             kernelExtensions = testCase.selection.postSelectionExtensions;
             testCase.verifyEqual(string(runtimeExtensions.losslessOutputGraphs),"issue-273");
             testCase.verifyEqual(string(runtimeExtensions.stableSourceAPI),"issue-249");
+            testCase.verifyEqual(string(runtimeExtensions.barotropicQGKernel),"issue-280");
+            testCase.verifyEqual(string(runtimeExtensions.barotropicQGForcing),"issue-281");
+            testCase.verifyEqual(string(runtimeExtensions.barotropicQGModelOutputRestart),"issue-282");
             for iField = 1:numel(provenanceFields)
                 field = provenanceFields(iField);
                 testCase.verifyEqual(string(runtimeExtensions.(field)),expectedProvenance(iField),field);
@@ -172,7 +175,9 @@ classdef TestCompiledKernelIntegration < matlab.unittest.TestCase
                 "PortableRuntime/app/WVRunRequest.cpp"
                 "PortableRuntime/app/WVRunRequest.hpp"
                 "PortableRuntime/contracts/wave-vortex-run-request-v1.schema.json"
+                "PortableRuntime/contracts/wave-vortex-run-request-v2.schema.json"
                 "PortableRuntime/examples/portable-run-request-v1.json"
+                "PortableRuntime/examples/portable-run-request-v2.json"
                 "PortableRuntime/third_party/nlohmann/json.hpp"
                 "PortableRuntime/third_party/nlohmann/LICENSE.MIT"
                 "@WVCompiledBackend/WVCompiledBackend.m"

@@ -20,7 +20,7 @@ WaveVortexModel provides five transform families together with model integration
 | `WVTransformStratifiedQG` | Stratified quasigeostrophic flow. |
 | `WVTransformBarotropicQG` | Equivalent-barotropic quasigeostrophic flow. |
 
-The rotating transforms accept either hemisphere for `5 <= abs(latitude) <= 85`, including the endpoints. Horizontal grids may contain independently chosen positive even or odd grid counts. MATLAB remains the default implementation. Constant-stratification transforms may explicitly select the narrower [compiled nonlinear-flux preview](/users-guide/compiled-preview.html).
+The rotating transforms accept either hemisphere for `5 <= abs(latitude) <= 85`, including the endpoints. Horizontal grids may contain independently chosen positive even or odd grid counts. MATLAB remains the default implementation. Constant-stratification transforms may explicitly select the narrower [compiled MATLAB backend preview](/users-guide/compiled-preview.html).
 
 Mode/index mappings accept scalars and column vectors. Resolution conversion and explicit antialiasing preserve coefficients identified by common integer mode numbers and initialize newly introduced modes to zero. Energy and, where defined, enstrophy agree between spectral and spatial representations within the transform discretization tolerance.
 
@@ -38,7 +38,20 @@ For three-dimensional transforms, `diffZF` and `diffZG` accept derivative orders
 
 `WVModel` provides adaptive and fixed-step integration, tolerance and time-step configuration, segmented integration, model output, and restart. Call `setupIntegrator` to change time-stepping settings.
 
-The optional [portable constant-stratification runtime](/users-guide/portable-runtime.html) provides a narrower source-built checkpoint workflow with fixed RK4 or adaptive RK3(2). It supports only the documented forcing and observing-system records; MATLAB remains the general model interface. Its stable `wave-vortex-portable-source-api-v1` extension surface is qualified on Ubuntu with GCC or Clang and on macOS with AppleClang, and the optimized runner is limited to Apple silicon. Windows/MSVC source-linked execution is unsupported.
+The optional [standalone portable runtime](/users-guide/portable-runtime.html) provides a narrower source-built checkpoint workflow for constant stratification and equivalent-barotropic QG with fixed RK4 or adaptive RK23/RK45/RK78. It supports only the documented transform-valid forcing and observing-system records; MATLAB remains the general model interface. Its stable `wave-vortex-portable-source-api-v1` extension surface is qualified on Ubuntu with GCC or Clang and on macOS with AppleClang, and the optimized runner is limited to Apple silicon. Windows/MSVC source-linked execution is unsupported.
+
+## Execution compatibility
+
+| Capability | MATLAB | Compiled MATLAB preview | Standalone runtime |
+| --- | --- | --- | --- |
+| Transform families | All five documented transforms | Constant stratification | Constant stratification and equivalent-barotropic QG |
+| Integrators | Fixed and adaptive MATLAB integration | MATLAB owns integration | Fixed RK4 and MATLAB-compatible `ode23`, `ode45`, and `ode78` |
+| Forcing | Documented built-ins and custom `WVForcing` | Exactly default `WVNonlinearAdvection` | Qualified transform-valid built-in subset |
+| Observers and NetCDF | Full documented MATLAB model surface | MATLAB owns observers and persistence | Qualified coefficients, fields, moorings, particles, tracers, schedules, and restart subsets |
+| Provider | MATLAB builtin Fourier transforms | Explicit local native FFTW build | Explicit local native FFTW build; reference provider only when requested |
+| Platforms | Supported MATLAB platforms | Apple silicon, MATLAB R2025b or later | Portable reference source build on macOS/Linux; optimized runner on Apple silicon |
+
+See [Compiled execution](/compiled-execution) for the process boundary, build commands, intended uses, and no-fallback behavior of the two compiled paths.
 
 The `adaptive-cell` option is under development and does not have the validation coverage of fixed-step and adaptive integration. Low-level integrator mixins and `ode45_cell` are implementation machinery rather than model entry points.
 
@@ -75,4 +88,4 @@ Portable C++ observers, schedules, and forcings are statically source-linked int
 
 Optimization Toolbox is optional. `WVNoMotionProfileOperation` uses `lsqnonlin` when it is available and otherwise uses `fminsearch` with an advisory warning.
 
-WaveVortexModel's ordinary transform methods use MATLAB's builtin Fourier transforms. The former fine-grained WaveVortex FFTW selector was retired after complete nonlinear-advection benchmarks did not justify its additional integration complexity. The compiled constant-stratification preview is different: it evaluates the complete ordinary nonlinear flux in one coarse C++ call using a locally built native FFTW provider. The reusable FFTWTransforms package remains independent of WaveVortexModel. The low-level barotropic FINUFFT path remains development machinery and is not selected through the documented interpolation options; FINUFFT is not a required package dependency.
+WaveVortexModel's ordinary transform methods use MATLAB's builtin Fourier transforms. The former fine-grained WaveVortex FFTW selector was retired after complete nonlinear-advection benchmarks did not justify its additional integration complexity. The compiled MATLAB backend preview is different: it evaluates the complete ordinary nonlinear flux in one coarse C++ call using a locally built native FFTW provider. The reusable FFTWTransforms package remains independent of WaveVortexModel. The low-level barotropic FINUFFT path remains development machinery and is not selected through the documented interpolation options; FINUFFT is not a required package dependency.

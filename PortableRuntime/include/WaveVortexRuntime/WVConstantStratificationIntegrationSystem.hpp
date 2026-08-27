@@ -69,12 +69,16 @@ public:
   WVKernelStatus createErrorPolicy(
       double absoluteToleranceScale,
       std::unique_ptr<WVIntegrationErrorPolicy> &policy) const override;
+  bool supportsFixedTimeStepSelection() const noexcept override { return true; }
+  WVKernelStatus evaluateFixedTimeStepCandidates(
+      const WVIntegrationState &state, double cfl,
+      WVFixedTimeStepCandidates &candidates) override;
 
   const std::vector<WVLagrangianParticles> &particles() const noexcept {
     return particles_;
   }
   const std::vector<WVTracer> &tracers() const noexcept { return tracers_; }
-  WVFieldEvaluationService *fieldEvaluationService() noexcept {
+  WVFieldEvaluationService *fieldEvaluationService() noexcept override {
     return fields_.get();
   }
   const WVIntegratedObserverMetrics &metrics() const noexcept {
@@ -95,7 +99,7 @@ public:
   const std::string &scheduleIdentifier() const noexcept {
     return forcing_->scheduleIdentifier();
   }
-  std::size_t persistentBytes() const noexcept;
+  std::size_t persistentBytes() const noexcept override;
 
 private:
   static WVKernelStatus createImpl(

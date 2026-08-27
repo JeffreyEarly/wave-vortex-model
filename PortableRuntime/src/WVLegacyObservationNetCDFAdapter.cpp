@@ -1,7 +1,7 @@
 #include "WVLegacyObservationNetCDFAdapter.hpp"
 #include "WaveVortexRuntime/WVExtensionCatalog.hpp"
 #include "WVLegacyObserverCompatibility.hpp"
-#include "WVModelOutputNetCDFSchema.hpp"
+#include "WVModelOutputTransformAdapters.hpp"
 #include "WVNetCDF.hpp"
 #include "WVObserverAdapter.hpp"
 
@@ -757,20 +757,34 @@ WVCheckpointStatus parseObserver(int outputGroup, int metadataGroup,
                                       outputPath);
     if (!result)
       return result;
-    observer.stateBlockIdentifiers = {"Ap", "Am", "A0"};
-    std::vector<std::string> names;
-    std::vector<std::size_t> dimensions;
-    result =
-        variableShape(outputGroup, "Ap_real", names, dimensions, outputPath);
+    int apVariable = -1;
+    bool hasAp = false;
+    result = detail::variableIdIfPresent(outputGroup, "Ap_real", apVariable,
+                                         hasAp, outputPath);
     if (!result)
       return result;
-    if (names.size() != 3 || names[0] != "t" || names[1] != "kl" ||
-        names[2] != "j")
-      return failure(WVCheckpointStatusCode::shapeMismatch,
-                     "Coefficient output must use [t,kl,j] NetCDF order.",
-                     outputPath + "/Ap_real");
-    const std::vector<std::size_t> logical{dimensions[2], dimensions[1]};
-    for (const char *name : {"Ap", "Am", "A0"}) {
+    observer.stateBlockIdentifiers =
+        hasAp ? std::vector<std::string>{"Ap", "Am", "A0"}
+              : std::vector<std::string>{"A0"};
+    std::vector<std::string> names;
+    std::vector<std::size_t> dimensions;
+    result = variableShape(outputGroup, hasAp ? "Ap_real" : "A0_real",
+                           names, dimensions, outputPath);
+    if (!result)
+      return result;
+    if ((hasAp && (names.size() != 3 || names[0] != "t" ||
+                   names[1] != "kl" || names[2] != "j")) ||
+        (!hasAp && (names.size() != 2 || names[0] != "t" ||
+                    names[1] != "kl")))
+      return failure(
+          WVCheckpointStatusCode::shapeMismatch,
+          hasAp ? "Coefficient output must use [t,kl,j] NetCDF order."
+                : "Compact A0 output must use [t,kl] NetCDF order.",
+          outputPath + (hasAp ? "/Ap_real" : "/A0_real"));
+    const std::vector<std::size_t> logical =
+        hasAp ? std::vector<std::size_t>{dimensions[2], dimensions[1]}
+              : std::vector<std::size_t>{dimensions[1]};
+    for (const auto &name : observer.stateBlockIdentifiers) {
       result = mergeStateBlock(portable,
                                {name, WVStateScalarType::complex64, logical,
                                 WVToleranceKind::coefficientEnergyScaled,
@@ -780,35 +794,55 @@ WVCheckpointStatus parseObserver(int outputGroup, int metadataGroup,
         return result;
     }
     } else {
-    const bool hasCompleteCoefficients =
+    const bool hasLegacyCoefficients =
         std::find(observer.fieldNames.begin(), observer.fieldNames.end(),
                   "Ap") != observer.fieldNames.end() &&
         std::find(observer.fieldNames.begin(), observer.fieldNames.end(),
                   "Am") != observer.fieldNames.end() &&
         std::find(observer.fieldNames.begin(), observer.fieldNames.end(),
                   "A0") != observer.fieldNames.end();
-    if (hasCompleteCoefficients) {
+    const bool hasCompactA0 = !hasLegacyCoefficients &&
+        std::find(observer.fieldNames.begin(), observer.fieldNames.end(),
+                  "A0") != observer.fieldNames.end();
+    if (hasLegacyCoefficients || hasCompactA0) {
       std::vector<std::string> names;
       std::vector<std::size_t> dimensions;
       int coefficient = -1;
       bool paired = false;
-      result = detail::variableIdIfPresent(outputGroup, "Ap_real", coefficient,
-                                           paired, outputPath);
+      const char *baseName = hasLegacyCoefficients ? "Ap" : "A0";
+      result = detail::variableIdIfPresent(
+          outputGroup, std::string(baseName) + "_real", coefficient, paired,
+          outputPath);
       if (!result)
         return result;
-      result = variableShape(outputGroup, paired ? "Ap_real" : "Ap", names,
-                             dimensions, outputPath);
+      result = variableShape(outputGroup,
+                             paired ? std::string(baseName) + "_real"
+                                    : std::string(baseName),
+                             names, dimensions, outputPath);
       if (!result)
         return result;
-      if ((names.size() != 2 && names.size() != 3) ||
-          names[names.size() - 2] != "kl" || names.back() != "j")
+      const bool legacyShape =
+          hasLegacyCoefficients &&
+          (names.size() == 2 || names.size() == 3) &&
+          names[names.size() - 2] == "kl" && names.back() == "j";
+      const bool compactShape = hasCompactA0 &&
+          (names.size() == 1 || names.size() == 2) &&
+          names.back() == "kl";
+      if (!legacyShape && !compactShape)
         return failure(WVCheckpointStatusCode::shapeMismatch,
-                       "Eulerian coefficients must use [kl,j] or [t,kl,j] "
-                       "NetCDF order.",
-                       outputPath + (paired ? "/Ap_real" : "/Ap"));
-      const std::vector<std::size_t> logical{dimensions.back(),
-                                             dimensions[dimensions.size() - 2]};
-      for (const char *name : {"Ap", "Am", "A0"}) {
+                       "Eulerian coefficients use an incompatible NetCDF "
+                       "order.",
+                       outputPath + "/" + baseName);
+      const std::vector<std::size_t> logical =
+          hasLegacyCoefficients
+              ? std::vector<std::size_t>{
+                    dimensions.back(), dimensions[dimensions.size() - 2]}
+              : std::vector<std::size_t>{dimensions.back()};
+      const std::vector<std::string> families =
+          hasLegacyCoefficients
+              ? std::vector<std::string>{"Ap", "Am", "A0"}
+              : std::vector<std::string>{"A0"};
+      for (const auto &name : families) {
         const auto existing = std::find_if(
             portable.stateBlocks.begin(), portable.stateBlocks.end(),
             [&](const auto &block) { return block.identifier == name; });

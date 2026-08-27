@@ -29,11 +29,16 @@ add_library(WaveVortexPortableRuntime STATIC
     src/WVForcingContracts.cpp
     src/WVNetCDF.cpp
     src/WVForcingScheduleDecoder.cpp
-    src/WVCheckpointReader.cpp
+    src/WVCheckpointTransformAdapters.cpp
     src/WVCheckpointWriter.cpp
     src/WVForcingEngine.cpp
     src/WVIntegrationState.cpp
     src/WVRungeKutta.cpp
+    include/WaveVortexRuntime/WVBarotropicQGForcingEngine.hpp
+    src/WVBarotropicQGForcingEngine.cpp
+    src/WVBarotropicQGIntegrationSystem.cpp
+    src/WVBarotropicQGFieldEvaluationAdapter.cpp
+    src/WVOutputTransformAdapters.cpp
     src/WVOutputOrchestration.cpp
     src/WVObserverAdapter.cpp
     src/WVLegacyObserverCompatibility.hpp
@@ -42,13 +47,14 @@ add_library(WaveVortexPortableRuntime STATIC
     src/WVFieldEvaluationService.cpp
     src/WVConstantStratificationIntegrationSystem.cpp
     src/WVObserverOutputEvaluationService.cpp
-    src/WVModelOutputNetCDFSchema.cpp
+    src/WVModelOutputTransformAdapters.cpp
     src/WVModelOutputNetCDFReader.cpp
     src/WVLegacyObservationNetCDFAdapter.cpp
     src/WVModelOutputNetCDFWriter.cpp
     src/WVModelOutputConfiguration.cpp
     src/WVModelInternalAccess.hpp
     src/WVModel.cpp
+    src/WVModelTransformAdapters.cpp
 )
 add_library(WaveVortex::PortableRuntime ALIAS WaveVortexPortableRuntime)
 
@@ -135,6 +141,24 @@ if(WV_RUNTIME_BUILD_BENCHMARKS)
         target_compile_options(wv-standalone-nonlinear-flux-benchmark PRIVATE
             -Wall -Wextra -Wpedantic -Werror)
     endif()
+
+    add_executable(wv-standalone-barotropic-qg-benchmark
+        ../Benchmarks/standalone/WVStandaloneBarotropicQGBenchmark.cpp)
+    target_compile_features(wv-standalone-barotropic-qg-benchmark PRIVATE
+        cxx_std_17)
+    target_include_directories(wv-standalone-barotropic-qg-benchmark PRIVATE
+        ../CompiledKernel/adapters/native-fftw
+        ../CompiledKernel/adapters/reference)
+    target_link_libraries(wv-standalone-barotropic-qg-benchmark PRIVATE
+        WaveVortex::Kernel
+        WaveVortex::ReferenceFFT
+        WaveVortexNativeFFTW)
+    set_target_properties(wv-standalone-barotropic-qg-benchmark PROPERTIES
+        BUILD_RPATH "${WV_RUNTIME_FFTW_ROOT}/lib")
+    if(CMAKE_CXX_COMPILER_ID MATCHES "AppleClang|Clang|GNU")
+        target_compile_options(wv-standalone-barotropic-qg-benchmark PRIVATE
+            -Wall -Wextra -Wpedantic -Werror)
+    endif()
 endif()
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "AppleClang|Clang|GNU")
@@ -147,6 +171,33 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "AppleClang|Clang|GNU")
 endif()
 
 if(BUILD_TESTING)
+    add_executable(WVBarotropicQGToleranceDump
+        tests/WVBarotropicQGToleranceDump.cpp)
+    target_compile_features(WVBarotropicQGToleranceDump PRIVATE cxx_std_17)
+    target_include_directories(WVBarotropicQGToleranceDump PRIVATE
+        ../CompiledKernel/adapters/reference)
+    target_link_libraries(WVBarotropicQGToleranceDump PRIVATE
+        WaveVortex::PortableRuntime
+        WaveVortex::ReferenceFFT
+        ${WAVEVORTEX_NETCDF_TARGET})
+    if(CMAKE_CXX_COMPILER_ID MATCHES "AppleClang|Clang|GNU")
+        target_compile_options(WVBarotropicQGToleranceDump PRIVATE
+            -Wall -Wextra -Wpedantic -Werror)
+    endif()
+
+    add_executable(WVBarotropicQGForcingDump
+        tests/WVBarotropicQGForcingDump.cpp)
+    target_compile_features(WVBarotropicQGForcingDump PRIVATE cxx_std_17)
+    target_include_directories(WVBarotropicQGForcingDump PRIVATE
+        ../CompiledKernel/adapters/reference)
+    target_link_libraries(WVBarotropicQGForcingDump PRIVATE
+        WaveVortex::PortableRuntime
+        WaveVortex::ReferenceFFT)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "AppleClang|Clang|GNU")
+        target_compile_options(WVBarotropicQGForcingDump PRIVATE
+            -Wall -Wextra -Wpedantic -Werror)
+    endif()
+
     function(wv_add_runtime_test target source test_name)
         add_executable(${target} tests/${source})
         target_compile_features(${target} PRIVATE cxx_std_17)
@@ -181,6 +232,9 @@ if(BUILD_TESTING)
     wv_add_runtime_test(TestWVCheckpointWriter TestWVCheckpointWriter.cpp checkpoint-writer)
     wv_add_runtime_test(TestWVForcingAndRK4 TestWVForcingAndRK4.cpp forcing-and-rk4)
     wv_add_runtime_test(TestWVUnifiedIntegration TestWVUnifiedIntegration.cpp unified-integration)
+    wv_add_runtime_test(TestWVBarotropicQGIntegration TestWVBarotropicQGIntegration.cpp barotropic-qg-integration)
+    wv_add_runtime_test(TestWVBarotropicQGForcing TestWVBarotropicQGForcing.cpp barotropic-qg-forcing)
+    wv_add_runtime_test(TestWVBarotropicQGModelOutput TestWVBarotropicQGModelOutput.cpp barotropic-qg-model-output)
     wv_add_runtime_test(TestWVOutputOrchestration TestWVOutputOrchestration.cpp output-orchestration)
     wv_add_runtime_test(TestWVOutputOccurrence TestWVOutputOccurrence.cpp output-occurrence)
     wv_add_runtime_test(TestWVModelOutputNetCDF TestWVModelOutputNetCDF.cpp model-output-netcdf)
@@ -191,6 +245,29 @@ if(BUILD_TESTING)
     wv_add_runtime_test(TestWVObservationOccurrence TestWVObservationOccurrence.cpp observation-occurrence)
     wv_add_runtime_test(TestWVLagrangianParticles TestWVLagrangianParticles.cpp lagrangian-particles)
     wv_add_runtime_test(TestWaveVortexRun TestWaveVortexRun.cpp standalone-runner)
+
+    if(TARGET WaveVortexNativeFFTW)
+        add_executable(TestWVBarotropicQGNativeFFTW
+            tests/TestWVBarotropicQGNativeFFTW.cpp)
+        target_compile_features(TestWVBarotropicQGNativeFFTW PRIVATE cxx_std_17)
+        target_include_directories(TestWVBarotropicQGNativeFFTW PRIVATE
+            ../CompiledKernel/adapters/native-fftw
+            ../CompiledKernel/adapters/reference)
+        target_link_libraries(TestWVBarotropicQGNativeFFTW PRIVATE
+            WaveVortex::Kernel
+            WaveVortex::ReferenceFFT
+            WaveVortexNativeFFTW)
+        target_compile_definitions(TestWVBarotropicQGNativeFFTW PRIVATE
+            WV_RUNTIME_EXPECTED_FFTW_ROOT="${WV_RUNTIME_FFTW_ROOT}")
+        set_target_properties(TestWVBarotropicQGNativeFFTW PROPERTIES
+            BUILD_RPATH "${WV_RUNTIME_FFTW_ROOT}/lib")
+        if(CMAKE_CXX_COMPILER_ID MATCHES "AppleClang|Clang|GNU")
+            target_compile_options(TestWVBarotropicQGNativeFFTW PRIVATE
+                -Wall -Wextra -Wpedantic -Werror)
+        endif()
+        add_test(NAME barotropic-qg-native-fftw
+            COMMAND TestWVBarotropicQGNativeFFTW)
+    endif()
 
     add_executable(TestWVExtendedRunner tests/TestWVExtendedRunner.cpp)
     target_compile_features(TestWVExtendedRunner PRIVATE cxx_std_17)
@@ -212,6 +289,9 @@ if(BUILD_TESTING)
     )
     target_compile_features(TestWVRunRequest PRIVATE cxx_std_17)
     target_include_directories(TestWVRunRequest PRIVATE app third_party)
+    target_compile_definitions(TestWVRunRequest PRIVATE
+        WV_RUNTIME_FIXTURE_DIR="${CMAKE_CURRENT_LIST_DIR}/tests/fixtures"
+    )
     if(CMAKE_CXX_COMPILER_ID MATCHES "AppleClang|Clang|GNU")
         target_compile_options(TestWVRunRequest PRIVATE
             -Wall -Wextra -Wpedantic -Werror)
@@ -232,6 +312,11 @@ if(BUILD_TESTING)
         COMMAND ${CMAKE_COMMAND}
             -DWV_REPOSITORY_ROOT=${CMAKE_CURRENT_LIST_DIR}/..
             -P ${CMAKE_CURRENT_LIST_DIR}/tests/CheckWVRuntimeArchitecture.cmake
+    )
+    add_test(NAME barotropic-qg-architecture-source-policy
+        COMMAND ${CMAKE_COMMAND}
+            -DWV_REPOSITORY_ROOT=${CMAKE_CURRENT_LIST_DIR}/..
+            -P ${CMAKE_CURRENT_LIST_DIR}/tests/CheckWVBarotropicQGArchitecture.cmake
     )
     add_test(NAME output-schedule-dispatch-source-policy
         COMMAND ${CMAKE_COMMAND}

@@ -304,6 +304,16 @@ WVCheckpointStatus decodeSupported(const WVForcingGroupSource& source, const WVT
             }
             consumedComplex.insert(complex->recordName);
         } else if (field.encoding == WVForcingPersistenceEncoding::realVariable) {
+            if (field.optional) {
+                int variable = -1;
+                const int inquiry = nc_inq_varid(
+                    source.groupId, field.netcdfName.c_str(), &variable);
+                if (inquiry == NC_ENOTVAR) continue;
+                if (inquiry != NC_NOERR)
+                    return netcdfFailure(
+                        inquiry, "Optional forcing-variable inspection",
+                        source.groupPath + "/" + field.netcdfName);
+            }
             std::vector<double> values;
             std::vector<std::size_t> dimensions;
             if (field.dimensions == WVForcingDimensionRule::horizontalYX) {
@@ -374,6 +384,38 @@ WVCheckpointStatus decodeForcingSchedule(
         return left.ordinal < right.ordinal;
     });
     schedule = std::move(candidate);
+    return WVCheckpointStatus::ok();
+}
+
+WVCheckpointStatus decodeForcingSchedule(
+    const std::vector<WVForcingGroupSource>& sources,
+    const WVTransformBarotropicQGConfiguration& configuration,
+    std::size_t coefficientCount,
+    const WVExtensionCatalog& catalog,
+    WVFrozenForcingSchedule& schedule) {
+    WVTransformConstantStratificationConfiguration horizontal;
+    horizontal.Nx = configuration.Nx;
+    horizontal.Ny = configuration.Ny;
+    horizontal.Lx = configuration.Lx;
+    horizontal.Ly = configuration.Ly;
+    auto result = decodeForcingSchedule(sources, horizontal, coefficientCount,
+                                        catalog, schedule);
+    if (!result)
+        return result;
+    // MATLAB persists forcing identity and construction order, but not the
+    // transform-specific execution stage. Resolve the QG stage from the
+    // frozen registration before the schedule reaches the QG engine.
+    for (auto& entry : schedule.entries) {
+        const auto* registration = catalog.forcings().registration(
+            entry.typeIdentifier, entry.contractVersion);
+        if (registration != nullptr)
+            entry.stage = registration->barotropicQGStage;
+    }
+    std::stable_sort(schedule.entries.begin(), schedule.entries.end(), [](const auto& left, const auto& right) {
+        if (stageRank(left.stage) != stageRank(right.stage)) return stageRank(left.stage) < stageRank(right.stage);
+        if (left.priority != right.priority) return left.priority < right.priority;
+        return left.ordinal < right.ordinal;
+    });
     return WVCheckpointStatus::ok();
 }
 

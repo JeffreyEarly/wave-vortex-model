@@ -78,6 +78,9 @@ public:
   virtual WVKernelStatus prepareInitial(const WVState &) {
     return WVKernelStatus::ok();
   }
+  virtual WVKernelStatus prepareInitial(const WVIntegrationState &state) {
+    return prepareInitial(state.waveVortex);
+  }
   virtual WVKernelStatus prepare(const WVOutputEvent &event) = 0;
   // Called exactly once after every destination route for the prepared event
   // has committed. Sources release event-scoped geometry and evaluated data

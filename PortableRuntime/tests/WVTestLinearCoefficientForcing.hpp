@@ -83,7 +83,10 @@ linearCoefficientRegistration() {
           createLinearCoefficientForcing,
           true,
           "",
-          false};
+          false,
+          WVForcingStage::spatial,
+          {},
+          {}};
 }
 
 inline WVKernelStatus registerLinearCoefficientForcing(

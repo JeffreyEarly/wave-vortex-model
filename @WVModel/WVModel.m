@@ -79,10 +79,15 @@ classdef WVModel < handle & WVModelAdaptiveTimeStepMethods & WVModelFixedTimeSte
 
     methods (Static)
         model = modelFromFile(path,options)
+        writePortableRunRequest(path,modelFiles,options)
 
         function name = defaultOutputGroupName()
             name = "wave-vortex";
         end
+    end
+
+    methods (Static, Hidden)
+        writePortableRunRequestForTesting(path,modelFiles,configuration,failureStage)
     end
 
     methods

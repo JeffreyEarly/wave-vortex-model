@@ -1169,6 +1169,45 @@ std::vector<char> fileBytes(const std::filesystem::path &path) {
           std::istreambuf_iterator<char>()};
 }
 
+std::string fileText(const std::filesystem::path &path) {
+  const auto bytes = fileBytes(path);
+  return {bytes.begin(), bytes.end()};
+}
+
+double jsonNumber(const std::string &document, const std::string &key) {
+  const auto position = document.find("\"" + key + "\":");
+  require(position != std::string::npos,
+          "JSON report field is missing: " + key);
+  const char *begin = document.c_str() + position + key.size() + 3;
+  char *end = nullptr;
+  const auto value = std::strtod(begin, &end);
+  require(end != begin, "JSON report field is not numeric: " + key);
+  return value;
+}
+
+double coefficientDifference(const WVCheckpoint &first,
+                             const WVCheckpoint &second) {
+  double difference = 0.0;
+  const std::vector<WVComplex64> *left[] = {
+      &first.state.coefficients.Ap, &first.state.coefficients.Am,
+      &first.state.coefficients.A0};
+  const std::vector<WVComplex64> *right[] = {
+      &second.state.coefficients.Ap, &second.state.coefficients.Am,
+      &second.state.coefficients.A0};
+  for (std::size_t family = 0; family < 3; ++family) {
+    require(left[family]->size() == right[family]->size(),
+            "checkpoint coefficient sizes differ");
+    for (std::size_t index = 0; index < left[family]->size(); ++index)
+      difference = std::max(
+          difference,
+          std::hypot((*left[family])[index].real -
+                         (*right[family])[index].real,
+                     (*left[family])[index].imag -
+                         (*right[family])[index].imag));
+  }
+  return difference;
+}
+
 class FactoryPreflightRejectingSampleSource final
     : public WVObserverSampleSource {
 public:
@@ -2320,6 +2359,216 @@ void testMultipleFilesGroupsAndSharedState() {
             "create request mutated its MATLAB-authored source bundle");
     require(std::filesystem::exists(requestedReport),
             "run request did not write its report");
+    const auto v1Report = fileText(requestedReport);
+    require(v1Report.find(
+                "\"schemaIdentifier\":\"wave-vortex-run-request-v1\"") !=
+                std::string::npos &&
+                v1Report.find("\"schemaVersion\":1") != std::string::npos &&
+                v1Report.find("\"id\":\"fixed-rk4\"") !=
+                    std::string::npos &&
+                v1Report.find("\"integrationRequest\"") ==
+                    std::string::npos &&
+                v1Report.find("\"parse\":") == std::string::npos,
+            "v1 execution or report semantics changed under v2 support");
+
+    struct V2Run {
+      std::filesystem::path request;
+      std::filesystem::path first;
+      std::filesystem::path second;
+      std::filesystem::path report;
+      std::string reportText;
+    };
+    const auto runV2 = [&](const std::string &name,
+                           const std::string &integration) {
+      V2Run result;
+      result.request = directory.path / (name + "-request.json");
+      result.first = directory.path / (name + "-first.nc");
+      result.second = directory.path / (name + "-second.nc");
+      result.report = directory.path / (name + "-report.json");
+      std::ofstream document(result.request,
+                             std::ios::binary | std::ios::trunc);
+      document << "{\"schemaIdentifier\":\"wave-vortex-run-request-v2\","
+                  "\"schemaVersion\":2,\"modelFiles\":[\""
+               << first.string() << "\",\"" << second.string()
+               << "\"],\"integration\":" << integration
+               << ",\"output\":{\"policy\":\"create\","
+                  "\"destinations\":{\"first\":\""
+               << result.first.string() << "\",\"second\":\""
+               << result.second.string()
+               << "\"}},\"execution\":{\"fftProvider\":\"reference\","
+                  "\"threads\":1},\"report\":\""
+               << result.report.string() << "\"}";
+      document.close();
+      const auto immutableRequest = fileBytes(result.request);
+      require(std::system((shellQuote(WV_RUNTIME_RUNNER) + " --request " +
+                           shellQuote(result.request) + " >/dev/null")
+                              .c_str()) == 0,
+              "v2 request execution failed: " + name);
+      require(fileBytes(result.request) == immutableRequest &&
+                  fileBytes(first) == sourceFirstBytes &&
+                  fileBytes(second) == sourceSecondBytes,
+              "v2 execution mutated its request or source bundle: " + name);
+      result.reportText = fileText(result.report);
+      require(result.reportText.find(
+                  "\"schemaIdentifier\":\"wave-vortex-run-request-v2\"") !=
+                      std::string::npos &&
+                  result.reportText.find("\"schemaVersion\":2") !=
+                      std::string::npos &&
+                  result.reportText.find("\"requestedMethod\":") !=
+                      std::string::npos &&
+                  result.reportText.find("\"activeMethod\":") !=
+                      std::string::npos &&
+                  result.reportText.find("\"noFallback\":true") !=
+                      std::string::npos &&
+                  result.reportText.find("\"parse\":") !=
+                      std::string::npos &&
+                  result.reportText.find("\"preflight\":") !=
+                      std::string::npos &&
+                  result.reportText.find("\"provider\":") !=
+                      std::string::npos &&
+                  result.reportText.find("\"startup\":") !=
+                      std::string::npos,
+              "v2 report omitted contract or lifecycle evidence: " + name);
+      return result;
+    };
+
+    std::unique_ptr<WVConstantStratificationIntegrationSystem> cflSystem;
+    status = WVConstantStratificationIntegrationSystem::create(
+        inspection.latestRestart.configuration,
+        inspection.latestRestart.forcingSchedule,modelOutputCatalog(),
+        std::make_unique<WVReferenceFFTEngine>(),cflSystem);
+    require(static_cast<bool>(status),status.message);
+    WVFixedTimeStepCandidates unitCandidates;
+    status = cflSystem->evaluateFixedTimeStepCandidates(
+        {restoredCheckpoint.state.view(),nullptr,0},1.0,unitCandidates);
+    require(static_cast<bool>(status),status.message);
+    const auto unitSelected =
+        std::min(unitCandidates.advective,unitCandidates.oscillatory);
+    require(std::isfinite(unitSelected) && unitSelected > 0.0,
+            "v2 trajectory fixture has no finite CFL candidate");
+    const auto matchedCFL = outputInterval/unitSelected;
+    std::ostringstream explicitIntegration;
+    explicitIntegration << std::setprecision(17)
+                        << "{\"method\":\"fixed-rk4\",\"finalTime\":"
+                        << end << ",\"initialStep\":" << outputInterval
+                        << '}';
+    const auto explicitV2 = runV2("v2-fixed-explicit",
+                                  explicitIntegration.str());
+    std::ostringstream cflIntegration;
+    cflIntegration << std::setprecision(17)
+                   << "{\"method\":\"fixed-rk4\",\"finalTime\":" << end
+                   << ",\"cfl\":" << matchedCFL
+                   << ",\"timeStepConstraint\":\"min\"}";
+    const auto cflV2 = runV2("v2-fixed-cfl",cflIntegration.str());
+    require(cflV2.reportText.find("\"stepPolicy\":\"cfl\"") !=
+                std::string::npos &&
+                cflV2.reportText.find("\"timeStepConstraint\":\"min\"") !=
+                    std::string::npos &&
+                jsonNumber(cflV2.reportText,"transientWorkspaceMaximumLiveBytes") >
+                    0.0 &&
+                std::abs(jsonNumber(cflV2.reportText,"selectedStep") -
+                         outputInterval) <= 1e-12*outputInterval,
+            "v2 CFL report omitted matched selection or transient storage");
+    require(explicitV2.reportText.find("\"stepPolicy\":\"explicit\"") !=
+                std::string::npos &&
+                std::abs(jsonNumber(explicitV2.reportText,"selectedStep") -
+                         outputInterval) <= 1e-12*outputInterval &&
+                std::abs(jsonNumber(explicitV2.reportText,
+                                    "requestedInitialStep") -
+                         outputInterval) <= 1e-12*outputInterval,
+            "v2 explicit-step report omitted its requested selection");
+    WVCheckpoint explicitCheckpoint;
+    WVCheckpoint cflCheckpoint;
+    require(WVCheckpointReader::read(explicitV2.first.string(),
+                                     *modelOutputCatalog(),
+                                     explicitCheckpoint) &&
+                WVCheckpointReader::read(cflV2.first.string(),
+                                         *modelOutputCatalog(),cflCheckpoint),
+            "matched explicit/CFL outputs are unreadable");
+    require(coefficientDifference(explicitCheckpoint,cflCheckpoint) <= 1e-12,
+            "matched explicit and CFL RK4 requests changed the trajectory");
+
+    struct AdaptiveFixture {
+      const char *method;
+      const char *controller;
+    };
+    for (const auto &adaptive : {
+             AdaptiveFixture{"adaptive-rk23","matlab-ode23-v1"},
+             AdaptiveFixture{"adaptive-rk45","matlab-ode45-v1"},
+             AdaptiveFixture{"adaptive-rk78","matlab-ode78-v1"}}) {
+      std::ostringstream integration;
+      integration << std::setprecision(17) << "{\"method\":\""
+                  << adaptive.method << "\",\"finalTime\":" << end
+                  << ",\"initialStep\":" << 2.0*outputInterval
+                  << ",\"maximumStep\":" << 2.0*outputInterval
+                  << ",\"relativeTolerance\":1e-6,"
+                     "\"absoluteToleranceScale\":1e-8}";
+      const auto result = runV2(std::string("v2-")+adaptive.method,
+                                integration.str());
+      require(result.reportText.find(std::string("\"requestedMethod\":\"")+
+                                         adaptive.method+"\"") !=
+                      std::string::npos &&
+                  result.reportText.find(std::string("\"activeMethod\":\"")+
+                                         adaptive.method+"\"") !=
+                      std::string::npos &&
+                  result.reportText.find(std::string("\"controller\":\"")+
+                                         adaptive.controller+"\"") !=
+                      std::string::npos &&
+                  std::abs(jsonNumber(result.reportText,
+                                      "requestedInitialStep") -
+                           2.0*outputInterval) <= 2e-12*outputInterval &&
+                  std::abs(jsonNumber(result.reportText,
+                                      "requestedMaximumStep") -
+                           2.0*outputInterval) <= 2e-12*outputInterval &&
+                  jsonNumber(result.reportText,"relativeTolerance") == 1e-6 &&
+                  jsonNumber(result.reportText,"absoluteTolerance") == 1e-8,
+              std::string("v2 request did not execute exact method ")+
+                  adaptive.method);
+      if (std::string(adaptive.method) == "adaptive-rk78")
+        require(jsonNumber(result.reportText,
+                           "continuousExtensionRightHandSideEvaluationCount") ==
+                        4.0 &&
+                    jsonNumber(result.reportText,"denseOutputCacheBuildCount") ==
+                        1.0,
+                "v2 RK78 model output did not use its lazy continuous "
+                "extension exactly once");
+    }
+
+    const auto writeRejectedV2 = [&](const std::string &name,
+                                     const std::string &integration,
+                                     const std::string &provider) {
+      const auto requestPath = directory.path/(name+".json");
+      const auto rejectedFirst = directory.path/(name+"-first.nc");
+      const auto rejectedSecond = directory.path/(name+"-second.nc");
+      std::ofstream document(requestPath,std::ios::binary|std::ios::trunc);
+      document << "{\"schemaIdentifier\":\"wave-vortex-run-request-v2\","
+                  "\"schemaVersion\":2,\"modelFiles\":[\""
+               << first.string() << "\",\"" << second.string()
+               << "\"],\"integration\":" << integration
+               << ",\"output\":{\"policy\":\"create\","
+                  "\"destinations\":{\"first\":\""
+               << rejectedFirst.string() << "\",\"second\":\""
+               << rejectedSecond.string()
+               << "\"}},\"execution\":{\"fftProvider\":\"" << provider
+               << "\",\"threads\":1},\"report\":\""
+               << (directory.path/(name+"-report.json")).string() << "\"}";
+      document.close();
+      require(std::system((shellQuote(WV_RUNTIME_RUNNER)+" --request "+
+                           shellQuote(requestPath)+" >/dev/null 2>&1").c_str()) !=
+                      0 &&
+                  !std::filesystem::exists(rejectedFirst) &&
+                  !std::filesystem::exists(rejectedSecond),
+              "rejected v2 request mutated a destination: "+name);
+    };
+    writeRejectedV2(
+        "v2-mixed-controls",
+        "{\"method\":\"fixed-rk4\",\"finalTime\":"+
+            std::to_string(end)+
+            ",\"initialStep\":1e-7,\"cfl\":0.25,"
+            "\"timeStepConstraint\":\"min\"}",
+        "reference");
+    writeRejectedV2("v2-unavailable-provider",
+                    explicitIntegration.str(),"native-fftw");
 
     const auto partialPath = directory.path / "partial-run.json";
     std::ofstream partial(partialPath, std::ios::binary | std::ios::trunc);

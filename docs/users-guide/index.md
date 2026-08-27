@@ -13,7 +13,6 @@ The user guide introduces the main WaveVortexModel workflows and connects them t
 - Start with the [Introduction](/users-guide/introduction.html) to understand `WVTransform` and `WVModel`.
 - Use [Using `WVTransform`](/users-guide/using-the-wvtransform.html) to choose a transform, initialize a state, and evaluate physical fields.
 - Consult [Capabilities and limitations](/users-guide/supported-features.html) when choosing interpolation, integration, forcing, output, or extension features.
-- Read [Compiled constant-stratification preview](/users-guide/compiled-preview.html) before opting into the source-built C++ nonlinear-flux backend.
-- Read [Portable constant-stratification runtime](/users-guide/portable-runtime.html) for the optional source-built checkpoint runner.
+- Compare the two source-built workflows in [Compiled execution](/compiled-execution), then use the [compiled MATLAB backend preview](/users-guide/compiled-preview.html) or [standalone portable runtime](/users-guide/portable-runtime.html) only when its narrower contract fits the model.
 - Read [Adding forcing](/users-guide/adding-forcing.html) before integrating nonlinear dynamics.
 - Use [Reading and writing files](/users-guide/reading-and-writing-to-file.html) for transform persistence, model output, and restart.

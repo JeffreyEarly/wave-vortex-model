@@ -52,6 +52,17 @@ classdef TestPortableForcingContracts < matlab.unittest.TestCase
             testCase.verifyError(@()WVBottomFrictionLinear(testCase.wvt,r=-eps),"MATLAB:validators:mustBeNonnegative");
         end
 
+        function narrowBandUsesInheritedFixedAmplitudeContract(testCase)
+            wvt = WVTransformBarotropicQG([17e3 11e3],[9 6],j=1,shouldAntialias=true);
+            forcing = WVNarrowBandGeostrophicForcing(wvt,initialPV="none",k_f=2*wvt.dk,j_f=1);
+            contract = forcing.portableImplementationContract();
+            testCase.verifyEqual(contract.capabilityStatus,"supported");
+            testCase.verifyEqual(contract.typeIdentifier,"WVNarrowBandGeostrophicForcing");
+            testCase.verifyEqual(contract.payload.A0Indices,forcing.A0_indices);
+            testCase.verifyEqual(contract.payload.A0Values,forcing.A0bar);
+            testCase.verifyFalse(isfield(contract.payload,"modelSpectrum"));
+        end
+
         function inheritedContractCannotAdvertiseParentClass(testCase)
             forcing = WVTestUnregisteredFixedAmplitudeForcing(testCase.wvt);
             contract = forcing.portableImplementationContract();

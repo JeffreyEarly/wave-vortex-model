@@ -1,6 +1,8 @@
 #pragma once
 
 #include "WaveVortexRuntime/WVForcingSchedule.hpp"
+#include "WaveVortexRuntime/WVIntegrationState.hpp"
+#include "WaveVortexKernel/WVTransformBarotropicQGKernel.hpp"
 #include "WaveVortexKernel/WVKernelTypes.hpp"
 
 #include <cstddef>
@@ -106,13 +108,32 @@ struct WVCheckpointMetadata {
     std::vector<WVCheckpointForcingHeader> forcingHeaders;
 };
 
+enum class WVPersistedTransformKind : std::uint8_t {
+    constantStratification,
+    barotropicQG
+};
+
 // Complete owning result needed to rebuild the portable constant-stratification core.
 struct WVCheckpoint {
+    WVPersistedTransformKind transformKind =
+        WVPersistedTransformKind::constantStratification;
     WVTransformConstantStratificationConfiguration configuration;
+    WVTransformBarotropicQGConfiguration barotropicQGConfiguration;
+    WVTransformStateDescription stateDescription;
     WVCheckpointState state;
+    // Populated only for transforms that do not use the stabilized legacy
+    // Ap/Am/A0 checkpoint representation. Barotropic QG therefore owns one
+    // compact A0 family here while the three legacy vectors above stay empty.
+    WVTransformStateCheckpoint transformState;
     WVCheckpointMetadata metadata;
     WVFrozenForcingSchedule forcingSchedule;
 };
+
+// Exact capacity owned by the transform's persisted coefficient families.
+// Transform-specific storage selection is implemented by the named
+// checkpoint adapter rather than by model or CLI orchestration.
+std::size_t checkpointCoefficientStorageBytes(
+    const WVCheckpoint& checkpoint) noexcept;
 
 // Capacity-based retained storage owned by one complete checkpoint, including
 // its object, coefficient arrays, metadata, and frozen forcing records.
@@ -122,6 +143,13 @@ checkpointRetainedBytes(const WVCheckpoint& checkpoint) noexcept {
         (checkpoint.state.coefficients.Ap.capacity() +
          checkpoint.state.coefficients.Am.capacity() +
          checkpoint.state.coefficients.A0.capacity()) * sizeof(WVComplex64) +
+        checkpoint.stateDescription.transformIdentifier.capacity() +
+        checkpoint.stateDescription.spatialDimensions.capacity() *
+            sizeof(std::size_t) +
+        checkpoint.stateDescription.coefficientFamilies.capacity() *
+            sizeof(WVCoefficientFamilyDescription) +
+        checkpoint.transformState.persistentBytes() -
+            sizeof(WVTransformStateCheckpoint) +
         checkpoint.metadata.profileIdentifier.capacity() +
         checkpoint.metadata.modelVersion.capacity() +
         checkpoint.metadata.transformClass.capacity() +
@@ -133,6 +161,10 @@ checkpointRetainedBytes(const WVCheckpoint& checkpoint) noexcept {
             sizeof(WVFrozenForcingEntry);
     for (const auto& header : checkpoint.metadata.forcingHeaders) {
         bytes += header.groupPath.capacity() + header.annotatedClass.capacity();
+    }
+    for (const auto& family : checkpoint.stateDescription.coefficientFamilies) {
+        bytes += family.identifier.capacity() +
+            family.spectralDimensions.capacity() * sizeof(std::size_t);
     }
     for (const auto& entry : checkpoint.forcingSchedule.entries) {
         bytes += entry.typeIdentifier.capacity() + entry.name.capacity() +
@@ -146,7 +178,13 @@ checkpointRetainedBytes(const WVCheckpoint& checkpoint) noexcept {
 // Allocation-light checkpoint information used to reject incompatible input
 // before loading the three state-sized coefficient arrays.
 struct WVCheckpointInspection {
+    WVPersistedTransformKind transformKind =
+        WVPersistedTransformKind::constantStratification;
     WVTransformConstantStratificationConfiguration configuration;
+    WVTransformBarotropicQGConfiguration barotropicQGConfiguration;
+    // Resolved before read() allocates or loads any coefficient array. The
+    // persistence adapter remains responsible for its transform's encoding.
+    WVTransformStateDescription stateDescription;
     WVShape2D coefficientShape;
     double t = 0.0;
     double t0 = 0.0;

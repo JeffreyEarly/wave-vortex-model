@@ -2,6 +2,7 @@
 #include "WaveVortexRuntime/WVExtensionCatalog.hpp"
 
 #include "WVForcingScheduleDecoder.hpp"
+#include "WVLegacyObservationNetCDFAdapter.hpp"
 #include "WVNetCDF.hpp"
 
 #include <netcdf.h>
@@ -130,7 +131,88 @@ WVCheckpointStatus readConfiguration(int rootId, WVTransformConstantStratificati
     return WVCheckpointStatus::ok();
 }
 
-WVCheckpointStatus findStateGroup(const std::vector<GroupRecord>& groups, StateGroupRecord& stateGroup) {
+WVCheckpointStatus readBarotropicQGConfiguration(
+    int rootId, WVTransformBarotropicQGConfiguration& configuration) {
+    std::vector<double> x;
+    std::vector<double> y;
+    for (auto pair : {std::pair<const char*, std::vector<double>*>{"x", &x},
+                      {"y", &y}}) {
+        auto result = detail::readDoubleCoordinate(rootId, pair.first,
+                                                   *pair.second, "/");
+        if (!result) return result;
+        result = validateCoordinate(pair.first, *pair.second);
+        if (!result) return result;
+    }
+    configuration.Nx = x.size();
+    configuration.Ny = y.size();
+    struct ScalarField { const char* name; double* value; };
+    for (const ScalarField field : {
+            ScalarField{"Lx", &configuration.Lx},
+            {"Ly", &configuration.Ly}, {"h", &configuration.h},
+            {"g", &configuration.g},
+            {"planetaryRadius", &configuration.planetaryRadius},
+            {"rotationRate", &configuration.rotationRate},
+            {"latitude", &configuration.latitude}}) {
+        auto result = detail::readDoubleScalar(rootId, field.name,
+                                                *field.value, "/");
+        if (!result) return result;
+        if (!std::isfinite(*field.value))
+            return status(WVCheckpointStatusCode::invalidValue,
+                          "Barotropic QG configuration variable '" +
+                              std::string(field.name) + "' must be finite.",
+                          "/" + std::string(field.name));
+    }
+    double j = 0.0;
+    auto result = detail::readDoubleScalar(rootId, "j", j, "/");
+    if (!result) return result;
+    if (!std::isfinite(j) || (j != 0.0 && j != 1.0))
+        return status(WVCheckpointStatusCode::invalidValue,
+                      "Barotropic QG mode j must be exactly 0 or 1.", "/j");
+    configuration.j = static_cast<std::uint32_t>(j);
+    result = detail::readLogicalScalar(rootId, "shouldAntialias",
+                                       configuration.shouldAntialias, "/");
+    if (!result) return result;
+    WVTransformBarotropicQGDescriptor descriptor;
+    const auto descriptorStatus =
+        WVTransformBarotropicQGDescriptor::create(configuration, descriptor);
+    if (!descriptorStatus)
+        return status(WVCheckpointStatusCode::descriptorFailure,
+                      "Unable to rebuild the Barotropic QG descriptor: " +
+                          descriptorStatus.message,
+                      "/");
+    return WVCheckpointStatus::ok();
+}
+
+WVCheckpointStatus groupCarriesCoefficientRestart(
+    const GroupRecord& group, const WVExtensionCatalog& catalog,
+    bool& carriesCoefficientRestart) {
+    carriesCoefficientRestart = true;
+    int metadataRoot = -1;
+    const int lookup =
+        nc_inq_ncid(group.id, "observingSystems", &metadataRoot);
+    if (lookup == NC_ENOGRP)
+        return WVCheckpointStatus::ok();
+    if (lookup != NC_NOERR)
+        return detail::netcdfFailure(
+            lookup, "Observer metadata-root lookup",
+            group.path + "/observingSystems");
+    carriesCoefficientRestart =
+        detail::persistedObserverCarriesCoefficientState(metadataRoot,
+                                                         catalog);
+    std::vector<int> observers;
+    auto result = detail::childGroups(metadataRoot, observers,
+                                      group.path + "/observingSystems");
+    if (!result) return result;
+    for (const int observer : observers)
+        carriesCoefficientRestart =
+            carriesCoefficientRestart ||
+            detail::persistedObserverCarriesCoefficientState(observer,
+                                                               catalog);
+    return WVCheckpointStatus::ok();
+}
+
+WVCheckpointStatus findStateGroup(const std::vector<GroupRecord>& groups,
+                                  StateGroupRecord& stateGroup) {
     std::vector<StateGroupRecord> candidates;
     for (const auto& group : groups) {
         std::size_t completeFamilies = 0;
@@ -159,13 +241,85 @@ WVCheckpointStatus findStateGroup(const std::vector<GroupRecord>& groups, StateG
         }
         int timeId = -1;
         bool hasTime = false;
-        const auto result = detail::variableIdIfPresent(group.id, "t", timeId, hasTime, group.path);
+        const auto result = detail::variableIdIfPresent(
+            group.id, "t", timeId, hasTime, group.path);
         if (!result) return result;
         if (!hasTime) return status(WVCheckpointStatusCode::missingVariable, "The checkpoint state group does not contain time variable 't'.", group.path + "/t");
         candidates.push_back({group.id, group.path});
     }
     if (candidates.empty()) return status(WVCheckpointStatusCode::missingVariable, "No complete Ap, Am, A0 checkpoint state was found.", "/");
     if (candidates.size() != 1) return status(WVCheckpointStatusCode::ambiguousState, "A checkpoint must contain exactly one complete Ap, Am, A0 state group.", "/");
+    stateGroup = candidates.front();
+    return WVCheckpointStatus::ok();
+}
+
+WVCheckpointStatus findBarotropicQGStateGroup(
+    const std::vector<GroupRecord>& groups,
+    const WVExtensionCatalog& catalog, StateGroupRecord& stateGroup) {
+    std::vector<StateGroupRecord> candidates;
+    for (const auto& group : groups) {
+        int realId = -1;
+        int imagId = -1;
+        int plainId = -1;
+        bool real = false;
+        bool imag = false;
+        bool plain = false;
+        auto result = detail::variableIdIfPresent(
+            group.id, "A0_real", realId, real, group.path);
+        if (!result) return result;
+        result = detail::variableIdIfPresent(
+            group.id, "A0_imag", imagId, imag, group.path);
+        if (!result) return result;
+        result = detail::variableIdIfPresent(
+            group.id, "A0", plainId, plain, group.path);
+        if (!result) return result;
+        if (!plain && !real && !imag) continue;
+        bool carriesCoefficientRestart = false;
+        result = groupCarriesCoefficientRestart(
+            group, catalog, carriesCoefficientRestart);
+        if (!result) return result;
+        if (!carriesCoefficientRestart) continue;
+        if (plain && (real || imag))
+            return status(WVCheckpointStatusCode::ambiguousState,
+                          "Barotropic QG A0 cannot have both plain and "
+                          "complex-pair encodings.",
+                          group.path + "/A0");
+        if (real != imag)
+            return status(WVCheckpointStatusCode::missingComplexPartner,
+                          "Barotropic QG A0 is missing a complex partner.",
+                          group.path + "/A0");
+        for (const char* forbidden : {"Ap", "Ap_real", "Ap_imag", "Am",
+                                      "Am_real", "Am_imag"}) {
+            int id = -1;
+            bool present = false;
+            result = detail::variableIdIfPresent(group.id, forbidden, id,
+                                                 present, group.path);
+            if (!result) return result;
+            if (present)
+                return status(WVCheckpointStatusCode::schemaMismatch,
+                              "Barotropic QG state must not contain dummy Ap "
+                              "or Am variables.",
+                              group.path + "/" + forbidden);
+        }
+        int timeId = -1;
+        bool hasTime = false;
+        result = detail::variableIdIfPresent(group.id, "t", timeId, hasTime,
+                                             group.path);
+        if (!result) return result;
+        if (!hasTime)
+            return status(WVCheckpointStatusCode::missingVariable,
+                          "The Barotropic QG state group has no time variable.",
+                          group.path + "/t");
+        candidates.push_back({group.id, group.path});
+    }
+    if (candidates.empty())
+        return status(WVCheckpointStatusCode::missingVariable,
+                      "No compact Barotropic QG A0 state was found.", "/");
+    if (candidates.size() != 1)
+        return status(WVCheckpointStatusCode::ambiguousState,
+                      "A Barotropic QG checkpoint must contain one compact "
+                      "A0 state group.",
+                      "/");
     stateGroup = candidates.front();
     return WVCheckpointStatus::ok();
 }
@@ -348,6 +502,146 @@ WVCheckpointStatus readComplexCoefficient(
     return WVCheckpointStatus::ok();
 }
 
+WVCheckpointStatus readCompactComplexCoefficient(
+    int groupId, const std::string& groupPath,
+    const std::string& baseName, std::size_t selectedIndex,
+    std::size_t stateCount, std::size_t elementCount,
+    std::vector<WVComplex64>* output) {
+    const std::string realName = baseName + "_real";
+    const std::string imagName = baseName + "_imag";
+    int realId = -1;
+    int imagId = -1;
+    int result = nc_inq_varid(groupId, realName.c_str(), &realId);
+    if (result == NC_ENOTVAR) {
+        int plainId = -1;
+        result = nc_inq_varid(groupId, baseName.c_str(), &plainId);
+        if (result == NC_ENOTVAR)
+            return status(WVCheckpointStatusCode::missingComplexPartner,
+                          "Missing compact coefficient '" + baseName + "'.",
+                          groupPath + "/" + baseName);
+        if (result != NC_NOERR)
+            return detail::netcdfFailure(result, "Coefficient lookup",
+                                         groupPath + "/" + baseName);
+        nc_type type = NC_NAT;
+        std::vector<int> dimensions;
+        auto checkpointStatus = inquireVariable(
+            groupId, plainId, type, dimensions, groupPath + "/" + baseName);
+        if (!checkpointStatus) return checkpointStatus;
+        if (type != NC_DOUBLE || dimensions.size() != 1)
+            return status(WVCheckpointStatusCode::shapeMismatch,
+                          "A compact initial coefficient must use [kl].",
+                          groupPath + "/" + baseName);
+        std::string name;
+        std::size_t length = 0;
+        checkpointStatus = dimensionName(groupId, dimensions[0], name, length,
+                                         groupPath + "/" + baseName);
+        if (!checkpointStatus) return checkpointStatus;
+        if (name != "kl" || length != elementCount)
+            return status(WVCheckpointStatusCode::shapeMismatch,
+                          "Compact coefficient kl dimension is incompatible.",
+                          groupPath + "/" + baseName);
+        if (output != nullptr) {
+            std::vector<double> values(elementCount);
+            result = nc_get_var_double(groupId, plainId, values.data());
+            if (result != NC_NOERR)
+                return detail::netcdfFailure(
+                    result, "Compact coefficient read",
+                    groupPath + "/" + baseName);
+            output->resize(elementCount);
+            for (std::size_t index = 0; index < elementCount; ++index)
+                (*output)[index] = {values[index], 0.0};
+        }
+        return WVCheckpointStatus::ok();
+    }
+    if (result != NC_NOERR)
+        return detail::netcdfFailure(result, "Complex-component lookup",
+                                     groupPath + "/" + realName);
+    result = nc_inq_varid(groupId, imagName.c_str(), &imagId);
+    if (result == NC_ENOTVAR)
+        return status(WVCheckpointStatusCode::missingComplexPartner,
+                      "Missing compact imaginary component '" + imagName +
+                          "'.",
+                      groupPath + "/" + imagName);
+    if (result != NC_NOERR)
+        return detail::netcdfFailure(result, "Complex-component lookup",
+                                     groupPath + "/" + imagName);
+    nc_type realType = NC_NAT;
+    nc_type imagType = NC_NAT;
+    std::vector<int> realDimensions;
+    std::vector<int> imagDimensions;
+    auto checkpointStatus = inquireVariable(
+        groupId, realId, realType, realDimensions, groupPath + "/" + realName);
+    if (!checkpointStatus) return checkpointStatus;
+    checkpointStatus = inquireVariable(
+        groupId, imagId, imagType, imagDimensions, groupPath + "/" + imagName);
+    if (!checkpointStatus) return checkpointStatus;
+    if (realType != NC_DOUBLE || imagType != NC_DOUBLE ||
+        realDimensions != imagDimensions ||
+        (realDimensions.size() != 1 && realDimensions.size() != 2))
+        return status(WVCheckpointStatusCode::shapeMismatch,
+                      "Compact complex coefficients must use [kl] or [t,kl].",
+                      groupPath + "/" + baseName);
+    const bool timeSeries = realDimensions.size() == 2;
+    for (std::size_t dimension = 0; dimension < realDimensions.size();
+         ++dimension) {
+        std::string name;
+        std::size_t length = 0;
+        checkpointStatus = dimensionName(
+            groupId, realDimensions[dimension], name, length,
+            groupPath + "/" + baseName);
+        if (!checkpointStatus) return checkpointStatus;
+        const std::string expectedName =
+            timeSeries && dimension == 0 ? "t" : "kl";
+        const std::size_t expectedLength =
+            timeSeries && dimension == 0 ? stateCount : elementCount;
+        if (name != expectedName || length != expectedLength)
+            return status(WVCheckpointStatusCode::shapeMismatch,
+                          "Compact coefficient dimensions are incompatible.",
+                          groupPath + "/" + baseName);
+    }
+    for (const auto& marker :
+         std::array<std::tuple<int, std::string, unsigned char,
+                               unsigned char>, 2>{
+             std::tuple<int, std::string, unsigned char, unsigned char>{
+                 realId, realName, 1, 0},
+             {imagId, imagName, 0, 1}}) {
+        checkpointStatus = readByteVariableAttribute(
+            groupId, std::get<0>(marker), std::get<1>(marker), "isComplex", 1,
+            groupPath);
+        if (!checkpointStatus) return checkpointStatus;
+        checkpointStatus = readByteVariableAttribute(
+            groupId, std::get<0>(marker), std::get<1>(marker), "isRealPart",
+            std::get<2>(marker), groupPath);
+        if (!checkpointStatus) return checkpointStatus;
+        checkpointStatus = readByteVariableAttribute(
+            groupId, std::get<0>(marker), std::get<1>(marker),
+            "isImaginaryPart", std::get<3>(marker), groupPath);
+        if (!checkpointStatus) return checkpointStatus;
+    }
+    if (output == nullptr) return WVCheckpointStatus::ok();
+    std::vector<double> real(elementCount);
+    std::vector<double> imag(elementCount);
+    if (timeSeries) {
+        const std::size_t start[] = {selectedIndex, 0};
+        const std::size_t count[] = {1, elementCount};
+        result = nc_get_vara_double(groupId, realId, start, count, real.data());
+        if (result == NC_NOERR)
+            result = nc_get_vara_double(groupId, imagId, start, count,
+                                        imag.data());
+    } else {
+        result = nc_get_var_double(groupId, realId, real.data());
+        if (result == NC_NOERR)
+            result = nc_get_var_double(groupId, imagId, imag.data());
+    }
+    if (result != NC_NOERR)
+        return detail::netcdfFailure(result, "Compact coefficient read",
+                                     groupPath + "/" + baseName);
+    output->resize(elementCount);
+    for (std::size_t index = 0; index < elementCount; ++index)
+        (*output)[index] = {real[index], imag[index]};
+    return WVCheckpointStatus::ok();
+}
+
 bool forcingOrdinal(const std::string& name, std::size_t& ordinal) {
     static constexpr const char* prefix = "forcing-";
     if (name.rfind(prefix, 0) != 0) return false;
@@ -431,11 +725,22 @@ WVCheckpointStatus inspectOpenFile(
     if (!hasWVTransform && !hasAnnotatedClass) return status(WVCheckpointStatusCode::missingAttribute, "Checkpoint root has neither WVTransform nor AnnotatedClass metadata.", "/");
     if (hasWVTransform && hasAnnotatedClass && wvTransform != annotatedClass) return status(WVCheckpointStatusCode::unsupportedTransform, "WVTransform and AnnotatedClass root metadata disagree.", "/");
     candidate.metadata.transformClass = hasWVTransform ? wvTransform : annotatedClass;
-    if (candidate.metadata.transformClass != "WVTransformConstantStratification") {
-        return status(WVCheckpointStatusCode::unsupportedTransform, "The portable runtime profile supports only WVTransformConstantStratification; found '" + candidate.metadata.transformClass + "'.", "/");
-    }
+    const bool isConstant = candidate.metadata.transformClass ==
+                            "WVTransformConstantStratification";
+    const bool isBarotropicQG = candidate.metadata.transformClass ==
+                                "WVTransformBarotropicQG";
+    if (!isConstant && !isBarotropicQG)
+        return status(WVCheckpointStatusCode::unsupportedTransform,
+                      "The portable runtime profile does not support transform '" +
+                          candidate.metadata.transformClass + "'.", "/");
+    candidate.transformKind = isBarotropicQG
+                                  ? WVPersistedTransformKind::barotropicQG
+                                  : WVPersistedTransformKind::constantStratification;
 
-    result = readConfiguration(rootId, candidate.configuration);
+    result = isConstant
+                 ? readConfiguration(rootId, candidate.configuration)
+                 : readBarotropicQGConfiguration(
+                       rootId, candidate.barotropicQGConfiguration);
     if (!result) return result;
     result = detail::readDoubleScalar(rootId, "t0", candidate.t0, "/");
     if (!result) return result;
@@ -444,36 +749,100 @@ WVCheckpointStatus inspectOpenFile(
     std::vector<GroupRecord> groups;
     result = inspectGroupTree(rootId, "/", groups);
     if (!result) return result;
-    result = findStateGroup(groups, stateGroup);
+    result = isConstant ? findStateGroup(groups, stateGroup)
+                        : findBarotropicQGStateGroup(groups, catalog,
+                                                    stateGroup);
     if (!result) return result;
     candidate.metadata.stateGroupPath = stateGroup.path;
     result = inspectTime(stateGroup.id, stateGroup.path, selection, candidate.metadata.selectedStateIndex, candidate.metadata.stateCount, candidate.t);
     if (!result) return result;
 
-    std::size_t Nj = 0;
     std::size_t Nkl = 0;
-    result = detail::dimensionLength(stateGroup.id, "j", Nj, stateGroup.path);
-    if (!result) return result;
     result = detail::dimensionLength(stateGroup.id, "kl", Nkl, stateGroup.path);
     if (!result) return result;
-    if (Nj == 0 || Nkl == 0) return status(WVCheckpointStatusCode::invalidValue, "Checkpoint spectral dimensions must be nonempty.", stateGroup.path);
-    candidate.configuration.Nj = Nj;
-    candidate.coefficientShape = {Nj, Nkl};
-    for (const char* family : {"Ap", "Am", "A0"}) {
-        result = readComplexCoefficient(stateGroup.id, stateGroup.path, family, candidate.metadata.selectedStateIndex, candidate.metadata.stateCount, Nj, Nkl, nullptr);
+    if (Nkl == 0)
+        return status(WVCheckpointStatusCode::invalidValue,
+                      "Checkpoint spectral dimensions must be nonempty.",
+                      stateGroup.path);
+    std::size_t coefficientCount = Nkl;
+    if (isConstant) {
+        std::size_t Nj = 0;
+        result = detail::dimensionLength(stateGroup.id, "j", Nj,
+                                         stateGroup.path);
+        if (!result) return result;
+        if (Nj == 0)
+            return status(WVCheckpointStatusCode::invalidValue,
+                          "Checkpoint j dimension must be nonempty.",
+                          stateGroup.path);
+        candidate.configuration.Nj = Nj;
+        candidate.coefficientShape = {Nj, Nkl};
+        candidate.stateDescription = {
+            candidate.metadata.transformClass,
+            {candidate.configuration.Nx, candidate.configuration.Ny,
+             candidate.configuration.Nz},
+            {{"Ap", {Nj, Nkl}, WVToleranceKind::coefficientEnergyScaled},
+             {"Am", {Nj, Nkl}, WVToleranceKind::coefficientEnergyScaled},
+             {"A0", {Nj, Nkl}, WVToleranceKind::coefficientEnergyScaled}},
+            true};
+        coefficientCount = Nj * Nkl;
+        for (const char* family : {"Ap", "Am", "A0"}) {
+            result = readComplexCoefficient(
+                stateGroup.id, stateGroup.path, family,
+                candidate.metadata.selectedStateIndex,
+                candidate.metadata.stateCount, Nj, Nkl, nullptr);
+            if (!result) return result;
+        }
+    } else {
+        candidate.coefficientShape = {1, Nkl};
+        candidate.stateDescription = {
+            candidate.metadata.transformClass,
+            {candidate.barotropicQGConfiguration.Nx,
+             candidate.barotropicQGConfiguration.Ny},
+            {{"A0", {Nkl}, WVToleranceKind::coefficientEnergyScaled}}, true};
+        result = readCompactComplexCoefficient(
+            stateGroup.id, stateGroup.path, "A0",
+            candidate.metadata.selectedStateIndex,
+            candidate.metadata.stateCount, Nkl, nullptr);
         if (!result) return result;
     }
 
     std::vector<detail::WVForcingGroupSource> forcingSources;
     result = readForcingHeaders(groups, candidate.metadata.forcingHeaders, forcingSources);
     if (!result) return result;
-    result = detail::decodeForcingSchedule(forcingSources, candidate.configuration, Nj * Nkl, catalog, candidate.forcingSchedule);
+    result = isConstant
+                 ? detail::decodeForcingSchedule(
+                       forcingSources, candidate.configuration,
+                       coefficientCount, catalog, candidate.forcingSchedule)
+                 : detail::decodeForcingSchedule(
+                       forcingSources, candidate.barotropicQGConfiguration,
+                       coefficientCount, catalog, candidate.forcingSchedule);
     if (!result) return result;
-    WVTransformConstantStratificationDescriptor descriptor;
-    const auto descriptorStatus = WVTransformConstantStratificationDescriptor::create(candidate.configuration, descriptor);
-    if (!descriptorStatus) return status(WVCheckpointStatusCode::descriptorFailure, "Unable to rebuild the constant-stratification descriptor: " + descriptorStatus.message, stateGroup.path);
-    if (descriptor.Nkl() != Nkl || descriptor.spectralShape().rows != Nj) {
-        return status(WVCheckpointStatusCode::shapeMismatch, "Stored coefficient shape does not match the descriptor rebuilt from checkpoint configuration.", stateGroup.path);
+    if (isConstant) {
+        WVTransformConstantStratificationDescriptor descriptor;
+        const auto descriptorStatus =
+            WVTransformConstantStratificationDescriptor::create(
+                candidate.configuration, descriptor);
+        if (!descriptorStatus)
+            return status(WVCheckpointStatusCode::descriptorFailure,
+                          "Unable to rebuild the constant-stratification descriptor: " +
+                              descriptorStatus.message,
+                          stateGroup.path);
+        if (descriptor.Nkl() != Nkl ||
+            descriptor.spectralShape().rows !=
+                candidate.coefficientShape.rows)
+            return status(WVCheckpointStatusCode::shapeMismatch,
+                          "Stored coefficients do not match the rebuilt descriptor.",
+                          stateGroup.path);
+    } else {
+        WVTransformBarotropicQGDescriptor descriptor;
+        const auto descriptorStatus =
+            WVTransformBarotropicQGDescriptor::create(
+                candidate.barotropicQGConfiguration, descriptor);
+        if (!descriptorStatus || descriptor.Nkl() != Nkl)
+            return status(WVCheckpointStatusCode::shapeMismatch,
+                          "Stored compact A0 does not match the rebuilt "
+                          "Barotropic QG descriptor.",
+                          stateGroup.path);
     }
     inspection = std::move(candidate);
     return WVCheckpointStatus::ok();
@@ -499,23 +868,62 @@ WVCheckpointStatus WVCheckpointReader::read(const std::string& path, const WVExt
     result = inspectOpenFile(rootId, selection, catalog, inspection, stateGroup);
     if (!result) return result;
     WVCheckpoint candidate;
+    candidate.transformKind = inspection.transformKind;
     candidate.configuration = inspection.configuration;
+    candidate.barotropicQGConfiguration =
+        inspection.barotropicQGConfiguration;
+    candidate.stateDescription = inspection.stateDescription;
     candidate.metadata = inspection.metadata;
     candidate.forcingSchedule = inspection.forcingSchedule;
     candidate.state.t = inspection.t;
     candidate.state.t0 = inspection.t0;
-    candidate.state.coefficients.shape = inspection.coefficientShape;
-    const auto Nj = inspection.coefficientShape.rows;
-    const auto Nkl = inspection.coefficientShape.columns;
-    result = readComplexCoefficient(stateGroup.id, stateGroup.path, "Ap", candidate.metadata.selectedStateIndex, candidate.metadata.stateCount, Nj, Nkl, &candidate.state.coefficients.Ap);
-    if (!result) return result;
-    result = readComplexCoefficient(stateGroup.id, stateGroup.path, "Am", candidate.metadata.selectedStateIndex, candidate.metadata.stateCount, Nj, Nkl, &candidate.state.coefficients.Am);
-    if (!result) return result;
-    result = readComplexCoefficient(stateGroup.id, stateGroup.path, "A0", candidate.metadata.selectedStateIndex, candidate.metadata.stateCount, Nj, Nkl, &candidate.state.coefficients.A0);
-    if (!result) return result;
+    if (inspection.transformKind ==
+        WVPersistedTransformKind::constantStratification) {
+        candidate.state.coefficients.shape = inspection.coefficientShape;
+        const auto Nj = inspection.coefficientShape.rows;
+        const auto Nkl = inspection.coefficientShape.columns;
+        result = readComplexCoefficient(stateGroup.id, stateGroup.path, "Ap", candidate.metadata.selectedStateIndex, candidate.metadata.stateCount, Nj, Nkl, &candidate.state.coefficients.Ap);
+        if (!result) return result;
+        result = readComplexCoefficient(stateGroup.id, stateGroup.path, "Am", candidate.metadata.selectedStateIndex, candidate.metadata.stateCount, Nj, Nkl, &candidate.state.coefficients.Am);
+        if (!result) return result;
+        result = readComplexCoefficient(stateGroup.id, stateGroup.path, "A0", candidate.metadata.selectedStateIndex, candidate.metadata.stateCount, Nj, Nkl, &candidate.state.coefficients.A0);
+        if (!result) return result;
+    } else {
+        candidate.transformState.transformIdentifier =
+            inspection.stateDescription.transformIdentifier;
+        candidate.transformState.spatialDimensions =
+            inspection.stateDescription.spatialDimensions;
+        candidate.transformState.t = inspection.t;
+        candidate.transformState.t0 = inspection.t0;
+        candidate.transformState.coefficientFamilies.push_back(
+            {"A0", inspection.stateDescription.coefficientFamilies[0]
+                       .spectralDimensions,
+             {}});
+        result = readCompactComplexCoefficient(
+            stateGroup.id, stateGroup.path, "A0",
+            candidate.metadata.selectedStateIndex,
+            candidate.metadata.stateCount,
+            inspection.coefficientShape.columns,
+            &candidate.transformState.coefficientFamilies[0].values);
+        if (!result) return result;
+    }
 
     checkpoint = std::move(candidate);
     return WVCheckpointStatus::ok();
+}
+
+std::size_t checkpointCoefficientStorageBytes(
+    const WVCheckpoint& checkpoint) noexcept {
+    if (checkpoint.transformKind == WVPersistedTransformKind::barotropicQG) {
+        std::size_t bytes = 0;
+        for (const auto& family : checkpoint.transformState.coefficientFamilies)
+            bytes += family.values.capacity() * sizeof(WVComplex64);
+        return bytes;
+    }
+    return (checkpoint.state.coefficients.Ap.capacity() +
+            checkpoint.state.coefficients.Am.capacity() +
+            checkpoint.state.coefficients.A0.capacity()) *
+           sizeof(WVComplex64);
 }
 
 } // namespace wavevortex::runtime
