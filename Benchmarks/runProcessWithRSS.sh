@@ -5,6 +5,7 @@ phase_file="$2"
 interval="$3"
 stdout_file="$4"
 stderr_file="$5"
+sampled_phase_file="${phase_file}.sampled"
 shift 5
 
 if [ "$1" != "--" ]; then
@@ -16,7 +17,9 @@ shift
 : > "$sample_file"
 : > "$stdout_file"
 : > "$stderr_file"
+: > "$sampled_phase_file"
 
+export WV_RSS_PHASE_ACK="$sampled_phase_file"
 "$@" >"$stdout_file" 2>"$stderr_file" &
 root_pid=$!
 sample_index=0
@@ -45,6 +48,7 @@ sample_tree() {
         }')
     if [ -n "$values" ]; then
         printf '%s\t%s\t%s\n' "$sample_index" "$phase" "$values" >> "$sample_file"
+        printf '%s\n' "$phase" > "$sampled_phase_file"
     fi
     sample_index=$((sample_index + 1))
 }

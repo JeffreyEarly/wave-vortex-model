@@ -43,15 +43,25 @@ for iEntry = 1:numel(catalog.interfaceComparisons)
     artifactPath = repositoryFile(repositoryRoot,string(entry.artifact),"published interface comparison");
     dataset = jsondecode(fileread(artifactPath));
     datasetId = string(dataset.datasetId);
-    if ~ismember(string(dataset.schemaVersion),["published-three-interface-v1" "published-three-interface-v2"]) || datasetId~=string(entry.datasetId) || isempty(regexp(datasetId,'^three-interface--[a-z0-9][a-z0-9-]*--\d{8}T\d{6}Z$','once')) || logical(dataset.source.sourceDirty)
+    if ~ismember(string(dataset.schemaVersion),["published-three-interface-v1" "published-three-interface-v2" "published-three-interface-v3"]) || datasetId~=string(entry.datasetId) || isempty(regexp(datasetId,'^three-interface--[a-z0-9][a-z0-9-]*--\d{8}T\d{6}Z$','once')) || logical(dataset.source.sourceDirty)
         error("WaveVortexModel:InvalidThreeInterfaceBenchmark","Interface comparison %s is invalid.",string(entry.datasetId));
     end
     if any(seen==datasetId), error("WaveVortexModel:DuplicateThreeInterfaceBenchmark","Interface comparison %s is duplicated.",datasetId); end
     seen(end+1,1)=datasetId;
-    if numel(dataset.cases)~=3 || ~all(arrayfun(@(i)logical(itemAt(dataset.cases,i).correctness.passed),1:numel(dataset.cases)))
-        error("WaveVortexModel:InvalidThreeInterfaceBenchmark","Interface comparison %s does not contain three passing matched cases.",datasetId);
+    if ~all(arrayfun(@(i)logical(itemAt(dataset.cases,i).correctness.passed),1:numel(dataset.cases)))
+        error("WaveVortexModel:InvalidThreeInterfaceBenchmark","Interface comparison %s contains a case that failed its publication gate.",datasetId);
     end
-    if string(dataset.schemaVersion)=="published-three-interface-v1"
+    if string(dataset.schemaVersion)=="published-three-interface-v3"
+        if numel(dataset.cases)~=16 || string(dataset.studyId)~="integrator-runtime-memory-v1" || ~validIntegratorStudyCases(dataset)
+            error("WaveVortexModel:InvalidThreeInterfaceBenchmark","Integrator comparison %s does not contain the complete 16-row per-resolution matrix.",datasetId);
+        end
+        if ~validInterfaceProvider(dataset.provider) || isempty(regexp(string(dataset.provenance.rawArtifactSHA256),'^[0-9a-f]{64}$','once')) || numel(dataset.provenance.fixtures)~=4
+            error("WaveVortexModel:InvalidThreeInterfaceBenchmark","Integrator comparison %s lacks provider, raw-artifact, or fixture provenance.",datasetId);
+        end
+        validateInterfaceArchive(dataset.provenance.externalArchive,datasetId);
+    elseif numel(dataset.cases)~=3
+        error("WaveVortexModel:InvalidThreeInterfaceBenchmark","Legacy interface comparison %s does not contain three passing matched cases.",datasetId);
+    elseif string(dataset.schemaVersion)=="published-three-interface-v1"
         if ~validInterfaceProvider(dataset.provider)
             error("WaveVortexModel:InvalidThreeInterfaceBenchmark","Interface comparison %s lacks validated provider identity.",datasetId);
         end
@@ -77,6 +87,27 @@ for iEntry = 1:numel(catalog.interfaceComparisons)
 end
 end
 
+function valid = validIntegratorStudyCases(dataset)
+expected = strings(0,1);
+for physicalConfiguration = ["hydrostatic" "nonhydrostatic"]
+    for integrator = ["fixed-rk4" "adaptive-rk23" "adaptive-rk45" "adaptive-rk78"]
+        for workload = ["coefficient-endpoint" "composite-dense-output"]
+            expected(end+1,1) = physicalConfiguration+"--"+integrator+"--"+workload; %#ok<AGROW>
+        end
+    end
+end
+actual = arrayfun(@(index)string(itemAt(dataset.cases,index).id),1:numel(dataset.cases));
+valid = isequal(sort(actual(:)),sort(expected));
+for iCase = 1:numel(dataset.cases)
+    benchmarkCase = itemAt(dataset.cases,iCase);
+    valid = valid && numel(benchmarkCase.interfaces)==3 && logical(benchmarkCase.correctness.endpointTrajectoryAgreementPassed);
+    for iInterface = 1:numel(benchmarkCase.interfaces)
+        item = itemAt(benchmarkCase.interfaces,iInterface);
+        valid = valid && isfinite(item.integrationSeconds) && item.integrationSeconds>0 && isfinite(item.totalPeakRSSBytes) && item.totalPeakRSSBytes>0;
+    end
+end
+end
+
 function markdown = interfaceComparisonMarkdown(records)
 if isempty(records)
     markdown = "No approved matched three-interface result has been published yet.";
@@ -85,6 +116,10 @@ end
 requiredResolutions = [256 256 129; 512 512 257];
 selected = selectCompatibleInterfaceRecords(records,requiredResolutions);
 dataset = selected(1).dataset;
+if string(dataset.schemaVersion)=="published-three-interface-v3"
+    markdown = integratorStudyMarkdown(selected,requiredResolutions);
+    return
+end
 caseOrder = ["nonlinear-flux" "fixed-rk4-continuation" "adaptive-rk23-observer-output"];
 rows = strings(0,5);
 for iResolution = 1:size(requiredResolutions,1)
@@ -100,6 +135,52 @@ end
 contract = itemAt(dataset.cases,1).contract;
 intro = "Matched nonhydrostatic constant-stratification workloads on "+string(dataset.platform.displayName)+" at "+string(dataset.platform.threadCount)+" threads. MATLAB builtin uses MATLAB transforms; MATLAB + compiled core and standalone C++ share validated `"+string(dataset.provider.id)+"` "+string(dataset.provider.version)+". Each cell reports runtime followed by total peak process-tree RSS. Parentheses show speed relative to MATLAB builtin and memory change relative to MATLAB builtin. Values are medians of "+string(contract.processRunCount)+" fresh processes.";
 markdown = intro+newline+newline+htmlTable(["Resolution" "Workload" "MATLAB builtin" "MATLAB + compiled core" "Standalone C++"],rows);
+end
+
+function markdown = integratorStudyMarkdown(selected,requiredResolutions)
+rows = strings(0,7);
+for iResolution = 1:size(requiredResolutions,1)
+    current = selected(iResolution).dataset;
+    for physicalConfiguration = ["hydrostatic" "nonhydrostatic"]
+        for integrator = ["fixed-rk4" "adaptive-rk23" "adaptive-rk45" "adaptive-rk78"]
+            for workload = ["coefficient-endpoint" "composite-dense-output"]
+                caseId = physicalConfiguration+"--"+integrator+"--"+workload;
+                benchmarkCase = interfaceCaseWithId(current,caseId);
+                builtin = interfaceWithId(benchmarkCase,"matlab-builtin");
+                matlabCompiled = interfaceWithId(benchmarkCase,"matlab-compiled");
+                standalone = interfaceWithId(benchmarkCase,"standalone-compiled");
+                rows(end+1,:) = [join(string(requiredResolutions(iResolution,:)),"×"),displayPhysicalConfiguration(physicalConfiguration),displayIntegrator(integrator),displayIntegratorWorkload(workload),integratorInterfaceCell(builtin),integratorInterfaceCell(matlabCompiled),integratorInterfaceCell(standalone)]; %#ok<AGROW>
+            end
+        end
+    end
+end
+dataset = selected(1).dataset;
+contract = itemAt(dataset.cases,1).contract;
+intro = "Matched constant-stratification integration workloads on "+string(dataset.platform.displayName)+" with "+string(dataset.platform.threadCount)+" threads. MATLAB builtin uses production MATLAB transforms; MATLAB + compiled core and standalone C++ share validated `"+string(dataset.provider.id)+"` "+string(dataset.provider.version)+". Each interface cell is **integration-only runtime / total process-tree peak RSS during integration**, reported as the median of "+string(contract.processRunCount)+" fresh processes. Startup, model/provider construction, FFT planning, parsing, and cleanup are outside both primary boundaries.";
+details = "The coefficient workload delivers only the accepted endpoint. The composite workload includes fields, particles, a tracer, source-linked mooring state, and several scheduled interior points per accepted step. Requested/active method identity, matched tolerances and step bounds, accepted/rejected steps, RHS evaluations, FSAL diagnostics, dense-extension work, exact standalone workspace ledgers, retained/incremental/final RSS diagnostics, output-graph agreement, and fixture/archive hashes remain in the compact downloadable records. MATLAB solver workspace, allocator/COW behavior, and opaque FFT/provider storage are identified as unattributed rather than presented as exact.";
+markdown = intro+newline+newline+htmlTable(["Resolution" "Physical configuration" "Integrator" "Workload" "MATLAB builtin" "MATLAB + compiled core" "Standalone C++"],rows)+newline+newline+details;
+end
+
+function value = integratorInterfaceCell(item)
+value = formatSeconds(item.integrationSeconds)+" / "+formatBytes(item.totalPeakRSSBytes);
+end
+
+function value = displayPhysicalConfiguration(identifier)
+if identifier=="hydrostatic", value="Hydrostatic"; else, value="Nonhydrostatic"; end
+end
+
+function value = displayIntegrator(identifier)
+switch identifier
+    case "fixed-rk4", value="Fixed RK4";
+    case "adaptive-rk23", value="ode23 / RK3(2)";
+    case "adaptive-rk45", value="ode45 / RK5(4)";
+    case "adaptive-rk78", value="ode78 / RK8(7)";
+    otherwise, value=identifier;
+end
+end
+
+function value = displayIntegratorWorkload(identifier)
+if identifier=="coefficient-endpoint", value="Coefficients · endpoint only"; else, value="Composite graph · interior dense output"; end
 end
 
 function selected = selectCompatibleInterfaceRecords(records,requiredResolutions)
@@ -183,7 +264,9 @@ for iCase = 1:numel(dataset.cases)
     for iInterface = 1:numel(benchmarkCase.interfaces)
         interfaceIds(iInterface) = string(itemAt(benchmarkCase.interfaces,iInterface).id);
     end
-    entries(iCase) = string(benchmarkCase.id)+"|"+string(benchmarkCase.operation)+"|"+jsonencode(orderfields(contract))+"|"+strjoin(sort(interfaceIds),",");
+    operation = "model-continuation";
+    if isfield(benchmarkCase,"operation"), operation = string(benchmarkCase.operation); end
+    entries(iCase) = string(benchmarkCase.id)+"|"+operation+"|"+jsonencode(orderfields(contract))+"|"+strjoin(sort(interfaceIds),",");
 end
 signature = strjoin(sort(entries),"||");
 end

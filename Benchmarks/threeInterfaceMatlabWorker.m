@@ -24,9 +24,12 @@ try
         provider = providerRecord(wvt,backend,config);
         writePhase(phasePath,"steady-retained");
         pause(config.plateauSeconds);
+        writePhase(phasePath,"integrate");
+        waitForPhaseSample("integrate");
         operationTimer = tic;
         [Fp,Fm,F0] = wvt.nonlinearFlux();
         integrationSeconds = toc(operationTimer);
+        writePhase(phasePath,"integration-complete");
         writeComplexBinary(config.comparisonPath,Fp,Fm,F0);
         finalState = stateRecord(wvt);
         outputAgreement = struct("kind","flux-binary","path",string(config.comparisonPath));
@@ -39,36 +42,49 @@ try
         provider = providerRecord(wvt,backend,config);
         if requestedIntegrator == "fixed-rk4"
             model.setupIntegrator(integratorType="fixed",deltaT=config.case.deltaT);
-        elseif requestedIntegrator == "adaptive-rk23"
-            model.setupIntegrator(integratorType="adaptive",integrator=@ode23,relTolerance=config.case.relativeTolerance,absTolerance=config.case.absoluteTolerance,shouldShowIntegrationStats=0);
+        elseif startsWith(requestedIntegrator,"adaptive-")
+            matlabIntegrator = matlabIntegratorFor(requestedIntegrator);
+            model.setupIntegrator(integratorType="adaptive",integrator=matlabIntegrator,relTolerance=config.case.relativeTolerance,absTolerance=config.case.absoluteTolerance,shouldShowIntegrationStats=0);
             model.odeOptions = odeset(model.odeOptions,'InitialStep',config.case.initialStep,'MaxStep',config.case.maximumStep,'Stats','on');
         else
             error("WaveVortexBenchmark:UnknownIntegrator","Unsupported requested integrator %s.",requestedIntegrator);
         end
         actualIntegrator = activeIntegrator(model);
         integrator = struct("requested",requestedIntegrator,"actual",actualIntegrator,"matched",requestedIntegrator==actualIntegrator);
-        if requestedIntegrator == "adaptive-rk23"
+        integrator.initialTime = double(model.t);
+        integrator.finalTime = double(config.case.finalTime);
+        if startsWith(requestedIntegrator,"adaptive-")
             integrator = adaptiveIntegratorRecordBeforeRun(model,config.case,integrator);
         end
         writePhase(phasePath,"steady-retained");
         pause(config.plateauSeconds);
         rhsEvaluationsBefore = double(model.nFluxComputations);
+        writePhase(phasePath,"integrate");
+        waitForPhaseSample("integrate");
         operationTimer = tic;
-        if requestedIntegrator == "adaptive-rk23"
+        if startsWith(requestedIntegrator,"adaptive-")
             statisticsText = evalc("runIntegration(model,config.case.finalTime)");
         else
             runIntegration(model,config.case.finalTime);
             statisticsText = "";
         end
         integrationSeconds = toc(operationTimer);
-        if requestedIntegrator == "adaptive-rk23"
-            integrator = completeAdaptiveIntegratorRecord(integrator,statisticsText,double(model.nFluxComputations)-rhsEvaluationsBefore);
+        writePhase(phasePath,"integration-complete");
+        rhsEvaluationCount = double(model.nFluxComputations)-rhsEvaluationsBefore;
+        if startsWith(requestedIntegrator,"adaptive-")
+            integrator = completeAdaptiveIntegratorRecord(integrator,statisticsText,rhsEvaluationCount,requestedIntegrator);
+        else
+            integrator.acceptedStepCount = round((config.case.finalTime-integrator.initialTime)/config.case.deltaT);
+            integrator.rejectedStepCount = 0;
+            integrator.rhsEvaluationCount = rhsEvaluationCount;
+            integrator.fsalReuseCount = 0;
+            integrator.fsalInvalidationCount = 0;
         end
         finalState = stateRecord(wvt);
         model.closeNetCDFFile();
-        if requestedIntegrator == "adaptive-rk23"
-            integrator.outputRecordCounts = outputRecordCounts(config.inputPath);
-        end
+        integrator.outputRecordCounts = outputRecordCounts(config.inputPath);
+        integrator.denseOutputEvaluationCount = scheduledInteriorOutputCount(integrator,config.case);
+        integrator.storageAccounting = matlabIntegratorStorageAccounting;
         outputAgreement = struct("kind","model-output","path",string(config.inputPath));
     end
     interfaceTotalSeconds = toc(interfaceTimer);
@@ -117,7 +133,7 @@ model.integrateToTime(finalTime,shouldShowIntegrationDiagnostics=false,callback=
 end
 
 function value = adaptiveIntegratorRecordBeforeRun(model,definition,value)
-value.controller = "matlab-ode23-v1";
+value.controller = "matlab-"+string(func2str(model.odeIntegrator))+"-v1";
 value.relativeTolerance = double(odeget(model.odeOptions,'RelTol'));
 tolerances = odeget(model.odeOptions,'AbsTol');
 value.absoluteToleranceHash = threeInterfaceToleranceHash(tolerances);
@@ -131,36 +147,79 @@ value.initialTime = double(model.t);
 value.finalTime = double(definition.finalTime);
 end
 
-function value = completeAdaptiveIntegratorRecord(value,statisticsText,rhsEvaluationCount)
+function value = completeAdaptiveIntegratorRecord(value,statisticsText,rhsEvaluationCount,requestedIntegrator)
 value.acceptedStepCount = statisticCount(statisticsText,"successful steps");
 value.rejectedStepCount = statisticCount(statisticsText,"failed attempts");
 reportedEvaluations = statisticCount(statisticsText,"function evaluations");
 if reportedEvaluations ~= rhsEvaluationCount
-    error("WaveVortexBenchmark:AdaptiveWorkCountMismatch","MATLAB ode23 reported %d function evaluations, but WVModel counted %d.",reportedEvaluations,rhsEvaluationCount);
+    error("WaveVortexBenchmark:AdaptiveWorkCountMismatch","MATLAB %s reported %d function evaluations, but WVModel counted %d.",matlabIntegratorName(requestedIntegrator),reportedEvaluations,rhsEvaluationCount);
 end
 value.rhsEvaluationCount = rhsEvaluationCount;
-value.denseOutputEvaluationCount = 0;
+value.fsalReuseCount = "not-exposed-by-matlab";
+value.fsalInvalidationCount = "not-exposed-by-matlab";
 end
 
 function value = statisticCount(text,label)
 token = regexp(text,'(?m)^\s*(\d+)\s+'+label,"tokens","once");
 if isempty(token)
-    error("WaveVortexBenchmark:MissingAdaptiveStatistics","MATLAB ode23 did not report %s.",label);
+    error("WaveVortexBenchmark:MissingAdaptiveStatistics","MATLAB adaptive solver did not report %s.",label);
 end
 value = str2double(token{1});
 end
 
 function value = outputRecordCounts(pathname)
-value = struct("waveVortex",numel(ncread(pathname,"/wave-vortex/t")),"particles",numel(ncread(pathname,"/particles/t")),"tracers",numel(ncread(pathname,"/tracers/t")));
+value = struct("waveVortex",recordCount(pathname,"/wave-vortex/t"),"particles",recordCount(pathname,"/particles/t"),"tracers",recordCount(pathname,"/tracers/t"));
 end
 
 function identifier = activeIntegrator(model)
 if string(model.integratorType) == "fixed"
     identifier = "fixed-rk4";
-elseif string(model.integratorType) == "adaptive" && string(func2str(model.odeIntegrator)) == "ode23"
-    identifier = "adaptive-rk23";
+elseif string(model.integratorType) == "adaptive" && ismember(string(func2str(model.odeIntegrator)),["ode23" "ode45" "ode78"])
+    identifier = "adaptive-rk"+extractAfter(string(func2str(model.odeIntegrator)),"ode");
 else
     identifier = string(model.integratorType)+":"+string(func2str(model.odeIntegrator));
+end
+end
+
+function integrator = matlabIntegratorFor(identifier)
+switch string(identifier)
+    case "adaptive-rk23"
+        integrator = @ode23;
+    case "adaptive-rk45"
+        integrator = @ode45;
+    case "adaptive-rk78"
+        integrator = @ode78;
+    otherwise
+        error("WaveVortexBenchmark:UnknownIntegrator","Unsupported requested integrator %s.",identifier);
+end
+end
+
+function name = matlabIntegratorName(identifier)
+name = "ode"+extractAfter(string(identifier),"adaptive-rk");
+end
+
+function value = scheduledInteriorOutputCount(integrator,definition)
+value = 0;
+if ~isfield(definition,"workload") || string(definition.workload) ~= "composite-dense-output"
+    return
+end
+deliveredAfterInitial = max(0,double(integrator.outputRecordCounts.waveVortex)-1);
+value = max(0,deliveredAfterInitial-double(integrator.acceptedStepCount));
+end
+
+function value = matlabIntegratorStorageAccounting
+value = struct("scope","MATLAB solver, allocator, and copy-on-write storage are opaque","exact",false,"persistentBytes","not-exposed-by-matlab","workspaceMaximumLiveBytes","not-exposed-by-matlab","denseHistoryBytes","not-exposed-by-matlab","stateEquivalentBufferCount","not-exposed-by-matlab");
+end
+
+function value = recordCount(pathname,variable)
+try
+    value = numel(ncread(pathname,variable));
+catch exception
+    if contains(string(exception.identifier),"netcdf") || contains(lower(string(exception.message)),"variable") || contains(lower(string(exception.message)),"group")
+        value = 0;
+    else
+        rethrow(exception)
+    end
 end
 end
 
@@ -227,6 +286,21 @@ function writePhase(pathname,phase)
 temporary = pathname+".tmp";
 writeText(temporary,phase);
 movefile(temporary,pathname,"f");
+end
+
+function waitForPhaseSample(expectedPhase)
+acknowledgementPath = string(getenv("WV_RSS_PHASE_ACK"));
+if acknowledgementPath == ""
+    return
+end
+timer = tic;
+while toc(timer) < 5
+    if isfile(acknowledgementPath) && strtrim(string(fileread(acknowledgementPath))) == expectedPhase
+        return
+    end
+    pause(0.001)
+end
+error("WaveVortexBenchmark:RSSPhaseHandshake","The external RSS sampler did not acknowledge phase %s.",expectedPhase)
 end
 
 function addRepositoryPaths(repositoryRoot,benchmarkFolder)
