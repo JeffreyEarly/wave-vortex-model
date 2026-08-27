@@ -8,6 +8,8 @@ nav_order: 100
 
 ## [Unreleased]
 
+## [4.3.0] - 2026-08-27
+
 ### Compiled execution and portable runtime
 
 - Added an explicit, source-only compiled preview for ordinary constant-stratification nonlinear flux. MATLAB remains the default; native support must be built explicitly, and unsupported transforms or forcing are rejected without fallback.
