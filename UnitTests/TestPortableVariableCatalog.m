@@ -2,6 +2,9 @@ classdef TestPortableVariableCatalog < matlab.unittest.TestCase
     methods (Test,TestTags="full")
         function testGeneratedCatalogMatchesCommittedFiles(testCase)
             repositoryRoot = TestPortableVariableCatalog.repositoryRoot();
+            originalPath = path;
+            pathCleanup = onCleanup(@() path(originalPath));
+            addpath(fullfile(repositoryRoot,"tools"));
             temporaryRoot = string(tempname);
             cleanup = onCleanup(@() rmdir(temporaryRoot,"s"));
             supplementFolder = fullfile(temporaryRoot,"PortableRuntime","contracts");
@@ -22,6 +25,7 @@ classdef TestPortableVariableCatalog < matlab.unittest.TestCase
                 repositoryRoot,"PortableRuntime","include", ...
                 "WaveVortexRuntime","generated", ...
                 "WVPortableVariableCatalog.hpp")));
+            clear pathCleanup
             clear cleanup
         end
 

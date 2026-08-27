@@ -23,8 +23,8 @@ Write a portable-runtime request for a MATLAB-authored NetCDF bundle.
 ## Parameters
 + `path`  destination JSON request path
 + `modelFiles`  ordered complete set of source NetCDF paths
-+ `options.schemaVersion`  exact request schema version, `1` or `2`
-+ `options.method`  `fixed-rk4`, `adaptive-rk23`, `adaptive-rk45`, or `adaptive-rk78`
++ `options.schemaVersion`  exact request schema version; default `2`
++ `options.method`  `fixed-rk4`, `adaptive-rk23`, `adaptive-rk45`, or `adaptive-rk78`; v2 default `adaptive-rk78`
 + `options.finalTime`  requested final integration time
 + `options.initialStep`  explicit RK4 step or adaptive initial step
 + `options.cfl`  CFL number for schema-v2 CFL-selected RK4
@@ -34,8 +34,8 @@ Write a portable-runtime request for a MATLAB-authored NetCDF bundle.
 + `options.absoluteToleranceScale`  adaptive absolute-tolerance scale
 + `options.outputPolicy`  `create`, `replace`, or `append`; default `append`
 + `options.destinations`  string-to-string dictionary keyed by output-file identifier
-+ `options.fftProvider`  `native-fftw` or `reference`; default `reference`
-+ `options.threads`  positive execution thread count; default `1`
++ `options.fftProvider`  `native-fftw` or `reference`; v2 default `native-fftw`
++ `options.threads`  positive execution thread count; v2 default automatically bounded hardware concurrency
 + `options.reportPath`  report path; default `<request-name>-report.json`
 
 ## Discussion
@@ -44,6 +44,13 @@ The referenced NetCDF files remain the authoritative scientific model,
 including transform configuration, state, forcing, observers, schedules,
 and restart progress. This method writes only execution choices and file
 routing for `wave-vortex-run --request`.
+Run-request v2 is the default. Omitted execution controls select MATLAB's
+standard `ode78` configuration: relative tolerance `1e-3`, absolute
+tolerance scale `1e-6`, an initial step from CFL `0.5` after state
+restoration, and a maximum step equal to one tenth of the continuation
+interval. The standalone runtime selects native FFTW with an automatically
+bounded thread count. These defaults do not recover custom MATLAB-session
+settings that were never persisted.
 
 The metadata-only writer accepts supported
 `WVTransformConstantStratification` bundles with complete `Ap`, `Am`, and

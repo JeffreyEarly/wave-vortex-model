@@ -50,14 +50,7 @@
         {
           "type": "object",
           "additionalProperties": false,
-          "required": [
-            "method",
-            "finalTime",
-            "initialStep",
-            "maximumStep",
-            "relativeTolerance",
-            "absoluteToleranceScale"
-          ],
+          "required": ["finalTime"],
           "properties": {
             "method": {
               "enum": ["adaptive-rk23", "adaptive-rk45", "adaptive-rk78"]
@@ -89,7 +82,6 @@
     "execution": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["fftProvider", "threads"],
       "properties": {
         "fftProvider": {"enum": ["native-fftw", "reference"]},
         "threads": {"type": "integer", "minimum": 1}

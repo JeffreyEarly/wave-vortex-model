@@ -153,6 +153,52 @@ int main() {
       require(static_cast<bool>(status),
               std::string("v2 CFL constraint was rejected: ")+constraint);
     }
+    write(root/"v2-defaults.json",
+          v2Request(R"({"finalTime":12})"));
+    status = decodeRunRequest((root/"v2-defaults.json").string(),request);
+    require(static_cast<bool>(status),
+            "v2 omitted defaults were rejected: "+status.message);
+    require(request.integration.method ==
+                WVRunRequestIntegrationMethod::adaptiveRK78 &&
+                request.integration.stepPolicy ==
+                    WVRunRequestStepPolicy::adaptive &&
+                request.integration.relativeTolerance == 1e-3 &&
+                request.integration.absoluteToleranceScale == 1e-6 &&
+                !request.integration.hasMethod &&
+                !request.integration.hasInitialStep &&
+                !request.integration.hasMaximumStep &&
+                !request.integration.hasRelativeTolerance &&
+                !request.integration.hasAbsoluteToleranceScale,
+            "v2 omitted integration defaults resolved incorrectly");
+    write(root/"v2-default-execution.json",R"({
+      "schemaIdentifier":"wave-vortex-run-request-v2",
+      "schemaVersion":2,
+      "modelFiles":["model.nc"],
+      "integration":{"finalTime":12},
+      "output":{"policy":"append","destinations":{}},
+      "execution":{},
+      "report":"default-report.json"
+    })");
+    status = decodeRunRequest((root/"v2-default-execution.json").string(),
+                              request);
+    require(static_cast<bool>(status) &&
+                request.fftProvider == "native-fftw" &&
+                request.threads == 0 && !request.hasFFTProvider &&
+                !request.hasThreads,
+            "v2 omitted execution defaults resolved incorrectly");
+    write(root/"v2-partial-overrides.json",
+          v2Request(R"({"finalTime":12,"relativeTolerance":1e-7,"maximumStep":3})"));
+    status = decodeRunRequest((root/"v2-partial-overrides.json").string(),
+                              request);
+    require(static_cast<bool>(status) &&
+                request.integration.method ==
+                    WVRunRequestIntegrationMethod::adaptiveRK78 &&
+                request.integration.relativeTolerance == 1e-7 &&
+                request.integration.maximumStep == 3 &&
+                request.integration.hasRelativeTolerance &&
+                request.integration.hasMaximumStep &&
+                !request.integration.hasInitialStep,
+            "v2 partial default overrides resolved incorrectly");
 
     const auto expectFailure = [&](const std::string &name,
                                    const std::string &contents,
@@ -215,10 +261,6 @@ int main() {
         {"cfl-absolute-tolerance",R"({"method":"fixed-rk4","finalTime":12,"cfl":0.25,"timeStepConstraint":"min","absoluteToleranceScale":0.000001})"},
         {"adaptive-cfl",R"({"method":"adaptive-rk23","finalTime":12,"initialStep":1,"maximumStep":2,"relativeTolerance":0.001,"absoluteToleranceScale":0.000001,"cfl":0.25})"},
         {"adaptive-constraint",R"({"method":"adaptive-rk45","finalTime":12,"initialStep":1,"maximumStep":2,"relativeTolerance":0.001,"absoluteToleranceScale":0.000001,"timeStepConstraint":"min"})"},
-        {"adaptive-missing-initial",R"({"method":"adaptive-rk78","finalTime":12,"maximumStep":2,"relativeTolerance":0.001,"absoluteToleranceScale":0.000001})"},
-        {"adaptive-missing-maximum",R"({"method":"adaptive-rk78","finalTime":12,"initialStep":1,"relativeTolerance":0.001,"absoluteToleranceScale":0.000001})"},
-        {"adaptive-missing-relative",R"({"method":"adaptive-rk78","finalTime":12,"initialStep":1,"maximumStep":2,"absoluteToleranceScale":0.000001})"},
-        {"adaptive-missing-absolute",R"({"method":"adaptive-rk78","finalTime":12,"initialStep":1,"maximumStep":2,"relativeTolerance":0.001})"},
         {"unknown-method",R"({"method":"ode45","finalTime":12,"initialStep":1,"maximumStep":2,"relativeTolerance":0.001,"absoluteToleranceScale":0.000001})"},
         {"unknown-integration-field",R"({"method":"fixed-rk4","finalTime":12,"initialStep":1,"deltaT":1})"},
         {"zero-cfl",R"({"method":"fixed-rk4","finalTime":12,"cfl":0,"timeStepConstraint":"min"})"},

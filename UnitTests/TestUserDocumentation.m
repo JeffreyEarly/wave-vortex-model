@@ -142,6 +142,38 @@ classdef TestUserDocumentation < matlab.unittest.TestCase
             testCase.verifyFalse(contains(page,"## Global attributes"+newline+newline+"## Dimensions"));
         end
 
+        function compiledExecutionNavigationAndRoutesAreStable(testCase)
+            overview = testCase.readCanonical(fullfile("compiled-execution","index.md"));
+            matlabPreview = testCase.readCanonical(fullfile( ...
+                "compiled-execution","compiled-matlab-backend.md"));
+            standalone = testCase.readCanonical(fullfile( ...
+                "compiled-execution","standalone-portable-runtime.md"));
+            userGuide = testCase.readCanonical(fullfile("users-guide","index.md"));
+            benchmarks = testCase.readCanonical("benchmarks.md");
+
+            testCase.verifyMatches(overview,'(?m)^title: Compiled execution$')
+            testCase.verifyMatches(overview,'(?m)^nav_order: 9\.5$')
+            testCase.verifyMatches(overview,'(?m)^permalink: /compiled-execution$')
+            testCase.verifyMatches(matlabPreview, ...
+                '(?m)^permalink: /users-guide/compiled-preview\.html$')
+            testCase.verifyMatches(standalone, ...
+                '(?m)^permalink: /users-guide/portable-runtime\.html$')
+            testCase.verifyMatches(matlabPreview,'(?m)^parent: Compiled execution$')
+            testCase.verifyMatches(standalone,'(?m)^parent: Compiled execution$')
+            testCase.verifySubstring(userGuide,"[Compiled execution](/compiled-execution)")
+            testCase.verifySubstring(standalone, ...
+                'WVModel.writePortableRunRequest("run.json","initial-condition.nc",finalTime=86400);')
+            testCase.verifySubstring(standalone,"wave-vortex-run --request run.json")
+            testCase.verifySubstring(overview,"Compiled MATLAB backend preview")
+            testCase.verifySubstring(overview,"Standalone portable runtime")
+            testCase.verifySubstring(benchmarks,"frozen to the accepted issue #312")
+            testCase.verifySubstring(benchmarks,"integration-only runtime and total peak process memory")
+            testCase.verifyFalse(isfile(fullfile(testCase.canonicalRoot, ...
+                "users-guide","compiled-preview.md")))
+            testCase.verifyFalse(isfile(fullfile(testCase.canonicalRoot, ...
+                "users-guide","portable-runtime.md")))
+        end
+
         function websiteUsesModernTypographyAndSearch(testCase)
             expectedFont = 'font-family: "Avenir Next", Avenir, "Helvetica Neue", Helvetica, Arial, sans-serif;';
             for root = [testCase.canonicalRoot fullfile(testCase.repositoryRoot,"docs")]
@@ -188,6 +220,7 @@ classdef TestUserDocumentation < matlab.unittest.TestCase
                 "acknowledgements.md"
                 "addons.md"
                 fullfile("classes","index.md")
+                fullfile("compiled-execution","index.md")
                 fullfile("developers-guide","index.md")
                 fullfile("mathematical-introduction","index.md")
                 ];

@@ -372,6 +372,137 @@ classdef TestPortableRuntimeCompatibility < matlab.unittest.TestCase
             end
         end
 
+        function omittedDefaultsMatchExplicitMatlabBehavior(testCase)
+            constantSource = fullfile(testCase.TemporaryFolder,"defaults-constant-source.nc");
+            constantModel = testCase.createLinearBottomFrictionModel( ...
+                constantSource,false,7,2.5e-7,"fixed");
+            constantModel.integrateToTime(1e-4, ...
+                shouldShowIntegrationDiagnostics=false,callback=@(~)[]);
+            constantTime = constantModel.wvt.t;
+            constantCandidates = testCase.matlabCFLCandidates(constantModel.wvt,.5);
+            constantModel.closeNetCDFFile();
+
+            qgSource = fullfile(testCase.TemporaryFolder,"defaults-qg-source.nc");
+            qgModel = testCase.createBarotropicQGModel(qgSource,[5 4],1,true);
+            qgModel.integrateToTime(.005, ...
+                shouldShowIntegrationDiagnostics=false,callback=@(~)[]);
+            qgTime = qgModel.wvt.t;
+            qgCandidates = testCase.matlabCFLCandidates(qgModel.wvt,.5);
+            qgModel.closeNetCDFFile();
+
+            sourcePaths = [constantSource qgSource];
+            sourceTimes = [constantTime qgTime];
+            finalTimes = [constantTime+1e-4 qgTime+.005];
+            candidates = {constantCandidates,qgCandidates};
+            labels = ["constant" "qg"];
+            for iCase = 1:numel(labels)
+                label = labels(iCase);
+                defaultPath = fullfile(testCase.TemporaryFolder, ...
+                    "defaults-"+label+"-runtime.nc");
+                explicitPath = fullfile(testCase.TemporaryFolder, ...
+                    "defaults-"+label+"-explicit.nc");
+                controlPath = fullfile(testCase.TemporaryFolder, ...
+                    "defaults-"+label+"-matlab.nc");
+                copyfile(sourcePaths(iCase),defaultPath)
+                copyfile(sourcePaths(iCase),explicitPath)
+                copyfile(sourcePaths(iCase),controlPath)
+                selectedStep = min(candidates{iCase}.advective, ...
+                    candidates{iCase}.oscillatory);
+                maximumStep = .1*(finalTimes(iCase)-sourceTimes(iCase));
+                effectiveInitialStep = min(selectedStep,maximumStep);
+
+                defaultRequest = fullfile(testCase.TemporaryFolder, ...
+                    "defaults-"+label+".json");
+                defaultReportName = "defaults-"+label+"-report.json";
+                WVModel.writePortableRunRequest(defaultRequest,defaultPath, ...
+                    finalTime=finalTimes(iCase),fftProvider="reference",threads=1, ...
+                    reportPath=defaultReportName);
+                immutableDefaultRequest = testCase.fileBytes(defaultRequest);
+                [status,output] = systemWithoutMatlabRuntime( ...
+                    shellQuote(testCase.Runner)+" --request "+shellQuote(defaultRequest));
+                testCase.assertEqual(status,0,output)
+                testCase.verifyEqual(testCase.fileBytes(defaultRequest), ...
+                    immutableDefaultRequest,label+" default request")
+                defaultReport = jsondecode(fileread(fullfile( ...
+                    testCase.TemporaryFolder,defaultReportName)));
+
+                explicitRequest = fullfile(testCase.TemporaryFolder, ...
+                    "defaults-"+label+"-explicit.json");
+                explicitReportName = "defaults-"+label+"-explicit-report.json";
+                WVModel.writePortableRunRequest(explicitRequest,explicitPath, ...
+                    method="adaptive-rk78",finalTime=finalTimes(iCase), ...
+                    initialStep=selectedStep,maximumStep=maximumStep, ...
+                    relativeTolerance=1e-3,absoluteToleranceScale=1e-6, ...
+                    fftProvider="reference",threads=1,reportPath=explicitReportName);
+                [status,output] = systemWithoutMatlabRuntime( ...
+                    shellQuote(testCase.Runner)+" --request "+shellQuote(explicitRequest));
+                testCase.assertEqual(status,0,output)
+                explicitReport = jsondecode(fileread(fullfile( ...
+                    testCase.TemporaryFolder,explicitReportName)));
+
+                testCase.verifyEmpty(defaultReport.integrationRequest.requestedMethod,label)
+                testCase.verifyEqual(string(defaultReport.integrationRequest.activeMethod), ...
+                    "adaptive-rk78",label)
+                testCase.verifyEqual(string(defaultReport.integrationRequest.controller), ...
+                    "matlab-ode78-v1",label)
+                testCase.verifyEqual(string(defaultReport.integrationRequest.initialStepPolicy), ...
+                    "cfl-0.5-default",label)
+                testCase.verifyEqual(defaultReport.integrationRequest.cfl,.5,label)
+                testCase.verifyEmpty(defaultReport.integrationRequest.requestedInitialStep,label)
+                testCase.verifyEmpty(defaultReport.integrationRequest.requestedMaximumStep,label)
+                testCase.verifyEmpty(defaultReport.integrationRequest.requestedRelativeTolerance,label)
+                testCase.verifyEmpty(defaultReport.integrationRequest.requestedAbsoluteToleranceScale,label)
+                testCase.verifyEqual(defaultReport.integrationRequest.activeRelativeTolerance,1e-3,label)
+                testCase.verifyEqual(defaultReport.integrationRequest.activeAbsoluteToleranceScale,1e-6,label)
+                testCase.verifyEqual(defaultReport.integrationRequest.selectedStep,selectedStep,RelTol=1e-12)
+                testCase.verifyEqual(defaultReport.integrationRequest.effectiveIntegrationStep, ...
+                    effectiveInitialStep,RelTol=1e-12)
+                testCase.verifyEqual(defaultReport.integrationRequest.effectiveMaximumStep, ...
+                    maximumStep,RelTol=1e-12)
+                testCase.verifyEqual(string(defaultReport.provider.requestedId),"reference",label)
+                testCase.verifyEqual(string(defaultReport.provider.id),"reference",label)
+                testCase.verifyEqual(defaultReport.provider.requestedThreads,1,label)
+                testCase.verifyEqual(defaultReport.provider.threads,1,label)
+                testCase.verifyEqual(explicitReport.integrationRequest.effectiveIntegrationStep, ...
+                    effectiveInitialStep,RelTol=1e-12)
+
+                defaultModel = WVModel.modelFromFile(char(defaultPath));
+                defaultCleanup = onCleanup(@()defaultModel.closeNetCDFFile());
+                explicitModel = WVModel.modelFromFile(char(explicitPath));
+                explicitCleanup = onCleanup(@()explicitModel.closeNetCDFFile());
+                controlModel = WVModel.modelFromFile(char(controlPath));
+                controlCleanup = onCleanup(@()controlModel.closeNetCDFFile());
+                controlModel.setupIntegrator();
+                controlModel.integrateToTime(finalTimes(iCase), ...
+                    shouldShowIntegrationDiagnostics=false,callback=@(~)[]);
+                testCase.verifyLessThanOrEqual(testCase.normalizedCoefficientError( ...
+                    defaultModel.wvt,explicitModel.wvt),1e-12,label+" explicit")
+                testCase.verifyLessThanOrEqual(testCase.normalizedCoefficientError( ...
+                    defaultModel.wvt,controlModel.wvt),1e-12,label+" MATLAB")
+                clear defaultCleanup explicitCleanup controlCleanup
+            end
+
+            nativePath = fullfile(testCase.TemporaryFolder,"defaults-native-unavailable.nc");
+            copyfile(constantSource,nativePath)
+            nativeRequest = fullfile(testCase.TemporaryFolder,"defaults-native-unavailable.json");
+            nativeReportName = "defaults-native-unavailable-report.json";
+            WVModel.writePortableRunRequest(nativeRequest,nativePath, ...
+                finalTime=constantTime+1e-4,reportPath=nativeReportName);
+            sourceBytes = testCase.fileBytes(nativePath);
+            requestBytes = testCase.fileBytes(nativeRequest);
+            [status,~] = systemWithoutMatlabRuntime( ...
+                shellQuote(testCase.Runner)+" --request "+shellQuote(nativeRequest));
+            testCase.verifyNotEqual(status,0)
+            testCase.verifyEqual(testCase.fileBytes(nativePath),sourceBytes)
+            testCase.verifyEqual(testCase.fileBytes(nativeRequest),requestBytes)
+            failure = jsondecode(fileread(fullfile( ...
+                testCase.TemporaryFolder,nativeReportName)));
+            testCase.verifyEqual(string(failure.status),"failed")
+            testCase.verifyEqual(string(failure.failure.stage),"provider")
+            testCase.verifySubstring(string(failure.failure.message), ...
+                "PortableRuntime/buildWaveVortexRun.sh")
+        end
+
         function barotropicQGModelOutputRoundTripsThroughStandalone(testCase)
             cases = {
                 [5 4], 0, false; ...
@@ -489,16 +620,17 @@ classdef TestPortableRuntimeCompatibility < matlab.unittest.TestCase
                 if policy == "explicit"
                     WVModel.writePortableRunRequest(requestPath,modelPath, ...
                         schemaVersion=schemaVersion,method=method,finalTime=finalTime,initialStep=.25, ...
-                        reportPath=reportPath);
+                        fftProvider="reference",threads=1,reportPath=reportPath);
                 elseif method == "fixed-rk4"
                     WVModel.writePortableRunRequest(requestPath,modelPath, ...
                         schemaVersion=schemaVersion,method=method,finalTime=finalTime,cfl=.25, ...
-                        timeStepConstraint=policy,reportPath=reportPath);
+                        timeStepConstraint=policy,fftProvider="reference",threads=1,reportPath=reportPath);
                 else
                     WVModel.writePortableRunRequest(requestPath,modelPath, ...
                         schemaVersion=schemaVersion,method=method,finalTime=finalTime, ...
                         initialStep=.25,maximumStep=1,relativeTolerance=1e-3, ...
-                        absoluteToleranceScale=1e-6,reportPath=reportPath);
+                        absoluteToleranceScale=1e-6,fftProvider="reference",threads=1, ...
+                        reportPath=reportPath);
                 end
                 immutableRequest = fileread(requestPath);
                 command = shellQuote(testCase.Runner)+" --request "+shellQuote(requestPath);
@@ -554,16 +686,17 @@ classdef TestPortableRuntimeCompatibility < matlab.unittest.TestCase
                     if stepPolicy == "explicit"
                         WVModel.writePortableRunRequest(requestPath,modelPath, ...
                             schemaVersion=2,method=method,finalTime=.01,initialStep=.0025, ...
-                            outputPolicy="append",reportPath=reportName);
+                            outputPolicy="append",fftProvider="reference",threads=1,reportPath=reportName);
                     elseif stepPolicy == "cfl"
                         WVModel.writePortableRunRequest(requestPath,modelPath, ...
                             schemaVersion=2,method=method,finalTime=.01,cfl=.25, ...
-                            timeStepConstraint="advective",outputPolicy="append",reportPath=reportName);
+                            timeStepConstraint="advective",outputPolicy="append", ...
+                            fftProvider="reference",threads=1,reportPath=reportName);
                     else
                         WVModel.writePortableRunRequest(requestPath,modelPath, ...
                             schemaVersion=2,method=method,finalTime=.01,initialStep=.005,maximumStep=.005, ...
                             relativeTolerance=1e-8,absoluteToleranceScale=1e-10, ...
-                            outputPolicy="append",reportPath=reportName);
+                            outputPolicy="append",fftProvider="reference",threads=1,reportPath=reportName);
                     end
                     immutableRequest = fileread(requestPath);
                     command = shellQuote(testCase.Runner)+" --request "+shellQuote(requestPath);

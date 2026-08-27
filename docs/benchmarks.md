@@ -12,7 +12,9 @@ These benchmarks help estimate the integration time and total peak memory requir
 
 ## Constant-stratification execution comparison
 
-The comparison uses identical frozen initial models, forcing, integration interval, numerical controls, observer graph, output schedule, hardware, and thread policy for all three interfaces. MATLAB builtin remains the default. Different integrators are not assumed to perform identical work: accepted and rejected steps, RHS evaluations, FSAL diagnostics, and dense-extension evaluations accompany the downloadable evidence. The compiled interfaces are source-built options for the supported constant-stratification configuration; see the [compiled constant-stratification preview](https://wavevortexmodel.org/users-guide/compiled-preview.html) for availability and build instructions.
+The comparison uses identical frozen initial models, forcing, integration interval, numerical controls, observer graph, output schedule, hardware, and thread policy for all three interfaces. MATLAB builtin remains the default. Different integrators are not assumed to perform identical work: accepted and rejected steps, RHS evaluations, FSAL diagnostics, and dense-extension evaluations accompany the downloadable evidence. The compiled interfaces are source-built options for the supported constant-stratification configuration; see the [compiled MATLAB backend preview](https://wavevortexmodel.org/users-guide/compiled-preview.html) for availability and build instructions.
+
+The v4.3 presentation is frozen to the accepted issue #312 Donut record `three-interface--m5-max--20260827T151230Z`: one `[256 256 129]` nonhydrostatic case, four integrators, two workloads, three interfaces, and three independent fresh-process repeats. It is release evidence, not a benchmark to refresh during final qualification. The primary published metrics are integration-only runtime and total peak process memory; startup remains outside the runtime boundary and is not presented as a primary metric.
 
 <!-- BENCHMARKS:INTERFACE_COMPARISON:START -->
 Matched constant-stratification integration workloads on Apple M5 Max with 18 threads. MATLAB builtin uses production MATLAB transforms; MATLAB + compiled core and standalone C++ share validated `native-neon-pthreads` 3.3.11. Each interface cell is **integration-only runtime / total process-tree peak RSS during integration**, reported as the median of 3 fresh processes. Startup, model/provider construction, FFT planning, parsing, and cleanup are outside both primary boundaries.
@@ -509,22 +511,11 @@ Processor, memory, operating-system, toolchain, and thread information accompany
 <!-- BENCHMARKS:HISTORY:START -->
 <!-- BENCHMARKS:HISTORY:END -->
 
-## Run the benchmark yourself
+## Accepted benchmark scope
 
-Benchmark tools are authoring utilities and are not installed on the runtime package path. From a clean WaveVortexModel authoring checkout, run:
+Benchmark tools are authoring utilities and are not installed on the runtime package path. The [benchmark authoring guide](https://github.com/JeffreyEarly/wave-vortex-model/tree/main/Benchmarks) documents suite contracts and publication, but the v4.3 release uses the already accepted matched-interface record without rerunning it or generating replacement timing or RSS claims. Larger matched-interface grids and unsupported transform/backend combinations remain deferred rather than being reported as zero or extrapolated from the accepted case.
 
-```matlab
-addpath("Benchmarks")
-results = runWaveVortexBenchmark(suites="scaling-standard-v1")
-```
-
-The larger `scaling-large-v1` suite can require substantially more memory. The [benchmark authoring guide](https://github.com/JeffreyEarly/wave-vortex-model/tree/main/Benchmarks) explains suite selection, reference generation, raw artifacts, and normalization for publication.
-
-The matched interface comparison uses one medium `[256 256 129]` nonhydrostatic case in a 150 km by 150 km by 1300 m domain and requires the validated native FFTW provider. Its deterministic physical state combines GM energy level 1 with a first-baroclinic red geostrophic spectrum that rolls on below mode 4, follows a `k^(-5/3)` range through mode 16, and transitions to `k^(-3)`. The geostrophic component is rescaled to a 0.15 m/s maximum horizontal speed; GM(1) remains at its requested energy level. Default anti-aliasing stays enabled. The runner validates a complete process repeat before releasing that repeat's raw NetCDF files, retaining compact per-repeat correctness evidence so temporary storage remains bounded without reducing numerical coverage:
-
-```matlab
-results = runThreeInterfaceBenchmarkComparison
-```
+The matched interface comparison uses one medium `[256 256 129]` nonhydrostatic case in a 150 km by 150 km by 1300 m domain and requires the validated native FFTW provider. Its deterministic physical state combines GM energy level 1 with a first-baroclinic red geostrophic spectrum that rolls on below mode 4, follows a `k^(-5/3)` range through mode 16, and transitions to `k^(-3)`. The geostrophic component is rescaled to a 0.15 m/s maximum horizontal speed; GM(1) remains at its requested energy level. Default anti-aliasing stays enabled. The accepted record retains compact correctness and provenance evidence for every repeat; raw NetCDF worker outputs and RSS samples remain outside the source tree.
 
 ## Methodology and interpretation
 

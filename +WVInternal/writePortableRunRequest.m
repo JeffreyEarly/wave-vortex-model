@@ -104,13 +104,21 @@ destinations = validateDestinations(configuration.destinations,string(configurat
 
 fftProvider = string(configuration.fftProvider);
 threads = double(configuration.threads);
-if ~isscalar(threads) || ~isfinite(threads) || threads <= 0 || fix(threads) ~= threads
+if schemaVersion == 1
+    if strlength(fftProvider) == 0
+        fftProvider = "reference";
+    end
+    if isnan(threads)
+        threads = 1;
+    end
+end
+if ~isscalar(threads) || (~isnan(threads) && (~isfinite(threads) || threads <= 0 || fix(threads) ~= threads))
     error("WaveVortexModel:PortableRunRequestExecution","threads must be a positive integer.");
 end
-if fftProvider ~= "native-fftw" && fftProvider ~= "reference"
+if ~ismember(fftProvider,["","native-fftw","reference"])
     error("WaveVortexModel:PortableRunRequestExecution","fftProvider must be native-fftw or reference.");
 end
-if fftProvider == "reference" && threads ~= 1
+if fftProvider == "reference" && ~isnan(threads) && threads ~= 1
     error("WaveVortexModel:PortableRunRequestExecution","The reference FFT provider requires one thread.");
 end
 
@@ -150,8 +158,10 @@ if ~isscalar(configuration.finalTime) || ~isfinite(configuration.finalTime)
 end
 allowedV1 = ["fixed-rk4","adaptive-rk23"];
 allowedV2 = [allowedV1,"adaptive-rk45","adaptive-rk78"];
-if (schemaVersion == 1 && ~ismember(method,allowedV1)) || ...
-        (schemaVersion == 2 && ~ismember(method,allowedV2))
+if schemaVersion == 1 && ~ismember(method,allowedV1)
+    error("WaveVortexModel:PortableRunRequestIntegration","The integration method is unavailable in schema version %d.",schemaVersion);
+end
+if schemaVersion == 2 && ~ismember(method,["" allowedV2])
     error("WaveVortexModel:PortableRunRequestIntegration","The integration method is unavailable in schema version %d.",schemaVersion);
 end
 
@@ -163,8 +173,17 @@ absoluteToleranceScale = optionalPositive(configuration.absoluteToleranceScale,"
 constraint = string(configuration.timeStepConstraint);
 hasConstraint = strlength(constraint) > 0;
 
-integration = struct("method",method,"finalTime",double(configuration.finalTime));
-if method == "fixed-rk4"
+integration = struct("finalTime",double(configuration.finalTime));
+if strlength(method) > 0
+    integration = struct;
+    integration.method = method;
+    integration.finalTime = double(configuration.finalTime);
+end
+effectiveMethod = method;
+if strlength(effectiveMethod) == 0
+    effectiveMethod = "adaptive-rk78";
+end
+if effectiveMethod == "fixed-rk4"
     if ~isnan(maximumStep) || ~isnan(relativeTolerance) || ~isnan(absoluteToleranceScale)
         error("WaveVortexModel:PortableRunRequestIntegration","Adaptive tolerances and maximumStep are not valid for fixed-rk4.");
     end
@@ -196,13 +215,21 @@ end
 if ~isnan(cfl) || hasConstraint
     error("WaveVortexModel:PortableRunRequestIntegration","CFL controls are valid only for fixed-rk4.");
 end
-if any(isnan([initialStep maximumStep relativeTolerance absoluteToleranceScale]))
+if schemaVersion == 1 && any(isnan([initialStep maximumStep relativeTolerance absoluteToleranceScale]))
     error("WaveVortexModel:PortableRunRequestIntegration","Adaptive methods require initialStep, maximumStep, relativeTolerance, and absoluteToleranceScale.");
 end
-integration.initialStep = initialStep;
-integration.maximumStep = maximumStep;
-integration.relativeTolerance = relativeTolerance;
-integration.absoluteToleranceScale = absoluteToleranceScale;
+if ~isnan(initialStep)
+    integration.initialStep = initialStep;
+end
+if ~isnan(maximumStep)
+    integration.maximumStep = maximumStep;
+end
+if ~isnan(relativeTolerance)
+    integration.relativeTolerance = relativeTolerance;
+end
+if ~isnan(absoluteToleranceScale)
+    integration.absoluteToleranceScale = absoluteToleranceScale;
+end
 end
 
 function value = optionalPositive(value,name)
@@ -650,8 +677,13 @@ else
 end
 append("  },");
 append("  " + jsonString("execution") + ": {");
-append("    " + jsonString("fftProvider") + ": " + jsonString(document.fftProvider) + ",");
-append("    " + jsonString("threads") + ": " + integerText(document.threads));
+if strlength(document.fftProvider) > 0
+    suffix = conditional(~isnan(document.threads),",","");
+    append("    " + jsonString("fftProvider") + ": " + jsonString(document.fftProvider) + suffix);
+end
+if ~isnan(document.threads)
+    append("    " + jsonString("threads") + ": " + integerText(document.threads));
+end
 append("  },");
 append("  " + jsonString("report") + ": " + jsonString(document.report));
 append("}");

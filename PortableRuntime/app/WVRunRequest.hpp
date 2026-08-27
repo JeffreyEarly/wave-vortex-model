@@ -40,8 +40,8 @@ const char *serializedIdentifier(
 
 struct WVRunRequestIntegration {
   WVRunRequestIntegrationMethod method =
-      WVRunRequestIntegrationMethod::fixedRK4;
-  WVRunRequestStepPolicy stepPolicy = WVRunRequestStepPolicy::explicitStep;
+      WVRunRequestIntegrationMethod::adaptiveRK78;
+  WVRunRequestStepPolicy stepPolicy = WVRunRequestStepPolicy::adaptive;
   WVRunRequestTimeStepConstraint timeStepConstraint =
       WVRunRequestTimeStepConstraint::notApplicable;
   double finalTime = 0.0;
@@ -50,6 +50,11 @@ struct WVRunRequestIntegration {
   double maximumStep = 0.0;
   double relativeTolerance = 0.0;
   double absoluteToleranceScale = 0.0;
+  bool hasMethod = false;
+  bool hasInitialStep = false;
+  bool hasMaximumStep = false;
+  bool hasRelativeTolerance = false;
+  bool hasAbsoluteToleranceScale = false;
 };
 
 // A compact execution request. Scientific configuration, state, forcing,
@@ -72,6 +77,8 @@ struct WVRunRequest {
   std::vector<WVRunRequestDestination> destinations;
   std::string fftProvider;
   std::size_t threads = 0;
+  bool hasFFTProvider = false;
+  bool hasThreads = false;
   std::string report;
 };
 
