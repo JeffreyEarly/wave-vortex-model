@@ -8,6 +8,12 @@ nav_order: 100
 
 ## [Unreleased]
 
+### MATLAB integration performance
+
+- Added an authoring benchmark that separates integrated tracer and particle state from dense-output delivery, with matched fixed-RK4 work, output-record validation, and fresh-process timing and RSS measurements.
+- Replaced full-grid `interpn` setup for finite, three-dimensional linear particle queries with a periodic trilinear stencil that shares indices and weights across requested fields. At `[128 128 65]`, the focused two- and 4096-particle cases were 7.81x and 9.67x faster, respectively, with roundoff-level field and trajectory differences.
+- Applied constant-stratification vertical derivative multipliers to the small inverse-transform matrices instead of the large modal fields. Large-grid `diffZF` and `diffZG` self time decreased by 18.5% and 19.1%, respectively, with roundoff-level derivative and downstream differences.
+
 ## [4.3.0] - 2026-08-27
 
 ### Compiled execution and portable runtime
