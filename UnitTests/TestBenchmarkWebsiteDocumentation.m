@@ -25,8 +25,9 @@ classdef TestBenchmarkWebsiteDocumentation < matlab.unittest.TestCase
 
             generateBenchmarkWebsiteDocumentation(root,buildFolder);
 
-            page = string(fileread(fullfile(buildFolder,"benchmarks.md")));
-            testCase.verifySubstring(page,"No approved scaling datasets have been published yet");
+            page = string(fileread(fullfile(buildFolder,"compiled-execution","benchmarks.md")));
+            testCase.verifySubstring(page,"No approved MATLAB speed-scaling datasets have been published yet");
+            testCase.verifySubstring(page,"No approved MATLAB memory-scaling datasets have been published yet");
             testCase.verifySubstring(page,"No approved computer results have been published yet");
             testCase.verifySubstring(page,"No approved result files have been published yet");
             testCase.verifySubstring(page,"No approved matched three-interface result has been published yet");
@@ -48,13 +49,13 @@ classdef TestBenchmarkWebsiteDocumentation < matlab.unittest.TestCase
 
             generateBenchmarkWebsiteDocumentation(root,firstBuild);
             secondBuild = fullfile(root,"second-build");
-            mkdir(secondBuild);
-            copyfile(fullfile(testCase.repositoryRoot,"Documentation","WebsiteDocumentation","benchmarks.md"),fullfile(secondBuild,"benchmarks.md"));
+            mkdir(fullfile(secondBuild,"compiled-execution"));
+            copyfile(fullfile(testCase.repositoryRoot,"Documentation","WebsiteDocumentation","compiled-execution","benchmarks.md"),fullfile(secondBuild,"compiled-execution","benchmarks.md"));
             generateBenchmarkWebsiteDocumentation(root,secondBuild);
 
             comparison = compareDocumentationTrees(firstBuild,secondBuild);
             testCase.verifyTrue(comparison.IsEqual,strjoin(comparison.Substantive,newline));
-            page = string(fileread(fullfile(firstBuild,"benchmarks.md")));
+            page = string(fileread(fullfile(firstBuild,"compiled-execution","benchmarks.md")));
             testCase.verifySubstring(page,"M5 Max");
             testCase.verifySubstring(page,"Zen 4 workstation");
             testCase.verifySubstring(page,"WaveVortexModel C++");
@@ -99,8 +100,8 @@ classdef TestBenchmarkWebsiteDocumentation < matlab.unittest.TestCase
 
             generateBenchmarkWebsiteDocumentation(root,buildFolder);
 
-            page = string(fileread(fullfile(buildFolder,"benchmarks.md")));
-            testCase.verifySubstring(page,"## Performance across releases");
+            page = string(fileread(fullfile(buildFolder,"compiled-execution","benchmarks.md")));
+            testCase.verifySubstring(page,"**Performance across releases**");
             testCase.verifySubstring(page,"4.2.1");
             testCase.verifySubstring(page,"4.2.2");
             testCase.verifyFalse(contains(page,"BENCHMARKS:AT_GLANCE"));
@@ -119,8 +120,8 @@ classdef TestBenchmarkWebsiteDocumentation < matlab.unittest.TestCase
 
             generateBenchmarkWebsiteDocumentation(root,buildFolder);
 
-            page = string(fileread(fullfile(buildFolder,"benchmarks.md")));
-            comparison = extractBetween(page,"<!-- BENCHMARKS:INTERFACE_COMPARISON:START -->","<!-- BENCHMARKS:INTERFACE_COMPARISON:END -->");
+            page = string(fileread(fullfile(buildFolder,"compiled-execution","benchmarks.md")));
+            comparison = extractBetween(page,"<!-- BENCHMARKS:INTERFACE_SUMMARY:START -->","<!-- BENCHMARKS:INTERFACE_SUMMARY:END -->");
             testCase.verifySubstring(comparison,"256×256×129");
             testCase.verifySubstring(comparison,"512×512×257");
             testCase.verifySubstring(page,"Adaptive RK3(2) + output");
@@ -142,30 +143,40 @@ classdef TestBenchmarkWebsiteDocumentation < matlab.unittest.TestCase
             testCase.verifyFalse(isfile(fullfile(buildFolder,"benchmarks","raw",first.datasetId+".json")));
         end
 
-        function integratorStudyRendersOneRuntimeAndRSSMatrix(testCase)
+        function integratorStudyRendersSummaryAndTwoFocusedMatrices(testCase)
             [root,buildFolder] = testCase.createFixture("integrator-study");
             [firstEntry,first] = testCase.publishIntegratorStudyDataset(root,[256 256 129],"20260825T120000Z");
             testCase.writeCatalog(root,struct([]),firstEntry);
 
             generateBenchmarkWebsiteDocumentation(root,buildFolder);
 
-            page = string(fileread(fullfile(buildFolder,"benchmarks.md")));
-            comparison = extractBetween(page,"<!-- BENCHMARKS:INTERFACE_COMPARISON:START -->","<!-- BENCHMARKS:INTERFACE_COMPARISON:END -->");
-            testCase.verifyEqual(numel(strfind(comparison,"256×256×129")),8)
-            testCase.verifyFalse(contains(comparison,"512×512×257"))
-            testCase.verifyFalse(contains(comparison,">Hydrostatic<"))
-            testCase.verifySubstring(comparison,"Nonhydrostatic")
-            testCase.verifySubstring(comparison,"Fixed RK4")
-            testCase.verifySubstring(comparison,"ode23 / RK3(2)")
-            testCase.verifySubstring(comparison,"ode45 / RK5(4)")
-            testCase.verifySubstring(comparison,"ode78 / RK8(7)")
-            testCase.verifySubstring(comparison,"Coefficients · endpoint only")
-            testCase.verifySubstring(comparison,"Composite graph · interior dense output")
-            testCase.verifySubstring(comparison,"1 s / 1 GiB")
-            testCase.verifyFalse(contains(comparison,"×)"))
+            page = string(fileread(fullfile(buildFolder,"compiled-execution","benchmarks.md")));
+            summary = extractBetween(page,"<!-- BENCHMARKS:INTERFACE_SUMMARY:START -->","<!-- BENCHMARKS:INTERFACE_SUMMARY:END -->");
+            comparison = extractBetween(page,"<!-- BENCHMARKS:INTEGRATOR_COMPARISON:START -->","<!-- BENCHMARKS:INTEGRATOR_COMPARISON:END -->");
+            testCase.verifySubstring(summary,"Matched `ode78 / RK8(7)` results")
+            testCase.verifySubstring(summary,"Coefficients only")
+            testCase.verifySubstring(summary,"Composite dense output")
+            testCase.verifySubstring(summary,'rowspan="3"')
+            testCase.verifySubstring(summary,"3.00×")
+            testCase.verifyEqual(numel(strfind(summary,"benchmark-fastest")),2)
+            testCase.verifyEqual(numel(strfind(summary,"benchmark-lowest-memory")),2)
+            testCase.verifyFalse(contains(summary,"Fixed RK4"))
+
+            testCase.verifySubstring(comparison,"### Coefficients only")
+            testCase.verifySubstring(comparison,"### Composite graph with dense output")
+            testCase.verifyEqual(numel(strfind(comparison,"Fixed RK4")),2)
+            testCase.verifyEqual(numel(strfind(comparison,"ode23 / RK3(2)")),2)
+            testCase.verifyEqual(numel(strfind(comparison,"ode45 / RK5(4)")),2)
+            testCase.verifyEqual(numel(strfind(comparison,"ode78 / RK8(7)")),2)
+            testCase.verifyEqual(numel(strfind(comparison,'scope="colgroup" colspan="2"')),6)
+            testCase.verifyEqual(numel(strfind(comparison,"benchmark-fastest")),8)
+            testCase.verifyEqual(numel(strfind(comparison,"benchmark-lowest-memory")),8)
+            testCase.verifySubstring(comparison,"Runtime")
+            testCase.verifySubstring(comparison,"Peak memory")
+            testCase.verifyFalse(contains(comparison,"Resolution"))
+            testCase.verifyFalse(contains(comparison,"Physical configuration"))
             testCase.verifyFalse(contains(comparison,"incremental","IgnoreCase",true))
             testCase.verifyFalse(contains(comparison,"process wall","IgnoreCase",true))
-            testCase.verifySubstring(comparison,"exact standalone workspace ledgers")
             testCase.verifyTrue(isfile(fullfile(buildFolder,"benchmarks","data",first.datasetId+".json")))
         end
 
@@ -192,7 +203,7 @@ classdef TestBenchmarkWebsiteDocumentation < matlab.unittest.TestCase
 
             generateBenchmarkWebsiteDocumentation(root,buildFolder);
 
-            page = string(fileread(fullfile(buildFolder,"benchmarks.md")));
+            page = string(fileread(fullfile(buildFolder,"compiled-execution","benchmarks.md")));
             testCase.verifySubstring(page,"No scaling-large-v1 dataset was collected for this environment.");
             testCase.verifySubstring(page,"No scaling-standard-v1 dataset was collected for this environment.");
             testCase.verifySubstring(page,"MATLAB R2026a Update 4");
@@ -248,8 +259,8 @@ classdef TestBenchmarkWebsiteDocumentation < matlab.unittest.TestCase
             root = fullfile(testCase.temporaryFolder,name);
             buildFolder = fullfile(root,"build");
             mkdir(fullfile(root,"Benchmarks","results"));
-            mkdir(buildFolder);
-            copyfile(fullfile(testCase.repositoryRoot,"Documentation","WebsiteDocumentation","benchmarks.md"),fullfile(buildFolder,"benchmarks.md"));
+            mkdir(fullfile(buildFolder,"compiled-execution"));
+            copyfile(fullfile(testCase.repositoryRoot,"Documentation","WebsiteDocumentation","compiled-execution","benchmarks.md"),fullfile(buildFolder,"compiled-execution","benchmarks.md"));
         end
 
         function entries = publishDatasets(testCase,root,datasets)

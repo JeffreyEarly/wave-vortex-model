@@ -29,3 +29,5 @@ Both optimized paths currently require Apple silicon and a locally built pinned 
 Use the compiled MATLAB preview when the model should stay in MATLAB and its forcing fits the narrow preview contract. Use the standalone runtime when MATLAB should author the initial conditions and scientific graph but a separate process should perform the supported integration and persistence workflow.
 
 Detailed ownership, extension, numerical, and persistence contracts are documented in the [compiled-kernel contract](/developers-guide/compiled-kernel-contract.html) and [portable-runtime contract](/developers-guide/portable-runtime-contract.html).
+
+See [Benchmarks](/benchmarks) for the accepted MATLAB, compiled-core, and standalone runtime measurements and MATLAB scaling results.
