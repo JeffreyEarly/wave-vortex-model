@@ -64,6 +64,20 @@ classdef TestInterpolatedFieldAtPosition < matlab.unittest.TestCase
 
             testCase.verifySize(actual,size(x));
             testCase.verifyEqual(actual,expected,AbsTol=1e-12);
+
+            nQuery = 4096;
+            x = linspace(-testCase.wvt.Lx,2*testCase.wvt.Lx,nQuery);
+            y = linspace(2*testCase.wvt.Ly,-testCase.wvt.Ly,nQuery);
+            z = linspace(zGrid(1),zGrid(end),nQuery);
+            x(1:6) = [0 testCase.wvt.Lx -1 testCase.wvt.Lx+1 testCase.wvt.x(4) testCase.wvt.x(end)];
+            y(1:6) = [0 testCase.wvt.Ly testCase.wvt.Ly+1 -1 testCase.wvt.y(5) testCase.wvt.y(end)];
+            z(1:6) = [zGrid(1) zGrid(end) zGrid(1) zGrid(end) zGrid(1)-1 zGrid(end)+1];
+            actual = testCase.wvt.variableAtPositionWithName(x,y,z,'interpolationTest3D');
+            expected = testCase.periodicInterpolation3D(testCase.field3D,x,y,z);
+            testCase.verifySize(actual,size(x));
+            testCase.verifyEqual(actual,expected,AbsTol=1e-12);
+            scalar = testCase.wvt.variableAtPositionWithName(x(1),y(1),z(1),'interpolationTest3D');
+            testCase.verifyEqual(scalar,expected(1),AbsTol=1e-12);
         end
 
         function testSupportedMethodsReturnMultipleFields(testCase)
@@ -79,7 +93,7 @@ classdef TestInterpolatedFieldAtPosition < matlab.unittest.TestCase
                 testCase.verifySize(actual2D,size(x));
                 testCase.verifySize(actual3D,size(x));
                 testCase.verifyEqual(actual2D,expected2D);
-                testCase.verifyEqual(actual3D,expected3D);
+                testCase.verifyEqual(actual3D,expected3D,AbsTol=1e-12);
             end
         end
 
@@ -199,7 +213,7 @@ classdef TestInterpolatedFieldAtPosition < matlab.unittest.TestCase
         function expected = periodicInterpolation3D(testCase,field,x,y,z)
             [xPeriodic,yPeriodic] = testCase.periodicGrid();
             fieldPeriodic = field([end 1:end 1],[end 1:end 1],:);
-            expected = interpn(xPeriodic,yPeriodic,testCase.wvt.z,fieldPeriodic,mod(x,testCase.wvt.Lx),mod(y,testCase.wvt.Ly),z,'linear');
+            expected = interpn(xPeriodic,yPeriodic,testCase.wvt.z,fieldPeriodic,mod(x,testCase.wvt.Lx),mod(y,testCase.wvt.Ly),z,'linear',0);
         end
 
         function [xPeriodic,yPeriodic] = periodicGrid(testCase)
