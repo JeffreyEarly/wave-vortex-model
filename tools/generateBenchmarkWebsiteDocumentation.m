@@ -178,9 +178,7 @@ for workload = workloads
     end
 end
 lines = [lines; "</tbody>"; benchmarkTableEnd];
-contract = itemAt(dataset.cases,1).contract;
-intro = "Matched `ode78 / RK8(7)` results on "+string(dataset.platform.displayName)+" with "+string(dataset.platform.threadCount)+" threads. Values are medians of "+string(contract.processRunCount)+" fresh processes; speedup uses MATLAB builtin for the same workload as 1.00×.";
-markdown = intro+newline+newline+strjoin(lines,newline);
+markdown = strjoin(lines,newline);
 end
 
 function markdown = integratorComparisonMarkdown(records)
@@ -195,17 +193,27 @@ if ~any(v3Mask)
 end
 selected = selectCompatibleInterfaceRecords(records(v3Mask),[256 256 129]);
 dataset = selected(1).dataset;
-contract = itemAt(dataset.cases,1).contract;
-intro = "Each table compares the same integrator across MATLAB builtin, MATLAB with the compiled core, and standalone C++. Values are medians of "+string(contract.processRunCount)+" fresh processes on "+string(dataset.platform.displayName)+" at "+string(dataset.platform.threadCount)+" threads.";
 coefficientTable = "### Coefficients only"+newline+newline+integratorTable(dataset,"coefficient-endpoint","Coefficients-only integrator comparison");
 denseTable = "### Composite graph with dense output"+newline+newline+integratorTable(dataset,"composite-dense-output","Dense-output integrator comparison");
-markdown = intro+newline+newline+coefficientTable+newline+newline+denseTable;
+markdown = coefficientTable+newline+newline+denseTable;
 end
 
 function html = integratorTable(dataset,workload,label)
 interfaceIds = ["matlab-builtin" "matlab-compiled" "standalone-compiled"];
 interfaceNames = ["MATLAB builtin" "MATLAB + compiled core" "Standalone C++"];
 integrators = ["fixed-rk4" "adaptive-rk23" "adaptive-rk45" "adaptive-rk78"];
+runtimes = zeros(numel(integrators),numel(interfaceIds));
+memories = zeros(numel(integrators),numel(interfaceIds));
+for iIntegrator = 1:numel(integrators)
+    benchmarkCase = interfaceCaseWithId(dataset,"nonhydrostatic--"+integrators(iIntegrator)+"--"+workload);
+    for iInterface = 1:numel(interfaceIds)
+        item = interfaceWithId(benchmarkCase,interfaceIds(iInterface));
+        runtimes(iIntegrator,iInterface) = double(item.integrationSeconds);
+        memories(iIntegrator,iInterface) = double(item.totalPeakRSSBytes);
+    end
+end
+fastestRuntime = min(runtimes,[],1);
+lowestMemory = min(memories,[],1);
 groupHeaders = strings(1,numel(interfaceNames));
 metricHeaders = strings(1,2*numel(interfaceNames));
 for iInterface = 1:numel(interfaceNames)
@@ -219,22 +227,13 @@ lines = [ ...
     "  <tr>"+strjoin(metricHeaders,"")+"</tr>"; ...
     "</thead>"; ...
     "<tbody>"];
-for integrator = integrators
-    benchmarkCase = interfaceCaseWithId(dataset,"nonhydrostatic--"+integrator+"--"+workload);
-    items = cell(1,numel(interfaceIds));
-    runtimes = zeros(1,numel(interfaceIds));
-    memories = zeros(1,numel(interfaceIds));
-    for iInterface = 1:numel(interfaceIds)
-        items{iInterface} = interfaceWithId(benchmarkCase,interfaceIds(iInterface));
-        runtimes(iInterface) = double(items{iInterface}.integrationSeconds);
-        memories(iInterface) = double(items{iInterface}.totalPeakRSSBytes);
-    end
+for iIntegrator = 1:numel(integrators)
     cells = strings(1,2*numel(interfaceIds));
     for iInterface = 1:numel(interfaceIds)
-        cells(2*iInterface-1) = "<td>"+benchmarkMetricCell(formatSeconds(runtimes(iInterface)),runtimes(iInterface)==min(runtimes),"Fastest","benchmark-fastest")+"</td>";
-        cells(2*iInterface) = "<td>"+benchmarkMetricCell(formatBytes(memories(iInterface)),memories(iInterface)==min(memories),"Lowest memory","benchmark-lowest-memory")+"</td>";
+        cells(2*iInterface-1) = "<td>"+benchmarkMetricCell(formatSeconds(runtimes(iIntegrator,iInterface)),runtimes(iIntegrator,iInterface)==fastestRuntime(iInterface),"Fastest","benchmark-fastest")+"</td>";
+        cells(2*iInterface) = "<td>"+benchmarkMetricCell(formatBytes(memories(iIntegrator,iInterface)),memories(iIntegrator,iInterface)==lowestMemory(iInterface),"Lowest memory","benchmark-lowest-memory")+"</td>";
     end
-    lines(end+1,1) = "  <tr><th scope=""row"">"+xmlEscape(displayIntegrator(integrator))+"</th>"+strjoin(cells,"")+"</tr>"; %#ok<AGROW>
+    lines(end+1,1) = "  <tr><th scope=""row"">"+xmlEscape(displayIntegrator(integrators(iIntegrator)))+"</th>"+strjoin(cells,"")+"</tr>"; %#ok<AGROW>
 end
 lines = [lines; "</tbody>"; benchmarkTableEnd];
 html = strjoin(lines,newline);

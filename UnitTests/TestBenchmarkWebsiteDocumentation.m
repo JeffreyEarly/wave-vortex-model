@@ -153,7 +153,6 @@ classdef TestBenchmarkWebsiteDocumentation < matlab.unittest.TestCase
             page = string(fileread(fullfile(buildFolder,"compiled-execution","benchmarks.md")));
             summary = extractBetween(page,"<!-- BENCHMARKS:INTERFACE_SUMMARY:START -->","<!-- BENCHMARKS:INTERFACE_SUMMARY:END -->");
             comparison = extractBetween(page,"<!-- BENCHMARKS:INTEGRATOR_COMPARISON:START -->","<!-- BENCHMARKS:INTEGRATOR_COMPARISON:END -->");
-            testCase.verifySubstring(summary,"Matched `ode78 / RK8(7)` results")
             testCase.verifySubstring(summary,"Coefficients only")
             testCase.verifySubstring(summary,"Composite dense output")
             testCase.verifySubstring(summary,'rowspan="3"')
@@ -161,6 +160,7 @@ classdef TestBenchmarkWebsiteDocumentation < matlab.unittest.TestCase
             testCase.verifyEqual(numel(strfind(summary,"benchmark-fastest")),2)
             testCase.verifyEqual(numel(strfind(summary,"benchmark-lowest-memory")),2)
             testCase.verifyFalse(contains(summary,"Fixed RK4"))
+            testCase.verifyFalse(contains(summary,"fresh processes"))
 
             testCase.verifySubstring(comparison,"### Coefficients only")
             testCase.verifySubstring(comparison,"### Composite graph with dense output")
@@ -169,14 +169,27 @@ classdef TestBenchmarkWebsiteDocumentation < matlab.unittest.TestCase
             testCase.verifyEqual(numel(strfind(comparison,"ode45 / RK5(4)")),2)
             testCase.verifyEqual(numel(strfind(comparison,"ode78 / RK8(7)")),2)
             testCase.verifyEqual(numel(strfind(comparison,'scope="colgroup" colspan="2"')),6)
-            testCase.verifyEqual(numel(strfind(comparison,"benchmark-fastest")),8)
-            testCase.verifyEqual(numel(strfind(comparison,"benchmark-lowest-memory")),8)
+            testCase.verifyEqual(numel(strfind(comparison,"benchmark-fastest")),6)
+            testCase.verifyEqual(numel(strfind(comparison,"benchmark-lowest-memory")),6)
+            fixedRows = regexp(comparison,'(?s)<tr><th scope="row">Fixed RK4</th>.*?</tr>','match');
+            ode78Rows = regexp(comparison,'(?s)<tr><th scope="row">ode78 / RK8\(7\)</th>.*?</tr>','match');
+            testCase.verifyEqual(numel(fixedRows),2)
+            testCase.verifyEqual(numel(ode78Rows),2)
+            for row = string(fixedRows)
+                testCase.verifyEqual(numel(strfind(row,"benchmark-lowest-memory")),3)
+                testCase.verifyFalse(contains(row,"benchmark-fastest"))
+            end
+            for row = string(ode78Rows)
+                testCase.verifyEqual(numel(strfind(row,"benchmark-fastest")),3)
+                testCase.verifyFalse(contains(row,"benchmark-lowest-memory"))
+            end
             testCase.verifySubstring(comparison,"Runtime")
             testCase.verifySubstring(comparison,"Peak memory")
             testCase.verifyFalse(contains(comparison,"Resolution"))
             testCase.verifyFalse(contains(comparison,"Physical configuration"))
             testCase.verifyFalse(contains(comparison,"incremental","IgnoreCase",true))
             testCase.verifyFalse(contains(comparison,"process wall","IgnoreCase",true))
+            testCase.verifyFalse(contains(comparison,"fresh processes"))
             testCase.verifyTrue(isfile(fullfile(buildFolder,"benchmarks","data",first.datasetId+".json")))
         end
 
@@ -315,14 +328,25 @@ classdef TestBenchmarkWebsiteDocumentation < matlab.unittest.TestCase
             graph = struct("passed",true,"variableCount",6,"recordCount",12,"maximumAbsoluteError",0,"maximumRelativeError",1e-14,"categories",categories);
             cases = cell(1,8);
             iCase = 0;
+            iIntegrator = 0;
             physicalConfiguration = "nonhydrostatic";
             for integrator = ["fixed-rk4" "adaptive-rk23" "adaptive-rk45" "adaptive-rk78"]
+                iIntegrator = iIntegrator+1;
                 for workload = ["coefficient-endpoint" "composite-dense-output"]
                     iCase = iCase+1;
+                    caseInterfaces = interfaces;
+                    runtimeFactor = 5-iIntegrator;
+                    memoryFactor = iIntegrator;
+                    for iInterface = 1:numel(caseInterfaces)
+                        caseInterfaces{iInterface}.integrationSeconds = runtimeFactor/iInterface;
+                        caseInterfaces{iInterface}.integrationSamplesSeconds = runtimeFactor*[0.9 1 1.1]/iInterface;
+                        caseInterfaces{iInterface}.totalPeakRSSBytes = memoryFactor*iInterface*2^30;
+                        caseInterfaces{iInterface}.totalPeakRSSSamplesBytes = memoryFactor*iInterface*[0.9 1 1.1]*2^30;
+                    end
                     identifier = physicalConfiguration+"--"+integrator+"--"+workload;
                     contract = struct("Nxyz",resolution,"Lxyz",[150e3 150e3 1300],"physicalConfiguration",physicalConfiguration,"isHydrostatic",false,"workload",workload,"forcing","default WVNonlinearAdvection","shouldAntialias",true,"integrator",integrator,"deltaT",128,"integrationStepCount",56,"finalTime",7168,"relativeTolerance",1e-3,"absoluteToleranceScale",1e-6,"absoluteToleranceEvidence","component hashes","initialStep",295.7935799274,"maximumStep",716.8,"outputInterval",conditional(workload=="coefficient-endpoint",7168,128),"denseOutputPointsPerStep",4,"observerGraph",workload,"processRunCount",3,"warmupCount",0,"samplesPerProcess",1);
                     correctness = struct("passed",true,"maximumRelativeError",1e-14,"outputAgreementPassed",true,"endpointTrajectoryAgreementPassed",true,"completeOutputGraph",graph);
-                    cases{iCase} = struct("id",identifier,"physicalConfiguration",physicalConfiguration,"workload",workload,"integrator",integrator,"contract",contract,"interfaces",{interfaces},"correctness",correctness);
+                    cases{iCase} = struct("id",identifier,"physicalConfiguration",physicalConfiguration,"workload",workload,"integrator",integrator,"contract",contract,"interfaces",{caseInterfaces},"correctness",correctness);
                 end
             end
             datasetId = "three-interface--donut--"+timestamp;
