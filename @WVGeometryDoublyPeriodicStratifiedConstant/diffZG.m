@@ -25,13 +25,13 @@ u = reshape(u,self.Nz,[]);
 
 % sine goes to, [1,-1,-1,1] for numDerivs = [1,2,3,4]
 thesign = [1,-1,-1,1];
-m = reshape(pi*self.j/self.Lz,[],1);
-du_bar = thesign(mod(n-1,4)+1)*(m.^n) .* (self.DST*u);
+m = reshape(pi*self.j/self.Lz,1,[]);
+du_bar = self.DST*u;
 
 if mod(n,2) == 0
-    du = self.iDST*du_bar;
+    du = (self.iDST .* (thesign(mod(n-1,4)+1)*(m.^n)))*du_bar;
 else
-    du = self.iDCT*du_bar;
+    du = (self.iDCT .* (thesign(mod(n-1,4)+1)*(m.^n)))*du_bar;
 end
 du = reshape(du,self.Nz,self.Nx,self.Ny);
 du = permute(du,[2 3 1]);
