@@ -5,7 +5,7 @@ arguments
     buildFolder (1,1) string
 end
 
-pagePath = fullfile(buildFolder,"benchmarks.md");
+pagePath = fullfile(buildFolder,"compiled-execution","benchmarks.md");
 if ~isfile(pagePath)
     error("WaveVortexModel:MissingBenchmarkPage","The canonical Benchmarks page is missing from the staged documentation tree.");
 end
@@ -24,8 +24,10 @@ copyInterfaceRecords(interfaceRecords,buildFolder);
 
 latestRecords = latestPublishedRecords(records);
 pageText = string(fileread(pagePath));
-pageText = replaceGeneratedSection(pageText,"INTERFACE_COMPARISON",interfaceComparisonMarkdown(interfaceRecords));
-pageText = replaceGeneratedSection(pageText,"SCALING",scalingMarkdown(latestRecords,buildFolder));
+pageText = replaceGeneratedSection(pageText,"INTERFACE_SUMMARY",interfaceSummaryMarkdown(interfaceRecords));
+pageText = replaceGeneratedSection(pageText,"SPEED_SCALING",scalingMarkdown(latestRecords,buildFolder,"runtime"));
+pageText = replaceGeneratedSection(pageText,"MEMORY_SCALING",scalingMarkdown(latestRecords,buildFolder,"memory"));
+pageText = replaceGeneratedSection(pageText,"INTEGRATOR_COMPARISON",integratorComparisonMarkdown(interfaceRecords));
 pageText = replaceGeneratedSection(pageText,"COMPUTERS",computerMarkdown(latestRecords));
 pageText = replaceGeneratedSection(pageText,"HISTORY",historyMarkdown(records));
 pageText = replaceGeneratedSection(pageText,"DOWNLOADS",downloadsMarkdown(records,interfaceRecords));
@@ -106,7 +108,7 @@ for iCase = 1:numel(dataset.cases)
 end
 end
 
-function markdown = interfaceComparisonMarkdown(records)
+function markdown = interfaceSummaryMarkdown(records)
 if isempty(records)
     markdown = "No approved matched three-interface result has been published yet.";
     return
@@ -115,9 +117,13 @@ v3Mask = arrayfun(@(record)string(record.dataset.schemaVersion)=="published-thre
 if any(v3Mask)
     requiredResolutions = [256 256 129];
     selected = selectCompatibleInterfaceRecords(records(v3Mask),requiredResolutions);
-    markdown = integratorStudyMarkdown(selected,requiredResolutions);
+    markdown = integratorSummaryMarkdown(selected(1).dataset);
     return
 end
+markdown = legacyInterfaceComparisonMarkdown(records);
+end
+
+function markdown = legacyInterfaceComparisonMarkdown(records)
 requiredResolutions = [256 256 129; 512 512 257];
 selected = selectCompatibleInterfaceRecords(records,requiredResolutions);
 dataset = selected(1).dataset;
@@ -138,35 +144,130 @@ intro = "Matched nonhydrostatic constant-stratification workloads on "+string(da
 markdown = intro+newline+newline+htmlTable(["Resolution" "Workload" "MATLAB builtin" "MATLAB + compiled core" "Standalone C++"],rows);
 end
 
-function markdown = integratorStudyMarkdown(selected,requiredResolutions)
-rows = strings(0,7);
-for iResolution = 1:size(requiredResolutions,1)
-    current = selected(iResolution).dataset;
-    physicalConfiguration = "nonhydrostatic";
-    for integrator = ["fixed-rk4" "adaptive-rk23" "adaptive-rk45" "adaptive-rk78"]
-        for workload = ["coefficient-endpoint" "composite-dense-output"]
-            caseId = physicalConfiguration+"--"+integrator+"--"+workload;
-            benchmarkCase = interfaceCaseWithId(current,caseId);
-            builtin = interfaceWithId(benchmarkCase,"matlab-builtin");
-            matlabCompiled = interfaceWithId(benchmarkCase,"matlab-compiled");
-            standalone = interfaceWithId(benchmarkCase,"standalone-compiled");
-            rows(end+1,:) = [join(string(requiredResolutions(iResolution,:)),"×"),displayPhysicalConfiguration(physicalConfiguration),displayIntegrator(integrator),displayIntegratorWorkload(workload),integratorInterfaceCell(builtin),integratorInterfaceCell(matlabCompiled),integratorInterfaceCell(standalone)]; %#ok<AGROW>
+function markdown = integratorSummaryMarkdown(dataset)
+integrator = "adaptive-rk78";
+workloads = ["coefficient-endpoint" "composite-dense-output"];
+interfaceIds = ["matlab-builtin" "matlab-compiled" "standalone-compiled"];
+interfaceNames = ["MATLAB builtin" "MATLAB + compiled core" "Standalone C++"];
+lines = [ ...
+    benchmarkTableStart("MATLAB and C++ summary","benchmark-summary-table"); ...
+    "<thead>"; ...
+    "  <tr><th scope=""col"">Workload</th><th scope=""col"">Interface</th><th scope=""col"">Runtime</th><th scope=""col"">Speedup vs MATLAB</th><th scope=""col"">Peak memory</th></tr>"; ...
+    "</thead>"; ...
+    "<tbody>"];
+for workload = workloads
+    benchmarkCase = interfaceCaseWithId(dataset,"nonhydrostatic--"+integrator+"--"+workload);
+    builtin = interfaceWithId(benchmarkCase,"matlab-builtin");
+    items = cell(1,numel(interfaceIds));
+    runtimes = zeros(1,numel(interfaceIds));
+    memories = zeros(1,numel(interfaceIds));
+    for iInterface = 1:numel(interfaceIds)
+        items{iInterface} = interfaceWithId(benchmarkCase,interfaceIds(iInterface));
+        runtimes(iInterface) = double(items{iInterface}.integrationSeconds);
+        memories(iInterface) = double(items{iInterface}.totalPeakRSSBytes);
+    end
+    for iInterface = 1:numel(interfaceIds)
+        workloadCell = "";
+        if iInterface == 1
+            workloadCell = "<th scope=""rowgroup"" rowspan="""+string(numel(interfaceIds))+""">"+xmlEscape(displaySummaryWorkload(workload))+"</th>";
         end
+        runtimeCell = benchmarkMetricCell(formatSeconds(runtimes(iInterface)),runtimes(iInterface)==min(runtimes),"Fastest","benchmark-fastest");
+        memoryCell = benchmarkMetricCell(formatBytes(memories(iInterface)),memories(iInterface)==min(memories),"Lowest memory","benchmark-lowest-memory");
+        speedup = formatSpeedup(double(builtin.integrationSeconds)/runtimes(iInterface),iInterface==1);
+        lines(end+1,1) = "  <tr>"+workloadCell+"<th scope=""row"">"+xmlEscape(interfaceNames(iInterface))+"</th><td>"+runtimeCell+"</td><td class=""benchmark-number"">"+xmlEscape(speedup)+"</td><td>"+memoryCell+"</td></tr>"; %#ok<AGROW>
     end
 end
+lines = [lines; "</tbody>"; benchmarkTableEnd];
+contract = itemAt(dataset.cases,1).contract;
+intro = "Matched `ode78 / RK8(7)` results on "+string(dataset.platform.displayName)+" with "+string(dataset.platform.threadCount)+" threads. Values are medians of "+string(contract.processRunCount)+" fresh processes; speedup uses MATLAB builtin for the same workload as 1.00×.";
+markdown = intro+newline+newline+strjoin(lines,newline);
+end
+
+function markdown = integratorComparisonMarkdown(records)
+if isempty(records)
+    markdown = "No approved integrator comparison has been published yet.";
+    return
+end
+v3Mask = arrayfun(@(record)string(record.dataset.schemaVersion)=="published-three-interface-v3",records);
+if ~any(v3Mask)
+    markdown = "No approved integrator comparison has been published yet.";
+    return
+end
+selected = selectCompatibleInterfaceRecords(records(v3Mask),[256 256 129]);
 dataset = selected(1).dataset;
 contract = itemAt(dataset.cases,1).contract;
-intro = "Matched constant-stratification integration workloads on "+string(dataset.platform.displayName)+" with "+string(dataset.platform.threadCount)+" threads. MATLAB builtin uses production MATLAB transforms; MATLAB + compiled core and standalone C++ share validated `"+string(dataset.provider.id)+"` "+string(dataset.provider.version)+". Each interface cell is **integration-only runtime / total process-tree peak RSS during integration**, reported as the median of "+string(contract.processRunCount)+" fresh processes. Startup, model/provider construction, FFT planning, parsing, and cleanup are outside both primary boundaries.";
-details = "The coefficient workload delivers only the accepted endpoint. The composite workload includes fields, particles, a tracer, source-linked mooring state, and several scheduled interior points per accepted step. Requested/active method identity, matched tolerances and step bounds, accepted/rejected steps, RHS evaluations, FSAL diagnostics, dense-extension work, exact standalone workspace ledgers, supplementary memory diagnostics, output-graph agreement, and fixture/archive hashes remain in the compact downloadable records. MATLAB solver workspace, allocator/COW behavior, and opaque FFT/provider storage are identified as unattributed rather than presented as exact.";
-markdown = intro+newline+newline+htmlTable(["Resolution" "Physical configuration" "Integrator" "Workload" "MATLAB builtin" "MATLAB + compiled core" "Standalone C++"],rows)+newline+newline+details;
+intro = "Each table compares the same integrator across MATLAB builtin, MATLAB with the compiled core, and standalone C++. Values are medians of "+string(contract.processRunCount)+" fresh processes on "+string(dataset.platform.displayName)+" at "+string(dataset.platform.threadCount)+" threads.";
+coefficientTable = "### Coefficients only"+newline+newline+integratorTable(dataset,"coefficient-endpoint","Coefficients-only integrator comparison");
+denseTable = "### Composite graph with dense output"+newline+newline+integratorTable(dataset,"composite-dense-output","Dense-output integrator comparison");
+markdown = intro+newline+newline+coefficientTable+newline+newline+denseTable;
 end
 
-function value = integratorInterfaceCell(item)
-value = formatSeconds(item.integrationSeconds)+" / "+formatBytes(item.totalPeakRSSBytes);
+function html = integratorTable(dataset,workload,label)
+interfaceIds = ["matlab-builtin" "matlab-compiled" "standalone-compiled"];
+interfaceNames = ["MATLAB builtin" "MATLAB + compiled core" "Standalone C++"];
+integrators = ["fixed-rk4" "adaptive-rk23" "adaptive-rk45" "adaptive-rk78"];
+groupHeaders = strings(1,numel(interfaceNames));
+metricHeaders = strings(1,2*numel(interfaceNames));
+for iInterface = 1:numel(interfaceNames)
+    groupHeaders(iInterface) = "<th scope=""colgroup"" colspan=""2"">"+xmlEscape(interfaceNames(iInterface))+"</th>";
+    metricHeaders(2*iInterface-1:2*iInterface) = ["<th scope=""col"">Runtime</th>" "<th scope=""col"">Peak memory</th>"];
+end
+lines = [ ...
+    benchmarkTableStart(label,""); ...
+    "<thead>"; ...
+    "  <tr><th scope=""col"" rowspan=""2"">Integrator</th>"+strjoin(groupHeaders,"")+"</tr>"; ...
+    "  <tr>"+strjoin(metricHeaders,"")+"</tr>"; ...
+    "</thead>"; ...
+    "<tbody>"];
+for integrator = integrators
+    benchmarkCase = interfaceCaseWithId(dataset,"nonhydrostatic--"+integrator+"--"+workload);
+    items = cell(1,numel(interfaceIds));
+    runtimes = zeros(1,numel(interfaceIds));
+    memories = zeros(1,numel(interfaceIds));
+    for iInterface = 1:numel(interfaceIds)
+        items{iInterface} = interfaceWithId(benchmarkCase,interfaceIds(iInterface));
+        runtimes(iInterface) = double(items{iInterface}.integrationSeconds);
+        memories(iInterface) = double(items{iInterface}.totalPeakRSSBytes);
+    end
+    cells = strings(1,2*numel(interfaceIds));
+    for iInterface = 1:numel(interfaceIds)
+        cells(2*iInterface-1) = "<td>"+benchmarkMetricCell(formatSeconds(runtimes(iInterface)),runtimes(iInterface)==min(runtimes),"Fastest","benchmark-fastest")+"</td>";
+        cells(2*iInterface) = "<td>"+benchmarkMetricCell(formatBytes(memories(iInterface)),memories(iInterface)==min(memories),"Lowest memory","benchmark-lowest-memory")+"</td>";
+    end
+    lines(end+1,1) = "  <tr><th scope=""row"">"+xmlEscape(displayIntegrator(integrator))+"</th>"+strjoin(cells,"")+"</tr>"; %#ok<AGROW>
+end
+lines = [lines; "</tbody>"; benchmarkTableEnd];
+html = strjoin(lines,newline);
 end
 
-function value = displayPhysicalConfiguration(identifier)
-if identifier=="hydrostatic", value="Hydrostatic"; else, value="Nonhydrostatic"; end
+function line = benchmarkTableStart(label,additionalClass)
+tableClass = strtrim("benchmark-results-table "+additionalClass);
+line = "<div class=""benchmark-table-scroll"" role=""region"" aria-label="""+xmlEscape(label)+""" tabindex=""0"">"+newline+"<table class="""+tableClass+""">";
+end
+
+function line = benchmarkTableEnd
+line = "</table>"+newline+"</div>";
+end
+
+function value = benchmarkMetricCell(formattedValue,isWinner,label,cssClass)
+value = "<span class=""benchmark-number"">";
+if isWinner
+    value = value+"<strong>"+xmlEscape(formattedValue)+"</strong><span class=""benchmark-winner "+cssClass+""">"+xmlEscape(label)+"</span>";
+else
+    value = value+xmlEscape(formattedValue);
+end
+value = value+"</span>";
+end
+
+function value = formatSpeedup(speedup,isBaseline)
+value = sprintf('%.2f×',speedup);
+if isBaseline
+    value = value+" baseline";
+end
+end
+
+function value = displaySummaryWorkload(identifier)
+if identifier=="coefficient-endpoint", value="Coefficients only"; else, value="Composite dense output"; end
 end
 
 function value = displayIntegrator(identifier)
@@ -177,10 +278,6 @@ switch identifier
     case "adaptive-rk78", value="ode78 / RK8(7)";
     otherwise, value=identifier;
 end
-end
-
-function value = displayIntegratorWorkload(identifier)
-if identifier=="coefficient-endpoint", value="Coefficients · endpoint only"; else, value="Composite graph · interior dense output"; end
 end
 
 function selected = selectCompatibleInterfaceRecords(records,requiredResolutions)
@@ -460,10 +557,14 @@ indices = sort(cell2mat(values(latestByKey)));
 records = records(indices);
 end
 
-function markdown = scalingMarkdown(records,buildFolder)
+function markdown = scalingMarkdown(records,buildFolder,metricName)
 records = records(arrayfun(@(record)startsWith(string(record.dataset.benchmark.suiteId),"scaling-"),records));
 if isempty(records)
-    markdown = "No approved scaling datasets have been published yet.";
+    if metricName == "runtime"
+        markdown = "No approved MATLAB speed-scaling datasets have been published yet.";
+    else
+        markdown = "No approved MATLAB memory-scaling datasets have been published yet.";
+    end
     return
 end
 
@@ -473,8 +574,11 @@ specifications = [ ...
     struct("id","memory-horizontal","title","Peak process memory versus horizontal resolution","axis","horizontal","metric","memory","xLabel","Horizontal grid size (Nx = Ny)","yLabel","Peak process memory (GiB)"), ...
     struct("id","memory-vertical","title","Peak process memory versus vertical resolution","axis","vertical","metric","memory","xLabel","Vertical grid size (Nz)","yLabel","Peak process memory (GiB)") ...
     ];
+specifications = specifications(arrayfun(@(specification)string(specification.metric)==metricName,specifications));
 assetFolder = fullfile(buildFolder,"assets","benchmarks");
-mkdir(assetFolder);
+if ~isfolder(assetFolder)
+    mkdir(assetFolder);
+end
 sections = strings(1,numel(specifications));
 for iSpecification = 1:numel(specifications)
     specification = specifications(iSpecification);
@@ -818,7 +922,7 @@ if isempty(rows)
     return
 end
 rows = unique(sortrows(rows,[1 2 4 5 3]),"rows","stable");
-markdown = "## Performance across releases" + newline + newline + ...
+markdown = "**Performance across releases**" + newline + newline + ...
     "This section appears only when matching platform, toolchain, suite, and case configurations exist for at least two WaveVortexModel versions." + newline + newline + ...
     "<details>" + newline + "<summary>View comparable release history</summary>" + newline + newline + ...
     htmlTable(["Platform" "Implementation" "Version" "Suite" "Case" "Median runtime" "Peak process memory"],rows) + newline + newline + "</details>";

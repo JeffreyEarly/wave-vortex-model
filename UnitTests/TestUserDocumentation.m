@@ -149,7 +149,8 @@ classdef TestUserDocumentation < matlab.unittest.TestCase
             standalone = testCase.readCanonical(fullfile( ...
                 "compiled-execution","standalone-portable-runtime.md"));
             userGuide = testCase.readCanonical(fullfile("users-guide","index.md"));
-            benchmarks = testCase.readCanonical("benchmarks.md");
+            benchmarks = testCase.readCanonical(fullfile( ...
+                "compiled-execution","benchmarks.md"));
 
             testCase.verifyMatches(overview,'(?m)^title: Compiled execution$')
             testCase.verifyMatches(overview,'(?m)^nav_order: 9\.5$')
@@ -160,14 +161,23 @@ classdef TestUserDocumentation < matlab.unittest.TestCase
                 '(?m)^permalink: /users-guide/portable-runtime\.html$')
             testCase.verifyMatches(matlabPreview,'(?m)^parent: Compiled execution$')
             testCase.verifyMatches(standalone,'(?m)^parent: Compiled execution$')
+            testCase.verifyMatches(benchmarks,'(?m)^parent: Compiled execution$')
+            testCase.verifyMatches(benchmarks,'(?m)^nav_order: 3$')
+            testCase.verifyMatches(benchmarks,'(?m)^has_toc: true$')
+            testCase.verifyMatches(benchmarks,'(?m)^permalink: /benchmarks$')
             testCase.verifySubstring(userGuide,"[Compiled execution](/compiled-execution)")
             testCase.verifySubstring(standalone, ...
                 'WVModel.writePortableRunRequest("run.json","initial-condition.nc",finalTime=86400);')
             testCase.verifySubstring(standalone,"wave-vortex-run --request run.json")
             testCase.verifySubstring(overview,"Compiled MATLAB backend preview")
             testCase.verifySubstring(overview,"Standalone portable runtime")
+            testCase.verifySubstring(overview,"[Benchmarks](/benchmarks)")
             testCase.verifySubstring(benchmarks,"frozen to the accepted issue #312")
-            testCase.verifySubstring(benchmarks,"integration-only runtime and total peak process memory")
+            headings = ["## MATLAB vs C++" "## MATLAB speed scaling" ...
+                "## MATLAB memory scaling" "## Integrator comparison"];
+            headingLocations = arrayfun(@(heading)strfind(benchmarks,heading),headings);
+            testCase.verifyTrue(all(diff(headingLocations)>0))
+            testCase.verifyFalse(isfile(fullfile(testCase.canonicalRoot,"benchmarks.md")))
             testCase.verifyFalse(isfile(fullfile(testCase.canonicalRoot, ...
                 "users-guide","compiled-preview.md")))
             testCase.verifyFalse(isfile(fullfile(testCase.canonicalRoot, ...
@@ -183,6 +193,8 @@ classdef TestUserDocumentation < matlab.unittest.TestCase
                 testCase.verifySubstring(stylesheet,"line-height: 1.65;");
                 testCase.verifySubstring(stylesheet,"letter-spacing: -0.015em;");
                 testCase.verifySubstring(stylesheet,".search-input");
+                testCase.verifySubstring(stylesheet,".benchmark-table-scroll");
+                testCase.verifySubstring(stylesheet,".benchmark-winner");
                 testCase.verifyMatches(config,"(?m)^search_enabled: true$");
             end
         end

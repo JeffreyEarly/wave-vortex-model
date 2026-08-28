@@ -42,4 +42,4 @@ Backend selection is runtime-only. Ordinary NetCDF restoration selects MATLAB. R
 wvt = WVTransform.waveVortexTransformFromFile("restart.nc",computationalBackend="compiled");
 ```
 
-The preview may trade higher memory use for lower integration runtime. The accepted matched measurements report integration runtime and total peak process memory on the [Benchmarks](/benchmarks.html) page. See the [compiled-kernel contract](/developers-guide/compiled-kernel-contract.html) for implementation, ownership, and provider details.
+The preview may trade higher memory use for lower integration runtime. The accepted matched measurements report integration runtime and total peak process memory on the [Benchmarks](/benchmarks) page. See the [compiled-kernel contract](/developers-guide/compiled-kernel-contract.html) for implementation, ownership, and provider details.

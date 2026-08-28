@@ -55,6 +55,8 @@ Run the canonical medium case with:
 results = runThreeInterfaceBenchmarkComparison;
 ```
 
+The v4.3 website presentation is frozen to the accepted issue #312 Donut record `three-interface--m5-max--20260827T151230Z`. It is release evidence and must not be refreshed during release qualification. The public page selects `ode78 / RK8(7)` for its compact MATLAB-versus-C++ summary because that method has the lowest integration runtime for every interface in both accepted workloads; the complete fixed RK4, RK3(2), RK5(4), and RK8(7) matrix remains visible in the detailed integrator comparison.
+
 The detailed raw result and RSS samples are compressed beneath the external sibling archive `../wave-vortex-model-benchmark-artifacts/three-interface/`. They are never committed or copied into the generated website. The source tree contains only the compact normalized record and presentation; its provenance stores fixture hashes, the raw-artifact hash, and the external archive filename, SHA-256, compressed byte count, and location. The author-only standalone kernel worker is built only when `WV_RUNTIME_BUILD_BENCHMARKS=ON`; it is not part of the package or ordinary `wave-vortex-run` interface.
 
 Normalize a MATLAB artifact with explicit platform identity and repository-relative provenance:

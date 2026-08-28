@@ -34,3 +34,48 @@ textarea {
 }
 
 @import "./matlab-live-script";
+
+.benchmark-table-scroll {
+  margin: 1rem 0 1.5rem;
+  overflow-x: auto;
+}
+
+.benchmark-results-table {
+  min-width: 48rem;
+  margin-bottom: 0;
+}
+
+.benchmark-summary-table {
+  min-width: 38rem;
+}
+
+.benchmark-results-table th,
+.benchmark-results-table td {
+  vertical-align: top;
+}
+
+.benchmark-results-table .benchmark-number {
+  white-space: nowrap;
+}
+
+.benchmark-winner {
+  display: block;
+  width: fit-content;
+  margin-top: 0.2rem;
+  padding: 0.05rem 0.35rem;
+  border: 1px solid currentColor;
+  border-radius: 0.2rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.benchmark-fastest {
+  color: #176b38;
+  background: #e8f5ec;
+}
+
+.benchmark-lowest-memory {
+  color: #384b8f;
+  background: #eef1ff;
+}

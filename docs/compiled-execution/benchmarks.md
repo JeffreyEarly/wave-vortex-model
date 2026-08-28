@@ -1,48 +1,46 @@
 ---
 layout: default
 title: Benchmarks
-nav_order: 8
+parent: Compiled execution
+nav_order: 3
+has_toc: true
 description: Runtime and memory scaling for WaveVortexModel
 permalink: /benchmarks
 ---
 
 # Benchmarks
 
-These benchmarks help estimate the integration time and total peak memory required by a model. The primary comparison uses the same constant-stratification model through MATLAB's builtin implementation, MATLAB with the compiled C++ core, and the standalone C++ runtime. Additional scaling results cover MATLAB's builtin transforms across other model families and computers.
+These frozen, machine-dependent measurements compare WaveVortexModel execution paths and show how ordinary MATLAB execution scales with resolution. MATLAB remains the default implementation; the compiled paths are optional source builds for supported configurations.
 
-## Constant-stratification execution comparison
+## MATLAB vs C++
 
-The comparison uses identical frozen initial models, forcing, integration interval, numerical controls, observer graph, output schedule, hardware, and thread policy for all three interfaces. MATLAB builtin remains the default. Different integrators are not assumed to perform identical work: accepted and rejected steps, RHS evaluations, FSAL diagnostics, and dense-extension evaluations accompany the downloadable evidence. The compiled interfaces are source-built options for the supported constant-stratification configuration; see the [compiled MATLAB backend preview](https://wavevortexmodel.org/users-guide/compiled-preview.html) for availability and build instructions.
+The compact comparison uses `ode78 / RK8(7)`, the fastest integrator for every interface and workload in the accepted study. Runtime covers integration and required output delivery; peak memory is the largest sampled total process-tree RSS during that boundary. Startup, model construction, FFT planning, parsing, and cleanup are excluded.
 
-The v4.3 presentation is frozen to the accepted issue #312 Donut record `three-interface--m5-max--20260827T151230Z`: one `[256 256 129]` nonhydrostatic case, four integrators, two workloads, three interfaces, and three independent fresh-process repeats. It is release evidence, not a benchmark to refresh during final qualification. The primary published metrics are integration-only runtime and total peak process memory; startup remains outside the runtime boundary and is not presented as a primary metric.
+<!-- BENCHMARKS:INTERFACE_SUMMARY:START -->
+Matched `ode78 / RK8(7)` results on Apple M5 Max with 18 threads. Values are medians of 3 fresh processes; speedup uses MATLAB builtin for the same workload as 1.00×.
 
-<!-- BENCHMARKS:INTERFACE_COMPARISON:START -->
-Matched constant-stratification integration workloads on Apple M5 Max with 18 threads. MATLAB builtin uses production MATLAB transforms; MATLAB + compiled core and standalone C++ share validated `native-neon-pthreads` 3.3.11. Each interface cell is **integration-only runtime / total process-tree peak RSS during integration**, reported as the median of 3 fresh processes. Startup, model/provider construction, FFT planning, parsing, and cleanup are outside both primary boundaries.
-
-<table>
-  <thead>
-    <tr><th scope="col">Resolution</th><th scope="col">Physical configuration</th><th scope="col">Integrator</th><th scope="col">Workload</th><th scope="col">MATLAB builtin</th><th scope="col">MATLAB + compiled core</th><th scope="col">Standalone C++</th></tr>
-  </thead>
-  <tbody>
-    <tr><td>256×256×129</td><td>Nonhydrostatic</td><td>Fixed RK4</td><td>Coefficients · endpoint only</td><td>55.43 s / 3.27 GiB</td><td>32.96 s / 3.84 GiB</td><td>33.63 s / 2.55 GiB</td></tr>
-    <tr><td>256×256×129</td><td>Nonhydrostatic</td><td>Fixed RK4</td><td>Composite graph · interior dense output</td><td>73.89 s / 4.19 GiB</td><td>62.8 s / 5.38 GiB</td><td>44.08 s / 3.08 GiB</td></tr>
-    <tr><td>256×256×129</td><td>Nonhydrostatic</td><td>ode23 / RK3(2)</td><td>Coefficients · endpoint only</td><td>191.4 s / 3.53 GiB</td><td>125.7 s / 4.14 GiB</td><td>124.5 s / 2.64 GiB</td></tr>
-    <tr><td>256×256×129</td><td>Nonhydrostatic</td><td>ode23 / RK3(2)</td><td>Composite graph · interior dense output</td><td>291.2 s / 6.33 GiB</td><td>268 s / 6.78 GiB</td><td>169.2 s / 3.19 GiB</td></tr>
-    <tr><td>256×256×129</td><td>Nonhydrostatic</td><td>ode45 / RK5(4)</td><td>Coefficients · endpoint only</td><td>57.1 s / 4.06 GiB</td><td>33.14 s / 4.46 GiB</td><td>34.07 s / 2.73 GiB</td></tr>
-    <tr><td>256×256×129</td><td>Nonhydrostatic</td><td>ode45 / RK5(4)</td><td>Composite graph · interior dense output</td><td>86.1 s / 9.12 GiB</td><td>72.13 s / 9.59 GiB</td><td>46.18 s / 3.41 GiB</td></tr>
-    <tr><td>256×256×129</td><td>Nonhydrostatic</td><td>ode78 / RK8(7)</td><td>Coefficients · endpoint only</td><td>47.13 s / 4.22 GiB</td><td>27.91 s / 4.59 GiB</td><td>27.79 s / 2.9 GiB</td></tr>
-    <tr><td>256×256×129</td><td>Nonhydrostatic</td><td>ode78 / RK8(7)</td><td>Composite graph · interior dense output</td><td>71.24 s / 10.5 GiB</td><td>62.11 s / 11 GiB</td><td>38.66 s / 4.26 GiB</td></tr>
-  </tbody>
+<div class="benchmark-table-scroll" role="region" aria-label="MATLAB and C++ summary" tabindex="0">
+<table class="benchmark-results-table benchmark-summary-table">
+<thead>
+  <tr><th scope="col">Workload</th><th scope="col">Interface</th><th scope="col">Runtime</th><th scope="col">Speedup vs MATLAB</th><th scope="col">Peak memory</th></tr>
+</thead>
+<tbody>
+  <tr><th scope="rowgroup" rowspan="3">Coefficients only</th><th scope="row">MATLAB builtin</th><td><span class="benchmark-number">47.13 s</span></td><td class="benchmark-number">1.00× baseline</td><td><span class="benchmark-number">4.22 GiB</span></td></tr>
+  <tr><th scope="row">MATLAB + compiled core</th><td><span class="benchmark-number">27.91 s</span></td><td class="benchmark-number">1.69×</td><td><span class="benchmark-number">4.59 GiB</span></td></tr>
+  <tr><th scope="row">Standalone C++</th><td><span class="benchmark-number"><strong>27.79 s</strong><span class="benchmark-winner benchmark-fastest">Fastest</span></span></td><td class="benchmark-number">1.70×</td><td><span class="benchmark-number"><strong>2.9 GiB</strong><span class="benchmark-winner benchmark-lowest-memory">Lowest memory</span></span></td></tr>
+  <tr><th scope="rowgroup" rowspan="3">Composite dense output</th><th scope="row">MATLAB builtin</th><td><span class="benchmark-number">71.24 s</span></td><td class="benchmark-number">1.00× baseline</td><td><span class="benchmark-number">10.5 GiB</span></td></tr>
+  <tr><th scope="row">MATLAB + compiled core</th><td><span class="benchmark-number">62.11 s</span></td><td class="benchmark-number">1.15×</td><td><span class="benchmark-number">11 GiB</span></td></tr>
+  <tr><th scope="row">Standalone C++</th><td><span class="benchmark-number"><strong>38.66 s</strong><span class="benchmark-winner benchmark-fastest">Fastest</span></span></td><td class="benchmark-number">1.84×</td><td><span class="benchmark-number"><strong>4.26 GiB</strong><span class="benchmark-winner benchmark-lowest-memory">Lowest memory</span></span></td></tr>
+</tbody>
 </table>
+</div>
+<!-- BENCHMARKS:INTERFACE_SUMMARY:END -->
 
-The coefficient workload delivers only the accepted endpoint. The composite workload includes fields, particles, a tracer, source-linked mooring state, and several scheduled interior points per accepted step. Requested/active method identity, matched tolerances and step bounds, accepted/rejected steps, RHS evaluations, FSAL diagnostics, dense-extension work, exact standalone workspace ledgers, supplementary memory diagnostics, output-graph agreement, and fixture/archive hashes remain in the compact downloadable records. MATLAB solver workspace, allocator/COW behavior, and opaque FFT/provider storage are identified as unattributed rather than presented as exact.
-<!-- BENCHMARKS:INTERFACE_COMPARISON:END -->
+## MATLAB speed scaling
 
-## MATLAB builtin scaling across transform families
+These plots show median `nonlinearFlux` evaluation time for MATLAB's builtin transforms. The representative plots use the nonhydrostatic constant-stratification transform; expandable tables retain every published transform family and environment.
 
-The plots separate horizontal and vertical scaling for the representative nonhydrostatic constant-stratification transform. Limiting each chart to one transform keeps the machine and suite comparisons legible; the expandable tables retain results for every transform family. Each point is the median of the retained timing samples. Memory plots report the peak resident memory of the MATLAB or C++ process, including the language runtime and numerical libraries.
-
-<!-- BENCHMARKS:SCALING:START -->
+<!-- BENCHMARKS:SPEED_SCALING:START -->
 ### Runtime versus horizontal resolution
 
 ![Runtime versus horizontal resolution — constant nonhydrostatic](/assets/benchmarks/runtime-horizontal.svg)
@@ -265,7 +263,13 @@ The plots separate horizontal and vertical scaling for the representative nonhyd
 </table>
 
 </details>
+<!-- BENCHMARKS:SPEED_SCALING:END -->
 
+## MATLAB memory scaling
+
+These plots show peak MATLAB process memory, including the language runtime and numerical libraries, for the same scaling cases.
+
+<!-- BENCHMARKS:MEMORY_SCALING:START -->
 ### Peak process memory versus horizontal resolution
 
 ![Peak process memory versus horizontal resolution — constant nonhydrostatic](/assets/benchmarks/memory-horizontal.svg)
@@ -488,11 +492,58 @@ The plots separate horizontal and vertical scaling for the representative nonhyd
 </table>
 
 </details>
-<!-- BENCHMARKS:SCALING:END -->
+<!-- BENCHMARKS:MEMORY_SCALING:END -->
 
-## Compare computers
+## Integrator comparison
 
-Processor, memory, operating-system, toolchain, and thread information accompany every published dataset. Results from different environments remain machine-dependent measurements rather than universal performance guarantees.
+The detailed comparison holds the nonhydrostatic `[256 256 129]` model, numerical controls, hardware, thread policy, and three fresh-process repeats fixed. Runtime and memory winners are identified separately because the fastest interface need not use the least memory.
+
+<!-- BENCHMARKS:INTEGRATOR_COMPARISON:START -->
+Each table compares the same integrator across MATLAB builtin, MATLAB with the compiled core, and standalone C++. Values are medians of 3 fresh processes on Apple M5 Max at 18 threads.
+
+### Coefficients only
+
+<div class="benchmark-table-scroll" role="region" aria-label="Coefficients-only integrator comparison" tabindex="0">
+<table class="benchmark-results-table">
+<thead>
+  <tr><th scope="col" rowspan="2">Integrator</th><th scope="colgroup" colspan="2">MATLAB builtin</th><th scope="colgroup" colspan="2">MATLAB + compiled core</th><th scope="colgroup" colspan="2">Standalone C++</th></tr>
+  <tr><th scope="col">Runtime</th><th scope="col">Peak memory</th><th scope="col">Runtime</th><th scope="col">Peak memory</th><th scope="col">Runtime</th><th scope="col">Peak memory</th></tr>
+</thead>
+<tbody>
+  <tr><th scope="row">Fixed RK4</th><td><span class="benchmark-number">55.43 s</span></td><td><span class="benchmark-number">3.27 GiB</span></td><td><span class="benchmark-number"><strong>32.96 s</strong><span class="benchmark-winner benchmark-fastest">Fastest</span></span></td><td><span class="benchmark-number">3.84 GiB</span></td><td><span class="benchmark-number">33.63 s</span></td><td><span class="benchmark-number"><strong>2.55 GiB</strong><span class="benchmark-winner benchmark-lowest-memory">Lowest memory</span></span></td></tr>
+  <tr><th scope="row">ode23 / RK3(2)</th><td><span class="benchmark-number">191.4 s</span></td><td><span class="benchmark-number">3.53 GiB</span></td><td><span class="benchmark-number">125.7 s</span></td><td><span class="benchmark-number">4.14 GiB</span></td><td><span class="benchmark-number"><strong>124.5 s</strong><span class="benchmark-winner benchmark-fastest">Fastest</span></span></td><td><span class="benchmark-number"><strong>2.64 GiB</strong><span class="benchmark-winner benchmark-lowest-memory">Lowest memory</span></span></td></tr>
+  <tr><th scope="row">ode45 / RK5(4)</th><td><span class="benchmark-number">57.1 s</span></td><td><span class="benchmark-number">4.06 GiB</span></td><td><span class="benchmark-number"><strong>33.14 s</strong><span class="benchmark-winner benchmark-fastest">Fastest</span></span></td><td><span class="benchmark-number">4.46 GiB</span></td><td><span class="benchmark-number">34.07 s</span></td><td><span class="benchmark-number"><strong>2.73 GiB</strong><span class="benchmark-winner benchmark-lowest-memory">Lowest memory</span></span></td></tr>
+  <tr><th scope="row">ode78 / RK8(7)</th><td><span class="benchmark-number">47.13 s</span></td><td><span class="benchmark-number">4.22 GiB</span></td><td><span class="benchmark-number">27.91 s</span></td><td><span class="benchmark-number">4.59 GiB</span></td><td><span class="benchmark-number"><strong>27.79 s</strong><span class="benchmark-winner benchmark-fastest">Fastest</span></span></td><td><span class="benchmark-number"><strong>2.9 GiB</strong><span class="benchmark-winner benchmark-lowest-memory">Lowest memory</span></span></td></tr>
+</tbody>
+</table>
+</div>
+
+### Composite graph with dense output
+
+<div class="benchmark-table-scroll" role="region" aria-label="Dense-output integrator comparison" tabindex="0">
+<table class="benchmark-results-table">
+<thead>
+  <tr><th scope="col" rowspan="2">Integrator</th><th scope="colgroup" colspan="2">MATLAB builtin</th><th scope="colgroup" colspan="2">MATLAB + compiled core</th><th scope="colgroup" colspan="2">Standalone C++</th></tr>
+  <tr><th scope="col">Runtime</th><th scope="col">Peak memory</th><th scope="col">Runtime</th><th scope="col">Peak memory</th><th scope="col">Runtime</th><th scope="col">Peak memory</th></tr>
+</thead>
+<tbody>
+  <tr><th scope="row">Fixed RK4</th><td><span class="benchmark-number">73.89 s</span></td><td><span class="benchmark-number">4.19 GiB</span></td><td><span class="benchmark-number">62.8 s</span></td><td><span class="benchmark-number">5.38 GiB</span></td><td><span class="benchmark-number"><strong>44.08 s</strong><span class="benchmark-winner benchmark-fastest">Fastest</span></span></td><td><span class="benchmark-number"><strong>3.08 GiB</strong><span class="benchmark-winner benchmark-lowest-memory">Lowest memory</span></span></td></tr>
+  <tr><th scope="row">ode23 / RK3(2)</th><td><span class="benchmark-number">291.2 s</span></td><td><span class="benchmark-number">6.33 GiB</span></td><td><span class="benchmark-number">268 s</span></td><td><span class="benchmark-number">6.78 GiB</span></td><td><span class="benchmark-number"><strong>169.2 s</strong><span class="benchmark-winner benchmark-fastest">Fastest</span></span></td><td><span class="benchmark-number"><strong>3.19 GiB</strong><span class="benchmark-winner benchmark-lowest-memory">Lowest memory</span></span></td></tr>
+  <tr><th scope="row">ode45 / RK5(4)</th><td><span class="benchmark-number">86.1 s</span></td><td><span class="benchmark-number">9.12 GiB</span></td><td><span class="benchmark-number">72.13 s</span></td><td><span class="benchmark-number">9.59 GiB</span></td><td><span class="benchmark-number"><strong>46.18 s</strong><span class="benchmark-winner benchmark-fastest">Fastest</span></span></td><td><span class="benchmark-number"><strong>3.41 GiB</strong><span class="benchmark-winner benchmark-lowest-memory">Lowest memory</span></span></td></tr>
+  <tr><th scope="row">ode78 / RK8(7)</th><td><span class="benchmark-number">71.24 s</span></td><td><span class="benchmark-number">10.5 GiB</span></td><td><span class="benchmark-number">62.11 s</span></td><td><span class="benchmark-number">11 GiB</span></td><td><span class="benchmark-number"><strong>38.66 s</strong><span class="benchmark-winner benchmark-fastest">Fastest</span></span></td><td><span class="benchmark-number"><strong>4.26 GiB</strong><span class="benchmark-winner benchmark-lowest-memory">Lowest memory</span></span></td></tr>
+</tbody>
+</table>
+</div>
+<!-- BENCHMARKS:INTEGRATOR_COMPARISON:END -->
+
+<details markdown="1">
+<summary>Benchmark conditions, environments, and downloads</summary>
+
+The v4.3 presentation is frozen to the accepted issue #312 Donut record `three-interface--m5-max--20260827T151230Z`; it is release evidence, not a benchmark to refresh during qualification. Comparisons require matching suite contracts, operations, domains, resolutions, numerical options, random seeds, warmup counts, and sample counts. Results from different environments reflect both hardware and toolchain differences.
+
+Benchmark tools are authoring utilities and are not installed on the runtime package path. The [benchmark authoring guide](https://github.com/JeffreyEarly/wave-vortex-model/tree/main/Benchmarks) documents suite definitions, measurement boundaries, correctness gates, provenance, and publication. Missing coverage is reported as unavailable, never as zero or extrapolated performance.
+
+**Test environments**
 
 <!-- BENCHMARKS:COMPUTERS:START -->
 <table>
@@ -511,23 +562,9 @@ Processor, memory, operating-system, toolchain, and thread information accompany
 <!-- BENCHMARKS:HISTORY:START -->
 <!-- BENCHMARKS:HISTORY:END -->
 
-## Accepted benchmark scope
+**Downloadable results**
 
-Benchmark tools are authoring utilities and are not installed on the runtime package path. The [benchmark authoring guide](https://github.com/JeffreyEarly/wave-vortex-model/tree/main/Benchmarks) documents suite contracts and publication, but the v4.3 release uses the already accepted matched-interface record without rerunning it or generating replacement timing or RSS claims. Larger matched-interface grids and unsupported transform/backend combinations remain deferred rather than being reported as zero or extrapolated from the accepted case.
-
-The matched interface comparison uses one medium `[256 256 129]` nonhydrostatic case in a 150 km by 150 km by 1300 m domain and requires the validated native FFTW provider. Its deterministic physical state combines GM energy level 1 with a first-baroclinic red geostrophic spectrum that rolls on below mode 4, follows a `k^(-5/3)` range through mode 16, and transitions to `k^(-3)`. The geostrophic component is rescaled to a 0.15 m/s maximum horizontal speed; GM(1) remains at its requested energy level. Default anti-aliasing stays enabled. The accepted record retains compact correctness and provenance evidence for every repeat; raw NetCDF worker outputs and RSS samples remain outside the source tree.
-
-## Methodology and interpretation
-
-The scaling suites advance the coefficient state and evaluate `nonlinearFlux` with ordinary production caches retained; those measurements are not complete model steps. The matched interface suite measures fixed RK4 and MATLAB-compatible RK3(2), RK5(4), and RK8(7) integration for the physical nonhydrostatic state. Fixed RK4 uses the largest power-of-two step no greater than the frozen-state CFL=0.25 estimate (128 s for the canonical state); adaptive methods start from the frozen-state CFL=0.5 estimate (approximately 295.794 s) with no user `MaxStep`. The 7168 s interval is 56 fixed steps. Each method runs both a coefficient-only endpoint workload and a composite output graph with one persisted restart record followed by four first-step records for fields, particles, a tracer, and source-linked mooring state; three of those times are interior to the fixed step. Published rows must execute the requested integrator and provider without fallback, match adaptive controls, preserve accepted endpoint trajectories when interior output is added, pass method-appropriate numerical tolerances, and reproduce the complete saved output graph.
-
-Scaling runtime is the median of the recorded post-warmup samples. Matched-interface runtime is the median integration-only time from three independent fresh processes, beginning immediately before integration and ending after required output delivery. **Peak process memory** is the largest externally sampled total process-tree RSS while the worker reports the integration or required output-delivery phase. Process launch, MATLAB startup, model and provider construction, FFT planning, NetCDF inspection, parsing, and cleanup are outside both primary boundaries. Retained, incremental, final, and process-lifetime RSS remain diagnostics.
-
-Only datasets approved in the benchmark catalog are published. Comparisons require the same suite contract, operation, case, domain, resolution, numerical options, random seed, warmup count, and sample count. MATLAB release and update are recorded as part of the toolchain: when two machines use different MATLAB releases, their measurements reflect both hardware and MATLAB implementation differences rather than isolating hardware alone. Missing implementation or suite coverage is reported as unavailable and never as zero runtime or memory.
-
-## Downloadable results
-
-Scaling and compiled-preview datasets use the language-neutral `published-benchmark-v1` contract. The current matched integrator study uses `published-three-interface-v3`; earlier matched workflow records remain available under their versioned contracts. Compact study records retain the requested/active method, work counts, exact standalone integrator storage ledgers, explicit MATLAB storage-opacity notes, fixture and raw-artifact hashes, and the location, SHA-256, and size of a compressed author archive outside the source tree. Verbose RSS samples and worker records are not distributed with the website or package.
+The compact published JSON records contain the measurements and correctness evidence used by this page. Raw worker outputs and RSS samples remain outside the source tree.
 
 <!-- BENCHMARKS:DOWNLOADS:START -->
 <table>
@@ -548,3 +585,5 @@ Scaling and compiled-preview datasets use the language-neutral `published-benchm
   </tbody>
 </table>
 <!-- BENCHMARKS:DOWNLOADS:END -->
+
+</details>
