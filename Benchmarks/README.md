@@ -63,7 +63,7 @@ The detailed raw result and RSS samples are compressed beneath the external sibl
 
 `runWaveVortexObserverCostBenchmark` is a MATLAB authoring study that separates the two costs combined by the frozen v4.3 composite workload. It runs a matched two-by-two case matrix: coefficient state or coefficient-plus-tracer/particle state, crossed with endpoint-only delivery or first-step dense delivery. The coefficient dense-output case writes only interpolated coefficients; the full composite case retains the v4.3 field, mooring, particle, and tracer graph. The accepted v4.3 publication data and its schemas are not inputs or outputs of this study.
 
-Each repeat runs in a fresh MATLAB process and reports integration-plus-delivery elapsed time, phase-scoped process-tree peak and baseline RSS, fixed-RK4 right-hand-side evaluations, scheduled interior output count, output record counts, and the nominal integrated-state size. Construction, deterministic initial-state generation, startup, and cleanup remain outside the timing boundary.
+Each case runs once in a fresh MATLAB process and reports integration-plus-delivery elapsed time, phase-scoped process-tree peak and baseline RSS, fixed-RK4 right-hand-side evaluations, output record counts, and nominal integrated-state size. Construction, deterministic initial-state generation, startup, and cleanup remain outside the timing boundary. Repeat the call when multiple samples are needed.
 
 ```matlab
 addpath("Benchmarks")
@@ -76,11 +76,11 @@ Select one case when investigating it in isolation:
 results = runWaveVortexObserverCostBenchmark(caseIds="integrated-observer-endpoint");
 ```
 
-For MATLAB line-level profiling without the fresh-process wrapper, call the single-case entry point through the shared profiling utility:
+For MATLAB line-level profiling, disable fresh-process isolation and select one case:
 
 ```matlab
 addpath("../OceanKit/tools/profiling","Benchmarks")
-report = profileCodeHotspots(@()runWaveVortexObserverCostBenchmarkCase("composite-dense-output"),projectRoots=pwd);
+report = profileCodeHotspots(@()runWaveVortexObserverCostBenchmark(caseIds="composite-dense-output",shouldUseFreshProcess=false),projectRoots=pwd);
 ```
 
 Normalize a MATLAB artifact with explicit platform identity and repository-relative provenance:
