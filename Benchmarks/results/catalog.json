@@ -49,6 +49,10 @@
   ],
   "interfaceComparisons": [
     {
+      "datasetId": "three-interface--m5-max--20260828T143049Z",
+      "artifact": "Benchmarks/results/published/three-interface--m5-max--20260828T143049Z.json"
+    },
+    {
       "datasetId": "three-interface--m5-max--20260827T151230Z",
       "artifact": "Benchmarks/results/published/three-interface--m5-max--20260827T151230Z.json"
     },

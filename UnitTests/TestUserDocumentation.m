@@ -172,7 +172,7 @@ classdef TestUserDocumentation < matlab.unittest.TestCase
             testCase.verifySubstring(overview,"Compiled MATLAB backend preview")
             testCase.verifySubstring(overview,"Standalone portable runtime")
             testCase.verifySubstring(overview,"[Benchmarks](/benchmarks)")
-            testCase.verifySubstring(benchmarks,"frozen to the accepted issue #312")
+            testCase.verifySubstring(benchmarks,"three-interface--m5-max--20260828T143049Z")
             testCase.verifySubstring(benchmarks,"MATLAB at low resolution")
             testCase.verifySubstring(benchmarks,"build physical understanding")
             testCase.verifySubstring(benchmarks,"added complexity is worthwhile")

@@ -16,7 +16,7 @@ The usual starting point is MATLAB at low resolution: it keeps the model easy to
 
 **Setup.** The benchmark evolves a nonhydrostatic, constant-stratification flow in a 150 km × 150 km × 1.3 km domain, initialized with GM(1) waves and a first-baroclinic red geostrophic spectrum, for 0.12 inertial periods. The numerics use a `256 × 256 × 129` grid and the adaptive `ode78 / RK8(7)` integrator. The model and integrator are fixed while the execution path and output workload vary.
 
-**Conclusion.** Standalone C++ is fastest and uses the least memory for both workloads. MATLAB with the compiled core nearly matches its coefficients-only runtime, but the dense-output speedup is smaller and peak memory remains close to MATLAB builtin.
+**Conclusion.** Standalone C++ is fastest and uses the least memory for both workloads. MATLAB with the compiled core nearly matches its coefficients-only runtime and the v4.3.x observer optimizations narrow the dense-output gap, although peak memory remains close to MATLAB builtin.
 
 <!-- BENCHMARKS:INTERFACE_SUMMARY:START -->
 Published matched interface results will appear here.
@@ -55,7 +55,7 @@ Published integrator results will appear here.
 <details markdown="1">
 <summary>Benchmark conditions, environments, and downloads</summary>
 
-The v4.3 presentation is frozen to the accepted issue #312 Donut record `three-interface--m5-max--20260827T151230Z`; it is release evidence, not a benchmark to refresh during qualification. Comparisons require matching suite contracts, operations, domains, resolutions, numerical options, random seeds, warmup counts, and sample counts. Results from different environments reflect both hardware and toolchain differences.
+The current presentation uses the post-optimization Donut record `three-interface--m5-max--20260828T143049Z`; the accepted v4.3 record remains cataloged as historical evidence. Comparisons require matching suite contracts, operations, domains, resolutions, numerical options, random seeds, warmup counts, and sample counts. Results from different environments reflect both hardware and toolchain differences.
 
 Benchmark tools are authoring utilities and are not installed on the runtime package path. The [benchmark authoring guide](https://github.com/JeffreyEarly/wave-vortex-model/tree/main/Benchmarks) documents suite definitions, measurement boundaries, correctness gates, provenance, and publication. Missing coverage is reported as unavailable, never as zero or extrapolated performance.
 
