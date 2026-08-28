@@ -173,6 +173,36 @@ classdef TestUserDocumentation < matlab.unittest.TestCase
             testCase.verifySubstring(overview,"Standalone portable runtime")
             testCase.verifySubstring(overview,"[Benchmarks](/benchmarks)")
             testCase.verifySubstring(benchmarks,"frozen to the accepted issue #312")
+            testCase.verifySubstring(benchmarks,"MATLAB at low resolution")
+            testCase.verifySubstring(benchmarks,"build physical understanding")
+            testCase.verifySubstring(benchmarks,"added complexity is worthwhile")
+            matlabCppDescription = extractBetween(benchmarks,"## MATLAB vs C++", ...
+                "<!-- BENCHMARKS:INTERFACE_SUMMARY:START -->");
+            testCase.verifySubstring(matlabCppDescription, ...
+                "nonhydrostatic, constant-stratification flow")
+            testCase.verifySubstring(matlabCppDescription,"0.12 inertial periods")
+            testCase.verifySubstring(matlabCppDescription,"256 × 256 × 129")
+            testCase.verifySubstring(matlabCppDescription,"ode78 / RK8(7)")
+            testCase.verifySubstring(matlabCppDescription, ...
+                "execution path and output workload vary")
+            testCase.verifySubstring(matlabCppDescription,"Standalone C++ is fastest")
+            testCase.verifyFalse(contains(matlabCppDescription,"Runtime covers"))
+            testCase.verifyFalse(contains(matlabCppDescription,"fresh processes"))
+            sections = ["MATLAB vs C++" "MATLAB speed scaling" ...
+                "MATLAB memory scaling" "Integrator comparison"];
+            markers = ["INTERFACE_SUMMARY" "SPEED_SCALING" ...
+                "MEMORY_SCALING" "INTEGRATOR_COMPARISON"];
+            for iSection = 1:numel(sections)
+                sectionStart = "## "+sections(iSection);
+                marker = "<!-- BENCHMARKS:"+markers(iSection)+":START -->";
+                sectionIntroduction = extractBetween(benchmarks,sectionStart,marker);
+                testCase.verifySubstring(sectionIntroduction,"**Setup.**")
+                testCase.verifySubstring(sectionIntroduction,"**Conclusion.**")
+            end
+            testCase.verifySubstring(benchmarks,"Horizontal sweeps vary `Nx = Ny`")
+            testCase.verifySubstring(benchmarks,"vertical sweeps vary `Nz`")
+            testCase.verifySubstring(benchmarks,"doubling both horizontal dimensions")
+            testCase.verifySubstring(benchmarks,"varies the integrator down the rows")
             headings = ["## MATLAB vs C++" "## MATLAB speed scaling" ...
                 "## MATLAB memory scaling" "## Integrator comparison"];
             headingLocations = arrayfun(@(heading)strfind(benchmarks,heading),headings);

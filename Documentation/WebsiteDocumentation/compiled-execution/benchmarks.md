@@ -10,11 +10,13 @@ permalink: /benchmarks
 
 # Benchmarks
 
-These frozen, machine-dependent measurements compare WaveVortexModel execution paths and show how ordinary MATLAB execution scales with resolution. MATLAB remains the default implementation; the compiled paths are optional source builds for supported configurations.
+The usual starting point is MATLAB at low resolution: it keeps the model easy to inspect while you build physical understanding and establish that the configuration behaves as intended. Once the science is clear, higher resolutions, different integrators, or compiled execution may be useful. This page summarizes measured runtime and memory tradeoffs to help decide when that added complexity is worthwhile.
 
 ## MATLAB vs C++
 
-The compact comparison uses `ode78 / RK8(7)`, the fastest integrator for every interface and workload in the accepted study. Runtime covers integration and required output delivery; peak memory is the largest sampled total process-tree RSS during that boundary. Startup, model construction, FFT planning, parsing, and cleanup are excluded.
+**Setup.** The benchmark evolves a nonhydrostatic, constant-stratification flow in a 150 km × 150 km × 1.3 km domain, initialized with GM(1) waves and a first-baroclinic red geostrophic spectrum, for 0.12 inertial periods. The numerics use a `256 × 256 × 129` grid and the adaptive `ode78 / RK8(7)` integrator. The model and integrator are fixed while the execution path and output workload vary.
+
+**Conclusion.** Standalone C++ is fastest and uses the least memory for both workloads. MATLAB with the compiled core nearly matches its coefficients-only runtime, but the dense-output speedup is smaller and peak memory remains close to MATLAB builtin.
 
 <!-- BENCHMARKS:INTERFACE_SUMMARY:START -->
 Published matched interface results will appear here.
@@ -22,7 +24,9 @@ Published matched interface results will appear here.
 
 ## MATLAB speed scaling
 
-These plots show median `nonlinearFlux` evaluation time for MATLAB's builtin transforms. The representative plots use the nonhydrostatic constant-stratification transform; expandable tables retain every published transform family and environment.
+**Setup.** These tests evaluate one state-advanced `nonlinearFlux` call using MATLAB's builtin transforms with anti-aliasing enabled. The representative plots use a constant-stratification, nonhydrostatic model in a 15 km × 15 km × 1.3 km domain. Horizontal sweeps vary `Nx = Ny`, holding `Nz = 65` in the standard suite and `Nz = 129` in the large suite; vertical sweeps vary `Nz`, holding `Nx = Ny` at 128 or 512. The model, transform, and operation are otherwise fixed.
+
+**Conclusion.** Horizontal refinement is the stronger runtime constraint: at large resolutions, doubling both horizontal dimensions increases runtime by roughly fourfold, while doubling the vertical resolution increases it by about two to two-and-a-half times.
 
 <!-- BENCHMARKS:SPEED_SCALING:START -->
 Published runtime scaling results will appear here.
@@ -30,7 +34,9 @@ Published runtime scaling results will appear here.
 
 ## MATLAB memory scaling
 
-These plots show peak MATLAB process memory, including the language runtime and numerical libraries, for the same scaling cases.
+**Setup.** These tests repeat the same model, operation, and horizontal and vertical resolution sweeps used above; only the reported metric changes to peak MATLAB process memory, including the language runtime and numerical libraries.
+
+**Conclusion.** Horizontal refinement is also the stronger memory constraint: at large resolutions, doubling both horizontal dimensions increases peak memory by roughly three- to fourfold, while doubling the vertical resolution approximately doubles it.
 
 <!-- BENCHMARKS:MEMORY_SCALING:START -->
 Published memory scaling results will appear here.
@@ -38,7 +44,9 @@ Published memory scaling results will appear here.
 
 ## Integrator comparison
 
-The detailed comparison holds the nonhydrostatic `[256 256 129]` model, numerical controls, hardware, thread policy, and three fresh-process repeats fixed. Runtime and memory winners are identified separately because the fastest interface need not use the least memory.
+**Setup.** This comparison reuses the MATLAB-vs-C++ model, initial condition, 0.12 inertial-period duration, and `256 × 256 × 129` grid. Each table fixes the output workload, varies the integrator down the rows, and varies the execution path across the columns; the forcing and anti-aliasing remain fixed. Runtime and memory winners are identified independently within each execution-path column.
+
+**Conclusion.** `ode78 / RK8(7)` is fastest for every execution path in both workloads, while fixed RK4 uses the least peak memory. In this experiment, `ode23 / RK3(2)` is substantially slower without using less memory than fixed RK4.
 
 <!-- BENCHMARKS:INTEGRATOR_COMPARISON:START -->
 Published integrator results will appear here.
