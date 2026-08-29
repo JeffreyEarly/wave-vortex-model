@@ -85,7 +85,8 @@
         "inputFieldFamilies": {"type": "array", "minItems": 15, "maxItems": 15, "items": {"type": "integer", "minimum": 0, "maximum": 1}},
         "targetNames": {"const": ["Fu", "Fv", "Fw", "Feta"]},
         "targetFieldFamilies": {"type": "array", "minItems": 4, "maxItems": 4, "items": {"type": "integer", "minimum": 0, "maximum": 1}},
-        "groupCount": {"type": "integer", "minimum": 1}
+        "groupCount": {"type": "integer", "minimum": 1},
+        "groupRule": {"const": "WVM floating K^2-unique order with nondecreasing integer k^2+l^2 diagnostic keys; repeated diagnostic keys permitted"}
       }
     },
     "derivativeConvention": {"type": "string", "minLength": 1},

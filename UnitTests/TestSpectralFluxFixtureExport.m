@@ -25,6 +25,7 @@ classdef TestSpectralFluxFixtureExport < matlab.unittest.TestCase
             testCase.verifyEqual(manifest.operatorContract.familyIds,["wave-f" "wave-g"]);
             testCase.verifyEqual(manifest.operatorContract.inputFieldFamilies,uint32([0 0 1 0 0 1 0 0 1 1 1 0 1 1 0]));
             testCase.verifyEqual(manifest.operatorContract.targetFieldFamilies,uint32([0 0 1 1]));
+            testCase.verifyEqual(manifest.operatorContract.groupRule,"WVM floating K^2-unique order with nondecreasing integer k^2+l^2 diagnostic keys; repeated diagnostic keys permitted");
             testCase.verifyEqual(numel(manifest.payloads),8);
 
             decoded = jsondecode(fileread(fullfile(outputDirectory,"manifest.json")));

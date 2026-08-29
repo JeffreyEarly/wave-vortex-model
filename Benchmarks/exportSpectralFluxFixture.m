@@ -19,7 +19,7 @@ arguments (Output)
 end
 
 if options.Nxyz(1) ~= options.Nxyz(2) || options.Lxyz(1) ~= options.Lxyz(2)
-    error("WaveVortexBenchmark:SpectralFluxFixtureRequiresSquareDomain","The spectral-flux fixture requires equal horizontal grid counts and domain lengths so integer K-squared groups identify the WVM operator family exactly.")
+    error("WaveVortexBenchmark:SpectralFluxFixtureRequiresSquareDomain","The spectral-flux fixture requires equal horizontal grid counts and domain lengths so integer k-squared-plus-l-squared keys diagnose the WVM K-squared operator groups.")
 end
 if mod(options.Nxyz(1),2) ~= 0 || options.Nxyz(3) < 4
     error("WaveVortexBenchmark:InvalidSpectralFluxFixtureSize","The spectral-flux fixture requires an even horizontal grid and Nz >= 4.")
@@ -66,6 +66,9 @@ for iGroup = 1:groupCount
 end
 if any(diff(double(groupIndices)) < 0) || ~isequal(unique(double(groupIndices),"stable").',0:groupCount-1)
     error("WaveVortexBenchmark:SpectralFluxFixtureGroupOrder","WVM K-squared groups must be contiguous in radial mode order.")
+end
+if any(diff(groupKeys) < 0)
+    error("WaveVortexBenchmark:SpectralFluxFixtureGroupKeys","WVM K-squared diagnostic keys must be nondecreasing. Repeated integer keys are permitted when distinct floating K-squared values identify distinct WVM matrices.")
 end
 
 familyIds = ["wave-f" "wave-g"];
@@ -143,7 +146,7 @@ manifest = struct( ...
     "retention",struct("horizontalPolicy","radial-two-thirds","horizontalCutoffFraction",2/3,"verticalPolicy","floor(2*(Nz-1)/3)","verticalRetainedFraction",Nj/(Nz-1)), ...
     "modeOrder",struct("logicalAxes",["k" "l" "j" "field"],"horizontal","WVM radial magnitude then k then l","vertical","j ascending from zero"), ...
     "normalization",struct("horizontalForward","raw FFT coefficients","horizontalInverse","raw inverse FFT followed by division by Nx*Ny before each physical factor","pointwiseScale",inverseScale), ...
-    "operatorContract",struct("familyIds",familyIds,"inputFieldNames",inputFieldNames,"inputFieldFamilies",inputFieldFamilies,"targetNames",targetNames,"targetFieldFamilies",targetFieldFamilies,"groupCount",groupCount,"groupRule","exact integer k^2+l^2 on a square horizontal domain"), ...
+    "operatorContract",struct("familyIds",familyIds,"inputFieldNames",inputFieldNames,"inputFieldFamilies",inputFieldFamilies,"targetNames",targetNames,"targetFieldFamilies",targetFieldFamilies,"groupCount",groupCount,"groupRule","WVM floating K^2-unique order with nondecreasing integer k^2+l^2 diagnostic keys; repeated diagnostic keys permitted"), ...
     "derivativeConvention","Input slots 0..2 are U,V,W; slots 3+3*t..5+3*t are q[t].x,q[t].y,q[t].z. q[3].z denotes the complete eta vertical-advection factor, including eta*dLnN2 when assembled by WVM.", ...
     "oracle",struct("identity","WVM MATLAB Fourier transforms plus WVM Fw/Gw projection matrices and direct -(U*qx+V*qy+W*qz) evaluation","maximumScaleNormalizedErrorTolerance",1e-12,"relativeL2ErrorTolerance",1e-12), ...
     "payloads",payloads);
