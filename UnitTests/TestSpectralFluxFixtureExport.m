@@ -15,6 +15,7 @@ classdef TestSpectralFluxFixtureExport < matlab.unittest.TestCase
         function exportsVersionedMappedOperatorFixture(testCase)
             folderFixture = testCase.applyFixture(matlab.unittest.fixtures.TemporaryFolderFixture);
             outputDirectory = fullfile(string(folderFixture.Folder),"fixture");
+            capacity = spectralFluxFixtureCapacity(Nxyz=[8 8 7]);
             manifest = exportSpectralFluxFixture(outputDirectory,Nxyz=[8 8 7],seed=19);
 
             testCase.verifyEqual(manifest.schema,"spectral-flux-fixture-v1");
@@ -27,6 +28,13 @@ classdef TestSpectralFluxFixtureExport < matlab.unittest.TestCase
             testCase.verifyEqual(manifest.operatorContract.targetFieldFamilies,uint32([0 0 1 1]));
             testCase.verifyEqual(manifest.operatorContract.groupRule,"WVM floating K^2-unique order with nondecreasing integer k^2+l^2 diagnostic keys; repeated diagnostic keys permitted");
             testCase.verifyEqual(numel(manifest.payloads),8);
+            testCase.verifyEqual(capacity.schema,"spectral-flux-fixture-capacity-v1");
+            testCase.verifyEqual(capacity.workload.Nkl,manifest.workload.Nkl);
+            testCase.verifyEqual(capacity.workload.Nj,manifest.workload.Nj);
+            testCase.verifyEqual(capacity.workload.groupCount,manifest.operatorContract.groupCount);
+            testCase.verifyEqual(capacity.payloadBytes.sourceFixtureTotal,sum([manifest.payloads.byteCount]));
+            testCase.verifyGreaterThan(capacity.exporterBytes.recommendedPhysicalMemory,capacity.exporterBytes.estimatedPeak);
+            testCase.verifyGreaterThan(capacity.diskBytes.recommendedFreeForSourceAndPrepared,capacity.payloadBytes.sourceAndPreparedApproximate);
 
             decoded = jsondecode(fileread(fullfile(outputDirectory,"manifest.json")));
             testCase.verifyEqual(string(decoded.schema),"spectral-flux-fixture-v1");

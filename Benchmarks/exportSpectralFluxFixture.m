@@ -77,41 +77,36 @@ targetNames = ["Fu" "Fv" "Fw" "Feta"];
 inputFieldFamilies = uint32([0 0 1 0 0 1 0 0 1 1 1 0 1 1 0]);
 targetFieldFamilies = uint32([0 0 1 1]);
 
-inverseOperators = zeros(Nz,Nj,numel(familyIds),groupCount);
-forwardOperators = zeros(Nj,Nz,numel(familyIds),groupCount);
-for iGroup = 1:groupCount
-    iMode = find(groupIndices == iGroup-1,1);
-    kMode = double(modeKeys(1,iMode));
-    lMode = double(modeKeys(2,iMode));
-    inverseOperators(:,:,1,iGroup) = wvt.FwInvMatrix(kMode,lMode);
-    inverseOperators(:,:,2,iGroup) = wvt.GwInvMatrix(kMode,lMode);
-    forwardOperators(:,:,1,iGroup) = wvt.FwMatrix(kMode,lMode);
-    forwardOperators(:,:,2,iGroup) = wvt.GwMatrix(kMode,lMode);
+modalInputs = complex(zeros(Nj,numel(inputFieldNames),Nkl));
+for iField = 1:numel(inputFieldNames)
+    realPart = (2*rand(Nj,1,Nkl)-1)/8;
+    imaginaryPart = (2*rand(Nj,1,Nkl)-1)/8;
+    modalInputs(:,iField,:) = complex(realPart,imaginaryPart);
 end
-
-modalInputs = complex(2*rand(Nj,numel(inputFieldNames),Nkl)-1,2*rand(Nj,numel(inputFieldNames),Nkl)-1)/8;
 dcMode = find(modeKeys(1,:) == 0 & modeKeys(2,:) == 0,1);
 modalInputs(:,:,dcMode) = real(modalInputs(:,:,dcMode));
 horizontalPointCount = Nx*Ny;
-physicalInputs = zeros(Nx,Ny,Nz,numel(inputFieldNames));
-for iField = 1:numel(inputFieldNames)
-    spectrum = reconstructSpectrum(modalInputs,iField,inputFieldFamilies(iField),inverseOperators,groupIndices);
-    physicalInputs(:,:,:,iField) = wvt.transformToSpatialDomainWithFourier(spectrum);
+sharedPhysical = zeros(Nx,Ny,Nz,3);
+for iField = 1:3
+    spectrum = reconstructSpectrum(wvt,modalInputs,iField,inputFieldFamilies(iField));
+    sharedPhysical(:,:,:,iField) = wvt.transformToSpatialDomainWithFourier(spectrum);
 end
 
-U = physicalInputs(:,:,:,1);
-V = physicalInputs(:,:,:,2);
-W = physicalInputs(:,:,:,3);
+derivativePhysical = zeros(Nx,Ny,Nz,3);
 modalTargets = complex(zeros(Nj,numel(targetNames),Nkl));
 inverseScale = 1/(horizontalPointCount*horizontalPointCount);
 for iTarget = 1:numel(targetNames)
     firstDerivative = 4+3*(iTarget-1);
-    qx = physicalInputs(:,:,:,firstDerivative);
-    qy = physicalInputs(:,:,:,firstDerivative+1);
-    qz = physicalInputs(:,:,:,firstDerivative+2);
-    target = -inverseScale*(U.*qx+V.*qy+W.*qz);
+    for iDerivative = 1:3
+        iField = firstDerivative+iDerivative-1;
+        spectrum = reconstructSpectrum(wvt,modalInputs,iField,inputFieldFamilies(iField));
+        derivativePhysical(:,:,:,iDerivative) = wvt.transformToSpatialDomainWithFourier(spectrum);
+    end
+    target = sharedPhysical(:,:,:,1).*derivativePhysical(:,:,:,1);
+    target = target+sharedPhysical(:,:,:,2).*derivativePhysical(:,:,:,2);
+    target = -inverseScale*(target+sharedPhysical(:,:,:,3).*derivativePhysical(:,:,:,3));
     rawSpectrum = horizontalPointCount*wvt.transformFromSpatialDomainWithFourier(target);
-    modalTargets(:,iTarget,:) = projectSpectrum(rawSpectrum,targetFieldFamilies(iTarget),forwardOperators,groupIndices);
+    modalTargets(:,iTarget,:) = projectSpectrum(wvt,rawSpectrum,targetFieldFamilies(iTarget));
 end
 
 payloads = repmat(emptyPayloadRecord(),0,1);
@@ -119,8 +114,8 @@ payloads(end+1) = writePayload(outputDirectory,"horizontal-mode-keys.i32le",mode
 payloads(end+1) = writePayload(outputDirectory,"vertical-mode-keys.i32le",int32(wvt.j(:)),"int32-le","j",Nj);
 payloads(end+1) = writePayload(outputDirectory,"mode-group-indices.u32le",groupIndices,"uint32-le","mode",Nkl);
 payloads(end+1) = writePayload(outputDirectory,"group-keys.u64le",groupKeys,"uint64-le","group",groupCount);
-payloads(end+1) = writePayload(outputDirectory,"inverse-operators.f64le",inverseOperators,"float64-le",["z" "j" "operatorFamily" "group"],[Nz Nj numel(familyIds) groupCount]);
-payloads(end+1) = writePayload(outputDirectory,"forward-operators.f64le",forwardOperators,"float64-le",["j" "z" "operatorFamily" "group"],[Nj Nz numel(familyIds) groupCount]);
+payloads(end+1) = writeOperatorPayload(outputDirectory,"inverse-operators.f64le",wvt,"inverse",["z" "j" "operatorFamily" "group"],[Nz Nj numel(familyIds) groupCount]);
+payloads(end+1) = writeOperatorPayload(outputDirectory,"forward-operators.f64le",wvt,"forward",["j" "z" "operatorFamily" "group"],[Nj Nz numel(familyIds) groupCount]);
 payloads(end+1) = writeComplexPayload(outputDirectory,"modal-inputs.c128le",modalInputs,["j" "inputField" "mode"],[Nj numel(inputFieldNames) Nkl]);
 payloads(end+1) = writeComplexPayload(outputDirectory,"expected-modal-targets.c128le",modalTargets,["j" "target" "mode"],[Nj numel(targetNames) Nkl]);
 
@@ -156,23 +151,39 @@ writeText(manifestPath,string(jsonencode(manifest,PrettyPrint=true))+newline);
 clear stateCleanup
 end
 
-function spectrum = reconstructSpectrum(modalInputs,iField,familyIndex,inverseOperators,groupIndices)
-Nz = size(inverseOperators,1);
+function spectrum = reconstructSpectrum(wvt,modalInputs,iField,familyIndex)
+Nz = wvt.Nz;
 Nkl = size(modalInputs,3);
 spectrum = complex(zeros(Nz,Nkl));
-for iGroup = 1:size(inverseOperators,4)
-    indices = find(groupIndices == iGroup-1);
-    spectrum(:,indices) = inverseOperators(:,:,double(familyIndex)+1,iGroup)*reshape(modalInputs(:,iField,indices),size(modalInputs,1),[]);
+for iGroup = 1:wvt.nK2unique
+    indices = wvt.K2uniqueK2Map{iGroup};
+    spectrum(:,indices) = inverseOperator(wvt,familyIndex,iGroup)*reshape(modalInputs(:,iField,indices),size(modalInputs,1),[]);
 end
 end
 
-function modalTarget = projectSpectrum(spectrum,familyIndex,forwardOperators,groupIndices)
-Nj = size(forwardOperators,1);
+function modalTarget = projectSpectrum(wvt,spectrum,familyIndex)
+Nj = wvt.Nj;
 Nkl = size(spectrum,2);
 modalTarget = complex(zeros(Nj,1,Nkl));
-for iGroup = 1:size(forwardOperators,4)
-    indices = find(groupIndices == iGroup-1);
-    modalTarget(:,1,indices) = reshape(forwardOperators(:,:,double(familyIndex)+1,iGroup)*spectrum(:,indices),Nj,1,[]);
+for iGroup = 1:wvt.nK2unique
+    indices = wvt.K2uniqueK2Map{iGroup};
+    modalTarget(:,1,indices) = reshape(forwardOperator(wvt,familyIndex,iGroup)*spectrum(:,indices),Nj,1,[]);
+end
+end
+
+function operator = inverseOperator(wvt,familyIndex,iGroup)
+if familyIndex == 0
+    operator = shiftdim(wvt.Ppm(:,iGroup),1).*wvt.PFpmInv(:,:,iGroup);
+else
+    operator = shiftdim(wvt.Qpm(:,iGroup),1).*wvt.QGpmInv(:,:,iGroup);
+end
+end
+
+function operator = forwardOperator(wvt,familyIndex,iGroup)
+if familyIndex == 0
+    operator = wvt.PFpm(:,:,iGroup)./wvt.Ppm(:,iGroup);
+else
+    operator = wvt.QGpm(:,:,iGroup)./wvt.Qpm(:,iGroup);
 end
 end
 
@@ -199,15 +210,47 @@ if fileId < 0
     error("WaveVortexBenchmark:SpectralFluxFixtureWriteFailed","Unable to write %s.",pathname)
 end
 cleanup = onCleanup(@()fclose(fileId));
-interleaved = zeros(2,numel(value));
-interleaved(1,:) = real(value(:));
-interleaved(2,:) = imag(value(:));
-written = fwrite(fileId,interleaved,"double");
-if written ~= 2*numel(value)
-    error("WaveVortexBenchmark:SpectralFluxFixtureWriteFailed","Expected to write %d scalar elements to %s but wrote %d.",2*numel(value),pathname,written)
+chunkElements = 2^20;
+totalWritten = 0;
+for firstElement = 1:chunkElements:numel(value)
+    lastElement = min(firstElement+chunkElements-1,numel(value));
+    chunk = value(firstElement:lastElement);
+    interleaved = zeros(2,numel(chunk));
+    interleaved(1,:) = real(chunk);
+    interleaved(2,:) = imag(chunk);
+    totalWritten = totalWritten+fwrite(fileId,interleaved,"double");
+end
+if totalWritten ~= 2*numel(value)
+    error("WaveVortexBenchmark:SpectralFluxFixtureWriteFailed","Expected to write %d scalar elements to %s but wrote %d.",2*numel(value),pathname,totalWritten)
 end
 clear cleanup
 payload = payloadRecord(pathname,fileName,"complex-float64-interleaved-le",axes,shape,true);
+end
+
+function payload = writeOperatorPayload(outputDirectory,fileName,wvt,direction,axes,shape)
+pathname = fullfile(outputDirectory,fileName);
+fileId = fopen(pathname,"w","ieee-le");
+if fileId < 0
+    error("WaveVortexBenchmark:SpectralFluxFixtureWriteFailed","Unable to write %s.",pathname)
+end
+cleanup = onCleanup(@()fclose(fileId));
+totalWritten = 0;
+for iGroup = 1:wvt.nK2unique
+    for familyIndex = 0:1
+        if direction == "inverse"
+            operator = inverseOperator(wvt,familyIndex,iGroup);
+        else
+            operator = forwardOperator(wvt,familyIndex,iGroup);
+        end
+        totalWritten = totalWritten+fwrite(fileId,operator,"double");
+    end
+end
+expectedElements = prod(shape);
+if totalWritten ~= expectedElements
+    error("WaveVortexBenchmark:SpectralFluxFixtureWriteFailed","Expected to write %d operator elements to %s but wrote %d.",expectedElements,pathname,totalWritten)
+end
+clear cleanup
+payload = payloadRecord(pathname,fileName,"float64-le",axes,shape,false);
 end
 
 function payload = payloadRecord(pathname,fileName,elementType,axes,shape,isComplex)
@@ -254,9 +297,14 @@ if fileId < 0
     error("WaveVortexBenchmark:SpectralFluxFixtureHashFailed","Unable to read %s.",pathname)
 end
 cleanup = onCleanup(@()fclose(fileId));
-bytes = fread(fileId,Inf,"*uint8");
 digest = java.security.MessageDigest.getInstance("SHA-256");
-digest.update(bytes);
+while true
+    bytes = fread(fileId,2^24,"*uint8");
+    if isempty(bytes)
+        break
+    end
+    digest.update(bytes);
+end
 hashBytes = typecast(digest.digest(),"uint8");
 hash = lower(string(reshape(dec2hex(hashBytes,2).',1,[])));
 clear cleanup
