@@ -34,7 +34,13 @@ Nj = floor(2*(Nz-1)/3);
 geometry = WVGeometryDoublyPeriodic(options.Lxyz(1:2),options.Nxyz(1:2),Nz=1,shouldAntialias=true,shouldExcludeNyquist=true,shouldExcludeConjugates=true,conjugateDimension=2);
 K2 = reshape(sqrt(geometry.k.^2+geometry.l.^2).^2,[],1);
 Nkl = geometry.Nkl;
-groupCount = numel(unique(K2));
+[~,~,groupIndices] = unique(K2);
+groupCount = max(groupIndices);
+modeKeys = [geometry.kMode_wv(:) geometry.lMode_wv(:)];
+integerK2 = sum(modeKeys.*modeKeys,2);
+[~,canonicalOrder] = sortrows([integerK2 modeKeys],[1 2 3]);
+canonicalGroups = groupIndices(canonicalOrder);
+canonicalGroupSegmentCount = 1+sum(diff(canonicalGroups) ~= 0);
 
 bytesPerDouble = 8;
 bytesPerComplex = 16;
@@ -59,7 +65,7 @@ estimatedExporterPeakBytes = estimatedTransformResidentBytes+estimatedExporterAd
 
 capacity = struct( ...
     "schema","spectral-flux-fixture-capacity-v1", ...
-    "workload",struct("Nx",Nx,"Ny",Ny,"Nz",Nz,"Nkl",Nkl,"Nj",Nj,"groupCount",groupCount), ...
+    "workload",struct("Nx",Nx,"Ny",Ny,"Nz",Nz,"Nkl",Nkl,"Nj",Nj,"sourceGroupCount",groupCount,"canonicalGroupSegmentCount",canonicalGroupSegmentCount), ...
     "payloadBytes",struct("metadata",metadataPayloadBytes,"verticalOperators",operatorPayloadBytes,"modalInputs",modalInputBytes,"modalTargets",modalTargetBytes,"sourceFixtureTotal",sourcePayloadBytes,"preparedFixtureApproximate",sourcePayloadBytes,"sourceAndPreparedApproximate",2*sourcePayloadBytes), ...
     "exporterBytes",struct("estimatedWvmTransformResident",estimatedTransformResidentBytes,"estimatedAdditionalLive",estimatedExporterAdditionalLiveBytes,"estimatedPeak",estimatedExporterPeakBytes,"recommendedPhysicalMemory",ceil(1.25*estimatedExporterPeakBytes)), ...
     "diskBytes",struct("recommendedFreeForSourceAndPrepared",ceil(1.10*2*sourcePayloadBytes)), ...

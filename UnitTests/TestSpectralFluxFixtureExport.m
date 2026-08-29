@@ -31,7 +31,8 @@ classdef TestSpectralFluxFixtureExport < matlab.unittest.TestCase
             testCase.verifyEqual(capacity.schema,"spectral-flux-fixture-capacity-v1");
             testCase.verifyEqual(capacity.workload.Nkl,manifest.workload.Nkl);
             testCase.verifyEqual(capacity.workload.Nj,manifest.workload.Nj);
-            testCase.verifyEqual(capacity.workload.groupCount,manifest.operatorContract.groupCount);
+            testCase.verifyEqual(capacity.workload.sourceGroupCount,manifest.operatorContract.groupCount);
+            testCase.verifyGreaterThanOrEqual(capacity.workload.canonicalGroupSegmentCount,capacity.workload.sourceGroupCount);
             testCase.verifyEqual(capacity.payloadBytes.sourceFixtureTotal,sum([manifest.payloads.byteCount]));
             testCase.verifyGreaterThan(capacity.exporterBytes.recommendedPhysicalMemory,capacity.exporterBytes.estimatedPeak);
             testCase.verifyGreaterThan(capacity.diskBytes.recommendedFreeForSourceAndPrepared,capacity.payloadBytes.sourceAndPreparedApproximate);
