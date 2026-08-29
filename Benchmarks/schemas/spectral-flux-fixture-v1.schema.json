@@ -1,0 +1,117 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/JeffreyEarly/wave-vortex-model/Benchmarks/schemas/spectral-flux-fixture-v1.schema.json",
+  "title": "WVM spectral-flux fixture v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "fixtureId",
+    "status",
+    "authoritative",
+    "createdAtUtc",
+    "numericType",
+    "byteOrder",
+    "provenance",
+    "generator",
+    "workload",
+    "retention",
+    "modeOrder",
+    "normalization",
+    "operatorContract",
+    "derivativeConvention",
+    "oracle",
+    "payloads"
+  ],
+  "properties": {
+    "schema": {"const": "spectral-flux-fixture-v1"},
+    "fixtureId": {"type": "string", "minLength": 1},
+    "status": {"enum": ["authoritative-wvm-export", "invalid"]},
+    "authoritative": {"type": "boolean"},
+    "createdAtUtc": {"type": "string", "format": "date-time"},
+    "numericType": {"const": "float64"},
+    "byteOrder": {"const": "little-endian"},
+    "provenance": {
+      "type": "object",
+      "required": ["repository", "commit", "tree", "dirtyTree", "matlabVersion", "matlabRelease", "architecture"],
+      "properties": {
+        "repository": {"const": "JeffreyEarly/wave-vortex-model"},
+        "commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "tree": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "dirtyTree": {"type": "boolean"}
+      }
+    },
+    "generator": {
+      "type": "object",
+      "required": ["path", "command"],
+      "properties": {
+        "path": {"const": "Benchmarks/exportSpectralFluxFixture.m"},
+        "command": {"type": "string", "minLength": 1}
+      }
+    },
+    "workload": {
+      "type": "object",
+      "required": ["Nx", "Ny", "Nz", "H", "Nkl", "Nj", "fields", "Lxyz", "latitude"],
+      "properties": {
+        "Nx": {"type": "integer", "minimum": 2},
+        "Ny": {"type": "integer", "minimum": 2},
+        "Nz": {"type": "integer", "minimum": 4},
+        "H": {"type": "integer", "minimum": 1},
+        "Nkl": {"type": "integer", "minimum": 1},
+        "Nj": {"type": "integer", "minimum": 1},
+        "fields": {"const": 4},
+        "Lxyz": {"type": "array", "minItems": 3, "maxItems": 3, "items": {"type": "number", "exclusiveMinimum": 0}}
+      }
+    },
+    "retention": {
+      "type": "object",
+      "required": ["horizontalPolicy", "horizontalCutoffFraction", "verticalPolicy", "verticalRetainedFraction"],
+      "properties": {
+        "horizontalPolicy": {"const": "radial-two-thirds"},
+        "verticalPolicy": {"const": "floor(2*(Nz-1)/3)"}
+      }
+    },
+    "modeOrder": {"type": "object"},
+    "normalization": {
+      "type": "object",
+      "required": ["horizontalForward", "horizontalInverse", "pointwiseScale"]
+    },
+    "operatorContract": {
+      "type": "object",
+      "required": ["familyIds", "inputFieldNames", "inputFieldFamilies", "targetNames", "targetFieldFamilies", "groupCount", "groupRule"],
+      "properties": {
+        "familyIds": {"const": ["wave-f", "wave-g"]},
+        "inputFieldNames": {"type": "array", "minItems": 15, "maxItems": 15, "uniqueItems": true, "items": {"type": "string"}},
+        "inputFieldFamilies": {"type": "array", "minItems": 15, "maxItems": 15, "items": {"type": "integer", "minimum": 0, "maximum": 1}},
+        "targetNames": {"const": ["Fu", "Fv", "Fw", "Feta"]},
+        "targetFieldFamilies": {"type": "array", "minItems": 4, "maxItems": 4, "items": {"type": "integer", "minimum": 0, "maximum": 1}},
+        "groupCount": {"type": "integer", "minimum": 1}
+      }
+    },
+    "derivativeConvention": {"type": "string", "minLength": 1},
+    "oracle": {
+      "type": "object",
+      "required": ["identity", "maximumScaleNormalizedErrorTolerance", "relativeL2ErrorTolerance"]
+    },
+    "payloads": {
+      "type": "array",
+      "minItems": 8,
+      "maxItems": 8,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "byteCount", "elementType", "logicalAxes", "shape", "stridesElements", "isComplex", "sha256"],
+        "properties": {
+          "path": {"type": "string", "pattern": "^[A-Za-z0-9._-]+$"},
+          "byteCount": {"type": "integer", "minimum": 1},
+          "elementType": {"enum": ["int32-le", "uint32-le", "uint64-le", "float64-le", "complex-float64-interleaved-le"]},
+          "logicalAxes": {"oneOf": [{"type": "string"}, {"type": "array", "items": {"type": "string"}}]},
+          "shape": {"oneOf": [{"type": "integer", "minimum": 1}, {"type": "array", "items": {"type": "integer", "minimum": 1}}]},
+          "stridesElements": {"oneOf": [{"type": "integer", "minimum": 1}, {"type": "array", "items": {"type": "integer", "minimum": 1}}]},
+          "isComplex": {"type": "boolean"},
+          "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+        }
+      }
+    }
+  }
+}
