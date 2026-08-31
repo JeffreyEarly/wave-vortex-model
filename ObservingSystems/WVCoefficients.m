@@ -8,6 +8,11 @@ classdef WVCoefficients < WVObservingSystem
         absTolerance
     end
 
+    properties (Access=private)
+        coefficientFamilyNames (1,:) string = strings(1,0)
+        coefficientFamilyShapes (1,:) cell = cell(1,0)
+    end
+
     methods
         function self = WVCoefficients(model,options)
             %create a new observing system
@@ -28,7 +33,10 @@ classdef WVCoefficients < WVObservingSystem
             self@WVObservingSystem(model,"wave-vortex coefficient flux");
             self.absTolerance = options.absTolerance;
 
-            self.nFluxComponents = length(self.wvt.coefficientStateAnnotations());
+            annotations = self.wvt.coefficientStateAnnotations();
+            self.coefficientFamilyNames = string({annotations.name});
+            self.coefficientFamilyShapes = arrayfun(@(annotation)size(self.wvt.(annotation.name)),annotations,UniformOutput=false);
+            self.nFluxComponents = length(annotations);
         end
 
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -39,10 +47,9 @@ classdef WVCoefficients < WVObservingSystem
         
         function nArray = lengthOfFluxComponents(self)
             % return an array containing the numel of each flux component.
-            annotations = self.wvt.coefficientStateAnnotations();
-            nArray = zeros(length(annotations),1);
-            for iFamily = 1:length(annotations)
-                nArray(iFamily) = numel(self.wvt.(annotations(iFamily).name));
+            nArray = zeros(length(self.coefficientFamilyShapes),1);
+            for iFamily = 1:length(self.coefficientFamilyShapes)
+                nArray(iFamily) = prod(self.coefficientFamilyShapes{iFamily});
             end
         end
 
@@ -53,8 +60,7 @@ classdef WVCoefficients < WVObservingSystem
             % - Declaration: contract = portableImplementationContract(self)
             % - Returns contract: versioned data-only observer contract
             % - Developer: true
-            annotations = self.wvt.coefficientStateAnnotations();
-            familyNames = string({annotations.name});
+            familyNames = self.coefficientFamilyNames;
             payload = struct("name",string(self.name),"absTolerance",double(self.absTolerance),"coefficientFamilies",familyNames);
             if isequal(familyNames,["Ap" "Am" "A0"]) || isequal(familyNames,"A0")
                 contract = self.supportedPortableImplementationContract("WVCoefficients",payload);
@@ -64,39 +70,35 @@ classdef WVCoefficients < WVObservingSystem
         end
 
         function Y0 = absErrorTolerance(self)
-            annotations = self.wvt.coefficientStateAnnotations();
             toleranceState = self.wvt.coefficientAbsoluteTolerances(self.absTolerance);
-            Y0 = cell(length(annotations),1);
-            for iFamily = 1:length(annotations)
-                Y0{iFamily} = toleranceState.(annotations(iFamily).name);
+            Y0 = cell(length(self.coefficientFamilyNames),1);
+            for iFamily = 1:length(self.coefficientFamilyNames)
+                Y0{iFamily} = toleranceState.(self.coefficientFamilyNames(iFamily));
             end
         end
 
         function Y0 = initialConditions(self)
-            annotations = self.wvt.coefficientStateAnnotations();
-            Y0 = cell(length(annotations),1);
-            for iFamily = 1:length(annotations)
-                Y0{iFamily} = self.wvt.(annotations(iFamily).name);
+            Y0 = cell(length(self.coefficientFamilyNames),1);
+            for iFamily = 1:length(self.coefficientFamilyNames)
+                Y0{iFamily} = self.wvt.(self.coefficientFamilyNames(iFamily));
             end
         end
 
         function nlF = fluxAtTime(self,t,y0)
             self.updateIntegratorValues(t,y0)
 
-            annotations = self.wvt.coefficientStateAnnotations();
             tendency = self.wvt.coefficientTendency();
-            nlF = cell(1,length(annotations));
-            for iFamily = 1:length(annotations)
-                nlF{iFamily} = tendency.(annotations(iFamily).name);
+            nlF = cell(1,length(self.coefficientFamilyNames));
+            for iFamily = 1:length(self.coefficientFamilyNames)
+                nlF{iFamily} = tendency.(self.coefficientFamilyNames(iFamily));
             end
         end
 
         function updateIntegratorValues(self,t,y0)
             self.wvt.t = t;
-            annotations = self.wvt.coefficientStateAnnotations();
-            for iFamily = 1:length(annotations)
-                name = annotations(iFamily).name;
-                self.wvt.(name) = reshape(y0{iFamily},size(self.wvt.(name)));
+            for iFamily = 1:length(self.coefficientFamilyNames)
+                name = self.coefficientFamilyNames(iFamily);
+                self.wvt.(name) = reshape(y0{iFamily},self.coefficientFamilyShapes{iFamily});
             end
         end
 

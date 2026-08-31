@@ -83,6 +83,19 @@ addpath("../OceanKit/tools/profiling","Benchmarks")
 report = profileCodeHotspots(@()runWaveVortexObserverCostBenchmark(caseIds="composite-dense-output",shouldUseFreshProcess=false),projectRoots=pwd);
 ```
 
+### Free-surface QG coefficient backing
+
+`runFreeSurfaceQGCoefficientStorageBenchmark` compares the production separate `Ag_q`, `Ag_0`, and `Amda` integrator entries with an authoring-only packed adapter. Both candidates cache immutable annotation metadata at construction and cross the same canonical public setters, so the study isolates backing and integrator behavior rather than repeated descriptor construction.
+
+The canonical matrix covers zero, one, and two active endpoints at `64 × 64 × 33` and `256 × 256 × 129`. It times warmed reconstruction, projection, complete nonlinear RHS, copy/update, and fixed RK4; checks exact candidate agreement; records exact coefficient payload bytes; and samples phase-scoped process-tree RSS in fresh MATLAB workers. Packed storage is selected only if every fixed-RK4 95% bootstrap interval is wholly below the 3% practical threshold.
+
+```matlab
+addpath("Benchmarks")
+results = runFreeSurfaceQGCoefficientStorageBenchmark;
+```
+
+The accepted M5 Max/R2026a artifact is stored under `results/reference/free-surface-qg-coefficient-storage-v1-m5-max-r2026a`. It retains separate integrator entries. Representative cases use a matched certified `Nj=10` prefix because #346's automatic MDA refit is not yet reproducible at the APV-limited common count; the default InternalModes quadratic-aliasing tolerance remains `0.1` and every certified maximum is recorded in the artifact.
+
 Normalize a MATLAB artifact with explicit platform identity and repository-relative provenance:
 
 ```matlab

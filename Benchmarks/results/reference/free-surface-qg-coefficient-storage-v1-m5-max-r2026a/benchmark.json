@@ -1,0 +1,1970 @@
+{
+  "studyId": "free-surface-qg-coefficient-storage-v1",
+  "environment": {
+    "matlabRelease": "2026a",
+    "architecture": "maca64",
+    "computer": "MACA64",
+    "timestampUTC": "2026-08-31T23:03:10Z"
+  },
+  "configuration": {
+    "gridIds": [
+      "small",
+      "representative"
+    ],
+    "endpointIds": [
+      "zero",
+      "one",
+      "two"
+    ],
+    "strategyIds": [
+      "separate",
+      "packed"
+    ],
+    "seed": 34322,
+    "smallNxyz": [
+      64,
+      64,
+      33
+    ],
+    "representativeNxyz": [
+      256,
+      256,
+      129
+    ],
+    "representativeNj": 10,
+    "Lxyz": [
+      150000,
+      150000,
+      1000
+    ],
+    "warmupCount": 1,
+    "sampleCount": 5,
+    "bootstrapCount": 10000,
+    "minimumMeaningfulSpeedup": 0.03
+  },
+  "cases": [
+    {
+      "id": "small-zero-endpoint",
+      "gridId": "small",
+      "endpointId": "zero",
+      "Nxyz": [
+        64,
+        64,
+        33
+      ],
+      "Lxyz": [
+        150000,
+        150000,
+        1000
+      ],
+      "g0": null,
+      "gd": null,
+      "activeEndpointCount": 0,
+      "modeCountPolicy": "automatic-0.1-aliasing",
+      "requestedNj": [],
+      "strategies": [
+        {
+          "id": "separate",
+          "status": "complete",
+          "operations": [
+            {
+              "id": "reconstruction",
+              "rawSeconds": [
+                0.0065077083333333332,
+                0.00545425,
+                0.0049859166666666663,
+                0.0047169583333333334,
+                0.0047545833333333338
+              ],
+              "medianSeconds": 0.0049859166666666663
+            },
+            {
+              "id": "projection",
+              "rawSeconds": [
+                0.000675125,
+                0.000714875,
+                0.00067033333333333333,
+                0.00068395833333333329,
+                0.00062529166666666668
+              ],
+              "medianSeconds": 0.000675125
+            },
+            {
+              "id": "complete-rhs",
+              "rawSeconds": [
+                0.0084162916666666674,
+                0.0082305416666666673,
+                0.0078348333333333325,
+                0.008160625,
+                0.0080822083333333336
+              ],
+              "medianSeconds": 0.008160625
+            },
+            {
+              "id": "integrator-copy-update",
+              "rawSeconds": [
+                0.0007985,
+                0.00064158333333333331,
+                0.000560375,
+                0.00071629166666666662,
+                0.00048375
+              ],
+              "medianSeconds": 0.00064158333333333331
+            },
+            {
+              "id": "fixed-rk4-step",
+              "rawSeconds": [
+                0.030336458333333333,
+                0.030011333333333334,
+                0.029541791666666668,
+                0.032095958333333334,
+                0.040113708333333331
+              ],
+              "medianSeconds": 0.030336458333333333
+            }
+          ],
+          "stateStorage": {
+            "strategyId": "separate",
+            "componentCount": 3,
+            "componentBytes": [
+              240576,
+              0,
+              168
+            ],
+            "componentShapes": [
+              [
+                21,
+                716
+              ],
+              [
+                0,
+                716
+              ],
+              [
+                21,
+                1
+              ]
+            ],
+            "componentIsComplex": [
+              true,
+              true,
+              false
+            ],
+            "totalIntegratorBytes": 240744,
+            "canonicalFamilyNames": [
+              "Ag_q",
+              "Ag_0",
+              "Amda"
+            ],
+            "canonicalFamilyBytes": [
+              240576,
+              0,
+              168
+            ],
+            "canonicalCoefficientBytes": 240744,
+            "scope": "exact MATLAB payload bytes from whos; allocator and copy-on-write state unavailable"
+          },
+          "scientificConfiguration": {
+            "modeCountPolicy": "automatic-0.1-aliasing",
+            "requestedNj": [],
+            "retainedNj": 21,
+            "commonCertifiedModeCount": 21,
+            "apvCertifiedModeCount": 21,
+            "mdaCertifiedModeCount": 31,
+            "quadraticAliasingTolerance": 0.1,
+            "quadraticAliasingError": 0.094896266835540546
+          },
+          "correctness": {
+            "tolerance": 5E-13,
+            "passed": true,
+            "stateRelativeError": 0,
+            "rhsRelativeError": 0,
+            "copyUpdateRelativeError": 0,
+            "fixedRK4RelativeError": 0
+          },
+          "memory": {
+            "provider": "macos-ps-process-tree",
+            "boundary": "total live-process-tree RSS during benchmark operations",
+            "samplingIntervalSeconds": 0.005,
+            "baselineRSSBytes": 9.65984256E+8,
+            "peakRSSBytes": 9.6681984E+8,
+            "peakIncrementBytes": 835584,
+            "steadySampleCount": 2,
+            "operationSampleCount": 10
+          }
+        },
+        {
+          "id": "packed",
+          "status": "complete",
+          "operations": [
+            {
+              "id": "reconstruction",
+              "rawSeconds": [
+                0.0069644166666666665,
+                0.0074676666666666667,
+                0.0050735,
+                0.0049990416666666664,
+                0.0047913333333333332
+              ],
+              "medianSeconds": 0.0050735
+            },
+            {
+              "id": "projection",
+              "rawSeconds": [
+                0.000622375,
+                0.00061833333333333336,
+                0.000672,
+                0.00063808333333333338,
+                0.00069645833333333333
+              ],
+              "medianSeconds": 0.00063808333333333338
+            },
+            {
+              "id": "complete-rhs",
+              "rawSeconds": [
+                0.0087788333333333329,
+                0.0084032083333333337,
+                0.0086035416666666673,
+                0.0084525416666666672,
+                0.008384
+              ],
+              "medianSeconds": 0.0084525416666666672
+            },
+            {
+              "id": "integrator-copy-update",
+              "rawSeconds": [
+                0.000901375,
+                0.0011606666666666666,
+                0.001202375,
+                0.0011935416666666668,
+                0.00098866666666666677
+              ],
+              "medianSeconds": 0.0011606666666666666
+            },
+            {
+              "id": "fixed-rk4-step",
+              "rawSeconds": [
+                0.033131541666666667,
+                0.03223375,
+                0.031770708333333335,
+                0.03337933333333333,
+                0.04265404166666667
+              ],
+              "medianSeconds": 0.033131541666666667
+            }
+          ],
+          "stateStorage": {
+            "strategyId": "packed",
+            "componentCount": 1,
+            "componentBytes": 240912,
+            "componentShapes": [
+              15057,
+              1
+            ],
+            "componentIsComplex": true,
+            "totalIntegratorBytes": 240912,
+            "canonicalFamilyNames": [
+              "Ag_q",
+              "Ag_0",
+              "Amda"
+            ],
+            "canonicalFamilyBytes": [
+              240576,
+              0,
+              168
+            ],
+            "canonicalCoefficientBytes": 240744,
+            "scope": "exact MATLAB payload bytes from whos; allocator and copy-on-write state unavailable"
+          },
+          "scientificConfiguration": {
+            "modeCountPolicy": "automatic-0.1-aliasing",
+            "requestedNj": [],
+            "retainedNj": 21,
+            "commonCertifiedModeCount": 21,
+            "apvCertifiedModeCount": 21,
+            "mdaCertifiedModeCount": 31,
+            "quadraticAliasingTolerance": 0.1,
+            "quadraticAliasingError": 0.094896266835540546
+          },
+          "correctness": {
+            "tolerance": 5E-13,
+            "passed": true,
+            "stateRelativeError": 0,
+            "rhsRelativeError": 0,
+            "copyUpdateRelativeError": 0,
+            "fixedRK4RelativeError": 0
+          },
+          "memory": {
+            "provider": "macos-ps-process-tree",
+            "boundary": "total live-process-tree RSS during benchmark operations",
+            "samplingIntervalSeconds": 0.005,
+            "baselineRSSBytes": 9.69539584E+8,
+            "peakRSSBytes": 9.68425472E+8,
+            "peakIncrementBytes": 0,
+            "steadySampleCount": 2,
+            "operationSampleCount": 11
+          }
+        }
+      ],
+      "comparison": {
+        "operations": [
+          {
+            "id": "reconstruction",
+            "packedToSeparateMedianRatio": 1.0175661446407382,
+            "medianSpeedup": 0.98273709799283848,
+            "ratioConfidenceInterval95": [
+              0.77961391939046643,
+              1.4977520014708097
+            ]
+          },
+          {
+            "id": "projection",
+            "packedToSeparateMedianRatio": 0.9451336172313769,
+            "medianSpeedup": 1.0580514561838841,
+            "ratioConfidenceInterval95": [
+              0.89258028792912514,
+              1.0389731476877175
+            ]
+          },
+          {
+            "id": "complete-rhs",
+            "packedToSeparateMedianRatio": 1.035771361466391,
+            "medianSpeedup": 0.96546403695141,
+            "ratioConfidenceInterval95": [
+              1.004307122594571,
+              1.0861924082217627
+            ]
+          },
+          {
+            "id": "integrator-copy-update",
+            "packedToSeparateMedianRatio": 1.8090661124821406,
+            "medianSpeedup": 0.55277139574956924,
+            "ratioConfidenceInterval95": [
+              1.2583910185562215,
+              2.3993109388458222
+            ]
+          },
+          {
+            "id": "fixed-rk4-step",
+            "packedToSeparateMedianRatio": 1.0921361123510627,
+            "medianSpeedup": 0.91563678619442457,
+            "ratioConfidenceInterval95": [
+              0.82594063334541712,
+              1.4060323455687946
+            ]
+          }
+        ],
+        "allCorrectnessPassed": true,
+        "packedRK4MeaningfullyFaster": false,
+        "packedRK4ThresholdRatio": 0.97,
+        "separateIntegratorBytes": 240744,
+        "packedIntegratorBytes": 240912,
+        "packedToSeparateIntegratorByteRatio": 1.0006978367062107
+      }
+    },
+    {
+      "id": "small-one-endpoint",
+      "gridId": "small",
+      "endpointId": "one",
+      "Nxyz": [
+        64,
+        64,
+        33
+      ],
+      "Lxyz": [
+        150000,
+        150000,
+        1000
+      ],
+      "g0": 0.02,
+      "gd": null,
+      "activeEndpointCount": 1,
+      "modeCountPolicy": "automatic-0.1-aliasing",
+      "requestedNj": [],
+      "strategies": [
+        {
+          "id": "separate",
+          "status": "complete",
+          "operations": [
+            {
+              "id": "reconstruction",
+              "rawSeconds": [
+                0.0050615833333333337,
+                0.0051300416666666664,
+                0.00432425,
+                0.0045030833333333338,
+                0.0043920833333333329
+              ],
+              "medianSeconds": 0.0045030833333333338
+            },
+            {
+              "id": "projection",
+              "rawSeconds": [
+                0.0013446666666666668,
+                0.0013240416666666667,
+                0.0011981666666666666,
+                0.001292125,
+                0.0012998333333333334
+              ],
+              "medianSeconds": 0.0012998333333333334
+            },
+            {
+              "id": "complete-rhs",
+              "rawSeconds": [
+                0.0094956666666666661,
+                0.0087,
+                0.009869416666666667,
+                0.010193375,
+                0.0089926666666666662
+              ],
+              "medianSeconds": 0.0094956666666666661
+            },
+            {
+              "id": "integrator-copy-update",
+              "rawSeconds": [
+                0.00044554166666666668,
+                0.00040058333333333336,
+                0.000388375,
+                0.000386,
+                0.00038845833333333332
+              ],
+              "medianSeconds": 0.00038845833333333332
+            },
+            {
+              "id": "fixed-rk4-step",
+              "rawSeconds": [
+                0.03764525,
+                0.028786,
+                0.028386625,
+                0.030261666666666666,
+                0.040388708333333335
+              ],
+              "medianSeconds": 0.030261666666666666
+            }
+          ],
+          "stateStorage": {
+            "strategyId": "separate",
+            "componentCount": 3,
+            "componentBytes": [
+              57280,
+              11456,
+              40
+            ],
+            "componentShapes": [
+              [
+                5,
+                716
+              ],
+              [
+                1,
+                716
+              ],
+              [
+                5,
+                1
+              ]
+            ],
+            "componentIsComplex": [
+              true,
+              true,
+              false
+            ],
+            "totalIntegratorBytes": 68776,
+            "canonicalFamilyNames": [
+              "Ag_q",
+              "Ag_0",
+              "Amda"
+            ],
+            "canonicalFamilyBytes": [
+              57280,
+              11456,
+              40
+            ],
+            "canonicalCoefficientBytes": 68776,
+            "scope": "exact MATLAB payload bytes from whos; allocator and copy-on-write state unavailable"
+          },
+          "scientificConfiguration": {
+            "modeCountPolicy": "automatic-0.1-aliasing",
+            "requestedNj": [],
+            "retainedNj": 5,
+            "commonCertifiedModeCount": 5,
+            "apvCertifiedModeCount": 5,
+            "mdaCertifiedModeCount": 16,
+            "quadraticAliasingTolerance": 0.1,
+            "quadraticAliasingError": 0.0078172541783485226
+          },
+          "correctness": {
+            "tolerance": 5E-13,
+            "passed": true,
+            "stateRelativeError": 0,
+            "rhsRelativeError": 0,
+            "copyUpdateRelativeError": 0,
+            "fixedRK4RelativeError": 0
+          },
+          "memory": {
+            "provider": "macos-ps-process-tree",
+            "boundary": "total live-process-tree RSS during benchmark operations",
+            "samplingIntervalSeconds": 0.005,
+            "baselineRSSBytes": 9.9631104E+8,
+            "peakRSSBytes": 9.97998592E+8,
+            "peakIncrementBytes": 1.687552E+6,
+            "steadySampleCount": 1,
+            "operationSampleCount": 11
+          }
+        },
+        {
+          "id": "packed",
+          "status": "complete",
+          "operations": [
+            {
+              "id": "reconstruction",
+              "rawSeconds": [
+                0.0052229166666666665,
+                0.004835333333333333,
+                0.0043669583333333329,
+                0.0040850833333333329,
+                0.0042494583333333334
+              ],
+              "medianSeconds": 0.0043669583333333329
+            },
+            {
+              "id": "projection",
+              "rawSeconds": [
+                0.001374375,
+                0.0013685416666666666,
+                0.0012575,
+                0.0013222083333333334,
+                0.0012285416666666666
+              ],
+              "medianSeconds": 0.0013222083333333334
+            },
+            {
+              "id": "complete-rhs",
+              "rawSeconds": [
+                0.0081989166666666669,
+                0.008951625,
+                0.010170041666666668,
+                0.010681791666666666,
+                0.0096371666666666671
+              ],
+              "medianSeconds": 0.0096371666666666671
+            },
+            {
+              "id": "integrator-copy-update",
+              "rawSeconds": [
+                0.000794,
+                0.001027625,
+                0.0010264583333333334,
+                0.00086495833333333336,
+                0.00079333333333333328
+              ],
+              "medianSeconds": 0.00086495833333333336
+            },
+            {
+              "id": "fixed-rk4-step",
+              "rawSeconds": [
+                0.039839625,
+                0.030303916666666667,
+                0.029687,
+                0.031694375,
+                0.040395333333333332
+              ],
+              "medianSeconds": 0.031694375
+            }
+          ],
+          "stateStorage": {
+            "strategyId": "packed",
+            "componentCount": 1,
+            "componentBytes": 68816,
+            "componentShapes": [
+              4301,
+              1
+            ],
+            "componentIsComplex": true,
+            "totalIntegratorBytes": 68816,
+            "canonicalFamilyNames": [
+              "Ag_q",
+              "Ag_0",
+              "Amda"
+            ],
+            "canonicalFamilyBytes": [
+              57280,
+              11456,
+              40
+            ],
+            "canonicalCoefficientBytes": 68776,
+            "scope": "exact MATLAB payload bytes from whos; allocator and copy-on-write state unavailable"
+          },
+          "scientificConfiguration": {
+            "modeCountPolicy": "automatic-0.1-aliasing",
+            "requestedNj": [],
+            "retainedNj": 5,
+            "commonCertifiedModeCount": 5,
+            "apvCertifiedModeCount": 5,
+            "mdaCertifiedModeCount": 16,
+            "quadraticAliasingTolerance": 0.1,
+            "quadraticAliasingError": 0.0078172541783485226
+          },
+          "correctness": {
+            "tolerance": 5E-13,
+            "passed": true,
+            "stateRelativeError": 0,
+            "rhsRelativeError": 0,
+            "copyUpdateRelativeError": 0,
+            "fixedRK4RelativeError": 0
+          },
+          "memory": {
+            "provider": "macos-ps-process-tree",
+            "boundary": "total live-process-tree RSS during benchmark operations",
+            "samplingIntervalSeconds": 0.005,
+            "baselineRSSBytes": 9.96507648E+8,
+            "peakRSSBytes": 1.000128512E+9,
+            "peakIncrementBytes": 3.620864E+6,
+            "steadySampleCount": 2,
+            "operationSampleCount": 12
+          }
+        }
+      ],
+      "comparison": {
+        "operations": [
+          {
+            "id": "reconstruction",
+            "packedToSeparateMedianRatio": 0.969770712659844,
+            "medianSpeedup": 1.0311715820508174,
+            "ratioConfidenceInterval95": [
+              0.82834772297171078,
+              1.1598534337583506
+            ]
+          },
+          {
+            "id": "projection",
+            "packedToSeparateMedianRatio": 1.0172137453519683,
+            "medianSpeedup": 0.98307755333564417,
+            "ratioConfidenceInterval95": [
+              0.93517600396628642,
+              1.1035262206148284
+            ]
+          },
+          {
+            "id": "complete-rhs",
+            "packedToSeparateMedianRatio": 1.0149015340330678,
+            "medianSpeedup": 0.98531726129740749,
+            "ratioConfidenceInterval95": [
+              0.86343770842840606,
+              1.16897030651341
+            ]
+          },
+          {
+            "id": "integrator-copy-update",
+            "packedToSeparateMedianRatio": 2.2266437841896387,
+            "medianSpeedup": 0.449106411676863,
+            "ratioConfidenceInterval95": [
+              1.9413635088375574,
+              2.6459607338268425
+            ]
+          },
+          {
+            "id": "fixed-rk4-step",
+            "packedToSeparateMedianRatio": 1.0473439995593985,
+            "medianSpeedup": 0.95479613233157834,
+            "ratioConfidenceInterval95": [
+              0.78473356311427789,
+              1.4032978994418583
+            ]
+          }
+        ],
+        "allCorrectnessPassed": true,
+        "packedRK4MeaningfullyFaster": false,
+        "packedRK4ThresholdRatio": 0.97,
+        "separateIntegratorBytes": 68776,
+        "packedIntegratorBytes": 68816,
+        "packedToSeparateIntegratorByteRatio": 1.0005815982319415
+      }
+    },
+    {
+      "id": "small-two-endpoint",
+      "gridId": "small",
+      "endpointId": "two",
+      "Nxyz": [
+        64,
+        64,
+        33
+      ],
+      "Lxyz": [
+        150000,
+        150000,
+        1000
+      ],
+      "g0": 0.02,
+      "gd": 0.03,
+      "activeEndpointCount": 2,
+      "modeCountPolicy": "automatic-0.1-aliasing",
+      "requestedNj": [],
+      "strategies": [
+        {
+          "id": "separate",
+          "status": "complete",
+          "operations": [
+            {
+              "id": "reconstruction",
+              "rawSeconds": [
+                0.0050982083333333331,
+                0.0050815833333333329,
+                0.00509275,
+                0.0048575833333333335,
+                0.0047560833333333335
+              ],
+              "medianSeconds": 0.0050815833333333329
+            },
+            {
+              "id": "projection",
+              "rawSeconds": [
+                0.001292125,
+                0.0013515833333333333,
+                0.0014989166666666666,
+                0.001458625,
+                0.0014628333333333333
+              ],
+              "medianSeconds": 0.001458625
+            },
+            {
+              "id": "complete-rhs",
+              "rawSeconds": [
+                0.008906125,
+                0.008942625,
+                0.010461083333333333,
+                0.010698916666666667,
+                0.00981675
+              ],
+              "medianSeconds": 0.00981675
+            },
+            {
+              "id": "integrator-copy-update",
+              "rawSeconds": [
+                0.000442625,
+                0.00039416666666666669,
+                0.00038883333333333332,
+                0.00037666666666666664,
+                0.00037404166666666667
+              ],
+              "medianSeconds": 0.00038883333333333332
+            },
+            {
+              "id": "fixed-rk4-step",
+              "rawSeconds": [
+                0.035585166666666668,
+                0.030898916666666668,
+                0.030097625,
+                0.032888541666666667,
+                0.051300708333333334
+              ],
+              "medianSeconds": 0.032888541666666667
+            }
+          ],
+          "stateStorage": {
+            "strategyId": "separate",
+            "componentCount": 3,
+            "componentBytes": [
+              57280,
+              22912,
+              40
+            ],
+            "componentShapes": [
+              [
+                5,
+                716
+              ],
+              [
+                2,
+                716
+              ],
+              [
+                5,
+                1
+              ]
+            ],
+            "componentIsComplex": [
+              true,
+              true,
+              false
+            ],
+            "totalIntegratorBytes": 80232,
+            "canonicalFamilyNames": [
+              "Ag_q",
+              "Ag_0",
+              "Amda"
+            ],
+            "canonicalFamilyBytes": [
+              57280,
+              22912,
+              40
+            ],
+            "canonicalCoefficientBytes": 80232,
+            "scope": "exact MATLAB payload bytes from whos; allocator and copy-on-write state unavailable"
+          },
+          "scientificConfiguration": {
+            "modeCountPolicy": "automatic-0.1-aliasing",
+            "requestedNj": [],
+            "retainedNj": 5,
+            "commonCertifiedModeCount": 5,
+            "apvCertifiedModeCount": 5,
+            "mdaCertifiedModeCount": 17,
+            "quadraticAliasingTolerance": 0.1,
+            "quadraticAliasingError": 0.012158493279418273
+          },
+          "correctness": {
+            "tolerance": 5E-13,
+            "passed": true,
+            "stateRelativeError": 0,
+            "rhsRelativeError": 0,
+            "copyUpdateRelativeError": 0,
+            "fixedRK4RelativeError": 0
+          },
+          "memory": {
+            "provider": "macos-ps-process-tree",
+            "boundary": "total live-process-tree RSS during benchmark operations",
+            "samplingIntervalSeconds": 0.005,
+            "baselineRSSBytes": 9.8942976E+8,
+            "peakRSSBytes": 9.94885632E+8,
+            "peakIncrementBytes": 5.455872E+6,
+            "steadySampleCount": 2,
+            "operationSampleCount": 12
+          }
+        },
+        {
+          "id": "packed",
+          "status": "complete",
+          "operations": [
+            {
+              "id": "reconstruction",
+              "rawSeconds": [
+                0.0052875,
+                0.0053776666666666669,
+                0.0047565416666666667,
+                0.004705875,
+                0.0046214583333333333
+              ],
+              "medianSeconds": 0.0047565416666666667
+            },
+            {
+              "id": "projection",
+              "rawSeconds": [
+                0.0014011666666666667,
+                0.00133175,
+                0.0013599166666666666,
+                0.00154125,
+                0.001391125
+              ],
+              "medianSeconds": 0.001391125
+            },
+            {
+              "id": "complete-rhs",
+              "rawSeconds": [
+                0.0095192083333333326,
+                0.0096662916666666668,
+                0.010762541666666667,
+                0.010945666666666666,
+                0.010869583333333334
+              ],
+              "medianSeconds": 0.010762541666666667
+            },
+            {
+              "id": "integrator-copy-update",
+              "rawSeconds": [
+                0.00080783333333333336,
+                0.00098320833333333333,
+                0.00088245833333333329,
+                0.00077333333333333334,
+                0.000731
+              ],
+              "medianSeconds": 0.00080783333333333336
+            },
+            {
+              "id": "fixed-rk4-step",
+              "rawSeconds": [
+                0.038905958333333331,
+                0.032937583333333333,
+                0.032006666666666669,
+                0.033576416666666664,
+                0.043521166666666666
+              ],
+              "medianSeconds": 0.033576416666666664
+            }
+          ],
+          "stateStorage": {
+            "strategyId": "packed",
+            "componentCount": 1,
+            "componentBytes": 80272,
+            "componentShapes": [
+              5017,
+              1
+            ],
+            "componentIsComplex": true,
+            "totalIntegratorBytes": 80272,
+            "canonicalFamilyNames": [
+              "Ag_q",
+              "Ag_0",
+              "Amda"
+            ],
+            "canonicalFamilyBytes": [
+              57280,
+              22912,
+              40
+            ],
+            "canonicalCoefficientBytes": 80232,
+            "scope": "exact MATLAB payload bytes from whos; allocator and copy-on-write state unavailable"
+          },
+          "scientificConfiguration": {
+            "modeCountPolicy": "automatic-0.1-aliasing",
+            "requestedNj": [],
+            "retainedNj": 5,
+            "commonCertifiedModeCount": 5,
+            "apvCertifiedModeCount": 5,
+            "mdaCertifiedModeCount": 17,
+            "quadraticAliasingTolerance": 0.1,
+            "quadraticAliasingError": 0.012158493279418273
+          },
+          "correctness": {
+            "tolerance": 5E-13,
+            "passed": true,
+            "stateRelativeError": 0,
+            "rhsRelativeError": 0,
+            "copyUpdateRelativeError": 0,
+            "fixedRK4RelativeError": 0
+          },
+          "memory": {
+            "provider": "macos-ps-process-tree",
+            "boundary": "total live-process-tree RSS during benchmark operations",
+            "samplingIntervalSeconds": 0.005,
+            "baselineRSSBytes": 9.99907328E+8,
+            "peakRSSBytes": 9.97376E+8,
+            "peakIncrementBytes": 0,
+            "steadySampleCount": 2,
+            "operationSampleCount": 12
+          }
+        }
+      ],
+      "comparison": {
+        "operations": [
+          {
+            "id": "reconstruction",
+            "packedToSeparateMedianRatio": 0.93603535643418234,
+            "medianSpeedup": 1.0683357130968754,
+            "ratioConfidenceInterval95": [
+              0.909452434444645,
+              1.1070662709509187
+            ]
+          },
+          {
+            "id": "projection",
+            "packedToSeparateMedianRatio": 0.95372354100608447,
+            "medianSpeedup": 1.0485218797735645,
+            "ratioConfidenceInterval95": [
+              0.9103907941209981,
+              1.0843894102092806
+            ]
+          },
+          {
+            "id": "complete-rhs",
+            "packedToSeparateMedianRatio": 1.0963446829823176,
+            "medianSpeedup": 0.91212190428995632,
+            "ratioConfidenceInterval95": [
+              0.909963913871253,
+              1.2204615737296898
+            ]
+          },
+          {
+            "id": "integrator-copy-update",
+            "packedToSeparateMedianRatio": 2.0775825117873983,
+            "medianSpeedup": 0.481328656901176,
+            "ratioConfidenceInterval95": [
+              1.8250964887508239,
+              2.5286112301757395
+            ]
+          },
+          {
+            "id": "fixed-rk4-step",
+            "packedToSeparateMedianRatio": 1.0209153390555221,
+            "medianSpeedup": 0.9795131503510649,
+            "ratioConfidenceInterval95": [
+              0.654502008987855,
+              1.3232926867893453
+            ]
+          }
+        ],
+        "allCorrectnessPassed": true,
+        "packedRK4MeaningfullyFaster": false,
+        "packedRK4ThresholdRatio": 0.97,
+        "separateIntegratorBytes": 80232,
+        "packedIntegratorBytes": 80272,
+        "packedToSeparateIntegratorByteRatio": 1.0004985541928408
+      }
+    },
+    {
+      "id": "representative-zero-endpoint",
+      "gridId": "representative",
+      "endpointId": "zero",
+      "Nxyz": [
+        256,
+        256,
+        129
+      ],
+      "Lxyz": [
+        150000,
+        150000,
+        1000
+      ],
+      "g0": null,
+      "gd": null,
+      "activeEndpointCount": 0,
+      "modeCountPolicy": "certified-fixed-prefix",
+      "requestedNj": 10,
+      "strategies": [
+        {
+          "id": "separate",
+          "status": "complete",
+          "operations": [
+            {
+              "id": "reconstruction",
+              "rawSeconds": [
+                0.072645416666666671,
+                0.069563041666666672,
+                0.070264958333333336,
+                0.068902083333333336,
+                0.068801458333333329
+              ],
+              "medianSeconds": 0.069563041666666672
+            },
+            {
+              "id": "projection",
+              "rawSeconds": [
+                0.00906725,
+                0.008764333333333334,
+                0.008789375,
+                0.008864375,
+                0.008946458333333334
+              ],
+              "medianSeconds": 0.008864375
+            },
+            {
+              "id": "complete-rhs",
+              "rawSeconds": [
+                0.091464083333333335,
+                0.092764333333333338,
+                0.090436666666666665,
+                0.09269120833333333,
+                0.089455541666666666
+              ],
+              "medianSeconds": 0.091464083333333335
+            },
+            {
+              "id": "integrator-copy-update",
+              "rawSeconds": [
+                0.00093458333333333338,
+                0.0009355,
+                0.00074754166666666665,
+                0.000659875,
+                0.00055091666666666668
+              ],
+              "medianSeconds": 0.00074754166666666665
+            },
+            {
+              "id": "fixed-rk4-step",
+              "rawSeconds": [
+                0.36626470833333336,
+                0.36982225,
+                0.36858791666666668,
+                0.370062375,
+                0.38444770833333336
+              ],
+              "medianSeconds": 0.36982225
+            }
+          ],
+          "stateStorage": {
+            "strategyId": "separate",
+            "componentCount": 3,
+            "componentBytes": [
+              1.83008E+6,
+              0,
+              80
+            ],
+            "componentShapes": [
+              [
+                10,
+                11438
+              ],
+              [
+                0,
+                11438
+              ],
+              [
+                10,
+                1
+              ]
+            ],
+            "componentIsComplex": [
+              true,
+              true,
+              false
+            ],
+            "totalIntegratorBytes": 1.83016E+6,
+            "canonicalFamilyNames": [
+              "Ag_q",
+              "Ag_0",
+              "Amda"
+            ],
+            "canonicalFamilyBytes": [
+              1.83008E+6,
+              0,
+              80
+            ],
+            "canonicalCoefficientBytes": 1.83016E+6,
+            "scope": "exact MATLAB payload bytes from whos; allocator and copy-on-write state unavailable"
+          },
+          "scientificConfiguration": {
+            "modeCountPolicy": "certified-fixed-prefix",
+            "requestedNj": 10,
+            "retainedNj": 10,
+            "commonCertifiedModeCount": 86,
+            "apvCertifiedModeCount": 86,
+            "mdaCertifiedModeCount": 127,
+            "quadraticAliasingTolerance": 0.1,
+            "quadraticAliasingError": 0.0015387520764285519
+          },
+          "correctness": {
+            "tolerance": 5E-13,
+            "passed": true,
+            "stateRelativeError": 0,
+            "rhsRelativeError": 0,
+            "copyUpdateRelativeError": 0,
+            "fixedRK4RelativeError": 0
+          },
+          "memory": {
+            "provider": "macos-ps-process-tree",
+            "boundary": "total live-process-tree RSS during benchmark operations",
+            "samplingIntervalSeconds": 0.005,
+            "baselineRSSBytes": 2.386059264E+9,
+            "peakRSSBytes": 2.38460928E+9,
+            "peakIncrementBytes": 0,
+            "steadySampleCount": 2,
+            "operationSampleCount": 94
+          }
+        },
+        {
+          "id": "packed",
+          "status": "complete",
+          "operations": [
+            {
+              "id": "reconstruction",
+              "rawSeconds": [
+                0.072173208333333336,
+                0.068977125,
+                0.069503541666666668,
+                0.069232833333333327,
+                0.070136166666666666
+              ],
+              "medianSeconds": 0.069503541666666668
+            },
+            {
+              "id": "projection",
+              "rawSeconds": [
+                0.00891375,
+                0.008910875,
+                0.0087839166666666673,
+                0.0088664166666666665,
+                0.0091192083333333333
+              ],
+              "medianSeconds": 0.008910875
+            },
+            {
+              "id": "complete-rhs",
+              "rawSeconds": [
+                0.093408125,
+                0.093044708333333337,
+                0.092706125,
+                0.093081708333333332,
+                0.092274833333333334
+              ],
+              "medianSeconds": 0.093044708333333337
+            },
+            {
+              "id": "integrator-copy-update",
+              "rawSeconds": [
+                0.0019079166666666667,
+                0.001598,
+                0.00163525,
+                0.0012502916666666667,
+                0.0011720833333333334
+              ],
+              "medianSeconds": 0.001598
+            },
+            {
+              "id": "fixed-rk4-step",
+              "rawSeconds": [
+                0.383688875,
+                0.37162583333333332,
+                0.37123175,
+                0.37477654166666668,
+                0.3892515
+              ],
+              "medianSeconds": 0.37477654166666668
+            }
+          ],
+          "stateStorage": {
+            "strategyId": "packed",
+            "componentCount": 1,
+            "componentBytes": 1.83024E+6,
+            "componentShapes": [
+              114390,
+              1
+            ],
+            "componentIsComplex": true,
+            "totalIntegratorBytes": 1.83024E+6,
+            "canonicalFamilyNames": [
+              "Ag_q",
+              "Ag_0",
+              "Amda"
+            ],
+            "canonicalFamilyBytes": [
+              1.83008E+6,
+              0,
+              80
+            ],
+            "canonicalCoefficientBytes": 1.83016E+6,
+            "scope": "exact MATLAB payload bytes from whos; allocator and copy-on-write state unavailable"
+          },
+          "scientificConfiguration": {
+            "modeCountPolicy": "certified-fixed-prefix",
+            "requestedNj": 10,
+            "retainedNj": 10,
+            "commonCertifiedModeCount": 86,
+            "apvCertifiedModeCount": 86,
+            "mdaCertifiedModeCount": 127,
+            "quadraticAliasingTolerance": 0.1,
+            "quadraticAliasingError": 0.0015387520764285519
+          },
+          "correctness": {
+            "tolerance": 5E-13,
+            "passed": true,
+            "stateRelativeError": 0,
+            "rhsRelativeError": 0,
+            "copyUpdateRelativeError": 0,
+            "fixedRK4RelativeError": 0
+          },
+          "memory": {
+            "provider": "macos-ps-process-tree",
+            "boundary": "total live-process-tree RSS during benchmark operations",
+            "samplingIntervalSeconds": 0.005,
+            "baselineRSSBytes": 2.400575488E+9,
+            "peakRSSBytes": 2.399649792E+9,
+            "peakIncrementBytes": 0,
+            "steadySampleCount": 2,
+            "operationSampleCount": 95
+          }
+        }
+      ],
+      "comparison": {
+        "operations": [
+          {
+            "id": "reconstruction",
+            "packedToSeparateMedianRatio": 0.99914466074837383,
+            "medianSpeedup": 1.000856071483168,
+            "ratioConfidenceInterval95": [
+              0.95675054058239506,
+              1.0375223193829577
+            ]
+          },
+          {
+            "id": "projection",
+            "packedToSeparateMedianRatio": 1.0052457167030953,
+            "medianSpeedup": 0.994781657244659,
+            "ratioConfidenceInterval95": [
+              0.98183173043336514,
+              1.0287480316811206
+            ]
+          },
+          {
+            "id": "complete-rhs",
+            "packedToSeparateMedianRatio": 1.017281373653957,
+            "medianSpeedup": 0.98301219888467606,
+            "ratioConfidenceInterval95": [
+              0.99937251386129,
+              1.0401223512797093
+            ]
+          },
+          {
+            "id": "integrator-copy-update",
+            "packedToSeparateMedianRatio": 2.13767348531297,
+            "medianSpeedup": 0.46779828952857744,
+            "ratioConfidenceInterval95": [
+              1.3364956351327275,
+              2.9006201784903949
+            ]
+          },
+          {
+            "id": "fixed-rk4-step",
+            "packedToSeparateMedianRatio": 1.0133964131867854,
+            "medianSpeedup": 0.986780678308641,
+            "ratioConfidenceInterval95": [
+              0.974843999698702,
+              1.0525367254133573
+            ]
+          }
+        ],
+        "allCorrectnessPassed": true,
+        "packedRK4MeaningfullyFaster": false,
+        "packedRK4ThresholdRatio": 0.97,
+        "separateIntegratorBytes": 1.83016E+6,
+        "packedIntegratorBytes": 1.83024E+6,
+        "packedToSeparateIntegratorByteRatio": 1.0000437120251782
+      }
+    },
+    {
+      "id": "representative-one-endpoint",
+      "gridId": "representative",
+      "endpointId": "one",
+      "Nxyz": [
+        256,
+        256,
+        129
+      ],
+      "Lxyz": [
+        150000,
+        150000,
+        1000
+      ],
+      "g0": 0.02,
+      "gd": null,
+      "activeEndpointCount": 1,
+      "modeCountPolicy": "certified-fixed-prefix",
+      "requestedNj": 10,
+      "strategies": [
+        {
+          "id": "separate",
+          "status": "complete",
+          "operations": [
+            {
+              "id": "reconstruction",
+              "rawSeconds": [
+                0.11996483333333334,
+                0.1272935,
+                0.11680558333333334,
+                0.116305625,
+                0.116624375
+              ],
+              "medianSeconds": 0.11680558333333334
+            },
+            {
+              "id": "projection",
+              "rawSeconds": [
+                0.022565166666666667,
+                0.022976041666666665,
+                0.023954625,
+                0.020400333333333333,
+                0.020838541666666665
+              ],
+              "medianSeconds": 0.022565166666666667
+            },
+            {
+              "id": "complete-rhs",
+              "rawSeconds": [
+                0.15267183333333334,
+                0.16643904166666668,
+                0.15295616666666667,
+                0.15668616666666665,
+                0.180690375
+              ],
+              "medianSeconds": 0.15668616666666665
+            },
+            {
+              "id": "integrator-copy-update",
+              "rawSeconds": [
+                0.00062979166666666663,
+                0.00081516666666666662,
+                0.00075470833333333336,
+                0.00068995833333333333,
+                0.00061983333333333335
+              ],
+              "medianSeconds": 0.00068995833333333333
+            },
+            {
+              "id": "fixed-rk4-step",
+              "rawSeconds": [
+                0.64144341666666671,
+                0.631933,
+                0.63771141666666664,
+                0.67150179166666668,
+                0.65336870833333338
+              ],
+              "medianSeconds": 0.64144341666666671
+            }
+          ],
+          "stateStorage": {
+            "strategyId": "separate",
+            "componentCount": 3,
+            "componentBytes": [
+              1.83008E+6,
+              183008,
+              80
+            ],
+            "componentShapes": [
+              [
+                10,
+                11438
+              ],
+              [
+                1,
+                11438
+              ],
+              [
+                10,
+                1
+              ]
+            ],
+            "componentIsComplex": [
+              true,
+              true,
+              false
+            ],
+            "totalIntegratorBytes": 2.013168E+6,
+            "canonicalFamilyNames": [
+              "Ag_q",
+              "Ag_0",
+              "Amda"
+            ],
+            "canonicalFamilyBytes": [
+              1.83008E+6,
+              183008,
+              80
+            ],
+            "canonicalCoefficientBytes": 2.013168E+6,
+            "scope": "exact MATLAB payload bytes from whos; allocator and copy-on-write state unavailable"
+          },
+          "scientificConfiguration": {
+            "modeCountPolicy": "certified-fixed-prefix",
+            "requestedNj": 10,
+            "retainedNj": 10,
+            "commonCertifiedModeCount": 41,
+            "apvCertifiedModeCount": 41,
+            "mdaCertifiedModeCount": 64,
+            "quadraticAliasingTolerance": 0.1,
+            "quadraticAliasingError": 0.0014424385630966232
+          },
+          "correctness": {
+            "tolerance": 5E-13,
+            "passed": true,
+            "stateRelativeError": 0,
+            "rhsRelativeError": 0,
+            "copyUpdateRelativeError": 0,
+            "fixedRK4RelativeError": 0
+          },
+          "memory": {
+            "provider": "macos-ps-process-tree",
+            "boundary": "total live-process-tree RSS during benchmark operations",
+            "samplingIntervalSeconds": 0.005,
+            "baselineRSSBytes": 2.055200768E+9,
+            "peakRSSBytes": 2.051244032E+9,
+            "peakIncrementBytes": 0,
+            "steadySampleCount": 2,
+            "operationSampleCount": 161
+          }
+        },
+        {
+          "id": "packed",
+          "status": "complete",
+          "operations": [
+            {
+              "id": "reconstruction",
+              "rawSeconds": [
+                0.12024575,
+                0.12296633333333333,
+                0.11779,
+                0.1449475,
+                0.11651108333333333
+              ],
+              "medianSeconds": 0.12024575
+            },
+            {
+              "id": "projection",
+              "rawSeconds": [
+                0.020012291666666668,
+                0.019922333333333334,
+                0.020398041666666665,
+                0.019932541666666668,
+                0.020169375
+              ],
+              "medianSeconds": 0.020012291666666668
+            },
+            {
+              "id": "complete-rhs",
+              "rawSeconds": [
+                0.15848725,
+                0.15458495833333333,
+                0.16879304166666667,
+                0.16034979166666666,
+                0.16717741666666666
+              ],
+              "medianSeconds": 0.16034979166666666
+            },
+            {
+              "id": "integrator-copy-update",
+              "rawSeconds": [
+                0.0020193333333333335,
+                0.0025434166666666665,
+                0.001732875,
+                0.001545125,
+                0.0013373333333333334
+              ],
+              "medianSeconds": 0.001732875
+            },
+            {
+              "id": "fixed-rk4-step",
+              "rawSeconds": [
+                0.64385616666666667,
+                0.6497390833333333,
+                0.67326245833333331,
+                0.64277229166666672,
+                0.675212625
+              ],
+              "medianSeconds": 0.6497390833333333
+            }
+          ],
+          "stateStorage": {
+            "strategyId": "packed",
+            "componentCount": 1,
+            "componentBytes": 2.013248E+6,
+            "componentShapes": [
+              125828,
+              1
+            ],
+            "componentIsComplex": true,
+            "totalIntegratorBytes": 2.013248E+6,
+            "canonicalFamilyNames": [
+              "Ag_q",
+              "Ag_0",
+              "Amda"
+            ],
+            "canonicalFamilyBytes": [
+              1.83008E+6,
+              183008,
+              80
+            ],
+            "canonicalCoefficientBytes": 2.013168E+6,
+            "scope": "exact MATLAB payload bytes from whos; allocator and copy-on-write state unavailable"
+          },
+          "scientificConfiguration": {
+            "modeCountPolicy": "certified-fixed-prefix",
+            "requestedNj": 10,
+            "retainedNj": 10,
+            "commonCertifiedModeCount": 41,
+            "apvCertifiedModeCount": 41,
+            "mdaCertifiedModeCount": 64,
+            "quadraticAliasingTolerance": 0.1,
+            "quadraticAliasingError": 0.0014424385630966232
+          },
+          "correctness": {
+            "tolerance": 5E-13,
+            "passed": true,
+            "stateRelativeError": 0,
+            "rhsRelativeError": 0,
+            "copyUpdateRelativeError": 0,
+            "fixedRK4RelativeError": 0
+          },
+          "memory": {
+            "provider": "macos-ps-process-tree",
+            "boundary": "total live-process-tree RSS during benchmark operations",
+            "samplingIntervalSeconds": 0.005,
+            "baselineRSSBytes": 2.018607104E+9,
+            "peakRSSBytes": 2.015608832E+9,
+            "peakIncrementBytes": 0,
+            "steadySampleCount": 2,
+            "operationSampleCount": 168
+          }
+        }
+      ],
+      "comparison": {
+        "operations": [
+          {
+            "id": "reconstruction",
+            "packedToSeparateMedianRatio": 1.0294520738520632,
+            "medianSpeedup": 0.97139053424618627,
+            "ratioConfidenceInterval95": [
+              0.944633857973895,
+              1.240929550314019
+            ]
+          },
+          {
+            "id": "projection",
+            "packedToSeparateMedianRatio": 0.88686655686123894,
+            "medianSpeedup": 1.1275653504616954,
+            "ratioConfidenceInterval95": [
+              0.83542496142881251,
+              0.980978660479404
+            ]
+          },
+          {
+            "id": "complete-rhs",
+            "packedToSeparateMedianRatio": 1.0233819301214637,
+            "medianSpeedup": 0.97715229335865983,
+            "ratioConfidenceInterval95": [
+              0.88742851779828713,
+              1.0950115225358092
+            ]
+          },
+          {
+            "id": "integrator-copy-update",
+            "packedToSeparateMedianRatio": 2.5115647080137689,
+            "medianSpeedup": 0.398158166822958,
+            "ratioConfidenceInterval95": [
+              1.8954712737681458,
+              3.6863337158040941
+            ]
+          },
+          {
+            "id": "fixed-rk4-step",
+            "packedToSeparateMedianRatio": 1.012932811298892,
+            "medianSpeedup": 0.987232310816047,
+            "ratioConfidenceInterval95": [
+              0.967590989922278,
+              1.0588059227939701
+            ]
+          }
+        ],
+        "allCorrectnessPassed": true,
+        "packedRK4MeaningfullyFaster": false,
+        "packedRK4ThresholdRatio": 0.97,
+        "separateIntegratorBytes": 2.013168E+6,
+        "packedIntegratorBytes": 2.013248E+6,
+        "packedToSeparateIntegratorByteRatio": 1.0000397383626205
+      }
+    },
+    {
+      "id": "representative-two-endpoint",
+      "gridId": "representative",
+      "endpointId": "two",
+      "Nxyz": [
+        256,
+        256,
+        129
+      ],
+      "Lxyz": [
+        150000,
+        150000,
+        1000
+      ],
+      "g0": 0.02,
+      "gd": 0.03,
+      "activeEndpointCount": 2,
+      "modeCountPolicy": "certified-fixed-prefix",
+      "requestedNj": 10,
+      "strategies": [
+        {
+          "id": "separate",
+          "status": "complete",
+          "operations": [
+            {
+              "id": "reconstruction",
+              "rawSeconds": [
+                0.14771679166666668,
+                0.12918145833333333,
+                0.13032445833333334,
+                0.12841891666666666,
+                0.127955375
+              ],
+              "medianSeconds": 0.12918145833333333
+            },
+            {
+              "id": "projection",
+              "rawSeconds": [
+                0.023152333333333334,
+                0.022645166666666668,
+                0.021997208333333334,
+                0.022967416666666667,
+                0.024149583333333332
+              ],
+              "medianSeconds": 0.022967416666666667
+            },
+            {
+              "id": "complete-rhs",
+              "rawSeconds": [
+                0.16649791666666666,
+                0.16815266666666667,
+                0.17311316666666668,
+                0.19422316666666667,
+                0.19587541666666666
+              ],
+              "medianSeconds": 0.17311316666666668
+            },
+            {
+              "id": "integrator-copy-update",
+              "rawSeconds": [
+                0.000813,
+                0.000653375,
+                0.00077591666666666662,
+                0.0008361666666666667,
+                0.00071045833333333334
+              ],
+              "medianSeconds": 0.00077591666666666662
+            },
+            {
+              "id": "fixed-rk4-step",
+              "rawSeconds": [
+                0.69958720833333332,
+                0.69604879166666667,
+                0.71556725,
+                0.77271233333333333,
+                0.769205375
+              ],
+              "medianSeconds": 0.71556725
+            }
+          ],
+          "stateStorage": {
+            "strategyId": "separate",
+            "componentCount": 3,
+            "componentBytes": [
+              1.83008E+6,
+              366016,
+              80
+            ],
+            "componentShapes": [
+              [
+                10,
+                11438
+              ],
+              [
+                2,
+                11438
+              ],
+              [
+                10,
+                1
+              ]
+            ],
+            "componentIsComplex": [
+              true,
+              true,
+              false
+            ],
+            "totalIntegratorBytes": 2.196176E+6,
+            "canonicalFamilyNames": [
+              "Ag_q",
+              "Ag_0",
+              "Amda"
+            ],
+            "canonicalFamilyBytes": [
+              1.83008E+6,
+              366016,
+              80
+            ],
+            "canonicalCoefficientBytes": 2.196176E+6,
+            "scope": "exact MATLAB payload bytes from whos; allocator and copy-on-write state unavailable"
+          },
+          "scientificConfiguration": {
+            "modeCountPolicy": "certified-fixed-prefix",
+            "requestedNj": 10,
+            "retainedNj": 10,
+            "commonCertifiedModeCount": 42,
+            "apvCertifiedModeCount": 42,
+            "mdaCertifiedModeCount": 65,
+            "quadraticAliasingTolerance": 0.1,
+            "quadraticAliasingError": 0.0021017397157834885
+          },
+          "correctness": {
+            "tolerance": 5E-13,
+            "passed": true,
+            "stateRelativeError": 0,
+            "rhsRelativeError": 0,
+            "copyUpdateRelativeError": 0,
+            "fixedRK4RelativeError": 0
+          },
+          "memory": {
+            "provider": "macos-ps-process-tree",
+            "boundary": "total live-process-tree RSS during benchmark operations",
+            "samplingIntervalSeconds": 0.005,
+            "baselineRSSBytes": 2.039250944E+9,
+            "peakRSSBytes": 2.042626048E+9,
+            "peakIncrementBytes": 3.375104E+6,
+            "steadySampleCount": 2,
+            "operationSampleCount": 185
+          }
+        },
+        {
+          "id": "packed",
+          "status": "complete",
+          "operations": [
+            {
+              "id": "reconstruction",
+              "rawSeconds": [
+                0.14185083333333334,
+                0.129396625,
+                0.12799004166666667,
+                0.127576375,
+                0.12890854166666665
+              ],
+              "medianSeconds": 0.12890854166666665
+            },
+            {
+              "id": "projection",
+              "rawSeconds": [
+                0.022350833333333334,
+                0.022857,
+                0.022445083333333334,
+                0.022547,
+                0.022470041666666666
+              ],
+              "medianSeconds": 0.022470041666666666
+            },
+            {
+              "id": "complete-rhs",
+              "rawSeconds": [
+                0.168364625,
+                0.1900445,
+                0.16972016666666667,
+                0.17318375,
+                0.17504316666666667
+              ],
+              "medianSeconds": 0.17318375
+            },
+            {
+              "id": "integrator-copy-update",
+              "rawSeconds": [
+                0.0018445833333333333,
+                0.0019087083333333334,
+                0.001865625,
+                0.0014642083333333334,
+                0.0013938333333333333
+              ],
+              "medianSeconds": 0.0018445833333333333
+            },
+            {
+              "id": "fixed-rk4-step",
+              "rawSeconds": [
+                0.69913404166666671,
+                0.706915125,
+                0.71467575,
+                0.722411,
+                0.73049908333333335
+              ],
+              "medianSeconds": 0.71467575
+            }
+          ],
+          "stateStorage": {
+            "strategyId": "packed",
+            "componentCount": 1,
+            "componentBytes": 2.196256E+6,
+            "componentShapes": [
+              137266,
+              1
+            ],
+            "componentIsComplex": true,
+            "totalIntegratorBytes": 2.196256E+6,
+            "canonicalFamilyNames": [
+              "Ag_q",
+              "Ag_0",
+              "Amda"
+            ],
+            "canonicalFamilyBytes": [
+              1.83008E+6,
+              366016,
+              80
+            ],
+            "canonicalCoefficientBytes": 2.196176E+6,
+            "scope": "exact MATLAB payload bytes from whos; allocator and copy-on-write state unavailable"
+          },
+          "scientificConfiguration": {
+            "modeCountPolicy": "certified-fixed-prefix",
+            "requestedNj": 10,
+            "retainedNj": 10,
+            "commonCertifiedModeCount": 42,
+            "apvCertifiedModeCount": 42,
+            "mdaCertifiedModeCount": 65,
+            "quadraticAliasingTolerance": 0.1,
+            "quadraticAliasingError": 0.0021017397157834885
+          },
+          "correctness": {
+            "tolerance": 5E-13,
+            "passed": true,
+            "stateRelativeError": 0,
+            "rhsRelativeError": 0,
+            "copyUpdateRelativeError": 0,
+            "fixedRK4RelativeError": 0
+          },
+          "memory": {
+            "provider": "macos-ps-process-tree",
+            "boundary": "total live-process-tree RSS during benchmark operations",
+            "samplingIntervalSeconds": 0.005,
+            "baselineRSSBytes": 2.072018944E+9,
+            "peakRSSBytes": 2.07937536E+9,
+            "peakIncrementBytes": 7.356416E+6,
+            "steadySampleCount": 2,
+            "operationSampleCount": 182
+          }
+        }
+      ],
+      "comparison": {
+        "operations": [
+          {
+            "id": "reconstruction",
+            "packedToSeparateMedianRatio": 0.99788733870798663,
+            "medianSpeedup": 1.0021171340792325,
+            "ratioConfidenceInterval95": [
+              0.87267358173847853,
+              1.098074252787181
+            ]
+          },
+          {
+            "id": "projection",
+            "packedToSeparateMedianRatio": 0.97834432112158887,
+            "medianSpeedup": 1.0221350279353436,
+            "ratioConfidenceInterval95": [
+              0.9304525612933281,
+              1.02149515184692
+            ]
+          },
+          {
+            "id": "complete-rhs",
+            "packedToSeparateMedianRatio": 1.0004077294332512,
+            "medianSpeedup": 0.99959243674228493,
+            "ratioConfidenceInterval95": [
+              0.86686170290361853,
+              1.0978050003899182
+            ]
+          },
+          {
+            "id": "integrator-copy-update",
+            "packedToSeparateMedianRatio": 2.3772956717860594,
+            "medianSpeedup": 0.42064603569008358,
+            "ratioConfidenceInterval95": [
+              1.7510962726729122,
+              2.8231617881512658
+            ]
+          },
+          {
+            "id": "fixed-rk4-step",
+            "packedToSeparateMedianRatio": 0.99875413526820866,
+            "medianSpeedup": 1.0012474188469385,
+            "ratioConfidenceInterval95": [
+              0.91484902531645018,
+              1.03787408102557
+            ]
+          }
+        ],
+        "allCorrectnessPassed": true,
+        "packedRK4MeaningfullyFaster": false,
+        "packedRK4ThresholdRatio": 0.97,
+        "separateIntegratorBytes": 2.196176E+6,
+        "packedIntegratorBytes": 2.196256E+6,
+        "packedToSeparateIntegratorByteRatio": 1.0000364269530311
+      }
+    }
+  ],
+  "decision": {
+    "status": "complete",
+    "selectedStrategy": "separate",
+    "reason": "Separate backing is retained because packed backing did not prove a practically meaningful fixed-RK4 improvement in every case.",
+    "minimumMeaningfulSpeedup": 0.03,
+    "confidenceLevel": 0.95,
+    "decisionOperation": "fixed-rk4-step",
+    "requiresEveryCase": true
+  }
+}

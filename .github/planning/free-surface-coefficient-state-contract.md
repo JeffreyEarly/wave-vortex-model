@@ -170,6 +170,6 @@ Round-trip tolerances, representative grids, and performance cases belong to the
 
 ## Deferred decisions and non-goals
 
-The reference implementation uses separate coefficient arrays and separate integrator entries. Issue #343 retains a packed candidate behind a private adapter and owns measurements of warmed RHS time, projection/reconstruction time, integrator copying, and memory after the complete nonlinear RHS exists. Public properties and NetCDF storage do not change with that benchmark. An internal orthogonal `Ag_0` representation is one candidate, not a public contract change.
+The reference implementation uses separate coefficient arrays and separate integrator entries. [Issue #343's benchmark decision](free-surface-qg-coefficient-storage-decision.md) retained that representation: packed storage did not demonstrate the required end-to-end improvement and made integrator copy/update work materially slower. Public properties and NetCDF storage therefore require no backing-driven change. An internal orthogonal `Ag_0` representation remains a possible future optimization, not a public contract change.
 
 Future full-Boussinesq wave storage remains deferred. The QG prototype does not add compatibility aliases or a migration from the legacy `A0` layout.
