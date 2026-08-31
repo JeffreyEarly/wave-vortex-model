@@ -287,20 +287,40 @@ classdef WVModelOutputFile < handle & matlab.mixin.Heterogeneous
                     self.initializeOutputFile();
                 end
 
-                % 2) inform the appropriate groups that they need to write a time step.
+                % 2) stage every due payload without writing a time coordinate.
                 outputGroupNames = self.outputGroupNameOutputTimeMap.keys;
-                didWriteToFile = false;
+                stagedGroups = cell(length(outputGroupNames),1);
+                stagedIndices = zeros(length(outputGroupNames),1);
+                nStagedGroups = 0;
                 for i = 1:length(outputGroupNames)
                     t_group = self.outputGroupNameOutputTimeMap{outputGroupNames(i)};
                     if ~isempty(t_group) && t == t_group(1)
-                        self.outputGroupWithName(outputGroupNames(i)).writeTimeStepToNetCDFFile(self.ncfile,t);
-                        t_group(1) = [];
-                        self.outputGroupNameOutputTimeMap{outputGroupNames(i)} = t_group;
-                        didWriteToFile = true;
+                        outputGroup = self.outputGroupWithName(outputGroupNames(i));
+                        outputIndex = outputGroup.stageTimeStepToNetCDFFile(self.ncfile,t);
+                        if outputIndex > 0
+                            nStagedGroups = nStagedGroups + 1;
+                            stagedGroups{nStagedGroups} = outputGroup;
+                            stagedIndices(nStagedGroups) = outputIndex;
+                        end
                     end
                 end
-                if didWriteToFile
+                stagedGroups = stagedGroups(1:nStagedGroups);
+                stagedIndices = stagedIndices(1:nStagedGroups);
+
+                % 3) make every payload durable, then commit with finite t.
+                if ~isempty(stagedGroups)
                     self.ncfile.sync();
+                    for iGroup = 1:length(stagedGroups)
+                        stagedGroups{iGroup}.commitStagedTimeStep(t,stagedIndices(iGroup));
+                    end
+                    self.ncfile.sync();
+                    for i = 1:length(outputGroupNames)
+                        t_group = self.outputGroupNameOutputTimeMap{outputGroupNames(i)};
+                        if ~isempty(t_group) && t == t_group(1)
+                            t_group(1) = [];
+                            self.outputGroupNameOutputTimeMap{outputGroupNames(i)} = t_group;
+                        end
+                    end
                 end
             catch exception
                 self.closeNetCDFFile();
@@ -324,8 +344,13 @@ classdef WVModelOutputFile < handle & matlab.mixin.Heterogeneous
             % storage object returns to its uninitialized state.
             %
             % - Topic: Internal
-            if self.observingSystemWillWriteWaveVortexCoefficients == true
-                properties = setdiff(self.wvt.requiredProperties,{'Ap','Am','A0','t'});
+            coefficientGroups = self.outputGroupsContainingCompleteCoefficientState();
+            if length(coefficientGroups) > 1
+                error('WVModelOutputFile:MultipleCompleteCoefficientStreams','Exactly one output group may contain the complete coefficient state; found %d.',length(coefficientGroups));
+            end
+            coefficientNames = self.wvt.coefficientStateVariableNamesForPersistence();
+            if isscalar(coefficientGroups)
+                properties = setdiff(self.wvt.requiredProperties,[coefficientNames {'t'}]);
             else
                 properties = setdiff(self.wvt.requiredProperties,{'t'});
             end
@@ -367,16 +392,29 @@ classdef WVModelOutputFile < handle & matlab.mixin.Heterogeneous
             % A simple check to see if one of the observing systems will be writing wave-vortex coefficients
             %
             % - Topic: Internal
+            bool = ~isempty(self.outputGroupsContainingCompleteCoefficientState());
+        end
+
+        function groups = outputGroupsContainingCompleteCoefficientState(self)
+            % Return output groups containing every physical coefficient family.
+            %
+            % - Topic: Internal
+            coefficientNames = string(self.wvt.coefficientStateVariableNamesForPersistence());
             outputGroups_ = self.outputGroups;
-            bool = false;
+            containsCompleteState = false(size(outputGroups_));
             for iGroup = 1:length(outputGroups_)
+                outputNames = strings(1,0);
                 observingSystems = outputGroups_(iGroup).observingSystems;
                 for iObs = 1:length(observingSystems)
                     if isa(observingSystems(iObs),'WVEulerianFields')
-                        bool = bool | all(ismember(intersect({'Ap','Am','A0'},self.wvt.variableNames),observingSystems(iObs).netCDFOutputVariables));
+                        outputNames = union(outputNames,string(observingSystems(iObs).netCDFOutputVariables));
                     end
                 end
+                if all(ismember(coefficientNames,outputNames))
+                    containsCompleteState(iGroup) = true;
+                end
             end
+            groups = outputGroups_(containsCompleteState);
         end
 
         function recordNetCDFFileHistory(self,options)

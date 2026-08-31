@@ -36,18 +36,20 @@ required to perform the decomposition. The same object can reconstruct
 $$(u,v,w,\rho,p)$$, relative vorticity, potential vorticity, energetic
 diagnostics, and custom registered variables from those coefficients.
 
-Choose one of five concrete transform classes:
+Choose one of six concrete transform classes:
 
 + `WVTransformConstantStratification`, in hydrostatic or nonhydrostatic mode
 + `WVTransformHydrostatic`
 + `WVTransformBoussinesq`
 + `WVTransformStratifiedQG`
++ `WVTransformFreeSurfaceQG`
 + `WVTransformBarotropicQG`
 
 Wave-bearing transforms store positive- and negative-frequency wave and
 inertial coefficients in `Ap` and `Am`, and zero-frequency geostrophic
-and mean-density-anomaly coefficients in `A0`. Quasigeostrophic
-transforms use `A0` only. The `Apt`, `Amt`, and `A0t` variables are the
+and mean-density-anomaly coefficients in `A0`. Legacy quasigeostrophic
+transforms use `A0` only. Free-surface QG uses the annotated `Ag_q`,
+`Ag_0`, and `Amda` families. The `Apt`, `Amt`, and `A0t` variables are the
 corresponding coefficients evaluated at the current transform time.
 
 
@@ -196,6 +198,7 @@ These items document internal implementation details and are not part of the pri
   + [`classDefinedOperationForKnownVariable`](/classes/transforms/wvtransform/classdefinedoperationforknownvariable.html) This is one of two functions that returns operations for computing
   + [`clearVariableCacheOfApAmA0DependentVariables`](/classes/transforms/wvtransform/clearvariablecacheofapama0dependentvariables.html) clear the internal cache
   + [`clearVariableCacheOfTimeDependentVariables`](/classes/transforms/wvtransform/clearvariablecacheoftimedependentvariables.html) clear the internal cache of variables that claim to be time dependent
+  + [`coefficientStateAnnotations`](/classes/transforms/wvtransform/coefficientstateannotations.html) Return canonical coefficient-family annotations in integrator order.
   + [`defaultOperations`](/classes/transforms/wvtransform/defaultoperations.html) return array of WVOperation instances initialized by default
   + [`fetchFromVariableCache`](/classes/transforms/wvtransform/fetchfromvariablecache.html) retrieve a set of variables from the internal cache
   + [`flowComponentNameMap`](/classes/transforms/wvtransform/flowcomponentnamemap.html)
@@ -214,6 +217,9 @@ These items document internal implementation details and are not part of the pri
   + [`variableCache`](/classes/transforms/wvtransform/variablecache.html)
   + [`wvCoefficientDependentVariablesNameMap`](/classes/transforms/wvtransform/wvcoefficientdependentvariablesnamemap.html)
 + Class internals
+  + [`coefficientAbsoluteTolerances`](/classes/transforms/wvtransform/coefficientabsolutetolerances.html) Return one adaptive-integrator tolerance array per coefficient family.
+  + [`coefficientStateVariableNamesForPersistence`](/classes/transforms/wvtransform/coefficientstatevariablenamesforpersistence.html) Return physically present canonical coefficient variable names.
+  + [`coefficientTendency`](/classes/transforms/wvtransform/coefficienttendency.html) Return nonlinear coefficient tendencies in a family-keyed structure.
   + [`hasPVComponent`](/classes/transforms/wvtransform/haspvcomponent.html)
   + [`hasWaveComponent`](/classes/transforms/wvtransform/haswavecomponent.html)
 + Construction internals

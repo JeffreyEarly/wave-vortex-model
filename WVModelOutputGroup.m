@@ -253,6 +253,8 @@ classdef WVModelOutputGroup < handle & matlab.mixin.Heterogeneous & CAAnnotatedC
                 varAnnotation.attributes('units') = 'seconds since 1970-01-01 00:00:00';
                 varAnnotation.attributes('axis') = 'T';
                 varAnnotation.attributes('calendar') = 'standard';
+                varAnnotation.attributes('_FillValue') = NaN;
+                varAnnotation.attributes('wvm_record_commit_protocol') = 'finite_time_prefix_v1';
                 self.group.addDimension(varAnnotation.name,length=Inf,type="double",attributes=varAnnotation.attributes);
 
                 for iObs = 1:length(self.observingSystems)
@@ -283,21 +285,55 @@ classdef WVModelOutputGroup < handle & matlab.mixin.Heterogeneous & CAAnnotatedC
                 ncfile NetCDFFile
                 t double
             end
+            outputIndex = self.stageTimeStepToNetCDFFile(ncfile,t);
+            if outputIndex > 0
+                ncfile.sync();
+                self.commitStagedTimeStep(t,outputIndex);
+                ncfile.sync();
+            end
+        end
+
+        function outputIndex = stageTimeStepToNetCDFFile(self,ncfile,t)
+            % Stage one record payload without committing its time coordinate.
+            %
+            % - Topic: Internal
+            % - Declaration: outputIndex = stageTimeStepToNetCDFFile(self,ncfile,t)
+            arguments
+                self WVModelOutputGroup
+                ncfile NetCDFFile
+                t (1,1) double
+            end
             if ~self.didInitializeStorage
                 self.initializeOutputGroup(ncfile);
             end
-            if ( ~isempty(self.group) && t > self.timeOfLastIncrementWrittenToGroup )
-                outputIndex = self.incrementsWrittenToGroup + 1;
-
-                self.group.variableWithName('t').setValueAlongDimensionAtIndex(t,'t',outputIndex);
-
-                for iObs = 1:length(self.observingSystems)
-                    self.observingSystems(iObs).writeTimeStepToFile(self.group,outputIndex);
-                end
-
-                self.incrementsWrittenToGroup = outputIndex;
-                self.timeOfLastIncrementWrittenToGroup = t;
+            outputIndex = 0;
+            if isempty(self.group) || t <= self.timeOfLastIncrementWrittenToGroup
+                return
             end
+
+            outputIndex = self.incrementsWrittenToGroup + 1;
+            for iObs = 1:length(self.observingSystems)
+                self.observingSystems(iObs).writeTimeStepToFile(self.group,outputIndex);
+            end
+        end
+
+        function commitStagedTimeStep(self,t,outputIndex)
+            % Commit a staged record by writing its finite time coordinate.
+            %
+            % - Topic: Internal
+            % - Declaration: commitStagedTimeStep(self,t,outputIndex)
+            arguments
+                self WVModelOutputGroup
+                t (1,1) double {mustBeFinite}
+                outputIndex (1,1) double {mustBePositive,mustBeInteger}
+            end
+            expectedIndex = self.incrementsWrittenToGroup + 1;
+            if outputIndex ~= expectedIndex
+                error('WVModelOutputGroup:InvalidCommitIndex','Expected record index %d, but received %d.',expectedIndex,outputIndex);
+            end
+            self.group.variableWithName('t').setValueAlongDimensionAtIndex(t,'t',outputIndex);
+            self.incrementsWrittenToGroup = outputIndex;
+            self.timeOfLastIncrementWrittenToGroup = t;
         end
 
         function recordNetCDFFileHistory(self,options)
@@ -384,13 +420,47 @@ classdef WVModelOutputGroup < handle & matlab.mixin.Heterogeneous & CAAnnotatedC
                 outputGroup = feval(className,model,options{:});
             end
             outputGroup.group = group;
-            nPoints = group.dimensionWithName("t").nPoints;
+            nPoints = WVModelOutputGroup.committedRecordCountForGroup(group);
             outputGroup.incrementsWrittenToGroup = nPoints;
             if nPoints > 0
                 outputGroup.timeOfLastIncrementWrittenToGroup = group.readVariablesAtIndexAlongDimension('t',nPoints,'t');
             end
             outputGroup.initObservingSystemsFromGroup(group);
             outputGroup.didInitializeStorage = true;
+        end
+
+        function count = committedRecordCountForGroup(group)
+            % Return the contiguous committed prefix of an output group.
+            %
+            % Legacy groups without the finite-time protocol retain their raw
+            % unlimited-dimension behavior.
+            %
+            % - Topic: Internal
+            % - Declaration: count = committedRecordCountForGroup(group)
+            arguments
+                group (1,1) NetCDFGroup
+            end
+            rawCount = group.dimensionWithName('t').nPoints;
+            timeVariable = group.variableWithName('t');
+            if ~isKey(timeVariable.attributes,'wvm_record_commit_protocol')
+                count = rawCount;
+                return
+            end
+            if rawCount == 0
+                count = 0;
+                return
+            end
+            t = reshape(group.readVariables('t'),[],1);
+            finite = isfinite(t);
+            firstHole = find(~finite,1);
+            if isempty(firstHole)
+                count = length(t);
+                return
+            end
+            if any(finite(firstHole+1:end))
+                error('WVModelOutputGroup:NoncontiguousCommittedRecords','Output group %s contains a finite time after an uncommitted record.',group.name);
+            end
+            count = firstHole-1;
         end
     end
 end

@@ -15,7 +15,7 @@ transformSidecars = fullfile(repositoryRoot,"@WVTransform","detailedDescriptions
 parentName = "Transforms";
 websiteFolder = "classes/transforms";
 writeClassDocumentation("WVTransform",buildFolder,websiteFolder,parentName,classFolderName,parentName,1,{'handle','CAAnnotatedClass'},transformSidecars);
-classes = ["WVTransformBoussinesq" "WVTransformHydrostatic" "WVTransformConstantStratification" "WVTransformBarotropicQG" "WVTransformStratifiedQG"];
+classes = ["WVTransformBoussinesq" "WVTransformHydrostatic" "WVTransformConstantStratification" "WVTransformBarotropicQG" "WVTransformStratifiedQG" "WVTransformFreeSurfaceQG"];
 writeClassGroup(classes,buildFolder,websiteFolder,parentName,classFolderName,parentName,2,{'handle','WVTransform','CAAnnotatedClass'},transformSidecars);
 
 writeClassDocumentation("WVModel",buildFolder,"classes",classFolderName,"",classFolderName,2,{'handle'},string.empty(0,1));
@@ -45,7 +45,7 @@ writeClassGroup(classes,buildFolder,websiteFolder,parentName,classFolderName,par
 
 parentName = "Operations & annotations";
 websiteFolder = "classes/operations-and-annotations";
-classes = ["WVOperation" "WVVariableAnnotation"];
+classes = ["WVOperation" "WVVariableAnnotation" "WVCoefficientAnnotation"];
 writeClassGroup(classes,buildFolder,websiteFolder,parentName,classFolderName,parentName,1,{'handle'},string.empty(0,1));
 
 parentName = "Flow components";
@@ -141,6 +141,14 @@ if ismember(className,["WVTransformStratifiedQG","WVTransformBarotropicQG"])
         documentation.allMethodDocumentation(a0Index).shortDescription = ...
             "Zero-frequency geostrophic coefficients.";
     end
+end
+if className == "WVTransformFreeSurfaceQG"
+    excludedNames = [excludedNames ...
+        "Ap" "Am" "A0" "Apt" "Amt" "A0t" "waveCoefficientsAtTimeT" ...
+        "convertFromWavenumberToFrequency" "initWithUVEta" "initWithUVRho" ...
+        "addUVEta" "transformUVEtaToWaveVortex" "transformWaveVortexToUVWEta" ...
+        "verticalModes" "h" "h_pm" "Lr2" "waveModeVerticalStructureAtIndex" ...
+        "FMatrix" "FinvMatrix" "GMatrix" "GinvMatrix"];
 end
 if className == "WVTransformBarotropicQG"
     excludedNames = [excludedNames ...

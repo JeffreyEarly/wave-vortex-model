@@ -8,7 +8,7 @@ has_toc: true
 
 # Capabilities and limitations
 
-WaveVortexModel provides five transform families together with model integration, forcing, observing systems, and NetCDF output. This page summarizes the documented public behavior and important limitations. Public MATLAB visibility alone does not make an implementation helper a recommended entry point.
+WaveVortexModel provides five production transform families and a free-surface QG transform whose modal representation and persistence are available ahead of its nonlinear RHS. This page summarizes the documented public behavior and important limitations. Public MATLAB visibility alone does not make an implementation helper a recommended entry point.
 
 ## Transforms
 
@@ -18,6 +18,7 @@ WaveVortexModel provides five transform families together with model integration
 | `WVTransformHydrostatic` | Hydrostatic flow with variable stratification. |
 | `WVTransformBoussinesq` | Nonhydrostatic flow with variable stratification. |
 | `WVTransformStratifiedQG` | Stratified quasigeostrophic flow. |
+| `WVTransformFreeSurfaceQG` | Free-surface QG construction, projection, reconstruction, snapshots, output, and restart; nonlinear evolution is deferred. |
 | `WVTransformBarotropicQG` | Equivalent-barotropic quasigeostrophic flow. |
 
 The rotating transforms accept either hemisphere for `5 <= abs(latitude) <= 85`, including the endpoints. Horizontal grids may contain independently chosen positive even or odd grid counts. MATLAB remains the default implementation. Constant-stratification transforms may explicitly select the narrower [compiled MATLAB backend preview](/users-guide/compiled-preview.html).
@@ -44,7 +45,7 @@ The optional [standalone portable runtime](/users-guide/portable-runtime.html) p
 
 | Capability | MATLAB | Compiled MATLAB preview | Standalone runtime |
 | --- | --- | --- | --- |
-| Transform families | All five documented transforms | Constant stratification | Constant stratification and equivalent-barotropic QG |
+| Transform families | All five production transforms; free-surface QG representation and persistence without nonlinear evolution | Constant stratification | Constant stratification and equivalent-barotropic QG |
 | Integrators | Fixed and adaptive MATLAB integration | MATLAB owns integration | Fixed RK4 and MATLAB-compatible `ode23`, `ode45`, and `ode78` |
 | Forcing | Documented built-ins and custom `WVForcing` | Exactly default `WVNonlinearAdvection` | Qualified transform-valid built-in subset |
 | Observers and NetCDF | Full documented MATLAB model surface | MATLAB owns observers and persistence | Qualified coefficients, fields, moorings, particles, tracers, schedules, and restart subsets |

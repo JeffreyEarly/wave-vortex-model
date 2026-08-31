@@ -3,7 +3,7 @@ layout: default
 title: initObservingSystemsFromGroup
 parent: WVModelOutputGroup
 grand_parent: Model output
-nav_order: 7
+nav_order: 9
 mathjax: true
 ---
 

@@ -73,6 +73,7 @@ These items document internal implementation details and are not part of the pri
   + [`outputGroupNames`](/classes/model-output/wvmodeloutputfile/outputgroupnames.html) retrieve the names of all output group names
   + [`outputGroupWithName`](/classes/model-output/wvmodeloutputfile/outputgroupwithname.html) retrieve a WVModelOutputGroup by name
   + [`outputGroups`](/classes/model-output/wvmodeloutputfile/outputgroups.html) array of `WVModelOutputGroup`s that will be written to file
+  + [`outputGroupsContainingCompleteCoefficientState`](/classes/model-output/wvmodeloutputfile/outputgroupscontainingcompletecoefficientstate.html) Return output groups containing every physical coefficient family.
   + [`outputTimesForIntegrationPeriod`](/classes/model-output/wvmodeloutputfile/outputtimesforintegrationperiod.html) returns a unique, ordered array of the aggregate output times during the requested integration period.
   + [`recordNetCDFFileHistory`](/classes/model-output/wvmodeloutputfile/recordnetcdffilehistory.html) tells the output groups to log this time step in the NetCDF history
 + Output internals

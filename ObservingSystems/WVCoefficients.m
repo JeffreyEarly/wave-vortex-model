@@ -1,8 +1,8 @@
 classdef WVCoefficients < WVObservingSystem
     % Integrate and record the wave-vortex coefficients
     %
-    % WVCoefficients supplies the Ap, Am, and A0 state variables used by a
-    % WVModel integrator and writes their current values to model output.
+    % WVCoefficients supplies the ordered coefficient families declared by
+    % `coefficientStateAnnotations` to a WVModel integrator.
 
     properties (GetAccess=public, SetAccess=public)
         absTolerance
@@ -28,12 +28,7 @@ classdef WVCoefficients < WVObservingSystem
             self@WVObservingSystem(model,"wave-vortex coefficient flux");
             self.absTolerance = options.absTolerance;
 
-            if self.wvt.hasWaveComponent == true
-                self.nFluxComponents = 2;
-            end
-            if self.wvt.hasPVComponent == true
-                self.nFluxComponents = self.nFluxComponents + 1;
-            end
+            self.nFluxComponents = length(self.wvt.coefficientStateAnnotations());
         end
 
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -44,12 +39,10 @@ classdef WVCoefficients < WVObservingSystem
         
         function nArray = lengthOfFluxComponents(self)
             % return an array containing the numel of each flux component.
-            nArray = [];
-            if self.wvt.hasWaveComponent == true
-                nArray = cat(1,nArray,[numel(self.wvt.Ap); numel(self.wvt.Am)]);
-            end
-            if self.wvt.hasPVComponent == true
-                nArray = cat(1,nArray,[numel(self.wvt.A0)]);
+            annotations = self.wvt.coefficientStateAnnotations();
+            nArray = zeros(length(annotations),1);
+            for iFamily = 1:length(annotations)
+                nArray(iFamily) = numel(self.wvt.(annotations(iFamily).name));
             end
         end
 
@@ -60,79 +53,50 @@ classdef WVCoefficients < WVObservingSystem
             % - Declaration: contract = portableImplementationContract(self)
             % - Returns contract: versioned data-only observer contract
             % - Developer: true
-            payload = struct("name",string(self.name),"absTolerance",double(self.absTolerance));
-            contract = self.supportedPortableImplementationContract("WVCoefficients",payload);
+            annotations = self.wvt.coefficientStateAnnotations();
+            familyNames = string({annotations.name});
+            payload = struct("name",string(self.name),"absTolerance",double(self.absTolerance),"coefficientFamilies",familyNames);
+            if isequal(familyNames,["Ap" "Am" "A0"]) || isequal(familyNames,"A0")
+                contract = self.supportedPortableImplementationContract("WVCoefficients",payload);
+            else
+                contract = WVInternal.portableImplementationContract(string(class(self)),"WVCoefficients","unavailable","The portable runtime does not implement this transform's coefficient-family layout.",payload);
+            end
         end
 
         function Y0 = absErrorTolerance(self)
-            alpha0 = ones(self.wvt.spectralMatrixSize);
-            alphapm = ones(self.wvt.spectralMatrixSize);
-            AbsErrorSpectrum = @isempty;
-            kRadial = self.wvt.kRadial;
-            Kh = self.wvt.Kh;
-            J = self.wvt.J;
-            dk = kRadial(2)-kRadial(1);
-            for iK=1:length(kRadial)
-                indicesForK = kRadial(iK)-dk/2 < Kh & Kh <= kRadial(iK)+dk/2;
-                for iJ=1:length(self.wvt.j)
-                    % this is faster than logical indexing
-                    indicesForKJ = find(indicesForK & J == self.wvt.j(iJ));
-                    nIndicesForKJ = length(indicesForKJ);
-
-                    if isequal(AbsErrorSpectrum,@isempty)
-                        energyPerA0Component = (kRadial(iK)+dk/2 - max(kRadial(iK)-dk/2,0))/nIndicesForKJ;
-                        energyPerApmComponent = energyPerA0Component;
-                    else
-                        energyPerA0Component = integral(@(k) A0AbsErrorSpectrum(k,J(iJ)),max(kRadial(iK)-dk/2,0),kRadial(iK)+dk/2)/nIndicesForKJ;
-                        energyPerApmComponent = integral(@(k) ApmAbsErrorSpectrum(k,J(iJ)),max(kRadial(iK)-dk/2,0),kRadial(iK)+dk/2)/nIndicesForKJ/2;
-                    end
-                    if self.wvt.hasPVComponent == true
-                        alpha0(indicesForKJ) = self.absTolerance*sqrt(energyPerA0Component./(self.wvt.A0_TE_factor(indicesForKJ) ));
-                    end
-                    if self.wvt.hasWaveComponent == true
-                        alphapm(indicesForKJ) = self.absTolerance*sqrt(energyPerApmComponent./(self.wvt.Apm_TE_factor(indicesForKJ) ));
-                    end
-                end
-            end
-
-            alpha0(isinf(alpha0)) = 1;
-            alphapm(isinf(alphapm)) = 1;
-
-            Y0 = {};
-            if self.wvt.hasWaveComponent == true
-                Y0 = cat(1,Y0,{alphapm;alphapm});
-            end
-            if self.wvt.hasPVComponent == true
-                Y0 = cat(1,Y0,{alpha0});
+            annotations = self.wvt.coefficientStateAnnotations();
+            toleranceState = self.wvt.coefficientAbsoluteTolerances(self.absTolerance);
+            Y0 = cell(length(annotations),1);
+            for iFamily = 1:length(annotations)
+                Y0{iFamily} = toleranceState.(annotations(iFamily).name);
             end
         end
 
         function Y0 = initialConditions(self)
-            Y0 = {};
-            if self.wvt.hasWaveComponent == true
-                Y0 = cat(1,Y0,{self.wvt.Ap;self.wvt.Am});
-            end
-            if self.wvt.hasPVComponent == true
-                Y0 = cat(1,Y0,{self.wvt.A0});
+            annotations = self.wvt.coefficientStateAnnotations();
+            Y0 = cell(length(annotations),1);
+            for iFamily = 1:length(annotations)
+                Y0{iFamily} = self.wvt.(annotations(iFamily).name);
             end
         end
 
         function nlF = fluxAtTime(self,t,y0)
             self.updateIntegratorValues(t,y0)
 
-            nlF = cell(1,self.nFluxComponents);
-            [nlF{:}] = self.wvt.nonlinearFlux();
+            annotations = self.wvt.coefficientStateAnnotations();
+            tendency = self.wvt.coefficientTendency();
+            nlF = cell(1,length(annotations));
+            for iFamily = 1:length(annotations)
+                nlF{iFamily} = tendency.(annotations(iFamily).name);
+            end
         end
 
         function updateIntegratorValues(self,t,y0)
-            n = 0;
             self.wvt.t = t;
-            if self.wvt.hasWaveComponent == true
-                n=n+1; self.wvt.Ap(:) = y0{n};
-                n=n+1; self.wvt.Am(:) = y0{n};
-            end
-            if self.wvt.hasPVComponent == true
-                n=n+1; self.wvt.A0(:) = y0{n};
+            annotations = self.wvt.coefficientStateAnnotations();
+            for iFamily = 1:length(annotations)
+                name = annotations(iFamily).name;
+                self.wvt.(name) = reshape(y0{iFamily},size(self.wvt.(name)));
             end
         end
 

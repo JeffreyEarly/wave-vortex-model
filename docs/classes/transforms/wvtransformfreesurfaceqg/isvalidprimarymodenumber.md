@@ -1,0 +1,35 @@
+---
+layout: default
+title: isValidPrimaryModeNumber
+parent: WVTransformFreeSurfaceQG
+grand_parent: Transforms
+nav_order: 114
+mathjax: true
+---
+
+#  isValidPrimaryModeNumber
+
+returns a boolean indicating whether (k,l,j) is a valid primary (non-conjugate) mode number
+
+> Developer documentation: this item describes internal implementation details.
+
+
+---
+
+## Declaration
+```matlab
+ index = isValidPrimaryModeNumber(kMode,lMode,jMode)
+```
+## Parameters
++ `kMode`  integer
++ `lMode`  integer
++ `jMode`  non-negative integer
+
+## Returns
++ `index`  a non-negative integer
+
+## Discussion
+
+returns a boolean indicating whether (k,l,j) is a valid
+non-conjugate mode number according to how the property
+conjugateDimension is set.

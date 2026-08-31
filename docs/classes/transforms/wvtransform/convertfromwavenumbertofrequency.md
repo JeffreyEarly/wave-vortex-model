@@ -3,7 +3,7 @@ layout: default
 title: convertFromWavenumberToFrequency
 parent: WVTransform
 grand_parent: Transforms
-nav_order: 23
+nav_order: 27
 mathjax: true
 ---
 

@@ -25,8 +25,8 @@ initialize the flow from a NetCDF file
 
 ## Discussion
 
-Clears variables Ap,Am,A0 and then sets them the values found in the file
-at the requested time.
+Restores the annotated coefficient families found in the file at the
+requested committed time.
 
 This is intended to be used in conjunction with
 [`waveVortexTransformFromFile`](/classes/transforms/wvtransform/wavevortextransformfromfile.html)

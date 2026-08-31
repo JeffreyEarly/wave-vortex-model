@@ -3,7 +3,7 @@ layout: default
 title: hasWaveComponent
 parent: WVTransform
 grand_parent: Transforms
-nav_order: 43
+nav_order: 47
 mathjax: true
 ---
 

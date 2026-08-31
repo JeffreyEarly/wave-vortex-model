@@ -3,7 +3,7 @@ layout: default
 title: initializeOutputGroup
 parent: WVModelOutputGroup
 grand_parent: Model output
-nav_order: 8
+nav_order: 10
 mathjax: true
 ---
 

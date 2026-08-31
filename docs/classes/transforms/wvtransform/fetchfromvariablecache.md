@@ -3,7 +3,7 @@ layout: default
 title: fetchFromVariableCache
 parent: WVTransform
 grand_parent: Transforms
-nav_order: 28
+nav_order: 32
 mathjax: true
 ---
 

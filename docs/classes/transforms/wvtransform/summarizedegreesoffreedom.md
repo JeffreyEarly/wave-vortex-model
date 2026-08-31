@@ -3,7 +3,7 @@ layout: default
 title: summarizeDegreesOfFreedom
 parent: WVTransform
 grand_parent: Transforms
-nav_order: 83
+nav_order: 87
 mathjax: true
 ---
 

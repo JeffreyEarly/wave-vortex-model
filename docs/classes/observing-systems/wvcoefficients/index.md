@@ -18,8 +18,8 @@ Integrate and record the wave-vortex coefficients
 
 ## Overview
 
-WVCoefficients supplies the Ap, Am, and A0 state variables used by a
-WVModel integrator and writes their current values to model output.
+WVCoefficients supplies the ordered coefficient families declared by
+`coefficientStateAnnotations` to a WVModel integrator.
 
 
 ## Topics

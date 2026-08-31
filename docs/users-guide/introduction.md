@@ -12,7 +12,7 @@ WaveVortexModel separates the representation of a fluid state from its time evol
 
 ## `WVTransform`: represent and diagnose a state
 
-A [`WVTransform`](/classes/transforms/wvtransform/) represents the state of a rotating fluid at a reference time. Wave-bearing transforms store that state in the wave–vortex coefficients `Ap`, `Am`, and `A0`; quasigeostrophic transforms use `A0`. The transform reconstructs physical variables such as velocity, density, pressure, and potential vorticity when they are requested.
+A [`WVTransform`](/classes/transforms/wvtransform/) represents the state of a rotating fluid at a reference time. Wave-bearing transforms store that state in the wave–vortex coefficients `Ap`, `Am`, and `A0`; legacy quasigeostrophic transforms use `A0`. The free-surface QG transform uses its canonical `Ag_q`, `Ag_0`, and `Amda` families. The transform reconstructs physical variables such as velocity, density, pressure, and potential vorticity when they are requested.
 
 Transforms also provide the forward projection from physical fields to coefficients, spectral differentiation and integration, interpolation at periodic off-grid positions, energetics, spectra, and flow-component diagnostics. Choose the transform family to match the desired stratification and dynamical approximation.
 

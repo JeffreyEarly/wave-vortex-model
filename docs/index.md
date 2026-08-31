@@ -26,7 +26,7 @@ model = WVModel(wvt);
 model.integrateToTime(600);
 ```
 
-The transform stores the decomposed state in `Ap`, `Am`, and `A0`. Variables such as velocity, density, pressure, energy, and potential vorticity are reconstructed from those coefficients when requested.
+Transforms store decomposed state in annotated coefficient families: `Ap`, `Am`, and `A0` for the established wave–vortex representation, or `Ag_q`, `Ag_0`, and `Amda` for free-surface QG. Variables such as velocity, density, pressure, energy, and potential vorticity are reconstructed from those coefficients when requested.
 
 ## Start here
 

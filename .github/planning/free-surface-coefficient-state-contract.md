@@ -135,7 +135,13 @@ The QG descriptor order is `Ag_q`, `Ag_0`, `Amda`. The descriptor defines the lo
 
 The three logical coefficient families are canonical restart state. Their family identities, logical dimensions, auxiliary coordinates, and canonical bases must survive a round trip. In particular, a file never exposes orthogonal zero-APV coefficients in place of boundary-normalized `Ag_0`.
 
-The precise NetCDF variable names, physical dimensions, zero-endpoint encoding, schema version, append policy, and migration behavior are Phase 2 decisions. Packed integrator buffers, coordinate rotations, reconstruction matrices, caches, and derived diagnostics are not persisted.
+Persistence also includes the complete sampled mathematical representation needed to resume without rerunning an InternalModes solver: APV and MDA mode labels, sampled `F/G` modes, equivalent depths, forward matrices, zero-APV pages, endpoint responses, `F/G` source-pairing matrices, source-solve matrices, resolved coordinates and endpoint parameters, and compact certification results. These arrays are scientific restart state, not disposable runtime caches.
+
+Packed integrator buffers, Fourier plans, horizontal masks, derived-variable caches, and runtime forcing or closure caches are not persisted. Orthogonal zero-APV rotations may be persisted as diagnostic operators when useful, but they never replace the canonical boundary-normalized coefficient state.
+
+An inactive zero-APV family is physically omitted. When `activeEndpointCount=0`, the file contains no `activeEndpoint`, `Ag_0`, or zero-APV mode/operator variable. The logical MATLAB property and tendency field remain empty arrays with shape `0 × NklNonzero`.
+
+Model-output records use their unlimited `t` coordinate as the commit marker. Payload variables are staged and synchronized before the corresponding finite `t` value is written and synchronized. Readers accept only the contiguous finite prefix of `t`, reject finite values after a fill-valued hole, and overwrite the first uncommitted index when resuming.
 
 ## Full-Boussinesq extension
 
@@ -164,6 +170,6 @@ Round-trip tolerances, representative grids, and performance cases belong to the
 
 ## Deferred decisions and non-goals
 
-Issue #343 retains the choice among separate arrays, dependent views over packed state, and hybrid storage. It also owns measurements of warmed RHS time, projection/reconstruction time, integrator copying, and memory. An internal orthogonal `Ag_0` representation is one candidate, not a public contract change.
+The reference implementation uses separate coefficient arrays and separate integrator entries. Issue #343 retains a packed candidate behind a private adapter and owns measurements of warmed RHS time, projection/reconstruction time, integrator copying, and memory after the complete nonlinear RHS exists. Public properties and NetCDF storage do not change with that benchmark. An internal orthogonal `Ag_0` representation is one candidate, not a public contract change.
 
-Phase 2 defines the independent v5 NetCDF schema. Later work implements mode construction, common-`Nj` certification, nonlinear products, forcing, invariants, and the transform itself. This phase does not modify MATLAB source, add test scaffolding, regenerate website documentation, migrate existing transforms, or create compatibility aliases.
+Future full-Boussinesq wave storage remains deferred. The QG prototype does not add compatibility aliases or a migration from the legacy `A0` layout.

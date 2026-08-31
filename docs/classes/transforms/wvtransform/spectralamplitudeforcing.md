@@ -3,7 +3,7 @@ layout: default
 title: spectralAmplitudeForcing
 parent: WVTransform
 grand_parent: Transforms
-nav_order: 79
+nav_order: 83
 mathjax: true
 ---
 

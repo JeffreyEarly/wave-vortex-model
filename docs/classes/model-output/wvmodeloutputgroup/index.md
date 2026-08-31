@@ -64,19 +64,22 @@ outputFile.addOutputGroup(outputGroup);
 
 ## Developer Topics
 These items document internal implementation details and are not part of the primary public API.
++ Output internals
+  + [`commitStagedTimeStep`](/classes/model-output/wvmodeloutputgroup/commitstagedtimestep.html) Commit a staged record by writing its finite time coordinate.
+  + [`model`](/classes/model-output/wvmodeloutputgroup/model.html) Reference to the WVModel being used
+  + [`name`](/classes/model-output/wvmodeloutputgroup/name.html) of the current (or future) group in the NetCDF file
+  + [`observingSystemWithName`](/classes/model-output/wvmodeloutputgroup/observingsystemwithname.html) retrieve an observing system by name
+  + [`observingSystems`](/classes/model-output/wvmodeloutputgroup/observingsystems.html) array of WVObservingSystem that will be written to the group
 + Output persistence and scheduling
+  + [`committedRecordCountForGroup`](/classes/model-output/wvmodeloutputgroup/committedrecordcountforgroup.html) Return the contiguous committed prefix of an output group.
   + [`didInitializeStorage`](/classes/model-output/wvmodeloutputgroup/didinitializestorage.html) boolean indicating whether or not the internal structure of the NetCDF file has been created
   + [`group`](/classes/model-output/wvmodeloutputgroup/group.html) Reference to the NetCDFGroup being used for model output
   + [`incrementsWrittenToGroup`](/classes/model-output/wvmodeloutputgroup/incrementswrittentogroup.html) output index of the current/most recent step.
   + [`modelOutputGroupFromGroup`](/classes/model-output/wvmodeloutputgroup/modeloutputgroupfromgroup.html) initialize a WVModelOutputGroup instance from NetCDF file
   + [`outputTimesForIntegrationPeriod`](/classes/model-output/wvmodeloutputgroup/outputtimesforintegrationperiod.html) returns a unique, ordered array of the aggregate output times during the requested integration period.
   + [`recordNetCDFFileHistory`](/classes/model-output/wvmodeloutputgroup/recordnetcdffilehistory.html) losg this time step in the NetCDF history
+  + [`stageTimeStepToNetCDFFile`](/classes/model-output/wvmodeloutputgroup/stagetimesteptonetcdffile.html) Stage one record payload without committing its time coordinate.
   + [`timeOfLastIncrementWrittenToGroup`](/classes/model-output/wvmodeloutputgroup/timeoflastincrementwrittentogroup.html) output index of the current/most recent step.
-+ Output internals
-  + [`model`](/classes/model-output/wvmodeloutputgroup/model.html) Reference to the WVModel being used
-  + [`name`](/classes/model-output/wvmodeloutputgroup/name.html) of the current (or future) group in the NetCDF file
-  + [`observingSystemWithName`](/classes/model-output/wvmodeloutputgroup/observingsystemwithname.html) retrieve an observing system by name
-  + [`observingSystems`](/classes/model-output/wvmodeloutputgroup/observingsystems.html) array of WVObservingSystem that will be written to the group
 
 
 ---

@@ -121,7 +121,10 @@ classdef WVModel < handle & WVModelAdaptiveTimeStepMethods & WVModelFixedTimeSte
                     warning('The nonlinear flux has no damping and may not be stable.');
                 end
             end
-            self.eulerianObservingSystem = WVEulerianFields(self,fieldNames=intersect({'Ap','Am','A0'},self.wvt.variableNames));
+            coefficientAnnotations = self.wvt.coefficientStateAnnotations();
+            coefficientNames = {coefficientAnnotations.name};
+            physicallyPresent = arrayfun(@(annotation)annotation.isPhysicallyPresent(self.wvt),coefficientAnnotations);
+            self.eulerianObservingSystem = WVEulerianFields(self,fieldNames=coefficientNames(physicallyPresent));
         end
 
         function value = get.t(self)

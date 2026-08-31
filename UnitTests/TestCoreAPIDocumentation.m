@@ -17,6 +17,7 @@ classdef TestCoreAPIDocumentation < matlab.unittest.TestCase
                 "WVTransformHydrostatic"
                 "WVTransformBoussinesq"
                 "WVTransformStratifiedQG"
+                "WVTransformFreeSurfaceQG"
                 "WVTransformBarotropicQG"
                 ];
             for family = transformFamilies'
@@ -32,6 +33,7 @@ classdef TestCoreAPIDocumentation < matlab.unittest.TestCase
                 "wvtransformhydrostatic", "WVTransformHydrostatic", ["options.N2Function" "options.rhoFunction"]
                 "wvtransformboussinesq", "WVTransformBoussinesq", ["options.N2Function" "options.rhoFunction"]
                 "wvtransformstratifiedqg", "WVTransformStratifiedQG", ["options.N2Function" "options.rhoFunction"]
+                "wvtransformfreesurfaceqg", "WVTransformFreeSurfaceQG", ["options.N2Function" "options.rhoFunction" "options.g0" "options.gd"]
                 "wvtransformbarotropicqg", "WVTransformBarotropicQG", "options.h"
                 };
             for iExpectation = 1:size(expectations,1)
@@ -102,6 +104,7 @@ classdef TestCoreAPIDocumentation < matlab.unittest.TestCase
                 "classes/transforms/wvtransformhydrostatic/index.md"
                 "classes/transforms/wvtransformboussinesq/index.md"
                 "classes/transforms/wvtransformstratifiedqg/index.md"
+                "classes/transforms/wvtransformfreesurfaceqg/index.md"
                 "classes/transforms/wvtransformbarotropicqg/index.md"
                 "classes/wvmodel/index.md"
                 ];

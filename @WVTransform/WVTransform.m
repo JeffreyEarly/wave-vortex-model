@@ -15,18 +15,20 @@ classdef WVTransform < matlab.mixin.indexing.RedefinesDot & CAAnnotatedClass
     % $$(u,v,w,\rho,p)$$, relative vorticity, potential vorticity, energetic
     % diagnostics, and custom registered variables from those coefficients.
     %
-    % Choose one of five concrete transform classes:
+    % Choose one of six concrete transform classes:
     %
     % + `WVTransformConstantStratification`, in hydrostatic or nonhydrostatic mode
     % + `WVTransformHydrostatic`
     % + `WVTransformBoussinesq`
     % + `WVTransformStratifiedQG`
+    % + `WVTransformFreeSurfaceQG`
     % + `WVTransformBarotropicQG`
     %
     % Wave-bearing transforms store positive- and negative-frequency wave and
     % inertial coefficients in `Ap` and `Am`, and zero-frequency geostrophic
-    % and mean-density-anomaly coefficients in `A0`. Quasigeostrophic
-    % transforms use `A0` only. The `Apt`, `Amt`, and `A0t` variables are the
+    % and mean-density-anomaly coefficients in `A0`. Legacy quasigeostrophic
+    % transforms use `A0` only. Free-surface QG uses the annotated `Ag_q`,
+    % `Ag_0`, and `Amda` families. The `Apt`, `Amt`, and `A0t` variables are the
     % corresponding coefficients evaluated at the current transform time.
     %
     % - Topic: Create and restore a transform
@@ -1098,7 +1100,7 @@ classdef WVTransform < matlab.mixin.indexing.RedefinesDot & CAAnnotatedClass
             propertyAnnotations(end).attributes('standard_name') = 'time';
             propertyAnnotations(end).attributes('axis') = 'T';
 
-            propertyAnnotations(end+1) = CANumericProperty('t0',{},'s', 'reference time of Ap, Am, A0');
+            propertyAnnotations(end+1) = CANumericProperty('t0',{},'s', 'reference time of the canonical coefficient state');
 
             annotation = WVVariableAnnotation('totalEnergy',{},'m3 s-2', 'horizontally-averaged depth-integrated energy computed spectrally from wave-vortex coefficients');
             annotation.isVariableWithLinearTimeStep = 0;

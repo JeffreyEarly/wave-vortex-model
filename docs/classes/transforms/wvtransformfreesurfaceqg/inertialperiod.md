@@ -1,0 +1,23 @@
+---
+layout: default
+title: inertialPeriod
+parent: WVTransformFreeSurfaceQG
+grand_parent: Transforms
+nav_order: 101
+mathjax: true
+---
+
+#  inertialPeriod
+
+Inertial period in seconds.
+
+
+---
+
+## Description
+Real valued property with no dimensions and units of $$\mathrm{s}$$.
+
+## Discussion
+Inertial period in seconds.
+
+The inertial period is computed from the Coriolis parameter as $$T_f=2\pi/f$$. It is determined by `rotationRate` and `latitude`, which are set during construction.

@@ -3,7 +3,7 @@ layout: default
 title: didInitializeStorage
 parent: WVModelOutputGroup
 grand_parent: Model output
-nav_order: 4
+nav_order: 6
 mathjax: true
 ---
 

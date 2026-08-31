@@ -12,7 +12,11 @@ WaveVortexModel writes named dimensions, variables, units, descriptive attribute
 
 ## Scientific variables
 
-Each registered variable has a `WVVariableAnnotation` that defines its name, dimensions, units, and description. The output system uses those annotations when creating NetCDF dimensions and variables. Eulerian fields, coefficients, particles, tracers, and moorings add the dimensions and metadata needed for their own stored state.
+Each registered variable has a `WVVariableAnnotation` that defines its name, dimensions, units, and description. Canonical coefficient families use `WVCoefficientAnnotation`, which additionally records auxiliary coordinates, canonical basis, persistence role, numeric domain, and empty-family policy. The output system uses those annotations when creating NetCDF dimensions and variables. Eulerian fields, coefficients, particles, tracers, and moorings add the dimensions and metadata needed for their own stored state.
+
+## Committed time records
+
+Each output group uses an unlimited `t` coordinate with a `NaN` fill value. WaveVortexModel writes and synchronizes all payload variables before writing the corresponding finite time, then synchronizes the committed coordinate. Only the contiguous finite prefix of `t` is a valid output or restart sequence. A fill-valued hole marks the first uncommitted record, and a later finite time is rejected as a corrupted commit sequence. Files created before this convention retain their legacy raw-time behavior.
 
 The package uses established names and units where they are defined, but the metadata should still be reviewed before a file is distributed or deposited in an archive.
 

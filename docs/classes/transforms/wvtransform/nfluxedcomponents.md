@@ -3,7 +3,7 @@ layout: default
 title: nFluxedComponents
 parent: WVTransform
 grand_parent: Transforms
-nav_order: 50
+nav_order: 54
 mathjax: true
 ---
 

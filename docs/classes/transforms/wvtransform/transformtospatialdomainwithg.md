@@ -3,7 +3,7 @@ layout: default
 title: transformToSpatialDomainWithG
 parent: WVTransform
 grand_parent: Transforms
-nav_order: 100
+nav_order: 104
 mathjax: true
 ---
 

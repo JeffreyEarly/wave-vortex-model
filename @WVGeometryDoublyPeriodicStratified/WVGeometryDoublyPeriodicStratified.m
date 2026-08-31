@@ -68,11 +68,17 @@ classdef WVGeometryDoublyPeriodicStratified < WVGeometryDoublyPeriodic & WVStrat
             end
             Lz = Lxyz(3);
             Nz = Nxyz(3);
+            allFields = cell2struct([struct2cell(stratOptions);struct2cell(directInit)],[fieldnames(stratOptions);fieldnames(directInit)]);
+            allFields.Lz = Lz;
+            canInitializeDirectly = all(isfield(allFields, WVGeometryDoublyPeriodicStratified.namesOfRequiredPropertiesForStratification));
+            canSkipModeSolver = canInitializeDirectly && ~isequal(stratOptions.rhoFunction,@isempty);
             if ~isfield(stratOptions,'z')
                 stratOptions.z = WVStratification.quadraturePointsForStratifiedFlow(Lz,Nz,rho=stratOptions.rhoFunction,N2=stratOptions.N2Function,latitude=stratOptions.latitude,rotationRate=stratOptions.rotationRate);
             end
             nModes = Nz-1;
-            if ~isequal(stratOptions.N2Function,@isempty)
+            if canSkipModeSolver
+                verticalModes = [];
+            elseif ~isequal(stratOptions.N2Function,@isempty)
                 verticalModes = InternalModesWKBSpectral(N2=stratOptions.N2Function,zIn=[-Lz 0],zOut=stratOptions.z,latitude=stratOptions.latitude,rho0=stratOptions.rho0,nModes=nModes,nEVP=max(256,floor(2.1*Nz)),rotationRate=stratOptions.rotationRate,g=stratOptions.g);
                 stratOptions.N2Function = stratOptions.N2Function;
                 stratOptions.rhoFunction = @(z) verticalModes.rho_function(z);
@@ -81,8 +87,10 @@ classdef WVGeometryDoublyPeriodicStratified < WVGeometryDoublyPeriodic & WVStrat
                 stratOptions.N2Function = @(z) verticalModes.N2_function(z);
                 stratOptions.rhoFunction = stratOptions.rhoFunction;
             end
-            verticalModes.normalization = Normalization.kConstant;
-            verticalModes.upperBoundary = UpperBoundary.rigidLid;
+            if ~canSkipModeSolver
+                verticalModes.normalization = Normalization.kConstant;
+                verticalModes.upperBoundary = UpperBoundary.rigidLid;
+            end
 
             if geomOptions.shouldAntialias == true && ~isfield(stratOptions,"Nj")
                 maxNj = Nxyz(3)-1;
@@ -98,9 +106,6 @@ classdef WVGeometryDoublyPeriodicStratified < WVGeometryDoublyPeriodic & WVStrat
             self@WVGeometryDoublyPeriodic(Lxyz(1:2),Nxyz(1:2),optionCell{:},Nz=Nxyz(3),shouldExcludeNyquist=true,shouldExcludeConjugates=true,conjugateDimension=2);
 
             self.verticalModes = verticalModes;
-
-            allFields = cell2struct([struct2cell(stratOptions);struct2cell(directInit)],[fieldnames(stratOptions);fieldnames(directInit)]);
-            canInitializeDirectly = all(isfield(allFields, WVGeometryDoublyPeriodicStratified.namesOfRequiredPropertiesForStratification));
 
             if canInitializeDirectly == true
                 self.dLnN2 = directInit.dLnN2;

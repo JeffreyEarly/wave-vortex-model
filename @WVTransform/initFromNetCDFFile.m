@@ -1,8 +1,8 @@
 function initFromNetCDFFile(wvt,ncfile,options)
 % initialize the flow from a NetCDF file
 %
-% Clears variables Ap,Am,A0 and then sets them the values found in the file
-% at the requested time.
+% Restores the annotated coefficient families found in the file at the
+% requested committed time.
 % 
 % This is intended to be used in conjunction with
 % [`waveVortexTransformFromFile`](/classes/transforms/wvtransform/wavevortextransformfromfile.html)
@@ -37,32 +37,34 @@ end
 
 wvt.t0 = ncfile.readVariables('t0');
 
-coefficientNames = {};
-if wvt.hasWaveComponent
-    coefficientNames = {'Ap','Am'};
-end
-if wvt.hasPVComponent
-    coefficientNames{end+1} = 'A0';
-end
-stateVariableNames = {};
-if ~isempty(coefficientNames) && all(ncfile.hasVariableWithName(coefficientNames{:}))
-    stateVariableNames = coefficientNames;
-elseif all(ncfile.hasVariableWithName('u','v','eta'))
+coefficientNames = wvt.coefficientStateVariableNamesForPersistence();
+stateVariableNames = coefficientNames;
+[stateGroup,hasState] = groupContainingCompleteVariableSet(ncfile,stateVariableNames);
+if ~hasState
     stateVariableNames = {'u','v','eta'};
-elseif ncfile.hasVariableWithName('A0')
-    stateVariableNames = {'A0'};
+    [stateGroup,hasState] = groupContainingCompleteVariableSet(ncfile,stateVariableNames);
 end
-stateGroup = ncfile;
-if ~isempty(stateVariableNames)
-    stateGroup = commonVariableGroup(ncfile,stateVariableNames);
+if ~hasState
+    stateVariableNames = {'A0'};
+    [stateGroup,hasState] = groupContainingCompleteVariableSet(ncfile,stateVariableNames);
+end
+if ~hasState
+    stateVariableNames = {};
+    stateGroup = ncfile;
 end
 
 hasTimeDimension = 0;
 if stateGroup.hasDimensionWithName('t') && stateGroup.hasVariableWithName('t')
     hasTimeDimension = 1;
     tDim = stateGroup.readVariables('t');
+    committedCount = WVModelOutputGroup.committedRecordCountForGroup(stateGroup);
+    tDim = reshape(tDim,[],1);
+    tDim = tDim(1:committedCount);
     if isinf(options.iTime)
-        iTime = length(tDim);
+        iTime = committedCount;
+        if iTime == 0
+            error('WVTransform:NoCommittedRestartRecord','The selected output group contains no committed records.');
+        end
     elseif options.iTime > length(tDim)
         error('Index out of bounds! There are %d time points in this file, you requested %d.',length(tDim),options.iTime);
     else
@@ -73,14 +75,20 @@ else
     wvt.t = stateGroup.readVariables('t');
 end
 
-if all(ismember({'Ap','Am','A0'},stateVariableNames))
+if ~isempty(coefficientNames) && all(ismember(coefficientNames,stateVariableNames))
     if hasTimeDimension == 1
-        [wvt.A0,wvt.Ap,wvt.Am] = stateGroup.readVariablesAtIndexAlongDimension('t',iTime,'A0','Ap','Am');
+        values = cell(1,length(coefficientNames));
+        [values{:}] = stateGroup.readVariablesAtIndexAlongDimension('t',iTime,coefficientNames{:});
     else
-        [wvt.A0,wvt.Ap,wvt.Am] = stateGroup.readVariables('A0','Ap','Am');
+        values = cell(1,length(coefficientNames));
+        [values{:}] = stateGroup.readVariables(coefficientNames{:});
+    end
+    for iFamily = 1:length(coefficientNames)
+        familyName = coefficientNames{iFamily};
+        wvt.(familyName) = reshape(values{iFamily},size(wvt.(familyName)));
     end
     if options.shouldDisplayInit == 1
-        fprintf('%s initialized from Ap, Am, A0.\n',ncfile.attributes('WVTransform'));
+        fprintf('%s initialized from %s.\n',ncfile.attributes('WVTransform'),strjoin(coefficientNames,', '));
     end
 elseif all(ismember({'u','v','eta'},stateVariableNames))
     if hasTimeDimension == 1
@@ -107,22 +115,54 @@ end
 
 end
 
-function group = commonVariableGroup(ncfile,variableNames)
-variables = cell(1,length(variableNames));
-for iVariable = 1:length(variableNames)
-    paths = ncfile.variablePathsWithName(variableNames{iVariable});
-    if length(paths) ~= 1
-        error('A restart file must contain exactly one %s state variable, but %d were found.',variableNames{iVariable},length(paths));
+function [group,found] = groupContainingCompleteVariableSet(ncfile,variableNames)
+group = [];
+found = false;
+if isempty(variableNames)
+    return
+end
+candidates = groupTree(ncfile);
+isMatching = false(length(candidates),1);
+for iGroup = 1:length(candidates)
+    candidate = candidates{iGroup};
+    hasVariables = true;
+    for iVariable = 1:length(variableNames)
+        if strlength(candidate.groupPath) == 0
+            localPath = string(variableNames{iVariable});
+        else
+            localPath = candidate.groupPath + "/" + string(variableNames{iVariable});
+        end
+        hasVariables = hasVariables && any(ncfile.variablePathsWithName(variableNames{iVariable}) == localPath);
     end
-    variables{iVariable} = ncfile.variableWithName(char(paths));
-end
-group = variables{1}.group;
-for iVariable = 2:length(variables)
-    if variables{iVariable}.group ~= group
-        error('The restart state variables must be stored together in one NetCDF group.');
+    if hasVariables
+        isMatching(iGroup) = true;
     end
 end
-if ~group.hasVariableWithName('t')
-    error('The NetCDF group containing the restart state does not contain time.');
+matchingIndices = find(isMatching);
+if length(matchingIndices) > 1
+    error('WVTransform:AmbiguousRestartState','A restart file contains %d complete copies of the state variables %s.',length(matchingIndices),strjoin(variableNames,', '));
+elseif isempty(matchingIndices)
+    return
 end
+group = candidates{matchingIndices};
+found = true;
+if strlength(group.groupPath) > 0 && ~localVariableExists(ncfile,group,'t')
+    error('WVTransform:MissingRestartTime','The NetCDF group containing the restart state does not contain a local time coordinate.');
+end
+end
+
+function candidates = groupTree(group)
+candidates = {group};
+for iChild = 1:length(group.groups)
+    candidates = [candidates,groupTree(group.groups(iChild))]; %#ok<AGROW>
+end
+end
+
+function tf = localVariableExists(ncfile,group,name)
+if strlength(group.groupPath) == 0
+    localPath = string(name);
+else
+    localPath = group.groupPath + "/" + string(name);
+end
+tf = any(ncfile.variablePathsWithName(name) == localPath);
 end

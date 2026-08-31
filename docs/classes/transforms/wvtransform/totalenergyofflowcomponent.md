@@ -3,7 +3,7 @@ layout: default
 title: totalEnergyOfFlowComponent
 parent: WVTransform
 grand_parent: Transforms
-nav_order: 93
+nav_order: 97
 mathjax: true
 ---
 

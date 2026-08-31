@@ -3,7 +3,7 @@ layout: default
 title: defaultOperations
 parent: WVTransform
 grand_parent: Transforms
-nav_order: 25
+nav_order: 29
 mathjax: true
 ---
 
