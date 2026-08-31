@@ -1,7 +1,7 @@
 classdef WVForcing < handle & matlab.mixin.Heterogeneous & CAAnnotatedClass
     % Add forcing or dissipation to a wave-vortex transform.
     %
-    % `WVForcing` is the base class for forcing and closure objects
+    % `WVForcing` is the base class for right-hand-side and closure objects
     % attached to a `WVTransform`. Use one of the supplied subclasses or
     % subclass this interface to implement a custom forcing. Each instance
     % belongs to the transform supplied at construction and is registered by
@@ -12,8 +12,10 @@ classdef WVForcing < handle & matlab.mixin.Heterogeneous & CAAnnotatedClass
     % $$(u,v,w,\eta)$$ for nonhydrostatic flow. Those tendencies are projected
     % into wave-vortex space before spectral forcing contributes directly to
     % $$(F_+,F_-,F_0)$$. Spectral-amplitude forcing may then update `Ap`, `Am`,
-    % and `A0` directly. Potential-vorticity variants contribute only to the
-    % zero-frequency tendency or amplitude.
+    % and `A0` directly. Legacy potential-vorticity variants contribute only
+    % to the zero-frequency tendency or amplitude. QG-state spatial forcing
+    % contributes both an interior QGPV tendency and active-endpoint anomaly
+    % tendencies before the transform projects them into coefficient space.
     %
     % A custom subclass declares one or more stages with `forcingType` and
     % overrides the corresponding evaluation methods. Spatial forcing is
@@ -69,6 +71,7 @@ classdef WVForcing < handle & matlab.mixin.Heterogeneous & CAAnnotatedClass
         % | `HydrostaticSpatial` | `addHydrostaticSpatialForcing` |
         % | `NonhydrostaticSpatial` | `addNonhydrostaticSpatialForcing` |
         % | `PVSpatial` | `addPotentialVorticitySpatialForcing` |
+        % | `QGSpatial` | `addQuasigeostrophicSpatialForcing` |
         % | `Spectral` | `addSpectralForcing` |
         % | `PVSpectral` | `addPotentialVorticitySpectralForcing` |
         % | `SpectralAmplitude` | `setSpectralForcing` and `setSpectralAmplitude` |
@@ -248,6 +251,25 @@ classdef WVForcing < handle & matlab.mixin.Heterogeneous & CAAnnotatedClass
             % - Developer: true
         end
 
+        function [Fq,Fb] = addQuasigeostrophicSpatialForcing(self,wvt,Fq,Fb)
+            % Add interior and active-endpoint QG physical-space tendencies.
+            %
+            % `Fq` has the transform's `x`, `y`, and `z` dimensions. `Fb`
+            % has `x`, `y`, and `activeEndpoint` dimensions; its third
+            % dimension is zero when both endpoints are inactive. A forcing
+            % declaring `QGSpatial` overrides this hook and returns both
+            % accumulators in the same physical coordinates.
+            %
+            % - Topic: Implement forcing evaluation
+            % - Declaration: [Fq,Fb] = addQuasigeostrophicSpatialForcing(wvt,Fq,Fb)
+            % - Parameter wvt: free-surface QG transform evaluating the forcing
+            % - Parameter Fq: accumulated physical-space QGPV tendency
+            % - Parameter Fb: accumulated active-endpoint anomaly tendency
+            % - Returns Fq: updated physical-space QGPV tendency
+            % - Returns Fb: updated active-endpoint anomaly tendency
+            % - Developer: true
+        end
+
         function F0 = addPotentialVorticitySpectralForcing(self, wvt, F0)
             % Add a spectral QGPV tendency.
             %
@@ -344,9 +366,9 @@ classdef WVForcing < handle & matlab.mixin.Heterogeneous & CAAnnotatedClass
             %
             % - Topic: Implement forcing evaluation
             % - Declaration: forceTypes = spatialFluxTypes()
-            % - Returns forceTypes: `HydrostaticSpatial`, `NonhydrostaticSpatial`, and `PVSpatial`
+            % - Returns forceTypes: physical-space forcing types
             % - Developer: true
-            forceTypes = WVForcingType(["HydrostaticSpatial","NonhydrostaticSpatial","PVSpatial"]);
+            forceTypes = WVForcingType(["HydrostaticSpatial","NonhydrostaticSpatial","PVSpatial","QGSpatial"]);
         end
 
         function forceTypes = spectralFluxTypes()

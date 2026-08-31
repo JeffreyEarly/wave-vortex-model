@@ -30,11 +30,14 @@ classdef WVNonlinearAdvection < WVForcing
     %
     % $$
     % \begin{align}
-    % \mathcal{S}_\mathrm{qgpv} &= - \left( u \partial_x q + v \partial_y q \right)
+    % \mathcal{S}_\mathrm{qgpv} &= - \left( u \partial_x q + v \partial_y q \right), \\
+    % \mathcal{S}_{b_e} &= - \left( u_e \partial_x b_e + v_e \partial_y b_e \right)
     % \end{align}
     % $$
     %
-    % where $$q$$ is QGPV.
+    % where $$q$$ is QGPV and $$b_e$$ is an active endpoint anomaly. The
+    % endpoint equation is present only for QG transforms whose canonical
+    % state includes active boundary sheets.
     %
     % ### Notes
     %
@@ -93,7 +96,7 @@ classdef WVNonlinearAdvection < WVForcing
             arguments
                 wvt WVTransform {mustBeNonempty}
             end
-            self@WVForcing(wvt,"nonlinear advection",WVForcingType(["HydrostaticSpatial" "NonhydrostaticSpatial" "PVSpatial"]));
+            self@WVForcing(wvt,"nonlinear advection",WVForcingType(["HydrostaticSpatial" "NonhydrostaticSpatial" "PVSpatial" "QGSpatial"]));
             self.priority = 127;
             if isa(wvt,'WVStratification') && isprop(wvt,'dLnN2')
                 self.dLnN2 = shiftdim(wvt.dLnN2,-2);
@@ -115,6 +118,24 @@ classdef WVNonlinearAdvection < WVForcing
 
         function Fpv = addPotentialVorticitySpatialForcing(self, wvt, Fpv)
             Fpv = Fpv - (wvt.u.*wvt.diffX(wvt.qgpv) + wvt.v.*wvt.diffY(wvt.qgpv));
+        end
+
+        function [Fq,Fb] = addQuasigeostrophicSpatialForcing(~,wvt,Fq,Fb)
+            % Add nonlinear advection of interior QGPV and endpoint anomalies.
+            %
+            % - Topic: Implement forcing evaluation
+            % - Declaration: [Fq,Fb] = addQuasigeostrophicSpatialForcing(wvt,Fq,Fb)
+            % - Parameter wvt: free-surface QG transform providing the physical state
+            % - Parameter Fq: accumulated physical-space QGPV tendency
+            % - Parameter Fb: accumulated active-endpoint anomaly tendency
+            % - Returns Fq: QGPV tendency including nonlinear advection
+            % - Returns Fb: endpoint tendency including nonlinear advection
+            % - Developer: true
+            [q,u,v,b,ub,vb] = wvt.quasigeostrophicSpatialState();
+            Fq = Fq-(u.*wvt.diffX(q)+v.*wvt.diffY(q));
+            if wvt.activeEndpointCount > 0
+                Fb = Fb-(ub.*wvt.diffX(b)+vb.*wvt.diffY(b));
+            end
         end
 
         function force = forcingWithResolutionOfTransform(self,wvtX2)

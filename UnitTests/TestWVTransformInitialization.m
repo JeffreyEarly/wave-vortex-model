@@ -4,7 +4,7 @@ classdef TestWVTransformInitialization < matlab.unittest.TestCase
         latitude = struct('southOutside',-86,'southUpperBoundary',-85,'southLowerBoundary',-5,'southInsideLowerBoundary',-4,'equator',0,'northInsideLowerBoundary',4,'northLowerBoundary',5,'northUpperBoundary',85,'northOutside',86)
     end
 
-    methods (Test)
+    methods (Test, TestTags = "full")
         function stratifiedQGConvertsKConstantModesToGeostrophicNormalization(testCase)
             N2 = @(z)2e-5*exp(z/4000);
             wvt = WVTransformStratifiedQG([4000 3000 1000],[8 6 5],N2Function=N2,latitude=45,shouldAntialias=false);

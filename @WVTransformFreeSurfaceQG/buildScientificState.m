@@ -57,7 +57,7 @@ klNonzero = find(kh > 0);
 kNonzero = horizontalGeometry.k(klNonzero);
 lNonzero = horizontalGeometry.l(klNonzero);
 khNonzero = kh(klNonzero);
-[khUnique,~,klNonzeroKhUniqueIndex] = unique(khNonzero,'sorted');
+[khUnique,klNonzeroKhUniqueIndex] = uniqueWavenumberPages(khNonzero);
 
 f0 = 2*options.rotationRate*sind(options.latitude);
 if f0 == 0
@@ -73,28 +73,31 @@ mdaProblem = IMInternalModes.meanDensityAnomalyModes(N2=N2Function,zDomain=zDoma
 apvBasis = solver.solveEVP(apvProblem,nModes=nSolve);
 mdaBasis = solver.solveEVP(mdaProblem,nModes=nSolve);
 
+quadraticAliasingTolerance = 0.1;
+[~,apvAssessment] = apvBasis.discreteTransform(z=z,variables=["F","G"],quadraticAliasingTolerance=quadraticAliasingTolerance);
+maximumCandidateCount = min([nSolve,length(z)]);
+[mdaCertifiedTransform,mdaCertifiedAssessment,mdaCertifiedModeCount] = certifiedMdaTransform(mdaBasis,z,maximumCandidateCount);
+apvCandidateModeCount = apvAssessment.candidateModeCount;
+mdaCandidateModeCount = maximumCandidateCount;
+apvCertifiedModeCount = apvAssessment.retainedModeCount;
+commonCertifiedModeCount = min(apvCertifiedModeCount,mdaCertifiedModeCount);
 if isempty(options.Nj)
-    maximumCandidateCount = min([nSolve,length(z)]);
-    [apvTransform,mdaTransform,apvAssessment,mdaAssessment,Nj] = certifiedCommonTransform(apvBasis,mdaBasis,z,maximumCandidateCount);
-    apvCandidateModeCount = maximumCandidateCount;
-    mdaCandidateModeCount = maximumCandidateCount;
+    Nj = commonCertifiedModeCount;
 else
     if ~isscalar(options.Nj) || options.Nj < 1 || options.Nj ~= fix(options.Nj)
         error('WVTransformFreeSurfaceQG:InvalidNj','Nj must be a positive integer.');
     end
     Nj = options.Nj;
-    if Nj > nSolve || Nj > length(z)
-        error('WVTransformFreeSurfaceQG:UncertifiedNj','Requested Nj=%d exceeds the %d available solved modes or physical samples.',Nj,min(nSolve,length(z)));
+    if Nj > commonCertifiedModeCount
+        error('WVTransformFreeSurfaceQG:UncertifiedNj','Requested Nj=%d exceeds the product-safe common certified maximum of %d.',Nj,commonCertifiedModeCount);
     end
-    try
-        [apvTransform,apvAssessment] = apvBasis.discreteTransform(z=z,nModes=Nj,variables=["F","G"]);
-        [mdaTransform,mdaAssessment] = mdaBasis.discreteTransform(z=z,nModes=Nj,variables="G");
-    catch cause
-        exception = MException('WVTransformFreeSurfaceQG:UncertifiedNj','Requested Nj=%d is not certified for both APV and MDA modes on the supplied z grid.',Nj);
-        throw(addCause(exception,cause))
-    end
-    apvCandidateModeCount = Nj;
-    mdaCandidateModeCount = Nj;
+end
+apvTransform = apvAssessment.candidateTransform.prefixTransform(Nj);
+if Nj == mdaCertifiedModeCount
+    mdaTransform = mdaCertifiedTransform;
+    mdaAssessment = mdaCertifiedAssessment;
+else
+    [mdaTransform,mdaAssessment] = mdaBasis.discreteTransform(z=z,nModes=Nj,variables="G");
 end
 hasPositiveQuadrature = ~apvTransform.hasNegativeWeights && ~mdaTransform.hasNegativeWeights;
 if ~hasPositiveQuadrature
@@ -238,47 +241,73 @@ state.zeroAPVGPairing = zeroAPVGPairing;
 state.zeroAPVSourceSolve = zeroAPVSourceSolve;
 state.apvCandidateModeCount = apvCandidateModeCount;
 state.mdaCandidateModeCount = mdaCandidateModeCount;
+state.apvCertifiedModeCount = apvCertifiedModeCount;
+state.mdaCertifiedModeCount = mdaCertifiedModeCount;
+state.commonCertifiedModeCount = commonCertifiedModeCount;
 state.apvGramError = max(apvFDiagnostics.relativeGramOperatorError,apvGDiagnostics.relativeGramOperatorError);
 state.apvRoundTripError = max(apvFDiagnostics.roundTripError,apvGDiagnostics.roundTripError);
 state.mdaGramError = mdaDiagnostics.relativeGramOperatorError;
 state.mdaRoundTripError = mdaDiagnostics.roundTripError;
+quadraticDiagnostics = apvAssessment.prefixDiagnostics(Nj,:);
+state.quadraticAliasingTolerance = quadraticAliasingTolerance;
+state.quadraticAliasingError = quadraticDiagnostics.quadraticAliasingError;
+state.quadraticAliasingLimitingChannel = quadraticDiagnostics.quadraticLimitingChannel;
+state.quadraticAliasingLimitingModeNumberI = quadraticDiagnostics.quadraticLimitingModeNumberI;
+state.quadraticAliasingLimitingModeNumberJ = quadraticDiagnostics.quadraticLimitingModeNumberJ;
 state.minimumRelativeMuSeparation = minimumRelativeMuSeparation;
 state.zeroAPVGramReciprocalCondition = zeroAPVGramReciprocalCondition;
 state.zeroAPVGramRelativeSeparation = zeroAPVGramRelativeSeparation;
 state.hasPositiveQuadrature = hasPositiveQuadrature;
-state.certificationMethod = "InternalModesEVP common discrete-transform prefix v1";
+state.certificationMethod = "InternalModesEVP fixed-grid common product-safe prefix v2";
 state.Ag_q = complex(zeros(Nj,length(klNonzero)));
 state.Ag_0 = Ag_0;
 state.Amda = zeros(Nj,1);
 
 % Keep the strict assessments alive through construction so every requested
 % common-prefix policy is evaluated even though only compact results persist.
-if apvAssessment.retainedModeCount ~= Nj || mdaAssessment.retainedModeCount ~= Nj
+if Nj > apvAssessment.retainedModeCount || Nj > mdaAssessment.retainedModeCount ...
+        || length(apvTransform.modeNumber) ~= Nj || length(mdaTransform.modeNumber) ~= Nj
     error('WVTransformFreeSurfaceQG:CertificationInconsistency','InternalModesEVP did not retain the requested common prefix.');
 end
 end
 
-function [apvTransform,mdaTransform,apvAssessment,mdaAssessment,Nj] = certifiedCommonTransform(apvBasis,mdaBasis,z,maximumCandidateCount)
+function [transform,assessment,Nj] = certifiedMdaTransform(mdaBasis,z,maximumCandidateCount)
 lastCause = [];
 for candidateCount = maximumCandidateCount:-1:1
     try
-        [candidateAPV,candidateAPVAssessment] = apvBasis.discreteTransform(z=z,nModes=candidateCount,variables=["F","G"]);
-        [candidateMDA,candidateMDAAssessment] = mdaBasis.discreteTransform(z=z,nModes=candidateCount,variables="G");
-        apvTransform = candidateAPV;
-        mdaTransform = candidateMDA;
-        apvAssessment = candidateAPVAssessment;
-        mdaAssessment = candidateMDAAssessment;
+        [transform,assessment] = mdaBasis.discreteTransform(z=z,nModes=candidateCount,variables="G");
         Nj = candidateCount;
         return
     catch cause
         lastCause = cause;
     end
 end
-exception = MException('WVTransformFreeSurfaceQG:NoCertifiedCommonMode','No common APV/MDA mode prefix is certified on the supplied z grid.');
+exception = MException('WVTransformFreeSurfaceQG:NoCertifiedCommonMode','No MDA mode prefix is certified on the supplied z grid.');
 if ~isempty(lastCause)
     exception = addCause(exception,lastCause);
 end
 throw(exception)
+end
+
+function [uniqueValues,index] = uniqueWavenumberPages(values)
+if isempty(values)
+    uniqueValues = zeros(0,1);
+    index = zeros(0,1);
+    return
+end
+[sortedValues,order] = sort(values(:));
+sortedIndex = ones(size(sortedValues));
+for iValue = 2:length(sortedValues)
+    comparisonScale = max(abs(sortedValues(iValue-1:iValue)));
+    if abs(sortedValues(iValue)-sortedValues(iValue-1)) > 64*eps(comparisonScale)
+        sortedIndex(iValue) = sortedIndex(iValue-1)+1;
+    else
+        sortedIndex(iValue) = sortedIndex(iValue-1);
+    end
+end
+uniqueValues = accumarray(sortedIndex,sortedValues,[],@mean);
+index = zeros(size(sortedIndex));
+index(order) = sortedIndex;
 end
 
 function rho = densityFromStratification(z,N2Function,rho0,g)
