@@ -200,9 +200,16 @@ classdef WVStratification < WVRotatingFPlane
         function [P,Q,PFinv,PF,QGinv,QG,h,w] = verticalProjectionOperatorsForGeostrophicModes(self,Nj)
             % Now go compute the appropriate number of modes at the
             % quadrature points.
-            self.verticalModes.normalization = Normalization.geostrophic;
+            %
+            % Solve through the fixed-wavenumber normalization path, then
+            % apply the provider's conversion to the geostrophic scaling.
+            % This preserves WVM's modal convention without coupling the
+            % solve to unrelated fixed-frequency normalization members.
+            self.verticalModes.normalization = Normalization.kConstant;
             self.verticalModes.upperBoundary = UpperBoundary.rigidLid;
-            [Finv,Ginv,h] = self.verticalModes.modesAtFrequency(0);
+            [Finv,Ginv,h,~,geostrophicRatio] = self.verticalModes.modesAtFrequency(0,"geostrophicNorm");
+            Finv = Finv .* geostrophicRatio;
+            Ginv = Ginv .* geostrophicRatio;
             [P,Q,PFinv,PF,QGinv,QG,h,w] = WVStratification.verticalProjectionOperatorsWithRigidLid(Finv,Ginv,h,Nj,self.verticalModes.Lz);
         end
 

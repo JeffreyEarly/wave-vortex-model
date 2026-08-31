@@ -4,6 +4,24 @@ classdef TestWVTransformInitialization < matlab.unittest.TestCase
         latitude = struct('southOutside',-86,'southUpperBoundary',-85,'southLowerBoundary',-5,'southInsideLowerBoundary',-4,'equator',0,'northInsideLowerBoundary',4,'northLowerBoundary',5,'northUpperBoundary',85,'northOutside',86)
     end
 
+    methods (Test)
+        function stratifiedQGConvertsKConstantModesToGeostrophicNormalization(testCase)
+            N2 = @(z)2e-5*exp(z/4000);
+            wvt = WVTransformStratifiedQG([4000 3000 1000],[8 6 5],N2Function=N2,latitude=45,shouldAntialias=false);
+
+            testCase.verifyEqual(wvt.verticalModes.normalization,Normalization.kConstant)
+            [F,G,h,~,geostrophicRatio] = wvt.verticalModes.modesAtFrequency(0,"geostrophicNorm");
+            nBaroclinic = wvt.Nj-1;
+            expectedFinv = [ones(wvt.Nz,1),F(:,1:nBaroclinic).*geostrophicRatio(1:nBaroclinic)];
+            expectedGinv = zeros(wvt.Nz,wvt.Nj);
+            expectedGinv(2:end-1,2:end) = G(2:end-1,1:nBaroclinic).*geostrophicRatio(1:nBaroclinic);
+
+            testCase.verifyEqual(wvt.FinvMatrix,expectedFinv,RelTol=1e-12,AbsTol=1e-13)
+            testCase.verifyEqual(wvt.GinvMatrix,expectedGinv,RelTol=1e-12,AbsTol=1e-13)
+            testCase.verifyEqual(wvt.h_0,[1;h(1:nBaroclinic).'],RelTol=1e-12,AbsTol=1e-13)
+        end
+    end
+
     methods (Test, TestTags = "full")
         function testInitWithLatitude(testCase,transform,latitude)
             constructor = @()TestWVTransformInitialization.transformAtLatitude(transform,latitude);

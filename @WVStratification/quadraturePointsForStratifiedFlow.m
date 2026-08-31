@@ -23,7 +23,9 @@ if ~isequal(options.N2,@isempty)
 elseif ~isequal(options.rho,@isempty)
     im = InternalModesWKBSpectral(rho=options.rho,zIn=[-Lz 0],zOut=z,latitude=options.latitude,rotationRate=options.rotationRate,g=options.g);
 end
-im.normalization = Normalization.geostrophic;
+% Mode roots, and therefore the quadrature locations, do not depend on
+% amplitude normalization.
+im.normalization = Normalization.kConstant;
 im.upperBoundary = UpperBoundary.rigidLid;
 [~,~,~,z] = im.modesAtQuadraturePoints(nPoints=Nz,omega=0);
 end
