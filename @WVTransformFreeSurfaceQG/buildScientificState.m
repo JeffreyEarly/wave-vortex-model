@@ -106,6 +106,13 @@ if mdaModeCount < mdaCertifiedModeCount
         z=z,modeCount=mdaModeCount,gridDesign=verticalGridDesign,variables="G", ...
         gramTolerance=options.mdaGramTolerance);
 end
+quadraticPolicy = apvAssessment.quadraticAliasingPolicy;
+hasProjectionContract = isfield(quadraticPolicy,'projectionPairing') && isequal(string(quadraticPolicy.projectionPairing),"signedPontryagin");
+hasErrorContract = isfield(quadraticPolicy,'errorNorm') && isequal(string(quadraticPolicy.errorNorm),"inducedHilbertMajorant");
+if ~hasProjectionContract || ~hasErrorContract
+    error('WVTransformFreeSurfaceQG:UnsupportedQuadraticAliasingContract', ...
+        'The active InternalModes checkout must use signed Pontryagin projection and the induced Hilbert majorant for coupled quadratic-aliasing errors.');
+end
 hasPositiveQuadrature = ~apvTransform.hasNegativeWeights && ~mdaTransform.hasNegativeWeights;
 if ~hasPositiveQuadrature
     error('WVTransformFreeSurfaceQG:NegativeQuadratureWeight','The common physical grid produced a negative fitted quadrature weight. Supply a better-resolved z grid.');
