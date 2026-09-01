@@ -3,7 +3,7 @@ layout: default
 title: maskForAliasedModes
 parent: WVTransformFreeSurfaceQG
 grand_parent: Transforms
-nav_order: 141
+nav_order: 140
 mathjax: true
 ---
 

@@ -1,15 +1,15 @@
 ---
 layout: default
-title: mdaInitialModeCount
+title: apvZeroAPVLimitingModeNumber
 parent: WVTransformFreeSurfaceQG
 grand_parent: Transforms
-nav_order: 153
+nav_order: 54
 mathjax: true
 ---
 
-#  mdaInitialModeCount
+#  apvZeroAPVLimitingModeNumber
 
-Initial MDA count considered by certification.
+APV physical mode label limiting the APV/zero-APV product error.
 
 
 ---

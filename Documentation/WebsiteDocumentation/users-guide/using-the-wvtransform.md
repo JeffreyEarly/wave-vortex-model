@@ -65,11 +65,21 @@ g_0=-\int_{-L_z}^{0}N^2(z)\,dz,
 g_d=\mathop{\rm Inf}.
 $$
 
-The transform designs one APV-root physical grid and independently selects the largest certified APV and MDA mode counts on that grid. Use `apvModeCount` or `mdaModeCount` to request smaller certified family prefixes. A finite endpoint activates one row of the boundary-normalized `Ag_0` family; an infinite endpoint is inactive.
+The transform obtains one WKB-stretched Chebyshev--Lobatto quadrature rule from InternalModesEVP and uses the same points and positive weights for both APV and MDA projection. It selects the APV and MDA mode counts independently from the requested Gram-error tolerances; the counts are results rather than constructor options. A finite endpoint activates one row of the boundary-normalized `Ag_0` family; an infinite endpoint is inactive.
 
 ```matlab
 wvtFreeSurfaceQG = WVTransformFreeSurfaceQG(Lxyz,Nxyz,N2Function=N2,latitude=30);
 ```
+
+With an active endpoint, the transform also checks the APV/zero-APV product error at the largest horizontal wavenumber in the requested grid. Use the lightweight assessment before constructing a full transform when choosing horizontal and vertical resolution:
+
+```matlab
+resolution = WVTransformFreeSurfaceQG.assessVerticalResolution( ...
+    Lxyz(3),Nxyz(3),N2Function=N2,latitude=30);
+minimumHorizontalWavelength = resolution.minimumHorizontalWavelength;
+```
+
+`maximumSupportedKh` is the largest passing wavenumber found within a one-percent bracket, and `firstRejectedKh` is the adjacent failing value. Construction fails with an actionable resolution error when the requested horizontal grid exceeds this limit. The limit does not apply when both endpoint families are inactive.
 
 The default negative surface acceleration normally produces an APV mode with physical label `-1`. That negative mode is expected and is retained in projection and all applicable coupled quadratic product pairs. Modal projection and coefficient recovery use the signed Pontryagin pairing. The reported `quadraticAliasingError` instead measures the difference between discrete and continuous signed projections in the induced positive Hilbert majorant, divided by the product's majorant norm. Its default acceptance tolerance is `0.1`; the negative mode therefore does not imply a negative or imaginary error magnitude. Never use the square root of a signed self-pairing, even after taking its absolute value, as a general state norm.
 

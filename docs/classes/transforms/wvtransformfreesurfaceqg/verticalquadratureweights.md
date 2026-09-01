@@ -1,15 +1,15 @@
 ---
 layout: default
-title: apvQuadratureWeights
+title: verticalQuadratureWeights
 parent: WVTransformFreeSurfaceQG
 grand_parent: Transforms
-nav_order: 54
+nav_order: 244
 mathjax: true
 ---
 
-#  apvQuadratureWeights
+#  verticalQuadratureWeights
 
-APV-family quadrature weights on the shared physical grid.
+Shared positive physical quadrature weights.
 
 
 ---

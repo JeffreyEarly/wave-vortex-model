@@ -6,36 +6,18 @@ arguments
     options struct
 end
 
-if isequal(options.N2Function,@isempty) && isequal(options.rhoFunction,@isempty)
-    error('WVTransformFreeSurfaceQG:MissingStratification','Supply either N2Function or rhoFunction.');
-end
-
 Lz = Lxyz(3);
-zDomain = [-Lz 0];
-if isequal(options.N2Function,@isempty)
-    derivativeStep = max(1,Lz)*eps^(1/3);
-    N2Function = @(z) stratificationFromDensity(z,options.rhoFunction,options.rho0,options.g,zDomain,derivativeStep);
-else
-    N2Function = options.N2Function;
+if ~isempty(options.z)
+    error('WVTransformFreeSurfaceQG:CustomVerticalGridUnavailable', ...
+        'Scientific construction uses the WKB-stretched Chebyshev-Lobatto rule determined by Nz. Restore custom points only through complete persisted-state construction.');
 end
-if isequal(options.rhoFunction,@isempty)
-    rhoFunction = @(z) densityFromStratification(z,N2Function,options.rho0,options.g);
-else
-    rhoFunction = options.rhoFunction;
-end
-
-g0 = options.g0;
-if isnan(g0)
-    g0 = -integral(N2Function,-Lz,0);
-end
-gd = options.gd;
-if isnan(g0) || g0 == -Inf || isnan(gd) || gd == -Inf
-    error('WVTransformFreeSurfaceQG:InvalidEndpointAcceleration','g0 and gd must be signed finite, zero, or positive Inf.');
-end
-endpointScale = max([options.g,abs(g0(isfinite(g0))),abs(gd(isfinite(gd))),1]);
-if (isfinite(g0) && abs(g0) <= sqrt(eps)*endpointScale) || (isfinite(gd) && abs(gd) <= sqrt(eps)*endpointScale)
-    warning('WVTransformFreeSurfaceQG:NearZeroEndpointAcceleration','A finite endpoint acceleration is near zero; verify that the corresponding limiting boundary condition is intended.');
-end
+inputs = WVTransformFreeSurfaceQG.resolveScientificInputs(Lz,options);
+N2Function = inputs.N2Function;
+rhoFunction = inputs.rhoFunction;
+g0 = inputs.g0;
+gd = inputs.gd;
+f0 = inputs.f0;
+zDomain = inputs.zDomain;
 
 horizontalGeometry = WVGeometryDoublyPeriodic(Lxyz(1:2),Nxyz(1:2),shouldAntialias=options.shouldAntialias,Nz=Nxyz(3),shouldExcludeNyquist=true,shouldExcludeConjugates=true,conjugateDimension=2);
 kh = hypot(horizontalGeometry.k,horizontalGeometry.l);
@@ -45,78 +27,22 @@ lNonzero = horizontalGeometry.l(klNonzero);
 khNonzero = kh(klNonzero);
 [khUnique,klNonzeroKhUniqueIndex] = uniqueWavenumberPages(khNonzero);
 
-f0 = 2*options.rotationRate*sind(options.latitude);
-if f0 == 0
-    error('WVTransformFreeSurfaceQG:ZeroCoriolis','Free-surface QG construction requires nonzero Coriolis frequency.');
-end
-
-nCandidate = Nxyz(3);
-nSolve = nCandidate+4;
-nEVP = max(96,3*nSolve);
-solver = IMSolverSpectral(nEVP=nEVP);
-apvProblem = IMInternalModes.geostrophicAPVModes(N2=N2Function,zDomain=zDomain,g=options.g,g0=g0,gd=gd,surfaceBoundary="freeSurface");
-mdaProblem = IMInternalModes.meanDensityAnomalyModes(N2=N2Function,zDomain=zDomain,g=options.g,g0=g0,gd=gd);
-apvBasis = solver.solveEVP(apvProblem,nModes=nSolve);
-mdaBasis = solver.solveEVP(mdaProblem,nModes=nSolve);
-
-if isempty(options.z)
-    [z,verticalGridDesign] = apvBasis.modeRootGrid(nPoints=Nxyz(3));
-else
-    z = options.z(:);
-    verticalGridDesign = struct.empty;
-end
-if length(z) ~= Nxyz(3) || any(diff(z) <= 0) || abs(z(1)+Lz) > sqrt(eps)*max(1,Lz) || abs(z(end)) > sqrt(eps)*max(1,Lz)
-    error('WVTransformFreeSurfaceQG:InvalidVerticalGrid','z must contain Nz increasing points spanning exactly [-Lz,0].');
-end
-N2Values = N2Function(z);
-N2Values = N2Values(:);
-if length(N2Values) ~= length(z) || any(~isfinite(N2Values)) || any(N2Values <= 0)
-    error('WVTransformFreeSurfaceQG:InvalidStratification','N2Function must return one finite positive value per z point.');
-end
-
-if isempty(verticalGridDesign)
-    [apvCertifiedTransform,apvCertifiedAssessment] = apvBasis.certifiedDiscreteTransform( ...
-        z=z,variables=["F","G"],gramTolerance=options.apvGramTolerance, ...
-        quadraticAliasingTolerance=options.quadraticAliasingTolerance);
-    verticalGridDesign = apvCertifiedAssessment.gridDesign;
-else
-    [apvCertifiedTransform,apvCertifiedAssessment] = apvBasis.certifiedDiscreteTransform( ...
-        z=z,gridDesign=verticalGridDesign,variables=["F","G"],gramTolerance=options.apvGramTolerance, ...
-        quadraticAliasingTolerance=options.quadraticAliasingTolerance);
-end
-[mdaCertifiedTransform,mdaCertifiedAssessment] = mdaBasis.certifiedDiscreteTransform( ...
-    z=z,gridDesign=verticalGridDesign,variables="G",gramTolerance=options.mdaGramTolerance);
-apvInitialModeCount = max(apvCertifiedAssessment.certificationSearch.modeCount);
-mdaInitialModeCount = max(mdaCertifiedAssessment.certificationSearch.modeCount);
-apvCertifiedModeCount = apvCertifiedAssessment.retainedModeCount;
-mdaCertifiedModeCount = mdaCertifiedAssessment.retainedModeCount;
-apvModeCount = selectedModeCount(options.apvModeCount,apvCertifiedModeCount,"APV");
-mdaModeCount = selectedModeCount(options.mdaModeCount,mdaCertifiedModeCount,"MDA");
-apvTransform = apvCertifiedTransform;
-apvAssessment = apvCertifiedAssessment;
-if apvModeCount < apvCertifiedModeCount
-    [apvTransform,apvAssessment] = apvBasis.fitDiscreteTransform( ...
-        z=z,modeCount=apvModeCount,gridDesign=verticalGridDesign,variables=["F","G"], ...
-        gramTolerance=options.apvGramTolerance,quadraticAliasingTolerance=options.quadraticAliasingTolerance);
-end
-mdaTransform = mdaCertifiedTransform;
-mdaAssessment = mdaCertifiedAssessment;
-if mdaModeCount < mdaCertifiedModeCount
-    [mdaTransform,mdaAssessment] = mdaBasis.fitDiscreteTransform( ...
-        z=z,modeCount=mdaModeCount,gridDesign=verticalGridDesign,variables="G", ...
-        gramTolerance=options.mdaGramTolerance);
-end
-quadraticPolicy = apvAssessment.quadraticAliasingPolicy;
-hasProjectionContract = isfield(quadraticPolicy,'projectionPairing') && isequal(string(quadraticPolicy.projectionPairing),"signedPontryagin");
-hasErrorContract = isfield(quadraticPolicy,'errorNorm') && isequal(string(quadraticPolicy.errorNorm),"inducedHilbertMajorant");
-if ~hasProjectionContract || ~hasErrorContract
-    error('WVTransformFreeSurfaceQG:UnsupportedQuadraticAliasingContract', ...
-        'The active InternalModes checkout must use signed Pontryagin projection and the induced Hilbert majorant for coupled quadratic-aliasing errors.');
-end
-hasPositiveQuadrature = ~apvTransform.hasNegativeWeights && ~mdaTransform.hasNegativeWeights;
-if ~hasPositiveQuadrature
-    error('WVTransformFreeSurfaceQG:NegativeQuadratureWeight','The common physical grid produced a negative fitted quadrature weight. Supply a better-resolved z grid.');
-end
+verticalOptions = options;
+verticalOptions.g0 = g0;
+verticalOptions.gd = gd;
+vertical = WVTransformFreeSurfaceQG.buildVerticalModes(Lz,Nxyz(3),N2Function,verticalOptions);
+z = vertical.z;
+verticalQuadratureWeights = vertical.weights;
+N2Values = vertical.N2Values;
+nEVP = vertical.nEVP;
+solver = vertical.solver;
+apvBasis = vertical.apvBasis;
+apvTransform = vertical.apvTransform;
+mdaTransform = vertical.mdaTransform;
+apvAssessment = vertical.apvAssessment;
+mdaAssessment = vertical.mdaAssessment;
+apvModeCount = length(apvTransform.modeNumber);
+mdaModeCount = length(mdaTransform.modeNumber);
 
 apvF = apvTransform.inverseMatrix(variable="F");
 apvG = apvTransform.inverseMatrix(variable="G");
@@ -148,6 +74,26 @@ if activeEndpointCount > 0
     zeroAPVG = zeroModes.G(z);
     apvEndpointResponse = geostrophicTransform.apvEndpointResponse;
     minimumRelativeMuSeparation = geostrophicTransform.compatibilityDiagnostics.minimumRelativeMuSeparation;
+    if nKh > 0
+        crossAssessment = WVTransformFreeSurfaceQG.measureAPVZeroAPVQuadraticError(apvBasis,apvTransform,zeroModes,nKh,2*nEVP);
+        apvZeroAPVQuadraticError = crossAssessment.error;
+        apvZeroAPVLimitingEndpoint = crossAssessment.limitingEndpoint;
+        apvZeroAPVLimitingModeNumber = crossAssessment.limitingModeNumber;
+        if apvZeroAPVQuadraticError > options.quadraticAliasingTolerance
+            limit = WVTransformFreeSurfaceQG.supportedHorizontalWavenumber(apvBasis,apvTransform,N2Function,f0,options.g, ...
+                endpointNames(activeMask),nEVP,options.quadraticAliasingTolerance,rejectedKh=khUnique(end));
+            error('WVTransformFreeSurfaceQG:UnderresolvedVerticalGrid', ...
+                ['Nz=%d resolves APV/zero-APV products through kh approximately %.6g rad m^-1 at tolerance %.3g, ' ...
+                'but the horizontal grid retains %.6g rad m^-1 with error %.3g. The first rejected bracket is %.6g rad m^-1, ' ...
+                'and the corresponding minimum horizontal wavelength is %.6g m. Increase Nz or reduce horizontal resolution.'], ...
+                Nxyz(3),limit.maximumSupportedKh,options.quadraticAliasingTolerance,khUnique(end),apvZeroAPVQuadraticError, ...
+                limit.firstRejectedKh,limit.minimumHorizontalWavelength);
+        end
+    else
+        apvZeroAPVQuadraticError = NaN;
+        apvZeroAPVLimitingEndpoint = "";
+        apvZeroAPVLimitingModeNumber = NaN;
+    end
 
     endpointZ = [0;-Lz];
     zeroFEndpoints = zeroModes.F(endpointZ);
@@ -199,6 +145,9 @@ else
     zeroAPVGramRelativeSeparation = zeros(0,1);
     minimumRelativeMuSeparation = min(relativeMuSeparation,[],'all');
     Ag_0 = complex(zeros(0,length(klNonzero)));
+    apvZeroAPVQuadraticError = NaN;
+    apvZeroAPVLimitingEndpoint = "";
+    apvZeroAPVLimitingModeNumber = NaN;
 end
 
 identitySamples = eye(length(z));
@@ -221,8 +170,7 @@ state.P0 = ones(apvModeCount,1);
 state.Q0 = ones(apvModeCount,1);
 state.h_0 = reshape(apvTransform.h,[],1);
 state.z_int = apvTransform.weights;
-state.apvQuadratureWeights = apvTransform.weights;
-state.mdaQuadratureWeights = mdaTransform.weights;
+state.verticalQuadratureWeights = verticalQuadratureWeights;
 state.g0 = g0;
 state.gd = gd;
 state.activeEndpointCount = activeEndpointCount;
@@ -251,26 +199,18 @@ state.mdaF = mdaF;
 state.mdaG = mdaG;
 state.mdaGForward = mdaGForward;
 state.mdaEquivalentDepth = reshape(mdaTransform.h,[],1);
-state.verticalGridKind = string(verticalGridDesign.kind);
-state.verticalGridSourceEVP = string(verticalGridDesign.sourceEVP);
-state.verticalGridGeneratingVariable = string(verticalGridDesign.generatingVariable);
-state.verticalGridGeneratingModeNumber = verticalGridDesign.generatingModeNumber;
-state.verticalGridRepresentedModeCount = verticalGridDesign.representedModeCount;
-state.verticalGridInterpretation = string(verticalGridDesign.interpretationForG);
+state.verticalGridKind = "chebyshevLobatto";
+state.verticalGridCoordinate = "wkb";
 state.zeroAPVF = zeroAPVF;
 state.zeroAPVG = zeroAPVG;
 state.zeroAPVFPairing = zeroAPVFPairing;
 state.zeroAPVGPairing = zeroAPVGPairing;
 state.zeroAPVSourceSolve = zeroAPVSourceSolve;
-state.apvInitialModeCount = apvInitialModeCount;
-state.mdaInitialModeCount = mdaInitialModeCount;
-state.apvCertifiedModeCount = apvCertifiedModeCount;
-state.mdaCertifiedModeCount = mdaCertifiedModeCount;
 state.apvGramError = max(apvFDiagnostics.relativeGramOperatorError,apvGDiagnostics.relativeGramOperatorError);
 state.apvRoundTripError = max(apvFDiagnostics.roundTripError,apvGDiagnostics.roundTripError);
 state.mdaGramError = mdaDiagnostics.relativeGramOperatorError;
 state.mdaRoundTripError = mdaDiagnostics.roundTripError;
-quadraticDiagnostics = apvAssessment.prefixDiagnostics(end,:);
+quadraticDiagnostics = apvAssessment.prefixDiagnostics(apvModeCount,:);
 state.apvGramTolerance = options.apvGramTolerance;
 state.mdaGramTolerance = options.mdaGramTolerance;
 state.quadraticAliasingTolerance = options.quadraticAliasingTolerance;
@@ -282,30 +222,18 @@ state.minimumRelativeMuSeparation = minimumRelativeMuSeparation;
 state.muTolerance = options.muTolerance;
 state.zeroAPVGramReciprocalCondition = zeroAPVGramReciprocalCondition;
 state.zeroAPVGramRelativeSeparation = zeroAPVGramRelativeSeparation;
-state.hasPositiveQuadrature = hasPositiveQuadrature;
-state.certificationMethod = "InternalModesEVP signed-projection induced-Hilbert-majorant independently-refitted family selection v6";
+state.apvZeroAPVQuadraticError = apvZeroAPVQuadraticError;
+state.apvZeroAPVLimitingEndpoint = apvZeroAPVLimitingEndpoint;
+state.apvZeroAPVLimitingModeNumber = apvZeroAPVLimitingModeNumber;
+state.modeSelectionMethod = "fixed-native-quadrature-v1";
 state.Ag_q = complex(zeros(apvModeCount,length(klNonzero)));
 state.Ag_0 = Ag_0;
 state.Amda = zeros(mdaModeCount,1);
 
-if apvAssessment.weightFitModeCount ~= apvModeCount || mdaAssessment.weightFitModeCount ~= mdaModeCount ...
+if ~isempty(apvAssessment.weightFit) || ~isempty(mdaAssessment.weightFit) ...
         || length(apvTransform.modeNumber) ~= apvModeCount || length(mdaTransform.modeNumber) ~= mdaModeCount
-    error('WVTransformFreeSurfaceQG:CertificationInconsistency','InternalModesEVP did not retain the requested family prefixes.');
+    error('WVTransformFreeSurfaceQG:ModeSelectionInconsistency','InternalModesEVP did not use the supplied fixed quadrature rule.');
 end
-end
-
-function count = selectedModeCount(requestedCount,certifiedCount,familyName)
-if isempty(requestedCount)
-    count = certifiedCount;
-    return
-end
-if ~isscalar(requestedCount) || requestedCount < 1 || requestedCount ~= fix(requestedCount)
-    error('WVTransformFreeSurfaceQG:InvalidModeCount','%s mode count must be a positive integer.',familyName);
-end
-if requestedCount > certifiedCount
-    error('WVTransformFreeSurfaceQG:UncertifiedModeCount','Requested %s mode count %d exceeds its certified maximum of %d.',familyName,requestedCount,certifiedCount);
-end
-count = requestedCount;
 end
 
 function [uniqueValues,index] = uniqueWavenumberPages(values)
@@ -327,31 +255,4 @@ end
 uniqueValues = accumarray(sortedIndex,sortedValues,[],@mean);
 index = zeros(size(sortedIndex));
 index(order) = sortedIndex;
-end
-
-function rho = densityFromStratification(z,N2Function,rho0,g)
-shape = size(z);
-z = z(:);
-rho = zeros(size(z));
-for iPoint = 1:length(z)
-    rho(iPoint) = rho0-(rho0/g)*integral(N2Function,0,z(iPoint));
-end
-rho = reshape(rho,shape);
-end
-
-function N2 = stratificationFromDensity(z,rhoFunction,rho0,g,zDomain,derivativeStep)
-shape = size(z);
-z = z(:);
-zMinus = max(z-derivativeStep,zDomain(1));
-zPlus = min(z+derivativeStep,zDomain(2));
-if any(zPlus <= zMinus)
-    error('WVTransformFreeSurfaceQG:InvalidDensityEvaluationPoint','Density-derived stratification was requested outside the vertical domain.');
-end
-rhoMinus = reshape(rhoFunction(zMinus),[],1);
-rhoPlus = reshape(rhoFunction(zPlus),[],1);
-if length(rhoMinus) ~= length(z) || length(rhoPlus) ~= length(z)
-    error('WVTransformFreeSurfaceQG:InvalidDensityFunction','rhoFunction must return one value per input depth.');
-end
-N2 = -(g/rho0)*(rhoPlus-rhoMinus)./(zPlus-zMinus);
-N2 = reshape(N2,shape);
 end

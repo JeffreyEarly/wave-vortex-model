@@ -26,7 +26,7 @@ The nonzero-horizontal-wavenumber state is split into generalized-
 energy APV coefficients `Ag_q` and boundary-normalized zero-APV
 coefficients `Ag_0`. The horizontal mean is represented independently
 by real mean-density-anomaly coefficients `Amda`.
-APV and MDA retain independently certified mode counts on the same
+APV and MDA select independent mode counts on the same
 physical vertical grid. The inherited `Nj` value equals
 `apvModeCount`; `mdaModeCount` may differ.
 Omitted endpoints use $$g_0=-\int_{-D}^{0}N^2\,dz$$ and
@@ -51,6 +51,7 @@ wvt = WVTransformFreeSurfaceQG([100e3 100e3 4000],[32 32 33],N2Function=N2,latit
 ## Topics
 + Create and restore a transform
   + [`WVTransformFreeSurfaceQG`](/classes/transforms/wvtransformfreesurfaceqg/wvtransformfreesurfaceqg.html) Create a free-surface QG transform scientifically or directly.
+  + [`assessVerticalResolution`](/classes/transforms/wvtransformfreesurfaceqg/assessverticalresolution.html) Assess vertical-mode accuracy and the active-endpoint horizontal limit.
   + [`waveVortexTransformFromFile`](/classes/transforms/wvtransformfreesurfaceqg/wavevortextransformfromfile.html) Restore a free-surface QG transform from persisted arrays.
 + Evaluate physical fields
   + On the model grid
@@ -107,7 +108,6 @@ wvt = WVTransformFreeSurfaceQG([100e3 100e3 4000],[32 32 33],N2Function=N2,latit
     + Free-surface modes and operators
       + [`activeEndpoint`](/classes/transforms/wvtransformfreesurfaceqg/activeendpoint.html) Numeric endpoint codes, surface `1` then bottom `2`.
       + [`activeEndpointCount`](/classes/transforms/wvtransformfreesurfaceqg/activeendpointcount.html) Number of finite endpoint accelerations.
-      + [`apvCertifiedModeCount`](/classes/transforms/wvtransformfreesurfaceqg/apvcertifiedmodecount.html) Maximum APV count accepted by its retained-band policies.
       + [`apvEndpointResponse`](/classes/transforms/wvtransformfreesurfaceqg/apvendpointresponse.html) APV endpoint responses for each active endpoint and page.
       + [`apvEquivalentDepth`](/classes/transforms/wvtransformfreesurfaceqg/apvequivalentdepth.html) APV equivalent depths.
       + [`apvF`](/classes/transforms/wvtransformfreesurfaceqg/apvf.html) Sampled APV F modes.
@@ -118,38 +118,38 @@ wvt = WVTransformFreeSurfaceQG([100e3 100e3 4000],[32 32 33],N2Function=N2,latit
       + [`apvGSourcePairing`](/classes/transforms/wvtransformfreesurfaceqg/apvgsourcepairing.html) APV G source-pairing operator.
       + [`apvGramError`](/classes/transforms/wvtransformfreesurfaceqg/apvgramerror.html) Worst retained APV Gram error.
       + [`apvGramTolerance`](/classes/transforms/wvtransformfreesurfaceqg/apvgramtolerance.html) Normalized Gram tolerance used for APV selection.
-      + [`apvInitialModeCount`](/classes/transforms/wvtransformfreesurfaceqg/apvinitialmodecount.html) Initial APV count considered by certification.
       + [`apvMode`](/classes/transforms/wvtransformfreesurfaceqg/apvmode.html) Ordinal APV family coordinate.
       + [`apvModeCount`](/classes/transforms/wvtransformfreesurfaceqg/apvmodecount.html) Number of retained APV modes.
       + [`apvModeNumber`](/classes/transforms/wvtransformfreesurfaceqg/apvmodenumber.html) Physical APV mode labels.
       + [`apvMu`](/classes/transforms/wvtransformfreesurfaceqg/apvmu.html) APV inversion eigenvalues for each horizontal page.
-      + [`apvQuadratureWeights`](/classes/transforms/wvtransformfreesurfaceqg/apvquadratureweights.html) APV-family quadrature weights on the shared physical grid.
       + [`apvRoundTripError`](/classes/transforms/wvtransformfreesurfaceqg/apvroundtriperror.html) Worst retained APV sampled round-trip error.
-      + [`certificationMethod`](/classes/transforms/wvtransformfreesurfaceqg/certificationmethod.html) Persisted certification method identifier.
+      + [`apvZeroAPVLimitingEndpoint`](/classes/transforms/wvtransformfreesurfaceqg/apvzeroapvlimitingendpoint.html) Active endpoint limiting the APV/zero-APV product error.
+      + [`apvZeroAPVLimitingModeNumber`](/classes/transforms/wvtransformfreesurfaceqg/apvzeroapvlimitingmodenumber.html) APV physical mode label limiting the APV/zero-APV product error.
+      + [`apvZeroAPVQuadraticError`](/classes/transforms/wvtransformfreesurfaceqg/apvzeroapvquadraticerror.html) APV/zero-APV quadratic-product error at maximum horizontal wavenumber.
       + [`g0`](/classes/transforms/wvtransformfreesurfaceqg/g0.html) Effective surface acceleration; omitted default is `-integral(N2,-Lz,0)`.
       + [`gd`](/classes/transforms/wvtransformfreesurfaceqg/gd.html) Effective bottom acceleration; omitted default is `Inf`.
-      + [`hasPositiveQuadrature`](/classes/transforms/wvtransformfreesurfaceqg/haspositivequadrature.html) Whether both fitted quadrature rules are nonnegative.
       + [`kNonzero`](/classes/transforms/wvtransformfreesurfaceqg/knonzero.html) X wavenumber associated with `klNonzero`.
       + [`khNonzero`](/classes/transforms/wvtransformfreesurfaceqg/khnonzero.html) Horizontal-wavenumber magnitude associated with `klNonzero`.
       + [`khUnique`](/classes/transforms/wvtransformfreesurfaceqg/khunique.html) Distinct positive horizontal-wavenumber pages.
       + [`klNonzero`](/classes/transforms/wvtransformfreesurfaceqg/klnonzero.html) Original full-`kl` indices retained at positive horizontal wavenumber.
       + [`klNonzeroKhUniqueIndex`](/classes/transforms/wvtransformfreesurfaceqg/klnonzerokhuniqueindex.html) One-based map from `klNonzero` to `khUnique`.
       + [`lNonzero`](/classes/transforms/wvtransformfreesurfaceqg/lnonzero.html) Y wavenumber associated with `klNonzero`.
-      + [`mdaCertifiedModeCount`](/classes/transforms/wvtransformfreesurfaceqg/mdacertifiedmodecount.html) Maximum MDA count accepted by its retained-band policies.
       + [`mdaEquivalentDepth`](/classes/transforms/wvtransformfreesurfaceqg/mdaequivalentdepth.html) MDA equivalent depths.
       + [`mdaF`](/classes/transforms/wvtransformfreesurfaceqg/mdaf.html) Sampled MDA F modes.
       + [`mdaG`](/classes/transforms/wvtransformfreesurfaceqg/mdag.html) Sampled MDA G modes.
       + [`mdaGForward`](/classes/transforms/wvtransformfreesurfaceqg/mdagforward.html) MDA G projection matrix.
       + [`mdaGramError`](/classes/transforms/wvtransformfreesurfaceqg/mdagramerror.html) Retained MDA Gram error.
       + [`mdaGramTolerance`](/classes/transforms/wvtransformfreesurfaceqg/mdagramtolerance.html) Normalized Gram tolerance used for MDA selection.
-      + [`mdaInitialModeCount`](/classes/transforms/wvtransformfreesurfaceqg/mdainitialmodecount.html) Initial MDA count considered by certification.
       + [`mdaMode`](/classes/transforms/wvtransformfreesurfaceqg/mdamode.html) Ordinal MDA family coordinate.
       + [`mdaModeCount`](/classes/transforms/wvtransformfreesurfaceqg/mdamodecount.html) Number of retained MDA modes.
       + [`mdaModeNumber`](/classes/transforms/wvtransformfreesurfaceqg/mdamodenumber.html) Physical MDA mode labels.
-      + [`mdaQuadratureWeights`](/classes/transforms/wvtransformfreesurfaceqg/mdaquadratureweights.html) MDA-family quadrature weights on the shared physical grid.
       + [`mdaRoundTripError`](/classes/transforms/wvtransformfreesurfaceqg/mdaroundtriperror.html) Retained MDA sampled round-trip error.
       + [`minimumRelativeMuSeparation`](/classes/transforms/wvtransformfreesurfaceqg/minimumrelativemuseparation.html) Minimum relative APV inversion-eigenvalue separation.
+      + [`modeSelectionMethod`](/classes/transforms/wvtransformfreesurfaceqg/modeselectionmethod.html) Persisted mode-selection method identifier.
       + [`sourceEndpoint`](/classes/transforms/wvtransformfreesurfaceqg/sourceendpoint.html) Matching source-endpoint coordinate codes.
+      + [`verticalGridCoordinate`](/classes/transforms/wvtransformfreesurfaceqg/verticalgridcoordinate.html) Coordinate in which the vertical-grid rule is native.
+      + [`verticalGridKind`](/classes/transforms/wvtransformfreesurfaceqg/verticalgridkind.html) Shared vertical-grid design kind, `chebyshevLobatto`.
+      + [`verticalQuadratureWeights`](/classes/transforms/wvtransformfreesurfaceqg/verticalquadratureweights.html) Shared positive physical quadrature weights.
       + [`zeroAPVF`](/classes/transforms/wvtransformfreesurfaceqg/zeroapvf.html) Sampled boundary-normalized zero-APV F pages.
       + [`zeroAPVFPairing`](/classes/transforms/wvtransformfreesurfaceqg/zeroapvfpairing.html) Zero-APV F source-pairing matrices.
       + [`zeroAPVG`](/classes/transforms/wvtransformfreesurfaceqg/zeroapvg.html) Sampled boundary-normalized zero-APV G pages.
@@ -344,12 +344,6 @@ These items document internal implementation details and are not part of the pri
   + Additional geometry utilities
     + [`quadraticAliasingLimitingModeNumberI`](/classes/transforms/wvtransformfreesurfaceqg/quadraticaliasinglimitingmodenumberi.html) First physical mode label in the limiting product.
     + [`quadraticAliasingLimitingModeNumberJ`](/classes/transforms/wvtransformfreesurfaceqg/quadraticaliasinglimitingmodenumberj.html) Second physical mode label in the limiting product.
-    + [`verticalGridGeneratingModeNumber`](/classes/transforms/wvtransformfreesurfaceqg/verticalgridgeneratingmodenumber.html) Physical label of the generating mode; `NaN` for explicit points.
-    + [`verticalGridGeneratingVariable`](/classes/transforms/wvtransformfreesurfaceqg/verticalgridgeneratingvariable.html) Variable whose roots generated the grid; empty for explicit points.
-    + [`verticalGridInterpretation`](/classes/transforms/wvtransformfreesurfaceqg/verticalgridinterpretation.html) Human-readable interpretation of the grid for G structures.
-    + [`verticalGridKind`](/classes/transforms/wvtransformfreesurfaceqg/verticalgridkind.html) Shared vertical-grid design kind, `modeRoot` or `explicit`.
-    + [`verticalGridRepresentedModeCount`](/classes/transforms/wvtransformfreesurfaceqg/verticalgridrepresentedmodecount.html) Mode count represented by the generating grid; `NaN` for explicit points.
-    + [`verticalGridSourceEVP`](/classes/transforms/wvtransformfreesurfaceqg/verticalgridsourceevp.html) EVP that supplied a mode-root grid, or the assessing EVP for an explicit grid.
 + Spectral transforms and operators
   + [`P0`](/classes/transforms/wvtransformfreesurfaceqg/p0.html) Preconditioner for F, size(P)=[Nj 1]. F*u = uhat, (PF)*u = P*uhat, so ubar==P*uhat
   + [`PF0`](/classes/transforms/wvtransformfreesurfaceqg/pf0.html) size(PF,PG)=[Nj x Nz]

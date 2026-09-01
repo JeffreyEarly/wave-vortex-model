@@ -3,15 +3,13 @@ layout: default
 title: verticalGridKind
 parent: WVTransformFreeSurfaceQG
 grand_parent: Transforms
-nav_order: 247
+nav_order: 242
 mathjax: true
 ---
 
 #  verticalGridKind
 
-Shared vertical-grid design kind, `modeRoot` or `explicit`.
-
-> Developer documentation: this item describes internal implementation details.
+Shared vertical-grid design kind, `chebyshevLobatto`.
 
 
 ---

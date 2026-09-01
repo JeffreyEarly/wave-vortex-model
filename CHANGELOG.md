@@ -2,9 +2,10 @@
 
 ## [Unreleased]
 
-### Free-surface QG signed norms
+### Free-surface QG vertical grid and signed norms
 
-- Retained negative APV modes under the default endpoint choice $$g_0=-\int_{-D}^{0}N^2\,dz$$ and $$g_d=\mathop{\rm Inf}$$, kept signed InternalModes projection and coefficient recovery, and certified coupled quadratic products with the induced positive Hilbert-majorant error at the existing default tolerance `0.1`.
+- Retained negative APV modes under the default endpoint choice $$g_0=-\int_{-D}^{0}N^2\,dz$$ and $$g_d=\mathop{\rm Inf}$$, kept signed InternalModes projection and coefficient recovery, and measured coupled quadratic products with the induced positive Hilbert-majorant error at the existing default tolerance `0.1`.
+- Replaced separately fitted APV and MDA grids with one WKB-stretched Chebyshev--Lobatto quadrature rule and independently selected family mode counts. Added preconstruction vertical-resolution assessment and an actionable maximum-horizontal-wavenumber check for active endpoint families.
 
 ### MATLAB integration performance
 

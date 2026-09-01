@@ -3,7 +3,7 @@ layout: default
 title: mdaGramTolerance
 parent: WVTransformFreeSurfaceQG
 grand_parent: Transforms
-nav_order: 152
+nav_order: 150
 mathjax: true
 ---
 

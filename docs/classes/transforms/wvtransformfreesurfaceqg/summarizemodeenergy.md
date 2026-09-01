@@ -3,7 +3,7 @@ layout: default
 title: summarizeModeEnergy
 parent: WVTransformFreeSurfaceQG
 grand_parent: Transforms
-nav_order: 212
+nav_order: 209
 mathjax: true
 ---
 

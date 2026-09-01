@@ -1,15 +1,15 @@
 ---
 layout: default
-title: apvInitialModeCount
+title: apvZeroAPVQuadraticError
 parent: WVTransformFreeSurfaceQG
 grand_parent: Transforms
-nav_order: 49
+nav_order: 55
 mathjax: true
 ---
 
-#  apvInitialModeCount
+#  apvZeroAPVQuadraticError
 
-Initial APV count considered by certification.
+APV/zero-APV quadratic-product error at maximum horizontal wavenumber.
 
 
 ---

@@ -3,7 +3,7 @@ layout: default
 title: modeNumberFromIndex
 parent: WVTransformFreeSurfaceQG
 grand_parent: Transforms
-nav_order: 160
+nav_order: 156
 mathjax: true
 ---
 

@@ -94,7 +94,7 @@ addpath("Benchmarks")
 results = runFreeSurfaceQGCoefficientStorageBenchmark;
 ```
 
-The accepted M5 Max/R2026a artifact is stored under `results/reference/free-surface-qg-coefficient-storage-v1-m5-max-r2026a`. It retains separate integrator entries. Representative cases use matched 10-mode APV and MDA prefixes because the benchmark predates independent family retention. Current reruns record `mdaGramTolerance=0.1`; InternalModes independently certifies both families on the shared APV grid and then fits each requested 10-mode band exactly. The transform never truncates MDA merely to match APV; the artifact remains immutable evidence for the storage decision under its recorded contract.
+The accepted M5 Max/R2026a artifact is stored under `results/reference/free-surface-qg-coefficient-storage-v1-m5-max-r2026a`. It retains separate integrator entries and remains immutable evidence for the storage decision under its recorded contract. That artifact predates the current vertical-grid algorithm and used matched 10-mode APV and MDA sets. Current reruns do not request mode counts: both grid sizes use one WKB-stretched Chebyshev--Lobatto rule, keep its native positive weights, and select APV and MDA counts independently from their error tolerances. The result records both selected counts, their Gram errors, and the APV/zero-APV product error.
 
 Normalize a MATLAB artifact with explicit platform identity and repository-relative provenance:
 

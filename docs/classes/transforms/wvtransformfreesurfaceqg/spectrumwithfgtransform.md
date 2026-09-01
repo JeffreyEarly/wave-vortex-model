@@ -3,7 +3,7 @@ layout: default
 title: spectrumWithFgTransform
 parent: WVTransformFreeSurfaceQG
 grand_parent: Transforms
-nav_order: 206
+nav_order: 203
 mathjax: true
 ---
 
