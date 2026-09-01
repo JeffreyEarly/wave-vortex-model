@@ -60,6 +60,11 @@ $$
 Stratified QG contains only nonzero-horizontal-wavenumber geostrophic
 modes, not a mean-density-anomaly component. Consequently,
 `shouldForceMeanDensityAnomaly` does not alter its QGPV pathway.
+`WVTransformFreeSurfaceQG` instead applies constant diffusivity to
+buoyancy with the transform's persisted weak vertical operator. Its
+complete tendency is projected into `Ag_q`, residual `Ag_0`, and
+`Amda`; setting `shouldForceMeanDensityAnomaly=false` suppresses only
+the resulting `Amda` tendency.
 
 ### Example
 

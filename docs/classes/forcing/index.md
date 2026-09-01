@@ -22,4 +22,5 @@ All forcing classes derive from [`WVForcing`](/classes/forcing/wvforcing/). New 
 | [`WVFixedAmplitudeForcing`](/classes/forcing/wvfixedamplitudeforcing/) | Hold selected `Ap`, `Am`, or `A0` coefficients fixed |
 | [`WVNarrowBandGeostrophicForcing`](/classes/forcing/wvnarrowbandgeostrophicforcing/) | Initialize and hold a radial band of geostrophic `A0` coefficients |
 | [`WVBetaPlanePVAdvection`](/classes/forcing/wvbetaplanepvadvection/) | Add the $$-\beta v_g$$ tendency to balanced QGPV |
+| [`WVSeasonalSurfaceBuoyancyFlux`](/classes/forcing/wvseasonalsurfacebuoyancyflux/) | Apply a sinusoidal surface buoyancy flux to free-surface QG |
 | [`WVPseudoTopographicWaveGeneration`](/classes/forcing/wvpseudotopographicwavegeneration/) | Project prescribed bottom velocity onto internal-wave modes |

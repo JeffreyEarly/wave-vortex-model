@@ -361,6 +361,7 @@ These items document internal implementation details and are not part of the pri
   + [`transformToSpatialDomainWithFourier`](/classes/transforms/wvtransformfreesurfaceqg/transformtospatialdomainwithfourier.html)
   + [`transformToSpatialDomainWithFourierAtPosition`](/classes/transforms/wvtransformfreesurfaceqg/transformtospatialdomainwithfourieratposition.html)
   + [`transformWithG_wg`](/classes/transforms/wvtransformfreesurfaceqg/transformwithg_wg.html)
+  + [`verticalDerivativeMatrix`](/classes/transforms/wvtransformfreesurfaceqg/verticalderivativematrix.html) Physical first-derivative matrix on the shared increasing-z grid.
 + Class internals
   + [`chebfunForZArray`](/classes/transforms/wvtransformfreesurfaceqg/chebfunforzarray.html)
   + [`maxFg`](/classes/transforms/wvtransformfreesurfaceqg/maxfg.html)
@@ -372,6 +373,7 @@ These items document internal implementation details and are not part of the pri
   + [`quadraticAliasingTolerance`](/classes/transforms/wvtransformfreesurfaceqg/quadraticaliasingtolerance.html) Coupled quadratic-aliasing tolerance used for APV selection.
   + [`quadraturePointsForStratifiedFlow`](/classes/transforms/wvtransformfreesurfaceqg/quadraturepointsforstratifiedflow.html) return the quadrature points for a given stratification
   + [`quasigeostrophicSpatialState`](/classes/transforms/wvtransformfreesurfaceqg/quasigeostrophicspatialstate.html) Reconstruct the physical state used by QG spatial forcing.
+  + [`thermalCoefficientTendency`](/classes/transforms/wvtransformfreesurfaceqg/thermalcoefficienttendency.html) Project weak vertical buoyancy diffusion and endpoint fluxes.
   + [`throwErrorIfDensityViolation`](/classes/transforms/wvtransformfreesurfaceqg/throwerrorifdensityviolation.html) checks if the proposed coefficients are a valid adiabatic re-arrangement of the base state
   + [`verticalProjectionOperatorsWithRigidLid`](/classes/transforms/wvtransformfreesurfaceqg/verticalprojectionoperatorswithrigidlid.html) return the normalized projection operators with prefactors
 + Persistence internals

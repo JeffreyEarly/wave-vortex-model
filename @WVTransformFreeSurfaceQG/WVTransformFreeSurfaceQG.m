@@ -139,6 +139,9 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
         % Shared positive physical quadrature weights.
         % - Topic: Inspect modes and operators
         verticalQuadratureWeights
+        % Physical first-derivative matrix on the shared increasing-z grid.
+        % - Topic: Inspect modes and operators
+        verticalDerivativeMatrix
 
         % Shared vertical-grid design kind, `chebyshevLobatto`.
         % - Topic: Inspect modes and operators
@@ -355,6 +358,7 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
                 options.mdaGForward double
                 options.mdaEquivalentDepth (:,1) double
                 options.verticalQuadratureWeights (:,1) double
+                options.verticalDerivativeMatrix double
                 options.verticalGridKind (1,1) string
                 options.verticalGridCoordinate (1,1) string
                 options.zeroAPVF double
@@ -663,6 +667,7 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
             propertyAnnotations(end+1) = CANumericProperty('mdaGForward',{'mdaMode','z'},'m-1','MDA G forward matrix');
             propertyAnnotations(end+1) = CANumericProperty('mdaEquivalentDepth',{'mdaMode'},'m','MDA equivalent depths');
             propertyAnnotations(end+1) = CANumericProperty('verticalQuadratureWeights',{'z'},'m','shared positive physical quadrature weights');
+            propertyAnnotations(end+1) = CANumericProperty('verticalDerivativeMatrix',{'z','z'},'m-1','physical first-derivative matrix on the shared increasing-z grid');
 
             propertyAnnotations(end+1) = CAPropertyAnnotation('verticalGridKind','shared vertical-grid design kind');
             propertyAnnotations(end+1) = CAPropertyAnnotation('verticalGridCoordinate','native coordinate of the shared vertical grid');
@@ -757,7 +762,7 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
         end
 
         function names = persistedScientificPropertyNames()
-            names = {'g0','gd','activeEndpointCount','activeEndpoint','sourceEndpoint','apvMode','apvModeNumber','mdaMode','mdaModeNumber','klNonzero','kNonzero','lNonzero','khNonzero','khUnique','klNonzeroKhUniqueIndex','apvF','apvG','apvFForward','apvGForward','apvEquivalentDepth','apvMu','apvEndpointResponse','apvFSourcePairing','apvGSourcePairing','mdaF','mdaG','mdaGForward','mdaEquivalentDepth','verticalQuadratureWeights','verticalGridKind','verticalGridCoordinate','zeroAPVF','zeroAPVG','zeroAPVFPairing','zeroAPVGPairing','zeroAPVSourceSolve','apvGramError','apvRoundTripError','mdaGramError','mdaRoundTripError','apvGramTolerance','mdaGramTolerance','quadraticAliasingTolerance','quadraticAliasingError','quadraticAliasingLimitingChannel','quadraticAliasingLimitingModeNumberI','quadraticAliasingLimitingModeNumberJ','minimumRelativeMuSeparation','muTolerance','zeroAPVGramReciprocalCondition','zeroAPVGramRelativeSeparation','apvZeroAPVQuadraticError','apvZeroAPVLimitingEndpoint','apvZeroAPVLimitingModeNumber','modeSelectionMethod'};
+            names = {'g0','gd','activeEndpointCount','activeEndpoint','sourceEndpoint','apvMode','apvModeNumber','mdaMode','mdaModeNumber','klNonzero','kNonzero','lNonzero','khNonzero','khUnique','klNonzeroKhUniqueIndex','apvF','apvG','apvFForward','apvGForward','apvEquivalentDepth','apvMu','apvEndpointResponse','apvFSourcePairing','apvGSourcePairing','mdaF','mdaG','mdaGForward','mdaEquivalentDepth','verticalQuadratureWeights','verticalDerivativeMatrix','verticalGridKind','verticalGridCoordinate','zeroAPVF','zeroAPVG','zeroAPVFPairing','zeroAPVGPairing','zeroAPVSourceSolve','apvGramError','apvRoundTripError','mdaGramError','mdaRoundTripError','apvGramTolerance','mdaGramTolerance','quadraticAliasingTolerance','quadraticAliasingError','quadraticAliasingLimitingChannel','quadraticAliasingLimitingModeNumberI','quadraticAliasingLimitingModeNumberJ','minimumRelativeMuSeparation','muTolerance','zeroAPVGramReciprocalCondition','zeroAPVGramRelativeSeparation','apvZeroAPVQuadraticError','apvZeroAPVLimitingEndpoint','apvZeroAPVLimitingModeNumber','modeSelectionMethod'};
         end
 
         function names = optionalZeroAPVPropertyNames()

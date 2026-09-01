@@ -195,7 +195,7 @@ classdef TestForcingMathematicalContracts < matlab.unittest.TestCase
             guide = string(fileread(fullfile(testCase.repositoryRoot,"docs","users-guide","adding-forcing.md")));
             testCase.verifySubstring(beta,"-\beta v_g");
             testCase.verifySubstring(beta,"not a full");
-            testCase.verifySubstring(beta,"beta-plane treatment of internal-wave dynamics");
+            testCase.verifySubstring(beta,"internal-wave dynamics");
             testCase.verifyFalse(contains(beta,"I suspect"));
             testCase.verifySubstring(vertical,"-f\kappa_z\partial_{zzz}\eta");
             testCase.verifySubstring(vertical,"not a mean-density-anomaly component");

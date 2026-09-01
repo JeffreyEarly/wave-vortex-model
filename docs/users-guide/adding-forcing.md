@@ -168,7 +168,19 @@ wvt.addForcing(WVBetaPlanePVAdvection(wvt));
 
 ## Diffusing displacement vertically
 
-`WVVerticalDiffusivity` applies $$\mathcal{S}_\eta=\kappa_z\partial_{zz}\eta$$ to the represented displacement field. For variable stratification, `shouldForceMeanDensityAnomaly=true` also includes the horizontally uniform source $$-\kappa_z\partial_z\ln N^2$$, which projects onto the mean-density-anomaly component rather than the wave modes. For stratified QG, which has no mean-density-anomaly component, the corresponding QGPV tendency is $$\mathcal{S}_q=-f\partial_z\mathcal{S}_\eta$$ and the option has no effect.
+For wave-bearing transforms, `WVVerticalDiffusivity` applies $$\mathcal{S}_\eta=\kappa_z\partial_{zz}\eta$$ to the represented displacement field. For variable stratification, `shouldForceMeanDensityAnomaly=true` also includes the horizontally uniform source $$-\kappa_z\partial_z\ln N^2$$, which projects onto the mean-density-anomaly component rather than the wave modes. For stratified QG, which has no mean-density-anomaly component, the corresponding QGPV tendency is $$\mathcal{S}_q=-f\partial_z\mathcal{S}_\eta$$ and the option has no effect.
+
+For `WVTransformFreeSurfaceQG`, the closure instead diffuses $$\mathfrak b=-N^2\eta_i$$ with the transform's weak vertical operator and insulating active endpoints. The resulting displacement and QGPV tendencies are projected into `Ag_q`, residual `Ag_0`, and `Amda`. In this transform, `shouldForceMeanDensityAnomaly=false` suppresses only the resulting `Amda` tendency.
+
+## Adding a seasonal surface buoyancy flux
+
+`WVSeasonalSurfaceBuoyancyFlux` applies the inward flux
+
+$$
+\mathcal Q_{\mathfrak b,0}=Q_*P(x,y)\sin(2\pi t/T+\phi)
+$$
+
+to an active free-surface endpoint. Supply `amplitude`, and optionally supply an exact numeric `pattern`, `period`, and `phase`. The default period is 365.25 days and the default pattern is $$\sin(2\pi y/L_y)$$. Patterns are neither normalized nor mean-removed, so a nonzero horizontal mean forces `Amda`.
 
 ## Creating your own forcing
 

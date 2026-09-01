@@ -71,6 +71,7 @@ The supplied forcing and closure classes are:
 - `WVBottomFrictionLinear`
 - `WVBottomFrictionQuadratic`
 - `WVBetaPlanePVAdvection`
+- `WVSeasonalSurfaceBuoyancyFlux`
 - `WVPseudoTopographicWaveGeneration`
 
 `WVThermalDamping` is under development and has more limited validation than the classes above. Custom forcing may be implemented through the documented `WVForcing` extension interface.

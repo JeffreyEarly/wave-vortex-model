@@ -17,7 +17,7 @@ apvBasis = solver.solveEVP(apvProblem,nModes=nSolve);
 mdaBasis = solver.solveEVP(mdaProblem,nModes=nSolve);
 
 gridSolver = IMSolverSpectral(nEVP=Nz,coordinateKind="wkb").configuredForEVP(apvProblem);
-[z,weights] = gridSolver.nativeQuadratureRule(zDomain);
+[z,weights,Dz] = gridSolver.nativeDifferentiationRule(zDomain);
 weights = weights*(Lz/sum(weights));
 if length(z) ~= Nz || any(diff(z) <= 0) || abs(z(1)+Lz) > sqrt(eps)*max(1,Lz) || abs(z(end)) > sqrt(eps)*max(1,Lz)
     error('WVTransformFreeSurfaceQG:InvalidVerticalGrid','The WKB quadrature must contain Nz increasing points spanning exactly [-Lz,0].');
@@ -49,6 +49,6 @@ if ~isempty(apvAssessment.weightFit) || ~isempty(mdaAssessment.weightFit)
     error('WVTransformFreeSurfaceQG:ModeSelectionInconsistency','InternalModesEVP did not use the supplied fixed quadrature rule.');
 end
 
-vertical = struct(z=z,weights=weights,N2Values=N2Values,nEVP=nEVP,solver=solver,apvProblem=apvProblem,mdaProblem=mdaProblem, ...
+vertical = struct(z=z,weights=weights,Dz=Dz,N2Values=N2Values,nEVP=nEVP,solver=solver,apvProblem=apvProblem,mdaProblem=mdaProblem, ...
     apvBasis=apvBasis,mdaBasis=mdaBasis,apvTransform=apvTransform,mdaTransform=mdaTransform,apvAssessment=apvAssessment,mdaAssessment=mdaAssessment);
 end

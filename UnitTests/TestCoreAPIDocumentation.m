@@ -573,6 +573,7 @@ classdef TestCoreAPIDocumentation < matlab.unittest.TestCase
                 fullfile("wvfixedamplitudeforcing","index.md")
                 fullfile("wvnarrowbandgeostrophicforcing","index.md")
                 fullfile("wvbetaplanepvadvection","index.md")
+                fullfile("wvseasonalsurfacebuoyancyflux","index.md")
                 fullfile("wvpseudotopographicwavegeneration","index.md")
                 fullfile("closures","wvadaptivedamping","index.md")
                 fullfile("closures","wvverticaldiffusivity","index.md")
@@ -595,6 +596,7 @@ classdef TestCoreAPIDocumentation < matlab.unittest.TestCase
                 fullfile("wvbottomfrictionquadratic","index.md"), ["Cd" "cd"]
                 fullfile("wvfixedamplitudeforcing","index.md"), ["A0_indices" "A0bar" "Ap_indices" "Apbar" "Am_indices" "Ambar" "setWaveForcingCoefficients" "setGeostrophicForcingCoefficients" "setNarrowBandGeostrophicForcing"]
                 fullfile("wvnarrowbandgeostrophicforcing","index.md"), ["r" "k_r" "k_f" "j_f" "u_rms" "initialPV" "modelSpectrum" "A0_indices" "A0bar"]
+                fullfile("wvseasonalsurfacebuoyancyflux","index.md"), ["pattern" "amplitude" "period" "phase"]
                 fullfile("closures","wvadaptivedamping","index.md"), ["damp" "k_no_damp" "k_damp" "j_no_damp" "j_damp" "dampingTimeScale"]
                 fullfile("closures","wvverticaldiffusivity","index.md"), ["kappa_z" "shouldForceMeanDensityAnomaly"]
                 fullfile("closures","wvhorizontaldamping","index.md"), ["nu" "kappa"]

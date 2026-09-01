@@ -69,6 +69,8 @@ These items document internal implementation details and are not part of the pri
   + [`addNonhydrostaticSpatialForcing`](/classes/forcing/wvforcing/addnonhydrostaticspatialforcing.html) Add nonhydrostatic physical-space tendencies.
   + [`addPotentialVorticitySpatialForcing`](/classes/forcing/wvforcing/addpotentialvorticityspatialforcing.html) Add a physical-space QGPV tendency.
   + [`addPotentialVorticitySpectralForcing`](/classes/forcing/wvforcing/addpotentialvorticityspectralforcing.html) Add a spectral QGPV tendency.
+  + [`addQuasigeostrophicSpatialForcing`](/classes/forcing/wvforcing/addquasigeostrophicspatialforcing.html) Add interior and active-endpoint QG physical-space tendencies.
+  + [`addQuasigeostrophicSpectralForcing`](/classes/forcing/wvforcing/addquasigeostrophicspectralforcing.html) Add a free-surface QG coefficient-family tendency.
   + [`addSpectralForcing`](/classes/forcing/wvforcing/addspectralforcing.html) Add wave-vortex coefficient tendencies in spectral space.
   + [`setPotentialVorticitySpectralAmplitude`](/classes/forcing/wvforcing/setpotentialvorticityspectralamplitude.html) Restore selected QG coefficients after a model step.
   + [`setPotentialVorticitySpectralForcing`](/classes/forcing/wvforcing/setpotentialvorticityspectralforcing.html) Modify QGPV tendencies for a spectral-amplitude constraint.
@@ -82,8 +84,6 @@ These items document internal implementation details and are not part of the pri
 + Forcing persistence
   + [`forcingFromGroup`](/classes/forcing/wvforcing/forcingfromgroup.html) Restore a concrete forcing from a NetCDF group.
 + Forcing internals
-  + [`addQuasigeostrophicSpatialForcing`](/classes/forcing/wvforcing/addquasigeostrophicspatialforcing.html) Add interior and active-endpoint QG physical-space tendencies.
-  + [`addQuasigeostrophicSpectralForcing`](/classes/forcing/wvforcing/addquasigeostrophicspectralforcing.html) Add a free-surface QG coefficient-family tendency.
   + [`didGetRemovedFromTransform`](/classes/forcing/wvforcing/didgetremovedfromtransform.html) Release resources when a forcing is removed from its transform.
   + [`portableImplementationContract`](/classes/forcing/wvforcing/portableimplementationcontract.html) Describe availability of the paired portable C++ implementation.
 

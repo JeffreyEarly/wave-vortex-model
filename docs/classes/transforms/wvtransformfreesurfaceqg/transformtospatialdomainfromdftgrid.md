@@ -3,7 +3,7 @@ layout: default
 title: transformToSpatialDomainFromDFTGrid
 parent: WVTransformFreeSurfaceQG
 grand_parent: Transforms
-nav_order: 231
+nav_order: 232
 mathjax: true
 ---
 

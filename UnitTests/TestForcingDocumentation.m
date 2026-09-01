@@ -17,6 +17,7 @@ classdef TestForcingDocumentation < matlab.unittest.TestCase
                 "wvnarrowbandgeostrophicforcing", false, "self = WVNarrowBandGeostrophicForcing(wvt,options)", ["`modelSpectrum`" "`initialPV`" "consume random numbers"]
                 "wvbottomfrictionlinear", false, "self = WVBottomFrictionLinear(wvt,options)", ["`r`" "inverse seconds" "200-day"]
                 "wvbottomfrictionquadratic", false, "self = WVBottomFrictionQuadratic(wvt,options)", ["`Cd`" "dimensionless" "4000"]
+                "wvseasonalsurfacebuoyancyflux", false, "self = WVSeasonalSurfaceBuoyancyFlux(wvt,options)", ["`pattern`" "365.25 days" "`Amda`"]
                 "wvadaptivedamping", true, "self = WVAdaptiveDamping(wvt)", ["wvt.uvMax*damp" "k_no_damp" "significant damping"]
                 "wvhorizontaldamping", true, "self = WVHorizontalDamping(wvt,options)", ["`nu`" "`kappa`" "square meters per second"]
                 "wvverticaldamping", true, "self = WVVerticalDamping(wvt,options)", ["`nu`" "`kappa`" "square meters per second"]
@@ -33,7 +34,7 @@ classdef TestForcingDocumentation < matlab.unittest.TestCase
                 overview = testCase.generatedPage(folder,"index.md",isClosure);
                 constructor = testCase.generatedPage(folder,folder + ".md",isClosure);
                 reference = testCase.generatedClassReference(folder,isClosure);
-                testCase.verifySubstring(overview,"### Example",folder + " lacks an example.");
+                testCase.verifySubstring(overview,"```matlab",folder + " lacks an executable MATLAB example.");
                 testCase.verifySubstring(constructor,constructorDeclaration,folder + " has the wrong constructor declaration.");
                 for token = requiredText
                     testCase.verifySubstring(reference,token,folder + " lacks " + token + ".");
@@ -69,6 +70,7 @@ classdef TestForcingDocumentation < matlab.unittest.TestCase
                 "WVNarrowBandGeostrophicForcing"
                 "WVBottomFrictionLinear"
                 "WVBottomFrictionQuadratic"
+                "WVSeasonalSurfaceBuoyancyFlux"
                 "WVAdaptiveDamping"
                 "WVHorizontalDamping"
                 "WVVerticalDamping"

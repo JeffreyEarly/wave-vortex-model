@@ -39,6 +39,11 @@ classdef WVVerticalDiffusivity < WVForcing
     % Stratified QG contains only nonzero-horizontal-wavenumber geostrophic
     % modes, not a mean-density-anomaly component. Consequently,
     % `shouldForceMeanDensityAnomaly` does not alter its QGPV pathway.
+    % `WVTransformFreeSurfaceQG` instead applies constant diffusivity to
+    % buoyancy with the transform's persisted weak vertical operator. Its
+    % complete tendency is projected into `Ag_q`, residual `Ag_0`, and
+    % `Amda`; setting `shouldForceMeanDensityAnomaly=false` suppresses only
+    % the resulting `Amda` tendency.
     %
     % ### Example
     %
@@ -105,14 +110,18 @@ classdef WVVerticalDiffusivity < WVForcing
                 options.kappa_z double = 1e-5
                 options.shouldForceMeanDensityAnomaly = true;
             end
-            supportedTypes = ["HydrostaticSpatial","NonhydrostaticSpatial","PVSpatial"];
-            if isa(wvt,"WVGeometryDoublyPeriodicBarotropic")
+            if isa(wvt,"WVTransformFreeSurfaceQG")
+                supportedTypes = "QGSpectral";
+            elseif isa(wvt,"WVGeometryDoublyPeriodicBarotropic")
                 supportedTypes = ["HydrostaticSpatial","NonhydrostaticSpatial"];
+            else
+                supportedTypes = ["HydrostaticSpatial","NonhydrostaticSpatial","PVSpatial"];
             end
             self@WVForcing(wvt,"vertical diffusivity",WVForcingType(supportedTypes));
             self.wvt = wvt;
             self.kappa_z = options.kappa_z;
             self.shouldForceMeanDensityAnomaly = options.shouldForceMeanDensityAnomaly;
+            self.isClosure = true;
             if self.shouldForceMeanDensityAnomaly && isprop(wvt,"dLnN2")
                 self.dLnN2 = shiftdim(wvt.dLnN2,-2);
             end
@@ -139,6 +148,24 @@ classdef WVVerticalDiffusivity < WVForcing
             % - Returns Fpv: QGPV tendency including vertical diffusivity
             % - Developer: true
             Fpv = Fpv - wvt.f * self.kappa_z * (wvt.diffZG(wvt.eta,n=3));
+        end
+
+        function tendency = addQuasigeostrophicSpectralForcing(self,wvt,tendency,~)
+            % Add weak vertical buoyancy diffusion to free-surface QG.
+            %
+            % - Topic: Implement forcing evaluation
+            % - Declaration: tendency = addQuasigeostrophicSpectralForcing(wvt,tendency,physicalState)
+            % - Parameter wvt: free-surface QG transform evaluating the closure
+            % - Parameter tendency: accumulated family-keyed coefficient tendency
+            % - Returns tendency: coefficient tendency including vertical buoyancy diffusion
+            % - Developer: true
+            contribution = wvt.thermalCoefficientTendency(self.kappa_z);
+            if ~self.shouldForceMeanDensityAnomaly
+                contribution.Amda(:) = 0;
+            end
+            tendency.Ag_q = tendency.Ag_q+contribution.Ag_q;
+            tendency.Ag_0 = tendency.Ag_0+contribution.Ag_0;
+            tendency.Amda = tendency.Amda+contribution.Amda;
         end
 
         function force = forcingWithResolutionOfTransform(self, wvtX2)
