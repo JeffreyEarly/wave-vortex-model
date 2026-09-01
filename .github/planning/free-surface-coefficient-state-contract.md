@@ -34,11 +34,15 @@ The canonical public state consists of three directly mutable properties. Dimens
 
 | Property | Dimensions | Shape | MATLAB values | Units | Canonical basis |
 | --- | --- | --- | --- | --- | --- |
-| `Ag_q` | `apvMode, klNonzero` | `Nj × NklNonzero` | complex `double` | $\mathrm{s^{-1}}$ | generalized-energy APV modes |
+| `Ag_q` | `apvMode, klNonzero` | `Napv × NklNonzero` | complex `double` | $\mathrm{s^{-1}}$ | generalized-energy APV modes |
 | `Ag_0` | `activeEndpoint, klNonzero` | `Ne × NklNonzero` | complex `double` | $\mathrm{s^{-1}}$ | boundary-normalized zero-APV responses |
-| `Amda` | `mdaMode` | `Nj × 1` | real `double` | $\mathrm{m}$ | signed-normalized MDA modes |
+| `Amda` | `mdaMode` | `Nmda × 1` | real `double` | $\mathrm{m}$ | signed-normalized MDA modes |
 
-`Nj` is one retained-count decision applied to both the APV and MDA bases. Equal counts do not make those bases interchangeable. `apvMode` and `mdaMode` are distinct ordinal dimensions of length `Nj`, with the physical labels stored separately as `apvModeNumber(apvMode)` and `mdaModeNumber(mdaMode)`.
+APV and MDA retention are independent decisions on the same physical `z` grid. `apvMode` has length `Napv`, `mdaMode` has length `Nmda`, and no equality between those lengths is required. Their physical labels are stored separately as `apvModeNumber(apvMode)` and `mdaModeNumber(mdaMode)`. Scientific construction selects both counts automatically unless `apvModeCount` or `mdaModeCount` requests a smaller certified prefix. `Nj` is not a `WVTransformFreeSurfaceQG` constructor option. The inherited read-only `Nj` geometry value equals `apvModeCount` because the legacy stratified-geometry operators are the APV operators; it does not describe the MDA family.
+
+Scientific initialization accepts and persists `apvGramTolerance`, `mdaGramTolerance`, `quadraticAliasingTolerance`, and `muTolerance`. APV selection applies its Gram and coupled quadratic-product tolerances. MDA selection applies only its Gram tolerance because periodic free-surface QG has no nonlinear MDA tendency and no MDA quadratic-product contract. WaveVortexModel delegates independently refitted retained-count selection to `certifiedDiscreteTransform`; it does not implement a second family-count search. An explicit lower family count is rebuilt with `fitDiscreteTransform`, so its weights are fitted to that exact band rather than inherited from a larger certificate.
+
+With no explicit `z`, the shared physical grid is the APV `modeRootGrid`: roots of the next APV F mode, which are extrema-like points for nonzero APV G modes. Caller-supplied `z` remains supported and is recorded as an explicit grid. Grid provenance, APV weights, and independently fitted MDA weights are persisted alongside the forward matrices. The inherited `z_int` remains the APV weight vector used by legacy stratified-geometry integration; it is not an MDA projection rule.
 
 `klNonzero` contains exactly the entries of the existing compact `kl` grid for which $k_h>0$. Its coordinate values retain the original `kl` indices rather than being renumbered. The corresponding `k`, `l`, and $k_h$ values are auxiliary coordinates. The horizontal mean is therefore absent from `Ag_q` and `Ag_0`, not represented by a constrained zero column.
 
@@ -135,7 +139,7 @@ The QG descriptor order is `Ag_q`, `Ag_0`, `Amda`. The descriptor defines the lo
 
 The three logical coefficient families are canonical restart state. Their family identities, logical dimensions, auxiliary coordinates, and canonical bases must survive a round trip. In particular, a file never exposes orthogonal zero-APV coefficients in place of boundary-normalized `Ag_0`.
 
-Persistence also includes the complete sampled mathematical representation needed to resume without rerunning an InternalModes solver: APV and MDA mode labels, sampled `F/G` modes, equivalent depths, forward matrices, zero-APV pages, endpoint responses, `F/G` source-pairing matrices, source-solve matrices, resolved coordinates and endpoint parameters, and compact certification results. These arrays are scientific restart state, not disposable runtime caches.
+Persistence also includes the complete sampled mathematical representation needed to resume without rerunning an InternalModes solver: APV and MDA mode labels, sampled `F/G` modes, equivalent depths, family-specific quadrature weights, forward matrices, shared-grid provenance, zero-APV pages, endpoint responses, `F/G` source-pairing matrices, source-solve matrices, resolved coordinates and endpoint parameters, and compact certification results. These arrays are scientific restart state, not disposable runtime caches.
 
 Packed integrator buffers, Fourier plans, horizontal masks, derived-variable caches, and runtime forcing or closure caches are not persisted. Orthogonal zero-APV rotations may be persisted as diagnostic operators when useful, but they never replace the canonical boundary-normalized coefficient state.
 
@@ -164,7 +168,8 @@ These scenarios define the executable contract to be implemented after the stora
 | No active endpoint | `Ag_0` and its tendency are `0 × NklNonzero`; APV and MDA remain independently usable. |
 | Direct mutation | Assigning any canonical property validates its contract and invalidates all coefficient-dependent cached diagnostics. |
 | Tendency dispatch | Dynamics and every spectral forcing stage receive and return exactly the three family fields with state-matching shapes. |
-| Coordinate identity | `klNonzero`, APV mode numbers, MDA mode numbers, and active endpoint identities survive logical persistence without renumbering or conflation. |
+| Independent retention | APV and MDA may retain different mode counts; neither family is truncated merely to match the other. |
+| Coordinate identity | `klNonzero`, independently sized APV and MDA mode numbers, and active endpoint identities survive logical persistence without renumbering or conflation. |
 
 Round-trip tolerances, representative grids, and performance cases belong to their implementation and benchmark issues. The scientific pass condition is comparison to the admissible state projected by InternalModesEVP, not comparison to legacy `A0` layout.
 

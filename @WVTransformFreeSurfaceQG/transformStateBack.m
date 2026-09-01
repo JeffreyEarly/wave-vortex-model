@@ -3,7 +3,7 @@ function [APV,endpointAnomalies] = transformStateBack(self,Ag_q,Ag_0)
 %
 % - Topic: Transform coefficient state
 % - Declaration: [APV,endpointAnomalies] = transformStateBack(self,Ag_q,Ag_0)
-% - Parameter Ag_q: APV coefficients with shape `Nj × NklNonzero`
+% - Parameter Ag_q: APV coefficients with shape `apvModeCount × NklNonzero`
 % - Parameter Ag_0: zero-APV coefficients with shape `Ne × NklNonzero`
 % - Returns APV: sampled APV pages
 % - Returns endpointAnomalies: active endpoint-anomaly pages

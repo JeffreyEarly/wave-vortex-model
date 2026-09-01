@@ -24,20 +24,6 @@ else
     rhoFunction = options.rhoFunction;
 end
 
-if isempty(options.z)
-    z = linspace(-Lz,0,Nxyz(3)).';
-else
-    z = options.z(:);
-end
-if length(z) ~= Nxyz(3) || any(diff(z) <= 0) || abs(z(1)+Lz) > sqrt(eps)*max(1,Lz) || abs(z(end)) > sqrt(eps)*max(1,Lz)
-    error('WVTransformFreeSurfaceQG:InvalidVerticalGrid','z must contain Nz increasing points spanning exactly [-Lz,0].');
-end
-N2Values = N2Function(z);
-N2Values = N2Values(:);
-if length(N2Values) ~= length(z) || any(~isfinite(N2Values)) || any(N2Values <= 0)
-    error('WVTransformFreeSurfaceQG:InvalidStratification','N2Function must return one finite positive value per z point.');
-end
-
 g0 = options.g0;
 if isnan(g0)
     g0 = -integral(N2Function,-Lz,0);
@@ -64,7 +50,7 @@ if f0 == 0
     error('WVTransformFreeSurfaceQG:ZeroCoriolis','Free-surface QG construction requires nonzero Coriolis frequency.');
 end
 
-nCandidate = length(z);
+nCandidate = Nxyz(3);
 nSolve = nCandidate+4;
 nEVP = max(96,3*nSolve);
 solver = IMSolverSpectral(nEVP=nEVP);
@@ -73,31 +59,52 @@ mdaProblem = IMInternalModes.meanDensityAnomalyModes(N2=N2Function,zDomain=zDoma
 apvBasis = solver.solveEVP(apvProblem,nModes=nSolve);
 mdaBasis = solver.solveEVP(mdaProblem,nModes=nSolve);
 
-quadraticAliasingTolerance = 0.1;
-[~,apvAssessment] = apvBasis.discreteTransform(z=z,variables=["F","G"],quadraticAliasingTolerance=quadraticAliasingTolerance);
-maximumCandidateCount = min([nSolve,length(z)]);
-[mdaCertifiedTransform,mdaCertifiedAssessment,mdaCertifiedModeCount] = certifiedMdaTransform(mdaBasis,z,maximumCandidateCount);
-apvCandidateModeCount = apvAssessment.candidateModeCount;
-mdaCandidateModeCount = maximumCandidateCount;
-apvCertifiedModeCount = apvAssessment.retainedModeCount;
-commonCertifiedModeCount = min(apvCertifiedModeCount,mdaCertifiedModeCount);
-if isempty(options.Nj)
-    Nj = commonCertifiedModeCount;
+if isempty(options.z)
+    [z,verticalGridDesign] = apvBasis.modeRootGrid(nPoints=Nxyz(3));
 else
-    if ~isscalar(options.Nj) || options.Nj < 1 || options.Nj ~= fix(options.Nj)
-        error('WVTransformFreeSurfaceQG:InvalidNj','Nj must be a positive integer.');
-    end
-    Nj = options.Nj;
-    if Nj > commonCertifiedModeCount
-        error('WVTransformFreeSurfaceQG:UncertifiedNj','Requested Nj=%d exceeds the product-safe common certified maximum of %d.',Nj,commonCertifiedModeCount);
-    end
+    z = options.z(:);
+    verticalGridDesign = struct.empty;
 end
-apvTransform = apvAssessment.candidateTransform.prefixTransform(Nj);
-if Nj == mdaCertifiedModeCount
-    mdaTransform = mdaCertifiedTransform;
-    mdaAssessment = mdaCertifiedAssessment;
+if length(z) ~= Nxyz(3) || any(diff(z) <= 0) || abs(z(1)+Lz) > sqrt(eps)*max(1,Lz) || abs(z(end)) > sqrt(eps)*max(1,Lz)
+    error('WVTransformFreeSurfaceQG:InvalidVerticalGrid','z must contain Nz increasing points spanning exactly [-Lz,0].');
+end
+N2Values = N2Function(z);
+N2Values = N2Values(:);
+if length(N2Values) ~= length(z) || any(~isfinite(N2Values)) || any(N2Values <= 0)
+    error('WVTransformFreeSurfaceQG:InvalidStratification','N2Function must return one finite positive value per z point.');
+end
+
+if isempty(verticalGridDesign)
+    [apvCertifiedTransform,apvCertifiedAssessment] = apvBasis.certifiedDiscreteTransform( ...
+        z=z,variables=["F","G"],gramTolerance=options.apvGramTolerance, ...
+        quadraticAliasingTolerance=options.quadraticAliasingTolerance);
+    verticalGridDesign = apvCertifiedAssessment.gridDesign;
 else
-    [mdaTransform,mdaAssessment] = mdaBasis.discreteTransform(z=z,nModes=Nj,variables="G");
+    [apvCertifiedTransform,apvCertifiedAssessment] = apvBasis.certifiedDiscreteTransform( ...
+        z=z,gridDesign=verticalGridDesign,variables=["F","G"],gramTolerance=options.apvGramTolerance, ...
+        quadraticAliasingTolerance=options.quadraticAliasingTolerance);
+end
+[mdaCertifiedTransform,mdaCertifiedAssessment] = mdaBasis.certifiedDiscreteTransform( ...
+    z=z,gridDesign=verticalGridDesign,variables="G",gramTolerance=options.mdaGramTolerance);
+apvInitialModeCount = max(apvCertifiedAssessment.certificationSearch.modeCount);
+mdaInitialModeCount = max(mdaCertifiedAssessment.certificationSearch.modeCount);
+apvCertifiedModeCount = apvCertifiedAssessment.retainedModeCount;
+mdaCertifiedModeCount = mdaCertifiedAssessment.retainedModeCount;
+apvModeCount = selectedModeCount(options.apvModeCount,apvCertifiedModeCount,"APV");
+mdaModeCount = selectedModeCount(options.mdaModeCount,mdaCertifiedModeCount,"MDA");
+apvTransform = apvCertifiedTransform;
+apvAssessment = apvCertifiedAssessment;
+if apvModeCount < apvCertifiedModeCount
+    [apvTransform,apvAssessment] = apvBasis.fitDiscreteTransform( ...
+        z=z,modeCount=apvModeCount,gridDesign=verticalGridDesign,variables=["F","G"], ...
+        gramTolerance=options.apvGramTolerance,quadraticAliasingTolerance=options.quadraticAliasingTolerance);
+end
+mdaTransform = mdaCertifiedTransform;
+mdaAssessment = mdaCertifiedAssessment;
+if mdaModeCount < mdaCertifiedModeCount
+    [mdaTransform,mdaAssessment] = mdaBasis.fitDiscreteTransform( ...
+        z=z,modeCount=mdaModeCount,gridDesign=verticalGridDesign,variables="G", ...
+        gramTolerance=options.mdaGramTolerance);
 end
 hasPositiveQuadrature = ~apvTransform.hasNegativeWeights && ~mdaTransform.hasNegativeWeights;
 if ~hasPositiveQuadrature
@@ -115,7 +122,7 @@ mdaGForward = mdaTransform.forwardMatrix(variable="G");
 frequencyTerm = (f0^2/options.g)./reshape(apvTransform.h,[],1);
 apvMu = frequencyTerm+reshape(khUnique,1,[]).^2;
 relativeMuSeparation = abs(apvMu)./(abs(frequencyTerm)+reshape(khUnique,1,[]).^2);
-if any(~isfinite(apvMu),'all') || any(relativeMuSeparation <= sqrt(eps),'all')
+if any(~isfinite(apvMu),'all') || any(relativeMuSeparation <= options.muTolerance,'all')
     error('WVTransformFreeSurfaceQG:NearSingularMu','A retained APV inversion eigenvalue is singular or insufficiently separated.');
 end
 
@@ -128,7 +135,8 @@ if activeEndpointCount > 0
     endpointNames = ["surface","bottom"];
     zeroProblem = IMGeostrophicZeroAPVModes.atWavenumber(N2=N2Function,zDomain=zDomain,f0=f0,g=options.g,k=khUnique,endpoints=endpointNames(activeMask),surfaceBoundary="freeSurface");
     zeroModes = solver.solveGeostrophicZeroAPVModes(zeroProblem);
-    geostrophicTransform = IMGeostrophicTransform(apvTransform=apvTransform,zeroAPVModes=zeroModes,g0=g0,gd=gd);
+    geostrophicTransform = IMGeostrophicTransform(apvTransform=apvTransform,zeroAPVModes=zeroModes, ...
+        g0=g0,gd=gd,muTolerance=options.muTolerance);
     zeroAPVF = zeroModes.F(z);
     zeroAPVG = zeroModes.G(z);
     apvEndpointResponse = geostrophicTransform.apvEndpointResponse;
@@ -176,7 +184,7 @@ if activeEndpointCount > 0
 else
     zeroAPVF = zeros(length(z),0,nKh);
     zeroAPVG = zeros(length(z),0,nKh);
-    apvEndpointResponse = zeros(0,Nj,nKh);
+    apvEndpointResponse = zeros(0,apvModeCount,nKh);
     zeroAPVFPairing = zeros(0,length(z),nKh);
     zeroAPVGPairing = zeros(0,length(z),nKh);
     zeroAPVSourceSolve = zeros(0,0,nKh);
@@ -202,18 +210,20 @@ state.PF0inv = apvF;
 state.QG0inv = apvG;
 state.PF0 = apvFForward;
 state.QG0 = apvGForward;
-state.P0 = ones(Nj,1);
-state.Q0 = ones(Nj,1);
+state.P0 = ones(apvModeCount,1);
+state.Q0 = ones(apvModeCount,1);
 state.h_0 = reshape(apvTransform.h,[],1);
 state.z_int = apvTransform.weights;
+state.apvQuadratureWeights = apvTransform.weights;
+state.mdaQuadratureWeights = mdaTransform.weights;
 state.g0 = g0;
 state.gd = gd;
 state.activeEndpointCount = activeEndpointCount;
 state.activeEndpoint = activeEndpoint;
 state.sourceEndpoint = sourceEndpoint;
-state.apvMode = (1:Nj).';
+state.apvMode = (1:apvModeCount).';
 state.apvModeNumber = reshape(apvTransform.modeNumber,[],1);
-state.mdaMode = (1:Nj).';
+state.mdaMode = (1:mdaModeCount).';
 state.mdaModeNumber = reshape(mdaTransform.modeNumber,[],1);
 state.klNonzero = reshape(klNonzero,[],1);
 state.kNonzero = reshape(kNonzero,[],1);
@@ -234,59 +244,61 @@ state.mdaF = mdaF;
 state.mdaG = mdaG;
 state.mdaGForward = mdaGForward;
 state.mdaEquivalentDepth = reshape(mdaTransform.h,[],1);
+state.verticalGridKind = string(verticalGridDesign.kind);
+state.verticalGridSourceEVP = string(verticalGridDesign.sourceEVP);
+state.verticalGridGeneratingVariable = string(verticalGridDesign.generatingVariable);
+state.verticalGridGeneratingModeNumber = verticalGridDesign.generatingModeNumber;
+state.verticalGridRepresentedModeCount = verticalGridDesign.representedModeCount;
+state.verticalGridInterpretation = string(verticalGridDesign.interpretationForG);
 state.zeroAPVF = zeroAPVF;
 state.zeroAPVG = zeroAPVG;
 state.zeroAPVFPairing = zeroAPVFPairing;
 state.zeroAPVGPairing = zeroAPVGPairing;
 state.zeroAPVSourceSolve = zeroAPVSourceSolve;
-state.apvCandidateModeCount = apvCandidateModeCount;
-state.mdaCandidateModeCount = mdaCandidateModeCount;
+state.apvInitialModeCount = apvInitialModeCount;
+state.mdaInitialModeCount = mdaInitialModeCount;
 state.apvCertifiedModeCount = apvCertifiedModeCount;
 state.mdaCertifiedModeCount = mdaCertifiedModeCount;
-state.commonCertifiedModeCount = commonCertifiedModeCount;
 state.apvGramError = max(apvFDiagnostics.relativeGramOperatorError,apvGDiagnostics.relativeGramOperatorError);
 state.apvRoundTripError = max(apvFDiagnostics.roundTripError,apvGDiagnostics.roundTripError);
 state.mdaGramError = mdaDiagnostics.relativeGramOperatorError;
 state.mdaRoundTripError = mdaDiagnostics.roundTripError;
-quadraticDiagnostics = apvAssessment.prefixDiagnostics(Nj,:);
-state.quadraticAliasingTolerance = quadraticAliasingTolerance;
+quadraticDiagnostics = apvAssessment.prefixDiagnostics(end,:);
+state.apvGramTolerance = options.apvGramTolerance;
+state.mdaGramTolerance = options.mdaGramTolerance;
+state.quadraticAliasingTolerance = options.quadraticAliasingTolerance;
 state.quadraticAliasingError = quadraticDiagnostics.quadraticAliasingError;
 state.quadraticAliasingLimitingChannel = quadraticDiagnostics.quadraticLimitingChannel;
 state.quadraticAliasingLimitingModeNumberI = quadraticDiagnostics.quadraticLimitingModeNumberI;
 state.quadraticAliasingLimitingModeNumberJ = quadraticDiagnostics.quadraticLimitingModeNumberJ;
 state.minimumRelativeMuSeparation = minimumRelativeMuSeparation;
+state.muTolerance = options.muTolerance;
 state.zeroAPVGramReciprocalCondition = zeroAPVGramReciprocalCondition;
 state.zeroAPVGramRelativeSeparation = zeroAPVGramRelativeSeparation;
 state.hasPositiveQuadrature = hasPositiveQuadrature;
-state.certificationMethod = "InternalModesEVP fixed-grid common product-safe prefix v2";
-state.Ag_q = complex(zeros(Nj,length(klNonzero)));
+state.certificationMethod = "InternalModesEVP shared-grid independently-refitted family selection v5";
+state.Ag_q = complex(zeros(apvModeCount,length(klNonzero)));
 state.Ag_0 = Ag_0;
-state.Amda = zeros(Nj,1);
+state.Amda = zeros(mdaModeCount,1);
 
-% Keep the strict assessments alive through construction so every requested
-% common-prefix policy is evaluated even though only compact results persist.
-if Nj > apvAssessment.retainedModeCount || Nj > mdaAssessment.retainedModeCount ...
-        || length(apvTransform.modeNumber) ~= Nj || length(mdaTransform.modeNumber) ~= Nj
-    error('WVTransformFreeSurfaceQG:CertificationInconsistency','InternalModesEVP did not retain the requested common prefix.');
+if apvAssessment.weightFitModeCount ~= apvModeCount || mdaAssessment.weightFitModeCount ~= mdaModeCount ...
+        || length(apvTransform.modeNumber) ~= apvModeCount || length(mdaTransform.modeNumber) ~= mdaModeCount
+    error('WVTransformFreeSurfaceQG:CertificationInconsistency','InternalModesEVP did not retain the requested family prefixes.');
 end
 end
 
-function [transform,assessment,Nj] = certifiedMdaTransform(mdaBasis,z,maximumCandidateCount)
-lastCause = [];
-for candidateCount = maximumCandidateCount:-1:1
-    try
-        [transform,assessment] = mdaBasis.discreteTransform(z=z,nModes=candidateCount,variables="G");
-        Nj = candidateCount;
-        return
-    catch cause
-        lastCause = cause;
-    end
+function count = selectedModeCount(requestedCount,certifiedCount,familyName)
+if isempty(requestedCount)
+    count = certifiedCount;
+    return
 end
-exception = MException('WVTransformFreeSurfaceQG:NoCertifiedCommonMode','No MDA mode prefix is certified on the supplied z grid.');
-if ~isempty(lastCause)
-    exception = addCause(exception,lastCause);
+if ~isscalar(requestedCount) || requestedCount < 1 || requestedCount ~= fix(requestedCount)
+    error('WVTransformFreeSurfaceQG:InvalidModeCount','%s mode count must be a positive integer.',familyName);
 end
-throw(exception)
+if requestedCount > certifiedCount
+    error('WVTransformFreeSurfaceQG:UncertifiedModeCount','Requested %s mode count %d exceeds its certified maximum of %d.',familyName,requestedCount,certifiedCount);
+end
+count = requestedCount;
 end
 
 function [uniqueValues,index] = uniqueWavenumberPages(values)
