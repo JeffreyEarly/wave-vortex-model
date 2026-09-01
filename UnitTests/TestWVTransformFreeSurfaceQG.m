@@ -375,6 +375,61 @@ classdef TestWVTransformFreeSurfaceQG < matlab.unittest.TestCase
             end
         end
 
+        function nearLimitAPVEndpointCrossTendencyMeetsVerticalTolerance(testCase)
+            D = 4000;
+            N2 = @(z) (5.2e-3)^2*exp(2*z/1300);
+            gd = 0.03;
+            assessment = WVTransformFreeSurfaceQG.assessVerticalResolution(D,33,N2Function=N2,latitude=30,g0=NaN,gd=gd);
+
+            unitGeometry = WVGeometryDoublyPeriodic(2*pi*[1 1],[16 16],shouldAntialias=true,Nz=1, ...
+                shouldExcludeNyquist=true,shouldExcludeConjugates=true,conjugateDimension=2);
+            kIndex = round(unitGeometry.k/unitGeometry.dk);
+            lIndex = round(unitGeometry.l/unitGeometry.dl);
+            khIndex = hypot(kIndex,lIndex);
+            maximumKhIndex = max(khIndex);
+            targetIndex = find(kIndex > 0 & lIndex > 0 & abs(khIndex-maximumKhIndex) <= 32*eps(maximumKhIndex),1);
+            testCase.assertNotEmpty(targetIndex)
+            targetKIndex = kIndex(targetIndex);
+            targetLIndex = lIndex(targetIndex);
+            dk = 0.95*assessment.maximumSupportedKh/maximumKhIndex;
+            L = 2*pi/dk;
+
+            NzValues = [33 65 129];
+            transforms = cell(size(NzValues));
+            crossTendencies = cell(size(NzValues));
+            limitingEndpointCode = find(["surface" "bottom"] == assessment.limitingEndpoint,1);
+            testCase.assertNotEmpty(limitingEndpointCode)
+            for iResolution = 1:length(NzValues)
+                transforms{iResolution} = WVTransformFreeSurfaceQG([L L D],[16 16 NzValues(iResolution)], ...
+                    N2Function=N2,latitude=30,g0=NaN,gd=gd);
+                crossTendencies{iResolution} = TestWVTransformFreeSurfaceQG.isolatedAPVEndpointCrossTendency( ...
+                    transforms{iResolution},assessment.limitingAPVModeNumber,limitingEndpointCode, ...
+                    [0 targetLIndex],[targetKIndex 0]);
+            end
+            testCase.verifyEqual(max(transforms{1}.khUnique)/assessment.maximumSupportedKh,0.95,RelTol=64*eps)
+
+            reference = transforms{end};
+            referenceTendency = crossTendencies{end};
+            referenceOutputIndex = TestWVTransformFreeSurfaceQG.nonzeroIndexForMode(reference,targetKIndex,targetLIndex);
+            relativeErrors = zeros(2,2);
+            for iResolution = 1:2
+                wvt = transforms{iResolution};
+                tendency = crossTendencies{iResolution};
+                outputIndex = TestWVTransformFreeSurfaceQG.nonzeroIndexForMode(wvt,targetKIndex,targetLIndex);
+                [hasReferenceMode,referenceModeIndex] = ismember(wvt.apvModeNumber,reference.apvModeNumber);
+                testCase.assertTrue(all(hasReferenceMode))
+                referenceAgq = referenceTendency.Ag_q(referenceModeIndex,referenceOutputIndex);
+                referenceAg0 = referenceTendency.Ag_0(:,referenceOutputIndex);
+                testCase.verifyGreaterThan(norm(referenceAgq),0)
+                testCase.verifyGreaterThan(norm(referenceAg0),0)
+                relativeErrors(iResolution,1) = norm(tendency.Ag_q(:,outputIndex)-referenceAgq)/norm(referenceAgq);
+                relativeErrors(iResolution,2) = norm(tendency.Ag_0(:,outputIndex)-referenceAg0)/norm(referenceAg0);
+                testCase.verifyLessThanOrEqual(relativeErrors(iResolution,:),wvt.quadraticAliasingTolerance)
+                testCase.verifyEqual(tendency.Amda,zeros(size(wvt.Amda)),AbsTol=0)
+            end
+            testCase.verifyLessThan(relativeErrors(2,:),relativeErrors(1,:))
+        end
+
         function snapshotPersistsRepresentationAndDirectConstructionSkipsModeSolver(testCase)
             path = fullfile(testCase.temporaryFolder,"snapshot.nc");
             scientific = TestWVTransformFreeSurfaceQG.newTransform(0.02,0.03);
@@ -625,6 +680,36 @@ classdef TestWVTransformFreeSurfaceQG < matlab.unittest.TestCase
                 wvt.Ag_0(1,i10) = -3e-4+2e-4i;
                 wvt.Ag_0(2,i01) = 4e-4-1e-4i;
             end
+        end
+
+        function tendency = isolatedAPVEndpointCrossTendency(wvt,apvModeNumber,endpointCode,apvHorizontalIndex,endpointHorizontalIndex)
+            apvModeIndex = find(wvt.apvModeNumber == apvModeNumber,1);
+            endpointIndex = find(wvt.activeEndpoint == endpointCode,1);
+            testAPVIndex = TestWVTransformFreeSurfaceQG.nonzeroIndexForMode(wvt,apvHorizontalIndex(1),apvHorizontalIndex(2));
+            testEndpointIndex = TestWVTransformFreeSurfaceQG.nonzeroIndexForMode(wvt,endpointHorizontalIndex(1),endpointHorizontalIndex(2));
+            if isempty(apvModeIndex) || isempty(endpointIndex)
+                error('TestWVTransformFreeSurfaceQG:MissingCrossTendencyMode','The requested APV mode or active endpoint is absent.');
+            end
+
+            Ag_q = complex(zeros(size(wvt.Ag_q)));
+            Ag_0 = complex(zeros(size(wvt.Ag_0)));
+            Ag_q(apvModeIndex,testAPVIndex) = 2e-4+3e-4i;
+            Ag_0(endpointIndex,testEndpointIndex) = -3e-4+2e-4i;
+            wvt.Amda = zeros(size(wvt.Amda));
+
+            wvt.Ag_q = Ag_q;
+            wvt.Ag_0 = Ag_0;
+            mixedTendency = wvt.coefficientTendency();
+            wvt.Ag_0 = complex(zeros(size(Ag_0)));
+            apvTendency = wvt.coefficientTendency();
+            wvt.Ag_q = complex(zeros(size(Ag_q)));
+            wvt.Ag_0 = Ag_0;
+            endpointTendency = wvt.coefficientTendency();
+
+            tendency = struct();
+            tendency.Ag_q = mixedTendency.Ag_q-apvTendency.Ag_q-endpointTendency.Ag_q;
+            tendency.Ag_0 = mixedTendency.Ag_0-apvTendency.Ag_0-endpointTendency.Ag_0;
+            tendency.Amda = mixedTendency.Amda-apvTendency.Amda-endpointTendency.Amda;
         end
 
         function values = selectedRefinementTendency(wvt)
