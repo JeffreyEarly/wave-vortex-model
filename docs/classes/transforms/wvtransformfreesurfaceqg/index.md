@@ -251,6 +251,7 @@ wvt = WVTransformFreeSurfaceQG([100e3 100e3 4000],[32 32 33],N2Function=N2,latit
       + [`transformToRadialWavenumber`](/classes/transforms/wvtransformfreesurfaceqg/transformtoradialwavenumber.html) transforms in the spectral domain from (j,kl) to (j,kRadial)
   + Flow diagnostics
     + [`hasMeanPressureDifference`](/classes/transforms/wvtransformfreesurfaceqg/hasmeanpressuredifference.html) Diagnose an MDA mean-pressure difference between the boundaries.
+    + [`uvMax`](/classes/transforms/wvtransformfreesurfaceqg/uvmax.html) Maximum reconstructed horizontal speed.
   + Density validity
     + [`isDensityInValidRange`](/classes/transforms/wvtransformfreesurfaceqg/isdensityinvalidrange.html) Test whether total density remains within the no-motion density range.
 + Differentiate and integrate fields

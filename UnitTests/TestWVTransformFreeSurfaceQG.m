@@ -350,6 +350,55 @@ classdef TestWVTransformFreeSurfaceQG < matlab.unittest.TestCase
             testCase.verifyGreaterThan(abs(actualMean(end)),0)
         end
 
+        function adaptiveGaussianEvolutionUsesDirectSpeedDiagnostic(testCase)
+            wvt = TestWVTransformFreeSurfaceQG.newTransform(0.02,0.03);
+            wvt.initWithGaussianEddy(maximumSpeed=0.05,horizontalRadius=20e3,verticalScale=250,zCenter=75);
+            expectedSpeed = max(hypot(wvt.u,wvt.v),[],"all");
+            testCase.verifyEqual(wvt.uvMax,expectedSpeed,AbsTol=32*eps(expectedSpeed))
+
+            initialAmda = wvt.Amda;
+            wvt.addForcing(WVBetaPlanePVAdvection(wvt));
+            wvt.addForcing(WVAdaptiveDamping(wvt));
+            testCase.verifyTrue(wvt.hasClosure)
+            model = WVModel(wvt,shouldUseLinearDynamics=false);
+            model.setupIntegrator(integratorType="adaptive",relTolerance=1e-3,absTolerance=1e-6);
+            model.integrateToTime(2000,shouldShowIntegrationDiagnostics=false);
+
+            testCase.verifyEqual(wvt.t,2000,AbsTol=0)
+            testCase.verifyEqual(wvt.Amda,initialAmda,AbsTol=0)
+            testCase.verifyTrue(all(isfinite([wvt.Ag_q(:);wvt.Ag_0(:);wvt.Amda(:)])))
+        end
+
+        function adaptiveDampingActsOnFreeSurfaceCoefficientFamilies(testCase)
+            wvt = TestWVTransformFreeSurfaceQG.newTransform(0.02,0.03);
+            wvt.removeAllForcing();
+            wvt.Ag_q = TestWVTransformFreeSurfaceQG.complexState(size(wvt.Ag_q),2e-3);
+            wvt.Ag_0 = TestWVTransformFreeSurfaceQG.complexState(size(wvt.Ag_0),3e-3);
+            wvt.Amda = reshape((1:wvt.mdaModeCount)/11,[],1);
+            damping = WVAdaptiveDamping(wvt);
+            wvt.addForcing(damping);
+
+            testCase.verifySize(damping.dampAg_q,size(wvt.Ag_q))
+            testCase.verifySize(damping.dampAg_0,size(wvt.Ag_0))
+            testCase.verifyTrue(all(damping.dampAg_q <= 0,"all"))
+            testCase.verifyTrue(all(damping.dampAg_0 <= 0,"all"))
+            testCase.verifyTrue(any(damping.dampAg_q < 0,"all"))
+            testCase.verifyTrue(any(damping.dampAg_0 < 0,"all"))
+
+            expected = struct('Ag_q',complex(zeros(size(wvt.Ag_q))), ...
+                'Ag_0',complex(zeros(size(wvt.Ag_0))),'Amda',zeros(size(wvt.Amda)));
+            expected = damping.addQuasigeostrophicSpectralForcing(wvt,expected);
+            actual = wvt.coefficientTendency();
+            testCase.verifyEqual(actual.Ag_q,expected.Ag_q,AbsTol=0)
+            testCase.verifyEqual(actual.Ag_0,expected.Ag_0,AbsTol=0)
+            testCase.verifyEqual(actual.Amda,zeros(size(wvt.Amda)),AbsTol=0)
+            testCase.verifyGreaterThan(norm(actual.Ag_q(:))+norm(actual.Ag_0(:)),0)
+
+            noEndpointTransform = TestWVTransformFreeSurfaceQG.newTransform(Inf,Inf);
+            noEndpointDamping = WVAdaptiveDamping(noEndpointTransform);
+            testCase.verifySize(noEndpointDamping.dampAg_0,size(noEndpointTransform.Ag_0))
+        end
+
         function betaPlaneGaussianEvolutionConvergesUnderRefinement(testCase)
             horizontalCounts = [12 24 48];
             verticalCounts = [33 65 129];
@@ -369,7 +418,7 @@ classdef TestWVTransformFreeSurfaceQG < matlab.unittest.TestCase
                 wvt.addForcing(WVBetaPlanePVAdvection(wvt));
                 model = WVModel(wvt,shouldUseLinearDynamics=false);
                 model.setupIntegrator(integratorType="fixed",deltaT=500);
-                model.integrateToTime(4000,shouldShowIntegrationDiagnostics=false,callback=@(~)[]);
+                model.integrateToTime(4000,shouldShowIntegrationDiagnostics=false);
 
                 finalValues{iResolution} = TestWVTransformFreeSurfaceQG.lowModeSurfaceStreamfunction(wvt,2);
                 testCase.verifyEqual(wvt.Amda,initialAmda,AbsTol=0)
@@ -380,7 +429,7 @@ classdef TestWVTransformFreeSurfaceQG < matlab.unittest.TestCase
                     wvt.t = 0;
                     refinedModel = WVModel(wvt,shouldUseLinearDynamics=false);
                     refinedModel.setupIntegrator(integratorType="fixed",deltaT=250);
-                    refinedModel.integrateToTime(4000,shouldShowIntegrationDiagnostics=false,callback=@(~)[]);
+                    refinedModel.integrateToTime(4000,shouldShowIntegrationDiagnostics=false);
                     timeRefinedReference = TestWVTransformFreeSurfaceQG.lowModeSurfaceStreamfunction(wvt,2);
                     testCase.verifyEqual(wvt.Amda,initialAmda,AbsTol=0)
                 end
@@ -543,6 +592,7 @@ classdef TestWVTransformFreeSurfaceQG < matlab.unittest.TestCase
             path = fullfile(testCase.temporaryFolder,"snapshot.nc");
             scientific = TestWVTransformFreeSurfaceQG.newTransform(0.02,0.03);
             TestWVTransformFreeSurfaceQG.setMixedState(scientific,2);
+            scientific.addForcing(WVAdaptiveDamping(scientific));
             ncfile = scientific.writeToFile(char(path));
             ncfile.close();
 
@@ -554,6 +604,11 @@ classdef TestWVTransformFreeSurfaceQG < matlab.unittest.TestCase
             testCase.verifyEqual(actualPsi,expectedPsi)
             testCase.verifyEqual(actualEta,expectedEta)
             testCase.verifyEqual(actualQ,expectedQ)
+            restoredDamping = restored.forcingWithName('adaptive damping');
+            scientificDamping = scientific.forcingWithName('adaptive damping');
+            testCase.verifyClass(restoredDamping,"WVAdaptiveDamping")
+            testCase.verifyEqual(restoredDamping.dampAg_q,scientificDamping.dampAg_q,AbsTol=0)
+            testCase.verifyEqual(restoredDamping.dampAg_0,scientificDamping.dampAg_0,AbsTol=0)
 
             directOptions = TestWVTransformFreeSurfaceQG.directOptions(scientific);
             directArguments = namedargs2cell(directOptions);

@@ -3,7 +3,7 @@ layout: default
 title: k_no_damp
 parent: WVAdaptiveDamping
 grand_parent: Closures
-nav_order: 10
+nav_order: 12
 mathjax: true
 ---
 

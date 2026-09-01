@@ -38,7 +38,10 @@ viscosity filter.
 wavenumber and mode above which significant damping will occur.
 
 The damping operator acts in the spectral domain, directly damping
-the wave-vortex coefficients.
+the wave-vortex coefficients. For free-surface QG, the same closure
+acts directly on the canonical coefficient families: `Ag_q` receives
+horizontal and APV-mode damping, `Ag_0` receives horizontal damping,
+and the horizontally uniform `Amda` family is unchanged.
 
 $$
 \begin{align}
@@ -100,6 +103,8 @@ These items document internal implementation details and are not part of the pri
   + [`classRequiredPropertyNames`](/classes/forcing/closures/wvadaptivedamping/classrequiredpropertynames.html) Returns the required property names for the class
 + Forcing internals
   + [`buildDampingOperator`](/classes/forcing/closures/wvadaptivedamping/builddampingoperator.html) Build the unit-speed spectral damping operator.
+  + [`dampAg_0`](/classes/forcing/closures/wvadaptivedamping/dampag_0.html) Unit-speed damping operator for free-surface zero-APV coefficients.
+  + [`dampAg_q`](/classes/forcing/closures/wvadaptivedamping/dampag_q.html) Unit-speed damping operator for free-surface APV coefficients.
   + [`spectralVanishingViscosityFilter`](/classes/forcing/closures/wvadaptivedamping/spectralvanishingviscosityfilter.html) Build horizontal and vertical spectral-vanishing filters.
 
 

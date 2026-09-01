@@ -35,7 +35,8 @@ $$(F_+,F_-,F_0)$$. Spectral-amplitude forcing may then update `Ap`, `Am`,
 and `A0` directly. Legacy potential-vorticity variants contribute only
 to the zero-frequency tendency or amplitude. QG-state spatial forcing
 contributes both an interior QGPV tendency and active-endpoint anomaly
-tendencies before the transform projects them into coefficient space.
+tendencies before the transform projects them into coefficient space;
+QG spectral forcing then modifies the family-keyed coefficient tendency.
 
 A custom subclass declares one or more stages with `forcingType` and
 overrides the corresponding evaluation methods. Spatial forcing is
@@ -82,6 +83,7 @@ These items document internal implementation details and are not part of the pri
   + [`forcingFromGroup`](/classes/forcing/wvforcing/forcingfromgroup.html) Restore a concrete forcing from a NetCDF group.
 + Forcing internals
   + [`addQuasigeostrophicSpatialForcing`](/classes/forcing/wvforcing/addquasigeostrophicspatialforcing.html) Add interior and active-endpoint QG physical-space tendencies.
+  + [`addQuasigeostrophicSpectralForcing`](/classes/forcing/wvforcing/addquasigeostrophicspectralforcing.html) Add a free-surface QG coefficient-family tendency.
   + [`didGetRemovedFromTransform`](/classes/forcing/wvforcing/didgetremovedfromtransform.html) Release resources when a forcing is removed from its transform.
   + [`portableImplementationContract`](/classes/forcing/wvforcing/portableimplementationcontract.html) Describe availability of the paired portable C++ implementation.
 

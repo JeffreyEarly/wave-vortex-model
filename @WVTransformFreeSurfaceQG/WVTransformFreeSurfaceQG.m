@@ -261,6 +261,9 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
         % Reconstructed y velocity.
         % - Topic: Evaluate physical fields
         v
+        % Maximum reconstructed horizontal speed.
+        % - Topic: Evaluate physical fields
+        uvMax
         % Reconstructed isopycnal displacement including MDA.
         % - Topic: Evaluate physical fields
         eta
@@ -412,7 +415,7 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
             geometryOptions = struct(shouldAntialias=options.shouldAntialias,z=state.z,j=state.apvModeNumber,Nj=length(state.apvMode),N2Function=state.N2Function,rhoFunction=state.rhoFunction,rho0=options.rho0,planetaryRadius=options.planetaryRadius,rotationRate=options.rotationRate,latitude=options.latitude,g=options.g,dLnN2=state.dLnN2,PF0inv=state.PF0inv,QG0inv=state.QG0inv,PF0=state.PF0,QG0=state.QG0,P0=state.P0,Q0=state.Q0,h_0=state.h_0,z_int=state.z_int);
             geometryArguments = namedargs2cell(geometryOptions);
             self@WVGeometryDoublyPeriodicStratified(Lxyz,Nxyz,geometryArguments{:});
-            self@WVTransform(WVForcingType("QGSpatial"));
+            self@WVTransform(WVForcingType(["QGSpatial" "QGSpectral"]));
 
             stateNames = WVTransformFreeSurfaceQG.persistedScientificPropertyNames();
             for iProperty = 1:length(stateNames)
@@ -470,7 +473,8 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
             % Every registered `QGSpatial` object contributes an interior
             % QGPV tendency and active-endpoint anomaly tendencies. Their
             % accumulated physical state is projected APV first and residual
-            % zero APV second; `Amda` remains exactly zero.
+            % zero APV second. Registered `QGSpectral` objects then modify
+            % the family-keyed coefficient tendency directly.
             %
             % - Topic: Transform coefficient state
             % - Declaration: tendency = coefficientTendency(self)
@@ -481,6 +485,9 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
                 [Fq,Fb] = self.spatialFluxForcing(iForcing).addQuasigeostrophicSpatialForcing(self,Fq,Fb);
             end
             tendency = self.projectQuasigeostrophicSpatialTendency(Fq,Fb);
+            for iForcing = 1:length(self.spectralFluxForcing)
+                tendency = self.spectralFluxForcing(iForcing).addQuasigeostrophicSpectralForcing(self,tendency);
+            end
         end
 
         function [Fq,Fzero,Fmda] = nonlinearFlux(self)
@@ -513,6 +520,13 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
         function value = get.v(self)
             [psiHat,~,~] = self.reconstructSpectralState();
             value = self.transformToSpatialDomainWithFourier(sqrt(-1)*reshape(self.k,1,[]).*psiHat);
+        end
+
+        function value = get.uvMax(self)
+            [psiHat,~,~] = self.reconstructSpectralState();
+            u_ = self.transformToSpatialDomainWithFourier(-sqrt(-1)*reshape(self.l,1,[]).*psiHat);
+            v_ = self.transformToSpatialDomainWithFourier(sqrt(-1)*reshape(self.k,1,[]).*psiHat);
+            value = max(hypot(u_,v_),[],"all");
         end
 
         function value = get.eta(self)

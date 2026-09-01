@@ -15,7 +15,8 @@ classdef WVForcing < handle & matlab.mixin.Heterogeneous & CAAnnotatedClass
     % and `A0` directly. Legacy potential-vorticity variants contribute only
     % to the zero-frequency tendency or amplitude. QG-state spatial forcing
     % contributes both an interior QGPV tendency and active-endpoint anomaly
-    % tendencies before the transform projects them into coefficient space.
+    % tendencies before the transform projects them into coefficient space;
+    % QG spectral forcing then modifies the family-keyed coefficient tendency.
     %
     % A custom subclass declares one or more stages with `forcingType` and
     % overrides the corresponding evaluation methods. Spatial forcing is
@@ -74,6 +75,7 @@ classdef WVForcing < handle & matlab.mixin.Heterogeneous & CAAnnotatedClass
         % | `QGSpatial` | `addQuasigeostrophicSpatialForcing` |
         % | `Spectral` | `addSpectralForcing` |
         % | `PVSpectral` | `addPotentialVorticitySpectralForcing` |
+        % | `QGSpectral` | `addQuasigeostrophicSpectralForcing` |
         % | `SpectralAmplitude` | `setSpectralForcing` and `setSpectralAmplitude` |
         % | `PVSpectralAmplitude` | `setPotentialVorticitySpectralForcing` and `setPotentialVorticitySpectralAmplitude` |
         %
@@ -283,6 +285,21 @@ classdef WVForcing < handle & matlab.mixin.Heterogeneous & CAAnnotatedClass
             % - Developer: true
         end
 
+        function tendency = addQuasigeostrophicSpectralForcing(self,wvt,tendency)
+            % Add a free-surface QG coefficient-family tendency.
+            %
+            % Subclasses declaring `QGSpectral` override this hook. The
+            % scalar input and output structure contains the transform's
+            % canonical `Ag_q`, `Ag_0`, and `Amda` families.
+            %
+            % - Topic: Implement forcing evaluation
+            % - Declaration: tendency = addQuasigeostrophicSpectralForcing(wvt,tendency)
+            % - Parameter wvt: free-surface QG transform evaluating the forcing
+            % - Parameter tendency: accumulated family-keyed coefficient tendency
+            % - Returns tendency: updated family-keyed coefficient tendency
+            % - Developer: true
+        end
+
         function A0 = setPotentialVorticitySpectralAmplitude(self, wvt, A0)
             % Restore selected QG coefficients after a model step.
             %
@@ -376,9 +393,9 @@ classdef WVForcing < handle & matlab.mixin.Heterogeneous & CAAnnotatedClass
             %
             % - Topic: Implement forcing evaluation
             % - Declaration: forceTypes = spectralFluxTypes()
-            % - Returns forceTypes: `Spectral` and `PVSpectral`
+            % - Returns forceTypes: `Spectral`, `PVSpectral`, and `QGSpectral`
             % - Developer: true
-            forceTypes = WVForcingType(["Spectral","PVSpectral"]);
+            forceTypes = WVForcingType(["Spectral","PVSpectral","QGSpectral"]);
         end
 
         function forceTypes = spectralAmplitudeTypes()

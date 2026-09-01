@@ -17,7 +17,10 @@ classdef WVAdaptiveDamping < WVForcing
     % wavenumber and mode above which significant damping will occur.
     %
     % The damping operator acts in the spectral domain, directly damping
-    % the wave-vortex coefficients.
+    % the wave-vortex coefficients. For free-surface QG, the same closure
+    % acts directly on the canonical coefficient families: `Ag_q` receives
+    % horizontal and APV-mode damping, `Ag_0` receives horizontal damping,
+    % and the horizontally uniform `Amda` family is unchanged.
     %
     % $$
     % \begin{align}
@@ -70,10 +73,31 @@ classdef WVAdaptiveDamping < WVForcing
         % Unit-speed spectral damping operator in inverse meters.
         %
         % This array has `wvt.spectralMatrixSize`. The actual coefficient
-        % damping rate is `wvt.uvMax*damp` in inverse seconds.
+        % damping rate is `wvt.uvMax*damp` in inverse seconds. Free-surface
+        % QG applies its `klNonzero` subset through `dampAg_q` and uses the
+        % separate `dampAg_0` operator for active endpoints.
         %
         % - Topic: Properties
         damp
+
+        % Unit-speed damping operator for free-surface APV coefficients.
+        %
+        % This array has the shape of `wvt.Ag_q` for a
+        % `WVTransformFreeSurfaceQG` and is empty for other transforms. It
+        % combines horizontal and APV-mode spectral-vanishing damping.
+        %
+        % - Topic: Properties
+        dampAg_q = []
+
+        % Unit-speed damping operator for free-surface zero-APV coefficients.
+        %
+        % This array has the shape of `wvt.Ag_0` for a
+        % `WVTransformFreeSurfaceQG` and is empty for other transforms. The
+        % endpoint family is damped horizontally because its rows identify
+        % active boundaries rather than an ordered vertical-mode family.
+        %
+        % - Topic: Properties
+        dampAg_0 = []
 
         % Estimated horizontal wavenumber for significant damping.
         %
@@ -92,15 +116,18 @@ classdef WVAdaptiveDamping < WVForcing
         
         % Estimated vertical mode number for significant damping.
         %
-        % This value is dimensionless. The filter is already nonzero below
-        % this estimate; use `j_no_damp` for the exact zero-damping cutoff.
+        % This value is dimensionless. Free-surface QG uses the ordinal APV
+        % family coordinate because its physical labels include a negative
+        % surface mode. The filter is already nonzero below this estimate;
+        % use `j_no_damp` for the exact zero-damping cutoff.
         %
         % - Topic: Properties
         j_damp
 
         % Vertical mode number below which damping is exactly zero.
         %
-        % This value is dimensionless.
+        % This value is dimensionless. Free-surface QG uses the ordinal APV
+        % family coordinate.
         %
         % - Topic: Properties
         j_no_damp
@@ -145,7 +172,7 @@ classdef WVAdaptiveDamping < WVForcing
             arguments
                 wvt WVTransform {mustBeNonempty}
             end
-            self@WVForcing(wvt,"adaptive damping",WVForcingType(["Spectral","PVSpectral"]));
+            self@WVForcing(wvt,"adaptive damping",WVAdaptiveDamping.forcingTypesForTransform(wvt));
             self.wvt = wvt;
             self.isClosure = true;
             self.buildDampingOperator();
@@ -167,10 +194,17 @@ classdef WVAdaptiveDamping < WVForcing
                 self WVAdaptiveDamping {mustBeNonempty}
             end
             self.assumedEffectiveHorizontalGridResolution = self.wvt.effectiveHorizontalGridResolution;
+            self.dampAg_q = [];
+            self.dampAg_0 = [];
 
             kl_max = pi/self.assumedEffectiveHorizontalGridResolution;
-            j_max = self.wvt.effectiveJMax;
-            j_index = find(self.wvt.j == self.wvt.effectiveJMax);
+            if isa(self.wvt,"WVTransformFreeSurfaceQG")
+                j_max = length(self.wvt.apvMode);
+                j_index = length(self.wvt.apvMode);
+            else
+                j_max = self.wvt.effectiveJMax;
+                j_index = find(self.wvt.j == self.wvt.effectiveJMax);
+            end
             [K,L,~] = self.wvt.kljGrid;
             [Qkl,Qj,self.k_no_damp,self.k_damp,self.j_no_damp,self.j_damp] = self.spectralVanishingViscosityFilter(kl_max, j_max);
             prefactor_xy = self.assumedEffectiveHorizontalGridResolution/(pi^2);
@@ -180,6 +214,12 @@ classdef WVAdaptiveDamping < WVForcing
             self.damp = -prefactor_xy*Qkl.*(K.^2 +L.^2) ;
             if ~isa(self.wvt,"WVGeometryDoublyPeriodicBarotropic")
                 self.damp = self.damp - prefactor_z*Qj.*Lr2inv;
+            end
+            if isa(self.wvt,"WVTransformFreeSurfaceQG")
+                nonzeroIndex = self.wvt.klNonzero;
+                self.dampAg_q = self.damp(:,nonzeroIndex);
+                horizontalDamp = -prefactor_xy*Qkl(1,nonzeroIndex).*(K(1,nonzeroIndex).^2+L(1,nonzeroIndex).^2);
+                self.dampAg_0 = repmat(horizontalDamp,self.wvt.activeEndpointCount,1);
             end
         end
 
@@ -209,6 +249,11 @@ classdef WVAdaptiveDamping < WVForcing
             kl_damp = (kl_max+b*kl_cutoff)/(1+b); % approximately
 
             [K,L,J] = wvt_.kljGrid;
+            verticalMode = wvt_.j;
+            if isa(wvt_,"WVTransformFreeSurfaceQG")
+                verticalMode = wvt_.apvMode;
+                J = repmat(verticalMode,1,wvt_.Nkl);
+            end
             Kh = sqrt(K.^2 + L.^2);
 
             Qkl = exp( - ((abs(Kh)-kl_max)./(abs(Kh)-kl_cutoff)).^2 );
@@ -216,7 +261,7 @@ classdef WVAdaptiveDamping < WVForcing
             Qkl(abs(Kh)>kl_max) = 1;
 
             if wvt_.Nj > 2
-                dj = wvt_.j(2)-wvt_.j(1);
+                dj = verticalMode(2)-verticalMode(1);
                 j_cutoff = dj*(j_max/dj)^(3/4);
                 j_damp = (j_max+b*j_cutoff)/(1+b); % approximately
                 Qj = exp( - ((J-j_max)./(J-j_cutoff)).^2 );
@@ -334,6 +379,30 @@ classdef WVAdaptiveDamping < WVForcing
             F0 = F0 + wvt.uvMax * self.damp .* wvt.A0;
         end
 
+        function tendency = addQuasigeostrophicSpectralForcing(self,wvt,tendency)
+            % Add adaptive damping to free-surface QG coefficient families.
+            %
+            % `Ag_q` receives horizontal and vertical-mode damping. `Ag_0`
+            % receives horizontal damping only because its rows identify
+            % active endpoints, not successively smaller vertical scales.
+            % The horizontally uniform `Amda` family is unchanged: it has no
+            % nonlinear transfer in the present free-surface QG model.
+            %
+            % - Topic: Implement forcing evaluation
+            % - Declaration: tendency = addQuasigeostrophicSpectralForcing(wvt,tendency)
+            % - Parameter wvt: free-surface QG transform evaluating the closure
+            % - Parameter tendency: accumulated family-keyed coefficient tendency
+            % - Returns tendency: coefficient tendency including adaptive damping
+            arguments
+                self WVAdaptiveDamping {mustBeNonempty}
+                wvt WVTransformFreeSurfaceQG {mustBeNonempty}
+                tendency (1,1) struct
+            end
+            uvMax = wvt.uvMax;
+            tendency.Ag_q = tendency.Ag_q+uvMax*self.dampAg_q.*wvt.Ag_q;
+            tendency.Ag_0 = tendency.Ag_0+uvMax*self.dampAg_0.*wvt.Ag_0;
+        end
+
         function force = forcingWithResolutionOfTransform(self, wvtX2)
             % Create equivalent adaptive damping for another resolution.
             %
@@ -347,6 +416,17 @@ classdef WVAdaptiveDamping < WVForcing
             force = WVAdaptiveDamping(wvtX2);
         end
     end
+
+    methods (Static, Access = private)
+        function forcingTypes = forcingTypesForTransform(wvt)
+            if isa(wvt,"WVTransformFreeSurfaceQG")
+                forcingTypes = WVForcingType("QGSpectral");
+            else
+                forcingTypes = WVForcingType(["Spectral","PVSpectral"]);
+            end
+        end
+    end
+
     methods (Static)
         function vars = classRequiredPropertyNames()
             % Returns the required property names for the class

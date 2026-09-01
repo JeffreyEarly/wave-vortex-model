@@ -3,7 +3,7 @@ layout: default
 title: j_no_damp
 parent: WVAdaptiveDamping
 grand_parent: Closures
-nav_order: 8
+nav_order: 10
 mathjax: true
 ---
 
@@ -16,4 +16,5 @@ Vertical mode number below which damping is exactly zero.
 
 ## Discussion
 
-This value is dimensionless.
+This value is dimensionless. Free-surface QG uses the ordinal APV
+family coordinate.

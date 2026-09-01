@@ -960,7 +960,7 @@ classdef WVModel < handle & WVModelAdaptiveTimeStepMethods & WVModelFixedTimeSte
         end
 
         function showIntegrationTimeDiagnostics(self,finalTime)
-            if self.shouldShowIntegrationDiagnostics == false && isempty(self.integrationCallback)  == 0
+            if self.shouldShowIntegrationDiagnostics == false
                 return;
             end
             deltaWallTime = datetime('now')-self.integrationLastInformWallTime;
