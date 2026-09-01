@@ -17,10 +17,11 @@ WVTransformFreeSurfaceQG.validateCoefficient(Ag_q,[length(self.apvMode),length(s
 WVTransformFreeSurfaceQG.validateCoefficient(Ag_0,[self.activeEndpointCount,length(self.klNonzero)],false,'Ag_0');
 APV = self.apvF*Ag_q;
 endpointAnomalies = complex(zeros(self.activeEndpointCount,length(self.klNonzero)));
-for iKl = 1:length(self.klNonzero)
-    iKh = self.klNonzeroKhUniqueIndex(iKl);
-    if self.activeEndpointCount > 0
-        endpointAnomalies(:,iKl) = self.apvEndpointResponse(:,:,iKh)*Ag_q(:,iKl)-(self.f/(self.g*self.khNonzero(iKl)^2))*Ag_0(:,iKl);
-    end
+if self.activeEndpointCount > 0
+    nNonzero = length(self.klNonzero);
+    responsePages = pagemtimes(self.apvEndpointResponse(:,:,self.klNonzeroKhUniqueIndex), ...
+        reshape(Ag_q,length(self.apvMode),1,nNonzero));
+    endpointAnomalies = reshape(responsePages,self.activeEndpointCount,nNonzero) ...
+        -(self.f/self.g)*Ag_0./reshape(self.khNonzero.^2,1,[]);
 end
 end

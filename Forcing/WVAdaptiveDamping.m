@@ -379,7 +379,7 @@ classdef WVAdaptiveDamping < WVForcing
             F0 = F0 + wvt.uvMax * self.damp .* wvt.A0;
         end
 
-        function tendency = addQuasigeostrophicSpectralForcing(self,wvt,tendency)
+        function tendency = addQuasigeostrophicSpectralForcing(self,wvt,tendency,physicalState)
             % Add adaptive damping to free-surface QG coefficient families.
             %
             % `Ag_q` receives horizontal and vertical-mode damping. `Ag_0`
@@ -389,16 +389,22 @@ classdef WVAdaptiveDamping < WVForcing
             % nonlinear transfer in the present free-surface QG model.
             %
             % - Topic: Implement forcing evaluation
-            % - Declaration: tendency = addQuasigeostrophicSpectralForcing(wvt,tendency)
+            % - Declaration: tendency = addQuasigeostrophicSpectralForcing(wvt,tendency,physicalState)
             % - Parameter wvt: free-surface QG transform evaluating the closure
             % - Parameter tendency: accumulated family-keyed coefficient tendency
+            % - Parameter physicalState: optional shared physical reconstruction
             % - Returns tendency: coefficient tendency including adaptive damping
             arguments
                 self WVAdaptiveDamping {mustBeNonempty}
                 wvt WVTransformFreeSurfaceQG {mustBeNonempty}
                 tendency (1,1) struct
+                physicalState (1,1) struct = struct()
             end
-            uvMax = wvt.uvMax;
+            if isfield(physicalState,'uvMax')
+                uvMax = physicalState.uvMax;
+            else
+                uvMax = wvt.uvMax;
+            end
             tendency.Ag_q = tendency.Ag_q+uvMax*self.dampAg_q.*wvt.Ag_q;
             tendency.Ag_0 = tendency.Ag_0+uvMax*self.dampAg_0.*wvt.Ag_0;
         end

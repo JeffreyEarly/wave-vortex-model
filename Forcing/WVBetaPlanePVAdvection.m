@@ -90,7 +90,7 @@ classdef WVBetaPlanePVAdvection < WVForcing
             Fpv = Fpv - wvt.beta * wvt.v;
         end
 
-        function [Fq,Fb] = addQuasigeostrophicSpatialForcing(~,wvt,Fq,Fb)
+        function [Fq,Fb] = addQuasigeostrophicSpatialForcing(~,wvt,Fq,Fb,physicalState)
             % Add $$-\beta v_g$$ to free-surface QGPV without an endpoint source.
             %
             % The transform projects this interior tendency into `Ag_q`
@@ -99,14 +99,23 @@ classdef WVBetaPlanePVAdvection < WVForcing
             % tendency is exactly zero.
             %
             % - Topic: Implement forcing evaluation
-            % - Declaration: [Fq,Fb] = addQuasigeostrophicSpatialForcing(wvt,Fq,Fb)
+            % - Declaration: [Fq,Fb] = addQuasigeostrophicSpatialForcing(wvt,Fq,Fb,physicalState)
             % - Parameter wvt: free-surface QG transform evaluating the forcing
             % - Parameter Fq: accumulated physical-space QGPV tendency
             % - Parameter Fb: accumulated active-endpoint anomaly tendency
+            % - Parameter physicalState: optional shared physical reconstruction
             % - Returns Fq: QGPV tendency including beta-plane advection
             % - Returns Fb: unchanged endpoint-anomaly tendency
             % - Developer: true
-            Fq = Fq-wvt.beta*wvt.v;
+            if nargin < 5
+                physicalState = struct();
+            end
+            if isfield(physicalState,'v')
+                v = physicalState.v;
+            else
+                v = wvt.v;
+            end
+            Fq = Fq-wvt.beta*v;
         end
 
         function [Fp, Fm, F0] = addSpectralForcing(self, wvt, Fp, Fm, F0)

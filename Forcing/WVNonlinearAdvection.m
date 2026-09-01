@@ -120,18 +120,31 @@ classdef WVNonlinearAdvection < WVForcing
             Fpv = Fpv - (wvt.u.*wvt.diffX(wvt.qgpv) + wvt.v.*wvt.diffY(wvt.qgpv));
         end
 
-        function [Fq,Fb] = addQuasigeostrophicSpatialForcing(~,wvt,Fq,Fb)
+        function [Fq,Fb] = addQuasigeostrophicSpatialForcing(~,wvt,Fq,Fb,physicalState)
             % Add nonlinear advection of interior QGPV and endpoint anomalies.
             %
             % - Topic: Implement forcing evaluation
-            % - Declaration: [Fq,Fb] = addQuasigeostrophicSpatialForcing(wvt,Fq,Fb)
+            % - Declaration: [Fq,Fb] = addQuasigeostrophicSpatialForcing(wvt,Fq,Fb,physicalState)
             % - Parameter wvt: free-surface QG transform providing the physical state
             % - Parameter Fq: accumulated physical-space QGPV tendency
             % - Parameter Fb: accumulated active-endpoint anomaly tendency
+            % - Parameter physicalState: optional shared physical reconstruction
             % - Returns Fq: QGPV tendency including nonlinear advection
             % - Returns Fb: endpoint tendency including nonlinear advection
             % - Developer: true
-            [q,u,v,b,ub,vb] = wvt.quasigeostrophicSpatialState();
+            if nargin < 5
+                physicalState = struct();
+            end
+            if all(isfield(physicalState,{'q','u','v','b','ub','vb'}))
+                q = physicalState.q;
+                u = physicalState.u;
+                v = physicalState.v;
+                b = physicalState.b;
+                ub = physicalState.ub;
+                vb = physicalState.vb;
+            else
+                [q,u,v,b,ub,vb] = wvt.quasigeostrophicSpatialState();
+            end
             Fq = Fq-(u.*wvt.diffX(q)+v.*wvt.diffY(q));
             if wvt.activeEndpointCount > 0
                 Fb = Fb-(ub.*wvt.diffX(b)+vb.*wvt.diffY(b));

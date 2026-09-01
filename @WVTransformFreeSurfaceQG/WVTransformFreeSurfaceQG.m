@@ -474,19 +474,27 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
             % QGPV tendency and active-endpoint anomaly tendencies. Their
             % accumulated physical state is projected APV first and residual
             % zero APV second. Registered `QGSpectral` objects then modify
-            % the family-keyed coefficient tendency directly.
+            % the family-keyed coefficient tendency directly. One local
+            % reconstruction is shared by all forcing objects during this
+            % evaluation; it is not retained as transform cache state.
             %
             % - Topic: Transform coefficient state
             % - Declaration: tendency = coefficientTendency(self)
             % - Returns tendency: scalar structure with `Ag_q`, `Ag_0`, and `Amda` tendencies
             Fq = zeros(self.spatialMatrixSize);
             Fb = zeros(self.Nx,self.Ny,self.activeEndpointCount);
+            physicalState = struct();
+            if ~isempty(self.spatialFluxForcing) || ~isempty(self.spectralFluxForcing)
+                [q,u,v,b,ub,vb] = self.quasigeostrophicSpatialState();
+                physicalState = struct('q',q,'u',u,'v',v,'b',b,'ub',ub,'vb',vb, ...
+                    'uvMax',max(hypot(u,v),[],"all"));
+            end
             for iForcing = 1:length(self.spatialFluxForcing)
-                [Fq,Fb] = self.spatialFluxForcing(iForcing).addQuasigeostrophicSpatialForcing(self,Fq,Fb);
+                [Fq,Fb] = self.spatialFluxForcing(iForcing).addQuasigeostrophicSpatialForcing(self,Fq,Fb,physicalState);
             end
             tendency = self.projectQuasigeostrophicSpatialTendency(Fq,Fb);
             for iForcing = 1:length(self.spectralFluxForcing)
-                tendency = self.spectralFluxForcing(iForcing).addQuasigeostrophicSpectralForcing(self,tendency);
+                tendency = self.spectralFluxForcing(iForcing).addQuasigeostrophicSpectralForcing(self,tendency,physicalState);
             end
         end
 

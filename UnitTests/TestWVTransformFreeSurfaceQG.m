@@ -233,6 +233,15 @@ classdef TestWVTransformFreeSurfaceQG < matlab.unittest.TestCase
             TestWVTransformFreeSurfaceQG.setMixedState(wvt,1);
             nonlinear = wvt.forcingWithName('nonlinear advection');
             [q,u,v,b,ub,vb] = wvt.quasigeostrophicSpatialState();
+            [psiHat,~,~] = wvt.reconstructSpectralState();
+            endpointVerticalIndex = [wvt.Nz 1];
+            endpointVerticalIndex = endpointVerticalIndex(wvt.activeEndpoint);
+            expectedUb = TestWVTransformFreeSurfaceQG.endpointSpectralToSpatial(wvt, ...
+                -sqrt(-1)*reshape(wvt.l,1,[]).*psiHat(endpointVerticalIndex,:));
+            expectedVb = TestWVTransformFreeSurfaceQG.endpointSpectralToSpatial(wvt, ...
+                sqrt(-1)*reshape(wvt.k,1,[]).*psiHat(endpointVerticalIndex,:));
+            testCase.verifyEqual(ub,expectedUb,AbsTol=32*eps(max(1,max(abs(expectedUb),[],"all"))))
+            testCase.verifyEqual(vb,expectedVb,AbsTol=32*eps(max(1,max(abs(expectedVb),[],"all"))))
             expectedFq = -(u.*wvt.diffX(q)+v.*wvt.diffY(q));
             expectedFb = -(ub.*wvt.diffX(b)+vb.*wvt.diffY(b));
             [Fq,Fb] = nonlinear.addQuasigeostrophicSpatialForcing(wvt,zeros(size(q)),zeros(size(b)));
@@ -247,6 +256,33 @@ classdef TestWVTransformFreeSurfaceQG < matlab.unittest.TestCase
             testCase.verifyEqual(actual.Ag_0,expected.Ag_0,AbsTol=5e-11)
             testCase.verifyEqual(actual.Amda,zeros(size(wvt.Amda)),AbsTol=0)
             testCase.verifyGreaterThan(norm(actual.Ag_q(:))+norm(actual.Ag_0(:)),0)
+        end
+
+        function sharedPhysicalStateMatchesDirectForcingEvaluation(testCase)
+            wvt = TestWVTransformFreeSurfaceQG.newTransform(0.02,0.03);
+            TestWVTransformFreeSurfaceQG.setMixedState(wvt,2);
+            [q,u,v,b,ub,vb] = wvt.quasigeostrophicSpatialState();
+            physicalState = struct('q',q,'u',u,'v',v,'b',b,'ub',ub,'vb',vb, ...
+                'uvMax',max(hypot(u,v),[],"all"));
+
+            nonlinear = wvt.forcingWithName('nonlinear advection');
+            [directFq,directFb] = nonlinear.addQuasigeostrophicSpatialForcing(wvt,zeros(size(q)),zeros(size(b)));
+            [sharedFq,sharedFb] = nonlinear.addQuasigeostrophicSpatialForcing(wvt,zeros(size(q)),zeros(size(b)),physicalState);
+            testCase.verifyEqual(sharedFq,directFq,AbsTol=0)
+            testCase.verifyEqual(sharedFb,directFb,AbsTol=0)
+
+            beta = WVBetaPlanePVAdvection(wvt);
+            [directFq,directFb] = beta.addQuasigeostrophicSpatialForcing(wvt,zeros(size(q)),zeros(size(b)));
+            [sharedFq,sharedFb] = beta.addQuasigeostrophicSpatialForcing(wvt,zeros(size(q)),zeros(size(b)),physicalState);
+            testCase.verifyEqual(sharedFq,directFq,AbsTol=0)
+            testCase.verifyEqual(sharedFb,directFb,AbsTol=0)
+
+            damping = WVAdaptiveDamping(wvt);
+            incoming = struct('Ag_q',complex(zeros(size(wvt.Ag_q))), ...
+                'Ag_0',complex(zeros(size(wvt.Ag_0))),'Amda',zeros(size(wvt.Amda)));
+            direct = damping.addQuasigeostrophicSpectralForcing(wvt,incoming);
+            shared = damping.addQuasigeostrophicSpectralForcing(wvt,incoming,physicalState);
+            testCase.verifyEqual(shared,direct,AbsTol=0)
         end
 
         function manufacturedPhysicalTendencyRecoversBothCanonicalFamilies(testCase)

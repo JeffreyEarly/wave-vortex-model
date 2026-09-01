@@ -253,20 +253,24 @@ classdef WVForcing < handle & matlab.mixin.Heterogeneous & CAAnnotatedClass
             % - Developer: true
         end
 
-        function [Fq,Fb] = addQuasigeostrophicSpatialForcing(self,wvt,Fq,Fb)
+        function [Fq,Fb] = addQuasigeostrophicSpatialForcing(self,wvt,Fq,Fb,physicalState)
             % Add interior and active-endpoint QG physical-space tendencies.
             %
             % `Fq` has the transform's `x`, `y`, and `z` dimensions. `Fb`
             % has `x`, `y`, and `activeEndpoint` dimensions; its third
             % dimension is zero when both endpoints are inactive. A forcing
             % declaring `QGSpatial` overrides this hook and returns both
-            % accumulators in the same physical coordinates.
+            % accumulators in the same physical coordinates. During model
+            % tendency evaluation, `physicalState` provides the shared
+            % `q`, `u`, `v`, `b`, `ub`, and `vb` reconstruction. It is an
+            % empty structure when the hook is called directly.
             %
             % - Topic: Implement forcing evaluation
-            % - Declaration: [Fq,Fb] = addQuasigeostrophicSpatialForcing(wvt,Fq,Fb)
+            % - Declaration: [Fq,Fb] = addQuasigeostrophicSpatialForcing(wvt,Fq,Fb,physicalState)
             % - Parameter wvt: free-surface QG transform evaluating the forcing
             % - Parameter Fq: accumulated physical-space QGPV tendency
             % - Parameter Fb: accumulated active-endpoint anomaly tendency
+            % - Parameter physicalState: optional shared physical reconstruction
             % - Returns Fq: updated physical-space QGPV tendency
             % - Returns Fb: updated active-endpoint anomaly tendency
             % - Developer: true
@@ -285,17 +289,21 @@ classdef WVForcing < handle & matlab.mixin.Heterogeneous & CAAnnotatedClass
             % - Developer: true
         end
 
-        function tendency = addQuasigeostrophicSpectralForcing(self,wvt,tendency)
+        function tendency = addQuasigeostrophicSpectralForcing(self,wvt,tendency,physicalState)
             % Add a free-surface QG coefficient-family tendency.
             %
             % Subclasses declaring `QGSpectral` override this hook. The
             % scalar input and output structure contains the transform's
-            % canonical `Ag_q`, `Ag_0`, and `Amda` families.
+            % canonical `Ag_q`, `Ag_0`, and `Amda` families. During model
+            % tendency evaluation, `physicalState` provides the shared
+            % physical reconstruction and `uvMax`; it is empty when the
+            % hook is called directly.
             %
             % - Topic: Implement forcing evaluation
-            % - Declaration: tendency = addQuasigeostrophicSpectralForcing(wvt,tendency)
+            % - Declaration: tendency = addQuasigeostrophicSpectralForcing(wvt,tendency,physicalState)
             % - Parameter wvt: free-surface QG transform evaluating the forcing
             % - Parameter tendency: accumulated family-keyed coefficient tendency
+            % - Parameter physicalState: optional shared physical reconstruction
             % - Returns tendency: updated family-keyed coefficient tendency
             % - Developer: true
         end

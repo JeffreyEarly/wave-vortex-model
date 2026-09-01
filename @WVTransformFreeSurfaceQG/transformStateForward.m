@@ -28,11 +28,11 @@ end
 
 Ag_q = self.apvFForward*APV;
 Ag_0 = complex(zeros(expectedEndpointSize));
-for iKl = 1:length(self.klNonzero)
-    iKh = self.klNonzeroKhUniqueIndex(iKl);
-    if self.activeEndpointCount > 0
-        residual = endpointAnomalies(:,iKl)-self.apvEndpointResponse(:,:,iKh)*Ag_q(:,iKl);
-        Ag_0(:,iKl) = -(self.g*self.khNonzero(iKl)^2/self.f)*residual;
-    end
+if self.activeEndpointCount > 0
+    nNonzero = length(self.klNonzero);
+    responsePages = pagemtimes(self.apvEndpointResponse(:,:,self.klNonzeroKhUniqueIndex), ...
+        reshape(Ag_q,length(self.apvMode),1,nNonzero));
+    residual = endpointAnomalies-reshape(responsePages,self.activeEndpointCount,nNonzero);
+    Ag_0 = -(self.g/self.f)*reshape(self.khNonzero.^2,1,[]).*residual;
 end
 end

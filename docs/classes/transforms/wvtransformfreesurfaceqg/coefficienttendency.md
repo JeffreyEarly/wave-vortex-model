@@ -27,4 +27,6 @@ Every registered `QGSpatial` object contributes an interior
 QGPV tendency and active-endpoint anomaly tendencies. Their
 accumulated physical state is projected APV first and residual
 zero APV second. Registered `QGSpectral` objects then modify
-the family-keyed coefficient tendency directly.
+the family-keyed coefficient tendency directly. One local
+reconstruction is shared by all forcing objects during this
+evaluation; it is not retained as transform cache state.

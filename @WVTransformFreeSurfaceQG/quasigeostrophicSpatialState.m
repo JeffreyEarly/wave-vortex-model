@@ -35,10 +35,9 @@ bHat(:,self.klNonzero) = bNonzero;
 endpointVerticalIndex = self.activeEndpoint;
 endpointVerticalIndex(self.activeEndpoint == 1) = self.Nz;
 endpointVerticalIndex(self.activeEndpoint == 2) = 1;
-psiEndpointHat = psiHat(endpointVerticalIndex,:);
 b = endpointSpectralToSpatial(self,bHat);
-ub = endpointSpectralToSpatial(self,-sqrt(-1)*reshape(self.l,1,[]).*psiEndpointHat);
-vb = endpointSpectralToSpatial(self,sqrt(-1)*reshape(self.k,1,[]).*psiEndpointHat);
+ub = u(:,:,endpointVerticalIndex);
+vb = v(:,:,endpointVerticalIndex);
 end
 
 function values = endpointSpectralToSpatial(self,spectralValues)

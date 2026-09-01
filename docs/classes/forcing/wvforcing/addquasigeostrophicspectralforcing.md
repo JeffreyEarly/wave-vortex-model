@@ -18,11 +18,12 @@ Add a free-surface QG coefficient-family tendency.
 
 ## Declaration
 ```matlab
- tendency = addQuasigeostrophicSpectralForcing(wvt,tendency)
+ tendency = addQuasigeostrophicSpectralForcing(wvt,tendency,physicalState)
 ```
 ## Parameters
 + `wvt`  free-surface QG transform evaluating the forcing
 + `tendency`  accumulated family-keyed coefficient tendency
++ `physicalState`  optional shared physical reconstruction
 
 ## Returns
 + `tendency`  updated family-keyed coefficient tendency
@@ -31,4 +32,7 @@ Add a free-surface QG coefficient-family tendency.
 
 Subclasses declaring `QGSpectral` override this hook. The
 scalar input and output structure contains the transform's
-canonical `Ag_q`, `Ag_0`, and `Amda` families.
+canonical `Ag_q`, `Ag_0`, and `Amda` families. During model
+tendency evaluation, `physicalState` provides the shared
+physical reconstruction and `uvMax`; it is empty when the
+hook is called directly.

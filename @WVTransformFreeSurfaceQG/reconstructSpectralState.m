@@ -10,22 +10,32 @@ arguments
     self (1,1) WVTransformFreeSurfaceQG
 end
 
-psiHat = complex(zeros(length(self.z),self.Nkl));
-etaHat = complex(zeros(length(self.z),self.Nkl));
-qHat = complex(zeros(length(self.z),self.Nkl));
-for iKl = 1:length(self.klNonzero)
-    fullKlIndex = self.klNonzero(iKl);
-    iKh = self.klNonzeroKhUniqueIndex(iKl);
-    apvStreamfunctionCoefficients = -self.Ag_q(:,iKl)./self.apvMu(:,iKh);
-    psiHat(:,fullKlIndex) = self.apvF*apvStreamfunctionCoefficients;
-    etaHat(:,fullKlIndex) = (self.f/self.g)*(self.apvG*apvStreamfunctionCoefficients);
-    qHat(:,fullKlIndex) = self.apvF*self.Ag_q(:,iKl);
-    if self.activeEndpointCount > 0
-        zeroStreamfunctionCoefficients = -self.Ag_0(:,iKl)/self.khNonzero(iKl)^2;
-        psiHat(:,fullKlIndex) = psiHat(:,fullKlIndex)+self.zeroAPVF(:,:,iKh)*zeroStreamfunctionCoefficients;
-        etaHat(:,fullKlIndex) = etaHat(:,fullKlIndex)+(self.f/self.g)*(self.zeroAPVG(:,:,iKh)*zeroStreamfunctionCoefficients);
-    end
+nz = length(self.z);
+nonzeroIndex = self.klNonzero;
+pageIndex = self.klNonzeroKhUniqueIndex;
+nNonzero = length(nonzeroIndex);
+fOverG = self.f/self.g;
+
+apvStreamfunctionCoefficients = -self.Ag_q./self.apvMu(:,pageIndex);
+psiNonzero = self.apvF*apvStreamfunctionCoefficients;
+etaNonzero = fOverG*(self.apvG*apvStreamfunctionCoefficients);
+qNonzero = self.apvF*self.Ag_q;
+
+if self.activeEndpointCount > 0
+    zeroStreamfunctionCoefficients = -self.Ag_0./reshape(self.khNonzero.^2,1,[]);
+    zeroCoefficientPages = reshape(zeroStreamfunctionCoefficients,self.activeEndpointCount,1,nNonzero);
+    zeroF = pagemtimes(self.zeroAPVF(:,:,pageIndex),zeroCoefficientPages);
+    zeroG = pagemtimes(self.zeroAPVG(:,:,pageIndex),zeroCoefficientPages);
+    psiNonzero = psiNonzero+reshape(zeroF,nz,nNonzero);
+    etaNonzero = etaNonzero+fOverG*reshape(zeroG,nz,nNonzero);
 end
+
+psiHat = complex(zeros(nz,self.Nkl));
+etaHat = complex(zeros(nz,self.Nkl));
+qHat = complex(zeros(nz,self.Nkl));
+psiHat(:,nonzeroIndex) = psiNonzero;
+etaHat(:,nonzeroIndex) = etaNonzero;
+qHat(:,nonzeroIndex) = qNonzero;
 
 meanIndex = find(hypot(self.k,self.l) == 0,1);
 if ~isempty(meanIndex)
