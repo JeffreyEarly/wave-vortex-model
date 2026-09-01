@@ -25,6 +25,7 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
     % ```
     %
     % - Topic: Create and restore a transform
+    % - Topic: Initialize the flow
     % - Topic: Inspect coefficient families
     % - Topic: Inspect modes and operators
     % - Topic: Transform coefficient state

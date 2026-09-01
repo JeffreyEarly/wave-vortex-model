@@ -286,6 +286,115 @@ classdef TestWVTransformFreeSurfaceQG < matlab.unittest.TestCase
             end
         end
 
+        function shiftedGaussianEddyPopulatesEveryCanonicalFamily(testCase)
+            endpointValues = [Inf Inf;0.02 Inf;Inf 0.03;0.02 0.03];
+            U = 0.05;
+            Le = 20e3;
+            He = 250;
+            zc = 75;
+            center = [0.35 0.65].*[100e3 100e3];
+            for iCase = 1:size(endpointValues,1)
+                wvt = TestWVTransformFreeSurfaceQG.newTransform(endpointValues(iCase,1),endpointValues(iCase,2));
+                TestWVTransformFreeSurfaceQG.setMixedState(wvt,iCase);
+                wvt.addToVariableCache('u',17);
+                wvt.initWithGaussianEddy(maximumSpeed=U,horizontalRadius=Le,verticalScale=He,zCenter=zc,center=center);
+
+                testCase.verifyGreaterThan(norm(wvt.Ag_q(:)),0)
+                testCase.verifyGreaterThan(norm(wvt.Amda(:)),0)
+                testCase.verifyEqual(size(wvt.Ag_0),[wvt.activeEndpointCount length(wvt.klNonzero)])
+                if wvt.activeEndpointCount > 0
+                    testCase.verifyGreaterThan(norm(wvt.Ag_0(:)),0)
+                else
+                    testCase.verifyEmpty(wvt.Ag_0)
+                end
+                testCase.verifyEmpty(wvt.fetchFromVariableCache('u'))
+
+                [qNonzero,bNonzero] = wvt.transformStateBack(wvt.Ag_q,wvt.Ag_0);
+                [AgqRoundTrip,Ag0RoundTrip] = wvt.transformStateForward(qNonzero,bNonzero);
+                testCase.verifyEqual(AgqRoundTrip,wvt.Ag_q,AbsTol=2e-12*max(1,max(abs(wvt.Ag_q),[],"all")))
+                if isempty(wvt.Ag_0)
+                    testCase.verifyEqual(Ag0RoundTrip,wvt.Ag_0)
+                else
+                    testCase.verifyEqual(Ag0RoundTrip,wvt.Ag_0,AbsTol=2e-11*max(1,max(abs(wvt.Ag_0),[],"all")))
+                end
+
+                etaMean = wvt.transformMDABack(wvt.Amda);
+                testCase.verifyEqual(wvt.transformMDAForward(etaMean),wvt.Amda,AbsTol=2e-12*max(1,max(abs(wvt.Amda),[],"all")))
+                expectedMean = TestWVTransformFreeSurfaceQG.gaussianMeanDisplacement(wvt,U,Le,He,zc);
+                if isfinite(wvt.g0) && isfinite(wvt.gd)
+                    relativeMeanError = norm(etaMean-expectedMean)/max(norm(expectedMean),realmin);
+                    testCase.verifyLessThanOrEqual(relativeMeanError,wvt.mdaGramTolerance)
+                end
+                if isinf(wvt.g0)
+                    testCase.verifyEqual(etaMean(end),0,AbsTol=2e-12)
+                end
+                if isinf(wvt.gd)
+                    testCase.verifyEqual(etaMean(1),0,AbsTol=2e-12)
+                end
+            end
+        end
+
+        function gaussianVerticalCenterExposesSurfaceDisplacement(testCase)
+            wvt = TestWVTransformFreeSurfaceQG.newTransform(0.02,0.03);
+            U = 0.05;
+            Le = 20e3;
+            He = 250;
+            centeredMean = TestWVTransformFreeSurfaceQG.gaussianMeanDisplacement(wvt,U,Le,He,0);
+            shiftedMean = TestWVTransformFreeSurfaceQG.gaussianMeanDisplacement(wvt,U,Le,He,75);
+            testCase.verifyEqual(centeredMean(end),0,AbsTol=0)
+            testCase.verifyNotEqual(shiftedMean(end),0)
+
+            wvt.initWithGaussianEddy(maximumSpeed=U,horizontalRadius=Le,verticalScale=He,zCenter=75);
+            actualMean = wvt.transformMDABack(wvt.Amda);
+            testCase.verifyEqual(sign(actualMean(end)),sign(shiftedMean(end)))
+            testCase.verifyGreaterThan(abs(actualMean(end)),0)
+        end
+
+        function betaPlaneGaussianEvolutionConvergesUnderRefinement(testCase)
+            horizontalCounts = [12 24 48];
+            verticalCounts = [33 65 129];
+            initialValues = cell(3,1);
+            finalValues = cell(3,1);
+            timeRefinedReference = [];
+            for iResolution = 1:3
+                wvt = WVTransformFreeSurfaceQG([200e3 200e3 1000], ...
+                    [horizontalCounts(iResolution) horizontalCounts(iResolution) verticalCounts(iResolution)], ...
+                    N2Function=@(z)1e-4*ones(size(z)),latitude=30,g0=0.02,gd=0.03,mdaGramTolerance=0.1);
+                wvt.initWithGaussianEddy(maximumSpeed=0.05,horizontalRadius=40e3,verticalScale=250,zCenter=75);
+                initialValues{iResolution} = TestWVTransformFreeSurfaceQG.lowModeSurfaceStreamfunction(wvt,2);
+                initialAmda = wvt.Amda;
+                initialAgq = wvt.Ag_q;
+                initialAg0 = wvt.Ag_0;
+
+                wvt.addForcing(WVBetaPlanePVAdvection(wvt));
+                model = WVModel(wvt,shouldUseLinearDynamics=false);
+                model.setupIntegrator(integratorType="fixed",deltaT=500);
+                model.integrateToTime(4000,shouldShowIntegrationDiagnostics=false,callback=@(~)[]);
+
+                finalValues{iResolution} = TestWVTransformFreeSurfaceQG.lowModeSurfaceStreamfunction(wvt,2);
+                testCase.verifyEqual(wvt.Amda,initialAmda,AbsTol=0)
+                if iResolution == 3
+                    wvt.Ag_q = initialAgq;
+                    wvt.Ag_0 = initialAg0;
+                    wvt.Amda = initialAmda;
+                    wvt.t = 0;
+                    refinedModel = WVModel(wvt,shouldUseLinearDynamics=false);
+                    refinedModel.setupIntegrator(integratorType="fixed",deltaT=250);
+                    refinedModel.integrateToTime(4000,shouldShowIntegrationDiagnostics=false,callback=@(~)[]);
+                    timeRefinedReference = TestWVTransformFreeSurfaceQG.lowModeSurfaceStreamfunction(wvt,2);
+                    testCase.verifyEqual(wvt.Amda,initialAmda,AbsTol=0)
+                end
+            end
+
+            referenceChange = timeRefinedReference-initialValues{3};
+            coarseError = norm((finalValues{1}-initialValues{1})-referenceChange)/max(norm(referenceChange),realmin);
+            mediumError = norm((finalValues{2}-initialValues{2})-referenceChange)/max(norm(referenceChange),realmin);
+            timeError = norm((finalValues{3}-initialValues{3})-referenceChange)/max(norm(referenceChange),realmin);
+            testCase.verifyLessThan(mediumError,coarseError)
+            testCase.verifyLessThanOrEqual(mediumError,0.1)
+            testCase.verifyLessThanOrEqual(timeError,max(0.25*mediumError,1e-10))
+        end
+
         function axialAndObliqueEntriesReuseTheirKhPage(testCase)
             wvt = WVTransformFreeSurfaceQG([100e3 100e3 1000],[16 16 33], ...
                 N2Function=@(z)1e-4*ones(size(z)),latitude=30,g0=0.02,gd=0.03,mdaGramTolerance=0.1);
@@ -657,6 +766,23 @@ classdef TestWVTransformFreeSurfaceQG < matlab.unittest.TestCase
             wvt.Ag_q = state.Ag_q;
             wvt.Ag_0 = state.Ag_0;
             wvt.Amda = state.Amda;
+        end
+
+        function etaMean = gaussianMeanDisplacement(wvt,U,Le,He,zc)
+            horizontalMean = pi*Le^2/(wvt.Lx*wvt.Ly);
+            verticalStructure = exp(-((wvt.z-zc).^2)/(2*He^2));
+            verticalDerivative = -((wvt.z-zc)/He^2).*verticalStructure;
+            streamfunctionScale = U*(Le/sqrt(2))*exp(1/2);
+            etaMean = -(wvt.f./wvt.N2).*(streamfunctionScale*horizontalMean*verticalDerivative);
+        end
+
+        function values = lowModeSurfaceStreamfunction(wvt,maximumMode)
+            [psiHat,~,~] = wvt.reconstructSpectralState();
+            kMode = reshape(wvt.kMode_wv,[],1);
+            lMode = reshape(wvt.lMode_wv,[],1);
+            selected = find(abs(kMode) <= maximumMode & abs(lMode) <= maximumMode);
+            [~,order] = sortrows([kMode(selected) lMode(selected)],[1 2]);
+            values = reshape(psiHat(end,selected(order)),[],1);
         end
 
         function values = endpointSpectralToSpatial(wvt,spectralValues)

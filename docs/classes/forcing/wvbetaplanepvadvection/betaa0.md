@@ -20,4 +20,5 @@ Spectral multiplier mapping `A0` to its beta-plane tendency.
 
 This Internal array is $$-\beta V_{A0}$$. It is zero on modes
 without geostrophic meridional velocity, including the horizontal
-mean and mean-density-anomaly modes.
+mean and mean-density-anomaly modes. It is empty when the forcing
+uses the free-surface `QGSpatial` path.

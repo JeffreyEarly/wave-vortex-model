@@ -36,13 +36,15 @@ $$
 $$
 
 QG transforms evaluate this expression directly in physical QGPV
-space. Wave-bearing transforms apply the equivalent spectral tendency
-only to the geostrophic `A0` coefficients; `Ap`, `Am`, inertial modes,
-and mean-density-anomaly modes receive no direct beta tendency. This
-retains beta advection for the balanced flow but is not a full
-beta-plane treatment of internal-wave dynamics: wave frequencies and
-structures continue to use the transform's constant Coriolis
-parameter.
+space. Free-surface QG projects the interior tendency into `Ag_q`
+followed by the residual endpoint response in `Ag_0`; beta supplies no
+direct endpoint or `Amda` tendency. Wave-bearing transforms apply the
+equivalent spectral tendency only to the geostrophic `A0`
+coefficients; `Ap`, `Am`, inertial modes, and mean-density-anomaly
+modes receive no direct beta tendency. This retains beta advection for
+the balanced flow but is not a full beta-plane treatment of
+internal-wave dynamics: wave frequencies and structures continue to
+use the transform's constant Coriolis parameter.
 
 ```matlab
 wvt.addForcing(WVBetaPlanePVAdvection(wvt));

@@ -15,13 +15,15 @@ classdef WVBetaPlanePVAdvection < WVForcing
     % $$
     %
     % QG transforms evaluate this expression directly in physical QGPV
-    % space. Wave-bearing transforms apply the equivalent spectral tendency
-    % only to the geostrophic `A0` coefficients; `Ap`, `Am`, inertial modes,
-    % and mean-density-anomaly modes receive no direct beta tendency. This
-    % retains beta advection for the balanced flow but is not a full
-    % beta-plane treatment of internal-wave dynamics: wave frequencies and
-    % structures continue to use the transform's constant Coriolis
-    % parameter.
+    % space. Free-surface QG projects the interior tendency into `Ag_q`
+    % followed by the residual endpoint response in `Ag_0`; beta supplies no
+    % direct endpoint or `Amda` tendency. Wave-bearing transforms apply the
+    % equivalent spectral tendency only to the geostrophic `A0`
+    % coefficients; `Ap`, `Am`, inertial modes, and mean-density-anomaly
+    % modes receive no direct beta tendency. This retains beta advection for
+    % the balanced flow but is not a full beta-plane treatment of
+    % internal-wave dynamics: wave frequencies and structures continue to
+    % use the transform's constant Coriolis parameter.
     %
     % ```matlab
     % wvt.addForcing(WVBetaPlanePVAdvection(wvt));
@@ -38,7 +40,8 @@ classdef WVBetaPlanePVAdvection < WVForcing
         %
         % This Internal array is $$-\beta V_{A0}$$. It is zero on modes
         % without geostrophic meridional velocity, including the horizontal
-        % mean and mean-density-anomaly modes.
+        % mean and mean-density-anomaly modes. It is empty when the forcing
+        % uses the free-surface `QGSpatial` path.
         %
         % - Topic: Forcing internals
         % - Developer: true
@@ -66,9 +69,13 @@ classdef WVBetaPlanePVAdvection < WVForcing
             arguments
                 wvt WVTransform {mustBeNonempty}
             end
-            self@WVForcing(wvt,"beta-plane advection of qgpv",WVForcingType(["Spectral" "PVSpatial"]));
-            self.betaA0 = -wvt.beta * wvt.VA0;
-            self.betaA0(1,1,1) = 0;
+            self@WVForcing(wvt,"beta-plane advection of qgpv",WVForcingType(["Spectral" "PVSpatial" "QGSpatial"]));
+            if any(wvt.forcingType == WVForcingType.QGSpatial)
+                self.betaA0 = [];
+            else
+                self.betaA0 = -wvt.beta * wvt.VA0;
+                self.betaA0(1,1,1) = 0;
+            end
         end
 
         function Fpv = addPotentialVorticitySpatialForcing(self, wvt, Fpv)
@@ -81,6 +88,25 @@ classdef WVBetaPlanePVAdvection < WVForcing
             % - Returns Fpv: QGPV tendency including beta-plane advection
             % - Developer: true
             Fpv = Fpv - wvt.beta * wvt.v;
+        end
+
+        function [Fq,Fb] = addQuasigeostrophicSpatialForcing(~,wvt,Fq,Fb)
+            % Add $$-\beta v_g$$ to free-surface QGPV without an endpoint source.
+            %
+            % The transform projects this interior tendency into `Ag_q`
+            % first and then places the compensating endpoint response in
+            % `Ag_0`. `Fb` remains unchanged and the projected `Amda`
+            % tendency is exactly zero.
+            %
+            % - Topic: Implement forcing evaluation
+            % - Declaration: [Fq,Fb] = addQuasigeostrophicSpatialForcing(wvt,Fq,Fb)
+            % - Parameter wvt: free-surface QG transform evaluating the forcing
+            % - Parameter Fq: accumulated physical-space QGPV tendency
+            % - Parameter Fb: accumulated active-endpoint anomaly tendency
+            % - Returns Fq: QGPV tendency including beta-plane advection
+            % - Returns Fb: unchanged endpoint-anomaly tendency
+            % - Developer: true
+            Fq = Fq-wvt.beta*wvt.v;
         end
 
         function [Fp, Fm, F0] = addSpectralForcing(self, wvt, Fp, Fm, F0)

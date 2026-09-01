@@ -55,6 +55,39 @@ classdef TestForcingMathematicalContracts < matlab.unittest.TestCase
             end
         end
 
+        function betaPlaneFreeSurfacePathHasNoDirectEndpointOrMDASource(testCase)
+            endpointValues = [Inf Inf;0.02 Inf;Inf 0.03;0.02 0.03];
+            for iCase = 1:size(endpointValues,1)
+                wvt = TestForcingMathematicalContracts.freeSurfaceQGTransform(endpointValues(iCase,1),endpointValues(iCase,2));
+                wvt.initWithGaussianEddy(maximumSpeed=0.05,horizontalRadius=20e3,verticalScale=250,zCenter=75);
+                wvt.removeAllForcing();
+                forcing = WVBetaPlanePVAdvection(wvt);
+
+                zeroEndpointTendency = zeros(wvt.Nx,wvt.Ny,wvt.activeEndpointCount);
+                [Fq,Fb] = forcing.addQuasigeostrophicSpatialForcing(wvt,zeros(wvt.spatialMatrixSize),zeroEndpointTendency);
+                expectedFq = -wvt.beta*wvt.v;
+                testCase.verifyEqual(Fq,expectedFq,AbsTol=2e-14*max(1,max(abs(expectedFq),[],"all")))
+                testCase.verifyEqual(Fb,zeroEndpointTendency,AbsTol=0)
+
+                expected = wvt.projectQuasigeostrophicSpatialTendency(expectedFq,zeroEndpointTendency);
+                wvt.addForcing(forcing);
+                actual = wvt.coefficientTendency();
+                testCase.verifyEqual(actual.Ag_q,expected.Ag_q,AbsTol=2e-14*max(1,max(abs(expected.Ag_q),[],"all")))
+                if isempty(expected.Ag_0)
+                    testCase.verifyEqual(actual.Ag_0,expected.Ag_0)
+                else
+                    testCase.verifyEqual(actual.Ag_0,expected.Ag_0,AbsTol=2e-14*max(1,max(abs(expected.Ag_0),[],"all")))
+                end
+                testCase.verifyEqual(actual.Amda,zeros(size(wvt.Amda)),AbsTol=0)
+
+                [~,endpointResidual] = wvt.transformStateBack(actual.Ag_q,actual.Ag_0);
+                testCase.verifyEqual(endpointResidual,zeros(size(endpointResidual)),AbsTol=2e-12*max(1,max(abs(expectedFq),[],"all")))
+                if wvt.activeEndpointCount > 0
+                    testCase.verifyGreaterThan(norm(actual.Ag_0(:)),0)
+                end
+            end
+        end
+
         function betaPlaneSpectralPathAffectsOnlyGeostrophicA0(testCase)
             transforms = TestForcingMathematicalContracts.waveTransforms();
             for iTransform = 1:numel(transforms)
@@ -199,6 +232,10 @@ classdef TestForcingMathematicalContracts < matlab.unittest.TestCase
 
         function wvt = stratifiedQGTransform()
             wvt = WVTransformStratifiedQG([40e3 30e3 2e3],[8 6 5],N2=@(z)2e-5*exp(z/4000),latitude=45,shouldAntialias=false);
+        end
+
+        function wvt = freeSurfaceQGTransform(g0,gd)
+            wvt = WVTransformFreeSurfaceQG([100e3 100e3 1000],[8 8 33],N2Function=@(z)1e-4*ones(size(z)),latitude=30,g0=g0,gd=gd,mdaGramTolerance=0.1);
         end
 
         function coefficients = deterministicCoefficients(matrixSize)

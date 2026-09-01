@@ -53,6 +53,13 @@ wvt = WVTransformFreeSurfaceQG([100e3 100e3 4000],[32 32 33],N2Function=N2,latit
   + [`WVTransformFreeSurfaceQG`](/classes/transforms/wvtransformfreesurfaceqg/wvtransformfreesurfaceqg.html) Create a free-surface QG transform scientifically or directly.
   + [`assessVerticalResolution`](/classes/transforms/wvtransformfreesurfaceqg/assessverticalresolution.html) Assess vertical-mode accuracy and the active-endpoint horizontal limit.
   + [`waveVortexTransformFromFile`](/classes/transforms/wvtransformfreesurfaceqg/wavevortextransformfromfile.html) Restore a free-surface QG transform from persisted arrays.
++ Initialize the flow
+  + General initialization
+    + [`addRandomFlow`](/classes/transforms/wvtransformfreesurfaceqg/addrandomflow.html) add randomized flow to the existing state
+    + [`initFromNetCDFFile`](/classes/transforms/wvtransformfreesurfaceqg/initfromnetcdffile.html) initialize the flow from a NetCDF file
+    + [`initWithGaussianEddy`](/classes/transforms/wvtransformfreesurfaceqg/initwithgaussianeddy.html) Initialize a balanced, vertically shifted Gaussian eddy.
+    + [`initWithRandomFlow`](/classes/transforms/wvtransformfreesurfaceqg/initwithrandomflow.html) initialize with a random flow state
+    + [`removeAll`](/classes/transforms/wvtransformfreesurfaceqg/removeall.html) removes all energy from the model
 + Evaluate physical fields
   + On the model grid
     + Density and displacement
@@ -229,12 +236,6 @@ wvt = WVTransformFreeSurfaceQG([100e3 100e3 4000],[32 32 33],N2Function=N2,latit
     + [`hasClosure`](/classes/transforms/wvtransformfreesurfaceqg/hasclosure.html) Whether a closure is currently attached to the transform.
   + Summarize forcing
     + [`summarizeForcing`](/classes/transforms/wvtransformfreesurfaceqg/summarizeforcing.html) Print a table of registered forcing and closure objects.
-+ Initialize the flow
-  + General initialization
-    + [`addRandomFlow`](/classes/transforms/wvtransformfreesurfaceqg/addrandomflow.html) add randomized flow to the existing state
-    + [`initFromNetCDFFile`](/classes/transforms/wvtransformfreesurfaceqg/initfromnetcdffile.html) initialize the flow from a NetCDF file
-    + [`initWithRandomFlow`](/classes/transforms/wvtransformfreesurfaceqg/initwithrandomflow.html) initialize with a random flow state
-    + [`removeAll`](/classes/transforms/wvtransformfreesurfaceqg/removeall.html) removes all energy from the model
 + Analyze the flow
   + Spectra
     + Spectral fields

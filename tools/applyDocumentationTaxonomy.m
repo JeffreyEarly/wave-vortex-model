@@ -128,7 +128,8 @@ elseif contains(name,"Geostrophic") || ismember(name,["setSSH","removeAllGeostro
 elseif contains(name,"MeanDensityAnomaly")
     topicPath = "Initialize the flow — Mean density anomalies";
 elseif ismember(name,["initWithUVEta","initWithUVRho","addUVEta", ...
-        "initFromNetCDFFile","initWithRandomFlow","addRandomFlow","removeAll"])
+        "initFromNetCDFFile","initWithRandomFlow","initWithGaussianEddy", ...
+        "addRandomFlow","removeAll"])
     topicPath = "Initialize the flow — General initialization";
 elseif ismember(name,["u","v","w"])
     topicPath = "Evaluate physical fields — On the model grid — Velocity";
