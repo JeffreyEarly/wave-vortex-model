@@ -18,3 +18,8 @@ Coupled quadratic-aliasing error at the selected APV count.
 
 ## Description
 Real valued property with no dimensions and is dimensionless.
+
+## Discussion
+
+This is a positive relative error in the induced Hilbert
+majorant, not a signed generalized-energy self-pairing.

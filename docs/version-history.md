@@ -8,6 +8,10 @@ nav_order: 100
 
 ## [Unreleased]
 
+### Free-surface QG signed norms
+
+- Retained negative APV modes under the default endpoint choice $$g_0=-\int_{-D}^{0}N^2\,dz$$ and $$g_d=\mathop{\rm Inf}$$, kept signed InternalModes projection and coefficient recovery, and certified coupled quadratic products with the induced positive Hilbert-majorant error at the existing default tolerance `0.1`.
+
 ### MATLAB integration performance
 
 - Added an authoring benchmark that separates integrated tracer and particle state from dense-output delivery, with matched fixed-RK4 work, output-record validation, and fresh-process timing and RSS measurements.

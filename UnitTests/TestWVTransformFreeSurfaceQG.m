@@ -111,6 +111,23 @@ classdef TestWVTransformFreeSurfaceQG < matlab.unittest.TestCase
                 'WVTransformFreeSurfaceQG:UncertifiedModeCount')
         end
 
+        function omittedEndpointDefaultsRetainSignedAPVAndCertifyWithMajorant(testCase)
+            D = 4000;
+            N2 = @(z) (5.2e-3)^2*exp(2*z/1300);
+            expectedG0 = -integral(N2,-D,0);
+            wvt = WVTransformFreeSurfaceQG([100e3 100e3 D],[8 8 33], ...
+                N2Function=N2,latitude=30);
+
+            testCase.verifyEqual(wvt.g0,expectedG0,AbsTol=0)
+            testCase.verifyEqual(wvt.gd,Inf,AbsTol=0)
+            testCase.verifyEqual(wvt.quadraticAliasingTolerance,0.1,AbsTol=0)
+            testCase.verifyEqual(wvt.apvModeNumber(1),-1,AbsTol=0)
+            testCase.verifyTrue(isfinite(wvt.quadraticAliasingError))
+            testCase.verifyLessThanOrEqual(wvt.quadraticAliasingError,0.1)
+            testCase.verifySubstring(wvt.certificationMethod,"signed-projection")
+            testCase.verifySubstring(wvt.certificationMethod,"induced-Hilbert-majorant")
+        end
+
         function explicitFamilyCountsAreIndependentPrefixes(testCase)
             wvt = WVTransformFreeSurfaceQG([100e3 100e3 1000],[8 8 33], ...
                 N2Function=@(z)1e-4*ones(size(z)),latitude=30,apvModeCount=1,mdaModeCount=2,g0=0.02,gd=0.03);

@@ -30,7 +30,7 @@ Create a free-surface QG transform scientifically or directly.
 + `options.mdaModeCount`  requested retained MDA mode count
 + `options.apvGramTolerance`  APV normalized-Gram tolerance
 + `options.mdaGramTolerance`  MDA normalized-Gram tolerance
-+ `options.quadraticAliasingTolerance`  APV quadratic-product tolerance
++ `options.quadraticAliasingTolerance`  APV quadratic-product tolerance in the induced Hilbert majorant
 + `options.muTolerance`  APV inversion singularity tolerance
 
 ## Returns

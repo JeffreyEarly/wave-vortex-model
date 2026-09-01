@@ -29,6 +29,11 @@ by real mean-density-anomaly coefficients `Amda`.
 APV and MDA retain independently certified mode counts on the same
 physical vertical grid. The inherited `Nj` value equals
 `apvModeCount`; `mdaModeCount` may differ.
+Omitted endpoints use $$g_0=-\int_{-D}^{0}N^2\,dz$$ and
+$$g_d=\mathop{\rm Inf}$$. The resulting APV family normally includes
+a negative mode. InternalModes retains that mode and uses its signed
+Pontryagin pairing for projection; coupled quadratic errors are
+positive magnitudes in the induced Hilbert majorant.
 
 Scientific construction solves the InternalModesEVP problems once and
 stores every sampled mode and projection operator. Persisted-state
@@ -121,8 +126,8 @@ wvt = WVTransformFreeSurfaceQG([100e3 100e3 4000],[32 32 33],N2Function=N2,latit
       + [`apvQuadratureWeights`](/classes/transforms/wvtransformfreesurfaceqg/apvquadratureweights.html) APV-family quadrature weights on the shared physical grid.
       + [`apvRoundTripError`](/classes/transforms/wvtransformfreesurfaceqg/apvroundtriperror.html) Worst retained APV sampled round-trip error.
       + [`certificationMethod`](/classes/transforms/wvtransformfreesurfaceqg/certificationmethod.html) Persisted certification method identifier.
-      + [`g0`](/classes/transforms/wvtransformfreesurfaceqg/g0.html) Effective surface acceleration.
-      + [`gd`](/classes/transforms/wvtransformfreesurfaceqg/gd.html) Effective bottom acceleration.
+      + [`g0`](/classes/transforms/wvtransformfreesurfaceqg/g0.html) Effective surface acceleration; omitted default is `-integral(N2,-Lz,0)`.
+      + [`gd`](/classes/transforms/wvtransformfreesurfaceqg/gd.html) Effective bottom acceleration; omitted default is `Inf`.
       + [`hasPositiveQuadrature`](/classes/transforms/wvtransformfreesurfaceqg/haspositivequadrature.html) Whether both fitted quadrature rules are nonnegative.
       + [`kNonzero`](/classes/transforms/wvtransformfreesurfaceqg/knonzero.html) X wavenumber associated with `klNonzero`.
       + [`khNonzero`](/classes/transforms/wvtransformfreesurfaceqg/khnonzero.html) Horizontal-wavenumber magnitude associated with `klNonzero`.

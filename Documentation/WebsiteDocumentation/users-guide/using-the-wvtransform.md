@@ -57,11 +57,21 @@ wvtQG = WVTransformStratifiedQG(Lxyz,Nxyz,N2Function=N2,latitude=30);
 
 ### Free-surface QG
 
-Supply the same stratification inputs together with optional endpoint accelerations `g0` and `gd`. By default, the transform designs one APV-root physical grid and independently selects the largest certified APV and MDA mode counts on that grid. Use `apvModeCount` or `mdaModeCount` to request smaller certified family prefixes. A finite endpoint activates one row of the boundary-normalized `Ag_0` family; an infinite endpoint is inactive.
+Supply the same stratification inputs together with optional endpoint accelerations `g0` and `gd`. Omit them for the production defaults
+
+$$
+g_0=-\int_{-L_z}^{0}N^2(z)\,dz,
+\qquad
+g_d=\mathop{\rm Inf}.
+$$
+
+The transform designs one APV-root physical grid and independently selects the largest certified APV and MDA mode counts on that grid. Use `apvModeCount` or `mdaModeCount` to request smaller certified family prefixes. A finite endpoint activates one row of the boundary-normalized `Ag_0` family; an infinite endpoint is inactive.
 
 ```matlab
-wvtFreeSurfaceQG = WVTransformFreeSurfaceQG(Lxyz,Nxyz,N2Function=N2,latitude=30,g0=0.02,gd=Inf);
+wvtFreeSurfaceQG = WVTransformFreeSurfaceQG(Lxyz,Nxyz,N2Function=N2,latitude=30);
 ```
+
+The default negative surface acceleration normally produces an APV mode with physical label `-1`. That negative mode is expected and is retained in projection and all applicable coupled quadratic product pairs. Modal projection and coefficient recovery use the signed Pontryagin pairing. The reported `quadraticAliasingError` instead measures the difference between discrete and continuous signed projections in the induced positive Hilbert majorant, divided by the product's majorant norm. Its default acceptance tolerance is `0.1`; the negative mode therefore does not imply a negative or imaginary error magnitude. Never use the square root of a signed self-pairing, even after taking its absolute value, as a general state norm.
 
 The transform supports scientific construction, projection and reconstruction, nonlinear QGPV and active-endpoint advection, snapshots, model-output persistence, and restart. Periodic horizontal advection leaves `Amda` unchanged. Milestone work still in progress includes the complete diagnostic suite, beta-plane qualification, buoyancy diffusion and surface-flux forcing, resolution transfer, and end-to-end qualification.
 

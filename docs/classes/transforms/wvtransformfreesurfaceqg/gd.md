@@ -9,7 +9,7 @@ mathjax: true
 
 #  gd
 
-Effective bottom acceleration.
+Effective bottom acceleration; omitted default is `Inf`.
 
 
 ---

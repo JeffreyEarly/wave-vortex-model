@@ -8,6 +8,11 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
     % APV and MDA retain independently certified mode counts on the same
     % physical vertical grid. The inherited `Nj` value equals
     % `apvModeCount`; `mdaModeCount` may differ.
+    % Omitted endpoints use $$g_0=-\int_{-D}^{0}N^2\,dz$$ and
+    % $$g_d=\mathop{\rm Inf}$$. The resulting APV family normally includes
+    % a negative mode. InternalModes retains that mode and uses its signed
+    % Pontryagin pairing for projection; coupled quadratic errors are
+    % positive magnitudes in the induced Hilbert majorant.
     %
     % Scientific construction solves the InternalModesEVP problems once and
     % stores every sampled mode and projection operator. Persisted-state
@@ -42,10 +47,10 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
     end
 
     properties (GetAccess = public, SetAccess = private)
-        % Effective surface acceleration.
+        % Effective surface acceleration; omitted default is `-integral(N2,-Lz,0)`.
         % - Topic: Inspect modes and operators
         g0
-        % Effective bottom acceleration.
+        % Effective bottom acceleration; omitted default is `Inf`.
         % - Topic: Inspect modes and operators
         gd
         % Number of finite endpoint accelerations.
@@ -203,9 +208,16 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
         % - Topic: Inspect modes and operators
         mdaGramTolerance
         % Coupled quadratic-aliasing tolerance used for APV selection.
+        %
+        % Continuous and sampled projections use the signed Pontryagin
+        % pairing. Their difference and the source-product magnitude are
+        % measured with the induced positive Hilbert majorant.
         % - Topic: Inspect modes and operators
         quadraticAliasingTolerance
         % Coupled quadratic-aliasing error at the selected APV count.
+        %
+        % This is a positive relative error in the induced Hilbert
+        % majorant, not a signed generalized-energy self-pairing.
         % - Topic: Inspect modes and operators
         quadraticAliasingError
         % Product channel limiting the selected APV prefix.
@@ -300,7 +312,7 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
             % - Parameter options.mdaModeCount: requested retained MDA mode count
             % - Parameter options.apvGramTolerance: APV normalized-Gram tolerance
             % - Parameter options.mdaGramTolerance: MDA normalized-Gram tolerance
-            % - Parameter options.quadraticAliasingTolerance: APV quadratic-product tolerance
+            % - Parameter options.quadraticAliasingTolerance: APV quadratic-product tolerance in the induced Hilbert majorant
             % - Parameter options.muTolerance: APV inversion singularity tolerance
             % - Returns wvt: new `WVTransformFreeSurfaceQG` instance
             arguments
@@ -672,7 +684,7 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
             propertyAnnotations(end+1) = CANumericProperty('zeroAPVSourceSolve',{'activeEndpoint','sourceEndpoint','khUnique'},'1','zero-APV source-solve matrices');
 
             scalarNames = {'apvInitialModeCount','mdaInitialModeCount','apvCertifiedModeCount','mdaCertifiedModeCount','apvGramError','apvRoundTripError','mdaGramError','mdaRoundTripError','apvGramTolerance','mdaGramTolerance','quadraticAliasingTolerance','quadraticAliasingError','quadraticAliasingLimitingModeNumberI','quadraticAliasingLimitingModeNumberJ','minimumRelativeMuSeparation','muTolerance','hasPositiveQuadrature'};
-            scalarDescriptions = {'initial APV mode count searched','initial MDA mode count searched','maximum certified APV mode count','maximum certified MDA mode count','worst APV Gram error','worst APV round-trip error','MDA Gram error','MDA round-trip error','APV normalized-Gram tolerance','MDA normalized-Gram tolerance','coupled quadratic-aliasing tolerance','coupled quadratic-aliasing error at selected APV count','first limiting quadratic-product mode number','second limiting quadratic-product mode number','minimum relative mu separation','APV inversion relative singularity tolerance','positive-quadrature certification flag'};
+            scalarDescriptions = {'initial APV mode count searched','initial MDA mode count searched','maximum certified APV mode count','maximum certified MDA mode count','worst APV Gram error','worst APV round-trip error','MDA Gram error','MDA round-trip error','APV normalized-Gram tolerance','MDA normalized-Gram tolerance','coupled quadratic-aliasing tolerance in the induced Hilbert majorant','coupled quadratic-aliasing error in the induced Hilbert majorant at selected APV count','first limiting quadratic-product mode number','second limiting quadratic-product mode number','minimum relative mu separation','APV inversion relative singularity tolerance','positive-quadrature certification flag'};
             for iProperty = 1:length(scalarNames)
                 propertyAnnotations(end+1) = CANumericProperty(scalarNames{iProperty},{},'1',scalarDescriptions{iProperty}); %#ok<AGROW>
             end

@@ -18,3 +18,9 @@ Coupled quadratic-aliasing tolerance used for APV selection.
 
 ## Description
 Real valued property with no dimensions and is dimensionless.
+
+## Discussion
+
+Continuous and sampled projections use the signed Pontryagin
+pairing. Their difference and the source-product magnitude are
+measured with the induced positive Hilbert majorant.
