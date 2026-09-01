@@ -3,7 +3,7 @@ layout: default
 title: diffX
 parent: WVTransformFreeSurfaceQG
 grand_parent: Transforms
-nav_order: 68
+nav_order: 72
 mathjax: true
 ---
 

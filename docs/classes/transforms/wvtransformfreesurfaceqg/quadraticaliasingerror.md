@@ -1,0 +1,20 @@
+---
+layout: default
+title: quadraticAliasingError
+parent: WVTransformFreeSurfaceQG
+grand_parent: Transforms
+nav_order: 179
+mathjax: true
+---
+
+#  quadraticAliasingError
+
+Coupled quadratic-aliasing error at the selected APV count.
+
+> Developer documentation: this item describes internal implementation details.
+
+
+---
+
+## Description
+Real valued property with no dimensions and is dimensionless.

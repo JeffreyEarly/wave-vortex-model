@@ -51,11 +51,14 @@ and for quasigeostrophic transforms,
 
 $$
 \begin{align}
-\mathcal{S}_\mathrm{qgpv} &= - \left( u \partial_x q + v \partial_y q \right)
+\mathcal{S}_\mathrm{qgpv} &= - \left( u \partial_x q + v \partial_y q \right), \\
+\mathcal{S}_{b_e} &= - \left( u_e \partial_x b_e + v_e \partial_y b_e \right)
 \end{align}
 $$
 
-where $$q$$ is QGPV.
+where $$q$$ is QGPV and $$b_e$$ is an active endpoint anomaly. The
+endpoint equation is present only for QG transforms whose canonical
+state includes active boundary sheets.
 
 ### Notes
 

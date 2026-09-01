@@ -3,7 +3,7 @@ layout: default
 title: forcingType
 parent: WVForcing
 grand_parent: Forcing
-nav_order: 9
+nav_order: 10
 mathjax: true
 ---
 
@@ -27,6 +27,7 @@ subclass implements:
 | `HydrostaticSpatial` | `addHydrostaticSpatialForcing` |
 | `NonhydrostaticSpatial` | `addNonhydrostaticSpatialForcing` |
 | `PVSpatial` | `addPotentialVorticitySpatialForcing` |
+| `QGSpatial` | `addQuasigeostrophicSpatialForcing` |
 | `Spectral` | `addSpectralForcing` |
 | `PVSpectral` | `addPotentialVorticitySpectralForcing` |
 | `SpectralAmplitude` | `setSpectralForcing` and `setSpectralAmplitude` |

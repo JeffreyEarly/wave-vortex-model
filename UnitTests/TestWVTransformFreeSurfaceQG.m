@@ -263,6 +263,20 @@ classdef TestWVTransformFreeSurfaceQG < matlab.unittest.TestCase
             testCase.verifyEqual(wvt.zeroAPVG(:,:,iKh),wvt.zeroAPVG(:,:,wvt.klNonzeroKhUniqueIndex(oblique)),AbsTol=0)
         end
 
+        function maximumKhZeroAPVResponsesRemainBoundaryNormalized(testCase)
+            endpointValues = [0.02 Inf;Inf 0.03;0.02 0.03];
+            for iCase = 1:size(endpointValues,1)
+                wvt = TestWVTransformFreeSurfaceQG.newTransform(endpointValues(iCase,1),endpointValues(iCase,2));
+                iKh = length(wvt.khUnique);
+                surfaceResponse = reshape(wvt.zeroAPVG(end,:,iKh)-wvt.zeroAPVF(end,:,iKh),1,[]);
+                bottomResponse = reshape(wvt.zeroAPVG(1,:,iKh),1,[]);
+                endpointResponse = [surfaceResponse;bottomResponse];
+                testCase.verifyEqual(endpointResponse(wvt.activeEndpoint,:),eye(wvt.activeEndpointCount),AbsTol=2e-10)
+                inactiveEndpoint = setdiff((1:2).',wvt.activeEndpoint);
+                testCase.verifyEqual(endpointResponse(inactiveEndpoint,:),zeros(length(inactiveEndpoint),wvt.activeEndpointCount),AbsTol=2e-10)
+            end
+        end
+
         function retainedNonlinearTendencyIsStableUnderGridRefinement(testCase)
             coarse = WVTransformFreeSurfaceQG([100e3 100e3 1000],[8 8 33], ...
                 N2Function=@(z)1e-4*ones(size(z)),latitude=30,apvModeCount=2,mdaModeCount=2, ...

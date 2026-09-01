@@ -3,7 +3,7 @@ layout: default
 title: effectiveVerticalGridResolution
 parent: WVTransformFreeSurfaceQG
 grand_parent: Transforms
-nav_order: 76
+nav_order: 80
 mathjax: true
 ---
 

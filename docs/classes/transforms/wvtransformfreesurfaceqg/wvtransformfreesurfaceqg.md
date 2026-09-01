@@ -26,7 +26,12 @@ Create a free-surface QG transform scientifically or directly.
 + `options.g0`  surface acceleration; default stratification integral
 + `options.gd`  bottom acceleration; default `Inf`
 + `options.z`  physical vertical grid
-+ `options.Nj`  requested common retained mode count
++ `options.apvModeCount`  requested retained APV mode count
++ `options.mdaModeCount`  requested retained MDA mode count
++ `options.apvGramTolerance`  APV normalized-Gram tolerance
++ `options.mdaGramTolerance`  MDA normalized-Gram tolerance
++ `options.quadraticAliasingTolerance`  APV quadratic-product tolerance
++ `options.muTolerance`  APV inversion singularity tolerance
 
 ## Returns
 + `wvt`  new `WVTransformFreeSurfaceQG` instance

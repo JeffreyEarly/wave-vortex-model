@@ -3,7 +3,7 @@ layout: default
 title: zeroAPVGramReciprocalCondition
 parent: WVTransformFreeSurfaceQG
 grand_parent: Transforms
-nav_order: 242
+nav_order: 264
 mathjax: true
 ---
 

@@ -1,0 +1,17 @@
+---
+layout: default
+title: quadraticAliasingLimitingChannel
+parent: WVTransformFreeSurfaceQG
+grand_parent: Transforms
+nav_order: 180
+mathjax: true
+---
+
+#  quadraticAliasingLimitingChannel
+
+Product channel limiting the selected APV prefix.
+
+> Developer documentation: this item describes internal implementation details.
+
+
+---

@@ -3,7 +3,7 @@ layout: default
 title: degreesOfFreedomForComplexMatrix
 parent: WVTransformFreeSurfaceQG
 grand_parent: Transforms
-nav_order: 64
+nav_order: 68
 mathjax: true
 ---
 

@@ -3,7 +3,7 @@ layout: default
 title: crossSpectrumWithGgTransform
 parent: WVTransformFreeSurfaceQG
 grand_parent: Transforms
-nav_order: 62
+nav_order: 66
 mathjax: true
 ---
 

@@ -3,7 +3,7 @@ layout: default
 title: spatialFluxTypes
 parent: WVForcing
 grand_parent: Forcing
-nav_order: 19
+nav_order: 20
 mathjax: true
 ---
 
@@ -21,6 +21,6 @@ Return the physical-space forcing types.
  forceTypes = spatialFluxTypes()
 ```
 ## Returns
-+ `forceTypes`  `HydrostaticSpatial`, `NonhydrostaticSpatial`, and `PVSpatial`
++ `forceTypes`  physical-space forcing types
 
 ## Discussion

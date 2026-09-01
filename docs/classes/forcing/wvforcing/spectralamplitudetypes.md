@@ -3,7 +3,7 @@ layout: default
 title: spectralAmplitudeTypes
 parent: WVForcing
 grand_parent: Forcing
-nav_order: 20
+nav_order: 21
 mathjax: true
 ---
 

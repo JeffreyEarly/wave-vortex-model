@@ -3,7 +3,7 @@ layout: default
 title: shouldExcludeConjugates
 parent: WVTransformFreeSurfaceQG
 grand_parent: Transforms
-nav_order: 184
+nav_order: 200
 mathjax: true
 ---
 

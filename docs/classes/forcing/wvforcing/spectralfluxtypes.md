@@ -3,7 +3,7 @@ layout: default
 title: spectralFluxTypes
 parent: WVForcing
 grand_parent: Forcing
-nav_order: 21
+nav_order: 22
 mathjax: true
 ---
 

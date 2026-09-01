@@ -19,7 +19,7 @@ A `WVTransform` represents a fluid state in physical and wave–vortex coordinat
 | [`WVTransformHydrostatic`](/classes/transforms/wvtransformhydrostatic/) | Hydrostatic flow with variable stratification. |
 | [`WVTransformBoussinesq`](/classes/transforms/wvtransformboussinesq/) | Nonhydrostatic flow with variable stratification. |
 | [`WVTransformStratifiedQG`](/classes/transforms/wvtransformstratifiedqg/) | Three-dimensional stratified quasigeostrophic flow. |
-| [`WVTransformFreeSurfaceQG`](/classes/transforms/wvtransformfreesurfaceqg/) | Free-surface QG modal construction, reconstruction, and durable persistence; the nonlinear RHS is deferred. |
+| [`WVTransformFreeSurfaceQG`](/classes/transforms/wvtransformfreesurfaceqg/) | Free-surface QG modal construction, nonlinear advection, reconstruction, and durable persistence. |
 | [`WVTransformBarotropicQG`](/classes/transforms/wvtransformbarotropicqg/) | Two-dimensional equivalent-barotropic quasigeostrophic flow. |
 
 All rotating transforms accept latitude in either hemisphere for $$5 \leq \lvert\mathrm{latitude}\rvert \leq 85$$ degrees.
@@ -57,13 +57,13 @@ wvtQG = WVTransformStratifiedQG(Lxyz,Nxyz,N2Function=N2,latitude=30);
 
 ### Free-surface QG
 
-Supply the same stratification inputs together with optional endpoint accelerations `g0` and `gd`. The transform chooses the largest APV/MDA mode prefix certified on the supplied `z` grid unless `Nj` is requested explicitly. A finite endpoint activates one row of the boundary-normalized `Ag_0` family; an infinite endpoint is inactive.
+Supply the same stratification inputs together with optional endpoint accelerations `g0` and `gd`. By default, the transform designs one APV-root physical grid and independently selects the largest certified APV and MDA mode counts on that grid. Use `apvModeCount` or `mdaModeCount` to request smaller certified family prefixes. A finite endpoint activates one row of the boundary-normalized `Ag_0` family; an infinite endpoint is inactive.
 
 ```matlab
 wvtFreeSurfaceQG = WVTransformFreeSurfaceQG(Lxyz,Nxyz,N2Function=N2,latitude=30,g0=0.02,gd=Inf);
 ```
 
-This milestone supports scientific construction, projection and reconstruction, snapshots, model-output persistence, and restart. Nonlinear tendency evaluation is intentionally unavailable until the free-surface QG RHS is added.
+The transform supports scientific construction, projection and reconstruction, nonlinear QGPV and active-endpoint advection, snapshots, model-output persistence, and restart. Periodic horizontal advection leaves `Amda` unchanged. Milestone work still in progress includes the complete diagnostic suite, beta-plane qualification, buoyancy diffusion and surface-flux forcing, resolution transfer, and end-to-end qualification.
 
 ### Equivalent-barotropic QG
 

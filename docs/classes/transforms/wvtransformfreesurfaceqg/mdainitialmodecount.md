@@ -1,15 +1,15 @@
 ---
 layout: default
-title: mdaCandidateModeCount
+title: mdaInitialModeCount
 parent: WVTransformFreeSurfaceQG
 grand_parent: Transforms
-nav_order: 142
+nav_order: 153
 mathjax: true
 ---
 
-#  mdaCandidateModeCount
+#  mdaInitialModeCount
 
-MDA candidate count considered by certification.
+Initial MDA count considered by certification.
 
 
 ---

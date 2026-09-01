@@ -1,15 +1,15 @@
 ---
 layout: default
-title: apvCandidateModeCount
+title: apvGramTolerance
 parent: WVTransformFreeSurfaceQG
 grand_parent: Transforms
-nav_order: 38
+nav_order: 48
 mathjax: true
 ---
 
-#  apvCandidateModeCount
+#  apvGramTolerance
 
-APV candidate count considered by certification.
+Normalized Gram tolerance used for APV selection.
 
 
 ---
