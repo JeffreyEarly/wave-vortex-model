@@ -474,14 +474,67 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
         end
 
         function tolerances = coefficientAbsoluteTolerances(self,absTolerance)
-            % Return uniform family-local tolerances for the prototype.
+            % Scale adaptive tolerances by unit-coefficient physical energy.
+            %
+            % This uses the same radial error-density convention as the
+            % legacy wave-vortex families. Within each radial bin, the
+            % available spectral error is divided equally over horizontal
+            % coefficients. The exact physical energy of a unit coefficient
+            % then maps that error into each family's native normalization.
+            % This keeps the tolerance invariant under changes to modal
+            % normalization without requiring signed generalized-energy
+            % diagnostics.
+            %
             % - Topic: Inspect coefficient families
-            annotations = self.coefficientStateAnnotations();
-            tolerances = struct();
-            for iFamily = 1:length(annotations)
-                name = annotations(iFamily).name;
-                tolerances.(name) = absTolerance*ones(size(self.(name)));
+            % - Declaration: tolerances = coefficientAbsoluteTolerances(self,absTolerance)
+            % - Parameter absTolerance: positive spectral coefficient-error scale
+            % - Returns tolerances: family-keyed coefficient-local absolute tolerances
+            arguments
+                self (1,1) WVTransformFreeSurfaceQG
+                absTolerance (1,1) double {mustBePositive}
             end
+
+            pageIndex = self.klNonzeroKhUniqueIndex;
+            weights = self.verticalQuadratureWeights;
+            N2 = self.N2;
+            fOverG = self.f/self.g;
+            radialWavenumber = self.kRadial;
+            radialSpacing = radialWavenumber(2)-radialWavenumber(1);
+            horizontalEnergyShare = zeros(1,length(self.khNonzero));
+            for iRadial = 1:length(radialWavenumber)
+                isBin = radialWavenumber(iRadial)-radialSpacing/2 < self.khNonzero & self.khNonzero <= radialWavenumber(iRadial)+radialSpacing/2;
+                nBin = nnz(isBin);
+                if nBin > 0
+                    radialWidth = radialWavenumber(iRadial)+radialSpacing/2-max(radialWavenumber(iRadial)-radialSpacing/2,0);
+                    horizontalEnergyShare(isBin) = radialWidth/nBin;
+                end
+            end
+            if any(horizontalEnergyShare <= 0)
+                error('WVTransformFreeSurfaceQG:InvalidToleranceGrid','Every nonzero horizontal coefficient must belong to a positive-width radial tolerance bin.')
+            end
+            meanRadialWidth = radialWavenumber(1)+radialSpacing/2-max(radialWavenumber(1)-radialSpacing/2,0);
+
+            apvEnergyFactor = zeros(self.apvModeCount,length(self.khUnique));
+            for iPage = 1:length(self.khUnique)
+                inverseMu = 1./reshape(self.apvMu(:,iPage),1,[]);
+                psiMode = self.apvF.*inverseMu;
+                etaMode = fOverG*self.apvG.*inverseMu;
+                apvEnergyFactor(:,iPage) = sum(weights.*(self.khUnique(iPage)^2*abs(psiMode).^2+N2.*abs(etaMode).^2),1).';
+            end
+            tolerances = struct();
+            tolerances.Ag_q = absTolerance*sqrt(horizontalEnergyShare./apvEnergyFactor(:,pageIndex));
+
+            zeroAPVEnergyFactor = zeros(self.activeEndpointCount,length(self.khUnique));
+            for iPage = 1:length(self.khUnique)
+                inverseKh2 = 1/self.khUnique(iPage)^2;
+                psiMode = self.zeroAPVF(:,:,iPage)*inverseKh2;
+                etaMode = fOverG*self.zeroAPVG(:,:,iPage)*inverseKh2;
+                zeroAPVEnergyFactor(:,iPage) = sum(weights.*(self.khUnique(iPage)^2*abs(psiMode).^2+N2.*abs(etaMode).^2),1).';
+            end
+            tolerances.Ag_0 = absTolerance*sqrt(horizontalEnergyShare./zeroAPVEnergyFactor(:,pageIndex));
+
+            mdaEnergyFactor = 0.5*sum(weights.*N2.*abs(self.mdaG).^2,1).';
+            tolerances.Amda = absTolerance*sqrt(meanRadialWidth./mdaEnergyFactor);
         end
 
         function tendency = coefficientTendency(self)

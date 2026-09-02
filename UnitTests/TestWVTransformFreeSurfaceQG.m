@@ -50,6 +50,44 @@ classdef TestWVTransformFreeSurfaceQG < matlab.unittest.TestCase
                 'WVTransformFreeSurfaceQG:InvalidCoefficient')
         end
 
+        function coefficientAbsoluteTolerancesRespectPhysicalEnergyNormalization(testCase)
+            wvt = TestWVTransformFreeSurfaceQG.newTransform(0.02,0.03);
+            absTolerance = 1e-6;
+            tolerances = wvt.coefficientAbsoluteTolerances(absTolerance);
+            radialSpacing = wvt.kRadial(2)-wvt.kRadial(1);
+            radialIndex = find(wvt.kRadial-radialSpacing/2 < wvt.khNonzero(1) & wvt.khNonzero(1) <= wvt.kRadial+radialSpacing/2,1);
+            isBin = wvt.kRadial(radialIndex)-radialSpacing/2 < wvt.khNonzero & wvt.khNonzero <= wvt.kRadial(radialIndex)+radialSpacing/2;
+            radialWidth = wvt.kRadial(radialIndex)+radialSpacing/2-max(wvt.kRadial(radialIndex)-radialSpacing/2,0);
+            expectedNonzeroEnergy = absTolerance^2*radialWidth/nnz(isBin);
+            meanRadialWidth = wvt.kRadial(1)+radialSpacing/2-max(wvt.kRadial(1)-radialSpacing/2,0);
+            expectedMeanEnergy = absTolerance^2*meanRadialWidth;
+
+            testCase.verifySize(tolerances.Ag_q,size(wvt.Ag_q))
+            testCase.verifySize(tolerances.Ag_0,size(wvt.Ag_0))
+            testCase.verifySize(tolerances.Amda,size(wvt.Amda))
+            testCase.verifyTrue(all(isfinite([tolerances.Ag_q(:);tolerances.Ag_0(:);tolerances.Amda(:)])))
+            testCase.verifyTrue(all([tolerances.Ag_q(:);tolerances.Ag_0(:);tolerances.Amda(:)] > 0))
+
+            wvt.removeAllForcing();
+            wvt.Ag_q = complex(zeros(size(wvt.Ag_q)));
+            wvt.Ag_0 = complex(zeros(size(wvt.Ag_0)));
+            wvt.Amda = zeros(size(wvt.Amda));
+            wvt.Ag_q(1,1) = tolerances.Ag_q(1,1);
+            testCase.verifyEqual(wvt.totalEnergy,expectedNonzeroEnergy,RelTol=2e-12)
+
+            wvt.Ag_q(:) = 0;
+            wvt.Ag_0(1,1) = tolerances.Ag_0(1,1);
+            testCase.verifyEqual(wvt.totalEnergy,expectedNonzeroEnergy,RelTol=2e-12)
+
+            wvt.Ag_0(:) = 0;
+            wvt.Amda(1) = tolerances.Amda(1);
+            testCase.verifyEqual(wvt.totalEnergy,expectedMeanEnergy,RelTol=2e-12)
+
+            noEndpointTransform = TestWVTransformFreeSurfaceQG.newTransform(Inf,Inf);
+            noEndpointTolerances = noEndpointTransform.coefficientAbsoluteTolerances(absTolerance);
+            testCase.verifySize(noEndpointTolerances.Ag_0,size(noEndpointTransform.Ag_0))
+        end
+
         function endpointConfigurationsHaveCanonicalShapesAndMDAConstraints(testCase)
             endpointValues = [Inf Inf;0.02 Inf;Inf 0.03;0.02 0.03];
             expectedCodes = {zeros(0,1),1,2,[1;2]};

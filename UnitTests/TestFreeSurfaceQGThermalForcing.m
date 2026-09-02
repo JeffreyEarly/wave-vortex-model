@@ -165,6 +165,39 @@ classdef TestFreeSurfaceQGThermalForcing < matlab.unittest.TestCase
             testCase.verifyTrue(all(isfinite(wvt.Amda),"all"))
         end
 
+        function adaptiveSeasonalResponseMatchesExactCoefficientSolution(testCase)
+            day = 86400;
+            period = 20*day;
+            kappaT = 1e-5;
+            amplitude = 1e-9;
+            relTolerance = 1e-3;
+            absTolerance = 1e-6;
+            wvt = TestFreeSurfaceQGThermalForcing.variableTransform(0.02,Inf,33);
+            [~,Y] = ndgrid(wvt.x,wvt.y);
+            pattern = sin(2*pi*Y/wvt.Ly);
+            spectralPattern = TestFreeSurfaceQGThermalForcing.horizontalTransform(wvt,pattern);
+            [~,localIndex] = max(abs(spectralPattern(wvt.klNonzero)));
+
+            [L,r] = TestFreeSurfaceQGThermalForcing.thermalPageSystem(wvt,localIndex,kappaT,pattern,amplitude);
+            expected = TestFreeSurfaceQGThermalForcing.exactSeasonalResponse(L,r,2*pi/period,0,period);
+
+            wvt.removeAllForcing();
+            wvt.addForcing(WVVerticalDiffusivity(wvt,kappa_z=kappaT));
+            wvt.addForcing(WVSeasonalSurfaceBuoyancyFlux(wvt,pattern=pattern,amplitude=amplitude,period=period,phase=0));
+            model = WVModel(wvt,shouldUseLinearDynamics=false);
+            model.setupIntegrator(integratorType="adaptive",relTolerance=relTolerance,absTolerance=absTolerance);
+            model.odeOptions = odeset(model.odeOptions,"MaxStep",day);
+            model.integrateToTime(period,shouldShowIntegrationDiagnostics=false);
+
+            actual = [wvt.Ag_q(:,localIndex);wvt.Ag_0(:,localIndex)];
+            tolerances = wvt.coefficientAbsoluteTolerances(absTolerance);
+            localAbsoluteTolerance = [tolerances.Ag_q(:,localIndex);tolerances.Ag_0(:,localIndex)];
+            normalizedError = abs(actual-expected)./(localAbsoluteTolerance+relTolerance*abs(expected));
+            testCase.verifyLessThanOrEqual(max(normalizedError),20)
+            testCase.verifyEqual(wvt.Amda,zeros(size(wvt.Amda)),AbsTol=1e-14)
+            testCase.verifyEqual(wvt.t,period)
+        end
+
         function lowFamilyThermalTendenciesImproveWithVerticalResolution(testCase)
             NzValues = [33 65 129];
             values = cell(size(NzValues));
@@ -296,6 +329,39 @@ classdef TestFreeSurfaceQGThermalForcing < matlab.unittest.TestCase
             meanIndex = TestFreeSurfaceQGThermalForcing.meanIndex(wvt);
             Amda = real(wvt.transformMDAForward(etaTendencyHat(:,meanIndex)));
             tendency = struct('Ag_q',Ag_q,'Ag_0',Ag_0,'Amda',Amda);
+        end
+
+        function [L,r] = thermalPageSystem(wvt,localIndex,kappaT,surfaceFlux,amplitude)
+            savedAgq = wvt.Ag_q;
+            savedAg0 = wvt.Ag_0;
+            savedAmda = wvt.Amda;
+            cleanup = onCleanup(@()TestFreeSurfaceQGThermalForcing.restoreState(wvt,savedAgq,savedAg0,savedAmda));
+            nState = wvt.apvModeCount+wvt.activeEndpointCount;
+            L = zeros(nState);
+            for iState = 1:nState
+                wvt.Ag_q(:) = 0;
+                wvt.Ag_0(:) = 0;
+                if iState <= wvt.apvModeCount
+                    wvt.Ag_q(iState,localIndex) = 1;
+                else
+                    wvt.Ag_0(iState-wvt.apvModeCount,localIndex) = 1;
+                end
+                tendency = wvt.thermalCoefficientTendency(kappaT);
+                L(:,iState) = [tendency.Ag_q(:,localIndex);tendency.Ag_0(:,localIndex)];
+            end
+            wvt.Ag_q(:) = 0;
+            wvt.Ag_0(:) = 0;
+            unitTendency = wvt.thermalCoefficientTendency(0,surfaceBuoyancyFlux=surfaceFlux);
+            r = amplitude*[unitTendency.Ag_q(:,localIndex);unitTendency.Ag_0(:,localIndex)];
+            clear cleanup
+        end
+
+        function x = exactSeasonalResponse(L,r,omega,phase,t)
+            identity = eye(size(L));
+            propagator = expm(L*t);
+            positive = exp(1i*phase)*((1i*omega*identity-L)\((exp(1i*omega*t)*identity-propagator)*r));
+            negative = exp(-1i*phase)*((-1i*omega*identity-L)\((exp(-1i*omega*t)*identity-propagator)*r));
+            x = (positive-negative)/(2i);
         end
 
         function spectralFlux = horizontalTransform(wvt,flux)
