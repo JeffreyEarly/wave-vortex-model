@@ -232,6 +232,19 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
         modeSelectionMethod
     end
 
+    properties (Access = private, Transient)
+        % Rebuildable unit-diffusivity operators derived from the fixed
+        % vertical modes, quadrature rule, and endpoint configuration.
+        hasThermalCoefficientOperators_ (1,1) logical = false
+        thermalDiffusionOperatorByKh_ = []
+        thermalDiffusionOperatorByKl_ = []
+        thermalMDADiffusionOperator_ = []
+        thermalSurfaceFluxOperatorByKh_ = []
+        thermalBottomFluxOperatorByKh_ = []
+        thermalSurfaceMDAFluxOperator_ = []
+        thermalBottomMDAFluxOperator_ = []
+    end
+
     properties (Dependent)
         % Spatially integrated quasigeostrophic energy.
         % - Topic: Evaluate physical fields
@@ -489,9 +502,8 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
             Fb = zeros(self.Nx,self.Ny,self.activeEndpointCount);
             physicalState = struct();
             if ~isempty(self.spatialFluxForcing) || ~isempty(self.spectralFluxForcing)
-                [q,u,v,b,ub,vb] = self.quasigeostrophicSpatialState();
-                physicalState = struct('q',q,'u',u,'v',v,'b',b,'ub',ub,'vb',vb, ...
-                    'uvMax',max(hypot(u,v),[],"all"));
+                [q,uPhysical,vPhysical,b,ub,vb] = self.quasigeostrophicSpatialState();
+                physicalState = struct('q',q,'u',uPhysical,'v',vPhysical,'b',b,'ub',ub,'vb',vb,'uvMax',max(hypot(uPhysical,vPhysical),[],"all"));
             end
             for iForcing = 1:length(self.spatialFluxForcing)
                 [Fq,Fb] = self.spatialFluxForcing(iForcing).addQuasigeostrophicSpatialForcing(self,Fq,Fb,physicalState);
@@ -592,6 +604,77 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
     end
 
     methods (Access = private)
+        function ensureThermalCoefficientOperators(self)
+            if self.hasThermalCoefficientOperators_
+                return
+            end
+
+            N2 = reshape(self.N2,[],1);
+            weights = self.verticalQuadratureWeights;
+            Dz = self.verticalDerivativeMatrix;
+            verticalOperator = -(Dz.'*(weights.*(Dz.*N2.')))./(weights.*N2);
+            if ~any(self.activeEndpoint == 1)
+                verticalOperator(end,:) = 0;
+            end
+            if ~any(self.activeEndpoint == 2)
+                verticalOperator(1,:) = 0;
+            end
+
+            nAPV = self.apvModeCount;
+            nEndpoint = self.activeEndpointCount;
+            nState = nAPV+nEndpoint;
+            nPage = length(self.khUnique);
+            stateOperator = zeros(nState,nState,nPage);
+            surfaceOperator = zeros(nState,nPage);
+            bottomOperator = zeros(nState,nPage);
+            surfaceEtaTendency = zeros(self.Nz,1);
+            bottomEtaTendency = zeros(self.Nz,1);
+            if any(self.activeEndpoint == 1)
+                surfaceEtaTendency(end) = -1/(weights(end)*N2(end));
+            end
+            if any(self.activeEndpoint == 2)
+                bottomEtaTendency(1) = -1/(weights(1)*N2(1));
+            end
+
+            surfaceTaper = 1+self.z/self.Lz;
+            for iPage = 1:nPage
+                inverseMu = -1./self.apvMu(:,iPage).';
+                apvInteriorDisplacement = (self.f/self.g)*(self.apvG-surfaceTaper*self.apvF(end,:)).*inverseMu;
+                if nEndpoint > 0
+                    inverseKhSquared = -1/(self.khUnique(iPage)^2);
+                    zeroInteriorDisplacement = (self.f/self.g)*(self.zeroAPVG(:,:,iPage)-surfaceTaper*self.zeroAPVF(end,:,iPage))*inverseKhSquared;
+                else
+                    zeroInteriorDisplacement = zeros(self.Nz,0);
+                end
+                etaTendency = verticalOperator*[apvInteriorDisplacement zeroInteriorDisplacement];
+                stateOperator(:,:,iPage) = self.projectThermalEtaTendencyOnPage(etaTendency,iPage);
+                surfaceOperator(:,iPage) = self.projectThermalEtaTendencyOnPage(surfaceEtaTendency,iPage);
+                bottomOperator(:,iPage) = self.projectThermalEtaTendencyOnPage(bottomEtaTendency,iPage);
+            end
+
+            self.thermalDiffusionOperatorByKh_ = stateOperator;
+            self.thermalDiffusionOperatorByKl_ = stateOperator(:,:,self.klNonzeroKhUniqueIndex);
+            self.thermalMDADiffusionOperator_ = real(self.mdaGForward*(verticalOperator*self.mdaG));
+            self.thermalSurfaceFluxOperatorByKh_ = surfaceOperator;
+            self.thermalBottomFluxOperatorByKh_ = bottomOperator;
+            self.thermalSurfaceMDAFluxOperator_ = real(self.mdaGForward*surfaceEtaTendency);
+            self.thermalBottomMDAFluxOperator_ = real(self.mdaGForward*bottomEtaTendency);
+            self.hasThermalCoefficientOperators_ = true;
+        end
+
+        function stateTendency = projectThermalEtaTendencyOnPage(self,etaTendency,pageIndex)
+            qTendency = -self.f*(self.verticalDerivativeMatrix*etaTendency);
+            AgqTendency = self.apvFForward*qTendency;
+            if self.activeEndpointCount > 0
+                endpointRows = self.Nz-(self.activeEndpoint-1)*(self.Nz-1);
+                endpointTendency = etaTendency(endpointRows,:);
+                Ag0Tendency = -(self.g/self.f)*self.khUnique(pageIndex)^2*(endpointTendency-self.apvEndpointResponse(:,:,pageIndex)*AgqTendency);
+            else
+                Ag0Tendency = zeros(0,size(etaTendency,2));
+            end
+            stateTendency = [AgqTendency;Ag0Tendency];
+        end
+
         function validateAgq(self,value)
             self.validateCoefficient(value,[length(self.apvMode),length(self.klNonzero)],false,'Ag_q');
         end

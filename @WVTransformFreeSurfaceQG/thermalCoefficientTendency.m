@@ -1,5 +1,5 @@
 function tendency = thermalCoefficientTendency(self,kappaT,options)
-% Project weak vertical buoyancy diffusion and endpoint fluxes.
+% Apply vertical buoyancy diffusion and endpoint fluxes in coefficient space.
 %
 % The complete interior displacement and buoyancy are
 %
@@ -17,9 +17,10 @@ function tendency = thermalCoefficientTendency(self,kappaT,options)
 % +e_d\mathcal Q_{\mathfrak b,d}.
 % $$
 %
-% Positive endpoint flux is inward. Inactive endpoint rows are constrained
-% to zero and reject nonzero imposed flux. The resulting displacement and
-% QGPV tendencies are projected into `Ag_q`, residual `Ag_0`, and `Amda`.
+% The transform composes reconstruction, this weak update, and modal
+% projection once for every distinct positive horizontal wavenumber. The
+% resulting rebuildable operators act directly on `Ag_q`, `Ag_0`, and
+% `Amda`; they are not persisted. Positive endpoint flux is inward.
 %
 % - Topic: Transform coefficient state
 % - Declaration: tendency = thermalCoefficientTendency(self,kappaT,options)
@@ -39,59 +40,51 @@ surfaceFlux = validateFlux(options.surfaceBuoyancyFlux,self,"surfaceBuoyancyFlux
 bottomFlux = validateFlux(options.bottomBuoyancyFlux,self,"bottomBuoyancyFlux");
 surfaceIsActive = any(self.activeEndpoint == 1);
 bottomIsActive = any(self.activeEndpoint == 2);
-if ~surfaceIsActive && any(surfaceFlux ~= 0,"all")
+if ~surfaceIsActive && ~isempty(surfaceFlux) && any(surfaceFlux ~= 0,"all")
     error('WVTransformFreeSurfaceQG:InactiveSurfaceFlux','A nonzero surface buoyancy flux requires an active surface endpoint.');
 end
-if ~bottomIsActive && any(bottomFlux ~= 0,"all")
+if ~bottomIsActive && ~isempty(bottomFlux) && any(bottomFlux ~= 0,"all")
     error('WVTransformFreeSurfaceQG:InactiveBottomFlux','A nonzero bottom buoyancy flux requires an active bottom endpoint.');
 end
 
-[psiHat,etaHat] = self.reconstructSpectralState();
-surfacePsiHat = psiHat(end,:);
-surfaceTaper = 1+self.z/self.Lz;
-etaInteriorHat = etaHat-(self.f/self.g)*surfaceTaper*surfacePsiHat;
-N2 = reshape(self.N2,[],1);
-buoyancyHat = -N2.*etaInteriorHat;
-
-Dz = self.verticalDerivativeMatrix;
-weights = self.verticalQuadratureWeights;
-weakTendency = -Dz.'*(weights.*(kappaT*(Dz*buoyancyHat)));
-if surfaceIsActive
-    weakTendency(end,:) = weakTendency(end,:)+horizontalTransform(self,surfaceFlux);
-end
-if bottomIsActive
-    weakTendency(1,:) = weakTendency(1,:)+horizontalTransform(self,bottomFlux);
-end
-buoyancyTendencyHat = weakTendency./weights;
-if ~surfaceIsActive
-    buoyancyTendencyHat(end,:) = 0;
-end
-if ~bottomIsActive
-    buoyancyTendencyHat(1,:) = 0;
-end
-
-etaTendencyHat = -buoyancyTendencyHat./N2;
-qTendencyHat = -self.f*(Dz*etaTendencyHat);
-endpointRows = self.Nz-(self.activeEndpoint-1)*(self.Nz-1);
-endpointTendencyHat = etaTendencyHat(endpointRows,:);
-[Ag_q,Ag_0] = self.transformStateForward(qTendencyHat(:,self.klNonzero),endpointTendencyHat(:,self.klNonzero));
-
-meanIndex = find(hypot(self.k,self.l) == 0,1);
-if isempty(meanIndex)
+self.ensureThermalCoefficientOperators();
+nState = self.apvModeCount+self.activeEndpointCount;
+nNonzero = length(self.klNonzero);
+if kappaT == 0
+    stateTendency = complex(zeros(nState,nNonzero));
     Amda = zeros(size(self.Amda));
 else
-    Amda = real(self.transformMDAForward(etaTendencyHat(:,meanIndex)));
+    state = [self.Ag_q;self.Ag_0];
+    statePages = pagemtimes(self.thermalDiffusionOperatorByKl_,reshape(state,nState,1,nNonzero));
+    stateTendency = kappaT*reshape(statePages,nState,nNonzero);
+    Amda = kappaT*(self.thermalMDADiffusionOperator_*self.Amda);
 end
-tendency = struct('Ag_q',Ag_q,'Ag_0',Ag_0,'Amda',Amda);
+
+if ~isempty(surfaceFlux) && any(surfaceFlux ~= 0,"all")
+    spectralFlux = horizontalTransform(self,surfaceFlux);
+    stateTendency = stateTendency+self.thermalSurfaceFluxOperatorByKh_(:,self.klNonzeroKhUniqueIndex).*spectralFlux(self.klNonzero);
+    Amda = Amda+self.thermalSurfaceMDAFluxOperator_*real(spectralFlux(meanIndex(self)));
+end
+if ~isempty(bottomFlux) && any(bottomFlux ~= 0,"all")
+    spectralFlux = horizontalTransform(self,bottomFlux);
+    stateTendency = stateTendency+self.thermalBottomFluxOperatorByKh_(:,self.klNonzeroKhUniqueIndex).*spectralFlux(self.klNonzero);
+    Amda = Amda+self.thermalBottomMDAFluxOperator_*real(spectralFlux(meanIndex(self)));
+end
+
+tendency = struct('Ag_q',stateTendency(1:self.apvModeCount,:),'Ag_0',stateTendency(self.apvModeCount+1:end,:),'Amda',real(Amda));
 end
 
 function flux = validateFlux(flux,wvt,name)
 if isempty(flux)
-    flux = zeros(wvt.Nx,wvt.Ny);
+    return
 end
 if ~isa(flux,'double') || ~isreal(flux) || any(~isfinite(flux),"all") || ~isequal(size(flux),[wvt.Nx wvt.Ny])
     error('WVTransformFreeSurfaceQG:InvalidBuoyancyFlux','%s must be a finite real double array with shape Nx x Ny.',name);
 end
+end
+
+function index = meanIndex(wvt)
+index = find(hypot(wvt.k,wvt.l) == 0,1);
 end
 
 function spectralFlux = horizontalTransform(wvt,flux)

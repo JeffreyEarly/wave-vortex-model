@@ -191,6 +191,38 @@ classdef TestFreeSurfaceQGThermalForcing < matlab.unittest.TestCase
             end
             testCase.verifyLessThan(refinedErrors,coarseErrors)
         end
+
+        function coefficientOperatorsMatchDirectWeakProjection(testCase)
+            endpointValues = [Inf Inf;0.02 Inf;Inf 0.03;0.02 0.03];
+            for iCase = 1:size(endpointValues,1)
+                wvt = TestFreeSurfaceQGThermalForcing.newTransform(endpointValues(iCase,1),endpointValues(iCase,2));
+                wvt.Ag_q = TestFreeSurfaceQGThermalForcing.complexState(size(wvt.Ag_q),2e-3);
+                wvt.Ag_0 = TestFreeSurfaceQGThermalForcing.complexState(size(wvt.Ag_0),3e-3);
+                wvt.Amda = 0.2*sin((1:wvt.mdaModeCount).');
+                [X,Y] = ndgrid(wvt.x,wvt.y);
+                surfaceFlux = zeros(wvt.Nx,wvt.Ny);
+                bottomFlux = zeros(wvt.Nx,wvt.Ny);
+                if isfinite(endpointValues(iCase,1))
+                    surfaceFlux = 3e-9*(0.2+sin(2*pi*X/wvt.Lx).*cos(2*pi*Y/wvt.Ly));
+                end
+                if isfinite(endpointValues(iCase,2))
+                    bottomFlux = -2e-9*(0.1+cos(2*pi*X/wvt.Lx).*sin(2*pi*Y/wvt.Ly));
+                end
+
+                expected = TestFreeSurfaceQGThermalForcing.directThermalCoefficientTendency(wvt,7e-6,surfaceFlux,bottomFlux);
+                actual = wvt.thermalCoefficientTendency(7e-6,surfaceBuoyancyFlux=surfaceFlux,bottomBuoyancyFlux=bottomFlux);
+                TestFreeSurfaceQGThermalForcing.verifyTendencyRelative(testCase,actual,expected,2e-11)
+
+                repeated = wvt.thermalCoefficientTendency(7e-6,surfaceBuoyancyFlux=surfaceFlux,bottomBuoyancyFlux=bottomFlux);
+                testCase.verifyEqual(repeated,actual,AbsTol=0)
+                wvt.Ag_q = 0.7*wvt.Ag_q;
+                wvt.Ag_0 = -0.4*wvt.Ag_0;
+                wvt.Amda = 1.3*wvt.Amda;
+                expectedChanged = TestFreeSurfaceQGThermalForcing.directThermalCoefficientTendency(wvt,4e-6,zeros(wvt.Nx,wvt.Ny),zeros(wvt.Nx,wvt.Ny));
+                actualChanged = wvt.thermalCoefficientTendency(4e-6);
+                TestFreeSurfaceQGThermalForcing.verifyTendencyRelative(testCase,actualChanged,expectedChanged,2e-11)
+            end
+        end
     end
 
     methods (Static, Access=private)
@@ -222,6 +254,55 @@ classdef TestFreeSurfaceQGThermalForcing < matlab.unittest.TestCase
             testCase.verifyEqual(actual.Ag_q,scale*unit.Ag_q,AbsTol=0)
             testCase.verifyEqual(actual.Ag_0,scale*unit.Ag_0,AbsTol=0)
             testCase.verifyEqual(actual.Amda,scale*unit.Amda,AbsTol=0)
+        end
+
+        function verifyTendencyRelative(testCase,actual,expected,tolerance)
+            names = {'Ag_q','Ag_0','Amda'};
+            for iName = 1:length(names)
+                name = names{iName};
+                scale = max(norm(expected.(name)(:)),realmin);
+                relativeError = norm(actual.(name)(:)-expected.(name)(:))/scale;
+                testCase.verifyLessThanOrEqual(relativeError,tolerance,sprintf('%s relative error is %.3g.',name,relativeError))
+            end
+        end
+
+        function tendency = directThermalCoefficientTendency(wvt,kappaT,surfaceFlux,bottomFlux)
+            [psiHat,etaHat] = wvt.reconstructSpectralState();
+            etaInteriorHat = etaHat-(wvt.f/wvt.g)*(1+wvt.z/wvt.Lz)*psiHat(end,:);
+            N2 = reshape(wvt.N2,[],1);
+            buoyancyHat = -N2.*etaInteriorHat;
+            Dz = wvt.verticalDerivativeMatrix;
+            weights = wvt.verticalQuadratureWeights;
+            weakTendency = -Dz.'*(weights.*(kappaT*(Dz*buoyancyHat)));
+            if any(wvt.activeEndpoint == 1) && any(surfaceFlux ~= 0,"all")
+                weakTendency(end,:) = weakTendency(end,:)+TestFreeSurfaceQGThermalForcing.horizontalTransform(wvt,surfaceFlux);
+            end
+            if any(wvt.activeEndpoint == 2) && any(bottomFlux ~= 0,"all")
+                weakTendency(1,:) = weakTendency(1,:)+TestFreeSurfaceQGThermalForcing.horizontalTransform(wvt,bottomFlux);
+            end
+            buoyancyTendencyHat = weakTendency./weights;
+            if ~any(wvt.activeEndpoint == 1)
+                buoyancyTendencyHat(end,:) = 0;
+            end
+            if ~any(wvt.activeEndpoint == 2)
+                buoyancyTendencyHat(1,:) = 0;
+            end
+
+            etaTendencyHat = -buoyancyTendencyHat./N2;
+            qTendencyHat = -wvt.f*(Dz*etaTendencyHat);
+            endpointRows = wvt.Nz-(wvt.activeEndpoint-1)*(wvt.Nz-1);
+            endpointTendencyHat = etaTendencyHat(endpointRows,:);
+            [Ag_q,Ag_0] = wvt.transformStateForward(qTendencyHat(:,wvt.klNonzero),endpointTendencyHat(:,wvt.klNonzero));
+            meanIndex = TestFreeSurfaceQGThermalForcing.meanIndex(wvt);
+            Amda = real(wvt.transformMDAForward(etaTendencyHat(:,meanIndex)));
+            tendency = struct('Ag_q',Ag_q,'Ag_0',Ag_0,'Amda',Amda);
+        end
+
+        function spectralFlux = horizontalTransform(wvt,flux)
+            padded = zeros(wvt.Nx,wvt.Ny,wvt.Nz);
+            padded(:,:,1) = flux;
+            spectralFlux = wvt.transformFromSpatialDomainWithFourier(padded);
+            spectralFlux = spectralFlux(1,:);
         end
 
         function etaInterior = interiorDisplacementTendency(wvt,tendency)
