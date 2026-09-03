@@ -101,7 +101,8 @@ classdef WVTransformFreeSurfaceQGDiffusion < WVGeometryDoublyPeriodic & WVTransf
 
     properties (Access = private, Transient)
         % Rebuildable page membership; depends only on the persisted map.
-        pageEntries_
+        pageIndices_
+        pageValid_
         % Fourier work geometry for the extra quadrature planes.
         verticalFourierGeometry_
     end
@@ -267,7 +268,13 @@ classdef WVTransformFreeSurfaceQGDiffusion < WVGeometryDoublyPeriodic & WVTransf
             if max(abs(self.khUnique(self.klNonzeroKhUniqueIndex)-self.khNonzero)) > 1000*eps*max(self.khNonzero)
                 error('WVTransformFreeSurfaceQGDiffusion:InvalidPageMap','The saved page map does not match the horizontal geometry.');
             end
-            self.pageEntries_ = arrayfun(@(ip)find(self.klNonzeroKhUniqueIndex==ip),1:np,UniformOutput=false);
+            counts = accumarray(self.klNonzeroKhUniqueIndex,1,[np 1]);
+            self.pageIndices_ = ones(max(counts),np);
+            self.pageValid_ = false(size(self.pageIndices_));
+            for ip = 1:np
+                self.pageIndices_(1:counts(ip),ip) = find(self.klNonzeroKhUniqueIndex==ip);
+                self.pageValid_(1:counts(ip),ip) = true;
+            end
             self.initializeVerticalNumerics();
             self.hasWaveComponent = false; self.hasPVComponent = true;
             if isempty(options.Ag_T), options.Ag_T = complex(zeros(n,length(self.klNonzero))); end
@@ -315,11 +322,7 @@ classdef WVTransformFreeSurfaceQGDiffusion < WVGeometryDoublyPeriodic & WVTransf
             % Reconstruct independent interior QGPV and surface anomaly.
             % - Topic: Transform coefficient state
             self.checkSize(amplitudes,size(self.Ag_T),'amplitudes');
-            state = complex(zeros(size(amplitudes)));
-            for ip = 1:length(self.khUnique)
-                entries = self.pageEntries_{ip};
-                state(:,entries) = self.scaledStateFromModes(:,:,ip)*amplitudes(:,entries);
-            end
+            state = self.applyModalMatrices(self.scaledStateFromModes,amplitudes);
             state = state./self.stateScale();
             q = state(1:end-1,:); b = state(end,:);
         end
@@ -330,33 +333,30 @@ classdef WVTransformFreeSurfaceQGDiffusion < WVGeometryDoublyPeriodic & WVTransf
             self.checkSize(q,[self.Nz-2 length(self.klNonzero)],'q');
             self.checkSize(b,[1 length(self.klNonzero)],'b');
             state = self.stateScale().*[q;b];
-            amplitudes = complex(zeros(size(self.Ag_T)));
-            for ip = 1:length(self.khUnique)
-                entries = self.pageEntries_{ip};
-                amplitudes(:,entries) = self.modesFromScaledState(:,:,ip)*state(:,entries);
-            end
+            amplitudes = self.applyModalMatrices(self.modesFromScaledState,state);
         end
 
         function [phi,eta,q,b] = reconstructSpectralState(self,amplitudes)
             % Reconstruct full-grid compact fields from total coefficients.
             % - Topic: Transform coefficient state
             if nargin<2, amplitudes = self.Ag_T; end
-            phi = complex(zeros(self.Nz,length(self.klNonzero))); eta = phi; q = phi;
-            for ip = 1:length(self.khUnique)
-                entries = self.pageEntries_{ip}; a = amplitudes(:,entries);
-                phi(:,entries) = self.phiModes(:,:,ip)*a;
-                eta(:,entries) = self.etaModes(:,:,ip)*a;
-                q(:,entries) = self.qModes(:,:,ip)*a;
-            end
-            [~,b] = self.transformStateBack(amplitudes);
+            phi = self.applyModalMatrices(self.phiModes,amplitudes);
+            if nargout>1, eta = self.applyModalMatrices(self.etaModes,amplitudes); end
+            if nargout>2, q = self.applyModalMatrices(self.qModes,amplitudes); end
+            if nargout>3, b = self.applyModalMatrices(self.scaledStateFromModes(end,:,:),amplitudes); end
         end
 
-        function [q,u,v,b,ub,vb] = quasigeostrophicSpatialState(self)
+        function [q,u,v,b,ub,vb,qInteriorHat] = quasigeostrophicSpatialState(self)
             % Share one physical reconstruction between QG forcing objects.
             % Interior QGPV comes directly from the independent state.
+            % The optional last output shares that compact Fourier state
+            % with vertical damping; endpoint QGPV still uses qModes.
             % - Topic: Evolution internals
-            [phi,~,qHat,bHat] = self.reconstructSpectralState();
-            [qHat(2:end-1,:),~] = self.transformStateBack(self.Ag_T);
+            phi = self.reconstructSpectralState();
+            [qInteriorHat,bHat] = self.transformStateBack(self.Ag_T);
+            qHat = complex(zeros(self.Nz,length(self.klNonzero)));
+            qHat(2:end-1,:) = qInteriorHat;
+            qHat([1 end],:) = self.applyModalMatrices(self.qModes([1 end],:,:),self.Ag_T);
             q = self.spatialField(qHat);
             u = self.spatialField(-1i*self.lNonzero.'.*phi);
             v = self.spatialField(1i*self.kNonzero.'.*phi);
@@ -377,9 +377,9 @@ classdef WVTransformFreeSurfaceQGDiffusion < WVGeometryDoublyPeriodic & WVTransf
             % Evaluate spatial and spectral forcing on the total stage state.
             % - Topic: Evolution internals
             if nargin<2, excludeSeasonal = false; end
-            [q,u,v,b,ub,vb] = self.quasigeostrophicSpatialState();
+            [q,u,v,b,ub,vb,qInteriorHat] = self.quasigeostrophicSpatialState();
             speed = max(hypot(u,v),[],'all');
-            physical = struct(q=q,u=u,v=v,b=b,ub=ub,vb=vb,uvMax=speed);
+            physical = struct(q=q,u=u,v=v,b=b,ub=ub,vb=vb,uvMax=speed,qInteriorHat=qInteriorHat);
             Fq = zeros(self.spatialMatrixSize); Fb = zeros(self.Nx,self.Ny);
             for force = self.spatialFluxForcing
                 if excludeSeasonal && isa(force,'WVSeasonalSurfaceAnomalyForcing'), continue; end
@@ -391,9 +391,28 @@ classdef WVTransformFreeSurfaceQGDiffusion < WVGeometryDoublyPeriodic & WVTransf
                     [Fq,Fb] = force.addQuasigeostrophicSpatialForcing(self,Fq,Fb,physical);
                 end
             end
-            tendency = self.projectQuasigeostrophicSpatialTendency(Fq,Fb);
+            qTendency = self.spectralField(Fq); bTendency = self.spectralField(Fb);
+            qTendency = qTendency(2:end-1,:);
+            tendency = struct(Ag_T=complex(zeros(size(self.Ag_T))));
+            isProjected = false;
             for force = self.spectralFluxForcing
-                tendency = force.addQuasigeostrophicSpectralForcing(self,tendency,physical);
+                % Combine additive damping with advection before the first
+                % modal projection. Custom forces (including subclasses)
+                % see the usual fully projected tendency in original order.
+                if ~isProjected && metaclass(force)==?WVAdaptiveDamping
+                    [horizontal,vertical] = force.thermalDampingTendency(self,physical);
+                    tendency.Ag_T = tendency.Ag_T+horizontal;
+                    if ~isempty(vertical), qTendency = qTendency+vertical; end
+                else
+                    if ~isProjected
+                        tendency.Ag_T = tendency.Ag_T+self.transformStateForward(qTendency,bTendency);
+                        isProjected = true;
+                    end
+                    tendency = force.addQuasigeostrophicSpectralForcing(self,tendency,physical);
+                end
+            end
+            if ~isProjected
+                tendency.Ag_T = tendency.Ag_T+self.transformStateForward(qTendency,bTendency);
             end
         end
 
@@ -511,6 +530,18 @@ classdef WVTransformFreeSurfaceQGDiffusion < WVGeometryDoublyPeriodic & WVTransf
     end
 
     methods (Access = private)
+        function values = applyModalMatrices(self,matrices,amplitudes)
+            % Batch kh pages; padding is temporary, never scientific state.
+            % Only small coefficient/result buffers are gathered. The large
+            % persisted operators are used directly, without repacking.
+            indices = self.pageIndices_; valid = self.pageValid_;
+            pages = reshape(amplitudes(:,indices(:)),size(amplitudes,1),size(indices,1),size(indices,2));
+            pages = pagemtimes(matrices,pages);
+            pages = reshape(pages,size(matrices,1),[]);
+            values = complex(zeros(size(matrices,1),size(amplitudes,2)));
+            values(:,indices(valid)) = pages(:,valid);
+        end
+
         function initializeVerticalNumerics(self)
             self.verticalFourierGeometry_=[];
             if ~isempty(self.verticalNumerics) && (~isscalar(self.verticalNumerics) || ~isequal(self.verticalNumerics.nativeZ,self.z))

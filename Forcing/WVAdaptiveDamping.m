@@ -451,10 +451,11 @@ classdef WVAdaptiveDamping < WVForcing
                 uvMax = wvt.uvMax;
             end
             if isa(wvt,"WVTransformFreeSurfaceQGDiffusion")
-                tendency.Ag_T=tendency.Ag_T+uvMax*self.damp(:,wvt.klNonzero).*wvt.Ag_T;
-                if self.verticalDampingStrength>0
-                    [q,~]=wvt.transformStateBack(wvt.Ag_T);
-                    tendency.Ag_T=tendency.Ag_T+wvt.transformStateForward(uvMax*(self.verticalDamp*q),complex(zeros(1,length(wvt.klNonzero))));
+                physicalState.uvMax=uvMax;
+                [horizontal,vertical]=self.thermalDampingTendency(wvt,physicalState);
+                tendency.Ag_T=tendency.Ag_T+horizontal;
+                if ~isempty(vertical)
+                    tendency.Ag_T=tendency.Ag_T+wvt.transformStateForward(vertical,complex(zeros(1,length(wvt.klNonzero))));
                 end
                 return
             end
@@ -473,6 +474,23 @@ classdef WVAdaptiveDamping < WVForcing
                 wvtX2 WVTransform {mustBeNonempty}
             end
             force = WVAdaptiveDamping(wvtX2,verticalDampingStrength=self.verticalDampingStrength);
+        end
+    end
+
+    methods (Access = {?WVTransformFreeSurfaceQGDiffusion})
+        function [horizontal,vertical] = thermalDampingTendency(self,wvt,physicalState)
+            % Split thermal damping so its QGPV term can share a projection.
+            % - Topic: Forcing internals
+            horizontal=physicalState.uvMax*self.damp(:,wvt.klNonzero).*wvt.Ag_T;
+            vertical=[];
+            if self.verticalDampingStrength>0
+                if isfield(physicalState,'qInteriorHat')
+                    q=physicalState.qInteriorHat;
+                else
+                    [q,~]=wvt.transformStateBack(wvt.Ag_T);
+                end
+                vertical=physicalState.uvMax*(self.verticalDamp*q);
+            end
         end
     end
 

@@ -10,6 +10,71 @@ classdef TestWVTransformFreeSurfaceQGDiffusion < matlab.unittest.TestCase
         end
     end
     methods (Test, TestTags="full")
+        function sharedRHSMatchesUnsharedForcingPath(testCase)
+            w=TestWVTransformFreeSurfaceQGDiffusion.transform();
+            TestWVTransformFreeSurfaceQGDiffusion.initializeNonlinear(w);
+            indices=reshape(1:numel(w.Ag_T),size(w.Ag_T));
+            initial=w.Ag_T+1e-3*(cos(indices)+1i*sin(2*indices)); w.t=86400;
+            for dealias=[false true]
+                w.configureVerticalNumerics(shouldDealias=dealias);
+                for damping=[-1 0 1]
+                    if damping>=0, w.addForcing(WVAdaptiveDamping(w,verticalDampingStrength=damping)); end
+                    for amplitude=[0 1]
+                        w.Ag_T=amplitude*initial;
+                        for exclude=[false true]
+                            [expected,referenceSpeed,physical]=thermalQGUnsharedTendency(w,exclude);
+                            [actual,speed]=w.nonthermalCoefficientTendency(exclude);
+                            testCase.verifyEqual(actual.Ag_T,expected.Ag_T,RelTol=1e-11,AbsTol=1e-22)
+                            testCase.verifyEqual(speed,referenceSpeed,RelTol=1e-14)
+                            [q,u,v,b]=w.quasigeostrophicSpatialState();
+                            testCase.verifyEqual(q,physical.q,RelTol=1e-12,AbsTol=1e-21)
+                            testCase.verifyEqual(u,physical.u,RelTol=1e-13,AbsTol=1e-20)
+                            testCase.verifyEqual(v,physical.v,RelTol=1e-13,AbsTol=1e-20)
+                            testCase.verifyEqual(b,physical.b,RelTol=1e-13,AbsTol=1e-16)
+                        end
+                    end
+                    if damping>=0, w.removeForcing(w.forcingWithName('adaptive damping')); end
+                end
+            end
+        end
+
+        function sharedRHSRespectsCustomSpectralCallbacks(testCase)
+            w=TestWVTransformFreeSurfaceQGDiffusion.transform();
+            TestWVTransformFreeSurfaceQGDiffusion.initializeNonlinear(w);
+            for priority=[0 255]
+                w.addForcing(WVAdaptiveDamping(w,verticalDampingStrength=1));
+                w.addForcing(ThermalTendencyMultiplier(w,priority));
+                if priority==0
+                    testCase.verifyClass(w.spectralFluxForcing(1),'ThermalTendencyMultiplier')
+                else
+                    testCase.verifyClass(w.spectralFluxForcing(1),'WVAdaptiveDamping')
+                end
+                expected=thermalQGUnsharedTendency(w); actual=w.nonthermalCoefficientTendency();
+                testCase.verifyEqual(actual.Ag_T,expected.Ag_T,RelTol=1e-11,AbsTol=1e-22)
+                w.removeForcing(w.forcingWithName('tendency multiplier'));
+                w.removeForcing(w.forcingWithName('adaptive damping'));
+            end
+            w.addForcing(ThermalCustomDamping(w));
+            expected=thermalQGUnsharedTendency(w); actual=w.nonthermalCoefficientTendency();
+            testCase.verifyEqual(actual.Ag_T,expected.Ag_T,RelTol=1e-11,AbsTol=1e-22)
+        end
+
+        function partialReconstructionMatchesCompleteOutputs(testCase)
+            w=TestWVTransformFreeSurfaceQGDiffusion.transform();
+            TestWVTransformFreeSurfaceQGDiffusion.initializeNonlinear(w);
+            [phi,eta,q,b]=w.reconstructSpectralState();
+            [referencePhi,referenceEta,referenceQ,referenceB]=ThermalUnsharedTransform.reconstruct(w,w.Ag_T);
+            testCase.verifyEqual(phi,referencePhi,RelTol=1e-12,AbsTol=1e-12)
+            testCase.verifyEqual(eta,referenceEta,RelTol=1e-12,AbsTol=1e-14)
+            testCase.verifyEqual(q,referenceQ,RelTol=1e-12,AbsTol=1e-20)
+            testCase.verifyEqual(b,referenceB,RelTol=1e-12,AbsTol=1e-16)
+            testCase.verifyEqual(w.reconstructSpectralState(),phi)
+            [p,e]=w.reconstructSpectralState(); testCase.verifyEqual(p,phi); testCase.verifyEqual(e,eta)
+            [p,e,Q]=w.reconstructSpectralState(); testCase.verifyEqual(p,phi); testCase.verifyEqual(e,eta); testCase.verifyEqual(Q,q)
+            [~,endpoint]=w.transformStateBack(w.Ag_T);
+            testCase.verifyEqual(b,endpoint,RelTol=1e-13,AbsTol=1e-16)
+        end
+
         function tiltedSingleWaveAdvectionHasNoMeanSource(testCase)
             w=TestWVTransformFreeSurfaceQGDiffusion.transform();
             pattern=sin(2*pi*(w.X(:,:,1)/w.Lx+w.Y(:,:,1)/w.Ly));
