@@ -71,10 +71,15 @@ classdef WVSeasonalSurfaceAnomalyForcing < WVForcing
             % The full complex Fourier source is multiplied by a real-time
             % harmonic integral, never by a real-part operation on itself.
             % - Topic: Implement forcing evaluation
-            lambda=wvt.coefficientLinearRates(); omega=2*pi/self.period;
+
+            % Time dependence is shared by every Fourier entry at this kh.
+            % Expand only after evaluation; modalSource_ keeps its complete
+            % complex Fourier pattern, including roundoff-sized entries.
+            lambda=-wvt.thermalDecayRate; omega=2*pi/self.period;
             plus=harmonicIntegral(lambda,omega,t);
             minus=harmonicIntegral(lambda,-omega,t);
-            amplitudes=self.modalSource_.*(exp(1i*self.phase)*plus-exp(-1i*self.phase)*minus)/(2i);
+            response=exp(1i*self.phase)*plus-exp(-1i*self.phase)*minus;
+            amplitudes=self.modalSource_.*response(:,wvt.klNonzeroKhUniqueIndex)/(2i);
         end
         function force = forcingWithResolutionOfTransform(self,wvt)
             % Require an explicitly resampled horizontal forcing pattern.

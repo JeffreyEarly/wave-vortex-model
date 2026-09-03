@@ -77,7 +77,8 @@ classdef WVModelExponentialTimeStepMethods < handle
                 end
                 self.writeTimeStepToNetCDFFile(t);
                 nextOutput=2; state=acceptedTotal-w.seasonalCoefficients(t);
-                lambda=w.coefficientLinearRates();
+                % Evaluate time functions once per kh, then expand weights.
+                lambda=-w.thermalDecayRate; columnIndices=w.klNonzeroKhUniqueIndex;
                 h=min(o.initialStep,o.maximumStep);
                 accepted=0; rejected=0; evaluations=0; outputEvaluations=0;
                 steps=[]; maxCFL=0; maxDampingNumber=0; timer=tic;
@@ -87,11 +88,11 @@ classdef WVModelExponentialTimeStepMethods < handle
                     [N0,speed]=rhs(state,t);
                     h=min(h,.5*gridSize/max(speed,realmin));
                     h=min(h,1/max(w.maximumExplicitDampingRate(speed),realmin));
-                    c=WVInternal.exponentialRK4Coefficients(lambda,h);
+                    c=WVInternal.exponentialRK4Coefficients(lambda,h,columnIndices);
                     [whole,stageSpeed]=WVInternal.exponentialRK4Step(state,t,h,c,@rhs,N0,speed);
                     errorValue=0; trial=whole;
                     if o.exponentialAdaptive
-                        halfC=WVInternal.exponentialRK4Coefficients(lambda,h/2);
+                        halfC=WVInternal.exponentialRK4Coefficients(lambda,h/2,columnIndices);
                         [half,s1]=WVInternal.exponentialRK4Step(state,t,h/2,halfC,@rhs,N0,speed);
                         [trial,s2]=WVInternal.exponentialRK4Step(half,t+h/2,h/2,halfC,@rhs);
                         stageSpeed=max([stageSpeed s1 s2]);
@@ -116,11 +117,11 @@ classdef WVModelExponentialTimeStepMethods < handle
                             else
                                 sampleH=sampleTime-oldTime;
                                 if o.exponentialAdaptive
-                                    sampleC=WVInternal.exponentialRK4Coefficients(lambda,sampleH/2);
+                                    sampleC=WVInternal.exponentialRK4Coefficients(lambda,sampleH/2,columnIndices);
                                     halfway=WVInternal.exponentialRK4Step(oldState,oldTime,sampleH/2,sampleC,@outputRHS);
                                     sample=WVInternal.exponentialRK4Step(halfway,oldTime+sampleH/2,sampleH/2,sampleC,@outputRHS);
                                 else
-                                    sampleC=WVInternal.exponentialRK4Coefficients(lambda,sampleH);
+                                    sampleC=WVInternal.exponentialRK4Coefficients(lambda,sampleH,columnIndices);
                                     sample=WVInternal.exponentialRK4Step(oldState,oldTime,sampleH,sampleC,@outputRHS);
                                 end
                             end
