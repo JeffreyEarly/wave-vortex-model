@@ -24,7 +24,7 @@ classdef TestWVTransformFreeSurfaceQGDiffusion < matlab.unittest.TestCase
                         for exclude=[false true]
                             [expected,referenceSpeed,physical]=thermalQGUnsharedTendency(w,exclude);
                             [actual,speed]=w.nonthermalCoefficientTendency(exclude);
-                            testCase.verifyEqual(actual.Ag_T,expected.Ag_T,RelTol=1e-11,AbsTol=1e-22)
+                            TestWVTransformFreeSurfaceQGDiffusion.verifyEquivalentTendency(testCase,w,actual,expected);
                             testCase.verifyEqual(speed,referenceSpeed,RelTol=1e-14)
                             [q,u,v,b]=w.quasigeostrophicSpatialState();
                             testCase.verifyEqual(q,physical.q,RelTol=1e-12,AbsTol=1e-21)
@@ -50,13 +50,13 @@ classdef TestWVTransformFreeSurfaceQGDiffusion < matlab.unittest.TestCase
                     testCase.verifyClass(w.spectralFluxForcing(1),'WVAdaptiveDamping')
                 end
                 expected=thermalQGUnsharedTendency(w); actual=w.nonthermalCoefficientTendency();
-                testCase.verifyEqual(actual.Ag_T,expected.Ag_T,RelTol=1e-11,AbsTol=1e-22)
+                TestWVTransformFreeSurfaceQGDiffusion.verifyEquivalentTendency(testCase,w,actual,expected);
                 w.removeForcing(w.forcingWithName('tendency multiplier'));
                 w.removeForcing(w.forcingWithName('adaptive damping'));
             end
             w.addForcing(ThermalCustomDamping(w));
             expected=thermalQGUnsharedTendency(w); actual=w.nonthermalCoefficientTendency();
-            testCase.verifyEqual(actual.Ag_T,expected.Ag_T,RelTol=1e-11,AbsTol=1e-22)
+            TestWVTransformFreeSurfaceQGDiffusion.verifyEquivalentTendency(testCase,w,actual,expected);
         end
 
         function partialReconstructionMatchesCompleteOutputs(testCase)
@@ -322,6 +322,21 @@ classdef TestWVTransformFreeSurfaceQGDiffusion < matlab.unittest.TestCase
         end
     end
     methods (Static)
+        function verifyEquivalentTendency(testCase,w,actual,expected)
+            % Reordered linear sums can differ in nearly cancelling modal
+            % entries. Check the full coefficient norm and every physical
+            % error norm; do not divide by each tiny modal entry separately.
+            difference=actual.Ag_T-expected.Ag_T;
+            reference=norm(expected.Ag_T,'fro');
+            if reference==0
+                testCase.verifyEqual(actual.Ag_T,expected.Ag_T)
+            else
+                testCase.verifyLessThan(norm(difference,'fro')/reference,1e-11)
+                physicalReference=w.physicalErrorNorms(expected.Ag_T);
+                testCase.verifyLessThan(w.physicalErrorNorms(difference)./max(physicalReference,realmin),1e-11)
+            end
+        end
+
         function w=transform(kappa)
             if nargin<1, kappa=1e-5; end
             w=WVTransformFreeSurfaceQGDiffusion.fromN2([500e3 500e3 4000],[8 8 17],N2Function=@(z)(5.2e-3)^2*exp(2*z/1300),kappaT=kappa);

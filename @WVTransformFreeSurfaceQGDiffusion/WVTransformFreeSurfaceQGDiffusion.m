@@ -299,6 +299,7 @@ classdef WVTransformFreeSurfaceQGDiffusion < WVGeometryDoublyPeriodic & WVTransf
 
         configureVerticalNumerics(self,options)
         [Fq,Fb,speed] = dealiasedAdvection(self,physical)
+        [FqHat,FbHat,speed] = dealiasedAdvectionFourierTendency(self,physical)
         diagnostics = verticalClosureDiagnostics(self)
 
         function rate=maximumExplicitDampingRate(self,speed)
@@ -346,11 +347,11 @@ classdef WVTransformFreeSurfaceQGDiffusion < WVGeometryDoublyPeriodic & WVTransf
             if nargout>3, b = self.applyModalMatrices(self.scaledStateFromModes(end,:,:),amplitudes); end
         end
 
-        function [q,u,v,b,ub,vb,qInteriorHat] = quasigeostrophicSpatialState(self)
+        function [q,u,v,b,ub,vb,qInteriorHat,phi] = quasigeostrophicSpatialState(self)
             % Share one physical reconstruction between QG forcing objects.
             % Interior QGPV comes directly from the independent state.
-            % The optional last output shares that compact Fourier state
-            % with vertical damping; endpoint QGPV still uses qModes.
+            % Optional outputs share compact interior QGPV and streamfunction
+            % with damping and dealiasing; endpoint QGPV still uses qModes.
             % - Topic: Evolution internals
             phi = self.reconstructSpectralState();
             [qInteriorHat,bHat] = self.transformStateBack(self.Ag_T);
@@ -377,22 +378,38 @@ classdef WVTransformFreeSurfaceQGDiffusion < WVGeometryDoublyPeriodic & WVTransf
             % Evaluate spatial and spectral forcing on the total stage state.
             % - Topic: Evolution internals
             if nargin<2, excludeSeasonal = false; end
-            [q,u,v,b,ub,vb,qInteriorHat] = self.quasigeostrophicSpatialState();
+            [q,u,v,b,ub,vb,qInteriorHat,phiHat] = self.quasigeostrophicSpatialState();
             speed = max(hypot(u,v),[],'all');
-            physical = struct(q=q,u=u,v=v,b=b,ub=ub,vb=vb,uvMax=speed,qInteriorHat=qInteriorHat);
+            physical = struct(q=q,u=u,v=v,b=b,ub=ub,vb=vb,uvMax=speed,qInteriorHat=qInteriorHat,phiHat=phiHat);
             Fq = zeros(self.spatialMatrixSize); Fb = zeros(self.Nx,self.Ny);
+            qTendency = complex(zeros(size(qInteriorHat)));
+            bTendency = complex(zeros(1,length(self.klNonzero)));
+            % Early projection is safe only for known additive callbacks.
+            % Custom forcing must still see the full accumulated grid field,
+            % including horizontal product modes outside the stored subset.
+            additiveClasses = ["WVNonlinearAdvection" "WVSeasonalSurfaceAnomalyForcing" "WVBetaPlanePVAdvection"];
+            forceClasses = string(arrayfun(@class,self.spatialFluxForcing,UniformOutput=false));
+            shouldProjectAdvectionEarly = self.shouldDealiasVertical && all(ismember(forceClasses,additiveClasses));
             for force = self.spatialFluxForcing
                 if excludeSeasonal && isa(force,'WVSeasonalSurfaceAnomalyForcing'), continue; end
                 if self.shouldDealiasVertical && isa(force,'WVNonlinearAdvection')
-                    [advectionQ,advectionB,fineSpeed]=self.dealiasedAdvection(physical);
-                    Fq=Fq+advectionQ; Fb=Fb+advectionB;
+                    if shouldProjectAdvectionEarly
+                        [advectionQ,advectionB,fineSpeed]=self.dealiasedAdvectionFourierTendency(physical);
+                        qTendency=qTendency+advectionQ; bTendency=bTendency+advectionB;
+                    else
+                        [advectionQ,advectionB,fineSpeed]=self.dealiasedAdvection(physical);
+                        Fq=Fq+advectionQ; Fb=Fb+advectionB;
+                    end
                     speed=max(speed,fineSpeed); physical.uvMax=speed;
                 else
                     [Fq,Fb] = force.addQuasigeostrophicSpatialForcing(self,Fq,Fb,physical);
                 end
             end
-            qTendency = self.spectralField(Fq); bTendency = self.spectralField(Fb);
-            qTendency = qTendency(2:end-1,:);
+            if any(Fq,'all')
+                spatialQTendency = self.spectralField(Fq);
+                qTendency = qTendency+spatialQTendency(2:end-1,:);
+            end
+            if any(Fb,'all'), bTendency = bTendency+self.spectralField(Fb); end
             tendency = struct(Ag_T=complex(zeros(size(self.Ag_T))));
             isProjected = false;
             for force = self.spectralFluxForcing
@@ -530,6 +547,7 @@ classdef WVTransformFreeSurfaceQGDiffusion < WVGeometryDoublyPeriodic & WVTransf
     end
 
     methods (Access = private)
+        [advection,Fb,speed] = advectionOnQuadrature(self,physical,shouldUseFourier)
         function values = applyModalMatrices(self,matrices,amplitudes)
             % Batch kh pages; padding is temporary, never scientific state.
             % Only small coefficient/result buffers are gathered. The large

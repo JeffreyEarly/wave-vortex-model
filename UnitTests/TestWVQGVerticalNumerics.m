@@ -1,5 +1,74 @@
 classdef TestWVQGVerticalNumerics < matlab.unittest.TestCase
+    methods (TestMethodSetup)
+        function fixturePath(testCase)
+            testCase.applyFixture(matlab.unittest.fixtures.PathFixture(fullfile(fileparts(mfilename('fullpath')),'Fixtures')));
+        end
+    end
     methods (Test)
+        function fourierDealiasingMatchesNativeGridProducts(testCase)
+            for shouldAntialias=[false true]
+                w=WVTransformFreeSurfaceQGDiffusion.fromN2([500e3 400e3 4000],[12 8 33],N2Function=@(z)(5.2e-3)^2*exp(2*z/1300),kappaT=1e-5,shouldAntialias=shouldAntialias);
+                index=reshape(1:numel(w.Ag_T),size(w.Ag_T));
+                initial=1e-3*(sin(index)+1i*cos(2*index));
+                for factor=[2 3]
+                    w.configureVerticalNumerics(quadratureFactor=factor);
+                    for amplitude=[0 1]
+                        w.Ag_T=amplitude*initial;
+                        [q,u,v,b,ub,vb,qHat,phiHat]=w.quasigeostrophicSpatialState();
+                        physical=struct(q=q,u=u,v=v,b=b,ub=ub,vb=vb,qInteriorHat=qHat,phiHat=phiHat);
+                        [expectedQ,expectedB,expectedSpeed]=ThermalNativeGridTransform.advectionFourierReference(w,physical);
+                        [actualQ,actualB,speed]=w.dealiasedAdvectionFourierTendency(physical);
+                        testCase.verifyLessThan(norm(actualQ-expectedQ,'fro')/max(norm(expectedQ,'fro'),realmin),1e-11)
+                        testCase.verifyEqual(actualB,expectedB)
+                        testCase.verifyEqual(speed,expectedSpeed,RelTol=1e-12,AbsTol=1e-20)
+                        % Missing shared spectra must still use the caller's fields.
+                        native=rmfield(physical,{'qInteriorHat','phiHat'});
+                        [fallbackQ,fallbackB,fallbackSpeed]=w.dealiasedAdvectionFourierTendency(native);
+                        testCase.verifyEqual(fallbackQ,expectedQ,RelTol=1e-10,AbsTol=1e-23)
+                        testCase.verifyEqual(fallbackB,expectedB)
+                        testCase.verifyEqual(fallbackSpeed,expectedSpeed)
+                    end
+                end
+            end
+        end
+
+        function earlyProjectionPreservesSpatialCallbackSemantics(testCase)
+            w=TestWVTransformFreeSurfaceQGDiffusion.transform();
+            TestWVTransformFreeSurfaceQGDiffusion.initializeNonlinear(w);
+            index=reshape(1:numel(w.Ag_T),size(w.Ag_T));
+            w.Ag_T=w.Ag_T+1e-3*(sin(index)+1i*cos(2*index));
+            w.addForcing(ThermalSpatialTendencyMultiplier(w));
+            w.addForcing(WVAdaptiveDamping(w,verticalDampingStrength=1));
+            testCase.verifyClass(w.spatialFluxForcing(end),'ThermalSpatialTendencyMultiplier')
+            expected=thermalQGUnsharedTendency(w); actual=w.nonthermalCoefficientTendency();
+            testCase.verifyEqual(actual.Ag_T,expected.Ag_T,RelTol=1e-10,AbsTol=1e-21)
+            % Confirm this fixture really detects projection before its callback.
+            [q,u,v,b,ub,vb]=w.quasigeostrophicSpatialState();
+            physical=struct(q=q,u=u,v=v,b=b,ub=ub,vb=vb);
+            [Fq,Fb]=w.dealiasedAdvection(physical);
+            force=w.forcingWithName('spatial tendency multiplier');
+            [fullQ,fullB]=force.addQuasigeostrophicSpatialForcing(w,Fq,Fb,physical);
+            [cutQ,cutB]=force.addQuasigeostrophicSpatialForcing(w,w.spatialField(w.spectralField(Fq)),w.spatialField(w.spectralField(Fb)),physical);
+            full=w.projectQuasigeostrophicSpatialTendency(fullQ,fullB);
+            cut=w.projectQuasigeostrophicSpatialTendency(cutQ,cutB);
+            testCase.verifyGreaterThan(norm(full.Ag_T-cut.Ag_T,'fro')/norm(full.Ag_T,'fro'),1e-6)
+        end
+
+        function fourierTendencyPreservesEnstrophyAndEndpointBudgets(testCase)
+            w=TestWVTransformFreeSurfaceQGDiffusion.transform();
+            TestWVTransformFreeSurfaceQGDiffusion.initializeNonlinear(w);
+            [q,u,v,b,ub,vb,qHat,phiHat]=w.quasigeostrophicSpatialState();
+            physical=struct(q=q,u=u,v=v,b=b,ub=ub,vb=vb,qInteriorHat=qHat,phiHat=phiHat);
+            [dq,db,speed]=w.dealiasedAdvectionFourierTendency(physical);
+            o=w.verticalNumerics; c=o.qToPolynomial*qHat;
+            power=2*real(sum(conj(c).*(o.qToPolynomial*dq),'all'));
+            scale=speed*max(w.khNonzero)*sum(abs(c).^2,'all');
+            testCase.verifyLessThan(abs(power)/scale,1e-10)
+            bHat=w.spectralField(b);
+            endpointPower=2*real(sum(conj(bHat).*db,'all'));
+            testCase.verifyLessThan(abs(endpointPower)/(speed*max(w.khNonzero)*sum(abs(bHat).^2,'all')),1e-10)
+        end
+
         function projectionAndDampingContracts(testCase)
             nz=65; s=-cos(pi*(0:nz-1)'/(nz-1));
             z=1300*log(exp(-4000/1300)+(1+s)*(1-exp(-4000/1300))/2);
