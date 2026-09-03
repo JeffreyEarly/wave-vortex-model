@@ -44,6 +44,8 @@ classdef WVVerticalDiffusivity < WVForcing
     % complete tendency is projected into `Ag_q`, residual `Ag_0`, and
     % `Amda`; setting `shouldForceMeanDensityAnomaly=false` suppresses only
     % the resulting `Amda` tendency.
+    % `WVTransformFreeSurfaceQGDiffusion` rejects this forcing because its
+    % homogeneous buoyancy diffusion is already built into the transform.
     %
     % ### Example
     %
@@ -109,6 +111,9 @@ classdef WVVerticalDiffusivity < WVForcing
                 wvt WVTransform {mustBeNonempty}
                 options.kappa_z double = 1e-5
                 options.shouldForceMeanDensityAnomaly = true;
+            end
+            if isa(wvt,"WVTransformFreeSurfaceQGDiffusion")
+                error('WVVerticalDiffusivity:DiffusionAlreadyBuiltIn','Vertical buoyancy diffusion is already part of this transform. Set kappaT when constructing it.');
             end
             if isa(wvt,"WVTransformFreeSurfaceQG")
                 supportedTypes = "QGSpectral";

@@ -282,6 +282,9 @@ classdef TestWVTransformFreeSurfaceQG < matlab.unittest.TestCase
             testCase.verifyEqual(vb,expectedVb,AbsTol=32*eps(max(1,max(abs(expectedVb),[],"all"))))
             expectedFq = -(u.*wvt.diffX(q)+v.*wvt.diffY(q));
             expectedFb = -(ub.*wvt.diffX(b)+vb.*wvt.diffY(b));
+            % Periodic incompressible advection has no horizontal-mean source.
+            expectedFq = expectedFq-mean(expectedFq,[1 2]);
+            expectedFb = expectedFb-mean(expectedFb,[1 2]);
             [Fq,Fb] = nonlinear.addQuasigeostrophicSpatialForcing(wvt,zeros(size(q)),zeros(size(b)));
             testCase.verifyEqual(Fq,expectedFq,AbsTol=5e-14)
             testCase.verifyEqual(Fb,expectedFb,AbsTol=5e-14)

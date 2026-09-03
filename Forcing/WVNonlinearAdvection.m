@@ -145,9 +145,15 @@ classdef WVNonlinearAdvection < WVForcing
             else
                 [q,u,v,b,ub,vb] = wvt.quasigeostrophicSpatialState();
             end
-            Fq = Fq-(u.*wvt.diffX(q)+v.*wvt.diffY(q));
+            % A periodic incompressible Jacobian has zero horizontal mean
+            % at every depth. Remove its roundoff mean before accumulation,
+            % especially when two nearly equal advection terms cancel.
+            % Do not remove any mean supplied by other forcing objects.
+            advection = u.*wvt.diffX(q)+v.*wvt.diffY(q);
+            Fq = Fq-(advection-mean(advection,[1 2]));
             if wvt.activeEndpointCount > 0
-                Fb = Fb-(ub.*wvt.diffX(b)+vb.*wvt.diffY(b));
+                advection = ub.*wvt.diffX(b)+vb.*wvt.diffY(b);
+                Fb = Fb-(advection-mean(advection,[1 2]));
             end
         end
 
