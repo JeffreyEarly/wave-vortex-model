@@ -3,7 +3,7 @@ layout: default
 title: verticalDerivativeMatrix
 parent: WVTransformFreeSurfaceQG
 grand_parent: Transforms
-nav_order: 244
+nav_order: 248
 mathjax: true
 ---
 

@@ -30,7 +30,8 @@ APV and MDA select independent mode counts on the same
 physical vertical grid. The inherited `Nj` value equals
 `apvModeCount`; `mdaModeCount` may differ.
 Omitted endpoints use $$g_0=-\int_{-D}^{0}N^2\,dz$$ and
-$$g_d=\mathop{\rm Inf}$$. The resulting APV family normally includes
+$$g_d=+\int_{-D}^{0}N^2\,dz$$, activating both endpoints.
+Use `gd=Inf` for an inactive bottom. The APV family normally includes
 a negative mode. InternalModes retains that mode and uses its signed
 Pontryagin pairing for projection; coupled quadratic errors are
 positive magnitudes in the induced Hilbert majorant.
@@ -134,7 +135,7 @@ wvt = WVTransformFreeSurfaceQG([100e3 100e3 4000],[32 32 33],N2Function=N2,latit
       + [`apvZeroAPVLimitingModeNumber`](/classes/transforms/wvtransformfreesurfaceqg/apvzeroapvlimitingmodenumber.html) APV physical mode label limiting the APV/zero-APV product error.
       + [`apvZeroAPVQuadraticError`](/classes/transforms/wvtransformfreesurfaceqg/apvzeroapvquadraticerror.html) APV/zero-APV quadratic-product error at maximum horizontal wavenumber.
       + [`g0`](/classes/transforms/wvtransformfreesurfaceqg/g0.html) Effective surface acceleration; omitted default is `-integral(N2,-Lz,0)`.
-      + [`gd`](/classes/transforms/wvtransformfreesurfaceqg/gd.html) Effective bottom acceleration; omitted default is `Inf`.
+      + [`gd`](/classes/transforms/wvtransformfreesurfaceqg/gd.html) Effective bottom acceleration; omitted default is `integral(N2,-Lz,0)`.
       + [`kNonzero`](/classes/transforms/wvtransformfreesurfaceqg/knonzero.html) X wavenumber associated with `klNonzero`.
       + [`khNonzero`](/classes/transforms/wvtransformfreesurfaceqg/khnonzero.html) Horizontal-wavenumber magnitude associated with `klNonzero`.
       + [`khUnique`](/classes/transforms/wvtransformfreesurfaceqg/khunique.html) Distinct positive horizontal-wavenumber pages.
@@ -212,7 +213,7 @@ wvt = WVTransformFreeSurfaceQG([100e3 100e3 4000],[32 32 33],N2Function=N2,latit
     + Gravity
       + [`g`](/classes/transforms/wvtransformfreesurfaceqg/g.html) Gravitational acceleration in meters per second squared.
   + Transform configuration
-    + [`isHydrostatic`](/classes/transforms/wvtransformfreesurfaceqg/ishydrostatic.html) Whether the transform uses the hydrostatic approximation.
+    + [`isHydrostatic`](/classes/transforms/wvtransformfreesurfaceqg/ishydrostatic.html) Whether this transform uses hydrostatic balance.
     + [`shouldAntialias`](/classes/transforms/wvtransformfreesurfaceqg/shouldantialias.html) Whether the spectral grid excludes modes that alias quadratic products.
 + Extend a transform
   + Flow components
@@ -254,6 +255,8 @@ wvt = WVTransformFreeSurfaceQG([100e3 100e3 4000],[32 32 33],N2Function=N2,latit
     + [`uvMax`](/classes/transforms/wvtransformfreesurfaceqg/uvmax.html) Maximum reconstructed horizontal speed.
   + Density validity
     + [`isDensityInValidRange`](/classes/transforms/wvtransformfreesurfaceqg/isdensityinvalidrange.html) Test whether total density remains within the no-motion density range.
+  + Potential vorticity and enstrophy
+    + [`totalPotentialEnstrophy`](/classes/transforms/wvtransformfreesurfaceqg/totalpotentialenstrophy.html) Half the volume integral of horizontally averaged squared full QGPV.
 + Differentiate and integrate fields
   + [`diffX`](/classes/transforms/wvtransformfreesurfaceqg/diffx.html) Differentiate a gridded field in the periodic x direction.
   + [`diffY`](/classes/transforms/wvtransformfreesurfaceqg/diffy.html) Differentiate a gridded field in the periodic y direction.
@@ -273,6 +276,17 @@ wvt = WVTransformFreeSurfaceQG([100e3 100e3 4000],[32 32 33],N2Function=N2,latit
     + [`primaryFlowComponentWithName`](/classes/transforms/wvtransformfreesurfaceqg/primaryflowcomponentwithname.html) retrieve a WVPrimaryFlowComponent by name
   + Summarize flow components
     + [`summarizeFlowComponents`](/classes/transforms/wvtransformfreesurfaceqg/summarizeflowcomponents.html) Print a table of registered primary and diagnostic components.
++ Analyze energy
+  + Energy and enstrophy budgets
+    + [`quadraticDiagnostics`](/classes/transforms/wvtransformfreesurfaceqg/quadraticdiagnostics.html) Evaluate positive physical energy, full potential enstrophy, and their rates.
+  + Energy summaries
+    + [`summarizeEnergyContent`](/classes/transforms/wvtransformfreesurfaceqg/summarizeenergycontent.html) displays a summary of the energy content of the fluid
+    + [`summarizeModeEnergy`](/classes/transforms/wvtransformfreesurfaceqg/summarizemodeenergy.html) List the most energetic modes
+  + Total energy
+    + [`totalEnergy`](/classes/transforms/wvtransformfreesurfaceqg/totalenergy.html) Positive physical energy from the canonical quadratic diagnostics.
+    + [`totalEnergySpatiallyIntegrated`](/classes/transforms/wvtransformfreesurfaceqg/totalenergyspatiallyintegrated.html) Positive physical energy, including surface gravitational energy.
+  + Component energy
+    + [`totalEnergyOfFlowComponent`](/classes/transforms/wvtransformfreesurfaceqg/totalenergyofflowcomponent.html) Compute the energy carried by one flow component.
 + Convert representations
   + Physical fields and coefficients
     + [`reconstructSpectralState`](/classes/transforms/wvtransformfreesurfaceqg/reconstructspectralstate.html) Reconstruct compact spectral streamfunction, displacement, and APV.
@@ -283,16 +297,7 @@ wvt = WVTransformFreeSurfaceQG([100e3 100e3 4000],[32 32 33],N2Function=N2,latit
 + Create a related transform
   + [`spectralVariableWithResolution`](/classes/transforms/wvtransformfreesurfaceqg/spectralvariablewithresolution.html) create a new variable with different resolution
   + [`waveVortexTransformWithDoubleResolution`](/classes/transforms/wvtransformfreesurfaceqg/wavevortextransformwithdoubleresolution.html) create a new WVTransform with double resolution
-  + [`waveVortexTransformWithResolution`](/classes/transforms/wvtransformfreesurfaceqg/wavevortextransformwithresolution.html) Create the same transform family at a new resolution.
-+ Analyze energy
-  + Energy summaries
-    + [`summarizeEnergyContent`](/classes/transforms/wvtransformfreesurfaceqg/summarizeenergycontent.html) displays a summary of the energy content of the fluid
-    + [`summarizeModeEnergy`](/classes/transforms/wvtransformfreesurfaceqg/summarizemodeenergy.html) List the most energetic modes
-  + Total energy
-    + [`totalEnergy`](/classes/transforms/wvtransformfreesurfaceqg/totalenergy.html) Total energy computed from wave-vortex coefficients.
-    + [`totalEnergySpatiallyIntegrated`](/classes/transforms/wvtransformfreesurfaceqg/totalenergyspatiallyintegrated.html) Total energy computed from physical-space fields.
-  + Component energy
-    + [`totalEnergyOfFlowComponent`](/classes/transforms/wvtransformfreesurfaceqg/totalenergyofflowcomponent.html) Compute the energy carried by one flow component.
+  + [`waveVortexTransformWithResolution`](/classes/transforms/wvtransformfreesurfaceqg/wavevortextransformwithresolution.html) Defer free-surface resolution transfer to milestone issue #352.
 + Get package information
   + [`version`](/classes/transforms/wvtransformfreesurfaceqg/version.html) Installed WaveVortexModel version.
 
@@ -362,18 +367,21 @@ These items document internal implementation details and are not part of the pri
   + [`transformToSpatialDomainWithFourierAtPosition`](/classes/transforms/wvtransformfreesurfaceqg/transformtospatialdomainwithfourieratposition.html)
   + [`transformWithG_wg`](/classes/transforms/wvtransformfreesurfaceqg/transformwithg_wg.html)
   + [`verticalDerivativeMatrix`](/classes/transforms/wvtransformfreesurfaceqg/verticalderivativematrix.html) Physical first-derivative matrix on the shared increasing-z grid.
++ Nonlinear flux and forcing internals
+  + [`boundaryBuoyancyFluxTendency`](/classes/transforms/wvtransformfreesurfaceqg/boundarybuoyancyfluxtendency.html) Project prescribed inward buoyancy fluxes onto the canonical families.
 + Class internals
+  + [`boundaryMomentumTendency`](/classes/transforms/wvtransformfreesurfaceqg/boundarymomentumtendency.html) Project momentum stress per unit density onto the signed balanced basis.
   + [`chebfunForZArray`](/classes/transforms/wvtransformfreesurfaceqg/chebfunforzarray.html)
   + [`maxFg`](/classes/transforms/wvtransformfreesurfaceqg/maxfg.html)
   + [`maxFw`](/classes/transforms/wvtransformfreesurfaceqg/maxfw.html)
   + [`muTolerance`](/classes/transforms/wvtransformfreesurfaceqg/mutolerance.html) Relative singularity tolerance used for APV inversion.
+  + [`physicalMetricOperators`](/classes/transforms/wvtransformfreesurfaceqg/physicalmetricoperators.html) Return quadrature reconstruction and positive physical quadratic metrics.
   + [`projectQuasigeostrophicSpatialTendency`](/classes/transforms/wvtransformfreesurfaceqg/projectquasigeostrophicspatialtendency.html) Project physical QG tendencies into canonical coefficient families.
   + [`quadraticAliasingError`](/classes/transforms/wvtransformfreesurfaceqg/quadraticaliasingerror.html) Coupled quadratic-aliasing error at the selected APV count.
   + [`quadraticAliasingLimitingChannel`](/classes/transforms/wvtransformfreesurfaceqg/quadraticaliasinglimitingchannel.html) Product channel limiting the selected APV prefix.
   + [`quadraticAliasingTolerance`](/classes/transforms/wvtransformfreesurfaceqg/quadraticaliasingtolerance.html) Coupled quadratic-aliasing tolerance used for APV selection.
   + [`quadraturePointsForStratifiedFlow`](/classes/transforms/wvtransformfreesurfaceqg/quadraturepointsforstratifiedflow.html) return the quadrature points for a given stratification
   + [`quasigeostrophicSpatialState`](/classes/transforms/wvtransformfreesurfaceqg/quasigeostrophicspatialstate.html) Reconstruct the physical state used by QG spatial forcing.
-  + [`thermalCoefficientTendency`](/classes/transforms/wvtransformfreesurfaceqg/thermalcoefficienttendency.html) Project weak vertical buoyancy diffusion and endpoint fluxes.
   + [`throwErrorIfDensityViolation`](/classes/transforms/wvtransformfreesurfaceqg/throwerrorifdensityviolation.html) checks if the proposed coefficients are a valid adiabatic re-arrangement of the base state
   + [`verticalProjectionOperatorsWithRigidLid`](/classes/transforms/wvtransformfreesurfaceqg/verticalprojectionoperatorswithrigidlid.html) return the normalized projection operators with prefactors
 + Persistence internals

@@ -113,6 +113,7 @@ These items document internal implementation details and are not part of the pri
   + [`showIntegrationTimeDiagnostics`](/classes/wvmodel/showintegrationtimediagnostics.html)
   + [`updateIntegratorValuesFromCellArray`](/classes/wvmodel/updateintegratorvaluesfromcellarray.html) We must set the time here. If we are integrating the
 + Flux assembly
+  + [`explicitFlux`](/classes/wvmodel/explicitflux.html) Evaluate registered forcings handled explicitly by ETDRK4.
   + [`fluxAtTimeCellArray`](/classes/wvmodel/fluxattimecellarray.html)
   + [`indicesForFluxedSystem`](/classes/wvmodel/indicesforfluxedsystem.html)
   + [`nFluxComponents`](/classes/wvmodel/nfluxcomponents.html)

@@ -234,27 +234,33 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
     end
 
     properties (Access = private, Transient)
+        % Quadrature reconstruction and metrics depend only on immutable modes.
+        physicalMetricOperators_ = []
         % Fixed zero-APV stress responses for surface and bottom momentum loads.
         boundaryMomentumResponse_
-        % Rebuildable unit-diffusivity operators derived from the fixed
-        % vertical modes, quadrature rule, and endpoint configuration.
-        hasThermalCoefficientOperators_ (1,1) logical = false
-        thermalDiffusionOperatorByKh_ = []
-        thermalDiffusionOperatorByKl_ = []
-        thermalMDADiffusionOperator_ = []
-        thermalSurfaceFluxOperatorByKh_ = []
-        thermalBottomFluxOperatorByKh_ = []
-        thermalSurfaceMDAFluxOperator_ = []
-        thermalBottomMDAFluxOperator_ = []
+        % Boundary-flux projections derived from the fixed vertical modes.
+        hasBoundaryBuoyancyFluxOperators_ (1,1) logical = false
+        surfaceBuoyancyFluxOperatorByKh_ = []
+        bottomBuoyancyFluxOperatorByKh_ = []
+        surfaceBuoyancyMDAFluxOperator_ = []
+        bottomBuoyancyMDAFluxOperator_ = []
     end
 
     properties (Dependent)
-        % Spatially integrated quasigeostrophic energy.
+        % Positive physical energy, including surface gravitational energy.
+        %
+        % Horizontally averaged and vertically integrated, in m3 s-2.
+        % This is the positive physical inventory, not signed generalized energy.
         % - Topic: Evaluate physical fields
         totalEnergySpatiallyIntegrated
-        % Spectral-state energy evaluated through the physical reconstruction.
+        % Positive physical energy from the canonical quadratic diagnostics.
         % - Topic: Evaluate physical fields
         totalEnergy
+        % Half the volume integral of horizontally averaged squared full QGPV.
+        %
+        % Includes mean-density-anomaly QGPV; units are m s-2.
+        % - Topic: Evaluate physical fields
+        totalPotentialEnstrophy
         % Whether this transform uses hydrostatic balance.
         % - Topic: Inspect modes and operators
         isHydrostatic
@@ -501,9 +507,6 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
             end
 
             pageIndex = self.klNonzeroKhUniqueIndex;
-            weights = self.verticalQuadratureWeights;
-            N2 = self.N2;
-            fOverG = self.f/self.g;
             radialWavenumber = self.kRadial;
             radialSpacing = radialWavenumber(2)-radialWavenumber(1);
             horizontalEnergyShare = zeros(1,length(self.khNonzero));
@@ -520,30 +523,20 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
             end
             meanRadialWidth = radialWavenumber(1)+radialSpacing/2-max(radialWavenumber(1)-radialSpacing/2,0);
 
-            apvEnergyFactor = zeros(self.apvModeCount,length(self.khUnique));
+            metrics = self.physicalMetricOperators();
+            energyFactor = zeros(self.apvModeCount+self.activeEndpointCount,length(self.khUnique));
             for iPage = 1:length(self.khUnique)
-                inverseMu = 1./reshape(self.apvMu(:,iPage),1,[]);
-                psiMode = self.apvF.*inverseMu;
-                etaMode = fOverG*self.apvG.*inverseMu;
-                apvEnergyFactor(:,iPage) = sum(weights.*(self.khUnique(iPage)^2*abs(psiMode).^2+N2.*abs(etaMode).^2),1).';
+                page = metrics.pages{iPage};
+                energyFactor(:,iPage) = real(diag(page.kineticEnergy+page.interiorPotentialEnergy+page.surfacePotentialEnergy));
             end
             tolerances = struct();
-            tolerances.Ag_q = absTolerance*sqrt(horizontalEnergyShare./apvEnergyFactor(:,pageIndex));
-
-            zeroAPVEnergyFactor = zeros(self.activeEndpointCount,length(self.khUnique));
-            for iPage = 1:length(self.khUnique)
-                inverseKh2 = 1/self.khUnique(iPage)^2;
-                psiMode = self.zeroAPVF(:,:,iPage)*inverseKh2;
-                etaMode = fOverG*self.zeroAPVG(:,:,iPage)*inverseKh2;
-                zeroAPVEnergyFactor(:,iPage) = sum(weights.*(self.khUnique(iPage)^2*abs(psiMode).^2+N2.*abs(etaMode).^2),1).';
-            end
-            tolerances.Ag_0 = absTolerance*sqrt(horizontalEnergyShare./zeroAPVEnergyFactor(:,pageIndex));
-
-            mdaEnergyFactor = 0.5*sum(weights.*N2.*abs(self.mdaG).^2,1).';
+            tolerances.Ag_q = absTolerance*sqrt(horizontalEnergyShare./energyFactor(1:self.apvModeCount,pageIndex));
+            tolerances.Ag_0 = absTolerance*sqrt(horizontalEnergyShare./energyFactor(self.apvModeCount+1:end,pageIndex));
+            mdaEnergyFactor = 0.5*real(diag(metrics.mda.interiorPotentialEnergy));
             tolerances.Amda = absTolerance*sqrt(meanRadialWidth./mdaEnergyFactor);
         end
 
-        function tendency = coefficientTendency(self)
+        function [tendency,speed] = coefficientTendency(self,options)
             % Evaluate the family-keyed free-surface QG tendency.
             %
             % Every registered `QGSpatial` object contributes an interior
@@ -555,22 +548,31 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
             % evaluation; it is not retained as transform cache state.
             %
             % - Topic: Transform coefficient state
-            % - Declaration: tendency = coefficientTendency(self)
+            % - Declaration: [tendency,speed] = coefficientTendency(self,options)
+            % - Parameter options.excludingForcing: forcing names handled analytically by an integrator; empty evaluates every forcing
+            % - Returns speed: maximum horizontal speed from the shared reconstruction
             % - Returns tendency: scalar structure with `Ag_q`, `Ag_0`, and `Amda` tendencies
+            arguments
+                self WVTransformFreeSurfaceQG
+                options.excludingForcing (1,:) string = strings(1,0)
+            end
             Fq = zeros(self.spatialMatrixSize);
             Fb = zeros(self.Nx,self.Ny,self.activeEndpointCount);
             physicalState = struct();
-            if ~isempty(self.spatialFluxForcing) || ~isempty(self.spectralFluxForcing)
+            if nargout>1 || ~isempty(self.spatialFluxForcing) || ~isempty(self.spectralFluxForcing)
                 [q,uPhysical,vPhysical,b,ub,vb] = self.quasigeostrophicSpatialState();
                 physicalState = struct('q',q,'u',uPhysical,'v',vPhysical,'b',b,'ub',ub,'vb',vb,'uvMax',max(hypot(uPhysical,vPhysical),[],"all"));
             end
             for iForcing = 1:length(self.spatialFluxForcing)
+                if any(options.excludingForcing==string(self.spatialFluxForcing(iForcing).name)), continue; end
                 [Fq,Fb] = self.spatialFluxForcing(iForcing).addQuasigeostrophicSpatialForcing(self,Fq,Fb,physicalState);
             end
             tendency = self.projectQuasigeostrophicSpatialTendency(Fq,Fb);
             for iForcing = 1:length(self.spectralFluxForcing)
+                if any(options.excludingForcing==string(self.spectralFluxForcing(iForcing).name)), continue; end
                 tendency = self.spectralFluxForcing(iForcing).addQuasigeostrophicSpectralForcing(self,tendency,physicalState);
             end
+            if nargout>1, speed=physicalState.uvMax; end
         end
 
         function [Fq,Fzero,Fmda] = nonlinearFlux(self)
@@ -623,14 +625,17 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
         end
 
         function energy = get.totalEnergySpatiallyIntegrated(self)
-            u_ = self.u;
-            v_ = self.v;
-            eta_ = self.eta;
-            energy = sum(self.z_int.*squeeze(mean(mean(u_.^2+v_.^2+reshape(self.N2,1,1,[]).*eta_.^2,1),2)))/2;
+            diagnostics = self.quadraticDiagnostics();
+            energy = diagnostics.totalEnergy;
         end
 
         function energy = get.totalEnergy(self)
             energy = self.totalEnergySpatiallyIntegrated;
+        end
+
+        function enstrophy = get.totalPotentialEnstrophy(self)
+            diagnostics = self.quadraticDiagnostics();
+            enstrophy = diagnostics.potentialEnstrophy;
         end
 
         function value = get.isHydrostatic(~)
@@ -663,27 +668,17 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
     end
 
     methods (Access = private)
-        function ensureThermalCoefficientOperators(self)
-            if self.hasThermalCoefficientOperators_
+        function ensureBoundaryBuoyancyFluxOperators(self)
+            if self.hasBoundaryBuoyancyFluxOperators_
                 return
             end
 
             N2 = reshape(self.N2,[],1);
             weights = self.verticalQuadratureWeights;
-            Dz = self.verticalDerivativeMatrix;
-            verticalOperator = -(Dz.'*(weights.*(Dz.*N2.')))./(weights.*N2);
-            if ~any(self.activeEndpoint == 1)
-                verticalOperator(end,:) = 0;
-            end
-            if ~any(self.activeEndpoint == 2)
-                verticalOperator(1,:) = 0;
-            end
-
             nAPV = self.apvModeCount;
             nEndpoint = self.activeEndpointCount;
             nState = nAPV+nEndpoint;
             nPage = length(self.khUnique);
-            stateOperator = zeros(nState,nState,nPage);
             surfaceOperator = zeros(nState,nPage);
             bottomOperator = zeros(nState,nPage);
             surfaceEtaTendency = zeros(self.Nz,1);
@@ -695,33 +690,19 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
                 bottomEtaTendency(1) = -1/(weights(1)*N2(1));
             end
 
-            surfaceTaper = 1+self.z/self.Lz;
             for iPage = 1:nPage
-                inverseMu = -1./self.apvMu(:,iPage).';
-                apvInteriorDisplacement = (self.f/self.g)*(self.apvG-surfaceTaper*self.apvF(end,:)).*inverseMu;
-                if nEndpoint > 0
-                    inverseKhSquared = -1/(self.khUnique(iPage)^2);
-                    zeroInteriorDisplacement = (self.f/self.g)*(self.zeroAPVG(:,:,iPage)-surfaceTaper*self.zeroAPVF(end,:,iPage))*inverseKhSquared;
-                else
-                    zeroInteriorDisplacement = zeros(self.Nz,0);
-                end
-                etaTendency = verticalOperator*[apvInteriorDisplacement zeroInteriorDisplacement];
-                stateOperator(:,:,iPage) = self.projectThermalEtaTendencyOnPage(etaTendency,iPage);
-                surfaceOperator(:,iPage) = self.projectThermalEtaTendencyOnPage(surfaceEtaTendency,iPage);
-                bottomOperator(:,iPage) = self.projectThermalEtaTendencyOnPage(bottomEtaTendency,iPage);
+                surfaceOperator(:,iPage) = self.projectBoundaryEtaTendencyOnPage(surfaceEtaTendency,iPage);
+                bottomOperator(:,iPage) = self.projectBoundaryEtaTendencyOnPage(bottomEtaTendency,iPage);
             end
 
-            self.thermalDiffusionOperatorByKh_ = stateOperator;
-            self.thermalDiffusionOperatorByKl_ = stateOperator(:,:,self.klNonzeroKhUniqueIndex);
-            self.thermalMDADiffusionOperator_ = real(self.mdaGForward*(verticalOperator*self.mdaG));
-            self.thermalSurfaceFluxOperatorByKh_ = surfaceOperator;
-            self.thermalBottomFluxOperatorByKh_ = bottomOperator;
-            self.thermalSurfaceMDAFluxOperator_ = real(self.mdaGForward*surfaceEtaTendency);
-            self.thermalBottomMDAFluxOperator_ = real(self.mdaGForward*bottomEtaTendency);
-            self.hasThermalCoefficientOperators_ = true;
+            self.surfaceBuoyancyFluxOperatorByKh_ = surfaceOperator;
+            self.bottomBuoyancyFluxOperatorByKh_ = bottomOperator;
+            self.surfaceBuoyancyMDAFluxOperator_ = real(self.mdaGForward*surfaceEtaTendency);
+            self.bottomBuoyancyMDAFluxOperator_ = real(self.mdaGForward*bottomEtaTendency);
+            self.hasBoundaryBuoyancyFluxOperators_ = true;
         end
 
-        function stateTendency = projectThermalEtaTendencyOnPage(self,etaTendency,pageIndex)
+        function stateTendency = projectBoundaryEtaTendencyOnPage(self,etaTendency,pageIndex)
             qTendency = -self.f*(self.verticalDerivativeMatrix*etaTendency);
             AgqTendency = self.apvFForward*qTendency;
             if self.activeEndpointCount > 0

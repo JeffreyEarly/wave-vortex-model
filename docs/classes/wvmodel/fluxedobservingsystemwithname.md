@@ -3,7 +3,7 @@ layout: default
 title: fluxedObservingSystemWithName
 parent: WVModel
 grand_parent: Class documentation
-nav_order: 20
+nav_order: 21
 mathjax: true
 ---
 

@@ -3,7 +3,7 @@ layout: default
 title: summarizeDegreesOfFreedom
 parent: WVTransformFreeSurfaceQG
 grand_parent: Transforms
-nav_order: 206
+nav_order: 210
 mathjax: true
 ---
 

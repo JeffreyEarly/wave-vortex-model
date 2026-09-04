@@ -3,7 +3,7 @@ layout: default
 title: assumedEffectiveHorizontalGridResolution
 parent: WVAdaptiveDamping
 grand_parent: Closures
-nav_order: 2
+nav_order: 3
 mathjax: true
 ---
 

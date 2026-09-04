@@ -87,6 +87,8 @@ So arguably they're under-damped in a non-hydrostatic simulation.
 ## Topics
 + Create the forcing
   + [`WVAdaptiveDamping`](/classes/forcing/closures/wvadaptivedamping/wvadaptivedamping.html) Create adaptive spectral damping for a transform.
++ Inspect forcing configuration
+  + [`apvCutoffFraction`](/classes/forcing/closures/wvadaptivedamping/apvcutofffraction.html) Fraction of the largest APV mode below which vertical damping is zero.
 + Inspect forcing or damping scales
   + [`k_no_damp`](/classes/forcing/closures/wvadaptivedamping/k_no_damp.html) Horizontal wavenumber below which damping is exactly zero.
   + [`k_damp`](/classes/forcing/closures/wvadaptivedamping/k_damp.html) Estimated horizontal wavenumber for significant damping.
@@ -95,6 +97,8 @@ So arguably they're under-damped in a non-hydrostatic simulation.
   + [`assumedEffectiveHorizontalGridResolution`](/classes/forcing/closures/wvadaptivedamping/assumedeffectivehorizontalgridresolution.html) Effective horizontal resolution used to construct `damp`, in meters.
   + [`dampingTimeScale`](/classes/forcing/closures/wvadaptivedamping/dampingtimescale.html) Return the inverse maximum unit-speed damping coefficient.
   + [`damp`](/classes/forcing/closures/wvadaptivedamping/damp.html) Unit-speed spectral damping operator in inverse meters.
++ Evaluate forcing budgets
+  + [`quasigeostrophicDampingContributions`](/classes/forcing/closures/wvadaptivedamping/quasigeostrophicdampingcontributions.html) Return the horizontal and vertical tendencies used by this forcing.
 
 
 ## Developer Topics

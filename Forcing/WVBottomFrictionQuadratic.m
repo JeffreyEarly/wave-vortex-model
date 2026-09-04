@@ -38,9 +38,9 @@ classdef WVBottomFrictionQuadratic < WVForcing
     % \end{align}
     % $$
     %
-    % The thermal free-surface QG transform projects the bottom stress
-    % directly into its diffusion modes instead of forcing a bottom QGPV
-    % grid value. Its stress products use a doubled horizontal grid.
+    % The free-surface QG transform projects the bottom stress
+    % into its canonical APV and active-endpoint families through a signed
+    % boundary load. Its stress products use a doubled horizontal grid.
     %
     % ### Example
     %
@@ -70,7 +70,7 @@ classdef WVBottomFrictionQuadratic < WVForcing
         %
         % This is `Cd/z_int(1)` for a three-dimensional transform and
         % `Cd/4000` for a barotropic transform.
-        % Empty for the thermal transform, which uses a boundary load.
+        % Empty for the free-surface QG transform, which uses a boundary load.
         %
         % - Topic: Properties
         cd
@@ -90,7 +90,7 @@ classdef WVBottomFrictionQuadratic < WVForcing
             % - Declaration: contract = portableImplementationContract(self)
             % - Returns contract: versioned data-only forcing contract
             % - Developer: true
-            if isa(self.wvt,'WVTransformFreeSurfaceQGDiffusion') || isa(self.wvt,'WVTransformFreeSurfaceQG')
+            if isa(self.wvt,'WVTransformFreeSurfaceQG')
                 contract=portableImplementationContract@WVForcing(self);
                 return
             end
@@ -115,11 +115,11 @@ classdef WVBottomFrictionQuadratic < WVForcing
                 options.Cd (1,1) double {mustBeNonnegative} = 1e-3 % https://www.nemo-ocean.eu/doc/node70.html
             end
             types=WVForcingType(["HydrostaticSpatial" "NonhydrostaticSpatial" "PVSpatial"]);
-            if isa(wvt,'WVTransformFreeSurfaceQGDiffusion') || isa(wvt,'WVTransformFreeSurfaceQG'), types=WVForcingType.QGSpectral; end
+            if isa(wvt,'WVTransformFreeSurfaceQG'), types=WVForcingType.QGSpectral; end
             self@WVForcing(wvt,"quadratic bottom friction",types);
             self.Cd = options.Cd;
             
-            if isa(wvt,'WVTransformFreeSurfaceQGDiffusion') || isa(wvt,'WVTransformFreeSurfaceQG')
+            if isa(wvt,'WVTransformFreeSurfaceQG')
                 self.cd=[];
                 self.bottomGeometry_=WVGeometryDoublyPeriodic([wvt.Lx wvt.Ly],2*[wvt.Nx wvt.Ny],Nz=1,shouldAntialias=false,shouldExcludeNyquist=true,shouldExcludeConjugates=true,conjugateDimension=2);
                 g=self.bottomGeometry_;

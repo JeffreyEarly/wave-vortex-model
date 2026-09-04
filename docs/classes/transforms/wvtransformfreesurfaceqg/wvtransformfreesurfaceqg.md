@@ -23,8 +23,9 @@ Create a free-surface QG transform scientifically or directly.
 + `Nxyz`  grid counts `[Nx Ny Nz]`
 + `options.N2Function`  squared buoyancy-frequency function
 + `options.rhoFunction`  no-motion density function
-+ `options.g0`  surface acceleration; default stratification integral
-+ `options.gd`  bottom acceleration; default `Inf`
++ `options.g0`  surface acceleration; default negative stratification integral
++ `options.gd`  bottom acceleration; default positive stratification integral
++ `options.latitude`  latitude in degrees; default 24
 + `options.apvGramTolerance`  APV normalized-Gram tolerance
 + `options.mdaGramTolerance`  MDA normalized-Gram tolerance
 + `options.quadraticAliasingTolerance`  APV quadratic-product tolerance in the induced Hilbert majorant
@@ -36,7 +37,9 @@ Create a free-surface QG transform scientifically or directly.
 ## Discussion
 
 Omitted `g0` uses $$-\int_{-D}^{0}N^2\,dz$$ and omitted `gd`
-is `Inf`. A finite endpoint, including zero, activates one
-boundary-normalized zero-APV family row. Supplying every
+uses $$+\int_{-D}^{0}N^2\,dz$$, activating both endpoints.
+Use `gd=Inf` to omit the bottom endpoint. A finite endpoint,
+including zero, activates one boundary-normalized zero-APV
+family row. Supplying every
 persisted mode/operator option selects the direct construction
 path and performs no InternalModes solve.

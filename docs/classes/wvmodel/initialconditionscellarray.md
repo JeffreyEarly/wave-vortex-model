@@ -3,7 +3,7 @@ layout: default
 title: initialConditionsCellArray
 parent: WVModel
 grand_parent: Class documentation
-nav_order: 23
+nav_order: 24
 mathjax: true
 ---
 

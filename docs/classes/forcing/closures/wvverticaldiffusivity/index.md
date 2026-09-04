@@ -60,11 +60,17 @@ $$
 Stratified QG contains only nonzero-horizontal-wavenumber geostrophic
 modes, not a mean-density-anomaly component. Consequently,
 `shouldForceMeanDensityAnomaly` does not alter its QGPV pathway.
-`WVTransformFreeSurfaceQG` instead applies constant diffusivity to
-buoyancy with the transform's persisted weak vertical operator. Its
-complete tendency is projected into `Ag_q`, residual `Ag_0`, and
+`WVTransformFreeSurfaceQG` instead applies density diffusion with a
+Galerkin operator on the complete `Ag_q`, boundary-normalized `Ag_0`, and
 `Amda`; setting `shouldForceMeanDensityAnomaly=false` suppresses only
 the resulting `Amda` tendency.
+Both endpoints must be active for this diffusion discretization.
+The forcing owns rebuildable operators derived from the transform's
+stored modes. `WVModel.setupIntegrator(integratorType="exponential")`
+uses these same operators for exact linear stepping. Ordinary stepping
+includes the diffusion tendency through this forcing's callback.
+Ordinary integration builds Galerkin generators only; diffusion
+diagonalization and eigenvalue diagnostics are lazy and opt-in.
 
 ### Example
 
@@ -75,10 +81,9 @@ wvt.addForcing(WVVerticalDiffusivity(wvt,kappa_z=1e-6));
 
 ### Notes
 
-This is currently implemented in the spatial domain. It applies to
-wave-bearing three-dimensional transforms and has a separate QGPV
-pathway for stratified QG. It is not compatible with barotropic QG,
-which has no vertical structure.
+Wave-bearing transforms use the spatial callback, stratified QG uses
+its QGPV callback, and free-surface QG uses canonical spectral tendencies.
+Barotropic QG has no vertical structure and is not supported.
 
 
 
@@ -97,6 +102,9 @@ These items document internal implementation details and are not part of the pri
   + [`classRequiredPropertyNames`](/classes/forcing/closures/wvverticaldiffusivity/classrequiredpropertynames.html) Returns the required property names for the class
 + Forcing internals
   + [`dLnN2`](/classes/forcing/closures/wvverticaldiffusivity/dlnn2.html) Precomputed vertical logarithmic stratification gradient.
+  + [`densityDiffusionModes`](/classes/forcing/closures/wvverticaldiffusivity/densitydiffusionmodes.html) Return lazily diagonalized operators for exact linear evolution.
+  + [`densityDiffusionOperators`](/classes/forcing/closures/wvverticaldiffusivity/densitydiffusionoperators.html) Return Galerkin generators without computing diffusion eigenmodes.
+  + [`explicitTimeStepLimit`](/classes/forcing/closures/wvverticaldiffusivity/explicittimesteplimit.html) Return a conservative explicit diffusion timescale in seconds.
 
 
 ---

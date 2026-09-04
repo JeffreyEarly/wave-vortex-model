@@ -39,13 +39,17 @@ classdef WVVerticalDiffusivity < WVForcing
     % Stratified QG contains only nonzero-horizontal-wavenumber geostrophic
     % modes, not a mean-density-anomaly component. Consequently,
     % `shouldForceMeanDensityAnomaly` does not alter its QGPV pathway.
-    % `WVTransformFreeSurfaceQG` instead applies constant diffusivity to
-    % buoyancy with the transform's persisted weak vertical operator. Its
-    % complete tendency is projected into `Ag_q`, residual `Ag_0`, and
+    % `WVTransformFreeSurfaceQG` instead applies density diffusion with a
+    % Galerkin operator on the complete `Ag_q`, boundary-normalized `Ag_0`, and
     % `Amda`; setting `shouldForceMeanDensityAnomaly=false` suppresses only
     % the resulting `Amda` tendency.
-    % `WVTransformFreeSurfaceQGDiffusion` rejects this forcing because its
-    % homogeneous buoyancy diffusion is already built into the transform.
+    % Both endpoints must be active for this diffusion discretization.
+    % The forcing owns rebuildable operators derived from the transform's
+    % stored modes. `WVModel.setupIntegrator(integratorType="exponential")`
+    % uses these same operators for exact linear stepping. Ordinary stepping
+    % includes the diffusion tendency through this forcing's callback.
+    % Ordinary integration builds Galerkin generators only; diffusion
+    % diagonalization and eigenvalue diagnostics are lazy and opt-in.
     %
     % ### Example
     %
@@ -56,10 +60,9 @@ classdef WVVerticalDiffusivity < WVForcing
     %
     % ### Notes
     %
-    % This is currently implemented in the spatial domain. It applies to
-    % wave-bearing three-dimensional transforms and has a separate QGPV
-    % pathway for stratified QG. It is not compatible with barotropic QG,
-    % which has no vertical structure.
+    % Wave-bearing transforms use the spatial callback, stratified QG uses
+    % its QGPV callback, and free-surface QG uses canonical spectral tendencies.
+    % Barotropic QG has no vertical structure and is not supported.
     %
     % - Topic: Create the forcing
     % - Topic: Inspect forcing configuration
@@ -97,6 +100,13 @@ classdef WVVerticalDiffusivity < WVForcing
         dLnN2 = 0
     end
 
+    properties (Access = private, Transient)
+        % Rebuilt when either public diffusion setting changes.
+        densityDiffusionOperators_ = []
+        % Exact-evolution eigencoordinates are independent optional derived state.
+        densityDiffusionModes_ = []
+    end
+
     methods
         function self = WVVerticalDiffusivity(wvt,options)
             % Create vertical diffusivity for a three-dimensional transform.
@@ -111,9 +121,6 @@ classdef WVVerticalDiffusivity < WVForcing
                 wvt WVTransform {mustBeNonempty}
                 options.kappa_z double = 1e-5
                 options.shouldForceMeanDensityAnomaly = true;
-            end
-            if isa(wvt,"WVTransformFreeSurfaceQGDiffusion")
-                error('WVVerticalDiffusivity:DiffusionAlreadyBuiltIn','Vertical buoyancy diffusion is already part of this transform. Set kappaT when constructing it.');
             end
             if isa(wvt,"WVTransformFreeSurfaceQG")
                 supportedTypes = "QGSpectral";
@@ -156,7 +163,7 @@ classdef WVVerticalDiffusivity < WVForcing
         end
 
         function tendency = addQuasigeostrophicSpectralForcing(self,wvt,tendency,~)
-            % Add weak vertical buoyancy diffusion to free-surface QG.
+            % Add density diffusion on the complete free-surface QG state.
             %
             % - Topic: Implement forcing evaluation
             % - Declaration: tendency = addQuasigeostrophicSpectralForcing(wvt,tendency,physicalState)
@@ -164,13 +171,70 @@ classdef WVVerticalDiffusivity < WVForcing
             % - Parameter tendency: accumulated family-keyed coefficient tendency
             % - Returns tendency: coefficient tendency including vertical buoyancy diffusion
             % - Developer: true
-            contribution = wvt.thermalCoefficientTendency(self.kappa_z);
-            if ~self.shouldForceMeanDensityAnomaly
-                contribution.Amda(:) = 0;
+            operators = self.densityDiffusionOperators();
+            state = [wvt.Ag_q;wvt.Ag_0];
+            for p = 1:length(wvt.khUnique)
+                columns = wvt.klNonzeroKhUniqueIndex == p;
+                contribution = operators.pages{p}.generator*state(:,columns);
+                tendency.Ag_q(:,columns) = tendency.Ag_q(:,columns)+contribution(1:wvt.apvModeCount,:);
+                tendency.Ag_0(:,columns) = tendency.Ag_0(:,columns)+contribution(wvt.apvModeCount+1:end,:);
             end
-            tendency.Ag_q = tendency.Ag_q+contribution.Ag_q;
-            tendency.Ag_0 = tendency.Ag_0+contribution.Ag_0;
-            tendency.Amda = tendency.Amda+contribution.Amda;
+            tendency.Amda = tendency.Amda+operators.mda.generator*wvt.Amda;
+        end
+
+        function operators = densityDiffusionOperators(self)
+            % Return Galerkin generators without computing diffusion eigenmodes.
+            %
+            % These value arrays are derived from fixed canonical modes and
+            % are not persisted. Changing kappa_z or the MDA flag invalidates
+            % the cache; coefficients and time do not affect it.
+            % Use densityDiffusionModes only when exponential evolution needs
+            % eigencoordinates. Physical metrics belong to the transform.
+            %
+            % - Topic: Forcing internals
+            % - Developer: true
+            if isempty(self.densityDiffusionOperators_) || ...
+                    self.densityDiffusionOperators_.kappa_z ~= self.kappa_z || ...
+                    self.densityDiffusionOperators_.shouldForceMeanDensityAnomaly ~= self.shouldForceMeanDensityAnomaly
+                self.densityDiffusionOperators_ = WVInternal.densityDiffusionOperators(self.wvt,self.kappa_z, ...
+                    shouldForceMeanDensityAnomaly=self.shouldForceMeanDensityAnomaly);
+                self.densityDiffusionModes_ = [];
+            end
+            operators = self.densityDiffusionOperators_;
+        end
+
+        function operators = densityDiffusionModes(self)
+            % Return lazily diagonalized operators for exact linear evolution.
+            %
+            % Reuses the same Galerkin generators as the ordinary forcing
+            % callback. A diffusion-configuration change invalidates both caches.
+            % - Topic: Forcing internals
+            % - Returns operators: generators augmented with complete eigencoordinates and diagnostics
+            % - Developer: true
+            generators = self.densityDiffusionOperators();
+            if isempty(self.densityDiffusionModes_)
+                self.densityDiffusionModes_ = WVInternal.densityDiffusionModes(generators);
+            end
+            operators = self.densityDiffusionModes_;
+        end
+
+        function deltaT = explicitTimeStepLimit(self)
+            % Return a conservative explicit diffusion timescale in seconds.
+            %
+            % The inverse infinity norm of each generator in well-scaled
+            % physical coordinates bounds the largest eigenvalue magnitude.
+            % This avoids an eigensolve and keeps decaying diffusion modes
+            % inside the RK4 stability region. Positive physical growth is
+            % not clipped, and accuracy may require a smaller step.
+            % - Topic: Forcing internals
+            % - Returns deltaT: inverse largest norm bound, or Inf for zero diffusion
+            % - Developer: true
+            operators = self.densityDiffusionOperators();
+            rate = norm(operators.mda.energyGenerator,Inf);
+            for p = 1:length(operators.pages)
+                rate = max(rate,norm(operators.pages{p}.energyGenerator,Inf));
+            end
+            deltaT = 1/rate;
         end
 
         function force = forcingWithResolutionOfTransform(self, wvtX2)

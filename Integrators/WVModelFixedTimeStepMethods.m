@@ -47,11 +47,13 @@ classdef WVModelFixedTimeStepMethods < handle
             self.rk4Integrator = [];
         end
 
-        function [deltaT,advectiveDT,oscillatoryDT] = timeStepForCFL(self, cfl, outputInterval)
+        function [deltaT,advectiveDT,oscillatoryDT,diffusionDT] = timeStepForCFL(self, cfl, outputInterval)
             % Return the time step (in seconds) to maintain the given cfl condition.
             % If the cfl condition is not given, 0.25 will be assumed.
             % If outputInterval is given, the time step will be rounded to evenly
             % divide the outputInterval.
+            % Registered free-surface density diffusion also constrains the
+            % result, using a conservative generator norm without diagonalization.
             if nargin == 1
                 cfl = 0.25;
             end
@@ -81,16 +83,14 @@ classdef WVModelFixedTimeStepMethods < handle
                 fprintf('dX/U = %.1f s (%.1f min). The highest frequency resolved IGW has period of %.1f s (%.1f min).\n', dx/U,dx/U/60,period,period/60);
             end
 
+            diffusionDT = self.explicitDiffusionTimeStepLimit();
             if nargin == 3 && ~isempty(outputInterval)
                 advectiveDT = outputInterval/ceil(outputInterval/advectiveDT);
                 oscillatoryDT = outputInterval/ceil(outputInterval/oscillatoryDT);
+                diffusionDT = outputInterval/ceil(outputInterval/diffusionDT);
             end
 
-            if advectiveDT < oscillatoryDT
-                deltaT = advectiveDT;
-            else
-                deltaT = oscillatoryDT;
-            end
+            deltaT = min([advectiveDT,oscillatoryDT,diffusionDT]);
 
         end
 
@@ -103,11 +103,15 @@ classdef WVModelFixedTimeStepMethods < handle
             end
             if isfield(self.integratorOptions,"deltaT")
                 deltaT = self.integratorOptions.deltaT;
+                diffusionDT = self.explicitDiffusionTimeStepLimit();
+                if deltaT>diffusionDT
+                    error('WVModel:DiffusionTimeStep','The requested step %.6g s exceeds the density-diffusion limit %.6g s. Reduce deltaT or select exponential integration.',deltaT,diffusionDT);
+                end
             else
                 if ~isfield(self.integratorOptions,"cfl")
                     self.integratorOptions.cfl = 0.25;
                 end
-                [deltaT,advectiveDT,oscillatoryDT] = self.timeStepForCFL(self.integratorOptions.cfl);
+                [deltaT,advectiveDT,oscillatoryDT,diffusionDT] = self.timeStepForCFL(self.integratorOptions.cfl);
                 if strcmp(self.integratorOptions.timeStepConstraint,"advective")
                     deltaT = advectiveDT;
                     fprintf('Using the advective dt')
@@ -118,6 +122,7 @@ classdef WVModelFixedTimeStepMethods < handle
                     deltaT = min(oscillatoryDT,advectiveDT);
                     fprintf('Using the min dt')
                 end
+                deltaT = min(deltaT,diffusionDT);
             end
 
             % The function call here is stupid, because it is not obvious
@@ -130,6 +135,27 @@ classdef WVModelFixedTimeStepMethods < handle
             Y0 = self.initialConditionsCellArray();
             self.rk4Integrator = WVArrayIntegrator(@(t,y0) self.fluxAtTimeCellArray(t,y0),integratorTimes,Y0,deltaT,OutputFcn=@self.timeStepIncrement);
             self.finalIntegrationTime = [];
+        end
+
+        function deltaT = explicitDiffusionTimeStepLimit(self)
+            % Bound explicit free-surface density diffusion across registered forcings.
+            %
+            % Bounds add when multiple diffusion forcings act simultaneously.
+            % Other transform families retain their existing timestep selection.
+            % - Topic: Integration
+            % - Returns deltaT: conservative diffusion step in seconds, or Inf
+            % - Developer: true
+            rate = 0;
+            if isa(self.wvt,'WVTransformFreeSurfaceQG')
+                names = self.wvt.forcingNames();
+                for name = reshape(names,1,[])
+                    force = self.wvt.forcingWithName(name);
+                    if isa(force,'WVVerticalDiffusivity')
+                        rate = rate+1/force.explicitTimeStepLimit();
+                    end
+                end
+            end
+            deltaT = 1/rate;
         end
 
         function status = timeStepIncrement(self,t,y,flag)

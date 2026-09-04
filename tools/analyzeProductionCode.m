@@ -30,7 +30,7 @@ suppressedFindings = normalizedFindings(analysis.SuppressedIssues,true,repositor
 findings = [activeFindings; suppressedFindings];
 if ~isempty(findings)
     findings = sortrows(findings,["RelativeFile" "Line" "Column" "CheckID" "Suppressed"]);
-    [findings.Classification,findings.Rationale] = classifyFindings(findings,repositoryRoot);
+    [findings.Classification,findings.Rationale] = classifyFindings(findings);
 end
 
 blockingMask = startsWith(findings.Classification,"blocking");
@@ -110,7 +110,7 @@ relative(insideRoot) = extractAfter(files(insideRoot),strlength(rootPrefix));
 relative = replace(relative,filesep,"/");
 end
 
-function [classification,rationale] = classifyFindings(findings,repositoryRoot)
+function [classification,rationale] = classifyFindings(findings)
 classification = repmat("blocking-unclassified",height(findings),1);
 rationale = repmat("Unclassified findings require review before they can become nonblocking.",height(findings),1);
 
@@ -132,18 +132,6 @@ mdaPropertyMask = findings.CheckID == "MCNPR" & findings.RelativeFile == "FlowCo
 inheritedPropertyMask = inertialPropertyMask | mdaPropertyMask;
 classification(inheritedPropertyMask) = "accepted-false-positive";
 rationale(inheritedPropertyMask) = "Ap, Am, and A0 are supplied by the composed transform hierarchy and are not visible to analysis of the mixin alone.";
-
-% Only these three error-only MVP interface stubs intentionally never return.
-% Match their declaration lines, not every unset output in the class.
-thermalFile = "@WVTransformFreeSurfaceQGDiffusion/WVTransformFreeSurfaceQGDiffusion.m";
-thermalOutputMask = findings.CheckID == "STOUT" & findings.RelativeFile == thermalFile;
-if any(thermalOutputMask)
-    sourceLines = strtrim(splitlines(string(fileread(fullfile(repositoryRoot,thermalFile)))));
-    stubLines = find(startsWith(sourceLines,["function state = coefficientAbsoluteTolerances(","function [a,b,c] = nonlinearFlux(","function value = unsupported()"]));
-    thermalOutputMask = thermalOutputMask & ismember(findings.Line,stubLines);
-    classification(thermalOutputMask) = "accepted-interface";
-    rationale(thermalOutputMask) = "Required legacy-interface stubs always throw; their declared outputs are never returned. Focused tests verify these rejection paths.";
-end
 
 errorMask = findings.Severity == "error";
 classification(errorMask) = "blocking-error";

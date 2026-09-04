@@ -29,9 +29,6 @@ classdef WVSeasonalSurfaceAnomalyForcing < WVForcing
         % - Topic: Inspect forcing configuration
         phase
     end
-    properties (Access = private, Transient)
-        modalSource_
-    end
     methods
         function self = WVSeasonalSurfaceAnomalyForcing(wvt,options)
             % Create strict seasonal endpoint forcing.
@@ -43,7 +40,7 @@ classdef WVSeasonalSurfaceAnomalyForcing < WVForcing
                 options.period (1,1) double {mustBePositive,mustBeFinite} = 365.25*86400
                 options.phase (1,1) double {mustBeReal,mustBeFinite} = 0
             end
-            if ~isa(wvt,'WVTransformFreeSurfaceQGDiffusion') && ~isa(wvt,'WVTransformFreeSurfaceQG')
+            if ~isa(wvt,'WVTransformFreeSurfaceQG')
                 error('WVSeasonalSurfaceAnomalyForcing:UnsupportedTransform','Use a free-surface QG transform.');
             end
             if ~isequal(size(options.pattern),[wvt.Nx wvt.Ny]) || ~any(wvt.activeEndpoint==1)
@@ -55,32 +52,12 @@ classdef WVSeasonalSurfaceAnomalyForcing < WVForcing
             self@WVForcing(wvt,'seasonal surface anomaly',WVForcingType('QGSpatial'));
             self.pattern=options.pattern; self.amplitude=options.amplitude;
             self.period=options.period; self.phase=options.phase;
-            if isa(wvt,'WVTransformFreeSurfaceQGDiffusion')
-                b=zeros(wvt.activeEndpointCount,length(wvt.klNonzero));
-                b(1,:)=wvt.spectralField(self.amplitude*self.pattern);
-                self.modalSource_=wvt.transformStateForward(zeros(wvt.Nz-2,length(wvt.klNonzero)),b);
-            end
         end
         function [Fq,Fb] = addQuasigeostrophicSpatialForcing(self,wvt,Fq,Fb,~)
             % Add only the prescribed surface endpoint tendency.
             % - Topic: Implement forcing evaluation
             i=find(wvt.activeEndpoint==1,1);
             Fb(:,:,i)=Fb(:,:,i)+self.amplitude*sin(2*pi*wvt.t/self.period+self.phase)*self.pattern;
-        end
-        function amplitudes = exactThermalResponse(self,wvt,t)
-            % Evaluate the zero-at-time-zero sinusoidal thermal response.
-            % The full complex Fourier source is multiplied by a real-time
-            % harmonic integral, never by a real-part operation on itself.
-            % - Topic: Implement forcing evaluation
-
-            % Time dependence is shared by every Fourier entry at this kh.
-            % Expand only after evaluation; modalSource_ keeps its complete
-            % complex Fourier pattern, including roundoff-sized entries.
-            lambda=-wvt.thermalDecayRate; omega=2*pi/self.period;
-            plus=harmonicIntegral(lambda,omega,t);
-            minus=harmonicIntegral(lambda,-omega,t);
-            response=exp(1i*self.phase)*plus-exp(-1i*self.phase)*minus;
-            amplitudes=self.modalSource_.*response(:,wvt.klNonzeroKhUniqueIndex)/(2i);
         end
         function force = forcingWithResolutionOfTransform(self,wvt)
             % Require an explicitly resampled horizontal forcing pattern.
@@ -120,12 +97,4 @@ classdef WVSeasonalSurfaceAnomalyForcing < WVForcing
             a(end+1)=CANumericProperty('phase',{},'rad','phase at time zero');
         end
     end
-end
-
-function value = harmonicIntegral(lambda,omega,t)
-% (exp(i*omega*t)-exp(lambda*t))/(i*omega-lambda), without inverse decay.
-z=(lambda-1i*omega)*t;
-ratio=ones(size(z)); nonzero=z~=0;
-ratio(nonzero)=expm1(z(nonzero))./z(nonzero);
-value=t*exp(1i*omega*t).*ratio;
 end

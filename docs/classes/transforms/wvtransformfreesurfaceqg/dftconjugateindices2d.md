@@ -3,7 +3,7 @@ layout: default
 title: dftConjugateIndices2D
 parent: WVTransformFreeSurfaceQG
 grand_parent: Transforms
-nav_order: 70
+nav_order: 72
 mathjax: true
 ---
 

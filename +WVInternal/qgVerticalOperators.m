@@ -1,8 +1,7 @@
 function operators = qgVerticalOperators(z,quadratureCount)
-% Build WKB-polynomial over-integration and physical-norm QGPV coordinates.
+% Build quadrature and interpolation on the stored WKB vertical grid.
 % The input nodes are the bottom-to-surface WKB Chebyshev-Lobatto grid.
-% QGPV uses only its independent interior nodes (degree Nz-3); phi uses
-% all nodes (degree Nz-1). No endpoint QGPV or thermal eigenvectors enter.
+% Interpolation uses every stored node; no coefficient family is reduced.
 % - Topic: Developer utilities
 arguments (Input)
     z (:,1) double {mustBeFinite}
@@ -11,7 +10,7 @@ end
 arguments (Output)
     operators (1,1) struct
 end
-nz=length(z); nq=nz-2;
+nz=length(z);
 if nz<5 || any(diff(z)<=0) || quadratureCount<nz
     error('WV:VerticalGrid','Use increasing Chebyshev-mapped z and at least Nz quadrature points.');
 end
@@ -27,10 +26,5 @@ if any(jacobian<=0)
     error('WV:VerticalMapping','The interpolated WKB coordinate must have positive dz/ds.');
 end
 weights=weights.*jacobian;
-qNative=native(2:end-1,1:nq); qFine=fine(:,1:nq);
-% Weighted QR keeps the physical-depth metric without normal equations.
-[orthogonal,triangular]=qr(sqrt(weights).*qFine,0);
-qFromPolynomial=qNative/triangular;
-qToPolynomial=triangular/qNative;
-operators=struct(nativeZ=z,zQuadrature=fine*zCoefficients,quadratureWeights=weights,qToQuadrature=qFine/qNative,phiToQuadrature=fine/native,qFromQuadrature=qFromPolynomial*(orthogonal'.*sqrt(weights).'),qFromPolynomial=qFromPolynomial,qToPolynomial=qToPolynomial);
+operators=struct(zQuadrature=fine*zCoefficients,quadratureWeights=weights,phiToQuadrature=fine/native);
 end

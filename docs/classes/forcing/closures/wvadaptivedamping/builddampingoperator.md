@@ -3,7 +3,7 @@ layout: default
 title: buildDampingOperator
 parent: WVAdaptiveDamping
 grand_parent: Closures
-nav_order: 3
+nav_order: 4
 mathjax: true
 ---
 

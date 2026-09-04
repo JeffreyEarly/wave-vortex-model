@@ -3,7 +3,7 @@ layout: default
 title: nFluxComputations
 parent: WVModel
 grand_parent: Class documentation
-nav_order: 36
+nav_order: 37
 mathjax: true
 ---
 

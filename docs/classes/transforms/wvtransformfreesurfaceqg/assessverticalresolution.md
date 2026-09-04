@@ -23,8 +23,9 @@ Assess vertical-mode accuracy and the active-endpoint horizontal limit.
 + `Nz`  number of physical vertical quadrature points
 + `options.N2Function`  squared buoyancy-frequency function
 + `options.rhoFunction`  no-motion density function
-+ `options.g0`  surface acceleration; default stratification integral
-+ `options.gd`  bottom acceleration; default `Inf`
++ `options.g0`  surface acceleration; default negative stratification integral
++ `options.gd`  bottom acceleration; default positive stratification integral; use Inf to omit the bottom endpoint
++ `options.latitude`  latitude in degrees; default 24
 + `options.apvGramTolerance`  APV normalized-Gram tolerance
 + `options.mdaGramTolerance`  MDA normalized-Gram tolerance
 + `options.quadraticAliasingTolerance`  APV quadratic-product tolerance

@@ -113,9 +113,6 @@ classdef WVModel < handle & WVModelAdaptiveTimeStepMethods & WVModelFixedTimeSte
                 options.shouldUseLinearDynamics = false
             end
 
-            if isa(wvt,'WVTransformFreeSurfaceQGDiffusion') && options.shouldUseLinearDynamics
-                error('WVModel:ExponentialIntegratorRequired','Use the exponential integrator and remove nonlinear forcing for a purely thermal run.');
-            end
             self.wvt = wvt;
             self.isDynamicsLinear = options.shouldUseLinearDynamics;
             if ~self.isDynamicsLinear
@@ -637,20 +634,17 @@ classdef WVModel < handle & WVModelAdaptiveTimeStepMethods & WVModelFixedTimeSte
             % reasonable choice of values. However, you may find it
             % necessary to customize the time stepping behavior.
             %
-            % Ordinary transforms support "adaptive" and "fixed" stepping.
-            % WVTransformFreeSurfaceQGDiffusion instead selects "exponential"
-            % by default: homogeneous diffusion and the registered strict
-            % seasonal response are evaluated analytically, while ETDRK4
-            % advances the remaining tendencies with adaptive step doubling.
-            % Its physicalAbsTolerance is an independent four-entry vector
-            % of RMS floors for QGPV [s^-1], buoyancy [m s^-2], speed [m s^-1],
-            % and surface displacement [m]. The coefficient-energy
-            % absTolerance option does not apply to that nonorthogonal basis.
+            % The default is adaptive stepping. A canonical free-surface QG
+            % model with WVVerticalDiffusivity can opt into "exponential":
+            % density diffusion and strict seasonal forcing are evaluated
+            % analytically, and ETDRK4 advances the other registered forcings.
+            % physicalAbsTolerance sets RMS floors for QGPV [s^-1], buoyancy
+            % [m s^-2], speed [m s^-1], and endpoint displacement [m].
             %
-            % The "fixed" time-step integrator used a cfl condition based
-            % on the advective velocity, but you can change this to use the
-            % highest oscillatory frequency. Alternatively, you can simply
-            % set deltaT yourself.
+            % The "fixed" integrator selects a step using advection or the
+            % highest oscillatory frequency. Registered free-surface density
+            % diffusion adds a conservative bound for either selection.
+            % An explicit deltaT exceeding that bound raises an error.
             %
             % The "adaptive" time-step integator uses absolute and relative
             % error tolerances. It is worth reading Matlab's documentation
@@ -665,7 +659,7 @@ classdef WVModel < handle & WVModelAdaptiveTimeStepMethods & WVModelFixedTimeSte
             %
             % - Topic: Integration
             % - Declaration: setupIntegrator(self,options)
-            % - Parameter integratorType: "adaptive" (ordinary default), "fixed", or "exponential" (diffusion-transform default)
+            % - Parameter integratorType: "adaptive" (ordinary default), "fixed", or "exponential" (opt-in density diffusion)
             % - Parameter deltaT: (fixed) time step
             % - Parameter cfl: (fixed) cfl condition
             % - Parameter timeStepConstraint: (fixed) constraint to fix the time step. "advective" (default) ,"oscillatory","min"
@@ -697,14 +691,17 @@ classdef WVModel < handle & WVModelAdaptiveTimeStepMethods & WVModelFixedTimeSte
             end
 
             if isempty(options.integratorType)
-                if isa(self.wvt,'WVTransformFreeSurfaceQGDiffusion') || ~isempty(self.weakThermalEvolution), options.integratorType='exponential'; else, options.integratorType='adaptive'; end
+                if ~isempty(self.densityDiffusionIntegrator), options.integratorType='exponential'; else, options.integratorType='adaptive'; end
             end
-            if isa(self.wvt,'WVTransformFreeSurfaceQGDiffusion') && ~strcmp(options.integratorType,'exponential')
-                error('WVModel:ExponentialIntegratorRequired','The diffusion transform requires integratorType="exponential".');
+            if strcmp(options.integratorType,'exponential')
+                exponentialTimeStepOptions.relTolerance=adaptiveTimeStepOptions.relTolerance;
+                optionArgs=namedargs2cell(exponentialTimeStepOptions);
+                self.setupExponentialTimeStepIntegrator(optionArgs{:});
+                self.integratorType = options.integratorType;
+                self.didSetupIntegrator = true;
+                return
             end
-            if ~isempty(self.weakThermalEvolution) && ~strcmp(options.integratorType,'exponential')
-                error('WVModel:WeakThermalIntegratorRequired','This model has opted into weak thermal evolution; use exponential stepping or a separate ordinary model.');
-            end
+            self.clearDensityDiffusionIntegrator();
 
             if self.isDynamicsLinear == false
                 self.wvCoefficientFluxedObservingSystem.absTolerance = adaptiveTimeStepOptions.absTolerance;
@@ -714,11 +711,7 @@ classdef WVModel < handle & WVModelAdaptiveTimeStepMethods & WVModelFixedTimeSte
             self.resetAdaptiveTimeStepIntegrator();
 
             self.integratorType = options.integratorType;
-            if strcmp(self.integratorType,"exponential")
-                exponentialTimeStepOptions.relTolerance=adaptiveTimeStepOptions.relTolerance;
-                optionArgs=namedargs2cell(exponentialTimeStepOptions);
-                self.setupExponentialTimeStepIntegrator(optionArgs{:});
-            elseif strcmp(self.integratorType,"adaptive")
+            if strcmp(self.integratorType,"adaptive")
                 adaptiveTimeStepOptions = rmfield(adaptiveTimeStepOptions,"absTolerance");
                 optionArgs = namedargs2cell(adaptiveTimeStepOptions);
                 self.setupAdaptiveTimeStepIntegrator(optionArgs{:});
@@ -842,16 +835,12 @@ classdef WVModel < handle & WVModelAdaptiveTimeStepMethods & WVModelFixedTimeSte
             end
         end
 
-        function [F,speed] = nonthermalFlux(self)
-            % Evaluate the diffusion transform's explicit stage tendency.
+        function [F,speed] = explicitFlux(self)
+            % Evaluate registered forcings handled explicitly by ETDRK4.
             % - Topic: Flux assembly
             % - Developer: true
             self.nFluxComputations = self.nFluxComputations + 1;
-            if isempty(self.weakThermalEvolution)
-                [F,speed] = self.wvt.nonthermalCoefficientTendency(true);
-            else
-                [F,speed] = self.weakThermalEvolution.nonthermalCoefficientTendency(true);
-            end
+            [F,speed] = self.densityDiffusionIntegrator.explicitCoefficientTendency(true);
         end
 
         function updateIntegratorValuesFromCellArray(self,t,y0)

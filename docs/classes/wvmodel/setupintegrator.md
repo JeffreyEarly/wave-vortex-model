@@ -3,7 +3,7 @@ layout: default
 title: setupIntegrator
 parent: WVModel
 grand_parent: Class documentation
-nav_order: 52
+nav_order: 53
 mathjax: true
 ---
 
@@ -19,14 +19,18 @@ Customize the time-stepping
  setupIntegrator(self,options)
 ```
 ## Parameters
-+ `integratorType`  (optional) integrator type. "adaptive"(default), "fixed"
++ `integratorType`  "adaptive" (ordinary default), "fixed", or "exponential" (opt-in density diffusion)
 + `deltaT`  (fixed) time step
 + `cfl`  (fixed) cfl condition
 + `timeStepConstraint`  (fixed) constraint to fix the time step. "advective" (default) ,"oscillatory","min"
 + `integrator`  (adapative) function handle of integrator. @ode78 (default)
 + `absTolerance`  (adapative) absolute tolerance for sqrt(energy). 1e-6 (default)
-+ `relTolerance`  (adapative) relative tolerance for sqrt(energy). 1e-3 (default)
++ `relTolerance`  relative tolerance, 1e-3 by default; coefficient error for adaptive stepping or reconstructed RMS error for exponential stepping
 + `shouldShowIntegrationStats`  (adapative) whether to show integration output 0 or 1 (default)
++ `physicalAbsTolerance`  (exponential) RMS floors [1e-13 1e-11 1e-8 1e-8] for QGPV, buoyancy, speed, and endpoint displacement
++ `initialStep`  (exponential) initial trial step in seconds, default 3600
++ `maximumStep`  (exponential) maximum trial step in seconds, default 86400
++ `exponentialAdaptive`  (exponential) use physical-norm step doubling, default true
 
 ## Discussion
 
@@ -34,14 +38,17 @@ By default the model will use adaptive time stepping with a
 reasonable choice of values. However, you may find it
 necessary to customize the time stepping behavior.
 
-When setting up the integrator you must choice between
-"adaptive" and "fixed" integrator types. Depending on which
-type you choose, you will have different options available.
+The default is adaptive stepping. A canonical free-surface QG
+model with WVVerticalDiffusivity can opt into "exponential":
+density diffusion and strict seasonal forcing are evaluated
+analytically, and ETDRK4 advances the other registered forcings.
+physicalAbsTolerance sets RMS floors for QGPV [s^-1], buoyancy
+[m s^-2], speed [m s^-1], and endpoint displacement [m].
 
-The "fixed" time-step integrator used a cfl condition based
-on the advective velocity, but you can change this to use the
-highest oscillatory frequency. Alternatively, you can simply
-set deltaT yourself.
+The "fixed" integrator selects a step using advection or the
+highest oscillatory frequency. Registered free-surface density
+diffusion adds a conservative bound for either selection.
+An explicit deltaT exceeding that bound raises an error.
 
 The "adaptive" time-step integator uses absolute and relative
 error tolerances. It is worth reading Matlab's documentation

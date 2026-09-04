@@ -21,9 +21,6 @@ classdef WVAdaptiveDamping < WVForcing
     % acts directly on the canonical coefficient families: `Ag_q` receives
     % horizontal and APV-mode damping, `Ag_0` receives horizontal damping,
     % and the horizontally uniform `Amda` family is unchanged.
-    % For the thermal QG transform, optional verticalDampingStrength adds
-    % physical-depth-orthogonal polynomial damping to independent QGPV.
-    % It leaves the endpoint tendency zero and does not change kappaT.
     %
     % $$
     % \begin{align}
@@ -73,6 +70,13 @@ classdef WVAdaptiveDamping < WVForcing
     %
     % - Declaration: WVAdaptiveDamping < [WVForcing](/classes/forcing/wvforcing/)
     properties
+        % Fraction of the largest APV mode below which vertical damping is zero.
+        %
+        % Applies to free-surface QG only. A finite value lies in [0,1).
+        % The default NaN retains the standard spectral-vanishing cutoff.
+        % Changing this setting rebuilds the operator and persists on restart.
+        % - Topic: Inspect forcing configuration
+        apvCutoffFraction (1,1) double = NaN
         % Unit-speed spectral damping operator in inverse meters.
         %
         % This array has `wvt.spectralMatrixSize`. The actual coefficient
@@ -145,17 +149,18 @@ classdef WVAdaptiveDamping < WVForcing
         forcingListener
     end
 
-    properties (SetAccess = private)
-        % Thermal-QG vertical numerical damping strength; zero disables it.
-        % This damps independent QGPV, not buoyancy or thermal-mode indices.
-        % - Topic: Inspect forcing configuration
-        verticalDampingStrength = 0
-        % Rebuildable unit-speed vertical QGPV damping matrix, in m^-1.
-        % - Topic: Forcing internals
-        verticalDamp = []
+    properties (Access = private, Transient)
+        horizontalDamping_ = []
     end
 
     methods (Access = private, Hidden)
+        function apvCutoffFractionDidChange(self)
+            % During construction the first operator is built explicitly.
+            if ~isempty(self.damp)
+                self.buildDampingOperator();
+            end
+        end
+
         function forcingDidChangeNotification(self,~,~)
             if self.wvt.effectiveHorizontalGridResolution ~= self.assumedEffectiveHorizontalGridResolution
                 self.buildDampingOperator();
@@ -181,21 +186,29 @@ classdef WVAdaptiveDamping < WVForcing
             % - Topic: Initialization
             % - Declaration: self = WVAdaptiveDamping(wvt,options)
             % - Parameter wvt: transform that owns and evaluates the closure
-            % - Parameter verticalDampingStrength: thermal-QG polynomial damping multiplier; zero disables it (default)
+            % - Parameter options.apvCutoffFraction: optional free-surface APV cutoff fraction; NaN uses the standard cutoff
             % - Returns self: adaptive-damping closure owned by `wvt`
             arguments
                 wvt WVTransform {mustBeNonempty}
-                options.verticalDampingStrength (1,1) double {mustBeNonnegative,mustBeFinite} = 0
+                options.apvCutoffFraction (1,1) double = NaN
             end
             self@WVForcing(wvt,"adaptive damping",WVAdaptiveDamping.forcingTypesForTransform(wvt));
             self.wvt = wvt;
-            self.verticalDampingStrength=options.verticalDampingStrength;
-            if self.verticalDampingStrength>0 && ~isa(wvt,'WVTransformFreeSurfaceQGDiffusion')
-                error('WVAdaptiveDamping:VerticalOption','verticalDampingStrength is specific to the thermal QG transform.');
-            end
             self.isClosure = true;
+            self.apvCutoffFraction = options.apvCutoffFraction;
             self.buildDampingOperator();
             self.forcingListener = addlistener(self.wvt,'forcingDidChange',@self.forcingDidChangeNotification);
+        end
+
+        function set.apvCutoffFraction(self,value)
+            if ~isreal(value) || ~(isnan(value) || (isfinite(value) && value>=0 && value<1))
+                error('WVAdaptiveDamping:APVCutoff','Use an APV cutoff fraction in [0,1), or NaN for the standard cutoff.');
+            end
+            if ~isnan(value) && ~isa(self.wvt,'WVTransformFreeSurfaceQG')
+                error('WVAdaptiveDamping:APVCutoff','The APV cutoff fraction applies only to WVTransformFreeSurfaceQG.');
+            end
+            self.apvCutoffFraction = value;
+            self.apvCutoffFractionDidChange();
         end
 
         function didGetRemovedFromTransform(self, wvt)
@@ -215,29 +228,9 @@ classdef WVAdaptiveDamping < WVForcing
             self.assumedEffectiveHorizontalGridResolution = self.wvt.effectiveHorizontalGridResolution;
             self.dampAg_q = [];
             self.dampAg_0 = [];
-            self.verticalDamp=[];
+            self.horizontalDamping_ = [];
 
             kl_max = pi/self.assumedEffectiveHorizontalGridResolution;
-            if isa(self.wvt,"WVTransformFreeSurfaceQGDiffusion")
-                % Horizontal damping commutes with every thermal page.
-                % Thermal-mode indices are not APV vertical wavenumbers.
-                dkl=min(self.wvt.dk,self.wvt.dl);
-                self.k_no_damp=dkl*(kl_max/dkl)^(3/4);
-                b=sqrt(-log(.1)); self.k_damp=(kl_max+b*self.k_no_damp)/(1+b);
-                kh=hypot(self.wvt.k,self.wvt.l).';
-                filter=exp(-((kh-kl_max)./(kh-self.k_no_damp)).^2);
-                filter(kh<=self.k_no_damp)=0; filter(kh>kl_max)=1;
-                self.damp=repmat(-self.assumedEffectiveHorizontalGridResolution/pi^2*filter.*kh.^2,self.wvt.Nj,1);
-                self.j_no_damp=Inf; self.j_damp=Inf;
-                if self.verticalDampingStrength>0
-                    o=self.wvt.verticalNumerics;
-                    if isempty(o)
-                        error('WVAdaptiveDamping:MissingVerticalOperators','Call configureVerticalNumerics before enabling vertical QGPV damping.');
-                    end
-                    self.verticalDamp=-(self.verticalDampingStrength/self.assumedEffectiveHorizontalGridResolution)*o.qFromPolynomial*(o.unitDampingRates().*o.qToPolynomial);
-                end
-                return
-            end
             if isa(self.wvt,"WVTransformFreeSurfaceQG")
                 j_max = length(self.wvt.apvMode);
                 j_index = length(self.wvt.apvMode);
@@ -259,6 +252,7 @@ classdef WVAdaptiveDamping < WVForcing
                 nonzeroIndex = self.wvt.klNonzero;
                 self.dampAg_q = self.damp(:,nonzeroIndex);
                 horizontalDamp = -prefactor_xy*Qkl(1,nonzeroIndex).*(K(1,nonzeroIndex).^2+L(1,nonzeroIndex).^2);
+                self.horizontalDamping_ = horizontalDamp;
                 self.dampAg_0 = repmat(horizontalDamp,self.wvt.activeEndpointCount,1);
             end
         end
@@ -300,12 +294,17 @@ classdef WVAdaptiveDamping < WVForcing
             Qkl(abs(Kh)<kl_cutoff) = 0;
             Qkl(abs(Kh)>kl_max) = 1;
 
-            if wvt_.Nj > 2
-                dj = verticalMode(2)-verticalMode(1);
-                j_cutoff = dj*(j_max/dj)^(3/4);
+            hasAPVCutoff = isa(wvt_,"WVTransformFreeSurfaceQG") && ~isnan(self.apvCutoffFraction);
+            if wvt_.Nj > 2 || hasAPVCutoff
+                if hasAPVCutoff
+                    j_cutoff = self.apvCutoffFraction*j_max;
+                else
+                    dj = verticalMode(2)-verticalMode(1);
+                    j_cutoff = dj*(j_max/dj)^(3/4);
+                end
                 j_damp = (j_max+b*j_cutoff)/(1+b); % approximately
                 Qj = exp( - ((J-j_max)./(J-j_cutoff)).^2 );
-                Qj(J<j_cutoff) = 0;
+                Qj(J<=j_cutoff) = 0;
                 Qj(J>j_max) = 1;
             else
                 j_cutoff = 0;
@@ -427,11 +426,6 @@ classdef WVAdaptiveDamping < WVForcing
             % active endpoints, not successively smaller vertical scales.
             % The horizontally uniform `Amda` family is unchanged: it has no
             % nonlinear transfer in the present free-surface QG model.
-            % `WVTransformFreeSurfaceQGDiffusion` applies horizontal damping
-            % to every `Ag_T` mode. Optional vertical damping instead acts
-            % on independent QGPV in physical-depth-orthogonal polynomial
-            % coordinates, with zero endpoint tendency. Thermal-mode indices
-            % are never interpreted as APV vertical wavenumbers.
             %
             % - Topic: Implement forcing evaluation
             % - Declaration: tendency = addQuasigeostrophicSpectralForcing(wvt,tendency,physicalState)
@@ -445,22 +439,35 @@ classdef WVAdaptiveDamping < WVForcing
                 tendency (1,1) struct
                 physicalState (1,1) struct = struct()
             end
+            [horizontal,vertical] = self.quasigeostrophicDampingContributions(wvt,physicalState);
+            tendency.Ag_q = tendency.Ag_q+horizontal.Ag_q+vertical.Ag_q;
+            tendency.Ag_0 = tendency.Ag_0+horizontal.Ag_0;
+        end
+
+        function [horizontal,vertical] = quasigeostrophicDampingContributions(self,wvt,physicalState)
+            % Return the horizontal and vertical tendencies used by this forcing.
+            %
+            % Their sum is the complete damping tendency, including any
+            % configured APV cutoff. Both contributions leave MDA unchanged.
+            % - Topic: Implement forcing evaluation
+            % - Parameter wvt: free-surface QG transform evaluating the closure
+            % - Parameter physicalState: optional shared reconstruction containing uvMax
+            % - Returns horizontal: horizontal coefficient tendency
+            % - Returns vertical: APV-mode coefficient tendency
+            arguments
+                self (1,1) WVAdaptiveDamping
+                wvt (1,1) WVTransformFreeSurfaceQG
+                physicalState (1,1) struct = struct()
+            end
             if isfield(physicalState,'uvMax')
                 uvMax = physicalState.uvMax;
             else
                 uvMax = wvt.uvMax;
             end
-            if isa(wvt,"WVTransformFreeSurfaceQGDiffusion")
-                physicalState.uvMax=uvMax;
-                [horizontal,vertical]=self.thermalDampingTendency(wvt,physicalState);
-                tendency.Ag_T=tendency.Ag_T+horizontal;
-                if ~isempty(vertical)
-                    tendency.Ag_T=tendency.Ag_T+wvt.transformStateForward(vertical,complex(zeros(wvt.activeEndpointCount,length(wvt.klNonzero))));
-                end
-                return
-            end
-            tendency.Ag_q = tendency.Ag_q+uvMax*self.dampAg_q.*wvt.Ag_q;
-            tendency.Ag_0 = tendency.Ag_0+uvMax*self.dampAg_0.*wvt.Ag_0;
+            horizontal = struct(Ag_q=uvMax*self.horizontalDamping_.*wvt.Ag_q, ...
+                Ag_0=uvMax*self.dampAg_0.*wvt.Ag_0,Amda=zeros(size(wvt.Amda)));
+            vertical = struct(Ag_q=uvMax*(self.dampAg_q-self.horizontalDamping_).*wvt.Ag_q, ...
+                Ag_0=zeros(size(wvt.Ag_0)),Amda=zeros(size(wvt.Amda)));
         end
 
         function force = forcingWithResolutionOfTransform(self, wvtX2)
@@ -473,30 +480,13 @@ classdef WVAdaptiveDamping < WVForcing
                 self WVAdaptiveDamping {mustBeNonempty}
                 wvtX2 WVTransform {mustBeNonempty}
             end
-            force = WVAdaptiveDamping(wvtX2,verticalDampingStrength=self.verticalDampingStrength);
-        end
-    end
-
-    methods (Access = {?WVTransformFreeSurfaceQGDiffusion})
-        function [horizontal,vertical] = thermalDampingTendency(self,wvt,physicalState)
-            % Split thermal damping so its QGPV term can share a projection.
-            % - Topic: Forcing internals
-            horizontal=physicalState.uvMax*self.damp(:,wvt.klNonzero).*wvt.Ag_T;
-            vertical=[];
-            if self.verticalDampingStrength>0
-                if isfield(physicalState,'qInteriorHat')
-                    q=physicalState.qInteriorHat;
-                else
-                    [q,~]=wvt.transformStateBack(wvt.Ag_T);
-                end
-                vertical=physicalState.uvMax*(self.verticalDamp*q);
-            end
+            force = WVAdaptiveDamping(wvtX2,apvCutoffFraction=self.apvCutoffFraction);
         end
     end
 
     methods (Static, Access = private)
         function forcingTypes = forcingTypesForTransform(wvt)
-            if isa(wvt,"WVTransformFreeSurfaceQG") || isa(wvt,"WVTransformFreeSurfaceQGDiffusion")
+            if isa(wvt,"WVTransformFreeSurfaceQG")
                 forcingTypes = WVForcingType("QGSpectral");
             else
                 forcingTypes = WVForcingType(["Spectral","PVSpectral"]);
@@ -513,7 +503,7 @@ classdef WVAdaptiveDamping < WVForcing
             % - Returns: vars
             arguments
             end
-            vars = {'verticalDampingStrength'};
+            vars = {'apvCutoffFraction'};
         end
 
         function propertyAnnotations = classDefinedPropertyAnnotations()
@@ -525,7 +515,8 @@ classdef WVAdaptiveDamping < WVForcing
             arguments (Output)
                 propertyAnnotations CAPropertyAnnotation
             end
-            propertyAnnotations = CANumericProperty('verticalDampingStrength',{},'1','thermal QGPV vertical spectral-vanishing damping strength; zero disables');
+            propertyAnnotations = CAPropertyAnnotation.empty(0,0);
+            propertyAnnotations(end+1) = CANumericProperty('apvCutoffFraction',{},'1','free-surface APV cutoff fraction; NaN uses the standard cutoff');
         end
     end
 end

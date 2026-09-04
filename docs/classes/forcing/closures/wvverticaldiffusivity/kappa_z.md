@@ -3,7 +3,7 @@ layout: default
 title: kappa_z
 parent: WVVerticalDiffusivity
 grand_parent: Closures
-nav_order: 4
+nav_order: 7
 mathjax: true
 ---
 

@@ -92,7 +92,7 @@ classdef WVSeasonalSurfaceBuoyancyFlux < WVForcing
             self.amplitude = options.amplitude;
             self.period = options.period;
             self.phase = options.phase;
-            self.unitTendency = wvt.thermalCoefficientTendency(0,surfaceBuoyancyFlux=self.pattern);
+            self.unitTendency = wvt.boundaryBuoyancyFluxTendency(surfaceBuoyancyFlux=self.pattern);
         end
 
         function tendency = addQuasigeostrophicSpectralForcing(self,wvt,tendency,~)

@@ -15,4 +15,5 @@ The user guide introduces the main WaveVortexModel workflows and connects them t
 - Consult [Capabilities and limitations](/users-guide/supported-features.html) when choosing interpolation, integration, forcing, output, or extension features.
 - Compare the two source-built workflows in [Compiled execution](/compiled-execution), then use the [compiled MATLAB backend preview](/users-guide/compiled-preview.html) or [standalone portable runtime](/users-guide/portable-runtime.html) only when its narrower contract fits the model.
 - Read [Adding forcing](/users-guide/adding-forcing.html) before integrating nonlinear dynamics.
+- Use [Free-surface QG density diffusion](/users-guide/free-surface-qg-density-diffusion.html) for the developmental canonical QG model, shared budgets, and integrator selection.
 - Use [Reading and writing files](/users-guide/reading-and-writing-to-file.html) for transform persistence, model output, and restart.

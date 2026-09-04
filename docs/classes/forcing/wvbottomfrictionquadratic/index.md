@@ -59,6 +59,10 @@ $$
 \end{align}
 $$
 
+The free-surface QG transform projects the bottom stress
+into its canonical APV and active-endpoint families through a signed
+boundary load. Its stress products use a doubled horizontal grid.
+
 ### Example
 
 ```matlab

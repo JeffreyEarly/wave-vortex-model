@@ -10,6 +10,18 @@ classdef TestCoreAPIDocumentation < matlab.unittest.TestCase
     end
 
     methods (Test,TestTags="full")
+        function freeSurfaceEnergyKeepsItsCanonicalDefinition(testCase)
+            total = testCase.generatedTransformPage("wvtransformfreesurfaceqg","totalenergy.md");
+            spatial = testCase.generatedTransformPage("wvtransformfreesurfaceqg","totalenergyspatiallyintegrated.md");
+            diagnostic = testCase.generatedTransformPage("wvtransformfreesurfaceqg","quadraticdiagnostics.md");
+            testCase.verifySubstring(total,"canonical quadratic diagnostics")
+            testCase.verifySubstring(spatial,"surface gravitational energy")
+            testCase.verifySubstring(diagnostic,"horizontal-mean QGPV from MDA")
+            testCase.verifyFalse(contains(diagnostic,"Developer documentation"))
+            testCase.verifyFalse(contains(total,"Apm_TE_factor"))
+            testCase.verifyFalse(contains(spatial,"A0_TE_factor"))
+        end
+
         function abstractTransformListsCurrentFamilies(testCase)
             page = testCase.generatedTransformPage("wvtransform","index.md");
             transformFamilies = [
@@ -564,6 +576,7 @@ classdef TestCoreAPIDocumentation < matlab.unittest.TestCase
                 "Inspect forcing or damping scales"
                 "Evaluate prescribed forcing"
                 "Generate forcing inputs"
+                "Evaluate forcing budgets"
                 ];
             indexes = [
                 fullfile("wvforcing","index.md")
@@ -574,6 +587,7 @@ classdef TestCoreAPIDocumentation < matlab.unittest.TestCase
                 fullfile("wvnarrowbandgeostrophicforcing","index.md")
                 fullfile("wvbetaplanepvadvection","index.md")
                 fullfile("wvseasonalsurfacebuoyancyflux","index.md")
+                fullfile("wvseasonalsurfaceanomalyforcing","index.md")
                 fullfile("wvpseudotopographicwavegeneration","index.md")
                 fullfile("closures","wvadaptivedamping","index.md")
                 fullfile("closures","wvverticaldiffusivity","index.md")

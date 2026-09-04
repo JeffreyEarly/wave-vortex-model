@@ -16,10 +16,11 @@ Create adaptive spectral damping for a transform.
 
 ## Declaration
 ```matlab
- self = WVAdaptiveDamping(wvt)
+ self = WVAdaptiveDamping(wvt,options)
 ```
 ## Parameters
 + `wvt`  transform that owns and evaluates the closure
++ `options.apvCutoffFraction`  optional free-surface APV cutoff fraction; NaN uses the standard cutoff
 
 ## Returns
 + `self`  adaptive-damping closure owned by `wvt`

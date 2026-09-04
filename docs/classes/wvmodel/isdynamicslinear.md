@@ -3,7 +3,7 @@ layout: default
 title: isDynamicsLinear
 parent: WVModel
 grand_parent: Class documentation
-nav_order: 33
+nav_order: 34
 mathjax: true
 ---
 

@@ -3,7 +3,7 @@ layout: default
 title: spectralVariableWithResolution
 parent: WVTransformFreeSurfaceQG
 grand_parent: Transforms
-nav_order: 203
+nav_order: 207
 mathjax: true
 ---
 

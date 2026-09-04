@@ -23,7 +23,7 @@ writeClassDocumentation("WVModel",buildFolder,"classes",classFolderName,"",class
 parentName = "Forcing";
 websiteFolder = "classes/forcing";
 writeClassDocumentation("WVForcing",buildFolder,websiteFolder,parentName,"",parentName,1,{'handle','CAAnnotatedClass','matlab.mixin.Heterogeneous'},string.empty(0,1));
-classes = ["WVNonlinearAdvection" "WVBottomFrictionLinear" "WVBottomFrictionQuadratic" "WVFixedAmplitudeForcing" "WVNarrowBandGeostrophicForcing" "WVBetaPlanePVAdvection" "WVSeasonalSurfaceBuoyancyFlux" "WVPseudoTopographicWaveGeneration"];
+classes = ["WVNonlinearAdvection" "WVBottomFrictionLinear" "WVBottomFrictionQuadratic" "WVFixedAmplitudeForcing" "WVNarrowBandGeostrophicForcing" "WVBetaPlanePVAdvection" "WVSeasonalSurfaceBuoyancyFlux" "WVPseudoTopographicWaveGeneration" "WVSeasonalSurfaceAnomalyForcing"];
 writeClassGroup(classes,buildFolder,websiteFolder,parentName,classFolderName,parentName,2,{'handle','WVForcing','CAAnnotatedClass','matlab.mixin.Heterogeneous'},string.empty(0,1));
 
 parentName = "Closures";
@@ -59,6 +59,7 @@ websiteFolder = "classes/developer-internals";
 writeClassDocumentation("WVFourierStorageLayout",buildFolder,websiteFolder,parentName,classFolderName,parentName,1,{'handle'},string.empty(0,1));
 writeClassDocumentation("WVCompiledBackend",buildFolder,websiteFolder,parentName,classFolderName,parentName,2,{'handle'},string.empty(0,1));
 writeClassDocumentation("WVCompiledConstantStratificationBackend",buildFolder,websiteFolder,parentName,classFolderName,parentName,3,{'handle'},string.empty(0,1));
+writeClassDocumentation("WVDensityDiffusionIntegrator",buildFolder,websiteFolder,parentName,classFolderName,parentName,4,{'handle'},string.empty(0,1));
 end
 
 function writeVersionHistory(repositoryRoot,buildFolder)
@@ -301,6 +302,12 @@ for sidecarFolder = sidecarFolders'
         end
         for iMethod = matchingIndices
             methodDocumentation = documentation.allMethodDocumentation(iMethod);
+            % Canonical free-surface overrides use different coefficient
+            % families and metrics from the base wave-vortex transform.
+            if shouldOverrideSummary && string(documentation.name)=="WVTransformFreeSurfaceQG" && ...
+                    string(methodDocumentation.definingClassName)==string(documentation.name)
+                continue
+            end
             methodDocumentation.mergeAnnotatedPropertyDocumentation(sidecarMetadata);
             if shouldOverrideSummary && sidecarSummary ~= ""
                 methodDocumentation.shortDescription = sidecarSummary;

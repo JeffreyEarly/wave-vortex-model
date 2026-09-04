@@ -3,7 +3,7 @@ layout: default
 title: floatPositions
 parent: WVModel
 grand_parent: Class documentation
-nav_order: 18
+nav_order: 19
 mathjax: true
 ---
 
