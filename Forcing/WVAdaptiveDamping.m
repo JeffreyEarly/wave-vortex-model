@@ -455,7 +455,7 @@ classdef WVAdaptiveDamping < WVForcing
                 [horizontal,vertical]=self.thermalDampingTendency(wvt,physicalState);
                 tendency.Ag_T=tendency.Ag_T+horizontal;
                 if ~isempty(vertical)
-                    tendency.Ag_T=tendency.Ag_T+wvt.transformStateForward(vertical,complex(zeros(1,length(wvt.klNonzero))));
+                    tendency.Ag_T=tendency.Ag_T+wvt.transformStateForward(vertical,complex(zeros(wvt.activeEndpointCount,length(wvt.klNonzero))));
                 end
                 return
             end

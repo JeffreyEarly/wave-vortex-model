@@ -3,13 +3,15 @@ classdef WVTransformFreeSurfaceQGDiffusion < WVGeometryDoublyPeriodic & WVTransf
     %
     % The public Ag_T array is the total instantaneous modal state, in
     % meters. Unit Euclidean right eigenvectors act on scaled interior
-    % QGPV and surface-displacement data. These modes are not energy
+    % QGPV and active endpoint-displacement data. These modes are not energy
     % orthogonal. Fixed homogeneous buoyancy diffusion is part of the
     % transform; it must not also be supplied as a forcing.
     %
-    % This MVP supports an active surface, inactive bottom, and zero
+    % This MVP defaults to active surface and bottom endpoints, and zero
     % horizontal mean. Operations, flow components, MDA, and the portable
-    % runtime are not supported. Use the exponential WVModel integrator.
+    % runtime are not supported. Use gd=Inf for an inactive bottom and the
+    % exponential WVModel integrator. An active bottom has zero diffusive
+    % buoyancy flux, not a prescribed zero displacement.
     %
     % ```matlab
     % wvt = WVTransformFreeSurfaceQGDiffusion.fromN2([500e3 500e3 4000],[64 64 385],N2Function=@(z)(5.2e-3)^2*exp(2*z/1300),latitude=24,kappaT=1e-5);
@@ -40,6 +42,12 @@ classdef WVTransformFreeSurfaceQGDiffusion < WVGeometryDoublyPeriodic & WVTransf
         % Fixed buoyancy diffusivity in square meters per second.
         % - Topic: Inspect the representation
         kappaT
+        % Surface generalized-energy projection weight in m s^-2.
+        % - Topic: Inspect the representation
+        g0
+        % Bottom generalized-energy weight; Inf fixes bottom anomaly to zero.
+        % - Topic: Inspect the representation
+        gd
         % Latitude in degrees north.
         % - Topic: Inspect the representation
         latitude
@@ -105,6 +113,8 @@ classdef WVTransformFreeSurfaceQGDiffusion < WVGeometryDoublyPeriodic & WVTransf
         pageValid_
         % Fourier work geometry for the extra quadrature planes.
         verticalFourierGeometry_
+        % Endpoint stress curls to modal tendencies; fixed scientific arrays.
+        boundaryStressProjection_
     end
 
     properties (Dependent)
@@ -192,6 +202,9 @@ classdef WVTransformFreeSurfaceQGDiffusion < WVGeometryDoublyPeriodic & WVTransf
         % Surface endpoint displacement anomaly in meters.
         % - Topic: Evaluate physical fields
         surfaceAnomaly
+        % Bottom endpoint displacement anomaly in meters (zero if inactive).
+        % - Topic: Evaluate physical fields
+        bottomAnomaly
         % Sea-surface height in meters.
         % - Topic: Evaluate physical fields
         ssh
@@ -219,6 +232,8 @@ classdef WVTransformFreeSurfaceQGDiffusion < WVGeometryDoublyPeriodic & WVTransf
                 options.rotationRate (1,1) double {mustBePositive,mustBeFinite}
                 options.planetaryRadius (1,1) double {mustBePositive,mustBeFinite}
                 options.g (1,1) double {mustBePositive,mustBeFinite}
+                options.g0 (1,1) double {mustBeReal,mustBeFinite}
+                options.gd (1,1) double {mustBeReal}
                 options.shouldAntialias (1,1) logical = true
                 options.verticalQuadratureWeights (:,1) double {mustBePositive,mustBeFinite}
                 options.verticalDerivativeMatrix double {mustBeFinite}
@@ -253,7 +268,10 @@ classdef WVTransformFreeSurfaceQGDiffusion < WVGeometryDoublyPeriodic & WVTransf
             for name = string(names), self.(name) = options.(name); end
             self.Lz = -self.z(1);
             self.klNonzero = find(hypot(self.k,self.l)>0);
-            n = nz-1; np = length(self.khUnique);
+            if isnan(self.gd) || self.gd==-Inf
+                error('WVTransformFreeSurfaceQGDiffusion:InvalidEndpointWeights','Use finite gd or gd=Inf.');
+            end
+            n = nz-2+self.activeEndpointCount; np = length(self.khUnique);
             for name = ["scaledStateFromModes" "modesFromScaledState"]
                 self.checkSize(self.(name),[n n np],name);
             end
@@ -301,6 +319,7 @@ classdef WVTransformFreeSurfaceQGDiffusion < WVGeometryDoublyPeriodic & WVTransf
         [Fq,Fb,speed] = dealiasedAdvection(self,physical)
         [FqHat,FbHat,speed] = dealiasedAdvectionFourierTendency(self,physical)
         diagnostics = verticalClosureDiagnostics(self)
+        tendency = boundaryMomentumTendency(self,tauXHat,tauYHat,endpoint)
 
         function rate=maximumExplicitDampingRate(self,speed)
             % Bound the sum of horizontal and vertical adaptive damping rates.
@@ -325,14 +344,14 @@ classdef WVTransformFreeSurfaceQGDiffusion < WVGeometryDoublyPeriodic & WVTransf
             self.checkSize(amplitudes,size(self.Ag_T),'amplitudes');
             state = self.applyModalMatrices(self.scaledStateFromModes,amplitudes);
             state = state./self.stateScale();
-            q = state(1:end-1,:); b = state(end,:);
+            q = state(1:self.Nz-2,:); b = state(self.Nz-1:end,:);
         end
 
         function amplitudes = transformStateForward(self,q,b)
-            % Project independent interior QGPV and surface displacement.
+            % Project independent interior QGPV and active endpoint displacements.
             % - Topic: Transform coefficient state
             self.checkSize(q,[self.Nz-2 length(self.klNonzero)],'q');
-            self.checkSize(b,[1 length(self.klNonzero)],'b');
+            self.checkSize(b,[self.activeEndpointCount length(self.klNonzero)],'b');
             state = self.stateScale().*[q;b];
             amplitudes = self.applyModalMatrices(self.modesFromScaledState,state);
         end
@@ -344,7 +363,7 @@ classdef WVTransformFreeSurfaceQGDiffusion < WVGeometryDoublyPeriodic & WVTransf
             phi = self.applyModalMatrices(self.phiModes,amplitudes);
             if nargout>1, eta = self.applyModalMatrices(self.etaModes,amplitudes); end
             if nargout>2, q = self.applyModalMatrices(self.qModes,amplitudes); end
-            if nargout>3, b = self.applyModalMatrices(self.scaledStateFromModes(end,:,:),amplitudes); end
+            if nargout>3, b = self.applyModalMatrices(self.scaledStateFromModes(self.Nz-1:end,:,:),amplitudes); end
         end
 
         function [q,u,v,b,ub,vb,qInteriorHat,phi] = quasigeostrophicSpatialState(self)
@@ -362,14 +381,15 @@ classdef WVTransformFreeSurfaceQGDiffusion < WVGeometryDoublyPeriodic & WVTransf
             u = self.spatialField(-1i*self.lNonzero.'.*phi);
             v = self.spatialField(1i*self.kNonzero.'.*phi);
             b = self.spatialField(bHat);
-            ub = u(:,:,end); vb = v(:,:,end);
+            endpoints=[self.Nz 1]; endpoints=endpoints(self.activeEndpoint);
+            ub = u(:,:,endpoints); vb = v(:,:,endpoints);
         end
 
         function tendency = projectQuasigeostrophicSpatialTendency(self,Fq,Fb)
             % Project zero-mean QGPV and endpoint tendencies into Ag_T.
             % - Topic: Evolution internals
             self.checkSize(Fq,[self.Nx self.Ny self.Nz],'Fq');
-            self.checkSize(Fb,[self.Nx self.Ny],'Fb');
+            self.checkSize(Fb,[self.Nx self.Ny self.activeEndpointCount],'Fb');
             q = self.spectralField(Fq); b = self.spectralField(Fb);
             tendency = struct(Ag_T=self.transformStateForward(q(2:end-1,:),b));
         end
@@ -381,9 +401,9 @@ classdef WVTransformFreeSurfaceQGDiffusion < WVGeometryDoublyPeriodic & WVTransf
             [q,u,v,b,ub,vb,qInteriorHat,phiHat] = self.quasigeostrophicSpatialState();
             speed = max(hypot(u,v),[],'all');
             physical = struct(q=q,u=u,v=v,b=b,ub=ub,vb=vb,uvMax=speed,qInteriorHat=qInteriorHat,phiHat=phiHat);
-            Fq = zeros(self.spatialMatrixSize); Fb = zeros(self.Nx,self.Ny);
+            Fq = zeros(self.spatialMatrixSize); Fb = zeros(self.Nx,self.Ny,self.activeEndpointCount);
             qTendency = complex(zeros(size(qInteriorHat)));
-            bTendency = complex(zeros(1,length(self.klNonzero)));
+            bTendency = complex(zeros(self.activeEndpointCount,length(self.klNonzero)));
             % Early projection is safe only for known additive callbacks.
             % Custom forcing must still see the full accumulated grid field,
             % including horizontal product modes outside the stored subset.
@@ -457,7 +477,7 @@ classdef WVTransformFreeSurfaceQGDiffusion < WVGeometryDoublyPeriodic & WVTransf
             [phi,eta,q,b] = self.reconstructSpectralState(amplitudes);
             B = -self.N2.*(eta-(self.f/self.g)*(1+self.z/self.Lz).*phi(end,:));
             w = self.verticalQuadratureWeights/self.Lz;
-            norms = sqrt(2*[sum(w.*abs(q).^2,'all'),sum(w.*abs(B).^2,'all'),sum(w.*self.khNonzero.'.^2.*abs(phi).^2,'all'),sum(abs(b).^2)]);
+            norms = sqrt(2*[sum(w.*abs(q).^2,'all'),sum(w.*abs(B).^2,'all'),sum(w.*self.khNonzero.'.^2.*abs(phi).^2,'all'),sum(abs(b).^2,'all')]);
         end
 
         function state = coefficientAbsoluteTolerances(~,~)
@@ -510,11 +530,11 @@ classdef WVTransformFreeSurfaceQGDiffusion < WVGeometryDoublyPeriodic & WVTransf
         function value = get.X(self), [value,~,~]=ndgrid(self.x,self.y,self.z); end
         function value = get.Y(self), [~,value,~]=ndgrid(self.x,self.y,self.z); end
         function value = get.Z(self), [~,~,value]=ndgrid(self.x,self.y,self.z); end
-        function value = get.Nj(self), value=self.Nz-1; end
+        function value = get.Nj(self), value=self.Nz-2+self.activeEndpointCount; end
         function value = get.thermalMode(self), value=(1:self.Nj).'; end
         function value = get.thermalState(self), value=(1:self.Nj).'; end
-        function value = get.activeEndpoint(~), value=1; end
-        function value = get.activeEndpointCount(~), value=1; end
+        function value = get.activeEndpoint(self), value=(1:self.activeEndpointCount).'; end
+        function value = get.activeEndpointCount(self), value=1+isfinite(self.gd); end
         function value = get.f(self), value=2*self.rotationRate*sind(self.latitude); end
         function value = get.beta(self), value=2*self.rotationRate*cosd(self.latitude)/self.planetaryRadius; end
         function value = get.inertialPeriod(self), value=2*pi/abs(self.f); end
@@ -526,7 +546,13 @@ classdef WVTransformFreeSurfaceQGDiffusion < WVGeometryDoublyPeriodic & WVTransf
         function value = get.v(self), phi=self.reconstructSpectralState(); value=self.spatialField(1i*self.kNonzero.'.*phi); end
         function value = get.eta(self), [~,eta]=self.reconstructSpectralState(); value=self.spatialField(eta); end
         function value = get.qgpv(self), [~,~,q]=self.reconstructSpectralState(); value=self.spatialField(q); end
-        function value = get.surfaceAnomaly(self), [~,b]=self.transformStateBack(self.Ag_T); value=self.spatialField(b); end
+        function value = get.surfaceAnomaly(self), [~,b]=self.transformStateBack(self.Ag_T); value=self.spatialField(b(1,:)); end
+        function value = get.bottomAnomaly(self)
+            value=zeros(self.Nx,self.Ny);
+            if self.activeEndpointCount==2
+                [~,b]=self.transformStateBack(self.Ag_T); value=self.spatialField(b(2,:));
+            end
+        end
         function value = get.ssh(self), phi=self.reconstructSpectralState(); value=self.spatialField((self.f/self.g)*phi(end,:)); end
         function value = get.buoyancy(self)
             [phi,eta]=self.reconstructSpectralState();
@@ -576,7 +602,7 @@ classdef WVTransformFreeSurfaceQGDiffusion < WVGeometryDoublyPeriodic & WVTransf
             self.checkSize(value,[self.Nj length(self.klNonzero)],'Ag_T');
         end
         function scale = stateScale(self)
-            scale=[(self.Lz/abs(self.f))*sqrt(self.verticalQuadratureWeights(2:end-1)/self.Lz);1];
+            scale=[(self.Lz/abs(self.f))*sqrt(self.verticalQuadratureWeights(2:end-1)/self.Lz);ones(self.activeEndpointCount,1)];
         end
     end
 
@@ -592,7 +618,7 @@ classdef WVTransformFreeSurfaceQGDiffusion < WVGeometryDoublyPeriodic & WVTransf
         function names = scientificPropertyNames()
             % List the complete direct-construction vocabulary.
             % - Topic: Create and restore a transform
-            names={'Lx','Ly','x','y','z','N2','kappaT','latitude','rotationRate','planetaryRadius','g','shouldAntialias','verticalQuadratureWeights','verticalDerivativeMatrix','khUnique','klNonzeroKhUniqueIndex','thermalDecayRate','scaledStateFromModes','modesFromScaledState','phiModes','etaModes','qModes','eigenResidual','eigenvectorCondition','verticalNumerics','shouldDealiasVertical'};
+            names={'Lx','Ly','x','y','z','N2','kappaT','latitude','rotationRate','planetaryRadius','g','g0','gd','shouldAntialias','verticalQuadratureWeights','verticalDerivativeMatrix','khUnique','klNonzeroKhUniqueIndex','thermalDecayRate','scaledStateFromModes','modesFromScaledState','phiModes','etaModes','qModes','eigenResidual','eigenvectorCondition','verticalNumerics','shouldDealiasVertical'};
         end
         function annotation = thermalCoefficientAnnotation()
             annotation=WVCoefficientAnnotation('Ag_T',{'thermalMode','klNonzero'},'m','total instantaneous balanced diffusion-mode amplitudes',canonicalBasis="complete scaled balanced buoyancy-diffusion eigenmodes",auxiliaryCoordinates=["kNonzero" "lNonzero" "khNonzero"],isComplex=true);

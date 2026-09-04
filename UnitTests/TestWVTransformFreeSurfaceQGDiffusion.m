@@ -339,7 +339,7 @@ classdef TestWVTransformFreeSurfaceQGDiffusion < matlab.unittest.TestCase
 
         function w=transform(kappa)
             if nargin<1, kappa=1e-5; end
-            w=WVTransformFreeSurfaceQGDiffusion.fromN2([500e3 500e3 4000],[8 8 17],N2Function=@(z)(5.2e-3)^2*exp(2*z/1300),kappaT=kappa);
+            w=WVTransformFreeSurfaceQGDiffusion.fromN2([500e3 500e3 4000],[8 8 17],N2Function=@(z)(5.2e-3)^2*exp(2*z/1300),kappaT=kappa,gd=Inf);
         end
         function force=seasonal(w,phase)
             if nargin<2, phase=0; end

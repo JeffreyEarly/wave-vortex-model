@@ -12,8 +12,9 @@ function assessment = assessVerticalResolution(Lz,Nz,options)
 % - Parameter Nz: number of physical vertical quadrature points
 % - Parameter options.N2Function: squared buoyancy-frequency function
 % - Parameter options.rhoFunction: no-motion density function
-% - Parameter options.g0: surface acceleration; default stratification integral
-% - Parameter options.gd: bottom acceleration; default `Inf`
+% - Parameter options.g0: surface acceleration; default negative stratification integral
+% - Parameter options.gd: bottom acceleration; default positive stratification integral; use Inf to omit the bottom endpoint
+% - Parameter options.latitude: latitude in degrees; default 24
 % - Parameter options.apvGramTolerance: APV normalized-Gram tolerance
 % - Parameter options.mdaGramTolerance: MDA normalized-Gram tolerance
 % - Parameter options.quadraticAliasingTolerance: APV quadratic-product tolerance
@@ -25,10 +26,10 @@ arguments
     options.rhoFunction function_handle = @isempty
     options.rho0 (1,1) double {mustBePositive} = 1025
     options.rotationRate (1,1) double {mustBePositive} = 7.2921e-5
-    options.latitude (1,1) double {mustBeSupportedLatitude} = 33
+    options.latitude (1,1) double {mustBeSupportedLatitude} = 24
     options.g (1,1) double {mustBePositive} = 9.81
     options.g0 (1,1) double = NaN
-    options.gd (1,1) double = Inf
+    options.gd (1,1) double = NaN
     options.apvGramTolerance (1,1) double {mustBeReal,mustBeFinite,mustBeNonnegative} = 1e-2
     options.mdaGramTolerance (1,1) double {mustBeReal,mustBeFinite,mustBeNonnegative} = 1e-2
     options.quadraticAliasingTolerance (1,1) double {mustBeReal,mustBeFinite,mustBePositive} = 0.1

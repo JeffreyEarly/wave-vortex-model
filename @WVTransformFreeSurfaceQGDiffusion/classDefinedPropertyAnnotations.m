@@ -8,10 +8,12 @@ for name=["totalEnergy" "totalEnergySpatiallyIntegrated"]
 end
 annotations(end+1)=CADimensionProperty('z','m','physical vertical coordinate, bottom to surface');
 annotations(end+1)=CADimensionProperty('thermalMode','1','complete ordinal diffusion-mode coordinate');
-annotations(end+1)=CADimensionProperty('thermalState','1','scaled independent data: interior QGPV, then surface displacement');
+annotations(end+1)=CADimensionProperty('thermalState','1','scaled independent data: interior QGPV, then active endpoint displacements in surface-bottom order');
 annotations(end+1)=CADimensionProperty('klNonzero','1','original one-based full-kl indices at positive wavenumber');
 annotations(end+1)=CADimensionProperty('khUnique','rad m-1','distinct positive horizontal-wavenumber pages');
-annotations(end+1)=CADimensionProperty('activeEndpoint','1','surface endpoint code, one');
+annotations(end+1)=CADimensionProperty('activeEndpoint','1','active endpoint codes: surface 1, bottom 2');
+annotations(end+1)=CANumericProperty('g0',{},'m s-2','surface generalized-energy projection weight');
+annotations(end+1)=CANumericProperty('gd',{},'m s-2','bottom generalized-energy projection weight; Inf constrains bottom anomaly to zero');
 annotations(end+1)=WVTransformFreeSurfaceQGDiffusion.thermalCoefficientAnnotation();
 annotations(end+1)=CANumericProperty('N2',{'z'},'s-2','squared buoyancy frequency');
 annotations(end+1)=CANumericProperty('verticalQuadratureWeights',{'z'},'m','positive physical quadrature weights');
@@ -42,4 +44,5 @@ for i=1:length(names)
     if i<=6, dims={'x','y','z'}; elseif i<=8, dims={'x','y'}; else, dims={}; end
     annotations(end+1)=WVVariableAnnotation(names{i},dims,units{i},descriptions{i});
 end
+annotations(end+1)=WVVariableAnnotation('bottomAnomaly',{'x','y'},'m','bottom endpoint displacement anomaly; zero when inactive');
 end

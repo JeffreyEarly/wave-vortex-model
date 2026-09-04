@@ -16,7 +16,7 @@ if self.shouldDealiasVertical
     [Fq,Fb,fineSpeed]=self.dealiasedAdvection(physical); speed=max(speed,fineSpeed);
 else
     nonlinear=WVNonlinearAdvection(self);
-    [Fq,Fb]=nonlinear.addQuasigeostrophicSpatialForcing(self,zeros(self.spatialMatrixSize),zeros(self.Nx,self.Ny),physical);
+    [Fq,Fb]=nonlinear.addQuasigeostrophicSpatialForcing(self,zeros(self.spatialMatrixSize),zeros(self.Nx,self.Ny,self.activeEndpointCount),physical);
 end
 advection=self.projectQuasigeostrophicSpatialTendency(Fq,Fb);
 horizontal=complex(zeros(size(self.Ag_T))); vertical=horizontal; source=horizontal;
@@ -30,7 +30,7 @@ for force=self.spectralFluxForcing
 end
 for force=self.spatialFluxForcing
     if isa(force,'WVSeasonalSurfaceAnomalyForcing')
-        [Fq,Fb]=force.addQuasigeostrophicSpatialForcing(self,zeros(self.spatialMatrixSize),zeros(self.Nx,self.Ny),physical);
+        [Fq,Fb]=force.addQuasigeostrophicSpatialForcing(self,zeros(self.spatialMatrixSize),zeros(self.Nx,self.Ny,self.activeEndpointCount),physical);
         tendency=self.projectQuasigeostrophicSpatialTendency(Fq,Fb); source=source+tendency.Ag_T;
     end
 end

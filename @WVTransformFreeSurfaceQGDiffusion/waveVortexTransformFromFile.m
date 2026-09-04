@@ -9,7 +9,7 @@ end
 ncfile=NetCDFFile(path,shouldReadOnly=options.shouldReadOnly);
 try
     names=WVTransformFreeSurfaceQGDiffusion.scientificPropertyNames();
-    optional={'verticalNumerics','shouldDealiasVertical'};
+    optional={'verticalNumerics','shouldDealiasVertical','g0','gd'};
     values=CAAnnotatedClass.propertyValuesFromGroup(ncfile,setdiff(names,optional));
     for name=string(optional)
         if ncfile.hasGroupWithName(name) || ncfile.hasVariableWithName(name)
@@ -17,6 +17,8 @@ try
             values.(name)=additional.(name);
         end
     end
+    if ~isfield(values,'g0'), values.g0=-sum(values.verticalQuadratureWeights.*values.N2); end
+    if ~isfield(values,'gd'), values.gd=Inf; end
     args=namedargs2cell(values);
     wvt=WVTransformFreeSurfaceQGDiffusion(args{:});
     wvt.initFromNetCDFFile(ncfile,iTime=options.iTime);

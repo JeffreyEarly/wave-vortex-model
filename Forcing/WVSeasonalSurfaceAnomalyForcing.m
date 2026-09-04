@@ -56,7 +56,8 @@ classdef WVSeasonalSurfaceAnomalyForcing < WVForcing
             self.pattern=options.pattern; self.amplitude=options.amplitude;
             self.period=options.period; self.phase=options.phase;
             if isa(wvt,'WVTransformFreeSurfaceQGDiffusion')
-                b=wvt.spectralField(self.amplitude*self.pattern);
+                b=zeros(wvt.activeEndpointCount,length(wvt.klNonzero));
+                b(1,:)=wvt.spectralField(self.amplitude*self.pattern);
                 self.modalSource_=wvt.transformStateForward(zeros(wvt.Nz-2,length(wvt.klNonzero)),b);
             end
         end

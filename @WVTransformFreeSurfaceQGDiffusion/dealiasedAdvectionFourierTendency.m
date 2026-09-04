@@ -12,7 +12,7 @@ arguments (Input)
 end
 arguments (Output)
     FqHat (:,:) double
-    FbHat (1,:) double
+    FbHat (:,:) double
     speed (1,1) double
 end
 [advection,Fb,speed]=self.advectionOnQuadrature(physical,true);

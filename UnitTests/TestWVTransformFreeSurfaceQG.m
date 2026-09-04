@@ -184,15 +184,22 @@ classdef TestWVTransformFreeSurfaceQG < matlab.unittest.TestCase
             N2 = @(z) (5.2e-3)^2*exp(2*z/1300);
             expectedG0 = -integral(N2,-D,0);
             wvt = WVTransformFreeSurfaceQG([100e3 100e3 D],[8 8 33], ...
-                N2Function=N2,latitude=30);
+                N2Function=N2);
 
             testCase.verifyEqual(wvt.g0,expectedG0,AbsTol=0)
-            testCase.verifyEqual(wvt.gd,Inf,AbsTol=0)
+            testCase.verifyEqual(wvt.gd,-expectedG0,AbsTol=0)
+            testCase.verifyEqual(wvt.activeEndpoint,[1;2])
+            testCase.verifyEqual(wvt.latitude,24)
             testCase.verifyEqual(wvt.quadraticAliasingTolerance,0.1,AbsTol=0)
             testCase.verifyEqual(wvt.apvModeNumber(1),-1,AbsTol=0)
             testCase.verifyTrue(isfinite(wvt.quadraticAliasingError))
             testCase.verifyLessThanOrEqual(wvt.quadraticAliasingError,0.1)
             testCase.verifyEqual(wvt.modeSelectionMethod,"fixed-native-quadrature-v1")
+            assessment = WVTransformFreeSurfaceQG.assessVerticalResolution(D,33,N2Function=N2);
+            testCase.verifyEqual(assessment.z,wvt.z)
+            testCase.verifyEqual(assessment.apvModeCount,length(wvt.apvMode))
+            testCase.verifyEqual(assessment.mdaModeCount,length(wvt.mdaMode))
+            testCase.verifyEqual(assessment.apvGramError,wvt.apvGramError)
         end
 
         function scientificGridAndModeCountsAreNotCallerSelected(testCase)

@@ -3,7 +3,10 @@ function self = fromN2(Lxyz,Nxyz,options)
 %
 % No APV eigensolve is performed. The APV descriptor supplies only the
 % physical domain and stratification to the native spectral grid builder.
-% The matrix acts on [q(z(2:end-1)); b0], with b0 in meters.
+% The matrix acts on [q(z(2:end-1)); b0; bd], with endpoints in meters.
+% Use gd=Inf to omit bd. Default projection weights are the negative and
+% positive integral of N2 over depth, respectively, as in the non-diffusive
+% transform; they do not alter the physical diffusion operator.
 %
 % - Topic: Create and restore a transform
 % - Parameter Lxyz: domain lengths in meters
@@ -11,6 +14,9 @@ function self = fromN2(Lxyz,Nxyz,options)
 % - Parameter verticalDealiasingFactor: nonlinear quadrature count divided by Nz; default 2, independent of the thermal mode count
 % - Parameter options.N2Function: positive stratification function
 % - Parameter options.kappaT: fixed buoyancy diffusivity, default 1e-5 m2/s
+% - Parameter options.g0: surface projection weight; default negative stratification integral
+% - Parameter options.gd: bottom projection weight; default positive stratification integral; use Inf to omit the bottom endpoint
+% - Parameter options.latitude: latitude in degrees; default 24
 % - Returns self: complete thermal-mode transform
 arguments
     Lxyz (1,3) double {mustBePositive,mustBeFinite}
@@ -21,13 +27,15 @@ arguments
     options.rotationRate (1,1) double {mustBePositive,mustBeFinite} = 7.2921e-5
     options.planetaryRadius (1,1) double {mustBePositive,mustBeFinite} = 6.371e6
     options.g (1,1) double {mustBePositive,mustBeFinite} = 9.81
+    options.g0 (1,1) double {mustBeReal} = NaN
+    options.gd (1,1) double {mustBeReal} = NaN
     options.shouldAntialias (1,1) logical = true
     options.verticalDealiasingFactor (1,1) double {mustBeGreaterThanOrEqual(options.verticalDealiasingFactor,1),mustBeFinite} = 2
 end
 if Nxyz(3)<5 || min(Nxyz(1:2))<4
     error('WVTransformFreeSurfaceQGDiffusion:InvalidGrid','Use Nz >= 5 and Nx, Ny >= 4.');
 end
-D=Lxyz(3); nz=Nxyz(3); n=nz-1;
+D=Lxyz(3); nz=Nxyz(3);
 f=2*options.rotationRate*sind(options.latitude);
 problem=IMInternalModes.geostrophicAPVModes(N2=options.N2Function,zDomain=[-D 0],g=options.g,g0=0,gd=Inf,surfaceBoundary="freeSurface");
 grid=IMSolverSpectral(nEVP=nz,coordinateKind="wkb").configuredForEVP(problem);
@@ -36,6 +44,15 @@ N2=reshape(options.N2Function(z),[],1);
 if numel(N2)~=nz || any(~isfinite(N2) | N2<=0)
     error('WVTransformFreeSurfaceQGDiffusion:InvalidStratification','N2Function must return a finite positive value at every node.');
 end
+if isnan(options.g0) || isnan(options.gd)
+    columnGravity=integral(options.N2Function,-D,0);
+    if isnan(options.g0), options.g0=-columnGravity; end
+    if isnan(options.gd), options.gd=columnGravity; end
+end
+if ~isfinite(options.g0) || options.gd==-Inf
+    error('WVTransformFreeSurfaceQGDiffusion:InvalidEndpointWeights','Use finite g0 and finite gd or gd=Inf.');
+end
+ne=1+isfinite(options.gd); n=nz-2+ne;
 geometry=WVGeometryDoublyPeriodic(Lxyz(1:2),Nxyz(1:2),shouldAntialias=options.shouldAntialias,shouldExcludeNyquist=true,shouldExcludeConjugates=true,conjugateDimension=2);
 kh=hypot(geometry.k,geometry.l); kh=kh(kh>0);
 [khUnique,~,pageMap]=uniquetol(kh,100*eps,DataScale=max(kh)); np=length(khUnique);
@@ -48,11 +65,13 @@ state.verticalQuadratureWeights=w; state.verticalDerivativeMatrix=Dz;
 state.scaledStateFromModes=complex(zeros(n,n,np)); state.modesFromScaledState=state.scaledStateFromModes;
 state.phiModes=complex(zeros(nz,n,np)); state.etaModes=state.phiModes; state.qModes=state.phiModes;
 state.thermalDecayRate=complex(zeros(n,np)); state.eigenResidual=zeros(np,1); state.eigenvectorCondition=zeros(np,1);
-scale=[(D/abs(f))*sqrt(w(2:end-1)/D);1];
+scale=[(D/abs(f))*sqrt(w(2:end-1)/D);ones(ne,1)];
 % Homogeneous weak diffusion, expressed on interior displacement.
-vertical=-(Dz.'*(w.*(Dz.*N2.')))./(w.*N2); vertical(1,:)=0;
-projection=[-f*Dz(2:end-1,:);zeros(1,nz)]; projection(end,end)=1;
-rhs=zeros(nz,n); rhs(2:end-1,1:end-1)=eye(nz-2); rhs(end,end)=1;
+vertical=-(Dz.'*(w.*(Dz.*N2.')))./(w.*N2);
+if ne==1, vertical(1,:)=0; end
+projection=[-f*Dz(2:end-1,:);zeros(ne,nz)]; projection(nz-1,end)=1;
+rhs=zeros(nz,n); rhs(2:end-1,1:nz-2)=eye(nz-2); rhs(end,nz-1)=1;
+if ne==2, projection(nz,1)=1; rhs(1,nz)=1; end
 % At zero diffusivity use the unit-diffusivity basis with zero rates.
 solveDiffusivity=options.kappaT;
 if solveDiffusivity==0, solveDiffusivity=1; end
@@ -79,7 +98,7 @@ for ip=1:np
     inverseResidual=norm(left'*right-eye(n),'fro')/sqrt(n);
     growthTolerance=1e3*eps*norm(Lscaled,2);
     if residual>1e-11 || inverseResidual>1e-9 || any(real(lambda)>growthTolerance)
-        error('WVTransformFreeSurfaceQGDiffusion:UnreliableModes','Page kh=%.8g: eigen residual %.3g, inverse residual %.3g, maximum growth %.3g.',khUnique(ip),residual,inverseResidual,max(real(lambda)));
+        error('WVTransformFreeSurfaceQGDiffusion:UnreliableModes','Page kh=%.8g: eigen residual %.3g, inverse residual %.3g, maximum growth %.3g (allowed %.3g). Increase Nz if the neutral buoyancy direction is under-resolved.',khUnique(ip),residual,inverseResidual,max(real(lambda)),growthTolerance);
     end
     state.scaledStateFromModes(:,:,ip)=right;
     state.modesFromScaledState(:,:,ip)=left';

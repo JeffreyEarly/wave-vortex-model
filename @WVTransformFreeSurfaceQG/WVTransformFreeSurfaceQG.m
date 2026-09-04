@@ -9,7 +9,8 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
     % physical vertical grid. The inherited `Nj` value equals
     % `apvModeCount`; `mdaModeCount` may differ.
     % Omitted endpoints use $$g_0=-\int_{-D}^{0}N^2\,dz$$ and
-    % $$g_d=\mathop{\rm Inf}$$. The resulting APV family normally includes
+    % $$g_d=+\int_{-D}^{0}N^2\,dz$$, activating both endpoints.
+    % Use `gd=Inf` for an inactive bottom. The APV family normally includes
     % a negative mode. InternalModes retains that mode and uses its signed
     % Pontryagin pairing for projection; coupled quadratic errors are
     % positive magnitudes in the induced Hilbert majorant.
@@ -51,7 +52,7 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
         % Effective surface acceleration; omitted default is `-integral(N2,-Lz,0)`.
         % - Topic: Inspect modes and operators
         g0
-        % Effective bottom acceleration; omitted default is `Inf`.
+        % Effective bottom acceleration; omitted default is `integral(N2,-Lz,0)`.
         % - Topic: Inspect modes and operators
         gd
         % Number of finite endpoint accelerations.
@@ -233,6 +234,8 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
     end
 
     properties (Access = private, Transient)
+        % Fixed zero-APV stress responses for surface and bottom momentum loads.
+        boundaryMomentumResponse_
         % Rebuildable unit-diffusivity operators derived from the fixed
         % vertical modes, quadrature rule, and endpoint configuration.
         hasThermalCoefficientOperators_ (1,1) logical = false
@@ -293,8 +296,10 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
             % Create a free-surface QG transform scientifically or directly.
             %
             % Omitted `g0` uses $$-\int_{-D}^{0}N^2\,dz$$ and omitted `gd`
-            % is `Inf`. A finite endpoint, including zero, activates one
-            % boundary-normalized zero-APV family row. Supplying every
+            % uses $$+\int_{-D}^{0}N^2\,dz$$, activating both endpoints.
+            % Use `gd=Inf` to omit the bottom endpoint. A finite endpoint,
+            % including zero, activates one boundary-normalized zero-APV
+            % family row. Supplying every
             % persisted mode/operator option selects the direct construction
             % path and performs no InternalModes solve.
             %
@@ -304,8 +309,9 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
             % - Parameter Nxyz: grid counts `[Nx Ny Nz]`
             % - Parameter options.N2Function: squared buoyancy-frequency function
             % - Parameter options.rhoFunction: no-motion density function
-            % - Parameter options.g0: surface acceleration; default stratification integral
-            % - Parameter options.gd: bottom acceleration; default `Inf`
+            % - Parameter options.g0: surface acceleration; default negative stratification integral
+            % - Parameter options.gd: bottom acceleration; default positive stratification integral
+            % - Parameter options.latitude: latitude in degrees; default 24
             % - Parameter options.apvGramTolerance: APV normalized-Gram tolerance
             % - Parameter options.mdaGramTolerance: MDA normalized-Gram tolerance
             % - Parameter options.quadraticAliasingTolerance: APV quadratic-product tolerance in the induced Hilbert majorant
@@ -320,10 +326,10 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
                 options.rho0 (1,1) double {mustBePositive} = 1025
                 options.planetaryRadius (1,1) double {mustBePositive} = 6.371e6
                 options.rotationRate (1,1) double {mustBePositive} = 7.2921e-5
-                options.latitude (1,1) double {mustBeSupportedLatitude} = 33
+                options.latitude (1,1) double {mustBeSupportedLatitude} = 24
                 options.g (1,1) double {mustBePositive} = 9.81
                 options.g0 (1,1) double = NaN
-                options.gd (1,1) double = Inf
+                options.gd (1,1) double = NaN
                 options.z (:,1) double = zeros(0,1)
                 options.j (:,1) double
                 options.apvGramTolerance (1,1) double {mustBeReal,mustBeFinite,mustBeNonnegative} = 1e-2

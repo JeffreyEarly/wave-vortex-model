@@ -22,10 +22,12 @@ else
 end
 
 g0 = options.g0;
-if isnan(g0)
-    g0 = -integral(N2Function,-Lz,0);
-end
 gd = options.gd;
+if isnan(g0) || isnan(gd)
+    columnGravity = integral(N2Function,-Lz,0);
+    if isnan(g0), g0 = -columnGravity; end
+    if isnan(gd), gd = columnGravity; end
+end
 if isnan(g0) || g0 == -Inf || isnan(gd) || gd == -Inf
     error('WVTransformFreeSurfaceQG:InvalidEndpointAcceleration','g0 and gd must be signed finite, zero, or positive Inf.');
 end

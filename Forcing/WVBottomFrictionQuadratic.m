@@ -38,6 +38,10 @@ classdef WVBottomFrictionQuadratic < WVForcing
     % \end{align}
     % $$
     %
+    % The thermal free-surface QG transform projects the bottom stress
+    % directly into its diffusion modes instead of forcing a bottom QGPV
+    % grid value. Its stress products use a doubled horizontal grid.
+    %
     % ### Example
     %
     % ```matlab
@@ -66,9 +70,16 @@ classdef WVBottomFrictionQuadratic < WVForcing
         %
         % This is `Cd/z_int(1)` for a three-dimensional transform and
         % `Cd/4000` for a barotropic transform.
+        % Empty for the thermal transform, which uses a boundary load.
         %
         % - Topic: Properties
         cd
+    end
+
+    properties (Access=private, Transient)
+        % Fixed horizontal product geometry and compact-mode correspondence.
+        bottomGeometry_
+        bottomIndices_
     end
 
     methods
@@ -79,6 +90,10 @@ classdef WVBottomFrictionQuadratic < WVForcing
             % - Declaration: contract = portableImplementationContract(self)
             % - Returns contract: versioned data-only forcing contract
             % - Developer: true
+            if isa(self.wvt,'WVTransformFreeSurfaceQGDiffusion') || isa(self.wvt,'WVTransformFreeSurfaceQG')
+                contract=portableImplementationContract@WVForcing(self);
+                return
+            end
             payload = struct("name",string(self.name),"forcingTypes",string(self.forcingType),"priority",self.priority,"Cd",double(self.Cd));
             contract = self.supportedPortableImplementationContract("WVBottomFrictionQuadratic",payload);
         end
@@ -99,10 +114,18 @@ classdef WVBottomFrictionQuadratic < WVForcing
                 wvt WVTransform {mustBeNonempty}
                 options.Cd (1,1) double {mustBeNonnegative} = 1e-3 % https://www.nemo-ocean.eu/doc/node70.html
             end
-            self@WVForcing(wvt,"quadratic bottom friction",WVForcingType(["HydrostaticSpatial" "NonhydrostaticSpatial" "PVSpatial"]));
+            types=WVForcingType(["HydrostaticSpatial" "NonhydrostaticSpatial" "PVSpatial"]);
+            if isa(wvt,'WVTransformFreeSurfaceQGDiffusion') || isa(wvt,'WVTransformFreeSurfaceQG'), types=WVForcingType.QGSpectral; end
+            self@WVForcing(wvt,"quadratic bottom friction",types);
             self.Cd = options.Cd;
             
-            if ~isa(self.wvt,"WVGeometryDoublyPeriodicBarotropic")
+            if isa(wvt,'WVTransformFreeSurfaceQGDiffusion') || isa(wvt,'WVTransformFreeSurfaceQG')
+                self.cd=[];
+                self.bottomGeometry_=WVGeometryDoublyPeriodic([wvt.Lx wvt.Ly],2*[wvt.Nx wvt.Ny],Nz=1,shouldAntialias=false,shouldExcludeNyquist=true,shouldExcludeConjugates=true,conjugateDimension=2);
+                g=self.bottomGeometry_;
+                [found,self.bottomIndices_]=ismember(round([wvt.kNonzero*wvt.Lx wvt.lNonzero*wvt.Ly]/(2*pi)),round([g.k*wvt.Lx g.l*wvt.Ly]/(2*pi)),'rows');
+                assert(all(found),'The doubled grid must contain every native Fourier entry.');
+            elseif ~isa(self.wvt,"WVGeometryDoublyPeriodicBarotropic")
                 self.cd = self.Cd/wvt.z_int(1);
             else
                 % scaled by Lz, a typical ocean depth
@@ -131,6 +154,30 @@ classdef WVBottomFrictionQuadratic < WVForcing
             v_b = wvt.v(:,:,1);
             uv_mag = sqrt(u_b.^2 + v_b.^2);
             Fpv(:,:,1) = Fpv(:,:,1) - self.cd * (wvt.diffX(uv_mag.*v_b) - wvt.diffY(uv_mag.*u_b));
+        end
+
+        function tendency=addQuasigeostrophicSpectralForcing(self,wvt,tendency,physicalState)
+            % Add the transform-owned projection of bottom momentum stress.
+            % - Topic: Implement forcing evaluation
+            % - Developer: true
+            if self.Cd==0, return; end
+            if nargin>=5 && isfield(physicalState,'phiHat')
+                phi=physicalState.phiHat;
+            else
+                phi=wvt.reconstructSpectralState();
+                if isa(wvt,'WVTransformFreeSurfaceQG'), phi=phi(:,wvt.klNonzero); end
+            end
+            g=self.bottomGeometry_; indices=self.bottomIndices_;
+            bottom=complex(zeros(1,g.Nkl)); bottom(indices)=phi(1,:);
+            u=g.transformToSpatialDomainWithFourier(-1i*g.l.'.*bottom);
+            v=g.transformToSpatialDomainWithFourier(1i*g.k.'.*bottom);
+            speed=hypot(u,v);
+            stressU=g.transformFromSpatialDomainWithFourier(speed.*u);
+            stressV=g.transformFromSpatialDomainWithFourier(speed.*v);
+            source=wvt.boundaryMomentumTendency(-self.Cd*stressU(indices),-self.Cd*stressV(indices),"bottom");
+            for name=string(fieldnames(source)).'
+                tendency.(name)=tendency.(name)+source.(name);
+            end
         end
 
         function force = forcingWithResolutionOfTransform(self,wvtX2)
