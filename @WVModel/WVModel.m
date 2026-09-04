@@ -697,10 +697,13 @@ classdef WVModel < handle & WVModelAdaptiveTimeStepMethods & WVModelFixedTimeSte
             end
 
             if isempty(options.integratorType)
-                if isa(self.wvt,'WVTransformFreeSurfaceQGDiffusion'), options.integratorType='exponential'; else, options.integratorType='adaptive'; end
+                if isa(self.wvt,'WVTransformFreeSurfaceQGDiffusion') || ~isempty(self.weakThermalEvolution), options.integratorType='exponential'; else, options.integratorType='adaptive'; end
             end
             if isa(self.wvt,'WVTransformFreeSurfaceQGDiffusion') && ~strcmp(options.integratorType,'exponential')
                 error('WVModel:ExponentialIntegratorRequired','The diffusion transform requires integratorType="exponential".');
+            end
+            if ~isempty(self.weakThermalEvolution) && ~strcmp(options.integratorType,'exponential')
+                error('WVModel:WeakThermalIntegratorRequired','This model has opted into weak thermal evolution; use exponential stepping or a separate ordinary model.');
             end
 
             if self.isDynamicsLinear == false
@@ -844,7 +847,11 @@ classdef WVModel < handle & WVModelAdaptiveTimeStepMethods & WVModelFixedTimeSte
             % - Topic: Flux assembly
             % - Developer: true
             self.nFluxComputations = self.nFluxComputations + 1;
-            [F,speed] = self.wvt.nonthermalCoefficientTendency(true);
+            if isempty(self.weakThermalEvolution)
+                [F,speed] = self.wvt.nonthermalCoefficientTendency(true);
+            else
+                [F,speed] = self.weakThermalEvolution.nonthermalCoefficientTendency(true);
+            end
         end
 
         function updateIntegratorValuesFromCellArray(self,t,y0)

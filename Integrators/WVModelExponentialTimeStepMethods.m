@@ -35,8 +35,40 @@ classdef WVModelExponentialTimeStepMethods < handle
         % Counts and accepted steps from the most recent integration.
         % - Topic: Exponential integration
         exponentialStatistics
+        % Explicit developmental adapter; canonical snapshots do not persist it.
+        % - Topic: Exponential integration
+        % - Developer: true
+        weakThermalEvolution = []
     end
     methods
+        function setupWeakThermalIntegrator(self,kappaT,options)
+            % Opt into weak diffusion on the unchanged APV/zero-APV/MDA state.
+            % Reapply this choice explicitly after restoring a canonical snapshot.
+            % - Topic: Exponential integration
+            % - Developer: true
+            arguments
+                self WVModel
+                kappaT (1,1) double {mustBeNonnegative,mustBeFinite}
+                options.quadratureCount (1,1) double {mustBeInteger,mustBePositive} = max(129,2*self.wvt.Nz+1)
+                options.relTolerance (1,1) double {mustBePositive,mustBeFinite} = 1e-4
+                options.physicalAbsTolerance (1,4) double {mustBePositive,mustBeFinite} = [1e-13 1e-11 1e-8 1e-8]
+                options.initialStep (1,1) double {mustBePositive,mustBeFinite} = 3600
+                options.maximumStep (1,1) double {mustBePositive,mustBeFinite} = 86400
+                options.exponentialAdaptive (1,1) logical = true
+            end
+            self.assertExponentialConfiguration(true);
+            evolution=WVWeakThermalEvolution(self.wvt,kappaT,quadratureCount=options.quadratureCount);
+            previous=self.weakThermalEvolution;
+            self.weakThermalEvolution=evolution;
+            try
+                args=namedargs2cell(rmfield(options,'quadratureCount'));
+                self.setupIntegrator(args{:},integratorType="exponential");
+            catch exception
+                self.weakThermalEvolution=previous;
+                rethrow(exception)
+            end
+        end
+
         function setupExponentialTimeStepIntegrator(self,options)
             % Configure adaptive physical-norm ETDRK4 stepping.
             % - Topic: Exponential integration
@@ -64,21 +96,28 @@ classdef WVModelExponentialTimeStepMethods < handle
                 error('WVModel:ExponentialTimeRange','Exponential integration requires forward evolution at nonnegative times.');
             end
             w=self.wvt; o=self.exponentialOptions;
-            t=self.t; acceptedTotal=w.Ag_T;
+            evolution=w; isWeak=~isempty(self.weakThermalEvolution);
+            if isWeak, evolution=self.weakThermalEvolution; end
+            t=self.t;
+            if isWeak, acceptedTotal=evolution.modalState(); else, acceptedTotal=w.Ag_T; end
             try
                 times=self.outputTimesForIntegrationPeriod(t,finalTime);
                 self.finalIntegrationTime=finalTime;
                 self.showIntegrationStartDiagnostics(finalTime);
-                if ~isempty(w.verticalNumerics), quadratureCount=length(w.verticalNumerics.zQuadrature); else, quadratureCount=0; end
-                dampingNames=w.forcingNames(); hasDamping=any(dampingNames=="adaptive damping"); verticalStrength=0;
-                if hasDamping, damping=w.forcingWithName('adaptive damping'); verticalStrength=damping.verticalDampingStrength; end
-                if self.shouldShowIntegrationDiagnostics
+                if self.shouldShowIntegrationDiagnostics && ~isWeak
+                    if ~isempty(w.verticalNumerics), quadratureCount=length(w.verticalNumerics.zQuadrature); else, quadratureCount=0; end
+                    dampingNames=w.forcingNames(); hasDamping=any(dampingNames=="adaptive damping"); verticalStrength=0;
+                    if hasDamping, damping=w.forcingWithName('adaptive damping'); verticalStrength=damping.verticalDampingStrength; end
                     fprintf('QG numerics: horizontal dealiasing %d; vertical dealiasing %d (%d quadrature nodes); adaptive horizontal damping %d; vertical strength %.3g.\n',w.shouldAntialias,w.shouldDealiasVertical,quadratureCount,hasDamping,verticalStrength);
                 end
                 self.writeTimeStepToNetCDFFile(t);
-                nextOutput=2; state=acceptedTotal-w.seasonalCoefficients(t);
+                nextOutput=2; state=acceptedTotal-evolution.seasonalCoefficients(t);
                 % Evaluate time functions once per kh, then expand weights.
-                lambda=-w.thermalDecayRate; columnIndices=w.klNonzeroKhUniqueIndex;
+                if isWeak
+                    lambda=evolution.rates; columnIndices=1;
+                else
+                    lambda=-w.thermalDecayRate; columnIndices=w.klNonzeroKhUniqueIndex;
+                end
                 h=min(o.initialStep,o.maximumStep);
                 accepted=0; rejected=0; evaluations=0; outputEvaluations=0;
                 steps=[]; maxCFL=0; maxDampingNumber=0; timer=tic;
@@ -87,7 +126,7 @@ classdef WVModelExponentialTimeStepMethods < handle
                     h=min([h,finalTime-t,o.maximumStep]);
                     [N0,speed]=rhs(state,t);
                     h=min(h,.5*gridSize/max(speed,realmin));
-                    h=min(h,1/max(w.maximumExplicitDampingRate(speed),realmin));
+                    h=min(h,1/max(evolution.maximumExplicitDampingRate(speed),realmin));
                     c=WVInternal.exponentialRK4Coefficients(lambda,h,columnIndices);
                     [whole,stageSpeed]=WVInternal.exponentialRK4Step(state,t,h,c,@rhs,N0,speed);
                     errorValue=0; trial=whole;
@@ -96,17 +135,17 @@ classdef WVModelExponentialTimeStepMethods < handle
                         [half,s1]=WVInternal.exponentialRK4Step(state,t,h/2,halfC,@rhs,N0,speed);
                         [trial,s2]=WVInternal.exponentialRK4Step(half,t+h/2,h/2,halfC,@rhs);
                         stageSpeed=max([stageSpeed s1 s2]);
-                        difference=w.physicalErrorNorms(trial-whole)/15;
-                        scale=o.physicalAbsTolerance+o.relTolerance*max(w.physicalErrorNorms(state),w.physicalErrorNorms(trial));
+                        difference=evolution.physicalErrorNorms(trial-whole)/15;
+                        scale=o.physicalAbsTolerance+o.relTolerance*max(evolution.physicalErrorNorms(state),evolution.physicalErrorNorms(trial));
                         errorValue=max(difference./scale);
                     end
                     cfl=h*stageSpeed/gridSize;
-                    dampingNumber=h*w.maximumExplicitDampingRate(stageSpeed);
+                    dampingNumber=h*evolution.maximumExplicitDampingRate(stageSpeed);
                     finite=all(isfinite(trial),'all') && isfinite(errorValue);
                     accept=finite && errorValue<=1 && cfl<=.6 && dampingNumber<=1.2;
                     if accept
                         oldTime=t; oldState=state;
-                        t=t+h; state=trial; acceptedTotal=state+w.seasonalCoefficients(t);
+                        t=t+h; state=trial; acceptedTotal=state+evolution.seasonalCoefficients(t);
                         accepted=accepted+1; steps(end+1)=h; %#ok<AGROW>
                         maxCFL=max(maxCFL,cfl);
                         maxDampingNumber=max(maxDampingNumber,dampingNumber);
@@ -125,7 +164,7 @@ classdef WVModelExponentialTimeStepMethods < handle
                                     sample=WVInternal.exponentialRK4Step(oldState,oldTime,sampleH,sampleC,@outputRHS);
                                 end
                             end
-                            w.t=sampleTime; w.Ag_T=sample+w.seasonalCoefficients(sampleTime);
+                            setState(sampleTime,sample+evolution.seasonalCoefficients(sampleTime));
                             self.writeTimeStepToNetCDFFile(sampleTime);
                             nextOutput=nextOutput+1;
                         end
@@ -161,26 +200,35 @@ classdef WVModelExponentialTimeStepMethods < handle
             end
 
             function [value,s] = rhs(c,stageTime)
-                w.t=stageTime; w.Ag_T=c+w.seasonalCoefficients(stageTime);
-                [tendency,s]=self.nonthermalFlux(); value=tendency.Ag_T;
+                setState(stageTime,c+evolution.seasonalCoefficients(stageTime));
+                [tendency,s]=self.nonthermalFlux();
+                if isWeak, value=tendency; else, value=tendency.Ag_T; end
                 evaluations=evaluations+1;
             end
             function [value,s] = outputRHS(c,stageTime)
-                w.t=stageTime; w.Ag_T=c+w.seasonalCoefficients(stageTime);
-                [tendency,s]=w.nonthermalCoefficientTendency(true); value=tendency.Ag_T;
+                setState(stageTime,c+evolution.seasonalCoefficients(stageTime));
+                [tendency,s]=evolution.nonthermalCoefficientTendency(true);
+                if isWeak, value=tendency; else, value=tendency.Ag_T; end
                 outputEvaluations=outputEvaluations+1;
             end
             function restoreAccepted()
-                w.t=t; w.Ag_T=acceptedTotal;
+                setState(t,acceptedTotal);
+            end
+            function setState(time,total)
+                w.t=time;
+                if isWeak, evolution.setModalState(total); else, w.Ag_T=total; end
             end
         end
     end
     methods (Access = private)
-        function assertExponentialConfiguration(self)
+        function assertExponentialConfiguration(self,allowWeakSetup)
             arguments
                 self WVModel
+                allowWeakSetup (1,1) logical = false
             end
-            if ~isa(self.wvt,'WVTransformFreeSurfaceQGDiffusion') || self.isDynamicsLinear
+            isWeak=~isempty(self.weakThermalEvolution) && self.weakThermalEvolution.wvt==self.wvt;
+            isWeak=isWeak || (allowWeakSetup && isa(self.wvt,'WVTransformFreeSurfaceQG'));
+            if (~isa(self.wvt,'WVTransformFreeSurfaceQGDiffusion') && ~isWeak) || self.isDynamicsLinear
                 error('WVModel:ExponentialTransformRequired','Use the diffusion transform in a normal WVModel; remove nonlinear forcing for a purely thermal run.');
             end
             if length(self.fluxedObservingSystems)~=1 || ~isa(self.fluxedObservingSystems(1),'WVCoefficients')
