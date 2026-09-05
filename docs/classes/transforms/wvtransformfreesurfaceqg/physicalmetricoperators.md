@@ -28,6 +28,9 @@ combinations and every MDA mode are represented.
 
 For each nonzero horizontal wavenumber, `pages` contains kinetic, interior
 potential, and surface potential energy matrices. The common APV enstrophy
-matrix is `apvPotentialEnstrophy`. Compact nonzero Fourier coefficients count
-twice in physical variance; quadraticDiagnostics applies the half-integral
-convention, including the separate horizontal-mean contribution.
+matrix is the exact continuous Gram matrix of the depth-normalized F modes,
+`D*I`. The sampled quadrature Gram is only an approximation to this diagonal
+physical metric and is reserved for transform construction and resolution
+assessment. Compact nonzero Fourier coefficients count twice in physical
+variance; quadraticDiagnostics applies the half-integral convention,
+including the separate horizontal-mean contribution.

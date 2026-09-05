@@ -8,9 +8,12 @@ function operators = physicalMetricOperators(self)
 %
 % For each nonzero horizontal wavenumber, `pages` contains kinetic, interior
 % potential, and surface potential energy matrices. The common APV enstrophy
-% matrix is `apvPotentialEnstrophy`. Compact nonzero Fourier coefficients count
-% twice in physical variance; quadraticDiagnostics applies the half-integral
-% convention, including the separate horizontal-mean contribution.
+% matrix is the exact continuous Gram matrix of the depth-normalized F modes,
+% `D*I`. The sampled quadrature Gram is only an approximation to this diagonal
+% physical metric and is reserved for transform construction and resolution
+% assessment. Compact nonzero Fourier coefficients count twice in physical
+% variance; quadraticDiagnostics applies the half-integral convention,
+% including the separate horizontal-mean contribution.
 %
 % - Topic: Inspect modes and operators
 % - Returns operators: quadrature, reconstruction arrays, and quadratic metrics
@@ -74,7 +77,7 @@ MQ = -f*MGz;
 mdaReconstruction = struct(eta=MG,buoyancy=MB,buoyancyZ=MBz,q=MQ,endpoint=self.mdaG([end 1],:));
 mda = struct(reconstruction=mdaReconstruction,interiorPotentialEnergy=MG'*(weights.*N2.*MG), ...
     potentialEnstrophy=MQ'*(weights.*MQ));
-operators = struct(pages={pages},reconstruction={reconstruction},apvPotentialEnstrophy=F'*(weights.*F), ...
+operators = struct(pages={pages},reconstruction={reconstruction},apvPotentialEnstrophy=D*eye(self.apvModeCount), ...
     mda=mda,z=z,weights=weights,N2=N2,quadratureCount=count);
 self.physicalMetricOperators_ = operators;
 end

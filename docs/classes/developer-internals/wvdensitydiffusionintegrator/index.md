@@ -30,7 +30,7 @@ model = WVModel(wvt);
 model.setupIntegrator(integratorType="exponential");
 ```
 
-- Developer: true
+  - Developer: true
 
 
 ## Topics

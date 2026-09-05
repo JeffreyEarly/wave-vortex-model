@@ -27,6 +27,8 @@ classdef TestFreeSurfaceQGDiagnostics < matlab.unittest.TestCase
                 testCase.verifyGreaterThan(d.totalEnergy,sum(byWavenumber.totalEnergy))
                 testCase.verifyGreaterThan(d.potentialEnstrophy,sum(byWavenumber.potentialEnstrophy))
                 metrics = w.physicalMetricOperators();
+                testCase.verifyEqual(metrics.apvPotentialEnstrophy,w.Lz*eye(w.apvModeCount))
+                testCase.verifyEqual(byWavenumber.potentialEnstrophy,w.Lz*sum(abs(w.Ag_q).^2,1),RelTol=8*eps)
                 w.Ag_q = 2*w.Ag_q;
                 w.t = 123;
                 testCase.verifyEqual(w.physicalMetricOperators(),metrics)
