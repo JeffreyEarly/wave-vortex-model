@@ -161,7 +161,7 @@ classdef WVBottomFrictionQuadratic < WVForcing
             % - Topic: Implement forcing evaluation
             % - Developer: true
             if self.Cd==0, return; end
-            if nargin>=5 && isfield(physicalState,'phiHat')
+            if nargin>=4 && isfield(physicalState,'phiHat')
                 phi=physicalState.phiHat;
             else
                 phi=wvt.reconstructSpectralState();

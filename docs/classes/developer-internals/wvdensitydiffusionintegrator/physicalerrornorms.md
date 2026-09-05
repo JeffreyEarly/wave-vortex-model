@@ -18,3 +18,5 @@ RMS full QGPV, buoyancy, speed, and active-endpoint displacement.
 
 ## Discussion
 Includes MDA means; compact nonzero Fourier entries count twice.
+Fixed QR factors preserve positive quadrature norms without
+repeatedly reconstructing fields on the vertical grid.

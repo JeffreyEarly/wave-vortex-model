@@ -18,7 +18,7 @@ Reconstruct the physical state used by QG spatial forcing.
 
 ## Declaration
 ```matlab
- [q,u,v,b,ub,vb] = quasigeostrophicSpatialState(self)
+ [q,u,v,b,ub,vb,phiHat] = quasigeostrophicSpatialState(self)
 ```
 ## Returns
 + `q`  interior QGPV
@@ -27,6 +27,7 @@ Reconstruct the physical state used by QG spatial forcing.
 + `b`  active-endpoint anomaly
 + `ub`  active-endpoint zonal velocity
 + `vb`  active-endpoint meridional velocity
++ `phiHat`  spectral streamfunction on the nonzero compact Fourier columns, Nz by NklNonzero
 
 ## Discussion
 

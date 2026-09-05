@@ -18,27 +18,32 @@ fOverG = self.f/self.g;
 
 apvStreamfunctionCoefficients = -self.Ag_q./self.apvMu(:,pageIndex);
 psiNonzero = self.apvF*apvStreamfunctionCoefficients;
-etaNonzero = fOverG*(self.apvG*apvStreamfunctionCoefficients);
-qNonzero = self.apvF*self.Ag_q;
 
 if self.activeEndpointCount > 0
     zeroStreamfunctionCoefficients = -self.Ag_0./reshape(self.khNonzero.^2,1,[]);
     zeroCoefficientPages = reshape(zeroStreamfunctionCoefficients,self.activeEndpointCount,1,nNonzero);
     zeroF = pagemtimes(self.zeroAPVF(:,:,pageIndex),zeroCoefficientPages);
-    zeroG = pagemtimes(self.zeroAPVG(:,:,pageIndex),zeroCoefficientPages);
     psiNonzero = psiNonzero+reshape(zeroF,nz,nNonzero);
-    etaNonzero = etaNonzero+fOverG*reshape(zeroG,nz,nNonzero);
 end
 
 psiHat = complex(zeros(nz,self.Nkl));
-etaHat = complex(zeros(nz,self.Nkl));
-qHat = complex(zeros(nz,self.Nkl));
 psiHat(:,nonzeroIndex) = psiNonzero;
-etaHat(:,nonzeroIndex) = etaNonzero;
-qHat(:,nonzeroIndex) = qNonzero;
 
-meanIndex = find(hypot(self.k,self.l) == 0,1);
-if ~isempty(meanIndex)
-    etaHat(:,meanIndex) = self.mdaG*self.Amda;
+if nargout > 1
+    etaNonzero = fOverG*(self.apvG*apvStreamfunctionCoefficients);
+    if self.activeEndpointCount > 0
+        zeroG = pagemtimes(self.zeroAPVG(:,:,pageIndex),zeroCoefficientPages);
+        etaNonzero = etaNonzero+fOverG*reshape(zeroG,nz,nNonzero);
+    end
+    etaHat = complex(zeros(nz,self.Nkl));
+    etaHat(:,nonzeroIndex) = etaNonzero;
+    meanIndex = find(hypot(self.k,self.l) == 0,1);
+    if ~isempty(meanIndex)
+        etaHat(:,meanIndex) = self.mdaG*self.Amda;
+    end
+end
+if nargout > 2
+    qHat = complex(zeros(nz,self.Nkl));
+    qHat(:,nonzeroIndex) = self.apvF*self.Ag_q;
 end
 end

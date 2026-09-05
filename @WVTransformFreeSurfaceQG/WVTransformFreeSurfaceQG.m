@@ -236,6 +236,8 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
     properties (Access = private, Transient)
         % Quadrature reconstruction and metrics depend only on immutable modes.
         physicalMetricOperators_ = []
+        % Horizontal transforms for the fixed active-endpoint planes.
+        endpointGeometry_ = []
         % Fixed zero-APV stress responses for surface and bottom momentum loads.
         boundaryMomentumResponse_
         % Boundary-flux projections derived from the fixed vertical modes.
@@ -560,8 +562,8 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
             Fb = zeros(self.Nx,self.Ny,self.activeEndpointCount);
             physicalState = struct();
             if nargout>1 || ~isempty(self.spatialFluxForcing) || ~isempty(self.spectralFluxForcing)
-                [q,uPhysical,vPhysical,b,ub,vb] = self.quasigeostrophicSpatialState();
-                physicalState = struct('q',q,'u',uPhysical,'v',vPhysical,'b',b,'ub',ub,'vb',vb,'uvMax',max(hypot(uPhysical,vPhysical),[],"all"));
+                [q,uPhysical,vPhysical,b,ub,vb,phiHat] = self.quasigeostrophicSpatialState();
+                physicalState = struct('q',q,'u',uPhysical,'v',vPhysical,'b',b,'ub',ub,'vb',vb,'phiHat',phiHat,'uvMax',max(hypot(uPhysical,vPhysical),[],"all"));
             end
             for iForcing = 1:length(self.spatialFluxForcing)
                 if any(options.excludingForcing==string(self.spatialFluxForcing(iForcing).name)), continue; end
@@ -585,7 +587,7 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
         end
 
         function value = get.psi(self)
-            [psiHat,~,~] = self.reconstructSpectralState();
+            psiHat = self.reconstructSpectralState();
             value = self.transformToSpatialDomainWithFourier(psiHat);
         end
 
@@ -598,17 +600,17 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
         end
 
         function value = get.u(self)
-            [psiHat,~,~] = self.reconstructSpectralState();
+            psiHat = self.reconstructSpectralState();
             value = self.transformToSpatialDomainWithFourier(-sqrt(-1)*reshape(self.l,1,[]).*psiHat);
         end
 
         function value = get.v(self)
-            [psiHat,~,~] = self.reconstructSpectralState();
+            psiHat = self.reconstructSpectralState();
             value = self.transformToSpatialDomainWithFourier(sqrt(-1)*reshape(self.k,1,[]).*psiHat);
         end
 
         function value = get.uvMax(self)
-            [psiHat,~,~] = self.reconstructSpectralState();
+            psiHat = self.reconstructSpectralState();
             u_ = self.transformToSpatialDomainWithFourier(-sqrt(-1)*reshape(self.l,1,[]).*psiHat);
             v_ = self.transformToSpatialDomainWithFourier(sqrt(-1)*reshape(self.k,1,[]).*psiHat);
             value = max(hypot(u_,v_),[],"all");
@@ -668,6 +670,17 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
     end
 
     methods (Access = private)
+        endpointAnomalies = reconstructEndpointAnomalies(self,Ag_q,Ag_0)
+
+        function geometry = endpointGeometry(self)
+            if isempty(self.endpointGeometry_)
+                self.endpointGeometry_ = WVGeometryDoublyPeriodic([self.Lx self.Ly],[self.Nx self.Ny],Nz=self.activeEndpointCount, ...
+                    shouldAntialias=self.shouldAntialias,shouldExcludeNyquist=self.shouldExcludeNyquist, ...
+                    shouldExcludeConjugates=self.shouldExcludeConjugates,conjugateDimension=self.conjugateDimension);
+            end
+            geometry = self.endpointGeometry_;
+        end
+
         function ensureBoundaryBuoyancyFluxOperators(self)
             if self.hasBoundaryBuoyancyFluxOperators_
                 return

@@ -27,10 +27,8 @@ end
 
 FqHat = self.transformFromSpatialDomainWithFourier(Fq);
 if self.activeEndpointCount > 0
-    padded = zeros(self.Nx,self.Ny,self.Nz);
-    padded(:,:,1:self.activeEndpointCount) = Fb;
-    FbHat = self.transformFromSpatialDomainWithFourier(padded);
-    FbHat = FbHat(1:self.activeEndpointCount,:);
+    geometry = self.endpointGeometry();
+    FbHat = geometry.transformFromSpatialDomainWithFourier(Fb);
 else
     FbHat = complex(zeros(0,self.Nkl));
 end

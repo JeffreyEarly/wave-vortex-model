@@ -16,7 +16,7 @@ Evaluate positive physical energy, full potential enstrophy, and their rates.
 
 ## Parameters
 + `options.state`  optional Ag_q, Ag_0, Amda structure; default is the current state
-+ `options.tendency`  optional family-keyed coefficient tendency
++ `options.tendency`  optional row array of family-keyed coefficient tendencies
 
 ## Returns
 + `diagnostics`  energy components, totalEnergy, potentialEnstrophy, and optional matching Tendency fields
@@ -31,6 +31,9 @@ the horizontal-mean QGPV from MDA. These are physical inventories; signed
 generalized energy is a separate diagnostic. Units are m3 s-2 and m s-2.
 Supply any coefficient tendency to evaluate its instantaneous contribution
 using the same metrics, without modifying the transform.
+A row array of tendencies shares the inventory and state-dependent products.
+Tendency fields then have one row per supplied tendency; by-wavenumber
+tendency fields have shape numberOfTendencies by NklNonzero.
 
 ```matlab
 inventory = wvt.quadraticDiagnostics();
