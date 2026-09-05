@@ -57,6 +57,29 @@ classdef TestFreeSurfaceQGPerformance < matlab.unittest.TestCase
             testCase.verifyEqual(actual,direct)
         end
 
+        function widthBatchedModeTransformsMatchIndividualPagesAndCache(testCase)
+            w=TestFreeSurfaceQGPerformance.transform(); w.removeAllForcing();
+            w.addForcing(WVVerticalDiffusivity(w,kappa_z=1e-5));
+            e=WVDensityDiffusionIntegrator(w); state=TestFreeSurfaceQGPerformance.mixedState(w);
+            balanced=[state.Ag_q;state.Ag_0]; expected=zeros(size(balanced),'like',balanced);
+            for p=1:length(e.operators.pages)
+                columns=find(w.klNonzeroKhUniqueIndex==p);
+                expected(:,columns)=e.operators.pages{p}.toModes*balanced(:,columns);
+            end
+            profile clear; profile on
+            cleanup=onCleanup(@()profile('off'));
+            actual=e.toModes(state);
+            restored=e.fromModes(actual);
+            e.toModes(restored);
+            profile off; info=profile('info'); clear cleanup
+            transformed=reshape(actual(1:numel(expected)),size(expected));
+            testCase.verifyEqual(transformed,expected,RelTol=2e-15)
+            testCase.verifyLessThan(norm(restored.Ag_q-state.Ag_q,'fro')/norm(state.Ag_q,'fro'),1e-12)
+            testCase.verifyLessThan(norm(restored.Ag_0-state.Ag_0,'fro')/norm(state.Ag_0,'fro'),1e-6)
+            selected=contains(string({info.FunctionTable.FunctionName}),'buildModeTransformBatches');
+            testCase.verifyEqual(sum([info.FunctionTable(selected).NumCalls]),1)
+        end
+
         function batchedBudgetsMatchEachDirectionalDerivative(testCase)
             w=TestFreeSurfaceQGPerformance.transform();
             state=TestFreeSurfaceQGPerformance.mixedState(w);

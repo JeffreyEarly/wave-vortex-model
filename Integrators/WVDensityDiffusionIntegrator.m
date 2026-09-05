@@ -29,6 +29,8 @@ classdef WVDensityDiffusionIntegrator < handle
     properties (Access = private)
         diffusionForcing_
         columnGroups_
+        % Width-grouped matrices and columns derived from the fixed diffusion operators.
+        modeTransformBatches_ = {}
         balancedShape_
         balancedCount_
         seasonalForcing_ = {}
@@ -215,11 +217,7 @@ classdef WVDensityDiffusionIntegrator < handle
             % Transform a family-keyed state or tendency without losing rows.
             % - Topic: Density diffusion integration
             balanced=[state.Ag_q;state.Ag_0];
-            transformed=complex(zeros(self.balancedShape_));
-            for p=1:length(self.columnGroups_)
-                columns=self.columnGroups_{p};
-                transformed(:,columns)=self.operators.pages{p}.toModes*balanced(:,columns);
-            end
+            transformed=self.applyModeTransformBatches(balanced,"toModes");
             amplitudes=[transformed(:);self.operators.mda.toModes*state.Amda];
         end
 
@@ -227,11 +225,7 @@ classdef WVDensityDiffusionIntegrator < handle
             % Invert the complete modal coordinate change.
             % - Topic: Density diffusion integration
             [transformed,meanState]=self.unpackModalState(amplitudes);
-            balanced=complex(zeros(self.balancedShape_));
-            for p=1:length(self.columnGroups_)
-                columns=self.columnGroups_{p};
-                balanced(:,columns)=self.operators.pages{p}.fromModes*transformed(:,columns);
-            end
+            balanced=self.applyModeTransformBatches(transformed,"fromModes");
             n=self.wvt.apvModeCount;
             state=struct(Ag_q=balanced(1:n,:),Ag_0=balanced(n+1:end,:),Amda=meanState);
         end
@@ -311,6 +305,30 @@ classdef WVDensityDiffusionIntegrator < handle
         end
     end
     methods (Access = private)
+        function output = applyModeTransformBatches(self,input,direction)
+            if isempty(self.modeTransformBatches_), self.buildModeTransformBatches(); end
+            output=zeros(size(input),'like',input);
+            for k=1:length(self.modeTransformBatches_)
+                batch=self.modeTransformBatches_{k};
+                values=reshape(input(:,batch.columns(:)),size(input,1),size(batch.columns,1),[]);
+                transformed=pagemtimes(batch.(direction),values);
+                output(:,batch.columns(:))=reshape(transformed,size(input,1),[]);
+            end
+        end
+
+        function buildModeTransformBatches(self)
+            widths=cellfun(@length,self.columnGroups_);
+            uniqueWidths=unique(widths);
+            batches=cell(length(uniqueWidths),1);
+            for k=1:length(uniqueWidths)
+                pageIndices=find(widths==uniqueWidths(k));
+                pages=[self.operators.pages{pageIndices}];
+                columns=reshape(cell2mat(self.columnGroups_(pageIndices).'),uniqueWidths(k),[]);
+                batches{k}=struct(columns=columns,toModes=cat(3,pages.toModes),fromModes=cat(3,pages.fromModes));
+            end
+            self.modeTransformBatches_=batches;
+        end
+
         function [balanced,meanState] = unpackModalState(self,amplitudes)
             if ~iscolumn(amplitudes) || length(amplitudes)~=length(self.rates) || any(~isfinite(amplitudes))
                 error('WV:DensityDiffusionState','Supply one finite packed diffusion-coordinate column.');
