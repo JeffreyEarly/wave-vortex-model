@@ -5,6 +5,7 @@ find_package(Threads REQUIRED)
 add_library(WaveVortexKernel STATIC
     src/WVRetainedHorizontalOperator.cpp
     src/WVPreparedVerticalOperator.cpp
+    src/WVTransformStratifiedQGKernel.cpp
     src/WVKernelTypes.cpp
     src/WVTransformBarotropicQGKernel.cpp
     src/WVTransformConstantStratificationKernel.cpp

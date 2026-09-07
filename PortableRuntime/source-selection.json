@@ -76,11 +76,13 @@
     "matrixScanBytes": 32768,
     "scientificInputs": "MATLAB-persisted numeric geometry and preconditioned F/G operators",
     "sourceSHA256": {
-      "PortableRuntime/include/WaveVortexRuntime/WVStratifiedModalRecord.hpp": "a1217ee8bebdbb8a501adc698daa6ec63d6d34544dfdaea0fa00fa0aeb36085d",
+      "PortableRuntime/include/WaveVortexRuntime/WVStratifiedModalRecord.hpp": "0b4e53ad912ade703ea68cbb179b3fa15749d180882cb966efcf52c1caa8cac9",
       "PortableRuntime/src/WVStratifiedModalRecord.cpp": "61ee443f41592778fa3fd470fbb600932d89188178f8f19848b7501cf3bddd43",
       "@WVGeometryDoublyPeriodicStratified/WVGeometryDoublyPeriodicStratified.m": "4d6df4bb82feb550a20da25a8e34ae9370272f2268ea3660d571dfeddaa06cc8",
       "@WVTransform/writeToFile.m": "b362676f63e681327ed04708e99927aca07c0b602bf573840a4bb365d0694a0a",
-      "WVModelOutputFile.m": "b1b546df8bc6c1a33c9c0ee75267d21a5104a2451250a94b222e97f3a83ba43f"
-    }
+      "WVModelOutputFile.m": "b1b546df8bc6c1a33c9c0ee75267d21a5104a2451250a94b222e97f3a83ba43f",
+      "CompiledKernel/include/WaveVortexKernel/WVStratifiedModalSource.hpp": "e82dc0193e48edeae4b41ff8b9ef7cd3f8e74a38b024e019ecae6afffea65a22"
+    },
+    "numericalSourceInterface": "WaveVortexKernel/WVStratifiedModalSource.hpp"
   }
 }

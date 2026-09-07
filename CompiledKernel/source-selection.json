@@ -99,5 +99,18 @@
       "referenceFFT": "703724883edd3c05f583c7e68bad46830b1a92e22524a10906d3da366ad64c49",
       "accelerate": "08fa3565ad33dc08ace85b9c708019745a53fca1187d0ebb9b23991ddb4292cc"
     }
+  },
+  "stratifiedQGKernel": {
+    "identity": "wave-vortex-stratified-qg-kernel-v1",
+    "scientificSource": "wave-vortex-stratified-modal-record-v1",
+    "preparedOperators": "wave-vortex-spectral-operators-v1",
+    "coefficientLayout": "canonical-interleaved-Nj-Nkl",
+    "normalization": "A0-is-F-projected-QGPV",
+    "runtimeExecutionCapabilityAdded": false,
+    "sourceSHA256": {
+      "CompiledKernel/include/WaveVortexKernel/WVStratifiedModalSource.hpp": "e82dc0193e48edeae4b41ff8b9ef7cd3f8e74a38b024e019ecae6afffea65a22",
+      "CompiledKernel/include/WaveVortexKernel/WVTransformStratifiedQGKernel.hpp": "0e36e6af9ae1799d1dd8f70f4014771163a8b4fd9243c2ef6ea76674a018979f",
+      "CompiledKernel/src/WVTransformStratifiedQGKernel.cpp": "5060032007c8b4871554fe9f853ec40bf84441cd8b0b37f328687bf05bc867c1"
+    }
   }
 }

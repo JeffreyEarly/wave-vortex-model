@@ -1,7 +1,7 @@
 #pragma once
 
 #include "WaveVortexRuntime/WVCheckpointReader.hpp"
-#include "WaveVortexKernel/WVSpectralOperators.hpp"
+#include "WaveVortexKernel/WVStratifiedModalSource.hpp"
 #include <memory>
 
 namespace wavevortex::runtime {
@@ -9,35 +9,13 @@ namespace wavevortex::runtime {
 // Scientific record semantics, separate from checkpoint and execution contracts.
 inline constexpr const char* WVStratifiedModalRecordContract = "wave-vortex-stratified-modal-record-v1";
 
-struct WVStratifiedModalGeometry {
-    std::string transformClass, modelVersion;
-    std::size_t Nx = 0, Ny = 0, Nz = 0, Nj = 0, Nkl = 0;
-    double Lx = 0, Ly = 0, Lz = 0, g = 0, rho0 = 0;
-    double latitude = 0, rotationRate = 0, planetaryRadius = 0;
-    bool shouldAntialias = false;
-    std::vector<double> x, y, z, j, k, l, N2, rho_nm0, dLnN2, P0, Q0, h_0, z_int;
-    std::vector<WVRetainedModeKey> modes;
-};
-
-struct WVStratifiedModalInspection {
-    WVStratifiedModalGeometry geometry;
-    std::size_t scientificMatrixBytes = 0;
-    // Matrix payloads are scanned through a fixed buffer, never retained here.
-    static constexpr std::size_t matrixScanBytes = 4096*sizeof(double);
-};
-
-// Names refer to unpreconditioned scientific F/G operations. Matrix storage is
-// column-major. Reconstruction maps modal to vertical grid; projection reverses it.
-enum class WVStratifiedModalOperator { reconstructF, projectF, reconstructG, projectG, GToF, FToG };
-
-enum class WVStratifiedScientificMatrix { PF0inv, QG0inv, PF0, QG0 };
-struct WVScientificModalGroup {
-    std::uint64_t identity = 0;
-    std::vector<std::size_t> columns;
-};
-
-class WVStratifiedModalRecord {
+class WVStratifiedModalRecord final : public WVStratifiedModalSource {
 public:
+    // Scientific ownership is fixed once published to consumers.
+    WVStratifiedModalRecord(const WVStratifiedModalRecord&) = delete;
+    WVStratifiedModalRecord& operator=(const WVStratifiedModalRecord&) = delete;
+    WVStratifiedModalRecord(WVStratifiedModalRecord&&) = delete;
+    WVStratifiedModalRecord& operator=(WVStratifiedModalRecord&&) = delete;
     const WVStratifiedModalGeometry& geometry() const noexcept { return geometry_; }
     const std::vector<double>& PF0inv() const noexcept { return PF0inv_; }
     const std::vector<double>& QG0inv() const noexcept { return QG0inv_; }
