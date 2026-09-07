@@ -220,6 +220,18 @@
       "kind": "matlab-runtime-parity",
       "path": "UnitTests/TestPortableStratifiedQG.m",
       "symbol": "incompatibleModelGraphsAreTransactional"
+    },
+    {
+      "id": "sqg-continuation",
+      "kind": "matlab-runtime-parity",
+      "path": "UnitTests/TestPortableStratifiedQGQualification.m",
+      "symbol": "longerContinuationMatchesMatlab"
+    },
+    {
+      "id": "sqg-lifecycle",
+      "kind": "matlab-runtime-parity",
+      "path": "UnitTests/TestPortableStratifiedQGQualification.m",
+      "symbol": "lifecycleAndStorageRemainBounded"
     }
   ],
   "rows": [
@@ -2407,7 +2419,9 @@
       "acceptance": "supported",
       "evidence": [
         "sqg-pairs",
-        "sqg-compositions"
+        "sqg-compositions",
+        "sqg-continuation",
+        "sqg-lifecycle"
       ],
       "barotropicCase": ""
     },
@@ -2435,7 +2449,9 @@
       "acceptance": "supported",
       "evidence": [
         "sqg-pairs",
-        "sqg-compositions"
+        "sqg-compositions",
+        "sqg-continuation",
+        "sqg-lifecycle"
       ],
       "barotropicCase": ""
     },
@@ -2463,7 +2479,9 @@
       "acceptance": "supported",
       "evidence": [
         "sqg-pairs",
-        "sqg-compositions"
+        "sqg-compositions",
+        "sqg-continuation",
+        "sqg-lifecycle"
       ],
       "barotropicCase": ""
     },
@@ -2492,7 +2510,9 @@
       "acceptance": "supported",
       "evidence": [
         "sqg-pairs",
-        "sqg-compositions"
+        "sqg-compositions",
+        "sqg-continuation",
+        "sqg-lifecycle"
       ],
       "barotropicCase": ""
     },
@@ -2521,7 +2541,9 @@
       "acceptance": "supported",
       "evidence": [
         "sqg-pairs",
-        "sqg-compositions"
+        "sqg-compositions",
+        "sqg-continuation",
+        "sqg-lifecycle"
       ],
       "barotropicCase": ""
     },
@@ -2549,7 +2571,9 @@
       "acceptance": "supported",
       "evidence": [
         "sqg-pairs",
-        "sqg-compositions"
+        "sqg-compositions",
+        "sqg-continuation",
+        "sqg-lifecycle"
       ],
       "barotropicCase": ""
     },
@@ -2632,7 +2656,9 @@
       "acceptance": "supported",
       "evidence": [
         "sqg-pairs",
-        "sqg-compositions"
+        "sqg-compositions",
+        "sqg-continuation",
+        "sqg-lifecycle"
       ],
       "barotropicCase": ""
     },
@@ -2710,7 +2736,9 @@
       "acceptance": "supported",
       "evidence": [
         "sqg-pairs",
-        "sqg-compositions"
+        "sqg-compositions",
+        "sqg-continuation",
+        "sqg-lifecycle"
       ],
       "barotropicCase": ""
     },
@@ -2738,7 +2766,9 @@
       "acceptance": "supported",
       "evidence": [
         "sqg-pairs",
-        "sqg-compositions"
+        "sqg-compositions",
+        "sqg-continuation",
+        "sqg-lifecycle"
       ],
       "barotropicCase": ""
     },
@@ -2789,7 +2819,9 @@
       "acceptance": "supported",
       "evidence": [
         "sqg-pairs",
-        "sqg-compositions"
+        "sqg-compositions",
+        "sqg-continuation",
+        "sqg-lifecycle"
       ],
       "barotropicCase": ""
     },
@@ -2818,7 +2850,9 @@
       "acceptance": "supported",
       "evidence": [
         "sqg-pairs",
-        "sqg-compositions"
+        "sqg-compositions",
+        "sqg-continuation",
+        "sqg-lifecycle"
       ],
       "barotropicCase": ""
     },
@@ -2847,7 +2881,9 @@
       "acceptance": "supported",
       "evidence": [
         "sqg-pairs",
-        "sqg-compositions"
+        "sqg-compositions",
+        "sqg-continuation",
+        "sqg-lifecycle"
       ],
       "barotropicCase": ""
     },
@@ -2875,7 +2911,9 @@
       "acceptance": "supported",
       "evidence": [
         "sqg-pairs",
-        "sqg-compositions"
+        "sqg-compositions",
+        "sqg-continuation",
+        "sqg-lifecycle"
       ],
       "barotropicCase": ""
     },
@@ -2958,7 +2996,9 @@
       "acceptance": "supported",
       "evidence": [
         "sqg-pairs",
-        "sqg-compositions"
+        "sqg-compositions",
+        "sqg-continuation",
+        "sqg-lifecycle"
       ],
       "barotropicCase": ""
     },
@@ -3036,7 +3076,9 @@
       "acceptance": "supported",
       "evidence": [
         "sqg-pairs",
-        "sqg-compositions"
+        "sqg-compositions",
+        "sqg-continuation",
+        "sqg-lifecycle"
       ],
       "barotropicCase": ""
     }

@@ -1,0 +1,79 @@
+name: Stratified QG qualification
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sqg-qualification-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  qualify:
+    name: SQG qualification / ${{ matrix.configuration }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        configuration: [release, sanitized]
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          path: source
+          persist-credentials: false
+      - uses: actions/checkout@v6
+        with:
+          repository: JeffreyEarly/OceanKit
+          ref: 96f0b801c565406dd5a4ba2480334a3a481c3e2c
+          path: OceanKit
+          persist-credentials: false
+      - name: Install NetCDF
+        run: |
+          sudo apt-get -o Acquire::Retries=3 update
+          sudo apt-get -o Acquire::Retries=3 install --yes libnetcdf-dev pkg-config
+      - name: Build reference runtime and probes
+        working-directory: source
+        env:
+          CC: clang
+          CXX: clang++
+        run: |
+          flags=()
+          if [[ '${{ matrix.configuration }}' == sanitized ]]; then
+            flags+=('-DCMAKE_CXX_FLAGS=-fsanitize=address,undefined -fno-omit-frame-pointer' '-DCMAKE_EXE_LINKER_FLAGS=-fsanitize=address,undefined')
+          fi
+          cmake -S PortableRuntime -B "$RUNNER_TEMP/sqg-build" -DCMAKE_BUILD_TYPE=RelWithDebInfo -DWV_ENABLE_ACCELERATE=OFF "${flags[@]}"
+          cmake --build "$RUNNER_TEMP/sqg-build" --parallel 4 --target wave-vortex-run WVStableForcingDump WVStratifiedQGFieldDump WVStratifiedQGLifecycleProbe WVStratifiedModalDump
+      - uses: matlab-actions/setup-matlab@v3
+        with:
+          release: R2025b
+          cache: true
+      - name: Qualify MATLAB-C++-MATLAB continuation
+        uses: matlab-actions/run-command@v3
+        env:
+          ASAN_OPTIONS: detect_leaks=1:halt_on_error=1
+          UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+        with:
+          command: >-
+            sourceRoot=fullfile(pwd,"source");
+            addpath(fullfile(sourceRoot,"tools"));
+            configureCIEnvironment(sourceRoot,fullfile(pwd,"OceanKit"));
+            cd(sourceRoot);
+            qualifyPortableStratifiedQG(fullfile(getenv("RUNNER_TEMP"),"sqg-qualification.json"),runner=fullfile(getenv("RUNNER_TEMP"),"sqg-build","wave-vortex-run"));
+      - name: Upload machine-readable qualification
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sqg-qualification-${{ matrix.configuration }}
+          path: ${{ runner.temp }}/sqg-qualification.json
+          if-no-files-found: error
+      - name: Verify clean checkout
+        if: always()
+        working-directory: source
+        run: bash tools/checkCIWorkspaceCleanliness.sh

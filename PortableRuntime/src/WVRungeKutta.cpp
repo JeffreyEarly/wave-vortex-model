@@ -810,7 +810,11 @@ WVFixedStepRK4::ensureWorkspace(const WVMutableIntegrationState &state) {
     return WVKernelStatus::ok();
   try {
     workspace_ = new Workspace;
+    workspace_->acceptedCoefficientViews.reserve(system_.stateLayout().coefficientFamilyCount());
+    workspace_->acceptedBlockViews.reserve(system_.stateLayout().additionalBlocks().size());
   } catch (const std::bad_alloc &) {
+    delete workspace_;
+    workspace_ = nullptr;
     return {WVKernelStatusCode::allocationFailure,
             "RK4 workspace allocation failed."};
   }
@@ -878,10 +882,10 @@ WVKernelStatus WVFixedStepRK4::step(WVMutableIntegrationState &state,
     ~Guard() { value = false; }
   } guard{stepping_};
   hasAcceptedStep_ = false;
-  std::vector<WVCoefficientFamilyConstView> coefficientViews;
-  std::vector<WVAdditionalStateBlockConstView> stateViews;
-  const auto baseView =
-      integrationConstView(state, coefficientViews, stateViews);
+  // Reuse the prepared view metadata. These views borrow the accepted state;
+  // no state-sized copy or per-step vector allocation is needed.
+  const auto baseView = integrationConstView(
+      state, workspace_->acceptedCoefficientViews, workspace_->acceptedBlockViews);
   const double initialTime = state.waveVortex.t;
   if (acceptedStateConstrained_) {
     auto derivative = workspace_->derivative.flux();
