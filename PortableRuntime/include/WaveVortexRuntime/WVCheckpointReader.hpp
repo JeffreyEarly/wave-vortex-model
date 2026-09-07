@@ -43,7 +43,8 @@ enum class WVCheckpointStatusCode : std::uint32_t {
     schemaMismatch,
     incompleteRecord,
     appendConflict,
-    unsupportedObserver
+    unsupportedObserver,
+    allocationFailure
 };
 
 struct WVCheckpointStatus {

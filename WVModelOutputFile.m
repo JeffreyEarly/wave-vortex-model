@@ -329,6 +329,11 @@ classdef WVModelOutputFile < handle & matlab.mixin.Heterogeneous
             else
                 properties = setdiff(self.wvt.requiredProperties,{'t'});
             end
+            if isa(self.wvt,'WVGeometryDoublyPeriodicStratified')
+                % Include portable scientific inputs without changing the
+                % required properties used to reconstruct older MATLAB files.
+                properties = union(properties,{'N2','rho_nm0','k','l'});
+            end
             % in theory we already removed the file if the user requested
             if isfile(self.path)
                 error('A file already exists at this path.');

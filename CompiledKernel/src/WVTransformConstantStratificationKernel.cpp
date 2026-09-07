@@ -1,12 +1,13 @@
 #include "WaveVortexKernel/WVTransformConstantStratificationKernel.hpp"
 #include "WVCoefficientFormulas.hpp"
+#include "WVPreparedModeExecutor.hpp"
 
 #include <algorithm>
 #include <cmath>
 #include <chrono>
 #include <limits>
 #include <new>
-#include <thread>
+#include <system_error>
 #include <stdexcept>
 
 namespace wavevortex {
@@ -23,26 +24,6 @@ constexpr double pi = 3.141592653589793238462643383279502884;
 #else
 #define WV_KERNEL_RESTRICT
 #endif
-
-template <typename Operation>
-void forEachModeBlock(std::size_t modeCount, Operation&& operation) {
-    constexpr std::size_t requestedWorkers = WV_KERNEL_COEFFICIENT_WORKERS;
-    const std::size_t workerCount = std::min(requestedWorkers,modeCount);
-    if (workerCount <= 1) {
-        operation(0,modeCount);
-        return;
-    }
-    std::vector<std::thread> workers;
-    workers.reserve(workerCount - 1);
-    const std::size_t blockSize = (modeCount + workerCount - 1) / workerCount;
-    for (std::size_t worker = 1; worker < workerCount; ++worker) {
-        const std::size_t begin = std::min(worker * blockSize,modeCount);
-        const std::size_t end = std::min(begin + blockSize,modeCount);
-        workers.emplace_back([begin,end,&operation]() { operation(begin,end); });
-    }
-    operation(0,std::min(blockSize,modeCount));
-    for (auto& worker : workers) worker.join();
-}
 
 enum PlanIndex : std::size_t {
     horizontalForward3, horizontalForward4, horizontalInverse3, horizontalInverse4,
@@ -439,6 +420,9 @@ void completeHermitianBoundaries(WVComplex64* half, const WVHalfSpectrumMappings
 
 } // namespace
 
+WVTransformConstantStratificationKernel::WVTransformConstantStratificationKernel() = default;
+WVTransformConstantStratificationKernel::~WVTransformConstantStratificationKernel() = default;
+
 WVKernelStatus WVTransformConstantStratificationKernel::create(
     const WVTransformConstantStratificationConfiguration& configuration,
     std::unique_ptr<WVFFTEngine> engine,
@@ -474,19 +458,24 @@ WVKernelStatus WVTransformConstantStratificationKernel::create(
             candidate->scalarAntialiasRows_.capacity() * sizeof(std::uint8_t);
         status = candidate->preparePlans();
         if (!status) return status;
+        candidate->coefficientExecutor_ = std::make_unique<kernel_detail::WVPreparedModeExecutor>(
+            std::max<std::size_t>(1, std::min<std::size_t>(WV_KERNEL_COEFFICIENT_WORKERS, candidate->descriptor_.Nkl())));
         candidate->metrics_.engineBytes = candidate->engine_->persistentBytes();
         candidate->metrics_.kernelManagementBytes =
             sizeof(*candidate) - sizeof(candidate->descriptor_) +
             candidate->engineIdentifier_.capacity() +
             candidate->engineLibraryIdentity_.capacity() +
             candidate->plans_.capacity() *
-                sizeof(std::unique_ptr<WVFFTPlan>);
+                sizeof(std::unique_ptr<WVFFTPlan>) +
+            candidate->coefficientExecutor_->persistentBytes();
         kernel = std::move(candidate);
         return WVKernelStatus::ok();
     } catch (const std::bad_alloc&) {
         return {WVKernelStatusCode::allocationFailure, "Unable to allocate the bounded kernel scratch arena."};
     } catch (const std::overflow_error& error) {
         return {WVKernelStatusCode::sizeOverflow, error.what()};
+    } catch (const std::system_error& error) {
+        return {WVKernelStatusCode::allocationFailure, error.what()};
     }
 }
 
@@ -615,7 +604,7 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformUVEtaToWaveVort
     const auto coefficientProjectionStart = std::chrono::steady_clock::now();
     auto projectModes = [&](auto phaseProvidedConstant) {
         constexpr bool phaseProvided = decltype(phaseProvidedConstant)::value;
-        forEachModeBlock(descriptor_.Nkl(),[&](std::size_t begin, std::size_t end) {
+        coefficientExecutor_->execute(descriptor_.Nkl(),[&](std::size_t begin, std::size_t end) {
             for (std::size_t iMode = begin; iMode < end; ++iMode) {
                 const auto& horizontal = descriptor_.fourierModes()[iMode];
                 if (mapping.conjugatesStoredValueByWVIndex[iMode]) {
@@ -664,7 +653,7 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformUVWEtaToWaveVor
     const auto coefficientProjectionStart = std::chrono::steady_clock::now();
     auto projectModes = [&](auto phaseProvidedConstant) {
         constexpr bool phaseProvided = decltype(phaseProvidedConstant)::value;
-        forEachModeBlock(descriptor_.Nkl(),[&](std::size_t begin, std::size_t end) {
+        coefficientExecutor_->execute(descriptor_.Nkl(),[&](std::size_t begin, std::size_t end) {
             for (std::size_t iMode = begin; iMode < end; ++iMode) {
                 const auto& horizontal = descriptor_.fourierModes()[iMode];
                 if (mapping.conjugatesStoredValueByWVIndex[iMode]) {
@@ -747,7 +736,7 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformWaveVortexToUVW
     const std::size_t halfRows = mapping.NxHalf * c.Ny; auto* half = reinterpret_cast<WVComplex64*>(halfSpectrumScratch_.data());
     std::fill(half,half + c.Nz * 4 * halfRows,WVComplex64{});
     const auto coefficientAssemblyStart = std::chrono::steady_clock::now();
-    forEachModeBlock(descriptor_.Nkl(),[&](std::size_t begin, std::size_t end) {
+    coefficientExecutor_->execute(descriptor_.Nkl(),[&](std::size_t begin, std::size_t end) {
         for (std::size_t iMode = begin; iMode < end; ++iMode) {
         if (evolvedCoefficients == nullptr) {
             auto source = [&](std::size_t index) {
@@ -784,7 +773,7 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformWaveVortexToUVW
     auto* half = reinterpret_cast<WVComplex64*>(halfSpectrumScratch_.data());
     std::fill(half,half + c.Nz * 3 * halfRows,WVComplex64{});
     const auto coefficientAssemblyStart = std::chrono::steady_clock::now();
-    forEachModeBlock(descriptor_.Nkl(),[&](std::size_t begin, std::size_t end) {
+    coefficientExecutor_->execute(descriptor_.Nkl(),[&](std::size_t begin, std::size_t end) {
         for (std::size_t iMode = begin; iMode < end; ++iMode) {
             auto source = [&](std::size_t index) {
                 if (evolvedCoefficients != nullptr) return EvolvedWaveVortexCoefficients{evolvedCoefficients->Ap.data[index],evolvedCoefficients->Am.data[index],evolvedCoefficients->A0.data[index]};
@@ -805,25 +794,24 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformWaveVortexToUVW
 }
 
 namespace {
-WVKernelStatus transformAllDerivatives(WVTransformConstantStratificationKernel& kernel, bool cosine, const WVComplexConstView& Apm, const WVComplexConstView& A0, WVRealFieldBundleView& fields) {
+WVKernelStatus validateAllDerivativeInputs(const WVTransformConstantStratificationKernel& kernel, const WVComplexConstView& Apm, const WVComplexConstView& A0, WVRealFieldBundleView& fields) {
     const auto spectral = kernel.descriptor().spectralShape();
     auto status = validateSpectral(Apm, spectral, "Apm"); if (!status) return status;
     status = validateSpectral(A0, spectral, "A0"); if (!status) return status;
     status = validateBundle(fields, kernel.descriptor().spatialShape(), 4, "Field derivatives"); if (!status) return status;
     status = validateDerivativeOwnership(Apm,A0,fields,spectral); if (!status) return status;
-    // Implemented as a friendless helper through the public transform path is not possible; the member wrappers below contain the operation.
-    return {WVKernelStatusCode::unsupportedOperation, cosine ? "internal F derivative dispatch" : "internal G derivative dispatch"};
+    return WVKernelStatus::ok();
 }
 } // namespace
 
 WVKernelStatus WVTransformConstantStratificationKernel::transformToSpatialDomainWithFAllDerivatives(const WVComplexConstView& Apm, const WVComplexConstView& A0, WVRealFieldBundleView& fields) {
-    auto initial = transformAllDerivatives(*this, true, Apm, A0, fields); if (initial.code != WVKernelStatusCode::unsupportedOperation) return initial;
+    auto initial = validateAllDerivativeInputs(*this, Apm, A0, fields); if (!initial) return initial;
     ExecutionGuard guard(executing_); if (!guard.entered()) return {WVKernelStatusCode::reentrantExecution, "Kernel operations are not reentrant."};
     const auto& c = descriptor_.configuration(); const auto& mapping = descriptor_.halfSpectrumMappings(); const auto& modes = descriptor_.verticalModes();
     const std::size_t halfRows = mapping.NxHalf * c.Ny; auto* half = reinterpret_cast<WVComplex64*>(halfSpectrumScratch_.data());
     std::fill(half,half + c.Nz * 4 * halfRows,WVComplex64{});
     const auto coefficientAssemblyStart = std::chrono::steady_clock::now();
-    forEachModeBlock(descriptor_.Nkl(),[&](std::size_t begin, std::size_t end) {
+    coefficientExecutor_->execute(descriptor_.Nkl(),[&](std::size_t begin, std::size_t end) {
         for (std::size_t mode = begin; mode < end; ++mode) {
             const auto& horizontal = descriptor_.fourierModes()[mode];
             if (mapping.conjugatesStoredValueByWVIndex[mode]) assembleFieldFamilyDerivativesForMode<true,true>(half,mapping,modes,horizontal,Apm,A0,c.Nz,c.Nj,mode);
@@ -840,13 +828,13 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformToSpatialDomain
 }
 
 WVKernelStatus WVTransformConstantStratificationKernel::transformToSpatialDomainWithGAllDerivatives(const WVComplexConstView& Apm, const WVComplexConstView& A0, WVRealFieldBundleView& fields) {
-    auto initial = transformAllDerivatives(*this, false, Apm, A0, fields); if (initial.code != WVKernelStatusCode::unsupportedOperation) return initial;
+    auto initial = validateAllDerivativeInputs(*this, Apm, A0, fields); if (!initial) return initial;
     ExecutionGuard guard(executing_); if (!guard.entered()) return {WVKernelStatusCode::reentrantExecution, "Kernel operations are not reentrant."};
     const auto& c = descriptor_.configuration(); const auto& mapping = descriptor_.halfSpectrumMappings(); const auto& modes = descriptor_.verticalModes();
     const std::size_t halfRows = mapping.NxHalf * c.Ny; auto* half = reinterpret_cast<WVComplex64*>(halfSpectrumScratch_.data());
     std::fill(half,half + c.Nz * 4 * halfRows,WVComplex64{});
     const auto coefficientAssemblyStart = std::chrono::steady_clock::now();
-    forEachModeBlock(descriptor_.Nkl(),[&](std::size_t begin, std::size_t end) {
+    coefficientExecutor_->execute(descriptor_.Nkl(),[&](std::size_t begin, std::size_t end) {
         for (std::size_t mode = begin; mode < end; ++mode) {
             const auto& horizontal = descriptor_.fourierModes()[mode];
             if (mapping.conjugatesStoredValueByWVIndex[mode]) assembleFieldFamilyDerivativesForMode<false,true>(half,mapping,modes,horizontal,Apm,A0,c.Nz,c.Nj,mode);
@@ -874,7 +862,7 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformToSpatialDomain
     const auto coefficientAssemblyStart = std::chrono::steady_clock::now();
     auto assembleTarget = [&](auto targetConstant) {
         constexpr std::size_t resolvedTarget = decltype(targetConstant)::value;
-        forEachModeBlock(descriptor_.Nkl(),[&](std::size_t begin, std::size_t end) {
+        coefficientExecutor_->execute(descriptor_.Nkl(),[&](std::size_t begin, std::size_t end) {
             for (std::size_t mode = begin; mode < end; ++mode) {
                 auto source = [&](std::size_t index) { return EvolvedWaveVortexCoefficients{evolvedCoefficients.Ap.data[index],evolvedCoefficients.Am.data[index],evolvedCoefficients.A0.data[index]}; };
                 if (mapping.conjugatesStoredValueByWVIndex[mode]) assembleDerivativeSpectraForMode<resolvedTarget,true>(half,mapping,modes,descriptor_.fourierModes(),c.Nz,c.Nj,mode,source);
@@ -916,7 +904,7 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformToSpatialDomain
     const auto coefficientAssemblyStart = std::chrono::steady_clock::now();
     auto assembleTarget = [&](auto targetConstant) {
         constexpr std::size_t resolvedTarget = decltype(targetConstant)::value;
-        forEachModeBlock(descriptor_.Nkl(),[&](std::size_t begin, std::size_t end) {
+        coefficientExecutor_->execute(descriptor_.Nkl(),[&](std::size_t begin, std::size_t end) {
             for (std::size_t mode = begin; mode < end; ++mode) {
                 auto source = [&](std::size_t index) { return evolveWaveVortexCoefficients(state.coefficients.Ap.data[index],state.coefficients.Am.data[index],state.coefficients.A0.data[index],phaseValues.data[index]); };
                 if (mapping.conjugatesStoredValueByWVIndex[mode]) assembleDerivativeSpectraForMode<resolvedTarget,true>(half,mapping,modes,descriptor_.fourierModes(),c.Nz,c.Nj,mode,source);
@@ -965,7 +953,7 @@ WVKernelStatus WVTransformConstantStratificationKernel::projectSingleFluxTargetI
     auto projectTarget = [&](auto targetConstant, auto hydrostaticConstant) {
         constexpr std::size_t resolvedTarget = decltype(targetConstant)::value;
         constexpr bool hydrostatic = decltype(hydrostaticConstant)::value;
-        forEachModeBlock(descriptor_.Nkl(),[&](std::size_t begin, std::size_t end) {
+        coefficientExecutor_->execute(descriptor_.Nkl(),[&](std::size_t begin, std::size_t end) {
             for (std::size_t iMode = begin; iMode < end; ++iMode) {
                 const auto& horizontal = descriptor_.fourierModes()[iMode];
                 if (mapping.conjugatesStoredValueByWVIndex[iMode]) {
