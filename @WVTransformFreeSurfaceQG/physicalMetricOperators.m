@@ -65,12 +65,7 @@ for p = 1:length(pages)
     pages{p} = struct(kineticEnergy=kinetic,interiorPotentialEnergy=interiorPotential,surfacePotentialEnergy=surfacePotential);
 end
 MG = P*self.mdaG;
-% Inactive surface modes have G(0)=0 and finite sampled derivatives.
-if isfinite(self.g0)
-    MGz = P*((self.mdaF+(self.g0/g)*self.mdaG(end,:))./self.mdaEquivalentDepth(:).');
-else
-    MGz = P*(self.verticalDerivativeMatrix*self.mdaG);
-end
+MGz = P*self.mdaDisplacementDerivative();
 MB = -N2.*MG;
 MBz = -N2z.*MG-N2.*MGz;
 MQ = -f*MGz;

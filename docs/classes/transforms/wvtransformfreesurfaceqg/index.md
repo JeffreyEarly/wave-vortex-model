@@ -68,7 +68,7 @@ wvt = WVTransformFreeSurfaceQG([100e3 100e3 4000],[32 32 33],N2Function=N2,latit
       + [`rho_nm0`](/classes/transforms/wvtransformfreesurfaceqg/rho_nm0.html) Reference no-motion density profile, `[Nz 1]`, in $$\mathrm{kg\,m^{-3}}$$.
     + Vorticity and geostrophic fields
       + [`psi`](/classes/transforms/wvtransformfreesurfaceqg/psi.html) Reconstructed geostrophic streamfunction.
-      + [`qgpv`](/classes/transforms/wvtransformfreesurfaceqg/qgpv.html) Reconstructed APV field.
+      + [`qgpv`](/classes/transforms/wvtransformfreesurfaceqg/qgpv.html) Reconstructed full QGPV field, including the horizontal-mean MDA contribution.
     + Velocity
       + [`u`](/classes/transforms/wvtransformfreesurfaceqg/u.html) Reconstructed x velocity.
       + [`v`](/classes/transforms/wvtransformfreesurfaceqg/v.html) Reconstructed y velocity.
@@ -290,7 +290,7 @@ wvt = WVTransformFreeSurfaceQG([100e3 100e3 4000],[32 32 33],N2Function=N2,latit
     + [`totalEnergyOfFlowComponent`](/classes/transforms/wvtransformfreesurfaceqg/totalenergyofflowcomponent.html) Compute the energy carried by one flow component.
 + Convert representations
   + Physical fields and coefficients
-    + [`reconstructSpectralState`](/classes/transforms/wvtransformfreesurfaceqg/reconstructspectralstate.html) Reconstruct compact spectral streamfunction, displacement, and APV.
+    + [`reconstructSpectralState`](/classes/transforms/wvtransformfreesurfaceqg/reconstructspectralstate.html) Reconstruct compact spectral streamfunction, displacement, and full QGPV.
     + [`transformMDABack`](/classes/transforms/wvtransformfreesurfaceqg/transformmdaback.html) Reconstruct horizontal-mean displacement from the MDA family.
     + [`transformMDAForward`](/classes/transforms/wvtransformfreesurfaceqg/transformmdaforward.html) Project horizontal-mean displacement onto the MDA family.
     + [`transformStateBack`](/classes/transforms/wvtransformfreesurfaceqg/transformstateback.html) Reconstruct sampled APV and active endpoint anomalies.

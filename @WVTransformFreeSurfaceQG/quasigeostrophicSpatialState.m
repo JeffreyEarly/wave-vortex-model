@@ -3,6 +3,9 @@ function [q,u,v,b,ub,vb,phiHat] = quasigeostrophicSpatialState(self)
 %
 % Interior fields have shape `Nx × Ny × Nz`. Endpoint fields have shape
 % `Nx × Ny × Ne`, with active endpoints in canonical surface-bottom order.
+% QGPV and endpoint anomalies include their MDA horizontal means; inactive
+% endpoints remain omitted. The endpoint anomaly is displacement relative
+% to surface elevation at the top, and displacement at the bottom.
 %
 % - Topic: Transform coefficient state
 % - Declaration: [q,u,v,b,ub,vb,phiHat] = quasigeostrophicSpatialState(self)
@@ -18,9 +21,7 @@ arguments
     self (1,1) WVTransformFreeSurfaceQG
 end
 
-psiHat = self.reconstructSpectralState();
-qHat = complex(zeros(self.Nz,self.Nkl));
-qHat(:,self.klNonzero) = self.apvF*self.Ag_q;
+[psiHat,etaHat,qHat] = self.reconstructSpectralState();
 if nargout > 6, phiHat = psiHat(:,self.klNonzero); end
 q = self.transformToSpatialDomainWithFourier(qHat);
 u = self.transformToSpatialDomainWithFourier(-sqrt(-1)*reshape(self.l,1,[]).*psiHat);
@@ -39,6 +40,10 @@ bHat(:,self.klNonzero) = bNonzero;
 endpointVerticalIndex = self.activeEndpoint;
 endpointVerticalIndex(self.activeEndpoint == 1) = self.Nz;
 endpointVerticalIndex(self.activeEndpoint == 2) = 1;
+meanIndex = find(hypot(self.k,self.l) == 0,1);
+if ~isempty(meanIndex)
+    bHat(:,meanIndex) = etaHat(endpointVerticalIndex,meanIndex);
+end
 geometry = self.endpointGeometry();
 b = geometry.transformToSpatialDomainWithFourier(bHat);
 ub = u(:,:,endpointVerticalIndex);
