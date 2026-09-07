@@ -1,0 +1,52 @@
+# Issue 296 implementation and verification
+
+Target: `JeffreyEarly/wave-vortex-model#296`, branch `issue-296-stratified-qg-kernel` in `wvm-v4-cpp-adoption-audit`, starting from v4 main `02fd1e2facc8d1022dfee3cf4e3c36300a6e4ce3`. PR #359 integrated #295/#356/#357 after the required Smoke, Documentation and Code Analyzer checks passed; those three issues are closed. This goal begins after that integration. The separate v5 checkout remains at `3f3da755e776ac5a17a597dd503369497acdbbad` on `feature/v5.0-free-surface-qg` and was not changed.
+
+## Delivered behavior
+
+`WVTransformStratifiedQGKernel` consumes the immutable scientific source from #295, uses #357 prepared horizontal/vertical services, and implements canonical interleaved `A0(j,kl)` QGPV dynamics. The pure numerical `WVStratifiedModalSource` interface and data vocabulary live in `CompiledKernel`; the NetCDF reader and owning record remain in `PortableRuntime`. A shared scientific owner is retained, while prepared execution matrices and mutable workspace have separate owners. Published records cannot be copy/move-assigned over. There is no numerical-core NetCDF/MATLAB/vendor include, eigenproblem solver, `Ap`/`Am` compatibility storage or matrix expansion per horizontal mode.
+
+Implemented operations: raw F-space QGPV projection, U/V/displacement projection, field reconstruction, first x/y/z derivatives, nonlinear PV advection, explicit beta-plane tendency, stationary F-plane and exact linear Rossby evolution, spectral/spatial energy and enstrophy, and maximum horizontal speed. Fields cover u/v, zero w, displacement, pressure height, pressure, streamfunction, QGPV, excess/total density, vertical vorticity and surface height/velocities. Field arrays are `[Nx,Ny,Nz]`; surface arrays are `[Nx,Ny,1]`.
+
+The source's exact retained horizontal list carries the antialias selection. The four shared F/G operators retain arbitrary legal j keys, including non-prefix subsets. MATLAB's geostrophic mask excludes all horizontal means; raw QGPV projection still retains means as MATLAB does. Barotropic displacement and deformation wavenumber are zero. F-plane A0 is stationary even at nonzero reference times. Planetary beta is available as a factor but is applied only when explicitly requested.
+
+Scientific details were established from `WVTransformStratifiedQG`, `WVGeostrophicComponent`, `WVGeostrophicMethods`, `WVGeometryDoublyPeriodicStratified`, the standard field operations, `WVNonlinearAdvection` and `WVBetaPlanePVAdvection`. Pressure is `rho0*g*pi`. Density derivatives use N2 and `dLnN2`. Spatial energy uses stored quadrature; spatial enstrophy matches MATLAB's existing trapezoidal-z diagnostic, which is distinct from modal quadrature on nonuniform grids. No MATLAB production code, API, required-property list, writer, reader or restart behavior changed in #296.
+
+The kernel uses a caller-supplied FFT engine and setup-only matrix-backend factory (scalar by default). It has four physical scratch volumes, two `[Nj,Nkl]` complex arrays and one `[Nz,Nkl]` complex array, in addition to separately counted service workspaces. Source, derived operators, numerical workspace, factors and provider/plan lower bounds are reported separately. Capacity accounting is not a process-memory bound or a claim about opaque vendor allocations. Each kernel owns a single mutable workspace; separate kernels provide independent workspaces.
+
+This is the standalone numerical kernel slice. It does not enable full Stratified QG checkpoint execution in `wave-vortex-run`, register a new compiled-MATLAB backend selector, or integrate the forcing/observer/output graph. Those remain #297–#298. Hydrostatic and Boussinesq kernel execution remain subsequent issues. #358 performance qualification is independent.
+
+## Acceptance evidence
+
+| Requirement | Evidence |
+| --- | --- |
+| MATLAB profiles, shapes and truncations | Two variable profiles (exponential and tanh); `[Nx,Ny,Nz,Nj]` = `[8,6,9,4]`, `[9,7,10,6]`, `[8,7,7,1]`; antialias on/off, unequal 19000-by-11000-by-1000 domains, nonuniform vertical grids. Twelve cases with both reference and native FFT providers. |
+| Exact retained subsets and zero modes | Additional actual MATLAB basis `[0,2,4]` selected from six modes, with all modal matrices/preconditioners sliced coherently; separate horizontal-mean-only input checks zero reconstructed QGPV/velocity/energy/enstrophy and stationary A0. Both providers covered. |
+| Projections and normalization | Compare U/V, displacement, pressure-height, streamfunction, QGPV and energy/enstrophy factors with MATLAB; arbitrary QGPV and U/V/displacement projections; end-to-end QGPV and U/V/displacement round trips on the retained subspace. |
+| Fields and derivatives | All 14 exposed fields and their first x/y/z derivatives match MATLAB field operations and vertical calculus; surface outputs use the top grid slice. Density's horizontally uniform background is differentiated analytically as zero. |
+| Dynamics | Nonlinear PV tendencies match MATLAB's forcing evaluation. Standalone beta and combined nonlinear-plus-beta tendencies match `WVBetaPlanePVAdvection`; F-plane evolution is stationary and exact beta evolution matches MATLAB coefficient multipliers. No forcing registry integration is claimed. |
+| Diagnostics | Spectral energy/enstrophy, spatial energy, MATLAB's trapezoidal spatial enstrophy, and maximum horizontal speed match MATLAB. |
+| Ownership and failures | Inputs preserved, failed setup leaves an existing kernel untouched, scientific owner retained until kernel release, copy/move assignment disabled, shape/pointer/alias/beta errors rejected. Inject failure at each FFT plan and each of four matrix backend factories; counters show no live leaked engines/plans. Allocation-failure sweep reaches successful setup with no partial publication or leaks. |
+| Prepared storage | Repeated nonlinear flux, density derivative, field evaluation and projection create zero application new/new[] allocations. Physical scratch is exactly four real volumes in the tested implementations. Vendor internal allocation is outside the interposer. |
+| Current consumers | Focused existing runtime tests and current ATS source compile and pass; no production MATLAB changes, manifest changes or released-snapshot changes. |
+
+## Verification ledger
+
+Host: Apple silicon macOS; AppleClang 21 and GCC 14.2. The native provider uses the existing validated FFTW installation. Required local data and dependency snapshots were available. No generated fixtures or binaries are committed.
+
+- `TestStratifiedQGCompiledKernel`: all three methods passed across reference/native providers. The profile/subset methods were rerun after adding explicit QGPV/UVEta round-trip assertions; the unchanged mean-only method had already passed. Final numerical tolerance is `2e-11*max(abs(expected)) + 1e-18` per compared quantity; no existing test tolerance was loosened.
+- The first numerical run exposed cancellation in the MATLAB reference for horizontal derivatives of total density: perturbations are tiny relative to the roughly 1025 kg/m3 background. The reference now differentiates `rho_e`, since the background has exactly zero horizontal derivative. The kernel and tolerances were unchanged. Compact scalar error diagnostics replaced large failure tables.
+- `TestWVStratifiedQGKernel` and `TestWVStratifiedModalRecord` passed native Release, including allocation/factory/FFT-failure sweeps and source lifetime. Their common synthetic NetCDF fixture was extracted into a test-only header; physical parity comes from MATLAB fixtures, not that synthetic fixture.
+- Debug AddressSanitizer + UndefinedBehaviorSanitizer in `/private/tmp/wvm-295-asan`: both tests passed without sanitizer diagnostics. This does not claim vendor-internal allocation interception.
+- GCC 14.2 Release, Accelerate/native FFT disabled, `/private/tmp/wvm-295-gcc`: numerical/runtime libraries and both tests compiled and passed. GCC's macOS linker emits deployment-version warnings; the new code compiles under warnings-as-errors. No new full-CLI GCC or Linux-host qualification is claimed by these local runs.
+- Focused runtime checks passed 6/6: portable implementation contract, checkpoint reader, unified integration, Barotropic QG integration, extended runner composition and architecture source policy. An initial build command used the wrong extended-runner target name; the actual `TestWVExtendedRunner` target is built for final verification.
+- Current ATS main `511aa6af9c60353b3de4d371dfe0df43159027cf`, rebuilt against this worktree, passed 7/7 including source-linked runner end-to-end. Its source tree remains clean.
+- Existing `TestStratifiedModalRecord`: 6/6 passed, preserving #295 scientific/export/old-file behavior after interface extraction. `TestCompiledKernelIntegration`: 5/5 passed. Code Analyzer reports zero messages for the new MATLAB test.
+- `buildtool docs:check`: passed after the coherent documentation batch, 2026 files, 4145 routes, zero failures and no generated differences. No website files changed.
+- The final record assignment prohibition is a compile-time ownership restriction, with static assertions; it changes neither scientific arithmetic nor object layout. Its final focused native build/run passed 3/3: modal record, QG kernel and freshly rebuilt extended runner; this follows the numerical/sanitizer/consumer gates above. Source hashes and diff/scope checks are verified after that header-only change without repeating unaffected numerical or documentation gates.
+
+## Handoff
+
+Build `TestWVStratifiedQGKernel` and `WVStratifiedQGKernelDump` from `PortableRuntime`; run CTest `-R '^stratified-(qg-kernel|modal-record)$'`. MATLAB uses `UnitTests/TestStratifiedQGCompiledKernel.m`; optionally set `WV_QG_KERNEL_DUMP` and `WV_QG_TEST_NATIVE=1`. Otherwise it builds a temporary reference executable. The native executable requires `WV_RUNTIME_ENABLE_NATIVE_FFTW=ON` and the validated provider root. Other kernels may implement the immutable scientific source interface without depending on persistence.
+
+Next: #297, integrate applicable forcing, field services, observers and output/restart graphs with the Stratified QG kernel; #298 then qualifies complete continuation. Publication and integration of #296 were authorized by the user on 2026-09-07. The implementation is ready for the required hosted checks and merge into v4 main.
