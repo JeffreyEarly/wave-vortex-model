@@ -317,7 +317,7 @@ function value = shellQuote(value)
 value = "'"+replace(string(value),"'","'""'""'")+"'";
 end
 function [status,output] = cleanSystem(command)
-[status,output] = system("env -u DYLD_LIBRARY_PATH -u DYLD_FRAMEWORK_PATH -u DYLD_FALLBACK_LIBRARY_PATH "+command);
+[status,output] = system("env -u LD_LIBRARY_PATH -u DYLD_LIBRARY_PATH -u DYLD_FRAMEWORK_PATH -u DYLD_FALLBACK_LIBRARY_PATH "+command);
 end
 
 function result = forcingGroup(info,identity)
