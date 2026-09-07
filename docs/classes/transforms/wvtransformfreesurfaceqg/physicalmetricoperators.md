@@ -9,7 +9,7 @@ mathjax: true
 
 #  physicalMetricOperators
 
-Return quadrature reconstruction and positive physical quadratic metrics.
+Return quadrature reconstruction and physical quadratic and endpoint-variance metrics.
 
 > Developer documentation: this item describes internal implementation details.
 
@@ -27,7 +27,8 @@ after restoration. No forcing or integrator is required. All active-endpoint
 combinations and every MDA mode are represented.
 
 For each nonzero horizontal wavenumber, `pages` contains kinetic, interior
-potential, and surface potential energy matrices. The common APV enstrophy
+potential, and surface potential energy matrices, plus surface/bottom
+anomaly second-moment matrices. Inactive endpoint matrices are zero. The common APV enstrophy
 matrix is the exact continuous Gram matrix of the depth-normalized F modes,
 `D*I`. The sampled quadrature Gram is only an approximation to this diagonal
 physical metric and is reserved for transform construction and resolution

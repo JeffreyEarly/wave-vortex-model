@@ -9,7 +9,7 @@ mathjax: true
 
 #  reconstructSpectralState
 
-Reconstruct compact spectral streamfunction, displacement, and APV.
+Reconstruct compact spectral streamfunction, displacement, and full QGPV.
 
 
 ---
@@ -21,6 +21,10 @@ Reconstruct compact spectral streamfunction, displacement, and APV.
 ## Returns
 + `psiHat`  streamfunction on the compact full-kl grid
 + `etaHat`  displacement on the compact full-kl grid
-+ `qHat`  APV on the compact full-kl grid
++ `qHat`  full QGPV, including MDA, on the compact full-kl grid
 
 ## Discussion
+
+The zero-horizontal-wavenumber displacement is the MDA field, with
+$$\overline q = -f\partial_z\overline\eta_i.$$ The mean SSH
+gauge is zero. Nonzero-wavenumber QGPV is reconstructed from APV modes.

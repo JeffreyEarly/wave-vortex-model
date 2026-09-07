@@ -27,3 +27,7 @@ Reconstruct sampled APV and active endpoint anomalies.
 + `endpointAnomalies`  active endpoint-anomaly pages
 
 ## Discussion
+
+These pages contain only the nonzero horizontal wavenumbers supplied by
+`Ag_q` and `Ag_0`. Use `quasigeostrophicSpatialState` for physical QGPV
+and endpoint fields including the current `Amda` horizontal means.

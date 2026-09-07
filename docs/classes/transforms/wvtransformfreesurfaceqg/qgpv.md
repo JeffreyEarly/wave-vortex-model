@@ -9,7 +9,7 @@ mathjax: true
 
 #  qgpv
 
-Reconstructed APV field.
+Reconstructed full QGPV field, including the horizontal-mean MDA contribution.
 
 
 ---

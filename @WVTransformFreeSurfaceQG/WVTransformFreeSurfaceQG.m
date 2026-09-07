@@ -294,7 +294,7 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
         % Reconstructed isopycnal displacement including MDA.
         % - Topic: Evaluate physical fields
         eta
-        % Reconstructed APV field.
+        % Reconstructed full QGPV field, including the horizontal-mean MDA contribution.
         % - Topic: Evaluate physical fields
         qgpv
     end
@@ -671,6 +671,7 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
 
     methods (Access = private)
         endpointAnomalies = reconstructEndpointAnomalies(self,Ag_q,Ag_0)
+        derivative = mdaDisplacementDerivative(self)
 
         function geometry = endpointGeometry(self)
             if isempty(self.endpointGeometry_)

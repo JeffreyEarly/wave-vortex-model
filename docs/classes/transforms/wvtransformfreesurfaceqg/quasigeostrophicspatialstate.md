@@ -33,3 +33,6 @@ Reconstruct the physical state used by QG spatial forcing.
 
 Interior fields have shape `Nx × Ny × Nz`. Endpoint fields have shape
 `Nx × Ny × Ne`, with active endpoints in canonical surface-bottom order.
+QGPV and endpoint anomalies include their MDA horizontal means; inactive
+endpoints remain omitted. The endpoint anomaly is displacement relative
+to surface elevation at the top, and displacement at the bottom.

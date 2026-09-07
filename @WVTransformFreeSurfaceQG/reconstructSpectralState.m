@@ -1,11 +1,15 @@
 function [psiHat,etaHat,qHat] = reconstructSpectralState(self)
-% Reconstruct compact spectral streamfunction, displacement, and APV.
+% Reconstruct compact spectral streamfunction, displacement, and full QGPV.
+%
+% The zero-horizontal-wavenumber displacement is the MDA field, with
+% $$\overline q = -f\partial_z\overline\eta_i.$$ The mean SSH
+% gauge is zero. Nonzero-wavenumber QGPV is reconstructed from APV modes.
 %
 % - Topic: Transform coefficient state
 % - Declaration: [psiHat,etaHat,qHat] = reconstructSpectralState(self)
 % - Returns psiHat: streamfunction on the compact full-kl grid
 % - Returns etaHat: displacement on the compact full-kl grid
-% - Returns qHat: APV on the compact full-kl grid
+% - Returns qHat: full QGPV, including MDA, on the compact full-kl grid
 arguments
     self (1,1) WVTransformFreeSurfaceQG
 end
@@ -45,5 +49,8 @@ end
 if nargout > 2
     qHat = complex(zeros(nz,self.Nkl));
     qHat(:,nonzeroIndex) = self.apvF*self.Ag_q;
+    if ~isempty(meanIndex)
+        qHat(:,meanIndex) = -self.f*(self.mdaDisplacementDerivative()*self.Amda);
+    end
 end
 end
