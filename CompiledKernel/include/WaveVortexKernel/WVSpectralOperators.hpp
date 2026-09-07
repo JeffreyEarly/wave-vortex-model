@@ -1,0 +1,163 @@
+#pragma once
+
+#include "WVFFTEngine.hpp"
+#include <cstdint>
+#include <memory>
+#include <string>
+#include <vector>
+
+namespace wavevortex {
+
+// Internal numerical service contract, independent of kernel contract 4 and
+// portable extension source API v1. Scientific checkpoint records do not store it.
+inline constexpr const char* WVSpectralOperatorContract = "wave-vortex-spectral-operators-v1";
+enum class WVComplexRepresentation { interleaved, split };
+enum class WVOperatorPlacement { outOfPlace, inPlace };
+enum class WVFourierNormalization { forwardUnit, unitary, inverseUnit };
+enum class WVMatrixAction { reconstruction, projection, crossFamily };
+enum class WVAccumulation { overwrite, add };
+
+// Strides are positive element strides, in complex values (interleaved) or
+// doubles (each split component). Logical indices are [vertical, retained mode].
+// modeSet names the exact ordered set, not an inferred radius or approximate key.
+struct WVComplexLayout {
+    std::size_t rows = 0, columns = 0, rowStride = 1, columnStride = 0;
+    WVComplexRepresentation representation = WVComplexRepresentation::interleaved;
+    std::string family, modeSet;
+};
+struct WVComplexInput {
+    const WVComplex64* interleaved = nullptr;
+    const double* real = nullptr;
+    const double* imag = nullptr;
+    // Capacity of the interleaved buffer, or minimum capacity of the two split buffers.
+    std::size_t bytes = 0;
+};
+struct WVComplexOutput {
+    WVComplex64* interleaved = nullptr;
+    double* real = nullptr;
+    double* imag = nullptr;
+    std::size_t bytes = 0;
+    WVComplexInput input() const noexcept { return {interleaved,real,imag,bytes}; }
+};
+struct WVRealGridLayout {
+    std::size_t Nx = 0, Ny = 0, planes = 0;
+    std::size_t xStride = 1, yStride = 0, planeStride = 0;
+    std::string family;
+};
+struct WVRealInput { const double* data = nullptr; std::size_t bytes = 0; };
+struct WVRealOutput { double* data = nullptr; std::size_t bytes = 0; };
+struct WVRetainedModeKey { std::int64_t k = 0, l = 0; };
+struct WVRetainedHorizontalSpecification {
+    WVRealGridLayout grid;
+    WVComplexLayout retained;
+    double Lx = 0, Ly = 0;
+    std::vector<WVRetainedModeKey> modes; // One representative per Hermitian orbit, in caller order.
+    WVFourierNormalization normalization = WVFourierNormalization::forwardUnit;
+    WVOperatorPlacement placement = WVOperatorPlacement::outOfPlace;
+};
+
+namespace spectral_detail {
+struct HorizontalData;
+struct HorizontalWorkspaceData;
+struct VerticalData;
+struct VerticalWorkspaceData;
+}
+class WVRetainedHorizontalWorkspace {
+public:
+    ~WVRetainedHorizontalWorkspace();
+    WVRetainedHorizontalWorkspace(const WVRetainedHorizontalWorkspace&) = delete;
+    WVRetainedHorizontalWorkspace& operator=(const WVRetainedHorizontalWorkspace&) = delete;
+    std::size_t persistentBytes() const noexcept;
+    std::size_t planBytesLowerBound() const noexcept;
+private:
+    friend class WVRetainedHorizontalOperator;
+    WVRetainedHorizontalWorkspace();
+    std::unique_ptr<spectral_detail::HorizontalWorkspaceData> data_;
+};
+class WVRetainedHorizontalOperator {
+public:
+    // Reference schedule: full FFT followed by gather, or zero/embed followed by
+    // full inverse FFT. Uses the supplied provider; no pruned transform adoption.
+    static WVKernelStatus create(const WVRetainedHorizontalSpecification&, std::unique_ptr<WVFFTEngine>, std::unique_ptr<WVRetainedHorizontalOperator>&);
+    WVKernelStatus createWorkspace(std::unique_ptr<WVRetainedHorizontalWorkspace>&) const;
+    WVKernelStatus forward(WVRetainedHorizontalWorkspace&, WVRealInput, WVComplexOutput) const;
+    WVKernelStatus inverse(WVRetainedHorizontalWorkspace&, WVComplexInput, WVRealOutput) const;
+    std::size_t persistentBytes() const noexcept;
+    std::size_t providerBytesLowerBound() const noexcept;
+private:
+    WVRetainedHorizontalOperator() = default;
+    std::shared_ptr<const spectral_detail::HorizontalData> data_;
+};
+
+// Exact authoritative source identity. source must change with geometry,
+// stratification, retained basis or normalization; name identifies one operator
+// in that source. Equal numerical matrices with different identities stay distinct.
+struct WVMatrixIdentity { std::string source, name; };
+struct WVRealMatrixInput {
+    const double* data = nullptr;
+    std::size_t rows = 0, columns = 0, rowStride = 1, columnStride = 0, bytes = 0;
+};
+struct WVVerticalMatrixRecord {
+    WVMatrixIdentity identity;
+    WVRealMatrixInput values;
+    WVMatrixAction action = WVMatrixAction::reconstruction;
+    std::string inputFamily, outputFamily;
+};
+struct WVVerticalGroup {
+    std::uint64_t identity = 0; // Exact source group identity; never derived from integer radius.
+    std::size_t matrix = 0;
+    std::vector<std::size_t> modes; // May be discontiguous; each retained column occurs exactly once.
+};
+struct WVVerticalSpecification {
+    std::string sourceIdentity;
+    WVMatrixAction action = WVMatrixAction::reconstruction;
+    std::size_t Nz = 0, Nj = 0;
+    WVComplexLayout input, output;
+    std::vector<WVVerticalMatrixRecord> matrices;
+    std::vector<WVVerticalGroup> groups;
+    WVAccumulation accumulation = WVAccumulation::overwrite;
+    WVOperatorPlacement placement = WVOperatorPlacement::outOfPlace;
+};
+
+// Adapter boundary: column-major A[m,k], B[k,n], C[m,n]. The prepared service
+// validates dimensions/placement and supplies immutable matrices. Implementations
+// must perform C=A*B+beta*C without application allocation or launching workers.
+class WVVerticalMatrixBackend {
+public:
+    virtual ~WVVerticalMatrixBackend() = default;
+    virtual const char* identifier() const noexcept = 0;
+    virtual std::size_t maximumDimension() const noexcept = 0;
+    virtual std::size_t persistentBytes() const noexcept = 0;
+    virtual void split(std::size_t m, std::size_t k, std::size_t n, const double* a,
+        const double* br, const double* bi, std::size_t ldb, double* cr, double* ci, std::size_t ldc, double beta) const noexcept = 0;
+    virtual void interleaved(std::size_t m, std::size_t k, std::size_t n, const WVComplex64* a,
+        const WVComplex64* b, std::size_t ldb, WVComplex64* c, std::size_t ldc, double beta) const noexcept = 0;
+};
+WVKernelStatus WVCreateScalarMatrixBackend(std::unique_ptr<WVVerticalMatrixBackend>&);
+
+class WVVerticalWorkspace {
+public:
+    ~WVVerticalWorkspace();
+    WVVerticalWorkspace(const WVVerticalWorkspace&) = delete;
+    WVVerticalWorkspace& operator=(const WVVerticalWorkspace&) = delete;
+    std::size_t persistentBytes() const noexcept;
+private:
+    friend class WVPreparedVerticalOperator;
+    WVVerticalWorkspace();
+    std::unique_ptr<spectral_detail::VerticalWorkspaceData> data_;
+};
+class WVPreparedVerticalOperator {
+public:
+    static WVKernelStatus create(const WVVerticalSpecification&, std::unique_ptr<WVVerticalMatrixBackend>, std::unique_ptr<WVPreparedVerticalOperator>&);
+    WVKernelStatus createWorkspace(std::unique_ptr<WVVerticalWorkspace>&) const;
+    WVKernelStatus execute(WVVerticalWorkspace&, WVComplexInput, WVComplexOutput) const;
+    std::size_t persistentBytes() const noexcept;
+    std::size_t matrixBytes() const noexcept;
+    std::size_t uniqueMatrixCount() const noexcept;
+    const char* backendIdentifier() const noexcept;
+private:
+    WVPreparedVerticalOperator() = default;
+    std::shared_ptr<const spectral_detail::VerticalData> data_;
+};
+
+} // namespace wavevortex

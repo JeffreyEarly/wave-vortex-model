@@ -2,7 +2,6 @@
 
 #include <cmath>
 #include <complex>
-#include <functional>
 #include <vector>
 
 namespace wavevortex {
@@ -10,14 +9,17 @@ namespace {
 
 constexpr double pi = 3.141592653589793238462643383279502884;
 
-void forEachBatch(const WVFFTPlanSpecification& specification, const std::function<void(std::ptrdiff_t,std::ptrdiff_t)>& action) {
-    std::function<void(std::size_t,std::ptrdiff_t,std::ptrdiff_t)> visit;
-    visit = [&](std::size_t dimension, std::ptrdiff_t inputOffset, std::ptrdiff_t outputOffset) {
-        if (dimension == specification.batchDimensions.size()) { action(inputOffset, outputOffset); return; }
-        const auto& batch = specification.batchDimensions[dimension];
-        for (std::size_t index = 0; index < batch.count; ++index) visit(dimension + 1, inputOffset + static_cast<std::ptrdiff_t>(index) * batch.inputStride, outputOffset + static_cast<std::ptrdiff_t>(index) * batch.outputStride);
-    };
-    visit(0, 0, 0);
+template <typename Action>
+void visitBatch(const WVFFTPlanSpecification& specification, const Action& action,
+    std::size_t dimension, std::ptrdiff_t inputOffset, std::ptrdiff_t outputOffset) {
+    if (dimension == specification.batchDimensions.size()) { action(inputOffset,outputOffset); return; }
+    const auto& batch = specification.batchDimensions[dimension];
+    for (std::size_t index = 0; index < batch.count; ++index)
+        visitBatch(specification,action,dimension+1,inputOffset+static_cast<std::ptrdiff_t>(index)*batch.inputStride,outputOffset+static_cast<std::ptrdiff_t>(index)*batch.outputStride);
+}
+template <typename Action>
+void forEachBatch(const WVFFTPlanSpecification& specification, const Action& action) {
+    visitBatch(specification,action,0,0,0);
 }
 
 class ReferencePlan final : public WVFFTPlan {

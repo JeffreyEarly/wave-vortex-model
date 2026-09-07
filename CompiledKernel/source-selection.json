@@ -35,7 +35,8 @@
     "kernelInterfaceSHA256": "6e9c5e6d58982c99704336eeb0068ff8fb7ef24e77c429469a04ab3b5ae6f50e",
     "integrationSystemSHA256": "1bb9d96106e698b6ecdd3066ab7a237052d1bf6e2ba9eefd4bbd87ee0dbdbd69",
     "forcingEngineSHA256": "6f27859f43d38dfaf8355adb6d066c5f2ae30ec10e95bc07ade3141430af5ca9",
-    "forcingInterfaceSHA256": "0e08bd27b5e069fdee2de7b1428ab549051580e943ce576dde090a705cd8e56f"
+    "forcingInterfaceSHA256": "0e08bd27b5e069fdee2de7b1428ab549051580e943ce576dde090a705cd8e56f",
+    "preparedSpectralOperators": "issue-357"
   },
   "contract": {
     "version": 4,
@@ -48,7 +49,9 @@
   },
   "barotropicQGContract": {
     "version": 4,
-    "coefficientFamilies": ["A0"],
+    "coefficientFamilies": [
+      "A0"
+    ],
     "coefficientShape": "[Nkl]",
     "normalization": "QGPV",
     "planCount": 3,
@@ -73,5 +76,28 @@
     "rejected arena, layout, and workspace schedules",
     "preparation-branch verification artifacts",
     "public computationalBackend selection"
-  ]
+  ],
+  "spectralOperatorContract": {
+    "identity": "wave-vortex-spectral-operators-v1",
+    "horizontalSchedule": "full-fft-gather-embed",
+    "complexRepresentations": [
+      "interleaved",
+      "split"
+    ],
+    "verticalActions": [
+      "reconstruction",
+      "projection",
+      "crossFamily"
+    ],
+    "matrixIdentity": "exact-source-and-name",
+    "placement": "out-of-place",
+    "sourceSHA256": {
+      "interface": "187d1352585d30b1095f20f5fb6c47848101f76b3222563c78c1402aaff13bdd",
+      "horizontal": "bf5f800392870741ed63c0b94f9f83e137990f09ab1f753f144f347ae5452431",
+      "vertical": "460d12936bd9f383400476b0bc8338735ec9216e4fd7489240f6c9d78ab7898b",
+      "validation": "eb416d6abc47d97d506b4c4fa65e8006b951d07d013c5d96db0f8043b417cc79",
+      "referenceFFT": "703724883edd3c05f583c7e68bad46830b1a92e22524a10906d3da366ad64c49",
+      "accelerate": "08fa3565ad33dc08ace85b9c708019745a53fca1187d0ebb9b23991ddb4292cc"
+    }
+  }
 }

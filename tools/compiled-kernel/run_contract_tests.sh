@@ -61,5 +61,22 @@ compiler=${CXX:-c++}
 "$compiler" -std=c++17 -Wall -Wextra -Wpedantic -Werror -pthread \
     -I "$repository_root/CompiledKernel/src" \
     "$script_directory/tests/TestWVPreparedModeExecutor.cpp" \
+    "$script_directory/tests/WVAllocationProbe.cpp" \
     -o "$build_directory/TestWVPreparedModeExecutor"
 "$build_directory/TestWVPreparedModeExecutor"
+
+"$compiler" -std=c++17 -Wall -Wextra -Wpedantic -Werror -pthread \
+    -DWV_HAVE_ACCELERATE=0 -DWV_TEST_NATIVE_FFTW=0 \
+    -I "$repository_root/CompiledKernel/include" \
+    -I "$repository_root/CompiledKernel/adapters/reference" \
+    -I "$repository_root/CompiledKernel/adapters/accelerate" \
+    "$repository_root/CompiledKernel/src/WVKernelTypes.cpp" \
+    "$repository_root/CompiledKernel/src/WVTransformConstantStratificationKernel.cpp" \
+    "$repository_root/CompiledKernel/src/WVRetainedHorizontalOperator.cpp" \
+    "$repository_root/CompiledKernel/src/WVPreparedVerticalOperator.cpp" \
+    "$repository_root/CompiledKernel/adapters/reference/WVReferenceFFTEngine.cpp" \
+    "$repository_root/CompiledKernel/adapters/accelerate/WVAccelerateMatrixBackend.cpp" \
+    "$script_directory/tests/TestWVSpectralOperators.cpp" \
+    "$script_directory/tests/WVAllocationProbe.cpp" \
+    -o "$build_directory/TestWVSpectralOperators"
+"$build_directory/TestWVSpectralOperators"
