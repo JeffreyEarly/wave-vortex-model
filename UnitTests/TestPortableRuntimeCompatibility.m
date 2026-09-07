@@ -756,16 +756,18 @@ classdef TestPortableRuntimeCompatibility < matlab.unittest.TestCase
         end
 
         function matlabWriterBarotropicQGForcingMatrixMatchesMatlab(testCase)
-            forcingCases = {
-                "nonlinear", "nonlinear"; ...
-                "adaptive", "adaptive"; ...
-                "fixed", "fixed"; ...
-                "narrow", "narrow"; ...
-                "linear", "linear"; ...
-                "quadratic", "quadratic"; ...
-                "beta", "beta"; ...
+            catalog = jsondecode(fileread(fullfile(testCase.RepositoryRoot,"PortableRuntime","contracts","portable-forcing-compatibility-v1.json")));
+            rows = catalog.rows(string({catalog.rows.configuration}) == "barotropic-aa1");
+            forcingCases = cell(0,2);
+            for row = reshape(rows,1,[])
+                if row.implementation.factoryAvailable && string(row.matlab.applicability) == "applicable"
+                    testCase.assertNotEmpty(row.barotropicCase,"Every available Barotropic QG pair needs its MATLAB continuation fixture.");
+                    forcingCases(end+1,:) = {string(row.barotropicCase),string(row.barotropicCase)}; %#ok<AGROW>
+                end
+            end
+            forcingCases = [forcingCases; {
                 "ordered-fixed", ["quadratic" "linear" "beta" "nonlinear" "adaptive" "fixed"]; ...
-                "ordered-narrow", ["beta" "quadratic" "nonlinear" "adaptive" "narrow"]};
+                "ordered-narrow", ["beta" "quadratic" "nonlinear" "adaptive" "narrow"]}];
             fieldNames = ["u" "v" "eta" "pi" "psi" "qgpv" "zeta_z" "ssh"];
             for iCase = 1:size(forcingCases,1)
                 caseName = "qg-forcing-"+forcingCases{iCase,1};

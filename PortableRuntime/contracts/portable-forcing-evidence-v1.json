@@ -1,0 +1,236 @@
+{
+  "schema": "portable-forcing-evidence-v1",
+  "inventorySource": "Documentation/WebsiteDocumentation/users-guide/supported-features.md",
+  "excluded": [
+    {
+      "identity": "WVThermalDamping",
+      "reason": "under-development"
+    }
+  ],
+  "evidence": [
+    {
+      "id": "barotropic-matlab-continuation",
+      "kind": "matlab-runtime-parity",
+      "path": "UnitTests/TestPortableRuntimeCompatibility.m",
+      "symbol": "matlabWriterBarotropicQGForcingMatrixMatchesMatlab"
+    },
+    {
+      "id": "barotropic-testFixedAmplitudeAndNarrowBand",
+      "kind": "cpp-unit",
+      "path": "PortableRuntime/tests/TestWVBarotropicQGForcing.cpp",
+      "symbol": "testFixedAmplitudeAndNarrowBand"
+    },
+    {
+      "id": "barotropic-testNumericalForcingMatrix",
+      "kind": "cpp-unit",
+      "path": "PortableRuntime/tests/TestWVBarotropicQGForcing.cpp",
+      "symbol": "testNumericalForcingMatrix"
+    },
+    {
+      "id": "constant-testFixedAmplitudeAndRK4",
+      "kind": "cpp-unit",
+      "path": "PortableRuntime/tests/TestWVForcingAndRK4.cpp",
+      "symbol": "testFixedAmplitudeAndRK4"
+    },
+    {
+      "id": "constant-testLinearBottomFrictionFormula",
+      "kind": "cpp-unit",
+      "path": "PortableRuntime/tests/TestWVForcingAndRK4.cpp",
+      "symbol": "testLinearBottomFrictionFormula"
+    },
+    {
+      "id": "constant-testNonlinearCompatibility",
+      "kind": "cpp-unit",
+      "path": "PortableRuntime/tests/TestWVForcingAndRK4.cpp",
+      "symbol": "testNonlinearCompatibility"
+    },
+    {
+      "id": "constant-testQuadraticAndPseudo",
+      "kind": "cpp-unit",
+      "path": "PortableRuntime/tests/TestWVForcingAndRK4.cpp",
+      "symbol": "testQuadraticAndPseudo"
+    },
+    {
+      "id": "constant-testSpectralForcing",
+      "kind": "cpp-unit",
+      "path": "PortableRuntime/tests/TestWVForcingAndRK4.cpp",
+      "symbol": "testSpectralForcing"
+    },
+    {
+      "id": "matlab-contracts",
+      "kind": "matlab-contract",
+      "path": "UnitTests/TestPortableForcingContracts.m",
+      "symbol": "supportedForcingsReturnExactVersionedContracts"
+    },
+    {
+      "id": "matlab-narrow-contract",
+      "kind": "matlab-contract",
+      "path": "UnitTests/TestPortableForcingContracts.m",
+      "symbol": "narrowBandUsesInheritedFixedAmplitudeContract"
+    }
+  ],
+  "forcings": [
+    {
+      "identity": "WVAdaptiveDamping",
+      "contractVersion": 1,
+      "constantFactory": true,
+      "barotropicFactory": true,
+      "implementationIssue": 0,
+      "constantEvidence": [
+        "constant-testSpectralForcing",
+        "matlab-contracts"
+      ],
+      "barotropicEvidence": [
+        "barotropic-testNumericalForcingMatrix",
+        "barotropic-matlab-continuation"
+      ],
+      "barotropicCase": "adaptive"
+    },
+    {
+      "identity": "WVAntialiasing",
+      "contractVersion": 1,
+      "constantFactory": false,
+      "barotropicFactory": false,
+      "implementationIssue": 290,
+      "constantEvidence": [],
+      "barotropicEvidence": [],
+      "barotropicCase": ""
+    },
+    {
+      "identity": "WVBetaPlanePVAdvection",
+      "contractVersion": 1,
+      "constantFactory": true,
+      "barotropicFactory": true,
+      "implementationIssue": 0,
+      "constantEvidence": [
+        "constant-testSpectralForcing",
+        "matlab-contracts"
+      ],
+      "barotropicEvidence": [
+        "barotropic-testNumericalForcingMatrix",
+        "barotropic-matlab-continuation"
+      ],
+      "barotropicCase": "beta"
+    },
+    {
+      "identity": "WVBottomFrictionLinear",
+      "contractVersion": 1,
+      "constantFactory": true,
+      "barotropicFactory": true,
+      "implementationIssue": 0,
+      "constantEvidence": [
+        "constant-testLinearBottomFrictionFormula",
+        "matlab-contracts"
+      ],
+      "barotropicEvidence": [
+        "barotropic-testNumericalForcingMatrix",
+        "barotropic-matlab-continuation"
+      ],
+      "barotropicCase": "linear"
+    },
+    {
+      "identity": "WVBottomFrictionQuadratic",
+      "contractVersion": 1,
+      "constantFactory": true,
+      "barotropicFactory": true,
+      "implementationIssue": 0,
+      "constantEvidence": [
+        "constant-testQuadraticAndPseudo",
+        "matlab-contracts"
+      ],
+      "barotropicEvidence": [
+        "barotropic-testNumericalForcingMatrix",
+        "barotropic-matlab-continuation"
+      ],
+      "barotropicCase": "quadratic"
+    },
+    {
+      "identity": "WVFixedAmplitudeForcing",
+      "contractVersion": 1,
+      "constantFactory": true,
+      "barotropicFactory": true,
+      "implementationIssue": 0,
+      "constantEvidence": [
+        "constant-testFixedAmplitudeAndRK4",
+        "matlab-contracts"
+      ],
+      "barotropicEvidence": [
+        "barotropic-testFixedAmplitudeAndNarrowBand",
+        "barotropic-matlab-continuation"
+      ],
+      "barotropicCase": "fixed"
+    },
+    {
+      "identity": "WVHorizontalDamping",
+      "contractVersion": 1,
+      "constantFactory": false,
+      "barotropicFactory": false,
+      "implementationIssue": 291,
+      "constantEvidence": [],
+      "barotropicEvidence": [],
+      "barotropicCase": ""
+    },
+    {
+      "identity": "WVNarrowBandGeostrophicForcing",
+      "contractVersion": 1,
+      "constantFactory": false,
+      "barotropicFactory": true,
+      "implementationIssue": 294,
+      "constantEvidence": [],
+      "barotropicEvidence": [
+        "barotropic-testFixedAmplitudeAndNarrowBand",
+        "barotropic-matlab-continuation"
+      ],
+      "barotropicCase": "narrow"
+    },
+    {
+      "identity": "WVNonlinearAdvection",
+      "contractVersion": 1,
+      "constantFactory": true,
+      "barotropicFactory": true,
+      "implementationIssue": 0,
+      "constantEvidence": [
+        "constant-testNonlinearCompatibility",
+        "matlab-contracts"
+      ],
+      "barotropicEvidence": [
+        "barotropic-testNumericalForcingMatrix",
+        "barotropic-matlab-continuation"
+      ],
+      "barotropicCase": "nonlinear"
+    },
+    {
+      "identity": "WVPseudoTopographicWaveGeneration",
+      "contractVersion": 1,
+      "constantFactory": true,
+      "barotropicFactory": false,
+      "implementationIssue": 0,
+      "constantEvidence": [
+        "constant-testQuadraticAndPseudo",
+        "matlab-contracts"
+      ],
+      "barotropicEvidence": [],
+      "barotropicCase": ""
+    },
+    {
+      "identity": "WVVerticalDamping",
+      "contractVersion": 1,
+      "constantFactory": false,
+      "barotropicFactory": false,
+      "implementationIssue": 292,
+      "constantEvidence": [],
+      "barotropicEvidence": [],
+      "barotropicCase": ""
+    },
+    {
+      "identity": "WVVerticalDiffusivity",
+      "contractVersion": 1,
+      "constantFactory": false,
+      "barotropicFactory": false,
+      "implementationIssue": 293,
+      "constantEvidence": [],
+      "barotropicEvidence": [],
+      "barotropicCase": ""
+    }
+  ]
+}

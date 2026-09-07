@@ -1,0 +1,247 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Portable compatibility matrix v1 \u2014 forcing foundation",
+  "description": "The initial forcing slice records pending acceptance only. It cannot advertise complete support. Further feature slices are assembled by issue 306.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "schemaVersion",
+    "slice",
+    "completion",
+    "inventory",
+    "configurations",
+    "evidence",
+    "rows"
+  ],
+  "properties": {
+    "schema": {
+      "const": "portable-compatibility-matrix-v1"
+    },
+    "schemaVersion": {
+      "const": 1
+    },
+    "slice": {
+      "const": "forcing"
+    },
+    "completion": {
+      "const": "incomplete"
+    },
+    "inventory": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source",
+        "stable",
+        "excluded"
+      ],
+      "properties": {
+        "source": {
+          "type": "string"
+        },
+        "stable": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "excluded": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "identity",
+              "reason"
+            ],
+            "properties": {
+              "identity": {
+                "type": "string"
+              },
+              "reason": {
+                "const": "under-development"
+              }
+            }
+          }
+        }
+      }
+    },
+    "configurations": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/configuration"
+      }
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/evidence"
+      }
+    },
+    "rows": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/forcingRow"
+      }
+    }
+  },
+  "$defs": {
+    "configuration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "transform",
+        "isHydrostatic",
+        "shouldAntialias"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "transform": {
+          "enum": [
+            "WVTransformConstantStratification",
+            "WVTransformBarotropicQG"
+          ]
+        },
+        "isHydrostatic": {
+          "type": "boolean"
+        },
+        "shouldAntialias": {
+          "type": "boolean"
+        }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "kind",
+        "path",
+        "symbol"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "cpp-unit",
+            "matlab-runtime-parity",
+            "matlab-contract"
+          ]
+        },
+        "path": {
+          "type": "string"
+        },
+        "symbol": {
+          "type": "string"
+        }
+      }
+    },
+    "forcingRow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "forcing",
+        "contractVersion",
+        "configuration",
+        "matlab",
+        "implementation",
+        "acceptance",
+        "evidence",
+        "barotropicCase"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "forcing": {
+          "type": "string"
+        },
+        "contractVersion": {
+          "const": 1
+        },
+        "configuration": {
+          "type": "string"
+        },
+        "matlab": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "applicability",
+            "forcingTypes",
+            "activeTypes",
+            "priority",
+            "rejection"
+          ],
+          "properties": {
+            "applicability": {
+              "enum": [
+                "applicable",
+                "incompatible"
+              ]
+            },
+            "forcingTypes": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "activeTypes": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "priority": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 255
+            },
+            "rejection": {
+              "enum": [
+                "",
+                "double-antialias",
+                "forcing-stage-unavailable",
+                "wave-transform-required"
+              ]
+            }
+          }
+        },
+        "implementation": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "factoryAvailable",
+            "issue"
+          ],
+          "properties": {
+            "factoryAvailable": {
+              "type": "boolean"
+            },
+            "issue": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "acceptance": {
+          "const": "pending"
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "barotropicCase": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

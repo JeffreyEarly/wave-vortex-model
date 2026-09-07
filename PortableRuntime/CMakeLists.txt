@@ -229,6 +229,7 @@ if(BUILD_TESTING)
     wv_add_runtime_test(TestWVPortableVariableCatalog TestWVPortableVariableCatalog.cpp portable-variable-catalog)
     wv_add_runtime_test(TestWVObserverAdapter TestWVObserverAdapter.cpp observer-adapter)
     wv_add_runtime_test(TestWVExtensionCatalog TestWVExtensionCatalog.cpp extension-catalog)
+    wv_add_runtime_test(TestWVForcingCompatibility TestWVForcingCompatibility.cpp forcing-compatibility-catalog)
     add_executable(TestWVStratifiedModalRecord tests/TestWVStratifiedModalRecord.cpp
         ../tools/compiled-kernel/tests/WVAllocationProbe.cpp)
     target_include_directories(TestWVStratifiedModalRecord PRIVATE ../tools/compiled-kernel/tests)
