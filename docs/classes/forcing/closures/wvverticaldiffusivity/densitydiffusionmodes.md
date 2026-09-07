@@ -3,7 +3,7 @@ layout: default
 title: densityDiffusionModes
 parent: WVVerticalDiffusivity
 grand_parent: Closures
-nav_order: 4
+nav_order: 5
 mathjax: true
 ---
 

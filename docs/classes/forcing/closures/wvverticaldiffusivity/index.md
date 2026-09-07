@@ -94,6 +94,8 @@ Barotropic QG has no vertical structure and is not supported.
 + Inspect forcing configuration
   + [`kappa_z`](/classes/forcing/closures/wvverticaldiffusivity/kappa_z.html) Configured vertical diffusivity in $$\mathrm{m^{2}\,s^{-1}}$$.
   + [`shouldForceMeanDensityAnomaly`](/classes/forcing/closures/wvverticaldiffusivity/shouldforcemeandensityanomaly.html) Whether to include the mean-density-anomaly source.
++ Assess response accuracy
+  + [`assessSeasonalResponse`](/classes/forcing/closures/wvverticaldiffusivity/assessseasonalresponse.html) Estimate resolved-mode seasonal-response errors by reference refinement.
 
 
 ## Developer Topics

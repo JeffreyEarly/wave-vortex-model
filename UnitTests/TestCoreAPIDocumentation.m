@@ -572,6 +572,7 @@ classdef TestCoreAPIDocumentation < matlab.unittest.TestCase
             expectedOrder = [
                 "Create the forcing"
                 "Inspect forcing configuration"
+                "Assess response accuracy"
                 "Configure forcing"
                 "Inspect forcing or damping scales"
                 "Evaluate prescribed forcing"
@@ -612,7 +613,7 @@ classdef TestCoreAPIDocumentation < matlab.unittest.TestCase
                 fullfile("wvnarrowbandgeostrophicforcing","index.md"), ["r" "k_r" "k_f" "j_f" "u_rms" "initialPV" "modelSpectrum" "A0_indices" "A0bar"]
                 fullfile("wvseasonalsurfacebuoyancyflux","index.md"), ["pattern" "amplitude" "period" "phase"]
                 fullfile("closures","wvadaptivedamping","index.md"), ["damp" "k_no_damp" "k_damp" "j_no_damp" "j_damp" "dampingTimeScale"]
-                fullfile("closures","wvverticaldiffusivity","index.md"), ["kappa_z" "shouldForceMeanDensityAnomaly"]
+                fullfile("closures","wvverticaldiffusivity","index.md"), ["kappa_z" "shouldForceMeanDensityAnomaly" "assessSeasonalResponse"]
                 fullfile("closures","wvhorizontaldamping","index.md"), ["nu" "kappa"]
                 fullfile("closures","wvverticaldamping","index.md"), ["nu" "kappa"]
                 fullfile("closures","wvthermaldamping","index.md"), ["alpha" "alpha_scaled"]

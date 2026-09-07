@@ -66,6 +66,7 @@ classdef WVVerticalDiffusivity < WVForcing
     %
     % - Topic: Create the forcing
     % - Topic: Inspect forcing configuration
+    % - Topic: Assess response accuracy
     % - Topic: Implement forcing evaluation
     % - Topic: Convert forcing resolution
     % - Topic: Forcing persistence
@@ -180,6 +181,84 @@ classdef WVVerticalDiffusivity < WVForcing
                 tendency.Ag_0(:,columns) = tendency.Ag_0(:,columns)+contribution(wvt.apvModeCount+1:end,:);
             end
             tendency.Amda = tendency.Amda+operators.mda.generator*wvt.Amda;
+        end
+
+        function assessment = assessSeasonalResponse(self,forcing,times,options)
+            % Estimate resolved-mode seasonal-response errors by reference refinement.
+            %
+            % This explicit preflight evolves the supplied zero-mean surface
+            % source and this diffusivity from rest, using the same Galerkin
+            % generators as model integration. Times are elapsed seconds from
+            % that initial condition; current coefficients, model time, other
+            % forcing, and nonlinear advection do not enter the assessment.
+            % No coefficients or registered forcing are changed. Derived
+            % operator caches may be populated.
+            %
+            % Supply two progressively finer compatible resolved-mode
+            % transforms. Their refinement difference is reported separately;
+            % it is evidence of reference convergence, not a certified bound.
+            % References must share the horizontal layout, physical parameters,
+            % stratification, and two active endpoints. This initial API
+            % assesses the zero-MDA seasonal perturbation only.
+            %
+            % The finest reference is projected by a continuous QGPV L2
+            % fit into the candidate APV modes, followed by a zero-APV
+            % endpoint correction. Representation compares that projection
+            % with the reference; evolution compares the candidate response
+            % with the projection; total compares candidate with reference.
+            % Error norms do not add. Evolution relative errors use the
+            % projected reference magnitude; other errors use the fine
+            % reference magnitude. Zero over zero is zero; nonzero over zero
+            % is Inf. Errors are estimates for this source and these times.
+            %
+            % Each comparison contains absolute, relative, and reference
+            % magnitude tables. Field errors are horizontal/depth RMS;
+            % endpoint and SSH errors are horizontal RMS. Energy and
+            % enstrophy use horizontal means of half depth integrals,
+            % including free-surface potential energy. Their tendencies are
+            % directional derivatives along the forced linear response.
+            % Per-wavenumber comparisons use the same conventions. Units are
+            % provided in `assessment.units`.
+            %
+            % Optional tolerance structs use observable names from those
+            % tables (except `time`), with finite nonnegative scalar values.
+            % Acceptance tests absolute error <= absolute tolerance + relative
+            % tolerance * reference magnitude, separately for each time and
+            % specified observable. Omitted tolerance components are zero.
+            % With no tolerances, acceptance is an empty table. Reference
+            % acceptance is separate from total-error acceptance.
+            %
+            % - Topic: Assess response accuracy
+            % - Declaration: assessment = assessSeasonalResponse(self,forcing,times,options)
+            % - Parameter forcing: seasonal surface anomaly forcing owned by this transform
+            % - Parameter times: nonnegative finite elapsed times in seconds
+            % - Parameter referenceTransforms: required cell containing two progressively finer free-surface QG transforms
+            % - Parameter quadratureCount: common integration count; zero selects max(129,2*finestNz+1)
+            % - Parameter stratificationTolerance: compatibility tolerance for maximum relative N2 difference; default `1e-6`
+            % - Parameter absoluteTolerance: optional struct of absolute total-error tolerances
+            % - Parameter relativeTolerance: optional struct of relative total-error tolerances
+            % - Parameter referenceAbsoluteTolerance: optional struct of absolute reference-refinement tolerances
+            % - Parameter referenceRelativeTolerance: optional struct of relative reference-refinement tolerances
+            % - Returns assessment: error decomposition, refinement differences, optional acceptance tables, and configuration
+            arguments (Input)
+                self (1,1) WVVerticalDiffusivity
+                forcing (1,1) WVSeasonalSurfaceAnomalyForcing
+                times (1,:) double {mustBeNonnegative,mustBeFinite,mustBeNonempty}
+                options.referenceTransforms (1,2) cell
+                options.quadratureCount (1,1) double {mustBeInteger,mustBeNonnegative} = 0
+                options.stratificationTolerance (1,1) double {mustBeNonnegative,mustBeFinite} = 1e-6
+                options.absoluteTolerance (1,1) struct = struct()
+                options.relativeTolerance (1,1) struct = struct()
+                options.referenceAbsoluteTolerance (1,1) struct = struct()
+                options.referenceRelativeTolerance (1,1) struct = struct()
+            end
+            arguments (Output)
+                assessment (1,1) struct
+            end
+            if ~isfield(options,'referenceTransforms')
+                error('WV:ResponseReferences','Supply two progressively finer referenceTransforms.');
+            end
+            assessment = WVInternal.assessSeasonalResponse(self,forcing,times,options);
         end
 
         function operators = densityDiffusionOperators(self)
