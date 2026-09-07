@@ -58,6 +58,9 @@ int main(int argc,char** argv) {
         require(kernel->transformUVEtaToA0({u.data(),kernel->spatialShape()},{v.data(),kernel->spatialShape()},{eta.data(),kernel->spatialShape()},out)); result["projectUVEta"]=complexValues(c);
         require(kernel->nonlinearFlux(A0,out)); result["flux"]=complexValues(c);
         require(kernel->nonlinearFlux(A0,out,f.beta)); result["fluxBeta"]=complexValues(c);
+        require(kernel->verticalDiffusivityFlux(A0,.002,out)); result["verticalDiffusivity"]=complexValues(c);
+        require(kernel->linearBottomFrictionFlux(A0,1e-5,out)); result["linearBottomFriction"]=complexValues(c);
+        require(kernel->quadraticBottomFrictionFlux(A0,.003,out)); result["quadraticBottomFriction"]=complexValues(c);
         require(kernel->linearFlux(A0,out,f.beta)); result["linearBeta"]=complexValues(c);
         require(kernel->evolveA0(A0,1234,out)); result["stationary"]=complexValues(c);
         require(kernel->evolveA0(A0,1234,out,f.beta)); result["evolvedBeta"]=complexValues(c);
@@ -67,7 +70,7 @@ int main(int argc,char** argv) {
         require(kernel->totalEnstrophySpatiallyIntegrated(A0,scalar)); result["spatialEnstrophy"]=scalar;
         require(kernel->uvMax(A0,scalar)); result["uvMax"]=scalar;
         allocationProbe::calls=0; allocationProbe::counting=true;
-        for (int i=0;i<3;++i) { require(kernel->nonlinearFlux(A0,out)); require(kernel->transformA0ToField(A0,WVStratifiedQGField::eta,{q.data(),kernel->spatialShape()})); }
+        for (int i=0;i<3;++i) { require(kernel->nonlinearFlux(A0,out)); require(kernel->verticalDiffusivityFlux(A0,.002,out)); require(kernel->linearBottomFrictionFlux(A0,1e-5,out)); require(kernel->quadraticBottomFrictionFlux(A0,.003,out)); require(kernel->transformA0ToField(A0,WVStratifiedQGField::eta,{q.data(),kernel->spatialShape()})); }
         allocationProbe::counting=false; result["preparedAllocations"]=allocationProbe::calls.load();
         bool unchanged=true; for (std::size_t i=0;i<S;++i) unchanged=unchanged && a[i].real==original[i].real && a[i].imag==original[i].imag;
         result["inputPreserved"]=unchanged; result["scientificBytes"]=kernel->storage().sharedScientificBytes;

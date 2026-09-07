@@ -37,7 +37,8 @@
     "forcingEngineSHA256": "6f27859f43d38dfaf8355adb6d066c5f2ae30ec10e95bc07ade3141430af5ca9",
     "forcingInterfaceSHA256": "0e08bd27b5e069fdee2de7b1428ab549051580e943ce576dde090a705cd8e56f",
     "preparedSpectralOperators": "issue-357",
-    "stableForcingCompatibility": "issues-290-294"
+    "stableForcingCompatibility": "issues-290-294",
+    "stratifiedQGRuntime": "issue-297"
   },
   "contract": {
     "version": 4,
@@ -93,8 +94,8 @@
     "matrixIdentity": "exact-source-and-name",
     "placement": "out-of-place",
     "sourceSHA256": {
-      "interface": "187d1352585d30b1095f20f5fb6c47848101f76b3222563c78c1402aaff13bdd",
-      "horizontal": "bf5f800392870741ed63c0b94f9f83e137990f09ab1f753f144f347ae5452431",
+      "interface": "ef5b7efef9362061f7a737bbeb52272ebf43f16c5100086feaf061aeb03845fd",
+      "horizontal": "9caecbe0499ff231a1911cb83b087616fdbf36a3a56ae1341f32781e840a4854",
       "vertical": "460d12936bd9f383400476b0bc8338735ec9216e4fd7489240f6c9d78ab7898b",
       "validation": "eb416d6abc47d97d506b4c4fa65e8006b951d07d013c5d96db0f8043b417cc79",
       "referenceFFT": "703724883edd3c05f583c7e68bad46830b1a92e22524a10906d3da366ad64c49",
@@ -110,8 +111,8 @@
     "runtimeExecutionCapabilityAdded": false,
     "sourceSHA256": {
       "CompiledKernel/include/WaveVortexKernel/WVStratifiedModalSource.hpp": "e82dc0193e48edeae4b41ff8b9ef7cd3f8e74a38b024e019ecae6afffea65a22",
-      "CompiledKernel/include/WaveVortexKernel/WVTransformStratifiedQGKernel.hpp": "0e36e6af9ae1799d1dd8f70f4014771163a8b4fd9243c2ef6ea76674a018979f",
-      "CompiledKernel/src/WVTransformStratifiedQGKernel.cpp": "5060032007c8b4871554fe9f853ec40bf84441cd8b0b37f328687bf05bc867c1"
+      "CompiledKernel/include/WaveVortexKernel/WVTransformStratifiedQGKernel.hpp": "d54a21e4b86731fe11a9ea625f94f13e9b91cff12207bb241ab42a922fcb37bc",
+      "CompiledKernel/src/WVTransformStratifiedQGKernel.cpp": "f5c9d4334902139fd16ecfad83eac2c64edc249f2ae815dfca4ecdfcdf595ef5"
     }
   }
 }

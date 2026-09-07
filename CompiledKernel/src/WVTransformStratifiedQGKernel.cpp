@@ -31,7 +31,7 @@ WVKernelStatus WVTransformStratifiedQGKernel::create(std::shared_ptr<const WVStr
         auto& c=*candidate;
         c.S_=product(g.Nj,g.Nkl); c.H_=product(g.Nz,g.Nkl); c.R_=product(product(g.Nx,g.Ny),g.Nz);
         product(c.S_,sizeof(WVComplex64)); product(c.H_,sizeof(WVComplex64)); product(product(4,c.R_),sizeof(double));
-        c.engineIdentifier_=engine->identifier();
+        c.engineIdentifier_=engine->identifier(); c.engineLibraryIdentity_=engine->libraryIdentity();
         WVRetainedHorizontalSpecification horizontal;
         auto status=c.source_->horizontalSpecification(g.Nz,WVComplexRepresentation::interleaved,"QG-grid",horizontal);
         if (!status) return status;
@@ -182,6 +182,64 @@ WVKernelStatus WVTransformStratifiedQGKernel::nonlinearFlux(WVComplexConstView a
     for (std::size_t i=0;i<R_;++i) real_[3*R_+i]=-(real_[i]*real_[2*R_+i]+real_[R_+i]*(real_[3*R_+i]+beta));
     return project(real_.data()+3*R_,b.data);
 }
+WVKernelStatus WVTransformStratifiedQGKernel::verticalDiffusivityFlux(WVComplexConstView a,double kappaZ,WVComplexView b) {
+    if (!std::isfinite(kappaZ) || kappaZ<0) return {WVKernelStatusCode::invalidConfiguration,"Vertical diffusivity must be finite and nonnegative."};
+    auto status=spectral(a); if (!status) return status; status=spectral({b.data,b.shape}); if (!status) return status;
+    status=disjoint(a.data,S_*sizeof(WVComplex64),b.data,S_*sizeof(WVComplex64)); if (!status) return status;
+    ActiveCall guard(active_); if (!guard.entered) return reentrant();
+    const auto& g=geometry();
+    // MATLAB diffZG(eta,n=3) is DzG*DzzG*eta. Preserve its intermediate
+    // projection of N2-weighted grid values, including on truncated bases.
+    for (std::size_t i=0;i<S_;++i) modal_[i]=scale(a.data[i],factors_.eta[i]);
+    status=vertical(2,modal_.data(),gridSpectral_.data()); if (!status) return status;
+    status=vertical(3,gridSpectral_.data(),modal_.data()); if (!status) return status;
+    for (std::size_t i=0;i<S_;++i) modal_[i]=scale(modal_[i],1/g.h_0[i%g.Nj]);
+    status=vertical(2,modal_.data(),gridSpectral_.data()); if (!status) return status;
+    for (std::size_t mode=0;mode<g.Nkl;++mode) for (std::size_t z=0;z<g.Nz;++z)
+        gridSpectral_[z+g.Nz*mode]=scale(gridSpectral_[z+g.Nz*mode],-g.N2[z]/g.g);
+    status=vertical(3,gridSpectral_.data(),modal_.data()); if (!status) return status;
+    for (std::size_t i=0;i<S_;++i) modal_[i]=scale(modal_[i],-factors_.f*kappaZ/g.h_0[i%g.Nj]);
+    status=vertical(0,modal_.data(),gridSpectral_.data()); if (!status) return status;
+    return vertical(1,gridSpectral_.data(),b.data);
+}
+WVKernelStatus WVTransformStratifiedQGKernel::linearBottomFrictionFlux(WVComplexConstView a,double rate,WVComplexView b) {
+    if (!std::isfinite(rate) || rate<0) return {WVKernelStatusCode::invalidConfiguration,"Bottom friction must be finite and nonnegative."};
+    auto status=spectral(a); if (!status) return status; status=spectral({b.data,b.shape}); if (!status) return status;
+    status=disjoint(a.data,S_*sizeof(WVComplex64),b.data,S_*sizeof(WVComplex64)); if (!status) return status;
+    ActiveCall guard(active_); if (!guard.entered) return reentrant();
+    status=reconstruct(a,WVStratifiedQGField::zetaZ,WVStratifiedQGDerivative::value,real_.data()); if (!status) return status;
+    const auto plane=R_/geometry().Nz;
+    const double scaled=-rate*geometry().Lz/geometry().z_int.front();
+    for (std::size_t i=0;i<plane;++i) real_[i]*=scaled;
+    std::fill(real_.begin()+plane,real_.begin()+R_,0);
+    return project(real_.data(),b.data);
+}
+WVKernelStatus WVTransformStratifiedQGKernel::quadraticBottomFrictionFlux(WVComplexConstView a,double dragCoefficient,WVComplexView b) {
+    if (!std::isfinite(dragCoefficient) || dragCoefficient<0) return {WVKernelStatusCode::invalidConfiguration,"Quadratic drag must be finite and nonnegative."};
+    auto status=spectral(a); if (!status) return status; status=spectral({b.data,b.shape}); if (!status) return status;
+    status=disjoint(a.data,S_*sizeof(WVComplex64),b.data,S_*sizeof(WVComplex64)); if (!status) return status;
+    ActiveCall guard(active_); if (!guard.entered) return reentrant();
+    status=reconstruct(a,WVStratifiedQGField::u,WVStratifiedQGDerivative::value,real_.data()); if (!status) return status;
+    status=reconstruct(a,WVStratifiedQGField::v,WVStratifiedQGDerivative::value,real_.data()+R_); if (!status) return status;
+    const auto& g=geometry(); const auto plane=R_/g.Nz;
+    for (std::size_t i=0;i<plane;++i) {
+        const double speed=std::hypot(real_[i],real_[R_+i]);
+        real_[i]*=speed; real_[R_+i]*=speed;
+    }
+    std::fill(real_.begin()+plane,real_.begin()+R_,0);
+    std::fill(real_.begin()+R_+plane,real_.begin()+2*R_,0);
+    // Horizontal differentiation commutes with F projection. Only the bottom
+    // cell carries stress; z_int owns its MATLAB quadrature normalization.
+    status=project(real_.data(),auxiliary_.data()); if (!status) return status;
+    status=project(real_.data()+R_,modal_.data()); if (!status) return status;
+    const double scaled=-dragCoefficient/g.z_int.front();
+    for (std::size_t i=0;i<S_;++i) {
+        const auto mode=i/g.Nj;
+        const auto dx=multiply(modal_[i],{0,g.k[mode]}),dy=multiply(auxiliary_[i],{0,g.l[mode]});
+        b.data[i]=scale({dx.real-dy.real,dx.imag-dy.imag},scaled);
+    }
+    return WVKernelStatus::ok();
+}
 WVKernelStatus WVTransformStratifiedQGKernel::linearFlux(WVComplexConstView a,WVComplexView b,double beta) const {
     auto status=spectral(a); if (!status) return status; status=spectral({b.data,b.shape}); if (!status) return status;
     if (!std::isfinite(beta)) return {WVKernelStatusCode::invalidConfiguration,"Beta must be finite."};
@@ -232,5 +290,24 @@ WVKernelStatus WVTransformStratifiedQGKernel::uvMax(WVComplexConstView a,double&
     status=reconstruct(a,WVStratifiedQGField::u,WVStratifiedQGDerivative::value,real_.data()); if (!status) return status;
     status=reconstruct(a,WVStratifiedQGField::v,WVStratifiedQGDerivative::value,real_.data()+R_); if (!status) return status;
     double maximum=0; for (std::size_t i=0;i<R_;++i) maximum=std::max(maximum,std::hypot(real_[i],real_[R_+i])); value=maximum; return WVKernelStatus::ok();
+}
+WVKernelStatus WVTransformStratifiedQGKernel::advectScalarWithAdvectionFields(WVRealVolumeConstView scalar, WVRealFieldBundleConstView fields, bool antialias, WVRealVolumeView output) {
+    auto status = volume(scalar); if (!status) return status;
+    status = volume({output.data,output.shape}); if (!status) return status;
+    if (!fields.data || fields.shape.first != geometry().Nx || fields.shape.second != geometry().Ny || fields.shape.third != geometry().Nz || fields.shape.fourth != 3)
+        return {WVKernelStatusCode::invalidShape,"SQG advection fields must have shape [Nx,Ny,Nz,3]."};
+    status = volume({fields.data,spatialShape()}); if (!status) return status;
+    for (const auto* input : {scalar.data,fields.data,(fields.data+R_)}) {
+        status = disjoint(input,R_*sizeof(double),output.data,R_*sizeof(double)); if (!status) return status;
+    }
+    ActiveCall guard(active_); if (!guard.entered) return reentrant();
+    status = horizontal_->spatialDerivative(*horizontalWorkspace_,{scalar.data,R_*sizeof(double)},{real_.data(),R_*sizeof(double)},true); if (!status) return status;
+    status = horizontal_->spatialDerivative(*horizontalWorkspace_,{scalar.data,R_*sizeof(double)},{real_.data()+R_,R_*sizeof(double)},false); if (!status) return status;
+    for (std::size_t i = 0; i < R_; ++i) output.data[i] = -fields.data[i]*real_[i]-(fields.data+R_)[i]*real_[R_+i];
+    if (antialias) {
+        status = horizontal_->forward(*horizontalWorkspace_,{output.data,R_*sizeof(double)},{gridSpectral_.data(),nullptr,nullptr,H_*sizeof(WVComplex64)}); if (!status) return status;
+        status = horizontal_->inverse(*horizontalWorkspace_,{gridSpectral_.data(),nullptr,nullptr,H_*sizeof(WVComplex64)},{output.data,R_*sizeof(double)});
+    }
+    return status;
 }
 } // namespace wavevortex

@@ -467,7 +467,8 @@ WVKernelStatus WVModelOutputConfiguration::compile(
     const WVTransformConstantStratificationConfiguration
         *planningConfiguration,
     bool isDynamicsLinear,
-    const WVTransformStateDescription *planningStateDescription) {
+    const WVTransformStateDescription *planningStateDescription,
+    const WVStratifiedModalGeometry *stratifiedGeometry) {
   if (!catalog)
     return invalid("Output configuration requires an extension catalog.");
   if (!std::isfinite(initialTime) || !std::isfinite(finalTime) ||
@@ -547,6 +548,7 @@ WVKernelStatus WVModelOutputConfiguration::compile(
     if (!observationSchemas.empty()) {
       WVObserverOutputPlanningContext planningContext;
       planningContext.configuration = planningConfiguration;
+      planningContext.stratifiedGeometry = stratifiedGeometry;
       planningContext.stateBlocks = observerRecord.stateBlocks.data();
       planningContext.stateBlockCount = observerRecord.stateBlocks.size();
       planningContext.isDynamicsLinear = isDynamicsLinear;

@@ -383,15 +383,19 @@ WVKernelStatus buildLegacyOutputPlan(
     return WVKernelStatus::ok();
   };
   operations.fixedVerticalProfiles = [&]() -> WVKernelStatus {
-    if (configuration == nullptr || spatialDimensions.size() != 3)
+    if ((configuration == nullptr && context.stratifiedGeometry == nullptr) || spatialDimensions.size() != 3)
       return {WVKernelStatusCode::unsupportedOperation,
               "Fixed vertical profiles require a three-dimensional transform."};
-    const auto &legacyConfiguration = *configuration;
+    const auto* stratified = context.stratifiedGeometry;
+    const std::size_t Nx = spatialDimensions[0], Ny = spatialDimensions[1], Nz = spatialDimensions[2];
+    const double Lx = stratified ? stratified->Lx : configuration->Lx;
+    const double Ly = stratified ? stratified->Ly : configuration->Ly;
+    const double Lz = stratified ? stratified->Lz : configuration->Lz;
     const std::string idName = observer.name + "_id";
     const std::string zName = observer.name + "_z";
     addAxis(plan.schema, idName, observer.x.size(),
             WVObservationCoordinateRole::identifier);
-    addAxis(plan.schema, zName, legacyConfiguration.Nz,
+    addAxis(plan.schema, zName, Nz,
             WVObservationCoordinateRole::z);
     std::vector<double> identifiers(observer.x.size());
     for (std::size_t index = 0; index < identifiers.size(); ++index)
@@ -401,13 +405,14 @@ WVKernelStatus buildLegacyOutputPlan(
                     std::move(identifiers), "unitless id number", "",
                     WVObservationCoordinateRole::identifier);
     std::vector<double> z = observer.z;
+    if (z.empty() && stratified) z = stratified->z;
     if (z.empty()) {
-      z.resize(legacyConfiguration.Nz);
+      z.resize(Nz);
       const double dz =
-          legacyConfiguration.Lz /
-          static_cast<double>(legacyConfiguration.Nz - 1);
+          Lz /
+          static_cast<double>(Nz - 1);
       for (std::size_t index = 0; index < z.size(); ++index)
-        z[index] = -legacyConfiguration.Lz +
+        z[index] = -Lz +
                    static_cast<double>(index) * dz;
     }
     addConstantReal(plan, "static-" + zName, zName, {zName},
@@ -418,22 +423,22 @@ WVKernelStatus buildLegacyOutputPlan(
     std::vector<double> y = observer.y;
     WVFieldSamplingRequest sampling;
     sampling.kind = WVFieldSamplingKind::fixedVerticalProfiles;
-    const double dx = legacyConfiguration.Lx /
-                      static_cast<double>(legacyConfiguration.Nx);
-    const double dy = legacyConfiguration.Ly /
-                      static_cast<double>(legacyConfiguration.Ny);
+    const double dx = Lx /
+                      static_cast<double>(Nx);
+    const double dy = Ly /
+                      static_cast<double>(Ny);
     for (std::size_t index = 0; index < x.size(); ++index) {
-      x[index] = std::fmod(x[index], legacyConfiguration.Lx);
-      y[index] = std::fmod(y[index], legacyConfiguration.Ly);
+      x[index] = std::fmod(x[index], Lx);
+      y[index] = std::fmod(y[index], Ly);
       if (x[index] < 0.0)
-        x[index] += legacyConfiguration.Lx;
+        x[index] += Lx;
       if (y[index] < 0.0)
-        y[index] += legacyConfiguration.Ly;
+        y[index] += Ly;
       sampling.xIndices.push_back(std::min(
-          legacyConfiguration.Nx,
+          Nx,
           static_cast<std::size_t>(std::floor(x[index] / dx)) + 1));
       sampling.yIndices.push_back(std::min(
-          legacyConfiguration.Ny,
+          Ny,
           static_cast<std::size_t>(std::floor(y[index] / dy)) + 1));
     }
     addConstantReal(plan, "static-x", observer.name + "_x", {idName},
@@ -455,7 +460,7 @@ WVKernelStatus buildLegacyOutputPlan(
           plan,
           fieldVariable(*metadata, "derived-" + field,
                         observer.name + '_' + field, {zName, idName},
-                        outputLayout(*metadata), ", recorded at the mooring"),
+                        WVObservationValueLayout::record, ", recorded at the mooring"),
           std::move(channel));
     }
     return WVKernelStatus::ok();
@@ -877,11 +882,9 @@ public:
     if (block->scalarType != WVStateScalarType::real64 ||
         block->ownership != WVStateOwnership::integratorOwned)
       return invalid("WVTracer requires one integrator-owned real state block.");
-    const std::size_t expectedRank = observer.isXYOnly ? 2 : 3;
-    if (block->dimensions.size() != expectedRank)
-      return invalid(observer.isXYOnly
-                         ? "A two-dimensional WVTracer requires a rank-two state block."
-                         : "A three-dimensional WVTracer requires a rank-three state block.");
+    const auto rank = block->dimensions.size();
+    if (rank != 3 && !(observer.isXYOnly && rank == 2))
+      return invalid("WVTracer requires a rank-three grid or a rank-two grid with XY-only advection.");
     ++ownerCounts.at(observer.stateBlockIdentifiers.front());
     return WVKernelStatus::ok();
   }

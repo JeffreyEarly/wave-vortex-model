@@ -132,6 +132,11 @@ public:
       const WVTransformBarotropicQGDescriptor &descriptor,
       bool hasAdaptiveDamping,
       std::unique_ptr<WVBarotropicQGForcing> &forcing) const;
+  WVKernelStatus createStratifiedQG(
+      const WVFrozenForcingEntry &entry,
+      const WVStratifiedModalGeometry &descriptor,
+      bool hasAdaptiveDamping,
+      std::unique_ptr<WVStratifiedQGForcing> &forcing) const;
   WVKernelStatus
   validateConfiguration(const WVFrozenForcingEntry &entry) const;
   std::size_t persistentBytes() const noexcept;

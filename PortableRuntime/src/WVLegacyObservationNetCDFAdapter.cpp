@@ -772,18 +772,13 @@ WVCheckpointStatus parseObserver(int outputGroup, int metadataGroup,
                            names, dimensions, outputPath);
     if (!result)
       return result;
-    if ((hasAp && (names.size() != 3 || names[0] != "t" ||
-                   names[1] != "kl" || names[2] != "j")) ||
-        (!hasAp && (names.size() != 2 || names[0] != "t" ||
-                    names[1] != "kl")))
-      return failure(
-          WVCheckpointStatusCode::shapeMismatch,
-          hasAp ? "Coefficient output must use [t,kl,j] NetCDF order."
-                : "Compact A0 output must use [t,kl] NetCDF order.",
-          outputPath + (hasAp ? "/Ap_real" : "/A0_real"));
-    const std::vector<std::size_t> logical =
-        hasAp ? std::vector<std::size_t>{dimensions[2], dimensions[1]}
-              : std::vector<std::size_t>{dimensions[1]};
+    const bool modalShape = names == std::vector<std::string>{"t","kl","j"};
+    const bool compactShape = !hasAp && names == std::vector<std::string>{"t","kl"};
+    if (!modalShape && !compactShape)
+      return failure(WVCheckpointStatusCode::shapeMismatch,
+                     "Coefficient output must use [t,kl,j] or compact [t,kl] NetCDF order.",outputPath);
+    const std::vector<std::size_t> logical = modalShape
+        ? std::vector<std::size_t>{dimensions[2],dimensions[1]} : std::vector<std::size_t>{dimensions[1]};
     for (const auto &name : observer.stateBlockIdentifiers) {
       result = mergeStateBlock(portable,
                                {name, WVStateScalarType::complex64, logical,
@@ -822,7 +817,7 @@ WVCheckpointStatus parseObserver(int outputGroup, int metadataGroup,
       if (!result)
         return result;
       const bool legacyShape =
-          hasLegacyCoefficients &&
+          (hasLegacyCoefficients || hasCompactA0) &&
           (names.size() == 2 || names.size() == 3) &&
           names[names.size() - 2] == "kl" && names.back() == "j";
       const bool compactShape = hasCompactA0 &&
@@ -834,7 +829,7 @@ WVCheckpointStatus parseObserver(int outputGroup, int metadataGroup,
                        "order.",
                        outputPath + "/" + baseName);
       const std::vector<std::size_t> logical =
-          hasLegacyCoefficients
+          legacyShape
               ? std::vector<std::size_t>{
                     dimensions.back(), dimensions[dimensions.size() - 2]}
               : std::vector<std::size_t>{dimensions.back()};

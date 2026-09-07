@@ -8,11 +8,13 @@
 #include <cstddef>
 #include <cstdint>
 #include <string>
+#include <memory>
 #include <vector>
 
 namespace wavevortex::runtime {
 
 class WVExtensionCatalog;
+class WVStratifiedModalRecord;
 
 // Version of the reader contract. This identifier is not written into 4.x files.
 inline constexpr std::uint32_t WVCheckpointProfileVersion = 1;
@@ -111,7 +113,8 @@ struct WVCheckpointMetadata {
 
 enum class WVPersistedTransformKind : std::uint8_t {
     constantStratification,
-    barotropicQG
+    barotropicQG,
+    stratifiedQG
 };
 
 // Complete owning result needed to rebuild the portable constant-stratification core.
@@ -120,6 +123,8 @@ struct WVCheckpoint {
         WVPersistedTransformKind::constantStratification;
     WVTransformConstantStratificationConfiguration configuration;
     WVTransformBarotropicQGConfiguration barotropicQGConfiguration;
+    // One immutable scientific owner shared by checkpoint, planning and kernel.
+    std::shared_ptr<const WVStratifiedModalRecord> stratifiedModalSource;
     WVTransformStateDescription stateDescription;
     WVCheckpointState state;
     // Populated only for transforms that do not use the stabilized legacy
@@ -183,6 +188,8 @@ struct WVCheckpointInspection {
         WVPersistedTransformKind::constantStratification;
     WVTransformConstantStratificationConfiguration configuration;
     WVTransformBarotropicQGConfiguration barotropicQGConfiguration;
+    // One immutable scientific owner shared by checkpoint, planning and kernel.
+    std::shared_ptr<const WVStratifiedModalRecord> stratifiedModalSource;
     // Resolved before read() allocates or loads any coefficient array. The
     // persistence adapter remains responsible for its transform's encoding.
     WVTransformStateDescription stateDescription;

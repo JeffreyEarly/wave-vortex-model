@@ -3,6 +3,7 @@
 #include "WaveVortexRuntime/WVForcing.hpp"
 #include "WaveVortexRuntime/WVPortableImplementationContract.hpp"
 #include "WaveVortexKernel/WVTransformBarotropicQGKernel.hpp"
+#include "WaveVortexKernel/WVStratifiedModalSource.hpp"
 
 #include <cstdint>
 #include <functional>
@@ -13,6 +14,7 @@
 namespace wavevortex::runtime {
 
 class WVBarotropicQGForcing;
+class WVStratifiedQGForcing;
 
 enum class WVForcingPersistenceEncoding : std::uint8_t {
   realVariable,
@@ -62,6 +64,10 @@ using WVBarotropicQGForcingFactory = std::function<WVKernelStatus(
     const WVTransformBarotropicQGDescriptor &, bool,
     std::unique_ptr<WVBarotropicQGForcing> &)>;
 
+using WVStratifiedQGForcingFactory = std::function<WVKernelStatus(
+    const WVFrozenForcingEntry &, const WVStratifiedModalGeometry &, bool,
+    std::unique_ptr<WVStratifiedQGForcing> &)>;
+
 struct WVForcingFactoryRegistration {
   std::string matlabClassName;
   std::uint32_t contractVersion = WVPortablePairContractVersion;
@@ -82,6 +88,9 @@ struct WVForcingFactoryRegistration {
   std::function<WVKernelStatus(const WVFrozenForcingEntry &,
       const WVTransformConstantStratificationDescriptor &, WVForcingPreparation &)>
       prepareConstantResolution = {};
+  WVForcingStage stratifiedQGStage = WVForcingStage::spatial;
+  WVBarotropicQGForcingPreflight stratifiedQGPreflight = {};
+  WVStratifiedQGForcingFactory stratifiedQGFactory = {};
 };
 
 std::vector<WVForcingFactoryRegistration> builtInForcingFactories();

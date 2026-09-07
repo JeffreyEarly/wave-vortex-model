@@ -1,6 +1,7 @@
 #include "WaveVortexRuntime/WVFieldEvaluationService.hpp"
 #include "WaveVortexRuntime/WVIntegrationState.hpp"
 #include "WVBarotropicQGFieldEvaluationAdapter.hpp"
+#include "WVStratifiedQGFieldEvaluationAdapter.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -544,6 +545,47 @@ WVKernelStatus WVFieldEvaluationService::initializeScratch() {
 }
 
 WVFieldEvaluationService::~WVFieldEvaluationService() = default;
+WVKernelStatus WVFieldEvaluationService::create(
+    std::shared_ptr<const WVStratifiedModalSource> source,
+    std::unique_ptr<WVFFTEngine> engine,
+    std::unique_ptr<WVFieldEvaluationService> &service) {
+  service.reset();
+  try {
+    auto candidate = std::unique_ptr<WVFieldEvaluationService>(
+        new WVFieldEvaluationService());
+    auto status = detail::WVStratifiedQGFieldEvaluationAdapter::create(
+        source, std::move(engine), candidate->stratifiedQG_);
+    if (!status)
+      return status;
+    candidate->metrics_ = candidate->stratifiedQG_->metrics();
+    service = std::move(candidate);
+    return WVKernelStatus::ok();
+  } catch (const std::bad_alloc &) {
+    return {WVKernelStatusCode::allocationFailure,
+            "Unable to allocate the Stratified QG field boundary."};
+  }
+}
+
+WVKernelStatus WVFieldEvaluationService::createBorrowing(
+    WVTransformStratifiedQGKernel &transform,
+    std::unique_ptr<WVFieldEvaluationService> &service) {
+  service.reset();
+  try {
+    auto candidate = std::unique_ptr<WVFieldEvaluationService>(
+        new WVFieldEvaluationService());
+    auto status =
+        detail::WVStratifiedQGFieldEvaluationAdapter::createBorrowing(
+            transform, candidate->stratifiedQG_);
+    if (!status)
+      return status;
+    candidate->metrics_ = candidate->stratifiedQG_->metrics();
+    service = std::move(candidate);
+    return WVKernelStatus::ok();
+  } catch (const std::bad_alloc &) {
+    return {WVKernelStatusCode::allocationFailure,
+            "Unable to allocate the borrowed Stratified QG field boundary."};
+  }
+}
 
 std::vector<std::string> WVFieldEvaluationService::supportedFieldNames() {
   std::vector<std::string> result;
@@ -559,6 +601,8 @@ WVKernelStatus WVFieldEvaluationService::createPlan(
     WVFieldEvaluationPlan &plan) const {
   if (barotropicQG_)
     return barotropicQG_->createPlan(requests, plan);
+  if (stratifiedQG_)
+    return stratifiedQG_->createPlan(requests, plan);
   try {
     WVFieldEvaluationPlan candidate;
     const auto &configuration = transform_->descriptor().configuration();
@@ -785,6 +829,7 @@ WVKernelStatus WVFieldEvaluationService::createPlan(
 WVKernelStatus WVFieldEvaluationService::evaluate(
     const WVFieldEvaluationPlan &plan, const WVState &state,
     WVFieldOutputView *outputs, std::size_t outputCount) {
+  if (!transform_) return {WVKernelStatusCode::unsupportedOperation,"This transform requires coefficient-family state views."};
   const PlanInvocation invocation{&plan, outputs, outputCount};
   return evaluatePlanBatch(&invocation, 1, state);
 }
@@ -794,6 +839,8 @@ WVKernelStatus WVFieldEvaluationService::evaluate(
     WVFieldOutputView *outputs, std::size_t outputCount) {
   if (barotropicQG_)
     return barotropicQG_->evaluate(plan, state, outputs, outputCount);
+  if (stratifiedQG_)
+    return stratifiedQG_->evaluate(plan, state, outputs, outputCount);
   return evaluate(plan, state.waveVortex, outputs, outputCount);
 }
 
@@ -1411,6 +1458,8 @@ WVKernelStatus WVFieldEvaluationService::createEventPlan(
     WVEventFieldEvaluationPlan &plan) {
   if (barotropicQG_)
     return barotropicQG_->createEventPlan(requests, plan);
+  if (stratifiedQG_)
+    return stratifiedQG_->createEventPlan(requests, plan);
   try {
     WVEventFieldEvaluationPlan candidate;
     const auto &configuration = transform_->descriptor().configuration();
@@ -1513,6 +1562,9 @@ WVKernelStatus WVFieldEvaluationService::prepareEventGeometry(
     std::size_t positionSetCount, WVPreparedFieldGeometry &geometry) {
   if (barotropicQG_)
     return barotropicQG_->prepareEventGeometry(
+        plan, positionSets, positionSetCount, geometry);
+  if (stratifiedQG_)
+    return stratifiedQG_->prepareEventGeometry(
         plan, positionSets, positionSetCount, geometry);
   if (!sameTransformConfiguration(
           plan.configuration_, transform_->descriptor().configuration()))
@@ -1756,6 +1808,7 @@ WVKernelStatus WVFieldEvaluationService::evaluateEvent(
 WVKernelStatus WVFieldEvaluationService::evaluateEventBatch(
     const WVState &state, const WVEventFieldEvaluationBatchEntry *entries,
     std::size_t entryCount) {
+  if (!transform_) return {WVKernelStatusCode::unsupportedOperation,"This transform requires coefficient-family state views."};
   if (entryCount != 0 && entries == nullptr)
     return {WVKernelStatusCode::invalidPointer,
             "Event field batch has a null entry pointer."};
@@ -1829,6 +1882,8 @@ WVKernelStatus WVFieldEvaluationService::evaluateEventBatch(
     std::size_t entryCount) {
   if (barotropicQG_)
     return barotropicQG_->evaluateEventBatch(state, entries, entryCount);
+  if (stratifiedQG_)
+    return stratifiedQG_->evaluateEventBatch(state, entries, entryCount);
   return evaluateEventBatch(state.waveVortex, entries, entryCount);
 }
 
@@ -1837,6 +1892,8 @@ WVKernelStatus WVFieldEvaluationService::createMovingPlan(
     WVMovingFieldEvaluationPlan &plan) const {
   if (barotropicQG_)
     return barotropicQG_->createMovingPlan(requests, plan);
+  if (stratifiedQG_)
+    return stratifiedQG_->createMovingPlan(requests, plan);
   try {
     WVMovingFieldEvaluationPlan candidate;
     candidate.configuration_ = transform_->descriptor().configuration();
@@ -1899,6 +1956,9 @@ WVKernelStatus WVFieldEvaluationService::evaluateMoving(
   if (barotropicQG_)
     return barotropicQG_->evaluateMoving(plan, state, positions, outputs,
                                          outputCount);
+  if (stratifiedQG_)
+    return stratifiedQG_->evaluateMoving(plan, state, positions, outputs,
+                                         outputCount);
   return evaluateMoving(plan, state.waveVortex, positions, outputs,
                         outputCount);
 }
@@ -1920,13 +1980,16 @@ WVKernelStatus WVFieldEvaluationService::evaluateMovingFromAdvectionFields(
   if (barotropicQG_)
     return barotropicQG_->evaluateMovingFromAdvectionFields(
         plan, state, advectionFields, positions, outputs, outputCount);
+  if (stratifiedQG_)
+    return stratifiedQG_->evaluateMovingFromAdvectionFields(
+        plan, state, advectionFields, positions, outputs, outputCount);
   return evaluateMovingFromAdvectionFields(
       plan, state.waveVortex, advectionFields, positions, outputs,
       outputCount);
 }
 
 WVRealFieldBundleView WVFieldEvaluationService::advectionFieldStorage() noexcept {
-  if (barotropicQG_)
+  if (barotropicQG_ || stratifiedQG_)
     return {};
   const auto spatial = transform_->descriptor().spatialShape();
   return {realScratch_.data(),{spatial.first,spatial.second,spatial.third,3}};
@@ -1937,6 +2000,7 @@ WVKernelStatus WVFieldEvaluationService::evaluateMovingImpl(
     const WVRealFieldBundleConstView *preparedAdvectionFields,
     WVMovingPositionView positions, WVFieldOutputView *outputs,
     std::size_t outputCount) {
+  if (!transform_) return {WVKernelStatusCode::unsupportedOperation,"This transform requires coefficient-family state views."};
   if (!sameTransformConfiguration(
           plan.configuration_, transform_->descriptor().configuration()))
     return invalid(
@@ -2138,6 +2202,10 @@ WVKernelStatus WVFieldEvaluationService::evaluateMovingImpl(
   return WVKernelStatus::ok();
 }
 
+const WVStratifiedModalGeometry* WVFieldEvaluationService::stratifiedGeometry() const noexcept {
+  return stratifiedQG_ ? &stratifiedQG_->configuration() : nullptr;
+}
+
 const WVTransformConstantStratificationConfiguration &
 WVFieldEvaluationService::configuration() const noexcept {
   return transform_->descriptor().configuration();
@@ -2147,6 +2215,10 @@ WVKernelStatus WVFieldEvaluationService::createStateLayout(
     const WVPortableObserverDescriptor &descriptor,
     WVIntegrationStateLayout &layout) const {
   (void)descriptor;
+  if (stratifiedQG_) {
+    const auto& g=stratifiedQG_->configuration();
+    return WVIntegrationStateLayout::createCoefficientOnly({"WVTransformStratifiedQG",{g.Nx,g.Ny,g.Nz},{{"A0",{g.Nj,g.Nkl},WVToleranceKind::coefficientEnergyScaled}},true},layout);
+  }
   if (barotropicQG_) {
     const auto &configuration = barotropicQG_->configuration();
     WVTransformBarotropicQGDescriptor transform;
@@ -2181,6 +2253,8 @@ bool WVFieldEvaluationService::isCompatibleWith(
     const WVIntegrationStateLayout &layout) const noexcept {
   if (barotropicQG_)
     return barotropicQG_->isCompatibleWith(layout);
+  if (stratifiedQG_)
+    return stratifiedQG_->isCompatibleWith(layout);
   if (!transform_ || !layout.hasLegacyCoefficientTriple())
     return false;
   const auto shape = transform_->descriptor().spectralShape();
@@ -2194,6 +2268,12 @@ bool WVFieldEvaluationService::isCompatibleWith(
 
 bool WVFieldEvaluationService::isCompatibleWith(
     const WVFieldEvaluationService &other) const noexcept {
+  if(static_cast<bool>(stratifiedQG_)!=static_cast<bool>(other.stratifiedQG_)) return false;
+  if(stratifiedQG_) {
+    const auto& a=stratifiedQG_->configuration(); const auto& b=other.stratifiedQG_->configuration();
+    return a.Nx==b.Nx && a.Ny==b.Ny && a.Nj==b.Nj && a.Nkl==b.Nkl && a.Lx==b.Lx && a.Ly==b.Ly && a.z==b.z && a.j==b.j && a.k==b.k && a.l==b.l;
+  }
+
   if (static_cast<bool>(barotropicQG_) !=
       static_cast<bool>(other.barotropicQG_))
     return false;
@@ -2208,10 +2288,11 @@ bool WVFieldEvaluationService::isCompatibleWith(
 
 const WVFieldEvaluationMetrics &
 WVFieldEvaluationService::metrics() const noexcept {
-  return barotropicQG_ ? barotropicQG_->metrics() : metrics_;
+  return stratifiedQG_ ? stratifiedQG_->metrics() : barotropicQG_ ? barotropicQG_->metrics() : metrics_;
 }
 
 std::size_t WVFieldEvaluationService::persistentBytes() const noexcept {
+  if(stratifiedQG_) return sizeof(*this)+stratifiedQG_->persistentBytes();
   if (barotropicQG_)
     return sizeof(*this) + barotropicQG_->persistentBytes();
   return sizeof(*this) +

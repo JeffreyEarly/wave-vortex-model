@@ -50,7 +50,7 @@ bool sameModelOutputTransformConfiguration(
 bool modelOutputGroupCarriesCompleteCoefficientRestart(
     const WVTransformStateDescription &description,
     bool hasDeclaredCoefficientFamilies,
-    bool hasCoefficientObserver) noexcept;
+    bool hasCoefficientObserver, bool isDynamicsLinear = false) noexcept;
 
 WVCheckpointStatus defineModelOutputRoot(
     int root, const WVCheckpoint &checkpoint, const WVForcingCatalog &catalog,

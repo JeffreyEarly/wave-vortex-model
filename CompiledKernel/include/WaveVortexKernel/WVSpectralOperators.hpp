@@ -84,6 +84,10 @@ public:
     WVKernelStatus inverse(WVRetainedHorizontalWorkspace&, WVComplexInput, WVRealOutput) const;
     std::size_t persistentBytes() const noexcept;
     std::size_t providerBytesLowerBound() const noexcept;
+    // Full-grid derivative before retained-mode projection (e.g. passive tracers).
+    // Uses all resolved Fourier modes, with a zero derivative on the selected
+    // even-grid Nyquist axis, independent of the retained spectral subset.
+    WVKernelStatus spatialDerivative(WVRetainedHorizontalWorkspace&, WVRealInput, WVRealOutput, bool xDerivative) const;
 private:
     WVRetainedHorizontalOperator() = default;
     std::shared_ptr<const spectral_detail::HorizontalData> data_;

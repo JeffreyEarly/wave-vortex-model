@@ -133,6 +133,24 @@
       "kind": "matlab-runtime-parity",
       "path": "UnitTests/TestPortableStableForcing.m",
       "symbol": "constantNarrowBandAndOrderedClosuresMatchMatlab"
+    },
+    {
+      "id": "sqg-pairs",
+      "kind": "matlab-runtime-parity",
+      "path": "UnitTests/TestPortableStratifiedQG.m",
+      "symbol": "applicableForcingTendenciesMatchMatlab"
+    },
+    {
+      "id": "sqg-compositions",
+      "kind": "matlab-runtime-parity",
+      "path": "UnitTests/TestPortableStratifiedQG.m",
+      "symbol": "modelIntegrationRoundTripsThroughMatlab"
+    },
+    {
+      "id": "sqg-rejections",
+      "kind": "matlab-runtime-parity",
+      "path": "UnitTests/TestPortableStratifiedQG.m",
+      "symbol": "incompatibleModelGraphsAreTransactional"
     }
   ],
   "forcings": [
@@ -156,7 +174,12 @@
         "baseline-compositions",
         "adaptive-cfl"
       ],
-      "barotropicCase": "adaptive"
+      "barotropicCase": "adaptive",
+      "stratifiedQGFactory": true,
+      "stratifiedQGEvidence": [
+        "sqg-pairs",
+        "sqg-compositions"
+      ]
     },
     {
       "identity": "WVAntialiasing",
@@ -177,7 +200,12 @@
         "baseline-compositions",
         "adaptive-cfl"
       ],
-      "barotropicCase": ""
+      "barotropicCase": "",
+      "stratifiedQGFactory": true,
+      "stratifiedQGEvidence": [
+        "sqg-pairs",
+        "sqg-compositions"
+      ]
     },
     {
       "identity": "WVBetaPlanePVAdvection",
@@ -197,7 +225,12 @@
         "baseline-pairs",
         "baseline-compositions"
       ],
-      "barotropicCase": "beta"
+      "barotropicCase": "beta",
+      "stratifiedQGFactory": true,
+      "stratifiedQGEvidence": [
+        "sqg-pairs",
+        "sqg-compositions"
+      ]
     },
     {
       "identity": "WVBottomFrictionLinear",
@@ -217,7 +250,12 @@
         "baseline-pairs",
         "baseline-compositions"
       ],
-      "barotropicCase": "linear"
+      "barotropicCase": "linear",
+      "stratifiedQGFactory": true,
+      "stratifiedQGEvidence": [
+        "sqg-pairs",
+        "sqg-compositions"
+      ]
     },
     {
       "identity": "WVBottomFrictionQuadratic",
@@ -237,7 +275,12 @@
         "baseline-pairs",
         "baseline-compositions"
       ],
-      "barotropicCase": "quadratic"
+      "barotropicCase": "quadratic",
+      "stratifiedQGFactory": true,
+      "stratifiedQGEvidence": [
+        "sqg-pairs",
+        "sqg-compositions"
+      ]
     },
     {
       "identity": "WVFixedAmplitudeForcing",
@@ -259,7 +302,12 @@
         "baseline-compositions",
         "adaptive-cfl"
       ],
-      "barotropicCase": "fixed"
+      "barotropicCase": "fixed",
+      "stratifiedQGFactory": true,
+      "stratifiedQGEvidence": [
+        "sqg-pairs",
+        "sqg-compositions"
+      ]
     },
     {
       "identity": "WVHorizontalDamping",
@@ -276,7 +324,9 @@
         "adaptive-cfl"
       ],
       "barotropicEvidence": [],
-      "barotropicCase": ""
+      "barotropicCase": "",
+      "stratifiedQGFactory": false,
+      "stratifiedQGEvidence": []
     },
     {
       "identity": "WVNarrowBandGeostrophicForcing",
@@ -295,7 +345,12 @@
         "baseline-pairs",
         "baseline-compositions"
       ],
-      "barotropicCase": "narrow"
+      "barotropicCase": "narrow",
+      "stratifiedQGFactory": true,
+      "stratifiedQGEvidence": [
+        "sqg-pairs",
+        "sqg-compositions"
+      ]
     },
     {
       "identity": "WVNonlinearAdvection",
@@ -317,7 +372,12 @@
         "baseline-compositions",
         "adaptive-cfl"
       ],
-      "barotropicCase": "nonlinear"
+      "barotropicCase": "nonlinear",
+      "stratifiedQGFactory": true,
+      "stratifiedQGEvidence": [
+        "sqg-pairs",
+        "sqg-compositions"
+      ]
     },
     {
       "identity": "WVPseudoTopographicWaveGeneration",
@@ -332,7 +392,9 @@
         "baseline-compositions"
       ],
       "barotropicEvidence": [],
-      "barotropicCase": ""
+      "barotropicCase": "",
+      "stratifiedQGFactory": false,
+      "stratifiedQGEvidence": []
     },
     {
       "identity": "WVVerticalDamping",
@@ -349,7 +411,9 @@
         "adaptive-cfl"
       ],
       "barotropicEvidence": [],
-      "barotropicCase": ""
+      "barotropicCase": "",
+      "stratifiedQGFactory": false,
+      "stratifiedQGEvidence": []
     },
     {
       "identity": "WVVerticalDiffusivity",
@@ -366,7 +430,12 @@
         "adaptive-cfl"
       ],
       "barotropicEvidence": [],
-      "barotropicCase": ""
+      "barotropicCase": "",
+      "stratifiedQGFactory": true,
+      "stratifiedQGEvidence": [
+        "sqg-pairs",
+        "sqg-compositions"
+      ]
     }
   ],
   "qualification": "baseline-v1"

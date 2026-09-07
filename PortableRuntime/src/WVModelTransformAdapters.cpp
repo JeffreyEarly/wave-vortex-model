@@ -1,4 +1,6 @@
 #include "WVModelTransformAdapters.hpp"
+#include "WaveVortexRuntime/WVStratifiedQGIntegrationSystem.hpp"
+#include "WaveVortexRuntime/WVStratifiedModalRecord.hpp"
 
 #include <new>
 #include <utility>
@@ -119,6 +121,66 @@ private:
   std::unique_ptr<WVBarotropicQGIntegrationSystem> system_;
 };
 
+class StratifiedQGModelSystem final : public WVResolvedModelSystem {
+public:
+  explicit StratifiedQGModelSystem(
+      std::unique_ptr<WVStratifiedQGIntegrationSystem> system)
+      : system_(std::move(system)) {}
+
+  WVIntegrationSystem &integrationSystem() noexcept override {
+    return *system_;
+  }
+  const WVIntegrationSystem &integrationSystem() const noexcept override {
+    return *system_;
+  }
+  const std::string &forcingScheduleIdentifier() const noexcept override {
+    return system_->forcingScheduleIdentifier();
+  }
+  const std::string &kernelProviderIdentifier() const noexcept override {
+    return system_->kernel().engineIdentifier();
+  }
+  const std::string &kernelProviderLibraryIdentity() const noexcept override {
+    return system_->kernel().engineLibraryIdentity();
+  }
+  WVKernelStatus initializeObserverState(
+      WVMutableIntegrationState &state) const override {
+    return system_->initializeParticleState(state);
+  }
+  void populateMetrics(WVModelMetrics &metrics) const noexcept override {
+    metrics.integratedObservers = system_->metrics();
+    const auto& storage = system_->kernel().storage();
+    metrics.kernel.descriptorBytes = storage.sharedScientificBytes + storage.factorBytes;
+    metrics.kernel.planCount = 2;
+    metrics.kernel.planBytes = storage.planBytesLowerBound;
+    metrics.kernel.engineBytes = storage.providerBytesLowerBound;
+    metrics.kernel.kernelManagementBytes = storage.preparedBytes;
+    metrics.kernel.scratchCapacityBytes = storage.workspaceBytes + storage.spectralScratchBytes + storage.realScratchBytes;
+    metrics.kernel.scratchHighWaterBytes = metrics.kernel.scratchCapacityBytes;
+    metrics.kernel.realScratchCapacityBytes = storage.realScratchBytes;
+    const auto &forcing = system_->forcingMetrics();
+    metrics.forcing.scheduleBytes = forcing.scheduleBytes;
+    metrics.forcing.derivedOperatorBytes = forcing.derivedOperatorBytes;
+    metrics.forcing.workspaceCapacityBytes = forcing.workspaceCapacityBytes;
+    metrics.forcing.evaluationCount = forcing.evaluationCount;
+    metrics.forcing.restoredCoefficientCount =
+        forcing.restoredCoefficientCount;
+    metrics.forcing.resolvedSpatialCount = forcing.resolvedSpatialCount;
+    metrics.forcing.resolvedSpectralCount = forcing.resolvedSpectralCount;
+    metrics.forcing.resolvedAmplitudeCount = forcing.resolvedAmplitudeCount;
+    metrics.forcing.physicalFieldReconstructionCount =
+        forcing.physicalFieldReconstructionCount;
+    metrics.forcing.physicalFieldReuseCount =
+        forcing.physicalFieldReuseCount;
+    metrics.forcing.spatialTendencyProjectionCount =
+        forcing.spatialTendencyProjectionCount;
+    metrics.forcing.stateConstraintElementWrites =
+        forcing.stateConstraintElementWrites;
+  }
+
+private:
+  std::unique_ptr<WVStratifiedQGIntegrationSystem> system_;
+};
+
 } // namespace
 
 WVKernelStatus createConstantStratificationModelSystem(
@@ -175,6 +237,33 @@ WVKernelStatus createBarotropicQGModelSystem(
   }
 }
 
+WVKernelStatus createStratifiedQGModelSystem(
+    std::shared_ptr<const WVStratifiedModalSource> source,
+    const WVFrozenForcingSchedule &schedule,
+    const WVPortableObserverDescriptor *descriptor,
+    std::shared_ptr<const WVExtensionCatalog> catalog,
+    std::unique_ptr<WVFFTEngine> engine,
+    std::unique_ptr<WVResolvedModelSystem> &system) {
+  std::unique_ptr<WVStratifiedQGIntegrationSystem> numerical;
+  auto status = descriptor == nullptr
+                    ? WVStratifiedQGIntegrationSystem::create(
+                          std::move(source), schedule, std::move(catalog),
+                          std::move(engine), numerical)
+                    : WVStratifiedQGIntegrationSystem::create(
+                          std::move(source), schedule, *descriptor,
+                          std::move(catalog), std::move(engine), numerical);
+  if (!status)
+    return status;
+  try {
+    system =
+        std::make_unique<StratifiedQGModelSystem>(std::move(numerical));
+    return WVKernelStatus::ok();
+  } catch (const std::bad_alloc &) {
+    return {WVKernelStatusCode::allocationFailure,
+            "Unable to allocate the Stratified QG model adapter."};
+  }
+}
+
 WVKernelStatus createPersistedModelSystem(
     const WVCheckpointInspection &inspection,
     const WVFrozenForcingSchedule &schedule,
@@ -182,6 +271,11 @@ WVKernelStatus createPersistedModelSystem(
     std::shared_ptr<const WVExtensionCatalog> catalog,
     std::unique_ptr<WVFFTEngine> engine,
     std::unique_ptr<WVResolvedModelSystem> &system) {
+  if (inspection.transformKind == WVPersistedTransformKind::stratifiedQG) {
+    if (!inspection.stratifiedModalSource || inspection.stratifiedModalSource->N2FunctionPayload().empty())
+      return invalid("MATLAB-compatible SQG model output requires its opaque N2Function persistence payload.");
+    return createStratifiedQGModelSystem(inspection.stratifiedModalSource,schedule,descriptor,std::move(catalog),std::move(engine),system);
+  }
   if (inspection.transformKind == WVPersistedTransformKind::barotropicQG)
     return createBarotropicQGModelSystem(
         inspection.barotropicQGConfiguration, schedule, descriptor,
@@ -195,6 +289,10 @@ WVKernelStatus validatePersistedModelForcingSchedule(
     const WVCheckpointInspection &inspection,
     const WVFrozenForcingSchedule &schedule,
     const WVExtensionCatalog &catalog) {
+  if (inspection.transformKind == WVPersistedTransformKind::stratifiedQG) {
+    if (!inspection.stratifiedModalSource) return invalid("SQG scientific source is absent.");
+    return WVStratifiedQGForcingEngine::validateSchedule(inspection.stratifiedModalSource->geometry(),schedule,inspection.coefficientShape.elementCount(),catalog);
+  }
   if (inspection.transformKind == WVPersistedTransformKind::barotropicQG)
     return WVBarotropicQGForcingEngine::validateSchedule(
         inspection.barotropicQGConfiguration, schedule,
@@ -211,6 +309,7 @@ WVCheckpointInspection modelCheckpointInspection(
   inspection.configuration = checkpoint.configuration;
   inspection.barotropicQGConfiguration =
       checkpoint.barotropicQGConfiguration;
+  inspection.stratifiedModalSource = checkpoint.stratifiedModalSource;
   inspection.stateDescription = checkpoint.stateDescription;
   inspection.coefficientShape =
       checkpoint.transformKind == WVPersistedTransformKind::barotropicQG
@@ -220,6 +319,10 @@ WVCheckpointInspection modelCheckpointInspection(
                           : checkpoint.transformState.coefficientFamilies[0]
                                 .values.size()}
           : checkpoint.state.coefficients.shape;
+  if (checkpoint.transformKind == WVPersistedTransformKind::stratifiedQG && checkpoint.stratifiedModalSource) {
+    const auto& g = checkpoint.stratifiedModalSource->geometry();
+    inspection.coefficientShape = {g.Nj,g.Nkl};
+  }
   inspection.t = checkpoint.state.t;
   inspection.t0 = checkpoint.state.t0;
   inspection.metadata = checkpoint.metadata;
@@ -318,7 +421,7 @@ void setModelCheckpointTimes(WVCheckpoint &checkpoint, double t,
                              double t0) noexcept {
   checkpoint.state.t = t;
   checkpoint.state.t0 = t0;
-  if (checkpoint.transformKind == WVPersistedTransformKind::barotropicQG) {
+  if (checkpoint.transformKind != WVPersistedTransformKind::constantStratification) {
     checkpoint.transformState.t = t;
     checkpoint.transformState.t0 = t0;
   }

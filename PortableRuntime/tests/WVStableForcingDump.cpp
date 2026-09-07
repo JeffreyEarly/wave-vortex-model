@@ -1,5 +1,7 @@
 #include "WaveVortexRuntime/WVCheckpointReader.hpp"
 #include "WaveVortexRuntime/WVForcingEngine.hpp"
+#include "WaveVortexRuntime/WVStratifiedQGForcingEngine.hpp"
+#include "WaveVortexRuntime/WVStratifiedModalRecord.hpp"
 #include "WaveVortexRuntime/WVBarotropicQGForcingEngine.hpp"
 #include "WaveVortexRuntime/WVExtensionCatalog.hpp"
 #include "WVReferenceFFTEngine.hpp"
@@ -46,6 +48,17 @@ int main(int argc,char** argv) {
       std::vector<WVComplex64> f(a.size());
       WVComplexConstView input{a.data(),engine->kernel().descriptor().spectralShape()};
       WVComplexView output{f.data(),input.shape};
+      require(engine->evaluateRightHandSide(input,output));
+      allocationProbe::calls=0; allocationProbe::counting=true;
+      const auto status=engine->evaluateRightHandSide(input,output);
+      allocationProbe::counting=false; require(status);
+      result["F0"]=values(f);
+    } else if (checkpoint.transformKind==WVPersistedTransformKind::stratifiedQG) {
+      std::unique_ptr<WVStratifiedQGForcingEngine> engine;
+      require(WVStratifiedQGForcingEngine::create(checkpoint.stratifiedModalSource,checkpoint.forcingSchedule,catalog,std::move(fft),engine));
+      auto& a=checkpoint.transformState.coefficientFamilies.at(0).values;
+      std::vector<WVComplex64> f(a.size());
+      WVComplexConstView input{a.data(),engine->kernel().spectralShape()}; WVComplexView output{f.data(),input.shape};
       require(engine->evaluateRightHandSide(input,output));
       allocationProbe::calls=0; allocationProbe::counting=true;
       const auto status=engine->evaluateRightHandSide(input,output);

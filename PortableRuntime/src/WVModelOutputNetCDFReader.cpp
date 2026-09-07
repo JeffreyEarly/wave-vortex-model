@@ -1195,7 +1195,7 @@ WVCheckpointStatus parseOutputFile(const std::string &path,
 
     group.containsCompleteCoefficientRestart =
         detail::modelOutputGroupCarriesCompleteCoefficientRestart(
-            stateDescription, hasCoefficients, hasCoefficientObserver);
+            stateDescription, hasCoefficients, hasCoefficientObserver, isDynamicsLinear);
     restartGroupCount +=
         group.containsCompleteCoefficientRestart ? 1 : 0;
 
@@ -1350,6 +1350,17 @@ WVCheckpointStatus WVModelOutputNetCDFSink::restoreState(
       return failure(WVCheckpointStatusCode::schemaMismatch,
                      "Selected restart changed after graph inspection.",
                      inspection.latestRestartPath);
+
+    if (restoredCheckpoint.transformKind == WVPersistedTransformKind::stratifiedQG) {
+      WVCheckpointInspection restoredScientific;
+      restoredScientific.transformKind = restoredCheckpoint.transformKind;
+      restoredScientific.stratifiedModalSource = restoredCheckpoint.stratifiedModalSource;
+      if (!detail::sameModelOutputTransformConfiguration(inspection.latestRestart,restoredScientific))
+        return failure(WVCheckpointStatusCode::schemaMismatch,"SQG scientific source changed after graph inspection.",inspection.latestRestartPath);
+      // The verification read is disposable; the model, state and output
+      // adapters retain the same authoritative owner selected at preflight.
+      restoredCheckpoint.stratifiedModalSource = inspection.latestRestart.stratifiedModalSource;
+    }
 
     std::map<std::string, std::vector<std::vector<double>>> resolvedState;
     auto restoredObservers = inspection.observerRecord.observers;

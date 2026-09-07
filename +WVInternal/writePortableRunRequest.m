@@ -327,6 +327,8 @@ dynamicsMode = numericAttribute(information.Attributes,"WVModelIsDynamicsLinear"
 switch transformClass
     case "WVTransformConstantStratification"
         bundleSignature = inspectConstantStratificationMetadata(path,information,transformClass,modelVersion,dynamicsMode);
+    case "WVTransformStratifiedQG"
+        bundleSignature = inspectStratifiedQGMetadata(path,information,transformClass,modelVersion,dynamicsMode);
     case "WVTransformBarotropicQG"
         bundleSignature = inspectBarotropicQGMetadata(path,information,transformClass,modelVersion,dynamicsMode);
     otherwise
@@ -394,6 +396,42 @@ for iScalar = 1:numel(scalarNames)
 end
 signature = struct("transformClass",transformClass,"modelVersion",modelVersion, ...
     "dimensionLengths",dimensionLengths,"scalarValues",scalarValues,"dynamicsMode",dynamicsMode);
+end
+
+function signature = inspectStratifiedQGMetadata(path,information,transformClass,modelVersion,dynamicsMode)
+dimensionNames = ["x","y","z","j","kl"];
+dimensionLengths = arrayfun(@(name) rootDimensionLength(information,name),dimensionNames);
+if any(dimensionLengths < 1)
+    error("WaveVortexModel:PortableRunRequestContract","Stratified QG dimensions must be nonempty.");
+end
+scalarNames = ["Lx","Ly","Lz","g","rho0","planetaryRadius","rotationRate","latitude","shouldAntialias","t0"];
+scalarValues = arrayfun(@(name) readRootScalar(path,information,name),scalarNames);
+variableNames = ["x","y","z","j","kl","k","l","N2","rho_nm0","dLnN2","P0","Q0","h_0","z_int","PF0inv","QG0inv","PF0","QG0"];
+variableDimensions = {"x","y","z","j","kl","kl","kl","z","z","z","j","j","j","z",["z","j"],["z","j"],["j","z"],["j","z"]};
+scientificValues = cell(size(variableNames));
+for index = 1:numel(variableNames)
+    variable = rootVariable(information,variableNames(index));
+    if string(variable.Datatype) ~= "double" || ~isequal(arrayfun(@dimensionLeafName,variable.Dimensions),variableDimensions{index})
+        error("WaveVortexModel:PortableRunRequestContract","Stratified QG scientific variable %s has incompatible dimensions or type.",variableNames(index));
+    end
+    values = ncread(path,variableNames(index));
+    if any(~isfinite(values),"all")
+        error("WaveVortexModel:PortableRunRequestContract","Stratified QG scientific variable %s must be finite.",variableNames(index));
+    end
+    scientificValues{index} = values;
+end
+completeRestartGroups = 0;
+for index = 1:numel(information.Groups)
+    group = information.Groups(index);
+    if textAttribute(group.Attributes,"AnnotatedClass","") ~= "WVModelOutputGroupEvenlySpaced", continue; end
+    validatePortableGroupContracts(group);
+    completeRestartGroups = completeRestartGroups + validateStratifiedQGRestartGroup(group,dimensionLengths(4:5),logical(dynamicsMode));
+end
+if completeRestartGroups ~= 1
+    error("WaveVortexModel:PortableRunRequestContract","Each Stratified QG source file must declare exactly one complete A0 restart stream.");
+end
+signature = struct("transformClass",transformClass,"modelVersion",modelVersion,"dimensionLengths",dimensionLengths, ...
+    "scalarValues",scalarValues,"scientificValues",{scientificValues},"dynamicsMode",dynamicsMode);
 end
 
 function signature = inspectBarotropicQGMetadata(path,information,transformClass,modelVersion,dynamicsMode)
@@ -528,6 +566,69 @@ if string(variable.Datatype) ~= "double" || ~validDimensions || ...
         isempty(variable.Size) || variable.Size(1) ~= compactLength
     error("WaveVortexModel:PortableRunRequestContract", ...
         "Barotropic QG compact variable %s has an incompatible type or shape in %s.",name,group.Name);
+end
+if allowTimeSeries
+    validateComplexMarker(variable,"isComplex",1,group.Name);
+end
+end
+
+function isComplete = validateStratifiedQGRestartGroup(group,compactLength,isLinear)
+isComplete = false;
+variableNames = string({group.Variables.Name});
+hasPlain = any(variableNames == "A0");
+hasReal = any(variableNames == "A0_real");
+hasImaginary = any(variableNames == "A0_imag");
+if ~hasPlain && ~hasReal && ~hasImaginary
+    return
+end
+coefficientObservers = declaredObserverCount(group,"WVCoefficients");
+if coefficientObservers == 0 && ~isLinear
+    return
+elseif coefficientObservers > 1
+    error("WaveVortexModel:PortableRunRequestContract", ...
+        "A Stratified QG output group declares an ambiguous WVCoefficients observer contract in %s.",group.Name);
+end
+if hasPlain && (hasReal || hasImaginary) || xor(hasReal,hasImaginary)
+    error("WaveVortexModel:PortableRunRequestContract", ...
+        "Stratified QG A0 has ambiguous or incomplete compact storage in %s.",group.Name);
+end
+for forbidden = ["Ap","Ap_real","Ap_imag","Am","Am_real","Am_imag"]
+    if any(variableNames == forbidden)
+        error("WaveVortexModel:PortableRunRequestContract", ...
+            "Stratified QG compact state must not contain dummy %s storage in %s.",forbidden,group.Name);
+    end
+end
+if hasPlain
+    validateStratifiedVariable(group,"A0",compactLength,false);
+else
+    validateStratifiedVariable(group,"A0_real",compactLength,true);
+    validateStratifiedVariable(group,"A0_imag",compactLength,true);
+    realVariable = group.Variables(find(variableNames == "A0_real",1));
+    imaginaryVariable = group.Variables(find(variableNames == "A0_imag",1));
+    if ~isequal(realVariable.Size,imaginaryVariable.Size) || ...
+            ~isequal(arrayfun(@dimensionLeafName,realVariable.Dimensions), ...
+            arrayfun(@dimensionLeafName,imaginaryVariable.Dimensions))
+        error("WaveVortexModel:PortableRunRequestContract", ...
+            "Stratified QG compact A0 components must have identical dimensions in %s.",group.Name);
+    end
+    validateComplexMarker(realVariable,"isRealPart",1,group.Name);
+    validateComplexMarker(realVariable,"isImaginaryPart",0,group.Name);
+    validateComplexMarker(imaginaryVariable,"isRealPart",0,group.Name);
+    validateComplexMarker(imaginaryVariable,"isImaginaryPart",1,group.Name);
+end
+isComplete = true;
+end
+
+function validateStratifiedVariable(group,name,compactLength,allowTimeSeries)
+variableNames = string({group.Variables.Name});
+variable = group.Variables(find(variableNames == name,1));
+dimensionNames = arrayfun(@dimensionLeafName,variable.Dimensions);
+validDimensions = isequal(dimensionNames,["j","kl"]) || ...
+    (allowTimeSeries && isequal(dimensionNames,["j","kl","t"]) && variable.Size(3) > 0);
+if string(variable.Datatype) ~= "double" || ~validDimensions || ...
+        numel(variable.Size) < 2 || ~isequal(variable.Size(1:2),compactLength)
+    error("WaveVortexModel:PortableRunRequestContract", ...
+        "Stratified QG compact variable %s has an incompatible type or shape in %s.",name,group.Name);
 end
 if allowTimeSeries
     validateComplexMarker(variable,"isComplex",1,group.Name);

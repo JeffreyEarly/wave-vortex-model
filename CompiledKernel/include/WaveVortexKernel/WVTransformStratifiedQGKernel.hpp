@@ -31,6 +31,9 @@ public:
     const WVStratifiedModalGeometry& geometry() const noexcept { return source_->geometry(); }
     const WVStratifiedQGModeFactors& factors() const noexcept { return factors_; }
     const WVStratifiedQGStorage& storage() const noexcept { return storage_; }
+    std::size_t persistentBytes() const noexcept {
+        return sizeof(*this)+storage_.sharedScientificBytes+storage_.preparedBytes+storage_.workspaceBytes+storage_.spectralScratchBytes+storage_.realScratchBytes+storage_.factorBytes;
+    }
     const std::string& engineIdentifier() const noexcept { return engineIdentifier_; }
     WVShape2D spectralShape() const noexcept { return {geometry().Nj,geometry().Nkl}; }
     WVShape3D spatialShape() const noexcept { return {geometry().Nx,geometry().Ny,geometry().Nz}; }
@@ -44,6 +47,11 @@ public:
         WVRealVolumeView, WVStratifiedQGDerivative = WVStratifiedQGDerivative::value);
     // Surface fields use [Nx,Ny,1]; other fields use [Nx,Ny,Nz].
     WVKernelStatus nonlinearFlux(WVComplexConstView, WVComplexView, double beta = 0);
+    // Configured physical closures projected to A0. These overwrite the output
+    // and reuse the kernel's prepared operators and mutable workspace.
+    WVKernelStatus verticalDiffusivityFlux(WVComplexConstView, double kappaZ, WVComplexView);
+    WVKernelStatus linearBottomFrictionFlux(WVComplexConstView, double rate, WVComplexView);
+    WVKernelStatus quadraticBottomFrictionFlux(WVComplexConstView, double dragCoefficient, WVComplexView);
     WVKernelStatus linearFlux(WVComplexConstView, WVComplexView, double beta = 0) const;
     // F-plane A0 is stationary. An explicit beta gives exact linear Rossby evolution.
     WVKernelStatus evolveA0(WVComplexConstView, double elapsedTime, WVComplexView, double beta = 0) const;
@@ -51,6 +59,8 @@ public:
     WVKernelStatus totalEnstrophy(WVComplexConstView, double&) const;
     WVKernelStatus totalEnergySpatiallyIntegrated(WVComplexConstView, double&);
     WVKernelStatus totalEnstrophySpatiallyIntegrated(WVComplexConstView, double&);
+    const std::string& engineLibraryIdentity() const noexcept { return engineLibraryIdentity_; }
+    WVKernelStatus advectScalarWithAdvectionFields(WVRealVolumeConstView, WVRealFieldBundleConstView, bool antialias, WVRealVolumeView);
     WVKernelStatus uvMax(WVComplexConstView, double&);
 private:
     WVTransformStratifiedQGKernel() = default;
@@ -63,7 +73,7 @@ private:
     std::shared_ptr<const WVStratifiedModalSource> source_;
     WVStratifiedQGModeFactors factors_;
     WVStratifiedQGStorage storage_;
-    std::string engineIdentifier_;
+    std::string engineIdentifier_, engineLibraryIdentity_;
     std::unique_ptr<WVRetainedHorizontalOperator> horizontal_;
     std::unique_ptr<WVRetainedHorizontalWorkspace> horizontalWorkspace_;
     std::array<std::unique_ptr<WVPreparedVerticalOperator>,4> vertical_;
