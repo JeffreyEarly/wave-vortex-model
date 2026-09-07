@@ -4,33 +4,48 @@
 
 namespace wavevortex::runtime::detail {
 
+WVKernelStatus preflightLaplacianDamping(const WVFrozenForcingEntry &, bool);
+WVKernelStatus preflightVerticalDiffusivity(const WVFrozenForcingEntry &, bool);
+WVKernelStatus createHorizontalDamping(const WVFrozenForcingEntry &, const WVTransformConstantStratificationDescriptor &, const WVForcingPreparation &, std::unique_ptr<WVForcing> &);
+WVKernelStatus createVerticalDamping(const WVFrozenForcingEntry &, const WVTransformConstantStratificationDescriptor &, const WVForcingPreparation &, std::unique_ptr<WVForcing> &);
+WVKernelStatus createVerticalDiffusivity(const WVFrozenForcingEntry &, const WVTransformConstantStratificationDescriptor &, const WVForcingPreparation &, std::unique_ptr<WVForcing> &);
+WVKernelStatus prepareExplicitAntialiasing(const WVFrozenForcingEntry &, const WVTransformConstantStratificationDescriptor &, WVForcingPreparation &);
+WVKernelStatus preflightExplicitAntialiasing(const WVFrozenForcingEntry &, bool);
+WVKernelStatus createExplicitAntialiasing(
+    const WVFrozenForcingEntry &, const WVTransformConstantStratificationDescriptor &,
+    const WVForcingPreparation &, std::unique_ptr<WVForcing> &);
+WVKernelStatus createBarotropicQGExplicitAntialiasing(
+    const WVFrozenForcingEntry &, const WVTransformBarotropicQGDescriptor &,
+    bool, std::unique_ptr<WVBarotropicQGForcing> &);
+WVKernelStatus preflightBarotropicQGExplicitAntialiasing(const WVFrozenForcingEntry &, std::size_t);
+
 WVKernelStatus createNonlinearAdvectionForcing(
     const WVFrozenForcingEntry &,
-    const WVTransformConstantStratificationDescriptor &, bool,
+    const WVTransformConstantStratificationDescriptor &, const WVForcingPreparation &,
     std::unique_ptr<WVForcing> &);
 WVKernelStatus createAdaptiveDampingForcing(
     const WVFrozenForcingEntry &,
-    const WVTransformConstantStratificationDescriptor &, bool,
+    const WVTransformConstantStratificationDescriptor &, const WVForcingPreparation &,
     std::unique_ptr<WVForcing> &);
 WVKernelStatus createFixedAmplitudeForcing(
     const WVFrozenForcingEntry &,
-    const WVTransformConstantStratificationDescriptor &, bool,
+    const WVTransformConstantStratificationDescriptor &, const WVForcingPreparation &,
     std::unique_ptr<WVForcing> &);
 WVKernelStatus createQuadraticBottomFriction(
     const WVFrozenForcingEntry &,
-    const WVTransformConstantStratificationDescriptor &, bool,
+    const WVTransformConstantStratificationDescriptor &, const WVForcingPreparation &,
     std::unique_ptr<WVForcing> &);
 WVKernelStatus createLinearBottomFriction(
     const WVFrozenForcingEntry &,
-    const WVTransformConstantStratificationDescriptor &, bool,
+    const WVTransformConstantStratificationDescriptor &, const WVForcingPreparation &,
     std::unique_ptr<WVForcing> &);
 WVKernelStatus createPseudoTopographicForcing(
     const WVFrozenForcingEntry &,
-    const WVTransformConstantStratificationDescriptor &, bool,
+    const WVTransformConstantStratificationDescriptor &, const WVForcingPreparation &,
     std::unique_ptr<WVForcing> &);
 WVKernelStatus createBetaPlaneForcing(
     const WVFrozenForcingEntry &,
-    const WVTransformConstantStratificationDescriptor &, bool,
+    const WVTransformConstantStratificationDescriptor &, const WVForcingPreparation &,
     std::unique_ptr<WVForcing> &);
 
 WVKernelStatus preflightBarotropicQGEmptyForcing(

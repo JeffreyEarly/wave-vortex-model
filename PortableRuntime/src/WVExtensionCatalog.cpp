@@ -307,7 +307,7 @@ WVPortableCapability WVForcingCatalog::capability(
 WVKernelStatus WVForcingCatalog::create(
     const WVFrozenForcingEntry &entry,
     const WVTransformConstantStratificationDescriptor &descriptor,
-    bool hasAdaptiveDamping, std::unique_ptr<WVForcing> &forcing) const {
+    const WVForcingPreparation &preparation, std::unique_ptr<WVForcing> &forcing) const {
   forcing.reset();
   const auto *value = registration(entry.typeIdentifier,
                                    entry.contractVersion);
@@ -316,7 +316,7 @@ WVKernelStatus WVForcingCatalog::create(
             "Unsupported forcing identity."};
   try {
     std::unique_ptr<WVForcing> candidate;
-    const auto status = value->factory(entry, descriptor, hasAdaptiveDamping,
+    const auto status = value->factory(entry, descriptor, preparation,
                                        candidate);
     if (!status)
       return status;

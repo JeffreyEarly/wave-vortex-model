@@ -148,7 +148,7 @@ WVForcingFactoryRegistration throwingForcing(std::string identity,
   registration.matlabClassName = std::move(identity);
   registration.factory =
       [badAllocation](const WVFrozenForcingEntry &,
-                      const WVTransformConstantStratificationDescriptor &, bool,
+                      const WVTransformConstantStratificationDescriptor &, const WVForcingPreparation &,
                       std::unique_ptr<WVForcing> &) -> WVKernelStatus {
     if (badAllocation)
       throw std::bad_alloc();
@@ -567,7 +567,7 @@ int main() {
         std::make_unique<wavevortex::runtime::test::
                              WVTestPortableLinearCoefficientForcing>(entry, 1.0);
     const auto status =
-        catalog->forcings().create(entry, transform, false, output);
+        catalog->forcings().create(entry, transform, {}, output);
     require(!status && !output &&
                 status.code ==
                     (badAllocation ? WVKernelStatusCode::allocationFailure
@@ -581,7 +581,7 @@ int main() {
     registration.matlabClassName = "StatusForcing";
     registration.factory =
         [](const WVFrozenForcingEntry &entry,
-           const WVTransformConstantStratificationDescriptor &, bool,
+           const WVTransformConstantStratificationDescriptor &, const WVForcingPreparation &,
            std::unique_ptr<WVForcing> &output) {
       output = std::make_unique<wavevortex::runtime::test::
                                     WVTestPortableLinearCoefficientForcing>(
@@ -602,7 +602,7 @@ int main() {
         std::make_unique<wavevortex::runtime::test::
                              WVTestPortableLinearCoefficientForcing>(entry, 1.0);
     const auto status =
-        catalog->forcings().create(entry, transform, false, output);
+        catalog->forcings().create(entry, transform, {}, output);
     require(!status && !output,
             "forcing status failure published a partial implementation");
   }

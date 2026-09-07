@@ -48,6 +48,17 @@ classdef WVAntialiasing < WVForcing
     end
 
     methods
+        function contract = portableImplementationContract(self)
+            % Return the configured explicit-filter contract for portable execution.
+            %
+            % - Topic: Forcing internals
+            % - Declaration: contract = portableImplementationContract(self)
+            % - Returns contract: versioned data-only forcing contract
+            % - Developer: true
+            payload = struct("name",string(self.name),"forcingTypes",string(self.forcingType),"priority",self.priority,"Nj",self.Nj);
+            contract = self.supportedPortableImplementationContract("WVAntialiasing",payload);
+        end
+
         function self = WVAntialiasing(wvt,options)
             % Create explicit antialias filtering for a transform.
             %

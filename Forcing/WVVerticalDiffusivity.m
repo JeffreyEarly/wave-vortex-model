@@ -91,6 +91,17 @@ classdef WVVerticalDiffusivity < WVForcing
     end
 
     methods
+        function contract = portableImplementationContract(self)
+            % Return canonical closure parameters for portable execution.
+            %
+            % - Topic: Forcing internals
+            % - Declaration: contract = portableImplementationContract(self)
+            % - Returns contract: versioned data-only forcing contract
+            % - Developer: true
+            payload = struct("name",string(self.name),"forcingTypes",string(self.forcingType),"priority",self.priority,"kappa_z",self.kappa_z,"shouldForceMeanDensityAnomaly",self.shouldForceMeanDensityAnomaly);
+            contract = self.supportedPortableImplementationContract("WVVerticalDiffusivity",payload);
+        end
+
         function self = WVVerticalDiffusivity(wvt,options)
             % Create vertical diffusivity for a three-dimensional transform.
             %

@@ -52,7 +52,7 @@ struct WVForcingPersistenceSchema {
 using WVForcingFactory = std::function<WVKernelStatus(
     const WVFrozenForcingEntry &,
     const WVTransformConstantStratificationDescriptor &,
-    bool, std::unique_ptr<WVForcing> &)>;
+    const WVForcingPreparation &, std::unique_ptr<WVForcing> &)>;
 
 using WVBarotropicQGForcingPreflight = std::function<WVKernelStatus(
     const WVFrozenForcingEntry &, std::size_t)>;
@@ -77,6 +77,11 @@ struct WVForcingFactoryRegistration {
   WVForcingStage barotropicQGStage = WVForcingStage::spatial;
   WVBarotropicQGForcingPreflight barotropicQGPreflight;
   WVBarotropicQGForcingFactory barotropicQGFactory;
+  // Called during model preflight, before FFT plans or mutable output.
+  std::function<WVKernelStatus(const WVFrozenForcingEntry &, bool)> modelPreflight = {};
+  std::function<WVKernelStatus(const WVFrozenForcingEntry &,
+      const WVTransformConstantStratificationDescriptor &, WVForcingPreparation &)>
+      prepareConstantResolution = {};
 };
 
 std::vector<WVForcingFactoryRegistration> builtInForcingFactories();

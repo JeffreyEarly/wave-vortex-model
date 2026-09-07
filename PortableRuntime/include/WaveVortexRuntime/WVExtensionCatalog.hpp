@@ -126,7 +126,7 @@ public:
   WVKernelStatus create(
       const WVFrozenForcingEntry &entry,
       const WVTransformConstantStratificationDescriptor &descriptor,
-      bool hasAdaptiveDamping, std::unique_ptr<WVForcing> &forcing) const;
+      const WVForcingPreparation &preparation, std::unique_ptr<WVForcing> &forcing) const;
   WVKernelStatus createBarotropicQG(
       const WVFrozenForcingEntry &entry,
       const WVTransformBarotropicQGDescriptor &descriptor,

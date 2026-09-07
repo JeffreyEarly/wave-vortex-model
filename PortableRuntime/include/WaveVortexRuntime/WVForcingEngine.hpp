@@ -86,6 +86,7 @@ public:
         const WVRealVolumeConstView& scalar, bool shouldAntialias,
         WVRealVolumeView& rightHandSide);
     WVStateConstraintResult restoreForcingAmplitudes(WVMutableCoefficients& coefficients);
+    const WVForcingPreparation& preparation() const noexcept { return preparation_; }
     WVShape2D stateShape() const noexcept { return kernel_->descriptor().spectralShape(); }
     WVKernelStatus createErrorPolicy(double absoluteToleranceScale, std::unique_ptr<WVIntegrationErrorPolicy>& policy) const;
 
@@ -119,6 +120,7 @@ private:
     std::vector<double> forcingFields_;
     std::vector<WVComplex64> temporaryFlux_;
     WVForcingEngineMetrics metrics_;
+    WVForcingPreparation preparation_;
     std::string scheduleIdentifier_;
     bool physicalFieldsValid_ = false;
     bool executing_ = false;
