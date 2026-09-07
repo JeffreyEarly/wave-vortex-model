@@ -260,8 +260,9 @@ wvt = WVTransformFreeSurfaceQG([100e3 100e3 4000],[32 32 33],N2Function=N2,latit
 + Differentiate and integrate fields
   + [`diffX`](/classes/transforms/wvtransformfreesurfaceqg/diffx.html) Differentiate a gridded field in the periodic x direction.
   + [`diffY`](/classes/transforms/wvtransformfreesurfaceqg/diffy.html) Differentiate a gridded field in the periodic y direction.
-  + [`diffZF`](/classes/transforms/wvtransformfreesurfaceqg/diffzf.html) Differentiate an F-grid field with respect to z.
-  + [`diffZG`](/classes/transforms/wvtransformfreesurfaceqg/diffzg.html) Differentiate a G-grid field with respect to z.
+  + [`diffZ`](/classes/transforms/wvtransformfreesurfaceqg/diffz.html) Differentiate a sampled field on the shared physical vertical grid.
+  + [`diffZF`](/classes/transforms/wvtransformfreesurfaceqg/diffzf.html) Differentiate a sampled field without projecting onto the APV F modes.
+  + [`diffZG`](/classes/transforms/wvtransformfreesurfaceqg/diffzg.html) Differentiate a sampled field without projecting onto the APV G modes.
   + [`intZF`](/classes/transforms/wvtransformfreesurfaceqg/intzf.html) Return the first antiderivative of an F-representation.
   + [`intZG`](/classes/transforms/wvtransformfreesurfaceqg/intzg.html) Return the bottom-zero first antiderivative of a G-representation.
 + Inspect flow components

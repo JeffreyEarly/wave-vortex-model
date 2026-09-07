@@ -3,7 +3,7 @@ layout: default
 title: initWithGaussianEddy
 parent: WVTransformFreeSurfaceQG
 grand_parent: Transforms
-nav_order: 108
+nav_order: 109
 mathjax: true
 ---
 

@@ -3,7 +3,7 @@ layout: default
 title: hasClosure
 parent: WVTransformFreeSurfaceQG
 grand_parent: Transforms
-nav_order: 97
+nav_order: 98
 mathjax: true
 ---
 

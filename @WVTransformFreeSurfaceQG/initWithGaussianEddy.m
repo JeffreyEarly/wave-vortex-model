@@ -75,7 +75,7 @@ etaHat = -(self.f./self.N2).*dPsiDzHat;
 
 verticalFluxHat = (self.f^2./self.N2).*dPsiDzHat;
 verticalFlux = self.transformToSpatialDomainWithFourier(verticalFluxHat);
-verticalDivergenceHat = self.transformFromSpatialDomainWithFourier(self.diffZG(verticalFlux));
+verticalDivergenceHat = self.transformFromSpatialDomainWithFourier(self.diffZ(verticalFlux));
 qHat = -kh2.*psiHat+verticalDivergenceHat;
 
 endpointHat = complex(zeros(self.activeEndpointCount,self.Nkl));

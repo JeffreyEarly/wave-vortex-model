@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Free-surface QG vertical calculus
+
+- Added sampled-field `diffZ` and routed free-surface `diffZF`/`diffZG` through the persisted physical grid derivative, preserving zero-APV and MDA content instead of projecting through APV-only modes. Orders 1–4 apply the physical derivative successively, including the variable WKB metric. Gaussian initialization now uses the general derivative for its vertical flux; rigid-lid calculus is unchanged.
+
 ### Free-surface QG vertical grid and signed norms
 
 - Retained negative APV modes under the default endpoint choice $$g_0=-\int_{-D}^{0}N^2\,dz$$ and $$g_d=\mathop{\rm Inf}$$, kept signed InternalModes projection and coefficient recovery, and measured coupled quadratic products with the induced positive Hilbert-majorant error at the existing default tolerance `0.1`.

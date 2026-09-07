@@ -201,7 +201,7 @@ elseif ismember(name,["FMatrix","FinvMatrix","GMatrix","GinvMatrix"])
     topicPath = "Inspect the domain — Spectral grid — Vertical-mode transformation matrices";
 elseif ismember(name,["isHydrostatic","shouldAntialias","computationalBackend","computationalBackendMetadata"])
     topicPath = "Inspect the domain — Transform configuration";
-elseif ismember(name,["diffX","diffY","diffZF","diffZG","intZF","intZG"])
+elseif ismember(name,["diffX","diffY","diffZ","diffZF","diffZG","intZF","intZG"])
     topicPath = "Differentiate and integrate fields";
 elseif ismember(name,["transformUVEtaToWaveVortex","transformUVWEtaToWaveVortex", ...
         "transformWaveVortexToUVWEta","transformQGPVToWaveVortex", ...

@@ -3,13 +3,13 @@ layout: default
 title: diffZF
 parent: WVTransformFreeSurfaceQG
 grand_parent: Transforms
-nav_order: 76
+nav_order: 77
 mathjax: true
 ---
 
 #  diffZF
 
-Differentiate an F-grid field with respect to z.
+Differentiate a sampled field without projecting onto the APV F modes.
 
 
 ---
@@ -19,18 +19,14 @@ Differentiate an F-grid field with respect to z.
  du = diffZF(u,n=n)
 ```
 ## Parameters
-+ `u`  F-grid field with dimensions `[Nx Ny Nz]`
-+ `n`  derivative order from 1 through 4 (default 1)
++ `u`  real or complex sampled field with shape `Nx x Ny x Nz`
++ `n`  physical derivative order from 1 through 4; default 1
 
 ## Returns
-+ `du`  vertical derivative in the alternating F/G representation
++ `du`  sampled physical derivative with the same shape as u
 
 ## Discussion
 
-`u` must use the gridded layout `[Nx Ny Nz]`. Orders 1 through 4 are
-supported. Odd orders return a G-representation and even orders return
-an F-representation.
-
-```matlab
-dudz = wvt.diffZF(u);
-```
+This free-surface alias uses `diffZ` on the shared physical grid.
+APV, zero-APV, MDA, and general sampled fields use the same derivative;
+the F suffix does not select a modal subspace or an output family.

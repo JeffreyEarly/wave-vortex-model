@@ -3,13 +3,13 @@ layout: default
 title: diffZG
 parent: WVTransformFreeSurfaceQG
 grand_parent: Transforms
-nav_order: 77
+nav_order: 78
 mathjax: true
 ---
 
 #  diffZG
 
-Differentiate a G-grid field with respect to z.
+Differentiate a sampled field without projecting onto the APV G modes.
 
 
 ---
@@ -19,14 +19,14 @@ Differentiate a G-grid field with respect to z.
  du = diffZG(u,n=n)
 ```
 ## Parameters
-+ `u`  G-grid field with dimensions `[Nx Ny Nz]`
-+ `n`  derivative order from 1 through 4 (default 1)
++ `u`  real or complex sampled field with shape `Nx x Ny x Nz`
++ `n`  physical derivative order from 1 through 4; default 1
 
 ## Returns
-+ `du`  vertical derivative in the alternating G/F representation
++ `du`  sampled physical derivative with the same shape as u
 
 ## Discussion
 
-`u` must use the gridded layout `[Nx Ny Nz]`. Orders 1 through 4 are
-supported. Odd orders return an F-representation and even orders return
-a G-representation.
+This free-surface alias uses `diffZ` on the shared physical grid.
+APV, zero-APV, MDA, and general sampled fields use the same derivative;
+the G suffix does not select a modal subspace or an output family.
