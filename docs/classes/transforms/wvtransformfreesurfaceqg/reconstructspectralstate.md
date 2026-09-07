@@ -3,7 +3,7 @@ layout: default
 title: reconstructSpectralState
 parent: WVTransformFreeSurfaceQG
 grand_parent: Transforms
-nav_order: 189
+nav_order: 190
 mathjax: true
 ---
 
@@ -16,8 +16,11 @@ Reconstruct compact spectral streamfunction, displacement, and full QGPV.
 
 ## Declaration
 ```matlab
- [psiHat,etaHat,qHat] = reconstructSpectralState(self)
+ [psiHat,etaHat,qHat] = reconstructSpectralState(options)
 ```
+## Parameters
++ `options.flowComponent`  selector belonging to this transform; empty selects the full state
+
 ## Returns
 + `psiHat`  streamfunction on the compact full-kl grid
 + `etaHat`  displacement on the compact full-kl grid

@@ -3,7 +3,7 @@ layout: default
 title: summarizeVariables
 parent: WVTransform
 grand_parent: Transforms
-nav_order: 92
+nav_order: 94
 mathjax: true
 ---
 

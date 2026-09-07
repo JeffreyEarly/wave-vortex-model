@@ -218,10 +218,12 @@ These items document internal implementation details and are not part of the pri
   + [`wvCoefficientDependentVariablesNameMap`](/classes/transforms/wvtransform/wvcoefficientdependentvariablesnamemap.html)
 + Class internals
   + [`coefficientAbsoluteTolerances`](/classes/transforms/wvtransform/coefficientabsolutetolerances.html) Return one adaptive-integrator tolerance array per coefficient family.
+  + [`coefficientState`](/classes/transforms/wvtransform/coefficientstate.html) Copy the canonical coefficient families, optionally selecting a component.
   + [`coefficientStateVariableNamesForPersistence`](/classes/transforms/wvtransform/coefficientstatevariablenamesforpersistence.html) Return physically present canonical coefficient variable names.
   + [`coefficientTendency`](/classes/transforms/wvtransform/coefficienttendency.html) Return nonlinear coefficient tendencies in a family-keyed structure.
   + [`hasPVComponent`](/classes/transforms/wvtransform/haspvcomponent.html)
   + [`hasWaveComponent`](/classes/transforms/wvtransform/haswavecomponent.html)
+  + [`reconstructFields`](/classes/transforms/wvtransform/reconstructfields.html) Reconstruct named physical fields at the current transform time.
 + Construction internals
   + [`WVTransform`](/classes/transforms/wvtransform/wvtransform.html) Initialize the internal WVTransform state for a concrete subclass.
 

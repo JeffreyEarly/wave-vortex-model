@@ -3,7 +3,7 @@ layout: default
 title: randomAmplitudesWithSpectrum
 parent: WVFlowComponent
 grand_parent: Flow components
-nav_order: 12
+nav_order: 13
 mathjax: true
 ---
 

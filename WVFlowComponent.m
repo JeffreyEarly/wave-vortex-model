@@ -1,7 +1,7 @@
 classdef WVFlowComponent < handle & matlab.mixin.Heterogeneous
-    % Describe one family of orthogonal wave-vortex solutions.
+    % Select resolved coefficient families and compose flow components.
     %
-    % Each degree-of-freedom in the model is associated with an analytical
+    % In the legacy wave-vortex models, each degree of freedom has an analytical
     % solution to the equations of motion. This class groups together
     % solutions of a particular type and provides a mapping between their
     % analytical solutions and their numerical representation.
@@ -19,7 +19,19 @@ classdef WVFlowComponent < handle & matlab.mixin.Heterogeneous
     % components may combine those masks without introducing a new independent
     % solution family.
     %
+    % Family-keyed selectors also support models with independently shaped
+    % coefficient arrays. Selecting coefficients does not imply that their
+    % physical energies are orthogonal; model-specific diagnostics retain
+    % cross terms. Analytical initialization remains a primary-mode capability.
+    %
+    % ```matlab
+    % component = WVFlowComponent(wvt,coefficientMasks=struct(Amda=true));
+    % fields = wvt.reconstructFields("eta",flowComponent=component);
+    % ```
+    %
     % - Topic: Initialization
+    % - Topic: Masks
+    % - Topic: Properties
     properties (Access=private)
         bitmask = 0
     end
@@ -73,36 +85,127 @@ classdef WVFlowComponent < handle & matlab.mixin.Heterogeneous
         maskA0
     end
 
+    properties (Access = private)
+        familyMasks_ (1,1) struct = struct()
+    end
+
+    properties (Dependent, SetAccess = private)
+        % Masks keyed by the transform's canonical coefficient families.
+        %
+        % Omitted families select zero. Legacy masks remain live aliases.
+        % - Topic: Masks
+        coefficientMasks
+    end
+
     properties (Dependent)
+        % Whether the legacy A0 mask selects any coefficients.
+        % Use coefficientMasks for models with other canonical families.
+        % - Topic: Masks
         hasPVComponent logical
+        % Whether the legacy Ap or Am mask selects any coefficients.
+        % Use coefficientMasks for models with other canonical families.
+        % - Topic: Masks
         hasWaveComponent logical
     end
 
     methods
         function self = WVFlowComponent(wvt,options)
-            % create a new orthogonal solution group
+            % Create a selector for resolved coefficient families.
+            %
+            % Supply scalar zero/one or exact family-shaped masks through
+            % `coefficientMasks`. New-family masks are fixed at construction.
+            % Masks must preserve the concrete model's conjugate symmetries.
             %
             % - Topic: Initialization
-            % - Declaration:  solnGroup = WVFlowComponent(wvt)
+            % - Declaration: solnGroup = WVFlowComponent(wvt,options)
             % - Parameter wvt: instance of a WVTransform
-            % - Returns solnGroup: a new orthogonal solution group instance
+            % - Parameter options.coefficientMasks: family-keyed scalar structure; omitted families select zero
+            % - Parameter options.maskAp: legacy positive-wave selector
+            % - Parameter options.maskAm: legacy negative-wave selector
+            % - Parameter options.maskA0: legacy zero-frequency selector
+            % - Returns solnGroup: resolved coefficient selector
             arguments
                 wvt WVTransform {mustBeNonempty}
                 options.maskAp = 0
                 options.maskAm = 0
                 options.maskA0 = 0
+                options.coefficientMasks (1,1) struct = struct()
             end
             self.wvt = wvt;
             self.maskAp = options.maskAp;
             self.maskAm = options.maskAm;
             self.maskA0 = options.maskA0;
+            annotations = wvt.coefficientStateAnnotations();
+            names = string({annotations.name});
+            for name = string(fieldnames(options.coefficientMasks)).'
+                if ~ismember(name,names)
+                    error('WVFlowComponent:UnknownFamily','Unknown coefficient family %s.',name)
+                end
+                mask = options.coefficientMasks.(name);
+                if ~(isnumeric(mask) || islogical(mask)) || ~isreal(mask) || any(~ismember(mask(:),[0 1])) || (~isscalar(mask) && ~isequal(size(mask),size(wvt.(name))))
+                    error('WVFlowComponent:InvalidMask','Mask %s must be zero/one and scalar or exactly the coefficient-family shape.',name)
+                end
+                if ismember(name,["Ap" "Am" "A0"])
+                    legacyName = "mask"+name;
+                    if ~isequal(options.(legacyName),0)
+                        error('WVFlowComponent:DuplicateMask','Specify %s through coefficientMasks or its legacy option, not both.',name)
+                    end
+                    self.(legacyName) = logical(mask);
+                else
+                    self.familyMasks_.(name) = logical(mask);
+                end
+            end
+        end
+
+        function masks = get.coefficientMasks(self)
+            annotations = self.wvt.coefficientStateAnnotations();
+            masks = struct();
+            for annotation = annotations
+                name = annotation.name;
+                if ismember(string(name),["Ap" "Am" "A0"])
+                    masks.(name) = self.(['mask' name]);
+                elseif isfield(self.familyMasks_,name)
+                    masks.(name) = self.familyMasks_.(name);
+                else
+                    masks.(name) = false;
+                end
+            end
         end
 
         function bool = contains(self,otherComponent)
-            bool = all( ~otherComponent.maskA0(:) | self.maskA0(:)) & all( ~otherComponent.maskAm(:) | self.maskAm(:)) & all( ~otherComponent.maskAm(:) | self.maskAm(:));
+            % Test containment of selections in the same resolved state.
+            %
+            % Physically empty families contribute no selected modes.
+            % - Topic: Masks
+            % - Declaration: bool = contains(otherComponent)
+            % - Parameter otherComponent: selector belonging to the same transform
+            % - Returns bool: true when every selected coefficient is contained
+            if self.wvt ~= otherComponent.wvt
+                error('WVFlowComponent:DifferentTransform','Components must belong to the same transform.')
+            end
+            first = self.coefficientMasks;
+            second = otherComponent.coefficientMasks;
+            bool = true;
+            for familyName = string(fieldnames(first)).'
+                if isempty(self.wvt.(familyName)), continue; end
+                a = first.(familyName); b = second.(familyName);
+                bool = bool && all(~b(:) | a(:));
+            end
         end
 
         function h = plus(f,g)
+            % Form the union of two selections on the same transform.
+            %
+            % Overlapping modes are selected once. Energies of the two
+            % components are not assumed to be additive.
+            % - Topic: Masks
+            % - Declaration: h = plus(f,g)
+            % - Parameter f: first selector
+            % - Parameter g: second selector on the same transform
+            % - Returns h: component selecting the union of both masks
+            if f.wvt ~= g.wvt
+                error('WVFlowComponent:DifferentTransform','Components must belong to the same transform.')
+            end
             h = WVFlowComponent(f.wvt);
             h.name = join(cat(2,string(f.name),string(g.name)),' + ');
             h.shortName = join(cat(2,string(f.shortName),string(g.shortName)),'');
@@ -110,6 +213,11 @@ classdef WVFlowComponent < handle & matlab.mixin.Heterogeneous
             h.maskAp = f.maskAp | g.maskAp;
             h.maskAm = f.maskAm | g.maskAm;
             h.maskA0 = f.maskA0 | g.maskA0;
+            first = f.coefficientMasks;
+            second = g.coefficientMasks;
+            for familyName = setdiff(string(fieldnames(first)),["Ap" "Am" "A0"]).'
+                h.familyMasks_.(familyName) = first.(familyName) | second.(familyName);
+            end
         end
 
         function bool = get.hasPVComponent(self)
@@ -137,7 +245,9 @@ classdef WVFlowComponent < handle & matlab.mixin.Heterogeneous
             %
             % Returns Ap, Am, A0 matrices initialized with random amplitude
             % for this flow component. These resulting matrices will have
-            % the correct symmetries for a valid flow state. 
+            % the correct symmetries for a valid flow state.
+            % Models with other canonical families must initialize those
+            % families explicitly; this legacy analytical API rejects them.
             %
             % - Topic: Initialization
             % - Declaration: Ap,Am,A0] = randomAmplitudes()
@@ -154,6 +264,10 @@ classdef WVFlowComponent < handle & matlab.mixin.Heterogeneous
                 A0 double
             end
             
+            annotations = self.wvt.coefficientStateAnnotations();
+            if any(~ismember(string({annotations.name}),["Ap" "Am" "A0"]))
+                error('WVFlowComponent:UnsupportedAnalyticalModes','Random analytical-mode initialization is not defined for these coefficient families. Initialize the canonical families explicitly.')
+            end
             if self.hasPVComponent
                 A0 = zeros(self.wvt.spectralMatrixSize);
                 validModes = self.maskA0 & self.wvt.totalFlowComponent.maskOfPrimaryModesForCoefficientMatrix(WVCoefficientMatrix.A0);
