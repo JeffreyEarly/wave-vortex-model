@@ -67,8 +67,14 @@ report = struct(schemaIdentifier="wave-vortex-sqg-qualification-v1",schemaVersio
 if all([tests.passed]) && ~any([tests.incomplete])
     report.status = "complete";
 end
+try
+    validatePortableStratifiedQGQualification(report,repositoryRoot=root);
+catch exception
+    report.status = "incomplete";
+    writeJSON(outputPath,report);
+    rethrow(exception);
+end
 writeJSON(outputPath,report);
-validatePortableStratifiedQGQualification(report,repositoryRoot=root);
 assertSuccess(results);
 end
 

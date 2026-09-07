@@ -54,9 +54,13 @@ for index=1:numel(continuations)
     require(isscalar(definition),"Unknown continuation fixture.");
     for field=reshape(string(fieldnames(definition)),1,[])
         actual=row.definition.(field); expectedValue=definition.(field);
-        if isnumeric(actual), matches=isequal(actual(:),expectedValue(:));
-        elseif ischar(expectedValue) || isstring(expectedValue), matches=isequal(string(actual),string(expectedValue));
-        else, matches=isequal(actual,expectedValue); end
+        if isnumeric(actual)
+            matches=isequal(actual(:),expectedValue(:));
+        elseif ischar(expectedValue) || isstring(expectedValue)
+            matches=isequal(string(actual),string(expectedValue));
+        else
+            matches=isequal(actual,expectedValue);
+        end
         require(matches,"Continuation fixture differs from its declared configuration.");
     end
     if string(row.definition.stepPolicy)=="cfl"
@@ -68,7 +72,21 @@ for index=1:numel(continuations)
         require(isfinite(errors.particlePosition) && errors.particlePosition>=0 && errors.particlePosition<=.02,"Particle-position qualification exceeds tolerance.");
         require(all(isfinite(values)) && all(values>=0) && all(values<=bound),"Continuation parity exceeds the declared tolerance.");
     end
+    require(isfinite(row.coefficientChange),"Nonfinite trajectory change.");
     if ~row.definition.linear, require(row.coefficientChange>1e-4,"Qualification trajectory is numerically trivial."); end
+    for result={row.whole,row.segmented}
+        graph=result{1}.graph;
+        require(isequal(graph.wave_vortex.times(:),(17:100:617)') && graph.wave_vortex.ordinal==7,"Primary schedule/ordinal differs.");
+        require(isequal(graph.dense.times(:),(17:25:617)') && graph.dense.ordinal==25,"Dense schedule/ordinal differs.");
+    end
+    require(isequal(row.whole.graph,row.segmented.graph),"Segmented graph identity differs.");
+    runs=row.runtime; if isstruct(runs), runs=num2cell(runs); end
+    require(numel(runs)==3,"Missing uninterrupted or segmented runtime reports.");
+    for run=reshape(runs,1,[])
+        measured=run{1};
+        require(string(measured.status)=="complete" && measured.execution.noFallback && string(measured.provider.id)==string(row.provider),"Runtime completion/provider mismatch.");
+        require(measured.integratorStorageLedger.byteLedgerAgreement && measured.storageBytes.persistentFullHermitian==0,"Runtime storage contract failed.");
+    end
 end
 require(numel(unique(keys))==numel(keys),"Duplicate continuation cases.");
 lifecycle=report.lifecycle; if isstruct(lifecycle), lifecycle=num2cell(lifecycle); end
@@ -80,6 +98,12 @@ for index=1:numel(lifecycle)
     require(ismember(reshape(row.grid,1,[]),manifest.lifecycleGrids,"rows"),"Unknown lifecycle grid.");
     keys(end+1)=join(string(row.grid(:)),"x")+"/"+string(row.provider); %#ok<AGROW>
     require(row.completedLifecycles==6 && row.scientificOwnersReleased && row.retainedGrowthBytes==0,"Lifecycle ownership/storage qualification failed.");
+    require(numel(row.measurements)==6,"Missing lifecycle measurements.");
+    for measured=reshape(row.measurements,1,[])
+        require(measured.retainedBytesAfter==measured.retainedBytesBefore && measured.retainedBytesAfter>0,"Measured retained storage grew or is absent.");
+        require(measured.sampleSteps==16 && measured.rhsEvaluations==64 && isfinite(measured.sampleSeconds) && measured.sampleSeconds>0,"Invalid lifecycle work measurement.");
+    end
+    require(row.preparedStepAllocations==max([row.measurements.preparedStepAllocations]),"Allocation summary contradicts measurements.");
     if string(row.provider)=="native-fftw", require(row.preparedStepAllocations==0,"Native prepared integration allocates application memory."); end
 end
 require(numel(unique(keys))==numel(keys),"Duplicate lifecycle cases.");

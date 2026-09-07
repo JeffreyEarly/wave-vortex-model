@@ -25,6 +25,8 @@ The JSON uses `wave-vortex-sqg-qualification-v1`. It records source revision and
 
 The dedicated `Stratified QG qualification` workflow runs reference-provider release and ASan/UBSan qualification on Linux and uploads separate JSON artifacts. It runs independently of the optional Full suite. Native FFTW qualification is performed on the supported local Apple Silicon build; the report identifies the actual provider/library. An artifact demonstrates its recorded configuration, rather than certifying every compiler/platform or an exhaustive cross-product.
 
+The recorded [Apple Silicon reference/native qualification](https://github.com/JeffreyEarly/wave-vortex-model/blob/main/PortableRuntime/qualification/stratified-qg-apple-silicon-v1.json) contains 34 passing tests, 41 forcing/provider results, 12 continuation cases and six lifecycle results. Its source revision is recorded before the artifact itself is added to the repository.
+
 ## Numerical coverage and tolerances
 
 The shared forcing catalog contains 96 rows, including SQG's 17 supported and 7 intentionally incompatible rows across both transform-antialias configurations. Existing exact-pair tests compare every applicable RHS and append continuation, with odd/even grids and representative closure orderings. Their MATLAB-authoritative applicability and evidence links remain in the same catalog used by C++ contracts.
@@ -41,4 +43,4 @@ The lifecycle probe constructs, advances and destroys six complete models at eac
 
 Runtime reports retain RHS counts, field reconstruction/projection counts, timing, integrator storage-ledger agreement and RSS diagnostics. SQG closures and distinct event occurrences currently reconstruct independently. Further reuse or backend tuning should follow measurements of the same workload. Retained-capacity accounting excludes allocator metadata and opaque NetCDF/FFTW internals; RSS is a process measurement rather than proof of exact live array storage. Timing is descriptive, with no machine-dependent CI speed threshold.
 
-The task ledger is [issue-298-verification.md](../.github/planning/issue-298-verification.md). Issue #306 consumes this qualification alongside the same expanded forcing slice when assembling the full feature catalog.
+The authoring repository retains the [issue-298 verification ledger](https://github.com/JeffreyEarly/wave-vortex-model/blob/main/.github/planning/issue-298-verification.md). Issue #306 consumes this qualification alongside the same expanded forcing slice when assembling the full feature catalog.
