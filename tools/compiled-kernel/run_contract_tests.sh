@@ -57,3 +57,9 @@ compiler=${CXX:-c++}
     "$script_directory/tests/WVReferenceFFTEngine.cpp" \
     "$script_directory/WVBarotropicQGFixtureDump.cpp" \
     -o "$build_directory/WVBarotropicQGFixtureDump"
+
+"$compiler" -std=c++17 -Wall -Wextra -Wpedantic -Werror -pthread \
+    -I "$repository_root/CompiledKernel/src" \
+    "$script_directory/tests/TestWVPreparedModeExecutor.cpp" \
+    -o "$build_directory/TestWVPreparedModeExecutor"
+"$build_directory/TestWVPreparedModeExecutor"

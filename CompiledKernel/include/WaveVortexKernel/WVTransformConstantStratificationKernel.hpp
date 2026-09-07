@@ -6,6 +6,7 @@
 #include <vector>
 
 namespace wavevortex {
+namespace kernel_detail { class WVPreparedModeExecutor; }
 
 enum class WVDynamicalField : std::uint8_t { u, v, w, eta };
 
@@ -48,7 +49,7 @@ class WVTransformConstantStratificationKernel {
 public:
     static WVKernelStatus create(const WVTransformConstantStratificationConfiguration& configuration, std::unique_ptr<WVFFTEngine> engine, std::unique_ptr<WVTransformConstantStratificationKernel>& kernel);
 
-    ~WVTransformConstantStratificationKernel() = default;
+    ~WVTransformConstantStratificationKernel();
     WVTransformConstantStratificationKernel(const WVTransformConstantStratificationKernel&) = delete;
     WVTransformConstantStratificationKernel& operator=(const WVTransformConstantStratificationKernel&) = delete;
     WVTransformConstantStratificationKernel(WVTransformConstantStratificationKernel&&) = delete;
@@ -79,11 +80,12 @@ public:
     WVKernelStatus nonlinearFlux(const WVState& state, WVFlux& flux);
     WVKernelStatus nonlinearFluxWithAdvectionFields(const WVState& state, WVFlux& flux, WVRealFieldBundleView& advectionFields);
     WVKernelStatus nonlinearFluxUsingAdvectionFields(const WVState& state, WVFlux& flux, const WVRealFieldBundleConstView& advectionFields);
+    // Call at setup when scalar advection is configured, before repeated RHS calls.
     WVKernelStatus prepareScalarAdvection();
     WVKernelStatus advectFGridScalar(const WVRealVolumeConstView& scalar, const WVRealFieldBundleConstView& advectionFields, bool shouldAntialias, WVRealVolumeView& rightHandSide);
 
 private:
-    WVTransformConstantStratificationKernel() = default;
+    WVTransformConstantStratificationKernel();
     WVKernelStatus preparePlans();
     WVKernelStatus transformUVEtaToWaveVortexImpl(const WVRealFieldBundleConstView& fields, double t, double t0, WVMutableCoefficients& coefficients, WVComplexConstView phaseValues = {});
     WVKernelStatus transformUVWEtaToWaveVortexImpl(const WVRealFieldBundleConstView& fields, double t, double t0, WVMutableCoefficients& coefficients, WVComplexConstView phaseValues = {});
@@ -105,6 +107,7 @@ private:
     std::vector<double> halfSpectrumScratch_;
     std::vector<double> realScratch_;
     mutable WVKernelMetrics metrics_;
+    std::unique_ptr<kernel_detail::WVPreparedModeExecutor> coefficientExecutor_;
     bool executing_ = false;
     bool stageInstrumentationEnabled_ = false;
 };

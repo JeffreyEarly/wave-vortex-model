@@ -27,6 +27,9 @@ struct WVFFTPlanSpecification {
     std::vector<WVFFTDimension> batchDimensions;
     std::size_t inputBytes = 0;
     std::size_t outputBytes = 0;
+    // Out-of-place execution must preserve input unless explicitly allowed here.
+    // In-place execution inherently overwrites its shared input/output storage.
+    // Providers must reject unsupported preservation/placement at plan creation.
     bool destroysInput = false;
     bool inPlace = false;
 };
@@ -34,6 +37,8 @@ struct WVFFTPlanSpecification {
 class WVFFTPlan {
 public:
     virtual ~WVFFTPlan() = default;
+    // Execution must use the placement selected at setup: identical addresses
+    // for in-place plans, disjoint addressed spans for out-of-place plans.
     virtual WVKernelStatus execute(const void* input, void* output) = 0;
     virtual std::size_t persistentBytes() const noexcept = 0;
 };
