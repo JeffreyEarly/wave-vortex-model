@@ -287,7 +287,7 @@ wvt = WVTransformFreeSurfaceQG([100e3 100e3 4000],[32 32 33],N2Function=N2,latit
     + [`totalEnergy`](/classes/transforms/wvtransformfreesurfaceqg/totalenergy.html) Positive physical energy from the canonical quadratic diagnostics.
     + [`totalEnergySpatiallyIntegrated`](/classes/transforms/wvtransformfreesurfaceqg/totalenergyspatiallyintegrated.html) Positive physical energy, including surface gravitational energy.
   + Component energy
-    + [`totalEnergyOfFlowComponent`](/classes/transforms/wvtransformfreesurfaceqg/totalenergyofflowcomponent.html) Compute the energy carried by one flow component.
+    + [`totalEnergyOfFlowComponent`](/classes/transforms/wvtransformfreesurfaceqg/totalenergyofflowcomponent.html) Evaluate the physical energy of a selected resolved QG state.
 + Convert representations
   + Physical fields and coefficients
     + [`reconstructSpectralState`](/classes/transforms/wvtransformfreesurfaceqg/reconstructspectralstate.html) Reconstruct compact spectral streamfunction, displacement, and full QGPV.
@@ -391,6 +391,7 @@ These items document internal implementation details and are not part of the pri
   + [`namesOfRequiredPropertiesForGeometry`](/classes/transforms/wvtransformfreesurfaceqg/namesofrequiredpropertiesforgeometry.html)
   + [`namesOfRequiredPropertiesForRotatingFPlane`](/classes/transforms/wvtransformfreesurfaceqg/namesofrequiredpropertiesforrotatingfplane.html)
   + [`namesOfRequiredPropertiesForTransform`](/classes/transforms/wvtransformfreesurfaceqg/namesofrequiredpropertiesfortransform.html)
+  + [`namesOfTransformVariables`](/classes/transforms/wvtransformfreesurfaceqg/namesoftransformvariables.html) List physical fields supported by ordinary QG operations.
   + [`newNonrequiredPropertyNames`](/classes/transforms/wvtransformfreesurfaceqg/newnonrequiredpropertynames.html)
   + [`newRequiredPropertyNames`](/classes/transforms/wvtransformfreesurfaceqg/newrequiredpropertynames.html)
   + [`requiredPropertiesForGeometryFromGroup`](/classes/transforms/wvtransformfreesurfaceqg/requiredpropertiesforgeometryfromgroup.html)

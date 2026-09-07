@@ -3,13 +3,13 @@ layout: default
 title: totalEnergyOfFlowComponent
 parent: WVTransformFreeSurfaceQG
 grand_parent: Transforms
-nav_order: 221
+nav_order: 222
 mathjax: true
 ---
 
 #  totalEnergyOfFlowComponent
 
-Compute the energy carried by one flow component.
+Evaluate the physical energy of a selected resolved QG state.
 
 
 ---
@@ -19,17 +19,12 @@ Compute the energy carried by one flow component.
  energy = totalEnergyOfFlowComponent(flowComponent)
 ```
 ## Parameters
-+ `flowComponent`  component whose coefficient masks select the energy
++ `flowComponent`  one component belonging to this transform
 
 ## Returns
-+ `energy`  horizontally averaged, depth-integrated energy per unit reference density
++ `energy`  positive physical energy in m3 s-2
 
 ## Discussion
-Compute the energy carried by one flow component.
 
-The calculation applies the component's `maskAp`, `maskAm`, and `maskA0` to the transform coefficients and sums the corresponding energy factors.
-
-```matlab
-waveEnergy = wvt.totalEnergyOfFlowComponent(wvt.waveComponent);
-geostrophicEnergy = wvt.totalEnergyOfFlowComponent(wvt.geostrophicComponent);
-```
+Cross terms inside the selected state are retained. Energies of disjoint
+coefficient selectors need not sum to the energy of their union.

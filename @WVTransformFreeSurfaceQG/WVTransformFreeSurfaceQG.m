@@ -458,6 +458,19 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
             self.Ag_0 = state.Ag_0;
             self.Amda = state.Amda;
             self.addForcing(WVNonlinearAdvection(self));
+            names = self.namesOfTransformVariables();
+            self.addOperation(self.operationForKnownVariable(names{:}));
+            familyNames = ["Ag_q" "Ag_0" "Amda"];
+            componentNames = ["apv" "zeroapv" "mda"];
+            for iFamily = 1:length(familyNames)
+                masks = struct();
+                masks.(familyNames(iFamily)) = true;
+                component = WVFlowComponent(self,coefficientMasks=masks);
+                component.name = familyNames(iFamily);
+                component.shortName = componentNames(iFamily);
+                component.abbreviatedName = componentNames(iFamily);
+                self.addFlowComponent(component);
+            end
         end
 
         function set.Ag_q(self,value)
@@ -586,11 +599,6 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
             Fmda = tendency.Amda;
         end
 
-        function value = get.psi(self)
-            psiHat = self.reconstructSpectralState();
-            value = self.transformToSpatialDomainWithFourier(psiHat);
-        end
-
         function value = get.apvModeCount(self)
             value = length(self.apvMode);
         end
@@ -599,31 +607,28 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
             value = length(self.mdaMode);
         end
 
+        function value = get.psi(self)
+            value = self.variableWithName('psi');
+        end
+
         function value = get.u(self)
-            psiHat = self.reconstructSpectralState();
-            value = self.transformToSpatialDomainWithFourier(-sqrt(-1)*reshape(self.l,1,[]).*psiHat);
+            value = self.variableWithName('u');
         end
 
         function value = get.v(self)
-            psiHat = self.reconstructSpectralState();
-            value = self.transformToSpatialDomainWithFourier(sqrt(-1)*reshape(self.k,1,[]).*psiHat);
+            value = self.variableWithName('v');
         end
 
         function value = get.uvMax(self)
-            psiHat = self.reconstructSpectralState();
-            u_ = self.transformToSpatialDomainWithFourier(-sqrt(-1)*reshape(self.l,1,[]).*psiHat);
-            v_ = self.transformToSpatialDomainWithFourier(sqrt(-1)*reshape(self.k,1,[]).*psiHat);
-            value = max(hypot(u_,v_),[],"all");
+            value = self.variableWithName('uvMax');
         end
 
         function value = get.eta(self)
-            [~,etaHat,~] = self.reconstructSpectralState();
-            value = self.transformToSpatialDomainWithFourier(etaHat);
+            value = self.variableWithName('eta');
         end
 
         function value = get.qgpv(self)
-            [~,~,qHat] = self.reconstructSpectralState();
-            value = self.transformToSpatialDomainWithFourier(qHat);
+            value = self.variableWithName('qgpv');
         end
 
         function energy = get.totalEnergySpatiallyIntegrated(self)
@@ -744,6 +749,12 @@ classdef WVTransformFreeSurfaceQG < WVGeometryDoublyPeriodicStratified & WVTrans
 
     methods (Static)
         assessment = assessVerticalResolution(Lz,Nz,options)
+
+        function names = namesOfTransformVariables()
+            % List physical fields supported by ordinary QG operations.
+            % - Topic: Evaluate physical fields
+            names = {'psi','u','v','eta','qgpv','ssh','ssu','ssv','uvMax'};
+        end
 
         function propertyAnnotations = classDefinedPropertyAnnotations()
             propertyAnnotations = WVTransformFreeSurfaceQG.propertyAnnotationsForTransform();

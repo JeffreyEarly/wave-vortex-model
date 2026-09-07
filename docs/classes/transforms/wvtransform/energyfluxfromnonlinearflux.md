@@ -3,7 +3,7 @@ layout: default
 title: energyFluxFromNonlinearFlux
 parent: WVTransform
 grand_parent: Transforms
-nav_order: 30
+nav_order: 31
 mathjax: true
 ---
 
