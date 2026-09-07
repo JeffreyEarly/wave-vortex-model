@@ -50,7 +50,7 @@ private:
 
 inline WVKernelStatus createLinearCoefficientForcing(
     const WVFrozenForcingEntry &entry,
-    const WVTransformConstantStratificationDescriptor &, bool,
+    const WVTransformConstantStratificationDescriptor &, const WVForcingPreparation &,
     std::unique_ptr<WVForcing> &forcing) {
   const auto *value = entry.configuration.value("rate");
   const auto *values =

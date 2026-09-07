@@ -163,7 +163,7 @@ void testForcingCapabilities() {
             require(!capability.unavailabilityReason.empty(), "unsupported forcing omitted its reason");
         }
     }
-    require(supported == 10, "forcing capability matrix must expose eight production pairs and two test pairs");
+    require(supported == 14, "forcing capability matrix must expose twelve production pairs and two test pairs");
     require(forcings.capability("WVTestPortableFixedAmplitudeForcing").isSupported(), "registered test forcing pair is unavailable");
     require(forcings.capability("WVTestPortableFixedAmplitudeForcing", 2).status == WVPortableCapabilityStatus::versionMismatch, "forcing pair version mismatch was accepted");
     require(forcings.capability(test::LinearCoefficientForcingIdentifier).isSupported(), "registered linear coefficient forcing pair is unavailable");
@@ -443,7 +443,7 @@ void testOrderedForcingHeaders() {
 }
 
 void testUnsupportedForcingClasses() {
-    const std::array<const char*, 6> unsupported = {"WVAntialiasing", "WVHorizontalDamping", "WVVerticalDamping", "WVThermalDamping", "WVVerticalDiffusivity", "WVUserForcing"};
+    const std::array<const char*, 2> unsupported = {"WVThermalDamping", "WVUserForcing"};
     for (const char* typeIdentifier : unsupported) {
         TemporaryFile file(temporaryCopy("forcing-nonlinear.nc"));
         int id = -1;
@@ -460,6 +460,19 @@ void testUnsupportedForcingClasses() {
 }
 
 void testMalformedForcingRecords() {
+    for (const char* typeIdentifier : std::array<const char*,4>{"WVAntialiasing","WVHorizontalDamping","WVVerticalDamping","WVVerticalDiffusivity"}) {
+        TemporaryFile file(temporaryCopy("forcing-nonlinear.nc"));
+        int id = -1;
+        requireNetCDF(nc_open(file.path.string().c_str(), NC_WRITE, &id), "open unsupported forcing fixture");
+        int forcingId = -1;
+        requireNetCDF(nc_inq_ncid(id, "forcing", &forcingId), "find singleton forcing group");
+        overwriteTextAttribute(forcingId, "AnnotatedClass", typeIdentifier);
+        requireNetCDF(nc_close(id), "close unsupported forcing fixture");
+        WVCheckpoint checkpoint;
+        const auto result = WVCheckpointReader::read(file.path.string(), *test::extensionCatalog(), checkpoint);
+        require(result.code == WVCheckpointStatusCode::missingVariable, std::string(typeIdentifier) + " accepted missing closure parameters");
+        verifyWritableAfterFailure(file.path);
+    }
     {
         TemporaryFile file(temporaryCopy("forcing-quadratic-bottom-friction.nc"));
         int id = -1;

@@ -494,11 +494,7 @@ WVConstantStratificationIntegrationSystem::evaluateFixedTimeStepCandidates(
     WVFixedTimeStepCandidates result;
     result.transientWorkspaceMaximumLiveBytes =
         velocityElements * sizeof(double);
-    double maximumHorizontalWavenumber = 0.0;
-    for (const auto &mode : descriptor.fourierModes())
-      maximumHorizontalWavenumber =
-          std::max({maximumHorizontalWavenumber, std::abs(mode.k),
-                    std::abs(mode.l)});
+    const double maximumHorizontalWavenumber = forcing_->preparation().maximumHorizontalComponent;
     if (!(maximumHorizontalWavenumber > 0.0) ||
         !std::isfinite(maximumHorizontalWavenumber))
       return invalid("The effective horizontal resolution is unavailable.");

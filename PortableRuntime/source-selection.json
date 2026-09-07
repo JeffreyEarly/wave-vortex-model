@@ -55,7 +55,8 @@
     "externalConsumerBaselineCommit": "ba57981f336ad5bbbc0907dcd74fcd4fcd137708",
     "externalConsumerBaselineWaveVortexCommit": "84dc1b53093650fdbc9be62b637cf298c46a95d3",
     "description": "Source-linked observer, output-schedule, and forcing implementations are resolved through an explicitly owned immutable typed catalog. Observation occurrences use construction-resolved schedule payloads, evaluator-owned event geometry, central resolved-field evaluation, and destination-independent retry identity. Source API v1 exposes no legacy persistence callbacks or WVModel internals.",
-    "stratifiedModalRecords": "issue-295"
+    "stratifiedModalRecords": "issue-295",
+    "stableForcingCompatibility": "issues-290-294"
   },
   "excluded": [
     "benchmark harnesses and payloads",

@@ -850,7 +850,7 @@ inspectionTrapCatalog(InspectionFactoryCounts &counts) {
     if (registration.isSupported)
       registration.factory =
           [&counts](const WVFrozenForcingEntry &,
-                    const WVTransformConstantStratificationDescriptor &, bool,
+                    const WVTransformConstantStratificationDescriptor &, const WVForcingPreparation &,
                     std::unique_ptr<WVForcing> &) {
         ++counts.forcings;
         return WVKernelStatus{WVKernelStatusCode::invalidConfiguration,
@@ -2567,8 +2567,12 @@ void testMultipleFilesGroupsAndSharedState() {
             ",\"initialStep\":1e-7,\"cfl\":0.25,"
             "\"timeStepConstraint\":\"min\"}",
         "reference");
+    writeRejectedV2("v2-unknown-provider",
+                    explicitIntegration.str(),"unknown-provider");
+#if !WV_TEST_NATIVE_FFTW
     writeRejectedV2("v2-unavailable-provider",
                     explicitIntegration.str(),"native-fftw");
+#endif
 
     const auto partialPath = directory.path / "partial-run.json";
     std::ofstream partial(partialPath, std::ios::binary | std::ios::trunc);

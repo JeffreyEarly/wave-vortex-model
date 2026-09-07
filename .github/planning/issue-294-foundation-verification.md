@@ -1,5 +1,7 @@
 # Issue 294 forcing catalog foundation
 
+Historical foundation record. The subsequent implementation and qualification are recorded in [issue-290-294-verification.md](issue-290-294-verification.md).
+
 Scope: the user authorized the audited next step—establish the shared inventory/schema and map existing evidence before implementing closures. Work starts from v4 main `c242756efd0329bea38427823b7f07fd0354ee40` on `issue-294-forcing-catalog-foundation`. This is the catalog foundation, not completion of #294 or new forcing implementation.
 
 ## Delivered

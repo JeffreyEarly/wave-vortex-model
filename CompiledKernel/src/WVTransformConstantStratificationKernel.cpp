@@ -623,6 +623,52 @@ WVKernelStatus WVTransformConstantStratificationKernel::transformUVEtaToWaveVort
     return WVKernelStatus::ok();
 }
 
+WVKernelStatus WVTransformConstantStratificationKernel::addLaplacianDamping(
+    const WVState& state, double nu, double kappa, WVLaplacianDirection direction, WVFlux& flux) {
+    if (!std::isfinite(nu) || !std::isfinite(kappa) || nu < 0.0 || kappa < 0.0 ||
+        (direction != WVLaplacianDirection::horizontal && direction != WVLaplacianDirection::vertical))
+        return {WVKernelStatusCode::invalidConfiguration,"Laplacian damping requires finite nonnegative coefficients and a valid direction."};
+    const auto status = validateStateAndFlux(descriptor_,state,flux);
+    if (!status) return status;
+    ExecutionGuard guard(executing_);
+    if (!guard.entered()) return {WVKernelStatusCode::reentrantExecution,"Kernel operations are not reentrant."};
+    const auto& c = descriptor_.configuration();
+    const auto& modes = descriptor_.verticalModes();
+    for (std::size_t kl = 0; kl < descriptor_.Nkl(); ++kl) {
+        const auto& horizontal = descriptor_.fourierModes()[kl];
+        for (std::size_t j = 0; j < c.Nj; ++j) {
+            const auto index = j+c.Nj*kl;
+            const double wavenumber = direction == WVLaplacianDirection::horizontal ? horizontal.Kh : modes.verticalWavenumber[j];
+            const double velocityRate = -nu*wavenumber*wavenumber;
+            const double displacementRate = -kappa*wavenumber*wavenumber;
+            const auto phaseValue = phase(modes.omega[index]*(state.t-state.t0));
+            const auto evolved = evolveWaveVortexCoefficients(state.coefficients.Ap.data[index],state.coefficients.Am.data[index],state.coefficients.A0.data[index],phaseValue);
+            const auto U = multiply(coefficientValueForField<0>(modes,index,evolved),velocityRate);
+            const auto V = multiply(coefficientValueForField<1>(modes,index,evolved),velocityRate);
+            const auto W = multiply(coefficientValueForField<2>(modes,index,evolved),velocityRate);
+            const auto N = multiply(coefficientValueForField<3>(modes,index,evolved),displacementRate);
+            const auto A0 = geostrophicCoefficient(U,V,N,horizontal.k,horizontal.l,modes.A0FromVorticity[index],modes.A0FromBuoyancy[index]);
+            detail::WaveCoefficientPair coefficients;
+            if (kl == 0) coefficients = inertialCoefficientPair(U,V,modes.inertialScale[j]);
+            else {
+                WVComplex64 waveContribution;
+                if (c.isHydrostatic) {
+                    const auto divergence = add(multiply(U,WVComplex64{0.0,horizontal.k}),multiply(V,WVComplex64{0.0,horizontal.l}));
+                    waveContribution = multiply(modes.ApmDProjection[index],divergence);
+                } else {
+                    const auto delta = multiply(add(multiply(U,horizontal.cosAlpha),multiply(V,horizontal.sinAlpha)),modes.ApmDScaled[index]);
+                    const auto wBar = multiply(WVComplex64{0.0,(horizontal.Kh/2.0)*modes.apmWProjectionPrefactor[j]},W);
+                    waveContribution = add(delta,wBar);
+                }
+                coefficients = waveCoefficientPair(waveContribution,buoyancyProjection(N,A0,modes.NA0Field[index],modes.ApmNProjection[index]));
+            }
+            detail::accumulateAtReferenceTime(flux.Fp.data[index],flux.Fm.data[index],coefficients,phaseValue);
+            flux.F0.data[index] = add(flux.F0.data[index],A0);
+        }
+    }
+    return WVKernelStatus::ok();
+}
+
 WVKernelStatus WVTransformConstantStratificationKernel::transformUVWEtaToWaveVortex(
     const WVRealFieldBundleConstView& fields, double t, double t0, WVMutableCoefficients& coefficients) {
     if (descriptor_.configuration().isHydrostatic) return {WVKernelStatusCode::invalidConfiguration, "transformUVWEtaToWaveVortex requires a nonhydrostatic kernel."};

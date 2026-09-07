@@ -67,6 +67,17 @@ classdef WVHorizontalDamping < WVForcing
     end
 
     methods
+        function contract = portableImplementationContract(self)
+            % Return canonical closure parameters for portable execution.
+            %
+            % - Topic: Forcing internals
+            % - Declaration: contract = portableImplementationContract(self)
+            % - Returns contract: versioned data-only forcing contract
+            % - Developer: true
+            payload = struct("name",string(self.name),"forcingTypes",string(self.forcingType),"priority",self.priority,"nu",self.nu,"kappa",self.kappa);
+            contract = self.supportedPortableImplementationContract("WVHorizontalDamping",payload);
+        end
+
         function self = WVHorizontalDamping(wvt,options)
             % Create horizontal Laplacian damping for a transform.
             %

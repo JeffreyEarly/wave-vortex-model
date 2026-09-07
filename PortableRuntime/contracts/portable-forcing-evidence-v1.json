@@ -67,6 +67,72 @@
       "kind": "matlab-contract",
       "path": "UnitTests/TestPortableForcingContracts.m",
       "symbol": "narrowBandUsesInheritedFixedAmplitudeContract"
+    },
+    {
+      "id": "baseline-pairs",
+      "kind": "matlab-runtime-parity",
+      "path": "UnitTests/TestPortableStableForcing.m",
+      "symbol": "catalogPairsMatchMatlabAndAppend"
+    },
+    {
+      "id": "baseline-compositions",
+      "kind": "matlab-runtime-parity",
+      "path": "UnitTests/TestPortableStableForcing.m",
+      "symbol": "orderedClosureGraphsRestartAndConvertResolution"
+    },
+    {
+      "id": "malformed-append",
+      "kind": "matlab-runtime-parity",
+      "path": "UnitTests/TestPortableStableForcing.m",
+      "symbol": "malformedClosuresLeaveAppendTargetsUnchanged"
+    },
+    {
+      "id": "baseline-rejections",
+      "kind": "cpp-unit",
+      "path": "PortableRuntime/tests/TestWVForcingCompatibility.cpp",
+      "symbol": "testForcingIncompatibilities"
+    },
+    {
+      "id": "matlab-attachment",
+      "kind": "matlab-contract",
+      "path": "tools/generatePortableForcingCompatibility.m",
+      "symbol": "probeForcing"
+    },
+    {
+      "id": "closure-preflight-decay",
+      "kind": "cpp-unit",
+      "path": "PortableRuntime/tests/TestWVForcingAndRK4.cpp",
+      "symbol": "testStableClosurePreflightAndDecay"
+    },
+    {
+      "id": "explicit-antialiasing",
+      "kind": "matlab-runtime-parity",
+      "path": "UnitTests/TestPortableStableForcing.m",
+      "symbol": "explicitAntialiasingMatchesMatlab"
+    },
+    {
+      "id": "laplacian-damping",
+      "kind": "matlab-runtime-parity",
+      "path": "UnitTests/TestPortableStableForcing.m",
+      "symbol": "laplacianDampingMatchesMatlab"
+    },
+    {
+      "id": "vertical-diffusivity",
+      "kind": "matlab-runtime-parity",
+      "path": "UnitTests/TestPortableStableForcing.m",
+      "symbol": "verticalDiffusivityMatchesMatlab"
+    },
+    {
+      "id": "adaptive-cfl",
+      "kind": "matlab-runtime-parity",
+      "path": "UnitTests/TestPortableStableForcing.m",
+      "symbol": "adaptiveClosuresUseMatlabEffectiveResolution"
+    },
+    {
+      "id": "constant-narrow-composition",
+      "kind": "matlab-runtime-parity",
+      "path": "UnitTests/TestPortableStableForcing.m",
+      "symbol": "constantNarrowBandAndOrderedClosuresMatchMatlab"
     }
   ],
   "forcings": [
@@ -78,22 +144,39 @@
       "implementationIssue": 0,
       "constantEvidence": [
         "constant-testSpectralForcing",
-        "matlab-contracts"
+        "matlab-contracts",
+        "baseline-pairs",
+        "baseline-compositions",
+        "adaptive-cfl"
       ],
       "barotropicEvidence": [
         "barotropic-testNumericalForcingMatrix",
-        "barotropic-matlab-continuation"
+        "barotropic-matlab-continuation",
+        "baseline-pairs",
+        "baseline-compositions",
+        "adaptive-cfl"
       ],
       "barotropicCase": "adaptive"
     },
     {
       "identity": "WVAntialiasing",
       "contractVersion": 1,
-      "constantFactory": false,
-      "barotropicFactory": false,
-      "implementationIssue": 290,
-      "constantEvidence": [],
-      "barotropicEvidence": [],
+      "constantFactory": true,
+      "barotropicFactory": true,
+      "implementationIssue": 0,
+      "constantEvidence": [
+        "baseline-pairs",
+        "baseline-compositions",
+        "closure-preflight-decay",
+        "malformed-append",
+        "explicit-antialiasing",
+        "adaptive-cfl"
+      ],
+      "barotropicEvidence": [
+        "baseline-pairs",
+        "baseline-compositions",
+        "adaptive-cfl"
+      ],
       "barotropicCase": ""
     },
     {
@@ -104,11 +187,15 @@
       "implementationIssue": 0,
       "constantEvidence": [
         "constant-testSpectralForcing",
-        "matlab-contracts"
+        "matlab-contracts",
+        "baseline-pairs",
+        "baseline-compositions"
       ],
       "barotropicEvidence": [
         "barotropic-testNumericalForcingMatrix",
-        "barotropic-matlab-continuation"
+        "barotropic-matlab-continuation",
+        "baseline-pairs",
+        "baseline-compositions"
       ],
       "barotropicCase": "beta"
     },
@@ -120,11 +207,15 @@
       "implementationIssue": 0,
       "constantEvidence": [
         "constant-testLinearBottomFrictionFormula",
-        "matlab-contracts"
+        "matlab-contracts",
+        "baseline-pairs",
+        "baseline-compositions"
       ],
       "barotropicEvidence": [
         "barotropic-testNumericalForcingMatrix",
-        "barotropic-matlab-continuation"
+        "barotropic-matlab-continuation",
+        "baseline-pairs",
+        "baseline-compositions"
       ],
       "barotropicCase": "linear"
     },
@@ -136,11 +227,15 @@
       "implementationIssue": 0,
       "constantEvidence": [
         "constant-testQuadraticAndPseudo",
-        "matlab-contracts"
+        "matlab-contracts",
+        "baseline-pairs",
+        "baseline-compositions"
       ],
       "barotropicEvidence": [
         "barotropic-testNumericalForcingMatrix",
-        "barotropic-matlab-continuation"
+        "barotropic-matlab-continuation",
+        "baseline-pairs",
+        "baseline-compositions"
       ],
       "barotropicCase": "quadratic"
     },
@@ -152,34 +247,53 @@
       "implementationIssue": 0,
       "constantEvidence": [
         "constant-testFixedAmplitudeAndRK4",
-        "matlab-contracts"
+        "matlab-contracts",
+        "baseline-pairs",
+        "baseline-compositions",
+        "adaptive-cfl"
       ],
       "barotropicEvidence": [
         "barotropic-testFixedAmplitudeAndNarrowBand",
-        "barotropic-matlab-continuation"
+        "barotropic-matlab-continuation",
+        "baseline-pairs",
+        "baseline-compositions",
+        "adaptive-cfl"
       ],
       "barotropicCase": "fixed"
     },
     {
       "identity": "WVHorizontalDamping",
       "contractVersion": 1,
-      "constantFactory": false,
+      "constantFactory": true,
       "barotropicFactory": false,
-      "implementationIssue": 291,
-      "constantEvidence": [],
+      "implementationIssue": 0,
+      "constantEvidence": [
+        "baseline-pairs",
+        "baseline-compositions",
+        "closure-preflight-decay",
+        "malformed-append",
+        "laplacian-damping",
+        "adaptive-cfl"
+      ],
       "barotropicEvidence": [],
       "barotropicCase": ""
     },
     {
       "identity": "WVNarrowBandGeostrophicForcing",
       "contractVersion": 1,
-      "constantFactory": false,
+      "constantFactory": true,
       "barotropicFactory": true,
-      "implementationIssue": 294,
-      "constantEvidence": [],
+      "implementationIssue": 0,
+      "constantEvidence": [
+        "baseline-pairs",
+        "baseline-compositions",
+        "constant-narrow-composition"
+      ],
       "barotropicEvidence": [
         "barotropic-testFixedAmplitudeAndNarrowBand",
-        "barotropic-matlab-continuation"
+        "barotropic-matlab-continuation",
+        "baseline-pairs",
+        "baseline-compositions"
       ],
       "barotropicCase": "narrow"
     },
@@ -191,11 +305,17 @@
       "implementationIssue": 0,
       "constantEvidence": [
         "constant-testNonlinearCompatibility",
-        "matlab-contracts"
+        "matlab-contracts",
+        "baseline-pairs",
+        "baseline-compositions",
+        "adaptive-cfl"
       ],
       "barotropicEvidence": [
         "barotropic-testNumericalForcingMatrix",
-        "barotropic-matlab-continuation"
+        "barotropic-matlab-continuation",
+        "baseline-pairs",
+        "baseline-compositions",
+        "adaptive-cfl"
       ],
       "barotropicCase": "nonlinear"
     },
@@ -207,7 +327,9 @@
       "implementationIssue": 0,
       "constantEvidence": [
         "constant-testQuadraticAndPseudo",
-        "matlab-contracts"
+        "matlab-contracts",
+        "baseline-pairs",
+        "baseline-compositions"
       ],
       "barotropicEvidence": [],
       "barotropicCase": ""
@@ -215,22 +337,37 @@
     {
       "identity": "WVVerticalDamping",
       "contractVersion": 1,
-      "constantFactory": false,
+      "constantFactory": true,
       "barotropicFactory": false,
-      "implementationIssue": 292,
-      "constantEvidence": [],
+      "implementationIssue": 0,
+      "constantEvidence": [
+        "baseline-pairs",
+        "baseline-compositions",
+        "closure-preflight-decay",
+        "malformed-append",
+        "laplacian-damping",
+        "adaptive-cfl"
+      ],
       "barotropicEvidence": [],
       "barotropicCase": ""
     },
     {
       "identity": "WVVerticalDiffusivity",
       "contractVersion": 1,
-      "constantFactory": false,
+      "constantFactory": true,
       "barotropicFactory": false,
-      "implementationIssue": 293,
-      "constantEvidence": [],
+      "implementationIssue": 0,
+      "constantEvidence": [
+        "baseline-pairs",
+        "baseline-compositions",
+        "closure-preflight-decay",
+        "malformed-append",
+        "vertical-diffusivity",
+        "adaptive-cfl"
+      ],
       "barotropicEvidence": [],
       "barotropicCase": ""
     }
-  ]
+  ],
+  "qualification": "baseline-v1"
 }

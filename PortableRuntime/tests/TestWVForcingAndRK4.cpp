@@ -651,6 +651,77 @@ void testRightHandSideContextIdentity() {
     require(static_cast<bool>(status),"current RHS context was rejected");
 }
 
+void testStableClosurePreflightAndDecay() {
+    for (bool hydrostatic : {true,false}) {
+        auto config = configuration(hydrostatic);
+        config.shouldAntialias = false;
+        config.g = 9.81; // Match MATLAB modal-normalization gravity for the analytical identity.
+        auto control = createEngine(config,{});
+        const auto shape = control->stateShape();
+        for (const auto* identity : {"WVHorizontalDamping","WVVerticalDamping","WVVerticalDiffusivity","WVAntialiasing"}) {
+            const bool filter = std::string(identity) == "WVAntialiasing";
+            const bool diffusivity = std::string(identity) == "WVVerticalDiffusivity";
+            auto record = forcingConfiguration();
+            record.values.push_back(realValue(filter ? "Nj" : diffusivity ? "kappa_z" : "nu",{filter ? 2.0 : 0.125}));
+            if (diffusivity) record.values.push_back({"shouldForceMeanDensityAnomaly",{},std::vector<std::uint8_t>{1}});
+            else if (!filter) record.values.push_back(realValue("kappa",{0.125}));
+            auto force = entry(identity,filter ? "antialias filter" : identity,filter ? WVForcingStage::spectral : WVForcingStage::spatial,filter ? 127 : 255,record);
+            WVFrozenForcingSchedule schedule; schedule.entries.push_back(force);
+            auto valid = WVConstantStratificationForcingEngine::validateSchedule(config,schedule,shape,*test::extensionCatalog());
+            require(static_cast<bool>(valid),valid.message);
+            for (const auto& values : {std::vector<double>{-1.0},std::vector<double>{std::numeric_limits<double>::quiet_NaN()},std::vector<double>{std::numeric_limits<double>::infinity()},std::vector<double>{1.0,2.0}}) {
+                auto bad = schedule;
+                bad.entries[0].configuration.values[0] = realValue(record.values[0].name,values);
+                require(!WVConstantStratificationForcingEngine::validateSchedule(config,bad,shape,*test::extensionCatalog()),"Malformed closure accepted during preflight.");
+            }
+            auto missing = schedule;
+            missing.entries[0].configuration.values.clear();
+            require(!WVConstantStratificationForcingEngine::validateSchedule(config,missing,shape,*test::extensionCatalog()),"Missing closure parameters accepted.");
+            if (diffusivity) {
+                auto bad = schedule;
+                bad.entries[0].configuration.values[1].storage = std::vector<std::uint8_t>{2};
+                require(!WVConstantStratificationForcingEngine::validateSchedule(config,bad,shape,*test::extensionCatalog()),"Invalid logical accepted.");
+            }
+            if (filter) {
+                auto bad = schedule;
+                bad.entries[0].configuration.values[0] = realValue("Nj",{1.5});
+                require(!WVConstantStratificationForcingEngine::validateSchedule(config,bad,shape,*test::extensionCatalog()),"Fractional truncation accepted.");
+                auto antialiased = config; antialiased.shouldAntialias = true;
+                require(!WVConstantStratificationForcingEngine::validateSchedule(antialiased,schedule,shape,*test::extensionCatalog()),"Double antialiasing accepted.");
+                schedule.entries[0].configuration.values[0] = realValue("Nj",{0});
+                auto engine = createEngine(config,schedule);
+                OwnedState state(shape);
+                const auto before = state.values;
+                auto mutableState = state.mutableView();
+                const auto constraint = engine->restoreForcingAmplitudes(mutableState.coefficients);
+                require(static_cast<bool>(constraint.status) && exactlyEqual(before,state.values),"Explicit spectral closure changed amplitudes.");
+                std::vector<WVComplex64> values(before.size(),{1,2});
+                auto flux = fluxView(values,shape);
+                require(static_cast<bool>(engine->nonlinearFlux(state.view(),flux)),"Empty retained mask failed.");
+                for (const auto value : values) require(value.real == 0 && value.imag == 0,"Filter-only RHS was not zero.");
+            } else if (!diffusivity) {
+                auto engine = createEngine(config,schedule);
+                OwnedState state(shape);
+                std::fill(state.values.begin(),state.values.end(),WVComplex64{});
+                const std::size_t index = config.Nj+1;
+                for (std::size_t family=0;family<3;++family) state.values[family*shape.elementCount()+index] = {1e-5,-2e-5};
+                std::vector<WVComplex64> values(state.values.size());
+                auto flux = fluxView(values,shape);
+                require(static_cast<bool>(engine->nonlinearFlux(state.view(),flux)),"Laplacian RHS failed.");
+                const auto& descriptor=engine->kernel().descriptor();
+                const auto k = std::string(identity) == "WVHorizontalDamping" ? descriptor.fourierModes()[1].Kh : descriptor.verticalModes().verticalWavenumber[1];
+                const double rate=-0.125*k*k;
+                for (std::size_t family=0;family<3;++family) {
+                    const auto offset=family*shape.elementCount()+index;
+                    require(std::hypot(values[offset].real-rate*state.values[offset].real,values[offset].imag-rate*state.values[offset].imag)<1e-23,"Equal viscosity/diffusivity did not give the analytical modal decay.");
+                    require(values[offset].real*state.values[offset].real+values[offset].imag*state.values[offset].imag<0,"Damping injected modal energy.");
+                }
+                require(engine->metrics().workspaceCapacityBytes==0 && engine->metrics().physicalFieldReconstructionCount==0,"Diagonal closures allocated physical workspaces.");
+            }
+        }
+    }
+}
+
 void testValidation() {
     auto schedule = nonlinearSchedule();
     schedule.profileVersion = 99;
@@ -688,6 +759,7 @@ int main() {
         testQuadraticAndPseudo(false);
         testMultipleWholeFluxProducers();
         testRightHandSideContextIdentity();
+        testStableClosurePreflightAndDecay();
         testValidation();
         std::cout << "Portable forcing and RK4 tests passed.\n";
         return 0;

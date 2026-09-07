@@ -8,6 +8,8 @@
 namespace wavevortex {
 namespace kernel_detail { class WVPreparedModeExecutor; }
 
+enum class WVLaplacianDirection : std::uint8_t { horizontal, vertical };
+
 enum class WVDynamicalField : std::uint8_t { u, v, w, eta };
 
 struct WVKernelMetrics {
@@ -77,6 +79,10 @@ public:
     WVKernelStatus transformStateFieldDerivatives(const WVState& state, WVDynamicalField field, WVRealFieldBundleView& derivatives);
     WVKernelStatus transformToSpatialDomainWithFAllDerivatives(const WVComplexConstView& Apm, const WVComplexConstView& A0, WVRealFieldBundleView& fields);
     WVKernelStatus transformToSpatialDomainWithGAllDerivatives(const WVComplexConstView& Apm, const WVComplexConstView& A0, WVRealFieldBundleView& fields);
+    // Add physical velocity/displacement Laplacian forcing in coefficient space.
+    // Reuses the descriptor's field/projection factors and caller-owned flux.
+    WVKernelStatus addLaplacianDamping(const WVState& state, double nu, double kappa,
+        WVLaplacianDirection direction, WVFlux& flux);
     WVKernelStatus nonlinearFlux(const WVState& state, WVFlux& flux);
     WVKernelStatus nonlinearFluxWithAdvectionFields(const WVState& state, WVFlux& flux, WVRealFieldBundleView& advectionFields);
     WVKernelStatus nonlinearFluxUsingAdvectionFields(const WVState& state, WVFlux& flux, const WVRealFieldBundleConstView& advectionFields);

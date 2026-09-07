@@ -215,6 +215,7 @@ if(BUILD_TESTING)
             WV_CHECKPOINT_FIXTURE_DIR="${CMAKE_CURRENT_LIST_DIR}/tests/fixtures"
             WV_RUNTIME_FIXTURE_DIR="${CMAKE_CURRENT_LIST_DIR}/tests/fixtures"
             WV_RUNTIME_RUNNER="$<TARGET_FILE:wave-vortex-run>"
+            WV_TEST_NATIVE_FFTW=$<BOOL:${WV_RUNTIME_ENABLE_NATIVE_FFTW}>
         )
         if(CMAKE_CXX_COMPILER_ID MATCHES "AppleClang|Clang|GNU")
             target_compile_options(${target} PRIVATE -Wall -Wextra -Wpedantic -Werror)
@@ -372,4 +373,19 @@ if(BUILD_TESTING)
         target_compile_options(TestWVStratifiedQGKernel PRIVATE -Wall -Wextra -Wpedantic -Werror)
     endif()
     add_test(NAME stratified-qg-kernel COMMAND TestWVStratifiedQGKernel)
+endif()
+
+if(BUILD_TESTING)
+    add_executable(WVStableForcingDump tests/WVStableForcingDump.cpp ../tools/compiled-kernel/tests/WVAllocationProbe.cpp)
+    target_include_directories(WVStableForcingDump PRIVATE third_party)
+    target_link_libraries(WVStableForcingDump PRIVATE WaveVortex::PortableRuntime WaveVortex::ReferenceFFT)
+    if(WV_RUNTIME_ENABLE_NATIVE_FFTW)
+        target_link_libraries(WVStableForcingDump PRIVATE WaveVortexNativeFFTW)
+        target_compile_definitions(WVStableForcingDump PRIVATE WV_TEST_NATIVE_FFTW=1)
+    else()
+        target_compile_definitions(WVStableForcingDump PRIVATE WV_TEST_NATIVE_FFTW=0)
+    endif()
+    if(CMAKE_CXX_COMPILER_ID MATCHES "AppleClang|Clang|GNU")
+        target_compile_options(WVStableForcingDump PRIVATE -Wall -Wextra -Wpedantic -Werror)
+    endif()
 endif()

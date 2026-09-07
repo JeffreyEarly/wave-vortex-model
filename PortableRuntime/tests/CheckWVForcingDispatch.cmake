@@ -4,6 +4,10 @@ file(GLOB_RECURSE forcing_sources
     "${WV_REPOSITORY_ROOT}/PortableRuntime/src/*.hpp")
 
 set(forcing_class_literals
+    WVAntialiasing
+    WVHorizontalDamping
+    WVVerticalDamping
+    WVVerticalDiffusivity
     WVNonlinearAdvection
     WVAdaptiveDamping
     WVFixedAmplitudeForcing

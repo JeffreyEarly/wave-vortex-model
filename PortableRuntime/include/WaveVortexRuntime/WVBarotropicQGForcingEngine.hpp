@@ -40,6 +40,7 @@ struct WVBarotropicQGForcingEngineMetrics {
 class WVBarotropicQGForcingExecutionContext final {
 public:
   WVKernelStatus nonlinearAdvection();
+  void filterTendency(const std::vector<std::size_t> &indices);
   WVKernelStatus adaptiveDamping(const std::vector<double> &dampingOperator);
   WVKernelStatus linearBottomFriction(double rate);
   WVKernelStatus quadraticBottomFriction(double drag);

@@ -1,15 +1,56 @@
 #include "WaveVortexRuntime/WVForcingContracts.hpp"
 #include "generated/WVForcingCompatibilityRows.hpp"
+#include "WaveVortexRuntime/WVExtensionCatalog.hpp"
+#include "WaveVortexRuntime/WVForcingEngine.hpp"
+#include "WaveVortexRuntime/WVBarotropicQGForcingEngine.hpp"
 
 #include <algorithm>
 #include <iostream>
 #include <stdexcept>
 #include <string>
 
+using namespace wavevortex;
 using namespace wavevortex::runtime;
+
+void testForcingIncompatibilities() {
+  WVExtensionCatalogBuilder builder;
+  auto status = addBuiltInExtensions(builder);
+  if (!status) throw std::runtime_error(status.message);
+  std::shared_ptr<const WVExtensionCatalog> catalog;
+  status = builder.freeze(catalog);
+  if (!status) throw std::runtime_error(status.message);
+  std::size_t rejected = 0;
+  for (const auto& row : test::forcingCompatibilityRows) {
+    if (row.applicable) continue;
+    const auto* registration = catalog->forcings().registration(row.identity,row.version);
+    WVFrozenForcingEntry entry;
+    entry.typeIdentifier=row.identity; entry.contractVersion=row.version;
+    entry.name=registration->defaultName;
+    entry.stage=row.barotropic ? registration->barotropicQGStage : registration->stage;
+    entry.priority=registration->priority;
+    entry.configuration={"wave-vortex-forcing-configuration-v1",1,{}};
+    if (entry.typeIdentifier=="WVAntialiasing")
+      entry.configuration.values.push_back({"Nj",{},std::vector<double>{1}});
+    WVFrozenForcingSchedule schedule; schedule.entries.push_back(entry);
+    if (row.barotropic) {
+      WVTransformBarotropicQGConfiguration c;
+      c.Nx=8; c.Ny=6; c.Lx=17000; c.Ly=11000; c.h=1; c.j=1; c.shouldAntialias=row.antialias;
+      status=WVBarotropicQGForcingEngine::validateSchedule(c,schedule,24,*catalog);
+    } else {
+      WVTransformConstantStratificationConfiguration c;
+      c.Nx=8; c.Ny=6; c.Nz=5; c.Nj=4; c.shouldAntialias=row.antialias;
+      status=WVConstantStratificationForcingEngine::validateSchedule(c,schedule,{4,24},*catalog);
+    }
+    if (status || (status.code!=WVKernelStatusCode::unsupportedOperation && status.code!=WVKernelStatusCode::invalidConfiguration))
+      throw std::runtime_error(std::string("MATLAB incompatibility accepted: ")+row.identity);
+    ++rejected;
+  }
+  if (rejected!=11) throw std::runtime_error("Incomplete baseline rejection evidence.");
+}
 
 int main() {
   try {
+    testForcingIncompatibilities();
     const auto registrations = builtInForcingFactories();
     for (const auto &row : test::forcingCompatibilityRows) {
       const auto found = std::find_if(registrations.begin(), registrations.end(),

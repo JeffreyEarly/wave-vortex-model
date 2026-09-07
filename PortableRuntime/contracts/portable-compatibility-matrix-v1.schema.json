@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Portable compatibility matrix v1 \u2014 forcing foundation",
-  "description": "The initial forcing slice records pending acceptance only. It cannot advertise complete support. Further feature slices are assembled by issue 306.",
+  "title": "Portable compatibility matrix v1 \u2014 forcing slice",
+  "description": "MATLAB-authoritative baseline forcing compatibility. Pending rows cannot satisfy the completeness gate. Issue 306 assembles further feature slices.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -25,7 +25,10 @@
       "const": "forcing"
     },
     "completion": {
-      "const": "incomplete"
+      "enum": [
+        "incomplete",
+        "complete"
+      ]
     },
     "inventory": {
       "type": "object",
@@ -230,7 +233,11 @@
           }
         },
         "acceptance": {
-          "const": "pending"
+          "enum": [
+            "pending",
+            "supported",
+            "incompatible"
+          ]
         },
         "evidence": {
           "type": "array",

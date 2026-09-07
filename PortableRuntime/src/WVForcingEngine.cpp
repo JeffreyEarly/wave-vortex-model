@@ -235,6 +235,32 @@ protected:
     std::size_t ordinal_ = 0;
 };
 
+class LaplacianDampingForcing final : public ResolvedForcing {
+public:
+    LaplacianDampingForcing(const WVFrozenForcingEntry& entry, double nu, double kappa, WVLaplacianDirection direction)
+        : ResolvedForcing(entry), nu_(nu), kappa_(kappa), direction_(direction) {}
+    WVKernelStatus addRightHandSide(WVForcingExecutionContext& context) const override {
+        return context.laplacianDamping(nu_,kappa_,direction_);
+    }
+    std::size_t persistentBytes() const noexcept override { return sizeof(*this)+metadataDynamicBytes(); }
+private:
+    double nu_,kappa_;
+    WVLaplacianDirection direction_;
+};
+
+class ExplicitAntialiasingForcing final : public ResolvedForcing {
+public:
+    ExplicitAntialiasingForcing(const WVFrozenForcingEntry& entry, std::vector<std::size_t> indices)
+        : ResolvedForcing(entry), indices_(std::move(indices)) {}
+    WVKernelStatus addRightHandSide(WVForcingExecutionContext& context) const override {
+        context.filterTendency(indices_);
+        return WVKernelStatus::ok();
+    }
+    std::size_t persistentBytes() const noexcept override { return sizeof(*this)+metadataDynamicBytes()+vectorBytes(indices_); }
+private:
+    std::vector<std::size_t> indices_;
+};
+
 class NonlinearAdvectionForcing final : public ResolvedForcing {
 public:
     using ResolvedForcing::ResolvedForcing;
@@ -349,21 +375,20 @@ private:
     WVFixedAmplitudeConfiguration values_;
 };
 
-std::vector<double> adaptiveDampingOperator(const WVTransformConstantStratificationDescriptor& descriptor, WVKernelStatus& status) {
+std::vector<double> adaptiveDampingOperator(const WVTransformConstantStratificationDescriptor& descriptor, const WVForcingPreparation& preparation, WVKernelStatus& status) {
     const auto& configuration = descriptor.configuration();
     const auto& modes = descriptor.verticalModes();
     const double f2 = modes.coriolisFrequency*modes.coriolisFrequency;
     if (!(f2 > 0.0)) { status = {WVKernelStatusCode::unsupportedOperation,"Adaptive damping requires nonzero Coriolis frequency."}; return {}; }
-    double maximumComponent = 0.0;
-    for (const auto& horizontal : descriptor.fourierModes()) maximumComponent = std::max(maximumComponent,std::max(std::abs(horizontal.k),std::abs(horizontal.l)));
+    const double maximumComponent = preparation.maximumHorizontalComponent;
     if (!(maximumComponent > 0.0)) { status = {WVKernelStatusCode::invalidConfiguration,"Adaptive damping requires resolved horizontal wavenumbers."}; return {}; }
     const double effectiveResolution = pi/maximumComponent;
     const double dklMinimum = std::min(2.0*pi/configuration.Lx,2.0*pi/configuration.Ly);
     const double klCutoff = dklMinimum*std::pow(maximumComponent/dklMinimum,0.75);
-    const double jMaximum = static_cast<double>(configuration.Nj-1);
+    const double jMaximum = static_cast<double>(preparation.maximumVerticalMode);
     const double jCutoff = configuration.Nj > 2 ? std::pow(jMaximum,0.75) : 0.0;
     const double prefactorXY = effectiveResolution/(pi*pi);
-    const double referenceLr2 = configuration.g*modes.h0.back()/f2;
+    const double referenceLr2 = configuration.g*modes.h0[preparation.maximumVerticalMode]/f2;
     const double prefactorZ = (pi*pi*referenceLr2/(effectiveResolution*effectiveResolution))*prefactorXY;
     std::vector<double> damping(descriptor.spectralShape().elementCount());
     for (std::size_t iMode = 0; iMode < descriptor.Nkl(); ++iMode) {
@@ -372,7 +397,7 @@ std::vector<double> adaptiveDampingOperator(const WVTransformConstantStratificat
         for (std::size_t iJ = 0; iJ < configuration.Nj; ++iJ) {
             const auto index = iJ+configuration.Nj*iMode;
             const double Qj = configuration.Nj > 2 ? vanishingFilter(modes.j[iJ],jCutoff,jMaximum) : 1.0;
-            const double Lr2Inverse = iJ == 0 ? 0.0 : f2/(configuration.g*modes.h0[iJ]);
+            const double Lr2Inverse = f2/(configuration.g*modes.h0[iJ]);
             damping[index] = -prefactorXY*Qkl*horizontal.Kh*horizontal.Kh-prefactorZ*Qj*Lr2Inverse;
         }
     }
@@ -386,9 +411,88 @@ bool emptyConfiguration(const WVFrozenForcingEntry& entry) { return entry.config
 
 namespace detail {
 
+WVKernelStatus preflightLaplacianDamping(const WVFrozenForcingEntry& entry, bool) {
+    for (const auto* name : {"nu","kappa"}) {
+        const auto* value = realValues(entry.configuration,name);
+        if (value == nullptr || value->size() != 1 || !std::isfinite(value->front()) || value->front() < 0.0)
+            return {WVKernelStatusCode::invalidConfiguration,"Damping nu and kappa must be finite nonnegative scalars."};
+    }
+    return WVKernelStatus::ok();
+}
+WVKernelStatus preflightVerticalDiffusivity(const WVFrozenForcingEntry& entry, bool) {
+    const auto* value = realValues(entry.configuration,"kappa_z");
+    const auto* flag = booleanValues(entry.configuration,"shouldForceMeanDensityAnomaly");
+    if (value == nullptr || value->size() != 1 || !std::isfinite(value->front()) || value->front() < 0.0 || flag == nullptr || flag->size() != 1 || flag->front() > 1)
+        return {WVKernelStatusCode::invalidConfiguration,"Vertical diffusivity requires scalar nonnegative kappa_z and a scalar logical mean-density flag."};
+    return WVKernelStatus::ok();
+}
+WVKernelStatus createHorizontalDamping(const WVFrozenForcingEntry& entry, const WVTransformConstantStratificationDescriptor&, const WVForcingPreparation &,
+    std::unique_ptr<WVForcing>& forcing) {
+    const auto status = preflightLaplacianDamping(entry,false); if (!status) return status;
+    forcing = std::make_unique<LaplacianDampingForcing>(entry,realValues(entry.configuration,"nu")->front(),realValues(entry.configuration,"kappa")->front(),WVLaplacianDirection::horizontal);
+    return WVKernelStatus::ok();
+}
+WVKernelStatus createVerticalDamping(const WVFrozenForcingEntry& entry, const WVTransformConstantStratificationDescriptor&, const WVForcingPreparation &,
+    std::unique_ptr<WVForcing>& forcing) {
+    const auto status = preflightLaplacianDamping(entry,false); if (!status) return status;
+    forcing = std::make_unique<LaplacianDampingForcing>(entry,realValues(entry.configuration,"nu")->front(),realValues(entry.configuration,"kappa")->front(),WVLaplacianDirection::vertical);
+    return WVKernelStatus::ok();
+}
+WVKernelStatus createVerticalDiffusivity(const WVFrozenForcingEntry& entry, const WVTransformConstantStratificationDescriptor&, const WVForcingPreparation &,
+    std::unique_ptr<WVForcing>& forcing) {
+    const auto status = preflightVerticalDiffusivity(entry,false); if (!status) return status;
+    forcing = std::make_unique<LaplacianDampingForcing>(entry,0.0,realValues(entry.configuration,"kappa_z")->front(),WVLaplacianDirection::vertical);
+    return WVKernelStatus::ok();
+}
+
+WVKernelStatus preflightExplicitAntialiasing(const WVFrozenForcingEntry& entry, bool shouldAntialias) {
+    if (shouldAntialias) return {WVKernelStatusCode::invalidConfiguration,"Explicit antialiasing requires shouldAntialias=false."};
+    const auto* values = realValues(entry.configuration,"Nj");
+    if (values == nullptr || values->size() != 1 || !std::isfinite(values->front()) || values->front() < 0.0 || std::floor(values->front()) != values->front())
+        return {WVKernelStatusCode::invalidConfiguration,"Explicit antialiasing Nj must be one finite nonnegative integer."};
+    return WVKernelStatus::ok();
+}
+
+WVKernelStatus prepareExplicitAntialiasing(const WVFrozenForcingEntry& entry,
+    const WVTransformConstantStratificationDescriptor& descriptor, WVForcingPreparation& preparation) {
+    // MATLAB's transform resolution accessor recognizes this registered name.
+    if (entry.name != "antialias filter") return WVKernelStatus::ok();
+    const auto& c = descriptor.configuration();
+    const double retained = realValues(entry.configuration,"Nj")->front();
+    const double cutoff = (2.0/3.0)*2.0*pi*static_cast<double>(c.Nx/2)/c.Lx;
+    preparation.maximumHorizontalComponent = 0.0;
+    preparation.maximumVerticalMode = 0;
+    for (const auto& mode : descriptor.fourierModes()) {
+        if (mode.Kh > cutoff) continue;
+        for (std::size_t j = 0; j < c.Nj; ++j) {
+            if (static_cast<double>(j) > retained-1.0) continue;
+            preparation.maximumHorizontalComponent = std::max({preparation.maximumHorizontalComponent,std::abs(mode.k),std::abs(mode.l)});
+            preparation.maximumVerticalMode = std::max(preparation.maximumVerticalMode,j);
+        }
+    }
+    return WVKernelStatus::ok();
+}
+
+WVKernelStatus createExplicitAntialiasing(const WVFrozenForcingEntry& entry,
+    const WVTransformConstantStratificationDescriptor& descriptor, const WVForcingPreparation &,
+    std::unique_ptr<WVForcing>& forcing) {
+    const auto& c = descriptor.configuration();
+    auto status = preflightExplicitAntialiasing(entry,c.shouldAntialias);
+    if (!status) return status;
+    const double Nj = realValues(entry.configuration,"Nj")->front();
+    const double maximumK = 2.0*pi*static_cast<double>(c.Nx/2)/c.Lx;
+    std::vector<std::size_t> indices;
+    for (std::size_t kl = 0; kl < descriptor.Nkl(); ++kl)
+        for (std::size_t j = 0; j < c.Nj; ++j)
+            if (descriptor.fourierModes()[kl].Kh > 2.0*maximumK/3.0 || descriptor.verticalModes().j[j] > Nj-1.0)
+                indices.push_back(j+c.Nj*kl);
+    forcing = std::make_unique<ExplicitAntialiasingForcing>(entry,std::move(indices));
+    return WVKernelStatus::ok();
+}
+
 WVKernelStatus createNonlinearAdvectionForcing(
     const WVFrozenForcingEntry& entry,
-    const WVTransformConstantStratificationDescriptor&, bool,
+    const WVTransformConstantStratificationDescriptor&, const WVForcingPreparation &,
     std::unique_ptr<WVForcing>& forcing) {
     if (!emptyConfiguration(entry)) return {WVKernelStatusCode::invalidConfiguration,"Nonlinear advection does not accept configuration values."};
     forcing = std::make_unique<NonlinearAdvectionForcing>(entry);
@@ -397,11 +501,11 @@ WVKernelStatus createNonlinearAdvectionForcing(
 
 WVKernelStatus createAdaptiveDampingForcing(
     const WVFrozenForcingEntry& entry,
-    const WVTransformConstantStratificationDescriptor& descriptor, bool,
+    const WVTransformConstantStratificationDescriptor& descriptor, const WVForcingPreparation &preparation,
     std::unique_ptr<WVForcing>& forcing) {
     if (!emptyConfiguration(entry)) return {WVKernelStatusCode::invalidConfiguration,"Adaptive damping does not accept configuration values."};
     WVKernelStatus status;
-    auto damping = adaptiveDampingOperator(descriptor,status);
+    auto damping = adaptiveDampingOperator(descriptor,preparation,status);
     if (!status) return status;
     forcing = std::make_unique<AdaptiveDampingForcing>(entry,std::move(damping));
     return WVKernelStatus::ok();
@@ -409,7 +513,7 @@ WVKernelStatus createAdaptiveDampingForcing(
 
 WVKernelStatus createQuadraticBottomFriction(
     const WVFrozenForcingEntry& entry,
-    const WVTransformConstantStratificationDescriptor& descriptor, bool,
+    const WVTransformConstantStratificationDescriptor& descriptor, const WVForcingPreparation &,
     std::unique_ptr<WVForcing>& forcing) {
     const auto* values = realValues(entry.configuration,"Cd");
     if (values == nullptr || values->size() != 1 || !std::isfinite(values->front()) || values->front() < 0.0) return {WVKernelStatusCode::invalidConfiguration,"Quadratic drag coefficient must be one finite nonnegative scalar."};
@@ -419,7 +523,7 @@ WVKernelStatus createQuadraticBottomFriction(
 
 WVKernelStatus createLinearBottomFriction(
     const WVFrozenForcingEntry& entry,
-    const WVTransformConstantStratificationDescriptor& descriptor, bool,
+    const WVTransformConstantStratificationDescriptor& descriptor, const WVForcingPreparation &,
     std::unique_ptr<WVForcing>& forcing) {
     const auto* values = realValues(entry.configuration,"r");
     if (values == nullptr || values->size() != 1 || !std::isfinite(values->front()) || values->front() < 0.0) return {WVKernelStatusCode::invalidConfiguration,"Linear drag rate must be one finite nonnegative scalar."};
@@ -431,7 +535,7 @@ WVKernelStatus createLinearBottomFriction(
 
 WVKernelStatus createFixedAmplitudeForcing(
     const WVFrozenForcingEntry& entry,
-    const WVTransformConstantStratificationDescriptor& descriptor, bool,
+    const WVTransformConstantStratificationDescriptor& descriptor, const WVForcingPreparation &,
     std::unique_ptr<WVForcing>& forcing) {
     WVFixedAmplitudeConfiguration configuration;
     const auto decode = [&](const char* indexName, const char* realName, const char* imagName, auto& indices, auto& values) -> bool {
@@ -459,7 +563,7 @@ WVKernelStatus createFixedAmplitudeForcing(
 
 WVKernelStatus createBetaPlaneForcing(
     const WVFrozenForcingEntry& entry,
-    const WVTransformConstantStratificationDescriptor& descriptor, bool,
+    const WVTransformConstantStratificationDescriptor& descriptor, const WVForcingPreparation &,
     std::unique_ptr<WVForcing>& forcing) {
     if (!emptyConfiguration(entry)) return {WVKernelStatusCode::invalidConfiguration,"Beta-plane advection does not accept configuration values."};
     const auto& configuration = descriptor.configuration();
@@ -478,7 +582,7 @@ WVKernelStatus createBetaPlaneForcing(
 WVKernelStatus createPseudoTopographicForcing(
     const WVFrozenForcingEntry& entry,
     const WVTransformConstantStratificationDescriptor& descriptor,
-    bool hasAdaptiveDamping, std::unique_ptr<WVForcing>& forcing) {
+    const WVForcingPreparation &preparation, std::unique_ptr<WVForcing>& forcing) {
     WVPseudoTopographicOperators operators;
     auto& record = operators.configuration;
     const auto& configuration = descriptor.configuration();
@@ -504,7 +608,7 @@ WVKernelStatus createPseudoTopographicForcing(
     static const std::set<std::string> validSymbols = {"","M2","S2","N2","K1","O1"};
     if (!std::isfinite(record.frequency) || record.frequency <= 0.0 || !std::isfinite(record.rampDuration) || record.rampDuration < 0.0 || !std::isfinite(record.startTime) || std::isnan(record.maximumForcedHorizontalWavenumber) || record.maximumForcedHorizontalWavenumber < 0.0 || std::isnan(record.maximumForcedVerticalMode) || record.maximumForcedVerticalMode < 0.0 || validSymbols.count(record.darwinSymbol) == 0) return {WVKernelStatusCode::invalidConfiguration,"Pseudo-topographic forcing values are invalid."};
     WVKernelStatus dampingStatus = WVKernelStatus::ok();
-    const auto damping = hasAdaptiveDamping && record.shouldAvoidAdaptiveDamping ? adaptiveDampingOperator(descriptor,dampingStatus) : std::vector<double>{};
+    const auto damping = preparation.hasAdaptiveDamping && record.shouldAvoidAdaptiveDamping ? adaptiveDampingOperator(descriptor,preparation,dampingStatus) : std::vector<double>{};
     if (!dampingStatus) return dampingStatus;
     const auto count = descriptor.spectralShape().elementCount();
     operators.responsePlusX.assign(count,{}); operators.responsePlusY.assign(count,{}); operators.responseMinusX.assign(count,{}); operators.responseMinusY.assign(count,{});
@@ -553,6 +657,10 @@ WVKernelStatus WVConstantStratificationForcingEngine::validateSchedule(
         if (entry.name.empty() || !names.insert(entry.name).second) return {WVKernelStatusCode::invalidConfiguration,"Forcing names must be nonempty and unique."};
         const auto recordStatus = catalog.forcings().validateConfiguration(entry);
         if (!recordStatus) return recordStatus;
+        if (registration->modelPreflight) {
+            const auto status = registration->modelPreflight(entry,configuration.shouldAntialias);
+            if (!status) return status;
+        }
     }
     return WVKernelStatus::ok();
 }
@@ -600,17 +708,28 @@ WVKernelStatus WVConstantStratificationForcingEngine::initialize(const WVFrozenF
     const auto& descriptor = kernel_->descriptor();
     const auto count = descriptor.spectralShape().elementCount();
     const auto& configuration = descriptor.configuration();
-    const bool hasAdaptiveDamping = std::any_of(
+    preparation_.maximumVerticalMode = configuration.Nj-1;
+    for (const auto& mode : descriptor.fourierModes())
+        preparation_.maximumHorizontalComponent = std::max({preparation_.maximumHorizontalComponent,std::abs(mode.k),std::abs(mode.l)});
+    preparation_.hasAdaptiveDamping = std::any_of(
         entries.begin(), entries.end(), [this](const auto* entry) {
             const auto* registration = catalog_->forcings().registration(entry->typeIdentifier, entry->contractVersion);
             return registration != nullptr && registration->providesAdaptiveDamping;
         });
 
+    for (const auto* entry : entries) {
+        const auto* registration = catalog_->forcings().registration(entry->typeIdentifier,entry->contractVersion);
+        if (registration->prepareConstantResolution) {
+            const auto status = registration->prepareConstantResolution(*entry,descriptor,preparation_);
+            if (!status) return status;
+        }
+    }
+
     for (const auto* entryPointer : entries) {
         const auto& entry = *entryPointer;
         if (entry.name.empty() || !names.insert(entry.name).second) return {WVKernelStatusCode::invalidConfiguration,"Forcing names must be nonempty and unique."};
         std::unique_ptr<WVForcing> resolved;
-        auto status = catalog_->forcings().create(entry,descriptor,hasAdaptiveDamping,resolved);
+        auto status = catalog_->forcings().create(entry,descriptor,preparation_,resolved);
         if (!status) return status;
         if (!resolved || resolved->stage() != entry.stage) return {WVKernelStatusCode::invalidConfiguration,"A forcing factory returned an incompatible implementation."};
         if (entry.stage == WVForcingStage::spatial) ++metrics_.resolvedSpatialCount;
@@ -796,6 +915,20 @@ WVKernelStatus WVConstantStratificationForcingEngine::addNonlinearFlux(
     metrics_.temporaryAccumulationElementReads += 2*temporaryFlux_.size();
     metrics_.temporaryAccumulationElementWrites += temporaryFlux_.size();
     return WVKernelStatus::ok();
+}
+
+void WVForcingExecutionContext::filterTendency(const std::vector<std::size_t>& indices) {
+    if (!*outputInitialized_) engine_->initializeOutputWithZeros(*flux_,*outputInitialized_);
+    for (const auto index : indices) {
+        flux_->Fp.data[index] = {};
+        flux_->Fm.data[index] = {};
+        flux_->F0.data[index] = {};
+    }
+}
+
+WVKernelStatus WVForcingExecutionContext::laplacianDamping(double nu, double kappa, WVLaplacianDirection direction) {
+    if (!*outputInitialized_) engine_->initializeOutputWithZeros(*flux_,*outputInitialized_);
+    return engine_->kernel().addLaplacianDamping(*state_,nu,kappa,direction,*flux_);
 }
 
 WVKernelStatus WVForcingExecutionContext::nonlinearAdvection() {

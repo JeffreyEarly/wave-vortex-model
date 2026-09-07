@@ -252,6 +252,19 @@ private:
   double beta_ = 0.0;
 };
 
+class QGExplicitAntialiasing final : public ResolvedBarotropicQGForcing {
+public:
+  QGExplicitAntialiasing(const WVFrozenForcingEntry &entry, std::vector<std::size_t> indices)
+      : ResolvedBarotropicQGForcing(entry), indices_(std::move(indices)) {}
+  WVKernelStatus addRightHandSide(WVBarotropicQGForcingExecutionContext &context) const override {
+    context.filterTendency(indices_);
+    return WVKernelStatus::ok();
+  }
+  std::size_t persistentBytes() const noexcept override { return sizeof(*this)+metadataDynamicBytes()+vectorBytes(indices_); }
+private:
+  std::vector<std::size_t> indices_;
+};
+
 class QGFixedAmplitude final : public ResolvedBarotropicQGForcing {
 public:
   QGFixedAmplitude(WVFrozenForcingEntry entry,
@@ -370,6 +383,25 @@ std::vector<double> adaptiveDampingOperator(
 
 namespace detail {
 
+WVKernelStatus preflightBarotropicQGExplicitAntialiasing(const WVFrozenForcingEntry &entry, std::size_t) {
+  return preflightExplicitAntialiasing(entry,false);
+}
+WVKernelStatus createBarotropicQGExplicitAntialiasing(const WVFrozenForcingEntry &entry,
+    const WVTransformBarotropicQGDescriptor &descriptor, bool,
+    std::unique_ptr<WVBarotropicQGForcing> &forcing) {
+  const auto &c = descriptor.configuration();
+  auto status = preflightExplicitAntialiasing(entry,c.shouldAntialias);
+  if (!status) return status;
+  const double Nj = realValues(entry.configuration,"Nj")->front();
+  const double maximumK = 2.0*pi*static_cast<double>(c.Nx/2)/c.Lx;
+  std::vector<std::size_t> indices;
+  for (std::size_t kl = 0; kl < descriptor.Nkl(); ++kl)
+    if (descriptor.fourierModes()[kl].Kh > 2.0*maximumK/3.0 || c.j > Nj-1.0)
+      indices.push_back(kl);
+  forcing = std::make_unique<QGExplicitAntialiasing>(entry,std::move(indices));
+  return WVKernelStatus::ok();
+}
+
 WVKernelStatus preflightBarotropicQGEmptyForcing(
     const WVFrozenForcingEntry &entry, std::size_t) {
   return emptyConfiguration(entry)
@@ -474,6 +506,14 @@ WVKernelStatus createBarotropicQGBetaPlanePVAdvection(
 
 } // namespace detail
 
+void WVBarotropicQGForcingExecutionContext::filterTendency(const std::vector<std::size_t> &indices) {
+  if (!outputInitialized_) {
+    engine_->initializeOutputWithZeros(F0_);
+    outputInitialized_ = true;
+  }
+  for (const auto index : indices) F0_.data[index] = {};
+}
+
 WVKernelStatus WVBarotropicQGForcingExecutionContext::nonlinearAdvection() {
   const auto status = engine_->kernel().addPotentialVorticityAdvection(
       A0_, F0_, outputInitialized_, workspace_);
@@ -560,6 +600,10 @@ WVKernelStatus WVBarotropicQGForcingEngine::validateSchedule(
     auto status = catalog.forcings().validateConfiguration(entry);
     if (!status)
       return status;
+    if (registration->modelPreflight) {
+      status = registration->modelPreflight(entry,configuration.shouldAntialias);
+      if (!status) return status;
+    }
     if (!registration->barotropicQGPreflight)
       return {WVKernelStatusCode::invalidConfiguration,
               "A Barotropic QG forcing registration lacks allocation-light preflight."};

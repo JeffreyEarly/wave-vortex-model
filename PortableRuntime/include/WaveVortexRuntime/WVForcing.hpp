@@ -2,6 +2,7 @@
 
 #include "WaveVortexRuntime/WVForcingSchedule.hpp"
 #include "WaveVortexRuntime/WVIntegrationContracts.hpp"
+#include "WaveVortexKernel/WVTransformConstantStratificationKernel.hpp"
 
 #include <cstddef>
 #include <cstdint>
@@ -13,6 +14,13 @@ namespace wavevortex::runtime {
 
 class WVConstantStratificationForcingEngine;
 class WVConstantStratificationRightHandSideContext;
+
+// Shared, immutable resolution facts resolved before forcing construction.
+struct WVForcingPreparation {
+  bool hasAdaptiveDamping = false;
+  double maximumHorizontalComponent = 0.0;
+  std::size_t maximumVerticalMode = 0;
+};
 
 struct WVFixedAmplitudeConfiguration {
   std::vector<std::size_t> ApIndices;
@@ -49,6 +57,8 @@ struct WVPseudoTopographicOperators {
 class WVForcingExecutionContext final {
 public:
   WVKernelStatus nonlinearAdvection();
+  WVKernelStatus laplacianDamping(double nu, double kappa, WVLaplacianDirection direction);
+  void filterTendency(const std::vector<std::size_t> &indices);
   WVKernelStatus physicalFields(WVRealFieldBundleConstView &fields);
   WVRealFieldBundleView clearedSpatialTendency();
   WVKernelStatus projectSpatialTendency(

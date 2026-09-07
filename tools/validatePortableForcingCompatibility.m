@@ -1,8 +1,8 @@
 function validatePortableForcingCompatibility(matrix,options)
-% Validate the forcing catalog foundation and its exact evidence references.
+% Validate the forcing slice, exact evidence and baseline completeness.
 %
-% requireComplete is a readiness gate, not a structural check. The foundation
-% deliberately contains pending acceptance rows and cannot pass this gate.
+% CI executes the referenced catalog-driven parity and rejection tests.
+% Structural validation alone is not a numerical qualification run.
 arguments (Input)
     matrix (1,1) struct
     options.repositoryRoot (1,1) string = string(fileparts(fileparts(mfilename("fullpath"))))
@@ -10,7 +10,7 @@ arguments (Input)
 end
 require(isequal(sort(string(fieldnames(matrix))),sort(["schema";"schemaVersion";"slice";"completion";"inventory";"configurations";"evidence";"rows"])),"Unexpected matrix fields.");
 require(string(matrix.schema) == "portable-compatibility-matrix-v1" && matrix.schemaVersion == 1 && string(matrix.slice) == "forcing","Unknown matrix identity/version/slice.");
-require(string(matrix.completion) == "incomplete","The foundation cannot claim qualification completeness.");
+require(ismember(string(matrix.completion),["incomplete","complete"]),"Unknown completion status.");
 names = string(matrix.inventory.stable(:));
 require(~isempty(names) && numel(unique(names)) == numel(names) && isequal(names,sort(names)),"Stable identities must be unique and sorted.");
 configs = string({matrix.configurations.id});
@@ -53,7 +53,7 @@ for row = reshape(matrix.rows,1,[])
     require(ismember(string(row.forcing),names) && ismember(string(row.configuration),configs),"Unknown forcing or configuration.");
     require(string(row.id) == string(row.configuration)+"/"+string(row.forcing),"Contradictory row identity.");
     require(row.contractVersion == 1,"Stale portable pair version.");
-    require(string(row.acceptance) == "pending","This evidence-mapping foundation cannot advertise qualified support or rejection.");
+    require(ismember(string(row.acceptance),["pending","supported","incompatible"]),"Unknown acceptance status.");
     applicable = string(row.matlab.applicability) == "applicable";
     require(ismember(string(row.matlab.applicability),["applicable","incompatible"]),"Unknown MATLAB applicability.");
     active = string(row.matlab.activeTypes);
@@ -75,9 +75,17 @@ for row = reshape(matrix.rows,1,[])
     if row.implementation.factoryAvailable && applicable
         require(~isempty(references),"Implemented applicable rows require mapped evidence.");
     end
+    if string(row.acceptance) == "supported"
+        require(applicable && row.implementation.factoryAvailable,"Support requires MATLAB applicability and an executable factory.");
+        require(all(ismember(["baseline-pairs","baseline-compositions"],references)),"Support requires catalog-driven exact-pair parity, append and composition/restart evidence.");
+    elseif string(row.acceptance) == "incompatible"
+        require(~applicable && all(ismember(["baseline-rejections","matlab-attachment"],references)),"Intentional rejection requires MATLAB attachment and C++ preflight evidence.");
+    end
 end
-if options.requireComplete
-    error("WaveVortexModel:CompatibilityIncomplete","Forcing acceptance is pending; the foundation is not a support qualification.");
+complete = ~any(string({matrix.rows.acceptance}) == "pending");
+require((string(matrix.completion) == "complete") == complete,"Completion contradicts the row acceptance states.");
+if options.requireComplete && ~complete
+    error("WaveVortexModel:CompatibilityIncomplete","Forcing acceptance remains pending.");
 end
 end
 
