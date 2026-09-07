@@ -1,5 +1,5 @@
 function operators = physicalMetricOperators(self)
-% Return quadrature reconstruction and positive physical quadratic metrics.
+% Return quadrature reconstruction and physical quadratic and endpoint-variance metrics.
 %
 % These value arrays depend only on stored, immutable scientific modes. They
 % are built lazily, shared by diagnostics and density diffusion, and rebuilt
@@ -7,7 +7,8 @@ function operators = physicalMetricOperators(self)
 % combinations and every MDA mode are represented.
 %
 % For each nonzero horizontal wavenumber, `pages` contains kinetic, interior
-% potential, and surface potential energy matrices. The common APV enstrophy
+% potential, and surface potential energy matrices, plus surface/bottom
+% anomaly second-moment matrices. Inactive endpoint matrices are zero. The common APV enstrophy
 % matrix is the exact continuous Gram matrix of the depth-normalized F modes,
 % `D*I`. The sampled quadrature Gram is only an approximation to this diagonal
 % physical metric and is reserved for transform construction and resolution
@@ -63,6 +64,13 @@ for p = 1:length(pages)
     interiorPotential = eta'*(weights.*N2.*eta);
     surfacePotential = (f^2/g)*(phiSurface'*phiSurface);
     pages{p} = struct(kineticEnergy=kinetic,interiorPotentialEnergy=interiorPotential,surfacePotentialEnergy=surfacePotential);
+    endpointNames = ["surfaceAnomalyVariance","bottomAnomalyVariance"];
+    for b = 1:2
+        row = find(self.activeEndpoint==b);
+        pairing = zeros(size(kinetic));
+        if ~isempty(row), pairing = endpoint(row,:)'*endpoint(row,:); end
+        pages{p}.(endpointNames(b)) = pairing;
+    end
 end
 MG = P*self.mdaG;
 MGz = P*self.mdaDisplacementDerivative();
@@ -72,6 +80,15 @@ MQ = -f*MGz;
 mdaReconstruction = struct(eta=MG,buoyancy=MB,buoyancyZ=MBz,q=MQ,endpoint=self.mdaG([end 1],:));
 mda = struct(reconstruction=mdaReconstruction,interiorPotentialEnergy=MG'*(weights.*N2.*MG), ...
     potentialEnstrophy=MQ'*(weights.*MQ));
+endpointNames = ["surfaceAnomalyVariance","bottomAnomalyVariance"];
+for b = 1:2
+    pairing = zeros(self.mdaModeCount);
+    if any(self.activeEndpoint==b)
+        trace = mdaReconstruction.endpoint(b,:);
+        pairing = trace'*trace;
+    end
+    mda.(endpointNames(b)) = pairing;
+end
 operators = struct(pages={pages},reconstruction={reconstruction},apvPotentialEnstrophy=D*eye(self.apvModeCount), ...
     mda=mda,z=z,weights=weights,N2=N2,quadratureCount=count);
 self.physicalMetricOperators_ = operators;

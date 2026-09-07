@@ -279,7 +279,7 @@ wvt = WVTransformFreeSurfaceQG([100e3 100e3 4000],[32 32 33],N2Function=N2,latit
     + [`summarizeFlowComponents`](/classes/transforms/wvtransformfreesurfaceqg/summarizeflowcomponents.html) Print a table of registered primary and diagnostic components.
 + Analyze energy
   + Energy and enstrophy budgets
-    + [`quadraticDiagnostics`](/classes/transforms/wvtransformfreesurfaceqg/quadraticdiagnostics.html) Evaluate positive physical energy, full potential enstrophy, and their rates.
+    + [`quadraticDiagnostics`](/classes/transforms/wvtransformfreesurfaceqg/quadraticdiagnostics.html) Evaluate physical and generalized invariants and their directional rates.
   + Energy summaries
     + [`summarizeEnergyContent`](/classes/transforms/wvtransformfreesurfaceqg/summarizeenergycontent.html) displays a summary of the energy content of the fluid
     + [`summarizeModeEnergy`](/classes/transforms/wvtransformfreesurfaceqg/summarizemodeenergy.html) List the most energetic modes
@@ -376,7 +376,7 @@ These items document internal implementation details and are not part of the pri
   + [`maxFg`](/classes/transforms/wvtransformfreesurfaceqg/maxfg.html)
   + [`maxFw`](/classes/transforms/wvtransformfreesurfaceqg/maxfw.html)
   + [`muTolerance`](/classes/transforms/wvtransformfreesurfaceqg/mutolerance.html) Relative singularity tolerance used for APV inversion.
-  + [`physicalMetricOperators`](/classes/transforms/wvtransformfreesurfaceqg/physicalmetricoperators.html) Return quadrature reconstruction and positive physical quadratic metrics.
+  + [`physicalMetricOperators`](/classes/transforms/wvtransformfreesurfaceqg/physicalmetricoperators.html) Return quadrature reconstruction and physical quadratic and endpoint-variance metrics.
   + [`projectQuasigeostrophicSpatialTendency`](/classes/transforms/wvtransformfreesurfaceqg/projectquasigeostrophicspatialtendency.html) Project physical QG tendencies into canonical coefficient families.
   + [`quadraticAliasingError`](/classes/transforms/wvtransformfreesurfaceqg/quadraticaliasingerror.html) Coupled quadratic-aliasing error at the selected APV count.
   + [`quadraticAliasingLimitingChannel`](/classes/transforms/wvtransformfreesurfaceqg/quadraticaliasinglimitingchannel.html) Product channel limiting the selected APV prefix.

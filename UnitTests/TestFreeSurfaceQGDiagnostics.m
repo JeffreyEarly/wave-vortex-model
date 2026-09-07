@@ -110,11 +110,62 @@ classdef TestFreeSurfaceQGDiagnostics < matlab.unittest.TestCase
             d = w.quadraticDiagnostics(state=state,tendency=tendency);
             dp = w.quadraticDiagnostics(state=plus);
             dm = w.quadraticDiagnostics(state=minus);
-            for name = ["kineticEnergy" "interiorPotentialEnergy" "surfacePotentialEnergy" "totalEnergy" "potentialEnstrophy"]
+            for name = ["kineticEnergy" "interiorPotentialEnergy" "surfacePotentialEnergy" "totalEnergy" "potentialEnstrophy" "surfaceAnomalyVariance" "bottomAnomalyVariance" "generalizedEnergy"]
                 testCase.verifyEqual(d.(name+"Tendency"),(dp.(name)-dm.(name))/(2*h),RelTol=1e-7)
             end
             testCase.verifyEqual(w.Amda,zeros(size(w.Amda)))
             testCase.verifyEqual(w.Ag_q,complex(zeros(size(w.Ag_q))))
+        end
+
+        function zeroWeightsRetainActiveEndpointVariances(testCase)
+            for parameters = [0 0;0 Inf;Inf 0].'
+                w = WVTransformFreeSurfaceQG([100e3 100e3 1000],[8 8 33],N2Function=@(z)1e-4*ones(size(z)),g0=parameters(1),gd=parameters(2));
+                w.Ag_0(:,1) = 1e-11;
+                [d,spectrum,meanPart] = w.quadraticDiagnostics();
+                testCase.verifyEqual(d.generalizedEnergy,d.totalEnergy)
+                names = ["surfaceAnomalyVariance","bottomAnomalyVariance"];
+                for b = 1:2
+                    if isfinite(parameters(b))
+                        testCase.verifyGreaterThan(d.(names(b)),0)
+                    else
+                        testCase.verifyEqual(d.(names(b)),0)
+                    end
+                    testCase.verifyEqual(sum(spectrum.(names(b)))+meanPart.(names(b)),d.(names(b)))
+                end
+            end
+        end
+
+        function spectralAccountingAndSignedCrossTerms(testCase)
+            w = WVTransformFreeSurfaceQG([100e3 100e3 1000],[8 8 33],N2Function=@(z)1e-4*ones(size(z)),g0=-.2,gd=.03);
+            w.Ag_q(1:3,1) = [1;2i;3]*1e-9;
+            w.Ag_0(:,1) = [1;2]*1e-11;
+            w.Amda(1:3) = [.1;-.02;.03];
+            state = struct(Ag_q=w.Ag_q,Ag_0=w.Ag_0,Amda=w.Amda);
+            tendency = state;
+            twice = state;
+            for name = ["Ag_q","Ag_0","Amda"], twice.(name) = 2*state.(name); end
+            [d,spectrum,meanPart] = w.quadraticDiagnostics(tendency=[tendency twice]);
+            for name = string(fieldnames(spectrum)).'
+                testCase.verifyEqual(d.(name),sum(spectrum.(name),2)+meanPart.(name),RelTol=1e-12,AbsTol=1e-25)
+            end
+            for name = ["totalEnergy","potentialEnstrophy","surfaceAnomalyVariance","bottomAnomalyVariance","generalizedEnergy"]
+                testCase.verifyEqual(d.(name+"Tendency"),[2;4]*d.(name),RelTol=1e-12,AbsTol=1e-25)
+            end
+            testCase.verifyEqual(w.Ag_q,state.Ag_q)
+            testCase.verifyEqual(w.Ag_0,state.Ag_0)
+            testCase.verifyEqual(w.Amda,state.Amda)
+            % An endpoint-normalized coordinate pair need not diagonalize H.
+            w.Ag_q(:) = 0; w.Amda(:) = 0;
+            pair = w.quadraticDiagnostics();
+            w.Ag_0(2,1) = 0; first = w.quadraticDiagnostics();
+            w.Ag_0(:,1) = [0;2]*1e-11; second = w.quadraticDiagnostics();
+            testCase.verifyGreaterThan(abs(pair.generalizedEnergy-first.generalizedEnergy-second.generalizedEnergy),1e-5*pair.totalEnergy)
+            % Negative generalized energy is valid; physical energy stays positive.
+            w.Ag_0(:) = 0; w.Amda(1) = .1;
+            d = w.quadraticDiagnostics();
+            testCase.verifyLessThan(d.generalizedEnergy,0)
+            testCase.verifyGreaterThan(d.totalEnergy,0)
+            verifyIndependentInventories(testCase,w,Inf);
         end
 
         function dampingContributionsFollowConfigurationAndRebuild(testCase)
@@ -172,6 +223,19 @@ for count = [129 257]
     enstrophy = weights.'*mean(fields{4}.^2,2)/2;
     d = w.quadraticDiagnostics();
     testCase.verifyEqual([d.totalEnergy d.potentialEnstrophy],[energy enstrophy],RelTol=1e-7,AbsTol=1e-24)
+    eta = w.eta;
+    traces = {eta(:,:,end)-(w.f/w.g)*w.psi(:,:,end),eta(:,:,1)};
+    B = zeros(1,2);
+    H = energy;
+    parameters = [w.g0 w.gd];
+    for endpoint = 1:2
+        if isfinite(parameters(endpoint))
+            B(endpoint) = mean(traces{endpoint}.^2,'all')/2;
+            H = H+parameters(endpoint)*B(endpoint);
+        end
+    end
+    testCase.verifyEqual([d.surfaceAnomalyVariance d.bottomAnomalyVariance],B,RelTol=1e-7,AbsTol=1e-24)
+    testCase.verifyEqual(d.generalizedEnergy,H,AbsTol=1e-7*(energy+sum(abs(parameters(isfinite(parameters))).*B(isfinite(parameters)))))
     if ~isempty(previous)
         testCase.verifyEqual([energy enstrophy],previous,RelTol=1e-10,AbsTol=1e-24)
     end
