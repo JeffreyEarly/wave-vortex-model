@@ -154,7 +154,8 @@ public:
       const WVTransformConstantStratificationConfiguration
           *planningConfiguration = nullptr,
       bool isDynamicsLinear = false,
-      const WVTransformStateDescription *planningStateDescription = nullptr);
+      const WVTransformStateDescription *planningStateDescription = nullptr,
+      const WVStratifiedModalGeometry *stratifiedGeometry = nullptr);
 
   // Construct the existing NetCDF sink according to the compiled graph-wide
   // policy. The sample source is preflighted against the compiled plan before

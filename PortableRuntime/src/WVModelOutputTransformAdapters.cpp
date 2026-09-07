@@ -1,6 +1,7 @@
 #include "WVModelOutputTransformAdapters.hpp"
 
 #include "WVNetCDF.hpp"
+#include "WaveVortexRuntime/WVStratifiedModalRecord.hpp"
 #include "WaveVortexRuntime/WVForcingContracts.hpp"
 
 #include <netcdf.h>
@@ -20,6 +21,18 @@ namespace {
 WVCheckpointStatus failed(WVCheckpointStatusCode code, std::string message,
                           std::string location) {
   return {code, std::move(message), std::move(location)};
+}
+
+bool sameStratifiedSource(const WVStratifiedModalRecord* a, const WVStratifiedModalRecord* b) noexcept {
+  if (!a || !b) return false;
+  if (a == b) return true;
+  const auto& x = a->geometry(); const auto& y = b->geometry();
+  return x.transformClass == y.transformClass && x.Nx == y.Nx && x.Ny == y.Ny && x.Nz == y.Nz && x.Nj == y.Nj && x.Nkl == y.Nkl &&
+    x.Lx == y.Lx && x.Ly == y.Ly && x.Lz == y.Lz && x.g == y.g && x.rho0 == y.rho0 && x.latitude == y.latitude &&
+    x.rotationRate == y.rotationRate && x.planetaryRadius == y.planetaryRadius && x.shouldAntialias == y.shouldAntialias &&
+    x.x == y.x && x.y == y.y && x.z == y.z && x.j == y.j && x.k == y.k && x.l == y.l && x.N2 == y.N2 &&
+    x.rho_nm0 == y.rho_nm0 && x.dLnN2 == y.dLnN2 && x.P0 == y.P0 && x.Q0 == y.Q0 && x.h_0 == y.h_0 && x.z_int == y.z_int &&
+    a->PF0inv() == b->PF0inv() && a->QG0inv() == b->QG0inv() && a->PF0() == b->PF0() && a->QG0() == b->QG0();
 }
 
 WVCheckpointStatus defineLogical(int group, const std::string &name,
@@ -324,12 +337,18 @@ WVCheckpointStatus defineModelOutputRoot(
     std::vector<const WVFrozenForcingEntry *> &forcingEntries) {
   const bool isBarotropicQG =
       checkpoint.transformKind == WVPersistedTransformKind::barotropicQG;
-  const auto &legacy = checkpoint.configuration;
+  const bool isStratifiedQG = checkpoint.transformKind == WVPersistedTransformKind::stratifiedQG;
+  auto legacy = checkpoint.configuration;
+  if (isStratifiedQG) {
+    if (!checkpoint.stratifiedModalSource) return failed(WVCheckpointStatusCode::schemaMismatch,"SQG scientific source is absent.","/");
+    const auto& g = checkpoint.stratifiedModalSource->geometry();
+    legacy.Nx=g.Nx; legacy.Ny=g.Ny; legacy.Nz=g.Nz; legacy.Nj=g.Nj;
+  }
   const auto &qg = checkpoint.barotropicQGConfiguration;
   const std::size_t Nkl = isBarotropicQG
                               ? checkpoint.transformState.coefficientFamilies
                                     .front().values.size()
-                              : checkpoint.state.coefficients.shape.columns;
+                              : isStratifiedQG ? checkpoint.stratifiedModalSource->geometry().Nkl : checkpoint.state.coefficients.shape.columns;
   const std::array<std::pair<const char *, std::size_t>, 5> definitions =
       isBarotropicQG
           ? std::array<std::pair<const char *, std::size_t>, 5>{
@@ -354,7 +373,7 @@ WVCheckpointStatus defineModelOutputRoot(
     if (!result)
       return result;
   }
-  const std::vector<const char *> scalars =
+  std::vector<const char *> scalars =
       isBarotropicQG
           ? std::vector<const char *>{"Lx", "Ly", "g", "h", "j",
                                       "latitude", "planetaryRadius",
@@ -362,6 +381,7 @@ WVCheckpointStatus defineModelOutputRoot(
           : std::vector<const char *>{"Lx", "Ly", "Lz", "N0", "g",
                                       "latitude", "planetaryRadius", "rho0",
                                       "rotationRate", "t0"};
+  if (isStratifiedQG) scalars.erase(std::remove(scalars.begin(),scalars.end(),std::string("N0")),scalars.end());
   for (const char *name : scalars) {
     int variable = -1;
     const auto result = defineDoubleVariable(root, name, {}, variable, "/");
@@ -369,7 +389,7 @@ WVCheckpointStatus defineModelOutputRoot(
       return result;
   }
   const std::vector<const char *> logicals =
-      isBarotropicQG ? std::vector<const char *>{"shouldAntialias"}
+      (isBarotropicQG || isStratifiedQG) ? std::vector<const char *>{"shouldAntialias"}
                      : std::vector<const char *>{"isHydrostatic",
                                                  "shouldAntialias"};
   for (const char *name : logicals) {
@@ -378,8 +398,23 @@ WVCheckpointStatus defineModelOutputRoot(
     if (!result)
       return result;
   }
+  if (isStratifiedQG) {
+    const auto& payload = checkpoint.stratifiedModalSource->N2FunctionPayload();
+    if (!payload.empty()) {
+      int dimension=-1, variable=-1;
+      auto result=checkedNetCDF(nc_def_dim(root,"N2Function",payload.size(),&dimension),"Function dimension definition","/N2Function"); if (!result) return result;
+      result=checkedNetCDF(nc_def_var(root,"N2Function",NC_UBYTE,1,&dimension,&variable),"Function definition","/N2Function"); if (!result) return result;
+      result=putByteAttribute(root,variable,"isFunctionHandleType",1,"/N2Function"); if (!result) return result;
+    }
+    for (const auto& entry : std::vector<std::pair<const char*,std::vector<int>>>{
+      {"k",{dimensions[1]}},{"l",{dimensions[1]}},{"N2",{dimensions[4]}},{"rho_nm0",{dimensions[4]}},{"dLnN2",{dimensions[4]}},{"z_int",{dimensions[4]}},
+      {"P0",{dimensions[0]}},{"Q0",{dimensions[0]}},{"h_0",{dimensions[0]}},
+      {"PF0inv",{dimensions[0],dimensions[4]}},{"QG0inv",{dimensions[0],dimensions[4]}},{"PF0",{dimensions[4],dimensions[0]}},{"QG0",{dimensions[4],dimensions[0]}}}) {
+      int variable=-1; auto result=defineDoubleVariable(root,entry.first,entry.second,variable,"/"); if (!result) return result;
+    }
+  }
   const std::string transformClass =
-      isBarotropicQG ? "WVTransformBarotropicQG"
+      isStratifiedQG ? "WVTransformStratifiedQG" : isBarotropicQG ? "WVTransformBarotropicQG"
                      : "WVTransformConstantStratification";
   auto result = putTextAttribute(root, NC_GLOBAL, "AnnotatedClass",
                                  transformClass, "/");
@@ -467,6 +502,29 @@ WVCheckpointStatus writeModelOutputRoot(
       checkpoint.transformKind == WVPersistedTransformKind::barotropicQG;
   const auto &configuration = checkpoint.configuration;
   const auto &qg = checkpoint.barotropicQGConfiguration;
+  if (checkpoint.transformKind == WVPersistedTransformKind::stratifiedQG) {
+    const auto& record = *checkpoint.stratifiedModalSource; const auto& g=record.geometry();
+    if (!record.N2FunctionPayload().empty()) {
+      int variable=-1; auto result=variableId(root,"N2Function",variable,"/"); if (!result) return result;
+      result=checkedNetCDF(nc_put_var_uchar(root,variable,record.N2FunctionPayload().data()),"Function payload write","/N2Function"); if (!result) return result;
+    }
+    std::vector<double> kl(g.Nkl); for (std::size_t i=0;i<kl.size();++i) kl[i]=static_cast<double>(i);
+    for (const auto& item : std::vector<std::pair<const char*,const std::vector<double>*>>{
+      {"x",&g.x},{"y",&g.y},{"z",&g.z},{"j",&g.j},{"kl",&kl},{"k",&g.k},{"l",&g.l},{"N2",&g.N2},{"rho_nm0",&g.rho_nm0},
+      {"dLnN2",&g.dLnN2},{"z_int",&g.z_int},{"P0",&g.P0},{"Q0",&g.Q0},{"h_0",&g.h_0},
+      {"PF0inv",&record.PF0inv()},{"QG0inv",&record.QG0inv()},{"PF0",&record.PF0()},{"QG0",&record.QG0()}}) {
+      auto result=writeDoubles(root,item.first,*item.second,"/"); if (!result) return result;
+    }
+    for (const auto& item : std::vector<std::pair<const char*,double>>{
+      {"Lx",g.Lx},{"Ly",g.Ly},{"Lz",g.Lz},{"g",g.g},{"rho0",g.rho0},{"latitude",g.latitude},{"rotationRate",g.rotationRate},{"planetaryRadius",g.planetaryRadius},{"t0",checkpoint.state.t0}}) {
+      auto result=writeDouble(root,item.first,item.second,"/"); if (!result) return result;
+    }
+    auto result=writeLogical(root,"shouldAntialias",g.shouldAntialias,"/"); if (!result) return result;
+    for (std::size_t i=0;i<forcingEntries.size();++i) {
+      result=writeForcingEntry(forcingGroups[i],*forcingEntries[i],catalog,forcingEntries.size()==1 ? "/forcing" : "/forcing/forcing-"+std::to_string(i+1)); if (!result) return result;
+    }
+    return WVCheckpointStatus::ok();
+  }
   if (isBarotropicQG) {
     const std::size_t Nkl =
         checkpoint.transformState.coefficientFamilies.front().values.size();
@@ -754,6 +812,90 @@ private:
   WVTransformBarotropicQGConfiguration configuration_;
 };
 
+class StratifiedQGOutputTransformAdapter final
+    : public WVModelOutputTransformAdapter {
+public:
+  explicit StratifiedQGOutputTransformAdapter(
+      std::shared_ptr<const WVStratifiedModalRecord> source)
+      : source_(std::move(source)) {}
+
+  WVCheckpointStatus validate(
+      const WVCheckpoint &checkpoint,
+      const WVIntegrationStateLayout &layout) const override {
+    if (checkpoint.transformKind != WVPersistedTransformKind::stratifiedQG ||
+        checkpoint.stateDescription.transformIdentifier !=
+            layout.transformIdentifier())
+      return failed(WVCheckpointStatusCode::shapeMismatch,
+                    "Output checkpoint and state-layout transforms differ.",
+                    "/");
+    if (!sameStratifiedSource(source_.get(),checkpoint.stratifiedModalSource.get()))
+      return failed(WVCheckpointStatusCode::schemaMismatch,"SQG scientific source differs.","/");
+    const auto& g = source_->geometry();
+    if (layout.coefficientFamilyCount() != 1 ||
+        layout.coefficientFamilies()[0].identifier != "A0" ||
+        layout.coefficientFamilies()[0].spectralDimensions !=
+            std::vector<std::size_t>{g.Nj,g.Nkl} ||
+        checkpoint.transformState.coefficientFamilies.size() != 1 ||
+        checkpoint.transformState.coefficientFamilies[0].values.size() !=
+            g.Nj*g.Nkl)
+      return failed(WVCheckpointStatusCode::shapeMismatch,
+                    "Compact Stratified QG output state does not match its "
+                    "transform.",
+                    "/");
+    return WVCheckpointStatus::ok();
+  }
+
+  const WVComplex64 *coefficientData(
+      const WVCheckpoint &checkpoint, const WVIntegrationStateLayout &layout,
+      std::size_t family) const noexcept override {
+    return family < layout.coefficientFamilyCount() &&
+                   family < checkpoint.transformState.coefficientFamilies.size()
+               ? checkpoint.transformState.coefficientFamilies[family]
+                     .values.data()
+               : nullptr;
+  }
+
+  void bindConstructionState(
+      const WVCheckpoint &checkpoint,
+      WVIntegrationState &state) const noexcept override {
+    state.waveVortex.t = checkpoint.transformState.t;
+    state.waveVortex.t0 = checkpoint.transformState.t0;
+  }
+
+  WVCheckpointStatus defineRoot(
+      int root, const WVCheckpoint &checkpoint,
+      const WVForcingCatalog &catalog, bool isDynamicsLinear,
+      std::array<int, 5> &dimensions, std::vector<int> &forcingGroups,
+      std::vector<const WVFrozenForcingEntry *> &forcingEntries) const override {
+    return defineModelOutputRoot(root, checkpoint, catalog, isDynamicsLinear,
+                                 dimensions, forcingGroups, forcingEntries);
+  }
+
+  WVCheckpointStatus writeRoot(
+      int root, const WVCheckpoint &checkpoint,
+      const WVForcingCatalog &catalog,
+      const std::vector<int> &forcingGroups,
+      const std::vector<const WVFrozenForcingEntry *> &forcingEntries)
+      const override {
+    return writeModelOutputRoot(root, checkpoint, catalog, forcingGroups,
+                                forcingEntries);
+  }
+
+  bool sameConfiguration(
+      const WVCheckpointInspection &inspection) const noexcept override {
+    return inspection.transformKind ==
+               WVPersistedTransformKind::stratifiedQG &&
+           sameStratifiedSource(source_.get(),inspection.stratifiedModalSource.get());
+  }
+
+  std::size_t persistentBytes() const noexcept override {
+    return sizeof(*this);
+  }
+
+private:
+  std::shared_ptr<const WVStratifiedModalRecord> source_;
+};
+
 } // namespace
 
 WVCheckpointStatus createModelOutputTransformAdapter(
@@ -761,7 +903,9 @@ WVCheckpointStatus createModelOutputTransformAdapter(
     std::unique_ptr<WVModelOutputTransformAdapter> &adapter) {
   adapter.reset();
   try {
-    if (checkpoint.transformKind == WVPersistedTransformKind::barotropicQG)
+    if (checkpoint.transformKind == WVPersistedTransformKind::stratifiedQG)
+      adapter = std::make_unique<StratifiedQGOutputTransformAdapter>(checkpoint.stratifiedModalSource);
+    else if (checkpoint.transformKind == WVPersistedTransformKind::barotropicQG)
       adapter = std::make_unique<BarotropicQGOutputTransformAdapter>(
           checkpoint.barotropicQGConfiguration);
     else
@@ -781,6 +925,7 @@ bool sameModelOutputTransformConfiguration(
     const WVCheckpointInspection &right) noexcept {
   if (left.transformKind != right.transformKind)
     return false;
+  if (left.transformKind == WVPersistedTransformKind::stratifiedQG) return sameStratifiedSource(left.stratifiedModalSource.get(),right.stratifiedModalSource.get());
   return left.transformKind == WVPersistedTransformKind::barotropicQG
              ? sameTransformConfiguration(left.barotropicQGConfiguration,
                                           right.barotropicQGConfiguration)
@@ -791,14 +936,15 @@ bool sameModelOutputTransformConfiguration(
 bool modelOutputGroupCarriesCompleteCoefficientRestart(
     const WVTransformStateDescription &description,
     bool hasDeclaredCoefficientFamilies,
-    bool hasCoefficientObserver) noexcept {
+    bool hasCoefficientObserver, bool isDynamicsLinear) noexcept {
   if (!hasDeclaredCoefficientFamilies)
     return false;
+  if (description.transformIdentifier == "WVTransformStratifiedQG" && isDynamicsLinear) return true;
   // In the compact QG contract A0 is also a valid Eulerian field name, so its
   // variable alone cannot identify restart ownership. The legacy constant-
   // stratification contract historically treats a complete Ap/Am/A0 field
   // triple as restart state, including linear passive-field output.
-  return description.transformIdentifier != "WVTransformBarotropicQG" ||
+  return (description.transformIdentifier != "WVTransformBarotropicQG" && description.transformIdentifier != "WVTransformStratifiedQG") ||
          hasCoefficientObserver;
 }
 

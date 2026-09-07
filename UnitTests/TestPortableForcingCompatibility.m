@@ -57,7 +57,7 @@ classdef TestPortableForcingCompatibility < matlab.unittest.TestCase
         end
         function implementedPairsAndScientificRejectionsStayDistinct(testCase)
             rows = testCase.matrix.rows;
-            for family = ["constant-hydrostatic","constant-nonhydrostatic","barotropic"]
+            for family = ["constant-hydrostatic","constant-nonhydrostatic","barotropic","stratified-qg"]
                 antialias = testCase.row(family+"-aa0/WVAntialiasing");
                 testCase.verifyEqual(string(antialias.matlab.applicability),"applicable");
                 testCase.verifyEqual(antialias.matlab.priority,127);
@@ -71,7 +71,7 @@ classdef TestPortableForcingCompatibility < matlab.unittest.TestCase
             wave = testCase.row("constant-hydrostatic-aa0/WVVerticalDiffusivity");
             testCase.verifyEqual(string(wave.matlab.applicability),"applicable");
             testCase.verifyEqual(wave.implementation.issue,0);
-            testCase.verifyEqual(numel(rows),72);
+            testCase.verifyEqual(numel(rows),96);
             testCase.verifyEqual(string(testCase.matrix.inventory.excluded.identity),"WVThermalDamping");
             testCase.verifyFalse(any(string({rows.forcing}) == "WVThermalDamping"));
         end

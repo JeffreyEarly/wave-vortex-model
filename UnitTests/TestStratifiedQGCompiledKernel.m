@@ -162,6 +162,12 @@ classdef TestStratifiedQGCompiledKernel < matlab.unittest.TestCase
                 testCase.near(report.spatialEnergy,wvt.totalEnergySpatiallyIntegrated,"spatial energy")
                 testCase.near(report.spatialEnstrophy,wvt.totalEnstrophySpatiallyIntegrated(),"spatial enstrophy")
                 testCase.near(report.uvMax,wvt.uvMax,"maximum speed")
+                closures = {WVVerticalDiffusivity(wvt,kappa_z=.002),WVBottomFrictionLinear(wvt,r=1e-5),WVBottomFrictionQuadratic(wvt,Cd=.003)};
+                closureNames = ["verticalDiffusivity","linearBottomFriction","quadraticBottomFriction"];
+                for iClosure = 1:numel(closures)
+                    spatialFlux = closures{iClosure}.addPotentialVorticitySpatialForcing(wvt,zeros(wvt.spatialMatrixSize));
+                    testCase.near(complexOutput(report.(closureNames(iClosure))),wvt.transformQGPVToWaveVortex(spatialFlux),closureNames(iClosure))
+                end
             end
         end
 

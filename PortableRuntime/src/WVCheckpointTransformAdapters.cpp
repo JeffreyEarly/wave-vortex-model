@@ -1,5 +1,6 @@
 #include "WaveVortexRuntime/WVCheckpointReader.hpp"
 #include "WaveVortexRuntime/WVExtensionCatalog.hpp"
+#include "WaveVortexRuntime/WVStratifiedModalRecord.hpp"
 
 #include "WVForcingScheduleDecoder.hpp"
 #include "WVLegacyObservationNetCDFAdapter.hpp"
@@ -253,9 +254,9 @@ WVCheckpointStatus findStateGroup(const std::vector<GroupRecord>& groups,
     return WVCheckpointStatus::ok();
 }
 
-WVCheckpointStatus findBarotropicQGStateGroup(
+WVCheckpointStatus findQGStateGroup(
     const std::vector<GroupRecord>& groups,
-    const WVExtensionCatalog& catalog, StateGroupRecord& stateGroup) {
+    const WVExtensionCatalog& catalog, StateGroupRecord& stateGroup, bool allowLinearA0 = false) {
     std::vector<StateGroupRecord> candidates;
     for (const auto& group : groups) {
         int realId = -1;
@@ -278,15 +279,15 @@ WVCheckpointStatus findBarotropicQGStateGroup(
         result = groupCarriesCoefficientRestart(
             group, catalog, carriesCoefficientRestart);
         if (!result) return result;
-        if (!carriesCoefficientRestart) continue;
+        if (!carriesCoefficientRestart && !allowLinearA0) continue;
         if (plain && (real || imag))
             return status(WVCheckpointStatusCode::ambiguousState,
-                          "Barotropic QG A0 cannot have both plain and "
+                          "QG A0 cannot have both plain and "
                           "complex-pair encodings.",
                           group.path + "/A0");
         if (real != imag)
             return status(WVCheckpointStatusCode::missingComplexPartner,
-                          "Barotropic QG A0 is missing a complex partner.",
+                          "QG A0 is missing a complex partner.",
                           group.path + "/A0");
         for (const char* forbidden : {"Ap", "Ap_real", "Ap_imag", "Am",
                                       "Am_real", "Am_imag"}) {
@@ -297,7 +298,7 @@ WVCheckpointStatus findBarotropicQGStateGroup(
             if (!result) return result;
             if (present)
                 return status(WVCheckpointStatusCode::schemaMismatch,
-                              "Barotropic QG state must not contain dummy Ap "
+                              "QG state must not contain dummy Ap "
                               "or Am variables.",
                               group.path + "/" + forbidden);
         }
@@ -308,16 +309,16 @@ WVCheckpointStatus findBarotropicQGStateGroup(
         if (!result) return result;
         if (!hasTime)
             return status(WVCheckpointStatusCode::missingVariable,
-                          "The Barotropic QG state group has no time variable.",
+                          "The QG state group has no time variable.",
                           group.path + "/t");
         candidates.push_back({group.id, group.path});
     }
     if (candidates.empty())
         return status(WVCheckpointStatusCode::missingVariable,
-                      "No compact Barotropic QG A0 state was found.", "/");
+                      "No compact QG A0 state was found.", "/");
     if (candidates.size() != 1)
         return status(WVCheckpointStatusCode::ambiguousState,
-                      "A Barotropic QG checkpoint must contain one compact "
+                      "A QG checkpoint must contain one compact "
                       "A0 state group.",
                       "/");
     stateGroup = candidates.front();
@@ -703,7 +704,7 @@ WVState WVCheckpointState::view() const noexcept {
 namespace {
 
 WVCheckpointStatus inspectOpenFile(
-    int rootId,
+    int rootId, const std::string& path,
     WVCheckpointStateSelection selection,
     const WVExtensionCatalog& catalog,
     WVCheckpointInspection& inspection,
@@ -729,7 +730,8 @@ WVCheckpointStatus inspectOpenFile(
                             "WVTransformConstantStratification";
     const bool isBarotropicQG = candidate.metadata.transformClass ==
                                 "WVTransformBarotropicQG";
-    if (!isConstant && !isBarotropicQG)
+    const bool isStratifiedQG = candidate.metadata.transformClass == "WVTransformStratifiedQG";
+    if (!isConstant && !isBarotropicQG && !isStratifiedQG)
         return status(WVCheckpointStatusCode::unsupportedTransform,
                       "The portable runtime profile does not support transform '" +
                           candidate.metadata.transformClass + "'.", "/");
@@ -737,10 +739,13 @@ WVCheckpointStatus inspectOpenFile(
                                   ? WVPersistedTransformKind::barotropicQG
                                   : WVPersistedTransformKind::constantStratification;
 
-    result = isConstant
-                 ? readConfiguration(rootId, candidate.configuration)
-                 : readBarotropicQGConfiguration(
-                       rootId, candidate.barotropicQGConfiguration);
+    if (isStratifiedQG) {
+        candidate.transformKind=WVPersistedTransformKind::stratifiedQG;
+        result=WVStratifiedModalReader::read(path,candidate.stratifiedModalSource);
+    } else {
+        result = isConstant ? readConfiguration(rootId,candidate.configuration)
+                            : readBarotropicQGConfiguration(rootId,candidate.barotropicQGConfiguration);
+    }
     if (!result) return result;
     result = detail::readDoubleScalar(rootId, "t0", candidate.t0, "/");
     if (!result) return result;
@@ -749,9 +754,20 @@ WVCheckpointStatus inspectOpenFile(
     std::vector<GroupRecord> groups;
     result = inspectGroupTree(rootId, "/", groups);
     if (!result) return result;
+    bool linearSQG = false;
+    if (isStratifiedQG) {
+        nc_type type; std::size_t length=0;
+        const int code=nc_inq_att(rootId,NC_GLOBAL,"WVModelIsDynamicsLinear",&type,&length);
+        if (code != NC_ENOTATT) {
+            if (code != NC_NOERR || type != NC_UBYTE || length != 1)
+                return status(WVCheckpointStatusCode::invalidValue,"Linear dynamics metadata must be a scalar logical attribute.","/");
+            unsigned char value=0; const int readCode=nc_get_att_uchar(rootId,NC_GLOBAL,"WVModelIsDynamicsLinear",&value);
+            if (readCode != NC_NOERR || value>1) return status(WVCheckpointStatusCode::invalidValue,"Invalid linear dynamics metadata.","/");
+            linearSQG=value!=0;
+        }
+    }
     result = isConstant ? findStateGroup(groups, stateGroup)
-                        : findBarotropicQGStateGroup(groups, catalog,
-                                                    stateGroup);
+                        : findQGStateGroup(groups, catalog, stateGroup, linearSQG);
     if (!result) return result;
     candidate.metadata.stateGroupPath = stateGroup.path;
     result = inspectTime(stateGroup.id, stateGroup.path, selection, candidate.metadata.selectedStateIndex, candidate.metadata.stateCount, candidate.t);
@@ -765,7 +781,7 @@ WVCheckpointStatus inspectOpenFile(
                       "Checkpoint spectral dimensions must be nonempty.",
                       stateGroup.path);
     std::size_t coefficientCount = Nkl;
-    if (isConstant) {
+    if (isConstant || isStratifiedQG) {
         std::size_t Nj = 0;
         result = detail::dimensionLength(stateGroup.id, "j", Nj,
                                          stateGroup.path);
@@ -775,6 +791,10 @@ WVCheckpointStatus inspectOpenFile(
                           "Checkpoint j dimension must be nonempty.",
                           stateGroup.path);
         candidate.configuration.Nj = Nj;
+        if (isStratifiedQG) {
+            const auto& g=candidate.stratifiedModalSource->geometry();
+            if (Nj!=g.Nj || Nkl!=g.Nkl) return status(WVCheckpointStatusCode::shapeMismatch,"SQG coefficients disagree with the authoritative modal record.",stateGroup.path);
+        }
         candidate.coefficientShape = {Nj, Nkl};
         candidate.stateDescription = {
             candidate.metadata.transformClass,
@@ -784,8 +804,13 @@ WVCheckpointStatus inspectOpenFile(
              {"Am", {Nj, Nkl}, WVToleranceKind::coefficientEnergyScaled},
              {"A0", {Nj, Nkl}, WVToleranceKind::coefficientEnergyScaled}},
             true};
+        if (isStratifiedQG) {
+            const auto& g=candidate.stratifiedModalSource->geometry();
+            candidate.stateDescription={candidate.metadata.transformClass,{g.Nx,g.Ny,g.Nz},{{"A0",{Nj,Nkl},WVToleranceKind::coefficientEnergyScaled}},true};
+        }
         coefficientCount = Nj * Nkl;
         for (const char* family : {"Ap", "Am", "A0"}) {
+            if (isStratifiedQG && std::string(family)!="A0") continue;
             result = readComplexCoefficient(
                 stateGroup.id, stateGroup.path, family,
                 candidate.metadata.selectedStateIndex,
@@ -809,13 +834,11 @@ WVCheckpointStatus inspectOpenFile(
     std::vector<detail::WVForcingGroupSource> forcingSources;
     result = readForcingHeaders(groups, candidate.metadata.forcingHeaders, forcingSources);
     if (!result) return result;
-    result = isConstant
-                 ? detail::decodeForcingSchedule(
-                       forcingSources, candidate.configuration,
-                       coefficientCount, catalog, candidate.forcingSchedule)
-                 : detail::decodeForcingSchedule(
-                       forcingSources, candidate.barotropicQGConfiguration,
-                       coefficientCount, catalog, candidate.forcingSchedule);
+    result = isStratifiedQG
+                 ? detail::decodeForcingSchedule(forcingSources,candidate.stratifiedModalSource->geometry(),coefficientCount,catalog,candidate.forcingSchedule)
+                 : isConstant
+                     ? detail::decodeForcingSchedule(forcingSources,candidate.configuration,coefficientCount,catalog,candidate.forcingSchedule)
+                     : detail::decodeForcingSchedule(forcingSources,candidate.barotropicQGConfiguration,coefficientCount,catalog,candidate.forcingSchedule);
     if (!result) return result;
     if (isConstant) {
         WVTransformConstantStratificationDescriptor descriptor;
@@ -833,7 +856,7 @@ WVCheckpointStatus inspectOpenFile(
             return status(WVCheckpointStatusCode::shapeMismatch,
                           "Stored coefficients do not match the rebuilt descriptor.",
                           stateGroup.path);
-    } else {
+    } else if (isBarotropicQG) {
         WVTransformBarotropicQGDescriptor descriptor;
         const auto descriptorStatus =
             WVTransformBarotropicQGDescriptor::create(
@@ -855,7 +878,7 @@ WVCheckpointStatus WVCheckpointReader::inspect(const std::string& path, const WV
     auto result = WVNetCDFFile::openReadOnly(path, file);
     if (!result) return result;
     StateGroupRecord stateGroup;
-    return inspectOpenFile(file.id(), selection, catalog, inspection, stateGroup);
+    return inspectOpenFile(file.id(), path, selection, catalog, inspection, stateGroup);
 }
 
 WVCheckpointStatus WVCheckpointReader::read(const std::string& path, const WVExtensionCatalog& catalog, WVCheckpoint& checkpoint, WVCheckpointStateSelection selection) {
@@ -865,7 +888,7 @@ WVCheckpointStatus WVCheckpointReader::read(const std::string& path, const WVExt
     const int rootId = file.id();
     WVCheckpointInspection inspection;
     StateGroupRecord stateGroup;
-    result = inspectOpenFile(rootId, selection, catalog, inspection, stateGroup);
+    result = inspectOpenFile(rootId, path, selection, catalog, inspection, stateGroup);
     if (!result) return result;
     WVCheckpoint candidate;
     candidate.transformKind = inspection.transformKind;
@@ -873,6 +896,7 @@ WVCheckpointStatus WVCheckpointReader::read(const std::string& path, const WVExt
     candidate.barotropicQGConfiguration =
         inspection.barotropicQGConfiguration;
     candidate.stateDescription = inspection.stateDescription;
+    candidate.stratifiedModalSource = inspection.stratifiedModalSource;
     candidate.metadata = inspection.metadata;
     candidate.forcingSchedule = inspection.forcingSchedule;
     candidate.state.t = inspection.t;
@@ -899,12 +923,16 @@ WVCheckpointStatus WVCheckpointReader::read(const std::string& path, const WVExt
             {"A0", inspection.stateDescription.coefficientFamilies[0]
                        .spectralDimensions,
              {}});
+        if (inspection.transformKind==WVPersistedTransformKind::stratifiedQG) {
+            result=readComplexCoefficient(stateGroup.id,stateGroup.path,"A0",candidate.metadata.selectedStateIndex,candidate.metadata.stateCount,inspection.coefficientShape.rows,inspection.coefficientShape.columns,&candidate.transformState.coefficientFamilies[0].values);
+        } else {
         result = readCompactComplexCoefficient(
             stateGroup.id, stateGroup.path, "A0",
             candidate.metadata.selectedStateIndex,
             candidate.metadata.stateCount,
             inspection.coefficientShape.columns,
             &candidate.transformState.coefficientFamilies[0].values);
+        }
         if (!result) return result;
     }
 
@@ -914,7 +942,7 @@ WVCheckpointStatus WVCheckpointReader::read(const std::string& path, const WVExt
 
 std::size_t checkpointCoefficientStorageBytes(
     const WVCheckpoint& checkpoint) noexcept {
-    if (checkpoint.transformKind == WVPersistedTransformKind::barotropicQG) {
+    if (checkpoint.transformKind != WVPersistedTransformKind::constantStratification) {
         std::size_t bytes = 0;
         for (const auto& family : checkpoint.transformState.coefficientFamilies)
             bytes += family.values.capacity() * sizeof(WVComplex64);

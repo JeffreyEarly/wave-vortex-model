@@ -1,5 +1,6 @@
 #include "WaveVortexRuntime/WVExtensionCatalog.hpp"
 #include "WaveVortexRuntime/WVBarotropicQGForcingEngine.hpp"
+#include "WaveVortexRuntime/WVStratifiedQGForcingEngine.hpp"
 #include "WaveVortexRuntime/WVObserverOutputProvider.hpp"
 #include "WVLegacyObserverCompatibility.hpp"
 #include "WVObserverAdapter.hpp"
@@ -372,6 +373,44 @@ WVKernelStatus WVForcingCatalog::createBarotropicQG(
   }
 }
 
+WVKernelStatus WVForcingCatalog::createStratifiedQG(
+    const WVFrozenForcingEntry &entry,
+    const WVStratifiedModalGeometry &descriptor,
+    bool hasAdaptiveDamping,
+    std::unique_ptr<WVStratifiedQGForcing> &forcing) const {
+  forcing.reset();
+  const auto *value = registration(entry.typeIdentifier,
+                                   entry.contractVersion);
+  if (value == nullptr || !value->isSupported ||
+      !value->stratifiedQGFactory)
+    return {WVKernelStatusCode::unsupportedOperation,
+            "Unsupported Stratified QG forcing identity."};
+  try {
+    std::unique_ptr<WVStratifiedQGForcing> candidate;
+    const auto status = value->stratifiedQGFactory(
+        entry, descriptor, hasAdaptiveDamping, candidate);
+    if (!status)
+      return status;
+    if (!candidate)
+      return invalid("A Stratified QG forcing factory returned no implementation.");
+    if (candidate->typeIdentifier() != entry.typeIdentifier ||
+        candidate->contractVersion() != entry.contractVersion)
+      return invalid(
+          "A Stratified QG forcing factory returned an incompatible identity.");
+    forcing = std::move(candidate);
+    return WVKernelStatus::ok();
+  } catch (const std::bad_alloc &) {
+    return {WVKernelStatusCode::allocationFailure,
+            "Unable to construct a Stratified QG forcing implementation."};
+  } catch (const std::exception &error) {
+    return invalid("Stratified QG forcing factory failed: " +
+                   std::string(error.what()));
+  } catch (...) {
+    return invalid(
+        "Stratified QG forcing factory failed with an unknown exception.");
+  }
+}
+
 WVKernelStatus WVForcingCatalog::validateConfiguration(
     const WVFrozenForcingEntry &entry) const {
   const auto *value = registration(entry.typeIdentifier,
@@ -522,12 +561,12 @@ WVKernelStatus WVExtensionCatalogBuilder::addForcingFactory(
       registrationValue.contractVersion == 0)
     return reject("A forcing registration requires an identity and positive version.");
   if ((registrationValue.isSupported && !registrationValue.factory &&
-       !registrationValue.barotropicQGFactory) ||
+       !registrationValue.barotropicQGFactory && !registrationValue.stratifiedQGFactory) ||
       (registrationValue.isSupported &&
        !registrationValue.unavailabilityReason.empty()) ||
       (!registrationValue.isSupported &&
        (registrationValue.factory ||
-        registrationValue.barotropicQGFactory)) ||
+        registrationValue.barotropicQGFactory || registrationValue.stratifiedQGFactory)) ||
       (!registrationValue.isSupported &&
        registrationValue.unavailabilityReason.empty()))
     return reject("A forcing registration is incomplete or conflicting.");

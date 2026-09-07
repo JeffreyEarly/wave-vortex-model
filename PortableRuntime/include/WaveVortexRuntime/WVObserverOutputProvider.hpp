@@ -25,6 +25,7 @@ struct WVObserverOutputPlanningContext {
   // constant-stratification configuration remains available above for v1
   // observer implementations that require its physical parameters.
   const WVIntegrationStateLayout *stateLayout = nullptr;
+  const WVStratifiedModalGeometry *stratifiedGeometry = nullptr;
 
   const WVStateBlockRecord *
   stateBlock(const std::string &identifier) const noexcept;

@@ -182,4 +182,28 @@ WVKernelStatus WVRetainedHorizontalOperator::inverse(WVRetainedHorizontalWorkspa
         output.data[p*g.planeStride+y*g.yStride+x*g.xStride] = d.inverseScale*w.real[p*d.planeSize+y*g.Nx+x];
     return WVKernelStatus::ok();
 }
+WVKernelStatus WVRetainedHorizontalOperator::spatialDerivative(WVRetainedHorizontalWorkspace& workspace, WVRealInput input, WVRealOutput output, bool xDerivative) const {
+    auto& w = *workspace.data_; const auto& d = *data_;
+    if (w.owner != data_) return {WVKernelStatusCode::invalidConfiguration,"Workspace belongs to another horizontal operator."};
+    if (input.bytes < d.realSpan || output.bytes < d.realSpan) return {WVKernelStatusCode::invalidShape,"Derivative grid capacity is too small."};
+    if (!addressFits(input.data,d.realSpan,alignof(double)) || !addressFits(output.data,d.realSpan,alignof(double)))
+        return {WVKernelStatusCode::invalidPointer,"Invalid derivative grid storage."};
+    if (overlap(input.data,d.realSpan,output.data,d.realSpan)) return {WVKernelStatusCode::overlappingArrays,"Derivative input and output overlap."};
+    ActiveCall guard(w.active); if (!guard.entered) return {WVKernelStatusCode::reentrantExecution,"Horizontal workspace is active."};
+    const auto& g = d.spec.grid;
+    for (std::size_t p = 0; p < g.planes; ++p) for (std::size_t y = 0; y < g.Ny; ++y) for (std::size_t x = 0; x < g.Nx; ++x)
+        w.real[p*d.planeSize+y*g.Nx+x] = input.data[p*g.planeStride+y*g.yStride+x*g.xStride];
+    auto status = w.forward->execute(w.real.data(),w.half.data()); if (!status) return status;
+    const auto half = g.Nx/2+1;
+    for (std::size_t p = 0; p < g.planes; ++p) for (std::size_t y = 0; y < g.Ny; ++y) for (std::size_t x = 0; x < half; ++x) {
+        const auto i = xDerivative ? x : y, n = xDerivative ? g.Nx : g.Ny;
+        const auto mode = i <= n/2 ? static_cast<std::int64_t>(i) : static_cast<std::int64_t>(i)-static_cast<std::int64_t>(n);
+        const double k = n%2 == 0 && i == n/2 ? 0.0 : 2*std::acos(-1.0)*mode/(xDerivative ? d.spec.Lx : d.spec.Ly)/d.planeSize;
+        auto& value = w.half[p*d.halfSize+y*half+x]; value = {-k*value.imag,k*value.real};
+    }
+    status = w.inverse->execute(w.half.data(),w.real.data()); if (!status) return status;
+    for (std::size_t p = 0; p < g.planes; ++p) for (std::size_t y = 0; y < g.Ny; ++y) for (std::size_t x = 0; x < g.Nx; ++x)
+        output.data[p*g.planeStride+y*g.yStride+x*g.xStride] = w.real[p*d.planeSize+y*g.Nx+x];
+    return WVKernelStatus::ok();
+}
 } // namespace wavevortex

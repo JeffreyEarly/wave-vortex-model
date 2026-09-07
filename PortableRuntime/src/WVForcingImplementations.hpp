@@ -78,5 +78,40 @@ WVKernelStatus createBarotropicQGBetaPlanePVAdvection(
     const WVFrozenForcingEntry &,
     const WVTransformBarotropicQGDescriptor &, bool,
     std::unique_ptr<WVBarotropicQGForcing> &);
+WVKernelStatus preflightStratifiedQGEmptyForcing(
+    const WVFrozenForcingEntry &, std::size_t);
+WVKernelStatus preflightStratifiedQGFixedAmplitude(
+    const WVFrozenForcingEntry &, std::size_t);
+WVKernelStatus preflightStratifiedQGScalarForcing(
+    const WVFrozenForcingEntry &, std::size_t);
+WVKernelStatus createStratifiedQGNonlinearAdvection(
+    const WVFrozenForcingEntry &,
+    const WVStratifiedModalGeometry &, bool,
+    std::unique_ptr<WVStratifiedQGForcing> &);
+WVKernelStatus createStratifiedQGAdaptiveDamping(
+    const WVFrozenForcingEntry &,
+    const WVStratifiedModalGeometry &, bool,
+    std::unique_ptr<WVStratifiedQGForcing> &);
+WVKernelStatus createStratifiedQGFixedAmplitude(
+    const WVFrozenForcingEntry &,
+    const WVStratifiedModalGeometry &, bool,
+    std::unique_ptr<WVStratifiedQGForcing> &);
+WVKernelStatus createStratifiedQGQuadraticBottomFriction(
+    const WVFrozenForcingEntry &,
+    const WVStratifiedModalGeometry &, bool,
+    std::unique_ptr<WVStratifiedQGForcing> &);
+WVKernelStatus createStratifiedQGLinearBottomFriction(
+    const WVFrozenForcingEntry &,
+    const WVStratifiedModalGeometry &, bool,
+    std::unique_ptr<WVStratifiedQGForcing> &);
+WVKernelStatus createStratifiedQGBetaPlanePVAdvection(
+    const WVFrozenForcingEntry &,
+    const WVStratifiedModalGeometry &, bool,
+    std::unique_ptr<WVStratifiedQGForcing> &);
+
+WVKernelStatus preflightStratifiedQGExplicitAntialiasing(const WVFrozenForcingEntry &,std::size_t);
+WVKernelStatus preflightStratifiedQGVerticalDiffusivity(const WVFrozenForcingEntry &,std::size_t);
+WVKernelStatus createStratifiedQGExplicitAntialiasing(const WVFrozenForcingEntry &,const WVStratifiedModalGeometry &,bool,std::unique_ptr<WVStratifiedQGForcing> &);
+WVKernelStatus createStratifiedQGVerticalDiffusivity(const WVFrozenForcingEntry &,const WVStratifiedModalGeometry &,bool,std::unique_ptr<WVStratifiedQGForcing> &);
 
 } // namespace wavevortex::runtime::detail

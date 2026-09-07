@@ -56,7 +56,8 @@
     "externalConsumerBaselineWaveVortexCommit": "84dc1b53093650fdbc9be62b637cf298c46a95d3",
     "description": "Source-linked observer, output-schedule, and forcing implementations are resolved through an explicitly owned immutable typed catalog. Observation occurrences use construction-resolved schedule payloads, evaluator-owned event geometry, central resolved-field evaluation, and destination-independent retry identity. Source API v1 exposes no legacy persistence callbacks or WVModel internals.",
     "stratifiedModalRecords": "issue-295",
-    "stableForcingCompatibility": "issues-290-294"
+    "stableForcingCompatibility": "issues-290-294",
+    "stratifiedQGRuntime": "issue-297"
   },
   "excluded": [
     "benchmark harnesses and payloads",
@@ -77,13 +78,39 @@
     "matrixScanBytes": 32768,
     "scientificInputs": "MATLAB-persisted numeric geometry and preconditioned F/G operators",
     "sourceSHA256": {
-      "PortableRuntime/include/WaveVortexRuntime/WVStratifiedModalRecord.hpp": "0b4e53ad912ade703ea68cbb179b3fa15749d180882cb966efcf52c1caa8cac9",
-      "PortableRuntime/src/WVStratifiedModalRecord.cpp": "61ee443f41592778fa3fd470fbb600932d89188178f8f19848b7501cf3bddd43",
+      "PortableRuntime/include/WaveVortexRuntime/WVStratifiedModalRecord.hpp": "a0486a1e62dcc2269d70c7af951e7d545a3759b4edbe35a7bfc9119d1d47013e",
+      "PortableRuntime/src/WVStratifiedModalRecord.cpp": "4248a3f05f246de819d6ad6c7e6ec6d125349ec3471281d23b4ac9d5111be614",
       "@WVGeometryDoublyPeriodicStratified/WVGeometryDoublyPeriodicStratified.m": "4d6df4bb82feb550a20da25a8e34ae9370272f2268ea3660d571dfeddaa06cc8",
       "@WVTransform/writeToFile.m": "b362676f63e681327ed04708e99927aca07c0b602bf573840a4bb365d0694a0a",
       "WVModelOutputFile.m": "b1b546df8bc6c1a33c9c0ee75267d21a5104a2451250a94b222e97f3a83ba43f",
       "CompiledKernel/include/WaveVortexKernel/WVStratifiedModalSource.hpp": "e82dc0193e48edeae4b41ff8b9ef7cd3f8e74a38b024e019ecae6afffea65a22"
     },
     "numericalSourceInterface": "WaveVortexKernel/WVStratifiedModalSource.hpp"
+  },
+  "stratifiedQGRuntime": {
+    "transform": "WVTransformStratifiedQG",
+    "executionCapabilityAdded": true,
+    "coefficientFamilies": [
+      "A0"
+    ],
+    "spectralDimensions": [
+      "j",
+      "kl"
+    ],
+    "spatialDimensions": [
+      "x",
+      "y",
+      "z"
+    ],
+    "matlabTracerAdvection": "XY-only on a rank-three grid",
+    "qualification": "UnitTests/TestPortableStratifiedQG.m",
+    "sourceSHA256": {
+      "PortableRuntime/include/WaveVortexRuntime/WVStratifiedQGForcingEngine.hpp": "ee5f6cef2d03a5f5658a69ca9c84321baa8817d4e466883ff9445f7faccf8ec6",
+      "PortableRuntime/include/WaveVortexRuntime/WVStratifiedQGIntegrationSystem.hpp": "01a6230fb6ed1cd57d66e1f8b7b67a1aef33f21fcb5bbb1d839d6a56360ddc3b",
+      "PortableRuntime/src/WVStratifiedQGForcingEngine.cpp": "e59bb57630fcdfdfa8643db92c79b91e92ba540724182abeb10ca6638d46b7af",
+      "PortableRuntime/src/WVStratifiedQGIntegrationSystem.cpp": "2608eb1acf19f6759232fd42fba15dd31b337acecb80e13f8044a22388302488",
+      "PortableRuntime/src/WVStratifiedQGFieldEvaluationAdapter.hpp": "e282d83f41765ff8389c942ed78014c2e40e160e127dfc30b01328649959fd42",
+      "PortableRuntime/src/WVStratifiedQGFieldEvaluationAdapter.cpp": "9a84c399834f96bfe4de5405ea9102da9fc60d2a34300237bb45662921f9fba3"
+    }
   }
 }

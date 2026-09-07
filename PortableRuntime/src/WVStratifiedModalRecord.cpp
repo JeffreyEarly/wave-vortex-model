@@ -181,6 +181,25 @@ WVCheckpointStatus WVStratifiedModalReader::read(const std::string& path, std::s
         for (const auto& m : {Matrix{"PF0inv",&candidate->PF0inv_},{"QG0inv",&candidate->QG0inv_},{"PF0",&candidate->PF0_},{"QG0",&candidate->QG0_}}) {
             status = scanMatrix(file.id(),m.name,candidate->geometry_,m.values); if (!status) return status;
         }
+        int functionVariable = -1;
+        const int functionCode = nc_inq_varid(file.id(),"N2Function",&functionVariable);
+        if (functionCode != NC_ENOTVAR) {
+            if (functionCode != NC_NOERR) return detail::netcdfFailure(functionCode,"Function payload lookup","N2Function");
+            int rank=0, dimension=-1; nc_type type;
+            int code=nc_inq_var(file.id(),functionVariable,nullptr,&type,&rank,nullptr,nullptr);
+            if (code != NC_NOERR) return detail::netcdfFailure(code,"Function payload metadata","N2Function");
+            if (rank != 1 || type != NC_UBYTE) return invalid("N2Function must be an opaque uint8 vector.","N2Function");
+            nc_type markerType; std::size_t markerLength=0; unsigned char marker=0;
+            code=nc_inq_att(file.id(),functionVariable,"isFunctionHandleType",&markerType,&markerLength);
+            if (code != NC_NOERR || markerType != NC_UBYTE || markerLength != 1)
+                return invalid("N2Function requires its scalar function-handle marker.","N2Function");
+            code=nc_get_att_uchar(file.id(),functionVariable,"isFunctionHandleType",&marker);
+            if (code != NC_NOERR || marker != 1) return invalid("Invalid N2Function function-handle marker.","N2Function");
+            code=nc_inq_vardimid(file.id(),functionVariable,&dimension); if (code != NC_NOERR) return detail::netcdfFailure(code,"Function payload dimension","N2Function");
+            std::size_t size=0; code=nc_inq_dimlen(file.id(),dimension,&size); if (code != NC_NOERR) return detail::netcdfFailure(code,"Function payload length","N2Function");
+            candidate->N2FunctionPayload_.resize(size);
+            code=nc_get_var_uchar(file.id(),functionVariable,candidate->N2FunctionPayload_.data()); if (code != NC_NOERR) return detail::netcdfFailure(code,"Function payload read","N2Function");
+        }
         WVScientificModalGroup group; group.columns.resize(candidate->geometry_.Nkl);
         for (std::size_t i=0;i<group.columns.size();++i) group.columns[i]=i;
         candidate->groups_.push_back(std::move(group));
@@ -191,7 +210,7 @@ WVCheckpointStatus WVStratifiedModalReader::read(const std::string& path, std::s
       catch (const std::overflow_error& e) { return invalid(e.what()); }
 }
 std::size_t WVStratifiedModalRecord::persistentBytes() const noexcept {
-    std::size_t bytes = sizeof(*this)+sourceIdentity_.capacity()+modeSetIdentity_.capacity()+geometry_.transformClass.capacity()+geometry_.modelVersion.capacity()+geometry_.modes.capacity()*sizeof(WVRetainedModeKey);
+    std::size_t bytes = sizeof(*this)+N2FunctionPayload_.capacity()+sourceIdentity_.capacity()+modeSetIdentity_.capacity()+geometry_.transformClass.capacity()+geometry_.modelVersion.capacity()+geometry_.modes.capacity()*sizeof(WVRetainedModeKey);
     for (const auto* v : {&geometry_.x,&geometry_.y,&geometry_.z,&geometry_.j,&geometry_.k,&geometry_.l,&geometry_.N2,&geometry_.rho_nm0,&geometry_.dLnN2,&geometry_.P0,&geometry_.Q0,&geometry_.h_0,&geometry_.z_int,&PF0inv_,&QG0inv_,&PF0_,&QG0_}) bytes += v->capacity()*sizeof(double);
     bytes += groups_.capacity()*sizeof(WVScientificModalGroup);
     for (const auto& group:groups_) bytes += group.columns.capacity()*sizeof(std::size_t);

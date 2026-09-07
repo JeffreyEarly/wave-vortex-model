@@ -45,10 +45,40 @@ void contracts(const std::shared_ptr<const WVStratifiedModalRecord>& source) {
     require(b[0].real==17 && spatial[0]==29,"Invalid call mutated output");
     status=kernel->transformA0ToField(input,static_cast<WVStratifiedQGField>(99),{spatial.data(),kernel->spatialShape()}); require(status.code==WVKernelStatusCode::unsupportedOperation,"Unknown field accepted");
     status=kernel->transformA0ToField(input,WVStratifiedQGField::u,{nullptr,kernel->spatialShape()}); require(status.code==WVKernelStatusCode::invalidPointer,"Null field accepted");
+    for (auto operation : {&WVTransformStratifiedQGKernel::verticalDiffusivityFlux,&WVTransformStratifiedQGKernel::linearBottomFrictionFlux,&WVTransformStratifiedQGKernel::quadraticBottomFrictionFlux}) {
+        status=(kernel.get()->*operation)(input,-1,output); require(status.code==WVKernelStatusCode::invalidConfiguration,"Negative closure coefficient accepted");
+        status=(kernel.get()->*operation)(input,std::numeric_limits<double>::infinity(),output); require(status.code==WVKernelStatusCode::invalidConfiguration,"Infinite closure coefficient accepted");
+        status=(kernel.get()->*operation)(input,1,{a.data(),input.shape}); require(status.code==WVKernelStatusCode::overlappingArrays,"Aliased closure accepted");
+        require(b[0].real==17,"Invalid closure mutated output");
+        require(bool((kernel.get()->*operation)(input,0,output)),"Zero closure failed");
+        for (const auto x:b) require(x.real==0 && x.imag==0,"Zero closure has a tendency");
+        std::fill(b.begin(),b.end(),WVComplex64{17,19});
+    }
+    std::vector<double> tracer(R), tracerFlux(R), velocity(3*R,0), expectedTracer(R);
+    const double pi=std::acos(-1.0);
+    for (std::size_t z=0;z<g.Nz;++z) for(std::size_t y=0;y<g.Ny;++y) for(std::size_t x=0;x<g.Nx;++x) {
+        const auto i=x+g.Nx*(y+g.Ny*z); const double scale=1+.2*z;
+        tracer[i]=scale*(std::sin(6*pi*x/g.Nx)+std::cos(4*pi*y/g.Ny)+std::cos(pi*x)+std::cos(pi*y));
+        velocity[i]=1; velocity[R+i]=.5;
+        expectedTracer[i]=scale*(-6*pi/g.Lx*std::cos(6*pi*x/g.Nx)+2*pi/g.Ly*std::sin(4*pi*y/g.Ny));
+    }
+    WVRealVolumeConstView tracerInput{tracer.data(),kernel->spatialShape()};
+    WVRealVolumeView tracerOutput{tracerFlux.data(),kernel->spatialShape()};
+    WVRealFieldBundleConstView advection{velocity.data(),{g.Nx,g.Ny,g.Nz,3}};
+    status=kernel->advectScalarWithAdvectionFields(tracerInput,advection,false,tracerOutput); require(bool(status),"Full-grid tracer derivative failed");
+    for (std::size_t i=0;i<R;++i) require(std::abs(tracerFlux[i]-expectedTracer[i])<1e-14,"Full-grid tracer derivative or Nyquist handling differs");
+    status=kernel->advectScalarWithAdvectionFields(tracerInput,advection,true,tracerOutput); require(bool(status),"Tracer projection failed");
+    for(double value:tracerFlux) require(std::abs(value)<1e-14,"Tracer flux failed retained-mode filtering");
+    status=kernel->advectScalarWithAdvectionFields(tracerInput,advection,false,{tracer.data()+1,kernel->spatialShape()});
+    require(status.code==WVKernelStatusCode::overlappingArrays,"Partial tracer alias accepted");
     require(bool(kernel->nonlinearFlux(input,output)),"Flux failed");
     allocationProbe::calls=0; allocationProbe::counting=true;
     for (int i=0;i<5;++i) {
+        require(bool(kernel->advectScalarWithAdvectionFields(tracerInput,advection,true,tracerOutput)),"Prepared tracer allocation test failed");
         require(bool(kernel->nonlinearFlux(input,output)),"Prepared flux failed");
+        require(bool(kernel->verticalDiffusivityFlux(input,.002,output)),"Prepared diffusivity failed");
+        require(bool(kernel->linearBottomFrictionFlux(input,1e-5,output)),"Prepared linear friction failed");
+        require(bool(kernel->quadraticBottomFrictionFlux(input,.003,output)),"Prepared quadratic friction failed");
         require(bool(kernel->transformA0ToField(input,WVStratifiedQGField::rhoTotal,{spatial.data(),kernel->spatialShape()},WVStratifiedQGDerivative::z)),"Prepared density derivative failed");
         require(bool(kernel->transformQGPVToA0({spatial.data(),kernel->spatialShape()},output)),"Prepared projection failed");
     }

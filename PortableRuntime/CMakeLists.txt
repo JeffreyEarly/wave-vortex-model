@@ -37,8 +37,11 @@ add_library(WaveVortexPortableRuntime STATIC
     src/WVRungeKutta.cpp
     include/WaveVortexRuntime/WVBarotropicQGForcingEngine.hpp
     src/WVBarotropicQGForcingEngine.cpp
+    src/WVStratifiedQGForcingEngine.cpp
     src/WVBarotropicQGIntegrationSystem.cpp
+    src/WVStratifiedQGIntegrationSystem.cpp
     src/WVBarotropicQGFieldEvaluationAdapter.cpp
+    src/WVStratifiedQGFieldEvaluationAdapter.cpp
     src/WVOutputTransformAdapters.cpp
     src/WVOutputOrchestration.cpp
     src/WVObserverAdapter.cpp
@@ -363,6 +366,21 @@ if(BUILD_TESTING)
     endif()
     if(CMAKE_CXX_COMPILER_ID MATCHES "AppleClang|Clang|GNU")
         target_compile_options(WVStratifiedQGKernelDump PRIVATE -Wall -Wextra -Wpedantic -Werror)
+    endif()
+endif()
+
+if(BUILD_TESTING)
+    add_executable(WVStratifiedQGFieldDump tests/WVStratifiedQGFieldDump.cpp ../tools/compiled-kernel/tests/WVAllocationProbe.cpp)
+    target_include_directories(WVStratifiedQGFieldDump PRIVATE third_party)
+    target_link_libraries(WVStratifiedQGFieldDump PRIVATE WaveVortex::PortableRuntime WaveVortex::ReferenceFFT)
+    if(WV_RUNTIME_ENABLE_NATIVE_FFTW)
+        target_link_libraries(WVStratifiedQGFieldDump PRIVATE WaveVortexNativeFFTW)
+        target_compile_definitions(WVStratifiedQGFieldDump PRIVATE WV_TEST_NATIVE_FFTW=1)
+    else()
+        target_compile_definitions(WVStratifiedQGFieldDump PRIVATE WV_TEST_NATIVE_FFTW=0)
+    endif()
+    if(CMAKE_CXX_COMPILER_ID MATCHES "AppleClang|Clang|GNU")
+        target_compile_options(WVStratifiedQGFieldDump PRIVATE -Wall -Wextra -Wpedantic -Werror)
     endif()
 endif()
 

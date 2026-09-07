@@ -600,6 +600,7 @@ WVKernelStatus WVObserverOutputEvaluationService::create(
     planningContext.configuration = impl.fields->hasLegacyConfiguration()
                                         ? &impl.fields->configuration()
                                         : nullptr;
+    planningContext.stratifiedGeometry = impl.fields->stratifiedGeometry();
     planningContext.stateBlocks = descriptorRecord.stateBlocks.data();
     planningContext.stateBlockCount = descriptorRecord.stateBlocks.size();
     planningContext.isDynamicsLinear = isDynamicsLinear;

@@ -1,4 +1,5 @@
 #include "WaveVortexRuntime/WVModel.hpp"
+#include "WaveVortexRuntime/WVStratifiedModalRecord.hpp"
 #include "WaveVortexRuntime/WVForcingContracts.hpp"
 #include "WVModelInternalAccess.hpp"
 #include "WVModelTransformAdapters.hpp"
@@ -135,7 +136,8 @@ WVKernelStatus compileOutputConfiguration(
       detail::legacyModelOutputPlanningConfiguration(
           inspection.latestRestart),
       inspection.isDynamicsLinear,
-      &inspection.latestRestart.stateDescription);
+      &inspection.latestRestart.stateDescription,
+      inspection.latestRestart.stratifiedModalSource ? &inspection.latestRestart.stratifiedModalSource->geometry() : nullptr);
 }
 #endif
 

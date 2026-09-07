@@ -3,6 +3,7 @@
 #include "WaveVortexRuntime/WVExtensionCatalog.hpp"
 #include "WaveVortexRuntime/WVForcingEngine.hpp"
 #include "WaveVortexRuntime/WVBarotropicQGForcingEngine.hpp"
+#include "WaveVortexRuntime/WVStratifiedQGForcingEngine.hpp"
 
 #include <algorithm>
 #include <iostream>
@@ -26,13 +27,16 @@ void testForcingIncompatibilities() {
     WVFrozenForcingEntry entry;
     entry.typeIdentifier=row.identity; entry.contractVersion=row.version;
     entry.name=registration->defaultName;
-    entry.stage=row.barotropic ? registration->barotropicQGStage : registration->stage;
+    entry.stage=row.stratifiedQG ? registration->stratifiedQGStage : row.barotropic ? registration->barotropicQGStage : registration->stage;
     entry.priority=registration->priority;
     entry.configuration={"wave-vortex-forcing-configuration-v1",1,{}};
     if (entry.typeIdentifier=="WVAntialiasing")
       entry.configuration.values.push_back({"Nj",{},std::vector<double>{1}});
     WVFrozenForcingSchedule schedule; schedule.entries.push_back(entry);
-    if (row.barotropic) {
+    if (row.stratifiedQG) {
+      WVStratifiedModalGeometry c; c.Nx=8; c.Ny=6; c.Nz=9; c.Nj=4; c.Nkl=24; c.shouldAntialias=row.antialias;
+      status=WVStratifiedQGForcingEngine::validateSchedule(c,schedule,96,*catalog);
+    } else if (row.barotropic) {
       WVTransformBarotropicQGConfiguration c;
       c.Nx=8; c.Ny=6; c.Lx=17000; c.Ly=11000; c.h=1; c.j=1; c.shouldAntialias=row.antialias;
       status=WVBarotropicQGForcingEngine::validateSchedule(c,schedule,24,*catalog);
@@ -45,7 +49,7 @@ void testForcingIncompatibilities() {
       throw std::runtime_error(std::string("MATLAB incompatibility accepted: ")+row.identity);
     ++rejected;
   }
-  if (rejected!=11) throw std::runtime_error("Incomplete baseline rejection evidence.");
+  if (rejected!=18) throw std::runtime_error("Incomplete baseline rejection evidence.");
 }
 
 int main() {
@@ -59,7 +63,7 @@ int main() {
       if (found == registrations.end())
         throw std::runtime_error(std::string("Missing current registry pair: ") + row.identity);
       const bool available = found->isSupported &&
-          (row.barotropic ? static_cast<bool>(found->barotropicQGFactory)
+          (row.stratifiedQG ? static_cast<bool>(found->stratifiedQGFactory) : row.barotropic ? static_cast<bool>(found->barotropicQGFactory)
                           : static_cast<bool>(found->factory));
       if (available != row.factoryAvailable)
         throw std::runtime_error(std::string("Stale factory availability: ") + row.identity);
@@ -74,7 +78,7 @@ int main() {
       else if (stage == "SpectralAmplitude" || stage == "PVSpectralAmplitude")
         expected = WVForcingStage::spectralAmplitude;
       else throw std::runtime_error("Unknown generated scientific stage.");
-      const auto actual = row.barotropic ? found->barotropicQGStage : found->stage;
+      const auto actual = row.stratifiedQG ? found->stratifiedQGStage : row.barotropic ? found->barotropicQGStage : found->stage;
       if (actual != expected || found->priority != row.priority ||
           std::find(found->forcingTypes.begin(), found->forcingTypes.end(), stage) ==
               found->forcingTypes.end())

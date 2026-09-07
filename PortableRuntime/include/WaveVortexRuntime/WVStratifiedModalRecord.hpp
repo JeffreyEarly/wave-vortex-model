@@ -17,6 +17,9 @@ public:
     WVStratifiedModalRecord(WVStratifiedModalRecord&&) = delete;
     WVStratifiedModalRecord& operator=(WVStratifiedModalRecord&&) = delete;
     const WVStratifiedModalGeometry& geometry() const noexcept { return geometry_; }
+    // Opaque MATLAB .mat payload, retained only for round-trip persistence.
+    // Portable numerical execution never deserializes or executes this code.
+    const std::vector<unsigned char>& N2FunctionPayload() const noexcept { return N2FunctionPayload_; }
     const std::vector<double>& PF0inv() const noexcept { return PF0inv_; }
     const std::vector<double>& QG0inv() const noexcept { return QG0inv_; }
     const std::vector<double>& PF0() const noexcept { return PF0_; }
@@ -46,6 +49,7 @@ private:
     friend class WVStratifiedModalReader;
     WVStratifiedModalRecord() = default;
     WVStratifiedModalGeometry geometry_;
+    std::vector<unsigned char> N2FunctionPayload_;
     std::vector<double> PF0inv_, QG0inv_, PF0_, QG0_;
     std::string sourceIdentity_, modeSetIdentity_;
     std::vector<WVScientificModalGroup> groups_;

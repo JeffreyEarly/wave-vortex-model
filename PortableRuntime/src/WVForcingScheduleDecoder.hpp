@@ -1,6 +1,7 @@
 #pragma once
 
 #include "WaveVortexRuntime/WVCheckpointReader.hpp"
+#include "WaveVortexKernel/WVStratifiedModalSource.hpp"
 
 #include <cstddef>
 #include <string>
@@ -24,6 +25,12 @@ WVCheckpointStatus decodeForcingSchedule(
 WVCheckpointStatus decodeForcingSchedule(
     const std::vector<WVForcingGroupSource>& sources,
     const WVTransformBarotropicQGConfiguration& configuration,
+    std::size_t coefficientCount,
+    const WVExtensionCatalog& catalog,
+    WVFrozenForcingSchedule& schedule);
+WVCheckpointStatus decodeForcingSchedule(
+    const std::vector<WVForcingGroupSource>& sources,
+    const WVStratifiedModalGeometry& configuration,
     std::size_t coefficientCount,
     const WVExtensionCatalog& catalog,
     WVFrozenForcingSchedule& schedule);

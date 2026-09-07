@@ -119,7 +119,7 @@ classdef TestPortableStableForcing < matlab.unittest.TestCase
         function catalogPairsMatchMatlabAndAppend(testCase)
             matrix = jsondecode(fileread(fullfile(testCase.root,"PortableRuntime","contracts","portable-forcing-compatibility-v1.json")));
             for row = reshape(matrix.rows,1,[])
-                if string(row.matlab.applicability) ~= "applicable", continue; end
+                if string(row.matlab.applicability) ~= "applicable" || startsWith(string(row.configuration),"stratified-qg"), continue; end
                 config = matrix.configurations(string({matrix.configurations.id}) == string(row.configuration));
                 family = "hydrostatic";
                 if string(config.transform) == "WVTransformBarotropicQG", family = "barotropic";

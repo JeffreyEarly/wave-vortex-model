@@ -2,6 +2,7 @@
 
 #include "WaveVortexKernel/WVTransformConstantStratificationKernel.hpp"
 #include "WaveVortexKernel/WVTransformBarotropicQGKernel.hpp"
+#include "WaveVortexKernel/WVTransformStratifiedQGKernel.hpp"
 #include "WaveVortexRuntime/WVObserverContracts.hpp"
 #include "WaveVortexRuntime/generated/WVPortableVariableCatalog.hpp"
 
@@ -19,6 +20,7 @@ class WVIntegrationStateLayout;
 
 namespace detail {
 class WVBarotropicQGFieldEvaluationAdapter;
+class WVStratifiedQGFieldEvaluationAdapter;
 }
 
 enum class WVFieldSamplingKind : std::uint8_t {
@@ -144,6 +146,7 @@ private:
 
   friend class WVFieldEvaluationService;
   friend class detail::WVBarotropicQGFieldEvaluationAdapter;
+  friend class detail::WVStratifiedQGFieldEvaluationAdapter;
 };
 
 class WVMovingFieldEvaluationPlan final {
@@ -171,6 +174,7 @@ private:
   std::size_t transformPlanBytes_ = 0;
   friend class WVFieldEvaluationService;
   friend class detail::WVBarotropicQGFieldEvaluationAdapter;
+  friend class detail::WVStratifiedQGFieldEvaluationAdapter;
 };
 
 class WVFieldEvaluationPlan final {
@@ -221,6 +225,7 @@ private:
 
   friend class WVFieldEvaluationService;
   friend class detail::WVBarotropicQGFieldEvaluationAdapter;
+  friend class detail::WVStratifiedQGFieldEvaluationAdapter;
 };
 
 struct WVPreparedFieldOutputSpecification {
@@ -285,6 +290,7 @@ private:
 
   friend class WVFieldEvaluationService;
   friend class detail::WVBarotropicQGFieldEvaluationAdapter;
+  friend class detail::WVStratifiedQGFieldEvaluationAdapter;
 };
 
 // One independently keyed occurrence in a coarse same-state evaluation.
@@ -354,6 +360,13 @@ public:
          std::unique_ptr<WVFieldEvaluationService> &service);
   static WVKernelStatus
   createBorrowing(WVTransformBarotropicQGKernel &transform,
+                  std::unique_ptr<WVFieldEvaluationService> &service);
+  static WVKernelStatus
+  create(std::shared_ptr<const WVStratifiedModalSource> source,
+         std::unique_ptr<WVFFTEngine> engine,
+         std::unique_ptr<WVFieldEvaluationService> &service);
+  static WVKernelStatus
+  createBorrowing(WVTransformStratifiedQGKernel &transform,
                   std::unique_ptr<WVFieldEvaluationService> &service);
 
   WVFieldEvaluationService(const WVFieldEvaluationService &) = delete;
@@ -426,6 +439,7 @@ public:
 
   const WVTransformConstantStratificationConfiguration &
   configuration() const noexcept;
+  const WVStratifiedModalGeometry* stratifiedGeometry() const noexcept;
   bool hasLegacyConfiguration() const noexcept { return transform_ != nullptr; }
   WVKernelStatus createStateLayout(
       const WVPortableObserverDescriptor &descriptor,
@@ -457,6 +471,7 @@ private:
   WVTransformConstantStratificationKernel *transform_ = nullptr;
   std::unique_ptr<detail::WVBarotropicQGFieldEvaluationAdapter>
       barotropicQG_;
+  std::unique_ptr<detail::WVStratifiedQGFieldEvaluationAdapter> stratifiedQG_;
   std::unique_ptr<MovingWorkspace> movingWorkspace_;
   std::vector<double> realScratch_;
   std::vector<WVComplex64> complexScratch_;
