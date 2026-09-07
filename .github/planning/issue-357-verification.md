@@ -60,4 +60,4 @@ Configure `tools/compiled-kernel` as shown in `CompiledKernel/README.md`. Native
 
 The initial implementation goal made no commit, push or tracker changes. The subsequent user-authorized publication commits and pushes this work on `audit/v4-cpp-spectral-adoption` and updates the related v4 issues. Main integration remains a separate step.
 
-The user clarified that backward compatibility is not required for this code under development. Future source/record contracts may be changed coherently with current consumers and fixtures; do not add legacy adapters solely to compile obsolete historical pins. Scientific correctness and current MATLAB/C++ agreement remain required.
+The user clarified that backward compatibility is not required for the C++ code under development. MATLAB code, APIs and persisted-file compatibility must be preserved. Future C++ source/record contracts may be changed coherently with current consumers and fixtures; do not add legacy adapters solely to compile obsolete historical pins. Scientific correctness and current MATLAB/C++ agreement remain required.

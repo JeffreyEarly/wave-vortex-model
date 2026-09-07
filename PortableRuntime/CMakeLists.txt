@@ -28,6 +28,7 @@ add_library(WaveVortexPortableRuntime STATIC
     src/WVOutputSchedule.cpp
     src/WVForcingContracts.cpp
     src/WVNetCDF.cpp
+    src/WVStratifiedModalRecord.cpp
     src/WVForcingScheduleDecoder.cpp
     src/WVCheckpointTransformAdapters.cpp
     src/WVCheckpointWriter.cpp
@@ -228,6 +229,14 @@ if(BUILD_TESTING)
     wv_add_runtime_test(TestWVPortableVariableCatalog TestWVPortableVariableCatalog.cpp portable-variable-catalog)
     wv_add_runtime_test(TestWVObserverAdapter TestWVObserverAdapter.cpp observer-adapter)
     wv_add_runtime_test(TestWVExtensionCatalog TestWVExtensionCatalog.cpp extension-catalog)
+    add_executable(TestWVStratifiedModalRecord tests/TestWVStratifiedModalRecord.cpp
+        ../tools/compiled-kernel/tests/WVAllocationProbe.cpp)
+    target_include_directories(TestWVStratifiedModalRecord PRIVATE ../tools/compiled-kernel/tests)
+    target_link_libraries(TestWVStratifiedModalRecord PRIVATE WaveVortex::PortableRuntime ${WAVEVORTEX_NETCDF_TARGET})
+    if(CMAKE_CXX_COMPILER_ID MATCHES "AppleClang|Clang|GNU")
+        target_compile_options(TestWVStratifiedModalRecord PRIVATE -Wall -Wextra -Wpedantic -Werror)
+    endif()
+    add_test(NAME stratified-modal-record COMMAND TestWVStratifiedModalRecord)
     wv_add_runtime_test(TestWVCheckpointReader TestWVCheckpointReader.cpp checkpoint-reader)
     wv_add_runtime_test(TestWVCheckpointWriter TestWVCheckpointWriter.cpp checkpoint-writer)
     wv_add_runtime_test(TestWVForcingAndRK4 TestWVForcingAndRK4.cpp forcing-and-rk4)
@@ -328,4 +337,14 @@ if(BUILD_TESTING)
             -DWV_REPOSITORY_ROOT=${CMAKE_CURRENT_LIST_DIR}/..
             -P ${CMAKE_CURRENT_LIST_DIR}/tests/CheckWVObservationOccurrence.cmake
     )
+endif()
+
+# Scientific modal reader probe for MATLAB-authored parity fixtures.
+if(BUILD_TESTING)
+    add_executable(WVStratifiedModalDump tests/WVStratifiedModalDump.cpp)
+    target_include_directories(WVStratifiedModalDump PRIVATE third_party)
+    target_link_libraries(WVStratifiedModalDump PRIVATE WaveVortex::PortableRuntime WaveVortex::ReferenceFFT)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "AppleClang|Clang|GNU")
+        target_compile_options(WVStratifiedModalDump PRIVATE -Wall -Wextra -Wpedantic -Werror)
+    endif()
 endif()

@@ -37,6 +37,13 @@ function ncfile = writeToFile(self,path,properties,options)
     options.attributes('history') = string(strcat(string(datetime('now')),': file created.'));
     options.attributes('references') = 'Early, J., Lelong, M., & Sundermeyer, M. (2021). A generalized wave-vortex decomposition for rotating Boussinesq flows with arbitrary stratification. Journal of Fluid Mechanics, 912, A32. doi:10.1017/jfm.2020.995';
 
+    if options.shouldAddRequiredProperties && isa(self,'WVGeometryDoublyPeriodicStratified')
+        % Save evaluated inputs for portable readers without requiring them
+        % when MATLAB reconstructs older files. Explicit property-only saves
+        % retain their existing behavior when shouldAddRequiredProperties=false.
+        properties = union(properties,{'N2','rho_nm0','k','l'});
+    end
+
     optionCell = namedargs2cell(options);
     ncfile = writeToFile@CAAnnotatedClass(self,path,properties{:},optionCell{:});
 end
