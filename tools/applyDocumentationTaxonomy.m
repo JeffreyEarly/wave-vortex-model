@@ -424,6 +424,8 @@ elseif ismember(name,["barotropicVelocityAtTime","bottomVelocityAtTime", ...
     topicPath = "Evaluate prescribed forcing";
 elseif name == "goffAbyssalHillTopography"
     topicPath = "Generate forcing inputs";
+elseif name == "assessSeasonalResponse"
+    topicPath = "Assess response accuracy";
 elseif name == "quasigeostrophicDampingContributions"
     topicPath = "Evaluate forcing budgets";
 else

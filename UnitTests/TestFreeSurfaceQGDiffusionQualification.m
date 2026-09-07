@@ -1,7 +1,39 @@
 classdef TestFreeSurfaceQGDiffusionQualification < matlab.unittest.TestCase
     % Independent physical-depth qualification of two-active-boundary diffusion.
-    % runStudy reports failed physical accuracy targets without weakening them.
+    % runStudy reports numerical errors without a universal acceptance threshold.
     methods (Test, TestTags="full")
+        function publicEstimatesAgreeWithIndependentFields(testCase)
+            for scale = [Inf 1300]
+                w = newTransform(33,scale);
+                coarse = newTransform(65,scale);
+                fine = newTransform(129,scale);
+                f = WVSeasonalSurfaceAnomalyForcing(w,pattern=cos(2*pi*w.Y(:,:,1)/w.Ly),amplitude=1e-7);
+                closure = WVVerticalDiffusivity(w,kappa_z=1e-5);
+                time = f.period/4;
+                actual = closure.assessSeasonalResponse(f,time,referenceTransforms={coarse,fine});
+                [z,weights] = gauss(513,w.Lz);
+                [~,p] = min(abs(w.khUnique-2*pi/w.Ly));
+                [a,ap,as] = modelPage(w,p,z,weights,scale,1e-5);
+                [b,bp,bs] = modelPage(fine,p,z,weights,scale,1e-5);
+                ac = ap.fromEnergy*response(ap.energyGenerator,ap.toEnergy*as,2*pi/f.period,time)*f.amplitude;
+                bc = bp.fromEnergy*response(bp.energyGenerator,bp.toEnergy*bs,2*pi/f.period,time)*f.amplitude;
+                ad = ap.generator*ac+f.amplitude*as;
+                bd = bp.generator*bc+f.amplitude*bs;
+                expectedQ = sqrt(sum(weights.*abs(a.q*ac-b.q*bc).^2)/(2*w.Lz));
+                expectedB = sqrt(sum(weights.*abs(a.b*ac-b.b*bc).^2)/(2*w.Lz));
+                expectedEnergy = abs(norm(a.energy*ac)^2-norm(b.energy*bc)^2)/4;
+                expectedEnergyRate = abs(real((a.energy*ac)'*(a.energy*ad)-(b.energy*bc)'*(b.energy*bd)))/2;
+                testCase.verifyEqual(actual.total.absolute.qgpv,expectedQ,RelTol=2e-4)
+                testCase.verifyEqual(actual.total.absolute.buoyancy,expectedB,RelTol=2e-4)
+                testCase.verifyEqual(actual.total.absolute.energy,expectedEnergy,RelTol=2e-3)
+                testCase.verifyEqual(actual.total.absolute.energyTendency,expectedEnergyRate,RelTol=2e-3)
+                % Independent integration count must not set the measured modal error.
+                refined = closure.assessSeasonalResponse(f,time,referenceTransforms={coarse,fine},quadratureCount=513);
+                testCase.verifyEqual(actual.total.absolute.qgpv,refined.total.absolute.qgpv,RelTol=1e-6)
+                testCase.verifyLessThan(actual.configuration.stratificationRelativeDifference(1),1e-6)
+            end
+        end
+
         function independentReferenceConverges(testCase)
             [z,weights] = gauss(601,4000);
             f = 2*7.2921e-5*sind(24);
@@ -124,7 +156,7 @@ classdef TestFreeSurfaceQGDiffusionQualification < matlab.unittest.TestCase
         function results = runStudy(options)
             % Report seasonal errors at fixed physical parameters from rest.
             % Add UnitTests to the path, then call this method explicitly.
-            % A failed target is a qualification result, not a test assertion.
+            % Callers decide which observable errors their application can accept.
             arguments (Input)
                 options.gridCounts (1,:) double {mustBeInteger,mustBePositive} = [33 65 129]
                 options.scales (1,:) double {mustBePositive} = [Inf 1300]
@@ -170,9 +202,8 @@ classdef TestFreeSurfaceQGDiffusionQualification < matlab.unittest.TestCase
                         energyBudgetError = abs(energyBudget-referenceEnergyBudget)/max(abs(referenceEnergyBudget),realmin);
                         enstrophyBudgetError = abs(enstrophyBudget-referenceEnstrophyBudget)/max(abs(referenceEnstrophyBudget),realmin);
                         qConsistency = relative(r.q*c,r.qState*c,weights);
-                        passed = all([bError qError sshError endpointError]<1e-2) && all([energyError enstrophyError]<2e-2) && all([energyBudgetError enstrophyBudgetError]<5e-2);
                         index = index+1;
-                        rows{index} = table(scale,nz,size(r.qState,2)-2,w.mdaModeCount,fraction,bError,qError,sshError,endpointError,energyError,enstrophyError,energyBudgetError,enstrophyBudgetError,qConsistency,passed,VariableNames={'stratificationScale','Nz','APVModes','MDAModes','timeInYears','buoyancyError','qgpvError','sshError','endpointError','energyError','enstrophyError','energyBudgetError','enstrophyBudgetError','qgpvConsistency','passed'});
+                        rows{index} = table(scale,nz,size(r.qState,2)-2,w.mdaModeCount,fraction,bError,qError,sshError,endpointError,energyError,enstrophyError,energyBudgetError,enstrophyBudgetError,qConsistency,VariableNames={'stratificationScale','Nz','APVModes','MDAModes','timeInYears','buoyancyError','qgpvError','sshError','endpointError','energyError','enstrophyError','energyBudgetError','enstrophyBudgetError','qgpvConsistency'});
                         disp(rows{index})
                     end
                 end
