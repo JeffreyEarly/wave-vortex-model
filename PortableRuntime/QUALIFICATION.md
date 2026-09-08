@@ -11,7 +11,7 @@ qualifyPortableHydrostatic("hydrostatic-reference.json");
 qualifyPortableHydrostatic("hydrostatic-native.json",runner="/path/to/build/wave-vortex-run",native=true);
 ```
 
-The supplied runner needs matching `WVStableForcingDump`, `WVStratifiedQGFieldDump` (the shared stratified field probe), `WVHydrostaticLifecycleProbe`, `WVStratifiedModalDump` and `WVHydrostaticKernelDump` executables beside it. Without a supplied runner the tool builds the reference configuration. Native qualification includes the reference provider and native FFTW, plus scalar/Accelerate matrix parity in the numerical kernel tests. Complete model runs currently use the scalar matrix backend; this evidence does not claim Accelerate selection through the runner.
+The supplied runner needs matching `WVStableForcingDump`, `WVStratifiedQGFieldDump` (the shared stratified field probe), `WVHydrostaticLifecycleProbe`, `WVStratifiedQGLifecycleProbe`, `WVStratifiedModalDump` and `WVHydrostaticKernelDump` executables beside it. Without a supplied runner the tool builds the reference configuration. Native qualification includes the reference provider and native FFTW, plus scalar/Accelerate matrix parity in the numerical kernel tests. Complete model runs currently use the scalar matrix backend; this evidence does not claim Accelerate selection through the runner.
 
 The `wave-vortex-hydrostatic-qualification-v1` report links executed tests to the existing forcing catalog, including all 23 supported Hydrostatic forcing/antialias pairs and the intentional antialias-on-antialias incompatibility. It records the source revision, working-tree status, MATLAB release, provider, timing, storage and measured continuation errors. `validatePortableHydrostaticQualification` rejects missing, duplicate, stale, contradictory or out-of-tolerance evidence. The focused Hydrostatic workflow runs reference release and ASan/UBSan qualification and uploads separate reports, independently of optional Full CI.
 
@@ -28,6 +28,17 @@ The CFL fixture requests the CFL number that selects a five-second step at each 
 The shared stratified lifecycle probe constructs, warms up, advances and destroys six complete models per case. Both providers run 8×6×9, 12×10×13 and 20×16×17 grids; native FFTW additionally runs 64×48×49 with 24 modes. Large cases are native-only because the reference implementation uses a direct DFT. Each lifecycle records setup time, sixteen measured RK4 steps, 64 RHS evaluations, reconstruction/projection counts and retained capacities. It verifies modal-source ownership release after destruction, unchanged prepared capacities and zero native C++ application allocations. These prepared-step measurements occur between output events; the continuation reports separately include real output/restart work.
 
 Retained bytes count integration-system, integrator, state and output capacities. Scientific bytes are also reported for inspection. Allocator metadata and opaque FFTW/NetCDF internals are outside this accounting; process RSS in the runtime report is diagnostic, not an exact live-array ledger. Timing is descriptive, with no machine-dependent CI speed threshold.
+
+The recorded [Apple Silicon Hydrostatic report](qualification/hydrostatic-apple-silicon-v1.json) contains 41 passing tests, 47 forcing/provider results, twelve continuation results and seven lifecycle results. The maximum coefficient-family discrepancy is `5.19e-9`; the maximum particle-position discrepancy is `2.62e-6 m`. All lifecycle cases report zero retained growth and zero prepared allocations. Representative native measurements are:
+
+| Grid / modes | Retained capacities | Median time for 16 RK4 steps |
+| --- | ---: | ---: |
+| 8×6×9 / 4 | 372,498 bytes | 0.00271 s |
+| 12×10×13 / 6 | 856,354 bytes | 0.0116 s |
+| 20×16×17 / 8 | 2,543,002 bytes | 0.0486 s |
+| 64×48×49 / 24 | 66,545,802 bytes | 2.91 s |
+
+These samples ran on a shared development host; they establish descriptive baselines rather than isolated speed comparisons. The forcing-service counters record 128 physical-bundle reconstructions and 192 spatial projections per 64 RHS evaluations. They do not include every field reconstruction performed by the separate sampling/output services.
 
 Hydrostatic spatial closures still project separately, and integrated observers may reconstruct fields after the forcing RHS. The qualification records this schedule before optimization. Backend selection and safe per-RHS field reuse remain possible measured follow-ups. Variable-stratification Boussinesq wave matrices, their horizontal-wavenumber groups and full Boussinesq runtime qualification remain the next transform gap.
 
