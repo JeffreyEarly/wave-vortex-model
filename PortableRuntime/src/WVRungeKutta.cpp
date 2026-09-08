@@ -2604,10 +2604,11 @@ WVKernelStatus WVAdaptiveRK78::evaluateDenseOutput(
   auto status = validateMutableIntegrationState(system_.stateLayout(), output);
   if (!status)
     return status;
-  for (std::size_t family = 0; family < output.coefficientFamilyCount;
+  const auto &layout = system_.stateLayout();
+  for (std::size_t family = 0; family < layout.coefficientFamilyCount();
        ++family)
-    if (output.coefficientFamilies[family].data ==
-        acceptedStep_.endpoint.coefficientFamilies[family].data)
+    if (coefficientFamilyView(layout, output, family).data ==
+        coefficientFamilyView(layout, acceptedStep_.endpoint, family).data)
       return {WVKernelStatusCode::invalidConfiguration,
               "RK78 dense output must not alias accepted integration state."};
   for (std::size_t block = 0; block < output.additionalBlockCount; ++block)

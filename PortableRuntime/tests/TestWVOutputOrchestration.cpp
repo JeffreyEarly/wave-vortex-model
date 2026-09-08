@@ -1000,6 +1000,73 @@ void testSolverInvariance(Context &context) {
             << " adaptive_rejected=" << adaptiveOutput.rejected << '\n';
 }
 
+void testRK78DenseOutputRepresentations(Context &context) {
+  const auto &layout = context.system.stateLayout();
+  for (const bool explicitEndpoint : {false, true}) {
+    StateFixture accepted(layout);
+    std::vector<WVCoefficientFamilyView> acceptedFamilies;
+    for (std::size_t family = 0; family < layout.coefficientFamilyCount();
+         ++family)
+      acceptedFamilies.push_back(
+          coefficientFamilyView(layout, accepted.state, family));
+    if (explicitEndpoint) {
+      accepted.state.coefficientFamilies = acceptedFamilies.data();
+      accepted.state.coefficientFamilyCount = acceptedFamilies.size();
+    }
+    WVAdaptiveRK78Options options;
+    options.relativeTolerance = 1.0;
+    options.absoluteToleranceScale = 1.0;
+    options.maximumStepSize = 0.3;
+    options.retainDenseOutput = true;
+    WVAdaptiveRK78 integrator(context.system, options);
+    require(static_cast<bool>(integrator.prepareStateAfterRestart(accepted.state)) &&
+                static_cast<bool>(integrator.advanceToTime(accepted.state, 0.3, 0.3)),
+            "RK78 accepts both coefficient representations");
+    const auto acceptedValues = accepted.values();
+    std::vector<double> reference;
+    for (const bool explicitOutput : {false, true}) {
+      StateFixture output(layout);
+      std::vector<WVCoefficientFamilyView> outputFamilies;
+      for (std::size_t family = 0; family < layout.coefficientFamilyCount();
+           ++family)
+        outputFamilies.push_back(
+            coefficientFamilyView(layout, output.state, family));
+      if (explicitOutput) {
+        output.state.coefficientFamilies = outputFamilies.data();
+        output.state.coefficientFamilyCount = outputFamilies.size();
+      }
+      require(static_cast<bool>(integrator.evaluateDenseOutput(0.1, output.state)),
+              "RK78 dense output accepts every representation combination");
+      if (reference.empty())
+        reference = output.values();
+      require(output.values() == reference && accepted.values() == acceptedValues,
+              "RK78 dense output is representation independent and preserves endpoint");
+      for (std::size_t family = 0; family < layout.coefficientFamilyCount();
+           ++family) {
+        auto alias = output.state;
+        auto aliasFamilies = outputFamilies;
+        if (explicitOutput) {
+          aliasFamilies[family].data = acceptedFamilies[family].data;
+          alias.coefficientFamilies = aliasFamilies.data();
+        } else {
+          WVComplexView *views[] = {&alias.waveVortex.coefficients.Ap,
+                                    &alias.waveVortex.coefficients.Am,
+                                    &alias.waveVortex.coefficients.A0};
+          views[family]->data = acceptedFamilies[family].data;
+        }
+        const auto before = output.values();
+        const auto evaluations = integrator.metrics().denseOutputEvaluationCount;
+        require(integrator.evaluateDenseOutput(0.2, alias).code ==
+                    WVKernelStatusCode::invalidConfiguration &&
+                    accepted.values() == acceptedValues &&
+                    output.values() == before &&
+                    integrator.metrics().denseOutputEvaluationCount == evaluations,
+                "RK78 rejects each aliased family before evaluation or mutation");
+      }
+    }
+  }
+}
+
 void testRK78LazyDenseOutputAndTransactionalRetry(Context &context) {
   StateFixture fixture(context.system.stateLayout());
   WVAdaptiveRK78Options options;
@@ -1337,6 +1404,7 @@ int main() {
   testPreflightAndMalformedProgress(context);
   testTerminationInterruptionAndLaterRouteFailure(context);
   testSolverInvariance(context);
+  testRK78DenseOutputRepresentations(context);
   testRK78LazyDenseOutputAndTransactionalRetry(context);
   testIntegratorExtensionBoundary(context);
   testDriverStorageBoundedByConfiguration();
