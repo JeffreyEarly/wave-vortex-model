@@ -21,7 +21,7 @@ void require(WVKernelStatus status) { if (!status) throw std::runtime_error(stat
 void close(double a, double b) { require(std::abs(a-b) <= 2e-12*(1+std::abs(b)),"Independent oracle mismatch"); }
 void close(WVComplex64 a, std::complex<long double> b) { close(a.real,static_cast<double>(b.real())); close(a.imag,static_cast<double>(b.imag())); }
 template <typename T> bool same(const std::vector<T>& a, const std::vector<T>& b) {
-    return a.size() == b.size() && std::memcmp(a.data(),b.data(),a.size()*sizeof(T)) == 0;
+    return a.size() == b.size() && (a.empty() || std::memcmp(a.data(),b.data(),a.size()*sizeof(T)) == 0);
 }
 struct Buffer {
     WVComplexLayout layout;

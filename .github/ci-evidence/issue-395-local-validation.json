@@ -1,0 +1,22 @@
+{
+  "schema": "wvm-ci-local-validation-v1",
+  "platform": "Apple Silicon, MATLAB R2025b",
+  "scientificSourceCommit": "f5b5f46deb08ea397aebec2e73b9515f33df2d94",
+  "harness": "Working tree leading to c217264f; this run predates the expectedTests report-field addition. Hosted evidence validates the final report contract.",
+  "smokeTests": 137,
+  "selectedClasses": 42,
+  "selectedTests": 411,
+  "passedTests": 411,
+  "incompleteTests": 0,
+  "phases": {
+    "smoke": true,
+    "analyzer": true,
+    "documentation": true
+  },
+  "phaseSeconds": {
+    "smoke": 35.249647583333335,
+    "analyzer": 1.0789035,
+    "documentation": 57.356022583333335
+  },
+  "testSeconds": 1017.9392056666667
+}

@@ -31,7 +31,7 @@ def category(name):
         return 'setup'
     if 'build' in name or 'compile' in name:
         return 'build_or_combined_build_test'
-    if any(token in name for token in ('test', 'qualif', 'analy', 'catalog', 'verify', 'matlab-actions/run-command', 'matlab gate')):
+    if any(token in name for token in ('test', 'qualif', 'analy', 'catalog', 'verify', 'contract', 'selected matlab', 'matlab-actions/run-command', 'matlab gate')):
         return 'validation'
     return 'other'
 
@@ -63,7 +63,8 @@ def collect(repo, run_id):
     return dict(id=run_id, name=run['name'], sourceCommit=run['head_sha'], event=run['event'],
                 url=run['html_url'], status=run['status'], conclusion=run['conclusion'],
                 createdAt=run['created_at'], startedAt=run['run_started_at'],
-                initialQueueSeconds=seconds(run['created_at'], run['run_started_at']),
+                firstJobQueueSeconds=seconds(run['created_at'], min((job['started_at'] for job in jobs if job.get('started_at')), default=None)),
+                latestAttemptStartDelaySeconds=seconds(run['created_at'], run['run_started_at']),
                 completedJobSeconds=sum(durations), incompleteJobs=sum(r['seconds'] is None for r in rows),
                 jobs=rows)
 

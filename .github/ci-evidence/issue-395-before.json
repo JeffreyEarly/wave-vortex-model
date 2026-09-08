@@ -14,7 +14,6 @@
       "conclusion": "success",
       "createdAt": "2026-09-08T14:42:52Z",
       "startedAt": "2026-09-08T14:42:52Z",
-      "initialQueueSeconds": 0,
       "completedJobSeconds": 1142.0,
       "incompleteJobs": 0,
       "jobs": [
@@ -433,7 +432,9 @@
             }
           ]
         }
-      ]
+      ],
+      "latestAttemptStartDelaySeconds": 0,
+      "firstJobQueueSeconds": 1.0
     },
     {
       "id": 34240963152,
@@ -445,7 +446,6 @@
       "conclusion": "success",
       "createdAt": "2026-09-08T14:51:17Z",
       "startedAt": "2026-09-08T15:09:25Z",
-      "initialQueueSeconds": 1088.0,
       "completedJobSeconds": 2135.0,
       "incompleteJobs": 0,
       "jobs": [
@@ -1279,7 +1279,9 @@
             }
           ]
         }
-      ]
+      ],
+      "latestAttemptStartDelaySeconds": 1088.0,
+      "firstJobQueueSeconds": 1.0
     },
     {
       "id": 34240963189,
@@ -1291,7 +1293,6 @@
       "conclusion": "success",
       "createdAt": "2026-09-08T14:51:17Z",
       "startedAt": "2026-09-08T14:51:17Z",
-      "initialQueueSeconds": 0,
       "completedJobSeconds": 558.0,
       "incompleteJobs": 0,
       "jobs": [
@@ -1467,7 +1468,9 @@
             }
           ]
         }
-      ]
+      ],
+      "latestAttemptStartDelaySeconds": 0,
+      "firstJobQueueSeconds": 3.0
     },
     {
       "id": 34240963126,
@@ -1479,7 +1482,6 @@
       "conclusion": "success",
       "createdAt": "2026-09-08T14:51:17Z",
       "startedAt": "2026-09-08T14:51:17Z",
-      "initialQueueSeconds": 0,
       "completedJobSeconds": 1514.0,
       "incompleteJobs": 0,
       "jobs": [
@@ -1679,7 +1681,9 @@
             }
           ]
         }
-      ]
+      ],
+      "latestAttemptStartDelaySeconds": 0,
+      "firstJobQueueSeconds": 39.0
     },
     {
       "id": 34240963178,
@@ -1691,7 +1695,6 @@
       "conclusion": "success",
       "createdAt": "2026-09-08T14:51:17Z",
       "startedAt": "2026-09-08T14:51:17Z",
-      "initialQueueSeconds": 0,
       "completedJobSeconds": 1552.0,
       "incompleteJobs": 0,
       "jobs": [
@@ -1891,7 +1894,9 @@
             }
           ]
         }
-      ]
+      ],
+      "latestAttemptStartDelaySeconds": 0,
+      "firstJobQueueSeconds": 61.0
     },
     {
       "id": 34240963115,
@@ -1903,7 +1908,6 @@
       "conclusion": "success",
       "createdAt": "2026-09-08T14:51:17Z",
       "startedAt": "2026-09-08T14:51:17Z",
-      "initialQueueSeconds": 0,
       "completedJobSeconds": 3281.0,
       "incompleteJobs": 0,
       "jobs": [
@@ -2091,7 +2095,9 @@
             }
           ]
         }
-      ]
+      ],
+      "latestAttemptStartDelaySeconds": 0,
+      "firstJobQueueSeconds": 40.0
     },
     {
       "id": 34240963118,
@@ -2103,7 +2109,6 @@
       "conclusion": "cancelled",
       "createdAt": "2026-09-08T14:51:17Z",
       "startedAt": "2026-09-08T14:51:17Z",
-      "initialQueueSeconds": 0,
       "completedJobSeconds": 4563.0,
       "incompleteJobs": 0,
       "jobs": [
@@ -2335,7 +2340,9 @@
             }
           ]
         }
-      ]
+      ],
+      "latestAttemptStartDelaySeconds": 0,
+      "firstJobQueueSeconds": 22.0
     },
     {
       "id": 34240963158,
@@ -2347,7 +2354,6 @@
       "conclusion": "success",
       "createdAt": "2026-09-08T14:51:17Z",
       "startedAt": "2026-09-08T14:51:17Z",
-      "initialQueueSeconds": 0,
       "completedJobSeconds": 302.0,
       "incompleteJobs": 0,
       "jobs": [
@@ -2535,7 +2541,9 @@
             }
           ]
         }
-      ]
+      ],
+      "latestAttemptStartDelaySeconds": 0,
+      "firstJobQueueSeconds": 30.0
     }
   ]
 }
