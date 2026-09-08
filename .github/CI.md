@@ -45,3 +45,5 @@ Run `python3 -m pip install -r tools/ci/requirements.txt`, then `python3 -m unit
 Use actionlint to validate all workflow files before deployment. `tools/ci/measure_runs.py --run RUN_ID --output FILE` records job/step times across attempts without counting carried-forward successes twice. These are elapsed runner seconds, not invoice charges; incomplete jobs are identified explicitly. Timing evidence lives in `.github/ci-evidence/`.
 
 The ordinary required-path target is roughly 5–8 minutes with healthy provisioning. Documentation rendering, broad scientific changes, sanitizer builds, and complete qualification may exceed that target. Report measured hosted results separately from estimates and local timings.
+
+<!-- Temporary documentation-route timing probe for issue 395; do not merge. -->
