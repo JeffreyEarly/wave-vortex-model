@@ -1,5 +1,7 @@
 # Issue #353: retained-band qualification with the corrected provider
 
+> Current scope: the [adiabatic qualification handoff](Issue353AdiabaticQualification.md) supersedes this report's historical next-work recommendations. Numerical results and failed accuracy criteria below remain unchanged. Thin-layer diffusion research is #389; the long adiabatic application is #367; release/install/export work is #354.
+
 This study distinguishes a numerically accurate eigensolve from a sufficiently large retained scientific mode band. It follows the merged row-equilibration correction in InternalModes #16 and WVM #383. The original #380 tables remain historical evidence with their original provider. No runtime API, model hierarchy, resolved-mode definition, transform fitting, package metadata or experiment pin changes.
 
 ## Question and fixed physical problem

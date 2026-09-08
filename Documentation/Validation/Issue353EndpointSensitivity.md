@@ -1,5 +1,7 @@
 # Issue #353: high-band endpoint sensitivity
 
+> Current scope: the [adiabatic qualification handoff](Issue353AdiabaticQualification.md) supersedes this report's historical next-work recommendations. Numerical results and failed accuracy criteria below remain unchanged. Thin-layer diffusion research is #389; the long adiabatic application is #367; release/install/export work is #354.
+
 The nonmonotone high-band differences in PR #380 are primarily a numerical eigensolve error. Equilibrating the generalized eigenproblem's rows reduces the fixed-band error against independent analytical modes and removes the observed nonlinear endpoint discrepancy. The WVM resolved basis, sampling policy, physical equations, and class hierarchy are unchanged. This does not qualify the retained bandwidth of the seasonal experiment.
 
 ## Configuration and controls
