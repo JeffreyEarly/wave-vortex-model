@@ -1,5 +1,7 @@
 #include "WaveVortexRuntime/WVModelOutputNetCDF.hpp"
 #include "WaveVortexRuntime/WVModel.hpp"
+#include "../src/WVModelInternalAccess.hpp"
+#include "WaveVortexRuntime/WVIntegrationContracts.hpp"
 #include "WVTestExtensionCatalog.hpp"
 #include "WaveVortexRuntime/WVObserverOutputEvaluationService.hpp"
 #include "WaveVortexRuntime/WVObserverOutputProvider.hpp"
@@ -4157,6 +4159,15 @@ void testCoincidentRoutesKeepDistinctLogicalBatches() {
 void testWVModelRetainsFailedNetCDFRouteForRetry() {
   TemporaryDirectory directory;
   auto checkpoint = checkpointTemplate();
+  // Keep this persistence fixture stable over its one-second RK4 steps while
+  // retaining nonzero nonlinear diagnostics at the failed output event.
+  for (auto *family : {&checkpoint.state.coefficients.Ap,
+                       &checkpoint.state.coefficients.Am,
+                       &checkpoint.state.coefficients.A0})
+    for (auto &value : *family) {
+      value.real *= 1e-6;
+      value.imag *= 1e-6;
+    }
   const auto initialTime = checkpoint.state.t;
   const auto sourcePath = directory.path / "retry-algorithmic-source.nc";
   auto sourceRecord = recordFor(checkpoint, sourcePath);
@@ -4197,6 +4208,17 @@ void testWVModelRetainsFailedNetCDFRouteForRetry() {
   const auto secondaryPath = directory.path / "retry-secondary.nc";
   auto record = sourceInspection.observerRecord;
   record.outputFiles[0].destination = primaryPath.string();
+  const auto nonlinear=std::find_if(sourceInspection.latestRestart.forcingSchedule.entries.begin(),
+      sourceInspection.latestRestart.forcingSchedule.entries.end(),[](const auto& entry){return entry.typeIdentifier=="WVNonlinearAdvection";});
+  require(nonlinear!=sourceInspection.latestRestart.forcingSchedule.entries.end(),"Retry fixture requires nonlinear advection");
+  auto suffix=nonlinear->name;
+  for(auto& character:suffix) if(character==' ' || character=='-') character='_';
+  WVObserverRecord diagnostic;
+  diagnostic.identifier="forcing-diagnostics"; diagnostic.name="forcing diagnostics";
+  diagnostic.typeIdentifier="WVEulerianFields";
+  diagnostic.fieldNames={"Fu_"+suffix,"Fv_"+suffix,"Feta_"+suffix};
+  record.observers.push_back(diagnostic);
+  record.outputFiles[0].groups[0].observerIdentifiers.push_back(diagnostic.identifier);
   auto secondary = record.outputFiles[0];
   secondary.identifier = "secondary";
   secondary.destination = secondaryPath.string();
@@ -4235,11 +4257,16 @@ void testWVModelRetainsFailedNetCDFRouteForRetry() {
               plan.event(0).routeCount == 2,
           "WVModel retry plan did not preserve the algorithmic continuation "
           "and two coincident routes");
+  auto* fields=WVModelInternalAccess::integrationSystem(model).fieldEvaluationService();
+  require(fields!=nullptr,"Retry model must expose its resolved field service");
+  std::unique_ptr<WVObserverOutputEvaluationService> evaluation;
+  status=WVObserverOutputEvaluationService::create(false,descriptor,*fields,evaluation);
+  require(bool(status),status.message);
   WVModelOutputNetCDFSink netCDFSink;
   persistence = WVModelOutputNetCDFSink::createNew(
       {modelOutputCatalog(), restoredCheckpoint,
        sourceInspection.isDynamicsLinear},
-      descriptor, plan, layout, nullptr, netCDFSink);
+      descriptor, plan, layout, evaluation.get(), netCDFSink);
   require(static_cast<bool>(persistence), persistence.message);
   FailOnceNetCDFSink sink(netCDFSink, 2);
   status = netCDFSink.preflight(plan);
@@ -4266,15 +4293,33 @@ void testWVModelRetainsFailedNetCDFRouteForRetry() {
     return count;
   };
 
+  const auto beforeDiagnostic=fields->metrics().diagnosticEvaluationCount;
   status = model.advanceToTime(state, finalTime, 1.0, plan, sink);
   require(!status && state.checkpoint().state.t == finalTime &&
               timeCount(primaryPath, "wave-vortex") == 1 &&
               timeCount(secondaryPath, "wave-vortex-secondary") == 0 &&
               fileBytes(sourcePath) == immutableSource,
           "WVModel route failure lost the accepted state, changed failed "
-          "offsets, or mutated the restart source");
+          "offsets, or mutated the restart source: "+status.message);
 
+  const auto accepted=state.checkpoint().state;
+  const auto progress=model.metrics(&state).integrator;
+  const auto fftCalls=fields->metrics().fftExecutionCount;
+  require(fields->metrics().diagnosticEvaluationCount==beforeDiagnostic+1 &&
+      evaluation->metrics().outputCapacityBytes>0 && fields->metrics().diagnosticWorkspaceLiveBytes==0,
+      "Failed sink route did not retain exactly one prepared diagnostic occurrence");
   status = model.advanceToTime(state, finalTime, 1.0, plan, sink);
+  require(fields->metrics().diagnosticEvaluationCount==beforeDiagnostic+1 && fields->metrics().fftExecutionCount==fftCalls,
+      "Sink retry repeated forcing diagnostics or field reconstruction");
+  const auto retried=model.metrics(&state).integrator;
+  require(retried.acceptedStepCount==progress.acceptedStepCount && retried.rejectedStepCount==progress.rejectedStepCount &&
+      retried.baseRightHandSideEvaluationCount==progress.baseRightHandSideEvaluationCount,
+      "Sink retry repeated integration work");
+  const auto& acceptedAfter=state.checkpoint().state;
+  for(const auto pair:{std::make_pair(&accepted.coefficients.Ap,&acceptedAfter.coefficients.Ap),
+      std::make_pair(&accepted.coefficients.Am,&acceptedAfter.coefficients.Am),std::make_pair(&accepted.coefficients.A0,&acceptedAfter.coefficients.A0)})
+    require(pair.first->size()==pair.second->size() && std::equal(pair.first->begin(),pair.first->end(),pair.second->begin(),
+        [](auto left,auto right){return left.real==right.real && left.imag==right.imag;}),"Sink retry changed accepted coefficients");
   require(static_cast<bool>(status) &&
               timeCount(primaryPath, "wave-vortex") == 1 &&
               timeCount(secondaryPath, "wave-vortex-secondary") == 1 &&
@@ -4298,6 +4343,24 @@ void testWVModelRetainsFailedNetCDFRouteForRetry() {
           "route replay");
   persistence = netCDFSink.close();
   require(static_cast<bool>(persistence), persistence.message);
+  const auto readDiagnostic=[&](const std::filesystem::path& path,const char* groupName,const std::string& name) {
+    int file=-1,group=-1,variable=-1;
+    require(nc_open(path.c_str(),NC_NOWRITE,&file)==NC_NOERR && nc_inq_ncid(file,groupName,&group)==NC_NOERR &&
+        nc_inq_varid(group,name.c_str(),&variable)==NC_NOERR,"Read saved retry diagnostic");
+    const auto& c=checkpoint.configuration;
+    std::vector<double> values(c.Nx*c.Ny*c.Nz);
+    require(nc_get_var_double(group,variable,values.data())==NC_NOERR && nc_close(file)==NC_NOERR,"Read saved retry diagnostic values");
+    return values;
+  };
+  bool nonzero=false;
+  for(const auto& name:diagnostic.fieldNames) {
+    const auto primary=readDiagnostic(primaryPath,"wave-vortex",name);
+    const auto secondary=readDiagnostic(secondaryPath,"wave-vortex-secondary",name);
+    require(primary==secondary,"Sink retry wrote different forcing fields to sibling routes");
+    for(auto value:primary) {require(std::isfinite(value),"Sink retry wrote nonfinite forcing output"); nonzero|=value!=0;}
+  }
+  require(nonzero,"Sink retry fixture must carry nonzero diagnostic values");
+  require(evaluation->metrics().outputCapacityBytes==0,"Completed sink retry retained diagnostic output arrays");
   WVModelOutputNetCDFInspection retryInspection;
   persistence = WVModelOutputNetCDFSink::inspect(
       {primaryPath.string(), secondaryPath.string()}, *modelOutputCatalog(),

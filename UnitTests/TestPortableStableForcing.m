@@ -7,7 +7,8 @@ classdef TestPortableStableForcing < matlab.unittest.TestCase
         providers (1,:) string
     end
     properties (TestParameter)
-        outputFamily = struct(constantHydrostatic="constant-hydrostatic",constantNonhydrostatic="constant-nonhydrostatic",barotropic="barotropic",stratifiedQG="stratified-qg",hydrostatic="hydrostatic",boussinesq="boussinesq")
+        outputDynamics = struct(linear=true,nonlinear=false)
+        outputFamily = struct(constantHydrostatic="constant-hydrostatic",constantNonhydrostatic="constant-nonhydrostatic",barotropic="barotropic",stratifiedQG="stratified-qg",stratifiedQGPrimitives="stratified-qg-primitives",hydrostatic="hydrostatic",boussinesq="boussinesq")
     end
     methods (TestClassSetup)
         function buildProbe(testCase)
@@ -33,8 +34,10 @@ classdef TestPortableStableForcing < matlab.unittest.TestCase
         end
     end
     methods (Test,TestTags="full")
-        function forcingOutputContinuationMatchesMatlab(testCase,outputFamily)
+        function forcingOutputContinuationMatchesMatlab(testCase,outputFamily,outputDynamics)
             family = string(outputFamily);
+            usePrimitives = family == "stratified-qg-primitives";
+            if usePrimitives, family = "stratified-qg"; end
             if family == "barotropic"
                 wvt = WVTransformBarotropicQG([17000 11000],[8 6],j=1,shouldAntialias=false);
             elseif family == "stratified-qg"
@@ -49,12 +52,20 @@ classdef TestPortableStableForcing < matlab.unittest.TestCase
                 wvt.t = 37;
             end
             forces = [WVNonlinearAdvection(wvt),WVBottomFrictionLinear(wvt,r=2.5e-7),WVBottomFrictionQuadratic(wvt,Cd=.002)];
-            if family == "stratified-qg"
+            if family == "stratified-qg" && ~usePrimitives
                 % #404 prevents MATLAB from saving a spectral diagnostic
                 % composition. Its raw spatial outputs remain testable.
                 forces = [forces,WVVerticalDiffusivity(wvt,kappa_z=.002)];
             else
-                forces = [forces,WVBetaPlanePVAdvection(wvt),WVAdaptiveDamping(wvt),testCase.forcing(wvt,"WVNarrowBandGeostrophicForcing"),testCase.forcing(wvt,"WVFixedAmplitudeForcing"),WVAntialiasing(wvt,Nj=3)];
+                fixed = testCase.forcing(wvt,"WVFixedAmplitudeForcing");
+                if usePrimitives
+                    % A horizontal mean fixed at zero has only roundoff-sized
+                    % tendency here. Select a populated mode for parity.
+                    fixedIndex = find(wvt.Kh>0 & wvt.J==1,1);
+                    fixed = WVFixedAmplitudeForcing(wvt,name="catalog fixed",A0_indices=uint64(fixedIndex),A0bar=wvt.A0(fixedIndex));
+                end
+                forces = [forces,WVBetaPlanePVAdvection(wvt),WVAdaptiveDamping(wvt),testCase.forcing(wvt,"WVNarrowBandGeostrophicForcing"),fixed,WVAntialiasing(wvt,Nj=3)];
+                if usePrimitives, forces = [forces,WVVerticalDiffusivity(wvt,kappa_z=.002)]; end
                 if ~isQG
                     terrain = 2*cos(2*pi*reshape(wvt.x,[],1)/wvt.Lx)+sin(2*pi*reshape(wvt.y,1,[])/wvt.Ly);
                     tidal = WVPseudoTopographicWaveGeneration(wvt,topographicHeight=terrain,barotropicVelocityAmplitude=[.01;.005],frequency=1e-4,rampDuration=0);
@@ -63,9 +74,16 @@ classdef TestPortableStableForcing < matlab.unittest.TestCase
             end
             wvt.setForcing(forces);
             operation = SpatialForcingOperation(wvt);
+            if usePrimitives
+                % #404: the published wrapper omits the SQG vertical modal
+                % transforms. Qualify saved values with existing MATLAB
+                % primitives and the wrapper's unchanged metadata.
+                testCase.verifyError(@()operation.compute(wvt),'MATLAB:sizeDimensionsMustMatch');
+                operation = WVOperation('spatial forcing',operation.outputVariables,@stratifiedForcingOutputs);
+            end
             wvt.addOperation(operation);
             names = string({operation.outputVariables.name});
-            model = WVModel(wvt,shouldUseLinearDynamics=true);
+            model = WVModel(wvt,shouldUseLinearDynamics=outputDynamics);
             model.eulerianObservingSystem.addNetCDFOutputVariables(names{:});
             source = fullfile(testCase.folder,"forcing-output-source.nc");
             file = model.createNetCDFFileForModelOutput(source,outputInterval=.5,shouldOverwriteExisting=true);
@@ -75,11 +93,23 @@ classdef TestPortableStableForcing < matlab.unittest.TestCase
             file.writeTimeStepToOutputFile(37);
             model.closeNetCDFFile();
             ncwriteatt(source,"/","portableFileIdentifier","forcing-output-primary");
+            baselineSource = fullfile(testCase.folder,"forcing-baseline-source.nc");
+            if ~outputDynamics
+                baseline = WVModel(wvt,shouldUseLinearDynamics=false);
+                baseline.eulerianObservingSystem.addNetCDFOutputVariables('u','v');
+                baselineFile = baseline.createNetCDFFileForModelOutput(baselineSource,outputInterval=.5,shouldOverwriteExisting=true);
+                baselineDense = baselineFile.addNewEvenlySpacedOutputGroup("dense",outputInterval=.125,initialTime=37,finalTime=38);
+                baselineDense.addObservingSystem(WVEulerianFields(baseline,fieldNames={'u','v'}));
+                baselineFile.outputTimesForIntegrationPeriod(37,38);
+                baselineFile.writeTimeStepToOutputFile(37);
+                baseline.closeNetCDFFile();
+                ncwriteatt(baselineSource,"/","portableFileIdentifier","forcing-baseline-primary");
+            end
             controlPath = fullfile(testCase.folder,"forcing-output-matlab.nc");
             % #408: MATLAB does not restore the forcing operation when reading
             % saved Eulerian observers. Use a fresh writer with the same
             % registered operation; C++ still restarts the authored source.
-            control = WVModel(wvt,shouldUseLinearDynamics=true);
+            control = WVModel(wvt,shouldUseLinearDynamics=outputDynamics);
             control.eulerianObservingSystem.addNetCDFOutputVariables(names{:});
             controlFile = control.createNetCDFFileForModelOutput(controlPath,outputInterval=.5,shouldOverwriteExisting=true);
             controlDense = controlFile.addNewEvenlySpacedOutputGroup("dense",outputInterval=.125,initialTime=37,finalTime=38);
@@ -93,31 +123,26 @@ classdef TestPortableStableForcing < matlab.unittest.TestCase
                 for scenario = 1:4
                     outputPath = fullfile(testCase.folder,"forcing-output-runtime.nc");
                     copyfile(source,outputPath);
+                    baselinePath = fullfile(testCase.folder,"forcing-baseline-runtime.nc");
+                    if ~outputDynamics, copyfile(baselineSource,baselinePath); end
                     times = 38;
                     if scenario == 2, times = [37.5 38]; end
                     for finalTime = times
-                        requestPath = fullfile(testCase.folder,"forcing-output-request.json");
-                        method = "fixed-rk4";
-                        if scenario == 3, method = "adaptive-rk45"; end
-                        if scenario == 4, method = "adaptive-rk78"; end
-                        if isQG
-                            % #410: the MATLAB request helper still requires a
-                            % coefficient stream for linear QG files. C++
-                            % supports their initial-only coefficient layout;
-                            % its legacy CLI requires explicit dense retention.
-                            command = shellQuote(testCase.runner)+" "+shellQuote(outputPath)+" --restart-mode model --output-policy append --benchmark-model-dense-output 1 --integrator "+method+" --delta-t 0.25 --final-time "+finalTime+" --fft-provider "+replace(provider,"native","native-fftw")+" --report "+shellQuote(fullfile(testCase.folder,"forcing-output-report.json"));
-                            if scenario > 2, command = command+" --initial-step 0.25 --maximum-step 0.25"; end
-                        else
-                            if scenario <= 2
-                                WVModel.writePortableRunRequest(requestPath,outputPath,method=method,finalTime=finalTime,initialStep=.25,fftProvider=replace(provider,"native","native-fftw"),reportPath="forcing-output-report.json");
-                            else
-                                WVModel.writePortableRunRequest(requestPath,outputPath,method=method,finalTime=finalTime,initialStep=.25,maximumStep=.25,fftProvider=replace(provider,"native","native-fftw"),reportPath="forcing-output-report.json");
+                        report = testCase.runForcingOutputContinuation(outputPath,provider,scenario,finalTime,isQG);
+                        if ~outputDynamics
+                            baselineReport = testCase.runForcingOutputContinuation(baselinePath,provider,scenario,finalTime,isQG);
+                            testCase.verifyEqual(report.state,baselineReport.state,"Diagnostics changed integration progress or RHS counts.");
+                            for metric = ["lastNormalizedError","lastAcceptedStepSize","nextStepSize","constraintModifiedCoefficientCount","baseRightHandSideEvaluationCount"]
+                                testCase.verifyEqual(report.integrator.(metric),baselineReport.integrator.(metric),"Diagnostics changed "+metric);
                             end
-                            command = shellQuote(testCase.runner)+" --request "+shellQuote(requestPath);
+                            testCase.verifyEqual(report.forcing,baselineReport.forcing,"Diagnostics changed the resolved forcing schedule.");
+                            coefficientNames = ["A0_real","A0_imag"];
+                            if ~isQG, coefficientNames = ["A0_real","A0_imag","Ap_real","Ap_imag","Am_real","Am_imag"]; end
+                            for coefficient = coefficientNames
+                                variablePath = "/wave-vortex/"+coefficient;
+                                testCase.verifyEqual(ncread(outputPath,variablePath),ncread(baselinePath,variablePath),"Diagnostics changed saved "+coefficient);
+                            end
                         end
-                        [status,output] = cleanSystem(command);
-                        testCase.assertEqual(status,0,family+" "+provider+" scenario="+scenario+": "+output);
-                        report = jsondecode(fileread(fullfile(testCase.folder,"forcing-output-report.json")));
                         testCase.verifyEqual(report.state.stepCount,4-2*double(scenario==2));
                         testCase.verifyEqual(report.diagnosticEvaluation.workspaceLiveBytes,0);
                         testCase.verifyGreaterThan(report.diagnosticEvaluation.evaluationCount,0);
@@ -166,7 +191,7 @@ classdef TestPortableStableForcing < matlab.unittest.TestCase
                             end
                         end
                     end
-                    fprintf('FORCING_OUTPUT_DIAGNOSTICS %s provider=%s scenario=%d comparisons=%d max_relative=%.17g\n',family,provider,scenario,comparisons,maximumError);
+                    fprintf('FORCING_OUTPUT_DIAGNOSTICS %s provider=%s scenario=%d comparisons=%d max_relative=%.17g linear=%d\n',outputFamily,provider,scenario,comparisons,maximumError,outputDynamics);
                 end
             end
         end
@@ -633,6 +658,30 @@ classdef TestPortableStableForcing < matlab.unittest.TestCase
     end
 
     methods (Access=private)
+        function report = runForcingOutputContinuation(testCase,outputPath,provider,scenario,finalTime,isQG)
+            requestPath = fullfile(testCase.folder,"forcing-output-request.json");
+            method = "fixed-rk4";
+            if scenario == 3, method = "adaptive-rk45"; end
+            if scenario == 4, method = "adaptive-rk78"; end
+            if isQG
+                % #410: the MATLAB request helper still requires a
+                % coefficient stream for linear QG files. C++
+                % supports their initial-only coefficient layout;
+                % its legacy CLI requires explicit dense retention.
+                command = shellQuote(testCase.runner)+" "+shellQuote(outputPath)+" --restart-mode model --output-policy append --benchmark-model-dense-output 1 --integrator "+method+" --delta-t 0.25 --final-time "+finalTime+" --fft-provider "+replace(provider,"native","native-fftw")+" --report "+shellQuote(fullfile(testCase.folder,"forcing-output-report.json"));
+                if scenario > 2, command = command+" --initial-step 0.25 --maximum-step 0.25"; end
+            else
+                if scenario <= 2
+                    WVModel.writePortableRunRequest(requestPath,outputPath,method=method,finalTime=finalTime,initialStep=.25,fftProvider=replace(provider,"native","native-fftw"),reportPath="forcing-output-report.json");
+                else
+                    WVModel.writePortableRunRequest(requestPath,outputPath,method=method,finalTime=finalTime,initialStep=.25,maximumStep=.25,fftProvider=replace(provider,"native","native-fftw"),reportPath="forcing-output-report.json");
+                end
+                command = shellQuote(testCase.runner)+" --request "+shellQuote(requestPath);
+            end
+            [status,output] = cleanSystem(command);
+            testCase.assertEqual(status,0,provider+" scenario="+scenario+": "+output);
+            report = jsondecode(fileread(fullfile(testCase.folder,"forcing-output-report.json")));
+        end
         function force = forcing(~,wvt,identity)
             switch identity
                 case "WVFixedAmplitudeForcing"
@@ -795,6 +844,10 @@ wvt.A0(inertial) = .003*sin(n(inertial)).*(wvt.J(inertial)>0);
 wvt.t0 = 17;
 wvt.t = 37;
 wvt.removeAllForcing();
+end
+
+function varargout = stratifiedForcingOutputs(wvt)
+varargout = stratifiedForcingPrimitives(wvt);
 end
 
 function outputs = stratifiedForcingPrimitives(wvt)
