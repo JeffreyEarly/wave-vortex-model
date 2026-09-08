@@ -115,7 +115,8 @@ enum class WVPersistedTransformKind : std::uint8_t {
     constantStratification,
     barotropicQG,
     stratifiedQG,
-    hydrostatic
+    hydrostatic,
+    boussinesq
 };
 
 // Complete owning result needed to rebuild the portable constant-stratification core.

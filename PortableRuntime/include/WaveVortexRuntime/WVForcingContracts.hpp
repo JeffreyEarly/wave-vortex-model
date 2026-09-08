@@ -6,6 +6,7 @@
 #include "WaveVortexKernel/WVStratifiedModalSource.hpp"
 
 #include "WaveVortexKernel/WVTransformHydrostaticKernel.hpp"
+#include "WaveVortexKernel/WVTransformBoussinesqKernel.hpp"
 
 #include <cstdint>
 #include <functional>
@@ -71,6 +72,7 @@ using WVStratifiedQGForcingFactory = std::function<WVKernelStatus(
     std::unique_ptr<WVStratifiedQGForcing> &)>;
 
 using WVHydrostaticForcingFactory = std::function<WVKernelStatus(const WVFrozenForcingEntry&, WVTransformHydrostaticKernel&, const WVForcingPreparation&, std::unique_ptr<WVForcing>&)>;
+using WVBoussinesqForcingFactory = std::function<WVKernelStatus(const WVFrozenForcingEntry&, WVTransformBoussinesqKernel&, const WVForcingPreparation&, std::unique_ptr<WVForcing>&)>;
 
 struct WVForcingFactoryRegistration {
   std::string matlabClassName;
@@ -99,6 +101,10 @@ struct WVForcingFactoryRegistration {
   std::function<WVKernelStatus(const WVFrozenForcingEntry &,
       const WVTransformHydrostaticKernel &, WVForcingPreparation &)>
       prepareHydrostaticResolution = {};
+  WVBoussinesqForcingFactory boussinesqFactory = {};
+  std::function<WVKernelStatus(const WVFrozenForcingEntry &,
+      const WVTransformBoussinesqKernel &, WVForcingPreparation &)>
+      prepareBoussinesqResolution = {};
 };
 
 std::vector<WVForcingFactoryRegistration> builtInForcingFactories();

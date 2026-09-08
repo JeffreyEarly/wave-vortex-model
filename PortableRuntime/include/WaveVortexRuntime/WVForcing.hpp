@@ -14,6 +14,7 @@ namespace wavevortex::runtime {
 
 class WVConstantStratificationForcingEngine;
 class WVHydrostaticForcingEngine;
+class WVBoussinesqForcingEngine;
 class WVConstantStratificationRightHandSideContext;
 
 // Shared, immutable resolution facts resolved before forcing construction.
@@ -77,12 +78,14 @@ public:
 private:
   WVConstantStratificationForcingEngine *engine_ = nullptr;
   WVHydrostaticForcingEngine *hydrostatic_ = nullptr;
+  WVBoussinesqForcingEngine *boussinesq_ = nullptr;
   const WVState *state_ = nullptr;
   WVFlux *flux_ = nullptr;
   bool *outputInitialized_ = nullptr;
   WVRealFieldBundleView *externalFields_ = nullptr;
   bool *externalFieldsPrepared_ = nullptr;
   friend class WVConstantStratificationForcingEngine;
+  friend class WVBoussinesqForcingEngine;
   friend class WVHydrostaticForcingEngine;
 };
 

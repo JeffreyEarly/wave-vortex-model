@@ -10,7 +10,7 @@
     "reference",
     "native-fftw"
   ],
-  "catalogPath": "PortableRuntime/contracts/portable-forcing-compatibility-v1.json",
+  "catalogPath": "PortableRuntime/qualification/forcing-catalog-through-hydrostatic-v1.json",
   "catalogSHA256": "c85486c503ef152de0839c62b0fd114cd50ff6faf3413852d297db73074d34a9",
   "elapsedSeconds": 432.42922941666666,
   "tests": [

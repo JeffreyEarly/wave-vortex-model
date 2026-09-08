@@ -22,11 +22,8 @@ for name=requiredClasses
 end
 if contractsOnly, expectedNames=expectedNames(expectedNames~="TestPortableHydrostaticQualification/longerContinuationMatchesMatlab"); end
 require(isequal(sort(testNames),sort(expectedNames)),"Missing or unexpected qualification tests.");
-catalogPath = fullfile(options.repositoryRoot,"PortableRuntime","contracts","portable-forcing-compatibility-v1.json");
-file=fopen(catalogPath,"rb"); cleanup=onCleanup(@()fclose(file)); bytes=fread(file,Inf,"*uint8");
-digest=java.security.MessageDigest.getInstance('SHA-256'); digest.update(bytes); hash=string(lower(reshape(dec2hex(typecast(digest.digest(),'uint8'),2)',1,[])));
-require(string(report.catalogSHA256)==hash,"Qualification catalog digest is stale.");
-catalog=jsondecode(fileread(catalogPath));
+[catalog,compatibleCatalog] = portableQualificationCatalog(report,"hydrostatic",options.repositoryRoot);
+require(compatibleCatalog,"Qualification catalog digest or transform slice is stale.");
 expected=catalog.rows(startsWith(string({catalog.rows.configuration}),"hydrostatic"));
 keys=strings(1,0);
 for row=reshape(expected,1,[])

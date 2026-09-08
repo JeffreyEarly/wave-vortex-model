@@ -4,6 +4,7 @@
 #include "WaveVortexKernel/WVTransformBarotropicQGKernel.hpp"
 #include "WaveVortexKernel/WVTransformStratifiedQGKernel.hpp"
 #include "WaveVortexKernel/WVTransformHydrostaticKernel.hpp"
+#include "WaveVortexKernel/WVTransformBoussinesqKernel.hpp"
 #include "WaveVortexRuntime/WVObserverContracts.hpp"
 #include "WaveVortexRuntime/generated/WVPortableVariableCatalog.hpp"
 
@@ -368,6 +369,7 @@ public:
          std::unique_ptr<WVFieldEvaluationService> &service);
   static WVKernelStatus
   createBorrowing(WVTransformHydrostaticKernel &transform,std::unique_ptr<WVFieldEvaluationService> &service);
+  static WVKernelStatus createBorrowing(WVTransformBoussinesqKernel &transform,std::unique_ptr<WVFieldEvaluationService> &service);
   static WVKernelStatus
   createBorrowing(WVTransformStratifiedQGKernel &transform,
                   std::unique_ptr<WVFieldEvaluationService> &service);

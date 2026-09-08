@@ -14,9 +14,9 @@ require(ismember(string(matrix.completion),["incomplete","complete"]),"Unknown c
 names = string(matrix.inventory.stable(:));
 require(~isempty(names) && numel(unique(names)) == numel(names) && isequal(names,sort(names)),"Stable identities must be unique and sorted.");
 configs = string({matrix.configurations.id});
-require(numel(unique(configs)) == numel(configs) && numel(configs) == 10,"The forcing slice requires ten unique configurations.");
+require(numel(unique(configs)) == numel(configs) && numel(configs) == 12,"The forcing slice requires twelve unique configurations.");
 expectedConfigs = strings(1,0);
-for family = ["constant-hydrostatic","constant-nonhydrostatic","barotropic","stratified-qg","hydrostatic"]
+for family = ["constant-hydrostatic","constant-nonhydrostatic","barotropic","stratified-qg","hydrostatic","boussinesq"]
     for antialias = [false true]
         key = family+"-aa"+double(antialias);
         expectedConfigs(end+1) = key; %#ok<AGROW>
@@ -26,8 +26,9 @@ for family = ["constant-hydrostatic","constant-nonhydrostatic","barotropic","str
         if family == "barotropic", transform = "WVTransformBarotropicQG"; end
         if family == "stratified-qg", transform = "WVTransformStratifiedQG"; end
         if family == "hydrostatic", transform = "WVTransformHydrostatic"; end
+        if family == "boussinesq", transform = "WVTransformBoussinesq"; end
         require(string(config.transform) == transform && config.shouldAntialias == antialias && ...
-            config.isHydrostatic == (family ~= "constant-nonhydrostatic"),"Contradictory configuration identity.");
+            config.isHydrostatic == (~ismember(family,["constant-nonhydrostatic","boussinesq"])),"Contradictory configuration identity.");
     end
 end
 require(isequal(sort(configs),sort(expectedConfigs)),"Unknown baseline configuration.");
@@ -82,11 +83,13 @@ for row = reshape(matrix.rows,1,[])
         requiredEvidence = ["baseline-pairs","baseline-compositions"];
         if startsWith(string(row.configuration),"stratified-qg"), requiredEvidence = ["sqg-pairs","sqg-compositions"]; end
         if startsWith(string(row.configuration),"hydrostatic"), requiredEvidence = ["hydro-pairs","hydro-compositions","hydro-continuations"]; end
+        if startsWith(string(row.configuration),"boussinesq"), requiredEvidence = ["bouss-pairs","bouss-compositions","bouss-continuations"]; end
         require(all(ismember(requiredEvidence,references)),"Support requires catalog-driven exact-pair parity, append and composition/restart evidence.");
     elseif string(row.acceptance) == "incompatible"
         requiredEvidence = ["baseline-rejections","matlab-attachment"];
         if startsWith(string(row.configuration),"stratified-qg"), requiredEvidence = ["sqg-rejections","matlab-attachment"]; end
         if startsWith(string(row.configuration),"hydrostatic"), requiredEvidence = replace(requiredEvidence,"baseline-","hydro-"); end
+        if startsWith(string(row.configuration),"boussinesq"), requiredEvidence = replace(requiredEvidence,"baseline-","bouss-"); end
         require(~applicable && all(ismember(requiredEvidence,references)),"Intentional rejection requires MATLAB attachment and C++ preflight evidence.");
     end
 end

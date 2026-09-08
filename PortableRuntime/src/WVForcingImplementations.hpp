@@ -126,5 +126,17 @@ WVKernelStatus createHydrostaticBetaPlaneForcing(const WVFrozenForcingEntry&,WVT
 WVKernelStatus createHydrostaticPseudoTopographicForcing(const WVFrozenForcingEntry&,WVTransformHydrostaticKernel&,const WVForcingPreparation&,std::unique_ptr<WVForcing>&);
 WVKernelStatus prepareHydrostaticExplicitAntialiasing(const WVFrozenForcingEntry&, const WVTransformHydrostaticKernel&, WVForcingPreparation&);
 WVKernelStatus createHydrostaticExplicitAntialiasing(const WVFrozenForcingEntry&,WVTransformHydrostaticKernel&,const WVForcingPreparation&,std::unique_ptr<WVForcing>&);
+WVKernelStatus createBoussinesqHorizontalDamping(const WVFrozenForcingEntry&,WVTransformBoussinesqKernel&,const WVForcingPreparation&,std::unique_ptr<WVForcing>&);
+WVKernelStatus createBoussinesqVerticalDamping(const WVFrozenForcingEntry&,WVTransformBoussinesqKernel&,const WVForcingPreparation&,std::unique_ptr<WVForcing>&);
+WVKernelStatus createBoussinesqVerticalDiffusivity(const WVFrozenForcingEntry&,WVTransformBoussinesqKernel&,const WVForcingPreparation&,std::unique_ptr<WVForcing>&);
+WVKernelStatus createBoussinesqNonlinearAdvectionForcing(const WVFrozenForcingEntry&,WVTransformBoussinesqKernel&,const WVForcingPreparation&,std::unique_ptr<WVForcing>&);
+WVKernelStatus createBoussinesqAdaptiveDampingForcing(const WVFrozenForcingEntry&,WVTransformBoussinesqKernel&,const WVForcingPreparation&,std::unique_ptr<WVForcing>&);
+WVKernelStatus createBoussinesqQuadraticBottomFriction(const WVFrozenForcingEntry&,WVTransformBoussinesqKernel&,const WVForcingPreparation&,std::unique_ptr<WVForcing>&);
+WVKernelStatus createBoussinesqLinearBottomFriction(const WVFrozenForcingEntry&,WVTransformBoussinesqKernel&,const WVForcingPreparation&,std::unique_ptr<WVForcing>&);
+WVKernelStatus createBoussinesqFixedAmplitudeForcing(const WVFrozenForcingEntry&,WVTransformBoussinesqKernel&,const WVForcingPreparation&,std::unique_ptr<WVForcing>&);
+WVKernelStatus createBoussinesqBetaPlaneForcing(const WVFrozenForcingEntry&,WVTransformBoussinesqKernel&,const WVForcingPreparation&,std::unique_ptr<WVForcing>&);
+WVKernelStatus createBoussinesqPseudoTopographicForcing(const WVFrozenForcingEntry&,WVTransformBoussinesqKernel&,const WVForcingPreparation&,std::unique_ptr<WVForcing>&);
+WVKernelStatus prepareBoussinesqExplicitAntialiasing(const WVFrozenForcingEntry&, const WVTransformBoussinesqKernel&, WVForcingPreparation&);
+WVKernelStatus createBoussinesqExplicitAntialiasing(const WVFrozenForcingEntry&,WVTransformBoussinesqKernel&,const WVForcingPreparation&,std::unique_ptr<WVForcing>&);
 
 } // namespace wavevortex::runtime::detail

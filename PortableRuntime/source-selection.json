@@ -62,7 +62,8 @@
     "stratifiedQGQualification": "issue-298",
     "hydrostaticKernel": "issue-299",
     "hydrostaticRuntime": "issue-300",
-    "boussinesqKernel": "issue-302"
+    "boussinesqKernel": "issue-302",
+    "boussinesqRuntime": "issue-303"
   },
   "excluded": [
     "benchmark harnesses and payloads",
@@ -135,5 +136,14 @@
     "coefficientLayout": "canonical-interleaved-Nj-Nkl",
     "runtimeExecutionCapabilityAdded": false,
     "qualification": "UnitTests/TestBoussinesqCompiledKernel.m"
+  },
+  "boussinesqRuntime": {
+    "transform": "WVTransformBoussinesq",
+    "executionCapabilityAdded": true,
+    "issue": 303,
+    "scientificSource": "wave-vortex-stratified-modal-record-v1",
+    "forcingCatalog": "portable-forcing-compatibility-v1.json",
+    "numericalParity": "UnitTests/TestPortableBoussinesq.m",
+    "performanceQualificationIssue": 304
   }
 }

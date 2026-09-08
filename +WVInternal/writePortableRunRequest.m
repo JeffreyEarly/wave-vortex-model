@@ -327,7 +327,7 @@ dynamicsMode = numericAttribute(information.Attributes,"WVModelIsDynamicsLinear"
 switch transformClass
     case "WVTransformConstantStratification"
         bundleSignature = inspectConstantStratificationMetadata(path,information,transformClass,modelVersion,dynamicsMode);
-    case {"WVTransformStratifiedQG","WVTransformHydrostatic"}
+    case {"WVTransformStratifiedQG","WVTransformHydrostatic","WVTransformBoussinesq"}
         bundleSignature = inspectStratifiedQGMetadata(path,information,transformClass,modelVersion,dynamicsMode);
     case "WVTransformBarotropicQG"
         bundleSignature = inspectBarotropicQGMetadata(path,information,transformClass,modelVersion,dynamicsMode);
@@ -408,6 +408,10 @@ scalarNames = ["Lx","Ly","Lz","g","rho0","planetaryRadius","rotationRate","latit
 scalarValues = arrayfun(@(name) readRootScalar(path,information,name),scalarNames);
 variableNames = ["x","y","z","j","kl","k","l","N2","rho_nm0","dLnN2","P0","Q0","h_0","z_int","PF0inv","QG0inv","PF0","QG0"];
 variableDimensions = {"x","y","z","j","kl","kl","kl","z","z","z","j","j","j","z",["z","j"],["z","j"],["j","z"],["j","z"]};
+if transformClass == "WVTransformBoussinesq"
+    variableNames = [variableNames,"K2unique","iK2unique","h_pm","Ppm","Qpm","PFpmInv","QGpmInv","PFpm","QGpm","QGwg"];
+    variableDimensions = [variableDimensions,{"K2unique","kl",["j","kl"],["j","K2unique"],["j","K2unique"],["z","j","K2unique"],["z","j","K2unique"],["j","z","K2unique"],["j","z","K2unique"],["j","j","K2unique"]}];
+end
 scientificValues = cell(size(variableNames));
 for index = 1:numel(variableNames)
     variable = rootVariable(information,variableNames(index));
@@ -425,7 +429,7 @@ for index = 1:numel(information.Groups)
     group = information.Groups(index);
     if textAttribute(group.Attributes,"AnnotatedClass","") ~= "WVModelOutputGroupEvenlySpaced", continue; end
     validatePortableGroupContracts(group);
-    completeRestartGroups = completeRestartGroups + validateStratifiedQGRestartGroup(group,dimensionLengths(4:5),logical(dynamicsMode),transformClass=="WVTransformHydrostatic");
+    completeRestartGroups = completeRestartGroups + validateStratifiedQGRestartGroup(group,dimensionLengths(4:5),logical(dynamicsMode),ismember(transformClass,["WVTransformHydrostatic","WVTransformBoussinesq"]));
 end
 if completeRestartGroups ~= 1
     error("WaveVortexModel:PortableRunRequestContract","Each Stratified QG source file must declare exactly one complete A0 restart stream.");
