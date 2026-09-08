@@ -25,6 +25,12 @@ nav_order: 100
 - Sampling-grid changes preserve each retained family count by default. QG accepts optional strict APV/MDA counts while preserving automatic selection when omitted. An unqualified target or incompatible matched mode rejects the request.
 - Rebuild supported forcing on the target and reject unsupported conversions explicitly. Prescribed Boussinesq volume sources preserve their absolute clock and reject unresolved spatial patterns. Transferred QG and Boussinesq states continue through the existing annotated restart path without a provider solve on restoration.
 
+### Committed observer restart
+
+- Restore Lagrangian particle positions, tracked fields, and tracer state from the contiguous committed time prefix instead of the raw unlimited dimension length. Interrupted payload writes no longer become restored observer state.
+- Preserve configuration for shared observers in groups with no committed records, and reconcile their state from a group saved at the coefficient restart time. A restart without a saved current observer state still rejects.
+- Qualify differently scheduled output groups, shared particles/tracers, moorings, incomplete writes, malformed streams, and provider-free fixed-step continuation across free-surface QG and linear Boussinesq.
+
 ### Free-surface QG vertical calculus
 
 - Added sampled-field `diffZ` and routed free-surface `diffZF`/`diffZG` through the persisted physical grid derivative, preserving zero-APV and MDA content instead of projecting through APV-only modes. Orders 1–4 apply the physical derivative successively, including the variable WKB metric. Gaussian initialization now uses the general derivative for its vertical flux; rigid-lid calculus is unchanged.

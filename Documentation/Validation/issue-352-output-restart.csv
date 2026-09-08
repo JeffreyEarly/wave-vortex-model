@@ -1,0 +1,5 @@
+model,profile,checkpointTime,diagnosticTime,finalTime,initialError,restartError,outputError,particleDisplacement,tracerChange
+qg,constant,207,227,367,0,0,0,0.0522817681120797,2.57850677627405e-06
+qg,exponential,207,227,367,0,0,0,0.05133723193298,3.11238043938577e-06
+boussinesq,constant,207,227,367,0,0,0,0.764494651829621,3.01006314385404e-05
+boussinesq,exponential,207,227,367,0,0,0,0.755695051224825,3.01284909937171e-05

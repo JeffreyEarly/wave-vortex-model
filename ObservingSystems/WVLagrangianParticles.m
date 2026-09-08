@@ -255,6 +255,11 @@ classdef WVLagrangianParticles < WVObservingSystem
         function os = observingSystemFromGroup(group,model,outputGroup)
             %initialize a WVObservingSystem instance from NetCDF file
             %
+            % Restore only committed records. A group with no committed
+            % records contributes configuration and empty state; model-file
+            % restoration reconciles shared observers with a saved state at
+            % the coefficient restart time, or rejects the restart.
+            %
             % Subclasses to should override this method to enable model
             % restarts. This method works in conjunction with -writeToFile
             % to provide restart capability.
@@ -273,17 +278,21 @@ classdef WVLagrangianParticles < WVObservingSystem
             vars = CAAnnotatedClass.requiredPropertiesFromGroup(group);
 
             parentGroup = outputGroup.group;
-            nPoints = parentGroup.dimensionWithName("t").nPoints;
-            vars.x = parentGroup.readVariablesAtIndexAlongDimension('t',nPoints,vars.name+"_x");
-            vars.y = parentGroup.readVariablesAtIndexAlongDimension('t',nPoints,vars.name+"_y");
-            if ~isequal(model.wvt.spatialDimensionNames,{'x','y'})
-                vars.z = parentGroup.readVariablesAtIndexAlongDimension('t',nPoints,vars.name+"_z");
-            else
-                vars.z = [];
+            nPoints = WVModelOutputGroup.committedRecordCountForGroup(parentGroup);
+            vars.x = zeros(1,0); vars.y = zeros(1,0); vars.z = zeros(1,0);
+            if nPoints > 0
+                vars.x = parentGroup.readVariablesAtIndexAlongDimension('t',nPoints,vars.name+"_x");
+                vars.y = parentGroup.readVariablesAtIndexAlongDimension('t',nPoints,vars.name+"_y");
+                if ~isequal(model.wvt.spatialDimensionNames,{'x','y'})
+                    vars.z = parentGroup.readVariablesAtIndexAlongDimension('t',nPoints,vars.name+"_z");
+                end
             end
 
             options = namedargs2cell(vars);
             os = WVLagrangianParticles(model,options{:});
+            if nPoints == 0
+                return
+            end
 
             % We still need to recover the last value of the tracked fields
             for i=1:length(os.trackedFieldNamesCell)
