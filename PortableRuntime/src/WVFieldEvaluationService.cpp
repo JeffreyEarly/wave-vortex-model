@@ -2083,30 +2083,30 @@ WVKernelStatus WVFieldEvaluationService::createMovingPlan(
 WVKernelStatus WVFieldEvaluationService::evaluateMoving(
     const WVMovingFieldEvaluationPlan &plan, const WVState &state,
     WVMovingPositionView positions, WVFieldOutputView *outputs,
-    std::size_t outputCount) {
-  return evaluateMovingImpl(plan,state,nullptr,positions,outputs,outputCount);
+    std::size_t outputCount, const std::uint8_t *activeOutputs) {
+  return evaluateMovingImpl(plan,state,nullptr,positions,outputs,outputCount,activeOutputs);
 }
 
 WVKernelStatus WVFieldEvaluationService::evaluateMoving(
     const WVMovingFieldEvaluationPlan &plan,
     const WVIntegrationState &state, WVMovingPositionView positions,
-    WVFieldOutputView *outputs, std::size_t outputCount) {
+    WVFieldOutputView *outputs, std::size_t outputCount, const std::uint8_t *activeOutputs) {
   if (barotropicQG_)
     return barotropicQG_->evaluateMoving(plan, state, positions, outputs,
-                                         outputCount);
+                                         outputCount, activeOutputs);
   if (stratified_)
     return stratified_->evaluateMoving(plan, state, positions, outputs,
-                                         outputCount);
+                                         outputCount, activeOutputs);
   return evaluateMoving(plan, state.waveVortex, positions, outputs,
-                        outputCount);
+                        outputCount, activeOutputs);
 }
 
 WVKernelStatus WVFieldEvaluationService::evaluateMovingFromAdvectionFields(
     const WVMovingFieldEvaluationPlan &plan, const WVState &state,
     const WVRealFieldBundleConstView &advectionFields,
     WVMovingPositionView positions, WVFieldOutputView *outputs,
-    std::size_t outputCount) {
-  return evaluateMovingImpl(plan,state,&advectionFields,positions,outputs,outputCount);
+    std::size_t outputCount, const std::uint8_t *activeOutputs) {
+  return evaluateMovingImpl(plan,state,&advectionFields,positions,outputs,outputCount,activeOutputs);
 }
 
 WVKernelStatus WVFieldEvaluationService::evaluateMovingFromAdvectionFields(
@@ -2114,16 +2114,16 @@ WVKernelStatus WVFieldEvaluationService::evaluateMovingFromAdvectionFields(
     const WVIntegrationState &state,
     const WVRealFieldBundleConstView &advectionFields,
     WVMovingPositionView positions, WVFieldOutputView *outputs,
-    std::size_t outputCount) {
+    std::size_t outputCount, const std::uint8_t *activeOutputs) {
   if (barotropicQG_)
     return barotropicQG_->evaluateMovingFromAdvectionFields(
-        plan, state, advectionFields, positions, outputs, outputCount);
+        plan, state, advectionFields, positions, outputs, outputCount, activeOutputs);
   if (stratified_)
     return stratified_->evaluateMovingFromAdvectionFields(
-        plan, state, advectionFields, positions, outputs, outputCount);
+        plan, state, advectionFields, positions, outputs, outputCount, activeOutputs);
   return evaluateMovingFromAdvectionFields(
       plan, state.waveVortex, advectionFields, positions, outputs,
-      outputCount);
+      outputCount, activeOutputs);
 }
 
 WVRealFieldBundleView WVFieldEvaluationService::advectionFieldStorage() noexcept {
@@ -2137,7 +2137,7 @@ WVKernelStatus WVFieldEvaluationService::evaluateMovingImpl(
     const WVMovingFieldEvaluationPlan &plan, const WVState &state,
     const WVRealFieldBundleConstView *preparedAdvectionFields,
     WVMovingPositionView positions, WVFieldOutputView *outputs,
-    std::size_t outputCount) {
+    std::size_t outputCount, const std::uint8_t *activeOutputs) {
   if (!transform_) return {WVKernelStatusCode::unsupportedOperation,"This transform requires coefficient-family state views."};
   if (!sameTransformConfiguration(
           plan.configuration_, transform_->descriptor().configuration()))
@@ -2161,15 +2161,23 @@ WVKernelStatus WVFieldEvaluationService::evaluateMovingImpl(
       return {WVKernelStatusCode::invalidShape,
               "Moving-field coefficients must have shape [Nj,Nkl]."};
   for (std::size_t index = 0; index < outputCount; ++index)
-    if (outputs[index].data == nullptr ||
-        outputs[index].elementCount != plan.outputs_[index].elementCount)
+    if ((!activeOutputs || activeOutputs[index]) && (outputs[index].data == nullptr ||
+        outputs[index].elementCount != plan.outputs_[index].elementCount))
       return {WVKernelStatusCode::invalidShape,
               "Moving-field output shape does not match its request."};
-  for (std::size_t index = 0; index < positions.positionCount; ++index)
-    if (!std::isfinite(positions.x[index]) ||
-        !std::isfinite(positions.y[index]) ||
-        !std::isfinite(positions.z[index]))
-      return invalid("Moving coordinates must be finite.");
+  const auto finitePosition=[&](std::size_t index) {return std::isfinite(positions.x[index]) && std::isfinite(positions.y[index]) && std::isfinite(positions.z[index]);};
+  if(!activeOutputs) {
+    for(std::size_t index=0;index<positions.positionCount;++index)
+      if(!finitePosition(index)) return invalid("Moving coordinates must be finite.");
+  } else {
+    bool anyActive=false;
+    for(const auto& request:plan.requests_) if(activeOutputs[request.outputIndex]) {
+      anyActive=true;
+      for(std::size_t index=request.positionOffset;index<request.positionOffset+request.positionCount;++index)
+        if(!finitePosition(index)) return invalid("Moving coordinates must be finite.");
+    }
+    if(!anyActive) return WVKernelStatus::ok();
+  }
   ExecutionGuard guard(executing_);
   if (!guard.entered())
     return {WVKernelStatusCode::reentrantExecution,
@@ -2201,8 +2209,8 @@ WVKernelStatus WVFieldEvaluationService::evaluateMovingImpl(
         preparedAdvectionFields->shape.fourth != 3)
       return {WVKernelStatusCode::invalidShape,
               "Prepared advection fields must have shape [Nx,Ny,Nz,3]."};
-    if (std::any_of(plan.requests_.begin(),plan.requests_.end(),[](const auto &request) {
-          return request.primitiveChannel > 2;
+    if (std::any_of(plan.requests_.begin(),plan.requests_.end(),[&](const auto &request) {
+          return (!activeOutputs || activeOutputs[request.outputIndex]) && request.primitiveChannel > 2;
         }))
       return {WVKernelStatusCode::unsupportedOperation,
               "Prepared advection fields support only u, v, and w requests."};
@@ -2226,8 +2234,8 @@ WVKernelStatus WVFieldEvaluationService::evaluateMovingImpl(
       configuration.rho0 * configuration.N0 * configuration.N0 /
       configuration.g;
   const bool needsTotalDensity = std::any_of(
-      plan.requests_.begin(), plan.requests_.end(), [](const auto &request) {
-        return request.primitiveChannel == 5;
+      plan.requests_.begin(), plan.requests_.end(), [&](const auto &request) {
+        return (!activeOutputs || activeOutputs[request.outputIndex]) && request.primitiveChannel == 5;
       });
   double *totalDensity = nullptr;
   if (needsTotalDensity) {
@@ -2247,6 +2255,7 @@ WVKernelStatus WVFieldEvaluationService::evaluateMovingImpl(
         std::max(metrics_.scratchHighWaterBytes, 5 * R * sizeof(double));
   }
   for (const auto &request : plan.requests_) {
+    if(activeOutputs && !activeOutputs[request.outputIndex]) continue;
     auto &output = outputs[request.outputIndex];
     for (std::size_t local = 0; local < request.positionCount; ++local) {
       const auto position = request.positionOffset + local;

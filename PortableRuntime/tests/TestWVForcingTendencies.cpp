@@ -423,6 +423,50 @@ void fieldService(Engine& engine,const WVState& state,WVShape4D spatial,
     WVFieldOutputView movingViews[]={{&movingU,1},{&movingV,1}};
     require(bool(service->evaluateMoving(moving,integrationState,positions,movingViews,2)),"Independent moving reference");
     const double expectedMovingU=movingU,expectedMovingV=movingV;
+    WVMovingFieldEvaluationPlan selectedMoving;
+    require(bool(service->createMovingPlan({{"active-u","u",0,1,WVPositionInterpolation::linear},
+        {"inactive-v","v",1,1,WVPositionInterpolation::linear},{"shared-u","u",0,1,WVPositionInterpolation::linear},
+        {"inactive-eta","eta",1,1,WVPositionInterpolation::linear}},selectedMoving)),"Selected moving plan");
+    const double nan=std::numeric_limits<double>::quiet_NaN();
+    double selectedX[]={0,nan},selectedY[]={0,nan},selectedZ[]={0,nan};
+    WVMovingPositionView selectedPositions{selectedX,selectedY,selectedZ,2};
+    double firstU=99,secondU=99;
+    WVFieldOutputView selectedMovingViews[]={{&firstU,1},{},{&secondU,1},{}};
+    std::uint8_t movingSelection[]={1,0,1,0};
+    const auto writesBefore=service->metrics().outputElementWriteCount;
+    require(bool(service->evaluateMoving(selectedMoving,integrationState,selectedPositions,selectedMovingViews,4,movingSelection)) &&
+        firstU==expectedMovingU && secondU==expectedMovingU && service->metrics().outputElementWriteCount==writesBefore+2,
+        "Moving selection evaluated inactive coordinates or failed to share selected output");
+    movingSelection[0]=movingSelection[2]=0;
+    const auto emptyMoving=counter->calls;
+    require(bool(service->evaluateMoving(selectedMoving,integrationState,selectedPositions,selectedMovingViews,4,movingSelection)) &&
+        counter->calls==emptyMoving,"Empty moving selection reconstructed fields");
+    movingSelection[1]=1; double selectedV=99; selectedMovingViews[1]={&selectedV,1};
+    require(!service->evaluateMoving(selectedMoving,integrationState,selectedPositions,selectedMovingViews,4,movingSelection) &&
+        counter->calls==emptyMoving && selectedV==99,"Invalid active moving coordinates escaped preflight");
+    selectedX[1]=selectedY[1]=0;
+    if constexpr(!std::is_same_v<Engine,WVBarotropicQGForcingEngine>)
+        require(!service->evaluateMoving(selectedMoving,integrationState,selectedPositions,selectedMovingViews,4,movingSelection) &&
+            counter->calls==emptyMoving && selectedV==99,"Invalid active moving z escaped preflight");
+    selectedZ[1]=0;
+    require(bool(service->evaluateMoving(selectedMoving,integrationState,selectedPositions,selectedMovingViews,4,movingSelection)) &&
+        selectedV==expectedMovingV,"Selected moving retry differs");
+    movingSelection[0]=movingSelection[2]=1; movingSelection[1]=0;
+    const std::size_t velocityChannels=std::is_same_v<Engine,WVBarotropicQGForcingEngine> ? 2 : 3;
+    std::vector<double> preparedVelocity(velocityChannels*R);
+    std::copy(successful[forcingOutputCount+1].begin(),successful[forcingOutputCount+1].end(),preparedVelocity.begin());
+    std::copy(successful[forcingOutputCount+2].begin(),successful[forcingOutputCount+2].end(),preparedVelocity.begin()+R);
+    if(!qg) {
+        WVFieldEvaluationPlan verticalVelocity;
+        require(bool(service->createPlan({{"vertical-velocity","w",{}}},verticalVelocity)),"Prepared moving w plan");
+        WVFieldOutputView vertical{preparedVelocity.data()+2*R,R};
+        require(bool(service->evaluate(verticalVelocity,integrationState,&vertical,1)),"Prepared moving w field");
+    }
+    const WVRealFieldBundleConstView preparedMoving{preparedVelocity.data(),{spatial.first,spatial.second,spatial.third,velocityChannels}};
+    const auto preparedBefore=counter->calls;
+    require(bool(service->evaluateMovingFromAdvectionFields(selectedMoving,integrationState,preparedMoving,selectedPositions,selectedMovingViews,4,movingSelection)) &&
+        firstU==expectedMovingU && secondU==expectedMovingU && counter->calls==preparedBefore,
+        "Prepared moving selection reconstructed fields or rejected an inactive nonvelocity channel");
     WVEventFieldEvaluationPlan eventPlan;
     require(bool(service->createEventPlan({{"event-u","u",0,WVPositionInterpolation::linear},
         {"event-v","v",0,WVPositionInterpolation::linear},{"event-qgpv","qgpv",0,WVPositionInterpolation::linear}},eventPlan)),"Shared occurrence plan");

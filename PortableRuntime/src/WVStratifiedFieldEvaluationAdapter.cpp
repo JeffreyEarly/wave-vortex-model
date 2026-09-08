@@ -836,9 +836,9 @@ WVKernelStatus WVStratifiedFieldEvaluationAdapter::createMovingPlan(
 WVKernelStatus WVStratifiedFieldEvaluationAdapter::evaluateMoving(
     const WVMovingFieldEvaluationPlan &publicPlan,
     const WVIntegrationState &state, WVMovingPositionView positions,
-    WVFieldOutputView *outputs, std::size_t outputCount) {
+    WVFieldOutputView *outputs, std::size_t outputCount, const std::uint8_t *activeOutputs) {
   return evaluateMovingImpl(publicPlan, state, nullptr, positions, outputs,
-                            outputCount);
+                            outputCount, activeOutputs);
 }
 
 WVKernelStatus
@@ -847,9 +847,9 @@ WVStratifiedFieldEvaluationAdapter::evaluateMovingFromAdvectionFields(
     const WVIntegrationState &state,
     const WVRealFieldBundleConstView &advectionFields,
     WVMovingPositionView positions, WVFieldOutputView *outputs,
-    std::size_t outputCount) {
+    std::size_t outputCount, const std::uint8_t *activeOutputs) {
   return evaluateMovingImpl(publicPlan, state, &advectionFields, positions,
-                            outputs, outputCount);
+                            outputs, outputCount, activeOutputs);
 }
 
 WVKernelStatus WVStratifiedFieldEvaluationAdapter::evaluateMovingImpl(
@@ -857,7 +857,7 @@ WVKernelStatus WVStratifiedFieldEvaluationAdapter::evaluateMovingImpl(
     const WVIntegrationState &state,
     const WVRealFieldBundleConstView *advectionFields,
     WVMovingPositionView positions, WVFieldOutputView *outputs,
-    std::size_t outputCount) {
+    std::size_t outputCount, const std::uint8_t *activeOutputs) {
   const auto plan =
       std::static_pointer_cast<const MovingPlan>(publicPlan.transformPlan_);
   if (!plan || plan->fingerprint != configurationFingerprint(configuration()))
@@ -870,16 +870,31 @@ WVKernelStatus WVStratifiedFieldEvaluationAdapter::evaluateMovingImpl(
     return {WVKernelStatusCode::invalidShape,
             "Stratified QG moving positions or outputs have the wrong shape."};
   for (std::size_t output = 0; output < outputCount; ++output)
-    if (outputs[output].data == nullptr ||
+    if ((!activeOutputs || activeOutputs[output]) && (outputs[output].data == nullptr ||
         outputs[output].elementCount !=
-            publicPlan.outputs_[output].elementCount)
+            publicPlan.outputs_[output].elementCount))
       return {WVKernelStatusCode::invalidShape,
               "A Stratified QG moving-field output has the wrong shape."};
-  for (std::size_t position = 0; position < positions.positionCount;
-       ++position)
-    if (!std::isfinite(positions.x[position]) ||
-        !std::isfinite(positions.y[position]))
-      return invalid("Stratified QG moving positions must be finite.");
+  const auto finitePosition=[&](std::size_t index) {return std::isfinite(positions.x[index]) && std::isfinite(positions.y[index]);};
+  if(!activeOutputs) {
+    for(std::size_t index=0;index<positions.positionCount;++index)
+      if(!finitePosition(index)) return invalid("Stratified QG moving positions must be finite.");
+  } else {
+    bool anyActive=false;
+    for(const auto& request:plan->requests) if(activeOutputs[request.output]) {
+      anyActive=true;
+      for(std::size_t index=request.offset;index<request.offset+request.count;++index)
+        if(!finitePosition(index)) return invalid("Stratified QG moving positions must be finite.");
+    }
+    if(!anyActive) return WVKernelStatus::ok();
+  }
+
+  for(const auto& request:plan->requests) {
+    if((activeOutputs && !activeOutputs[request.output]) || surface(request.field)) continue;
+    if(!positions.z) return invalid("SQG volume samples require z coordinates.");
+    for(std::size_t index=request.offset;index<request.offset+request.count;++index)
+      if(!std::isfinite(positions.z[index])) return invalid("SQG positions must be finite.");
+  }
   WVState amplitudes;
   auto status = coefficientView(state, configuration(), amplitudes);
   if (!status)
@@ -889,9 +904,10 @@ WVKernelStatus WVStratifiedFieldEvaluationAdapter::evaluateMovingImpl(
   executing_=true; struct Guard {bool& value;~Guard(){value=false;}} guard{executing_};
   const auto R=g.Nx*g.Ny*g.Nz; auto& workspace=*movingInterpolation_;
   if(advectionFields && (advectionFields->data==nullptr || advectionFields->shape.first!=g.Nx || advectionFields->shape.second!=g.Ny || advectionFields->shape.third!=g.Nz || advectionFields->shape.fourth!=3)) return invalid("SQG advection fields require [Nx,Ny,Nz,3].");
-  for(const auto& request:plan->requests) if(!surface(request.field) && !positions.z) return invalid("SQG volume samples require z coordinates.");
+  for(const auto& request:plan->requests) if((!activeOutputs || activeOutputs[request.output]) && !surface(request.field) && !positions.z) return invalid("SQG volume samples require z coordinates.");
   std::array<bool,16> evaluated{};
   for(const auto& request:plan->requests) {
+    if(activeOutputs && !activeOutputs[request.output]) continue;
     const auto fieldIndex=static_cast<std::size_t>(request.field);if(evaluated[fieldIndex]) continue;
     const double* values=fieldScratch_.data();
     if(advectionFields && (request.field==WVHydrostaticField::u || request.field==WVHydrostaticField::v || request.field==WVHydrostaticField::w)) {
@@ -903,7 +919,7 @@ WVKernelStatus WVStratifiedFieldEvaluationAdapter::evaluateMovingImpl(
       else {++metrics_.transformCount; ++metrics_.movingPrimitiveTransformCount;}
     }
     evaluated[fieldIndex]=true;
-    for(const auto& destination:plan->requests) if(destination.field==request.field) {
+    for(const auto& destination:plan->requests) if((!activeOutputs || activeOutputs[destination.output]) && destination.field==request.field) {
       for(std::size_t p=0;p<destination.count;++p) {
         const auto index=p+destination.offset; const double x=positions.x[index],y=positions.y[index];
         const bool horizontal=surface(request.field); const double z=horizontal?g.z.front():positions.z[index];

@@ -616,10 +616,55 @@ void testService(bool linear,bool diagnostics=false) {
           "route-aware preparation evaluated unrouted particles");
 }
 
+void testSelectedMovingObservers() {
+  const auto config=configuration();
+  auto record=descriptor().record();
+  for(const char* name:{"other-x","other-y"})
+    record.stateBlocks.push_back({name,WVStateScalarType::real64,{2},WVToleranceKind::uniformAbsolute,1e-5,
+        WVStateOwnership::integratorOwned,WVRestartRequirement::requiredDynamicState});
+  auto other=record.observers[4]; other.identifier="other-particles"; other.name="otherDrifters";
+  other.stateBlockIdentifiers={"other-x","other-y"}; record.observers.push_back(other);
+  WVPortableObserverDescriptor observers;
+  auto status=WVPortableObserverDescriptor::create(record,extensionCatalog(),observers);
+  require(bool(status),status.message);
+  std::unique_ptr<WVFieldEvaluationService> fields;
+  require(bool(WVFieldEvaluationService::create(config,std::make_unique<WVReferenceFFTEngine>(),fields)),"Moving selection field service");
+  std::unique_ptr<WVObserverOutputEvaluationService> service;
+  status=WVObserverOutputEvaluationService::create(false,observers,*fields,service);
+  require(bool(status),"Moving selection observer service: "+status.message);
+  auto owned=state(config);
+  std::array<WVAdditionalStateBlockLayout,4> layouts;
+  std::array<std::array<double,2>,4> coordinates{{{{0,100}},{{0,100}},{{NAN,NAN}},{{NAN,NAN}}}};
+  const char* names[]={"particle-x","particle-y","other-x","other-y"};
+  std::array<WVAdditionalStateBlockConstView,4> blocks;
+  for(std::size_t index=0;index<4;++index) {
+    layouts[index].identifier=names[index]; layouts[index].scalarType=WVStateScalarType::real64; layouts[index].elementCount=2;
+    blocks[index]={&layouts[index],coordinates[index].data(),nullptr};
+  }
+  WVOutputSchedulePayload payload; require(bool(payload.reset(emptyOutputSchedulePayloadSchema())),"Moving selection payload");
+  WVPortableTypedRecord cursor;
+  WVOutputObserverView selected{4,&observers.observers()[4],observers.resolvedObserver(observers.observers()[4])};
+  WVOutputRouteView route; route.observers=&selected; route.observerCount=1;
+  route.proposedScheduleCursor=&cursor; route.schedulePayloadSchema=&emptyOutputSchedulePayloadSchema(); route.schedulePayload=&payload;
+  WVOutputEvent event; event.eventOrdinal=1; event.scheduledTime=owned.view().t;
+  event.state={owned.view(),blocks.data(),blocks.size()}; event.routes=&route; event.routeCount=1;
+  status=service->prepare(event);
+  require(bool(status),"Active moving observer was affected by inactive coordinates: "+status.message);
+  require(fields->metrics().splineInterpolationCount==4,"Inactive moving observer was sampled");
+  service->complete(event);
+  selected={6,&observers.observers()[6],observers.resolvedObserver(observers.observers()[6])};
+  const auto before=fields->metrics().fftExecutionCount;
+  require(!service->prepare(event) && fields->metrics().fftExecutionCount==before,"Active invalid moving coordinates escaped preflight");
+  coordinates[2]={0,100}; coordinates[3]={0,100}; coordinates[0]={NAN,NAN}; coordinates[1]={NAN,NAN};
+  require(bool(service->prepare(event)) && fields->metrics().splineInterpolationCount==8,"Moving observer selection failed after retry");
+  service->complete(event);
+}
+
 } // namespace
 
 int main() {
   try {
+    testSelectedMovingObservers();
     testService(false);
     testService(true);
     testService(false,true);

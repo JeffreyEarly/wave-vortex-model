@@ -32,13 +32,13 @@ public:
                                 const WVIntegrationState &state,
                                 WVMovingPositionView positions,
                                 WVFieldOutputView *outputs,
-                                std::size_t outputCount);
+                                std::size_t outputCount, const std::uint8_t *activeOutputs = nullptr);
   WVKernelStatus evaluateMovingFromAdvectionFields(
       const WVMovingFieldEvaluationPlan &plan,
       const WVIntegrationState &state,
       const WVRealFieldBundleConstView &advectionFields,
       WVMovingPositionView positions, WVFieldOutputView *outputs,
-      std::size_t outputCount);
+      std::size_t outputCount, const std::uint8_t *activeOutputs = nullptr);
   WVKernelStatus createEventPlan(
       const std::vector<WVEventFieldRequest> &requests,
       WVEventFieldEvaluationPlan &plan);
@@ -68,7 +68,7 @@ private:
       const WVIntegrationState &state,
       const WVRealFieldBundleConstView *advectionFields,
       WVMovingPositionView positions, WVFieldOutputView *outputs,
-      std::size_t outputCount);
+      std::size_t outputCount, const std::uint8_t *activeOutputs = nullptr);
   WVBarotropicQGFieldEvaluationAdapter() = default;
   std::unique_ptr<WVTransformBarotropicQGKernel> ownedKernel_;
   WVTransformBarotropicQGKernel *kernel_ = nullptr;

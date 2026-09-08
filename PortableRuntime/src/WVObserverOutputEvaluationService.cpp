@@ -286,6 +286,7 @@ public:
     std::size_t offset = 0;
     std::size_t count = 0;
     bool isXYOnly = false;
+    std::size_t firstOutput = 0, outputCount = 0;
   };
 
   WVIntegrationStateLayout stateLayout;
@@ -303,6 +304,7 @@ public:
   std::vector<WVFieldOutputView> initialFieldViews;
   std::vector<WVFieldOutputView> timeSeriesFieldViews;
   WVMovingFieldEvaluationPlan movingFieldPlan;
+  std::vector<std::uint8_t> activeMovingOutputs;
   std::vector<std::vector<double>> movingFieldStorage;
   std::vector<WVFieldOutputView> movingFieldViews;
   std::vector<MovingCoordinates> movingCoordinates;
@@ -456,6 +458,7 @@ public:
     }
     if (!initial && !movingFieldViews.empty() && evaluateMoving) {
       for (const auto &coordinates : movingCoordinates) {
+        if(std::none_of(activeMovingOutputs.begin()+coordinates.firstOutput,activeMovingOutputs.begin()+coordinates.firstOutput+coordinates.outputCount,[](auto value){return value!=0;})) continue;
         if (coordinates.xBlockIndex >=
                 state.additionalBlockCount ||
             coordinates.yBlockIndex >=
@@ -489,7 +492,7 @@ public:
       const auto status = fields->evaluateMoving(
           movingFieldPlan, state,
           {movingX.data(), movingY.data(), movingZ.data(), movingX.size()},
-          movingFieldViews.data(), movingFieldViews.size());
+          movingFieldViews.data(), movingFieldViews.size(), activeMovingOutputs.data());
       if (!status) {
         finish();
         return status;
@@ -851,7 +854,8 @@ WVKernelStatus WVObserverOutputEvaluationService::create(
           return invalid("Moving observer coordinate state was not resolved.");
         impl.movingCoordinates.push_back(
             {xBlockIndex, yBlockIndex, zBlockIndex, positions.fixedZ,
-             movingOffset, positions.positionCount, positions.isXYOnly});
+             movingOffset, positions.positionCount, positions.isXYOnly,
+             impl.movingFieldViews.size(),static_cast<std::size_t>(std::count_if(storedPlan.channels.begin(),storedPlan.channels.end(),[](const auto& channel){return channel.source==WVObserverOutputChannelSource::movingField;}))});
       }
 
       for (auto &channel : storedPlan.channels) {
@@ -1013,6 +1017,7 @@ WVKernelStatus WVObserverOutputEvaluationService::create(
                                              impl.movingFieldPlan);
       if (!status)
         return status;
+      impl.activeMovingOutputs.resize(impl.movingFieldPlan.outputCount());
       for (const auto &storage : impl.movingFieldStorage)
         candidate->metrics_.outputCapacityBytes +=
             storage.capacity() * sizeof(double);
@@ -1276,6 +1281,7 @@ WVKernelStatus WVObserverOutputEvaluationService::prepare(
       }
     }
   std::fill(impl_->activeTimeSeriesOutputs.begin(),impl_->activeTimeSeriesOutputs.end(),event.routes ? 0 : 1);
+  std::fill(impl_->activeMovingOutputs.begin(),impl_->activeMovingOutputs.end(),event.routes ? 0 : 1);
   for(std::size_t route=0;route<event.routeCount;++route)
     for(std::size_t observer=0;observer<event.routes[route].observerCount;++observer) {
       const auto& view=event.routes[route].observers[observer];
@@ -1287,6 +1293,8 @@ WVKernelStatus WVObserverOutputEvaluationService::prepare(
       for(const auto& output:*binding.outputs)
         if(output.source==WVObserverOutputChannelSource::sampledField && !output.initialField)
           impl_->activeTimeSeriesOutputs[output.fieldOutput]=1;
+        else if(output.source==WVObserverOutputChannelSource::movingField)
+          impl_->activeMovingOutputs[output.fieldOutput]=1;
     }
   impl_->preparedEventOrdinal = event.eventOrdinal;
   impl_->preparedScheduledTime = event.scheduledTime;
@@ -1550,6 +1558,7 @@ std::size_t WVObserverOutputEvaluationService::persistentBytes() const noexcept 
       impl_->timeSeriesFieldViews.capacity() * sizeof(WVFieldOutputView) +
       impl_->activeTimeSeriesOutputs.capacity() * sizeof(std::uint8_t) +
       impl_->movingFieldViews.capacity() * sizeof(WVFieldOutputView) +
+      impl_->activeMovingOutputs.capacity() * sizeof(std::uint8_t) +
       impl_->movingCoordinates.capacity() * sizeof(Impl::MovingCoordinates) +
       impl_->observerPlans.capacity() * sizeof(WVObserverOutputPlan) +
       impl_->eventFieldPlans.capacity() *

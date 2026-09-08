@@ -436,27 +436,28 @@ public:
   WVKernelStatus
   createMovingPlan(const std::vector<WVMovingFieldRequest> &requests,
                    WVMovingFieldEvaluationPlan &plan) const;
+  // Selection also skips coordinate values belonging only to inactive requests.
   WVKernelStatus evaluateMoving(const WVMovingFieldEvaluationPlan &plan,
                                 const WVState &state,
                                 WVMovingPositionView positions,
                                 WVFieldOutputView *outputs,
-                                std::size_t outputCount);
+                                std::size_t outputCount, const std::uint8_t *activeOutputs = nullptr);
   WVKernelStatus evaluateMoving(const WVMovingFieldEvaluationPlan &plan,
                                 const WVIntegrationState &state,
                                 WVMovingPositionView positions,
                                 WVFieldOutputView *outputs,
-                                std::size_t outputCount);
+                                std::size_t outputCount, const std::uint8_t *activeOutputs = nullptr);
   WVKernelStatus evaluateMovingFromAdvectionFields(
       const WVMovingFieldEvaluationPlan &plan, const WVState &state,
       const WVRealFieldBundleConstView &advectionFields,
       WVMovingPositionView positions, WVFieldOutputView *outputs,
-      std::size_t outputCount);
+      std::size_t outputCount, const std::uint8_t *activeOutputs = nullptr);
   WVKernelStatus evaluateMovingFromAdvectionFields(
       const WVMovingFieldEvaluationPlan &plan,
       const WVIntegrationState &state,
       const WVRealFieldBundleConstView &advectionFields,
       WVMovingPositionView positions, WVFieldOutputView *outputs,
-      std::size_t outputCount);
+      std::size_t outputCount, const std::uint8_t *activeOutputs = nullptr);
   WVKernelStatus
   createEventPlan(const std::vector<WVEventFieldRequest> &requests,
                   WVEventFieldEvaluationPlan &plan);
@@ -516,7 +517,7 @@ private:
       const WVMovingFieldEvaluationPlan &plan, const WVState &state,
       const WVRealFieldBundleConstView *advectionFields,
       WVMovingPositionView positions, WVFieldOutputView *outputs,
-      std::size_t outputCount);
+      std::size_t outputCount, const std::uint8_t *activeOutputs = nullptr);
   class MovingWorkspace;
   std::unique_ptr<WVTransformConstantStratificationKernel> ownedTransform_;
   WVTransformConstantStratificationKernel *transform_ = nullptr;
