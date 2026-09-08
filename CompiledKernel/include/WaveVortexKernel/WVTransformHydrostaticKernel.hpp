@@ -67,6 +67,9 @@ public:
     // all horizontal grid columns rather than truncating through a Fourier map.
     WVKernelStatus differentiateVertical(WVRealVolumeConstView, WVHydrostaticFamily,
         unsigned order, WVRealVolumeView);
+    // Full-grid horizontal derivatives and three-dimensional passive advection.
+    WVKernelStatus differentiateHorizontal(WVRealVolumeConstView, bool xDerivative, WVRealVolumeView);
+    WVKernelStatus advectScalarWithAdvectionFields(WVRealVolumeConstView, WVRealFieldBundleConstView, bool antialias, WVRealVolumeView, bool xyOnly = false);
     WVKernelStatus integrateVertical(WVRealVolumeConstView, WVHydrostaticFamily, WVRealVolumeView);
 private:
     WVTransformHydrostaticKernel() = default;

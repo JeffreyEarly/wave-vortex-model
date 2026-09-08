@@ -38,10 +38,12 @@ add_library(WaveVortexPortableRuntime STATIC
     include/WaveVortexRuntime/WVBarotropicQGForcingEngine.hpp
     src/WVBarotropicQGForcingEngine.cpp
     src/WVStratifiedQGForcingEngine.cpp
+    src/WVHydrostaticForcingEngine.cpp
     src/WVBarotropicQGIntegrationSystem.cpp
     src/WVStratifiedQGIntegrationSystem.cpp
+    src/WVHydrostaticIntegrationSystem.cpp
     src/WVBarotropicQGFieldEvaluationAdapter.cpp
-    src/WVStratifiedQGFieldEvaluationAdapter.cpp
+    src/WVStratifiedFieldEvaluationAdapter.cpp
     src/WVOutputTransformAdapters.cpp
     src/WVOutputOrchestration.cpp
     src/WVObserverAdapter.cpp
@@ -453,4 +455,11 @@ if(BUILD_TESTING)
         target_compile_options(TestWVHydrostaticKernel PRIVATE -Wall -Wextra -Wpedantic -Werror)
     endif()
     add_test(NAME hydrostatic-kernel COMMAND TestWVHydrostaticKernel)
+
+    add_executable(TestWVHydrostaticRuntime tests/TestWVHydrostaticRuntime.cpp ../tools/compiled-kernel/tests/WVAllocationProbe.cpp)
+    target_link_libraries(TestWVHydrostaticRuntime PRIVATE WaveVortex::PortableRuntime WaveVortex::ReferenceFFT ${WAVEVORTEX_NETCDF_TARGET})
+    if(CMAKE_CXX_COMPILER_ID MATCHES "AppleClang|Clang|GNU")
+        target_compile_options(TestWVHydrostaticRuntime PRIVATE -Wall -Wextra -Wpedantic -Werror)
+    endif()
+    add_test(NAME hydrostatic-runtime COMMAND TestWVHydrostaticRuntime)
 endif()

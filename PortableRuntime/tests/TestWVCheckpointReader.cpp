@@ -277,8 +277,8 @@ void testUnsupportedVersionAndTransform() {
         TemporaryFile file(temporaryCopy("root-nonhydrostatic.nc"));
         int id = -1;
         requireNetCDF(nc_open(file.path.string().c_str(), NC_WRITE, &id), "open transform fixture");
-        overwriteTextAttribute(id, "WVTransform", "WVTransformHydrostatic");
-        overwriteTextAttribute(id, "AnnotatedClass", "WVTransformHydrostatic");
+        overwriteTextAttribute(id, "WVTransform", "WVTransformBoussinesq");
+        overwriteTextAttribute(id, "AnnotatedClass", "WVTransformBoussinesq");
         requireNetCDF(nc_close(id), "close transform fixture");
         WVCheckpoint checkpoint;
         const auto result = WVCheckpointReader::read(file.path.string(), *test::extensionCatalog(), checkpoint);

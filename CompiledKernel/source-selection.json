@@ -34,12 +34,13 @@
     "kernelTypesSHA256": "4b7cf55649b02eaae224bfaf618f756122a81c1caaff92c751b4e35f827ea1cc",
     "kernelInterfaceSHA256": "6e9c5e6d58982c99704336eeb0068ff8fb7ef24e77c429469a04ab3b5ae6f50e",
     "integrationSystemSHA256": "1bb9d96106e698b6ecdd3066ab7a237052d1bf6e2ba9eefd4bbd87ee0dbdbd69",
-    "forcingEngineSHA256": "6f27859f43d38dfaf8355adb6d066c5f2ae30ec10e95bc07ade3141430af5ca9",
-    "forcingInterfaceSHA256": "0e08bd27b5e069fdee2de7b1428ab549051580e943ce576dde090a705cd8e56f",
+    "forcingEngineSHA256": "4fff3f0ee23564e6ece00081287b61099796962597e7b46df593e8293e89a1d3",
+    "forcingInterfaceSHA256": "811e219f426ce91e843717cec8561f4fb294ef4e0d70626e636f7533697fc33e",
     "preparedSpectralOperators": "issue-357",
     "stableForcingCompatibility": "issues-290-294",
     "stratifiedQGRuntime": "issue-297",
-    "hydrostaticKernel": "issue-299"
+    "hydrostaticKernel": "issue-299",
+    "hydrostaticRuntime": "issue-300"
   },
   "contract": {
     "version": 4,

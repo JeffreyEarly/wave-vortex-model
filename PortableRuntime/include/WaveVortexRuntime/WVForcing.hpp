@@ -13,6 +13,7 @@
 namespace wavevortex::runtime {
 
 class WVConstantStratificationForcingEngine;
+class WVHydrostaticForcingEngine;
 class WVConstantStratificationRightHandSideContext;
 
 // Shared, immutable resolution facts resolved before forcing construction.
@@ -57,6 +58,7 @@ struct WVPseudoTopographicOperators {
 class WVForcingExecutionContext final {
 public:
   WVKernelStatus nonlinearAdvection();
+  WVKernelStatus verticalDiffusivity(double kappa, bool forceMean);
   WVKernelStatus laplacianDamping(double nu, double kappa, WVLaplacianDirection direction);
   void filterTendency(const std::vector<std::size_t> &indices);
   WVKernelStatus physicalFields(WVRealFieldBundleConstView &fields);
@@ -74,12 +76,14 @@ public:
 
 private:
   WVConstantStratificationForcingEngine *engine_ = nullptr;
+  WVHydrostaticForcingEngine *hydrostatic_ = nullptr;
   const WVState *state_ = nullptr;
   WVFlux *flux_ = nullptr;
   bool *outputInitialized_ = nullptr;
   WVRealFieldBundleView *externalFields_ = nullptr;
   bool *externalFieldsPrepared_ = nullptr;
   friend class WVConstantStratificationForcingEngine;
+  friend class WVHydrostaticForcingEngine;
 };
 
 // Stable source API v1 boundary for one exact MATLAB identity/version forcing.

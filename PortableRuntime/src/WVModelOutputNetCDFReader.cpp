@@ -1351,7 +1351,7 @@ WVCheckpointStatus WVModelOutputNetCDFSink::restoreState(
                      "Selected restart changed after graph inspection.",
                      inspection.latestRestartPath);
 
-    if (restoredCheckpoint.transformKind == WVPersistedTransformKind::stratifiedQG) {
+    if (restoredCheckpoint.transformKind == WVPersistedTransformKind::stratifiedQG || restoredCheckpoint.transformKind == WVPersistedTransformKind::hydrostatic) {
       WVCheckpointInspection restoredScientific;
       restoredScientific.transformKind = restoredCheckpoint.transformKind;
       restoredScientific.stratifiedModalSource = restoredCheckpoint.stratifiedModalSource;

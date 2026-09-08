@@ -23,7 +23,7 @@ std::vector<WVForcingFactoryRegistration> builtInForcingFactories() {
                                      std::move(reference), optional,
                                      nonnegative, positive, allowInfinity};
   };
-  return {
+  std::vector<WVForcingFactoryRegistration> factories{
       {"WVNonlinearAdvection", WVPortablePairContractVersion,
        {"HydrostaticSpatial", "NonhydrostaticSpatial", "PVSpatial"},
        "nonlinear advection", WVForcingStage::spatial, 127, {},
@@ -193,6 +193,21 @@ std::vector<WVForcingFactoryRegistration> builtInForcingFactories() {
        detail::createBarotropicQGFixedAmplitude, {}, {},
        WVForcingStage::spectralAmplitude, detail::preflightStratifiedQGFixedAmplitude,
        detail::createStratifiedQGFixedAmplitude}};
+  for (auto& registration:factories) {
+    if (registration.matlabClassName=="WVNonlinearAdvection") registration.hydrostaticFactory=detail::createHydrostaticNonlinearAdvectionForcing;
+    if (registration.matlabClassName=="WVAntialiasing") { registration.hydrostaticFactory=detail::createHydrostaticExplicitAntialiasing; registration.prepareHydrostaticResolution=detail::prepareHydrostaticExplicitAntialiasing; }
+    if (registration.matlabClassName=="WVAdaptiveDamping") registration.hydrostaticFactory=detail::createHydrostaticAdaptiveDampingForcing;
+    if (registration.matlabClassName=="WVFixedAmplitudeForcing") registration.hydrostaticFactory=detail::createHydrostaticFixedAmplitudeForcing;
+    if (registration.matlabClassName=="WVNarrowBandGeostrophicForcing") registration.hydrostaticFactory=detail::createHydrostaticFixedAmplitudeForcing;
+    if (registration.matlabClassName=="WVBottomFrictionQuadratic") registration.hydrostaticFactory=detail::createHydrostaticQuadraticBottomFriction;
+    if (registration.matlabClassName=="WVBottomFrictionLinear") registration.hydrostaticFactory=detail::createHydrostaticLinearBottomFriction;
+    if (registration.matlabClassName=="WVPseudoTopographicWaveGeneration") registration.hydrostaticFactory=detail::createHydrostaticPseudoTopographicForcing;
+    if (registration.matlabClassName=="WVBetaPlanePVAdvection") registration.hydrostaticFactory=detail::createHydrostaticBetaPlaneForcing;
+    if (registration.matlabClassName=="WVHorizontalDamping") registration.hydrostaticFactory=detail::createHydrostaticHorizontalDamping;
+    if (registration.matlabClassName=="WVVerticalDamping") registration.hydrostaticFactory=detail::createHydrostaticVerticalDamping;
+    if (registration.matlabClassName=="WVVerticalDiffusivity") registration.hydrostaticFactory=detail::createHydrostaticVerticalDiffusivity;
+  }
+  return factories;
 }
 
 WVFrozenForcingSchedule defaultNonlinearAdvectionSchedule() {

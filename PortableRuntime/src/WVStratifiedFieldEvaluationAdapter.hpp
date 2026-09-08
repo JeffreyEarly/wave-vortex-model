@@ -1,23 +1,26 @@
 #pragma once
 
 #include "WaveVortexRuntime/WVFieldEvaluationService.hpp"
+#include "WaveVortexKernel/WVTransformHydrostaticKernel.hpp"
 
 namespace wavevortex::runtime::detail {
 
 // Named transform adapter behind the resolved WVFieldEvaluationService
 // boundary. Plans retain only immutable interpolation metadata; the adapter
 // owns one volume scratch field and never a full Hermitian spectrum.
-class WVStratifiedQGFieldEvaluationAdapter final {
+class WVStratifiedFieldEvaluationAdapter final {
 public:
-  ~WVStratifiedQGFieldEvaluationAdapter();
+  ~WVStratifiedFieldEvaluationAdapter();
 
   static WVKernelStatus create(
       std::shared_ptr<const WVStratifiedModalSource> source,
       std::unique_ptr<WVFFTEngine> engine,
-      std::unique_ptr<WVStratifiedQGFieldEvaluationAdapter> &adapter);
+      std::unique_ptr<WVStratifiedFieldEvaluationAdapter> &adapter);
   static WVKernelStatus createBorrowing(
       WVTransformStratifiedQGKernel &kernel,
-      std::unique_ptr<WVStratifiedQGFieldEvaluationAdapter> &adapter);
+      std::unique_ptr<WVStratifiedFieldEvaluationAdapter> &adapter);
+
+  static WVKernelStatus createBorrowing(WVTransformHydrostaticKernel&,std::unique_ptr<WVStratifiedFieldEvaluationAdapter>&);
 
   WVKernelStatus createPlan(const std::vector<WVFieldRequest> &requests,
                             WVFieldEvaluationPlan &plan) const;
@@ -58,6 +61,8 @@ public:
   std::size_t persistentBytes() const noexcept;
 
 private:
+  WVKernelStatus transformField(const WVState&,WVHydrostaticField,WVRealVolumeView);
+  WVKernelStatus scalarValue(const WVState&,unsigned,double&);
   struct MovingInterpolationWorkspace;
   WVKernelStatus evaluateMovingImpl(
       const WVMovingFieldEvaluationPlan &plan,
@@ -65,9 +70,12 @@ private:
       const WVRealFieldBundleConstView *advectionFields,
       WVMovingPositionView positions, WVFieldOutputView *outputs,
       std::size_t outputCount);
-  WVStratifiedQGFieldEvaluationAdapter() = default;
+  WVStratifiedFieldEvaluationAdapter() = default;
   std::unique_ptr<WVTransformStratifiedQGKernel> ownedKernel_;
   WVTransformStratifiedQGKernel *kernel_ = nullptr;
+  std::unique_ptr<WVTransformHydrostaticKernel> ownedHydrostatic_;
+  WVTransformHydrostaticKernel* hydrostaticKernel_=nullptr;
+  std::vector<double> speedScratch_;
   std::vector<double> fieldScratch_;
   std::unique_ptr<MovingInterpolationWorkspace> movingInterpolation_;
   WVFieldEvaluationMetrics metrics_;

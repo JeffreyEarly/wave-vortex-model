@@ -74,6 +74,18 @@
       "transform": "WVTransformStratifiedQG",
       "isHydrostatic": true,
       "shouldAntialias": true
+    },
+    {
+      "id": "hydrostatic-aa0",
+      "transform": "WVTransformHydrostatic",
+      "isHydrostatic": true,
+      "shouldAntialias": false
+    },
+    {
+      "id": "hydrostatic-aa1",
+      "transform": "WVTransformHydrostatic",
+      "isHydrostatic": true,
+      "shouldAntialias": true
     }
   ],
   "evidence": [
@@ -232,6 +244,30 @@
       "kind": "matlab-runtime-parity",
       "path": "UnitTests/TestPortableStratifiedQGQualification.m",
       "symbol": "lifecycleAndStorageRemainBounded"
+    },
+    {
+      "id": "hydro-pairs",
+      "kind": "matlab-runtime-parity",
+      "path": "UnitTests/TestPortableHydrostatic.m",
+      "symbol": "applicableForcingTendenciesMatchMatlab"
+    },
+    {
+      "id": "hydro-compositions",
+      "kind": "matlab-runtime-parity",
+      "path": "UnitTests/TestPortableHydrostatic.m",
+      "symbol": "orderedForcingTendenciesMatchMatlab"
+    },
+    {
+      "id": "hydro-rejections",
+      "kind": "matlab-runtime-parity",
+      "path": "UnitTests/TestPortableHydrostatic.m",
+      "symbol": "incompatibleModelGraphsAreTransactional"
+    },
+    {
+      "id": "hydro-continuations",
+      "kind": "matlab-runtime-parity",
+      "path": "UnitTests/TestPortableHydrostatic.m",
+      "symbol": "applicableForcingContinuationsMatchMatlab"
     }
   ],
   "rows": [
@@ -3079,6 +3115,702 @@
         "sqg-compositions",
         "sqg-continuation",
         "sqg-lifecycle"
+      ],
+      "barotropicCase": ""
+    },
+    {
+      "id": "hydrostatic-aa0/WVAdaptiveDamping",
+      "forcing": "WVAdaptiveDamping",
+      "contractVersion": 1,
+      "configuration": "hydrostatic-aa0",
+      "matlab": {
+        "applicability": "applicable",
+        "forcingTypes": [
+          "PVSpectral",
+          "Spectral"
+        ],
+        "activeTypes": [
+          "Spectral"
+        ],
+        "priority": 255,
+        "rejection": ""
+      },
+      "implementation": {
+        "factoryAvailable": true,
+        "issue": 0
+      },
+      "acceptance": "supported",
+      "evidence": [
+        "hydro-pairs",
+        "hydro-compositions",
+        "hydro-continuations"
+      ],
+      "barotropicCase": ""
+    },
+    {
+      "id": "hydrostatic-aa0/WVAntialiasing",
+      "forcing": "WVAntialiasing",
+      "contractVersion": 1,
+      "configuration": "hydrostatic-aa0",
+      "matlab": {
+        "applicability": "applicable",
+        "forcingTypes": [
+          "PVSpectral",
+          "Spectral"
+        ],
+        "activeTypes": [
+          "Spectral"
+        ],
+        "priority": 127,
+        "rejection": ""
+      },
+      "implementation": {
+        "factoryAvailable": true,
+        "issue": 0
+      },
+      "acceptance": "supported",
+      "evidence": [
+        "hydro-pairs",
+        "hydro-compositions",
+        "hydro-continuations"
+      ],
+      "barotropicCase": ""
+    },
+    {
+      "id": "hydrostatic-aa0/WVBetaPlanePVAdvection",
+      "forcing": "WVBetaPlanePVAdvection",
+      "contractVersion": 1,
+      "configuration": "hydrostatic-aa0",
+      "matlab": {
+        "applicability": "applicable",
+        "forcingTypes": [
+          "PVSpatial",
+          "Spectral"
+        ],
+        "activeTypes": [
+          "Spectral"
+        ],
+        "priority": 255,
+        "rejection": ""
+      },
+      "implementation": {
+        "factoryAvailable": true,
+        "issue": 0
+      },
+      "acceptance": "supported",
+      "evidence": [
+        "hydro-pairs",
+        "hydro-compositions",
+        "hydro-continuations"
+      ],
+      "barotropicCase": ""
+    },
+    {
+      "id": "hydrostatic-aa0/WVBottomFrictionLinear",
+      "forcing": "WVBottomFrictionLinear",
+      "contractVersion": 1,
+      "configuration": "hydrostatic-aa0",
+      "matlab": {
+        "applicability": "applicable",
+        "forcingTypes": [
+          "HydrostaticSpatial",
+          "NonhydrostaticSpatial",
+          "PVSpatial"
+        ],
+        "activeTypes": [
+          "HydrostaticSpatial"
+        ],
+        "priority": 255,
+        "rejection": ""
+      },
+      "implementation": {
+        "factoryAvailable": true,
+        "issue": 0
+      },
+      "acceptance": "supported",
+      "evidence": [
+        "hydro-pairs",
+        "hydro-compositions",
+        "hydro-continuations"
+      ],
+      "barotropicCase": ""
+    },
+    {
+      "id": "hydrostatic-aa0/WVBottomFrictionQuadratic",
+      "forcing": "WVBottomFrictionQuadratic",
+      "contractVersion": 1,
+      "configuration": "hydrostatic-aa0",
+      "matlab": {
+        "applicability": "applicable",
+        "forcingTypes": [
+          "HydrostaticSpatial",
+          "NonhydrostaticSpatial",
+          "PVSpatial"
+        ],
+        "activeTypes": [
+          "HydrostaticSpatial"
+        ],
+        "priority": 255,
+        "rejection": ""
+      },
+      "implementation": {
+        "factoryAvailable": true,
+        "issue": 0
+      },
+      "acceptance": "supported",
+      "evidence": [
+        "hydro-pairs",
+        "hydro-compositions",
+        "hydro-continuations"
+      ],
+      "barotropicCase": ""
+    },
+    {
+      "id": "hydrostatic-aa0/WVFixedAmplitudeForcing",
+      "forcing": "WVFixedAmplitudeForcing",
+      "contractVersion": 1,
+      "configuration": "hydrostatic-aa0",
+      "matlab": {
+        "applicability": "applicable",
+        "forcingTypes": [
+          "PVSpectralAmplitude",
+          "SpectralAmplitude"
+        ],
+        "activeTypes": [
+          "SpectralAmplitude"
+        ],
+        "priority": 255,
+        "rejection": ""
+      },
+      "implementation": {
+        "factoryAvailable": true,
+        "issue": 0
+      },
+      "acceptance": "supported",
+      "evidence": [
+        "hydro-pairs",
+        "hydro-compositions",
+        "hydro-continuations"
+      ],
+      "barotropicCase": ""
+    },
+    {
+      "id": "hydrostatic-aa0/WVHorizontalDamping",
+      "forcing": "WVHorizontalDamping",
+      "contractVersion": 1,
+      "configuration": "hydrostatic-aa0",
+      "matlab": {
+        "applicability": "applicable",
+        "forcingTypes": [
+          "HydrostaticSpatial",
+          "NonhydrostaticSpatial"
+        ],
+        "activeTypes": [
+          "HydrostaticSpatial"
+        ],
+        "priority": 255,
+        "rejection": ""
+      },
+      "implementation": {
+        "factoryAvailable": true,
+        "issue": 0
+      },
+      "acceptance": "supported",
+      "evidence": [
+        "hydro-pairs",
+        "hydro-compositions",
+        "hydro-continuations"
+      ],
+      "barotropicCase": ""
+    },
+    {
+      "id": "hydrostatic-aa0/WVNarrowBandGeostrophicForcing",
+      "forcing": "WVNarrowBandGeostrophicForcing",
+      "contractVersion": 1,
+      "configuration": "hydrostatic-aa0",
+      "matlab": {
+        "applicability": "applicable",
+        "forcingTypes": [
+          "PVSpectralAmplitude",
+          "SpectralAmplitude"
+        ],
+        "activeTypes": [
+          "SpectralAmplitude"
+        ],
+        "priority": 255,
+        "rejection": ""
+      },
+      "implementation": {
+        "factoryAvailable": true,
+        "issue": 0
+      },
+      "acceptance": "supported",
+      "evidence": [
+        "hydro-pairs",
+        "hydro-compositions",
+        "hydro-continuations"
+      ],
+      "barotropicCase": ""
+    },
+    {
+      "id": "hydrostatic-aa0/WVNonlinearAdvection",
+      "forcing": "WVNonlinearAdvection",
+      "contractVersion": 1,
+      "configuration": "hydrostatic-aa0",
+      "matlab": {
+        "applicability": "applicable",
+        "forcingTypes": [
+          "HydrostaticSpatial",
+          "NonhydrostaticSpatial",
+          "PVSpatial"
+        ],
+        "activeTypes": [
+          "HydrostaticSpatial"
+        ],
+        "priority": 127,
+        "rejection": ""
+      },
+      "implementation": {
+        "factoryAvailable": true,
+        "issue": 0
+      },
+      "acceptance": "supported",
+      "evidence": [
+        "hydro-pairs",
+        "hydro-compositions",
+        "hydro-continuations"
+      ],
+      "barotropicCase": ""
+    },
+    {
+      "id": "hydrostatic-aa0/WVPseudoTopographicWaveGeneration",
+      "forcing": "WVPseudoTopographicWaveGeneration",
+      "contractVersion": 1,
+      "configuration": "hydrostatic-aa0",
+      "matlab": {
+        "applicability": "applicable",
+        "forcingTypes": [
+          "Spectral"
+        ],
+        "activeTypes": [
+          "Spectral"
+        ],
+        "priority": 255,
+        "rejection": ""
+      },
+      "implementation": {
+        "factoryAvailable": true,
+        "issue": 0
+      },
+      "acceptance": "supported",
+      "evidence": [
+        "hydro-pairs",
+        "hydro-compositions",
+        "hydro-continuations"
+      ],
+      "barotropicCase": ""
+    },
+    {
+      "id": "hydrostatic-aa0/WVVerticalDamping",
+      "forcing": "WVVerticalDamping",
+      "contractVersion": 1,
+      "configuration": "hydrostatic-aa0",
+      "matlab": {
+        "applicability": "applicable",
+        "forcingTypes": [
+          "HydrostaticSpatial",
+          "NonhydrostaticSpatial"
+        ],
+        "activeTypes": [
+          "HydrostaticSpatial"
+        ],
+        "priority": 255,
+        "rejection": ""
+      },
+      "implementation": {
+        "factoryAvailable": true,
+        "issue": 0
+      },
+      "acceptance": "supported",
+      "evidence": [
+        "hydro-pairs",
+        "hydro-compositions",
+        "hydro-continuations"
+      ],
+      "barotropicCase": ""
+    },
+    {
+      "id": "hydrostatic-aa0/WVVerticalDiffusivity",
+      "forcing": "WVVerticalDiffusivity",
+      "contractVersion": 1,
+      "configuration": "hydrostatic-aa0",
+      "matlab": {
+        "applicability": "applicable",
+        "forcingTypes": [
+          "HydrostaticSpatial",
+          "NonhydrostaticSpatial",
+          "PVSpatial"
+        ],
+        "activeTypes": [
+          "HydrostaticSpatial"
+        ],
+        "priority": 255,
+        "rejection": ""
+      },
+      "implementation": {
+        "factoryAvailable": true,
+        "issue": 0
+      },
+      "acceptance": "supported",
+      "evidence": [
+        "hydro-pairs",
+        "hydro-compositions",
+        "hydro-continuations"
+      ],
+      "barotropicCase": ""
+    },
+    {
+      "id": "hydrostatic-aa1/WVAdaptiveDamping",
+      "forcing": "WVAdaptiveDamping",
+      "contractVersion": 1,
+      "configuration": "hydrostatic-aa1",
+      "matlab": {
+        "applicability": "applicable",
+        "forcingTypes": [
+          "PVSpectral",
+          "Spectral"
+        ],
+        "activeTypes": [
+          "Spectral"
+        ],
+        "priority": 255,
+        "rejection": ""
+      },
+      "implementation": {
+        "factoryAvailable": true,
+        "issue": 0
+      },
+      "acceptance": "supported",
+      "evidence": [
+        "hydro-pairs",
+        "hydro-compositions",
+        "hydro-continuations"
+      ],
+      "barotropicCase": ""
+    },
+    {
+      "id": "hydrostatic-aa1/WVAntialiasing",
+      "forcing": "WVAntialiasing",
+      "contractVersion": 1,
+      "configuration": "hydrostatic-aa1",
+      "matlab": {
+        "applicability": "incompatible",
+        "forcingTypes": [],
+        "activeTypes": [],
+        "priority": 0,
+        "rejection": "double-antialias"
+      },
+      "implementation": {
+        "factoryAvailable": true,
+        "issue": 0
+      },
+      "acceptance": "incompatible",
+      "evidence": [
+        "hydro-rejections",
+        "matlab-attachment"
+      ],
+      "barotropicCase": ""
+    },
+    {
+      "id": "hydrostatic-aa1/WVBetaPlanePVAdvection",
+      "forcing": "WVBetaPlanePVAdvection",
+      "contractVersion": 1,
+      "configuration": "hydrostatic-aa1",
+      "matlab": {
+        "applicability": "applicable",
+        "forcingTypes": [
+          "PVSpatial",
+          "Spectral"
+        ],
+        "activeTypes": [
+          "Spectral"
+        ],
+        "priority": 255,
+        "rejection": ""
+      },
+      "implementation": {
+        "factoryAvailable": true,
+        "issue": 0
+      },
+      "acceptance": "supported",
+      "evidence": [
+        "hydro-pairs",
+        "hydro-compositions",
+        "hydro-continuations"
+      ],
+      "barotropicCase": ""
+    },
+    {
+      "id": "hydrostatic-aa1/WVBottomFrictionLinear",
+      "forcing": "WVBottomFrictionLinear",
+      "contractVersion": 1,
+      "configuration": "hydrostatic-aa1",
+      "matlab": {
+        "applicability": "applicable",
+        "forcingTypes": [
+          "HydrostaticSpatial",
+          "NonhydrostaticSpatial",
+          "PVSpatial"
+        ],
+        "activeTypes": [
+          "HydrostaticSpatial"
+        ],
+        "priority": 255,
+        "rejection": ""
+      },
+      "implementation": {
+        "factoryAvailable": true,
+        "issue": 0
+      },
+      "acceptance": "supported",
+      "evidence": [
+        "hydro-pairs",
+        "hydro-compositions",
+        "hydro-continuations"
+      ],
+      "barotropicCase": ""
+    },
+    {
+      "id": "hydrostatic-aa1/WVBottomFrictionQuadratic",
+      "forcing": "WVBottomFrictionQuadratic",
+      "contractVersion": 1,
+      "configuration": "hydrostatic-aa1",
+      "matlab": {
+        "applicability": "applicable",
+        "forcingTypes": [
+          "HydrostaticSpatial",
+          "NonhydrostaticSpatial",
+          "PVSpatial"
+        ],
+        "activeTypes": [
+          "HydrostaticSpatial"
+        ],
+        "priority": 255,
+        "rejection": ""
+      },
+      "implementation": {
+        "factoryAvailable": true,
+        "issue": 0
+      },
+      "acceptance": "supported",
+      "evidence": [
+        "hydro-pairs",
+        "hydro-compositions",
+        "hydro-continuations"
+      ],
+      "barotropicCase": ""
+    },
+    {
+      "id": "hydrostatic-aa1/WVFixedAmplitudeForcing",
+      "forcing": "WVFixedAmplitudeForcing",
+      "contractVersion": 1,
+      "configuration": "hydrostatic-aa1",
+      "matlab": {
+        "applicability": "applicable",
+        "forcingTypes": [
+          "PVSpectralAmplitude",
+          "SpectralAmplitude"
+        ],
+        "activeTypes": [
+          "SpectralAmplitude"
+        ],
+        "priority": 255,
+        "rejection": ""
+      },
+      "implementation": {
+        "factoryAvailable": true,
+        "issue": 0
+      },
+      "acceptance": "supported",
+      "evidence": [
+        "hydro-pairs",
+        "hydro-compositions",
+        "hydro-continuations"
+      ],
+      "barotropicCase": ""
+    },
+    {
+      "id": "hydrostatic-aa1/WVHorizontalDamping",
+      "forcing": "WVHorizontalDamping",
+      "contractVersion": 1,
+      "configuration": "hydrostatic-aa1",
+      "matlab": {
+        "applicability": "applicable",
+        "forcingTypes": [
+          "HydrostaticSpatial",
+          "NonhydrostaticSpatial"
+        ],
+        "activeTypes": [
+          "HydrostaticSpatial"
+        ],
+        "priority": 255,
+        "rejection": ""
+      },
+      "implementation": {
+        "factoryAvailable": true,
+        "issue": 0
+      },
+      "acceptance": "supported",
+      "evidence": [
+        "hydro-pairs",
+        "hydro-compositions",
+        "hydro-continuations"
+      ],
+      "barotropicCase": ""
+    },
+    {
+      "id": "hydrostatic-aa1/WVNarrowBandGeostrophicForcing",
+      "forcing": "WVNarrowBandGeostrophicForcing",
+      "contractVersion": 1,
+      "configuration": "hydrostatic-aa1",
+      "matlab": {
+        "applicability": "applicable",
+        "forcingTypes": [
+          "PVSpectralAmplitude",
+          "SpectralAmplitude"
+        ],
+        "activeTypes": [
+          "SpectralAmplitude"
+        ],
+        "priority": 255,
+        "rejection": ""
+      },
+      "implementation": {
+        "factoryAvailable": true,
+        "issue": 0
+      },
+      "acceptance": "supported",
+      "evidence": [
+        "hydro-pairs",
+        "hydro-compositions",
+        "hydro-continuations"
+      ],
+      "barotropicCase": ""
+    },
+    {
+      "id": "hydrostatic-aa1/WVNonlinearAdvection",
+      "forcing": "WVNonlinearAdvection",
+      "contractVersion": 1,
+      "configuration": "hydrostatic-aa1",
+      "matlab": {
+        "applicability": "applicable",
+        "forcingTypes": [
+          "HydrostaticSpatial",
+          "NonhydrostaticSpatial",
+          "PVSpatial"
+        ],
+        "activeTypes": [
+          "HydrostaticSpatial"
+        ],
+        "priority": 127,
+        "rejection": ""
+      },
+      "implementation": {
+        "factoryAvailable": true,
+        "issue": 0
+      },
+      "acceptance": "supported",
+      "evidence": [
+        "hydro-pairs",
+        "hydro-compositions",
+        "hydro-continuations"
+      ],
+      "barotropicCase": ""
+    },
+    {
+      "id": "hydrostatic-aa1/WVPseudoTopographicWaveGeneration",
+      "forcing": "WVPseudoTopographicWaveGeneration",
+      "contractVersion": 1,
+      "configuration": "hydrostatic-aa1",
+      "matlab": {
+        "applicability": "applicable",
+        "forcingTypes": [
+          "Spectral"
+        ],
+        "activeTypes": [
+          "Spectral"
+        ],
+        "priority": 255,
+        "rejection": ""
+      },
+      "implementation": {
+        "factoryAvailable": true,
+        "issue": 0
+      },
+      "acceptance": "supported",
+      "evidence": [
+        "hydro-pairs",
+        "hydro-compositions",
+        "hydro-continuations"
+      ],
+      "barotropicCase": ""
+    },
+    {
+      "id": "hydrostatic-aa1/WVVerticalDamping",
+      "forcing": "WVVerticalDamping",
+      "contractVersion": 1,
+      "configuration": "hydrostatic-aa1",
+      "matlab": {
+        "applicability": "applicable",
+        "forcingTypes": [
+          "HydrostaticSpatial",
+          "NonhydrostaticSpatial"
+        ],
+        "activeTypes": [
+          "HydrostaticSpatial"
+        ],
+        "priority": 255,
+        "rejection": ""
+      },
+      "implementation": {
+        "factoryAvailable": true,
+        "issue": 0
+      },
+      "acceptance": "supported",
+      "evidence": [
+        "hydro-pairs",
+        "hydro-compositions",
+        "hydro-continuations"
+      ],
+      "barotropicCase": ""
+    },
+    {
+      "id": "hydrostatic-aa1/WVVerticalDiffusivity",
+      "forcing": "WVVerticalDiffusivity",
+      "contractVersion": 1,
+      "configuration": "hydrostatic-aa1",
+      "matlab": {
+        "applicability": "applicable",
+        "forcingTypes": [
+          "HydrostaticSpatial",
+          "NonhydrostaticSpatial",
+          "PVSpatial"
+        ],
+        "activeTypes": [
+          "HydrostaticSpatial"
+        ],
+        "priority": 255,
+        "rejection": ""
+      },
+      "implementation": {
+        "factoryAvailable": true,
+        "issue": 0
+      },
+      "acceptance": "supported",
+      "evidence": [
+        "hydro-pairs",
+        "hydro-compositions",
+        "hydro-continuations"
       ],
       "barotropicCase": ""
     }

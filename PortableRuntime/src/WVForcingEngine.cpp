@@ -2,6 +2,7 @@
 #include "WaveVortexRuntime/WVExtensionCatalog.hpp"
 #include "WaveVortexRuntime/WVForcingContracts.hpp"
 #include "WVForcingImplementations.hpp"
+#include "WaveVortexRuntime/WVHydrostaticForcingEngine.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -405,6 +406,33 @@ std::vector<double> adaptiveDampingOperator(const WVTransformConstantStratificat
     return damping;
 }
 
+
+std::vector<double> adaptiveDampingOperator(const WVTransformHydrostaticKernel& kernel,const WVForcingPreparation& preparation,WVKernelStatus& status) {
+    const auto& g=kernel.geometry();
+    const double f=2*g.rotationRate*std::sin(g.latitude*pi/180),maximum=preparation.maximumHorizontalComponent;
+    if (!(maximum>0) || f==0) { status={WVKernelStatusCode::invalidConfiguration,"Hydrostatic damping requires nonzero rotation and resolved horizontal modes."}; return {}; }
+    const double dx=pi/maximum,dk=std::min(2*pi/g.Lx,2*pi/g.Ly),cutoff=dk*std::pow(maximum/dk,.75);
+    const double jm=static_cast<double>(preparation.maximumVerticalMode),dj=g.Nj>1 ? g.j[1]-g.j[0] : 1;
+    const double jc=g.Nj>2 ? dj*std::pow(jm/dj,.75) : 0;
+    const auto found=std::find(g.j.begin(),g.j.end(),jm);
+    if(found==g.j.end()) { status={WVKernelStatusCode::invalidConfiguration,"Effective damping mode is not retained."}; return {}; }
+    const auto jindex=static_cast<std::size_t>(found-g.j.begin());
+    const double xy=dx/(pi*pi),zz=(pi*pi*g.g*g.h_0[jindex]/(f*f*dx*dx))*xy;
+    std::vector<double> result(g.Nj*g.Nkl);
+    for (std::size_t i=0;i<result.size();++i) {
+        const auto j=i%g.Nj,m=i/g.Nj; const double kh=std::hypot(g.k[m],g.l[m]);
+        result[i]=-xy*vanishingFilter(kh,cutoff,maximum)*kh*kh-zz*(g.Nj>2 ? vanishingFilter(g.j[j],jc,jm) : 1)*f*f/(g.g*g.h_0[j]);
+    }
+    status=WVKernelStatus::ok(); return result;
+}
+class HydrostaticVerticalDiffusivityForcing final : public ResolvedForcing {
+public:
+    HydrostaticVerticalDiffusivityForcing(const WVFrozenForcingEntry& e,double k,bool mean):ResolvedForcing(e),kappa_(k),mean_(mean) {}
+    WVKernelStatus addRightHandSide(WVForcingExecutionContext& context) const override { return context.verticalDiffusivity(kappa_,mean_); }
+private:
+    double kappa_; bool mean_;
+};
+
 bool emptyConfiguration(const WVFrozenForcingEntry& entry) { return entry.configuration.values.empty(); }
 
 } // namespace
@@ -632,6 +660,191 @@ WVKernelStatus createPseudoTopographicForcing(
         }
     }
     forcing = std::make_unique<PseudoTopographicForcing>(entry,std::move(operators));
+    return WVKernelStatus::ok();
+}
+
+WVKernelStatus createHydrostaticHorizontalDamping(const WVFrozenForcingEntry& entry, WVTransformHydrostaticKernel&, const WVForcingPreparation &,
+    std::unique_ptr<WVForcing>& forcing) {
+    const auto status = preflightLaplacianDamping(entry,false); if (!status) return status;
+    forcing = std::make_unique<LaplacianDampingForcing>(entry,realValues(entry.configuration,"nu")->front(),realValues(entry.configuration,"kappa")->front(),WVLaplacianDirection::horizontal);
+    return WVKernelStatus::ok();
+}
+
+WVKernelStatus createHydrostaticVerticalDamping(const WVFrozenForcingEntry& entry, WVTransformHydrostaticKernel&, const WVForcingPreparation &,
+    std::unique_ptr<WVForcing>& forcing) {
+    const auto status = preflightLaplacianDamping(entry,false); if (!status) return status;
+    forcing = std::make_unique<LaplacianDampingForcing>(entry,realValues(entry.configuration,"nu")->front(),realValues(entry.configuration,"kappa")->front(),WVLaplacianDirection::vertical);
+    return WVKernelStatus::ok();
+}
+
+WVKernelStatus createHydrostaticVerticalDiffusivity(const WVFrozenForcingEntry& entry, WVTransformHydrostaticKernel&, const WVForcingPreparation &,
+    std::unique_ptr<WVForcing>& forcing) {
+    const auto status = preflightVerticalDiffusivity(entry,false); if (!status) return status;
+    forcing = std::make_unique<HydrostaticVerticalDiffusivityForcing>(entry,realValues(entry.configuration,"kappa_z")->front(),booleanValues(entry.configuration,"shouldForceMeanDensityAnomaly")->front()!=0);
+    return WVKernelStatus::ok();
+}
+
+WVKernelStatus createHydrostaticNonlinearAdvectionForcing(
+    const WVFrozenForcingEntry& entry,
+    WVTransformHydrostaticKernel&, const WVForcingPreparation &,
+    std::unique_ptr<WVForcing>& forcing) {
+    if (!emptyConfiguration(entry)) return {WVKernelStatusCode::invalidConfiguration,"Nonlinear advection does not accept configuration values."};
+    forcing = std::make_unique<NonlinearAdvectionForcing>(entry);
+    return WVKernelStatus::ok();
+}
+
+WVKernelStatus createHydrostaticAdaptiveDampingForcing(
+    const WVFrozenForcingEntry& entry,
+    WVTransformHydrostaticKernel& descriptor, const WVForcingPreparation &preparation,
+    std::unique_ptr<WVForcing>& forcing) {
+    if (!emptyConfiguration(entry)) return {WVKernelStatusCode::invalidConfiguration,"Adaptive damping does not accept configuration values."};
+    WVKernelStatus status;
+    auto damping = adaptiveDampingOperator(descriptor,preparation,status);
+    if (!status) return status;
+    forcing = std::make_unique<AdaptiveDampingForcing>(entry,std::move(damping));
+    return WVKernelStatus::ok();
+}
+
+WVKernelStatus createHydrostaticQuadraticBottomFriction(
+    const WVFrozenForcingEntry& entry,
+    WVTransformHydrostaticKernel& descriptor, const WVForcingPreparation &,
+    std::unique_ptr<WVForcing>& forcing) {
+    const auto* values = realValues(entry.configuration,"Cd");
+    if (values == nullptr || values->size() != 1 || !std::isfinite(values->front()) || values->front() < 0.0) return {WVKernelStatusCode::invalidConfiguration,"Quadratic drag coefficient must be one finite nonnegative scalar."};
+    forcing = std::make_unique<QuadraticBottomFrictionForcing>(entry,values->front()/descriptor.geometry().z_int.front());
+    return WVKernelStatus::ok();
+}
+
+WVKernelStatus createHydrostaticLinearBottomFriction(
+    const WVFrozenForcingEntry& entry,
+    WVTransformHydrostaticKernel& descriptor, const WVForcingPreparation &,
+    std::unique_ptr<WVForcing>& forcing) {
+    const auto* values = realValues(entry.configuration,"r");
+    if (values == nullptr || values->size() != 1 || !std::isfinite(values->front()) || values->front() < 0.0) return {WVKernelStatusCode::invalidConfiguration,"Linear drag rate must be one finite nonnegative scalar."};
+    const double scaledRate = descriptor.geometry().Lz*values->front()/descriptor.geometry().z_int.front();
+    forcing = std::make_unique<LinearBottomFrictionForcing>(entry,scaledRate);
+    return WVKernelStatus::ok();
+}
+
+WVKernelStatus createHydrostaticFixedAmplitudeForcing(
+    const WVFrozenForcingEntry& entry,
+    WVTransformHydrostaticKernel& descriptor, const WVForcingPreparation &,
+    std::unique_ptr<WVForcing>& forcing) {
+    WVFixedAmplitudeConfiguration configuration;
+    const auto decode = [&](const char* indexName, const char* realName, const char* imagName, auto& indices, auto& values) -> bool {
+        const auto* sourceIndices = integerValues(entry.configuration,indexName);
+        const auto* real = realValues(entry.configuration,realName);
+        const auto* imag = realValues(entry.configuration,imagName);
+        if (sourceIndices == nullptr && real == nullptr && imag == nullptr) return true;
+        if (sourceIndices == nullptr || real == nullptr || imag == nullptr || sourceIndices->size() != real->size() || real->size() != imag->size()) return false;
+        std::set<std::size_t> unique;
+        for (std::size_t index = 0; index < sourceIndices->size(); ++index) {
+            if ((*sourceIndices)[index] < 0 || static_cast<std::size_t>((*sourceIndices)[index]) >= descriptor.spectralShape().elementCount() || !std::isfinite((*real)[index]) || !std::isfinite((*imag)[index])) return false;
+            const auto converted = static_cast<std::size_t>((*sourceIndices)[index]);
+            if (!unique.insert(converted).second) return false;
+            indices.push_back(converted);
+            values.push_back({(*real)[index],(*imag)[index]});
+        }
+        return true;
+    };
+    if (!decode("ApIndices","ApValuesReal","ApValuesImag",configuration.ApIndices,configuration.ApValues) ||
+        !decode("AmIndices","AmValuesReal","AmValuesImag",configuration.AmIndices,configuration.AmValues) ||
+        !decode("A0Indices","A0ValuesReal","A0ValuesImag",configuration.A0Indices,configuration.A0Values)) return {WVKernelStatusCode::invalidConfiguration,"Fixed-amplitude configuration is malformed or outside the coefficient shape."};
+    forcing = std::make_unique<FixedAmplitudeForcing>(entry,std::move(configuration));
+    return WVKernelStatus::ok();
+}
+
+WVKernelStatus createHydrostaticBetaPlaneForcing(
+    const WVFrozenForcingEntry& entry,
+    WVTransformHydrostaticKernel& descriptor, const WVForcingPreparation &,
+    std::unique_ptr<WVForcing>& forcing) {
+    if (!emptyConfiguration(entry)) return {WVKernelStatusCode::invalidConfiguration,"Beta-plane advection does not accept configuration values."};
+    const auto& configuration = descriptor.geometry();
+    const double beta=2*configuration.rotationRate*std::cos(configuration.latitude*pi/180)/configuration.planetaryRadius;
+    std::vector<WVComplex64> betaA0(descriptor.spectralShape().elementCount());
+    for (std::size_t i=0;i<betaA0.size();++i) if (descriptor.factors()[i].geostrophic) betaA0[i]=multiply(descriptor.factors()[i].VA0,-beta);
+    forcing = std::make_unique<BetaPlaneForcing>(entry,std::move(betaA0));
+    return WVKernelStatus::ok();
+}
+
+WVKernelStatus createHydrostaticPseudoTopographicForcing(
+    const WVFrozenForcingEntry& entry,
+    WVTransformHydrostaticKernel& descriptor,
+    const WVForcingPreparation &preparation, std::unique_ptr<WVForcing>& forcing) {
+    WVPseudoTopographicOperators operators;
+    auto& record = operators.configuration;
+    const auto& configuration = descriptor.geometry();
+    const auto* height = realValues(entry.configuration,"topographicHeight");
+    const auto* velocityReal = realValues(entry.configuration,"barotropicVelocityAmplitudeReal");
+    const auto* velocityImag = realValues(entry.configuration,"barotropicVelocityAmplitudeImag");
+    const auto* frequency = realValues(entry.configuration,"frequency");
+    const auto* ramp = realValues(entry.configuration,"rampDuration");
+    const auto* start = realValues(entry.configuration,"startTime");
+    const auto* avoid = booleanValues(entry.configuration,"shouldAvoidAdaptiveDamping");
+    const auto* maximumK = realValues(entry.configuration,"maximumForcedHorizontalWavenumber");
+    const auto* maximumJ = realValues(entry.configuration,"maximumForcedVerticalMode");
+    const auto* symbol = textValues(entry.configuration,"darwinSymbol");
+    if (height == nullptr || height->size() != configuration.Nx*configuration.Ny || velocityReal == nullptr || velocityImag == nullptr || velocityReal->size() != 2 || velocityImag->size() != 2 || frequency == nullptr || frequency->size() != 1 || ramp == nullptr || ramp->size() != 1 || start == nullptr || start->size() != 1 || avoid == nullptr || avoid->size() != 1 || maximumK == nullptr || maximumK->size() != 1 || maximumJ == nullptr || maximumJ->size() != 1) return {WVKernelStatusCode::invalidConfiguration,"Pseudo-topographic forcing configuration is incomplete."};
+    record.topographicShape = {configuration.Nx,configuration.Ny};
+    record.topographicHeight = *height;
+    record.barotropicVelocityAmplitude = {{{(*velocityReal)[0],(*velocityImag)[0]},{(*velocityReal)[1],(*velocityImag)[1]}}};
+    record.frequency = frequency->front(); record.rampDuration = ramp->front(); record.startTime = start->front();
+    record.shouldAvoidAdaptiveDamping = avoid->front() != 0;
+    record.maximumForcedHorizontalWavenumber = maximumK->front(); record.maximumForcedVerticalMode = maximumJ->front();
+    record.darwinSymbol = symbol == nullptr || symbol->empty() ? std::string{} : symbol->front();
+    static const std::set<std::string> validSymbols = {"","M2","S2","N2","K1","O1"};
+    if (!std::isfinite(record.frequency) || record.frequency <= 0.0 || !std::isfinite(record.rampDuration) || record.rampDuration < 0.0 || !std::isfinite(record.startTime) || std::isnan(record.maximumForcedHorizontalWavenumber) || record.maximumForcedHorizontalWavenumber < 0.0 || std::isnan(record.maximumForcedVerticalMode) || record.maximumForcedVerticalMode < 0.0 || validSymbols.count(record.darwinSymbol) == 0) return {WVKernelStatusCode::invalidConfiguration,"Pseudo-topographic forcing values are invalid."};
+    WVKernelStatus dampingStatus = WVKernelStatus::ok();
+    const auto damping = preparation.hasAdaptiveDamping && record.shouldAvoidAdaptiveDamping ? adaptiveDampingOperator(descriptor,preparation,dampingStatus) : std::vector<double>{};
+    if (!dampingStatus) return dampingStatus;
+    const auto count = descriptor.spectralShape().elementCount();
+    operators.responsePlusX.assign(count,{}); operators.responsePlusY.assign(count,{}); operators.responseMinusX.assign(count,{}); operators.responseMinusY.assign(count,{});
+    std::vector<double> bottom(configuration.Nj),physical(configuration.Nx*configuration.Ny*configuration.Nz);
+    std::vector<WVComplex64> modal(count);
+    for (std::size_t j=0;j<configuration.Nj;++j) {
+        std::fill(modal.begin(),modal.end(),WVComplex64{}); modal[j]={1,0};
+        const auto status=descriptor.transformToSpatial({modal.data(),descriptor.spectralShape()},WVHydrostaticFamily::F,{physical.data(),descriptor.spatialShape()}); if (!status) return status;
+        bottom[j]=physical[0];
+    }
+    for (std::size_t m=0;m<configuration.Nkl;++m) {
+        const auto terrain=normalizedTerrainCoefficient(record,configuration.modes[m].k,configuration.modes[m].l);
+        const auto dx=multiply(WVComplex64{-terrain.imag,terrain.real},configuration.k[m]),dy=multiply(WVComplex64{-terrain.imag,terrain.real},configuration.l[m]);
+        for (std::size_t j=0;j<configuration.Nj;++j) {
+            const auto i=j+configuration.Nj*m; const auto& factor=descriptor.factors()[i];
+            if (!factor.wave || std::hypot(configuration.k[m],configuration.l[m])>record.maximumForcedHorizontalWavenumber || configuration.j[j]>record.maximumForcedVerticalMode || (!damping.empty() && damping[i]!=0)) continue;
+            const double response=configuration.g*bottom[j]*factor.NAp/factor.waveEnergy;
+            operators.responsePlusX[i]=multiply(dx,response); operators.responsePlusY[i]=multiply(dy,response);
+            operators.responseMinusX[i]=multiply(dx,-response); operators.responseMinusY[i]=multiply(dy,-response);
+        }
+    }
+    forcing = std::make_unique<PseudoTopographicForcing>(entry,std::move(operators));
+    return WVKernelStatus::ok();
+}
+
+WVKernelStatus prepareHydrostaticExplicitAntialiasing(const WVFrozenForcingEntry& entry,
+    const WVTransformHydrostaticKernel& kernel, WVForcingPreparation& preparation) {
+    if (entry.name!="antialias filter") return WVKernelStatus::ok();
+    const auto& g=kernel.geometry();
+    const double retained=realValues(entry.configuration,"Nj")->front();
+    const double cutoff=(2.0/3.0)*2*pi*static_cast<double>(g.Nx/2)/g.Lx;
+    preparation.maximumHorizontalComponent=0; preparation.maximumVerticalMode=0;
+    for(std::size_t m=0;m<g.Nkl;++m) for(double j:g.j) {
+        if(std::hypot(g.k[m],g.l[m])>cutoff || j>retained-1) continue;
+        preparation.maximumHorizontalComponent=std::max({preparation.maximumHorizontalComponent,std::abs(g.k[m]),std::abs(g.l[m])});
+        preparation.maximumVerticalMode=std::max(preparation.maximumVerticalMode,static_cast<std::size_t>(j));
+    }
+    return WVKernelStatus::ok();
+}
+
+WVKernelStatus createHydrostaticExplicitAntialiasing(const WVFrozenForcingEntry& entry,
+    WVTransformHydrostaticKernel& descriptor, const WVForcingPreparation &,
+    std::unique_ptr<WVForcing>& forcing) {
+    const auto& c=descriptor.geometry();
+    const double retained=realValues(entry.configuration,"Nj")->front();
+    const double cutoff=(2.0/3.0)*2*pi*static_cast<double>(c.Nx/2)/c.Lx;
+    std::vector<std::size_t> indices;
+    for (std::size_t i=0;i<c.Nj*c.Nkl;++i) if (std::hypot(c.k[i/c.Nj],c.l[i/c.Nj])>cutoff || c.j[i%c.Nj]>retained-1) indices.push_back(i);
+    forcing = std::make_unique<ExplicitAntialiasingForcing>(entry,std::move(indices));
     return WVKernelStatus::ok();
 }
 
@@ -927,39 +1140,55 @@ void WVForcingExecutionContext::filterTendency(const std::vector<std::size_t>& i
 }
 
 WVKernelStatus WVForcingExecutionContext::laplacianDamping(double nu, double kappa, WVLaplacianDirection direction) {
+    if (hydrostatic_) return hydrostatic_->addLaplacianDamping(*state_,nu,kappa,direction,*flux_);
     if (!*outputInitialized_) engine_->initializeOutputWithZeros(*flux_,*outputInitialized_);
     return engine_->kernel().addLaplacianDamping(*state_,nu,kappa,direction,*flux_);
 }
 
+WVKernelStatus WVForcingExecutionContext::verticalDiffusivity(double kappa,bool forceMean) {
+    if (hydrostatic_) return hydrostatic_->addVerticalDiffusivity(*state_,kappa,forceMean,*flux_);
+    return laplacianDamping(0,kappa,WVLaplacianDirection::vertical);
+}
+
 WVKernelStatus WVForcingExecutionContext::nonlinearAdvection() {
+    if (hydrostatic_) return hydrostatic_->addNonlinearFlux(*state_,*flux_);
     return engine_->addNonlinearFlux(*state_,*flux_,*outputInitialized_,externalFields_,*externalFieldsPrepared_);
 }
 
 WVKernelStatus WVForcingExecutionContext::physicalFields(
     WVRealFieldBundleConstView& fields) {
+    if (hydrostatic_) return hydrostatic_->physicalFields(*state_,fields);
     return engine_->ensurePhysicalFields(*state_,fields,externalFields_,*externalFieldsPrepared_);
 }
 
 WVRealFieldBundleView WVForcingExecutionContext::clearedSpatialTendency() {
+    if (hydrostatic_) return hydrostatic_->clearedSpatialTendency();
     return engine_->clearedSpatialTendency();
 }
 
 WVKernelStatus WVForcingExecutionContext::projectSpatialTendency(
     const WVRealFieldBundleConstView& tendency) {
+    if (hydrostatic_) return hydrostatic_->addProjectedSpatialTendency(*state_,tendency,*flux_);
     return engine_->addProjectedSpatialTendency(*state_,tendency,*flux_,*outputInitialized_);
 }
 
 WVKernelStatus WVForcingExecutionContext::adaptiveDamping(const std::vector<double>& values) {
+    if (hydrostatic_) return hydrostatic_->addAdaptiveDamping(*state_,values,*flux_);
     if (!*outputInitialized_) engine_->initializeOutputWithZeros(*flux_,*outputInitialized_);
     return engine_->addAdaptiveDamping(*state_,values,*flux_,externalFields_,*externalFieldsPrepared_);
 }
 
 WVKernelStatus WVForcingExecutionContext::pseudoTopographicGeneration(const WVPseudoTopographicOperators& operators) {
+    if (hydrostatic_) return hydrostatic_->addPseudoTopographicGeneration(*state_,operators,*flux_);
     if (!*outputInitialized_) engine_->initializeOutputWithZeros(*flux_,*outputInitialized_);
     return engine_->addPseudoTopographicGeneration(*state_,operators,*flux_);
 }
 
 WVKernelStatus WVForcingExecutionContext::betaPlaneAdvection(const std::vector<WVComplex64>& values) {
+    if (hydrostatic_) {
+        for (std::size_t i=0;i<values.size();++i) flux_->F0.data[i]=add(flux_->F0.data[i],multiply(values[i],state_->coefficients.A0.data[i]));
+        return WVKernelStatus::ok();
+    }
     if (!*outputInitialized_) engine_->initializeOutputWithZeros(*flux_,*outputInitialized_);
     engine_->addBetaPlaneAdvection(*state_,values,*flux_);
     return WVKernelStatus::ok();
@@ -973,6 +1202,13 @@ void WVForcingExecutionContext::zeroSelectedTendencies(const WVFixedAmplitudeCon
 }
 
 WVKernelStatus WVForcingExecutionContext::linearCoefficientTendency(double rate) {
+    if (hydrostatic_) {
+        if (!std::isfinite(rate)) return {WVKernelStatusCode::invalidConfiguration,"Nonfinite coefficient rate."};
+        const WVComplexConstView a[]={state_->coefficients.Ap,state_->coefficients.Am,state_->coefficients.A0};
+        const WVComplexView b[]={flux_->Fp,flux_->Fm,flux_->F0};
+        for (int j=0;j<3;++j) for (std::size_t i=0;i<a[j].shape.elementCount();++i) b[j].data[i]=add(b[j].data[i],multiply(a[j].data[i],rate));
+        return WVKernelStatus::ok();
+    }
     if (!*outputInitialized_) engine_->initializeOutputWithZeros(*flux_,*outputInitialized_);
     return engine_->addLinearCoefficientTendency(*state_,rate,*flux_);
 }
