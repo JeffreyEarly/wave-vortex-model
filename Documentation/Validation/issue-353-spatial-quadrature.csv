@@ -1,0 +1,52 @@
+observable,absoluteDifference,relativeDifference
+u,1.14905313250966e-19,8.27110732334879e-17
+v,5.59897877121831e-23,6.70850094225406e-18
+eta,1.01915004213637e-17,2.38524477946811e-17
+qgpv,6.94831714544543e-23,3.33066907387547e-15
+buoyancy,2.20030042939105e-22,2.34187669256869e-17
+ssh,0,0
+surfaceAnomaly,0,0
+bottomAnomaly,0,0
+physicalEnergyNorm,2.62919026827735e-18,1.75640751942652e-17
+kineticEnergy,0,0
+interiorPotentialEnergy,0,0
+surfacePotentialEnergy,0,0
+surfaceAnomalyVariance,0,0
+bottomAnomalyVariance,0,0
+potentialEnstrophy,0,0
+totalEnergy,0,0
+generalizedEnergy,0,0
+energySpectrum,0,0
+enstrophySpectrum,0,0
+nonlinear advection:kineticEnergyTendency,0,0
+seasonal surface anomaly:kineticEnergyTendency,0,0
+quadratic bottom friction:kineticEnergyTendency,0,0
+vertical diffusivity:kineticEnergyTendency,0,0
+nonlinear advection:interiorPotentialEnergyTendency,0,0
+seasonal surface anomaly:interiorPotentialEnergyTendency,0,0
+quadratic bottom friction:interiorPotentialEnergyTendency,0,0
+vertical diffusivity:interiorPotentialEnergyTendency,0,0
+nonlinear advection:surfacePotentialEnergyTendency,0,0
+seasonal surface anomaly:surfacePotentialEnergyTendency,0,0
+quadratic bottom friction:surfacePotentialEnergyTendency,0,0
+vertical diffusivity:surfacePotentialEnergyTendency,0,0
+nonlinear advection:surfaceAnomalyVarianceTendency,0,0
+seasonal surface anomaly:surfaceAnomalyVarianceTendency,0,0
+quadratic bottom friction:surfaceAnomalyVarianceTendency,0,0
+vertical diffusivity:surfaceAnomalyVarianceTendency,0,0
+nonlinear advection:bottomAnomalyVarianceTendency,0,0
+seasonal surface anomaly:bottomAnomalyVarianceTendency,0,0
+quadratic bottom friction:bottomAnomalyVarianceTendency,0,0
+vertical diffusivity:bottomAnomalyVarianceTendency,0,0
+nonlinear advection:potentialEnstrophyTendency,0,0
+seasonal surface anomaly:potentialEnstrophyTendency,0,0
+quadratic bottom friction:potentialEnstrophyTendency,0,0
+vertical diffusivity:potentialEnstrophyTendency,0,0
+nonlinear advection:totalEnergyTendency,0,0
+seasonal surface anomaly:totalEnergyTendency,0,0
+quadratic bottom friction:totalEnergyTendency,0,0
+vertical diffusivity:totalEnergyTendency,0,0
+nonlinear advection:generalizedEnergyTendency,0,0
+seasonal surface anomaly:generalizedEnergyTendency,0,0
+quadratic bottom friction:generalizedEnergyTendency,0,0
+vertical diffusivity:generalizedEnergyTendency,0,0
