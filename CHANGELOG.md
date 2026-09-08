@@ -19,6 +19,11 @@
 - Sampling-grid changes preserve each retained family count by default. QG accepts optional strict APV/MDA counts while preserving automatic selection when omitted. An unqualified target or incompatible matched mode rejects the request.
 - Rebuild supported forcing on the target and reject unsupported conversions explicitly. Prescribed Boussinesq volume sources preserve their absolute clock and reject unresolved spatial patterns. Transferred QG and Boussinesq states continue through the existing annotated restart path without a provider solve on restoration.
 
+### Short seasonal QG composition
+
+- Added an authoring example composing the complete seasonal QG case through existing transform, forcing, exponential integration, output, and model-file restart interfaces. No runtime hierarchy or persistence changes are required.
+- Added short process-accounting, mechanism-sensitivity, actual timestep-refinement and provider-free restart evidence, with explicit retained counts and limits on spatial-accuracy claims.
+
 ### Committed observer restart
 
 - Restore Lagrangian particle positions, tracked fields, and tracer state from the contiguous committed time prefix instead of the raw unlimited dimension length. Interrupted payload writes no longer become restored observer state.
