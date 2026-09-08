@@ -59,7 +59,8 @@
     "stratifiedModalRecords": "issue-295",
     "stableForcingCompatibility": "issues-290-294",
     "stratifiedQGRuntime": "issue-297",
-    "stratifiedQGQualification": "issue-298"
+    "stratifiedQGQualification": "issue-298",
+    "hydrostaticKernel": "issue-299"
   },
   "excluded": [
     "benchmark harnesses and payloads",

@@ -1,0 +1,79 @@
+name: Hydrostatic kernel parity
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: hydrostatic-kernel-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  qualify:
+    name: Hydrostatic kernel / ${{ matrix.configuration }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        configuration: [release, sanitized]
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          path: source
+          persist-credentials: false
+      - uses: actions/checkout@v6
+        with:
+          repository: JeffreyEarly/OceanKit
+          ref: 96f0b801c565406dd5a4ba2480334a3a481c3e2c
+          path: OceanKit
+          persist-credentials: false
+      - name: Install NetCDF
+        run: |
+          sudo apt-get -o Acquire::Retries=3 update
+          sudo apt-get -o Acquire::Retries=3 install --yes libnetcdf-dev pkg-config
+      - name: Build reference runtime and probes
+        working-directory: source
+        env:
+          CC: clang
+          CXX: clang++
+        run: |
+          flags=()
+          if [[ '${{ matrix.configuration }}' == sanitized ]]; then
+            flags+=('-DCMAKE_CXX_FLAGS=-fsanitize=address,undefined -fno-omit-frame-pointer' '-DCMAKE_EXE_LINKER_FLAGS=-fsanitize=address,undefined')
+          fi
+          cmake -S PortableRuntime -B "$RUNNER_TEMP/hydrostatic-build" -DCMAKE_BUILD_TYPE=RelWithDebInfo -DWV_ENABLE_ACCELERATE=OFF "${flags[@]}"
+          cmake --build "$RUNNER_TEMP/hydrostatic-build" --parallel 4 --target TestWVHydrostaticKernel WVHydrostaticKernelDump
+      - name: Run kernel boundary contracts
+        env:
+          ASAN_OPTIONS: detect_leaks=1:alloc_dealloc_mismatch=1:halt_on_error=1
+          UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+        run: ctest --test-dir "$RUNNER_TEMP/hydrostatic-build" -R '^hydrostatic-kernel$' --output-on-failure
+      - uses: matlab-actions/setup-matlab@v3
+        with:
+          release: R2025b
+          cache: true
+      - name: Compare Hydrostatic kernel with MATLAB
+        uses: matlab-actions/run-command@v3
+        env:
+          ASAN_OPTIONS: detect_leaks=1:alloc_dealloc_mismatch=1:halt_on_error=1
+          UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+        with:
+          command: >-
+            sourceRoot=fullfile(pwd,"source");
+            addpath(fullfile(sourceRoot,"tools"));
+            configureCIEnvironment(sourceRoot,fullfile(pwd,"OceanKit"));
+            cd(sourceRoot);
+            setenv("WV_HYDRO_KERNEL_DUMP",fullfile(getenv("RUNNER_TEMP"),"hydrostatic-build","WVHydrostaticKernelDump"));
+            results=runtests("UnitTests/TestHydrostaticCompiledKernel.m");
+            assertSuccess(results);
+      - name: Verify clean checkout
+        if: always()
+        working-directory: source
+        run: bash tools/checkCIWorkspaceCleanliness.sh
