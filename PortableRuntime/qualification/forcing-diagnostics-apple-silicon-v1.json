@@ -2209,6 +2209,21 @@
     {
       "scope": "Analytically cancelling tidal Fw channel",
       "evidence": "The sum of separately reconstructed Ap/Am contributions is asserted to cancel within 1e-12 of their maximum magnitude; both implementations and their difference use that same conditioning scale. Other channels use per-channel maximum reference magnitude."
+    },
+    {
+      "issue": 408,
+      "scope": "MATLAB saved observer restoration",
+      "evidence": "Observed property listener warning and missing forcing operation during modelFromFile; saved-output reference uses a fresh writer."
+    },
+    {
+      "issue": 409,
+      "scope": "Adaptive damping at allocated Nj>2 and effective j_max=1",
+      "evidence": "degenerateAdaptiveDampingHasExplicitMatlabException verifies MATLAB Qj-derived damping/tendencies contain NaNs, while both C++ providers produce finite diagnostic arrays, preserve coefficients, and free diagnostic scratch."
+    },
+    {
+      "issue": 410,
+      "scope": "MATLAB request generation for linear initial-only barotropic files",
+      "evidence": "Observed unconditional coefficient-stream rejection; C++ CLI restart/append passes the saved-output matrix."
     }
   ],
   "verification": {
@@ -2222,10 +2237,382 @@
     ]
   },
   "remaining": [
-    "MATLAB/native saved-output and dense-value matrix",
+    "Nonlinear MATLAB/native saved-output and dense-value matrix; SQG spectral saved-value qualification against primitives under explicit #404 exception",
     "Force-specific sink failure/retry qualification",
-    "Remaining derived/derivative intermediate sharing audit",
+    "Remaining derived/derivative intermediate sharing and identity/preflight audit",
     "Representative integration runtime and retained-memory 3% budgets",
     "Final catalog delivery status, required hosted checks and integration"
-  ]
+  ],
+  "savedOutput": {
+    "cppSourceCommit": "2c863661544e62d433e87f14dfd554ce42e92f8f",
+    "testSourceSha256": "cb5b22e284c743703ecf809dcb784d8dac49e78bf80331e479aed2e7be4c0533",
+    "runnerSha256": "e4f6f3ab2662cd6743237bb92b67cf96095ac393d0cf23f2290c1d85c881b1a3",
+    "matlabRelease": "R2025b",
+    "dynamics": "linear coefficient evolution with active forcing diagnostics; this does not qualify nonlinear trajectories",
+    "scenarios": {
+      "1": "fixed RK4 uninterrupted append",
+      "2": "fixed RK4 segmented restart and append",
+      "3": "adaptive RK45 append",
+      "4": "adaptive RK78 append"
+    },
+    "initialTime": 37,
+    "finalTime": 38,
+    "stepSize": 0.25,
+    "normalOutputInterval": 0.5,
+    "denseOutputInterval": 0.125,
+    "normalRecordCount": 3,
+    "denseRecordCount": 9,
+    "fieldRecordComparisons": 17280,
+    "rows": [
+      {
+        "transform": "constant-hydrostatic",
+        "provider": "reference",
+        "scenario": 1,
+        "fieldRecordComparisons": 432,
+        "maximumNormalizedError": 1.1685411674361618e-13
+      },
+      {
+        "transform": "constant-hydrostatic",
+        "provider": "reference",
+        "scenario": 2,
+        "fieldRecordComparisons": 432,
+        "maximumNormalizedError": 1.1685411674361618e-13
+      },
+      {
+        "transform": "constant-hydrostatic",
+        "provider": "reference",
+        "scenario": 3,
+        "fieldRecordComparisons": 432,
+        "maximumNormalizedError": 1.1685411674361618e-13
+      },
+      {
+        "transform": "constant-hydrostatic",
+        "provider": "reference",
+        "scenario": 4,
+        "fieldRecordComparisons": 432,
+        "maximumNormalizedError": 1.1685411674361618e-13
+      },
+      {
+        "transform": "constant-hydrostatic",
+        "provider": "native",
+        "scenario": 1,
+        "fieldRecordComparisons": 432,
+        "maximumNormalizedError": 1.1685411674361618e-13
+      },
+      {
+        "transform": "constant-hydrostatic",
+        "provider": "native",
+        "scenario": 2,
+        "fieldRecordComparisons": 432,
+        "maximumNormalizedError": 1.1685411674361618e-13
+      },
+      {
+        "transform": "constant-hydrostatic",
+        "provider": "native",
+        "scenario": 3,
+        "fieldRecordComparisons": 432,
+        "maximumNormalizedError": 1.1685411674361618e-13
+      },
+      {
+        "transform": "constant-hydrostatic",
+        "provider": "native",
+        "scenario": 4,
+        "fieldRecordComparisons": 432,
+        "maximumNormalizedError": 1.1685411674361618e-13
+      },
+      {
+        "transform": "constant-nonhydrostatic",
+        "provider": "reference",
+        "scenario": 1,
+        "fieldRecordComparisons": 576,
+        "maximumNormalizedError": 1.2315309671473967e-13
+      },
+      {
+        "transform": "constant-nonhydrostatic",
+        "provider": "reference",
+        "scenario": 2,
+        "fieldRecordComparisons": 576,
+        "maximumNormalizedError": 1.2315309671473967e-13
+      },
+      {
+        "transform": "constant-nonhydrostatic",
+        "provider": "reference",
+        "scenario": 3,
+        "fieldRecordComparisons": 576,
+        "maximumNormalizedError": 1.2315309671473967e-13
+      },
+      {
+        "transform": "constant-nonhydrostatic",
+        "provider": "reference",
+        "scenario": 4,
+        "fieldRecordComparisons": 576,
+        "maximumNormalizedError": 1.2315309671473967e-13
+      },
+      {
+        "transform": "constant-nonhydrostatic",
+        "provider": "native",
+        "scenario": 1,
+        "fieldRecordComparisons": 576,
+        "maximumNormalizedError": 1.231908485445978e-13
+      },
+      {
+        "transform": "constant-nonhydrostatic",
+        "provider": "native",
+        "scenario": 2,
+        "fieldRecordComparisons": 576,
+        "maximumNormalizedError": 1.231908485445978e-13
+      },
+      {
+        "transform": "constant-nonhydrostatic",
+        "provider": "native",
+        "scenario": 3,
+        "fieldRecordComparisons": 576,
+        "maximumNormalizedError": 1.231908485445978e-13
+      },
+      {
+        "transform": "constant-nonhydrostatic",
+        "provider": "native",
+        "scenario": 4,
+        "fieldRecordComparisons": 576,
+        "maximumNormalizedError": 1.231908485445978e-13
+      },
+      {
+        "transform": "hydrostatic",
+        "provider": "reference",
+        "scenario": 1,
+        "fieldRecordComparisons": 432,
+        "maximumNormalizedError": 2.0717484589710766e-13
+      },
+      {
+        "transform": "hydrostatic",
+        "provider": "reference",
+        "scenario": 2,
+        "fieldRecordComparisons": 432,
+        "maximumNormalizedError": 2.0717484589710766e-13
+      },
+      {
+        "transform": "hydrostatic",
+        "provider": "reference",
+        "scenario": 3,
+        "fieldRecordComparisons": 432,
+        "maximumNormalizedError": 2.0717484589710766e-13
+      },
+      {
+        "transform": "hydrostatic",
+        "provider": "reference",
+        "scenario": 4,
+        "fieldRecordComparisons": 432,
+        "maximumNormalizedError": 2.0717484589710766e-13
+      },
+      {
+        "transform": "hydrostatic",
+        "provider": "native",
+        "scenario": 1,
+        "fieldRecordComparisons": 432,
+        "maximumNormalizedError": 5.180376870171569e-14
+      },
+      {
+        "transform": "hydrostatic",
+        "provider": "native",
+        "scenario": 2,
+        "fieldRecordComparisons": 432,
+        "maximumNormalizedError": 5.180376870171569e-14
+      },
+      {
+        "transform": "hydrostatic",
+        "provider": "native",
+        "scenario": 3,
+        "fieldRecordComparisons": 432,
+        "maximumNormalizedError": 5.180376870171569e-14
+      },
+      {
+        "transform": "hydrostatic",
+        "provider": "native",
+        "scenario": 4,
+        "fieldRecordComparisons": 432,
+        "maximumNormalizedError": 5.180376870171569e-14
+      },
+      {
+        "transform": "boussinesq",
+        "provider": "reference",
+        "scenario": 1,
+        "fieldRecordComparisons": 576,
+        "maximumNormalizedError": 1.1122102104150342e-13
+      },
+      {
+        "transform": "boussinesq",
+        "provider": "reference",
+        "scenario": 2,
+        "fieldRecordComparisons": 576,
+        "maximumNormalizedError": 1.1122102104150342e-13
+      },
+      {
+        "transform": "boussinesq",
+        "provider": "reference",
+        "scenario": 3,
+        "fieldRecordComparisons": 576,
+        "maximumNormalizedError": 1.1122102104150342e-13
+      },
+      {
+        "transform": "boussinesq",
+        "provider": "reference",
+        "scenario": 4,
+        "fieldRecordComparisons": 576,
+        "maximumNormalizedError": 1.1122102104150342e-13
+      },
+      {
+        "transform": "boussinesq",
+        "provider": "native",
+        "scenario": 1,
+        "fieldRecordComparisons": 576,
+        "maximumNormalizedError": 1.1122102104150342e-13
+      },
+      {
+        "transform": "boussinesq",
+        "provider": "native",
+        "scenario": 2,
+        "fieldRecordComparisons": 576,
+        "maximumNormalizedError": 1.1122102104150342e-13
+      },
+      {
+        "transform": "boussinesq",
+        "provider": "native",
+        "scenario": 3,
+        "fieldRecordComparisons": 576,
+        "maximumNormalizedError": 1.1122102104150342e-13
+      },
+      {
+        "transform": "boussinesq",
+        "provider": "native",
+        "scenario": 4,
+        "fieldRecordComparisons": 576,
+        "maximumNormalizedError": 1.1122102104150342e-13
+      },
+      {
+        "transform": "barotropic",
+        "provider": "reference",
+        "scenario": 1,
+        "fieldRecordComparisons": 96,
+        "maximumNormalizedError": 2.0486092476685436e-14
+      },
+      {
+        "transform": "barotropic",
+        "provider": "reference",
+        "scenario": 2,
+        "fieldRecordComparisons": 96,
+        "maximumNormalizedError": 2.0486092476685436e-14
+      },
+      {
+        "transform": "barotropic",
+        "provider": "reference",
+        "scenario": 3,
+        "fieldRecordComparisons": 96,
+        "maximumNormalizedError": 2.0486092476685436e-14
+      },
+      {
+        "transform": "barotropic",
+        "provider": "reference",
+        "scenario": 4,
+        "fieldRecordComparisons": 96,
+        "maximumNormalizedError": 2.0486092476685436e-14
+      },
+      {
+        "transform": "barotropic",
+        "provider": "native",
+        "scenario": 1,
+        "fieldRecordComparisons": 96,
+        "maximumNormalizedError": 5.121523119171359e-15
+      },
+      {
+        "transform": "barotropic",
+        "provider": "native",
+        "scenario": 2,
+        "fieldRecordComparisons": 96,
+        "maximumNormalizedError": 5.121523119171359e-15
+      },
+      {
+        "transform": "barotropic",
+        "provider": "native",
+        "scenario": 3,
+        "fieldRecordComparisons": 96,
+        "maximumNormalizedError": 5.121523119171359e-15
+      },
+      {
+        "transform": "barotropic",
+        "provider": "native",
+        "scenario": 4,
+        "fieldRecordComparisons": 96,
+        "maximumNormalizedError": 5.121523119171359e-15
+      },
+      {
+        "transform": "stratified-qg",
+        "provider": "reference",
+        "scenario": 1,
+        "fieldRecordComparisons": 48,
+        "maximumNormalizedError": 2.35615136449668e-15
+      },
+      {
+        "transform": "stratified-qg",
+        "provider": "reference",
+        "scenario": 2,
+        "fieldRecordComparisons": 48,
+        "maximumNormalizedError": 2.35615136449668e-15
+      },
+      {
+        "transform": "stratified-qg",
+        "provider": "reference",
+        "scenario": 3,
+        "fieldRecordComparisons": 48,
+        "maximumNormalizedError": 2.35615136449668e-15
+      },
+      {
+        "transform": "stratified-qg",
+        "provider": "reference",
+        "scenario": 4,
+        "fieldRecordComparisons": 48,
+        "maximumNormalizedError": 2.35615136449668e-15
+      },
+      {
+        "transform": "stratified-qg",
+        "provider": "native",
+        "scenario": 1,
+        "fieldRecordComparisons": 48,
+        "maximumNormalizedError": 1.110040150323746e-15
+      },
+      {
+        "transform": "stratified-qg",
+        "provider": "native",
+        "scenario": 2,
+        "fieldRecordComparisons": 48,
+        "maximumNormalizedError": 1.110040150323746e-15
+      },
+      {
+        "transform": "stratified-qg",
+        "provider": "native",
+        "scenario": 3,
+        "fieldRecordComparisons": 48,
+        "maximumNormalizedError": 1.110040150323746e-15
+      },
+      {
+        "transform": "stratified-qg",
+        "provider": "native",
+        "scenario": 4,
+        "fieldRecordComparisons": 48,
+        "maximumNormalizedError": 1.110040150323746e-15
+      }
+    ],
+    "scope": [
+      "All stable wave and barotropic forcing contributions in ordered compositions.",
+      "Stratified-QG raw spatial nonlinear, linear/quadratic bottom-friction and vertical-diffusivity contributions; spectral output comparison remains limited by #404.",
+      "Each record is compared independently, with finite-value assertions, exact time/shape/units/long_name checks, expected step counts, positive dense-evaluation counts and zero live diagnostic scratch.",
+      "Reference uses a fresh MATLAB writer with registered SpatialForcingOperation because MATLAB restart does not restore that operation (#408).",
+      "QG uses the existing C++ legacy CLI with explicit method-owned dense retention; MATLAB request-helper barotropic limitation is #410."
+    ],
+    "verificationNotes": [
+      "Constant families passed before parameterizing the method; Hydrostatic/Boussinesq passed in the next batch. Only failed QG cases were rerun after enabling legacy CLI dense retention.",
+      "Initial fixture mistakes were corrected: explicit MATLAB operation registration and valid fixed-step request options.",
+      "The initial Nj=2 antialiasing fixture exposed MATLAB adaptive-filter NaNs (#409); the qualified compositions use Nj=3, consistent with earlier numerical qualification.",
+      "Code Analyzer found only three obsolete AGROW suppressions after parameterization; these were removed and Code Analyzer rerun successfully without repeating the matrix."
+    ]
+  }
 }
