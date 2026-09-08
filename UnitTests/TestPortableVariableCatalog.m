@@ -25,6 +25,11 @@ classdef TestPortableVariableCatalog < matlab.unittest.TestCase
                 repositoryRoot,"PortableRuntime","include", ...
                 "WaveVortexRuntime","generated", ...
                 "WVPortableVariableCatalog.hpp")));
+            testCase.verifyEqual(fileread(result.contractHeaderPath),fileread(fullfile( ...
+                repositoryRoot,"PortableRuntime","include","WaveVortexRuntime", ...
+                "generated","WVPortableVariableContracts.hpp")));
+            testCase.verifyEqual(fileread(result.documentationPath),fileread(fullfile( ...
+                repositoryRoot,"PortableRuntime","VARIABLES.md")));
             clear pathCleanup
             clear cleanup
         end
@@ -35,8 +40,8 @@ classdef TestPortableVariableCatalog < matlab.unittest.TestCase
                 "PortableRuntime","contracts","portable-variable-catalog-v1.json")));
             variables = catalog.variables;
             testCase.verifyEqual(string(catalog.schema),"portable-variable-catalog-v1");
-            testCase.verifyEqual([variables.ordinal],0:22);
-            testCase.verifyEqual(numel(unique(string({variables.name}))),23);
+            testCase.verifyEqual([variables.ordinal],0:75);
+            testCase.verifyEqual(numel(unique(string({variables.name}))),76);
 
             u = variables(string({variables.name}) == "u");
             testCase.verifyEqual(string(u.dimensions),["x";"y";"z"]);
@@ -56,6 +61,51 @@ classdef TestPortableVariableCatalog < matlab.unittest.TestCase
             testCase.verifyTrue(Ap.isVariableWithNonlinearTimeStep);
         end
 
+        function testLegacyMetadataAndGraphFailures(testCase)
+            root = TestPortableVariableCatalog.repositoryRoot();
+            catalog = jsondecode(fileread(fullfile(root,"PortableRuntime","contracts","portable-variable-catalog-v1.json")));
+            legacy = jsondecode(fileread(fullfile(root,"UnitTests","fixtures","portable-variable-legacy-v1.json")));
+            testCase.verifyEqual(catalog.variables(1:23),legacy.variables);
+            validatePortableVariableCatalog(catalog);
+            testCase.verifyNumElements(catalog.configurations,12);
+            testCase.verifyNumElements(catalog.contracts,666);
+            broken = catalog;
+            broken.contracts(1).dependencies = {broken.contracts(1).metadata.name};
+            testCase.verifyError(@()validatePortableVariableCatalog(broken),"WaveVortexModel:InvalidPortableVariableDependency");
+            broken = catalog;
+            broken.contracts(1).dependencies = {'customUnknown'};
+            testCase.verifyError(@()validatePortableVariableCatalog(broken),"WaveVortexModel:InvalidPortableVariableDependency");
+            broken = catalog;
+            broken.contracts(2) = broken.contracts(1);
+            testCase.verifyError(@()validatePortableVariableCatalog(broken),"WaveVortexModel:InvalidPortableVariableCatalog");
+            broken = catalog;
+            broken.contracts(1).metadata.units = '';
+            testCase.verifyError(@()validatePortableVariableCatalog(broken),"WaveVortexModel:InvalidPortableVariableCatalog");
+            broken = catalog;
+            broken.contracts(1).intermediateMask = 2^30;
+            testCase.verifyError(@()validatePortableVariableCatalog(broken),"WaveVortexModel:InvalidPortableVariableCatalog");
+            broken = catalog;
+            broken.contracts(1).metadata.samplingModes = {'positions'};
+            testCase.verifyError(@()validatePortableVariableCatalog(broken),"WaveVortexModel:InvalidPortableVariableCatalog");
+        end
+
+        function testConfigurationAndConditionalDependencies(testCase)
+            root = TestPortableVariableCatalog.repositoryRoot();
+            catalog = jsondecode(fileread(fullfile(root,"PortableRuntime","contracts","portable-variable-catalog-v1.json")));
+            rows = catalog.contracts;
+            names = arrayfun(@(r)string(r.metadata.name),rows);
+            barotropic = rows(names=="u" & string({rows.configuration}).'=="barotropic-aa0");
+            testCase.verifyEqual(string(barotropic.metadata.dimensions),["x";"y"]);
+            hydrostatic = rows(names=="eta_true" & string({rows.configuration}).'=="hydrostatic-aa0");
+            testCase.verifyEqual(string(hydrostatic.trueProfileDependencies),"rho_nm");
+            testCase.verifyEqual(string(hydrostatic.runtimeStatus),"pending-305");
+            forcing = rows(names=="Fqgpv_portable_catalog_forcing" & string({rows.configuration}).'=="barotropic-aa0");
+            testCase.verifyEqual(string(forcing.metadata.units),"s-2");
+            testCase.verifyEqual(string(forcing.authority),"forcing-instance-template");
+            testCase.verifyEqual(string(forcing.runtimeStatus),"pending-315");
+            testCase.verifyTrue(ismember("totalEnstrophy",string({catalog.exclusions.name})));
+        end
+
         function testEvaluationLoopsDoNotCompareFieldNames(testCase)
             repositoryRoot = TestPortableVariableCatalog.repositoryRoot();
             source = fileread(fullfile(repositoryRoot,"PortableRuntime","src", ...
@@ -63,7 +113,7 @@ classdef TestPortableVariableCatalog < matlab.unittest.TestCase
             testCase.verifyEmpty(regexp(source, ...
                 'request\.fieldName\s*(==|!=)',"once"));
             testCase.verifyNotEmpty(strfind(source, ...
-                "findPortableVariable(request.fieldName)")); %#ok<STRIFCND>
+                "findExecutablePortableVariable(request.fieldName)"));
         end
 
         function testHydrostaticAndNonhydrostaticAnnotationsAgree(testCase)

@@ -45,7 +45,7 @@ WVCheckpointStatus validateCatalogIdentity(
 
 const WVPortableVariableMetadata *
 coefficientMetadata(std::string_view name) noexcept {
-  const auto *metadata = findPortableVariable(name);
+  const auto *metadata = findExecutablePortableVariable(name);
   return metadata != nullptr &&
                  metadata->kind == WVPortableVariableKind::coefficient
              ? metadata
