@@ -44,3 +44,5 @@ Scope: v4 main `f5b5f46deb08ea397aebec2e73b9515f33df2d94`, isolated checkout; no
 - Boundary review also covers the existing wholly exhaustive spectral-differentiation classes: their category exclusions are now explicit report evidence rather than empty-class failures on a test-file edit. The gate rejects silent omissions, unsupported exclusions and exclusions that overlap executed methods.
 
 - Final category-boundary component validation: all eight nonoptional EtaTrue tests passed; exactly one optional method and 2,440 exhaustive parameterized methods were recorded as excluded. Both wholly exhaustive classes were explicitly identified. Harness Code Analyzer and all 36 policy tests pass.
+
+- Supersession exposed a cancellation issue in the MATLAB parent job: `always()` kept obsolete numerical work running. It now uses `!cancelled()` while still accepting an intentionally skipped C++ dependency. The aggregate retains `always()` and rejects cancelled selected jobs. The superseded run was force-cancelled; no current required check was bypassed.

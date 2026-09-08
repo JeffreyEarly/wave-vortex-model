@@ -118,7 +118,7 @@ jobs:
   matlab:
     name: MATLAB / ${{ matrix.release }} / batch ${{ matrix.shard }}
     needs: [route, cpp-release]
-    if: ${{ always() && needs.route.result == 'success' && (needs.cpp-release.result == 'success' || needs.route.outputs.cpp == 'false') }}
+    if: ${{ !cancelled() && needs.route.result == 'success' && (needs.cpp-release.result == 'success' || needs.route.outputs.cpp == 'false') }}
     strategy:
       fail-fast: false
       matrix: ${{ fromJSON(needs.route.outputs.matlab_matrix) }}

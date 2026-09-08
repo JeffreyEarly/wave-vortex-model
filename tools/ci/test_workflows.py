@@ -30,6 +30,8 @@ class WorkflowContracts(unittest.TestCase):
             self.assertEqual(jobs['cpp-'+configuration]['with']['configuration'], configuration)
         self.assertIn('cpp-release', jobs['matlab']['needs'])
         self.assertNotIn('cpp-sanitized', jobs['matlab']['needs'])
+        self.assertIn('!cancelled()', jobs['matlab']['if'])
+        self.assertNotIn('always()', jobs['matlab']['if'])
         self.assertIn('matlab_matrix', jobs['matlab']['strategy']['matrix'])
         self.assertEqual(jobs['matlab-sanitized']['with']['configuration'], 'sanitized')
 
