@@ -3,6 +3,7 @@
 #include "WaveVortexRuntime/WVExtensionCatalog.hpp"
 #include "WaveVortexRuntime/WVForcingContracts.hpp"
 #include "WVForcingImplementations.hpp"
+#include "WVForcingDiagnosticWorkspace.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -170,6 +171,7 @@ public:
   WVForcingStage stage() const noexcept override { return stage_; }
   std::uint8_t priority() const noexcept override { return priority_; }
   std::size_t ordinal() const noexcept override { return ordinal_; }
+  bool supportsTendencyDiagnostics() const noexcept override { return true; }
   std::size_t persistentBytes() const noexcept override {
     return sizeof(*this) + metadataDynamicBytes();
   }
@@ -768,6 +770,66 @@ WVKernelStatus WVBarotropicQGForcingEngine::evaluateRightHandSide(
       context.workspace_.spatialTendencyProjectionCount;
   ++metrics_.evaluationCount;
   return WVKernelStatus::ok();
+}
+
+WVKernelStatus WVBarotropicQGForcingEngine::evaluateForcingTendencies(
+    const WVComplexConstView& A0,const WVForcingTendencyOutput* outputs,std::size_t count) {
+  if (executing_) return {WVKernelStatusCode::reentrantExecution,"Forcing diagnostics require an idle engine."};
+  const auto spectral=kernel().descriptor().spectralShape();
+  const auto plane=kernel().descriptor().spatialShape();
+  const WVShape4D spatial{plane.rows,plane.columns,1,1};
+  const WVState state{0,0,{{},{},A0}};
+  auto status=detail::validateForcingTendencyOutputs(forcing_,spectral,spatial,state,outputs,count);
+  if (!status || !count) return status;
+  if (A0.shape.rows!=spectral.rows || A0.shape.columns!=spectral.columns)
+    return {WVKernelStatusCode::invalidShape,"Expected compact QG diagnostic state."};
+  const auto address=reinterpret_cast<std::uintptr_t>(A0.data);
+  if (!address || address%alignof(WVComplex64) || spectral.elementCount()*sizeof(WVComplex64)>UINTPTR_MAX-address)
+    return {WVKernelStatusCode::invalidPointer,"Invalid QG diagnostic state storage."};
+  for (std::size_t i=0;i<spectral.elementCount();++i)
+    if (!std::isfinite(A0.data[i].real) || !std::isfinite(A0.data[i].imag))
+      return {WVKernelStatusCode::invalidConfiguration,"QG diagnostic state must be finite."};
+  try {
+    detail::WVForcingDiagnosticWorkspace work(spectral,spatial,1,0);
+    auto flux=work.fluxView();
+    status=kernel().evolveA0(A0,0,flux.F0); if (!status) return status;
+    std::fill(work.flux.begin(),work.flux.end(),WVComplex64{});
+    WVBarotropicQGForcingExecutionContext context;
+    context.engine_=this; context.A0_=A0; context.outputInitialized_=true;
+    executing_=true;
+    struct Guard {
+      WVBarotropicQGForcingEngine& engine;
+      detail::WVForcingDiagnosticWorkspace& work;
+      WVBarotropicQGOperationWorkspace& physical;
+      ~Guard() {
+        engine.tendencyMetrics_.workspaceHighWaterBytes=std::max(engine.tendencyMetrics_.workspaceHighWaterBytes,work.bytes());
+        engine.tendencyMetrics_.workspaceLiveBytes=0;
+        engine.metrics_.physicalFieldReconstructionCount+=physical.physicalFieldReconstructionCount;
+        engine.metrics_.physicalFieldReuseCount+=physical.physicalFieldReuseCount;
+        engine.executing_=false;
+      }
+    } guard{*this,work,context.workspace_};
+    tendencyMetrics_.workspaceLiveBytes=work.bytes();
+    WVRealView raw{work.raw.data(),plane};
+    return detail::evaluateForcingTendencySequence(forcing_,work,outputs,count,tendencyMetrics_,
+      [&](const WVBarotropicQGForcing& forcing,WVFlux& destination) {
+        context.F0_=destination.F0;
+        context.workspace_.spatialTendency=forcing.stage()==WVForcingStage::spatial ? &raw : nullptr;
+        context.workspace_.spatialTendencyCaptured=false;
+        const auto result=forcing.addRightHandSide(context);
+        work.spatialCaptured=context.workspace_.spatialTendencyCaptured;
+        return result;
+      },
+      [&](WVRealFieldBundleConstView fields,WVFlux& destination) {
+        return kernel().transformQGPVToA0({fields.data,plane},destination.F0);
+      },
+      [&](const std::vector<WVComplex64>& difference,WVRealFieldBundleView destination) {
+        WVRealView output{destination.data,plane};
+        return kernel().transformSpectralTendencyToSpatial({difference.data(),spectral},output);
+      });
+  } catch (const std::bad_alloc&) {
+    return {WVKernelStatusCode::allocationFailure,"Unable to allocate event forcing diagnostic workspace."};
+  }
 }
 
 WVStateConstraintResult

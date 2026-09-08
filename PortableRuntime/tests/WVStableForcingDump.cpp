@@ -25,8 +25,8 @@ json values(const std::vector<WVComplex64>& a) {
   for (const auto x:a) { real.push_back(x.real); imag.push_back(x.imag); }
   return {{"real",real},{"imag",imag}};
 }
-template<class Engine>
-void tendencies(Engine& engine,const WVState& state,WVShape4D shape,json& result) {
+template<class Engine,class State>
+void tendencies(Engine& engine,const State& state,WVShape4D shape,json& result) {
   std::vector<std::vector<double>> storage(engine.forcingCount());
   std::vector<WVForcingTendencyOutput> outputs;
   for (std::size_t index=0;index<storage.size();++index) {
@@ -40,7 +40,8 @@ void tendencies(Engine& engine,const WVState& state,WVShape4D shape,json& result
   const auto R=shape.first*shape.second*shape.third;
   const char* hydrostatic[]={"Fu","Fv","Feta"};
   const char* nonhydrostatic[]={"Fu","Fv","Fw","Feta"};
-  const auto* names=shape.fourth==3 ? hydrostatic : nonhydrostatic;
+  const char* qg[]={"Fqgpv"};
+  const auto* names=shape.fourth==1 ? qg : (shape.fourth==3 ? hydrostatic : nonhydrostatic);
   for (std::size_t index=0;index<storage.size();++index) {
     const auto* forcing=engine.forcingInstance(index);
     json entry={{"name",forcing->name()},{"type",forcing->typeIdentifier()},
@@ -74,7 +75,6 @@ int main(int argc,char** argv) {
     } else throw std::runtime_error("Unknown provider.");
     json result;
     if (checkpoint.transformKind == WVPersistedTransformKind::barotropicQG) {
-      if (diagnostics) throw std::runtime_error("Barotropic forcing diagnostics are not implemented yet.");
       std::unique_ptr<WVBarotropicQGForcingEngine> engine;
       require(WVBarotropicQGForcingEngine::create(checkpoint.barotropicQGConfiguration,checkpoint.forcingSchedule,catalog,std::move(fft),engine));
       auto& a=checkpoint.transformState.coefficientFamilies.at(0).values;
@@ -86,6 +86,10 @@ int main(int argc,char** argv) {
       const auto status=engine->evaluateRightHandSide(input,output);
       allocationProbe::counting=false; require(status);
       result["F0"]=values(f);
+      if (diagnostics) {
+        const auto plane=engine->kernel().descriptor().spatialShape();
+        tendencies(*engine,input,{plane.rows,plane.columns,1,1},result);
+      }
     } else if (checkpoint.transformKind==WVPersistedTransformKind::stratifiedQG) {
       if (diagnostics) throw std::runtime_error("Stratified QG forcing diagnostics are not implemented yet.");
       std::unique_ptr<WVStratifiedQGForcingEngine> engine;

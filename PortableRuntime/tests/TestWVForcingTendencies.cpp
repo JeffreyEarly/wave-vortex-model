@@ -1,4 +1,5 @@
 #include "WaveVortexRuntime/WVForcingEngine.hpp"
+#include "WaveVortexRuntime/WVBarotropicQGForcingEngine.hpp"
 #include "WaveVortexRuntime/WVHydrostaticForcingEngine.hpp"
 #include "WaveVortexRuntime/WVBoussinesqForcingEngine.hpp"
 #include "WaveVortexRuntime/WVStratifiedModalRecord.hpp"
@@ -9,6 +10,7 @@
 #include <array>
 #include <iostream>
 #include <numeric>
+#include <limits>
 #include <type_traits>
 
 using namespace wavevortex;
@@ -235,6 +237,95 @@ void constant(bool hydrostatic) {
 
 }
 
+void barotropic() {
+    WVTransformBarotropicQGConfiguration c;
+    c.Nx=8; c.Ny=6; c.Lx=17000; c.Ly=11000; c.h=.8; c.j=1;
+    c.g=9.81; c.planetaryRadius=6.371e6; c.rotationRate=7.2921e-5; c.latitude=33; c.shouldAntialias=false;
+    auto catalog=wavevortex::runtime::test::extensionCatalog();
+    auto counter=std::make_shared<FailureCounter>();
+    std::unique_ptr<WVBarotropicQGForcingEngine> engine;
+    require(bool(WVBarotropicQGForcingEngine::create(c,{},catalog,std::make_unique<FailingEngine>(counter),engine)),"QG setup");
+    const auto spectral=engine->kernel().descriptor().spectralShape(),plane=engine->kernel().descriptor().spatialShape();
+    const auto S=spectral.elementCount(),R=plane.elementCount();
+    const WVShape4D spatial{plane.rows,plane.columns,1,1};
+    auto scheduleValue=schedule(S);
+    auto& entries=scheduleValue.entries;
+    entries[0].configuration.values.erase(entries[0].configuration.values.begin(),entries[0].configuration.values.begin()+6);
+    entries.push_back({"WVBottomFrictionQuadratic",1,"quadratic drag",WVForcingStage::spatial,255,4,"",
+        {"wave-vortex-forcing-configuration-v1",1,{{"Cd",{},std::vector<double>{.002}}}}});
+    const WVPortableTypedRecord empty{"wave-vortex-forcing-configuration-v1",1,{}};
+    entries.push_back({"WVBetaPlanePVAdvection",1,"beta advection",WVForcingStage::spatial,255,5,"",empty});
+    entries.push_back({"WVAdaptiveDamping",1,"adaptive damping",WVForcingStage::spectral,255,6,"",empty});
+    require(bool(WVBarotropicQGForcingEngine::create(c,scheduleValue,catalog,std::make_unique<FailingEngine>(counter),engine)),"QG diagnostic schedule");
+    std::vector<WVComplex64> a(S),f(S);
+    for (std::size_t i=0;i<S;++i) a[i]={1e-6*std::sin(.17*i),1e-6*std::cos(.23*i)};
+    WVComplexView mutableA{a.data(),spectral}; engine->kernel().enforceReality(mutableA);
+    const WVComplexConstView state{a.data(),spectral}; WVComplexView flux{f.data(),spectral};
+    require(bool(engine->evaluateRightHandSide(state,flux)),"QG baseline RHS");
+    const auto before=a,rhs=f; const auto bytes=engine->persistentBytes();
+    const auto calls=engine->metrics().evaluationCount,reconstructions=engine->metrics().physicalFieldReconstructionCount;
+    std::vector<std::vector<double>> values(7,std::vector<double>(R,99));
+    std::vector<WVForcingTendencyOutput> outputs;
+    for (std::size_t i=0;i<values.size();++i) outputs.push_back({i,{values[i].data(),spatial}});
+    const auto start=counter->calls;
+    auto status=engine->evaluateForcingTendencies(state,outputs.data(),outputs.size());
+    if (!status) throw std::runtime_error(status.message);
+    const auto fftCalls=counter->calls-start;
+    require(engine->forcingCount()==7 && engine->forcingInstance(0)->name()=="nonlinear advection" &&
+        engine->forcingInstance(6)->name()=="held amplitudes" && !engine->forcingInstance(7),"QG instance binding/order");
+    require(engine->tendencyMetrics().forcingEvaluationCount==7 && engine->tendencyMetrics().spatialProjectionCount==1 &&
+        engine->tendencyMetrics().spectralReconstructionCount==3 && engine->tendencyMetrics().workspaceLiveBytes==0 &&
+        engine->persistentBytes()==bytes && engine->metrics().evaluationCount==calls && equal(a,before),"QG diagnostic state/metrics");
+    require(engine->metrics().physicalFieldReconstructionCount==reconstructions+1,"QG same-event fields were reconstructed twice");
+    // Independent nonlinear product, without projecting out unretained modes.
+    std::vector<double> u(R),v(R),q(3*R),expected(R);
+    WVRealView uv{u.data(),plane},vv{v.data(),plane};
+    require(bool(engine->kernel().transformA0ToField(state,WVBarotropicQGField::u,uv)) &&
+        bool(engine->kernel().transformA0ToField(state,WVBarotropicQGField::v,vv)),"QG independent velocity");
+    WVRealFieldBundleView derivatives{q.data(),{plane.rows,plane.columns,1,3}};
+    require(bool(engine->kernel().transformA0ToFieldWithDerivatives(state,WVBarotropicQGField::qgpv,derivatives)),"QG independent derivatives");
+    for (std::size_t i=0;i<R;++i) expected[i]=-u[i]*q[R+i]-v[i]*q[2*R+i];
+    relative(values[0],expected);
+    std::vector<double> sum(R);
+    for (std::size_t n=0;n<6;++n) for (std::size_t i=0;i<R;++i) sum[i]+=values[n][i];
+    // Spatial raw sums need projection before comparison with fixed amplitudes.
+    require(bool(engine->kernel().transformQGPVToA0({sum.data(),plane},flux)),"QG cumulative projection");
+    WVRealView expectedView{expected.data(),plane};
+    require(bool(engine->kernel().transformSpectralTendencyToSpatial({f.data(),spectral},expectedView)),"QG cumulative inverse");
+    for (auto& x:expected) x=-x;
+    relative(values[6],expected);
+    require(bool(engine->evaluateRightHandSide(state,flux)) && equal(f,rhs) && equal(a,before),"QG diagnostics changed later RHS");
+    const auto successful=values;
+    for (auto& field:values) std::fill(field.begin(),field.end(),99);
+    counter->failAt=counter->calls+fftCalls;
+    require(engine->evaluateForcingTendencies(state,outputs.data(),outputs.size()).code==WVKernelStatusCode::fftExecutionFailure,"QG late FFT injection");
+    for (const auto& field:values) for (auto x:field) require(x==99,"QG partial diagnostic escaped failed evaluation");
+    require(equal(a,before) && engine->persistentBytes()==bytes && engine->tendencyMetrics().workspaceLiveBytes==0,"QG failed diagnostic changed state/storage");
+    counter->failAt=0;
+    require(bool(engine->evaluateForcingTendencies(state,outputs.data(),outputs.size())) && values==successful,"QG retry differs");
+    std::vector<double> selected(R); const WVForcingTendencyOutput request{6,{selected.data(),spatial}};
+    require(bool(engine->evaluateForcingTendencies(state,&request,1)) && selected==successful[6],"QG selected-only prefix lost previous stages");
+    const auto beforeInvalid=counter->calls;
+    const auto saved=a[0]; a[0].real=std::numeric_limits<double>::quiet_NaN();
+    std::fill(selected.begin(),selected.end(),99);
+    require(engine->evaluateForcingTendencies(state,&request,1).code==WVKernelStatusCode::invalidConfiguration &&
+        counter->calls==beforeInvalid,"Nonfinite QG diagnostic state accepted");
+    for (auto x:selected) require(x==99,"Invalid QG state changed output");
+    a[0]=saved;
+    // Raw inverse must preserve the mean, while ordinary qgpv retains its mask.
+    std::fill(f.begin(),f.end(),WVComplex64{});
+    for (std::size_t i=0;i<S;++i) if (engine->kernel().descriptor().fourierModes()[i].Kh==0) f[i]={.25,7};
+    require(bool(engine->kernel().transformSpectralTendencyToSpatial({f.data(),spectral},expectedView)),"QG raw mean inverse");
+    for (auto x:expected) require(std::abs(x-.25)<1e-14,"QG diagnostic mean was masked or imaginary part escaped");
+    require(bool(engine->kernel().transformA0ToQGPV({f.data(),spectral},expectedView)),"QG ordinary mean inverse");
+    for (auto x:expected) require(x==0,"QG ordinary mean mask changed");
+    WVBarotropicQGOperationWorkspace workspace;
+    WVRealView raw{reinterpret_cast<double*>(a.data()),plane}; workspace.spatialTendency=&raw;
+    const auto beforeReject=counter->calls;
+    require(engine->kernel().addPotentialVorticityAdvection(state,flux,false,workspace).code==WVKernelStatusCode::overlappingArrays &&
+        counter->calls==beforeReject,"QG raw overlap accepted or rejected after FFT");
+}
+
 template<bool Hydrostatic> void stratified(bool unpairedMean=false) {
     Temporary file;
     if constexpr (Hydrostatic) {
@@ -275,7 +366,7 @@ template<bool Hydrostatic> void stratified(bool unpairedMean=false) {
 }
 int main() {
     try {
-        constant(false); constant(true); stratified<true>(); stratified<false>(); stratified<true>(true); stratified<false>(true);
+        barotropic(); constant(false); constant(true); stratified<true>(); stratified<false>(); stratified<true>(true); stratified<false>(true);
         std::cout<<"PASS: ordered forcing diagnostics, state isolation, and transactional retry\n";
         return 0;
     } catch(const std::exception& error) { std::cerr<<error.what()<<'\n'; return 1; }

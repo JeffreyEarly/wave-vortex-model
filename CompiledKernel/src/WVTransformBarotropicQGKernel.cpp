@@ -687,6 +687,34 @@ WVKernelStatus WVTransformBarotropicQGKernel::transformA0ToQGPV(
     return transformA0ToField(A0, WVBarotropicQGField::qgpv, qgpv);
 }
 
+WVKernelStatus WVTransformBarotropicQGKernel::transformSpectralTendencyToSpatial(
+    const WVComplexConstView& input,WVRealView& output) {
+    if (executing_) return {WVKernelStatusCode::reentrantExecution,"The Barotropic QG kernel is not reentrant."};
+    auto status=validateSpectral(input,descriptor_.spectralShape(),"Spectral tendency"); if (!status) return status;
+    status=validateSpatial(output,descriptor_.spatialShape(),"Spatial tendency"); if (!status) return status;
+    const auto inputAddress=reinterpret_cast<std::uintptr_t>(input.data),outputAddress=reinterpret_cast<std::uintptr_t>(output.data);
+    if (inputAddress%alignof(WVComplex64) || outputAddress%alignof(double) ||
+        input.shape.elementCount()*sizeof(WVComplex64)>UINTPTR_MAX-inputAddress ||
+        output.shape.elementCount()*sizeof(double)>UINTPTR_MAX-outputAddress)
+        return {WVKernelStatusCode::invalidPointer,"Invalid tendency storage."};
+    for (std::size_t i=0;i<input.shape.elementCount();++i)
+        if (!std::isfinite(input.data[i].real) || !std::isfinite(input.data[i].imag))
+            return {WVKernelStatusCode::invalidConfiguration,"Spectral tendency must be finite."};
+    if (overlaps(input.data,input.shape.elementCount()*sizeof(WVComplex64),output.data,output.shape.elementCount()*sizeof(double)))
+        return {WVKernelStatusCode::overlappingArrays,"Spectral and spatial tendency storage overlap."};
+    ExecutionGuard guard(executing_);
+    const auto& mappings=descriptor_.halfSpectrumMappings();
+    std::fill_n(halfSpectrumScratch_.data(),mappings.NxHalf*descriptor_.configuration().Ny,WVComplex64{});
+    for (std::size_t i=0;i<mappings.directRows.size();++i)
+        halfSpectrumScratch_[mappings.directRows[i]]=input.data[mappings.directWVIndices[i]];
+    for (std::size_t i=0;i<mappings.conjugatedRows.size();++i)
+        halfSpectrumScratch_[mappings.conjugatedRows[i]]=conjugate(input.data[mappings.conjugatedWVIndices[i]]);
+    completeHermitianBoundaries(halfSpectrumScratch_.data(),mappings,1);
+    status=plans_[inversePlan]->execute(halfSpectrumScratch_.data(),output.data); if (!status) return status;
+    ++metrics_.executionCount; ++metrics_.inverseExecutionCount;
+    return WVKernelStatus::ok();
+}
+
 WVKernelStatus WVTransformBarotropicQGKernel::transformA0ToField(
     const WVComplexConstView& A0, WVBarotropicQGField field,
     WVRealView& output) {
@@ -845,7 +873,8 @@ WVKernelStatus WVTransformBarotropicQGKernel::inverseNonlinearFields(
 }
 
 WVKernelStatus WVTransformBarotropicQGKernel::validateForcingOperation(
-    const WVComplexConstView& A0, const WVComplexView& F0) const {
+    const WVComplexConstView& A0, const WVComplexView& F0,
+    const WVRealView* spatialTendency) const {
     auto status = validateSpectral(A0, descriptor_.spectralShape(), "A0");
     if (!status) return status;
     status = validateSpectral(F0, descriptor_.spectralShape(), "F0");
@@ -855,6 +884,16 @@ WVKernelStatus WVTransformBarotropicQGKernel::validateForcingOperation(
     if (overlaps(A0.data, bytes, F0.data, bytes))
         return {WVKernelStatusCode::overlappingArrays,
                 "A0 state and F0 tendency must not overlap."};
+    if (spatialTendency) {
+        status=validateSpatial(*spatialTendency,descriptor_.spatialShape(),"Raw tendency");
+        if (!status) return status;
+        const auto R=descriptor_.spatialShape().elementCount()*sizeof(double);
+        const auto address=reinterpret_cast<std::uintptr_t>(spatialTendency->data);
+        if (address%alignof(double) || R>UINTPTR_MAX-address)
+            return {WVKernelStatusCode::invalidPointer,"Invalid raw tendency storage."};
+        if (overlaps(spatialTendency->data,R,A0.data,bytes) || overlaps(spatialTendency->data,R,F0.data,bytes))
+            return {WVKernelStatusCode::overlappingArrays,"Raw tendency overlaps model coefficients or flux."};
+    }
     return WVKernelStatus::ok();
 }
 
@@ -1018,7 +1057,7 @@ WVKernelStatus WVTransformBarotropicQGKernel::addPotentialVorticityAdvection(
     if (executing_)
         return {WVKernelStatusCode::reentrantExecution,
                 "The Barotropic QG kernel is not reentrant."};
-    auto status = validateForcingOperation(A0, F0);
+    auto status = validateForcingOperation(A0, F0, workspace.spatialTendency);
     if (!status) return status;
     ExecutionGuard guard(executing_);
     status = ensureForcingFields(A0, true, workspace);
@@ -1032,6 +1071,11 @@ WVKernelStatus WVTransformBarotropicQGKernel::addPotentialVorticityAdvection(
     for (std::size_t index = 0; index < R; ++index)
         tendency[index] = -(u[index] * qx[index] +
                             v[index] * qy[index]);
+    if (workspace.spatialTendency) {
+        std::copy_n(tendency,R,workspace.spatialTendency->data);
+        workspace.spatialTendencyCaptured=true;
+        return WVKernelStatus::ok();
+    }
     status = forward({tendency, descriptor_.spatialShape()}, F0, accumulate);
     if (!status) return status;
     ++workspace.spatialTendencyProjectionCount;
@@ -1049,7 +1093,7 @@ WVKernelStatus WVTransformBarotropicQGKernel::addAdaptiveDamping(
     if (executing_)
         return {WVKernelStatusCode::reentrantExecution,
                 "The Barotropic QG kernel is not reentrant."};
-    auto status = validateForcingOperation(A0, F0);
+    auto status = validateForcingOperation(A0, F0, workspace.spatialTendency);
     if (!status) return status;
     if (dampingOperator.size() != descriptor_.Nkl())
         return {WVKernelStatusCode::invalidShape,
@@ -1082,7 +1126,7 @@ WVKernelStatus WVTransformBarotropicQGKernel::addLinearBottomFriction(
     if (executing_)
         return {WVKernelStatusCode::reentrantExecution,
                 "The Barotropic QG kernel is not reentrant."};
-    auto status = validateForcingOperation(A0, F0);
+    auto status = validateForcingOperation(A0, F0, workspace.spatialTendency);
     if (!status) return status;
     if (!std::isfinite(rate) || rate < 0.0)
         return {WVKernelStatusCode::invalidConfiguration,
@@ -1099,6 +1143,11 @@ WVKernelStatus WVTransformBarotropicQGKernel::addLinearBottomFriction(
     double* tendency = realScratch_.data() + 4 * R;
     for (std::size_t index = 0; index < R; ++index)
         tendency[index] = -rate * zeta.data[index];
+    if (workspace.spatialTendency) {
+        std::copy_n(tendency,R,workspace.spatialTendency->data);
+        workspace.spatialTendencyCaptured=true;
+        return WVKernelStatus::ok();
+    }
     status = forward({tendency, spatial}, F0, accumulate);
     if (!status) return status;
     ++workspace.spatialTendencyProjectionCount;
@@ -1112,7 +1161,7 @@ WVKernelStatus WVTransformBarotropicQGKernel::addQuadraticBottomFriction(
     if (executing_)
         return {WVKernelStatusCode::reentrantExecution,
                 "The Barotropic QG kernel is not reentrant."};
-    auto status = validateForcingOperation(A0, F0);
+    auto status = validateForcingOperation(A0, F0, workspace.spatialTendency);
     if (!status) return status;
     if (!std::isfinite(drag) || drag < 0.0)
         return {WVKernelStatusCode::invalidConfiguration,
@@ -1142,6 +1191,11 @@ WVKernelStatus WVTransformBarotropicQGKernel::addQuadraticBottomFriction(
     double* tendency = realScratch_.data() + 4 * R;
     for (std::size_t index = 0; index < R; ++index)
         tendency[index] = -drag * (speedV[index] - speedU[index]);
+    if (workspace.spatialTendency) {
+        std::copy_n(tendency,R,workspace.spatialTendency->data);
+        workspace.spatialTendencyCaptured=true;
+        return WVKernelStatus::ok();
+    }
     status = forward({tendency, spatial}, F0, accumulate);
     if (!status) return status;
     ++workspace.spatialTendencyProjectionCount;
@@ -1155,7 +1209,7 @@ WVKernelStatus WVTransformBarotropicQGKernel::addBetaPlanePVAdvection(
     if (executing_)
         return {WVKernelStatusCode::reentrantExecution,
                 "The Barotropic QG kernel is not reentrant."};
-    auto status = validateForcingOperation(A0, F0);
+    auto status = validateForcingOperation(A0, F0, workspace.spatialTendency);
     if (!status) return status;
     if (!std::isfinite(beta))
         return {WVKernelStatusCode::invalidConfiguration,
@@ -1169,6 +1223,11 @@ WVKernelStatus WVTransformBarotropicQGKernel::addBetaPlanePVAdvection(
     double* tendency = realScratch_.data() + 4 * R;
     for (std::size_t index = 0; index < R; ++index)
         tendency[index] = -beta * v[index];
+    if (workspace.spatialTendency) {
+        std::copy_n(tendency,R,workspace.spatialTendency->data);
+        workspace.spatialTendencyCaptured=true;
+        return WVKernelStatus::ok();
+    }
     status = forward({tendency, spatial}, F0, accumulate);
     if (!status) return status;
     ++workspace.spatialTendencyProjectionCount;

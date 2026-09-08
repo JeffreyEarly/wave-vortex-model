@@ -14,11 +14,12 @@ namespace wavevortex::runtime::detail {
 // The ordinary RHS has no dependency on these state-sized arrays.
 class WVForcingDiagnosticWorkspace final {
 public:
-  WVForcingDiagnosticWorkspace(WVShape2D spectral, WVShape4D spatial)
-      : spectral(spectral), spatial(spatial), flux(3*spectral.elementCount()),
+  WVForcingDiagnosticWorkspace(WVShape2D spectral, WVShape4D spatial,
+      std::size_t coefficientFamilies=3,std::size_t physicalChannels=4)
+      : spectral(spectral), spatial(spatial), flux(coefficientFamilies*spectral.elementCount()),
         previous(flux.size()), temporary(flux.size()),
         cumulative(spatial.elementCount()), raw(spatial.elementCount()),
-        physical(4*spatial.first*spatial.second*spatial.third) {}
+        physical(physicalChannels*spatial.first*spatial.second*spatial.third) {}
 
   WVFlux fluxView() { return views(flux); }
   WVFlux temporaryView() { return views(temporary); }
@@ -49,6 +50,7 @@ public:
 private:
   WVFlux views(std::vector<WVComplex64>& data) {
     const auto S=spectral.elementCount();
+    if (data.size()==S) return {{},{},{data.data(),spectral}};
     return {{data.data(),spectral},{data.data()+S,spectral},{data.data()+2*S,spectral}};
   }
 };
@@ -76,8 +78,9 @@ inline bool forcingArraysOverlap(const void* a,std::size_t n,const void* b,std::
   return a && b && n && m && (x<=y ? y-x<n : x-y<m);
 }
 
-inline WVKernelStatus validateForcingTendencyOutputs(
-    const std::vector<std::unique_ptr<WVForcing>>& forcing,WVShape2D spectral,WVShape4D spatial,
+template<class Forcing>
+WVKernelStatus validateForcingTendencyOutputs(
+    const std::vector<std::unique_ptr<Forcing>>& forcing,WVShape2D spectral,WVShape4D spatial,
     const WVState& state,const WVForcingTendencyOutput* outputs,std::size_t count) {
   if (count && !outputs)
     return {WVKernelStatusCode::invalidPointer,"Missing forcing diagnostic output descriptors."};
@@ -116,9 +119,9 @@ inline WVKernelStatus validateForcingTendencyOutputs(
 // The existing resolved instances remain the only forcing dispatch. Spatial
 // operations are accumulated before the stage-boundary projection, matching
 // SpatialForcingOperation. Later operations observe the preceding accumulator.
-template<class Execute,class Project,class Reconstruct>
+template<class Forcing,class Execute,class Project,class Reconstruct>
 WVKernelStatus evaluateForcingTendencySequence(
-    const std::vector<std::unique_ptr<WVForcing>>& forcing,
+    const std::vector<std::unique_ptr<Forcing>>& forcing,
     WVForcingDiagnosticWorkspace& work,const WVForcingTendencyOutput* outputs,
     std::size_t count,WVForcingTendencyMetrics& metrics,
     Execute execute,Project project,Reconstruct reconstruct) {

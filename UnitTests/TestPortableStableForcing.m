@@ -102,6 +102,50 @@ classdef TestPortableStableForcing < matlab.unittest.TestCase
                 end
             end
         end
+        function fullGridBarotropicTendenciesMatchMatlab(testCase)
+            for j = [0 1]
+                for antialias = [false true]
+                    for grid = {[8 6],[9 7]}
+                        wvt = WVTransformBarotropicQG([17000 11000],grid{1},j=j,shouldAntialias=antialias);
+                        n = reshape(1:numel(wvt.A0),size(wvt.A0));
+                        wvt.A0 = 1e-6*complex(sin(.17*n),cos(.23*n)).*(wvt.Kh>0);
+                        wvt.t = 37;
+                        fixed = WVFixedAmplitudeForcing(wvt,name="held-pv",A0_indices=uint64((1:numel(wvt.A0))'),A0bar=wvt.A0(:));
+                        forces = [WVNonlinearAdvection(wvt),WVBottomFrictionLinear(wvt,r=2.5e-7),WVBottomFrictionQuadratic(wvt,Cd=.002),WVBetaPlanePVAdvection(wvt),WVAdaptiveDamping(wvt),fixed];
+                        if ~antialias, forces = [forces,WVAntialiasing(wvt)]; end %#ok<AGROW>
+                        wvt.setForcing(forces);
+                        before = wvt.A0;
+                        operation = SpatialForcingOperation(wvt);
+                        expected = cell(1,operation.nVarOut);
+                        [expected{:}] = operation.compute(wvt);
+                        names = string({operation.outputVariables.name});
+                        source = testCase.writeInitialModel(wvt);
+                        resultPath = fullfile(testCase.folder,"qg-tendencies.json");
+                        for provider = testCase.providers
+                            [status,output] = cleanSystem(shellQuote(testCase.executable)+" "+shellQuote(source)+" "+shellQuote(resultPath)+" "+provider+" tendencies");
+                            testCase.assertEqual(status,0,provider+": "+output);
+                            actual = jsondecode(fileread(resultPath));
+                            testCase.verifyEqual(actual.diagnosticWorkspaceLiveBytes,0);
+                            testCase.verifyEqual(actual.diagnosticForcingEvaluationCount,numel(wvt.forcing));
+                            maximumError = 0;
+                            for instance = reshape(actual.tendencies,1,[])
+                                name = "Fqgpv_"+replace(string(instance.name),[" ","-"],"_");
+                                index = find(names==name);
+                                testCase.assertNumElements(index,1,name);
+                                reference = expected{index};
+                                values = instance.fields.Fqgpv;
+                                error = max(abs(values(:)-reference(:)))/max(max(abs(reference(:))),realmin);
+                                testCase.verifyLessThanOrEqual(error,1e-12,"j="+j+" aa="+antialias+" "+provider+" "+name);
+                                maximumError = max(maximumError,error);
+                            end
+                            testCase.verifyEqual(numel(actual.tendencies),operation.nVarOut);
+                            fprintf('QG_FORCING_DIAGNOSTICS j=%d aa=%d grid=%s provider=%s comparisons=%d max_relative=%.17g\n',j,antialias,mat2str(grid{1}),provider,operation.nVarOut,maximumError);
+                        end
+                        testCase.verifyEqual(wvt.A0,before);
+                    end
+                end
+            end
+        end
         function explicitAntialiasingMatchesMatlab(testCase)
             for family = ["hydrostatic","nonhydrostatic","barotropic"]
                 for grid = {[8 6 5],[9 7 7]}

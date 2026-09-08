@@ -1,6 +1,7 @@
 #pragma once
 
 #include "WaveVortexRuntime/WVForcingSchedule.hpp"
+#include "WaveVortexRuntime/WVForcingTendency.hpp"
 #include "WaveVortexRuntime/WVIntegrationContracts.hpp"
 #include "WaveVortexKernel/WVTransformBarotropicQGKernel.hpp"
 
@@ -70,6 +71,7 @@ public:
   virtual std::uint8_t priority() const noexcept = 0;
   virtual std::size_t ordinal() const noexcept = 0;
   virtual std::size_t persistentBytes() const noexcept = 0;
+  virtual bool supportsTendencyDiagnostics() const noexcept { return false; }
   virtual std::size_t constraintWriteCount() const noexcept { return 0; }
   virtual WVKernelStatus addRightHandSide(
       WVBarotropicQGForcingExecutionContext &context) const = 0;
@@ -114,6 +116,13 @@ public:
     return scheduleIdentifier_;
   }
   std::size_t persistentBytes() const noexcept;
+  std::size_t forcingCount() const noexcept { return forcing_.size(); }
+  const WVBarotropicQGForcing* forcingInstance(std::size_t index) const noexcept {
+    return index<forcing_.size() ? forcing_[index].get() : nullptr;
+  }
+  WVKernelStatus evaluateForcingTendencies(const WVComplexConstView&,
+      const WVForcingTendencyOutput*,std::size_t);
+  const WVForcingTendencyMetrics& tendencyMetrics() const noexcept { return tendencyMetrics_; }
 
 private:
   WVBarotropicQGForcingEngine() = default;
@@ -125,6 +134,7 @@ private:
   std::vector<std::unique_ptr<WVBarotropicQGForcing>> forcing_;
   WVBarotropicQGForcingEngineMetrics metrics_;
   std::string scheduleIdentifier_;
+  WVForcingTendencyMetrics tendencyMetrics_;
   bool executing_ = false;
   friend class WVBarotropicQGForcingExecutionContext;
 };
