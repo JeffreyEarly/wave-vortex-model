@@ -16,6 +16,20 @@ classdef TestPortableHydrostaticQualificationEvidence < matlab.unittest.TestCase
             testCase.verifyEqual(numel(testCase.report.continuations),12);
             testCase.verifyEqual(numel(testCase.report.lifecycle),7);
         end
+        function referenceOnlyScopeStillRequiresEveryContinuation(testCase)
+            referenceReport = testCase.report;
+            referenceReport.providers = "reference";
+            referenceReport.tests = referenceReport.tests(string({referenceReport.tests.name})~="TestPortableStratifiedQGQualification/lifecycleAndStorageRemainBounded");
+            referenceReport.rows = referenceReport.rows(string({referenceReport.rows.provider})=="reference");
+            referenceReport.continuations = referenceReport.continuations(string({referenceReport.continuations.provider})=="reference");
+            grids = reshape([referenceReport.lifecycle.grid],3,[])';
+            referenceReport.lifecycle = referenceReport.lifecycle(string({referenceReport.lifecycle.provider})=="reference" & ismember(grids,[8 6 9;12 10 13],"rows")');
+            validatePortableHydrostaticQualification(referenceReport);
+            testCase.verifyEqual(numel(referenceReport.continuations),6);
+            testCase.verifyEqual(numel(referenceReport.lifecycle),2);
+            bad = referenceReport; bad.continuations(end)=[]; testCase.verifyInvalid(bad);
+            bad = referenceReport; bad.lifecycle(end)=[]; testCase.verifyInvalid(bad);
+        end
         function missingOrContradictoryEvidenceIsRejected(testCase)
             original = testCase.report;
             bad = original; bad.rows(end)=[]; testCase.verifyInvalid(bad);

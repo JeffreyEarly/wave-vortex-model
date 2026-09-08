@@ -68,6 +68,7 @@ classdef TestPortableHydrostaticQualification < matlab.unittest.TestCase
             for definition = reshape(manifest.lifecycleCases,1,[])
                 if definition.nativeOnly && ~ismember("native-fftw",testCase.providers), continue; end
                 definition.grid = reshape(definition.grid,1,[]);
+                if isequal(testCase.providers,"reference") && ~ismember(definition.grid,manifest.referenceOnlyLifecycleGrids,"rows"), continue; end
                 source = testCase.authorModel(definition);
                 for provider = testCase.providers
                     if definition.nativeOnly && provider=="reference", continue; end

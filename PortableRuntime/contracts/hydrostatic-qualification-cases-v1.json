@@ -155,5 +155,17 @@
       "shouldAntialias": false,
       "linear": false
     }
+  ],
+  "referenceOnlyLifecycleGrids": [
+    [
+      8,
+      6,
+      9
+    ],
+    [
+      12,
+      10,
+      13
+    ]
   ]
 }

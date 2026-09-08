@@ -12,7 +12,8 @@ require(~isempty(report.tests) && all([report.tests.passed]) && ~any([report.tes
 testNames = string({report.tests.name});
 require(numel(unique(testNames))==numel(testNames),"Duplicate test evidence.");
 requiredClasses=["TestPortableHydrostatic","TestPortableHydrostaticQualification","TestPortableStableForcing","TestPortableForcingCompatibility","TestCompiledKernelIntegration","TestStratifiedModalRecord","TestHydrostaticCompiledKernel"];
-expectedNames="TestPortableStratifiedQGQualification/lifecycleAndStorageRemainBounded";
+expectedNames=strings(1,0);
+if ismember("native-fftw",providers), expectedNames="TestPortableStratifiedQGQualification/lifecycleAndStorageRemainBounded"; end
 for name=requiredClasses
     suite=testsuite(fullfile(options.repositoryRoot,"UnitTests",name+".m"));
     expectedNames=[expectedNames,string({suite.Name})]; %#ok<AGROW>
@@ -93,12 +94,14 @@ end
 require(numel(unique(keys))==numel(keys),"Duplicate continuation cases.");
 lifecycle=report.lifecycle; if isstruct(lifecycle), lifecycle=num2cell(lifecycle); end
 expectedCount=sum(~[manifest.lifecycleCases.nativeOnly])*numel(providers)+sum([manifest.lifecycleCases.nativeOnly])*double(ismember("native-fftw",providers));
+if isequal(providers,"reference"), expectedCount=size(manifest.referenceOnlyLifecycleGrids,1); end
 require(numel(lifecycle)==expectedCount,"Incomplete lifecycle matrix.");
 keys=strings(1,0);
 for index=1:numel(lifecycle)
     row=lifecycle{index};
     require(ismember(string(row.provider),providers),"Unknown lifecycle provider.");
     grids=reshape([manifest.lifecycleCases.grid],3,[])';
+    if isequal(providers,"reference"), grids=manifest.referenceOnlyLifecycleGrids; end
     require(ismember(reshape(row.grid,1,[]),grids,"rows"),"Unknown lifecycle grid.");
     definition=manifest.lifecycleCases(string({manifest.lifecycleCases.id})==string(row.definition.id));
     require(isscalar(definition),"Unknown lifecycle fixture.");

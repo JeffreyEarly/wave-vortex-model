@@ -30,3 +30,11 @@ Scope: Hydrostatic end-to-end qualification on v4 main after #300/PR #376. MATLA
 ## Integration gates
 
 Both recorded-evidence suites passed all six methods, including malformed/contradictory numerical and memory evidence rejection (`/private/tmp/wvm-301-evidence-tests.log`). Whitespace and repository-scope checks passed. Pending: focused hosted release/sanitizer and required branch checks. Optional Full CI is not an additional gate. No required local assets are missing; no MATLAB production source, package manifests, release snapshots or v5 files changed.
+
+## Hosted workload adjustment
+
+The initial hosted SQG release/sanitizer qualification passed (run `34184626299`). Its release JSON records 1,177 seconds total and 463 seconds in the SQG lifecycle test. Comparing matched reference measurements with the local report shows approximately sixfold direct-DFT cost. At that rate, including both the large reference Hydrostatic lifecycle and redundant SQG lifecycle in each Hydrostatic job would exceed its 35-minute limit.
+
+Reference-only qualification therefore uses the manifest's two smaller lifecycle grids and leaves the SQG lifecycle to its dedicated workflow. All six Hydrostatic continuation cases, kernel/forcing parity and other regression tests remain required. The native-plus-reference scope and committed measurements are unchanged. This changes qualification scheduling only, with no numerical/runtime or MATLAB production changes.
+
+The adjusted two-grid reference lifecycle passed under local ASan/UBSan, and the unchanged native artifact passed its three existing evidence tests (`/private/tmp/wvm-301-reference-scope.log`). A new focused evidence test confirms that reference-only scope still requires all six continuations and both lifecycle fixtures (`/private/tmp/wvm-301-reference-evidence.log`).

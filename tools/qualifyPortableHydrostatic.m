@@ -36,7 +36,10 @@ setenv("WV_HYDRO_KERNEL_DUMP",fullfile(fileparts(runner),"WVHydrostaticKernelDum
 setenv("WV_HYDRO_TEST_NATIVE",string(double(options.native)));
 classes = ["TestPortableHydrostatic","TestPortableHydrostaticQualification","TestPortableStableForcing","TestPortableForcingCompatibility","TestCompiledKernelIntegration","TestStratifiedModalRecord","TestHydrostaticCompiledKernel"];
 parts = arrayfun(@testsuite,classes,UniformOutput=false);
-suite = [parts{:},testsuite("TestPortableStratifiedQGQualification",Name="*lifecycleAndStorageRemainBounded")];
+suite = [parts{:}];
+if options.native
+    suite = [suite,testsuite("TestPortableStratifiedQGQualification",Name="*lifecycleAndStorageRemainBounded")];
+end
 started = tic; results = run(suite);
 tests = struct('name',{},'passed',{},'failed',{},'incomplete',{},'seconds',{});
 for result = reshape(results,1,[])
