@@ -1,0 +1,7 @@
+control,group,field,APV,day,endpoint,absoluteRMSChange,allocationFraction
+quadrature,state,diffusionIntegral,1729,64,bottom,3.724212177120823e-11,0.004835058576912248
+quadrature,rate,feedbackTendencyError,1729,64,bottom,2.5037062534005696e-17,0.025644525867798803
+quadrature,localization,interiorGradientResidual,1729,64,bottom,1.4403067562598018e-16,0.14752522912103963
+reference,state,evolutionError,865,64,bottom,1.1861283879835064e-10,0.01539923066379226
+reference,rate,operatorResidualTendencyError,1729,1,surface,8.779838238691006e-15,0.6520243032701902
+reference,localization,surfaceLayerGradientResidual,1729,1,surface,3.8018000455864995e-15,0.28233618416478834
