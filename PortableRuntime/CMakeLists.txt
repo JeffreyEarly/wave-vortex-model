@@ -421,7 +421,7 @@ if(BUILD_TESTING)
 endif()
 
 if(BUILD_TESTING)
-    foreach(probe WVStratifiedQGLifecycleProbe WVHydrostaticLifecycleProbe)
+    foreach(probe WVStratifiedQGLifecycleProbe WVHydrostaticLifecycleProbe WVBoussinesqLifecycleProbe)
         add_executable(${probe} tests/WVStratifiedLifecycleProbe.cpp ../tools/compiled-kernel/tests/WVAllocationProbe.cpp)
         target_include_directories(${probe} PRIVATE third_party)
         target_link_libraries(${probe} PRIVATE WaveVortex::PortableRuntime WaveVortex::ReferenceFFT)
