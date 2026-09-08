@@ -4107,6 +4107,19 @@
       ],
       "runtimeChanged": false,
       "priorHostedSanitizedBuildAndContracts": "passed on d6cafb81"
+    },
+    {
+      "finding": "The existing ordinary-diagnostic continuation fixture selected every implemented row, including newly implemented forcing templates without actual instance bindings.",
+      "correction": "Select implemented ordinary diagnostic identities by excluding forcing-instance-template authority. The separate TestPortableStableForcing matrix supplies and verifies actual forcing instances.",
+      "testSourceSha256": "99b56d0389f873672c7f25fdcc102ff09b4fac37182fe757c7bf135cb2624947",
+      "localVerification": {
+        "names": "TestPortableDiagnostics/outputContinuationMatchesMatlab",
+        "passed": true,
+        "duration": 108.357291625
+      },
+      "coverage": "All six transform configurations, reference/native providers, fixed/segmented/adaptive continuation, primary/dense and sibling files.",
+      "codeAnalyzerFindings": 0,
+      "runtimeChanged": false
     }
   ]
 }

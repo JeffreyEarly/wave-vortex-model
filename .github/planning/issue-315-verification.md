@@ -170,6 +170,12 @@ Branch: `issue-315-forcing-tendency-diagnostics`, based on v4 main `866f66ed4198
 - Replaced the temporary pair list with explicit before/after coefficient-family pointer arrays, preserving every accepted-state equality assertion. A preliminary const-reference loop caused GCC 14 dangling-reference diagnostics; the final arrays compile cleanly under GCC 14 with -Wall -Wextra -Wpedantic -Werror. Release and Apple ASan/UBSan model-output-netcdf pass on the corrected test.
 - No runtime or MATLAB code changed in this correction, so numerical matrices and performance qualification were not repeated. The updated test hash is recorded in the evidence. Required hosted CI must still pass on the corrected PR head before integration.
 
+### Ordinary output fixture after catalog promotion
+
+- The final catalog audit found that TestPortableDiagnostics/outputContinuationMatchesMatlab selected every implemented diagnostic row, which now includes unbound forcing templates. Those exemplars are not concrete field names for that fixture. Its selection now excludes forcing-instance-template authority, preserving the ordinary-diagnostic coverage; actual forcing instances remain covered by TestPortableStableForcing's full output matrix.
+- The affected continuation method passed on the isolated v4 checkout with both reference/native providers across all six transforms, fixed/segmented/adaptive scenarios, normal/dense output and sibling files. Code Analyzer is clean. This is a test-only selection correction; MATLAB runtime behavior and existing numerical/performance evidence are unchanged.
+- Hosted C++ Release and sanitizer build/contracts passed on 10b3c406, confirming the GCC correction. Required CI will rerun for this final test adjustment before integration.
+
 ## Diagnostic semantics established from MATLAB
 
 `Operations/SpatialForcingOperation.m` reports the difference before and after each operation in stage/priority order. Spatial diagnostics expose the raw spatial contribution; spectral and amplitude diagnostics reconstruct the difference in the accumulated spectral tendency. Filters and fixed-amplitude operations therefore require the preceding accumulated tendency. Evaluating each forcing independently from a zero accumulator is incorrect.

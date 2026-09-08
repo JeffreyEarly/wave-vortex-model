@@ -109,7 +109,9 @@ classdef TestPortableDiagnostics < matlab.unittest.TestCase
             for family = ["constant-hydrostatic","constant-nonhydrostatic","barotropic","stratified-qg","hydrostatic","boussinesq"]
                 wvt = testCase.transform(family,[8 6 9],true);
                 rows = catalog.contracts(string({catalog.contracts.configuration})==family+"-aa1");
-                rows = rows([rows.ordinal]>=23 & string({rows.runtimeStatus})=="implemented");
+                % Forcing templates require actual instance bindings, covered
+                % by TestPortableStableForcing's output continuation matrix.
+                rows = rows([rows.ordinal]>=23 & string({rows.runtimeStatus})=="implemented" & string({rows.authority})~="forcing-instance-template");
                 names = reshape(arrayfun(@(row)string(row.metadata.name),rows),1,[]);
                 for row = reshape(rows,1,[])
                     if string(row.authority)=="known-variable-factory"
