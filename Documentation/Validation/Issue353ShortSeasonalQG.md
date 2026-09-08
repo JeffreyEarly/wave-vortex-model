@@ -1,5 +1,7 @@
 # Short seasonal QG composition using existing model interfaces
 
+> Current scope: the [adiabatic qualification handoff](Issue353AdiabaticQualification.md) supersedes this report's historical next-work recommendations. Numerical results and failed accuracy criteria below remain unchanged. Thin-layer diffusion research is #389; the long adiabatic application is #367; release/install/export work is #354.
+
 This increment of #353 demonstrates the primary seasonal experiment as a small composition of the existing v4-style interfaces: a transform, registered forcing objects, `WVModel`, ordinary output groups, and `WVModel.modelFromFile`. It adds no runtime class, persistence schema, model hierarchy, or scientific operator. The authoring example uses the resolved APV/endpoint/MDA state throughout. This is a short finite-resolution model qualification; the primary experiment's pins, case directories and saved trajectories are unchanged.
 
 ## What the experiment taught us

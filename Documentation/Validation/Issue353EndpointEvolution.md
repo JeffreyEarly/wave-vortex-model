@@ -1,5 +1,7 @@
 # Issue #353: endpoint evolution and retained-band error
 
+> Current scope: the [adiabatic qualification handoff](Issue353AdiabaticQualification.md) supersedes this report's historical next-work recommendations. Numerical results and failed accuracy criteria below remain unchanged. Thin-layer diffusion research is #389; the long adiabatic application is #367; release/install/export work is #354.
+
 The retained-band study in PR #385 found nonmonotone bottom-displacement error even with analytical APV modes. This follow-up traces that error through signed endpoint tendencies and independently accumulated source/diffusion budgets. It preserves the existing resolved scientific modes, both active endpoints and the current weak diffusion operator. It adds authoring diagnostics and a scientific regression, with no runtime or public API change.
 
 ## Fixed problem and diagnostic coordinates

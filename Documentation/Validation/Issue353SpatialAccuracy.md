@@ -1,5 +1,7 @@
 # Short seasonal QG spatial accuracy (#353)
 
+> Current scope: the [adiabatic qualification handoff](Issue353AdiabaticQualification.md) supersedes this report's historical next-work recommendations. Numerical results and failed accuracy criteria below remain unchanged. Thin-layer diffusion research is #389; the long adiabatic application is #367; release/install/export work is #354.
+
 The short seasonal model can be composed and restarted through existing v4-style interfaces, but those properties do not establish its spatial accuracy. This study separates vertical sampling, retained APV bandwidth, horizontal resolution, time error, and resolution-dependent adaptive damping. Every transform uses its resolved modes; no production basis, runtime class, model hierarchy, forcing interface or persistence contract changes.
 
 The principal result is that additional vertical samples at fixed modal bandwidth cannot recover missing QGPV content. At day 64, the undamped 14-mode case changes by about `7.15e-8` relatively in QGPV when increasing 65 to 129 samples, while 56 versus 84 retained APV modes still differs by about 48%. The latter is an unresolved reference comparison, not an estimate with a converged continuum reference. Accurate SSH alone is insufficient to qualify QGPV or the bottom anomaly.
