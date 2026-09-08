@@ -242,4 +242,3 @@ if study=="reference" || study=="referenceQuadrature", withinTolerance=absolute<
 rows=table(repmat(study,6,1),repmat(count,6,1),repmat(referenceCount,6,1),repmat(day,6,1),names.',absolute,relative,referenceMagnitude,allowance,withinTolerance, ...
     VariableNames=["study","count","referenceCount","day","observable","absolute","relative","referenceMagnitude","allowance","withinTolerance"]);
 end
-
