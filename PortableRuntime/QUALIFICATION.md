@@ -1,8 +1,41 @@
-# Stratified QG qualification
+# Portable transform qualification
+
+## Hydrostatic qualification
+
+`WVTransformHydrostatic` supports MATLAB-authored model continuation with Ap/Am/A0 state, variable stratification, all twelve stable forcing identities where MATLAB permits them, full or horizontal-only tracers and particles, moorings, surface and volume fields, dense output, multiple output files, append and restart. MATLAB reopens the resulting model graphs directly. The scientific modal source and opaque `N2Function` payload are preserved. No MATLAB execution or eigensolver is needed during C++ continuation; MATLAB constructors, scientific methods and save defaults are unchanged.
+
+After `tools/configureCIEnvironment`, run:
+
+```matlab
+qualifyPortableHydrostatic("hydrostatic-reference.json");
+qualifyPortableHydrostatic("hydrostatic-native.json",runner="/path/to/build/wave-vortex-run",native=true);
+```
+
+The supplied runner needs matching `WVStableForcingDump`, `WVStratifiedQGFieldDump` (the shared stratified field probe), `WVHydrostaticLifecycleProbe`, `WVStratifiedModalDump` and `WVHydrostaticKernelDump` executables beside it. Without a supplied runner the tool builds the reference configuration. Native qualification includes the reference provider and native FFTW, plus scalar/Accelerate matrix parity in the numerical kernel tests. Complete model runs currently use the scalar matrix backend; this evidence does not claim Accelerate selection through the runner.
+
+The `wave-vortex-hydrostatic-qualification-v1` report links executed tests to the existing forcing catalog, including all 23 supported Hydrostatic forcing/antialias pairs and the intentional antialias-on-antialias incompatibility. It records the source revision, working-tree status, MATLAB release, provider, timing, storage and measured continuation errors. `validatePortableHydrostaticQualification` rejects missing, duplicate, stale, contradictory or out-of-tolerance evidence. The focused Hydrostatic workflow runs reference release and ASan/UBSan qualification and uploads separate reports, independently of optional Full CI.
+
+### Numerical coverage
+
+`contracts/hydrostatic-qualification-cases-v1.json` declares six 600-second trajectories using exponential and thermocline stratification, nonuniform vertical grids, odd/even horizontal grids, modal truncation, transform and explicit antialiasing, linear/nonlinear dynamics, and full/XY observer advection. RK4, RK3(2) and RK7(8) cover explicit, CFL-selected and default adaptive stepping. Each uninterrupted trajectory and two-segment append/restart trajectory is compared against MATLAB. Primary output is every 100 seconds and dense output every 25 seconds, including the initial state.
+
+The coefficient comparison bounds each of Ap, Am and A0 separately. Further comparisons cover fields, energy, enstrophy, tracers, all three particle coordinates, tracked fields, moorings, dense fields, forcing identities, observer ordering, output variable schemas, schedules and ordinals. Explicit/CFL cases use a `2e-7` relative maximum-error ceiling; default adaptive cases use `5e-4`, below MATLAB's default `1e-3` relative tolerance. Particle positions have a `0.02 m` ceiling. Nonlinear cases must change the coefficient state by at least `1e-4` in relative maximum norm. The existing focused Hydrostatic tests additionally exercise non-prefix modal subsets, malformed metadata, exact forcing tendencies and continuations, and transactional multi-file create/replace/append behavior.
+
+The CFL fixture requests the CFL number that selects a five-second step at each segment's initial state. This keeps MATLAB and C++ on a shared step grid while checking Hydrostatic advective/oscillatory step selection. It does not change the existing endpoint policies: C++ shortens a final step, while MATLAB can take a full step and interpolate. Fixtures avoid the existing MATLAB adaptive-damping degeneracy when explicit antialiasing leaves only one positive vertical mode.
+
+### Runtime, memory and lifecycle scope
+
+The shared stratified lifecycle probe constructs, warms up, advances and destroys six complete models per case. Both providers run 8×6×9, 12×10×13 and 20×16×17 grids; native FFTW additionally runs 64×48×49 with 24 modes. Large cases are native-only because the reference implementation uses a direct DFT. Each lifecycle records setup time, sixteen measured RK4 steps, 64 RHS evaluations, reconstruction/projection counts and retained capacities. It verifies modal-source ownership release after destruction, unchanged prepared capacities and zero native C++ application allocations. These prepared-step measurements occur between output events; the continuation reports separately include real output/restart work.
+
+Retained bytes count integration-system, integrator, state and output capacities. Scientific bytes are also reported for inspection. Allocator metadata and opaque FFTW/NetCDF internals are outside this accounting; process RSS in the runtime report is diagnostic, not an exact live-array ledger. Timing is descriptive, with no machine-dependent CI speed threshold.
+
+Hydrostatic spatial closures still project separately, and integrated observers may reconstruct fields after the forcing RHS. The qualification records this schedule before optimization. Backend selection and safe per-RHS field reuse remain possible measured follow-ups. Variable-stratification Boussinesq wave matrices, their horizontal-wavenumber groups and full Boussinesq runtime qualification remain the next transform gap.
+
+## Stratified QG qualification
 
 `WVTransformStratifiedQG` supports complete MATLAB-authored portable model continuation with A0-only state, the nine applicable stable forcings, Eulerian and surface fields, three-dimensional fixed/moving/event sampling, fixed-depth XY drifters, rank-three XY tracers, moorings and linear passive observers. Model graphs retain multi-file/group identities, schedules, dense output, create/replace/append and restart. MATLAB reopens the output directly. See [README.md](README.md#stratified-qg-model-integration) for the execution surface and scientific persistence contract.
 
-A three-dimensional SQG tracer must use `WVTracer(...,isXYOnly=true)`. This describes its horizontal advection on `[Nx,Ny,Nz]`; it does not flatten the tracer. MATLAB SQG has no `w`, so vertical tracer advection is an intentional preflight incompatibility. Hydrostatic models have separate focused runtime parity coverage under #300; they remain outside this SQG performance qualification. Existing MATLAB constructors, readers, required properties and save behavior remain unchanged.
+A three-dimensional SQG tracer must use `WVTracer(...,isXYOnly=true)`. This describes its horizontal advection on `[Nx,Ny,Nz]`; it does not flatten the tracer. MATLAB SQG has no `w`, so vertical tracer advection is an intentional preflight incompatibility. Hydrostatic models have their own qualification above. Existing MATLAB constructors, readers, required properties and save behavior remain unchanged.
 
 ## Run and inspect the evidence
 
@@ -29,7 +62,7 @@ The recorded [Apple Silicon reference/native qualification](https://github.com/J
 
 ## Numerical coverage and tolerances
 
-The shared forcing catalog contains 96 rows, including SQG's 17 supported and 7 intentionally incompatible rows across both transform-antialias configurations. Existing exact-pair tests compare every applicable RHS and append continuation, with odd/even grids and representative closure orderings. Their MATLAB-authoritative applicability and evidence links remain in the same catalog used by C++ contracts.
+The shared forcing catalog contains 120 rows, including SQG's 17 supported and 7 intentionally incompatible rows across both transform-antialias configurations. Existing exact-pair tests compare every applicable RHS and append continuation, with odd/even grids and representative closure orderings. Their MATLAB-authoritative applicability and evidence links remain in the same catalog used by C++ contracts.
 
 `contracts/stratified-qg-qualification-cases-v1.json` declares six longer complete-model cases. They span odd/even grids, one through six retained modes, explicit and transform antialiasing, fixed amplitudes, nonlinear closure compositions, linear passive observers, RK4/RK23/RK78, explicit steps, CFL-selected RK4 and default adaptive initial steps. Each run covers 600 seconds with primary output every 100 seconds and dense output every 25 seconds; its uninterrupted and two-segment trajectories are compared against MATLAB. Nonlinear cases must change A0 by at least `1e-4` in relative maximum norm, preventing nearly stationary trajectories from passing as substantive qualification.
 

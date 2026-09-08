@@ -1,4 +1,4 @@
-name: Hydrostatic parity
+name: Hydrostatic qualification
 
 on:
   pull_request:
@@ -18,7 +18,7 @@ jobs:
   qualify:
     name: Hydrostatic kernel and runtime / ${{ matrix.configuration }}
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 35
     strategy:
       fail-fast: false
       matrix:
@@ -49,7 +49,7 @@ jobs:
             flags+=('-DCMAKE_CXX_FLAGS=-fsanitize=address,undefined -fno-omit-frame-pointer' '-DCMAKE_EXE_LINKER_FLAGS=-fsanitize=address,undefined')
           fi
           cmake -S PortableRuntime -B "$RUNNER_TEMP/hydrostatic-build" -DCMAKE_BUILD_TYPE=RelWithDebInfo -DWV_ENABLE_ACCELERATE=OFF "${flags[@]}"
-          cmake --build "$RUNNER_TEMP/hydrostatic-build" --parallel 4 --target TestWVHydrostaticKernel WVHydrostaticKernelDump TestWVHydrostaticRuntime WVStableForcingDump WVStratifiedQGFieldDump wave-vortex-run
+          cmake --build "$RUNNER_TEMP/hydrostatic-build" --parallel 4 --target TestWVHydrostaticKernel WVHydrostaticKernelDump TestWVHydrostaticRuntime WVStableForcingDump WVStratifiedQGFieldDump WVHydrostaticLifecycleProbe WVStratifiedQGLifecycleProbe WVStratifiedModalDump wave-vortex-run
       - name: Run kernel boundary contracts
         env:
           ASAN_OPTIONS: detect_leaks=1:alloc_dealloc_mismatch=1:halt_on_error=1
@@ -59,7 +59,7 @@ jobs:
         with:
           release: R2025b
           cache: true
-      - name: Compare Hydrostatic kernel with MATLAB
+      - name: Qualify MATLAB-C++-MATLAB Hydrostatic continuation
         uses: matlab-actions/run-command@v3
         env:
           ASAN_OPTIONS: detect_leaks=1:alloc_dealloc_mismatch=1:halt_on_error=1
@@ -70,11 +70,14 @@ jobs:
             addpath(fullfile(sourceRoot,"tools"));
             configureCIEnvironment(sourceRoot,fullfile(pwd,"OceanKit"));
             cd(sourceRoot);
-            setenv("WV_HYDRO_KERNEL_DUMP",fullfile(getenv("RUNNER_TEMP"),"hydrostatic-build","WVHydrostaticKernelDump"));
-            setenv("WV_STABLE_FORCING_DUMP",fullfile(getenv("RUNNER_TEMP"),"hydrostatic-build","WVStableForcingDump"));
-            setenv("WV_STABLE_FORCING_RUNNER",fullfile(getenv("RUNNER_TEMP"),"hydrostatic-build","wave-vortex-run"));
-            results=runtests(["UnitTests/TestHydrostaticCompiledKernel.m","UnitTests/TestPortableHydrostatic.m"]);
-            assertSuccess(results);
+            qualifyPortableHydrostatic(fullfile(getenv("RUNNER_TEMP"),"hydrostatic-qualification.json"),runner=fullfile(getenv("RUNNER_TEMP"),"hydrostatic-build","wave-vortex-run"));
+      - name: Upload machine-readable qualification
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: hydrostatic-qualification-${{ matrix.configuration }}
+          path: ${{ runner.temp }}/hydrostatic-qualification.json
+          if-no-files-found: error
       - name: Verify clean checkout
         if: always()
         working-directory: source
