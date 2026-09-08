@@ -1,4 +1,5 @@
 #pragma once
+#include "WVForcingTendency.hpp"
 
 #include "WaveVortexRuntime/WVIntegrationContracts.hpp"
 #include "WaveVortexRuntime/WVForcing.hpp"
@@ -57,6 +58,15 @@ struct WVForcingEngineMetrics {
 // stage and priority order; evaluate() performs no forcing dispatch discovery.
 class WVConstantStratificationForcingEngine final {
 public:
+    // Indices refer to the already resolved stage/priority order.
+    std::size_t forcingCount() const noexcept { return forcing_.size(); }
+    const WVForcing* forcingInstance(std::size_t index) const noexcept {
+        return index<forcing_.size() ? forcing_[index].get() : nullptr;
+    }
+    WVKernelStatus evaluateForcingTendencies(const WVState&,
+        const WVForcingTendencyOutput*,std::size_t);
+    const WVForcingTendencyMetrics& tendencyMetrics() const noexcept { return tendencyMetrics_; }
+
     // Validate the frozen schedule without constructing transforms, plans, or
     // array-sized derived operators and workspaces.
     static WVKernelStatus validateSchedule(
@@ -111,6 +121,7 @@ private:
     WVKernelStatus addLinearCoefficientTendency(const WVState& state, double rate, WVFlux& flux) const;
     void initializeOutputWithZeros(WVFlux& flux, bool& outputInitialized);
     WVKernelStatus addNonlinearFlux(const WVState& state, WVFlux& flux, bool& outputInitialized, WVRealFieldBundleView* externalFields, bool& externalFieldsPrepared);
+    WVKernelStatus diagnosticLaplacian(const WVState&,double,double,WVLaplacianDirection,WVFlux&,bool&);
     void clearEvaluationWorkspace() noexcept;
 
     std::unique_ptr<WVTransformConstantStratificationKernel> kernel_;
@@ -125,6 +136,8 @@ private:
     bool physicalFieldsValid_ = false;
     bool executing_ = false;
     std::uint64_t evaluationGeneration_ = 0;
+    detail::WVForcingDiagnosticWorkspace* diagnosticWorkspace_=nullptr;
+    WVForcingTendencyMetrics tendencyMetrics_;
     friend class WVForcingExecutionContext;
 };
 

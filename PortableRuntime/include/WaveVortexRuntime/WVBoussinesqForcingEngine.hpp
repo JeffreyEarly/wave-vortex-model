@@ -1,4 +1,5 @@
 #pragma once
+#include "WVForcingTendency.hpp"
 #include "WVForcingEngine.hpp"
 #include "WaveVortexKernel/WVTransformBoussinesqKernel.hpp"
 namespace wavevortex::runtime {
@@ -6,6 +7,15 @@ namespace wavevortex::runtime {
 // the immutable Boussinesq source and prepared once at construction.
 class WVBoussinesqForcingEngine final {
 public:
+    // Indices refer to the already resolved stage/priority order.
+    std::size_t forcingCount() const noexcept { return forcing_.size(); }
+    const WVForcing* forcingInstance(std::size_t index) const noexcept {
+        return index<forcing_.size() ? forcing_[index].get() : nullptr;
+    }
+    WVKernelStatus evaluateForcingTendencies(const WVState&,
+        const WVForcingTendencyOutput*,std::size_t);
+    const WVForcingTendencyMetrics& tendencyMetrics() const noexcept { return tendencyMetrics_; }
+
     static WVKernelStatus validateSchedule(const WVStratifiedModalGeometry&,const WVFrozenForcingSchedule&,WVShape2D,const WVExtensionCatalog&);
     static WVKernelStatus create(std::shared_ptr<const WVStratifiedModalSource>,const WVFrozenForcingSchedule&,std::shared_ptr<const WVExtensionCatalog>,std::unique_ptr<WVFFTEngine>,std::unique_ptr<WVBoussinesqForcingEngine>&);
     WVKernelStatus nonlinearFlux(const WVState&,WVFlux&);
@@ -38,6 +48,8 @@ private:
     WVForcingEngineMetrics metrics_;
     std::string scheduleIdentifier_;
     bool physicalValid_=false,executing_=false;
+    detail::WVForcingDiagnosticWorkspace* diagnosticWorkspace_=nullptr;
+    WVForcingTendencyMetrics tendencyMetrics_;
     friend class WVForcingExecutionContext;
 };
 }

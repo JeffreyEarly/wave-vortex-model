@@ -30,6 +30,78 @@ classdef TestPortableStableForcing < matlab.unittest.TestCase
         end
     end
     methods (Test,TestTags="full")
+        function fullGridWaveTendenciesMatchMatlab(testCase)
+            for family = ["constant-hydrostatic","constant-nonhydrostatic","hydrostatic","boussinesq"]
+                for antialias = [false true]
+                    for grid = {[8 6 9],[9 7 10]}
+                        wvt = diagnosticWaveTransform(family,grid{1},antialias);
+                        fixed = WVFixedAmplitudeForcing(wvt,name="held-coefficients",Ap_indices=uint64(2),Apbar=wvt.Ap(2),A0_indices=uint64(2),A0bar=wvt.A0(2));
+                        terrain = 2*cos(2*pi*reshape(wvt.x,[],1)/wvt.Lx)+sin(2*pi*reshape(wvt.y,1,[])/wvt.Ly);
+                        tidal = WVPseudoTopographicWaveGeneration(wvt,topographicHeight=terrain,barotropicVelocityAmplitude=[.01;.005],frequency=1e-4,rampDuration=0);
+                        forces = [WVNonlinearAdvection(wvt),WVBottomFrictionLinear(wvt,r=2.5e-7),WVBottomFrictionQuadratic(wvt,Cd=.002),WVHorizontalDamping(wvt,nu=.125,kappa=.002),WVVerticalDamping(wvt,nu=.125,kappa=.002),WVVerticalDiffusivity(wvt,kappa_z=.002),WVAdaptiveDamping(wvt),WVBetaPlanePVAdvection(wvt),tidal,fixed];
+                        if ~antialias, forces = [forces,WVAntialiasing(wvt,Nj=3)]; end %#ok<AGROW>
+                        wvt.setForcing(forces);
+                        before = {wvt.Ap,wvt.Am,wvt.A0};
+                        verticalCancellationScale = 0;
+                        if ~wvt.isHydrostatic
+                            % Tidal Ap/Am contributions to Fw cancel analytically.
+                            % Use their separate physical magnitudes to condition
+                            % this zero-channel comparison, retaining the 1e-12
+                            % bound without dividing by a roundoff-only residual.
+                            zero = zeros(size(wvt.Ap));
+                            [tidalFp,tidalFm,~] = tidal.addSpectralForcing(wvt,zero,zero,zero);
+                            plus = wvt.transformToSpatialDomainWithG(Apm=wvt.WAp.*wvt.phase.*tidalFp);
+                            minus = wvt.transformToSpatialDomainWithG(Apm=wvt.WAm.*wvt.conjPhase.*tidalFm);
+                            verticalCancellationScale = max(abs([plus(:);minus(:)]));
+                            testCase.assertGreaterThan(verticalCancellationScale,0);
+                            testCase.verifyLessThanOrEqual(max(abs(plus(:)+minus(:))),1e-12*verticalCancellationScale);
+                        end
+                        operation = SpatialForcingOperation(wvt);
+                        expected = cell(1,operation.nVarOut);
+                        [expected{:}] = operation.compute(wvt);
+                        names = string({operation.outputVariables.name});
+                        source = testCase.writeInitialModel(wvt);
+                        resultPath = fullfile(testCase.folder,"tendencies.json");
+                        for provider = testCase.providers
+                            [status,output] = cleanSystem(shellQuote(testCase.executable)+" "+shellQuote(source)+" "+shellQuote(resultPath)+" "+provider+" tendencies");
+                            testCase.assertEqual(status,0,family+" "+provider+": "+output);
+                            actual = jsondecode(fileread(resultPath));
+                            testCase.verifyEqual(actual.diagnosticWorkspaceLiveBytes,0);
+                            testCase.verifyEqual(actual.diagnosticForcingEvaluationCount,numel(wvt.forcing));
+                            comparisons = 0;
+                            maximumError = 0;
+                            for instance = reshape(actual.tendencies,1,[])
+                                suffix = replace(string(instance.name),[" ","-"],"_");
+                                for channel = string(fieldnames(instance.fields))'
+                                    name = channel+"_"+suffix;
+                                    index = find(names==name);
+                                    testCase.assertNumElements(index,1,name);
+                                    reference = expected{index};
+                                    values = instance.fields.(channel);
+                                    absoluteError = max(abs(values(:)-reference(:)));
+                                    scale = max(abs(reference(:)));
+                                    if channel=="Fw" && string(instance.type)=="WVPseudoTopographicWaveGeneration"
+                                        testCase.verifyLessThanOrEqual(scale,1e-12*verticalCancellationScale,"MATLAB tidal Fw must remain a cancellation residual");
+                                        testCase.verifyLessThanOrEqual(max(abs(values(:))),1e-12*verticalCancellationScale,"C++ tidal Fw must remain a cancellation residual");
+                                        scale = verticalCancellationScale;
+                                    end
+                                    error = absoluteError/max(scale,realmin);
+                                    if error > 1e-12
+                                        fprintf('FORCING_DIAGNOSTIC_ERROR %s %s abs=%.17g reference=%.17g\n',family,name,absoluteError,scale);
+                                    end
+                                    testCase.verifyLessThanOrEqual(error,1e-12,family+" aa="+antialias+" "+provider+" "+name);
+                                    maximumError = max(maximumError,error);
+                                    comparisons = comparisons+1;
+                                end
+                            end
+                            testCase.verifyEqual(comparisons,operation.nVarOut);
+                            fprintf('FORCING_DIAGNOSTICS %s aa=%d grid=%s provider=%s comparisons=%d max_relative=%.17g\n',family,antialias,mat2str(grid{1}),provider,comparisons,maximumError);
+                        end
+                        testCase.verifyEqual({wvt.Ap,wvt.Am,wvt.A0},before);
+                    end
+                end
+            end
+        end
         function explicitAntialiasingMatchesMatlab(testCase)
             for family = ["hydrostatic","nonhydrostatic","barotropic"]
                 for grid = {[8 6 5],[9 7 7]}
@@ -337,4 +409,26 @@ function bytes = readBytes(path)
 file = fopen(path,"r");
 cleanup = onCleanup(@()fclose(file));
 bytes = fread(file,Inf,"*uint8");
+end
+
+function wvt = diagnosticWaveTransform(family,grid,antialias)
+switch family
+    case "hydrostatic"
+        wvt = WVTransformHydrostatic([17000 11000 1000],grid,Nj=4,N2Function=@(z)1e-4*exp(z/700),shouldAntialias=antialias);
+    case "boussinesq"
+        wvt = WVTransformBoussinesq([17000 11000 1000],grid,Nj=4,N2Function=@(z)1e-4*exp(z/700),shouldAntialias=antialias);
+    otherwise
+        wvt = WVTransformConstantStratification([17000 11000 1000],grid,N0=5.2e-3,isHydrostatic=family=="constant-hydrostatic",shouldAntialias=antialias);
+end
+n = reshape(1:numel(wvt.A0),size(wvt.A0));
+wave = wvt.J>0 & (wvt.K.^2+wvt.L.^2)>0;
+inertial = (wvt.K.^2+wvt.L.^2)==0;
+wvt.Ap = .001*(sin(.7*n)+1i*cos(.3*n))./(1+wvt.J).*(wave|inertial);
+wvt.Am = .002*(sin(.3*n)+1i*cos(.7*n))./(1+wvt.J).*wave;
+wvt.Am(inertial) = conj(wvt.Ap(inertial));
+wvt.A0 = 1e-6*(sin(.7*n)+1i*cos(.3*n));
+wvt.A0(inertial) = .003*sin(n(inertial)).*(wvt.J(inertial)>0);
+wvt.t0 = 17;
+wvt.t = 37;
+wvt.removeAllForcing();
 end

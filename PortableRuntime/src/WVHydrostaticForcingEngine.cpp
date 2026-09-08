@@ -1,6 +1,7 @@
 #include "WaveVortexRuntime/WVHydrostaticForcingEngine.hpp"
 #include "WaveVortexRuntime/WVExtensionCatalog.hpp"
 #include "WaveVortexRuntime/WVForcingContracts.hpp"
+#include "WVForcingDiagnosticWorkspace.hpp"
 #include <algorithm>
 #include <cmath>
 #include <limits>
@@ -106,6 +107,20 @@ WVKernelStatus WVHydrostaticForcingEngine::nonlinearFlux(const WVState& state,WV
     ++metrics_.evaluationCount; return WVKernelStatus::ok();
 }
 WVKernelStatus WVHydrostaticForcingEngine::physicalFields(const WVState& state,WVRealFieldBundleConstView& fields) {
+    if (diagnosticWorkspace_) {
+        auto& work=*diagnosticWorkspace_;
+        const auto shape=kernel().spatialShape(); const auto R=shape.elementCount();
+        if (!work.physicalPrepared) {
+            const WVHydrostaticField names[]={WVHydrostaticField::u,WVHydrostaticField::v,WVHydrostaticField::w,WVHydrostaticField::eta};
+            for (std::size_t channel=0;channel<4;++channel) {
+                auto status=kernel().transformStateField(state,names[channel],{work.physical.data()+channel*R,shape});
+                if (!status) return status;
+            }
+            work.physicalPrepared=true; ++metrics_.physicalFieldReconstructionCount;
+        } else ++metrics_.physicalFieldReuseCount;
+        fields={work.physical.data(),{shape.first,shape.second,shape.third,4}};
+        return WVKernelStatus::ok();
+    }
     // Reuse is limited to one explicitly active RHS evaluation. External calls
     // always reconstruct, even when a caller mutates coefficients in place.
     if (!executing_) physicalValid_=false;
@@ -121,6 +136,9 @@ WVRealFieldBundleView WVHydrostaticForcingEngine::clearedSpatialTendency() {
     std::fill(spatial_.begin(),spatial_.end(),0); const auto g=kernel().spatialShape(); return {spatial_.data(),{g.first,g.second,g.third,3}};
 }
 WVKernelStatus WVHydrostaticForcingEngine::addProjectedSpatialTendency(const WVState& state,WVRealFieldBundleConstView fields,WVFlux& flux) {
+    if (diagnosticWorkspace_) {
+        return diagnosticWorkspace_->addSpatial(fields);
+    }
     const auto R=kernel().spatialShape().elementCount(),S=kernel().spectralShape().elementCount(); const auto shape=kernel().spectralShape();
     if (fields.shape.first!=kernel().geometry().Nx || fields.shape.second!=kernel().geometry().Ny || fields.shape.third!=kernel().geometry().Nz || fields.shape.fourth!=3 || !fields.data) return invalid("Hydrostatic tendency requires [Nx,Ny,Nz,3].");
     WVMutableCoefficients out{{temporary_.data(),shape},{temporary_.data()+S,shape},{temporary_.data()+2*S,shape}};
@@ -130,6 +148,14 @@ WVKernelStatus WVHydrostaticForcingEngine::addProjectedSpatialTendency(const WVS
     ++metrics_.spatialTendencyProjectionCount; return WVKernelStatus::ok();
 }
 WVKernelStatus WVHydrostaticForcingEngine::addNonlinearFlux(const WVState& state,WVFlux& flux) {
+    if (diagnosticWorkspace_) {
+        WVRealFieldBundleConstView fields;
+        auto status=physicalFields(state,fields); if (!status) return status;
+        diagnosticWorkspace_->spatialCaptured=true;
+        auto raw=diagnosticWorkspace_->rawView();
+        auto temporary=diagnosticWorkspace_->temporaryView();
+        return kernel().nonlinearFlux(state,temporary,&raw,&fields);
+    }
     const auto S=kernel().spectralShape().elementCount(); const auto shape=kernel().spectralShape();
     WVFlux tmp{{temporary_.data(),shape},{temporary_.data()+S,shape},{temporary_.data()+2*S,shape}};
     auto s=kernel().nonlinearFlux(state,tmp); if (!s) return s;
@@ -219,4 +245,56 @@ WVKernelStatus WVHydrostaticForcingEngine::createErrorPolicy(double tolerance,st
 std::size_t WVHydrostaticForcingEngine::persistentBytes() const noexcept {
     return sizeof(*this)+(kernel_ ? kernel_->persistentBytes() : 0)+metrics_.scheduleBytes+metrics_.derivedOperatorBytes+metrics_.workspaceCapacityBytes;
 }
+WVKernelStatus WVHydrostaticForcingEngine::evaluateForcingTendencies(
+    const WVState& state,const WVForcingTendencyOutput* outputs,std::size_t count) {
+    if (executing_) return {WVKernelStatusCode::reentrantExecution,"Forcing diagnostics require an idle engine."};
+    const auto shape=kernel().spatialShape();
+    const auto R=shape.elementCount();
+    const WVShape4D spatial{shape.first,shape.second,shape.third,3};
+    auto status=detail::validateForcingTendencyOutputs(forcing_,kernel().spectralShape(),spatial,state,outputs,count);
+    if (!status || !count) return status;
+    try {
+        detail::WVForcingDiagnosticWorkspace work(kernel().spectralShape(),spatial);
+        auto flux=work.fluxView();
+        status=kernel().evolveCoefficients(state,{flux.Fp,flux.Fm,flux.F0}); if (!status) return status;
+        std::fill(work.flux.begin(),work.flux.end(),WVComplex64{});
+        executing_=true; diagnosticWorkspace_=&work;
+        struct Guard {
+            WVHydrostaticForcingEngine& engine;
+            ~Guard() {
+                engine.tendencyMetrics_.workspaceHighWaterBytes=std::max(engine.tendencyMetrics_.workspaceHighWaterBytes,engine.diagnosticWorkspace_->bytes());
+                engine.tendencyMetrics_.workspaceLiveBytes=0;
+                engine.diagnosticWorkspace_=nullptr; engine.executing_=false; engine.physicalValid_=false;
+            }
+        } guard{*this};
+        tendencyMetrics_.workspaceLiveBytes=work.bytes();
+        bool initialized=true;
+        WVForcingExecutionContext context; context.hydrostatic_=this;
+        context.state_=&state; context.outputInitialized_=&initialized;
+        return detail::evaluateForcingTendencySequence(forcing_,work,outputs,count,tendencyMetrics_,
+            [&](const WVForcing& forcing,WVFlux& destination) {
+                context.flux_=&destination;
+                return forcing.addRightHandSide(context);
+            },
+            [&](WVRealFieldBundleConstView fields,WVFlux& destination) {
+                return kernel().transformUVEtaToWaveVortex({fields.data+0*R,shape},{fields.data+1*R,shape},{fields.data+2*R,shape},state.t,state.t0,
+                    {destination.Fp,destination.Fm,destination.F0});
+            },
+            [&](std::vector<WVComplex64>& difference,WVRealFieldBundleView destination) {
+                detail::projectRealMeanTendency(difference,kernel().geometry());
+                const auto spectral=kernel().spectralShape(); const auto S=spectral.elementCount();
+                const WVState delta{state.t,state.t0,{{difference.data(),spectral},
+                    {difference.data()+S,spectral},{difference.data()+2*S,spectral}}};
+                const WVHydrostaticField names[]={WVHydrostaticField::u,WVHydrostaticField::v,WVHydrostaticField::eta};
+                for (std::size_t channel=0;channel<3;++channel) {
+                    auto result=kernel().transformStateField(delta,names[channel],{destination.data+channel*R,shape});
+                    if (!result) return result;
+                }
+                return WVKernelStatus::ok();
+            });
+    } catch (const std::bad_alloc&) {
+        return {WVKernelStatusCode::allocationFailure,"Unable to allocate event forcing diagnostic workspace."};
+    }
+}
+
 }
