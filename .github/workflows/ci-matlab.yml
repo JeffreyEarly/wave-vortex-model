@@ -2,6 +2,12 @@ name: Shared MATLAB validation
 on:
   workflow_call:
     inputs:
+      selection-id:
+        required: true
+        type: string
+      binary-id:
+        required: false
+        type: string
       release:
         required: true
         type: string
@@ -36,7 +42,8 @@ jobs:
           persist-credentials: false
       - uses: actions/download-artifact@v4
         with:
-          name: ci-selection
+          artifact-ids: ${{ inputs.selection-id }}
+          merge-multiple: true
           path: ${{ runner.temp }}/selection
       - name: Configure bounded Ubuntu package downloads
         timeout-minutes: 5
@@ -65,7 +72,8 @@ jobs:
       - uses: actions/download-artifact@v4
         if: inputs.binaries
         with:
-          name: ci-binaries-${{ inputs.configuration }}
+          artifact-ids: ${{ inputs.binary-id }}
+          merge-multiple: true
           path: ${{ runner.temp }}/binaries
       - name: Verify exact-revision binary artifact
         if: inputs.binaries
@@ -124,7 +132,7 @@ jobs:
         timeout-minutes: 3
         uses: actions/upload-artifact@v4
         with:
-          name: ci-matlab-${{ inputs.release }}-${{ inputs.configuration }}-${{ inputs.shard }}
+          name: ci-matlab-${{ inputs.release }}-${{ inputs.configuration }}-${{ inputs.shard }}-retry
           path: ${{ runner.temp }}/matlab-results.json
           if-no-files-found: error
           overwrite: true

@@ -27,6 +27,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
+      selection_id: ${{ steps.artifact-upload.outputs.artifact-id || steps.artifact-retry.outputs.artifact-id }}
       cpp: ${{ steps.select.outputs.cpp }}
       documentation: ${{ steps.select.outputs.documentation }}
       analyzer: ${{ steps.select.outputs.analyzer }}
@@ -73,7 +74,7 @@ jobs:
         timeout-minutes: 3
         uses: actions/upload-artifact@v4
         with:
-          name: ci-selection
+          name: ci-selection-retry
           path: ${{ runner.temp }}/selection.json
           overwrite: true
           retention-days: 14
@@ -123,6 +124,8 @@ jobs:
       matrix: ${{ fromJSON(needs.route.outputs.matlab_matrix) }}
     uses: ./.github/workflows/ci-matlab.yml
     with:
+      selection-id: ${{ needs.route.outputs.selection_id }}
+      binary-id: ${{ needs.cpp-release.outputs.artifact-id }}
       release: ${{ matrix.release }}
       configuration: release
       shard: ${{ matrix.shard }}
@@ -138,6 +141,8 @@ jobs:
       matrix: ${{ fromJSON(needs.route.outputs.sanitized_matrix) }}
     uses: ./.github/workflows/ci-matlab.yml
     with:
+      selection-id: ${{ needs.route.outputs.selection_id }}
+      binary-id: ${{ needs.cpp-sanitized.outputs.artifact-id }}
       release: R2025b
       configuration: sanitized
       shard: ${{ matrix.shard }}
@@ -162,7 +167,8 @@ jobs:
           persist-credentials: false
       - uses: actions/download-artifact@v4
         with:
-          name: ci-selection
+          artifact-ids: ${{ needs.route.outputs.selection_id }}
+          merge-multiple: true
           path: ${{ runner.temp }}/gate
       - uses: actions/download-artifact@v4
         with:
