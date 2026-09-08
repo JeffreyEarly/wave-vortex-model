@@ -2,6 +2,16 @@ classdef TestFreeSurfaceQGDiffusionQualification < matlab.unittest.TestCase
     % Independent physical-depth qualification of two-active-boundary diffusion.
     % runStudy reports numerical errors without a universal acceptance threshold.
     methods (Test, TestTags="full")
+        function surfaceWeightBulkImprovementDoesNotQualifyEndpoints(testCase)
+            folder=string(tempname); mkdir(folder); cleanup=onCleanup(@()rmdir(folder,'s'));
+            result=TestFreeSurfaceQGDiffusionQualification.runSurfaceWeightStudy(folder,surfaceLengths=[5 650],bands=217,days=[64 91.3125],quadratureCount=2049,referenceCount=257);
+            r=result.errors;
+            q=r(r.observable=="qgpv" & r.day==64,:);
+            testCase.verifyLessThan(q.absolute(1),q.absolute(2)/10)
+            bottom=r(r.observable=="bottomAnomaly",:);
+            testCase.verifyFalse(any(bottom.withinTolerance))
+            testCase.verifyLessThan(max(result.diagnostics.rootResidual),1e-9)
+        end
         function endpointEvolutionIdentifiesCancellation(testCase)
             folder=string(tempname); mkdir(folder);
             cleanup=onCleanup(@()rmdir(folder,'s'));
@@ -193,6 +203,66 @@ classdef TestFreeSurfaceQGDiffusionQualification < matlab.unittest.TestCase
     end
 
     methods (Static)
+        function result = runSurfaceWeightStudy(folder,options)
+            % Compare existing scientific APV boundary-weight choices.
+            arguments (Input)
+                folder (1,1) string
+                options.surfaceLengths (1,:) double {mustBeFinite} = [5 10 20 50 100 650]
+                options.bands (1,:) double {mustBeInteger,mustBePositive} = [217 433]
+                options.days (1,:) double {mustBeNonnegative} = [1 8 32 64 91.3125]
+                options.quadratureCount (1,1) double {mustBeInteger,mustBePositive} = 4097
+                options.referenceCount (1,1) double {mustBeInteger,mustBePositive} = 385
+                options.bottomWeight (1,1) double = NaN
+            end
+            if ~isfolder(folder), mkdir(folder); end
+            D=4000; scale=1300; N0=5.2e-3; g=9.81; f=2*7.2921e-5*sind(24);
+            kh=2*pi/100e3; T=365.25*86400; omega=2*pi/T; amplitude=10*pi/T; kappa=1e-5;
+            N2=@(z)N0^2*exp(2*z/scale); I=integral(N2,-D,0);
+            gd=options.bottomWeight; if isnan(gd), gd=I; end
+            [z,weights]=studyGrid(options.quadratureCount,D);
+            ref=reference(options.referenceCount,z,weights,D,N2,scale,kh,f,g,kappa);
+            refStates=cell(size(options.days)); refCoefficients=refStates;
+            for j=1:length(options.days)
+                refCoefficients{j}=response(ref.A,amplitude*ref.source,omega,options.days(j)*86400);
+                refStates{j}=studyState(ref,refCoefficients{j});
+            end
+            solution=IMExponentialStratificationSolution(N0=N0,b=scale,zDomain=[-D 0],g=g,f0=f);
+            zero=solution.geostrophicZeroAPVModesAtWavenumber(kh,endpoints=["surface","bottom"],surfaceBoundary="freeSurface");
+            ZF=zero.F(z); ZG=zero.G(z); rows=table(); diagnostics=table();
+            for surfaceLength=options.surfaceLengths
+                g0=-N0^2*surfaceLength;
+                evp=IMInternalModes.geostrophicAPVModes(N2=N2,zDomain=[-D 0],g=g,g0=g0,gd=gd,surfaceBoundary="freeSurface");
+                basis=solution.internalModes(evp,nModes=max(options.bands));
+                basis=basis.addNormalization("raw",@(~,~)1); basis.normalization="raw";
+                F=basis.F(z); G=basis.G(z); Fs=basis.F(0); Gs=basis.G(0); Gb=basis.G(-D);
+                for count=options.bands
+                    h=basis.h(1:count); mu=kh^2+f^2./(g*h);
+                    r.phi=[-F(:,1:count)./mu,-ZF/kh^2]; surf=[-Fs(1:count)./mu,-zero.F(0)/kh^2];
+                    eta=f/g*[-G(:,1:count)./mu,-ZG/kh^2]; etaZ=[-f/g*F(:,1:count)./(h.*mu),ZF/f];
+                    bZ=-2/scale*N2(z).*(eta-f/g*(1+z/D)*surf)-N2(z).*(etaZ-f/g/D*surf);
+                    page=WVInternal.densityDiffusionPage(r.phi,eta,etaZ,bZ,surf,weights,N2(z),kh,f,g,kappa);
+                    r.q=[F(:,1:count),zeros(length(z),2)]; r.ssh=f/g*surf;
+                    r.b=-N2(z).*(eta-f/g*(1+z/D)*surf);
+                    r.energy=[sqrt(weights)*kh.*r.phi;sqrt(weights.*N2(z)).*eta;f/sqrt(g)*surf];
+                    r.endpoint=[[-f/g*(Gs(1:count)-Fs(1:count))./mu;-f/g*Gb(1:count)./mu],-f/g/kh^2*eye(2)];
+                    source=zeros(count+2,1); source(count+1)=-g/f*kh^2*amplitude;
+                    for j=1:length(options.days)
+                        c=page.fromEnergy*response(page.energyGenerator,page.toEnergy*source,omega,options.days(j)*86400);
+                        row=studyComparison(studyState(r,c),refStates{j},weights,D,"surfaceWeight",count,options.referenceCount,options.days(j));
+                        row.surfaceLength=repmat(surfaceLength,6,1); row.g0=repmat(g0,6,1); row.gd=repmat(gd,6,1);
+                        row.quadratureCount=repmat(options.quadratureCount,6,1); rows=[rows;row]; %#ok<AGROW>
+                        gradient=bZ*c; refGradient=ref.bZ*refCoefficients{j}; layer=z>-100;
+                        gradientRelative=sqrt(sum(weights(layer).*abs(gradient(layer)-refGradient(layer)).^2)/sum(weights(layer).*abs(refGradient(layer)).^2));
+                        rootResidual=max(abs(basis.metadata.rootResiduals)); muSeparation=min(abs(mu)./(kh^2+abs(f^2./(g*h))));
+                        diagnostics=[diagnostics;table(surfaceLength,count,options.days(j),gradientRelative,rootResidual,muSeparation,VariableNames=["surfaceLength","APV","day","surfaceGradientRelative","rootResidual","muSeparation"])]; %#ok<AGROW>
+                    end
+                    fprintf('Surface weight length=%g m APV=%d complete\n',surfaceLength,count);
+                    writetable(rows,fullfile(folder,'issue-353-surface-weight-errors.csv'));
+                    writetable(diagnostics,fullfile(folder,'issue-353-surface-weight-diagnostics.csv'));
+                end
+            end
+            result=struct(errors=rows,diagnostics=diagnostics);
+        end
         function result = runEndpointEvolutionStudy(folder,options)
             % Diagnose endpoint error without changing the resolved model basis.
             arguments (Input)
