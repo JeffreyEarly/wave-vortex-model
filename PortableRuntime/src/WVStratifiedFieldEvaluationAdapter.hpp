@@ -2,6 +2,7 @@
 
 #include "WaveVortexRuntime/WVFieldEvaluationService.hpp"
 #include "WaveVortexKernel/WVTransformHydrostaticKernel.hpp"
+#include "WaveVortexKernel/WVTransformBoussinesqKernel.hpp"
 
 namespace wavevortex::runtime::detail {
 
@@ -21,6 +22,7 @@ public:
       std::unique_ptr<WVStratifiedFieldEvaluationAdapter> &adapter);
 
   static WVKernelStatus createBorrowing(WVTransformHydrostaticKernel&,std::unique_ptr<WVStratifiedFieldEvaluationAdapter>&);
+  static WVKernelStatus createBorrowing(WVTransformBoussinesqKernel&,std::unique_ptr<WVStratifiedFieldEvaluationAdapter>&);
 
   WVKernelStatus createPlan(const std::vector<WVFieldRequest> &requests,
                             WVFieldEvaluationPlan &plan) const;
@@ -74,7 +76,9 @@ private:
   std::unique_ptr<WVTransformStratifiedQGKernel> ownedKernel_;
   WVTransformStratifiedQGKernel *kernel_ = nullptr;
   std::unique_ptr<WVTransformHydrostaticKernel> ownedHydrostatic_;
+  std::unique_ptr<WVTransformBoussinesqKernel> ownedBoussinesq_;
   WVTransformHydrostaticKernel* hydrostaticKernel_=nullptr;
+  WVTransformBoussinesqKernel* boussinesqKernel_=nullptr;
   std::vector<double> speedScratch_;
   std::vector<double> fieldScratch_;
   std::unique_ptr<MovingInterpolationWorkspace> movingInterpolation_;

@@ -40,7 +40,7 @@ The recorded [Apple Silicon Hydrostatic report](qualification/hydrostatic-apple-
 
 These samples ran on a shared development host; they establish descriptive baselines rather than isolated speed comparisons. The forcing-service counters record 128 physical-bundle reconstructions and 192 spatial projections per 64 RHS evaluations. They do not include every field reconstruction performed by the separate sampling/output services.
 
-Hydrostatic spatial closures still project separately, and integrated observers may reconstruct fields after the forcing RHS. The qualification records this schedule before optimization. Backend selection and safe per-RHS field reuse remain possible measured follow-ups. Variable-stratification Boussinesq wave matrices, their horizontal-wavenumber groups and full Boussinesq runtime qualification remain the next transform gap.
+Hydrostatic spatial closures still project separately, and integrated observers may reconstruct fields after the forcing RHS. The qualification records this schedule before optimization. Backend selection and safe per-RHS field reuse remain possible measured follow-ups. The Boussinesq kernel (#302) and complete-model integration (#303) are implemented. Longer Boussinesq runtime qualification remains #304.
 
 ## Stratified QG qualification
 
@@ -73,7 +73,7 @@ The recorded [Apple Silicon reference/native qualification](https://github.com/J
 
 ## Numerical coverage and tolerances
 
-The shared forcing catalog contains 120 rows, including SQG's 17 supported and 7 intentionally incompatible rows across both transform-antialias configurations. Existing exact-pair tests compare every applicable RHS and append continuation, with odd/even grids and representative closure orderings. Their MATLAB-authoritative applicability and evidence links remain in the same catalog used by C++ contracts.
+The shared forcing catalog contains 144 rows, including SQG's 17 supported and 7 intentionally incompatible rows across both transform-antialias configurations. Existing exact-pair tests compare every applicable RHS and append continuation, with odd/even grids and representative closure orderings. Their MATLAB-authoritative applicability and evidence links remain in the same catalog used by C++ contracts.
 
 `contracts/stratified-qg-qualification-cases-v1.json` declares six longer complete-model cases. They span odd/even grids, one through six retained modes, explicit and transform antialiasing, fixed amplitudes, nonlinear closure compositions, linear passive observers, RK4/RK23/RK78, explicit steps, CFL-selected RK4 and default adaptive initial steps. Each run covers 600 seconds with primary output every 100 seconds and dense output every 25 seconds; its uninterrupted and two-segment trajectories are compared against MATLAB. Nonlinear cases must change A0 by at least `1e-4` in relative maximum norm, preventing nearly stationary trajectories from passing as substantive qualification.
 
@@ -88,3 +88,7 @@ The lifecycle probe constructs, advances and destroys six complete models at eac
 Runtime reports retain RHS counts, field reconstruction/projection counts, timing, integrator storage-ledger agreement and RSS diagnostics. SQG closures and distinct event occurrences currently reconstruct independently. Further reuse or backend tuning should follow measurements of the same workload. Retained-capacity accounting excludes allocator metadata and opaque NetCDF/FFTW internals; RSS is a process measurement rather than proof of exact live array storage. Timing is descriptive, with no machine-dependent CI speed threshold.
 
 The authoring repository retains the [issue-298 verification ledger](https://github.com/JeffreyEarly/wave-vortex-model/blob/main/.github/planning/issue-298-verification.md). Issue #306 consumes this qualification alongside the same expanded forcing slice when assembling the full feature catalog.
+
+## Catalog provenance after additive transform support
+
+The recorded SQG/Hydrostatic measurements retain their original source revisions, test results and catalog SHA-256. Their `catalogPath` now points to an exact archived copy of the catalog used for those runs. Validation checks those bytes against the original digest and requires the transform's current configurations, complete rows, inventory and referenced evidence definitions to match exactly. Adding Boussinesq rows therefore preserves historical measurements without claiming a fresh long qualification run. Changes to a recorded transform's own compatibility semantics still invalidate its evidence. Current qualification tools continue to record the current complete catalog.

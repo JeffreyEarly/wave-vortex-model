@@ -187,6 +187,30 @@
       "kind": "matlab-runtime-parity",
       "path": "UnitTests/TestPortableHydrostatic.m",
       "symbol": "applicableForcingContinuationsMatchMatlab"
+    },
+    {
+      "id": "bouss-pairs",
+      "kind": "matlab-runtime-parity",
+      "path": "UnitTests/TestPortableBoussinesq.m",
+      "symbol": "applicableForcingTendenciesMatchMatlab"
+    },
+    {
+      "id": "bouss-compositions",
+      "kind": "matlab-runtime-parity",
+      "path": "UnitTests/TestPortableBoussinesq.m",
+      "symbol": "orderedForcingTendenciesMatchMatlab"
+    },
+    {
+      "id": "bouss-rejections",
+      "kind": "matlab-runtime-parity",
+      "path": "UnitTests/TestPortableBoussinesq.m",
+      "symbol": "incompatibleModelGraphsAreTransactional"
+    },
+    {
+      "id": "bouss-continuations",
+      "kind": "matlab-runtime-parity",
+      "path": "UnitTests/TestPortableBoussinesq.m",
+      "symbol": "applicableForcingContinuationsMatchMatlab"
     }
   ],
   "forcings": [
@@ -223,6 +247,12 @@
         "hydro-pairs",
         "hydro-compositions",
         "hydro-continuations"
+      ],
+      "boussinesqFactory": true,
+      "boussinesqEvidence": [
+        "bouss-pairs",
+        "bouss-compositions",
+        "bouss-continuations"
       ]
     },
     {
@@ -257,6 +287,12 @@
         "hydro-pairs",
         "hydro-compositions",
         "hydro-continuations"
+      ],
+      "boussinesqFactory": true,
+      "boussinesqEvidence": [
+        "bouss-pairs",
+        "bouss-compositions",
+        "bouss-continuations"
       ]
     },
     {
@@ -290,6 +326,12 @@
         "hydro-pairs",
         "hydro-compositions",
         "hydro-continuations"
+      ],
+      "boussinesqFactory": true,
+      "boussinesqEvidence": [
+        "bouss-pairs",
+        "bouss-compositions",
+        "bouss-continuations"
       ]
     },
     {
@@ -323,6 +365,12 @@
         "hydro-pairs",
         "hydro-compositions",
         "hydro-continuations"
+      ],
+      "boussinesqFactory": true,
+      "boussinesqEvidence": [
+        "bouss-pairs",
+        "bouss-compositions",
+        "bouss-continuations"
       ]
     },
     {
@@ -356,6 +404,12 @@
         "hydro-pairs",
         "hydro-compositions",
         "hydro-continuations"
+      ],
+      "boussinesqFactory": true,
+      "boussinesqEvidence": [
+        "bouss-pairs",
+        "bouss-compositions",
+        "bouss-continuations"
       ]
     },
     {
@@ -391,6 +445,12 @@
         "hydro-pairs",
         "hydro-compositions",
         "hydro-continuations"
+      ],
+      "boussinesqFactory": true,
+      "boussinesqEvidence": [
+        "bouss-pairs",
+        "bouss-compositions",
+        "bouss-continuations"
       ]
     },
     {
@@ -416,6 +476,12 @@
         "hydro-pairs",
         "hydro-compositions",
         "hydro-continuations"
+      ],
+      "boussinesqFactory": true,
+      "boussinesqEvidence": [
+        "bouss-pairs",
+        "bouss-compositions",
+        "bouss-continuations"
       ]
     },
     {
@@ -446,6 +512,12 @@
         "hydro-pairs",
         "hydro-compositions",
         "hydro-continuations"
+      ],
+      "boussinesqFactory": true,
+      "boussinesqEvidence": [
+        "bouss-pairs",
+        "bouss-compositions",
+        "bouss-continuations"
       ]
     },
     {
@@ -481,6 +553,12 @@
         "hydro-pairs",
         "hydro-compositions",
         "hydro-continuations"
+      ],
+      "boussinesqFactory": true,
+      "boussinesqEvidence": [
+        "bouss-pairs",
+        "bouss-compositions",
+        "bouss-continuations"
       ]
     },
     {
@@ -504,6 +582,12 @@
         "hydro-pairs",
         "hydro-compositions",
         "hydro-continuations"
+      ],
+      "boussinesqFactory": true,
+      "boussinesqEvidence": [
+        "bouss-pairs",
+        "bouss-compositions",
+        "bouss-continuations"
       ]
     },
     {
@@ -529,6 +613,12 @@
         "hydro-pairs",
         "hydro-compositions",
         "hydro-continuations"
+      ],
+      "boussinesqFactory": true,
+      "boussinesqEvidence": [
+        "bouss-pairs",
+        "bouss-compositions",
+        "bouss-continuations"
       ]
     },
     {
@@ -559,6 +649,12 @@
         "hydro-pairs",
         "hydro-compositions",
         "hydro-continuations"
+      ],
+      "boussinesqFactory": true,
+      "boussinesqEvidence": [
+        "bouss-pairs",
+        "bouss-compositions",
+        "bouss-continuations"
       ]
     }
   ],

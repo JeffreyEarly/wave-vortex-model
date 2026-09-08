@@ -607,6 +607,27 @@ WVKernelStatus WVFieldEvaluationService::createBorrowing(
   }
 }
 
+WVKernelStatus WVFieldEvaluationService::createBorrowing(
+    WVTransformBoussinesqKernel &transform,
+    std::unique_ptr<WVFieldEvaluationService> &service) {
+  service.reset();
+  try {
+    auto candidate = std::unique_ptr<WVFieldEvaluationService>(
+        new WVFieldEvaluationService());
+    auto status =
+        detail::WVStratifiedFieldEvaluationAdapter::createBorrowing(
+            transform, candidate->stratified_);
+    if (!status)
+      return status;
+    candidate->metrics_ = candidate->stratified_->metrics();
+    service = std::move(candidate);
+    return WVKernelStatus::ok();
+  } catch (const std::bad_alloc &) {
+    return {WVKernelStatusCode::allocationFailure,
+            "Unable to allocate the borrowed Boussinesq field boundary."};
+  }
+}
+
 std::vector<std::string> WVFieldEvaluationService::supportedFieldNames() {
   std::vector<std::string> result;
   result.reserve(WVPortableVariableCatalog.size());
@@ -2238,7 +2259,7 @@ WVKernelStatus WVFieldEvaluationService::createStateLayout(
   if (stratified_) {
     const auto& g=stratified_->configuration();
     WVTransformStateDescription description{g.transformClass,{g.Nx,g.Ny,g.Nz},{},true};
-    if (g.transformClass=="WVTransformHydrostatic") for (const char* name:{"Ap","Am"}) description.coefficientFamilies.push_back({name,{g.Nj,g.Nkl},WVToleranceKind::coefficientEnergyScaled});
+    if ((g.transformClass=="WVTransformHydrostatic" || g.transformClass=="WVTransformBoussinesq")) for (const char* name:{"Ap","Am"}) description.coefficientFamilies.push_back({name,{g.Nj,g.Nkl},WVToleranceKind::coefficientEnergyScaled});
     description.coefficientFamilies.push_back({"A0",{g.Nj,g.Nkl},WVToleranceKind::coefficientEnergyScaled});
     return WVIntegrationStateLayout::createCoefficientOnly(std::move(description),layout);
   }

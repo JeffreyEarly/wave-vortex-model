@@ -1,6 +1,7 @@
 #include "WVModelTransformAdapters.hpp"
 #include "WaveVortexRuntime/WVStratifiedQGIntegrationSystem.hpp"
 #include "WaveVortexRuntime/WVHydrostaticIntegrationSystem.hpp"
+#include "WaveVortexRuntime/WVBoussinesqIntegrationSystem.hpp"
 #include "WaveVortexRuntime/WVStratifiedModalRecord.hpp"
 
 #include <new>
@@ -240,6 +241,65 @@ public:
 private:
   std::unique_ptr<WVHydrostaticIntegrationSystem> system_;
 };
+class BoussinesqModelSystem final : public WVResolvedModelSystem {
+public:
+  explicit BoussinesqModelSystem(
+      std::unique_ptr<WVBoussinesqIntegrationSystem> system)
+      : system_(std::move(system)) {}
+
+  WVIntegrationSystem &integrationSystem() noexcept override {
+    return *system_;
+  }
+  const WVIntegrationSystem &integrationSystem() const noexcept override {
+    return *system_;
+  }
+  const std::string &forcingScheduleIdentifier() const noexcept override {
+    return system_->scheduleIdentifier();
+  }
+  const std::string &kernelProviderIdentifier() const noexcept override {
+    return system_->kernel().engineIdentifier();
+  }
+  const std::string &kernelProviderLibraryIdentity() const noexcept override {
+    return system_->kernel().engineLibraryIdentity();
+  }
+  WVKernelStatus initializeObserverState(
+      WVMutableIntegrationState &state) const override {
+    return system_->initializeParticleState(state);
+  }
+  void populateMetrics(WVModelMetrics &metrics) const noexcept override {
+    metrics.integratedObservers = system_->metrics();
+    const auto& storage = system_->kernel().storage();
+    metrics.kernel.descriptorBytes = storage.sharedScientificBytes + storage.factorBytes;
+    metrics.kernel.planCount = 2;
+    metrics.kernel.planBytes = storage.planBytesLowerBound;
+    metrics.kernel.engineBytes = storage.providerBytesLowerBound;
+    metrics.kernel.kernelManagementBytes = storage.preparedBytes;
+    metrics.kernel.scratchCapacityBytes = storage.workspaceBytes + storage.spectralScratchBytes + storage.realScratchBytes;
+    metrics.kernel.scratchHighWaterBytes = metrics.kernel.scratchCapacityBytes;
+    metrics.kernel.realScratchCapacityBytes = storage.realScratchBytes;
+    const auto &forcing = system_->forcingMetrics();
+    metrics.forcing.scheduleBytes = forcing.scheduleBytes;
+    metrics.forcing.derivedOperatorBytes = forcing.derivedOperatorBytes;
+    metrics.forcing.workspaceCapacityBytes = forcing.workspaceCapacityBytes;
+    metrics.forcing.evaluationCount = forcing.evaluationCount;
+    metrics.forcing.restoredCoefficientCount =
+        forcing.restoredCoefficientCount;
+    metrics.forcing.resolvedSpatialCount = forcing.resolvedSpatialCount;
+    metrics.forcing.resolvedSpectralCount = forcing.resolvedSpectralCount;
+    metrics.forcing.resolvedAmplitudeCount = forcing.resolvedAmplitudeCount;
+    metrics.forcing.physicalFieldReconstructionCount =
+        forcing.physicalFieldReconstructionCount;
+    metrics.forcing.physicalFieldReuseCount =
+        forcing.physicalFieldReuseCount;
+    metrics.forcing.spatialTendencyProjectionCount =
+        forcing.spatialTendencyProjectionCount;
+    metrics.forcing.stateConstraintElementWrites =
+        forcing.stateConstraintElementWrites;
+  }
+
+private:
+  std::unique_ptr<WVBoussinesqIntegrationSystem> system_;
+};
 
 } // namespace
 
@@ -350,6 +410,32 @@ WVKernelStatus createHydrostaticModelSystem(
             "Unable to allocate the Stratified QG model adapter."};
   }
 }
+WVKernelStatus createBoussinesqModelSystem(
+    std::shared_ptr<const WVStratifiedModalSource> source,
+    const WVFrozenForcingSchedule &schedule,
+    const WVPortableObserverDescriptor *descriptor,
+    std::shared_ptr<const WVExtensionCatalog> catalog,
+    std::unique_ptr<WVFFTEngine> engine,
+    std::unique_ptr<WVResolvedModelSystem> &system) {
+  std::unique_ptr<WVBoussinesqIntegrationSystem> numerical;
+  auto status = descriptor == nullptr
+                    ? WVBoussinesqIntegrationSystem::create(
+                          std::move(source), schedule, std::move(catalog),
+                          std::move(engine), numerical)
+                    : WVBoussinesqIntegrationSystem::create(
+                          std::move(source), schedule, *descriptor,
+                          std::move(catalog), std::move(engine), numerical);
+  if (!status)
+    return status;
+  try {
+    system =
+        std::make_unique<BoussinesqModelSystem>(std::move(numerical));
+    return WVKernelStatus::ok();
+  } catch (const std::bad_alloc &) {
+    return {WVKernelStatusCode::allocationFailure,
+            "Unable to allocate the Boussinesq model adapter."};
+  }
+}
 
 WVKernelStatus createPersistedModelSystem(
     const WVCheckpointInspection &inspection,
@@ -361,6 +447,10 @@ WVKernelStatus createPersistedModelSystem(
   if (inspection.transformKind==WVPersistedTransformKind::hydrostatic) {
     if (!inspection.stratifiedModalSource || inspection.stratifiedModalSource->N2FunctionPayload().empty()) return invalid("MATLAB-compatible Hydrostatic output requires its N2Function payload.");
     return createHydrostaticModelSystem(inspection.stratifiedModalSource,schedule,descriptor,std::move(catalog),std::move(engine),system);
+  }
+  if (inspection.transformKind==WVPersistedTransformKind::boussinesq) {
+    if (!inspection.stratifiedModalSource || inspection.stratifiedModalSource->N2FunctionPayload().empty()) return invalid("MATLAB-compatible Boussinesq output requires its N2Function payload.");
+    return createBoussinesqModelSystem(inspection.stratifiedModalSource,schedule,descriptor,std::move(catalog),std::move(engine),system);
   }
   if (inspection.transformKind == WVPersistedTransformKind::stratifiedQG) {
     if (!inspection.stratifiedModalSource || inspection.stratifiedModalSource->N2FunctionPayload().empty())
@@ -383,6 +473,10 @@ WVKernelStatus validatePersistedModelForcingSchedule(
   if (inspection.transformKind==WVPersistedTransformKind::hydrostatic) {
     if (!inspection.stratifiedModalSource) return invalid("Hydrostatic scientific source is absent.");
     return WVHydrostaticForcingEngine::validateSchedule(inspection.stratifiedModalSource->geometry(),schedule,inspection.coefficientShape,catalog);
+  }
+  if (inspection.transformKind==WVPersistedTransformKind::boussinesq) {
+    if (!inspection.stratifiedModalSource) return invalid("Boussinesq scientific source is absent.");
+    return WVBoussinesqForcingEngine::validateSchedule(inspection.stratifiedModalSource->geometry(),schedule,inspection.coefficientShape,catalog);
   }
   if (inspection.transformKind == WVPersistedTransformKind::stratifiedQG) {
     if (!inspection.stratifiedModalSource) return invalid("SQG scientific source is absent.");
@@ -414,7 +508,7 @@ WVCheckpointInspection modelCheckpointInspection(
                           : checkpoint.transformState.coefficientFamilies[0]
                                 .values.size()}
           : checkpoint.state.coefficients.shape;
-  if ((checkpoint.transformKind == WVPersistedTransformKind::stratifiedQG || checkpoint.transformKind == WVPersistedTransformKind::hydrostatic) && checkpoint.stratifiedModalSource) {
+  if ((checkpoint.transformKind == WVPersistedTransformKind::stratifiedQG || (checkpoint.transformKind == WVPersistedTransformKind::hydrostatic || checkpoint.transformKind == WVPersistedTransformKind::boussinesq)) && checkpoint.stratifiedModalSource) {
     const auto& g = checkpoint.stratifiedModalSource->geometry();
     inspection.coefficientShape = {g.Nj,g.Nkl};
   }
@@ -501,7 +595,7 @@ WVMutableState modelCheckpointLegacyView(WVCheckpoint &checkpoint) noexcept {
   WVMutableState state;
   state.t = checkpoint.state.t;
   state.t0 = checkpoint.state.t0;
-  if (checkpoint.transformKind==WVPersistedTransformKind::hydrostatic && checkpoint.transformState.coefficientFamilies.size()==3) {
+  if ((checkpoint.transformKind==WVPersistedTransformKind::hydrostatic || checkpoint.transformKind==WVPersistedTransformKind::boussinesq) && checkpoint.transformState.coefficientFamilies.size()==3) {
     const auto shape=WVShape2D{checkpoint.stratifiedModalSource->geometry().Nj,checkpoint.stratifiedModalSource->geometry().Nkl};
     auto& families=checkpoint.transformState.coefficientFamilies;
     state.coefficients={{families[0].values.data(),shape},{families[1].values.data(),shape},{families[2].values.data(),shape}};

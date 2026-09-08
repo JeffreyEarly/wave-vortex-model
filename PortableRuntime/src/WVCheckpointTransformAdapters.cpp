@@ -732,7 +732,8 @@ WVCheckpointStatus inspectOpenFile(
                                 "WVTransformBarotropicQG";
     const bool isStratifiedQG = candidate.metadata.transformClass == "WVTransformStratifiedQG";
     const bool isHydrostatic=candidate.metadata.transformClass=="WVTransformHydrostatic";
-    const bool isStratified=isStratifiedQG || isHydrostatic;
+    const bool isBoussinesq=candidate.metadata.transformClass=="WVTransformBoussinesq";
+    const bool isStratified=isStratifiedQG || isHydrostatic || isBoussinesq;
     if (!isConstant && !isBarotropicQG && !isStratified)
         return status(WVCheckpointStatusCode::unsupportedTransform,
                       "The portable runtime profile does not support transform '" +
@@ -742,7 +743,7 @@ WVCheckpointStatus inspectOpenFile(
                                   : WVPersistedTransformKind::constantStratification;
 
     if (isStratified) {
-        candidate.transformKind=isHydrostatic ? WVPersistedTransformKind::hydrostatic : WVPersistedTransformKind::stratifiedQG;
+        candidate.transformKind=isBoussinesq ? WVPersistedTransformKind::boussinesq : isHydrostatic ? WVPersistedTransformKind::hydrostatic : WVPersistedTransformKind::stratifiedQG;
         result=WVStratifiedModalReader::read(path,candidate.stratifiedModalSource);
     } else {
         result = isConstant ? readConfiguration(rootId,candidate.configuration)
@@ -768,7 +769,7 @@ WVCheckpointStatus inspectOpenFile(
             linearSQG=value!=0;
         }
     }
-    result = (isConstant || isHydrostatic) ? findStateGroup(groups, stateGroup)
+    result = (isConstant || isHydrostatic || isBoussinesq) ? findStateGroup(groups, stateGroup)
                         : findQGStateGroup(groups, catalog, stateGroup, linearSQG);
     if (!result) return result;
     candidate.metadata.stateGroupPath = stateGroup.path;
@@ -810,7 +811,7 @@ WVCheckpointStatus inspectOpenFile(
             const auto& g=candidate.stratifiedModalSource->geometry();
             candidate.stateDescription={candidate.metadata.transformClass,{g.Nx,g.Ny,g.Nz},{{"A0",{Nj,Nkl},WVToleranceKind::coefficientEnergyScaled}},true};
         }
-        if (isHydrostatic) { const auto& g=candidate.stratifiedModalSource->geometry(); candidate.stateDescription.spatialDimensions={g.Nx,g.Ny,g.Nz}; }
+        if (isHydrostatic || isBoussinesq) { const auto& g=candidate.stratifiedModalSource->geometry(); candidate.stateDescription.spatialDimensions={g.Nx,g.Ny,g.Nz}; }
         coefficientCount = Nj * Nkl;
         for (const char* family : {"Ap", "Am", "A0"}) {
             if (isStratifiedQG && std::string(family)!="A0") continue;

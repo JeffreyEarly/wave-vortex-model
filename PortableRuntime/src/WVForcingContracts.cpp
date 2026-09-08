@@ -195,17 +195,29 @@ std::vector<WVForcingFactoryRegistration> builtInForcingFactories() {
        detail::createStratifiedQGFixedAmplitude}};
   for (auto& registration:factories) {
     if (registration.matlabClassName=="WVNonlinearAdvection") registration.hydrostaticFactory=detail::createHydrostaticNonlinearAdvectionForcing;
+    if (registration.matlabClassName=="WVNonlinearAdvection") registration.boussinesqFactory=detail::createBoussinesqNonlinearAdvectionForcing;
     if (registration.matlabClassName=="WVAntialiasing") { registration.hydrostaticFactory=detail::createHydrostaticExplicitAntialiasing; registration.prepareHydrostaticResolution=detail::prepareHydrostaticExplicitAntialiasing; }
+    if (registration.matlabClassName=="WVAntialiasing") { registration.boussinesqFactory=detail::createBoussinesqExplicitAntialiasing; registration.prepareBoussinesqResolution=detail::prepareBoussinesqExplicitAntialiasing; }
     if (registration.matlabClassName=="WVAdaptiveDamping") registration.hydrostaticFactory=detail::createHydrostaticAdaptiveDampingForcing;
+    if (registration.matlabClassName=="WVAdaptiveDamping") registration.boussinesqFactory=detail::createBoussinesqAdaptiveDampingForcing;
     if (registration.matlabClassName=="WVFixedAmplitudeForcing") registration.hydrostaticFactory=detail::createHydrostaticFixedAmplitudeForcing;
+    if (registration.matlabClassName=="WVFixedAmplitudeForcing") registration.boussinesqFactory=detail::createBoussinesqFixedAmplitudeForcing;
     if (registration.matlabClassName=="WVNarrowBandGeostrophicForcing") registration.hydrostaticFactory=detail::createHydrostaticFixedAmplitudeForcing;
+    if (registration.matlabClassName=="WVNarrowBandGeostrophicForcing") registration.boussinesqFactory=detail::createBoussinesqFixedAmplitudeForcing;
     if (registration.matlabClassName=="WVBottomFrictionQuadratic") registration.hydrostaticFactory=detail::createHydrostaticQuadraticBottomFriction;
+    if (registration.matlabClassName=="WVBottomFrictionQuadratic") registration.boussinesqFactory=detail::createBoussinesqQuadraticBottomFriction;
     if (registration.matlabClassName=="WVBottomFrictionLinear") registration.hydrostaticFactory=detail::createHydrostaticLinearBottomFriction;
+    if (registration.matlabClassName=="WVBottomFrictionLinear") registration.boussinesqFactory=detail::createBoussinesqLinearBottomFriction;
     if (registration.matlabClassName=="WVPseudoTopographicWaveGeneration") registration.hydrostaticFactory=detail::createHydrostaticPseudoTopographicForcing;
+    if (registration.matlabClassName=="WVPseudoTopographicWaveGeneration") registration.boussinesqFactory=detail::createBoussinesqPseudoTopographicForcing;
     if (registration.matlabClassName=="WVBetaPlanePVAdvection") registration.hydrostaticFactory=detail::createHydrostaticBetaPlaneForcing;
+    if (registration.matlabClassName=="WVBetaPlanePVAdvection") registration.boussinesqFactory=detail::createBoussinesqBetaPlaneForcing;
     if (registration.matlabClassName=="WVHorizontalDamping") registration.hydrostaticFactory=detail::createHydrostaticHorizontalDamping;
+    if (registration.matlabClassName=="WVHorizontalDamping") registration.boussinesqFactory=detail::createBoussinesqHorizontalDamping;
     if (registration.matlabClassName=="WVVerticalDamping") registration.hydrostaticFactory=detail::createHydrostaticVerticalDamping;
+    if (registration.matlabClassName=="WVVerticalDamping") registration.boussinesqFactory=detail::createBoussinesqVerticalDamping;
     if (registration.matlabClassName=="WVVerticalDiffusivity") registration.hydrostaticFactory=detail::createHydrostaticVerticalDiffusivity;
+    if (registration.matlabClassName=="WVVerticalDiffusivity") registration.boussinesqFactory=detail::createBoussinesqVerticalDiffusivity;
   }
   return factories;
 }

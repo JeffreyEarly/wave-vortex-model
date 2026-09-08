@@ -24,6 +24,11 @@ public:
     const std::vector<double>& QG0inv() const noexcept { return QG0inv_; }
     const std::vector<double>& PF0() const noexcept { return PF0_; }
     const std::vector<double>& QG0() const noexcept { return QG0_; }
+    const std::vector<double>& PFpmInv() const noexcept { return PFpmInv_; }
+    const std::vector<double>& QGpmInv() const noexcept { return QGpmInv_; }
+    const std::vector<double>& PFpm() const noexcept { return PFpm_; }
+    const std::vector<double>& QGpm() const noexcept { return QGpm_; }
+    const std::vector<double>& QGwg() const noexcept { return QGwg_; }
     // Exact identity of this immutable in-process scientific record. No reuse by
     // path, radius or approximate matrix values; rereading creates a new record.
     const std::string& sourceIdentity() const noexcept { return sourceIdentity_; }

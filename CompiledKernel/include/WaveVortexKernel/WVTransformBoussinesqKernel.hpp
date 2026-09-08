@@ -73,6 +73,10 @@ public:
     // Full-grid horizontal derivatives retain modes outside the compact map.
     WVKernelStatus differentiateHorizontal(WVRealVolumeConstView, bool xDerivative, WVRealVolumeView);
     WVKernelStatus integrateVertical(WVRealVolumeConstView, WVBoussinesqFamily, WVRealVolumeView);
+    // Unpreconditioned wave F values at one vertical index, [Nj,Nkl].
+    WVKernelStatus waveModeVerticalStructureAtIndex(std::size_t, WVRealView);
+    // Advect a scalar with supplied u/v/w, optionally filtering horizontal modes.
+    WVKernelStatus advectScalarWithAdvectionFields(WVRealVolumeConstView, WVRealFieldBundleConstView, bool antialias, WVRealVolumeView, bool xyOnly = false);
 private:
     WVTransformBoussinesqKernel() = default;
     WVKernelStatus spectral(WVComplexConstView) const;

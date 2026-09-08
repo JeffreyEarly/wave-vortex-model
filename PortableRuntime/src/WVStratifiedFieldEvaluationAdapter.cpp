@@ -434,7 +434,7 @@ double interpolate(const double *field,const Weight& weight,WVPositionInterpolat
 }
 
 WVKernelStatus coefficientView(const WVIntegrationState& state,const WVStratifiedModalGeometry& g,WVState& result) {
-  const bool hydro=g.transformClass=="WVTransformHydrostatic";
+  const bool hydro=(g.transformClass=="WVTransformHydrostatic" || g.transformClass=="WVTransformBoussinesq");
   const auto count=hydro ? 3U : 1U;
   if (state.coefficientFamilyCount!=count || !state.coefficientFamilies) return invalid("Wrong stratified coefficient family count.");
   const char* names[]={"Ap","Am","A0"};
@@ -499,6 +499,9 @@ WVKernelStatus WVStratifiedFieldEvaluationAdapter::create(
     if (source->geometry().transformClass=="WVTransformHydrostatic") {
       status=WVTransformHydrostaticKernel::create(source,std::move(engine),candidate->ownedHydrostatic_);
       candidate->hydrostaticKernel_=candidate->ownedHydrostatic_.get();
+    } else if (source->geometry().transformClass=="WVTransformBoussinesq") {
+      status=WVTransformBoussinesqKernel::create(source,std::move(engine),candidate->ownedBoussinesq_);
+      candidate->boussinesqKernel_=candidate->ownedBoussinesq_.get();
     } else {
       status=WVTransformStratifiedQGKernel::create(source,std::move(engine),candidate->ownedKernel_);
       candidate->kernel_=candidate->ownedKernel_.get();
@@ -506,12 +509,12 @@ WVKernelStatus WVStratifiedFieldEvaluationAdapter::create(
     if (!status) return status;
     const auto& g=source->geometry();
     candidate->fieldScratch_.resize(g.Nx*g.Ny*g.Nz);
-    if (candidate->hydrostaticKernel_) candidate->speedScratch_.resize(candidate->fieldScratch_.size());
+    if (candidate->hydrostaticKernel_ || candidate->boussinesqKernel_) candidate->speedScratch_.resize(candidate->fieldScratch_.size());
     candidate->movingInterpolation_ =
         std::make_unique<MovingInterpolationWorkspace>(
             source->geometry().Nx, source->geometry().Ny, source->geometry().z);
     candidate->metrics_.transformPersistentBytes =
-        candidate->hydrostaticKernel_ ? candidate->hydrostaticKernel_->persistentBytes() : candidate->kernel_->persistentBytes();
+        candidate->boussinesqKernel_ ? candidate->boussinesqKernel_->persistentBytes() : candidate->hydrostaticKernel_ ? candidate->hydrostaticKernel_->persistentBytes() : candidate->kernel_->persistentBytes();
     candidate->metrics_.scratchCapacityBytes =
         (candidate->fieldScratch_.capacity()+candidate->speedScratch_.capacity()) * sizeof(double) +
         candidate->movingInterpolation_->scratchBytes();
@@ -577,6 +580,33 @@ WVKernelStatus WVStratifiedFieldEvaluationAdapter::createBorrowing(
   }
 }
 
+WVKernelStatus WVStratifiedFieldEvaluationAdapter::createBorrowing(
+    WVTransformBoussinesqKernel &kernel,
+    std::unique_ptr<WVStratifiedFieldEvaluationAdapter> &adapter) {
+  adapter.reset();
+  try {
+    auto candidate = std::unique_ptr<WVStratifiedFieldEvaluationAdapter>(
+        new WVStratifiedFieldEvaluationAdapter());
+    candidate->boussinesqKernel_ = &kernel;
+    candidate->speedScratch_.resize(kernel.spatialShape().elementCount());
+    candidate->fieldScratch_.resize(
+        kernel.spatialShape().elementCount());
+    candidate->movingInterpolation_ =
+        std::make_unique<MovingInterpolationWorkspace>(
+            kernel.geometry().Nx, kernel.geometry().Ny, kernel.geometry().z);
+    candidate->metrics_.transformPersistentBytes = kernel.persistentBytes();
+    candidate->metrics_.scratchCapacityBytes =
+        (candidate->fieldScratch_.capacity()+candidate->speedScratch_.capacity()) * sizeof(double) +
+        candidate->movingInterpolation_->scratchBytes();
+    candidate->metrics_.servicePersistentBytes = candidate->persistentBytes();
+    adapter = std::move(candidate);
+    return WVKernelStatus::ok();
+  } catch (const std::bad_alloc &) {
+    return {WVKernelStatusCode::allocationFailure,
+            "Unable to allocate borrowed Boussinesq field service."};
+  }
+}
+
 WVKernelStatus WVStratifiedFieldEvaluationAdapter::createPlan(
     const std::vector<WVFieldRequest> &requests,
     WVFieldEvaluationPlan &plan) const {
@@ -606,7 +636,7 @@ WVKernelStatus WVStratifiedFieldEvaluationAdapter::createPlan(
       if (input.identifier.empty() || !identifiers.insert(input.identifier).second)
         return invalid("Stratified QG field identifiers must be nonempty and unique.");
       Request request;
-      auto status = resolveField(input.fieldName, request.field, request.scalar,hydrostaticKernel_!=nullptr);
+      auto status = resolveField(input.fieldName, request.field, request.scalar,(hydrostaticKernel_!=nullptr || boussinesqKernel_!=nullptr));
       if (!status)
         return status;
       request.sampling = input.sampling.kind;
@@ -768,7 +798,7 @@ WVKernelStatus WVStratifiedFieldEvaluationAdapter::createMovingPlan(
       const auto &input = requests[index];
       WVHydrostaticField field;
       ScalarField scalar;
-      auto status = resolveField(input.fieldName, field, scalar,hydrostaticKernel_!=nullptr);
+      auto status = resolveField(input.fieldName, field, scalar,(hydrostaticKernel_!=nullptr || boussinesqKernel_!=nullptr));
       if (!status || scalar != ScalarField::none)
         return status ? invalid("A scalar field cannot be sampled at moving positions.") : status;
       if (input.identifier.empty() || !identifiers.insert(input.identifier).second ||
@@ -923,7 +953,7 @@ WVKernelStatus WVStratifiedFieldEvaluationAdapter::createEventPlan(
         return invalid("SQG event position-set slot exceeds the supported range.");
       WVHydrostaticField field;
       ScalarField scalar;
-      auto status = resolveField(requests[index].fieldName, field, scalar,hydrostaticKernel_!=nullptr);
+      auto status = resolveField(requests[index].fieldName, field, scalar,(hydrostaticKernel_!=nullptr || boussinesqKernel_!=nullptr));
       if (!status)
         return status;
       if (scalar != ScalarField::none)
@@ -1082,7 +1112,7 @@ WVKernelStatus WVStratifiedFieldEvaluationAdapter::evaluateEventBatch(
 }
 
 bool WVStratifiedFieldEvaluationAdapter::isCompatibleWith(const WVIntegrationStateLayout& layout) const noexcept {
-  const auto& g=configuration(); const bool hydro=hydrostaticKernel_!=nullptr;
+  const auto& g=configuration(); const bool hydro=(hydrostaticKernel_!=nullptr || boussinesqKernel_!=nullptr);
   if (layout.transformIdentifier()!=g.transformClass || layout.spatialDimensions()!=std::vector<std::size_t>{g.Nx,g.Ny,g.Nz} || layout.coefficientFamilyCount()!=(hydro?3U:1U)) return false;
   const char* names[]={"Ap","Am","A0"};
   for (std::size_t i=0;i<layout.coefficientFamilyCount();++i) if (layout.coefficientFamilies()[i].identifier!=names[hydro?i:2] || layout.coefficientFamilies()[i].elementCount!=g.Nj*g.Nkl) return false;
@@ -1091,19 +1121,42 @@ bool WVStratifiedFieldEvaluationAdapter::isCompatibleWith(const WVIntegrationSta
 
 const WVStratifiedModalGeometry &
 WVStratifiedFieldEvaluationAdapter::configuration() const noexcept {
-  return hydrostaticKernel_ ? hydrostaticKernel_->geometry() : kernel_->geometry();
+  return boussinesqKernel_ ? boussinesqKernel_->geometry() : hydrostaticKernel_ ? hydrostaticKernel_->geometry() : kernel_->geometry();
 }
 
 std::size_t
 WVStratifiedFieldEvaluationAdapter::persistentBytes() const noexcept {
   return sizeof(*this) +
-         (ownedKernel_ ? kernel_->persistentBytes() : 0) + (ownedHydrostatic_ ? ownedHydrostatic_->persistentBytes() : 0) + speedScratch_.capacity()*sizeof(double) +
+         (ownedKernel_ ? kernel_->persistentBytes() : 0) + (ownedHydrostatic_ ? ownedHydrostatic_->persistentBytes() : 0) + (ownedBoussinesq_ ? ownedBoussinesq_->persistentBytes() : 0) + speedScratch_.capacity()*sizeof(double) +
          fieldScratch_.capacity() * sizeof(double) +
          (movingInterpolation_ ? movingInterpolation_->persistentBytes() : 0);
 }
 
 WVKernelStatus WVStratifiedFieldEvaluationAdapter::transformField(const WVState& state,WVHydrostaticField field,WVRealVolumeView out) {
   if (hydrostaticKernel_) return hydrostaticKernel_->transformStateField(state,field,out);
+  if (boussinesqKernel_) {
+    WVBoussinesqField mapped;
+    switch(field) {
+      case WVHydrostaticField::u: mapped=WVBoussinesqField::u; break;
+      case WVHydrostaticField::v: mapped=WVBoussinesqField::v; break;
+      case WVHydrostaticField::w: mapped=WVBoussinesqField::w; break;
+      case WVHydrostaticField::eta: mapped=WVBoussinesqField::eta; break;
+      case WVHydrostaticField::pi: mapped=WVBoussinesqField::pi; break;
+      case WVHydrostaticField::p: mapped=WVBoussinesqField::p; break;
+      case WVHydrostaticField::psi: mapped=WVBoussinesqField::psi; break;
+      case WVHydrostaticField::qgpv: mapped=WVBoussinesqField::qgpv; break;
+      case WVHydrostaticField::rhoE: mapped=WVBoussinesqField::rhoE; break;
+      case WVHydrostaticField::rhoTotal: mapped=WVBoussinesqField::rhoTotal; break;
+      case WVHydrostaticField::zetaX: mapped=WVBoussinesqField::zetaX; break;
+      case WVHydrostaticField::zetaY: mapped=WVBoussinesqField::zetaY; break;
+      case WVHydrostaticField::zetaZ: mapped=WVBoussinesqField::zetaZ; break;
+      case WVHydrostaticField::ssh: mapped=WVBoussinesqField::ssh; break;
+      case WVHydrostaticField::ssu: mapped=WVBoussinesqField::ssu; break;
+      case WVHydrostaticField::ssv: mapped=WVBoussinesqField::ssv; break;
+      default: return invalid("Unsupported Boussinesq field.");
+    }
+    return boussinesqKernel_->transformStateField(state,mapped,out);
+  }
   WVStratifiedQGField qg;
   switch(field) {
     case WVHydrostaticField::u: qg=WVStratifiedQGField::u; break;
@@ -1125,9 +1178,9 @@ WVKernelStatus WVStratifiedFieldEvaluationAdapter::transformField(const WVState&
   return kernel_->transformA0ToField(state.coefficients.A0,qg,out);
 }
 WVKernelStatus WVStratifiedFieldEvaluationAdapter::scalarValue(const WVState& state,unsigned scalar,double& value) {
-  if (!hydrostaticKernel_) return scalar==static_cast<unsigned>(ScalarField::energy) ? kernel_->totalEnergy(state.coefficients.A0,value) : kernel_->uvMax(state.coefficients.A0,value);
-  if (scalar==static_cast<unsigned>(ScalarField::energy)) return hydrostaticKernel_->totalEnergy(state.coefficients,value);
-  const auto shape=hydrostaticKernel_->spatialShape();
+  if (!hydrostaticKernel_ && !boussinesqKernel_) return scalar==static_cast<unsigned>(ScalarField::energy) ? kernel_->totalEnergy(state.coefficients.A0,value) : kernel_->uvMax(state.coefficients.A0,value);
+  if (scalar==static_cast<unsigned>(ScalarField::energy)) return boussinesqKernel_ ? boussinesqKernel_->totalEnergy(state.coefficients,value) : hydrostaticKernel_->totalEnergy(state.coefficients,value);
+  const auto shape=boussinesqKernel_ ? boussinesqKernel_->spatialShape() : hydrostaticKernel_->spatialShape();
   auto s=transformField(state,scalar==static_cast<unsigned>(ScalarField::wMax) ? WVHydrostaticField::w : WVHydrostaticField::u,{fieldScratch_.data(),shape}); if (!s) return s;
   if (scalar==static_cast<unsigned>(ScalarField::uvMax)) { s=transformField(state,WVHydrostaticField::v,{speedScratch_.data(),shape}); if (!s) return s; }
   value=0; for (std::size_t i=0;i<fieldScratch_.size();++i) value=std::max(value,scalar==static_cast<unsigned>(ScalarField::wMax) ? std::abs(fieldScratch_[i]) : std::hypot(fieldScratch_[i],speedScratch_[i]));

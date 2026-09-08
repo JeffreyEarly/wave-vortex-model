@@ -1,6 +1,7 @@
 #include "WaveVortexRuntime/WVCheckpointReader.hpp"
 #include "WaveVortexRuntime/WVForcingEngine.hpp"
 #include "WaveVortexRuntime/WVHydrostaticForcingEngine.hpp"
+#include "WaveVortexRuntime/WVBoussinesqForcingEngine.hpp"
 #include "WaveVortexRuntime/WVStratifiedQGForcingEngine.hpp"
 #include "WaveVortexRuntime/WVStratifiedModalRecord.hpp"
 #include "WaveVortexRuntime/WVBarotropicQGForcingEngine.hpp"
@@ -68,6 +69,19 @@ int main(int argc,char** argv) {
     } else if (checkpoint.transformKind==WVPersistedTransformKind::hydrostatic) {
       std::unique_ptr<WVHydrostaticForcingEngine> engine;
       require(WVHydrostaticForcingEngine::create(checkpoint.stratifiedModalSource,checkpoint.forcingSchedule,catalog,std::move(fft),engine));
+      const auto shape=engine->kernel().spectralShape();
+      auto& families=checkpoint.transformState.coefficientFamilies;
+      WVState state{checkpoint.state.t,checkpoint.state.t0,{{families[0].values.data(),shape},{families[1].values.data(),shape},{families[2].values.data(),shape}}};
+      std::vector<WVComplex64> fp(shape.elementCount()),fm(fp.size()),f0(fp.size());
+      WVFlux flux{{fp.data(),shape},{fm.data(),shape},{f0.data(),shape}};
+      require(engine->nonlinearFlux(state,flux));
+      allocationProbe::calls=0; allocationProbe::counting=true;
+      const auto status=engine->nonlinearFlux(state,flux);
+      allocationProbe::counting=false; require(status);
+      result["Fp"]=values(fp); result["Fm"]=values(fm); result["F0"]=values(f0);
+    } else if (checkpoint.transformKind==WVPersistedTransformKind::boussinesq) {
+      std::unique_ptr<WVBoussinesqForcingEngine> engine;
+      require(WVBoussinesqForcingEngine::create(checkpoint.stratifiedModalSource,checkpoint.forcingSchedule,catalog,std::move(fft),engine));
       const auto shape=engine->kernel().spectralShape();
       auto& families=checkpoint.transformState.coefficientFamilies;
       WVState state{checkpoint.state.t,checkpoint.state.t0,{{families[0].values.data(),shape},{families[1].values.data(),shape},{families[2].values.data(),shape}}};

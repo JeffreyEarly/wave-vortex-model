@@ -32,7 +32,9 @@ bool sameStratifiedSource(const WVStratifiedModalRecord* a, const WVStratifiedMo
     x.rotationRate == y.rotationRate && x.planetaryRadius == y.planetaryRadius && x.shouldAntialias == y.shouldAntialias &&
     x.x == y.x && x.y == y.y && x.z == y.z && x.j == y.j && x.k == y.k && x.l == y.l && x.N2 == y.N2 &&
     x.rho_nm0 == y.rho_nm0 && x.dLnN2 == y.dLnN2 && x.P0 == y.P0 && x.Q0 == y.Q0 && x.h_0 == y.h_0 && x.z_int == y.z_int &&
-    a->PF0inv() == b->PF0inv() && a->QG0inv() == b->QG0inv() && a->PF0() == b->PF0() && a->QG0() == b->QG0();
+    a->PF0inv() == b->PF0inv() && a->QG0inv() == b->QG0inv() && a->PF0() == b->PF0() && a->QG0() == b->QG0() && x.K2unique == y.K2unique && x.waveGroup == y.waveGroup &&
+    x.Ppm == y.Ppm && x.Qpm == y.Qpm && x.h_pm == y.h_pm &&
+    a->PFpmInv() == b->PFpmInv() && a->QGpmInv() == b->QGpmInv() && a->PFpm() == b->PFpm() && a->QGpm() == b->QGpm() && a->QGwg() == b->QGwg();
 }
 
 WVCheckpointStatus defineLogical(int group, const std::string &name,
@@ -337,7 +339,7 @@ WVCheckpointStatus defineModelOutputRoot(
     std::vector<const WVFrozenForcingEntry *> &forcingEntries) {
   const bool isBarotropicQG =
       checkpoint.transformKind == WVPersistedTransformKind::barotropicQG;
-  const bool isStratified = checkpoint.transformKind == WVPersistedTransformKind::stratifiedQG || checkpoint.transformKind == WVPersistedTransformKind::hydrostatic;
+  const bool isStratified = checkpoint.transformKind == WVPersistedTransformKind::stratifiedQG || (checkpoint.transformKind == WVPersistedTransformKind::hydrostatic || checkpoint.transformKind == WVPersistedTransformKind::boussinesq);
   auto legacy = checkpoint.configuration;
   if (isStratified) {
     if (!checkpoint.stratifiedModalSource) return failed(WVCheckpointStatusCode::schemaMismatch,"SQG scientific source is absent.","/");
@@ -411,6 +413,17 @@ WVCheckpointStatus defineModelOutputRoot(
       {"P0",{dimensions[0]}},{"Q0",{dimensions[0]}},{"h_0",{dimensions[0]}},
       {"PF0inv",{dimensions[0],dimensions[4]}},{"QG0inv",{dimensions[0],dimensions[4]}},{"PF0",{dimensions[4],dimensions[0]}},{"QG0",{dimensions[4],dimensions[0]}}}) {
       int variable=-1; auto result=defineDoubleVariable(root,entry.first,entry.second,variable,"/"); if (!result) return result;
+    }
+  }
+  if (checkpoint.transformKind==WVPersistedTransformKind::boussinesq) {
+    int groupDim=-1;
+    auto status=checkedNetCDF(nc_def_dim(root,"K2unique",checkpoint.stratifiedModalSource->geometry().K2unique.size(),&groupDim),"Wave group dimension definition","/K2unique"); if (!status) return status;
+    for (const auto& item:std::vector<std::pair<const char*,std::vector<int>>>{
+      {"K2unique",{groupDim}},{"iK2unique",{dimensions[1]}},{"h_pm",{dimensions[1],dimensions[0]}},
+      {"Ppm",{groupDim,dimensions[0]}},{"Qpm",{groupDim,dimensions[0]}},
+      {"PFpmInv",{groupDim,dimensions[0],dimensions[4]}},{"QGpmInv",{groupDim,dimensions[0],dimensions[4]}},
+      {"PFpm",{groupDim,dimensions[4],dimensions[0]}},{"QGpm",{groupDim,dimensions[4],dimensions[0]}},{"QGwg",{groupDim,dimensions[0],dimensions[0]}}}) {
+      int variable=-1; status=defineDoubleVariable(root,item.first,item.second,variable,"/"); if (!status) return status;
     }
   }
   const std::string transformClass =
@@ -502,7 +515,7 @@ WVCheckpointStatus writeModelOutputRoot(
       checkpoint.transformKind == WVPersistedTransformKind::barotropicQG;
   const auto &configuration = checkpoint.configuration;
   const auto &qg = checkpoint.barotropicQGConfiguration;
-  if (checkpoint.transformKind == WVPersistedTransformKind::stratifiedQG || checkpoint.transformKind == WVPersistedTransformKind::hydrostatic) {
+  if (checkpoint.transformKind == WVPersistedTransformKind::stratifiedQG || (checkpoint.transformKind == WVPersistedTransformKind::hydrostatic || checkpoint.transformKind == WVPersistedTransformKind::boussinesq)) {
     const auto& record = *checkpoint.stratifiedModalSource; const auto& g=record.geometry();
     if (!record.N2FunctionPayload().empty()) {
       int variable=-1; auto result=variableId(root,"N2Function",variable,"/"); if (!result) return result;
@@ -518,6 +531,15 @@ WVCheckpointStatus writeModelOutputRoot(
     for (const auto& item : std::vector<std::pair<const char*,double>>{
       {"Lx",g.Lx},{"Ly",g.Ly},{"Lz",g.Lz},{"g",g.g},{"rho0",g.rho0},{"latitude",g.latitude},{"rotationRate",g.rotationRate},{"planetaryRadius",g.planetaryRadius},{"t0",checkpoint.state.t0}}) {
       auto result=writeDouble(root,item.first,item.second,"/"); if (!result) return result;
+    }
+    if (checkpoint.transformKind==WVPersistedTransformKind::boussinesq) {
+      std::vector<double> membership(g.Nkl);
+      for (std::size_t i=0;i<g.Nkl;++i) membership[i]=static_cast<double>(g.waveGroup[i]+1);
+      for (const auto& item:std::vector<std::pair<const char*,const std::vector<double>*>>{
+        {"K2unique",&g.K2unique},{"iK2unique",&membership},{"h_pm",&g.h_pm},{"Ppm",&g.Ppm},{"Qpm",&g.Qpm},
+        {"PFpmInv",&record.PFpmInv()},{"QGpmInv",&record.QGpmInv()},{"PFpm",&record.PFpm()},{"QGpm",&record.QGpm()},{"QGwg",&record.QGwg()}}) {
+        auto status=writeDoubles(root,item.first,*item.second,"/"); if (!status) return status;
+      }
     }
     auto result=writeLogical(root,"shouldAntialias",g.shouldAntialias,"/"); if (!result) return result;
     for (std::size_t i=0;i<forcingEntries.size();++i) {
@@ -822,7 +844,7 @@ public:
   WVCheckpointStatus validate(
       const WVCheckpoint &checkpoint,
       const WVIntegrationStateLayout &layout) const override {
-    if ((checkpoint.transformKind != WVPersistedTransformKind::stratifiedQG && checkpoint.transformKind != WVPersistedTransformKind::hydrostatic) ||
+    if ((checkpoint.transformKind != WVPersistedTransformKind::stratifiedQG && checkpoint.transformKind != WVPersistedTransformKind::hydrostatic && checkpoint.transformKind != WVPersistedTransformKind::boussinesq) ||
         checkpoint.stateDescription.transformIdentifier !=
             layout.transformIdentifier())
       return failed(WVCheckpointStatusCode::shapeMismatch,
@@ -831,7 +853,7 @@ public:
     if (!sameStratifiedSource(source_.get(),checkpoint.stratifiedModalSource.get()))
       return failed(WVCheckpointStatusCode::schemaMismatch,"SQG scientific source differs.","/");
     const auto& g = source_->geometry();
-    const bool hydro=g.transformClass=="WVTransformHydrostatic"; const auto count=hydro?3U:1U;
+    const bool hydro=(g.transformClass=="WVTransformHydrostatic" || g.transformClass=="WVTransformBoussinesq"); const auto count=hydro?3U:1U;
     if (layout.coefficientFamilyCount()!=count || checkpoint.transformState.coefficientFamilies.size()!=count) return failed(WVCheckpointStatusCode::shapeMismatch,"Stratified output coefficient count differs.","/");
     const char* names[]={"Ap","Am","A0"};
     for (std::size_t i=0;i<count;++i) if (layout.coefficientFamilies()[i].identifier!=names[hydro?i:2] || layout.coefficientFamilies()[i].spectralDimensions!=std::vector<std::size_t>{g.Nj,g.Nkl} || checkpoint.transformState.coefficientFamilies[i].values.size()!=g.Nj*g.Nkl) return failed(WVCheckpointStatusCode::shapeMismatch,"Stratified output coefficient shape differs.","/");
@@ -876,7 +898,7 @@ public:
 
   bool sameConfiguration(
       const WVCheckpointInspection &inspection) const noexcept override {
-    return (inspection.transformKind == WVPersistedTransformKind::stratifiedQG || inspection.transformKind == WVPersistedTransformKind::hydrostatic) &&
+    return (inspection.transformKind == WVPersistedTransformKind::stratifiedQG || (inspection.transformKind == WVPersistedTransformKind::hydrostatic || inspection.transformKind == WVPersistedTransformKind::boussinesq)) &&
            sameStratifiedSource(source_.get(),inspection.stratifiedModalSource.get());
   }
 
@@ -895,7 +917,7 @@ WVCheckpointStatus createModelOutputTransformAdapter(
     std::unique_ptr<WVModelOutputTransformAdapter> &adapter) {
   adapter.reset();
   try {
-    if (checkpoint.transformKind == WVPersistedTransformKind::stratifiedQG || checkpoint.transformKind == WVPersistedTransformKind::hydrostatic)
+    if (checkpoint.transformKind == WVPersistedTransformKind::stratifiedQG || (checkpoint.transformKind == WVPersistedTransformKind::hydrostatic || checkpoint.transformKind == WVPersistedTransformKind::boussinesq))
       adapter = std::make_unique<StratifiedOutputTransformAdapter>(checkpoint.stratifiedModalSource);
     else if (checkpoint.transformKind == WVPersistedTransformKind::barotropicQG)
       adapter = std::make_unique<BarotropicQGOutputTransformAdapter>(
@@ -917,7 +939,7 @@ bool sameModelOutputTransformConfiguration(
     const WVCheckpointInspection &right) noexcept {
   if (left.transformKind != right.transformKind)
     return false;
-  if (left.transformKind == WVPersistedTransformKind::stratifiedQG || left.transformKind == WVPersistedTransformKind::hydrostatic) return sameStratifiedSource(left.stratifiedModalSource.get(),right.stratifiedModalSource.get());
+  if (left.transformKind == WVPersistedTransformKind::stratifiedQG || (left.transformKind == WVPersistedTransformKind::hydrostatic || left.transformKind == WVPersistedTransformKind::boussinesq)) return sameStratifiedSource(left.stratifiedModalSource.get(),right.stratifiedModalSource.get());
   return left.transformKind == WVPersistedTransformKind::barotropicQG
              ? sameTransformConfiguration(left.barotropicQGConfiguration,
                                           right.barotropicQGConfiguration)

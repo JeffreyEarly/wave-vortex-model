@@ -29,6 +29,7 @@ private:
   std::size_t vOutput_ = 0;
   std::size_t wOutput_ = std::numeric_limits<std::size_t>::max();
   friend class WVConstantStratificationIntegrationSystem;
+  friend class WVBoussinesqIntegrationSystem;
   friend class WVHydrostaticIntegrationSystem;
 };
 

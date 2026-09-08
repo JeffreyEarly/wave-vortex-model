@@ -39,9 +39,11 @@ add_library(WaveVortexPortableRuntime STATIC
     src/WVBarotropicQGForcingEngine.cpp
     src/WVStratifiedQGForcingEngine.cpp
     src/WVHydrostaticForcingEngine.cpp
+    src/WVBoussinesqForcingEngine.cpp
     src/WVBarotropicQGIntegrationSystem.cpp
     src/WVStratifiedQGIntegrationSystem.cpp
     src/WVHydrostaticIntegrationSystem.cpp
+    src/WVBoussinesqIntegrationSystem.cpp
     src/WVBarotropicQGFieldEvaluationAdapter.cpp
     src/WVStratifiedFieldEvaluationAdapter.cpp
     src/WVOutputTransformAdapters.cpp
@@ -488,4 +490,13 @@ if(BUILD_TESTING)
         target_compile_options(TestWVBoussinesqKernel PRIVATE -Wall -Wextra -Wpedantic -Werror)
     endif()
     add_test(NAME boussinesq-kernel COMMAND TestWVBoussinesqKernel)
+endif()
+
+if(BUILD_TESTING)
+    add_executable(TestWVBoussinesqRuntime tests/TestWVBoussinesqRuntime.cpp ../tools/compiled-kernel/tests/WVAllocationProbe.cpp)
+    target_link_libraries(TestWVBoussinesqRuntime PRIVATE WaveVortex::PortableRuntime WaveVortex::ReferenceFFT ${WAVEVORTEX_NETCDF_TARGET})
+    if(CMAKE_CXX_COMPILER_ID MATCHES "AppleClang|Clang|GNU")
+        target_compile_options(TestWVBoussinesqRuntime PRIVATE -Wall -Wextra -Wpedantic -Werror)
+    endif()
+    add_test(NAME boussinesq-runtime COMMAND TestWVBoussinesqRuntime)
 endif()

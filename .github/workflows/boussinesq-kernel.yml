@@ -1,4 +1,4 @@
-name: Boussinesq kernel parity
+name: Boussinesq kernel and runtime parity
 
 on:
   pull_request:
@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   qualify:
-    name: Boussinesq numerical kernel / ${{ matrix.configuration }}
+    name: Boussinesq kernel and runtime / ${{ matrix.configuration }}
     runs-on: ubuntu-latest
     timeout-minutes: 25
     strategy:
@@ -49,12 +49,12 @@ jobs:
             flags+=('-DCMAKE_CXX_FLAGS=-fsanitize=address,undefined -fno-omit-frame-pointer' '-DCMAKE_EXE_LINKER_FLAGS=-fsanitize=address,undefined')
           fi
           cmake -S PortableRuntime -B "$RUNNER_TEMP/boussinesq-build" -DCMAKE_BUILD_TYPE=RelWithDebInfo -DWV_ENABLE_ACCELERATE=OFF "${flags[@]}"
-          cmake --build "$RUNNER_TEMP/boussinesq-build" --parallel 4 --target TestWVBoussinesqKernel WVBoussinesqKernelDump WVHydrostaticKernelDump
+          cmake --build "$RUNNER_TEMP/boussinesq-build" --parallel 4 --target TestWVBoussinesqKernel WVBoussinesqKernelDump WVHydrostaticKernelDump TestWVBoussinesqRuntime WVStableForcingDump WVStratifiedQGFieldDump wave-vortex-run
       - name: Run kernel boundary contracts
         env:
           ASAN_OPTIONS: detect_leaks=1:alloc_dealloc_mismatch=1:halt_on_error=1
           UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
-        run: ctest --test-dir "$RUNNER_TEMP/boussinesq-build" -R '^boussinesq-kernel$' --output-on-failure
+        run: ctest --test-dir "$RUNNER_TEMP/boussinesq-build" -R '^boussinesq-(kernel|runtime)$' --output-on-failure
       - uses: matlab-actions/setup-matlab@v3
         with:
           release: R2025b
@@ -71,7 +71,9 @@ jobs:
             configureCIEnvironment(sourceRoot,fullfile(pwd,"OceanKit"));
             cd(sourceRoot);
             setenv("WV_BOUSS_KERNEL_DUMP",fullfile(getenv("RUNNER_TEMP"),"boussinesq-build","WVBoussinesqKernelDump"));
-            results=runtests("UnitTests/TestBoussinesqCompiledKernel.m");
+            setenv("WV_STABLE_FORCING_DUMP",fullfile(getenv("RUNNER_TEMP"),"boussinesq-build","WVStableForcingDump"));
+            setenv("WV_STABLE_FORCING_RUNNER",fullfile(getenv("RUNNER_TEMP"),"boussinesq-build","wave-vortex-run"));
+            results=runtests({'UnitTests/TestBoussinesqCompiledKernel.m','UnitTests/TestPortableBoussinesq.m'});
             assertSuccess(results);
       - name: Verify clean checkout
         if: always()

@@ -3,6 +3,7 @@
 #include "WaveVortexRuntime/WVExtensionCatalog.hpp"
 #include "WaveVortexRuntime/WVForcingEngine.hpp"
 #include "WaveVortexRuntime/WVHydrostaticForcingEngine.hpp"
+#include "WaveVortexRuntime/WVBoussinesqForcingEngine.hpp"
 #include "WaveVortexRuntime/WVBarotropicQGForcingEngine.hpp"
 #include "WaveVortexRuntime/WVStratifiedQGForcingEngine.hpp"
 
@@ -34,7 +35,10 @@ void testForcingIncompatibilities() {
     if (entry.typeIdentifier=="WVAntialiasing")
       entry.configuration.values.push_back({"Nj",{},std::vector<double>{1}});
     WVFrozenForcingSchedule schedule; schedule.entries.push_back(entry);
-    if (row.hydrostatic) {
+    if (row.boussinesq) {
+      WVStratifiedModalGeometry c; c.transformClass="WVTransformBoussinesq"; c.Nj=4; c.Nkl=24; c.shouldAntialias=row.antialias;
+      status=WVBoussinesqForcingEngine::validateSchedule(c,schedule,{4,24},*catalog);
+    } else if (row.hydrostatic) {
       WVStratifiedModalGeometry c; c.transformClass="WVTransformHydrostatic"; c.Nj=4; c.Nkl=24; c.shouldAntialias=row.antialias;
       status=WVHydrostaticForcingEngine::validateSchedule(c,schedule,{4,24},*catalog);
     } else if (row.stratifiedQG) {
@@ -53,7 +57,7 @@ void testForcingIncompatibilities() {
       throw std::runtime_error(std::string("MATLAB incompatibility accepted: ")+row.identity);
     ++rejected;
   }
-  if (rejected!=19) throw std::runtime_error("Incomplete baseline rejection evidence.");
+  if (rejected!=20) throw std::runtime_error("Incomplete baseline rejection evidence.");
 }
 
 int main() {
@@ -67,7 +71,7 @@ int main() {
       if (found == registrations.end())
         throw std::runtime_error(std::string("Missing current registry pair: ") + row.identity);
       const bool available = found->isSupported &&
-          (row.hydrostatic ? static_cast<bool>(found->hydrostaticFactory) : row.stratifiedQG ? static_cast<bool>(found->stratifiedQGFactory) : row.barotropic ? static_cast<bool>(found->barotropicQGFactory)
+          (row.boussinesq ? static_cast<bool>(found->boussinesqFactory) : row.hydrostatic ? static_cast<bool>(found->hydrostaticFactory) : row.stratifiedQG ? static_cast<bool>(found->stratifiedQGFactory) : row.barotropic ? static_cast<bool>(found->barotropicQGFactory)
                           : static_cast<bool>(found->factory));
       if (available != row.factoryAvailable)
         throw std::runtime_error(std::string("Stale factory availability: ") + row.identity);
